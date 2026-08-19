@@ -10803,3 +10803,62 @@ recorded for POST-MODULE scheduling per Frank's stop line.
 NEXT: wave E (\K) lane; then the REPAIR SLICE (K28 wrapper fix + A/B/C
 knob re-placement — serialized AFTER wave E so the every-artifact byte
 churn lands once, last); then the D27 blinded corpus; module close.
+
+## 2026-08-19 (EDT), thirty-fourth session (part 4) — WAVE E (\K) landed and merged: module `assertions` is CONSTRUCT-COMPLETE (8/8)
+
+Merge 84f5b1e; battery in flight at entry (gate quiet-box after; archives
+ride the next part). \K as A_KRESET lowering to N_EPS — language-unchanged,
+so the capture-erased prefilter needs NO special case (its span start IS
+the pre-\K start rule 1 protects). THE MECHANISM: \K writes stv[0], group
+0's reserved start slot — reserved since [M4.5b], never written by
+anything — inheriting the trail's exact-old-value undo, the PCREC_UNSET
+fill (= the "no \K crossed" signal), attempt unwind and the listing event
+with NO new machinery. The one real cost: a trail entry in vm_cost,
+multiplied by enclosing quantifiers — the only non-free assertion there,
+S87 its failing direction (and S87's invisibility to all four structural
+checks is MEASURED: codegen 0fail/56pass, only the corpus sees it).
+forces_kreset WALKS the AST (the engine-selection socket's first real
+customer — a future discharge hook rewriting \K away must flip the
+verdict); --engine=dfa refuses through D44.6's empty-by-population branch,
+which ran for the first time without changing a line. §6.3 RULE 3's CURE
+MEASURED NOT NEEDED: the entry both its broken lines live in is one a
+VM-forced pattern never has; the VM's own entry anchors by CALL and
+returns pos - ctx->pos, never caps. Evidence via the module's neatest
+device: tests/fuzz/pcre2_oracle has no anchored mode, so §2 asks libpcre2
+about \G(?:PAT) at the same startpos — wave D's construct as wave E's
+oracle. 596 libpcre2-only cells (U11d); differential 50,344 cells total /
+0 divergences; suite 20,242/0; matrix S85/S86/S87 all canon-DETECTED with
+DISJOINT symptoms. Byte identity WITHOUT a fourth gate, by argument: VM-
+forced + one emitter predicate (pinned as a quoted-literal rule) + a
+commit-pinned probe sharing no sources (1208/1208 + 1209/1209) — the
+manager's independent historical diff reproduced 1,208/1,208 exactly.
+
+FINDINGS: the SR-8 tripwire fired on its designed day and the answer was
+STILL not SR-8 (\K stays in the population; paid named exception; second-
+construct trigger recorded, manager's). Wave D's enabled-but-unbuilt
+retirement prediction measured WRONG — the mechanism's population is
+every enabled-module unwired port (live on four modules); pin re-homed,
+mechanism kept: "move the PIN, not the MECHANISM". K28 gains nothing (\K
+cannot make a pattern impossible; wave C's monotone-growth prediction now
+BOUNDED — one spelling per impossibility-capable construct, all landed).
+compliance survey rows corrected for waves B/D/E; RETURNED FINDING: the
+GENERATED compliance index is stale for the whole module (all eight rows
+REJECTED|planned; registry rows still RS_MODULE/ROADMAP_PLANNED) — a
+cross-cutting flip feeding registry_check/reject/PC-3, JOINS THE REPAIR
+SLICE (now three items: K28 wrapper fix + A/B/C knob re-placement +
+compliance flip). Watchdog lesson adopted: sub-second pcrec spawns are
+invisible to point-in-time ps — a poor liveness signal for probe runs.
+
+ALSO THIS PART, design direction from Frank recorded on [DD-11] (commits
+00ff4b3/f45df53/7bd77b5/c259b26): bindings are DIRECT RX REFERENCES not
+flags (flags = binding-mutation operators; dissolves the D47.5 class
+entirely); hygiene RULED by scoping law (insert groups local-by-number,
+global-by-name; call-vs-ref demoted to implementation); reduction scope
+measured (quantifier sugar already collapsed byte-identically; the
+irreducible core enumerated); values: optimization concentration + the
+core as target IR for grep/POSIX/oniguruma (leftmost-longest the honest
+core-level limit). [V-D]/[DD-14] cross-noted.
+
+NEXT: battery+gate close for wave E; the REPAIR SLICE lane; the D27
+blinded corpus (serialized after repair — its cells must meet the final
+artifact bytes); [M6.2] CLOSE; STOP per Frank's line.
