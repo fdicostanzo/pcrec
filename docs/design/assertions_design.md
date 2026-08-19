@@ -1069,6 +1069,33 @@ zero.
 > knows a machine has a direction. That is the whole of the "mirrored"
 > in this section's own reverse sentence, made concrete.
 
+> **REFUTED BY [M6.2] WAVE C (2026-08-19), AND IT WAS A LIVE MISCOMPILE
+> BEFORE IT WAS A DOCUMENTATION ERROR — READ THIS BEFORE THE SENTENCE BELOW.**
+>
+> `(?m)^` is **NOT** true at every position after a newline. PCRE2's
+> pcre2pattern is explicit: under multiline, `^` "does not match after a
+> newline that **ends the string**". So the rule is
+>
+>     pos == 0  ||  (pos < n && s[pos-1] == '\n')
+>
+> and `(?m)^` is **not** the mirror of `(?m)$`, which this section and §9.3
+> both present it as. On `"a\n"`, `(?m)^` holds at 0 only; `(?m)$` holds at 1
+> AND at 2.
+>
+> **python3 `re` implements the sentence below rather than PCRE2's rule**
+> (docs/dev/upstream_issues.md U11b), which is why the error was invisible to
+> the base-tier oracle and why every `(?m)`-with-`^` corpus block is now
+> `# pcre2-only`. pcrec shipped the design's rule and was WRONG for it; the
+> defect was found by `tests/assertions/run_mline_diff.sh` at `startpos > 0`,
+> because from `startpos 0` an earlier match masks the trailing position on
+> almost every subject. `(?m)^$` on `"a\n"` is the one shape that shows it
+> from 0.
+>
+> In the closure the exclusion is `end_ok` — wave A's `pos == n` view, which
+> `(?m)^` therefore consumes as well as `(?m)$` does, for the opposite
+> purpose: `(?m)$` reads it to be TRUE at end of subject, `(?m)^` reads it to
+> be FALSE there.
+
 **`(?m)^`** is true at `pos == 0` or when `s[pos-1] == '\n'`. Forward that is a
 previous-byte context bit — cheap, and it requires changing the one hardcoded
 `false` in the worklist (`src/ir/dfa.c:692`) into "this byte class is the
@@ -2348,7 +2375,7 @@ the shipped `A_BOL`/`A_EOL` arms (`src/gen/emit_vm.c:3458-3474`):
 | `\A` | `pos == 0` |
 | `\z` | `pos == n` |
 | `\Z` | `pos == n \|\| (pos + 1 == n && s[pos] == '\n')` |
-| `(?m)^` | `pos == 0 \|\| s[pos-1] == '\n'` |
+| `(?m)^` | `pos == 0 \|\| s[pos-1] == '\n'` — **WRONG, see §3.7's wave C annotation**: PCRE2 excludes a newline that ENDS the string, so the shipped arm is `pos == 0 \|\| (pos < n && s[pos-1] == '\n')` |
 | `(?m)$` | `pos == n \|\| s[pos] == '\n'` |
 | `\G` | `pos == startpos` |
 | `\b` | see below — the naive spelling reads out of bounds at both edges |

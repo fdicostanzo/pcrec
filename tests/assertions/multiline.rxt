@@ -33,6 +33,7 @@
 # set chosen so that newlines appear first, last, doubled and absent.
 # ======================================================================
 
+# pcre2-only
 pattern (?m)^
 features assertions,modifiers
 m "" 0 0
@@ -118,6 +119,7 @@ m "\nab\n" 3 3
 # population D63's candidate-start prefilter is measured on.
 # ======================================================================
 
+# pcre2-only
 pattern (?m)^ERROR
 features assertions,modifiers
 m "ERROR" 0 5
@@ -174,6 +176,7 @@ n "x\ny\nz"
 n "b\na"
 n "\nab\n"
 
+# pcre2-only
 pattern (?m)^ERROR$
 features assertions,modifiers
 m "ERROR" 0 5
@@ -258,6 +261,7 @@ n "x\ny\nz"
 n "b\na"
 n "\nab\n"
 
+# pcre2-only
 pattern (?m)^a
 features assertions,modifiers
 n "ERROR"
@@ -314,6 +318,7 @@ n "x\ny\nz"
 m "b\na" 2 3
 n "\nab\n"
 
+# pcre2-only
 pattern (?m)^.
 features assertions,modifiers
 m "ERROR" 0 1
@@ -369,6 +374,444 @@ m "aaa\nbbb" 2 3
 m "x\ny\nz" 0 1
 m "b\na" 0 1
 m "\nab\n" 2 3
+
+# ======================================================================
+# 2b. THE TRAILING-NEWLINE ASYMMETRY, at EVERY startpos.
+#
+# PCRE2's multiline `^` "does not match after a newline that ends the
+# string" -- so `(?m)^` on a subject ending in a line break holds at
+# offset 0 and NOT at the end, while `(?m)$` on the same subject holds
+# at BOTH the position before that break and at the end. `(?m)^` is NOT
+# the mirror of `(?m)$`, and assertions_design.md §3.7 and §9.3 both
+# state it as if it were.
+#
+# THE CELLS BELOW SWEEP EVERY STARTPOS, and that is the whole point:
+# from startpos 0 an earlier match masks the trailing position on almost
+# every subject, which is how this survived a first corpus that only
+# searched from 0. tests/assertions/run_mline_diff.sh found it at
+# startpos 1. `(?m)^$` is the one shape that shows it from startpos 0
+# too, because no earlier position satisfies both halves.
+#
+# python3 `re` DISAGREES WITH PCRE2 HERE and reports the trailing match,
+# so every `(?m)`-with-`^` block in this file is `# pcre2-only` — the
+# same WHOLESALE rule the `\Z` blocks follow, for a second reason
+# (docs/dev/upstream_issues.md U11b).
+# ======================================================================
+
+# pcre2-only
+pattern (?m)^
+features assertions,modifiers
+m "" 0 0
+m "a" 0 0
+m "\n" 0 0
+m "a\n" 0 0
+m "\na" 0 0
+m "a\n\n" 0 0
+m "\n\n" 0 0
+m "ab\n" 0 0
+m "a\nb" 0 0
+m "ac\n" 0 0
+m "\nac" 0 0
+m "abc" 0 0
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ms 1 "\na" 1 1
+ns 2 "\na"
+ms 1 "a\n\n" 2 2
+ms 2 "a\n\n" 2 2
+ns 3 "a\n\n"
+ms 1 "\n\n" 1 1
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ms 1 "a\nb" 2 2
+ms 2 "a\nb" 2 2
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ms 1 "\nac" 1 1
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# pcre2-only
+pattern (?m)^$
+features assertions,modifiers
+m "" 0 0
+n "a"
+m "\n" 0 0
+n "a\n"
+m "\na" 0 0
+m "a\n\n" 2 2
+m "\n\n" 0 0
+n "ab\n"
+n "a\nb"
+n "ac\n"
+m "\nac" 0 0
+n "abc"
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ns 1 "\na"
+ns 2 "\na"
+ms 1 "a\n\n" 2 2
+ms 2 "a\n\n" 2 2
+ns 3 "a\n\n"
+ms 1 "\n\n" 1 1
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ns 1 "a\nb"
+ns 2 "a\nb"
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ns 1 "\nac"
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# pcre2-only
+pattern (?m)^[^c]*
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "a\n\n" 0 3
+m "\n\n" 0 2
+m "ab\n" 0 3
+m "a\nb" 0 3
+m "ac\n" 0 1
+m "\nac" 0 2
+m "abc" 0 2
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ms 1 "\na" 1 2
+ns 2 "\na"
+ms 1 "a\n\n" 2 3
+ms 2 "a\n\n" 2 3
+ns 3 "a\n\n"
+ms 1 "\n\n" 1 2
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ms 1 "a\nb" 2 3
+ms 2 "a\nb" 2 3
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ms 1 "\nac" 1 2
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# pcre2-only
+pattern (?m)^a
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "a\n\n" 0 1
+n "\n\n"
+m "ab\n" 0 1
+m "a\nb" 0 1
+m "ac\n" 0 1
+m "\nac" 1 2
+m "abc" 0 1
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ms 1 "\na" 1 2
+ns 2 "\na"
+ns 1 "a\n\n"
+ns 2 "a\n\n"
+ns 3 "a\n\n"
+ns 1 "\n\n"
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ns 1 "a\nb"
+ns 2 "a\nb"
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ms 1 "\nac" 1 2
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# pcre2-only
+pattern (?m)^.
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "a\n\n" 0 1
+n "\n\n"
+m "ab\n" 0 1
+m "a\nb" 0 1
+m "ac\n" 0 1
+m "\nac" 1 2
+m "abc" 0 1
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ms 1 "\na" 1 2
+ns 2 "\na"
+ns 1 "a\n\n"
+ns 2 "a\n\n"
+ns 3 "a\n\n"
+ns 1 "\n\n"
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ms 1 "a\nb" 2 3
+ms 2 "a\nb" 2 3
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ms 1 "\nac" 1 2
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+pattern (?m)$
+features assertions,modifiers
+m "" 0 0
+m "a" 1 1
+m "\n" 0 0
+m "a\n" 1 1
+m "\na" 0 0
+m "a\n\n" 1 1
+m "\n\n" 0 0
+m "ab\n" 2 2
+m "a\nb" 1 1
+m "ac\n" 2 2
+m "\nac" 0 0
+m "abc" 3 3
+ms 1 "a" 1 1
+ms 1 "\n" 1 1
+ms 1 "a\n" 1 1
+ms 2 "a\n" 2 2
+ms 1 "\na" 2 2
+ms 2 "\na" 2 2
+ms 1 "a\n\n" 1 1
+ms 2 "a\n\n" 2 2
+ms 3 "a\n\n" 3 3
+ms 1 "\n\n" 1 1
+ms 2 "\n\n" 2 2
+ms 1 "ab\n" 2 2
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+ms 1 "a\nb" 1 1
+ms 2 "a\nb" 3 3
+ms 3 "a\nb" 3 3
+ms 1 "ac\n" 2 2
+ms 2 "ac\n" 2 2
+ms 3 "ac\n" 3 3
+ms 1 "\nac" 3 3
+ms 2 "\nac" 3 3
+ms 3 "\nac" 3 3
+ms 1 "abc" 3 3
+ms 2 "abc" 3 3
+ms 3 "abc" 3 3
+
+pattern (?m)a$
+features assertions,modifiers
+n ""
+m "a" 0 1
+n "\n"
+m "a\n" 0 1
+m "\na" 1 2
+m "a\n\n" 0 1
+n "\n\n"
+n "ab\n"
+m "a\nb" 0 1
+n "ac\n"
+n "\nac"
+n "abc"
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ms 1 "\na" 1 2
+ns 2 "\na"
+ns 1 "a\n\n"
+ns 2 "a\n\n"
+ns 3 "a\n\n"
+ns 1 "\n\n"
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ns 1 "a\nb"
+ns 2 "a\nb"
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ns 1 "\nac"
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+pattern (?m)[^c]*$
+features assertions,modifiers
+m "" 0 0
+m "a" 0 1
+m "\n" 0 1
+m "a\n" 0 2
+m "\na" 0 2
+m "a\n\n" 0 3
+m "\n\n" 0 2
+m "ab\n" 0 3
+m "a\nb" 0 3
+m "ac\n" 2 3
+m "\nac" 0 0
+m "abc" 3 3
+ms 1 "a" 1 1
+ms 1 "\n" 1 1
+ms 1 "a\n" 1 2
+ms 2 "a\n" 2 2
+ms 1 "\na" 1 2
+ms 2 "\na" 2 2
+ms 1 "a\n\n" 1 3
+ms 2 "a\n\n" 2 3
+ms 3 "a\n\n" 3 3
+ms 1 "\n\n" 1 2
+ms 2 "\n\n" 2 2
+ms 1 "ab\n" 1 3
+ms 2 "ab\n" 2 3
+ms 3 "ab\n" 3 3
+ms 1 "a\nb" 1 3
+ms 2 "a\nb" 2 3
+ms 3 "a\nb" 3 3
+ms 1 "ac\n" 2 3
+ms 2 "ac\n" 2 3
+ms 3 "ac\n" 3 3
+ms 1 "\nac" 3 3
+ms 2 "\nac" 3 3
+ms 3 "\nac" 3 3
+ms 1 "abc" 3 3
+ms 2 "abc" 3 3
+ms 3 "abc" 3 3
+
+pattern ^
+features assertions
+m "" 0 0
+m "a" 0 0
+m "\n" 0 0
+m "a\n" 0 0
+m "\na" 0 0
+m "a\n\n" 0 0
+m "\n\n" 0 0
+m "ab\n" 0 0
+m "a\nb" 0 0
+m "ac\n" 0 0
+m "\nac" 0 0
+m "abc" 0 0
+ns 1 "a"
+ns 1 "\n"
+ns 1 "a\n"
+ns 2 "a\n"
+ns 1 "\na"
+ns 2 "\na"
+ns 1 "a\n\n"
+ns 2 "a\n\n"
+ns 3 "a\n\n"
+ns 1 "\n\n"
+ns 2 "\n\n"
+ns 1 "ab\n"
+ns 2 "ab\n"
+ns 3 "ab\n"
+ns 1 "a\nb"
+ns 2 "a\nb"
+ns 3 "a\nb"
+ns 1 "ac\n"
+ns 2 "ac\n"
+ns 3 "ac\n"
+ns 1 "\nac"
+ns 2 "\nac"
+ns 3 "\nac"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+pattern $
+features assertions
+m "" 0 0
+m "a" 1 1
+m "\n" 0 0
+m "a\n" 1 1
+m "\na" 2 2
+m "a\n\n" 2 2
+m "\n\n" 1 1
+m "ab\n" 2 2
+m "a\nb" 3 3
+m "ac\n" 2 2
+m "\nac" 3 3
+m "abc" 3 3
+ms 1 "a" 1 1
+ms 1 "\n" 1 1
+ms 1 "a\n" 1 1
+ms 2 "a\n" 2 2
+ms 1 "\na" 2 2
+ms 2 "\na" 2 2
+ms 1 "a\n\n" 2 2
+ms 2 "a\n\n" 2 2
+ms 3 "a\n\n" 3 3
+ms 1 "\n\n" 1 1
+ms 2 "\n\n" 2 2
+ms 1 "ab\n" 2 2
+ms 2 "ab\n" 2 2
+ms 3 "ab\n" 3 3
+ms 1 "a\nb" 3 3
+ms 2 "a\nb" 3 3
+ms 3 "a\nb" 3 3
+ms 1 "ac\n" 2 2
+ms 2 "ac\n" 2 2
+ms 3 "ac\n" 3 3
+ms 1 "\nac" 3 3
+ms 2 "\nac" 3 3
+ms 3 "\nac" 3 3
+ms 1 "abc" 3 3
+ms 2 "abc" 3 3
+ms 3 "abc" 3 3
 
 # ======================================================================
 # 3. `(?m)$` WITH A LIVE QUANTIFIER — the population §3.6.1 names as the
@@ -641,6 +1084,7 @@ m "x\ny\nz" 0 1
 m "b\na" 0 1
 m "\nab\n" 0 0
 
+# pcre2-only
 pattern (?m)^[^c]*
 features assertions,modifiers
 m "" 0 0
@@ -685,6 +1129,7 @@ m "x\ny\nz" 0 5
 m "b\na" 0 3
 m "\nab\n" 0 4
 
+# pcre2-only
 pattern (?m)^\w+
 features assertions,classes,modifiers
 n ""
@@ -997,6 +1442,7 @@ m "x\ny\nz" 0 3
 m "b\na" 0 3
 m "\nab\n" 0 3
 
+# pcre2-only
 pattern (?m:^a)
 features assertions,modifiers
 n ""
@@ -1488,6 +1934,7 @@ n "x\ny\nz"
 m "b\na" 2 3
 n "\nab\n"
 
+# pcre2-only
 pattern (?m)^a|b$
 features assertions,modifiers
 n ""
@@ -1582,6 +2029,7 @@ n "x\ny\nz"
 m "b\na" 2 3
 m "\nab\n" 2 3
 
+# pcre2-only
 pattern (?:(?m:^a)|^b)
 features assertions,modifiers
 n ""
@@ -2082,6 +2530,7 @@ n "\n\n"
 # that makes the class axis three-valued rather than a bool.
 # ======================================================================
 
+# pcre2-only
 pattern (?m)^\bx*
 features assertions,modifiers
 n ""
@@ -2178,6 +2627,7 @@ m "xfoo" 4 4
 m "x\nfoo" 0 1
 m "foo\nxfoo" 3 3
 
+# pcre2-only
 pattern (?m)^\w+\b$
 features assertions,classes,modifiers
 n ""

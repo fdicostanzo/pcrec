@@ -663,3 +663,53 @@ the measurement that the second assertion is not redundant. The corpus sees
 this one loudly, which makes it a weaker row than S71/S73; it earns its place
 because §7.2's argument is about a drift that has not happened yet, and would
 survive two sets that happen to agree on today's alphabet.
+
+## [M6.2 wave C] S76-S81, and two more arms
+
+Six rows for `(?m)`, running two new arms — `mlinectxidentity`
+(tests/codegen/run_mlinectx_identity.sh) and `mlinediff`
+(tests/assertions/run_mline_diff.sh) — alongside `harness` and `assertions`.
+Each arm is its own for this matrix's standing reason: the three identity
+gates guard DIFFERENT constructions against DIFFERENT reference knobs, and
+`mlinediff` is the only instrument in the tree that sweeps a generated subject
+space over patterns with LIVE scan-avoidance mechanisms.
+
+**Four of the six exist because the design proposed an INTERSECTION and the
+wave shipped a DECLINE.** §3.6.1 names five scan-avoidance mechanisms and
+proposes intersecting rows 2-5; wave C intersects none of them, so each
+posture needs its decline PINNED rather than its intersection tested. That
+inverts what a sabotage does: S78 removes a decline, S79 narrows a guard, and
+S80 RE-EMITS a line the cure's whole content is not emitting.
+
+- **S77 is D62's control 2 and it is PERMANENT.** D62 chose a FIELD over a
+  node kind and accepted a named residual: a new kind cannot be silently
+  ignored, a new field warns nowhere. This row is the compile alarm's
+  replacement for the KNOWN consumer — turn `first_of`'s `a->multiline` read
+  off and `(?m)[^c]{1,3}$` on `"a\nc"` loses its match entirely, in the scoped
+  spellings too, while every non-multiline cell in tests/assertions/gate.rxt
+  stays green. Both directions, which is what makes it a gate rather than a
+  switch.
+- **S76** (the newline alphabet refinement made unconditional) is
+  SEMANTICS-PRESERVING in exactly S71's way and for the same reason — a
+  refined alphabet is the same partition more finely cut — so the whole
+  corpus and both oracles stay green and only the byte-identity gate can see
+  it. Wave C makes the mistake likelier than wave B did: the two refinements
+  now sit on ADJACENT LINES, one gated on `has_word` and one on `has_nl`, next
+  to an ungated loop.
+- **S78/S80** need a `(?m)$`-family pattern to fire at all, which is R30 E5's
+  finding turned into two rows. `\b` cannot make either fire: its left operand
+  is part of the state identity, so it is constant across any skipped run. A
+  wave B sabotage of these lines would have had NO FAILING DIRECTION in the
+  wave the design calls most dangerous — the project's recorded check-design
+  failure — which is why the design MOVED them here.
+- **S79** guards rows 1 and 2 together, because the memchr and bitmap
+  prefilters ride ONE emit gate. Its sabotage is not an arbitrary break: it is
+  the PRE-WAVE LINE transcribed into the new field, which is the realistic
+  mistake a mechanical refactor makes.
+- **S81 writes the DESIGN'S OWN SENTENCE as code**, and that is what makes it
+  worth its runtime. §3.7.2 says a `(?m)^`-anchored attempt "can only begin at
+  offset 0 or immediately after a `'\n'`" — true of a fully-anchored pattern,
+  false of `(?m)^a|b`. The shipped derivation asks which seeded start states
+  are LIVE and gets both right; the sabotage asks for the newline set and
+  loses the `b` branch's matches. A row whose edit is a quotation from the
+  design is the sharpest kind this matrix carries.

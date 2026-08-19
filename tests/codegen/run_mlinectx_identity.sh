@@ -138,57 +138,22 @@ find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
 # from `Dfa.clsctx` would be the check reading its own subject's verdict. Both
 # counts print every run so the classification is visible rather than latent
 # (§3.4's committed-tooling lesson).
-python3 - "$PATFILE" "$WORKDIR/mpat" "$WORKDIR/nompat" <<'PY'
-import sys
-src, mout, nout = sys.argv[1], sys.argv[2], sys.argv[3]
-
-OPTLETTERS = set("imsxUJnarDPSTW^-")
-
-def sets_multiline(p):
-    """True iff the pattern contains an option run that SETS `m`, outside a
-    bracket expression. Mirrors src/parse/mod_modifiers.c's grammar: `(?`
-    opens a run, an optional `^` resets, letters accumulate, a `-` moves to
-    the unset side, and `)` or `:` terminates. A run containing any byte the
-    grammar does not admit is not an option run at all (it is `(?:`, `(?=`,
-    `(?<name>`, ...) and is skipped."""
-    i, n, incls = 0, len(p), False
-    while i < n:
-        c = p[i]
-        if c == '\\' and i + 1 < n:
-            i += 2
-            continue
-        if not incls and c == '[':
-            incls = True
-            i += 1
-            if i < n and p[i] == '^': i += 1
-            if i < n and p[i] == ']': i += 1
-            continue
-        if incls:
-            if c == ']': incls = False
-            i += 1
-            continue
-        if c == '(' and i + 1 < n and p[i + 1] == '?':
-            j = i + 2
-            unset = False
-            while j < n and p[j] in OPTLETTERS:
-                if p[j] == '-': unset = True
-                elif p[j] == 'm' and not unset: return True
-                j += 1
-            i = j
-            continue
-        i += 1
-    return False
+python3 - "$ROOT_DIR" "$PATFILE" "$WORKDIR/mpat" "$WORKDIR/nompat" <<'PY'
+import os, sys
+root, src, mout, nout = sys.argv[1:5]
+sys.path.insert(0, os.path.join(root, "tests", "lib"))
+from mlscan import multiline_anchor      # ONE implementation, three readers
 
 raw = [l.rstrip("\n") for l in open(src) if l.strip()]
-mentions = [p for p in raw if 'm' in p and '(?' in p]
-real = [p for p in raw if sets_multiline(p)]
-rest = [p for p in raw if not sets_multiline(p)]
+mentions = [p for p in raw if '(?' in p and 'm' in p]
+real = [p for p in raw if multiline_anchor(p)]
+rest = [p for p in raw if not multiline_anchor(p)]
 open(mout, "w").write("".join(p + "\n" for p in real))
 open(nout, "w").write("".join(p + "\n" for p in rest))
 print("mlinectx-identity: corpus %d patterns; contain both `(?` and an `m`: "
-      "%d; actually SET multiline in an option run: %d; mention neither or "
-      "only unset it: %d"
-      % (len(raw), len(mentions), len(real), len(raw) - len(real)))
+      "%d; carry a `^`/`$` IN SCOPE of a set `m`: %d; everything else "
+      "(including patterns that set `m` with no anchor to receive it): %d"
+      % (len(raw), len(mentions), len(real), len(rest)))
 PY
 
 nm=$(wc -l < "$WORKDIR/mpat")

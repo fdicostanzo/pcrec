@@ -85,6 +85,63 @@ that none of this costs a `\b`-free pattern a byte, and
 `run_codegen_tests.sh`'s `[M6.2-WORDB]` block (sabotages S72/S73) for the two
 memory-safety rules no oracle can see.
 
+## **[M6.2 wave C] `(?m)`: the class axis becomes THREE-VALUED, and ENG_ATTEMPT gets its first scan avoidance**
+
+Wave B's class axis was a bool. `(?m)$` reads a DIFFERENT property of the same
+byte, so it becomes the `UPC_*` partition (`src/core/internal.h`) and every
+site in this file that read `waccept`, `wlist` or `s1w` reads an array index
+instead. Four things changed here beyond that mechanical rewrite:
+
+- **`upc_of_newline(d)` and the EOL-position accept.** Wave B's note at
+  `emit_attempt`'s EOL arm said the class axis has nothing to add there,
+  because the byte at an EOL position is `'\n'` and `'\n'` is not a word
+  character. That reasoning was right for its axis and its CONCLUSION IS NOW
+  WRONG: `'\n'` IS the newline definition, which is exactly what `(?m)$`
+  reads. `(?m)a(?:$|\Z)` is the shape that needs both — the `\Z` half makes an
+  EOL view exist and the `(?m)$` half makes that view's accept depend on the
+  byte the arm's own entry test just pinned. Both indices are compile-time
+  facts there (the view from the position, the class from `s[pos] == '\n'`),
+  so it is a CONSTANT, not a table read.
+- **The `eolvar`-only arm SPLITS when its two positions disagree.** `pos == n`
+  (no next byte, §3.6.2's scalar) and `pos + 1 == n && s[pos] == '\n'` (next
+  byte pinned to the newline) were one merged `if` before this wave, and could
+  be: nothing could tell them apart until an EOL view's accept depended on the
+  next byte. They split only when the two bits differ, so a machine with no
+  newline refinement emits the pre-wave text character for character.
+- **[D63] THE CANDIDATE-START DERIVATION, one site and two callers.** D63
+  rules that the DERIVATION (state row -> byte set -> memchr-vs-bitmap choice
+  -> table emission) is the SAME question for every engine and MUST be
+  factored; the LOOP INTEGRATION differs structurally and stays per-engine.
+  `CandSet`/`cand_derive`/`cand_emit_table` are that factoring, with
+  `cand_from_escapes` (ENG_UNANCH's wrapped start state) and
+  `cand_from_live_seeds` (ENG_ATTEMPT's `(?m)^`) as its two callers. The `(?m)^`
+  twist is a FIELD, not a fork: `offset` says the candidate is the found byte's
+  position PLUS ONE, because a line start is the byte after a newline.
+  **The candidate set is the LIVE-SEED set, and that is stronger than the
+  design's own sentence.** §3.7.2 says a `(?m)^`-anchored attempt "can only
+  begin at offset 0 or immediately after a `'\n'`" — true of a FULLY-anchored
+  pattern and false of `(?m)^a|b`, whose `b` branch can begin anywhere.
+  Deriving from which `s1u[]` entries are LIVE gets both right: `(?m)^ERROR`
+  yields the newline set and a `memchr`, `(?m)^a|b` yields all 256 and no
+  prefilter at all. Sabotage S81 is the design's sentence written as code.
+  D63's other named instances (D8's `^`-on-some-branches shape, partial `\G`)
+  become CALLERS of these three functions rather than new copies.
+  `pcrec_emit_prologue` calls `attempt_cand` too — the SAME function, never a
+  restatement of its condition — because it has to decide about
+  `#include <string.h>` before any body exists.
+- **The postures for §3.6.1's five scan-avoidance mechanisms are all DECLINE
+  or ORDERING; not one is an intersection.** Rows 1 and 2 share the widened
+  `start_acc` gate (S79); rows 3 and 5 share `pick_skip_states`' decline
+  (S78); row 4's compensating accept is NOT EMITTED under `views` at all, so
+  its cure is the evaluation order and its sabotage re-emits it (S80). The
+  design proposes intersections for rows 2-5; the annotation at §3.6.1 records
+  why each was declined instead and what declining costs.
+
+Gates: `tests/codegen/run_mlinectx_identity.sh` (sabotage S76) for the claim
+that none of this costs a `(?m)`-free pattern a byte, and
+`tests/assertions/run_mline_diff.sh` (sabotages S78/S79/S80/S81) for the
+scan-avoidance cure on the only population that can break it.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

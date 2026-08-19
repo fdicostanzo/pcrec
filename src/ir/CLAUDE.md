@@ -65,13 +65,53 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   context is live, so they intern APART; where it is not live they intern
   TOGETHER, and that merge is why §3.5's measured ratio is 1.10x median rather
   than the theoretical 2x. A field would have to forbid it.
-  Mechanism 4 (§3.8) adds `Dfa.s1w`, the interior start state for a WORD
-  context — `s1` is the non-word one and `s0` covers "no context byte exists",
-  which is a non-word context and needs no twin.
+  Mechanism 4 (§3.8) adds the interior start states — one per class-axis
+  context of the byte the walk has already passed (`Dfa.s1u[]`, `Dfa.s1w` in
+  wave B's spelling) — while `s0` covers "no context byte exists", which is
+  neither a word character nor a newline and needs no twins.
   `-DPCREC_NO_WORDCTX` pins `has_word` false for
   `tests/codegen/run_wordctx_identity.sh`, the same shape as the two knobs
   above; under it a `\b` pattern compiles to something WRONG, which is what
   makes that script's positive control non-vacuous.
+  **[M6.2 wave C] `(?m)` ADDS NO NEW MACHINERY — it adds a second PROPERTY to
+  the two axes wave B built**, which is why this file's diff for it is small
+  and its *structure* changed anyway. `(?m)$` reads whether the byte to the
+  RIGHT is a newline (the axis `\b`'s right-hand side uses) and `(?m)^`
+  whether the byte to the LEFT is one (the axis `\b`'s left-hand side uses),
+  so the class axis stops being a BOOL and becomes the three-valued `UPC_*`
+  partition (`UPC_PLAIN`/`UPC_WORD`/`UPC_NL`, disjoint and exhaustive because
+  a newline is not a word character). Consequences, each of which is a thing
+  to know before editing:
+  (a) `DState` carries `up[UPC_N]` — a `DView` per class context — where wave
+  B carried `list`/`accept` plus `wlist`/`waccept`, and `Dfa.s1u[UPC_N]`
+  where it carried `s1`/`s1w`. `make_state` interns from an array and shares
+  storage between views whose closures coincide, so a machine with no class
+  axis still allocates ONE list per state and charges K7's budget once.
+  (b) **DIRECTION APPEARS IN EXACTLY ONE PLACE**, and wave B genuinely did not
+  need it: `\b` is SYMMETRIC in its two operands, so a machine reading them
+  backwards gets the same answer. `(?m)$` reads ONE side — forward it is the
+  byte about to be consumed, reverse it is the one already consumed — so the
+  closure names its operands by SIDE (`left_*`/`right_*`, i.e. `s[pos-1]` and
+  `s[pos]`) and `make_state`'s `sides_of` is the single function that knows a
+  machine has a direction. `pcrec_build_dfa` takes `reverse` explicitly rather
+  than deriving it from `prune`; the two coincide today (D7) and a coincidence
+  load-bearing for correctness is what this project keeps recording.
+  (c) `(?m)$` MAKES `end_ok` LIVE — its "or end of subject" half is wave A's
+  `pos == n` view — so a pure-`(?m)$` machine has `endvar >= 0` and
+  `eolvar == -1` everywhere and reaches `emit_view_select`'s
+  `has_end && !has_eol` arm, the branch wave A wrote for `\z`. A construct the
+  design calls `$`'s sibling shares its emitted selector with `\z` and none
+  with `$`.
+  (d) **`(?m)^` IS NOT THE MIRROR OF `(?m)$`.** PCRE2's multiline `^` does not
+  match after a newline that ENDS the string, so `N_BOT_M`'s newline half is
+  guarded by `!end_ok`. The design (§3.7, §9.3) states it without that guard
+  and python3 `re` implements it without it (U11b); pcrec shipped the design's
+  rule in this lane and `tests/assertions/run_mline_diff.sh` caught it at
+  `startpos > 0`.
+  `-DPCREC_NO_MLINECTX` pins `has_nl` false for
+  `tests/codegen/run_mlinectx_identity.sh`, the same shape as the three knobs
+  above; under it a `(?m)$` pattern compiles to `\z`'s semantics, which is
+  what makes that script's positive control non-vacuous.
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

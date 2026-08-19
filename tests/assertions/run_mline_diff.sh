@@ -229,13 +229,26 @@ printf 'mline-diff: scan-avoidance mechanisms live in each pattern'\''s DFA arti
 # libpcre2, so a systematic mistake in how this script drives the oracle shows
 # up here as a divergence and nowhere else.
 #
-# It carries its own KNOWN exclusion rather than a blanket tolerance: python's
-# non-multiline `$` and `\Z` differ from PCRE2's (docs/dev/upstream_issues.md
-# U11), so a pattern python cannot express is SKIPPED and counted, never
-# silently passed.
-python3 - "$WORKDIR/oracle.tsv" "$WORKDIR/subjects" > "$WORKDIR/py.txt" 2>&1 <<'PY'
+# IT CARRIES ITS KNOWN EXCLUSIONS BY NAME rather than a blanket tolerance, and
+# there are two, both in docs/dev/upstream_issues.md:
+#
+#   U11   python's `\Z` IS PCRE2's `\z` — a pattern python cannot express at
+#         all is SKIPPED and counted, never silently passed.
+#   U11b  python's multiline `^` MATCHES after a newline that ends the string
+#         and PCRE2's does not. This lane found that as a live pcrec defect
+#         BEFORE it was an oracle divergence — pcrec had implemented the
+#         design's rule, which is python's — so the exclusion is applied
+#         WHOLESALE to every pattern that sets `m` and contains a `^`, on the
+#         same rule the corpus applies. A per-cell tolerance would let the
+#         next divergence in this class through.
+#
+# The excluded patterns are NAMED in the output, so an exclusion that quietly
+# grew to cover the whole sweep is visible rather than latent.
+python3 - "$WORKDIR/oracle.tsv" "$WORKDIR/subjects" "$ROOT_DIR" > "$WORKDIR/py.txt" 2>&1 <<'PY'
 import os, re, sys
-tsv, subdir = sys.argv[1], sys.argv[2]
+tsv, subdir, root = sys.argv[1], sys.argv[2], sys.argv[3]
+sys.path.insert(0, os.path.join(root, "tests", "lib"))
+from mlscan import multiline_caret      # ONE implementation, three readers
 cache = {}
 def subj(name):
     if name not in cache:
@@ -246,11 +259,15 @@ n = bad = skipped = 0
 for line in open(tsv):
     pat, name, sp, want = line.rstrip("\n").split("\t", 3)
     if pat not in rxs:
-        try:
-            rxs[pat] = re.compile(pat)
-        except re.error:
+        if multiline_caret(pat):
             rxs[pat] = None
             skipped_pats.add(pat)
+        else:
+            try:
+                rxs[pat] = re.compile(pat)
+            except re.error:
+                rxs[pat] = None
+                skipped_pats.add(pat)
     rx = rxs[pat]
     if rx is None:
         skipped += 1
@@ -266,12 +283,15 @@ for line in open(tsv):
             print("PYDIFF %r [%s] startpos %s: python %s / libpcre2 %s"
                   % (pat, name, sp, got, want))
 print("PYSTATS %d %d %d %d" % (n, bad, skipped, len(skipped_pats)))
+for p in sorted(skipped_pats):
+    print("PYSKIP %s" % p)
 PY
 read -r _ npy npybad npyskip npyskippat <<< "$(grep '^PYSTATS ' "$WORKDIR/py.txt")"
 if [ "${npybad:-1}" -eq 0 ] && [ "${npy:-0}" -gt 1000 ]; then
-    ok "second oracle: python3 re and libpcre2 agree on all $npy python-expressible cells (${npyskip:-0} cells over ${npyskippat:-0} patterns python cannot express were SKIPPED, not passed) — the oracle is being driven correctly"
+    ok "second oracle: python3 re and libpcre2 agree on all $npy python-verifiable cells (${npyskip:-0} cells over ${npyskippat:-0} patterns were SKIPPED under U11/U11b, not passed) — the oracle is being driven correctly"
+    grep '^PYSKIP ' "$WORKDIR/py.txt" | sed 's/^PYSKIP /  U11\/U11b-excluded from the python arm: /'
 else
-    bad "second oracle: python3 re and libpcre2 disagree on ${npybad:-?} of ${npy:-?} cells, which means this script is driving one of them wrongly rather than that pcrec is wrong:"
+    bad "second oracle: python3 re and libpcre2 disagree on ${npybad:-?} of ${npy:-?} cells. That is a claim about THIS SCRIPT or about a NEW oracle divergence, not about pcrec — the libpcre2 comparisons above are what judge pcrec. Check the startpos convention and the subject bytes before believing anything else:"
     grep '^PYDIFF ' "$WORKDIR/py.txt" >&2
 fi
 
