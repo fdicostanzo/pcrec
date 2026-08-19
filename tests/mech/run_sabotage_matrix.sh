@@ -57,6 +57,7 @@
 #   vmidentity  vm                     — added 2026-08-15 ([M4.5b])
 #   endvaridentity  assertions         — added 2026-08-19 ([M6.2] wave A)
 #   wordctxidentity                    — added 2026-08-19 ([M6.2] wave B)
+#   mlinectxidentity  mlinediff       — added 2026-08-19 ([M6.2] wave C)
 #   irlisting                          — added 2026-08-15 ([M4.5c])
 #   gentimeout                         — added 2026-08-15 ([M4.5c fix], D45)
 #   possdiff                           — added 2026-08-16 ([ENG-BREP])
@@ -262,6 +263,39 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/wordctxidentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("wordctxid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            mlinectxidentity)
+                # [M6.2 wave C] the `(?m)`-free byte-identity gate. Its own arm
+                # rather than `wordctxidentity`, on the same rule those two
+                # apply to each other: they guard DIFFERENT constructions
+                # against DIFFERENT reference knobs, and wave C's is the one
+                # that has to survive a mechanical refactor of every site that
+                # read wave B's `waccept`/`wlist`/`s1w`. A sabotage of one must
+                # not be reported as coverage by the other.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_mlinectx_identity.sh" \
+                    > "$work/mlinectxidentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/mlinectxidentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("mlinectxid:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            mlinediff)
+                # [M6.2 wave C] the `(?m)$`-family differential against
+                # libpcre2 and python3 `re`. Its own arm because it is the only
+                # instrument in the tree that sweeps a generated subject space
+                # over patterns with a LIVE prefilter and LIVE skip states —
+                # the population §3.6.1 names as the one the scan-avoidance
+                # cure can actually break, and the one D11's own 53-divergence
+                # history is about. A `.rxt` corpus pins chosen cells; this
+                # sweeps.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/assertions/run_mline_diff.sh" \
+                    > "$work/mlinediff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/mlinediff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/mlinediff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("mlinediff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
@@ -699,6 +733,18 @@ fi
 # alive 51 minutes after completion, twice. Completion is a fact about the
 # LOG, not about a process listing: grep the log for this trailer (or for
 # FATAL, the only early exit that skips it).
+#
+# AND READ THE THIRD OUTCOME: a run with NO TRAILER AND NO `FATAL` WAS
+# KILLED, NOT FAILED — treat its output as damage rather than data. The
+# MECH-2 row-count guard below cannot see that case and is not meant to: it
+# counts arrived rows INSIDE this script, so a SIGTERM'd run never reaches
+# it, and the log simply stops. Measured 2026-08-19 ([M6.2] wave C), when a
+# `pkill -f run_sabotage_matrix` aimed at a duplicate run took out a live
+# sibling's child — the pattern is over the whole command line, so two
+# legitimate concurrent runs are indistinguishable under it. Kill a run by
+# its PROCESS GROUP or its recorded PID, never by a name pattern; it is the
+# same root as the no-`pgrep -f` rule above, which is that a command line is
+# not an identity.
 echo
 echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, pc3-skipped: ${oracle_skipped:-0}) at $SHA =="
 

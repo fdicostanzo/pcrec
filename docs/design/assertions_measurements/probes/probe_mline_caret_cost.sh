@@ -145,3 +145,73 @@ echo "That constant is the mitigation's target: a newline candidate-start"
 echo "prefilter would let D skip line-start to line-start instead of visiting"
 echo "every offset. Both arms are timed over 200 inner repeats, because a"
 echo "single memchr over 8 KB is below this clock's resolution."
+
+# ---------------------------------------------------------------------------
+# [M6.2 WAVE C] THE SAME MEASUREMENT ON THE REAL CONSTRUCT.
+#
+# Everything above measures `(?m)^` through STAND-INS, because [M6.1] ran on a
+# compiler that refused the `m` letter. Wave C built it, so the arms below are
+# the patterns themselves — and they are not the same artifacts as their
+# stand-ins, which is the point:
+#
+#   F  `(?m)^ERROR`   — the real non-crossing pattern. Its interior start
+#                       state is live ONLY for a newline predecessor, so D63's
+#                       candidate-start prefilter applies: one memchr('\n')
+#                       between attempts instead of visiting every offset.
+#   G  `(?m)^[^b]*b`  — the real crossing pattern, D63's accepted residue.
+#                       The prefilter removes attempts, not scanning, and this
+#                       shape's cost IS the scanning, so the O(n^2) stands.
+#
+# The stand-ins get NO prefilter and could not: `\nERROR`'s branch says
+# nothing about the byte BEFORE the start, so every predecessor byte seeds a
+# live state and the candidate set is all 256. That is why D above is the
+# honest "before" number for F rather than a second spelling of it.
+echo
+echo "=== [M6.2 wave C] THE REAL CONSTRUCT, with D63's prefilter ==="
+buildm() {   # $1=tag $2=pattern — same as build(), with the modules enabled
+    "$PCREC" --features assertions,modifiers -p rx --no-captures -o "$D/m.c" -- "$2"
+    gcc -O2 -I"$D" -o "$D/$1" "$D/drv.c" "$D/m.c"
+    eng="ENG_UNANCH (memchr + skips)"
+    grep -q 'start_max' "$D/m.c" && eng="ENG_ATTEMPT"
+    grep -q 'memchr' "$D/m.c" && eng="$eng + D63 candidate prefilter"
+    sm=$(grep -o 'const size_t start_max = [^;]*' "$D/m.c" | head -1 | sed 's/.*= //')
+    printf '  %-4s %-22s %-46s %s\n' "$1" "$2" "$eng" "${sm:+start_max=$sm}"
+}
+buildm F '(?m)^ERROR'
+buildm G '(?m)^[^b]*b'
+
+echo
+echo "--- NON-CROSSING: F (real, prefiltered) against D (stand-in) and E ---"
+printf '%-8s %-14s %-14s %-14s %-10s %s\n' \
+    "n" "F (?m)^ERROR" "D stand-in" "E unanch" "D/F" "F/E"
+for n in 8000 32000 128000; do
+    tf=$("$D/F" $n $LINE 5 200 | cut -d' ' -f1)
+    td=$("$D/D" $n $LINE 5 200 | cut -d' ' -f1)
+    te=$("$D/E" $n $LINE 5 200 | cut -d' ' -f1)
+    r1=$(python3 -c "print('%.0fx' % ($td/$tf) if $tf>0 else 'n/a')")
+    r2=$(python3 -c "print('%.0fx' % ($tf/$te) if $te>0 else 'n/a')")
+    printf '%-8s %-14s %-14s %-14s %-10s %s\n' "$n" "$tf" "$td" "$te" "$r1" "$r2"
+done
+echo
+echo "D/F is the prefilter's measured effect on the arm it is FOR; F/E is what"
+echo "is left against a plain unanchored memchr. The [M6.1] design predicted"
+echo "the D/E gap (85-185x) as the mitigation's target."
+
+echo
+echo "--- CROSSING: G (real) against A (stand-in). NOT rescued, per D63 ---"
+printf '%-8s %-14s %-14s %-10s %s\n' "n" "G (?m)^[^b]*b" "A stand-in" "A/G" "G growth per doubling"
+prev=""
+for n in 4000 8000 16000 32000 64000; do
+    tg=$("$D/G" $n $LINE 5 | cut -d' ' -f1)
+    ta=$("$D/A" $n $LINE 5 | cut -d' ' -f1)
+    rat=$(python3 -c "print('%.2fx' % ($ta/$tg) if $tg>0 else 'n/a')")
+    g=""
+    [ -n "$prev" ] && g=$(python3 -c "print('%.2fx' % ($tg/$prev) if $prev>0 else '')")
+    printf '%-8s %-14s %-14s %-10s %s\n' "$n" "$tg" "$ta" "$rat" "$g"
+    prev=$tg
+done
+echo
+echo "G still grows ~4x per doubling. D63 accepts that explicitly and queues"
+echo "DD-7's reverse BOT variant as the sequenced fix; the prefilter removes"
+echo "attempts, and this shape's cost is the scanning each surviving attempt"
+echo "does. A shipped number, not a discovered one."

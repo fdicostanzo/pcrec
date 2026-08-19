@@ -85,6 +85,81 @@ that none of this costs a `\b`-free pattern a byte, and
 `run_codegen_tests.sh`'s `[M6.2-WORDB]` block (sabotages S72/S73) for the two
 memory-safety rules no oracle can see.
 
+## **[M6.2 wave C] `(?m)`: the class axis becomes THREE-VALUED, and ENG_ATTEMPT gets its first scan avoidance**
+
+Wave B's class axis was a bool. `(?m)$` reads a DIFFERENT property of the same
+byte, so it becomes the `UPC_*` partition (`src/core/internal.h`) and every
+site in this file that read `waccept`, `wlist` or `s1w` reads an array index
+instead. Four things changed here beyond that mechanical rewrite:
+
+- **`upc_of_newline(d)` and the EOL-position accept.** Wave B's note at
+  `emit_attempt`'s EOL arm said the class axis has nothing to add there,
+  because the byte at an EOL position is `'\n'` and `'\n'` is not a word
+  character. That reasoning was right for its axis and its CONCLUSION IS NOW
+  WRONG: `'\n'` IS the newline definition, which is exactly what `(?m)$`
+  reads. `(?m)a(?:$|\Z)` is the shape that needs both — the `\Z` half makes an
+  EOL view exist and the `(?m)$` half makes that view's accept depend on the
+  byte the arm's own entry test just pinned. Both indices are compile-time
+  facts there (the view from the position, the class from `s[pos] == '\n'`),
+  so it is a CONSTANT, not a table read.
+- **The `eolvar`-only arm SPLITS when its two positions disagree.** `pos == n`
+  (no next byte, §3.6.2's scalar) and `pos + 1 == n && s[pos] == '\n'` (next
+  byte pinned to the newline) were one merged `if` before this wave, and could
+  be: nothing could tell them apart until an EOL view's accept depended on the
+  next byte. They split only when the two bits differ, so a machine with no
+  newline refinement emits the pre-wave text character for character.
+- **[D63] THE CANDIDATE-START DERIVATION, one site and two callers.** D63
+  rules that the DERIVATION (state row -> byte set -> memchr-vs-bitmap choice
+  -> table emission) is the SAME question for every engine and MUST be
+  factored; the LOOP INTEGRATION differs structurally and stays per-engine.
+  `CandSet`/`cand_derive`/`cand_emit_table` are that factoring, with
+  `cand_from_escapes` (ENG_UNANCH's wrapped start state) and
+  `cand_from_live_seeds` (ENG_ATTEMPT's `(?m)^`) as its two callers. The `(?m)^`
+  twist is a FIELD, not a fork: `offset` says the candidate is the found byte's
+  position PLUS ONE, because a line start is the byte after a newline.
+  **The candidate set is the LIVE-SEED set, and that is stronger than the
+  design's own sentence.** §3.7.2 says a `(?m)^`-anchored attempt "can only
+  begin at offset 0 or immediately after a `'\n'`" — true of a FULLY-anchored
+  pattern and false of `(?m)^a|b`, whose `b` branch can begin anywhere.
+  Deriving from which `s1u[]` entries are LIVE gets both right: `(?m)^ERROR`
+  yields the newline set and a `memchr`, `(?m)^a|b` yields all 256 and no
+  prefilter at all. Sabotage S81 is the design's sentence written as code.
+  D63's other named instances (D8's `^`-on-some-branches shape, partial `\G`)
+  become CALLERS of these three functions rather than new copies.
+  `pcrec_emit_prologue` calls `attempt_cand` too — the SAME function, never a
+  restatement of its condition — because it has to decide about
+  `#include <string.h>` before any body exists.
+- **The postures for §3.6.1's five scan-avoidance mechanisms are all DECLINE
+  or ORDERING; not one is an intersection — and only ONE of the five turns
+  out to be a live hazard.** The design proposes intersections for rows 2-5;
+  wave C wrote a sabotage per mechanism and MEASURED each before committing
+  it, by sweeping every corpus pattern whose ARTIFACT the edit changes through
+  107 subjects under the find-all loop:
+  - rows 3 and 5 (the self-loop skips) DECLINE via `pick_skip_states`, and
+    that is REAL: sabotage S78 turns `(?m)[^c]*$` on `"a\nb\nc"` from `(0,3)`
+    into `(0,1)`.
+  - rows 1 and 2 (the prefilters) share the widened `start_acc` gate, and
+    **the widening is REDUNDANT**. D3's accept-pruning cuts the unanchored
+    start self-loop out of every accepting closure, so a class the start state
+    accepts on cannot transition back to it — it ESCAPES — so the prefilter's
+    stay set never contains it. Narrowing `start_acc` changes 21 corpus
+    artifacts and 0 answers over 2,247 cells. §3.6.1's `\bx*` prediction is
+    false. The widening is KEPT (free, and the honest reading of "accepts on
+    any class") and ships NO sabotage row; the same argument this file already
+    makes for the neighbouring `last == (size_t)-1` gate.
+  - row 4's compensating accept is NOT EMITTED under `views` at all, and even
+    when re-emitted it can only UNDER-report (the EOL view's closure is a
+    superset of the base's; a skip-eligible state's accept does not vary by
+    class). 13 artifacts, 0 answers over 1,391 cells, and 0 new answers when
+    combined with row 3's sabotage. No row.
+  The §3.6.1 annotation carries the full table and what declining costs.
+
+Gates: `tests/codegen/run_mlinectx_identity.sh` (sabotage S76) for the claim
+that none of this costs a `(?m)`-free pattern a byte, and
+`tests/assertions/run_mline_diff.sh` (sabotages S78/S81) for the
+scan-avoidance cure and D63's candidate derivation on the only populations
+that can break them.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

@@ -186,22 +186,29 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   factoring). Part of `make test` as `make test-altcls`. See its own
   CLAUDE.md for why the differential's engine choice differs from every
   other deny-family suite's.
-- **`assertions/`** — module `assertions` ([M6.2]), WAVE A so far: `\A`,
-  `\Z` and `\z`. **The one directory in the tree whose ORACLE RULE differs
-  from the project default, and the reason is measured**: python `re`'s `\Z`
-  IS PCRE2's `\z` (python has no single escape for PCRE2's `\Z` at all), and
-  it disagrees in the silent direction — no match, or a shorter span, exactly
-  where PCRE2 matches. So every `\Z` block carries `# pcre2-only` and
+- **`assertions/`** — module `assertions` ([M6.2]), WAVES A, B AND C so far:
+  `\A`, `\Z`, `\z`, `\b`, `\B` and `(?m)`. **The one directory in the tree
+  whose ORACLE RULE differs from the project default, and the reason is
+  measured — TWICE**: python `re`'s `\Z` IS PCRE2's `\z` (python has no
+  single escape for PCRE2's `\Z` at all), and python's multiline `^` matches
+  after a newline that ENDS the string while PCRE2's does not. Both disagree
+  in the silent direction — no match, a shorter span, or a match PCRE2 does
+  not report — so every `\Z` block and every `(?m)`-with-`^` block carries
+  `# pcre2-only`, WHOLESALE rather than per diverging cell, and
   `verify_pcre2.py` re-verifies the whole directory against libpcre2 on every
   run, through `tests/fuzz/pcre2_oracle` and `tests/harness/verify_rxt.py`'s
-  own parser (one libpcre2 access path, one `.rxt` parser). `\A`/`\z` blocks
-  stay python-verified, which is the standing proof the split is about `\Z`
-  and not about the module. `run_assertions_tests.sh` (`make test-assertions`)
-  carries what a `.rxt` file cannot: that oracle, the CONTROL under
-  tests/reject's enabled-but-unbuilt rows (the three constructs this wave
-  builds must COMPILE with the gate open, or those rows measure an empty
-  module), and the D47.5 exemption firing read off `<PREFIX>_VM_STRATS` in
-  both directions. See its own CLAUDE.md, and docs/dev/upstream_issues.md U11
+  own parser (one libpcre2 access path, one `.rxt` parser). `\A`, `\z`,
+  `\b`/`\B` and `(?m)$` blocks stay python-verified, which is the standing
+  proof the splits are about those two constructs and not about the module.
+  `run_assertions_tests.sh` (`make test-assertions`) carries what a `.rxt`
+  file cannot: that oracle, the CONTROL under tests/reject's
+  enabled-but-unbuilt rows (the constructs each wave builds must COMPILE with
+  the gate open, or those rows measure an empty module), the D47.5 exemption
+  firing read off `<PREFIX>_VM_STRATS` in both directions, and the composed
+  state budget refusing rather than miscompiling. `run_mline_diff.sh` is the
+  wave C differential — a generated subject sweep over the `(?m)$` family
+  against libpcre2 on both engines, with its own population claim checked.
+  See its own CLAUDE.md, and docs/dev/upstream_issues.md U11 and U11b
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the only one in the tree that runs a find-all LOOP:
   docs/spec/match_api.md §3.1's protocol, compiled against real artifacts

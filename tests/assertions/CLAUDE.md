@@ -1,8 +1,8 @@
 # tests/assertions — module `assertions` ([M6.2])
 
-The module's own corpus and its two non-`.rxt` checks. **WAVES A AND B so
-far**: `\A`, `\Z`, `\z`, `\b` and `\B` are built; `(?m)` `\G` `\K` are
-recognised, attributed and refused, and land in later waves
+The module's own corpus and its three non-`.rxt` checks. **WAVES A, B AND C
+so far**: `\A`, `\Z`, `\z`, `\b`, `\B` and `(?m)` are built; `\G` and `\K`
+are recognised, attributed and refused, and land in later waves
 (`docs/design/assertions_design.md` §10).
 
 ## THE ORACLE RULE IS DIFFERENT HERE, and it is the first thing to know
@@ -85,6 +85,66 @@ every oracle exclusion has an entry there.
   a PRE-EXISTING `-Werror=maybe-uninitialized` in the `<prefix>_match`
   wrapper (base-tier reproducer `^a^b`, measured on the pre-wave compiler);
   live equivalents stand in their place.
+- **multiline.rxt** — [M6.2] WAVE C: `(?m)`. **The SCOPING is what makes this
+  file different from the other two.** `(?m)` is a scoped inline option, so
+  the answer depends on the state in force AT EACH `^`/`$` rather than on the
+  pattern's final option state — and the shipped pre-cure code got the
+  leading-`(?m)` shape right and every other spelling wrong, which is D47.5's
+  addendum and D62's control 1. So the file carries `(?m:...)`,
+  `(?m)...(?-m)`, a mid-pattern `(?m)`, a trailing `(?m)`, and a section where
+  a multiline `$` and a non-multiline `$` occur in the SAME compile — cells
+  nothing but a per-node resolution can answer, because a pass-wide flag has
+  one value.
+  Also here: §8.7's four D47.5 gate cells (the recommended guard is
+  `(?m)[^c]{1,3}$` on `"a\nc"` → `(0,1)`, the strongest of the four because a
+  possessified compile produces NO MATCH AT ALL and the cell cannot pass by
+  accident on an off-by-one — sabotage S77 is its failing direction); the
+  `(?m)$`-with-quantifier family §3.6.1 names as the population the
+  scan-avoidance cure can actually break; `(?m)^` shapes for D63's
+  candidate-start prefilter; `\A`/`\Z`/`\z` under `(?m)`, which is the
+  failing direction for `mod_assertions.c`'s pinned-false flag; and `(?m)`
+  composed with `\b`, the case that makes the class axis three-valued rather
+  than a bool.
+  **ORACLES, and the split is wider than the other two files'.** A leading
+  `(?m)` and `(?m:...)` are verifiable against BOTH python3 `re` and libpcre2
+  and every such cell agrees on both. Python rejects a bare `(?-m)`, a
+  mid-pattern `(?m)` and a trailing `(?m)` OUTRIGHT ("global flags not at the
+  start of the expression"), so those blocks carry `# pcre2-only` — the same
+  convention wave A established for `\Z`, applied for a different reason
+  (python cannot express the pattern at all, rather than expressing it with
+  different semantics). Every expectation libpcre2-produced.
+  **ONE MID-PATTERN SHAPE IS DELIBERATELY ABSENT and the file's own header
+  says which and why**: `a(?m)^b` is a never-matching pattern whose emitted C
+  trips the PRE-EXISTING `-Werror=maybe-uninitialized` in the
+  `<prefix>_match` wrapper — known issue K28, base-tier reproducer `^a^b`,
+  the same exclusion `wordb.rxt` records for three `\b`/`\B` shapes. The live
+  equivalents `a(?m)$` and `a(?m)^b|c` stand in its place.
+- **run_mline_diff.sh** — [M6.2] WAVE C's DIFFERENTIAL SWEEP, run by
+  `make test-assertions`. A `.rxt` file pins chosen cells; this sweeps a
+  generated subject space over the `(?m)$` family against libpcre2 and
+  python3 `re`, on BOTH pcrec engines.
+  **It exists because of what §3.6.1 says can break.** `\b`'s accept bit is
+  pinned across a skipped run; `(?m)$`'s is not — "is the next byte a
+  newline" genuinely varies inside a run a skip set admits — so this is the
+  only population in the tree where a scan-avoidance mechanism can jump past
+  an accepting position. D11's own record is why it is measured rather than
+  argued: the first attempt at M2.12 got rule 1 right and still produced 53
+  divergences over 27 patterns x 69 subjects.
+  **THE POPULATION CLAIM IS CHECKED, NOT ASSUMED**: every pattern's artifact
+  is inspected for a LIVE mechanism (`_fs<N>`/`_rs<N>` skip tables, a
+  `memchr`, a `_first[]` bitmap, a class-indexed accept), the per-pattern
+  table is printed every run, and the script FAILS if too few carry one — a
+  sweep over patterns the cure never touches would be green against a
+  completely broken cure.
+  **The python arm checks the ORACLE, not pcrec**, and says so: D26 makes
+  libpcre2 the truth, so "python agrees with pcrec" adds nothing once pcrec
+  agrees with libpcre2. What python CAN see is this script driving the oracle
+  wrongly — a startpos convention, a subject that lost a byte — because it
+  shares no code with libpcre2. Patterns python cannot express are SKIPPED
+  and COUNTED, never silently passed.
+  Its own first run reported 366 "divergences" that were entirely
+  `startpos > n` cells on the empty subject, where libpcre2 returns
+  BADOFFSET; the skip is now explicit and the skipped count is printed.
 - **verify_pcre2.py** — the libpcre2 oracle for this directory's corpus.
   IMPORTS `tests/harness/verify_rxt.py`'s `.rxt` parser rather than copying it
   (one implementation of the file format) and builds
@@ -101,7 +161,11 @@ every oracle exclusion has an entry there.
      LEADING and a TRAILING spelling of each, because the two reach different
      machinery — the forward seed and the reverse one — and a control that
      only ever compiled the leading form would not notice the reverse half
-     failing to build). The refusal
+     failing to build; wave C added the four `(?m)` spellings on the same
+     move as it retired their two reject rows — the bare run, the scoping
+     form, the unset `(?-m)` and a `(?m)^`, because those take four different
+     paths and the last one ROUTES TO ENG_ATTEMPT, where a build failure
+     would otherwise surface only as a slow pattern). The refusal
      TEXTS live in tests/reject/ (the house home for "which module does a
      diagnostic name", both gate states adjacent in its `== assertions ==`
      section); what cannot live there is the fact that stops the

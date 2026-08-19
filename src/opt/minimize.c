@@ -91,25 +91,32 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
 
     int nparts = 0;
     {
-        /* [M6.2 wave B] THE INITIAL PARTITION SPLITS ON BOTH ACCEPT BITS.
-         * `accept` is the accept when the next byte is a non-word one and
-         * `waccept` when it is a word one (src/ir/dfa.c), and they are two
+        /* [M6.2 wave B, all three views since wave C] THE INITIAL PARTITION
+         * SPLITS ON EVERY ACCEPT BIT. A state's accept is one bit per
+         * class-axis context — what it answers when the next byte is a word
+         * character, a newline, or neither (src/ir/dfa.c) — and they are
          * independent outputs of the same state: merging states that agree on
-         * one and differ on the other would silently answer a `\b` with the
-         * wrong bit at every position of the right kind.
+         * one and differ on another would silently answer a `\b` or a `(?m)$`
+         * with the wrong bit at every position of the right kind.
          *
          * The transition axis needs nothing added, and that is the payoff of
-         * baking the word view into `tr[]` rather than interning it: whichever
-         * closure a class consumes from is already reflected in that class's
-         * transition column, so the existing per-class signature covers it.
+         * baking the class views into `tr[]` rather than interning them:
+         * whichever closure a class consumes from is already reflected in
+         * that class's transition column, so the existing per-class signature
+         * covers it.
          *
-         * BYTE-IDENTITY holds because the key is `accept*2 + waccept` and the
-         * ids are handed out in FIRST-OCCURRENCE order: with no word context
-         * `waccept == accept`, only keys 0 and 3 occur, and they occur in the
-         * same order the two pre-wave keys did. */
-        int accid[4] = { -1, -1, -1, -1 };
+         * BYTE-IDENTITY holds because the key is the bits in view order and
+         * the ids are handed out in FIRST-OCCURRENCE order: with no class
+         * axis every view carries the same bit, so only the all-clear and
+         * all-set keys occur, and they occur in the same order the two
+         * pre-wave keys did. */
+        int accid[1 << UPC_N];
+        for (size_t k = 0; k < sizeof accid / sizeof accid[0]; k++)
+            accid[k] = -1;
         for (int i = 0; i < n; i++) {
-            int a = (d->st[i].accept ? 2 : 0) | (d->st[i].waccept ? 1 : 0);
+            int a = 0;
+            for (int u = 0; u < UPC_N; u++)
+                if (d->st[i].up[u].accept) a |= 1 << (UPC_N - 1 - u);
             if (accid[a] < 0) accid[a] = nparts++;
             part[i] = accid[a];
         }
@@ -169,15 +176,15 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
             int c = seq[part[i]];
             if (ns[c].tr) continue;   /* class already built from its rep */
             const DState *o = &d->st[i];
-            ns[c].accept = o->accept;
-            ns[c].waccept = o->waccept;
-            ns[c].nlist = 0;
-            ns[c].list = NULL;
             /* The NFA-state lists are dead after minimization (nothing
-             * downstream reads them); the word list goes the same way rather
-             * than being left dangling into a freed partition's storage. */
-            ns[c].nwlist = 0;
-            ns[c].wlist = NULL;
+             * downstream reads them), so every view keeps its accept bit and
+             * drops its list rather than being left dangling into a freed
+             * partition's storage. */
+            for (int u = 0; u < UPC_N; u++) {
+                ns[c].up[u].accept = o->up[u].accept;
+                ns[c].up[u].nlist  = 0;
+                ns[c].up[u].list   = NULL;
+            }
             ns[c].tr = arena_alloc(&cx->arena, (size_t)d->ncls * sizeof(int));
             for (int cl = 0; cl < d->ncls; cl++) {
                 int t = o->tr[cl];
@@ -193,12 +200,12 @@ void pcrec_minimize_dfa(Ctx *cx, Dfa *d)
         memcpy(d->st, ns, (size_t)m * sizeof(DState));
         d->n = m;
         if (d->s0 >= 0) d->s0 = seq[part[d->s0]];
-        if (d->s1 >= 0) d->s1 = seq[part[d->s1]];
-        /* [M6.2 wave B] mechanism 4's seed start state remaps with the other
-         * two. Forgetting it would leave `s1w` pointing into the PRE-merge
-         * numbering — a wrong start state rather than a missing one, and only
-         * on patterns that minimize, which is most of them. */
-        if (d->s1w >= 0) d->s1w = seq[part[d->s1w]];
+        /* [M6.2 wave B] mechanism 4's seeded start states remap with `s0`.
+         * Forgetting one would leave it pointing into the PRE-merge numbering
+         * — a wrong start state rather than a missing one, and only on
+         * patterns that minimize, which is most of them. */
+        for (int u = 0; u < UPC_N; u++)
+            if (d->s1u[u] >= 0) d->s1u[u] = seq[part[d->s1u[u]]];
         free(seq);
         free(ns);
     }

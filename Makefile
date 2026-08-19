@@ -263,7 +263,9 @@ test-assertions: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/assertions/run_assertions_tests.sh' \
 	    'bash tests/codegen/run_endvar_identity.sh' \
-	    'bash tests/codegen/run_wordctx_identity.sh'
+	    'bash tests/codegen/run_wordctx_identity.sh' \
+	    'bash tests/codegen/run_mlinectx_identity.sh' \
+	    'bash tests/assertions/run_mline_diff.sh'
 
 # [M4.7b] K7's pin: what a large bounded repeat COSTS to compile, and that a
 # failed allocation is diagnosed rather than aborting the caller.

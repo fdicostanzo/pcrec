@@ -709,15 +709,22 @@ for e in G K; do
 done
 # The `m` LETTER's own arm (src/parse/mod_modifiers.c), which produces its
 # refusal per letter rather than through the `(?` doorway's row — so it needs
-# its own copy of the rule and its own pin. Both spellings, because the bare
-# run and the scoping form take different paths through the port.
-reject_gated assertions,modifiers '(?m)a' \
-    "module 'assertions' is enabled but inline option 'm' (multiline) is not implemented yet"
-reject_gated assertions,modifiers '(?m:a$)' \
-    "module 'assertions' is enabled but inline option 'm' (multiline) is not implemented yet"
-# ...and with `assertions` OFF it must still say the other thing, which is the
-# failing direction for the branch above (line 860's row is the same claim
-# from module `modifiers`' side).
+# its own copy of the rule and its own pin.
+#
+# [M6.2 WAVE C] THE TWO ENABLED-BUT-UNBUILT ROWS RETIRED, exactly as `\b` and
+# `\B`'s did in wave B and for the same reason: `(?m)a` and `(?m:a$)` COMPILE
+# now, so a pin asserting they refuse would be pinning a lie. The count going
+# DOWN is the wave landing, not coverage eroding — and the control that stops
+# this being erosion is in tests/assertions/run_assertions_tests.sh, which
+# asserts BOTH spellings compile with the gate open.
+#
+# What stays is the module-OFF row, which is still true and is now the ONLY
+# `(?m)`-specific gated pin: with `assertions` disabled the letter is refused
+# by its own name. Both spellings are kept here, because the bare run and the
+# scoping form take different paths through the port and only one of them was
+# ever pinned on this side.
+reject_gated modifiers '(?m)a' \
+    "inline option 'm' (multiline) requires module 'assertions'"
 reject_gated modifiers '(?m:a$)' \
     "inline option 'm' (multiline) requires module 'assertions'"
 
@@ -902,7 +909,6 @@ accept '(?-i)'
 #   3. THE RULING: names the true owning module (named-groups — duplicate
 #      NAMES are named-group semantics, same dispatch logic 'm' already
 #      uses for 'assertions') without the false "requires" framing.
-reject_gated modifiers '(?m)a'     "requires module 'assertions'"
 reject_gated modifiers '(?J)a'     "module 'named-groups' does not implement duplicate group names"
 # [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so `(?m)a`/
 # `(?J)a` reach this SAME diagnosis bare, with no `--features` at all — the
@@ -1838,8 +1844,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 64 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 64 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now, so their enabled-but-unbuilt rows retired and the count going DOWN is the wave landing rather than coverage eroding)." >&2
+if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 62 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 62 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

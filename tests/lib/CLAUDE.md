@@ -61,6 +61,32 @@ section targets depend on.
   `tests/reject/run_reject_tests.sh`'s own (call-index, not script-index)
   sharding.
 
+- **mlscan.py** — [M6.2] wave C: WHERE IS `(?m)` IN FORCE, decided from the
+  pattern TEXT. Three committed checks need that same answer, so it lives
+  here once — `tests/codegen/run_mlinectx_identity.sh` (which patterns the
+  `-DPCREC_NO_MLINECTX` knob can change, i.e. its corpus split),
+  `tests/assertions/run_mline_diff.sh` (which patterns its python arm must
+  skip under U11b), and the `.rxt` corpus generator (which blocks are
+  `# pcre2-only`). It is the M2.12 rule applied to a fork that has not
+  happened yet.
+  **It is a GRAMMAR scan, never a call into pcrec**: a split derived from
+  `Dfa.clsctx` or any other verdict pcrec computes about the pattern under
+  test would be the check reading its own subject's answer.
+  **Two traps, both of which cost a real run before this file existed.**
+  (1) A `^` inside a bracket expression is a CLASS NEGATION, not an anchor —
+  half this module's corpus is `[^c]`-shaped, and missing that excluded
+  `(?m)[^c]{1,3}$`, the D47.5 GUARD CELL, from python cross-verification.
+  Exactly the trap `run_wordctx_identity.sh` documents for `[\b]`.
+  (2) Setting `m` is not enough; an ANCHOR must receive it — `(?m)\Aa`,
+  `(?m)\Bfoo` and `a$(?m)` all set the option and build no multiline node,
+  and a coarser split reported ten such patterns as a dead reference knob.
+  Scoping follows the parser (bare runs mutate the enclosing scope, `(?m:`
+  scopes to its body, `(?^...)` resets), verified against libpcre2 on
+  `((?m))a$` and `(?:(?m))a$`. **It carries its own self-check**: run
+  `python3 tests/lib/mlscan.py` — 27 cases including every trap above and
+  the three scoping cells, exit 1 on any failure. A scanner nobody exercises
+  is a scanner that drifts.
+
 ## Conventions
 
 A script grouped by `run_group.sh` must isolate itself the same way every

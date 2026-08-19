@@ -209,14 +209,19 @@ bool pcrec_registry_option_run_recognise(const char *at, size_t avail,
  *               pairs are census-identical (probe_mod05.c). They become
  *               real under UTF/UCP — MOD-0.6/M5 own that day; the letters
  *               are consumed here so the run parses, and nothing is set.
- *   m, J        HONEST PER-LETTER REFUSALS (the MOD-0.3a per-name
- *               precedent): multiline ^/$ is assertion-engine work
- *               (DD-11's $-EOL sibling) and J is observable only through
- *               named groups. Tier-2 attributions, recorded in the plan.
- *               `-m` and `-J` are accepted no-ops: pcrec's anchors already
- *               have the not-multiline semantics, and duplicate names
- *               cannot occur without named groups — unsetting either is
- *               true today.
+ *   m           REAL as of [M6.2] wave C — module `assertions`. Sets the
+ *               scoped multiline state; `p_atom`'s `^`/`$` rows resolve it
+ *               onto the node at the assertion itself (D62), which is what
+ *               makes `(?m:...)` and `(?m)...(?-m)` right by construction
+ *               rather than by a downstream pass re-deriving scope. Refused
+ *               by its own name while the module is DISABLED. `-m` is
+ *               accepted with no gate: it asks for the semantics pcrec's
+ *               anchors have without the module.
+ *   J           AN HONEST PER-LETTER REFUSAL (the MOD-0.3a per-name
+ *               precedent): J is observable only through named groups.
+ *               A tier-2 attribution, recorded in the plan. `-J` is an
+ *               accepted no-op — duplicate names cannot occur without
+ *               named groups, so unsetting it is true today.
  *
  * TERMINATORS: `)` applies the delta to the ENCLOSING scope — the caller's
  * splice deliberately bypasses p_group_body's save/restore, so the mutation
@@ -243,7 +248,9 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     size_t i = from;
     bool caret = false, hyphen = false;
     bool set_i = false, set_s = false, set_U = false, set_n = false;
+    bool set_m = false;
     bool un_i = false, un_s = false, un_U = false, un_n = false, un_x = false;
+    bool un_m = false;
     int xlvl = -1;              /* -1 = the run does not touch the level */
 
     if (i < n && p[i] == '^') { caret = true; i++; }
@@ -276,32 +283,43 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
             else xlvl = (i > from && p[i - 1] == 'x') ? 2 : 1;
             break;
         case 'm':
-            /* [M6.2 wave A] TWO REFUSALS, and which one is honest depends on
-             * whether module `assertions` is ENABLED (assertions_design.md
-             * §9.2). "requires module 'assertions'" is right while the module
-             * is off and becomes a lie the moment it is on — it tells the
-             * user to enable something they already enabled. `(?m)` lands in
-             * that module's wave C; until then it is recognised, attributed
-             * and refused BY ITS OWN NAME.
+            /* [M6.2 wave C] ACCEPTED. Through wave B this letter carried its
+             * own per-letter refusal in TWO forms (module-off and
+             * module-on-but-unbuilt), because `(?m)`'s refusal is produced
+             * HERE rather than by the `(?` doorway's GROUP_OPT row — a
+             * letter's module is not the dispatching row's. That machinery is
+             * retired with the letter, not made conditional: module
+             * `assertions` implements multiline `^`/`$` in this wave, so the
+             * honest answer to `(?m)` is to set the bit.
              *
-             * This letter needs its own copy of the rule rather than riding
-             * ext.c's UNBUILT epilogue, and the reason is the one §1 of the
-             * design note re-measured rather than inherited: the REFUSAL for
-             * `(?m)` is produced HERE, per letter, not by the `(?` doorway's
-             * row — the GROUP_OPT row is only the recogniser, and a letter's
-             * module is not the dispatching row's (which is also why
-             * `--explain`'s attribution clause is scoped the way it is).
-             * The WORDING is deliberately the same shape ext.c emits, so a
-             * user meets one sentence for the whole class. */
+             * The bit's ONE consumer is the parser itself — `p_atom`'s `^`
+             * and `$` rows copy the state IN FORCE AT THE ASSERTION onto
+             * `Ast.multiline` (D62; src/parse/parse.c). Nothing downstream
+             * reads this struct, which src/parse/parse_mods.h makes a compile
+             * error rather than a convention. That is why `(?m:...)` and
+             * `(?m)...(?-m)` are right by construction here: the set/restore
+             * below is the same machinery `(?i)` has always used, and the
+             * resolution happens at each `^`/`$` while it is in force.
+             *
+             * `\A`/`\Z`/`\z` are UNAFFECTED and that is not an oversight:
+             * src/parse/mod_assertions.c pins their nodes' flag false, which
+             * is PCRE2's own rule — `\Z` under `(?m)` is still the subject's
+             * end, not a line's.
+             *
+             * THE MODULE GATE STAYS (§9.2): with `assertions` disabled the
+             * letter is refused by the same "requires module" sentence the
+             * rest of the class uses. `-m` needs no gate — it asks for the
+             * semantics pcrec's anchors have with no module at all. */
             if (!hyphen) {
-                if (pcrec_feature_enabled(FEAT_ASSERTIONS))
+                if (!pcrec_feature_enabled(FEAT_ASSERTIONS))
                     return modport_refuse(want, i,
-                        "module 'assertions' is enabled but inline option 'm' "
-                        "(multiline) is not implemented yet");
-                return modport_refuse(want, i,
-                    "inline option 'm' (multiline) requires module 'assertions'");
+                        "inline option 'm' (multiline) requires module "
+                        "'assertions'");
+                set_m = true;
+            } else {
+                un_m = true;
             }
-            break;                        /* -m: true today, accepted */
+            break;
         case 'J':
             /* [M6.3] WORDING, THIRD AND FINAL PASS (manager ruling,
              * 2026-08-18, citing docs/pcre2_options.md's RATIFIED D38 row
@@ -368,11 +386,13 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     if (set_s) ns.dotall = true;
     if (set_U) ns.ungreedy = true;
     if (set_n) ns.nocap = true;
+    if (set_m) ns.multiline = true;
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
     if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
     if (un_U) ns.ungreedy = false;
     if (un_n) ns.nocap = false;
+    if (un_m) ns.multiline = false;
     if (un_x) ns.xlevel = 0;
 
     if (p[i] == ')') {

@@ -138,8 +138,33 @@ struct Ast {
      * will tell you: that residual is D62's accepted cost, and this comment
      * is the thing that covers it.
      *
-     * The arena zeroes, so a node nothing set is non-multiline — which is
-     * every node today, since `(?m)` is still refused. */
+     * [M6.2 wave C] THE FIELD IS LIVE, and D62 control 3's obligation was
+     * DISCHARGED BY INSPECTION over every AST-walking analysis, with the
+     * verdict recorded here rather than in five places nobody re-reads. §8.3
+     * names four sites as the residual the flag spelling cannot cover — the
+     * `Ast.k` switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and
+     * `src/opt/revdet.c` x1 — and the inspection is that NONE of them needs
+     * the flag, for one reason with three shapes:
+     *
+     *   - `vm_det_seq` (emit_vm.c) DECLINES on the kind: a `$` of either
+     *     spelling is zero-width, so "scan ahead by stride" is wrong for
+     *     both, and its `default: return 0` is right without reading a field.
+     *   - `vm_cap_offsets` and `vm_rev_emit` (emit_vm.c) are UNREACHABLE for
+     *     either spelling: both run only on bodies `vm_det_seq` and
+     *     `src/opt/revdet.c`'s `rd_shape` already approved, and `rd_shape`
+     *     declines every `A_BOL`/`A_EOL`.
+     *   - `pcrec_revdet_first` (revdet.c) WIDENS to all bytes, the sound
+     *     direction, which makes the disjointness test fail and the
+     *     quantifier keep its machinery.
+     *
+     * THE PATTERN WORTH CARRYING FORWARD: an analysis is at risk exactly when
+     * it treats `$` as TRANSPARENT — reasoning about WHERE it is true and
+     * concluding it may be skipped over. Every one of these four treats it as
+     * OPAQUE (decline, widen, or unreachable), and opacity is multiline-blind
+     * by construction. `src/opt/possessify.c` was the one transparent
+     * consumer in the tree and is the one this field exists for.
+     *
+     * The arena zeroes, so a node nothing set is non-multiline. */
     bool     multiline;
     /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
      * quantifier after this node is an error rather than a repetition of it.
@@ -207,6 +232,24 @@ typedef enum {
     N_END,     /* [M6.2 wave A] assert end-of-subject (`\z`), goto t1 —
                 * strictly stronger than N_EOL, which is why it is its own
                 * state kind and its own closure bit rather than a variant */
+    /* [M6.2 wave C] `(?m)^` and `(?m)$`, goto t1. SEPARATE KINDS from N_BOT
+     * and N_EOL, and that is not the same question D62 answered: D62 rules
+     * that the AST spells multiline as a FIELD, because `Ast.k` encodes
+     * STRUCTURE and a modifier is parse-resolved state. By the time lowering
+     * has run the modifier is no longer state — it has been resolved into a
+     * DIFFERENT ASSERTION, whose truth condition is a different expression
+     * over different inputs (N_EOL is a position test; N_EOL_M reads a BYTE).
+     * That is exactly the structural difference NKind exists to carry, and
+     * it is the same argument N_END already won one line up.
+     *
+     * Their operands, in the vocabulary src/ir/dfa.c's Clo uses:
+     *   N_BOT_M  — start of subject, or the byte to the LEFT is a newline;
+     *   N_EOL_M  — end of subject, or the byte to the RIGHT is a newline.
+     * `\A`/`\Z` never lower to these: their nodes pin multiline false at the
+     * parser (src/parse/mod_assertions.c), which is what makes them aliases
+     * of the NON-multiline `^`/`$` under `(?m)` too, as PCRE2 has them. */
+    N_BOT_M,
+    N_EOL_M,
     /* [M6.2 wave B] `\b` / `\B`, goto t1. The FIRST assertions in this
      * machine whose truth is not a function of the position alone: both read
      * the byte on either side of it. src/ir/dfa.c's closure evaluates them
@@ -236,10 +279,70 @@ typedef struct {
 
 /* ---- DFA (priority subset construction) ---- */
 
+/* [M6.2 wave C] THE CLASS AXIS IS THREE-VALUED, and this enum is it.
+ *
+ * Wave B gave the closure one class-axis bit — "the byte about to be consumed
+ * is a word character" — because `\b` was the only assertion that read it.
+ * `(?m)$` reads a DIFFERENT property of that same byte ("it is a newline"), so
+ * the axis stops being a bool and becomes a partition of the alphabet:
+ *
+ *   UPC_PLAIN  neither a word character nor a newline
+ *   UPC_WORD   a word character
+ *   UPC_NL     a newline (the D64 definition, `pcrec_cls_newline`)
+ *
+ * THE THREE ARE DISJOINT AND EXHAUSTIVE because a newline is not a word
+ * character; there is no fourth combination to represent. src/ir/dfa.c's
+ * `eqclasses` refines the byte-equivalence partition by whichever of the two
+ * sets the machine actually needs, so every byte of a class has the same
+ * answer and `upc_of_class` is exact rather than a sample.
+ *
+ * THE SAME THREE VALUES INDEX THE OTHER SIDE. The byte the walk has already
+ * CONSUMED carries the same partition — `\b` reads its word-ness and `(?m)^`
+ * reads its newline-ness — but that side is carried in the state IDENTITY
+ * (§3.5's mechanism), so it indexes the START states (`Dfa.s1u`) rather than
+ * a per-state array. One enum, two uses, and the symmetry is real: the
+ * forward and reverse machines swap which side is which, which is what
+ * make_state's `reverse` mapping is for. */
+enum { UPC_PLAIN = 0, UPC_WORD = 1, UPC_NL = 2, UPC_N = 3 };
+
+
+/* One closure of a pre-set under one class-axis context. */
 typedef struct {
     int     *list;     /* priority-ordered N_CLASS state ids (arena) */
     int      nlist;
     uint8_t  accept;   /* match ends here */
+} DView;
+
+typedef struct {
+    /* [M6.2 wave B, generalized in wave C] THE CLASS VIEWS — the SAME pre-set
+     * closed once per class-axis context (assertions_design.md §3.5/§3.6).
+     * `up[UPC_PLAIN]` is the base view every pre-wave site meant by "the
+     * state's list" and "the state's accept bit".
+     *
+     * They are SECOND LISTS rather than second interned states, and that is
+     * the one structural choice worth understanding before editing anything:
+     *
+     *   - `eolvar`/`endvar` are POSITION views: they apply at two positions
+     *     out of n, so an indirection through a per-state table costs nothing
+     *     and an interned variant state is the natural spelling.
+     *   - a class view is decided by the byte at EVERY position, and the
+     *     class of that byte is already in a register for the transition
+     *     lookup. Interning it as a variant state would put a second table
+     *     read on the hot path for a choice the transition row can BAKE IN.
+     *
+     * So `tr[c]` is built from `up[upc_of_class(c)]`, and the only thing left
+     * over is the ACCEPT bit — which is why §3.6's class-indexed accept table
+     * exists and nothing else does. Every view's accept equals
+     * `up[UPC_PLAIN].accept` on every state of a machine with no `\b` and no
+     * `(?m)$` (there is no N_WORDB/N_EOL_M to gate, so the closures
+     * coincide), so that table is not emitted and the artifact does not move.
+     *
+     * The OTHER half of the context — the class of the byte already CONSUMED
+     * — is not a field at all. It is carried implicitly: two pre-sets that
+     * differ in it close differently wherever it matters, so they intern
+     * apart, and where it does not matter they intern together, which is the
+     * merge a separate field would have to forbid. */
+    DView    up[UPC_N];
     int      eolvar;   /* EOL-variant state (the eol_ok=true closure of the same
                           pre-set: correctly priority-pruned accept + threads),
                           used at EOL positions; -1 = identical to this state */
@@ -255,36 +358,6 @@ typedef struct {
      * exact opposite of the zero-regression property this convention buys.
      * tests/codegen/run_endvar_identity.sh is the check that says so. */
     int      endvar;
-    /* [M6.2 wave B] THE WORD VIEW — the SAME pre-set closed with "the byte
-     * about to be consumed is a word character" instead of "is not"
-     * (assertions_design.md §3.5/§3.6). It is a SECOND LIST rather than a
-     * second interned state, and that is the one structural choice in this
-     * wave worth understanding before editing anything:
-     *
-     *   - `eolvar`/`endvar` are POSITION views: they apply at two positions
-     *     out of n, so an indirection through a per-state table costs nothing
-     *     and an interned variant state is the natural spelling.
-     *   - the word view is a CLASS view: which of the two closures applies is
-     *     decided by the byte at EVERY position, and the class of that byte
-     *     is already in a register for the transition lookup. Interning it as
-     *     a variant state would put a second table read on the hot path for a
-     *     choice the transition row can simply BAKE IN.
-     *
-     * So `tr[c]` is built from `wlist` when class `c` is a word class and
-     * from `list` when it is not, and the only thing left over is the ACCEPT
-     * bit — which is why §3.6's class-indexed accept table exists and nothing
-     * else does. `waccept == accept` on every state of every `\b`-free
-     * pattern (there is no N_WORDB to gate, so the two closures coincide), so
-     * that table is not emitted and the artifact does not move.
-     *
-     * The OTHER half of the context — the word-ness of the byte already
-     * CONSUMED — is not a field at all. It is carried implicitly: two
-     * pre-sets that differ in it close differently wherever it matters, so
-     * they intern apart, and where it does not matter they intern together,
-     * which is the merge a separate field would have to forbid. */
-    int     *wlist;
-    int      nwlist;
-    uint8_t  waccept;
     int     *tr;       /* [ncls] target dfa state or -1 = dead (arena) */
 } DState;
 
@@ -294,28 +367,37 @@ typedef struct {
     int      ncls;     /* number of byte equivalence classes */
     uint8_t  clsmap[256];
     uint8_t  rep[256]; /* representative byte per class id */
-    int      s0, s1;   /* start state at pos==0 / pos>0; -1 = dead */
-    /* [M6.2 wave B] MECHANISM 4's seed (assertions_design.md §3.8): the
-     * interior start state for the case where the byte the walk has already
-     * passed IS a word character. `s1` is the same state for the non-word
-     * case, and `s0` covers "there is no such byte" (start of subject for the
-     * forward machine, end of subject for the reverse one) — which is a
-     * NON-WORD context, so `s0` needs no word twin.
+    int      s0;       /* start state where there is no context byte at all */
+    /* [M6.2 wave B, generalized in wave C] MECHANISM 4's seed
+     * (assertions_design.md §3.8): the INTERIOR start states, one per
+     * class-axis context of the byte the walk has already passed —
+     * `s[startpos-1]` for the forward machine, `s[end]` for the reverse one.
+     * `s1u[UPC_PLAIN]` is what the pre-wave code called `s1`.
      *
-     * Equal to `s1` whenever the machine carries no word assertion, because
-     * the two closures then coincide and intern to one state. */
-    int      s1w;
-    /* True when this machine was built with a word context — i.e. its NFA
-     * carries an N_WORDB/N_NWORDB. It is the flag every emitter site that
+     * `s0` covers "there is no such byte" (start of subject for the forward
+     * machine, end of subject for the reverse one), which is neither a word
+     * character nor a newline, so `s0` needs no twins of its own.
+     *
+     * All three are the same state whenever the machine carries no assertion
+     * that reads the consumed byte, because the closures then coincide and
+     * intern together — which is what keeps every existing artifact's start
+     * dispatch a compile-time constant. */
+    int      s1u[UPC_N];
+    /* True when this machine was built with a CLASS AXIS at all — i.e. its
+     * NFA carries an N_WORDB/N_NWORDB (`\b`'s word-ness) or an N_BOT_M/
+     * N_EOL_M (`(?m)`'s newline-ness). It is the flag every emitter site that
      * must choose between the pre-wave text and the class-indexed text reads,
      * and it is derived from the NFA rather than from any state's contents so
-     * the two emitters cannot disagree about which shape they are in. */
-    bool     wordctx;
+     * the two emitters cannot disagree about which shape they are in.
+     *
+     * Named `wordctx` through wave B, when `\b` was the only customer. */
+    bool     clsctx;
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
     int     *tab;      /* hash table (heap) */
     size_t   tabcap;
 } Dfa;
+
 
 /* ---- compile context ---- */
 
@@ -1013,6 +1095,26 @@ extern const unsigned char pcrec_cls_digit_esc[32], pcrec_cls_space_esc[32],
     pcrec_cls_px_graph[32], pcrec_cls_px_lower[32], pcrec_cls_px_print[32],
     pcrec_cls_px_punct[32], pcrec_cls_px_space[32], pcrec_cls_px_upper[32],
     pcrec_cls_px_word[32],  pcrec_cls_px_xdigit[32];
+/* Which class-axis context does byte class `c` carry? Declared here rather
+ * than in src/ir/dfa.c because BOTH emitters ask it — the accept table, the
+ * seed table and ENG_ATTEMPT's per-state arms all have to agree with the
+ * subset construction about which view a class selects, and a second copy of
+ * this two-line rule is exactly the drift this project keeps recording.
+ *
+ * Well-defined ONLY because `eqclasses` refined the partition by whichever of
+ * the two sets the machine needs: every byte of a class then has the same
+ * answer, so reading it off the class's representative byte is exact rather
+ * than a sample. A machine that skipped a refinement never asks the
+ * corresponding question — with no N_WORDB nothing distinguishes UPC_WORD
+ * from UPC_PLAIN, and this answer is then consumed only as an index into
+ * views that are all the same list. */
+static inline int upc_of_class(const Dfa *d, int c)
+{
+    if (cls_has(pcrec_cls_word_esc, d->rep[c])) return UPC_WORD;
+    if (cls_has(pcrec_cls_newline,  d->rep[c])) return UPC_NL;
+    return UPC_PLAIN;
+}
+
 /* The GENERATED name->bits map for the POSIX named classes: emitted by
  * probe_cls_bits.c --emit as part of cls_bits.inc, so the PAIRING of a
  * name to its table is the same artifact as the measurement that produced
@@ -1579,7 +1681,7 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start sel
 bool nfa_has_asserts(const Nfa *nfa);
 bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
-                     bool prune, int maxstates);
+                     bool prune, bool reverse, int maxstates);
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 

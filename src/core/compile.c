@@ -224,15 +224,15 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             cx.job->engine = PCREC_ENG_UNANCH;
             nfa_wrap_unanchored(&cx, &cx.job->nfa);
             pcrec_build_nfa(&cx, root, &cx.job->rnfa, true);
-            pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
+            pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                             PCREC_MAX_DFA_STATES_TABLE);
-            pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false,
+            pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false, true,
                             PCREC_MAX_DFA_STATES_TABLE);
             pcrec_minimize_dfa(&cx, &cx.job->dfa);
             pcrec_minimize_dfa(&cx, &cx.job->rdfa);
         } else {
             cx.job->engine = PCREC_ENG_ATTEMPT;
-            pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true,
+            pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                             PCREC_MAX_DFA_STATES_GOTO);
             pcrec_minimize_dfa(&cx, &cx.job->dfa);
         }

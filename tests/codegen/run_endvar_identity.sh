@@ -128,13 +128,53 @@ find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
     | sed 's/^pattern //' \
     | LC_ALL=C sort -u > "$PATFILE"
 
-# The split: a pattern MENTIONING `\z` is the control population (the two
-# builds must differ), everything else is the identity population. The test is
-# on the pattern TEXT rather than on anything pcrec computes, deliberately —
-# a split derived from `dfa_has_endvar` would be the check reading its own
-# subject's verdict.
-grep -F '\z' "$PATFILE" > "$WORKDIR/zpat" || true
-grep -vF '\z' "$PATFILE" > "$WORKDIR/nozpat" || true
+# The split: a pattern that CREATES A `pos == n` VIEW is the control
+# population (the two builds must differ), everything else is the identity
+# population. The test is on the pattern TEXT rather than on anything pcrec
+# computes, deliberately — a split derived from `dfa_has_endvar` would be the
+# check reading its own subject's verdict.
+#
+# **[M6.2 wave C] THE SPLIT IS NO LONGER `grep -F '\z'`, AND THIS GATE IS WHAT
+# TOLD US.** Wave A wrote the third closure view for `\z` and split on `\z`
+# accordingly, which was exact at the time. BOTH `(?m)` anchors read that same
+# view, for OPPOSITE purposes: `(?m)$` is "end of subject OR the next byte is a
+# newline", so it reads `end_ok` to be TRUE there; `(?m)^` does NOT match after
+# a newline that ENDS the string, so it reads `end_ok` to be FALSE there. So
+# the day the `m` letter was accepted this gate went red on 51 patterns, every
+# one of them a `(?m)` anchor sitting in the identity population where it does
+# not belong. That is the check WORKING: it caught a wave-C construct silently
+# joining a wave-A mechanism, which no behaviour test could see because
+# `-DPCREC_NO_ENDVAR` is never defined in a shipped build.
+#
+# The classifier is tests/lib/mlscan.py (shared with the wave C gate and the
+# `(?m)$` differential, with its own self-check), and it is a GRAMMAR scan —
+# `(?m)` is scoped and spelled several ways, and a `$` inside `[...]` is not
+# an anchor.
+python3 - "$ROOT_DIR" "$PATFILE" "$WORKDIR/zpat" "$WORKDIR/nozpat" <<'PY'
+import os, sys
+root, src, zout, nout = sys.argv[1:5]
+sys.path.insert(0, os.path.join(root, "tests", "lib"))
+from mlscan import multiline_anchor
+
+raw = [l.rstrip("\n") for l in open(src) if l.strip()]
+def has_end_view(p):
+    # BOTH `(?m)` anchors, not just `(?m)$`, and the reason is the tidiest
+    # fact in wave C: they read the `pos == n` view for OPPOSITE purposes.
+    # `(?m)$` reads it to be TRUE at end of subject ("or end of subject" is
+    # half its definition); `(?m)^` reads it to be FALSE there, because PCRE2's
+    # multiline `^` does not match after a newline that ENDS the string. Same
+    # view, both directions.
+    return "\\z" in p or multiline_anchor(p)
+z    = [p for p in raw if has_end_view(p)]
+noz  = [p for p in raw if not has_end_view(p)]
+open(zout, "w").write("".join(p + "\n" for p in z))
+open(nout, "w").write("".join(p + "\n" for p in noz))
+print("endvar-identity: corpus %d patterns; create a `pos == n` view: %d "
+      "(%d mention \\z, %d are (?m) anchor shapes); identity population: %d"
+      % (len(raw), len(z), sum(1 for p in raw if "\\z" in p),
+         sum(1 for p in raw if multiline_anchor(p) and "\\z" not in p),
+         len(noz)))
+PY
 nz=$(wc -l < "$WORKDIR/zpat")
 nn=$(wc -l < "$WORKDIR/nozpat")
 
@@ -162,7 +202,26 @@ fi
 # DIFFERENT fact from the one being measured here, which is why reading it to
 # explain a non-difference is legitimate and reading `dfa_has_endvar` would
 # not be.
-ctl_diff=0; ctl_same_vm=0; ctl_same_dfa=0; ctl_rej=0
+#
+# **[M6.2 wave C] A SECOND LEGITIMATE NON-DIFFERENCE, and it needs its own
+# anti-vacuity argument.** The `(?m)` anchors joined this control population,
+# and two of them — `a(?m)^b` and `a(?m)^b|c` — carry a `(?m)^` that can never
+# hold (a `^` after a MANDATORY consumed byte, whose predecessor is that byte
+# and not a newline). The construct is present, no state's END view ever
+# differs from its EOL view, so nothing is interned and there is nothing for
+# the knob to disable. `a(?m)^b` is additionally the never-matching shape whose
+# artifact carries no automaton at all (K28's class, and wave B's gate's own
+# third category).
+#
+# READ OFF THE **UNSABOTAGED** ARTIFACT, and that is what makes it admissible
+# rather than the forbidden reading. "Does this artifact carry an end-view
+# table" is, in the REFERENCE build, exactly `dfa_has_endvar` — the switch this
+# check measures. In the SUBJECT build it is not: `-DPCREC_NO_ENDVAR` is a
+# reference-build-only flag, so a DEAD knob cannot make the subject build stop
+# emitting end-view tables. A pattern classified here is therefore one the knob
+# provably could not have affected, and a broken knob cannot grow this class.
+# The row count is printed either way so the class cannot swell unnoticed.
+ctl_diff=0; ctl_same_vm=0; ctl_same_noview=0; ctl_same_dfa=0; ctl_rej=0
 while IFS= read -r pat; do
     [ -z "$pat" ] && continue
     a="$(gen_a "$pat")"; b="$(gen_b "$pat")"
@@ -171,6 +230,9 @@ while IFS= read -r pat; do
         ctl_diff=$((ctl_diff + 1))
     elif printf '%s' "$a" | grep -q '^#define RX_ENGINE "vm"$'; then
         ctl_same_vm=$((ctl_same_vm + 1))
+    elif ! printf '%s' "$a" | grep -qE '^    static const short rx_(f|r)endv\['; then
+        ctl_same_noview=$((ctl_same_noview + 1))
+        echo "  control carries the construct but interns NO end view (nothing for the knob to disable): $pat" >&2
     else
         ctl_same_dfa=$((ctl_same_dfa + 1))
         echo "  DFA-compiled control did NOT differ: $pat" >&2
@@ -178,9 +240,9 @@ while IFS= read -r pat; do
 done < "$WORKDIR/zpat"
 
 if [ "$ctl_diff" -ge 5 ] && [ "$ctl_same_dfa" -eq 0 ]; then
-    ok "positive control: $ctl_diff DFA-compiled \\z patterns differ between the two builds and 0 agree ($ctl_same_vm agreed and are VM artifacts, where the third view plays no part) — -DPCREC_NO_ENDVAR really disables it, so the identity comparisons below are not vacuous"
+    ok "positive control: $ctl_diff DFA-compiled end-view patterns differ between the two builds and 0 agree unexplained ($ctl_same_vm agreed and are VM artifacts, where the third view plays no part; $ctl_same_noview carry the construct at a position it can never hold, so the subject build interns no end view either) — -DPCREC_NO_ENDVAR really disables it, so the identity comparisons below are not vacuous"
 else
-    bad "positive control: $ctl_diff \\z patterns differ, $ctl_same_dfa DFA-compiled ones AGREE, $ctl_same_vm VM ones agree (expected), $ctl_rej rejected by both. Every DFA-compiled \\z pattern must differ; if none does, the reference knob is dead and this whole check is vacuous."
+    bad "positive control: $ctl_diff end-view patterns differ, $ctl_same_dfa DFA-compiled ones AGREE UNEXPLAINED, $ctl_same_vm VM ones agree (expected), $ctl_same_noview intern no end view (expected), $ctl_rej rejected by both. Every DFA-compiled end-view pattern that actually interns one must differ; if none does, the reference knob is dead and this whole check is vacuous."
 fi
 
 # ---- the identity sweep --------------------------------------------------

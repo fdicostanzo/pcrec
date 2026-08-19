@@ -193,12 +193,17 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   the validated run building set/unset masks (unset wins, measured), applies
   them to `cx->mods` for a bare run (whose caller splice deliberately
   escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
-  or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals
-  `m` -> 'assertions' (gated reject pin — and since [M6.2] wave A that letter
-  has TWO refusals, the second naming the CONSTRUCT when module `assertions`
-  is ENABLED but has not built `(?m)` yet; it needs its own copy of ext.c's
-  rule because a letter's refusal is produced HERE, per letter, and a letter's
-  module is not the dispatching row's) and, since [M6.3], `J` -> K14's
+  or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals; `m` is **REAL since [M6.2] wave C** — it sets the scoped
+  multiline state, and `p_atom`'s `^`/`$` rows resolve that state onto the
+  node at the assertion itself (D62, `Ast.multiline`), which is what makes
+  `(?m:...)` and `(?m)...(?-m)` right by construction rather than by a
+  downstream pass re-deriving scope. Its wave-A pair of refusals (module-off,
+  and enabled-but-unbuilt) retired with the letter, along with their two
+  `tests/reject` pins; what remains is the module-OFF refusal by the letter's
+  own name, which still needs its own copy of ext.c's rule because a letter's
+  refusal is produced HERE, per letter, and a letter's module is not the
+  dispatching row's. `-m` needs no gate at all — it asks for the semantics
+  pcrec's anchors have with no module. Since [M6.3], `J` -> K14's
   permanent ROADMAP_NEVER wording rather than a module name — it used to
   say "requires module 'named-groups'", true only while that module did
   not exist; named-groups shipped WITHOUT (?J)/DUPNAMES (a ruled scope

@@ -121,6 +121,16 @@ refuses() {
 # machinery (the forward seed and the reverse one, assertions_design.md §3.8)
 # and a control that only ever compiled the leading form would not notice the
 # reverse half failing to build at all.
+#
+# [M6.2 wave C] `(?m)` JOINS on the same move, and it needs `modifiers` as
+# well as `assertions` — the letter is produced by module `modifiers`' option
+# run and ATTRIBUTED to `assertions`, so a control naming only one of them
+# would not compile for a reason that has nothing to do with the wave. Four
+# spellings, because they take four different paths: the bare run `(?m)`, the
+# scoping form `(?m:...)`, the unset `(?-m)` (which was accepted before this
+# wave and must stay accepted), and a `(?m)^` — the one that ROUTES to
+# ENG_ATTEMPT, where a build failure would otherwise show up only as a slow
+# pattern.
 for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
@@ -129,10 +139,26 @@ for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
         bad "[assertions] '$p' should compile with the module enabled: $(cat "$WORKDIR/e.txt")"
     fi
 done
+for p in '(?m)a$' '(?m:a$)' '(?-m)a$' '(?m)^a'; do
+    rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
+    if "$PCREC" --features assertions,modifiers -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+        ok "[assertions] '$p' COMPILES — wave C's letter is BUILT, which is what takes over from the two 'inline option m is not implemented yet' rows tests/reject just retired"
+    else
+        bad "[assertions] '$p' should compile with assertions+modifiers enabled: $(cat "$WORKDIR/e.txt")"
+    fi
+done
 # ...and the same ones must still REFUSE with the gate closed, which is what
 # makes the line above a statement about the gate rather than about the build.
 for p in '\Aa' 'a\z' 'a\Z' '\ba' 'a\b' '\Ba' 'x\Bx'; do
     refuses bare "$p" "requires module 'assertions'"
+done
+# `(?m)`'s gate-closed twin is `modifiers` WITHOUT `assertions`: bare would
+# refuse for the wrong module (`modifiers` is in std1, `assertions` is not),
+# so the refusal that proves the ATTRIBUTION is the one taken with the option
+# run's own module already on. `(?-m)` is deliberately not here — it is
+# accepted with no module at all, which is the claim beside it.
+for p in '(?m)a$' '(?m:a$)' '(?m)^a'; do
+    refuses modifiers "$p" "inline option 'm' (multiline) requires module 'assertions'"
 done
 
 # ---------------------------------------------------------------------------

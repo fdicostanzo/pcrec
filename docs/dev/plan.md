@@ -312,6 +312,172 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   ir-listing 79/0, vm 35/0, possessify 18/0, rungselect 24/0, counterk
   23/0, mrl 22/0 + 18/0, altcls 15/0, assertions 26/0, endvar-identity
   3/0, wordctx-identity 3/0; `make strict` clean.
+  **WAVE C LANDED 2026-08-19 (lane/asrtwavec)**: `(?m)`, the wave four
+  separate rulings travel on. The `m` letter is ACCEPTED
+  (src/parse/mod_modifiers.c; both its wave-A refusals retire with it) and
+  `^`/`$` copy the SCOPED state onto the node at the assertion itself, which
+  wave A had already built — so `(?m:...)`, `(?m)...(?-m)` and a mid-pattern
+  `(?m)` are right BY CONSTRUCTION rather than by a downstream pass
+  re-deriving scope.
+  ENGINE: `(?m)` adds NO new mechanism — it adds a second PROPERTY to the two
+  axes wave B built, so the class axis stops being a bool and becomes the
+  three-valued `UPC_{PLAIN,WORD,NL}` partition of the alphabet (disjoint and
+  exhaustive: a newline is not a word character). `DState.up[UPC_N]` replaces
+  `list`/`accept` + `wlist`/`waccept`; `Dfa.s1u[UPC_N]` replaces `s1`/`s1w`;
+  the alphabet refines by `pcrec_cls_newline` (D64's ONE definition, the table
+  `\N` compiles from) when and only when the machine carries an
+  N_BOT_M/N_EOL_M. `(?m)$` stays on ENG_UNANCH; `(?m)^` routes to ENG_ATTEMPT
+  via an extended `nfa_has_bot` and the seeded start dispatch.
+  **DIRECTION APPEARS IN EXACTLY ONE PLACE, and wave B genuinely did not need
+  it**: `\b` is SYMMETRIC in its two operands so a machine reading them
+  backwards gets the same answer, while `(?m)$` reads ONE side — forward the
+  byte about to be consumed, reverse the one already consumed. The closure now
+  names its operands by SIDE (`left_*`/`right_*`) and `make_state`'s
+  `sides_of` is the only function that knows a machine has a direction;
+  `pcrec_build_dfa` takes `reverse` explicitly rather than deriving it from
+  `prune` (they coincide under D7, and a coincidence load-bearing for
+  correctness is what this project keeps recording).
+  D63's CANDIDATE-START PREFILTER lands as a TOOL per its charter: the
+  DERIVATION (`CandSet`/`cand_derive`/`cand_emit_table`) is ONE site with two
+  callers — ENG_UNANCH's `cand_from_escapes` and ENG_ATTEMPT's
+  `cand_from_live_seeds` — and the `(?m)^` predecessor-byte twist is a FIELD
+  (`offset`), not a fork. `pcrec_emit_prologue` calls the SAME predicate to
+  decide about `#include <string.h>`.
+  D62's controls 1-3 all land: the widened scoped cells, the PERMANENT
+  flag-reader sabotage S77, and the field-comment obligation — the last
+  discharged by INSPECTING all four `default:`-carrying `Ast.k` switches
+  (§8.3's stated landing condition) and recording the rule that generalizes:
+  an analysis is at risk exactly when it treats `$` as TRANSPARENT, and all
+  four treat it as OPAQUE (decline, widen, unreachable). possessify was the
+  tree's one transparent consumer.
+  **THE DESIGN'S `(?m)^` RULE IS WRONG AND SHIPPED WRONG FIRST — this wave's
+  sharpest finding.** §3.7 and §9.3 both give `(?m)^` as "`pos == 0` or
+  `s[pos-1] == '\n'`"; PCRE2's multiline `^` "does not match after a newline
+  that ENDS the string", so `(?m)^` is NOT the mirror of `(?m)$` (on `"a\n"`
+  the first holds at 0 only, the second at 1 AND 2). pcrec implemented the
+  design's rule and was WRONG for it. **python3 `re` implements the design's
+  rule too**, which is why no oracle in the base tier could see it — filed as
+  upstream_issues.md U11b, and every `(?m)`-with-`^` corpus block is now
+  `# pcre2-only` on the same WHOLESALE rule `\Z` blocks follow. Found by
+  tests/assertions/run_mline_diff.sh at `startpos > 0`, because from
+  `startpos 0` an earlier match masks the trailing position on almost every
+  subject; `(?m)^$` on `"a\n"` is the one shape that shows it from 0 and is
+  now in the corpus by name. The corpus gained a full startpos sweep for the
+  same reason.
+  **THE FIVE SCAN-AVOIDANCE MECHANISMS (§3.6.1): NOT ONE SHIPS AN
+  INTERSECTION, AND ONLY ONE IS A LIVE HAZARD.** The design proposes
+  intersections for rows 2-5. The wave wrote a sabotage per mechanism and
+  MEASURED each before committing it — sweeping every corpus pattern whose
+  ARTIFACT the edit changes through 107 subjects under the §3.1 find-all loop
+  — and SHIPPED FOUR ROWS OF SIX:
+  - rows 3/5 (self-loop skips) DECLINE via `pick_skip_states`, and it is real:
+    S78 turns `(?m)[^c]*$` on `"a
+b
+c"` from `(0,3)` into `(0,1)`, and
+    `(?m)[^c]+$` on the same subject from `[(0,3)]` into `[(0,1),(1,3)]`. Both
+    witness subjects were ADDED TO THE CORPUS when the row was validated; the
+    first draft had neither and the row would have come back UNDETECTED.
+  - rows 1/2 (the prefilters) share the widened `start_acc`, and **that
+    widening is REDUNDANT** — D3's accept-pruning cuts the unanchored start
+    self-loop out of every accepting closure, so a class the start state
+    accepts on ESCAPES it and the prefilter's stay set never contains it.
+    §3.6.1's `x*` prediction is FALSE: narrowing `start_acc` changes 21
+    corpus artifacts and **0 answers over 2,247 cells**. Kept as
+    belt-and-braces (free, and the honest reading of "accepts on any class"),
+    NOT cited as load-bearing, and NO sabotage row — a row with no failing
+    direction is the check-design failure this project records, and writing
+    one here would have been the section's own mistake repeated. This is the
+    same argument `emit_dfa.c` already makes for the neighbouring
+    `last == (size_t)-1` gate, which two critics attacked without building a
+    witness.
+  - row 4's compensating accept can only UNDER-report (the EOL view's closure
+    is a superset of the base's; a skip-eligible state's accept does not vary
+    by class): 13 artifacts, **0 answers over 1,391 cells**, and 0 new answers
+    even when combined with row 3's sabotage. NO row.
+  The cost of DECLINING is measured too: exactly ZERO on the pre-wave corpus
+  (the eligibility test is false at every state) and non-zero on the `(?m)$`
+  family, accepted and recorded rather than priced away.
+  **THE `(?m)^` COST, MEASURED ON THE BUILT COMPILER AND ARCHIVED**
+  (`assertions_measurements/out/mline_caret_cost.txt`; the [M6.1] probe gained
+  a wave-C arm that runs the REAL construct instead of the stand-ins it had to
+  use when the letter was refused):
+  - NON-CROSSING arm, the one D63's prefilter is for: `(?m)^ERROR` against
+    its unprefiltered stand-in `^ERROR|\nERROR` reads **3x / 7x / 7x** at
+    n = 8k/32k/128k. What is LEFT against a plain unanchored `ERROR` is
+    **82x / 33x / 27x** — so the design's 85-185x target is closed to roughly
+    27-33x at settled n, not to nothing, and that residual is the honest
+    number rather than the headline.
+  - CROSSING arm, D63's accepted residue: `(?m)^[^b]*b` still grows
+    **3.98x / 3.99x / 3.98x / 4.01x per doubling** — the O(n^2) signature,
+    unrescued exactly as D63 says. Its ratio against the stand-in is
+    **1.00-1.01x** at settled n, which incidentally confirms the [M6.1]
+    stand-in was faithful: the prefilter skips nothing there because every
+    line start is already a candidate.
+  EVIDENCE: tests/assertions/multiline.rxt, every expectation libpcre2-
+  produced, re-verified by BOTH oracles on every run;
+  tests/assertions/run_mline_diff.sh, a generated subject sweep over the
+  `(?m)$` family on BOTH engines with the population claim CHECKED (it fails
+  if too few patterns carry a live mechanism);
+  tests/codegen/run_mlinectx_identity.sh against a `-DPCREC_NO_MLINECTX`
+  reference; sabotages S76-S81 and the two new mech arms;
+  tests/lib/mlscan.py, the `(?m)`-scope scanner all three checks share, with
+  its own self-check.
+  **DEVIATIONS AND FINDINGS RETURNED**: (1) the `(?m)^` rule above, which is a
+  design refutation and an oracle divergence at once. (2) `(?m)$` reaches
+  `emit_view_select`'s `has_end && !has_eol` arm — the branch wave A wrote for
+  "`\z` with no `$` anywhere" — because `N_EOL_M` never consults `eol_ok`: a
+  construct the design calls `$`'s sibling shares its emitted selector with
+  `\z` and none with `$`. (3) Wave B's inline note at ENG_ATTEMPT's EOL arm
+  ("the EOL position's next byte is `\n`, which is NOT a word character, so
+  the scalar accept is already right") was right for its axis and its
+  CONCLUSION IS NOW WRONG — `'\n'` IS the newline definition; the arm reads a
+  compile-time constant indexed by `upc_of_newline`, and the `eolvar`-only arm
+  SPLITS when its two positions disagree. (4) D63's candidate set is the
+  LIVE-SEED set, strictly more general than §3.7.2's "offset 0 or immediately
+  after a `'\n'`" — that sentence is true of a fully-anchored pattern and
+  false of `(?m)^a|b`, and sabotage S81 is the sentence written as code.
+  (5) K28 gains a FOURTH spelling, `a(?m)^b`, excluded by name with live
+  equivalents; the list grows monotonically until the wrapper is fixed.
+  SUITE (this lane, build/test_wavec_final.log, EXIT=0, zero FAIL lines):
+  corpus **19,346/0** (16,066 at the merge base + 3,280 new `(?m)` cells),
+  cli 269/0,
+  reject 535/0 (gated 64 -> 62), registry 169/0 + PC-3 163/0, codegen 52/0,
+  trie 7/0, vm-identity 9/0, ir-listing 79/0, vm 35/0, possessify 18/0,
+  rungselect 24/0, counterk 23/0, mrl 22/0 + 18/0, altcls 15/0, assertions
+  33/0, endvar-identity 3/0 (**1087** `pos == n`-view-free patterns identical,
+  83 controls differing), wordctx-identity 3/0 (**1108** identical, 63
+  controls), mlinectx-identity 4/0 (**1117** identical, 56 controls, plus the
+  shared scanner's own 36-case self-check), mline-diff 3/0 (**5,038 DFA +
+  5,038 VM cells** at 0 divergences, 20 of 22 patterns carrying a live
+  scan-avoidance mechanism), encseam 2/0, resource 19/0, thread 8/0;
+  `make strict` clean (build/wavec_strict.log).
+  (6) The identity gate's first split was too coarse — ten patterns that SET
+  `m` with no anchor to receive it read as a dead reference knob — and the
+  `(?m)$` differential's first python arm excluded the D47.5 GUARD CELL over a
+  `^` that is a class negation in `[^c]`. Both are why the scanner is one
+  shared file with a self-check.
+  (7) **WAVE A's ENDVAR-IDENTITY GATE WENT RED ON 51 PATTERNS, and it was
+  right to.** `(?m)$`'s "or end of subject" half IS wave A's `pos == n` view
+  (`N_EOL_M` reads `end_ok`), so a `(?m)$` pattern belongs to that gate's
+  POSITIVE CONTROL and not to its identity population — but wave A split on
+  `grep -F '\z'`, which was exact when it was written. The split now asks
+  "does this pattern create a `pos == n` view" through the shared scanner.
+  Worth naming: a wave-C construct silently joined a wave-A mechanism, no
+  behaviour test could have seen it (`-DPCREC_NO_ENDVAR` is never defined in a
+  shipped build), and the construction gate is the only instrument that did.
+  That is the third time in this module a byte-identity gate has earned its
+  keep.
+  (8) **D62's control 2 NEEDS A CAPTURE-BEARING CELL, and §8.7's own spelling
+  is capture-free.** Possessification is a VM optimization — it removes
+  backtracking states, and A DFA HAS NO BACKTRACKING TO REMOVE — so
+  `(?m)[^c]{1,3}$` routes to the DFA and answers correctly with the flag-read
+  turned off (measured: 749 find-all cells, 0 divergences under S77). One
+  parenthesis routes it to the VM and the same pattern loses its match
+  entirely. multiline.rxt carries both forms in adjacent sections and says
+  which is which. This is wave B's S75 lesson ("every block in wordb.rxt was
+  capture-free so nothing in the corpus reached emit_vm.c's arm at all")
+  arriving one wave later on a different arm — worth a process note, because
+  the wave that recorded it is the wave before this one.
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here

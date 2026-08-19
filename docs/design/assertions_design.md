@@ -13,11 +13,16 @@ lane. Nothing here is built.
 `../dev/reviews/2026-08-18-r30-assertions-design.md`, three read-only critics
 against commit 4f0dafe. **Read this block before any section.**
 
-**BUILD ANNOTATIONS EXIST BELOW THIS BLOCK** ([M6.2] waves A–B, 2026-08-19):
+**BUILD ANNOTATIONS EXIST BELOW THIS BLOCK** ([M6.2] waves A–C, 2026-08-19):
 §3.2 (the NOTBOL/NOTEOL erasure the alias is silent on), §3.5.1 (the 38,009
 forecast refuted as an observation), §3.6.1 (the skip-union sentence refuted;
-wave B ships DECLINE), §7.2 (the seam question contested and settled the
-design's way). A reader who stops at this block misses all five.
+wave B ships DECLINE — and wave C's per-mechanism postures, measured), §3.7
+(the class axis is THREE-VALUED, not a second bool), §3.7.2 (D63's candidate
+set is the LIVE-SEED set, which is strictly more general than "the newline
+set" and is what makes `(?m)^a|b` correct), §7.2 (the seam question contested
+and settled the design's way), §8.3 (the four `default:` sites inspected;
+none needs the flag, and the reason generalizes). A reader who stops at this
+block misses all of them.
 
 **What survived**, on the panel's own independent instruments rather than
 re-runs of this lane's: the D47.5 scope-blind miscompile (§8, "the single
@@ -876,6 +881,76 @@ varies inside a run a skip set admits.
 > INTERSECTION (wave C's, which must not lean on the quoted sentence for its
 > `\b` arm).
 
+>
+> **[M6.2] WAVE C, 2026-08-19 — WHAT EACH MECHANISM ACTUALLY SHIPS, AND WHICH
+> OF THE FIVE HAS A FAILING DIRECTION AT ALL.** The section proposes
+> INTERSECTION for rows 2-5 and DECLINE for row 1. Wave C decided per
+> mechanism ON MEASUREMENT, and **not one of the five ships an intersection** —
+> but the more useful finding is that **only one of the five turns out to be a
+> live hazard**:
+>
+> | # | mechanism | posture SHIPPED | is it a live hazard? |
+> |---|---|---|---|
+> | 1 | memchr prefilter | DECLINE, via the widened `start_acc` | **NO — the guard is REDUNDANT**, see below |
+> | 2 | bitmap prefilter | DECLINE, same `start_acc` (rows 1 and 2 ride ONE emit gate) | **NO**, same argument |
+> | 3 | forward self-loop skip | DECLINE (`pick_skip_states` drops a state whose accept varies) | **YES — sabotage S78, measured** |
+> | 4 | post-skip compensating accept | not emitted under `views`; the cure is the evaluation ORDER | **NO — it can only UNDER-report**, see below |
+> | 5 | reverse self-loop skip | DECLINE, same `pick_skip_states` | **YES**, covered by S78 |
+>
+> **ROWS 1 AND 2: `start_acc` IS REDUNDANT, BY THIS FILE'S OWN RECORDED
+> ARGUMENT.** §3.6.1 predicts that a narrowed `start_acc` makes `\bx*` on
+> `'a x'` report only `(2,3)`. It does not, and the reason is D3's
+> accept-pruning: the unanchored start self-loop is the LOWEST-priority
+> thread, so any closure that reaches ACCEPT prunes it — therefore a class the
+> start state ACCEPTS on cannot transition back to the start state, therefore
+> that class ESCAPES, therefore the prefilter's stay set excludes it and the
+> skip never passes an accepting position. `src/gen/emit_dfa.c` already states
+> that argument, for the neighbouring `last == (size_t)-1` gate, and records
+> that two independent critics attacked that gate and neither could build a
+> witness.
+>
+> MEASURED the same way, this lane: narrowing `start_acc` to one class's bit
+> changes **21 corpus artifacts** and **0 answers** over 2,247 find-all cells
+> (21 patterns x 107 subjects, against the unsabotaged compiler). So the
+> widening is kept — it is free, and it is the honest reading of "accepts on
+> any class" — but it is NOT cited as load-bearing and it ships NO sabotage
+> row, because a row with no failing direction is this project's recorded
+> check-design failure and writing one here would have been the section's own
+> mistake repeated.
+>
+> **ROW 4 CAN ONLY UNDER-REPORT.** Under `views` the compensating `last = pos;`
+> is not emitted at all (the accept check already runs after the skip), and
+> even when the guard is removed the line records the state's UPC_PLAIN accept
+> at the landing position — which is never GREATER than the correct bit, since
+> the EOL view's closure is a superset of the base's and a skip-eligible
+> state's accept does not vary by class. Measured: re-emitting it changes **13
+> corpus artifacts** and **0 answers** over 1,391 cells, and **still 0 new
+> answers when combined with row 3's sabotage**. No row.
+>
+> **THE COST OF DECLINING (rows 3/5) WAS MEASURED, NOT ASSUMED.** On the
+> pre-wave corpus it is exactly zero — the eligibility test is false at every
+> state, so not one artifact moves, which the byte-identity gate measures at
+> 1039/1039. On the `(?m)$` family it is not zero: `(?m)[^c]*$` keeps its skip
+> tables for the states whose accept does not vary and loses them for the one
+> that does. That is a real loss and it is accepted, because an intersection
+> for rows 3/5 would have to compute "the accept row masked by the stay set"
+> per state and emit a per-class stay table to exploit it — new machinery, on
+> the hot path, for a population no benchmark in this project measures.
+> **Recorded here rather than left implicit so a later lane can price it.**
+>
+> **S78's WITNESSES, since the section calls this the module's most dangerous
+> item and a claim of danger deserves a demonstration:**
+>
+> ```
+> (?m)[^c]*$  on "\n\nc"     (0,1) becomes (0,0)          -- a SHORT match
+> (?m)[^c]*$  on "a\nb\nc"    (0,3) becomes (0,1)
+> (?m)[^c]+$  on "a\nb\nc"    [(0,3)] becomes [(0,1), (1,3)]
+> ```
+>
+> None of those subjects was in the corpus's first draft; all three are in it
+> now, by name, because the sabotage would otherwise have come back
+> UNDETECTED against single-newline subjects.
+
 **The consequence is worse than the misattribution.** A Wave B sabotage row
 disabling the intersection would be a **no-op on every pattern Wave B lands** —
 a check with no failing direction, in the wave this document calls most
@@ -996,6 +1071,78 @@ the EOL view is free — it is consulted at the last two positions only. Under
 newline. That is exactly why the view must move **into the class-indexed
 tables** rather than stay a per-position branch, and §3.6 measures that move at
 zero.
+
+> **BUILT, [M6.2] WAVE C (2026-08-19, lane/asrtwavec) — WITH ONE STRUCTURAL
+> CORRECTION THIS SECTION DOES NOT STATE.**
+>
+> The paragraph above is right that `(?m)$` folds into the class-indexed
+> tables, and that is what shipped. What it leaves implicit is that the class
+> axis wave B built is a **BOOL** — "the upcoming byte is a word character" —
+> and `(?m)$` does not add a second bool beside it. Word-ness and
+> newline-ness are properties of THE SAME BYTE, so the axis becomes a
+> three-valued partition of the alphabet (`UPC_PLAIN` / `UPC_WORD` /
+> `UPC_NL`, `src/core/internal.h`), disjoint and exhaustive because a newline
+> is not a word character. A design that read this section as "add an
+> `up_nl` beside `up_word`" would build four combinations where three exist,
+> and would have to decide what the impossible fourth means.
+>
+> **`(?m)$` ALSO NEEDS THE `pos == n` VIEW, which this section does not
+> mention.** Its truth is "end of subject OR the next byte is a newline", and
+> the first half is a POSITION fact with no byte to ask about. So `N_EOL_M`
+> reads `end_ok` — `\z`'s own closure bit, wave A's third view — plus the
+> class axis, and a pure-`(?m)$` machine therefore has `endvar >= 0` and
+> `eolvar == -1` everywhere. That combination had never occurred before (it
+> is `emit_view_select`'s `has_end && !has_eol` arm, written for `\z` with no
+> `$` anywhere) and it is exactly the right selector: only `pos == n` picks a
+> view, and every other position's accept comes from the class axis.
+>
+> **AND THE REVERSE MACHINE READS THE OTHER SIDE.** `\b`'s test is symmetric
+> in its two operands, so wave B's closure could name them by WALK order
+> (consumed / upcoming) and let both machines share one expression. `(?m)$`
+> is not symmetric: forward, the byte it reads is the one about to be
+> consumed; reverse, it is the one already consumed. The closure therefore
+> names its operands by SIDE (`left_*` / `right_*`, i.e. `s[pos-1]` and
+> `s[pos]`) and exactly one function — `make_state`'s `reverse` mapping —
+> knows a machine has a direction. That is the whole of the "mirrored"
+> in this section's own reverse sentence, made concrete.
+
+> **REFUTED BY [M6.2] WAVE C (2026-08-19), AND IT WAS A LIVE MISCOMPILE
+> BEFORE IT WAS A DOCUMENTATION ERROR — READ THIS BEFORE THE SENTENCE BELOW.**
+>
+> `(?m)^` is **NOT** true at every position after a newline. PCRE2's
+> pcre2pattern is explicit: under multiline, `^` "does not match after a
+> newline that **ends the string**". So the rule is
+>
+>     pos == 0  ||  (pos < n && s[pos-1] == '\n')
+>
+> and `(?m)^` is **not** the mirror of `(?m)$`, which this section and §9.3
+> both present it as. On `"a\n"`, `(?m)^` holds at 0 only; `(?m)$` holds at 1
+> AND at 2.
+>
+> **python3 `re` implements the sentence below rather than PCRE2's rule**
+> (docs/dev/upstream_issues.md U11b), which is why the error was invisible to
+> the base-tier oracle and why every `(?m)`-with-`^` corpus block is now
+> `# pcre2-only`. pcrec shipped the design's rule and was WRONG for it; the
+> defect was found by `tests/assertions/run_mline_diff.sh` at `startpos > 0`,
+> because from `startpos 0` an earlier match masks the trailing position on
+> almost every subject. `(?m)^$` on `"a\n"` is the one shape that shows it
+> from 0.
+>
+> In the closure the exclusion is `end_ok` — wave A's `pos == n` view, which
+> `(?m)^` therefore consumes as well as `(?m)$` does, for the opposite
+> purpose: `(?m)$` reads it to be TRUE at end of subject, `(?m)^` reads it to
+> be FALSE there.
+>
+> **THE EVIDENCE WAS ALREADY IN THIS REPOSITORY**, which is the part worth
+> keeping. `docs/pcre2_options.md`'s `PCRE2_ALT_CIRCUMFLEX` row — surveyed and
+> RATIFIED under D38 on 2026-08-14, four days before this design was written
+> — reads "under `MULTILINE`, `^` ALSO matches immediately after a final
+> trailing newline", and an option whose whole content is turning that on is
+> only meaningful if the default is off. That row and this section describe
+> the same construct, disagree, and sat one document apart until a subject
+> sweep at `startpos > 0` forced them together. A design lane that consulted
+> the project's own option survey for the construct it was designing would
+> have caught it before any code existed.
 
 **`(?m)^`** is true at `pos == 0` or when `s[pos-1] == '\n'`. Forward that is a
 previous-byte context bit — cheap, and it requires changing the one hardcoded
@@ -1131,6 +1278,33 @@ prefilter as not worth its complexity, `(?m)^` still ships — routed to
 ENG_ATTEMPT, with both curves above recorded in the plan row rather than
 discovered by a user. What is NOT acceptable is the first draft's position:
 shipping the routing while describing its cost as "nothing else changes".
+
+> **BUILT, [M6.2] WAVE C (2026-08-19, lane/asrtwavec) — AND THE CANDIDATE SET
+> IS NOT WHAT THIS SECTION SAYS IT IS.**
+>
+> The sentence "a `(?m)^`-anchored attempt can only begin at offset 0 or
+> immediately after a `'\n'`" is **true of a FULLY-`(?m)^`-anchored pattern
+> and false of the general case**, and `nfa_has_bot` routes ANY pattern
+> containing a BOT-family node to this engine — `(?m)^a|b` included, where the
+> `b` branch can begin anywhere. Implementing the sentence literally loses
+> that branch's matches entirely; it is the sabotage row S81 precisely because
+> it is the reading this text invites.
+>
+> **What shipped derives the candidate set from WHICH SEEDED START STATES ARE
+> LIVE**: an attempt at `start > 0` enters `s1u[upc_of_class(s[start-1])]`, so
+> a predecessor byte whose seeded state is DEAD cannot begin a match, and only
+> those bytes are candidates. For `(?m)^ERROR` only the `UPC_NL` seed is live,
+> the set is the newline definition, and the derivation picks `memchr` — the
+> same artifact the sentence describes. For `(?m)^a|b` every seed is live, the
+> set is all 256, `cand_derive` reports it unusable, and **no prefilter is
+> emitted at all**, which is correct rather than merely safe.
+>
+> The generalization costs nothing and buys D63's other two named instances
+> for free: D8's `^`-on-some-branches shape and partial `\G` are the same
+> question about the same seed row, so they become CALLERS of
+> `cand_from_live_seeds` rather than new derivations. That is the "tool, not a
+> one-off" half of D63's charter discharged by construction rather than by
+> intention.
 
 #### 3.7.3 The [DD-7] question this reopens
 
@@ -1957,6 +2131,29 @@ first run produced `0 diagnostics` because the include paths were wrong, which
 is this probe's version of the failure mode this document keeps finding in
 other people's checks.
 
+>
+> **[M6.2] WAVE C, 2026-08-19 — THE FOUR-SITE INSPECTION, DISCHARGED.** D62
+> chose the flag, so this section's residual is live and its landing condition
+> was to inspect the four `default:`-carrying switches by hand. **None of the
+> four needs the flag**, and the reason is one fact with three shapes:
+>
+> | site | what it does with `A_BOL`/`A_EOL` | why the flag cannot change it |
+> |---|---|---|
+> | `vm_det_seq` (emit_vm.c) | `default: return 0` — DECLINES | a `$` is zero-width under either spelling, so "scan ahead by stride" is wrong for both |
+> | `vm_cap_offsets` (emit_vm.c) | `default: return -1` | UNREACHABLE: it runs only on bodies `vm_det_seq` approved, which excludes both |
+> | `vm_rev_emit` (emit_vm.c) | `default:` -> `ctx_fail` | UNREACHABLE: `revdet.c`'s `rd_shape` declines every `A_BOL`/`A_EOL` before this walk starts |
+> | `pcrec_revdet_first` (revdet.c) | `default:` WIDENS to all bytes | widening is opaque to what an assertion means; it makes the disjointness test fail, which is the sound direction |
+>
+> **The generalization, which is the part worth carrying to the fifth
+> analysis** (D62's own revisit-when): an analysis is at risk exactly when it
+> treats `$` as TRANSPARENT — reasoning about WHERE it is true and concluding
+> it may be skipped over. All four treat it as OPAQUE (decline, widen, or
+> unreachable), and opacity is multiline-blind by construction.
+> `src/opt/possessify.c` was the tree's one transparent consumer, which is why
+> it was the one site the defect lived at. The inspection and this rule are
+> recorded at the field itself (`src/core/internal.h`, `Ast.multiline`), where
+> D62 control 3 points a reader, rather than only here.
+
 **Nineteen switches over `Ast.k` exist** — `src/opt/possessify.c` 3,
 `src/ir/nfa.c` 1, `src/gen/emit_vm.c` 8, `src/opt/mrl.c` 1, `src/opt/revdet.c`
 5, `src/opt/altcls.c` 1 (a twentieth switch at `src/gen/emit_vm.c:3855` is over
@@ -2226,7 +2423,7 @@ the shipped `A_BOL`/`A_EOL` arms (`src/gen/emit_vm.c:3458-3474`):
 | `\A` | `pos == 0` |
 | `\z` | `pos == n` |
 | `\Z` | `pos == n \|\| (pos + 1 == n && s[pos] == '\n')` |
-| `(?m)^` | `pos == 0 \|\| s[pos-1] == '\n'` |
+| `(?m)^` | `pos == 0 \|\| s[pos-1] == '\n'` — **WRONG, see §3.7's wave C annotation**: PCRE2 excludes a newline that ENDS the string, so the shipped arm is `pos == 0 \|\| (pos < n && s[pos-1] == '\n')` |
 | `(?m)$` | `pos == n \|\| s[pos] == '\n'` |
 | `\G` | `pos == startpos` |
 | `\b` | see below — the naive spelling reads out of bounds at both edges |
@@ -2248,6 +2445,19 @@ must short-circuit before any dereference.
 
 `\b`'s `wordtbl` is the front-end-emitted table of §7.2, and it is the only row
 with an encoding future.
+
+> **BUILT, [M6.2] WAVE C (2026-08-19) — the two `(?m)` rows, with `\b`'s two
+> corrections applied to them rather than rediscovered.** Both ship with the
+> guard IN THE EXPRESSION (R30 m2's rule, K27's class): `pos == 0` and
+> `pos == n` short-circuit before `s[pos-1]` and `s[pos]` are formed, so
+> `match_api.md` §3.1's legal `(s == NULL, n == 0)` subject dereferences
+> nothing. And both take their newline from the CLASS POOL — `vm_cls(v,
+> pcrec_cls_newline)`, the same interning `\b` uses for `pcrec_cls_word_esc`
+> — rather than from a `'\n'` written into the emitted comparison. That is
+> D64's definition-shaped constraint discharged the way §7.2 item 3 discharges
+> `\w`'s: one table, three readers (this arm, `src/ir/dfa.c`'s alphabet
+> refinement, and `\N`), and no site that could disagree with another about
+> what a line break is.
 
 **`\G` and the match-here entry — CORRECTED, R30 E8.** The first draft said the
 `rx_ctx` "has no `startpos`" and built a spec consequence and a Wave D test on
@@ -2383,6 +2593,33 @@ wave that lands it. If Wave B wants the machinery early it must carry a
   `probe_mline_caret_cost.sh` against the built compiler, and either land the
   `memchr('\n')` candidate-start prefilter (§3.7.2) or record the measured
   O(n²) in the plan row as shipped behaviour.
+
+> **[M6.2] WAVE C LANDED, 2026-08-19 (lane/asrtwavec).** All of the above
+> discharged. **THE `(?m)^` COST, AS A NUMBER** — this probe re-run against
+> the built compiler, with a wave-C arm that runs the REAL construct rather
+> than the stand-ins §3.7.1 had to use (`out/mline_caret_cost.txt`):
+> `(?m)^ERROR` beats its unprefiltered stand-in by **3x / 7x / 7x** at
+> n = 8k/32k/128k, leaving **82x / 33x / 27x** against a plain unanchored
+> `ERROR` — so §3.7.2's 85-185x target closes to roughly 27-33x at settled n
+> rather than to nothing. The crossing arm `(?m)^[^b]*b` still grows
+> **3.98-4.01x per doubling** and sits at **1.00-1.01x** of its stand-in,
+> which is D63's accepted residue AND an incidental confirmation that
+> §3.7.1's stand-in was faithful: the prefilter skips nothing there, because
+> every line start is already a candidate.
+>
+> The rest: the four inline annotations that correct or extend this section
+> are at §3.6.1 (the five mechanisms' SHIPPED postures — not one of them is an
+> intersection), §3.7 (the class axis is three-valued, `(?m)$` needs the
+> `pos == n` view, and the closure names its operands by SIDE), §3.7.2 (D63's
+> candidate set is the LIVE-SEED set, strictly more general than the newline
+> set), §8.3 (the four `default:` sites inspected, none needs the flag) and
+> §9.3 (the two VM rows, guards in the expression, newline from the class
+> pool). What this section did NOT predict, recorded here because it is the
+> only structural surprise: `(?m)$` reaches `emit_view_select`'s
+> `has_end && !has_eol` arm — the branch wave A wrote for "`\z` with no `$`
+> anywhere" — because `N_EOL_M` never consults `eol_ok`. A construct the
+> section treats as `$`'s sibling therefore shares an emitted selector with
+> `\z` and none with `$`.
 
 ### Wave D — `\G`
 
@@ -2584,6 +2821,39 @@ Per §0.1, every BELIEVED claim in a load-bearing position, collected:
    case.** *Refutation:* build it and re-run `probe_mline_caret_cost.sh`; if the
    curve stays quadratic on the linear-case shape, option (b) of Q3 collapses
    into option (a).
+
+> **[M6.2] WAVE C — WHAT THESE SEVEN CAME TO.** Items 1, 4 and 7 were this
+> wave's; the others belong to waves B, D and beyond.
+>
+> - **1 is WITHDRAWN rather than confirmed**, and by its own refutation
+>   procedure. The wave never built an intersection: rows 3/5 DECLINE and rows
+>   1/2's guard is redundant under D3's accept-pruning (§3.6.1's annotation has
+>   the measurements). There is no intersection left to be sound. What the
+>   item's experiment DID find, run against the decline instead, is S78's three
+>   witnesses.
+> - **4 HOLDS**, and by exactly the route the refutation prescribes rather than
+>   by assuming symmetry: the reverse `(?m)$` context bit is built, and the
+>   asymmetry the item worries about is real and is handled in ONE place —
+>   `make_state`'s `sides_of`, because `(?m)$` reads one side while `\b` reads
+>   both symmetrically. `tests/assertions/run_mline_diff.sh` sweeps it on both
+>   engines at 0 divergences.
+> - **7 HOLDS ON THE ARM IT NAMES AND NOT BEYOND IT.** The linear non-crossing
+>   shape gains 3x/7x/7x; the quadratic crossing shape is unchanged
+>   (3.98-4.01x per doubling, and 1.00-1.01x of its unprefiltered stand-in), so
+>   Q3's option (b) does NOT collapse into (a) — but it also does not close the
+>   gap: 27-33x remains against a plain unanchored memchr at settled n. D63
+>   already accepts the crossing residue and queues DD-7 for it.
+>
+> **AN EIGHTH CLAIM WAS NEVER LISTED AND WAS FALSE**, which is worth more than
+> the seven that were: §3.7 and §9.3's rule for `(?m)^` ("`pos == 0` or
+> `s[pos-1] == '\n'`") is not PCRE2's, and the design carried it as a
+> definition rather than as a BELIEVED claim, so §12 never asked for an
+> experiment against it. It shipped as a live miscompile and was caught by a
+> `startpos > 0` sweep. The lesson for the next design lane in this family:
+> **a construct's DEFINITION is a claim about PCRE2's behaviour like any
+> other**, and this project already had the counter-evidence on file
+> (`docs/pcre2_options.md`'s `PCRE2_ALT_CIRCUMFLEX` row, ratified four days
+> earlier).
 
 ## 13. What this design does NOT measure
 

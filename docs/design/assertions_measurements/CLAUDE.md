@@ -57,6 +57,16 @@ design doc marks every claim accordingly.
   header records the probe's own first finding: an all-'a' subject measures
   NOTHING, because every interior attempt dies on its first byte — a draft using
   that subject would have reported the design's struck sentence as correct.
+  **[M6.2 wave C] GAINED A REAL-CONSTRUCT ARM**, additively: the [M6.1] arms
+  measure `(?m)^` through STAND-INS (`^ERROR|\nERROR`) because the compiler
+  refused the `m` letter, and wave C built it, so arms F and G run the patterns
+  themselves under D63's candidate-start prefilter. The stand-ins are KEPT and
+  are the honest "before" number — they get no prefilter and could not
+  (`\nERROR`'s branch says nothing about the byte BEFORE the start, so every
+  predecessor seeds a live state). Landing figures: non-crossing 3x/7x/7x
+  against the stand-in and 82x/33x/27x still to go against a plain unanchored
+  memchr; crossing unrescued at 3.98-4.01x per doubling and 1.00-1.01x of its
+  stand-in, which incidentally confirms the stand-in was faithful.
 - **`probes/probe_wswitch_alarm.sh` — MEASURED, self-restoring.** R30 M8: whether
   a new `AKind` enumerator raises a build alarm (15 warnings, 6 files). Appends
   the enumerator, runs `gcc -fsyntax-only`, counts, and restores the header under

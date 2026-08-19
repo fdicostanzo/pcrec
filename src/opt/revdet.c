@@ -260,7 +260,13 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
         default:
             /* Unreachable on a shape-scanned body; widening to ALL BYTES is
              * the sound direction, because it makes the disjointness test
-             * below fail and the quantifier keep its machinery. */
+             * below fail and the quantifier keep its machinery.
+             *
+             * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected
+             * for `Ast.multiline` awareness and needing none: widening is
+             * opaque to what an assertion means, so it cannot be wrong about
+             * WHERE a `$` is true. The full inspection is recorded at the
+             * field itself (src/core/internal.h). */
             memset(out, 0xff, 32);
             return;
         }

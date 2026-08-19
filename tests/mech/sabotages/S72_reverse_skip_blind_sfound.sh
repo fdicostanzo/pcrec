@@ -9,7 +9,7 @@
 #
 # The loop-top writer is obvious. The reverse SKIP's is not — and it is worse
 # than a first reading suggests, because `emit_dfa.c`'s `if (!views &&
-# rd->st[K].accept)` is a COMPILE-TIME condition on whether to EMIT the line.
+# rd->st[K].up[UPC_PLAIN].accept)` is a COMPILE-TIME condition on whether to EMIT the line.
 # What lands in the artifact under it is a BARE, UNCONDITIONAL `sfound = pp;`
 # inside the skip block, with no runtime test to fail. So on any pattern where
 # that block is emitted, every skip that stops exactly at `startpos` records a
@@ -31,7 +31,7 @@ SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
 SAB_DESC="the reverse self-loop skip emits its bare unconditional 'sfound = pp;' under a word context too, so a skip stopping at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1] (assertions_design.md S3.8.3.1's second writer)"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 2] reports an sfound writer not conditioned on an accept read"
 SAB_COUNT=1
-SAB_BEFORE='            if (!views && rd->st[K].accept)
+SAB_BEFORE='            if (!views && rd->st[K].up[UPC_PLAIN].accept)
                 sb_puts(c, "                sfound = pp;\n");'
-SAB_AFTER='            if (rd->st[K].accept)   /* SABOTAGE S72 */
+SAB_AFTER='            if (rd->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */
                 sb_puts(c, "                sfound = pp;\n");'

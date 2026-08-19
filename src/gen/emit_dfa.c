@@ -935,29 +935,66 @@ static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
     sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
+/* The SCALAR accept table — the bit for a position with NO next byte, which
+ * §3.6.2 makes the UPC_PLAIN view's own accept (out of subject is neither a
+ * word character nor a newline). Every state of a machine with no class axis
+ * carries that same bit in all three views, so this is also the pre-wave
+ * table, byte for byte. */
 static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
 {
     sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
         if (i % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", d->st[i].accept ? 1 : 0);
+        sb_printf(c, " %d,", d->st[i].up[UPC_PLAIN].accept ? 1 : 0);
     }
     sb_puts(c, "\n    };\n");
 }
 
-/* [M6.2 wave B] Does any state's accept bit DEPEND ON THE NEXT BYTE?
+/* [M6.2 wave B] Does THIS state's accept bit DEPEND ON THE NEXT BYTE? */
+static bool state_acc_varies(const DState *st)
+{
+    for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
+        if ((bool)st->up[u].accept != (bool)st->up[UPC_PLAIN].accept)
+            return true;
+    return false;
+}
+
+/* Does this state accept at a position whose next byte is in ANY class? The
+ * OR over the class views, and §3.6.1 is emphatic about why the prefilter's
+ * gate needs the OR rather than one bit. */
+static bool state_acc_any(const DState *st)
+{
+    for (int u = 0; u < UPC_N; u++)
+        if (st->up[u].accept) return true;
+    return false;
+}
+
+/* Does mechanism 4's runtime start dispatch change any answer? With every
+ * interior start state interned to the same state the seed table would be a
+ * constant column, so the pre-wave compile-time constant start is emitted
+ * instead — which is what keeps every existing artifact's first lines
+ * unmoved. */
+static bool dfa_needs_seed(const Dfa *d)
+{
+    for (int u = UPC_PLAIN + 1; u < UPC_N; u++)
+        if (d->s1u[u] != d->s1u[UPC_PLAIN]) return true;
+    return false;
+}
+
+/* Does ANY state's accept bit depend on the next byte?
  *
  * This is the exact condition for emitting §3.6's class-indexed accept table,
- * and it is deliberately NOT "the pattern contains `\b`": a `\b` that is not
- * reachable at an accepting position leaves every state's two accept bits
- * equal, and such a pattern keeps the pre-wave scalar accept and the pre-wave
- * loop text. False for every state of every `\b`-free machine by construction
- * (with no N_WORDB the two closures coincide, src/ir/dfa.c), which is what
- * makes the corpus's artifacts unmoved. */
-static bool dfa_has_wacc(const Dfa *d)
+ * and it is deliberately NOT "the pattern contains `\b` or `(?m)$`": an
+ * assertion that is not reachable at an accepting position leaves every
+ * state's accept bits equal across the views, and such a pattern keeps the
+ * pre-wave scalar accept and the pre-wave loop text. False for every state of
+ * every machine with no class axis by construction (with no N_WORDB and no
+ * N_EOL_M the closures coincide, src/ir/dfa.c), which is what makes the
+ * corpus's artifacts unmoved. */
+static bool dfa_has_clsacc(const Dfa *d)
 {
     for (int i = 0; i < d->n; i++)
-        if ((bool)d->st[i].waccept != (bool)d->st[i].accept) return true;
+        if (state_acc_varies(&d->st[i])) return true;
     return false;
 }
 
@@ -973,12 +1010,27 @@ static void emit_acc_cls_table(StrBuf *c, const char *p, const char *tag,
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
-            bool w = cls_has(pcrec_cls_word_esc, d->rep[cl]);
             sb_printf(c, " %d,",
-                      (w ? d->st[i].waccept : d->st[i].accept) ? 1 : 0);
+                      d->st[i].up[upc_of_class(d, cl)].accept ? 1 : 0);
         }
     }
     sb_puts(c, "\n    };\n");
+}
+
+/* The class-axis context of a position whose next byte is a NEWLINE — the one
+ * position ENG_ATTEMPT's EOL arm knows the byte at without reading it, since
+ * `s[pos] == '\n'` is the arm's own entry condition.
+ *
+ * D64: derived from `pcrec_cls_newline`, the ONE definition, rather than from
+ * a `'\n'` written here. A machine with no newline refinement answers
+ * UPC_PLAIN, which is correct for it: nothing distinguishes the two views
+ * there, so the bit is the same either way. */
+static int upc_of_newline(const Dfa *d)
+{
+    for (int b = 0; b < 256; b++)
+        if (cls_has(pcrec_cls_newline, (unsigned)b))
+            return upc_of_class(d, d->clsmap[b]);
+    return UPC_PLAIN;
 }
 
 /* MECHANISM 4's seed table (§3.8.2): byte class of the context byte -> start
@@ -986,20 +1038,139 @@ static void emit_acc_cls_table(StrBuf *c, const char *p, const char *tag,
  * and the alphabet refinement already guarantees the word set is a union of
  * them. It is read ONCE PER SEARCH, off the hot loop entirely.
  *
- * `s1w` and `s1` are the interior start states for a word and a non-word
- * context; `s0` covers "no context byte exists", which every caller handles
- * with its own branch because the condition differs per machine (`startpos ==
- * 0` forward, `end == n` reverse). */
+ * `s1u[]` are the interior start states, one per class-axis context of the
+ * context byte; `s0` covers "no context byte exists", which every caller
+ * handles with its own branch because the condition differs per machine
+ * (`startpos == 0` forward, `end == n` reverse). */
 static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
                             const Dfa *d)
 {
     sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
         if (cl % 16 == 0) sb_puts(c, "\n       ");
-        bool w = cls_has(pcrec_cls_word_esc, d->rep[cl]);
-        sb_printf(c, " %d,", w ? d->s1w : d->s1);
+        sb_printf(c, " %d,", d->s1u[upc_of_class(d, cl)]);
     }
     sb_puts(c, "\n    };\n");
+}
+
+/* ---- [D63] the CANDIDATE-START derivation: one site, two callers ---------
+ *
+ * A scan-avoidance mechanism has two halves, and D63 rules that exactly one of
+ * them is shared. The DERIVATION — which byte VALUES can begin a match, how
+ * many there are, whether that is one `memchr` or a 256-entry bitmap walk, and
+ * the table for the bitmap case — is the SAME question for every engine, and
+ * it lives here. The LOOP INTEGRATION differs structurally (ENG_UNANCH skips
+ * WITHIN one scan while parked in its start state; ENG_ATTEMPT advances
+ * BETWEEN attempts and composes with the three-way start dispatch) and stays
+ * with each engine.
+ *
+ * The constraint is M2.12's lesson stated as a rule rather than as a warning:
+ * "M2.7 forked a second copy, and the fork is exactly how the prefilter and
+ * skip loops went missing from the `$` path for a whole milestone". D63
+ * charters this as a TOOL — ENG_ATTEMPT's `(?m)^` instance is the first
+ * customer and the only one built here, with D8's `^`-on-some-branches shape
+ * and partial `\G` named as the next two, both of which are new CALLERS of
+ * these three functions rather than new copies of them.
+ *
+ * THE ONE NEW CASE `(?m)^` ADDS is `offset`. ENG_UNANCH's candidates are
+ * positions whose OWN byte is in the set; `(?m)^`'s are positions whose
+ * PREDECESSOR is (a line start is the byte after a newline), so the candidate
+ * is the found offset plus one. That is a field, not a fork. */
+typedef struct {
+    uint8_t set[256];   /* the candidate byte values */
+    int     count;      /* how many */
+    int     byte;       /* the single value when count == 1 */
+    bool    usable;     /* a PROPER subset: worth filtering on at all */
+    bool    use_memchr; /* usable and a single value */
+    int     offset;     /* candidate position = found offset + offset */
+} CandSet;
+
+static void cand_derive(CandSet *cs, const uint8_t set[256], int offset)
+{
+    memcpy(cs->set, set, 256);
+    cs->count = 0;
+    cs->byte = 0;
+    cs->offset = offset;
+    for (int b = 0; b < 256; b++)
+        if (cs->set[b]) { cs->count++; cs->byte = b; }
+    /* NEITHER EXTREME IS FILTERABLE, and the two are different failures: an
+     * empty set means the caller has already proved something stronger than a
+     * prefilter (its own early-out), and a full one means every position is a
+     * candidate, so the filter is pure cost. */
+    cs->usable = cs->count > 0 && cs->count < 256;
+    cs->use_memchr = cs->usable && cs->count == 1;
+}
+
+/* ENG_UNANCH's caller: the bytes on which the start state does not stay put —
+ * i.e. the bytes that ADVANCE the pattern. A run of bytes outside this set
+ * leaves the machine parked in `st`, so the scan may jump over it. */
+static void cand_from_escapes(CandSet *cs, const Dfa *d, int st)
+{
+    uint8_t set[256];
+    for (int b = 0; b < 256; b++)
+        set[b] = (uint8_t)(d->st[st].tr[d->clsmap[b]] != st);
+    cand_derive(cs, set, 0);
+}
+
+/* ENG_ATTEMPT's caller ([M6.2] wave C): the PREDECESSOR bytes after which an
+ * attempt can still be alive. An attempt at `start > 0` enters
+ * `s1u[upc_of_class(s[start-1])]`, so a predecessor byte whose seeded start
+ * state is DEAD cannot begin a match and the attempt loop may skip it.
+ *
+ * This is `(?m)^`'s candidate set without naming `(?m)^` anywhere: for
+ * `(?m)^ERROR` only the UPC_NL seed is live, so the set is the newline
+ * definition and the derivation picks `memchr`; for a pattern with no
+ * BOT-family node every seed is live, the set is all 256 and `usable` is
+ * false, so nothing is emitted. `\b`-only patterns land there too — both
+ * their seeds are live — which is why this costs wave B's artifacts nothing.
+ *
+ * `start == 0` is a candidate unconditionally (it enters `s0`, a different
+ * state entirely) and every caller handles it with its own branch. */
+static void cand_from_live_seeds(CandSet *cs, const Dfa *d)
+{
+    uint8_t set[256];
+    for (int b = 0; b < 256; b++)
+        set[b] = (uint8_t)(d->s1u[upc_of_class(d, d->clsmap[b])] >= 0);
+    cand_derive(cs, set, 1);
+}
+
+static void cand_emit_table(StrBuf *c, const char *p, const char *tag,
+                            const CandSet *cs)
+{
+    emit_u8_table(c, p, tag, cs->set, 256);
+}
+
+/* Does ENG_ATTEMPT get a candidate-start prefilter, and what is it? ONE
+ * derivation with TWO readers — emit_attempt, which emits the loop, and
+ * pcrec_emit_prologue, which has to decide about `#include <string.h>` before
+ * any body exists. A second copy of this test in the prologue is how the
+ * artifact would end up calling `memchr` without declaring it. */
+static bool attempt_cand(const Dfa *d, CandSet *cs)
+{
+    /* A fully-anchored pattern already runs ONE attempt (`start_max` is the
+     * literal 0), so there is nothing between attempts to skip. */
+    bool anchored = true;
+    for (int u = 0; u < UPC_N; u++) if (d->s1u[u] >= 0) anchored = false;
+    if (d->n == 0 || anchored) return false;
+    cand_from_live_seeds(cs, d);
+    /* THE MEMCHR FORM ONLY, and that is a deliberate scope line rather than an
+     * oversight. D63 charters the derivation as a tool and says to build ONLY
+     * the `(?m)^` instance now; MEASURED against today's construct set, that
+     * instance's candidate set is always a SINGLE byte — a seeded start state
+     * is dead only when all three of its class views are empty, which `(?m)^`
+     * achieves (nothing passes without a newline to the left) and `\b`/`\B`
+     * structurally cannot (their truth needs BOTH sides, so some view always
+     * survives). So the bitmap loop integration would be EMITTED CODE NO
+     * PATTERN REACHES, and shipping an untested emitted loop is worse than
+     * shipping none.
+     *
+     * The DERIVATION still handles the bitmap case (`cand_derive` computes it
+     * and `cand_emit_table` emits it — ENG_UNANCH's caller uses exactly that
+     * path today), so D63's next instance adds a LOOP, not a second
+     * derivation. D8's `^`-on-some-branches shape is that instance: its
+     * candidate set is a first-byte set at offset 0, which is both multi-byte
+     * and a different bound, and D63 gates it on its own measurement. */
+    return cs->usable && cs->use_memchr;
 }
 
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
@@ -1052,7 +1223,7 @@ static int pick_skip_states(const Dfa *d, int exclude, int out[4])
              * and costs nothing on any pattern without a next-byte-sensitive
              * accept — i.e. nothing in the pre-wave corpus, where this test
              * is false at every state. */
-            if ((bool)d->st[i].waccept != (bool)d->st[i].accept) continue;
+            if (state_acc_varies(&d->st[i])) continue;
             bool taken = false;
             for (int k = 0; k < nout; k++)
                 if (out[k] == i) taken = true;
@@ -1126,9 +1297,9 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      *   `facc2`/`racc2` — some state's accept actually varies with the next
      *             byte, so §3.6's class-indexed accept table is needed. A
      *             pattern can have the first without the second. */
-    bool wctx  = fd->wordctx || rd->wordctx;
-    bool facc2 = dfa_has_wacc(fd);
-    bool racc2 = dfa_has_wacc(rd);
+    bool wctx  = fd->clsctx || rd->clsctx;
+    bool facc2 = dfa_has_clsacc(fd);
+    bool racc2 = dfa_has_clsacc(rd);
 
     /* `views` is the D11 flag: "a state can accept at a position a skip would
      * pass, or the position a skip lands on is not the position whose accept
@@ -1143,8 +1314,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * be a constant column, so the pre-wave constant start is emitted instead
      * — which is also what keeps every existing artifact's first lines
      * unmoved. */
-    bool fseed = fd->s1w != fd->s1;
-    bool rseed = rd->s1w != rd->s1;
+    bool fseed = dfa_needs_seed(fd);
+    bool rseed = dfa_needs_seed(rd);
 
     emit_search_head(c, fn, storage);
 
@@ -1156,8 +1327,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
 
     /* start-state prefilter analysis: bytes that advance the pattern.
      *
-     * [M6.2 wave B] `start_acc` is "accepts on ANY class", the OR of the two
-     * accept bits, and §3.6.1 is emphatic about why. The prefilter skips runs
+     * [M6.2 wave B] `start_acc` is "accepts on ANY class", the OR over the
+     * class views, and §3.6.1 is emphatic about why. The prefilter skips runs
      * of bytes at which the machine provably stays parked in `fs`; if `fs`
      * accepts on SOME classes and this read one bit, a pattern like `\bx*`
      * would keep its `memchr('x')` and jump straight past the empty matches
@@ -1166,23 +1337,36 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * one-bit `start_acc` reports only (2,3).
      *
      * It is also the analysis for the start state's OTHER seeded forms —
-     * `s1`/`s1w` under mechanism 4 — so those are OR'd in too: with
+     * `s1u[]` under mechanism 4 — so those are OR'd in too: with
      * `startpos > 0` the machine begins in one of those, and a prefilter
      * decision taken from `s0` alone would be a decision about a state the
-     * search may never occupy. */
-    bool start_acc = fd->st[fs].accept || fd->st[fs].waccept;
+     * search may never occupy.
+     *
+     * [M6.2 wave C] THE WIDENING IS BELT-AND-BRACES, NOT LOAD-BEARING, and
+     * that is a correction to the paragraph above — §3.6.1's `\bx*` cell does
+     * NOT lose three of four matches under a one-bit read. The reason is the
+     * argument this file already makes for the `last == (size_t)-1` gate
+     * thirty lines down: D3's accept-pruning cuts the unanchored start
+     * self-loop out of every accepting closure, so a class the start state
+     * ACCEPTS on cannot transition back to the start state — it ESCAPES —
+     * so the prefilter's stay set never contains it and the skip never passes
+     * an accepting position.
+     *
+     * MEASURED, this lane: narrowing to `fd->st[fs].up[UPC_PLAIN].accept`
+     * changes 21 corpus artifacts and 0 answers, over 2,247 find-all cells
+     * (21 patterns x 107 subjects). Keep the widening — it is free and it is
+     * the honest reading of "accepts on any class" — but do not cite it as a
+     * premise, and note that it therefore ships NO sabotage row: a check with
+     * no failing direction is exactly what this file's own neighbouring
+     * comment warns about. */
+    bool start_acc = state_acc_any(&fd->st[fs]);
     if (fseed) {
-        start_acc = start_acc ||
-                    fd->st[fd->s1].accept  || fd->st[fd->s1].waccept ||
-                    fd->st[fd->s1w].accept || fd->st[fd->s1w].waccept;
+        for (int u = 0; u < UPC_N; u++)
+            start_acc = start_acc || state_acc_any(&fd->st[fd->s1u[u]]);
     }
-    uint8_t first[256];
-    int esc_count = 0, esc_byte = 0;
-    for (int b = 0; b < 256; b++) {
-        int t = fd->st[fs].tr[fd->clsmap[b]];
-        first[b] = (uint8_t)(t != fs);
-        if (first[b]) { esc_count++; esc_byte = b; }
-    }
+    /* [D63] THE SHARED DERIVATION, this engine's caller. */
+    CandSet fcand;
+    cand_from_escapes(&fcand, fd, fs);
     /* "can neither accept nor ever leave the start state" is only a proof
      * that nothing matches when the start state has no EOL view. `$` alone is
      * exactly the counter-example: it never leaves fs and facc[fs] is 0, but
@@ -1192,7 +1376,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * `startpos > 0` begins in a different state whose escapes and accepts
      * this analysis never looked at. With `fseed` false there is only one
      * start state and the pre-wave argument is unchanged. */
-    if (esc_count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
+    if (fcand.count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
         fd->st[fs].endvar < 0) {
         sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
                    "    return 0;\n}\n");
@@ -1216,8 +1400,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * Keep the gate — it is free belt-and-braces — but do not cite it as a
      * premise. Presenting a redundant condition and a load-bearing one as the
      * same claim is how someone eventually "simplifies away" the wrong half. */
-    bool prefilter = !start_acc && esc_count > 0 && esc_count < 256;
-    bool use_memchr = prefilter && esc_count == 1;
+    bool prefilter = !start_acc && fcand.usable;
+    bool use_memchr = prefilter && fcand.use_memchr;
 
     int fskip[4], rskip[4];
     int nfskip = pick_skip_states(fd, fs, fskip);
@@ -1231,7 +1415,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     if (eol)  emit_eol_table(c, p, "fev", fd);
     if (endv) emit_end_table(c, p, "fendv", fd);
     if (prefilter && !use_memchr)
-        emit_u8_table(c, p, "first", first, 256);
+        cand_emit_table(c, p, "first", &fcand);
     for (int k = 0; k < nfskip; k++)
         emit_stay_table(c, p, "fs", fskip[k], fd);
     emit_u8_table(c, p, "rcls", rd->clsmap, 256);
@@ -1309,7 +1493,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                     /* no early `return 0`: the EOL view may still accept at
                      * n-1 or n, so fall through to the stepped loop instead */
                     sb_puts(c,   "            if (pos + 1 < n) {\n");
-                    sb_printf(c, "                const void *q = memchr(s + pos, %d, n - 1 - pos);\n", esc_byte);
+                    sb_printf(c, "                const void *q = memchr(s + pos, %d, n - 1 - pos);\n", fcand.byte);
                     sb_puts(c,   "                pos = q ? (size_t)((const unsigned char *)q - s) : n - 1;\n"
                                  "            }\n");
                 } else {
@@ -1326,7 +1510,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                      * such guard — its own `pos + 1 < n` bound already
                      * implies n > 0, hence s != NULL. */
                     sb_puts(c,   "            if (pos >= n) return 0;\n");
-                    sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", esc_byte);
+                    sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", fcand.byte);
                     sb_puts(c,   "            if (!q) return 0;\n"
                                  "            pos = (size_t)((const unsigned char *)q - s);\n");
                 }
@@ -1344,7 +1528,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             /* With the accept check ahead of us (non-EOL order) the skipped
              * run's final position would otherwise go unrecorded; under EOL
              * the check runs after the skip and already covers it. */
-            if (!views && fd->st[K].accept)
+            if (!views && fd->st[K].up[UPC_PLAIN].accept)
                 sb_puts(c, "            last = pos;\n");
             sb_puts(c, "        }\n");
             kw = "else if";
@@ -1423,7 +1607,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             sb_printf(c, "            %s (rst == %d%s) {\n", kw, K,
                       views ? " && pp + 1 < n" : "");
             sb_printf(c, "                while (pp > startpos && %s_rs%d[s[pp - 1]]) pp--;\n", p, K);
-            if (!views && rd->st[K].accept)
+            if (!views && rd->st[K].up[UPC_PLAIN].accept)
                 sb_puts(c, "                sfound = pp;\n");
             sb_puts(c, "            }\n");
             kw = "else if";
@@ -1533,8 +1717,13 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * exists for and the ordinary interior one, and it composes with the
      * `start == 0` selection this engine already made rather than adding a
      * second. */
-    bool acc2 = dfa_has_wacc(d);
-    bool seed = d->s1w != d->s1;
+    bool acc2 = dfa_has_clsacc(d);
+    bool seed = dfa_needs_seed(d);
+    /* [M6.2 wave C] the class-axis context of a position whose next byte is a
+     * newline: the EOL arms below know that byte from their own entry test,
+     * so their accept bit is a COMPILE-TIME constant rather than a table read
+     * (§3.6.2's composition with the position axis, both indices known). */
+    int unl = upc_of_newline(d);
     if (acc2) emit_acc_cls_table(c, p, "acc2", d);
 
     for (int i = 0; i < d->n; i++) {
@@ -1551,29 +1740,80 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) sb_puts(c, ", ");
-            emit_target(c, p,
-                        cls_has(pcrec_cls_word_esc, d->rep[cl]) ? d->s1w
-                                                                : d->s1);
+            emit_target(c, p, d->s1u[upc_of_class(d, cl)]);
         }
         sb_puts(c, " };\n");
     }
 
-    /* anchored fast path (M2.1): if the interior start state is dead, every
+    /* [D63] THE CANDIDATE-START PREFILTER, this engine's first instance.
+     * Derived by the shared helper; only the LOOP INTEGRATION is here. */
+    CandSet cand;
+    bool cpre = attempt_cand(d, &cand);
+
+    /* anchored fast path (M2.1): if every interior start state is dead, every
      * branch requires ^, so only start == 0 can ever match.
-     * [M6.2 wave B] there are now TWO interior start states, and the fast
-     * path needs BOTH dead — `(?:^|\b)x` has a live one and a dead one. */
+     * [M6.2 wave B] there is now more than one interior start state, and the
+     * fast path needs ALL of them dead — `(?:^|\b)x` has a live one and a
+     * dead one. [M6.2 wave C] `(?m)^x` has exactly one live (the newline
+     * context), which is what D63's candidate prefilter above is for: the
+     * fast path does not apply, and every attempt but the line starts is
+     * still provably dead. */
+    bool anchored = true;
+    for (int u = 0; u < UPC_N; u++) if (d->s1u[u] >= 0) anchored = false;
     sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
-              (d->s1 < 0 && d->s1w < 0) ? "0 /* fully ^-anchored */" : "n");
-    sb_puts(c, "    for (start = startpos; start <= start_max; start++) {\n"
-               "        size_t pos = start;\n"
+              anchored ? "0 /* fully ^-anchored */" : "n");
+    sb_puts(c, "    for (start = startpos; start <= start_max; start++) {\n");
+    if (cpre) {
+        /* [D63] LOOP INTEGRATION, ENG_ATTEMPT's shape: an advance BETWEEN
+         * attempts, not a skip inside one. It composes with the three-way
+         * start dispatch below rather than replacing it — the dispatch still
+         * decides WHICH start state an attempt enters; this only skips the
+         * starts whose state would be the dead one.
+         *
+         * `start == 0` is never skipped: it enters `s0`, which this
+         * derivation says nothing about (assertions_design.md §3.7.2's
+         * "offset 0 or immediately after a newline" is exactly the shape of
+         * the two branches here).
+         *
+         * SOUNDNESS is by construction rather than by argument: a skipped
+         * `start` would have jumped straight to the dead label and fallen
+         * through `%s_done` with `last == (size_t)-1`, i.e. done nothing at
+         * all. This is the one scan-avoidance mechanism in the file that
+         * needs no D11 bound, because it skips whole ATTEMPTS rather than
+         * positions within a scan, and an attempt records nothing until it
+         * runs.
+         *
+         * THE GUARD READS `s[start - offset]`, IN RANGE BECAUSE `offset >= 1`
+         * here: a predecessor-byte candidate set (D63's one new case) and
+         * `start > 0` together put that read at `start - 1 <= n - 1`. A
+         * future ENG_ATTEMPT caller with `offset == 0` would be reading
+         * `s[start]` and needs its own `start < n` bound — which is exactly
+         * why the derivation carries `offset` as data instead of the two
+         * shapes being two functions.
+         *
+         * The MEASURED target is the linear non-crossing arm (§3.7.2, R30
+         * N3): `(?m)^ERROR` dies in a byte or two per attempt, so the cost is
+         * visiting every offset, and this is what removes it. The quadratic
+         * crossing arm (§3.7.1) is NOT rescued and D63 accepts that —
+         * DD-7's reverse BOT variant is the sequenced fix. */
+        sb_printf(c, "        if (start > 0 && s[start - %d] != %d) {\n"
+                         "            const void *q = memchr(s + start, %d, "
+                         "n - start);\n"
+                         "            if (!q) break;\n"
+                         "            start = (size_t)"
+                         "((const unsigned char *)q - s) + %d;\n"
+                         "        }\n",
+                  cand.offset, cand.byte, cand.byte, cand.offset);
+    }
+    sb_puts(c, "        size_t pos = start;\n"
                "        size_t last = (size_t)-1;\n");
 
     if (seed) {
         sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
         sb_printf(c, " : %s_seed[%s_cls[s[start - 1]]]);\n", p, p);
-    } else if (d->s0 == d->s1) {
+    } else if (d->s0 == d->s1u[UPC_PLAIN]) {
         sb_puts(c, "        goto ");
         if (d->s0 < 0) sb_printf(c, "*&&%s_dead;\n", p);
         else           sb_printf(c, "*&&%s_s%d;\n", p, d->s0);
@@ -1581,7 +1821,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
         sb_puts(c, " : ");
-        emit_target(c, p, d->s1);
+        emit_target(c, p, d->s1u[UPC_PLAIN]);
         sb_puts(c, ");\n");
     }
 
@@ -1595,7 +1835,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * artifact typically has a handful of such states and keeps the
          * pre-wave text at every other, which is what makes the byte-identity
          * property hold at state granularity rather than at file granularity. */
-        bool wsplit = acc2 && (bool)st->waccept != (bool)st->accept;
+        bool wsplit = acc2 && state_acc_varies(st);
         if (wsplit) {
             /* THE ORDER FLIPS, and it has to. The pre-wave arms record the
              * accept and THEN test for `pos >= n`, which is sound while the
@@ -1604,28 +1844,33 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * first — it is the one position with no next byte, where §3.6.2
              * makes the accept SCALAR. That test is also what makes the
              * `s[pos]` below unreachable at `pos == n`. */
-            if (st->endvar >= 0) {
-                const DState *ev = &d->st[st->endvar];
-                sb_puts(c, "        if (pos == n) {\n");
-                if (ev->accept) sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            goto %s_done;\n        }\n", p);
-            } else if (st->eolvar >= 0) {
-                const DState *v = &d->st[st->eolvar];
-                sb_puts(c, "        if (pos == n) {\n");
-                if (v->accept) sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            goto %s_done;\n        }\n", p);
-            } else {
-                sb_puts(c, "        if (pos == n) {\n");
-                if (st->accept) sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            goto %s_done;\n        }\n", p);
-            }
+            int endview = st->endvar >= 0 ? st->endvar
+                        : st->eolvar >= 0 ? st->eolvar : i;
+            sb_puts(c, "        if (pos == n) {\n");
+            if (d->st[endview].up[UPC_PLAIN].accept)
+                sb_puts(c, "            last = pos;\n");
+            sb_printf(c, "            goto %s_done;\n        }\n", p);
             if (st->eolvar >= 0) {
-                /* The EOL position's next byte is `\n`, which is NOT a word
-                 * character, so the EOL view's SCALAR accept is already the
-                 * right bit there — the class axis has nothing to add. */
+                /* [M6.2 wave C] THE EOL POSITION'S ACCEPT IS CLASS-INDEXED
+                 * TOO, and wave B's note here said otherwise. Its reasoning
+                 * was right for its own axis and its conclusion is now wrong:
+                 * the byte at an EOL position is `\n`, which is indeed not a
+                 * word character — so the WORD axis has nothing to add — but
+                 * it IS the newline definition, which is precisely what
+                 * `(?m)$` reads. `(?m)a(?:$|\Z)` is the shape that needs
+                 * both: the `\Z` half makes an EOL view exist, and the
+                 * `(?m)$` half makes that view's accept depend on the very
+                 * byte the arm's entry test just pinned.
+                 *
+                 * Pinned, not read: both indices are compile-time facts here
+                 * (the view from the position, the class from the arm's own
+                 * `s[pos] == newline` test), so this is a constant, not a
+                 * table lookup. `unl` is UPC_PLAIN on any machine without a
+                 * newline refinement, which is what keeps the pre-wave text
+                 * byte-identical. */
                 const DState *v = &d->st[st->eolvar];
                 sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
-                if (v->accept) sb_puts(c, "            last = pos;\n");
+                if (v->up[unl].accept) sb_puts(c, "            last = pos;\n");
                 sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
                           p, st->eolvar, p);
                 sb_puts(c, "        }\n");
@@ -1652,20 +1897,20 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * has no `\z`. */
             const DState *endv = &d->st[st->endvar];
             sb_puts(c, "        if (pos == n) {\n");
-            if (endv->accept)
+            if (endv->up[UPC_PLAIN].accept)
                 sb_puts(c, "            last = pos;\n");
             sb_printf(c, "            goto %s_done;\n", p);
             sb_puts(c, "        }\n");
             if (st->eolvar >= 0) {
                 const DState *v = &d->st[st->eolvar];
                 sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
-                if (v->accept)
+                if (v->up[unl].accept)
                     sb_puts(c, "            last = pos;\n");
                 sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
                           p, st->eolvar, p);
                 sb_puts(c, "        }\n");
             }
-            if (st->accept)
+            if (st->up[UPC_PLAIN].accept)
                 sb_puts(c, "        last = pos;\n");
             /* both arms above returned or consumed, so pos < n here */
             sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
@@ -1673,21 +1918,50 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
             const DState *v = &d->st[st->eolvar];
             /* at an EOL position ($ passable), use the EOL-view state:
              * its accept is correctly priority-pruned and its table
-             * carries the $-gated continuations */
-            sb_puts(c, "        if (pos == n || (pos + 1 == n && "
-                       "s[pos] == '\\n')) {\n");
-            if (v->accept)
-                sb_puts(c, "            last = pos;\n");
-            sb_printf(c, "            if (pos >= n) goto %s_done;\n", p);
-            sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
-                      p, st->eolvar, p);
-            sb_puts(c, "        }\n");
-            if (st->accept)
+             * carries the $-gated continuations.
+             *
+             * [M6.2 wave C] THE TWO EOL POSITIONS CAN CARRY DIFFERENT ACCEPT
+             * BITS and the pre-wave text merged them into one arm. They are
+             * `pos == n` (no next byte: §3.6.2's SCALAR accept) and
+             * `pos + 1 == n && s[pos] == '\n'` (next byte pinned to the
+             * newline definition), and until `(?m)$` existed nothing could
+             * tell them apart, because the EOL view's accept did not depend
+             * on the next byte at all. `(?m)a$` on `"a\n"` is the witness:
+             * the view accepts at the newline position and the merged arm
+             * would have had to answer for both with one bit.
+             *
+             * The arms only SPLIT when the two bits differ, so a machine with
+             * no newline refinement (`unl == UPC_PLAIN`) emits the pre-wave
+             * text character for character. */
+            bool a_end = v->up[UPC_PLAIN].accept;
+            bool a_nl  = v->up[unl].accept;
+            if (a_end == a_nl) {
+                sb_puts(c, "        if (pos == n || (pos + 1 == n && "
+                           "s[pos] == '\\n')) {\n");
+                if (a_end)
+                    sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            if (pos >= n) goto %s_done;\n", p);
+                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                          p, st->eolvar, p);
+                sb_puts(c, "        }\n");
+            } else {
+                sb_puts(c, "        if (pos == n) {\n");
+                if (a_end)
+                    sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto %s_done;\n        }\n", p);
+                sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
+                if (a_nl)
+                    sb_puts(c, "            last = pos;\n");
+                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                          p, st->eolvar, p);
+                sb_puts(c, "        }\n");
+            }
+            if (st->up[UPC_PLAIN].accept)
                 sb_puts(c, "        last = pos;\n");
             /* not an EOL position implies pos < n: consume directly */
             sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
         } else {
-            if (st->accept)
+            if (st->up[UPC_PLAIN].accept)
                 sb_puts(c, "        last = pos;\n");
             sb_printf(c, "        if (pos >= n) goto %s_done;\n", p);
             sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
@@ -1739,10 +2013,16 @@ void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
 {
     StrBuf *c = &cx->job->csb;
-    bool need_string_h = cx->job->fit.chosen == ENGM_VM
-                             ? cx->job->fit.prefilter &&
-                               cx->job->engine == PCREC_ENG_UNANCH
-                             : cx->job->engine == PCREC_ENG_UNANCH;
+    /* [M6.2 wave C] ENG_ATTEMPT joins the list of bodies that can call
+     * `memchr`: D63's candidate-start prefilter. The test is `attempt_cand`,
+     * the SAME function emit_attempt uses to decide whether to emit the loop
+     * — never a restatement of its condition here. */
+    bool dfa_body = cx->job->fit.chosen != ENGM_VM || cx->job->fit.prefilter;
+    CandSet acand;
+    bool need_string_h =
+        dfa_body && (cx->job->engine == PCREC_ENG_UNANCH ||
+                     (cx->job->engine == PCREC_ENG_ATTEMPT &&
+                      attempt_cand(&cx->job->dfa, &acand) && acand.use_memchr));
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,

@@ -106,9 +106,37 @@ or it has no regression net at all.
   never compiled, which the artifact's own `RX_ENGINE` stamp says (VM artifacts
   only). That is a different fact from the one being measured, which is why
   reading it to explain a non-difference is legitimate and reading
-  `dfa_has_endvar` would not be. Landing figures: 1011 of 1011 `\z`-free corpus
-  patterns byte-identical, 18 DFA-compiled `\z` patterns differing, 0
-  DFA-compiled ones agreeing — read the current numbers from a run.
+  `dfa_has_endvar` would not be. Landing figures at wave A: 1011 of 1011
+  `\z`-free corpus patterns byte-identical, 18 DFA-compiled `\z` patterns
+  differing, 0 DFA-compiled ones agreeing — read the current numbers from a
+  run.
+
+  **[M6.2 wave C] ITS SPLIT IS NO LONGER `grep -F '\z'`, AND THIS GATE IS WHAT
+  SAID SO.** Wave A wrote the third closure view for `\z` and split on `\z`,
+  which was exact at the time. BOTH `(?m)` anchors read that same view, for
+  OPPOSITE purposes: `(?m)$` is "end of subject OR the next byte is a
+  newline", so it reads `end_ok` to be TRUE there; `(?m)^` does NOT match
+  after a newline that ENDS the string, so it reads `end_ok` to be FALSE
+  there. So the day the `m` letter was accepted this gate went RED on 51
+  patterns, every one a `(?m)` anchor sitting in the identity population where
+  it does not belong. That is the check working: it caught a wave-C construct
+  silently joining a wave-A mechanism, which no behaviour test could see
+  (`-DPCREC_NO_ENDVAR` is never defined in a shipped build). The split now
+  asks "does this pattern create a `pos == n` view" through
+  `tests/lib/mlscan.py`'s `multiline_anchor`, and those patterns join the
+  POSITIVE CONTROL, where they belong and where they strengthen it.
+
+  Their arrival also gave that control a SECOND legitimate non-difference
+  class, with its own anti-vacuity argument. `a(?m)^b` and `a(?m)^b|c` carry a
+  `(?m)^` that can never hold (a `^` after a MANDATORY consumed byte), so no
+  state's END view differs, nothing is interned, and the knob has nothing to
+  disable. That is detected by reading the **UNSABOTAGED** artifact for an
+  end-view table — and reading it there rather than in the reference build is
+  the whole of what makes it admissible: `-DPCREC_NO_ENDVAR` is a
+  reference-build-only flag, so a DEAD knob cannot make the subject build stop
+  emitting those tables, and a broken knob therefore cannot grow this class.
+  In the reference build the same read WOULD be `dfa_has_endvar`, which this
+  script's own rule forbids.
 
 - **run_wordctx_identity.sh** — [M6.2] wave B's BYTE-IDENTITY GATE, the same
   shape one axis over. `\b`/`\B` are the largest change any wave of [M6.2]
@@ -138,6 +166,32 @@ or it has no regression net at all.
   the knob. Classified rather than excluded, and read off the ARTIFACT (the
   `(void)s; ... return 0;` body) rather than off a maintained list of pattern
   texts — the same rule the VM arm follows.
+
+- **run_mlinectx_identity.sh** — [M6.2] wave C's BYTE-IDENTITY GATE, the third
+  in the family. `(?m)` adds a NEWLINE half to the class axis wave B built —
+  the alphabet is refined by `pcrec_cls_newline` (D64's one definition), every
+  state gains a third closure, the `pos == n` view goes live, and ENG_ATTEMPT
+  gains D63's candidate-start prefilter — and the claim is that a pattern
+  WITHOUT a multiline `^`/`$` pays for none of it. Reference build is this
+  tree's sources with `-DPCREC_NO_MLINECTX` (`has_nl` pinned false); sabotage
+  S76 is the measured failing direction.
+
+  **THIS ONE HAS A REASON THE OTHER TWO DID NOT.** Waves A and B each ADDED a
+  view beside existing ones. Wave C turned a BOOL into a three-valued enum,
+  rewriting every site that read `waccept`, `wlist` or `s1w`. A mechanical
+  refactor of that size is exactly where a `UPC_PLAIN` becomes a `UPC_WORD` in
+  one arm and nothing notices, and the corpus cannot see it unless the arm is
+  reachable. This gate can, on every pattern in the tree.
+
+  **Its SPLIT is subtler again, and for a third reason.** `\z` means one thing
+  everywhere (a substring split); `\b` means two things (a bracket-depth
+  split); `(?m)` means one thing but is SCOPED and spelled several ways —
+  `(?m)`, `(?im)`, `(?m:...)` and `(?^m)` all set it while `(?-m)`, `(?im-m)`
+  and a bare `(?i)` do not. So the scanner walks the option-run grammar
+  `src/parse/mod_modifiers.c` walks (optional leading `^`, then letters, with
+  everything after a `-` on the unset side) rather than looking for a
+  substring. Deliberately not decided by anything pcrec computes: a split from
+  `Dfa.clsctx` would be the check reading its own subject's verdict.
 
 - **run_ir_listing.sh** — [M4.5c] DD-8's VM program listing (`--emit-ir`) held
   to the ARTIFACT it describes. engine_m4.md §10's constraint is that the dump

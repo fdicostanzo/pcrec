@@ -334,3 +334,57 @@ that the split is about `\Z` specifically rather than about the module.
 The exclusion rule is applied to `\Z` blocks WHOLESALE, not per diverging
 cell: a subject added to an unmarked `\Z` block later would silently start
 lying, and there is no mechanical way for the corpus to notice.
+
+---
+
+### U11b — python `re`: multiline `^` MATCHES AFTER A FINAL NEWLINE, PCRE2's does not (module `assertions`, [M6.2] wave C)
+
+**Found**: 2026-08-19 by the [M6.2] wave C implementation lane, through
+`tests/assertions/run_mline_diff.sh` — a generated subject sweep at
+`startpos > 0`, not by reading a manual. **It was a live pcrec defect first
+and an oracle divergence second**, and the order matters: pcrec had
+implemented the rule the design states, which is python's rule.
+
+**The divergence.** PCRE2's multiline `^` matches at offset 0 and immediately
+after an INTERNAL newline; pcre2pattern is explicit that it "does not match
+after a newline that ends the string". python's `re` under `MULTILINE` has no
+such exclusion. So `(?m)^` and `(?m)$` are NOT mirror images in PCRE2, and
+they are in python.
+
+**MEASURED, libpcre2 10.46 vs python 3.14.4:**
+
+```
+pattern      subject   startpos   pcre2      python     verdict
+(?m)^        'a\n'      1          None       (2, 2)     *** DISAGREE ***
+(?m)^        'a\n'      2          None       (2, 2)     *** DISAGREE ***
+(?m)^[^c]*   'ac\n'     1          None       (3, 3)     *** DISAGREE ***
+(?m)^$       'a\n'      0          None       (2, 2)     *** DISAGREE ***
+(?m)^        'a\n'      0          (0, 0)     (0, 0)     agree
+(?m)$        'a\n'      any        matches at 1 AND 2 in both   agree
+```
+
+**CORROBORATED BY PCRE2's OWN OPTION SURFACE, which this tree had already
+surveyed.** `docs/pcre2_options.md`'s `PCRE2_ALT_CIRCUMFLEX` row (RATIFIED
+2026-08-14, D38) reads: "under `MULTILINE`, `^` ALSO matches immediately after
+a final trailing newline". An option whose entire content is turning that on
+is only meaningful if the DEFAULT is off. The fact was in this repository the
+whole time, one document away from the design that got it wrong; nobody
+composed the two. Worth naming as a process finding rather than only a
+semantic one — a survey row is evidence, and this lane found it after the
+sweep rather than before.
+
+**Why the corpus could not have caught it and the sweep could.** From
+`startpos 0` an earlier match masks the trailing position on almost every
+subject — `(?m)^` on `"a\n"` reports `(0,0)` from both — so a corpus that
+only searches from 0 is blind to it. It needs a RESUME past the earlier
+match, which is what a `startpos > 0` sweep does and what the `.rxt`
+corpus's first `(?m)` draft had none of. `(?m)^$` is the single shape that
+shows it from `startpos 0`, because no earlier position satisfies both
+halves; it is now in the corpus by name.
+
+**Impact**: every block in `tests/assertions/` whose pattern sets `m` AND
+contains a `^` is marked `# pcre2-only`, on the same WHOLESALE rule the `\Z`
+blocks follow above and for the same reason — a subject or a startpos added
+later must not silently start lying. `(?m)$`-only blocks are NOT excluded and
+ARE checked live by `verify_rxt.py`, which is the standing proof that this
+split is about multiline `^` specifically rather than about `(?m)`.

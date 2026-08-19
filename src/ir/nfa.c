@@ -496,8 +496,15 @@ static Frag compile_ast(NB *b, const Ast *a)
         return f;
     }
     case A_EMPTY: return frag_single(b, N_EPS);
-    case A_BOL:   return frag_single(b, N_BOT);
-    case A_EOL:   return frag_single(b, N_EOL);
+    /* [M6.2 wave C] THE MODIFIER STOPS BEING STATE HERE. The parser resolved
+     * the scoped `(?m)` onto the node (D62; src/parse/parse.c), and lowering
+     * consumes that field ONCE, choosing between two assertions whose truth
+     * conditions are different expressions over different inputs. Downstream
+     * of this line there is no multiline flag to forget to read — which is
+     * the compile-time alarm D62's control 3 accepts the loss of on the AST,
+     * bought back on the IR where node kinds are the vocabulary. */
+    case A_BOL:   return frag_single(b, a->multiline ? N_BOT_M : N_BOT);
+    case A_EOL:   return frag_single(b, a->multiline ? N_EOL_M : N_EOL);
     /* [M6.2 wave A] `\z`. Reversal is identity, exactly as N_BOT/N_EOL's is:
      * an assertion about an absolute subject position is the same assertion
      * whichever direction the machine walks — the reverse machine simply
@@ -681,17 +688,29 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 /* `^` in the REVERSE machine would need a position-dependent bot-variant
  * (checked at pp == 0), which the DFA does not build; `$` only needs the
  * eolvar the construction already computes. So ENG_UNANCH accepts EOL-only
- * patterns and `^` patterns stay on ENG_ATTEMPT (M2.7). */
+ * patterns and `^` patterns stay on ENG_ATTEMPT (M2.7).
+ *
+ * [M6.2 wave C] `(?m)^` JOINS THE BOT FAMILY, and it needs the same routing
+ * for MORE reason, not less (assertions_design.md §3.7): plain `^`'s reverse
+ * problem is the missing position-dependent variant, and `(?m)^` needs that
+ * variant AND a byte-selected view on top of it. So this predicate becomes
+ * "contains any BOT-family node" — the extension §3.7 asks for, and the
+ * reason the reverse machine never has to evaluate N_BOT_M.
+ *
+ * `(?m)$` does NOT join: its truth at `pp` is a fact about `s[pp]`, the byte
+ * the reverse walk has already consumed, which the state identity carries
+ * (§3.5's mechanism mirrored). It stays on ENG_UNANCH. */
 bool nfa_has_bot(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
-        if (nfa->st[i].k == N_BOT) return true;
+        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_BOT_M) return true;
     return false;
 }
 
 bool nfa_has_asserts(const Nfa *nfa)
 {
     for (int i = 0; i < nfa->n; i++)
-        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_EOL) return true;
+        if (nfa->st[i].k == N_BOT || nfa->st[i].k == N_EOL ||
+            nfa->st[i].k == N_BOT_M || nfa->st[i].k == N_EOL_M) return true;
     return false;
 }
