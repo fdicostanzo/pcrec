@@ -182,9 +182,20 @@ rungs_of() { # rungs_of <cfile> <PREFIX>  -> the hex mask, or empty
 # `-o <name>.c` (SPLIT output), so the shared block lands in the PAIRED
 # `.h`, not the `.c` passed in here — reading only the .c silently found
 # nothing and made every artifact read as "no COUNTER rung" (found live,
-# 2026-08-18, same defect as the possessify/rungselect suites').
+# 2026-08-18, same defect as the possessify/rungselect suites'). It is
+# universal and emitted UNCONDITIONALLY, so an empty read is always an
+# extraction bug, never a legitimate "no" -- HARD-FAIL here so every
+# caller is protected in one place, rather than trusting `0x$mask & 0x`
+# to silently evaluate to 0.
 counter_bit_of() {   # counter_bit_of <file.c>
-    sed -n 's/^#define PCREC_VM_RUNG_COUNTER *0x\([0-9a-f]*\)u$/\1/p' "${1%.c}.h"
+    local hdr b
+    hdr="${1%.c}.h"
+    b="$(sed -n 's/^#define PCREC_VM_RUNG_COUNTER *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
+    if [ -z "$b" ]; then
+        echo "counter_bit_of: PCREC_VM_RUNG_COUNTER not found in $hdr" >&2
+        exit 1
+    fi
+    printf '%s\n' "$b"
 }
 
 one_pattern() {

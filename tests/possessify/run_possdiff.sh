@@ -166,7 +166,19 @@ one_pattern() {
     # .c alone silently found nothing and made every artifact read as
     # "not possessified" (found live, 2026-08-18).
     pb_strats=$(sed -n 's/^#define PB_VM_STRATS 0x\([0-9a-f]*\)u$/\1/p' "$d/pb.c")
+    # PCREC_VM_STRAT_POSSESSIVE is [ABI-NS]/D60 universal: emitted
+    # UNCONDITIONALLY on every artifact. An empty read means the
+    # extraction is broken (wrong file/spelling), never a legitimate "no"
+    # -- HARD-FAIL rather than let `0x$pb_strats & 0x` silently evaluate
+    # to 0, which is exactly what turned this suite's own do-or-die check
+    # and the possessified-count into false negatives (found live,
+    # 2026-08-18: this empty-arithmetic path is what made "0 of 155
+    # possessified" read as a clean run).
     pb_poss=$(sed -n 's/^#define PCREC_VM_STRAT_POSSESSIVE *0x\([0-9a-f]*\)u$/\1/p' "$d/pb.h")
+    if [ -z "$pb_poss" ]; then
+        echo "FATAL: PCREC_VM_STRAT_POSSESSIVE not found in $d/pb.h" >&2
+        exit 1
+    fi
     if [ $(( 0x$pb_strats & 0x$pb_poss )) -ne 0 ]; then
         bad "'$pat': -fno-possessify was passed and the artifact still stamps POSSESSIVE (D47.3 do-or-die)"
         return 0
@@ -174,6 +186,10 @@ one_pattern() {
 
     pa_strats=$(sed -n 's/^#define PA_VM_STRATS 0x\([0-9a-f]*\)u$/\1/p' "$d/pa.c")
     pa_poss=$(sed -n 's/^#define PCREC_VM_STRAT_POSSESSIVE *0x\([0-9a-f]*\)u$/\1/p' "$d/pa.h")
+    if [ -n "$pa_strats" ] && [ -z "$pa_poss" ]; then
+        echo "FATAL: PCREC_VM_STRAT_POSSESSIVE not found in $d/pa.h" >&2
+        exit 1
+    fi
     this_poss=0
     if [ -n "$pa_strats" ] && [ $(( 0x$pa_strats & 0x$pa_poss )) -ne 0 ]; then
         this_poss=1

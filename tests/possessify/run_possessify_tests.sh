@@ -76,9 +76,22 @@ gen() {
 has_possessive() {   # has_possessive <file.c>
     local m b hdr
     hdr="${1%.c}.h"
+    # RX_VM_STRATS (per-artifact mask) legitimately absent on a DFA artifact
+    # -- that IS "not possessive", not an extraction failure.
     m="$(sed -n 's/^#define RX_VM_STRATS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    [ -n "$m" ] || return 1
+    # PCREC_VM_STRAT_POSSESSIVE is [ABI-NS]/D60 universal: emitted
+    # UNCONDITIONALLY, so an empty read here means the extraction is
+    # broken (wrong file/spelling), never a legitimate "no". HARD-FAIL
+    # rather than silently arithmetic-ing `0x$m & 0x` to 0 -- that silent
+    # default-to-false is exactly what made "0 of 155 possessified" read
+    # as a clean run instead of a broken check (found live, 2026-08-18).
     b="$(sed -n 's/^#define PCREC_VM_STRAT_POSSESSIVE *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
-    [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
+    if [ -z "$b" ]; then
+        echo "has_possessive: PCREC_VM_STRAT_POSSESSIVE not found in $hdr" >&2
+        exit 1
+    fi
+    [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 
 echo "== [ENG-BREP] possessification structural checks =="

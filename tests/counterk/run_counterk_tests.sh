@@ -69,9 +69,21 @@ gen_default() {   # like gen but WITHOUT --engine=vm (the shipped routing)
 has_counter() {   # has_counter <file.c>
     local m b hdr
     hdr="${1%.c}.h"
+    # RX_VM_RUNGS (per-artifact mask) legitimately absent on a DFA
+    # artifact -- that IS "no COUNTER rung", not an extraction failure.
     m="$(sed -n 's/^#define RX_VM_RUNGS 0x\([0-9a-f]*\)u$/\1/p' "$1")"
+    [ -n "$m" ] || return 1
+    # PCREC_VM_RUNG_COUNTER is [ABI-NS]/D60 universal: emitted
+    # UNCONDITIONALLY, so an empty read means the extraction is broken,
+    # never a legitimate "no". HARD-FAIL rather than silently
+    # arithmetic-ing `0x$m & 0x` to 0 (found live, 2026-08-18, the
+    # possessify suite's identical defect).
     b="$(sed -n 's/^#define PCREC_VM_RUNG_COUNTER *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
-    [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
+    if [ -z "$b" ]; then
+        echo "has_counter: PCREC_VM_RUNG_COUNTER not found in $hdr" >&2
+        exit 1
+    fi
+    [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 info_field() {   # info_field <file> <member>
     sed -n "s/^    \.$2 = \([-0-9]*\),.*$/\1/p" "$1" | head -1

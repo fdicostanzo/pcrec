@@ -136,9 +136,21 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 has_clamp() {   # has_clamp <file.c> <PREFIX>
     local m b hdr
     hdr="${1%.c}.h"
+    # $2_VM_PRUNES (per-artifact mask) legitimately absent on a DFA
+    # artifact -- that IS "no clamp", not an extraction failure.
     m="$(sed -n "s/^#define $2_VM_PRUNES 0x\([0-9a-f]*\)u\$/\1/p" "$1")"
+    [ -n "$m" ] || return 1
+    # PCREC_VM_PRUNE_CLAMPED is [ABI-NS]/D60 universal: emitted
+    # UNCONDITIONALLY, so an empty read means the extraction is broken,
+    # never a legitimate "no". HARD-FAIL rather than silently
+    # arithmetic-ing `0x$m & 0x` to 0 (found live, 2026-08-18, the
+    # possessify suite's identical defect).
     b="$(sed -n 's/^#define PCREC_VM_PRUNE_CLAMPED  *0x\([0-9a-f]*\)u$/\1/p' "$hdr")"
-    [ -n "$m" ] && [ -n "$b" ] && [ $(( 0x$m & 0x$b )) -ne 0 ]
+    if [ -z "$b" ]; then
+        echo "has_clamp: PCREC_VM_PRUNE_CLAMPED not found in $hdr" >&2
+        exit 1
+    fi
+    [ $(( 0x$m & 0x$b )) -ne 0 ]
 }
 
 # ---------------------------------------------------------------------------
