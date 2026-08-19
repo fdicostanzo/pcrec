@@ -2986,8 +2986,9 @@ machinery with A–D and can move if scheduling requires.
 >   module, and the one that COMPLETES the list.
 > - **Byte identity.** No fifth gate was built, and that is a deviation with
 >   an argument rather than an omission. `\K` is VM-forced and the emitter
->   reads its counter INTO AN ARTIFACT at exactly ONE site (`--emit-ir`'s
->   listing reads it too, and a query writes no artifact), so the claim is about one
+>   reads its counter into a DEFAULT ARTIFACT at exactly ONE site
+>   (`--emit-ir`'s listing and `--trace`'s ACCEPT line read it too; neither
+>   writes a default artifact), so the claim is about one
 >   predicate — pinned permanently as `[M6.2-KRESET rule 1b]`, which quotes
 >   the pre-wave `caps_out` body as a LITERAL so a rewrite into a third shape
 >   fails too. The corpus-wide half was MEASURED ONCE against the genuine

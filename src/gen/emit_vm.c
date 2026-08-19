@@ -448,23 +448,29 @@ typedef struct {
                            * before this wave and stays byte-identical. */
     long long nkreset;    /* [M6.2 wave E] emitted `\K` write sites, counted as
                            * they are written — `ngst`'s shape and `nclamp`'s
-                           * reason. It is the gate on ONE decision in the
-                           * EMITTED ARTIFACT: whether `<prefix>_caps_out`
+                           * reason. It is the gate on ONE decision in a
+                           * DEFAULT artifact: whether `<prefix>_caps_out`
                            * derives `caps[0][0]` from slot 0 or from its
                            * `start` argument. A `\K`-free program takes the
                            * pre-wave arm and is byte-identical, and because
-                           * that is the only ARTIFACT site reading this
-                           * counter, "a `\K`-free pattern pays nothing" is a
-                           * one-predicate claim rather than the multi-site
-                           * construction waves B-D each had to argue.
+                           * that is the only default-artifact site reading
+                           * this counter, "a `\K`-free pattern pays nothing"
+                           * is a one-predicate claim rather than the
+                           * multi-site construction waves B-D each had to
+                           * argue.
                            *
-                           * `vm_render_listing` reads it too, and that is not
-                           * a second emitted decision: `--emit-ir` is a QUERY
-                           * that writes no artifact. The listing has to read
-                           * it because slot 0 stops being entry-only the
-                           * moment a `\K` exists, and a listing that said
-                           * otherwise would describe a different program from
-                           * the one beside it — S10's drift, exactly. */
+                           * TWO NON-DEFAULT SURFACES read it as well, and
+                           * neither weakens that: `--emit-ir`'s SLOTS row
+                           * (slot 0 stops being entry-only the moment a `\K`
+                           * exists, and a listing saying otherwise would
+                           * describe a different program from the one beside
+                           * it — S10's drift), and `--trace`'s ACCEPT line
+                           * (which reports the consumed span AND the reported
+                           * one, because on a `\K` artifact they differ and
+                           * either alone misleads). A listing writes no
+                           * artifact at all, and `--trace` is a generation
+                           * axis whose artifact is different by
+                           * construction. */
     bool      tracing;    /* --trace: emit an instrumented artifact */
     bool      has_budget; /* [ENG-BREP counter-K] the counters exist in this
                            * artifact (ONE gate for both, D49). Read by the
@@ -4854,9 +4860,24 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     char accept_tr[160], fail_tr[192], exhaust_tr[128];
     accept_tr[0] = fail_tr[0] = exhaust_tr[0] = 0;
     if (v.tracing) {
-        snprintf(accept_tr, sizeof accept_tr,
-                 "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
-                 " ctx->pos, pos);\n", v.p);
+        /* [M6.2 wave E] ON A `\K` ARTIFACT THIS LINE SAYS BOTH SPANS, because
+         * on such an artifact they are different and one of them alone is
+         * misleading. `[ctx->pos, pos)` is what the PROGRAM consumed, which is
+         * what a trace of the program should say; the REPORTED span starts at
+         * the last crossed `\K`, and a reader watching `(?:a\K)*ab` retreat
+         * would otherwise see "ACCEPT [0,4)" and the caller print "2 4" with
+         * nothing connecting them. Emitted only where a `\K` exists, so a
+         * `\K`-free traced artifact keeps its line byte for byte. */
+        if (v.nkreset > 0)
+            snprintf(accept_tr, sizeof accept_tr,
+                     "    fprintf(stderr, \"[%s] ACCEPT consumed [%%zu,%%zu)"
+                     " reported [%%td,%%zu)\\n\", ctx->pos, pos,"
+                     " stv[0] != PCREC_UNSET ? stv[0] : (ptrdiff_t)ctx->pos,"
+                     " pos);\n", v.p);
+        else
+            snprintf(accept_tr, sizeof accept_tr,
+                     "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
+                     " ctx->pos, pos);\n", v.p);
         snprintf(fail_tr, sizeof fail_tr,
                  "    fprintf(stderr, \"[%s] backtrack: %%u frame(s), trail %%u\\n\","
                  " w->btn, w->trn);\n", v.p);
@@ -4953,11 +4974,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * below).
      *
      * A `\K`-FREE ARTIFACT TAKES THE PRE-WAVE ARM, character for character.
-     * This is the only site that reads `v.nkreset` INTO AN ARTIFACT, which is
-     * what makes "wave E costs a `\K`-free pattern nothing" a claim about one
-     * predicate rather than about a construction spanning four files.
-     * `vm_render_listing` reads it as well, but `--emit-ir` is a query that
-     * writes no artifact, so byte identity is untouched by it. */
+     * This is the only site that reads `v.nkreset` into a DEFAULT artifact,
+     * which is what makes "wave E costs a `\K`-free pattern nothing" a claim
+     * about one predicate rather than about a construction spanning four
+     * files. `vm_render_listing` and the `--trace` ACCEPT line read it too;
+     * a listing writes no artifact, and a traced artifact is a different
+     * artifact by construction (the axis says so in its own text). */
     sb_printf(c,
         "static void %s_caps_out(const %s_work *w, ptrdiff_t (*caps)[2],\n"
         "                        size_t start, ptrdiff_t len)\n"

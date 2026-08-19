@@ -660,9 +660,9 @@ c"` from `(0,3)` into `(0,1)`, and
   the four-wave precedent rather than an omission.** Waves A-D each changed a
   construction spanning several emitter decision points, so each needed a
   corpus-wide comparison against a `-D` knob build. `\K` is VM-forced and the
-  emitter reads `v.nkreset` into the ARTIFACT at exactly ONE site
-  (`<prefix>_caps_out`'s body; `--emit-ir`'s listing reads it too, and a query
-  writes no artifact),
+  emitter reads `v.nkreset` into a DEFAULT ARTIFACT at exactly ONE site
+  (`<prefix>_caps_out`'s body; `--emit-ir`'s listing and `--trace`'s ACCEPT
+  line read it too, and neither writes a default artifact),
   so the claim is about one predicate: pinned permanently as
   `[M6.2-KRESET rule 1b]`, which quotes the pre-wave body as a LITERAL so a
   rewrite into a third shape fails too. The corpus-wide half was MEASURED ONCE

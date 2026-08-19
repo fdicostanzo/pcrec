@@ -249,9 +249,10 @@ test-altcls: all
 # the wave adds NO identity gate to the four above — deliberately. Waves A-D
 # each changed a construction spanning several emitter sites, so each needed a
 # corpus-wide byte comparison against a reference build to say a construct-free
-# pattern paid nothing. `\K` is VM-FORCED and the emitter reads its counter at
-# exactly ONE site (`<prefix>_caps_out`'s body), so that claim is a claim about
-# one predicate: it is pinned as `[M6.2-KRESET rule 1b]` in
+# pattern paid nothing. `\K` is VM-FORCED and the emitter reads its counter
+# into a DEFAULT ARTIFACT at exactly ONE site (`<prefix>_caps_out`'s body;
+# `--emit-ir`'s listing and `--trace`'s ACCEPT line read it too, and neither
+# writes a default artifact), so that claim is about one predicate: it is pinned as `[M6.2-KRESET rule 1b]` in
 # tests/codegen/run_codegen_tests.sh, and it was MEASURED corpus-wide once
 # against the genuine PRE-WAVE COMPILER — a reference sharing no sources with
 # the subject, which is strictly stronger than a `-D` knob build and is what

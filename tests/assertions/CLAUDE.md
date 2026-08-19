@@ -358,8 +358,9 @@ analysis**, which is what makes S83 visible where the same shape is invisible
 to its two predecessors, and moving it is what found a dead `gseed[]` table
 this wave had emitted on every `\b`/`(?m)` artifact. **Wave E deliberately built NO identity gate**, which is the one place this
 module's waves differ in shape: `\K` is VM-forced and the emitter reads its
-counter into an ARTIFACT at exactly ONE site, so "a `\K`-free pattern pays
-nothing" is a claim about one predicate rather than about a construction. It is pinned as
+counter into a DEFAULT ARTIFACT at exactly ONE site, so "a `\K`-free pattern
+pays nothing" is a claim about one predicate rather than about a
+construction. It is pinned as
 `[M6.2-KRESET rule 1b]`, which quotes the pre-wave `caps_out` body as a
 LITERAL so a rewrite into a third shape fails too; the corpus-wide half was
 measured ONCE against the genuine pre-wave COMPILER (1,208/1,208 default,
