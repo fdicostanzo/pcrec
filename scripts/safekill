@@ -1,0 +1,151 @@
+#!/usr/bin/env bash
+#
+# safekill — kill a process tree without the collateral-kill failure mode
+# that `pkill -f` keeps producing in this project.
+#
+# WHY THIS EXISTS. Two incidents on 2026-08-19, hours apart, same shape:
+#   Incident A (wave B lane): `pkill -f` against a stale mech scratch-root
+#   pattern killed a CONCURRENT, legitimate mech run as collateral (it
+#   reported FATAL / 0 rows). First-recorded lesson: "never pkill -f a
+#   pattern while another run of the same tool is live; kill by exact PID."
+#   Incident B (the manager, same day): stopped a duplicate matrix run via
+#   the task API — fine — then "cleaned up" with `pkill -f
+#   run_sabotage_matrix`, which killed the OTHER, canonical run's live
+#   child mid-row. The victim's log just stopped: no trailer, no FATAL,
+#   because SIGTERM never reached the script's own accounting.
+# THE SHARPENED LESSON (wave C's analysis): A COMMAND LINE IS NOT AN
+# IDENTITY. Two legitimate concurrent invocations of the same tool are
+# INDISTINGUISHABLE under any -f pattern — no amount of operator care
+# fixes that — and the pattern can also match the caller's OWN wrapper
+# shell (a `bash -c '...pattern text...'` matches itself; this is the root
+# of this project's standing "never pgrep -f to poll liveness" rule,
+# docs/dev/learnings.md section 6). The durable fixes, ordered by how
+# little they ask of someone under pressure: kill the PROCESS GROUP of the
+# shell you launched, or the recorded PID — never a name pattern. safekill
+# makes the first the effortless default and keeps the second narrow and
+# refuse-by-default on purpose.
+#
+# DESIGN CONSEQUENCES, each answering one incident:
+#   - The PAVED ROAD is "I have a PID" (the common case: you started
+#     something, you recorded its PID). safekill PID kills that PID's
+#     process group AND its descendant tree (union of both — a
+#     double-forked/daemonizing descendant can escape one mechanism but not
+#     both: reparented-to-init but same pgid is caught by the group kill;
+#     self-setsid'd into a new group but still a ppid-descendant is caught
+#     by the tree walk). One call, no flags, safe by construction.
+#   - The DANGEROUS ROAD is "I only have a pattern" (-f/--pattern). This
+#     path is deliberately narrow: it lists candidates from raw /proc reads
+#     ONLY — never `ps`/`pgrep`/any subprocess whose own argv could carry
+#     the pattern text and match itself, which is exactly how a polling
+#     wrapper self-matches under `pgrep -f` per the learnings.md rule.
+#     Every candidate that is safekill's own PID or an ANCESTOR of the
+#     caller (the whole chain up to PID 1, walked via /proc, unconditional,
+#     no override flag: this is the "wrapper shell carries the pattern
+#     text" failure reproduced exactly, and an override flag would just
+#     re-open the hole) is dropped before anything else happens. If more
+#     than one candidate remains, safekill REFUSES — this is incident
+#     A/B's shape in miniature, two legitimate same-command-line processes
+#     — unless --all is given explicitly. Refusal, not a guess.
+#   - NEVER interactive. Agents cannot answer a confirmation prompt (they
+#     are not attached to a terminal that will ever see one), so a design
+#     that "asks before an ambiguous kill" would just hang or silently
+#     skip the prompt depending on harness plumbing. Safety comes entirely
+#     from refuse-by-default plus explicit flags, never a question.
+#   - Every process actually signalled gets an audit line printed as it
+#     happens: pid, pgid, start time, command — exactly the fields a
+#     postmortem needs to answer "what did this kill and was it right",
+#     which is precisely what incident B's victim log could NOT answer
+#     (SIGTERM landed with zero accounting on the receiving end).
+#   - Candidate scope narrower than the whole box, for the pattern path:
+#     --under PID restricts candidates to PID's descendant tree (reliable
+#     via /proc's ppid chain) and --cwd DIR restricts to processes whose
+#     /proc/PID/cwd resolves under DIR (reliable via readlink, best-effort
+#     for another user's processes whose cwd this UID cannot read — such
+#     candidates are excluded, not treated as a hard error). Same-session
+#     scoping was considered and NOT built as a default filter: incident
+#     A/B's two collisions were both async/background invocations that may
+#     not share a session with the caller, so defaulting to session-scope
+#     would have hidden the exact case this tool exists to handle safely;
+#     --under is the equivalent narrowing tool when the caller has
+#     something to anchor on.
+#   - Signal choice: TERM by default, escalate to KILL after a grace period
+#     (--grace SECS, default 3) unless --term-only (never escalate) or
+#     --kill-now/-K (skip TERM, go straight to KILL — for the genuinely
+#     stuck). The escalation poll checks survivors in short increments
+#     rather than sleeping the full grace, matching scripts/watchdog's
+#     TERM->KILL shape.
+#   - Exit codes are distinct on purpose so a caller can branch without
+#     parsing text: 0 killed something, 1 nothing matched (not an error —
+#     "already dead" is a fine outcome), 2 refused (ambiguous -f match,
+#     needs --all), 125 usage error. See EXIT CODES below.
+#
+# WHAT THIS DELIBERATELY DOES NOT DO (so a future reader does not propose
+# rebuilding it): no confirmation prompts, ever — see above. No config
+# file, no daemon/watch mode, no cross-machine kill, no privilege
+# escalation (a candidate this UID cannot signal is reported and skipped,
+# never sudo'd). No override for the self/ancestor exclusion — the one
+# guard this tool has that the incidents show a human cannot reliably
+# apply by hand, so it does not get a bypass flag. No "kill everything
+# matching, no questions" default — --all exists and is one flag away, but
+# the operator has to choose it, matching the incident record's actual
+# lesson (operator care did not scale; refuse-by-default does).
+#
+# Usage:
+#   scripts/safekill [OPTIONS] PID                # paved road: group+tree
+#   scripts/safekill [OPTIONS] --pgid PGID         # exact group, no tree
+#   scripts/safekill [OPTIONS] -f PATTERN          # narrow, refuse-by-default
+#   scripts/safekill -h
+#
+# Options:
+#   --pgid PGID     target an explicit process group id instead of a PID
+#                   (kills exactly that group's current membership; no
+#                   descendant-tree walk — PGID is already the whole ask)
+#   -f, --pattern PAT
+#                   match candidates by POSIX-ERE search against each
+#                   process's full /proc/PID/cmdline (pkill -f's semantics:
+#                   a search, not an anchored match). Dangerous path — see
+#                   above. Self/ancestor candidates are dropped first,
+#                   unconditionally; >1 remaining candidate REFUSES
+#                   (exit 2) unless --all is given.
+#   -a, --all       required to proceed when -f/--pattern matches more than
+#                   one candidate after exclusions. Usage error with PID or
+#                   --pgid targets (there is no ambiguity to widen there).
+#   -n, --list      list matching candidates (pid/pgid/start/cmd) to stdout
+#                   and exit WITHOUT signalling anything. Works with any
+#                   target form; bypasses the ambiguity refusal (nothing is
+#                   killed, so nothing needs refusing) — this is the safe
+#                   way to preview a -f pattern before widening with --all.
+#   --under PID     (with -f/--pattern only) restrict candidates to PID's
+#                   descendant tree.
+#   --cwd DIR       (with -f/--pattern only) restrict candidates to
+#                   processes whose cwd resolves under DIR.
+#   -s, --signal SIG
+#                   initial signal, name or number (default TERM).
+#   --grace SECS    seconds between the initial signal and KILL escalation
+#                   (default 3).
+#   --term-only     send the initial signal only; never escalate to KILL
+#                   even if survivors remain after --grace.
+#   -K, --kill-now  send KILL immediately — no initial signal, no grace.
+#   -h, --help      this text.
+#
+# Exit codes:
+#   0    at least one process was signalled.
+#   1    no candidates matched (already dead, or the pattern/PID/PGID
+#        found nothing) — not treated as an error.
+#   2    refused: -f/--pattern matched more than one candidate after
+#        exclusions and --all was not given.
+#   125  usage error (bad arguments, target not found for --list, etc.).
+#
+# Mechanism notes: candidate discovery reads /proc/[0-9]*/stat,
+# /proc/PID/cmdline and /proc/PID/cwd directly — no `ps`, no `pgrep`, no
+# subprocess of any kind is spawned to find candidates, so there is no
+# wrapper argv for a pattern to self-match against during discovery (only
+# safekill's OWN argv can do that, and the ancestor-chain exclusion covers
+# exactly that). Best-effort like scripts/watchdog's collect_stats: a
+# process that exits mid-scan is silently skipped rather than treated as
+# an error, and a candidate whose cwd this UID cannot read is excluded
+# from --cwd matching rather than aborting the run.
+
+set -u
+echo "safekill: not yet implemented (requirements-only commit)" >&2
+exit 125
