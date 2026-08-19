@@ -741,7 +741,8 @@ Of the four that shipped:
   false of `(?m)^a|b`. The shipped derivation asks which seeded start states
   are LIVE and gets both right; the sabotage asks for the newline set and
   loses the other branch's matches (`a|^b` on `"cac"`: `[(1,2)]` becomes
-  `[]`). Note its population includes PRE-EXISTING patterns — `^a|b`,
+  `[]`; multiline.rxt goes 3241 pass / **39 FAIL** across seven patterns, every
+  failure a lost match). Note its population includes PRE-EXISTING patterns — `^a|b`,
   `a|^b`, `(?:^|\b)foo` — so the derivation guards shapes that predate this
   wave. A row whose edit is a quotation from the design is the sharpest kind
   this matrix carries.
