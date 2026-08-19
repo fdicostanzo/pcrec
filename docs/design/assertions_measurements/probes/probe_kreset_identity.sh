@@ -89,12 +89,23 @@ for mode in default vm; do
     same=0; diff=0; both=0; refmis=0
     : > "$WORK/differs.$mode"
     while IFS= read -r p; do
+        # `if a=$(...)` and NOT `a=$(...); ra=$?`. Under `set -e` the second
+        # form ABORTS THE WHOLE PROBE the first time a pattern is refused —
+        # an assignment from a failing command substitution is itself a
+        # failing command. The refused population here is large and expected
+        # (395 of 1369 patterns, plus every `\K` one on the reference side),
+        # so the naive form measured nothing and exited 1. Found by running
+        # it; recorded here because the failure looks like a probe that
+        # finished.
         # shellcheck disable=SC2086
-        a=$(timeout 60 "$SUBJ" --features all -p rx $args -o - -- "$p" 2>/dev/null); ra=$?
+        if a=$(timeout 60 "$SUBJ" --features all -p rx $args -o - -- "$p" 2>/dev/null); then ra=0; else ra=$?; fi
         # shellcheck disable=SC2086
-        b=$(timeout 60 "$REF"  --features all -p rx $args -o - -- "$p" 2>/dev/null); rb=$?
+        if b=$(timeout 60 "$REF"  --features all -p rx $args -o - -- "$p" 2>/dev/null); then rb=0; else rb=$?; fi
         if [ $ra -ne 0 ] || [ $rb -ne 0 ]; then
-            [ $ra -ne $rb ] && { refmis=$((refmis + 1)); printf '%s\t%d\t%d\n' "$p" "$ra" "$rb" >> "$WORK/refmis.$mode"; }
+            if [ $ra -ne $rb ]; then
+                refmis=$((refmis + 1))
+                printf '%s\t%d\t%d\n' "$p" "$ra" "$rb" >> "$WORK/refmis.$mode"
+            fi
             continue
         fi
         both=$((both + 1))
