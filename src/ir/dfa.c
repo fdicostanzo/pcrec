@@ -25,7 +25,8 @@
  * their truth depends on the two BYTES around the position, so the state
  * identity gains "the byte already consumed was a word character" and each
  * state gains a second closure for "the byte about to be consumed is one"
- * (`DState.wlist`). The class map is refined by the word set so that bit is
+ * (`DState.up[UPC_WORD]`, `DState.wlist` in wave B's spelling). The class map
+ * is refined by the word set so that bit is
  * constant inside a class, and the transition row for a class is then built
  * from the closure that class's word-ness selects — which is what keeps the
  * emitted hot path a single table read. See eqclasses, the Clo comment and

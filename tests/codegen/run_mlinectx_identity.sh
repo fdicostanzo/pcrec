@@ -76,6 +76,19 @@ pass=0; fail=0
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
+# ---- the shared scanner's own self-check --------------------------------
+# tests/lib/mlscan.py decides this script's corpus SPLIT, so a drifted scanner
+# would silently move patterns out of the identity population and this gate
+# would go green over a smaller set. Its self-check is milliseconds and runs
+# here rather than in a scripts/Makefile rule (D48's home for INDEPENDENT
+# instruments) because it is not independent of this check — it is part of it.
+if python3 "$ROOT_DIR/tests/lib/mlscan.py" > "$WORKDIR/mlscan.log" 2>&1; then
+    ok "tests/lib/mlscan.py self-check: $(tail -1 "$WORKDIR/mlscan.log")"
+else
+    bad "tests/lib/mlscan.py self-check FAILED — the corpus split below is derived from it, so this gate's population cannot be trusted:"
+    cat "$WORKDIR/mlscan.log" >&2
+fi
+
 # ---- the reference compiler ---------------------------------------------
 # The source list is FOUND, not globbed at a fixed depth — src/gen/enc/ is two
 # levels down and a hand-maintained `src/*/*.c` silently dropped it once

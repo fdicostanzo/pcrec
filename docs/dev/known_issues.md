@@ -2315,6 +2315,15 @@ the shape naturally (`^\Bfoo`, `^\Bo`, `^a\bb`), and those three cells
 are named and excluded in tests/assertions/wordb.rxt's own header (~line
 2793) with live equivalents in their place.
 
+**[M6.2 wave C] adds a FOURTH spelling and it is a different construct**:
+`a(?m)^b` — a multiline `^` after a consumed byte, which cannot match for
+the same reason `^a^b` cannot, so the shape is reached by `(?m)` as well as
+by `\b`. Named and excluded in tests/assertions/multiline.rxt's own header,
+with the live equivalents `a(?m)$` and `a(?m)^b|c` in its place. Worth noting
+for the fix's scheduling: each wave that lands a new BOT-family or
+context assertion adds spellings that reach this shape, so the exclusion
+list grows monotonically until the wrapper is fixed.
+
 **Fix sketch and why it is deferred:** initialize the wrapper's `caps`
 (or restructure the wrapper so gcc sees the dominance) — a one-line
 emitter change whose blast radius is EVERY artifact in the tree, so it
