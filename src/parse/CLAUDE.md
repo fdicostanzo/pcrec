@@ -384,7 +384,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   RUNTIME value the match call supplies — `<prefix>_search`'s own `startpos`
   (docs/spec/match_api.md §3.1). That is what buys a closure bit and a second
   family of start states in src/ir/dfa.c and an extra parameter on the VM's
-  `match_impl`, and nothing at all in the alphabet: it reads no byte. Not
+  `match_anchored`, and nothing at all in the alphabet: it reads no byte. Not
   repeatable, measured the same way: `\G*` `\G+` `\G?` `\G{2}` `a\G*` are all
   error 109 and `(\G)*` compiles to (0,0).
 

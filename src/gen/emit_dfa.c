@@ -173,7 +173,10 @@ static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int fa
  * option product, chosen by a generated selector (D18/D20). Almost nothing
  * here needs to change for that, because every identifier either emitter
  * produces is a FUNCTION-LOCAL static except the ones named below: the
- * unanchored engine's fcls/ftr/facc/fev/first/fs<N>/rcls/rtr/racc/rev/rs<N>
+ * unanchored engine's forward_byte_class/forward_next_state/
+ * forward_is_accepting/forward_eol_view/can_begin_match/forward_stay<N>/
+ * reverse_byte_class/reverse_next_state/reverse_is_accepting/
+ * reverse_eol_view/reverse_stay<N>
  * and the attempt engine's cls/t<N> are all declared inside the engine
  * function, so two engines in two functions cannot collide on them however
  * similar their patterns. (D18 measured this on `.*=.*$`: 15 emitted
@@ -589,10 +592,10 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
 }
 
 /* [M4.4] (match_api_m4.md §3.1, D41.4): the anchored capture-DELIVERING
- * sibling of <prefix>_match — same anchoring test, plus a caps_out
+ * sibling of <prefix>_match — same anchoring test, plus a capture_spans_out
  * parameter that gets every RX_NCAPS pair on success and is left UNTOUCHED
  * on failure (A-8's "untouched wins" rule, shared with <prefix>_search). At
- * [M4.4] RX_NCAPS is always 1, so caps_out[0] is the only slot ever
+ * [M4.4] RX_NCAPS is always 1, so capture_spans_out[0] is the only slot ever
  * written; the loop is written against the macro rather than hardcoded so
  * nothing here needs revisiting when [M4.5] grows it. */
 static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
@@ -983,9 +986,12 @@ static void emit_end_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 /* The VIEW SELECTOR, emitted once per machine (forward and reverse) and the
  * one place the three-way position rule turns into C.
  *
- * `posv` is the position variable (`pos` / `pp`), `stv` the state variable
- * (`st` / `rst`), `outv` the view variable the scan then indexes through
- * (`est` / `erst`), and `ev`/`endv` the two table tags.
+ * `posv` is the position variable (emitted as `scan_position` /
+ * `rewind_position`), `stv` the state variable (`forward_state` /
+ * `reverse_state`), `outv` the view variable the scan then indexes
+ * through (`forward_view_state` / `reverse_view_state`), and
+ * `ev`/`endv` the two table tags. THE PARAMETER NAMES HERE ARE THIS
+ * FUNCTION'S OWN and did not move; only the emitted names did.
  *
  *   pos == n                      -> the END view   (`\z`, `$`, `\Z` all pass)
  *   pos + 1 == n && s[pos] == \n  -> the EOL view   (`$`/`\Z` only)
@@ -1644,7 +1650,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     cand_from_escapes(&fcand, fd, fs);
     /* "can neither accept nor ever leave the start state" is only a proof
      * that nothing matches when the start state has no EOL view. `$` alone is
-     * exactly the counter-example: it never leaves fs and facc[fs] is 0, but
+     * exactly the counter-example: it never leaves fs and forward_is_accepting[fs] is 0, but
      * its EOL variant accepts. */
     /* [M6.2 wave B] `!fseed` joins the conjunction: the proof below is about
      * the ONE start state `fs`, and under mechanism 4 a search at
@@ -1969,7 +1975,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * LOOP. This loop has TWO exits — this one and the dead-state `rst <
          * 0` below — and code placed after the loop would run on both. On the
          * dead-state exit `pp > startpos` and `rst < 0`, so an epilogue would
-         * record `sfound` at a position the walk never reached (a WRONG
+         * record `match_start_position` at a position the walk never reached (a WRONG
          * ANSWER, worse than a lost match) and would index the accept table
          * with a NEGATIVE state (an out-of-bounds read in emitted code,
          * K27's class). This arm is entered only when `pp <= startpos` and

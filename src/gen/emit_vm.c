@@ -328,7 +328,7 @@ typedef struct {
     int       nrevcaps;   /* the largest capture-group count any one revdet
                            * body has — sizes the SHARED recovery locals. One
                            * array serves every revdet loop because a walk's
-                           * results are PUBLISHED into stv before control
+                           * results are PUBLISHED into slot_values before control
                            * leaves the loop, so nothing outlives its own
                            * commit. */
     int       nocap;      /* [ENG-BREP] >0 while emitting (or costing) a revdet
@@ -401,7 +401,7 @@ typedef struct {
      * therefore knows which copy it is writing. ONE rung breaks that: the
      * counter rung's MANDATORY phase emits K body copies that serve every
      * trip, so "how many mandatory iterations are still to come" is
-     * `count - stv[ctr] - j` and lives in a trailed slot rather than in the
+     * `count - slot_values[ctr] - j` and lives in a trailed slot rather than in the
      * emitter. k23_design.md §4.5 designed exactly this expression; the
      * blinded test author MEASURED that leaving it out leaves K23 alive on
      * `(a{1,3}){65}`, where the compile-time view sees at most K iterations
@@ -536,7 +536,7 @@ static void vm_charge(Vm *v)
                  PCREC_MAX_VM_NODES);
 }
 
-/* Slot layout in `stv` (§2.4: ONE flat array, so the restore loop is written
+/* Slot layout in `slot_values` (§2.4: ONE flat array, so the restore loop is written
  * once, the overflow bound is one number, and a future slot class costs a
  * layout row rather than a new save/restore path).
  *
@@ -676,7 +676,7 @@ static int vm_slot_ctr(Vm *v, int i)
  * copies for nothing or leave twenty replicated.
  *
  * THE STRICTNESS IS §3.2's [R25 E3] and it is structural, not arithmetic. A
- * phase's trip guard is `stv[ctr] + K > count` evaluated at ctr = 0, so at
+ * phase's trip guard is `slot_values[ctr] + K > count` evaluated at ctr = 0, so at
  * count < K it takes the tail immediately and the tail emits all `count`
  * copies — which for the optional phase IS `vm_opt_chain`, so the emission is
  * byte-identical to the frames rung by construction. At count == K the loop
@@ -929,7 +929,7 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
 /* THE RUNG DECISION, in ONE place (§2.5's ladder, D44.1's extension).
  *
  * Three call sites need it and they MUST agree: the slot counter (which sizes
- * `stv` before anything is emitted), the capacity analysis (which sizes the
+ * `slot_values` before anything is emitted), the capacity analysis (which sizes the
  * two arrays and stamps the ceiling), and the emitter itself. Two of them
  * disagreeing does not produce a diagnostic — it produces a matcher whose
  * arrays are sized for a shape it does not have.
@@ -1330,7 +1330,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
      * multiplication is A_REP's, exactly as it is for A_CAP's two entries.
      *
      * It allocates no SLOT and vm_count_slots says so: slot 0 is group 0's
-     * start, which `stv` has always reserved and nothing has ever written.
+     * start, which `slot_values` has always reserved and nothing has ever written.
      *
      * `v->nocap` is not consulted, unlike A_CAP below, and the reason is
      * structural rather than an omission: `nocap` is set only inside a
@@ -1412,7 +1412,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
 
 /* ---- slot counting (must mirror the emitter's own rung decisions) --------*/
 
-/* Counts stv slots AND emitted resume points, in one walk that mirrors the
+/* Counts slot_values slots AND emitted resume points, in one walk that mirrors the
  * emitter's own rung decisions and its replication. Both counts have to be
  * exact for the same reason: a slot count that under-counts makes two live
  * loops share one slot, and a resume-point count that under-counts lets an
@@ -1690,7 +1690,7 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  * this section learned the hard way: the charge has THREE emission sites in
  * two different spellings, and the probe that priced this design reported a
  * confident zero for the revdet rung because the first version instrumented
- * only the `RX_CUT` macro and missed the rung that cuts by assigning `w->btn`
+ * only the `RX_CUT` macro and missed the rung that cuts by assigning `run->resume_depth`
  * directly. One call here is what keeps a fourth site from repeating that.
  *
  * WHAT IS CHARGED, and equally WHAT IS NOT. The rule is "per-iteration work
@@ -1712,8 +1712,8 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
  *                                 own published control row.
  *
  * The emitted subtraction is SIGNED and the cast order is load-bearing:
- * `w->btn` is `unsigned` and `stv[]` is `ptrdiff_t`, so the count must be
- * taken as `(ptrdiff_t)w->btn - stv[slot]` and never the other way, or a
+ * `run->resume_depth` is `unsigned` and `slot_values[]` is `ptrdiff_t`, so the count must be
+ * taken as `(ptrdiff_t)run->resume_depth - slot_values[slot]` and never the other way, or a
  * momentarily-negative intermediate wraps to an enormous positive charge. */
 static void vm_work(Vm *v, const char *countexpr, const char *role)
 {
@@ -1725,7 +1725,7 @@ static void vm_work(Vm *v, const char *countexpr, const char *role)
 
 static void vm_cut(Vm *v, int slot, const char *role)
 {
-    /* BEFORE the cut, necessarily: RX_CUT overwrites `w->btn` with the mark,
+    /* BEFORE the cut, necessarily: RX_CUT overwrites `run->resume_depth` with the mark,
      * so after it runs the count this charge needs no longer exists. */
     {
         char cnt[192];
@@ -2013,7 +2013,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * still the loop's entry position at every point below, because the scan
      * writes only `<p>_cur` and `pos` is not assigned until the loop commits.
      * So the possessive path reads `pos` where the backtracking one reads
-     * `stv[low]`, allocates no slot, and writes no trail entry. vm_cost_rep
+     * `slot_values[low]`, allocates no slot, and writes no trail entry. vm_cost_rep
      * and vm_count_slots carry the same branch; all three must agree or two
      * live loops share one slot. */
     const bool poss = a->possessive;
@@ -2421,7 +2421,7 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
  *          <body>  -> L(j+1)
  *     L(count+1): CUT(mark); goto next     <- every copy taken
  *     exit:       goto next                <- the pop already restored pos,
- *                                             and left btn exactly at mark
+ *                                             and left resume_depth exactly at mark
  *
  * The body's OWN frames are not disturbed while it runs, which matters: a
  * one-unambiguous body still needs them to FIND its match (`(?:a|bc)` on "bc"
@@ -2798,7 +2798,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * also the resume label of the frame this test skips pushing, and
      * arriving there directly leaves exactly the state that frame's pop would
      * have restored: `pos` is this boundary either way, `it` is untouched, and
-     * `w->btn` is already at the depth the pop would have left it. */
+     * `run->resume_depth` is already at the depth the pop would have left it. */
     vm_mrl_test(v, "scan_position", vm_fadd(bw, F), shortl,
                 "MRL: no room for another iteration and the follow -- stop the "
                 "scan on the boundary it is standing on");
@@ -2976,9 +2976,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
  * at the loop level.
  *
  *   L_min:    RX_SET(ctr, 0)
- *   L_mtrip:  if (stv[ctr] + K > m) goto L_mtail
+ *   L_mtrip:  if (slot_values[ctr] + K > m) goto L_mtail
  *             <K copies of the body>       ; no PUSH: a mandatory copy that
- *             RX_SET(ctr, stv[ctr] + K)    ; fails fails the whole quantifier
+ *             RX_SET(ctr, slot_values[ctr] + K)    ; fails fails the whole quantifier
  *             goto L_mtrip
  *   L_mtail:  <m mod K copies>             ; the residue, as emitted today
  *             goto next
@@ -2989,10 +2989,10 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
  * the whole reason the counter has to be trailed.
  *
  * THE RESIDUE IS A COMPILE-TIME CONSTANT, not a runtime remainder. `L_mtail`
- * is reachable only through the trip guard, and `stv[ctr]` is only ever 0 or
+ * is reachable only through the trip guard, and `slot_values[ctr]` is only ever 0 or
  * incremented by exactly K, so the tail is entered at ctr = K*floor(m/K) and
  * the residue is exactly `m mod K` copies. eng_brep_design.md §4.2 writes the
- * tail as "(n - stv[ctr]) copies", which reads as a runtime quantity; it is
+ * tail as "(n - slot_values[ctr]) copies", which reads as a runtime quantity; it is
  * not, and that is what keeps the tail as ordinary replication at a smaller
  * count rather than something new.
  *
@@ -3083,7 +3083,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
          * once-per-iteration would, and stays sound for the reason a check
          * omitted is always sound: pruning forgone, never an answer changed.
          * The runtime-expression form §4.5 sketches
-         * (`max(0, rmin - stv[ctr]) * bw + F`, reading the counter) is
+         * (`max(0, rmin - slot_values[ctr]) * bw + F`, reading the counter) is
          * strictly stronger and is NOT taken in v1 — it puts a load, a
          * multiply and a subtract on the trip path to tighten a bound whose
          * population nobody has measured. Recorded as a residual rather than
@@ -3091,7 +3091,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         /* [M4.6d] THE RUNTIME FOLLOW-MIN (§4.5), and this rung is the only
          * place it is needed. One body copy serves every trip, so the
          * compile-time view sees at most `K + residue` iterations of follow
-         * where the truth is `count - stv[ctr] - j`. On `(a{1,3}){65}` those
+         * where the truth is `count - slot_values[ctr] - j`. On `(a{1,3}){65}` those
          * are 9 and 65: the compile-time bound leaves the whole ambiguous
          * decomposition alive, and the blinded test author measured exactly
          * that before this expression existed. The counter is a TRAILED slot
@@ -3125,7 +3125,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             const long long cf = optional ? F
                                           : vm_fadd(vm_fmul(K - 1 - i, bw), TF);
             if (!optional) {
-                /* Copy `i` is followed by `count - stv[ctr] - (i+1)` further
+                /* Copy `i` is followed by `count - slot_values[ctr] - (i+1)` further
                  * MANDATORY iterations -- across the rest of this trip, every
                  * later trip, and the residue, all of which are certain to
                  * run. The compile-time `cf` above is the same quantity seen
@@ -3218,10 +3218,10 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
  * at loop entry — `vm_poss_chain`'s discipline applied per ITERATION rather
  * than per COPY.
  *
- *   L_trip:  if (stv[ctr] >= NOPT) goto next
+ *   L_trip:  if (slot_values[ctr] >= NOPT) goto next
  *            PUSH(L_stop)          ; this iteration cannot run -> leave
  *            <body>  -> L_step
- *   L_step:  RX_CUT(mark); RX_SET(ctr, stv[ctr] + 1); goto L_trip
+ *   L_step:  RX_CUT(mark); RX_SET(ctr, slot_values[ctr] + 1); goto L_trip
  *   L_stop:  RX_CUT(mark); goto next
  *
  * THE PUSH STAYS, and deleting it is not available. `vm_poss_chain`'s recorded
@@ -3759,10 +3759,10 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * array element instead of taking a new parameter.
          *
          * PCREC_UNSET IS THE "NO `\K` WAS CROSSED" SIGNAL and it is not an
-         * overload: `work_init` fills every slot with it once per search, and
+         * overload: `run_state_init` fills every slot with it once per search, and
          * the trail restores it by construction on every rewind to mark 0. A
          * position can never legitimately be PCREC_UNSET (-1), so the test in
-         * `caps_out` is total. `(?:a\K)?b` on "b" is the cell — PCRE2 (0,1),
+         * `report_captures` is total. `(?:a\K)?b` on "b" is the cell — PCRE2 (0,1),
          * the `\K` not crossed — beside `(?:a\K)?b` on "ab", which is (1,2).
          *
          * `vm_charge` at the top of this function has already counted the
@@ -4829,7 +4829,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             v.up, v.p);
     }
 
-    /* The per-search reset (§2.4): stv is initialised to UNSET ONCE per
+    /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
      * SEARCH call, not per start position. On a failed attempt the trail
      * rewind to mark 0 restores every slot the attempt wrote back to UNSET by
      * construction, so the per-attempt reset is O(writes-since-attempt-start)
@@ -4942,13 +4942,13 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     /* [ENG-BREP] the reverse-deterministic rung's working locals. All UNTRAILED
      * and all read only where they are provably live: `it`/`mk` inside the
      * forward scan, `c`/`prev`/`ns` inside one commit's own backward walk. What
-     * has to survive a backtrack lives in stv (the three slots per loop) or in
+     * has to survive a backtrack lives in slot_values (the three slots per loop) or in
      * the resume frame's recorded position, which is where the retreat target
      * rides.
      *
      * The capture-recovery arrays are SHARED across every revdet loop in the
      * program and sized by the widest body, because a walk's results are
-     * published into stv before control leaves the loop that ran it — nothing
+     * published into slot_values before control leaves the loop that ran it — nothing
      * here outlives its own commit. */
     for (int i = 0; i < nrev_total; i++)
         sb_printf(c,
@@ -5088,7 +5088,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * The VM's working slots are LOCAL and the ENTRY copies the capture region
      * out on a completed match — one linear copy of 2*ncaps ptrdiff_t on the
      * success path only. Aliasing the caller's array directly was considered
-     * and rejected: stv also holds guards and low-water marks, so aliasing
+     * and rejected: slot_values also holds guards and low-water marks, so aliasing
      * would split the trail's slot space across two base pointers to save a
      * copy whose size is the GROUP COUNT, not the subject length.
      *
@@ -5283,14 +5283,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * two engines' match-here entries do not share one. This one calls
      * `<prefix>_match_impl` directly, so:
      *
-     *   - THE FILTER IS STRUCTURAL. `match_impl` starts at `ctx->pos` and
+     *   - THE FILTER IS STRUCTURAL. `match_anchored` starts at `ctx->pos` and
      *     never moves it; there is no retry loop and no start-equality
      *     test to get wrong. "Anchored at the requested position" is a
      *     property of the call, not a property checked afterwards, so
      *     there is nothing here for a post-`\K` start to be compared
      *     against. `a\Kb` at `ctx->pos == 0` returns 2, where the DFA
      *     entry's filter would return -1.
-     *   - THE RETURN IS ALREADY THE CONSUMED LENGTH. `match_impl` returns
+     *   - THE RETURN IS ALREADY THE CONSUMED LENGTH. `match_anchored` returns
      *     `pos - ctx->pos`, computed from positions, not from `caps`, so
      *     `\K` cannot reach it. `ab\K` at 0 returns 2 while its reported
      *     span is (2,2) — the case where the two numbers genuinely differ
