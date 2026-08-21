@@ -19,7 +19,7 @@
 #
 # So the population this sabotage is visible on is narrow and specific —
 # LEADING `\B` at `search_from > 0` — and a suite that did not deliberately carry
-# it would run green. tests/assertions/wordb.rxt carries it as `ms`/`ns`
+# it would run green. tests/assertions/wordb_basic.rxt carries it as `ms`/`ns`
 # cells; the named one is `\Bfoo` on "xfoo" at search_from 1, which is (1,4) and
 # becomes "no match" under this edit.
 #
@@ -38,9 +38,9 @@
 SAB_ID="S74-reverse-termination-blind"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="harness assertions"
-SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
+SAB_HARNESS_TARGET="tests/assertions/wordb_basic.rxt"   # wordb.rxt split 2026-08-21; the named \Bfoo-on-"xfoo"-at-search_from-1 cell lives here
 SAB_DESC="the reverse walk's termination boundary drops its context-indexed accept and reads the blind scalar one, so a LEADING \\B at search_from > 0 loses its match (assertions_design.md S3.8.3.1); leading-\\b patterns and every trailing-assertion pattern stay green, which is why the sweep is split into arms"
-SAB_DOC_FIGURE="tests/assertions/wordb.rxt: the leading-\\B ms/ns cells at search_from > 0 fail; every \\b cell and every trailing-assertion cell stays green"
+SAB_DOC_FIGURE="tests/assertions/wordb_basic.rxt: the leading-\\B ms/ns cells at search_from > 0 fail; every \\b cell and every trailing-assertion cell stays green"
 SAB_COUNT=1
 SAB_BEFORE='                     "                if (search_from ? %s_reverse_is_accepting_by_class[%s * %d + "
                      "%s_reverse_byte_class[subject[search_from - 1]]]\n"

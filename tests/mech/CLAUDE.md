@@ -320,44 +320,83 @@ mismatch reported by `lib/replace.py`) rather than silently applying to the
 wrong place or skipping. Re-derive the anchor from `git show HEAD:<path>` when
 that happens; do not weaken the count check.
 
-## SEVEN ROWS' ANCHORS HAVE DRIFTED FROM HEAD (measured 2026-08-19, PRE-EXISTING)
+## SEVEN ROWS' ANCHORS HAD DRIFTED FROM HEAD (found 2026-08-19, RE-ANCHORED 2026-08-21)
 
 Found by the [M6.2] repair slice while checking that its OWN edits had not
 moved any anchor. The method is the driver's own: `printf '%s' "$SAB_BEFORE"`
 and count that literal in `$SAB_FILE`, which is exactly what `lib/replace.py`
-is handed. Seven rows' anchor text is ABSENT from the file it names, so a full
-`make mech` scores each of them `APPLY-FAILED` / `ANOMALY (anchor drifted from
-HEAD)` — not `DETECTED`, and not `UNDETECTED` either:
+is handed. Seven rows' anchor text was ABSENT from the file it names, so a
+full `make mech` scored each of them `APPLY-FAILED` / `ANOMALY (anchor
+drifted from HEAD)` — not `DETECTED`, and not `UNDETECTED` either — and a
+per-prefix run (`run_sabotage_matrix.sh S85`) never touches a row it does not
+name, which is why nothing noticed until a full-matrix run.
 
-| row | file |
-|---|---|
-| S08 casefold-order | `src/parse/parse.c` |
-| S09 casefold-delete | `src/parse/parse.c` |
-| S21 cls-peek-raw | `src/parse/parse.c` |
-| S22 caret-reset-clears-u | `src/parse/mod_modifiers.c` |
-| S26 unset-applied-first | `src/parse/mod_modifiers.c` |
-| S39 vm-cursor-always-greedy | `src/gen/emit_vm.c` |
-| S65 prefilter-flags-mask | `src/gen/emit_dfa.c` |
+All seven were re-anchored by the sabanchors lane (2026-08-21) against this
+same file's Conventions recipe — re-derive from the current source, never
+weaken the count check — and each was dry-run applied through
+`lib/replace.py` directly (the exact mechanism the driver uses) before
+landing, confirming a clean single-occurrence match and a syntactically sound
+result. Two drift causes account for all seven:
 
-**MEASURED PRE-EXISTING**: the identical seven fail the same check on a
-pristine checkout of the [M6.2] repair slice's merge base (`6045d3f`), so
-none of them is this slice's doing. S65's is the legible one and shows the
-shape: its anchor ends `PCREC_FORCE_PREFILTER;` and `emit_info_def`'s
-`strategy_denials` now ends `PCREC_FORCE_PREFILTER |` followed by
-`PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR;` — [OPT-ALTCLS] appended to
-the mask and S65's anchor was not re-derived in the same change, which is
-exactly what this file's Conventions section asks for.
+| row | file | drift cause |
+|---|---|---|
+| S08 casefold-order | `src/parse/parse.c` | `Ctx.mods` struct→pointer (below) |
+| S09 casefold-delete | `src/parse/parse.c` | `Ctx.mods` struct→pointer |
+| S21 cls-peek-raw | `src/parse/parse.c` | `Ctx.mods` struct→pointer |
+| S22 caret-reset-clears-u | `src/parse/mod_modifiers.c` | `Ctx.mods` struct→pointer, `ModState`→`ParseMods` rename |
+| S26 unset-applied-first | `src/parse/mod_modifiers.c` | wave C added the `m`/multiline letter to the set/unset block the anchor spans |
+| S39 vm-cursor-always-greedy | `src/gen/emit_vm.c` | [M4.6d] MRL replaced the comment the anchor's second line quoted |
+| S65 prefilter-flags-mask | `src/gen/emit_dfa.c` | [OPT-ALTCLS] appended two more mask bits after the anchor's tail |
 
-**Why nothing noticed.** The driver is loud per row, and it says so — but
-recent lanes have run it BY PREFIX (`run_sabotage_matrix.sh S85`) to validate
-their own rows, and a per-prefix run never touches a row it does not name. A
-full-matrix run is what surfaces this class, and one has not been taken since
-the drift landed. The fix per row is this file's standing recipe: re-derive
-the anchor from `git show HEAD:<path>`, never weaken the count check, and
-re-run that row through the driver. **NOT DONE BY THE REPAIR SLICE** — seven
-unrelated rows each want their own re-derivation and re-validation, which is a
-different piece of work from the one it was chartered with. Flagged for the
-manager.
+**Five of the seven (S08/S09/S21/S22/S26) share ONE root cause**: [M6.2] wave
+A (`src/parse/parse_mods.h`) turned `Ctx.mods` from a `ModState` struct value
+into a pointer to an incomplete `ParseMods` (renamed from `ModState`), so
+every `cx->mods.FIELD` site in `src/parse/parse.c` and
+`src/parse/mod_modifiers.c` became `cx->mods->FIELD`, and every
+`ModState ns = cx->mods;`-shaped local became `ParseMods ns = *cx->mods;`.
+None of the five sabotages' anchors were re-derived when that landed — a
+single struct-to-pointer refactor silently invalidated five rows across two
+files at once, which is worth knowing as its own shape: a source-wide
+mechanical rename is exactly the kind of change an anchor's literal-text
+contract cannot survive without an explicit re-derivation pass.
+
+**S26 additionally predates a real content addition**, not just a spelling
+change: [M6.2] wave C added the `m` (multiline) letter's `set_m`/`un_m`
+handling to the exact set/unset block this row reorders. The stale anchor
+would have flipped only the block's PRE-wave-C prefix, silently leaving `m`
+on the correct side of the reordering — re-derivation added the two new
+lines in their real position so the flip still reorders the whole block.
+
+**S39's drift is a comment collision, not a code change.** The `if
+(a->greedy) {` line the anchor targets never moved; [M4.6d] (MRL pruning)
+replaced the comment that used to sit directly beneath it with the MRL clamp
+explanation, and the sabotage's second anchor line quoted the old comment
+verbatim. The re-derived anchor quotes the MRL comment instead — which
+usefully also disambiguates this specific `if (a->greedy) {` (the span-loop
+cursor rung) from two unrelated sites in the same file (the frames rung's
+retreat, the reverse-deterministic rung) that share the identical first
+line.
+
+**S65's is the one the original finding already diagnosed**: its anchor
+ended `PCREC_FORCE_PREFILTER;` and `emit_info_def`'s `strategy_denials` now
+ends `PCREC_FORCE_PREFILTER |` followed by `PCREC_NO_ALTCLS_MERGE |
+PCREC_NO_ALTCLS_FACTOR;` — [OPT-ALTCLS] appended to the mask and S65's anchor
+was not re-derived in the same change. The re-anchored version keeps the
+trailing `|` so the ALTCLS bits stay attached to the expression; S65 still
+drops only its own two prefilter bits (S67 is the separate row for ALTCLS's
+own pair).
+
+**Validation status: CONFIRMED** (2026-08-21, at merge). Dry-run
+`lib/replace.py` application confirmed each anchor matches its target
+exactly once and produces syntactically valid C reproducing the row's
+documented intent; then the by-prefix smoke (all seven DETECTED, fail
+counts matching each row's documented figures exactly) and the FULL-MATRIX
+run both landed clean: `== mech run COMPLETE: 85 rows (undetected: 0,
+anomalies: 0, pc3-skipped: 0) at ae6e41f ==` — all seven ANOMALY ->
+DETECTED, no other row's score moved, and the two instruments produced
+byte-identical per-row counts. Re-derive the anchor from
+`git show HEAD:<path>` whenever this class recurs; never weaken the count
+check.
 
 The repair slice's own anchor movement, by contrast, was one row and was
 re-derived in the same change: S81's line gained `upc_emit_of_class` when the
@@ -689,8 +728,9 @@ way to read them:
   assumption coincides with its truth condition — so the sabotage is invisible
   to every leading-`\b` pattern and to every trailing-assertion pattern, and
   is seen only by LEADING `\B` at `startpos > 0`. That is why
-  tests/assertions/wordb.rxt carries those cells and why the wave's
-  differential is split into arms at all.
+  tests/assertions/wordb_basic.rxt carries those cells (wordb.rxt's shard
+  holding the plain leading/trailing forms, split 2026-08-21) and why the
+  wave's differential is split into arms at all.
 
 S71 is also the shape of a mistake that would really happen: nobody deletes a
 gate on purpose, but someone moves the word-set refinement next to the other

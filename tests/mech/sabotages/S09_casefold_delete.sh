@@ -8,11 +8,15 @@ SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="char_node: delete the cls_casefold() call (literals stop folding under -i)"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 1 codegen check + 14 caseless.rxt cases"
 SAB_COUNT=1
+# RE-ANCHORED 2026-08-21 (sabanchors lane): same drift as S08 —
+# Ctx.mods became a pointer to ParseMods at [M6.2] wave A, so
+# `cx->mods.caseless` became `cx->mods->caseless`. Intent (delete the
+# fold call) unchanged.
 SAB_BEFORE="static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
     cls_set(a->cls, c & 0xff);
-    if (cx->mods.caseless) cls_casefold(a->cls);
+    if (cx->mods->caseless) cls_casefold(a->cls);
     return a;
 }"
 SAB_AFTER="static Ast *char_node(Ctx *cx, unsigned c)

@@ -11,10 +11,14 @@ SAB_HARNESS_TARGET="tests/modifiers/xxmode.rxt"
 SAB_DESC="cls_peek_past_dash: drop the xlevel>=2 skip-through, peek the raw next byte"
 SAB_DOC_FIGURE="measured MOD-0.5e: 3 harness cases fail of 11 in tests/modifiers/xxmode.rxt (the (?xx)[a- ] hazard block's m/n cells go from matching {a,-} to a bogus a-SPACE range or an outright compile error)"
 SAB_COUNT=1
+# RE-ANCHORED 2026-08-21 (sabanchors lane): same drift as S08/S09 —
+# Ctx.mods became a pointer to ParseMods at [M6.2] wave A, so
+# `cx->mods.xlevel` became `cx->mods->xlevel`. Intent (drop the
+# xlevel>=2 skip-through) unchanged.
 SAB_BEFORE="static int cls_peek_past_dash(Ctx *cx)
 {
     size_t i = cx->pos + 1;
-    if (cx->mods.xlevel >= 2)
+    if (cx->mods->xlevel >= 2)
         while (i < cx->patlen &&
                (cx->pat[i] == ' ' || cx->pat[i] == '\\t')) i++;
     return i < cx->patlen ? (unsigned char)cx->pat[i] : -1;

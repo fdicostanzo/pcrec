@@ -44,7 +44,7 @@
 SAB_ID="S75-wordb-second-wordset"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
-SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
+SAB_HARNESS_TARGET="tests/assertions/wordb_vm.rxt"   # wordb.rxt split 2026-08-21; the capture-bearing '(\b\w+\b)' block this row needs lives here
 SAB_DESC="the VM's \\b arm interns pcrec_cls_digit_esc instead of pcrec_cls_word_esc, so \\b and \\w disagree about what a word character is and the artifact carries two class tables where it must carry one (assertions_design.md S7.2 item 3)"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 3] reports 2 class tables in '(\\b\\w+\\b)'s artifact"
 SAB_COUNT=1
