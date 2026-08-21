@@ -212,7 +212,26 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 - [M6.1] archived to plan_completed.md (completed 2026-08-18, thirty-third session — the R30 panel + focused re-checks + N1 verification closed it; design docs/design/assertions_design.md merged at 0beac07; review docs/dev/reviews/2026-08-18-r30-assertions-design.md; Frank rulings Q1/Q3/Q8 carried on [M6.2])
 - [M6.2] archived to plan_completed.md (completed 2026-08-21, thirty-fifth session — module `assertions` closed: five waves + repair slice + D27 blinded corpus, all close-validated; the post-module queue re-homed to [M6.0])
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
-- [M6.4] STATE:not-started — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
+- [SPEC-M] STATE:not-started (CHARTERED by Frank 2026-08-21, ruling 1a
+  of the triage discussion: "agree but don't spend a lot of time as
+  this is to be replaced") — tests/spec_mod0 check01_isolation and
+  check07_gate_equivalence, red since [M6.2] wave C: their model
+  assumes a module's behavior depends only on its OWN gate, and (?m)
+  is a measured TWO-MODULE construct (mod_modifiers.c consults
+  FEAT_ASSERTIONS for the multiline EFFECT — the same fact the D27
+  corpus found from outside and gating.rxt pins on all four
+  combinations). Fix: carry (?m) as a NAMED, evidence-cited exception
+  in both checks (cite the D27 gating.rxt record and D65's memo),
+  restore the suite green, and note the amendment in the suite's
+  acceptance record since it is D27-authored. MINIMAL EFFORT by
+  ruling — the real resolution is [DD-11]'s flags-as-binding-mutators
+  redesign, which dissolves the cross-module shape; this row's fix is
+  interim truth-restoration, not architecture
+- [M6.4] STATE:not-started (SESSION BOUNDARY RULED by Frank
+  2026-08-21: the thirty-fifth session STOPS just before this row —
+  session reset, then proceed into [M6.4] at the next session's start;
+  module order 6.4 -> 6.5 -> 6.6 REAFFIRMED, the machinery-building
+  argument over the D66-chain-sooner argument) — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here
 - [M6.6] STATE:not-started — module `lookaround`: last on purpose (hardest; likely its own design gate before code). Lookbehind's back-step is D58-named residue — a seam entry, never raw `pos - k` byte arithmetic in shared emitter code
 - [ABI-NS] archived to plan_completed.md (completed 2026-08-18, thirty-third session — D60+addendum implemented; merge on main; [M6.2]'s wave A is UNBLOCKED)
@@ -1396,9 +1415,21 @@ document). Mechanize instead.
   producers (# comments, header-names-columns, append-only, no tabs in
   fields) and consumers (resolve by name; trailing-safe; count only as
   header-equality), and declares future table commands adopt it AT
-  BIRTH; --emit-ir and --trace are explicitly out of scope, the latter
-  pointed at [V-H]. Remaining here: parts 2-3, consumer conversion +
-  the two checks, per the doc) — THE DUMP'S SELF-DESCRIBING CONTRACT.
+  BIRTH; --emit-ir moved to TO-BE-CONSIDERED on [DD-8]; sections added
+  same day. Remaining here: parts 2-3, consumer conversion + the two
+  checks, per the doc. RULED ADDITIONS (Frank, 2026-08-21 evening):
+  (i) the conversion lands as TEST LIBRARY FUNCTIONS — one
+  implementation of the contract in tests/lib/ (comment-skip, header
+  name->index resolution, section selection, header-truthfulness
+  assertion; shell for the awk consumers, and compliance_section.py's
+  parse routed through the same contract semantics) that every
+  consumer CALLS instead of hand-rolling the format at each site —
+  "the test code ties to the spec": the library cites and implements
+  docs/spec/table_contract.md, so a future format feature (e.g.
+  sections) is implemented ONCE, in gen_timeout.sh's one-rule pattern;
+  (ii) VALIDATION SCOPE: not the full suite — the affected sections
+  (test-reject, test-cli, test-registry) plus the contract's own
+  checks are the merge bar) — THE DUMP'S SELF-DESCRIBING CONTRACT.
   `--list-syntax` ALREADY emits `#` comment lines and a `#kind<TAB>...`
   header row naming every column; what is missing is the ruled CONTRACT
   and conforming consumers. Three parts: (1) DOCUMENT the contract where
@@ -1483,7 +1514,12 @@ document). Mechanize instead.
   this row moves. Sequencing: after the built-status column (which lands
   first and independently); pairs naturally with it (same generator, same
   checker). The recurring failure this retires: prose rows going stale
-  after waves land (three recorded instances in [M6.2] alone)
+  after waves land (three recorded instances in [M6.2] alone).
+  SCHEDULING RULED (Frank, 2026-08-21, triage ruling 2): CLEARED for
+  the test-infra window BEFORE [M6.4], sequenced AFTER [SR-11] (shared
+  compliance_section.py); the window also absorbs the anchor-checker
+  promotion into make test and the PROCS=4-5 tests/assertions
+  recommendation
 - [PC-2] STATE:not-started — periodic re-survey: re-read pcre2syntax.html,
   re-run tests/reject, move landed modules from REJECTED to OK, re-stamp the
   date. Do this whenever a module lands and at each checkpoint review
