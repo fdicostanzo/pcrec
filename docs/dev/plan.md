@@ -462,7 +462,20 @@ including V-G/V-H (added this session).
   already owes (--emit-ir / --emit-dot — that row stays the owner of
   those two surfaces; this row is the run-time half). Pairs with [V-G]:
   a failing user test plus a traced matcher is a debugging story no
-  regex library offers
+  regex library offers. TRACE ENRICHMENT NOTE (Frank, 2026-08-21,
+  thirty-fifth session — details/design TBD, stays boonies): revisit
+  what --trace's emitted instrumentation SAYS — today it narrates
+  engine mechanics (push/pop frames, state transitions); Frank wants it
+  to also point at the position IN THE PATTERN being worked on (which
+  construct — the `\n`, the quantifier — the engine is currently
+  matching against, i.e. a pattern-offset/construct reference on trace
+  events) and generally describe MORE than frame traffic. The emitter
+  knows the pattern offset per emitted site at generation time, so this
+  is plumbing generation-time knowledge into the trace strings — same
+  family as the [M6-READ] legends (emitter-owned data rendered for a
+  reader), which is the natural design starting point. If an enriched
+  trace mode ever emits TABULAR output it adopts docs/spec/
+  table_contract.md at birth
 
 - [SAFEKILL] STATE:started (chartered by Frank 2026-08-19, thirty-fourth
   session, on the recurring pkill-collateral class) — a SAFE PROCESS-KILL
@@ -1377,7 +1390,15 @@ document). Mechanize instead.
 - [SR-11] STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
   session, from the D65 format-consumer breakage: "if it was meant to be
   read, it might be prep'd for it — #comments are ignored and a
-  #header:col1 col2... row") — THE DUMP'S SELF-DESCRIBING CONTRACT.
+  #header:col1 col2... row". PART 1 DONE same day: the contract is
+  WRITTEN and GENERALIZED to every tabular command — docs/spec/
+  table_contract.md covers --list-syntax AND --list-verbs, rules
+  producers (# comments, header-names-columns, append-only, no tabs in
+  fields) and consumers (resolve by name; trailing-safe; count only as
+  header-equality), and declares future table commands adopt it AT
+  BIRTH; --emit-ir and --trace are explicitly out of scope, the latter
+  pointed at [V-H]. Remaining here: parts 2-3, consumer conversion +
+  the two checks, per the doc) — THE DUMP'S SELF-DESCRIBING CONTRACT.
   `--list-syntax` ALREADY emits `#` comment lines and a `#kind<TAB>...`
   header row naming every column; what is missing is the ruled CONTRACT
   and conforming consumers. Three parts: (1) DOCUMENT the contract where

@@ -124,5 +124,13 @@ spec and a design doc disagree, the spec is what the tool promises.
   byte-identical to the artifact's emission (`lib/CLAUDE.md` carries the
   detail).
 
+- `table_contract.md` — the ruled contract for every command that outputs
+  a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table
+  surface, which adopts it at birth): `#` comments, a header row naming
+  all columns, append-only columns, consumers resolve by header NAME
+  (never hardcoded count/position, trailing-safe, count only as
+  header-equality). Chartered by Frank 2026-08-21 from the D65
+  format-consumer breakage; [SR-11] tracks consumer conversion + the
+  two checks. `--emit-ir`/`--trace` are explicitly out of scope.
 Maintenance: update this file when files are added/removed or their roles
 change.
