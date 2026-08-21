@@ -30,7 +30,7 @@
 SAB_ID="S73-accept-indexed-at-end"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen harness"
-SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
+SAB_HARNESS_TARGET="tests/assertions/wordb_empty_compose.rxt"   # wordb.rxt split 2026-08-21; the §3.6.2 pos==n composition section lives here
 SAB_DESC="the forward loop's class-indexed accept is emitted ABOVE its 'pos >= n' guard, so the emitted matcher computes fcls[s[pos]] at pos == n -- an out-of-bounds read in generated code (S3.6.2, K27's class) that usually changes no answer"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 1] reports the guard after the first class-indexed accept"
 SAB_COUNT=1

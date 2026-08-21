@@ -87,34 +87,60 @@ every oracle exclusion has an entry there.
   flag-reader sabotage) belong to WAVE C**, where the flag can actually be
   true and those rows can actually go red; writing them now would be a check
   with no failing direction.
-- **wordb.rxt** — [M6.2] WAVE B: `\b` and `\B`. **The `ms`/`ns` cells are what
-  makes this file different from `absolute.rxt`, and they are not decoration.**
-  `\b`/`\B` are the module's first CONTEXT assertions — their truth at a
-  position depends on the bytes on EITHER SIDE of it — while
-  `<prefix>_search(s, n, startpos, caps)` searches `s[startpos, n)` and
-  `s[startpos-1]` sits OUTSIDE that window and INSIDE the subject. A
-  `startpos > 0` cell is therefore the only thing in this corpus that can see
-  mechanism 4 (`assertions_design.md` §3.8) at all, and 5 of that section's 10
-  measured cells differ between searching from `startpos` and searching the
-  SLICE — in BOTH directions, so no conservative reading exists.
-  **The LEADING `\B` cells at `startpos > 0` carry §3.8.3.1's reverse
-  TERMINATION defect, which a leading-`\b` population structurally cannot
-  see**: `\b`'s blind assumption (no left context means non-word) coincides
-  with its own truth condition, so a `\b`-only suite reports clean against an
-  implementation that throws matches away. The named cell is `\Bfoo` on
-  `"xfoo"` at startpos 1 → `(1,4)`, and sabotage S74 is its failing direction.
-  Also here: both-ended and interior forms, the empty-match family (`\b`,
-  `\bx*` — whose start state ACCEPTS, which is what §3.6.1's widened
-  `start_acc` is about), composition with `$`/`\z`/`\Z` (§3.6.2's two axes),
-  and an ENG_ATTEMPT block, since a `^` routes the pattern to the
-  computed-goto engine where §3.6's table and §3.8's seed take a different
-  emitted shape. Every expectation libpcre2-produced. **THREE ANCHORED CELLS
-  WERE DELIBERATELY ABSENT AND ARE NOW BACK** ([M6.2] repair slice,
-  2026-08-19) — `^\Bfoo`, `^\Bo`, `^a\bb`, never-matching patterns whose
-  emitted C tripped a PRE-EXISTING `-Werror=maybe-uninitialized` (K28,
-  base-tier reproducer `^a^b`) until that wrapper was fixed. The live
-  equivalents STAY beside them: same impossibility, live sibling branch,
-  different emitted shape.
+- **wordb_basic.rxt, wordb_empty_compose.rxt, wordb_engattempt.rxt,
+  wordb_vm.rxt** — [M6.2] WAVE B: `\b` and `\B`, in four shards. **Split
+  2026-08-21** ([M6.2.2] plan row) along the corpus's own section
+  boundaries so `tests/harness/run.sh`'s file-granularity `PROCS=N`
+  parallelism does not serialize the corpus section's wall time behind one
+  4,608-case file; every case moved verbatim (proven by a byte-diff of the
+  section bodies against the pre-split file). **The `ms`/`ns` cells,
+  present in all four, are what makes this corpus different from
+  `absolute.rxt`, and they are not decoration.** `\b`/`\B` are the module's
+  first CONTEXT assertions — their truth at a position depends on the bytes
+  on EITHER SIDE of it — while `<prefix>_search(s, n, startpos, caps)`
+  searches `s[startpos, n)` and `s[startpos-1]` sits OUTSIDE that window
+  and INSIDE the subject. A `startpos > 0` cell is therefore the only thing
+  in this corpus that can see mechanism 4 (`assertions_design.md` §3.8) at
+  all, and 5 of that section's 10 measured cells differ between searching
+  from `startpos` and searching the SLICE — in BOTH directions, so no
+  conservative reading exists.
+  - **wordb_basic.rxt** — the plain, un-anchored, non-capturing forms: the
+    ten §3.8 cells (`\bfoo`, `\Bfoo`, `foo\b`, `foo\B`) and both-ended /
+    interior forms (`\bfoo\b`, `\b\w+\b`, `a\bb`, …). **The LEADING `\B`
+    cells at `startpos > 0` carry §3.8.3.1's reverse TERMINATION defect,
+    which a leading-`\b` population structurally cannot see**: `\b`'s blind
+    assumption (no left context means non-word) coincides with its own
+    truth condition, so a `\b`-only suite reports clean against an
+    implementation that throws matches away. The named cell is `\Bfoo` on
+    `"xfoo"` at startpos 1 → `(1,4)`, and sabotage S74 is its failing
+    direction. Carries the family-wide header (oracle rule, mechanism-4
+    background) the other three shards point back to.
+  - **wordb_empty_compose.rxt** — the empty-match family (`\b`, `\bx*` —
+    whose start state ACCEPTS, which is what §3.6.1's widened `start_acc`
+    is about) and composition with the module's other position assertions,
+    `$`/`\z`/`\Z`/`\A` (§3.6.2's two axes: the view axis by position, the
+    class axis by next byte, scalar at `pos == n`). The two `\Z` blocks
+    here (`\bfoo\Z`, `\Bo\Z`) carry `# pcre2-only`.
+  - **wordb_engattempt.rxt** — the ENG_ATTEMPT block: every pattern here
+    leads with `^`, which routes it to the computed-goto engine, where
+    §3.6's table and §3.8's seed take a different emitted shape (baked into
+    the label body rather than read from an array) than a corpus with no
+    `^` cells would ever exercise. **THREE ANCHORED CELLS WERE DELIBERATELY
+    ABSENT AND ARE NOW BACK** ([M6.2] repair slice, 2026-08-19) — `^\Bfoo`,
+    `^\Bo`, `^a\bb`, never-matching patterns whose emitted C tripped a
+    PRE-EXISTING `-Werror=maybe-uninitialized` (K28, base-tier reproducer
+    `^a^b`) until that wrapper was fixed. The live equivalents STAY beside
+    them: same impossibility, live sibling branch, different emitted shape.
+  - **wordb_vm.rxt** — the VM half: every block here carries a capturing
+    group, which forces VM routing (`src/opt/select_engine.c`'s
+    `forces_captures`). Its ABSENCE was measured: sabotage S75 first came
+    back UNDETECTED because every pre-existing block in the corpus was
+    capture-free, so nothing reached `src/gen/emit_vm.c`'s `\b` arm at all
+    — this shard exists because that measurement found the gap. Includes
+    the `ms`/`ns` cells on the VM's own guarded spelling (design §9.3,
+    which reads `s[pos-1]` directly and has no mechanism-4 seed to get
+    wrong), pinned separately from the DFA's rather than assumed identical.
+  Every expectation in all four shards libpcre2-produced.
 - **multiline.rxt** — [M6.2] WAVE C: `(?m)`. **The SCOPING is what makes this
   file different from the other two.** `(?m)` is a scoped inline option, so
   the answer depends on the state in force AT EACH `^`/`$` rather than on the
@@ -150,7 +176,7 @@ every oracle exclusion has an entry there.
   equivalents `a(?m)$` and `a(?m)^b|c` STAY beside it.
 - **gpos.rxt** — [M6.2] WAVE D: `\G`, the first matching position. **The
   `ms`/`ns` cells are the point of this file more sharply than they are even
-  in wordb.rxt**: `\G` is true iff `pos == startpos`, so at the default
+  in the wordb shards**: `\G` is true iff `pos == startpos`, so at the default
   `startpos == 0` it is INDISTINGUISHABLE from `\A` on every subject, and a
   corpus written entirely at offset 0 would go green on a compiler that
   lowered `\G` to `A_BOL`. Every block sweeps startpos across the whole

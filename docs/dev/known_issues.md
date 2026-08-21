@@ -2312,8 +2312,9 @@ of this shape is a suite build failure. That is also why it survived
 undetected: no pre-wave-B corpus pattern compiles to a single dead state.
 `^a^b` is a base-tier reproducer; wave B's corpus is the first to REACH
 the shape naturally (`^\Bfoo`, `^\Bo`, `^a\bb`), and those three cells
-are named and excluded in tests/assertions/wordb.rxt's own header (~line
-2793) with live equivalents in their place.
+are named and excluded in tests/assertions/wordb_engattempt.rxt's own
+header (~line 33; wordb.rxt's ENG_ATTEMPT-half shard, split 2026-08-21)
+with live equivalents in their place.
 
 **[M6.2 wave C] adds a FOURTH spelling and it is a different construct**:
 `a(?m)^b` — a multiline `^` after a consumed byte, which cannot match for
@@ -2396,7 +2397,8 @@ too, so `{{0}}` raises no `-Wmissing-braces` at any width.
 
 **THE SIX EXCLUDED CORPUS SPELLINGS ARE BACK**, in the same change and
 oracle-verified against libpcre2 through `tests/assertions/verify_pcre2.py`:
-`^\Bfoo`, `^\Bo`, `^a\bb` (wordb.rxt, +216 cells), `a(?m)^b`
+`^\Bfoo`, `^\Bo`, `^a\bb` (wordb.rxt, +216 cells — now tests/assertions/
+wordb_engattempt.rxt's shard, split 2026-08-21), `a(?m)^b`
 (multiline.rxt, +45), `a\Gb` and `x\G` (gpos.rxt, +30). Each file's own
 header is rewritten from "absent, and here is why" to "back, and here is
 what fixed it". The LIVE equivalents stay in place — they carry the same
