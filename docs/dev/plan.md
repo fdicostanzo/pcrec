@@ -1369,6 +1369,36 @@ document). Mechanize instead.
 
 ## PCRE2 compliance tracking
 
+- [DOC-DRV] STATE:not-started — COMPLIANCE PAGE AS ANNOTATED DERIVATION
+  (Frank, 2026-08-21, thirty-fifth session, from the "could the entire
+  compliance page be derived from source?" discussion): restructure
+  docs/pcre2_compliance.md so every derivable FACT is generated and the
+  hand-written residue shrinks to the two things that genuinely require a
+  human. THE THREE-COMPONENT MODEL, ruled: (1) GENERATED FACTS from
+  `--list-syntax` (status/module/gating/diagnostic + the [built-status]
+  column once the registry_built_status memo's implementation lands) —
+  never hand-edited, SR-4's cannot-drift property; (2) the INDEPENDENT
+  SURVEY derived from PCRE2's own documentation — NEVER generated from the
+  registry, because its value is answering "what does PCRE2 have that the
+  registry doesn't even list", and deriving it from the registry would
+  certify completeness from the thing being audited (the
+  controls-sharing-a-source class); (3) KEYED ANNOTATIONS — the
+  hand-written measurements and judgment (OK-LIMITED qualifiers, U-list
+  divergences, K-list caveats, D26 tiers, the deferral analysis), each
+  keyed to the construct it describes so staleness is detectable rather
+  than silent, rendered into the page by the generator. The page stays
+  trustworthy through the CHECKED TENSION of independently-derived halves
+  (compliance_section.py), not through full derivation. SCOPE: generator +
+  checker changes, migration of ~600 lines of prose-row content into keyed
+  annotations, prose shrunk to survey + judgment. THE PROCESS IS CARRIED BY
+  A SKILL (Frank's ruling, same discussion): .claude/skills/
+  compliance-refresh/SKILL.md defines the repeatable refresh procedure and
+  its invariants, exists NOW (ahead of this row), and governs the interim
+  discipline until this row lands; update its migration-status section when
+  this row moves. Sequencing: after the built-status column (which lands
+  first and independently); pairs naturally with it (same generator, same
+  checker). The recurring failure this retires: prose rows going stale
+  after waves land (three recorded instances in [M6.2] alone)
 - [PC-2] STATE:not-started — periodic re-survey: re-read pcre2syntax.html,
   re-run tests/reject, move landed modules from REJECTED to OK, re-stamp the
   date. Do this whenever a module lands and at each checkpoint review
