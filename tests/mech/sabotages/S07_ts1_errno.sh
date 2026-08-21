@@ -8,5 +8,5 @@ SAB_SUITES="codegen"
 SAB_DESC="emit_unanchored: append '(void)errno;' to the emitted prologue with no errno.h include"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 6 TS-1 checks (+ OS-0b compile check incidentally)"
 SAB_COUNT=1
-SAB_BEFORE="\"    size_t pos = startpos;\\n\""
-SAB_AFTER="\"    size_t pos = startpos; (void)errno;\\n\""
+SAB_BEFORE="\"    size_t scan_position = search_from;\\n\""
+SAB_AFTER="\"    size_t scan_position = search_from; (void)errno;\\n\""

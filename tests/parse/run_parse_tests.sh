@@ -110,7 +110,18 @@ done
 # capture node, which is the thing [M4.5b] could plausibly have broken.
 rx_search_body() { # rx_search_body <whole-file-text-on-stdin>
     awk '
-        $0 ~ /^int rx_search\(/ { inside = 1 }
+        # The `!~ ";$"` guard matches the DEFINITION, not the DECLARATION. A
+        # self-contained artifact declares the entry near the top and defines
+        # it far below, and both lines start `int rx_search(` -- so without it
+        # this captured from the DECLARATION and swept up everything between.
+        # [M6-READ] made that visible: the orientation block sits in that
+        # window and QUOTES THE PATTERN, so two patterns with the same AST
+        # emitted different "bodies" and all 9 pairs reported differing. The
+        # same bug, and the same fix, as the body() helper in
+        # tests/codegen/run_codegen_tests.sh. `tail -n +2` above skips the
+        # line-1 pattern
+        # comment; the orientation block is a SECOND place the pattern appears.
+        $0 ~ /^int rx_search\(/ && $0 !~ /;[ \t]*$/ { inside = 1 }
         inside                  { print }
         inside && /^\}/         { exit }
     '

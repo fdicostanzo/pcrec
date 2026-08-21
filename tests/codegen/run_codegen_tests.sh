@@ -38,7 +38,7 @@ bad()  { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # start_max, the attempt loop — is a function-local static or a statement
 # INSIDE the engine function. That is exactly what lets several engines share
 # one file (D18/D20), and it is also what makes a whole-file grep the wrong
-# tool the moment there is more than one: `rx_fs[0-9]+\[256\]` would then be
+# tool the moment there is more than one: `rx_forward_stay[0-9]+\[256\]` would then be
 # satisfied by ANY engine present, so a check that reads "this pattern emits a
 # skip table" quietly weakens to "some engine in here does" WITHOUT failing.
 #
@@ -52,8 +52,17 @@ bad()  { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # the SAME emitter's output with a different storage class, and it must be
 # extractable for the same per-engine scoping reason every other body is.
 body() { # body <file> <entry-name> <out-file>
+    # The `!~ ";[ \t]*$"` guard matches the DEFINITION, not the DECLARATION.
+    # A self-contained artifact declares the entry near the top and defines it
+    # far below, and both lines start `int <fn>(` -- so without the guard this
+    # captured from the DECLARATION and swept up everything in between.
+    # [M6-READ] exposed it: the orientation block sits in that window and
+    # quotes the PATTERN, so the OS-1 folding checks (which compare two
+    # patterns compiling to the same engine) began reporting a difference that
+    # is not in the engine at all. The extractor was always wrong; nothing
+    # pattern-dependent had ever landed between the two lines before.
     awk -v fn="$2" '
-        $0 ~ "^(static )?int " fn "\\(" { inside = 1 }
+        $0 ~ "^(static )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }
         inside                { print }
         inside && /^\}/       { exit }
     ' "$1" > "$3"
@@ -73,12 +82,12 @@ gen() { # gen <name> <pattern> [extra pcrec args...] -> <name>.c plus <name>.bod
 # '.*=.*' has states that self-loop on nearly every byte; the emitter must
 # produce a skip table for them. Disabling pick_skip_states removes these.
 if gen skip '.*=.*'; then
-    if grep -qE 'rx_(fs|rs)[0-9]+\[256\]' "$WORKDIR/skip.body"; then
+    if grep -qE 'rx_(forward|reverse)_stay[0-9]+\[256\]' "$WORKDIR/skip.body"; then
         ok "skip states: '.*=.*' emits a self-loop skip table"
     else
         bad "skip states: '.*=.*' emitted NO skip table (pick_skip_states disabled/broken?)"
     fi
-    if grep -qE 'while \(pos < n && rx_fs[0-9]+\[s\[pos\]\]\) pos\+\+;' "$WORKDIR/skip.body"; then
+    if grep -qE 'while \(scan_position < subject_length && rx_forward_stay[0-9]+\[subject\[scan_position\]\]\) scan_position\+\+;' "$WORKDIR/skip.body"; then
         ok "skip states: forward skip loop present"
     else
         bad "skip states: forward skip loop missing"
@@ -125,9 +134,9 @@ fi
 # prefilter's OWN minimization is then checked separately below, which is
 # coverage this check did not have before.
 if gen minim '(?:get|post|put|delete|patch)'; then
-    entries=$(grep -oE 'rx_ftr\[[0-9]+\]' "$WORKDIR/minim.body" | grep -oE '[0-9]+' | head -1)
+    entries=$(grep -oE 'rx_forward_next_state\[[0-9]+\]' "$WORKDIR/minim.body" | grep -oE '[0-9]+' | head -1)
     if [ -z "${entries:-}" ]; then
-        bad "minimization: could not find rx_ftr[] table in generated code"
+        bad "minimization: could not find rx_forward_next_state[] table in generated code"
     elif [ "$entries" -le 200 ]; then
         ok "minimization: keyword alternation table is $entries entries (<= 200)"
     else
@@ -145,9 +154,9 @@ if "$PCREC" -p rx -o "$WORKDIR/minimvm.c" -- '(get|post|put|delete|patch)' >/dev
     if ! body "$WORKDIR/minimvm.c" rx_prefilter "$WORKDIR/minimvm.body"; then
         bad "minimization/prefilter: could not extract rx_prefilter from the VM artifact"
     else
-        ventries=$(grep -oE 'rx_ftr\[[0-9]+\]' "$WORKDIR/minimvm.body" | grep -oE '[0-9]+' | head -1)
+        ventries=$(grep -oE 'rx_forward_next_state\[[0-9]+\]' "$WORKDIR/minimvm.body" | grep -oE '[0-9]+' | head -1)
         if [ -z "${ventries:-}" ]; then
-            bad "minimization/prefilter: no rx_ftr[] table inside the VM artifact's prefilter"
+            bad "minimization/prefilter: no rx_forward_next_state[] table inside the VM artifact's prefilter"
         elif [ "$ventries" -le 200 ]; then
             ok "minimization/prefilter: the VM hybrid's prefilter table is $ventries entries (<= 200) — the same passes run on that path"
         else
@@ -160,12 +169,12 @@ fi
 
 # ---- M2.7: `$` patterns must use the O(n) engine, not per-start attempts ----
 if gen dollar 'a*b$'; then
-    if grep -q 'rx_fev\[' "$WORKDIR/dollar.body"; then
+    if grep -q 'rx_forward_eol_view\[' "$WORKDIR/dollar.body"; then
         ok "M2.7: 'a*b\$' uses the unanchored engine with EOL variants"
     else
         bad "M2.7: 'a*b\$' did NOT use the unanchored engine (reverted to O(n^2) attempts?)"
     fi
-    if grep -q 'for (start = startpos' "$WORKDIR/dollar.body"; then
+    if grep -q 'for (start = search_from' "$WORKDIR/dollar.body"; then
         bad "M2.7: 'a*b\$' still emits a per-start-position attempt loop"
     else
         ok "M2.7: no per-start attempt loop for a \$-bearing pattern"
@@ -181,7 +190,7 @@ fi
 # eligibility, this fails, and you owe a measurement of the REVERSE machine
 # before deciding the new numbers are better.
 if gen dense '[01]*1[01]{8}'; then
-    if grep -qE 'rx_(fs|rs)[0-9]+\[256\]' "$WORKDIR/dense.body"; then
+    if grep -qE 'rx_(forward|reverse)_stay[0-9]+\[256\]' "$WORKDIR/dense.body"; then
         bad "M2.10: '[01]*1[01]{8}' now emits a skip table — eligibility was widened; re-measure case (f) (it was 27% SLOWER when this last changed) before accepting"
     else
         ok "M2.10: narrow-alphabet dense pattern stays skip-ineligible (measured regression)"
@@ -194,7 +203,7 @@ fi
 # cost 43% on '[01]*1[01]{8}' (158.4 -> 90.8 MB/s). Both orders are correct;
 # only one is fast, and which one depends on the path.
 if gen ordnoeol '[01]*1[01]{8}'; then
-    acc_line=$(grep -nE 'if \(rx_facc\[st\]\) last = pos;' "$WORKDIR/ordnoeol.body" | head -1 | cut -d: -f1)
+    acc_line=$(grep -nE 'if \(rx_forward_is_accepting\[forward_state\]\) last_accept_position = scan_position;' "$WORKDIR/ordnoeol.body" | head -1 | cut -d: -f1)
     pre_line=$(grep -nE 'const void \*q = memchr' "$WORKDIR/ordnoeol.body" | head -1 | cut -d: -f1)
     if [ -n "${acc_line:-}" ] && [ -n "${pre_line:-}" ] && [ "$acc_line" -lt "$pre_line" ]; then
         ok "M2.12: non-EOL path keeps accept BEFORE scan avoidance (the fast order)"
@@ -208,18 +217,18 @@ fi
 # path and left `$` patterns at ~291 MB/s where the same pattern without `$`
 # ran at ~22 GB/s. Nothing in the corpus or the budgets could see that.
 if gen eolskip '.*=.*$'; then
-    if grep -qE 'rx_fs[0-9]+\[256\]' "$WORKDIR/eolskip.body"; then
+    if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/eolskip.body"; then
         ok "M2.12: '.*=.*\$' emits a skip table on the EOL path"
     else
         bad "M2.12: '.*=.*\$' emitted NO skip table (EOL path lost scan avoidance again?)"
     fi
     # bounded at n-1, never n: a state may accept at an EOL position
-    if grep -qE 'while \(pos \+ 1 < n && rx_fs[0-9]+\[s\[pos\]\]\) pos\+\+;' "$WORKDIR/eolskip.body"; then
+    if grep -qE 'while \(scan_position \+ 1 < subject_length && rx_forward_stay[0-9]+\[subject\[scan_position\]\]\) scan_position\+\+;' "$WORKDIR/eolskip.body"; then
         ok "M2.12: EOL forward skip loop is bounded at n-1"
     else
         bad "M2.12: EOL forward skip loop missing or not bounded at n-1"
     fi
-    if grep -qE 'rst == [0-9]+ && pp \+ 1 < n' "$WORKDIR/eolskip.body"; then
+    if grep -qE 'reverse_state == [0-9]+ && rewind_position \+ 1 < subject_length' "$WORKDIR/eolskip.body"; then
         ok "M2.12: EOL reverse skip loop carries the pp+1<n entry guard"
     else
         bad "M2.12: EOL reverse skip loop missing its pp+1<n entry guard"
@@ -227,8 +236,8 @@ if gen eolskip '.*=.*$'; then
     # ORDER MATTERS, and getting it wrong is what the first M2.12 attempt did:
     # a skip landing on n-1 must not consume that byte before the EOL view of
     # it has been taken. So the accept evaluation must come AFTER the skips.
-    skip_line=$(grep -nE 'while \(pos \+ 1 < n && rx_fs[0-9]+' "$WORKDIR/eolskip.body" | tail -1 | cut -d: -f1)
-    acc_line=$(grep -nE 'if \(rx_facc\[est\]\) last = pos;' "$WORKDIR/eolskip.body" | head -1 | cut -d: -f1)
+    skip_line=$(grep -nE 'while \(scan_position \+ 1 < subject_length && rx_forward_stay[0-9]+' "$WORKDIR/eolskip.body" | tail -1 | cut -d: -f1)
+    acc_line=$(grep -nE 'if \(rx_forward_is_accepting\[forward_view_state\]\) last_accept_position = scan_position;' "$WORKDIR/eolskip.body" | head -1 | cut -d: -f1)
     if [ -n "${skip_line:-}" ] && [ -n "${acc_line:-}" ] && [ "$acc_line" -gt "$skip_line" ]; then
         ok "M2.12: EOL accept/eolvar evaluation happens after the skip loops"
     else
@@ -244,7 +253,7 @@ if gen eolpre 'a*b$'; then
     fi
     # ...but WITHOUT the non-EOL early `return 0`, since the start state's EOL
     # view may still accept at n-1 or n
-    if grep -qE 'memchr\(s \+ pos, [0-9]+, n - 1 - pos\)' "$WORKDIR/eolpre.body"; then
+    if grep -qE 'memchr\(subject \+ scan_position, [0-9]+, subject_length - 1 - scan_position\)' "$WORKDIR/eolpre.body"; then
         ok "M2.12: EOL memchr is bounded at n-1"
     else
         bad "M2.12: EOL memchr not bounded at n-1"
@@ -253,7 +262,7 @@ fi
 
 # ^ patterns legitimately stay on the attempt engine (documented limitation)
 if gen caret '^a|b'; then
-    if grep -q 'for (start = startpos' "$WORKDIR/caret.body"; then
+    if grep -q 'for (start = search_from' "$WORKDIR/caret.body"; then
         ok "engine selection: partially-^-anchored pattern uses the attempt engine"
     else
         bad "engine selection: '^a|b' unexpectedly on the unanchored engine (^ needs a reverse BOT variant)"
@@ -339,7 +348,7 @@ if gen casehot 'Hello|World' -i; then
     else
         ok "OS-1: -i output contains no run-time case conversion at all"
     fi
-    if grep -q '^int rx_search(const unsigned char \*s, size_t n, size_t startpos, ptrdiff_t (\*caps)\[2\])$' "$WORKDIR/casehot.body"; then
+    if grep -q '^int rx_search(const unsigned char \*subject, size_t subject_length, size_t search_from, ptrdiff_t (\*capture_spans)\[2\])$' "$WORKDIR/casehot.body"; then
         ok "OS-1: -i leaves the entry-point signature unchanged (a singleton dimension is not in the signature)"
     else
         bad "OS-1: -i changed the entry-point signature — a compiled-away option must not appear at run time (D18)"
@@ -426,15 +435,15 @@ elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
     fi
 
     # the control for every engine-scoped grep above
-    if grep -qE 'rx_fs[0-9]+\[256\]' "$WORKDIR/multi.c"; then
+    if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.c"; then
         if body "$WORKDIR/multi.c" rx_search "$WORKDIR/multi.a.body" \
         && body "$WORKDIR/multi.c" rx_search_b "$WORKDIR/multi.b.body"; then
-            if grep -qE 'rx_fs[0-9]+\[256\]' "$WORKDIR/multi.a.body"; then
+            if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.a.body"; then
                 ok "OS-0b: scoped grep finds the skip table in the engine that has one"
             else
                 bad "OS-0b: scoped grep MISSED the skip table in '.*=.*' (body() extracting nothing?)"
             fi
-            if grep -qE 'rx_fs[0-9]+\[256\]' "$WORKDIR/multi.b.body"; then
+            if grep -qE 'rx_forward_stay[0-9]+\[256\]' "$WORKDIR/multi.b.body"; then
                 bad "OS-0b: scoped grep attributed engine A's skip table to engine B — body() is not scoping, so every symbol check above has silently weakened to 'some engine here does'"
             else
                 ok "OS-0b: scoped grep does NOT attribute engine A's skip table to engine B"
@@ -593,13 +602,13 @@ ts1_scan() { # ts1_scan <label> <file>
     # function has no storage to race on — but until the VM emitter existed,
     # every emitted `static` was a table, so "static and not const" and "mutable
     # state" were the same set and the check could not tell them apart. The VM
-    # artifact emits five static functions (rx_match_impl, rx_work_init,
-    # rx_unwind, rx_caps_out, rx_prefilter) and its whole mutable working set is
+    # artifact emits five static functions (rx_match_anchored, rx_work_init,
+    # rx_unwind, rx_report_captures, rx_prefilter) and its whole mutable working set is
     # a LOCAL of the search entry, which is exactly what D19 asks for.
     #
     # The discriminator is C's declarator syntax, not a name list: a function
     # declarator has `(` with no `=`, `;` or `[` before it. So
-    # `static void rx_unwind(rx_work *w)` is excluded and
+    # `static void rx_unwind(rx_run_state *w)` is excluded and
     # `static unsigned char rx_tbl[256] = {` (S06's sabotage — a table with its
     # const dropped) still has no `(` at all and is still caught, as is anything
     # of the shape `static int rx_counter = f(0);`, where `=` precedes the `(`.
@@ -1077,7 +1086,7 @@ fi
 # directory's charter is about, found the only way it can be found.
 #
 # `.*\b.*`'s reverse skip state DOES accept, and the check now ASSERTS that
-# rather than assuming it: `rx_racc[K]` is read out of the artifact and
+# rather than assuming it: `rx_reverse_is_accepting[K]` is read out of the artifact and
 # required to be 1, so a future fixture that quietly loses the property fails
 # loudly instead of passing vacuously.
 WB_PAT='.*\b.*'
@@ -1105,19 +1114,19 @@ if gen wordb "$WB_PAT" --features all; then
     # read, so it is dropped first -- an exclusion worth spelling out, since
     # forgetting it is a check that fails on its own subject rather than on a
     # defect.
-    grep 'rx_facc2\[' "$wbb" | grep -v '^ *static const' > "$WORKDIR/f2reads"
+    grep 'rx_forward_is_accepting_by_class\[' "$wbb" | grep -v '^ *static const' > "$WORKDIR/f2reads"
     f2lines=$(grep -c . "$WORKDIR/f2reads" || true)
-    f2bad=$(grep -cv 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' "$WORKDIR/f2reads" || true)
-    guard_ln=$(grep -n '^        if (pos >= n) {$' "$wbb" | head -1 | cut -d: -f1)
-    first_f2=$(grep -n 'rx_facc2\[' "$wbb" | grep -v ':[[:space:]]*static const' \
+    f2bad=$(grep -cv 'rx_forward_is_accepting_by_class\[[a-z_]* \* [0-9]* + forward_class\]' "$WORKDIR/f2reads" || true)
+    guard_ln=$(grep -n '^        if (scan_position >= subject_length) {$' "$wbb" | head -1 | cut -d: -f1)
+    first_f2=$(grep -n 'rx_forward_is_accepting_by_class\[' "$wbb" | grep -v ':[[:space:]]*static const' \
                | head -1 | cut -d: -f1)
     scalar_in_guard=$(sed -n "${guard_ln:-0},$((${guard_ln:-0} + 2))p" "$wbb" \
-                      | grep -c 'rx_facc\[' || true)
+                      | grep -c 'rx_forward_is_accepting\[' || true)
     if [ "$f2lines" -lt 1 ]; then
         bad "[M6.2-WORDB rule 1]: '$WB_PAT' emitted no class-indexed accept at all — the fixture no longer exercises §3.6, so this rule has no population"
     elif [ "$f2bad" -ne 0 ]; then
         bad "[M6.2-WORDB rule 1]: $f2bad of $f2lines class-indexed accept reads are not indexed by the 'cl' local; a read that computes its own class is a read this check cannot prove is guarded:"
-        grep -v 'rx_facc2\[[a-z]* \* [0-9]* + cl\]' "$WORKDIR/f2reads" >&2
+        grep -v 'rx_forward_is_accepting_by_class\[[a-z_]* \* [0-9]* + forward_class\]' "$WORKDIR/f2reads" >&2
     elif [ -z "$guard_ln" ] || [ -z "$first_f2" ] || [ "$guard_ln" -ge "$first_f2" ]; then
         bad "[M6.2-WORDB rule 1]: the 'if (pos >= n)' guard is at line ${guard_ln:-MISSING} and the first class-indexed accept at line ${first_f2:-MISSING} — the guard must come FIRST, or the emitted loop reads s[pos] at pos == n"
     elif [ "$scalar_in_guard" -lt 1 ]; then
@@ -1126,74 +1135,79 @@ if gen wordb "$WB_PAT" --features all; then
         ok "[M6.2-WORDB rule 1] (§3.6.2): all $f2lines class-indexed accept reads go through the guarded 'cl' local, and the 'pos >= n' arm takes the SCALAR accept before any of them — no accept table is indexed at pos == n"
     fi
 
-    # --- rule 2 (§3.8.3.1): every `sfound` writer at the reverse boundary ---
+    # --- rule 2 (§3.8.3.1): every `match_start_position` writer at the reverse boundary ---
     #
-    # THE INVARIANT: no `sfound` is recorded at `pp == startpos` except through
+    # THE INVARIANT: no `match_start_position` is recorded at `pp == startpos` except through
     # the context-indexed accept. The design states it as an invariant rather
     # than a patch for a specific reason — there is MORE THAN ONE WRITER. The
     # loop-top one is obvious; the reverse SKIP's is not, and it is worse than
     # it looks: `emit_dfa.c`'s `if (!eol && rd->st[K].accept)` is a
     # COMPILE-TIME condition on whether to EMIT the line, so what would land
-    # in the artifact is a BARE, UNCONDITIONAL `sfound = pp;` inside the skip
+    # in the artifact is a BARE, UNCONDITIONAL `match_start_position = pp;` inside the skip
     # block with no runtime test to fail.
     #
-    # So the check enumerates EVERY `sfound` assignment in the body and
+    # So the check enumerates EVERY `match_start_position` assignment in the body and
     # requires each to be conditioned on an accept read — on its own line or
     # on the one above it, which is where the boundary arm's two-line ternary
     # puts it. A bare assignment fails no matter which writer emitted it,
     # which is what makes this an invariant check rather than a check of the
     # one site somebody remembered.
     #
-    # THE FIXTURE HAS A LIVE REVERSE SKIP (`rx_rs<K>`), asserted below: without
+    # THE FIXTURE HAS A LIVE REVERSE SKIP (`rx_reverse_stay<K>`), asserted below: without
     # one this rule would pass on an artifact that has no second writer to get
     # wrong.
-    rskips=$(grep -c 'rx_rs[0-9]*\[s\[pp - 1\]\]' "$wbb" || true)
+    rskips=$(grep -c 'rx_reverse_stay[0-9]*\[subject\[rewind_position - 1\]\]' "$wbb" || true)
     # THE NON-VACUITY ASSERTION. Read the reverse skip state's index out of
     # its own emitted loop, then that state's SCALAR accept out of the
-    # artifact's `rx_racc[]`. Both come from the artifact; neither is typed
+    # artifact's `rx_reverse_is_accepting[]`. Both come from the artifact; neither is typed
     # here, so a fixture change cannot silently drop the property.
-    rskip_k=$(grep -oE 'rx_rs[0-9]+\[s\[pp - 1\]\]' "$wbb" | head -1 \
+    rskip_k=$(grep -oE 'rx_reverse_stay[0-9]+\[subject\[rewind_position - 1\]\]' "$wbb" | head -1 \
               | grep -oE '[0-9]+' | head -1)
-    rskip_acc=$(sed -n '/static const unsigned char rx_racc\[/,/};/p' "$wbb" \
+    rskip_acc=$(sed -n '/static const unsigned char rx_reverse_is_accepting\[/,/};/p' "$wbb" \
                 | tr -d ' \n' | sed 's/.*={//; s/};.*//' \
                 | cut -d, -f$((${rskip_k:-0} + 1)))
-    # `size_t sfound = (size_t)-1;` is the DECLARATION, not a record of a
+    # `size_t match_start_position = (size_t)-1;` is the DECLARATION, not a record of a
     # match start, and is excluded by name rather than by pattern-matching
     # around it.
-    sf_total=$(grep 'sfound = ' "$wbb" | grep -cv 'size_t sfound = ' || true)
+    sf_total=$(grep 'match_start_position = ' "$wbb" | grep -cv 'size_t match_start_position = ' || true)
     sf_bad=$(awk '
-        /sfound = / && !/size_t sfound = / {
-            if ($0 !~ /racc/ && prev !~ /racc/) { print NR": "$0; n++ }
+        /match_start_position = / && !/size_t match_start_position = / {
+            # `racc` was how the accept table was spelled before [M6-READ]; the
+            # two tables are now rx_reverse_is_accepting[] and
+            # rx_reverse_is_accepting_by_class[], and matching on the shared
+            # substring keeps this blind to which of the two a writer reads --
+            # which is the property the rule wants.
+            if ($0 !~ /reverse_is_accepting/ && prev !~ /reverse_is_accepting/) { print NR": "$0; n++ }
         }
         { if ($0 !~ /^[[:space:]]*$/) prev = $0 }
         END { exit 0 }
     ' "$wbb")
     nsf_bad=$(printf '%s' "$sf_bad" | grep -c . || true)
     if [ "$rskips" -lt 1 ]; then
-        bad "[M6.2-WORDB rule 2]: '$WB_PAT' emitted no reverse skip loop, so the second, blind sfound writer §3.8.3.1 is about cannot be present — this rule would pass vacuously"
+        bad "[M6.2-WORDB rule 2]: '$WB_PAT' emitted no reverse skip loop, so the second, blind match_start_position writer §3.8.3.1 is about cannot be present — this rule would pass vacuously"
     elif [ "${rskip_acc:-0}" != "1" ]; then
-        bad "[M6.2-WORDB rule 2]: '$WB_PAT's reverse skip state $rskip_k does NOT accept (rx_racc[$rskip_k] = ${rskip_acc:-unread}), so the blind writer is gated off by its OTHER compile-time conjunct and no sabotage of the guard can emit it. This rule would pass vacuously — which is exactly how sabotage S72 first came back UNDETECTED. Pick a fixture whose reverse skip state accepts."
+        bad "[M6.2-WORDB rule 2]: '$WB_PAT's reverse skip state $rskip_k does NOT accept (rx_reverse_is_accepting[$rskip_k] = ${rskip_acc:-unread}), so the blind writer is gated off by its OTHER compile-time conjunct and no sabotage of the guard can emit it. This rule would pass vacuously — which is exactly how sabotage S72 first came back UNDETECTED. Pick a fixture whose reverse skip state accepts."
     elif [ "$sf_total" -lt 2 ]; then
-        bad "[M6.2-WORDB rule 2]: only $sf_total sfound writers in the body; the boundary arm and the interior read are both expected"
+        bad "[M6.2-WORDB rule 2]: only $sf_total match_start_position writers in the body; the boundary arm and the interior read are both expected"
     elif [ "$nsf_bad" -ne 0 ]; then
-        bad "[M6.2-WORDB rule 2]: $nsf_bad sfound writer(s) are not conditioned on an accept read. A bare 'sfound = pp;' at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1]:"
+        bad "[M6.2-WORDB rule 2]: $nsf_bad match_start_position writer(s) are not conditioned on an accept read. A bare 'match_start_position = pp;' at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1]:"
         printf '%s\n' "$sf_bad" >&2
     else
-        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total sfound writers are conditioned on an accept read, with $rskips reverse skip loop(s) present AND skip state $rskip_k ACCEPTING (rx_racc[$rskip_k] = 1) — so the second, blind writer really would be emitted here if its guard were removed"
+        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total match_start_position writers are conditioned on an accept read, with $rskips reverse skip loop(s) present AND skip state $rskip_k ACCEPTING (rx_reverse_is_accepting[$rskip_k] = 1) — so the second, blind writer really would be emitted here if its guard were removed"
     fi
 
     # --- rule 2b: the boundary accept is ATTACHED TO THE BREAK (R30 N9) -----
     #
     # The reverse loop has TWO exits — the boundary and the dead state — and
     # an accept placed after the loop would run on BOTH: on the dead-state
-    # exit it would record `sfound` at a position the walk never reached (a
+    # exit it would record `match_start_position` at a position the walk never reached (a
     # WRONG ANSWER, worse than a lost match) and index the accept table with a
     # NEGATIVE state (out-of-bounds, K27's class). So the context-indexed
     # boundary read must sit INSIDE the `pp <= startpos` arm, and there must
     # be no accept read after the loop closes.
-    b_arm=$(grep -n 'if (pp <= startpos) {' "$wbb" | head -1 | cut -d: -f1)
-    b_read=$(grep -n 'rx_rcls\[s\[startpos - 1\]\]' "$wbb" | head -1 | cut -d: -f1)
-    b_dead=$(grep -n 'if (rst < 0) break;' "$wbb" | head -1 | cut -d: -f1)
+    b_arm=$(grep -n 'if (rewind_position <= search_from) {' "$wbb" | head -1 | cut -d: -f1)
+    b_read=$(grep -n 'rx_reverse_byte_class\[subject\[search_from - 1\]\]' "$wbb" | head -1 | cut -d: -f1)
+    b_dead=$(grep -n 'if (reverse_state < 0) break;' "$wbb" | head -1 | cut -d: -f1)
     if [ -z "$b_arm" ] || [ -z "$b_read" ] || [ -z "$b_dead" ]; then
         bad "[M6.2-WORDB rule 2b]: could not locate the boundary arm (${b_arm:-MISSING}), its context read (${b_read:-MISSING}) or the dead-state exit (${b_dead:-MISSING}) in the emitted reverse loop"
     elif [ "$b_read" -le "$b_arm" ] || [ "$b_read" -ge "$b_dead" ]; then
@@ -1227,8 +1241,8 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
     # expression each is applied to, and count the DISTINCT ones. `(\b\w+\b)`
     # asks the same question — is this byte a word character — in three places,
     # so a correct artifact has exactly ONE distinct test.
-    ndistinct=$(grep -oE '\(rx_k[0-9]+\[\(s\[[^]]*\]\) >> 3\] >> \(\(s\[[^]]*\]\) & 7\)\) & 1|\(unsigned\)\(s\[[^]]*\] - [0-9]+\) <= [0-9]+u|s\[[^]]*\] == [0-9]+' \
-                "$WORKDIR/wordset.c" | sed 's/s\[[^]]*\]/B/g' | sort -u | grep -c . || true)
+    ndistinct=$(grep -oE '\(rx_class_bitmap[0-9]+\[\(subject\[[^]]*\]\) >> 3\] >> \(\(subject\[[^]]*\]\) & 7\)\) & 1|\(unsigned\)\(subject\[[^]]*\] - [0-9]+\) <= [0-9]+u|subject\[[^]]*\] == [0-9]+' \
+                "$WORKDIR/wordset.c" | sed 's/subject\[[^]]*\]/B/g' | sort -u | grep -c . || true)
     #
     # TWO ASSERTIONS, and the SECOND one took three tries — each earlier draft
     # was measured blind by running sabotage S75 rather than by reasoning:
@@ -1292,19 +1306,19 @@ fi
 if "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/null 2>&1; then
     # The whole of the emitted caps_out, so both the presence of the \K form
     # and the ABSENCE of the plain one are read from the same text.
-    awk '/^static void rx_caps_out\(/,/^}/' "$WORKDIR/kres.c" > "$WORKDIR/kres.capsout"
+    awk '/^static void rx_report_captures\(/,/^}/' "$WORKDIR/kres.c" > "$WORKDIR/kres.capsout"
     if [ ! -s "$WORKDIR/kres.capsout" ]; then
-        bad "[M6.2-KRESET rule 1]: could not extract rx_caps_out from the 'a\\Kb' artifact — the extractor has stopped matching the emitted shape, so this rule is measuring nothing"
-    elif ! grep -q 'w->stv\[0\] != PCREC_UNSET' "$WORKDIR/kres.capsout"; then
+        bad "[M6.2-KRESET rule 1]: could not extract rx_report_captures from the 'a\\Kb' artifact — the extractor has stopped matching the emitted shape, so this rule is measuring nothing"
+    elif ! grep -q 'run->slot_values\[0\] != PCREC_UNSET' "$WORKDIR/kres.capsout"; then
         bad "[M6.2-KRESET rule 1]: 'a\\Kb's caps_out does not read the trailed \\K slot at all. §6.3 rule 1: caps[0][0] on a \\K pattern comes from the VM, never from the prefilter's span start (which is the REVERSE PASS's answer)"
-    elif grep -qE '^ *caps\[0\]\[0\] = \(ptrdiff_t\)start;' "$WORKDIR/kres.capsout"; then
+    elif grep -qE '^ *capture_spans\[0\]\[0\] = \(ptrdiff_t\)match_start;' "$WORKDIR/kres.capsout"; then
         bad "[M6.2-KRESET rule 1]: 'a\\Kb's caps_out still contains the unconditional 'caps[0][0] = (ptrdiff_t)start;'. That is the prefilter's span start — the pre-\\K start — and writing it out reports where matching BEGAN where PCRE2 reports where the last \\K was crossed"
-    elif grep -qE '^ *stv\[0\] = ' "$WORKDIR/kres.c"; then
+    elif grep -qE '^ *slot_values\[0\] = ' "$WORKDIR/kres.c"; then
         # ORDERED BEFORE the missing-RX_SET branch below, because a DIRECT
         # write satisfies "no RX_SET" too and the specific diagnosis is the
         # useful one. Measured: sabotage S86 lands here.
-        bad "[M6.2-KRESET rule 1]: 'a\\Kb' writes stv[0] DIRECTLY rather than through RX_SET. The macro is what records the old value on the trail, so a direct write cannot be undone when a backtrack passes back over it — '(?:a\\K|ax)c' on \"axc\" is the cell that then reports (1,3) instead of (0,3)"
-    elif ! grep -q 'RX_SET(0, (ptrdiff_t)pos)' "$WORKDIR/kres.c"; then
+        bad "[M6.2-KRESET rule 1]: 'a\\Kb' writes slot_values[0] DIRECTLY rather than through RX_SET. The macro is what records the old value on the trail, so a direct write cannot be undone when a backtrack passes back over it — '(?:a\\K|ax)c' on \"axc\" is the cell that then reports (1,3) instead of (0,3)"
+    elif ! grep -q 'RX_SET(RX_SLOT_WHOLE_START, (ptrdiff_t)scan_position)' "$WORKDIR/kres.c"; then
         bad "[M6.2-KRESET rule 1]: 'a\\Kb' emits no trailed write to slot 0 — caps_out reads a slot nothing ever fills, so every match reports the fallback and the construct is inert"
     else
         ok "[M6.2-KRESET rule 1] (§6.3): 'a\\Kb's caps[0][0] comes from the TRAILED slot 0 and the unconditional 'caps[0][0] = start' (the prefilter's, i.e. the reverse pass's, span start) is GONE from its caps_out — both directions, in one artifact"
@@ -1321,11 +1335,11 @@ fi
 # below are what the emitter produced BEFORE this wave, quoted here so the
 # check has a source independent of the emitter it checks.
 if "$PCREC" -p rx --engine=vm -o "$WORKDIR/nok.c" -- '(a)(b)' >/dev/null 2>&1; then
-    awk '/^static void rx_caps_out\(/,/^}/' "$WORKDIR/nok.c" > "$WORKDIR/nok.capsout"
+    awk '/^static void rx_report_captures\(/,/^}/' "$WORKDIR/nok.c" > "$WORKDIR/nok.capsout"
     if [ ! -s "$WORKDIR/nok.capsout" ]; then
-        bad "[M6.2-KRESET rule 1b]: could not extract rx_caps_out from the \\K-free VM artifact"
-    elif ! grep -qF '    caps[0][0] = (ptrdiff_t)start;' "$WORKDIR/nok.capsout" \
-      || ! grep -qF '    caps[0][1] = (ptrdiff_t)start + len;' "$WORKDIR/nok.capsout"; then
+        bad "[M6.2-KRESET rule 1b]: could not extract rx_report_captures from the \\K-free VM artifact"
+    elif ! grep -qF '    capture_spans[0][0] = (ptrdiff_t)match_start;' "$WORKDIR/nok.capsout" \
+      || ! grep -qF '    capture_spans[0][1] = (ptrdiff_t)match_start + match_length;' "$WORKDIR/nok.capsout"; then
         bad "[M6.2-KRESET rule 1b]: the \\K-free VM artifact '(a)(b)' no longer emits the pre-wave caps_out body verbatim. Wave E's claim is that a \\K-free pattern pays NOTHING for \\K, and the emitter reads v.nkreset at exactly one site — this is that site"
     elif grep -q 'PCREC_UNSET' "$WORKDIR/nok.capsout"; then
         bad "[M6.2-KRESET rule 1b]: the \\K-free VM artifact's caps_out mentions PCREC_UNSET — the \\K arm is being emitted for a pattern with no \\K in it"
@@ -1362,10 +1376,10 @@ if "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/nul
         bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match compares caps[0][0] against ctx->pos. That is the DFA artifact's start filter, and under \\K it compares against the POST-\\K start and REJECTS a genuine anchored match — 'a\\Kb' at ctx->pos 0 returns -1 where PCRE2 matches (1,2)"
     elif grep -q 'caps\[0\]\[1\] - caps\[0\]\[0\]' "$WORKDIR/kent.match"; then
         bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match returns caps[0][1] - caps[0][0], the POST-\\K length. A D38 callout uses that return as its ADVANCE, so on 'ab\\K' it would advance by 0 and loop forever"
-    elif ! grep -q 'rx_match_impl(ctx' "$WORKDIR/kent.match"; then
-        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match does not call rx_match_impl directly. The VM's match-here entry is anchored BY CONSTRUCTION (it starts at ctx->pos and never moves it); routing it through rx_search would reintroduce the filter this rule forbids"
+    elif ! grep -q 'rx_match_anchored(ctx' "$WORKDIR/kent.match"; then
+        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match does not call rx_match_anchored directly. The VM's match-here entry is anchored BY CONSTRUCTION (it starts at ctx->pos and never moves it); routing it through rx_search would reintroduce the filter this rule forbids"
     else
-        ok "[M6.2-KRESET rule 3] (R30 E8): 'a\\Kb's rx_match calls rx_match_impl at ctx->pos directly — no start filter to compare against a post-\\K start, and no caps-derived return. Both halves of §6.3 rule 3 hold structurally on the only engine a \\K pattern can reach"
+        ok "[M6.2-KRESET rule 3] (R30 E8): 'a\\Kb's rx_match calls rx_match_anchored at ctx->pos directly — no start filter to compare against a post-\\K start, and no caps-derived return. Both halves of §6.3 rule 3 hold structurally on the only engine a \\K pattern can reach"
     fi
 else
     bad "[M6.2-KRESET rule 3]: pcrec failed to compile the fixture 'a\\Kb'"
@@ -1382,8 +1396,8 @@ if "$PCREC" -p rx --no-captures -o "$WORKDIR/dent.c" -- 'a(b|c)d' >/dev/null 2>&
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/dent.c" > "$WORKDIR/dent.match"
     if [ ! -s "$WORKDIR/dent.match" ]; then
         bad "[M6.2-KRESET rule 3b]: could not extract rx_match from the DFA artifact"
-    elif ! grep -qF '(size_t)caps[0][0] != ctx->pos' "$WORKDIR/dent.match" \
-      || ! grep -qF 'return caps[0][1] - caps[0][0];' "$WORKDIR/dent.match"; then
+    elif ! grep -qF '(size_t)capture_spans[0][0] != ctx->pos' "$WORKDIR/dent.match" \
+      || ! grep -qF 'return capture_spans[0][1] - capture_spans[0][0];' "$WORKDIR/dent.match"; then
         bad "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match no longer carries the start filter and the caps-derived return verbatim. Wave E changed nothing there BY DESIGN — a \\K pattern is VM-forced, so the shape §6.3 quotes as broken-under-\\K is unreachable-with-\\K and correct as it stands"
     else
         ok "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match still carries its start filter and its caps-derived return, verbatim and untouched by wave E — correct there precisely because a \\K pattern can never reach that engine"

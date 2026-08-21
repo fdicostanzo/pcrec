@@ -50,7 +50,7 @@ implementation: 32 cases returning `RX_ERR_STEPS` where the promise says the
 matcher must answer. The cause was real. On the counter rung the emitter
 writes ONE body copy per K iterations, so the compile-time view of "how many
 mandatory iterations still follow" tops out at `K + residue` (9 there) where
-the truth is `count - stv[ctr] - j` (65). `k23_design.md` §4.5 had designed
+the truth is `count - slot_values[ctr] - j` (65). `k23_design.md` §4.5 had designed
 exactly that runtime expression; this lane had deferred it as a residual on
 §9.3's "once-per-trip is believed enough", which splits into a FREQUENCY that
 holds and a VALUE that does not.

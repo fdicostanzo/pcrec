@@ -7,7 +7,7 @@
 # rung's, and the one that carries K23.
 #
 # `fold` is what makes the greedy cursor rung's clamp the SCAN'S OWN BOUND
-# (§4.6). With it false the block emits `while (cur + W <= n ...)` — the
+# (§4.6). With it false the block emits `while (cur + W <= subject_length ...)` — the
 # pre-MRL scan — so the cursor never stops at the last viable iteration
 # boundary, the whole doomed suffix is walked, and the retreat chain descends
 # through every position of it. The frames, revdet and counter rungs keep their
@@ -23,8 +23,8 @@
 SAB_ID="S61-mrl-cursor-clamp-dropped"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="mrl mrldiff"
-SAB_DESC="the greedy cursor rung stops folding its clamp into the scan bound, so the span loop runs to the subject end and the doomed suffix is scanned and retreated over; every other rung keeps its bound and the stamp still reads CLAMPED"
+SAB_DESC="the greedy cursor rung stops folding its clamp into the scan bound, so the span loop runs to the subject match_end_position and the doomed suffix is scanned and retreated over; every other rung keeps its bound and the stamp still reads CLAMPED"
 SAB_DOC_FIGURE="tests/mrl/run_mrl_tests.sh §1; k23_design.md §4.6"
 SAB_COUNT=1
-SAB_BEFORE='        const bool fold = vm_mrl_test(v, "pos", mrl, -1,'
-SAB_AFTER='        const bool fold = 0 && vm_mrl_test(v, "pos", mrl, -1,  /* SABOTAGE S61 */'
+SAB_BEFORE='        const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,'
+SAB_AFTER='        const bool fold = 0 && vm_mrl_test(v, "scan_position", mrl, -1,  /* SABOTAGE S61 */'

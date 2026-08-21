@@ -174,8 +174,8 @@ for pat in "${PATTERNS[@]}"; do
     mech=""
     grep -qE '^    static const unsigned char rx_(fs|rs)[0-9]+\[' "$d/gen.c" && mech="${mech}skip,"
     grep -q 'memchr' "$d/gen.c" && mech="${mech}memchr,"
-    grep -q 'rx_first\[' "$d/gen.c" && mech="${mech}bitmap,"
-    grep -q 'rx_facc2\[' "$d/gen.c" && mech="${mech}clsacc,"
+    grep -q 'rx_can_begin_match\[' "$d/gen.c" && mech="${mech}bitmap,"
+    grep -q 'rx_forward_is_accepting_by_class\[' "$d/gen.c" && mech="${mech}clsacc,"
     if [ -n "$mech" ]; then nlive=$((nlive + 1)); fi
     mechlist="$mechlist  $(printf '%-18s' "$pat") ${mech:-none}
 "
@@ -306,6 +306,26 @@ if [ "$nlive" -ge 8 ]; then
     ok "population: $nlive of $npat patterns emit a LIVE scan-avoidance mechanism (skip table, memchr, first-set bitmap) or a class-indexed accept — the sweep is over the population §3.6.1 says can actually break, not over patterns the cure never touches"
 else
     bad "population: only $nlive of $npat patterns emit any scan-avoidance mechanism at all. A green differential over this set would prove nothing about the cure — the sweep has gone vacuous."
+fi
+
+# THE POPULATION IS PINNED EXACT, and the reason is a measured near-miss.
+# `$nlive` counts patterns whose artifact carries a live scan-avoidance
+# mechanism, and it is built by GREPPING EMITTED TEXT for each mechanism's
+# table. It was only ever PRINTED, never asserted -- so when [M6-READ] renamed
+# the emitted tables and one of those greps (`rx_facc2[`) went stale, the
+# figure silently fell from 20 to 13 and NOTHING WENT RED. Seven patterns
+# stopped being credited with the class-indexed accept and the sweep went on
+# reporting success over a quietly smaller population.
+#
+# An exact pin rather than a floor, per this tree's own rule for irreplaceable
+# populations: a floor of 1 would have passed at 13 just as happily. If the
+# corpus or the emitter legitimately moves this number, UPDATE THE PIN
+# DELIBERATELY -- that edit is the point, not an obstacle.
+MLINE_LIVE_EXPECT="${MLINE_LIVE_EXPECT:-20}"
+if [ "$nlive" -eq "$MLINE_LIVE_EXPECT" ]; then
+    ok "population: $nlive of $npat patterns carry a live scan-avoidance mechanism, matching the pin -- each mechanism is detected by grepping the artifact, so a stale grep shows up here as an UNDERCOUNT rather than as silence"
+else
+    bad "population: $nlive patterns carry a live scan-avoidance mechanism, pinned at $MLINE_LIVE_EXPECT. A DROP usually means a mechanism grep has gone stale against renamed emitted text and is crediting fewer patterns than it should (measured: [M6-READ] took this from 20 to 13 with no other symptom). Confirm the mechanism greps still match the emitted tables, then re-pin deliberately."
 fi
 
 echo

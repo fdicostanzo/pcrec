@@ -3,7 +3,7 @@
 #
 # The scan discards the body's own choice points at every iteration BOUNDARY,
 # and that cut is what makes the resume stack O(1) in the iteration count
-# instead of O(n) - the property that lets `((a)|b){0,4000}c` exist at all. It
+# instead of O(subject_length) - the property that lets `((a)|b){0,4000}c` exist at all. It
 # is licensed by forward unique-iteration: once the body has matched [p,q) there
 # is no other way to match an iteration there, so the frames it leaves behind
 # are provably dead.
@@ -24,7 +24,7 @@ SAB_SUITES="rungdiff"
 SAB_DESC="the revdet scan per-iteration cut removed: the loop frames accumulate per iteration again, so the artifact exhausts its stack below the length it stamps"
 SAB_DOC_FIGURE="tests/rungselect/run_rungdiff.sh: the failure surfaces part"
 SAB_COUNT=1
-SAB_BEFORE='    sb_printf(b, "    w->btn = %s_mk;\n", rv);
+SAB_BEFORE='    sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration'
 SAB_AFTER='    sb_printf(b, "    (void)%s_mk;\n", rv);  /* SABOTAGE S51 */
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration'

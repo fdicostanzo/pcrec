@@ -207,8 +207,8 @@ static void emit_altcls_macros(StrBuf *sb, const char *upper, int merges, int fa
  * further signature change is owed when RX_NCAPS grows past 1 at [M4.5]). */
 static void emit_search_decl(StrBuf *sb, const char *fn)
 {
-    sb_printf(sb, "int %s(const unsigned char *s, size_t n, "
-                  "size_t startpos, ptrdiff_t (*caps)[2]);\n", fn);
+    sb_printf(sb, "int %s(const unsigned char *subject, size_t subject_length, "
+                  "size_t search_from, ptrdiff_t (*capture_spans)[2]);\n", fn);
 }
 
 /* The definition's signature, kept next to the declaration it must match.
@@ -279,8 +279,8 @@ static void emit_search_head(StrBuf *c, const char *fn, const char *storage)
                "   instructions, purely from code placement. Do not remove;\n"
                "   see pcrec docs/dev/known_issues.md K24. */\n"
                "__attribute__((noclone))\n");
-    sb_printf(c, "%sint %s(const unsigned char *s, size_t n, "
-                 "size_t startpos, ptrdiff_t (*caps)[2])\n{\n", storage, fn);
+    sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
+                 "size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n", storage, fn);
 }
 
 static void emit_match_decl(StrBuf *sb, const char *fn)
@@ -290,7 +290,7 @@ static void emit_match_decl(StrBuf *sb, const char *fn)
 
 static void emit_match_caps_decl(StrBuf *sb, const char *fn)
 {
-    sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);\n", fn);
+    sb_printf(sb, "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]);\n", fn);
 }
 
 /* [DEVIATION, REPORTED] spelled `struct rx_info`, not the bare `rx_info`
@@ -579,11 +579,11 @@ static void emit_match_def(StrBuf *c, const char *matchfn, const char *searchfn,
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
-        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
-        "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
+        "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
+        "    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
-        "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
-        "    return caps[0][1] - caps[0][0];\n"
+        "    if (found != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;\n"
+        "    return capture_spans[0][1] - capture_spans[0][0];\n"
         "}\n",
         matchfn, upper, searchfn);
 }
@@ -599,20 +599,20 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
                                  const char *upper)
 {
     sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
+        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
         "{\n"
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
-        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
-        "    int found = %s(ctx->subject, ctx->len, ctx->pos, caps);\n"
+        "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
+        "    int found = %s(ctx->subject, ctx->len, ctx->pos, capture_spans);\n"
         "    if (found < 0) return (ptrdiff_t)found;\n"
-        "    if (found != 1 || (size_t)caps[0][0] != ctx->pos) return -1;\n"
-        "    if (caps_out) {\n"
+        "    if (found != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;\n"
+        "    if (capture_spans_out) {\n"
         "        for (int k = 0; k < %s_NCAPS; k++) {\n"
-        "            caps_out[k][0] = caps[k][0];\n"
-        "            caps_out[k][1] = caps[k][1];\n"
+        "            capture_spans_out[k][0] = capture_spans[k][0];\n"
+        "            capture_spans_out[k][1] = capture_spans[k][1];\n"
         "        }\n"
         "    }\n"
-        "    return caps[0][1] - caps[0][0];\n"
+        "    return capture_spans[0][1] - capture_spans[0][0];\n"
         "}\n",
         fn, upper, searchfn, upper);
 }
@@ -1003,8 +1003,8 @@ static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
 {
     sb_printf(c, "%sint %s = %s;\n", ind, outv, stv);
     if (!has_end) {
-        sb_printf(c, "%sif (__builtin_expect(%s + 1 >= n, 0) && %s_%s[%s] >= 0 &&\n"
-                     "%s    (%s == n || (%s + 1 == n && s[%s] == '\\n')))\n"
+        sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0) && %s_%s[%s] >= 0 &&\n"
+                     "%s    (%s == subject_length || (%s + 1 == subject_length && subject[%s] == '\\n')))\n"
                      "%s    %s = %s_%s[%s];\n",
                   ind, posv, p, ev, stv,
                   ind, posv, posv, posv,
@@ -1013,19 +1013,19 @@ static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
     }
     if (!has_eol) {
         /* `\z` with no `$`/`\Z` anywhere: only `pos == n` selects anything. */
-        sb_printf(c, "%sif (__builtin_expect(%s == n, 0) && %s_%s[%s] >= 0)\n"
+        sb_printf(c, "%sif (__builtin_expect(%s == subject_length, 0) && %s_%s[%s] >= 0)\n"
                      "%s    %s = %s_%s[%s];\n",
                   ind, posv, p, endv, stv,
                   ind, outv, p, endv, stv);
         return;
     }
-    sb_printf(c, "%sif (__builtin_expect(%s + 1 >= n, 0)) {\n", ind, posv);
-    sb_printf(c, "%s    if (%s == n) {\n", ind, posv);
+    sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0)) {\n", ind, posv);
+    sb_printf(c, "%s    if (%s == subject_length) {\n", ind, posv);
     sb_printf(c, "%s        if (%s_%s[%s] >= 0)      %s = %s_%s[%s];\n",
               ind, p, endv, stv, outv, p, endv, stv);
     sb_printf(c, "%s        else if (%s_%s[%s] >= 0) %s = %s_%s[%s];\n",
               ind, p, ev, stv, outv, p, ev, stv);
-    sb_printf(c, "%s    } else if (s[%s] == '\\n' && %s_%s[%s] >= 0) {\n",
+    sb_printf(c, "%s    } else if (subject[%s] == '\\n' && %s_%s[%s] >= 0) {\n",
               ind, posv, p, ev, stv);
     sb_printf(c, "%s        %s = %s_%s[%s];\n", ind, outv, p, ev, stv);
     sb_printf(c, "%s    }\n%s}\n", ind, ind);
@@ -1373,6 +1373,158 @@ static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
     emit_u8_table(c, p, name, stay, 256);
 }
 
+/* ---------------------------------------------------------------------
+ * [M6-READ] LEGENDS: the block comments that make a table readable.
+ *
+ * Both are computed from the very data this file is about to write -- the
+ * class map and the transition table themselves -- so neither can drift from
+ * the table it describes. That is the plan row's engineering note (iv), "the
+ * emitter tags what it emits, no after-the-fact inference", satisfied without
+ * a tagging pass: a walk over emitter-owned data IS the tag.
+ * --------------------------------------------------------------------- */
+
+/* One byte rendered for a human: printable ASCII quoted, everything else as a
+ * number. Legend text only; never emitted as code. */
+static void legend_byte(StrBuf *c, int b)
+{
+    if (b == '\'')      sb_puts(c, "'\\''");
+    else if (b == '\\') sb_puts(c, "'\\\\'");
+    else if (b >= 0x20 && b < 0x7f) sb_printf(c, "'%c'", b);
+    else                sb_printf(c, "%d", b);
+}
+
+/* WHICH BYTES EACH CLASS HOLDS, as ranges. Class 0 is named rather than
+ * enumerated: it is the catch-all, and listing its ranges is pages of noise
+ * that tells the reader nothing. */
+static void emit_class_legend(StrBuf *c, const Dfa *d)
+{
+    sb_printf(c, "     * Class legend (%d classes; every byte not listed is class 0):\n",
+              d->ncls);
+    sb_puts(c, "     *   0  every other byte\n");
+    for (int cl = 1; cl < d->ncls; cl++) {
+        sb_printf(c, "     *   %d  ", cl);
+        int shown = 0, b = 0;
+        while (b < 256 && shown < 8) {
+            if (d->clsmap[b] != cl) { b++; continue; }
+            int a = b;
+            while (b + 1 < 256 && d->clsmap[b + 1] == cl) b++;
+            if (shown) sb_puts(c, ", ");
+            legend_byte(c, a);
+            if (b != a) { sb_puts(c, "-"); legend_byte(c, b); }
+            shown++; b++;
+        }
+        if (b < 256) sb_puts(c, ", ...");
+        sb_puts(c, "\n");
+    }
+}
+
+/* WHAT EACH STATE MEANS, as the SHORTEST INPUT THAT REACHES IT -- a
+ * breadth-first search over the transition table below, using each class's
+ * representative byte.
+ *
+ * The example string IS the state's meaning, and it needs no knowledge of the
+ * pattern's syntax: a reader comparing two adjacent states sees exactly what
+ * the machine just consumed. On the reverse machine the walk consumes the
+ * match right-to-left, so the examples read backwards and the banner says so.
+ *
+ * Capped: past LEGEND_MAX_STATES a full listing is noise rather than
+ * orientation, so only the start and the accepting states are named and the
+ * comment says what it left out. */
+#define LEGEND_MAX_STATES 48
+/* A state deep in the machine has an example as long as its distance from
+ * the start; past this many bytes the string stops orienting anyone. */
+#define LEGEND_MAX_EXAMPLE 40
+
+static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
+{
+    int *dist  = malloc((size_t)d->n * sizeof(int));
+    int *from  = malloc((size_t)d->n * sizeof(int));
+    int *via   = malloc((size_t)d->n * sizeof(int));
+    int *queue = malloc((size_t)d->n * sizeof(int));
+    int *path  = malloc((size_t)d->n * sizeof(int));
+    if (!dist || !from || !via || !queue || !path) {
+        free(dist); free(from); free(via); free(queue); free(path);
+        return;                    /* a legend is never worth failing a compile over */
+    }
+    for (int i = 0; i < d->n; i++) { dist[i] = -1; from[i] = -1; via[i] = -1; }
+    int head = 0, tail = 0;
+    if (d->s0 >= 0 && d->s0 < d->n) { dist[d->s0] = 0; queue[tail++] = d->s0; }
+    while (head < tail) {
+        int s = queue[head++];
+        for (int cl = 0; cl < d->ncls; cl++) {
+            int nx = d->st[s].tr[cl];
+            if (nx < 0 || nx >= d->n || dist[nx] >= 0) continue;
+            dist[nx] = dist[s] + 1; from[nx] = s; via[nx] = cl;
+            queue[tail++] = nx;
+        }
+    }
+
+    /* How many states accept? In a big machine this decides whether a listing
+     * is orientation or noise -- `((a)|b){0,4000}c` has 4002 accepting states,
+     * and naming them all cost 4000 lines and tripled the artifact. Caught by
+     * the [ENG-BREP] emitted-size check, which is exactly what it is for. */
+    int nacc = 0;
+    for (int i = 0; i < d->n; i++) if (d->st[i].up[UPC_PLAIN].accept) nacc++;
+
+    bool brief = d->n > LEGEND_MAX_STATES;
+    if (brief) {
+        /* A SUMMARY, not a truncated list. Which particular states accept is
+         * not orientation once there are thousands of them; how many there
+         * are, and what the shortest accepted input looks like, is. */
+        int shortest = -1;
+        for (int i = 0; i < d->n; i++)
+            if (d->st[i].up[UPC_PLAIN].accept && dist[i] >= 0 &&
+                (shortest < 0 || dist[i] < dist[shortest])) shortest = i;
+        sb_printf(c, "     * State legend -- %d states, %d of them accepting: too many\n"
+                     "     * to name individually. The start state is %d",
+                  d->n, nacc, d->s0);
+        if (shortest >= 0)
+            sb_printf(c, ", and the\n"
+                         "     * shortest input reaching an accepting state is %d byte(s) long",
+                      dist[shortest]);
+        sb_puts(c, ".\n");
+        free(dist); free(from); free(via); free(queue); free(path);
+        return;
+    }
+    if (reverse)
+        sb_puts(c, "     * State legend -- the bytes this walk consumes, IN WALK\n"
+                   "     * ORDER, i.e. the match read backwards:\n");
+    else
+        sb_puts(c, "     * State legend -- the shortest input that reaches each state:\n");
+    for (int i = 0; i < d->n; i++) {
+        bool acc = d->st[i].up[UPC_PLAIN].accept != 0;
+        /* NOT "unreachable": this walk follows the plain transitions only, and
+         * a state can also be selected by a POSITION VIEW (end of subject, end
+         * of line) that has no edge in the table below. Saying what the walk
+         * actually established is the honest claim; saying the state is dead
+         * would be wrong, and is wrong on `^ab(c|d)e$` today. */
+        if (dist[i] < 0) {
+            sb_printf(c, "     *  %3d  (no path through the transitions above;\n"
+                         "     *       a position view can still select it)\n", i);
+            continue;
+        }
+        sb_printf(c, "     *  %3d  ", i);
+        if (dist[i] == 0) sb_puts(c, "(start) nothing consumed yet");
+        else {
+            int len = dist[i], k = len, s = i;
+            while (k > 0) { path[--k] = via[s]; s = from[s]; }
+            sb_puts(c, "\"");
+            int shown = len < LEGEND_MAX_EXAMPLE ? len : LEGEND_MAX_EXAMPLE;
+            for (k = 0; k < shown; k++) {
+                int b = d->rep[path[k]];
+                if (b >= 0x20 && b < 0x7f && b != '"' && b != '\\')
+                    sb_printf(c, "%c", b);
+                else sb_printf(c, "\\x%02x", b);
+            }
+            sb_puts(c, "\"");
+            if (shown < len) sb_printf(c, "... (%d bytes)", len);
+        }
+        if (acc) sb_puts(c, "   ACCEPTING");
+        sb_puts(c, "\n");
+    }
+    free(dist); free(from); free(via); free(queue); free(path);
+}
+
 /* M2.7 put `$`-bearing patterns on this engine; M2.12 gave them back the
  * scan-avoidance M2.7 had traded away. Both live in ONE emitter on purpose:
  * M2.7 forked a second copy, and the fork is exactly how the prefilter and
@@ -1443,7 +1595,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_search_head(c, fn, storage);
 
     if (fs < 0 || rs < 0) {
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
+        sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
@@ -1501,7 +1653,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * start state and the pre-wave argument is unchanged. */
     if (fcand.count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
         st_emit_endvar(&fd->st[fs]) < 0) {
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
+        sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
@@ -1530,39 +1682,81 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     int nfskip = pick_skip_states(fd, fs, fskip);
     int nrskip = pick_skip_states(rd, -1, rskip);
 
-    emit_u8_table(c, p, "fcls", fd->clsmap, 256);
-    emit_tr_table(c, p, "ftr", fd);
-    emit_acc_table(c, p, "facc", fd);
-    if (facc2) emit_acc_cls_table(c, p, "facc2", fd);
-    if (fseed) emit_seed_table(c, p, "fseed", fd, fd->s1u);
-    if (eol)  emit_eol_table(c, p, "fev", fd);
-    if (endv) emit_end_table(c, p, "fendv", fd);
-    if (prefilter && !use_memchr)
-        cand_emit_table(c, p, "first", &fcand);
+    /* [M6-READ] The tables are the artifact's data structures, and each gets
+     * the block comment the plan row's requirement (1) asks for: what it is,
+     * how it is indexed, what a cell means, and -- where the cells are STATES
+     * -- a legend naming them. Requirement (3)'s clarification is why there is
+     * no per-row commentary inside any of them. */
+    sb_puts(c, "    /* ---- FORWARD TABLES: find where a match ENDS ------------------\n"
+               "     * Byte class of every possible input byte. The pattern can only\n"
+               "     * tell a few kinds of byte apart, so all 256 values fold into a\n"
+               "     * few classes and the transition table needs one column per class\n"
+               "     * rather than 256.\n"
+               "     *\n");
+    emit_class_legend(c, fd);
+    sb_puts(c, "     */\n");
+    emit_u8_table(c, p, "forward_byte_class", fd->clsmap, 256);
+    sb_printf(c, "    /* Forward transitions, indexed [state * %d + class]; -1 means\n"
+                 "     * the pattern cannot continue and the scan stops. %d rows of %d.\n"
+                 "     *\n", fd->ncls, fd->n, fd->ncls);
+    emit_state_legend(c, fd, false);
+    sb_puts(c, "     */\n");
+    emit_tr_table(c, p, "forward_next_state", fd);
+    sb_puts(c, "    /* 1 where a match may end, indexed by forward state. */\n");
+    emit_acc_table(c, p, "forward_is_accepting", fd);
+    if (facc2) emit_acc_cls_table(c, p, "forward_is_accepting_by_class", fd);
+    if (fseed) emit_seed_table(c, p, "forward_seed_state", fd, fd->s1u);
+    if (eol)  emit_eol_table(c, p, "forward_eol_view", fd);
+    if (endv) emit_end_table(c, p, "forward_end_view", fd);
+    if (prefilter && !use_memchr) {
+        sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
+                   "     * forward loop uses this to skip over bytes that cannot begin\n"
+                   "     * one instead of stepping through them; speed only, it never\n"
+                   "     * changes the answer. */\n");
+        cand_emit_table(c, p, "can_begin_match", &fcand);
+    }
     for (int k = 0; k < nfskip; k++)
-        emit_stay_table(c, p, "fs", fskip[k], fd);
-    emit_u8_table(c, p, "rcls", rd->clsmap, 256);
-    emit_tr_table(c, p, "rtr", rd);
-    emit_acc_table(c, p, "racc", rd);
-    if (racc2) emit_acc_cls_table(c, p, "racc2", rd);
-    if (rseed) emit_seed_table(c, p, "rseed", rd, rd->s1u);
-    if (eol)  emit_eol_table(c, p, "rev", rd);
-    if (endv) emit_end_table(c, p, "rendv", rd);
+        emit_stay_table(c, p, "forward_stay", fskip[k], fd);
+    sb_puts(c, "    /* ---- REVERSE TABLES: find where that match BEGINS -------------\n"
+               "     * The same three-table shape, built from the pattern read right to\n"
+               "     * left and walked backwards from the end the forward scan found.\n"
+               "     * The two machines are independent and need not agree.\n"
+               "     *\n");
+    emit_class_legend(c, rd);
+    sb_puts(c, "     */\n");
+    emit_u8_table(c, p, "reverse_byte_class", rd->clsmap, 256);
+    sb_printf(c, "    /* Reverse transitions, indexed [state * %d + class]; -1 stops\n"
+                 "     * the walk. %d rows of %d.\n"
+                 "     *\n", rd->ncls, rd->n, rd->ncls);
+    emit_state_legend(c, rd, true);
+    sb_puts(c, "     */\n");
+    emit_tr_table(c, p, "reverse_next_state", rd);
+    sb_puts(c, "    /* 1 where the backwards walk has consumed a whole match,\n"
+               "     * indexed by reverse state. */\n");
+    emit_acc_table(c, p, "reverse_is_accepting", rd);
+    if (racc2) emit_acc_cls_table(c, p, "reverse_is_accepting_by_class", rd);
+    if (rseed) emit_seed_table(c, p, "reverse_seed_state", rd, rd->s1u);
+    if (eol)  emit_eol_table(c, p, "reverse_eol_view", rd);
+    if (endv) emit_end_table(c, p, "reverse_end_view", rd);
     for (int k = 0; k < nrskip; k++)
-        emit_stay_table(c, p, "rs", rskip[k], rd);
+        emit_stay_table(c, p, "reverse_stay", rskip[k], rd);
 
     /* Under EOL the scan reads the accept flag and the transition row through
      * `est`/`erst` (the EOL view at the last two positions); otherwise those
      * collapse to `st`/`rst` and gcc sees exactly the pre-M2.7 loop. */
-    const char *fsrc = viewsel ? "est" : "st";
-    const char *rsrc = viewsel ? "erst" : "rst";
+    const char *fsrc = viewsel ? "forward_view_state" : "forward_state";
+    const char *rsrc = viewsel ? "reverse_view_state" : "reverse_state";
     /* Every skip must stop at n-1 so a state that accepts only at EOL is
      * never skipped past; below n-1 the EOL view is unreachable, which is
      * also why `est` cannot be stale after a skip. */
-    const char *fbound = views ? "pos + 1 < n" : "pos < n";
+    const char *fbound = views ? "scan_position + 1 < subject_length" : "scan_position < subject_length";
 
-    sb_puts(c,   "    size_t pos = startpos;\n"
-                 "    size_t last = (size_t)-1;\n");
+    sb_puts(c,   "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
+                 "    // One byte per iteration. The loop keeps the LAST accepting\n"
+                 "    // position rather than stopping at the first, so the longest\n"
+                 "    // match wins.\n"
+                 "    size_t scan_position = search_from;\n"
+                 "    size_t last_accept_position = (size_t)-1;\n");
     if (fseed) {
         /* MECHANISM 4, forward initialization (§3.8.2). ONCE PER SEARCH, off
          * the loop entirely — the emitted hot path is unchanged.
@@ -1586,12 +1780,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * out-of-bounds read in EMITTED code — K27's class. With the guard
          * first, `startpos <= n`, and `startpos > 0` then implies `n > 0`,
          * hence `s != NULL` under match_api.md §3.1's legal empty subject. */
-        sb_puts(c,   "    if (startpos > n) return 0;\n");
-        sb_printf(c, "    int st = startpos ? %s_fseed[%s_fcls[s[startpos - 1]]]"
+        sb_puts(c,   "    if (search_from > subject_length) return 0;\n");
+        sb_printf(c, "    int forward_state = search_from ? %s_forward_seed_state[%s_forward_byte_class[subject[search_from - 1]]]"
                      " : %d;\n", p, p, fs);
     } else {
-        sb_printf(c, "    int st = %d;\n", fs);
-        sb_puts(c,   "    if (startpos > n) return 0;\n");
+        sb_printf(c, "    int forward_state = %d;\n", fs);
+        sb_puts(c,   "    if (search_from > subject_length) return 0;\n");
     }
     sb_puts(c,   "    for (;;) {\n");
     /* Under EOL, scan avoidance must run BEFORE the accept/EOL evaluation, so
@@ -1606,18 +1800,34 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * spreads), so the non-EOL path keeps the original order. This asymmetry
      * is the whole reason the flag exists; do not "simplify" it away. */
     if (!views)
-        sb_printf(c, "        if (%s_facc[st]) last = pos;\n", p);
+        sb_printf(c, "        if (%s_forward_is_accepting[forward_state]) last_accept_position = scan_position;\n", p);
     {
         const char *kw = "if";
         if (prefilter) {
-            sb_printf(c, "        if (st == %d && last == (size_t)-1) {\n", fs);
+            /* [M6-READ] The prefilter's own description, emitted HERE because
+             * this is where its form is known -- the orientation block names
+             * the step and defers to this comment rather than re-deriving
+             * `use_memchr` a second time. */
+            if (use_memchr) {
+                sb_puts(c,   "        // Prefilter: nothing found yet and still at the start, so\n"
+                             "        // skip straight to the next byte that could begin a match.\n"
+                             "        // Only ");
+                legend_byte(c, fcand.byte);
+                sb_printf(c, " (%d) can, so one memchr() replaces the steps.\n",
+                          fcand.byte);
+            }
+            else
+                sb_puts(c,   "        // Prefilter: nothing found yet and still at the start, so\n"
+                             "        // skip over bytes that cannot begin a match rather than\n"
+                             "        // stepping through them. can_begin_match says which can.\n");
+            sb_printf(c, "        if (forward_state == %d && last_accept_position == (size_t)-1) {\n", fs);
             if (use_memchr) {
                 if (views) {
                     /* no early `return 0`: the EOL view may still accept at
                      * n-1 or n, so fall through to the stepped loop instead */
-                    sb_puts(c,   "            if (pos + 1 < n) {\n");
-                    sb_printf(c, "                const void *q = memchr(s + pos, %d, n - 1 - pos);\n", fcand.byte);
-                    sb_puts(c,   "                pos = q ? (size_t)((const unsigned char *)q - s) : n - 1;\n"
+                    sb_puts(c,   "            if (scan_position + 1 < subject_length) {\n");
+                    sb_printf(c, "                const void *q = memchr(subject + scan_position, %d, subject_length - 1 - scan_position);\n", fcand.byte);
+                    sb_puts(c,   "                scan_position = q ? (size_t)((const unsigned char *)q - subject) : subject_length - 1;\n"
                                  "            }\n");
                 } else {
                     /* [K27] The `pos >= n` guard is the FIX, and it is not
@@ -1632,36 +1842,36 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                      * reached one line later. The EOL arm above needs no
                      * such guard — its own `pos + 1 < n` bound already
                      * implies n > 0, hence s != NULL. */
-                    sb_puts(c,   "            if (pos >= n) return 0;\n");
-                    sb_printf(c, "            const void *q = memchr(s + pos, %d, n - pos);\n", fcand.byte);
+                    sb_puts(c,   "            if (scan_position >= subject_length) return 0;\n");
+                    sb_printf(c, "            const void *q = memchr(subject + scan_position, %d, subject_length - scan_position);\n", fcand.byte);
                     sb_puts(c,   "            if (!q) return 0;\n"
-                                 "            pos = (size_t)((const unsigned char *)q - s);\n");
+                                 "            scan_position = (size_t)((const unsigned char *)q - subject);\n");
                 }
             } else {
-                sb_printf(c, "            while (%s && !%s_first[s[pos]]) pos++;\n", fbound, p);
-                if (!views) sb_puts(c, "            if (pos >= n) return 0;\n");
+                sb_printf(c, "            while (%s && !%s_can_begin_match[subject[scan_position]]) scan_position++;\n", fbound, p);
+                if (!views) sb_puts(c, "            if (scan_position >= subject_length) return 0;\n");
             }
             sb_puts(c, "        }\n");
             kw = "else if";
         }
         for (int k = 0; k < nfskip; k++) {
             int K = fskip[k];
-            sb_printf(c, "        %s (st == %d) {\n", kw, K);
-            sb_printf(c, "            while (%s && %s_fs%d[s[pos]]) pos++;\n", fbound, p, K);
+            sb_printf(c, "        %s (forward_state == %d) {\n", kw, K);
+            sb_printf(c, "            while (%s && %s_forward_stay%d[subject[scan_position]]) scan_position++;\n", fbound, p, K);
             /* With the accept check ahead of us (non-EOL order) the skipped
              * run's final position would otherwise go unrecorded; under EOL
              * the check runs after the skip and already covers it. */
             if (!views && fd->st[K].up[UPC_PLAIN].accept)
-                sb_puts(c, "            last = pos;\n");
+                sb_puts(c, "            last_accept_position = scan_position;\n");
             sb_puts(c, "        }\n");
             kw = "else if";
         }
     }
     if (viewsel)
-        emit_view_select(c, p, eol, endv, "pos", "st", "est", "fev", "fendv",
+        emit_view_select(c, p, eol, endv, "scan_position", "forward_state", "forward_view_state", "forward_eol_view", "forward_end_view",
                          "        ");
     if (views && !facc2)
-        sb_printf(c, "        if (%s_facc[%s]) last = pos;\n", p, fsrc);
+        sb_printf(c, "        if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n", p, fsrc);
     if (facc2) {
         /* §3.6.2's COMPOSITION RULE, and the `pos == n` arm is the half that
          * is easy to get wrong. The accept bit is class-indexed at every
@@ -1677,29 +1887,29 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * the transition — the byte is read once, and the structural check
          * for this rule has a single named thing to look at rather than an
          * expression to parse. */
-        sb_printf(c, "        if (pos >= n) {\n"
-                     "            if (%s_facc[%s]) last = pos;\n"
+        sb_printf(c, "        if (scan_position >= subject_length) {\n"
+                     "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
                      "            break;\n"
                      "        }\n", p, fsrc);
         sb_printf(c, "        {\n"
-                     "            unsigned cl = %s_fcls[s[pos]];\n"
-                     "            if (%s_facc2[%s * %d + cl]) last = pos;\n"
-                     "            st = %s_ftr[%s * %d + cl];\n"
-                     "            pos++;\n"
+                     "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"
+                     "            if (%s_forward_is_accepting_by_class[%s * %d + forward_class]) last_accept_position = scan_position;\n"
+                     "            forward_state = %s_forward_next_state[%s * %d + forward_class];\n"
+                     "            scan_position++;\n"
                      "        }\n",
                   p, p, fsrc, fd->ncls, p, fsrc, fd->ncls);
     } else {
-        sb_puts(c,   "        if (pos >= n) break;\n");
-        sb_printf(c, "        st = %s_ftr[%s * %d + %s_fcls[s[pos++]]];\n",
+        sb_puts(c,   "        if (scan_position >= subject_length) break;\n");
+        sb_printf(c, "        forward_state = %s_forward_next_state[%s * %d + %s_forward_byte_class[subject[scan_position++]]];\n",
                   p, fsrc, fd->ncls, p);
     }
-    sb_puts(c,   "        if (st < 0) break;\n"
+    sb_puts(c,   "        if (forward_state < 0) break;   // dead: no match can continue\n"
                  "    }\n"
-                 "    if (last == (size_t)-1) return 0;\n"
+                 "    if (last_accept_position == (size_t)-1) return 0;\n"
                  "    {\n"
-                 "        size_t end = last;\n"
-                 "        size_t sfound = (size_t)-1;\n"
-                 "        size_t pp = end;\n");
+                 "        size_t match_end_position = last_accept_position;\n"
+                 "        size_t match_start_position = (size_t)-1;\n"
+                 "        size_t rewind_position = match_end_position;\n");
     if (rseed) {
         /* MECHANISM 4, REVERSE INITIALIZATION (§3.8.3). The reverse walk
          * starts at `pp = end` and consumes LEFTWARD, so the byte that seeds
@@ -1712,14 +1922,14 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          *
          * `end == n` is the out-of-subject case — no byte to the right —
          * which is a NON-word context and therefore the pre-wave constant. */
-        sb_printf(c, "        int rst = (end < n) ? %s_rseed[%s_rcls[s[end]]]"
+        sb_printf(c, "        int reverse_state = (match_end_position < subject_length) ? %s_reverse_seed_state[%s_reverse_byte_class[subject[match_end_position]]]"
                      " : %d;\n", p, p, rs);
     } else {
-        sb_printf(c, "        int rst = %d;\n", rs);
+        sb_printf(c, "        int reverse_state = %d;\n", rs);
     }
     sb_puts(c,   "        for (;;) {\n");
     if (!views)
-        sb_printf(c, "            if (%s_racc[rst]) sfound = pp;\n", p);
+        sb_printf(c, "            if (%s_reverse_is_accepting[reverse_state]) match_start_position = rewind_position;\n", p);
     {   /* same ordering rule as the forward loop, and `sfound` wants the
          * SMALLEST accepting position, which is where a reverse skip stops */
         const char *kw = "if";
@@ -1727,20 +1937,20 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             int K = rskip[k];
             /* pp only ever DECREASES, so one entry guard is enough to keep the
              * whole skip below the EOL region */
-            sb_printf(c, "            %s (rst == %d%s) {\n", kw, K,
-                      views ? " && pp + 1 < n" : "");
-            sb_printf(c, "                while (pp > startpos && %s_rs%d[s[pp - 1]]) pp--;\n", p, K);
+            sb_printf(c, "            %s (reverse_state == %d%s) {\n", kw, K,
+                      views ? " && rewind_position + 1 < subject_length" : "");
+            sb_printf(c, "                while (rewind_position > search_from && %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n", p, K);
             if (!views && rd->st[K].up[UPC_PLAIN].accept)
-                sb_puts(c, "                sfound = pp;\n");
+                sb_puts(c, "                match_start_position = rewind_position;\n");
             sb_puts(c, "            }\n");
             kw = "else if";
         }
     }
     if (viewsel)
-        emit_view_select(c, p, eol, endv, "pp", "rst", "erst", "rev", "rendv",
+        emit_view_select(c, p, eol, endv, "rewind_position", "reverse_state", "reverse_view_state", "reverse_eol_view", "reverse_end_view",
                          "            ");
     if (views && !racc2)
-        sb_printf(c, "            if (%s_racc[%s]) sfound = pp;\n", p, rsrc);
+        sb_printf(c, "            if (%s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n", p, rsrc);
     if (racc2) {
         /* MECHANISM 4, REVERSE TERMINATION (§3.8.3.1) — the site whose
          * absence is a LOST MATCH, and the site whose PLACEMENT is the whole
@@ -1774,29 +1984,29 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * scalar accept because no byte exists past `n`; this one needs a
          * CONTEXT-INDEXED accept because the byte exists and is merely
          * outside the window. */
-        sb_printf(c, "            if (pp <= startpos) {\n"
-                     "                if (startpos ? %s_racc2[%s * %d + "
-                     "%s_rcls[s[startpos - 1]]]\n"
-                     "                             : %s_racc[%s]) sfound = pp;\n"
+        sb_printf(c, "            if (rewind_position <= search_from) {\n"
+                     "                if (search_from ? %s_reverse_is_accepting_by_class[%s * %d + "
+                     "%s_reverse_byte_class[subject[search_from - 1]]]\n"
+                     "                             : %s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"
                      "                break;\n"
                      "            }\n",
                   p, rsrc, rd->ncls, p, p, rsrc);
         sb_printf(c, "            {\n"
-                     "                unsigned rcl = %s_rcls[s[pp - 1]];\n"
-                     "                if (%s_racc2[%s * %d + rcl]) sfound = pp;\n"
-                     "                rst = %s_rtr[%s * %d + rcl];\n"
-                     "                pp--;\n"
+                     "                unsigned reverse_class = %s_reverse_byte_class[subject[rewind_position - 1]];\n"
+                     "                if (%s_reverse_is_accepting_by_class[%s * %d + reverse_class]) match_start_position = rewind_position;\n"
+                     "                reverse_state = %s_reverse_next_state[%s * %d + reverse_class];\n"
+                     "                rewind_position--;\n"
                      "            }\n",
                   p, p, rsrc, rd->ncls, p, rsrc, rd->ncls);
     } else {
-        sb_puts(c,   "            if (pp <= startpos) break;\n");
-        sb_printf(c, "            rst = %s_rtr[%s * %d + %s_rcls[s[--pp]]];\n",
+        sb_puts(c,   "            if (rewind_position <= search_from) break;\n");
+        sb_printf(c, "            reverse_state = %s_reverse_next_state[%s * %d + %s_reverse_byte_class[subject[--rewind_position]]];\n",
                   p, rsrc, rd->ncls, p);
     }
-    sb_puts(c,   "            if (rst < 0) break;\n"
+    sb_puts(c,   "            if (reverse_state < 0) break;\n"
                  "        }\n"
-                 "        if (sfound == (size_t)-1) return 0;\n"
-                 "        if (caps) { caps[0][0] = (ptrdiff_t)sfound; caps[0][1] = (ptrdiff_t)end; }\n"
+                 "        if (match_start_position == (size_t)-1) return 0;\n"
+                 "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n"
                  "        return 1;\n"
                  "    }\n"
                  "}\n");
@@ -1821,12 +2031,21 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
 
     if (d->n == 0) {
         /* no live start state: the pattern matches nothing */
-        sb_puts(c, "    (void)s; (void)n; (void)startpos; (void)caps;\n"
+        sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
 
-    emit_u8_table(c, p, "cls", d->clsmap, 256);
+    sb_puts(c, "    /* ---- STATE MACHINE: this engine tries the pattern at one start\n"
+               "     * position at a time, and each state is a LABEL rather than a table\n"
+               "     * row, so a step is a computed goto.\n"
+               "     *\n"
+               "     * Byte class of every possible input byte: all 256 values fold into\n"
+               "     * the few classes this pattern can tell apart.\n"
+               "     *\n");
+    emit_class_legend(c, d);
+    sb_puts(c, "     */\n");
+    emit_u8_table(c, p, "byte_class", d->clsmap, 256);
 
     /* [M6.2 wave B] this engine's share of §3.6 and §3.8. `acc2` is the
      * class-indexed accept, needed wherever a state's accept depends on the
@@ -1897,10 +2116,25 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * so their accept bit is a COMPILE-TIME constant rather than a table read
      * (§3.6.2's composition with the position axis, both indices known). */
     int unl = upc_of_newline(d);
-    if (acc2) emit_acc_cls_table(c, p, "acc2", d);
+    if (acc2) {
+        sb_puts(c, "    /* 1 where a match may end, indexed [state * classes + class]:\n"
+                   "     * this machine's accept bit depends on the NEXT byte, so it is a\n"
+                   "     * table read rather than a per-state constant. */\n");
+        emit_acc_cls_table(c, p, "is_accepting_by_class", d);
+    }
 
+    /* [M6-READ] The jump rows are this engine's transition table, one array
+     * per state instead of one flat table -- the cells are code ADDRESSES, so
+     * a step is an indirect jump rather than a load and a compare. The legend
+     * names the states those addresses belong to. */
+    sb_printf(c, "    /* Jump targets, one row per state, indexed by byte class.\n"
+                 "     * A cell is the label to jump to for that class; %s_dead ends\n"
+                 "     * the attempt. %d states, %d classes.\n"
+                 "     *\n", p, d->n, d->ncls);
+    emit_state_legend(c, d, false);
+    sb_puts(c, "     */\n");
     for (int i = 0; i < d->n; i++) {
-        sb_printf(c, "    static const void *const %s_t%d[%d] = { ",
+        sb_printf(c, "    static const void *const %s_targets_%d[%d] = { ",
                   p, i, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) sb_puts(c, ", ");
@@ -1909,7 +2143,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
         sb_puts(c, " };\n");
     }
     if (seed) {
-        sb_printf(c, "    static const void *const %s_seed[%d] = { ",
+        sb_printf(c, "    static const void *const %s_seed_state[%d] = { ",
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) sb_puts(c, ", ");
@@ -1924,7 +2158,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
      * left) and three for `start == startpos` (where the `\b` is live). A
      * single `seed` flag would emit a constant where a table is needed. */
     if (gtbl) {
-        sb_printf(c, "    static const void *const %s_gseed[%d] = { ",
+        sb_printf(c, "    static const void *const %s_gstart_seed_state[%d] = { ",
                   p, d->ncls);
         for (int cl = 0; cl < d->ncls; cl++) {
             if (cl) sb_puts(c, ", ");
@@ -1973,8 +2207,8 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     sb_printf(c, "    size_t start;\n"
                  "    const size_t start_max = %s;\n",
               anchored ? "0 /* fully ^-anchored */"
-                       : a_bot ? "startpos /* fully \\G-anchored */" : "n");
-    sb_puts(c, "    for (start = startpos; start <= start_max; start++) {\n");
+                       : a_bot ? "search_from /* fully \\G-anchored */" : "subject_length");
+    sb_puts(c, "    for (start = search_from; start <= start_max; start++) {\n");
     if (cpre) {
         /* [D63] LOOP INTEGRATION, ENG_ATTEMPT's shape: an advance BETWEEN
          * attempts, not a skip inside one. It composes with the three-way
@@ -2021,18 +2255,18 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
          * STRENGTHENING of the existing guard rather than a second condition,
          * and every position the skip then passes over is one this
          * derivation's domain covers. Sabotage S82 restores `start > 0`. */
-        sb_printf(c, "        if (start > %s && s[start - %d] != %d) {\n"
-                         "            const void *q = memchr(s + start, %d, "
-                         "n - start);\n"
+        sb_printf(c, "        if (start > %s && subject[start - %d] != %d) {\n"
+                         "            const void *q = memchr(subject + start, %d, "
+                         "subject_length - start);\n"
                          "            if (!q) break;\n"
                          "            start = (size_t)"
-                         "((const unsigned char *)q - s) + %d;\n"
+                         "((const unsigned char *)q - subject) + %d;\n"
                          "        }\n",
-                  gseed ? "startpos" : "0",
+                  gseed ? "search_from" : "0",
                   cand.offset, cand.byte, cand.byte, cand.offset);
     }
-    sb_puts(c, "        size_t pos = start;\n"
-               "        size_t last = (size_t)-1;\n");
+    sb_puts(c, "        size_t scan_position = start;\n"
+               "        size_t last_accept_position = (size_t)-1;\n");
 
     /* [M6.2 wave D] THE START DISPATCH IS THREE-WAY WHEN `\G` IS PRESENT
      * (assertions_design.md §4.2's table), and the three cases are exactly
@@ -2052,17 +2286,17 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     if (gseed) {
         sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
-        sb_puts(c, "\n               : (start == startpos) ? ");
-        if (gtbl) sb_printf(c, "%s_gseed[%s_cls[s[start - 1]]]", p, p);
+        sb_puts(c, "\n               : (start == search_from) ? ");
+        if (gtbl) sb_printf(c, "%s_gstart_seed_state[%s_byte_class[subject[start - 1]]]", p, p);
         else      emit_target(c, p, d->s1g[UPC_PLAIN]);
         sb_puts(c, "\n               : ");
-        if (seed) sb_printf(c, "%s_seed[%s_cls[s[start - 1]]]", p, p);
+        if (seed) sb_printf(c, "%s_seed_state[%s_byte_class[subject[start - 1]]]", p, p);
         else      emit_target(c, p, d->s1u[UPC_PLAIN]);
         sb_puts(c, ");\n");
     } else if (seed) {
         sb_puts(c, "        goto *((start == 0) ? ");
         emit_target(c, p, d->s0);
-        sb_printf(c, " : %s_seed[%s_cls[s[start - 1]]]);\n", p, p);
+        sb_printf(c, " : %s_seed_state[%s_byte_class[subject[start - 1]]]);\n", p, p);
     } else if (d->s0 == d->s1u[UPC_PLAIN]) {
         sb_puts(c, "        goto ");
         if (d->s0 < 0) sb_printf(c, "*&&%s_dead;\n", p);
@@ -2096,9 +2330,9 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * `s[pos]` below unreachable at `pos == n`. */
             int endview = st_emit_endvar(st) >= 0 ? st_emit_endvar(st)
                         : st->eolvar >= 0 ? st->eolvar : i;
-            sb_puts(c, "        if (pos == n) {\n");
+            sb_puts(c, "        if (scan_position == subject_length) {\n");
             if (d->st[endview].up[UPC_PLAIN].accept)
-                sb_puts(c, "            last = pos;\n");
+                sb_puts(c, "            last_accept_position = scan_position;\n");
             sb_printf(c, "            goto %s_done;\n        }\n", p);
             if (st->eolvar >= 0) {
                 /* [M6.2 wave C] THE EOL POSITION'S ACCEPT IS CLASS-INDEXED
@@ -2119,17 +2353,17 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
                  * newline refinement, which is what keeps the pre-wave text
                  * byte-identical. */
                 const DState *v = &d->st[st->eolvar];
-                sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
-                if (v->up[unl].accept) sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
+                if (v->up[unl].accept) sb_puts(c, "            last_accept_position = scan_position;\n");
+                sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
                 sb_puts(c, "        }\n");
             }
             sb_printf(c, "        {\n"
-                         "            unsigned cl = %s_cls[s[pos]];\n"
-                         "            if (%s_acc2[%d + cl]) last = pos;\n"
-                         "            pos++;\n"
-                         "            goto *%s_t%d[cl];\n"
+                         "            unsigned forward_class = %s_byte_class[subject[scan_position]];\n"
+                         "            if (%s_is_accepting_by_class[%d + forward_class]) last_accept_position = scan_position;\n"
+                         "            scan_position++;\n"
+                         "            goto *%s_targets_%d[forward_class];\n"
                          "        }\n",
                       p, p, i * d->ncls, p, i);
         } else if (st_emit_endvar(st) >= 0) {
@@ -2146,24 +2380,24 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
              * pre-wave text, unchanged, for every state of every pattern that
              * has no `\z`. */
             const DState *endv = &d->st[st_emit_endvar(st)];
-            sb_puts(c, "        if (pos == n) {\n");
+            sb_puts(c, "        if (scan_position == subject_length) {\n");
             if (endv->up[UPC_PLAIN].accept)
-                sb_puts(c, "            last = pos;\n");
+                sb_puts(c, "            last_accept_position = scan_position;\n");
             sb_printf(c, "            goto %s_done;\n", p);
             sb_puts(c, "        }\n");
             if (st->eolvar >= 0) {
                 const DState *v = &d->st[st->eolvar];
-                sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
+                sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
                 if (v->up[unl].accept)
-                    sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
                 sb_puts(c, "        }\n");
             }
             if (st->up[UPC_PLAIN].accept)
-                sb_puts(c, "        last = pos;\n");
+                sb_puts(c, "        last_accept_position = scan_position;\n");
             /* both arms above returned or consumed, so pos < n here */
-            sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
+            sb_printf(c, "        goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n", p, i, p);
         } else if (st->eolvar >= 0) {
             const DState *v = &d->st[st->eolvar];
             /* at an EOL position ($ passable), use the EOL-view state:
@@ -2186,42 +2420,42 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
             bool a_end = v->up[UPC_PLAIN].accept;
             bool a_nl  = v->up[unl].accept;
             if (a_end == a_nl) {
-                sb_puts(c, "        if (pos == n || (pos + 1 == n && "
-                           "s[pos] == '\\n')) {\n");
+                sb_puts(c, "        if (scan_position == subject_length || (scan_position + 1 == subject_length && "
+                           "subject[scan_position] == '\\n')) {\n");
                 if (a_end)
-                    sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            if (pos >= n) goto %s_done;\n", p);
-                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                sb_printf(c, "            if (scan_position >= subject_length) goto %s_done;\n", p);
+                sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
                 sb_puts(c, "        }\n");
             } else {
-                sb_puts(c, "        if (pos == n) {\n");
+                sb_puts(c, "        if (scan_position == subject_length) {\n");
                 if (a_end)
-                    sb_puts(c, "            last = pos;\n");
+                    sb_puts(c, "            last_accept_position = scan_position;\n");
                 sb_printf(c, "            goto %s_done;\n        }\n", p);
-                sb_puts(c, "        if (pos + 1 == n && s[pos] == '\\n') {\n");
+                sb_puts(c, "        if (scan_position + 1 == subject_length && subject[scan_position] == '\\n') {\n");
                 if (a_nl)
-                    sb_puts(c, "            last = pos;\n");
-                sb_printf(c, "            goto *%s_t%d[%s_cls[s[pos++]]];\n",
+                    sb_puts(c, "            last_accept_position = scan_position;\n");
+                sb_printf(c, "            goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n",
                           p, st->eolvar, p);
                 sb_puts(c, "        }\n");
             }
             if (st->up[UPC_PLAIN].accept)
-                sb_puts(c, "        last = pos;\n");
+                sb_puts(c, "        last_accept_position = scan_position;\n");
             /* not an EOL position implies pos < n: consume directly */
-            sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
+            sb_printf(c, "        goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n", p, i, p);
         } else {
             if (st->up[UPC_PLAIN].accept)
-                sb_puts(c, "        last = pos;\n");
-            sb_printf(c, "        if (pos >= n) goto %s_done;\n", p);
-            sb_printf(c, "        goto *%s_t%d[%s_cls[s[pos++]]];\n", p, i, p);
+                sb_puts(c, "        last_accept_position = scan_position;\n");
+            sb_printf(c, "        if (scan_position >= subject_length) goto %s_done;\n", p);
+            sb_printf(c, "        goto *%s_targets_%d[%s_byte_class[subject[scan_position++]]];\n", p, i, p);
         }
     }
 
     sb_printf(c, "%s_dead: __attribute__((unused));\n", p);
     sb_printf(c, "%s_done:\n", p);
-    sb_puts(c, "        if (__builtin_expect(last != (size_t)-1, 0)) {\n"
-               "            if (caps) { caps[0][0] = (ptrdiff_t)start; caps[0][1] = (ptrdiff_t)last; }\n"
+    sb_puts(c, "        if (__builtin_expect(last_accept_position != (size_t)-1, 0)) {\n"
+               "            if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)start; capture_spans[0][1] = (ptrdiff_t)last_accept_position; }\n"
                "            return 1;\n"
                "        }\n"
                "    }\n"
@@ -2260,6 +2494,108 @@ void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len)
  * exact order pcrec_emit_dfa emitted it before this refactor — including the
  * `#include <string.h>` the unanchored engine's memchr prefilter needs, which
  * the VM's hybrid needs for the same reason and its VM-only mode does not. */
+/* [M6-READ] THE ORIENTATION BLOCK -- a map of THIS artifact.
+ *
+ * The plan row's SCOPE RULED block sets what this is and is not: the artifact
+ * explains ITSELF. Frank's frame is that a reader coming from a higher-level
+ * language loses the larger picture in C's nuts and bolts, and the
+ * commentary's job is restoring the altitude C strips away -- saying what a
+ * higher-level language would have let the code say itself. So this names the
+ * SECTIONS THIS FILE HAS and how one match attempt flows through them. It is
+ * not a regex-engine primer, and it must never become one.
+ *
+ * Everything it says is read off the compiled job, so an artifact without a
+ * prefilter does not claim one and a VM artifact describes the VM. A block
+ * that described a shape the file does not have would be worse than none. */
+static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
+{
+    Job *job = cx->job;
+    bool vm = job->fit.chosen == ENGM_VM;
+    bool prefilter = job->fit.prefilter;
+    /* WHICH prefilter shape the forward scan uses is NOT re-derived here. The
+     * derivation lives in emit_unanchored, which owns it, and a second copy
+     * that agreed today would be a second source of truth about the emitted
+     * code -- the shape this project has been bitten by before. This block
+     * names the STEP; the prefilter's own emission site describes the form it
+     * took, where `use_memchr` is already in hand. */
+
+    sb_puts(c, "/* =====================================================================\n"
+               " * HOW THIS MATCHER WORKS -- a map of this file\n"
+               " *\n"
+               " * This is a complete, self-contained matcher for ONE pattern:\n"
+               " *\n *     ");
+    /* the pattern itself, rendered safe for a block comment */
+    for (const char *q = cx->pat; *q; q++) {
+        if (q[0] == '*' && q[1] == '/') sb_puts(c, "*\\/");
+        else if (*q == '\n') sb_puts(c, "\\n");
+        else sb_putc(c, *q);
+    }
+    sb_puts(c, "\n *\n"
+               " * There is no pattern parser here and nothing to configure. The\n"
+               " * pattern was compiled away ahead of time; what is left is the\n"
+               " * machinery below and the entry points that drive it.\n"
+               " *\n");
+
+    if (!vm) {
+        sb_puts(c, " * ONE SEARCH, END TO END:\n *\n"
+                   " *   1. FORWARD SCAN. Walk the subject left to right, one byte per\n"
+                   " *      step, moving between numbered states by table lookup. Every\n"
+                   " *      time the scan lands in an ACCEPTING state, remember the\n"
+                   " *      position: a match could end here. This finds where the match\n"
+                   " *      ENDS.\n");
+        sb_puts(c, " *\n"
+                   " *   2. PREFILTER SKIP -- a shortcut that may appear inside step 1.\n"
+                   " *      While the scan is still in the start state with nothing\n"
+                   " *      found, bytes that cannot begin a match are skipped rather\n"
+                   " *      than stepped over. Speed only: it can never change the\n"
+                   " *      answer. Its own comment, at the loop below, says which form\n"
+                   " *      this artifact uses.\n");
+        sb_puts(c, " *\n"
+                   " *   3. REVERSE SCAN. Walk backwards from the end found in step 1,\n"
+                   " *      through a SECOND set of tables built from the same pattern\n"
+                   " *      read right to left. The furthest-back accepting position is\n"
+                   " *      where the match STARTS. The second pass exists because the\n"
+                   " *      forward tables record only where a match can END, never where\n"
+                   " *      the one that ended there began.\n *\n");
+    } else {
+        sb_puts(c, " * This pattern reports where its capture groups matched, so the\n"
+                   " * matcher is built in two halves that run one after the other:\n *\n");
+        if (prefilter)
+            sb_puts(c, " *   HALF 1 -- the prefilter. A pair of table-driven scanners,\n"
+                       " *     forward then reverse, that answer \"is there a match at all,\n"
+                       " *     and between which two offsets?\" while ignoring the groups.\n"
+                       " *     It never backtracks. What it cannot do is say where the\n"
+                       " *     groups fell.\n *\n");
+        sb_puts(c, " *   HALF 2 -- the compiled program. One label per position in the\n"
+                   " *     pattern, walked by goto, recording each group's start and end\n"
+                   " *     as it passes them. Where the pattern offers a choice it pushes\n"
+                   " *     a RESUME FRAME and takes the preferred branch; when a label\n"
+                   " *     finds the subject does not match it jumps to the one place\n"
+                   " *     that goes backwards, restoring the position and undoing the\n"
+                   " *     group writes made since. Running out of frames, trail, steps\n"
+                   " *     or work budget returns a distinct \"gave up\" code, which is\n"
+                   " *     NOT the same answer as \"no match\".\n *\n");
+    }
+
+    char residual[96];
+    snprintf(residual, sizeof residual, "%s_next_pos", cx->opt->prefix);
+    sb_printf(c, " * %s does the work. %s and %s are\n"
+                 " * anchored entry points, %s is caller-facing encoding\n"
+                 " * residue, and %s describes what this artifact is. Each is\n"
+                 " * documented at its definition.\n",
+              g->searchfn, g->matchfn, g->matchcapsfn, residual, g->infoname);
+    if (!vm || prefilter)
+        sb_puts(c, " *\n"
+                   " * READING THE TABLES. Each scanner uses three arrays with the same\n"
+                   " * shape: a byte-class table folding all 256 byte values down to the\n"
+                   " * few classes this pattern can tell apart; a transition table, one\n"
+                   " * row per state and one column per class, whose cell is the state to\n"
+                   " * move to or -1 for \"dead, stop\"; and an accepting table marking\n"
+                   " * the states where a match may end. Every table below carries a\n"
+                   " * legend naming its states or classes.\n");
+    sb_puts(c, " * ===================================================================== */\n\n");
+}
+
 void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
 {
     StrBuf *c = &cx->job->csb;
@@ -2303,6 +2639,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         sb_puts(c, "#include <stdio.h>\n#include <string.h>\n");
     sb_puts(c, "\n");
+    emit_orientation_block(cx, c, g);
 }
 
 /* The `.rodata` reflection instance. The VM passes what it ACTUALLY enforces;
@@ -2350,11 +2687,11 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
     sb_printf(&cx->job->csb,
         "int main(int argc, char **argv)\n{\n"
         "    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */\n"
-        "    ptrdiff_t caps[%s_NCAPS][2] = {{0}};\n"
+        "    ptrdiff_t capture_spans[%s_NCAPS][2] = {{0}};\n"
         "    if (argc < 2) { fprintf(stderr, \"usage: %%s <subject>\\n\", argv[0]); return 2; }\n"
-        "    int rc = %s((const unsigned char *)argv[1], strlen(argv[1]), 0, caps);\n"
+        "    int rc = %s((const unsigned char *)argv[1], strlen(argv[1]), 0, capture_spans);\n"
         "    if (rc == 1) {\n"
-        "        printf(\"match %%td %%td\\n\", caps[0][0], caps[0][1]);\n"
+        "        printf(\"match %%td %%td\\n\", capture_spans[0][0], capture_spans[0][1]);\n"
         "        return 0;\n"
         "    }\n"
         "    if (rc == 0) {\n"

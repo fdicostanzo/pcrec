@@ -207,7 +207,7 @@ fi
 # knob works.
 #
 # It is classified rather than excluded, and read off the ARTIFACT (a body
-# whose whole content is the `(void)s; ... return 0;` early-out) rather than
+# whose whole content is the `(void)subject; ... return 0;` early-out) rather than
 # off a list of pattern texts someone would have to maintain. Same rule the VM
 # arm follows: reading a different fact to explain a non-difference is
 # legitimate; reading `Dfa.wordctx` would not be.
@@ -220,7 +220,7 @@ while IFS= read -r pat; do
         ctl_diff=$((ctl_diff + 1))
     elif printf '%s' "$a" | grep -q '^#define RX_ENGINE "vm"$'; then
         ctl_same_vm=$((ctl_same_vm + 1))
-    elif printf '%s' "$a" | grep -q '^    (void)s; (void)n; (void)startpos; (void)caps;$'; then
+    elif printf '%s' "$a" | grep -q '^    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;$'; then
         ctl_same_empty=$((ctl_same_empty + 1))
         echo "  never-matching control (no automaton to change): $pat" >&2
     else

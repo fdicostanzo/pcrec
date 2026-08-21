@@ -63,11 +63,11 @@ code shape five times:
 | anchored | `^abc$` | fully `^`-anchored, `start_max = 0` fast path | tests/base/anchors.rxt |
 | memchr | `needleXYZW` | unanchored, memchr-prefiltered literal, zero skip tables | tests/bench THROUGHPUT case (a) |
 | eol | `a.*\|b$` | `$`-EOL engine, M2.12 skip/EOL-view interaction (D11) | tests/base/eol_scan_avoidance.rxt line 147, verbatim |
-| skip | `=[^\n]*!` | self-loop SKIP STATES (confirmed: emits `rx_fs*[256]`) | tests/bench THROUGHPUT case (e), verbatim |
+| skip | `=[^\n]*!` | self-loop SKIP STATES (confirmed: emits `rx_forward_stay*[256]`) | tests/bench THROUGHPUT case (e), verbatim |
 | trie | `catfish\|cat\|dog` | M2.8 alternation trie (`chain_alts`/`trie_build`) | tests/base/alternation_trie.rxt line 48, verbatim |
 
 The `skip` fixture hard-errors if its pattern stops emitting a forward skip
-table (`grep 'rx_fs[0-9]*\[256\]'` on the generated C) — the same trap
+table (`grep 'rx_forward_stay[0-9]*\[256\]'` on the generated C) — the same trap
 tests/bench/CLAUDE.md documents for its own case (e): a pattern that quietly
 stops exercising the skip loop degrades into re-measuring the memchr case
 under a different name, with no other signal.

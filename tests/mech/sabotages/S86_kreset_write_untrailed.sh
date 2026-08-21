@@ -61,6 +61,6 @@ SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
 SAB_DESC="the emitted \\K write goes straight to stv[0] instead of through <PREFIX>_SET, so it is never recorded on the trail and a backtrack cannot undo it. A \\K crossed on a LOSING path stays crossed: '(?:a\\K|ax)c' on \"axc\" answers (1,3) where PCRE2 answers (0,3), and '(?:a\\K)*ab' on \"aaab\" answers (3,4) where PCRE2 answers (2,4)"
 SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:6fail/590pass,kresetdiff:3fail/6pass -- DETECTED (canonical matrix run, 2026-08-19)"
 SAB_COUNT=1
-SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)pos",
+SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)scan_position",
                "\\K resets the reported start of the match to here");'
-SAB_AFTER='        sb_printf(b, "    stv[0] = (ptrdiff_t)pos;\n");   /* SABOTAGE S86 */'
+SAB_AFTER='        sb_printf(b, "    slot_values[0] = (ptrdiff_t)scan_position;\n");   /* SABOTAGE S86 */'

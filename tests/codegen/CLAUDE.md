@@ -273,7 +273,7 @@ decides whether to perform it — and then run the row through
   and this checks it anyway, because the structural argument holds only while
   there is genuinely one call. Each listing SECTION is pinned to a fact
   derivable from the `.c`: the label SET both directions and duplicate-free,
-  every `RX_PUSH` with its resume target, the set of `stv` slots actually
+  every `RX_PUSH` with its resume target, the set of `slot_values` slots actually
   written, the header's RX_NCAPS/frames/trail against the artifact's own
   macros, and the island/callout counts against the artifact rather than
   against the listing's own claim (so those sections begin working the day a
@@ -429,7 +429,7 @@ Every symbol these checks look for is a function-local static or a statement
 inside the engine function — that is the measured finding OS-0b rests on, and
 it is what lets several engines share one file under D18/D20. It is also what
 makes a whole-file grep wrong as soon as there IS more than one engine:
-`rx_fs[0-9]+\[256\]` would be satisfied by ANY engine present, so a check
+`rx_forward_stay[0-9]+\[256\]` would be satisfied by ANY engine present, so a check
 reading "this pattern emits a skip table" degrades to "some engine in here
 does" while still passing. All 19 grep sites across 11 generated files now run
 against a body extracted by entry name (`body()`).
@@ -602,14 +602,14 @@ tree — this file's whole charter, three more times:
    is weak: every class-indexed read must go through the guarded `cl` local,
    AND the `pos >= n` guard (with the scalar accept inside it) must precede
    the first such read. Sabotage S73.
-2. **§3.8.3.1 — no `sfound` at the reverse boundary except through the
+2. **§3.8.3.1 — no `match_start_position` at the reverse boundary except through the
    context-indexed accept, from ANY writer.** The design states an invariant
    rather than a patch because there is more than one writer: the reverse
-   SKIP's `sfound = pp;` is emitted under a COMPILE-TIME condition, so what
+   SKIP's `match_start_position = pp;` is emitted under a COMPILE-TIME condition, so what
    lands in the artifact is a bare unconditional assignment with no runtime
-   test to fail. The check enumerates every `sfound` assignment in the body
+   test to fail. The check enumerates every `match_start_position` assignment in the body
    and requires each to be conditioned on an accept read. A companion rule
-   (2b) pins R30 N9: the boundary accept must be ATTACHED to the `pp <=
+   (2b) pins R30 N9: the boundary accept must be ATTACHED to the `rewind_position <=
    startpos` break, because the loop has a SECOND exit (dead state) and an
    epilogue below it would record a position the walk never reached and index
    the accept table with a negative state. Sabotage S72.
@@ -623,6 +623,90 @@ shape carrying every emitted site at once — class-indexed accepts in BOTH
 machines, mechanism 4's seed in both, AND live forward and reverse SKIP
 states. Rule 2 is about the skip, so a fixture without one would satisfy it
 vacuously, and the check asserts the skip's presence rather than assuming it.
+
+## [M6-READ] `run_object_neutrality.sh` — the two-compiler gate
+
+Added 2026-08-21 as conversion step 2, BEFORE any emitter change. It sweeps
+every `pattern` line in every `.rxt` under `tests/` (the population grows with
+the corpus, `run_vm_identity.sh`'s formulation) through TWO pcrec builds,
+compiles both artifacts at `-O2 -g0`, and compares:
+
+  **(a)** raw `.text` + `.rodata` bytes — executed code, which contains no
+  names at all. This is the property that matters.
+  **(c)** exported symbols — [M6-READ] promises zero ABI change, and this is
+  the line that enforces it.
+  **(b)** all symbols, reported as INFO only. Renaming a static function or a
+  function-local static table renames its internal-linkage symbol; that is not
+  executed code and does not survive `strip`, but a check diffing disassembly
+  TEXT fails on it. The sample stage's first version did exactly that and
+  produced 200 lines of diff in which every line was a symbol name.
+
+**It is NOT in `make test`**, and cannot be: it needs a second compiler. It is
+a tool pointed at two builds. That also makes its reference STRONGER than the
+`*_identity.sh` family's — those build a reference from the same sources with
+a `-D` knob, which wave D measured can CANCEL a sabotage; this one takes a
+genuinely independent binary, sharing no sources with its subject.
+
+**Its own non-vacuity has two arms.** A sweep that compared nothing fails
+loudly (`same == 0`), and a pattern one build refuses while the other compiles
+is a REFUSAL MISMATCH rather than a skipped row. But the sharper control is
+self-arming and arrives with the conversion: after the rename, **(b) must be
+NON-ZERO** while (a) and (c) stay clean. If (b) came back 0 from a converted
+emitter, the gate would be reading artifacts the rename never touched.
+
+Baseline recorded at step 2, current build against itself: 33 of 40 patterns
+compared (7 refused by both), (a) and (c) clean, **(b) = 0** — which is
+correct for a self-comparison and is the number the conversion must move.
+
+## [M6-READ] the SLOTS block's non-vacuity guard, and the sabotage that earned it
+
+Added 2026-08-21, **before** any emitted identifier was renamed, because the
+rename is what makes the hazard live. `run_ir_listing.sh`'s SLOTS block
+compares two extractions that are both pattern-matched SPELLINGS the emitter
+writes: `RX_SET(<slot>` in the `.c`, `set slot_values[n]` in the listing. Renaming
+them together is the only CORRECT way to rename them — and doing so makes
+both greps match nothing, after which `diff -q` on two empty files passes.
+The check would go on reporting green while reading neither side.
+
+This is the failure this project already has in its own memory (a control
+sharing a source with the thing it controls), and [M6-READ] is a live
+occasion for it in two independent ways: the listing's prose moves with the
+emitter's variable names, and the artifact stops writing `RX_SET(2,` at all
+once the slot legend lands (`RX_SET(RX_SLOT_GROUP1_START,`).
+
+Three things now hold the block open:
+
+1. **Per-pattern non-emptiness, asserted on BOTH sides.** Every pattern in
+   `PATTERNS` has at least one capturing group, so every one must write at
+   least one slot; an empty extraction is a failure with its own message
+   naming which side went blind.
+2. **Symbolic operands are RESOLVED against the artifact's own `#define`s**,
+   so the block keeps working across the slot-legend change instead of
+   needing a flag day — and an operand that resolves to nothing is a hard
+   failure, not a silently dropped row.
+3. **A sweep-wide guard for CHOICE POINTS**, which cannot assert
+   non-emptiness per pattern (a fully-possessified pattern legitimately
+   pushes no frame) but across this sweep must find some.
+
+**Measured, both directions** (run from this directory — see the scratchpad
+warning below, which this lane walked into before getting it right):
+
+| state | old check | new check |
+|---|---|---|
+| unsabotaged | 79 pass / 0 fail | 80 pass / 0 fail |
+| listing side moved only (`set slot_values[n]`) | 68 / 11 — already caught | 69 / 11, message names the listing |
+| **BOTH sides moved** (the real post-conversion state) | **79 / 0 — all 11 SLOTS checks comparing empty against empty** | **69 / 11, message names the `.c` side** |
+
+The middle row is why the guard is not redundant: the one-sided sabotage was
+always caught, so a validation that only tried that one would have concluded
+the block was already safe. Only the both-sides case is vacuous, and it is
+the case the conversion actually produces.
+
+The guard also found a live defect in the extraction on its first run: the
+old numeric-only grep was matching `RX_SET`'s own `#define` line and silently
+dropping the operand because the macro PARAMETER name (`slot_`) is not
+`[0-9]+`. Resolving symbolic operands made it visible. `#define` lines are
+now excluded explicitly.
 
 ## Conventions
 
@@ -821,7 +905,7 @@ structural surface is provenance rather than presence. Four checks:
   i.e. the REVERSE PASS's answer and the PRE-`\K` start, which
   assertions_design.md §6.3 rule 1 says may bound the search and must never be
   written out. Both directions are asserted in one artifact, plus that the
-  write goes through `RX_SET` rather than straight to `stv[0]` — the macro is
+  write goes through `RX_SET` rather than straight to `slot_values[0]` — the macro is
   what records the old value on the trail, and without it a `\K` crossed on a
   LOSING path stays crossed.
 - **rule 1b** — a `\K`-FREE VM artifact emits the PRE-WAVE `caps_out` body

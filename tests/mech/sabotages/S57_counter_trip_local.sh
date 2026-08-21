@@ -6,7 +6,7 @@
 # so any per-loop local inside that body is reused where replication gave each
 # copy its own. That is safe today only because of an invariant stated in
 # exactly one comment (`src/gen/emit_vm.c`, the cursor rung's retreat note) — a
-# resume label reads only TRAILED slots or `pos`, never an untrailed local.
+# resume label reads only TRAILED slots or `scan_position`, never an untrailed local.
 #
 # Counter-K does not introduce the invariant; it makes it carry weight it has
 # not carried before, and an invariant with no check is a sentence [R25 E16].
@@ -25,6 +25,6 @@ SAB_SUITES="counterkdiff"
 SAB_DESC="the nested cursor rung's low-water slot becomes an untrailed store, so an outer counter trip resumes reading a value a later inner iteration wrote"
 SAB_DOC_FIGURE="docs/design/counterk_impl/counterk_design.md §8.4 (S57 and the invariant it attacks)"
 SAB_COUNT=1
-SAB_BEFORE='        vm_set(v, low, "(ptrdiff_t)pos",
-               "span-loop low-water mark (loop entry pos)");'
-SAB_AFTER='        sb_printf(v->b, "    stv[%d] = (ptrdiff_t)pos;\n", low);  /* SABOTAGE S57 */'
+SAB_BEFORE='        vm_set(v, low, "(ptrdiff_t)scan_position",
+               "span-loop low-water mark (loop entry scan_position)");'
+SAB_AFTER='        sb_printf(v->b, "    stv[%d] = (ptrdiff_t)scan_position;\n", low);  /* SABOTAGE S57 */'

@@ -460,7 +460,7 @@ subject and therefore immune to the cancellation wave D measured in the knob
 builds. And
 `tests/codegen/run_codegen_tests.sh`'s `[M6.2-WORDB]` block carries three
 rules no correctness test can see — no accept table indexed at `pos == n`
-(§3.6.2, sabotage S73), no `sfound` recorded blind at the reverse boundary by
+(§3.6.2, sabotage S73), no `match_start_position` recorded blind at the reverse boundary by
 ANY writer including the skip's (§3.8.3.1, sabotage S72), and exactly one
 word-set spelling per artifact (§7.2 item 3) — and its `[M6.2-KRESET]` block
 carries wave E's four: `caps[0][0]`'s PROVENANCE on a `\K` artifact and on a
