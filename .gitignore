@@ -22,3 +22,4 @@ tests/fuzz/failures/
 /docs/dev/wake.md
 worktrees/
 scripts/tests/*.testreport
+build-ccache/
