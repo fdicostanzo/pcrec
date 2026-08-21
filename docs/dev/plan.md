@@ -208,25 +208,11 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M6 — PCRE feature modules
 
-- [M6.0] STATE:started — milestone (EXPANDED 2026-08-18, thirty-third session, on Frank's standing ruling). Scope per the ruled list: assertions (\b \B, \A \z, (?m) multiline, \G, \K — module `assertions`), lookaround, backrefs, atomic groups + possessive-quantifier SPELLINGS (module `atomic-groups`; the possessify OPTIMIZATION already exists internally — this is the surface syntax, which is SEMANTICS, not an optimization), named groups (module `named-groups`). PREMISES RE-VERIFIED AT EXPANSION (constraint (a); probe on HEAD b95fbe6, 2026-08-18): \b \B \A \z \Z (?m) \G \K all refuse with module `assertions`; (?= (?! (?<= (?<! with `lookaround`; \1 \k (?P= with `backrefs`; (?> and *+ ++ ?+ with `atomic-groups`; (?<n> (?'n' (?P<n> declarations with `named-groups`; (?( with `conditionals`, (?R with `recursion`, (?| with `branch-reset` — those three are NOT in Frank's ruled M6 list, their refusals stand; \d, [[:alpha:]], (?i), (?s), and mid-pattern $ all COMPILE (the 2026-08-16 row correction holds). ABI groundwork verified shipped: `rx_info.groups` (`const rx_group_entry *`, "NULL until named-groups"), `nnames`, and the `rx_group_entry` ABI type all exist in the frozen M4 ABI — named-groups POPULATES an anticipated slot, no ABI change; the groups SORT KEY is the one deliberately-unfixed spec point (match_api.md §6) and is fixed by [M6.3]. INHERITED OBLIGATIONS travelling on substeps: D47.5 possessification-gate test rides whichever wave lands (?m) — see [M6.2]; D58 seam routing — every encoding-sensitive residue (lookbehind back-step, \G advance, caseless backref compare, word-character classification for \b) routes through src/gen/enc/ residual entries FROM BIRTH, never raw byte arithmetic in shared emitter code. MODULE PROGRESS: named-groups DONE ([M6.3], 2026-08-18); assertions DONE ([M6.2], 2026-08-21, 8/8 constructs); remaining: atomic-groups [M6.4], backrefs [M6.5], lookaround [M6.6] — NOT cleared to start unprompted (Frank sequenced [M6-READ] + the queue's tranche A ahead of them, 2026-08-21). POST-MODULE QUEUE (re-homed here from the [M6.2] row at its close; groupings and status as of 2026-08-21): TRANCHE A IN FLIGHT — (3) seven drifted sabotage anchors S08/S09/S21/S22/S26/S39/S65 (lane/sabanchors: re-anchored, mech validation pending), (5) wordb.rxt shard-split + PROCS note (lane/wordbshard: split done, suite validation pending), (7) heavy differentials on the sanitizer axes (to launch as background runs); the verification of record for (3)+(5)'s mech state is ONE post-merge full-matrix mech run on main. RE-BASED BY D66 (Frank, 2026-08-21) — (1) DD-7's reverse BOT variant (D63) and (2) D63's second instance (first-byte-at-offset-0, the 83x partial-anchor gap) now DEPEND ON the [DD-11] core-reduction work: optimize the CORE lookbehind-anchor form once (candidate-start derivation from a leading fixed lookbehind + generalized reverse boundary evaluation) so every desugared anchor benefits, rather than implementing against ^'s special case; sequenced behind [M6.6] lookaround + the DD-11 design — see D66 for the two answered questions and the accepted tradeoffs; (4) the registry BUILT-STATUS field — memo delivered (docs/design/registry_built_status_memo.md, lane/regstatus) and RATIFIED WHOLESALE by Frank 2026-08-21 (D65: per-construct, dump-time-derived, three-valued + registry_check defect assertion); implementation IN FLIGHT on the same lane. ARMED, NO WORK — (6) SR-8's second-construct trigger
+- [M6.0] STATE:started — milestone (EXPANDED 2026-08-18, thirty-third session, on Frank's standing ruling). Scope per the ruled list: assertions (\b \B, \A \z, (?m) multiline, \G, \K — module `assertions`), lookaround, backrefs, atomic groups + possessive-quantifier SPELLINGS (module `atomic-groups`; the possessify OPTIMIZATION already exists internally — this is the surface syntax, which is SEMANTICS, not an optimization), named groups (module `named-groups`). PREMISES RE-VERIFIED AT EXPANSION (constraint (a); probe on HEAD b95fbe6, 2026-08-18): \b \B \A \z \Z (?m) \G \K all refuse with module `assertions`; (?= (?! (?<= (?<! with `lookaround`; \1 \k (?P= with `backrefs`; (?> and *+ ++ ?+ with `atomic-groups`; (?<n> (?'n' (?P<n> declarations with `named-groups`; (?( with `conditionals`, (?R with `recursion`, (?| with `branch-reset` — those three are NOT in Frank's ruled M6 list, their refusals stand; \d, [[:alpha:]], (?i), (?s), and mid-pattern $ all COMPILE (the 2026-08-16 row correction holds). ABI groundwork verified shipped: `rx_info.groups` (`const rx_group_entry *`, "NULL until named-groups"), `nnames`, and the `rx_group_entry` ABI type all exist in the frozen M4 ABI — named-groups POPULATES an anticipated slot, no ABI change; the groups SORT KEY is the one deliberately-unfixed spec point (match_api.md §6) and is fixed by [M6.3]. INHERITED OBLIGATIONS travelling on substeps: D47.5 possessification-gate test rides whichever wave lands (?m) — see [M6.2]; D58 seam routing — every encoding-sensitive residue (lookbehind back-step, \G advance, caseless backref compare, word-character classification for \b) routes through src/gen/enc/ residual entries FROM BIRTH, never raw byte arithmetic in shared emitter code. MODULE PROGRESS: named-groups DONE ([M6.3], 2026-08-18); assertions DONE ([M6.2], 2026-08-21, 8/8 constructs); remaining: atomic-groups [M6.4], backrefs [M6.5], lookaround [M6.6] — NOT cleared to start unprompted (Frank sequenced [M6-READ] + the queue's tranche A ahead of them, 2026-08-21). POST-MODULE QUEUE (re-homed here from the [M6.2] row at its close; groupings and status as of 2026-08-21): TRANCHE A IN FLIGHT — (3) seven drifted sabotage anchors S08/S09/S21/S22/S26/S39/S65 (lane/sabanchors: re-anchored, mech validation pending), (5) wordb.rxt shard-split + PROCS note (lane/wordbshard: split done, suite validation pending), (7) heavy differentials on the sanitizer axes — DONE (kreset+gstart under BOTH axes, all four clean on first-ever sanitizer exposure, in the union chain b8cb848); the post-merge full-matrix mech on main also DONE (85/0/0 at 115fbc6), closing (3)+(5)'s verification of record. RE-BASED BY D66 (Frank, 2026-08-21) — (1) DD-7's reverse BOT variant (D63) and (2) D63's second instance (first-byte-at-offset-0, the 83x partial-anchor gap) now DEPEND ON the [DD-11] core-reduction work: optimize the CORE lookbehind-anchor form once (candidate-start derivation from a leading fixed lookbehind + generalized reverse boundary evaluation) so every desugared anchor benefits, rather than implementing against ^'s special case; sequenced behind [M6.6] lookaround + the DD-11 design — see D66 for the two answered questions and the accepted tradeoffs; (4) the registry BUILT-STATUS field — DONE (D65 ratified, implemented, merged 30f5e4b; the two missed FORMAT consumers fixed by the tail lane b7c230d with the complete format-consumer survey in the memo's Correction section; validated by the union battery b8cb848). ARMED, NO WORK — (6) SR-8's second-construct trigger
 - [M6.1] archived to plan_completed.md (completed 2026-08-18, thirty-third session — the R30 panel + focused re-checks + N1 verification closed it; design docs/design/assertions_design.md merged at 0beac07; review docs/dev/reviews/2026-08-18-r30-assertions-design.md; Frank rulings Q1/Q3/Q8 carried on [M6.2])
 - [M6.2] archived to plan_completed.md (completed 2026-08-21, thirty-fifth session — module `assertions` closed: five waves + repair slice + D27 blinded corpus, all close-validated; the post-module queue re-homed to [M6.0])
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
-- [SPEC-M] STATE:not-started (CHARTERED by Frank 2026-08-21, ruling 1a
-  of the triage discussion: "agree but don't spend a lot of time as
-  this is to be replaced") — tests/spec_mod0 check01_isolation and
-  check07_gate_equivalence, red since [M6.2] wave C: their model
-  assumes a module's behavior depends only on its OWN gate, and (?m)
-  is a measured TWO-MODULE construct (mod_modifiers.c consults
-  FEAT_ASSERTIONS for the multiline EFFECT — the same fact the D27
-  corpus found from outside and gating.rxt pins on all four
-  combinations). Fix: carry (?m) as a NAMED, evidence-cited exception
-  in both checks (cite the D27 gating.rxt record and D65's memo),
-  restore the suite green, and note the amendment in the suite's
-  acceptance record since it is D27-authored. MINIMAL EFFORT by
-  ruling — the real resolution is [DD-11]'s flags-as-binding-mutators
-  redesign, which dissolves the cross-module shape; this row's fix is
-  interim truth-restoration, not architecture
+- [SPEC-M] archived to plan_completed.md (completed 2026-08-21 — spec_mod0 green, (?m) named exceptions with guards; expiry DD-11)
 - [M6.4] STATE:not-started (SESSION BOUNDARY RULED by Frank
   2026-08-21: the thirty-fifth session STOPS just before this row —
   session reset, then proceed into [M6.4] at the next session's start;
@@ -244,95 +230,7 @@ note: conditionals and recursion are NOT in Frank's ruled M6 list and are
 not substeps above — their module refusals stand; they queue behind M6 as
 their own future rows if ruled in.)
 
-- [M6-READ] STATE:started (2026-08-21, thirty-fifth session, on Frank's ruling — pulled ahead of [M6.4]/[M6.5]/[M6.6] together with the [M6.2] post-module queue's tranche A, D27 corpus merged and close battery in flight; SAMPLE STAGE first: lane/m6read delivers the naming scheme, hand-commented sample artifact(s), object-code-neutrality measurement and pin-update budget FOR FRANK'S APPROVAL before any emitter conversion) — EMITTED-CODE READABILITY PASS (Frank,
-  2026-08-18, thirty-second session: ruled as the IMMEDIATE follow to
-  M6, ahead of the rest of M5). The generated C becomes readable as
-  first-class output. Frank's five requirements, near-verbatim:
-  (1) DATA STRUCTURES: a 1–3-line comment each — what it is, where it
-  is used, what it means. (2) CODE SECTIONS: 1–2 lines saying what the
-  section is about to do ("prefilter section to find candidates...").
-  (3) LINE COMMENTS — CODE ONLY, not data structures (Frank
-  clarification, same day): 1 line, the INTENT of the next line, never
-  an echo of the code ("advance to next character", NOT "increment
-  source pointer"); structures/tables get item (1)'s block comment,
-  never per-line/per-row commentary. (4) FULL NAMES — LOCALLY SCOPED
-  IDENTIFIERS ONLY (Frank's second clarification, same day): variables,
-  types, and structure names that are LOCAL to the artifact get full
-  names — no "pos", the source_position/source_index class of names,
-  ONE consistent scheme, the scheme delegated to the implementer. ABI
-  NAMES ARE KEPT AS-IS: the public emitted surface (entry points,
-  rx_matchfn, the emitted header's names) does not change — THIS ROW
-  MAKES NO ABI CHANGE OF ANY KIND; it is purely an internal
-  comment/clarity step. (5) STATE-NAME LEGENDS (upgraded from
-  "consider" to a REQUIREMENT by the same clarification): numbers in
-  data tables in structures/arrays get short text names WHERE THEY ARE
-  STATES — not indexes or other numeric kinds — with a legend in the
-  comment above the table.
-  ENGINEERING NOTES recorded at ruling time: (i) the pass must be
-  OBJECT-CODE-NEUTRAL — comments, renames, and state names cannot
-  change the compiled artifact; the natural check is
-  compile-before/after and compare object code, which the row gets for
-  free (state names via macros/enums resolving to the same values);
-  (ii) spec §2's verbatim quotes re-quote under the verification-ledger
-  discipline in the same change — the ABI comment block and all ABI
-  names are UNTOUCHED by ruling, so the re-quote is body-text only;
-  (iii) codegen structural checks and stamp pins that grep emitted
-  LOCAL identifiers need a coordinated pin update — budget for it;
-  (iv) distinguishing state-valued table cells from index/other
-  numerics is emitter knowledge — the emitter tags what it emits, no
-  after-the-fact inference; (v) the code-vs-structure
-  clarification resolved the worst of the comment-density question
-  (tables never get per-line commentary); the design pass still brings
-  Frank ONE sample commented artifact to approve the style against
-  before the full emitter conversion — cheap, and it fixes the
-  line-comment granularity on real code by example.
-  INTENT CLARIFICATION (Frank, 2026-08-21, thirty-fifth session — recorded
-  so the implementing lane's brief carries the GOAL, not just the letter):
-  the five requirements are GUIDELINES, not a checklist, and following them
-  blindly is the named failure mode (per-line quota comments that echo
-  code, renames that add length without comprehension). The goal they
-  serve: a READER can understand what the emitted code is doing — there is
-  an EDUCATIONAL aspect. The acceptance question for every individual
-  commenting/naming decision is "does this help a competent C programmer,
-  new to regex engines, understand what is going on here" — density and
-  altitude follow from that answer, in both directions: self-evident code
-  correctly gets NO comment; a genuinely subtle mechanism may deserve a
-  fuller explanatory block than any per-line rule would produce.
-  Consequences: (a) the one-sample style approval judges EDUCATIONAL
-  quality against this goal, not format compliance; (b) the implementing
-  lane is judgment-heavy work, not mechanical transcription — model choice
-  accordingly; (c) manager PROPOSAL for the sample stage (not ruled): a
-  top-of-artifact "how this matcher works" overview block as the natural
-  home for machine-shape orientation and the state legends; (d) the lane's
-  brief must quote this clarification alongside the five requirements.
-  SAMPLE STAGE APPROVED (Frank, 2026-08-21, on lane/m6read 61f0209's
-  exemplars — "look fantastic"), with ONE COSMETIC RULING: section/block
-  comments stay `/* */`, LINE comments switch to `//` (stands out
-  better). Approval ratifies the samples' embodied judgment calls
-  (README §2's five: local param renames with the frozen ABI block
-  untouched; rx_L labels kept with legends; the five new emitted
-  macros and no state enum; developer commentary kept under the reader
-  layer; decimal byte literals with consume-comments) — none was
-  separately overruled. Frank's VM-sample observation (a literal
-  sequence matched byte-at-a-time rather than one strncmp) is the
-  [OPT-A] literal-run-coalescing lead HE recorded 2026-08-18, re-surfaced
-  by the readable artifact — see that row; no new work item here.
-  NEXT: the emitter conversion per the sample README §5's plan, FIRST
-  landing the non-vacuous replacement for run_ir_listing.sh's
-  prose-grep (the vacuous-pass hazard the sample stage found), watched
-  failing, before any renaming.
-  SCOPE RULED (Frank, same day, answering the manager's calibration
-  question): the artifact explains ITSELF — "it's not comp-sci 101", no
-  general regex-engine pedagogy. Frank's frame, recorded as the working
-  standard: readers coming from higher-level languages lose the LARGER
-  PICTURE in C's nuts and bolts — the commentary's job is restoring the
-  altitude C strips away, i.e. saying what a higher-level language would
-  have let the code say itself ("this block is the candidate scan", "this
-  table maps byte-class to next state"), never teaching engine theory.
-  The (c) overview proposal is re-scoped accordingly: an orientation map
-  of THIS artifact's sections and match-attempt flow, not a regex-engine
-  primer; still brought to Frank at the sample stage.
-
+- [M6-READ] archived to plan_completed.md (completed 2026-08-21, thirty-fifth session — the emitted-code readability pass: approved style shipped from both emitters, legends generated from emitter-owned data, census-proven byte identity; CONVERSION_LOG.md is the findings record; src/gen/CLAUDE.md carries the emitted-vocabulary rules)
 ## M3 — Streaming input
 
 - [M3.0] STATE:not-started — DESIGN GATE FIRST (R2-A3): D7's "same shape streaming needs" holds only for match-END finding. The reverse pass rescans backward through raw bytes a stream may no longer hold (unbounded for `.*` shapes). Design match-START finding under bounded memory BEFORE writing streaming code; reconcile with APPROACH §6's PARTIAL/WINDOW_EXCEEDED contract

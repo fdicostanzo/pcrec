@@ -3281,3 +3281,109 @@ c"` from `(0,3)` into `(0,1)`, and
   registry a built-status field so the index can answer "does this compile
   today" is a real, small, WHOLE-REGISTRY change — not a per-module repair —
   and it is now the only thing left of this item.
+
+- [SPEC-M] STATE:completed (DONE same day, lane/specm merged post-union-battery: named (?m) exceptions in check01 (nm pair, allowed-count exactly 1) and check07 (structured-field selector + non-vacuity guard), sabotage-validated both directions; suite 12/2 -> 14/0; amendment in the D27 suite's acceptance record; expiry = DD-11) — formerly STATE:not-started (CHARTERED by Frank 2026-08-21, ruling 1a
+  of the triage discussion: "agree but don't spend a lot of time as
+  this is to be replaced") — tests/spec_mod0 check01_isolation and
+  check07_gate_equivalence, red since [M6.2] wave C: their model
+  assumes a module's behavior depends only on its OWN gate, and (?m)
+  is a measured TWO-MODULE construct (mod_modifiers.c consults
+  FEAT_ASSERTIONS for the multiline EFFECT — the same fact the D27
+  corpus found from outside and gating.rxt pins on all four
+  combinations). Fix: carry (?m) as a NAMED, evidence-cited exception
+  in both checks (cite the D27 gating.rxt record and D65's memo),
+  restore the suite green, and note the amendment in the suite's
+  acceptance record since it is D27-authored. MINIMAL EFFORT by
+  ruling — the real resolution is [DD-11]'s flags-as-binding-mutators
+  redesign, which dissolves the cross-module shape; this row's fix is
+  interim truth-restoration, not architecture
+
+- [M6-READ] STATE:completed (CLOSED 2026-08-21, thirty-fifth session: sample stage APPROVED by Frank; the full emitter conversion merged c4bb613 — census 925 patterns / 0 uncompilable / 574-574 byte-identical / 570 renamed, suite + full mech green on the lane tip and again on merged main (85/0/0 at 115fbc6), union battery + gate 13/13 archived b8cb848; five pin classes + the rename-reaches-English inventory + the fixed-fixture-sampling lesson in docs/design/m6read_samples/CONVERSION_LOG.md; the ~64 doc-prose mentions and 47 emitter-comment stragglers cleaned by the tail lane; ORIGINALLY (2026-08-21 morning, on Frank's ruling — pulled ahead of [M6.4]/[M6.5]/[M6.6] together with the [M6.2] post-module queue's tranche A, D27 corpus merged and close battery in flight; SAMPLE STAGE first: lane/m6read delivers the naming scheme, hand-commented sample artifact(s), object-code-neutrality measurement and pin-update budget FOR FRANK'S APPROVAL before any emitter conversion) — EMITTED-CODE READABILITY PASS (Frank,
+  2026-08-18, thirty-second session: ruled as the IMMEDIATE follow to
+  M6, ahead of the rest of M5). The generated C becomes readable as
+  first-class output. Frank's five requirements, near-verbatim:
+  (1) DATA STRUCTURES: a 1–3-line comment each — what it is, where it
+  is used, what it means. (2) CODE SECTIONS: 1–2 lines saying what the
+  section is about to do ("prefilter section to find candidates...").
+  (3) LINE COMMENTS — CODE ONLY, not data structures (Frank
+  clarification, same day): 1 line, the INTENT of the next line, never
+  an echo of the code ("advance to next character", NOT "increment
+  source pointer"); structures/tables get item (1)'s block comment,
+  never per-line/per-row commentary. (4) FULL NAMES — LOCALLY SCOPED
+  IDENTIFIERS ONLY (Frank's second clarification, same day): variables,
+  types, and structure names that are LOCAL to the artifact get full
+  names — no "pos", the source_position/source_index class of names,
+  ONE consistent scheme, the scheme delegated to the implementer. ABI
+  NAMES ARE KEPT AS-IS: the public emitted surface (entry points,
+  rx_matchfn, the emitted header's names) does not change — THIS ROW
+  MAKES NO ABI CHANGE OF ANY KIND; it is purely an internal
+  comment/clarity step. (5) STATE-NAME LEGENDS (upgraded from
+  "consider" to a REQUIREMENT by the same clarification): numbers in
+  data tables in structures/arrays get short text names WHERE THEY ARE
+  STATES — not indexes or other numeric kinds — with a legend in the
+  comment above the table.
+  ENGINEERING NOTES recorded at ruling time: (i) the pass must be
+  OBJECT-CODE-NEUTRAL — comments, renames, and state names cannot
+  change the compiled artifact; the natural check is
+  compile-before/after and compare object code, which the row gets for
+  free (state names via macros/enums resolving to the same values);
+  (ii) spec §2's verbatim quotes re-quote under the verification-ledger
+  discipline in the same change — the ABI comment block and all ABI
+  names are UNTOUCHED by ruling, so the re-quote is body-text only;
+  (iii) codegen structural checks and stamp pins that grep emitted
+  LOCAL identifiers need a coordinated pin update — budget for it;
+  (iv) distinguishing state-valued table cells from index/other
+  numerics is emitter knowledge — the emitter tags what it emits, no
+  after-the-fact inference; (v) the code-vs-structure
+  clarification resolved the worst of the comment-density question
+  (tables never get per-line commentary); the design pass still brings
+  Frank ONE sample commented artifact to approve the style against
+  before the full emitter conversion — cheap, and it fixes the
+  line-comment granularity on real code by example.
+  INTENT CLARIFICATION (Frank, 2026-08-21, thirty-fifth session — recorded
+  so the implementing lane's brief carries the GOAL, not just the letter):
+  the five requirements are GUIDELINES, not a checklist, and following them
+  blindly is the named failure mode (per-line quota comments that echo
+  code, renames that add length without comprehension). The goal they
+  serve: a READER can understand what the emitted code is doing — there is
+  an EDUCATIONAL aspect. The acceptance question for every individual
+  commenting/naming decision is "does this help a competent C programmer,
+  new to regex engines, understand what is going on here" — density and
+  altitude follow from that answer, in both directions: self-evident code
+  correctly gets NO comment; a genuinely subtle mechanism may deserve a
+  fuller explanatory block than any per-line rule would produce.
+  Consequences: (a) the one-sample style approval judges EDUCATIONAL
+  quality against this goal, not format compliance; (b) the implementing
+  lane is judgment-heavy work, not mechanical transcription — model choice
+  accordingly; (c) manager PROPOSAL for the sample stage (not ruled): a
+  top-of-artifact "how this matcher works" overview block as the natural
+  home for machine-shape orientation and the state legends; (d) the lane's
+  brief must quote this clarification alongside the five requirements.
+  SAMPLE STAGE APPROVED (Frank, 2026-08-21, on lane/m6read 61f0209's
+  exemplars — "look fantastic"), with ONE COSMETIC RULING: section/block
+  comments stay `/* */`, LINE comments switch to `//` (stands out
+  better). Approval ratifies the samples' embodied judgment calls
+  (README §2's five: local param renames with the frozen ABI block
+  untouched; rx_L labels kept with legends; the five new emitted
+  macros and no state enum; developer commentary kept under the reader
+  layer; decimal byte literals with consume-comments) — none was
+  separately overruled. Frank's VM-sample observation (a literal
+  sequence matched byte-at-a-time rather than one strncmp) is the
+  [OPT-A] literal-run-coalescing lead HE recorded 2026-08-18, re-surfaced
+  by the readable artifact — see that row; no new work item here.
+  NEXT: the emitter conversion per the sample README §5's plan, FIRST
+  landing the non-vacuous replacement for run_ir_listing.sh's
+  prose-grep (the vacuous-pass hazard the sample stage found), watched
+  failing, before any renaming.
+  SCOPE RULED (Frank, same day, answering the manager's calibration
+  question): the artifact explains ITSELF — "it's not comp-sci 101", no
+  general regex-engine pedagogy. Frank's frame, recorded as the working
+  standard: readers coming from higher-level languages lose the LARGER
+  PICTURE in C's nuts and bolts — the commentary's job is restoring the
+  altitude C strips away, i.e. saying what a higher-level language would
+  have let the code say itself ("this block is the candidate scan", "this
+  table maps byte-class to next state"), never teaching engine theory.
+  The (c) overview proposal is re-scoped accordingly: an orientation map
+  of THIS artifact's sections and match-attempt flow, not a regex-engine
+  primer; still brought to Frank at the sample stage.
+
