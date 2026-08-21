@@ -399,6 +399,40 @@ Recorded because a log that only lists other people's defects is not a log.
 
 ---
 
+## A FOURTH pin class the survey did not have: ARTIFACT CLASSIFIERS
+
+The pin survey budgeted three kinds — grep assertions, expected-output
+literals, sabotage anchors. The full `make test` found a fourth, and it does
+not look like a pin until a rename makes it one.
+
+`run_wordctx_identity.sh`'s positive control requires every DFA-compiled
+`\b`/`\B` pattern to DIFFER between the knob builds, and classifies the
+legitimate exceptions by READING THE ARTIFACT:
+
+```sh
+grep -q '^    (void)s; (void)n; (void)startpos; (void)caps;$'
+```
+
+That is the matches-nothing early-out, which is how `\b\B` and `\B\b`
+(contradictions — a position either is a word boundary or is not) are
+recognised as agreeing for a reason unrelated to the knob. Reading the
+artifact rather than keeping a list of pattern texts is the RIGHT design; it
+is also what makes the line a pin. With the old spelling the classifier
+stopped recognising them and they fell into the "unexplained" bucket, which
+fails — exactly what that bucket is for. It refused to wave through two
+artifacts it could no longer account for.
+
+The same line is in THREE gates (wordctx, mlinectx, gstart); a sweep found no
+fourth. The endvar gate does not carry it — its own legitimate non-difference
+class is different (a `(?m)^` after a mandatory consumed byte) and is read a
+different way.
+
+**A check that reads emitted text to decide which BUCKET a result belongs in
+is as much a pin as one that reads it to decide pass or fail** — and it is
+harder to find, because grepping for assertions will not surface it.
+
+---
+
 ## What each gate is FOR
 
 | instrument | proves | blind to |
