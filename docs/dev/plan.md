@@ -919,6 +919,17 @@ their own future rows if ruled in.)
   top-of-artifact "how this matcher works" overview block as the natural
   home for machine-shape orientation and the state legends; (d) the lane's
   brief must quote this clarification alongside the five requirements.
+  SCOPE RULED (Frank, same day, answering the manager's calibration
+  question): the artifact explains ITSELF — "it's not comp-sci 101", no
+  general regex-engine pedagogy. Frank's frame, recorded as the working
+  standard: readers coming from higher-level languages lose the LARGER
+  PICTURE in C's nuts and bolts — the commentary's job is restoring the
+  altitude C strips away, i.e. saying what a higher-level language would
+  have let the code say itself ("this block is the candidate scan", "this
+  table maps byte-class to next state"), never teaching engine theory.
+  The (c) overview proposal is re-scoped accordingly: an orientation map
+  of THIS artifact's sections and match-attempt flow, not a regex-engine
+  primer; still brought to Frank at the sample stage.
 
 ## M3 — Streaming input
 
