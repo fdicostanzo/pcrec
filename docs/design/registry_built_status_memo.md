@@ -1,12 +1,24 @@
 # Registry built-status field — decision memo
 
-PROPOSED, unbuilt. Written by the REGSTATUS lane (2026-08-21) per the
+**RATIFIED WHOLESALE 2026-08-21 (D65, Frank).** All five recommendations
+below are ruled — see docs/dev/decisions.md D65 for the ruling text (decision,
+why, consumers, revisit-when). This document remains the design record; the
+IMPLEMENTATION lane (same REGSTATUS lane/worktree) is tracked in
+docs/dev/plan.md and its own journal entries, not by further edits to the
+recommendations below. Written by the REGSTATUS lane (2026-08-21) per the
 [M6.2] repair slice's refutation (docs/dev/dev_journal.md, 2026-08-19 part 6,
 "ITEM 3 REFUTED"; the same finding is archived at docs/dev/plan_completed.md's
 `## 2026-08-21` [M6.2] row). Read the "How to read the generated index below"
 section of docs/pcre2_compliance.md (added by the repair slice, line 592)
-before this memo — it is the interim measure this memo is meant to retire or
-shrink.
+before this memo — it is the interim measure D65(4) shrinks once the `built`
+column ships.
+
+Interacts with [DOC-DRV] (docs/dev/plan.md, the later compliance-page
+restructure into generated facts + independent survey + keyed annotations):
+DOC-DRV's generated-facts component explicitly includes "the [built-status]
+column once the registry_built_status memo's implementation lands" — this
+memo's column is a prerequisite DOC-DRV consumes, not something DOC-DRV's
+scope duplicates.
 
 ## The problem, in three sentences
 
@@ -267,7 +279,10 @@ that did not need catching) rather than silently mislabeling anything as
 guard (share the fixed prefix string as a `#define` both sites include)
 rather than two copies of the sentence.
 
-## Open questions for Frank
+## Open questions for Frank — RATIFIED WHOLESALE (D65, 2026-08-21)
+
+All five recommendations below are ruled as written; no recommendation was
+overridden. See docs/dev/decisions.md D65 for the ruling text.
 
 1. **Field semantics: per-construct vs per-module.** Recommend
    per-construct (Option 2) — per-module repeats the exact mistake the

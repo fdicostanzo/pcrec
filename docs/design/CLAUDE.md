@@ -898,8 +898,10 @@ append-only or historical records.
   machinery — rather than a hand-declared column, which would reproduce
   the "second `built` column somebody would have to keep in sync with the
   ports" ext.c's own UNBUILT-macro comment already declined to build.
-  PROPOSED, unbuilt; five open questions for Frank, none touching
-  `RS_BASE => ROADMAP_NONE` pairing or the gate-CLOSED diagnostics.
+  **RATIFIED WHOLESALE (D65, 2026-08-21)** — all five recommendations ruled
+  as written; none touch `RS_BASE => ROADMAP_NONE` pairing or the
+  gate-CLOSED diagnostics. Implementation tracked in docs/dev/plan.md
+  (same REGSTATUS lane).
 
 Maintenance: update this file when files are added/removed or their roles
 change.
