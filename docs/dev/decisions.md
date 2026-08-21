@@ -5118,3 +5118,44 @@ restructure), which lands separately and later.
 compiling the row's own syntax arrives (the memo's Q5 wrinkle in a
 form the per-row probe cannot resolve), or the isolated-Ctx probe
 machinery changes shape.
+
+## D66 — tranche C (D63 prefilter second instance + DD-7 reverse BOT) RE-BASED onto the DD-11 core-reduction work: optimize the CORE lookbehind-anchor form, not ^'s special case (Frank, 2026-08-21, thirty-fifth session)
+
+**Decision.** The two [M6.2] post-module queue engine items — D63's
+second prefilter instance (the 83x partial-anchor gap) and DD-7's
+reverse BOT variant (the (?m)^ 1996x quadratic) — now DEPEND ON the
+[DD-11] definitions/reduction work rather than being implemented
+against `^`'s current special-cased machinery. Frank's direction:
+simplify constructs down to core rx elements with expansion via
+replacement rx keyed on flags, and SAVE THE OPTIMIZATION EFFORT for
+the core forms, so every construct that desugars to a
+lookbehind-shaped anchor benefits from one optimizer.
+
+**The two answered questions.** (1) `^` reduces: the start=0 variant
+ALREADY IS `\A` internally (wave A: one node, A_BOL); the (?m) variant
+is `(?:\A|(?<=\n)(?!\z))` — the U11b carve-out as a conjunct, with the
+D27 corpus as the ready-made oracle for the replacement — pending only
+one-byte fixed lookbehind, which is [M6.6]. A one-byte fixed
+lookbehind is an alphabet-context assertion, i.e. exactly the
+machinery waves B/C built; the existing context mechanism becomes the
+LOWERING TARGET of the core form, not a bypassed special case.
+(2) Optimization generalizes and strengthens: candidate-start
+derivation from a leading fixed lookbehind (memchr its anchor byte;
+\A -> position 0) and reverse-machine boundary evaluation
+(mechanism 4 generalized) cover (?m)^, \b-leading patterns, \G-ish
+shapes and user-written lookbehind anchors with ONE optimizer; the
+1996x and 83x measurements become its first two test cases instead of
+its whole scope.
+
+**Accepted tradeoffs, on the record.** The measured gaps stay unfixed
+until M6.6 + the DD-11 design + the core optimizer land (a long
+chain — deliberate); the desugar must not pessimize the shipped
+special cases (guard: the house identity-gate discipline — byte
+identity for unaffected populations, measured equivalence for
+desugared ones; precedent: DD-11's reduction-scope probe showed
+quantifier sugar collapsing byte-identically).
+
+**Revisit when:** [M6.6] lands lookaround (the dependency's first
+link), or a production user hits the (?m)^ quadratic hard enough that
+an interim special-case fix earns its keep as a stopgap (then this
+decision is the record of what the real fix is).
