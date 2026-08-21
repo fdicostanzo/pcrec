@@ -8,13 +8,18 @@ SAB_HARNESS_TARGET="tests/modifiers/reset.rxt"
 SAB_DESC="pcrec_modport_optrun: (?^) no longer preserves ungreedy across the reset"
 SAB_DOC_FIGURE="measured MOD-0.5e: 1 harness case (tests/modifiers/reset.rxt, the U-survives-(?^) block)"
 SAB_COUNT=1
-SAB_BEFORE="    ModState ns = cx->mods;
+# RE-ANCHORED 2026-08-21 (sabanchors lane): [M6.2] wave A (parse_mods.h)
+# renamed ModState to ParseMods and turned Ctx.mods into a pointer, so
+# `ModState ns = cx->mods;` became `ParseMods ns = *cx->mods;` (both the
+# type name and the deref changed). Intent (the (?^) reset also clears
+# ungreedy, contradicting the measured U-survives-^ rule) unchanged.
+SAB_BEFORE="    ParseMods ns = *cx->mods;
     if (caret) {
         bool keep_ungreedy = ns.ungreedy;
-        ns = (ModState){0};
+        ns = (ParseMods){0};
         ns.ungreedy = keep_ungreedy;
     }"
-SAB_AFTER="    ModState ns = cx->mods;
+SAB_AFTER="    ParseMods ns = *cx->mods;
     if (caret) {
-        ns = (ModState){0};
+        ns = (ParseMods){0};
     }"

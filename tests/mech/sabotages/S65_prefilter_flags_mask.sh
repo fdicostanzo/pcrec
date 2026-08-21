@@ -32,11 +32,21 @@ SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="prefilter"
 SAB_DESC="PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER dropped from emit_info_def's strategy_denials mask, so -fprefilter/-fno-prefilter leak into the emitted rx_info.flags literal even though the axis changes no match behavior -- two artifacts that answer identically now differ in their reflection surface over a knob with no observable effect"
 SAB_DOC_FIGURE="lib/CLAUDE.md's [M4.6f] entry; src/gen/CLAUDE.md's STRATEGY-DENIAL mask paragraph"
+# RE-ANCHORED 2026-08-21 (sabanchors lane): [OPT-ALTCLS] appended
+# PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR to strategy_denials after
+# this row was written, so the mask no longer ends at PCREC_FORCE_PREFILTER
+# with a terminating `;` — it now continues with a `|` into the two new
+# ALTCLS bits on the next line (this file's own tests/mech/CLAUDE.md records
+# the finding). Anchor and replacement updated to keep the trailing `|` so
+# the ALTCLS bits stay attached to the expression; S65's own two bits are
+# still the ones dropped, S67 (a separate row) is what drops the ALTCLS
+# pair. Intent (PCREC_NO_PREFILTER/PCREC_FORCE_PREFILTER leak into the
+# emitted rx_info.flags) unchanged.
 SAB_COUNT=1
 SAB_BEFORE='                                          PCREC_NO_LENGTH_PRUNE |
-                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER;
+                                          PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
 '
-SAB_AFTER='                                          PCREC_NO_LENGTH_PRUNE;
+SAB_AFTER='                                          PCREC_NO_LENGTH_PRUNE |
                                           /* SABOTAGE S65: the two prefilter
                                            * force-pair bits removed from the
                                            * mask -- they now leak into
