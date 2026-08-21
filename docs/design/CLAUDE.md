@@ -873,6 +873,38 @@ append-only or historical records.
   `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
   commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
   of them.
+- `m6read_samples/` — **PROPOSED, awaiting Frank's style ruling** ([M6-READ]
+  sample stage, 2026-08-21): the ONE sample commented artifact the row owes
+  before any emitter conversion, delivered as two hand-edited before/after
+  pairs (a DFA artifact with prefilter + forward scan + reverse pass, and a
+  capture-bearing VM artifact) plus the naming scheme, the style rationale
+  and the conversion plan. Nothing in `src/` was touched; the `*_after.c`
+  files show what the emitter SHOULD produce. Its load-bearing results:
+  **object-code neutrality holds** (`.text` + `.rodata` byte-identical,
+  exported symbols identical, behaviour identical on every subject tried)
+  but the NAIVE form of that check FALSE-ALARMS — renaming a static function
+  or a function-local static table renames its internal-linkage symbol, so a
+  disassembly-TEXT diff reports 12/18 differences in which every line is a
+  symbol name and no instruction moved; "neutral" therefore has to be
+  DEFINED as executed-bytes plus exported-symbols, which is what
+  `check_neutrality.sh` enforces. The state legends need no tagging pass and
+  no after-the-fact inference (engineering note (iv) discharged cheaply): a
+  BFS over the transition table the emitter is about to write labels each
+  state with the shortest input reaching it, and `--emit-ir` ALREADY prints
+  the VM's slot legend and per-label intents from the emitter's own walk, so
+  the readable C and the IR listing become two renderings of one walk. Pin
+  budget measured at **~94** (77 in the identifier set surveyed, +~17 sibling
+  tables) plus 64 stale doc mentions — but the real hazard is ONE line,
+  `tests/codegen/run_ir_listing.sh:132`, which greps the listing's own prose
+  for `stv[N]`: rename emitter and listing consistently and both sides go
+  empty and the `diff -q` passes VACUOUSLY, the control-shares-a-source-with-
+  what-it-controls failure this project has already recorded once. Five
+  judgment calls are flagged for Frank rather than assumed, headed by where
+  "ABI" stops (parameter spellings have no linkage and were renamed in `.c`
+  and `.h`; the shared `PCREC_RX_ABI_H` block is untouched, so note (ii)'s
+  re-quote stays body-text-only) and by the deliberate NON-rename of the
+  `rx_L<N>` labels, which are shared vocabulary with `--emit-ir`. See its own
+  CLAUDE.md.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
