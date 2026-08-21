@@ -1,0 +1,1261 @@
+# tests/assertions/wordb_engattempt.rxt — module `assertions`, [M6.2] WAVE B:
+# `\b`/`\B` under the ENG_ATTEMPT (computed-goto) engine — every block here
+# has a leading `^`, which routes the pattern off the table-driven DFA.
+#
+# ONE OF FOUR SHARDS wordb.rxt was split into 2026-08-21 (see
+# wordb_basic.rxt's header for the split rationale and
+# tests/assertions/CLAUDE.md for the full list). Every case here moved
+# verbatim from wordb.rxt; nothing was added, removed, or reworded.
+#
+# THE SHARED CONTEXT, restated briefly because it governs every block below
+# (full version: wordb_basic.rxt's header). EVERY EXPECTATION WAS PRODUCED BY
+# libpcre2 10.46 (through tests/fuzz/pcre2_oracle, options = 0), never
+# written by hand, and cross-checked by python3 `re` with 0 divergences.
+# `\b`/`\B` are the module's first CONTEXT assertions, so the `ms`/`ns` cells
+# below at `startpos > 0` are exercising mechanism 4 (assertions_design.md
+# §3.8) a second time, on ENG_ATTEMPT's own accept shape — "BAKED INTO THE
+# LABEL BODY rather than read from an array" per the section header just
+# below, which is why a corpus with no `^` cells would exercise neither
+# §3.6's table nor §3.8's seed on this engine at all.
+#
+# THIS SHARD CARRIES THE THREE K28-REINSTATED CELLS the wave B header names
+# (`^\Bfoo`, `^\Bo`, `^a\bb`) — see the section comment immediately below for
+# the full account; docs/dev/known_issues.md K28 is the closed issue.
+
+# ====================================================================
+# THE ENG_ATTEMPT HALF. A `^` routes the pattern to the
+# computed-goto engine, whose accept is BAKED INTO THE LABEL
+# BODY rather than read from an array -- so §3.6's table and
+# §3.8's seed both take a different emitted shape there, and
+# a corpus with no `^` cells would exercise neither.
+# ====================================================================
+
+# THREE ANCHORED CELLS WERE ABSENT FROM THIS BLOCK AND ARE NOW
+# BACK -- `^\Bfoo`, `^\Bo` and `^a\bb`, reinstated 2026-08-19
+# by the [M6.2] repair slice, which fixed the defect that kept
+# them out. They are patterns that can NEVER match (their whole
+# DFA is one dead state) and pcrec always answered them
+# correctly; what failed was the C it emitted, which did not
+# survive `-Wall -Wextra -Werror`: gcc inlined the
+# always-returns-0 `<prefix>_search` into `<prefix>_match` and
+# then reported the wrapper's `caps` array as
+# maybe-uninitialized, even though the `found != 1`
+# short-circuit means it is never read. That was KNOWN ISSUE
+# K28 (base-tier reproducer `^a^b`, `-O1`-ONLY), CLOSED by
+# initializing the wrapper's `caps` -- the emitter change is in
+# src/gen/emit_dfa.c and its comment records why restructuring
+# the test was measured NOT to work.
+#
+# IT WAS NEVER THIS WAVE'S DEFECT, which is why the three cells
+# are ordinary members of this block now rather than a special
+# section: `\b`/`\B` merely spelled a shape the base tier
+# already reached. The LIVE anchored equivalents that stood in
+# for them (`^\bfoo`, `^f\Bo`, `^a\b.`, `^\Bfoo|^x`,
+# `^a\bb|^z`) STAY -- they carry the same impossibility on a
+# sibling branch that keeps the automaton alive, which is a
+# different emitted shape and its own coverage.
+# K28 (reinstated). Impossible under `^`: position 0 is a boundary when `s[0]` is a word byte, so a
+# leading `\B` before `f` can never hold.
+pattern ^\Bfoo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+# K28 (reinstated). Impossible under `^`: the same shape one byte wide -- the shortest spelling of it.
+pattern ^\Bo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+# K28 (reinstated). Impossible under `^`: `a` and `b` are both word bytes, so the position between them
+# is never a boundary.
+pattern ^a\bb
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\bfoo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+m "foo" 0 3
+n "xfoo"
+n " foo"
+m "foo " 0 3
+m "foox" 0 3
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+m "foobar" 0 3
+n "a-b"
+n "a\nb"
+m "foo\n" 0 3
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 3
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^x\Bfoo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+m "xfoo" 0 4
+n " foo"
+n "foo "
+n "foox"
+m "xfoofoo" 0 4
+m "xfoo foo" 0 4
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ms 0 "xfoo" 0 4
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 4
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 4
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\w+\b
+features assertions,classes
+n ""
+m "a" 0 1
+m "x" 0 1
+n " "
+m "_" 0 1
+m "1" 0 1
+m "foo" 0 3
+m "xfoo" 0 4
+n " foo"
+m "foo " 0 3
+m "foox" 0 4
+m "xfoofoo" 0 7
+m "xfoo foo" 0 4
+m "a x" 0 1
+m "ab" 0 2
+m "a b" 0 1
+m "_a" 0 2
+m "a_" 0 2
+m "1a" 0 2
+m "a1" 0 2
+m "aa bb cc" 0 2
+m "ab_cd ef" 0 5
+n ".a."
+m "a.b" 0 1
+m "foobar" 0 6
+m "a-b" 0 1
+m "a\nb" 0 1
+m "foo\n" 0 3
+ms 0 "xfoo" 0 4
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 4
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 7
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 3
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ms 0 "a x" 0 1
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ms 0 "ab_cd ef" 0 5
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\b\w+\b
+features assertions,classes
+n ""
+m "a" 0 1
+m "x" 0 1
+n " "
+m "_" 0 1
+m "1" 0 1
+m "foo" 0 3
+m "xfoo" 0 4
+n " foo"
+m "foo " 0 3
+m "foox" 0 4
+m "xfoofoo" 0 7
+m "xfoo foo" 0 4
+m "a x" 0 1
+m "ab" 0 2
+m "a b" 0 1
+m "_a" 0 2
+m "a_" 0 2
+m "1a" 0 2
+m "a1" 0 2
+m "aa bb cc" 0 2
+m "ab_cd ef" 0 5
+n ".a."
+m "a.b" 0 1
+m "foobar" 0 6
+m "a-b" 0 1
+m "a\nb" 0 1
+m "foo\n" 0 3
+ms 0 "xfoo" 0 4
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 4
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 7
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 3
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ms 0 "a x" 0 1
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ms 0 "ab_cd ef" 0 5
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^f\Bo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+m "foo" 0 2
+n "xfoo"
+n " foo"
+m "foo " 0 2
+m "foox" 0 2
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+m "foobar" 0 2
+n "a-b"
+n "a\nb"
+m "foo\n" 0 2
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 2
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^a\b.
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+m "a x" 0 2
+n "ab"
+m "a b" 0 2
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+m "a.b" 0 2
+n "foobar"
+m "a-b" 0 2
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ms 0 "a x" 0 2
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\b
+features assertions
+n ""
+m "a" 0 0
+m "x" 0 0
+n " "
+m "_" 0 0
+m "1" 0 0
+m "foo" 0 0
+m "xfoo" 0 0
+n " foo"
+m "foo " 0 0
+m "foox" 0 0
+m "xfoofoo" 0 0
+m "xfoo foo" 0 0
+m "a x" 0 0
+m "ab" 0 0
+m "a b" 0 0
+m "_a" 0 0
+m "a_" 0 0
+m "1a" 0 0
+m "a1" 0 0
+m "aa bb cc" 0 0
+m "ab_cd ef" 0 0
+n ".a."
+m "a.b" 0 0
+m "foobar" 0 0
+m "a-b" 0 0
+m "a\nb" 0 0
+m "foo\n" 0 0
+ms 0 "xfoo" 0 0
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 0
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 0
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 0
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ms 0 "a x" 0 0
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ms 0 "ab_cd ef" 0 0
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\B
+features assertions
+m "" 0 0
+n "a"
+n "x"
+m " " 0 0
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+m " foo" 0 0
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+m ".a." 0 0
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ms 0 " foo" 0 0
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\w+\B
+features assertions,classes
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+m "foo" 0 2
+m "xfoo" 0 3
+n " foo"
+m "foo " 0 2
+m "foox" 0 3
+m "xfoofoo" 0 6
+m "xfoo foo" 0 3
+n "a x"
+m "ab" 0 1
+n "a b"
+m "_a" 0 1
+m "a_" 0 1
+m "1a" 0 1
+m "a1" 0 1
+m "aa bb cc" 0 1
+m "ab_cd ef" 0 4
+n ".a."
+n "a.b"
+m "foobar" 0 5
+n "a-b"
+n "a\nb"
+m "foo\n" 0 2
+ms 0 "xfoo" 0 3
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 3
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 6
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 2
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ms 0 "ab_cd ef" 0 4
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^.\b.
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+m " foo" 0 2
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+m "a x" 0 2
+n "ab"
+m "a b" 0 2
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+m ".a." 0 2
+m "a.b" 0 2
+n "foobar"
+m "a-b" 0 2
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ms 0 " foo" 0 2
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ms 0 "a x" 0 2
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern (?:^|\b)foo
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+m "foo" 0 3
+n "xfoo"
+m " foo" 1 4
+m "foo " 0 3
+m "foox" 0 3
+n "xfoofoo"
+m "xfoo foo" 5 8
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+m "foobar" 0 3
+n "a-b"
+n "a\nb"
+m "foo\n" 0 3
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ms 0 " foo" 1 4
+ms 1 " foo" 1 4
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 5 8
+ms 1 "xfoo foo" 5 8
+ms 2 "xfoo foo" 5 8
+ms 3 "xfoo foo" 5 8
+ms 4 "xfoo foo" 5 8
+ms 5 "xfoo foo" 5 8
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ms 0 "foo" 0 3
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^\Bfoo|^x
+features assertions
+n ""
+n "a"
+m "x" 0 1
+n " "
+n "_"
+n "1"
+n "foo"
+m "xfoo" 0 1
+n " foo"
+n "foo "
+n "foox"
+m "xfoofoo" 0 1
+m "xfoo foo" 0 1
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ms 0 "xfoo" 0 1
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ms 0 "xfoo foo" 0 1
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ms 0 "xfoofoo" 0 1
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
+pattern ^a\bb|^z
+features assertions
+n ""
+n "a"
+n "x"
+n " "
+n "_"
+n "1"
+n "foo"
+n "xfoo"
+n " foo"
+n "foo "
+n "foox"
+n "xfoofoo"
+n "xfoo foo"
+n "a x"
+n "ab"
+n "a b"
+n "_a"
+n "a_"
+n "1a"
+n "a1"
+n "aa bb cc"
+n "ab_cd ef"
+n ".a."
+n "a.b"
+n "foobar"
+n "a-b"
+n "a\nb"
+n "foo\n"
+ns 0 "xfoo"
+ns 1 "xfoo"
+ns 2 "xfoo"
+ns 3 "xfoo"
+ns 4 "xfoo"
+ns 0 " foo"
+ns 1 " foo"
+ns 2 " foo"
+ns 3 " foo"
+ns 4 " foo"
+ns 0 "xfoo foo"
+ns 1 "xfoo foo"
+ns 2 "xfoo foo"
+ns 3 "xfoo foo"
+ns 4 "xfoo foo"
+ns 5 "xfoo foo"
+ns 6 "xfoo foo"
+ns 7 "xfoo foo"
+ns 8 "xfoo foo"
+ns 0 "xfoofoo"
+ns 1 "xfoofoo"
+ns 2 "xfoofoo"
+ns 3 "xfoofoo"
+ns 4 "xfoofoo"
+ns 5 "xfoofoo"
+ns 6 "xfoofoo"
+ns 7 "xfoofoo"
+ns 0 "foo"
+ns 1 "foo"
+ns 2 "foo"
+ns 3 "foo"
+ns 0 "a x"
+ns 1 "a x"
+ns 2 "a x"
+ns 3 "a x"
+ns 0 "ab_cd ef"
+ns 1 "ab_cd ef"
+ns 2 "ab_cd ef"
+ns 3 "ab_cd ef"
+ns 4 "ab_cd ef"
+ns 5 "ab_cd ef"
+ns 6 "ab_cd ef"
+ns 7 "ab_cd ef"
+ns 8 "ab_cd ef"
+
