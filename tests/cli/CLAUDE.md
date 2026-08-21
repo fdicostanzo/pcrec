@@ -303,6 +303,18 @@ suite would notice. The other cases there are ordinary surface checks: a query
 takes no pattern and no `-o`, an unknown flavour is an error rather than a
 silently-unfiltered dump, and both flags appear in `--help`.
 
+**The field count itself is now 16, not 15** (D65, 2026-08-21 —
+docs/design/registry_built_status_memo.md's `built` column, appended as the
+16th field per SR-4's own "columns are APPENDED, never reordered" rule).
+Case10's own `NF != 15` pin did not update in the same change and broke the
+moment the column landed — it is a FORMAT consumer (asserts the dump's exact
+SHAPE) that a survey scoped to CONTENT consumers (who reads which field's
+VALUE) missed; fixed to `NF != 16` by the tail lane that found it via the
+merge battery. See the memo's own "Correction" section for the full
+consumer survey and tests/reject/CLAUDE.md's matching entry — that
+directory's row iterator carried the identical hard-coded `15` and broke
+the same way.
+
 Note that case 8 SKIPS itself when python3 is absent (it uses python3 only to
 build the 9000-branch pattern string). python3 is therefore not a hard
 dependency of `make test`, but on a box without it this case silently stops

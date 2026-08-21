@@ -368,3 +368,36 @@ spliced at a DIFFERENT site in `ext.c` from the `UNBUILT` macro's.
 Gated count 61 -> 64 (one row left, four arrived). The generalisation for the
 next module: when a module's last unbuilt construct lands, move the PIN, not
 the MECHANISM.
+
+## [D65] the row iterator is a FORMAT consumer of `--list-syntax`, and the
+## first survey of its consumers missed that (2026-08-21, tail lane)
+
+The `--list-syntax` dump gained a 16th column, `built`
+(docs/design/registry_built_status_memo.md, D65). The row-iterator loop just
+above (`"$PCREC" --list-syntax > "$WORKDIR/syntax.tsv"` and the `awk` that
+follows) hard-coded `NF != 15` when filtering the dump to non-base rows —
+this directory's field-count guard for exactly this dump, added when the
+15th column (`class_expect`) landed and never revisited since. Every row
+failed the check the moment the 16th column existed, so the filter matched
+NOTHING, `niter` went to 0, and the section's own non-vacuity floor is what
+caught it ("iterated 0 rows, dump has 0 non-base rows (floor 60) — the
+iteration is not covering the table") rather than a silent pass — the exact
+shape this file's own header quotes as the founding incident (`\v`'s silent
+miscompile) one level up, in test infrastructure rather than in pcrec
+itself.
+
+Fixed by changing both `NF != 15` occurrences (the `awk` filter and the
+`nexpected` count two dozen lines below it) to `NF != 16`, with a comment
+naming D65 at the fix site. `$3`/`$4`/`$8`/`$11` (syntax/module/status/
+expect — the columns this loop actually reads) are unmoved: SR-4's own
+"columns are APPENDED, never reordered" rule is what makes a field-count
+bump the ONLY thing that needed to change here.
+
+**The lesson for the registry's own maintenance rule, one level up from
+"decide each construct's row by state, not by reflex" above**: a new
+APPENDED column to `--list-syntax` is a FORMAT change to an interface this
+directory (and tests/cli's case10) asserts an exact shape of, not merely a
+new fact a content reader might or might not notice. `docs/design/
+registry_built_status_memo.md`'s own "Correction" section (2026-08-21, tail
+lane) has the full FORMAT-vs-CONTENT consumer survey this incident argued
+for, done properly the second time.

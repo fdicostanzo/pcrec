@@ -1645,8 +1645,18 @@ else
     # `expect` is blank is reported as a bad row rather than silently probed
     # with an empty pattern or matched against an empty substring — the latter
     # matches ANY diagnostic and would pass while testing nothing.
+    #
+    # NF != 16, not 15: D65 (2026-08-21) appended a 16th column, `built`
+    # (docs/design/registry_built_status_memo.md). Appended, per SR-4's own
+    # "columns are APPENDED, never reordered" rule — so $3 (syntax), $4
+    # (module), $8 (status) and $11 (expect) are all UNCHANGED positions;
+    # only the field-count guard needed updating. This exact guard is what
+    # caught the drift when the field count changed and this line did not:
+    # every row failed `NF != 15`, `$niter` silently went to 0, and the
+    # loop's own non-vacuity floor below is what surfaced it rather than a
+    # quietly-passing empty run.
     awk -F'\t' '
-        /^#/ || NF != 15 || $8 == "base" { next }
+        /^#/ || NF != 16 || $8 == "base" { next }
         $3 == "" || $11 == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
         { print $3 "\t" $11 "\t" $4 }
     ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
@@ -1669,7 +1679,7 @@ else
 
     # The loop must have seen every non-base row: a `read` that silently stops
     # early would make this whole section quietly shrink to nothing.
-    nexpected=$(awk -F'\t' '!/^#/ && NF == 15 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
+    nexpected=$(awk -F'\t' '!/^#/ && NF == 16 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
     # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).
