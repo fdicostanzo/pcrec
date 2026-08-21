@@ -41,7 +41,7 @@ END = "<!-- END GENERATED -->"
 
 COLS = ["kind", "selector", "syntax", "module", "feature", "flavours",
         "engines", "status", "diag", "flags", "expect", "note", "roadmap",
-        "quantifiable", "class_expect"]
+        "quantifiable", "class_expect", "built"]
 
 
 def dump():
@@ -88,15 +88,23 @@ def render(rows):
            "above carry the analysis; this is the inventory, and it cannot drift "
            "from the compiler because it is printed by it.",
            "",
-           "| doorway | syntax | status | roadmap | module | engines | PCRE2 semantics |",
-           "|---|---|---|---|---|---|---|"]
+           "| doorway | syntax | status | built | roadmap | module | engines | PCRE2 semantics |",
+           "|---|---|---|---|---|---|---|---|"]
     for r in rows:
         status = {"base": "`OK`", "module": "`REJECTED`",
                   "rejected": "`AGREES-REJECT`"}.get(r["status"], r["status"])
-        out.append("| {} | `{}` | {} | {} | {} | {} | {} |".format(
+        # D65: `built` is orthogonal to `status`/`roadmap` (a THIRD axis —
+        # has the owning module's producer landed for THIS construct,
+        # derived live by pcrec_construct_built_status rather than a
+        # hand-declared field). "—" for RS_BASE/RS_REJECTED rows, where the
+        # question does not arise, matching `roadmap`'s own "—" convention
+        # just to its right.
+        built = {"built": "`built`", "unbuilt": "`unbuilt`"}.get(r["built"], "—")
+        out.append("| {} | `{}` | {} | {} | {} | {} | {} | {} |".format(
             doorway.get(r["kind"], r["kind"]),
             md_escape(r["syntax"]),
             status,
+            built,
             r["roadmap"] if r["roadmap"] != "-" else "—",
             f"`{r['module']}`" if r["module"] else "—",
             r["engines"] or "—",

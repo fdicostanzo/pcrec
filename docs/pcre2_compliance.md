@@ -589,41 +589,40 @@ The `PLANNED`/`PLANNED-HARD` split is a judgement about pcrec's architecture,
 not a schedule. Treat it as a prediction to be checked the way D18's option
 predictions were — and record it here when one turns out wrong.
 
-### How to read the generated index below (added 2026-08-19, [M6.2] repair slice)
+### How to read the generated index below (added 2026-08-19, [M6.2] repair slice; shrunk 2026-08-21, D65)
 
 Its `status` and `roadmap` columns are the REGISTRY's two fields (`RegStatus`
-and `Roadmap`, `src/core/internal.h`), and **neither one says whether the
-module that owns a construct has been BUILT.** `status` is a fact about
-PCRE2 and about pcrec's BASE grammar: `REJECTED` renders `RS_MODULE`, "the
-base grammar does not implement this, and the `module` column names what
-does". It reads exactly that for `\d`, `(?i)` and `\b` alike, and all three
-compile today.
+and `Roadmap`, `src/core/internal.h`), and answer a fact about PCRE2 and
+about pcrec's BASE grammar, never whether a construct's owning module has
+been BUILT: `status` reads `REJECTED` for `RS_MODULE`, "the base grammar
+does not implement this, and the `module` column names what does" — the same
+reading for `\d`, `(?i)` and `\b` alike, whether or not any of the three
+compiles today.
 
-MEASURED 2026-08-19 (`pcrec --list-syntax`, counted by module): **34 rows of
-this index name a module that is SHIPPED** — `classes` 12, `modifiers` 12,
-`assertions` 7, `named-groups` 3 — **and every one of them reads
-`REJECTED | planned`.**
+**The `built` column (D65) answers that third question directly, per
+construct** — `built`/`unbuilt`, or `—` where it does not arise
+(`RS_BASE`/`RS_REJECTED` rows). It is DERIVED, not hand-maintained: measured
+live, per row, by driving the row's own `syntax` through a gate-forced-open
+doorway call (`pcrec_construct_built_status`, src/parse/syntax_dump.c) — the
+same "cannot drift from the compiler because it is printed by it" property
+SR-4 already gives the rest of this table. A construct read `REJECTED |
+built` is base-grammar-absent but its module compiles it today (`\d`); one
+read `REJECTED | unbuilt` genuinely does not compile yet, whatever `--features`
+says (`\k`, `(?=...)`, `(?J)`).
 
-**The shipped status lives in the PROSE rows above, not here**, and that is
-this section's design rather than an oversight: `compliance_section.py`'s own
-docstring says "the inventory is generated and the analysis is not". A reader
-asking whether a construct compiles today reads its prose row (`OK`,
-`OK-GATED`, `OK-LIMITED`) and "Keeping this current" item 3, which is about
-those rows and only those rows.
-
-This is recorded because it has already misled once. The [M6.2] wave E lane
-read `REJECTED | planned` on module `assertions`' rows as staleness SPECIFIC
-to that module and returned a whole-module registry flip as a finding; the
-repair slice measured the population above and flipped nothing, because the
-eight `assertions` constructs are marked exactly as the other 27 shipped
-constructs are and changing only them would make the index inconsistent
-rather than current. Flipping them to `RS_BASE` would additionally be false
-(they need `--features assertions`), would break the `RS_BASE => ROADMAP_NONE`
-pairing `registry_check` enforces, and would delete the module name from the
-gate-CLOSED diagnostic that `tests/reject/`'s rows assert. Giving the registry
-a "the owning module is built" field so this index could answer the question
-is a real, small design question, and it is a whole-registry one — not a
-per-module repair.
+This column exists because its absence already misled once, and the history
+is worth one sentence: the [M6.2] wave E lane read `REJECTED | planned` on
+module `assertions`' rows as staleness SPECIFIC to that module and proposed
+a whole-module registry flip; the repair slice refuted it (34 shipped-module
+rows all read that way, so flipping eight would make the index inconsistent
+rather than current, and would break the `RS_BASE => ROADMAP_NONE` pairing
+`registry_check` enforces) and named the real fix as a registry BUILT-STATUS
+field — `docs/design/registry_built_status_memo.md`, ratified wholesale as
+D65 and built in the same session. Per-construct granularity was the point:
+of the 34 rows the repair slice measured, 33 read `built` and one — `(?J)`,
+module `modifiers`' own permanent, unconditional decline to implement
+DUPNAMES — reads `unbuilt`, a distinction a per-module flip could never have
+expressed.
 
 <!-- BEGIN GENERATED: registry construct index (SR-4) -->
 
@@ -636,107 +635,107 @@ per-module repair.
 
 Every non-base construct pcrec knows, as the parser itself sees it — 100 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
-| doorway | syntax | status | roadmap | module | engines | PCRE2 semantics |
-|---|---|---|---|---|---|---|
-| after `\` | `\d` | `REJECTED` | planned | `classes` | dfa|vm | any decimal digit |
-| after `\` | `\D` | `REJECTED` | planned | `classes` | dfa|vm | any character that is not a decimal digit |
-| after `\` | `\s` | `REJECTED` | planned | `classes` | dfa|vm | any whitespace character |
-| after `\` | `\S` | `REJECTED` | planned | `classes` | dfa|vm | any character that is not whitespace |
-| after `\` | `\w` | `REJECTED` | planned | `classes` | dfa|vm | any word character (letter, digit or underscore) |
-| after `\` | `\W` | `REJECTED` | planned | `classes` | dfa|vm | any character that is not a word character |
-| after `\` | `\h` | `REJECTED` | planned | `classes` | dfa|vm | any horizontal whitespace character |
-| after `\` | `\H` | `REJECTED` | planned | `classes` | dfa|vm | any character that is not horizontal whitespace |
-| after `\` | `\v` | `REJECTED` | planned | `classes` | dfa|vm | any vertical whitespace character (NOT vertical tab; python re disagrees) |
-| after `\` | `\V` | `REJECTED` | planned | `classes` | dfa|vm | any character that is not vertical whitespace |
-| after `\` | `\N` | `REJECTED` | planned | `classes` | dfa|vm | any character except newline (PCRE2 forbids it inside a class) |
-| after `\` | `\N{name}` | `AGREES-REJECT` | never | — | — | \N{name} — PCRE2 states it does not support this Perl construct |
-| after `\` | `\N{U+0041}` | `REJECTED` | planned | `unicode-props` | dfa|vm | a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection |
-| after `\` | `\b` | `REJECTED` | planned | `assertions` | dfa|vm | word boundary — but inside a class it is BASE syntax: backspace (0x08) |
-| after `\` | `\B` | `REJECTED` | planned | `assertions` | dfa|vm | not a word boundary |
-| after `\` | `\A` | `REJECTED` | planned | `assertions` | dfa|vm | start of subject |
-| after `\` | `\Z` | `REJECTED` | planned | `assertions` | dfa|vm | end of subject, or before a final newline |
-| after `\` | `\z` | `REJECTED` | planned | `assertions` | dfa|vm | end of subject |
-| after `\` | `\G` | `REJECTED` | planned | `assertions` | dfa|vm | first matching position in the subject |
-| after `\` | `\K` | `REJECTED` | planned | `assertions` | vm | reset the reported start of the match |
-| after `\` | `\k<name>` | `REJECTED` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
-| after `\` | `\g{-1}` | `REJECTED` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
-| after `\` | `\p{L}` | `REJECTED` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
-| after `\` | `\P{L}` | `REJECTED` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
-| after `\` | `\Q` | `REJECTED` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
-| after `\` | `\E` | `REJECTED` | planned | `quoting` | dfa|vm | end literal quoting begun by \Q |
-| after `\` | `\R` | `REJECTED` | planned | `misc` | dfa|vm | any Unicode newline sequence |
-| after `\` | `\X` | `REJECTED` | planned | `misc` | dfa|vm | a Unicode extended grapheme cluster |
-| after `\` | `\C` | `REJECTED` | planned | `misc` | dfa|vm | one data unit (byte), even in UTF mode |
-| after `\` | `\cX` | `REJECTED` | planned | `misc` | dfa|vm | control character: \cX is X xor 0x40 |
-| after `\` | `\o{101}` | `REJECTED` | planned | `misc` | dfa|vm | character with the given octal code |
-| after `\` | `\0` | `REJECTED` | planned | `backrefs` | dfa|vm | octal escape \0dd — never a backreference (there is no group 0) |
-| after `\` | `\1` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 1 (PCRE2 error 115 if no such group) |
-| after `\` | `\2` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 2 (PCRE2 error 115 if no such group) |
-| after `\` | `\3` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 3 (PCRE2 error 115 if no such group) |
-| after `\` | `\4` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 4 (PCRE2 error 115 if no such group) |
-| after `\` | `\5` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 5 (PCRE2 error 115 if no such group) |
-| after `\` | `\6` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 6 (PCRE2 error 115 if no such group) |
-| after `\` | `\7` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 7 (PCRE2 error 115 if no such group) |
-| after `\` | `\8` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
-| after `\` | `\9` | `REJECTED` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
-| after `(?` | `(?:...)` | `OK` | — | — | dfa|vm | non-capturing group |
-| after `(?` | `(?=...)` | `REJECTED` | planned | `lookaround` | vm | positive lookahead |
-| after `(?` | `(?!...)` | `REJECTED` | planned | `lookaround` | vm | negative lookahead |
-| after `(?` | `(?<=...)` | `REJECTED` | planned | `lookaround` | vm | positive lookbehind |
-| after `(?` | `(?<!...)` | `REJECTED` | planned | `lookaround` | vm | negative lookbehind |
-| after `(?` | `(?<*a)` | `REJECTED` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
-| after `(?` | `(?<name>a)` | `REJECTED` | planned | `named-groups` | dfa|vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
-| after `(?` | `(?'name'...)` | `REJECTED` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
-| after `(?` | `(?P<name>a)` | `REJECTED` | planned | `named-groups` | dfa|vm | python-style named capture group |
-| after `(?` | `(?P=n)` | `REJECTED` | planned | `backrefs` | vm | python-style backreference to a named group |
-| after `(?` | `(?P>n)` | `REJECTED` | planned | `recursion` | vm | python-style subroutine call into a named group |
-| after `(?` | `(?PX)` | `AGREES-REJECT` | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
-| after `(?` | `(?>...)` | `REJECTED` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
-| after `(?` | `(?*a)` | `REJECTED` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
-| after `(?` | `(?#...)` | `REJECTED` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
-| after `(?` | `(?C1)` | `REJECTED` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
-| after `(?` | `(?\|...)` | `REJECTED` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
-| after `(?` | `(?(1)a\|b)` | `REJECTED` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
-| after `(?` | `(?&name)` | `REJECTED` | planned | `recursion` | vm | recurse into the named group |
-| after `(?` | `(?R)` | `REJECTED` | planned | `recursion` | vm | recurse the whole pattern |
-| after `(?` | `(?0)` | `REJECTED` | planned | `recursion` | vm | recurse the whole pattern (synonym for (?R)) |
-| after `(?` | `(?1)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 1 |
-| after `(?` | `(?2)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 2 |
-| after `(?` | `(?3)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 3 |
-| after `(?` | `(?4)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 4 |
-| after `(?` | `(?5)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 5 |
-| after `(?` | `(?6)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 6 |
-| after `(?` | `(?7)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 7 |
-| after `(?` | `(?8)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 8 |
-| after `(?` | `(?9)` | `REJECTED` | planned | `recursion` | vm | recurse into capture group 9 |
-| after `(?` | `(?+1)(a)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT |
-| after `(?` | `(a)(?-01)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, leading zero |
-| after `(?` | `(a)(?-1)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call to the group 1 to the LEFT |
-| after `(?` | `(a)(a)(?-2)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 2 to the left |
-| after `(?` | `(a)(a)(a)(?-3)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 3 to the left |
-| after `(?` | `(a)(a)(a)(a)(?-4)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 4 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(?-5)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 5 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(?-6)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 6 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(?-7)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 7 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
-| after `(?` | `(?[[a]])` | `REJECTED` | planned | `extended-classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
-| after `(?` | `(?)` | `REJECTED` | planned | `modifiers` | dfa|vm | empty option setting |
-| after `(?` | `(?-i)` | `REJECTED` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
-| after `(?` | `(?^)` | `REJECTED` | planned | `modifiers` | dfa|vm | reset all options to their default |
-| after `(?` | `(?J)` | `REJECTED` | planned | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
-| after `(?` | `(?U)` | `REJECTED` | planned | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
-| after `(?` | `(?a)` | `REJECTED` | planned | `modifiers` | dfa|vm | ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*) |
-| after `(?` | `(?i)` | `REJECTED` | planned | `modifiers` | dfa|vm | caseless |
-| after `(?` | `(?m)` | `REJECTED` | planned | `modifiers` | dfa|vm | multiline: ^ and $ match at internal newlines |
-| after `(?` | `(?n)` | `REJECTED` | planned | `modifiers` | dfa|vm | no auto-capture: plain (...) stops capturing |
-| after `(?` | `(?r)` | `REJECTED` | planned | `modifiers` | dfa|vm | restrict caseless matching to within ASCII or non-ASCII |
-| after `(?` | `(?s)` | `REJECTED` | planned | `modifiers` | dfa|vm | dotall: . matches newline |
-| after `(?` | `(?x)` | `REJECTED` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
-| after `(?` | `(?q)` | `AGREES-REJECT` | never | — | — | no construct begins with this byte — PCRE2 error 111 |
-| after `(*` | `(*ACCEPT)` | `REJECTED` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
-| after `[` in a class | `[[:alpha:]]` | `REJECTED` | planned | `classes` | dfa|vm | POSIX character class |
-| after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |
-| after `[` in a class | `[[=a=]]` | `AGREES-REJECT` | never | — | — | POSIX equivalence class — PCRE2 rejects it, and so must we |
+| doorway | syntax | status | built | roadmap | module | engines | PCRE2 semantics |
+|---|---|---|---|---|---|---|---|
+| after `\` | `\d` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any decimal digit |
+| after `\` | `\D` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any character that is not a decimal digit |
+| after `\` | `\s` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any whitespace character |
+| after `\` | `\S` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any character that is not whitespace |
+| after `\` | `\w` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any word character (letter, digit or underscore) |
+| after `\` | `\W` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any character that is not a word character |
+| after `\` | `\h` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any horizontal whitespace character |
+| after `\` | `\H` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any character that is not horizontal whitespace |
+| after `\` | `\v` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any vertical whitespace character (NOT vertical tab; python re disagrees) |
+| after `\` | `\V` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any character that is not vertical whitespace |
+| after `\` | `\N` | `REJECTED` | `built` | planned | `classes` | dfa|vm | any character except newline (PCRE2 forbids it inside a class) |
+| after `\` | `\N{name}` | `AGREES-REJECT` | — | never | — | — | \N{name} — PCRE2 states it does not support this Perl construct |
+| after `\` | `\N{U+0041}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a Unicode code point by number — PCRE2 error 193 outside UTF mode, which is recognition, not rejection |
+| after `\` | `\b` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | word boundary — but inside a class it is BASE syntax: backspace (0x08) |
+| after `\` | `\B` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | not a word boundary |
+| after `\` | `\A` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | start of subject |
+| after `\` | `\Z` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | end of subject, or before a final newline |
+| after `\` | `\z` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | end of subject |
+| after `\` | `\G` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | first matching position in the subject |
+| after `\` | `\K` | `REJECTED` | `built` | planned | `assertions` | vm | reset the reported start of the match |
+| after `\` | `\k<name>` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
+| after `\` | `\g{-1}` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
+| after `\` | `\p{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
+| after `\` | `\P{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
+| after `\` | `\Q` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
+| after `\` | `\E` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | end literal quoting begun by \Q |
+| after `\` | `\R` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | any Unicode newline sequence |
+| after `\` | `\X` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | a Unicode extended grapheme cluster |
+| after `\` | `\C` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | one data unit (byte), even in UTF mode |
+| after `\` | `\cX` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | control character: \cX is X xor 0x40 |
+| after `\` | `\o{101}` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | character with the given octal code |
+| after `\` | `\0` | `REJECTED` | `unbuilt` | planned | `backrefs` | dfa|vm | octal escape \0dd — never a backreference (there is no group 0) |
+| after `\` | `\1` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 1 (PCRE2 error 115 if no such group) |
+| after `\` | `\2` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 2 (PCRE2 error 115 if no such group) |
+| after `\` | `\3` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 3 (PCRE2 error 115 if no such group) |
+| after `\` | `\4` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 4 (PCRE2 error 115 if no such group) |
+| after `\` | `\5` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 5 (PCRE2 error 115 if no such group) |
+| after `\` | `\6` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 6 (PCRE2 error 115 if no such group) |
+| after `\` | `\7` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 7 (PCRE2 error 115 if no such group) |
+| after `\` | `\8` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
+| after `\` | `\9` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
+| after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
+| after `(?` | `(?=...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | positive lookahead |
+| after `(?` | `(?!...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | negative lookahead |
+| after `(?` | `(?<=...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | positive lookbehind |
+| after `(?` | `(?<!...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | negative lookbehind |
+| after `(?` | `(?<*a)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
+| after `(?` | `(?<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
+| after `(?` | `(?'name'...)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
+| after `(?` | `(?P<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | python-style named capture group |
+| after `(?` | `(?P=n)` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | python-style backreference to a named group |
+| after `(?` | `(?P>n)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | python-style subroutine call into a named group |
+| after `(?` | `(?PX)` | `AGREES-REJECT` | — | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
+| after `(?` | `(?>...)` | `REJECTED` | `unbuilt` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
+| after `(?` | `(?*a)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
+| after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
+| after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
+| after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
+| after `(?` | `(?(1)a\|b)` | `REJECTED` | `unbuilt` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
+| after `(?` | `(?&name)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into the named group |
+| after `(?` | `(?R)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse the whole pattern |
+| after `(?` | `(?0)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse the whole pattern (synonym for (?R)) |
+| after `(?` | `(?1)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 1 |
+| after `(?` | `(?2)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 2 |
+| after `(?` | `(?3)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 3 |
+| after `(?` | `(?4)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 4 |
+| after `(?` | `(?5)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 5 |
+| after `(?` | `(?6)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 6 |
+| after `(?` | `(?7)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 7 |
+| after `(?` | `(?8)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 8 |
+| after `(?` | `(?9)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 9 |
+| after `(?` | `(?+1)(a)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT |
+| after `(?` | `(a)(?-01)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, leading zero |
+| after `(?` | `(a)(?-1)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call to the group 1 to the LEFT |
+| after `(?` | `(a)(a)(?-2)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 2 to the left |
+| after `(?` | `(a)(a)(a)(?-3)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 3 to the left |
+| after `(?` | `(a)(a)(a)(a)(?-4)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 4 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(?-5)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 5 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(?-6)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 6 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(?-7)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 7 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
+| after `(?` | `(?[[a]])` | `REJECTED` | `unbuilt` | planned | `extended-classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
+| after `(?` | `(?)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | empty option setting |
+| after `(?` | `(?-i)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
+| after `(?` | `(?^)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | reset all options to their default |
+| after `(?` | `(?J)` | `REJECTED` | `unbuilt` | planned | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
+| after `(?` | `(?U)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
+| after `(?` | `(?a)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*) |
+| after `(?` | `(?i)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | caseless |
+| after `(?` | `(?m)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | multiline: ^ and $ match at internal newlines |
+| after `(?` | `(?n)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | no auto-capture: plain (...) stops capturing |
+| after `(?` | `(?r)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | restrict caseless matching to within ASCII or non-ASCII |
+| after `(?` | `(?s)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | dotall: . matches newline |
+| after `(?` | `(?x)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | extended: ignore unescaped whitespace and # comments |
+| after `(?` | `(?q)` | `AGREES-REJECT` | — | never | — | — | no construct begins with this byte — PCRE2 error 111 |
+| after `(*` | `(*ACCEPT)` | `REJECTED` | `unbuilt` | planned | `verbs` | vm | backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) or script run ((*script_run:...)) |
+| after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |
+| after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |
+| after `[` in a class | `[[=a=]]` | `AGREES-REJECT` | — | never | — | — | POSIX equivalence class — PCRE2 rejects it, and so must we |
 
 <!-- END GENERATED -->
