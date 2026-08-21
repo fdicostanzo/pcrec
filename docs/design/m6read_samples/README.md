@@ -1,9 +1,13 @@
 # [M6-READ] sample stage — the style exemplar
 
-**STATUS: PROPOSED.** This directory is the one sample commented artifact the
-[M6-READ] plan row owes Frank before the emitter conversion. Nothing in
-`src/` was touched. The samples are hand-edited emitted C: they show what the
-emitter should produce, they are not produced by it.
+**STATUS: APPROVED** (Frank, 2026-08-21 — "look fantastic"), with one cosmetic
+ruling applied (§3's comment-form block) and all five §2 judgment calls
+ratified. This directory is the STYLE OF RECORD for the emitter conversion.
+
+The samples are hand-edited emitted C: they show what the emitter should
+produce, they are not produced by it, and they will go stale as the emitter
+moves. **§3b records where the conversion had to deviate from them and why** —
+read it alongside §1's mapping, which is the pre-deviation proposal.
 
 The row's acceptance question, quoted from its INTENT CLARIFICATION, is the
 one every choice below was made against:
@@ -169,6 +173,17 @@ the same values"; these are that mechanism, and all are verified neutral:
   applied to the one place in the VM where a bare number *is* an identity,
   and it is the single largest readability gain in that artifact.
 
+**AMENDED AT CONVERSION (approved by the manager, 2026-08-21): FOUR OF THE
+FIVE MACROS ARE UNSAFE AND WERE NOT BUILT.** `RX_FORWARD_CLASSES`,
+`RX_REVERSE_CLASSES`, `RX_FORWARD_START` and `RX_REVERSE_START` are
+per-ENGINE facts, and a single artifact can hold MORE THAN ONE ENGINE
+(OS-0b) — two engines in one file can have different class counts and
+different start states, so a file-scope macro would be wrong for one of them,
+and per-engine-named macros would be worse than the comment they replace. The
+row stride and the start state are carried by the table's own block comment
+instead, which is where they were already legible. `RX_NO_POSITION` and the
+slot legend are unaffected and were built.
+
 I deliberately did **not** emit an enum naming all 15 DFA states. For a
 non-trivial pattern those names would be machine-generated noise, and only
 the start state is ever referenced by number. The legend in the comment
@@ -296,6 +311,69 @@ The reverse machine's legend lists bytes **in the order that walk consumes
 them**, with the comment saying so — the examples read as the match
 backwards, which is itself the clearest available statement of what the
 reverse pass does.
+
+**THE LEGEND MUST BE CAPPED, AND THE READABILITY PASS SPENDS EMITTED LINES.**
+A naive legend names every state, and `((a)|b){0,4000}c` has 4,002 states of
+which 4,001 ACCEPT — so it emitted 4,000 legend lines and took that artifact
+from 1,704 lines to 5,797, straight through `run_ir_listing.sh`'s 2,000-line
+[ENG-BREP] emitted-size threshold. Past 48 states the legend now emits a
+SUMMARY instead (how many states, how many accept, where the start is, how
+short the shortest accepted input is), because WHICH states accept stops
+being orientation once there are thousands; examples over 40 bytes are elided
+with their true length.
+
+With the cap, that artifact is **1,795 lines — 91 lines of comment layer, and
+its headroom under the size check falls from 296 to 205.** Not close yet, but
+the budget is real and the interaction recurs: any future legend that grows
+per-state meets that threshold first. Worth carrying into the plan row.
+
+## 3b. Where the CONVERSION had to deviate from this sample
+
+The samples are the style of record, and the emitter conversion followed them
+closely. Four places it could not, each because building the thing revealed a
+constraint the hand-edit could not see. Recorded here so the sample and the
+shipped emitter do not silently disagree.
+
+**The five macros became one.** Decision 3 proposed `RX_FORWARD_CLASSES`,
+`RX_REVERSE_CLASSES`, `RX_FORWARD_START`, `RX_REVERSE_START` and
+`RX_NO_POSITION`. Only the slot legend and `RX_NO_POSITION` are safe at file
+scope: a single artifact can hold MORE THAN ONE ENGINE (OS-0b), and a row
+stride and a start state are per-ENGINE facts, so a file-scope macro would be
+wrong for one of them. The row stride and start state are carried by the
+table's own block comment instead, which is where they were already legible.
+
+**`RX_TOO_SHORT` / `RX_CLAMP_SPAN` became `RX_PRUNE_TOO_SHORT` /
+`RX_PRUNE_CLAMP_SPAN`.** The sample's names read better in isolation and
+destroyed a property: `RX_MRL_*` was a GREPPABLE FAMILY, and `tests/mrl`
+asserts an ABSENCE through it (`grep -q 'RX_MRL_'` — "this artifact carries no
+bound under `-fno-length-prune`"). Two unrelated names make that check match
+nothing and pass vacuously. Patching the grep to an alternation would have
+worked and been wrong, because the next macro added to the family would
+escape it. **A rename has to preserve the PROPERTIES names carry, not just
+their readability** — that is the general lesson, and it is the one thing in
+this document I would put in front of the next person doing a rename.
+
+**The VM's cursor is `scan_position`, not `position`.** The sample used the
+bare word under rule 3 (qualify only where there is more than one of a kind).
+Once both emitters were converted, the same role wanted the same name across
+artifacts, and the DFA scanner genuinely has two cursors. One name for one
+role beat local brevity.
+
+**The four revdet names WERE resolved, on the manager's prompt to look
+harder.** `%s_rvs`, `%s_rvg`, `%s_ns` and `%s_rv<N>_c` are now
+`revdet_group_seen`, `revdet_group_span`, `groups_seen` and `cursor`. The
+vocabulary is not in `eng_brep_design.md` — it is in the EMITTER'S OWN
+emission sites, which is a legitimate and citable source: the locals there
+are named `gs`/`ga`/`ns`, `rvg[j][2]` is a `ptrdiff_t` PAIR per group,
+`rvs[j]` a flag per group, and the walk's exit test is
+`if (ns >= ng) goto wend` beside an event note reading "no group to witness:
+one step is all the retreat needs". That is the backward walk recording each
+group's span and stopping once every group has been witnessed. The
+declaration site carries the citation.
+
+The first pass left these short under the "a confidently wrong full name is
+worse than a short one" rule, which stands — but that rule is about giving up
+too EARLY as much as about guessing, and one more place to look was enough.
 
 ## 4. Object-code neutrality — result
 

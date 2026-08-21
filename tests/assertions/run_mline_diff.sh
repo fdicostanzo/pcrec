@@ -174,7 +174,7 @@ for pat in "${PATTERNS[@]}"; do
     mech=""
     grep -qE '^    static const unsigned char rx_(fs|rs)[0-9]+\[' "$d/gen.c" && mech="${mech}skip,"
     grep -q 'memchr' "$d/gen.c" && mech="${mech}memchr,"
-    grep -q 'rx_first\[' "$d/gen.c" && mech="${mech}bitmap,"
+    grep -q 'rx_can_begin_match\[' "$d/gen.c" && mech="${mech}bitmap,"
     grep -q 'rx_facc2\[' "$d/gen.c" && mech="${mech}clsacc,"
     if [ -n "$mech" ]; then nlive=$((nlive + 1)); fi
     mechlist="$mechlist  $(printf '%-18s' "$pat") ${mech:-none}

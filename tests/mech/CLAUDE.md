@@ -682,7 +682,7 @@ way to read them:
   whose class carries the same bit, so the corpus goes green while the
   artifact has acquired UB — K27's class in generated code, and the reason
   rule 1 is checked structurally rather than by running anything.
-- **S72** (the reverse skip's blind `sfound = pp;` restored) and **S74**
+- **S72** (the reverse skip's blind `match_start_position = pp;` restored) and **S74**
   (mechanism 4's reverse TERMINATION removed) change answers, but only on
   narrow populations that had to be built deliberately. S74 is the sharpest
   row in the wave: `\b` is safe by ACCIDENT at that boundary — its blind
@@ -933,7 +933,7 @@ comparison — which is why both of them are visible in the corpus as well.
   where matching BEGAN. **CANONICAL MATRIX RUN:
   `codegen:1fail/55pass, corpus:210fail/386pass, kresetdiff:6fail/3pass` —
   DETECTED.**
-- **S86 writes `stv[0]` DIRECTLY instead of through `<PREFIX>_SET`**, so the
+- **S86 writes `slot_values[0]` DIRECTLY instead of through `<PREFIX>_SET`**, so the
   write is never trailed and cannot be undone. **CANONICAL MATRIX RUN: `codegen:1fail/55pass,
   corpus:6fail/590pass, kresetdiff:3fail/6pass` — DETECTED** — and the SIX is the number worth
   reading. A wrong-PROVENANCE bug is wrong nearly everywhere; a missing-UNDO
@@ -942,7 +942,7 @@ comparison — which is why both of them are visible in the corpus as well.
   two families deliberately rather than trusting a subject sweep to wander
   into them, and it is why the two rows are separate: their symptoms inside
   `[M6.2-KRESET rule 1]` are DISJOINT (S85 fires the "does not read the slot"
-  branch and leaves the write correct; S86 fires the "writes stv[0] directly"
+  branch and leaves the write correct; S86 fires the "writes slot_values[0] directly"
   branch and leaves `caps_out` correct), so one row exercising both would let
   either branch rot behind the other.
 
@@ -968,7 +968,7 @@ comparison — which is why both of them are visible in the corpus as well.
 **THE THREE SYMPTOMS ARE DISJOINT, which is why this is three rows and not
 one edit with three halves.** S85 fires `[M6.2-KRESET rule 1]`'s "does not
 read the trailed slot" branch and leaves the write correct; S86 fires the
-same check's "writes stv[0] directly" branch and leaves `caps_out` correct;
+same check's "writes slot_values[0] directly" branch and leaves `caps_out` correct;
 S87 fires neither and is seen only by the corpus. Merging any two would let
 the third's branch rot behind it.
 

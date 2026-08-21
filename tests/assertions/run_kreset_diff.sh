@@ -231,12 +231,12 @@ for spec in "${PATSPEC[@]}"; do
     # the trailed write and the `\K`-aware caps_out would be green against a
     # `\K` that compiled to nothing at all.
     site="none"
-    if grep -q 'RX_SET(0, (ptrdiff_t)pos)' "$d/gen.c" \
-       && grep -q 'w->stv\[0\] != PCREC_UNSET' "$d/gen.c"; then
+    if grep -q 'RX_SET(RX_SLOT_WHOLE_START, (ptrdiff_t)scan_position)' "$d/gen.c" \
+       && grep -q 'run->slot_values\[0\] != PCREC_UNSET' "$d/gen.c"; then
         site="write+capsout"; nwrite=$((nwrite + 1))
-    elif grep -q 'RX_SET(0, (ptrdiff_t)pos)' "$d/gen.c"; then
+    elif grep -q 'RX_SET(RX_SLOT_WHOLE_START, (ptrdiff_t)scan_position)' "$d/gen.c"; then
         site="write-ONLY"
-    elif grep -q 'w->stv\[0\] != PCREC_UNSET' "$d/gen.c"; then
+    elif grep -q 'run->slot_values\[0\] != PCREC_UNSET' "$d/gen.c"; then
         site="capsout-ONLY"
     fi
     sitelist="$sitelist  $(printf '%-8s %-20s' "$cls" "$pat") $site

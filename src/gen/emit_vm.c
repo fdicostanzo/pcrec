@@ -62,7 +62,7 @@
  * precision dressed as compatibility, which D26 tier 3 exists to prevent.
  *
  * The two array caps are bounded by D19's 128 KB thread stack rather than
- * chosen for generosity: rx_work is a LOCAL of the search entry, a resume
+ * chosen for generosity: rx_run_state is a LOCAL of the search entry, a resume
  * frame is 24 B and a trail entry 16 B (D44.1's measured per-entry constants),
  * so 2048 + 3072 is ~96 KB — a large but survivable share of that budget
  * (~32 KB remains for the entry's scalars and callees), and the reason the
@@ -78,7 +78,7 @@
  * (cursor/revdet eligibility for same-trailing-byte alternations), not this
  * knob. */
 enum {
-    VM_DEFAULT_BT_FRAMES    = 2048,
+    VM_DEFAULT_RESUME_FRAMES    = 2048,
     VM_DEFAULT_TRAIL_FRAMES = 3072,
     /* Exact sizing (§2.5: "where the pattern's dynamic depth is statically
      * bounded the emitter computes the exact requirement") is clamped here.
@@ -91,7 +91,7 @@ enum {
      * together or the calibration is half-landed (measured: changing only
      * the pair above left `((a)|ab){0,4000}c` at 1024 frames / ceiling 307,
      * which is how the two-knobs fact was discovered). */
-    VM_MAX_AUTO_BT_FRAMES    = 2048,
+    VM_MAX_AUTO_RESUME_FRAMES    = 2048,
     VM_MAX_AUTO_TRAIL_FRAMES = 3072
 };
 
@@ -594,6 +594,61 @@ static int vm_slot_rev(Vm *v, int loop, int which)
  * constants (m, NOPT and K are all known when the C is written), so nothing
  * needs a low-water mark or a ceiling recorded at run time. The counter is the
  * only run-time quantity the shape has. */
+/* [M6-READ] THE SLOT LEGEND. Requirement (5) applied to the one place in a VM
+ * artifact where a bare number is an IDENTITY rather than an index: the slot
+ * array. `RX_SET(2, ...)` says nothing; `RX_SET(RX_SLOT_GROUP1_START, ...)`
+ * says everything, and the macro resolves to the same 2 -- engineering note
+ * (i)'s "state names via macros/enums resolving to the same values", so the
+ * object code cannot move.
+ *
+ * The classification is the SAME arithmetic vm_slot_guard/low/mark/rev/ctr use
+ * above, read backwards. It is deliberately not a second table: a slot's
+ * meaning is decided by the layout, and a parallel list would be a second
+ * source of truth about it -- which is how a slot two live loops share gets
+ * emitted (this file's own warning, at vm_counter_rung).
+ *
+ * Writes the SUFFIX only; the caller prefixes. Returns false for a slot the
+ * layout does not account for, which is a bug rather than a naming gap, so the
+ * caller falls back to the bare number rather than inventing a name. */
+static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
+{
+    int ngroup_slots = 2 * (v->ngroups + 1);
+    int base_guard   = ngroup_slots;
+    int base_low     = base_guard + v->nguard_total;
+    int base_mark    = base_low   + v->nlow_total;
+    int base_rev     = base_mark  + v->nmark_total;
+    int base_ctr     = base_rev   + 3 * v->nrev_total;
+
+    if (slot < 0) return false;
+    if (slot < ngroup_slots) {
+        int g = slot / 2;
+        const char *half = (slot % 2) ? "END" : "START";
+        if (g == 0) snprintf(buf, bufsz, "SLOT_WHOLE_%s", half);
+        else        snprintf(buf, bufsz, "SLOT_GROUP%d_%s", g, half);
+        return true;
+    }
+    if (slot < base_low) {
+        snprintf(buf, bufsz, "SLOT_EMPTY_GUARD%d", slot - base_guard);
+        return true;
+    }
+    if (slot < base_mark) {
+        snprintf(buf, bufsz, "SLOT_SPAN_LOW%d", slot - base_low);
+        return true;
+    }
+    if (slot < base_rev) {
+        snprintf(buf, bufsz, "SLOT_CUT_MARK%d", slot - base_mark);
+        return true;
+    }
+    if (slot < base_ctr) {
+        static const char *which[3] = { "ENTRY", "LOW", "HI" };
+        int off = slot - base_rev;
+        snprintf(buf, bufsz, "SLOT_REVDET%d_%s", off / 3, which[off % 3]);
+        return true;
+    }
+    snprintf(buf, bufsz, "SLOT_COUNTER%d", slot - base_ctr);
+    return true;
+}
+
 static int vm_slot_ctr(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
@@ -756,7 +811,7 @@ static void vm_cls_test(Vm *v, StrBuf *b, int ci, const char *byte)
         sb_printf(b, "(unsigned)(%s - %d) <= %du", byte, lo, hi - lo);
         return;
     }
-    sb_printf(b, "(%s_k%d[(%s) >> 3] >> ((%s) & 7)) & 1", v->p, ci, byte, byte);
+    sb_printf(b, "(%s_class_bitmap%d[(%s) >> 3] >> ((%s) & 7)) & 1", v->p, ci, byte, byte);
 }
 
 /* ---- §2.5's cursor ladder: is this body a deterministic fixed-length run? --
@@ -1554,6 +1609,17 @@ static void vm_lbl(Vm *v, int id, const char *role)
      * that is only ever reached through a resume frame's `&&` address, or one
      * the flattening below makes unreachable, must not fail the harness's
      * -Werror generated-code build. */
+    /* [M6-READ] The label's INTENT, emitted as a line comment from the SAME
+     * `role` string the listing gets. One call writes both, so the C and
+     * `--emit-ir` cannot drift about what a label is for -- which is the
+     * property S10 asks of the listing, now extended to the code it describes.
+     *
+     * The label NUMBER is deliberately not renamed: it is shared vocabulary
+     * with the listing and with tests/codegen/run_ir_listing.sh, so it is a
+     * documented cross-artifact identifier rather than an opaque local. It
+     * gets a name in a comment, not a new spelling. */
+    if (role && *role)
+        sb_printf(v->b, "// %s\n", role);
     sb_printf(v->b, "%s_L%d: __attribute__((unused));\n", v->p, id);
     vm_ev(v, VE_LABEL, id, 0, role);
 }
@@ -1589,12 +1655,18 @@ static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
 
 static void vm_push(Vm *v, int lblid, const char *role)
 {
-    vm_push_at(v, lblid, "pos", role);
+    vm_push_at(v, lblid, "scan_position", role);
 }
 
 static void vm_set(Vm *v, int slot, const char *val, const char *role)
 {
-    sb_printf(v->b, "    %s_SET(%d, %s);\n", v->up, slot, val);
+    {
+        char nm[48];
+        if (vm_slot_name(v, slot, nm, sizeof nm))
+            sb_printf(v->b, "    %s_SET(%s_%s, %s);\n", v->up, v->up, nm, val);
+        else
+            sb_printf(v->b, "    %s_SET(%d, %s);\n", v->up, slot, val);
+    }
     vm_ev(v, VE_SET, slot, 0, role);
 }
 
@@ -1646,7 +1718,7 @@ static void vm_set(Vm *v, int slot, const char *val, const char *role)
 static void vm_work(Vm *v, const char *countexpr, const char *role)
 {
     if (!v->has_budget) return;
-    sb_printf(v->b, "    %s_WORK(%s);\n", v->up, countexpr);
+    sb_printf(v->b, "    %s_CHARGE_WORK(%s);\n", v->up, countexpr);
     v->nwork++;
     vm_ev(v, VE_NOTE, 0, 0, role);
 }
@@ -1657,7 +1729,7 @@ static void vm_cut(Vm *v, int slot, const char *role)
      * so after it runs the count this charge needs no longer exists. */
     {
         char cnt[192];
-        snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - stv[%d]", slot);
+        snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
         vm_work(v, cnt, "work charge: frames discarded by this cut");
     }
     sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
@@ -1836,7 +1908,7 @@ static bool vm_mrl_test(Vm *v, const char *posexpr, long long minrest,
                         int dst, const char *role)
 {
     if (!v->mrl || (minrest <= 0 && !v->fdyn)) return false;
-    sb_printf(v->b, "    if (%s_MRL_SHORT(%s, %s)) ", v->up, posexpr,
+    sb_printf(v->b, "    if (%s_PRUNE_TOO_SHORT(%s, %s)) ", v->up, posexpr,
               vm_mrl_amt(v, minrest));
     if (dst < 0) sb_printf(v->b, "goto %s_fail;\n", v->p);
     else         sb_printf(v->b, "goto %s_L%d;\n", v->p, dst);
@@ -1856,7 +1928,7 @@ static int vm_mrl_gate(Vm *v, int entry, long long minrest, int dst,
     if (!v->mrl || (minrest <= 0 && !v->fdyn)) return entry;
     pass = vm_label(v);
     vm_lbl(v, entry, role);
-    vm_mrl_test(v, "pos", minrest, dst, role);
+    vm_mrl_test(v, "scan_position", minrest, dst, role);
     vm_goto(v, pass);
     return pass;
 }
@@ -1956,8 +2028,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     long long lo_off = (long long)a->rmin * stride;
     /* The loop's entry position, spelled for whichever of the two it is. */
     char entrypos[32];
-    if (poss) snprintf(entrypos, sizeof entrypos, "(ptrdiff_t)pos");
-    else      snprintf(entrypos, sizeof entrypos, "stv[%d]", low);
+    if (poss) snprintf(entrypos, sizeof entrypos, "(ptrdiff_t)scan_position");
+    else      snprintf(entrypos, sizeof entrypos, "slot_values[%d]", low);
 
     /* class ids first, so the pool is stable before any test is written */
     int *ci = arena_alloc(&v->cx->arena, (size_t)stride * sizeof(int));
@@ -1968,7 +2040,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     memset(&t, 0, sizeof t);
     for (int i = 0; i < stride; i++) {
         char byte[64];
-        snprintf(byte, sizeof byte, "s[%s_cur + %d]", v->p, i);
+        snprintf(byte, sizeof byte, "subject[%s_span_cursor + %d]", v->p, i);
         sb_puts(&t, " && (");
         vm_cls_test(v, &t, ci[i], byte);
         sb_puts(&t, ")");
@@ -2012,8 +2084,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * The possessive path reads `pos` for the same quantity and writes no
      * slot at all — see the note at the top of this function. */
     if (!poss)
-        vm_set(v, low, "(ptrdiff_t)pos",
-               "span-loop low-water mark (loop entry pos)");
+        vm_set(v, low, "(ptrdiff_t)scan_position",
+               "span-loop low-water mark (loop entry scan_position)");
 
     if (poss) {
         /* The scan, and then the commit. One straight line: consume to the
@@ -2023,10 +2095,10 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * label the loop could come back to. */
         sb_puts(b, "    {\n");
         if (a->rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
-        sb_printf(b, "        %s_cur = pos;\n", v->p);
-        sb_printf(b, "        while (%s_cur + %d <= n", v->p, stride);
+        sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
+        sb_printf(b, "        while (%s_span_cursor + %d <= subject_length", v->p, stride);
         if (a->rmax >= 0) sb_printf(b, " && it_ < %dUL", a->rmax);
-        sb_printf(b, "%s) { %s_cur += %d;", test, v->p, stride);
+        sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
         if (a->rmax >= 0) sb_puts(b, " it_++;");
         sb_puts(b, " }\n    }\n");
         /* [counter-K] THE FRAMELESS SCAN'S CHARGE, and this is the exact site
@@ -2048,10 +2120,10 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         {
             char cnt[192];
             snprintf(cnt, sizeof cnt,
-                     "((ptrdiff_t)(%s_cur - %s)) / %d", v->p, entrypos, stride);
+                     "((ptrdiff_t)(%s_span_cursor - %s)) / %d", v->p, entrypos, stride);
             vm_work(v, cnt, "work charge: frameless scan iterations");
         }
-        sb_printf(b, "    if ((ptrdiff_t)%s_cur < %s + %lld) goto %s_fail;\n",
+        sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < %s + %lld) goto %s_fail;\n",
                   v->p, entrypos, lo_off, v->p);
         vm_ev(v, VE_NOTE, 0, 0,
               "fewer than rmin iterations: the loop cannot be satisfied");
@@ -2071,22 +2143,22 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * must not come to depend on possessify's, so it does not. */
         {
             char cx[64];
-            snprintf(cx, sizeof cx, "%s_cur", v->p);
+            snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
             vm_mrl_test(v, cx, mrl, -1,
                         "MRL: too few bytes remain after the loop's one exit "
                         "position for any accepting continuation");
         }
         if (ncaps) {
-            sb_printf(b, "    if ((ptrdiff_t)%s_cur >= %s + %d) {\n",
+            sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= %s + %d) {\n",
                       v->p, entrypos, stride);
             for (int i = 0; i < ncaps; i++) {
                 char val[96];
-                snprintf(val, sizeof val, "(ptrdiff_t)(%s_cur - %d)", v->p,
+                snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
                          stride - caps[i].off);
                 vm_set(v, 2 * caps[i].group, val,
                        vm_rolef(v, "group %d open, derived from the cursor",
                                 caps[i].group));
-                snprintf(val, sizeof val, "(ptrdiff_t)(%s_cur - %d)", v->p,
+                snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
                          stride - caps[i].off - caps[i].len);
                 vm_set(v, 2 * caps[i].group + 1, val,
                        vm_rolef(v, "group %d close, derived from the cursor",
@@ -2094,7 +2166,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
             }
             sb_puts(b, "    }\n");
         }
-        sb_printf(b, "    pos = %s_cur;\n", v->p);
+        sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
         vm_goto(v, next);
         sb_free(&t);
         return;
@@ -2154,19 +2226,19 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * form, asserted structurally by `run_mrl_tests.sh` §2b).
          *
          * At W = 1 the rounding is the identity in any case. */
-        const bool fold = vm_mrl_test(v, "pos", mrl, -1,
+        const bool fold = vm_mrl_test(v, "scan_position", mrl, -1,
                                       "MRL: the continuation cannot fit from "
                                       "this loop's entry at all");
         sb_puts(b, "    {\n");
         if (a->rmax >= 0) sb_puts(b, "        unsigned long it_ = 0;\n");
         if (fold)
-            sb_printf(b, "        const size_t lim_ = %s_MRL_CAP(pos, %s, %d);\n",
+            sb_printf(b, "        const size_t lim_ = %s_PRUNE_CLAMP_SPAN(scan_position, %s, %d);\n",
                       v->up, vm_mrl_amt(v, mrl), stride);
-        sb_printf(b, "        %s_cur = pos;\n", v->p);
-        sb_printf(b, "        while (%s_cur + %d <= %s", v->p, stride,
-                  fold ? "lim_" : "n");
+        sb_printf(b, "        %s_span_cursor = scan_position;\n", v->p);
+        sb_printf(b, "        while (%s_span_cursor + %d <= %s", v->p, stride,
+                  fold ? "lim_" : "subject_length");
         if (a->rmax >= 0) sb_printf(b, " && it_ < %dUL", a->rmax);
-        sb_printf(b, "%s) { %s_cur += %d;", test, v->p, stride);
+        sb_printf(b, "%s) { %s_span_cursor += %d;", test, v->p, stride);
         if (a->rmax >= 0) sb_puts(b, " it_++;");
         sb_puts(b, " }\n    }\n");
         if (fold)
@@ -2177,7 +2249,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         vm_goto(v, retry);
 
         vm_lbl(v, retry, "span-loop: take the continuation at the cursor");
-        sb_printf(b, "    if ((ptrdiff_t)%s_cur < stv[%d] + %lld) goto %s_fail;\n",
+        sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld) goto %s_fail;\n",
                   v->p, low, lo_off, v->p);
         vm_ev(v, VE_NOTE, 0, 0, "below the low-water mark: exhausted");
     } else {
@@ -2188,13 +2260,13 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * retreat. Getting this wrong is not a performance difference: `(a*?)a`
          * on "aa" gives [0,2)/g1=[0,1) under a greedy scan where both oracles
          * give [0,1)/g1=[0,0). */
-        sb_printf(b, "    %s_cur = pos;\n", v->p);
+        sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
         if (a->rmin > 0) {
             sb_puts(b, "    {\n        unsigned long it_ = 0;\n");
             sb_printf(b, "        while (it_ < %dUL) {\n", a->rmin);
-            sb_printf(b, "            if (!(%s_cur + %d <= n%s)) goto %s_fail;\n",
+            sb_printf(b, "            if (!(%s_span_cursor + %d <= subject_length%s)) goto %s_fail;\n",
                       v->p, stride, test, v->p);
-            sb_printf(b, "            %s_cur += %d; it_++;\n", v->p, stride);
+            sb_printf(b, "            %s_span_cursor += %d; it_++;\n", v->p, stride);
             sb_puts(b, "        }\n    }\n");
         }
         vm_goto(v, retry);
@@ -2214,16 +2286,16 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * too and the whole remaining ascent is cut by this one comparison. */
         {
             char cx[64];
-            snprintf(cx, sizeof cx, "%s_cur", v->p);
+            snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
             vm_mrl_test(v, cx, mrl, -1,
                         "MRL: the ascent has passed the last position an "
-                        "accepting continuation could start from");
+                        "accepting continuation could attempt_position from");
         }
     }
 
     {
         char cur[64];
-        snprintf(cur, sizeof cur, "%s_cur", v->p);
+        snprintf(cur, sizeof cur, "%s_span_cursor", v->p);
         vm_push_at(v, again, cur, a->greedy
                    ? "shorter run is the resume (retreat one stride)"
                    : "longer run is the resume (extend one stride)");
@@ -2234,17 +2306,17 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * report — and, inside an enclosing loop, is what makes a failed final
          * iteration restore group k to the value the SUCCESSFUL earlier
          * iteration left rather than to unset (S3.2). */
-        sb_printf(b, "    if ((ptrdiff_t)%s_cur >= stv[%d] + %d) {\n",
+        sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %d) {\n",
                   v->p, low, stride);
         for (int i = 0; i < ncaps; i++) {
             char val[96];
-            snprintf(val, sizeof val, "(ptrdiff_t)(%s_cur - %d)", v->p,
+            snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
                      stride - caps[i].off);
             vm_set(v, 2 * caps[i].group, val,
                    vm_rolef(v, "group %d open, derived from the cursor "
                                "(D44.1: not written per iteration)",
                             caps[i].group));
-            snprintf(val, sizeof val, "(ptrdiff_t)(%s_cur - %d)", v->p,
+            snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
                      stride - caps[i].off - caps[i].len);
             vm_set(v, 2 * caps[i].group + 1, val,
                    vm_rolef(v, "group %d close, derived from the cursor",
@@ -2252,25 +2324,25 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         }
         sb_puts(b, "    }\n");
     }
-    sb_printf(b, "    pos = %s_cur;\n", v->p);
+    sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
     vm_goto(v, next);
 
     vm_lbl(v, again, a->greedy ? "span-loop retreat (resumed from the frame)"
                                : "span-loop extend (resumed from the frame)");
     /* the fail label restored pos from this frame, i.e. to the cursor value
      * the push recorded — so the retreat/extension needs no save slot */
-    sb_printf(b, "    %s_cur = pos;\n", v->p);
+    sb_printf(b, "    %s_span_cursor = scan_position;\n", v->p);
     if (a->greedy) {
-        sb_printf(b, "    if ((ptrdiff_t)%s_cur < stv[%d] + %lld + %d) goto %s_fail;\n",
+        sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor < slot_values[%d] + %lld + %d) goto %s_fail;\n",
                   v->p, low, lo_off, stride, v->p);
-        sb_printf(b, "    %s_cur -= %d;\n", v->p, stride);
+        sb_printf(b, "    %s_span_cursor -= %d;\n", v->p, stride);
     } else {
         if (a->rmax >= 0)
-            sb_printf(b, "    if ((ptrdiff_t)%s_cur >= stv[%d] + %lld) goto %s_fail;\n",
+            sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %lld) goto %s_fail;\n",
                       v->p, low, (long long)a->rmax * stride, v->p);
-        sb_printf(b, "    if (!(%s_cur + %d <= n%s)) goto %s_fail;\n",
+        sb_printf(b, "    if (!(%s_span_cursor + %d <= subject_length%s)) goto %s_fail;\n",
                   v->p, stride, test, v->p);
-        sb_printf(b, "    %s_cur += %d;\n", v->p, stride);
+        sb_printf(b, "    %s_span_cursor += %d;\n", v->p, stride);
     }
     vm_goto(v, retry);
     sb_free(&t);
@@ -2307,7 +2379,7 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
      * for both preferences — `next` is the greedy fallback and the lazy
      * fallthrough alike, which is §2.8's preference-blindness showing up as
      * one line of code instead of two. */
-    vm_mrl_test(v, "pos", vm_fadd(bw, v->fmin), next,
+    vm_mrl_test(v, "scan_position", vm_fadd(bw, v->fmin), next,
                 "MRL: no room for another iteration and the follow -- take "
                 "the skip, push nothing");
     if (greedy) {
@@ -2377,9 +2449,9 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
         /* [M4.6d] cut before push, on the possessive arm too. The one frame
          * this copy would push exists to notice that the body cannot run;
          * where MRL already knows it cannot, the frame is pure cost. */
-        vm_mrl_test(v, "pos", vm_fadd(bw, v->fmin), next,
+        vm_mrl_test(v, "scan_position", vm_fadd(bw, v->fmin), next,
                     "MRL: no room for another copy and the follow");
-        vm_push_at(v, exitl, "pos",
+        vm_push_at(v, exitl, "scan_position",
                    "the loop's ONLY frame: this copy failing leaves the loop");
         vm_goto(v, bentry);
         vm_emit(v, bentry, body, after);
@@ -2431,9 +2503,9 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
     /* [M4.6d] cut before push. Reached once per iteration, so this also
      * bounds the loop: the first position at which another iteration plus the
      * follow cannot fit ends the loop without a frame. */
-    vm_mrl_test(v, "pos", vm_fadd(bw, v->fmin), exitl,
+    vm_mrl_test(v, "scan_position", vm_fadd(bw, v->fmin), exitl,
                 "MRL: no room for another iteration and the follow");
-    vm_push_at(v, exitl, "pos",
+    vm_push_at(v, exitl, "scan_position",
                "the loop's ONLY frame: the iteration failing leaves the loop");
     vm_goto(v, bentry);
 
@@ -2493,7 +2565,7 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
     StrBuf *b = v->b;
     char byte[80];
     vm_charge(v);
-    snprintf(byte, sizeof byte, "s[%s - 1]", R->cur);
+    snprintf(byte, sizeof byte, "subject[%s - 1]", R->cur);
 
     switch (a->k) {
     case A_CLASS: {
@@ -2640,8 +2712,8 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * its own `= 0` at its declaration and the question does not arise. */
     char rv[80], cur[96], flr[32];
     snprintf(rv,  sizeof rv,  "%s_rv%d", v->p, loop);
-    snprintf(cur, sizeof cur, "%s_rv%d_c", v->p, loop);
-    snprintf(flr, sizeof flr, "(size_t)stv[%d]", se);
+    snprintf(cur, sizeof cur, "%s_rv%d_cursor", v->p, loop);
+    snprintf(flr, sizeof flr, "(size_t)slot_values[%d]", se);
 
     char bounds[32];
     if (a->rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->rmin);
@@ -2699,12 +2771,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     const long long bw = pcrec_minw(a->l);
     vm_prune_mark(v, entry,
                   v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
-    vm_set(v, se, "(ptrdiff_t)pos",
+    vm_set(v, se, "(ptrdiff_t)scan_position",
            "revdet: the loop's entry position (the capture walk's floor)");
     if (a->rmin == 0)
-        vm_set(v, sl, "(ptrdiff_t)pos",
+        vm_set(v, sl, "(ptrdiff_t)scan_position",
                "revdet: low-water = the entry, since rmin is 0");
-    sb_printf(b, "    %s_it = 0;\n", rv);
+    sb_printf(b, "    %s_iteration = 0;\n", rv);
     vm_goto(v, scanl);
 
     /* ---- the forward scan ------------------------------------------------
@@ -2717,7 +2789,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * frames to FIND its match, which is vm_poss_chain's own recorded lesson. */
     vm_lbl(v, scanl, "revdet scan: try one more iteration");
     if (a->rmax >= 0)
-        sb_printf(b, "    if (%s_it >= %dUL) goto %s_L%d;\n",
+        sb_printf(b, "    if (%s_iteration >= %dUL) goto %s_L%d;\n",
                   rv, a->rmax, v->p, fulll);
     /* [M4.6d] the stop, and it goes to `shortl` rather than to `fulll` — which
      * is not cosmetic. `fulll` is reached from the rmax test above, where the
@@ -2727,11 +2799,11 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * arriving there directly leaves exactly the state that frame's pop would
      * have restored: `pos` is this boundary either way, `it` is untouched, and
      * `w->btn` is already at the depth the pop would have left it. */
-    vm_mrl_test(v, "pos", vm_fadd(bw, F), shortl,
+    vm_mrl_test(v, "scan_position", vm_fadd(bw, F), shortl,
                 "MRL: no room for another iteration and the follow -- stop the "
                 "scan on the boundary it is standing on");
-    sb_printf(b, "    %s_mk = w->btn;\n", rv);
-    vm_push_at(v, shortl, "pos",
+    sb_printf(b, "    %s_frame_mark = run->resume_depth;\n", rv);
+    vm_push_at(v, shortl, "scan_position",
                "this iteration cannot run -- leave the loop with the ones that did");
     vm_goto(v, bodyl);
 
@@ -2755,16 +2827,16 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * never goes near the RX_CUT macro. */
     {
         char cnt[192];
-        snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - (ptrdiff_t)%s_mk", rv);
+        snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
         vm_work(v, cnt, "work charge: frames discarded by the revdet scan cut");
     }
-    sb_printf(b, "    w->btn = %s_mk;\n", rv);
+    sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
     vm_ev(v, VE_NOTE, 0, 0, "cut to the iteration's entry depth: a unique-iteration"
                             " body has no second parse of what just matched");
-    sb_printf(b, "    %s_it++;\n", rv);
+    sb_printf(b, "    %s_iteration++;\n", rv);
     if (a->rmin > 0) {
-        sb_printf(b, "    if (%s_it == %dUL) {\n", rv, a->rmin);
-        vm_set(v, sl, "(ptrdiff_t)pos",
+        sb_printf(b, "    if (%s_iteration == %dUL) {\n", rv, a->rmin);
+        vm_set(v, sl, "(ptrdiff_t)scan_position",
                "revdet: low-water = the boundary after rmin iterations");
         sb_puts(b, "    }\n");
     }
@@ -2775,14 +2847,14 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
      * Everything the commit tests is a slot or `pos`. */
     vm_lbl(v, shortl, "revdet scan: the body could not run at this boundary");
     if (a->rmin > 0)
-        sb_printf(b, "    if (%s_it < %dUL) goto %s_fail;\n", rv, a->rmin, v->p);
+        sb_printf(b, "    if (%s_iteration < %dUL) goto %s_fail;\n", rv, a->rmin, v->p);
     vm_goto(v, fulll);
 
     vm_lbl(v, fulll, "revdet: the forward scan is complete");
-    vm_set(v, sh, "(ptrdiff_t)pos",
+    vm_set(v, sh, "(ptrdiff_t)scan_position",
            "revdet: the maximal boundary reached (the lazy extension's ceiling)");
     if (!greedy && move) {
-        sb_printf(b, "    pos = (size_t)stv[%d];\n", sl);
+        sb_printf(b, "    scan_position = (size_t)slot_values[%d];\n", sl);
         vm_ev(v, VE_NOTE, 0, 0,
               "lazy: commit at the MINIMUM and extend on backtrack");
     }
@@ -2793,18 +2865,18 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     if (walk) {
         Rev R;
         char ga[64], gs[64], ns[64];
-        snprintf(ga, sizeof ga, "%s_rvg", v->p);
-        snprintf(gs, sizeof gs, "%s_rvs", v->p);
-        snprintf(ns, sizeof ns, "%s_rv%d_ns", v->p, loop);
+        snprintf(ga, sizeof ga, "%s_revdet_group_span", v->p);
+        snprintf(gs, sizeof gs, "%s_revdet_group_seen", v->p);
+        snprintf(ns, sizeof ns, "%s_rv%d_groups_seen", v->p, loop);
         R.cur = cur; R.floor = flr; R.ga = ga; R.gs = gs; R.ns = ns;
         R.grp = grp; R.ngrp = ng; R.faill = wendl;
 
-        sb_printf(b, "    %s_c = pos;\n", rv);
-        sb_printf(b, "    %s_prev = -1;\n", rv);
+        sb_printf(b, "    %s_cursor = scan_position;\n", rv);
+        sb_printf(b, "    %s_prev_position = -1;\n", rv);
         if (ng) {
-            sb_printf(b, "    %s_ns = 0;\n", rv);
+            sb_printf(b, "    %s_groups_seen = 0;\n", rv);
             sb_printf(b, "    { int i_; for (i_ = 0; i_ < %d; i_++)"
-                         " %s_rvs[i_] = 0; }\n", ng, v->p);
+                         " %s_revdet_group_seen[i_] = 0; }\n", ng, v->p);
         }
         vm_goto(v, walkl);
 
@@ -2815,10 +2887,10 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
         vm_rev_emit(v, revl, a->revbody, wstepl, &R);
 
         vm_lbl(v, wstepl, "revdet walk: landed on the previous boundary");
-        sb_printf(b, "    if (%s_prev < 0) %s_prev = (ptrdiff_t)%s;\n",
+        sb_printf(b, "    if (%s_prev_position < 0) %s_prev_position = (ptrdiff_t)%s;\n",
                   rv, rv, cur);
         if (ng) {
-            sb_printf(b, "    if (%s_ns >= %d) goto %s_L%d;\n",
+            sb_printf(b, "    if (%s_groups_seen >= %d) goto %s_L%d;\n",
                       rv, ng, v->p, wendl);
             vm_goto(v, walkl);
         } else {
@@ -2836,28 +2908,28 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     if (move) {
         if (greedy) {
             char pv[112];
-            snprintf(pv, sizeof pv, "(size_t)%s_prev", rv);
-            sb_printf(b, "    if ((ptrdiff_t)pos > stv[%d] && %s_prev >= 0) {\n",
+            snprintf(pv, sizeof pv, "(size_t)%s_prev_position", rv);
+            sb_printf(b, "    if ((ptrdiff_t)scan_position > slot_values[%d] && %s_prev_position >= 0) {\n",
                       sl, rv);
             vm_push_at(v, commitl, pv,
-                       "retreat: resume this very label with pos at the "
+                       "retreat: resume this very label with scan_position at the "
                        "PREVIOUS boundary, and re-derive from there");
             sb_puts(b, "    }\n");
         } else {
-            sb_printf(b, "    if ((ptrdiff_t)pos < stv[%d]) {\n", sh);
-            vm_push_at(v, extl, "pos",
+            sb_printf(b, "    if ((ptrdiff_t)scan_position < slot_values[%d]) {\n", sh);
+            vm_push_at(v, extl, "scan_position",
                        "extend: one more iteration is the lazy resume");
             sb_puts(b, "    }\n");
         }
     }
     for (int j = 0; j < ng; j++) {
         char val[64];
-        sb_printf(b, "    if (%s_rvs[%d]) {\n", v->p, j);
-        snprintf(val, sizeof val, "%s_rvg[%d][0]", v->p, j);
+        sb_printf(b, "    if (%s_revdet_group_seen[%d]) {\n", v->p, j);
+        snprintf(val, sizeof val, "%s_revdet_group_span[%d][0]", v->p, j);
         vm_set(v, 2 * grp[j], val,
                vm_rolef(v, "group %d open, recovered by the backward walk",
                         grp[j]));
-        snprintf(val, sizeof val, "%s_rvg[%d][1]", v->p, j);
+        snprintf(val, sizeof val, "%s_revdet_group_span[%d][1]", v->p, j);
         vm_set(v, 2 * grp[j] + 1, val,
                vm_rolef(v, "group %d close, recovered by the backward walk",
                         grp[j]));
@@ -2877,9 +2949,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
          * and unlike the scan's stop this one FAILS, because there is no
          * shorter alternative left to fall back to: the shorter ones were
          * already tried, which is what "lazy" means. */
-        vm_mrl_test(v, "pos", vm_fadd(bw, F), -1,
+        vm_mrl_test(v, "scan_position", vm_fadd(bw, F), -1,
                     "MRL: the lazy ascent has nowhere left to go");
-        sb_printf(b, "    %s_mk = w->btn;\n", rv);
+        sb_printf(b, "    %s_frame_mark = run->resume_depth;\n", rv);
         vm_goto(v, extbl);
         v->nocap++;
         vm_emit_f(v, extbl, a->l, extok, F);
@@ -2887,11 +2959,11 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, extok, "revdet: the extra iteration matched");
         {
             char cnt[192];
-            snprintf(cnt, sizeof cnt, "(ptrdiff_t)w->btn - (ptrdiff_t)%s_mk", rv);
+            snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
             vm_work(v, cnt, "work charge: frames discarded by the revdet "
                             "extra-iteration cut");
         }
-        sb_printf(b, "    w->btn = %s_mk;\n", rv);
+        sb_printf(b, "    run->resume_depth = %s_frame_mark;\n", rv);
         vm_goto(v, commitl);
         /* The body FAILING here needs no frame of its own: the push above only
          * happens below `hi`, and below `hi` the chain guarantees a next
@@ -2997,7 +3069,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         int body0 = vm_label(v);
         int cur;
         vm_lbl(v, trip, "counter trip: another K iterations, or the residue");
-        sb_printf(b, "    if (stv[%d] + %d > %d) goto %s_L%d;\n",
+        sb_printf(b, "    if (slot_values[%d] + %d > %d) goto %s_L%d;\n",
                   ctr, K, count, v->p, tail);
         vm_ev(v, VE_NOTE, 0, 0,
               "trip guard: the residue is a compile-time constant");
@@ -3029,13 +3101,13 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
             const char *dyn = NULL;
             if (v->mrl && bw > 0) {
                 dyn = vm_dyn_add(v, v->fdyn,
-                                 vm_rolef(v, "%lld * ((ptrdiff_t)%d - stv[%d])",
+                                 vm_rolef(v, "%lld * ((ptrdiff_t)%d - slot_values[%d])",
                                           bw, count, ctr));
             }
             {
                 const char *sd = v->fdyn;
                 v->fdyn = dyn ? dyn : v->fdyn;
-                vm_mrl_test(v, "pos", dyn ? F : vm_fadd(vm_fmul(K, bw), TF), -1,
+                vm_mrl_test(v, "scan_position", dyn ? F : vm_fadd(vm_fmul(K, bw), TF), -1,
                             dyn ? "MRL: the mandatory iterations still owed "
                                   "(counter-derived) plus the follow do not fit"
                                 : "MRL: this trip's K mandatory iterations, the "
@@ -3063,7 +3135,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                 const char *dyn = NULL;
                 if (v->mrl && bw > 0) {
                     dyn = vm_dyn_add(v, v->fdyn,
-                                     vm_rolef(v, "%lld * ((ptrdiff_t)%d - stv[%d])",
+                                     vm_rolef(v, "%lld * ((ptrdiff_t)%d - slot_values[%d])",
                                               bw, count - (i + 1), ctr));
                 }
                 if (dyn) vm_emit_fd(v, cur, a->l, nx, F, dyn);
@@ -3073,7 +3145,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                  * resume, so the frame carries the skip label. */
                 int bodyl = vm_label(v);
                 vm_lbl(v, cur, "counter iteration (greedy): body preferred");
-                vm_mrl_test(v, "pos", vm_fadd(bw, F), skip,
+                vm_mrl_test(v, "scan_position", vm_fadd(bw, F), skip,
                             "MRL: no room for another iteration and the follow");
                 vm_push(v, skip, "greedy: leaving the loop here is the resume");
                 vm_goto(v, bodyl);
@@ -3084,7 +3156,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
                  * arm. Greedy vs lazy is which side is the fallthrough. */
                 int bodyl = vm_label(v);
                 vm_lbl(v, cur, "counter iteration (lazy): leaving preferred");
-                vm_mrl_test(v, "pos", vm_fadd(bw, F), skip,
+                vm_mrl_test(v, "scan_position", vm_fadd(bw, F), skip,
                             "MRL: no room for another iteration and the follow");
                 vm_push(v, bodyl, "lazy: taking another iteration is the resume");
                 vm_goto(v, skip);
@@ -3095,7 +3167,7 @@ static void vm_counter_phase(Vm *v, int entry, const Ast *a, int count,
         vm_lbl(v, cur, "counter trip complete: charge K and go round");
         {
             char val[64];
-            snprintf(val, sizeof val, "stv[%d] + %d", ctr, K);
+            snprintf(val, sizeof val, "slot_values[%d] + %d", ctr, K);
             vm_set(v, ctr, val, "counter rung: += K, once per TRIP");
         }
         vm_goto(v, trip);
@@ -3187,11 +3259,11 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_goto(v, trip);
 
     vm_lbl(v, trip, "counter trip (possessive): one iteration, or leave");
-    sb_printf(b, "    if (stv[%d] >= %d) goto %s_L%d;\n", ctr, nopt, v->p, next);
+    sb_printf(b, "    if (slot_values[%d] >= %d) goto %s_L%d;\n", ctr, nopt, v->p, next);
     vm_ev(v, VE_NOTE, 0, 0, "the bound is a compile-time constant");
     /* [M4.6d] cut before push, once per iteration. `stop` cuts and takes the
      * continuation, which is exactly what the popped frame would have done. */
-    vm_mrl_test(v, "pos", vm_fadd(bw, F), stop,
+    vm_mrl_test(v, "scan_position", vm_fadd(bw, F), stop,
                 "MRL: no room for another iteration and the follow");
     vm_push(v, stop, "possessive: this iteration cannot run, so leave the loop");
     vm_goto(v, body0);
@@ -3201,7 +3273,7 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     vm_cut(v, mark, "cut: the iteration is committed and owns no live choice point");
     {
         char val[64];
-        snprintf(val, sizeof val, "stv[%d] + 1", ctr);
+        snprintf(val, sizeof val, "slot_values[%d] + 1", ctr);
         vm_set(v, ctr, val, "counter rung: += 1 (possessive: no trip, no K)");
     }
     vm_goto(v, trip);
@@ -3260,7 +3332,7 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
     vm_prune_mark(v, entry,
                   v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
     if (a->possessive)
-        vm_set(v, mark, "(ptrdiff_t)w->btn",
+        vm_set(v, mark, "(ptrdiff_t)run->resume_depth",
                "possessive cut mark (resume-stack depth at loop entry)");
     cur = vm_label(v);
     vm_goto(v, cur);
@@ -3329,10 +3401,10 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
      * has `bw == 0` and the test collapses to the loop's own follow-min,
      * which is still worth having: `(a*)*b` on a subject with no `b` left is
      * cut here rather than at the guard. */
-    vm_mrl_test(v, "pos", vm_fadd(pcrec_minw(a->l), v->fmin), exit,
+    vm_mrl_test(v, "scan_position", vm_fadd(pcrec_minw(a->l), v->fmin), exit,
                 "MRL: no room for another iteration and the follow");
     if (guard)
-        vm_set(v, gslot, "(ptrdiff_t)pos",
+        vm_set(v, gslot, "(ptrdiff_t)scan_position",
                "empty-iteration guard: where this iteration began");
     if (a->greedy) {
         vm_push(v, exit, "another iteration preferred; resume is the EXIT");
@@ -3373,7 +3445,7 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
          * still get their turn. Recorded for [M4.6] rather than solved with a
          * mechanism that mutates a frame in place, which does not survive the
          * loop being re-entered. */
-        sb_printf(v->b, "    if ((ptrdiff_t)pos != stv[%d]) goto %s_L%d;\n",
+        sb_printf(v->b, "    if ((ptrdiff_t)scan_position != slot_values[%d]) goto %s_L%d;\n",
                   gslot, v->p, cur);
         vm_goto(v, exit);
     } else {
@@ -3477,7 +3549,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         int body0 = vm_label(v);
         vm_lbl(v, entry, "possessified repeat: record the resume-stack depth "
                          "to cut back to");
-        vm_set(v, mslot, "(ptrdiff_t)w->btn",
+        vm_set(v, mslot, "(ptrdiff_t)run->resume_depth",
                "possessive cut mark (resume-stack depth at loop entry)");
         vm_goto(v, body0);
         cur = body0;
@@ -3534,9 +3606,9 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         int ci = vm_cls(v, a->cls);
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_CLASS, ci, next, NULL);
-        sb_puts(b, "    if (pos < n && (");
-        vm_cls_test(v, b, ci, "s[pos]");
-        sb_printf(b, ")) { pos++; goto %s_L%d; }\n", v->p, next);
+        sb_puts(b, "    if (scan_position < subject_length && (");
+        vm_cls_test(v, b, ci, "subject[scan_position]");
+        sb_printf(b, ")) { scan_position++; goto %s_L%d; }\n", v->p, next);
         vm_fail(v);
         return;
     }
@@ -3567,9 +3639,9 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
             int ni = vm_cls(v, pcrec_cls_newline);
             vm_lbl(v, entry, NULL);
             vm_ev(v, VE_ASSERT, next, 0,
-                  "(?m)^ start of subject or after a non-final newline");
-            sb_puts(b, "    if (pos == 0 || (pos < n && (");
-            vm_cls_test(v, b, ni, "s[pos-1]");
+                  "(?m)^ attempt_position of subject or after a non-final newline");
+            sb_puts(b, "    if (scan_position == 0 || (scan_position < subject_length && (");
+            vm_cls_test(v, b, ni, "subject[scan_position-1]");
             sb_printf(b, "))) goto %s_L%d;\n", v->p, next);
             vm_fail(v);
             return;
@@ -3578,8 +3650,8 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * startpos was, matching the emitted contract in lib/pcrec.h and the
          * DFA's own N_BOT. */
         vm_lbl(v, entry, NULL);
-        vm_ev(v, VE_ASSERT, next, 0, "^ start of subject (absolute offset 0)");
-        sb_printf(b, "    if (pos == 0) goto %s_L%d;\n", v->p, next);
+        vm_ev(v, VE_ASSERT, next, 0, "^ attempt_position of subject (absolute offset 0)");
+        sb_printf(b, "    if (scan_position == 0) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
     case A_EOL:
@@ -3591,8 +3663,8 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
             vm_lbl(v, entry, NULL);
             vm_ev(v, VE_ASSERT, next, 0,
                   "(?m)$ end of subject or before a newline");
-            sb_puts(b, "    if (pos == n || (");
-            vm_cls_test(v, b, ni, "s[pos]");
+            sb_puts(b, "    if (scan_position == subject_length || (");
+            vm_cls_test(v, b, ni, "subject[scan_position]");
             sb_printf(b, ")) goto %s_L%d;\n", v->p, next);
             vm_fail(v);
             return;
@@ -3600,7 +3672,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_ASSERT, next, 0,
               "$ end of subject, or before a final newline");
-        sb_printf(b, "    if (pos == n || (pos + 1 == n && s[pos] == '\\n')) "
+        sb_printf(b, "    if (scan_position == subject_length || (scan_position + 1 == subject_length && subject[scan_position] == '\\n')) "
                      "goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
@@ -3613,7 +3685,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * (K27's class): `pos == n` is a position test. */
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_ASSERT, next, 0, "\\z end of subject (absolute)");
-        sb_printf(b, "    if (pos == n) goto %s_L%d;\n", v->p, next);
+        sb_printf(b, "    if (scan_position == subject_length) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
     case A_GSTART:
@@ -3645,9 +3717,9 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * K27's class does not arise here any more than it does for `\z`. */
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_ASSERT, next, 0,
-              "\\G the first matching position (startpos)");
+              "\\G the first matching position (search_from)");
         v->ngst++;
-        sb_printf(b, "    if (pos == %s_startpos) goto %s_L%d;\n",
+        sb_printf(b, "    if (scan_position == %s_search_from) goto %s_L%d;\n",
                   v->p, v->p, next);
         vm_fail(v);
         return;
@@ -3697,7 +3769,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * node; nothing else here costs anything. */
         v->nkreset++;
         vm_lbl(v, entry, NULL);
-        vm_set(v, 0, "(ptrdiff_t)pos",
+        vm_set(v, 0, "(ptrdiff_t)scan_position",
                "\\K resets the reported start of the match to here");
         vm_goto(v, next);
         return;
@@ -3728,12 +3800,12 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_lbl(v, entry, NULL);
         vm_ev(v, VE_ASSERT, next, 0,
               neg ? "\\B not a word boundary" : "\\b word boundary");
-        sb_puts(b, "    if (((pos > 0 && (");
-        vm_cls_test(v, b, wi, "s[pos-1]");
+        sb_puts(b, "    if (((scan_position > 0 && (");
+        vm_cls_test(v, b, wi, "subject[scan_position-1]");
         sb_puts(b, ")) ");
         sb_puts(b, neg ? "==" : "!=");
-        sb_puts(b, " (pos < n && (");
-        vm_cls_test(v, b, wi, "s[pos]");
+        sb_puts(b, " (scan_position < subject_length && (");
+        vm_cls_test(v, b, wi, "subject[scan_position]");
         sb_printf(b, ")))) goto %s_L%d;\n", v->p, next);
         vm_fail(v);
         return;
@@ -3751,13 +3823,13 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * have left. vm_cost's A_CAP arm reads the same flag, so the emitted
          * code and the number the capacities are sized from cannot disagree. */
         if (!v->nocap)
-            vm_set(v, 2 * a->capno, "(ptrdiff_t)pos",
+            vm_set(v, 2 * a->capno, "(ptrdiff_t)scan_position",
                    vm_rolef(v, "group %d open, written on traverse", a->capno));
         vm_goto(v, inner);
         vm_emit(v, inner, a->l, close);
         vm_lbl(v, close, vm_rolef(v, "group %d closes", a->capno));
         if (!v->nocap)
-            vm_set(v, 2 * a->capno + 1, "(ptrdiff_t)pos",
+            vm_set(v, 2 * a->capno + 1, "(ptrdiff_t)scan_position",
                    vm_rolef(v, "group %d close, written on traverse", a->capno));
         vm_goto(v, next);
         return;
@@ -3932,8 +4004,8 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
               ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
                 " an exact window (S6.1); the VM never scans"
               : (cx->opt->flags & PCREC_NO_PREFILTER)
-              ? "NO (-fno-prefilter) -- forced off; the VM scans from startpos itself"
-              : "NO (--engine=vm) -- the VM scans from startpos itself (R21 E-6)");
+              ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
+              : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
     /* [D46] the rung stamp's QUICK-GLANCE summary: which rung KINDS appear
      * ANYWHERE in this program, not which one "the" program uses -- the
      * rung is selected per A_REP, so a pattern with two quantified bodies
@@ -4002,7 +4074,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * the emitter indexes with; "written" is derived from the VE_SET events,
      * so a slot the layout reserves and the program never writes shows up as
      * exactly that. */
-    sb_puts(o, "\nSLOTS (the stv array, engine_m4.md S2.4)\n");
+    sb_puts(o, "\nSLOTS (the slot_values array, engine_m4.md S2.4)\n");
     sb_printf(o, "  %-12s %-22s %s\n", "slot", "holds", "note");
     for (int k = 0; k <= v->ngroups; k++) {
         int w = 0;
@@ -4103,7 +4175,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                  "\n  ceiling: %s\n  bound sites emitted: %lld\n"
                  "  runtime-term length retreats: %lld%s\n",
               !v->mrl ? "none (-fno-length-prune)"
-                      : v->mrl_win ? "min(n, prefilter window end) -- D51 ruling 2"
+                      : v->mrl_win ? "min(subject_length, prefilter window end) -- D51 ruling 2"
                                    : "the subject end (no prefilter on this artifact)",
               v->nclamp, v->ndynskip,
               v->ndynskip ? "  <- an outer counter-derived term was DROPPED"
@@ -4153,8 +4225,12 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             break;
         }
         case VE_SET: {
-            char slot[24];
-            snprintf(slot, sizeof slot, "stv[%d] <- pos", e->a);
+            /* Widened for [M6-READ]: `stv[2] <- pos` fitted in 24, but
+             * `slot_values[2] <- scan_position` is 30 and snprintf silently
+             * TRUNCATED it to `slot_values[2] <- scan_`. A rename that moves
+             * emitted names has to check the listing's column widths too. */
+            char slot[48];
+            snprintf(slot, sizeof slot, "slot_values[%d] <- scan_position", e->a);
             sb_printf(o, "         set     %-28s ; %s\n", slot,
                       e->role ? e->role : "");
             break;
@@ -4186,14 +4262,14 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             /* [ENG-BREP] this one DOES write C, so unlike the two above it
              * belongs in the trace. */
             char slot[32];
-            snprintf(slot, sizeof slot, "frames <- stv[%d]", e->a);
+            snprintf(slot, sizeof slot, "frames <- slot_values[%d]", e->a);
             sb_printf(o, "         CUT     %-28s ; %s\n", slot,
                       e->role ? e->role : "commit: discard the loop's frames");
             break;
         }
         }
     }
-    sb_puts(o, "  accept   ; return pos - ctx->pos; the capture slots at this"
+    sb_puts(o, "  accept   ; return scan_position - ctx->pos; the capture slots at this"
                " instant ARE the answer (S3.1)\n");
     sb_puts(o, "  fail     ; the ONLY backtracker and the only indirect jump;"
                " one step charged here (S4.2)\n");
@@ -4280,7 +4356,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
 
     const int ncaps = v.ngroups + 1;
 
-    /* Slot counting first: RX_NSTATE has to be known before the rx_work type
+    /* Slot counting first: RX_NSLOTS has to be known before the rx_run_state type
      * is emitted, and it must agree EXACTLY with what the emitter goes on to
      * assign — so the counter mirrors the emitter's own rung decisions rather
      * than approximating them. */
@@ -4322,12 +4398,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         bt_frames = cx->opt->frame_capacity;
         trail_frames = cx->opt->frame_capacity;
     } else if (cost.unbounded) {
-        bt_frames = VM_DEFAULT_BT_FRAMES;
+        bt_frames = VM_DEFAULT_RESUME_FRAMES;
         trail_frames = VM_DEFAULT_TRAIL_FRAMES;
     } else {
         bt_frames = cost.frames + 1;
         trail_frames = cost.trail + 1;
-        if (bt_frames > VM_MAX_AUTO_BT_FRAMES) bt_frames = VM_MAX_AUTO_BT_FRAMES;
+        if (bt_frames > VM_MAX_AUTO_RESUME_FRAMES) bt_frames = VM_MAX_AUTO_RESUME_FRAMES;
         if (trail_frames > VM_MAX_AUTO_TRAIL_FRAMES)
             trail_frames = VM_MAX_AUTO_TRAIL_FRAMES;
     }
@@ -4342,7 +4418,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * pattern whose requirement DOES fit has no limit to declare, and stamps
      * 0 truthfully. Getting this wrong in the other direction is what a
      * silent cap looks like: `((a)|b){0,4000}c` is statically bounded at 4000
-     * frames, gets the VM_MAX_AUTO_BT_FRAMES clamp, and would otherwise have stamped "not applicable". */
+     * frames, gets the VM_MAX_AUTO_RESUME_FRAMES clamp, and would otherwise have stamped "not applicable". */
     fits = !cost.unbounded && cost.frames + 1 <= bt_frames
                            && cost.trail + 1 <= trail_frames;
     if (cost.growable && !fits) {
@@ -4416,10 +4492,10 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     sb_printf(c, "/* Engine: vm (forced by: %s) */\n",
               job->fit.why ? job->fit.why : "--engine=vm");
     if (has_budget)
-        sb_printf(c, "/* Step budget: %lld backtrack resumptions; backtrack "
+        sb_printf(c, "/* Step steps_left: %lld backtrack resumptions; backtrack "
                      "frames: %lld */\n", budget, bt_frames);
     else
-        sb_printf(c, "/* Step budget: none (--fno-step-budget); backtrack "
+        sb_printf(c, "/* Step steps_left: none (--fno-step-steps_left); backtrack "
                      "frames: %lld */\n", bt_frames);
     sb_printf(c, "#define %s_ENGINE \"vm\"\n", v.up);
     sb_puts(c, "#define ");
@@ -4543,8 +4619,28 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         sb_puts(c, "#include <stdio.h>\n");
         sb_printf(c, "#define %s_TRACE 1\n", v.up);
     }
-    sb_printf(c, "#define %s_NSTATE %d\n", v.up, nstate < 1 ? 1 : nstate);
-    sb_printf(c, "#define %s_BT_FRAMES %lld\n", v.up, bt_frames);
+    sb_printf(c, "#define %s_NSLOTS %d\n", v.up, nstate < 1 ? 1 : nstate);
+
+    /* [M6-READ] THE SLOT LEGEND, as macros resolving to the numbers they
+     * replace. Requirement (5): these table numbers are IDENTITIES, not
+     * indexes, and naming them is the single largest readability gain in a VM
+     * artifact -- `RX_SET(2, ...)` becomes `RX_SET(RX_SLOT_GROUP1_START, ...)`.
+     * Every name comes from vm_slot_name, i.e. from the layout arithmetic
+     * itself, so it cannot disagree with where the emitter actually writes. */
+    if (nstate > 0) {
+        sb_puts(c, "\n/* SLOT LEGEND -- names for the numbered cells of the slot\n"
+                   " * array. A capture group occupies a PAIR of slots, its start and\n"
+                   " * its end. The whole-match pair is listed for completeness: the\n"
+                   " * VM does not write it unless the pattern has a \\K, because the\n"
+                   " * entry already knows where the attempt began. */\n");
+        for (int sl = 0; sl < nstate; sl++) {
+            char nm[48];
+            if (!vm_slot_name(&v, sl, nm, sizeof nm)) continue;
+            sb_printf(c, "#define %s_%-24s %d\n", v.up, nm, sl);
+        }
+        sb_putc(c, '\n');
+    }
+    sb_printf(c, "#define %s_RESUME_FRAMES %lld\n", v.up, bt_frames);
     sb_printf(c, "#define %s_TRAIL_FRAMES %lld\n", v.up, trail_frames);
     if (has_budget)
         sb_printf(c, "#define %s_STEP_BUDGET %lldLL\n", v.up, budget);
@@ -4552,21 +4648,34 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         sb_printf(c, "#define %s_WORK_BUDGET %lldLL\n", v.up, work_budget);
     sb_puts(c, "\n");
 
-    /* ---- rx_work: the whole mutable working set, §2.2 ------------------
+    /* ---- rx_run_state: the whole mutable working set, §2.2 ------------------
      * All locals — no globals (TS-1: usable FROM threads, all-const tables,
      * no mutable state outside the caller's own frame) and no allocation
      * (PC-5/D38's COPY_MATCHED_SUBJECT = NEVER precedent). */
     sb_printf(c,
+        "/* Everything one match attempt can change, in one struct, so that no\n"
+        " * state lives in globals and two attempts can never interfere.\n"
+        " * Allocated by the caller on the stack; this file never allocates.\n"
+        " *\n"
+        " *   slot_values   the group boundaries recorded so far, by slot number\n"
+        " *   resume_stack  alternatives not yet tried, most recent last; each\n"
+        " *                 frame is \"if you get stuck, come back to HERE\"\n"
+        " *   trail         an undo log of slot_values writes, so popping a\n"
+        " *                 resume frame restores the groups exactly as they were\n"
+        " *   *_depth       how many entries of each are currently live\n"
+        " */\n"
         "typedef struct {\n"
-        "    ptrdiff_t stv[%s_NSTATE];\n"
-        "    struct { const void *k; size_t pos; unsigned mark;%s } bt[%s_BT_FRAMES];\n"
-        "    struct { unsigned slot; ptrdiff_t v; }               tr[%s_TRAIL_FRAMES];\n"
-        "    unsigned btn, trn;\n",
+        "    ptrdiff_t slot_values[%s_NSLOTS];\n"
+        "    struct { const void *resume_label; size_t resume_position;\n"
+        "             unsigned trail_mark;%s } resume_stack[%s_RESUME_FRAMES];\n"
+        "    struct { unsigned slot_index; ptrdiff_t saved_value; }\n"
+        "             trail[%s_TRAIL_FRAMES];\n"
+        "    unsigned resume_depth, trail_depth;\n",
         v.up, v.tracing ? " int id;" : "", v.up, v.up);
-    if (has_budget) sb_puts(c, "    long long budget;\n");
+    if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
-        sb_puts(c, "    long long work;\n");
-    sb_printf(c, "} %s_work;\n\n", v.p);
+        sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+    sb_printf(c, "} %s_run_state;\n\n", v.p);
 
     /* The internal give-up sentinels. They share the search entry's public
      * PCREC_ERR_* values ([ABI-NS]/D60: unprefixed since those are
@@ -4597,11 +4706,14 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * bound rather than merely mis-size it. */
     if (work_budget != PCREC_WORK_BUDGET_NONE) {
         sb_printf(c,
-            "#define %s_WORK(n_) do {                                    \\\n"
+            "/* Charge forward work the backtracker never sees. A scan that\n"
+            " * races over a megabyte costs no STEPS -- it never backtracks --\n"
+            " * so without this meter a slow attempt would look costless. */\n"
+            "#define %s_CHARGE_WORK(n_) do {                                    \\\n"
             "        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \\\n"
             "        if (nw_ > 0) {                                       \\\n"
-            "            w->work -= (long long)nw_;                       \\\n"
-            "            if (w->work < 0) return %s_R_WORK;               \\\n"
+            "            run->work_left -= (long long)nw_;                       \\\n"
+            "            if (run->work_left < 0) return %s_R_WORK;               \\\n"
             "        }                                                    \\\n"
             "    } while (0)\n\n",
             v.up, v.up);
@@ -4630,46 +4742,54 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * definition and the three call sites all read these two strings rather
      * than re-deriving the name, so a rename cannot leave one of them behind. */
     char mrl_param[96];
-    snprintf(mrl_param, sizeof mrl_param, ", const size_t %s_ceil", v.p);
+    snprintf(mrl_param, sizeof mrl_param, ", const size_t %s_window_end", v.p);
     /* [M6.2 wave D] `\G`'s parameter, written once for the same reason and
      * appended AFTER the ceiling's so the two are order-independent at every
      * site: each is emitted or omitted on its own flag, and a program with
      * both gets `(ctx, w, ceil, startpos)`. */
     char gst_param[96];
-    snprintf(gst_param, sizeof gst_param, ", const size_t %s_startpos", v.p);
+    snprintf(gst_param, sizeof gst_param, ", const size_t %s_search_from", v.p);
 
     if (v.nclamp > 0) {
         sb_printf(c,
-            "#define %s_MRL_SHORT(p_, mr_) \\\n"
-            "    ((%s_ceil) < (size_t)(mr_) || (%s_ceil) - (size_t)(mr_) < (p_))\n"
-            "#define %s_MRL_CAP(p_, mr_, w_) \\\n"
-            "    ((p_) + (size_t)(w_) * (((%s_ceil) - (size_t)(mr_) - (p_)) / (size_t)(w_)))\n\n",
+            "/* MINIMUM-REMAINING-LENGTH pruning. At each point the compiler\n"
+            " * knows the fewest bytes any successful continuation must still\n"
+            " * consume. If fewer than that remain before the window ends, this\n"
+            " * position cannot lead to a match and the program fails now\n"
+            " * instead of exploring from it. _CLAMP_SPAN is the same fact used\n"
+            " * to SHORTEN a scan rather than abandon it, rounded down to a\n"
+            " * whole number of iterations so the cursor stays on a position\n"
+            " * the loop could actually have stopped at. */\n"
+            "#define %s_PRUNE_TOO_SHORT(p_, mr_) \\\n"
+            "    ((%s_window_end) < (size_t)(mr_) || (%s_window_end) - (size_t)(mr_) < (p_))\n"
+            "#define %s_PRUNE_CLAMP_SPAN(p_, mr_, w_) \\\n"
+            "    ((p_) + (size_t)(w_) * (((%s_window_end) - (size_t)(mr_) - (p_)) / (size_t)(w_)))\n\n",
             v.up, v.p, v.p, v.up, v.p);
     }
 
     if (!v.tracing) {
         sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (w->trn >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
-            "        w->tr[w->trn].slot = (unsigned)(slot_);               \\\n"
-            "        w->tr[w->trn].v = stv[(slot_)];                       \\\n"
-            "        w->trn++;                                             \\\n"
+            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+            "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
+            "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
+            "        run->trail_depth++;                                             \\\n"
             "    } while (0)\n"
             "#define %s_SET(slot_, v_) do {                                \\\n"
-            "        %s_TRAIL(slot_); stv[(slot_)] = (v_);                 \\\n"
+            "        %s_TRAIL(slot_); slot_values[(slot_)] = (v_);                 \\\n"
             "    } while (0)\n"
             "#define %s_PUSH(lbl_, p_) do {                                \\\n"
-            "        if (w->btn >= %s_BT_FRAMES) return %s_R_FRAMES;       \\\n"
-            "        w->bt[w->btn].k = (lbl_);                             \\\n"
-            "        w->bt[w->btn].pos = (p_);                             \\\n"
-            "        w->bt[w->btn].mark = w->trn;                          \\\n"
-            "        w->btn++;                                             \\\n"
+            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+            "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
+            "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
+            "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
+            "        run->resume_depth++;                                             \\\n"
             "    } while (0)\n"
             /* [ENG-BREP] the possessive CUT. No trail rewind, deliberately —
              * see vm_cut()'s comment: the frames are dead, the capture writes
              * they would have rewound are not. */
             "#define %s_CUT(slot_) do {                                   \\\n"
-            "        w->btn = (unsigned)stv[(slot_)];                      \\\n"
+            "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
             v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up);
     } else {
@@ -4679,31 +4799,31 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
          * debugging tool that lies, which is worse than none. */
         sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (w->trn >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
-            "        w->tr[w->trn].slot = (unsigned)(slot_);               \\\n"
-            "        w->tr[w->trn].v = stv[(slot_)];                       \\\n"
-            "        w->trn++;                                             \\\n"
+            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+            "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
+            "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
+            "        run->trail_depth++;                                             \\\n"
             "    } while (0)\n"
             "#define %s_SET(slot_, v_) do {                                \\\n"
-            "        fprintf(stderr, \"[%s] set   stv[%%d] %%td -> %%td\\n\",  \\\n"
-            "                (int)(slot_), stv[(slot_)], (ptrdiff_t)(v_));  \\\n"
-            "        %s_TRAIL(slot_); stv[(slot_)] = (v_);                 \\\n"
+            "        fprintf(stderr, \"[%s] set   slot_values[%%d] %%td -> %%td\\n\",  \\\n"
+            "                (int)(slot_), slot_values[(slot_)], (ptrdiff_t)(v_));  \\\n"
+            "        %s_TRAIL(slot_); slot_values[(slot_)] = (v_);                 \\\n"
             "    } while (0)\n"
             "#define %s_PUSH(id_, lbl_, p_) do {                           \\\n"
-            "        if (w->btn >= %s_BT_FRAMES) return %s_R_FRAMES;       \\\n"
-            "        w->bt[w->btn].k = (lbl_);                             \\\n"
-            "        w->bt[w->btn].pos = (p_);                             \\\n"
-            "        w->bt[w->btn].mark = w->trn;                          \\\n"
-            "        w->bt[w->btn].id = (id_);                             \\\n"
-            "        fprintf(stderr, \"[%s] push  #%%u resume L%%d at pos %%zu"
+            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+            "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
+            "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
+            "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
+            "        run->resume_stack[run->resume_depth].id = (id_);                             \\\n"
+            "        fprintf(stderr, \"[%s] push  #%%u resume L%%d at scan_position %%zu"
                         " (trail %%u)\\n\",                                 \\\n"
-            "                w->btn, (id_), (size_t)(p_), w->trn);         \\\n"
-            "        w->btn++;                                             \\\n"
+            "                run->resume_depth, (id_), (size_t)(p_), run->trail_depth);         \\\n"
+            "        run->resume_depth++;                                             \\\n"
             "    } while (0)\n"
             "#define %s_CUT(slot_) do {                                   \\\n"
-            "        fprintf(stderr, \"[%s] cut   %%u -> %%td frame(s)\\n\",   \\\n"
-            "                w->btn, stv[(slot_)]);                        \\\n"
-            "        w->btn = (unsigned)stv[(slot_)];                      \\\n"
+            "        fprintf(stderr, \"[%s] cut   %%u -> %%td frame(subject)\\n\",   \\\n"
+            "                run->resume_depth, slot_values[(slot_)]);                        \\\n"
+            "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
             v.up, v.up, v.up, v.up, v.p, v.up, v.up, v.up, v.up, v.p,
             v.up, v.p);
@@ -4716,22 +4836,27 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * rather than O(NG) — which matters for the VM-only per-start loop, where
      * a naive memset per start position would be O(NG*n). */
     sb_printf(c,
-        "static void %s_work_init(%s_work *w)\n"
+        "/* Start a fresh attempt: every group unset, nothing to undo, both\n"
+        " * budgets full. */\n"
+        "static void %s_run_state_init(%s_run_state *run)\n"
         "{\n"
         "    int i;\n"
-        "    for (i = 0; i < %s_NSTATE; i++) w->stv[i] = PCREC_UNSET;\n"
-        "    w->btn = 0; w->trn = 0;\n",
+        "    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n"
+        "    run->resume_depth = 0; run->trail_depth = 0;\n",
         v.p, v.p, v.up);
-    if (has_budget) sb_printf(c, "    w->budget = %s_STEP_BUDGET;\n", v.up);
+    if (has_budget) sb_printf(c, "    run->steps_left = %s_STEP_BUDGET;\n", v.up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
-        sb_printf(c, "    w->work = %s_WORK_BUDGET;\n", v.up);
+        sb_printf(c, "    run->work_left = %s_WORK_BUDGET;\n", v.up);
     sb_puts(c, "}\n\n");
 
     sb_printf(c,
-        "static void %s_unwind(%s_work *w)\n"
+        "/* Roll the run state back to as-if-untouched WITHOUT resetting the\n"
+        " * budgets, so retrying at the next starting position cannot buy\n"
+        " * itself a fresh allowance. */\n"
+        "static void %s_reset_for_next_attempt(%s_run_state *run)\n"
         "{\n"
-        "    while (w->trn) { w->trn--; w->stv[w->tr[w->trn].slot] = w->tr[w->trn].v; }\n"
-        "    w->btn = 0;\n"
+        "    while (run->trail_depth) { run->trail_depth--; run->slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value; }\n"
+        "    run->resume_depth = 0;\n"
         "}\n\n",
         v.p, v.p);
 
@@ -4752,7 +4877,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                 }
             if (count == 256 || count == 1 || count == hi - lo + 1) continue;
             any = true;
-            sb_printf(c, "static const unsigned char %s_k%d[32] = {", v.p, i);
+            sb_printf(c, "static const unsigned char %s_class_bitmap%d[32] = {", v.p, i);
             for (int j = 0; j < 32; j++) {
                 if (j % 8 == 0) sb_puts(c, "\n   ");
                 sb_printf(c, " %3d,", v.cls[i][j]);
@@ -4778,7 +4903,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             " * compiles to (engine_m4.md 6.1, STRUCTURAL). It hands the VM an\n"
             " * anchored window so the VM never scans the subject, which is not\n"
             " * an optimization but the guard on a measured cliff: bench case\n"
-            " * (e) is 25.4 GB/s on pcrec today against pcre2-interp's DNF>90s,\n"
+            " * (e) is 25.4 GB/subject on pcrec today against pcre2-interp's DNF>90s,\n"
             " * and adding two parentheses must not move pcrec onto the DNF\n"
             " * side. Prefilter-before-VM is therefore an ORDERING RULE (4.7),\n"
             " * not a tuning knob: a pattern whose prefilter can answer must\n"
@@ -4787,7 +4912,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         sb_puts(c, "\n");
     }
 
-    /* ---- rx_match_impl: the program ------------------------------------ */
+    /* ---- rx_match_anchored: the program ------------------------------------ */
     /* [M4.6d] THE MRL CEILING IS A PARAMETER, not a member of `<prefix>_work`
      * as k23_design.md §9.1's sketch had it. The design's obligation (a) is
      * that an entry which runs NO prefilter must default the ceiling to the
@@ -4800,17 +4925,17 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * artifact with no clamp keeps the signature it had before MRL existed
      * and stays byte-identical. */
     sb_printf(c,
-        "static ptrdiff_t %s_match_impl(const rx_ctx *ctx, %s_work *w%s%s)\n"
+        "static ptrdiff_t %s_match_anchored(const rx_ctx *ctx, %s_run_state *run%s%s)\n"
         "{\n"
-        "    const unsigned char *const s = ctx->subject;\n"
-        "    const size_t n = ctx->len;\n"
-        "    size_t pos = ctx->pos;\n"
-        "    ptrdiff_t *const stv = w->stv;\n",
+        "    const unsigned char *const subject = ctx->subject;\n"
+        "    const size_t subject_length = ctx->len;\n"
+        "    size_t scan_position = ctx->pos;\n"
+        "    ptrdiff_t *const slot_values = run->slot_values;\n",
         v.p, v.p,
         v.nclamp > 0 ? mrl_param : "",
         v.ngst > 0 ? gst_param : "");
     if (v.rungs & vm_rung_bit[VM_RUNG_CURSOR])
-        sb_printf(c, "    size_t %s_cur = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
+        sb_printf(c, "    size_t %s_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):\n"
                      "                             a plain local, UNTRAILED, whose save\n"
                      "                             point is a resume frame */\n",
                   v.p);
@@ -4827,15 +4952,30 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * here outlives its own commit. */
     for (int i = 0; i < nrev_total; i++)
         sb_printf(c,
-            "    size_t %s_rv%d_c = 0; unsigned long %s_rv%d_it = 0;\n"
-            "    unsigned %s_rv%d_mk = 0; ptrdiff_t %s_rv%d_prev = -1;\n"
-            "    int %s_rv%d_ns = 0;\n",
+            /* [M6-READ] These suffixes MUST match the ones the use sites
+             * NAMES (M6-READ): `cursor` is the walk cursor; `groups_seen`
+             * is the count the walk has witnessed, tested against the group
+             * count at the wstep label (`if (groups_seen >= ng)`);
+             * `revdet_group_span[j][2]` is the span the backward walk
+             * recovered for group j and `revdet_group_seen[j]` whether it has
+             * been witnessed. Read off THIS file's own emission sites (the
+             * `ga`/`gs`/`ns` locals and the "no group to witness" note),
+             * which is where the rung's vocabulary actually lives.
+             *
+             * These suffixes MUST match the ones the use sites
+             * compose with `%s_<suffix>` from the `rv` base -- they are the
+             * same variable, spelled in two places. The rename moved the uses
+             * and left the declarations, and a revdet artifact stopped
+             * compiling; the two-artifact altcls differential caught it. */
+            "    size_t %s_rv%d_cursor = 0; unsigned long %s_rv%d_iteration = 0;\n"
+            "    unsigned %s_rv%d_frame_mark = 0; ptrdiff_t %s_rv%d_prev_position = -1;\n"
+            "    int %s_rv%d_groups_seen = 0;\n",
             v.p, i, v.p, i, v.p, i, v.p, i, v.p, i);
     if (nrev_total && v.nrevcaps) {
-        sb_printf(c, "    ptrdiff_t %s_rvg[%d][2] = {{0}};\n", v.p, v.nrevcaps);
-        sb_printf(c, "    unsigned char %s_rvs[%d] = {0};\n", v.p, v.nrevcaps);
+        sb_printf(c, "    ptrdiff_t %s_revdet_group_span[%d][2] = {{0}};\n", v.p, v.nrevcaps);
+        sb_printf(c, "    unsigned char %s_revdet_group_seen[%d] = {0};\n", v.p, v.nrevcaps);
     }
-    sb_puts(c, "    (void)s; (void)n; (void)stv;\n");
+    sb_puts(c, "    (void)subject; (void)subject_length; (void)slot_values;\n");
     /* Three of the five per-loop locals are used only by shapes that do not
      * always occur — the walk cursor and `prev` exist only when a walk is
      * emitted, and the seen-counter only when the body has groups — and the
@@ -4845,11 +4985,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * shape and are deliberately not listed, so a future shape that stops using
      * one still gets caught. */
     for (int i = 0; i < nrev_total; i++)
-        sb_printf(c, "    (void)%s_rv%d_c; (void)%s_rv%d_prev; (void)%s_rv%d_ns;\n",
+        sb_printf(c, "    (void)%s_rv%d_cursor; (void)%s_rv%d_prev_position; (void)%s_rv%d_groups_seen;\n",
                   v.p, i, v.p, i, v.p, i);
     if (v.tracing)
-        sb_printf(c, "    fprintf(stderr, \"[%s] enter at pos %%zu of %%zu\\n\","
-                     " pos, n);\n", v.p);
+        sb_printf(c, "    fprintf(stderr, \"[%s] enter at scan_position %%zu of %%zu\\n\","
+                     " scan_position, subject_length);\n", v.p);
     sb_printf(c, "    goto %s_L0;\n\n", v.p);
     sb_puts(c, v.b->p ? v.b->p : "");
     /* The three trace lines. Built here rather than inline so the untraced
@@ -4857,7 +4997,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * one emitted shape, not two, for the same reason the traced macros above
      * keep the untraced order of operations: a debug build that took a
      * different path would be a tool that lies. */
-    char accept_tr[160], fail_tr[192], exhaust_tr[128];
+    /* [M6-READ] Widened: the renamed emitted locals (pos -> scan_position,
+     * w -> run, b_ -> frame_index) made every one of these trace strings
+     * longer, and snprintf TRUNCATES rather than failing. gcc's
+     * -Wformat-truncation caught two of the three; the third is widened with
+     * them because a silently cut trace line is a debugging tool that lies. */
+    char accept_tr[288], fail_tr[288], exhaust_tr[192];
     accept_tr[0] = fail_tr[0] = exhaust_tr[0] = 0;
     if (v.tracing) {
         /* [M6.2 wave E] ON A `\K` ARTIFACT THIS LINE SAYS BOTH SPANS, because
@@ -4871,22 +5016,22 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         if (v.nkreset > 0)
             snprintf(accept_tr, sizeof accept_tr,
                      "    fprintf(stderr, \"[%s] ACCEPT consumed [%%zu,%%zu)"
-                     " reported [%%td,%%zu)\\n\", ctx->pos, pos,"
-                     " stv[0] != PCREC_UNSET ? stv[0] : (ptrdiff_t)ctx->pos,"
-                     " pos);\n", v.p);
+                     " reported [%%td,%%zu)\\n\", ctx->pos, scan_position,"
+                     " slot_values[0] != PCREC_UNSET ? slot_values[0] : (ptrdiff_t)ctx->pos,"
+                     " scan_position);\n", v.p);
         else
             snprintf(accept_tr, sizeof accept_tr,
                      "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
-                     " ctx->pos, pos);\n", v.p);
+                     " ctx->pos, scan_position);\n", v.p);
         snprintf(fail_tr, sizeof fail_tr,
-                 "    fprintf(stderr, \"[%s] backtrack: %%u frame(s), trail %%u\\n\","
-                 " w->btn, w->trn);\n", v.p);
+                 "    fprintf(stderr, \"[%s] backtrack: %%u frame(subject), trail %%u\\n\","
+                 " run->resume_depth, run->trail_depth);\n", v.p);
         /* A separate guarded statement rather than a brace around the
          * existing one: that keeps the UNTRACED artifact's bytes identical
          * (the insert is simply empty), which is what run_vm_identity.sh's
          * gate cares about and what a debug flag has no business changing. */
         snprintf(exhaust_tr, sizeof exhaust_tr,
-                 "    if (w->btn == 0)\n"
+                 "    if (run->resume_depth == 0)\n"
                  "        fprintf(stderr, \"[%s] FAIL: resume stack empty\\n\");\n",
                  v.p);
     }
@@ -4895,44 +5040,44 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    /* 3.1: leftmost-first is FIRST COMPLETE MATCH WINS, not compare\n"
         "     * candidates. The VM returns here immediately and the capture\n"
         "     * slots at this instant are the answer — no candidate comparison,\n"
-        "     * no longest-wins, no second pass. The caller's caps array is\n"
+        "     * no longest-wins, no second pass. The caller's capture_spans array is\n"
         "     * filled by the ENTRY, not here (3.4). */\n"
         "%s"
-        "    return (ptrdiff_t)(pos - ctx->pos);\n"
+        "    return (ptrdiff_t)(scan_position - ctx->pos);\n"
         "\n%s_fail: __attribute__((unused));\n"
         "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
         "     * A step is one backtrack resumption (4.2), counted at exactly\n"
         "     * this place — so forward progress is FREE (a linear match over\n"
-        "     * 100 MB costs zero steps), the budget is subject-length-\n"
+        "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
         "     * independent, and the counter measures precisely the thing it is\n"
         "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
         "     * boundary, and it must not be traded against execution speed. */\n"
         "%s%s"
-        "    if (w->btn == 0) return -1;\n",
+        "    if (run->resume_depth == 0) return -1;\n",
         v.p, accept_tr, v.p, fail_tr, exhaust_tr);
     if (has_budget)
-        sb_printf(c, "    if (--w->budget < 0) return %s_R_STEPS;\n", v.up);
+        sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
     {
-        char pop_tr[224];
+        char pop_tr[352];
         pop_tr[0] = 0;
         if (v.tracing)
             snprintf(pop_tr, sizeof pop_tr,
                      "        fprintf(stderr, \"[%s] pop   #%%u resume L%%d at"
-                     " pos %%zu (rewind trail %%u -> %%u)\\n\",\n"
-                     "                b_, w->bt[b_].id, pos, w->trn,"
-                     " w->bt[b_].mark);\n", v.p);
+                     " scan_position %%zu (rewind trail %%u -> %%u)\\n\",\n"
+                     "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
+                     " run->resume_stack[frame_index].trail_mark);\n", v.p);
         sb_printf(c,
             "    {\n"
-            "        const unsigned b_ = --w->btn;\n"
-            "        pos = w->bt[b_].pos;\n"
+            "        const unsigned frame_index = --run->resume_depth;\n"
+            "        scan_position = run->resume_stack[frame_index].resume_position;\n"
             "%s", pop_tr);
     }
     sb_puts(c,
-        "        while (w->trn > w->bt[b_].mark) {\n"
-        "            w->trn--;\n"
-        "            stv[w->tr[w->trn].slot] = w->tr[w->trn].v;\n"
+        "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
+        "            run->trail_depth--;\n"
+        "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
         "        }\n"
-        "        goto *w->bt[b_].k;\n"
+        "        goto *run->resume_stack[frame_index].resume_label;\n"
         "    }\n"
         "}\n\n");
 
@@ -4981,15 +5126,19 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * a listing writes no artifact, and a traced artifact is a different
      * artifact by construction (the axis says so in its own text). */
     sb_printf(c,
-        "static void %s_caps_out(const %s_work *w, ptrdiff_t (*caps)[2],\n"
-        "                        size_t start, ptrdiff_t len)\n"
+        "/* Copy the run's slot values out into the caller's caps array. The\n"
+        " * whole-match pair is not written by the VM at all -- the entry knows\n"
+        " * where the attempt began and how long it ran. Group g lives in the\n"
+        " * slot PAIR (2g, 2g+1), which is why this indexes arithmetically. */\n"
+        "static void %s_report_captures(const %s_run_state *run, ptrdiff_t (*capture_spans)[2],\n"
+        "                        size_t match_start, ptrdiff_t match_length)\n"
         "{\n"
-        "    int k;\n"
+        "    int group;\n"
         "%s"
-        "    caps[0][1] = (ptrdiff_t)start + len;\n"
-        "    for (k = 1; k < %s_NCAPS; k++) {\n"
-        "        caps[k][0] = w->stv[2 * k];\n"
-        "        caps[k][1] = w->stv[2 * k + 1];\n"
+        "    capture_spans[0][1] = (ptrdiff_t)match_start + match_length;\n"
+        "    for (group = 1; group < %s_NCAPS; group++) {\n"
+        "        capture_spans[group][0] = run->slot_values[2 * group];\n"
+        "        capture_spans[group][1] = run->slot_values[2 * group + 1];\n"
         "    }\n"
         "}\n\n",
         v.p, v.p,
@@ -4997,24 +5146,24 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
           ? "    /* \\K: the reported start is where the winning path last\n"
             "     * crossed a \\K (slot 0, trailed), NOT where matching began.\n"
             "     * PCREC_UNSET means no \\K was crossed on this path. */\n"
-            "    caps[0][0] = w->stv[0] != PCREC_UNSET ? w->stv[0]\n"
-            "                                         : (ptrdiff_t)start;\n"
-          : "    caps[0][0] = (ptrdiff_t)start;\n",
+            "    capture_spans[0][0] = run->slot_values[0] != PCREC_UNSET ? run->slot_values[0]\n"
+            "                                         : (ptrdiff_t)match_start;\n"
+          : "    capture_spans[0][0] = (ptrdiff_t)match_start;\n",
         v.up);
 
     /* ---- <prefix>_search (§2.6) ---------------------------------------- */
     sb_printf(c,
-        "int %s(const unsigned char *s, size_t n, size_t startpos,\n"
-        "       ptrdiff_t (*caps)[2])\n"
+        "int %s(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+        "       ptrdiff_t (*capture_spans)[2])\n"
         "{\n"
-        "    %s_work w;\n"
+        "    %s_run_state run;\n"
         "    rx_ctx ctx;\n"
-        "    ptrdiff_t r;\n"
-        "    size_t start;\n"
+        "    ptrdiff_t result;\n"
+        "    size_t attempt_position;\n"
         "%s"
-        "    if (startpos > n) return 0;\n",
+        "    if (search_from > subject_length) return 0;\n",
         g.searchfn, v.p,
-        v.nclamp > 0 ? "    size_t ceil_;\n" : "");
+        v.nclamp > 0 ? "    size_t window_end;\n" : "");
 
     /* The recompute, spelled once and used only where a bound reads it. */
     char retry_win[512];
@@ -5022,10 +5171,10 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     if (v.nclamp > 0 && prefn)
         snprintf(retry_win, sizeof retry_win,
                  "        {\n"
-                 "            ptrdiff_t win[1][2];\n"
-                 "            if (%s(s, n, start, win) != 1) return 0;\n"
-                 "            start = (size_t)win[0][0];\n"
-                 "            ceil_ = (size_t)win[0][1] < n ? (size_t)win[0][1] : n;\n"
+                 "            ptrdiff_t window[1][2];\n"
+                 "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"
+                 "            attempt_position = (size_t)window[0][0];\n"
+                 "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
                  "        }\n",
                  prefn);
 
@@ -5074,40 +5223,40 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     if (prefn) {
         sb_printf(c,
             "    {\n"
-            "        ptrdiff_t win[1][2];\n"
-            "        if (%s(s, n, startpos, win) != 1) return 0;\n"
-            "        start = (size_t)win[0][0];\n"
+            "        ptrdiff_t window[1][2];\n"
+            "        if (%s(subject, subject_length, search_from, window) != 1) return 0;\n"
+            "        attempt_position = (size_t)window[0][0];\n"
             "%s"
             "    }\n",
             prefn,
             v.nclamp > 0
-              ? "        ceil_ = (size_t)win[0][1] < n ? (size_t)win[0][1] : n;\n"
+              ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
               : "");
     } else {
-        sb_puts(c, "    start = startpos;\n");
-        if (v.nclamp > 0) sb_puts(c, "    ceil_ = n;\n");
+        sb_puts(c, "    attempt_position = search_from;\n");
+        if (v.nclamp > 0) sb_puts(c, "    window_end = subject_length;\n");
     }
 
     sb_printf(c,
-        "    %s_work_init(&w);\n"
-        "    ctx.subject = s; ctx.len = n; ctx.ncap = 0;\n"
+        "    %s_run_state_init(&run);\n"
+        "    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n"
         "    ctx.caps = NULL; ctx.user = NULL;\n"
         "    for (;;) {\n"
-        "        ctx.pos = start;\n"
-        "        r = %s_match_impl(&ctx, &w%s%s);\n"
-        "        if (r == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
-        "        if (r == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
-        "        if (r == %s_R_WORK)   return PCREC_ERR_WORK;\n"
-        "        if (r >= 0) break;\n"
-        "        %s_unwind(&w);\n"
-        "        if (start >= n) return 0;\n"
-        "        start++;\n"
+        "        ctx.pos = attempt_position;\n"
+        "        result = %s_match_anchored(&ctx, &run%s%s);\n"
+        "        if (result == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
+        "        if (result == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
+        "        if (result == %s_R_WORK)   return PCREC_ERR_WORK;\n"
+        "        if (result >= 0) break;\n"
+        "        %s_reset_for_next_attempt(&run);\n"
+        "        if (attempt_position >= subject_length) return 0;\n"
+        "        attempt_position++;\n"
         "%s"
         "    }\n"
-        "    if (caps) %s_caps_out(&w, caps, start, r);\n"
+        "    if (capture_spans) %s_report_captures(&run, capture_spans, attempt_position, result);\n"
         "    return 1;\n"
         "}\n\n",
-        v.p, v.p, v.nclamp > 0 ? ", ceil_" : "",
+        v.p, v.p, v.nclamp > 0 ? ", window_end" : "",
         /* [M6.2 wave D] `startpos`, NOT `start`. `start` is the position this
          * ATTEMPT begins at and the loop below moves it; `\G` asks about the
          * position the SEARCH was asked to begin at, which is the parameter.
@@ -5115,7 +5264,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
          * which is exactly why every later pass must fail — and why passing
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
-        v.ngst > 0 ? ", startpos" : "",
+        v.ngst > 0 ? ", search_from" : "",
         v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
@@ -5174,19 +5323,19 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         " * all (anything below -1 traps the process); and the collapse let an\n"
         " * inner give-up read as a plain path failure, so an outer match could\n"
         " * report an ANSWER where a bound had actually blown. A caller that\n"
-        " * only asks 'did it match' still writes `r < 0` and is unaffected. */\n"
+        " * only asks 'did it match' still writes `result < 0` and is unaffected. */\n"
         "ptrdiff_t %s(const rx_ctx *ctx)\n"
         "{\n"
-        "    %s_work w;\n"
-        "    ptrdiff_t r;\n"
+        "    %s_run_state run;\n"
+        "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
-        "    %s_work_init(&w);\n"
-        "    r = %s_match_impl(ctx, &w%s%s);\n"
+        "    %s_run_state_init(&run);\n"
+        "    result = %s_match_anchored(ctx, &run%s%s);\n"
         "    /* No translation and no clamp: the impl's return space IS this\n"
         "     * contract's -- >= 0, -1, or one of the three R_ sentinels, which\n"
         "     * are the ERR_ codes. A defensive floor test here would be dead\n"
         "     * code pretending to be a safeguard. */\n"
-        "    return r;\n"
+        "    return result;\n"
         "}\n\n",
         g.matchfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
@@ -5205,19 +5354,19 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "/* The capture-delivering sibling. Same D49 return space as\n"
         " * <prefix>_match above -- it always had room for the codes (it is not\n"
         " * an rx_matchfn), and now the two agree instead of differing over a\n"
-        " * reservation only one of them was bound by. caps_out is UNTOUCHED on\n"
+        " * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on\n"
         " * every negative return, give-up included: a caller that gave up has\n"
         " * no captures, and A-8's untouched-wins rule does not bend for it. */\n"
-        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])\n"
+        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
         "{\n"
-        "    %s_work w;\n"
-        "    ptrdiff_t r;\n"
+        "    %s_run_state run;\n"
+        "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
-        "    %s_work_init(&w);\n"
-        "    r = %s_match_impl(ctx, &w%s%s);\n"
-        "    if (r < 0) return r;\n"
-        "    if (caps_out) %s_caps_out(&w, caps_out, ctx->pos, r);\n"
-        "    return r;\n"
+        "    %s_run_state_init(&run);\n"
+        "    result = %s_match_anchored(ctx, &run%s%s);\n"
+        "    if (result < 0) return result;\n"
+        "    if (capture_spans_out) %s_report_captures(&run, capture_spans_out, ctx->pos, result);\n"
+        "    return result;\n"
         "}\n\n",
         g.matchcapsfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",

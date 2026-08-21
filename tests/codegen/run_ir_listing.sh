@@ -20,8 +20,9 @@
 #                  worse.
 #   CHOICE POINTS  every RX_PUSH in the .c appears once, and its resume TARGET
 #                  matches the `&&<prefix>_L<n>` the push actually jumps to.
-#   SLOTS          the set of stv slots the .c writes equals the set the
-#                  listing shows written, and the layout covers RX_NSTATE.
+#   SLOTS          the set of slot_values slots the .c writes equals the
+#                  set the listing shows written, and the layout covers
+#                  RX_NSLOTS.
 #   ISLANDS        the count is 0 AND the .c contains no island table — the
 #                  honest-empty claim is checked against the artifact, not
 #                  taken on trust, so the section starts working the day a
@@ -179,7 +180,7 @@ for pat in "${PATTERNS[@]}"; do
         esac
     done < "$d/c.slotops"
     sort -n -u < "$d/c.slots.raw" > "$d/c.slots"
-    grep -oE 'set +stv\[[0-9]+\]' "$d/ir" | grep -oE '[0-9]+' | sort -n -u > "$d/ir.slots"
+    grep -oE 'set +slot_values\[[0-9]+\]' "$d/ir" | grep -oE '[0-9]+' | sort -n -u > "$d/ir.slots"
     if [ -n "$unresolved" ]; then
         bad "ir-listing[$pat]: SLOTS — RX_SET operand(s)$unresolved are neither a number nor a #define in the artifact; the extraction would silently drop them"
     elif [ ! -s "$d/c.slots" ]; then
@@ -201,7 +202,7 @@ for pat in "${PATTERNS[@]}"; do
     # project keeps re-learning, and it bit run_vm_identity.sh first.
     cn="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_NCAPS [0-9]+' | awk '{print $3}')"
     ir_n="$(grep -oE '^; caps +RX_NCAPS [0-9]+' "$d/ir" | grep -oE '[0-9]+' | head -1)"
-    cbt="$(grep -oE '^#define RX_BT_FRAMES [0-9]+' "$d/gen.c" | awk '{print $3}')"
+    cbt="$(grep -oE '^#define RX_RESUME_FRAMES [0-9]+' "$d/gen.c" | awk '{print $3}')"
     ctr="$(grep -oE '^#define RX_TRAIL_FRAMES [0-9]+' "$d/gen.c" | awk '{print $3}')"
     ir_cap="$(grep -oE '^; capacities +[0-9]+ resume frames, [0-9]+ trail' "$d/ir")"
     ir_bt="$(printf '%s' "$ir_cap" | grep -oE '[0-9]+ resume' | grep -oE '[0-9]+')"

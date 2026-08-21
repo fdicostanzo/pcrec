@@ -172,8 +172,8 @@ fi
 # The rung's own possessified shape is covered in tests/rungselect/.
 if gen fr_on '(x)(?:a|bc){0,4}d' -fno-revdet \
    && gen fr_off '(x)(?:a|bc){0,4}d' -fno-possessify -fno-revdet; then
-    bt_on="$(sed -n 's/^#define RX_BT_FRAMES //p' "$WORKDIR/fr_on.c")"
-    bt_off="$(sed -n 's/^#define RX_BT_FRAMES //p' "$WORKDIR/fr_off.c")"
+    bt_on="$(sed -n 's/^#define RX_RESUME_FRAMES //p' "$WORKDIR/fr_on.c")"
+    bt_off="$(sed -n 's/^#define RX_RESUME_FRAMES //p' "$WORKDIR/fr_off.c")"
     if [ "$(cuts "$WORKDIR/fr_on.c")" -gt 0 ] && [ "$(cuts "$WORKDIR/fr_off.c")" -eq 0 ]; then
         ok "a possessified frames-rung loop emits the CUT, and the denied build does not"
     else

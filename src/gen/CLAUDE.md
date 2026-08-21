@@ -8,6 +8,61 @@ attempt loop with EOL-variant states. Table emission exists because gcc compile
 time on huge computed-goto functions is superlinear (R1 A-3). Generated code
 has zero dependency on pcrec at build or run time.
 
+## [M6-READ] THE EMITTED VOCABULARY, and the two rules that keep it working
+
+The generated C is a first-class deliverable: it carries an orientation block,
+data-structure block comments with class and state LEGENDS, section banners,
+`//` line comments, and full names for every locally-scoped identifier. The
+style of record is `docs/design/m6read_samples/` (approved 2026-08-21).
+
+WHAT IS FROZEN. Everything with linkage, plus every name inside the shared
+`PCREC_RX_ABI_H` block — `rx_ctx` and its fields, `rx_matchfn`,
+`rx_group_entry`, `struct rx_info`, `PCREC_*`. That block is spec §2's
+verbatim quote and `emit_rx_abi_types` is EXCLUDED BY NAME from the rename
+tooling (`scripts/m6read_rename_emitted.py`), because it DECLARES fields
+called `pos` and `caps`: a rename that reaches it renames the ABI itself and
+every artifact stops compiling. Measured, not theorised.
+
+WHAT MOVED (emit_dfa.c): `fcls/ftr/facc/rcls/rtr/racc/first/fs/rs` ->
+`forward_byte_class / forward_next_state / forward_is_accepting /
+reverse_* / can_begin_match / forward_stay / reverse_stay`; locals
+`pos/last/st/est/pp/rst/erst/sfound/end/cl` -> `scan_position /
+last_accept_position / forward_state / forward_view_state / rewind_position /
+reverse_state / reverse_view_state / match_start_position /
+match_end_position / forward_class`. ENG_ATTEMPT: `cls/acc2/seed/gseed/t<N>`
+-> `byte_class / is_accepting_by_class / seed_state / gstart_seed_state /
+targets_<N>`.
+
+WHAT MOVED (emit_vm.c): `rx_work` -> `rx_run_state` with fields
+`slot_values / resume_stack / trail / resume_depth / trail_depth /
+steps_left / work_left`; `rx_match_impl` -> `rx_match_anchored`,
+`rx_unwind` -> `rx_reset_for_next_attempt`, `rx_caps_out` ->
+`rx_report_captures`; `RX_NSTATE` -> `RX_NSLOTS` (it counts SLOTS),
+`RX_BT_FRAMES` -> `RX_RESUME_FRAMES`, `RX_MRL_SHORT`/`RX_MRL_CAP` ->
+`RX_PRUNE_TOO_SHORT`/`RX_PRUNE_CLAMP_SPAN`.
+
+**RULE 1: A NAME CAN CARRY A PROPERTY, AND THE RENAME MUST PRESERVE IT.**
+`RX_MRL_*` was a GREPPABLE FAMILY, and tests/mrl asserts an ABSENCE with
+`grep -q 'RX_PRUNE_'` ("no bound under -fno-length-prune"). Renaming the two
+macros to unrelated names would have made that check match nothing and pass
+vacuously. The family prefix is why they are `RX_PRUNE_*` and not the shorter
+names the sample first proposed.
+
+**RULE 2: A VARIABLE SPELLED IN TWO PLACES WILL BE RENAMED IN ONE.** The
+revdet rung declares `%s_rv%d_mk` and USES `%s_mk` composed from an `rv`
+base. The two format strings share no substring, so a rename moved the uses,
+left the declarations, and emitted C that does not compile — while pcrec
+itself built fine. Nothing makes that agreement structural; the declaration
+site now carries a comment saying so. **Before touching emitted names, grep
+for BOTH the composed and the direct spelling.**
+
+THE TWO GATES. `tests/codegen/run_object_neutrality.sh` (two builds, compares
+.text/.rodata bytes and exported symbols) proves sameness; the existing
+two-artifact differentials (tests/altcls, tests/possessify) compile emitted C
+with `-Werror` and link two artifacts in one TU, which is a stronger
+COMPILABILITY check and is what caught rule 2's breakage. This pass needed
+both.
+
 `emit_unanchored` handles EOL and non-EOL machines in ONE function on purpose
 (M2.12): M2.7 forked a second copy for `$` patterns, and that fork is how the
 prefilter and skip loops silently went missing from the `$` path for an entire
@@ -56,9 +111,9 @@ itself. Four sites in this file, and what gates each:
   FOUR boundaries, not two, and the reverse pair is the sharp one. Forward
   init reads `s[startpos-1]`; reverse init reads `s[end]`, which cannot be a
   compile-time constant because the forward loop produces `end`; reverse
-  TERMINATION reads `s[startpos-1]` and is **ATTACHED TO THE `pp <= startpos`
+  TERMINATION reads `s[startpos-1]` and is **ATTACHED TO THE `rewind_position <= startpos`
   BREAK, not peeled below the loop** — the reverse loop has a SECOND exit
-  (dead state), and an epilogue would run on it, recording `sfound` at a
+  (dead state), and an epilogue would run on it, recording `match_start_position` at a
   position the walk never reached and indexing the accept table with a
   NEGATIVE state (R30 N9). The forward range guard MOVES ABOVE `int st = ...`
   under `fseed`, because that initializer now dereferences the subject.
@@ -460,7 +515,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
 
   The pieces worth knowing before editing it:
 
-  - **`stv`, one flat array** (§2.4) holding capture pairs, empty-iteration
+  - **`slot_values`, one flat array** (§2.4) holding capture pairs, empty-iteration
     guards and cursor low-water marks. One restore loop, one overflow bound,
     and a future slot class costs a layout row rather than a new save/restore
     path. `vm_count_slots` must mirror the emitter's own rung decisions
@@ -739,7 +794,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
       - the COUNTER rung is the one place the bound is NOT a compile-time
         constant. One body copy serves every trip, so the compile-time view of
         "mandatory iterations still owed" tops out at `K + residue`; the truth
-        is `count - stv[ctr] - j`, read from the TRAILED counter slot.
+        is `count - slot_values[ctr] - j`, read from the TRAILED counter slot.
         `Vm.fdyn` carries that as a C expression alongside `fmin`. **Leaving
         it out leaves K23 alive**, measured on `(a{1,3}){65}` (9 bytes of
         visible follow against a real 65) by the D27-blinded test author, not

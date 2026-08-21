@@ -33,6 +33,6 @@ SAB_DESC="the counter rung's per-copy follow-min drops its runtime term and keep
 SAB_DOC_FIGURE="tests/mrl/run_mrl_tests.sh §1b; k23_design.md §4.5, §14.6"
 SAB_COUNT=1
 SAB_BEFORE='                    dyn = vm_dyn_add(v, v->fdyn,
-                                     vm_rolef(v, "%lld * ((ptrdiff_t)%d - stv[%d])",
+                                     vm_rolef(v, "%lld * ((ptrdiff_t)%d - slot_values[%d])",
                                               bw, count - (i + 1), ctr));'
 SAB_AFTER='                    dyn = NULL;  /* SABOTAGE S62 */'

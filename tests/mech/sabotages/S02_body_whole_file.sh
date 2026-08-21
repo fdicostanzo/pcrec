@@ -15,5 +15,7 @@ SAB_SUITES="codegen"
 SAB_DESC="body() awk extractor: drop the '^(static )?int fn(' start anchor so it prints the whole file"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 3 fail"
 SAB_COUNT=1
-SAB_BEFORE="        \$0 ~ \"^(static )?int \" fn \"\\\\(\" { inside = 1 }"
+# [M6-READ] Single-quoted: the guard added to body() contains $ and \t, and
+# a double-quoted anchor needed four levels of escaping to say so.
+SAB_BEFORE='        $0 ~ "^(static )?int " fn "\\(" && $0 !~ ";[ \t]*$" { inside = 1 }'
 SAB_AFTER="        { inside = 1 }"

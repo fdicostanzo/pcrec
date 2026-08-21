@@ -32,6 +32,6 @@ SAB_DESC="the reverse self-loop skip emits its bare unconditional 'sfound = pp;'
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 2] reports an sfound writer not conditioned on an accept read"
 SAB_COUNT=1
 SAB_BEFORE='            if (!views && rd->st[K].up[UPC_PLAIN].accept)
-                sb_puts(c, "                sfound = pp;\n");'
+                sb_puts(c, "                match_start_position = rewind_position;\n");'
 SAB_AFTER='            if (rd->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */
-                sb_puts(c, "                sfound = pp;\n");'
+                sb_puts(c, "                match_start_position = rewind_position;\n");'

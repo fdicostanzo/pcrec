@@ -273,7 +273,7 @@ decides whether to perform it — and then run the row through
   and this checks it anyway, because the structural argument holds only while
   there is genuinely one call. Each listing SECTION is pinned to a fact
   derivable from the `.c`: the label SET both directions and duplicate-free,
-  every `RX_PUSH` with its resume target, the set of `stv` slots actually
+  every `RX_PUSH` with its resume target, the set of `slot_values` slots actually
   written, the header's RX_NCAPS/frames/trail against the artifact's own
   macros, and the island/callout counts against the artifact rather than
   against the listing's own claim (so those sections begin working the day a
@@ -602,14 +602,14 @@ tree — this file's whole charter, three more times:
    is weak: every class-indexed read must go through the guarded `cl` local,
    AND the `pos >= n` guard (with the scalar accept inside it) must precede
    the first such read. Sabotage S73.
-2. **§3.8.3.1 — no `sfound` at the reverse boundary except through the
+2. **§3.8.3.1 — no `match_start_position` at the reverse boundary except through the
    context-indexed accept, from ANY writer.** The design states an invariant
    rather than a patch because there is more than one writer: the reverse
-   SKIP's `sfound = pp;` is emitted under a COMPILE-TIME condition, so what
+   SKIP's `match_start_position = pp;` is emitted under a COMPILE-TIME condition, so what
    lands in the artifact is a bare unconditional assignment with no runtime
-   test to fail. The check enumerates every `sfound` assignment in the body
+   test to fail. The check enumerates every `match_start_position` assignment in the body
    and requires each to be conditioned on an accept read. A companion rule
-   (2b) pins R30 N9: the boundary accept must be ATTACHED to the `pp <=
+   (2b) pins R30 N9: the boundary accept must be ATTACHED to the `rewind_position <=
    startpos` break, because the loop has a SECOND exit (dead state) and an
    epilogue below it would record a position the walk never reached and index
    the accept table with a negative state. Sabotage S72.
@@ -663,7 +663,7 @@ correct for a self-comparison and is the number the conversion must move.
 Added 2026-08-21, **before** any emitted identifier was renamed, because the
 rename is what makes the hazard live. `run_ir_listing.sh`'s SLOTS block
 compares two extractions that are both pattern-matched SPELLINGS the emitter
-writes: `RX_SET(<slot>` in the `.c`, `set stv[n]` in the listing. Renaming
+writes: `RX_SET(<slot>` in the `.c`, `set slot_values[n]` in the listing. Renaming
 them together is the only CORRECT way to rename them — and doing so makes
 both greps match nothing, after which `diff -q` on two empty files passes.
 The check would go on reporting green while reading neither side.
@@ -905,7 +905,7 @@ structural surface is provenance rather than presence. Four checks:
   i.e. the REVERSE PASS's answer and the PRE-`\K` start, which
   assertions_design.md §6.3 rule 1 says may bound the search and must never be
   written out. Both directions are asserted in one artifact, plus that the
-  write goes through `RX_SET` rather than straight to `stv[0]` — the macro is
+  write goes through `RX_SET` rather than straight to `slot_values[0]` — the macro is
   what records the old value on the trail, and without it a `\K` crossed on a
   LOSING path stays crossed.
 - **rule 1b** — a `\K`-FREE VM artifact emits the PRE-WAVE `caps_out` body

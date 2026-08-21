@@ -93,7 +93,7 @@ ceiling_of() {  # ceiling_of <file>
     sed -n 's/^#define RX_VM_PRUNE_CEILING "\(.*\)"$/\1/p' "$1"
 }
 bounds_in() {   # bounds_in <file> -- how many MRL bound sites the artifact has
-    grep -c 'RX_MRL_SHORT(' "$1" 2>/dev/null || true
+    grep -c 'RX_PRUNE_TOO_SHORT(' "$1" 2>/dev/null || true
 }
 
 # Build a runnable matcher from an artifact already in $WORKDIR/<name>.c and
@@ -198,7 +198,7 @@ if gen ctron "$CTR" --step-budget=8 && gen ctroff "$CTR" --step-budget=8 -fno-le
     else
         bad "counter rung control: the denied build also answered at a budget of 8 ('$b'); this check is measuring nothing"
     fi
-    if [ "$(grep -c 'stv\[[0-9]*\])))' "$WORKDIR/ctron.c")" -gt 0 ]; then
+    if [ "$(grep -c 'slot_values\[[0-9]*\])))' "$WORKDIR/ctron.c")" -gt 0 ]; then
         ok "counter rung: the emitted bound READS THE COUNTER (a runtime term), which is what the compile-time form could not express"
     else
         bad "counter rung: no counter-derived bound in the artifact -- the bound is compile-time only, which is the defect this cell exists for"
@@ -223,7 +223,7 @@ if gen lat '((?:ab){10,20}){10,50}' --step-budget=64; then
     # difference is this project's own control-shares-its-source failure
     # family closing (panel F1).
     #
-    # The first version of this row grepped `RX_MRL_CAP(pos, <mr>, 2)` — the
+    # The first version of this row grepped `RX_PRUNE_CLAMP_SPAN(pos, <mr>, 2)` — the
     # stride ARGUMENT at a call site. That argument is present whether or not
     # the macro does anything with it, so the check passed on an artifact
     # whose rounding had been deleted: it asserted that the emitter knows the
@@ -237,16 +237,16 @@ if gen lat '((?:ab){10,20}){10,50}' --step-budget=64; then
     # consumes the cap by ASSIGNING it, and that is exactly why it needs a
     # check: dead code with no assertion behind it is deleted by the next
     # refactor that reads "dead" as "deletable".
-    capdef="$(grep -A1 '^#define RX_MRL_CAP' "$WORKDIR/lat.c" | tail -1)"
+    capdef="$(grep -A1 '^#define RX_PRUNE_CLAMP_SPAN' "$WORKDIR/lat.c" | tail -1)"
     case "$capdef" in
         *'/ (size_t)(w_)'*)
-            ok "lattice: RX_MRL_CAP's body carries the integer DIVISION by the stride -- the rounding is present, not merely the stride argument at the call site" ;;
-        *)  bad "lattice: RX_MRL_CAP's body is '$capdef' -- the division by the stride is gone, so the cap is no longer rounded onto the iteration lattice. It is deliberately dead TODAY (the folded loop bound is self-rounding) and it is kept as defence-in-depth for a future assigning site; removing it silently is what this check exists to stop" ;;
+            ok "lattice: RX_PRUNE_CLAMP_SPAN's body carries the integer DIVISION by the stride -- the rounding is present, not merely the stride argument at the call site" ;;
+        *)  bad "lattice: RX_PRUNE_CLAMP_SPAN's body is '$capdef' -- the division by the stride is gone, so the cap is no longer rounded onto the iteration lattice. It is deliberately dead TODAY (the folded loop bound is self-rounding) and it is kept as defence-in-depth for a future assigning site; removing it silently is what this check exists to stop" ;;
     esac
-    if grep -q 'RX_MRL_CAP(pos, [^,]*, 2)' "$WORKDIR/lat.c"; then
+    if grep -q 'RX_PRUNE_CLAMP_SPAN(scan_position, [^,]*, 2)' "$WORKDIR/lat.c"; then
         ok "lattice: the cap is applied at a stride-2 site, so the division above is reached with a stride the identity does not cover"
     else
-        bad "lattice: no stride-2 RX_MRL_CAP call site in the artifact -- the division is only ever exercised at W=1, where it is the identity"
+        bad "lattice: no stride-2 RX_PRUNE_CLAMP_SPAN call site in the artifact -- the division is only ever exercised at W=1, where it is the identity"
     fi
 fi
 
@@ -272,13 +272,13 @@ fi
 #   - no artifact may contain more CAP sites than guard sites.
 # ---------------------------------------------------------------------------
 if gen guard '(a{2,4}){3,9}bcdefghij'; then
-    gm="$(grep -A1 '^#define RX_MRL_SHORT' "$WORKDIR/guard.c" | tail -1)"
-    ncap="$(grep -c 'RX_MRL_CAP(' "$WORKDIR/guard.c")"
-    nshort="$(grep -c 'RX_MRL_SHORT(' "$WORKDIR/guard.c")"
+    gm="$(grep -A1 '^#define RX_PRUNE_TOO_SHORT' "$WORKDIR/guard.c" | tail -1)"
+    ncap="$(grep -c 'RX_PRUNE_CLAMP_SPAN(' "$WORKDIR/guard.c")"
+    nshort="$(grep -c 'RX_PRUNE_TOO_SHORT(' "$WORKDIR/guard.c")"
     case "$gm" in
         *'< (size_t)(mr_)'*'- (size_t)(mr_) < (p_)'*)
-            ok "underflow guard: RX_MRL_SHORT carries BOTH clauses -- the ceiling-below-minrest test AND the minrest-below-pos test, which is what makes RX_MRL_CAP's subtraction well-defined" ;;
-        *)  bad "underflow guard: RX_MRL_SHORT is '$gm' -- it no longer carries both clauses, so RX_MRL_CAP's subtraction can wrap and the folded scan bound stops bounding the subject (ASAN heap-buffer-overflow, sabotage S60)" ;;
+            ok "underflow guard: RX_PRUNE_TOO_SHORT carries BOTH clauses -- the ceiling-below-minrest test AND the minrest-below-pos test, which is what makes RX_PRUNE_CLAMP_SPAN's subtraction well-defined" ;;
+        *)  bad "underflow guard: RX_PRUNE_TOO_SHORT is '$gm' -- it no longer carries both clauses, so RX_PRUNE_CLAMP_SPAN's subtraction can wrap and the folded scan bound stops bounding the subject (ASAN heap-buffer-overflow, sabotage S60)" ;;
     esac
     # `nshort` counts the macro definition line too, so a strict > is the
     # comparison: every CAP site needs a guard, and the definition is spare.
@@ -324,14 +324,14 @@ if [ "$(bounds_in "$WORKDIR/ceil_def.c")" -gt 0 ]; then
     # (b) the retry recompute: the prefilter is called TWICE, once at entry and
     #     once per start++ retry, so a window can never be carried across an
     #     attempt it was not computed for.
-    nprefilter="$(grep -c 'rx_prefilter(s, n,' "$WORKDIR/ceil_def.c")"
-    if [ "$nprefilter" -ge 2 ] && grep -q 'rx_prefilter(s, n, start, win)' "$WORKDIR/ceil_def.c"; then
+    nprefilter="$(grep -c 'rx_prefilter(subject, subject_length,' "$WORKDIR/ceil_def.c")"
+    if [ "$nprefilter" -ge 2 ] && grep -q 'rx_prefilter(subject, subject_length, attempt_position, window)' "$WORKDIR/ceil_def.c"; then
         ok "ruling 2 (b): the start++ retry RECOMPUTES the window ($nprefilter prefilter call sites, one of them at 'start')"
     else
         bad "ruling 2 (b): the retry does not recompute the window ($nprefilter prefilter call sites) -- a stale window is too SMALL, the unsound direction"
     fi
     # (a) the no-prefilter entries default to the subject end.
-    if [ "$(grep -c 'rx_match_impl(ctx, &w, ctx->len)' "$WORKDIR/ceil_def.c")" -eq 2 ]; then
+    if [ "$(grep -c 'rx_match_anchored(ctx, &run, ctx->len)' "$WORKDIR/ceil_def.c")" -eq 2 ]; then
         ok "ruling 2 (a): both match-here entries pass ctx->len -- an entry that runs no prefilter defaults to the subject end"
     else
         bad "ruling 2 (a): the match-here entries do not pass ctx->len as the ceiling"
@@ -405,7 +405,7 @@ while IFS= read -r cp; do
     fi
     "$PCREC" -p rx --engine=vm -fno-length-prune -o "$WORKDIR/bi/off/g.c" -- "$cp" \
         >/dev/null 2>&1 || { nref=$((nref + 1)); continue; }
-    if has_clamp "$WORKDIR/bi/off/g.c" || grep -q 'RX_MRL_' "$WORKDIR/bi/off/g.c"; then
+    if has_clamp "$WORKDIR/bi/off/g.c" || grep -q 'RX_PRUNE_' "$WORKDIR/bi/off/g.c"; then
         nviol=$((nviol + 1))
         [ "$nviol" -le 3 ] && bad "D47.3 do-or-die: '$cp' carries a bound under -fno-length-prune"
     fi

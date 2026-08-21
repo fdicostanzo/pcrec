@@ -8,14 +8,14 @@
 # three.
 #
 # The sabotage removes the rewind at the fail label, so a backtrack restores
-# `pos` but leaves every capture write standing. Nothing about the emitted
+# `scan_position` but leaves every capture write standing. Nothing about the emitted
 # code's SHAPE changes — the trail is still built, the frames still carry their
 # marks — so no structural check can see it; only spans can.
 SAB_ID="S36-vm-undo-neutered"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="vm"
-SAB_DESC="the emitted fail label no longer rewinds the capture trail (undo becomes a no-op; pos is still restored)"
+SAB_DESC="the emitted fail label no longer rewinds the capture trail (undo becomes a no-op; scan_position is still restored)"
 SAB_DOC_FIGURE="tests/vm/run_vm_tests.sh: the oracle sweep fails (wrong spans across the backtracking families)"
 SAB_COUNT=1
-SAB_BEFORE="        \"        while (w->trn > w->bt[b_].mark) {\\n\""
+SAB_BEFORE="        \"        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\\n\""
 SAB_AFTER="        \"        while (0 \&\& w->trn > w->bt[b_].mark) {  /* SABOTAGE S36 */\\n\""

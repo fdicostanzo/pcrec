@@ -209,8 +209,8 @@ for spec in "${PATSPEC[@]}"; do
     # three-way start dispatch would be green against a dispatch that is
     # wrong everywhere.
     dis="none"
-    if grep -q '(start == startpos)' "$d/gen.c"; then dis="three-way"; nthree=$((nthree + 1))
-    elif grep -q 'const size_t start_max = startpos' "$d/gen.c"; then dis="startpos-anchored"; nthree=$((nthree + 1))
+    if grep -q '(start == search_from)' "$d/gen.c"; then dis="three-way"; nthree=$((nthree + 1))
+    elif grep -q 'const size_t start_max = search_from' "$d/gen.c"; then dis="startpos-anchored"; nthree=$((nthree + 1))
     fi
     dispatchlist="$dispatchlist  $(printf '%-8s %-18s' "$cls" "$pat") $dis
 "
@@ -246,7 +246,7 @@ done
 printf 'gstart-diff: the start dispatch each pattern'\''s DFA artifact emitted:\n%s' "$dispatchlist"
 
 if [ "$nthree" -ge 10 ]; then
-    ok "population: $nthree of $npat patterns emitted a \\G-aware start dispatch (a three-way \`start == startpos\` arm, or the \`start_max = startpos\` anchored form) — the sweep is exercising the machinery this wave added, not passing over patterns it never touched"
+    ok "population: $nthree of $npat patterns emitted a \\G-aware start dispatch (a three-way \`start == search_from\` arm, or the \`start_max = search_from\` anchored form) — the sweep is exercising the machinery this wave added, not passing over patterns it never touched"
 else
     bad "population: only $nthree of $npat patterns emitted a \\G-aware start dispatch. The sweep below would be green against a dispatch that is wrong on every pattern."
 fi
@@ -380,7 +380,7 @@ fi
 # artifact exports the entry unconditionally (F1). Both engines are driven,
 # because §9.3's own correction is that the two match-here entries do NOT
 # share a shape: the DFA's wraps `rx_search` plus a start filter, the VM's
-# calls `rx_match_impl` directly. A test of one is not a test of the other.
+# calls `rx_match_anchored` directly. A test of one is not a test of the other.
 ent_agree=0; ent_dis=0; ent_bad=0; ent_cells=0
 : > "$WORKDIR/entdiffs.txt"
 ei=0

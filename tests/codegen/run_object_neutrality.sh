@@ -74,7 +74,18 @@ trap cleanup EXIT
 grep -rhE '^pattern ' "$ROOT_DIR/tests" 2>/dev/null | sed 's/^pattern //' \
     | sort -u > "$WORKDIR/pats.all"
 if [ "$NEUT_N" != "0" ]; then
-    head -n "$NEUT_N" "$WORKDIR/pats.all" > "$WORKDIR/pats"
+    # STRATIFIED, not the first N. A bounded run must still span the SHAPE
+    # space, and the corpus is sorted, so `head` samples one alphabetical
+    # corner of it. Measured the hard way during [M6-READ]: NEUT_N=60 with
+    # `head` reported 41 of 41 clean while the emitter was producing
+    # revdet-rung artifacts that did not COMPILE -- the head of the corpus
+    # contains no such pattern, and it took a different suite to notice.
+    # Every k-th line covers the same count across the whole file.
+    total=$(wc -l < "$WORKDIR/pats.all")
+    awk -v want="$NEUT_N" -v tot="$total" \
+        'BEGIN { step = (tot > want && want > 0) ? tot / want : 1 }
+         { if (int((NR - 1) / step) != int(NR / step) || step <= 1) print }' \
+        "$WORKDIR/pats.all" | head -n "$NEUT_N" > "$WORKDIR/pats"
 else
     cp "$WORKDIR/pats.all" "$WORKDIR/pats"
 fi

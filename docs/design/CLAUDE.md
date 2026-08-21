@@ -873,8 +873,9 @@ append-only or historical records.
   `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
   commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
   of them.
-- `m6read_samples/` — **PROPOSED, awaiting Frank's style ruling** ([M6-READ]
-  sample stage, 2026-08-21): the ONE sample commented artifact the row owes
+- `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
+  RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
+  stage): the ONE sample commented artifact the row owes
   before any emitter conversion, delivered as two hand-edited before/after
   pairs (a DFA artifact with prefilter + forward scan + reverse pass, and a
   capture-bearing VM artifact) plus the naming scheme, the style rationale
@@ -903,8 +904,29 @@ append-only or historical records.
   "ABI" stops (parameter spellings have no linkage and were renamed in `.c`
   and `.h`; the shared `PCREC_RX_ABI_H` block is untouched, so note (ii)'s
   re-quote stays body-text-only) and by the deliberate NON-rename of the
-  `rx_L<N>` labels, which are shared vocabulary with `--emit-ir`. See its own
-  CLAUDE.md.
+  `rx_L<N>` labels, which are shared vocabulary with `--emit-ir`.
+  **CONVERSION OUTCOME (same day):** built into both emitters, and §3b of the
+  README records the four places the built version had to deviate from the
+  approved sample — four of the five proposed macros are unsafe because ONE
+  ARTIFACT CAN HOLD MORE THAN ONE ENGINE (OS-0b) and a row stride is a
+  per-engine fact; `RX_TOO_SHORT`/`RX_CLAMP_SPAN` became `RX_PRUNE_*` because
+  `RX_MRL_*` was a GREPPABLE FAMILY that `tests/mrl` asserts an ABSENCE
+  through, and two unrelated names would have made that check pass vacuously
+  (**a rename must preserve the PROPERTIES names carry, not just their
+  readability** — the single most transferable finding of the lane); the VM's
+  cursor took the DFA's `scan_position` so one role has one name across
+  artifacts; and four revdet-rung names are deliberately left short because
+  their meaning could not be established with enough confidence, a
+  confidently-wrong full name being worse for a reader than a short one. The
+  conversion also found that the rename reaches ENGLISH four distinct ways
+  (possessives, pluralisation literals, an apostrophe terminating a quoted awk
+  block, and articles), that longer names silently TRUNCATE in fixed `char`
+  buffers (three sites, one of them making the IR listing misreport a slot
+  write), and that a BOUNDED gate implemented as `head -n N` over a sorted
+  corpus is a fixed fixture with a blind spot — it reported green three times
+  while the emitter produced revdet artifacts that did not COMPILE, caught
+  only by `tests/altcls`'s two-artifact `-Werror` differential. See its own
+  CLAUDE.md and `src/gen/CLAUDE.md`'s emitted-vocabulary section.
 - `design_registry_selectors.md` — SR-9 design proposal for string selectors
   in the construct registry. §2's "one uniform rule" mechanism was REVIEWED
   AND SUPERSEDED by R6 (2026-08-10; not built): the registry can identify a
