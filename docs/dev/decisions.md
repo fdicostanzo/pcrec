@@ -5075,3 +5075,46 @@ which is what "the appropriate time" means: revisit after those exist.
 **Revisit when:** M6.6 lands lookaround AND the first insertion
 producer exists; or a real customer demands a non-LF convention sooner
 (then DD-11 re-opens with this architecture as the leading candidate).
+
+## D65 — registry BUILT-STATUS ratified wholesale: per-construct, derived at dump time, three-valued (Frank, 2026-08-21, thirty-fifth session)
+
+**Decision.** The registry built-status memo
+(docs/design/registry_built_status_memo.md, REGSTATUS lane) is RATIFIED
+WHOLESALE, all five recommendations: (1) per-CONSTRUCT granularity —
+module `assertions` sat at 3/8, 5/8, 6/8, 7/8 built across its five
+waves, so a per-module value would have lied at four of five
+checkpoints; (2) DERIVED AT DUMP TIME — `--list-syntax` gains a column
+computed by driving each row's own syntax through a gate-forced-open
+doorway call (the isolated-Ctx machinery --probe-ask/--explain already
+use); never a hand-declared column (ext.c's own UNBUILT comment already
+declined "a second built column somebody would have to keep in sync
+with the ports"); (3) THREE-VALUED vocabulary — built / unbuilt / "—"
+(RS_BASE and RS_REJECTED rows, where the question does not apply), plus
+a registry_check DEFECT ASSERTION (not a rendered value) for a row
+whose own well-formed syntax produces neither a clean answer nor the
+enabled-but-unbuilt refusal shape; (4) the "How to read the generated
+index" section SHRINKS, not deletes — the RS_BASE-is-a-base-grammar
+explanation stays, the shipped-status-lives-in-the-prose caveat
+retires with the column that obsoletes it; (5) the many-names-one-row
+wrinkle (modifiers' twelve letters share one port whose switch decides
+each) needs NO schema change — driving each row's OWN syntax resolves
+it — and is recorded so the choice is deliberate when the next
+many-names-one-row module arrives.
+
+**Why.** The [M6.2] repair slice refuted the row-flip repair and named
+this field as the real fix; the memo found the compiler already
+computes built-ness per construct (RegRow port kinds + the
+enabled-but-unbuilt refusal), so the index can expose an existing fact
+with the same cannot-drift property (SR-4) the rest of the generated
+section has, rather than adding a second source of truth.
+
+**Consumers.** --list-syntax and the generated index change;
+registry_check gains the defect assertion; PC-3, tests/reject, the
+RS_BASE=>ROADMAP_NONE pairing, and the gate-CLOSED diagnostics
+deliberately do NOT change. Interacts with [DOC-DRV] (the page
+restructure), which lands separately and later.
+
+**Revisit when:** a module whose constructs cannot be probed by
+compiling the row's own syntax arrives (the memo's Q5 wrinkle in a
+form the per-row probe cannot resolve), or the isolated-Ctx probe
+machinery changes shape.
