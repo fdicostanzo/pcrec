@@ -95,20 +95,40 @@ def oracle_run(binpath, workdir, pattern, subject, startpos):
 
 
 def check_file(binpath, workdir, path):
-    npass = nfail = 0
+    npass = nfail = nflag = 0
     pattern = None
     perr = False
+    flagged = False
     for lineno, kind, data in parse_rxt(path):
         if kind == "pattern":
             pattern, _ = data
             perr = False
+            flagged = False
             continue
         if kind == "perr":
             perr = True
             continue
-        if kind in ("flags", "features", "g", "gp"):
+        if kind == "flags":
+            # A `flags` directive puts the block OUTSIDE this oracle's domain:
+            # tests/fuzz/pcre2_oracle.c compiles at options=0 by deliberate
+            # project-wide pin (adopting any flag is a re-measurement event),
+            # so verifying a flagged block here would compare a with-flags
+            # expectation against a without-flags oracle — wrong in the silent
+            # direction. Skip the block LOUDLY (counted below), the same shape
+            # as verify_rxt.py's `# pcre2-only` skip. Found at the [M6.2] d27
+            # merge review, where a `flags i` cell was mis-scored a
+            # disagreement. Spell per-block caselessness inline ((?i)...) to
+            # keep a cell verifiable here.
+            if data:
+                flagged = True
+            continue
+        if kind in ("features", "g", "gp"):
             continue
         if perr or pattern is None:
+            continue
+        if flagged:
+            if kind in ("m", "n", "ms", "ns"):
+                nflag += 1
             continue
         if kind == "m":
             subj, start, end = data
@@ -131,7 +151,7 @@ def check_file(binpath, workdir, path):
             print("FAIL %s:%d: pattern %r subject %r startpos %d: "
                   "file says %s, libpcre2 says %s"
                   % (path, lineno, pattern, subj, sp, want, got))
-    return npass, nfail
+    return npass, nfail, nflag
 
 
 def main(argv):
@@ -157,19 +177,25 @@ def main(argv):
                   "box, so the \\Z expectations cannot be re-verified here. "
                   "Install libpcre2-8-0 to run this check.")
             return 0
-        total_p = total_f = 0
+        total_p = total_f = total_fl = 0
         for path in files:
-            p, f = check_file(binpath, workdir, path)
-            print("  %-44s %4d cells verified against libpcre2%s"
+            p, f, fl = check_file(binpath, workdir, path)
+            print("  %-44s %4d cells verified against libpcre2%s%s"
                   % (os.path.relpath(path, ROOT), p,
-                     "" if f == 0 else ", %d DISAGREE" % f))
+                     "" if f == 0 else ", %d DISAGREE" % f,
+                     "" if fl == 0 else
+                     ", %d in `flags` blocks skipped (options=0 pin)" % fl))
             total_p += p
             total_f += f
+            total_fl += fl
     if total_p == 0:
         print("verify_pcre2: 0 cells checked — the corpus has no population")
         return 1
-    print("verify_pcre2: %d cells agree with libpcre2, %d disagree"
-          % (total_p, total_f))
+    print("verify_pcre2: %d cells agree with libpcre2, %d disagree%s"
+          % (total_p, total_f,
+             "" if total_fl == 0 else
+             ", %d skipped in `flags` blocks (outside the options=0 oracle)"
+             % total_fl))
     return 1 if total_f else 0
 
 

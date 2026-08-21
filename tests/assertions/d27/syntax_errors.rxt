@@ -1,0 +1,172 @@
+# tests/assertions/d27/syntax_errors.rxt -- spellings that are genuine PCRE2
+# SYNTAX errors (libpcre2 rejects at compile time), not merely pcrec
+# feature-gate refusals. Every perr block here is checked by ../oracle.py
+# against libpcre2's own compile verdict -- see the per-block comment for
+# the exact libpcre2 errorcode/message it measured. Contrast gating.rxt,
+# where the perr blocks are pcrec POLICY (module-gating) rather than PCRE2
+# syntax facts, and are marked `# pcrec-gate-only` so oracle.py skips them
+# rather than mis-scoring pcrec's own design choice as a PCRE2 fact.
+#
+# The common thread below: every bare zero-width assertion in this module
+# is UNREPEATABLE -- PCRE2 error 109 ("quantifier does not follow a
+# repeatable item"), the same error a bare quantified ^ already gets
+# (docs/testing.md's own U-series note). All eight are checked, greedy and
+# lazy forms both, plus one \K-specific restriction (error 199) that
+# exists independently of pcrec's own module-implementation status.
+
+# \A is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \A*
+features assertions
+perr
+# \A unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \A+
+features assertions
+perr
+# \A unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \A?
+features assertions
+perr
+# \A unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \A{2,3}
+features assertions
+perr
+# \A unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \A*?
+features assertions
+perr
+
+# \z is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \z*
+features assertions
+perr
+# \z unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \z+
+features assertions
+perr
+# \z unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \z?
+features assertions
+perr
+# \z unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \z{2,3}
+features assertions
+perr
+# \z unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \z*?
+features assertions
+perr
+
+# \Z is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \Z*
+features assertions
+perr
+# \Z unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \Z+
+features assertions
+perr
+# \Z unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \Z?
+features assertions
+perr
+# \Z unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \Z{2,3}
+features assertions
+perr
+# \Z unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \Z*?
+features assertions
+perr
+
+# \b is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \b*
+features assertions
+perr
+# \b unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \b+
+features assertions
+perr
+# \b unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \b?
+features assertions
+perr
+# \b unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \b{2,3}
+features assertions
+perr
+# \b unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \b*?
+features assertions
+perr
+
+# \B is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \B*
+features assertions
+perr
+# \B unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \B+
+features assertions
+perr
+# \B unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \B?
+features assertions
+perr
+# \B unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \B{2,3}
+features assertions
+perr
+# \B unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \B*?
+features assertions
+perr
+
+# \G is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \G*
+features assertions
+perr
+# \G unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \G+
+features assertions
+perr
+# \G unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \G?
+features assertions
+perr
+# \G unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \G{2,3}
+features assertions
+perr
+# \G unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \G*?
+features assertions
+perr
+
+# \K is a bare zero-width assertion -- unrepeatable, greedy *. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \K*
+features assertions
+perr
+# \K unrepeatable, greedy +. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \K+
+features assertions
+perr
+# \K unrepeatable, greedy ?. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \K?
+features assertions
+perr
+# \K unrepeatable, bounded {2,3}. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \K{2,3}
+features assertions
+perr
+# \K unrepeatable, LAZY *? -- laziness does not change the "nothing to repeat" verdict. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern \K*?
+features assertions
+perr
+
+# an inline-option group is likewise unrepeatable as a bare token. (libpcre2 error 109: quantifier does not follow a repeatable item)
+pattern (?m)*
+features modifiers,assertions
+perr
+
+# \K specifically is forbidden inside ANY lookaround (PCRE2 error 199), independent of the "nothing to repeat" family above. pcrec today refuses this pattern anyway (lookaround is UNIMPLEMENTED -- module enabled but "(?<...) is not implemented yet", a different diagnostic) -- both are nonzero exit so this perr passes either way; once lookaround lands, this cell is the one that starts checking whether pcrec ALSO enforces PCRE2's own \K-in-lookaround restriction rather than silently mismatching it. (libpcre2 error 199: \K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK))
+pattern (?<=a\Kb)c
+features assertions,lookaround
+perr

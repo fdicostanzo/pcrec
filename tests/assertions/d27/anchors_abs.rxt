@@ -1,0 +1,169 @@
+# tests/assertions/d27/anchors_abs.rxt -- D27-blinded corpus for \A, \z, \Z.
+#
+# Author was blind to pcrec's src/ and existing tests/ (D27); every
+# expectation here is computed from real libpcre2 (see ../oracle.py, which
+# re-checks this file mechanically -- do not hand-edit a number without
+# re-running it). options=0 throughout except where `flags i` appears.
+#
+# \A: start of subject, unconditionally, regardless of startpos.
+# \z: end of subject, unconditionally.
+# \Z: end of subject, OR immediately before a final newline that is the
+#      subject's very last byte (PCRE2's carve-out; a second trailing
+#      newline defeats it -- measured below, not assumed).
+
+# \A anchors to absolute offset 0 -- unaffected by startpos (contrast base ^, which has the same rule; match_api.md S3.1).
+pattern \Aabc
+features assertions
+m "abc" 0 3
+n "xabc"
+# startpos=1 does NOT relocate \A's anchor to 1 -- still requires absolute 0.
+ns 1 "xabc"
+# same point: a second literal "abc" at offset 3 is not "the start of the subject".
+ns 3 "abcabc"
+
+# \A composed with alternation.
+pattern \A(cat|dog)
+features assertions
+m "cat" 0 3
+g 1 0 3
+m "dog" 0 3
+g 1 0 3
+n "xcat"
+m "catcat" 0 3
+g 1 0 3
+
+# \A composed with a character class + quantifier.
+pattern \A[a-c]+
+features assertions
+m "cba123" 0 3
+n "123abc"
+
+# \A inside a repeated group: only the FIRST iteration can ever be at offset 0, so + can never take a second iteration -- placement x quantifier interaction.
+pattern (\Aa)+
+features assertions
+m "aaa" 0 1
+g 1 0 1
+m "a" 0 1
+g 1 0 1
+n ""
+
+# mid-pattern placement: \A after a mandatory non-empty literal can NEVER hold (offset would have to be both >=1 and ==0) -- an unsatisfiable pattern, not a syntax error.
+pattern x\Ay
+features assertions
+n "xy"
+n ""
+
+# trailing placement: same unsatisfiability from the other side.
+pattern ab\A
+features assertions
+n "ab"
+n ""
+
+# leading \z: "abc" would have to occupy zero bytes at the subject's end -- unsatisfiable (contrast \A leading, which IS satisfiable).
+pattern \zabc
+features assertions
+n "abc"
+
+# \z trailing -- the ordinary, satisfiable placement.
+pattern abc\z
+features assertions
+m "abc" 0 3
+n "abcx"
+m "xabc" 1 4
+ms 1 "xabc" 1 4
+ns 4 "xabc"
+
+# \z inside a repeated group: only an iteration landing on the LAST byte can hold, so + effectively collapses to exactly one iteration at the end.
+pattern (a\z)+
+features assertions
+m "aaa" 2 3
+g 1 2 3
+m "a" 0 1
+g 1 0 1
+n ""
+
+# \Z basics, including the ONE-trailing-newline carve-out and its failure to extend to two.
+pattern a\Z
+features assertions
+m "a" 0 1
+# single trailing newline: carve-out applies.
+m "a\n" 0 1
+# TWO trailing newlines: carve-out does NOT apply -- \Z only recognizes being immediately before the subject's very last byte when that byte is a newline, not before a run of them.
+n "a\n\n"
+n "ab"
+# startpos=1, \Z with the found "a" ending exactly at the subject end.
+ms 1 "aa" 1 2
+
+# \Z under CRLF: this build's libpcre2 default newline convention is LF-only (measured via pcre2_config_8(PCRE2_CONFIG_NEWLINE) -- see README), so \r\n is NOT recognized as one newline unit here; the carve-out looks only for a lone final \n.
+pattern a\Z
+features assertions
+# "a" can only match at offset 0-1; \Z there sees "\r\n" (2 bytes) remaining, not a bare final newline -- fails under LF-only convention.
+n "a\r\n"
+
+# triad cell (no trailing newline): \Z
+pattern a\Z
+features assertions
+m "a" 0 1
+
+# triad cell (no trailing newline): \z
+pattern a\z
+features assertions
+m "a" 0 1
+
+# triad cell (no trailing newline): bare $ (base syntax, no module needed) -- non-multiline $ is documented as \Z-equivalent; this is the direct check.
+pattern a$
+m "a" 0 1
+
+# triad cell (one trailing newline): \Z
+pattern a\Z
+features assertions
+m "a\n" 0 1
+
+# triad cell (one trailing newline): \z
+pattern a\z
+features assertions
+n "a\n"
+
+# triad cell (one trailing newline): bare $ (base syntax, no module needed) -- non-multiline $ is documented as \Z-equivalent; this is the direct check.
+pattern a$
+m "a\n" 0 1
+
+# triad cell (two trailing newlines): \Z
+pattern a\Z
+features assertions
+n "a\n\n"
+
+# triad cell (two trailing newlines): \z
+pattern a\z
+features assertions
+n "a\n\n"
+
+# triad cell (two trailing newlines): bare $ (base syntax, no module needed) -- non-multiline $ is documented as \Z-equivalent; this is the direct check.
+pattern a$
+n "a\n\n"
+
+# \A and \z together == whole-subject-exact-match.
+pattern \Aabc\z
+features assertions
+m "abc" 0 3
+n "abcd"
+n "xabc"
+
+# empty subject.
+pattern \A
+features assertions
+m "" 0 0
+# empty subject.
+pattern \z
+features assertions
+m "" 0 0
+# empty subject.
+pattern \Z
+features assertions
+m "" 0 0
+
+# boundary of subject: startpos == subject length.
+pattern abc\z
+features assertions
+# searching from the very end can never find a nonempty 3-byte match.
+ns 3 "abc"

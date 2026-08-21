@@ -1,0 +1,116 @@
+# tests/assertions/d27/multiline.rxt -- D27-blinded corpus for (?m).
+#
+# IMPORTANT pcrec-specific finding (see ../README.md FINDINGS): (?m) is
+# gated by TWO modules in pcrec, not one. The group syntax "(?m...)" itself
+# is base to module 'modifiers' (already default-enabled via std1); the
+# MULTILINE MATCHING EFFECT is separately gated by module 'assertions'.
+# `features modifiers,assertions` is required for every positive cell
+# below; the gating/ directory-adjacent perr cells in gating.rxt exercise
+# each partial combination on its own.
+#
+# (?m) makes ^ match at the start of the subject AND immediately after
+# every internal newline; $ matches at the end of the subject (or before a
+# trailing newline, like non-multiline $/\Z) AND immediately before every
+# internal newline. Verified against real libpcre2 throughout.
+
+# multiline ^ at subject start (ordinary case).
+pattern (?m)^a
+features modifiers,assertions
+m "a" 0 1
+n "xa"
+
+# multiline ^ after an internal newline.
+pattern (?m)^b
+features modifiers,assertions
+m "a\nb" 2 3
+ms 2 "a\nb" 2 3
+
+# multiline $ before an internal newline.
+pattern (?m)a$
+features modifiers,assertions
+m "a\nb" 0 1
+
+# multiline ^$ matching an EMPTY line between two newlines.
+pattern (?m)^$
+features modifiers,assertions
+m "a\n\nb" 2 2
+ms 2 "a\n\nb" 2 2
+
+# every ^ position, walked one startpos at a time -- one trailing newline.
+pattern (?m)^
+features modifiers,assertions
+m "a\n" 0 0
+ns 1 "a\n"
+# right after the SINGLE trailing newline, at the true subject end: NOT a valid ^ position -- the mirror of \Z's "final newline" carve-out (a) above, this time for ^ rather than $. Cross-verified in isolated subprocess calls (README FINDINGS) after an unrelated transient ctypes read looked otherwise once.
+ns 2 "a\n"
+
+# every ^ position -- TWO trailing newlines. Position 2 (between the two \n bytes) is NOT the subject's final newline -- it is a genuine internal empty-line start and DOES count. Position 3 (true end, right after the SECOND/final \n) is the same carve-out as the single-newline case above and does NOT count.
+pattern (?m)^
+features modifiers,assertions
+m "a\n\n" 0 0
+# unanchored from 1: the nearest valid ^ ahead is position 2 (an internal empty line), not 1 itself.
+ms 1 "a\n\n" 2 2
+# position 2 itself: valid -- it is followed by more subject (the second \n), so it is not the end-of-subject carve-out.
+ms 2 "a\n\n" 2 2
+# position 3: true subject end, immediately after the FINAL newline -- carve-out applies, no match.
+ns 3 "a\n\n"
+
+# SCOPED (?m:...): multiline applies only to the ^ inside the group; the $ OUTSIDE the group is still non-multiline (subject-end/before-final-newline only).
+pattern (?m:^a)$
+features modifiers,assertions
+# the scoped ^a can only hold at offset 0 (char is "x", fails) or offset 3 (right after the internal \n, char is "b", fails) -- never matches "a" at all.
+n "xa\nb"
+# scoped ^a DOES match at offset 0 ("a" at subject start); but the outer, non-multiline $ then has to hold at offset 1, where "\nb" remains -- not end-of-subject and not immediately before a bare trailing newline, so $ fails and the whole pattern fails.
+n "a\nb"
+
+# mirror of the above: ^ OUTSIDE the group stays non-multiline (subject start only), $ INSIDE is multiline.
+pattern ^a(?m:$)
+features modifiers,assertions
+m "a\nb" 0 1
+
+# mid-pattern (?-m) toggling OFF: after the switch, ^ reverts to non-multiline (subject-start only) for the REST of the pattern.
+pattern (?m)^a(?-m)^b
+features modifiers,assertions
+# second ^ (now non-multiline) cannot hold at offset 2, only at absolute offset 0 -- and offset 0 is already consumed by the first ^a.
+n "a\nb"
+
+# (?-m:...) as a SCOPED off-switch (contrast the unscoped (?-m) above): identical outcome here since nothing follows the group.
+pattern (?m)^a(?-m:^b)
+features modifiers,assertions
+n "a\nb"
+
+# (?m) composed with alternation + a capturing group, per line.
+pattern (?m)^(a|b)$
+features modifiers,assertions
+m "x\na\nc" 2 3
+g 1 2 3
+ms 2 "x\na\nc" 2 3
+g 1 2 3
+
+# (?m) composed with a quantifier.
+pattern (?m)^a+$
+features modifiers,assertions
+ms 2 "x\naaa\nc" 2 5
+
+# (?m) composed with a character class.
+pattern (?m)^[a-c]$
+features modifiers,assertions
+ms 2 "x\nb\nc" 2 3
+
+# \A and \Z are UNAFFECTED by (?m) -- there is no multiline variant of either; this block is the ^$ pair for direct contrast against the next two blocks.
+pattern (?m)^a$
+features modifiers,assertions
+ms 2 "x\na\nc" 2 3
+
+# \A stays absolute-start-only even with (?m) active.
+pattern (?m)\Aa
+features modifiers,assertions
+ns 2 "x\na\nc"
+m "a\nc" 0 1
+
+# \Z stays end-of-subject-only (with its usual single-trailing-newline carve-out) even with (?m) active -- it does NOT gain per-line semantics.
+pattern (?m)a\Z
+features modifiers,assertions
+# "a" at offset 2 is followed by "\nc", not the subject end or a bare trailing newline -- \Z fails even though (?m)^$ would have matched here.
+ns 2 "x\na\nc"
+ms 4 "x\nc\na" 4 5

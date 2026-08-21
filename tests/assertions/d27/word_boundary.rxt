@@ -1,0 +1,93 @@
+# tests/assertions/d27/word_boundary.rxt -- D27-blinded corpus for \b, \B.
+#
+# \b: a transition between a word char ([A-Za-z0-9_], ASCII, no module
+#      dependency on 'classes') and a non-word char (or subject edge).
+# \B: the complement -- NOT such a transition.
+# The byte immediately BEFORE startpos is part of the boundary computation
+# even though it is before where the search begins (match_api.md's
+# startpos contract): a search starting mid-subject still "sees" context.
+
+# \b framing a whole word.
+pattern \bcat\b
+features assertions
+m "cat" 0 3
+m "a cat sat" 2 5
+# "cat" mid-word on both sides -- no boundary at either end.
+n "concatenate"
+# trailing \b fails: s continues the word.
+n "cats"
+m "cat." 0 3
+
+# \B: "cat" NOT preceded by a boundary (mid-word only).
+pattern \Bcat
+features assertions
+m "concatenate" 3 6
+# subject-start IS a boundary (edge counts), so \B fails here.
+n "cat"
+n " cat"
+
+# startpos>0: the byte BEFORE startpos still governs the boundary test, even though the search begins later.
+pattern \bcat
+features assertions
+m "cat" 0 3
+# byte before offset 1 is "x" (word char); "c" is also a word char -- NO boundary at 1, even though the search starts exactly there.
+ns 1 "xcat"
+# byte before offset 1 is a space -- boundary exists at 1.
+ms 1 " cat" 1 4
+
+# startpos>0, mirrored for \B.
+pattern \Bcat
+features assertions
+ms 1 "xcat" 1 4
+ns 1 " cat"
+
+# \b composed with \w+ (module classes) -- cross-module composition axis.
+pattern \b\w+\b
+features classes,assertions
+m "  hello  " 2 7
+n ""
+
+# \b composed with alternation + group.
+pattern \b(cat|dog)\b
+features assertions
+m "a dog ran" 2 5
+g 1 2 5
+n "a doghouse"
+
+# \b composed with a quantified group.
+pattern (\bcat\b)+
+features assertions
+m "cat" 0 3
+g 1 0 3
+# no boundary between the two "cat"s -- \b\b framing fails to iterate here.
+n "catcat"
+
+# \b/\B composed with a character class.
+pattern [a-c]\B
+features assertions
+m "ab" 0 1
+n "a "
+
+# empty subject: no word char anywhere -- no possible transition, \b never holds.
+pattern \b
+features assertions
+n ""
+
+# empty subject: vacuously "not a boundary" at position 0.
+pattern \B
+features assertions
+m "" 0 0
+
+# subject-start and subject-end edges both count as boundaries when adjacent to a word char.
+pattern \b
+features assertions
+m "a" 0 0
+# startpos at the very end, byte before is a word char, nothing after -- edge counts as a boundary too.
+ms 1 "a" 1 1
+# no word char adjacent anywhere -- no boundary exists in an all-non-word subject.
+n " "
+
+# \b under caseless matching -- word-char classification is unaffected by case folding. Caselessness is spelled INLINE ((?i), module 'modifiers') rather than via the .rxt `flags i` directive: the in-tree libpcre2 checker that re-verifies this directory on every `make test` is deliberately pinned at options=0 with no caseless mode (project-wide: "adopting any flag is a deliberate re-measurement event"), so a `flags i` cell here would be unverifiable by that checker even though it is oracle-true. The inline spelling keeps the same coverage intent (caseless composed with \b) fully checkable at options=0 by any PCRE2 oracle, in-tree or this one.
+pattern (?i)\bcat\b
+features modifiers,assertions
+m "CAT" 0 3

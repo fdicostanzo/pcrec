@@ -1,0 +1,67 @@
+# tests/assertions/d27/gstart.rxt -- D27-blinded corpus for \G.
+#
+# \G asserts "current position == the startpos this search call was given".
+# Under docs/spec/match_api.md S3.1's find-all loop (which threads its
+# resume position as the next call's startpos), that makes \G mean
+# "contiguous with the previous match" -- a TOKENIZER, stopping at the
+# first gap, in contrast to a \G-free pattern which is a scanner. The
+# .rxt format has no native find-all primitive, so a loop is replayed by
+# hand as a sequence of ms/ns cases at the positions the loop itself would
+# visit (see mkcorpus.py's emit_loop/findall_loop, which implements
+# match_api.md's exact algorithm -- including the "advance off the match's
+# own START on an empty match" rule, not off the loop variable).
+
+# \G at a specific nonzero startpos: matches iff the pattern holds AT that exact offset.
+pattern \Ga
+features assertions
+ms 1 "xa" 1 2
+# \G requires the CURRENT startpos to equal itself -- trivially true at whatever startpos is given -- but the match must begin exactly there; at startpos=0 the subject starts with "x", not "a".
+n "xa"
+ms 2 "axa" 2 3
+
+# find-all loop, one character at a time (base "." needs no extra module) -- the plain tokenizer case.
+pattern \G.
+features assertions
+m "abc" 0 1
+ms 1 "abc" 1 2
+ms 2 "abc" 2 3
+ns 3 "abc"
+
+# find-all loop composed with alternation + a capturing group: two full hops, then the gap stops it.
+pattern \G(cat|dog)
+features assertions
+m "catdog" 0 3
+g 1 0 3
+ms 3 "catdog" 3 6
+g 1 3 6
+ns 6 "catdog"
+
+# the exact worked example docs/spec/match_api.md S3.1 cites: \G\w+ is a TOKENIZER on "ab ab ab", reporting only the first token and then stopping at the space (a \G-free \w+ would be a scanner and find all three).
+pattern \G\w+
+features classes,assertions
+m "ab ab ab" 0 2
+ns 2 "ab ab ab"
+
+# find-all loop composed with a quantified class, several real hops before the gap.
+pattern \G\d+
+features classes,assertions
+m "12 34 5x6" 0 2
+ns 2 "12 34 5x6"
+
+# \G composed with \K: \G still requires contiguity from the PREVIOUS match end, but \K still resets what gets REPORTED as this match's own start.
+pattern \Ga\Kb
+features assertions
+# single call, not a loop: \G holds at startpos=0 (subject start), "a" consumes to 1, \K resets the report marker to 1, "b" consumes to 2 -- reported span is [1,2), not [0,2).
+m "ab" 1 2
+
+# empty subject / boundary of subject for \G.
+pattern \Ga
+features assertions
+n ""
+# startpos == subject length: \G holds trivially (current pos == startpos), but there is no "a" left to consume.
+ns 1 "a"
+
+# bare \G, empty subject: current pos (0) trivially equals startpos (0).
+pattern \G
+features assertions
+m "" 0 0
