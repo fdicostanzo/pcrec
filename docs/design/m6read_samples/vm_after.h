@@ -117,29 +117,33 @@ struct rx_info {
 
 #define RX_NCAPS 4
 
-int rx_search(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2]);
+int rx_search(const unsigned char *subject, size_t subject_length,
+              size_t search_from, ptrdiff_t (*capture_spans)[2]);
 ptrdiff_t rx_match(const rx_ctx *ctx);
-ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);
+ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]);
 extern const struct rx_info rx_info;
 
 /* rx_next_pos -- the ENCODING RESIDUAL entry (pcrec DD-12/D58).
  *
- * Returns the smallest position STRICTLY GREATER than pos that is a
+ * Returns the smallest position STRICTLY GREATER than `position` that is a
  * CHARACTER BOUNDARY of this artifact's encoding, counting every position
- * >= n as a boundary. So the result is in (pos, n] whenever pos < n, and is
- * pos + 1 whenever pos >= n -- which is what lets a find-all loop advance
+ * >= subject_length as a boundary. So the result is in
+ * (position, subject_length] whenever position < subject_length, and is
+ * position + 1 whenever position >= subject_length -- which is what lets a find-all loop advance
  * past a zero-length match and still terminate (see pcrec's
  * docs/spec/match_api.md S3.1, which writes that loop out).
  *
  * This entry is the ONE place an artifact's byte-vs-character distinction
- * lives. It reads s only at offsets in [pos, n), so the (s == NULL, n == 0)
- * subject rx_search accepts is legal here too, and it is never called from
+ * lives. It reads the subject only at offsets in [position, subject_length), so the
+ * (subject == NULL, subject_length == 0) subject rx_search accepts is legal
+ * here too, and it is never called from
  * this artifact's own engine: it is caller-facing residue, not hot-path
  * code.
  *
  * THIS artifact was compiled for the `byte` encoding, where one byte is one
  * character. An artifact compiled for another encoding exports this same
  * entry with that encoding's body and no caller loop changes. */
-size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos);
+size_t rx_next_pos(const unsigned char *subject, size_t subject_length,
+                   size_t position);
 
 #endif /* PCREC_GEN_RX_H */

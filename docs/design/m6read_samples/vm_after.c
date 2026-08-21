@@ -9,6 +9,65 @@
 #include <stdio.h>
 #include <string.h>
 
+/* =====================================================================
+ * HOW THIS MATCHER WORKS -- a map of this file
+ *
+ * This is a complete, dependency-free matcher for ONE pattern:
+ *
+ *     (\w+)@(\w+)\.(com|org)
+ *
+ * The pattern was compiled away ahead of time. Unlike a pure
+ * table-driven matcher, this one has to report where each of the three
+ * PARENTHESISED GROUPS matched, so it is built in two halves that run
+ * one after the other:
+ *
+ *   HALF 1 -- rx_prefilter(). A pair of table-driven scanners, forward
+ *     then reverse, that answer "is there a match at all, and between
+ *     which two offsets?" while ignoring the groups entirely. This is
+ *     the same machinery a group-free pattern would compile to, and it
+ *     is fast: it never backtracks. What it cannot do is say where the
+ *     groups fell.
+ *
+ *   HALF 2 -- rx_match_anchored(). A straight-line program, one label
+ *     per position in the pattern, that walks the span half 1 found and
+ *     records each group's start and end as it passes them. It runs
+ *     ANCHORED inside that span, so it never has to scan the subject
+ *     looking for a starting point.
+ *
+ * Running half 1 first is not merely an optimisation. The program in
+ * half 2 can BACKTRACK -- see below -- and on some patterns a search
+ * that had to try every starting position would be catastrophically
+ * slow. Handing it an exact window is what bounds the work.
+ *
+ * HOW THE PROGRAM IN HALF 2 IS LAID OUT. Each pattern position is a
+ * label `rx_L<N>`; control moves by `goto`. The numbering is shared
+ * with `pcrec --emit-ir`, which prints the same program in readable
+ * form, so the numbers are deliberately NOT renamed. Three things can
+ * happen at a label: consume a byte and move on, record a group
+ * boundary, or -- where the pattern offers a choice -- push a RESUME
+ * FRAME recording the alternative and take the preferred branch.
+ *
+ * BACKTRACKING, in one paragraph, because it is the one mechanism in
+ * this file that is not local. When any label finds the subject does
+ * not match, it jumps to `rx_fail`. That is the ONLY place this program
+ * ever goes backwards. It pops the most recent resume frame, restores
+ * the subject position to where the frame was pushed, undoes every
+ * group boundary written since (that is what the TRAIL is for), and
+ * jumps to the alternative the frame named. With no frames left, there
+ * is no match.
+ *
+ * THE THREE BOUNDS. The program carries three counters so that a
+ * pathological pattern-and-subject pair cannot run forever: resume
+ * frames (capacity RX_RESUME_FRAMES), trail entries (RX_TRAIL_FRAMES),
+ * a step budget (RX_STEP_BUDGET, one step per backtrack) and a work
+ * budget (RX_WORK_BUDGET, for forward work that backtracking never
+ * sees). Exhausting any of them returns a distinct negative code
+ * meaning "gave up", which is NOT the same answer as "no match".
+ *
+ * rx_search drives both halves; rx_match and rx_match_caps are anchored
+ * entry points that skip half 1. Each is documented at its definition.
+ * ===================================================================== */
+
 /* Engine: vm (forced by: capture group at pattern offset 0) */
 /* Step budget: 500000000 backtrack resumptions; backtrack frames: 2 */
 #define RX_ENGINE "vm"
@@ -38,6 +97,20 @@
 #define RX_SLOT_GROUP3_START 6
 #define RX_SLOT_GROUP3_END   7
 
+/* Everything one match attempt can change, in one struct, so that no
+ * state lives in globals and two attempts can never interfere. Allocated
+ * by the caller on the stack; this file never allocates.
+ *
+ *   slot_values   the group boundaries recorded so far, by slot number
+ *                 (see the slot legend above)
+ *   resume_stack  alternatives not yet tried, most recent last; each
+ *                 frame is "if you get stuck, come back to HERE"
+ *   trail         an undo log of slot_values writes, so popping a resume
+ *                 frame can restore the groups exactly as they were
+ *   *_depth       how many entries of each are currently live
+ *   steps_left    backtracks remaining before the attempt gives up
+ *   work_left     forward work units remaining, counted separately
+ */
 typedef struct {
     ptrdiff_t slot_values[RX_NSLOTS];
     struct { const void *resume_label; size_t resume_position; unsigned trail_mark; }
@@ -53,6 +126,9 @@ typedef struct {
 #define RX_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)
 #define RX_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)
 
+/* Charge forward work that the backtracker never sees. A scan that
+ * races over a megabyte costs no STEPS -- it never backtracks -- so
+ * without this meter a slow attempt could look free. */
 #define RX_CHARGE_WORK(units_) do {                          \
         ptrdiff_t charged_ = (ptrdiff_t)(units_);             \
         if (charged_ > 0) {                                   \
@@ -61,6 +137,14 @@ typedef struct {
         }                                                     \
     } while (0)
 
+/* MINIMUM-REMAINING-LENGTH pruning. At each point the compiler knows
+ * the fewest bytes any successful continuation must still consume. If
+ * fewer than that remain before the window ends, this position cannot
+ * lead to a match, so the program can fail immediately instead of
+ * exploring from it. RX_CLAMP_SPAN is the same fact used to shorten a
+ * scan rather than to abandon it, rounded down to a whole number of
+ * loop iterations so the cursor stays on a position the loop could
+ * actually have stopped at. */
 #define RX_TOO_SHORT(position_, min_rest_) \
     ((rx_window_end) < (size_t)(min_rest_) \
      || (rx_window_end) - (size_t)(min_rest_) < (position_))
@@ -68,6 +152,12 @@ typedef struct {
     ((position_) + (size_t)(stride_) \
      * (((rx_window_end) - (size_t)(min_rest_) - (position_)) / (size_t)(stride_)))
 
+/* The four operations the program below performs on the run state.
+ * RX_SET writes a group boundary AND logs the old value (RX_TRAIL) so
+ * backtracking can put it back; RX_PUSH records an untried alternative;
+ * RX_CUT discards frames wholesale where the pattern says an earlier
+ * choice may no longer be revisited. Each returns a give-up code rather
+ * than overrunning its fixed-size array. */
 #define RX_TRAIL(slot_) do {                                       \
         if (run->trail_depth >= RX_TRAIL_FRAMES) return RX_R_FRAMES; \
         run->trail[run->trail_depth].slot_index = (unsigned)(slot_); \
@@ -88,6 +178,8 @@ typedef struct {
         run->resume_depth = (unsigned)slot_values[(slot_)];        \
     } while (0)
 
+/* Start a fresh attempt: every group unset, nothing to undo, both
+ * budgets full. */
 static void rx_run_state_init(rx_run_state *run)
 {
     int slot;
@@ -97,6 +189,9 @@ static void rx_run_state_init(rx_run_state *run)
     run->work_left = RX_WORK_BUDGET;
 }
 
+/* Roll the run state back to as-if-untouched WITHOUT resetting the
+ * budgets, so that retrying at the next starting position cannot buy
+ * itself a fresh allowance. */
 static void rx_reset_for_next_attempt(rx_run_state *run)
 {
     while (run->trail_depth) {
@@ -107,6 +202,9 @@ static void rx_reset_for_next_attempt(rx_run_state *run)
     run->resume_depth = 0;
 }
 
+/* Membership bitmap for the byte class `\w`, one bit per byte value:
+ * bit (b & 7) of byte b >> 3 is set when b is in the class. 32 bytes
+ * covers all 256 values, and the test is two shifts and an AND. */
 static const unsigned char rx_class_bitmap_0[32] = {
       0,   0,   0,   0,   0,   0, 255,   3,
     254, 255, 255, 135, 254, 255, 255,   7,
@@ -151,6 +249,17 @@ __attribute__((noclone))
 static int rx_prefilter(const unsigned char *subject, size_t subject_length,
                         size_t search_from, ptrdiff_t (*capture_spans)[2])
 {
+    /* Byte class of every input byte, for the forward scan. All 256
+     * values fold to 9 classes, so a transition row is 9 cells wide
+     * rather than 256. `W` below means a byte in `\w`.
+     *
+     * Class legend:
+     *   0  every other byte      5  'g'
+     *   1  '.'                   6  'm'
+     *   2  W, except c/g/m/o/r   7  'o'
+     *   3  '@'                   8  'r'
+     *   4  'c'
+     */
     static const unsigned char rx_forward_byte_class[256] = {
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -169,6 +278,17 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
+    /* Forward transitions, indexed [state * 9 + class]; -1 stops the
+     * scan. 10 rows of 9.
+     *
+     * State legend -- what has been consumed on arrival, with `W` for a
+     * run of word bytes:
+     *   0  (start) nothing yet    5  W@W.c
+     *   1  W                      6  W@W.o
+     *   2  W@                     7  W@W.co
+     *   3  W@W                    8  W@W.or
+     *   4  W@W.                   9  W@W.com or W@W.org   ACCEPTING
+     */
     static const short rx_forward_next_state[90] = {
         0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 2, 1, 1, 1,
         1, 1, 0, 0, 3, 0, 3, 3, 3, 3, 3, 0, 4, 3, 2, 3,
@@ -177,9 +297,13 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
         0, 1, 2, 1, 1, 9, 1, 1, 0, 0, 1, 2, 1, 9, 1, 1,
         1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     };
+    /* 1 where a match may end, indexed by forward state. */
     static const unsigned char rx_forward_is_accepting[10] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     };
+    /* 1 for each byte that could be the FIRST byte of a match. The
+     * forward loop uses this to skip over bytes that cannot start one
+     * instead of stepping through them; it only affects speed. */
     static const unsigned char rx_can_begin_match[256] = {
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -198,6 +322,9 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
+    /* The reverse scan's own three tables, built from the pattern read
+     * right to left and walked backwards from the end the forward scan
+     * found. Class legend: identical to the forward one above. */
     static const unsigned char rx_reverse_byte_class[256] = {
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -216,6 +343,18 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
+    /* Reverse transitions, indexed [state * 9 + class]; -1 stops the
+     * walk. 10 rows of 9.
+     *
+     * State legend -- bytes consumed IN THIS WALK'S ORDER, i.e. the
+     * match read backwards; read a row's example right to left to see
+     * the tail of the match it describes:
+     *   0  (start) at the match end   5  gro
+     *   1  g                          6  gro.
+     *   2  m                          7  gro.W
+     *   3  gr                         8  gro.W@
+     *   4  mo                         9  gro.W@W   ACCEPTING
+     */
     static const short rx_reverse_next_state[90] = {
         -1, -1, -1, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, 3, -1, -1, -1, -1, -1, -1, -1, 4, -1, -1, -1, -1, -1, -1,
@@ -224,6 +363,7 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
         -1, 7, 8, 7, 7, 7, 7, 7, -1, -1, 9, -1, 9, 9, 9, 9,
         9, -1, -1, 9, -1, 9, 9, 9, 9, 9,
     };
+    /* 1 where the backwards walk has consumed a whole match. */
     static const unsigned char rx_reverse_is_accepting[10] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     };
@@ -274,6 +414,14 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
     }
 }
 
+/* HALF 2: the compiled program. Runs ANCHORED at ctx->pos -- it never
+ * looks for a starting position -- and records where each group fell.
+ * `rx_window_end` is the ceiling half 1 established: no continuation may
+ * consume past it, which is what the RX_TOO_SHORT tests measure against.
+ *
+ * Returns the matched length, -1 for no match, or a give-up code.
+ * Control flows label to label by goto; `pcrec --emit-ir` prints the
+ * same program with the same label numbers. */
 static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run,
                                    const size_t rx_window_end)
 {
@@ -287,21 +435,29 @@ static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run,
     (void)subject; (void)subject_length; (void)slot_values;
     goto rx_L0;
 
+/* group 1 opens */
 rx_L0: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)position);
     goto rx_L3;
+/* group 1's body: `\w+` */
 rx_L3: __attribute__((unused));
+    /* Run the class as far as it goes. This loop is POSSESSIVE: it takes
+     * the longest run and never gives bytes back, so it pushes no resume
+     * frame and cannot be backtracked into. The compiler proved that
+     * giving a byte back could never rescue a failure here. */
     {
         rx_span_cursor = position;
         while (rx_span_cursor + 1 <= subject_length
                && ((rx_class_bitmap_0[(subject[rx_span_cursor + 0]) >> 3]
                     >> ((subject[rx_span_cursor + 0]) & 7)) & 1)) { rx_span_cursor += 1; }
     }
+    /* Pay for the bytes just scanned. */
     RX_CHARGE_WORK(((ptrdiff_t)(rx_span_cursor - (ptrdiff_t)position)) / 1);
     if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)position + 1) goto rx_fail;
     if (RX_TOO_SHORT(rx_span_cursor, 6)) goto rx_fail;
     position = rx_span_cursor;
     goto rx_L4;
+/* group 1 closes */
 rx_L4: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)position);
     goto rx_L2;
@@ -309,21 +465,29 @@ rx_L2: __attribute__((unused));
     /* consume '@' */
     if (position < subject_length && (subject[position] == 64)) { position++; goto rx_L5; }
     goto rx_fail;
+/* group 2 opens */
 rx_L5: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP2_START, (ptrdiff_t)position);
     goto rx_L7;
+/* group 2's body: `\w+` */
 rx_L7: __attribute__((unused));
+    /* Run the class as far as it goes. This loop is POSSESSIVE: it takes
+     * the longest run and never gives bytes back, so it pushes no resume
+     * frame and cannot be backtracked into. The compiler proved that
+     * giving a byte back could never rescue a failure here. */
     {
         rx_span_cursor = position;
         while (rx_span_cursor + 1 <= subject_length
                && ((rx_class_bitmap_0[(subject[rx_span_cursor + 0]) >> 3]
                     >> ((subject[rx_span_cursor + 0]) & 7)) & 1)) { rx_span_cursor += 1; }
     }
+    /* Pay for the bytes just scanned. */
     RX_CHARGE_WORK(((ptrdiff_t)(rx_span_cursor - (ptrdiff_t)position)) / 1);
     if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)position + 1) goto rx_fail;
     if (RX_TOO_SHORT(rx_span_cursor, 4)) goto rx_fail;
     position = rx_span_cursor;
     goto rx_L8;
+/* group 2 closes */
 rx_L8: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP2_END, (ptrdiff_t)position);
     goto rx_L6;
@@ -331,14 +495,18 @@ rx_L6: __attribute__((unused));
     /* consume '.' */
     if (position < subject_length && (subject[position] == 46)) { position++; goto rx_L9; }
     goto rx_fail;
+/* group 3 opens */
 rx_L9: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP3_START, (ptrdiff_t)position);
     goto rx_L10;
+/* the alternation (com|org): take branch 1, remember branch 2 */
 rx_L10: __attribute__((unused));
     RX_PUSH(&&rx_L14, position);
     goto rx_L12;
+/* reached only by backtracking: branch 1 failed, try branch 2 */
 rx_L14: __attribute__((unused));
     goto rx_L13;
+/* branch 1: "com" */
 rx_L12: __attribute__((unused));
     /* consume 'c' */
     if (position < subject_length && (subject[position] == 99)) { position++; goto rx_L15; }
@@ -351,6 +519,7 @@ rx_L16: __attribute__((unused));
     /* consume 'm' */
     if (position < subject_length && (subject[position] == 109)) { position++; goto rx_L11; }
     goto rx_fail;
+/* branch 2: "org" */
 rx_L13: __attribute__((unused));
     /* consume 'o' */
     if (position < subject_length && (subject[position] == 111)) { position++; goto rx_L17; }
@@ -363,9 +532,11 @@ rx_L18: __attribute__((unused));
     /* consume 'g' */
     if (position < subject_length && (subject[position] == 103)) { position++; goto rx_L11; }
     goto rx_fail;
+/* group 3 closes */
 rx_L11: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP3_END, (ptrdiff_t)position);
     goto rx_L1;
+/* the whole pattern is matched */
 rx_L1: __attribute__((unused));
     goto rx_accept;
 
