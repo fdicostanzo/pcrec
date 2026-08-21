@@ -66,6 +66,38 @@ NOT in scope today, with different dispositions:
    two consumers hardcoding `NF != 15` broke on a legitimate append;
    the header-deriving consumer did not.
 
+## Sections (optional, backwards-compatible)
+
+Added by Frank, 2026-08-21, same session: multi-table output — the
+`--emit-ir` shape, where one command's output holds several tables with
+DIFFERENT columns (a slot legend, a label table) — gets a SECTION
+mechanism rather than forcing one flat schema.
+
+1. A section is announced by a SECTION line: `#section NAME` (a `#` line
+   whose first word is `section`; NAME is a bare word, the section's
+   stable address). It is followed by that section's own comments and its
+   own HEADER line (rule 3 applies per section: the last `#` line before
+   a section's data is that section's header), then its data rows, until
+   the next `#section` line or end of output.
+2. BACKWARDS COMPATIBLE BY ABSENCE: output with no `#section` line is a
+   single anonymous section — byte-for-byte today's format, and existing
+   consumers are untouched. `--list-syntax`/`--list-verbs` stay
+   sectionless unless a real second table ever needs to join them.
+3. Section NAMES are the API: append-only as a set (a name, once
+   shipped, keeps its meaning; new sections may be added), and each
+   section's columns follow the producer contract independently
+   (append-only within the section).
+4. Consumer rules: a section-aware consumer SELECTS its section by name
+   and parses within it under the ordinary consumer contract; a consumer
+   reading a multi-section stream without selecting MUST fail loudly
+   rather than silently parse rows across section boundaries (rows from
+   a section whose header it never read are not data, they are someone
+   else's data).
+
+`--emit-ir` remains [DD-8]'s adoption decision; this section exists so
+that when it (or an enriched [V-H] trace table) adopts, the mechanism is
+already ruled and no flat-schema contortion is needed.
+
 ## The checks ([SR-11] lands these)
 
 - HEADER TRUTHFULNESS: every data row's field count equals the header's
