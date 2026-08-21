@@ -4,7 +4,7 @@
 #define PCREC_FEATURE_MODULES "classes,modifiers"
 #define RX_ALTCLS_MERGES 0
 #define RX_ALTCLS_FACTORED 0
-#include "vm_before.h"
+#include "vm_after.h"
 #include <string.h>
 #include <stdio.h>
 #include <string.h>
@@ -18,79 +18,116 @@
 #define RX_VM_STRATS 0x1u
 #define RX_VM_PRUNES 0x1u
 #define RX_VM_PRUNE_CEILING "prefilter-window"
-#define RX_NSTATE 8
-#define RX_BT_FRAMES 2
+#define RX_NSLOTS 8
+#define RX_RESUME_FRAMES 2
 #define RX_TRAIL_FRAMES 7
 #define RX_STEP_BUDGET 500000000LL
 #define RX_WORK_BUDGET 1000000000LL
 
+/* SLOT LEGEND -- names for the numbered cells of the slot array below.
+ * A capture group occupies a PAIR of slots, its start and its end. The
+ * whole-match pair (0,1) is listed for completeness only: the VM never
+ * writes it, because the entry point already knows where the attempt
+ * began and how long it ran (see rx_report_captures). */
+#define RX_SLOT_WHOLE_START  0   /* not written by the VM */
+#define RX_SLOT_WHOLE_END    1   /* not written by the VM */
+#define RX_SLOT_GROUP1_START 2
+#define RX_SLOT_GROUP1_END   3
+#define RX_SLOT_GROUP2_START 4
+#define RX_SLOT_GROUP2_END   5
+#define RX_SLOT_GROUP3_START 6
+#define RX_SLOT_GROUP3_END   7
+
 typedef struct {
-    ptrdiff_t stv[RX_NSTATE];
-    struct { const void *k; size_t pos; unsigned mark; } bt[RX_BT_FRAMES];
-    struct { unsigned slot; ptrdiff_t v; }               tr[RX_TRAIL_FRAMES];
-    unsigned btn, trn;
-    long long budget;
-    long long work;
-} rx_work;
+    ptrdiff_t slot_values[RX_NSLOTS];
+    struct { const void *resume_label; size_t resume_position; unsigned trail_mark; }
+             resume_stack[RX_RESUME_FRAMES];
+    struct { unsigned slot_index; ptrdiff_t saved_value; }
+             trail[RX_TRAIL_FRAMES];
+    unsigned resume_depth, trail_depth;
+    long long steps_left;
+    long long work_left;
+} rx_run_state;
 
 #define RX_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)
 #define RX_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)
 #define RX_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)
 
-#define RX_WORK(n_) do {                                    \
-        ptrdiff_t nw_ = (ptrdiff_t)(n_);                     \
-        if (nw_ > 0) {                                       \
-            w->work -= (long long)nw_;                       \
-            if (w->work < 0) return RX_R_WORK;               \
-        }                                                    \
+#define RX_CHARGE_WORK(units_) do {                          \
+        ptrdiff_t charged_ = (ptrdiff_t)(units_);             \
+        if (charged_ > 0) {                                   \
+            run->work_left -= (long long)charged_;            \
+            if (run->work_left < 0) return RX_R_WORK;         \
+        }                                                     \
     } while (0)
 
-#define RX_MRL_SHORT(p_, mr_) \
-    ((rx_ceil) < (size_t)(mr_) || (rx_ceil) - (size_t)(mr_) < (p_))
-#define RX_MRL_CAP(p_, mr_, w_) \
-    ((p_) + (size_t)(w_) * (((rx_ceil) - (size_t)(mr_) - (p_)) / (size_t)(w_)))
+#define RX_TOO_SHORT(position_, min_rest_) \
+    ((rx_window_end) < (size_t)(min_rest_) \
+     || (rx_window_end) - (size_t)(min_rest_) < (position_))
+#define RX_CLAMP_SPAN(position_, min_rest_, stride_) \
+    ((position_) + (size_t)(stride_) \
+     * (((rx_window_end) - (size_t)(min_rest_) - (position_)) / (size_t)(stride_)))
 
-#define RX_TRAIL(slot_) do {                                  \
-        if (w->trn >= RX_TRAIL_FRAMES) return RX_R_FRAMES;    \
-        w->tr[w->trn].slot = (unsigned)(slot_);               \
-        w->tr[w->trn].v = stv[(slot_)];                       \
-        w->trn++;                                             \
+#define RX_TRAIL(slot_) do {                                       \
+        if (run->trail_depth >= RX_TRAIL_FRAMES) return RX_R_FRAMES; \
+        run->trail[run->trail_depth].slot_index = (unsigned)(slot_); \
+        run->trail[run->trail_depth].saved_value = slot_values[(slot_)]; \
+        run->trail_depth++;                                        \
     } while (0)
-#define RX_SET(slot_, v_) do {                                \
-        RX_TRAIL(slot_); stv[(slot_)] = (v_);                 \
+#define RX_SET(slot_, value_) do {                                 \
+        RX_TRAIL(slot_); slot_values[(slot_)] = (value_);          \
     } while (0)
-#define RX_PUSH(lbl_, p_) do {                                \
-        if (w->btn >= RX_BT_FRAMES) return RX_R_FRAMES;       \
-        w->bt[w->btn].k = (lbl_);                             \
-        w->bt[w->btn].pos = (p_);                             \
-        w->bt[w->btn].mark = w->trn;                          \
-        w->btn++;                                             \
+#define RX_PUSH(label_, position_) do {                            \
+        if (run->resume_depth >= RX_RESUME_FRAMES) return RX_R_FRAMES; \
+        run->resume_stack[run->resume_depth].resume_label = (label_); \
+        run->resume_stack[run->resume_depth].resume_position = (position_); \
+        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \
+        run->resume_depth++;                                       \
     } while (0)
-#define RX_CUT(slot_) do {                                   \
-        w->btn = (unsigned)stv[(slot_)];                      \
+#define RX_CUT(slot_) do {                                         \
+        run->resume_depth = (unsigned)slot_values[(slot_)];        \
     } while (0)
 
-static void rx_work_init(rx_work *w)
+static void rx_run_state_init(rx_run_state *run)
 {
-    int i;
-    for (i = 0; i < RX_NSTATE; i++) w->stv[i] = PCREC_UNSET;
-    w->btn = 0; w->trn = 0;
-    w->budget = RX_STEP_BUDGET;
-    w->work = RX_WORK_BUDGET;
+    int slot;
+    for (slot = 0; slot < RX_NSLOTS; slot++) run->slot_values[slot] = PCREC_UNSET;
+    run->resume_depth = 0; run->trail_depth = 0;
+    run->steps_left = RX_STEP_BUDGET;
+    run->work_left = RX_WORK_BUDGET;
 }
 
-static void rx_unwind(rx_work *w)
+static void rx_reset_for_next_attempt(rx_run_state *run)
 {
-    while (w->trn) { w->trn--; w->stv[w->tr[w->trn].slot] = w->tr[w->trn].v; }
-    w->btn = 0;
+    while (run->trail_depth) {
+        run->trail_depth--;
+        run->slot_values[run->trail[run->trail_depth].slot_index] =
+            run->trail[run->trail_depth].saved_value;
+    }
+    run->resume_depth = 0;
 }
 
-static const unsigned char rx_k0[32] = {
+static const unsigned char rx_class_bitmap_0[32] = {
       0,   0,   0,   0,   0,   0, 255,   3,
     254, 255, 255, 135, 254, 255, 255,   7,
       0,   0,   0,   0,   0,   0,   0,   0,
       0,   0,   0,   0,   0,   0,   0,   0,
 };
+
+/* The forward tables have 9 byte classes, so each row of the forward
+ * transition table is 9 cells wide; likewise for the reverse tables.
+ * Both are pattern-derived constants, not tuning knobs. */
+#define RX_FORWARD_CLASSES 9
+#define RX_REVERSE_CLASSES 9
+
+/* Both prefilter scanners start in state 0. */
+#define RX_FORWARD_START 0
+#define RX_REVERSE_START 0
+
+/* "No position recorded yet" -- the sentinel for a variable holding a
+ * match boundary before one has been found. Positions are unsigned, so
+ * the impossible value is the all-ones one. */
+#define RX_NO_POSITION ((size_t)-1)
 
 /* The capture-erased forward+reverse DFA pair, emitted by the
  * SAME emitter the DFA-only artifact uses (src/gen/emit_dfa.c),
@@ -111,9 +148,10 @@ static const unsigned char rx_k0[32] = {
    instructions, purely from code placement. Do not remove;
    see pcrec docs/dev/known_issues.md K24. */
 __attribute__((noclone))
-static int rx_prefilter(const unsigned char *s, size_t n, size_t startpos, ptrdiff_t (*caps)[2])
+static int rx_prefilter(const unsigned char *subject, size_t subject_length,
+                        size_t search_from, ptrdiff_t (*capture_spans)[2])
 {
-    static const unsigned char rx_fcls[256] = {
+    static const unsigned char rx_forward_byte_class[256] = {
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,
@@ -131,7 +169,7 @@ static int rx_prefilter(const unsigned char *s, size_t n, size_t startpos, ptrdi
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
-    static const short rx_ftr[90] = {
+    static const short rx_forward_next_state[90] = {
         0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 2, 1, 1, 1,
         1, 1, 0, 0, 3, 0, 3, 3, 3, 3, 3, 0, 4, 3, 2, 3,
         3, 3, 3, 3, 0, 0, 1, 0, 5, 1, 1, 6, 1, 0, 0, 1,
@@ -139,10 +177,10 @@ static int rx_prefilter(const unsigned char *s, size_t n, size_t startpos, ptrdi
         0, 1, 2, 1, 1, 9, 1, 1, 0, 0, 1, 2, 1, 9, 1, 1,
         1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     };
-    static const unsigned char rx_facc[10] = {
+    static const unsigned char rx_forward_is_accepting[10] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     };
-    static const unsigned char rx_first[256] = {
+    static const unsigned char rx_can_begin_match[256] = {
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -160,7 +198,7 @@ static int rx_prefilter(const unsigned char *s, size_t n, size_t startpos, ptrdi
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
-    static const unsigned char rx_rcls[256] = {
+    static const unsigned char rx_reverse_byte_class[256] = {
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   1,   0,
@@ -178,7 +216,7 @@ static int rx_prefilter(const unsigned char *s, size_t n, size_t startpos, ptrdi
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
     };
-    static const short rx_rtr[90] = {
+    static const short rx_reverse_next_state[90] = {
         -1, -1, -1, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1,
         -1, 3, -1, -1, -1, -1, -1, -1, -1, 4, -1, -1, -1, -1, -1, -1,
         -1, -1, 5, -1, -1, -1, -1, -1, 5, -1, -1, -1, -1, -1, 6, -1,
@@ -186,119 +224,147 @@ static int rx_prefilter(const unsigned char *s, size_t n, size_t startpos, ptrdi
         -1, 7, 8, 7, 7, 7, 7, 7, -1, -1, 9, -1, 9, 9, 9, 9,
         9, -1, -1, 9, -1, 9, 9, 9, 9, 9,
     };
-    static const unsigned char rx_racc[10] = {
+    static const unsigned char rx_reverse_is_accepting[10] = {
         0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
     };
-    size_t pos = startpos;
-    size_t last = (size_t)-1;
-    int st = 0;
-    if (startpos > n) return 0;
+    size_t scan_position = search_from;
+    size_t last_accept_position = RX_NO_POSITION;
+    int forward_state = RX_FORWARD_START;
+
+    if (search_from > subject_length) return 0;
+
+    /* FORWARD SCAN: where can a match end? One byte per step; remember
+     * every accepting position and keep going, so the last one wins. */
     for (;;) {
-        if (rx_facc[st]) last = pos;
-        if (st == 0 && last == (size_t)-1) {
-            while (pos < n && !rx_first[s[pos]]) pos++;
-            if (pos >= n) return 0;
+        if (rx_forward_is_accepting[forward_state]) last_accept_position = scan_position;
+        /* Nothing found yet and still at the start: skip over bytes that
+         * cannot begin a match rather than stepping through them. */
+        if (forward_state == RX_FORWARD_START && last_accept_position == RX_NO_POSITION) {
+            while (scan_position < subject_length
+                   && !rx_can_begin_match[subject[scan_position]]) scan_position++;
+            if (scan_position >= subject_length) return 0;
         }
-        if (pos >= n) break;
-        st = rx_ftr[st * 9 + rx_fcls[s[pos++]]];
-        if (st < 0) break;
+        if (scan_position >= subject_length) break;
+        forward_state = rx_forward_next_state[forward_state * RX_FORWARD_CLASSES
+                            + rx_forward_byte_class[subject[scan_position++]]];
+        if (forward_state < 0) break;   /* dead: no match can continue */
     }
-    if (last == (size_t)-1) return 0;
+    if (last_accept_position == RX_NO_POSITION) return 0;
+
+    /* REVERSE SCAN: where did that match begin? */
     {
-        size_t end = last;
-        size_t sfound = (size_t)-1;
-        size_t pp = end;
-        int rst = 0;
+        size_t match_end_position = last_accept_position;
+        size_t match_start_position = RX_NO_POSITION;
+        size_t rewind_position = match_end_position;
+        int reverse_state = RX_REVERSE_START;
+
         for (;;) {
-            if (rx_racc[rst]) sfound = pp;
-            if (pp <= startpos) break;
-            rst = rx_rtr[rst * 9 + rx_rcls[s[--pp]]];
-            if (rst < 0) break;
+            if (rx_reverse_is_accepting[reverse_state]) match_start_position = rewind_position;
+            if (rewind_position <= search_from) break;
+            reverse_state = rx_reverse_next_state[reverse_state * RX_REVERSE_CLASSES
+                                + rx_reverse_byte_class[subject[--rewind_position]]];
+            if (reverse_state < 0) break;
         }
-        if (sfound == (size_t)-1) return 0;
-        if (caps) { caps[0][0] = (ptrdiff_t)sfound; caps[0][1] = (ptrdiff_t)end; }
+        if (match_start_position == RX_NO_POSITION) return 0;
+        if (capture_spans) {
+            capture_spans[0][0] = (ptrdiff_t)match_start_position;
+            capture_spans[0][1] = (ptrdiff_t)match_end_position;
+        }
         return 1;
     }
 }
 
-static ptrdiff_t rx_match_impl(const rx_ctx *ctx, rx_work *w, const size_t rx_ceil)
+static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run,
+                                   const size_t rx_window_end)
 {
-    const unsigned char *const s = ctx->subject;
-    const size_t n = ctx->len;
-    size_t pos = ctx->pos;
-    ptrdiff_t *const stv = w->stv;
-    size_t rx_cur = 0;   /* the span-loop cursor (engine_m4.md 2.5):
+    const unsigned char *const subject = ctx->subject;
+    const size_t subject_length = ctx->len;
+    size_t position = ctx->pos;
+    ptrdiff_t *const slot_values = run->slot_values;
+    size_t rx_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):
                              a plain local, UNTRAILED, whose save
                              point is a resume frame */
-    (void)s; (void)n; (void)stv;
+    (void)subject; (void)subject_length; (void)slot_values;
     goto rx_L0;
 
 rx_L0: __attribute__((unused));
-    RX_SET(2, (ptrdiff_t)pos);
+    RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)position);
     goto rx_L3;
 rx_L3: __attribute__((unused));
     {
-        rx_cur = pos;
-        while (rx_cur + 1 <= n && ((rx_k0[(s[rx_cur + 0]) >> 3] >> ((s[rx_cur + 0]) & 7)) & 1)) { rx_cur += 1; }
+        rx_span_cursor = position;
+        while (rx_span_cursor + 1 <= subject_length
+               && ((rx_class_bitmap_0[(subject[rx_span_cursor + 0]) >> 3]
+                    >> ((subject[rx_span_cursor + 0]) & 7)) & 1)) { rx_span_cursor += 1; }
     }
-    RX_WORK(((ptrdiff_t)(rx_cur - (ptrdiff_t)pos)) / 1);
-    if ((ptrdiff_t)rx_cur < (ptrdiff_t)pos + 1) goto rx_fail;
-    if (RX_MRL_SHORT(rx_cur, 6)) goto rx_fail;
-    pos = rx_cur;
+    RX_CHARGE_WORK(((ptrdiff_t)(rx_span_cursor - (ptrdiff_t)position)) / 1);
+    if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)position + 1) goto rx_fail;
+    if (RX_TOO_SHORT(rx_span_cursor, 6)) goto rx_fail;
+    position = rx_span_cursor;
     goto rx_L4;
 rx_L4: __attribute__((unused));
-    RX_SET(3, (ptrdiff_t)pos);
+    RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)position);
     goto rx_L2;
 rx_L2: __attribute__((unused));
-    if (pos < n && (s[pos] == 64)) { pos++; goto rx_L5; }
+    /* consume '@' */
+    if (position < subject_length && (subject[position] == 64)) { position++; goto rx_L5; }
     goto rx_fail;
 rx_L5: __attribute__((unused));
-    RX_SET(4, (ptrdiff_t)pos);
+    RX_SET(RX_SLOT_GROUP2_START, (ptrdiff_t)position);
     goto rx_L7;
 rx_L7: __attribute__((unused));
     {
-        rx_cur = pos;
-        while (rx_cur + 1 <= n && ((rx_k0[(s[rx_cur + 0]) >> 3] >> ((s[rx_cur + 0]) & 7)) & 1)) { rx_cur += 1; }
+        rx_span_cursor = position;
+        while (rx_span_cursor + 1 <= subject_length
+               && ((rx_class_bitmap_0[(subject[rx_span_cursor + 0]) >> 3]
+                    >> ((subject[rx_span_cursor + 0]) & 7)) & 1)) { rx_span_cursor += 1; }
     }
-    RX_WORK(((ptrdiff_t)(rx_cur - (ptrdiff_t)pos)) / 1);
-    if ((ptrdiff_t)rx_cur < (ptrdiff_t)pos + 1) goto rx_fail;
-    if (RX_MRL_SHORT(rx_cur, 4)) goto rx_fail;
-    pos = rx_cur;
+    RX_CHARGE_WORK(((ptrdiff_t)(rx_span_cursor - (ptrdiff_t)position)) / 1);
+    if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)position + 1) goto rx_fail;
+    if (RX_TOO_SHORT(rx_span_cursor, 4)) goto rx_fail;
+    position = rx_span_cursor;
     goto rx_L8;
 rx_L8: __attribute__((unused));
-    RX_SET(5, (ptrdiff_t)pos);
+    RX_SET(RX_SLOT_GROUP2_END, (ptrdiff_t)position);
     goto rx_L6;
 rx_L6: __attribute__((unused));
-    if (pos < n && (s[pos] == 46)) { pos++; goto rx_L9; }
+    /* consume '.' */
+    if (position < subject_length && (subject[position] == 46)) { position++; goto rx_L9; }
     goto rx_fail;
 rx_L9: __attribute__((unused));
-    RX_SET(6, (ptrdiff_t)pos);
+    RX_SET(RX_SLOT_GROUP3_START, (ptrdiff_t)position);
     goto rx_L10;
 rx_L10: __attribute__((unused));
-    RX_PUSH(&&rx_L14, pos);
+    RX_PUSH(&&rx_L14, position);
     goto rx_L12;
 rx_L14: __attribute__((unused));
     goto rx_L13;
 rx_L12: __attribute__((unused));
-    if (pos < n && (s[pos] == 99)) { pos++; goto rx_L15; }
+    /* consume 'c' */
+    if (position < subject_length && (subject[position] == 99)) { position++; goto rx_L15; }
     goto rx_fail;
 rx_L15: __attribute__((unused));
-    if (pos < n && (s[pos] == 111)) { pos++; goto rx_L16; }
+    /* consume 'o' */
+    if (position < subject_length && (subject[position] == 111)) { position++; goto rx_L16; }
     goto rx_fail;
 rx_L16: __attribute__((unused));
-    if (pos < n && (s[pos] == 109)) { pos++; goto rx_L11; }
+    /* consume 'm' */
+    if (position < subject_length && (subject[position] == 109)) { position++; goto rx_L11; }
     goto rx_fail;
 rx_L13: __attribute__((unused));
-    if (pos < n && (s[pos] == 111)) { pos++; goto rx_L17; }
+    /* consume 'o' */
+    if (position < subject_length && (subject[position] == 111)) { position++; goto rx_L17; }
     goto rx_fail;
 rx_L17: __attribute__((unused));
-    if (pos < n && (s[pos] == 114)) { pos++; goto rx_L18; }
+    /* consume 'r' */
+    if (position < subject_length && (subject[position] == 114)) { position++; goto rx_L18; }
     goto rx_fail;
 rx_L18: __attribute__((unused));
-    if (pos < n && (s[pos] == 103)) { pos++; goto rx_L11; }
+    /* consume 'g' */
+    if (position < subject_length && (subject[position] == 103)) { position++; goto rx_L11; }
     goto rx_fail;
 rx_L11: __attribute__((unused));
-    RX_SET(7, (ptrdiff_t)pos);
+    RX_SET(RX_SLOT_GROUP3_END, (ptrdiff_t)position);
     goto rx_L1;
 rx_L1: __attribute__((unused));
     goto rx_accept;
@@ -309,7 +375,7 @@ rx_accept: __attribute__((unused));
      * slots at this instant are the answer — no candidate comparison,
      * no longest-wins, no second pass. The caller's caps array is
      * filled by the ENTRY, not here (3.4). */
-    return (ptrdiff_t)(pos - ctx->pos);
+    return (ptrdiff_t)(position - ctx->pos);
 
 rx_fail: __attribute__((unused));
     /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.
@@ -319,16 +385,20 @@ rx_fail: __attribute__((unused));
      * independent, and the counter measures precisely the thing it is
      * meant to bound. D22: DD-2 is ROBUSTNESS, not a security
      * boundary, and it must not be traded against execution speed. */
-    if (w->btn == 0) return -1;
-    if (--w->budget < 0) return RX_R_STEPS;
+    if (run->resume_depth == 0) return -1;      /* nothing left to try */
+    if (--run->steps_left < 0) return RX_R_STEPS;
     {
-        const unsigned b_ = --w->btn;
-        pos = w->bt[b_].pos;
-        while (w->trn > w->bt[b_].mark) {
-            w->trn--;
-            stv[w->tr[w->trn].slot] = w->tr[w->trn].v;
+        const unsigned frame_index = --run->resume_depth;
+        /* Rewind the subject cursor to where the frame was pushed... */
+        position = run->resume_stack[frame_index].resume_position;
+        /* ...and undo every capture-slot write made since then, newest
+         * first, so the slots read as they did at the push. */
+        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {
+            run->trail_depth--;
+            slot_values[run->trail[run->trail_depth].slot_index] =
+                run->trail[run->trail_depth].saved_value;
         }
-        goto *w->bt[b_].k;
+        goto *run->resume_stack[frame_index].resume_label;
     }
 }
 
@@ -336,54 +406,72 @@ rx_fail: __attribute__((unused));
 #undef RX_SET
 #undef RX_PUSH
 
-static void rx_caps_out(const rx_work *w, ptrdiff_t (*caps)[2],
-                        size_t start, ptrdiff_t len)
+/* Copy the run's slot values out into the caller's caps array. Slot pair
+ * 0 -- the whole match -- is never written by the VM (see the slot legend
+ * above); it is computed here from the position this attempt started at
+ * and the length it returned. Group k lives in the slot PAIR (2k, 2k+1),
+ * which is why this loop indexes arithmetically rather than through the
+ * RX_SLOT_* names. */
+static void rx_report_captures(const rx_run_state *run, ptrdiff_t (*capture_spans)[2],
+                               size_t match_start, ptrdiff_t match_length)
 {
-    int k;
-    caps[0][0] = (ptrdiff_t)start;
-    caps[0][1] = (ptrdiff_t)start + len;
-    for (k = 1; k < RX_NCAPS; k++) {
-        caps[k][0] = w->stv[2 * k];
-        caps[k][1] = w->stv[2 * k + 1];
+    int group;
+    capture_spans[0][0] = (ptrdiff_t)match_start;
+    capture_spans[0][1] = (ptrdiff_t)match_start + match_length;
+    for (group = 1; group < RX_NCAPS; group++) {
+        capture_spans[group][0] = run->slot_values[2 * group];
+        capture_spans[group][1] = run->slot_values[2 * group + 1];
     }
 }
 
-int rx_search(const unsigned char *s, size_t n, size_t startpos,
-       ptrdiff_t (*caps)[2])
+int rx_search(const unsigned char *subject, size_t subject_length,
+       size_t search_from, ptrdiff_t (*capture_spans)[2])
 {
-    rx_work w;
+    rx_run_state run;
     rx_ctx ctx;
-    ptrdiff_t r;
-    size_t start;
-    size_t ceil_;
-    if (startpos > n) return 0;
+    ptrdiff_t result;
+    size_t attempt_position;
+    size_t window_end;
+
+    if (search_from > subject_length) return 0;
+
+    /* Ask the prefilter where the first plausible match lies. It returns
+     * a window; the VM is then run ANCHORED inside it and never scans. */
     {
-        ptrdiff_t win[1][2];
-        if (rx_prefilter(s, n, startpos, win) != 1) return 0;
-        start = (size_t)win[0][0];
-        ceil_ = (size_t)win[0][1] < n ? (size_t)win[0][1] : n;
+        ptrdiff_t window[1][2];
+        if (rx_prefilter(subject, subject_length, search_from, window) != 1) return 0;
+        attempt_position = (size_t)window[0][0];
+        window_end = (size_t)window[0][1] < subject_length
+                   ? (size_t)window[0][1] : subject_length;
     }
-    rx_work_init(&w);
-    ctx.subject = s; ctx.len = n; ctx.ncap = 0;
+    rx_run_state_init(&run);
+    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
     ctx.caps = NULL; ctx.user = NULL;
+
+    /* Try the VM at the window's start. If the whole pattern fails there,
+     * advance one position, re-run the prefilter to find the next window,
+     * and try again. */
     for (;;) {
-        ctx.pos = start;
-        r = rx_match_impl(&ctx, &w, ceil_);
-        if (r == RX_R_STEPS)  return PCREC_ERR_STEPS;
-        if (r == RX_R_FRAMES) return PCREC_ERR_FRAMES;
-        if (r == RX_R_WORK)   return PCREC_ERR_WORK;
-        if (r >= 0) break;
-        rx_unwind(&w);
-        if (start >= n) return 0;
-        start++;
+        ctx.pos = attempt_position;
+        result = rx_match_anchored(&ctx, &run, window_end);
+        /* A bound was hit: report WHY rather than "no match" -- the
+         * engine stopped without deciding. */
+        if (result == RX_R_STEPS)  return PCREC_ERR_STEPS;
+        if (result == RX_R_FRAMES) return PCREC_ERR_FRAMES;
+        if (result == RX_R_WORK)   return PCREC_ERR_WORK;
+        if (result >= 0) break;
+        rx_reset_for_next_attempt(&run);
+        if (attempt_position >= subject_length) return 0;
+        attempt_position++;
         {
-            ptrdiff_t win[1][2];
-            if (rx_prefilter(s, n, start, win) != 1) return 0;
-            start = (size_t)win[0][0];
-            ceil_ = (size_t)win[0][1] < n ? (size_t)win[0][1] : n;
+            ptrdiff_t window[1][2];
+            if (rx_prefilter(subject, subject_length, attempt_position, window) != 1) return 0;
+            attempt_position = (size_t)window[0][0];
+            window_end = (size_t)window[0][1] < subject_length
+                       ? (size_t)window[0][1] : subject_length;
         }
     }
-    if (caps) rx_caps_out(&w, caps, start, r);
+    if (capture_spans) rx_report_captures(&run, capture_spans, attempt_position, result);
     return 1;
 }
 
@@ -407,16 +495,16 @@ int rx_search(const unsigned char *s, size_t n, size_t startpos,
  * only asks 'did it match' still writes `r < 0` and is unaffected. */
 ptrdiff_t rx_match(const rx_ctx *ctx)
 {
-    rx_work w;
-    ptrdiff_t r;
+    rx_run_state run;
+    ptrdiff_t result;
     if (ctx->pos > ctx->len) return -1;
-    rx_work_init(&w);
-    r = rx_match_impl(ctx, &w, ctx->len);
+    rx_run_state_init(&run);
+    result = rx_match_anchored(ctx, &run, ctx->len);
     /* No translation and no clamp: the impl's return space IS this
      * contract's -- >= 0, -1, or one of the three R_ sentinels, which
      * are the ERR_ codes. A defensive floor test here would be dead
      * code pretending to be a safeguard. */
-    return r;
+    return result;
 }
 
 /* The capture-delivering sibling. Same D49 return space as
@@ -425,24 +513,25 @@ ptrdiff_t rx_match(const rx_ctx *ctx)
  * reservation only one of them was bound by. caps_out is UNTOUCHED on
  * every negative return, give-up included: a caller that gave up has
  * no captures, and A-8's untouched-wins rule does not bend for it. */
-ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2])
+ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])
 {
-    rx_work w;
-    ptrdiff_t r;
+    rx_run_state run;
+    ptrdiff_t result;
     if (ctx->pos > ctx->len) return -1;
-    rx_work_init(&w);
-    r = rx_match_impl(ctx, &w, ctx->len);
-    if (r < 0) return r;
-    if (caps_out) rx_caps_out(&w, caps_out, ctx->pos, r);
-    return r;
+    rx_run_state_init(&run);
+    result = rx_match_anchored(ctx, &run, ctx->len);
+    if (result < 0) return result;
+    if (capture_spans_out) rx_report_captures(&run, capture_spans_out, ctx->pos, result);
+    return result;
 }
 
-/* byte encoding: one byte is one character, so the next boundary after pos
- * is pos + 1 and the subject is never read. */
-size_t rx_next_pos(const unsigned char *s, size_t n, size_t pos)
+/* byte encoding: one byte is one character, so the next boundary after
+ * `position` is position + 1 and the subject is never read. */
+size_t rx_next_pos(const unsigned char *subject, size_t subject_length,
+                   size_t position)
 {
-    (void)s; (void)n;
-    return pos + 1;
+    (void)subject; (void)subject_length;
+    return position + 1;
 }
 
 const struct rx_info rx_info = {
@@ -466,29 +555,30 @@ const struct rx_info rx_info = {
 int main(int argc, char **argv)
 {
     /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */
-    ptrdiff_t caps[RX_NCAPS][2] = {{0}};
+    ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}};
     if (argc < 2) { fprintf(stderr, "usage: %s <subject>\n", argv[0]); return 2; }
-    int rc = rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0, caps);
-    if (rc == 1) {
-        printf("match %td %td\n", caps[0][0], caps[0][1]);
+    int search_result = rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0,
+                                  capture_spans);
+    if (search_result == 1) {
+        printf("match %td %td\n", capture_spans[0][0], capture_spans[0][1]);
         return 0;
     }
-    if (rc == 0) {
+    if (search_result == 0) {
         printf("nomatch\n");
         return 1;
     }
-    if (rc == PCREC_ERR_STEPS) {
+    if (search_result == PCREC_ERR_STEPS) {
         printf("steps\n");
         return 3;
     }
-    if (rc == PCREC_ERR_FRAMES) {
+    if (search_result == PCREC_ERR_FRAMES) {
         printf("frames\n");
         return 3;
     }
-    if (rc == PCREC_ERR_WORK) {
+    if (search_result == PCREC_ERR_WORK) {
         printf("work\n");
         return 3;
     }
-    printf("giveup %d\n", rc);
+    printf("giveup %d\n", search_result);
     return 3;
 }
