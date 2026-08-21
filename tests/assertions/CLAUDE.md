@@ -305,7 +305,40 @@ every oracle exclusion has an entry there.
   `tests/fuzz/pcre2_oracle.c` rather than carrying a third ctypes binding (one
   libpcre2 access path, the one PC-3 and the fuzzer already share). SKIPS
   LOUDLY when libpcre2 is absent — exit 0 with a skip line, never a silent
-  pass.
+  pass. Since the [M6.2] d27 merge review it also skips-and-COUNTS any block
+  carrying a `flags` directive: the shared oracle binary is pinned at
+  options=0 by deliberate project-wide rule, so a flagged block is outside
+  its domain, and before this it was MIS-VERIFIED (with-flags expectation
+  vs without-flags oracle — wrong in the silent direction; the d27 corpus's
+  one `flags i` cell was scored a disagreement, the first flagged block this
+  directory ever carried). Spell per-block caselessness inline (`(?i)...`)
+  to keep a cell verifiable here.
+- **d27/** — the [M6.2] D27-BLINDED ACCEPTANCE CORPUS, written at module
+  close from the PCRE2 goal by an author denied `src/` and `tests/`
+  (cell allowlist: docs/testing.md, docs/spec/match_api.md, build/ — see
+  d27/README.md, which is the acceptance record and stays as authored).
+  8 topic files, 145 blocks: the eight constructs alone and composed,
+  startpos context cells, the \Z/\z/$ trailing-newline triad, hand-replayed
+  §3.1 find-all loops for \G and \K, PCRE2 syntax rejections, and the
+  feature-gating direction (including the measured fact that `(?m)` is a
+  TWO-module construct — `modifiers` owns the group syntax, `assertions`
+  the multiline effect; gating.rxt exercises all four combinations).
+  ORACLE MECHANICS DIFFER FROM THE PARENT DIRECTORY, deliberately: no
+  block carries `# pcre2-only` (that marker serves verify_rxt.py, which
+  has no automated invocation over this tree and none over d27/); instead
+  d27/oracle.py — the author's own independent re-checker, over its
+  ctypes binding d27/lib_pcre2.py, a THIRD libpcre2 access path that
+  exists because the author's cell had no tests/fuzz/ — re-verifies every
+  cell, and verify_pcre2.py's own recursive walk covers d27/ on every
+  `make test` as well (two independent checkers, no shared parser on the
+  author's side). The 18 `# pcrec-gate-only` perr blocks in gating.rxt
+  are pcrec POLICY (module gates), not PCRE2 facts — valid PCRE2 patterns
+  deliberately refused — so BOTH checkers skip them and run.sh is what
+  asserts them. d27/mkcorpus.py is provenance only; nothing trusts it.
+  At merge review the corpus ran 0 divergences against the shipped module
+  (the acceptance result), and returned one two-sided finding: the
+  `flags i` cell vs the options=0 oracle pin, resolved by respelling the
+  cell inline and by verify_pcre2.py's flags-skip guard above.
 - **run_assertions_tests.sh** — the three things a `.rxt` file structurally
   cannot check, run by `make test-assertions`:
   1. the libpcre2 re-verification above;

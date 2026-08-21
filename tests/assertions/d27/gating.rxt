@@ -1,0 +1,167 @@
+# tests/assertions/d27/gating.rxt -- MOD-0.3c feature-gating, the refusal
+# direction the brief asked for: without --features assertions (or,
+# for (?m), the RIGHT combination of modules), each construct must be
+# refused naming the missing module; with it, it must compile.
+#
+# pcrec-specific finding (see ../README.md FINDINGS): (?m) needs BOTH
+# 'modifiers' (for the inline-option GROUP SYNTAX itself, already
+# default-enabled via std1) and 'assertions' (for the MULTILINE MATCHING
+# EFFECT) -- neither module alone is sufficient, and the two failure modes
+# report genuinely different diagnostics (measured below). This is a
+# two-module construct, unlike the other seven in this corpus, and the
+# brief's "each construct... must refuse naming the module" (singular)
+# does not quite fit it -- the four gating cells for (?m) below are the
+# reason this file documents the shape explicitly rather than folding it
+# into a one-line-per-construct table.
+#
+# Every perr block in this file is `# pcrec-gate-only`: it is pcrec POLICY
+# (a module gate), not a PCRE2 syntax fact, so ../oracle.py skips it rather
+# than mis-scoring a design choice as if it were a PCRE2 compile verdict
+# (libpcre2 has no module system and accepts all eight constructs
+# unconditionally at options=0).
+
+# --- \A \z \Z \b \B \G \K: refused without module 'assertions' ---
+
+# \A, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \A alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \Ax
+perr
+
+# \z, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \z alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \zx
+perr
+
+# \Z, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \Z alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \Zx
+perr
+
+# \b, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \b alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \bx
+perr
+
+# \B, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \B alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \Bx
+perr
+
+# \G, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \G alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \Gx
+perr
+
+# \K, DEFAULT features (std1 = classes,modifiers): refused, names module 'assertions'. (bare \K alone, with nothing to match after it, is also refused the same way -- this uses a trailing literal only so the same spelling is reusable as a positive-compile smoke pattern below.)
+# pcrec-gate-only
+pattern \Kx
+perr
+
+# \A, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \Ax
+features none
+perr
+
+# \z, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \zx
+features none
+perr
+
+# \Z, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \Zx
+features none
+perr
+
+# \b, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \bx
+features none
+perr
+
+# \B, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \Bx
+features none
+perr
+
+# \G, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \Gx
+features none
+perr
+
+# \K, --features none: refused, same as default (assertions was never in std1).
+# pcrec-gate-only
+pattern \Kx
+features none
+perr
+
+# --- \A \z \Z \b \B \G \K: compile cleanly WITH module 'assertions' ---
+
+# \A compiles and matches with module 'assertions' enabled.
+pattern \Ax
+features assertions
+m "x" 0 1
+
+# \z compiles and matches with module 'assertions' enabled.
+pattern x\z
+features assertions
+m "x" 0 1
+
+# \Z compiles and matches with module 'assertions' enabled.
+pattern x\Z
+features assertions
+m "x" 0 1
+
+# \b compiles and matches with module 'assertions' enabled.
+pattern \bx
+features assertions
+m "x" 0 1
+
+# \B compiles and matches with module 'assertions' enabled.
+pattern x\By
+features assertions
+m "xy" 0 2
+
+# \G compiles and matches with module 'assertions' enabled.
+pattern \Gx
+features assertions
+m "x" 0 1
+
+# \K compiles and matches with module 'assertions' enabled.
+pattern x\K
+features assertions
+m "x" 1 1
+
+# --- (?m): the two-module construct ---
+
+# (?m), DEFAULT features (std1 includes 'modifiers', so the (?m...) GROUP parses) -- but its MULTILINE EFFECT is refused, naming module 'assertions' specifically (not 'modifiers', which is already satisfied). Distinct diagnostic text from the next cell -- see README FINDINGS for both, verbatim.
+# pcrec-gate-only
+pattern (?m)^a
+perr
+
+# (?m), --features none: refused at the GROUP SYNTAX itself this time, naming module 'modifiers' -- a different failure point than the std1-default cell above, because now neither module is enabled.
+# pcrec-gate-only
+pattern (?m)^a
+features none
+perr
+
+# (?m), --features modifiers only (no assertions): same failure point as the std1-default cell above (group syntax is fine, multiline effect is refused) -- confirms it is 'modifiers' alone that was already doing the work in the default-features cell, not some other std1 member.
+# pcrec-gate-only
+pattern (?m)^a
+features modifiers
+perr
+
+# (?m), --features assertions only (no modifiers): refused at the GROUP SYNTAX -- the mirror of the previous cell, confirming BOTH modules are independently necessary and neither is sufficient alone.
+# pcrec-gate-only
+pattern (?m)^a
+features assertions
+perr
+
+# (?m) compiles and matches only with BOTH modules enabled together.
+pattern (?m)^a
+features modifiers,assertions
+m "a" 0 1

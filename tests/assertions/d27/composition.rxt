@@ -1,0 +1,49 @@
+# tests/assertions/d27/composition.rxt -- D27-blinded corpus: constructs
+# from the assertions module composed with EACH OTHER (not just with
+# alternation/quantifiers/groups/classes, which every other file in this
+# corpus already exercises alongside its own primary construct).
+
+# \A + \b + \b + \z: the whole subject must be exactly one word "foo".
+pattern \A\bfoo\b\z
+features assertions
+m "foo" 0 3
+n "xfoo"
+n "foo!"
+
+# (?m) + \b + \b, per line.
+pattern (?m)^\bfoo\b$
+features modifiers,assertions
+m "x\nfoo\ny" 2 5
+ms 2 "x\nfoo\ny" 2 5
+
+# \G + \K together: \G pins the whole match's start to the call's startpos; \K then moves only what gets REPORTED.
+pattern \Gcat\Kdog
+features assertions
+m "catdog" 3 6
+
+# \B + \K: reset placed right after a negative boundary check.
+pattern \B\Kcat
+features assertions
+m "concatenate" 3 6
+
+# \A + \K-under-quantifier + \z, cross-checked against the single-construct file's own version of this pattern (kreset.rxt) -- included here for the composition axis explicitly.
+pattern \A(a\Kb)+\z
+features assertions
+m "abab" 3 4
+g 1 2 4
+n "ababx"
+
+# (?m)^ + \G together: both must hold at the same position -- \G pins it to startpos, ^ additionally requires a real line start there.
+pattern (?m)^\Ga
+features modifiers,assertions
+m "a" 0 1
+ms 2 "x\na" 2 3
+# \G holds trivially at startpos=3 (equals itself), but (?m)^ does not -- offset 3 is mid-line, not right after the \n at offset 1.
+ns 3 "x\nxa"
+
+# \b (leading, positive) + \B (trailing, negative) on the SAME word: word must start at a boundary and continue past its nominal end without one.
+pattern \b(?:cat|dog)\B
+features assertions
+m "cats" 0 3
+# "cat" ends at a boundary (space follows) -- \B fails there; "dog" ends at true subject end, also a boundary -- \B fails there too. Neither alternative can satisfy the trailing \B.
+n "cat dog"

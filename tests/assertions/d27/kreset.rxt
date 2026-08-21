@@ -1,0 +1,96 @@
+# tests/assertions/d27/kreset.rxt -- D27-blinded corpus for \K.
+#
+# \K resets the REPORTED start of the match (caps[0][0] / ovector[0]) to
+# the current position, without affecting: what already-closed capturing
+# groups recorded (checked below), whether the match is anchored, or how
+# far the engine has actually consumed. It has NO effect on any group's
+# own span -- only on the whole-match report. Multiple \K in one
+# alternative: the LAST one executed on the winning path wins. \K inside
+# a quantified group: the FINAL iteration's \K wins. options=0 throughout;
+# every case cross-checked against real libpcre2.
+
+# basic \K: reported start moves past "a".
+pattern a\Kb
+features assertions
+m "ab" 1 2
+m "xab" 2 3
+
+# \K INSIDE a group, at the group's own close: the group's own span is UNCHANGED by \K (it still reports what it captured); only the overall report moves.
+pattern (a\K)b
+features assertions
+m "ab" 1 2
+g 1 0 1
+
+# \K AFTER a closed group: same non-effect on the group's own span, from the other side.
+pattern (a)\Kb
+features assertions
+m "ab" 1 2
+g 1 0 1
+
+# MULTIPLE \K in sequence: only the LAST one executed on the winning path determines the report.
+pattern a\Kb\Kc
+features assertions
+m "abc" 2 3
+
+# \K inside EACH branch of an alternation: whichever branch wins, ITS \K governs -- and the group's own span still covers the whole alternative regardless.
+pattern (a\Kb|c\Kd)
+features assertions
+m "ab" 1 2
+g 1 0 2
+m "cd" 1 2
+g 1 0 2
+
+# \K under a QUANTIFIER: each iteration resets the marker, so only the FINAL iteration's \K survives into the report -- the group itself (per R22 cross-iteration rules, not \K-specific) retains its LAST iteration's own span too.
+pattern (a\K)+b
+features assertions
+m "aaab" 3 4
+g 1 2 3
+m "ab" 1 2
+g 1 0 1
+
+# \K under a quantifier, anchored both ends: reported start is the LAST iteration's \K position, group span is the LAST iteration's own match.
+pattern \A(a\Kb)+\z
+features assertions
+m "abab" 3 4
+g 1 2 4
+
+# \K immediately after a zero-width assertion (\b): no visible difference from \b alone here (both zero-width, same position) -- included as the "immediately after a boundary" placement case.
+pattern \b\K\w+
+features classes,assertions
+m "  cat  " 2 5
+
+# \K composed with (?m): resets the report within one multiline-delimited line.
+pattern (?m)^a\Kb$
+features modifiers,assertions
+m "ab\nc" 1 2
+ms 2 "a\nab\nc" 3 4
+
+# \K producing an EMPTY reported span after consuming real bytes (match_api.md S3.1's own headline example for why the find-all loop's empty-match arm keys off caps[0][0], not the loop variable).
+pattern ab\K
+features assertions
+m "ababab" 2 2
+
+# find-all loop over the same pattern: exactly the two hops docs/spec/match_api.md S3.1 quotes verbatim ("2,2 6,6") -- reproduced here from a fresh libpcre2 measurement, not copied from the doc.
+pattern ab\K
+features assertions
+m "ababab" 2 2
+ms 3 "ababab" 6 6
+
+# find-all loop, non-empty \K reports throughout ("1,2 3,4 5,6" per the same spec passage).
+pattern a\Kb
+features assertions
+m "ababab" 1 2
+ms 2 "ababab" 3 4
+ms 4 "ababab" 5 6
+ns 6 "ababab"
+
+# empty subject / boundary: \K needs something to consume up to it in this pattern, so an empty subject cannot match at all.
+pattern a\Kb
+features assertions
+n ""
+
+# bare \K alone: zero-width, always succeeds at the position it's tried, report start/end both equal that position.
+pattern \K
+features assertions
+m "" 0 0
+m "xyz" 0 0
