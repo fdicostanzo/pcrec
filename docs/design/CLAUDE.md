@@ -879,6 +879,27 @@ append-only or historical records.
   doorway and name a module but not always the construct itself (`(?(R)`,
   `\12` depend on later-pattern or running state). Build the `byte + tail`
   design in §7 instead — pending Frank's approval and PC-3.
+- `registry_built_status_memo.md` — decision memo (2026-08-21, REGSTATUS
+  lane): the "real fix" the [M6.2] repair slice's ITEM 3 refutation named
+  (docs/dev/dev_journal.md, 2026-08-19 part 6) — a registry BUILT-STATUS
+  field, so the generated compliance index can distinguish a shipped
+  module's constructs from a merely-recognised one without flipping
+  `RegStatus`/`Roadmap` (which stay PCRE2/base-grammar facts, unchanged).
+  Finds the answer is mostly already computed at runtime: a row's own
+  `aport`/`cport` `PortKind` plus ext.c's ENABLED-BUT-UNBUILT refusal
+  already distinguish built from unbuilt per construct on every compile,
+  and tests/reject/'s `reject_gated` pins already assert it row-by-row.
+  Recommends PER-CONSTRUCT semantics (module `assertions`' real five-wave
+  3/8→8/8 history is the measured reason per-module would keep lying, the
+  same shape the refutation rejected one level coarser) and a
+  DERIVED-AT-DUMP-TIME column in `pcrec --list-syntax`/the generated index
+  — driving each row's own `syntax` through a gate-forced-open doorway
+  call, reusing `--probe-ask`/`--explain`'s existing isolated-`Ctx`
+  machinery — rather than a hand-declared column, which would reproduce
+  the "second `built` column somebody would have to keep in sync with the
+  ports" ext.c's own UNBUILT-macro comment already declined to build.
+  PROPOSED, unbuilt; five open questions for Frank, none touching
+  `RS_BASE => ROADMAP_NONE` pairing or the gate-CLOSED diagnostics.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
