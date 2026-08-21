@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 """Verify every mech sabotage's SAB_BEFORE anchor still occurs in its target
 file. A stale anchor means the sabotage silently fails to apply, i.e. a
-sabotage row that certifies nothing."""
+sabotage row that certifies nothing.
+
+Pure grep -- no builds, seconds to run -- which is what makes it usable as a
+standing tripwire beside `make mech`'s build-per-sabotage sweep. It was that
+gap that let seven anchors drift undetected for weeks.
+
+Graduated from the [M6-READ] lane. Its root was HARDCODED to that lane's
+worktree, so it ran nowhere else once the worktree was removed; the root is
+now derived from this file's own location, the same way every tests/ script
+derives ROOT_DIR from BASH_SOURCE. Run it from anywhere.
+"""
 import os, re, subprocess, sys
-root = "/home/duxevents/pcrec/worktrees/m6read"
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sabdir = os.path.join(root, "tests/mech/sabotages")
 stale = []
 for fn in sorted(os.listdir(sabdir)):
