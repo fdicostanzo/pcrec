@@ -103,6 +103,84 @@ pcrec_timeout_secs() {
     esac
 }
 
+# _gen_cc_run <compiler> <argv...> — [TT-3] the ccache-cacheability shape fix.
+#
+# WHY THIS EXISTS. ccache cannot cache a combined compile-AND-link invocation
+# (a .c source with -o and no -c): it only recognizes the single
+# preprocess-and-compile-to-one-object shape. Nearly every gen_cc call site in
+# this tree passes one or more .c sources straight to `-o <binary>` in ONE
+# gcc invocation (compile driver.c/gen.c and link in the same command), which
+# is exactly the shape ccache passes through uncached — MEASURED 2026-08-21:
+# only 540/5466 compile calls were cacheable under a naive PATH-masquerade
+# wiring (build/battery_union2.log). This function is the SINGLE place that
+# reshapes the call: split each .c source into its own `-c` compile (the
+# shape ccache caches), then link the resulting objects — same inputs, same
+# compiler, same flags, same final artifact, different invocation SHAPE.
+#
+# GATED on CCACHE=1 (house style, same shape as LINTGEN above): when unset
+# (the default), this is byte-for-byte the original one-shot call — no shape
+# change, no ccache dependency, nothing about a plain `make test` differs.
+# A call that already passes `-c` (pc4's split-by-hand, the D45 controls, the
+# codegen multi-engine fixture) is already the cacheable shape and is left
+# untouched either way.
+_gen_cc_run() {
+    local cc="$1"
+    shift
+    if [ "${CCACHE:-0}" != "1" ]; then
+        "$cc" "$@"
+        return $?
+    fi
+    local a has_c=0
+    for a in "$@"; do
+        if [ "$a" = "-c" ]; then has_c=1; break; fi
+    done
+    if [ "$has_c" -eq 1 ]; then
+        "$cc" "$@"
+        return $?
+    fi
+    local out="" flags=() csrcs=()
+    local args=("$@") n i
+    n=${#args[@]}
+    i=0
+    while [ "$i" -lt "$n" ]; do
+        a="${args[$i]}"
+        if [ "$a" = "-o" ] && [ -z "$out" ]; then
+            out="${args[$((i + 1))]}"
+            i=$((i + 2))
+            continue
+        fi
+        case "$a" in
+            *.c) csrcs+=("$a") ;;
+            *) flags+=("$a") ;;
+        esac
+        i=$((i + 1))
+    done
+    # Safety net: not the compile+link shape this split understands (no -o,
+    # or no .c sources at all — e.g. linking pre-built .o's) — run the
+    # original call rather than guess at a reshaping.
+    if [ -z "$out" ] || [ "${#csrcs[@]}" -eq 0 ]; then
+        "$cc" "$@"
+        return $?
+    fi
+    local tmp objs=() rc=0 src ob
+    tmp="$(mktemp -d "${TMPDIR:-/tmp}/gen_cc_split.XXXXXX")" || return 1
+    for src in "${csrcs[@]}"; do
+        ob="$tmp/$(basename "$src" .c).o"
+        "$cc" "${flags[@]}" -c -o "$ob" "$src"
+        rc=$?
+        if [ "$rc" -ne 0 ]; then
+            rm -rf "$tmp"
+            return "$rc"
+        fi
+        objs+=("$ob")
+    done
+    "$cc" "${flags[@]}" -o "$out" "${objs[@]}"
+    rc=$?
+    rm -rf "$tmp"
+    return "$rc"
+}
+export -f _gen_cc_run
+
 # gen_cc <case-label> <compiler-argv...>
 #
 # Runs one compile of GENERATED C under the budget. Always leaves the
@@ -131,8 +209,13 @@ gen_cc() {
     # Soft=hard would escalate straight to SIGKILL and destroy exactly that
     # distinction. The rlimit is per-process, not per-tree; the pathology
     # class is one cc1 grinding, and cc1 gets its own bounded counter.
+    # The whole split sequence (compile, compile, ..., link when CCACHE=1)
+    # runs under the SAME budget as the original one-shot call — ccache
+    # makes a hit near-instant, so the sum comfortably fits, and a real
+    # miss on every source is still bounded by the same numbers a plain
+    # compile was bounded by.
     GEN_CC_LOG="$(timeout "$wall" bash -c \
-        'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; exec "$@"' \
+        'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; _gen_cc_run "$@"' \
         _ "$cpu" "$@" 2>&1)"
     rc=$?
     if [ "$rc" -eq 152 ] || printf '%s' "$GEN_CC_LOG" | grep -q 'CPU time limit exceeded'; then
