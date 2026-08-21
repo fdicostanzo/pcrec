@@ -386,14 +386,17 @@ trailing `|` so the ALTCLS bits stay attached to the expression; S65 still
 drops only its own two prefilter bits (S67 is the separate row for ALTCLS's
 own pair).
 
-**Validation status**: dry-run `lib/replace.py` application confirms each
-anchor now matches its target exactly once and produces syntactically valid
-C reproducing the row's documented intent. Running these seven through
-`bash tests/mech/run_sabotage_matrix.sh` (individually or as a full-matrix
-run) to confirm each moves from `ANOMALY` to `DETECTED` — with no other
-row's score changing — is the remaining step, deferred while a battery+gate
-run has the box. Re-derive the anchor from `git show HEAD:<path>` whenever
-this class recurs; never weaken the count check.
+**Validation status: CONFIRMED** (2026-08-21, at merge). Dry-run
+`lib/replace.py` application confirmed each anchor matches its target
+exactly once and produces syntactically valid C reproducing the row's
+documented intent; then the by-prefix smoke (all seven DETECTED, fail
+counts matching each row's documented figures exactly) and the FULL-MATRIX
+run both landed clean: `== mech run COMPLETE: 85 rows (undetected: 0,
+anomalies: 0, pc3-skipped: 0) at ae6e41f ==` — all seven ANOMALY ->
+DETECTED, no other row's score moved, and the two instruments produced
+byte-identical per-row counts. Re-derive the anchor from
+`git show HEAD:<path>` whenever this class recurs; never weaken the count
+check.
 
 The repair slice's own anchor movement, by contrast, was one row and was
 re-derived in the same change: S81's line gained `upc_emit_of_class` when the
