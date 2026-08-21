@@ -858,7 +858,7 @@ note: conditionals and recursion are NOT in Frank's ruled M6 list and are
 not substeps above — their module refusals stand; they queue behind M6 as
 their own future rows if ruled in.)
 
-- [M6-READ] STATE:not-started — EMITTED-CODE READABILITY PASS (Frank,
+- [M6-READ] STATE:started (2026-08-21, thirty-fifth session, on Frank's ruling — pulled ahead of [M6.4]/[M6.5]/[M6.6] together with the [M6.2] post-module queue's tranche A, D27 corpus merged and close battery in flight; SAMPLE STAGE first: lane/m6read delivers the naming scheme, hand-commented sample artifact(s), object-code-neutrality measurement and pin-update budget FOR FRANK'S APPROVAL before any emitter conversion) — EMITTED-CODE READABILITY PASS (Frank,
   2026-08-18, thirty-second session: ruled as the IMMEDIATE follow to
   M6, ahead of the rest of M5). The generated C becomes readable as
   first-class output. Frank's five requirements, near-verbatim:
