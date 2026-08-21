@@ -192,7 +192,7 @@ typedef enum {
     VE_LABEL,    /* a: label id                                    */
     VE_CLASS,    /* a: class pool id, b: next label                */
     VE_PUSH,     /* a: resume label id                             */
-    VE_SET,      /* a: stv slot                                    */
+    VE_SET,      /* a: slot_values slot                            */
     VE_GOTO,     /* a: target label id                             */
     VE_FAIL,
     VE_ACCEPT,
@@ -204,7 +204,7 @@ typedef enum {
                   *       b: VmRungKind ordinal                     */
     VE_STRAT,    /* [ENG-BREP] a: the A_REP's own entry label id,
                   *       b: VmStratKind ordinal                    */
-    VE_CUT,      /* [ENG-BREP] a: the cut-mark stv slot            */
+    VE_CUT,      /* [ENG-BREP] a: the cut-mark slot_values slot    */
     VE_PRUNE     /* [M4.6d] a: the A_REP's own entry label id,
                   *       b: VmPruneKind ordinal                    */
 } VEKind;
@@ -2545,7 +2545,7 @@ static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
  * the walk finishes and the continuation is taken. */
 typedef struct {
     const char *cur;    /* the walk's own cursor local */
-    const char *floor;  /* the loop's entry position, as an stv read */
+    const char *floor;  /* the loop's entry position, as a slot_values read */
     const char *ga;     /* the capture-recovery locals: spans */
     const char *gs;     /* ... and their seen flags */
     const char *ns;     /* the seen counter */

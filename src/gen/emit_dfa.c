@@ -1936,8 +1936,9 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     sb_puts(c,   "        for (;;) {\n");
     if (!views)
         sb_printf(c, "            if (%s_reverse_is_accepting[reverse_state]) match_start_position = rewind_position;\n", p);
-    {   /* same ordering rule as the forward loop, and `sfound` wants the
-         * SMALLEST accepting position, which is where a reverse skip stops */
+    {   /* same ordering rule as the forward loop, and
+         * `match_start_position` wants the SMALLEST accepting position,
+         * which is where a reverse skip stops */
         const char *kw = "if";
         for (int k = 0; k < nrskip; k++) {
             int K = rskip[k];
