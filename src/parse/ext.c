@@ -167,10 +167,16 @@ static bool bucket_has_tail(RegKind kind, int sel)
  * some constructs built and others not WITHIN ONE PATTERN (R30 C7).
  *
  * D26 puts the WORDING in tier 3. The STRUCTURE is not tier 3: it decides
- * whether a half-landed module can mislead. */
+ * whether a half-landed module can mislead.
+ *
+ * D65 (2026-08-21): `PCREC_UNBUILT_MARKER` (internal.h) is the fixed
+ * substring `pcrec_construct_built_status` (src/parse/syntax_dump.c) keys
+ * on to recognise this shape from OUTSIDE — one define shared with that
+ * classifier rather than two copies of the sentence, so a reword here
+ * cannot silently stop being classified as `unbuilt`. */
 #define UNBUILT(pos, fmt, ...) \
-    REFUSE((pos), "module '%s' is enabled but " fmt " is not implemented yet", \
-           r->module, ##__VA_ARGS__)
+    REFUSE((pos), "module '%s' " PCREC_UNBUILT_MARKER " " fmt \
+           " is not implemented yet", r->module, ##__VA_ARGS__)
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * `c` is the byte after the backslash and the cursor sits just past it. Called
@@ -291,8 +297,8 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
          * what the caller knows about the construct must not. */
         if (want == WANT_RESULT)
             snprintf(res.msg, sizeof res.msg,
-                     "module '%s' is enabled but \\%c in a class is not "
-                     "implemented yet", r->module, c);
+                     "module '%s' " PCREC_UNBUILT_MARKER " \\%c in a class "
+                     "is not implemented yet", r->module, c);
         else
             snprintf(res.msg, sizeof res.msg,
                      "\\%c in a class requires module '%s'", c, r->module);

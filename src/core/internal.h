@@ -796,6 +796,34 @@ typedef enum {
                      is no module to name (POSIX collating elements) */
 } RegStatus;
 
+/* D65 (2026-08-21, ratifying docs/design/registry_built_status_memo.md): a
+ * THIRD axis, orthogonal to RegStatus (is this base grammar?) and Roadmap
+ * (will a module ever implement it?) — has the OWNING module's producer
+ * actually landed for THIS construct. Deliberately not a fourth RegRow
+ * field: `pcrec_construct_built_status()` (src/parse/syntax_dump.c) DERIVES
+ * it, per row, by driving the row's own `syntax` through a gate-forced-open
+ * doorway call — the same reason ext.c's UNBUILT macro comment gives for
+ * not adding "a second built column somebody would have to keep in sync
+ * with the ports". PCREC_BUILT_NA is the answer for RS_BASE/RS_REJECTED
+ * rows (the question does not arise); PCREC_BUILT_DEFECT is a row whose
+ * own well-formed `syntax` produced neither a clean answer nor the
+ * enabled-but-unbuilt refusal shape — a registry defect, never a status,
+ * which tests/registry/registry_check.c asserts never happens rather than
+ * silently rendering. */
+typedef enum {
+    PCREC_BUILT_NA = 0,
+    PCREC_BUILT_YES,
+    PCREC_BUILT_NO,
+    PCREC_BUILT_DEFECT
+} PcrecBuiltStatus;
+
+/* The stable substring both ext.c's UNBUILT macro (which renders it) and
+ * pcrec_construct_built_status (which recognises it) key on, so a reworded
+ * refusal cannot silently stop being classified — one define, not two
+ * copies of the sentence (D65's memo, "Risks and the check-design
+ * question"). */
+#define PCREC_UNBUILT_MARKER "is enabled but"
+
 /* Which diagnostic the construct produces. Kept as data so SR-2's dispatch is
  * a mechanical substitution and byte-identity is provable. */
 typedef enum {
@@ -1715,6 +1743,15 @@ extern const char *const PCREC_DEFAULT_FEATURES;
  * the only consumers today, and promoting one function into lib/pcrec.h later
  * is easy in a way that un-promoting it is not. */
 char *pcrec_syntax_tsv(unsigned flavours);
+/* D65: the built-status derivation `pcrec_syntax_tsv`'s new column reads,
+ * and the same function tests/registry/registry_check.c's defect assertion
+ * calls directly — one derivation, two callers, so neither can drift from
+ * the other (the shape SR-4's dump/doc pairing already uses). Mutates the
+ * process-global enabled set TEMPORARILY (src/parse/enabled.c) to force
+ * `r`'s own module open regardless of what the process's real --features
+ * installed, and restores it exactly before returning — see the function's
+ * own comment for why that is safe and how the restore is exact. */
+PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r);
 /* `--list-verbs`: the Q1 name tables, which are not RegRows and so cannot
  * appear in the TSV above. Caller frees. */
 char *pcrec_syntax_verbs(void);
