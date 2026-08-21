@@ -971,6 +971,16 @@ append-only or historical records.
   registry: 33 of 34 "shipped-module" rows read `built`, `(?J)` reads
   `unbuilt` — the precise distinction per-construct granularity was ruled
   for. Full measurements in the memo's own implementation record.
+  **CORRECTED (2026-08-21, tail lane lane/regstatustail): the consumer
+  survey covered CONTENT readers (module names, gate-CLOSED wording) but
+  not FORMAT readers (field count, positional splits), and the union
+  battery found two — tests/reject/'s `--list-syntax` row iterator and
+  tests/cli's case10, both hard-coding `NF != 15` — that broke the moment
+  the 16th column landed. Both fixed (`NF != 16`); the memo's own
+  "Correction" section carries the complete format-consumer survey (every
+  site in the tree that parses the dump's SHAPE, not just its content) and
+  the CONTENT-vs-FORMAT distinction the first pass needed and did not
+  draw. Verified: full `make test` green (corpus 20,775/0, cli 269/0).
 
 Maintenance: update this file when files are added/removed or their roles
 change.

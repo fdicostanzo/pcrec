@@ -422,6 +422,14 @@ edits touch `RegStatus`, `Roadmap`, or any existing refusal wording (the two
 ext.c sites keep their exact rendered text; only the SOURCE of the fixed
 substring moved to a shared `#define`).
 
+**CORRECTED 2026-08-21 (tail lane, lane/regstatustail) — "tests/reject/'s
+hand pins... UNCHANGED" is true and incomplete.** The hand pins themselves
+never moved; tests/reject/'s `--list-syntax` ROW ITERATOR did, because it is
+a FORMAT consumer this section's survey did not think to ask about
+separately from the hand pins it sits beside. See "Correction" below for
+the mechanism, the fix, and the complete format-consumer survey this
+paragraph's own gap argued for.
+
 **Files touched**: `src/core/internal.h`, `src/parse/ext.c`,
 `src/parse/syntax_dump.c`, `tests/registry/registry_check.c`,
 `tests/registry/run_registry_tests.sh`, `tests/registry/compliance_section.py`,
@@ -490,8 +498,10 @@ survey enumerated from remembered call sites inherits the same blind spot):
 
 **Verification**: `bash tests/registry/run_registry_tests.sh` (unaffected,
 already green — that suite's own consumers were fixed in the core-
-implementation commit) and a full `make test` run on merged main + this
-lane's fixes; see this lane's own hand-back for the exact result. The
-`docs/design/CLAUDE.md`, `tests/reject/CLAUDE.md`, `tests/cli/CLAUDE.md` and
-`tests/registry/CLAUDE.md` entries this correction touches are listed in
-that hand-back's file list.
+implementation commit) and a full untimeout'd `make test` on this lane's
+branch (merged main + both fixes): **EXITCODE=0**, corpus 20,775/0, cli
+269/0, zero `make` Errors read from the trailer. Both fixes validate: the
+same run that would have failed with `NF != 15` still hard-coded passes
+clean with `NF != 16`. The `docs/design/CLAUDE.md`, `tests/reject/CLAUDE.md`,
+`tests/cli/CLAUDE.md` and `tests/registry/CLAUDE.md` entries this correction
+touches are listed in that hand-back's file list.
