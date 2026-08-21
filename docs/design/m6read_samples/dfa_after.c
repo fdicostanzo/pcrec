@@ -236,11 +236,11 @@ int rx_search(const unsigned char *subject, size_t subject_length,
     for (;;) {
         if (rx_forward_is_accepting[forward_state]) last_accept_position = scan_position;
 
-        /* Prefilter: nothing found yet and still at the start, so skip
-         * ahead to the next byte that could begin a match. */
+        // Prefilter: nothing found yet and still at the start, so skip
+        // ahead to the next byte that could begin a match.
         if (forward_state == RX_FORWARD_START && last_accept_position == RX_NO_POSITION) {
             if (scan_position >= subject_length) return 0;
-            /* 69 is 'E', the only byte a match can start with. */
+            // 69 is 'E', the only byte a match can start with.
             const void *candidate = memchr(subject + scan_position, 69,
                                            subject_length - scan_position);
             if (!candidate) return 0;
@@ -248,10 +248,10 @@ int rx_search(const unsigned char *subject, size_t subject_length,
         }
 
         if (scan_position >= subject_length) break;
-        /* Consume one byte and follow its transition. */
+        // Consume one byte and follow its transition.
         forward_state = rx_forward_next_state[forward_state * RX_FORWARD_CLASSES
                                               + rx_forward_byte_class[subject[scan_position++]]];
-        if (forward_state < 0) break;   /* dead: no match can continue */
+        if (forward_state < 0) break;   // dead: no match can continue
     }
     if (last_accept_position == RX_NO_POSITION) return 0;
 
@@ -268,18 +268,18 @@ int rx_search(const unsigned char *subject, size_t subject_length,
 
         for (;;) {
             if (rx_reverse_is_accepting[reverse_state]) match_start_position = rewind_position;
-            /* Never rewind past where the caller allowed the search to
-             * begin. */
+            // Never rewind past where the caller allowed the search to
+            // begin.
             if (rewind_position <= search_from) break;
-            /* Step back one byte and follow its reverse transition. */
+            // Step back one byte and follow its reverse transition.
             reverse_state = rx_reverse_next_state[reverse_state * RX_REVERSE_CLASSES
                                                   + rx_reverse_byte_class[subject[--rewind_position]]];
             if (reverse_state < 0) break;
         }
         if (match_start_position == RX_NO_POSITION) return 0;
 
-        /* Slot 0 is the whole match; this pattern has no capture groups,
-         * so there is nothing else to report. */
+        // Slot 0 is the whole match; this pattern has no capture groups,
+        // so there is nothing else to report.
         if (capture_spans) {
             capture_spans[0][0] = (ptrdiff_t)match_start_position;
             capture_spans[0][1] = (ptrdiff_t)match_end_position;
@@ -296,20 +296,20 @@ int rx_search(const unsigned char *subject, size_t subject_length,
  * later engine shares this emitter. */
 ptrdiff_t rx_match(const rx_ctx *ctx)
 {
-    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */
+    // Initialized: gcc -O1 false maybe-uninitialized (pcrec K28).
     ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}};
     int search_result = rx_search(ctx->subject, ctx->len, ctx->pos, capture_spans);
     if (search_result < 0) return (ptrdiff_t)search_result;
-    /* rx_search is a SEARCH and may report a match starting later in the
-     * subject; this entry is ANCHORED, so anything that did not start
-     * exactly at ctx->pos is not an answer to the question asked. */
+    // rx_search is a SEARCH and may report a match starting later in the
+    // subject; this entry is ANCHORED, so anything that did not start
+    // exactly at ctx->pos is not an answer to the question asked.
     if (search_result != 1 || (size_t)capture_spans[0][0] != ctx->pos) return -1;
     return capture_spans[0][1] - capture_spans[0][0];
 }
 
 ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])
 {
-    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */
+    // Initialized: gcc -O1 false maybe-uninitialized (pcrec K28).
     ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}};
     int search_result = rx_search(ctx->subject, ctx->len, ctx->pos, capture_spans);
     if (search_result < 0) return (ptrdiff_t)search_result;
@@ -356,7 +356,7 @@ const struct rx_info rx_info = {
  * a one-shot driver that searches argv[1] and prints the span. */
 int main(int argc, char **argv)
 {
-    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */
+    // Initialized: gcc -O1 false maybe-uninitialized (pcrec K28).
     ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}};
     if (argc < 2) { fprintf(stderr, "usage: %s <subject>\n", argv[0]); return 2; }
     int search_result = rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0, capture_spans);
@@ -368,9 +368,9 @@ int main(int argc, char **argv)
         printf("nomatch\n");
         return 1;
     }
-    /* The give-up codes: the engine stopped without deciding. A DFA
-     * artifact cannot produce these; the arms exist so every artifact's
-     * driver reports the same way. */
+    // The give-up codes: the engine stopped without deciding. A DFA
+    // artifact cannot produce these; the arms exist so every artifact's
+    // driver reports the same way.
     if (search_result == PCREC_ERR_STEPS) {
         printf("steps\n");
         return 3;

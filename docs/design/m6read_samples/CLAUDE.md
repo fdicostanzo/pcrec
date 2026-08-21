@@ -1,5 +1,10 @@
 # docs/design/m6read_samples/ — the [M6-READ] style exemplar
 
+**APPROVED by Frank 2026-08-21** ("look fantastic"), with one cosmetic ruling
+applied — `/* */` for structural comments, `// ` for line-level intent — and
+all five of README §2's judgment calls ratified as embodied here. This
+directory is now the STYLE OF RECORD for the emitter conversion.
+
 The one sample commented artifact the [M6-READ] plan row owes Frank before
 the emitter conversion, plus the proposal it exists to justify. **Design
 artifacts only: nothing here is built or tested by pcrec's make, and nothing

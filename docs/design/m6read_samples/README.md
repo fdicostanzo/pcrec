@@ -113,10 +113,11 @@ VM:
 | `RX_WORK` | `RX_CHARGE_WORK` | it is an action, not a quantity |
 | `RX_MRL_SHORT` / `RX_MRL_CAP` | `RX_TOO_SHORT` / `RX_CLAMP_SPAN` | |
 
-## 2. Judgment calls, for Frank to confirm or redirect
+## 2. Judgment calls — RATIFIED (Frank, 2026-08-21)
 
-These are the places the row's letter did not decide and I did. Each is
-cheap to reverse.
+These are the places the row's letter did not decide and I did. **All five
+were reviewed and ratified as embodied in the approved samples; none was
+overruled.** They are recorded as reasoning, not as open questions.
 
 **Decision 1 — where "ABI" stops.** The row says the emitted header's names
 do not change. I read that as the names a *consumer writes*: exported
@@ -188,6 +189,35 @@ is a codegen change rather than a comment or a rename, so it is offered as a
 follow-on rather than smuggled in.
 
 ## 3. Style choices — where comments earned their place, and where they did not
+
+### Comment form — RULED (Frank, 2026-08-21)
+
+The samples were approved with one cosmetic ruling, applied here and binding
+on the emitter conversion:
+
+- **`/* */` = STRUCTURAL.** The file orientation block, section banners, data
+  structure and table blocks with their legends, macro-definition comments,
+  and function header blocks.
+- **`// ` = LINE-LEVEL INTENT.** Any comment attached to a statement, a small
+  group of statements, or a program label. Line comments stand out better
+  against the code in this form.
+
+Applied to 12 comments in `dfa_after.c` and 36 in `vm_after.c`; re-verified
+neutral (`.text`/`.rodata` byte-identical, exported symbols unchanged) rather
+than assumed. **The headers are untouched by the ruling** — every comment in
+them is either a doc block or a frozen-ABI field annotation, and neither is
+line-level intent.
+
+Two boundary calls, both trivially flippable if Frank wants them the other
+way. The multi-paragraph mechanism blocks at `rx_accept` and `rx_fail` keep
+`/* */`: they are the VM's two exits and read as header documentation for
+them, not as intent on a statement — whereas the short per-label comments
+(`// group 1 opens`, `// consume 'c'`) took `//`. And trailing annotations
+inside data initialisers (`.engine = 2, /* PCREC_ENGINE_VM */`) keep `/* */`,
+since `//` inside a braced initialiser reads poorly and these annotate data
+rather than code.
+
+### Density and placement
 
 The row names blind quota compliance as the failure mode, so it is worth
 being explicit about the density that resulted.

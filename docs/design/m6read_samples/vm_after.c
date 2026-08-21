@@ -377,8 +377,8 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
      * every accepting position and keep going, so the last one wins. */
     for (;;) {
         if (rx_forward_is_accepting[forward_state]) last_accept_position = scan_position;
-        /* Nothing found yet and still at the start: skip over bytes that
-         * cannot begin a match rather than stepping through them. */
+        // Nothing found yet and still at the start: skip over bytes that
+        // cannot begin a match rather than stepping through them.
         if (forward_state == RX_FORWARD_START && last_accept_position == RX_NO_POSITION) {
             while (scan_position < subject_length
                    && !rx_can_begin_match[subject[scan_position]]) scan_position++;
@@ -387,7 +387,7 @@ static int rx_prefilter(const unsigned char *subject, size_t subject_length,
         if (scan_position >= subject_length) break;
         forward_state = rx_forward_next_state[forward_state * RX_FORWARD_CLASSES
                             + rx_forward_byte_class[subject[scan_position++]]];
-        if (forward_state < 0) break;   /* dead: no match can continue */
+        if (forward_state < 0) break;   // dead: no match can continue
     }
     if (last_accept_position == RX_NO_POSITION) return 0;
 
@@ -429,114 +429,114 @@ static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run,
     const size_t subject_length = ctx->len;
     size_t position = ctx->pos;
     ptrdiff_t *const slot_values = run->slot_values;
-    size_t rx_span_cursor = 0;   /* the span-loop cursor (engine_m4.md 2.5):
-                             a plain local, UNTRAILED, whose save
-                             point is a resume frame */
+    // the span-loop cursor (engine_m4.md 2.5): a plain local, UNTRAILED,
+    // whose save point is a resume frame
+    size_t rx_span_cursor = 0;
     (void)subject; (void)subject_length; (void)slot_values;
     goto rx_L0;
 
-/* group 1 opens */
+// group 1 opens
 rx_L0: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)position);
     goto rx_L3;
-/* group 1's body: `\w+` */
+// group 1's body: `\w+`
 rx_L3: __attribute__((unused));
-    /* Run the class as far as it goes. This loop is POSSESSIVE: it takes
-     * the longest run and never gives bytes back, so it pushes no resume
-     * frame and cannot be backtracked into. The compiler proved that
-     * giving a byte back could never rescue a failure here. */
+    // Run the class as far as it goes. This loop is POSSESSIVE: it takes
+    // the longest run and never gives bytes back, so it pushes no resume
+    // frame and cannot be backtracked into. The compiler proved that
+    // giving a byte back could never rescue a failure here.
     {
         rx_span_cursor = position;
         while (rx_span_cursor + 1 <= subject_length
                && ((rx_class_bitmap_0[(subject[rx_span_cursor + 0]) >> 3]
                     >> ((subject[rx_span_cursor + 0]) & 7)) & 1)) { rx_span_cursor += 1; }
     }
-    /* Pay for the bytes just scanned. */
+    // Pay for the bytes just scanned.
     RX_CHARGE_WORK(((ptrdiff_t)(rx_span_cursor - (ptrdiff_t)position)) / 1);
     if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)position + 1) goto rx_fail;
     if (RX_TOO_SHORT(rx_span_cursor, 6)) goto rx_fail;
     position = rx_span_cursor;
     goto rx_L4;
-/* group 1 closes */
+// group 1 closes
 rx_L4: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)position);
     goto rx_L2;
 rx_L2: __attribute__((unused));
-    /* consume '@' */
+    // consume '@'
     if (position < subject_length && (subject[position] == 64)) { position++; goto rx_L5; }
     goto rx_fail;
-/* group 2 opens */
+// group 2 opens
 rx_L5: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP2_START, (ptrdiff_t)position);
     goto rx_L7;
-/* group 2's body: `\w+` */
+// group 2's body: `\w+`
 rx_L7: __attribute__((unused));
-    /* Run the class as far as it goes. This loop is POSSESSIVE: it takes
-     * the longest run and never gives bytes back, so it pushes no resume
-     * frame and cannot be backtracked into. The compiler proved that
-     * giving a byte back could never rescue a failure here. */
+    // Run the class as far as it goes. This loop is POSSESSIVE: it takes
+    // the longest run and never gives bytes back, so it pushes no resume
+    // frame and cannot be backtracked into. The compiler proved that
+    // giving a byte back could never rescue a failure here.
     {
         rx_span_cursor = position;
         while (rx_span_cursor + 1 <= subject_length
                && ((rx_class_bitmap_0[(subject[rx_span_cursor + 0]) >> 3]
                     >> ((subject[rx_span_cursor + 0]) & 7)) & 1)) { rx_span_cursor += 1; }
     }
-    /* Pay for the bytes just scanned. */
+    // Pay for the bytes just scanned.
     RX_CHARGE_WORK(((ptrdiff_t)(rx_span_cursor - (ptrdiff_t)position)) / 1);
     if ((ptrdiff_t)rx_span_cursor < (ptrdiff_t)position + 1) goto rx_fail;
     if (RX_TOO_SHORT(rx_span_cursor, 4)) goto rx_fail;
     position = rx_span_cursor;
     goto rx_L8;
-/* group 2 closes */
+// group 2 closes
 rx_L8: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP2_END, (ptrdiff_t)position);
     goto rx_L6;
 rx_L6: __attribute__((unused));
-    /* consume '.' */
+    // consume '.'
     if (position < subject_length && (subject[position] == 46)) { position++; goto rx_L9; }
     goto rx_fail;
-/* group 3 opens */
+// group 3 opens
 rx_L9: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP3_START, (ptrdiff_t)position);
     goto rx_L10;
-/* the alternation (com|org): take branch 1, remember branch 2 */
+// the alternation (com|org): take branch 1, remember branch 2
 rx_L10: __attribute__((unused));
     RX_PUSH(&&rx_L14, position);
     goto rx_L12;
-/* reached only by backtracking: branch 1 failed, try branch 2 */
+// reached only by backtracking: branch 1 failed, try branch 2
 rx_L14: __attribute__((unused));
     goto rx_L13;
-/* branch 1: "com" */
+// branch 1: "com"
 rx_L12: __attribute__((unused));
-    /* consume 'c' */
+    // consume 'c'
     if (position < subject_length && (subject[position] == 99)) { position++; goto rx_L15; }
     goto rx_fail;
 rx_L15: __attribute__((unused));
-    /* consume 'o' */
+    // consume 'o'
     if (position < subject_length && (subject[position] == 111)) { position++; goto rx_L16; }
     goto rx_fail;
 rx_L16: __attribute__((unused));
-    /* consume 'm' */
+    // consume 'm'
     if (position < subject_length && (subject[position] == 109)) { position++; goto rx_L11; }
     goto rx_fail;
-/* branch 2: "org" */
+// branch 2: "org"
 rx_L13: __attribute__((unused));
-    /* consume 'o' */
+    // consume 'o'
     if (position < subject_length && (subject[position] == 111)) { position++; goto rx_L17; }
     goto rx_fail;
 rx_L17: __attribute__((unused));
-    /* consume 'r' */
+    // consume 'r'
     if (position < subject_length && (subject[position] == 114)) { position++; goto rx_L18; }
     goto rx_fail;
 rx_L18: __attribute__((unused));
-    /* consume 'g' */
+    // consume 'g'
     if (position < subject_length && (subject[position] == 103)) { position++; goto rx_L11; }
     goto rx_fail;
-/* group 3 closes */
+// group 3 closes
 rx_L11: __attribute__((unused));
     RX_SET(RX_SLOT_GROUP3_END, (ptrdiff_t)position);
     goto rx_L1;
-/* the whole pattern is matched */
+// the whole pattern is matched
 rx_L1: __attribute__((unused));
     goto rx_accept;
 
@@ -556,14 +556,14 @@ rx_fail: __attribute__((unused));
      * independent, and the counter measures precisely the thing it is
      * meant to bound. D22: DD-2 is ROBUSTNESS, not a security
      * boundary, and it must not be traded against execution speed. */
-    if (run->resume_depth == 0) return -1;      /* nothing left to try */
+    if (run->resume_depth == 0) return -1;   // nothing left to try
     if (--run->steps_left < 0) return RX_R_STEPS;
     {
         const unsigned frame_index = --run->resume_depth;
-        /* Rewind the subject cursor to where the frame was pushed... */
+        // Rewind the subject cursor to where the frame was pushed...
         position = run->resume_stack[frame_index].resume_position;
-        /* ...and undo every capture-slot write made since then, newest
-         * first, so the slots read as they did at the push. */
+        // ...and undo every capture-slot write made since then, newest
+        // first, so the slots read as they did at the push.
         while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {
             run->trail_depth--;
             slot_values[run->trail[run->trail_depth].slot_index] =
@@ -606,8 +606,8 @@ int rx_search(const unsigned char *subject, size_t subject_length,
 
     if (search_from > subject_length) return 0;
 
-    /* Ask the prefilter where the first plausible match lies. It returns
-     * a window; the VM is then run ANCHORED inside it and never scans. */
+    // Ask the prefilter where the first plausible match lies. It returns
+    // a window; the VM is then run ANCHORED inside it and never scans.
     {
         ptrdiff_t window[1][2];
         if (rx_prefilter(subject, subject_length, search_from, window) != 1) return 0;
@@ -619,14 +619,14 @@ int rx_search(const unsigned char *subject, size_t subject_length,
     ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;
     ctx.caps = NULL; ctx.user = NULL;
 
-    /* Try the VM at the window's start. If the whole pattern fails there,
-     * advance one position, re-run the prefilter to find the next window,
-     * and try again. */
+    // Try the VM at the window's start. If the whole pattern fails there,
+    // advance one position, re-run the prefilter to find the next window,
+    // and try again.
     for (;;) {
         ctx.pos = attempt_position;
         result = rx_match_anchored(&ctx, &run, window_end);
-        /* A bound was hit: report WHY rather than "no match" -- the
-         * engine stopped without deciding. */
+        // A bound was hit: report WHY rather than "no match" -- the
+        // engine stopped without deciding.
         if (result == RX_R_STEPS)  return PCREC_ERR_STEPS;
         if (result == RX_R_FRAMES) return PCREC_ERR_FRAMES;
         if (result == RX_R_WORK)   return PCREC_ERR_WORK;
@@ -671,10 +671,10 @@ ptrdiff_t rx_match(const rx_ctx *ctx)
     if (ctx->pos > ctx->len) return -1;
     rx_run_state_init(&run);
     result = rx_match_anchored(ctx, &run, ctx->len);
-    /* No translation and no clamp: the impl's return space IS this
-     * contract's -- >= 0, -1, or one of the three R_ sentinels, which
-     * are the ERR_ codes. A defensive floor test here would be dead
-     * code pretending to be a safeguard. */
+    // No translation and no clamp: the impl's return space IS this
+    // contract's -- >= 0, -1, or one of the three R_ sentinels, which
+    // are the ERR_ codes. A defensive floor test here would be dead
+    // code pretending to be a safeguard.
     return result;
 }
 
@@ -725,7 +725,7 @@ const struct rx_info rx_info = {
 
 int main(int argc, char **argv)
 {
-    /* Initialized: gcc -O1 false maybe-uninitialized (pcrec K28). */
+    // Initialized: gcc -O1 false maybe-uninitialized (pcrec K28).
     ptrdiff_t capture_spans[RX_NCAPS][2] = {{0}};
     if (argc < 2) { fprintf(stderr, "usage: %s <subject>\n", argv[0]); return 2; }
     int search_result = rx_search((const unsigned char *)argv[1], strlen(argv[1]), 0,
