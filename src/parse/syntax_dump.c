@@ -23,6 +23,7 @@
  * the human-readable answer is the `module` column beside it — which
  * tests/registry/ separately proves is a bijection with the mask. */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -151,9 +152,15 @@ char *pcrec_syntax_tsv(unsigned flavours)
                  "# `syntax` is a valid probe pattern for the construct.\n"
                  "# `expect` is the text the diagnostic must contain, for the "
                  "rows that reject.\n"
+                 "# `built` (D65): has the owning module's producer landed for "
+                 "THIS construct, derived live by driving `syntax` through a "
+                 "gate-forced-open doorway call — 'built'/'unbuilt' for "
+                 "RS_MODULE rows, '-' where the question does not arise "
+                 "(RS_BASE/RS_REJECTED). Orthogonal to `status`/`roadmap`, "
+                 "which stay PCRE2/base-grammar facts.\n"
                  "#kind\tselector\tsyntax\tmodule\tfeature\tflavours\tengines"
                  "\tstatus\tdiag\tflags\texpect\tnote\troadmap\tquantifiable"
-                 "\tclass_expect\n");
+                 "\tclass_expect\tbuilt\n");
 
     for (size_t k = 0; k < NELEMS(all_kinds); k++) {
         size_t n;
@@ -197,6 +204,19 @@ char *pcrec_syntax_tsv(unsigned flavours)
              * rows: the construct cannot reach a class position, so there is
              * no fact to print (the header's "Empty field = none" rule). */
             put_str(&sb, r->class_expect);
+            sb_putc(&sb, '\t');
+            /* 16th column (D65, 2026-08-21): the built-status derivation —
+             * see pcrec_construct_built_status's own comment. PCREC_BUILT_
+             * DEFECT renders visibly rather than being coerced into "unbuilt"
+             * (a worse lie): tests/registry/registry_check.c's defect
+             * assertion is what turns it into a hard `make test` failure
+             * before this ever reaches a committed doc. */
+            {
+                PcrecBuiltStatus bs = pcrec_construct_built_status(r);
+                sb_puts(&sb, bs == PCREC_BUILT_YES    ? "built"
+                           : bs == PCREC_BUILT_NO     ? "unbuilt"
+                           : bs == PCREC_BUILT_DEFECT ? "defect" : "-");
+            }
             sb_putc(&sb, '\n');
         }
     }
@@ -397,6 +417,132 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
     }
     return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "",
                         .answered_at = WANT_CLAIM };
+}
+
+/* ---- D65: the BUILT-STATUS derivation ------------------------------------
+ *
+ * docs/design/registry_built_status_memo.md, ratified wholesale (D65,
+ * 2026-08-21). Answers "has this construct's own producer actually
+ * landed", per row, by driving the row's own `syntax` through the SAME
+ * doorway machinery `--probe-ask`/`--explain` use above, at a gate FORCED
+ * open (every module, not just the row's own — see
+ * `pcrec_construct_built_status`'s own comment for the `(?m)` cross-module
+ * dependency that forced the wider choice) — never a hand-declared column
+ * (ext.c's UNBUILT macro comment already gives the reason: a second column
+ * would have to be kept in sync with the ports by hand, the D24 two-homes
+ * shape this whole registry exists to prevent). The isolated-`Ctx` shape
+ * (memset, own `setjmp`, `pcrec_parse_mods_init`, `arena_free` on every
+ * exit) is `pcrec_probe_ask`'s, ordered the same way for the same reason:
+ * the guard is placed before any automatic object this function reads
+ * AFTER a possible longjmp is live, so `-Wclobbered` stays silent.
+ *
+ * `probe` does the CLASSIFICATION at whatever gate the caller has already
+ * installed; `pcrec_construct_built_status` (the exported entry, below) is
+ * the one that FORCES the gate. Split so the gate-mutation is in exactly
+ * one place. */
+static PcrecBuiltStatus built_status_probe(const RegRow *r)
+{
+    Ctx cx;
+    memset(&cx, 0, sizeof cx);
+    cx.pat = r->syntax;
+    cx.patlen = strlen(r->syntax);
+    cx.arena.cx = &cx;
+    if (setjmp(cx.jb)) {
+        /* the row's own well-formed `syntax` (SR-1's own rule: every row's
+         * `syntax` really reaches its doorway) RAISED instead of cleanly
+         * producing or refusing — neither half of D65(3)'s vocabulary, so
+         * this is a registry defect for tests/registry/registry_check.c to
+         * fail on, never a status this dump may assert. */
+        arena_free(&cx.arena);
+        return PCREC_BUILT_DEFECT;
+    }
+    pcrec_parse_mods_init(&cx);
+
+    Doorway d;
+    if (!doorway_route(r->syntax, cx.patlen, &d)) {
+        arena_free(&cx.arena);
+        return PCREC_BUILT_DEFECT;
+    }
+    ExtResult res = doorway_call(&cx, &d, WANT_RESULT);
+
+    /* THE CLASSIFICATION, and why it reads `answered_at` rather than the
+     * refusal TEXT (a narrower first draft matched `PCREC_UNBUILT_MARKER`
+     * here and MEASURED WRONG on three real rows — see the verification
+     * notes in docs/design/registry_built_status_memo.md's implementation
+     * record): `res.answered_at == WANT_RESULT` is exactly D33's own
+     * "gate open, port missing" signal (ext.c's UNBUILT comment: "reaching
+     * this point at WANT_RESULT means the gate was OPEN and the port block
+     * declined"), and `--probe-ask` has reported it since MOD-0.1 slice 9 —
+     * independent of WHAT the refusal says. Module `verbs` (a direct call,
+     * not a port — mod_verbs.c) and module `unicode-props` (bypasses
+     * `aport`/`cport` entirely, "no producer this phase" — mod_uprops.c)
+     * both refuse with the CLOSED-gate wording ("requires module 'X'") even
+     * with their gate forced open, because neither routes through ext.c's
+     * shared UNBUILT epilogue at all; a marker-text match would have
+     * wrongly scored both as registry defects. `answered_at` still reads
+     * `result` for both (MEASURED: `--probe-ask result -- '(*ACCEPT)'` with
+     * `--features verbs`, and the `\p{L}` analogue with `unicode-props`),
+     * because the gate genuinely was open — it is the PORT that had nothing
+     * to say, exactly the fact this column exists to report. Demoted
+     * `answered_at` (< WANT_RESULT) cannot happen here since the gate below
+     * forces EVERY module open, so a demotion would itself mean the
+     * registry's own feature/module bijection is broken — a real defect. */
+    PcrecBuiltStatus result;
+    if (res.what == EXT_NODE || res.what == EXT_MEMBERS ||
+        res.what == EXT_SCALAR)
+        result = PCREC_BUILT_YES;
+    else if (res.what == EXT_REFUSAL && res.answered_at == WANT_RESULT)
+        result = PCREC_BUILT_NO;
+    else
+        result = PCREC_BUILT_DEFECT;
+    arena_free(&cx.arena);
+    return result;
+}
+
+PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r)
+{
+    if (r->status != RS_MODULE || !r->module || !r->syntax) return PCREC_BUILT_NA;
+
+    /* THE GATE MUTATION. `enabled.c`'s enabled set is process-global,
+     * write-once-then-read-many by design (its own header comment) — the
+     * SAME shape `tests/registry/pcre2_check.c`'s "gated pass" already uses
+     * (install a focused set, run, restore, assert the restore — see
+     * tests/registry/CLAUDE.md, "THE ENABLED SET IS FOCUSED"), and this is
+     * `--list-syntax`'s one designed side effect on it: the printed table
+     * returns the set to exactly what it found, so a caller running
+     * `--features X --list-syntax` sees X's own gate-CLOSED diagnostics on
+     * every OTHER row unaffected, in the same process.
+     *
+     * `pcrec_enabled_set_modules()` and `pcrec_enabled_set_spec()`'s
+     * explicit-list form are exact inverses (the module column's own
+     * comma-separated spelling), which is what lets this restore the
+     * caller's set EXACTLY rather than merely to "none" — but that string
+     * lives in the SAME static buffer `install()` overwrites, so it must be
+     * copied out before this function's own `pcrec_enabled_set_spec` call
+     * below overwrites it in place.
+     *
+     * FORCES "all" OPEN, not merely `r->module` — a first draft forced only
+     * the row's own module and MEASURED WRONG on `(?m)`: the letter's own
+     * semantic gate (mod_modifiers.c's case 'm') checks `FEAT_ASSERTIONS`,
+     * not `FEAT_MODIFIERS`, even though the GROUP_OPT row it dispatches
+     * through carries `FEAT_MODIFIERS` (the option-run family's shared
+     * feature bit) — a real cross-module dependency this dump has no other
+     * way to discover per row. Forcing every module open cannot turn an
+     * unbuilt construct built (a row with no producer refuses no matter how
+     * many OTHER modules are enabled, MEASURED for `verbs`/`unicode-props`
+     * above), so the wider force costs nothing and fixes the one real gap
+     * found while verifying this against the shipped compiler. */
+    char saved[512];
+    snprintf(saved, sizeof saved, "%s", pcrec_enabled_set_modules());
+
+    char err[256];
+    if (pcrec_enabled_set_spec("all", err, sizeof err) != 0)
+        return PCREC_BUILT_DEFECT;   /* unreachable: "all" is always valid */
+
+    PcrecBuiltStatus result = built_status_probe(r);
+
+    pcrec_enabled_set_spec(saved[0] ? saved : "none", err, sizeof err);
+    return result;
 }
 
 /* The TSV word for a doorway. Deliberately NOT `doorway_name`'s wording:

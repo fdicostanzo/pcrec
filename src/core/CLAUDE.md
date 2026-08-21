@@ -251,6 +251,21 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   VM_ONLY -> ANY_ENGINE rather than SR-8 (above) finally being built — D59
   has the full argument.
 
+  **[D65] `PcrecBuiltStatus` and `PCREC_UNBUILT_MARKER`.** A THIRD axis on
+  `RegRow` beside `RegStatus`/`Roadmap` — has the owning module's producer
+  landed for THIS construct — deliberately NOT a fourth `RegRow` field:
+  `pcrec_construct_built_status()` (src/parse/syntax_dump.c) DERIVES it
+  per row by driving the row's own `syntax` through a gate-forced-open
+  doorway call, the reason ext.c's UNBUILT macro comment already gives for
+  not adding "a second built column somebody would have to keep in sync
+  with the ports". `PCREC_UNBUILT_MARKER` is the fixed substring both
+  ext.c's UNBUILT macro (which renders it) and the classifier's
+  documentation (not its logic — see syntax_dump.c's own comment for why
+  classification reads `ExtResult.answered_at` instead) share, so a
+  reworded refusal cannot silently drift from what it names. See
+  docs/design/registry_built_status_memo.md (ratified wholesale, D65) and
+  src/parse/CLAUDE.md's syntax_dump.c entry for the full derivation.
+
 ## Conventions
 
 All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.

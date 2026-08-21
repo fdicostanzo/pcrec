@@ -130,6 +130,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   and "this module has not implemented it yet" are different facts and the
   permanent one wins. Pinned in tests/reject/'s `== assertions ==` section
   with the gate-closed rows adjacent; sabotage S70.
+
+  **[D65] (2026-08-21) a `built` column DOES exist now** — `pcrec
+  --list-syntax`'s new column, `pcrec_construct_built_status`
+  (syntax_dump.c) — and it is NOT the second declared column the paragraph
+  above warns against: it is DERIVED, live, per row, by driving the gate
+  and reading `ExtResult.answered_at` exactly as this file's own comment
+  already describes ("gate open, port missing"), never a hand-set field
+  that could drift from the ports. `PCREC_UNBUILT_MARKER` (internal.h) is
+  the one shared string both this macro's format and the `\p`/`\P`-adjacent
+  in-class splice use, so the two ext.c refusal SITES stay one wording —
+  but the classifier itself does NOT match that text (a text-match first
+  draft was WRONG on three real rows: module `verbs` and module
+  `unicode-props` both refuse with the CLOSED-gate wording even at a
+  forced-open gate, since neither routes through this epilogue at all —
+  see docs/design/registry_built_status_memo.md's implementation record
+  and tests/registry/CLAUDE.md item 10 for the measurement).
 - **mod_verbs.c** — module `verbs` (MOD-0.4), the MIGRATION TEST: moves
   `pcrec_ext_verb` here from ext.c WITH the `(*` doorway's two VerbName
   tables and their four accessors (was registry.c) and their whole
@@ -507,6 +523,30 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   later is easier than un-promoting it. SR-4 makes this dump load-bearing, so
   its FORMAT is an interface: no field may contain a tab or a newline, which
   tests/cli case 10 asserts by counting fields
+
+  **[D65] (2026-08-21, docs/design/registry_built_status_memo.md, ratified
+  wholesale) — `--list-syntax` gains a 16th column, `built`.** A THIRD
+  question beside `status`/`roadmap`'s two ("is this base grammar" /
+  "will a module ever implement it"): has the owning module's producer
+  actually LANDED, per construct. `pcrec_construct_built_status` (the
+  exported entry both this dump and `tests/registry/registry_check.c`'s
+  defect assertion call — one derivation, two callers) reuses
+  `doorway_route`/`doorway_call` exactly as `--probe-ask`/`--explain` do,
+  with EVERY module forced open (`src/parse/enabled.c`'s process-global
+  set, saved via `pcrec_enabled_set_modules()` and restored exactly after —
+  the same shape `pcre2_check.c`'s "gated pass" already uses), and
+  classifies on `res.what` + `res.answered_at` rather than on refusal TEXT
+  — see its own comment in this file for the three real rows (module
+  `verbs`, module `unicode-props`, and the cross-module `(?m)` case) a
+  narrower text-matching first draft measured wrong on before landing on
+  this shape. `PCREC_BUILT_NA` ("—") for `RS_BASE`/`RS_REJECTED` rows,
+  where the question does not arise; `PCREC_BUILT_DEFECT` for a row whose
+  own well-formed `syntax` answers neither way — never rendered as a
+  status, always a `registry_check` hard failure. Measured on the shipped
+  registry: 33 of the 34 rows belonging to SHIPPED modules read `built`;
+  `(?J)` reads `unbuilt` (module `modifiers`' own permanent, unconditional
+  DUPNAMES decline) — the precise distinction a per-module summary always
+  blurred, and the reason D65 ruled per-CONSTRUCT granularity.
 
 ## PARSE-1 — `p_alt` as a module callback (2026-08-11)
 

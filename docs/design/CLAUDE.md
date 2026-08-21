@@ -933,6 +933,44 @@ append-only or historical records.
   doorway and name a module but not always the construct itself (`(?(R)`,
   `\12` depend on later-pattern or running state). Build the `byte + tail`
   design in §7 instead — pending Frank's approval and PC-3.
+- `registry_built_status_memo.md` — decision memo (2026-08-21, REGSTATUS
+  lane): the "real fix" the [M6.2] repair slice's ITEM 3 refutation named
+  (docs/dev/dev_journal.md, 2026-08-19 part 6) — a registry BUILT-STATUS
+  field, so the generated compliance index can distinguish a shipped
+  module's constructs from a merely-recognised one without flipping
+  `RegStatus`/`Roadmap` (which stay PCRE2/base-grammar facts, unchanged).
+  Finds the answer is mostly already computed at runtime: a row's own
+  `aport`/`cport` `PortKind` plus ext.c's ENABLED-BUT-UNBUILT refusal
+  already distinguish built from unbuilt per construct on every compile,
+  and tests/reject/'s `reject_gated` pins already assert it row-by-row.
+  Recommends PER-CONSTRUCT semantics (module `assertions`' real five-wave
+  3/8→8/8 history is the measured reason per-module would keep lying, the
+  same shape the refutation rejected one level coarser) and a
+  DERIVED-AT-DUMP-TIME column in `pcrec --list-syntax`/the generated index
+  — driving each row's own `syntax` through a gate-forced-open doorway
+  call, reusing `--probe-ask`/`--explain`'s existing isolated-`Ctx`
+  machinery — rather than a hand-declared column, which would reproduce
+  the "second `built` column somebody would have to keep in sync with the
+  ports" ext.c's own UNBUILT-macro comment already declined to build.
+  **RATIFIED WHOLESALE (D65, 2026-08-21)** — all five recommendations ruled
+  as written; none touch `RS_BASE => ROADMAP_NONE` pairing or the
+  gate-CLOSED diagnostics.
+  **BUILT same session (REGSTATUS lane, same worktree/branch)**:
+  `pcrec_construct_built_status` (src/parse/syntax_dump.c) landed as
+  designed, with one measured correction to the memo's own classification
+  sketch — reading `res.what`/`res.answered_at` rather than matching the
+  UNBUILT refusal's TEXT, and forcing EVERY module open rather than only a
+  row's own, after both measured wrong on real rows (module `verbs`,
+  module `unicode-props`, and `(?m)`'s cross-module `FEAT_ASSERTIONS`
+  dependency — see src/parse/CLAUDE.md's syntax_dump.c entry and
+  tests/registry/CLAUDE.md item 10 for the measurements). `--list-syntax`
+  gains the `built` column; `tests/registry/registry_check.c` gains the
+  D65(3) defect assertion, sabotage-validated both directions;
+  docs/pcre2_compliance.md's generated index carries the column and its
+  "How to read" section shrank per D65(4). Measured on the shipped
+  registry: 33 of 34 "shipped-module" rows read `built`, `(?J)` reads
+  `unbuilt` — the precise distinction per-construct granularity was ruled
+  for. Full measurements in the memo's own implementation record.
 
 Maintenance: update this file when files are added/removed or their roles
 change.

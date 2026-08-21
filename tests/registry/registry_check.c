@@ -1672,6 +1672,77 @@ static void check_class_syntax_reach(void)
            "module in a class");
 }
 
+/* ---- D65: the BUILT-STATUS defect assertion ------------------------------
+ *
+ * docs/design/registry_built_status_memo.md, ratified wholesale (D65,
+ * 2026-08-21), recommendation 3: a registry_check DEFECT ASSERTION, not a
+ * rendered value. `pcrec_construct_built_status` (src/parse/syntax_dump.c)
+ * classifies every RS_MODULE row's own well-formed `syntax` as built or
+ * unbuilt by driving it through a gate-forced-open doorway call; a row that
+ * lands in NEITHER bucket (`PCREC_BUILT_DEFECT`) means that call did not
+ * behave the way every OTHER row's does, for a `syntax` SR-1's own rule
+ * already requires to reach its doorway — a registry defect, not a status
+ * `--list-syntax`/the generated compliance index may silently render.
+ *
+ * Sabotage-validated in both directions (docs/design/registry_built_status_memo.md's
+ * implementation record carries the measurements): a row's `aport` forced to
+ * `NO_PORT` flips its column to `unbuilt` (a real refusal, not a defect —
+ * this check stays green, exactly as it should, since "not yet built" is
+ * not a defect); a row's `syntax` corrupted so it no longer reaches its own
+ * doorway (SR-1's own precondition broken) flips the column to `defect`,
+ * which THIS check catches. */
+static void check_built_status_defects(void)
+{
+    static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+    unsigned mask_before = pcrec_enabled_mask();
+    int checked = 0, built = 0, unbuilt = 0, na = 0, defects = 0;
+
+    for (size_t k = 0; k < sizeof kinds / sizeof kinds[0]; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            PcrecBuiltStatus bs = pcrec_construct_built_status(r);
+            checked++;
+            switch (bs) {
+            case PCREC_BUILT_NA:   na++;      break;
+            case PCREC_BUILT_YES:  built++;   break;
+            case PCREC_BUILT_NO:   unbuilt++; break;
+            case PCREC_BUILT_DEFECT:
+                defects++;
+                bad("built-status defect: '%s' (module '%s') answers "
+                    "NEITHER built nor unbuilt for its own syntax — "
+                    "pcrec_construct_built_status could not classify a row "
+                    "SR-1 requires to reach its own doorway", r->syntax,
+                    r->module ? r->module : "(none)");
+                break;
+            default:
+                defects++;
+                bad("built-status defect: '%s' returned an unrecognised "
+                    "PcrecBuiltStatus value", r->syntax);
+            }
+        }
+    }
+
+    /* THE RESTORE, asserted rather than trusted (pcre2_check.c's own "gated
+     * pass" rule, tests/registry/CLAUDE.md's "THE ENABLED SET IS FOCUSED"):
+     * `pcrec_construct_built_status` mutates the process-global enabled set
+     * once per row and restores it before returning, so after CHECKED calls
+     * the mask must read exactly what it did before the first one. */
+    if (pcrec_enabled_mask() != mask_before)
+        bad("built-status defect: the enabled set was 0x%x before %d "
+            "pcrec_construct_built_status calls and is 0x%x after — a "
+            "restore was lost", mask_before, checked, pcrec_enabled_mask());
+    else if (defects == 0) {
+        char label[192];
+        snprintf(label, sizeof label,
+                 "built-status: %d rows classified with 0 defects (%d "
+                 "built, %d unbuilt, %d n/a — RS_BASE/RS_REJECTED), enabled "
+                 "set restored exactly", checked, built, unbuilt, na);
+        ok(label);
+    }
+}
+
 int main(void)
 {
     printf("== registry well-formedness ==\n");
@@ -1733,6 +1804,9 @@ int main(void)
      * it: `[%ca%c]` would have FAILED until K3 was fixed, which is exactly why
      * it is landing in the same change as the fix. */
     sweep(RK_CLASSBRACKET, "[%calpha%c]", 1, "at a class's own bracket (4a)", 0, true, false);
+
+    printf("\n== D65: built-status derivation (every row's own syntax classifies) ==\n");
+    check_built_status_defects();
 
     printf("\n== Summary ==\n");
     printf("checks passed: %d\n", pass);
