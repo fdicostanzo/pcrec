@@ -1376,8 +1376,8 @@ document). Mechanize instead.
 
 - [TT-3] STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
   session, from the test-timings discussion; runs NEXT when a lane is
-  available — PREREQUISITE: ccache is not installed on the box, Frank
-  installs it) — COMPILE-CACHING THE SUITE. The suite's cost driver is
+  available — prerequisite DISCHARGED same day: Frank installed ccache
+  4.12.3) — COMPILE-CACHING THE SUITE. The suite's cost driver is
   gcc compiling generated C (full `make test` 7m16s at 20,775 cases;
   the five-stage battery ~65 min; full mech ~50 min at PROCS=4 —
   measured 2026-08-21), and that compilation is deterministic in its
