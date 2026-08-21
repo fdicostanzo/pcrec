@@ -18,11 +18,22 @@ Every pcrec command whose output is a DATA TABLE:
 Future tabular surfaces adopt this contract AT BIRTH — a new table
 command that does not conform is a defect, not a style choice.
 
-NOT in scope: `--emit-ir` (a program LISTING — line-oriented prose with
-its own structure, checked by tests/codegen/run_ir_listing.sh) and
-`--trace` output (an EVENT STREAM from an instrumented matcher; its
-enrichment is [V-H]'s design territory — if a future trace mode emits a
-table, that table adopts this contract).
+NOT in scope today, with different dispositions:
+
+- `--emit-ir` — TO BE CONSIDERED (Frank, 2026-08-21): the body is a
+  program LISTING (checked by tests/codegen/run_ir_listing.sh), but its
+  tabular SECTIONS (the slot legend, the label table) are candidates for
+  this contract, and the listing as a whole may deserve a sibling
+  line-oriented contract (a header declaring its section structure, so
+  its consumers — run_ir_listing.sh's extractors, which have already
+  gone stale once this session — parse by declaration rather than by
+  remembered shape). Decided when [DD-8] (the row that owns --emit-ir)
+  next opens; DD-8's standing constraint holds regardless: the listing
+  derives from the same walk the emitter does, never a parallel
+  description.
+- `--trace` output — an EVENT STREAM from an instrumented matcher; its
+  enrichment is [V-H]'s design territory. If a future trace mode emits a
+  table, that table adopts this contract at birth.
 
 ## The producer contract
 
