@@ -292,6 +292,54 @@ directory asserts that the description and the shipped parser actually agree.
    the generic consultation**, and the check's own comment says so — do not
    add a second exception.
 
+10. **[D65] the BUILT-STATUS defect assertion** (docs/dev/plan.md's post-M6.2
+    queue item 4; docs/design/registry_built_status_memo.md, ratified
+    wholesale 2026-08-21) — `check_built_status_defects` iterates all 100
+    rows and calls `pcrec_construct_built_status` (src/parse/syntax_dump.c),
+    the SAME function `pcrec --list-syntax`'s new `built` column calls, on
+    every one. It is a defect check, not a status check: `--list-syntax` and
+    the generated compliance index render `built`/`unbuilt`/`—`, and this
+    check asserts the FOURTH bucket, `PCREC_BUILT_DEFECT` (a row whose own
+    well-formed `syntax` — guaranteed reachable by rule 1's exact-row-count
+    convention above — answered neither built nor unbuilt), never fires. It
+    also asserts the process-global enabled set (src/parse/enabled.c) is
+    restored to exactly what it was before the run, since the classifier
+    mutates it once per row (forces "all" open, probes, restores) — the same
+    `pcre2_check.c` "gated pass" shape, in miniature, over 100 calls instead
+    of one.
+
+    **Sabotage-validated in both directions** (measured on a scratch copy,
+    reverted before commit): forcing the `\A` row's `aport` to `NO_PORT`
+    flips its `--list-syntax` column from `built` to `unbuilt` and this
+    check stays GREEN — a real refusal is not a defect, which is the whole
+    point of having two buckets rather than one. Corrupting the same row's
+    `syntax` from `"\\A"` to `"A"` (so it no longer reaches its own
+    doorway, breaking SR-1's own precondition) flips the column to `defect`
+    and this check FAILS, naming the row. Neither sabotage moved any other
+    check in this file or in PC-3.
+
+    **Why the classifier reads `res.answered_at` rather than the refusal
+    TEXT**, recorded because a narrower first draft measured wrong on three
+    real rows before landing on this shape: module `verbs` (a direct call,
+    not a port — mod_verbs.c) and module `unicode-props` (bypasses
+    `aport`/`cport` entirely — mod_uprops.c) both refuse with the
+    CLOSED-gate wording ("requires module 'X'") even with their gate
+    forced open, since neither routes through ext.c's shared
+    ENABLED-BUT-UNBUILT epilogue; a refusal-text match would have wrongly
+    scored both as registry defects. `res.answered_at == WANT_RESULT` is
+    D33's own "gate open, port missing" signal instead, true for both —
+    the gate genuinely was open, the PORT had nothing to say. **And why the
+    gate forces "all" open rather than only each row's own module**: a
+    first draft did the narrower thing and undercounted `(?m)` — the
+    letter's own semantic gate (mod_modifiers.c's case 'm') checks
+    `FEAT_ASSERTIONS`, not the dispatching `GROUP_OPT` row's own
+    `FEAT_MODIFIERS` — a real cross-module dependency no per-row module
+    lookup can see. Forcing every module open cannot turn a genuinely
+    unbuilt construct built (MEASURED for `verbs`/`unicode-props` above:
+    same refusal regardless of how many OTHER modules are on), so the
+    wider force costs nothing and fixed the one real gap found while
+    verifying this against the shipped compiler.
+
 The probe patterns come from each row's own `syntax` field, so a new row covers
 itself with no edit here. That is sound because this is a conformance check
 between two descriptions, not a control: it asserts the two agree, never that
@@ -337,6 +385,8 @@ module:
 | add a `]`-selector `RK_CLASSBRACKET` row (R9/C2-1) | 2 (+1 in PC-3) |
 | R20/OPTRUN-1: delete `group_answer`'s truncation branch (`(?P` at end of pattern) | 1 — the `(?%c` sweep's truncation exception, which is the ONLY generated instrument that reaches this cell: PC-3's tail-sweep template always inserts a byte after the prefix (+1 in tests/reject) |
 | [M4.7a]: wire a dummy PORT_SCALAR atom-position producer onto the `(?>...)` (atomic-groups) row, a `VM_ONLY`/`RS_MODULE` row | 2 — `check_engine_capability_tripwire` (by name) AND `check_class_ports`' atom-port population guard (23→24), independently |
+| [D65]: force the `\A` row's `aport` to `NO_PORT` (a real, honest un-wiring) | 0 — `check_built_status_defects` stays GREEN, correctly: the `--list-syntax` column flips `built` → `unbuilt`, which is not a defect |
+| [D65]: corrupt the `\A` row's `syntax` from `"\\A"` to `"A"` (breaks SR-1's own reach-its-own-doorway precondition) | 1 — `check_built_status_defects`, naming the row; the `--list-syntax` column flips to `defect` |
 
 ## pcre2_check.c — the external check (PC-3)
 
@@ -860,6 +910,11 @@ registry_check.c's alone.
 
 - `--check` — the generated construct INDEX in the compliance doc must match
   `pcrec --list-syntax`. Regenerate with `--write` after adding a row.
+  **[D65] the generated table's 16-column `COLS` list and rendered markdown
+  table both carry a `built` column** since 2026-08-21 (`built`/`unbuilt`
+  per RS_MODULE row, `—` for RS_BASE/RS_REJECTED) — see
+  docs/design/registry_built_status_memo.md and this directory's own item
+  10 above for what it answers and why it is derived rather than declared.
 - `--names` — every ``module `X` `` named in the doc's hand-written prose must
   be a module the registry knows. This is the check that catches the realistic
   failure: a module renamed in registry.c leaves the prose confidently

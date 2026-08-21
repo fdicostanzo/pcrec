@@ -1,11 +1,14 @@
 # Registry built-status field — decision memo
 
-**RATIFIED WHOLESALE 2026-08-21 (D65, Frank).** All five recommendations
-below are ruled — see docs/dev/decisions.md D65 for the ruling text (decision,
-why, consumers, revisit-when). This document remains the design record; the
-IMPLEMENTATION lane (same REGSTATUS lane/worktree) is tracked in
-docs/dev/plan.md and its own journal entries, not by further edits to the
-recommendations below. Written by the REGSTATUS lane (2026-08-21) per the
+**RATIFIED WHOLESALE 2026-08-21 (D65, Frank), and BUILT the same session**
+(same REGSTATUS lane/worktree — read the "Implementation record" section at
+the end of this document for what landed and the two places measurement
+corrected the sketch below). All five recommendations below are ruled — see
+docs/dev/decisions.md D65 for the ruling text (decision, why, consumers,
+revisit-when). This document remains the design record; the recommendations
+below are UNCHANGED from ratification — the implementation record appends
+rather than edits them, per this project's house style for a design note
+that gets built. Written by the REGSTATUS lane (2026-08-21) per the
 [M6.2] repair slice's refutation (docs/dev/dev_journal.md, 2026-08-19 part 6,
 "ITEM 3 REFUTED"; the same finding is archived at docs/dev/plan_completed.md's
 `## 2026-08-21` [M6.2] row). Read the "How to read the generated index below"
@@ -327,3 +330,101 @@ Every citation above is to a file:line or a command this lane ran
 read-only in its worktree (`pcrec --list-syntax` counts, `grep -n` over
 registry.c/internal.h/ext.c/syntax_dump.c/mod_modifiers.c, and the journal
 entries at the line numbers given). Nothing in this memo is UNVERIFIED.
+
+## Implementation record (D65, built same session)
+
+Built in `src/parse/syntax_dump.c` (`pcrec_construct_built_status`, declared
+in `src/core/internal.h` alongside the new `PcrecBuiltStatus` enum and
+`PCREC_UNBUILT_MARKER`), consumed by `pcrec --list-syntax`'s new 16th
+column, `compliance_section.py`'s generated table, and
+`tests/registry/registry_check.c`'s new `check_built_status_defects`.
+`ext.c`'s two enabled-but-unbuilt refusal SITES (the `UNBUILT` macro and the
+in-class splice) now share `PCREC_UNBUILT_MARKER` instead of two copies of
+the wording — landed as recommended, not corrected.
+
+**Two things measured wrong before landing, both against the shipped
+compiler rather than reasoned out — worth recording because the memo's own
+Option-C sketch got the CLASSIFICATION MECHANISM half right (drive the
+doorway, read the outcome) and the SPECIFICS half wrong twice:**
+
+1. **The sketch said classify by matching the UNBUILT refusal's TEXT.**
+   MEASURED WRONG on three real rows: module `verbs`'s `(*ACCEPT)` and
+   module `unicode-props`'s `\p{L}`/`\P{L}` both refuse with the
+   CLOSED-gate wording ("requires module 'X'") even with their gate forced
+   OPEN (`pcrec --features verbs --probe-ask result -- '(*ACCEPT)'` still
+   prints "(*...) requires module 'verbs'"), because neither routes
+   through ext.c's shared UNBUILT epilogue at all — `verbs` dispatches by
+   NAME through its own tables ("a direct call, not a port",
+   src/parse/CLAUDE.md's mod_verbs.c entry) and `unicode-props` bypasses
+   `aport`/`cport` entirely ("no producer this phase", the mod_uprops.c
+   entry). A text match scored both as registry DEFECTS. The fix reads
+   `ExtResult.answered_at` instead: `WANT_RESULT` reached with no demotion,
+   for a refusal, is exactly D33's own "gate open, port missing" signal
+   (ext.c's own UNBUILT comment already names it), independent of what the
+   refusal SAYS — measured correct on both rows once switched.
+2. **The sketch forced open only the probed row's own module.** MEASURED
+   WRONG on `(?m)`: the letter's semantic gate (mod_modifiers.c's case
+   `'m'`) checks `FEAT_ASSERTIONS`, not the dispatching `GROUP_OPT` row's
+   own `FEAT_MODIFIERS` — `pcrec --features modifiers --probe-ask result --
+   '(?m)'` refuses "requires module 'assertions'" (a row-invisible
+   cross-module dependency), while `--features modifiers,assertions` on the
+   same text produces a node. The fix forces `"all"` open rather than one
+   module — cannot false-positive an unbuilt row (a row with no producer
+   refuses no matter how many OTHER modules are on, reconfirmed on
+   `verbs`/`unicode-props`) and resolves the cross-module case for free.
+
+Neither correction changes the RULED field semantics, population mechanism,
+or vocabulary (D65 items 1-3) — both are implementation-mechanism fixes
+inside "drive the doorway, read the outcome," found by running the classifier
+against the shipped compiler before trusting it, not by re-deriving it from
+documentation.
+
+**Measured counts** (shipped registry, 100 rows, `pcrec --list-syntax`):
+6 rows `—` (1 `RS_BASE` + 5 `RS_REJECTED`, exactly matching the `status`
+column's own base/rejected counts), 94 `RS_MODULE` rows all classify cleanly
+— 33 `built`, 61 `unbuilt`, 0 `defect`. Of the 34 rows the repair slice's
+prose named as belonging to shipped modules (`classes` 12, `modifiers` 12,
+`assertions` 7, `named-groups` 3), 33 read `built` and exactly one —
+`(?J)`, module `modifiers`' own permanent, unconditional decline to
+implement `PCRE2_DUPNAMES` (mod_modifiers.c's case `'J'`) — reads `unbuilt`,
+a distinction the old "34 shipped" count could not express and the argument
+for D65(1)'s per-construct ruling made concrete. The four rows
+`tests/reject/run_reject_tests.sh`'s `reject_gated` pins (`\k` module
+`backrefs`, `(?=...)` module `lookaround`, `(?>...)` module `atomic-groups`,
+`\Q` module `quoting`) all read `unbuilt`, matching those pins exactly.
+`--list-syntax` output is byte-identical across repeated runs and
+unaffected by the invocation's own `--features` flag (the gate mutation is
+saved and restored exactly per row).
+
+**Check design / failing direction**, run before the check was trusted
+(scratch edits to `src/parse/registry.c`, reverted before commit): setting
+the `\A` row's `aport` to `NO_PORT` (a real, honest un-wiring) flips its
+`--list-syntax` column from `built` to `unbuilt` and
+`check_built_status_defects` stays GREEN — correctly, since an honest
+refusal is not a defect. Corrupting the same row's `syntax` from `"\\A"` to
+`"A"` (breaking SR-1's own "syntax must reach its own doorway" precondition)
+flips the column to `defect` and the check FAILS, naming the row. Neither
+sabotage moved any other check in `registry_check.c` or `pcre2_check.c`
+(PC-3).
+
+**Suite state**: `bash tests/registry/run_registry_tests.sh` exits 0
+(registry_check 171/0, PC-3 163/0, pc4 0 disagreements);
+`compliance_section.py --check`/`--names` both PASS against the regenerated
+`docs/pcre2_compliance.md`. Full `make test` was NOT run this session (the
+box was held for `m6read`'s own census/mech runs per the manager's load
+discipline) — this is the registry section only, run standalone, repeatedly,
+green each time.
+
+**Consistency with the ruled do-not-change list**: `RS_BASE => ROADMAP_NONE`
+pairing, gate-CLOSED "requires module 'X'" diagnostics, `tests/reject/`'s
+hand pins, and PC-3's own checks are all UNCHANGED — none of this session's
+edits touch `RegStatus`, `Roadmap`, or any existing refusal wording (the two
+ext.c sites keep their exact rendered text; only the SOURCE of the fixed
+substring moved to a shared `#define`).
+
+**Files touched**: `src/core/internal.h`, `src/parse/ext.c`,
+`src/parse/syntax_dump.c`, `tests/registry/registry_check.c`,
+`tests/registry/run_registry_tests.sh`, `tests/registry/compliance_section.py`,
+`docs/pcre2_compliance.md`, and this memo — plus CLAUDE.md updates in
+`src/core/`, `src/parse/`, `tests/registry/`, `docs/`, and `docs/design/`
+(this file's own entry).
