@@ -317,7 +317,7 @@ directory is in `emit_vm.c`, and it is four things:
   at `2 * (ngroups + 1)`). So the slot that already MEANS "the reported start"
   is the one `\K` writes: no slot is allocated, `PCREC_UNSET` becomes the "no
   `\K` was crossed on this path" signal for free (a position can never
-  legitimately be -1), and `caps_out` reads one existing array element instead
+  legitimately be -1), and `report_captures` reads one existing array element instead
   of taking a new parameter.
 - **`vm_cost` charges ONE TRAIL ENTRY per emitted `\K`**, multiplied by the
   enclosing quantifier exactly as A_CAP's two are. This is the one place the
@@ -343,7 +343,7 @@ artifact is a different artifact by construction. Waves A-D each changed a const
 emitter decision points and each needed a corpus-wide comparison against a
 reference build to say a construct-free pattern paid nothing. Here the claim
 is about ONE predicate, so it is pinned structurally — `[M6.2-KRESET rule 1b]`
-in `tests/codegen/run_codegen_tests.sh` quotes the pre-wave `caps_out` body as
+in `tests/codegen/run_codegen_tests.sh` quotes the pre-wave `report_captures` body as
 a LITERAL, so a rewrite into some third shape fails too — and the corpus-wide
 half was MEASURED ONCE against the genuine pre-wave COMPILER (1,208/1,208
 identical at the default engine, 1,209/1,209 under `--engine=vm`). That

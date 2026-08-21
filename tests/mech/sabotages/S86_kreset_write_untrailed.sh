@@ -6,7 +6,7 @@
 # exactly as a group start is". S85 guards where the value is READ from; this
 # row guards whether it can be TAKEN BACK.
 #
-# THE SABOTAGE writes `stv[0]` directly instead of through `<PREFIX>_SET`,
+# THE SABOTAGE writes `slot_values[0]` directly instead of through `<PREFIX>_SET`,
 # which is the macro that first records the slot's OLD value on the trail. The
 # value written is identical, the slot is identical, the emitted line is one
 # token shorter. What is lost is the undo — so a `\K` crossed on a path that
@@ -32,7 +32,7 @@
 # WHY IT IS A SEPARATE ROW FROM S85 rather than a second edit in it: the two
 # defects have DISJOINT symptoms in the structural check. S85 fires rule 1's
 # "caps_out still contains the unconditional caps[0][0] = start" branch; this
-# one fires rule 1's "writes stv[0] DIRECTLY rather than through RX_SET"
+# one fires rule 1's "writes slot_values[0] DIRECTLY rather than through RX_SET"
 # branch, and leaves caps_out completely correct. A single row exercising both
 # would let either branch rot undetected behind the other.
 #
@@ -58,7 +58,7 @@ SAB_ID="S86-kreset-write-untrailed"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness kresetdiff"
 SAB_HARNESS_TARGET="tests/assertions/kreset.rxt"
-SAB_DESC="the emitted \\K write goes straight to stv[0] instead of through <PREFIX>_SET, so it is never recorded on the trail and a backtrack cannot undo it. A \\K crossed on a LOSING path stays crossed: '(?:a\\K|ax)c' on \"axc\" answers (1,3) where PCRE2 answers (0,3), and '(?:a\\K)*ab' on \"aaab\" answers (3,4) where PCRE2 answers (2,4)"
+SAB_DESC="the emitted \\K write goes straight to slot_values[0] instead of through <PREFIX>_SET, so it is never recorded on the trail and a backtrack cannot undo it. A \\K crossed on a LOSING path stays crossed: '(?:a\\K|ax)c' on \"axc\" answers (1,3) where PCRE2 answers (0,3), and '(?:a\\K)*ab' on \"aaab\" answers (3,4) where PCRE2 answers (2,4)"
 SAB_DOC_FIGURE="codegen:1fail/55pass,corpus:6fail/590pass,kresetdiff:3fail/6pass -- DETECTED (canonical matrix run, 2026-08-19)"
 SAB_COUNT=1
 SAB_BEFORE='        vm_set(v, 0, "(ptrdiff_t)scan_position",
