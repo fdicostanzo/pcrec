@@ -147,17 +147,77 @@ measurement, and both corrections are recorded in the file headers rather than
 edited away, because the wrong version is the intuitive one and the next
 reader will arrive holding it.
 
+## SPEC-M amendment — a two-module construct broke the one-module assumption (2026-08-21)
+
+**What was amended.** `check01_isolation.sh` and `check07_gate_equivalence.c`
+both assumed, structurally, that a construct's behaviour depends only on its
+OWN owning module's gate. Neither check states this as a separate premise
+anywhere in its own text — it is baked into check01's "a recogniser must
+never link the enabled-set symbol" rule and into check07's "an eligible
+row's verdict must equal baseline, or flip naming its own module" transition
+rule. Both checks are amended to carry `(?m)` as a NAMED exception to that
+assumption, selected by the row's own structured fields (kind=group,
+selector=m, module=modifiers — check07) or by the exact (object, symbol)
+pair the isolation sweep already computes (mod_modifiers.o /
+pcrec_feature_enabled — check01), never by matching syntax text. Both checks
+still assert their original rule for every other row/pair, and both fail
+loud if the exception itself stops matching anything (sabotage-verified,
+2026-08-21: renaming the exception's selector/symbol in a scratch copy of
+each check restores the ORIGINAL failure this amendment fixes, proving the
+exception is load-bearing rather than a blanket suppression).
+
+**On what evidence.** `(?m)`'s GROUP SYNTAX (the `(?` doorway recognising
+the run) is module `modifiers`'; its MULTILINE MATCHING EFFECT is decided
+by module `assertions` — `mod_modifiers.c`'s case `'m'` calls
+`pcrec_feature_enabled(FEAT_ASSERTIONS)`, not `FEAT_MODIFIERS`, before
+setting the scoped multiline bit ([M6.2] wave C, landed 2026-08-19). This is
+measured, not asserted, in two independent places: `tests/assertions/d27/gating.rxt`
+(itself a D27-blinded corpus, written from outside `src/`) pins all FOUR
+gate combinations for `(?m)^a` and shows the two failure POINTS are
+genuinely different (group-syntax refusal naming 'modifiers' with neither
+module or 'assertions' alone enabled; multiline-effect refusal naming
+'assertions' with 'modifiers' alone or the std1 default enabled); it only
+compiles with both enabled. `docs/design/registry_built_status_memo.md`
+(D65, ratified 2026-08-21) independently re-derived the identical fact from
+the built-status side, and its own row 492 already names these two checks'
+red state as the pre-existing, out-of-scope-for-that-memo consequence.
+
+**Why this is a legitimate amendment, not a test-weakening.** The suite's
+own stated method (see "The method these follow" above) is to derive checks
+from the ten invariant statements' FAILURE DIRECTIONS, not from pcrec's
+implementation. Both original checks did exactly that, and both were
+CORRECT to flag `(?m)` the moment module `assertions` landed and gave the
+one-module assumption its first real counterexample — a spec-first check
+finding that its own model under-fit a construct it had never been able to
+exercise before is the D27 method working, not failing. The construct is
+genuinely two-module (measured above, independently, twice); the original
+model predates that module's existence (check01 and check07 were written
+and passing before ANY module had a producer) and could not have
+anticipated it. Narrowing the exception to exactly one named row, checked
+in both directions, keeps every other row's isolation/equivalence assertion
+exactly as strict as before — nothing about the population floors, the
+counting rule, or the transition rule for any other construct changed.
+
+**Chartered by**: Frank, 2026-08-21, [SPEC-M] (`docs/dev/plan.md`), ruling
+"agree but don't spend a lot of time as this is to be replaced" — this is
+INTERIM truth-restoration, not a redesign.
+
+**Expires when**: [DD-11]'s flags-as-binding-mutators redesign lands and
+removes the cross-module read this amendment describes. Delete both checks'
+named-exception blocks at that point; the ordinary rules should apply
+unmodified to whatever construct replaces `(?m)`'s current shape.
+
 ## Per-invariant status
 
 | # | Check | Status | Oracle | Awaited pcrec surface |
 |---|-------|--------|--------|----------------------|
-| 1 | check01_isolation.sh | **PASS** (aperture widened, STD1c re-arm 2026-08-13 — `docs/dev/std1_check_rearm.md`) | `nm` over `build/libpcrec.a` and `build/obj` — the linker | — (`ENABLED_RE` now also catches `PCREC_DEFAULT_FEATURES`, D37's bare-default mapping point, which the pre-STD1c pattern missed since it carries no `enabled`/`gate` substring; discovery is now 9 enabled-set symbols x 4 recogniser TUs (`mod_modifiers.o`, `mod_uprops.o`, `registry.o`, `scans.o`) = 36 symbol/TU pairs, all asserted absent from the recogniser TUs' undefined lists. Both discovery populations (`isolation.enabled_symbols` floor 9, `isolation.recogniser_tus` floor 4) are now ratcheted in floors.txt, taking the floors argument the other shell checks already take. Sabotage-validated both directions: narrowing `ENABLED_RE` to match nothing still trips the vacuity guard (SURFACE MISSING, exit 3); planting one reference to `PCREC_DEFAULT_FEATURES` from `scans.c` and rebuilding makes the check fail, naming `scans.o` and the symbol by name) |
+| 1 | check01_isolation.sh | **PASS** (aperture widened, STD1c re-arm 2026-08-13 — `docs/dev/std1_check_rearm.md`) | `nm` over `build/libpcrec.a` and `build/obj` — the linker | — (`ENABLED_RE` now also catches `PCREC_DEFAULT_FEATURES`, D37's bare-default mapping point, which the pre-STD1c pattern missed since it carries no `enabled`/`gate` substring; discovery is now 9 enabled-set symbols x 4 recogniser TUs (`mod_modifiers.o`, `mod_uprops.o`, `registry.o`, `scans.o`) = 36 symbol/TU pairs, all asserted absent from the recogniser TUs' undefined lists. Both discovery populations (`isolation.enabled_symbols` floor 9, `isolation.recogniser_tus` floor 4) are now ratcheted in floors.txt, taking the floors argument the other shell checks already take. Sabotage-validated both directions: narrowing `ENABLED_RE` to match nothing still trips the vacuity guard (SURFACE MISSING, exit 3); planting one reference to `PCREC_DEFAULT_FEATURES` from `scans.c` and rebuilding makes the check fail, naming `scans.o` and the symbol by name. **SPEC-M, 2026-08-21**: `mod_modifiers.o`'s reference to `pcrec_feature_enabled` — `(?m)`'s cross-module read of `FEAT_ASSERTIONS` — is now a NAMED, evidence-cited exception rather than a DISAGREE; see "SPEC-M amendment" above) |
 | 2 | check02_capture_count.c | **PASS** (the transient 2026-08-13 FAIL resolved same day: `capture.pcrec_refused` lowered 101 -> 97 under manager review, population conserved at 102 — see floors.txt) | libpcre2 `PCRE2_INFO_CAPTURECOUNT`, cross-checked against the err-115 boundary | — (`pcrec --count-groups -- BODY` is run, no shell involved, for every one of the 102 generated bodies, with NO `--features` — this check measures the bare default; exit 0 compares its printed count against CAPTURECOUNT — `capture.pcrec_compared`, floor 5 as of the D37 flip — exit 1 means pcrec refuses the body as an unimplemented construct and is counted, not compared — `capture.pcrec_refused`, floor 97 as of the same review. 5 of the 102 bodies are accepted today (base tier plus classes/modifiers constructs since D37); the compared population grows further module by module as more land) |
 | 3 | check03_lexical.c | **PASS** | libpcre2 binding behaviour over all 100 rows | — |
 | 4 | check04_class_position.c | **PASS** (surface landed) | libpcre2 256-byte class censuses | — (the `class_expect` column compares equal to the measured value on all 44 class-reachable rows — `class.expect_compared_cells`, floor 44 — and is verified empty on all 56 group/verb rows — `class.expect_verified_empty_rows`, floor 56) |
 | 5 | check05_digits.c | **PASS** | libpcre2 over a digit-run × count grid | — |
 | 6 | check06_cursor.sh | **PASS** (surface landed) | **none — see below; this check compares pcrec against itself** | — (`pcrec --probe-ask WANT [--] CONSTRUCT` drives one doorway once per call; every one of the 99 doorway-reaching rows is driven at `claim`, `verdict` AND `result` — `cursor.clear_compared`, floor 198, asserts pos_after == pos_before at the two WANT_RESULT-clear levels, and `cursor.set_compared`, floor 99, asserts pos_after >= pos_before at the WANT_RESULT-set level. The one row with no doorway at all, `(?:...)`, is named and floored separately — `cursor.base_answered_rows`, floor 1 — and the check fails if that set changes shape in either direction. Today every comparison is an equality: no recogniser is implemented yet, so nothing ever reaches a `result`-level answer, and the >= assertion's strictly-greater branch is unexercised but live) |
-| 7 | check07_gate_equivalence.c | **PASS** (population arrived 2026-08-12: module `classes`, 12 eligible rows, 24 pairs — the suite's FIRST exit-0 run; **[M6.3], 2026-08-18: the transition rule gains a SECOND terminal state**, see below) | libpcre2 decides membership | — (the sweep now applies the TRANSITION RULE, a dated correction in the file header: a disabled-module row accepted at baseline MUST flip to refused-as-unimplemented NAMING ITS OWN MODULE — still-accepted is a dead gate (sabotage-verified: an ext_gate that never demotes fails 24 clauses), invalid is the second-quieter-grammar defect, and every other row keeps strict equality so cross-module leaks fail. `gate.eligible_rows` floored at 12, `gate.baseline_accepted_rows` at 13; `gate.compared_pairs` stays floor-0 DELIBERATELY — check09's per-name assertion arms on it and would demand all 17 modules toggle; the pair count is transitively ratcheted via eligible_rows through the pairs==eligible×2 self-consistency assertion). **[M6.3] finding**: module `named-groups` landing exposed that this file's own LOCAL three-way verdict classifier (`VC_ACCEPTED`/`VC_UNIMPL`/`VC_INVALID` — a private copy, deliberately not routed through `spec_pcrec.h`'s shared four-way one, per this directory's own no-rewrite-a-passing-check rule) had never needed a fourth, PERMANENT-scope-exclusion state, because no row whose module could actually be gated had ever answered that way. `(?J)`'s per-letter refusal is the first (K14's ROADMAP_NEVER wording, naming no module, once `modifiers` is enabled) — under this check's OLD three-way classifier its baseline verdict silently moved from `refused-as-unimplemented` to `refused-as-invalid` (a false DISAGREE the moment the module landed, since `(?J)` is not invalid PCRE2, merely permanently unimplemented). `VC_SCOPE` joins the enum, `transition_ok` treats a SCOPE baseline exactly like an ACCEPTED one (the row's own module going OFF must flip it to `refused-as-unimplemented`, naming the row's own module) — the same structural rule, one terminal state over |
+| 7 | check07_gate_equivalence.c | **PASS** (population arrived 2026-08-12: module `classes`, 12 eligible rows, 24 pairs — the suite's FIRST exit-0 run; **[M6.3], 2026-08-18: the transition rule gains a SECOND terminal state**, see below) | libpcre2 decides membership | — (the sweep now applies the TRANSITION RULE, a dated correction in the file header: a disabled-module row accepted at baseline MUST flip to refused-as-unimplemented NAMING ITS OWN MODULE — still-accepted is a dead gate (sabotage-verified: an ext_gate that never demotes fails 24 clauses), invalid is the second-quieter-grammar defect, and every other row keeps strict equality so cross-module leaks fail. `gate.eligible_rows` floored at 12, `gate.baseline_accepted_rows` at 13; `gate.compared_pairs` stays floor-0 DELIBERATELY — check09's per-name assertion arms on it and would demand all 17 modules toggle; the pair count is transitively ratcheted via eligible_rows through the pairs==eligible×2 self-consistency assertion). **[M6.3] finding**: module `named-groups` landing exposed that this file's own LOCAL three-way verdict classifier (`VC_ACCEPTED`/`VC_UNIMPL`/`VC_INVALID` — a private copy, deliberately not routed through `spec_pcrec.h`'s shared four-way one, per this directory's own no-rewrite-a-passing-check rule) had never needed a fourth, PERMANENT-scope-exclusion state, because no row whose module could actually be gated had ever answered that way. `(?J)`'s per-letter refusal is the first (K14's ROADMAP_NEVER wording, naming no module, once `modifiers` is enabled) — under this check's OLD three-way classifier its baseline verdict silently moved from `refused-as-unimplemented` to `refused-as-invalid` (a false DISAGREE the moment the module landed, since `(?J)` is not invalid PCRE2, merely permanently unimplemented). `VC_SCOPE` joins the enum, `transition_ok` treats a SCOPE baseline exactly like an ACCEPTED one (the row's own module going OFF must flip it to `refused-as-unimplemented`, naming the row's own module) — the same structural rule, one terminal state over. **SPEC-M, 2026-08-21**: the `(?m)` row is now a NAMED exception to the transition rule under `inverted(-assertions)` specifically (its own module, `modifiers`, stays enabled there, but its multiline EFFECT genuinely depends on `assertions`) — see "SPEC-M amendment" above; every other row and every other configuration for this row keeps the unmodified rule |
 | 8 | check08_endpoints.c | **PASS** | libpcre2 censuses + an oracle-measured extent scan | — |
 | 9 | check09_every_feature_toggles.sh | **PASS** (per-name arming live, STD1c re-arm 2026-08-13 — `docs/dev/std1_check_rearm.md`) | check07's per-name output vs the registry, and (assertion 3) the BUILT pcrec's own `PCREC_FEATURE_MODULES` artifact stamp vs floors.txt's hand-pinned names — two independent sources | check07's comparison now runs; assertion 1 (all 17 module names present) still checked. Assertion 2's old GLOBAL trigger on `gate.compared_pairs` is gone — floors.txt now carries one `gate.pairs.<name> <floor>` line per graduated module (`gate.pairs.classes` 24, `gate.pairs.modifiers` 20, both measured on a real check07 run), and each is its own arming condition; a `gate.pairs.<name>` for a name the registry does not declare fails as a stale pin. New assertion 3 (set-membership honesty, D37's no-false-promise rule): a bare-default compile's `PCREC_FEATURE_MODULES` stamp (`std1` = `classes,modifiers`) must be a subset of the floored names. All three sabotages validated: zeroing `modifiers`' PERNAME line in a copied check07 output fails naming `modifiers`; pinning `gate.pairs.backrefs 1` fails "0 compared pairs, below its ... floor of 1"; deleting `gate.pairs.modifiers` while the stamp still lists it fails assertion 3 by name |
 | 10 | check10_quantifiable.c | **PASS** (surface landed) | libpcre2 `a<syntax>*` verdicts, two form sweeps, and the two LEXICAL discriminators | — (the `quantifiable` column arrived mid-work; it caught two real bugs on arrival, see below) |

@@ -122,6 +122,14 @@
  * eligible_rows floor through the pairs==eligible*2 self-consistency
  * assertion. Raising it is MOD-0.8-close work (or the second module's).
  *
+ * SPEC-M AMENDMENT (2026-08-21, docs/dev/plan.md [SPEC-M]). `(?m)` measurably
+ * needs TWO modules ('modifiers' for its GROUP SYNTAX, 'assertions' for its
+ * MULTILINE EFFECT), which this file's original model — one construct, one
+ * owning module — did not anticipate and, correctly, flagged as a disagreement
+ * once module `assertions` landed ([M6.2] wave C, 2026-08-19). See
+ * `is_m_cross_module_row`'s own comment, right above `member_ok[]` below, for
+ * the fact, the evidence, the exact scope, and the expiry condition.
+ *
  * SABOTAGE (verified — see the final report for exact commands and output).
  * (1) Oracle half: drop the membership test and take all 100 rows as members
  *     — the printed membership count jumps, failing the pinned floor's
@@ -485,6 +493,62 @@ static void build_inverted_list(char *buf, size_t bufsz, int skip)
     if (buf[0] == 0) snprintf(buf, bufsz, "none");
 }
 
+/* SPEC-M NAMED EXCEPTION (2026-08-21, docs/dev/plan.md [SPEC-M], Frank's
+ * ruling "agree but don't spend a lot of time as this is to be replaced").
+ *
+ * THE FACT. This suite's model (invariant 7 itself, and check01's isolation
+ * invariant beside it) assumes a construct's behaviour depends only on its
+ * OWN module's gate. `(?m)` measurably does not: its GROUP SYNTAX (the `(?`
+ * doorway recognising the run, and the row itself) belongs to module
+ * `modifiers`, but its MULTILINE MATCHING EFFECT is decided by module
+ * `assertions` -- mod_modifiers.c's case 'm' calls
+ * `pcrec_feature_enabled(FEAT_ASSERTIONS)`, not `FEAT_MODIFIERS`, before
+ * setting the scoped multiline bit ([M6.2] wave C, src/parse/mod_modifiers.c
+ * around line 314). That is correct pcrec design, not a cross-module leak:
+ * the two modules own two different questions about the same eleven bytes.
+ *
+ * EVIDENCE (measured independently, twice, before this exception was
+ * written). tests/assertions/d27/gating.rxt -- a D27-blinded corpus --
+ * pins all FOUR gate combinations for `(?m)^a`: default (modifiers on,
+ * assertions off under std1) refuses naming 'assertions'; --features none
+ * refuses at the GROUP SYNTAX naming 'modifiers'; modifiers-only refuses
+ * naming 'assertions' (same point as default); assertions-only refuses at
+ * the GROUP SYNTAX naming 'modifiers' (the mirror case) -- and it only
+ * compiles with BOTH enabled. docs/design/registry_built_status_memo.md
+ * (D65, ratified) independently documents the identical fact from the
+ * built-status side, and names this suite's own two red checks as the
+ * pre-existing consequence.
+ *
+ * WHAT THIS DOES NOT DO. It does not weaken the invariant for any other
+ * row, and it does not touch check01's discovery machinery or check07's
+ * counting rule -- `(?m)` is selected by the row's own STRUCTURED fields
+ * (kind/selector/module), never by matching "(?m)" as text, so a future row
+ * that happens to share the syntax spelling would not silently inherit the
+ * exception, and this row would stop matching (failing loud, per the
+ * REQUIRED-below guard) if the registry ever renamed the selector or the
+ * owning module.
+ *
+ * SCOPE, PRECISELY. The exception applies to exactly one comparison: the
+ * INVERTED-ASSERTIONS configuration (module 'assertions' disabled, every
+ * other module including the row's own 'modifiers' left enabled). Every
+ * other configuration for this row -- all-off, inverted-modifiers, and
+ * every other module's inverted sweep -- takes the ORDINARY transition
+ * rule unchanged, because disabling 'modifiers' closes the GROUP SYNTAX
+ * gate before mod_modifiers.c ever reaches the assertions check, and no
+ * other module's state touches this row at all.
+ *
+ * EXPIRY. Resolved by [DD-11]'s flags-as-binding-mutators redesign, which
+ * removes the cross-module read this exception exists to describe; this
+ * fix is interim truth-restoration, not architecture (Frank's own framing
+ * on the [SPEC-M] plan row). Delete this block and its call site the day
+ * that lands, and the ordinary transition rule should just work. */
+static int is_m_cross_module_row(const SpecRow *r)
+{
+    return !strcmp(spec_col(r, SPEC_COL_KIND), "group") &&
+           !strcmp(spec_col(r, SPEC_COL_SELECTOR), "m") &&
+           !strcmp(spec_col(r, SPEC_COL_MODULE), "modifiers");
+}
+
 static int member_ok[256];
 
 int main(int argc, char **argv)
@@ -621,6 +685,7 @@ int main(int argc, char **argv)
             }
         }
 
+        int m_exception_fired = 0;
         for (int mi = 0; mi < nnames; mi++) {
             char inv[1024];
             build_inverted_list(inv, sizeof inv, mi);
@@ -633,15 +698,61 @@ int main(int argc, char **argv)
                 verdict_checks_total++;
                 if (vc_base[i] == VC_ERROR || vc == VC_ERROR) continue;
                 snprintf(cfg, sizeof cfg, "inverted(-%s)", names[mi]);
-                /* inverted-M disables ONLY M: rows of every other module
-                 * take the equality arm, so a toggle that leaks across
-                 * modules fails naming both sides. */
-                transition_ok(S, (m && *m) ? m : "", m && *m && strcmp(m, names[mi]) == 0,
-                              cfg, vc_base[i], vc, named);
+                int mod_disabled = m && *m && strcmp(m, names[mi]) == 0;
+
+                /* SPEC-M NAMED EXCEPTION (see is_m_cross_module_row's own
+                 * comment above): under inverted-assertions specifically,
+                 * `(?m)`'s own module ('modifiers') stays enabled, so the
+                 * ordinary rule would demand equality with baseline -- but
+                 * the row's MULTILINE EFFECT genuinely depends on
+                 * 'assertions' too, so a baseline-accepted row must flip to
+                 * refused-as-unimplemented naming 'assertions', the SAME
+                 * transition shape a disabled-own-module row takes, just
+                 * naming a different module. */
+                if (!mod_disabled && is_m_cross_module_row(&spec_rows[i]) &&
+                    !strcmp(names[mi], "assertions")) {
+                    m_exception_fired = 1;
+                    if (vc_base[i] == VC_ACCEPTED) {
+                        if (vc != VC_UNIMPL || strcmp(named, "assertions") != 0)
+                            spec_fail("row '%s' (module '%s'): SPEC-M named "
+                                      "exception -- disabling module "
+                                      "'assertions' must flip (?m)'s "
+                                      "MULTILINE EFFECT to "
+                                      "refused-as-unimplemented naming "
+                                      "'assertions' (got %s, named '%s')",
+                                      S, m, vclass_name(vc), named);
+                    } else if (vc != vc_base[i]) {
+                        spec_fail("row '%s' (module '%s'): SPEC-M named "
+                                  "exception -- baseline was not accepted "
+                                  "(%s), yet disabling 'assertions' still "
+                                  "changed the verdict to %s", S, m,
+                                  vclass_name(vc_base[i]), vclass_name(vc));
+                    }
+                } else {
+                    /* inverted-M disables ONLY M: rows of every other module
+                     * take the equality arm, so a toggle that leaks across
+                     * modules fails naming both sides. */
+                    transition_ok(S, (m && *m) ? m : "", mod_disabled, cfg,
+                                  vc_base[i], vc, named);
+                }
                 int midx = name_lookup(m);
                 if (midx == mi && member_ok[i] && vc_base[i] == VC_ACCEPTED)
                     pairs[mi]++;
             }
+        }
+        /* Non-vacuity for the exception itself, the same discipline this
+         * suite applies to every *.inc pin: an exception that stops
+         * matching any row is stale and must fail loud, not quietly stop
+         * asserting anything. */
+        if (nnames >= 1 && !m_exception_fired) {
+            int have_assertions = name_lookup("assertions") >= 0;
+            if (have_assertions)
+                spec_fail("SPEC-M named exception for row '(?m)' (kind=group, "
+                          "selector=m, module=modifiers) matched zero rows "
+                          "under inverted(-assertions) -- the exception is "
+                          "stale (the row's selector/module moved, or the "
+                          "registry dropped it) and needs re-verifying "
+                          "before this file is trusted again");
         }
         free(vc_base);
 

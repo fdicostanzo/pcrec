@@ -179,29 +179,82 @@ if [ "$POPFAIL" -eq 1 ]; then
     exit 1
 fi
 
+# --- SPEC-M named exception (2026-08-21, docs/dev/plan.md [SPEC-M]) -----
+# THE FACT. `(?m)`'s GROUP SYNTAX belongs to module `modifiers` (this is why
+# mod_modifiers.o is a recogniser TU at all), but its MULTILINE MATCHING
+# EFFECT is decided by module `assertions`: mod_modifiers.c's case 'm' calls
+# `pcrec_feature_enabled(FEAT_ASSERTIONS)` before setting the scoped
+# multiline bit ([M6.2] wave C, ~src/parse/mod_modifiers.c:314). That
+# reference is exactly what this check's own isolation rule exists to
+# forbid — a recogniser consulting the enabled-set — but here it is correct
+# pcrec design (two modules genuinely own two different questions about the
+# same eleven bytes), not the leak the rule is meant to catch.
+#
+# EVIDENCE. tests/assertions/d27/gating.rxt (D27-blinded) pins all FOUR gate
+# combinations for `(?m)^a`, including the two where 'modifiers' is on and
+# 'assertions' is off (default std1, and --features modifiers alone), both
+# refusing at the multiline effect naming 'assertions'.
+# docs/design/registry_built_status_memo.md (D65, ratified) independently
+# measured the identical fact and names this suite's own two red checks as
+# the pre-existing consequence.
+#
+# SCOPE. Named by the exact (object basename, undefined symbol) pair this
+# check already computes — not a source-text pattern, and not "any
+# reference to pcrec_feature_enabled from anywhere" — so no other
+# recogniser's isolation is weakened, and a second, unrelated cross-module
+# reference would still fail normally. Checked in BOTH directions below:
+# an unmatched DISAGREE still fails, and the exception itself must fire
+# exactly once or this check fails as stale (the same discipline the
+# suite's *.inc pins already use).
+#
+# EXPIRY. Resolved by [DD-11]'s flags-as-binding-mutators redesign, which
+# removes the cross-module read this exception exists to describe — delete
+# this block's special case the day that lands.
+EXC_OBJ_BASENAME="mod_modifiers.o"
+EXC_SYMBOL="pcrec_feature_enabled"
+
 # --- the assertion ------------------------------------------------------
 FAILS=0
 CHECKED=0
+ALLOWED=0
 for o in $RECOG_OBJS; do
     UNDEF=$(nm --undefined-only "$o" 2>/dev/null | awk '{print $NF}')
+    obase=$(basename "$o")
     for s in $ENABLED_SYMS; do
         CHECKED=$((CHECKED + 1))
         if echo "$UNDEF" | grep -qx "$s"; then
-            echo "  DISAGREE $o references the enabled-set symbol '$s' — a"
-            echo "           recogniser must not link it (nm --undefined-only)"
-            FAILS=$((FAILS + 1))
+            if [ "$obase" = "$EXC_OBJ_BASENAME" ] && [ "$s" = "$EXC_SYMBOL" ]; then
+                echo "  ALLOWED (SPEC-M named exception) $o references '$s' —"
+                echo "           (?m)'s multiline EFFECT is module assertions',"
+                echo "           even though its GROUP SYNTAX is modifiers' own;"
+                echo "           see this file's header for the evidence."
+                ALLOWED=$((ALLOWED + 1))
+            else
+                echo "  DISAGREE $o references the enabled-set symbol '$s' — a"
+                echo "           recogniser must not link it (nm --undefined-only)"
+                FAILS=$((FAILS + 1))
+            fi
         fi
     done
 done
 echo "  POPULATION isolation.symbol_pairs_checked     $CHECKED"
+echo "  POPULATION isolation.named_exceptions         $ALLOWED"
 
 if [ "$CHECKED" -eq 0 ]; then
     echo "  FAIL: zero pairs checked — the sweep compared nothing"
+    exit 1
+fi
+if [ "$ALLOWED" -ne 1 ]; then
+    echo "FAIL $NAME: the SPEC-M named exception ($EXC_OBJ_BASENAME / $EXC_SYMBOL)"
+    echo "  fired $ALLOWED time(s), expected exactly 1 — either it is stale (the"
+    echo "  object or symbol name moved and needs re-verifying against the"
+    echo "  evidence in this file's header) or a NEW unexplained reference"
+    echo "  appeared alongside it. Either way this is not a quiet pass."
     exit 1
 fi
 if [ "$FAILS" -gt 0 ]; then
     echo "FAIL $NAME: $FAILS reference(s)"
     exit 1
 fi
-echo "PASS $NAME ($CHECKED symbol/TU pairs, $NSYM enabled-set symbols, $NREC recogniser TUs)"
+echo "PASS $NAME ($CHECKED symbol/TU pairs, $NSYM enabled-set symbols, $NREC recogniser TUs, $ALLOWED named exception)"
 exit 0
