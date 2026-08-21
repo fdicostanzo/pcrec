@@ -1374,6 +1374,33 @@ or never made. Writing the lesson down demonstrably does not install it (this
 session restated a load-contamination rule and violated it in the same
 document). Mechanize instead.
 
+- [SR-11] STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
+  session, from the D65 format-consumer breakage: "if it was meant to be
+  read, it might be prep'd for it — #comments are ignored and a
+  #header:col1 col2... row") — THE DUMP'S SELF-DESCRIBING CONTRACT.
+  `--list-syntax` ALREADY emits `#` comment lines and a `#kind<TAB>...`
+  header row naming every column; what is missing is the ruled CONTRACT
+  and conforming consumers. Three parts: (1) DOCUMENT the contract where
+  the dump is specified (# lines are comments; the last # line before
+  data is the header naming all columns in order; columns are APPENDED
+  only, per SR-4; consumers MUST resolve columns by header NAME, never
+  by hardcoded count or bare position); (2) CONVERT the in-tree
+  positional/count consumers to header-name resolution — the
+  tests/reject iterator and cli case10 (their NF != 16 fix was the
+  minimal repair, this is the durable one: awk builds a name->index map
+  from the header row; case10's integrity check becomes "every row's
+  field count equals the HEADER's declared count", strictly stronger
+  than any hardcoded number), plus check09's cut -f4 while there;
+  (3) a CHECK that the header row itself stays truthful (column count
+  in header == column count in every row — which case10's converted
+  form IS; and compliance_section.py's COLS list cross-checked against
+  the emitted header, so the generator and its checker cannot disagree
+  silently). EVIDENCE FOR THE DESIGN: the complete format-consumer
+  survey in registry_built_status_memo.md's Correction section —
+  spec_mod0's header-deriving loader (written blind, years early) was
+  the only shape-robust consumer and survived D65 unchanged; the two
+  hardcoded-count consumers broke. Sonnet-sized; no dependency;
+  schedule with the next test-infra window
 - [TT-3] STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
   session, from the test-timings discussion; runs NEXT when a lane is
   available — prerequisite DISCHARGED same day: Frank installed ccache
