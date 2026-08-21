@@ -11012,3 +11012,89 @@ calibration, not a stall. (3) The load-hold protocol (lanes author
 during a battery, validate after the gate) got three lanes' work
 authored inside the close battery's window at zero contention cost —
 adopt as the standing shape for battery-concurrent lanes.
+
+## 2026-08-21 (EDT), thirty-fifth session (part 2) — M6-READ shipped and close-validated; D65 landed with a lesson; the [M6.2] queue discharged
+
+M6-READ WENT INTENT-RULING TO MERGED IN ONE DAY. Sample stage (opus
+lane): naming scheme with qualify-only-when-plural, hand-commented
+DFA+VM exemplars at measured restraint (92%/88% of statements carry no
+comment), approved by Frank with the // cosmetic ruling. Conversion:
+ONE atomic commit by measured fallback (the halfway state compiles —
+parameter names have no linkage — but needs 33 pin reversions for a
+never-shipped state); the legends came FREE (BFS shortest-input walk
+over emitter-owned data; --emit-ir's slot legend routed to a second
+sink) — engineering note (iv) discharged by construction. CLOSE
+EVIDENCE at one SHA after three passes each catching a real finding:
+census 925 patterns / 0 uncompilable / 574-574 byte-identical executed
+code + exported symbols / 570 internal renames (the self-arming
+control); suite green; mech 85/0/0 re-run on the final tip BECAUSE
+five rows are scored by scripts the lane changed. Union battery + gate
+13/13 + post-merge mech + first-ever sanitizer exposure of the
+kreset/gstart differentials, all green (archive b8cb848).
+
+WHAT THE PASS COST, honestly: the ~94-pin survey was an undercount BY
+CONSTRUCTION (a survey enumerated from example artifacts inherits the
+examples' shape — D27's lesson one level up), and the true tail was
+found by RUNNING: five pin classes (surveyed greps; hidden extractors
+x3, two of them PRE-EXISTING latent bugs; prose-grep vacuity; BUCKET
+CLASSIFIERS in three identity gates; sibling-table greps incl. one
+SILENT UNDERCOUNT — a population figure printed but never asserted,
+slid 20->13 with nothing red, now pinned EXACT). The rename reached
+emitted ENGLISH four ways + three char-buffer truncations; the tail
+lane added the prose-rule corollary (no English-word entries in a
+prose rename map). The lane's own instruments failed twice (head-N
+fixed-fixture sampling green through uncompilable artifacts; a driver
+printing rc=0 under make errors THREE times, never fixed as directed —
+all evidence manager-verified from primary output). CONVERSION_LOG.md
+is the curated record; src/gen/CLAUDE.md carries the vocabulary rules.
+
+D65 LANDED, THEN TAUGHT THE FORMAT-CONSUMER LESSON. Implementation
+(sonnet, same lane as the memo): dump-time derived, answered_at not
+text-matching (verbs/unicode-props legitimately bypass the shared
+refusal), all-modules-open probing (the (?m) cross-module gate), the
+(?J) split — 33 built + 1 unbuilt among the "34 shipped" rows — as
+the per-construct ruling's concrete vindication. THEN THE UNION
+BATTERY FAILED: two consumers of the dump's FORMAT (tests/reject's
+iterator and cli case10, both hard-coded NF != 15) broke on the
+appended column — the memo had surveyed CONTENT consumers and never
+asked the SHAPE question. Fix + complete 8-consumer format survey
+(spec_mod0's header-deriving loader, D27-authored blind, was the only
+shape-robust consumer and survived unchanged); memo gained a
+Correction section. Manager's own foot-gun the same battery: env
+CC="ccache gcc" meets unquoted CC=$(CC) in UBSAN_ENV and the shell
+runs gcc as the command — re-run used the /usr/lib/ccache PATH
+masquerade. TT-3 cold data from the re-run: only 540/5466 compile
+calls cacheable (~10%) — the harness's compile-AND-LINK single
+invocations defeat ccache; the wiring lane's real work is invocation
+shape.
+
+RULINGS OF THE EVENING (all recorded in rows/decisions): D66 (tranche
+C re-based onto DD-11's core reduction — optimize the core
+lookbehind-anchor form, not ^'s special case; ^ start=0 already IS \A;
+(?m)^ desugars to (?:\A|(?<=\n)(?!\z)) pending M6.6); [TT-3] ccache
+row chartered + prerequisite installed; [SR-11] the dump's
+self-describing contract + docs/spec/table_contract.md GENERALIZED
+(all tabular commands, sections mechanism, backwards compatible;
+--emit-ir TO-BE-CONSIDERED on DD-8) + the tests/lib TABLE LIBRARY
+ruling (one contract implementation, consumers call it); [DOC-DRV]
+cleared for the pre-M6.4 infra window; [SPEC-M] chartered minimal and
+DONE same evening (named (?m) exceptions with stale-guards +
+non-vacuity, sabotage-validated, suite 12/2 -> 14/0, expiry DD-11);
+[V-H] gained the trace-enrichment note (pattern-position on trace
+events); M6.4 -> 6.5 -> 6.6 order REAFFIRMED with the session boundary
+ruled just before 6.4.
+
+QUEUE STATE: the [M6.2] post-module queue is fully discharged (items
+3/4/5/7 done and validated; 1+2 re-based by D66 onto DD-11/M6.6; 6
+armed). Remaining this session: [TT-3], [SR-11], [DOC-DRV], then
+session close before [M6.4].
+
+MANAGER LESSONS, part 2: a merge of two individually-green branches is
+UNVALIDATED until the union runs — the battery caught what
+section-scoped lane validation could not, exactly as designed; never
+put a space-containing CC through make (PATH masquerade is the paved
+road); a lane told twice to fix its instrument and not doing it is a
+compliance fact for the merge record, and reading evidence from
+primary output is what made it harmless; sub-lane sequencing (author
+during battery, validate after) held up under six concurrent
+work-streams.
