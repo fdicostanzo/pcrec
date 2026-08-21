@@ -10920,3 +10920,95 @@ build/gate_repair.log — chained, auto-gate on quiet). THE SOLE
 REMAINING CLOSE ITEM: the D27 blinded corpus, deferred to next session
 FIRST per Frank's stop order. DD-4 closed in place (wave D answered
 it). plan.md carries the post-module queue. wake.md is the handoff.
+
+## 2026-08-21 (EDT), thirty-fifth session (part 1) — [M6.2] CLOSED: D27 blinded corpus 0-divergence acceptance; M6-READ sample approved; tranche A in flight
+
+[M6.2] IS CLOSED. The repair slice's chained battery+gate from the
+handoff was verified green (gate 13/13 at load 0.32, archive 5288c30),
+then the D27 BLINDED CORPUS — the sole remaining close item — was
+authored in a cell (scripts/mk_d27_cell.sh asrtd27; allowlist
+docs/testing.md + docs/spec/match_api.md + build/, mirroring [M6.3]'s),
+by a sonnet lane, from the PCRE2 goal: 8 topic files, 145 blocks, 224
+oracle-verified cells (242 harness cases), every expectation measured
+against libpcre2 10.46 at options=0 via the author's own ctypes binding
+(no libpcre2-dev on this box — a compiled probe cannot link; finding
+recorded). RESULT: ZERO divergences against the shipped module, both in
+the author's own pcrec run and in the manager's independent re-runs —
+the acceptance the module close was owed, at ~3x [M6.3]'s corpus size.
+Merge 68998b9; close battery all-green on the final state (test
+20,775/0 — exactly +242 for the corpus, the only count that moved;
+strict/ubsan/asan/lint clean) + gate 13/13 quiet-box, archive a610967;
+row archived to plan_completed.md with the post-module queue re-homed
+to [M6.0] (bf8d83c). Module `assertions`: 8/8 constructs, five waves +
+repair slice + blinded acceptance, all close-validated.
+
+CORPUS FINDINGS. (1) (?m) is a TWO-MODULE construct — `modifiers` owns
+the (?m...) group syntax, `assertions` the multiline effect; neither
+alone compiles it; all four feature combinations measured and pinned in
+gating.rxt. The blinded author found this because the brief's "each
+construct refuses naming THE module" (singular) didn't fit — the
+goal-derived alphabet earning its keep again. (2) THE FLAGS-I FINDING,
+two-sided: the corpus's one `flags i` cell collided with the project's
+options=0 oracle pin — and the manager's independent verify run exposed
+that tests/assertions/verify_pcre2.py was MIS-VERIFYING flags-carrying
+blocks (options=0 oracle vs with-flags expectation, wrong in the silent
+direction; never fired because no prior block in the directory carried
+flags). Corpus half fixed by the AUTHOR (caseless respelled inline
+(?i)\bcat\b — options=0-verifiable verbatim); checker half by the
+manager (flags blocks now skip-and-COUNT loudly, verify_rxt.py's
+pcre2-only shape). The checker gap is the session's instance of the
+standing lesson: a checker that silently mis-scores is worse than one
+that skips loudly. (3) This box's libpcre2 default newline is LF-only
+(measured via pcre2_config), relevant to re-deriving the CRLF cells.
+
+M6-READ, THREE RULINGS + SAMPLE STAGE DONE IN ONE DAY. Frank's intent
+clarification (the five requirements are GUIDELINES serving reader
+understanding — blind compliance is the failure mode) and scope ruling
+("not comp-sci 101": the artifact explains ITSELF; commentary restores
+the altitude C strips away) recorded on the row (7d90897, ca14593).
+Frank sequenced M6-READ + queue tranche A AHEAD of [M6.4]/[M6.5]/
+[M6.6]. The sample stage (lane/m6read, opus, 61f0209): naming scheme
+with the qualify-only-when-plural rule, hand-commented DFA + VM
+exemplars with measured comment restraint (92%/88% of statements carry
+none — the anti-quota argument made numeric), neutrality PASS on both
+pairs, pin budget ~94 code + ~64 prose. APPROVED by Frank ("look
+fantastic") with one cosmetic ruling: /* */ structural, // line-level.
+LANE FINDINGS THAT MATTER: (a) "object-code-neutral" needed DEFINING —
+renaming statics renames internal-linkage SYMBOLS, so a naive
+disassembly diff false-alarms; the adopted gate is executed-bytes +
+exported-symbols. (b) run_ir_listing.sh:132 greps emitted prose that
+the conversion renames on BOTH sides — a vacuous-pass hazard of the
+control-shares-a-source class; the conversion plan lands a non-vacuous
+replacement FIRST, watched failing. (c) Frank's VM-sample observation
+(byte-at-a-time literal run vs one memcmp) is his OWN 2026-08-18
+[OPT-A] literal-run-coalescing lead re-surfaced by the readable
+artifact — cross-noted on the row as M6-READ's measured side benefit:
+readable output turns optimization gaps into things seen at a glance.
+Conversion phase chartered on the same lane, load-gated.
+
+TRANCHE A (both lanes authored DURING the close battery under an
+explicit load-hold protocol — author now, validate on box-free): 
+sabanchors re-derived all SEVEN drifted anchors with a clean diagnosis
+(FIVE share one root cause — wave A's ParseMods pointer refactor never
+propagated to the anchors; S39 a comment collision from MRL; S65 the
+known ALTCLS append), each dry-run verified as a pure text op;
+wordbshard split wordb.rxt into four topical shards, 4,608 cases
+conserved byte-diff-proven (and caught the manager's brief citing the
+stale pre-repair 4,392), retargeted S72-S75's harness arms, updated
+every live reference. VERIFICATION OF RECORD for both lanes' mech
+state: ONE post-merge full-matrix mech run on main — pending, with
+wordbshard's suite validation and sabanchors' matrix queued on the
+freed box, then the heavy-differentials background runs (queue item 7:
+the three assertions diff sweeps under both sanitizer axes, the
+exclusion waves D/E recorded).
+
+MANAGER LESSONS. (1) A background command inherits the SESSION cwd, not
+the last foreground cd — the manager launched the same worktree
+validation FIVE times without its cd prefix before switching to
+absolute paths; absolute paths in background commands, always. (2) A
+design lane's opening phase is legitimately write-silent for 10-15
+minutes (reads + derivation before the first WIP commit) — watchdog
+calibration, not a stall. (3) The load-hold protocol (lanes author
+during a battery, validate after the gate) got three lanes' work
+authored inside the close battery's window at zero contention cost —
+adopt as the standing shape for battery-concurrent lanes.
