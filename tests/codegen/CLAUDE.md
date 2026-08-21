@@ -429,7 +429,7 @@ Every symbol these checks look for is a function-local static or a statement
 inside the engine function — that is the measured finding OS-0b rests on, and
 it is what lets several engines share one file under D18/D20. It is also what
 makes a whole-file grep wrong as soon as there IS more than one engine:
-`rx_fs[0-9]+\[256\]` would be satisfied by ANY engine present, so a check
+`rx_forward_stay[0-9]+\[256\]` would be satisfied by ANY engine present, so a check
 reading "this pattern emits a skip table" degrades to "some engine in here
 does" while still passing. All 19 grep sites across 11 generated files now run
 against a body extracted by entry name (`body()`).

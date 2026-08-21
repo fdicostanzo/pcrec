@@ -63,7 +63,7 @@
 #   - '=[^\n]*!'             self-loop SKIP STATES -- tests/bench's
 #                            THROUGHPUT case (e) verbatim, chosen there
 #                            because cases (a)-(d) all emit ZERO skip
-#                            tables; confirmed here too (grep for `rx_fs`
+#                            tables; confirmed here too (grep for `rx_forward_stay`
 #                            in the emitted C, same table name the bench
 #                            comment and tests/codegen both grep for).
 #   - 'catfish|cat|dog'      the M2.8 alternation TRIE (tests/base/
@@ -249,7 +249,7 @@ for idx in "${!TS2_NAMES[@]}"; do
     # The skip-table pattern must actually emit one, or it silently degrades
     # into re-measuring the same shape as the memchr case (the same trap
     # tests/bench's CLAUDE.md documents for its own case (e)).
-    if [ "$name" = "skip" ] && ! grep -q 'rx_fs[0-9]*\[256\]' "$dir/gen.c"; then
+    if [ "$name" = "skip" ] && ! grep -q 'rx_forward_stay[0-9]*\[256\]' "$dir/gen.c"; then
         bad "TS-2 'skip': pattern '$pattern' emitted NO forward skip table -- this case can no longer test self-loop skip states under concurrency, which is the only thing it is for"
         continue
     fi

@@ -146,7 +146,7 @@ THROUGHPUT_BITMAP_MIN_MBPS="${THROUGHPUT_BITMAP_MIN_MBPS:-330}"   # measured 429
 # skip loop only. This engine also runs a REVERSE skip loop once a match is
 # found (scan forward for match end, then backward for match start — see
 # src/gen/emit_dfa.c's emit_unanchored) and a subject that never matches never
-# reaches that code at all, so the reverse skip table (rx_rs1 for this
+# reaches that code at all, so the reverse skip table (rx_reverse_stay1 for this
 # pattern) had zero throughput coverage anywhere in this suite. The subject is
 # now `'=' + 'a'*(n-2) + '!'`: ONE match spanning the whole buffer, forcing
 # both the forward scan (to reach the trailing '!') and the reverse scan (to
@@ -672,7 +672,7 @@ with open(os.path.join(outdir, "bitmap_8mb.bin"), "wb") as f:
 # forward to find the match's END, then backward from there to find the
 # match's START — see src/gen/emit_dfa.c's emit_unanchored), and the reverse
 # loop only runs at all once a match is found (`last` gets set). The old
-# subject never matched, so the reverse loop's own skip table (rx_rs1 for
+# subject never matched, so the reverse loop's own skip table (rx_reverse_stay1 for
 # this pattern) was emitted but its while-loop body had ZERO throughput
 # coverage anywhere in this suite — a regression in the REVERSE machine
 # specifically (D13's suspicion: "a backward byte-at-a-time skip loop loses
@@ -680,18 +680,18 @@ with open(os.path.join(outdir, "bitmap_8mb.bin"), "wb") as f:
 # else. A single '=' at the start and a single '!' at the end forces both
 # directions to walk almost the entire buffer through the skip table:
 # verified with a debug-instrumented build counting loop iterations directly
-# (not by timing) that the forward skip loop (rx_fs1) and the reverse skip
-# loop (rx_rs1) each iterate 8,388,606 times over this exact 8 MB subject —
+# (not by timing) that the forward skip loop (rx_forward_stay1) and the reverse skip
+# loop (rx_reverse_stay1) each iterate 8,388,606 times over this exact 8 MB subject —
 # i.e. both machines are exercised almost end-to-end. Match span is the
 # whole buffer, [0, n), so this is not the R2-B4 early-exit trap: reaching
 # the '!' requires scanning (and reaching 'sfound' requires walking back)
 # almost the full 8 MB either way.
 #
 # Known remaining gap, not closed by this subject: this pattern's forward
-# DFA also emits a SECOND skip table, rx_fs3, on the state reached only
+# DFA also emits a SECOND skip table, rx_forward_stay3, on the state reached only
 # AFTER a match by encountering a further '=' (i.e. a second candidate match
 # start following the first). This subject's single '=' means that state,
-# and rx_fs3, are still never entered — pick_skip_states' multi-state
+# and rx_forward_stay3, are still never entered — pick_skip_states' multi-state
 # selection remains uncovered by any throughput case. Left for future work.
 with open(os.path.join(outdir, "skiploop_8mb.bin"), "wb") as f:
     f.write(b"=" + b"a" * (n - 2) + b"!")
@@ -908,10 +908,10 @@ if [ $py_rc -eq 0 ]; then
         # guarding what it claims to. The reverse requirement is new in
         # R3.9: it used to be un-checkable because the old subject never
         # matched, so the reverse loop never ran at all.
-        if ! grep -qE 'rx_fs[0-9]+\[256\]' "$tdir/gen.c"; then
+        if ! grep -qE 'rx_forward_stay[0-9]+\[256\]' "$tdir/gen.c"; then
             record_hard_error "THROUGHPUT (e) emitted NO forward skip table for '=[^\\n]*!' — this case can no longer measure forward skip states, which is half of what it is for"
         fi
-        if ! grep -qE 'rx_rs[0-9]+\[256\]' "$tdir/gen.c"; then
+        if ! grep -qE 'rx_reverse_stay[0-9]+\[256\]' "$tdir/gen.c"; then
             record_hard_error "THROUGHPUT (e) emitted NO reverse skip table for '=[^\\n]*!' — this case can no longer measure reverse skip states, which is the other half of what it is for (R3.9)"
         fi
         run_bdriver "$tdir/t" "$subj_dir/skiploop_8mb.bin" 10 "$RUN_TIMEOUT"

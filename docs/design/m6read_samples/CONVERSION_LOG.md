@@ -433,6 +433,36 @@ harder to find, because grepping for assertions will not surface it.
 
 ---
 
+## The pins the survey's identifier list could not name
+
+The pin survey worked from a list of identifier spellings. Everything on that
+list was found. What it could not find were the pins whose spelling was NOT on
+it, and the full `make test` turned up three more after the conversion was
+otherwise green:
+
+- **`tests/thread` TS-2** requires the `skip` fixture to emit a forward skip
+  table, greping `rx_fs[0-9]*\[256\]`. The table is still emitted — the
+  census proved `.text`/`.rodata` byte-identical — but under its new name
+  `rx_forward_stay1`, so the check reported *"emitted NO forward skip table:
+  this case can no longer test self-loop skip states under concurrency, which
+  is the only thing it is for."* Which is precisely right.
+- **`tests/bench`** carries the same two greps for the forward and reverse
+  skip tables.
+- **`tests/assertions/run_mline_diff.sh`** greps `rx_facc2[` to build its
+  mechanism-classification string. **This one was silently UNDER-COUNTING:**
+  its "patterns carrying a live scan-avoidance mechanism" figure was 13 with
+  the stale grep and is **20** with the correct one. Seven patterns were not
+  being credited with the class-indexed-accept mechanism, and nothing failed —
+  the check just quietly measured less than it thought.
+
+`rx_fs`/`rx_rs`/`rx_facc2` were absent from the survey's list because they are
+SIBLING tables the sample artifacts did not happen to emit. The lesson is not
+that the survey was careless; it is that **a pin survey enumerated from
+example artifacts inherits those examples' shape** — the same failure D27
+exists to counter, one level up.
+
+---
+
 ## What each gate is FOR
 
 | instrument | proves | blind to |

@@ -116,7 +116,7 @@ m "ba" 1 2
 # The shape that produces it is an alternation with one unanchored self-looping
 # branch: the `.*`/`[^\n]*` state both self-loops (so it gets a skip table) and
 # accepts (so `last` must survive the skip). Confirmed from the emitted C
-# rather than assumed — `a.*|b$` emits rx_fs1[256] with rx_facc[1] == 1.
+# rather than assumed — `a.*|b$` emits rx_forward_stay1[256] with rx_forward_is_accepting[1] == 1.
 #
 # SABOTAGE-VALIDATED, and the two halves need different patterns. Counts are
 # whole-corpus and were re-measured after an R3.2 critic showed the first
@@ -137,7 +137,7 @@ m "ba" 1 2
 # eol_engine.rxt and review_r2.rxt); this file does not, despite its header.
 #
 # `[a-z].*|q$` is a NON-EOL machine even though it is written with a `$`:
-# `[a-z].*` subsumes `q$`, so no EOL-variant state survives (no rx_fev table is
+# `[a-z].*` subsumes `q$`, so no EOL-variant state survives (no rx_forward_eol_view table is
 # emitted). That is what gives it detection power on the non-EOL path — and it
 # is an accident of this pattern, so `a.*|b` and `=.*|;` below carry no `$` at
 # all and cannot lose that coverage to a construction change.
@@ -213,7 +213,7 @@ m "=;" 0 2
 # That intersection is the only place where the two orderings D11 arbitrates can
 # actually disagree about the same state, so it is the case the file most needed.
 #
-# `a(?:$|.)*` emits rx_fs2 with rx_facc[2] == 1 and rx_fev[2] >= 0 — verified in
+# `a(?:$|.)*` emits rx_forward_stay2 with rx_forward_is_accepting[2] == 1 and rx_forward_eol_view[2] >= 0 — verified in
 # the emitted C, not assumed. The critic swept 244 patterns of this shape against
 # PCRE2 and all held, so these are a regression net, not a bug report.
 #
