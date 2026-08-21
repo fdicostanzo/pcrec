@@ -900,6 +900,25 @@ their own future rows if ruled in.)
   Frank ONE sample commented artifact to approve the style against
   before the full emitter conversion — cheap, and it fixes the
   line-comment granularity on real code by example.
+  INTENT CLARIFICATION (Frank, 2026-08-21, thirty-fifth session — recorded
+  so the implementing lane's brief carries the GOAL, not just the letter):
+  the five requirements are GUIDELINES, not a checklist, and following them
+  blindly is the named failure mode (per-line quota comments that echo
+  code, renames that add length without comprehension). The goal they
+  serve: a READER can understand what the emitted code is doing — there is
+  an EDUCATIONAL aspect. The acceptance question for every individual
+  commenting/naming decision is "does this help a competent C programmer,
+  new to regex engines, understand what is going on here" — density and
+  altitude follow from that answer, in both directions: self-evident code
+  correctly gets NO comment; a genuinely subtle mechanism may deserve a
+  fuller explanatory block than any per-line rule would produce.
+  Consequences: (a) the one-sample style approval judges EDUCATIONAL
+  quality against this goal, not format compliance; (b) the implementing
+  lane is judgment-heavy work, not mechanical transcription — model choice
+  accordingly; (c) manager PROPOSAL for the sample stage (not ruled): a
+  top-of-artifact "how this matcher works" overview block as the natural
+  home for machine-shape orientation and the state legends; (d) the lane's
+  brief must quote this clarification alongside the five requirements.
 
 ## M3 — Streaming input
 
