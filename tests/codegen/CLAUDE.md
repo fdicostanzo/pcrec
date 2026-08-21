@@ -624,6 +624,56 @@ machines, mechanism 4's seed in both, AND live forward and reverse SKIP
 states. Rule 2 is about the skip, so a fixture without one would satisfy it
 vacuously, and the check asserts the skip's presence rather than assuming it.
 
+## [M6-READ] the SLOTS block's non-vacuity guard, and the sabotage that earned it
+
+Added 2026-08-21, **before** any emitted identifier was renamed, because the
+rename is what makes the hazard live. `run_ir_listing.sh`'s SLOTS block
+compares two extractions that are both pattern-matched SPELLINGS the emitter
+writes: `RX_SET(<slot>` in the `.c`, `set stv[n]` in the listing. Renaming
+them together is the only CORRECT way to rename them — and doing so makes
+both greps match nothing, after which `diff -q` on two empty files passes.
+The check would go on reporting green while reading neither side.
+
+This is the failure this project already has in its own memory (a control
+sharing a source with the thing it controls), and [M6-READ] is a live
+occasion for it in two independent ways: the listing's prose moves with the
+emitter's variable names, and the artifact stops writing `RX_SET(2,` at all
+once the slot legend lands (`RX_SET(RX_SLOT_GROUP1_START,`).
+
+Three things now hold the block open:
+
+1. **Per-pattern non-emptiness, asserted on BOTH sides.** Every pattern in
+   `PATTERNS` has at least one capturing group, so every one must write at
+   least one slot; an empty extraction is a failure with its own message
+   naming which side went blind.
+2. **Symbolic operands are RESOLVED against the artifact's own `#define`s**,
+   so the block keeps working across the slot-legend change instead of
+   needing a flag day — and an operand that resolves to nothing is a hard
+   failure, not a silently dropped row.
+3. **A sweep-wide guard for CHOICE POINTS**, which cannot assert
+   non-emptiness per pattern (a fully-possessified pattern legitimately
+   pushes no frame) but across this sweep must find some.
+
+**Measured, both directions** (run from this directory — see the scratchpad
+warning below, which this lane walked into before getting it right):
+
+| state | old check | new check |
+|---|---|---|
+| unsabotaged | 79 pass / 0 fail | 80 pass / 0 fail |
+| listing side moved only (`set slot_values[n]`) | 68 / 11 — already caught | 69 / 11, message names the listing |
+| **BOTH sides moved** (the real post-conversion state) | **79 / 0 — all 11 SLOTS checks comparing empty against empty** | **69 / 11, message names the `.c` side** |
+
+The middle row is why the guard is not redundant: the one-sided sabotage was
+always caught, so a validation that only tried that one would have concluded
+the block was already safe. Only the both-sides case is vacuous, and it is
+the case the conversion actually produces.
+
+The guard also found a live defect in the extraction on its first run: the
+old numeric-only grep was matching `RX_SET`'s own `#define` line and silently
+dropping the operand because the macro PARAMETER name (`slot_`) is not
+`[0-9]+`. Resolving symbolic operands made it visible. `#define` lines are
+now excluded explicitly.
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the

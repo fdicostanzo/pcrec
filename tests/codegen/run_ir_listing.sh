@@ -67,6 +67,14 @@ pass=0; fail=0
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
+# Aggregated across the whole pattern sweep, for the CHOICE POINTS block's own
+# non-vacuity guard. That block cannot assert non-emptiness per pattern the way
+# SLOTS can -- a pattern whose quantifiers all possessify legitimately pushes
+# no resume frame -- but across a sweep containing an alternation chain and a
+# backtracking rung, ZERO pushes on either side means the extraction stopped
+# matching rather than that the population vanished.
+tot_cpush=0; tot_ipush=0
+
 # The shapes, chosen so every emission path that can produce a listing event is
 # represented: an alternation chain, both cursor rungs, the frames rung with
 # and without the empty-iteration guard, nested captures, bounded replication,
@@ -128,13 +136,63 @@ for pat in "${PATTERNS[@]}"; do
     fi
 
     # ---- SLOTS: the written set ------------------------------------------
-    grep -oE 'RX_SET\([0-9]+' "$d/gen.c" | grep -oE '[0-9]+' | sort -n -u > "$d/c.slots"
+    #
+    # NON-VACUITY IS ASSERTED HERE, and it is the whole reason this block is
+    # shaped the way it is. Both sides of this comparison are extracted by
+    # pattern-matching a SPELLING: `RX_SET(<slot>` in the .c, `set <array>[n]`
+    # in the listing. The emitter writes both. So a rename that moves the
+    # emitter and the listing together — which is the only way to rename them
+    # CORRECTLY — makes both extractions match nothing, and a bare `diff -q`
+    # of two empty files PASSES. The check would then certify a listing it had
+    # stopped reading.
+    #
+    # That is this project's recorded check-design failure (a control sharing
+    # a source with the thing it controls), and [M6-READ]'s emitted-identifier
+    # rename is a live occasion for it. Every pattern in PATTERNS above has at
+    # least one capturing group, so every one of them MUST write at least one
+    # slot: an empty extraction on either side is a failure, never a pass.
+    #
+    # The .c side also resolves SYMBOLIC slot names. [M6-READ] emits a slot
+    # legend (`#define RX_SLOT_GROUP1_START 2`) and writes `RX_SET` through it,
+    # so the operand is not always a literal. Reading the artifact's own
+    # `#define`s keeps this check working across that change instead of
+    # requiring a flag day — and an operand that resolves to NOTHING is a hard
+    # failure rather than a silently dropped row, which is the same
+    # anti-vacuity rule one level down.
+    # `#define` lines are excluded: RX_SET's own definition line carries the
+    # macro's PARAMETER name as its operand. The old numeric-only extraction
+    # skipped it silently; resolving symbolic operands makes it visible, and it
+    # is not a slot write.
+    grep -v '^#define' "$d/gen.c" | grep -oE 'RX_SET\([A-Za-z0-9_]+' \
+        | sed 's/^RX_SET(//' > "$d/c.slotops"
+    : > "$d/c.slots.raw"
+    unresolved=""
+    while read -r op; do
+        [ -n "$op" ] || continue
+        case "$op" in
+            ''|*[!0-9]*)
+                v="$(cat "$d/gen.c" "$d/gen.h" 2>/dev/null \
+                     | grep -oE "^#define +$op +[0-9]+" | awk '{print $3}' | head -1)"
+                if [ -z "$v" ]; then unresolved="$unresolved $op"; else echo "$v" >> "$d/c.slots.raw"; fi
+                ;;
+            *) echo "$op" >> "$d/c.slots.raw" ;;
+        esac
+    done < "$d/c.slotops"
+    sort -n -u < "$d/c.slots.raw" > "$d/c.slots"
     grep -oE 'set +stv\[[0-9]+\]' "$d/ir" | grep -oE '[0-9]+' | sort -n -u > "$d/ir.slots"
-    if ! diff -q "$d/c.slots" "$d/ir.slots" >/dev/null; then
-        bad "ir-listing[$pat]: SLOTS — the stv slots the .c writes differ from the listing's: $(diff "$d/c.slots" "$d/ir.slots" | tr '\n' ' ' | cut -c1-200)"
+    if [ -n "$unresolved" ]; then
+        bad "ir-listing[$pat]: SLOTS — RX_SET operand(s)$unresolved are neither a number nor a #define in the artifact; the extraction would silently drop them"
+    elif [ ! -s "$d/c.slots" ]; then
+        bad "ir-listing[$pat]: SLOTS — no RX_SET sites found in the emitted C, but this pattern has capturing groups; the .c-side extraction is vacuous (did the emitted spelling change?)"
+    elif [ ! -s "$d/ir.slots" ]; then
+        bad "ir-listing[$pat]: SLOTS — the .c writes $(wc -l < "$d/c.slots") slot(s) but the listing-side extraction found none; the listing's wording changed and this check had stopped reading it"
+    elif ! diff -q "$d/c.slots" "$d/ir.slots" >/dev/null; then
+        bad "ir-listing[$pat]: SLOTS — the slots the .c writes differ from the listing's: $(diff "$d/c.slots" "$d/ir.slots" | tr '\n' ' ' | cut -c1-200)"
     else
-        ok "ir-listing[$pat]: SLOTS — the $(wc -l < "$d/c.slots") stv slot(s) the artifact writes are exactly the ones the listing shows"
+        ok "ir-listing[$pat]: SLOTS — the $(wc -l < "$d/c.slots") slot(s) the artifact writes are exactly the ones the listing shows, both extractions non-empty"
     fi
+    tot_cpush=$((tot_cpush + $(wc -l < "$d/c.push")))
+    tot_ipush=$((tot_ipush + $(wc -l < "$d/ir.push")))
 
     # ---- header numbers --------------------------------------------------
     # RX_NCAPS lives in the .h when a header is paired (the macros are emitted
@@ -185,6 +243,17 @@ for pat in "${PATTERNS[@]}"; do
         bad "ir-listing[$pat]: island/callout accounting disagrees — listing says $isl/$cal, artifact says $art_isl/$art_cal"
     fi
 done
+
+# ---- CHOICE POINTS: the sweep-wide non-vacuity guard --------------------
+# See the note at tot_cpush's declaration. Both spellings (`RX_PUSH(&&rx_L<n>`
+# in the .c, `resume L<n>` in the listing) are emitter-written, so a rename
+# that moves them together empties BOTH sides and every per-pattern diff -q
+# above passes on two empty files.
+if [ "$tot_cpush" -eq 0 ] || [ "$tot_ipush" -eq 0 ]; then
+    bad "ir-listing: CHOICE POINTS — the sweep found $tot_cpush emitted RX_PUSH site(s) and $tot_ipush listing resume target(s); zero on either side means the extraction stopped matching, so every per-pattern comparison above was two empty files"
+else
+    ok "ir-listing: CHOICE POINTS — the sweep's extractions are non-empty ($tot_cpush emitted push sites, $tot_ipush listing resume targets), so the per-pattern comparisons above compared something"
+fi
 
 # ---- PCREC_MAX_VM_REPEAT_COPIES, at its boundary ------------------------
 #
