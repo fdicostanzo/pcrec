@@ -1374,6 +1374,34 @@ or never made. Writing the lesson down demonstrably does not install it (this
 session restated a load-contamination rule and violated it in the same
 document). Mechanize instead.
 
+- [TT-3] STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
+  session, from the test-timings discussion; runs NEXT when a lane is
+  available — PREREQUISITE: ccache is not installed on the box, Frank
+  installs it) — COMPILE-CACHING THE SUITE. The suite's cost driver is
+  gcc compiling generated C (full `make test` 7m16s at 20,775 cases;
+  the five-stage battery ~65 min; full mech ~50 min at PROCS=4 —
+  measured 2026-08-21), and that compilation is deterministic in its
+  inputs, which the identity-gate discipline already proves stay
+  byte-identical for most artifacts under most changes. Wire ccache
+  onto BOTH compile paths (the tree build and the GENCFLAGS
+  generated-artifact path in tests/lib/gen_timeout.sh's gen_cc), as an
+  OPT-IN toggle in the house style (a plain `make test` without the
+  toggle must behave exactly as today). CACHE COMPILATION, NEVER
+  VERDICTS: every test still executes and every verdict is computed
+  fresh; verdict/skip caching is explicitly out of scope (it caches
+  conclusions). TWO RULED CAVEATS travel as design items, not
+  footnotes: (1) D45's gen-timeout POSITIVE CONTROL (the compile that
+  must actually time out) and anything that MEASURES compile time gets
+  CCACHE_DISABLE or a content salt — a cache hit would make the
+  wrapper's control vacuous, the checks-going-vacuous class; (2)
+  nothing timing-flavored (bench, gate, M2.9-territory compile-time
+  budgets) is ever cached. DELIVERABLE IS A MEASUREMENT, not a claim:
+  cold/warm before-after table for `make test`, one full mech row,
+  and the battery's ubsan stage, on a quiet box; land only with the
+  table (predictions on record: test 7m -> 1-2m, mech 50m -> 5-10m —
+  refute or confirm). Disk bound stated and checked (cache size cap;
+  the box has ~46G free). Update docs/testing.md's tier table and the
+  stale "make mech ~6-7 minutes" figure in the same change
 - [MECH-3] STATE:not-started — a measurement wrapper that refuses to emit a number without provenance: interleaved A/B, N trials, load before AND after (R3.10), min/median/max spread, and a stamped record. Every performance overclaim this project has made — the 27%-recorded-as-+40%, this session's 1.5-4.1% deltas taken at load 4.5-9.7 — would have been blocked at the point of measurement rather than caught in review. Frank's precedent: a claude-safe grep that refuses `| tail` and reports what it actually looked at
 
 ## PCRE2 compliance tracking
