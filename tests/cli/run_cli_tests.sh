@@ -503,13 +503,14 @@ case10() {
     assert_contains "case10: --list-syntax emits the column header" "$out" \
         "#kind	selector	syntax"
 
-    # every non-comment row has exactly 15 tab-separated fields (12 until
+    # every non-comment row has exactly 16 tab-separated fields (12 until
     # MOD-0.1 appended `roadmap`, `quantifiable` and then `class_expect`,
-    # 2026-08-11)
+    # 2026-08-11; 15 until D65 appended `built`, 2026-08-21 —
+    # docs/design/registry_built_status_memo.md)
     printf '%s\n' "$out" > "$d/dump.tsv"
     nrows=$(grep -vc '^#' "$d/dump.tsv")
-    nbad=$(awk -F'\t' '!/^#/ && NF != 15' "$d/dump.tsv" | wc -l)
-    assert_eq "case10: every dump row has 15 fields (no tab leaked into one)" \
+    nbad=$(awk -F'\t' '!/^#/ && NF != 16' "$d/dump.tsv" | wc -l)
+    assert_eq "case10: every dump row has 16 fields (no tab leaked into one)" \
         "0" "$nbad" "rows: $nrows"
     if [ "$nrows" -ge 60 ]; then
         pass "case10: dump carries the registry's rows ($nrows)"

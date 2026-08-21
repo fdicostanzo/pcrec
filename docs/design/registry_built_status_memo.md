@@ -422,9 +422,86 @@ edits touch `RegStatus`, `Roadmap`, or any existing refusal wording (the two
 ext.c sites keep their exact rendered text; only the SOURCE of the fixed
 substring moved to a shared `#define`).
 
+**CORRECTED 2026-08-21 (tail lane, lane/regstatustail) — "tests/reject/'s
+hand pins... UNCHANGED" is true and incomplete.** The hand pins themselves
+never moved; tests/reject/'s `--list-syntax` ROW ITERATOR did, because it is
+a FORMAT consumer this section's survey did not think to ask about
+separately from the hand pins it sits beside. See "Correction" below for
+the mechanism, the fix, and the complete format-consumer survey this
+paragraph's own gap argued for.
+
 **Files touched**: `src/core/internal.h`, `src/parse/ext.c`,
 `src/parse/syntax_dump.c`, `tests/registry/registry_check.c`,
 `tests/registry/run_registry_tests.sh`, `tests/registry/compliance_section.py`,
 `docs/pcre2_compliance.md`, and this memo — plus CLAUDE.md updates in
 `src/core/`, `src/parse/`, `tests/registry/`, `docs/`, and `docs/design/`
 (this file's own entry).
+
+## Correction (2026-08-21, tail lane, lane/regstatustail): the consumer
+## survey conflated CONTENT and FORMAT, and missed two of the latter
+
+The "Consumer changes" section above and the implementation record's
+"Consistency with the ruled do-not-change list" both said "tests/reject
+unchanged." That was true of its hand-written pins (the literal `module 'X'`
+expectations `reject_gated`/`row_reject` assert) and FALSE of its `--list-syntax`
+ROW ITERATOR, which the union battery (merging this lane behind [M6-READ])
+caught the moment both merged into main: `tests/reject/run_reject_tests.sh`'s
+loop hard-codes `NF != 15` when it filters the dump to non-base rows, and
+`tests/cli/run_cli_tests.sh` case10 hard-codes the identical `NF != 15` as its
+own load-bearing field-count pin (its own CLAUDE.md entry: "case10's
+load-bearing assertion is the FIELD COUNT, not the content"). Appending a 16th
+column made every row fail `NF != 15`, so tests/reject's iterator matched
+ZERO rows — caught by its own non-vacuity floor ("iterated 0 rows, dump has 0
+non-base rows (floor 60)"), not by a silent pass — and case10's exact pin
+simply read 16 where it expected 15.
+
+**The distinction the first survey needed and did not draw**: a CONTENT
+consumer reads the dump for what a specific field SAYS (a module name, a
+status word) and is unaffected by a column appended at the end; a FORMAT
+consumer asserts something about the dump's SHAPE (an exact field count, a
+positional split assuming that count) and breaks the moment the shape
+changes, even if it never looks at the new column's value. The original
+survey enumerated content consumers (PC-3, tests/reject's hand pins, the
+gate-CLOSED diagnostics) and reasoned correctly about them; it did not ask
+"who parses the dump's FORMAT" as a separate question, so it never found the
+two format consumers that actually broke.
+
+**Both fixed** (`tests/reject/run_reject_tests.sh`, two sites: the awk filter
+and the `nexpected` count; `tests/cli/run_cli_tests.sh` case10's `nbad` check
+and its own assertion label) by changing the hard-coded `15` to `16`, with a
+comment at each site naming D65 and this correction so the next appended
+column does not repeat the miss. `$3`/`$4`/`$8`/`$11` (syntax/module/status/
+expect) are unmoved by the append — SR-4's own "columns are APPENDED, never
+reordered" rule — so no other field reference in either file needed
+touching.
+
+**The complete FORMAT-consumer survey**, done properly this time — every
+site in the tree that invokes `--list-syntax`/`pcrec_syntax_tsv` and parses
+its shape (not just its content), found by `grep -rln` for `list-syntax`/
+`list_syntax`/`pcrec_syntax_tsv` over the whole tree and triaging every hit,
+per this project's own standing lesson that a survey must enumerate from the
+rename map and check every hit, never estimate from examples
+(`pcrec-check-design-lessons` memory item 16's "a pin survey enumerated from
+example artifacts inherits the examples' shape," one level up: a FORMAT
+survey enumerated from remembered call sites inherits the same blind spot):
+
+| Site | Format dependency | Broke on D65? | Disposition |
+|---|---|---|---|
+| `tests/reject/run_reject_tests.sh` (row iterator) | hard-coded `NF != 15` | **YES** | Fixed this lane (`NF != 16`, two sites) |
+| `tests/cli/run_cli_tests.sh` case10 | hard-coded `NF != 15` | **YES** | Fixed this lane (`NF != 16`, pin wording updated) |
+| `tests/spec_mod0/spec_common.h` (`spec_registry_load`, used by check02/04/06/07/09/10/11/13) | field count read DYNAMICALLY from the header line (`spec_nhdr`), row `ncol` compared against that, not a literal; the file's own comment: "Columns APPENDED after them are fine — that is how an awaited surface arrives" | No — designed for exactly this case | None needed. Verified empirically: `bash tests/spec_mod0/run_spec_mod0.sh` after the merge shows every `--list-syntax`-consuming check unaffected by the format change (2 failures present, `check01_isolation`/`check07_gate_equivalence`, both pre-existing and about mod_modifiers.c's cross-module `pcrec_feature_enabled(FEAT_ASSERTIONS)` call for `(?m)` — landed at [M6.2] wave C, 2026-08-19, two days before D65 existed; not this suite's or this memo's territory, and this suite is not part of `make test`) |
+| `tests/spec_mod0/check09_every_feature_toggles.sh` | `cut -f4` (module column) | No — positional-from-start, trailing-safe | None needed |
+| `tests/probes/probe_class_expect.c` | `strtok_r` reads fields 1 and 3 sequentially, ignores the rest of the line | No — same reason | None needed (not part of `make test`; a committed design-measurement probe) |
+| `tests/registry/compliance_section.py` | `COLS` list, exact field count | Would have broken had this lane not already updated it in the SAME change that added the column (`docs/design/registry_built_status_memo.md`'s own core-implementation commit) | Already correct — this is the column's own generator, not a third party discovering the shape after the fact |
+| `cli/main.c` | prints `pcrec_syntax_tsv`'s return value verbatim | N/A — no parsing | None needed |
+| `src/parse/enabled.c` | reads `pcrec_registry()`'s C structs directly, never the TSV text | N/A | None needed |
+
+**Verification**: `bash tests/registry/run_registry_tests.sh` (unaffected,
+already green — that suite's own consumers were fixed in the core-
+implementation commit) and a full untimeout'd `make test` on this lane's
+branch (merged main + both fixes): **EXITCODE=0**, corpus 20,775/0, cli
+269/0, zero `make` Errors read from the trailer. Both fixes validate: the
+same run that would have failed with `NF != 15` still hard-coded passes
+clean with `NF != 16`. The `docs/design/CLAUDE.md`, `tests/reject/CLAUDE.md`,
+`tests/cli/CLAUDE.md` and `tests/registry/CLAUDE.md` entries this correction
+touches are listed in that hand-back's file list.
