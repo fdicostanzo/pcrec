@@ -254,6 +254,20 @@ compile to the same engine) began reporting a difference that was not in the
 engine at all. Fixed by requiring the definition (`!~ ";[ \t]*$"`), which makes
 those checks tighter than before.
 
+**1b. And AGAIN, in a second suite, found by the full `make test`.**
+`tests/parse`'s `rx_search_body` has the identical bug — `$0 ~ /^int
+rx_search\(/` with no definition guard — and `test-parse` went red with
+*"ast-identity: 9 of 9 generated pairs differ"*. That check compares the
+emitted body of two patterns with the SAME AST (`a|b|c` versus `(a|b)|c`);
+the orientation block sits between the declaration and the definition and
+QUOTES THE PATTERN, so the two "bodies" differed by their own pattern text.
+
+Its author already knew line 1 quotes the pattern — the pipeline carries
+`tail -n +2` to skip it. The orientation block is a SECOND place the pattern
+appears, and that is the general hazard: **anything pattern-dependent added
+near the top of an artifact will find every extractor that was silently
+capturing more than it meant to.** Two suites had one; a sweep found no third.
+
 **2. Seven mech sabotage anchors were stale on `main`.** S08, S09, S21, S22,
 S26 (`src/parse/*`), S39, S65 (`src/gen/*`). A sabotage anchors an exact quote
 of source; if the quote no longer occurs, the sabotage cannot apply and its row
@@ -377,6 +391,11 @@ Recorded because a log that only lists other people's defects is not a log.
   (gcc: unterminated string). Caught at build.
 - Commit messages mangled twice by backticks in `git commit -m`; `-F` from then
   on.
+- **The apostrophe trap, caught a THIRD time — after documenting it above.**
+  Fixing `tests/parse`'s extractor, the explanatory comment I added inside its
+  single-quoted `awk` block contained `run_codegen_tests.sh's`, which
+  terminated the shell string. `bash -n` caught it. Knowing a trap by name is
+  not the same as avoiding it; the only reliable guard is running the thing.
 
 ---
 
