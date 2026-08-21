@@ -624,6 +624,40 @@ machines, mechanism 4's seed in both, AND live forward and reverse SKIP
 states. Rule 2 is about the skip, so a fixture without one would satisfy it
 vacuously, and the check asserts the skip's presence rather than assuming it.
 
+## [M6-READ] `run_object_neutrality.sh` — the two-compiler gate
+
+Added 2026-08-21 as conversion step 2, BEFORE any emitter change. It sweeps
+every `pattern` line in every `.rxt` under `tests/` (the population grows with
+the corpus, `run_vm_identity.sh`'s formulation) through TWO pcrec builds,
+compiles both artifacts at `-O2 -g0`, and compares:
+
+  **(a)** raw `.text` + `.rodata` bytes — executed code, which contains no
+  names at all. This is the property that matters.
+  **(c)** exported symbols — [M6-READ] promises zero ABI change, and this is
+  the line that enforces it.
+  **(b)** all symbols, reported as INFO only. Renaming a static function or a
+  function-local static table renames its internal-linkage symbol; that is not
+  executed code and does not survive `strip`, but a check diffing disassembly
+  TEXT fails on it. The sample stage's first version did exactly that and
+  produced 200 lines of diff in which every line was a symbol name.
+
+**It is NOT in `make test`**, and cannot be: it needs a second compiler. It is
+a tool pointed at two builds. That also makes its reference STRONGER than the
+`*_identity.sh` family's — those build a reference from the same sources with
+a `-D` knob, which wave D measured can CANCEL a sabotage; this one takes a
+genuinely independent binary, sharing no sources with its subject.
+
+**Its own non-vacuity has two arms.** A sweep that compared nothing fails
+loudly (`same == 0`), and a pattern one build refuses while the other compiles
+is a REFUSAL MISMATCH rather than a skipped row. But the sharper control is
+self-arming and arrives with the conversion: after the rename, **(b) must be
+NON-ZERO** while (a) and (c) stay clean. If (b) came back 0 from a converted
+emitter, the gate would be reading artifacts the rename never touched.
+
+Baseline recorded at step 2, current build against itself: 33 of 40 patterns
+compared (7 refused by both), (a) and (c) clean, **(b) = 0** — which is
+correct for a self-comparison and is the number the conversion must move.
+
 ## [M6-READ] the SLOTS block's non-vacuity guard, and the sabotage that earned it
 
 Added 2026-08-21, **before** any emitted identifier was renamed, because the
