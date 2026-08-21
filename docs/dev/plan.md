@@ -277,6 +277,40 @@ differentiator — see [M4-SUBST]'s beyond-PCRE2 direction. Developer-
 experience directions that serve the niche are the [V-*] rows below,
 including V-G/V-H (added this session).
 
+- [REL-META] STATE:not-started — META-PLAN ROW for FIRST-RELEASE +
+  CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
+  "we are within a few solid efforts of having a first release"; this
+  row's deliverable is the ROW SET, not the work — [SIMD-META]'s
+  pattern). Charter: survey what a first public release and an
+  open-to-PRs posture actually require, and propose the concrete rows
+  for Frank to ratify. KNOWN CANDIDATES from the chartering
+  discussion, to be sized and split by this row: (a) CONTRIBUTING.md +
+  PR template + the RUN-STAMP (`make test` emits tree-SHA/dirty-flag/
+  counts/duration; the template asks for the paste — catches
+  honest-mistake cases: wrong commit, subset, misread red; fraud is
+  explicitly a non-goal, provenance-imitation lesson applies) — mostly
+  distillation of existing house rules into contributor-sized form
+  (oracle-verified expectations WITH the oracle named; module/refusal
+  conventions; D26 tiering; CLAUDE.md maintenance travels with
+  changes; exact-count checks self-enforce). (b) CI on GitHub Actions
+  — FREE for public repos on standard runners (the minutes quota that
+  burned Frank's other project is a private-repo constraint);
+  fork-PR flow confirmed (fork -> PR, no access granted, first-time
+  contributors' workflow runs gated on maintainer approval, no secrets
+  exposed — none needed: gcc+make+libpcre2-8-0); TIERING per house
+  discipline: per-PR = test+strict; sanitizers/mech = merge or
+  nightly; the GATE NEVER runs in CI (shared runners are a loaded box
+  — floor-gate-under-load is contamination by our own rule; the gate
+  stays maintainer-side quiet-box); self-hosted runners explicitly
+  REJECTED for fork PRs (strangers' code on the box). (c) README
+  release-adequacy pass + user-facing quickstart. (d) versioning +
+  changelog + release mechanics (tag discipline, what "release" means
+  for an AOT compiler — source-only vs artifacts). (e) whatever the
+  survey finds that this list missed — the survey asks "what does a
+  stranger's first hour with this repo hit", which the chartering
+  discussion did not walk. Sequencing: the meta-survey is a read-only
+  sonnet lane, schedulable any time; the resulting rows land where
+  Frank rules
 - [V-A] STATE:not-started — PCRE2 compatibility layer: a drop-in surface for callers who already speak PCRE2, so adopting pcrec does not mean rewriting call sites. Interacts with DD-3 (generated-API versioning) — a compat layer is a second consumer of the generated contract. TWO surfaces (Frank, 2026-08-12): the PCRE2-native API, and a POSIX `regex.h` shim (regcomp/regexec/regfree, à la pcre2posix) — a smaller surface with wider adoption reach, since decades of C code speaks regex.h and never touched PCRE2
 - [V-B] STATE:not-started — usage libraries for other languages: bindings over the generated C. Note the generated code already has no runtime dependency on pcrec, which is what makes this cheap; keep it that way
 - [V-C] STATE:not-started — a grep CLI built on pcrec, the natural end-user demonstration that the speed mandate (D18) actually shows up in a real tool
