@@ -689,8 +689,9 @@ way to read them:
   assumption coincides with its truth condition — so the sabotage is invisible
   to every leading-`\b` pattern and to every trailing-assertion pattern, and
   is seen only by LEADING `\B` at `startpos > 0`. That is why
-  tests/assertions/wordb.rxt carries those cells and why the wave's
-  differential is split into arms at all.
+  tests/assertions/wordb_basic.rxt carries those cells (wordb.rxt's shard
+  holding the plain leading/trailing forms, split 2026-08-21) and why the
+  wave's differential is split into arms at all.
 
 S71 is also the shape of a mistake that would really happen: nobody deletes a
 gate on purpose, but someone moves the word-set refinement next to the other

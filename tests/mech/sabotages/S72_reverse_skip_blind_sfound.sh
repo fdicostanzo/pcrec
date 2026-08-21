@@ -27,7 +27,7 @@
 SAB_ID="S72-reverse-skip-blind-sfound"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen harness"
-SAB_HARNESS_TARGET="tests/assertions/wordb.rxt"
+SAB_HARNESS_TARGET="tests/assertions/wordb_basic.rxt"   # wordb.rxt split 2026-08-21; both-ends/interior wildcard forms live here
 SAB_DESC="the reverse self-loop skip emits its bare unconditional 'sfound = pp;' under a word context too, so a skip stopping at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1] (assertions_design.md S3.8.3.1's second writer)"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 2] reports an sfound writer not conditioned on an accept read"
 SAB_COUNT=1
