@@ -2411,3 +2411,36 @@ generated sweep.
 predicted one spelling per wave; wave E corrected it to one per construct
 that can make a pattern IMPOSSIBLE, and module `assertions` had landed
 all of them by then. Nothing was added after wave D.
+
+## K29 — OPEN, found 2026-08-22 (R31 panel critic r31eng, read-only, on the shipped binary at 4c5f508/036acd6 lineage; defect pre-existing since [ENG-BREP]'s counter rung)
+
+**What.** The VM emitter's counter rung has an UNBOUNDED arm that tails
+into the plain frames star: `vm_counter_fits` accepts `rmax < 0` when
+`rmin >= K` (`src/gen/emit_vm.c:695`), `vm_counter_rep` allocates and
+writes the cut mark (`:3310`, `:3334-3336`), then at `:3355-3358`
+(`if (unbounded) { vm_star(v, cur, a, next); return; }`) hands the tail
+to `vm_star`, which never reads `a->possessive`. So when possessify's
+§2.2 verdict marks such a repeat, the artifact stamps `RX_VM_STRATS 0x1`
+(POSSESSIVE) and allocates `RX_SLOT_CUT_MARK0`, writes it once, and
+READS IT NOWHERE — no `RX_CUT(` is emitted. Reproduced:
+`build/pcrec -p rx --engine=vm --no-captures '(?:ab|b){8,}c'` (also
+`{9,}`, and `(?:abc|bc){8,}d`); the bounded twin `(?:ab|b){8,12}c`
+emits 5 cut calls.
+
+**Severity today: MEDIUM, observability only.** Answers are unaffected
+because possessification is proof-gated (the cut it fails to emit would
+delete only provably-dead frames). But it is a D46 stamp that lies
+(STRATS says POSSESSIVE on an artifact with no cut), a dead slot in
+`RX_NSLOTS`, and the frame/trail budget `vm_cost_rep` computes for the
+possessive path is not the path emitted.
+
+**Why it matters NOW.** [M6.4]'s design (RULE 3) lifts user-written
+possessives `X{n,}+` onto the same rungs; through this arm a SEMANTIC
+possessive would emit an ordinary backtracking star and answer the
+UNCUT language — a miscompile. The fix therefore travels with [M6.4.2]
+(R31 E2 disposition): emit the exit cut in the unbounded tail (or do
+not mark), plus a per-dispatch-path structural check that every
+possessive path ends in a cut. Until then the free-discharge measurement
+in atomic_groups_design.md §5.3 is NOT contaminated — it reads the stamp
+as a proxy for the VERDICT, which the stamp faithfully reports; it is
+the emitted code the stamp is unfaithful to.
