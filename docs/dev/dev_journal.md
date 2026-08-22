@@ -11255,3 +11255,59 @@ Landing order stays 6.4 -> 6.5: the discharge socket's first
 implementation belongs to [M6.4]; backrefs' finite-language expansion is
 its second customer. Two design lanes + the 10-minute stall watchdog
 (cron) in flight; no implementation until a design survives its panel.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 2) — [M6.4.1] design DELIVERED (lane/agdesign 4c5f508); R31 panel convened; [M6.5.1] design in flight
+
+THE ATOMIC-GROUPS DESIGN, in its own one paragraph (docs/design/
+atomic_groups_design.md §0.2, 1,356 lines, 10 probes with archived
+outputs, ~2.5 hours on one opus lane): a cut is RX_CUT, which the VM
+already has; the no-trail-rewind invariant is shown (CUT-INV, §3.1) to be
+independent of possessify's proof — frames below the mark carry trail
+marks ≤ T0, so an outer pop still unwinds every body write — and
+vm_cut is REUSED UNCHANGED, prototype-checked 14/14 (9 non-vacuous) vs
+libpcre2. A_ATOMIC is a NODE KIND (15 -Wswitch diagnostics across 6
+files force every pass to answer for it — two of them revdet's rd_shape/
+rd_reverse, exactly where an atomic body must DECLINE since the reverse
+of a cut is not the cut of the reverse, §6.5); the module never writes
+Ast.possessive; the possessive spellings lower through the existing
+ENG-BREP rungs by an emitter-local lift (frame requirement 1+body, not
+per-iteration). THE HYBRID HAZARD MEASURED: 122 refuting cells where the
+uncut prefilter's span END is NOT a bound on the cut match's end; rules
+H1-H5 keep rejection (sound by containment) and the start as a seed
+(never reported — the loop already re-asks the prefilter on failure
+because D51 ruling 2 refused to rest on span-equality), and DROP the
+end as an MRL ceiling on cut-bearing artifacts — one predicate at
+emit_vm.c:4351, stamped "subject-end", sabotage S87. ENGINE SPLIT:
+forces_atomic unless the free discharge fires (possessify's §2.2
+verdict = "the cut deletes nothing", MEASURED 0 violations / 532
+positive-verdict patterns over 28,224 cells, four live controls); the
+discharge runs as an ordinary AST pass BEFORE the analysis loop, NOT in
+engine_m4.md §5.2's discharge socket — the lane found the socket's
+fixpoint never actually CALLS a registered hook (select_engine.c:283-
+294, a live defect in unused plumbing) — and the full Berglund cut
+construction is chartered as [ENG-CUT] with the |D(X)|×|D(rest)| bound
+and a D50-style evidence gate. Registry: four RK_QUANTSUFFIX dump-only
+rows (not a doorway — base-tier cost preserved) plus a per-kind
+assertion in registry_check, because a fifth RegKind raises ZERO
+compiler alarms (MEASURED). SR-8: NOT built here; second named tripwire
+exception, with the first both-directions evidence that the engines
+column cannot be made true by editing it. D58 residue: none. 13 python-
+vs-libpcre2 cells in the goal facts (ten "cannot express", the U9
+upstream divergence re-reproduced on HEAD).
+
+MANAGER RULINGS on the design's §15 open questions (Frank's autonomy
+grant covers them; recorded here and in R31's triage): (1) the four
+registry rows, not the exemption; (2) one wave, four slices, H3 first;
+(3) [ENG-CUT] chartered not-started behind the D50 gate; (4) SR-8's
+dedicated row is triggered when backrefs would add a third exception —
+[M6.5.1] is told so.
+
+R31 PANEL convened on 4c5f508: r31eng (opus, engine semantics vs the
+oracle — CUT-INV adversarial shapes, rule 3's rung lift on non-unique
+bodies, H1-H5 on every emitted path, the discharge's context gap, the
+revdet hazard), r31chk (opus, every probe re-run with its population
+and controls audited for the control-shares-a-source class; §11's
+checks; §7's built-column trace; Appendix B's leak/completeness), r31doc
+(sonnet, every citation in §3-§6/§11 re-derived, claim marking, archiver
+provenance, sibling-doc edits, D26 tiering). Critics read-only, never
+make.
