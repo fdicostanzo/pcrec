@@ -81,6 +81,42 @@ static const char *ng_arena_strndup(Ctx *cx, const char *s, size_t len)
     return p;
 }
 
+/* [M6.5.2] THE NAME GRAMMAR AS ONE FUNCTION, four readers.
+ *
+ * This port owns the rule (see the header's measured table); module
+ * `backrefs`' three by-name reference spellings must agree with it EXACTLY,
+ * because a reference whose grammar is NARROWER than the declaration's cannot
+ * name a group that exists, and one that is WIDER accepts a spelling PCRE2
+ * refuses. Two hand copies of one grammar is the drift
+ * `pcrec_is_bare_anchor` was made a single function for, one construct
+ * earlier, and the drift `mod_named_groups.c`'s own three spellings share one
+ * port to avoid.
+ *
+ * Returns the name's length starting at `p[i]`, or 0 with `*why` set. The
+ * caller decides what a SHORT answer means: the declaring port requires the
+ * closing delimiter next, the reference ports require the whole body. */
+size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+                             const char **why)
+{
+    size_t start = i;
+    if (i >= n || !(isalpha((unsigned char)p[i]) || p[i] == '_')) {
+        *why = "subpattern name expected (a name starts with a letter or "
+               "'_', never a digit)";
+        return 0;
+    }
+    while (i < n && (isalnum((unsigned char)p[i]) || p[i] == '_'))
+        i++;
+    return i - start;
+}
+
+/* THE LENGTH WALL IS NOT PART OF THE SCAN, and the split is deliberate. It is
+ * a separate MEASURED fact (129 bytes is PCRE2 error 148, swept 1..2000), it
+ * has its own home in `PCREC_MAX_GROUP_NAME` (src/core/limits.h), and the two
+ * callers apply it at DIFFERENT points in their own grammars: this port
+ * checks the closing delimiter FIRST, so `(?<`+130 bytes+`x` reports the
+ * missing `>` rather than the length. Folding the wall into the scan would
+ * move that diagnostic without anyone deciding to. */
+
 /* Is `name` (length `len`) already declared earlier in this pattern? A
  * linear scan of the declaration-order list — named groups are a handful
  * per pattern in any realistic corpus, so this trades a hash table pcrec
@@ -107,14 +143,13 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
      * owns none of that WORDING — only that a real syntax boundary
      * refuses cleanly — so this port's own message is written for a
      * pcrec reader, not transcribed from PCRE2's. */
-    if (i >= n || !(isalpha((unsigned char)p[i]) || p[i] == '_'))
-        REFUSE(i < n ? i : at,
-               "subpattern name expected (a name starts with a letter or "
-               "'_', never a digit)");
-
     size_t name_start = i;
-    while (i < n && (isalnum((unsigned char)p[i]) || p[i] == '_'))
-        i++;
+    {
+        const char *why = NULL;
+        size_t len = pcrec_group_name_scan(p, n, i, &why);
+        if (len == 0) REFUSE(i < n ? i : at, "%s", why);
+        i += len;
+    }
     size_t name_len = i - name_start;
 
     if (i >= n || p[i] != close)
@@ -128,11 +163,31 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
                "subpattern name is too long (maximum %d bytes)",
                (int)PCREC_MAX_GROUP_NAME);
 
-    if (ng_is_duplicate(cx, p + name_start, name_len))
+    /* [M6.5.2] THE DUPLICATE CHECK IS NOW CONDITIONAL, and the condition is
+     * READ HERE — at the DECLARATION, against the SCOPED `(?J)` state in force
+     * at THIS declaration, never at the pattern's start and never once per
+     * compile. That is what seventeen measured libpcre2 cells determine
+     * (backrefs_design.md §8.1) and the four separating ones are worth
+     * naming, because each kills a plausible alternative reading:
+     *
+     *   `(?<a>x)(?J)(?<a>y)`      LEGAL   — the SECOND declaration is under it
+     *   `(?J:(?<a>x))(?<a>y)`     ERROR   — the second is not
+     *   `(?<a>x)(?<a>y)(?J)`      ERROR   — so `(?J)` anywhere does NOT
+     *                                       legalise everything
+     *   `(?J)(?<a>x)(?-J)(?<a>y)` ERROR even with PCRE2_DUPNAMES set — the
+     *                                       inline letter is the authoritative
+     *                                       scoped state and can turn the API
+     *                                       option OFF
+     *
+     * So it is `caseless`'s shape one layer up, and the save/restore this port
+     * and `p_group_body` already perform around a body is the whole of the
+     * scoping. THE REFUSAL'S OLD LONG COMMENT DID NOT RETIRE WITH IT: it
+     * recorded two earlier wordings that were both wrong, and that history now
+     * lives in mod_modifiers.c's `case 'J'`, which is where the letter is. */
+    if (!cx->mods->dupnames && ng_is_duplicate(cx, p + name_start, name_len))
         REFUSE(name_start,
-               "two named subpatterns have the same name (module "
-               "'named-groups' does not implement (?J)/DUPNAMES; that "
-               "spelling is out of pcrec's scope)");
+               "two named subpatterns have the same name (write (?J) before "
+               "this declaration to allow duplicates)");
 
     /* NUMBERING (see header): unconditional on `cx->mods.nocap` — a named
      * group always gets a number, even under (?n). `want_caps` still gates

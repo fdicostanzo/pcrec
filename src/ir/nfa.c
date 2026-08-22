@@ -726,6 +726,31 @@ static Frag compile_ast(NB *b, const Ast *a)
      * since before there was a producer, and what sabotage row S91 injects. */
     case A_ATOMIC:
         return compile_ast(b, a->l);
+    /* [M6.5.2] NO MACHINE, AND THE ANSWER IS TO FALL INTO THE ERROR BELOW —
+     * deliberately, not for want of an idea.
+     *
+     * A backreference is not regular, so there is no NFA for it. Two
+     * approximations exist and BOTH are refused here rather than in a comment:
+     * erasing it to epsilon is a SUBSET (it deletes real matches, the one
+     * failure class D26 refuses outright), and replacing it with a copy of the
+     * referenced group's machine is the APPROACH §2 erasure, which is not even
+     * a superset once that group's transitive closure holds an assertion or an
+     * atomic/possessive operator — MEASURED at 12 of 18 positive-control cells
+     * across the two reasons, plus 3 of 5 for the transitive one
+     * (backrefs_design.md §7.2). Even where it IS a superset its leftmost SPAN
+     * differs from the true one on a large fraction of subjects, so it cannot
+     * serve as `engine_m4.md` §6.1's exact anchored window either.
+     *
+     * SO NOTHING BUILDS THIS MACHINE, and that is enforced upstream rather
+     * than assumed: `src/opt/select_engine.c` forces `EngineFit.prefilter`
+     * OFF for a backref-bearing pattern and refuses `-fprefilter` on one by
+     * name, and the pattern is VM-forced by its rows' stamps, so
+     * `src/core/compile.c`'s build condition (`chosen == ENGM_DFA ||
+     * fit.prefilter`) is false. Reaching this line means one of those two
+     * facts stopped being true, which is exactly when a loud internal error
+     * is worth more than a machine that answers for a different language. */
+    case A_BREF:
+        break;
     }
     ctx_fail(b->cx, 0, "internal error: bad AST node");
 }

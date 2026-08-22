@@ -799,18 +799,23 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
  * emission — but the lookup is still checked rather than assumed, because a
  * NULL text pointer reaching this far would otherwise emit a truncated
  * artifact instead of failing. */
+/* [M6.5.2] BOTH TAKE THE ARTIFACT'S MASK, which is D58's revisit clause being
+ * honoured — see enc.h for why a per-entry mask and not two more string
+ * fields. `Job.enc_mask` is set by whichever emitter is running BEFORE the
+ * prologue, so an entry reaches the artifact iff something in it is emitted
+ * that calls the entry. */
 static void emit_residual_decls(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    pcrec_enc_emit_text(sb, enc->decls, cx->opt->prefix);
+    pcrec_enc_emit_decls(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 
 static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 {
     const PcrecEnc *enc = pcrec_enc_by_id(cx->opt->encoding);
     if (!pcrec_enc_ready(enc)) return;
-    pcrec_enc_emit_text(sb, enc->defs, cx->opt->prefix);
+    pcrec_enc_emit_defs(sb, enc, cx->job->enc_mask, cx->opt->prefix);
 }
 
 static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
@@ -2740,6 +2745,10 @@ void pcrec_emit_dfa(Ctx *cx)
      * DFA-compiled pattern never promises more than the whole-match slot,
      * capture-bearing or not. RX_NCAPS > 1 implies the VM — one checkable
      * line, and tests/codegen checks it. */
+    /* A DFA artifact can carry no backreference — the construct is VM_ONLY by
+     * its twelve registry rows and SR-8 refuses `--engine=dfa` on it by name —
+     * so its mask is the unconditional entry alone. */
+    cx->job->enc_mask = PCREC_ENCE_NEXT_POS;
     pcrec_emit_prologue(cx, &g, 1);
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 

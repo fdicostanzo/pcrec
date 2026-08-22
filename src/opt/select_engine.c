@@ -168,6 +168,14 @@ static const RegRow *first_dfa_excluding(const Ast *a)
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        /* [M6.5.2] A LEAF, and its OWN stamp is what excludes the DFA — the
+         * test at the top of this loop has already read it. There is no
+         * subtree to descend into, which is why a backref-bearing pattern
+         * needs no per-module analysis at all: its twelve registry rows are
+         * VM_ONLY, their producer stamps every `A_BREF` it builds, and this
+         * generic walk finds the first one. D67's whole point, and the reason
+         * `analyses[]` gains no line for this module. */
+        case A_BREF:
             return NULL;
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
@@ -473,6 +481,52 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     {
         bool force_on  = (cx->opt->flags & PCREC_FORCE_PREFILTER) != 0;
         bool force_off = (cx->opt->flags & PCREC_NO_PREFILTER) != 0;
+        /* [M6.5.2] §7.1: A BACKREF-BEARING PATTERN GETS NO PREFILTER, and this
+         * is a REFUSAL of `-fprefilter` rather than a silent override, on
+         * D46's own do-or-die posture — a request the pattern cannot honour is
+         * refused, never quietly answered with something else.
+         *
+         * WHY THERE IS NO PREFILTER TO BUILD. `engine_m4.md` §6.1's hybrid does
+         * not merely need a filter that cannot false-negative: it needs the
+         * forward+reverse pair to hand the VM the EXACT anchored window, and
+         * that section marks the erasure half STRUCTURAL for capture-only
+         * patterns because there is no approximation step at all — `(a|b)` and
+         * `(?:a|b)` build the identical `Ast` (D31), so the prefilter's DFA IS
+         * the pattern's DFA. A backreference has no such identity. APPROACH
+         * §2's "backrefs -> their referenced sub-pattern" is a real
+         * approximation, and it fails BOTH halves of the hybrid's requirement:
+         *
+         *   - IT IS NOT EVEN A SUPERSET once the referenced group's TRANSITIVE
+         *     CLOSURE holds an assertion or an atomic/possessive operator.
+         *     MEASURED: 12 of 18 positive-control cells are false negatives
+         *     across those two reasons — `(\ba)\1` on "aa" is (0,2) and its
+         *     erasure `(\ba)\ba` matches NOTHING — plus 3 of 5 for the
+         *     transitive case, where the referenced group itself passes both
+         *     conditions and the assertion sits in a group reachable only
+         *     through a NESTED reference.
+         *   - ITS SPAN IS WRONG WHERE IT IS A SUPERSET. Over 12,786 distinct
+         *     subject-family pairs the false-negative count is 0 for all six
+         *     assertion-free families and the SPAN differs on up to 389
+         *     subjects in one of them: `(["'])[^"']*\1` on "\"''" is truly
+         *     (1,3) and the erasure says (0,2). A VM anchored to (0,2) does
+         *     not find the (1,3) match.
+         *
+         * SO THE MACHINE IS NEVER BUILT — src/ir/nfa.c has no `A_BREF` arm and
+         * falls into its internal error deliberately, and this line is what
+         * makes that unreachable. The cost is measured and stated rather than
+         * hidden: roughly one to two orders of magnitude on the families where
+         * a prefilter would have helped, and nothing on the families where it
+         * would not. §7.4 charters the two SOUND weaker uses (a nomatch-only
+         * filter gated on the transitive closure, and a literal-prefix skip)
+         * so that "VM-only, no prefilter" reads as THIS module's answer rather
+         * than as a permanent verdict. */
+        const bool has_bref = pcrec_has_bref(root);
+        if (force_on && has_bref)
+            ctx_fail(cx, why_pos,
+                     "-fprefilter cannot be honoured for a pattern containing a "
+                     "backreference: the prefilter is a capture-erased DFA, and "
+                     "erasing a backreference changes the language it answers "
+                     "for (drop -fprefilter)");
         if (force_on && force_off)
             ctx_fail(cx, why_pos,
                      "-fprefilter and -fno-prefilter cannot both be requested");
@@ -482,7 +536,8 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
                      "compiles to the DFA engine, which carries no separate "
                      "prefilter to force (pass --engine=vm, or drop "
                      "-fprefilter)");
-        fit.prefilter = force_on ? true
+        fit.prefilter = has_bref ? false
+                       : force_on ? true
                        : force_off ? false
                        : (fit.chosen == ENGM_VM) &&
                          (cx->opt->engine != PCREC_ENGINE_VM);

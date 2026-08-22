@@ -248,9 +248,9 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     size_t i = from;
     bool caret = false, hyphen = false;
     bool set_i = false, set_s = false, set_U = false, set_n = false;
-    bool set_m = false;
+    bool set_m = false, set_J = false;
     bool un_i = false, un_s = false, un_U = false, un_n = false, un_x = false;
-    bool un_m = false;
+    bool un_m = false, un_J = false;
     int xlvl = -1;              /* -1 = the run does not touch the level */
 
     if (i < n && p[i] == '^') { caret = true; i++; }
@@ -349,12 +349,38 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
              * consults this letter). Mirrors the `-e utf8` refusal's
              * precedent (a name pcrec knows, refused truthfully, no
              * "requires" claim). */
-            if (!hyphen)
-                return modport_refuse(want, i,
-                    "inline option 'J' (dupnames): module 'named-groups' "
-                    "does not implement duplicate group names (see "
-                    "docs/pcre2_compliance.md)");
-            break;                        /* -J: true today, accepted */
+            /* [M6.5.2] ACCEPTED, and the module that owns the letter is
+             * `backrefs` — not `named-groups`, which the refusal above named.
+             * ASK-1 ruled the split and docs/pcre2_compliance.md now records
+             * it: DECLARING a duplicate name is named-group semantics;
+             * RESOLVING a reference to one, and this letter, are backrefs'.
+             * The resolution machinery is what makes the letter mean anything
+             * (backrefs_design.md §8.3's first-of-the-run-by-number-that-is-SET
+             * rule), and it lives in src/parse/mod_backrefs.c.
+             *
+             * THE MODULE GATE IS `assertions`' `m` SHAPE EXACTLY: a letter's
+             * module is not the dispatching row's, so the gate is checked
+             * here, per letter. With `backrefs` off the answer becomes
+             * "requires module 'backrefs'"; with `modifiers` itself off the
+             * `(?` doorway's own row refuses first, naming `modifiers`, which
+             * is why §10's matrix has TWO different refusals for one
+             * construct. `-J` needs no gate — it asks for the semantics
+             * pcrec's named groups have with no module at all.
+             *
+             * THE BIT'S ONE CONSUMER IS THE PARSER: mod_named_groups.c's
+             * duplicate check reads the scoped state AT EACH DECLARATION.
+             * Nothing downstream reads it, which src/parse/parse_mods.h makes
+             * a compile error rather than a convention. */
+            if (!hyphen) {
+                if (!pcrec_feature_enabled(FEAT_BACKREFS))
+                    return modport_refuse(want, i,
+                        "inline option 'J' (dupnames) requires module "
+                        "'backrefs'");
+                set_J = true;
+            } else {
+                un_J = true;
+            }
+            break;
         case 'r':
             break;                        /* measured no-op at options=0 */
         case 'a':
@@ -379,20 +405,30 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
     ParseMods ns = *cx->mods;
     if (caret) {
         bool keep_ungreedy = ns.ungreedy;
+        /* [M6.5.2] `J` SURVIVES THE CARET RESET, and that is MEASURED, not
+         * inherited from the letter list: `(?J)(?<a>x)(?^)(?<a>y)` and
+         * `(?J)(?<a>x)(?^i)(?<a>y)` both COMPILE in libpcre2 10.46, so `(?^)`
+         * does not clear dupnames any more than it clears ungreedy. Clearing
+         * it here would turn a legal pattern into an error — the safe-looking
+         * direction, and still wrong. */
+        bool keep_dupnames = ns.dupnames;
         ns = (ParseMods){0};
         ns.ungreedy = keep_ungreedy;
+        ns.dupnames = keep_dupnames;
     }
     if (set_i) ns.caseless = true;
     if (set_s) ns.dotall = true;
     if (set_U) ns.ungreedy = true;
     if (set_n) ns.nocap = true;
     if (set_m) ns.multiline = true;
+    if (set_J) ns.dupnames = true;
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
     if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
     if (un_U) ns.ungreedy = false;
     if (un_n) ns.nocap = false;
     if (un_m) ns.multiline = false;
+    if (un_J) ns.dupnames = false;
     if (un_x) ns.xlevel = 0;
 
     if (p[i] == ')') {

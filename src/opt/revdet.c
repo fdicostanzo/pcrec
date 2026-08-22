@@ -134,6 +134,24 @@ static void rd_shape(Shape *S, const Ast *a)
         case A_ATOMIC:
             S->ok = false;
             return;
+        /* [M6.5.2] DECLINE, and it is an EXPLICIT arm rather than the
+         * fall-out below for `A_ATOMIC`'s reason: `rd_reverse` runs only on a
+         * body this scan approved, and its fallthrough COPIES, so a decline
+         * that is safe only by accident here becomes a miscompile there.
+         *
+         * WHY IT MUST DECLINE. This rung recovers an iteration boundary by
+         * matching the REVERSED body from the right, which requires the body's
+         * language to be reversal-expressible from its own text. A
+         * backreference's operand is not in its text — it is subject bytes a
+         * capture published — and there is no reversed spelling of "compare
+         * against what group k captured". Declining costs those bodies the
+         * rung and is always correct (this file's own invariant: declining is
+         * always available and always safe). Sabotage row S-BR4 makes this arm
+         * ACCEPT instead, because the `-Wswitch` alarm that brought a reader
+         * here says an arm is MISSING, never which arm is right. */
+        case A_BREF:
+            S->ok = false;
+            return;
         case A_CAP:
             /* One entry per capno, not per emitted instance: a fixed-count
              * repeat around a group emits the group several times and they all
@@ -226,6 +244,18 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
     case A_KRESET:
         ctx_fail(cx, 0, "internal error: \\K reached the reverse-deterministic "
                         "body reversal, which its shape scan must decline");
+
+    /* [M6.5.2] `\K`'s treatment for `\K`'s reason, one construct further out.
+     * A backreference is not a predicate and not reversal-invariant: it
+     * compares subject text against subject text at a pair of positions the
+     * FORWARD walk published, and there is no mirrored spelling of that.
+     * Unreachable — `rd_shape` declines every body carrying one — and the
+     * fallthrough this replaces would have COPIED the node into a reversed
+     * body that compares the same span while the walk runs the other way. */
+    case A_BREF:
+        ctx_fail(cx, 0, "internal error: a backreference reached the "
+                        "reverse-deterministic body reversal, which its shape "
+                        "scan must decline");
 
     /* [M6.4.2] SAME TREATMENT AS `\K`, AND THE FALLTHROUGH IT REPLACES IS THE
      * MOST DANGEROUS ONE THIS MODULE HAD TO CLOSE.
@@ -366,6 +396,12 @@ static bool rd_alt_disjoint(const Ast *a)
          * decline keeps the quantifier's machinery, which is always correct,
          * where an approval would hand the emitter a rung whose backward walk
          * has no way to reproduce a `\K` write. */
+        /* [M6.5.2] DECLINES with them, same sound direction: a decline keeps
+         * the quantifier's machinery, which is always correct, where an
+         * approval would hand the emitter a rung whose backward walk cannot
+         * reproduce a match-time compare. Unreachable — `rd_shape` rejects
+         * the body first. */
+        case A_BREF:
         case A_KRESET:
             return false;
         /* [M6.4.2] DECLINE, `\K`'s arm for `\K`'s reason: `false` is the sound
@@ -450,8 +486,9 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     /* [M6.2 wave E] `\K` joins them here with no caveat: this walk only
      * HUNTS for A_REP nodes to offer the rung to, and a leaf of any kind
-     * hosts none. The verdict about `\K` is rd_shape's, one level down. */
-    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+     * hosts none. The verdict about `\K` is rd_shape's, one level down.
+     * [M6.5.2] `A_BREF` joins for the identical reason. */
+    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
         return;
     case A_CAP:
     /* [M6.4.2] TRANSPARENT, and NOT the same question the three arms above

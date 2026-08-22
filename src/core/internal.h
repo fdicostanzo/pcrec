@@ -216,7 +216,39 @@ typedef enum {
      * artifact (design §4, 114 measured cells of silent match loss without
      * it). The full cut construction (Berglund et al.) is CHARTERED for the
      * `[ENG-CUT]` plan row, not built. */
-    A_ATOMIC
+    A_ATOMIC,
+    /* [M6.5.2] A BACKREFERENCE — `\1`, `\g{-1}`, `\k<name>`, `(?P=name)`.
+     * Compare the subject at the cursor against the text some earlier group
+     * captured, AT THIS INSTANT of the backtracking state
+     * (docs/design/backrefs_design.md §3).
+     *
+     * A KIND AND NOT A FLAG ON `A_CLASS`, on D62's own principle: node KINDS
+     * encode STRUCTURE. Everything else pcrec compiles is a 256-bit bitmap or
+     * a position predicate; a backreference is neither. It consumes a VARIABLE
+     * number of bytes decided at MATCH time, which no `A_CLASS` can express,
+     * and it is the reason this module needs a new emitted operation and the
+     * encoding seam's SECOND residual entry (design §4).
+     *
+     * `refs`/`nrefs`/`caseless` below are its payload; `l` and `r` are unused.
+     *
+     * ITS MINIMUM WIDTH IS 0 and `src/opt/mrl.c` already said so before this
+     * kind existed ("Lookaround, backreferences and `(*ATOMIC)` have no
+     * producers today; when they gain one, each contributes 0 here until
+     * someone measures otherwise"). A referenced group can publish an EMPTY
+     * capture, so 0 is exact rather than conservative — and `vm_nullable` must
+     * answer TRUE for the same reason, or a nullable quantifier body loses its
+     * empty-iteration guard and the artifact hangs (design §3.2 property 5).
+     *
+     * VM-ONLY, per the twelve registry rows that produce it, and the
+     * `engines`/`reg` stamp above is how that reaches
+     * `src/opt/select_engine.c`. A DFA cannot implement it at all: a
+     * backreference is not a regular construct, and the capture-erased
+     * approximation APPROACH §2 names is not even a sound SUPERSET once the
+     * referenced group holds an assertion or an atomic/possessive operator
+     * (design §7.2, measured). That is why a backref-bearing pattern gets NO
+     * prefilter — `EngineFit.prefilter` is forced false — rather than a
+     * filtered one. */
+    A_BREF
 } AKind;
 
 typedef struct Ast Ast;
@@ -350,6 +382,46 @@ struct Ast {
      * free discharge (src/opt/atomic.c) is deletion-shaped and satisfies this
      * trivially; `[ENG-CUT]` inherits the rule. Sabotage row S97. */
     const RegRow *reg;
+    /* [M6.5.2] A_BREF ONLY — the CANDIDATE GROUP NUMBERS, ascending, and how
+     * many. Filled by the END-OF-PARSE resolution pass (design §5.3), which is
+     * the one site that knows both the whole-pattern group count and every
+     * declaration of a duplicated name.
+     *
+     * A SET EVEN WHEN IT HAS ONE ELEMENT, deliberately. A reference to a
+     * DUPLICATED name (`(?J)`, design §8) resolves at MATCH time against a run
+     * of groups whose numbers are not contiguous — `(?J)(?<a>x)(q)(?<a>y)`
+     * gives the name `a` the numbers 1 and 3 — so the emitted shape is an
+     * else-if chain over the run in ascending number, taking the first member
+     * that is SET. Carrying the set uniformly means `nrefs == 1` is the SAME
+     * emitted code path with the chain length at one, rather than a second,
+     * rarer, less-tested path.
+     *
+     * `Ast.capno` is NOT reused for this: on an `A_CAP` it means "this node IS
+     * group k", a different fact, and overloading it would make two facts
+     * compete for one field. */
+    const int *refs;
+    int        nrefs;
+    /* [M6.5.2] A_BREF ONLY — is the compare CASELESS? D62's principle again:
+     * node FIELDS encode PARSE-RESOLVED MODIFIER STATE, set from the scoped
+     * `(?i)` state in force AT THE BACKREFERENCE, never re-derived downstream.
+     *
+     * MEASURED (backrefs_design.md §4, axis B): the caselessness is the option
+     * in force at the REFERENCE, not at the group. `^(a)(?i:\1)$` matches
+     * "aA"; `^(?i:(a))\1$` does not; `^((?i)a)\1$` does not.
+     *
+     * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.multiline`'s sibling
+     * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
+     * because the operand is subject text not known until the match runs. So
+     * this field selects WHICH residual seam entry the emitter calls
+     * (`$_bref_match` or `$_bref_match_caseless`) — two entries chosen at emit
+     * time, never one entry with a runtime flag, which is D18/D23's rule that
+     * an option compiles away.
+     *
+     * ANY ANALYSIS THAT PATTERN-MATCHES `case A_BREF:` AND DOES NOT READ THIS
+     * FIELD reproduces src/opt/possessify.c's pre-D62 bug, and no compiler
+     * diagnostic will say so — D62 control 3's accepted residual, covered here
+     * and by sabotage row S-BR2. */
+    bool       caseless;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -602,6 +674,18 @@ typedef struct {
      * follows. */
     int    altcls_merges;    /* stage 1: alternation runs folded into one class */
     int    altcls_factored;  /* stage 2: alternation runs prefix-factored */
+    /* [M6.5.2] WHICH ENCODING RESIDUAL ENTRIES THIS ARTIFACT NEEDS — an OR of
+     * PCREC_ENCE_* (src/gen/enc/enc.h). `PCREC_ENCE_NEXT_POS` is always in it
+     * (docs/spec/match_api.md §3.1 promises that entry unconditionally); the
+     * two backreference entries are added by the VM emitter as it emits them,
+     * so the mask is DISCOVERED BY EMITTING rather than predicted by a second
+     * walk — the same discipline the class pool and the cursor local already
+     * follow, and the reason the prologue is written after the program body.
+     *
+     * A backref-free artifact therefore carries exactly the residual text it
+     * always did, which is what makes §11.3's byte-identity gate hold for the
+     * seam as well as for the engine. */
+    unsigned enc_mask;
     StrBuf csb, hsb;
     /* [M4.5b] the VM emitter's scratch buffer for the matcher's BODY. It is
      * Job-owned rather than a local in pcrec_emit_vm for one reason: the body
@@ -628,6 +712,38 @@ typedef struct NamedGroup {
     int                 number;   /* the group's capture number, 1-based */
     struct NamedGroup  *next;
 } NamedGroup;
+
+/* [M6.5.2] module `backrefs` — ONE PENDING REFERENCE, recorded by whichever
+ * spelling produced it and resolved once at END OF PARSE
+ * (docs/design/backrefs_design.md §5.3).
+ *
+ * WHY DEFERRED AT ALL. PCRE2's rule 2 makes `\1`..`\9`'s VALIDITY a
+ * whole-pattern question — `\1(a)` compiles, the group is AFTER the escape —
+ * and the relative and by-name forms need the final count and the complete set
+ * of declarations too (`\g{+1}(a)` is legal; a duplicated name's run is not
+ * complete until the pattern ends). One deferred list gives three properties
+ * at once: forward references (§3.5) are legal BY CONSTRUCTION rather than by
+ * an exception, there is exactly ONE site that decides what "group k exists"
+ * means so the numeric, relative and by-name spellings cannot disagree, and
+ * the dupnames run resolution (§8.3) happens where every declaration is
+ * already known.
+ *
+ * RULE 3 IS THE EXCEPTION AND MUST STAY ONE: the backref-vs-OCTAL decision for
+ * a multi-digit run beginning 1-7 is made AT the escape from `Ctx.ncap`'s
+ * count SO FAR, because deferring it would let a later group retroactively
+ * turn an octal literal into a backreference. `\10(a)..(j)` is the measured
+ * boundary — octal 010, not a reference to group 10.
+ *
+ * Arena-owned and threaded like `NamedGroup`; `name` is an arena copy. */
+typedef struct PendingRef {
+    Ast                *node;    /* the A_BREF whose `refs` this fills in */
+    int                 number;  /* > 0: an absolute group number.
+                                    0: resolve `name` instead. */
+    const char         *name;    /* by-name references only */
+    size_t              at;      /* pattern offset the diagnostic points at */
+    const char         *what;    /* the spelling, for that diagnostic */
+    struct PendingRef  *next;
+} PendingRef;
 
 struct Ctx {
     Arena                arena;
@@ -767,6 +883,14 @@ struct Ctx {
      * this decision's evidence). */
     NamedGroup          *named_groups;
     unsigned             n_named_groups;
+    /* [M6.5.2] module `backrefs`: every reference this pattern made, in
+     * REVERSE declaration order (prepended, like `named_groups` above), and
+     * how many. Resolved in one pass by `pcrec_bref_resolve` at the end of
+     * `pcrec_parse_info`. NULL/0 for every pattern with no backreference,
+     * which is what makes the whole mechanism cost a backref-free compile
+     * nothing. */
+    PendingRef          *pending_refs;
+    unsigned             n_pending_refs;
     jmp_buf              jb;
     pcrec_error         *err;
     const pcrec_options *opt;
@@ -1431,6 +1555,19 @@ bool pcrec_is_bare_anchor(const Ast *a);
 Ast *pcrec_wrap_bare_anchor(Ctx *cx, Ast *body);
 Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
                                bool negate);
+/* [M6.5.2] One byte as an atom, with the caseless fold applied — the same
+ * one-constructor rule as the line above, for module TUs that produce a
+ * CHARACTER rather than a set (module `backrefs`' octal readings). */
+Ast *pcrec_ast_char(Ctx *cx, unsigned c);
+
+/* [M6.5.2] THE ASCII CASE-FOLD PARTITION AS ONE OBJECT — src/core/fold.c,
+ * where the full account lives. `pcrec_ascii_fold[c]` is c's case PARTNER, or
+ * c itself when it has none. `cls_casefold` derives its class widening from
+ * it, and `tests/backrefs/fold_agreement_check.c` asserts the SHIPPED
+ * `$_bref_match_caseless` residual entry induces the identical partition over
+ * all 65,536 byte pairs. Two spellings of one fact, with a mechanism between
+ * them instead of a comment (R32 E8; sabotage row S-BR11). */
+extern const unsigned char pcrec_ascii_fold[256];
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
@@ -1675,6 +1812,90 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
  * registry defect and the caller says so rather than shipping an unstamped
  * node — src/parse/mod_atomic_groups.c. */
 const RegRow *pcrec_atomic_suffix_row(int quant_byte);
+
+/* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
+ *
+ * Scans a subpattern name at `p[i..n)`: a leading ASCII letter or `_`, then
+ * letters, digits and `_`, at most PCREC_MAX_GROUP_NAME bytes. Returns the
+ * length (0 on a name that does not start), and sets `*why` to a
+ * pcrec-authored diagnostic when the scan fails.
+ *
+ * IT IS SHARED BECAUSE IT IS ONE PCRE2 FACT WITH FOUR READERS. The declaring
+ * port owns it, and module `backrefs`' three by-name reference spellings
+ * (`\k<n>` `\k'n'` `\k{n}`, `\g{n}`, `(?P=n)`) must agree with it EXACTLY —
+ * a reference whose name grammar is narrower than the declaration's cannot
+ * name a group that exists, and one that is wider accepts a spelling PCRE2
+ * refuses. That is the drift `pcrec_is_bare_anchor` was made one function for,
+ * one construct later. */
+size_t pcrec_group_name_scan(const char *p, size_t n, size_t i,
+                             const char **why);
+
+/* [M6.5.2] src/parse/mod_backrefs.c — module `backrefs`, the four producing
+ * ports and the end-of-parse resolution pass. Design:
+ * docs/design/backrefs_design.md, panel-approved at R32.
+ *
+ * FOUR PORTS, ONE NODE KIND. `pcrec_brport_digit` is the ten digit rows'
+ * atom-position producer and owns PCRE2's octal disambiguation (§5) — it is
+ * the ONLY one that can produce something OTHER than an `A_BREF`, because
+ * rules 1 and 3 make `\0` and a re-read multi-digit run an ordinary character.
+ * The other three are pure reference producers. Every one of them RECORDS a
+ * pending reference rather than resolving it (see `PendingRef`). */
+ExtResult pcrec_brport_digit(Ctx *cx, const RegRow *rw, ExtWant want,
+                             size_t at, size_t from);
+ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
+                         size_t at, size_t from);
+ExtResult pcrec_brport_k(Ctx *cx, const RegRow *rw, ExtWant want,
+                         size_t at, size_t from);
+ExtResult pcrec_brport_pname(Ctx *cx, const RegRow *rw, ExtWant want,
+                             size_t at, size_t from);
+
+/* THE END-OF-PARSE PASS (§5.3), called from `pcrec_parse_info` and nowhere
+ * else. Two jobs, in this order:
+ *
+ *   1. RESOLVE every pending reference against the final group count and the
+ *      complete set of name declarations, filling each `A_BREF`'s `refs`
+ *      array; a reference to a group that does not exist raises pcrec's own
+ *      error-115-class diagnostic at the recorded offset.
+ *   2. Under `--no-captures` ONLY, DELETE the `A_CAP` wrapper of every group
+ *      no reference names, and return the possibly-new root.
+ *
+ * WHY (2) IS A DELETION AND NOT A CONSTRUCTION. Under `--no-captures` the
+ * pre-[M6.5] parser built no `A_CAP` at all (`parse.c`'s capturing-`(` hook),
+ * so a backreference had nothing to read — measured by R32 E6, which is why
+ * §6.3 rules that a REFERENCED group keeps its internal slots and reports
+ * none. Deciding at the `(` which groups will be referenced needs a lexical
+ * pre-scan the project ruled out (`Ctx.ncap`'s comment: "the pre-scan is
+ * dead"), and a forward reference makes the question unanswerable there in
+ * principle. So the parser now builds the wrapper for every numbered group and
+ * this pass removes the ones nothing reads. For a pattern with NO
+ * backreference that deletes ALL of them, so the tree — and therefore the
+ * emitted C — is what it has always been, BY CONSTRUCTION rather than by
+ * inspection. That identity is what `tests/codegen/run_backref_identity.sh`
+ * gates, `--no-captures` arm included. */
+Ast *pcrec_bref_resolve(Ctx *cx, Ast *root);
+
+/* Does this tree carry a backreference? Read by src/opt/select_engine.c, which
+ * forces `EngineFit.prefilter` OFF for such a pattern (§7.1): the
+ * backref-ERASED approximation a prefilter DFA would be built from is not a
+ * sound superset once the referenced group holds an assertion or an
+ * atomic/possessive operator, and even where it IS a superset its leftmost
+ * SPAN differs from the true one on a large fraction of subjects — measured,
+ * §7.2 — so the exact anchored window `engine_m4.md` §6.1's hybrid needs
+ * cannot be had. src/opt/atomic.c, beside the other two tree predicates. */
+bool pcrec_has_bref(const Ast *a);
+
+/* THE MARKED SET (§3.2.4): `mark[g]` becomes true for every group number some
+ * `A_BREF` in this tree can resolve to — the UNION of every node's `refs`,
+ * which for a by-name reference over a duplicated name is EVERY member of the
+ * run and not merely the member a given match resolves to (R32 re-check E13:
+ * §8.3's chain reads them all at match time, so an unmarked member would be
+ * read under write-on-traverse and re-admit E1 through it).
+ *
+ * A marked group is the one that pays for publish-at-close — a third slot and
+ * a third trailed write per traverse — and an unmarked one emits exactly the
+ * two writes it always did. `mark` has `ncap + 1` entries and the caller
+ * zeroes it. src/opt/atomic.c. */
+void pcrec_bref_mark(const Ast *a, bool *mark, int nmark);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
