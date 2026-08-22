@@ -8,6 +8,10 @@ PCRE2's OWN non-backtracking matcher (`pcre2_dfa_match`) can and cannot do —
 useful prior art, since pcrec is also non-backtracking by construction.
 
 **Last surveyed: 2026-08-09** against pcrec at `ddb73a2`+ and libpcre2 10.46.
+**Last refreshed: 2026-08-22** ([M6.5.2], module `backrefs`) — components 1
+and 3 regenerated and reconciled; component 2 (the independent PCRE2-side
+survey) is UNCHANGED, because no PCRE2 construct appeared or moved: what
+changed is which of them pcrec compiles.
 This is a living document; see "Keeping this current" at the end.
 
 **This page is three components of DIFFERENT provenance, held in checked
@@ -128,12 +132,22 @@ Of PCRE2's syntax surface:
   now maps to the frozen named set `std1` = {`classes`, `modifiers`}, so a
   bare `pcrec` compiles their constructs with no flag needed. `--features
   none` is the only invocation that still refuses them, with the module name.
-- Three further modules have shipped `OK-GATED` since — built and
+- Four further modules have shipped `OK-GATED` since — built and
   oracle-verified, but compiled ONLY under an explicit `--features` naming
   them, and refused by name under the bare default: `assertions` (`\b \B \G`
   and `\K`, [M6.2], complete 2026-08-19), `named-groups` ([M6.3],
-  2026-08-18) and `atomic-groups` (`(?>...)` and the possessive quantifier
-  suffixes, [M6.4.2], 2026-08-22). **All three `assertions` rows read plain `OK`
+  2026-08-18), `atomic-groups` (`(?>...)` and the possessive quantifier
+  suffixes, [M6.4.2], 2026-08-22) and `backrefs` (every backreference
+  spelling, PCRE2's octal disambiguation at the atom position, and
+  `(?J)`/DUPNAMES — [M6.5.2], 2026-08-22). **`backrefs` moved THREE survey
+  rows and fourteen index rows at once**, which is more than any module
+  before it: `\0dd, \ddd as an ATOM` and the bundled backreference row in
+  their own sections, and `(?J) dup names` in Option setting — whose owning
+  module moved from `named-groups` to `backrefs` with it (ASK-1), the fourth
+  attribution that letter has carried and the first one that is both true and
+  actionable. It also ADDED two index rows born `unbuilt` (`\g<1>`, `\g'1'`,
+  module `recursion`), splitting a doorway that carried two different
+  constructs under one row. **All three `assertions` rows read plain `OK`
   from 2026-08-19 until 2026-08-22, which this page's own vocabulary
   reserves for constructs a bare `pcrec` compiles**: `\A \Z \z` at
   `211c5da` (wave A) and `\b \B \G` + `\K` at `f6d5430` (wave E) — and
@@ -255,7 +269,7 @@ model.
 | `\xhh` | `OK` | — |
 | `\x{hh..}` | `REJECTED` | — |
 | `\cx` | `REJECTED` | — |
-| `\0dd`, `\ddd` as an ATOM | `REJECTED` | — |
+| `\0dd`, `\ddd` as an ATOM | `OK-GATED` | — |
 | `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — |
 | `\o{ddd..}` | `REJECTED` | — |
 | `\N{U+hh..}` | `REJECTED` | — |
@@ -284,10 +298,19 @@ Module `unicode-props`.
 
 Trivially implementable; base tier simply does not include it.
 
-**`\0`**
+**`\0`** (2026-08-22)
 
 module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so
-they share an owner.
+they share an owner. SHIPPED 2026-08-22 ([M6.5.2]): `\0` is ALWAYS octal
+(at most three digits COUNTING the leading zero, so `\0377` is `\037` then a
+literal `'7'`) and can never be a backreference, because there is no group 0
+to address. It keeps its `backrefs` gate — moving it to the base grammar
+would be a compatibility change to the BASE tier made as a side effect of a
+module landing, and no build that accepts `\0` today stops accepting it. Its
+row is the one member of the digit family that is ANY_ENGINE, and the
+character node it produces is deliberately NOT stamped with the row: `(a)\10`
+is the octal byte 0x08 and compiles to a pure DFA, while `(a)\1` refuses
+`--engine=dfa` by name — asserted in both directions.
 
 **`base:class-escape-fallbacks`** (2026-08-11)
 
@@ -800,10 +823,13 @@ oracles) — PCRE2's own `PCRE2_INFO_NAMETABLE` is sorted the identical way,
 measured directly (tests/probes/probe_named_groups.c), which is this
 module's own evidence for the sort key docs/spec/match_api.md §6 had left
 open (fixed only for today's ref-empty rows — see D59). A duplicate name
-is a compile error (PCRE2 error 143, no DUPNAMES); `(?J)`/DUPNAMES itself
-stays OUT OF SCOPE — see its own row below. Backreference-BY-NAME
-spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) stay module `backrefs`,
-unaffected — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING
+is a compile error (PCRE2 error 143) **unless `(?J)` is in force at that
+declaration** — DUPNAMES SHIPPED 2026-08-22 ([M6.5.2]) and the split is:
+DECLARING a duplicate name is this module's (the check below is conditional
+on the scoped letter), RESOLVING a reference to one, and the `(?J)` letter
+itself, are module `backrefs`'. Backreference-BY-NAME
+spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) are module `backrefs`, SHIPPED
+in the same landing — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING
 position: the three lookbehind tails `=` `!` `*` have rows of their own.
 `--features none` (the bare default) still refuses with the module name;
 `--features named-groups` compiles. Oracles: tests/named_groups/.
@@ -873,7 +899,7 @@ survey). Pure lexing, `PLANNED`-trivial.
 | `(?x)` `(?xx)` extended | `OK` | — |
 | `(?U)` ungreedy | `OK` | — |
 | `(?n)` no-auto-capture | `OK` | — |
-| `(?J)` dup names | `REJECTED` | `planned` |
+| `(?J)` dup names | `OK-GATED` | — |
 | `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK` | — |
 | `(?^)` reset options | `OK` | — |
 | `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — |
@@ -955,22 +981,51 @@ Module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting
 (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1`
 set); `--features none` still refuses with the module name.
 
-**`(?J)`** (2026-08-18)
+**`(?J)`** (2026-08-22)
 
-Per-letter attributed to module `named-groups` (duplicate NAMES are
-named-group semantics — the same dispatch logic `(?m)` already uses for
-`assertions`), MOD-0.5a's original ruling ("J is observable only through
-named groups") — [M6.3] (2026-08-18) briefly moved this to a K14
-OUT-OF-SCOPE reading and then RULED it back: `docs/pcre2_options.md`'s
-`PCRE2_DUPNAMES` row is `RIDES(M4/captures)`, RATIFIED D38, a
-PLANNED-LATER disposition, not NEVER — (?J) does not meet K14's
-"architecturally out of scope per the survey" bar. The letter refuses
-UNCONDITIONALLY, gate open or closed, naming its true owning module
-WITHOUT the false "requires" framing ("module 'named-groups' does not
-implement duplicate group names" — "requires module 'named-groups'" would
-read as "enabling it fixes this", which named-groups shipping (without
-dupnames) disproved); `(?-J)` accepted no-op. Pin: tests/reject/
-reject_gated.
+**SUPPORTED since 2026-08-22 ([M6.5.2]), and the OWNER is module
+`backrefs`** — ASK-1, ruled with R32. The attribution has now moved four
+times and the history is kept because each move was wrong for a different
+reason:
+
+1. **`named-groups`, with "requires" framing** (MOD-0.5a) — true while that
+   module did not exist, a LIE the moment it shipped WITHOUT dupnames, since
+   "requires X" reads as "enabling X fixes this".
+2. **K14's ROADMAP_NEVER shape** ([M6.3], briefly) — wrong the other way:
+   `docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row is `RIDES(M4/captures)`,
+   RATIFIED D38, a PLANNED-LATER disposition, and `(?J)` does not meet K14's
+   "architecturally out of scope per the survey" bar.
+3. **`named-groups`, without the "requires" framing** ([M6.3], ruled) — right
+   about the DECLARING half and silent about the RESOLVING one.
+4. **`backrefs`, with "requires" back and TRUE this time** ([M6.5.2]). What
+   makes the letter mean anything is the rule for resolving a reference to a
+   duplicated name, and that machinery is this module's. **The split the page
+   now records: DECLARING a duplicate name is `named-groups`; RESOLVING a
+   reference to one, and the letter itself, are `backrefs`.**
+
+**THE SCOPING RULE, MEASURED over seventeen libpcre2 cells**: the duplicate
+check is made AT EACH DECLARATION, against the SCOPED `(?J)` state in force at
+THAT declaration. Four cells separate it from every plausible alternative —
+`(?<a>x)(?J)(?<a>y)` is LEGAL (the second declaration is under it);
+`(?J:(?<a>x))(?<a>y)` is an error (the second is not); `(?<a>x)(?<a>y)(?J)` is
+an error, which kills "(?J) anywhere legalises everything"; and
+`(?J)(?<a>x)(?-J)(?<a>y)` is an error EVEN WITH the PCRE2_DUPNAMES API bit
+set, which is what settles pcrec having the letter and no option bit.
+
+**THE RESOLUTION RULE: the FIRST member of the name-run, by ASCENDING GROUP
+NUMBER, that is SET** — "set" including set-to-empty. Measured against four
+candidate rules over eighteen cells, and swept over name-runs of size 1..4
+with every subset participating. `rx_info.groups` may now hold adjacent rows
+with equal names, sorted (name asc, then NUMBER asc) — libpcre2's own
+`PCRE2_INFO_NAMETABLE` order, measured — because
+`docs/spec/match_api.md` §6's caller algorithm selects the lowest-numbered
+participating member only if that order holds.
+
+`(?-J)` accepted, and it really does turn the state back off. With `backrefs`
+disabled the letter refuses naming it; with `modifiers` disabled the `(?`
+doorway's own row refuses first, naming `modifiers` — two refusal sites for
+one construct, both pinned. Pins: tests/reject/, tests/cli case11,
+tests/backrefs/dupnames.rxt.
 
 **`(?a)`**
 
@@ -1215,7 +1270,7 @@ regular.
 
 | syntax | status | becomes |
 |---|---|---|
-| `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)` | `REJECTED` | `PLANNED-HARD` |
+| `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)` | `OK-GATED` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: backreferences -->
 
@@ -1224,16 +1279,61 @@ regular.
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`\1`**
+**`\1`** (2026-08-22)
 
 **Backreferences are not a regular language** — no DFA can do them, and
-PCRE2's own DFA matcher does not. They need the M4 VM engine plus capture
-state. Note also D23's boundary: a CASELESS backreference compares
-subject text to subject text, which cannot fold into the automaton and
-needs a match-time comparison. All ATOM position: inside a class these
-spellings are not backreferences at all — octal or literal fallback,
-supported since FIX-3 (K13); see Escaped characters. The module, when it
-lands, must not touch the class position.
+PCRE2's own DFA matcher does not.
+
+**Module `backrefs` SHIPPED 2026-08-22 ([M6.5.2]).** Every spelling in the
+bundled row below parses and matches: the numeric forms (`\1`..`\N` for any
+N — measured to `\812`, with PCRE2's octal disambiguation resolved by four
+ordered questions), `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\g{name}`, `\k<n>`
+`\k'n'` `\k{n}` and `(?P=n)`. VM-only, by all twelve rows' `engines` mask
+consumed through SR-8's generic consultation (D67) — there is no
+backrefs-specific engine analysis. Oracles: tests/backrefs/ (226 generated
+cells) plus two differentials totalling 14,128 compared cells against
+libpcre2.
+
+**THE OCTAL ASYMMETRY IS THE PART A READER SHOULD KNOW.** `\1`..`\9` count
+groups over the WHOLE pattern (`\1(a)` compiles — the group is AFTER the
+escape), while `\10`+ count only groups BEFORE the escape (`\10(a)..(j)` is
+the OCTAL byte 0x08, and `(a)\10` is octal 010 rather than "group 1 then
+'0'"). A run beginning `8` or `9` is ALWAYS decimal, because those are not
+octal digits and the re-read would consume nothing. Measured cell by cell.
+
+**AN UNSET REFERENCE FAILS; AN EMPTY ONE SUCCEEDS**, and the two are one `if`
+apart: `^(a)?\1$` on "" is NO MATCH, while `^(x?)y\1z$` on "yz" is (0,2) with
+group 1 = (0,0). `PCRE2_MATCH_UNSET_BACKREF` would flip 2 of the 8 measured
+unset cells and is explicitly out of scope (it needs a second emitted shape
+for one construct, selected by an option pcrec does not have).
+
+**A REFERENCE INSIDE A RE-ENTERED GROUP SEES THE LAST *COMPLETED* ITERATION.**
+`(a|b\1)+` on "ab" is (0,1) with group 1 = (0,1). That is why a referenced
+group's capture pair is PUBLISHED TOGETHER at the group's close rather than
+written as control traverses each end — under the latter a re-entered group
+holds a half-open pair that is neither UNSET nor a capture, and two shapes
+underflow a `size_t` in emitted code.
+
+**D23's BOUNDARY, and it is where the encoding seam earned its second
+customer.** A CASELESS backreference compares subject text to subject text,
+which cannot fold into the automaton, so the fold happens at MATCH time in the
+encoding residual `$_bref_match_caseless` — the [M5-SEAM]'s second and third
+entries. The caselessness is the option in force AT THE REFERENCE, not at the
+group: `^(a)(?i:\1)$` matches "aA" and `^(?i:(a))\1$` does not.
+
+**NO PREFILTER**, and that is measured rather than cautious: the
+capture-erased approximation a hybrid would be built from is not even a
+SUPERSET once the referenced group's transitive closure holds an assertion or
+an atomic/possessive operator (12 of 18 positive-control cells are false
+negatives), and where it IS a superset its leftmost SPAN differs from the true
+one on up to 389 subjects in one family. The cost is one to two orders of
+magnitude on the families where a prefilter would have helped, and a
+nomatch-only filter gated on that closure is chartered rather than dropped.
+
+All ATOM position: inside a class these spellings are not backreferences at
+all — octal or literal fallback, supported since FIX-3 (K13); see Escaped
+characters. **The module does not touch the class position**, which
+tests/backrefs/octal_class.rxt pins with the module ENABLED.
 This annotation is keyed to `\1` and covers the bundled prose row
 `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)`.
 
@@ -1628,7 +1728,15 @@ same "cannot drift from the compiler because it is printed by it" property
 SR-4 already gives the rest of this table. A construct read `REJECTED |
 built` is base-grammar-absent but its module compiles it today (`\d`); one
 read `REJECTED | unbuilt` genuinely does not compile yet, whatever `--features`
-says (`\k`, `(?=...)`, `(?J)`).
+says (`(?=...)`, `\g<1>`, `(?R)`). **[M6.5.2], 2026-08-22**: `\k` and `(?J)`
+were this paragraph's own examples until module `backrefs` landed and both
+read `built`; the examples are replaced rather than deleted, because a
+sentence about the column that names no unbuilt construct would stop
+illustrating anything. `\g<1>` is a good replacement for a second reason —
+it is one of two rows that lane ADDED born unbuilt, splitting the `\g`
+doorway's SUBROUTINE half (module `recursion`) away from its BACKREFERENCE
+half, which had shared one row and would otherwise have read `built` for a
+construct nothing implements.
 
 This column exists because its absence already misled once, and the history
 is worth one sentence: the [M6.2] wave E lane read `REJECTED | planned` on
@@ -1640,11 +1748,24 @@ rather than current, and would break the `RS_BASE => ROADMAP_NONE` pairing
 field — `docs/design/registry_built_status_memo.md`, ratified wholesale as
 D65 and built in the same session. Per-construct granularity was the point:
 of the 34 rows the repair slice measured, 33 read `built` and one — `(?J)`,
-whose letter refuses unconditionally, gate open or closed (a
+whose letter then refused unconditionally, gate open or closed (a
 PLANNED-LATER disposition, not a permanent one: see its own annotation
 above and `docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row, RIDES(M4/
-captures), RATIFIED D38) — reads `unbuilt`, a distinction a per-module flip could never have
-expressed.
+captures), RATIFIED D38) — read `unbuilt`, a distinction a per-module flip
+could never have expressed.
+
+**THAT ONE ROW FLIPPED ON 2026-08-22 ([M6.5.2])**, and the flip is worth
+recording because it is what the column was built to make visible: `(?J)` is
+now `built`, its owner moved from `named-groups` to `backrefs` (ASK-1 — the
+letter's MEANING is the rule for resolving a reference to a duplicated name,
+and that machinery is backrefs'), and thirteen further rows flipped with it
+(`\0`, `\1`..`\9`, `\k`, `\g`). Two rows were ADDED born `unbuilt`
+(`\g<1>`, `\g'1'`, module `recursion`), which is the other half of the same
+change: the `\g` doorway carries a BACKREFERENCE construct and a SUBROUTINE
+CALL, the table had one row for both, and claiming the second would have been
+a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
+38 built + 60 unbuilt + 6 n/a to **106 = 52 + 48 + 6**, asserted EXACT by
+`tests/registry/registry_check.c` rather than rendered into a string.
 
 <!-- BEGIN GENERATED: registry construct index (SR-4) -->
 
@@ -1655,7 +1776,7 @@ expressed.
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 104 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 106 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 | doorway | syntax | status | built | roadmap | module | engines | PCRE2 semantics |
 |---|---|---|---|---|---|---|---|
@@ -1679,8 +1800,10 @@ Every non-base construct pcrec knows, as the parser itself sees it — 104 rows 
 | after `\` | `\z` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | end of subject |
 | after `\` | `\G` | `REJECTED` | `built` | planned | `assertions` | dfa|vm | first matching position in the subject |
 | after `\` | `\K` | `REJECTED` | `built` | planned | `assertions` | vm | reset the reported start of the match |
-| after `\` | `\k<name>` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
-| after `\` | `\g{-1}` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
+| after `\` | `\k<name>` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
+| after `\` | `\g{-1}` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
+| after `\` | `\g<1>` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) |
+| after `\` | `\g'1'` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference |
 | after `\` | `\p{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
 | after `\` | `\P{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
 | after `\` | `\Q` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
@@ -1690,16 +1813,16 @@ Every non-base construct pcrec knows, as the parser itself sees it — 104 rows 
 | after `\` | `\C` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | one data unit (byte), even in UTF mode |
 | after `\` | `\cX` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | control character: \cX is X xor 0x40 |
 | after `\` | `\o{101}` | `REJECTED` | `unbuilt` | planned | `misc` | dfa|vm | character with the given octal code |
-| after `\` | `\0` | `REJECTED` | `unbuilt` | planned | `backrefs` | dfa|vm | octal escape \0dd — never a backreference (there is no group 0) |
-| after `\` | `\1` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 1 (PCRE2 error 115 if no such group) |
-| after `\` | `\2` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 2 (PCRE2 error 115 if no such group) |
-| after `\` | `\3` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 3 (PCRE2 error 115 if no such group) |
-| after `\` | `\4` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 4 (PCRE2 error 115 if no such group) |
-| after `\` | `\5` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 5 (PCRE2 error 115 if no such group) |
-| after `\` | `\6` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 6 (PCRE2 error 115 if no such group) |
-| after `\` | `\7` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 7 (PCRE2 error 115 if no such group) |
-| after `\` | `\8` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
-| after `\` | `\9` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
+| after `\` | `\0` | `REJECTED` | `built` | planned | `backrefs` | dfa|vm | octal escape \0dd — never a backreference (there is no group 0) |
+| after `\` | `\1` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 1 (PCRE2 error 115 if no such group) |
+| after `\` | `\2` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 2 (PCRE2 error 115 if no such group) |
+| after `\` | `\3` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 3 (PCRE2 error 115 if no such group) |
+| after `\` | `\4` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 4 (PCRE2 error 115 if no such group) |
+| after `\` | `\5` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 5 (PCRE2 error 115 if no such group) |
+| after `\` | `\6` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 6 (PCRE2 error 115 if no such group) |
+| after `\` | `\7` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 7 (PCRE2 error 115 if no such group) |
+| after `\` | `\8` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
+| after `\` | `\9` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
 | after `(?` | `(?=...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | positive lookahead |
 | after `(?` | `(?!...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | negative lookahead |
@@ -1709,7 +1832,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 104 rows 
 | after `(?` | `(?<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
 | after `(?` | `(?'name'...)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
 | after `(?` | `(?P<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | python-style named capture group |
-| after `(?` | `(?P=n)` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | python-style backreference to a named group |
+| after `(?` | `(?P=n)` | `REJECTED` | `built` | planned | `backrefs` | vm | python-style backreference to a named group |
 | after `(?` | `(?P>n)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | python-style subroutine call into a named group |
 | after `(?` | `(?PX)` | `AGREES-REJECT` | — | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
 | after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
@@ -1745,7 +1868,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 104 rows 
 | after `(?` | `(?)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | empty option setting |
 | after `(?` | `(?-i)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
 | after `(?` | `(?^)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | reset all options to their default |
-| after `(?` | `(?J)` | `REJECTED` | `unbuilt` | planned | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
+| after `(?` | `(?J)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | allow duplicate names (PCRE2_DUPNAMES) |
 | after `(?` | `(?U)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | ungreedy: invert the greediness of quantifiers |
 | after `(?` | `(?a)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | ASCII-restrict class escapes (PCRE2_EXTRA_ASCII_*) |
 | after `(?` | `(?i)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | caseless |
