@@ -47,15 +47,20 @@ int main(int argc, char **argv) {
     size_t n = (size_t)atol(argv[1]);
     int mode = atoi(argv[2]), trials = atoi(argv[3]), rep = atoi(argv[4]);
     unsigned char *s = malloc(n + 64);
-    /* Filler: 7-letter words separated by spaces, and ADJACENT WORDS
-     * DIFFER -- no quote, no tag, no digit run, no repeated word. So the
-     * TRUE backref patterns have no match here, which is what makes mode 0
-     * a genuine nomatch subject. (A first version used all-'a' words; that
-     * subject contains the same word twice in a row, so the dupword idiom's
-     * own TRUE pattern matched at offset 0 and the "nomatch" arm was not
-     * one.) */
+    /* Filler: 7-letter words separated by spaces. Three properties, and
+     * R32 C9 is why the third is spelled out:
+     *   - adjacent WORDS differ           (dupword's true pattern misses)
+     *   - no quote, tag or digit          (quote/tag/digits miss)
+     *   - NO TWO ADJACENT LETTERS ARE EQUAL, within a word or across the
+     *     space (so `(\w)\1`'s true pattern misses too)
+     * The previous version made each word seven IDENTICAL letters while
+     * its own comment claimed the words "all differ" -- true of the words
+     * and false of the letters, so `(\w)\1` matched at offset 0 and the
+     * "nomatch" subject was not one for that idiom. Letters now advance by
+     * one per position and words start at a rotating offset. */
     for (size_t i = 0; i < n; i++)
-        s[i] = ((i % 8) == 7) ? ' ' : (unsigned char)('a' + (i / 8) % 20);
+        s[i] = ((i % 8) == 7) ? ' '
+                              : (unsigned char)('a' + (i % 7 + (i / 8) * 3) % 23);
     size_t len = n;
     if (mode == 1) {                 /* plant a match at the very end */
         const char *tail = "\"zz\" <b>q</b> 42-42 ww ";
@@ -104,7 +109,6 @@ printf '%-9s %-26s %-9s %-13s %-13s %-8s %s\n' \
     tag "erased pattern" subject "hybrid (s)" "vm-only (s)" ratio note
 printf -- '-%.0s' $(seq 1 118); printf '\n'
 
-nrows=0
 printf '%s\n' "$IDIOMS" | while IFS='|' read -r tag pat erased note; do
     [ -n "$tag" ] || continue
     for mode in 0 1; do
@@ -114,12 +118,26 @@ printf '%s\n' "$IDIOMS" | while IFS='|' read -r tag pat erased note; do
         "$PCREC" -p rx --features assertions,classes -o "$D/m.c" -- "$erased" >/dev/null
         gcc -O2 -I"$D" -o "$D/hy" "$D/drv.c" "$D/m.c"
         pf_h=$(grep -o 'RX_VM_PREFILTER "[a-z]*"' "$D/m.c" | head -1)
+        cp "$D/m.c" "$D/m_h.c"
         "$PCREC" -p rx --features assertions,classes --engine=vm -o "$D/m.c" -- "$erased" >/dev/null
         gcc -O2 -I"$D" -o "$D/vo" "$D/drv.c" "$D/m.c"
         pf_v=$(grep -o 'RX_VM_PREFILTER "[a-z]*"' "$D/m.c" | head -1)
         # THE POSITIVE CONTROL: if the two arms stamp the SAME prefilter,
         # this row is comparing an artifact with itself and its ratio is
         # meaningless. Say so rather than printing 1.00x.
+        # R32 C13: the ENGINE must be equal on both arms too, not just the
+        # prefilter stamp unequal. A DFA-compiled artifact emits NO
+        # RX_ENGINE/RX_VM_PREFILTER lines at all, so two empty stamps
+        # compare equal-and-absent and the old guard would have called that
+        # "no prefilter axis" when the real fact is "this row is not
+        # measuring the VM at all". Assert both.
+        en_h=$(grep -o 'RX_ENGINE "[a-z]*"' "$D/m_h.c" | head -1)
+        en_v=$(grep -o 'RX_ENGINE "[a-z]*"' "$D/m.c" | head -1)
+        if [ -z "$en_h" ] || [ -z "$en_v" ] || [ "$en_h" != "$en_v" ]; then
+            printf '%-9s %-26s %-9s %s\n' "$tag" "$erased" "$subj" \
+                "SKIPPED: engines differ or absent (hybrid='$en_h' vm='$en_v')"
+            continue
+        fi
         if [ "$pf_h" = "$pf_v" ]; then
             printf '%-9s %-26s %-9s %s\n' "$tag" "$erased" "$subj" \
                 "SKIPPED: both arms stamp $pf_h -- no prefilter axis here"
@@ -150,14 +168,13 @@ printf '%s\n' "$IDIOMS" | while IFS='|' read -r tag pat erased note; do
         [ "$ratio" = "NOISE" ] && agree="erasure matches at offset 0: filters NOTHING (see probe_erasure_hazard.py)"
         printf '%-9s %-26s %-9s %-13s %-13s %-8s %s\n' \
             "$tag" "$erased" "$subj" "$ht" "$vt" "$ratio" "$agree"
-        nrows=$((nrows + 1))
     done
 done
 
 echo
-echo "subject: ${KB} KB of filler (7-letter words, ADJACENT WORDS DIFFER, no"
-echo "quote/tag/digit -- so the TRUE backref patterns have no match); latematch"
-echo "appends a"
+echo "subject: ${KB} KB of filler (7-letter words; adjacent words differ AND"
+echo "no two adjacent letters are equal, no quote/tag/digit -- so the TRUE"
+echo "backref patterns, INCLUDING (\\w)\\1, have no match); latematch appends a"
 echo "24-byte tail every idiom matches. trials=$TRIALS reps=$REPS, best-of."
 echo "ratio = vm-only / hybrid: how much SLOWER search is with no prefilter."
 echo

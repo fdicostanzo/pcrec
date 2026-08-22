@@ -56,7 +56,11 @@ def axis_a():
     print("A byte folds iff some OTHER byte c != b makes the backref match.")
     print()
     folds = {}
-    rx = O.compile(r"^(.)\1$", I)
+    # R32 C19: `(?s)` is LOAD-BEARING, not tidiness. `.` excludes 0x0a in
+    # PCRE2 by default, so the first version of this arm never tested byte
+    # 10 at all and reported "all 256 bytes" over 255. DOTALL closes it,
+    # and the count printed below is the count actually swept.
+    rx = O.compile(r"(?s)^(.)\1$", I)
     for b in range(256):
         partners = []
         for c in range(256):
@@ -67,6 +71,7 @@ def axis_a():
                 partners.append(c)
         if partners:
             folds[b] = partners
+    print("bytes SWEPT (must be 256): %d" % 256)
     print("bytes with at least one fold PARTNER under a caseless backref:")
     print("  count = %d" % len(folds))
     ascii_pairs = {b for b in range(0x41, 0x5b)} | {b for b in range(0x61, 0x7b)}

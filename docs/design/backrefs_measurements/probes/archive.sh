@@ -23,7 +23,7 @@ m = importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.version
 
 {
   echo "# ============================================================"
-  echo "# ARCHIVED PROBE OUTPUT — [M6.5.1] module \`assertions\` design lane"
+  echo "# ARCHIVED PROBE OUTPUT — [M6.5.1] module \`backrefs\` design lane"
   echo "# ------------------------------------------------------------"
   echo "# PROBE      : $PROBE"
   echo "# ARGS       : ${*:-(none)}"

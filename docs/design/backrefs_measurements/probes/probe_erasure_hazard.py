@@ -55,9 +55,11 @@ IDIOMS = [
      ["a", "b", " "], 7),
     ("digits",  r'([0-9]+)-\1',             r'([0-9]+)-[0-9]+',
      ["1", "2", "-"], 6),
+    # R32 C8: the `finite` family — `(a|b)\1` vs `(a|b)(a|b)` over the same
+    # {a,b} list — was REMOVED. On this alphabet it is the identical
+    # language pair to `letter` below and reported identical figures, so
+    # "seven families" was six wearing seven names.
     ("letter",  r'(\w)\1',                  r'(\w)\w',
-     ["a", "b"], 6),
-    ("finite",  r'(a|b)\1',                 r'(a|b)(a|b)',
      ["a", "b"], 6),
     ("star",    r'(a*)b\1',                 r'(a*)b(a*)',
      ["a", "b"], 6),

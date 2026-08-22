@@ -115,9 +115,12 @@ def compile_one(pat, extra=()):
             return (False, 0, 0, t_pcrec, 0.0, msg[:60])
         c = open(out).read()
         nbytes = len(c)
-        m = re.search(r"RX_NSTATES\s+(\d+)", c) or re.search(
-            r"rx_(?:trans|acc)\w*\[(\d+)\]", c)
-        states = int(m.group(1)) if m else 0
+        # R32 C15: the `states` read that used to sit here was DEAD -- no
+        # caller printed it, and its regex matched nothing on a DFA
+        # artifact anyway. Emitted BYTES is what this probe actually
+        # reports and what the size-estimate obligation needs, so the dead
+        # read is gone rather than left to look like evidence.
+        states = 0
         t0 = time.time()
         g = subprocess.run(["gcc", "-O2", "-c", "-I", td, "-o",
                             os.path.join(td, "m.o"), out],
@@ -251,7 +254,13 @@ def main():
     print("%-10s %-18s %-9s %-7s %s"
           % ("family", "erased pattern", "emitted", "gcc s", "outcome"))
     print("-" * 78)
-    for tag, words, src in FAMILIES[:6]:
+    # R32 C16: this loop used to stop at FAMILIES[:6], which excluded
+    # cls26x2 -- the ONLY family whose expansion is large enough for the
+    # comparison to say anything. The two E2BIG/over-cap families are
+    # excluded by name (their un-expanded form is what compiles), not by
+    # a slice that silently dropped a live row.
+    for tag, words, src in [f for f in FAMILIES
+                            if f[0] not in ("cls26x3", "cls26x4")]:
         if words is None:
             words = LAZY[tag]()
         # the VM's own shape: the group's sub-pattern, ONCE, plus a compare
