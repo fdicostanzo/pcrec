@@ -11666,3 +11666,32 @@ unappliable). And the U9 ruling: `tests/known_fail/u9_atomic.rxt` holds the two
 patterns with libpcre2's answer, loud, with three live controls each dropping
 one conjunct — pcrec agrees with python `re` and with a hand derivation, D26
 says PCRE2 wins, and the implementation lane is not the place to decide it.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 7) — [M6.4.2] MERGED (69f3b93) and the D27 corpus found a TIER-1 MISCOMPILE the lane's 39,326-cell differential did not
+
+MERGE REVIEW. The lane delivered at e6de91a with `make test` 21,523/0
+(33 min — the identity sweep, ruled ONE-SHOT by the design, was wired
+into every `make test`: a review finding); merged with two both-sides
+doc conflicts resolved (journal both kept; plan.md the lane's fuller row).
+Three measured corrections to the approved design accepted (possessify's
+walk not transparent to A_ATOMIC; the discharge unsound for lazy bodies
+and keyed on the A_ATOMIC; the STRATS stamp from vm_cuts); 17 -Wswitch
+sites, 13 registry sites; the compliance refresh found FOUR survey rows
+reading OK since waves A-C while a bare pcrec refuses them (now
+OK-GATED). U9 held loud in known_fail pending Frank's ruling. Anchor
+tripwire: S45 and S63 STALE (the lane's edits moved their text) — re-
+derived in the fix lane. Union battery launched on 69f3b93 (build/
+battery_m64.log).
+
+THE D27 ACCEPTANCE RUN (branch agd27's 137 cells against main's binary):
+121 pass / 16 fail — 8 corpus-side (the author's `features atomic-groups`
+REPLACES std1, dropping modifiers/classes; three cells assume an unbuilt
+lookaround), 7 gating-direction cells to triage against the harness's
+feature handling, and ONE REAL: `(?:aa|a)++ab` on "aaab" — libpcre2 and
+python NOMATCH, pcrec MATCH (0,4), in every mode, rung FRAMES_UNBOUNDED
+(0x4) with one RX_CUT call site: the per-iteration cut leaves a retreat
+alive for a two-exit body. `(?:aa|a)+ab` (uncut) is (0,4) on all three —
+so the module answers the UNCUT language here. D27's thesis measured for
+the second time: tests derived from the code inherit its alphabet; the
+lane's 53-pattern differential and 748-case corpus never had this shape.
+Fix lane opened (lane/agfix from 69f3b93).
