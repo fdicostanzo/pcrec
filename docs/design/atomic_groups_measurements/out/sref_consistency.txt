@@ -1,0 +1,53 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_sref_consistency.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 62cc954 2026-08-22
+# RUN FROM REPO COMMIT        : 62cc954 (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/puc_targeted.txt
+#     ?? docs/design/atomic_groups_measurements/out/sref_consistency.txt
+# RUN DATE   : 2026-08-22T10:13:07-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+rows defined in §11.4: S88 S89 S90 S91 S92 S93 S94 S95 S96 S97 S98 S99 S100 
+
+  S100
+     row says : the lift accepts a NULLABLE body (carve-out one removed)
+     cited at : 1942:rows); the five codegen rules; sabotage rows **S88-S100**; the one-shot identity
+  S88
+     row says : the ceiling predicate is read at the STAMP only, not at `:5233`/`:5177`
+     cited at : 1852:**RENUMBERED FROM S88 — R31 C4.** The first revision said "numbering continues
+  S89
+     row says : `RX_CUT` also rewinds the trail to the first discarded frame's mark
+     cited at : 684:  a miscompile, not a variant; §11.4's **S89** is its sabotage.
+  S91
+     row says : the discharge fires unconditionally (drops atomicity whether or not the verdict was posi
+     cited at : 1202:  the construction must be a REWRITE that preserves the language, and §11.4's **S91**
+  S92
+     row says : `-fno-possessify` clears the user-written possessive
+     cited at : 1879:suite word and a log arm before S91/S92/S96/S97 can be scored at all. That is
+  S94
+     row says : `rd_shape` ACCEPTS `A_ATOMIC` instead of declining
+     cited at : 1886:row is S89), §3.5's "S94" (the capacity row is S95), §5.5's "S90" (the
+  S95
+     row says : `vm_cost`'s `A_ATOMIC` arm charges no trail entry
+     cited at : 695:  row (§11.4 **S95**). What is unchanged is the give-up CODE SPACE and the two cap
+  S96
+     row says : the producer does not stamp `A_ATOMIC` with its row's `engines` mask
+     cited at : 1690:discharge. Its own sabotage row (an un-stamped `A_ATOMIC`) is §11.4 **S96**.
+  S99
+     row says : the lift accepts a LAZY body (carve-out two removed)
+     cited at : 491:have. Sabotage row **S99** lifts a lazy body.
+
+mentions checked: 9   undefined: 0
+VERDICT: every cited row exists. APTNESS is for a reader: compare the two
+lines in each pair above.

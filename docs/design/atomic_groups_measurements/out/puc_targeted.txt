@@ -3,14 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_puc_targeted.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 81051d8 2026-08-22
-# RUN FROM REPO COMMIT        : ee64e5b (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 62cc954 2026-08-22
+# RUN FROM REPO COMMIT        : 62cc954 (lane/agdesign)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/atomic_groups_measurements/out/atomic_semantics.txt
-#      M docs/design/atomic_groups_measurements/out/cut_trail_proto.txt
-#     ?? docs/design/atomic_groups_measurements/out/cut_dispatch.txt
-#     ?? docs/design/atomic_groups_measurements/out/puc_targeted.txt
-# RUN DATE   : 2026-08-22T09:41:05-04:00
+#      M docs/design/atomic_groups_measurements/out/puc_targeted.txt
+# RUN DATE   : 2026-08-22T10:12:48-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
