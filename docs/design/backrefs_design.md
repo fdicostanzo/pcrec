@@ -53,6 +53,21 @@ the first-set one's compare fails**, which is what makes §8.3's frame-free
 else-if chain the right shape; §8.2's NAMETABLE order over ten patterns;
 `rx_group_entry` unchanged; §10's matrix; §9's `\N{` precedent, now MEASURED.
 
+**THE FOCUSED RE-CHECK (r32chk, on the revision).** Seventeen of twenty items
+CLOSED — every probe re-run byte-identical, the expansion boundary reproduced
+a FOURTH time, the C9 filler verified no-match for all five true patterns, and
+C12's positive control recorded as a strong closure because it "refuted the
+lane's own superset claim". What did not close, and one item where the
+re-check's own premise needed correcting:
+
+| item | what the re-check found | where it is now |
+|---|---|---|
+| **C2 (still open, 3 residuals)** | the per-site COUNT's provenance was unspecified — deriving it by scanning for `\<digit>` is a SECOND implementation of §5's octal rule, wrong on `(a)\10` and `(a)\18`, which are S-BR8's own fixtures; no SCOPED non-vacuity guard (all six fixtures expect 0 and get 0); comment-stripping specified at line granularity where the call spans two lines | §4.4: a DECLARED INTEGER column, an exact "N fixtures declare >= 1 bref" guard, token-level stripping in one pass |
+| **N1** | S-BR17 cannot go red — glibc's `qsort` is stable, so a name-only comparator preserves insertion order | §11.4, §8.2 — **and the re-check's premise is corrected**: its harness inserted in ASCENDING group order; pcrec PREPENDS (`mod_named_groups.c:154-155`) and walks from the head (`emit_dfa.c:676-677`), so the array is DESCENDING. The conclusion (make it structural) is right; the reason is that a behavioural row here needs two unspecified properties to agree. **Consequence: the tiebreak is a CORRECTNESS requirement**, since without it §8.2's caller algorithm selects the highest-numbered participating group — the rule §8.3's `"xyy"` cell rules out |
+| **N2** | §13 P-11's "+12/-12 plus `(?J)`" wrong twice | §13 P-11, §11.5: **built 33→47, unbuilt 61→49, na 6, total 100→102**, and the tripwire's 48 and the tally's 94 are different sets |
+| N3-N6, C18 residue | three stale figures in §7.3; §0.3's table still said "superset (sound)"; S-BR14 named a driver section that did not exist; a seventh run put `tag` at 172.9x above the stated ceiling; "all seven" over a 9-cell/8-pattern population | §7.3 (range now open-ended upward), §0.3, §11.2 (a named span-divergence section with its own guard), §3.5 |
+| S-BR12 | observable only after [M6.4.2]'s SR-8 | §11.4, flagged CROSS-MILESTONE |
+
 **The one finding worth naming rather than tabulating**, because it is this
 lane's own failure of a kind the project keeps cataloguing: **E1's
 counterexample was already in this document's archive.** Cell S3 of
@@ -1669,11 +1684,28 @@ row's own requirement that both consumers share one rule:
 > that name, then walk FORWARD and take the first row whose `slot` is not -1
 > and whose `caps[slot]` start is not `PCREC_UNSET`.
 
-The comparator in `emit_info_def`'s `qsort` gains the number tiebreak. That
-tiebreak is worth having *today*, duplicates or not: `qsort` is not stable, so
-without it two rows that compare equal have an unspecified order and the
-emitted artifact is not reproducible. D59 left it unpinned; this module pins
-it.
+The comparator in `emit_info_def`'s `qsort` gains the number tiebreak — and
+**it is a CORRECTNESS requirement, not the reproducibility nicety an earlier
+revision of this paragraph called it.** R32's re-check (N1) prompted reading
+the two sites together: `mod_named_groups.c:154-155` PREPENDS each
+declaration onto `Ctx.named_groups`, and `emit_dfa.c:676-677` walks that list
+from the head, so the array reaching `qsort` is in **descending** group
+number. Under a name-only comparator and a stable sort — glibc's is a merge
+sort — the emitted rows for one name would come out **(name asc, number
+DESC)**, and §8.2's caller algorithm (walk back to the run's first row, then
+forward to the first participating one) would then select the
+HIGHEST-numbered participating group. That is exactly the rule §8.3's `"xyy"`
+cell rules out.
+
+So without the tiebreak the reflection table would encode the WRONG
+resolution rule, silently, on the platform pcrec is developed on. The
+reproducibility argument (an unstable `qsort` leaves equal rows in
+unspecified order) is also true and is now the SECOND reason rather than the
+first. D59 left the tiebreak unpinned; this module pins it, and §11.4's
+S-BR17 detects its absence STRUCTURALLY — reading the emitted rows' order off
+the artifact — rather than behaviourally, because a behavioural row here
+depends on `qsort`'s stability and the list's direction agreeing, which is
+not a control.
 
 ### 8.3 The resolution rule: FIRST OF THE NAME-RUN, BY NUMBER, THAT IS SET
 
@@ -2140,7 +2172,7 @@ population and needs no exception.
 | pin | today | after |
 |---|---|---|
 | `registry_check.c:1473-1477`'s exact `qualifying` count | **48, hand-typed**, with a hand-written breakdown naming "12 ESC rows (`\K \k \g`, `\1..\7`, `\8 \9`)" | unchanged at 48 — but the breakdown comment's module attribution must be re-derived, and the `wired` count it does not currently assert must |
-| the built/unbuilt tally | **33 built / 61 unbuilt / 6 na** (`registry_built_status_memo.md:382-384`) | +12 built, -12 unbuilt (plus `(?J)`: +1/-1) |
+| the built/unbuilt tally | **33 built / 61 unbuilt / 6 na**, 100 rows (`registry_built_status_memo.md:382-384`) | **47 / 49 / 6, 102 rows** — fourteen rows flip (the twelve tripwire rows, `\0`, `(?J)`) and TWO are added born unbuilt (`\g<`, `\g'`). §13 P-11 carries the arithmetic and the warning that the tripwire's 48 and the tally's 94 are different sets |
 | `tests/reject/`'s `reject_gated` pins | `\k` pinned as an enabled-but-unbuilt control | `\k` leaves that population; the pin must move to a still-unbuilt row |
 
 **AND THE BUILT-STATUS TALLY IS ASSERTED BY NOTHING TODAY (R32 C5).**
@@ -2333,12 +2365,36 @@ pattern", and the pattern is test-authored, so I believe it cannot; this is
 the claim the re-check should attack hardest, because its first version was
 refuted for exactly this reason.
 
-**P-11 (NEW). The built/unbuilt tally movement (§11.5) is +12/-12 plus
-`(?J)`.** *Refuted by*: a row this module builds that the classifier does not
-reclassify — most likely `\g`, if the `\g<`/`\g'` split leaves the base `\g`
-row without an atom producer, or `\0`, whose gating §14 now decides. A
-prediction with an exact number, checkable by one `--list-syntax` run at
-landing.
+**P-11 (NEW, and CORRECTED after the R32 re-check — it was wrong twice).**
+The first version predicted "+12/-12 plus `(?J)`", which conflated two
+different row sets and forgot the two rows this module ADDS.
+
+**The corrected prediction, checkable by one `--list-syntax` run at landing:**
+
+| | today | after this module |
+|---|---|---|
+| `built` | 33 | **47** |
+| `unbuilt` | 61 | **49** |
+| na (`-`) | 6 | 6 |
+| **total rows** | **100** | **102** |
+
+The arithmetic, because the first version's error was in the accounting and
+not in the measurement: **fourteen** rows flip to `built` — the twelve
+tripwire rows, PLUS `\0` (module `backrefs`, `built=unbuilt` today, and
+`ANY_ENGINE`, so it is *not* one of the twelve), PLUS `(?J)`. And **two rows
+are ADDED born UNBUILT**: `\g<` and `\g'`, module `recursion` (§9). So
+unbuilt is `61 - 14 + 2 = 49` and the table grows by two.
+
+**THE TWO POPULATIONS ARE DIFFERENT SETS, and saying so is the point.** The
+engine-capability tripwire counts `RS_MODULE` rows whose `engines` mask
+EXCLUDES `ENGM_DFA` — 48 rows, twelve of them backrefs', `\0` excluded. The
+built-status tally counts ALL 94 `RS_MODULE` rows plus 6 `na`. The tripwire's
+48 is a subset of the tally's 94, they move for different reasons, and the
+first version of this prediction used one number for both.
+
+*Refuted by*: any row this module builds that the classifier does not
+reclassify — most likely `\g`, if the `\g<`/`\g'` split somehow leaves the
+base `\g` row without an atom producer.
 
 **KNOWN GAPS, listed rather than discovered (R32 C20).** The erasure families
 lack nested backreferences and `\K`; the `star` family's nomatch column rests
@@ -2429,4 +2485,5 @@ something different, not merely more.
 | **C4** | ten sabotage rows | **§11.4** eighteen, led by the prefilter-on-backref WRONG-ANSWER row and publish-at-open |
 | **C5** | the built column "gains this module's rows for free" | **§11.5** the tally is asserted by NOTHING today; the assertion lands in [M6.4.2] and this module states its movement (+12/-12, plus `(?J)`) |
 | E4, E8, E9, E10, E11 | — | the return protocol carries the failure prefix; one shared fold table + a 256-byte agreement check; the revdet group-in-body interaction named; `-Wswitch` is a warning `make strict` promotes; `pcrec_enc_ready` joins the cost list |
+| **re-check C2/N1/N2** | the complement check's count had no provenance; S-BR17 was behavioural; the tally prediction conflated two row sets | §4.4 (declared column + scoped guard + token stripping), §11.4/§8.2 (structural detector; the tiebreak reclassified as CORRECTNESS), §13 P-11/§11.5 (47/49/6 over 102 rows) |
 | C6-C14, C15-C20 | — | §9's built predictions cite §5.3; `\k<n>` undeclared is a REFUSAL; distinct-subject counts and one family removed; the filler's letters now differ; drivers specified with six sections and exact guards; §12's pointers moved under `docs/`; four probe defects fixed; `\0`'s gating decided |
