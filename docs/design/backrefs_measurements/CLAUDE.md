@@ -92,15 +92,32 @@ moved.
   `\1` as escapes, silently compiling the dupword arm with both word
   boundaries gone; and the filler contained the same word twice in a row, so
   the "nomatch" subject was not one.
-- **`probes/probe_erasure_hazard.py` — MEASURED, libpcre2.** The soundness
-  half of the prefilter question, which the timing probe cannot ask: is the
-  erasure a SUPERSET (FALSE-NEG column, zero in all seven families — so a
-  `nomatch` verdict is trustworthy) and does it report the SAME SPAN (SPAN
-  DIFF column, large in six of seven — so the hybrid's exact window is not
-  available). It carries a **VACUITY GUARD** because its own first run
-  reported the `tag` family at 100% selectivity over a population containing
-  zero positives, and a structured subject generator for families whose
-  positives a random walk never produces.
+- **`probes/probe_erasure_hazard.py` — MEASURED, libpcre2, and it REFUTED
+  this lane's own claim three times running.** The soundness half of the
+  prefilter question, which the timing probe cannot ask: is the erasure a
+  SUPERSET, and does it report the SAME SPAN (SPAN DIFF, large in five of the
+  six families — so the hybrid's exact window is unavailable either way).
+  **It carries THREE controls, and two exist because a claim of this
+  document fell to them:**
+    - the VACUITY GUARD, after its own first run reported the `tag` family at
+      100% selectivity over a population containing zero positives (plus a
+      structured subject generator for families whose positives a random walk
+      never produces);
+    - the POSITIVE CONTROL (R32 E2, extended by E12), which puts a position
+      predicate — or an atomic/possessive operator — inside the referenced
+      group: **12 of 18 cells ARE false negatives**, 6 per reason with 6
+      controls holding, so the FALSE-NEG zeros in the family table are a
+      measurement rather than a tautology;
+    - the TRANSITIVE CONTROL (R32 E15), which shows those conditions must
+      range over the TRANSITIVE CLOSURE of the reference relation and not
+      over the referenced group's subtree: **3 of 5 DEEP-erasure cells are
+      false negatives while the referenced group passes both conditions**,
+      because the assertion sits in a group reachable only through a nested
+      reference. Its atomic/possessive arm is 0 of 4 — measured and not
+      found, which is four cells of one shape and not a proof, and the file
+      says so.
+  The probe REFUSES to report if either the positive or the transitive
+  control finds nothing, because a control that cannot fail is not one.
 - **`probes/probe_expand_cost.py` — MEASURED, IN-PCREC, and it is the reason
   the design declines the expansion.** It hands the REWRITE'S OUTPUT to the
   shipped compiler, because `(a|b)\1` does not compile today and `aa|bb` does.
