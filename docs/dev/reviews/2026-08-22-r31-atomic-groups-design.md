@@ -78,3 +78,92 @@ was vacuous — 0 non-vacuity — and was rebuilt rather than reported); revdet
 decline stronger than claimed for rd_shape; §4.2's ceiling reading reproduced;
 RULE 3's per-iteration cut HELD for every non-nullable body incl. non-unique
 ones (`(?:a|ab){2}+` routes to poss_chain(count=0), group-exit cut only).
+
+## r31chk — checks, tests, sabotage rows, probe validity (received 09:3x)
+
+All re-runnable probes reproduce byte-for-byte (uncut_superset 1260/17,640/
+122/133/180; possessify_under_cut 48,000/0/202; free_discharge 1764/28,224/
+532/0; semantics, cut_trail, premises, ceiling_shape identical below the
+header). Scratch under `r31chk/` (cut_nonvac.py, r3a_live.py + pf_main.c,
+S88/S89 injections into a scratch copy of cut_proto.c).
+
+| ID | Sev | Claim / location | Evidence | Verdict | Disposition |
+|---|---|---|---|---|---|
+| C1 | HIGH | §7.4 R2: built derivation for RK_QUANTSUFFIX rows "is simply a compile of the syntax string" | `built_status_probe` (syntax_dump.c:443-500) is `doorway_route` + `doorway_call`; `doorway_route` (:334-377) recognises only `\x` `(?` `(*` `[` → the four rows derive to **PCREC_BUILT_DEFECT**. `--explain 'a*+'` on the shipped binary: "no construct matches". Three more hidden sites: pcrec_registry's switch (registry.c:955-964 `default: *n=0`), hardcoded `all_kinds[]` at syntax_dump.c:145 AND :1080, enabled.c:114 | REFUTED | RULING: R1 (rows) STANDS; the cost is re-stated honestly: a compile-probe arm in `built_status_probe` for non-doorway kinds, the registry switch, both `all_kinds[]` arrays, enabled.c, and the exact pins (C8) — enumerated in §7.4 and in slice 1 |
+| C2 | HIGH | §6.4a "0/48,000 in all FOUR positions" | the non-vacuity counter (202) measures possessive-vs-plain with the verdict IGNORED; the claim needs "the CUT bites on the POSITIVE-verdict population": measured 642 positive patterns, only **29 patterns / 59 cells (0.57%)** where the cut changes the answer; two of four positions contribute ZERO refutable cells. The verdict is read off the ERASED twin, so the two arms are correlated by construction | WEAKENED (r31eng's puc2.py extension is on the possessive-spelling axis, not this one) | FIX: generator targeted at the refutable region (cut bites AND verdict positive), the refutable-cell count ASSERTED as a population floor, per position; report the per-position floors |
+| C3 | HIGH | §11.3 rule 2 / S91 / rule 4: "still emits RX_CUT" as `grep RX_CUT` | the macro DEFINITION is emitted unconditionally (:4791-4793): `grep -c RX_CUT` = 1 on every VM artifact ever emitted, 0 `SLOT_CUT_MARK` — no shipped artifact has a cut CALL SITE; rule 2 is green on a compiler that deleted the cut; S91 scores UNDETECTED; rule 4's "no RX_CUT" is false by construction | REFUTED | FIX: match call sites (`RX_CUT(` outside `#define`) and mark slots; demonstrate the failing direction on a real artifact BEFORE the rule is written |
+| C4 | MED-HIGH | §11.4 "numbering continues from S85/S86"; §4.4 names S87 | `S87_kreset_trail_uncharged.sh` landed 2026-08-19 (wave E); 85 rows exist; the driver's ID-prefix match would select two `S87-` rows | REFUTED | FIX: renumber S88-S94 (+ the rows C10/C11 add) |
+| C5 | MED | §11.3 rule 1 / H3: "the stamp is the check" | `RX_VM_PRUNE_CEILING` is THREE-valued (:4610-4611): nclamp==0 stamps "none" both ways, no `window_end` local, no ceiling argument; the design's flagship witness `((?:a\|ab))c\|abcd` stamps "none"; over the 46 R3a patterns the histogram is {prefilter-window 42, none 4} — rule 1 red-on-correct and S87's sabotage invisible on ~9% | WEAKENED | FIX: rule 1 pins patterns with nclamp > 0 and says so; combines with E3 (assert on the `window_end` text too) |
+| C6 | MED | §3.4/§14.1 "PROTOTYPE-checked at 14/14, 9 non-vacuous" | S88 injected into a scratch cut_proto.c (cut also rewinds the trail): **2 of 14 rows go red** — both rows the probe labels "vacuous"; all 9 advertised non-vacuous rows stay GREEN; the named row `((?>(a)\|ab))c\|(abc)` is green under S88, while `(?>(a)x\|ab)` on "ax" does the real work unnamed. (S89 injection → "rows: 0" and the zero-guard reported nothing rather than success — the guard works) | WEAKENED | FIX: re-label rows by what they DISCRIMINATE (CUT-INV vs cut-vs-uncut are different axes); add rows that discriminate the invariant; name the right ones |
+| C7 | MED | "13 divergences" in three places; B.3's "remaining three rows" reconciliation | the instrument says 10; there is no 13-row raw table; B.3's enumeration is complete at 10 | REFUTED (= D1) | FIX with D1; delete the fabricated reconciliation sentence |
+| C8 | MED | §7.4/§8: exact registry pins silent; R3's source | registry_check.c:444 `total != 100` → 104 RED; :1474 `qualifying != 48` → 52 RED (rows' engines unspecified); :135 already catches a pcrec_registry omission (so §7.3's "half-done invisibly" is partly false — the real gap is the DUMP side, `all_kinds[]`); R3 must read `--list-syntax` OUTPUT, not iterate RK_COUNT over registry.c (shared source) | WEAKENED | FIX: state the new rows' status/engines, move both pins in the same change, R3 reads the dump output; §8 → M-1 |
+| C9 | MED | §3.2/§6.5 "the answer at BOTH revdet sites is decline" | the re-run lists FOUR revdet.c sites: :93, :185, **:321** (byte-set widening, one of §8.3's four `default:` sites), **:402** (rd_alt_disjoint) — two unanswered; slice 1 enumerates none | WEAKENED | FIX: answer all fifteen sites by name in §12 slice 1 |
+| C10 | MED | §3.5 "no new give-up code; caps unchanged" | the mark's RX_SET IS trailed (§3.3 property 1) → `vm_cost` (:1311, its switch one of the 15) needs an A_ATOMIC arm charging one trail entry per group × enclosing quantifier — the \K analogue is exactly what shipped S87_kreset_trail_uncharged guards; §11.4 has no capacity row | WEAKENED | FIX: the vm_cost arm + a capacity sabotage row; §3.5 corrected |
+| C11 | MED | §11.4/§12: S90's `run_atomic_diff.sh` arm; S91's "RED only under the flag" | run_sabotage_matrix.sh's suite vocabulary is CLOSED (:54-70, `*) UNKNOWN-SUITE` at :650-652) — needs a registered word + log arm; Appendix A.2 has NO -fno-possessify corpus arm for S91 | WEAKENED | FIX: driver suite word + arm in slice 4; A.2 gains the flag arm |
+| C12 | LOW-MED | §5.3 "16 U9-shaped, subtraction had something to subtract" | `U9-SHAPED cells subtracted: 0` — the branch is inside `if v:` and never executed; `u9_shaped()` untested by this run | WEAKENED | FIX: honest wording; a control that reaches the branch |
+| C13 | LOW | H1's "0/17,640" reported beside R3a's 122 | r1_viol can fire only on a libpcre2 bug (containment) — the zero carries no weight; R2's mirror (start_moved 180) is a real implicit control | — | FIX: label R1 as "cannot fire by construction" |
+| C14 | LOW-MED | Appendix B.6 + B.2 | B.6 hands the D27 author the design author's own hard-case list — the alphabet leak D27 exists to prevent; B.2 points at tests/ drivers the cell allowlist denies | WEAKENED | FIX: DELETE B.6; B.2 points only at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py (allowlistable) |
+| C15 | LOW | §11.3 rule 3 second clause ("textually reachable only from labels after it") | computed-goto dispatch — textual position carries no reachability | — | FIX: drop the clause; keep the mark-before-push clause |
+| C16 | — | §13 completeness | missing: the window-end-equals-uncut-end proxy (now measured by the critic), R3a clamp-site coverage (4/46 "none"), the refutable sub-population of §6.4, discriminating prototype rows, the registry pins, built derivability | — | FIX: §13 lists them |
+
+SURVIVED, and STRENGTHENED: §4's finding rested on an unstated proxy (that
+the prefilter's window end equals libpcre2's uncut leftmost-first end); the
+critic compiled the capture-inserted uncut twin for all 46 R3a patterns and
+called `rx_prefilter` DIRECTLY — **122/122 window ends equal the uncut end;
+114 cells across 42 patterns carry "prefilter-window" AND a window end
+strictly below the cut match's end** — silent match loss in the default
+engine the day the module lands without H3. §11.2's pinned-commit identity
+ruling (shares no source; the refusal-mismatch control is real — residual:
+assert the population exact). §5.3's controls fire independently; the
+detector is live across 398 differing negative-verdict patterns;
+`RX_VM_STRATS == 0x1` is the conservative read. §7.3's zero verified by
+inspection (every RegKind switch has a `default:`; the exposure is the
+`all_kinds[]` arrays). §5.4 item 3, H4 (:5341/:5371 `ctx->len`), §5.2's
+override order — all verified. Provenance: all eight probes reproduce
+byte-for-byte.
+
+## Verdict in one paragraph
+
+The design's TWO central results survive and come out stronger than
+delivered: CUT-INV (an unconditional cut reuses `vm_cut` unchanged — attacked
+on the emitted machinery, on nested/quantified/captured shapes and with a
+trail-rewinding sabotage; no refutation) and the hybrid hazard (now measured
+on the live prefilter: 114 cells of silent match loss without H3). What the
+panel refuted is the design's account of HOW those results land — and it is
+a long list: the possessive-rung lift hangs on nullable bodies and misses a
+fourth dispatch path that emits no cut (E1, E2 — the latter a PRE-EXISTING
+stamp lie, K29); H3's one-predicate edit moves the stamp and not the code,
+so the design's own check would agree with the bug (E3, C5); the registry
+ruling's built-derivation does not reach the rows it adds (C1, C8); the
+`grep RX_CUT` checks match an unconditional `#define` (C3); the
+possessify-under-cut zero is 99.4% vacuous on the axis that matters (C2);
+RULE 1's precedent was overturned by D62 though D62's principle supports the
+conclusion (D2); a real python-vs-PCRE2 divergence on `{n}+` is missing from
+the goal facts (E6) while the goal facts leak the author's alphabet (C14);
+and the SR-8 ruling reverses (M-1). Every one of these is fixable inside the
+design's own mechanism, and the fix list is the revision brief. HIGH count:
+M-1, D1, D2, E1, E2, E3, C1, C2, C3. The design is NOT approved at 4c5f508;
+a revision round with a focused re-check follows, per R30's precedent.
+
+## Triage — the revision brief (lane/agdesign, same author)
+
+MUST (blocking): M-1 (§5.1 → stamping + generic SR-8 analysis; §8 rewritten;
+the three contract notes adopted); E1 (nullable carve-out, checked
+precondition); E2 (enumerate vm_rep's real dispatch; every path ends in a
+cut; K29 fix travels); E3+C5 (H3's real sites :5232/:5171/:4611 one predicate;
+rule 1 asserts on the window_end TEXT and the stamp, pins nclamp>0); E4 (one
+shared predicate for emitter + pre-passes; vm_count_slots/vm_cost_rep
+arms); C1+C8 (registry cost enumerated: compile-probe arm, switch, both
+all_kinds[], enabled.c, pins 100→104 and the qualifying count, R3 reads dump
+output); C2 (targeted generator, asserted floors); C3 (call-site matching,
+failing direction first); D1/C7 (10, not 13; delete the reconciliation);
+D2 (RULE 1 re-grounded on D62's principle + §6.5 + the measurement; added
+to §14); E6 (non-unique-body spelling pairs re-measured; divergence family
+in §6 and Appendix B); C14 (delete B.6; B.2 → pcre2_ctypes.py only).
+SHOULD: E5 (H1 scoped, reopen for M6.6); E7 (ship the A_REP discharge only;
+callable verdict factored from possessify.c; run order stated); C4 (S88+);
+C6 (rows by discriminating axis); C9 (all fifteen sites named); C10 (vm_cost
+arm + capacity row); C11 (driver suite word; -fno-possessify corpus arm);
+E8 (explicit declining arms); D3, D5, C12, C13, C15, C16 (wording/labels);
+D4 (manager adds the [ENG-CUT] row at merge).
+Focused re-check: r31eng on E1/E2/E3/E4 as revised; r31chk on C1/C2/C3/C5.
