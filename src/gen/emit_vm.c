@@ -365,8 +365,12 @@ typedef struct {
     unsigned  strats;      /* [ENG-BREP] the same shape one rung down the
                             * ladder: BITMASK of VmStratKind values present,
                             * set by the same vm_rung_mark() call that sets
-                            * `rungs`, from the same `a->possessive` the
-                            * emitter is about to act on. One call, one
+                            * `rungs`, from the same `vm_cuts()` answer the
+                            * emitter is about to act on ([M6.4.2]: the LIFT
+                            * routes a semantic possessive onto these rungs
+                            * with no `Ast.possessive` behind it, and a stamp
+                            * that said BACKTRACKING on a loop that cuts would
+                            * be the K29 class of lie). One call, one
                             * truth — the macro, the listing section and the
                             * emitted machinery cannot disagree about whether
                             * a quantifier was possessified, because there is
@@ -872,6 +876,39 @@ static bool vm_cuts(const Ast *a, bool under_atomic)
     return a->possessive || under_atomic;
 }
 
+/* DOES THIS `A_REP` TAKE THE REVERSE-DETERMINISTIC RUNG? `a->revbody` is
+ * src/opt/revdet.c's verdict AND the material the backward walk is emitted
+ * from, so it was read directly at three sites — the emitter, `vm_cost_rep` and
+ * `vm_count_slots`. [M6.4.2] adds a SECOND condition, so it becomes a
+ * predicate, on `vm_counter_fits`'s own precedent ("the one shared predicate
+ * the two pre-passes also call, never a second reading of the same
+ * conditions").
+ *
+ * THE SECOND CONDITION IS RULE 3's (d), and putting it at only ONE of the three
+ * sites is a MEASURED defect rather than a tidiness argument. With the decline
+ * in `vm_rep` alone, `pcrec --engine=vm --no-captures -fno-possessify
+ * '(?>(?:a|bc){2})d'` emitted an artifact whose pre-pass had allocated three
+ * REVDET slots and no mark while the emitter took the FRAMES rung and asked for
+ * a mark — so `RX_SET(RX_SLOT_REVDET0_ENTRY, resume_depth)` and `RX_CUT(2)`
+ * both landed on the revdet loop's OWN entry slot. That is exactly the
+ * two-live-loops-share-one-slot failure `vm_count_slots`' header names, and
+ * exactly why E4 asked for one named predicate rather than three agreeing
+ * readings.
+ *
+ * See `vm_rev_canmove` for what condition (d) IS and why (a), (b) and (c) do
+ * not imply it. The population is measured EMPTY at the default flags —
+ * `rd_shape`'s gate is strictly stronger than §2.2's on everything
+ * constructible, so a revdet-approved exact-count body is always possessified
+ * too — and `-fno-possessify` is what makes the branch live, since the
+ * discharge and the lift both run while `run_possessify` does not. */
+static bool vm_revdet_fits(const Ast *a, bool under_atomic)
+{
+    if (!a->revbody) return false;
+    if (under_atomic && !a->possessive && a->rmax >= 0 && a->rmin == a->rmax)
+        return false;
+    return true;
+}
+
 /* ---- the class pool -----------------------------------------------------*/
 
 static int vm_cls(Vm *v, const uint8_t *bits)
@@ -1236,7 +1273,8 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
      * Counting the EMITTED copies here instead of the ITERATIONS would be a
      * silent cap of precisely the kind the revdet arm below records finding the
      * hard way: the artifact would size for 8 iterations and take 4000. */
-    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && !a->revbody
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc)
+        && !vm_revdet_fits(a, under_atomic)
         && vm_counter_fits(v, a)) {
         Cost body = vm_cost(v, a->l, false);
         const long long K = v->unroll_k;
@@ -1318,7 +1356,8 @@ static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
         return c;
     }
 
-    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && a->revbody) {
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc)
+        && vm_revdet_fits(a, under_atomic)) {
         const bool move = vm_rev_canmove(a, cuts);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
         int ng = 0;
@@ -1689,7 +1728,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
          * move, because that shape emits a second forward copy for its
          * extension step. The REVERSED body allocates no slots and pushes
          * nothing, so it is not walked here at all. */
-        if (a->revbody) {
+        if (vm_revdet_fits(a, under_atomic)) {
             int grp[PCREC_MAX_REVDET_BODY_GROUPS];
             int ng = 0;
             bool move = vm_rev_canmove(a, cuts);
@@ -3812,8 +3851,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
      * `vm_poss_chain` with `count == 0` — one mark, one cut, no retreat frame
      * to get wrong. `a->possessive` (the PROVED case) is unaffected and keeps
      * the rung, because there the verdict is exactly what licenses the gate. */
-    if (a->revbody &&
-        !(under_atomic && !a->possessive && a->rmax >= 0 && a->rmin == a->rmax)) {
+    if (vm_revdet_fits(a, under_atomic)) {
         vm_revdet_rep(v, entry, a, next, under_atomic);
         return;
     }
@@ -4541,8 +4579,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                   "span-loop low-water", "the loop's entry position (S2.5)");
     for (int i = 0; i < v->nmark; i++)
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_mark(v, i),
-                  "possessive cut mark",
-                  "resume-stack depth at loop entry (eng_brep_design.md S2)");
+                  "cut mark",
+                  "resume-stack depth at entry -- a possessified loop's "
+                  "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])");
     for (int i = 0; i < v->nrev; i++) {
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 0),
                   "revdet loop entry", "the capture walk's floor (S2.5)");
@@ -4808,7 +4847,10 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                  "alternation so the body compiles to a span loop instead",
                  v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
-    const int nmark_total = v.nmark;   /* [ENG-BREP] possessive cut marks */
+    /* [ENG-BREP] possessive cut marks, and since [M6.4.2] atomic-group cut
+     * marks too — one family, because they are the same operation with two
+     * different licences (a proof, or the user writing the cut). */
+    const int nmark_total = v.nmark;
     const int nctr_total  = v.nctr;    /* [ENG-BREP] counter loops, 1 slot each */
     const int nrev_total  = v.nrev;    /* [ENG-BREP] revdet loops, 3 slots each */
     v.nguard_total = nguard_total;
@@ -5003,7 +5045,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * PCREC_VM_STRAT_POSSESSIVE is absent from this value — not that the
      * flag was passed. A denied strategy appearing in a stamp is a hard test
      * failure, which is testable precisely because the stamp is built from
-     * `a->possessive` at the point the emitter acts on it.
+     * the same `vm_cuts()` answer the emitter acts on. [M6.4.2]: under
+     * `-fno-possessify` a WRITTEN possessive still cuts — the flag denies the
+     * REWRITE, never a construct the user spelled — so this bit is present on
+     * such an artifact and its absence is the denial's own evidence only for
+     * a pattern with no atomic construct in it.
      *
      * [ABI-NS] (D60): PCREC_VM_STRAT_POSSESSIVE/_BACKTRACKING are the same
      * class of pcrec-contract fact as the rung bits above, and moved to the
