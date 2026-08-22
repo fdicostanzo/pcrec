@@ -7,9 +7,51 @@ SEMANTICS — an unconditional cut, not a proof-gated optimisation. The existing
 
 Charter: `../dev/plan.md`'s `[M6.4]` row and its `[M6.4.1]` substep, plus
 Frank's 2026-08-12 companion note (same file, under the M4 design notes).
-Written to be attacked: the R30 panel found two HIGH defects in
-`assertions_design.md`, and §14 below is this document's own list of where to
-start.
+
+---
+
+## PANEL OUTCOME — R31 (2026-08-22). READ THIS BEFORE ANY SECTION.
+
+`../dev/reviews/2026-08-22-r31-atomic-groups-design.md`, three read-only
+critics plus manager findings, on this document at commit **4c5f508**.
+**NOT APPROVED at 4c5f508; this is the revision.**
+
+**The two central results SURVIVED and came out stronger:**
+
+- **CUT-INV** (§3.1) — attacked on the emitted machinery, on nested, quantified
+  and captured shapes, and with a trail-rewriting sabotage. No refutation.
+- **The hybrid hazard** (§4) — the critic went past this lane's oracle-level
+  measurement and called `rx_prefilter` DIRECTLY on all 46 R3a patterns:
+  **122/122 window ends equal the uncut end, and 114 cells across 42 patterns
+  carry a `"prefilter-window"` ceiling AND a window end strictly below the cut
+  match's end.** Silent match loss in the default engine, measured on the
+  emitted code.
+
+**What the panel refuted was the account of HOW those results land, and it is
+a long list.** Nine HIGH findings. Every section they touched is annotated
+inline with what was wrong; the annotations are kept rather than edited away,
+per this directory's house style. In brief:
+
+| finding | what was wrong | where |
+|---|---|---|
+| **M-1** | §8 argued for a second tripwire exception; the tripwire's own text forbids exactly that. **SR-8 IS BUILT** (D67) | §5.1, §8 |
+| **E1** | RULE 3 routed NULLABLE bodies onto `vm_poss_star`, whose no-guard property is licensed by §2.2 refusing them. The emitted matcher would HANG | §3.2.2 |
+| **E2** | RULE 3 named three dispatch paths; there are FIVE, and one emits no cut at all (**K29**) | §3.2.1, §3.2.4 |
+| **E3** | H3's "one predicate at `:4351`" moves the STAMP and not the code; the design's own check would have agreed with the bug | §4.4 |
+| **E4** | the lift is not a local emitter decision — `->possessive` is read at 23 sites incl. three pre-passes | §3.2.5 |
+| **C1** | the registry ruling's built-derivation cannot reach the rows it adds | §7.4 |
+| **C2** | the possessify-under-cut zero was 99.4% vacuous on the axis that matters | §6.4a |
+| **C3** | the `grep RX_CUT` checks match an unconditional `#define` | §11.3 |
+| **D1/D2** | "13 of 95" against an archive saying 10; RULE 1's precedent overturned by D62 (whose PRINCIPLE supports the conclusion) | §0.3, §3.2, §6 |
+
+**One thing this lane found that the panel did not, while fixing E2:** there
+are **TWO SPELLINGS OF A CUT** in the emitter, and only one is `RX_CUT`
+(§3.2.3). Every check in §11.3 now matches both.
+
+Written to be attacked: §14 is this document's own list of where to start, and
+it now carries what the first round did and did not move.
+
+---
 
 ---
 
@@ -47,19 +89,24 @@ with a different answer. pcrec's VM already has that operation —
 §3 shows the one invariant people worry about (the cut does not rewind the
 trail) is *independent of the proof that licenses today's cuts*, and §3.4
 runs a prototype on the emitted machinery to check it. What the module DOES
-need is three things that are not the cut: a **node kind** (`A_ATOMIC`) so
-every pass in the compiler is forced by `-Wswitch` to say what it does with
-one (§3.2, MEASURED at 15 diagnostics across 6 files); a **correction to the
-hybrid**, because the DFA prefilter necessarily runs the UNCUT language and
-its span END is therefore not a bound on the cut match's end — MEASURED at
-**122 refuting cells** (§4), and today's emitter feeds exactly that end to the
-VM as an MRL pruning ceiling; and an **engine split** in which a
-cut is VM-forcing *unless it is provably a no-op*, the free discharge, whose
-condition is possessify's own §2.2 verdict and which is MEASURED sound at 0
-violations over 532 positive-verdict patterns (§5). The full DFA cut
-construction (Berglund et al.) is CHARTERED here FOR a follow-on plan row —
-which does not exist yet and which the manager adds at merge (R31 D4) — not
-built.
+need is FOUR things that are not the cut. A **node kind** (`A_ATOMIC`) so every
+pass is forced by `-Wswitch` to say what it does with one — 15 diagnostics
+across 6 files, and D62's own principle (kinds encode structure) is the ground,
+§3.2. A **correction to the hybrid**: the DFA prefilter necessarily runs the
+UNCUT language, so its span END is not a bound on the cut match's end —
+**122 refuting cells**, and **114 cells of live silent match loss measured on
+the emitted prefilter** (§4) — and the fix is one predicate read at THREE
+sites, not one. A **lowering that survives all five of `vm_rep`'s dispatch
+paths** (§3.2.1), including a nullable carve-out that stops the emitted matcher
+hanging (§3.2.2), the K29 fix for the path that emits no cut at all (§3.2.4),
+and one shared predicate the emitter and four pre-passes call (§3.2.5). And an
+**engine split** in which a cut is VM-forcing unless it is provably a no-op —
+the free discharge, whose condition is possessify's own §2.2 verdict, MEASURED
+sound at 0 violations over 532 positive-verdict patterns, narrowed after R31 to
+the possessive spellings only (§5) — delivered through **SR-8, which this
+module BUILDS** (M-1). The full DFA cut construction (Berglund et al.) is
+CHARTERED here FOR a follow-on plan row — which does not exist yet and which
+the manager adds at merge (R31 D4) — not built.
 
 ### 0.3 Measurements this lane produced
 
@@ -71,11 +118,14 @@ R30 M7's rule, inherited).
 |---|---|---|
 | `probes/probe_atomic_semantics.py` | MEASURED, both oracles | the interaction table as cells; **15 of 109** python-vs-libpcre2 divergences (§6, App. B) |
 | `probes/probe_uncut_superset.py` | MEASURED, libpcre2, sweep | which of the prefilter's three outputs survive the erasure: rejection and start yes, END NO (122 cells) (§4) |
-| `probes/probe_ceiling_shape.sh` | STRUCTURAL, in-pcrec | that today's emitter really does feed the prefilter's span end to the VM as a ceiling, with both negative arms (§4.2) |
-| `probes/cut_proto.c` + `probes/probe_cut_trail.py` | PROTOTYPE, checked vs libpcre2 | that the proposed lowering computes PCRE2's answers, 14/14, **9 non-vacuous** (§3.4) |
-| `probes/probe_free_discharge.py` | MEASURED, in-pcrec + libpcre2 | the free discharge: 0 violations / 532 positive-verdict patterns, and what it rescues (§5.3) |
-| `probes/probe_possessify_under_cut.py` | MEASURED, in-pcrec + libpcre2 | that possessify's verdict survives a cut in all four quantifier positions: 0 / 48,000 (§6.4) |
+| `probes/probe_cut_dispatch.sh` | MEASURED, in-pcrec | **NEW (R31 E2/E4/C3/K29)**: `vm_rep`'s five dispatch paths, the SECOND cut spelling, and C3's failing direction on a real artifact (§3.2.1) |
+| `probes/probe_puc_targeted.py` | MEASURED, both arms | **NEW (R31 C2)**: the REFUTABLE region — 10,504 cells with asserted per-position floors (§6.4a) |
+| `probes/probe_registry_cost.sh` | MEASURED, in-pcrec | **NEW (R31 C1/C8)**: what a fifth `RegKind` actually costs, site by site (§7.4) |
 | `probes/probe_premises.sh` | MEASURED, in-pcrec | §1's premise table and §6.3's error shapes, as one re-runnable script |
+| `probes/probe_ceiling_shape.sh` | STRUCTURAL, in-pcrec | that today's emitter really does feed the prefilter's span end to the VM as a ceiling, with both negative arms (§4.2) |
+| `probes/cut_proto.c` + `probes/probe_cut_trail.py` | PROTOTYPE, checked vs libpcre2 | that the proposed lowering computes PCRE2's answers — 17/17, **10 cut-discriminating and 4 trail-discriminating** on two measured axes after C6 (§3.4) |
+| `probes/probe_free_discharge.py` | MEASURED, in-pcrec + libpcre2 | the free discharge: 0 violations / 532 positive-verdict patterns, and what it rescues (§5.3) |
+| `probes/probe_possessify_under_cut.py` | MEASURED, in-pcrec + libpcre2 | the FIRST possessify-under-cut sweep, 0 / 48,000 — **its non-vacuity counter was refuted by C2**; superseded as evidence by `probe_puc_targeted.py` and kept as the broad sweep (§6.4a) |
 | `probes/probe_rk_alarm.sh` | MEASURED, self-restoring | that a fifth `RegKind` raises **NO** build alarm (§7.3) |
 | `assertions_measurements/probes/probe_wswitch_alarm.sh` | **re-run, not rebuilt** | that a new `AKind` raises 15 (§3.2) |
 
