@@ -239,11 +239,71 @@ residual: **an analysis that pattern-matches `case A_BREF:` and does not read
 diagnostic will say so.** §11.4 makes that a sabotage row rather than a
 comment.
 
-### 3.2 The emitted shape
+### 3.2 The emitted shape, and PUBLISH-AT-CLOSE
 
-One label, no frame, no slot write, one trail entry never. In the vocabulary
-`emit_vm.c` already emits (`src/gen/emit_vm.c:3605-3620` is `A_CLASS`'s
-shape, and this is the same shape one level up):
+**REWRITTEN AFTER R32 E1, which refuted the first draft's central premise.**
+That draft said "a slot is UNSET iff no live path has written it", made the
+two-slot UNSET test total on that basis, and concluded a self-reference needs
+no special handling. The premise is false while a group is RE-ENTERED, the
+design's own archived cell refutes it, and one consequence is a memory-safety
+defect in emitted code. Read this subsection before §3.3-§3.7; all four
+depend on it.
+
+#### 3.2.1 What E1 found
+
+`src/gen/emit_vm.c:3813-3835` writes a group's START when control traverses
+its OPENING position and its END at the CLOSING one — "WRITE ON TRAVERSE", as
+that site's own comment says. So on iteration *n* > 1 of a quantified group,
+`slot_values[2k]` holds iteration *n*'s start and `slot_values[2k+1]` holds
+iteration *n-1*'s end. **Neither is `PCREC_UNSET`**, so the first draft's test
+passes and the compare runs against a span that is not a capture.
+
+The refutation was already sitting in this document's own archive. Cell S3,
+`(a|b\1)+` on `"ab"` (`out/br_semantics.txt`): libpcre2 answers **(0,1) with
+group 1 = (0,1)**; the first draft's model answers **(0,2) with group 1 =
+(1,2)**.
+
+And the failure is not confined to wrong answers. On `^(?:(a|b\1)y)+` over
+`"aybay"`, iteration 2 opens the group at 2 while iteration 1's end is 1, so
+`ref_s = 2 > ref_e = 1`. The emitted `(size_t)(ref_e - ref_s)` **underflows to
+`SIZE_MAX`** and the compare reads out of bounds — K27's class, in a matcher
+someone else compiles, with pcrec's name on it.
+
+#### 3.2.2 The correction
+
+**PUBLISH-AT-CLOSE.** The opening position is written to a per-group PENDING
+slot; the `(start, end)` PAIR is published together when control traverses the
+closing position. Both writes are trailed and exactly restored, exactly as
+today's two writes are. A backreference then reads only PUBLISHED pairs, and
+"published" means "some iteration of this group COMPLETED", which is precisely
+what libpcre2's reference sees.
+
+MEASURED, `out/publish_discipline.txt` — an arm-vs-arm sweep in which both
+arms are the SAME simulator, the same AST, the same search order and the same
+trail discipline, differing only in publication:
+
+| population | cells | `publish=open` | `publish=close` |
+|---|---|---|---|
+| re-entry shapes (E1's class) | 2,178 | **138 divergences, 40 reversed-span** | **0, 0** |
+| ordinary backrefs, no re-entry | 1,452 | 0, 0 | 0, 0 |
+| backref-free control | 2,178 | 0, 0 | 0, 0 |
+| **total** | **5,808** | **138 divergences, 40 reversed-span** | **0 divergences, 0 reversed-span** |
+
+Three things that table establishes, and the third is the one that keeps the
+correction cheap:
+
+- publish-at-close reproduces libpcre2 on every cell, including both of E1's.
+- the reversed-span column goes to zero, so the `size_t` underflow is not
+  mitigated but **structurally absent**: a published pair always has
+  `start <= end`, because the start was recorded before the body ran and the
+  end after it.
+- **the backref-free control is 0/0 in BOTH modes.** Publication discipline is
+  unobservable without a backreference, because at match completion every
+  group is closed and the published pair equals what write-on-traverse leaves.
+  That is what lets the correction be scoped (§3.2.4) instead of rewriting
+  capture semantics for every pattern pcrec compiles.
+
+#### 3.2.3 The emitted shape
 
 ```c
 // backreference \1 to group 1
@@ -252,6 +312,7 @@ rx_L7: __attribute__((unused));
         const ptrdiff_t ref_s = slot_values[RX_SLOT_GROUP1_START];
         const ptrdiff_t ref_e = slot_values[RX_SLOT_GROUP1_END];
         ptrdiff_t took;
+        /* Group 1 has no PUBLISHED capture on this path. PCRE2 fails. */
         if (ref_s == PCREC_UNSET || ref_e == PCREC_UNSET) goto rx_fail;
         took = rx_bref_match(subject, subject_length,
                              (size_t)ref_s, (size_t)ref_e, scan_position);
@@ -261,40 +322,79 @@ rx_L7: __attribute__((unused));
     }
 ```
 
-Six properties, each of which the panel should hold this section to:
+Unchanged from the first draft — which is the point. **The correction is
+entirely in `A_CAP`'s emission, not in `A_BREF`'s**, and the reference's own
+code is the same three tests it always was. What changed is that the two slots
+it reads now mean "the last COMPLETED capture" instead of "whatever the two
+writes last left".
 
-1. **It reads the slots, never a saved copy.** "The text between the
-   referenced group's two slots at THIS INSTANT" is literally
-   `slot_values[2k]` and `slot_values[2k+1]`, and the reason nothing else is
-   needed is P7: the fail label rewinds the trail to the popped frame's
-   `trail_mark` *before* transferring control (`emit_vm.c:5075-5081`), so by
-   the time any label runs, `slot_values` holds exactly the values that
-   label's path wrote. §3.7 is where that stops being a convenience and
-   becomes the correctness argument.
-2. **It writes nothing.** No `vm_set`, so no trail entry, so no capacity
-   change. `vm_cost`'s new `A_BREF` arm is `{0, 0, 0, 0}` — the same arm the
-   zero-width assertions take (`emit_vm.c:1316-1320`). This is the *only*
-   construct in this module that costs the capacity analysis nothing, and it
-   is worth stating because it is easy to assume the opposite.
-3. **It pushes no frame.** A backreference is deterministic: for a given
-   state there is exactly one length it can consume. There is no choice point
-   and `vm_alt`'s machinery is not involved. (`\1*` is a *quantifier over*
-   this node and gets the quantifier's frames — §3.6.)
-4. **`took` is a length, not a bool**, and §4.2 is why: under a future UTF-8
-   backend the consumed length need not equal `ref_e - ref_s`.
-5. **`vm_nullable` must return TRUE for `A_BREF`** (`emit_vm.c:732-770`),
-   because a group can capture the empty string and the reference then
-   consumes nothing — MEASURED, `out/br_semantics.txt` cells E1/E4/E5
-   (`^(a*)b\1$` on `"b"` is (0,1) with group 1 = (0,0); `^()\1\1\1$` on `""`
-   is (0,0)). Getting this wrong does not produce a wrong answer directly; it
-   produces a quantifier over a nullable body that the empty-iteration rule
-   (`engine_m4.md` §3.3) does not guard, which is an infinite loop. §11.4's
-   sabotage S-BR3 is exactly this.
-6. **`pcrec_minw(A_BREF)` is 0** (P12), which is the safe direction and is
-   already written down as the intended answer in `mrl.c`'s header. A
-   backreference to a group with a non-zero minimum width could contribute
-   more; measuring that is explicitly NOT this module's work (§14), because
-   an over-estimate here deletes real matches silently.
+`A_CAP`'s emission becomes, for a group this module marks (§3.2.4):
+
+```c
+// group 1 opens
+rx_L3: __attribute__((unused));
+    RX_SET(RX_SLOT_GROUP1_PENDING, (ptrdiff_t)scan_position);
+    goto rx_L4;
+    ...
+// group 1 closes -- the PAIR is published here, together
+rx_L5: __attribute__((unused));
+    RX_SET(RX_SLOT_GROUP1_START, slot_values[RX_SLOT_GROUP1_PENDING]);
+    RX_SET(RX_SLOT_GROUP1_END,   (ptrdiff_t)scan_position);
+    goto rx_L6;
+```
+
+#### 3.2.4 What it costs, and why it is scoped
+
+| | today | publish-at-close |
+|---|---|---|
+| slots per marked group | 2 | **3** (a pending slot) |
+| trailed writes per traverse | 2 | **3** (one at open, two at close) |
+| frames | 0 | 0 |
+| emitted labels | 2 | 2 |
+
+**The extra slot and write apply ONLY to groups this pattern actually
+references**, which is a compile-time property (§5.3's resolution pass already
+computes the referenced set). Three consequences:
+
+- A pattern with no backreference emits byte-identical C — §11.3's identity
+  gate holds by construction rather than by inspection, and §3.2.2's control
+  arm is the measurement that says the two disciplines are indistinguishable
+  there.
+- A backref pattern pays 1 slot + 1 trail entry per referenced group per
+  traverse. `vm_cost`'s `A_CAP` arm gains `+1` to `trail` for a marked group
+  (`emit_vm.c:1242`'s `2 * nc` term becomes `3 * nc` over marked groups), and
+  `vm_count_slots` allocates the third slot. Both sites already exist and both
+  already read one flag; this adds a second.
+- **The `--no-captures` interaction is real and is §6.3's, not this
+  section's**: under `--no-captures` no `A_CAP` node is created at all
+  (R32 E6), so a referenced group needs its slots reinstated. §6.3 carries the
+  ruling.
+
+#### 3.2.5 The properties, restated
+
+1. **It reads the two published slots, never a saved copy.** P7's trail
+   discipline is what makes that safe: the fail label rewinds to the popped
+   frame's `trail_mark` *before* transferring control
+   (`emit_vm.c:5075-5081`), so by the time any label runs `slot_values` holds
+   exactly what that path published. §3.7 is where this becomes the
+   correctness argument.
+2. **The reference writes nothing and pushes no frame.** `vm_cost`'s new
+   `A_BREF` arm is the zero arm the zero-width assertions take
+   (`emit_vm.c:1316-1320`). The capacity cost of this module is entirely in
+   `A_CAP`'s marked groups (§3.2.4), not here — which is the opposite of
+   where the first draft put it, and worth saying because the reference is
+   the construct that looks expensive.
+3. **A backreference is deterministic**: for a given state there is exactly
+   one length it can consume, so there is no choice point and `vm_alt` is not
+   involved. (`\1*` is a *quantifier over* this node — §3.6.)
+4. **`took` is a length, not a bool** (§4.2), and `ref_s <= ref_e` is now a
+   STRUCTURAL precondition the signature may assert rather than a hope.
+5. **`vm_nullable` must return TRUE for `A_BREF`** (`emit_vm.c:732-770`): a
+   group can publish an empty capture and the reference then consumes
+   nothing — MEASURED, cells E1/E4/E5. Getting this wrong is not a wrong
+   answer but an unguarded nullable quantifier body, i.e. a hang. S-BR3.
+6. **`pcrec_minw(A_BREF)` is 0** (P12), the safe direction, already written
+   down as the intended answer in `mrl.c`'s header.
 
 ### 3.3 Unset groups: PCRE2 FAILS, and `PCREC_UNSET` already says so
 
@@ -308,12 +408,16 @@ Six properties, each of which the panel should hold this section to:
 - python3 `re` **agrees on every one of the eight U cells**, so this half of
   the semantics is base-tier-oracle-verifiable.
 
-The emitted test is the two `PCREC_UNSET` comparisons in §3.2, and it is
-total: `run_state_init` fills every slot with `PCREC_UNSET` once per search
-(`emit_vm.c:4841-4852`) and the trail restores it by construction on every
-rewind to mark 0, so a slot is `PCREC_UNSET` **iff** no live path has written
-it. That is the identical argument wave E made for `\K`'s slot 0
-(`emit_vm.c:3752-3765`, `\K`'s slot-0 argument), reused rather than re-derived.
+The emitted test is the two `PCREC_UNSET` comparisons in §3.2.3 — **and it is
+total only because of publish-at-close.** `run_state_init` fills every slot
+with `PCREC_UNSET` once per search (`emit_vm.c:4841-4852`) and the trail
+restores it on every rewind to mark 0, so a PUBLISHED slot is `PCREC_UNSET`
+iff no live path has published it. **Under the first draft's write-on-traverse
+model the same sentence was FALSE** (R32 E1): a re-entered group leaves both
+slots non-UNSET while holding no capture at all, and the test passed on a span
+that was not one. The argument wave E made for `\K`'s slot 0
+(`emit_vm.c:3752-3765`) does carry over — but only to a slot with ONE writer
+and one meaning, which is what publishing the pair together restores.
 
 **`PCRE2_MATCH_UNSET_BACKREF` is OUT OF SCOPE**, and it is not free.
 MEASURED: 2 of the 8 U cells flip under the bit (`^(a)?\1$` on `""` becomes
@@ -369,12 +473,23 @@ first line fails. **S3 is the same fact for a self-reference**: `(a|b\1)+` on
 never usefully reachable — (0,1).
 
 **The parser must therefore NOT reject either shape**, which is a real
-instruction because the natural implementation does. Two rules fall out:
+instruction because the natural implementation does. But "no rejection" is
+not sufficient on its own, and R32 E1 is why: a self-reference is the shape
+that puts a live reference INSIDE the group it names, so it is exactly where
+write-on-traverse exposes an unpublished pair. `(a|b\1)+` is both the S3 cell
+and E1's headline counterexample. **Under publish-at-close the reference sees
+the last COMPLETED iteration and both cells are correct** (§3.2.2's sweep:
+0 divergences over the whole re-entry population). Three rules fall out:
 
 - **A reference inside its own group is legal.** `pcrec_ngport_declare`'s
   sibling for numeric references must not check "is group k closed".
 - **A forward reference is legal and its VALIDITY is a whole-pattern
   question**, deferred to end of parse — §5.3.
+- **A group that is referenced from INSIDE itself is a marked group** (§3.2.4)
+  like any other referenced group, and needs no additional treatment. The
+  pending slot is written on each open and the pair published on each close;
+  a reference reached before the first close reads `PCREC_UNSET` and fails,
+  which is F3's measured answer.
 
 This is also the module's **largest oracle divergence**: python3 `re` refuses
 all seven of these patterns at compile time, so **no S or F cell can be
@@ -462,10 +577,19 @@ backtracking the *previous* iteration's value must come back.
 
 That is an **exact restore, not a clear**, which is precisely what N1 needs
 and what `emit_vm.c:3813-3817`'s own comment on `A_CAP` already says ("Undo is
-EXACT RESTORE of the previous value, never a clear"). A backreference
-therefore needs **no new mechanism at all** to be correct under nesting: it
-reads two slots, and the trail's contract is that those two slots hold the
-values the current path wrote.
+EXACT RESTORE of the previous value, never a clear").
+
+**The trail is therefore sufficient for RESTORE and was never the problem —
+R32 E1 was about PUBLICATION, a different question.** The trail guarantees
+that the slots hold what the current path wrote; publish-at-close is what
+makes what the path wrote a *capture* rather than a half-open pair. The two
+mechanisms compose without interacting: the pending slot is trailed like any
+other (`RX_SET`), so a retreat out of an iteration restores the previous
+iteration's pending value along with its published pair, and N1's requirement
+— that iteration 2's reference compare against iteration 2's capture and that
+backtracking bring iteration 1's back — is met by the trail exactly as the
+first draft argued. What the first draft got wrong was not the restore; it was
+believing the pair was a capture at every instant.
 
 **The one place that contract is deliberately weakened, and why it is still
 safe.** `RX_CUT` (`emit_vm.c:4792-4795`, `vm_cut` at `:1726-1740`) truncates
@@ -520,12 +644,25 @@ be re-examined against D18's rule". It is re-examined here and the answer is:
 the fold *set* is unchanged and shared; only the *place* it is applied moves,
 from parse time to match time, for this one construct.
 
-The shared-definition rule follows `\b`'s precedent exactly
-(`emit_vm.c:3776-3800`: `\b` reads `pcrec_cls_word_esc`, the same table `\w`
-compiles from, "interned by content, so a pattern using both emits ONE bitmap
-and the two constructs cannot disagree"). The residual entry's byte backend
-must therefore embed a fold derived from the same source, not a hand-written
-`tolower()`.
+**The `\b` precedent is the right INTENT and the wrong MECHANISM, which R32
+E8 corrected.** `\b` reads `pcrec_cls_word_esc`, a shared 32-byte BITMAP, and
+emits a membership test from it. `cls_casefold` (`src/parse/parse.c:223-230`)
+is `static`, takes a 32-byte bitmap and WIDENS it in place; it is not a
+byte-to-byte fold and nothing in `src/gen/enc/` can call it. So "reuse the
+same table" is not available as written: the residual entry would carry a
+SECOND spelling of A-Z <-> a-z with nothing checking that the two agree.
+
+**RECOMMENDATION: one shared fold TABLE object, and a 256-byte agreement
+check.** A `const unsigned char pcrec_ascii_fold[256]` in `src/core` (identity
+except that each ASCII letter maps to its counterpart), with `cls_casefold`
+rewritten to derive its widening from it and the byte backend's residual text
+emitting it. If that refactor is judged too wide for this module, the fallback
+is the check alone: a test that walks all 256 bytes and asserts
+`cls_casefold`'s widening and the residual entry's fold induce the SAME
+partition. Either way the obligation is discharged by a mechanism rather than
+by a comment — the design's own §0.2 complaint about controls that share a
+source with what they control applies here in the other direction, where two
+sources have no control at all. §11.4's S-BR11 is the sabotage.
 
 **A `tolower()` in the emitted text would be a defect, not a shortcut**, and
 D23's own scope note says why: pcrec's fold is ASCII-only *deliberately*,
@@ -541,9 +678,23 @@ fold arithmetically or as a 256-byte table.
 /* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE
  * backreference compare (pcrec DD-12/D58).
  *
- * Returns the number of subject bytes at `at` that match the captured text
- * s[ref_start, ref_end), or -1 if they do not. Reads s only at offsets in
- * [ref_start, ref_end) and [at, n).
+ * PRECONDITION: ref_start <= ref_end <= n. The caller passes a PUBLISHED
+ * capture pair (pcrec backrefs_design.md S3.2), and a published pair is
+ * ordered by construction -- the start was recorded before the group's body
+ * ran and the end after it. The entry may assert it.
+ *
+ * RETURNS, and the sign carries two different facts:
+ *     >= 0   the number of SUBJECT bytes consumed at `at`. This need not
+ *            equal ref_end - ref_start: under an encoding whose case
+ *            folding is not length-preserving it may differ, which is why
+ *            the entry returns a length rather than a bool.
+ *     <  0   no match, and -(result) - 1 is the number of subject bytes
+ *            that DID compare equal before the mismatch (0 when the very
+ *            first unit differs, or when fewer than the needed bytes
+ *            remain). That prefix is the WORK the compare actually did and
+ *            is what the caller charges against the work budget.
+ *
+ * Reads s only at offsets in [ref_start, ref_end) and [at, n).
  */
 ptrdiff_t $_bref_match(const unsigned char *s, size_t n,
                        size_t ref_start, size_t ref_end, size_t at);
@@ -552,6 +703,16 @@ ptrdiff_t $_bref_match(const unsigned char *s, size_t n,
 ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,
                                 size_t ref_start, size_t ref_end, size_t at);
 ```
+
+**The negative encoding is R32 E4's correction and it is not decoration.**
+The first draft returned a bare `-1` and separately recommended (§3.8)
+charging "the compared prefix length on failure" — a quantity a single
+sentinel cannot carry, so the recommendation was inexpressible in its own
+signature. The failing case is the one that matters: `(a*)\1` over a long
+subject fails the compare after doing O(n) byte comparisons, and a budget
+that cannot see them is not a budget. `-(r) - 1` rather than `-r` so that a
+zero-length prefix is representable as `-1`, keeping the ordinary "no match,
+nothing compared" case at the value the first draft used.
 
 **Why a LENGTH and not a bool.** MEASURED, `out/caseless_fold.txt` axis C: in
 the 8-bit non-UTF build every fold pair is one byte to one byte, so the
@@ -623,22 +784,44 @@ no external advance to rewrite (D58's "Why" paragraph, measured that session).
 A backreference compare has no automaton representation whatsoever. There is
 nothing else it could be, and forbidding it forbids the construct.
 
-**RECOMMENDATION.** The check's population becomes **per ENTRY, declared by
-the backend**, not per call site:
+**RECOMMENDATION, REWRITTEN AFTER R32 E7 AND C2 — the first draft's version
+shared a source with its subject, which is this project's named failure.**
 
-- `PcrecEncEntry` (§4.5) gains a `bool engine_callable`.
-- `next_pos` keeps `engine_callable = false` and its check is UNCHANGED —
-  including S68, which must still fire.
-- `bref_match`/`bref_match_caseless` carry `engine_callable = true`, and for
-  them the check asserts the *complement*: the name must appear in an engine
-  body (an artifact with a backreference that never calls the compare has
-  inlined it, which is §4.2's violation) and must NOT appear inside any
-  emitted per-byte scan loop.
-- The allowlist is DERIVED from the backend table, the way the existing
-  check already derives residual NAMES from the artifact ("a backend that
-  adds a second entry is covered the day it lands rather than the day someone
-  remembers to extend a list here", `run_codegen_tests.sh:914-918`). The same
-  discipline, one field wider.
+The first draft proposed deriving the complement check's population from the
+backend table and asserting "the name appears in an engine body, and not in a
+scan loop". Both halves were wrong:
+
+- **The population was self-certifying.** The population would come from the
+  artifact's own residual declarations — i.e. from the emitter. An
+  implementation that inlines the compare AND drops the entry from the
+  artifact's mask leaves the check with nothing to assert, and
+  `run_codegen_tests.sh:1013`'s empty-population guard does not catch it,
+  because that guard is global and `next_pos` is unconditional, so it stays
+  green. The check would go green exactly when the thing it guards is broken.
+- **The "not in a scan loop" clause has no mechanism.** `calls_in_bodies()`
+  (`run_codegen_tests.sh:986-1004`) tracks a single `inbody` boolean; there is
+  no loop or label awareness in it at all. And its violation rule is a raw
+  `index($0, want)` with NO comment stripping — so a COMMENT naming
+  `rx_bref_match`, which §3.2.3's emitted shape puts directly beside the
+  call, satisfies the complement on its own. S-BR5 would pass by construction.
+
+**The corrected design, and its principle is that the expectation must come
+from the TEST, not from the artifact:**
+
+- The fixture table (`run_codegen_tests.sh`'s TAB-separated rows) gains a
+  column DECLARING which residual entries each fixture's artifact must carry,
+  and the module adds backref-bearing rows. That is test-authored truth: an
+  emitter change cannot edit it.
+- Counting is **per A_BREF SITE and comment-stripped**: the number of calls to
+  `<prefix>_bref_match*` in the engine body must equal the number of
+  backreferences in the fixture's PATTERN, which the test knows because the
+  test wrote the pattern. Comments are stripped before counting, so the
+  emitted intent comment beside each call cannot stand in for the call.
+- The **"not in a scan loop" clause is DROPPED.** No mechanism exists to
+  express it and inventing an awk loop-tracker to check one clause would be a
+  second control with the same author as the thing it checks.
+- `next_pos` keeps `engine_callable = false` and its check is UNCHANGED,
+  including S68 — verified by the panel to survive this refactor.
 
 **The alternative, named and rejected:** emit the compare as an ordinary
 `static` helper in the emitter's own output, outside the seam. That keeps the
@@ -687,10 +870,15 @@ the artifact contains a backreference of that caselessness. The
 third-encoding recipe is unchanged in shape — one new `enc_<name>.c`, its
 `extern`, its row — which is the property `enc.h:26-32` says must survive.
 
-**Cost accepted, stated:** `emit_residual_decls`/`emit_residual_defs`
-(`src/gen/emit_dfa.c`, per `src/gen/CLAUDE.md`'s [M5-SEAM] section) each gain
-a mask argument, and the cross-prefix byte-identity check on the ABI block
-re-baselines. Both are named in D60's own cost list for a comparable change.
+**Cost accepted, stated — and R32 E11 found the list short.**
+`emit_residual_decls`/`emit_residual_defs` (`src/gen/emit_dfa.c`, per
+`src/gen/CLAUDE.md`'s [M5-SEAM] section) each gain a mask argument, and the
+cross-prefix byte-identity check on the ABI block re-baselines. **Additionally:
+`pcrec_enc_ready()` (`src/gen/enc/enc.h:54`) tests `e->decls != NULL`, and the
+`entries` array REMOVES that field** — so the readiness predicate becomes
+"has a non-empty entries array", and every caller of `decls`/`defs` moves with
+it. That is a small set (the two emit functions and the readiness test) but it
+is three sites, not one, and the `-e utf8` refusal path reads the predicate.
 
 **The road not taken:** two more string fields on `PcrecEnc`
 (`bref_decls`/`bref_defs`). Simpler, and it does not generalise — lookbehind's
