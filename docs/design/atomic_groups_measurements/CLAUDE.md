@@ -22,9 +22,11 @@ Kept separate from `../assertions_measurements/`, `../eng_brep_measurements/`
 and their siblings for the reason those are separate from each other: never
 confuse one lane's numbers with another's.
 
-**REVISED AFTER R31 (2026-08-22).** Four of the instruments below were REBUILT
-because the panel refuted what they measured rather than what they reported,
-and three are new. Each entry says which. The pattern is worth naming because
+**REVISED AFTER R31 AND ITS FOCUSED RE-CHECK (2026-08-22).** Four of the
+instruments below were REBUILT because the panel refuted what they measured
+rather than what they reported, and FOUR are new — the last of them
+(`probe_lift_preference.py`) written for a finding against a claim the FIRST
+REVISION introduced. Each entry says which. The pattern is worth naming because
 it repeated four times: **an instrument can produce a correct number about the
 wrong population**, and every one of these was a zero that could not have been
 anything else.
@@ -142,6 +144,19 @@ anything else.
   verdicts of 8,820, because §2.2 reads the atomic group transparently and
   `a|ab` is not prefix-free. That position gets an ASSERTION instead of a
   floor, and the assertion is also the design's incompleteness finding.
+- **`probes/probe_lift_preference.py` — MEASURED, both arms. NEW (R31 focused
+  re-check, N1).** The possessive-rung lift's SECOND carve-out, measured the
+  way the first one was. Part A (in-pcrec): lazy quantifiers are possessified
+  today on **all six** of `vm_rep`'s dispatch paths, not only the cursor rung
+  the re-check measured — so the preference collapse is relied on across the
+  whole ladder. Part B (both oracles): the lift emits the GREEDY possessive
+  shape, so its answer is readable off libpcre2 by compiling that spelling —
+  **7 of 8 lift-eligible rows MISCOMPILE**, libpcre2 and python agreeing on
+  every correct answer, and three of them are the design's own §6 cells 14-16.
+  Its CONTROL is `(?>a*?b)c`, whose `A_ATOMIC` child is an `A_CAT` so the lift
+  never applies and the row must agree; the probe FAILS if the control breaks,
+  and equally if NOTHING miscompiles (which would refute N1 rather than confirm
+  the fix).
 - **`probes/probe_registry_cost.sh` — MEASURED, in-pcrec. NEW (R31 C1/C8).**
   What §7.4's four rows actually cost, site by site with line numbers, because
   the first revision said the built-status derivation was "simply a compile of

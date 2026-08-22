@@ -76,6 +76,12 @@ directory rather than in a commit message.)
   examined, **10,504 REFUTABLE cells (verdict positive AND the cut bites), 0
   violations**, all floors met; "Q wrapping the atomic group" **0 positive
   verdicts of 8,820**, asserted rather than floored.
+- `lift_preference.txt` — `probe_lift_preference.py`. Headline: lazy
+  quantifiers carry `RX_VM_STRATS 0x1` on **all six** dispatch paths
+  (CURSOR / FRAMES_BOUNDED / FRAMES_UNBOUNDED / REVDET / COUNTER bounded and
+  unbounded), and **7 of 8 lift-eligible cells MISCOMPILE** — `(?>a*?)b` on
+  `"aaab"` is (3,4) in both oracles and (0,4) under the lift; `(?>a*?)` on
+  `"aaa"` is (0,0) and (0,3). The `(?>a*?b)c` CONTROL holds.
 - `registry_cost.txt` — `probe_registry_cost.sh`. Headline: `doorway_route`
   recognises four prefixes; `--explain 'a*+'` = "no construct matches"; the
   `default: *n = 0` arm at `registry.c:962`; `all_kinds[]` at
