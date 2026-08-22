@@ -1988,10 +1988,17 @@ rather than to this document.
 
 For the author of `tests/backrefs/d27/`, working from the PCRE2 goal with
 `src/` and `tests/` denied. **libpcre2 10.46 is the oracle of record.** There
-is no `pcre2test` binary on this box; drive libpcre2 through ctypes —
-`tests/named_groups/d27/lib_pcre2.py` and `tests/assertions/verify_pcre2.py`
-are the existing drivers, and this lane's `br_oracle.py` adds compile-error
-NUMBERS and the name table.
+is no `pcre2test` binary on this box; drive libpcre2 through ctypes.
+
+**POINTERS THE CELL ALLOWLIST ACTUALLY PERMITS (R32 C11).** The first draft
+pointed at `tests/named_groups/d27/lib_pcre2.py` and
+`tests/assertions/verify_pcre2.py` — both under `tests/`, which a D27 cell
+DENIES, so the brief named files its own reader cannot open. The usable
+pointers are under `docs/`:
+`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py` (the binding) and
+`docs/design/backrefs_measurements/probes/br_oracle.py` (this lane's
+extension: compile-error NUMBERS, the name table, and three
+behaviourally-self-checked option bits).
 
 **F1. An unset group's backreference FAILS.** Not "matches empty".
 `^(a)?\1$` on `""` is no match. `PCRE2_MATCH_UNSET_BACKREF` flips 2 of 8 such
@@ -2050,88 +2057,113 @@ match at startpos 2. Sweep it.
 `^(?:(a|b)\1)+$` on `"aabb"` is (0,4) with group 1 = **(2,3)**, not (0,1).
 `(?:(a|bb)x)+\1` on `"axbbxbb"` is (0,7); on `"axbbxa"` it is no match.
 
+**F14. A REFERENCE INSIDE A RE-ENTERED GROUP SEES THE LAST *COMPLETED*
+ITERATION, not the one in progress.** This is the module's sharpest cell class
+and the one an implementation is most likely to get wrong: `(a|b\1)+` on
+`"ab"` is **(0,1) with group 1 = (0,1)** — the second iteration's `b\1` fails
+because `\1` still holds iteration 1's completed capture `"a"`, not because
+anything is unset. `^(?:(a|b\1)y)+` on `"aybay"` is (0,5) with group 1 =
+(2,4). Write several; they cost nothing and they are where a plausible
+implementation diverges.
+
+**F15. python3 `re` refuses `(?i)` anywhere but the pattern start.**
+`^((?i)a)\1$` and `^(?i)(a)(?-i)\1$` are libpcre2-legal and python compile
+errors ("global flags not at the start of the expression"), so the two cells
+that decide WHERE the caseless flag is read (F7) have no python oracle at all.
+
+**F16. The CLASS position diverges from python too.** `[\8]`, `[\9]`, `[\k]`
+and `[\g]` are the LITERAL characters `8`, `9`, `k`, `g` in PCRE2; python
+rejects all four as bad escapes. `[\400]` is a PCRE2 error. So a class-position
+cell written from python is either absent or wrong.
+
 ---
 
 ## 13. What would refute this — predictions for the panel
 
-Every load-bearing BELIEVED claim, with the experiment that kills it.
+**REVISED AFTER R32.** Eight of the eleven predictions below are new or
+rewritten; the three the panel confirmed are marked. The four HIGH findings
+against the first draft were E1, E2, and (with the manager) M-1/C1 — none of
+which this list anticipated, which is itself the most useful thing to say
+about it.
 
-**P-1. The compare needs no frame and no trail entry (§3.2 properties 2-3).**
-*Refuted by*: any PCRE2 cell where a backreference itself introduces a choice
-point — i.e. where the same reference can consume two different lengths at one
-state. Look for it in a UTF-8 build's fold ambiguity (`ß` vs `ss`), where a
-one-character reference might match one or two subject characters. If such a
-cell exists, the byte backend is still frame-free but the SIGNATURE in §4.2
-is insufficient (it returns one length, not a set) and §4.3's list is wrong.
+**P-1. Publish-at-close is correct and sufficient (§3.2).** *Refuted by*: any
+libpcre2 cell where a reference sees something other than the last COMPLETED
+iteration of the referenced group. The 5,808-cell sweep found none, but its
+alphabet is `{a,b,y}` and its subjects stop at length 4. The shapes most
+likely to break it are ones this sweep cannot express: **nested backreferences
+(a reference inside a group that is itself referenced), a `\K` inside a
+referenced group, and a possessive/atomic quantifier around one** — R32 C20
+named the first two as population gaps and they are still gaps.
 
-**P-2. `pcrec_minw(A_BREF) == 0` is safe (§3.2 property 6, P12).**
-*Refuted by*: nothing — 0 is an under-estimate and under-estimates prune less.
-The refutable half is the opposite claim I am NOT making: that a tighter bound
-(the referenced group's own `minw`) is sound. It is not obviously sound, since
-the group may be unset, and §14 keeps it out.
+**P-2. The pending slot is the whole cost (§3.2.4).** *Refuted by*: a shape
+needing MORE than one pending slot per group, which would mean a group open
+twice simultaneously. That needs recursion, which this module does not
+implement — but `atomic-groups`' cut and a future `recursion` module are both
+places to re-ask.
 
-**P-3. Charging work units for the compare is necessary (§3.8).**
-*Refuted or confirmed by*: instrument a prototype VM with the compare
-uncharged and run `(a*)\1` against a growing subject, counting bytes compared
-per step. If the ratio is bounded, the charge is unnecessary. I predict it is
-not — it should grow linearly in subject length — but this is the one budget
-claim in the document with no number behind it.
+**P-3. Charging the compare's work is necessary (§3.8).** *Refuted or
+confirmed by*: instrumenting a prototype with the compare uncharged and
+running `(a*)\1` against a growing subject, counting bytes compared per step.
+If the ratio is bounded the charge is unnecessary. I predict it is not. This
+is still the one budget claim with no number behind it; §4.2's return protocol
+now makes it EXPRESSIBLE, which R32 E4 found the first draft's version was
+not.
 
-**P-4. `--engine=dfa`'s captures branch mis-advises (§6.2).**
-*Already MEASURED* on the shipped binary with `\K`. The refutable part is the
-FIX: that reordering the two branches does not break the `\K`-free captures
-case. The check is the existing `tests/cli` refusal cells.
+**P-4. `--engine=dfa`'s captures branch mis-advises (§6.2).** *MEASURED on the
+shipped binary and CONFIRMED by the panel.* The first draft's proposed FIX was
+refuted (E5) and the second-why ruling replaced it.
 
-**P-5. `RK_ESC` rows honour a tail selector (§9). CHECKED, and it was the
-document's weakest claim until it was.** The first draft left this unverified
-and said so. It is now STRUCTURAL with a shipped precedent (`\N{` and `\N{U+`,
-two `RK_ESC` rows in one bucket, `registry.c:333` and `:349`), and §9 carries
-the chain. The residual named in an earlier revision — whether
-`pcrec_recognise_tail_default` treats `RK_ESC` differently — is CLOSED by
-reading it: its whole body is
-`if (!tail) return true; return at && tl <= avail && memcmp(at, tail, tl) == 0;`
-(`src/parse/registry.c`), which mentions no `RegKind` at all. *Refuted by*: a
-`rank` interaction — the two new `\g` rows must outrank the tail-less `\g`
-row, and the existing `\g` row's rank field must be checked at
-implementation time.
+**P-5. `RK_ESC` rows honour a tail selector (§9).** *CONFIRMED by the panel,
+and it went further than this document did*: higher `rank` wins, the
+arbitration has no kind branch, and disjoint tails cannot tie — so the
+`\g<`/`\g'` split is available and the residual this document left open
+(whether the existing `\g` row's rank permits it) is answered: it is rank 0,
+so the two new rows outrank it.
 
-**P-6. The expansion should not ship (§6.3).**
-*Refuted by*: a corpus of real `--no-captures` backref patterns in which
-finite-language references are common AND small. My measurement uses seven
-synthetic families and five real idioms; four of the five real idioms
-(`(\w)`, `([a-z]+)`, `([0-9]+)`, `(<[a-z]+>)`) reference INFINITE languages
-and cannot expand at all. If someone produces a corpus where the finite case
-dominates, the recommendation flips.
+**P-6. The expansion should not ship (§6.3).** *CONFIRMED — the boundary
+reproduced three times from three trees.* Still refutable by a corpus of real
+`--no-captures` backref patterns in which finite-language references are
+common AND small; four of the five real idioms measured reference INFINITE
+languages and cannot expand at all.
 
-**P-7. The erasure never false-negatives (§7.2).**
-*Refuted by*: one subject in any family where the true pattern matches and the
-erasure does not. Zero found in 28,160 subject-family pairs. The argument is
-that the captured text is always in the group's language — which is true, but
-the erasure also DROPS the synchronization, and a construct that interacts
-with the drop (a possessive group, an atomic group) might break it. **The
-seven families contain no atomic or possessive group**, and that is this
-measurement's real gap.
+**P-7. The erasure is a superset (§7.2). REFUTED AND CORRECTED (R32 E2).** It
+is a superset only when the referenced group is ASSERTION-FREE; 6 of 10
+control cells are false negatives otherwise. The corrected claim's own
+refutation would be a false negative in an assertion-free family — none found
+in 12,786 distinct pairs across six families. **The remaining gap the first
+draft had and this one still has: no family contains an ATOMIC or POSSESSIVE
+group**, and the erasure drops synchronization, so `atomic-groups` landing
+first is the event that should re-ask.
 
-**P-8. The seam interface must change (§4.5).**
-*Refuted by*: showing that two extra exported functions per artifact are
-acceptable. That is a size measurement nobody has taken; today's smallest
-artifact is ~12.4 KB (`out/expand_cost.txt`), so two ~15-line functions is
-under 1%. If Frank rules that acceptable, §4.5's whole change collapses to
-adding two strings to `decls_byte`/`defs_byte` and the design is simpler. **I
-recommend against it on the lookbehind argument (§4.5's last paragraph), not
-on size.**
+**P-8. The seam interface must change (§4.5).** *Refutable by* a size ruling I
+recommend against on generality grounds. R32 E11 made the change slightly
+larger than the first draft priced (`pcrec_enc_ready` moves too).
 
-**P-9. The `(?J)` scoping rule (§8.1). RESOLVED — the separating cells were
-missing from the first draft and are now measured.** `(?<a>x)(?<a>y)(?J)` is
-error 143, which kills "anywhere in the pattern"; `(?J)(?<a>x)(?-J)(?<a>y)` is
-error 143 *even with `PCRE2_DUPNAMES` set*, which shows the inline letter is
-authoritative over the API bit; `(?J)(?<a>x)(?:(?-J)q)(?<a>y)` compiles, which
-shows the ordinary scope-restore applies. *Refuted by*: a cell where the state
-at the declaration is not what decides — the obvious remaining one is a
-declaration inside a `(?|...)` branch reset, which pcrec does not implement
-and which is out of scope.
+**P-9. The `(?J)` scoping rule (§8.1).** *CONFIRMED under a harder battery*,
+including the separating cells this document added and the finding that an
+inline `(?-J)` beats the API bit.
 
----
+**P-10 (NEW). The complement check as now designed (§4.4) does not share a
+source with its subject.** *Refuted by*: showing that a fixture's declared
+residual-entry expectation can be satisfied by an artifact that inlines the
+compare — e.g. if the per-site count can be met by a call the emitter makes
+for some other reason. The count is "one call per `A_BREF` in the fixture's
+pattern", and the pattern is test-authored, so I believe it cannot; this is
+the claim the re-check should attack hardest, because its first version was
+refuted for exactly this reason.
+
+**P-11 (NEW). The built/unbuilt tally movement (§11.5) is +12/-12 plus
+`(?J)`.** *Refuted by*: a row this module builds that the classifier does not
+reclassify — most likely `\g`, if the `\g<`/`\g'` split leaves the base `\g`
+row without an atom producer, or `\0`, whose gating §14 now decides. A
+prediction with an exact number, checkable by one `--list-syntax` run at
+landing.
+
+**KNOWN GAPS, listed rather than discovered (R32 C20).** The erasure families
+lack nested backreferences and `\K`; the `star` family's nomatch column rests
+on only 88 negatives; the publish-discipline sweep has no atomic/possessive
+arm; and the `--no-captures` slot-retention ruling (§6.3) has no measurement
+behind it at all, because no build can produce one until the module exists.
 
 ## 14. Explicitly out of scope
 
@@ -2146,36 +2178,74 @@ and which is out of scope.
   the BODY is M5's.
 - `PCRE2_EXTRA_CASELESS_RESTRICT` / `(?r)`, which `registry.c:741` already
   carries as a measured no-op at options=0.
+- **`\0`'s GATING SPLIT — DECIDED (R32 C20), and the decision is "no change".**
+  `\0` is octal, `ANY_ENGINE`, and needs no VM; one could argue it should
+  therefore stop requiring module `backrefs` at all. It does not: `\0` shares
+  the digit doorway and today refuses with "requires module 'backrefs'"
+  (P1, measured), a `--features none` build has always refused it, and moving
+  it to base grammar would be a compatibility change to the BASE tier made as
+  a side effect of a module landing. It stays gated on `backrefs`, gains a
+  producer with the rest of the digit rows, and its diagnostic stops sharing
+  a code path with the nine backreference rows (§5.2). Not a regression: no
+  build that accepts `\0` today stops accepting it.
 - Matching PCRE2's specific error NUMBERS (115, 143, 144, 151, 164, 169).
   D26 tier 3: that a real syntax boundary refuses cleanly is exact; the
   wording and the number are not.
 
 ---
 
-## 15. ASKs
+## 15. ASKs — ALL RULED (2026-08-22, with R32)
 
-**ASK-1 (Frank).** `docs/pcre2_compliance.md:877-880` attributes `(?J)` to
-module `named-groups` ("duplicate NAMES are named-group semantics"), and
-line 1001 says its cells close when a dupnames producer lands *inside that
-module*. This design lands the producer in `backrefs`, because the by-name
-resolution machinery is here and the [M6.5] row rules it here. Should the
-compliance attribution move to `backrefs`, or stay `named-groups` with a
-note that the two halves (declaring, resolving) live in different modules?
-The latter is more truthful and more confusing.
+Kept with their answers rather than deleted, on the house rule that a design
+document records what was asked and how it was settled.
 
-**ASK-2 (Frank).** Should `pcrec_options.flags` gain `PCREC_DUPNAMES` beside
-`PCREC_CASELESS`, or is inline `(?J)` the only spelling? No consumer asks for
-the bit; `(?i)` has both only for historical reasons. Recommendation: inline
-only.
+**ASK-1 — `(?J)`'s compliance attribution. RULED: it moves to `backrefs`,
+with the split noted** (declaring = `named-groups`, resolving + `(?J)` =
+`backrefs`). Because `docs/pcre2_compliance.md` is a derived page under
+[DOC-DRV], this is a keyed-annotation edit through the `compliance-refresh`
+skill, not prose drift. §8.4's table carries the six sites.
 
-**ASK-3 (manager).** §6.2's `--engine=dfa` branch-ordering fix is a
-pre-existing defect in `src/opt/select_engine.c` that this module's population
-makes universal. Fix it in this module's wave, or as its own small lane
-before [M6.5.2] (the [ABI-NS] precedent)?
+**ASK-2 — a `PCREC_DUPNAMES` option bit. RULED: inline `(?J)` only.** No
+consumer asks for the bit and `pcrec_options.flags` stays as D44.8 froze it.
 
-**ASK-4 (manager).** §11.3's identity gate uses a commit-pinned reference,
-which `assertions_measurements/out/CLAUDE.md` records as strictly stronger but
-which the four SHIPPED gates do not use (they use a `-D` knob, for cheapness
-in an ongoing gate). This gate is ongoing, not one-shot. Accept the extra
-cost, or follow the four gates' precedent and accept the measured
-cancellation risk?
+**ASK-3 — the `--engine=dfa` branch-ordering fix. RULED: it lands in
+[M6.4.2]'s engine slice**, which lands first and shares the population shape.
+§6.2 stays as the defect record and now carries the SECOND-WHY ruling that
+replaced the first draft's refuted fix (R32 E5).
+
+**ASK-4 — the identity gate's reference. RULED: a ONE-SHOT commit-pinned
+sweep**, the same ruling and the same reason as R31/atomic §11.2: no stage of
+this module runs on the control population, so a `-D` knob would gate dead
+code. §11.3 is restated on that footing rather than on the first draft's
+"ongoing gate" framing.
+
+**ASK-5 (raised by this lane after the tripwire measurement) — build SR-8 or
+argue the exception. RULED (D67): SR-8 IS BUILT IN [M6.4.2]**, in D55's
+specified shape — producers stamp each module-produced AST node with its row's
+`engines` mask, one generic `EngineAnalysis` ANDs the stamps over the
+post-discharge tree, `forces_kreset` and the `registry_check` exception retire
+into it. §6.1 is rewritten against that contract and this module registers
+nothing. The three contract notes this lane raised are recorded in R31 M-1;
+notes 1 and 3 are the ones §6.2 and §6.3 depend on.
+
+---
+
+## 16. What R32 changed, in one table
+
+For a reader who knew the 4cd461f draft. Every row is a section that now says
+something different, not merely more.
+
+| finding | the first draft said | it now says |
+|---|---|---|
+| **E1** | a non-UNSET slot pair is a capture; the UNSET test is total; self-reference needs no handling | **§3.2 PUBLISH-AT-CLOSE.** A re-entered group holds a half-open pair; 138 divergences and 40 `size_t` underflows in 5,808 cells; the pair is published together at close |
+| **E2** | the erasure is a genuine superset | **§7.2** superset **iff the referenced group is assertion-free**; 6/10 control cells are false negatives otherwise; §7.4's charter gains the gate |
+| **E3** | `\10`+ is a backref if the count allows, else octal | **§5 rule 3'**: a run beginning `8`/`9` is ALWAYS decimal (no octal reading exists); the disambiguation is four ordered questions; references above `\99` exist |
+| **M-1/C1** | `forces_backref`, SR-8 deferred | **§6.1** `A_BREF` is STAMPED; SR-8 built in [M6.4.2] (D67); §11.5 rewritten — `qualifying` stays 48, `wired` goes 1→13 |
+| **E5** | reorder the two branches | **§6.2** record a SECOND, node-derived `why`; the defect record stays, the fix travels |
+| **E6** | `--no-captures` is the expansion's customer set | **§6.3/§10** — and under it NO `A_CAP` exists, so a referenced group keeps internal slots and reports none |
+| **E7/C2** | the complement check, "one field wider" | **§4.4** fixture-DECLARED expectations, comment-stripped per-site counting, the scan-loop clause dropped |
+| **C3** | `caseless.rxt` and `octal_class.rxt` are python-verifiable | **§11.1** per-CELL markings; 4/9 and 4/12 are python errors, including both load-bearing `(?i)`-placement cells |
+| **C4** | ten sabotage rows | **§11.4** eighteen, led by the prefilter-on-backref WRONG-ANSWER row and publish-at-open |
+| **C5** | the built column "gains this module's rows for free" | **§11.5** the tally is asserted by NOTHING today; the assertion lands in [M6.4.2] and this module states its movement (+12/-12, plus `(?J)`) |
+| E4, E8, E9, E10, E11 | — | the return protocol carries the failure prefix; one shared fold table + a 256-byte agreement check; the revdet group-in-body interaction named; `-Wswitch` is a warning `make strict` promotes; `pcrec_enc_ready` joins the cost list |
+| C6-C14, C15-C20 | — | §9's built predictions cite §5.3; `\k<n>` undeclared is a REFUSAL; distinct-subject counts and one family removed; the filler's letters now differ; drivers specified with six sections and exact guards; §12's pointers moved under `docs/`; four probe defects fixed; `\0`'s gating decided |
