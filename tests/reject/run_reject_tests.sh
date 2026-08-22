@@ -41,6 +41,12 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# [SR-11] table_contract.md's one implementation (tests/lib/table.sh):
+# resolves `--list-syntax` columns by NAME rather than this file hand-rolling
+# its own index map, which is what let a `NF != 15` hardcode drift silently
+# past D65's appended 16th column (docs/design/registry_built_status_memo.md's
+# Correction section) until the iteration's own non-vacuity floor caught it.
+. "$ROOT_DIR/tests/lib/table.sh"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 KEEP="${KEEP:-0}"
 
@@ -1646,20 +1652,34 @@ else
     # with an empty pattern or matched against an empty substring — the latter
     # matches ANY diagnostic and would pass while testing nothing.
     #
-    # NF != 16, not 15: D65 (2026-08-21) appended a 16th column, `built`
-    # (docs/design/registry_built_status_memo.md). Appended, per SR-4's own
-    # "columns are APPENDED, never reordered" rule — so $3 (syntax), $4
-    # (module), $8 (status) and $11 (expect) are all UNCHANGED positions;
-    # only the field-count guard needed updating. This exact guard is what
-    # caught the drift when the field count changed and this line did not:
-    # every row failed `NF != 15`, `$niter` silently went to 0, and the
-    # loop's own non-vacuity floor below is what surfaced it rather than a
-    # quietly-passing empty run.
-    awk -F'\t' '
-        /^#/ || NF != 16 || $8 == "base" { next }
-        $3 == "" || $11 == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
-        { print $3 "\t" $11 "\t" $4 }
+    # [SR-11] columns resolved BY NAME (tests/lib/table.sh), not a hardcoded
+    # `NF != 16`: D65 (2026-08-21) appended a 16th column, `built`, and the
+    # previous hardcoded `NF != 15` guard here silently zeroed this whole
+    # section until the loop's own non-vacuity floor below caught it (see
+    # docs/design/registry_built_status_memo.md's Correction section). The
+    # field-count guard now reads the header's OWN declared count
+    # (table_header_ncols), so the NEXT appended column changes nothing here.
+    # Column resolution itself must fail LOUDLY, not leave $AWKVARS/$NHDR
+    # empty and let awk run with undefined `$status`/`$syntax`/... (every
+    # unset awk field variable reads as the WHOLE line's field 0, or as
+    # 0/"" — a silent mis-parse of exactly the shape this contract exists to
+    # prevent). So both calls are gated on success before the awk ever runs;
+    # a header this suite cannot resolve fails the section instead of
+    # quietly iterating nothing (or the wrong columns).
+    resolved=1
+    AWKVARS="$(table_awk_map "$WORKDIR/syntax.tsv" status syntax module expect)" || resolved=0
+    NHDR="$(table_header_ncols "$WORKDIR/syntax.tsv")" || resolved=0
+    if [ "$resolved" -ne 1 ]; then
+        bad "could not resolve --list-syntax's columns by name (tests/lib/table.sh) — the dump's header is not what this suite expects"
+        : > "$WORKDIR/probe.tsv"
+        : > "$WORKDIR/badrows.txt"
+    else
+    awk -F'\t' $AWKVARS -v nhdr="$NHDR" '
+        /^#/ || NF != nhdr || $status == "base" { next }
+        $syntax == "" || $expect == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
+        { print $syntax "\t" $expect "\t" $module }
     ' "$WORKDIR/syntax.tsv" 2>"$WORKDIR/badrows.txt" > "$WORKDIR/probe.tsv"
+    fi
 
     # [TT-2] the BADROW diagnostic and the coverage-count assertion below are
     # GLOBAL: a child shard's own $niter is only a partial slice (never 99),
@@ -1678,8 +1698,14 @@ else
     done < "$WORKDIR/probe.tsv"
 
     # The loop must have seen every non-base row: a `read` that silently stops
-    # early would make this whole section quietly shrink to nothing.
-    nexpected=$(awk -F'\t' '!/^#/ && NF == 16 && $8 != "base"' "$WORKDIR/syntax.tsv" | wc -l)
+    # early would make this whole section quietly shrink to nothing. -1 when
+    # column resolution itself failed above (never a legitimate count), so
+    # this can never coincidentally agree with `niter` and mask that failure.
+    if [ "$resolved" -eq 1 ]; then
+        nexpected=$(awk -F'\t' $AWKVARS -v nhdr="$NHDR" '!/^#/ && NF == nhdr && $status != "base"' "$WORKDIR/syntax.tsv" | wc -l)
+    else
+        nexpected=-1
+    fi
     # `-eq 66`, not `-ge 60`: the floor had six rows of slack, and R6 measured
     # what slack buys — see the summary block below.
     # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).

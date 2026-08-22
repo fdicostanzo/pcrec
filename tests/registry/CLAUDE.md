@@ -920,6 +920,23 @@ registry_check.c's alone.
   failure: a module renamed in registry.c leaves the prose confidently
   describing something that no longer exists, and nothing else would notice.
 
+**[SR-11] GENERATOR AGREEMENT (2026-08-21, docs/spec/table_contract.md):**
+`dump()` now cross-checks its own `COLS` list against `--list-syntax`'s LIVE
+header line before parsing a single row — a column appended, renamed or
+reordered in the dump without a matching `COLS` update fails immediately,
+naming both lists. `COLS` is this script's own transcription of the dump's
+column order (python cannot source tests/lib/table.sh, which implements the
+identical rule for shell/awk consumers — comment-skip, "the last `#` line
+before the first data row is the header" — so this re-implements it rather
+than diverging from it); a transcription that stops matching its source is
+the D65 failure shape one level up (a hardcoded field COUNT drifted silently
+until an appended column broke two consumers — see this directory's item 10
+and docs/design/registry_built_status_memo.md's Correction section).
+Sabotage-validated: renaming `class_expect` to `class_expect_RENAMED` in a
+scratch copy of `COLS` fails `--check` naming the exact mismatch between
+`COLS` and the live header, rather than silently misreading every row past
+that point.
+
 The document is NOT rendered wholesale, which the SR-4 plan text asked for.
 Doing that would replace a survey — DFA-feasibility judgements, the
 `PLANNED`/`PLANNED-HARD` reasoning, the divergence post-mortems, and every row

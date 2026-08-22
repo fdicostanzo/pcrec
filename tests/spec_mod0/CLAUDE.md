@@ -92,6 +92,14 @@ every run.
   verb tables from a *run* of pcrec, never a committed copy.
 - **check01_isolation.sh**, **check06_cursor.sh**,
   **check09_every_feature_toggles.sh** — the three shell checks.
+  **[SR-11] (2026-08-21)**: check09's registry module-column read now
+  resolves the column BY NAME (`table_col_index`, tests/lib/table.sh)
+  instead of a hardcoded `cut -f4`, per docs/spec/table_contract.md's
+  consumer contract. A failed resolution exits 2 naming the missing
+  column rather than silently `cut`-ing the wrong field — sabotage-
+  validated against a scratch registry.tsv with `module` dropped from its
+  header, run through the real `check09_every_feature_toggles.sh`
+  end-to-end.
 - **check02 / 03 / 04 / 05 / 07 / 08 / 10** `.c` — the seven C checks for the
   ten module-0 invariants.
 - **check11_modifier_syntax.c**, **check12_modifier_semantics.c** — a SECOND

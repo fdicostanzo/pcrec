@@ -30,6 +30,10 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # (gen_run, same file): a handful of runs per case, not an inner loop.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="cli"
+# [SR-11] table_contract.md's one implementation (tests/lib/table.sh): case10
+# below resolves the dump's field count from its OWN header rather than a
+# hardcoded literal — see that case's comment.
+. "$ROOT_DIR/tests/lib/table.sh"
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
@@ -503,15 +507,24 @@ case10() {
     assert_contains "case10: --list-syntax emits the column header" "$out" \
         "#kind	selector	syntax"
 
-    # every non-comment row has exactly 16 tab-separated fields (12 until
-    # MOD-0.1 appended `roadmap`, `quantifiable` and then `class_expect`,
-    # 2026-08-11; 15 until D65 appended `built`, 2026-08-21 —
-    # docs/design/registry_built_status_memo.md)
+    # [SR-11] HEADER TRUTHFULNESS (docs/spec/table_contract.md, "The
+    # checks"): every data row's field count equals the header's OWN
+    # declared count — table_check_truthfulness, tests/lib/table.sh. This
+    # is the durable form of the old `NF != 16` literal (12 until MOD-0.1
+    # appended `roadmap`, `quantifiable`, `class_expect`, 2026-08-11; 16
+    # since D65 appended `built`, 2026-08-21 —
+    # docs/design/registry_built_status_memo.md): a literal count broke
+    # the moment D65 landed, and this check compares against the header
+    # instead, so the next appended column changes nothing here.
     printf '%s\n' "$out" > "$d/dump.tsv"
     nrows=$(grep -vc '^#' "$d/dump.tsv")
-    nbad=$(awk -F'\t' '!/^#/ && NF != 16' "$d/dump.tsv" | wc -l)
-    assert_eq "case10: every dump row has 16 fields (no tab leaked into one)" \
-        "0" "$nbad" "rows: $nrows"
+    if table_check_truthfulness "$d/dump.tsv" 2>"$d/truthfulness.err"; then
+        nbad=0
+    else
+        nbad=$(grep -c '^table: .*:.* has ' "$d/truthfulness.err")
+    fi
+    assert_eq "case10: every dump row's field count matches the header's declared count (no tab leaked into one)" \
+        "0" "$nbad" "rows: $nrows; $(cat "$d/truthfulness.err")"
     if [ "$nrows" -ge 60 ]; then
         pass "case10: dump carries the registry's rows ($nrows)"
     else

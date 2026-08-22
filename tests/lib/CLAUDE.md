@@ -39,6 +39,52 @@ section targets depend on.
   baseline even at a real 64.59% hit rate — thousands of sub-millisecond
   compiles is the wrong shape for caching's own overhead), a qualified YES
   for `make mech`'s per-sabotage tree rebuild.
+- **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md
+  (the RULED contract for tabular `pcrec` command output — `#` comments,
+  header-names-columns, append-only, optional `#section NAME` blocks), the
+  same single-implementation shape `gen_timeout.sh` established for the
+  compile budget. Sourced by shell/awk consumers of a dump (tests/reject/
+  run_reject_tests.sh, tests/cli/run_cli_tests.sh case10, tests/spec_mod0/
+  check09_every_feature_toggles.sh) instead of each hand-rolling its own
+  index map or a literal field-count guard — the D65 failure shape
+  (docs/design/registry_built_status_memo.md's Correction section): two
+  consumers hard-coded `NF != 15`, an appended 16th column (`built`) broke
+  both, and the header-deriving consumer (tests/spec_mod0/spec_common.h,
+  the contract's own house exemplar, left untouched by this file on
+  purpose) did not notice. `table_col_index FILE COL [SECTION]` resolves a
+  column BY NAME; `table_header_ncols FILE [SECTION]` is the header's own
+  declared field count, never a literal; `table_awk_map [-s SECTION] FILE
+  COL...` emits an `-v name=idx ...` string ready to splice into an
+  `awk -F'\t' $(table_awk_map ...) '...'` invocation, so an awk PROGRAM
+  reads `$module`/`$status`/... instead of a bare `$4` a reader has to
+  cross-reference against the header by hand; `table_check_truthfulness
+  FILE [SECTION]` is the contract's HEADER TRUTHFULNESS check (every data
+  row's field count equals the header's declared count) — the durable
+  final form of the old case10 `NF != 16` pin. Sections
+  (`#section NAME`) are supported per the contract: reading a
+  multi-section file with no `section` argument fails LOUDLY rather than
+  silently parsing whichever header came last (nothing in the tree emits
+  sections yet — `--emit-ir` is the pending [DD-8] candidate — so this path
+  is exercised only by this file's own tests today). Every failure names
+  what it could not resolve (the column, the file, the section) rather than
+  returning an empty string a caller might silently splice into `$0` — a
+  caller whose own resolution call can fail (table_awk_map,
+  table_header_ncols) MUST check its exit status before using the result,
+  or an unresolved column reads as an unset awk variable (field 0, or
+  "") rather than a failure; tests/reject/run_reject_tests.sh's own comment
+  at its call site names this trap. compliance_section.py is python and
+  cannot source this file; it re-implements the identical two rules
+  (comment-skip, "the last `#` line before the first data row is the
+  header") and cross-checks its own `COLS` list against the dump's live
+  header on every run (table_contract.md's GENERATOR AGREEMENT check), so
+  the two implementations cannot silently disagree about what a header
+  says. Also runnable as a command for a sabotage control or a non-shell
+  caller: `bash tests/lib/table.sh table-col-index FILE COL [SECTION]`
+  (and `table-header-ncols`/`table-awk-map`/`table-check`), same coda shape
+  as `gen_timeout.sh`'s `secs`/`runsecs`/`cpusecs`, `table-`-prefixed
+  because this file is SOURCED by scripts whose own `$1` is often a short
+  word ("check") a collision with an unprefixed command name would
+  silently misfire against.
 - **run_gen_timeout_tests.sh** — its own section in `make test`
   (`test-gentimeout`) — a positive control that the wrapper FIRES, plus a
   coverage assertion that every suite routes through it, because a
