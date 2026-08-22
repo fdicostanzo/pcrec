@@ -68,6 +68,29 @@ re-check's own premise needed correcting:
 | N3-N6, C18 residue | three stale figures in §7.3; §0.3's table still said "superset (sound)"; S-BR14 named a driver section that did not exist; a seventh run put `tag` at 172.9x above the stated ceiling; "all seven" over a 9-cell/8-pattern population | §7.3 (range now open-ended upward), §0.3, §11.2 (a named span-divergence section with its own guard), §3.5 |
 | S-BR12 | observable only after [M6.4.2]'s SR-8 | §11.4, flagged CROSS-MILESTONE |
 
+**THE FOCUSED RE-CHECK (r32eng, on the revision).** **E1 CLOSED** on 16,506
+cells of the critic's own — nested and mutual references, group-in-group,
+subjects to length 5, `\K`-in-group, and an ATOMIC/POSSESSIVE extension of
+`simvm.py` — with publish=close at 0/0 everywhere and publish=open at 228
+divergences and 331 reversed spans. This lane's instrument was verified
+UNSOFTENED by diff against the critic's original, which is the check the
+adoption rule exists to make possible. §3.2.4's SCOPING held on a per-group
+variant (16 mixed patterns, 1,936 cells, no difference in any unreferenced
+group's reported span). E3-E9 and E11 CLOSED. Two new:
+
+| item | what it found | where it is now |
+|---|---|---|
+| **E12 (MED-HIGH)** | the ASSERTION-FREE gate is necessary but NOT SUFFICIENT — an ATOMIC group or POSSESSIVE quantifier beneath the referenced `A_CAP` breaks the superset for a second structural reason (6/8 cells, controls holding) | §7.2, §7.4, §13 P-7. **This one is the lane's own failure and P-7 says so**: the first draft NAMED this gap, the first revision replaced the gap with a condition and stated the condition without it, leaving both halves on the page unjoined |
+| **E13 (MED)** | for a by-name reference over a dup-name run, the MARKED set must be EVERY member — the resolution chain reads them all at match time, so an unmarked member re-admits E1 through it | §3.2.4 (marked set = union of every `A_BREF`'s `refs`), §11.4 S-BR15b, §11.1 (`dupnames.rxt` had no re-entry cell) |
+| E14, E10 residual, a LOW note | `simvm.py`'s `publish` defaulted to `'close'`, so a reader replaying the refutation got the corrected model silently; §3.1(a) still said "compile error THERE"; §3.2.3 omitted the `vm_work` charge §3.8 recommends | the default is REMOVED (no default, with a message naming both disciplines); §3.1(a); §3.2.3 shows the charge |
+
+**One observation carried into the instrument**: in one of the critic's
+populations publish=open gave ZERO divergences and 243 REVERSED SPANS, because
+a reversed span makes the simulator's compare fail and failing sometimes
+coincides with the right answer — while the real artifact would have read out
+of bounds. **The reversed-span count is the more sensitive detector and is now
+the sweep's PRIMARY column.**
+
 **The one finding worth naming rather than tabulating**, because it is this
 lane's own failure of a kind the project keeps cataloguing: **E1's
 counterexample was already in this document's archive.** Cell S3 of
@@ -140,8 +163,8 @@ their repo commit by `probes/archive.sh`.
 | `probes/probe_prefilter_cost.sh` | MEASURED, artifact benchmark | §7: what VM-only search costs, on the SHIPPED compiler's own prefilter axis |
 | `probes/probe_erasure_hazard.py` | MEASURED, libpcre2 | §7: that the erasure is a superset **only for an ASSERTION-FREE referenced group** (R32 E2 — its positive control refutes the unconditional claim, 6/10 cells) and that its SPAN is not (unusable for the hybrid either way) |
 | `probes/probe_expand_cost.py` | MEASURED, in-pcrec | §6: the finite-language expansion compiled by the shipped compiler, and the DECLINE boundary bisected |
-| `probes/simvm.py` | the SIMULATOR, **adopted from R32's critic** | §3.2: the emitted model in both publication disciplines, with the `publish` axis added and nothing else changed |
-| `probes/probe_publish_discipline.py` | MEASURED, libpcre2 vs both models | §3.2: E1's 5,808-cell arm-vs-arm sweep, with a backref-FREE control arm |
+| `probes/simvm.py` | the SIMULATOR, **adopted from R32's critic** | §3.2: the emitted model in both publication disciplines, with the `publish` axis added and nothing else changed — verified UNSOFTENED by the critic's own diff at the re-check, which is the check this adoption rule exists to make possible. `publish` has NO DEFAULT (re-check E14): a reader replaying the refutation must not silently get the corrected model |
+| `probes/probe_publish_discipline.py` | MEASURED, libpcre2 vs both models | §3.2: E1's 5,808-cell arm-vs-arm sweep, with a backref-FREE control arm. **REVERSED SPANS are the primary column**, being the more sensitive detector |
 
 **`probes/archive.sh` is the ONLY writer of `out/`.** That rule is inherited
 from R30 M7, where a hand-written header imitating the archiver was named "a
@@ -2560,5 +2583,6 @@ something different, not merely more.
 | **C4** | ten sabotage rows | **§11.4** eighteen, led by the prefilter-on-backref WRONG-ANSWER row and publish-at-open |
 | **C5** | the built column "gains this module's rows for free" | **§11.5** the tally is asserted by NOTHING today; the assertion lands in [M6.4.2] and this module states its movement (+12/-12, plus `(?J)`) |
 | E4, E8, E9, E10, E11 | — | the return protocol carries the failure prefix; one shared fold table + a 256-byte agreement check; the revdet group-in-body interaction named; `-Wswitch` is a warning `make strict` promotes; `pcrec_enc_ready` joins the cost list |
+| **re-check E12/E13** | the erasure gate was assertion-freedom alone; the marked set was "referenced groups" | §7.2/§7.4/§13 P-7 (gate is assertion-free AND atomic/possessive-free — the population is LIVE because [M6.4] lands first); §3.2.4/§11.4/§11.1 (marked set = union of every `A_BREF`'s `refs`; S-BR15b; `dupnames.rxt` gains re-entry cells) |
 | **re-check C2/N1/N2** | the complement check's count had no provenance; S-BR17 was behavioural; the tally prediction conflated two row sets | §4.4 (declared column + scoped guard + token stripping), §11.4/§8.2 (structural detector; the tiebreak reclassified as CORRECTNESS), §13 P-11/§11.5 (47/49/6 over 102 rows) |
 | C6-C14, C15-C20 | — | §9's built predictions cite §5.3; `\k<n>` undeclared is a REFUSAL; distinct-subject counts and one family removed; the filler's letters now differ; drivers specified with six sections and exact guards; §12's pointers moved under `docs/`; four probe defects fixed; `\0`'s gating decided |
