@@ -3,11 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_registry_cost.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 34d593f 2026-08-22
-# RUN FROM REPO COMMIT        : 34d593f (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: c6f96c4 2026-08-22
+# RUN FROM REPO COMMIT        : c6f96c4 (lane/agdesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/atomic_groups_measurements/out/registry_cost.txt
-# RUN DATE   : 2026-08-22T09:42:28-04:00
+#      M docs/design/atomic_groups_measurements/out/registry_cost.txt
+# RUN DATE   : 2026-08-22T10:10:24-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,49 +17,88 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-== (a) the derivation cannot reach a non-doorway row ==
+== the number that moves ==
+  --list-syntax rows today : 100
+  after four new rows      : 104
+
+== (1) EXACT equalities on a dump-derived count — THESE GO RED ==
+  tests/reject/run_reject_tests.sh:1713:        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 99 ]; then
+  tests/registry/registry_check.c:444:    if (total != 100) {
+  tests/registry/compliance_section.py:391:    if len(rows) != 100:
+
+  Each of these is a deliberate anchor, and each says so in its own
+  comment (compliance_section.py: "Bumping it is deliberate and belongs
+  in the same commit as the row"). The non-base count is 99 rather than
+  100 because `(?:` is the one RS_BASE row; four RS_MODULE rows
+  make it 103.
+
+== (2) FLOORS on the row count — these PASS at 104 ==
+  tests/registry/pcre2_check.c:1929:    if (n_valid < 100 || n_invalid < 100)
+  tests/codegen/run_wordctx_identity.sh:253:if [ "$((same + diff))" -lt 100 ]; then
+  tests/codegen/run_gstart_identity.sh:246:if [ "$((same + diff))" -lt 100 ]; then
+  tests/codegen/run_mlinectx_identity.sh:235:if [ "$((same + diff))" -lt 100 ]; then
+  tests/codegen/run_endvar_identity.sh:263:if [ "$((same + diff))" -lt 100 ]; then
+  tests/codegen/run_vm_identity.sh:77:if [ "$npat" -lt 100 ]; then
+  tests/codegen/run_vm_identity.sh:187:if [ "$capfree" -lt 100 ]; then
+  tests/spec_mod0/check06_cursor.sh:136:if [ "$ROWS" -lt 100 ]; then
+
+== (3) hardcoded RegKind lists — a fifth kind is INVISIBLE to the compiler ==
+  src/parse/registry.c:958:    case RK_ESC:          *n = sizeof esc_rows          / sizeof esc_rows[0];          return esc_rows;
+  src/parse/enabled.c:114:static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+  src/parse/syntax_dump.c:75:    case RK_ESC:          return "esc";
+  src/parse/syntax_dump.c:88:    case RK_ESC:          return "after '\\'";
+  src/parse/syntax_dump.c:145:static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+  src/parse/syntax_dump.c:410:    case RK_ESC:   return pcrec_ext_escape(cx, want, d->sel, false, d->at);
+  src/parse/syntax_dump.c:556:    case RK_ESC:          return "escape";
+  tests/registry/pcre2_check.c:225:    case RK_ESC:          return "esc";
+  tests/registry/registry_check.c:110:    case RK_ESC:          return "esc";
+  tests/registry/registry_check.c:377:            case RK_ESC:
+  tests/registry/registry_check.c:1696:    static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+  and the switch whose default swallows a fifth kind:
+  962:    default:              *n = 0;                                                      return NULL;
+
+== (4) doorway-ROUTING set assertions — a non-doorway row lands unrouted ==
+  tests/spec_mod0/check06_cursor.sh:170:EXPECT_BASE_ANSWERED="(?:...)"
+  tests/spec_mod0/check06_cursor.sh:234:EXPECT_TRIMMED=$(printf '%s\n' "$EXPECT_BASE_ANSWERED" | sort)
+  tests/spec_mod0/check06_cursor.sh:243:    echo "  DISAGREE the set of rows reaching no doorway changed. expected"
+  This is a SET equality, not a count, so no floor absorbs it: the four
+  new rows route nowhere and join the unrouted bucket.
+  expected set today : "(?:...)"
+  expected set after : "(?:...) a*+ a++ a?+ a{1,2}+"
+
+== (5) the built-status derivation cannot reach a non-doorway row ==
   doorway_route (src/parse/syntax_dump.c:334) recognises exactly:
      8:            *d = (Doorway){ .kind = RK_ESC, .sel = c1, .at = i, .from = 0,
      15:            *d = (Doorway){ .kind = RK_GROUP,
      22:            *d = (Doorway){ .kind = RK_VERB, .sel = -1, .at = i, .from = 0,
      29:            *d = (Doorway){ .kind = RK_CLASSBRACKET,
      37:            *d = (Doorway){ .kind = RK_CLASSBRACKET, .sel = c1, .at = i,
-  and built_status_probe (syntax_dump.c:443) is that route plus the call.
-
-  the shipped compiler, asked about the two spellings:
     --explain '(?>a)'  : route          after '(?'  selector '>'
     --explain 'a*+'    : pcrec: no construct matches 'a*+' — it is either base syntax or not a construct pcrec knows
-  -> a row spelled 'a*+' derives to BUILT_DEFECT, not to built/unbuilt.
+  -> such a row derives to BUILT_DEFECT; built_status_probe
+     (syntax_dump.c:443) needs a NON-DOORWAY compile arm.
 
-== (b) every OTHER site a fifth RegKind must reach ==
-  1. pcrec_registry's switch — a fifth kind falls to `default: *n = 0`:
-     962:    default:              *n = 0;                                                      return NULL;
-  2. the dump's hardcoded kind list (ONE array, TWO use sites):
-     145:static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
-     165:    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
-     167:        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
-     1080:    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
-     1082:        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
-     (C8 called these "both all_kinds[] arrays"; measured, it is one
-      array at :145 iterated at :165 and :1080. The correction does not
-      change the ruling — three places still have to be edited.)
-  3. enabled.c's SEPARATE hardcoded list:
-     114:static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+== (6) the engine-capability tripwire's qualifying count ==
+  1473:    if (qualifying != 48)
+  VM_ONLY on the four new rows makes this 52. Under M-1 the tripwire is
+  REPLACED by SR-8 in the same substep, so expect to touch it once and
+  then delete it.
 
-== (c) the two registry_check pins that move ==
-  row total (registry_check.c:444), and what --list-syntax reports today:
-     444:    if (total != 100) {
-     --list-syntax rows today: 100   -> becomes 104 with four new rows
-  the engine-capability tripwire's qualifying count (registry_check.c:1473):
-     1473:    if (qualifying != 48)
-     -> the four new rows' `engines` value decides whether this becomes
-        52 or stays 48. §7.4 must STATE the value; it is not derivable
-        from the row count.
+== (7) the REGMANIFEST's prose pins, which no grep for a literal finds ==
+  88:engine-capability tripwire: of 48 engine-restricted|[M4.7a]/[SR-8], count updated at [M
+  90:built-status: 100 rows classified with 0 defects|D65 (docs/design/registry_built_status
+  These are the suite's own manifest lines. They carry the same two
+  numbers as sites (1) and (6) in PROSE, so a change that updates the
+  assertions and not these leaves the manifest describing a suite that
+  no longer exists.
 
-== (d) R3's source: the check must read the DUMP, not the table ==
-  registry_check.c:135 already catches a pcrec_registry omission:
-             if (!rows || n == 0) { bad("kind %s: no rows", kind_name((RegKind)k)); continue; }
-  so §7.3's "half-done invisibly" is only true of the DUMP side
-  (all_kinds[]), which no check reaches. A per-kind assertion that
-  ITERATES RK_COUNT over registry.c shares a source with what it checks;
-  it must parse `--list-syntax` OUTPUT instead.
+== (8) per-row field requirements the new rows must satisfy ==
+  173:                bad("%s row %zu (%s): no quantifiable value — unset would silently "
+  -> `quant` must not be QF_NONE. The value is QF_NO: `a*++` is an
+     ERROR in libpcre2 and in pcrec (§6.3), so a possessive suffix is
+     not itself quantifiable.
+
+== summary ==
+  This sweep is over src,cli,tests with no curated file list.
+  A future reader who widens it further and finds a tenth site should
+  treat that as this probe's next correction, not as a surprise.
