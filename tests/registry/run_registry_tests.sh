@@ -56,17 +56,24 @@ rc=${PIPESTATUS[0]}
 # two layers, same rules: count evaluated always (with the R9/C1-final2
 # wording split), manifest only on a green run (needles come from ok()
 # lines, and a failing check never prints one).
+# [M6.5.2] 178 -> 182, and the +4 is worth naming because it is NOT the twelve
+# rows module `backrefs` wired. MEASURED off a run's PASS lines:
+# `check_engine_capability` prints its per-row detail only on a FAILURE and one
+# green line otherwise, so wiring twelve producers moves this count by ZERO.
+# What moves it is `check_table_to_parser`, which prints TWO lines per RK_ESC
+# row — an atom-diagnostic line and a class-position line — and the two new
+# `\g<` / `\g'` rows are RK_ESC. 2 rows x 2 lines = 4.
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 178 ]; then
+if [ "$regn" -ne 182 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 178." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 182." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (178 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (182 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 178 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 182 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -156,9 +163,15 @@ if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
 # VISIBLE in the diff, and a manifest makes it FAIL. Neither replaces the other
 # — the count cannot say which check went, and the manifest only covers checks
 # someone thought to name.
+# [M6.5.2] 167 -> 169: the two new `RK_ESC` rows with tails `<` and `'`
+# (module `recursion`, splitting the `\g` doorway's SUBROUTINE half from its
+# BACKREFERENCE half) each add one PC-3 check, and each needed a WRAPPER —
+# their own `syntax` puts the construct LEFTMOST for pcrec, so the group
+# declaration libpcre2 demands (`(a)\g<1>`) lives in pcre2_check.c's WRAPPERS
+# table, the same shape the `(?P=` / `(?P>` pair already uses.
 if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     pc3n="$(grep -c '^PASS: ' "$PC3OUT" || true)"
-    if [ "$pc3n" -ne 167 ]; then
+    if [ "$pc3n" -ne 169 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -167,14 +180,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 167." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 169." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (167 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (169 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 167 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 169 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi
