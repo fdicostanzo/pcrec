@@ -58,30 +58,45 @@ def pc(pat, subj, ncap):
 def main():
     src = os.path.join(HERE, "cut_proto.c")
     with tempfile.TemporaryDirectory() as td:
-        exe = os.path.join(td, "cut_proto")
-        cc = subprocess.run(["gcc", "-O2", "-Wall", "-Wextra", "-std=gnu11",
-                             "-o", exe, src], capture_output=True, text=True)
-        if cc.returncode != 0:
-            print("COMPILE FAILED — this probe reports NOTHING rather than zero:")
-            print(cc.stderr)
-            return 1
-        if cc.stderr.strip():
-            print("compiler diagnostics (kept: a warning here is a finding):")
-            print(cc.stderr)
-        out = subprocess.run([exe], capture_output=True, text=True).stdout
+        outs = {}
+        for arm, flags in (("ok", []), ("sab", ["-DCUT_REWINDS_TRAIL"])):
+            exe = os.path.join(td, "cut_proto_" + arm)
+            cc = subprocess.run(["gcc", "-O2", "-Wall", "-Wextra", "-std=gnu11"]
+                                + flags + ["-o", exe, src],
+                                capture_output=True, text=True)
+            if cc.returncode != 0:
+                print("COMPILE FAILED (%s arm) — this probe reports NOTHING "
+                      "rather than zero:" % arm)
+                print(cc.stderr)
+                return 1
+            if cc.stderr.strip():
+                print("compiler diagnostics, %s arm (kept: a warning here is a "
+                      "finding):" % arm)
+                print(cc.stderr)
+            outs[arm] = subprocess.run([exe], capture_output=True,
+                                       text=True).stdout
+        out = outs["ok"]
+        sab = {}
+        for line in outs["sab"].splitlines():
+            if line.startswith("PROTO\t"):
+                _, pat, subj, got = line.split("\t")
+                sab[(pat, subj)] = got
 
     print("libpcre2:", P.version())
     print("gcc     :", subprocess.run(["gcc", "-dumpversion"],
                                       capture_output=True, text=True).stdout.strip())
     print()
-    hdr = ("%-22s %-8s %-22s %-22s %-8s  %-22s %s"
+    hdr = ("%-22s %-8s %-20s %-20s %-6s %-20s %-9s %s"
            % ("PATTERN", "SUBJECT", "PROTOTYPE", "LIBPCRE2 (oracle)", "AGREE",
-              "UNCUT TWIN (control)", "CUT MATTERS HERE"))
+              "UNCUT TWIN", "cut-vs-", "TRAIL-"))
     print(hdr)
     print("-" * len(hdr))
+    print("%-22s %-8s %-20s %-20s %-6s %-20s %-9s %s"
+          % ("", "", "", "", "", "(control)", "uncut", "REWIND"))
     rows = 0
     bad = 0
     vacuous = 0
+    disc_trail = 0
     for line in out.splitlines():
         if not line.startswith("PROTO\t"):
             continue
@@ -96,13 +111,24 @@ def main():
             bad += 1
         if not differs:
             vacuous += 1
-        print("%-22s %-8s %-22s %-22s %-8s  %-22s %s"
+        st = sab.get((pat, subj))
+        trail_disc = (st is not None and st != got)
+        if trail_disc:
+            disc_trail += 1
+        print("%-22s %-8s %-20s %-20s %-6s %-20s %-9s %s"
               % (pat, subj, got, want, "yes" if ok else "**NO**", u,
-                 "yes" if differs else "no (vacuous row)"))
+                 "yes" if differs else "no",
+                 "**YES**" if trail_disc else "no"))
     print()
-    print("rows: %d   disagreeing with libpcre2: %d   "
-          "rows where the cut changes nothing (vacuous): %d"
-          % (rows, bad, vacuous))
+    print("rows: %d   disagreeing with libpcre2: %d" % (rows, bad))
+    print("rows discriminating CUT-vs-UNCUT      : %d" % (rows - vacuous))
+    print("rows discriminating THE TRAIL INVARIANT: %d  (built with "
+          "-DCUT_REWINDS_TRAIL and diffed row by row)" % disc_trail)
+    print()
+    print("R31 C6: THESE ARE DIFFERENT AXES AND THE FIRST REVISION CONFLATED")
+    print("THEM. A row can be 'vacuous' on the cut-vs-uncut axis and be the")
+    print("only thing standing between CUT-INV and a silent capture loss. The")
+    print("suite needs a non-zero count in BOTH columns, and reports both.")
     if rows == 0:
         print("VERDICT: the prototype produced NO rows. This probe reports "
               "nothing rather than success.")
@@ -111,13 +137,18 @@ def main():
         print("VERDICT: the proposed lowering DIVERGES from PCRE2 on %d row(s)." % bad)
         return 1
     if vacuous == rows:
-        print("VERDICT: every row is vacuous — this suite would pass with "
-              "RX_CUT deleted and proves nothing.")
+        print("VERDICT: every row is vacuous on the cut axis — this suite would "
+              "pass with RX_CUT deleted and proves nothing.")
         return 1
-    print("VERDICT: the proposed lowering reproduces PCRE2 on all %d rows, "
-          "and %d of them are NON-VACUOUS (the uncut twin gives a different "
-          "answer), so RX_CUT is load-bearing in this measurement."
-          % (rows, rows - vacuous))
+    if disc_trail == 0:
+        print("VERDICT: NO row discriminates the trail invariant — this suite "
+              "would pass with a trail-rewinding cut, which is the exact thing "
+              "CUT-INV claims is wrong. It proves nothing about §3.1.")
+        return 1
+    print("VERDICT: the proposed lowering reproduces PCRE2 on all %d rows; %d "
+          "discriminate CUT-vs-UNCUT and %d discriminate the TRAIL INVARIANT, "
+          "so both of §3's claims are load-bearing in this measurement."
+          % (rows, rows - vacuous, disc_trail))
     return 0
 
 

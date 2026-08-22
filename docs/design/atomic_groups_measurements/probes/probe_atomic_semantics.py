@@ -105,6 +105,25 @@ CELLS = [
  ("B spell", r"(?>a{2})a",       "aaa", 0, "{n}+ equivalence"),
  ("B spell", r"a{2,}+a",         "aaaa", 0, "{n,}+ open upper bound"),
  ("B spell", r"(?>a{2,})a",      "aaaa", 0, "{n,}+ equivalence"),
+ # --- R31 E6: the spelling equivalence on a NON-UNIQUE-ITERATION body ----
+ # Section B's rows all have body `a`, where per-iteration and group-exit
+ # cutting CANNOT differ -- so they measure the equivalence on the one family
+ # that cannot refute it. These rows use `(?:a|ab)`, whose iteration can end in
+ # two places, and they are where python and PCRE2 part company.
+ ("B2 spell-nonuniq", r"(?:a|ab){2}+",      "aba",   0, "PCRE2 cuts at the GROUP EXIT; python cuts PER ITERATION"),
+ ("B2 spell-nonuniq", r"(?>(?:a|ab){2})",   "aba",   0, "the atomic spelling of the row above: PCRE2 must agree with it"),
+ ("B2 spell-nonuniq", r"(?:a|ab){2,3}+",    "ababa", 0, "{n,m}+ over a non-unique body"),
+ ("B2 spell-nonuniq", r"(?>(?:a|ab){2,3})", "ababa", 0, "its atomic spelling"),
+ ("B2 spell-nonuniq", r"(?:a|ab){2,}+",     "ababa", 0, "{n,}+ over a non-unique body"),
+ ("B2 spell-nonuniq", r"(?>(?:a|ab){2,})",  "ababa", 0, "its atomic spelling"),
+ ("B2 spell-nonuniq", r"(?:a|ab){2}+c",     "abac",  0, "with a follow"),
+ ("B2 spell-nonuniq", r"(?>(?:a|ab){2})c",  "abac",  0, "its atomic spelling"),
+ ("B2 spell-nonuniq", r"(?:a|ab)*+",        "aba",   0, "CONTROL: *+ over the SAME body -- python AGREES here"),
+ ("B2 spell-nonuniq", r"(?>(?:a|ab)*)",     "aba",   0, "its atomic spelling"),
+ ("B2 spell-nonuniq", r"(?:a|ab)++c",       "abac",  0, "CONTROL: ++ over the same body -- python agrees"),
+ ("B2 spell-nonuniq", r"(?>(?:a|ab)+)c",    "abac",  0, "its atomic spelling"),
+ ("B2 spell-nonuniq", r"(?:ab|a){2}+",      "aba",   0, "CONTROL: branch order reversed -- python agrees"),
+ ("B2 spell-nonuniq", r"(?:a|ab){3}+",      "ababa", 0, "{n}+ at a higher count"),
  # --- the {,n} question (charter iv): what IS {,n} to each oracle? ------
  ("C bracecomma", r"a{,2}",      "aaa", 0, "PCRE2 10.43+ made {,n} a QUANTIFIER"),
  ("C bracecomma", r"a{,2}b",     "aab", 0, "quantifier reading matches, literal reading does not"),
@@ -237,6 +256,73 @@ def main():
         print("     note: %s" % d[6])
     if n_dis == 0:
         print("  (none -- which would be SUSPICIOUS given U9; check the table ran)")
+
+    spelling_equivalence()
+
+
+# R31 E6. RULE 1 rests on `X q+` == `(?>X q)`, and the first revision measured
+# it only on section B, whose every row has body `a` -- a body with a unique
+# iteration, where per-iteration and group-exit cutting CANNOT differ. That
+# measured the equivalence on the one family that could not refute it. This
+# checks it where it can: bodies whose iteration can end in two places.
+EQUIV_PAIRS = [
+    # (possessive spelling, atomic spelling, subjects)
+    ("a*+",              "(?>a*)",              ["", "a", "aaa", "aaab"]),
+    ("a++",              "(?>a+)",              ["a", "aaa", "aaab"]),
+    ("a?+",              "(?>a?)",              ["", "a", "aa"]),
+    ("a{1,2}+",          "(?>a{1,2})",          ["a", "aaa"]),
+    ("a{2}+",            "(?>a{2})",            ["aa", "aaa"]),
+    ("a{2,}+",           "(?>a{2,})",           ["aa", "aaaa"]),
+    ("a{,2}+",           "(?>a{,2})",           ["", "a", "aaa"]),
+    # the non-unique-iteration bodies -- E6's population
+    ("(?:a|ab)*+",       "(?>(?:a|ab)*)",       ["aba", "abab", "ab"]),
+    ("(?:a|ab)++",       "(?>(?:a|ab)+)",       ["aba", "abab"]),
+    ("(?:a|ab){2}+",     "(?>(?:a|ab){2})",     ["aba", "abab", "aab"]),
+    ("(?:a|ab){2,3}+",   "(?>(?:a|ab){2,3})",   ["ababa", "abab"]),
+    ("(?:a|ab){2,}+",    "(?>(?:a|ab){2,})",    ["ababa", "abab"]),
+    ("(?:a|ab){2}+c",    "(?>(?:a|ab){2})c",    ["abac", "abc", "aabc"]),
+    ("(?:ab|a){2}+",     "(?>(?:ab|a){2})",     ["aba", "abab"]),
+    ("(?:ab?){0,3}+b",   "(?>(?:ab?){0,3})b",   ["ab", "abab", "aab"]),
+    ("(?:a|bc){1,3}+d",  "(?>(?:a|bc){1,3})d",  ["abcd", "ad", "bcd"]),
+    ("(?:a*)*+",         "(?>(?:a*)*)",         ["", "aaa", "aaab"]),
+    ("(?:a?)*+b",        "(?>(?:a?)*)b",        ["b", "aab"]),
+]
+
+
+def spelling_equivalence():
+    print()
+    print("=" * 78)
+    print("SPELLING EQUIVALENCE (R31 E6): does libpcre2 agree that `X q+` is")
+    print("`(?>X q)`?  RULE 1 desugars one to the other, so a single disagreeing")
+    print("cell REFUTES the desugaring. The NON-UNIQUE-ITERATION rows are the")
+    print("ones that can fire; the unique-body rows are kept as controls and are")
+    print("labelled, because a suite of only those measures nothing.")
+    print()
+    bad = 0
+    nonuniq = 0
+    for poss, atom, subs in EQUIV_PAIRS:
+        uniqbody = "|" not in poss and "?" not in poss.split("+")[0][:-1]
+        for s in subs:
+            a = pc_run(poss, s, 0)
+            b = pc_run(atom, s, 0)
+            agree = fmt(a) == fmt(b)
+            if not uniqbody:
+                nonuniq += 1
+            if not agree:
+                bad += 1
+                print("  **DISAGREE** %-20s %-22s subj %-8s %s vs %s"
+                      % (poss, atom, repr(s), fmt(a), fmt(b)))
+    print("  pairs: %d   cells: %d   NON-UNIQUE-BODY cells: %d   disagreeing: %d"
+          % (len(EQUIV_PAIRS), sum(len(x[2]) for x in EQUIV_PAIRS), nonuniq, bad))
+    if bad:
+        print("  VERDICT: RULE 1's desugaring is REFUTED by libpcre2.")
+    elif nonuniq == 0:
+        print("  VERDICT: no non-unique-body cell ran -- this check proves NOTHING.")
+    else:
+        print("  VERDICT: libpcre2 agrees on every cell, including %d where the"
+              % nonuniq)
+        print("  body's iteration can end in two places. The desugaring holds on")
+        print("  the population that could have refuted it.")
 
 
 main()

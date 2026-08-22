@@ -64,9 +64,38 @@ typedef struct {
         run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \
         run->resume_depth++;                                             \
     } while (0)
+#ifndef CUT_REWINDS_TRAIL
 #define RX_CUT(slot_) do {                                   \
         run->resume_depth = (unsigned)slot_values[(slot_)];                      \
     } while (0)
+#else
+/* ---- THE SABOTAGE ARM (R31 C6) ------------------------------------------
+ * `vm_cut`'s comment says the cut "IT DOES NOT TOUCH THE TRAIL, and must
+ * not". This arm makes it touch the trail, in the most natural WRONG way: it
+ * undoes everything the frames it is discarding would have undone, by
+ * rewinding to the trail mark of the FIRST DISCARDED frame.
+ *
+ * It exists because C6 found that this probe's "non-vacuous" column measures
+ * the WRONG AXIS. Cut-vs-uncut and trail-rewind-vs-not are different
+ * questions: under this sabotage exactly the rows the probe labelled VACUOUS
+ * go red, and all nine it advertised as non-vacuous stay green. A suite whose
+ * only discrimination column is cut-vs-uncut cannot see CUT-INV at all.
+ *
+ * The driver builds BOTH arms every run and reports, per row, which axis that
+ * row discriminates — so the two columns are measured rather than asserted. */
+#define RX_CUT(slot_) do {                                   \
+        unsigned m_ = (unsigned)slot_values[(slot_)];                            \
+        if (m_ < run->resume_depth) {                                            \
+            unsigned tm_ = run->resume_stack[m_].trail_mark;                     \
+            while (run->trail_depth > tm_) {                                     \
+                run->trail_depth--;                                              \
+                slot_values[run->trail[run->trail_depth].slot_index] =           \
+                    run->trail[run->trail_depth].saved_value;                    \
+            }                                                                    \
+        }                                                                        \
+        run->resume_depth = m_;                                                  \
+    } while (0)
+#endif
 /* ------------------------------------------------------------------------ */
 
 static void rx_init(rx_run_state *run)
@@ -285,6 +314,12 @@ static const struct row ROWS[] = {
     { "(?>a|ab)c|abcd",      p5, "abcd",  0 },
     { "(?>a|ab)c|abcd",      p5, "xxabcd",0 },
     { "(?>a|ab)c|abcd",      p5, "abc",   0 },
+    /* R31 C6: rows added BECAUSE they discriminate the TRAIL invariant rather
+     * than the cut. Each writes a capture inside the atomic body on the path
+     * the cut commits to, so a cut that rewound the trail would lose it. */
+    { "(?>(a)|ab)",          p3, "a",     1 },
+    { "(?>(a)x|ab)",         p4, "axb",   1 },
+    { "((?>(a)|ab))c|(abc)", p2, "abcx",  3 },
 };
 
 int main(void)
