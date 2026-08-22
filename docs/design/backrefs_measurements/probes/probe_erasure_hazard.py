@@ -131,6 +131,21 @@ ASSERTION_CELLS = [
     (r"(a)\1",          r"(a)a",           "aa"),
     (r"(\w)\1",         r"(\w)\w",         "aa"),
     (r"^(a|b)\1$",      r"^(a|b)(a|b)$",   "aa"),
+    # R32 re-check E12 -- the SECOND structural reason, and it is NOT an
+    # assertion. An ATOMIC group or POSSESSIVE quantifier beneath the
+    # referenced A_CAP breaks the superset for the same reason a position
+    # predicate does: the erased COPY commits without regard to what
+    # follows it, so it cannot re-decide the way the original's captured
+    # text implicitly did. The last two rows are the greedy/lazy CONTROLS
+    # and must NOT be false negatives.
+    (r"^(a*+)b\1a$",    r"^(a*+)b(?:a*+)a$",      "abaa"),
+    (r"^(a*+)b\1a$",    r"^(a*+)b(?:a*+)a$",      "aabaaa"),
+    (r"(a*+)b\1a",      r"(a*+)b(?:a*+)a",        "abaa"),
+    (r"^((?>a*))b\1a$", r"^((?>a*))b(?:(?>a*))a$", "abaa"),
+    (r"^([ab]*+)c\1a$", r"^([ab]*+)c(?:[ab]*+)a$", "abcaba"),
+    (r"^(a++)b\1a$",    r"^(a++)b(?:a++)a$",      "aabaaa"),
+    (r"^(a*)b\1a$",     r"^(a*)b(?:a*)a$",        "abaa"),
+    (r"^(a*?)b\1a$",    r"^(a*?)b(?:a*?)a$",      "abaa"),
 ]
 
 
@@ -140,7 +155,9 @@ def positive_control():
     print("POSITIVE CONTROL (R32 E2 / C12) -- can FALSE-NEG be non-zero?")
     print("=" * 112)
     print("A zero column is only evidence if a non-zero one is reachable.")
-    print("These cells put a POSITION PREDICATE inside the referenced group.")
+    print("These cells put a POSITION PREDICATE inside the referenced group,")
+    print("or an ATOMIC/POSSESSIVE one (R32 re-check E12) -- two different")
+    print("structural reasons with the same consequence.")
     print("Such a group is not a pure LANGUAGE -- whether it matches depends")
     print("on WHERE it is tried -- so substituting its text is not an")
     print("over-approximation at all.")
@@ -167,8 +184,8 @@ def positive_control():
     print("FALSE NEGATIVES: %d of %d cells." % (fn, ran))
     print("Non-zero is the point: the FALSE-NEG column CAN move, so a zero")
     print("in the family table above is a measurement and not a tautology --")
-    print("and the superset property holds only for an ASSERTION-FREE")
-    print("referenced group.")
+    print("and the superset property holds only for a referenced group that")
+    print("is BOTH assertion-free AND atomic/possessive-free.")
     return fn, ran
 
 

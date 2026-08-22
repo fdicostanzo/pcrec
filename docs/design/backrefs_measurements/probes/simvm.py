@@ -119,8 +119,15 @@ def parse(p):
     assert i[0]==len(p), 'trailing ' + p[i[0]:]
     return r, ncap[0]
 
-def run(pat, subj, start=0, caseless=False, publish='close'):
-    assert publish in ('open', 'close')
+def run(pat, subj, start=0, caseless=False, publish=None):
+    # R32 re-check E14: NO DEFAULT. A reader replaying the refutation with
+    # run(pat, subj) must not silently get the CORRECTED model and conclude
+    # there was nothing to refute. The caller says which discipline it
+    # wants, every time.
+    assert publish in ('open', 'close'), (
+        "simvm.run(): pass publish='open' (the model backrefs_design.md "
+        "described at 4cd461f, which R32 E1 refuted) or publish='close' "
+        "(the correction). There is deliberately no default.")
     ast, ncap = parse(pat)
     slots = [UNSET]*(2*ncap+2)
     # The corrected model's extra state: ONE pending-start slot per group.

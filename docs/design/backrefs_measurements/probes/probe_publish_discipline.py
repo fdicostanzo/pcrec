@@ -25,11 +25,18 @@ libpcre2 10.46 is the third arm and the oracle of record (D26).
 THREE THINGS IT REPORTS, and the third is why this is not merely a
 correctness question:
 
-  1. DIVERGENCES per model against libpcre2, over the whole population.
-  2. The REVERSED-SPAN count -- cells where ref_s > ref_e, each of which
-     is `ref_e - ref_s` underflowing a size_t in EMITTED code and reading
-     out of bounds. A wrong answer is a bug; this one is a memory-safety
-     defect in a matcher someone else compiles.
+  1. THE REVERSED-SPAN COUNT, reported FIRST because it is the more
+     SENSITIVE column (R32 re-check observation). A cell where
+     ref_s > ref_e is `ref_e - ref_s` underflowing a size_t in EMITTED
+     code and reading out of bounds -- a memory-safety defect in a matcher
+     someone else compiles, not merely a wrong answer. And it detects the
+     broken discipline in strictly more cells: the critic's own extension
+     found a population where publish=open produced ZERO divergences and
+     243 REVERSED SPANS, because a reversed span makes the simulator's
+     compare FAIL and failing sometimes coincides with the right answer
+     while the real artifact would have read out of bounds. A sweep that
+     leads with divergences understates the defect.
+  2. DIVERGENCES per model against libpcre2, over the whole population.
   3. A POSITIVE CONTROL: the backref-FREE arm of the population must
      agree in BOTH models, because publication discipline is unobservable
      without a backreference (at match completion every group is closed).
@@ -137,8 +144,9 @@ def sweep(pats, subs, label):
                         examples[pub].append((pat, subj, want, got))
     print("  %-28s cells=%d" % (label, rows))
     for pub in ("open", "close"):
-        print("    publish=%-6s divergences=%-5d reversed-span cells=%d"
-              % (pub, diff[pub], oob[pub]))
+        # REVERSED SPANS FIRST -- the more sensitive column (see header).
+        print("    publish=%-6s REVERSED-SPAN=%-5d divergences=%d"
+              % (pub, oob[pub], diff[pub]))
         for e in examples[pub]:
             print("        %-22s %-7s libpcre2=%s model=%s"
                   % (e[0], repr(e[1]), e[2], e[3]))
@@ -171,14 +179,16 @@ def main():
 
     total = n1 + n2 + n3
     print()
-    print("SUMMARY")
-    print("  cells                              : %d" % total)
-    print("  publish=open   divergences         : %d  (reversed-span: %d)"
-          % (d1["open"] + d2["open"] + d3["open"],
-             o1["open"] + o2["open"] + o3["open"]))
-    print("  publish=close  divergences         : %d  (reversed-span: %d)"
-          % (d1["close"] + d2["close"] + d3["close"],
-             o1["close"] + o2["close"] + o3["close"]))
+    print("SUMMARY  (REVERSED-SPAN is the primary column -- see the header)")
+    print("  cells                                    : %d" % total)
+    print("  publish=open   REVERSED-SPAN cells        : %d"
+          % (o1["open"] + o2["open"] + o3["open"]))
+    print("  publish=open   divergences vs libpcre2    : %d"
+          % (d1["open"] + d2["open"] + d3["open"]))
+    print("  publish=close  REVERSED-SPAN cells        : %d"
+          % (o1["close"] + o2["close"] + o3["close"]))
+    print("  publish=close  divergences vs libpcre2    : %d"
+          % (d1["close"] + d2["close"] + d3["close"]))
     print("  control-arm divergences (must be 0): open=%d close=%d"
           % (d3["open"], d3["close"]))
     if total == 0:
