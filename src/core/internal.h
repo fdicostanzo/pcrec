@@ -737,9 +737,15 @@ typedef struct NamedGroup {
  * Arena-owned and threaded like `NamedGroup`; `name` is an arena copy. */
 typedef struct PendingRef {
     Ast                *node;    /* the A_BREF whose `refs` this fills in */
-    int                 number;  /* > 0: an absolute group number.
-                                    0: resolve `name` instead. */
-    const char         *name;    /* by-name references only */
+    /* An absolute group number, read only when `name` is NULL. It may be ZERO
+     * OR NEGATIVE: `\g{-1}` at a count of zero computes 0, and whether a
+     * number names a group is the ONE question this list defers. Splitting
+     * that check between the port and the resolver would be the second home
+     * §5.3 exists to prevent — and it was a real defect, not a hypothetical:
+     * it made the `\g` row's own `syntax` refuse at the port, so D65's
+     * built-status column called a construct this module BUILDS `unbuilt`. */
+    int                 number;
+    const char         *name;    /* NULL selects `number`; else resolve this */
     size_t              at;      /* pattern offset the diagnostic points at */
     const char         *what;    /* the spelling, for that diagnostic */
     struct PendingRef  *next;

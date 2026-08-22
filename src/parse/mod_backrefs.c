@@ -74,10 +74,22 @@ static long br_decimal(const char *p, size_t from, size_t to)
 
 /* ---- the node, and the pending record that outlives it ------------------ */
 
-/* Build the `A_BREF` and queue its resolution. `number > 0` is an absolute
- * group number already computed (numeric and relative spellings both arrive
- * here that way — relative resolution is a COMPILE-TIME question against the
- * count at the escape, §5.1 rule 5); `number == 0` means resolve `name`.
+/* Build the `A_BREF` and queue its resolution. `name == NULL` means resolve
+ * `number`, which is an absolute group number already computed — the numeric
+ * and relative spellings both arrive here that way, because relative
+ * resolution is a COMPILE-TIME question against the count AT THE ESCAPE
+ * (§5.1 rule 5, measured in both directions: `(a)\g{-1}` is legal and
+ * `(a)\g{-2}` is error 115, `\g{+1}(a)` is legal and `\g{+2}(a)` is not).
+ *
+ * `number` MAY BE ZERO OR NEGATIVE HERE, and that is deliberate rather than
+ * sloppy: whether a computed number NAMES A GROUP is §5.3's one deferred
+ * question, and answering it in two places — here for `\g{-1}` at a count of
+ * zero, at end of parse for `\9` at a count of three — would be exactly the
+ * second home §5.3 exists to prevent. It also showed up as a real defect: with
+ * the check split, the `\g` registry row's own `syntax` (`\g{-1}`, standalone)
+ * refused AT THE PORT, so D65's built-status derivation classified a construct
+ * this module BUILDS as `unbuilt` and the generated compliance index would
+ * have said so.
  *
  * `caseless` is read HERE, from the scoped state in force AT THE REFERENCE —
  * D62's rule, and MEASURED to be the right position: `^(a)(?i:\1)$` matches
@@ -92,7 +104,7 @@ static Ast *br_node(Ctx *cx, const RegRow *rw, size_t at, int number,
     PendingRef *pr = arena_alloc(&cx->arena, sizeof *pr);
     pr->node   = a;
     pr->number = number;
-    pr->name   = name;
+    pr->name   = name;   /* NULL: resolve `number` */
     pr->at     = at;
     pr->what   = what;
     pr->next   = cx->pending_refs;
@@ -216,17 +228,23 @@ octal: {
  * and larger set for a different reason. */
 static bool br_brace_space(int c) { return c == ' ' || c == '\t'; }
 
-/* Resolve a RELATIVE reference against the count at this escape (§5.1 rule 5:
- * relative resolution happens at COMPILE time, in both directions, and a
- * relative value of zero is an error of its own). Returns 0 on a value this
- * pattern cannot address, so the caller raises the error-115-class refusal at
- * the same place an absolute out-of-range number does. */
-static int br_relative(Ctx *cx, int sign, long v)
+/* THE RELATIVE ARITHMETIC, and only the arithmetic (§5.1 rule 5): `-N` counts
+ * back from the most recently OPENED group, `+N` forward from the next one.
+ * Both are computed against `Ctx.ncap` AT THIS ESCAPE, which is what makes
+ * `\g{+1}(a)` legal and `\g{+2}(a)` not.
+ *
+ * WHETHER THE RESULT NAMES A GROUP IS NOT ASKED HERE. A number out of range —
+ * including zero and negative, which `\g{-1}` at a count of zero produces — is
+ * carried to §5.3's single resolution site like any other. The saturation is
+ * for the arithmetic's own sake, so a pathological `+999999999` cannot wrap
+ * into a small positive value that happens to name a real group. */
+static long br_relative(Ctx *cx, int sign, long v)
 {
     long base = (long)cx->ncap;
     long num  = sign < 0 ? base - v + 1 : base + v;
-    if (num < 1 || num > BR_NUMBER_MAX) return 0;
-    return (int)num;
+    if (num > BR_NUMBER_MAX) num = BR_NUMBER_MAX;
+    if (num < -BR_NUMBER_MAX) num = -BR_NUMBER_MAX;
+    return num;
 }
 
 /* The name branch of `\g{...}`, `\k<...>` and `(?P=...)`. `named-groups` is
@@ -304,23 +322,21 @@ ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
                     REFUSE(at, "\\g{} takes a number, a relative offset, or a "
                                "subpattern name, not a mixture");
             long v = br_decimal(p, d, e);
-            int num;
+            long num;
             if (sign == 0) {
-                if (v == 0)
-                    REFUSE(at, "there is no capture group 0 to reference");
-                num = (int)v;
+                num = v;
             } else {
+                /* A relative offset of ZERO is a grammar error about the
+                 * OFFSET rather than a question about which group it names
+                 * (PCRE2 error 126, a different number from 115's), so it is
+                 * the one refusal this branch still makes itself. */
                 if (v == 0)
                     REFUSE(at, "a relative reference of zero is not allowed");
                 num = br_relative(cx, sign, v);
-                if (num == 0)
-                    REFUSE(at, "relative backreference \\g{%c%ld} does not "
-                               "name a capture group in this pattern",
-                           sign < 0 ? '-' : '+', v);
             }
             char what[32];
             snprintf(what, sizeof what, "\\g{%.*s}", (int)(e - b), p + b);
-            return br_result_node(br_node(cx, rw, at, num, NULL,
+            return br_result_node(br_node(cx, rw, at, (int)num, NULL,
                                           br_strndup(cx, what, strlen(what))),
                                   at, close + 1, want);
         }
@@ -347,23 +363,17 @@ ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
             REFUSE(at, "\\g must be followed by a number, a relative offset, "
                        "or a braced name or number");
         long v = br_decimal(p, ds, d);
-        int num;
+        long num;
         if (sign == 0) {
-            if (v == 0)
-                REFUSE(at, "there is no capture group 0 to reference");
-            num = (int)v;
+            num = v;
         } else {
             if (v == 0)
                 REFUSE(at, "a relative reference of zero is not allowed");
             num = br_relative(cx, sign, v);
-            if (num == 0)
-                REFUSE(at, "relative backreference \\g%c%ld does not name a "
-                           "capture group in this pattern",
-                       sign < 0 ? '-' : '+', v);
         }
         char what[32];
         snprintf(what, sizeof what, "\\g%.*s", (int)(d - from), p + from);
-        return br_result_node(br_node(cx, rw, at, num, NULL,
+        return br_result_node(br_node(cx, rw, at, (int)num, NULL,
                                       br_strndup(cx, what, strlen(what))),
                               at, d, want);
     }
@@ -530,7 +540,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
      * reference should name the first one a reader would reach. */
     const PendingRef *worst = NULL;
     for (PendingRef *pr = cx->pending_refs; pr; pr = pr->next) {
-        if (pr->number > 0) {
+        if (!pr->name) {
             if (pr->number >= 1 && (unsigned long)pr->number <= cx->ncap) {
                 int *v = arena_alloc(&cx->arena, sizeof *v);
                 v[0] = pr->number;
@@ -550,7 +560,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
         if (!worst || pr->at < worst->at) worst = pr;
     }
     if (worst) {
-        if (worst->number > 0)
+        if (!worst->name)
             ctx_fail(cx, worst->at,
                      "%s refers to capture group %d, but this pattern has %u",
                      worst->what, worst->number, cx->ncap);

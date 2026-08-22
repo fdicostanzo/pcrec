@@ -187,6 +187,13 @@ static const Wrapper WRAPPERS[] = {
  * this table is for. */
 {RK_GROUP, 'P', "=", "(?<n>a)(?P=n)", "a python-style backreference needs the name declared"},
 {RK_GROUP, 'P', ">", "(?<n>a)(?P>n)", "a python-style subroutine call needs the name declared"},
+/* [M6.5.2] the two rows that split the `\g` doorway's SECOND construct out.
+ * Same shape and same reason as the `(?P=` / `(?P>` pair above: the row's
+ * `syntax` has to put the construct LEFTMOST for pcrec, so the group
+ * declaration libpcre2 demands lives here. Note these wrap a SUBROUTINE CALL,
+ * not a backreference — which is the whole point of the two rows existing. */
+{RK_ESC, 'g', "<",  "(a)\\g<1>", "a subroutine call by number needs the group"},
+{RK_ESC, 'g', "'",  "(a)\\g'1'", "a subroutine call by number needs the group"},
 };
 
 /* Substitute `syntax` out of `probe` for an escape libpcre2 always rejects, and
