@@ -34,7 +34,10 @@ nothing checked that, and the gap was not hypothetical — see below.
   into the normal tables. Since MOD-0.5c there is a FOURTH class: 15 GATED
   pins (`reject_gated`, its own counter in the ratchet), run with
   `--features modifiers` — the per-letter attribution diagnostics for `m`
-  (-> 'assertions') and `J` (-> 'named-groups') and the module's own
+  (-> 'assertions') and `J` (-> **'backrefs' since [M6.5.2], 2026-08-22**; it
+  read 'named-groups' from [M6.3] until that landing, which is the third of
+  four wordings that letter has carried — see the `(?J)` annotation in
+  docs/pcre2_compliance.md for why each earlier one was wrong) and the module's own
   malformed/truncated-run wording, none of which exist in the default
   config and none of which a `perr` block can assert. **R20/SPEC-1 took this
   class from 4 to 15**: a bare option run is NOT a repeatable item, and
@@ -48,6 +51,15 @@ nothing checked that, and the gap was not hypothetical — see below.
   positions and five accepted bare spellings. Ends with a MANIFEST
   naming the handful of rows whose deletion an exact count would not catch,
   plus the exact counts themselves. Part of `make test`; env: PCREC, KEEP=1.
+
+  **THE FIGURES IN THIS PARAGRAPH ARE THE ONES ITS OWN WAVE MEASURED and have
+  been overtaken repeatedly — re-run the script rather than reading them.**
+  Current, measured 2026-08-22 at [M6.5.2]: **282 hand-written rejections, 105
+  reached by iterating `--list-syntax`, 99 accept-controls, 73 gated pins, 0
+  known-wrong, 560 checks passing.** The exact counts live in the script's own
+  summary block, which is what actually fails; this file's copies are a
+  reader's orientation and this sentence is the standing warning that they are
+  a copy.
 
   **[M6.2] wave A added a SECOND KIND of gated pin, and the pairing is the
   point.** Until now a `reject_gated` row existed because the diagnostic does

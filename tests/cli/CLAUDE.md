@@ -82,7 +82,12 @@ Part of `make test` since M2.
   the CLAUSE SCOPE (`(?J)`/`(?m)` under `--features modifiers` agree and exit
   0, where they dissented on attribution about a tree tests/reject:664 pins as
   correct — with the per-LETTER module still SHOWN, which is the pin that stops
-  the fix being "make the two sides agree by dropping the interesting one");
+  the fix being "make the two sides agree by dropping the interesting one";
+  **`(?J)`'s per-letter module became `backrefs` at [M6.5.2], 2026-08-22 — the
+  FOURTH wording that letter has carried, and case11's assertion moved with
+  it. The pin's POINT is unchanged and is why it survived four moves: the
+  displayed answer must keep naming the letter's own module rather than the
+  dispatching row's**);
   the NULL CONTRACT (`(?` at end of pattern elects `none` and the catch-all is
   tagged `listed` rather than `fallback`; the `[[:alpha]` delimiter-scan
   decline elects `none` too); `rows 0` (the branch the design note called
