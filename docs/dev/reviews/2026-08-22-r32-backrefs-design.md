@@ -222,3 +222,34 @@ decline).
 
 Revision 2 dispatched to lane/brdesign (r32eng's re-check still running on
 b3d0b32; §3.2/§5/§7.2 held).
+
+## Focused re-check, r32eng on b3d0b32 — E1-E9, E11 CLOSED; E10 partial; three NEW
+
+Instrument integrity verified by diff: the lane's simvm.py differs from
+the critic's only by the docstring, the `publish` parameter, the pending
+array and the forked `cap` arm — the bref arm (incl. the reversed-span
+detector) byte-identical; NOT softened. E1 evidence beyond the lane's
+5,808: the critic's own E1 corpus 1,452; P-1's named gaps attacked with
+instruments — nested/mutual refs 7,260, group-in-group 1,452, |s|<=5
+441, deep re-entry 484, an ATOMIC/POSSESSIVE extension of the simulator
+2,662 + 819, and \K-in-group cells against libpcre2 ((a\Kb)\1 on "abab" =
+(1,4) g1=(0,2); ^(?:(a\Kb))+\1$ on "ababab" = (3,6) g1=(2,4) — the
+reference sees the LAST COMPLETED iteration, publish-at-close's answer) —
+**16,506 cells: close 0/0 on every one; open 228 divergences / 331
+reversed spans**. SCOPING held: a per-group variant over 16 MIXED
+patterns, 1,936 cells, 0 differences in any unreferenced group's span.
+E3 re-measured boundary-exact (\8 e115@7/ok@8 … \812 e115@811/ok@812;
+\100 with 100 groups AFTER is octal '@', BEFORE a backref). E4-E9, E11
+closed on the text (E5's second-why ruling "answers my identity-gate
+objection directly"; E9 "correct today by accident, and the design says
+so"). Observation carried: in GAP1 publish=open gave 0 divergences but
+243 REVERSED SPANS — the memory-safety column is the more sensitive
+detector and should be primary.
+
+| ID | Sev | Claim | Evidence | Disposition |
+|---|---|---|---|---|
+| E12 | MED-HIGH | §7.2/§7.4 "superset IFF assertion-free" | an ATOMIC/POSSESSIVE sub-pattern beneath the referenced A_CAP breaks the superset for the same structural reason: `^(a*+)b\1a$` on "abaa" (0,4), erasure None; "aabaaa"; unanchored; `^((?>a*))b\1a$`; `^([ab]*+)c\1a$` — 6/8 assertion-free cells FALSE NEGATIVE (lazy/greedy controls hold). The first draft's P-7 named this gap; the revision dropped it. [M6.4] lands first | REVISION 2: gate = assertion-free AND atomic/possessive-free; positive-control cells; P-7 |
+| E13 | MED | §3.2.4 "the resolution pass already computes the referenced set" | for a BY-NAME reference the marked set must be EVERY run member — §8.3 resolves at MATCH time over every member's pair. Measured: `(?J)^(?:(?<a>q))?(?:(?<a>a\|b\k<a>))+$` on "aba" = (0,3), g1 UNSET, g2 (1,3) — E1's shape through a non-first member | REVISION 2: one sentence (union of every A_BREF's `refs`); a sabotage row beside S-BR15; a re-entry cell in dupnames.rxt |
+| E14 | LOW | simvm.py `publish` default 'close' | a replay with run(pat, subj) silently gets the corrected model | REVISION 2: 'open' or no default |
+| E10 res. | LOW | §3.1(a):285 "compile error THERE" unqualified | §16 claims the correction applied | REVISION 2 |
+| note | LOW | §3.2.3's emitted shape shows no vm_work call | §3.8 recommends the charge | REVISION 2 |
