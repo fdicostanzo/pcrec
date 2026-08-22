@@ -721,25 +721,28 @@ struct Ctx {
      * offset, which the AST has no room for (no node carries a source
      * position). It is read ONLY when the walk already found a node, so it
      * cannot be stale in the direction that matters. */
-    size_t               first_kreset_pos;
-    /* [M6.4.2] Pattern offset of the FIRST atomic construct — the `(` of a
-     * `(?>...)`, or the `+` of a possessive suffix — or SIZE_MAX if none.
+    /* [M6.4.2 / SR-8, D67] Pattern offset of the FIRST construct whose
+     * registry row EXCLUDES the DFA, or SIZE_MAX if none.
      *
-     * `first_kreset_pos` above is the precedent, field for field, INCLUDING
-     * why it is not the verdict's source. SR-8's generic analysis answers
-     * "does this POST-DISCHARGE tree carry a DFA-excluding node" by WALKING,
-     * because that is the honest question and because the free discharge
-     * deletes nodes a parse-time counter would keep counting. This field only
-     * supplies the `engine_why` stamp's OFFSET, which the AST has no room for
-     * (no node carries a source position, and `Ast.reg` carries the row and
-     * therefore the TEXT but not the place). First wins, so the diagnostic
-     * names the first atomic construct rather than the last one parsed.
+     * IT REPLACES `first_kreset_pos` AND `first_atomic_pos`, which is the
+     * retirement D67 asks for: with the consultation generic, a per-construct
+     * position field would be a per-construct home for a fact the ONE stamp
+     * call already has in hand. `pcrec_ast_stamp` is that call and the only
+     * writer, so the offset and the `Ast.reg` it belongs to are recorded in
+     * the same statement.
      *
-     * It is written by BOTH producers — src/parse/mod_atomic_groups.c for
-     * `(?>`, and src/parse/parse.c's suffix desugaring for `*+ ++ ?+ {n,m}+`,
-     * which has no port to route through (the suffix is a quantifier suffix,
-     * not an atom: registry.c's header records the exemption). */
-    size_t               first_atomic_pos;
+     * IT IS THE DIAGNOSTIC'S SOURCE AND NOT THE VERDICT'S, exactly as
+     * `first_kreset_pos` was. `forces_registry` (src/opt/select_engine.c)
+     * answers "does this POST-DISCHARGE tree carry a DFA-excluding node" by
+     * WALKING, because that is the honest question and because the free
+     * discharge DELETES nodes a parse-time counter would keep counting. This
+     * field only supplies the `engine_why` stamp's offset, which no AST node
+     * carries. It is read ONLY on the path where the walk already found a
+     * node, so it cannot be stale in the direction that matters; on a tree
+     * where a rewrite deleted SOME but not all of them, the offset and the
+     * `why` TEXT (which comes from the surviving node's own row) can name
+     * different occurrences — D26 tier-3 wording, not a verdict. */
+    size_t               first_vmonly_pos;
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at
@@ -1404,6 +1407,22 @@ ExtResult pcrec_clsport_octal(Ctx *cx, const RegRow *rw, ExtWant want,
  * tell them apart — see cls_casefold's comment). The ONE constructor every
  * set-producing port uses, so the fold rule cannot be forgotten per site. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k);   /* bare-kind ctor for module TUs */
+/* [M6.4.2 / SR-8, D67] THE STAMP, and the ONE call that applies it.
+ *
+ * A module's producer calls this on every node it creates, with the row it was
+ * dispatched on and the pattern offset it blames. Two things happen in one
+ * statement, which is why it is a function and not an assignment: `Ast.reg` is
+ * set (so `pcrec_ast_engines` can consult the row's `engines` mask, and so
+ * `select_engine.c` can name the construct), and — for a row that EXCLUDES the
+ * DFA — `Ctx.first_vmonly_pos` records the offset, first-wins. Doing both here
+ * is what stops the offset and the row from being recorded at different
+ * moments and drifting.
+ *
+ * A PRODUCER THAT FORGETS TO CALL IT yields nodes claiming BOTH engines, which
+ * is the UNSOUND direction on purpose (D67 contract note 2). What catches that
+ * is `tests/registry/registry_check.c`'s generic tripwire — every VM_ONLY row
+ * with a producer must refuse `--engine=dfa` BY NAME — not a lucky default. */
+void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at);
 /* [M6.2 wave D] The BARE ANCHOR rule, one home, four readers (parse.c's
  * quantifier rejection and group wrap, mod_modifiers.c's `(?i:...)` port,
  * mod_named_groups.c's declaring port). See src/parse/parse.c for the

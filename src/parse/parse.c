@@ -45,6 +45,19 @@ static Ast *node(Ctx *cx, AKind k)
  * body). Kind only — payload fields are the caller's. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 
+/* [M6.4.2 / SR-8, D67] THE STAMP — see its declaration in core/internal.h for
+ * the contract. It lives here rather than in a module TU because every module
+ * calls it and none of them owns it. */
+void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at)
+{
+    a->reg = rw;
+    /* FIRST-WINS, and only for a row that actually excludes the DFA: the
+     * `engine_why` stamp names the FIRST such construct, and a row that lowers
+     * to both engines has no `why` to contribute. */
+    if (rw && !(rw->engines & ENGM_DFA) && cx->first_vmonly_pos == (size_t)-1)
+        cx->first_vmonly_pos = at;
+}
+
 /* ---- the BARE ANCHOR rule, in ONE place ([M6.2] wave D) ------------------
  *
  * PCRE2 refuses a quantified bare zero-width assertion (`\b*` is error 109)
@@ -1028,12 +1041,11 @@ have:
                 ctx_fail(cx, cx->pos,
                          "possessive quantifier requires module '%s'",
                          rw->module);
-            if (cx->first_atomic_pos == (size_t)-1)
-                cx->first_atomic_pos = cx->pos;
+            size_t plus = cx->pos;
             cx->pos++;                       /* the `+` */
             Ast *at_ = node(cx, A_ATOMIC);
             at_->l = r;
-            at_->reg = rw;
+            pcrec_ast_stamp(cx, at_, rw, plus);
             /* `a` becomes the ATOMIC wrapper, so a second quantifier after it
              * re-enters this loop's `quantified` guard and `a*++` refuses with
              * "multiple quantifiers on the same item" — still a clean tier-2

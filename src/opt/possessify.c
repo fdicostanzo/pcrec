@@ -763,8 +763,46 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         uint8_t none[32];
         bs_clear(none);
         if (body->k == A_REP) {
-            if (P->fn && pss_verdict(P, body, follow, may_end, encl))
-                P->fn(P->user, body);
+            /* THE SURVEY REPORTS THE `A_ATOMIC`, NOT ITS CHILD, and that is a
+             * MEASURED requirement rather than a naming choice. The discharge's
+             * question is about THIS GROUP — "would deleting it change the
+             * answer" — and its context is THIS group's follow. Reporting the
+             * `A_REP` made the answer look like a property of the quantifier,
+             * and NESTED atomics then shared it: `(?>a*+)a` parses to
+             * A_ATOMIC(A_ATOMIC(A_REP(a))), the inner group's verdict (follow
+             * EMPTY, positive) discharged the inner correctly, and the OUTER
+             * then found its own — now-spliced — `A_REP` child already in the
+             * set and discharged itself too, on a verdict computed for a
+             * different follow. Measured: `a*a` on "aaa" answers (0,3) where
+             * `(?>a*+)a` is NOMATCH in libpcre2. Keyed on the group, the outer
+             * is never reported (its child was not an `A_REP` when the survey
+             * ran) and simply keeps its cut, which is always safe.
+             *
+             * GREEDY ONLY, and this is CARVE-OUT TWO one consumer over. The
+             * discharge's claim is that the cut fires where §2.2 says the loop
+             * lands. For a GREEDY body the loop's FIRST exit IS the maximal
+             * exit, so the two coincide. For a LAZY one the first exit is the
+             * MINIMAL exit, while §2.2's positive verdict rests on the
+             * PREFERENCE COLLAPSE (emit_vm.c:2053-2062: under disjointness a
+             * lazy loop is FORCED to the maximal exit, because at any
+             * non-maximal exit the FOLLOW cannot begin) — and the cut fires
+             * BEFORE the follow is ever consulted. Measured: `(?>a*?)b` on
+             * "aaab" is (3,4) in libpcre2 and `a*?b` is (0,4), so deleting the
+             * group changes the answer on a positive verdict.
+             *
+             * §5.3's measurement could not have found this and says so once
+             * read carefully: `probe_free_discharge.py` drives the possessive
+             * SUFFIX spellings, and there is no lazy one — `a*?+` is an ERROR
+             * in both oracles — so its 532 positive-verdict patterns are all
+             * greedy. The `(?>X q?)` group spelling is outside its population.
+             * §14 item 9's pattern, a third time: another §2.2 consequence an
+             * emitted shape depended on. The EXACT-COUNT sub-case (`(?>a{2}?)`,
+             * where there is one exit and the preferences coincide) would be
+             * safe and is declined anyway — declining is always safe, and a
+             * second condition here would need its own evidence. */
+            if (P->fn && body->greedy &&
+                pss_verdict(P, body, follow, may_end, encl))
+                P->fn(P->user, a);
             pss_rep(P, body, none, true, encl, false);
         } else {
             pss_walk(P, body, none, true, encl);

@@ -1596,256 +1596,270 @@ static void check_class_ports(void)
            "predicted for slice 3");
 }
 
-/* [M4.7a] SR-8's TRIPWIRE (docs/dev/plan.md's [SR-8]/[M4.7a] rows). The
- * lowering-time engines-column CONSULTATION the row describes is
- * deliberately NOT built ahead of a producer — zero producers means zero
- * customers (D18/OS-0/D53's standing discipline against unpopulated
- * machinery; a manager redirect on this row, 2026-08-17, superseding an
- * earlier reading that built the consultation early). What this check
- * guards instead is the FACT that makes that omission SAFE today: every
- * RS_MODULE row whose `engines` mask excludes ENGM_DFA (VM_ONLY, in
- * registry.c's own macro vocabulary) has NO wired ATOM-position producer.
+/* ---- [M6.4.2 / D67] SR-8's TRIPWIRE, RETIRED INTO THE THING IT DEMANDED ----
  *
- * Atom position is the one that matters — a CLASS-position producer (the
- * `\1`..`\7` octal BASE ports, MOD-0.3d/FIX-3's cport.base machinery) can
- * never carry a VM_ONLY construct into the AST: a backreference is
- * impossible inside a class in the first place (FIX-3/K13), so those
- * rows' cport is a base-grammar fact, not a module producer, and is
- * correctly excluded here — only `aport` feeds a node select_engine.c
- * would ever see.
+ * `check_engine_capability_tripwire` stood here from [M4.7a] to [M6.4.2]. Its
+ * demand was that every RS_MODULE row whose `engines` mask excludes ENGM_DFA
+ * has NO wired atom-position producer — the fact that made SR-8's absence safe
+ * — and its failure message named src/opt/select_engine.c as the thing to build
+ * BEFORE the first producer landed. It fired twice. [M6.2] wave E answered `\K`
+ * with a NAMED exception that paid for itself behaviourally, and wrote down
+ * what to do the next time, in advance:
  *
- * So this check turns the SILENCE that lets src/opt/select_engine.c
- * refuse nothing on this axis today (its own header: "empty by
- * population") from a fact stated in three files' prose into something
- * that FAILS the moment it stops being true. The day a module wires the
- * first VM_ONLY producer, that row's `aport.kind` moves off PORT_NONE and
- * this check fails — and its failure message is written to be the thing a
- * future author reads FIRST, naming the exact next step rather than
- * merely reporting a mismatch. */
-static void check_engine_capability_tripwire(void)
+ *     "If a SECOND construct arrives here, do not add a second exception: two
+ *      is when the generic consultation has earned its axis and SR-8 is the
+ *      right build."
+ *
+ * `(?>` is the second. SR-8 IS BUILT (D67, src/opt/select_engine.c's
+ * `forces_registry`), so the tripwire's own premise is DISCHARGED and it goes —
+ * a deletion, not an addition, which is what D67 says a retirement looks like.
+ * What replaces it is the tripwire's demand turned the right way round: not
+ * "no VM_ONLY row has a producer" but "EVERY VM_ONLY row that HAS one refuses
+ * `--engine=dfa` BY NAME".
+ *
+ * THREE LAYERS, and the split is `check_required_rows`' own argument:
+ *
+ *   ITERATION guarantees COVERAGE. The population is walked from the table, so
+ *   a module that wires the next VM_ONLY producer cannot escape the check — and
+ *   a producer with no witness below is a NAMED FAILURE, which is what makes
+ *   this generic where a hand list alone would not be.
+ *
+ *   A HAND-WRITTEN WITNESS guarantees CORRECTNESS. A control must not share a
+ *   source with the thing it controls, and the row's own `syntax` cannot serve
+ *   here for a reason that is the module's whole point: `a*+` COMPILES under
+ *   `--engine=dfa`, correctly, because the free discharge deletes a cut it
+ *   proves is a no-op. So each producer-bearing row names a pattern whose cut
+ *   genuinely BITES, written by a human from the construct's semantics.
+ *
+ *   BOTH DIRECTIONS, wave E's rule kept verbatim: the witness must REFUSE under
+ *   `--engine=dfa` naming the construct, AND COMPILE under the default engine.
+ *   A check that asserted only the refusal would go green on a compiler that
+ *   had simply stopped accepting the construct at all.
+ *
+ * AND THE PER-PATTERN SPLIT IS ASSERTED TOO, in the other direction: `a*+b`
+ * must COMPILE under `--engine=dfa`. That is what the `engines` column could
+ * never say by itself — VM_ONLY is too strong for a possessive whose cut is
+ * provably dead and ANY_ENGINE is too weak for one whose cut bites — and it is
+ * the first evidence that column has had in BOTH directions. Sabotage row S91
+ * (the discharge fires unconditionally) and S96 (the producer does not stamp)
+ * are the two failing directions.
+ *
+ * THE MASK IS BORROWED AND GIVEN BACK, and the entry state is ASSERTED rather
+ * than saved blind — the retired check's own rule, kept: every other check in
+ * this file believes it runs at the default EMPTY set, which is what makes
+ * their "requires module 'X'" expectations mean anything. */
+static bool eng_refuses_by_name(const char *feats, const char *pat,
+                                const char *name, char *msg, size_t msgsz)
 {
-    int qualifying = 0, wired = 0, kreset_exception = 0;
+    pcrec_options opt;
+    pcrec_output  out;
+    pcrec_error   perr;
+    char err[256];
+
+    if (pcrec_enabled_set_spec(feats, err, sizeof err) != 0) {
+        snprintf(msg, msgsz, "could not enable '%s': %s", feats, err);
+        return false;
+    }
+    pcrec_default_options(&opt);
+    opt.engine = PCREC_ENGINE_DFA;
+    memset(&out, 0, sizeof out);
+    memset(&perr, 0, sizeof perr);
+    bool okrefuse;
+    if (pcrec_compile(pat, &opt, &out, &perr) == 0) {
+        pcrec_output_free(&out);
+        snprintf(msg, msgsz, "'%s' COMPILED under --engine=dfa", pat);
+        okrefuse = false;
+    } else if (!strstr(perr.msg, name) || !strstr(perr.msg, "--engine=dfa")) {
+        snprintf(msg, msgsz,
+                 "'%s' was refused under --engine=dfa but not BY ITS OWN NAME "
+                 "('%s'): %.160s", pat, name, perr.msg);
+        okrefuse = false;
+    } else {
+        /* The other direction: it must COMPILE on the default engine. */
+        pcrec_default_options(&opt);
+        memset(&out, 0, sizeof out);
+        memset(&perr, 0, sizeof perr);
+        if (pcrec_compile(pat, &opt, &out, &perr) != 0) {
+            snprintf(msg, msgsz,
+                     "'%s' does not compile on the DEFAULT engine (\"%.160s\"), "
+                     "so the refusal proves nothing", pat, perr.msg);
+            okrefuse = false;
+        } else {
+            pcrec_output_free(&out);
+            okrefuse = true;
+        }
+    }
+    pcrec_enabled_set_spec("none", err, sizeof err);
+    return okrefuse;
+}
+
+static void check_engine_capability(void)
+{
+    /* THE HAND-WRITTEN WITNESSES. One per (kind, sel) with a wired producer.
+     * `bites` is a pattern whose cut/write genuinely changes the language, so
+     * no rewrite can discharge it; `name` is the text the refusal must contain,
+     * which is `select_engine.c`'s `why` for that row. */
+    static const struct {
+        RegKind     kind;
+        int         sel;
+        const char *feats;
+        const char *bites;
+        const char *name;
+    } WITNESS[] = {
+        /* `\K` moves the REPORTED START, which a subset state (a set, not a
+         * path) cannot carry. Nothing discharges it. */
+        { RK_ESC,         'K', "assertions",    "a\\Kb",           "\\K" },
+        /* `(?>a|ab)c` on "abc" is (2,3) and `(?:a|ab)c` is (0,3): the cut
+         * changes the LANGUAGE, so the discharge must decline it. */
+        { RK_GROUP,       '>', "atomic-groups", "(?>a|ab)c",       "(?>...)" },
+        /* The four possessive spellings, each over a body whose iteration can
+         * end in two places — §2.2 refuses those, so the discharge does too.
+         * `(?:a|ab)*+c` on "abc" is NOMATCH where `(?:a|ab)*c` is (0,3). */
+        { RK_QUANTSUFFIX, '*', "atomic-groups", "(?:a|ab)*+c",     "possessive quantifier" },
+        { RK_QUANTSUFFIX, '+', "atomic-groups", "(?:a|ab)++c",     "possessive quantifier" },
+        { RK_QUANTSUFFIX, '?', "atomic-groups", "(?:a|ab)?+c",     "possessive quantifier" },
+        { RK_QUANTSUFFIX, '{', "atomic-groups", "(?:a|ab){1,3}+c", "possessive quantifier" },
+    };
+
+    int qualifying = 0, wired = 0, checked = 0, bads = 0;
+    char msg[320];
+
+    if (pcrec_enabled_mask() != 0) {
+        bad("engine capability: the enabled mask was already non-empty (0x%x) "
+            "before this check, so this file's other checks did not run at the "
+            "default set they assume and it cannot safely restore it",
+            pcrec_enabled_mask());
+        return;
+    }
 
     for (int k = 0; k < RK_COUNT; k++) {
         size_t n;
         const RegRow *rows = pcrec_registry((RegKind)k, &n);
-        for (size_t i = 0; rows && i < n; i++) {
+        if (!rows) continue;
+        for (size_t i = 0; i < n; i++) {
             const RegRow *r = &rows[i];
-            if (r->status != RS_MODULE) continue;
-            if (r->engines & ENGM_DFA) continue;   /* DFA-capable: not this row */
+            if (r->status != RS_MODULE || (r->engines & ENGM_DFA)) continue;
             qualifying++;
-            if (r->aport.kind != PORT_NONE) {
-                wired++;
-                /* [M6.2 wave E] `\K` IS THE FIRST ROW THIS TRIPWIRE EVER
-                 * ACTUALLY FIRED FOR, and the exception below is the answer
-                 * rather than a silencing.
-                 *
-                 * The tripwire's demand is "build the engine-capability
-                 * consultation BEFORE the producer lands". Wave E did — a
-                 * second registered `forces_*` row in
-                 * src/opt/select_engine.c, which is where the file's own
-                 * header said the socket's first real customer would go — but
-                 * it did NOT build SR-8's generic registry-column lookup, and
-                 * pretending otherwise here would be the more comfortable
-                 * lie. [M4.7a] declined that lookup on D18/OS-0/D53's
-                 * earn-its-axis discipline (a generic mechanism designed at
-                 * sample size zero), and sample size ONE does not change the
-                 * argument: `\K`'s verdict is not "some registry column says
-                 * VM", it is "this AST carries a node whose write is
-                 * path-dependent", which is a fact about the tree and not
-                 * about the table.
-                 *
-                 * SO THE EXCEPTION IS MADE TO PAY. It is not an allowlist
-                 * entry; it is a NAMED row plus a live behavioural assertion
-                 * that the refusal this tripwire exists to demand actually
-                 * happens — `--engine=dfa` on a `\K` pattern must refuse, by
-                 * its own name, with the module enabled. If someone wires a
-                 * producer onto `\K` and does not (or stops) delivering that
-                 * refusal, this goes red exactly as it would for any other
-                 * row. Every other member of the population keeps the
-                 * original, unmodified demand.
-                 *
-                 * If a SECOND construct arrives here, do not add a second
-                 * exception: two is when the generic consultation has earned
-                 * its axis and SR-8 is the right build. */
-                if (r->kind == RK_ESC && r->sel == 'K'
-                    && strcmp(r->module, "assertions") == 0) {
-                    kreset_exception++;
-                    continue;
+            /* HAS A PRODUCER. `aport` is the wiring for a DOORWAY row; an
+             * RK_QUANTSUFFIX row has no port BY DESIGN (it reaches no doorway)
+             * and its producer is `p_rep`'s desugaring in src/parse/parse.c, so
+             * the kind itself is the signal. Class-position ports are excluded
+             * for the retired tripwire's own reason: a `cport` can never carry
+             * a VM_ONLY construct into the AST. */
+            bool has_producer = r->aport.kind != PORT_NONE
+                             || r->kind == RK_QUANTSUFFIX;
+            if (!has_producer) continue;
+            wired++;
+
+            const char *bites = NULL, *name = NULL, *feats = NULL;
+            for (size_t w = 0; w < sizeof WITNESS / sizeof WITNESS[0]; w++)
+                if (WITNESS[w].kind == r->kind && WITNESS[w].sel == r->sel) {
+                    bites = WITNESS[w].bites; name = WITNESS[w].name;
+                    feats = WITNESS[w].feats;
+                    break;
                 }
-                /* [M6.3] the FIRST three wired rows this tripwire ever
-                 * expects to see: module `named-groups`'s three declaring
-                 * rows. They are wired AND their `engines` mask no longer
-                 * excludes ENGM_DFA (moved to ANY_ENGINE in the same
-                 * change, registry.c's own comment on those three rows
-                 * has the argument), so by the time this loop reaches
-                 * them `r->engines & ENGM_DFA` is already true and the
-                 * `continue` above skips them — they never reach this
-                 * branch at all. If this branch DOES fire for
-                 * `named-groups`, the reclassification regressed; every
-                 * other module hitting this branch is the ORIGINAL
-                 * finding, unchanged: build SR-8 first. */
-                bad("engine-capability tripwire: '%s' (module '%s') is "
-                    "RS_MODULE, its engines mask excludes ENGM_DFA, AND it "
-                    "now carries a wired ATOM-position producer -- YOU "
-                    "WIRED THE FIRST PRODUCER FOR AN ENGINE-RESTRICTED "
-                    "MODULE. Build SR-8's lowering-time engines-column "
-                    "consultation in src/opt/select_engine.c BEFORE this "
-                    "lands (see the [SR-8] row in docs/dev/plan.md) -- "
-                    "UNLESS, as [M6.3]'s named-groups rows did, the "
-                    "construct's own AST is provably no different from an "
-                    "already-DFA-capable one and the right fix is "
-                    "reclassifying `engines` to ANY_ENGINE instead (see "
-                    "docs/dev/decisions.md's [M6.3] entry for that "
-                    "argument's shape before reaching for SR-8 by reflex)",
-                    r->syntax, r->module);
+            if (!bites) {
+                bad("engine capability: '%s' (module '%s') is VM_ONLY and has "
+                    "a WIRED PRODUCER, but no witness names it in this check. "
+                    "SR-8's consultation (src/opt/select_engine.c's "
+                    "forces_registry) is what refuses such a construct under "
+                    "--engine=dfa; add a pattern whose cut/write genuinely "
+                    "bites, so the refusal is asserted rather than assumed",
+                    r->syntax, r->module ? r->module : "(none)");
+                bads++;
+                continue;
+            }
+            checked++;
+            if (!eng_refuses_by_name(feats, bites, name, msg, sizeof msg)) {
+                bad("engine capability: '%s' (module '%s'): %s", r->syntax,
+                    r->module, msg);
+                bads++;
             }
         }
     }
 
-    /* EXACT, not a floor, matching this file's own convention (check_class_
-     * ports, check_class_syntax_reach above): 48 rows, measured directly
-     * from registry.c at [M6.3] (was 51 at M4.7a) — 12 ESC rows (\K \k \g,
-     * \1..\7, \8 \9), 35 GROUP/GROUP_T rows (lookaround, atomic-groups,
-     * callouts, branch-reset, conditionals, recursion — named-groups'
-     * THREE declaring rows moved OUT of this population at [M6.3]: their
-     * `engines` mask is now ANY_ENGINE, a deliberate reclassification, not
-     * a producer wired onto an unexamined VM_ONLY row — see
-     * docs/dev/decisions.md), 1 VERB row (the `(*...)` catch-all). A
-     * deliberate move (a VM_ONLY row added, removed, or gaining ENGM_DFA)
-     * edits this number in the same change; a silent one is the defect
-     * this file exists to catch, same as every other population count
-     * here. */
-    if (qualifying != 52)
-        bad("engine-capability tripwire: %d RS_MODULE rows with an "
-            "engines mask excluding ENGM_DFA, expected 52 -- the VM_ONLY "
-            "population moved. If deliberate, update this number in the "
-            "same change", qualifying);
-    else if (wired == kreset_exception)
-        ok("engine-capability tripwire: of 52 engine-restricted RS_MODULE "
-           "rows, exactly the ONE named exception (\\K, [M6.2] wave E) "
-           "carries a wired atom-position producer and the other 47 carry "
-           "none -- so SR-8's generic lowering-time consultation is still "
-           "unpopulated machinery by design, and the exception discharges "
-           "the tripwire's own demand behaviourally below rather than by "
-           "assertion (module `named-groups`'s three rows are wired but "
-           "are no longer in this population at all, having moved to "
-           "ANY_ENGINE -- see the comment above the population count)");
+    /* EXACT, this file's own convention. 48 -> 52 at [M6.4.2] (the four
+     * RK_QUANTSUFFIX rows, all VM_ONLY); 1 -> 6 wired (`\K` since [M6.2] wave
+     * E, plus `(?>` and the four suffix rows). A deliberate move edits these
+     * numbers in the same change; a silent one is the defect. */
+    if (qualifying != 52 || wired != 6)
+        bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA and %d of "
+            "them have a wired producer, expected 52 and 6 -- the VM_ONLY "
+            "population or its producer set moved", qualifying, wired);
+    else if (bads == 0) {
+        char label[288];
+        snprintf(label, sizeof label,
+                 "engine capability: all %d wired VM_ONLY producers refuse "
+                 "--engine=dfa BY NAME on a witness whose cut bites, and every "
+                 "witness compiles on the default engine (of %d VM_ONLY rows; "
+                 "SR-8 is BUILT, so the [M4.7a] tripwire and its \\K exception "
+                 "are RETIRED -- D67)", checked, qualifying);
+        ok(label);
+    }
 
-    /* THE EXCEPTION'S PRICE, and this is the half that makes it a check
-     * rather than an allowlist. The tripwire above demands that an
-     * engine-restricted construct not acquire a producer until something
-     * REFUSES the impossible engine request. That refusal is D44.6's rule
-     * ("a request the pattern cannot honour is REFUSED, never silently
-     * downgraded"), it lives in src/opt/select_engine.c's override switch,
-     * and it is asserted HERE — on the shipped compiler, through the same
-     * `pcrec_compile` every other check in this file drives — because a
-     * comment claiming the obligation was met is worth nothing.
-     *
-     * BOTH DIRECTIONS. The refusal must fire under `--engine=dfa`, and the
-     * same pattern must COMPILE under the default engine: a check that only
-     * asserted the refusal would go green on a compiler that had simply
-     * stopped accepting `\K` at all, which is the failure mode this
-     * milestone is otherwise full of. */
-    if (kreset_exception > 0) {
-        char err[256], msg[256];
-        /* THE MASK IS BORROWED AND GIVEN BACK, and the entry state is
-         * ASSERTED rather than saved-and-restored blind. Every other check in
-         * this file believes it runs at the default EMPTY set — that is what
-         * makes their "requires module 'X'" expectations mean anything — so
-         * leaving a module enabled behind would silently rewrite the results
-         * of everything after this line. The gate has no set-by-mask entry
-         * point, only set-by-spec, so "restore whatever was there" is not
-         * expressible; asserting the one state that can occur is. This is
-         * tests/registry/pcre2_check.c's own `mask_before != 0` check, in
-         * miniature and for the identical reason. */
-        if (pcrec_enabled_mask() != 0) {
-            bad("engine-capability tripwire: the enabled mask was already "
-                "non-empty (0x%x) before the \\K probe, so this file's other "
-                "checks did not run at the default set they assume and the "
-                "probe cannot safely restore it",
-                pcrec_enabled_mask());
-            return;
-        }
-        if (pcrec_enabled_set_spec("assertions", err, sizeof err) != 0) {
-            bad("engine-capability tripwire: could not enable module "
-                "'assertions' to test \\K's refusal: %s", err);
+    if (pcrec_enabled_mask() != 0)
+        bad("engine capability: the enabled set was not restored (0x%x)",
+            pcrec_enabled_mask());
+}
+
+/* THE PER-PATTERN SPLIT, asserted in the direction the column cannot state.
+ *
+ * `engines` is a per-CONSTRUCT column and the answer is a per-PATTERN fact:
+ * VM_ONLY is too STRONG for `a*+b`, whose cut the free discharge PROVES dead,
+ * and ANY_ENGINE would be too WEAK for `(?>a|ab)c`, which nothing but the VM
+ * can compile. The check above asserts the second half. This asserts the first,
+ * which is the half that would silently disappear if the discharge stopped
+ * firing — nothing else in the tree would notice, because every answer would
+ * still be correct and only the ENGINE would change. Sabotage row S91 is the
+ * other direction (the discharge firing unconditionally), which the corpus
+ * catches. */
+static void check_free_discharge(void)
+{
+    static const char *const DISCHARGES[] = {
+        "a*+b",       /* the canonical idiom family */
+        "a++c",
+        "[^\"]*+\"",
+        "(?>a*)b",    /* the same thing spelled as a group */
+    };
+    char err[256], msg[256];
+    int done = 0;
+
+    if (pcrec_enabled_set_spec("atomic-groups", err, sizeof err) != 0) {
+        bad("free discharge: could not enable module 'atomic-groups': %s", err);
+        return;
+    }
+    for (size_t i = 0; i < sizeof DISCHARGES / sizeof DISCHARGES[0]; i++) {
+        pcrec_options opt;
+        pcrec_output  out;
+        pcrec_error   perr;
+        pcrec_default_options(&opt);
+        opt.engine = PCREC_ENGINE_DFA;
+        opt.flags |= PCREC_NO_CAPTURES;
+        memset(&out, 0, sizeof out);
+        memset(&perr, 0, sizeof perr);
+        if (pcrec_compile(DISCHARGES[i], &opt, &out, &perr) != 0) {
+            bad("free discharge: '%s' was REFUSED under --engine=dfa (\"%s\"). "
+                "Its §2.2 verdict is positive, so pcrec_discharge_atomic must "
+                "delete the cut BEFORE SR-8's consultation runs -- that is the "
+                "whole per-pattern split, and without it the `engines` column's "
+                "VM_ONLY is simply too strong", DISCHARGES[i], perr.msg);
         } else {
-            pcrec_options opt;
-            pcrec_output  out;
-            pcrec_error   perr;
-            pcrec_default_options(&opt);
-            opt.engine = PCREC_ENGINE_DFA;
-            memset(&out, 0, sizeof out);
-            memset(&perr, 0, sizeof perr);
-            if (pcrec_compile("a\\Kb", &opt, &out, &perr) == 0) {
-                pcrec_output_free(&out);
-                bad("engine-capability tripwire: 'a\\Kb' COMPILED under "
-                    "--engine=dfa. \\K is VM_ONLY and its producer is wired, "
-                    "so the D44.6 refusal in src/opt/select_engine.c is what "
-                    "licenses the exception above -- and it did not fire");
-            } else if (strstr(perr.msg, "\\K") == NULL
-                       || strstr(perr.msg, "--engine=dfa") == NULL) {
-                bad("engine-capability tripwire: 'a\\Kb' under --engine=dfa "
-                    "was refused, but not BY ITS OWN NAME: \"%s\". D44.6/"
-                    "§9.2 item 2 require the VM_ONLY-construct conflict to "
-                    "name the construct, because the captures branch's "
-                    "'--no-captures' advice would be a lie here", perr.msg);
-            } else if (try_compile("a\\Kb", msg, sizeof msg) != 0) {
-                bad("engine-capability tripwire: 'a\\Kb' does not compile at "
-                    "all under the DEFAULT engine (\"%s\"), so the refusal "
-                    "asserted above proves nothing about the exception", msg);
-            } else {
-                ok("engine-capability tripwire: \\K's exception is paid for "
-                   "-- 'a\\Kb' compiles on the default engine and REFUSES "
-                   "under --engine=dfa naming the construct (D44.6)");
-            }
+            pcrec_output_free(&out);
+            done++;
         }
-        if (pcrec_enabled_set_spec("none", err, sizeof err) != 0
-            || pcrec_enabled_mask() != 0)
-            bad("engine-capability tripwire: could not restore the EMPTY "
-                "feature mask after the \\K probe (%s) -- every check below "
-                "this line would then be running at a set it does not know "
-                "about", err);
+    }
+    pcrec_enabled_set_spec("none", err, sizeof err);
+    (void)msg;
+    if (done == (int)(sizeof DISCHARGES / sizeof DISCHARGES[0])) {
+        char label[224];
+        snprintf(label, sizeof label,
+                 "free discharge: all %d provably-dead cuts compile to a PURE "
+                 "DFA under --engine=dfa, so VM_ONLY is a per-row fact and the "
+                 "post-discharge tree is the per-pattern answer", done);
+        ok(label);
     }
 }
 
-/* ---- MOD-0.6/D33 §9.2: the in-class sweep gains tail context -----------
- *
- * `check_table_to_parser` above already probes every ESC row's own
- * `syntax` wrapped in `[...]` and asserts the message it predicts FROM THE
- * ROW'S OWN CURRENT FIELDS — which means it can never independently catch
- * a WRONG flag (K10: RF_CLASS_INVALID set on a row whose own `note` said
- * the opposite), only a table/parser disagreement given whatever the
- * table currently says. That is not this check's job either — no
- * check in this file reads an external oracle; tests/reject/'s
- * hand-written pins and PC-3's libpcre2 differential are what independently
- * catch a wrong flag, and always were (see docs/dev/known_issues.md's K10
- * entry).
- *
- * What WAS structurally impossible before this check: `sweep(RK_ESC,
- * "[\\%c]", ...)` above supplies exactly one byte of tail, so it can probe
- * `[\N]` and never `[\N{U+41}]` — the fourth of K10's four blind nets.
- * This closes THAT gap specifically: for every row whose `syntax` carries
- * more than the one-byte generic sweep can express (a `tail`, or body
- * text past the bare `\X` two-byte form), arbitrate on the REAL tail text
- * a class doorway would see and confirm it resolves to THIS row — not a
- * sibling in the same bucket — and that the compiled diagnostic actually
- * promises this row's module. A row that is unreachable at class position,
- * or reachable but misattributed, now fails here; a row whose FLAG is
- * simply wrong (given a correct table/parser agreement) still does not —
- * that is what tests/reject/'s independent pins are for.
- *
- * SKIPS rows whose class port is BASE (`\b \g \k \8 \9`): their in-class
- * meaning is a fixed literal fallback unrelated to the body form —
- * `[\g{-1}]` is not the \g construct at all, it is an ordinary class of
- * literal members `g { - 1` (see the `cport.base` branch's own comment
- * above), so wrapping their full syntax in `[...]` would assert something
- * FALSE, not something instructive. Those rows are already positively
- * tested via the one-byte `[\%c]` form both here and in
- * check_table_to_parser. Also skips non-RS_MODULE rows (RD_FIXED text is
- * already asserted positively, in both positions, by
- * check_table_to_parser). */
 static void check_class_syntax_reach(void)
 {
     size_t n;
@@ -2028,8 +2042,9 @@ int main(void)
     check_feature_module_bijection();
     check_class_ports();
 
-    printf("\n== [M4.7a] SR-8 tripwire (engine-capability consultation stays unbuilt) ==\n");
-    check_engine_capability_tripwire();
+    printf("\n== [M6.4.2/D67] SR-8 is BUILT: engine-capability refusal, per row ==\n");
+    check_engine_capability();
+    check_free_discharge();
 
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");
     check_row_ranks();

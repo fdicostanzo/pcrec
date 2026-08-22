@@ -65,6 +65,21 @@ typedef struct {
     /* Optional: rewrite the AST so the forcing no longer applies. Returns
      * NULL to decline. Must be semantics-preserving. */
     Ast      *(*discharge)(Ctx *cx, Ast *a);
+    /* [M6.4.2 / D67 contract note 1] IS THIS ROW NODE-DERIVED?
+     *
+     * Two kinds of forcing remain after SR-8 and the `--engine=dfa` override
+     * has to tell them apart. `forces_captures` is REQUEST-derived — a
+     * property of the generation REQUEST, with no registry row behind it —
+     * and its refusal names `--no-captures`, which is a real way out because
+     * the caller asked for captures merely by not passing the flag.
+     * `forces_registry` is NODE-derived, and there is NO flag that makes a
+     * `\K` or an atomic pattern DFA-compilable, so advising one is a lie.
+     *
+     * The defect this closes is live on the shipped compiler: `--engine=dfa
+     * '(a)\Kb'` answers "this pattern requires captures (on by default); pass
+     * --no-captures ..." — advice that does not help, because `\K` still
+     * forces the VM after the captures are gone. */
+    bool        node_derived;
 } EngineAnalysis;
 
 /* The fixpoint's bound. §5.2 asks for it "from day one so a later rewrite
@@ -91,87 +106,122 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
     return ENGM_VM;
 }
 
-/* ---- the second registered analysis: `\K` ([M6.2] wave E) ----------------
+/* ---- SR-8: THE GENERIC ENGINE-CAPABILITY CONSULTATION ([M6.4.2], D67) ----
  *
- * THE SOCKET'S FIRST REAL CUSTOMER, and the first time the paragraph at the
- * top of this file stops being true. It says "exactly one row", and that every
- * other VM_ONLY registry row is gated by a module with no producer so the
- * parser refuses those patterns long before selection runs. Module
- * `assertions` now has a producer and `\K` is its VM_ONLY row
- * (src/parse/registry.c), so a `\K` pattern reaches here compiled and asking
- * for an engine. This row is what answers.
+ * ONE analysis over every module-produced node's own registry row, replacing
+ * the per-construct `forces_kreset` that stood here.
  *
- * WHY IT WALKS THE AST WHERE `forces_captures` DELIBERATELY DOES NOT. That
- * row asks whether the artifact will PROMISE group offsets, because that is
- * the honest form of its question — the trigger is the requested OUTPUT. The
- * honest form of THIS question is structural: `caps[0][0]` is path-dependent
- * exactly when an A_KRESET node exists in the tree, so the tree is what gets
- * asked. It also keeps the row correct for the socket's whole reason to
- * exist: a future `discharge` hook that rewrote a `\K` away would flip this
- * verdict on the next round, where a parse-time counter would keep saying VM
- * forever.
+ * WHAT IT REPLACES AND WHY THE REPLACEMENT IS THE RIGHT SHAPE NOW. [M4.7a]
+ * declined to build this on D18/OS-0/D53's earn-its-axis discipline: zero
+ * VM_ONLY rows had producers, so a generic column consultation would have been
+ * machinery designed at sample size zero. [M6.2] wave E wired the first (`\K`)
+ * and answered it with a bespoke row plus a NAMED exception in
+ * `tests/registry/registry_check.c`'s tripwire — and that tripwire's own text
+ * said what to do next, in advance: *"If a SECOND construct arrives here, do
+ * not add a second exception: two is when the generic consultation has earned
+ * its axis and SR-8 is the right build."* `(?>` is the second. D67 rules the
+ * build; this is it, in the shape D55 specified.
  *
- * THE OFFSET IS NOT THE WALK'S. No AST node carries a source position, so the
- * `engine_why` stamp reads `cx->first_kreset_pos` (src/parse/mod_assertions.c
- * records it, on `first_cap_pos`'s precedent). It is read only on the path
- * where the walk already found a node, so the two cannot disagree about
- * WHETHER there is a `\K`; on a tree where a rewrite had deleted some but not
- * all of them they could disagree about WHICH one is named, which is D26
- * tier-3 wording and not a verdict. */
-static bool has_kreset(const Ast *a)
+ * THE MECHANISM, and every clause of it is load-bearing:
+ *
+ *   - A module's PRODUCER stamps each node it creates with the registry row it
+ *     was dispatched on (`Ast.reg`, `pcrec_ast_stamp`). The row — not a copy of
+ *     its `engines` mask, because a copied mask is a second home for a registry
+ *     fact and because `why`'s text has to come from the row anyway.
+ *   - This analysis ANDs `pcrec_ast_engines()` over the tree. An UNSTAMPED node
+ *     contributes ANY_ENGINE, so a forgotten stamp fails in the UNSOUND
+ *     direction ON PURPOSE (D67 contract note 2): what catches it is the
+ *     generic tripwire — every VM_ONLY row with a producer must refuse
+ *     `--engine=dfa` BY NAME — and not a lucky default. Sabotage row S96.
+ *   - It runs over the POST-DISCHARGE tree, which is the whole reason it can
+ *     be a per-ROW column at all while the answer is per-PATTERN. `(?>` is
+ *     genuinely VM-only for `(?>a|ab)c` and genuinely not for `[^"]*+"`; the
+ *     column cannot be made true by editing it (that is the first evidence it
+ *     has ever had in BOTH directions), and `pcrec_discharge_atomic` DELETES
+ *     the node before this runs, so the column stays a conservative per-row
+ *     fact and the tree says the per-pattern answer.
+ *
+ * WHY IT WALKS THE TREE rather than reading a parse-time counter — the same
+ * reason `forces_kreset` did, generalised: the socket exists for REWRITES that
+ * DISCHARGE a forcing, and a counter would keep saying VM after one deleted the
+ * node. `why_pos` still comes from `Ctx.first_vmonly_pos`, because no AST node
+ * carries a source position; it is read only where the walk already found a
+ * node.
+ *
+ * WHAT DOES *NOT* RETIRE INTO IT: `forces_captures` (D67 contract note 1). That
+ * row is REQUEST-derived — a property of the generation request, with no
+ * registry row behind it — so two kinds of forcing remain, request-derived and
+ * NODE-derived, and the `--engine=dfa` branch below has to tell them apart. */
+
+/* The first DFA-excluding node in walk order, or NULL. Returns the ROW because
+ * that is what carries the `why` text (D67: "why_pos/why from the first
+ * DFA-excluding node's row").
+ *
+ * Iterative on both spines, recursive only into a spine element's right child
+ * and into a body — D10/DD-10's discipline, held the way possessify.c,
+ * revdet.c and altcls.c hold it. A flat concatenation is allowed to be 20,000
+ * elements long; the nesting depth is bounded by the parser's group cap. */
+static const RegRow *first_dfa_excluding(const Ast *a)
 {
-    /* Iterative on both spines, recursive only into a spine element's right
-     * child and into A_CAP/A_REP bodies — D10/DD-10's discipline, held the
-     * way possessify.c/revdet.c/altcls.c hold it. A flat concatenation is
-     * allowed to be 20,000 elements long; the nesting depth is bounded by the
-     * parser's group cap. */
     for (;;) {
+        if (a->reg && !(a->reg->engines & ENGM_DFA)) return a->reg;
         switch (a->k) {
-        case A_KRESET:
-            return true;
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
-        case A_WORDB: case A_NWORDB: case A_GSTART:
-            return false;
-        case A_CAP: case A_REP:
-        /* [M6.4.2] TRANSPARENT — descend, do not stop. `\K` INSIDE an atomic
-         * group is a real, measured cell (`(?>a\Kb)c` on "abc" is (1,3) in
-         * libpcre2), and a `has_kreset` that answered "no" for it would let a
-         * `\K` pattern reach the DFA and report the wrong start silently. The
-         * warning that named this site is why the arm exists; the design's own
-         * fifteen-site enumeration did not list it, because the probe it came
-         * from carries a curated six-file list. */
-        case A_ATOMIC:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+            return NULL;
+        case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
         case A_CAT:
             while (a->k == A_CAT) {
-                if (has_kreset(a->r)) return true;
+                const RegRow *r = first_dfa_excluding(a->r);
+                if (r) return r;
                 a = a->l;
             }
             continue;
         case A_ALT:
             while (a->k == A_ALT) {
-                if (has_kreset(a->r)) return true;
+                const RegRow *r = first_dfa_excluding(a->r);
+                if (r) return r;
                 a = a->l;
             }
             continue;
         }
         /* No `default:` — mrl.c:18-24's rule. A node kind added after this
-         * file is written must be a COMPILE ERROR here, because "does this
-         * construct make the reported start path-dependent" is a question
-         * only the author of the new kind can answer, and inheriting "no" is
-         * the silent wrong answer. */
-        return false;
+         * file is written must be a COMPILE ERROR here, because "can this
+         * construct carry a producer's stamp, and can it CONTAIN one" is a
+         * question only the author of the new kind can answer, and inheriting
+         * "no" is the silent wrong answer: it would let a VM-only construct
+         * nested inside the new kind reach the DFA. */
+        return NULL;
     }
 }
 
-static unsigned forces_kreset(Ctx *cx, const Ast *a, size_t *why_pos,
-                              const char **why)
+static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
+                                const char **why)
 {
-    if (!has_kreset(a)) return ENGM_DFA | ENGM_VM;
-    *why_pos = cx->first_kreset_pos == (size_t)-1 ? 0 : cx->first_kreset_pos;
-    *why = "\\K";
-    return ENGM_VM;
+    const RegRow *r = first_dfa_excluding(a);
+    if (!r) return ENGM_DFA | ENGM_VM;
+    *why_pos = cx->first_vmonly_pos == (size_t)-1 ? 0 : cx->first_vmonly_pos;
+    /* THE TEXT IS THE ROW'S OWN `syntax`, which is what makes this generic
+     * without inventing a per-construct sentence: it is the field whose whole
+     * job is "how the construct is written", it is what `--list-syntax`
+     * displays, and `\K`'s row spells it "\K" — so [M6.2] wave E's shipped
+     * diagnostic ("\K requires the VM engine, which --engine=dfa excludes") is
+     * reproduced BYTE FOR BYTE by the generic path that replaced its bespoke
+     * analysis. That reproduction is D67's "same verdict, same position" made
+     * checkable.
+     *
+     * ONE KIND IS DIFFERENT AND IT IS NOT AN EXCEPTION TO THE RULE, it is the
+     * rule reading the field correctly. For a DOORWAY row the `syntax` IS the
+     * construct (`(?>...)`, `\K`). For an RK_QUANTSUFFIX row it is an
+     * EXAMPLE — a possessive suffix is not a pattern on its own, so the field
+     * has to carry an atom (`a{1,2}+`), and printing it would name a spelling
+     * the user did not write: `(?:a|ab){1,3}+c` would be explained as
+     * "a{1,2}+". The four rows are ONE construct with four spellings, and this
+     * is the noun parse.c's own module refusal already uses for it. */
+    *why = r->kind == RK_QUANTSUFFIX ? "possessive quantifier" : r->syntax;
+    return r->engines;
 }
 
 /* ORDER MATTERS ONLY FOR THE DIAGNOSTIC, and it is captures-first on purpose.
@@ -182,8 +232,11 @@ static unsigned forces_kreset(Ctx *cx, const Ast *a, size_t *why_pos,
  * "do not write `\K`" is not). A capture-free `\K` pattern gets the `\K`
  * explanation, which is then the only one available and the right one. */
 static const EngineAnalysis analyses[] = {
-    { "captures", forces_captures, NULL },
-    { "kreset",   forces_kreset,   NULL },
+    { "captures", forces_captures, NULL, false },
+    /* [M6.4.2] ONE row where `\K`'s was, and every future VM_ONLY module's
+     * forcing falls out of its registry rows with no per-module analysis —
+     * backrefs' twelve ([M6.5]) are the next customer and need no line here. */
+    { "registry", forces_registry, NULL, true  },
 };
 
 /* ---- the pass ---- */
@@ -275,16 +328,37 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     unsigned mask = ENGM_DFA | ENGM_VM;
     const char *why = NULL;
     size_t why_pos = 0;
+    /* [M6.4.2 / D67 note 1] THE SECOND WHY: the first NODE-DERIVED exclusion,
+     * recorded alongside the first exclusion of any kind. `RX_ENGINE_WHY`'s
+     * first-row rule is UNCHANGED — the stamp still reads `why`, captures-first
+     * — and this exists only so the `--engine=dfa` override can tell a
+     * conflict a flag can resolve from one no flag can. */
+    const char *node_why = NULL;
+    size_t node_why_pos = 0;
+
+    /* [M6.4.2] THE FREE DISCHARGE runs ONCE, HERE, before the analysis loop —
+     * NOT as a registered `discharge` hook. src/opt/atomic.c's own header has
+     * the three reasons, one of them measured: the fixpoint below never CALLS a
+     * registered hook, so registering would run the analysis 8 times and
+     * rewrite nothing. Running it first is what makes the consultation's
+     * per-ROW column produce a per-PATTERN answer — `--engine=dfa '[^"]*+"'`
+     * succeeds because the node is GONE by the time `forces_registry` looks. */
+    root = pcrec_discharge_atomic(cx, root);
 
     for (int round = 0; round < SELECT_MAX_ROUNDS; round++) {
         mask = ENGM_DFA | ENGM_VM;
         why = NULL;
         why_pos = 0;
+        node_why = NULL;
+        node_why_pos = 0;
         for (size_t i = 0; i < sizeof analyses / sizeof analyses[0]; i++) {
             size_t p = 0;
             const char *w = NULL;
             unsigned m = analyses[i].forces(cx, root, &p, &w);
             if (!(m & ENGM_DFA) && !why) { why = w; why_pos = p; }
+            if (!(m & ENGM_DFA) && analyses[i].node_derived && !node_why) {
+                node_why = w; node_why_pos = p;
+            }
             mask &= m;
         }
         if (mask & ENGM_DFA) break;   /* nothing forces the VM: done */
@@ -334,14 +408,20 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     switch (cx->opt->engine) {
     case PCREC_ENGINE_DFA:
         if (!(mask & ENGM_DFA)) {
-            if (cx->want_caps && cx->ncap > 0)
+            /* [M6.4.2 / D67 note 1] THE ORDERING FIX: take the captures branch
+             * ONLY when no NODE-DERIVED analysis contributed a why. Before it,
+             * `--engine=dfa '(a)\Kb'` advised `--no-captures` — a flag that
+             * cannot help, because `\K` still forces the VM after the captures
+             * are gone, and D44.6's rule is that a request the pattern cannot
+             * honour is REFUSED rather than answered with advice that fails. */
+            if (!node_why && cx->want_caps && cx->ncap > 0)
                 ctx_fail(cx, why_pos,
                          "this pattern requires captures (on by default); pass "
                          "--no-captures for a DFA-only artifact, or omit "
                          "--engine=dfa");
-            ctx_fail(cx, why_pos,
+            ctx_fail(cx, node_why ? node_why_pos : why_pos,
                      "%s requires the VM engine, which --engine=dfa excludes",
-                     why ? why : "this pattern");
+                     node_why ? node_why : why ? why : "this pattern");
         }
         fit.chosen = ENGM_DFA;
         break;

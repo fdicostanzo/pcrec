@@ -4817,7 +4817,43 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * the ceiling through a macro and never needs to know which of the two it
      * is. `fit.prefilter` is select_engine's verdict and is final by now. */
     v.mrl     = (cx->opt->flags & PCREC_NO_LENGTH_PRUNE) == 0;
-    v.mrl_win = job->fit.prefilter;
+    /* [M6.4.2] RULE H3 — THE ONE PREDICATE, READ AT THREE SITES, and the
+     * three-ness is R31 E3's whole finding.
+     *
+     * The prefilter is the capture-erased DFA, which for a cut-bearing pattern
+     * necessarily answers for the UNCUT language (src/ir/nfa.c lowers an atomic
+     * body transparently, because a subset construction keeps every alternative
+     * alive — which IS the non-atomic semantics). Its REJECTION stays sound (no
+     * uncut match means no atomic match) and its span START stays a lower bound
+     * (H2, and the emitted loop already re-asks it on every retry), but its
+     * span END IS NOT AN UPPER BOUND on the cut match's end:
+     *
+     *   (?>a|ab)c|abcd  on "abcd"   is (0,4);  the uncut twin is (0,3).
+     *
+     * MEASURED: 122 refuting cells over 17,640, and — on the EMITTED prefilter
+     * rather than inferred from an oracle — 114 cells across 42 patterns
+     * carrying a "prefilter-window" ceiling AND a window end strictly BELOW the
+     * cut match's end. That is silent match loss in the DEFAULT engine.
+     *
+     * THE FIRST DESIGN OF THIS FIX EDITED THIS LINE AND NOTHING ELSE, AND THE
+     * CHECK IT PROPOSED WOULD HAVE AGREED WITH THE BUG. `v.mrl_win` was read at
+     * exactly two places — the `--emit-ir` description and the
+     * `RX_VM_PRUNE_CEILING` STAMP — while the lines that BUILD the ceiling (the
+     * search entry's `window_end = min(window[0][1], n)` and the retry
+     * recompute) were gated on `prefn` and `v.nclamp > 0` and never on this
+     * flag. Flipping it would have stamped "subject-end" on an artifact whose
+     * ceiling was still live. So the two emission sites now read this SAME
+     * flag, which is what makes the stamp unable to disagree with the code it
+     * describes — and codegen rule 1 asserts on BOTH sources, because either
+     * alone is satisfiable by a half-done edit.
+     *
+     * `pcrec_has_atomic` is asked of the POST-DISCHARGE tree, so a pattern
+     * whose cut was proved a no-op keeps its ceiling: `[^"]*+"` loses nothing.
+     * Dropping the PREFILTER entirely was the alternative and is strictly
+     * worse — it would discard H1 and H2 as well, and losing the prefilter is
+     * a DD-2 regression by engine_m4.md §4.7's own standard. Keeping rejection
+     * and the start seed while dropping only the ceiling costs one predicate. */
+    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root);
     v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);
@@ -5645,14 +5681,21 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     char retry_win[512];
     retry_win[0] = 0;
     if (v.nclamp > 0 && prefn)
+        /* H3 site 2 of 3 (the RETRY recompute). The recompute itself STAYS on a
+         * cut-bearing artifact — it re-seeds `attempt_position` from the
+         * prefilter, which is H2 and is sound, and D51 ruling 2 is why it
+         * exists at all. Only the CEILING it also computed is dropped. */
         snprintf(retry_win, sizeof retry_win,
                  "        {\n"
                  "            ptrdiff_t window[1][2];\n"
                  "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"
                  "            attempt_position = (size_t)window[0][0];\n"
-                 "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
+                 "%s"
                  "        }\n",
-                 prefn);
+                 prefn,
+                 v.mrl_win
+                   ? "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
+                   : "            window_end = subject_length;\n");
 
     /* [M4.6d] THE MRL CEILING, and D51 ruling 2's three obligations, all
      * discharged in this one function.
@@ -5705,9 +5748,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "%s"
             "    }\n",
             prefn,
-            v.nclamp > 0
+            v.nclamp == 0 ? ""
+              /* H3 site 1 of 3 (the search ENTRY). */
+              : v.mrl_win
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
-              : "");
+              : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
     } else {
         sb_puts(c, "    attempt_position = search_from;\n");
         if (v.nclamp > 0) sb_puts(c, "    window_end = subject_length;\n");

@@ -44,12 +44,12 @@
  * VM_ONLY row with a producer must refuse `--engine=dfa` BY NAME — not a lucky
  * default. Sabotage row S96 removes the stamp and that assertion goes red.
  *
- * THE OFFSET IS RECORDED HERE AND AT parse.c's SUFFIX SITE, and nowhere else.
- * `Ctx.first_atomic_pos` is `first_kreset_pos`'s twin, field for field,
- * including the first-wins guard: the `engine_why` stamp wants a pattern
- * offset, no AST node carries one, and the analysis that decides the ENGINE
- * walks the post-discharge tree rather than reading a parse-time counter that
- * a rewrite could leave stale.
+ * THE OFFSET COMES WITH THE STAMP. `pcrec_ast_stamp` writes `Ast.reg` AND
+ * records `Ctx.first_vmonly_pos` in one statement, so the row and the offset
+ * the `engine_why` diagnostic pairs cannot be recorded at different moments and
+ * drift. The offset is needed at all because no AST node carries a source
+ * position; the VERDICT still walks the post-discharge tree, because a
+ * parse-time counter would keep counting nodes a rewrite deleted.
  *
  * NOT A SCOPE BOUNDARY FOR ANYTHING BUT ITS OWN BODY. `(?>` is a
  * body-carrying group, so it saves and restores the scoped inline-option state
@@ -114,9 +114,7 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
     /* SR-8/D67: the stamp, from the row this port was dispatched on. Not a
      * copy of the mask — the ROW, so the `engines` column keeps exactly one
      * home and `select_engine.c` can also name the construct. */
-    a->reg = rw;
-
-    if (cx->first_atomic_pos == (size_t)-1) cx->first_atomic_pos = at;
+    pcrec_ast_stamp(cx, a, rw, at);
 
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                       .answered_at = want };
