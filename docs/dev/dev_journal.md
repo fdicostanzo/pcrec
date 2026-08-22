@@ -11945,3 +11945,22 @@ tests/known_fail/u9_atomic.rxt with three live controls. FRANK'S RULING
 OWED: reproduce libpcre2, or keep the derivation and document the
 deviation. Next: [M6.5.2] backrefs implementation (design ca9beef) with
 its D27 corpus in parallel, per the grant.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 10) — [M6.5.2] + [M6.5.3] opened; the backrefs blinded corpus authored in 25 minutes
+
+[M6.5.2] backrefs implementation spawned at 16:42 (opus, lane/brimpl
+from 5286265) against the R32-approved design, with today's landing
+lessons in its brief (the blinded corpus will run against the merge;
+the generator must reach beyond the author's alphabet; the MRL follow-
+bound; publish-at-close; the dupnames tiebreak as correctness; SR-8
+exists now). [M6.5.3] the blinded corpus (sonnet, cell brd27,
+GOAL_FACTS = the design's §12 + br_oracle.py) delivered at 17:0x:
+8 files, 94 patterns, 183 oracle checks (65 m / 42 n / 63 group lines /
+28 perr; 55 pcre2-only blocks — python has no \g/\k/(?J), refuses self/
+forward references and non-leading (?i), reads every \NN as decimal),
+oracle.py 183/183 reproduced by the manager, nothing in the goal facts
+wrong; one measured observation already ruled (the (?J) attribution
+moves to backrefs at implementation, ASK-1). Group lines are `gp` —
+asserted when the artifact delivers the slot; the acceptance run's
+pending-vm count must be 0. Committed on branch brd27 (9c3f9aa), HELD
+for the acceptance run. Cell kept until then.
