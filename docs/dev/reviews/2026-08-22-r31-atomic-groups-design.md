@@ -405,3 +405,41 @@ registry sites; the reverse of nothing — the second cut spelling was the
 lane's own find), every one closed with measurement; the two central
 results never moved. [M6.4.2] implements THIS document; its §12 and the
 triage tables above are the brief.
+
+## POST-APPROVAL FINDING — found by the [M6.4.3] D27 corpus at [M6.4.2]'s merge review (2026-08-22 13:0x), not by the panel
+
+**P1 (HIGH, tier-1 miscompile in the merged module 69f3b93):** `(?:aa|a)++ab`
+on "aaab" — libpcre2 and python NOMATCH, pcrec (0,4); also `(?:aa|a)*+ab`,
+`(?>(?:aa|a)+)ab`, `(?:aa|a){1,3}+ab`, `(?:a|aa)++ab` (frames rungs 0x2/0x4);
+`a++ab` (cursor) correct. The module answered the UNCUT language. ROOT
+CAUSE (fix lane, 036bd55): `vm_atomic` emitted the body with the caller's
+`v->fmin` in force — the MRL machinery's minimum width of what FOLLOWS the
+group — and every possessive rung ends its loop at the first position
+where "one more iteration PLUS THE FOLLOW" does not fit. For an UNCUT loop
+the shortcut is answer-preserving because the skipped exit is STILL
+RETREATABLE; under a cut it is not — stopping early at a position the
+greedy run would have walked past MANUFACTURES the exit the cut exists to
+destroy. `-fno-length-prune` gave the right answer on every failing
+witness, which identified the prune as the carrier. FIX: the follow does
+not cross a cut — `fmin`/`fdyn` scoped to 0/NULL for the atomic body on
+BOTH routes (general shape and lift; `(?>a(?:aa|a)+)ab` puts the loop a
+level inside, where `under_atomic` is false and possessify's verdict was
+computed against an EMPTY follow while the emitter carried `ab` — the two
+disagreeing about which follow they mean is the whole defect).
+
+**What the design missed, stated for the record:** RULE 3's conditions —
+(a) cut-equivalent, (b) preference-preserving, (c) nullable-safe, (d) the
+rung's gate — are all about the BODY and the RUNG; the MRL follow-bound is
+a property of the CONTEXT the loop is emitted in, and its answer-
+preservation argument (vm_opt_chain's own comment: "the skip is the only
+survivor") silently assumes the skip can be retreated to. It is a FIFTH
+§2.2-style antecedent, on a third axis (§14 item 9's "the enumeration is
+empirical" was the right warning). Neither the 48,000/10,504-cell
+possessify-under-cut sweeps nor the 39,326-cell differential generated a
+two-exit body under a follow with a nonzero minimum width. The blinded
+author's `(?:aa|a)++ab` did — D27's thesis measured for the second time.
+
+**Required design annotation (the fix lane adds it at merge):** §3.2.2b
+"CARVE-OUT THREE / the follow does not cross a cut" — the invariant, the
+witness, the fix, and the generator gap it exposed; RULE 3 gains condition
+(e); §14 item 9 records this instance.
