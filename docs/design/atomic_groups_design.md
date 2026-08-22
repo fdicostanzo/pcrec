@@ -1293,7 +1293,11 @@ distinguish "not implemented" from "not in the table", which is a D26 tier-2
 > incompleteness is INVISIBLE to the compiler.
 
 That is the opposite of `AKind`'s 15, and it is the fact that decides this
-section. (The probe's own first run died silently on `set -e` plus an
+section. **The mechanism, verified by the critic and worth naming**: every
+`RegKind` switch in the tree carries a `default:`, so there is nothing for
+`-Wswitch` to complain about. The exposure is therefore not the switches at all
+— it is the two hardcoded kind ARRAYS (§7.4 sites 3 and 4), which no compiler
+diagnostic and, today, no check can see. (The probe's own first run died silently on `set -e` plus an
 assignment from a failing `ls` — the identical defect
 `assertions_measurements/CLAUDE.md` records for `probe_kreset_identity.sh` —
 and the note stays in the file.)
@@ -1310,19 +1314,64 @@ quantifier — is preserved exactly. The rows exist for the DUMP, which is a
 precedent the file already carries for a row that "exists so the table is
 complete for the dump" (`:29-30`).
 
-**RULE R2 — D65's `built` derivation for the new kind drives the row's own
-`syntax` through a full compile probe, not a doorway call.** `syntax_dump.c`'s
-derivation already works by driving a row's syntax through a gate-forced-open
-isolated `Ctx`; for a non-doorway row that call is simply a compile of the
-`syntax` string. The three-valued vocabulary (built / unbuilt / "—") is
-unchanged.
+**RULE R2 — D65's `built` derivation NEEDS A NEW ARM, and "simply a compile of
+the syntax string" was wrong.** R31 C1 refuted the first revision here:
+`built_status_probe` (`src/parse/syntax_dump.c:443`) is `doorway_route` +
+`doorway_call`, and `doorway_route` (`:334-380`) recognises exactly four
+prefixes — `\`, `(?`, `(*`, `[`. A row whose `syntax` is `a*+` routes nowhere
+and derives to **`PCREC_BUILT_DEFECT`**, not to built/unbuilt. Measured on the
+shipped binary (`out/registry_cost.txt`):
 
-**RULE R3 — because the compiler will NOT flag an unhandled `RegKind`, the
-design supplies the missing check itself.** `tests/registry/registry_check.c`
-gains a per-kind assertion: every `RegKind` value must be reached by the dump
-and by the built-status derivation, and a kind that no code path handles is a
-DEFECT ASSERTION, not a silently-skipped row. Without R3, R1 is a change that
-can land half-done invisibly, which is what §7.3 measured.
+```
+--explain '(?>a)' : route  after '(?'  selector '>'      <- routes
+--explain 'a*+'   : no construct matches 'a*+' — it is either
+                    base syntax or not a construct pcrec knows
+```
+
+So R2 is: `built_status_probe` gains a **non-doorway arm** that compiles the
+row's own `syntax` through the same gate-forced-open isolated `Ctx` and reads
+the same three-valued vocabulary off the result. That is more than a line, and
+it is the honest price of R1.
+
+**THE FULL COST, ENUMERATED — C1 + C8, and MEASURED rather than recalled**
+(`probes/probe_registry_cost.sh`, `out/registry_cost.txt`):
+
+| # | site | what it is today | what a fifth kind needs |
+|---|---|---|---|
+| 1 | `syntax_dump.c:443` `built_status_probe` | `doorway_route` + `doorway_call` | the non-doorway compile arm above |
+| 2 | `registry.c:962` `pcrec_registry`'s switch | `default: *n = 0; return NULL` | a `case RK_QUANTSUFFIX` |
+| 3 | `syntax_dump.c:145` `all_kinds[]` | a hardcoded 4-element array, iterated at **`:165` and `:1080`** | the fifth element |
+| 4 | `enabled.c:114` `kinds[]` | a SEPARATE hardcoded 4-element array | the fifth element |
+| 5 | `registry_check.c:444` | `if (total != 100)` | **104** |
+| 6 | `registry_check.c:1473` | `if (qualifying != 48)` | **48 or 52 — decided by the rows' `engines` value, §7.4.1** |
+
+**One correction to the finding, which does not change the ruling.** C8 says
+"both `all_kinds[]` arrays". Measured, there is ONE array (`syntax_dump.c:145`)
+with TWO USE SITES (`:165`, `:1080`), plus `enabled.c`'s SEPARATE array. Three
+places still have to be edited; the count of arrays is two, not three.
+
+#### 7.4.1 The new rows' field values, stated because C8 is right that they are not derivable
+
+`status` = `RS_MODULE`, `roadmap` = `ROADMAP_PLANNED`, `module` =
+`atomic_groups`, `engines` = **`VM_ONLY`**, matching row `registry.c:623` for
+the same reason (§8): a possessive whose §2.2 verdict is negative is not
+DFA-compilable by anything this module ships. `VM_ONLY` makes all four rows
+QUALIFY for the engine-capability tripwire, so `registry_check.c:1473`'s
+`qualifying` becomes **52**, and both pins move in the same change as the rows.
+Under M-1 the tripwire is being REPLACED by SR-8 in the same substep, so
+`[M6.4.2]` should expect to touch `:1473` once and then delete it.
+
+**RULE R3 — the per-kind check reads the DUMP OUTPUT, not the table.** R31 C8
+sharpened this twice. First, §7.3's "a half-done fifth kind is invisible" is
+only PARTLY true: `registry_check.c:135` already fails on a `pcrec_registry`
+omission (`if (!rows || n == 0) bad("kind %s: no rows", …)`), so site 2 above is
+already covered. **The uncovered side is the DUMP** — `all_kinds[]`, which no
+check reaches. Second, a per-kind assertion that ITERATES `RK_COUNT` over
+`registry.c` would share a source with what it checks, which is this project's
+signature failure mode (`memory/pcrec-check-design-lessons`). So R3 is:
+**`registry_check` parses `--list-syntax` OUTPUT and asserts that every
+`RegKind` name appears in it**, which is the only formulation that can see an
+`all_kinds[]` omission at all.
 
 **The alternative that loses, stated so the panel can weigh it.** An explicit
 EXEMPTION (leave the refusal in `parse.c`, record the reason, and let
@@ -1336,39 +1385,57 @@ manual entry in the one place the project decided manual entries should not be.
 
 ---
 
-## 8. (vi) SR-8 — this module does NOT build it
+## 8. (vi) SR-8 — **THIS MODULE BUILDS IT. The first revision's ruling is REVERSED.**
 
-D55 defers SR-8's lowering-time engine-capability consultation until a
-VM_ONLY-masked `RS_MODULE` row acquires a producer, and installs
-`tests/registry/registry_check.c`'s `check_engine_capability_tripwire` to fire
-on that day. D59 names atomic-groups and backrefs as the second-construct
-trigger for the general consultation. `\K` was the first, and [M6.2] wave E
-answered it with a NAMED, ARGUED exception rather than by building SR-8.
+**What the first revision said, and why it was wrong.** It ruled that
+`[M6.4.2]` should NOT build SR-8, and should instead add a SECOND named
+exception to `tests/registry/registry_check.c`'s
+`check_engine_capability_tripwire`, on `\K`'s precedent. It even offered "two
+named exceptions now exist" as the evidence a general mechanism was owed —
+without noticing that **the tripwire it cites already answers the question, in
+the file, in advance** (`registry_check.c:1422-1424`):
 
-**RULING: the same answer, with the reason updated rather than copied.**
+> "If a SECOND construct arrives here, do not add a second exception: two is
+> when the generic consultation has earned its axis and SR-8 is the right
+> build."
 
-The tripwire WILL fire when `(?>`'s row gets a producer. The module adds the
-SECOND named exception. What this module contributes to the SR-8 question is
-not code but the missing evidence, and it is worth writing down because it is
-the first time the `engines` column has been shown to be wrong in BOTH
-directions on the same row:
+`\K` was the first. `(?>` is the second. The tripwire was written to fire
+exactly once more and then be replaced, and the first revision proposed to
+defeat it on its second firing. **RULED (D67, manager, 2026-08-22): [M6.4.2]
+builds SR-8**, in the shape D55 specified and §5.1 now carries.
+
+**The evidence this lane contributes is unchanged and is now an argument FOR
+the build rather than against it.** The `engines` column is measurably wrong in
+BOTH directions on row `registry.c:623`:
 
 - `VM_ONLY` is too STRONG for `(?>a*)b` — the free discharge (§5.3) makes it
-  DFA-compilable, MEASURED on 532 patterns.
-- `ANY_ENGINE` would be too WEAK for `(?>a|ab)c`, which no engine but the VM
-  can compile today.
+  DFA-compilable, MEASURED on 532 positive-verdict patterns.
+- `ANY_ENGINE` would be too WEAK for `(?>a|ab)c`, which nothing but the VM can
+  compile today.
 
-So the row's mask cannot be made true by editing it, which is precisely Frank's
-"the engine answer is per-PATTERN, not per-row". **Reclassifying to
-`ANY_ENGINE` (D59's answer for named-groups' three rows) is therefore
-REJECTED here**, and the difference is real rather than stylistic: named-groups
-rows genuinely lower to both engines for every pattern; `(?>` does not.
+The row's mask cannot be made true by editing it, which is Frank's
+per-PATTERN point as a measurement. **That is precisely why the consultation
+has to be a PASS over stamped nodes rather than a per-row verdict**: the mask
+is a property of the CONSTRUCT, the answer is a property of the PATTERN, and
+the only place the two meet is the post-discharge tree. D59's ANY_ENGINE
+reclassification (right for named-groups, whose rows genuinely lower to both
+engines for every pattern) stays rejected here for the same reason it was.
 
-The consequence to record on the row rather than act on: **two named exceptions
-now exist**, and a third would be the point at which the exception mechanism is
-carrying more weight than the column. That is the evidence D55's revisit-when
-was waiting for, and it belongs to backrefs ([M6.5]) or to a dedicated SR-8
-row, not to this one.
+**What retires when SR-8 lands**, and this is the shape of the change:
+
+| retires | replaced by |
+|---|---|
+| `forces_kreset` (`select_engine.c:121-166`) | the generic analysis reading `\K`'s row stamp |
+| `check_engine_capability_tripwire`'s `\K` exception | nothing — the tripwire's own premise is discharged |
+| `registry_check.c:1473`'s `qualifying != 48` pin | the generic tripwire's own accounting |
+| this module's would-be `forces_atomic` | never written |
+
+`forces_captures` does NOT retire — M-1 contract note 1, §5.1.
+
+**The cost, stated so the manager can schedule it.** SR-8 is no longer a
+"deferred consultation" this module can decline; it is a prerequisite of this
+module's engine answer, and it lands in `[M6.4.2]`'s slice 3 alongside the
+discharge. Its own sabotage row (an un-stamped `A_ATOMIC`) is §11.4 S95.
 
 ---
 
@@ -1473,51 +1540,97 @@ population or is comparing two builds of the same tree.
 
 ### 11.3 The PERMANENT structural checks
 
-The one-shot gate above does not survive the wave, so four checks go into
-`tests/codegen/run_codegen_tests.sh`, each named and each with a sabotage row:
+> **R31 C3 REFUTED THREE OF THE FOUR RULES AS SPELLED, AND THE FAILING
+> DIRECTION IS DEMONSTRABLE ON A REAL ARTIFACT WITH NO SABOTAGE AT ALL.**
+> `#define RX_CUT(slot_)` is emitted UNCONDITIONALLY on every VM artifact
+> (`src/gen/emit_vm.c:4791`), so `grep -c RX_CUT` is at least 1 on every
+> artifact pcrec has ever produced. A rule spelled "the artifact contains
+> `RX_CUT`" is therefore green on a compiler that emits no cut.
+>
+> **The demonstration, on a shipped artifact** (`probe_cut_dispatch.sh` §3,
+> `out/cut_dispatch.txt`): `(?:ab|b){8,}c` is the K29 path — stamped
+> POSSESSIVE, cut-mark slot allocated and written, **zero cut call sites in
+> either spelling**. `grep -q RX_CUT` MATCHES it, on the `#define` line.
+> Call-site form `grep -c '^ *RX_CUT('` correctly reports 0.
+>
+> C3 asked for the failing direction to be demonstrated BEFORE the rule is
+> written. It is, and the rules below are written from it.
 
-- **`[M6.4-ATOMIC rule 1]`** — a cut-bearing artifact stamps
-  `RX_VM_PRUNE_CEILING "subject-end"` and its search entry contains
-  `window_end = subject_length`, never a `window[0][1]` assignment. (§4's H3.)
-- **`[M6.4-ATOMIC rule 2]`** — `-fno-possessify` on a pattern with an
-  UNDISCHARGED user-written possessive (e.g. `(?:a|ab){1,3}+c`, whose §2.2
-  verdict is MEASURED negative — `out/free_discharge.txt`'s second control)
-  still emits `RX_CUT`. (§3.2 rule 2: the flag denies the possessification
-  REWRITE, never a written possessive.) **The scoping is load-bearing**: on a
-  DISCHARGED possessive there is correctly no cut to emit, so a rule written
-  without it would be red on a correct compiler — see §5.4's carve-out.
-- **`[M6.4-ATOMIC rule 3]`** — inside the emitted function, the mark's
-  `RX_SET(RX_SLOT_CUT_MARKk, …)` appears BEFORE every `RX_PUSH` that the atomic
-  body emits, and every `RX_CUT(k)` is textually reachable only from labels
-  after it. (CUT-INV clause 2, §3.3 properties 1 and 2.)
-- **`[M6.4-ATOMIC rule 4]`** — a DISCHARGED pattern emits no mark slot and no
-  `RX_CUT`; a capture-free discharged pattern emits no VM at all
-  (`RX_ENGINE` absent — MEASURED: a `--no-captures` DFA artifact contains zero
-  `RX_ENGINE` defines). (§5.3.)
+Four checks in `tests/codegen/run_codegen_tests.sh`, each named, each with a
+sabotage row, and each matching **BOTH spellings of a cut** (§3.2.3):
+
+- **`[M6.4-ATOMIC rule 1]` — the ceiling.** On a cut-bearing artifact **whose
+  `RX_VM_PRUNE_CEILING` is not `"none"`** (i.e. `nclamp > 0`; C5 — with
+  `nclamp == 0` there is no `window_end` local and no ceiling to get wrong, and
+  the critic measured the R3a family at {prefilter-window 42, none 4}, so an
+  unscoped rule is RED on four correct artifacts), assert **two sources**:
+  (a) the emitted search entry contains no `window_end = … window[0][1] …`
+  assignment — it is absent or literally `window_end = subject_length;` — and
+  (b) the stamp reads `"subject-end"`. E3's whole finding is that either alone
+  is satisfiable by a half-done edit.
+- **`[M6.4-ATOMIC rule 2]` — the flag.** `-fno-possessify` on a pattern with an
+  UNDISCHARGED user-written possessive (`(?:a|ab){1,3}+c`, whose §2.2 verdict
+  is MEASURED negative) still emits a cut. Matched as **call sites**:
+  `grep -c '^ *RX_CUT('` > 0 **or** `grep -c 'run->resume_depth = <p>_rvN_frame_mark;'` > 0,
+  never as `grep RX_CUT`. The scoping to UNDISCHARGED is load-bearing (§5.4's
+  carve-out): on a discharged possessive there is correctly no cut.
+- **`[M6.4-ATOMIC rule 3]` — the mark.** The mark's `RX_SET(RX_SLOT_CUT_MARKk, …)`
+  appears BEFORE every `RX_PUSH` the atomic body emits (CUT-INV clause 2).
+  **The first revision's second clause is DELETED — R31 C15**: it asserted that
+  every `RX_CUT(k)` is "textually reachable only from labels after it", and
+  this VM dispatches by computed goto, where textual position carries no
+  reachability at all. The clause was unfalsifiable, which is worse than absent.
+- **`[M6.4-ATOMIC rule 4]` — the discharge.** A DISCHARGED pattern emits no
+  cut-mark slot (`grep -c 'RX_SLOT_CUT_MARK'` == 0) and no cut in either
+  spelling; a capture-free discharged pattern emits no VM at all (`RX_ENGINE`
+  absent — MEASURED: a `--no-captures` DFA artifact contains zero `RX_ENGINE`
+  defines). Note the slot count is the RELIABLE half here: K29 shows an
+  artifact can have the slot and no cut, so the two are independent facts and
+  the rule asserts both.
+- **`[M6.4-ATOMIC rule 5]` — NEW, from §3.2.1.** One assertion PER DISPATCH
+  PATH, driven by the six witnesses in that table, each naming which
+  cut-equivalence answer that path gives: CURSOR must emit **no push and no
+  cut**; FRAMES_BOUNDED / FRAMES_UNBOUNDED / COUNTER-bounded / COUNTER-unbounded
+  must emit `RX_CUT(` call sites; REVDET must emit the second spelling. Without
+  rule 5 a future rung change silently drops a path, which is exactly how K29
+  happened.
 
 ### 11.4 The mech sabotage rows
 
+**RENUMBERED FROM S88 — R31 C4.** The first revision said "numbering continues
+from S85/S86" and named S87 in §4.4. `S87_kreset_trail_uncharged.sh` LANDED
+2026-08-19 with [M6.2] wave E; there are 85 rows and S87 is taken, and
+`run_sabotage_matrix.sh`'s ID-prefix match would have selected two `S87-` rows.
+
 Shape per `tests/mech/sabotages/S85_*`: `SAB_ID`, `SAB_FILE`, `SAB_SUITES`,
 `SAB_HARNESS_TARGET`, `SAB_DESC`, `SAB_DOC_FIGURE`, `SAB_BEFORE`/`SAB_AFTER`.
-Numbering continues from S85/S86.
 
-| row | the sabotage | the claim it is the failing direction of | expected to move |
+| row | the sabotage | claim it is the failing direction of | expected to move |
 |---|---|---|---|
-| **S87** | `emit_vm.c:4351` keeps `v.mrl_win = job->fit.prefilter` on cut artifacts | §4 H3 | codegen rule 1 RED; the `ceiling.rxt` family (`(?>a\|ab)c\|abcd`) RED |
-| **S88** | `RX_CUT` also truncates `trail_depth` to the frame's mark | §3.1 CUT-INV | the capture-retention corpus RED (`(?>(a)\|ab)`); codegen GREEN, which is the point — this one is invisible to structure |
-| **S89** | the mark's `RX_SET` is emitted AFTER the body's first `RX_PUSH` | CUT-INV clause 2 | codegen rule 3 RED; the nesting and quantified-atomic corpus RED |
-| **S90** | the discharge fires unconditionally (drops atomicity whether or not the verdict was positive) | §5.3 | the whole atomic corpus RED; `run_atomic_diff.sh` RED. This is registry.c:615-622's named trap, as a row |
-| **S91** | `-fno-possessify` clears the user-written possessive | §3.2 rule 2 | codegen rule 2 RED; the corpus RED **only under the flag**, which is why it needs its own row |
-| **S92** | the possessive suffix parses but the mark is never recorded (silent UNCUT lowering) | the house "never miscompile" rule | the corpus RED broadly; `--list-syntax` still reports `built`, which is the row's whole warning |
-| **S93** | `rd_shape` ACCEPTS `A_ATOMIC` instead of declining | §6.5 | the revdet-eligible slice of the corpus RED; nothing else moves |
+| **S88** | the ceiling predicate is read at the STAMP only, not at `:5233`/`:5177` | §4.4 H3 — and this is E3's defect as a row | codegen rule 1(a) RED, rule 1(b) GREEN. The disjointness is the point: a row that turned both red would not prove the two sources are needed |
+| **S89** | `RX_CUT` also rewinds the trail to the first discarded frame's mark | §3.1 CUT-INV | the RETENTION corpus RED (`(?>(a)\|ab)`); codegen GREEN. Its scale is already MEASURED in the prototype: 4 of 17 rows (§3.4) |
+| **S90** | the mark's `RX_SET` is emitted AFTER the body's first `RX_PUSH` | CUT-INV clause 2 | codegen rule 3 RED; the nesting and quantified-atomic corpus RED |
+| **S91** | the discharge fires unconditionally (drops atomicity whether or not the verdict was positive) | §5.3 | the whole atomic corpus RED; `run_atomic_diff.sh` RED. `registry.c:615-622`'s named trap, as a row |
+| **S92** | `-fno-possessify` clears the user-written possessive | §3.2 RULE 2 | codegen rule 2 RED; the corpus RED **only under the flag** — which is why Appendix A.2 now has a `-fno-possessify` arm (C11) |
+| **S93** | the possessive suffix parses but the mark is never recorded (silent UNCUT lowering) | the house "never miscompile" rule | the corpus RED broadly; `--list-syntax` still reports `built`, which is the row's whole warning |
+| **S94** | `rd_shape` ACCEPTS `A_ATOMIC` instead of declining | §6.5 | the revdet-eligible slice RED; nothing else moves |
+| **S95** | `vm_cost`'s `A_ATOMIC` arm charges no trail entry | §3.5, C10 — the `S87_kreset_trail_uncharged` analogue one construct over | the capacity/`subject_ceiling` assertions RED on a deep-nested atomic; answers unchanged, which is why it needs its OWN row |
+| **S96** | the producer does not stamp `A_ATOMIC` with its row's `engines` mask | §5.1 / M-1's SR-8 contract | the engine-selection assertion RED; `--engine=dfa '(?>a\|ab)c'` SUCCEEDS instead of refusing |
+| **S97** | the discharge's output INHERITS the discharged node's stamp | M-1 contract note 3 | the fixpoint fails to converge to DFA while every answer stays correct — the "changes no answer" shape, invisible to the corpus and visible only to the engine assertion |
+| **S98** | `vm_cuts()` is not called by `vm_count_slots` (it reads `->possessive` directly) | §3.2.5 / E4 | slot-count assertions RED; on a deep pattern, an OOB slot write in EMITTED code (K27's class) |
 
-Every `SAB_DOC_FIGURE` is [M6.4.2]'s obligation, measured through the canonical
-driver (`run_sabotage_matrix.sh SNN`), never hand-applied — wave D's S82 lesson.
-**S88 and S93 are the two that matter most**, because both are invisible to
-every structural check and are caught only by the corpus; if either scores
-UNDETECTED the corpus is too small, not the row.
+**C11's driver requirement, which is a real blocker and not a detail.**
+`run_sabotage_matrix.sh`'s suite vocabulary is CLOSED (`:54-70`, with
+`*) UNKNOWN-SUITE` at `:650-652`), so `run_atomic_diff.sh` needs a REGISTERED
+suite word and a log arm before S91/S92/S96/S97 can be scored at all. That is
+slice 4 work and it must precede the sabotage measurement, not follow it.
 
----
+Every `SAB_DOC_FIGURE` is `[M6.4.2]`'s obligation, measured through the
+canonical driver (`run_sabotage_matrix.sh SNN`), never hand-applied — wave D's
+S82 lesson. **S89, S94 and S97 are the three that matter most**: all three are
+invisible to every structural check and are caught only by the corpus or the
+engine assertion, so if any scores UNDETECTED the corpus is too small, not the
+row.
 
 ## 12. Proposed wave structure for [M6.4.2]
 
