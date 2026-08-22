@@ -372,3 +372,35 @@ is language-denoting, assertions and atomic/possessive are not.
 |---|---|---|---|---|
 | E15 | MED | the gate is a property of the subtree BENEATH the referenced A_CAP | the erasure a prefilter DFA needs is the DEEP one (a nested reference is itself erased, pulling in a group nowhere beneath the referenced one); with group 2 assertion-/atomic-free in every row the gate ACCEPTS: `^(\Ga)((b)\1)\2$` on "ababa" (0,5), deep erasure None; `^(^a)((b)\1)\2$`; `(\ba)((b)\1)\2` — 3 of 5 deep-erasure FALSE NEGATIVES; the shallow erasure is sound but still holds a backreference | LAST REVISION: the condition over the TRANSITIVE CLOSURE of the reference relation, computable from the unioned `refs`; the three cells into the positive control; atomic/possessive transitive cells not found to bite — stated, not assumed |
 | E10 res. | LOW | §3.1(a):338-344 unchanged | §16's row at :85 records it FIXED — the change table claims a correction not made | LAST REVISION: wording + a true table |
+
+## Last revision — 188bbe7 → ca9beef; VERDICT: APPROVED
+
+E15 verified by the lane (3 of 5) and applied: the gate over the
+TRANSITIVE CLOSURE of the reference relation (one walk over the unioned
+`refs`), in §7.2, §7.4's charter and P-7; the shallow erasure noted as
+sound-but-not-a-candidate; a TRANSITIVE section in the probe (3/5
+biting, 2 non-biting; atomic/possessive applied transitively 0 of 4 —
+"measured-and-not-found, not proved"). The nested-backreference result
+cited as the panel's with the structural reason. P-7's self-description
+recorded: wrong three times in three ways — unconditional, one-
+condition, structural-where-transitive. E10 owned plainly: the edit had
+been applied without an assertion and silently matched nothing while
+§16 recorded it made — "a change reported by its author with no control
+on whether it happened"; fixed, and the lesson caught a two-rounds-stale
+CLAUDE.md entry for the erasure probe.
+
+**Manager verification at ca9beef:** tree clean; docs only; all nine
+archives' probe stamps equal their probes' live last-change commits and
+carry the `backrefs` stamp; probe_erasure_hazard.py re-run by the
+manager — body IDENTICAL to the archive (12/18, 3/5, 0/4 present);
+§3.1(a) now reads "FAIL TO BUILD UNDER make strict … -Wswitch is a
+WARNING" (the one remaining "compile error THERE" is §16's row quoting
+the old text); the transitive-closure gate present (7 mentions).
+
+**VERDICT — APPROVED at ca9beef.** 4cd461f → b3d0b32 → e369fac →
+e8c9098 → 188bbe7 → ca9beef: eight HIGH refuted and closed, E12/E13/E15
+found against the revisions and closed, publish-at-close validated on
+22,000+ cells across two instruments (the critic's, adopted unsoftened),
+the nested case measured safe. [M6.5.2] implements THIS document after
+[M6.4.2] lands; §11 and the triage tables are the brief; S-BR12 is
+unvalidatable until SR-8 exists and the matrix must not count it.
