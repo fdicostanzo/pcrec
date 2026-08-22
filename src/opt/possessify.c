@@ -614,16 +614,25 @@ typedef struct {
     int   marked;      /* newly marked on THIS call — the fixpoint's signal */
     int   seen;        /* A_REP nodes walked */
     int   possessive;  /* A_REP nodes possessive AFTER this call */
+    /* [M6.4.2] THE SURVEY CHANNEL. When `fn` is non-NULL this walk does NOT
+     * write `Ast.possessive` at all — it reports every positive verdict
+     * through the callback instead. `pcrec_poss_survey` is the entry; the free
+     * discharge (src/opt/atomic.c) is the caller. Same walk, same FOLLOW, same
+     * conjuncts: a second implementation of §2.2 is the one thing this file
+     * must never grow. */
+    void (*fn)(void *user, Ast *rep);
+    void *user;
 } Pss;
 
 static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
                      const uint8_t *encl);
 
-static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
-                    const uint8_t *encl)
+/* §2.2's verdict on ONE A_REP, side-effect-free, given the context its caller
+ * computed. Factored out of `pss_rep` at [M6.4.2] so the free discharge can ask
+ * the SAME question the marking walk asks, from the same lines. */
+static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
+                        bool may_end, const uint8_t *encl)
 {
-    P->seen++;
-
     First body = first_of(a->l);
 
     /* The effective follow: what comes after Q here, plus what every
@@ -647,13 +656,35 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * and bottom of §2.3's chain are the same position — which is also why it
      * survived every attack the panel made [R24 H8] and why it carries 52 of
      * the 76 possessifiable verdicts on realistic patterns. */
-    bool verdict;
-    if (base_ok && exact)                                verdict = true;
-    else if (base_ok && disjoint && lazy && may_end)     verdict = false;
-    else if (base_ok && disjoint)                        verdict = true;
-    else                                                 verdict = false;
+    if (base_ok && exact)                            return true;
+    if (base_ok && disjoint && lazy && may_end)      return false;
+    if (base_ok && disjoint)                         return true;
+    return false;
+}
 
-    if (verdict && !a->possessive) {
+/* `survey_this` is false at exactly one caller — the `A_ATOMIC` arm below,
+ * which has already asked this node's verdict in a DIFFERENT context. */
+static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
+                    const uint8_t *encl, bool survey_this)
+{
+    P->seen++;
+
+    First body = first_of(a->l);
+
+    /* The effective follow: what comes after Q here, plus what every
+     * enclosing loop could restart with. */
+    uint8_t eff[32];
+    memcpy(eff, follow, 32);
+    bs_or(eff, encl);
+
+    bool verdict = pss_verdict(P, a, follow, may_end, encl);
+
+    if (P->fn) {
+        /* SURVEY MODE writes nothing (`pcrec_poss_survey`'s whole contract).
+         * The census counters below are still maintained so a survey cannot
+         * silently corrupt `cx->poss_*`; `pcrec_poss_survey` restores them. */
+        if (verdict && survey_this) P->fn(P->user, a);
+    } else if (verdict && !a->possessive) {
         a->possessive = true;
         P->marked++;
     }
@@ -679,31 +710,67 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         return;
 
     case A_CAP:
-    /* [M6.4.2] TRANSPARENT — this walk HUNTS for A_REP nodes to offer the
-     * verdict to, and a quantifier inside an atomic group is still a
-     * quantifier the emitter has to lower.
-     *
-     * THE FOLLOW IT IS OFFERED IS THE ATOMIC GROUP'S OWN, unchanged, which is
-     * the conservative reading: the cut can only DELETE continuations, so the
-     * real follow of a quantifier inside the group is a SUBSET of what this
-     * passes down, and a larger follow makes the disjointness arm HARDER to
-     * satisfy. Whether §2.2's verdict stays sound in the presence of a cut is
-     * the one question this arm rests on, and it is measured rather than
-     * argued: 776,160 cells with 10,504 of them REFUTABLE (verdict positive
-     * AND the cut biting), 0 violations, per-position floors asserted
-     * (atomic_groups_measurements/out/puc_targeted.txt).
-     *
-     * Marking a quantifier inside a cut is also not a DOUBLE cut: the two cuts
-     * are against DIFFERENT marks at strictly increasing depths (the atomic
-     * group's mark is set before the body pushes anything), so the inner one
-     * is a no-op-or-shrink for the outer. */
-    case A_ATOMIC:
         pss_walk(P, a->l, follow, may_end, encl);
         return;
 
     case A_REP:
-        pss_rep(P, a, follow, may_end, encl);
+        pss_rep(P, a, follow, may_end, encl, true);
         return;
+
+    /* [M6.4.2] AN ATOMIC BODY IS ANALYSED AS A SELF-CONTAINED PATTERN, and
+     * THAT IS NOT WHAT "TRANSPARENT" WOULD DO.
+     *
+     * `first_of` and `gk_build` above ARE transparent — FIRST and the position
+     * automaton are properties of the strings the node can match, and a cut
+     * removes whole MATCHES rather than first bytes or positions. This walk is
+     * different: it threads FOLLOW, and FOLLOW is exactly what the cut cuts.
+     *
+     * MEASURED, on both engines, before this arm was written: with the group's
+     * own follow passed through, `(?>(?:a|bc)*?)d` on "abcd" answers (0,4)
+     * where libpcre2 answers (3,4). The lazy loop's §2.2 verdict came out
+     * POSITIVE because its follow looked like {d} and `may_end` looked false —
+     * so the lazy conjunct did not fire — and the emitter then collapsed the
+     * preference to maximal. But `d` is NOT this loop's follow: the group
+     * COMMITS at the loop's first exit, which for a lazy loop is the MINIMAL
+     * one, and `d` runs only after that commitment. §2.2's collapse argument
+     * ("at any non-maximal exit the body could iterate again, so that byte is
+     * in FIRST(X), so by disjointness the follow cannot begin there") assumes
+     * the loop can be RE-ENTERED, which is precisely what the cut deletes.
+     *
+     * So the body is walked with an EMPTY follow and `may_end = true`: nothing
+     * follows the body INSIDE the group, and the group's body may legitimately
+     * end at its own end. A quantifier that is NOT last in the body gets its
+     * real within-body follow from the A_CAT arm, unchanged — `(?>X*?y)d`
+     * still sees {y}. `encl` is carried through rather than cleared, which is
+     * the conservative direction (a larger follow makes disjointness harder).
+     *
+     * THE SURVEY ASKS A DIFFERENT QUESTION AND GETS THE OTHER FOLLOW, which is
+     * why it is answered HERE rather than inside the descent. The free
+     * discharge asks "would DELETING this A_ATOMIC change the answer", and the
+     * answer for the erased tree is the verdict computed with the GROUP's own
+     * follow — the transparent one. The two genuinely differ: `(?>a*)a` is
+     * NOMATCH on "aaa" while `a*a` is (0,3), and only the transparent reading
+     * (follow = {a}, not disjoint, verdict FALSE) refuses to discharge it,
+     * while only the cut-aware reading (follow = {}, verdict TRUE) is right
+     * about the MARK the emitter needs. Same node, two questions, two follows.
+     *
+     * §6.4a's 776,160-cell sweep did not find this: its generator is
+     * `PRE (?>QB q|QB xy) tail`-shaped, so a quantifier inside the group is
+     * always followed by something INSIDE it, and the cell where the
+     * quantifier ENDS the atomic body is not in its population. */
+    case A_ATOMIC: {
+        Ast *body = a->l;
+        uint8_t none[32];
+        bs_clear(none);
+        if (body->k == A_REP) {
+            if (P->fn && pss_verdict(P, body, follow, may_end, encl))
+                P->fn(P->user, body);
+            pss_rep(P, body, none, true, encl, false);
+        } else {
+            pss_walk(P, body, none, true, encl);
+        }
+        return;
+    }
 
     case A_CAT: {
         /* Right-to-left along the spine, carrying the follow of the suffix
@@ -737,6 +804,31 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         return;
     }
     }
+}
+
+void pcrec_poss_survey(Ctx *cx, Ast *root,
+                       void (*fn)(void *user, Ast *rep), void *user)
+{
+    Pss P;
+    memset(&P, 0, sizeof P);
+    P.cx = cx;
+    P.fn = fn;
+    P.user = user;
+    P.g = arena_alloc(&cx->arena, sizeof(Gk));
+
+    /* The census counters this walk maintains are `pcrec_possessify`'s, and a
+     * SURVEY must not move them: `--emit-ir`'s header reports them and the
+     * survey is not a pass anyone asked about. Saved and restored rather than
+     * left to the fact that survey mode writes nothing, because `P.possessive`
+     * is counted from the FIELD and would be reported as this survey's own. */
+    const int saved_total = cx->poss_total, saved_marked = cx->poss_marked;
+
+    uint8_t none[32];
+    bs_clear(none);
+    pss_walk(&P, root, none, true, none);
+
+    cx->poss_total  = saved_total;
+    cx->poss_marked = saved_marked;
 }
 
 int pcrec_possessify(Ctx *cx, Ast *root)
