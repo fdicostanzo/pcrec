@@ -101,12 +101,35 @@ all against revision 1:
   an empty population (refused patterns were dropped uncounted). It now
   asserts the population too.
 
-**The method finding underneath N1 is the one to carry**, and it applies to
-this document and to the review alike: *an enumeration is only as wide as its
-search population.* The first table searched four files and found six sites;
-the re-check searched wider and found seven; the sweep searches `src cli tests`
-and finds nine. §7.4 says so, and the probe tells a future reader that a tenth
-site is a correction rather than a surprise.
+**r31chk's FINAL re-check closed N1, N2 and N3** (all nine sites independently
+verified including this lane's 99→103 correction; the five re-aims judged apt;
+the WRAP floor correctly ordered) and raised two more registry sites plus one
+residual, all fixed in revision 2d:
+
+- **T1 (HARD RED) — §7.4.1 named five row fields and the reject suite needs
+  two more.** `run_reject_tests.sh` iterates every non-base dump row and
+  requires each row's own `syntax` to be a CLEAN EXIT-1 REJECTION containing
+  its `expect` text and writing no file. Both `expect` and `note` added, with
+  the contract stated and MEASURED satisfiable on all four spellings. Site 10.
+- **T2 (SILENT NON-COVERAGE) — `check_table_to_parser` enumerates kinds by
+  explicit CALL**, so a fifth kind is never compared and nothing goes red:
+  §7.3's own "half-done invisibly" shape, inside the file R3 strengthens.
+  Site 11, and R3 now has to cover it.
+- **N3-residual — the S-reference probe could not catch the bug it was built
+  for.** It was membership-only, and all five original stale references named
+  EXISTING rows. Rebuilt: every citation, from the extractor's own population,
+  printed beside the row's description, with the header saying plainly that it
+  surfaces evidence for a human judgement and cannot make that judgement.
+
+**The method finding, CORRECTED by T1/T2 and better for it.** The first table
+searched four files and found six sites; the re-check searched wider and found
+seven; the sweep searched `src cli tests` and found nine — and then the final
+re-check found two MORE, **in files the sweep had already read**. The
+population was wide enough; the QUESTION was not. So the lesson is not "widen
+the search population" but: *an enumeration is bounded by its population AND by
+the shapes it knows how to recognise, and the second bound is invisible from
+inside.* The probe now extracts five shapes and tells the next reader to
+suspect a sixth shape before a seventh directory.
 
 Written to be attacked: §14 is this document's own list of where to start, and
 it now carries what the first round did and did not move.
@@ -1648,11 +1671,18 @@ TRANSCRIPT AND NOT A MEASUREMENT.**
 > could not have seen.
 >
 > `probes/probe_registry_cost.sh` now SWEEPS `src/`, `cli/` and `tests/` with
-> no curated file list. **It finds NINE sites across SIX files where the
-> re-check named seven, and three of them are EXACT equalities** — so the
-> correction to the correction is recorded too. The lesson generalises past
-> this probe: an enumeration is only as wide as its search population, at
-> every level including the review's.
+> no curated file list. It found NINE sites across SIX files where the
+> re-check named seven, three of them EXACT equalities.
+>
+> **AND THEN THE FINAL RE-CHECK FOUND TWO MORE — IN FILES THE SWEEP ALREADY
+> READ.** Sites 10 and 11 are not in a seventh directory; they are a per-row
+> FIELD assertion and an enumeration-by-CALL, and the sweep was extracting row
+> COUNTS, KIND LISTS and ROUTING SETS. **The population was wide enough and the
+> QUESTION was not.** The probe now extracts five SHAPES, and its closing line
+> tells the next reader to suspect a sixth shape before a seventh directory.
+> That is the corrected lesson, and it is a better one than the first: an
+> enumeration is bounded by its search population AND by the shapes it knows
+> how to recognise, and the second bound is the one you cannot see.
 
 | # | site | today | after four rows |
 |---|---|---|---|
@@ -1665,6 +1695,8 @@ TRANSCRIPT AND NOT A MEASUREMENT.**
 | 7 | **`tests/registry/compliance_section.py:391`** | `len(rows) != 100` — EXACT, and its own comment says "Bumping it is deliberate and belongs in the same commit as the row" | **104**. [DOC-DRV]'s generator |
 | 8 | **`tests/reject/run_reject_tests.sh:1713`** | `niter -eq 99` — EXACT, the NON-BASE count (`(?:` is the one `RS_BASE` row) | **103** |
 | 9 | **`tests/spec_mod0/check06_cursor.sh:170`** `EXPECT_BASE_ANSWERED="(?:...)"`, asserted as a SET at `:243` | one unrouted row | **`(?:...) a*+ a++ a?+ a{1,2}+`** — a SET equality, so no floor absorbs it |
+| **10** | **`tests/reject/run_reject_tests.sh:1679`, `:1697`, `row_reject` at `:1587-1636`** | the suite iterates every NON-BASE dump row and calls `row_reject "$syntax" "$expect" "$module"`; awk drops rows with an empty `syntax` or `expect` as `BADROW` | each new row must have a NON-EMPTY `expect` **and its own `syntax` must be a clean exit-1 rejection whose stderr CONTAINS that text and which writes NO output file** — see §7.4.1 |
+| **11** | **`registry_check.c:770`, `:833`, `:1606`** — `check_table_to_parser` enumerates kinds by explicit CALL (`pcrec_registry(RK_ESC, …)`, `(RK_GROUP, …)`), not by iterating a list | two kinds covered | **a fifth kind is SILENTLY UNCOVERED** by the table→parser diagnostic-agreement check — §7.3's "half-done invisibly" shape, in the very file R3 strengthens |
 | — | `tests/registry/run_registry_tests.sh:88`, `:90` | the REGMANIFEST carries `48` and `100` in PROSE | both lines. No grep for a literal in a `.c` finds these |
 
 **The floors that PASS, checked so the table is not one-sided**: `check06_cursor.sh:136` (`ROWS -lt 100`) and the identity sweeps' `-lt 100` guards all hold at 104. The probe prints them.
@@ -1674,11 +1706,39 @@ TRANSCRIPT AND NOT A MEASUREMENT.**
 #### 7.4.1 The new rows' field values, stated because C8 is right that they are not derivable
 
 `status` = `RS_MODULE`, `roadmap` = `ROADMAP_PLANNED`, `module` =
-`atomic_groups`, **`quant` = `QF_NO`** — `registry_check.c:173-176` fails any
+`atomic_groups`, **`note` = non-empty** (`registry_check.c:145` fails an empty
+one), **`expect` = `requires module 'atomic-groups'`** — see the paragraph
+below, it is the load-bearing one — **`quant` = `QF_NO`** — `registry_check.c:173-176` fails any
 row whose `quant` is `QF_NONE` ("no quantifiable value … the question is real
 for BASE rows too"), and `QF_NO` is the measured answer: `a*++` is an ERROR in
 libpcre2 and in pcrec (§6.3), so a possessive suffix is not itself
-quantifiable. `engines` = **`VM_ONLY`**, matching row `registry.c:623` for
+quantifiable.
+
+**`expect` IS A BEHAVIOURAL COMMITMENT, NOT A LABEL — r31chk final T1.**
+`tests/reject/run_reject_tests.sh` iterates every non-base dump row and calls
+`row_reject "$syntax" "$expect" "$module"`, which requires the row's OWN
+`syntax`, run as `pcrec -p rx -o OUT -- '<syntax>'`, to (i) exit **exactly 1**,
+(ii) print a diagnostic CONTAINING the `expect` text, and (iii) write **no
+output file**. A row whose `expect` does not appear in its own diagnostic fails
+the suite; a blank one is caught twice (the awk `BADROW` filter at `:1679` and
+`row_reject`'s own guard at `:1597-1601`).
+
+MEASURED satisfiable on all four, on the shipped binary
+(`out/registry_cost.txt` §9):
+
+```
+a*+       exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+a++       exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+a?+       exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+a{1,2}+   exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 6)
+```
+
+so `expect = requires module 'atomic-groups'` is a substring of every one and
+the rows join the reject suite's iteration for free. **This is also why the
+`syntax` field must be `a*+` rather than `*+`**: `syntax` is executed, not
+displayed, and a bare suffix is not a pattern.
+
+`engines` = **`VM_ONLY`**, matching row `registry.c:623` for
 the same reason (§8): a possessive whose §2.2 verdict is negative is not
 DFA-compilable by anything this module ships. `VM_ONLY` makes all four rows
 QUALIFY for the engine-capability tripwire, so `registry_check.c:1473`'s
@@ -1697,6 +1757,15 @@ signature failure mode (`memory/pcrec-check-design-lessons`). So R3 is:
 **`registry_check` parses `--list-syntax` OUTPUT and asserts that every
 `RegKind` name appears in it**, which is the only formulation that can see an
 `all_kinds[]` omission at all.
+
+**R3 MUST ALSO COVER SITE 11 — r31chk final T2.** `check_table_to_parser` does
+not iterate any list: it names `RK_ESC` and `RK_GROUP` in explicit calls
+(`:770`, `:833`, `:1606`), so a fifth kind is not merely under-checked, it is
+**never compared at all** and nothing goes red. Either R3's per-kind assertion
+covers this check by name, or `check_table_to_parser` is changed to iterate
+`RK_COUNT`. The second is better and is what `[M6.4.2]` should do; the first is
+the minimum. Note what this site is: **the exact "half-done invisibly" failure
+§7.3 names, sitting inside the file R3 exists to strengthen.**
 
 **The alternative that loses, stated so the panel can weigh it.** An explicit
 EXEMPTION (leave the refusal in `parse.c`, record the reason, and let

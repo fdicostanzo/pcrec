@@ -183,6 +183,15 @@ so which tree produced a number is carried rather than assumed.
   and 9 undefined rows** — the id list was newline-separated and the `case`
   membership test matched nothing — caught only because the probe refuses to
   print a verdict when it checked nothing. The note stays in the file.
+  **REBUILT AGAIN at r31chk's final (N3-residual), because it could not catch
+  the bug it was built for**: it was MEMBERSHIP-ONLY, and all five stale
+  references named rows that EXIST — they named the WRONG ones. `sort -u` plus
+  `head -1` also showed one citing line per row, so the Appendix A.2 site that
+  MOTIVATED it was never displayed, and the display grep searched the whole
+  document while the extractor excluded §11.4. It now prints EVERY citation
+  from the extractor's own population beside the row's description, and its
+  header says plainly that aptness is a human judgement it surfaces evidence
+  for and cannot make.
 - **`probes/probe_registry_cost.sh` — MEASURED, in-pcrec. REWRITTEN AS A SWEEP
   (r31chk re-check N1); the first version was the defect it was written to
   prevent.** It carried a table headed "MEASURED rather than recalled" and
@@ -195,7 +204,11 @@ so which tree produced a number is carried rather than assumed.
   `compliance_section.py:391`), a THIRD hardcoded `kinds[]` array
   (`registry_check.c:1696`) both earlier enumerations missed, seven `RegKind`
   switches, and the REGMANIFEST's two PROSE pins. It closes by telling the
-  reader that a tenth site is its next correction, not a surprise.
+  reader to suspect a SIXTH SHAPE before a seventh directory, because that is
+  where the last two came from. Its own `set -e` foot-gun bit for the THIRD
+  time in this directory while writing the section about it, and the obvious
+  `|| true` fix then SWALLOWED the exit code the section was measuring; both
+  traps are recorded at the line.
   What §7.4's four rows actually cost, site by site with line numbers, because
   the first revision said the built-status derivation was "simply a compile of
   the syntax string" and it is `doorway_route` + `doorway_call` over four
