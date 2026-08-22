@@ -3387,3 +3387,31 @@ c"` from `(0,3)` into `(0,1)`, and
   of THIS artifact's sections and match-attempt flow, not a regex-engine
   primer; still brought to Frank at the sample stage.
 
+- [TT-3] STATE:completed (CLOSED 2026-08-21/22, merge ee57668: verdict NO for make test — plain 7:16 / cold 32:01 / warm 29:48 at a real 64.6% hit rate, per-call overhead x ~20k tiny compiles beats 12-core parallelism (workload shape, not wiring); qualified YES for mech rows (25-29% warm on single-row samples, cross-sabotage unmeasured with reasoning documented); wiring merged as opt-in CCACHE=1 off-by-default, toggle-off byte-identity PROVEN, D45 controls verified cold+warm; two-blocker diagnosis (compile+link shape; -I temp paths + -g CWD hashing) in docs/testing.md "Compile caching"; predictions REFUTED for the suite, the honest-no outcome the charter allowed) — formerly STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
+  session, from the test-timings discussion; runs NEXT when a lane is
+  available — prerequisite DISCHARGED same day: Frank installed ccache
+  4.12.3) — COMPILE-CACHING THE SUITE. The suite's cost driver is
+  gcc compiling generated C (full `make test` 7m16s at 20,775 cases;
+  the five-stage battery ~65 min; full mech ~50 min at PROCS=4 —
+  measured 2026-08-21), and that compilation is deterministic in its
+  inputs, which the identity-gate discipline already proves stay
+  byte-identical for most artifacts under most changes. Wire ccache
+  onto BOTH compile paths (the tree build and the GENCFLAGS
+  generated-artifact path in tests/lib/gen_timeout.sh's gen_cc), as an
+  OPT-IN toggle in the house style (a plain `make test` without the
+  toggle must behave exactly as today). CACHE COMPILATION, NEVER
+  VERDICTS: every test still executes and every verdict is computed
+  fresh; verdict/skip caching is explicitly out of scope (it caches
+  conclusions). TWO RULED CAVEATS travel as design items, not
+  footnotes: (1) D45's gen-timeout POSITIVE CONTROL (the compile that
+  must actually time out) and anything that MEASURES compile time gets
+  CCACHE_DISABLE or a content salt — a cache hit would make the
+  wrapper's control vacuous, the checks-going-vacuous class; (2)
+  nothing timing-flavored (bench, gate, M2.9-territory compile-time
+  budgets) is ever cached. DELIVERABLE IS A MEASUREMENT, not a claim:
+  cold/warm before-after table for `make test`, one full mech row,
+  and the battery's ubsan stage, on a quiet box; land only with the
+  table (predictions on record: test 7m -> 1-2m, mech 50m -> 5-10m —
+  refute or confirm). Disk bound stated and checked (cache size cap;
+  the box has ~46G free). Update docs/testing.md's tier table and the
+  stale "make mech ~6-7 minutes" figure in the same change
