@@ -3,11 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_atomic_semantics.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 81ca83e 2026-08-22
-# RUN FROM REPO COMMIT        : e45306c (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: ee64e5b 2026-08-22
+# RUN FROM REPO COMMIT        : ee64e5b (lane/agdesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/atomic_groups_measurements/out/
-# RUN DATE   : 2026-08-22T08:45:45-04:00
+#      M docs/design/atomic_groups_measurements/out/atomic_semantics.txt
+# RUN DATE   : 2026-08-22T09:41:04-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -58,6 +58,35 @@ B spell       a{2,}+a                'aaaa'       0  nomatch                    
                 -> {n,}+ open upper bound
 B spell       (?>a{2,})a             'aaaa'       0  nomatch                    nomatch                    yes
                 -> {n,}+ equivalence
+
+B2 spell-nonuniq (?:a|ab){2}+           'aba'        0  (0,3)                      nomatch                    **NO**
+                -> PCRE2 cuts at the GROUP EXIT; python cuts PER ITERATION
+B2 spell-nonuniq (?>(?:a|ab){2})        'aba'        0  (0,3)                      (0,3)                      yes
+                -> the atomic spelling of the row above: PCRE2 must agree with it
+B2 spell-nonuniq (?:a|ab){2,3}+         'ababa'      0  (0,3)                      nomatch                    **NO**
+                -> {n,m}+ over a non-unique body
+B2 spell-nonuniq (?>(?:a|ab){2,3})      'ababa'      0  (0,3)                      (0,3)                      yes
+                -> its atomic spelling
+B2 spell-nonuniq (?:a|ab){2,}+          'ababa'      0  (0,3)                      nomatch                    **NO**
+                -> {n,}+ over a non-unique body
+B2 spell-nonuniq (?>(?:a|ab){2,})       'ababa'      0  (0,3)                      (0,3)                      yes
+                -> its atomic spelling
+B2 spell-nonuniq (?:a|ab){2}+c          'abac'       0  (0,4)                      nomatch                    **NO**
+                -> with a follow
+B2 spell-nonuniq (?>(?:a|ab){2})c       'abac'       0  (0,4)                      (0,4)                      yes
+                -> its atomic spelling
+B2 spell-nonuniq (?:a|ab)*+             'aba'        0  (0,1)                      (0,1)                      yes
+                -> CONTROL: *+ over the SAME body -- python AGREES here
+B2 spell-nonuniq (?>(?:a|ab)*)          'aba'        0  (0,1)                      (0,1)                      yes
+                -> its atomic spelling
+B2 spell-nonuniq (?:a|ab)++c            'abac'       0  (2,4)                      (2,4)                      yes
+                -> CONTROL: ++ over the same body -- python agrees
+B2 spell-nonuniq (?>(?:a|ab)+)c         'abac'       0  (2,4)                      (2,4)                      yes
+                -> its atomic spelling
+B2 spell-nonuniq (?:ab|a){2}+           'aba'        0  (0,3)                      (0,3)                      yes
+                -> CONTROL: branch order reversed -- python agrees
+B2 spell-nonuniq (?:a|ab){3}+           'ababa'      0  (0,5)                      nomatch                    **NO**
+                -> {n}+ at a higher count
 
 C bracecomma  a{,2}                  'aaa'        0  (0,2)                      (0,2)                      yes
                 -> PCRE2 10.43+ made {,n} a QUANTIFIER
@@ -229,7 +258,22 @@ Q nocap       (?>[^\"]*)\"           'say "hi"'   0  (0,5)                      
                 -> its atomic spelling
 
 ==============================================================================
-DIVERGENCES (python is NOT a usable oracle for these): 10 of 95 cells
+DIVERGENCES (python is NOT a usable oracle for these): 15 of 109 cells
+  B2 spell-nonuniq (?:a|ab){2}+           subj='aba'      pos=0
+     libpcre2 (0,3)                    python nomatch                 
+     note: PCRE2 cuts at the GROUP EXIT; python cuts PER ITERATION
+  B2 spell-nonuniq (?:a|ab){2,3}+         subj='ababa'    pos=0
+     libpcre2 (0,3)                    python nomatch                 
+     note: {n,m}+ over a non-unique body
+  B2 spell-nonuniq (?:a|ab){2,}+          subj='ababa'    pos=0
+     libpcre2 (0,3)                    python nomatch                 
+     note: {n,}+ over a non-unique body
+  B2 spell-nonuniq (?:a|ab){2}+c          subj='abac'     pos=0
+     libpcre2 (0,4)                    python nomatch                 
+     note: with a follow
+  B2 spell-nonuniq (?:a|ab){3}+           subj='ababa'    pos=0
+     libpcre2 (0,5)                    python nomatch                 
+     note: {n}+ at a higher count
   J kreset     (?>a\Kb)c              subj='abc'      pos=0
      libpcre2 (1,3)                    python ERROR<bad escape \K>    
      note: \K inside an atomic body
@@ -260,3 +304,15 @@ DIVERGENCES (python is NOT a usable oracle for these): 10 of 95 cells
   O u9         (a?)(?>(b){0,4})a      subj='a'        pos=0
      libpcre2 nomatch                  python (0,1) g=(0,0),-         
      note: U9, atomic spelling
+
+==============================================================================
+SPELLING EQUIVALENCE (R31 E6): does libpcre2 agree that `X q+` is
+`(?>X q)`?  RULE 1 desugars one to the other, so a single disagreeing
+cell REFUTES the desugaring. The NON-UNIQUE-ITERATION rows are the
+ones that can fire; the unique-body rows are kept as controls and are
+labelled, because a suite of only those measures nothing.
+
+  pairs: 18   cells: 47   NON-UNIQUE-BODY cells: 28   disagreeing: 0
+  VERDICT: libpcre2 agrees on every cell, including 28 where the
+  body's iteration can end in two places. The desugaring holds on
+  the population that could have refuted it.
