@@ -209,8 +209,11 @@ parse-resolved modifier state. A backreference is not a class under an
 option — it consumes a *variable* number of bytes decided at match time,
 which no `A_CLASS` can express. `src/opt/mrl.c`'s exhaustive-switch-no-default
 rule then earns its keep for the fourth time: adding this member is a compile
-error at every analysis that must decide about it (`src/opt/mrl.c:19-24`), and
-`mrl.c:32-35` has already written down what the decision is (**0**, P12).
+error THERE (`src/opt/mrl.c:19-24`), and `mrl.c:32-35` has already written
+down what the decision is (**0**, P12). It is **not** a compile error
+everywhere — `vm_det_seq` (`emit_vm.c:880`) is one of the four documented
+`default:` sites and declines silently (correctly, §3.6) — so §3.6 and §11.4
+enumerate the sites the alarm does not cover rather than assuming it does.
 
 **(b) `refs`/`nrefs` rather than a single `capno`, UNIFORMLY.** A reference to
 a duplicated name resolves against a *set* of groups (§8.3), and those numbers
@@ -396,11 +399,18 @@ each of which is a claim the panel can check:
   declining on the kind needs no field read. **Adding `A_BREF` to
   `vm_det_seq` would be a miscompile**, because the length is a match-time
   quantity.
-- **The revdet rung DECLINES** for the same reason, through
-  `src/opt/revdet.c`'s `rd_shape`, which must be extended to decline the new
-  kind explicitly. This one is NOT free: `rd_shape` has a `default:` arm, so
-  the new kind inherits whatever that arm says. §11.4's sabotage S-BR4 is
-  this.
+- **The revdet rung DECLINES, and — CORRECTED — it does so BY CONSTRUCTION
+  and with an alarm.** An earlier revision of this section claimed
+  `src/opt/revdet.c`'s `rd_shape` has a `default:` arm from which a new kind
+  would inherit something. **It does not.** Its switch covers the kinds it
+  accepts and *falls out* of the switch into `S->ok = false; return;`
+  (`src/opt/revdet.c:89-140`, the two statements after the `A_ALT` arm), so an
+  unlisted kind declines — the safe direction. And because the switch is on an
+  enum with no `default:`, adding `A_BREF` raises `-Wswitch`, which
+  `make strict` promotes to an error. So this site both declines correctly and
+  says so, which is strictly better than the first draft claimed. S-BR4 stays
+  a sabotage row (§11.4) because the failing direction — someone *adding* an
+  `A_BREF` arm that accepts — is the mistake the alarm invites.
 - **The counter rung is fine**, because it replicates the body without
   reasoning about its width.
 
@@ -1402,7 +1412,7 @@ setting `SAB_ID`, `SAB_FILE`, `SAB_SUITES`, `SAB_DESC`, `SAB_BEFORE`,
 | S-BR1 | the unset test becomes `ref_e > ref_s` | `numeric.rxt`'s E cells | turns every empty capture into a failure; every non-empty cell still passes |
 | S-BR2 | the `caseless` field is ignored (always case-sensitive) | `caseless.rxt` | D62 control 3's exact residual; no compiler diagnostic |
 | S-BR3 | `vm_nullable` returns false for `A_BREF` | `numeric.rxt` Q6 (`^(a?)\1{3}$` on `""`) | an unguarded nullable body is a hang, not a wrong answer |
-| S-BR4 | `revdet.c`'s `rd_shape` accepts `A_BREF` | `nested.rxt` | the `default:` arm inherits the new kind silently |
+| S-BR4 | `revdet.c`'s `rd_shape` gains an arm ACCEPTING `A_BREF` | `nested.rxt` | the `-Wswitch` alarm (§3.6) tells you an arm is missing; it does not tell you which arm is right |
 | S-BR5 | the compare is inlined instead of calling the seam entry | `codegen` (§4.4's complement check) | **changes no answer** under the byte backend — the S68 shape |
 | S-BR6 | the module's atom port also claims the CLASS position | `octal_class.rxt` | 12 base cells that a module-off run cannot see |
 | S-BR7 | the gate check is dropped from the new atom port | `reject` | a construct that compiles with its module off |
