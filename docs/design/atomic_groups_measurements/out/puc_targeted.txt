@@ -3,11 +3,17 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_puc_targeted.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 62cc954 2026-08-22
-# RUN FROM REPO COMMIT        : 62cc954 (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 26a8e06 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/free_discharge.txt
+#      M docs/design/atomic_groups_measurements/out/possessify_under_cut.txt
 #      M docs/design/atomic_groups_measurements/out/puc_targeted.txt
-# RUN DATE   : 2026-08-22T10:12:48-04:00
+# RUN DATE   : 2026-08-22T10:19:17-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,7 +23,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-libpcre2: 10.46 2025-08-27   pcrec: build/pcrec
+libpcre2: 10.46 2025-08-27   pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
 
 cells examined (pattern x subject): 776160
 

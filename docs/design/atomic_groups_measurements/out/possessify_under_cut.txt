@@ -3,11 +3,16 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_possessify_under_cut.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 73f6cc0 2026-08-22
-# RUN FROM REPO COMMIT        : 73f6cc0 (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 26a8e06 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/atomic_groups_measurements/out/possessify_under_cut.txt
-# RUN DATE   : 2026-08-22T08:52:18-04:00
+#      M docs/design/atomic_groups_measurements/out/free_discharge.txt
+#      M docs/design/atomic_groups_measurements/out/possessify_under_cut.txt
+# RUN DATE   : 2026-08-22T10:19:11-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,7 +22,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-libpcre2: 10.46 2025-08-27   pcrec: build/pcrec
+libpcre2: 10.46 2025-08-27   pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
 
 cells (pattern x subject): 48000    patterns pcrec refused: 0
 
