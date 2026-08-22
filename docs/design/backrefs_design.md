@@ -171,7 +171,7 @@ CONTROL, and the probe refuses to report if that control finds nothing.
 `probe_prefilter_cost.sh`'s guard compared prefilter STAMPS rather than
 ENGINES, so a DFA artifact's empty stamp would have passed, and its filler's
 "7-letter words all differ" were seven IDENTICAL letters — true of the words,
-false of the letters, so `(\w)` matched the "nomatch" subject at offset 0.
+false of the letters, so `(\w)\1` matched the "nomatch" subject at offset 0.
 `probe_caseless_fold.py`'s axis A used `.`, which excludes 0x0a, so it swept
 **255** bytes while reporting 256. All four are fixed and each fix is written
 into the probe.
