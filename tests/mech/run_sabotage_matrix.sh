@@ -141,11 +141,29 @@ echo
 
 # ---- collect the sabotages to run -------------------------------------
 
+# THE SELECTOR MATCHES AT THE ID BOUNDARY, not by bare prefix, and [M6.4.2] is
+# why. The old rule was `[[ "$base" != "$ONLY"* ]]` — a plain prefix match on
+# the basename — which is exactly the hazard R31 C4 named when it caught a
+# proposed `S87` colliding with the shipped `S87_kreset_trail_uncharged.sh`:
+# "the driver's ID-prefix match would have selected two `S87-` rows".
+#
+# [M6.4.2] took the numbering past two digits and made the same hazard REAL for
+# the first time: with `S100_lift_accepts_nullable.sh` on disk,
+# `run_sabotage_matrix.sh S10` selected BOTH it and
+# `S10_casefold_one_direction.sh` — two unrelated rows, one intended, and a
+# figure attributed to whichever finished last. Measured on this tree before
+# the fix.
+#
+# A basename is `S<id>_<name>.sh`, so the boundary is the underscore. `S10` now
+# selects `S10_*` and nothing else; `S1` selects nothing, which is right — it
+# is not an id. A prefix selecting a RANGE was never a supported thing to want.
 sab_files=()
 for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
-    if [ -n "$ONLY" ] && [[ "$base" != "$ONLY"* ]]; then continue; fi
+    if [ -n "$ONLY" ] && [[ "$base" != "$ONLY"_* && "$base" != "$ONLY" ]]; then
+        continue
+    fi
     sab_files+=("$f")
 done
 
