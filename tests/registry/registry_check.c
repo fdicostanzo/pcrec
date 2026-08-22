@@ -33,6 +33,7 @@
  * Build/run: bash tests/registry/run_registry_tests.sh */
 
 #include <stdarg.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -111,6 +112,7 @@ static const char *kind_name(RegKind k)
     case RK_GROUP:        return "group";
     case RK_VERB:         return "verb";
     case RK_CLASSBRACKET: return "classbracket";
+    case RK_QUANTSUFFIX:  return "quantsuffix";
     default:              return "?";
     }
 }
@@ -261,11 +263,39 @@ static void check_wellformed(void)
                  * claiming tail "=" whose example writes "<" now fails here
                  * rather than in whichever differential noticed later. */
                 char needle[32];
+                if (k == RK_QUANTSUFFIX) {
+                    /* [M6.4.2] THERE IS NO DOORWAY PREFIX, so the invariant is
+                     * the same one stated for the construct itself: a
+                     * possessive suffix is a QUANTIFIER — whose first byte is
+                     * this row's selector — followed by `+`, and the row's
+                     * `syntax` must END with that pair. Ending, not merely
+                     * containing, because `syntax` is EXECUTED by
+                     * tests/reject/run_reject_tests.sh: a trailing atom after
+                     * the suffix would still refuse and would still contain the
+                     * needle while testing a longer pattern than the row
+                     * describes.
+                     *
+                     * The brace family is spelled by its CLOSER: the selector
+                     * is `{` (what `p_rep` dispatches on) and the `+` attaches
+                     * after the `}`, so `a{1,2}+` must end "}+" and must
+                     * contain a `{`. */
+                    const char *end = r->sel == '{' ? "}+" : NULL;
+                    char two[3];
+                    if (!end) { two[0] = (char)r->sel; two[1] = '+'; two[2] = 0; end = two; }
+                    size_t sl = strlen(r->syntax), nl = strlen(end);
+                    snprintf(needle, sizeof needle, "%s", end);
+                    if (sl < nl || strcmp(r->syntax + sl - nl, end) != 0 ||
+                        !strchr(r->syntax, r->sel))
+                        bad("%s row %zu (%s): the example is not this row's own "
+                            "construct — it must contain the selector '%c' and "
+                            "END with \"%s\"", kn, i, r->syntax, r->sel, end);
+                } else {
                 const char *pfx = k == RK_ESC ? "\\" : k == RK_GROUP ? "(?" : "[";
                 snprintf(needle, sizeof needle, "%s%c%s", pfx, r->sel, r->tail ? r->tail : "");
                 if (!strstr(r->syntax, needle))
                     bad("%s row %zu (%s): the example does not contain its own doorway text \"%s\"",
                         kn, i, r->syntax, needle);
+                }
                 /* Uniqueness is over the (sel, tail) PAIR since SR-9. Two rows
                  * MAY share a byte — that is the whole point of the tail — but
                  * two rows with the same byte AND the same tail are
@@ -388,6 +418,17 @@ static void check_wellformed(void)
                         "template and fixed text; this row's diagnostic shape "
                         "has no renderer", kn, r->syntax);
                 break;
+            /* [M6.4.2] The quant-suffix rows reach NO doorway; their
+             * diagnostic is rendered by `p_rep` in src/parse/parse.c, from the
+             * row's own `module`, using the module template's own shape. So
+             * RD_MODULE is the only value with a renderer, exactly as
+             * RD_FIXED is the only one for the two doorways below. */
+            case RK_QUANTSUFFIX:
+                if (r->diag != RD_MODULE)
+                    bad("%s (%s): the possessive-suffix site renders only the "
+                        "module template; this row's diagnostic shape has no "
+                        "renderer", kn, r->syntax);
+                break;
             case RK_VERB:
             case RK_CLASSBRACKET:
                 if (r->diag != RD_FIXED)
@@ -414,10 +455,16 @@ static void check_wellformed(void)
                 bad("%s: %d catch-all rows, needs exactly 1 — this doorway must "
                     "always resolve, and ext.c has no other answer for an "
                     "unrecognised byte", kind_name((RegKind)k), nany);
+            /* [M6.4.2] RK_QUANTSUFFIX lands in the `needs 0` arm and belongs
+             * there for a THIRD reason the message now names: it is not a
+             * doorway at all, so there is no dispatch for a catch-all to
+             * answer — a catch-all row here would be a row nothing can ever
+             * elect. */
             if (!wants_any && nany != 0)
                 bad("%s: %d catch-all rows, needs 0 — this doorway must be able "
-                    "to DECLINE, or every unmatched byte becomes a construct",
-                    kind_name((RegKind)k), nany);
+                    "to DECLINE (or, for the non-doorway kinds, has no dispatch "
+                    "for a catch-all to answer), or every unmatched byte becomes "
+                    "a construct", kind_name((RegKind)k), nany);
         }
         snprintf(label, sizeof label, "well-formed: %s rows (%zu)", kind_name((RegKind)k), n);
         ok(label);
@@ -441,8 +488,12 @@ static void check_wellformed(void)
      * 3 lookbehind tails on `<`, 3 python-style tails on `P`, `(?+`, `(?[`,
      * the `(?P` and `\N{` refusals, and `\N{U+`. Every one of them is a
      * MEASUREMENT against libpcre2 10.46, not a reading of pcre2syntax. */
-    if (total != 100) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 100. If you added or "
+    /* 100 -> 104 at [M6.4.2]: the four RK_QUANTSUFFIX rows (`a*+` `a++` `a?+`
+     * `a{1,2}+`), module `atomic-groups`. They are the first rows in the table
+     * that reach no doorway — see RK_QUANTSUFFIX's own comment in
+     * src/core/internal.h for why they exist and what they cost. */
+    if (total != 104) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 104. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -464,8 +515,19 @@ static void check_wellformed(void)
  * those that use its name, so it cannot hide. */
 static void check_feature_module_bijection(void)
 {
-    const RegRow *all[4];
-    size_t counts[4], nkinds = 0, total = 0;
+    /* [M6.4.2] `RK_COUNT`, NOT a literal 4 — and this is the TWELFTH registry
+     * site the fifth kind touched, found by a SEGFAULT rather than by any
+     * check. The loop below is `for (k = 0; k < RK_COUNT; k++)` and wrote past
+     * the end of two four-element arrays the moment RK_COUNT became 5.
+     *
+     * atomic_groups_design.md §7.4's sweep extracts five defect SHAPES — exact
+     * row counts, kind LISTS, doorway ROUTING-SET assertions, per-row FIELD
+     * requirements, and enumeration-by-CALL. This is a SIXTH: an array whose
+     * SIZE is the kind count, written as a literal. Its own closing line tells
+     * the next reader to suspect a sixth shape before a seventh directory, and
+     * that is exactly what this was. */
+    const RegRow *all[RK_COUNT];
+    size_t counts[RK_COUNT], nkinds = 0, total = 0;
     char label[128];
     int bad_pairs = 0;
 
@@ -743,6 +805,113 @@ static void check_arbitration_liveness(void)
     }
 }
 
+/* ---- [M6.4.2] R3: EVERY KIND REACHES THE DUMP -------------------------- */
+
+/* THE ONLY CHECK IN THIS FILE THAT READS `--list-syntax`'s OUTPUT RATHER THAN
+ * THE TABLE, and the formulation is the whole point.
+ *
+ * A fifth `RegKind` raises NO build alarm — MEASURED at 28 files offered / 28
+ * compiled clean / 0 `-Wswitch` diagnostics naming the new enumerator
+ * (atomic_groups_measurements/probes/probe_rk_alarm.sh), because every RegKind
+ * switch in the tree carries a `default:`. The real exposure is therefore not
+ * the switches at all: it is the hardcoded kind ARRAYS — `all_kinds[]` in
+ * src/parse/syntax_dump.c, `kinds[]` in src/parse/enabled.c, `kinds[]` below in
+ * this file — which no compiler and, before this check, nothing else could see.
+ *
+ * A CHECK THAT ITERATED `RK_COUNT` OVER `pcrec_registry` WOULD NOT SEE IT
+ * EITHER, and would look like it did. That is this project's signature
+ * check-design failure (memory: pcrec-check-design-lessons — a control sharing
+ * a source with what it controls): `all_kinds[]` is a SECOND enumeration, and
+ * only something that consumes the dump it produces can notice that the two
+ * disagree. So this check calls `pcrec_syntax_tsv` — the same function
+ * `--list-syntax` calls — and interrogates the TEXT.
+ *
+ * THREE ASSERTIONS, each catching a different half-done fifth kind:
+ *
+ *   (1) the dump's ROW COUNT equals the sum of `pcrec_registry`'s counts over
+ *       RK_COUNT — a kind missing from `all_kinds[]` renders no rows at all;
+ *   (2) the dump carries exactly RK_COUNT DISTINCT kind words — the same
+ *       omission from the other side, and it also catches two kinds that
+ *       render the same word;
+ *   (3) no kind word is `?` — `kind_name`'s unknown-kind sentinel, which is
+ *       what a kind present in `all_kinds[]` but missing from that switch
+ *       renders, and which (1) and (2) both survive.
+ *
+ * FAILING DIRECTIONS DEMONSTRATED BEFORE THE CHECK WAS WRITTEN, on this tree:
+ * dropping RK_QUANTSUFFIX from `all_kinds[]` fires (1) at 100 vs 104 and (2) at
+ * 4 vs 5; dropping its arm from `kind_name` fires (3). */
+static void check_kind_coverage(void)
+{
+    char *tsv = pcrec_syntax_tsv(0);
+    if (!tsv) { bad("kind coverage: --list-syntax produced no dump"); return; }
+
+    size_t table_rows = 0;
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n = 0;
+        if (pcrec_registry((RegKind)k, &n)) table_rows += n;
+    }
+
+    /* The dump's own kind words, collected from column 1. Bounded by RK_COUNT
+     * plus slack, so an extra word is a named failure rather than an overflow
+     * — the defect this very change found in check_feature_module_bijection. */
+    char words[RK_COUNT + 4][32];
+    int nwords = 0, dump_rows = 0, unknown = 0, overflow = 0;
+
+    for (const char *p = tsv; *p; ) {
+        const char *eol = strchr(p, '\n');
+        size_t len = eol ? (size_t)(eol - p) : strlen(p);
+        if (len && *p != '#') {
+            const char *tab = memchr(p, '\t', len);
+            size_t wl = tab ? (size_t)(tab - p) : len;
+            dump_rows++;
+            if (wl == 1 && *p == '?') unknown++;
+            if (wl < sizeof words[0]) {
+                char w[32];
+                memcpy(w, p, wl); w[wl] = 0;
+                int seen = 0;
+                for (int i = 0; i < nwords; i++)
+                    if (strcmp(words[i], w) == 0) { seen = 1; break; }
+                if (!seen) {
+                    if (nwords < (int)(sizeof words / sizeof words[0]))
+                        snprintf(words[nwords++], sizeof words[0], "%s", w);
+                    else
+                        overflow++;
+                }
+            }
+        }
+        p = eol ? eol + 1 : p + len;
+    }
+    free(tsv);
+
+    int bads = 0;
+    if ((size_t)dump_rows != table_rows) {
+        bad("kind coverage: the dump renders %d rows but pcrec_registry holds "
+            "%zu across RK_COUNT — a RegKind is missing from syntax_dump.c's "
+            "all_kinds[], which no -Wswitch can see", dump_rows, table_rows);
+        bads++;
+    }
+    if (nwords != RK_COUNT || overflow) {
+        bad("kind coverage: the dump carries %d distinct kind words (plus %d "
+            "beyond this check's capacity), expected exactly RK_COUNT = %d",
+            nwords, overflow, (int)RK_COUNT);
+        bads++;
+    }
+    if (unknown) {
+        bad("kind coverage: %d dump rows render the kind word '?' — "
+            "syntax_dump.c's kind_name has no arm for their RegKind, so the "
+            "TSV's frozen first column is lying about them", unknown);
+        bads++;
+    }
+    if (bads == 0) {
+        char label[192];
+        snprintf(label, sizeof label,
+                 "kind coverage: --list-syntax renders all %zu rows across "
+                 "exactly %d named kinds, none unknown (read from the DUMP, "
+                 "not from the table)", table_rows, nwords);
+        ok(label);
+    }
+}
+
 /* ---- part 2: table -> parser ------------------------------------------- */
 
 /* The exact diagnostic a row claims, at the atom (outside-a-class) site. */
@@ -765,6 +934,20 @@ static void check_table_to_parser(void)
     size_t n;
     const RegRow *rows;
     char label[192], want[256], pat[64];
+    /* [M6.4.2] r31chk final T2. THIS CHECK ENUMERATES KINDS BY EXPLICIT CALL —
+     * `pcrec_registry(RK_ESC, ...)`, `(RK_GROUP, ...)`, and a loop over the two
+     * doorway kinds below — so before this array existed a FIFTH `RegKind` was
+     * not merely under-checked, it was NEVER COMPARED AT ALL and nothing went
+     * red. That is §7.3's own "half-done invisibly" failure shape, sitting
+     * inside the file whose job is to notice it.
+     *
+     * `covered[]` plus the RK_COUNT sweep at the end of this function is the
+     * ruled fix: the enumeration is now over RK_COUNT, and a kind nothing
+     * compares is a NAMED failure rather than silence. No `-Wswitch` can
+     * substitute — every `RegKind` switch in the tree carries a `default:`,
+     * measured. */
+    bool covered[RK_COUNT];
+    memset(covered, 0, sizeof covered);
 
     /* escapes: both sites — outside a class and inside one */
     rows = pcrec_registry(RK_ESC, &n);
@@ -829,6 +1012,8 @@ static void check_table_to_parser(void)
         }
     }
 
+    covered[RK_ESC] = true;
+
     /* (?X groups */
     rows = pcrec_registry(RK_GROUP, &n);
     for (size_t i = 0; i < n; i++) {
@@ -859,6 +1044,28 @@ static void check_table_to_parser(void)
         expect_msg(label, r->syntax, want);
     }
 
+    covered[RK_GROUP] = true;
+
+    /* [M6.4.2] the possessive quantifier suffixes. NOT a doorway: `p_rep`
+     * (src/parse/parse.c) recognises the `+` after a quantifier it has already
+     * accepted, and renders the module template from the row it looks up.
+     * With module `atomic-groups` OUT of the enabled set — which is this
+     * binary's state, since nothing here installs one — the row's own `syntax`
+     * must produce exactly that sentence. When the gate is OPEN the same
+     * pattern COMPILES, which is what D65's `built` column reports and what
+     * `check_built_status_defects` asserts; the two halves are deliberately
+     * different questions asked at different gate states. */
+    rows = pcrec_registry(RK_QUANTSUFFIX, &n);
+    for (size_t i = 0; i < n; i++) {
+        const RegRow *r = &rows[i];
+        snprintf(want, sizeof want, "possessive quantifier requires module '%s'",
+                 r->module);
+        snprintf(label, sizeof label,
+                 "quantsuffix %s: diagnostic matches the row", r->syntax);
+        expect_msg(label, r->syntax, want);
+    }
+    covered[RK_QUANTSUFFIX] = true;
+
     /* verbs and class brackets: fixed messages, used verbatim */
     for (int k = RK_VERB; k <= RK_CLASSBRACKET; k++) {
         rows = pcrec_registry((RegKind)k, &n);
@@ -868,6 +1075,7 @@ static void check_table_to_parser(void)
                      kind_name((RegKind)k), r->syntax);
             expect_msg(label, r->syntax, r->msg);
         }
+        covered[k] = true;
     }
 
     /* The collating rows have a SECOND call site: the class-opening bracket
@@ -878,6 +1086,28 @@ static void check_table_to_parser(void)
                "[.a.]", "POSIX collating elements are not supported");
     expect_msg("classbracket [=a=]: opening bracket reaches the same row",
                "[=a=]", "POSIX collating elements are not supported");
+
+    /* [M6.4.2] T2's assertion, and the reason `covered[]` exists: EVERY kind
+     * must have been compared above. A kind added to the enum and to
+     * registry.c but not to this function is now a named failure here instead
+     * of a check that quietly stops covering it. */
+    {
+        int uncovered = 0;
+        for (int k = 0; k < RK_COUNT; k++) {
+            if (covered[k]) continue;
+            uncovered++;
+            bad("table -> parser: RegKind %s (%d) is NEVER COMPARED by this "
+                "check — it enumerates kinds by explicit call, so a new kind "
+                "is silently uncovered unless it is added here too",
+                kind_name((RegKind)k), k);
+        }
+        if (uncovered == 0) {
+            snprintf(label, sizeof label,
+                     "table -> parser: all %d RegKinds compared (enumerated "
+                     "over RK_COUNT, not by explicit call)", (int)RK_COUNT);
+            ok(label);
+        }
+    }
 }
 
 /* ---- part 2b: rows that MUST exist -------------------------------------
@@ -1326,25 +1556,41 @@ static void check_class_ports(void)
      * module `assertions` — all eight of its constructs now have one. Same
      * two invariants as every wave since A: RF_CLASS_INVALID and NO_PORT at
      * class position (`[\\K]` is PCRE2 error 107, re-measured by wave E), so
-     * the SCALAR population is UNMOVED at 5 for the fourth time running. */
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 33)
+     * the SCALAR population is UNMOVED at 5 for the fourth time running.
+     * [M6.4.2]: 33 -> 34, the `(?>...)` row's `pcrec_agport_atomic` producer.
+     * The SCALAR population is UNMOVED at 5 for the fifth time running, and
+     * this row cannot move it for a structural reason rather than a measured
+     * one: `(` inside a character class is an ordinary member, so no GROUP row
+     * can reach a class position at all and every one of them carries NO_PORT
+     * there by construction (check_wellformed asserts the matching
+     * `class_expect == NULL`).
+     *
+     * THE FOUR RK_QUANTSUFFIX ROWS ADD NOTHING HERE, and that is the whole
+     * shape of that kind: they carry NO_PORT at both positions because they
+     * reach NO DOORWAY — `p_rep` (src/parse/parse.c) recognises the possessive
+     * `+` directly and looks the row up only to STAMP from it. A port on one
+     * of them would be a port nothing can ever call, so a future edit that
+     * adds one moves this number and is caught here. */
+    if (scalar != 5 || set != 10 || fn != 9 || aports != 34)
         bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (33: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (34: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
-            "\\b and \\B since wave B, \\G since wave D, and \\K since "
-            "wave E). A "
+            "\\b and \\B since wave B, \\G since wave D, \\K since "
+            "wave E, and `(?>...)` since [M6.4.2]). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 33 atom "
+        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 34 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
-           "-- module `assertions` is now COMPLETE); scalar and SET "
+           "-- module `assertions` is now COMPLETE -- + `(?>...)`, "
+           "[M6.4.2]; the four RK_QUANTSUFFIX rows add none, having no "
+           "doorway to be called from); scalar and SET "
            "values oracle-tied "
            "(class_expect column / fallback law / census popcounts), as "
            "predicted for slice 3");
@@ -1470,13 +1716,13 @@ static void check_engine_capability_tripwire(void)
      * edits this number in the same change; a silent one is the defect
      * this file exists to catch, same as every other population count
      * here. */
-    if (qualifying != 48)
+    if (qualifying != 52)
         bad("engine-capability tripwire: %d RS_MODULE rows with an "
-            "engines mask excluding ENGM_DFA, expected 48 -- the VM_ONLY "
+            "engines mask excluding ENGM_DFA, expected 52 -- the VM_ONLY "
             "population moved. If deliberate, update this number in the "
             "same change", qualifying);
     else if (wired == kreset_exception)
-        ok("engine-capability tripwire: of 48 engine-restricted RS_MODULE "
+        ok("engine-capability tripwire: of 52 engine-restricted RS_MODULE "
            "rows, exactly the ONE named exception (\\K, [M6.2] wave E) "
            "carries a wired atom-position producer and the other 47 carry "
            "none -- so SR-8's generic lowering-time consultation is still "
@@ -1693,7 +1939,13 @@ static void check_class_syntax_reach(void)
  * which THIS check catches. */
 static void check_built_status_defects(void)
 {
-    static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+    /* [M6.4.2] RK_QUANTSUFFIX joins, and the derivation needed a NEW ARM to
+     * classify it at all: `doorway_route` recognises four prefixes and a row
+     * whose syntax is `a*+` routes nowhere, so before that arm these four rows
+     * derived to PCREC_BUILT_DEFECT — the failure this check reports. See
+     * `built_status_probe`'s non-doorway arm in src/parse/syntax_dump.c. */
+    static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
+                                     RK_QUANTSUFFIX };
     unsigned mask_before = pcrec_enabled_mask();
     int checked = 0, built = 0, unbuilt = 0, na = 0, defects = 0;
 
@@ -1733,12 +1985,38 @@ static void check_built_status_defects(void)
         bad("built-status defect: the enabled set was 0x%x before %d "
             "pcrec_construct_built_status calls and is 0x%x after — a "
             "restore was lost", mask_before, checked, pcrec_enabled_mask());
+    /* [M6.4.2] THE TALLIES ARE EXACT, not merely defect-free, and that is a
+     * CROSS-MODULE obligation rather than this module's bookkeeping.
+     *
+     * "0 defects" is satisfied by a table in which a construct SILENTLY STOPPED
+     * BEING BUILT: `built` drops, `unbuilt` rises, the sum is unchanged and
+     * nothing goes red. That is the direction that matters here, because the
+     * generated compliance index in docs/pcre2_compliance.md renders this
+     * column, so a construct quietly reverting to `unbuilt` is a documentation
+     * regression nothing else in the tree can see. Pinning the three numbers
+     * makes any movement — in either direction, by any module — a named
+     * failure in the commit that causes it.
+     *
+     * THE FIGURES ARE FROM A RUN, not derived: 104 rows = 38 built + 60
+     * unbuilt + 6 n/a, measured on this tree after [M6.4.2]. The 38 is the
+     * pre-module 33 plus five — `(?>...)` and the four RK_QUANTSUFFIX rows.
+     * The 6 n/a are the RS_BASE/RS_REJECTED rows, where the question does not
+     * arise. Bumping these is deliberate and belongs in the same commit as the
+     * producer that moves them. */
+    else if (checked != 104 || built != 38 || unbuilt != 60 || na != 6)
+        bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
+            "%d n/a, expected 104 = 38 + 60 + 6. Zero defects does NOT imply "
+            "nothing changed — a construct that silently stopped being built "
+            "moves `built` down and `unbuilt` up with the sum unchanged, and "
+            "the generated compliance index renders this column. If the move "
+            "is deliberate, update these numbers in the same commit",
+            checked, built, unbuilt, na);
     else if (defects == 0) {
         char label[192];
         snprintf(label, sizeof label,
                  "built-status: %d rows classified with 0 defects (%d "
-                 "built, %d unbuilt, %d n/a — RS_BASE/RS_REJECTED), enabled "
-                 "set restored exactly", checked, built, unbuilt, na);
+                 "built, %d unbuilt, %d n/a — RS_BASE/RS_REJECTED), exact, "
+                 "enabled set restored exactly", checked, built, unbuilt, na);
         ok(label);
     }
 }
@@ -1756,6 +2034,9 @@ int main(void)
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");
     check_row_ranks();
     check_arbitration_liveness();
+
+    printf("\n== [M6.4.2] R3: every RegKind reaches the dump ==\n");
+    check_kind_coverage();
 
     printf("\n== table -> parser (every row's own syntax) ==\n");
     check_table_to_parser();

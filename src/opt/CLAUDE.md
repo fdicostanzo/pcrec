@@ -145,6 +145,46 @@ construction (src/ir) and emission (src/gen).
   from `job->fit.prefilter` directly rather than recomputed. Tests:
   tests/prefilter/.
 
+- **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
+  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31).
+
+  **`pcrec_discharge_atomic` — THE FREE DISCHARGE.** Deletes every `A_ATOMIC`
+  whose cut is PROVABLY a no-op and splices its body back in. The condition is
+  possessify's own §2.2 verdict, unchanged, and that is exactly right rather
+  than convenient: the verdict's entire content is *"no retreat into this loop
+  can produce a match the preferred path does not"*, which is precisely *"the
+  cut deletes nothing"*. MEASURED at 0 violations over 532 positive-verdict
+  patterns (`atomic_groups_measurements/out/free_discharge.txt`). It ships for
+  the `A_ATOMIC(A_REP(X))` arm ONLY — the possessive spellings; the plain-group
+  `(?>X)` arm is DEFERRED at ZERO measured cells (R31 E7) and needs a callable
+  (U1)/(U2) predicate over an arbitrary subtree, which possessify.c does not
+  expose.
+
+  **WHY IT IS NOT REGISTERED IN `EngineAnalysis.discharge`**, which is the
+  socket engine_m4.md §5.2 designed with this module named as its customer.
+  Three reasons, the third measured: the socket only runs when the pattern is
+  already VM-FORCED, so a capture-free `a*+` would be discharged differently
+  under `--engine=vm` than by default; `discharge`'s contract is "rewrite so
+  the ENGINE FORCING no longer applies", which a PARTIALLY dischargeable
+  pattern cannot honour; and the fixpoint in select_engine.c NEVER CALLS a
+  registered hook — it sets `rewrote = true` for any non-NULL one and loops, so
+  registering today would run the analysis 8 times and rewrite nothing. It is
+  therefore an ordinary AST pass driven from the top of `pcrec_select_engine`,
+  the same call `run_possessify` already makes for the same reason.
+
+  **NOT gated by `-fno-possessify`.** The discharge is semantics-preserving by
+  its own verdict, and gating it would make an OPTIMISATION flag change which
+  ENGINE a pattern gets. The consequence is that emission-neutrality (a
+  discharged possessive emits byte-identical VM code, because possessify
+  re-derives the same verdict on the same quantifier) holds only in that flag's
+  ABSENCE — under it the discharge runs and `run_possessify` does not.
+
+  **`pcrec_has_atomic`** is H3's predicate, read at EMISSION and therefore
+  POST-discharge: `[^"]*+"` compiles to a pure DFA with the MRL ceiling intact,
+  `(?>a|ab)c` is VM-forced with the ceiling off. **`pcrec_ast_stamped_by`** is
+  D65's built-status signal for a row that reaches no doorway (RK_QUANTSUFFIX),
+  reading the SR-8 stamp rather than a second fact.
+
 - **possessify.c** — [ENG-BREP] POSSESSIFICATION
   (docs/design/eng_brep_design.md §2, D47.1: possessify-first in both the
   application order and the build order). Marks every `A_REP` for which no
@@ -156,6 +196,34 @@ construction (src/ir) and emission (src/gen).
   that needs none. It is monotone — it returns how many quantifiers it NEWLY
   marked, a marked quantifier is never unmarked — which is what lets
   select_engine.c drive it to a fixpoint in two rounds.
+
+  **[M6.4.2] `pcrec_poss_survey` — the SAME verdict, as a QUERY.** The free
+  discharge (atomic.c) needs §2.2's answer on one `A_REP` without marking
+  anything, and a SECOND implementation of §2.2 is the one thing this file must
+  never grow: every conjunct in it is a measured refutation of a simpler rule
+  somebody believed. So the survey runs the same `pss_walk` — same FOLLOW
+  accumulation, same enclosing-loop term, the same lines — and reports positive
+  verdicts through a callback instead of writing `Ast.possessive`. One pass is
+  exact rather than an approximation of the fixpoint: the verdict reads no
+  `possessive` field anywhere, so a second round marks nothing new.
+
+  **A_ATOMIC is TRANSPARENT at all three of this file's switches**, and the
+  transparency is measured rather than assumed. `first_of` and `gk_build` read
+  through the cut, which gives the UNCUT first-set and the UNCUT position
+  automaton — MORE positions and MORE follow edges than a cut-aware model, so
+  the verdict can only become more conservative. `pss_walk` descends so a
+  quantifier inside a cut still gets a verdict, with the atomic group's own
+  follow, which is a SUPERSET of its real follow and therefore the sound
+  direction. Whether §2.2 survives a cut at all is measured, not argued:
+  776,160 cells with 10,504 REFUTABLE (verdict positive AND the cut biting),
+  0 violations, per-position floors asserted (`out/puc_targeted.txt`).
+
+  **SOUND BUT MEASURABLY INCOMPLETE, and deliberately not fixed here.** An
+  atomic group IS a unique-match guarantee, so a §2.2 that understood
+  `A_ATOMIC` instead of seeing through it would accept all 8,820 patterns in
+  the "quantifier WRAPPING the atomic group" position where transparency
+  accepts 0. Declining is always safe, so that is an opportunity, and taking it
+  would invalidate the sweep the transparency was measured over.
 
   **The rule is REPAIRED, and the obvious version of it is measured WRONG.**
   "FIRST(body) disjoint from FOLLOW(quantifier), body non-nullable" is the

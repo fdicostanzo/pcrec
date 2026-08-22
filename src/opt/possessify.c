@@ -289,6 +289,21 @@ static First first_of(const Ast *a)
         }
 
     case A_CAP:
+    /* [M6.4.2] TRANSPARENT: FIRST is a property of the bytes a node can BEGIN
+     * with, and a cut removes whole matches rather than first bytes — every
+     * string `(?>X)` matches is one `X` matches, so FIRST(X) is a sound (and
+     * here exact) super-set. It is A_CAP's arm because it is A_CAP's answer.
+     *
+     * SOUND BUT MEASURABLY INCOMPLETE, and that is worth knowing rather than
+     * hiding: an atomic group is EXACTLY a unique-match guarantee, so a §2.2
+     * that understood `A_ATOMIC` instead of seeing through it would accept
+     * every one of the 8,820 patterns in `probe_puc_targeted.py`'s
+     * "quantifier WRAPPING the atomic group" position, where transparency
+     * accepts 0. Declining is always safe (this file's own invariant), so
+     * that is an opportunity and not a defect, and [M6.4.2] deliberately does
+     * not take it — the transparency is what §6.4a's 776,160-cell sweep was
+     * measured over. */
+    case A_ATOMIC:
         return first_of(a->l);
 
     case A_CAT: {
@@ -452,6 +467,16 @@ static GkParts gk_build(Gk *g, const Ast *a)
         return gk_parts_empty(true);
 
     case A_CAP:
+    /* [M6.4.2] TRANSPARENT, and here the transparency is load-bearing in the
+     * sound direction. This builds the body's POSITION (Glushkov) automaton,
+     * which (U1) one-unambiguity and (U2) prefix-freeness are decided on.
+     * Reading through the cut gives the UNCUT position automaton, which has
+     * MORE positions and MORE follow edges than a cut-aware one would — so
+     * every ambiguity and every non-prefix-free witness the real construct has
+     * is still present, and the verdict can only become MORE conservative,
+     * never less. Declining a possessification is always safe; wrongly
+     * granting one is a miscompile. */
+    case A_ATOMIC:
         return gk_build(g, a->l);
 
     case A_CAT: {
@@ -654,6 +679,25 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
         return;
 
     case A_CAP:
+    /* [M6.4.2] TRANSPARENT — this walk HUNTS for A_REP nodes to offer the
+     * verdict to, and a quantifier inside an atomic group is still a
+     * quantifier the emitter has to lower.
+     *
+     * THE FOLLOW IT IS OFFERED IS THE ATOMIC GROUP'S OWN, unchanged, which is
+     * the conservative reading: the cut can only DELETE continuations, so the
+     * real follow of a quantifier inside the group is a SUBSET of what this
+     * passes down, and a larger follow makes the disjointness arm HARDER to
+     * satisfy. Whether §2.2's verdict stays sound in the presence of a cut is
+     * the one question this arm rests on, and it is measured rather than
+     * argued: 776,160 cells with 10,504 of them REFUTABLE (verdict positive
+     * AND the cut biting), 0 violations, per-position floors asserted
+     * (atomic_groups_measurements/out/puc_targeted.txt).
+     *
+     * Marking a quantifier inside a cut is also not a DOUBLE cut: the two cuts
+     * are against DIFFERENT marks at strictly increasing depths (the atomic
+     * group's mark is set before the body pushes anything), so the inner one
+     * is a no-op-or-shrink for the outer. */
+    case A_ATOMIC:
         pss_walk(P, a->l, follow, may_end, encl);
         return;
 

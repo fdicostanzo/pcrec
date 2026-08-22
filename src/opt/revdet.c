@@ -118,6 +118,22 @@ static void rd_shape(Shape *S, const Ast *a)
         case A_KRESET:
             S->ok = false;
             return;
+        /* [M6.4.2] DECLINE, and it is an EXPLICIT arm rather than a
+         * fallthrough on purpose — see rd_reverse below, where the same
+         * omission is a miscompile rather than a missed optimisation.
+         *
+         * An atomic group is not reversal-invariant. The cut is defined
+         * relative to the FORWARD priority order — "whatever the body matches
+         * on its OWN first attempt" — and "the body's first success" is not a
+         * property a backwards walk can reproduce: this rung recovers an
+         * iteration boundary by matching the REVERSED body from the right,
+         * which has its own first success at a different place. Declining
+         * costs those patterns the rung and is always correct
+         * (`revdet.c`'s own invariant: declining is always available and
+         * always safe). Sabotage row S94 makes this arm ACCEPT instead. */
+        case A_ATOMIC:
+            S->ok = false;
+            return;
         case A_CAP:
             /* One entry per capno, not per emitted instance: a fixed-count
              * repeat around a group emits the group several times and they all
@@ -210,6 +226,28 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
     case A_KRESET:
         ctx_fail(cx, 0, "internal error: \\K reached the reverse-deterministic "
                         "body reversal, which its shape scan must decline");
+
+    /* [M6.4.2] SAME TREATMENT AS `\K`, AND THE FALLTHROUGH IT REPLACES IS THE
+     * MOST DANGEROUS ONE THIS MODULE HAD TO CLOSE.
+     *
+     * `rd_shape` above declines an atomic body by setting `S->ok = false`, and
+     * its switch ends in a fallthrough that does the same — so an unhandled
+     * kind there is safe BY ACCIDENT. This function's fallthrough is `rd_node`
+     * at the bottom, which copies the node and NULLs `l` and `r`. An unhandled
+     * `A_ATOMIC` would therefore have become an EMPTY-BODY ATOMIC GROUP in the
+     * reversed body the emitter walks — a plausible-looking tree that matches
+     * the wrong language, silently. And `-Wswitch` is only a WARNING on a
+     * plain `make` (`-Werror` is `make strict` only, R5-Q1), so the diagnostic
+     * that names this site does not by itself stop the build.
+     *
+     * It is unreachable for the same reason `\K`'s arm is: `rd_shape` declines
+     * every body carrying one and this runs only on a body it approved.
+     * Reaching it means that decline was removed, which is a change that MUST
+     * be noticed loudly rather than compiled into a matcher. */
+    case A_ATOMIC:
+        ctx_fail(cx, 0, "internal error: an atomic group reached the "
+                        "reverse-deterministic body reversal, which its shape "
+                        "scan must decline");
 
     case A_CAP: case A_REP: {
         Ast *n = rd_node(cx, a);
@@ -330,6 +368,15 @@ static bool rd_alt_disjoint(const Ast *a)
          * has no way to reproduce a `\K` write. */
         case A_KRESET:
             return false;
+        /* [M6.4.2] DECLINE, `\K`'s arm for `\K`'s reason: `false` is the sound
+         * direction here in the way `true` is not — a decline keeps the
+         * quantifier's machinery, which is always correct, where an approval
+         * would hand the emitter a rung whose backward walk cannot reproduce
+         * the forward cut. Unreachable (rd_shape rejects the body long
+         * before), and written out rather than left to the switch's tail
+         * because this file's two fallthroughs disagree about what is safe. */
+        case A_ATOMIC:
+            return false;
         case A_CAP: case A_REP:
             a = a->l;
             continue;
@@ -407,6 +454,15 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP:
+    /* [M6.4.2] TRANSPARENT, and NOT the same question the three arms above
+     * answer. This walk only HUNTS for A_REP nodes to offer the rung to; the
+     * verdict ABOUT an atomic group is `rd_shape`'s, one level down, and it is
+     * a decline. A quantifier that merely SITS INSIDE an atomic group is an
+     * ordinary quantifier the emitter still has to lower, and denying it the
+     * rung here would cost `(?>(?:a|bc)*d)` its one-body-copy lowering for no
+     * reason — the outer cut discards the loop's frames at the group's exit
+     * either way. */
+    case A_ATOMIC:
         rd_walk(R, a->l, in_rep);
         return;
     case A_REP:

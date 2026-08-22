@@ -119,6 +119,16 @@ long long pcrec_minw(const Ast *a)
         case A_CAP:
             a = a->l;
             continue;
+        /* [M6.4.2] `minw(A_ATOMIC(X)) == minw(X)`, and this is one of the two
+         * arms in the whole tree where an atomic group is transparent WITHOUT
+         * a caveat. The cut removes MATCHES, never BYTES: every string the
+         * group can match is one the body can match, so a lower bound on the
+         * body is a lower bound on the group — exact in this file's SOUND
+         * direction (under-estimating prunes less; over-estimating deletes
+         * real matches silently). It is `A_CAP`'s arm for `A_CAP`'s reason. */
+        case A_ATOMIC:
+            a = a->l;
+            continue;
         case A_ALT: {
             long long l = pcrec_minw(a->l), r = pcrec_minw(a->r);
             return mrl_sat_add(acc, l < r ? l : r);

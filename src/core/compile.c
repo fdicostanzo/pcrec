@@ -127,6 +127,11 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     cx.want_caps = (defo.flags & PCREC_NO_CAPTURES) == 0;
     cx.first_cap_pos = (size_t)-1;
     cx.first_kreset_pos = (size_t)-1;
+    /* [M6.4.2] `first_kreset_pos`'s twin, and SIZE_MAX means "no atomic
+     * construct was parsed" for the same reason: the engine VERDICT walks
+     * the post-discharge tree, and this only supplies the diagnostic's
+     * pattern offset. */
+    cx.first_atomic_pos = (size_t)-1;
     cx.want_ir = ir_out != NULL;
     /* [M4.7b/K7] Attach the compile's error channel to its allocators, so a
      * failed malloc anywhere below is a diagnosed refusal instead of an
@@ -336,6 +341,11 @@ int pcrec_count_groups(const char *pattern, pcrec_error *err)
     cx.want_caps = false;
     cx.first_cap_pos = (size_t)-1;
     cx.first_kreset_pos = (size_t)-1;
+    /* [M6.4.2] `first_kreset_pos`'s twin, and SIZE_MAX means "no atomic
+     * construct was parsed" for the same reason: the engine VERDICT walks
+     * the post-discharge tree, and this only supplies the diagnostic's
+     * pattern offset. */
+    cx.first_atomic_pos = (size_t)-1;
     cx.arena.cx = &cx;   /* [M4.7b/K7] parse OOM diagnoses; see compile_driver */
     if (!pattern) {
         if (err) snprintf(err->msg, sizeof(err->msg), "invalid arguments");

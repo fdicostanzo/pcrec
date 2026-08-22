@@ -59,6 +59,11 @@ void  sb_free(StrBuf *sb);
 
 /* ---- AST ---- */
 
+/* [M6.4.2 / SR-8] Forward declaration: `Ast.reg` (below) points at the
+ * registry row whose producer built the node. The full definition is far
+ * down this file; the AST only ever holds the pointer. */
+typedef struct RegRow RegRow;
+
 typedef enum {
     A_CLASS,   /* byte class (literals normalized to singleton classes) */
     A_CAT,     /* l r */
@@ -160,7 +165,58 @@ typedef enum {
      *     obtained without copying the tree).
      * That is also what makes §5.4's byte-identity gate hold by construction
      * instead of by inspection. */
-    A_CAP
+    A_CAP,
+    /* [M6.4.2] `(?>X)` — the ATOMIC GROUP, and the possessive quantifier
+     * suffixes `X*+ X++ X?+ X{n,m}+`, which parse to `A_ATOMIC(A_REP(X))`
+     * (PCRE2's own definition; atomic_groups_design.md §3.2 RULE 1, measured
+     * on 18 spelling pairs / 47 cells including 28 whose iteration can end in
+     * two places).
+     *
+     * A KIND AND NOT A FIELD, on D62's own principle — node KINDS encode
+     * STRUCTURE, node FIELDS encode parse-resolved MODIFIER STATE. Atomicity
+     * is not a modifier: it changes the LANGUAGE (`(?>a*)a` matches nothing
+     * where `a*a` matches), it changes the BACKTRACKING (choice points that
+     * would have been retried are discarded), and it BRACKETS a body. Two
+     * further supports, both measured by the design lane:
+     *
+     *   - `src/opt/revdet.c:179`'s `rd_node` CLEARS `Ast.possessive` on the
+     *     reversed copy the emitter walks, so a module that stored its
+     *     semantics in that field would have them silently deleted on a
+     *     revdet-approved body (design §6.5). A kind survives the copy.
+     *   - adding an `AKind` produces FIFTEEN `-Wswitch` diagnostics across six
+     *     files, each one a pass that must say what it does with an atomic
+     *     group; adding a struct FIELD produces zero
+     *     (`assertions_measurements/probes/probe_wswitch_alarm.sh`, re-run).
+     *
+     * IT IS A CUT, and the cut is the whole semantics: at the moment the body
+     * first succeeds, every choice point the body created is discarded, so the
+     * group can never be re-run with a different answer. The VM already had
+     * that operation — `vm_cut`, built for [ENG-BREP]'s possessification — and
+     * this kind needs no new VM primitive, because the no-trail-rewind
+     * invariant `vm_cut` relies on is INDEPENDENT of the §2.2 proof that
+     * licenses today's cuts (design §3.1, CUT-INV).
+     *
+     * `l` is the body; `r` is unused. `Ast.possessive` is NEVER written for
+     * this construct (design §3.2 RULE 2): that field keeps its meaning as
+     * possessify's deniable optimisation mark, so `-fno-possessify` cannot
+     * become a miscompiler and a copy constructor cannot delete a language
+     * feature. The emitter's "is this A_REP under an atomic lift" question is
+     * THREADED context (`vm_cuts(a, under_atomic)`), never a stored flag —
+     * D67's corollary, because a flag describing a parent the free discharge
+     * deleted goes stale.
+     *
+     * VM-ONLY, per its registry row's mask, and the `engines`/`reg` stamp
+     * below is how that reaches src/opt/select_engine.c. A DFA cannot
+     * implement it: subset construction keeps every alternative alive, which
+     * is exactly the NON-atomic semantics, so `src/ir/nfa.c` lowers the body
+     * TRANSPARENTLY and the capture-erased prefilter answers for the UNCUT
+     * language — a strict superset. That is sound for the prefilter's
+     * rejection and its span START and NOT for its span END, which is why
+     * `src/gen/emit_vm.c`'s MRL ceiling is switched off on a cut-bearing
+     * artifact (design §4, 114 measured cells of silent match loss without
+     * it). The full cut construction (Berglund et al.) is CHARTERED for the
+     * `[ENG-CUT]` plan row, not built. */
+    A_ATOMIC
 } AKind;
 
 typedef struct Ast Ast;
@@ -267,6 +323,33 @@ struct Ast {
      * node nothing analysed keeps its machinery, which is what makes
      * `-fno-revdet` byte-identity-safe. */
     const Ast *revbody;
+    /* [M6.4.2 / SR-8, D67] THE PRODUCING ROW — the registry row whose port
+     * built this node, or NULL for every node the BASE grammar built.
+     *
+     * D67's shape is "every AST node produced by an RS_MODULE row carries its
+     * row's `engines` mask, STAMPED BY THE PRODUCER at construction", and this
+     * is that stamp spelled as a POINTER TO THE ROW rather than as a copy of
+     * the mask, for the reason this whole registry exists (D24): a copied mask
+     * is a SECOND HOME for a registry fact, and the two can drift. The row is
+     * also where `why`'s TEXT has to come from — D67 says `why_pos`/`why` come
+     * from "the first DFA-excluding node's ROW" — so a mask alone would have
+     * needed a second stamp beside it anyway. `pcrec_ast_engines()` below is
+     * the one reader, and it is the only thing that may interpret this field.
+     *
+     * NULL MEANS ANY_ENGINE, which is D67 contract note 2's requirement that a
+     * FORGOTTEN STAMP FAIL IN THE UNSOUND DIRECTION: the arena zeroes, so a
+     * producer that forgets to stamp yields a node claiming both engines, and
+     * what catches that is the generic tripwire in
+     * tests/registry/registry_check.c (every VM_ONLY row with a producer must
+     * refuse `--engine=dfa` by name), not a lucky default.
+     *
+     * A DISCHARGE MUST NOT LET ITS OUTPUT INHERIT THE DISCHARGED NODE'S STAMP
+     * (D67 contract note 3): the discharged node is not copied, its
+     * replacement's NEW nodes are born NULL/ANY_ENGINE, and nodes copied from
+     * the body keep their own stamps — copying a `\K` must keep forcing. The
+     * free discharge (src/opt/atomic.c) is deletion-shaped and satisfies this
+     * trivially; `[ENG-CUT]` inherits the rule. Sabotage row S97. */
+    const RegRow *reg;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -639,6 +722,24 @@ struct Ctx {
      * position). It is read ONLY when the walk already found a node, so it
      * cannot be stale in the direction that matters. */
     size_t               first_kreset_pos;
+    /* [M6.4.2] Pattern offset of the FIRST atomic construct — the `(` of a
+     * `(?>...)`, or the `+` of a possessive suffix — or SIZE_MAX if none.
+     *
+     * `first_kreset_pos` above is the precedent, field for field, INCLUDING
+     * why it is not the verdict's source. SR-8's generic analysis answers
+     * "does this POST-DISCHARGE tree carry a DFA-excluding node" by WALKING,
+     * because that is the honest question and because the free discharge
+     * deletes nodes a parse-time counter would keep counting. This field only
+     * supplies the `engine_why` stamp's OFFSET, which the AST has no room for
+     * (no node carries a source position, and `Ast.reg` carries the row and
+     * therefore the TEXT but not the place). First wins, so the diagnostic
+     * names the first atomic construct rather than the last one parsed.
+     *
+     * It is written by BOTH producers — src/parse/mod_atomic_groups.c for
+     * `(?>`, and src/parse/parse.c's suffix desugaring for `*+ ++ ?+ {n,m}+`,
+     * which has no port to route through (the suffix is a quantifier suffix,
+     * not an atom: registry.c's header records the exemption). */
+    size_t               first_atomic_pos;
     /* [M4.7b/K7] Running total of NFA-state-list ELEMENTS interned by the
      * subset construction, across every machine this compile builds (forward
      * and reverse are charged to one budget because they are both live at
@@ -742,6 +843,39 @@ typedef enum {
     RK_GROUP,         /* doorway 2: after '(?'            — one byte decides */
     RK_VERB,          /* doorway 3: after '(*'            — a NAME decides   */
     RK_CLASSBRACKET,  /* doorway 4: after '[' in a class  — one byte decides */
+    /* [M6.4.2] NOT A DOORWAY — the one kind in this enum that no lookup on
+     * the parse path ever consults, and that is deliberate rather than an
+     * omission.
+     *
+     * The possessive quantifier suffixes (`a*+` `a++` `a?+` `a{n,m}+`) are
+     * QUANTIFIER SUFFIXES, not atoms: they are recognised by `p_rep` in
+     * src/parse/parse.c, after `try_quant` has already accepted the
+     * quantifier. This file's header records the exemption and its reason —
+     * inventing a doorway for them would cost the BASE tier a registry lookup
+     * on every quantifier — and that reason is preserved exactly: no doorway
+     * consults this kind, `pcrec_registry_find` is never called with it, and
+     * the parse path is byte-for-byte what it was.
+     *
+     * THE ROWS EXIST FOR THE DUMP. Without them `--list-syntax` and the
+     * generated index in docs/pcre2_compliance.md would say `(?>...)` is BUILT
+     * and say NOTHING AT ALL about `*+ ++ ?+ {n,m}+`, so a reader could not
+     * tell "not implemented" from "not in the table" — a D26 tier-2
+     * (RECOGNITION) discoverability defect. `registry.c` already carries the
+     * precedent for a row that "exists so the table is complete for the dump"
+     * (`(?:`, which the base grammar answers before the registry is reached).
+     *
+     * WHAT IT COSTS, because a fifth kind raises NO `-Wswitch` alarm — every
+     * `RegKind` switch in the tree carries a `default:`, MEASURED at 28 files
+     * offered / 28 clean / 0 diagnostics
+     * (atomic_groups_measurements/probes/probe_rk_alarm.sh). The exposure is
+     * therefore the hardcoded kind ARRAYS and the enumerations-by-CALL, which
+     * no compiler and, before [M6.4.2], no check could see. All of them are
+     * enumerated in atomic_groups_design.md §7.4 (eleven sites), and
+     * `tests/registry/registry_check.c`'s per-kind check now reads the
+     * `--list-syntax` OUTPUT — the only formulation that can see an omission
+     * from one of those arrays at all, since iterating RK_COUNT over
+     * registry.c would share a source with what it checks. */
+    RK_QUANTSUFFIX,
     RK_COUNT
 } RegKind;
 
@@ -1428,6 +1562,14 @@ struct RegRow {
     ExtPort cport;   /* class position */
 };
 
+/* [M6.4.2 / SR-8] The engines mask a node contributes to the pattern-wide AND.
+ * ONE reader of `Ast.reg`, so "an unstamped node claims both engines" is
+ * written once rather than at every consultation site. */
+static inline unsigned pcrec_ast_engines(const Ast *a)
+{
+    return a->reg ? a->reg->engines : (ENGM_DFA | ENGM_VM);
+}
+
 /* src/parse/registry.c */
 const RegRow *pcrec_registry(RegKind k, size_t *n);
 /* `at` points at the byte AFTER the doorway's selector byte and `avail` is how
@@ -1494,6 +1636,26 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
  * as it would a plain group. See docs/dev/decisions.md's [M6.3] entry. */
 ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
                                size_t at, size_t from);
+
+/* src/parse/mod_atomic_groups.c — module `atomic-groups` ([M6.4.2]). The
+ * `(?>...)` group port: parses the body and returns an A_ATOMIC node STAMPED
+ * with the row (SR-8/D67, `Ast.reg`). It is the SECOND VM_ONLY producer, and
+ * the one the engine-capability tripwire was written to fire for a second time
+ * and then be replaced by — see src/opt/select_engine.c's generic
+ * `forces_registry` analysis, which is SR-8 as D55 specified it.
+ *
+ * The possessive SUFFIXES share this module and this node kind but NOT this
+ * port: `X q+` desugars to `A_ATOMIC(A_REP(X))` at src/parse/parse.c's own
+ * quantifier site, which is where the `+` is recognised. Their registry rows
+ * (RK_QUANTSUFFIX) exist for the DUMP and are what parse.c stamps FROM, so the
+ * mask and the `why` text still have exactly one home. */
+ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from);
+/* The RK_QUANTSUFFIX row for a quantifier spelled by its own selector byte
+ * (`*`, `+`, `?` or `{`), for parse.c's desugaring to stamp from. NULL is a
+ * registry defect and the caller says so rather than shipping an unstamped
+ * node — src/parse/mod_atomic_groups.c. */
+const RegRow *pcrec_atomic_suffix_row(int quant_byte);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
@@ -1868,6 +2030,76 @@ int  pcrec_possessify(Ctx *cx, Ast *root);           /* src/opt/possessify.c */
  * "unique-iteration" on success. */
 void *pcrec_uniq_scratch(Ctx *cx);                   /* src/opt/possessify.c */
 bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
+
+/* [M6.4.2] §2.2's verdict as a QUERY rather than as a MARK — the callable
+ * verdict atomic_groups_design.md §5.3 (E7) asks for, and the whole reason the
+ * free discharge could be narrowed to a shape that is buildable today.
+ *
+ * It runs THE SAME WALK `pcrec_possessify` runs — same FOLLOW accumulation,
+ * same enclosing-loop term, same four conjuncts, the same lines of code — and
+ * calls `fn(user, rep)` once for every `A_REP` whose verdict is POSITIVE,
+ * WITHOUT writing `Ast.possessive`. A second implementation of §2.2 is the one
+ * thing this file must never grow (every conjunct in it is a measured
+ * refutation of a simpler rule somebody believed), so the discharge asks
+ * possessify rather than re-deriving anything.
+ *
+ * ONE PASS IS EXACT, not an approximation of the fixpoint `run_possessify`
+ * drives: the fixpoint exists because `pcrec_possessify` reports how many
+ * quantifiers it NEWLY marked and a caller wants that to reach zero, but the
+ * verdict itself reads no `possessive` field anywhere (P9), so round two marks
+ * nothing new and this survey sees exactly what the fixpoint would. */
+void  pcrec_poss_survey(Ctx *cx, Ast *root,
+                        void (*fn)(void *user, Ast *rep), void *user);
+
+/* ---- [M6.4.2] module `atomic-groups`: the free discharge (design §5.3) --- */
+
+/* Delete every `A_ATOMIC` whose cut is PROVABLY A NO-OP, splicing its body
+ * back in, and return the (possibly new) root.
+ *
+ * THE CONDITION IS POSSESSIFY'S OWN §2.2 VERDICT, unchanged, and the reason
+ * that is exactly right rather than merely convenient: the verdict's entire
+ * content is "no retreat into this loop can produce a match the preferred path
+ * does not", which is precisely "the cut deletes nothing". Ships for the
+ * `A_ATOMIC(A_REP(X))` arm ONLY — the possessive spellings — because that is
+ * the arm with evidence (0 violations over 532 positive-verdict patterns,
+ * atomic_groups_measurements/out/free_discharge.txt); the plain-group `(?>X)`
+ * arm is DEFERRED at zero measured cells (design §5.3's E7 ruling) and needs a
+ * callable (U1)/(U2) predicate over an arbitrary subtree, which is strictly
+ * more than the A_REP verdict above.
+ *
+ * RUN FROM THE TOP OF `pcrec_select_engine`, BEFORE the analysis loop, and NOT
+ * from the `EngineAnalysis.discharge` socket — see that file for the three
+ * reasons, one of which is that the socket's fixpoint never CALLS a registered
+ * hook today. NOT gated by `-fno-possessify` either: the discharge is
+ * semantics-preserving by its own verdict, and gating it would make an
+ * optimisation flag change which ENGINE a pattern gets.
+ *
+ * D67 contract note 3 holds by construction: this is a DELETION, so the nodes
+ * that survive are the body's own and keep their own stamps, and no new node
+ * is born to inherit the discharged one's. */
+Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root);      /* src/opt/atomic.c */
+
+/* Does this tree carry an A_ATOMIC — i.e. a cut that survived the discharge?
+ *
+ * READ AT EMISSION, and it is H3's whole predicate. The capture-erased
+ * prefilter is built from the UNCUT language (src/ir/nfa.c lowers an atomic
+ * body transparently, which is the only sound choice for a subset
+ * construction), so the prefilter's window END is NOT an upper bound on the
+ * cut match's end — MEASURED at 122 refuting cells and 114 cells of live
+ * silent match loss on the emitted prefilter (design §4.3). Its span START and
+ * its REJECTION stay sound, so the fix is to drop the MRL ceiling only. */
+bool pcrec_has_atomic(const Ast *a);                  /* src/opt/atomic.c */
+
+/* Does any node in `a` carry `row` as its SR-8 producing stamp — i.e. did that
+ * row's producer actually build something here?
+ *
+ * D65's built-status derivation reads this for a row that reaches NO DOORWAY
+ * (RK_QUANTSUFFIX), where `doorway_route`/`doorway_call`'s `ExtResult` is not
+ * available to classify on. It is the stamp itself and not a second fact, so
+ * it cannot disagree with the producer; and it is what makes the derivation's
+ * DEFECT verdict reachable — a row whose `syntax` does not exercise its own
+ * construct parses cleanly and stamps nothing. */
+bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row);  /* src/opt/atomic.c */
 
 /* ---- [ENG-BREP] the reverse-deterministic rung (engine_m4.md §2.5) ---- */
 

@@ -226,6 +226,10 @@ static const char *kind_name(RegKind k)
     case RK_GROUP:        return "group";
     case RK_VERB:         return "verb";
     case RK_CLASSBRACKET: return "classbracket";
+    /* [M6.4.2] the fifth kind. PC-3 never PROBES a quant-suffix row against
+     * libpcre2 — this file's sweeps are per-DOORWAY and there is no doorway —
+     * but the mapping must stay total, and `check_rows` iterates RK_COUNT. */
+    case RK_QUANTSUFFIX:  return "quantsuffix";
     default:              return "?";
     }
 }

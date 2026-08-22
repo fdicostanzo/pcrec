@@ -423,6 +423,25 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
         r->l = body;
         return r;
     }
+    /* [M6.4.2] DECLINE: an atomic group is not a class and never becomes one.
+     *
+     * Both stages here rewrite an ALTERNATION — merging single-byte branches
+     * into one class, or factoring a common prefix out of several — and the
+     * merge in particular is only sound because the branches it collapses are
+     * INTERCHANGEABLE: a class has no branch order, so nothing downstream can
+     * observe which member matched. Inside a cut that stops being true. The
+     * body's OWN alternation order is exactly what the cut commits to
+     * (`(?>a|ab)c` and `(?>ab|a)c` answer differently on "abc"), so a rewrite
+     * that lost the order would change the language.
+     *
+     * Declining is always available and always safe here — this pass is a pure
+     * optimisation — and it is the CONSERVATIVE answer rather than a claim
+     * that no atomic body is ever rewritable. Walking INTO the body would be
+     * defensible for the branches of an alternation the cut does not reorder,
+     * and is deliberately not taken: the win is unmeasured and the analysis
+     * that would justify it is [ENG-CUT]'s, not this row's. */
+    case A_ATOMIC:
+        return a;
     }
     return a;   /* unreachable under -Wswitch (make strict); mrl.c's rule */
 }

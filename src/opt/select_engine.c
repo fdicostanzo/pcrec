@@ -133,6 +133,14 @@ static bool has_kreset(const Ast *a)
         case A_WORDB: case A_NWORDB: case A_GSTART:
             return false;
         case A_CAP: case A_REP:
+        /* [M6.4.2] TRANSPARENT — descend, do not stop. `\K` INSIDE an atomic
+         * group is a real, measured cell (`(?>a\Kb)c` on "abc" is (1,3) in
+         * libpcre2), and a `has_kreset` that answered "no" for it would let a
+         * `\K` pattern reach the DFA and report the wrong start silently. The
+         * warning that named this site is why the arm exists; the design's own
+         * fifteen-site enumeration did not list it, because the probe it came
+         * from carries a curated six-file list. */
+        case A_ATOMIC:
             a = a->l;
             continue;
         case A_CAT:

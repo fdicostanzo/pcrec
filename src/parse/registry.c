@@ -620,7 +620,22 @@ REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
  * the NON-atomic semantics (a DFA never backtracks to begin with) — the
  * cut changes the LANGUAGE, so this row must never be lowered by simply
  * ignoring the atomicity. Per-pattern engine decision, module's call. */
-GROUP('>',  "(?>...)",       atomic_groups,    VM_ONLY, "atomic (non-backtracking) group", QF_YES),
+/* [M6.4.2] longhand, for the reason the two rows above are: a WIRED PORT.
+ * VM_ONLY stays — unlike [M6.3]'s named-groups reclassification, this row does
+ * NOT lower to both engines. D67 records why that difference matters: a named
+ * group's AST is an ordinary A_CAP and the pre-existing capture rule already
+ * routed it, so moving its mask to ANY_ENGINE was true; an atomic group
+ * genuinely cannot be represented in pcrec's Dfa, so the column cannot be made
+ * true by editing it. That is the first evidence this column has had in BOTH
+ * directions — VM_ONLY is too strong for `(?>a*)b`, which the free discharge
+ * rescues, and ANY_ENGINE would be too weak for `(?>a|ab)c`, which nothing but
+ * the VM can compile — and it is exactly why SR-8's consultation is a PASS
+ * over the post-discharge tree rather than a per-row verdict. */
+{RK_GROUP, '>', NULL, "(?>...)", M_atomic_groups, FLAV_PCRE2, VM_ONLY,
+ RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "atomic (non-backtracking) group",
+ ROADMAP_PLANNED, QF_YES, NULL, 0, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_agport_atomic}, NO_PORT},
 /* THE SECOND ROW THIS FILE'S PURPOSE IS MADE OF, and it arrived the same way
  * the first did — three homes disagreeing, found by an outside reading rather
  * than by any test. `(?*...)` is PCRE2's NON-ATOMIC POSITIVE LOOKAHEAD, the
@@ -824,6 +839,73 @@ REJECTED_DELIM(RK_CLASSBRACKET, '=', "[[=a=]]", "POSIX collating elements are no
                "POSIX equivalence class — PCRE2 rejects it, and so must we", QF_NO, "err 113"),
 };
 
+/* ---- kind 5: the POSSESSIVE QUANTIFIER SUFFIXES -- NOT A DOORWAY --------
+ * [M6.4.2], atomic_groups_design.md §7.4 RULE R1.
+ *
+ * This file's header lists the possessive `+` suffix as one of "the registry's
+ * known outstanding second homes" — a construct whose "requires module"
+ * diagnostic stays in parse.c because it is a sub-case of a BASE construct
+ * rather than a doorway, and inventing a doorway for it would cost the base
+ * tier a lookup on every quantifier. THAT REASON IS PRESERVED EXACTLY AND THE
+ * SECOND HOME IS CLOSED: these rows are consulted by the DUMP and by
+ * `src/parse/parse.c`'s desugaring (which reads the row it is already at, to
+ * stamp `Ast.reg` from — not a lookup on the base path, since it runs only
+ * after a `+` suffix has actually been seen). No doorway routes here;
+ * `pcrec_registry_find` is never called with RK_QUANTSUFFIX.
+ *
+ * WHY THEY ARE WORTH FOUR ROWS AND A DERIVATION ARM. The day module
+ * `atomic-groups` lands, `--list-syntax` and the generated index in
+ * docs/pcre2_compliance.md say `(?>...)` is BUILT and say NOTHING AT ALL about
+ * `*+ ++ ?+ {n,m}+`. A reader then cannot distinguish "not implemented" from
+ * "not in the table", which is a D26 tier-2 RECOGNITION defect. The cheaper
+ * alternative — leave the exemption and let the compliance page's hand-written
+ * annotation layer carry the four spellings — loses because [DOC-DRV] just
+ * spent a lane making that page's facts DERIVED rather than asserted, and a
+ * construct whose built-status is only ever a hand annotation is exactly what
+ * that document now exists to stop drifting.
+ *
+ * `syntax` IS EXECUTED, NOT DISPLAYED, which is why each one is a complete
+ * probeable pattern (`a*+`) and not a bare suffix (`*+`):
+ * tests/reject/run_reject_tests.sh iterates every non-base dump row and RUNS
+ * the row's own `syntax`, requiring exit exactly 1, a diagnostic containing the
+ * row's `expect` text, and no output file. Measured satisfiable on all four at
+ * the closed gate (atomic_groups_measurements/out/registry_cost.txt §9).
+ *
+ * `quant` is QF_NO, and it is measured rather than assumed: `a*++` is an ERROR
+ * in libpcre2 10.46 and in pcrec (design §6.3), so a possessive suffix is not
+ * itself a quantifiable item.
+ *
+ * `engines` is VM_ONLY, matching the `(?>...)` row for the same reason: a
+ * possessive whose §2.2 verdict is negative is not DFA-compilable by anything
+ * this module ships. The free discharge (src/opt/atomic.c) is what makes the
+ * PER-PATTERN answer better than the per-row mask — it DELETES the node before
+ * SR-8's consultation runs, so `--engine=dfa '[^"]*+"'` succeeds and
+ * `--engine=dfa '(?>a|ab)c'` refuses, which is the split Frank's 2026-08-12
+ * companion note asks for and which no edit to this column could express. */
+#define QUANTSUFFIX(sel, syn, note) \
+    {RK_QUANTSUFFIX, (sel), NULL, (syn), M_atomic_groups, FLAV_PCRE2, VM_ONLY, \
+     RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, QF_NO, NULL, \
+     0, NULL, NO_PORT, NO_PORT}
+
+static const RegRow quantsuffix_rows[] = {
+QUANTSUFFIX('*', "a*+",     "possessive `*` — `X*+` is PCRE2's own spelling of `(?>X*)`"),
+QUANTSUFFIX('+', "a++",     "possessive `+` — `X++` is PCRE2's own spelling of `(?>X+)`"),
+QUANTSUFFIX('?', "a?+",     "possessive `?` — `X?+` is PCRE2's own spelling of `(?>X?)`"),
+/* ONE row for the whole brace family (`{n}+` `{n,}+` `{n,m}+` `{,n}+`), on the
+ * same "one row per RECOGNITION" rule the rest of the table follows: the `{`
+ * is what decides, and try_quant has already resolved which brace form it was
+ * before the `+` is ever looked at. The four forms are corpus cells
+ * (tests/atomic_groups/possessive.rxt), not four rows.
+ *
+ * THE BRACE FORMS ARE ALSO WHERE python `re` DIVERGES FROM PCRE2 and `*+`/`++`
+ * do not: over a body whose iteration can end in two places, python cuts PER
+ * ITERATION and PCRE2 cuts at the GROUP EXIT — `(?:a|ab){2}+` on "aba" is (0,3)
+ * in PCRE2 and NO MATCH in python, while `(?:a|ab)*+` on "aba" is (0,1) in
+ * both. D26 makes PCRE2 the source of truth; the corpus cells are
+ * `# pcre2-only` and say so. */
+QUANTSUFFIX('{', "a{1,2}+", "possessive braces — `X{n,m}+` is `(?>X{n,m})`; also {n}+ {n,}+ {,n}+"),
+};
+
 /* ---- doorway 4's NAME set (FIX-2) ---------------------------------------
  *
  * The class-bracket doorway is NAME-keyed exactly as `(*` is, and it had the
@@ -959,6 +1041,12 @@ const RegRow *pcrec_registry(RegKind k, size_t *n)
     case RK_GROUP:        *n = sizeof group_rows        / sizeof group_rows[0];        return group_rows;
     case RK_VERB:         *n = sizeof verb_rows         / sizeof verb_rows[0];         return verb_rows;
     case RK_CLASSBRACKET: *n = sizeof classbracket_rows / sizeof classbracket_rows[0]; return classbracket_rows;
+    /* [M6.4.2] the fifth kind. `default:` below is what makes a MISSING arm
+     * here silent — every RegKind switch in the tree carries one, measured, so
+     * `-Wswitch` names none of them — which is why the omission that matters is
+     * caught by tests/registry/registry_check.c reading the DUMP OUTPUT and by
+     * its `check_table_to_parser` now iterating RK_COUNT, not by the compiler. */
+    case RK_QUANTSUFFIX:  *n = sizeof quantsuffix_rows  / sizeof quantsuffix_rows[0];  return quantsuffix_rows;
     default:              *n = 0;                                                      return NULL;
     }
 }
