@@ -239,7 +239,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   `(?>a|ab)c` all decline as PCRE2 does) and is the base-tier second oracle.
   Substeps:
   - [M6.4.1] archived to plan_completed.md (completed 2026-08-22 — design APPROVED by the R31 panel at lane/agdesign 21e173e, merged 497a28f: docs/design/atomic_groups_design.md + atomic_groups_measurements/; D67 SR-8 built here; [ENG-CUT] chartered; K29 found)
-  - [M6.4.2] STATE:started (lane `lane/agimpl` DELIVERED 2026-08-22; the row stays started until the manager reviews and merges — `completed` is a merge fact, not a lane one) — IMPLEMENTATION, one wave
+  - [M6.4.2] STATE:started (MERGED to main 69f3b93 2026-08-22 12:58 after review; THEN the D27 acceptance run found a TIER-1 MISCOMPILE — `(?:aa|a)++ab` on "aaab" answers the UNCUT language on the frames rungs (0x2/0x4) for two-exit bodies — FIX ROUND on lane/agfix (same lane): the fix + two-exit bodies under every rung in the differential with asserted floors + a sabotage row; the identity sweep OUT of make test (one-shot landing gate, its own opt-in target); S45/S63 anchors re-derived; union battery on the fixed state before `completed`. Lane `lane/agimpl` DELIVERED 2026-08-22; the row stays started until the manager reviews and merges — `completed` is a merge fact, not a lane one) — IMPLEMENTATION, one wave
     in four slices, awaiting manager review + merge. What landed: `A_ATOMIC`
     and both producers (`(?>` through a port, `X q+` through `p_rep`'s
     desugaring); the four RK_QUANTSUFFIX registry rows and THIRTEEN registry
