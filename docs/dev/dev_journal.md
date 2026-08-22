@@ -11710,3 +11710,16 @@ run from the main tree against 69f3b93: 133/134, the one failure
 agd27 WORKTREE's pre-module binary because a `cd` had moved the shell —
 22/134 — PCREC must be set explicitly when the harness runs from a
 different tree.)
+
+UNION BATTERY ON 69f3b93 (the merged-but-unfixed state; build/
+battery_m64.log, 12:58 → 14:11): test 21,523/0 EXIT=0; strict 0; ubsan 0
+(no runtime errors); asan 0; lint 0 — all five stages green on the
+compiler AND compilee axes with the module in. This is the non-semantic
+evidence; it does NOT cover the miscompile (a wrong ANSWER no sanitizer
+sees) and MUST be re-run on the fixed state before [M6.4] closes. The
+fix lane (lane/agfix 99fc4e8: the follow does not cross a cut; 30 two-
+exit-body family with floors; S101; three anchors re-derived; the
+identity sweep as its own target; §3.2.2b) is mid-`make test`, sequential
+and timestamped on purpose so per-section wall times are measured, not
+guessed; manager-verified on its binary: all seven witnesses agree with
+libpcre2 and the tripwire prints "all anchors resolve" (99 rows).
