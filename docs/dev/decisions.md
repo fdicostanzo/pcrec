@@ -5159,3 +5159,69 @@ quantifier sugar collapsing byte-identically).
 link), or a production user hits the (?m)^ quadratic hard enough that
 an interim special-case fix earns its keep as a stopgap (then this
 decision is the record of what the real fix is).
+
+## D67 — SR-8 IS BUILT in [M6.4.2], as the generic POST-DISCHARGE consultation over producer-stamped engines masks; D55's deferral and the \K exception retire (manager, 2026-08-22, thirty-sixth session, under Frank's autonomous-run grant; found by the [M6.5.1] lane against its own design)
+
+**Decision.** The lowering-time engine-capability consultation [SR-8]
+describes is built in [M6.4.2], the atomic-groups implementation, in
+the shape D55 already specified: every AST node produced by an
+RS_MODULE row carries its row's `engines` mask, STAMPED BY THE
+PRODUCER at construction; ONE generic `EngineAnalysis` walks the
+POST-DISCHARGE tree and ANDs the stamps, with `why_pos`/`why` taken
+from the first DFA-excluding node's row. `forces_kreset` retires into
+it (same verdict, same position); `tests/registry/registry_check.c`'s
+named `\K` exception retires; the tripwire's demand becomes the
+generic assertion that every VM_ONLY row with a producer refuses
+`--engine=dfa` by name, with a sabotage row that un-stamps a node.
+Backrefs' forcing ([M6.5]) then falls out of its twelve rows with no
+per-module analysis.
+
+**Why.** `registry_check.c:1422-1424` says, in the tripwire's own
+words, "If a SECOND construct arrives here, do not add a second
+exception: two is when the generic consultation has earned its axis
+and SR-8 is the right build." `\K` was the first construct; `(?>` is
+the second. The atomic-groups design (4c5f508 §8) had ruled "second
+named exception"; the backrefs design (4cd461f §6.1) had ruled a third
+— and its lane, measuring the tripwire population against its own
+text, found that backrefs would not be a third exception but TWELVE
+(`\k<name>` `\g{-1}` `\1`..`\9` `(?P=n)`, all VM_ONLY, all staying
+VM_ONLY because they genuinely are not DFA-capable). Both designs
+were reversed by their panels (R31 M-1, R32 M-1). The per-pattern
+split Frank's 2026-08-12 notes demand is preserved: the free discharge
+(and later [ENG-CUT] / the finite-language expansion) DELETES or
+REWRITES nodes before the consultation runs, so the column stays a
+conservative per-row fact and the per-pattern answer is what the
+post-pass tree says.
+
+**Contract (the three traps the [M6.5.1] lane named, adopted):**
+(1) `forces_captures` is REQUEST-derived (a property of the generation
+request, no row behind it) and does NOT retire; two kinds of forcing
+remain, and the `--engine=dfa` branch-ordering fix (the captures
+branch advising `--no-captures` when a construct is the real reason)
+reads "take the captures branch only when no NODE-derived analysis
+contributed a why" — implemented by recording a SECOND why, the first
+node-derived exclusion, leaving RX_ENGINE_WHY's first-row rule
+unchanged. (2) Shared constructors that do not know their row
+(`pcrec_ast_class_from_bits`, MOD-0.3c) are a deliberate decision when
+the first VM_ONLY set-producer arrives; the default stamp is
+ANY_ENGINE, which fails in the UNSOUND direction — the generic
+tripwire is what keeps catching it. (3) A discharge's output must not
+inherit the discharged node's stamp: the discharged node is not
+copied; its replacement's NEW nodes are born ANY_ENGINE; nodes copied
+from the body keep their own stamps. Corollary ruled for the emitter
+(R31 N2): "under an atomic lift" is THREADED context, never a stored
+node flag, for the same reason — a flag describing a parent the
+discharge deleted goes stale.
+
+**Supersedes.** D55's "deferred to the first VM_ONLY producer" (the
+second has arrived); D59 part 2's exception route for rows that
+genuinely stay VM_ONLY (named-groups' reclassification was correct
+because those rows lower to both engines; `(?>` and the backref rows
+do not — the column cannot be made true by editing it, which is the
+first both-directions evidence the column has had).
+
+**Revisit when:** a module needs a per-pattern answer the
+discharge-before-consultation order cannot express (a construct that
+is DFA-capable only in some CONTEXTS of the same tree without a
+rewrite that removes it) — that is the day the consultation needs a
+context argument.
