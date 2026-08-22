@@ -140,8 +140,7 @@ Of PCRE2's syntax surface:
   suffixes, [M6.4.2], 2026-08-22) and `backrefs` (every backreference
   spelling, PCRE2's octal disambiguation at the atom position, and
   `(?J)`/DUPNAMES — [M6.5.2], 2026-08-22). **`backrefs` moved THREE survey
-  rows and fourteen index rows at once**, which is more than any module
-  before it: `\0dd, \ddd as an ATOM` and the bundled backreference row in
+  rows and fourteen index rows in one landing**: `\0dd, \ddd as an ATOM` and the bundled backreference row in
   their own sections, and `(?J) dup names` in Option setting — whose owning
   module moved from `named-groups` to `backrefs` with it (ASK-1), the fourth
   attribution that letter has carried and the first one that is both true and
