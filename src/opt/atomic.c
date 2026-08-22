@@ -254,6 +254,12 @@ Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root)
      * by CONSTRUCTION rather than by the survey happening to change nothing. */
     if (!pcrec_has_atomic(root)) return root;
 
+    /* [M6.4.2] D46's controllability half, and `-fno-possessify`'s DENY shape.
+     * See lib/pcrec.h for why this is its OWN flag rather than a clause on
+     * that one: this denial changes which ENGINE a pattern gets, and an
+     * optimisation flag must not. */
+    if (cx->opt && (cx->opt->flags & PCREC_NO_ATOMIC_DISCHARGE)) return root;
+
     DischargeSet d;
     memset(&d, 0, sizeof d);
     d.cx = cx;

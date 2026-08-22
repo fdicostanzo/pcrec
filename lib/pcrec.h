@@ -191,7 +191,31 @@ enum {
      * unlike the VM-only possessify/revdet stamps) — the D46 half a
      * denied request can be checked against. */
     PCREC_NO_ALTCLS_MERGE  = 1u << 10,
-    PCREC_NO_ALTCLS_FACTOR = 1u << 11
+    PCREC_NO_ALTCLS_FACTOR = 1u << 11,
+    /* [M6.4.2] `-fno-atomic-discharge`: DENY the FREE DISCHARGE
+     * (docs/design/atomic_groups_design.md §5.3; src/opt/atomic.c).
+     *
+     * The discharge deletes an `A_ATOMIC` whose cut possessify's §2.2 verdict
+     * proves is a NO-OP. Like every other member of this family it changes no
+     * ANSWER — that is its entire claim — so the only reason to turn it off is
+     * to CHECK that claim, with a pcrec-vs-pcrec differential that compiles the
+     * same pattern twice and compares spans, every capture slot and the failure
+     * surface. A rewrite that cannot be denied cannot be differentially tested.
+     *
+     * WHAT IT DENIES IS AN ENGINE, NOT A STRATEGY, and that is the one way it
+     * differs from the five above. Every other `-fno-` here leaves the same
+     * artifact kind and changes the machinery inside it; denying THIS one
+     * leaves the `A_ATOMIC` in the tree, so SR-8's consultation sees a
+     * DFA-excluding node and the pattern compiles to the VM where it would have
+     * compiled to a pure DFA. `--engine=dfa -fno-atomic-discharge '[^"]*+"'`
+     * therefore REFUSES, which is correct and is the flag doing its job.
+     *
+     * IT IS SEPARATE FROM `-fno-possessify` DELIBERATELY. The discharge is NOT
+     * gated by that flag (src/opt/select_engine.c drives it unconditionally),
+     * because an OPTIMISATION denial must not decide which engine a pattern
+     * gets. Folding the two together would have made `-fno-possessify` do
+     * exactly that. */
+    PCREC_NO_ATOMIC_DISCHARGE = 1u << 12
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
