@@ -189,6 +189,99 @@ def positive_control():
     return fn, ran
 
 
+# R32 last round, E15 -- THE GATE MUST BE TRANSITIVE, NOT STRUCTURAL.
+#
+# The erasure a DFA prefilter actually needs is the DEEP one: a nested
+# reference inside the referenced group must ITSELF be erased, which pulls in
+# whatever group that reference names -- and that group may be nowhere
+# beneath the referenced one. So a gate that inspects only the subtree
+# beneath the referenced A_CAP can pass a pattern whose deep erasure is
+# unsound.
+#
+# In every row below GROUP 2 (the referenced one) is assertion-free and
+# atomic/possessive-free, so the STRUCTURAL gate ACCEPTS all five. Three are
+# false negatives anyway, because group 1 -- reachable only THROUGH group 2's
+# nested `\1` -- carries the assertion.
+#
+# The shallow erasure is sound here but is not a candidate: it still CONTAINS
+# a backreference, so no prefilter DFA can be built from it at all.
+TRANSITIVE_CELLS = [
+    (r"^(\Ga)((b)\1)\2$",  r"^(\Ga)((b)\1)(?:(?:b)(?:\Ga))$",  "ababa"),
+    (r"^(^a)((b)\1)\2$",   r"^(^a)((b)\1)(?:(?:b)(?:^a))$",    "ababa"),
+    (r"(\ba)((b)\1)\2",    r"(\ba)((b)\1)(?:(?:b)(?:\ba))",    "ababa"),
+    (r"^(a)((b)\1)\2$",    r"^(a)((b)\1)(?:(?:b)(?:a))$",      "ababa"),
+    (r"^(a|c)((b)\1)\2$",  r"^(a|c)((b)\1)(?:(?:b)(?:a|c))$",  "ababa"),
+]
+
+# The ATOMIC/POSSESSIVE half of the gate, transitively. Reported because a
+# design that says "we looked and it did not bite" must have looked: these
+# were NOT found to be false negatives, which is a measurement and not a
+# proof -- they are one shape.
+TRANSITIVE_ATOMIC = [
+    (r"^(a*+)((b)\1)\2$",   r"^(a*+)((b)\1)(?:(?:b)(?:a*+))$",     "ababa"),
+    (r"^(a*+)b((c)\1)\2$",  r"^(a*+)b((c)\1)(?:(?:c)(?:a*+))$",    "abcaca"),
+    (r"^((?>a))((b)\1)\2$", r"^((?>a))((b)\1)(?:(?:b)(?:(?>a)))$", "ababa"),
+    (r"^(a++)((b)\1)\2$",   r"^(a++)((b)\1)(?:(?:b)(?:a++))$",     "ababa"),
+]
+
+
+def transitive_control():
+    print()
+    print("=" * 112)
+    print("TRANSITIVE CONTROL (R32 E15) -- the DEEP erasure")
+    print("=" * 112)
+    print("Group 2 (the referenced one) is assertion-free AND")
+    print("atomic/possessive-free in every row, so a gate that inspects only")
+    print("the subtree beneath the referenced A_CAP ACCEPTS all of them.")
+    print()
+    print("%-24s %-36s %-8s %-9s %-9s %s"
+          % ("true pattern", "DEEP erasure", "subject", "true", "deep",
+             "FALSE-NEG?"))
+    print("-" * 112)
+    fn = ran = 0
+    for t, e, subj in TRANSITIVE_CELLS:
+        et, ee = O.compile_err(t), O.compile_err(e)
+        if et or ee:
+            print("%-24s %-36s SKIPPED (libpcre2 refuses)" % (t, e))
+            continue
+        ran += 1
+        a = O.compile(t).search(subj)
+        b = O.compile(e).search(subj)
+        bad = a is not None and b is None
+        fn += bad
+        print("%-24s %-36s %-8s %-9s %-9s %s"
+              % (t, e, repr(subj), str(a and a[0]), str(b and b[0]),
+                 "*** YES ***" if bad else "no"))
+    print()
+    print("DEEP-ERASURE FALSE NEGATIVES: %d of %d." % (fn, ran))
+    print("The assertion is in GROUP 1, reachable only THROUGH group 2's")
+    print("nested reference -- so the condition must hold over the TRANSITIVE")
+    print("CLOSURE of the reference relation, not over one subtree.")
+    print()
+    print("The ATOMIC/POSSESSIVE half, transitively -- NOT found to bite:")
+    print("-" * 112)
+    abite = 0
+    for t, e, subj in TRANSITIVE_ATOMIC:
+        et, ee = O.compile_err(t), O.compile_err(e)
+        if et or ee:
+            print("%-26s SKIPPED" % t)
+            continue
+        a = O.compile(t).search(subj)
+        b = O.compile(e).search(subj)
+        bad = a is not None and b is None
+        abite += bad
+        print("%-26s %-9s true=%-9s deep=%-9s %s"
+              % (t, repr(subj), str(a and a[0]), str(b and b[0]),
+                 "FALSE-NEG" if bad else "no"))
+    print()
+    print("atomic/possessive transitive false negatives: %d of %d --"
+          % (abite, len(TRANSITIVE_ATOMIC)))
+    print("MEASURED AND NOT FOUND, which is weaker than proved: these are one")
+    print("shape. The gate applies BOTH halves transitively regardless,")
+    print("because the cost of doing so is the same walk.")
+    return fn, ran
+
+
 def main():
     if O.SELFCHECK:
         print("ORACLE SELFCHECK FAILED:", O.SELFCHECK)
@@ -266,6 +359,11 @@ def main():
     print("              sampled with replacement and inflated three")
     print("              families 31.5x).")
     fn, ran = positive_control()
+    tfn, tran = transitive_control()
+    if tran == 0 or tfn == 0:
+        print("REFUSING to report: the transitive control did not run, or")
+        print("found no false negative -- E15's population is not present.")
+        return 2
     if ran == 0:
         print("REFUSING to report: the positive control did not run")
         return 2
