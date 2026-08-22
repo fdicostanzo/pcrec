@@ -331,3 +331,21 @@ re-archived in one batch, dirty lists out/-only. The lane's simvm diff
 matches the critic's. Honest gap added, not closed: a NESTED
 backreference (a reference inside a referenced group) — no measurement
 in either direction; handed to r32eng's last round.
+
+## Revision final — lane/brdesign e8c9098 → 188bbe7 (prose only; the two LOW §4.4 items)
+
+(1) The scoped guard is EXACTLY N — the previous text was a self-
+contradiction inside one bullet ("asserted EXACT … at least N"); the
+concrete reason written in: three backref-bearing fixtures, a floor of 2
+passes while one silently loses its declaration — the population-
+shrinking failure arriving through the guard itself. (2) "UNCHANGED" was
+wrong in the hiding direction: today a comment naming next_pos inside a
+body IS flagged (stricter than the check's own allowlist at :922-926);
+token-level stripping moves the implementation TO its documented
+contract, and the reader is told which way it moves. The implementation
+constraint recorded with its reason: strip BEFORE head-detection and the
+column-0 brace rules (a comment can contain a definition head or a
+column-0 brace and desynchronise `inbody`), in-comment state carried
+across awk records, one pass. S68 still fires (real call). r32eng's last
+round (E12/E13 + the nested-backreference gap) runs on e8c9098's
+sections, which 188bbe7 does not touch.
