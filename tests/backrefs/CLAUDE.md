@@ -37,9 +37,9 @@ Re-run it after changing a cell list:
 
     python3 tests/backrefs/gen_corpus.py     # rewrites the .rxt files in place
 
-Current census, from that run: **226 cells, 50 blocks python-verified, 62
-`# pcre2-only`, 31 `perr`.** `verify_rxt.py` passes 219/219 on the
-python-verifiable half; the harness passes 431/431 over the whole directory.
+Current census, from that run: **237 cells, 50 blocks python-verified, 65
+`# pcre2-only`, 31 `perr`.** `verify_rxt.py` passes 221/221 on the
+python-verifiable half; the harness passes 442/442 over the whole directory.
 
 ## Files
 

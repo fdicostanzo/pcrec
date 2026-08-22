@@ -59,7 +59,7 @@ n "axa"
 # EMPTY (§3.4): a group that captured the empty string is SET
 # ====================================================================
 
-# E1. The failure mode this catches is the OPPOSITE of §3.3's: an implementation testing `ref_end > ref_start` as a proxy for "is it set" turns every empty capture into a failure and gets "yz" wrong. Sabotage row S-BR1.
+# E1. The failure mode this catches is the OPPOSITE of §3.3's: an implementation testing `ref_end > ref_start` as a proxy for "is it set" turns every empty capture into a failure and gets "yz" wrong. Sabotage row S105.
 pattern ^(x?)y\1z$
 features backrefs
 m "yz" 0 2

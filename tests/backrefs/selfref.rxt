@@ -49,7 +49,7 @@ n "aa"
 # THE RE-ENTRY CLASS -- E1's landing condition (§3.2)
 # ====================================================================
 
-# S3, AND THE COUNTEREXAMPLE THAT REFUTED THE FIRST DESIGN. libpcre2 answers (0,1) with group 1 = (0,1). Under WRITE-ON-TRAVERSE -- start written at the opening position, end at the closing one -- iteration 2 leaves start=1 and end=1 with NO capture published, both non-UNSET, and the model answers (0,2) with group 1 = (1,2). Publish-at-close is what makes the unset test total. Sabotage S-BR15.
+# S3, AND THE COUNTEREXAMPLE THAT REFUTED THE FIRST DESIGN. libpcre2 answers (0,1) with group 1 = (0,1). Under WRITE-ON-TRAVERSE -- start written at the opening position, end at the closing one -- iteration 2 leaves start=1 and end=1 with NO capture published, both non-UNSET, and the model answers (0,2) with group 1 = (1,2). Publish-at-close is what makes the unset test total. Sabotage S103.
 # python DIVERGES here, measured rather than assumed: "ab" @0 pcre2=('m', 0, 1) python=('ERR', 'cannot refer to an open group at position 4') (3 of 3 cells)
 # pcre2-only
 pattern (a|b\1)+

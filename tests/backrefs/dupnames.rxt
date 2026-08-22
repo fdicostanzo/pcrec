@@ -119,7 +119,7 @@ g 2 0 1
 n "xy"
 n "yx"
 
-# BOTH members set. "xyx" matches (it used #1) and "xyy" does NOT, which eliminates "last set" / "highest number". Sabotage rows S-BR9 and S-BR10 are these two rules, and each is caught by exactly ONE of these cells -- which is the point of writing them as separate rows.
+# BOTH members set. "xyx" matches (it used #1) and "xyy" does NOT, which eliminates "last set" / "highest number". Sabotage rows S114 and S115 are these two rules, and each is caught by exactly ONE of these cells -- which is the point of writing them as separate rows.
 # python DIVERGES here, measured rather than assumed: "xyx" @0 pcre2=('m', 0, 3) python=('ERR', 'unknown extension ?J at position 1') (2 of 2 cells)
 # pcre2-only
 pattern (?J)^(?<a>x)(?<a>y)\k<a>$
@@ -225,7 +225,7 @@ g 2 0 1
 # THE RE-ENTRY CELLS OVER A NAME RUN (R32 re-check E13)
 # ====================================================================
 
-# THE CELL THAT MADE THE MARKED SET A UNION. "aba" is (0,3) with group 1 UNSET and group 2 = (1,3): the resolution chain falls THROUGH the unset first member to the second, which is the one being RE-ENTERED -- so it is exactly the member that must be published at close. Marking only the "resolved" member is not merely incomplete; there is no statically resolved member to speak of. Sabotage S-BR15b marks one member of the run and this cell is its only detector.
+# THE CELL THAT MADE THE MARKED SET A UNION. "aba" is (0,3) with group 1 UNSET and group 2 = (1,3): the resolution chain falls THROUGH the unset first member to the second, which is the one being RE-ENTERED -- so it is exactly the member that must be published at close. Marking only the "resolved" member is not merely incomplete; there is no statically resolved member to speak of. Sabotage S104 marks one member of the run and this cell is its only detector.
 # python DIVERGES here, measured rather than assumed: "aba" @0 pcre2=('m', 0, 3) python=('ERR', 'unknown extension ?J at position 1') (3 of 3 cells)
 # pcre2-only
 pattern (?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$

@@ -321,7 +321,7 @@ NUMERIC = [
           note="E1. The failure mode this catches is the OPPOSITE of §3.3's: "
                "an implementation testing `ref_end > ref_start` as a proxy "
                "for \"is it set\" turns every empty capture into a failure "
-               "and gets \"yz\" wrong. Sabotage row S-BR1."),
+               "and gets \"yz\" wrong. Sabotage row S105."),
         B(r"^(a*)\1$", [("",), ("aa",), ("aaa",), ("a",)], BR, groups=1),
         B(r"^(a?)\1{3}$", [("",), ("aaaa",), ("aa",)], BR, groups=1),
     ]),
@@ -391,7 +391,7 @@ OCTAL = [
     ("RULE 3: two or more digits, run beginning 1-7 -- SO FAR or OCTAL", [
         B(r"^(a)\10$", [("a\x08",), ("aa0",)], BR, groups=1,
           note="ONE group before, so `\\10` has no reference reading and is "
-               "OCTAL 010 = 0x08. Sabotage S-BR8 makes rule 3 count the WHOLE "
+               "OCTAL 010 = 0x08. Sabotage S112 makes rule 3 count the WHOLE "
                "pattern instead, and every groups-before cell still passes -- "
                "only this shape and `\\10(a)..(j)` below fail."),
         B(r"^\10(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)$",
@@ -415,7 +415,7 @@ OCTAL = [
                "would consume ZERO digits and produce nothing; PCRE2 reads "
                "the whole decimal number instead. With no group 81 this is "
                "error 115, and the failure a naive rule 3 produces is a "
-               "SILENT MIS-PARSE rather than an error. Sabotage S-BR8b."),
+               "SILENT MIS-PARSE rather than an error. Sabotage S113."),
         B(r"^\89$", [("\x08" "9",)], BR),
         B(r"^\91$", [("\x09" "1",)], BR),
     ]),
@@ -444,7 +444,7 @@ OCTAL_CLASS = [
                "answer exactly what the BASE tier answered before it existed: "
                "inside a class a backreference is impossible, so `\\0`..`\\7` "
                "are octal and `\\8` `\\9` `\\g` `\\k` are the literal "
-               "characters (FIX-3/K13, 41 measured cells). Sabotage S-BR6 "
+               "characters (FIX-3/K13, 41 measured cells). Sabotage S110 "
                "makes the module's atom port claim the class position too, "
                "and these twelve cells are the only thing that sees it."),
         B(r"^[\10]$", [("\x08",), ("\x01",), ("0",)], BR),
@@ -494,7 +494,7 @@ SELFREF = [
                "end at the closing one -- iteration 2 leaves start=1 and "
                "end=1 with NO capture published, both non-UNSET, and the "
                "model answers (0,2) with group 1 = (1,2). Publish-at-close is "
-               "what makes the unset test total. Sabotage S-BR15."),
+               "what makes the unset test total. Sabotage S103."),
         B(r"^(?:(a|b\1)y)+", [("aybay",), ("ay",), ("aybby",)], BR, groups=1,
           note="THE MEMORY-SAFETY CELL. On \"aybay\" iteration 2 opens the "
                "group at 2 while iteration 1's end is 1, so write-on-traverse "
@@ -560,7 +560,7 @@ NESTED = [
                "interaction was traced correct and UNNAMED in the first "
                "design; publish-at-close is what makes it designable, because "
                "the pending write and the pair it feeds are one publication "
-               "and the suppression covers both or neither. Sabotage S-BR13 "
+               "and the suppression covers both or neither. Sabotage S118 "
                "drops the pending write alone."),
         B(r"(?:(a|bb)x)+\1y", [("axbbxbby",), ("axbbxay",)], BR, groups=1),
     ]),
@@ -668,7 +668,7 @@ CASELESS_CELLS = [
           note="F7's positive half: the reference is inside `(?i:...)`, so the "
                "COMPARE folds and \"aA\" matches. `Ast.caseless` is set from "
                "the scoped state AT THE BACKREFERENCE, exactly as "
-               "`Ast.multiline` is set at the `$`. Sabotage S-BR2 ignores the "
+               "`Ast.multiline` is set at the `$`. Sabotage S106 ignores the "
                "field and this cell is what sees it."),
         B(r"^(?i:(a))\1$", [("aA",), ("aa",), ("Aa",), ("AA",)], BRM, groups=1,
           note="F7's negative half, and the one a plausible implementation "
@@ -758,7 +758,7 @@ DUPNAMES = [
         B(r"(?J)^(?<a>x)(?<a>y)\k<a>$", [("xyx",), ("xyy",)], BRNM, groups=2,
           note="BOTH members set. \"xyx\" matches (it used #1) and \"xyy\" "
                "does NOT, which eliminates \"last set\" / \"highest number\". "
-               "Sabotage rows S-BR9 and S-BR10 are these two rules, and each "
+               "Sabotage rows S114 and S115 are these two rules, and each "
                "is caught by exactly ONE of these cells -- which is the point "
                "of writing them as separate rows."),
         B(r"(?J)^(?:(?<a>p)|(?<a>q)|(?<a>r))\k<a>$",
@@ -793,7 +793,7 @@ DUPNAMES = [
                "the one being RE-ENTERED -- so it is exactly the member that "
                "must be published at close. Marking only the \"resolved\" "
                "member is not merely incomplete; there is no statically "
-               "resolved member to speak of. Sabotage S-BR15b marks one "
+               "resolved member to speak of. Sabotage S104 marks one "
                "member of the run and this cell is its only detector."),
         B(r"(?J)^(?:(?<a>a|b\k<a>))+$", [("aba",), ("a",)], BRNM, groups=1),
         B(r"(?J)^(?<a>x)(?:(?<a>a|b\k<a>))+$", [("xbx",), ("x",)], BRNM,

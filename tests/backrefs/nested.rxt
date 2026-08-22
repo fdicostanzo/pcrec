@@ -58,7 +58,7 @@ n "abab"
 # THE REVDET SHAPE (§3.6/R32 E9): a group in the body, a reference OUT
 # ====================================================================
 
-# N5/N6. `(?:(a|bb)x)+y` takes the reverse-deterministic rung, which SUPPRESSES the per-iteration capture writes and reconstructs the last iteration's values with a backward walk. A reference OUTSIDE that loop therefore reads slots written by the backward walk rather than by the loop. The interaction was traced correct and UNNAMED in the first design; publish-at-close is what makes it designable, because the pending write and the pair it feeds are one publication and the suppression covers both or neither. Sabotage S-BR13 drops the pending write alone.
+# N5/N6. `(?:(a|bb)x)+y` takes the reverse-deterministic rung, which SUPPRESSES the per-iteration capture writes and reconstructs the last iteration's values with a backward walk. A reference OUTSIDE that loop therefore reads slots written by the backward walk rather than by the loop. The interaction was traced correct and UNNAMED in the first design; publish-at-close is what makes it designable, because the pending write and the pair it feeds are one publication and the suppression covers both or neither. Sabotage S118 drops the pending write alone.
 pattern (?:(a|bb)x)+\1
 features backrefs
 m "axbbxbb" 0 7

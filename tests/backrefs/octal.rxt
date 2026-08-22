@@ -95,7 +95,7 @@ n "abcdefgh\x08"
 # RULE 3: two or more digits, run beginning 1-7 -- SO FAR or OCTAL
 # ====================================================================
 
-# ONE group before, so `\10` has no reference reading and is OCTAL 010 = 0x08. Sabotage S-BR8 makes rule 3 count the WHOLE pattern instead, and every groups-before cell still passes -- only this shape and `\10(a)..(j)` below fail.
+# ONE group before, so `\10` has no reference reading and is OCTAL 010 = 0x08. Sabotage S112 makes rule 3 count the WHOLE pattern instead, and every groups-before cell still passes -- only this shape and `\10(a)..(j)` below fail.
 # python DIVERGES here, measured rather than assumed: "a\x08" @0 pcre2=('m', 0, 2) python=('ERR', 'invalid group reference 10 at position 5') (2 of 2 cells)
 # pcre2-only
 pattern ^(a)\10$
@@ -146,7 +146,7 @@ m "S4" 0 2
 # RULE 3': a run BEGINNING 8 or 9 is ALWAYS a DECIMAL backreference
 # ====================================================================
 
-# R32 E3. 8 and 9 are not octal digits, so the octal re-read would consume ZERO digits and produce nothing; PCRE2 reads the whole decimal number instead. With no group 81 this is error 115, and the failure a naive rule 3 produces is a SILENT MIS-PARSE rather than an error. Sabotage S-BR8b.
+# R32 E3. 8 and 9 are not octal digits, so the octal re-read would consume ZERO digits and produce nothing; PCRE2 reads the whole decimal number instead. With no group 81 this is error 115, and the failure a naive rule 3 produces is a SILENT MIS-PARSE rather than an error. Sabotage S113.
 # pcre2 refuses: pcre2_compile failed at offset 3: reference to non-existent subpattern
 pattern ^\81$
 features backrefs
