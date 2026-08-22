@@ -115,6 +115,15 @@ fi
 if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --check; then rc=1; fi
 if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --names; then rc=1; fi
 
+# [DOC-DRV]: component 3, the keyed annotation store. Same drift-detector
+# shape as --check above (a stale key or a page-vs-store render mismatch
+# fails loudly, naming the fix), extended to
+# docs/pcre2_compliance_annotations.txt. --tension is informational by
+# design (see compliance_section.py's own docstring) and is run for
+# visibility, never for its exit code.
+if ! PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --check-annotations; then rc=1; fi
+PCREC="$PCREC" python3 "$SCRIPT_DIR/compliance_section.py" --tension
+
 # PC-3: the same table against libpcre2, which is the one authority none of the
 # above is. It links the same library and includes the same header, then dlopens
 # libpcre2 at runtime — and SKIPS LOUDLY if that library is absent, so a clone
