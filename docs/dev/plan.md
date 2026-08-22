@@ -428,21 +428,7 @@ including V-G/V-H (added this session).
   trace mode ever emits TABULAR output it adopts docs/spec/
   table_contract.md at birth
 
-- [SAFEKILL] STATE:started (chartered by Frank 2026-08-19, thirty-fourth
-  session, on the recurring pkill-collateral class) — a SAFE PROCESS-KILL
-  script in scripts/, wrapping/replacing pkill for this project's
-  operational use. The incident record that charters it: the wave B lane's
-  pkill -f killed a concurrent legitimate mech run (2026-08-19 journal,
-  lane process note); the manager's pkill -f run_sabotage_matrix killed the
-  wave C lane's live S76 matrix child HOURS after journaling that exact
-  lesson (same entry, manager lessons); the standing no-pgrep-f polling
-  rule shares the root ("a command line is not an identity" — two
-  legitimate concurrent runs are indistinguishable under a pattern, and
-  the pattern can match the caller's own wrapper shell). Three phases per
-  Frank's charter: (1) problems + requirements from the record, (2) the
-  script, (3) tests — per D48's shape (scripts/tests/<full-filename>.test,
-  make testscripts, NEVER part of make test). Non-interactive by
-  construction (agents cannot answer prompts).
+- [SAFEKILL] archived to plan_completed.md (completed 2026-08-19, thirty-fourth session — scripts/safekill merged db8ddde, all three phases; scripts/tests/safekill.test 13/13 under make testscripts; row flipped 2026-08-22 at the thirty-sixth session's wake-up, where the omission was found)
 - [V-I] STATE:not-started — NAMED-RESULTS COPY HELPER (Frank, 2026-08-18,
   thirty-third session; LOW PRIORITY, boonies tier; details and design
   TBD): an emitted per-pattern helper that takes a search's results —

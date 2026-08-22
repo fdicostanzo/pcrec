@@ -11098,3 +11098,105 @@ compliance fact for the merge record, and reading evidence from
 primary output is what made it harmless; sub-lane sequencing (author
 during battery, validate after) held up under six concurrent
 work-streams.
+
+## 2026-08-21/22 (EDT), thirty-fifth session (part 3, RECONSTRUCTED at the thirty-sixth session's wake-up) — [TT-3], [SR-11], [DOC-DRV] all landed; final baseline green; the session died in a dev-UI crash AFTER the work and BEFORE this entry
+
+WHY THIS ENTRY IS WRITTEN BY THE NEXT SESSION. The thirty-fifth session
+landed three rows after its part-2 entry (19:02), ran the final baseline
+(build/final_baseline.log, 22:52 -> 23:00, `FINAL BASELINE make test
+EXIT=0` on HEAD 63f97ab), and then the dev UI crashed before the close
+bookkeeping (this entry, the wake.md rewrite). Frank opened the
+thirty-sixth session with "dev ui crashed, not sure if you were
+completed". Answer, established from the record alone: YES for the work
+— every landing is a self-describing merge commit on main, main ==
+origin/main (pushed), tree clean, no worktrees, no processes, no cron.
+NO for the close record, which this entry and wake.md now supply. All
+figures below are read from commit messages and the uncommitted baseline
+log, not from memory of the session.
+
+[TT-3] COMPILE CACHING — MEASURED, VERDICT NO FOR THE SUITE (merge
+ee57668, row archived 236653f). Plain make test 7:16 / ccache cold 32:01
+/ warm 29:48 at a REAL 64.6% hit rate: per-call ccache overhead across
+~20k tiny compiles beats the 12-core parallel savings — workload shape,
+not wiring. Qualified YES for mech rows (25-29% faster warm, 71% direct
+hits on tree objects; cross-sabotage matrix unmeasured, reasoning
+recorded). The wiring is merged OPT-IN as CCACHE=1, off by default,
+toggle-off byte-identity PROVEN by trace diff; the two-blocker diagnosis
+(compile+link single invocations 10% -> 65% cacheable after the
+_gen_cc_run compile/link split; -I temp paths and -g CWD hashing fixed by
+relativize + NOHASHDIR/BASEDIR); D45 gen-timeout controls fire cold AND
+warm. docs/testing.md gained the section and a stale mech figure
+corrected (~6 min -> ~50 min at PROCS=4). Kept for mech and for
+[REL-META]'s CI case, where 2-core runners invert the economics.
+
+[SR-11] THE TABLE LIBRARY (merge 70650b2, archived 8eb73fd).
+tests/lib/table.sh is the ONE implementation of
+docs/spec/table_contract.md: column-by-name resolution, header-declared
+counts, awk name maps, header-truthfulness, sections including loud-fail
+on an unselected multi-section dump. All four consumers converted —
+tests/reject's iterator (resolution-gated, nexpected=-1 poisoning), cli
+case10 (now the truthfulness check), registry check09 by-name,
+compliance_section.py plus a generator-agreement COLS-vs-header
+cross-check. Controls run END-TO-END through the real consumers via a
+sabotaging pcrec wrapper (header-drop, extra-tab, COLS-rename — all loud,
+all naming their target). Section-scoped validation at pre-change
+figures (reject 537/0 @99 rows, cli 269/0, registry 171/0 + PC-3 163/0,
+spec_mod0 14/0). The lane's own find: pipeline-status swallowing inside
+the library, fixed — lesson 9 self-applied.
+
+[DOC-DRV] THE COMPLIANCE PAGE AS ANNOTATED DERIVATION (merge fc36e5e,
+archived 63f97ab). 90 keyed annotations — 38 registry-keyed against the
+live --list-syntax dump, 52 base-keyed against an INDEPENDENT allowlist;
+per-section generated annotation blocks; --check-annotations (stale-key
++ render-drift, red-cased) and --tension (the checked-tension guard,
+both directions, informational by design — the baseline prints 60
+registry-only tokens as INFO, which is the expected placeholder effect,
+not a defect). Survey component untouched and hand-written per the ruled
+three-component model; migration manifest complete with ZERO ask rows;
+two PRE-EXISTING compliance_section.py bugs found and fixed (END-marker
+newline growth; three text.index(END) sites silently wrong under
+multiple markers). Full page read performed. The compliance-refresh
+skill flipped to LANDED with the key-based procedure.
+
+THE ANCHOR TRIPWIRE'S FIRST LIVE CATCH. At the DOC-DRV merge review the
+sabotage-anchor tripwire went red on S43: TT-3's _gen_cc_run compile/link
+split had MOVED the text S43 quotes. Re-derived (63f97ab), tripwire
+85/85, S43's own mech row DETECTED 1/0/0. The tripwire joins the merge
+bar from here — it caught exactly the drift class tranche A's seven
+re-anchorings had just cleaned up, one merge later, which is the whole
+argument for having it on the bar.
+
+ALSO: [REL-META] chartered by Frank (2454d71) — a meta-plan row for
+first-release + contribution readiness whose deliverable is the
+ratifiable ROW SET (candidates recorded: CONTRIBUTING + template +
+run-stamp, free public-repo CI with house tiering and gate-never-in-CI,
+README pass, versioning/release mechanics, the stranger's-first-hour
+survey). Not started.
+
+FINAL BASELINE ON 63f97ab (build/final_baseline.log, uncommitted
+evidence — re-run, never cite): corpus 20,775/0; cli 269/0; reject
+537/0; registry 171/0 + PC-3 163/0; codegen 56; assertions 52; identity
+gates endvar/wordctx/mlinectx/gstart green with live positive controls;
+mline 4, gstart 8, kreset 9 differentials green (8/8 run_group);
+known_fail EMPTY, nothing to ratchet; annotations 90/90 live keys. No
+gate run recorded after the last merge (the last gate of record is
+union2, 13/13 at 115fbc6 — the TT-3/SR-11/DOC-DRV landings touch no
+engine code, so the gate's population is unchanged, but the next
+session's baseline verification should include a quiet-box gate
+regardless).
+
+HOUSEKEEPING FOUND AT WAKE-UP: [SAFEKILL] had sat STATE:started since
+its merge on 2026-08-19 (db8ddde, all three phases, 13/13) — the tool
+was in daily use and cited in every brief while its row said in-flight.
+Flipped and archived at the thirty-sixth session's start.
+
+LESSONS. (1) Incremental, self-describing commits are what made a UI
+crash cost NOTHING but the close entry — every figure above was
+reconstructable from `git log` plus one log file; the close record was
+the single uncommitted thing and the single thing lost. (2) Therefore:
+write the journal entry BEFORE launching the final baseline, then amend
+with the result — the baseline wait is ten minutes of exposure with the
+session's narrative still only in context. (3) A row flip is part of the
+merge, not of the close: [SAFEKILL]'s was missed because it merged
+mid-wave with no battery, and nothing downstream re-checks STATE tags
+against reality except the next wake-up's grep.

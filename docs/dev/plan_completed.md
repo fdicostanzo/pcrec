@@ -3499,3 +3499,19 @@ c"` from `(0,3)` into `(0,1)`, and
   compliance_section.py); the window also absorbs the anchor-checker
   promotion into make test and the PROCS=4-5 tests/assertions
   recommendation
+
+- [SAFEKILL] STATE:completed (CLOSED 2026-08-19, thirty-fourth session, merge db8ddde: scripts/safekill — PID mode = pgid ∪ ppid-descendant tree, pattern mode narrow with pure-/proc discovery and zero subprocess spawns, unconditional self/ancestor exclusion, refuse-by-default on ambiguity, --list/--under/--cwd, audit line before the signal; phase 3 scripts/tests/safekill.test 13/13 per D48 under make testscripts, never part of make test; every brief since points at it, pkill/pgrep -f retired. ROW FLIPPED 2026-08-22 at the thirty-sixth session's wake-up — the flip was missed at merge time and sat STATE:started for three days while the tool was in daily use) — formerly STATE:started (chartered by Frank 2026-08-19, thirty-fourth
+  session, on the recurring pkill-collateral class) — a SAFE PROCESS-KILL
+  script in scripts/, wrapping/replacing pkill for this project's
+  operational use. The incident record that charters it: the wave B lane's
+  pkill -f killed a concurrent legitimate mech run (2026-08-19 journal,
+  lane process note); the manager's pkill -f run_sabotage_matrix killed the
+  wave C lane's live S76 matrix child HOURS after journaling that exact
+  lesson (same entry, manager lessons); the standing no-pgrep-f polling
+  rule shares the root ("a command line is not an identity" — two
+  legitimate concurrent runs are indistinguishable under a pattern, and
+  the pattern can match the caller's own wrapper shell). Three phases per
+  Frank's charter: (1) problems + requirements from the record, (2) the
+  script, (3) tests — per D48's shape (scripts/tests/<full-filename>.test,
+  make testscripts, NEVER part of make test). Non-interactive by
+  construction (agents cannot answer prompts).
