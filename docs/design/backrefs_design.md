@@ -1106,7 +1106,8 @@ too).
 **RECOMMENDATION: one deferred list, checked once at end of parse.** The
 module records `(kind, requested_number_or_name, pattern_offset)` per
 reference into a `Ctx`-owned arena list — the same shape and the same tier as
-`Ctx.named_groups` (`src/core/internal.h:664-665`), which is already "a
+`Ctx.named_groups` (the fields at `src/core/internal.h:665-666`; the
+quoted characterisation is its comment at `:649-664`), which is already "a
 LEXICAL fact about the pattern text… populated unconditionally" — and a single
 end-of-parse pass resolves every entry, raising pcrec's own error-115-class
 diagnostic at the recorded offset. Three properties this buys:
@@ -1304,12 +1305,14 @@ checked first so the bisection is known to bracket a boundary:
 
 > `endpoint check: k=1 compiles=True ; k=17576 compiles=False`
 > **largest `|L(G)|` that compiles: 10,525** — a 73,674-byte pattern producing
-> **7,116,509 bytes of emitted C** and 2.07 s of gcc.
+> **7,116,509 bytes of emitted C** and ~2 s of gcc (1.99 / 2.07 / 2.00 s
+> across three runs of this lane's own).
 
-**The boundary REPRODUCES.** Two independent runs of this probe, from
-different working trees, both bisect to 10,525/10,526 with identical pattern
-and emitted-C byte counts; only the gcc seconds jitter (1.99 vs 2.07). So the
-number is a property of the compiler's caps, not of a run.
+**The boundary REPRODUCES — now four times, one of them independent.** Three
+runs of this probe from different working trees and a FOURTH by the R32 panel
+from a third tree all bisect to 10,525/10,526 with identical pattern and
+emitted-C byte counts (73,674 B and 7,116,509 B); only the gcc seconds jitter.
+So the number is a property of the compiler's caps, not of a run.
 > **smallest that does not: 10,526** — "pattern too complex for the DFA
 > engine (>32000 states)".
 
@@ -1448,18 +1451,20 @@ from a different run than the archive it cited:
 
 | idiom | subject | hybrid (s) | vm-only (s) | **vm-only is** |
 |---|---|---|---|---|
-| quote | nomatch | 0.00022810 | 0.00191457 | **8.4x slower** |
-| quote | latematch | 0.00009122 | 0.00191623 | **21.0x** |
-| tag | nomatch | 0.00000436 | 0.00069634 | **159.7x** |
-| tag | latematch | 0.00001092 | 0.00069780 | **63.9x** |
-| digits | nomatch | 0.00010991 | 0.00192808 | **17.5x** |
-| digits | latematch | 0.00008925 | 0.00139532 | **15.6x** |
-| dupword | nomatch / latematch | 0.00000028 / 0.00000011 | 0.00000009 / 0.00000004 | **NOISE** (see below) |
-| letter | nomatch / latematch | 0.00000007 / 0.00000004 | 0.00000005 / 0.00000004 | **NOISE** |
+| quote | nomatch | 0.00024435 | 0.00191383 | **7.8x slower** |
+| quote | latematch | 0.00023128 | 0.00195345 | **8.4x** |
+| tag | nomatch | 0.00001089 | 0.00077490 | **71.2x** |
+| tag | latematch | 0.00000538 | 0.00077801 | **144.6x** |
+| digits | nomatch | 0.00022515 | 0.00191765 | **8.5x** |
+| digits | latematch | 0.00022821 | 0.00190879 | **8.4x** |
+| dupword | nomatch / latematch | 0.00000011 / 0.00000028 | 0.00000008 / 0.00000008 | **NOISE** (see below) |
+| letter | nomatch / latematch | 0.00000007 / 0.00000003 | 0.00000005 / 0.00000002 | **NOISE** |
 
 **The RATIOS ARE STABLE IN ORDER OF MAGNITUDE AND NOT IN THEIR DIGITS, and a
-reader should not quote one.** Five runs of this probe during the lane gave
-quote **8.4-21.7x**, tag **63.9-159.7x** and digits **6.2-20.9x**. The
+reader should not quote one.** SIX runs of this probe across the lane and the R32
+revision gave quote **7.8-21.7x**, tag **63.9-159.7x** and digits
+**6.2-20.9x**; R32 independently reproduced ratios inside those ranges, with
+rows swapping between runs exactly as this paragraph predicts. The
 vm-only arm barely moves between runs; the HYBRID arm is multi-modal across
 roughly 0.000004-0.00023 s, and that is what makes the ratio jump — a
 prefilter that skips almost the whole subject is measuring a memchr whose
@@ -1561,13 +1566,13 @@ alternative reading:
 That is `Ast.multiline`'s and `caseless`'s shape once more, one layer up: a
 scoped parser-state bool saved and restored at group boundaries. So
 `ParseMods` (`src/parse/parse_mods.h`) gains `bool dupnames`,
-`mod_modifiers.c`'s `case 'J'` (`src/parse/mod_modifiers.c:323-354`) sets and
+`mod_modifiers.c`'s `case 'J'` (`src/parse/mod_modifiers.c:323-357`) sets and
 clears it instead of refusing, and `ng_is_duplicate`'s refusal
 (`src/parse/mod_named_groups.c:89-95`, `:131-135`) becomes conditional on the
 flag at the declaration site.
 
 **The `(?J)` refusal's long comment retires with it.** That comment
-(`mod_modifiers.c:324-353`) records two earlier wordings that were both wrong
+(`mod_modifiers.c:324-356`) records two earlier wordings that were both wrong
 and the reasoning that produced the third; it should be *replaced by a
 pointer to this section*, not deleted, on the same house rule that keeps
 refutations inline.
@@ -1705,10 +1710,19 @@ these are keyed annotations plus generated facts and the module runs the
 Note line 1001's wording carefully: it says the `J` cells close when "a FUTURE
 dupnames producer lands **inside** [named-groups]". This module lands the
 producer in `backrefs`, not in `named-groups`, because the by-name resolution
-machinery is here. The compliance text's *attribution* of the letter to module
-`named-groups` (877-880: "duplicate NAMES are named-group semantics") stays
-correct for the DECLARING half and must be reconciled with the RESOLVING half
-landing here. §15 ASK-1.
+machinery is here.
+
+**RULED (ASK-1): the attribution MOVES to `backrefs`, and the page notes the
+SPLIT.** The compliance text at 877-880 currently attributes the letter to
+`named-groups` ("duplicate NAMES are named-group semantics"), which is right
+about the DECLARING half and silent about the RESOLVING half. The annotation
+becomes: **declaring a duplicate name is `named-groups`; resolving a reference
+to one, and the `(?J)` letter itself, is `backrefs`.** Because the page is a
+derived artifact under [DOC-DRV], this is a keyed-annotation edit through the
+`compliance-refresh` skill — the generated index regenerates from the registry
+and the prose row is reconciled against it, so there is no way for the two to
+drift. Line 1001's revisit trigger FIRES with this module and the entry
+closes.
 
 ---
 

@@ -1,5 +1,11 @@
 # docs/design/backrefs_measurements — the [M6.5.1] design lane's instruments
 
+**REVISED AFTER R32.** Two instruments were added in the revision round and
+four of the original eight had defects the panel found. A reader should treat
+the defect notes below as the directory's most useful content: every one is a
+probe that produced CONFIDENT WRONG OUTPUT, and the pattern across them is
+what the closing section is about.
+
 The measurements behind `../backrefs_design.md` (module `backrefs`: numeric
 `\1`..`\99` with PCRE2's octal disambiguation, the `\g` and `\k` spellings,
 `(?P=name)`, and `(?J)`/DUPNAMES, which the [M6.5] row rules is implemented
@@ -104,6 +110,32 @@ moved.
   says — so the expansion's only customer is a `--no-captures` build. §2
   BISECTS the DECLINE boundary on the shipped compiler, with both endpoints
   checked first so the bisection is known to bracket one.
+- **`probes/simvm.py` — NOT A PROBE, the SIMULATOR, and NOT THIS LANE'S
+  WORK.** The R32 critic `r32eng` wrote it to test the design's §3.2 and it is
+  what FOUND E1 — the finding that a re-entered group's two capture slots
+  belong to different iterations, so the design's "a non-UNSET pair is a
+  capture" premise was false and two shapes underflowed a `size_t` in emitted
+  code. It is ADOPTED here rather than rewritten, with one `publish` parameter
+  added and nothing else changed, on a rule this directory should keep: **a
+  lane that re-implements the instrument that refuted it cannot detect that it
+  has softened it.** `publish='open'` reproduces the critic's run cell for
+  cell.
+- **`probes/probe_publish_discipline.py` — MEASURED, libpcre2 vs BOTH
+  models.** The arm-vs-arm form of E1: one simulator, one AST, one search
+  order, one trail discipline, two publication modes. Any infidelity to the
+  real emitter cancels between the arms, so what remains is the discipline
+  alone. 5,808 cells. Its third arm is the one that made the correction
+  cheap — a backref-FREE control that must agree in both modes, because
+  publication is unobservable without a reference, and does (0/0), which is
+  what lets publish-at-close be scoped to referenced groups instead of
+  rewriting capture semantics for every pattern pcrec compiles. It also
+  reports a REVERSED-SPAN count separately from divergences, because
+  `ref_s > ref_e` is not a wrong answer but an out-of-bounds read.
+  **Its own first run compared a fixed-width model tuple against libpcre2's
+  TRUNCATED one** (`pcre2_match` returns only the pairs it filled), reporting
+  a shape mismatch as a semantic divergence — in the CONTROL arm, the column
+  that exists to be zero. The padding is applied to the ORACLE side only; the
+  model is never adjusted to agree.
 - **`probes/archive.sh` — not a probe, the ARCHIVER.** Every file in `out/` is
   written by it, so one provenance header covers them all and a number can be
   traced to a run rather than to a claim. Copied from
@@ -114,16 +146,43 @@ moved.
 
 ## The pattern across the defect list, worth reading once
 
-Five of the eight instruments had a defect that produced CONFIDENT WRONG
-OUTPUT rather than an error, and every one was found by running the probe and
-looking at the whole table rather than at the number the design wanted. Four
-of the five are the same shape in different clothes: **a measurement whose
-population or filter does not contain the thing being measured** — a filter
-that never reached a transition table, a subject with no positives, a subject
-where the "nomatch" case matched, an erasure that was not the erasure. That is
-this project's own recurring finding (`../../.claude`-adjacent house rule: a
-control sharing a source with what it controls) one level out, and it is why
-every table here prints its denominator.
+**Nine defects across ten instruments**, five found by this lane and four by
+R32, every one producing CONFIDENT WRONG OUTPUT rather than an error. Seven of
+the nine are the same shape in different clothes: **a measurement whose
+population or filter does not contain the thing being measured.**
+
+- a filter that never reached a transition table (`caseless_fold`, A′)
+- a subject population with no positives (`erasure_hazard`, `tag`)
+- a "nomatch" subject that matched (`prefilter_cost`, twice — the filler's
+  repeated word, then its repeated letters)
+- an erasure that was not the erasure (`prefilter_cost`, `sed 's/\1//'`)
+- a sweep that measured 255 bytes and said 256 (`caseless_fold`, axis A: `.`
+  excludes 0x0a)
+- a denominator counting DRAWS rather than distinct subjects, and one family
+  present twice under two names (`erasure_hazard`)
+- a control comparing STAMPS where the fact is about ENGINES
+  (`prefilter_cost`)
+
+The remaining two are the sharper class, where the instrument had no way to
+FAIL: `erasure_hazard`'s FALSE-NEG column had no cell in which it could be
+non-zero until E2's assertion-in-group cells became its positive control, and
+`publish_discipline`'s first run turned a tuple-shape mismatch into a
+divergence in the very arm that exists to be zero.
+
+**And one that belongs to neither class and is the most instructive: E1's
+counterexample was already archived.** Cell S3 of `out/br_semantics.txt`
+disagreed with the design's model from the day both were written. The lane
+archived the cell, quoted it in the design, and never ran the model against
+it. No probe defect caused that — the probe was right; nothing compared its
+output to the design's claim. `probes/simvm.py` and
+`probes/probe_publish_discipline.py` exist so that comparison is now
+mechanical.
+
+That is this project's recurring finding (a control sharing a source with what
+it controls) seen from two sides: a control that cannot fail, and a claim with
+no control at all. It is why every table here prints its denominator, and why
+three probes now REFUSE to report rather than print a zero they cannot
+justify.
 
 ## `out/`
 

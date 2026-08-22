@@ -1,14 +1,14 @@
 # ============================================================
-# ARCHIVED PROBE OUTPUT — [M6.5.1] module `assertions` design lane
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
 # ------------------------------------------------------------
 # PROBE      : docs/design/backrefs_measurements/probes/probe_octal_rule.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: f91a449 2026-08-22
-# RUN FROM REPO COMMIT        : 6342199 (lane/brdesign)
+# PROBE LAST CHANGED AT COMMIT: fd8850e 2026-08-22
+# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/backrefs_measurements/out/br_semantics.txt
 #      M docs/design/backrefs_measurements/out/octal_rule.txt
-# RUN DATE   : 2026-08-22T09:10:39-04:00
+# RUN DATE   : 2026-08-22T09:58:53-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -126,6 +126,43 @@ pattern              verdict   matches        note
 \0377                ok        (0, 2)         \037 then '7'
 \o{101}              ok        (0, 1)         the unambiguous \o{} form
 \o{400}              err 134   -              beyond 8-bit
+
+==============================================================================
+E. A DIGIT RUN BEGINNING WITH 8 OR 9 -- always DECIMAL (R32 E3).
+==============================================================================
+`\8` and `\9` are not octal digits, so no octal reading of the
+run exists. Each row varies the GROUP COUNT and reports the
+compile verdict; the boundary is where err 115 stops.
+
+escape   g=0  g=1  g=8  g=9  g=10  g=12  g=81  g=82  g=90  g=91  g=100
+------------------------------------------------------------------------------
+\8       e115   e115   ok     ok     ok     ok     ok     ok     ok     ok     ok   
+\9       e115   e115   e115   ok     ok     ok     ok     ok     ok     ok     ok   
+\80      e115   e115   e115   e115   e115   e115   ok     ok     ok     ok     ok   
+\81      e115   e115   e115   e115   e115   e115   ok     ok     ok     ok     ok   
+\89      e115   e115   e115   e115   e115   e115   e115   e115   ok     ok     ok   
+\91      e115   e115   e115   e115   e115   e115   e115   e115   e115   ok     ok   
+\812     e115   e115   e115   e115   e115   e115   e115   e115   e115   e115   e115 
+
+The boundary for each run is exactly its own DECIMAL value, which
+is what makes it a decimal backreference and not anything else.
+
+DISCRIMINATORS
+  81 groups + \81 on 82 a's -> True  (a backref to group 81)
+  \81 + 81 groups AFTER      -> compiles=True, matches 81 a's=False
+     ... so the count is over the WHOLE pattern (a FORWARD
+     reference, which then fails at match time on the unset
+     rule) -- NOT the `so far` count a multi-digit run with a
+     valid octal reading uses.
+  \812 with 812 groups       -> ok
+  \812 with  81 groups       -> err 115
+
+RIDER (R32 E3): references ABOVE \99 exist, so a construct table
+that stops at \99 is too narrow. And \100 keeps the ORDINARY
+multi-digit rule, because it HAS an octal reading:
+  100 groups BEFORE + \100, on 101 a's -> True  (backref to 100)
+  \100 + 100 groups AFTER, on '@'+100a -> True  (OCTAL '@')
+  \100 with NO groups, on '@'          -> True  (OCTAL '@')
 
 ==============================================================================
 D. THE CLASS POSITION -- base syntax in pcrec today (FIX-3/K13).

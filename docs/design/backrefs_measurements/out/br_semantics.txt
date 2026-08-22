@@ -1,13 +1,13 @@
 # ============================================================
-# ARCHIVED PROBE OUTPUT — [M6.5.1] module `assertions` design lane
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
 # ------------------------------------------------------------
 # PROBE      : docs/design/backrefs_measurements/probes/probe_br_semantics.py
 # ARGS       : (none)
 # PROBE LAST CHANGED AT COMMIT: 603345c 2026-08-22
-# RUN FROM REPO COMMIT        : 6342199 (lane/brdesign)
+# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/backrefs_measurements/out/br_semantics.txt
-# RUN DATE   : 2026-08-22T09:10:39-04:00
+# RUN DATE   : 2026-08-22T09:58:53-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15

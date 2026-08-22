@@ -1,10 +1,10 @@
 # ============================================================
-# ARCHIVED PROBE OUTPUT — [M6.5.1] module `assertions` design lane
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
 # ------------------------------------------------------------
 # PROBE      : docs/design/backrefs_measurements/probes/probe_expand_cost.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 9b55272 2026-08-22
-# RUN FROM REPO COMMIT        : 6342199 (lane/brdesign)
+# PROBE LAST CHANGED AT COMMIT: bc3b302 2026-08-22
+# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/backrefs_measurements/out/br_semantics.txt
 #      M docs/design/backrefs_measurements/out/dupnames.txt
@@ -13,7 +13,8 @@
 #      M docs/design/backrefs_measurements/out/octal_rule.txt
 #      M docs/design/backrefs_measurements/out/prefilter_cost.txt
 #      M docs/design/backrefs_measurements/out/spellings.txt
-# RUN DATE   : 2026-08-22T09:10:44-04:00
+#     ?? docs/design/backrefs_measurements/out/publish_discipline.txt
+# RUN DATE   : 2026-08-22T09:59:00-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -52,13 +53,13 @@ anything the backrefs row does, and the expansion buys nothing.
 family     backref pattern    |L(G)|   pat len  emitted   pcrec s gcc s   outcome
 ----------------------------------------------------------------------------------------------------------------------
 alt2       (a|b)\1            2        5        13657 B   0.00    0.05    compiled
-quote      (["\'])\1          2        5        13679 B   0.00    0.05    compiled
-lit3       (abc)\1            1        6        12351 B   0.00    0.06    compiled
+quote      (["\'])\1          2        5        13679 B   0.00    0.07    compiled
+lit3       (abc)\1            1        6        12351 B   0.00    0.05    compiled
 cls3       ([abc])\1          3        8        13809 B   0.00    0.06    compiled
 cls26      ([a-z])\1          26       77       22113 B   0.00    0.05    compiled
-cls2x2     ([ab]{2})\1        4        19       14173 B   0.00    0.06    compiled
-cls26x2    ([a-z]{2})\1       676      3379     321302 B  0.09    0.14    compiled
-cls26x3    ([a-z]{3})\1       17576    123031   -         1.30    0.00    REFUSED: pcrec: pattern too complex for the DFA engine (>32000 states
+cls2x2     ([ab]{2})\1        4        19       14173 B   0.00    0.05    compiled
+cls26x2    ([a-z]{2})\1       676      3379     321302 B  0.10    0.14    compiled
+cls26x3    ([a-z]{3})\1       17576    123031   -         1.37    0.00    REFUSED: pcrec: pattern too complex for the DFA engine (>32000 states
 cls26x4    ([a-z]{4})\1       456976   4112783  -         0.01    0.00    REFUSED: cannot be passed at all: Argument list too long
 alt5x3     ((?:a|b|c|d|e){3})\1 125      874      35261 B   0.01    0.06    compiled
 
@@ -67,7 +68,7 @@ alt5x3     ((?:a|b|c|d|e){3})\1 125      874      35261 B   0.01    0.06    comp
    the SHIPPED compiler rather than estimated.
 ==============================================================================
   endpoint check: k=1 compiles=True ; k=17576 compiles=False
-  LARGEST |L(G)| that compiles : 10525  (pattern 73674 B, emitted 7116509 B, gcc 2.07 s)
+  LARGEST |L(G)| that compiles : 10525  (pattern 73674 B, emitted 7116509 B, gcc 2.00 s)
   SMALLEST that does not       : 10526  -> pcrec: pattern too complex for the DFA engine (>32000 states
 
   That number is what 5.2's size-estimate obligation has to
@@ -80,9 +81,11 @@ The VM-ONLY comparison for the same families, so the expansion's
 cost has something to be a cost AGAINST:
 family     erased pattern     emitted   gcc s   outcome
 ------------------------------------------------------------------------------
-alt2       (a|b)\1            13580 B   0.06    compiled
+alt2       (a|b)\1            13580 B   0.05    compiled
 quote      (["\'])\1          13604 B   0.06    compiled
-lit3       (abc)\1            12378 B   0.05    compiled
+lit3       (abc)\1            12378 B   0.06    compiled
 cls3       ([abc])\1          13592 B   0.05    compiled
 cls26      ([a-z])\1          13869 B   0.05    compiled
-cls2x2     ([ab]{2})\1        13802 B   0.06    compiled
+cls2x2     ([ab]{2})\1        13802 B   0.05    compiled
+cls26x2    ([a-z]{2})\1       27609 B   0.05    compiled
+alt5x3     ((?:a|b|c|d|e){3})\1 17129 B   0.05    compiled
