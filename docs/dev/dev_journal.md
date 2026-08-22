@@ -11964,3 +11964,30 @@ moves to backrefs at implementation, ASK-1). Group lines are `gp` —
 asserted when the artifact delivers the slot; the acceptance run's
 pending-vm count must be 0. Committed on branch brd27 (9c3f9aa), HELD
 for the acceptance run. Cell kept until then.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 11) — U9 RULED (D68): pcrec keeps the derived semantics; "I think you found an error in PCRE2"
+
+Frank's ruling at 18:5x, option (b): keep the hand-derivation answer
+(`a?(?:b){0,4}+a` on "a" = (0,1), python `re` agreeing), document the
+deviation from libpcre2 10.46, classify U9 `suspected-bug` — the
+classification upstream_issues.md already had for this category (U1 is
+the precedent). Implemented: D68 in decisions.md (why D26's "PCRE2 is the
+source of truth" does not reach a place where PCRE2-the-implementation
+contradicts its own documented semantics and two independent oracles);
+U9's entry carries the ruling; the two cells moved OUT of tests/
+known_fail (which holds pcrec BUGS — it is empty again, "nothing to
+ratchet") INTO tests/atomic_groups/possessive.rxt §9 beside their three
+controls, asserting pcrec's answer so a change toward libpcre2 goes RED
+in the module's own suite; a new marker `# pcre2-deviates <U-ref>` that
+tests/assertions/verify_pcre2.py — the house .rxt-level libpcre2
+verifier — skips LOUDLY and counts (a marker without a U-ref is a hard
+error), scored exactly like its `flags` skip: possessive.rxt 258 agree /
+0 disagree / 4 skipped; the assertions corpus unchanged at 10,120/0.
+Harness on the file 263/0; verify_rxt.py 230/0 (python verifies the U9
+cells). The compliance page's `base:quantifiers-possessive` annotation
+carries the deviation; regenerated from the store, --check-annotations
+and --check green (90 keys; 104-row index). The manager's own foot-gun
+for the record: the first patch's `def main():` anchor never matched
+(the function is `def main(argv):`) so the marker constant was not
+defined until the verifier's NameError said so — a replacement without
+an assertion, the shape the backrefs lane owned this morning.

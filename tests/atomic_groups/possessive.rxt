@@ -414,6 +414,25 @@ features atomic-groups
 m "a" 0 1
 ns 1 "a"
 
+# The U9 cells themselves — RULED D68 (Frank, 2026-08-22): pcrec keeps the
+# DERIVED possessive semantics (python `re` and a hand derivation agree) and
+# does NOT reproduce libpcre2 10.46's NO MATCH, which is classified a suspected
+# PCRE2 defect (docs/dev/upstream_issues.md U9). These two blocks assert pcrec's
+# answer; a change toward libpcre2 goes RED here. The libpcre2 verifier skips
+# them LOUDLY via the marker and counts the skips; python verifies them.
+# pcre2-deviates U9
+pattern a?(?:b){0,4}+a
+features atomic-groups
+m "a" 0 1
+ns 1 "a"
+
+# pcre2-deviates U9
+pattern (a?)(?>(b){0,4})a
+features atomic-groups
+m "a" 0 1
+g 1 0 0
+ns 1 "a"
+
 # ====================================================================
 # 10.  THE TIER-1 REGRESSION: A TWO-EXIT BODY UNDER AN OVERLAPPING
 #      FOLLOW ([M6.4.4])

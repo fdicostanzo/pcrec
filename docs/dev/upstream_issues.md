@@ -227,6 +227,20 @@ exactly: `\a` 0x07, `\e` 0x1b, `\f` 0x0c, `\n` 0x0a, `\r` 0x0d, `\t` 0x09.
   is the primary instrument for a measured reason, not just a ruled one.
   These 3 cells were the only "counterexamples" in the critic's 1,889×300
   capture-focused sweep — all PCRE2-side, none analysis-side.
+- **Status**: suspected-bug — candidate upstream report to the PCRE2 project
+  (classification set by Frank, 2026-08-22: "I think you found an error in
+  PCRE2").
+- **RULING (D68, Frank, 2026-08-22)**: pcrec KEEPS the derived semantics —
+  `a?(?:b){0,4}+a` on "a" is MATCH (0,1), agreeing with python `re` and the
+  hand derivation — and DOCUMENTS the deviation from libpcre2 10.46 rather
+  than reproducing it. Module `atomic-groups` ([M6.4], shipped the same day)
+  is the event that made it reachable. The two cells live in
+  tests/atomic_groups/possessive.rxt section 9 beside their three controls,
+  python-verified, with a LOUD per-block exclusion from the directory's
+  libpcre2 verifier (marker `# pcre2-deviates U9`); they are no longer in
+  tests/known_fail (that directory holds pcrec BUGS). A change toward
+  libpcre2's answer goes RED in the module's own suite. The compliance page's
+  `base:quantifiers-possessive` annotation carries the deviation.
 
 ## U10 — python `re`: named-group SPELLING and length-ceiling divergences (module `named-groups`, [M6.3])
 

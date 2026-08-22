@@ -306,6 +306,15 @@ GROUP EXIT in PCRE2 and PER ITERATION in python `re`, so `(?:a|ab){2}+` on
 "aba" is (0,3) in PCRE2 and NO MATCH in python, while `(?:a|ab)*+` on "aba"
 is (0,1) in both. pcrec follows PCRE2 (D26); the block is marked
 `# pcre2-only` for exactly that reason.
+
+DEVIATION, RULED (D68, 2026-08-22): on libpcre2 10.46 a possessive or atomic
+BOUNDED repeat of a GROUP preceded by a backtrack point that consumed —
+`a?(?:b){0,4}+a` on "a" — reports NO MATCH, where the documented semantics,
+python `re` and a hand derivation give (0,1). pcrec answers (0,1) and does not
+reproduce libpcre2 here; the divergence is classified a suspected PCRE2 defect
+(docs/dev/upstream_issues.md U9, three isolating controls). The cells are in
+tests/atomic_groups/possessive.rxt section 9, python-verified, excluded from
+the libpcre2 pass with a loud, counted marker.
 === base:quantifier-on-anchors
 section: quantifiers
 rejected as PCRE2 error 109 does; `(^)*` is accepted because a group

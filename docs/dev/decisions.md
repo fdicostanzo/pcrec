@@ -5225,3 +5225,42 @@ discharge-before-consultation order cannot express (a construct that
 is DFA-capable only in some CONTEXTS of the same tree without a
 rewrite that removes it) — that is the day the consultation needs a
 context argument.
+
+## D68 — U9 ruled: pcrec keeps the DERIVED possessive semantics and DOCUMENTS the deviation from libpcre2 10.46; the divergence is classified as a suspected PCRE2 defect (Frank, 2026-08-22, thirty-sixth session)
+
+**Decision.** On the U9 family — a possessive or atomic BOUNDED repeat
+`{m,n}+` of a GROUP preceded by a backtrack point that actually consumed
+(`a?(?:b){0,4}+a` on "a"; the atomic spelling `(a?)(?>(b){0,4})a`) —
+pcrec answers what the documented semantics, python `re` and a hand
+derivation give: MATCH (0,1). libpcre2 10.46 says NO MATCH. pcrec does
+NOT reproduce libpcre2 here. The deviation is documented on the
+compliance page and in docs/dev/upstream_issues.md U9 (status
+`suspected-bug`: a candidate upstream report), and the two cells live in
+module atomic-groups' own corpus as python-verified blocks with a LOUD
+per-block exclusion from the libpcre2 verifier; tests/known_fail no
+longer carries them (it holds pcrec BUGS; this is not one).
+
+**Why.** D26 makes PCRE2 the source of truth for what a pattern MATCHES
+— written for PCRE2-the-specification. U9 is a place where PCRE2-the-
+implementation contradicts its own documented meaning of a possessive
+quantifier (retreat into ITS OWN loop is forbidden, not retreat into a
+preceding item), agrees with neither python nor the definition, and has
+a boundary known only empirically (three conjuncts, each necessary —
+character item, `*+`, or a prefix that consumed nothing all MATCH in
+libpcre2). Reproducing it would mean encoding an uncharacterised quirk
+into the VM's cut machinery (extending a cut backward over a preceding
+frame, only for bounded group repeats) and diverging from two independent
+oracles. upstream_issues.md exists for exactly this category, and U1 is
+the precedent: pcrec keeps the correct semantics and the oracle excludes
+the quirk with a citable rationale.
+
+**Mechanics.** The known-fail ratchet's role ("if pcrec ever changes to
+reproduce U9 this fires") is carried instead by the corpus cells
+themselves: they assert (0,1), so a change toward libpcre2 goes RED in
+the module's own suite. The libpcre2 verifier over tests/atomic_groups/
+skips the marked blocks and COUNTS the skips; the count is asserted.
+
+**Revisit when:** PCRE2 fixes or documents the behaviour (re-measure the
+three conjuncts on the new release; if it matches the derivation, drop
+the exclusion and the annotation); or an upstream report is filed and
+answered (record the answer on U9).

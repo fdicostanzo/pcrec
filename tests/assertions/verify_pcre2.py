@@ -94,16 +94,43 @@ def oracle_run(binpath, workdir, pattern, subject, startpos):
     return "ORACLE:" + (out or r.stderr.strip() or "empty")
 
 
+DEVIATES_MARK = "# pcre2-deviates"   # [D68] a block whose libpcre2 answer pcrec
+                                   # DELIBERATELY does not reproduce; the marker names the
+                                   # docs/dev/upstream_issues.md entry. Skipped LOUDLY and counted.
+
+def deviating_patterns(path):
+    """[D68] Line numbers of `pattern` lines that follow a `# pcre2-deviates <U-ref>`
+    marker: blocks whose libpcre2 answer pcrec DELIBERATELY does not reproduce
+    (docs/dev/upstream_issues.md names the entry). Verifying them here would
+    report a disagreement that is a ruling, not a defect; NOT verifying them
+    silently would hide the deviation. So they are skipped LOUDLY and counted,
+    exactly like `flags` blocks. A marker with no U-ref is a hard error."""
+    out = set()
+    armed = None
+    for i, line in enumerate(open(path, errors="replace"), 1):
+        if line.startswith(DEVIATES_MARK):
+            ref = line[len(DEVIATES_MARK):].strip()
+            if not ref.startswith("U") or not ref[1:].split()[0].isdigit():
+                sys.exit("%s:%d: `%s` needs a docs/dev/upstream_issues.md entry, e.g. `%s U9`"
+                         % (path, i, DEVIATES_MARK, DEVIATES_MARK))
+            armed = i
+        elif line.startswith("pattern ") and armed is not None:
+            out.add(i)
+            armed = None
+    return out
+
+
 def check_file(binpath, workdir, path):
     npass = nfail = nflag = 0
     pattern = None
     perr = False
     flagged = False
+    deviates = deviating_patterns(path)
     for lineno, kind, data in parse_rxt(path):
         if kind == "pattern":
             pattern, _ = data
             perr = False
-            flagged = False
+            flagged = lineno in deviates   # a ruled deviation is scored like a flags block
             continue
         if kind == "perr":
             perr = True
@@ -184,7 +211,7 @@ def main(argv):
                   % (os.path.relpath(path, ROOT), p,
                      "" if f == 0 else ", %d DISAGREE" % f,
                      "" if fl == 0 else
-                     ", %d in `flags` blocks skipped (options=0 pin)" % fl))
+                     ", %d skipped (`flags` blocks or `# pcre2-deviates` rulings)" % fl))
             total_p += p
             total_f += f
             total_fl += fl
@@ -194,7 +221,7 @@ def main(argv):
     print("verify_pcre2: %d cells agree with libpcre2, %d disagree%s"
           % (total_p, total_f,
              "" if total_fl == 0 else
-             ", %d skipped in `flags` blocks (outside the options=0 oracle)"
+             ", %d skipped (`flags` blocks / `# pcre2-deviates` rulings, both counted)"
              % total_fl))
     return 1 if total_f else 0
 

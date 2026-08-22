@@ -3561,7 +3561,7 @@ c"` from `(0,3)` into `(0,1)`, and
 
 ## 2026-08-22 (thirty-sixth session — [M6.4]: module `atomic-groups` ships)
 
-- [M6.4] STATE:completed (CLOSED 2026-08-22, thirty-sixth session, under Frank's autonomous-run grant: design R31-approved at 21e173e; implementation merged 69f3b93, its tier-1 miscompile found by the blinded corpus and fixed 8e4af41; D27 corpus merged c324091 at 134/134; battery all green on 8e4af41 (test 21,557/0, strict, ubsan, asan, lint); mech 99/0 undetected with S88-S101 DETECTED and the S48 anomaly resolved; gate 13/13 at load 0.39, weakest margin 1.43x (34ede2c); SR-8 built per D67; K29 fixed; U9 OPEN for Frank) — formerly STATE:started (STARTED 2026-08-22, thirty-sixth session, on Frank's
+- [M6.4] STATE:completed (CLOSED 2026-08-22, thirty-sixth session, under Frank's autonomous-run grant: design R31-approved at 21e173e; implementation merged 69f3b93, its tier-1 miscompile found by the blinded corpus and fixed 8e4af41; D27 corpus merged c324091 at 134/134; battery all green on 8e4af41 (test 21,557/0, strict, ubsan, asan, lint); mech 99/0 undetected with S88-S101 DETECTED and the S48 anomaly resolved; gate 13/13 at load 0.39, weakest margin 1.43x (34ede2c); SR-8 built per D67; K29 fixed; U9 RULED D68 the same evening — pcrec keeps the derived semantics, deviation documented, suspected PCRE2 defect) — formerly STATE:started (STARTED 2026-08-22, thirty-sixth session, on Frank's
   standing ruling of 2026-08-21 — session reset, proceed into [M6.4] at the
   next session's start; AUTONOMOUS RUN THROUGH [M6.4] AND [M6.5] authorized
   by Frank 2026-08-22 with "journal defensively" — journal + commit at every
