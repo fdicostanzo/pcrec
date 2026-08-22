@@ -11902,3 +11902,46 @@ manager: S48 → SAB_COUNT=2 (both copies are the same site; re-run alone
 SAB_COUNT and requires the EXACT count, failing direction demonstrated
 (S48 at count 1 → "ANCHOR COUNT 2, SAB_COUNT 1"; at 2 → all 99 resolve).
 The merge bar's tripwire and mech's apply now ask the same question.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 9) — [M6.4] CLOSED: module `atomic-groups` ships
+
+THE CLOSE EVIDENCE, all on the fixed state: union battery on 8e4af41
+(test 21,557/0, strict, ubsan, asan, lint — zero sanitizer reports);
+full mech matrix on c324091 (99 rows, 0 undetected; the module's
+fourteen rows S88-S101 all DETECTED; the one anomaly, S48's duplicated
+anchor, resolved and re-run clean); anchor tripwire "all anchors
+resolve" with the exact-count check it gained today; the D27 corpus
+134/134; the quiet-box gate 13/13 at load 0.39 (weakest margin 1.43x),
+archived tests/bench/compare/results-ubuntubudu-20260822.md. Rows
+[M6.4.2]/[M6.4.3]/[M6.4.4] → completed; [M6.4] archived to
+plan_completed.md; [M6.0] reads atomic-groups DONE.
+
+THE DAY IN ONE PARAGRAPH. Frank's grant at 08:2x ("proceed through 6.4
+and 6.5 autonomously, journal defensively"). Two design gates in
+parallel (opus lanes), two D6 panels of three critics each, focused and
+final re-checks — 4c5f508 → 21e173e and 4cd461f → ca9beef, twenty-odd
+HIGH findings refuted and closed between them, both designs approved and
+merged by 11:4x. SR-8 reversed from "second exception" to BUILT by a
+lane measuring its own design against the tripwire's text (D67). The
+implementation (opus, one lane, four slices, ~2.5 h) merged at 12:58
+with three measured corrections to the approved design. THEN the
+blinded corpus — written in parallel by a sonnet lane denied src/ and
+tests/ — found a tier-1 miscompile the implementer's 39,326-cell
+differential did not contain: `(?:aa|a)++ab` answered the uncut language
+because the MRL follow-bound crossed the cut — a fifth §2.2-style
+antecedent on a third axis (context) that three rounds of adversarial
+review never named. Fixed at its root in 80 minutes (the follow does not
+cross a cut), with the family added to the generator under asserted
+floors, a sabotage row, and a design annotation. D27's thesis measured
+for the second time in this project: tests derived from the code inherit
+the code author's alphabet. K29 found and fixed the same day. The anchor
+tripwire caught drift three times and then caught its own gap against
+mech (presence vs exact count), fixed.
+
+OPEN PAST THE CLOSE: U9 — pcrec agrees with python `re` and a hand
+derivation AGAINST libpcre2 10.46 on `a?(?:b){0,4}+a`; D26 says PCRE2
+wins, upstream_issues.md U9 says PCRE2 is odd here; held LOUD in
+tests/known_fail/u9_atomic.rxt with three live controls. FRANK'S RULING
+OWED: reproduce libpcre2, or keep the derivation and document the
+deviation. Next: [M6.5.2] backrefs implementation (design ca9beef) with
+its D27 corpus in parallel, per the grant.

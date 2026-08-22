@@ -3558,3 +3558,88 @@ c"` from `(0,3)` into `(0,1)`, and
 ## 2026-08-22 (thirty-sixth session — [M6.5.1]: the backrefs design survives R32)
 
   - [M6.5.1] STATE:completed (CLOSED 2026-08-22, thirty-sixth session: docs/design/backrefs_design.md APPROVED by the R32 panel at ca9beef after three rounds — eight HIGH refuted and closed, E12/E13/E15 found against the revisions and closed; merged docs-only; §11 is [M6.5.2]'s brief) — formerly STATE:started — DESIGN GATE. docs/design/backrefs_design.md answering PER CONSTRUCT (\1..\9, \10+ and the octal disambiguation rule, \g{n} \g{-n} \g{name} \g<...> where PCRE2 defines them, \k<n> \k'n' \k{n}, (?P=n), and (?J) duplicate names): (i) the VM lowering — the compare instruction, unset-group semantics (PCRE2: an unset group fails to match unless PCRE2_MATCH_UNSET_BACKREF; measure), empty-group match, backrefs inside their own group `(a\1)`, forward references `\2(a)(b)`, backrefs inside quantifiers and the trail/slot model they read; (ii) CASELESS COMPARE as D58-named residue — a new src/gen/enc/ residual entry from birth, never inline byte arithmetic in shared emitter code (today only <prefix>_next_pos exists; design the entry's signature for the UTF-8 backend too); (iii) the engine split per Frank's 2026-08-12 design note (plan.md M4 design notes): infinite-language group -> VM; finite-language group -> DFA via the expansion rewrite in the discharge socket, with the size estimate before committing that §5.2 makes the rewrite author's obligation — and whether the expansion ships in THIS module or is chartered as a follow-on with the VM-only semantics shipping first; (iv) the octal rule — PCRE2's actual context-sensitive disambiguation of \N (group count so far, \8 \9, \0dd, the 3-digit forms) measured against libpcre2 and compared with the registry's RD_MODULE_OCTAL rows (registry.c:190-215) and what the base tier already does for octal; (v) DUPNAMES, implemented here per the row: (?J) and duplicate names as multiple adjacent rows in rx_info.groups sorted (name asc, number asc), BOTH consumers on the same first-entry-of-the-name-run-whose-slot-participated algorithm, VERIFIED against libpcre2 at design time; the named-groups module's refusal (mod_modifiers.c 'J' case; mod_named_groups.c duplicate refusal) is what this replaces; (vi) the hybrid hazard — a backref pattern's DFA prefilter (if any) runs a language that is NOT a superset or subset in general: rule what the prefilter may do (likely nothing — VM-only search) per pattern class; (vii) the D27 goal-facts list (python re vs libpcre2 divergences on backrefs: unset-group behaviour, (?P=n) spelling, \g forms python lacks); (viii) registry visibility of every spelling for D65's built column; (ix) identity gate and sabotage rows. D6 panel (R32) BEFORE implementation.
+
+## 2026-08-22 (thirty-sixth session — [M6.4]: module `atomic-groups` ships)
+
+- [M6.4] STATE:completed (CLOSED 2026-08-22, thirty-sixth session, under Frank's autonomous-run grant: design R31-approved at 21e173e; implementation merged 69f3b93, its tier-1 miscompile found by the blinded corpus and fixed 8e4af41; D27 corpus merged c324091 at 134/134; battery all green on 8e4af41 (test 21,557/0, strict, ubsan, asan, lint); mech 99/0 undetected with S88-S101 DETECTED and the S48 anomaly resolved; gate 13/13 at load 0.39, weakest margin 1.43x (34ede2c); SR-8 built per D67; K29 fixed; U9 OPEN for Frank) — formerly STATE:started (STARTED 2026-08-22, thirty-sixth session, on Frank's
+  standing ruling of 2026-08-21 — session reset, proceed into [M6.4] at the
+  next session's start; AUTONOMOUS RUN THROUGH [M6.4] AND [M6.5] authorized
+  by Frank 2026-08-22 with "journal defensively" — journal + commit at every
+  stage boundary; module order 6.4 -> 6.5 -> 6.6 REAFFIRMED) — module
+  `atomic-groups`: (?>...) and the possessive-quantifier spellings *+ ++ ?+
+  {n,m}+ as SEMANTICS (unconditional cut, not a proof-gated optimization —
+  the existing possessify pass, src/opt/possessify.c, is the mechanism
+  library, not the feature); engine selection routes atomic-bearing patterns
+  off the plain-DFA path (atomic changes the matched language: `(?>a*)a`
+  matches nothing); the VM's RX_CUT machinery ([ENG-BREP], vm_cut in
+  src/gen/emit_vm.c) is the substrate. Frank's 2026-08-12 companion note
+  (above, under the M4 design notes) rules the engine answer PER-PATTERN:
+  cut-constructible -> DFA (Berglund et al., cuts preserve regularity), else
+  VM; the M6.4 row's VM-substrate wording is the newer ruling and the charter
+  reconciles them as: the module SHIPS the VM cut as the semantics plus the
+  FREE discharge (a possessive whose body already satisfies possessify's §2.2
+  proof is a no-op and the pattern stays DFA-eligible — Frank's "disjoint-
+  follow special case is free in both directions"), and the FULL cut
+  construction is chartered as a follow-on engine row by the design gate
+  with a measured motivation (engine_m4.md §5.2's discharge socket is the
+  seam). Oracle: libpcre2 10.46 is the oracle of record; this box's python
+  3.14 `re` supports both spellings (verified 2026-08-22: `(?>a*)a`, `a*+a`,
+  `(?>a|ab)c` all decline as PCRE2 does) and is the base-tier second oracle.
+  Substeps:
+  - [M6.4.1] archived to plan_completed.md (completed 2026-08-22 — design APPROVED by the R31 panel at lane/agdesign 21e173e, merged 497a28f: docs/design/atomic_groups_design.md + atomic_groups_measurements/; D67 SR-8 built here; [ENG-CUT] chartered; K29 found)
+  - [M6.4.2] STATE:completed (2026-08-22) (MERGED to main 69f3b93 2026-08-22 12:58 after review; THEN the D27 acceptance run found a TIER-1 MISCOMPILE — `(?:aa|a)++ab` on "aaab" answers the UNCUT language on the frames rungs (0x2/0x4) for two-exit bodies — FIX ROUND on lane/agfix (same lane): the fix + two-exit bodies under every rung in the differential with asserted floors + a sabotage row; the identity sweep OUT of make test (one-shot landing gate, its own opt-in target); S45/S63 anchors re-derived; union battery on the fixed state before `completed`. Lane `lane/agimpl` DELIVERED 2026-08-22; the row stays started until the manager reviews and merges — `completed` is a merge fact, not a lane one) — IMPLEMENTATION, one wave
+    in four slices, awaiting manager review + merge. What landed: `A_ATOMIC`
+    and both producers (`(?>` through a port, `X q+` through `p_rep`'s
+    desugaring); the four RK_QUANTSUFFIX registry rows and THIRTEEN registry
+    sites (the design enumerated eleven; a twelfth was a `const RegRow *all[4]`
+    in registry_check.c whose own loop ran to RK_COUNT, found by a SEGFAULT,
+    and a thirteenth was tests/cli's case10 routing sweep + case11); `vm_atomic`
+    plus the four-condition LIFT with checked rung preconditions; K29 FIXED and
+    ordered before the lift; SR-8 BUILT (D67) with `forces_kreset`, the [M4.7a]
+    tripwire and its `\K` exception all RETIRED into it; the free discharge;
+    RULE H3 at three sites; tests/atomic_groups/ (748 cases, 722 re-verified
+    against libpcre2); run_atomic_diff.sh (39,326 cells x 3 arms + the discharge
+    and entries sections); the byte-identity gate against a PINNED PRE-MODULE
+    COMMIT; seven codegen rules; sabotage rows S88-S100; the `-fno-atomic-
+    discharge` knob.
+    STILL OWED AT CLOSE ([M6.4.4]'s): the canonical `run_sabotage_matrix.sh`
+    figures for S88-S100 (each row carries a marked PREDICTION today — the
+    lane never runs the matrix), and the compliance page refresh.
+    TWO THINGS THE MANAGER MUST RULE, both raised with evidence in the lane's
+    report: U9 (now REACHABLE for the first time, pcrec agreeing with python and
+    a hand derivation against libpcre2 — held in tests/known_fail/u9_atomic.rxt
+    rather than decided by the lane), and three places the approved design is
+    WRONG where the lane deviated deliberately (possessify's `pss_walk` is NOT
+    transparent to `A_ATOMIC`; the free discharge is UNSOUND for a lazy body;
+    the STRATS stamp must read the emitted shape, not `Ast.possessive`).
+    POST-MERGE FIX ROUND, lane `lane/agfix` from 69f3b93 (2026-08-22, delivered;
+    the manager reviews and merges): [M6.4.3]'s BLINDED corpus, run against the
+    merged module, found a TIER-1 MISCOMPILE this row's own 748 cases and
+    39,326-cell differential were green over — `(?:aa|a)++ab` on "aaab" gave
+    (0,4) against libpcre2's and python's NO MATCH, on every frames rung, in
+    every mode. ROOT CAUSE: `vm_atomic` emitted the atomic body with the
+    caller's follow-min still in force, and the possessive rungs turn that into
+    a loop bound ("one more iteration plus the follow does not fit" -> exit),
+    which is answer-preserving only while a retreat to that exit still exists.
+    THE FOLLOW DOES NOT CROSS A CUT: `v->fmin`/`v->fdyn` are now scoped to zero
+    for the whole atomic body, on both routes out of `vm_atomic`. The corpus
+    gap was UNIFORM and nobody had noticed it — every `cut` pattern in the tree
+    had a follow disjoint from its body's first set, so the early exit always
+    landed where the follow failed anyway. Closed by class `cut2`: 30 patterns,
+    two-exit bodies under overlapping follows, all five possessive rungs
+    (0x1f ASSERTED from the artifacts), its own non-vacuity floor (30/30, kept
+    SEPARATE because the old floor cleared 15 without them); possessive.rxt
+    section 10; sabotage row S101 — the only row in the matrix whose defect
+    SHIPPED. Also in that lane: the identity gate moved OUT of `make test` to
+    the opt-in `make test-atomic-identity` (§11.2/§14 item 8's ruled one-shot
+    landing gate), and THREE stale sabotage anchors re-derived from live source
+    (S45, S63 and S90 — the tripwire's second and third live catches).
+  - [M6.4.3] STATE:completed (2026-08-22) (AUTHORED 2026-08-22 11:4x on branch agd27 44ae045; CORRECTED 464ab1f after the first acceptance run — 15 corpus-side cells, the miscompile cell untouched; vs main 69f3b93 133/134 (the miscompile); vs the FIXED main 8e4af41 134/134 — merges into tests/atomic_groups/d27/ after the battery — 8 files / 113 patterns / 137 cells, oracle.py 137/137 reproduced by the manager, nothing in GOAL_FACTS found wrong; acceptance run against the merged module at [M6.4.2]'s merge review (69f3b93); cell agd27 created from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py + GOAL_FACTS.md = the approved design's Appendix B) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
+    author denied src/ and tests/; written from the PCRE2 goal; may be
+    AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the
+    implementation; run against the shipped module at merge review for a
+    0-divergence acceptance record that stays as authored).
+  - [M6.4.4] STATE:completed (2026-08-22: battery + mech + gate + tripwire + D27 run + archive, this entry) — CLOSE: union battery + quiet-box gate +
+    full mech matrix + anchor tripwire, archive, row -> completed and
+    archived to plan_completed.md, [M6.0] milestone updated, journal +
+    wake.md rewritten.
