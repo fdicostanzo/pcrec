@@ -11469,3 +11469,37 @@ internal slots, none reported.
 STATE AT 09:50: both designs in revision rounds (agdesign on R31's
 triage, brdesign on R32's); six critics idle, to be resumed for focused
 re-checks; watchdog live. Nothing merged; main carries only docs.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 4) — both designs through revision + focused re-check; approval imminent on both
+
+STATE AT 10:25. atomic-groups: lane/agdesign at 03533bb (revision 2b),
+one LOW in revision 2c in flight; r31eng's final re-check CLOSED all of
+its findings (N1's carve-out scope held under three attacks; the stored-
+flag alternative refuted as reachable); r31chk's final (the tenth-site
+hunt) running. backrefs: lane/brdesign at e369fac (revision 2), revision
+2b (r32eng's E12/E13) in flight; r32chk's final dispatched.
+
+WHAT THE RE-CHECK ROUNDS ADDED — the findings that only appear when a
+revision is attacked as hard as the original: (atomic) the lift needs a
+PREFERENCE carve-out as well as a nullability one — lazy bodies are
+possessified on all six dispatch paths today and 7/8 lift-eligible lazy
+cells miscompile, three of them the design's own table; RULE 3 now has
+three checked conditions plus the rung's own gate; the registry-cost
+enumeration grew 6 → 7 → 9 sites as its search population widened (the
+probe now sweeps src/cli/tests uncurated — "a tenth site is its next
+correction, not a surprise"); a second cut SPELLING (revdet's
+frame_mark assignment) that a `RX_CUT(` check would miss. (backrefs) the
+erasure's gate must exclude atomic/possessive groups as well as
+assertions (6/8 false negatives, and [M6.4] lands first); a by-name
+reference over a dup run must mark EVERY member (match-time resolution);
+the per-site count must be DECLARED, never scanned (a scanner is a
+second octal rule that drifts with the emitter); and the qsort tiebreak
+is a CORRECTNESS requirement — pcrec prepends declarations, so without
+it the reflection table encodes the wrong resolution rule on a stable
+sort. 16,506 critic-owned cells on the critic's own simulator (verified
+unsoftened by diff) back publish-at-close at 0/0.
+
+NEXT, in order: R31 close (approve at the 2c SHA) → merge lane/agdesign
+(docs only) → [ENG-CUT] row + [M6.4.1] → completed → [M6.4.2] lane
+(brief drafted) + the D27 cell [M6.4.3] in parallel → R32 close → merge
+lane/brdesign → [M6.5.1] → completed; [M6.5.2] waits for [M6.4.2].
