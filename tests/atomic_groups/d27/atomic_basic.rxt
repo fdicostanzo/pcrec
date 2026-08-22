@@ -1,0 +1,112 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# Basic (?>X) semantics: X matches at the current position on X's OWN first
+# attempt, and the group then refuses to reconsider that attempt even if
+# what follows fails. Every case here was measured against libpcre2 10.46
+# via docs/design/eng_brep_measurements/probes/pcre2_ctypes.py at options=0
+# (any (?i)/(?m) is inline, part of the pattern text). See README.md for
+# the oracle-verification command and the full author's note.
+#
+# `atomic-groups` is not in pcrec's default feature set (PCREC_DEFAULT_
+# FEATURES = "std1" = {classes, modifiers}), so every block below carries
+# its own `features atomic-groups` directive -- omitting it would make
+# every case here fail on the module gate alone, once the module exists,
+# regardless of whether the semantics below are implemented correctly.
+
+# A plain atomic group is just a group: it matches, or it doesn't.
+pattern (?>ab)
+features atomic-groups
+m "ab" 0 2
+n "ac"
+
+pattern (?>ab)c
+features atomic-groups
+m "abc" 0 3
+
+# Alternation PRIORITY inside an atomic group: the first alternative that
+# matches wins and is committed to, even though a later alternative would
+# also have matched (here, matching more).
+pattern (?>a|ab)
+features atomic-groups
+m "ab" 0 1
+
+# The classic atomic-alternation trap: committing to the shorter "a" loses
+# the "c" that would follow "ab" -- and there is no retry to try "ab"
+# instead, so the whole group (and hence the whole match attempt at this
+# start position, and every other start position in "abc") fails.
+pattern (?>a|ab)c
+features atomic-groups
+n "abc"
+m "ac" 0 2
+
+# Reordering the alternatives changes which one is committed to, and here
+# that changes the outcome versus the case above: matching "ab" first
+# leaves "c" available afterward.
+pattern (?>ab|a)c
+features atomic-groups
+m "abc" 0 3
+
+# a+ eats every 'a' available on its own first (greedy) attempt; if what
+# follows can still match with none left over, the atomic group is
+# unremarkable.
+pattern (?>a+)b
+features atomic-groups
+m "aaab" 0 4
+
+# The canonical atomic trap: (?>a+) always consumes every contiguous 'a'
+# from wherever it starts, so a mandatory 'a' immediately after it can
+# never be satisfied -- not at this start position, and (since a+ is
+# greedy and atomic at every possible start position too) not at any
+# other start position in this subject either.
+pattern (?>a+)a
+features atomic-groups
+n "aaab"
+
+# a* can match zero characters; on an empty subject that is its only
+# possible outcome, atomic or not, and there is still no 'a' left for the
+# literal that follows.
+pattern (?>a*)a
+features atomic-groups
+n ""
+
+# An empty atomic group is legal (pcrec's own promise, B.5) and matches
+# the empty string.
+pattern (?>)
+features atomic-groups
+m "" 0 0
+
+pattern (?>)a
+features atomic-groups
+m "a" 0 1
+
+# Nesting: the same commit-and-refuse behaviour applies at every level.
+pattern (?>(?>a+)b)
+features atomic-groups
+m "aab" 0 3
+n "aa"
+
+# A LAZY quantifier inside an atomic group still commits to whatever ITS
+# OWN first attempt was -- which for a lazy quantifier is the MINIMAL
+# match, not the maximal one. (?>a+?) commits to consuming exactly one
+# 'a', and cannot expand even though expanding would let a later 'b'
+# match. Search is unanchored, so the leftmost position where the
+# committed minimal 'a' happens to be followed by 'b' wins -- not
+# position 0, where committing to a single 'a' leaves another 'a' (not
+# 'b') next.
+pattern (?>a+?)b
+features atomic-groups
+m "aaab" 2 4
+
+pattern (?>a+?)
+features atomic-groups
+m "aaa" 0 1
+
+# Alternation priority again, worked both ways with real words: the first
+# alternative that matches is committed to regardless of length.
+pattern (?>cat|category)
+features atomic-groups
+m "category" 0 3
+
+pattern (?>category|cat)
+features atomic-groups
+m "category" 0 8

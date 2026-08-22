@@ -1,0 +1,123 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# Atomic groups next to (or wrapping) \K, \G, (?m), and caseless matching.
+# The first eight blocks are GOAL_FACTS B.3's own \K/\G/(?i) witnesses,
+# independently RE-MEASURED here against libpcre2 10.46 rather than copied
+# -- every one reproduced exactly (see README.md's divergence-list section
+# for the re-measurement note). python re cannot express \K or \G at all
+# (raises "bad escape"), and cannot parse a mid-pattern (?i) the way PCRE2
+# does either, so those blocks are marked `# pcre2-only` with the specific
+# reason. The remaining blocks (caseless applied correctly, (?m), lookaround
+# beside a cut) all agree with python re and carry no mark.
+#
+# Every block carries `features atomic-groups`; the \K/\G blocks also need
+# `assertions` (that is where pcrec gates \K and \G) and the lookaround
+# blocks also need `lookaround` (where pcrec gates (?= (?! (?<= (?<!) --
+# both measured directly against the CLI's own "requires module" refusal,
+# same as gating.rxt's method, not assumed from the module names alone.
+
+# \K resets the reported match START, not the atomic group's own
+# commitment -- (?>a\Kb) still atomically commits to "ab" as a unit, it
+# just reports starting at the \K reset point.
+# pcre2-only: python's re module has no \K ("bad escape \K")
+pattern (?>a\Kb)c
+features atomic-groups,assertions
+m "abc" 1 3
+
+# pcre2-only: python bad escape \K
+pattern (?>a\Kb|ab)c
+features atomic-groups,assertions
+m "abc" 1 3
+
+# pcre2-only: python bad escape \K
+pattern (?>a|a\Kb)b
+features atomic-groups,assertions
+m "abb" 0 2
+
+# \K outside the atomic group, atomic group after it: the reset still
+# applies to the whole match's reported start.
+# pcre2-only: python bad escape \K
+pattern a\K(?>b|bc)c
+features atomic-groups,assertions
+m "abcc" 1 3
+
+# \G ties the atomic group's first alternative to "contiguous with the
+# search's own start position" (docs/spec/match_api.md S3.1's find-all
+# loop semantics) -- at startpos 0 on "ac", \G is satisfied and the first
+# alternative ('a') wins.
+# pcre2-only: python bad escape \G
+pattern (?>\Ga|b)c
+features atomic-groups,assertions
+m "ac" 0 2
+
+# On "xbc" (still searched from startpos 0, the default for `m`), \G
+# fails everywhere except position 0 -- so the first alternative can only
+# ever be tried at position 0 (where it doesn't match 'x'), and the
+# leftmost match is via the SECOND alternative at position 1, where \G
+# is irrelevant to it.
+# pcre2-only: python bad escape \G
+pattern (?>\Ga|b)c
+features atomic-groups,assertions
+m "xbc" 1 3
+
+# \G OUTSIDE the atomic group anchors the whole match to position 0;
+# inside, the group commits to 'a' (first alternative), leaving "bc" --
+# and 'c' doesn't match 'b'. No fallback to "ab", and \G forbids trying
+# any position other than 0, so there is no match anywhere in the
+# subject at all.
+# pcre2-only: python bad escape \G
+pattern \G(?>a|ab)c
+features atomic-groups,assertions
+n "abc"
+
+# A mid-pattern (?i) inside the FIRST alternative of an atomic group only
+# turns on caselessness for that alternative's own remaining scope in
+# PCRE2's option-scoping rules -- it does not make the whole atomic group
+# (or the literal 'A' the first alternative needs) caseless from the
+# group's start, so 'A' still fails to match 'a' and (per the earlier
+# trap shape) there is no retry to the second alternative either.
+# pcre2-only: python cannot even PARSE a (?i) that is not at the very
+# start of the expression ("global flags not at the start of the
+# expression")
+pattern (?>(?i)a|ab)c
+features atomic-groups
+n "ABc"
+
+# \K used INSIDE the atomic group as literally the last thing in it: the
+# group still consumes "aaa" atomically (matching \K's zero-width
+# semantics -- it resets the report point but consumes nothing itself),
+# reporting an EMPTY span at the point \K fired, then 'b' matches after
+# it.
+# pcre2-only: python bad escape \K
+pattern (?>a+\K)b
+features atomic-groups,assertions
+m "aaab" 3 4
+
+# --- these agree with python re; no mark needed ---
+
+# (?i) placed correctly (at the pattern's own start) makes the whole
+# atomic group caseless, unlike the trap above.
+pattern (?i)(?>abc)
+features atomic-groups
+m "ABC" 0 3
+
+# (?m) plus an atomic group: ^ and $ still mean line-start/line-end, and
+# the atomic group's own commit-and-refuse behaviour is unaffected by
+# multiline mode.
+pattern (?m)^(?>a+)$
+features atomic-groups
+m "aaa\naaa" 0 3
+
+# Lookbehind beside (not inside) an atomic group: ordinary composition,
+# no surprises.
+pattern (?<=a)(?>b+)c
+features atomic-groups,lookaround
+m "abbbc" 1 5
+
+pattern (?>a+)(?=b)
+features atomic-groups,lookaround
+m "aaab" 0 3
+
+pattern (?>a+)(?!b)
+features atomic-groups,lookaround
+m "aaac" 0 3

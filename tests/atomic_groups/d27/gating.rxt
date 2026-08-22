@@ -1,0 +1,97 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# The --features refusal direction, both ways, for otherwise-VALID PCRE2
+# syntax (contrast with syntax_errors.rxt, which is genuinely malformed
+# syntax with the module ENABLED). This file is pcrec-CLI-level, not a
+# PCRE2 semantics claim -- MOD-0.3c's own module-gate mechanism -- so it
+# was measured directly against `build/pcrec`'s CLI (not the libpcre2
+# oracle, which has no such gate and always has every construct "on").
+#
+# Two blocks per pattern:
+#   1. no `features` line at all -- the module is DISABLED (pcrec's
+#      default feature set is "std1" = {classes, modifiers}, and
+#      atomic-groups is not in it) -- pcrec must refuse.
+#   2. `features atomic-groups` -- the module is ENABLED, but (measured
+#      directly against the CLI on this cell's prebuilt, pre-
+#      implementation `build/pcrec`) still not implemented -- pcrec must
+#      still refuse, for a DIFFERENT reason.
+# docs/testing.md's perr rule asserts only the exit code (nonzero), never
+# the message text, so both blocks pass identically today; what this file
+# pins down is that BOTH directions are refused, not just one.
+#
+# A finding worth a look at merge review, not a change this corpus makes:
+# measured directly, `(?>...)` DOES distinguish the two refusal reasons
+# in its message text ("requires module" vs "is enabled but ... is not
+# implemented yet"), but every possessive-quantifier spelling tested here
+# (`a++`, `a*+`, `a?+`, `a{2,3}+`, `a{,3}+`, `a{2,}+`) gives the IDENTICAL
+# "possessive quantifier requires module 'atomic-groups'" message in BOTH
+# directions -- the possessive-quantifier parse path does not appear to
+# consult whether the module is enabled before emitting that message,
+# unlike the `(?>...)` path. Not asserted here (perr is exit-code-only,
+# and message wording is explicitly not pcrec's promise per CLAUDE.md's
+# Compatibility Standard D26), but worth an implementer's attention since
+# it suggests the two constructs' gating checks are not sharing one code
+# path today.
+
+# --- (?>...) ---
+
+pattern (?>ab)
+perr
+
+pattern (?>ab)
+features atomic-groups
+perr
+
+# --- a++ ---
+
+pattern a++
+perr
+
+pattern a++
+features atomic-groups
+perr
+
+# --- a*+ ---
+
+pattern a*+
+perr
+
+pattern a*+
+features atomic-groups
+perr
+
+# --- a?+ ---
+
+pattern a?+
+perr
+
+pattern a?+
+features atomic-groups
+perr
+
+# --- a{2,3}+ (bounded brace-possessive) ---
+
+pattern a{2,3}+
+perr
+
+pattern a{2,3}+
+features atomic-groups
+perr
+
+# --- a{,3}+ (PCRE2 10.43+ {,n} spelling, possessive) ---
+
+pattern a{,3}+
+perr
+
+pattern a{,3}+
+features atomic-groups
+perr
+
+# --- a{2,}+ (unbounded brace-possessive) ---
+
+pattern a{2,}+
+perr
+
+pattern a{2,}+
+features atomic-groups
+perr
