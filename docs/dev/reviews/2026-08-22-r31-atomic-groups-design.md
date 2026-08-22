@@ -215,3 +215,25 @@ re-check is told.
 Focused re-check dispatched: r31eng on E1/E2/E3/E4 (+ the new claims:
 cut-equivalence, second-spelling coverage, nullable routing); r31chk on
 C1/C2/C3/C5 (+ C6's discriminating rows, numbering, closures).
+
+## Focused re-check, r31eng on b736071 — E1-E8 ALL CLOSED; two NEW findings
+
+Closures with evidence: E1 (carve-out routes to `vm_star` with its guard;
+checked precondition); E2 (five-path table reproduces K29 exactly — the
+critic independently re-confirmed "neither spelling"; §3.2.3's second
+spelling is a CORRECTION to the critic's own first-round evidence); E3
+(one predicate at :5177/:5233/:4611 — rule 1 on two sources and C5's
+three-valued histogram make it a check, not a caveat); E4 (vm_rev_canmove
+is the site where a lifted possessive is handed a retreat frame — the
+uncut semantics — and rd_shape's decline cannot reach it); E5 (+C13's
+relabel is a correction to the critic, who had let R1's vacuous zero stand
+as evidence); E6 (brace forms over two-exit bodies: python per-iteration,
+PCRE2 group-exit; `*+`/`++` agreeing as the control); E7; E8 (four revdet
+sites, rd_reverse's fallthrough → an empty-body atomic group — "a
+miscompile produced by a warning nobody turned into an error"). `src/` is
+byte-untouched by the revision.
+
+| ID | Sev | New claim | Counter-evidence | Disposition |
+|---|---|---|---|---|
+| N1 | HIGH | RULE 3 (corrected) + CUT-EQUIVALENCE: the lift keys on `a->l->k == A_REP` | the possessive rungs are GREEDY-ONLY by signature (vm_opt_chain :2358 takes `bool greedy`; vm_poss_chain :2437 / vm_poss_star :2494 do not; vm_counter_poss_opt never reads it; vm_cursor_rep's possessive scan :2090-2103 is unconditionally maximal) and :2053-2060 documents the preference collapse as a §2.2 CONSEQUENCE — the same deleted-antecedent shape as E1 on a second axis. Lazy quantifiers ARE possessified today and land on the cursor rung (`a*?b` STRATS 0x1 RUNGS 0x1). The lift miscompiles the design's OWN cells 14-16: `(?>a*?)b` on "aaab" (3,4) → (0,4); `(?>a*?)a` (0,1) → nomatch; `(?>a+?)b` (2,4) → (0,4); six more. Cut-equivalence is frames-only — the cursor rung satisfies it and answers the wrong language | REVISION 2: a LAZY A_REP under A_ATOMIC takes the general shape, never the lift; checked preference preconditions on every rung; a lazy witness per path; a sabotage row |
+| N2 | LOW-MED | `vm_cuts(const Ast *a)` | no parent pointer (internal.h:166-190); the pre-passes are independent root descents — "under a lift" is caller state | RULING: thread `under_atomic` down all five walks (no stored state the free discharge can leave stale — contract note 3's class) |
