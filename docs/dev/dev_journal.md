@@ -11559,3 +11559,20 @@ directions while `(?>` distinguishes disabled from enabled-but-unbuilt —
 a wording asymmetry the module's landing erases; D26 tier 3. The branch
 is HELD for the acceptance run at [M6.4.2]'s merge review (0 divergences
 expected; the record stays as authored).
+
+[M6.4.2] EARLY REVIEW, slices 1-2 (read-only, 11:0x-11:4x, no findings).
+Slice 1 (e913a49): A_ATOMIC + both producers + the four RK_QUANTSUFFIX
+rows with their `expect` text; TWELVE registry sites in one commit (the
+lane counted one more than the design's eleven); pins moved 100→104 /
+48→52 / check06's set; the D65 built column already derives `built` for
+`(?>...)` and `a*+` on the slice-1 binary; `a*?+` refuses as "multiple
+quantifiers". Slice 2 (af3f116): vm_atomic; `vm_lifts` carrying BOTH
+carve-outs (lazy → false; nullable body → false); `vm_cuts(a,
+under_atomic)` threaded (30 occurrences, 11 call sites); K29's fix
+landed BEFORE the lift; revdet declines at four sites; the preference /
+nullability preconditions CHECKED at the rung entries (:2250, :2683,
+:2760); H3 as ruled by E3 — `v.mrl_win = job->fit.prefilter &&
+!pcrec_has_atomic(root)` on the post-discharge tree, and BOTH window_end
+emission sites (:5697, :5754) now read that same flag as the stamp
+(:5123), so the stamp can no longer disagree with the code. Slices 3-4
+in flight.
