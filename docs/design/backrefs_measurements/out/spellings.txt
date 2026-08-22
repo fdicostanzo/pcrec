@@ -1,0 +1,66 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_spellings.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 603345c 2026-08-22
+# RUN FROM REPO COMMIT        : 9b55272 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/backrefs_measurements/out/
+# RUN DATE   : 2026-08-22T08:50:30-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 ; python3 3.14.4 re
+
+spelling               family       pcre2    pcre2 span python python
+----------------------------------------------------------------------------------------------------
+\1                     numeric      ok       (0, 2)     ok     (0, 2)
+\9                     numeric      ok       (0, 10)    ok     (0, 10)
+\10                    numeric      ok       (0, 11)    ok     (0, 11)
+\99                    numeric      ok       (0, 100)   ok     (0, 100)
+\g1                    g-backref    ok       (0, 2)     ERR    bad escape \g
+\g{1}                  g-backref    ok       (0, 2)     ERR    bad escape \g
+\g{-1}                 g-backref    ok       (0, 3)     ERR    bad escape \g
+\g{-2}                 g-backref    ok       (0, 3)     ERR    bad escape \g
+\g{+1}                 g-backref    ok       no         ERR    bad escape \g
+\g-1                   g-backref    ok       (0, 3)     ERR    bad escape \g
+\g{name}               g-backref    ok       (0, 2)     ERR    unknown extension ?<n
+\g{0}                  g-backref    err 115  -          ERR    bad escape \g
+\g<1>                  g-subroutine ok       (0, 2)     ERR    bad escape \g
+\g'1'                  g-subroutine ok       (0, 2)     ERR    bad escape \g
+\g<name>               g-subroutine ok       (0, 2)     ERR    unknown extension ?<n
+\g'name'               g-subroutine ok       (0, 2)     ERR    unknown extension ?<n
+\k<name>               k-backref    ok       (0, 2)     ERR    unknown extension ?<n
+\k'name'               k-backref    ok       (0, 2)     ERR    unknown extension ?<n
+\k{name}               k-backref    ok       (0, 2)     ERR    unknown extension ?<n
+\k<1>                  k-backref    err 144  -          ERR    bad escape \k
+\k{1}                  k-backref    err 144  -          ERR    bad escape \k
+\kname                 k-backref    err 169  -          ERR    unknown extension ?<n
+(?P=name)              python       ok       (0, 2)     ok     (0, 2)
+(?P=name) w/ (?<>)     python       ok       (0, 2)     ERR    unknown extension ?<n
+(?P=1)                 python       err 144  -          ERR    bad character in group name '1'
+
+SUBROUTINE vs BACKREFERENCE discriminator -- `(a|b)X` on 'ab':
+a SUBROUTINE re-runs the group's PATTERN (so 'ab' matches);
+a BACKREFERENCE compares the captured TEXT (so it must not).
+----------------------------------------------------------------------------------------------------
+^(a|b)\g<1>$             ok       (0, 2)     subroutine: re-runs the group, so 'ab' matches
+^(a|b)\1$                ok       no         backreference: same TEXT, so 'ab' must not
+^(a|b)\g{1}$             ok       no         \g{1} -- backref or subroutine?
+^(a|b)\g1$               ok       no         \g1 -- backref or subroutine?
+^(?<n>a|b)\g{n}$         ok       no         \g{name} -- backref or subroutine?
+^(?<n>a|b)\g<n>$         ok       (0, 2)     \g<name> -- backref or subroutine?
+^(?<n>a|b)\k<n>$         ok       no         \k<name> -- backref or subroutine?
+
+SUMMARY
+  spellings measured                  : 25
+  accepted by libpcre2                : 20
+  ALSO working in python3 re          : 5
+  libpcre2-only (python is BLIND here): 15

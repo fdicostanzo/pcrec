@@ -1,0 +1,63 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_erasure_hazard.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 9b55272 2026-08-22
+# RUN FROM REPO COMMIT        : 9b55272 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/backrefs_measurements/out/
+# RUN DATE   : 2026-08-22T08:50:30-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27
+
+For each idiom: the TRUE backref pattern vs its ERASED
+over-approximation, over a generated subject population.
+
+idiom    subjs   true hit  erased    FALSE-NEG SPAN DIFF  erased-nomatch when true-nomatch
+----------------------------------------------------------------------------------------------------------------
+quote    4000    1716      2641      0         367        1359/2284 (60%)
+           span example: '"\'\''        true=(1, 3) erased=(0, 2)
+           span example: '\'""'         true=(1, 3) erased=(0, 2)
+           span example: '"\'""'        true=(2, 4) erased=(0, 2)
+tag      4160    24        96        0         0          4064/4136 (98%)
+dupword  4000    419       2574      0         100        1426/3581 (40%)
+           span example: 'a  b  b'      true=(3, 7) erased=(0, 4)
+           span example: 'bba a a'      true=(4, 7) erased=(0, 5)
+           span example: ' ba b b'      true=(4, 7) erased=(1, 5)
+digits   4000    1058      1824      0         786        2176/2942 (74%)
+           span example: '11-1'         true=(1, 4) erased=(0, 4)
+           span example: '12-2'         true=(1, 4) erased=(0, 4)
+           span example: '1-11'         true=(0, 3) erased=(0, 4)
+letter   4000    3808      3997      0         1785       3/192 (2%)
+           span example: 'abb'          true=(1, 3) erased=(0, 2)
+           span example: 'baa'          true=(1, 3) erased=(0, 2)
+           span example: 'abaa'         true=(2, 4) erased=(0, 2)
+finite   4000    3808      3997      0         1785       3/192 (2%)
+           span example: 'abb'          true=(1, 3) erased=(0, 2)
+           span example: 'baa'          true=(1, 3) erased=(0, 2)
+           span example: 'abaa'         true=(2, 4) erased=(0, 2)
+star     4000    3912      3912      0         2525       88/88 (100%)
+           span example: 'ab'           true=(1, 2) erased=(0, 2)
+           span example: 'ba'           true=(0, 1) erased=(0, 2)
+           span example: 'aab'          true=(2, 3) erased=(0, 3)
+
+READING THE COLUMNS
+  FALSE-NEG = subjects the TRUE pattern matches and the ERASED
+              one does not. Any non-zero refutes 'the erasure is
+              a superset', which is the ONLY sound thing it is.
+  SPAN DIFF = subjects BOTH match, at DIFFERENT spans. Every one
+              of these is a window engine_m4.md 6.1's hybrid
+              would hand the VM WRONG. A capture-only pattern's
+              erasure has zero by construction; a backref's does
+              not.
+  last col  = how often the erasure agrees on NOMATCH, i.e. how
+              much a sound `nomatch`-only prefilter would buy.

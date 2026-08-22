@@ -106,6 +106,13 @@ def axis_b():
         (r"\08", "\\0 then literal '8'"),
         (r"\g{10}", "explicit \\g form, no groups"),
         (g[:10 * 3] + r"\g{10}", "explicit \\g form, 10 groups"),
+        (r"\g{10}" + g[:10 * 3], "explicit \\g form, 10 groups AFTER"),
+        (r"\g10", "unbraced \\g10, no groups"),
+        (g[:10 * 3] + r"\g10", "unbraced \\g10, 10 groups BEFORE"),
+        (r"(a)\g{-1}", "relative, one group back"),
+        (r"(a)\g{-2}", "relative, two back with only one group"),
+        (r"\g{+1}(a)", "relative FORWARD"),
+        (r"\g{+2}(a)", "relative forward past the end"),
     ]
     for pat, note in rows:
         print("%-46s %-9s %s" % (pat[:46], verdict(pat), note))
@@ -135,6 +142,11 @@ def axis_b():
           % matches(r"(a)\18", "a\x018"))
     print("  (a)\\18 on 'aa8'                -> %s  (backref 1 then '8')"
           % matches(r"(a)\18", "aa8"))
+    print("  \\g{10} with 10 groups AFTER -- backref or octal?")
+    print("     \\g{10}(a)..(j) on 'jabcdefghij' -> %s"
+          % matches(r"\g{10}" + tenb, "jabcdefghij"))
+    print("     \\g{10}(a)..(j) on '\\x08abcdefghij' -> %s"
+          % matches(r"\g{10}" + tenb, "\x08abcdefghij"))
     print("  \\12 with 12 groups AFTER, on the backref subject:")
     g12 = "".join("(%s)" % c for c in "abcdefghijkl")
     print("     \\12(a)..(l) on 'labcdefghijkl' -> %s"

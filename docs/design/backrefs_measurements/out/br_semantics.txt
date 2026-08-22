@@ -1,0 +1,93 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `assertions` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_br_semantics.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 603345c 2026-08-22
+# RUN FROM REPO COMMIT        : 9b55272 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/backrefs_measurements/out/
+# RUN DATE   : 2026-08-22T08:50:30-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 ; python3 re
+
+cell  pattern                  subject    sp   libpcre2                       python re                      agree
+----------------------------------------------------------------------------------------------------------------------------------
+U1    ^(a)?\1$                 ''         0    None                           None                           yes
+U2    ^(a)?\1$                 'a'        0    None                           None                           yes
+U3    ^(a)?\1$                 'aa'       0    ((0, 2), ((0, 1),))            ((0, 2), ((0, 1),))            yes
+U4    (a)|(b)\2                'b'        0    None                           None                           yes
+U5    ^(?:(a)|b)\1$            'b'        0    None                           None                           yes
+U6    ^(?:(a)|b)\1$            'aa'       0    ((0, 2), ((0, 1),))            ((0, 2), ((0, 1),))            yes
+U7    ^(?:(a)x|(b)y)\1$        'byb'      0    None                           None                           yes
+U8    ^(?:(a)x|(b)y)\2$        'byb'      0    ((0, 3), (None, (0, 1)))       ((0, 3), (None, (0, 1)))       yes
+E1    ^(a*)b\1$                'b'        0    ((0, 1), ((0, 0),))            ((0, 1), ((0, 0),))            yes
+E2    ^(a*)b\1$                'abaa'     0    None                           None                           yes
+E3    ^(a*)b\1$                'aba'      0    ((0, 3), ((0, 1),))            ((0, 3), ((0, 1),))            yes
+E4    ^()\1\1\1$               ''         0    ((0, 0), ((0, 0),))            ((0, 0), ((0, 0),))            yes
+E5    ^(x?)y\1z$               'yz'       0    ((0, 2), ((0, 0),))            ((0, 2), ((0, 0),))            yes
+S1    (a\1)                    'a'        0    None                           ERR:cannot refer to an open gr *** NO ***
+S2    ^(a\1)$                  'a'        0    None                           ERR:cannot refer to an open gr *** NO ***
+S3    (a|b\1)+                 'ab'       0    ((0, 1), ((0, 1),))            ERR:cannot refer to an open gr *** NO ***
+S4    ^(\1a)$                  'a'        0    None                           ERR:cannot refer to an open gr *** NO ***
+F1    \2(a)(b)                 'ab'       0    None                           ERR:invalid group reference 2  *** NO ***
+F2    ^\2(a)(b)$               'ab'       0    None                           ERR:invalid group reference 2  *** NO ***
+F3    (\2(a)|b)+               'ba'       0    ((0, 1), ((0, 1),))            ERR:invalid group reference 2  *** NO ***
+F4    (\2(a)|b)+               'baa'      0    ((0, 1), ((0, 1),))            ERR:invalid group reference 2  *** NO ***
+F5    ^(?:\1(a))+$             'aa'       0    None                           ERR:invalid group reference 1  *** NO ***
+Q1    ^(a)\1*$                 'a'        0    ((0, 1), ((0, 1),))            ((0, 1), ((0, 1),))            yes
+Q2    ^(a)\1*$                 'aaaa'     0    ((0, 4), ((0, 1),))            ((0, 4), ((0, 1),))            yes
+Q3    ^(\w)\1+$                'bbbb'     0    ((0, 4), ((0, 1),))            ((0, 4), ((0, 1),))            yes
+Q4    (\w)\1+                  'abbbc'    0    ((1, 4), ((1, 2),))            ((1, 4), ((1, 2),))            yes
+Q5    ^(a*)\1*$                'aaa'      0    ((0, 3), ((0, 3),))            ((0, 3), ((0, 3),))            yes
+Q6    ^(a?)\1{3}$              ''         0    ((0, 0), ((0, 0),))            ((0, 0), ((0, 0),))            yes
+Q7    ^(a?)\1{3}$              'aaaa'     0    ((0, 4), ((0, 1),))            ((0, 4), ((0, 1),))            yes
+N1    ^(?:(a|b)\1)+$           'aabb'     0    ((0, 4), ((2, 3),))            ((0, 4), ((2, 3),))            yes
+N2    ^(?:(a|b)\1)+$           'aab'      0    None                           None                           yes
+N3    ^((a)|(b))+\2$           'aba'      0    ((0, 3), ((1, 2), (0, 1), (1,  ((0, 3), ((1, 2), (0, 1), (1,  yes
+N4    ^(?:(a)(b)\2\1)+$        'abba'     0    ((0, 4), ((0, 1), (1, 2)))     ((0, 4), ((0, 1), (1, 2)))     yes
+N5    (?:(a|bb)x)+\1           'axbbxbb'  0    ((0, 7), ((2, 4),))            ((0, 7), ((2, 4),))            yes
+N6    (?:(a|bb)x)+\1           'axbbxa'   0    None                           None                           yes
+P1    (a)\1                    'xaa'      1    ((1, 3), ((1, 2),))            ((1, 3), ((1, 2),))            yes
+P2    (a)\1                    'xaa'      2    None                           None                           yes
+C1    (?i)^(a)\1$              'aA'       0    ((0, 2), ((0, 1),))            ((0, 2), ((0, 1),))            yes
+C2    (?i)^(ab)\1$             'abAB'     0    ((0, 4), ((0, 2),))            ((0, 4), ((0, 2),))            yes
+C3    (?i)^(a)\1$              'Aa'       0    ((0, 2), ((0, 1),))            ((0, 2), ((0, 1),))            yes
+C4    ^(?i:(a))\1$             'aA'       0    None                           None                           yes
+C5    ^((?i)a)\1$              'aA'       0    None                           ERR:global flags not at the st *** NO ***
+
+PCRE2_MATCH_UNSET_BACKREF arm -- the U cells recompiled with the
+bit set, to price the option pcrec declares out of scope:
+cell  pattern                  subject    default                        UNSET_BACKREF
+----------------------------------------------------------------------------------------------------
+U1    ^(a)?\1$                 ''         None                           ((0, 0), ())
+U2    ^(a)?\1$                 'a'        None                           None
+U3    ^(a)?\1$                 'aa'       ((0, 2), ((0, 1),))            ((0, 2), ((0, 1),))
+U4    (a)|(b)\2                'b'        None                           None
+U5    ^(?:(a)|b)\1$            'b'        None                           ((0, 1), ())
+U6    ^(?:(a)|b)\1$            'aa'       ((0, 2), ((0, 1),))            ((0, 2), ((0, 1),))
+U7    ^(?:(a)x|(b)y)\1$        'byb'      None                           None
+U8    ^(?:(a)x|(b)y)\2$        'byb'      ((0, 3), (None, (0, 1)))       ((0, 3), (None, (0, 1)))
+
+SUMMARY
+  cells                       : 42
+  libpcre2 vs python3 re DIFFS: 10
+    S1   (a\1)                  on 'a'       sp=0 : pcre2=None  python=ERR:cannot refer to an open group at position 2
+    S2   ^(a\1)$                on 'a'       sp=0 : pcre2=None  python=ERR:cannot refer to an open group at position 3
+    S3   (a|b\1)+               on 'ab'      sp=0 : pcre2=((0, 1), ((0, 1),))  python=ERR:cannot refer to an open group at position 4
+    S4   ^(\1a)$                on 'a'       sp=0 : pcre2=None  python=ERR:cannot refer to an open group at position 2
+    F1   \2(a)(b)               on 'ab'      sp=0 : pcre2=None  python=ERR:invalid group reference 2 at position 1
+    F2   ^\2(a)(b)$             on 'ab'      sp=0 : pcre2=None  python=ERR:invalid group reference 2 at position 2
+    F3   (\2(a)|b)+             on 'ba'      sp=0 : pcre2=((0, 1), ((0, 1),))  python=ERR:invalid group reference 2 at position 2
+    F4   (\2(a)|b)+             on 'baa'     sp=0 : pcre2=((0, 1), ((0, 1),))  python=ERR:invalid group reference 2 at position 2
+    F5   ^(?:\1(a))+$           on 'aa'      sp=0 : pcre2=None  python=ERR:invalid group reference 1 at position 5
+    C5   ^((?i)a)\1$            on 'aA'      sp=0 : pcre2=None  python=ERR:global flags not at the start of the expression at position 2
+  U cells whose answer FLIPS under PCRE2_MATCH_UNSET_BACKREF: 2
