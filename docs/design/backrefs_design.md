@@ -405,13 +405,25 @@ rx_L7: __attribute__((unused));
         if (ref_s == PCREC_UNSET || ref_e == PCREC_UNSET) goto rx_fail;
         took = rx_bref_match(subject, subject_length,
                              (size_t)ref_s, (size_t)ref_e, scan_position);
+        /* §3.8's WORK CHARGE. `took` on success; on failure the entry's
+         * negative encoding carries the prefix it compared (§4.2), so the
+         * work the fail label never sees is charged either way. Emitted
+         * through the `vm_work` primitive, one call one truth. */
+        RX_CHARGE_WORK(took >= 0 ? (size_t)took : (size_t)(-took - 1));
         if (took < 0) goto rx_fail;
         scan_position += (size_t)took;
         goto rx_L8;
     }
 ```
 
-Unchanged from the first draft — which is the point. **The correction is
+**The `RX_CHARGE_WORK` line is shown deliberately** (R32 re-check): an earlier
+revision recommended the charge in §3.8 and omitted it from the emitted shape
+here, so the two sections disagreed about what the artifact contains. It is
+emitted only when the artifact has a work budget, exactly as `vm_work`'s
+`has_budget` guard already does for every other charge site
+(`emit_vm.c:1718-1724`).
+
+Otherwise unchanged from the first draft — which is the point. **The correction is
 entirely in `A_CAP`'s emission, not in `A_BREF`'s**, and the reference's own
 code is the same three tests it always was. What changed is that the two slots
 it reads now mean "the last COMPLETED capture" instead of "whatever the two
@@ -443,7 +455,22 @@ rx_L5: __attribute__((unused));
 
 **The extra slot and write apply ONLY to groups this pattern actually
 references**, which is a compile-time property (§5.3's resolution pass already
-computes the referenced set). Three consequences:
+computes the referenced set).
+
+**THE MARKED SET IS THE UNION OF EVERY `A_BREF`'s `refs` ARRAY — every member
+of a duplicated name's run, not merely the member a given match resolves to
+(R32 re-check E13).** §8.3's resolution is a MATCH-TIME choice that reads
+every member's pair in ascending number until it finds a published one, so an
+unmarked member is read under write-on-traverse and E1 reappears through it.
+MEASURED: `(?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$` on `"aba"` is **(0,3) with
+group 1 UNSET and group 2 = (1,3)** — the chain falls through the unset first
+member to the second, which is the one being RE-ENTERED, so it is exactly the
+member that must be marked. `(?J)^(?<a>x)(?:(?<a>a|b\k<a>))+$` on `"xbx"` is
+(0,3) with both set, the same shape with the fall-through removed. Marking
+only the statically "resolved" member is not merely incomplete — there is no
+statically resolved member to speak of.
+
+Three consequences:
 
 - A pattern with no backreference emits byte-identical C — §11.3's identity
   gate holds by construction rather than by inspection, and §3.2.2's control
@@ -1448,10 +1475,40 @@ the REFERENCE's position rather than at the group's. `\b` before the second
 `a` of `"aa"` is false; `\b` before the first is true; the captured TEXT does
 not carry that.
 
-**So the corrected claim is: the erasure is a superset IFF the referenced
-group is ASSERTION-FREE.** That condition is cheap and syntactic — no
-`A_BOL`/`A_EOL`/`A_END`/`A_WORDB`/`A_NWORDB`/`A_GSTART`/`A_KRESET` and no
-lookaround beneath the referenced `A_CAP`.
+**AND ASSERTION-FREEDOM IS NECESSARY BUT NOT SUFFICIENT (R32 re-check E12).**
+An ATOMIC group or POSSESSIVE quantifier beneath the referenced `A_CAP`
+breaks the superset for a second structural reason, and the first revision of
+this section replaced a GAP with a CONDITION and lost it — §13 P-7 still
+named "no family contains an atomic or possessive group" as an open gap while
+§7.2 stated a condition that did not mention them. MEASURED, same positive
+control:
+
+| true pattern | erasure | subject | true | erased | false negative? |
+|---|---|---|---|---|---|
+| `^(a*+)b\1a$` | `^(a*+)b(?:a*+)a$` | `"abaa"` | (0,4) | **None** | **yes** |
+| `^(a*+)b\1a$` | `^(a*+)b(?:a*+)a$` | `"aabaaa"` | (0,6) | **None** | **yes** |
+| `(a*+)b\1a` | `(a*+)b(?:a*+)a` | `"abaa"` | (0,4) | **None** | **yes** |
+| `^((?>a*))b\1a$` | `^((?>a*))b(?:(?>a*))a$` | `"abaa"` | (0,4) | **None** | **yes** |
+| `^([ab]*+)c\1a$` | `^([ab]*+)c(?:[ab]*+)a$` | `"abcaba"` | (0,6) | **None** | **yes** |
+| `^(a++)b\1a$` | `^(a++)b(?:a++)a$` | `"aabaaa"` | (0,6) | **None** | **yes** |
+| `^(a*)b\1a$` (greedy CONTROL) | `^(a*)b(?:a*)a$` | `"abaa"` | (0,4) | (0,4) | no |
+| `^(a*?)b\1a$` (lazy CONTROL) | `^(a*?)b(?:a*?)a$` | `"abaa"` | (0,4) | (0,4) | no |
+
+**6 of 8, with both non-possessive controls holding.** The reason is the same
+shape as the assertion one: **the erased COPY commits without regard to what
+follows it.** `(a*+)` captures all the `a`s; the reference then compares that
+TEXT, which is a fixed string and re-decidable by the surrounding
+backtracking. The erased copy is a fresh possessive loop that eats the
+following `a` and cannot give it back. A backreference is never atomic even
+when the group it names is.
+
+**So the corrected gate is: the erasure is a superset IFF the referenced
+group is ASSERTION-FREE *and* ATOMIC/POSSESSIVE-FREE.** Both halves are cheap
+and syntactic — beneath the referenced `A_CAP`, no
+`A_BOL`/`A_EOL`/`A_END`/`A_WORDB`/`A_NWORDB`/`A_GSTART`/`A_KRESET`, no
+lookaround, and no atomic group or possessive quantifier. **[M6.4] lands
+first, so the second half's population is LIVE from the day this module
+ships** — it is not a future concern.
 
 **This does NOT touch §7.1's ruling**, and the direction is why: §7.1 refuses
 the prefilter outright, which is the safe side of an unsound approximation.
@@ -1553,11 +1610,13 @@ analysis §7.4 charters.
 
 Two sound weaker uses, neither in this module:
 
-- **A NOMATCH-ONLY prefilter, GATED ON AN ASSERTION-FREE REFERENCED GROUP.**
-  The erasure never false-negatives *under that condition* (§7.2, corrected
-  after R32 E2), so running it and answering `nomatch` outright is sound
-  there and UNSOUND without it — the first draft chartered this with no
-  condition at all, on a superset claim that does not hold in general.
+- **A NOMATCH-ONLY prefilter, GATED ON A REFERENCED GROUP THAT IS BOTH
+  ASSERTION-FREE AND ATOMIC/POSSESSIVE-FREE.**
+  The erasure never false-negatives *under BOTH conditions* (§7.2, corrected
+  after R32 E2 and again after the re-check's E12), so running it and
+  answering `nomatch` outright is sound there and UNSOUND without either half
+  — the first draft chartered this with no condition at all, and the first
+  revision with only the assertion half.
   Measured selectivity on the six families, all of which satisfy the
   condition: 23% to 98%, with three above 59%. It needs a second AST (the
   erasure is a real rewrite), a second NFA/DFA build, the assertion-free
@@ -1979,7 +2038,7 @@ oracle exactly where the module is load-bearing.
 | `selfref.rxt` | §3.5's S and F cells **plus §3.2's RE-ENTRY class** | **`# pcre2-only`** — python refuses all of them at compile time |
 | `spellings.rxt` | `\g`/`\k`/`(?P=n)` (§2) | **`# pcre2-only`** except the `(?P=name)` rows |
 | `caseless.rxt` | §4's axis-B scoping cells and the 52-byte fold | **MIXED — per cell.** 5 of 9 python-verifiable; `^(?i)(a)(?-i)\1$` and `^((?i)a)\1$` are ERRORS in python ("global flags not at the start"), and those two are precisely §3.1(c)'s and F7's load-bearing cells |
-| `dupnames.rxt` | §8's resolution cells | **`# pcre2-only`** — python has no `(?J)` and no `\k` |
+| `dupnames.rxt` | §8's resolution cells **plus RE-ENTRY cells over a name run** (R32 re-check E13 — the first draft's file had none, so S-BR15b would have had no detector): `(?J)^(?:(?<a>q))?(?:(?<a>a\|b\k<a>))+$` on `"aba"`, `(?J)^(?:(?<a>a\|b\k<a>))+$` on `"aba"`, `(?J)^(?<a>x)(?:(?<a>a\|b\k<a>))+$` on `"xbx"` | **`# pcre2-only`** — python has no `(?J)` and no `\k` |
 | `nested.rxt` | §3.7's N cells, the cut interaction, and the revdet group-in-body shape (§3.6) | python-verifiable for N1-N6 |
 | `nocaps.rxt` | §6.3/§10's `--no-captures` axis (R32 E6) | libpcre2 for the match; the ncaps/slot facts are pcrec-only reflection assertions |
 | `gated.rxt` | §10's two matrices | n/a for refusals; **every ACCEPT cell oracle-verified against libpcre2 first** (R32 C7) |
@@ -2093,6 +2152,7 @@ rather than a refusal. E1, E8, E9 and SR-8 add four more.
 |---|---|---|---|
 | **S-BR14** | **a DFA prefilter is attached to a backref pattern** (`fit.prefilter` forced true) | **`run_backref_diff.sh` §7, the SPAN-DIVERGENCE section** (§11.2) | **the wrong-answer mode.** §7.2 measures spans differing on up to 389 subjects in one family; nothing else in the suite would notice, because every refusal still refuses and every non-prefiltered pattern still passes |
 | **S-BR15** | **publish-at-OPEN restored** (`A_CAP` writes the pair on traverse) | `selfref.rxt`'s re-entry cells, `run_backref_diff.sh` §3 | E1 exactly. 138 divergences and 40 reversed-span cells in the 5,808-cell sweep — and ZERO in the backref-free population, so no existing suite sees it |
+| **S-BR15b** | **only the "resolved" member of a dup-name run is marked** (publish-at-close applied to one member, not the run) | `dupnames.rxt`'s re-entry cells, `run_dupnames_diff.sh` | R32 re-check E13: §8.3's chain reads EVERY member at match time, so an unmarked one is read under write-on-traverse and E1 returns through it. Invisible to every cell where the first member resolves |
 | S-BR1 | the unset test becomes `ref_e > ref_s` | `numeric.rxt`'s E cells | turns every empty capture into a failure; every non-empty cell still passes |
 | S-BR2 | the `caseless` field is ignored | `caseless.rxt` | D62 control 3's residual; no compiler diagnostic |
 | S-BR3 | `vm_nullable` returns false for `A_BREF` | `numeric.rxt` Q6 | an unguarded nullable body is a hang, not a wrong answer — caught by the harness's derived timeout |
@@ -2339,14 +2399,29 @@ reproduced three times from three trees.* Still refutable by a corpus of real
 common AND small; four of the five real idioms measured reference INFINITE
 languages and cannot expand at all.
 
-**P-7. The erasure is a superset (§7.2). REFUTED AND CORRECTED (R32 E2).** It
-is a superset only when the referenced group is ASSERTION-FREE; 6 of 10
-control cells are false negatives otherwise. The corrected claim's own
-refutation would be a false negative in an assertion-free family — none found
-in 12,786 distinct pairs across six families. **The remaining gap the first
-draft had and this one still has: no family contains an ATOMIC or POSSESSIVE
-group**, and the erasure drops synchronization, so `atomic-groups` landing
-first is the event that should re-ask.
+**P-7. The erasure is a superset (§7.2). REFUTED TWICE AND CORRECTED TWICE.**
+R32 E2: it is not a superset when the referenced group holds an ASSERTION.
+The re-check's E12: nor when it holds an ATOMIC group or POSSESSIVE
+quantifier. 12 of 18 positive-control cells are false negatives across the
+two reasons, with 6 controls holding.
+
+**The second correction is the more instructive failure and it is mine.** The
+first draft named the atomic/possessive gap in this very prediction. The
+first revision replaced the GAP with a CONDITION — and stated the condition
+as assertion-freedom alone, while leaving the gap sentence sitting two lines
+below it. A reader of that revision had both halves in front of them and the
+document never joined them. **A named gap is not a discharged gap**, which is
+R30 M6's lesson ("a named defect is not a fixed defect") arriving one level
+up: there the lane reproduced a defect it had just read about, here it stated
+a condition beside the evidence that the condition was incomplete.
+
+The corrected gate is assertion-free AND atomic/possessive-free. *Refuted
+by*: a false negative in a family satisfying BOTH halves — none found in
+12,786 distinct pairs across six families, and none in the eighteen control
+cells. **The remaining honest gap**: no family in the sweep contains a
+NESTED backreference (a reference inside a referenced group), which is the
+third structural way a group could stop being a language, and it is untested
+in either direction.
 
 **P-8. The seam interface must change (§4.5).** *Refutable by* a size ruling I
 recommend against on generality grounds. R32 E11 made the change slightly
