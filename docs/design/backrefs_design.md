@@ -917,9 +917,9 @@ Pasted from `out/expand_cost.txt` rather than re-typed (R30 N2):
 |---|---|---|---|---|---|---|
 | `(a\|b)\1` | alt2 | 2 | 5 B | 13,657 B | 0.05 s | compiled |
 | `(abc)\1` | lit3 | 1 | 6 B | 12,351 B | 0.06 s | compiled |
-| `([a-z])\1` | cls26 | 26 | 77 B | 22,113 B | 0.07 s | compiled |
+| `([a-z])\1` | cls26 | 26 | 77 B | 22,113 B | 0.05 s | compiled |
 | `((?:a\|b\|c\|d\|e){3})\1` | alt5x3 | 125 | 874 B | 35,261 B | 0.06 s | compiled |
-| `([a-z]{2})\1` | cls26x2 | 676 | 3,379 B | **321,302 B** | 0.15 s | compiled |
+| `([a-z]{2})\1` | cls26x2 | 676 | 3,379 B | **321,302 B** | 0.14 s | compiled |
 | `([a-z]{3})\1` | cls26x3 | 17,576 | 123,031 B | — | — | **REFUSED**: >32000 DFA states |
 | `([a-z]{4})\1` | cls26x4 | 456,976 | 4,112,783 B | — | — | **cannot even be passed**: `E2BIG` |
 
@@ -929,7 +929,12 @@ checked first so the bisection is known to bracket a boundary:
 
 > `endpoint check: k=1 compiles=True ; k=17576 compiles=False`
 > **largest `|L(G)|` that compiles: 10,525** — a 73,674-byte pattern producing
-> **7,116,509 bytes of emitted C** and 1.99 s of gcc.
+> **7,116,509 bytes of emitted C** and 2.07 s of gcc.
+
+**The boundary REPRODUCES.** Two independent runs of this probe, from
+different working trees, both bisect to 10,525/10,526 with identical pattern
+and emitted-C byte counts; only the gcc seconds jitter (1.99 vs 2.07). So the
+number is a property of the compiler's caps, not of a run.
 > **smallest that does not: 10,526** — "pattern too complex for the DFA
 > engine (>32000 states)".
 
@@ -945,7 +950,7 @@ SEMANTICS SHIP IN [M6.5]; THE EXPANSION IS CHARTERED AS A FOLLOW-ON ROW.**
 Four reasons, in order:
 
 1. Its only customer is `--no-captures`, which is not the default (D42.1).
-2. Its payoff on that customer is bounded by §7's numbers — 6.2x to 130x on
+2. Its payoff on that customer is bounded by §7's numbers — 6.2x to 160x on
    scanning — which is real, but is the *same* payoff a sound nomatch-only
    prefilter (§7.3) would deliver with no rewrite, no size estimate and no
    fixpoint interaction.
@@ -1028,22 +1033,26 @@ from a different run than the archive it cited:
 
 | idiom | subject | hybrid (s) | vm-only (s) | **vm-only is** |
 |---|---|---|---|---|
-| quote | nomatch | 0.00022634 | 0.00191456 | **8.5x slower** |
-| quote | latematch | 0.00011078 | 0.00191434 | **17.3x** |
-| tag | nomatch | 0.00001090 | 0.00069713 | **64.0x** |
-| tag | latematch | 0.00000539 | 0.00069859 | **129.6x** |
-| digits | nomatch | 0.00022497 | 0.00139382 | **6.2x** |
-| digits | latematch | 0.00011100 | 0.00139627 | **12.6x** |
-| dupword | nomatch / latematch | 0.00000014 / 0.00000011 | 0.00000004 / 0.00000008 | **NOISE** (see below) |
-| letter | nomatch / latematch | 0.00000007 / 0.00000008 | 0.00000002 / 0.00000005 | **NOISE** |
+| quote | nomatch | 0.00022810 | 0.00191457 | **8.4x slower** |
+| quote | latematch | 0.00009122 | 0.00191623 | **21.0x** |
+| tag | nomatch | 0.00000436 | 0.00069634 | **159.7x** |
+| tag | latematch | 0.00001092 | 0.00069780 | **63.9x** |
+| digits | nomatch | 0.00010991 | 0.00192808 | **17.5x** |
+| digits | latematch | 0.00008925 | 0.00139532 | **15.6x** |
+| dupword | nomatch / latematch | 0.00000028 / 0.00000011 | 0.00000009 / 0.00000004 | **NOISE** (see below) |
+| letter | nomatch / latematch | 0.00000007 / 0.00000004 | 0.00000005 / 0.00000004 | **NOISE** |
 
-**The RATIOS are stable in order of magnitude and NOT in their digits.** Four
-runs of this probe during the lane gave quote 8.4-21.7x, tag 64-157x and
-digits 6.2-20.9x — the hybrid arm is bimodal between roughly 0.00011 and
-0.00022 s across runs while the vm-only arm barely moves, which is what makes
-the ratio jump. Treat the DIRECTION and the ORDER as established and the
-particular digits as not; the design's ruling does not turn on which end of
-those ranges is right.
+**The RATIOS ARE STABLE IN ORDER OF MAGNITUDE AND NOT IN THEIR DIGITS, and a
+reader should not quote one.** Five runs of this probe during the lane gave
+quote **8.4-21.7x**, tag **63.9-159.7x** and digits **6.2-20.9x**. The
+vm-only arm barely moves between runs; the HYBRID arm is multi-modal across
+roughly 0.000004-0.00023 s, and that is what makes the ratio jump — a
+prefilter that skips almost the whole subject is measuring a memchr whose
+cost depends on where the first candidate byte lands, which the filler's
+period decides. Treat the DIRECTION and the ORDER as established and the
+digits as not. The design's ruling does not turn on which end of those ranges
+is right, and this document deliberately quotes the range rather than a
+run.
 
 **The two NOISE rows are a RESULT, not a failed measurement**, and they are
 the honest counterweight to the 157x: for `\b([a-z]+)\s+\1\b` and `(\w)\1` the
@@ -1053,7 +1062,8 @@ nothing **even if it were sound**. That is the same fact §7.2's last column
 reports as 40% and 2% selectivity.
 
 **So the cost of the ruling is roughly one to two orders of magnitude
-(6.2x-130x measured) on the families where a prefilter would have helped, and
+(6.2x-160x measured across five runs) on the families where a prefilter
+would have helped, and
 zero on the families where it would not** — and there
 is no way to tell which is which without the very analysis §7.4 charters.
 
@@ -1345,20 +1355,58 @@ under `--features modifiers,backrefs` must work.
 
 ## 10. Module gating, and what a partial enable means
 
-| enabled set | `(a)\1` | `(?J)(?<a>x)(?<a>y)` | `\k<n>` | `[\1]` |
+**The bare default is `--features std1`, and `std1` is `{classes,
+modifiers}`** (`src/parse/enabled.c:80-95`, `:112`) — not "nothing". An
+explicit `--features` REPLACES the set rather than adding to it, and a named
+set cannot be combined with module names (`--features std1,backrefs` is
+"unknown module 'std1'", MEASURED). That is a real constraint on how this
+module's `.rxt` `features:` directives must be written, and it is stated here
+because the natural assumption is the opposite one.
+
+MEASURED on the shipped compiler, four spelled-out sets:
+
+| `--features` | `(a)\1` | `(?J)(?<a>x)(?<a>y)` | `\k<n>` | `[\1]` |
 |---|---|---|---|---|
-| (bare default) | refuse: `\1 (backreference/octal) requires module 'backrefs'` | refuse: `(?J)` names its owner | refuse: `\k requires module 'backrefs'` | **0x01 — BASE, always** |
-| `backrefs` | compiles | refuse: `(?<name>` requires `named-groups` | refuse: `\k<name>` needs a named group to refer to → `named-groups` | 0x01 |
-| `named-groups` | refuse | refuse: needs `backrefs` | refuse | 0x01 |
-| `backrefs,named-groups` | compiles | compiles | compiles | 0x01 |
-| `backrefs,modifiers` | compiles | refuse (needs `named-groups`) | refuse | 0x01 |
+| `std1` (the bare default) | `\1 (backreference/octal) requires module 'backrefs'` | `inline option 'J' (dupnames): module 'named-groups' does not implement duplicate group names` | `\k requires module 'backrefs'` | **compiles, 0x01** |
+| `none` | same | `(?J...) requires module 'modifiers'` | same | **compiles, 0x01** |
+| `named-groups` | same | `(?J...) requires module 'modifiers'` | same | **compiles, 0x01** |
 
-The `[\1]` column is the invariant: the class position is base syntax and its
-answer does not move with the enabled set (P6, `ExtPort.base`).
+Two facts that table carries, and both matter to this module:
 
-`\k<name>`/`(?P=n)`/`\g{name}` need `named-groups` because there is nothing to
-name otherwise; the numeric spellings do not. That is a real partial-enable
-boundary and §11.1's corpus has a file for it.
+- **`(?J)`'s refusal comes from TWO different places depending on the set.**
+  Under `std1` the `modifiers` module is ON, so the letter dispatch runs and
+  hits `mod_modifiers.c`'s unconditional `case 'J'`; under `none` the
+  `(?J...)` ROW's gate refuses first, naming `modifiers`. `mod_modifiers.c`'s
+  own comment already says the letter's refusal is "unconditional either way",
+  and this is what that looks like from outside. After this module, the letter
+  must be gated on `FEAT_BACKREFS` — so the `none`/`named-groups` rows keep
+  their `modifiers` answer and the `std1` row's answer becomes "requires
+  module 'backrefs'".
+- **The `[\1]` column does not move.** It compiles to 0x01 in every set,
+  because the class position is base syntax (`ExtPort.base`, P6). That is the
+  invariant §5.2 forbids the module to disturb and §11.4's S-BR6 pins.
+
+**After this module lands**, the matrix the corpus must pin:
+
+| `--features` | `(a)\1` | `(?J)(?<a>x)(?<a>y)` | `\k<n>` |
+|---|---|---|---|
+| `std1` | refuse: needs `backrefs` | refuse: needs `backrefs` | refuse: needs `backrefs` |
+| `backrefs` | **compiles** | refuse: needs `modifiers` | refuse: needs `named-groups` |
+| `backrefs,modifiers` | **compiles** | refuse: needs `named-groups` | refuse: needs `named-groups` |
+| `backrefs,named-groups` | **compiles** | refuse: needs `modifiers` | **compiles** |
+| `backrefs,modifiers,named-groups` | **compiles** | **compiles** | **compiles** |
+
+`\k<name>`, `(?P=name)` and `\g{name}` need `named-groups` because there is
+nothing to name otherwise; `(?J)` needs `modifiers` because the letter lives
+in that module's dispatch; the numeric spellings need neither. That
+three-module dependency is the module's real partial-enable boundary and
+`gated.rxt` (§11.1) is where it is pinned.
+
+**Whether `std1` should advance to `std2` including `backrefs` is NOT this
+module's call** — D37 makes that an announced version boundary, and
+`enabled.c:103-111` records that the next advance "changes this constant and
+nothing else". §15 has no ASK for it because the answer is "not yet, and not
+here".
 
 ---
 

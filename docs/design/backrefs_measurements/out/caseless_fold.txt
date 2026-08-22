@@ -4,10 +4,17 @@
 # PROBE      : docs/design/backrefs_measurements/probes/probe_caseless_fold.py
 # ARGS       : (none)
 # PROBE LAST CHANGED AT COMMIT: 831e498 2026-08-22
-# RUN FROM REPO COMMIT        : 9b55272 (lane/brdesign)
+# RUN FROM REPO COMMIT        : 6342199 (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/backrefs_measurements/out/
-# RUN DATE   : 2026-08-22T08:50:39-04:00
+#      M docs/design/backrefs_measurements/out/br_semantics.txt
+#      M docs/design/backrefs_measurements/out/caseless_fold.txt
+#      M docs/design/backrefs_measurements/out/dupnames.txt
+#      M docs/design/backrefs_measurements/out/erasure_hazard.txt
+#      M docs/design/backrefs_measurements/out/expand_cost.txt
+#      M docs/design/backrefs_measurements/out/octal_rule.txt
+#      M docs/design/backrefs_measurements/out/prefilter_cost.txt
+#      M docs/design/backrefs_measurements/out/spellings.txt
+# RUN DATE   : 2026-08-22T09:11:29-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15

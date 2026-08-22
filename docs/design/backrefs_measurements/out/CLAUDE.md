@@ -7,6 +7,15 @@ branch the run was made from, whether the working tree was clean at run time,
 the date, and the python3, libpcre2 and gcc versions. Same intent as
 `scripts/measure.sh` / `docs/measurements/` (D35), scoped to this lane.
 
+**Every header here says `DIRTY`, and that is inherent to the archiver rather
+than sloppiness**: `archive.sh` redirects into the file it is about to stamp,
+so the file is already modified when `git status --porcelain` runs. The
+shipped `assertions_measurements/out/` headers have the identical property.
+What matters is WHAT the dirty list contains — and in every file here it is
+`out/` files only: no source, no probe and no design-document edit appears in
+any of the eight, because all eight were re-run in one batch from a committed
+tree after the design was written.
+
 **Evidence for the [M6.5.1] panel (R32), never an oracle.** No check in
 `make test` reads anything here; re-run the probe to re-measure.
 
@@ -59,9 +68,10 @@ archaeology. No file here was hand-written.
   compare's caselessness is the option in force **at the backreference**
   (`^(a)(?i:\1)$` matches `"aA"`; `^(?i:(a))\1$` does not).
 - `prefilter_cost.txt` — `probe_prefilter_cost.sh`. Headline: losing the
-  prefilter costs **6.2x to 130x** on the three idioms where it filters (the
-  ratio is stable in order of magnitude, not in its digits — four runs during
-  the lane spanned 6.2-21.7x, 64-157x and 6.2-20.9x), and
+  prefilter costs **one to two orders of magnitude** on the three idioms where
+  it filters — **quote 8.4-21.7x, tag 63.9-159.7x, digits 6.2-20.9x across
+  five runs**, so quote the RANGE and never a single run's digits; the hybrid
+  arm is multi-modal and the vm-only arm is not, and
   **nothing at all** on the two where the erased approximation matches at
   offset 0 (reported as NOISE, which is a result rather than a failed
   measurement). Both arms compile the identical pattern with the identical
@@ -82,6 +92,8 @@ archaeology. No file here was hand-written.
   `([a-z]{3})\1`'s 17,576-word expansion is REFUSED at >32,000 DFA states;
   `([a-z]{4})\1`'s 4.1 MB pattern **cannot be passed to a compiler at all**
   (`E2BIG`). Bisected on the shipped compiler: **the largest `|L(G)|` that
-  compiles is 10,525**, at 7.1 MB of emitted C and 2.0 s of gcc.
+  compiles is 10,525**, at 7,116,509 bytes of emitted C and ~2 s of gcc — a
+  boundary that REPRODUCES across two independent runs at identical byte
+  counts.
 
 Maintenance: update this file when outputs are added/removed.
