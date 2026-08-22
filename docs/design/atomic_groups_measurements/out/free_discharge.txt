@@ -1,0 +1,88 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_free_discharge.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: e45306c 2026-08-22
+# RUN FROM REPO COMMIT        : e45306c (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/
+# RUN DATE   : 2026-08-22T08:45:47-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27   pcrec: build/pcrec
+
+=== CONTROLS (printed every run; the instrument proving it can fire) ===
+  a*+a                   vs a*a                  subj 'aaa'     verdict=False   poss=None     plain=(0, 3)   DIFFER
+      the canonical cut: verdict MUST be negative and the answers MUST differ
+  (?:a|ab){1,3}+c        vs (?:a|ab){1,3}c       subj 'abc'     verdict=False   poss=None     plain=(0, 3)   DIFFER
+      possessify's own §2.4 117-counterexample family
+  [^"]*+"                vs [^"]*"               subj 'say "hi"' verdict=True    poss=(0, 5)   plain=(0, 5)   same
+      the canonical possessive IDIOM: verdict positive, answers identical
+  a?(?:b){0,4}+a         vs a?(?:b){0,4}a        subj 'a'       verdict=False   poss=None     plain=(0, 1)   DIFFER
+      U9's own witness (libpcre2 quirk, not the cut)
+  controls consistent: yes
+
+patterns generated and compilable by BOTH pcrec and libpcre2: 1764
+  (dropped: 0 pattern/compile refusals -- reported, not hidden)
+cells (pattern x subject): 28224
+
+possessify §2.2 verdict POSITIVE on every quantifier : 532 patterns
+possessify §2.2 verdict NEGATIVE                     : 1232 patterns
+
+=== THE DISCHARGE RULE ===
+REFUTING CONDITION: a POSITIVE verdict on a pattern whose possessive
+and non-possessive spellings give libpcre2 DIFFERENT answers.
+violations (U9 excluded): 0
+
+positive-verdict patterns that are U9-SHAPED at all: 16 --
+if this is 0 the subtraction below had NOTHING to subtract, which is
+a fact about the generator, not evidence that U9 is absent.
+
+U9-SHAPED cells subtracted (bounded {m,n}+ of a GROUP with a
+preceding backtrackable item -- libpcre2's own recorded quirk): 0
+
+=== HOW COMPLETE IS §2.2 AS A DISCHARGE CONDITION ===
+patterns with a NEGATIVE verdict whose possessive spelling never
+changed the answer on ANY subject in this set: 834 of 1232
+  (these are rescues the discharge DECLINES. Not a defect -- §2.2
+   is a sufficient condition and declining is always safe -- but it
+   is the size of the gap, and a subject set this small OVERSTATES
+   it: 'never differed on 16 subjects' is not 'is a no-op'.)
+     (?:a|ab)*+                   (twin (?:a|ab)*)
+     (?:a|ab)*+d                  (twin (?:a|ab)*d)
+     (?:a|ab)*+b                  (twin (?:a|ab)*b)
+     (?:a|ab)*+"                  (twin (?:a|ab)*")
+     (?:a|ab)*+bc                 (twin (?:a|ab)*bc)
+     (?:a|ab)++                   (twin (?:a|ab)+)
+     (?:a|ab)++d                  (twin (?:a|ab)+d)
+     (?:a|ab)++b                  (twin (?:a|ab)+b)
+     (?:a|ab)++"                  (twin (?:a|ab)+")
+     (?:a|ab)++bc                 (twin (?:a|ab)+bc)
+     ... 824 more
+
+=== THE RESCUED POPULATION (what the discharge buys) ===
+possessive patterns the discharge turns back into DFA-eligible
+ones, assuming nothing ELSE forces the VM: 532 of 1764 (30.2%)
+     a*+
+     a*+c
+     a*+d
+     a*+b
+     a*+"
+     a*+bc
+     a++
+     a++c
+     a++d
+     a++b
+     a++"
+     a++bc
+     a?+
+     a?+c
+     ... 518 more

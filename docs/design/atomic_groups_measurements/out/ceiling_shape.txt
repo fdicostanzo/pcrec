@@ -1,0 +1,85 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_ceiling_shape.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: e45306c 2026-08-22
+# RUN FROM REPO COMMIT        : e45306c (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/
+# RUN DATE   : 2026-08-22T08:45:46-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec binary: build/pcrec (/home/duxevents/pcrec/worktrees/agdesign/build/pcrec)
+pattern under test: (a|bc){1,4}d
+
+THE POSITIVE ARM — captures ON (VM-forced) and the prefilter ON (auto):
+this is the DEFAULT path, and the one an atomic pattern would take.
+
+== default (captures on, prefilter auto)
+   pcrec  '(a|bc){1,4}d'
+   --- the artifact's own selection stamps (D46) ---
+   #define RX_ENGINE "vm"
+   #define RX_ENGINE_WHY "capture group at pattern offset 0"
+   #define RX_VM_PRUNE_CEILING "prefilter-window"
+   --- window_end / ceiling sites in the emitted search entry ---
+   129:    ((rx_window_end) < (size_t)(mr_) || (rx_window_end) - (size_t)(mr_) < (p_))
+   131:    ((p_) + (size_t)(w_) * (((rx_window_end) - (size_t)(mr_) - (p_)) / (size_t)(w_)))
+   360:static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run, const size_t rx_window_end)
+   535:    size_t window_end;
+   539:        if (rx_prefilter(subject, subject_length, search_from, window) != 1) return 0;
+   541:        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+   548:        result = rx_match_anchored(&ctx, &run, window_end);
+   558:            if (rx_prefilter(subject, subject_length, attempt_position, window) != 1) return 0;
+   560:            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;
+   --- the anchored call, verbatim ---
+   548:        result = rx_match_anchored(&ctx, &run, window_end);
+
+THE CONTROLS:
+
+== -fno-prefilter (VM scans for itself)
+   pcrec -fno-prefilter '(a|bc){1,4}d'
+   --- the artifact's own selection stamps (D46) ---
+   #define RX_ENGINE "vm"
+   #define RX_ENGINE_WHY "capture group at pattern offset 0"
+   #define RX_VM_PRUNE_CEILING "subject-end"
+   --- window_end / ceiling sites in the emitted search entry ---
+   114:    ((rx_window_end) < (size_t)(mr_) || (rx_window_end) - (size_t)(mr_) < (p_))
+   116:    ((p_) + (size_t)(w_) * (((rx_window_end) - (size_t)(mr_) - (p_)) / (size_t)(w_)))
+   158:static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run, const size_t rx_window_end)
+   333:    size_t window_end;
+   336:    window_end = subject_length;
+   342:        result = rx_match_anchored(&ctx, &run, window_end);
+   --- the anchored call, verbatim ---
+   342:        result = rx_match_anchored(&ctx, &run, window_end);
+
+== --engine=vm (R21 E-6: prefilter off)
+   pcrec --engine=vm '(a|bc){1,4}d'
+   --- the artifact's own selection stamps (D46) ---
+   #define RX_ENGINE "vm"
+   #define RX_ENGINE_WHY "capture group at pattern offset 0"
+   #define RX_VM_PRUNE_CEILING "subject-end"
+   --- window_end / ceiling sites in the emitted search entry ---
+   114:    ((rx_window_end) < (size_t)(mr_) || (rx_window_end) - (size_t)(mr_) < (p_))
+   116:    ((p_) + (size_t)(w_) * (((rx_window_end) - (size_t)(mr_) - (p_)) / (size_t)(w_)))
+   158:static ptrdiff_t rx_match_anchored(const rx_ctx *ctx, rx_run_state *run, const size_t rx_window_end)
+   333:    size_t window_end;
+   336:    window_end = subject_length;
+   342:        result = rx_match_anchored(&ctx, &run, window_end);
+   --- the anchored call, verbatim ---
+   342:        result = rx_match_anchored(&ctx, &run, window_end);
+
+== --no-captures (DFA engine, no VM at all)
+   pcrec --no-captures '(a|bc){1,4}d'
+   --- the artifact's own selection stamps (D46) ---
+   --- window_end / ceiling sites in the emitted search entry ---
+   (no window_end local: this artifact emits no MRL clamp)
+   --- the anchored call, verbatim ---
+
