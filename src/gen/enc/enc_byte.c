@@ -146,7 +146,8 @@ static const char defs_bref[] =
 "}\n";
 
 static const char decls_bref_ci[] =
-"/* $_bref_match_caseless -- $_bref_match, folding case.\n"
+"/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
+" * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
 " *\n"
 " * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
 " * letters and nothing else, which is what an 8-bit non-UTF match does: in\n"

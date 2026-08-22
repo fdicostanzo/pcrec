@@ -354,11 +354,26 @@ static Ast *esc_atom(Ctx *cx)
     cx->pos = save;
     ExtResult r = pcrec_ext_escape(cx, WANT_RESULT, nextc(cx), false, epos);
     /* THE SPLICE (MOD-0.3c — the line D33 §9.3 promised would replace the
-     * wall, visibly): a produced atom node is the construct. The cursor
-     * already sits past the two-byte escape, which is the whole construct
-     * for every current producer (\d..\V, \N); a longer-bodied atom
-     * producer must carry its own end and advance here. */
-    if (r.what == EXT_NODE) return r.node;
+     * wall, visibly): a produced atom node is the construct.
+     *
+     * [M6.5.2] AND THE CURSOR NOW MOVES TO THE PRODUCER'S OWN `end`, which is
+     * the obligation the original comment here recorded in advance: "the
+     * cursor already sits past the two-byte escape, which is the whole
+     * construct for every current producer; a LONGER-BODIED ATOM PRODUCER
+     * must carry its own end and advance here." Module `backrefs` is that
+     * producer — `\k<name>`, `\g{-1}`, `\10` and an octal re-read are all
+     * longer than two bytes — and the failure of NOT doing this is not a
+     * refusal: `^(?<n>a)\k<n>$` compiled to a matcher that consumed the
+     * reference and then went on to match `<`, `n` and `>` as LITERALS. It
+     * matched a different language, silently.
+     *
+     * Every producer reports `end`, and the two that used to leave it implicit
+     * (the escape doorway's own set port, and module `assertions`' atom port)
+     * now say so — the group doorway's splice at p_group_body has read `end`
+     * this way since MOD-0.5c, so this is the escape doorway catching up with
+     * the contract check06 already measures ("the CALLER advances at
+     * RESULT"). */
+    if (r.what == EXT_NODE) { cx->pos = r.end; return r.node; }
     pcrec_ext_finish(cx, &r);
     /* The wall (K11's fix is this shape): the escape doorway cannot decline
      * today — even "no row" is a refusal — so reaching here means the

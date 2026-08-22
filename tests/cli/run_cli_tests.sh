@@ -1123,16 +1123,26 @@ case11() {
     assert_field "case11: ...(?J)'s row agrees" "$out" "(?J)" "agree" "ok"
     assert_field "case11: ...and the header counts no dissent for (?J)" \
         "$out" "@header" "dissents" "0"
-    # [M6.3], THIRD AND FINAL WORDING (manager ruling, citing the ratified
-    # D38 PCRE2_DUPNAMES row and docs/pcre2_compliance.md's own REJECTED/
+    # [M6.3], THIRD WORDING (manager ruling, citing the ratified D38
+    # PCRE2_DUPNAMES row and docs/pcre2_compliance.md's own REJECTED/
     # planned status for (?J) — not OUT-OF-SCOPE): the letter's own answer
     # names its TRUE owning module, `named-groups` (duplicate NAMES are
     # named-group semantics, same dispatch logic 'm' already uses for
     # 'assertions'), without the false "requires" framing — "requires
     # module 'named-groups'" would read as "enabling it fixes this", which
     # is false since named-groups ships without dupnames support.
+    #
+    # [M6.5.2] FOURTH AND — because the letter is now BUILT — LAST: the owner
+    # is `backrefs` (ASK-1, ruled with R32). Wording 3 was right about the
+    # DECLARING half and silent about the RESOLVING one, and it is the
+    # resolution rule for a reference to a duplicated name that makes the
+    # letter mean anything at all. The split the compliance page records:
+    # declaring a duplicate name is `named-groups`; resolving a reference to
+    # one, and this letter, are `backrefs`. The "requires" framing comes
+    # BACK with it and is now true — enabling `backrefs` does fix this — which
+    # is the property wording 1 lacked and the reason it had to go.
     assert_field "case11: ...while (?J)'s own answer names its true owning module" \
-        "$out" "(?J)" "own names" "named-groups"
+        "$out" "(?J)" "own names" "backrefs"
     assert_field "case11: ...and the row still declares its own" \
         "$out" "(?J)" "module" "modifiers"
 
