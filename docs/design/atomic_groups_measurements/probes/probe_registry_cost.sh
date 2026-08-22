@@ -109,7 +109,65 @@ echo "  -> \`quant\` must not be QF_NONE. The value is QF_NO: \`a*++\` is an"
 echo "     ERROR in libpcre2 and in pcrec (§6.3), so a possessive suffix is"
 echo "     not itself quantifiable."
 echo
+echo "== (9) per-row FIELD requirements — an EXTRACTION SHAPE, not a file =="
+echo "  r31chk final T1. The two sites below are in files already in the sweep;"
+echo "  what the sweep could not see was the SHAPE. It searched for row COUNTS,"
+echo "  KIND LISTS and ROUTING SETS. A row also has to satisfy per-FIELD"
+echo "  assertions, and those are a fourth shape:"
+grep -n 'empty note\|empty syntax\|no quantifiable value' tests/registry/registry_check.c | sed 's/^/    /'
+grep -n '\$syntax == "" || \$expect == ""' tests/reject/run_reject_tests.sh | sed 's/^/    /'
+echo
+echo "  So the new rows need \`note\` and \`expect\` NON-EMPTY as well as"
+echo "  \`quant\`. \`expect\` is load-bearing: run_reject_tests.sh iterates every"
+echo "  NON-BASE dump row and calls row_reject, which requires the row's own"
+echo "  syntax to be a CLEAN EXIT-1 REJECTION whose stderr CONTAINS the"
+echo "  \`expect\` text and which writes NO output file. Measured on the four:"
+T2=$(mktemp -d)
+for q in 'a*+' 'a++' 'a?+' 'a{1,2}+'; do
+    rm -f "$T2/o.c" "$T2/o.h"
+    # `|| true`: THIS DIRECTORY'S RECURRING DEFECT, hit for the THIRD time
+    # while writing the very section about it. `set -e` plus an assignment
+    # from a failing command substitution aborts the script, and every
+    # invocation here is SUPPOSED to fail (exit 1 is the thing being
+    # measured). probe_rk_alarm.sh's header records the same trap, and
+    # assertions_measurements/CLAUDE.md records it for probe_kreset_identity.sh.
+    # TWO traps in one line, and the second was this probe's own second
+    # attempt at the first. (1) `set -e` plus an assignment from a failing
+    # command substitution aborts the script, and every invocation here is
+    # SUPPOSED to fail — exit 1 is the thing being measured. (2) The obvious
+    # `|| true` fix SWALLOWS the exit code, so `r=$?` then reports 0 and the
+    # probe cheerfully prints "exit=0" for a clean exit-1 rejection. Redirect
+    # to a file and capture rc from the command itself.
+    "$PCREC" -p rx -o "$T2/o.c" -- "$q" 2>"$T2/err" >/dev/null && r=0 || r=$?
+    m=$(cat "$T2/err")
+    w=no; { [ -f "$T2/o.c" ] || [ -f "$T2/o.h" ]; } && w=YES
+    printf '    %-10s exit=%s wrote=%s  %s\n' "$q" "$r" "$w" "$m"
+done
+rm -rf "$T2"
+echo "    -> exit 1, no file written, and \"requires module 'atomic-groups'\" is"
+echo "       a substring of every one. \`expect\` = that text is SATISFIABLE."
+echo
+
+echo "== (10) enumeration by CALL — silent NON-COVERAGE =="
+echo "  r31chk final T2, and it is §7.3's \"half-done invisibly\" shape in the"
+echo "  very file R3 strengthens. check_table_to_parser does not iterate a kind"
+echo "  list at all; it names each kind in an explicit CALL:"
+grep -n 'pcrec_registry(RK_' tests/registry/registry_check.c | sed 's/^/    /'
+echo "  A fifth kind is therefore SILENTLY UNCOVERED by the table->parser"
+echo "  diagnostic-agreement check: nothing fails, the rows are simply never"
+echo "  compared. R3's per-kind assertion has to cover this check too, or the"
+echo "  check must iterate RK_COUNT."
+echo
+
 echo "== summary =="
-echo "  This sweep is over $(echo $TREE | tr ' ' ',') with no curated file list."
-echo "  A future reader who widens it further and finds a tenth site should"
-echo "  treat that as this probe's next correction, not as a surprise."
+echo "  SITES (9) AND (10) WERE FOUND BY DEFECT SHAPE, NOT BY FILE. Both live in"
+echo "  files this sweep already read; what was missing was the QUESTION. The"
+echo "  sweep now extracts five shapes -- row counts, kind lists, routing sets,"
+echo "  per-row FIELD assertions, and enumeration by CALL -- and the next"
+echo "  correction to it will most likely be a sixth shape rather than a"
+echo "  seventh directory."
+echo "  This sweep is over $(echo $TREE | tr ' ' ',') with no curated file list,"
+echo "  and it now reports ELEVEN sites where the first version reported six."
+echo "  A future reader who finds a twelfth should treat it as this probe's next"
+echo "  correction, not as a surprise -- and should suspect a new SHAPE before a"
+echo "  new directory."
