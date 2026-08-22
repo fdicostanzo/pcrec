@@ -1,0 +1,82 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_caseless_fold.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: bc3b302 2026-08-22
+# RUN FROM REPO COMMIT        : 66dee88 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/backrefs_measurements/out/caseless_fold.txt
+# RUN DATE   : 2026-08-22T10:00:59-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 (8-bit, NO PCRE2_UTF -- pcrec's own encoding today)
+
+==============================================================================
+A. WHICH BYTES DOES A CASELESS BACKREF COMPARE FOLD?
+==============================================================================
+For each byte b in 0..255, the pattern `(?i)^(X)Y$` with X = the
+byte and Y = a backref: the subject is `b` followed by CANDIDATE.
+A byte folds iff some OTHER byte c != b makes the backref match.
+
+bytes SWEPT (must be 256): 256
+bytes with at least one fold PARTNER under a caseless backref:
+  count = 52
+  ASCII letters covered      : 52 of 52
+  NON-ASCII bytes that fold  : NONE
+  ASCII letters that do NOT  : none
+  bytes with MORE than one partner: none
+
+VERDICT: the compare's fold is ASCII-ONLY, exactly cls_casefold's 52 bytes
+
+==============================================================================
+A'. pcrec's OWN fold, read off the compiler rather than the source.
+==============================================================================
+For each byte, `-i` on the singleton class vs the explicit pair:
+byte-identical emitted C means pcrec folds that byte to that
+partner. Disagreements with axis A are listed; silence means the
+two fold sets are the same set.
+  disagreements: NONE -- the two fold sets are identical over all 256 bytes
+
+==============================================================================
+B. WHERE IS `(?i)` READ -- at the GROUP or at the BACKREFERENCE?
+==============================================================================
+pattern                    subj   libpcre2       cell
+--------------------------------------------------------------------------------------------
+^(?i:(a))\1$               'aA'   no match       (?i) scoped to the GROUP only
+^(?i:(a))\1$               'aa'   (0, 2)           ... same, exact-case subject
+^(a)(?i)\1$                'aA'   (0, 2)         (?i) turned on AFTER the group
+^(?i)(a)(?-i)\1$           'aA'   no match       (?i) on at the group, OFF at the backref
+^(?i)(a)(?-i)\1$           'aa'   (0, 2)           ... same, exact-case subject
+^(a)(?i:\1)$               'aA'   (0, 2)         (?i) scoped to the BACKREF only
+^(?i)(a)\1$                'aA'   (0, 2)         (?i) on at both
+^((?i)a)\1$                'aA'   no match       (?i) inside the group, backref outside
+^((?i)a)\1$                'Aa'   no match         ... other order
+
+If the (?i)-scoped-to-the-BACKREF rows match and the
+(?i)-scoped-to-the-GROUP rows do not, the compare's caselessness
+is a property of the BACKREFERENCE NODE -- a parse-resolved field,
+D62's rule, exactly as `Ast.multiline` is for `$`.
+
+==============================================================================
+C. LENGTH. Is the caseless compare length-preserving in 8-bit?
+==============================================================================
+pattern                subject        libpcre2
+----------------------------------------------------------------------
+'(?i)^(ab)\\1$'        'abAB'         (0, 4)
+'(?i)^(\\xdf)\\1$'     'ßß'           (0, 2)
+'(?i)^(ss)\\1$'        'ssß'          no match
+'(?i)^(\\xdf)\\1$'     'ßss'          no match
+'(?i)^(\\xe0)\\1$'     'àÀ'           no match
+
+In the 8-bit NON-UTF build every fold pair is one byte to one
+byte, so the compare cannot change length. The rows above are the
+EVIDENCE for that, and the sharp-s row is the counterexample a
+UTF-8 backend would have to handle and this one does not.

@@ -1,0 +1,50 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_prefilter_cost.sh
+# ARGS       : build/pcrec /tmp/claude-1001/-home-duxevents-pcrec/0b20f33f-4d55-4c56-87d2-05b3307cd242/scratchpad/pf5
+# PROBE LAST CHANGED AT COMMIT: bc3b302 2026-08-22
+# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/backrefs_measurements/out/br_semantics.txt
+#      M docs/design/backrefs_measurements/out/dupnames.txt
+#      M docs/design/backrefs_measurements/out/erasure_hazard.txt
+#      M docs/design/backrefs_measurements/out/octal_rule.txt
+#      M docs/design/backrefs_measurements/out/prefilter_cost.txt
+#      M docs/design/backrefs_measurements/out/spellings.txt
+#     ?? docs/design/backrefs_measurements/out/publish_discipline.txt
+# RUN DATE   : 2026-08-22T09:58:56-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+tag       erased pattern             subject   hybrid (s)    vm-only (s)   ratio    note
+----------------------------------------------------------------------------------------------------------------------
+quote     (["\x27])[^"\x27]*["\x27]  nomatch   0.00024435    0.00191383    7.8x     a quoted string, the commonest real backref
+quote     (["\x27])[^"\x27]*["\x27]  latematch 0.00023128    0.00195345    8.4x     a quoted string, the commonest real backref
+tag       <([a-z]+)>[^<]*</[a-z]+>   nomatch   0.00001089    0.00077490    71.2x    an XML/HTML tag pair
+tag       <([a-z]+)>[^<]*</[a-z]+>   latematch 0.00000538    0.00077801    144.6x   an XML/HTML tag pair
+dupword   \b([a-z]+)\s+[a-z]+\b      nomatch   0.00000011    0.00000008    NOISE    erasure matches at offset 0: filters NOTHING (see probe_erasure_hazard.py)
+dupword   \b([a-z]+)\s+[a-z]+\b      latematch 0.00000028    0.00000008    NOISE    erasure matches at offset 0: filters NOTHING (see probe_erasure_hazard.py)
+digits    ([0-9]+)-[0-9]+            nomatch   0.00022515    0.00191765    8.5x     a repeated number
+digits    ([0-9]+)-[0-9]+            latematch 0.00022821    0.00190879    8.4x     a repeated number
+letter    (\w)\w                     nomatch   0.00000007    0.00000005    NOISE    erasure matches at offset 0: filters NOTHING (see probe_erasure_hazard.py)
+letter    (\w)\w                     latematch 0.00000003    0.00000002    NOISE    erasure matches at offset 0: filters NOTHING (see probe_erasure_hazard.py)
+
+subject: 256 KB of filler (7-letter words; adjacent words differ AND
+no two adjacent letters are equal, no quote/tag/digit -- so the TRUE
+backref patterns, INCLUDING (\w), have no match); latematch appends a
+24-byte tail every idiom matches. trials=5 reps=3, best-of.
+ratio = vm-only / hybrid: how much SLOWER search is with no prefilter.
+
+The backref patterns these erasures come from, for the record:
+  quote     (["\x27])[^"\x27]*\1     -> (["\x27])[^"\x27]*["\x27]
+  tag       <([a-z]+)>[^<]*</\1>     -> <([a-z]+)>[^<]*</[a-z]+>
+  dupword   \b([a-z]+)\s+\1\b        -> \b([a-z]+)\s+[a-z]+\b
+  digits    ([0-9]+)-\1              -> ([0-9]+)-[0-9]+
+  letter    (\w)\1                   -> (\w)\w

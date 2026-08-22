@@ -1,0 +1,186 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_octal_rule.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: fd8850e 2026-08-22
+# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/backrefs_measurements/out/br_semantics.txt
+#      M docs/design/backrefs_measurements/out/octal_rule.txt
+# RUN DATE   : 2026-08-22T09:58:53-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27
+pcrec binary: /home/duxevents/pcrec/worktrees/brdesign/build/pcrec (present)
+
+==============================================================================
+A. \1..\9 -- one digit. Group count varied; groups BEFORE vs AFTER.
+==============================================================================
+pattern                      verdict   note
+------------------------------------------------------------------------------
+\1                           err 115   no groups at all
+(a)\1                        ok        1 group, BEFORE the escape
+\1(a)                        ok        1 group, AFTER the escape
+\2                           err 115   no groups at all
+(a)\2                        err 115   1 group, BEFORE the escape
+\2(a)                        err 115   1 group, AFTER the escape
+\3                           err 115   no groups at all
+(a)\3                        err 115   1 group, BEFORE the escape
+\3(a)                        err 115   1 group, AFTER the escape
+\4                           err 115   no groups at all
+(a)\4                        err 115   1 group, BEFORE the escape
+\4(a)                        err 115   1 group, AFTER the escape
+\5                           err 115   no groups at all
+(a)\5                        err 115   1 group, BEFORE the escape
+\5(a)                        err 115   1 group, AFTER the escape
+\6                           err 115   no groups at all
+(a)\6                        err 115   1 group, BEFORE the escape
+\6(a)                        err 115   1 group, AFTER the escape
+\7                           err 115   no groups at all
+(a)\7                        err 115   1 group, BEFORE the escape
+\7(a)                        err 115   1 group, AFTER the escape
+\8                           err 115   no groups at all
+(a)\8                        err 115   1 group, BEFORE the escape
+\8(a)                        err 115   1 group, AFTER the escape
+\9                           err 115   no groups at all
+(a)\9                        err 115   1 group, BEFORE the escape
+\9(a)                        err 115   1 group, AFTER the escape
+(a)(b)(c)(d)(e)(f)(g)(h)(i)\9 ok        9 groups before
+\9(a)(b)(c)(d)(e)(f)(g)(h)(i) ok        9 groups after
+
+DISCRIMINATOR: does an ACCEPTED one-digit form behave as a
+backreference or as an octal literal?
+  (a)\1 on 'aa'  -> (0, 2)   (backref: (0,2); octal \1 = 0x01: no)
+  (a)\1 on 'a\x01' -> no
+
+==============================================================================
+B. \10 and up -- MULTI-DIGIT. The octal fallback and its ceiling.
+==============================================================================
+pattern                                        verdict   note
+----------------------------------------------------------------------------------------------------
+\10                                            ok        no groups; \10 -> octal 010 = 0x08?
+\10(a)                                         ok        1 group AFTER
+(a)\10                                         ok        1 group BEFORE
+(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\10              ok        10 groups BEFORE
+\10(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)              ok        10 groups AFTER
+(a)(b)(c)(d)(e)(f)(g)(h)(i)\10                 ok        9 groups BEFORE (one short)
+\12                                            ok        no groups; octal 012 = 0x0a
+(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)\12        ok        12 groups BEFORE
+\12(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)(k)(l)        ok        12 groups AFTER
+\18                                            ok        8 is not an octal digit
+\19                                            ok        9 is not an octal digit
+(a)\18                                         ok        1 group; \18 -> ?
+\100                                           ok        three octal digits = 0x40 '@'
+\377                                           ok        the documented octal ceiling
+\400                                           err 151   one past \377
+\0400                                          ok        \040 then literal '0'
+\1234                                          ok        \123 then literal '4'
+\08                                            ok        \0 then literal '8'
+\g{10}                                         err 115   explicit \g form, no groups
+(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\g{10}           ok        explicit \g form, 10 groups
+\g{10}(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)           ok        explicit \g form, 10 groups AFTER
+\g10                                           err 115   unbraced \g10, no groups
+(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\g10             ok        unbraced \g10, 10 groups BEFORE
+(a)\g{-1}                                      ok        relative, one group back
+(a)\g{-2}                                      err 115   relative, two back with only one group
+\g{+1}(a)                                      ok        relative FORWARD
+\g{+2}(a)                                      err 115   relative forward past the end
+
+DISCRIMINATORS -- octal or backreference?
+  \10 on '\x08'                  -> (0, 1)  (octal 010 = BS)
+  \100 on '@'                    -> (0, 1)  (octal 100 = '@')
+  \377 on '\xff'                 -> (0, 1)
+  (a)..(j)\10 on 'abcdefghijj'   -> (0, 11)  (backref to group 10)
+  (a)..(j)\10 on 'abcdefghij\x08' -> no  (octal reading)
+  (a)\10 on 'a\x08'             -> (0, 2)  (1 group: octal 010)
+  (a)\10 on 'aa0'                -> no  (backref 1 then '0')
+  \10(a)..(j) on '\x08abcdefghij' -> (0, 11)  (octal: groups AFTER do NOT count)
+  \10(a)..(j) on 'jabcdefghij'   -> no  (backref reading)
+  (a)\18 on 'a\x018'             -> (0, 3)  (octal 01 then '8')
+  (a)\18 on 'aa8'                -> no  (backref 1 then '8')
+  \g{10} with 10 groups AFTER -- backref or octal?
+     \g{10}(a)..(j) on 'jabcdefghij' -> no
+     \g{10}(a)..(j) on '\x08abcdefghij' -> no
+  \12 with 12 groups AFTER, on the backref subject:
+     \12(a)..(l) on 'labcdefghijkl' -> no
+     \12(a)..(l) on '\nabcdefghijkl' -> (0, 13)  (octal 012 = LF)
+
+==============================================================================
+C. \0 and the \0dd family -- always octal, never a backreference.
+==============================================================================
+pattern              verdict   matches        note
+------------------------------------------------------------------------------
+\0                   ok        (0, 1)         NUL
+(a)\0                ok        (0, 2)         a group exists; still octal?
+\00                  ok        (0, 1)         
+\000                 ok        (0, 1)         
+\012                 ok        (0, 1)         LF
+\0377                ok        (0, 2)         \037 then '7'
+\o{101}              ok        (0, 1)         the unambiguous \o{} form
+\o{400}              err 134   -              beyond 8-bit
+
+==============================================================================
+E. A DIGIT RUN BEGINNING WITH 8 OR 9 -- always DECIMAL (R32 E3).
+==============================================================================
+`\8` and `\9` are not octal digits, so no octal reading of the
+run exists. Each row varies the GROUP COUNT and reports the
+compile verdict; the boundary is where err 115 stops.
+
+escape   g=0  g=1  g=8  g=9  g=10  g=12  g=81  g=82  g=90  g=91  g=100
+------------------------------------------------------------------------------
+\8       e115   e115   ok     ok     ok     ok     ok     ok     ok     ok     ok   
+\9       e115   e115   e115   ok     ok     ok     ok     ok     ok     ok     ok   
+\80      e115   e115   e115   e115   e115   e115   ok     ok     ok     ok     ok   
+\81      e115   e115   e115   e115   e115   e115   ok     ok     ok     ok     ok   
+\89      e115   e115   e115   e115   e115   e115   e115   e115   ok     ok     ok   
+\91      e115   e115   e115   e115   e115   e115   e115   e115   e115   ok     ok   
+\812     e115   e115   e115   e115   e115   e115   e115   e115   e115   e115   e115 
+
+The boundary for each run is exactly its own DECIMAL value, which
+is what makes it a decimal backreference and not anything else.
+
+DISCRIMINATORS
+  81 groups + \81 on 82 a's -> True  (a backref to group 81)
+  \81 + 81 groups AFTER      -> compiles=True, matches 81 a's=False
+     ... so the count is over the WHOLE pattern (a FORWARD
+     reference, which then fails at match time on the unset
+     rule) -- NOT the `so far` count a multi-digit run with a
+     valid octal reading uses.
+  \812 with 812 groups       -> ok
+  \812 with  81 groups       -> err 115
+
+RIDER (R32 E3): references ABOVE \99 exist, so a construct table
+that stops at \99 is too narrow. And \100 keeps the ORDINARY
+multi-digit rule, because it HAS an octal reading:
+  100 groups BEFORE + \100, on 101 a's -> True  (backref to 100)
+  \100 + 100 groups AFTER, on '@'+100a -> True  (OCTAL '@')
+  \100 with NO groups, on '@'          -> True  (OCTAL '@')
+
+==============================================================================
+D. THE CLASS POSITION -- base syntax in pcrec today (FIX-3/K13).
+==============================================================================
+pattern              pcre2     pcre2 matches    pcrec today
+------------------------------------------------------------------------------
+[\1]                 ok        (0, 1)           accepts
+(a)[\1]              ok        (0, 2)           accepts
+[\10]                ok        (0, 1)           accepts
+[\12]                ok        (0, 1)           accepts
+[\8]                 ok        (0, 1)           accepts
+[\9]                 ok        (0, 1)           accepts
+[\0]                 ok        (0, 1)           accepts
+[\377]               ok        (0, 1)           accepts
+[\400]               err 151   -                refuses: pcrec: octal value is greater than
+[\1-\7]              ok        (0, 1)           accepts
+[\k]                 ok        (0, 1)           accepts
+[\g]                 ok        (0, 1)           accepts
+
+The pcrec column is the BASE tier (no --features), which is what
+makes it the 'must not change' baseline for module `backrefs`.

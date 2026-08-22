@@ -11527,3 +11527,21 @@ Lanes in flight now: agd27 (the blinded corpus, sonnet, cell), brdesign
 (holding at 188bbe7 for r32eng's last round). Next: spawn [M6.4.2]
 (opus, worktree lane/agimpl from 497a28f, the brief drafted this
 morning + the review file's triage as requirements).
+
+## 2026-08-22 (EDT), thirty-sixth session (part 6) — [M6.5.1] CLOSED: the backrefs design APPROVED at ca9beef and merged; both designs now law
+
+R32 closed at 11:4x after the last revision (E15: the erasure gate made
+TRANSITIVE over nested references — a prediction the lane records as
+wrong three times in three ways; the nested case itself measured SAFE by
+the critic on 2,402 + 2,692 cells with a structural reason; E10 owned as
+"a change reported by its author with no control on whether it
+happened"). Manager verification: nine archives fresh and stamped
+`backrefs`, probe_erasure_hazard re-run to an identical body, docs only,
+tree clean — one false alarm in the manager's own gate (it grepped for
+the old wording, which §16's change table rightly quotes). Merged;
+[M6.5.1] archived; [M6.5.2] waits for [M6.4.2] and inherits the cross-
+milestone items (SR-8 stamping consumed; the second-why fix; the built-
+tally assertion; S-BR12 unvalidatable until then). Lane/brdesign's
+worktree removed, branch kept.
+
+IN FLIGHT: [M6.4.2] (agimpl, opus) and [M6.4.3] (agd27, sonnet, cell).

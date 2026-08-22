@@ -1,0 +1,98 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_dupnames.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: cfb545d 2026-08-22
+# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/backrefs_measurements/out/br_semantics.txt
+#      M docs/design/backrefs_measurements/out/dupnames.txt
+#      M docs/design/backrefs_measurements/out/octal_rule.txt
+#      M docs/design/backrefs_measurements/out/spellings.txt
+# RUN DATE   : 2026-08-22T09:58:54-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27 ; python3 `re` has NO (?J) and no \k -- this probe is
+libpcre2-only BY NECESSITY, which is itself charter (g)'s answer
+for every DUPNAMES cell: the base-tier oracle cannot express one.
+
+==============================================================================
+1. THE NAME TABLE -- libpcre2's own order, duplicated names.
+==============================================================================
+pattern (compiled with DUPNAMES)   PCRE2_INFO_NAMETABLE, in table order
+------------------------------------------------------------------------------
+(?<a>x)(?<a>y)                     [(1, 'a'), (2, 'a')]
+(?<b>x)(?<a>y)(?<b>z)              [(2, 'a'), (1, 'b'), (3, 'b')]
+(?<z>1)(?<a>2)(?<z>3)(?<a>4)       [(2, 'a'), (4, 'a'), (1, 'z'), (3, 'z')]
+(?<a>1)(?<aa>2)(?<a>3)             [(1, 'a'), (3, 'a'), (2, 'aa')]
+(?<n>1)|(?<n>2)|(?<n>3)            [(1, 'n'), (2, 'n'), (3, 'n')]
+
+The pairs are (group NUMBER, name). The [M6.5] row's ruled pcrec
+layout is (name asc, number asc); compare directly.
+
+==============================================================================
+2. THE REFUSAL MATRIX -- what needs (?J)/PCRE2_DUPNAMES.
+==============================================================================
+pattern                        options=0   DUPNAMES    note
+------------------------------------------------------------------------------------------
+(?<a>x)(?<a>y)                 err 143     ok          same name, sequential
+(?<a>x)|(?<a>y)                err 143     ok          same name, different ALTERNATION branches
+(?:(?<a>x)|(?<a>y))            err 143     ok          same name, branches inside a group
+(?J)(?<a>x)(?<a>y)             ok          ok          inline (?J) at the start
+(?<a>x)(?J)(?<a>y)             ok          ok          inline (?J) AFTER the first declaration
+(?J:(?<a>x)(?<a>y))            ok          ok          scoped (?J:...)
+(?J)(?<a>x)(?<a>y)\k<a>        ok          ok          (?J) + a backref to the dup name
+(?<a>x)(?<A>y)                 ok          ok          names differing only in CASE
+(?P<a>x)(?P<a>y)               err 143     ok          python spelling, duplicated
+(?'a'x)(?'a'y)                 err 143     ok          quoted spelling, duplicated
+(?J:(?<a>x))(?<a>y)            err 143     ok          does (?J:...) SCOPE, or leak to the rest?
+(?J:(?<a>x)(?<a>y))(?<a>z)     err 143     ok          scoped dup pair, then a THIRD outside the scope
+((?J)(?<a>x))(?<a>y)           err 143     ok          (?J) set inside a group, dup outside
+(?-J)(?J)(?<a>x)(?<a>y)        ok          ok          (?J) after (?-J)
+(?J)(?<a>x)(?<a>y)\1           ok          ok          numeric backref to a dup-named group
+(?<a>x)(?<a>y)(?J)             err 143     ok          (?J) AFTER both declarations
+(?<a>x)(?<a>y)(?J)\k<a>        err 143     ok          same, plus a by-name reference
+(?J)(?<a>x)(?-J)(?<a>y)        err 143     err 143     (?J) then (?-J) before the second
+(?J)(?<a>x)(?:(?-J)q)(?<a>y)   ok          ok          (?-J) SCOPED AWAY before the second declaration
+
+NOTE the (?J) row: an INLINE (?J) is a compile option, so whether
+it works without the API bit is itself the measurement.
+
+==============================================================================
+3. THE RESOLUTION RULE -- which of the duplicates does \k<a> use?
+==============================================================================
+Every pattern declares TWO groups named `a` (numbers 1 and 2) and
+then references the name. The subject decides which was SET.
+
+pattern                                subj   result                     what the cell separates
+----------------------------------------------------------------------------------------------------------------------
+(?J)^(?:(?<a>x)|(?<a>y))\k<a>$         'xx'   (0, 2) g=[(0, 1)]          only #1 set (x); backref must compare 'x'
+(?J)^(?:(?<a>x)|(?<a>y))\k<a>$         'yy'   (0, 2) g=[None, (0, 1)]    only #2 set (y); EARLIER one UNSET -- the row's key cell
+(?J)^(?:(?<a>x)|(?<a>y))\k<a>$         'xy'   no match                   #1 set to 'x'; does the backref accept 'y'?
+(?J)^(?:(?<a>x)|(?<a>y))\k<a>$         'yx'   no match                   #2 set to 'y'; does the backref accept 'x'?
+(?J)^(?<a>x)(?<a>y)\k<a>$              'xyx'  (0, 3) g=[(0, 1), (1, 2)]  BOTH set (#1='x', #2='y'); 'x' = first-by-number
+(?J)^(?<a>x)(?<a>y)\k<a>$              'xyy'  no match                   BOTH set; 'y' = last-set / highest number
+(?J)^(?:(?<a>x)|(?<a>y)|z)\k<a>$       'z'    no match                   NEITHER set -- unset-backref semantics for a NAME
+(?J)^(?:(?<a>x)|(?<a>y)|z)\k<a>$       'zz'   no match                   NEITHER set, and there is text to compare
+(?J)^(?:(?<a>p)|(?<a>q)|(?<a>r))\k<a>$ 'qq'   (0, 2) g=[None, (0, 1)]    three dups, the MIDDLE one set
+(?J)^(?:(?<a>p)|(?<a>q)|(?<a>r))\k<a>$ 'rr'   (0, 2) g=[None, None, (0,  three dups, the LAST one set
+(?J)^(?:(?<a>x)|(?<a>y))(?P=a)$        'yy'   (0, 2) g=[None, (0, 1)]    (?P=a) spelling
+(?J)^(?:(?<a>x)|(?<a>y))\g{a}$         'yy'   (0, 2) g=[None, (0, 1)]    \g{a} spelling
+(?J)^(?:(?<a>x)|(?<a>y))\k'a'$         'yy'   (0, 2) g=[None, (0, 1)]    \k'a' spelling
+(?J)^(?:(?<a>x)|(?<a>y))\k{a}$         'yy'   (0, 2) g=[None, (0, 1)]    \k{a} spelling
+(?J)^(?<a>x?)(?<a>y)\k<a>$             'yy'   no match                   #1 set to EMPTY, #2 set to 'y' -- first-SET picks the EMPTY one
+(?J)^(?<a>x?)(?<a>y)\k<a>$             'y'    (0, 1) g=[(0, 0), (0, 1)]  same, with nothing left to compare
+(?J)^(?:(?<a>x)|(?<a>y))\2$            'yy'   (0, 2) g=[None, (0, 1)]    NUMERIC \2 -- names irrelevant, must compare group 2
+(?J)^(?:(?<a>x)|(?<a>y))\1$            'yy'   no match                   NUMERIC \1 -- group 1 is UNSET here, so this must FAIL
+
+NAMED-GROUP NUMBERING under duplicates, for the reflection table:
+  (?J)(?<a>x)(?<a>y)         nametable=[(1, 'a'), (2, 'a')]
+  (?J)(?<a>x)(q)(?<a>y)      nametable=[(1, 'a'), (3, 'a')]

@@ -1,0 +1,132 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.5.1] module `backrefs` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/backrefs_measurements/probes/probe_erasure_hazard.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 557b6ae 2026-08-22
+# RUN FROM REPO COMMIT        : 536be9e (lane/brdesign)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/backrefs_measurements/out/erasure_hazard.txt
+# RUN DATE   : 2026-08-22T10:33:35-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.5.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2 10.46 2025-08-27
+
+For each idiom: the TRUE backref pattern vs its ERASED
+over-approximation, over a generated subject population.
+
+idiom    subjs   true hit  erased    FALSE-NEG SPAN DIFF  erased-nomatch when true-nomatch
+----------------------------------------------------------------------------------------------------------------
+quote    4000    1744      2678      0         389        1322/2256 (59%)
+           span example: '"\'\''        true=(1, 3) erased=(0, 2)
+           span example: '\'""'         true=(1, 3) erased=(0, 2)
+           span example: '"\'""'        true=(2, 4) erased=(0, 2)
+tag      4160    24        96        0         0          4064/4136 (98%)
+dupword  3279    350       2339      0         100        940/2929 (32%)
+           span example: 'a  b  b'      true=(3, 7) erased=(0, 4)
+           span example: 'bba a a'      true=(4, 7) erased=(0, 5)
+           span example: ' ba b b'      true=(4, 7) erased=(1, 5)
+digits   1093    280       496       0         220        597/813 (73%)
+           span example: '11-1'         true=(1, 4) erased=(0, 4)
+           span example: '12-2'         true=(1, 4) erased=(0, 4)
+           span example: '1-11'         true=(0, 3) erased=(0, 4)
+letter   127     114       124       0         52         3/13 (23%)
+           span example: 'abb'          true=(1, 3) erased=(0, 2)
+           span example: 'baa'          true=(1, 3) erased=(0, 2)
+           span example: 'abaa'         true=(2, 4) erased=(0, 2)
+star     127     120       120       0         78         7/7 (100%)
+           span example: 'ab'           true=(1, 2) erased=(0, 2)
+           span example: 'ba'           true=(0, 1) erased=(0, 2)
+           span example: 'aab'          true=(2, 3) erased=(0, 3)
+
+READING THE COLUMNS
+  FALSE-NEG = subjects the TRUE pattern matches and the ERASED
+              one does not. Any non-zero refutes 'the erasure is
+              a superset', which is the ONLY sound thing it is.
+  SPAN DIFF = subjects BOTH match, at DIFFERENT spans. Every one
+              of these is a window engine_m4.md 6.1's hybrid
+              would hand the VM WRONG. A capture-only pattern's
+              erasure has zero by construction; a backref's does
+              not.
+  last col  = how often the erasure agrees on NOMATCH, i.e. how
+              much a sound `nomatch`-only prefilter would buy.
+  subjs     = DISTINCT subjects (R32 C8: the first version
+              sampled with replacement and inflated three
+              families 31.5x).
+
+================================================================================================================
+POSITIVE CONTROL (R32 E2 / C12) -- can FALSE-NEG be non-zero?
+================================================================================================================
+A zero column is only evidence if a non-zero one is reachable.
+These cells put a POSITION PREDICATE inside the referenced group,
+or an ATOMIC/POSSESSIVE one (R32 re-check E12) -- two different
+structural reasons with the same consequence.
+Such a group is not a pure LANGUAGE -- whether it matches depends
+on WHERE it is tried -- so substituting its text is not an
+over-approximation at all.
+
+true pattern             erasure                    subject  true       erased     FALSE-NEG?
+--------------------------------------------------------------------------------------------------------
+(\ba)\1                  (\ba)\ba                   'aa'     (0, 2)     None       *** YES ***
+^(\ba)\1$                ^(\ba)\ba$                 'aa'     (0, 2)     None       *** YES ***
+^(^a)\1$                 ^(^a)^a$                   'aa'     (0, 2)     None       *** YES ***
+^(\Ga)\1$                ^(\Ga)\Ga$                 'aa'     (0, 2)     None       *** YES ***
+^x((?<=x)a)\1$           ^x((?<=x)a)(?<=x)a$        'xaa'    (0, 3)     None       *** YES ***
+(\bfoo)\1                (\bfoo)\bfoo               'foofoo' (0, 6)     None       *** YES ***
+^(a\b)\1$                ^(a\b)a\b$                 'aa'     None       None       no
+(a)\1                    (a)a                       'aa'     (0, 2)     (0, 2)     no
+(\w)\1                   (\w)\w                     'aa'     (0, 2)     (0, 2)     no
+^(a|b)\1$                ^(a|b)(a|b)$               'aa'     (0, 2)     (0, 2)     no
+^(a*+)b\1a$              ^(a*+)b(?:a*+)a$           'abaa'   (0, 4)     None       *** YES ***
+^(a*+)b\1a$              ^(a*+)b(?:a*+)a$           'aabaaa' (0, 6)     None       *** YES ***
+(a*+)b\1a                (a*+)b(?:a*+)a             'abaa'   (0, 4)     None       *** YES ***
+^((?>a*))b\1a$           ^((?>a*))b(?:(?>a*))a$     'abaa'   (0, 4)     None       *** YES ***
+^([ab]*+)c\1a$           ^([ab]*+)c(?:[ab]*+)a$     'abcaba' (0, 6)     None       *** YES ***
+^(a++)b\1a$              ^(a++)b(?:a++)a$           'aabaaa' (0, 6)     None       *** YES ***
+^(a*)b\1a$               ^(a*)b(?:a*)a$             'abaa'   (0, 4)     (0, 4)     no
+^(a*?)b\1a$              ^(a*?)b(?:a*?)a$           'abaa'   (0, 4)     (0, 4)     no
+
+FALSE NEGATIVES: 12 of 18 cells.
+Non-zero is the point: the FALSE-NEG column CAN move, so a zero
+in the family table above is a measurement and not a tautology --
+and the superset property holds only for a referenced group that
+is BOTH assertion-free AND atomic/possessive-free.
+
+================================================================================================================
+TRANSITIVE CONTROL (R32 E15) -- the DEEP erasure
+================================================================================================================
+Group 2 (the referenced one) is assertion-free AND
+atomic/possessive-free in every row, so a gate that inspects only
+the subtree beneath the referenced A_CAP ACCEPTS all of them.
+
+true pattern             DEEP erasure                         subject  true      deep      FALSE-NEG?
+----------------------------------------------------------------------------------------------------------------
+^(\Ga)((b)\1)\2$         ^(\Ga)((b)\1)(?:(?:b)(?:\Ga))$       'ababa'  (0, 5)    None      *** YES ***
+^(^a)((b)\1)\2$          ^(^a)((b)\1)(?:(?:b)(?:^a))$         'ababa'  (0, 5)    None      *** YES ***
+(\ba)((b)\1)\2           (\ba)((b)\1)(?:(?:b)(?:\ba))         'ababa'  (0, 5)    None      *** YES ***
+^(a)((b)\1)\2$           ^(a)((b)\1)(?:(?:b)(?:a))$           'ababa'  (0, 5)    (0, 5)    no
+^(a|c)((b)\1)\2$         ^(a|c)((b)\1)(?:(?:b)(?:a|c))$       'ababa'  (0, 5)    (0, 5)    no
+
+DEEP-ERASURE FALSE NEGATIVES: 3 of 5.
+The assertion is in GROUP 1, reachable only THROUGH group 2's
+nested reference -- so the condition must hold over the TRANSITIVE
+CLOSURE of the reference relation, not over one subtree.
+
+The ATOMIC/POSSESSIVE half, transitively -- NOT found to bite:
+----------------------------------------------------------------------------------------------------------------
+^(a*+)((b)\1)\2$           'ababa'   true=(0, 5)    deep=(0, 5)    no
+^(a*+)b((c)\1)\2$          'abcaca'  true=(0, 6)    deep=(0, 6)    no
+^((?>a))((b)\1)\2$         'ababa'   true=(0, 5)    deep=(0, 5)    no
+^(a++)((b)\1)\2$           'ababa'   true=(0, 5)    deep=(0, 5)    no
+
+atomic/possessive transitive false negatives: 0 of 4 --
+MEASURED AND NOT FOUND, which is weaker than proved: these are one
+shape. The gate applies BOTH halves transitively regardless,
+because the cost of doing so is the same walk.
