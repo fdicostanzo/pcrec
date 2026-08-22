@@ -1287,7 +1287,13 @@ can note in passing. §10 gains the row and §11.2's driver gains the arm.
 `out/expand_cost.txt` §1. Each row hands the rewrite's actual output to
 today's binary on the DFA path:
 
-Pasted from `out/expand_cost.txt` rather than re-typed (R30 N2):
+**SELECTED AND REORDERED from `out/expand_cost.txt`, which R32 C15 was right
+to flag**: the first draft said "pasted", and the figures are verbatim but the
+rows are ordered by `|L(G)|` and three of the ten (`quote`, `cls3`, `cls2x2` —
+all small and all compiling) are omitted. Read the file for all ten. The
+distinction matters because "pasted" is this document's own promise that a
+table and its archive cannot drift, and a selection is a weaker claim that
+should be stated as one:
 
 | family | source | \|L(G)\| | pattern | emitted | gcc | outcome |
 |---|---|---|---|---|---|---|
