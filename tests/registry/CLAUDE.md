@@ -292,10 +292,34 @@ directory asserts that the description and the shipped parser actually agree.
    the generic consultation**, and the check's own comment says so — do not
    add a second exception.
 
+   **THE TRIPWIRE IS GONE. Everything above item 9 describes is HISTORY, and
+   this correction is dated 2026-08-22 ([M6.5.2]) because the paragraph above
+   went stale at [M6.4.2] and stayed that way through a landing** — the
+   hand-written-prose failure class this tree keeps cataloguing, met in the
+   file that documents the checks. `(?>` was the second construct, D67 ruled
+   SR-8 BUILT (`src/opt/select_engine.c`'s `forces_registry`), and
+   `check_engine_capability_tripwire` was DELETED. What replaced it is
+   `check_engine_capability`: the same demand turned the right way round —
+   not "no VM_ONLY row has a producer" but **"EVERY VM_ONLY row that HAS one
+   refuses `--engine=dfa` BY NAME"**, on a HAND-WRITTEN WITNESS per row whose
+   construct genuinely bites, asserted in BOTH directions (the witness must
+   also COMPILE on the default engine, or a compiler that had simply stopped
+   accepting the construct would pass).
+
+   Population accounting, re-derived from a run at [M6.5.2]: **`qualifying`
+   54, `wired` 18.** 48 → 52 at [M6.4.2] (the four RK_QUANTSUFFIX rows) →
+   54 now (the two `\g<` / `\g'` rows module `backrefs` added for module
+   `recursion`); `wired` 1 → 6 → 18 (backrefs' twelve). **Those twelve are
+   what made SR-8 the right build rather than a third exception**: the
+   [M6.5.1] lane measured the tripwire's population against its own design
+   and found backrefs would not be a third exception but TWELVE, which is
+   the measurement D67 turns on.
+
 10. **[D65] the BUILT-STATUS defect assertion** (docs/dev/plan.md's post-M6.2
     queue item 4; docs/design/registry_built_status_memo.md, ratified
-    wholesale 2026-08-21) — `check_built_status_defects` iterates all 100
-    rows and calls `pcrec_construct_built_status` (src/parse/syntax_dump.c),
+    wholesale 2026-08-21) — `check_built_status_defects` iterates all 106
+    rows (100 when this paragraph was written; 104 at [M6.4.2], 106 at
+    [M6.5.2]) and calls `pcrec_construct_built_status` (src/parse/syntax_dump.c),
     the SAME function `pcrec --list-syntax`'s new `built` column calls, on
     every one. It is a defect check, not a status check: `--list-syntax` and
     the generated compliance index render `built`/`unbuilt`/`—`, and this
@@ -305,8 +329,27 @@ directory asserts that the description and the shipped parser actually agree.
     also asserts the process-global enabled set (src/parse/enabled.c) is
     restored to exactly what it was before the run, since the classifier
     mutates it once per row (forces "all" open, probes, restores) — the same
-    `pcre2_check.c` "gated pass" shape, in miniature, over 100 calls instead
+    `pcre2_check.c` "gated pass" shape, in miniature, over 106 calls instead
     of one.
+
+    **[M6.4.2] ADDED AN EXACT TALLY BESIDE THE DEFECT ASSERTION, and it is a
+    different check wearing the same function's name.** "0 defects" is
+    satisfied by a table in which a construct SILENTLY STOPPED BEING BUILT:
+    `built` drops, `unbuilt` rises, the sum is unchanged and nothing goes red
+    — and the generated compliance index RENDERS that column, so it is a
+    documentation regression nothing else in the tree can see. The three
+    numbers are therefore pinned EXACT and each module's landing moves them
+    in the same commit. **106 = 52 built + 48 unbuilt + 6 n/a** at [M6.5.2],
+    from 104 = 38 + 60 + 6: fourteen rows flipped to `built` (`\0`, `\1`..`\9`,
+    `\k`, `\g`, `(?J)`) and two were added born `unbuilt`. Four of the
+    fourteen classify `built` only because module `backrefs` DEFERS reference
+    validity to end of parse — `\1`, `\g{-1}`, `\k<name>` and `(?P=n)` are all
+    error-115-class STANDALONE in PCRE2, and this derivation drives each row's
+    `syntax` ALONE — which is a real dependency and is why that module's
+    resolution has exactly one site. It stopped being theoretical during that
+    landing: while the relative form refused AT THE PORT for an out-of-range
+    number, the `\g` row's own `syntax` refused there too and this column
+    called a construct the module BUILDS `unbuilt`.
 
     **Sabotage-validated in both directions** (measured on a scratch copy,
     reverted before commit): forcing the `\A` row's `aport` to `NO_PORT`
