@@ -7,14 +7,27 @@
 # for the re-measurement note). python re cannot express \K or \G at all
 # (raises "bad escape"), and cannot parse a mid-pattern (?i) the way PCRE2
 # does either, so those blocks are marked `# pcre2-only` with the specific
-# reason. The remaining blocks (caseless applied correctly, (?m), lookaround
-# beside a cut) all agree with python re and carry no mark.
+# reason. The remaining LIVE blocks (caseless applied correctly, (?m))
+# agree with python re and carry no mark. Three lookaround-beside-a-cut
+# blocks that used to live at the end of this file are now commented out
+# -- see that section's own note.
 #
-# Every block carries `features atomic-groups`; the \K/\G blocks also need
-# `assertions` (that is where pcrec gates \K and \G) and the lookaround
-# blocks also need `lookaround` (where pcrec gates (?= (?! (?<= (?<!) --
-# both measured directly against the CLI's own "requires module" refusal,
-# same as gating.rxt's method, not assumed from the module names alone.
+# Every live block carries `features atomic-groups`; the \K/\G blocks also
+# need `assertions` (that is where pcrec gates \K and \G), and a block
+# using (?i)/(?m) needs `modifiers` too -- NOT because these are somehow
+# extra beyond atomic-groups, but because a block's `features` directive
+# REPLACES pcrec's default feature set rather than adding to it (D27
+# triage, post-[M6.4.2]: confirmed directly against the CLI -- `--features
+# atomic-groups` alone refuses `(?i)...` with "requires module
+# 'modifiers'", even though `modifiers` is on by default via std1 when NO
+# features directive is given at all). `(?m)` needs a SECOND module on top
+# of `modifiers`: the inline `(?m...)` option spelling itself gates on
+# `modifiers`, but multiline `^`/`$` anchoring lowers through `assertions`
+# -- confirmed directly, `--features atomic-groups,modifiers` alone still
+# refuses `(?m)^(?>a+)$` with "inline option 'm' (multiline) requires
+# module 'assertions'"; all three together compile it. All of this
+# measured directly against the CLI's own "requires module" refusal,
+# never assumed from the module names alone.
 
 # \K resets the reported match START, not the atomic group's own
 # commitment -- (?>a\Kb) still atomically commits to "ab" as a unit, it
@@ -80,7 +93,7 @@ n "abc"
 # start of the expression ("global flags not at the start of the
 # expression")
 pattern (?>(?i)a|ab)c
-features atomic-groups
+features atomic-groups,modifiers
 n "ABc"
 
 # \K used INSIDE the atomic group as literally the last thing in it: the
@@ -98,26 +111,36 @@ m "aaab" 3 4
 # (?i) placed correctly (at the pattern's own start) makes the whole
 # atomic group caseless, unlike the trap above.
 pattern (?i)(?>abc)
-features atomic-groups
+features atomic-groups,modifiers
 m "ABC" 0 3
 
 # (?m) plus an atomic group: ^ and $ still mean line-start/line-end, and
 # the atomic group's own commit-and-refuse behaviour is unaffected by
 # multiline mode.
 pattern (?m)^(?>a+)$
-features atomic-groups
+features atomic-groups,modifiers,assertions
 m "aaa\naaa" 0 3
 
-# Lookbehind beside (not inside) an atomic group: ordinary composition,
-# no surprises.
-pattern (?<=a)(?>b+)c
-features atomic-groups,lookaround
-m "abbbc" 1 5
-
-pattern (?>a+)(?=b)
-features atomic-groups,lookaround
-m "aaab" 0 3
-
-pattern (?>a+)(?!b)
-features atomic-groups,lookaround
-m "aaac" 0 3
+# --- lookaround module is NOT BUILT (D27 triage, post-[M6.4.2]) ---
+#
+# The three cells below were originally written as ordinary
+# atomic-plus-lookaround composition cells. Measured directly against the
+# refreshed CLI: `--features atomic-groups,lookaround` on a lookaround
+# construct still refuses -- "module 'lookaround' is enabled but (?<...)
+# is not implemented yet" -- so no build today can accept them. Left here,
+# commented out (not parsed as `pattern` blocks, so run.sh's harness never
+# sees them and they are not counted either way), with their intended
+# expectations preserved for whoever lands `lookaround` and wants a
+# starting point:
+#
+# pattern (?<=a)(?>b+)c
+# features atomic-groups,lookaround
+# m "abbbc" 1 5
+#
+# pattern (?>a+)(?=b)
+# features atomic-groups,lookaround
+# m "aaab" 0 3
+#
+# pattern (?>a+)(?!b)
+# features atomic-groups,lookaround
+# m "aaac" 0 3

@@ -153,6 +153,16 @@ features atomic-groups
 m "ababc" 0 4
 
 # --- negated-class and \d possessive traps ---
+# The `\d` cells below need `classes` added to the features list, not just
+# `atomic-groups`: a block's `features` directive REPLACES pcrec's default
+# feature set rather than adding to it, so `\d` (module `classes`, normally
+# on by default via std1) is NOT available under a bare `features
+# atomic-groups` -- confirmed directly against the CLI (D27 triage,
+# post-[M6.4.2]: `--features atomic-groups` alone refuses `\d++` with
+# "requires module 'classes'"; `--features atomic-groups,classes` accepts
+# it). `[ab]*+`/`[^b]*+` above use a literal class, not `\d`, so they need
+# no such addition.
+#
 # [^b]*+ possessively eats every non-'b' byte -- including the literal
 # 'c' the pattern goes on to require -- so the required 'c' is never
 # available afterward, anywhere in the subject.
@@ -165,13 +175,13 @@ features atomic-groups
 m "aaab" 0 4
 
 pattern \d++
-features atomic-groups
+features atomic-groups,classes
 m "123x" 0 3
 
 # The other classic possessive trap, on \d instead of a literal class:
 # \d*+ eats every digit, leaving none for the mandatory trailing \d.
 pattern \d*+\d
-features atomic-groups
+features atomic-groups,classes
 n "123"
 
 pattern (?:[a-c]|abc)*+

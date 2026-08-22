@@ -1,37 +1,41 @@
 # [M6.4.3] D27 blinded corpus -- atomic-groups module.
 #
-# The --features refusal direction, both ways, for otherwise-VALID PCRE2
-# syntax (contrast with syntax_errors.rxt, which is genuinely malformed
-# syntax with the module ENABLED). This file is pcrec-CLI-level, not a
-# PCRE2 semantics claim -- MOD-0.3c's own module-gate mechanism -- so it
-# was measured directly against `build/pcrec`'s CLI (not the libpcre2
-# oracle, which has no such gate and always has every construct "on").
+# The --features refusal direction for otherwise-VALID PCRE2 syntax
+# (contrast with syntax_errors.rxt, which is genuinely malformed syntax
+# with the module ENABLED). This file is pcrec-CLI-level, not a PCRE2
+# semantics claim -- MOD-0.3c's own module-gate mechanism.
 #
 # Two blocks per pattern:
 #   1. no `features` line at all -- the module is DISABLED (pcrec's
 #      default feature set is "std1" = {classes, modifiers}, and
-#      atomic-groups is not in it) -- pcrec must refuse.
-#   2. `features atomic-groups` -- the module is ENABLED, but (measured
-#      directly against the CLI on this cell's prebuilt, pre-
-#      implementation `build/pcrec`) still not implemented -- pcrec must
-#      still refuse, for a DIFFERENT reason.
-# docs/testing.md's perr rule asserts only the exit code (nonzero), never
-# the message text, so both blocks pass identically today; what this file
-# pins down is that BOTH directions are refused, not just one.
+#      atomic-groups is not in it) -- pcrec must refuse. Confirmed
+#      directly against the refreshed, post-[M6.4.2] CLI: still refuses,
+#      unchanged.
+#   2. `features atomic-groups` -- the module is ENABLED. This corpus was
+#      FIRST WRITTEN against a prebuilt, pre-implementation `build/pcrec`
+#      (every atomic/possessive construct refused outright, "requires
+#      module" or "enabled but not implemented yet" -- see
+#      syntax_errors.rxt's own note on this), so this direction originally
+#      asserted `perr` too. At the [M6.4.2] acceptance run (module now
+#      real), that assertion was WRONG in exactly the way it deserved to
+#      be: it was vacuously true before (the pre-module binary refused
+#      EVERYTHING, gate open or shut, so `perr` here was never testing the
+#      GATE at all, only the absence of an implementation) and is
+#      genuinely false now that the module works. Fixed below to assert
+#      the real match, confirmed both against libpcre2 and end-to-end
+#      against the refreshed `build/pcrec` (`--emit-main`, compiled and
+#      run) -- not just "does it compile".
 #
-# A finding worth a look at merge review, not a change this corpus makes:
-# measured directly, `(?>...)` DOES distinguish the two refusal reasons
-# in its message text ("requires module" vs "is enabled but ... is not
-# implemented yet"), but every possessive-quantifier spelling tested here
-# (`a++`, `a*+`, `a?+`, `a{2,3}+`, `a{,3}+`, `a{2,}+`) gives the IDENTICAL
-# "possessive quantifier requires module 'atomic-groups'" message in BOTH
-# directions -- the possessive-quantifier parse path does not appear to
-# consult whether the module is enabled before emitting that message,
-# unlike the `(?>...)` path. Not asserted here (perr is exit-code-only,
-# and message wording is explicitly not pcrec's promise per CLAUDE.md's
-# Compatibility Standard D26), but worth an implementer's attention since
-# it suggests the two constructs' gating checks are not sharing one code
-# path today.
+# A finding worth an implementer's attention (recorded, not changed by
+# this corpus): measured directly while the module was still
+# unimplemented, `(?>...)` distinguished its two refusal reasons
+# ("requires module" vs "is enabled but ... is not implemented yet"), but
+# every possessive-quantifier spelling tested here gave the IDENTICAL
+# "possessive quantifier requires module 'atomic-groups'" message in both
+# directions at that time -- suggesting the two constructs' gating checks
+# were not sharing one code path. Left as historical record; block 2
+# below no longer exercises that message at all now that the module is
+# implemented and block 2 compiles cleanly.
 
 # --- (?>...) ---
 
@@ -40,7 +44,7 @@ perr
 
 pattern (?>ab)
 features atomic-groups
-perr
+m "ab" 0 2
 
 # --- a++ ---
 
@@ -49,7 +53,7 @@ perr
 
 pattern a++
 features atomic-groups
-perr
+m "aaab" 0 3
 
 # --- a*+ ---
 
@@ -58,7 +62,7 @@ perr
 
 pattern a*+
 features atomic-groups
-perr
+m "aaa" 0 3
 
 # --- a?+ ---
 
@@ -67,7 +71,7 @@ perr
 
 pattern a?+
 features atomic-groups
-perr
+m "a" 0 1
 
 # --- a{2,3}+ (bounded brace-possessive) ---
 
@@ -76,7 +80,7 @@ perr
 
 pattern a{2,3}+
 features atomic-groups
-perr
+m "aaa" 0 3
 
 # --- a{,3}+ (PCRE2 10.43+ {,n} spelling, possessive) ---
 
@@ -85,7 +89,7 @@ perr
 
 pattern a{,3}+
 features atomic-groups
-perr
+m "aaa" 0 3
 
 # --- a{2,}+ (unbounded brace-possessive) ---
 
@@ -94,4 +98,4 @@ perr
 
 pattern a{2,}+
 features atomic-groups
-perr
+m "aaa" 0 3
