@@ -11545,3 +11545,17 @@ tally assertion; S-BR12 unvalidatable until then). Lane/brdesign's
 worktree removed, branch kept.
 
 IN FLIGHT: [M6.4.2] (agimpl, opus) and [M6.4.3] (agd27, sonnet, cell).
+
+[M6.4.3] AUTHORED (same hour): the blinded corpus landed on branch agd27
+— 8 files, 113 patterns, 137 cells (95 match + 15 group + 27 perr),
+oracle.py 137/137 from an independent re-parse, reproduced by the
+manager; the author re-measured every B.3 divergence row, every B.1
+pair and U9 with controls and found NOTHING in the goal facts wrong; it
+caught its own first-draft omission of the `features atomic-groups`
+directive (every block would have failed the gate) by re-reading
+docs/testing.md against the CLI. One live observation for the merge
+review: the possessive-suffix refusal prints the same text in both gate
+directions while `(?>` distinguishes disabled from enabled-but-unbuilt —
+a wording asymmetry the module's landing erases; D26 tier 3. The branch
+is HELD for the acceptance run at [M6.4.2]'s merge review (0 divergences
+expected; the record stays as authored).
