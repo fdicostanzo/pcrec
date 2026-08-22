@@ -11362,3 +11362,26 @@ r32chk (opus — every probe re-run with population/controls audited,
 the engine_callable complement check's vacuity, D65 built tracing, the
 D27 goal facts), r32doc (sonnet — citations, marking, provenance, the
 sibling-design cross-claims).
+
+SR-8 RULED BUILT, by the lane that would have been the third exception.
+brdesign's report (read-only against the shipped binary) measured the
+tripwire population: qualifying 48 rows, of which backrefs owns TWELVE
+(\k<name> \g{-1} \1..\9 (?P=n)) — so backrefs would not add a third
+named exception, it would add twelve, and tests/registry/
+registry_check.c:1422-1424 says in its own words that the SECOND
+construct is where "the generic consultation has earned its axis and
+SR-8 is the right build". Atomic-groups IS the second construct
+(\K was the first). The atomic design's §8 ("second named exception")
+therefore contradicts the check it cites — caught by the OTHER lane's
+honest report against its own §6.1, before either panel reported.
+MANAGER RULING (to be recorded as D67 with the R31 triage): [M6.4.2]
+BUILDS SR-8 in the shape D55 already specified — read the POST-pass
+tree: producers stamp each module-produced AST node with its row's
+`engines` mask; one generic EngineAnalysis ANDs the masks after the
+free discharge has run, why_pos/why from the first DFA-excluding node's
+row; forces_kreset retires into it (same verdict, same position); the
+registry_check exception retires; the tripwire's demand becomes
+generic, with a sabotage row (un-stamp A_ATOMIC -> --engine=dfa stops
+refusing -> red). Backrefs' forcing then falls out of its twelve rows.
+Both designs revise to this after their panels; the atomic revision
+brief carries it as manager finding M-1.
