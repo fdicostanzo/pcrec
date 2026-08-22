@@ -282,3 +282,29 @@ the stale-flag reason written in. §7.4, §6.4a, §11.3 verifiably untouched
 Lane flag, twice now: §14 item 8 (the identity claim) is unmeasurable
 until the module exists — to be SCHEDULED in [M6.4.2], not attacked now.
 r31chk's N1/N2/N3 + C7 residue: in the lane's queue (revision 2b).
+
+## Revision 2b (r31chk's N1/N2/N3 + C7) — lane/agdesign a22f044 → 03533bb (8 commits on b736071 in all; 14 probes)
+
+N1: probe_registry_cost.sh REWRITTEN as an uncurated sweep over `src cli
+tests` (hits classified as exact equalities / floors / kind lists /
+routing-set assertions) — it finds NINE sites across SIX files where the
+re-check found seven: check06's set (:170, asserted :243; new expected set
+`(?:...) a*+ a++ a?+ a{1,2}+`; its :136 floor passes at 104);
+compliance_section.py:391 `len(rows) != 100` → 104; run_reject_tests.sh:
+1713 `niter -eq 99` — the NON-BASE count → **103**; a THIRD `kinds[]`
+array at registry_check.c:1696; seven RegKind switches all with
+`default:` (why §7.3's zero-alarm holds); the REGMANIFEST's two PROSE pins
+(run_registry_tests.sh:88/:90, 48 and 100 in English). `quant = QF_NO` in
+§7.4.1 (registry_check.c:173-176). Method finding in the PANEL OUTCOME
+block: an enumeration is only as wide as its search population — four
+files found six, the re-check seven, the sweep nine; "a tenth site is the
+probe's next correction, not a surprise." N3: five S-references re-aimed
+(A.2 → "S89 and S94"; §11.4 now says why S88, a codegen row, is never a
+corpus catch); probes/probe_sref_consistency.sh prints each cited row's
+description beside the citing sentence (9 citations, 0 undefined; its
+own first run matched nothing — newline-separated id list — and refused
+to print a verdict). N2: `w["pats"] >= 8820` asserted (re-run unchanged:
+8,820 / 0 positive / 10,504 refutable / 0 violations). C7 residue fixed.
+§6.4a and §11.3 untouched across the whole revision (hunk-checked).
+Final re-checks dispatched: r31eng (N1/N2 at a22f044, sections unchanged
+since), r31chk (N1/N2/N3 at 03533bb, incl. the hunt for a tenth site).
