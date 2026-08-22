@@ -123,7 +123,7 @@ their repo commit by `probes/archive.sh`.
 | `probes/probe_dupnames.py` | MEASURED, libpcre2 | §8: the name table's order, the refusal matrix, and the resolution rule |
 | `probes/probe_caseless_fold.py` | MEASURED, libpcre2 + in-pcrec | §4: which bytes the compare folds, where `(?i)` is read, and whether the compare is length-preserving |
 | `probes/probe_prefilter_cost.sh` | MEASURED, artifact benchmark | §7: what VM-only search costs, on the SHIPPED compiler's own prefilter axis |
-| `probes/probe_erasure_hazard.py` | MEASURED, libpcre2 | §7: that the erasure is a superset (sound) and that its SPAN is not (unusable for the hybrid) |
+| `probes/probe_erasure_hazard.py` | MEASURED, libpcre2 | §7: that the erasure is a superset **only for an ASSERTION-FREE referenced group** (R32 E2 — its positive control refutes the unconditional claim, 6/10 cells) and that its SPAN is not (unusable for the hybrid either way) |
 | `probes/probe_expand_cost.py` | MEASURED, in-pcrec | §6: the finite-language expansion compiled by the shipped compiler, and the DECLINE boundary bisected |
 | `probes/simvm.py` | the SIMULATOR, **adopted from R32's critic** | §3.2: the emitted model in both publication disciplines, with the `publish` axis added and nothing else changed |
 | `probes/probe_publish_discipline.py` | MEASURED, libpcre2 vs both models | §3.2: E1's 5,808-cell arm-vs-arm sweep, with a backref-FREE control arm |
@@ -566,8 +566,12 @@ the last COMPLETED iteration and both cells are correct** (§3.2.2's sweep:
   which is F3's measured answer.
 
 This is also the module's **largest oracle divergence**: python3 `re` refuses
-all seven of these patterns at compile time, so **no S or F cell can be
-python-verified**. §12 carries that to the D27 author.
+every one of them at compile time, so **no S or F cell can be
+python-verified**. The archive carries **9 cells over 8 distinct patterns**
+(S1-S4 and F1-F5; `(\2(a)|b)+` appears twice, on `"ba"` and on `"baa"`) — the
+table above shows seven of the nine, and an earlier revision called that "all
+seven" of a population that is not seven (R32 C18 residue). §12 carries the
+divergence to the D27 author.
 
 ### 3.6 Backreferences inside quantifiers
 
@@ -906,11 +910,40 @@ from the TEST, not from the artifact:**
   column DECLARING which residual entries each fixture's artifact must carry,
   and the module adds backref-bearing rows. That is test-authored truth: an
   emitter change cannot edit it.
-- Counting is **per A_BREF SITE and comment-stripped**: the number of calls to
-  `<prefix>_bref_match*` in the engine body must equal the number of
+- **The expected call count is a DECLARED INTEGER COLUMN, not a count of
+  anything.** (R32 re-check C2(a).) The revision said "equal to the number of
   backreferences in the fixture's PATTERN, which the test knows because the
-  test wrote the pattern. Comments are stripped before counting, so the
-  emitted intent comment beside each call cannot stand in for the call.
+  test wrote the pattern" — but "knows" was doing unearned work: a harness
+  that DERIVES the count by scanning the pattern for `\<digit>` is a SECOND
+  IMPLEMENTATION OF §5's octal rule, and it gets the same cells wrong that
+  §5 exists to get right. `(a)\10` is octal and contains ZERO
+  backreferences; `(a)\18` is `\01` + `'8'` and contains zero. Those are
+  S-BR8's own fixtures. A scanner that counted them as one or two would make
+  the complement check red on a correct compiler, or — worse, since the
+  scanner and the emitter would drift in the same direction — green on an
+  incorrect one. So the column holds an integer a human wrote beside the
+  pattern, and **octal-ambiguous patterns are either kept out of the fixture
+  set or carry an explicitly declared count with a comment saying why**.
+- Counting on the ARTIFACT side is per-call and **token-level
+  comment-stripped**, not line-level. (C2(c).) §3.2.3's emitted call spans
+  two physical lines and carries an intent comment on the first, so a
+  line-based strip leaves a trailing `// ... rx_bref_match ...` on the call
+  line and a comment alone can satisfy the count. The strip removes `/* */`
+  and `//` regions from the whole function body before any matching, in ONE
+  pass over the body rather than a second walk: `calls_in_bodies()` gains the
+  stripping and both its callers use the stripped text, so the existing
+  violation rule and the new count rule cannot disagree about what a comment
+  is. **S68 must still fire after that refactor** — it does, and the reason
+  is that S68's sabotage puts a real CALL in a hot loop, not a comment, so
+  stripping comments cannot hide it; the panel verified the anchor survives.
+- **A SCOPED non-vacuity guard, asserted EXACT.** (C2(b).) All six existing
+  fixtures declare zero bref entries and get zero, so the complement check is
+  satisfied over an empty population — delete this module's fixture rows and
+  it stays green. The guard is therefore not the global "found no residual
+  entry" one (`run_codegen_tests.sh:1013`), which `next_pos` keeps satisfied
+  unconditionally: it is **"at least N fixtures declare >= 1 bref entry", with
+  N a literal asserted in the check**, in this file's own exact-count
+  convention. A run that finds fewer has lost its population and says so.
 - The **"not in a scan loop" clause is DROPPED.** No mechanism exists to
   express it and inventing an awk loop-tracker to check one clause would be a
   second control with the same author as the thing it checks.
@@ -1467,10 +1500,16 @@ from a different run than the archive it cited:
 | letter | nomatch / latematch | 0.00000007 / 0.00000003 | 0.00000005 / 0.00000002 | **NOISE** |
 
 **The RATIOS ARE STABLE IN ORDER OF MAGNITUDE AND NOT IN THEIR DIGITS, and a
-reader should not quote one.** SIX runs of this probe across the lane and the R32
-revision gave quote **7.8-21.7x**, tag **63.9-159.7x** and digits
-**6.2-20.9x**; R32 independently reproduced ratios inside those ranges, with
-rows swapping between runs exactly as this paragraph predicts. The
+reader should not quote one.** SEVEN runs of this probe across the lane and the R32
+revision gave quote **7.8-21.7x**, tag **63.9x and upward — a seventh run
+reached 172.9x, above what six runs had suggested was a ceiling** — and
+digits **6.2-20.9x**. R32 independently reproduced ratios inside those
+ranges, with rows swapping between runs exactly as this paragraph predicts.
+**The tag range is stated as OPEN-ENDED UPWARD rather than closed** (R32
+re-check N6): its hybrid arm is the fastest of all six and therefore the most
+sensitive to where the filler's first candidate byte lands, so a bounded
+ceiling is a claim the instrument does not support. Read the direction and
+the order of magnitude; do not quote an endpoint. The
 vm-only arm barely moves between runs; the HYBRID arm is multi-modal across
 roughly 0.000004-0.00023 s, and that is what makes the ratio jump — a
 prefilter that skips almost the whole subject is measuring a memchr whose
@@ -1481,17 +1520,19 @@ is right, and this document deliberately quotes the range rather than a
 run.
 
 **The two NOISE rows are a RESULT, not a failed measurement**, and they are
-the honest counterweight to the 157x: for `\b([a-z]+)\s+\1\b` and `(\w)\1` the
-*erasure matches at offset 0* on a subject the true pattern never matches, so
-the over-approximation filters nothing and a hybrid built on it would buy
-nothing **even if it were sound**. That is the same fact §7.2's last column
-reports as 40% and 2% selectivity.
+the honest counterweight to the two-orders-of-magnitude rows: for
+`\b([a-z]+)\s+\1\b` and `(\w)\1` the *erasure matches at offset 0* on a
+subject the true pattern never matches, so the over-approximation filters
+nothing and a hybrid built on it would buy nothing **even if it were sound**.
+That is the same fact §7.2's last column reports as **32% (dupword) and 23%
+(letter)** selectivity — figures the C8/C9 re-measurement moved, and which an
+earlier revision of this paragraph still quoted as "40% and 2%" (R32 re-check
+N3).
 
-**So the cost of the ruling is roughly one to two orders of magnitude
-(6.2x-160x measured across five runs) on the families where a prefilter
-would have helped, and
-zero on the families where it would not** — and there
-is no way to tell which is which without the very analysis §7.4 charters.
+**So the cost of the ruling is roughly one to two orders of magnitude on the
+families where a prefilter would have helped, and zero on the families where
+it would not** — and there is no way to tell which is which without the very
+analysis §7.4 charters.
 
 ### 7.4 What is chartered rather than built
 
@@ -1948,8 +1989,19 @@ guards**, where the first draft described one section and no guard.
 5. **The find-all loop**, since a backreference's span feeds the next
    iteration's startpos.
 6. **The `--engine=dfa` refusal** (§6.2), by name, with the module enabled.
+7. **THE SPAN-DIVERGENCE SECTION**, which exists for exactly one sabotage and
+   is named here so S-BR14 has a detector rather than a gesture (R32 re-check
+   N5). Its population is the subjects on which the backref-ERASED
+   approximation reports a DIFFERENT span from the true pattern — §7.2's
+   measured cells, including `"\"''"` for `(["'])[^"']*\1` (true (1,3),
+   erased (0,2)), `"11-1"` for `([0-9]+)-\1` (true (1,4), erased (0,4)) and
+   `"ba"` for `(a*)b\1` (true (0,1), erased (0,2)). Each is asserted against
+   libpcre2. **Its population guard is its own**: an EXACT count of
+   span-diverging subjects present, because a prefilter sabotage is invisible
+   on any subject where the two spans agree, and a section that quietly lost
+   those subjects would pass while the compiler miscompiles.
 
-Three POPULATION GUARDS, asserted EXACT rather than as floors, because every
+Four POPULATION GUARDS, asserted EXACT rather than as floors, because every
 one of them is a way for the suite to pass while measuring nothing:
 
 - the number of cells whose pattern actually contains a backreference;
@@ -1957,7 +2009,9 @@ one of them is a way for the suite to pass while measuring nothing:
   with an empty re-entry population is the first draft's `selfref.rxt`;
 - the number of cells where the two engines DISAGREE, which must be 0, paired
   with a nonzero count of cells where both produced a match (an all-refusal
-  run agrees trivially).
+  run agrees trivially);
+- the number of SPAN-DIVERGING subjects in section 7 (above), which is
+  S-BR14's whole detector.
 
 **`run_dupnames_diff.sh`** sweeps §8.3's resolution rule over generated
 name-runs of size 1-4 with every subset participating, against libpcre2, with
@@ -2005,7 +2059,7 @@ rather than a refusal. E1, E8, E9 and SR-8 add four more.
 
 | id | sabotage | what must fail | why it is not covered otherwise |
 |---|---|---|---|
-| **S-BR14** | **a DFA prefilter is attached to a backref pattern** (`fit.prefilter` forced true) | `run_backref_diff.sh` §7.2 cells | **the wrong-answer mode.** §7.2 measures spans differing on up to 389 subjects in one family; nothing else in the suite would notice, because every refusal still refuses and every non-prefiltered pattern still passes |
+| **S-BR14** | **a DFA prefilter is attached to a backref pattern** (`fit.prefilter` forced true) | **`run_backref_diff.sh` §7, the SPAN-DIVERGENCE section** (§11.2) | **the wrong-answer mode.** §7.2 measures spans differing on up to 389 subjects in one family; nothing else in the suite would notice, because every refusal still refuses and every non-prefiltered pattern still passes |
 | **S-BR15** | **publish-at-OPEN restored** (`A_CAP` writes the pair on traverse) | `selfref.rxt`'s re-entry cells, `run_backref_diff.sh` §3 | E1 exactly. 138 divergences and 40 reversed-span cells in the 5,808-cell sweep — and ZERO in the backref-free population, so no existing suite sees it |
 | S-BR1 | the unset test becomes `ref_e > ref_s` | `numeric.rxt`'s E cells | turns every empty capture into a failure; every non-empty cell still passes |
 | S-BR2 | the `caseless` field is ignored | `caseless.rxt` | D62 control 3's residual; no compiler diagnostic |
@@ -2019,10 +2073,41 @@ rather than a refusal. E1, E8, E9 and SR-8 add four more.
 | S-BR9 | §8.3's resolution takes the first by NUMBER rather than first SET | `dupnames.rxt` | the `"yy"` cell only |
 | S-BR10 | §8.3's resolution takes the LAST set | `dupnames.rxt` | the `"xyy"` cell only |
 | **S-BR11** | the residual entry's fold table diverges from `cls_casefold` by one byte | the 256-byte agreement check (§4.1) | two spellings of one fact with no control between them — R32 E8 |
-| **S-BR12** | an `A_BREF` node is left UNSTAMPED (defaults to `ANY_ENGINE`) | `registry`/engine-selection, and §6.2's refusal by name | SR-8's unsound-direction default (R31 M-1 note 2): the pattern silently routes to the DFA and miscompiles |
+| **S-BR12** | an `A_BREF` node is left UNSTAMPED (defaults to `ANY_ENGINE`) | `registry`/engine-selection, and §6.2's refusal by name — **only after [M6.4.2] lands SR-8** | SR-8's unsound-direction default (R31 M-1 note 2): the pattern silently routes to the DFA and miscompiles. **CROSS-MILESTONE: this row has no detector until the stamping mechanism it sabotages exists**, so it lands with [M6.5.2] but cannot be validated before [M6.4.2]; the mech matrix must not count it as passing in the interval |
 | **S-BR13** | the revdet capture suppression drops the PENDING slot but keeps the pair | `nested.rxt`'s group-in-body cells | R32 E9's unnamed interaction; correct today by accident, and publish-at-close is what makes it designable |
 | **S-BR16** | §5.3's deferred validity check is skipped | `octal.rxt`, `gated.rxt` | a reference to a nonexistent group is SILENTLY ACCEPTED and then reads `PCREC_UNSET` forever — a pattern that should be error-115 becomes one that never matches |
-| **S-BR17** | §8.2's qsort number tiebreak removed | `dupnames.rxt`, `codegen` identity | `qsort` is not stable, so the emitted table's row order becomes unspecified — a REPRODUCIBILITY defect that passes every behavioural test |
+| **S-BR17** | §8.2's qsort number tiebreak removed | **a STRUCTURAL assertion** (see below), not a behavioural suite | R32 re-check N1: a behavioural row cannot be trusted to go red here, in EITHER direction |
+
+**S-BR17 IS STRUCTURAL, AND THE RE-CHECK'S REASON IS NOT THE RIGHT ONE —
+THE REAL ONE IS WORSE (R32 re-check N1).** The re-check measured glibc's
+`qsort` preserving insertion order for equal keys (it is a merge sort unless
+memory-starved) and concluded S-BR17 cannot go red. Its harness inserted rows
+in ASCENDING group order. **pcrec does not.** `mod_named_groups.c:154-155`
+PREPENDS each declaration (`g->next = cx->named_groups; cx->named_groups =
+g;`) and `emit_dfa.c:676-677` walks that list from the head, so the array
+handed to `qsort` is in DESCENDING group number. (STRUCTURAL, both sites
+cited; no duplicate-name pattern compiles today, so it is not observable
+behaviourally yet.)
+
+Two consequences, and the second is a correction to §8.2:
+
+- Under a stable sort with a name-only comparator, pcrec's array yields
+  **(name asc, number DESCENDING)** — the wrong layout. So S-BR17 *would*
+  go red on glibc, contrary to the re-check's conclusion, but only because
+  glibc happens to be stable and the insertion order happens to be reversed.
+  A row that depends on two unspecified properties agreeing is not a control.
+- **Therefore the tiebreak is a CORRECTNESS requirement, not the
+  reproducibility nicety §8.2 called it.** Without it the emitted table is in
+  descending number within a name-run, and §8.2's caller algorithm — walk back
+  to the run's first row, then forward to the first participating one — then
+  selects the HIGHEST-numbered participating group. That is precisely the
+  resolution rule §8.3's `"xyy"` cell exists to rule out. §8.2 is corrected.
+
+**The detector is structural**: assert that the emitted `rx_group_entry` rows
+are non-decreasing in `(name, number)` — read off the artifact, independent of
+the comparator that produced them — plus a comparator-totality assertion (it
+returns 0 only for rows equal in BOTH fields). Neither depends on `qsort`'s
+stability, on the list's direction, or on a duplicate-name pattern existing.
 
 S-BR8/S-BR8b, S-BR9 and S-BR10 exist as separate rows on purpose: each is a
 plausible implementation, each passes the majority of the corpus, and each is
