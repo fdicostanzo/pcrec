@@ -24,6 +24,11 @@ the first DFA-excluding node's row; `forces_kreset` and the registry_check
 exception retire into it; a sabotage row un-stamps `A_ATOMIC`. §5.1's
 `forces_atomic` becomes the stamping rule; §8 is rewritten. Recorded as D67.
 
+**Contract notes for the SR-8 build (from the [M6.5.1] lane, read-only, recorded for [M6.4.2]'s brief):**
+1. SR-8 subsumes `forces_kreset` only — NOT `forces_captures` (`select_engine.c:84-92`, a property of the generation REQUEST with no registry row behind it). Two kinds of forcing remain, request-derived and node-derived; the `--engine=dfa` branch-ordering fix must read "take the captures branch only when no NODE-DERIVED analysis contributed a why".
+2. Shared constructors: `pcrec_ast_class_from_bits` (parse.c ~245, MOD-0.3c's ONE constructor for produced byte-sets) does not know its row. Decide deliberately: constructor takes the RegRow, or the port stamps after construction (silent-on-forget). Not on either module's path today (A_ATOMIC and A_BREF have their own producers); the default stamp is ANY_ENGINE so a forgotten stamp fails in the UNSOUND direction — which is exactly what the generic tripwire (every VM_ONLY row with a producer must refuse `--engine=dfa` by name) must keep catching.
+3. Discharge output must not inherit the discharged node's stamp, or the fixpoint never converges to DFA with every answer still correct — the "changes no answer" failure shape. Rule for the contract: stamps live on nodes; a discharge REPLACES the discharged node (which is not copied) with a subtree whose NEW nodes are born ANY_ENGINE; nodes copied from the body keep their own stamps (copying a `\K` must keep forcing). The free discharge is deletion-shaped and satisfies this trivially; the future cut construction inherits the rule. Sabotage row: an inherited stamp -> engine-selection assertion goes red.
+
 ## r31doc — citations, claim marking, provenance (report received 09:2x)
 
 | ID | Sev | Claim / location | Evidence | Verdict | Disposition |
