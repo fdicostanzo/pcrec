@@ -11200,3 +11200,48 @@ session's narrative still only in context. (3) A row flip is part of the
 merge, not of the close: [SAFEKILL]'s was missed because it merged
 mid-wave with no battery, and nothing downstream re-checks STATE tags
 against reality except the next wake-up's grep.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 1) — [M6.4] atomic-groups CHARTERED; autonomous run through [M6.4]+[M6.5] authorized
+
+FRANK'S RULING AT SESSION START: "proceed through 6.4 and 6.5
+autonomously. journal defensively." Recorded on the [M6.4] row and as a
+memory. The defensive-journal shape: an entry + commit at every stage
+boundary (charter, design approved, implementation merged, corpus
+merged, validation archived, close), never the narrative held in context
+until the end; the journal entry goes in BEFORE a long final validation
+and is amended after.
+
+ORIENTATION (explorer map, sonnet, 41 tool uses): the module's substrate
+is exactly where the row said — vm_cut (src/gen/emit_vm.c:1726) is the
+possessify pass's primitive, licensed by possessify.c's §2.2 unique-
+iteration proof and deliberately NOT rewinding the trail; (?> is a
+correctly-attributed registry row (registry.c:623, VM_ONLY) while the
+possessive suffix refusal is HAND-WRITTEN at parse.c:988 outside the
+registry (D65's built column cannot see it); select_engine.c's
+EngineAnalysis table (forces_captures, forces_kreset) is the VM-forcing
+seam and its --engine=dfa diagnostic is generic; engine_m4.md §5.2's
+discharge socket ("designed for customers that do not exist") names
+atomic-groups and backrefs as its first customers; no partial stubs
+anywhere. Frank's 2026-08-12 companion note (plan.md M4 design notes)
+rules the engine answer per-PATTERN (cut-constructible -> DFA, else VM).
+
+THE CHARTER'S TWO ARCHITECTURAL CALLS (manager's, recorded on the row):
+(1) the module SHIPS the VM cut as the semantics plus the FREE discharge
+(possessify's proof already identifies the possessives that are no-ops,
+so those patterns stay DFA-eligible), and the full Berglund cut
+construction becomes a follow-on engine row chartered by the design with
+a cost estimate — the row's newer VM-substrate wording and the companion
+note's per-pattern split reconciled, not chosen between. (2) The hybrid
+hazard is the design gate's first question: the DFA prefilter now runs
+the UNCUT language (a superset of the atomic one), so its span end and
+even its start are not trustworthy under a cut; what survives is sound
+rejection and a start lower bound. This is the \K §6.3 class of hazard
+one level up, and it gets a per-entry rule before any code.
+
+STAGE PLAN: [M6.4.1] design gate (opus lane, worktree lane/agdesign) ->
+R31 panel -> revision -> [M6.4.2] implementation (opus) with the D27
+blinded corpus [M6.4.3] authored IN PARALLEL (the blinded author needs
+only the goal) -> [M6.4.4] close. Then [M6.5] backrefs on the same
+shape, with the dupnames decision point implemented per the row.
+Oracles verified on this box: python 3.14 re handles both spellings
+correctly; libpcre2-8 10.46 present (no pcre2test binary — ctypes).

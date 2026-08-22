@@ -213,11 +213,84 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 - [M6.2] archived to plan_completed.md (completed 2026-08-21, thirty-fifth session — module `assertions` closed: five waves + repair slice + D27 blinded corpus, all close-validated; the post-module queue re-homed to [M6.0])
 - [M6.3] archived to plan_completed.md (completed 2026-08-18, thirty-third session — see that file; D59, merge commits on main)
 - [SPEC-M] archived to plan_completed.md (completed 2026-08-21 — spec_mod0 green, (?m) named exceptions with guards; expiry DD-11)
-- [M6.4] STATE:not-started (SESSION BOUNDARY RULED by Frank
-  2026-08-21: the thirty-fifth session STOPS just before this row —
-  session reset, then proceed into [M6.4] at the next session's start;
-  module order 6.4 -> 6.5 -> 6.6 REAFFIRMED, the machinery-building
-  argument over the D66-chain-sooner argument) — module `atomic-groups`: (?>...) and the possessive-quantifier spellings as SEMANTICS (unconditional cut, not a proof-gated optimization — the existing possessify pass is the mechanism library, not the feature); engine selection must route atomic-bearing patterns off the plain-DFA path (atomic changes the matched language: `(?>a*)a` matches nothing); the VM's RX_CUT machinery ([ENG-BREP]) is the natural substrate. Oracle: python 3.11+ `re` supports both spellings — verify the box's python before leaning on it
+- [M6.4] STATE:started (STARTED 2026-08-22, thirty-sixth session, on Frank's
+  standing ruling of 2026-08-21 — session reset, proceed into [M6.4] at the
+  next session's start; AUTONOMOUS RUN THROUGH [M6.4] AND [M6.5] authorized
+  by Frank 2026-08-22 with "journal defensively" — journal + commit at every
+  stage boundary; module order 6.4 -> 6.5 -> 6.6 REAFFIRMED) — module
+  `atomic-groups`: (?>...) and the possessive-quantifier spellings *+ ++ ?+
+  {n,m}+ as SEMANTICS (unconditional cut, not a proof-gated optimization —
+  the existing possessify pass, src/opt/possessify.c, is the mechanism
+  library, not the feature); engine selection routes atomic-bearing patterns
+  off the plain-DFA path (atomic changes the matched language: `(?>a*)a`
+  matches nothing); the VM's RX_CUT machinery ([ENG-BREP], vm_cut in
+  src/gen/emit_vm.c) is the substrate. Frank's 2026-08-12 companion note
+  (above, under the M4 design notes) rules the engine answer PER-PATTERN:
+  cut-constructible -> DFA (Berglund et al., cuts preserve regularity), else
+  VM; the M6.4 row's VM-substrate wording is the newer ruling and the charter
+  reconciles them as: the module SHIPS the VM cut as the semantics plus the
+  FREE discharge (a possessive whose body already satisfies possessify's §2.2
+  proof is a no-op and the pattern stays DFA-eligible — Frank's "disjoint-
+  follow special case is free in both directions"), and the FULL cut
+  construction is chartered as a follow-on engine row by the design gate
+  with a measured motivation (engine_m4.md §5.2's discharge socket is the
+  seam). Oracle: libpcre2 10.46 is the oracle of record; this box's python
+  3.14 `re` supports both spellings (verified 2026-08-22: `(?>a*)a`, `a*+a`,
+  `(?>a|ab)c` all decline as PCRE2 does) and is the base-tier second oracle.
+  Substeps:
+  - [M6.4.1] STATE:started — DESIGN GATE (design before code — the
+    engine-touching substep). docs/design/atomic_groups_design.md answering
+    PER CONSTRUCT ((?>...), *+, ++, ?+, {n,m}+ incl. {n}+ and the lazy-then-
+    possessive error shape): (i) the VM lowering of the UNCONDITIONAL cut —
+    what vm_cut may be reused for and what needs its own argument, in
+    particular the no-trail-rewind invariant that possessify's proof licenses
+    and an atomic group does NOT come with (captures written inside the body
+    must still be undone on an OUTER failure; captures retained on success);
+    (ii) THE HYBRID HAZARD — the default path runs the DFA prefilter on what
+    is now the UNCUT language (a superset), so a DFA-reported span/start can
+    be wrong under the cut while the true atomic match starts later: rule
+    what the prefilter may still be used for (sound rejection; a start LOWER
+    BOUND, since uncut matches ⊇ atomic matches) and what it may not (the
+    span end; the start itself), and how the emitted search loop changes;
+    the match-here entry's filter (assertions_design.md §6.3 / R30 E8) gets
+    its own rule; (iii) engine split per the charter above — the VM-forcing
+    EngineAnalysis (select_engine.c's table), the free discharge, and the
+    deferred cut construction with a size estimate of what it would cost;
+    (iv) interaction table: nesting, atomic inside quantifiers and
+    quantified atomic groups, alternation inside, lazy quantifiers inside,
+    empty body, captures inside (retained), \K \G and assertions inside,
+    (?m), the existing possessify/ENG-BREP rungs meeting a user-written
+    possessive (must not double-cut or mis-rung), --engine=dfa refusal
+    wording per the \K precedent; (v) REGISTRY — (?> is row registry.c:623;
+    the possessive suffix refusal is HAND-WRITTEN in parse.c:988 OUTSIDE the
+    registry, so D65's built column cannot see it: rule how possessives
+    become registry-visible (rows, a quant kind, or an explicit exemption
+    with its reason); (vi) SR-8 — D59 names atomic-groups/backrefs as the
+    trigger for the general engines-column consultation: decide whether
+    this module builds it; (vii) D58 residue enumeration (expected: none —
+    a cut is position-free — state it and say why); (viii) module gating
+    and partial-enable; (ix) the identity gate (atomic-free patterns
+    byte-identical with and without the module's analysis, tests/mech/
+    CLAUDE.md placement rule) and the mech sabotage rows the implementation
+    must add. D6 panel (R31) BEFORE implementation; revision; focused
+    re-check.
+  - [M6.4.2] STATE:not-started — IMPLEMENTATION (one lane unless the design
+    waves it): parser producer (src/parse/mod_atomic_groups.c), AST node(s),
+    VM lowering, EngineAnalysis registration, free discharge, corpus
+    tests/atomic_groups/ (oracle-verified: python re base tier + libpcre2
+    differential drivers over subjects x startpos, the assertions module's
+    shape), mech sabotage rows, identity gate, CLAUDE.md updates,
+    compliance-refresh, registry built column flips to built for every
+    construct the module ships.
+  - [M6.4.3] STATE:not-started — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
+    author denied src/ and tests/; written from the PCRE2 goal; may be
+    AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the
+    implementation; run against the shipped module at merge review for a
+    0-divergence acceptance record that stays as authored).
+  - [M6.4.4] STATE:not-started — CLOSE: union battery + quiet-box gate +
+    full mech matrix + anchor tripwire, archive, row -> completed and
+    archived to plan_completed.md, [M6.0] milestone updated, journal +
+    wake.md rewritten.
 - [M6.5] STATE:not-started — module `backrefs`: VM-forcing (a backref is not DFA-representable); numeric \1..\99 with the octal disambiguation the parser's refusal already hints at, \k spellings, (?P=n) once named-groups is in; CASELESS BACKREF COMPARE is D58-named residue — routes through a seam entry from birth. DUPNAMES DECISION POINT LIVES HERE (Frank, 2026-08-18, thirty-third session): (?J)/duplicate names are IMPLEMENTED with this module's by-name resolution machinery, not merely re-decided — ruled semantics: duplicate names appear as MULTIPLE adjacent rows in rx_info.groups, sorted (name asc, number asc) — the within-run number tiebreak D59 left unpinned, pinned now — and BOTH consumers use the same algorithm, 'first entry of the name-run whose slot participated': the caller walking the reflection table, and the emitted \k<name> resolution (which is PCRE2's own documented first-set-by-number behavior — verify against libpcre2 at design time per house discipline). The reflection half is nearly free (bsearch = first-of-run); the match-time half is VM machinery designed WITH \k<name> anyway. (?J)'s refusal stays truthful until this lands; the 'J' revisit trigger in docs/pcre2_compliance.md's deferral analysis points here
 - [M6.6] STATE:not-started — module `lookaround`: last on purpose (hardest; likely its own design gate before code). Lookbehind's back-step is D58-named residue — a seam entry, never raw `pos - k` byte arithmetic in shared emitter code
 - [ABI-NS] archived to plan_completed.md (completed 2026-08-18, thirty-third session — D60+addendum implemented; merge on main; [M6.2]'s wave A is UNBLOCKED)
