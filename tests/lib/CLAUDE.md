@@ -26,6 +26,19 @@ section targets depend on.
   loops with hundreds+ of sub-millisecond runs use bare
   `timeout`/`subprocess timeout=` reading the same number, because
   watchdog's fixed startup cost would multiply the loop's runtime.
+  **[TT-3] `CCACHE=1` (2026-08-21)** gates two more things in this file,
+  both no-ops when unset: `_gen_cc_run` reshapes `gen_cc`'s compile+link
+  calls into a `-c` compile per source then a link (the shape ccache can
+  cache — a raw compile-and-link cannot), and `gen_cc_relativize` rewrites
+  the call's own `-I<outdir>` to the textually-stable `-I.` after `cd`-ing
+  into it (every call site's own `-o` directory), because a fresh per-case
+  `mktemp` path in that flag defeated caching even with the shape fixed —
+  `CCACHE_NOHASHDIR=1`/`CCACHE_BASEDIR` are exported alongside it for the
+  same reason under `-g`. MEASURED (docs/testing.md "Compile caching"): a
+  clear NO for `make test` (a cold/warm cycle came in at 4x+ the plain
+  baseline even at a real 64.59% hit rate — thousands of sub-millisecond
+  compiles is the wrong shape for caching's own overhead), a qualified YES
+  for `make mech`'s per-sabotage tree rebuild.
 - **run_gen_timeout_tests.sh** — its own section in `make test`
   (`test-gentimeout`) — a positive control that the wrapper FIRES, plus a
   coverage assertion that every suite routes through it, because a

@@ -1557,6 +1557,161 @@ Measured (table above), the ruling:
   land in the inventory above with a triage before any fix (the
   findings-discipline that produced F1's clean arc).
 
+## Compile caching (`CCACHE=1`, [TT-3], 2026-08-21) — MEASURED NO for `make test`
+
+**The charter's own predictions were refuted, not confirmed.** ccache 4.12.3
+is installed (masquerade symlinks at `/usr/lib/ccache`). `CCACHE=1` (a
+`make`/env toggle, the LINTGEN shape) routes every `gcc`/`cc` invocation in
+the process tree through it via PATH masquerade — CC itself stays the single
+word `gcc`, never `ccache gcc` (that shape breaks `env`'s word-splitting in
+`UBSAN_ENV`/`ASAN_ENV`, discovered the hard way in the union battery). Toggle
+off (default): PATH gets nothing prepended, `CCACHE=0` is exported, and
+every compile-site behavior below reverts to its original one-shot call —
+verified byte-for-byte identical compiler command lines with and without the
+toggle (a full `make all` trace diffed clean; `tests/lib/run_gen_timeout_tests.sh`
+and `tests/cli/run_cli_tests.sh` both pass 269/269 and 18/18 with `CCACHE`
+unset, matching their toggled-on populations).
+
+**Two blockers, diagnosed and fixed in turn, and the fix was still not enough.**
+
+1. **Cacheable-call shape.** Nearly every compile site in
+   `tests/lib/gen_timeout.sh`'s `gen_cc` passes one or more `.c` sources
+   straight to `-o <binary>` in ONE gcc invocation (compile-and-link) — the
+   shape ccache cannot cache at all. MEASURED under a naive PATH-masquerade
+   wiring: 540/5,466 compile calls cacheable (~10%), 0 hits
+   (`build/battery_union2.log`). Fix: `_gen_cc_run` splits each `.c` source
+   into its own `-c` compile then links the objects, gated on `CCACHE=1` (a
+   call that already passes `-c` — `run_pc4.sh`'s own split, the D45
+   controls, the codegen multi-engine fixture — is untouched either way).
+   Raised cacheable calls to 65.2%, but a full cold+warm `make test` cycle
+   still measured essentially zero HITS: 2/11,765 (0.02%).
+2. **Hash instability.** ccache always hashes the full compiler argument
+   list. Every one of these call sites passes an `-I<dir>` naming its own
+   per-case `mktemp` workdir — a fresh absolute path every single case — so
+   even byte-identical content (`tests/harness/driver.c`, compiled
+   essentially unchanged on every one of ~20,000 cases) never matched its
+   own prior compile. Isolated with a micro-probe (compile identical content
+   from two different directories): absolute `-I<dir>`, no `cd`, MEASURED
+   0/2 hits even without `-g`. Fix: `gen_cc_relativize()` rewrites any
+   `-I<outdir>`/`-I <outdir>` (the call's own `-o` directory — every site
+   shares this one shape) to the textually-stable `-I.`, and `_gen_cc_run`
+   `cd`s into that directory before compiling, referencing in-directory
+   sources by bare basename. `-g` (the sanitizer axes' flag, and — since
+   `CFLAGS` defaults to `-O2 -g` — the ordinary TREE BUILD too) compounds
+   the problem: ccache's `hash_dir` option additionally folds the CWD into
+   the hash for correct debug-info paths, so a `-g` compile from two
+   different case directories still missed after fixing `-I` alone (probed
+   0/2 hits at `hash_dir`'s default, 1/2 — a HIT — with
+   `CCACHE_NOHASHDIR=1`). Both `CCACHE_NOHASHDIR=1` and `CCACHE_BASEDIR`
+   (the repo root for `gen_cc`'s callers, `$(CURDIR)` — evaluated fresh per
+   `make` invocation, so it self-adapts inside mech's ephemeral
+   `git archive` trees too — for the Makefile's own tree-build rule) are
+   exported once when the toggle is on.
+
+**With BOTH fixes in place, real hits appear** — confirmed first on a real
+suite (`tests/cli/run_cli_tests.sh` cold then warm, 269/269 passing both
+times, hits 0 → 15/17 of the new calls on the warm rerun) and then on the
+full corpus.
+
+### `make test`: cold/warm, measured
+
+| run | wall clock | notes |
+|---|---|---|
+| plain (no `CCACHE`) | 7m16s | the standing baseline, unchanged (docs/dev/plan.md [TT-3] row, 20,775 cases) |
+| `CCACHE=1` cold | 32m01s | fresh `build-ccache/`; `ccache -s`: 65.28% cacheable, 41.13% of THAT already hitting (residual population from an earlier smoke check the cache dir wasn't cleared before — see caveat below) |
+| `CCACHE=1` warm (rerun) | 29m48s | `ccache -s`: 65.23% cacheable, 64.59% of THAT hitting (7,599/11,765 — a REAL, healthy hit rate) |
+
+**Verdict: NO, decisively, even with the fix working.** A 64.59% hit rate
+still leaves wall time over 4x the plain baseline. The reason is the
+workload's shape, not a wiring gap: `test-corpus` alone compiles ~20,000
+generated matchers that each take sub-millisecond to a few milliseconds to
+compile from scratch, and ccache's own per-call overhead — hash the
+preprocessed output, check the manifest, and (since the split turns one
+gcc invocation into two-or-three) do this MULTIPLE times per case — costs
+more than the compile it is trying to avoid. Caching wins when the cached
+work is expensive relative to the caching machinery's own overhead; this
+workload is the opposite case by construction (thousands of tiny,
+already-fast compiles), so `make test` is not a candidate for this toggle
+at all, wiring correctness notwithstanding. (Caveat on the cold-run cell
+above: `build-ccache/` was not fully empty at that run's start — a
+same-session smoke check populated a handful of entries first — so the
+41.13% cold-hit figure understates a truly-empty-cache run's wall time
+slightly; it does not change the verdict, which rests on the WARM number
+already being 4x plain.)
+
+### One mech row: cold/warm/plain, measured
+
+Different workload, tested because it plausibly differs: mech rebuilds the
+WHOLE compiler tree from a fresh `git archive HEAD` copy once per sabotage,
+and most sabotages touch only 1-2 source files — the tree-build compiles are
+substantial real files (not sub-millisecond generated matchers), and most
+of a sabotage's ~27 objects are BYTE-IDENTICAL to the previous sabotage's,
+which is exactly the shape caching should help.
+
+`bash tests/mech/run_sabotage_matrix.sh S26` (`SAB_SUITES="harness"`, a
+heavier row than a codegen-only one):
+
+| run | wall clock | `ccache -s` (cacheable / hit rate) |
+|---|---|---|
+| plain (no `CCACHE`) | 6.69s | — |
+| `CCACHE=1` cold (fresh `build-ccache/`) | 6.80s | 82.69% cacheable, 16.28% hit (7/43 — intra-run reuse: the row's own 10-case corpus subset repeat-compiles the fixed `driver.c`, so even a "cold" cache warms itself mid-row) |
+| `CCACHE=1` warm (rerun) | 5.00s | 82.69% cacheable, 56.98% hit (49/86, 71% of hits direct-mode) |
+
+**Result: cold is a wash (~1.6% slower than plain — pure overhead, nothing
+to hit yet), warm is 25% faster than plain.** A lighter row (`S01`,
+`SAB_SUITES="codegen"` only, ~55-case suite) showed the same direction at
+similar scale: 5.53s cold → 3.91s warm (29% faster), `ccache -s` going from
+0/35 hits to 28/70 (71% direct-mode) — the tree's own ~27 object files
+hitting near-completely on the second build of the SAME sabotage. Both
+rows are a WITHIN-SABOTAGE repeat (same sabotage run twice), a weaker
+signal than the real production case (the full matrix runs ~30+ DIFFERENT
+sabotages back to back, each touching only 1-2 files out of ~27 — cross-
+sabotage reuse should be even higher than what these two rows show, since
+most of each fresh tree is byte-identical to the previous one). What both
+rows DO prove directly: the tree-build fix (`CCACHE_NOHASHDIR`/
+`CCACHE_BASEDIR` extended to the Makefile's own rule, not just `gen_cc`'s
+callers) works across the different physical `mktemp` tree ccache saw each
+run — the same cross-directory-identical-content mechanic the corpus fix
+needed, now confirmed on the tree-build path too.
+
+**Verdict: a qualified YES for mech, in contrast to `make test`'s decisive
+NO** — modest (25-29% faster warm on these two single-row samples) but
+genuine and mechanistically sound (real, substantial compiles being
+reused, not thousands of sub-millisecond ones drowned in per-call
+overhead). Not measured: the FULL ~50-minute matrix cold/warm (out of this
+row's time budget) — the two single-row samples are the evidence on
+record, with the reasoning for why cross-sabotage reuse should generalize
+favorably stated above rather than assumed silently.
+
+### The gen-timeout controls, verified under the toggle (the ruled caveat)
+
+D45's positive control (a compile that must genuinely time out) and the
+wall-backstop control both already compile with `-c` — they bypass
+`_gen_cc_run`'s split/relativize path entirely (that path only activates for
+the compile-AND-link shape) and are otherwise unaffected by the toggle. A
+killed compile never completes, so ccache never gets a result to store,
+regardless: `tests/lib/run_gen_timeout_tests.sh`'s full 18-check suite
+(including both fire controls) was run twice under `CCACHE=1` — cold, then
+warm on the SAME populated cache — and passed 18/18 both times. The
+controls fire on every run, not just the first.
+
+### Disk
+
+`CCACHE_DIR` defaults to `build-ccache/` (repo-local, gitignored — already
+listed in `.gitignore`), capped at ccache's own 5.0 GiB default `max_size`.
+Measured usage after the full cold+warm `make test` cycle: 0.66% of that
+cap (well under; the box has ~46G free regardless).
+
+### Disposition
+
+The wiring is CORRECT (both diagnosed blockers are actually fixed, not
+papered over) and stays on the branch for the record — `CCACHE=1` is
+opt-in, off by default, and a stranger's `make test` is provably unaffected.
+Whether to merge it (someone doing a `-j1` single-core CI run, or a
+tree-build-dominated workflow, might still want the toggle even though the
+project's own generated-code-heavy suites do not benefit) is a manager
+call, not this row's to make.
+
 ## The encoding seam's checks ([M5-SEAM], 2026-08-18)
 
 D58 built the DD-12 residual seam ahead of M6: an artifact embeds exactly
