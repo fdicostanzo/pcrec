@@ -85,3 +85,79 @@ quantifier; repeated alternation runs; all five spellings) — and
 DECISIVELY PCRE2 does NOT retry later run members when the first-set one's
 compare fails, so the frame-free else-if chain is the right shape; §10's
 matrix incl. (?J)'s two refusal sites; §9/P-5's `\N{` precedent real.
+
+## r32chk — checks, tests, sabotage rows, probe validity (received 09:4x)
+
+All eight probes re-run into scratch: six byte-identical to out/; the
+expansion boundary reproduces for a THIRD time from a third tree
+(10,525/10,526, 7,116,509 B); the prefilter ratios inside §7.3's ranges
+(rows swap between runs exactly as §7.3 predicts).
+
+| ID | Sev | Claim / location | Evidence | Verdict | Disposition |
+|---|---|---|---|---|---|
+| C1 | HIGH | §11.5 "qualifying drops by the rows this module builds (51→48's movement)"; §6.1 declines SR-8 | named-groups' rows LEFT the population by reclassification; §6.1 keeps VM_ONLY, so `qualifying` stays 48 and `wired` goes 1→13 — twelve `bad(...)` hits; registry_check.c:1424-1427 forecloses a second exception; the 48 is hand-typed at :1473-1477 | REFUTED | = M-1 (SR-8 built in [M6.4.2]); §11.5 rewritten; the hand-typed 48 named as a pin this module's change must move |
+| C2 | HIGH | §4.4's complement check "the same discipline, one field wider" | `calls_in_bodies()` (:986-1004) is a single `inbody` boolean — no loop/label awareness exists; the violation rule is raw `index($0, want)` with NO comment filtering, so a comment naming `rx_bref_match` (which §3.2's emitted shape places beside the call) satisfies the complement — S-BR5 goes green by construction | REFUTED (mechanism) | FIX with r32eng E7: fixture-declared expectations, comment-stripped call-site counting per A_BREF site; the "not in a scan loop" clause DROPPED (no mechanism) — S68's anchor survives the refactor (verified) |
+| C3 | HIGH | §11.1 oracle markings: caseless.rxt and octal_class.rxt "python-verifiable" | python refuses 4/9 caseless cells (`^(?i)(a)(?-i)\1$`, `^((?i)a)\1$` — the load-bearing §3.1(c)/F7 cells) and 4/12 class cells (`[\8]` `[\k]` `[\g]` literal in PCRE2/pcrec, errors in python; `[\400]`) | REFUTED | FIX: mark pcre2-only per cell; upstream_issues.md entries; §12 states these divergences |
+| C4 | HIGH | §11.4 completeness | no row plants a PREFILTER on a backref pattern (§7.2's measured wrong-answer mode); none for §5.3's deferred validity (nonexistent group silently accepted), §8.2's qsort tiebreak (silent non-reproducibility), §6.1's registration | REFUTED (completeness) | FIX: four rows added (prefilter-on-bref is the first) |
+| C5 | HIGH | §11.5 "check_built_status_defects gains this module's rows for free" | the check (registry_check.c:1694-1744) asserts `defects == 0` only; built/unbuilt tallies are INTERPOLATED INTO THE ok() STRING and compared to nothing; PC-3 never reads the column — "33/61" is pinned by no test; §9's seven-row table has no check behind it | REFUTED | CROSS-PANEL FIX (lands in [M6.4.2], first module to flip rows): registry_check asserts the built/unbuilt/na tallies EXACT, moved by each module's landing; R31 C8's pins join it |
+| C6 | MED | §9's built predictions | `built_status_probe` drives the row's syntax ALONE (`\1`, `\k<name>`, `(?P=n)` are err 115 standalone in PCRE2); they derive `built` ONLY because §5.3 defers validity to end-of-parse — uncited; `[\1]` compiles everywhere while `\1` reads unbuilt (atom-position-only granularity) | WEAKENED | FIX: §9 cites §5.3 as the reason; the granularity note |
+| C7 | MED | §10's after-table: bare `\k<n>` under backrefs,named-groups "compiles" | PCRE2: err 115 (no group `n`); gated.rxt would pin a tier-1 divergence | REFUTED (cell) | FIX: the cell is a refusal; gated.rxt's accept cells oracle-verified |
+| C8 | MED | §7.2/P-7 "28,160 subject-family pairs" | sampling with replacement: 11,042 distinct (letter/finite/star 127 each, 31.5x inflated); `letter` and `finite` are the same language pair over the same list — seven families is six | WEAKENED | FIX: distinct counts; dedupe; FALSE-NEG denominator = true-hit rows |
+| C9 | MED | §7.3 "filler whose 7-letter words all differ" | each word is seven IDENTICAL letters; `(\w)\1` matches at (0,2) in the filler — the `letter` row is noise anyway | WEAKENED | FIX: wording + filler |
+| C10 | MED | §11.2 cites run_kreset_diff.sh's shape | that driver has six sections (entries vs libpcre2; the find-all loop; --no-captures) and THREE population guards (nwrite==NK, ent_nz, fa_empty floor); §11.2 describes one section and no guard; §11.3's citation is to the wrong file | WEAKENED | FIX: drivers specified with the entries + find-all sections and asserted-exact floors |
+| C11 | MED | §12 goal facts | omits the caseless divergence (`^((?i)a)\1$`) and the class-position divergences; points the blinded author at tests/ paths the cell allowlist denies | WEAKENED | FIX: add the divergences; pointers only to docs/design/eng_brep_measurements/probes/pcre2_ctypes.py (+ br_oracle.py under docs/) |
+| C12 | MED | probe_erasure_hazard's FALSE-NEG column | VACUOUS guard sound; but no positive control proves FALSE-NEG can be non-zero — (E2's assertion-in-group cells ARE that control now) | WEAKENED | FIX: add E2's cells as the positive control |
+| C13 | MED | probe_prefilter_cost's guard | compares stamps not engines (a DFA artifact's empty stamp passes); fact right, control doesn't establish it | WEAKENED | FIX: assert RX_ENGINE equal on both arms |
+| C14 | LOW | archiver stamps "module `assertions`"; §0.3 "nine files from archive.sh" | out/CLAUDE.md is hand-written and claims the same of itself | = r32doc D1 | FIX |
+| C15-C19 | LOW | §6.3's table "pasted" (a reordered faithful subset); dead `states` and missing cls26x2 baseline in probe_expand_cost; dead `nrows` in probe_prefilter_cost; hand-typed "seven" (nine cells/eight patterns); P-5's rank answerable now (higher wins, `\g` rank 0); axis A measures 255 bytes (`.` excludes 0x0a) | — | FIX: wording/probes |
+| C20 | — | §13/§14 gaps | the tripwire collision; the complement check; `\0`'s gating split undecided; families lack nested backrefs/`\K`; `star` has 88 negatives | — | FIX: §13 lists them; `\0` decided (stays refused naming backrefs — not a regression) |
+
+SURVIVED (evidence): every probe reproduces; the corrected `_body()` filter
+is discriminating (four positive controls DIFFER, the probe's cell SAME);
+br_oracle's import self-check is two-directional and the `c_void_p`
+restype makes the compile-error path safe; the printf/read -r fixes
+load-bearing; §2's subroutine-vs-backref discriminator is a real
+measurement; §9's RK_ESC-tail argument now MEASURED (higher rank wins, no
+kind branch, disjoint tails cannot tie); §10's three "today" rows and the
+(?J) two-source refusal reproduce; S68 survives the refactor; S-BR3's hang
+is caught by the harness's derived timeout.
+
+## Verdict in one paragraph
+
+The backrefs design's MEASURED facts held almost everywhere — the fold set,
+the octal matrix bar one rule, the dupnames resolution rule under a harder
+battery, the NAMETABLE order, the expansion boundary (three independent
+reproductions), the no-prefilter ruling — and its reading of the shipped
+seam check (P14) is correct. What fell: (E1) the VM lowering's central
+premise, "a non-UNSET slot pair is a capture", is false while a group is
+re-entered — the design's own archived cell S3 refutes it, 36 divergences in
+a 1,444-cell sweep, and two shapes underflow a `size_t` in emitted code —
+the fix is PUBLISH-AT-CLOSE; (E2) the erasure is not a superset once the
+group holds an assertion, so the chartered nomatch-only prefilter's premise
+is false (§7.1 unaffected); (E3) `\8N`/`\9N` are decimal backrefs; (M-1/C1)
+the tripwire rule, SR-8 built upstream; (E7/C2) the proposed complement
+check shares a source with its subject; (C3) two corpus files mis-marked in
+the direction that loses the oracle; (C4) no row for the wrong-answer
+failure mode; (C5) the `built` column is asserted by nothing — a cross-
+module fix; (E6) `--no-captures` creates no A_CAP node. HIGH count: M-1,
+E1, E2, C1, C2, C3, C4, C5. NOT approved at 4cd461f; revision round with
+focused re-check.
+
+## Triage — the revision brief (lane/brdesign, same author)
+
+MUST: E1 (publish-at-close design, cost, re-run the 1,444 sweep on the
+corrected model, re-entry cells into selfref.rxt + a sabotage row, `ref_s <=
+ref_e` structural); E2 (assertion-free condition; P-7; §7.4's charter
+premise); E3 (rule 3'; `\N` any N; re-measure `\8N`/`\9N`); M-1/C1 (§6.1 →
+stamping; §11.5 rewritten; the 48 named); E7+C2 (fixture-declared
+expectations; per-site comment-stripped counting; drop the scan-loop
+clause); C3 (markings; upstream_issues rows; §12); C4 (four rows, prefilter-
+on-bref first); C5 (state the tally assertion as [M6.4.2]'s cross-module
+obligation and this module's movement of it); E5 (the second-why ruling,
+pointer to [M6.4.2]); E6 (the --no-captures ruling; §10 row). SHOULD: E4
+(return protocol carries the failure prefix); E8 (shared fold table or
+256-byte agreement check); E9 (name the group-in-body revdet interaction;
+a row); C6, C7, C8, C9, C10, C11, C12, C13; E10, E11, C14-C20 (wording,
+probes, archiver re-scope + one-batch re-archive). Rulings from §15 as
+sent (ASK-1..4). Focused re-check: r32eng on E1/E2/E3 as revised; r32chk on
+C2/C3/C4/C5.
