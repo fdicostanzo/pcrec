@@ -11311,3 +11311,54 @@ checks; §7's built-column trace; Appendix B's leak/completeness), r31doc
 (sonnet, every citation in §3-§6/§11 re-derived, claim marking, archiver
 provenance, sibling-doc edits, D26 tiering). Critics read-only, never
 make.
+
+[M6.5.1] DESIGN DELIVERED the same hour (lane/brdesign 4cd461f, 14
+commits, 1,708 lines, 9 probes with archived outputs; the lane recorded
+FOUR defects in its own instruments found by running them — the
+comment-stripped diff measuring the flags stamp, `sed 's/\\1//'` erasing
+to epsilon (unsound), /bin/sh echo eating `\b`, and a 100%-selectivity
+figure over zero positives — the vacuity shape, now guarded). Its one
+paragraph: a backref compares subject text against subject text at
+positions the backtracking state holds, so it needs a new AST kind and
+a frame-free, trail-free VM compare reading the slots through the
+existing trail discipline; its caseless form is the [M5-SEAM]'s SECOND
+residual entry and FORCES an interface change — P14: the shipped codegen
+check (run_codegen_tests.sh:922-926, backed by S68) forbids ANY seam call
+from an engine body, a faithful tightening while next_pos was the only
+entry that now forbids the construct; proposal: a per-entry
+engine_callable flag declared by the backend, next_pos unchanged and S68
+still firing, bref entries checked in the COMPLEMENT direction. VM-
+forcing for every pattern the module can ship (a backref pattern is
+capture-bearing by construction, so the finite-language expansion's only
+customer is --no-captures — MEASURED: 676 words already cost 321 KB of
+C, the DECLINE boundary bisected to |L(G)| = 10,525 on the shipped caps,
+reproducing across two trees; expansion chartered as a follow-on, NOT
+shipped). NO prefilter for A_BREF patterns (the erasure is a sound
+superset but its span is useless as a window — measured). Octal rule
+measured cell by cell. DUPNAMES resolution MEASURED over 18 cells to
+separate four candidate rules: FIRST OF THE NAME-RUN BY NUMBER THAT IS
+SET ("set" includes set-to-empty), all four by-name spellings agreeing,
+numeric references unaffected; the reflection order is libpcre2's own
+NAMETABLE order. A PRE-EXISTING diagnostic defect made loud: --engine=dfa
+on a capture-bearing VM_ONLY pattern takes the captures branch and
+advises --no-captures, which then refuses for the construct — two
+refusals, the first pointing at a flag that does not help.
+
+MANAGER RULINGS on its four ASKs: ASK-1 the (?J) compliance attribution
+moves to backrefs with the declaring/resolving split noted (annotations
+are derived now); ASK-2 inline (?J) only, no PCREC_DUPNAMES bit; ASK-3
+the --engine=dfa branch-ordering fix lands in [M6.4.2]'s engine slice
+(atomic-groups lands first and its capture-bearing population hits the
+same two-step); ASK-4 one-shot commit-pinned identity sweep, the same
+ruling as atomic-groups' §11.2 for the same reason (no stage of the
+module runs on the control population, so a -D knob gates dead code and
+the sweep cannot go red).
+
+R32 PANEL convened on 4cd461f alongside R31 (six read-only critics in
+flight): r32eng (opus — the frame-free compare under adversarial
+rewrite shapes, UNSET vs empty, the fold set, the octal matrix re-
+measured, the nomatch-only prefilter's soundness, 18+ dupnames cells),
+r32chk (opus — every probe re-run with population/controls audited,
+the engine_callable complement check's vacuity, D65 built tracing, the
+D27 goal facts), r32doc (sonnet — citations, marking, provenance, the
+sibling-design cross-claims).
