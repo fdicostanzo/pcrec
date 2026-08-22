@@ -22,18 +22,36 @@ Kept separate from `../assertions_measurements/`, `../eng_brep_measurements/`
 and their siblings for the reason those are separate from each other: never
 confuse one lane's numbers with another's.
 
+**REVISED AFTER R31 (2026-08-22).** Four of the instruments below were REBUILT
+because the panel refuted what they measured rather than what they reported,
+and three are new. Each entry says which. The pattern is worth naming because
+it repeated four times: **an instrument can produce a correct number about the
+wrong population**, and every one of these was a zero that could not have been
+anything else.
+
 ## The instruments, and what kind of evidence each produces
 
-- **`probes/probe_atomic_semantics.py` — MEASURED, BOTH ORACLES.** The design's
-  whole interaction table (§6) as 95 cells across 17 sections, libpcre2 10.46
+- **`probes/probe_atomic_semantics.py` — MEASURED, BOTH ORACLES. EXTENDED
+  TWICE BY R31.** The design's whole interaction table (§6) as **109** cells, libpcre2 10.46
   against python3 3.14, with a per-cell AGREE column and a `BOTH-ERR` verdict
   for cells where both refuse (D26 tier 2 satisfied, tier 3 wording ours).
-  Headline: **13 diverging cells**, of which 8 are constructs python cannot
-  express or parse at all and **2 are U9's real answer divergence**. Its own
-  first run reported three FALSE divergences because `pcre2_match` returns "one
-  more than the highest pair that has been SET", so a pattern whose LAST group
-  is unset comes back with a SHORTER tuple than python's — the padding
-  normalisation and the reason for it are in the file.
+  Headline: **15 diverging cells of 109**. Eight are constructs python cannot
+  express or parse; two are U9; and **five are new — R31 E6's family**: on a
+  BRACE possessive (`{n}+`, `{n,m}+`, `{n,}+`) over a body whose iteration can
+  end in two places, python cuts PER ITERATION and PCRE2 cuts at the GROUP
+  EXIT, so python reports NO MATCH where PCRE2 matches. `*+` and `++` over the
+  identical body AGREE, and those controls are in the section.
+  **It also gained a `spelling_equivalence()` check**, because E6 showed RULE
+  1's evidence was measured on the one family that could not refute it (every
+  section-B row has body `a`): 18 pairs, 47 cells, **28 of them
+  NON-UNIQUE-BODY**, 0 disagreeing, and the check FAILS if the non-unique count
+  is zero.
+  Its own first run reported three FALSE divergences because `pcre2_match`
+  returns "one more than the highest pair that has been SET", so a pattern whose
+  LAST group is unset comes back with a SHORTER tuple than python's — the
+  padding normalisation and the reason for it are in the file. **R31 D1/C7: the
+  design's PROSE went on saying "13 of 95" after the probe was fixed to say 10.
+  A corrected instrument does not correct the document that quoted it.**
 - **`probes/probe_uncut_superset.py` — MEASURED, libpcre2, SWEEP.** The hybrid
   hazard (§4) over a generated family rather than three hand-picked cells: 1,260
   patterns × 14 subjects, each with its two-byte-edit uncut twin. Headline:
@@ -53,13 +71,21 @@ confuse one lane's numbers with another's.
   stamps `RX_VM_PRUNE_CEILING "subject-end"`. A probe printing only the positive
   arm could not tell a reader whether it had found a SHAPE or a CONSTANT.
 - **`probes/cut_proto.c` + `probes/probe_cut_trail.py` — PROTOTYPE, checked
-  against libpcre2.** Five atomic patterns hand-lowered onto the emitted VM's
-  own machinery, with `RX_TRAIL`/`RX_SET`/`RX_PUSH`/`RX_CUT` and the fail label
-  copied VERBATIM from a real artifact, so a divergence is a divergence in the
-  LOWERING and not in the substrate. Headline: **14 rows, 0 disagreeing, 9
-  NON-VACUOUS.** The non-vacuity counter is not decoration — a suite of rows
-  where the cut changes nothing would pass with `RX_CUT` deleted, and the driver
-  FAILS if every row is vacuous.
+  against libpcre2. NOW SELF-SABOTAGING (R31 C6).** Atomic patterns hand-lowered
+  onto the emitted VM's own machinery, with `RX_TRAIL`/`RX_SET`/`RX_PUSH`/
+  `RX_CUT` and the fail label copied VERBATIM from a real artifact, so a
+  divergence is a divergence in the LOWERING and not in the substrate.
+  **C6 refuted its discrimination column**: a critic injected a trail-rewinding
+  cut and found 2 of 14 rows went red — both labelled VACUOUS — while all nine
+  advertised non-vacuous rows stayed green, because *cut-vs-uncut* and
+  *trail-rewind-vs-not* are DIFFERENT AXES. `cut_proto.c` now carries a
+  `-DCUT_REWINDS_TRAIL` arm, the driver builds BOTH every run and diffs them
+  row by row, and it FAILS if either column is zero. Headline: **17 rows, 0
+  disagreeing, 10 cut-discriminating, 4 trail-discriminating** — and the
+  corrected naming, which is the lesson: the trail invariant's failing
+  direction is RETENTION (`(?>(a)|ab)`), not the outer-failure row the first
+  revision named, because a cut that rewinds the trail gets UNDO trivially
+  right.
 - **`probes/probe_free_discharge.py` — MEASURED, in-pcrec on one arm and
   libpcre2 on the other.** The free discharge (§5.3): 1,764 patterns × 16
   subjects, verdict read off the shipped possessify pass via the twin's
@@ -88,6 +114,51 @@ confuse one lane's numbers with another's.
   `multiple quantifiers on the same item`. It deliberately includes `a*++`,
   whose message CHANGES when the module lands, so a reject-suite author has the
   before-picture without reconstructing it.
+- **`probes/probe_cut_dispatch.sh` — MEASURED, in-pcrec. NEW (R31 E2/E4/C3).**
+  Three questions in one instrument because they are one question: which
+  emitted code actually cuts. It drives a possessified pattern down each of
+  `vm_rep`'s FIVE dispatch paths and reports what the artifact contains.
+  Headlines: **the CURSOR rung's possessive path is FRAMELESS** (0 cuts, and
+  that is correct — nothing was pushed); **the REVDET rung cuts in a SECOND
+  SPELLING** (`run->resume_depth = <p>_rvN_frame_mark`, 0 `RX_CUT(` call
+  sites) — a fact THIS LANE found while fixing E2, which the panel did not
+  report and which `vm_cut`'s own header records a probe getting wrong once
+  before; and **the COUNTER rung's UNBOUNDED arm emits no cut at all** (K29),
+  which gives C3 its failing direction on a REAL SHIPPED ARTIFACT with no
+  sabotage: `grep -q RX_CUT` matches the unconditional `#define` on an artifact
+  that emits no cut.
+- **`probes/probe_puc_targeted.py` — MEASURED, both arms. NEW (R31 C2).**
+  `probe_possessify_under_cut.py`'s successor on the axis that matters. C2
+  refuted that probe's non-vacuity counter (202) as evidence: it counts
+  possessive-vs-plain with the VERDICT IGNORED, and the refutable cell needs
+  the verdict POSITIVE *and* the cut BITING — measured in the old generator at
+  59 cells. This one generates from atomic groups chosen BECAUSE they bite and
+  bodies chosen BECAUSE §2.2 accepts them: **10,504 refutable cells, 0
+  violations**, with per-position FLOORS the run FAILS if it cannot reach.
+  Two things it had to learn are kept in the file: the obvious "Q inside the
+  body" shape produces 1,050 positive verdicts, 672 biting patterns and **0
+  with both** (the lower-priority branch has to out-reach the quantified one),
+  and **"Q wrapping the atomic group" is empty BY CONSTRUCTION** — 0 positive
+  verdicts of 8,820, because §2.2 reads the atomic group transparently and
+  `a|ab` is not prefix-free. That position gets an ASSERTION instead of a
+  floor, and the assertion is also the design's incompleteness finding.
+- **`probes/probe_registry_cost.sh` — MEASURED, in-pcrec. NEW (R31 C1/C8).**
+  What §7.4's four rows actually cost, site by site with line numbers, because
+  the first revision said the built-status derivation was "simply a compile of
+  the syntax string" and it is `doorway_route` + `doorway_call` over four
+  recognised prefixes. Headline: **`--explain 'a*+'` says "no construct
+  matches"**, so such a row derives to `BUILT_DEFECT`. It also corrects the
+  finding it implements: C8 says "both `all_kinds[]` arrays"; measured, it is
+  ONE array with TWO use sites plus a SEPARATE array in `enabled.c`.
+- **`probes/probe_premises.sh` — MEASURED, in-pcrec.** The design's §1 premise
+  table and §6.3's error-shape table as ONE re-runnable script, because a
+  premise whose evidence is a shell command quoted in prose is asserted rather
+  than verified (R30 M8's finding, one document over). Headline: `(?>` refuses
+  at offset 0 from the REGISTRY; the possessive spellings refuse at the `+`'s
+  own offset from `parse.c:987-988`, OUTSIDE it; **`a{,2}b` COMPILES and
+  matches `"aab"` at `0 3`**; `a*?+` refuses today with `multiple quantifiers
+  on the same item`. It deliberately includes `a*++`, whose message CHANGES
+  when the module lands.
 - **`probes/probe_rk_alarm.sh` — MEASURED, self-restoring.** What a fifth
   `RegKind` costs (§7.3), on `../assertions_measurements/probes/
   probe_wswitch_alarm.sh`'s shape one enum over. Headline: **0 `-Wswitch`
