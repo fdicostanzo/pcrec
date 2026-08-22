@@ -3,15 +3,12 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/backrefs_measurements/probes/probe_erasure_hazard.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: bc3b302 2026-08-22
-# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
+# PROBE LAST CHANGED AT COMMIT: c35d1ed 2026-08-22
+# RUN FROM REPO COMMIT        : 9d4285d (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/backrefs_measurements/out/br_semantics.txt
-#      M docs/design/backrefs_measurements/out/dupnames.txt
 #      M docs/design/backrefs_measurements/out/erasure_hazard.txt
-#      M docs/design/backrefs_measurements/out/octal_rule.txt
-#      M docs/design/backrefs_measurements/out/spellings.txt
-# RUN DATE   : 2026-08-22T09:58:54-04:00
+#      M docs/design/backrefs_measurements/out/publish_discipline.txt
+# RUN DATE   : 2026-08-22T10:22:12-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -69,7 +66,9 @@ READING THE COLUMNS
 POSITIVE CONTROL (R32 E2 / C12) -- can FALSE-NEG be non-zero?
 ================================================================================================================
 A zero column is only evidence if a non-zero one is reachable.
-These cells put a POSITION PREDICATE inside the referenced group.
+These cells put a POSITION PREDICATE inside the referenced group,
+or an ATOMIC/POSSESSIVE one (R32 re-check E12) -- two different
+structural reasons with the same consequence.
 Such a group is not a pure LANGUAGE -- whether it matches depends
 on WHERE it is tried -- so substituting its text is not an
 over-approximation at all.
@@ -86,9 +85,17 @@ true pattern             erasure                    subject  true       erased  
 (a)\1                    (a)a                       'aa'     (0, 2)     (0, 2)     no
 (\w)\1                   (\w)\w                     'aa'     (0, 2)     (0, 2)     no
 ^(a|b)\1$                ^(a|b)(a|b)$               'aa'     (0, 2)     (0, 2)     no
+^(a*+)b\1a$              ^(a*+)b(?:a*+)a$           'abaa'   (0, 4)     None       *** YES ***
+^(a*+)b\1a$              ^(a*+)b(?:a*+)a$           'aabaaa' (0, 6)     None       *** YES ***
+(a*+)b\1a                (a*+)b(?:a*+)a             'abaa'   (0, 4)     None       *** YES ***
+^((?>a*))b\1a$           ^((?>a*))b(?:(?>a*))a$     'abaa'   (0, 4)     None       *** YES ***
+^([ab]*+)c\1a$           ^([ab]*+)c(?:[ab]*+)a$     'abcaba' (0, 6)     None       *** YES ***
+^(a++)b\1a$              ^(a++)b(?:a++)a$           'aabaaa' (0, 6)     None       *** YES ***
+^(a*)b\1a$               ^(a*)b(?:a*)a$             'abaa'   (0, 4)     (0, 4)     no
+^(a*?)b\1a$              ^(a*?)b(?:a*?)a$           'abaa'   (0, 4)     (0, 4)     no
 
-FALSE NEGATIVES: 6 of 10 cells.
+FALSE NEGATIVES: 12 of 18 cells.
 Non-zero is the point: the FALSE-NEG column CAN move, so a zero
 in the family table above is a measurement and not a tautology --
-and the superset property holds only for an ASSERTION-FREE
-referenced group.
+and the superset property holds only for a referenced group that
+is BOTH assertion-free AND atomic/possessive-free.

@@ -3,16 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/backrefs_measurements/probes/probe_publish_discipline.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: a293adb 2026-08-22
-# RUN FROM REPO COMMIT        : 6b63747 (lane/brdesign)
+# PROBE LAST CHANGED AT COMMIT: c35d1ed 2026-08-22
+# RUN FROM REPO COMMIT        : 9d4285d (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/backrefs_measurements/out/br_semantics.txt
-#      M docs/design/backrefs_measurements/out/dupnames.txt
-#      M docs/design/backrefs_measurements/out/erasure_hazard.txt
-#      M docs/design/backrefs_measurements/out/octal_rule.txt
-#      M docs/design/backrefs_measurements/out/spellings.txt
-#     ?? docs/design/backrefs_measurements/out/publish_discipline.txt
-# RUN DATE   : 2026-08-22T09:58:55-04:00
+#      M docs/design/backrefs_measurements/out/publish_discipline.txt
+# RUN DATE   : 2026-08-22T10:22:11-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -27,17 +22,17 @@ alphabet 'aby', subjects |s| <= 4 plus the empty string = 121 subjects
 
 A. THE RE-ENTRY CLASS (E1's population)
   re-entry shapes              cells=2178
-    publish=open   divergences=138   reversed-span cells=40
+    publish=open   REVERSED-SPAN=40    divergences=138
         (a|b\1)+               'ab'    libpcre2=((0, 1), ((0, 1),)) model=((0, 2), ((1, 2),))
         (a|b\1)+               'aab'   libpcre2=((0, 2), ((1, 2),)) model=((0, 3), ((2, 3),))
         (a|b\1)+               'aba'   libpcre2=((0, 3), ((1, 3),)) model=((0, 3), ((2, 3),))
         (a|b\1)+               'abb'   libpcre2=((0, 1), ((0, 1),)) model=((0, 3), ((2, 3),))
-    publish=close  divergences=0     reversed-span cells=0
+    publish=close  REVERSED-SPAN=0     divergences=0
 
 B. ORDINARY BACKREFS, no re-entry
   plain backref shapes         cells=1452
-    publish=open   divergences=0     reversed-span cells=0
-    publish=close  divergences=0     reversed-span cells=0
+    publish=open   REVERSED-SPAN=0     divergences=0
+    publish=close  REVERSED-SPAN=0     divergences=0
 
 C. POSITIVE CONTROL -- the same shapes with NO backreference
    Publication discipline is UNOBSERVABLE without a backref (at
@@ -45,11 +40,13 @@ C. POSITIVE CONTROL -- the same shapes with NO backreference
    agree here. A non-zero column refutes that and puts §11.3's
    byte-identity claim in question.
   backref-free control         cells=2178
-    publish=open   divergences=0     reversed-span cells=0
-    publish=close  divergences=0     reversed-span cells=0
+    publish=open   REVERSED-SPAN=0     divergences=0
+    publish=close  REVERSED-SPAN=0     divergences=0
 
-SUMMARY
-  cells                              : 5808
-  publish=open   divergences         : 138  (reversed-span: 40)
-  publish=close  divergences         : 0  (reversed-span: 0)
+SUMMARY  (REVERSED-SPAN is the primary column -- see the header)
+  cells                                    : 5808
+  publish=open   REVERSED-SPAN cells        : 40
+  publish=open   divergences vs libpcre2    : 138
+  publish=close  REVERSED-SPAN cells        : 0
+  publish=close  divergences vs libpcre2    : 0
   control-arm divergences (must be 0): open=0 close=0

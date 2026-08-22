@@ -33,8 +33,12 @@ archaeology. No file here was hand-written.
 
 - `publish_discipline.txt` — `probe_publish_discipline.py` (R32 E1). **The
   most consequential file in this directory.** Headline: over **5,808 cells**,
-  the emitted model as the design described it at 4cd461f diverges from
-  libpcre2 on **138** and produces **40 REVERSED-SPAN cells** — each one a
+  the emitted model as the design described it at 4cd461f produces **40
+  REVERSED-SPAN cells** — the file's PRIMARY column, because a reversed span
+  is an out-of-bounds read rather than a wrong answer and detects the broken
+  discipline in strictly more cells (the R32 critic found a population with
+  ZERO divergences and 243 reversed spans) — and diverges from libpcre2 on
+  **138** — each one a
   `size_t` underflow and an out-of-bounds read in emitted code — while
   PUBLISH-AT-CLOSE gives **0 and 0**. Every divergence is in the re-entry
   class; the 1,452 ordinary-backref cells agree in both models. **The third
@@ -118,10 +122,12 @@ archaeology. No file here was hand-written.
   false-negatives** — and its **SPAN differs on 389 / 100 / 220 / 52 / 78
   subjects** in five of the six, so it cannot serve `engine_m4.md` §6.1's
   exact-window role. **The POSITIVE CONTROL is the file's most important
-  block** (E2/C12): put a POSITION PREDICATE inside the referenced group and
-  **6 of 10 cells ARE false negatives** — `(\ba)\1` matches `"aa"` and
-  `(\ba)\ba` does not — so the erasure is a superset only for an
-  ASSERTION-FREE group, and the zero column above is a measurement rather than
+  block** (E2/C12, extended by the re-check's E12): put a POSITION PREDICATE
+  **or an ATOMIC/POSSESSIVE one** inside the referenced group and **12 of 18
+  cells ARE false negatives** — 6 for each structural reason, with 6 controls
+  (plain, `\w`, alternation, greedy `a*`, lazy `a*?`) holding — `(\ba)\1` matches `"aa"` and
+  `(\ba)\ba` does not — so the erasure is a superset only for a group that is BOTH
+  assertion-free AND atomic/possessive-free, and the zero column above is a measurement rather than
   a tautology. The probe REFUSES to report if that control finds nothing.
 - `expand_cost.txt` — `probe_expand_cost.py`. Two headlines. §0: **a default
   build sends `(abc)(abc)` to the VM naming "capture group at pattern offset
