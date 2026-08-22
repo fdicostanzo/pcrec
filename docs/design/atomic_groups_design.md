@@ -57,7 +57,8 @@ VM as an MRL pruning ceiling; and an **engine split** in which a
 cut is VM-forcing *unless it is provably a no-op*, the free discharge, whose
 condition is possessify's own §2.2 verdict and which is MEASURED sound at 0
 violations over 532 positive-verdict patterns (§5). The full DFA cut
-construction (Berglund et al.) is CHARTERED here as a follow-on row, not
+construction (Berglund et al.) is CHARTERED here FOR a follow-on plan row —
+which does not exist yet and which the manager adds at merge (R31 D4) — not
 built.
 
 ### 0.3 Measurements this lane produced
@@ -611,12 +612,24 @@ reported. It is already never reported: `rx_report_captures` is called with
 `attempt_position` — the position the VM actually matched at — not with
 `window[0][0]` (`src/gen/emit_vm.c:5256`). And the loop already advances and
 re-asks the prefilter on failure (P6). **What changes is not the code but its
-status**: D51 ruling 2's obligation (b) records a "STRUCTURAL argument that the
-retry cannot fire" resting on span-equality between the two machines, and
-deliberately does NOT rely on it — *"resting an unsound-direction correctness
-property on a believed claim is what the ruling forbids"*. For a cut pattern
-that argument is not merely believed, it is **false**, and the recompute the
-ruling insisted on anyway is what makes the loop correct. **This is the single
+status.**
+
+> **R31 D3: the first revision attributed a quotation to `decisions.md` D51
+> that is not in it, and reordered the words while inserting "correctness".**
+> The real source is `docs/design/k23_impl/k23_design.md:1806-1811`, quoted
+> verbatim here:
+>
+> > "**That argument is written down and is NOT what makes this safe.** It
+> > rests on span-equality between the two machines, which R21 split into
+> > 'erasure STRUCTURAL, span-equality BELIEVED-WITH-GATE' after finding two
+> > live priority miscompiles (K17, K18) in this exact territory. The ruling
+> > forbids resting an unsound-direction property on a believed claim, so the
+> > recompute ships."
+
+That argument — that the `start++` retry is unreachable — is not merely
+believed for a cut pattern; it is **false**, and 180 cells in §4.3 reach the
+retry. The recompute D51 ruling 2 insisted on anyway is what makes the loop
+correct today. **This is the single
 best thing in this section: the correct behaviour is already shipped, because
 a ruling refused to rest on an argument that has now expired.**
 
@@ -679,9 +692,13 @@ Two alternatives, both rejected with reasons:
   uncut (0,2) — a gap of 2 on a 4-byte subject), and any bound would have to be
   derived from the cut structure, which is the full construction §5.5 defers.
 - *Turn the prefilter off entirely for cut patterns.* That discards H1 and H2
-  as well, and §4.7 of `engine_m4.md` is explicit that losing the prefilter
-  turns DD-2 into a regression: `(?>a*)b` over 8 MB of `a` is answered by the
-  prefilter in one pass. Keeping rejection and the start seed while dropping
+  as well. `engine_m4.md` §4.7 makes losing the prefilter a DD-2 regression —
+  its own worked example is `a*b` over 8 MB of `a`, answered by the prefilter
+  in one pass where a naive VM needs ~7e13 resumptions. **R31 D5: the atomic
+  instance `(?>a*)b` is this document's extrapolation from that example, not a
+  sentence §4.7 contains**, and it is a safe one only because `(?>a*)b`'s
+  prefilter is the same machine `a*b`'s is (the uncut erasure, §4.1). Stated as
+  an extrapolation rather than as a citation. Keeping rejection and the start seed while dropping
   only the ceiling is strictly better and costs one predicate.
 
 **RULE H4 — the match-here entries need no change, and here is the evidence
@@ -922,7 +939,12 @@ For a plain `(?>X)` group the discharge is not emission-neutral at all (there
 is no possessify rung to re-derive it), and the emitted VM loses a
 provably-dead mark and cut — which is a win, not a difference to worry about.
 
-### 5.5 The FULL cut construction, chartered not built — row `[ENG-CUT]`
+### 5.5 The FULL cut construction, chartered not built — proposed row `[ENG-CUT]`
+
+> **R31 D4: there is no `[ENG-CUT]` row in `docs/dev/plan.md`.** The first
+> revision wrote "chartered" as though one existed. This section is a CHARTER
+> FOR a row the manager adds at merge (`[ENG-CUT] STATE:not-started`); until
+> then nothing in the plan points here.
 
 Frank's companion note rules the long-term answer: cuts preserve regularity
 (Berglund, Björklund, van der Merwe, *Cuts in Regular Expressions*), so an
@@ -1832,7 +1854,7 @@ directory.
 | `possessive.rxt` | `*+ ++ ?+ {n,m}+ {n}+ {n,}+ {,n}+`, and the `X q+` ≡ `(?>X q)` pairs cell for cell | python + libpcre2 |
 | `atomic_caps.rxt` | captures inside: retained, abandoned-inside, undone-on-outer-failure (§6 rows 17-21) | python + libpcre2 |
 | `atomic_quant.rxt` | atomic inside quantifiers, quantified atomic, nullable bodies, the empty-iteration rule | python + libpcre2 |
-| `atomic_ceiling.rxt` | §4's R3a family: patterns whose cut match ENDS LATER than the uncut one. **The one file that would go green with H3 unfixed and the corpus too small** | libpcre2 (python agrees; kept dual) |
+| `atomic_ceiling.rxt` | §4's R3a family: patterns whose cut match ENDS LATER than the uncut one. **Must carry BOTH clamp populations** — R31 C5 measured the 46 R3a patterns as {`nclamp > 0` 42, `nclamp == 0` 4}, and a file made only of the first cannot see a ceiling bug on the second, while codegen rule 1 is RED on the second if it is not scoped | libpcre2 (python agrees; kept dual) |
 | `atomic_assert.rxt` | `\K`, `\G`, `\b`, `(?m)`, `\Z` inside and around | **`# pcre2-only` in its entirety** — python cannot express `\K` or `\G` at all (MEASURED, 7 cells) |
 | `atomic_case.rxt` | `(?i)` around, inside, and scoped inside the body | mixed: the scoped-inside cells are `# pcre2-only` (python rejects `(?>(?i)a|ab)c`) |
 
@@ -1853,6 +1875,11 @@ Modelled on `tests/assertions/run_gstart_diff.sh` / `run_kreset_diff.sh`:
   R21 E-6). §4's whole hazard lives in the difference between those two
   artifacts, and a suite that ran only one of them would not see it. **This is
   the single most important driver in the module.**
+- **`run_atomic_diff.sh` §2b — the `-fno-possessify` arm (R31 C11).** The same
+  corpus compiled under `-fno-possessify`. Without it **S92 cannot be scored at
+  all**: the sabotage's whole failing direction is "RED only under the flag",
+  and a corpus with no flag arm has nowhere for it to be red. The first
+  revision named the row and not the arm.
 - **`run_atomic_diff.sh` §3 — the DISCHARGE differential.** Every dischargeable
   pattern compiled with and without the discharge (a `-f` knob, on
   `-fno-possessify`'s precedent), asserting IDENTICAL ANSWERS and, for the
@@ -1890,9 +1917,13 @@ defined by PCRE2 as `(?>X*)`, `(?>X+)`, `(?>X?)`, `(?>X{n,m})` — MEASURED
 identical on all 8 pairs tested.
 
 **B.2 The oracle of record is libpcre2 10.46**, driven by
-`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py` (a ctypes binding;
-there is no `pcre2test` on this box). `tests/named_groups/d27/lib_pcre2.py` and
-`tests/assertions/verify_pcre2.py` are the existing drivers to copy.
+`docs/design/eng_brep_measurements/probes/pcre2_ctypes.py` — a ctypes binding
+(there is no `pcre2test` on this box). **That path and no other.** The first
+revision also pointed at `tests/named_groups/d27/lib_pcre2.py` and
+`tests/assertions/verify_pcre2.py`; R31 C14 is right that **a D27 cell's
+allowlist denies `tests/`**, so those two are unreachable to the author and
+naming them wastes their time or, worse, invites a request to widen the cell.
+The `docs/design/` path is allowlistable.
 
 **B.3 python3 3.14 supports BOTH spellings and is a usable second oracle —
 except for these 13 cells, MEASURED** (`out/atomic_semantics.txt`):
@@ -1909,9 +1940,27 @@ except for these 13 cells, MEASURED** (`out/atomic_semantics.txt`):
 | `(?>(?i)a\|ab)c` on `"ABc"` | nomatch | `error: global flags not at the start of the expression` | python cannot PARSE |
 | `a?(?:b){0,4}+a` on `"a"` | **nomatch** | **(0,1)** | **U9 — a real answer divergence** |
 | `(a?)(?>(b){0,4})a` on `"a"` | **nomatch** | **(0,1)** g1=(0,0) | **U9, atomic spelling** |
+| `(?:a\|ab){2}+` on `"aba"` | **(0,3)** | **nomatch** | **brace-possessive family** |
+| `(?:a\|ab){2,3}+` on `"ababa"` | **(0,3)** | **nomatch** | same |
+| `(?:a\|ab){2,}+` on `"ababa"` | **(0,3)** | **nomatch** | same |
+| `(?:a\|ab){2}+c` on `"abac"` | **(0,4)** | **nomatch** | same |
+| `(?:a\|ab){3}+` on `"ababa"` | **(0,5)** | **nomatch** | same |
 
-(The remaining three rows in the raw table are group-tuple padding artefacts of
-the C API, corrected in the probe and listed here as agreeing.)
+**15 of 109 cells, and the count is the instrument's** — `out/atomic_semantics.txt`.
+*(R31 D1/C7: the first revision's body text said "13 of 95" in three places
+while its own archive said 10 of 95. The three extra were a defect in the
+PROBE — `pcre2_match` returns "one more than the highest pair that has been
+SET", so a pattern whose last group is unset came back with a shorter tuple
+than python's — which was fixed in the probe and never in the prose. The
+current 15/109 includes the five new brace-possessive rows above.)*
+
+**B.3.1 THE BRACE-POSSESSIVE FAMILY IS THE ONE TO INTERNALISE, alongside U9.**
+On a BRACE possessive (`{n}+`, `{n,m}+`, `{n,}+`) over a body whose iteration
+can end in two places, **python `re` cuts PER ITERATION and PCRE2 cuts at the
+GROUP EXIT**. `*+` and `++` over the identical body AGREE
+(`(?:a|ab)*+` on `"aba"` is `(0,1)` in both) — so the divergence is the brace
+forms specifically, and it runs in the dangerous direction: python says NO
+MATCH where PCRE2 matches. Take libpcre2.
 
 **B.4 U9 is the one to internalise** (`docs/dev/upstream_issues.md`): on
 libpcre2 10.46, a possessive or atomic BOUNDED repeat `{m,n}+` of a GROUP,
@@ -1930,13 +1979,16 @@ the possessification REWRITE and must NOT change a written possessive's
 answer. `{,n}` is a quantifier (PCRE2 10.43+), and pcrec's base tier already
 agrees. `(?>)` is legal and matches empty.
 
-**B.6 Where a blinded author should aim.** The three shapes this design says
-are hardest are: (1) a cut whose match ENDS LATER than the same pattern's
-uncut match (§4's family — write these from the definition, not from
-intuition); (2) captures written inside a body that the cut commits to and an
-OUTER failure then has to undo; (3) an atomic group inside a quantifier, where
-each iteration cuts independently. All three are places where a
-plausible implementation is wrong in the direction of returning an ANSWER
-rather than an error.
+**B.6 — DELETED. R31 C14, and the deletion is the point.**
 
----
+The first revision ended Appendix B with "Where a blinded author should aim",
+listing the three shapes THIS DESIGN considers hardest. That is the D27
+alphabet leak in its purest form: D27 exists because *tests derived from the
+code inherit the code author's alphabet* (CLAUDE.md, and the 2026-08-10
+measurement that found a tier-1 miscompile four adversarial critics had
+missed). Handing the blinded author the design author's own hard-case list
+hands them the alphabet the blinding was for.
+
+What a D27 author needs from this appendix is what PCRE2 DOES (B.1), which
+oracle to drive and how (B.2), where python lies (B.3), U9 (B.4) and pcrec's
+own promises (B.5). Where to aim is theirs.
