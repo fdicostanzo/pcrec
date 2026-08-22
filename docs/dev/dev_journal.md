@@ -11435,3 +11435,37 @@ assert the REFUTABLE population as a floor. (3) The most valuable
 finding of the morning (the tripwire rule, M-1) came from the OTHER
 module's lane measuring its own design honestly — cross-lane reports
 are review input.
+
+R32 COMPLETE THE SAME HOUR: the backrefs design NOT approved at 4cd461f
+(8 HIGH), revision dispatched (docs/dev/reviews/2026-08-22-r32-backrefs-
+design.md is the record). Its MEASURED facts held almost everywhere —
+fold set (256×256 pairs: exactly 52 bytes, one partner each), the octal
+matrix bar one rule, the dupnames rule under a harder battery (first-
+set-EMPTY three-way runs; PCRE2 does NOT retry later run members, so
+the frame-free else-if chain is the right shape), NAMETABLE order read
+as bytes for 10 patterns, the expansion boundary reproduced a THIRD time
+from a third tree. What fell: (E1) THE CENTRAL LOWERING PREMISE — the VM
+publishes a group's start slot at OPEN and its end at CLOSE
+(emit_vm.c:3823-3833), so while a group is re-entered a non-UNSET pair
+is not a capture; the design's own archived cell S3 refuted it (`(a|b\1)+`
+on "ab": model (0,2), libpcre2 (0,1)), 36 divergences in a 1,444-cell
+sweep on a simulator of the emitted model, and in two shapes ref_s >
+ref_e underflows size_t in EMITTED code; the fix is PUBLISH-AT-CLOSE.
+(E2) the erasure is NOT a superset once the referenced group contains an
+assertion (`(\ba)\1` on "aa" matches, its erasure does not — 6/10 cells),
+so the chartered nomatch-only prefilter's premise is false (the no-
+prefilter ruling stands, safe direction). (E3) `\8N`/`\9N` are always
+decimal backrefs. (E7/C2) the proposed engine_callable complement check
+is satisfiable by the emitter's OWN COMMENT beside the call — the check
+and its subject from one emitter arm. (C3) two corpus files marked
+python-verifiable where python refuses the load-bearing cells. (C4) no
+sabotage row for the wrong-answer failure mode (a prefilter on a backref
+pattern). (C5, CROSS-MODULE) D65's built/unbuilt tallies are interpolated
+into an ok() string and asserted by NOTHING — PC-3 never reads the
+column; [M6.4.2] pins them exact as the first module to flip rows. (E6)
+--no-captures creates no A_CAP node — ruled: referenced groups keep
+internal slots, none reported.
+
+STATE AT 09:50: both designs in revision rounds (agdesign on R31's
+triage, brdesign on R32's); six critics idle, to be resumed for focused
+re-checks; watchdog live. Nothing merged; main carries only docs.
