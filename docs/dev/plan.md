@@ -1338,53 +1338,7 @@ or never made. Writing the lesson down demonstrably does not install it (this
 session restated a load-contamination rule and violated it in the same
 document). Mechanize instead.
 
-- [SR-11] STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
-  session, from the D65 format-consumer breakage: "if it was meant to be
-  read, it might be prep'd for it — #comments are ignored and a
-  #header:col1 col2... row". PART 1 DONE same day: the contract is
-  WRITTEN and GENERALIZED to every tabular command — docs/spec/
-  table_contract.md covers --list-syntax AND --list-verbs, rules
-  producers (# comments, header-names-columns, append-only, no tabs in
-  fields) and consumers (resolve by name; trailing-safe; count only as
-  header-equality), and declares future table commands adopt it AT
-  BIRTH; --emit-ir moved to TO-BE-CONSIDERED on [DD-8]; sections added
-  same day. Remaining here: parts 2-3, consumer conversion + the two
-  checks, per the doc. RULED ADDITIONS (Frank, 2026-08-21 evening):
-  (i) the conversion lands as TEST LIBRARY FUNCTIONS — one
-  implementation of the contract in tests/lib/ (comment-skip, header
-  name->index resolution, section selection, header-truthfulness
-  assertion; shell for the awk consumers, and compliance_section.py's
-  parse routed through the same contract semantics) that every
-  consumer CALLS instead of hand-rolling the format at each site —
-  "the test code ties to the spec": the library cites and implements
-  docs/spec/table_contract.md, so a future format feature (e.g.
-  sections) is implemented ONCE, in gen_timeout.sh's one-rule pattern;
-  (ii) VALIDATION SCOPE: not the full suite — the affected sections
-  (test-reject, test-cli, test-registry) plus the contract's own
-  checks are the merge bar) — THE DUMP'S SELF-DESCRIBING CONTRACT.
-  `--list-syntax` ALREADY emits `#` comment lines and a `#kind<TAB>...`
-  header row naming every column; what is missing is the ruled CONTRACT
-  and conforming consumers. Three parts: (1) DOCUMENT the contract where
-  the dump is specified (# lines are comments; the last # line before
-  data is the header naming all columns in order; columns are APPENDED
-  only, per SR-4; consumers MUST resolve columns by header NAME, never
-  by hardcoded count or bare position); (2) CONVERT the in-tree
-  positional/count consumers to header-name resolution — the
-  tests/reject iterator and cli case10 (their NF != 16 fix was the
-  minimal repair, this is the durable one: awk builds a name->index map
-  from the header row; case10's integrity check becomes "every row's
-  field count equals the HEADER's declared count", strictly stronger
-  than any hardcoded number), plus check09's cut -f4 while there;
-  (3) a CHECK that the header row itself stays truthful (column count
-  in header == column count in every row — which case10's converted
-  form IS; and compliance_section.py's COLS list cross-checked against
-  the emitted header, so the generator and its checker cannot disagree
-  silently). EVIDENCE FOR THE DESIGN: the complete format-consumer
-  survey in registry_built_status_memo.md's Correction section —
-  spec_mod0's header-deriving loader (written blind, years early) was
-  the only shape-robust consumer and survived D65 unchanged; the two
-  hardcoded-count consumers broke. Sonnet-sized; no dependency;
-  schedule with the next test-infra window
+- [SR-11] archived to plan_completed.md (completed 2026-08-22 — the table contract implemented: tests/lib/table.sh + converted consumers + both checks; docs/spec/table_contract.md is the spec)
 - [TT-3] archived to plan_completed.md (completed 2026-08-22 — measured NO for make test / qualified YES for mech; CCACHE=1 wiring merged opt-in; docs/testing.md "Compile caching" is the record)
 - [MECH-3] STATE:not-started — a measurement wrapper that refuses to emit a number without provenance: interleaved A/B, N trials, load before AND after (R3.10), min/median/max spread, and a stamped record. Every performance overclaim this project has made — the 27%-recorded-as-+40%, this session's 1.5-4.1% deltas taken at load 4.5-9.7 — would have been blocked at the point of measurement rather than caught in review. Frank's precedent: a claude-safe grep that refuses `| tail` and reports what it actually looked at
 

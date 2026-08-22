@@ -3415,3 +3415,51 @@ c"` from `(0,3)` into `(0,1)`, and
   refute or confirm). Disk bound stated and checked (cache size cap;
   the box has ~46G free). Update docs/testing.md's tier table and the
   stale "make mech ~6-7 minutes" figure in the same change
+
+- [SR-11] STATE:completed (CLOSED 2026-08-22, merge 70650b2: tests/lib/table.sh is the one implementation of docs/spec/table_contract.md; all four consumers converted with resolution-failure poisoning; HEADER TRUTHFULNESS and GENERATOR AGREEMENT checks landed and sabotage-validated end-to-end through the real consumers; section-scoped validation at pre-change figures; the lane self-caught a pipeline-status-swallowing bug in its own library — lesson 9 self-applied) — formerly STATE:not-started (CHARTERED by Frank 2026-08-21, thirty-fifth
+  session, from the D65 format-consumer breakage: "if it was meant to be
+  read, it might be prep'd for it — #comments are ignored and a
+  #header:col1 col2... row". PART 1 DONE same day: the contract is
+  WRITTEN and GENERALIZED to every tabular command — docs/spec/
+  table_contract.md covers --list-syntax AND --list-verbs, rules
+  producers (# comments, header-names-columns, append-only, no tabs in
+  fields) and consumers (resolve by name; trailing-safe; count only as
+  header-equality), and declares future table commands adopt it AT
+  BIRTH; --emit-ir moved to TO-BE-CONSIDERED on [DD-8]; sections added
+  same day. Remaining here: parts 2-3, consumer conversion + the two
+  checks, per the doc. RULED ADDITIONS (Frank, 2026-08-21 evening):
+  (i) the conversion lands as TEST LIBRARY FUNCTIONS — one
+  implementation of the contract in tests/lib/ (comment-skip, header
+  name->index resolution, section selection, header-truthfulness
+  assertion; shell for the awk consumers, and compliance_section.py's
+  parse routed through the same contract semantics) that every
+  consumer CALLS instead of hand-rolling the format at each site —
+  "the test code ties to the spec": the library cites and implements
+  docs/spec/table_contract.md, so a future format feature (e.g.
+  sections) is implemented ONCE, in gen_timeout.sh's one-rule pattern;
+  (ii) VALIDATION SCOPE: not the full suite — the affected sections
+  (test-reject, test-cli, test-registry) plus the contract's own
+  checks are the merge bar) — THE DUMP'S SELF-DESCRIBING CONTRACT.
+  `--list-syntax` ALREADY emits `#` comment lines and a `#kind<TAB>...`
+  header row naming every column; what is missing is the ruled CONTRACT
+  and conforming consumers. Three parts: (1) DOCUMENT the contract where
+  the dump is specified (# lines are comments; the last # line before
+  data is the header naming all columns in order; columns are APPENDED
+  only, per SR-4; consumers MUST resolve columns by header NAME, never
+  by hardcoded count or bare position); (2) CONVERT the in-tree
+  positional/count consumers to header-name resolution — the
+  tests/reject iterator and cli case10 (their NF != 16 fix was the
+  minimal repair, this is the durable one: awk builds a name->index map
+  from the header row; case10's integrity check becomes "every row's
+  field count equals the HEADER's declared count", strictly stronger
+  than any hardcoded number), plus check09's cut -f4 while there;
+  (3) a CHECK that the header row itself stays truthful (column count
+  in header == column count in every row — which case10's converted
+  form IS; and compliance_section.py's COLS list cross-checked against
+  the emitted header, so the generator and its checker cannot disagree
+  silently). EVIDENCE FOR THE DESIGN: the complete format-consumer
+  survey in registry_built_status_memo.md's Correction section —
+  spec_mod0's header-deriving loader (written blind, years early) was
+  the only shape-robust consumer and survived D65 unchanged; the two
+  hardcoded-count consumers broke. Sonnet-sized; no dependency;
+  schedule with the next test-infra window
