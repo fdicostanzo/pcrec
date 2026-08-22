@@ -304,3 +304,30 @@ count it". LOW residuals → the in-flight revision: the guard must be
 EXACT, not "at least N"; "UNCHANGED" for next_pos overstates (a comment
 naming it stops being flagged — toward the stated allowlist); strip before
 head-detection with in-comment state across awk records.
+
+## Revision 2 final (r32eng's E12/E13/E14/E10 + the LOW note) — lane/brdesign e369fac → e8c9098 (doc 2,588 lines)
+
+E12 verified by the lane (8 cells: 6 false negatives, both non-possessive
+controls holding) and diagnosed precisely: the erased COPY commits
+without regard to what follows — "a backreference is never atomic even
+when the group it names is." The lane's own failure statement, recorded
+as written: the revised P-7 still said "no family contains an atomic or
+possessive group … atomic-groups landing first is the event that should
+re-ask" two lines below a gate that stated assertion-freedom alone — both
+halves on the page, never joined (R30 M6's lesson one level up). Gate
+now: assertion-free AND atomic/possessive-free beneath the referenced
+A_CAP, both syntactic; §7.4's charter inherits both; [M6.4] lands first
+so the second population is live from day one. Positive control 12 of
+18. E13 verified (`(?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$` on "aba" = (0,3),
+g1 UNSET, g2 (1,3) — the re-entered member is exactly the one that must be
+marked; no statically resolved member exists): marked set = UNION of every
+A_BREF's refs; S-BR15b; three re-entry cells in dupnames.rxt (it had
+none). E14: `publish` has NO default — a bare call fails loudly. E10
+residual and the RX_CHARGE_WORK line fixed. Reversed spans adopted as the
+sweep's PRIMARY column (the GAP1 0/243 figure as the reason: a reversed
+span fails the simulator's compare and sometimes coincides with the
+right answer while the real artifact reads out of bounds). Two probes
+re-archived in one batch, dirty lists out/-only. The lane's simvm diff
+matches the critic's. Honest gap added, not closed: a NESTED
+backreference (a reference inside a referenced group) — no measurement
+in either direction; handed to r32eng's last round.
