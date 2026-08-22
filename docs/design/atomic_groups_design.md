@@ -68,7 +68,7 @@ R30 M7's rule, inherited).
 
 | instrument | kind | what it answers |
 |---|---|---|
-| `probes/probe_atomic_semantics.py` | MEASURED, both oracles | the whole interaction table as cells, and the 13 python-vs-libpcre2 divergences (§6, App. B) |
+| `probes/probe_atomic_semantics.py` | MEASURED, both oracles | the interaction table as cells; **15 of 109** python-vs-libpcre2 divergences (§6, App. B) |
 | `probes/probe_uncut_superset.py` | MEASURED, libpcre2, sweep | which of the prefilter's three outputs survive the erasure: rejection and start yes, END NO (122 cells) (§4) |
 | `probes/probe_ceiling_shape.sh` | STRUCTURAL, in-pcrec | that today's emitter really does feed the prefilter's span end to the VM as a ceiling, with both negative arms (§4.2) |
 | `probes/cut_proto.c` + `probes/probe_cut_trail.py` | PROTOTYPE, checked vs libpcre2 | that the proposed lowering computes PCRE2's answers, 14/14, **9 non-vacuous** (§3.4) |
@@ -231,9 +231,22 @@ compiler naming them is the whole argument.
 
 **RULE 1. `A_ATOMIC` is a new `AKind`, with `l` = the body.** Both surface
 spellings parse to it: `(?>X)` directly, and `X q+` as `A_ATOMIC(A_REP(X))`,
-which is PCRE2's own definition of the possessive suffix (`X*+ ≡ (?>X*)`) and
-is MEASURED to agree cell for cell — `out/atomic_semantics.txt` section B, 8
-spelling pairs, libpcre2 and python agreeing on all 8.
+which is PCRE2's own definition of the possessive suffix (`X*+ ≡ (?>X*)`).
+
+> **R31 E6 REFUTED THE MEASUREMENT THAT SUPPORTED THE DESUGARING, AND THE
+> RE-MEASUREMENT SUPPORTS IT.** The first revision cited "section B, 8 spelling
+> pairs, both oracles agreeing on all 8" — and **every row in section B has
+> body `a`**, a body with a unique iteration, where per-iteration and
+> group-exit cutting CANNOT differ. It measured the equivalence on the one
+> family that could not refute it.
+>
+> `probe_atomic_semantics.py` now carries a dedicated
+> `spelling_equivalence()` check over bodies whose iteration can end in two
+> places (`(?:a|ab)`, `(?:ab?)`, `(?:a|bc)`, nullable `(?:a*)`, `(?:a?)`):
+> **18 pairs, 47 cells, 28 of them NON-UNIQUE-BODY cells, 0 disagreeing**
+> (`out/atomic_semantics.txt`). It FAILS if the non-unique-body count is zero,
+> so it cannot silently become the old vacuous check again. The desugaring
+> holds on the population that could have refuted it.
 
 **RULE 2. The module never writes `Ast.possessive`.** That field keeps exactly
 its current meaning: possessify's optimisation mark, deniable by
@@ -697,42 +710,77 @@ question instead of rediscovering it.
 
 ## 5. (iii) The engine split
 
-### 5.1 What forces the VM
+### 5.1 What forces the VM — **REVERSED BY M-1: this module STAMPS, and SR-8 IS BUILT**
 
-A third `EngineAnalysis` row (`src/opt/select_engine.c:160-166`), on the `\K`
-row's shape and for the `\K` row's stated reason — the honest form of the
-question is STRUCTURAL, so the tree is what gets asked:
+The first revision proposed a third hand-written `EngineAnalysis` row,
+`forces_atomic`, on `forces_kreset`'s shape, and §8 argued for a second named
+exception to `registry_check.c`'s engine-capability tripwire. **That tripwire's
+own text forbids it** (`tests/registry/registry_check.c:1422-1424`):
 
-```c
-static unsigned forces_atomic(Ctx *cx, const Ast *a, size_t *why_pos, const char **why)
-{
-    if (!has_atomic(a)) return ENGM_DFA | ENGM_VM;
-    *why_pos = cx->first_atomic_pos == (size_t)-1 ? 0 : cx->first_atomic_pos;
-    *why = "atomic group";           /* or "possessive quantifier" */
-    return ENGM_VM;
-}
-```
+> "If a SECOND construct arrives here, do not add a second exception: two is
+> when the generic consultation has earned its axis and SR-8 is the right
+> build."
 
-`has_atomic` is written to `has_kreset`'s discipline (`:121-158`): iterative on
-both spines, recursive only into a spine element's right child and into
-`A_CAP`/`A_REP`/`A_ATOMIC` bodies, and **no `default:`** — a node kind added
-later must be a compile error here. `first_atomic_pos` is a `Ctx` field on
-`first_kreset_pos`'s precedent, recorded by the module's producer.
+`\K` is the first; `(?>` is the second. **RULED (D67): [M6.4.2] builds SR-8 in
+D55's specified shape**, and this section is the stamping rule rather than a
+third bespoke analysis.
 
-Row ORDER: appended after `kreset`, which makes the verdict unchanged (the pass
-ANDs the masks) and the DIAGNOSTIC captures-first, `\K`-second, atomic-third —
-the same rationale the file already records at `:168-176` (the user can act on
-`--no-captures`; "do not write `(?>`" is not advice).
+**THE MECHANISM.** A module's producer stamps each AST node it creates with its
+registry row's `engines` mask. ONE generic `EngineAnalysis` ANDs the stamps over
+the **POST-DISCHARGE** tree; `why_pos`/`why` come from the first DFA-excluding
+node's row. `forces_kreset` and the registry_check exception RETIRE INTO IT — a
+deletion, not an addition. A sabotage row un-stamps `A_ATOMIC` and the
+engine-selection assertion goes red.
 
-The `why` STRING is per-CONSTRUCT, not per-module: `(?>a|ab)c` says "atomic
-group at pattern offset 0" and `a*+b` says "possessive quantifier at pattern
-offset 1". D26 tier 3 makes the wording ours; naming the construct the user
-wrote is what makes the message actionable.
+**THE THREE CONTRACT NOTES, adopted verbatim from the [M6.5.1] lane's
+read-only survey (M-1), because this module is the first customer and inherits
+them:**
+
+1. **SR-8 subsumes `forces_kreset` only — NOT `forces_captures`.**
+   `select_engine.c:84-92` is a property of the generation REQUEST with no
+   registry row behind it. Two kinds of forcing remain, **request-derived** and
+   **node-derived**, and the `--engine=dfa` branch-ordering fix must read *"take
+   the captures branch only when no NODE-DERIVED analysis contributed a why"*.
+2. **Shared constructors must be decided deliberately.**
+   `pcrec_ast_class_from_bits` (`parse.c` ~245, MOD-0.3c's ONE constructor for
+   produced byte-sets) does not know its row: either the constructor takes the
+   `RegRow`, or the port stamps after construction (silent-on-forget). It is
+   not on this module's path (`A_ATOMIC` has its own producer) and the default
+   stamp is `ANY_ENGINE`, so **a forgotten stamp fails in the UNSOUND
+   direction** — which is precisely what the generic tripwire (every `VM_ONLY`
+   row with a producer must refuse `--engine=dfa` by name) must keep catching.
+3. **Discharge output must not inherit the discharged node's stamp**, or the
+   fixpoint never converges to DFA with every answer still correct — the
+   "changes no answer" failure shape. Rule: stamps live on NODES; a discharge
+   REPLACES the discharged node (which is not copied) with a subtree whose NEW
+   nodes are born `ANY_ENGINE`; **nodes copied from the body keep their own
+   stamps** (copying a `\K` must keep forcing). The free discharge is
+   deletion-shaped and satisfies this trivially; `[ENG-CUT]` inherits the rule.
+   Sabotage row: an inherited stamp → the engine-selection assertion goes red.
+
+**What this module owes, concretely.** `A_ATOMIC` carries an `engines` field
+stamped by `src/parse/mod_atomic_groups.c` from row `registry.c:623`'s mask
+(`VM_ONLY`) and from the four new `RK_QUANTSUFFIX` rows' masks (§7.4).
+`first_atomic_pos` on `Ctx` is no longer needed for the verdict — the generic
+analysis reports the offending NODE's row — but the module still records it,
+because a node carries no source position (`forces_kreset`'s own recorded
+limitation) and `why_pos` has to come from somewhere.
+
+The `why` STRING stays per-CONSTRUCT because it comes from the ROW: `(?>a|ab)c`
+says "atomic group at pattern offset 0" and `a*+b` says "possessive quantifier
+at pattern offset 1", which is one more reason the possessive spellings need
+rows of their own (§7.4) rather than an exemption — an exempted construct has
+no row for the generic analysis to name.
 
 ### 5.2 `--engine=dfa` refuses, and needs no new code
 
-The second branch of the override (`src/opt/select_engine.c:326-336`, the second `ctx_fail` at `:334-335`) already
-does it:
+The second branch of the override (`src/opt/select_engine.c:326-336`, the second
+`ctx_fail` at `:334-335`) already does it — **with one ordering fix that comes
+from M-1 contract note 1 and is this module's to make**: the branch currently
+takes the CAPTURES arm whenever `cx->want_caps && cx->ncap > 0`, which on a
+capture-bearing atomic pattern would advise `--no-captures`, a flag that cannot
+help. Under SR-8 the rule becomes *take the captures branch only when no
+NODE-DERIVED analysis contributed a `why`*. Then:
 
 ```
 pcrec -p rx --features atomic-groups --engine=dfa '(?>a|ab)c'
@@ -753,13 +801,32 @@ user writing a possessive that CHANGES the language gets told so.
 
 ### 5.3 The free discharge
 
-**THE RULE.** An `A_ATOMIC` node is a NO-OP — and may be deleted — when its
-body admits a UNIQUE match at every position: possessify's §2.2 conditions
-(U1) one-unambiguous and (U2) prefix-free on the body's position automaton. For
-`A_ATOMIC(A_REP(X))` (the possessive spellings) the condition is possessify's
-FULL §2.2 verdict on that quantifier, unchanged, because that verdict's entire
-content is *"no retreat into this loop can produce a match the preferred path
-does not"* — which is exactly *"the cut deletes nothing"*.
+**THE RULE, NARROWED AFTER R31 E7.** `[M6.4.2]` ships **ONLY the
+`A_ATOMIC(A_REP(X))` discharge** — the possessive spellings — whose condition is
+possessify's FULL §2.2 verdict on that quantifier, unchanged, because the
+verdict's entire content is *"no retreat into this loop can produce a match the
+preferred path does not"*, which is exactly *"the cut deletes nothing"*.
+
+> **The plain-group arm `(?>X)` is DEFERRED, and the first revision should not
+> have shipped it.** It proposed discharging any `A_ATOMIC` whose body
+> satisfies (U1) one-unambiguous and (U2) prefix-free. E7's three objections
+> are all correct and all measured or structural:
+> (a) **it is measured at ZERO cells** — `probe_free_discharge.py` reads the
+> verdict off the non-possessive twin's `RX_VM_STRATS`, which requires a
+> QUANTIFIER, so the `(?>X)` arm has no evidence at all;
+> (b) **`possessify.c` exposes no callable subtree verdict** — the (U1)/(U2)
+> machinery is internal to the pass;
+> (c) **the run order is unspecified** — §5.4 runs the discharge BEFORE
+> `run_possessify`, which itself runs only AFTER the engine is chosen
+> (`select_engine.c:233-236`), so "reuse possessify's condition" names no
+> reachable code.
+>
+> The narrowed rule is buildable today: factor a **callable verdict** out of
+> `possessify.c` (the §2.2 predicate on one `A_REP`, with no marking side
+> effect), call it from `pcrec_discharge_atomic`, and leave the plain-group arm
+> to a follow-on row or to `[ENG-CUT]` — which subsumes it — once it has
+> evidence. Deferring costs the module nothing measured; §14 item 4 keeps the
+> gap named.
 
 **THE MEASUREMENT** (`probes/probe_free_discharge.py`, `out/free_discharge.txt`,
 **MEASURED, in-pcrec on one arm and libpcre2 on the other**). The verdict is
@@ -771,8 +838,17 @@ pattern's non-possessive twin `--engine=vm --no-captures` and read
 > 1,764 generated patterns × 16 subjects = **28,224 cells**. **532 patterns
 > with a POSITIVE verdict; 0 violations** — no cell where the verdict is
 > positive and libpcre2's possessive and non-possessive answers differ.
-> U9-shaped patterns in the positive population: **16** (so the subtraction had
-> something to subtract), contributing **0** violations.
+> 16 of the positive-verdict patterns are U9-SHAPED.
+
+**A correction to what that "16" licenses — R31 C12.** The first revision wrote
+"so the subtraction had something to subtract". It did not: the U9 SUBTRACTION
+branch is inside `if v:` and is reached only by a VIOLATION, and there were
+none, so the archived line reads `U9-SHAPED cells subtracted: 0` and
+`u9_shaped()` was never exercised by that run. The honest statement is: **16
+positive-verdict patterns are U9-shaped and none of them produced a violation,
+so nothing needed subtracting** — which is a weaker and true claim. The
+predicate itself is exercised by the fourth CONTROL row (U9's own witness),
+which is why that control is in the probe.
 
 The probe prints four CONTROLS every run, because a zero from an instrument
 that cannot fire is worth nothing: `a*+a` (verdict False, answers DIFFER),
@@ -951,6 +1027,27 @@ tier 2 satisfied, tier 3 wording ours).
 | 39 | **`{,n}+`** | `a{,2}+b` on `"aab"` | (0,3) | see §6.2 |
 | 40 | **`a*?+` — the lazy-then-possessive shape** | `a*?+` | **ERROR** | see §6.3 |
 | 41 | quantified atomic is NOT that error | `(?>a)*` on `"aaa"` | (0,3) | |
+| 42 | **`{n}+` over a NON-UNIQUE body** | `(?:a\|ab){2}+` on `"aba"` | **(0,3)** | **python says `nomatch`** — see §6.2.1 |
+| 43 | its atomic spelling | `(?>(?:a\|ab){2})` on `"aba"` | (0,3) | PCRE2 agrees with row 42; python agrees here |
+| 44 | `{n,m}+` over the same body | `(?:a\|ab){2,3}+` on `"ababa"` | (0,3) | python `nomatch` |
+| 45 | `{n,}+` over the same body | `(?:a\|ab){2,}+` on `"ababa"` | (0,3) | python `nomatch` |
+| 46 | with a follow | `(?:a\|ab){2}+c` on `"abac"` | (0,4) | python `nomatch` |
+| 47 | CONTROL: `*+` over the same body | `(?:a\|ab)*+` on `"aba"` | (0,1) | **python AGREES** — the divergence is the BRACE forms only |
+| 48 | CONTROL: `++` over the same body | `(?:a\|ab)++c` on `"abac"` | (2,4) | python agrees |
+
+#### 6.2.1 A python divergence the first revision missed entirely — R31 E6
+
+Rows 42-48 are a family, and the shape is exact: **on a BRACE possessive
+(`{n}+`, `{n,m}+`, `{n,}+`) over a body whose iteration can end in two places,
+python `re` cuts PER ITERATION and PCRE2 cuts at the GROUP EXIT.** `*+` and
+`++` over the identical body agree (rows 47-48), which is what makes this a
+family rather than a one-off and what makes the controls load-bearing.
+
+Five new divergences, all in the dangerous direction (python reports NO MATCH
+where PCRE2 matches), on a construct both oracles support — so a `.rxt` cell
+written from python would encode "no match" for a pattern that matches. It goes
+to the D27 author as a goal fact (Appendix B.3) and to `possessive.rxt` as a
+`# pcre2-only` block.
 
 ### 6.2 `{,n}` — the base tier already agrees, and this module must not touch it
 
@@ -1018,22 +1115,60 @@ a subset — **has a visible hole**: the verdict is about the UNCUT winner `W`,
 and if the cut deletes `W`, nothing says the best SURVIVING path is not a
 retreat-into-Q path.
 
-**MEASURED** (`probes/probe_possessify_under_cut.py`,
-`out/possessify_under_cut.txt`), over patterns with exactly one quantifier and
-at least one atomic group, in all FOUR positions of the quantifier relative to
-the cut:
+**FIRST MEASUREMENT, AND R31 C2 REFUTED ITS NON-VACUITY COUNTER.**
+`probe_possessify_under_cut.py` reported 48,000 cells and 0 violations across
+four positions, with a "non-vacuity counter" of 202. **The counter measures the
+wrong axis**: it counts cells where the POSSESSIVE spelling changes the answer
+with the verdict IGNORED. The cell that can refute the claim needs BOTH
+properties at once — the verdict POSITIVE *and* the cut BITING. The critic
+measured that population in the old generator at **29 patterns / 59 cells
+(0.57%), with two of four positions contributing ZERO**. A zero over a
+population that thin is not evidence.
 
-| quantifier position | verdict + | verdict − | violations |
-|---|---|---|---|
-| inside the atomic body | 275 | 475 | **0** |
-| wrapping the atomic group | 75 | 675 | **0** |
-| before the atomic group | 72 | 678 | **0** |
-| after the atomic group | 220 | 530 | **0** |
+**THE RE-MEASUREMENT** (`probes/probe_puc_targeted.py`,
+`out/puc_targeted.txt`), generated from atomic groups chosen BECAUSE they bite
+and quantifier bodies chosen BECAUSE §2.2 accepts them, with the refutable-cell
+count ASSERTED as a per-position FLOOR that the run fails if it cannot reach:
 
-**48,000 cells, 0 violations**, with a non-vacuity counter of 202 (cells where
-the possessive spelling DOES change libpcre2's answer, verdict ignored) so the
-zero is not an artefact of a family where possessification never matters. This
-is EVIDENCE, not a proof; §14 keeps it on the attack list.
+| quantifier position | patterns | verdict + | cut bites | **REFUTABLE cells** | violations |
+|---|---|---|---|---|---|
+| inside the atomic body | 8,820 | 5,250 | 3,402 | **399** | **0** |
+| wrapping the atomic group | 8,820 | **0** | 3,990 | 0 (see below) | 0 |
+| before the atomic group | 8,820 | 8,310 | 2,065 | **6,130** | **0** |
+| after the atomic group | 8,820 | 5,250 | 2,490 | **3,975** | **0** |
+
+**776,160 cells examined; 10,504 REFUTABLE cells; 0 violations** — against the
+critic's measured 59 refutable cells in the old generator, a 178x larger
+population on the axis that matters.
+
+Two things the rebuild had to learn, both kept in the probe:
+
+- **The obvious "inside" shape measures nothing.** The first form was
+  `(?>QB q|QB xy)tail`: 1,050 positive verdicts, 672 biting patterns and **0
+  cells with both**. The cut bites only when the body has a LOWER-PRIORITY
+  alternative that would have reached FURTHER, so the second branch has to
+  out-reach the quantified first one. `(?>ab*|abc)d` on `"abcd"` is the
+  smallest witness (atomic `nomatch`, uncut `(0,4)`).
+- **"Q wrapping the atomic group" is EMPTY BY CONSTRUCTION, not by accident,
+  and the probe ASSERTS that instead of faking a floor.** Measured: **0
+  positive verdicts out of 8,820.** When the quantifier's body IS the atomic
+  group, §2.2 evaluates (U2) prefix-freeness on `a|ab` read TRANSPARENTLY (the
+  rule below) and declines every time. The probe fails if a positive verdict
+  ever appears there, because that would mean the transparency argument is
+  wrong.
+
+  **That zero is also a design finding worth stating: possessify's
+  transparency is SOUND but measurably INCOMPLETE.** An atomic group is
+  *exactly* a unique-match guarantee, so a possessify that understood
+  `A_ATOMIC` rather than seeing through it would accept all 8,820. Declining is
+  always safe (`possessify.c`'s own invariant), so this is an opportunity and
+  not a defect — deliberately not taken in `[M6.4.2]`.
+
+This is EVIDENCE, not a proof, and one correlation remains and is stated rather
+than hidden: the verdict is read off the atomicity-ERASED twin, so the verdict
+arm and the "cut bites" arm are computed from related objects. Removing that
+needs the callable subtree verdict E7 schedules. §14 keeps the claim on the
+attack list.
 
 **(b) Does it DOUBLE-CUT?** No, and the reason is Rule 2 of §3.2: the module
 never writes `Ast.possessive`. possessify may mark a quantifier that is also
@@ -1071,17 +1206,43 @@ sit inside a revdet-approved body. **If the module had stored its semantics in
 walks.**
 
 Under §3.2's rule 1 the semantics live in the node KIND, so the copy carries
-them — and `rd_reverse`'s switch has no `default:`, which is why the `-Wswitch`
-measurement matters: `revdet.c:185` is one of the 15 sites, and the compiler
-will not let the module land without answering there.
+them.
 
-**THE ANSWER AT BOTH SITES IS DECLINE**, on `\K`'s precedent
-(`revdet.c:184-208`): an atomic group is not reversal-invariant. Its cut is
-defined relative to the FORWARD priority order — "the body's first success" is
-not a property a backwards walk can reproduce — so `rd_shape` sets `S->ok =
-false` on `A_ATOMIC` and `rd_reverse` errors on it, exactly as they do for
-`A_KRESET`. Declining costs those patterns the revdet rung, and `revdet.c`'s
+**THERE ARE FOUR revdet SITES, NOT TWO — R31 C9.** The `-Wswitch` re-run lists
+`src/opt/revdet.c:93` (`rd_shape`), `:185` (`rd_reverse`), **`:321`** (the
+byte-set widening walk) and **`:402`** (`rd_alt_disjoint`). The first revision
+answered two and §12's slice list enumerated none. All fifteen sites are now
+named in §12 slice 1.
+
+**AND "the compiler will not let the module land" IS TOO STRONG — R31 E8.**
+Two corrections, both this lane's error:
+
+- `-Werror` is `make strict` only (R5-Q1, and CLAUDE.md says so in as many
+  words). A `-Wswitch` diagnostic is a WARNING on a plain `make`. It is a loud,
+  enumerated, 15-site warning — which is the whole value — but it does not
+  block a build.
+- **`rd_shape` and `rd_reverse` do not fail the same way, and the second one is
+  dangerous.** `rd_shape` declines by FALLTHROUGH (`revdet.c:143-146`), so an
+  unhandled `A_ATOMIC` there is safe by accident. `rd_reverse`'s fallthrough is
+  `rd_node`, which copies the node and NULLs `l` and `r` — so an unhandled
+  `A_ATOMIC` becomes an **EMPTY-BODY atomic group**, silently, rather than a
+  declined one. That is a miscompile produced by a warning nobody turned into
+  an error.
+
+**THE ANSWER AT ALL FOUR SITES IS AN EXPLICIT ARM THAT DECLINES**, on `\K`'s
+precedent (`revdet.c:184-208`), never a fallthrough: an atomic group is not
+reversal-invariant, because its cut is defined relative to the FORWARD priority
+order and "the body's first success" is not a property a backwards walk can
+reproduce. `rd_shape` sets `S->ok = false`; `rd_reverse` raises as it does for
+`A_KRESET`; `:321` widens to all bytes (the sound direction); `:402` declines
+disjointness. Declining costs those patterns the revdet rung, and `revdet.c`'s
 own rule is that "declining is always available and always safe".
+
+**The decline is NOT sufficient on its own for the LIFTED case**, and this is
+where §3.2.5's shared predicate earns itself: `rd_shape` sees the `A_REP` of a
+lifted `A_ATOMIC(A_REP(X))`, not the `A_ATOMIC`, so the decline never fires and
+`vm_rev_canmove` (`:975`, reading `->possessive`, which RULE 2 leaves false)
+hands the loop a retreat frame. `vm_cuts(a)` is what closes that.
 
 ---
 
@@ -1478,8 +1639,8 @@ directory.
 | `atomic_assert.rxt` | `\K`, `\G`, `\b`, `(?m)`, `\Z` inside and around | **`# pcre2-only` in its entirety** — python cannot express `\K` or `\G` at all (MEASURED, 7 cells) |
 | `atomic_case.rxt` | `(?i)` around, inside, and scoped inside the body | mixed: the scoped-inside cells are `# pcre2-only` (python rejects `(?>(?i)a|ab)c`) |
 
-The oracle split is not a formality: `out/atomic_semantics.txt` measures **13
-of 95 cells diverging**, and Appendix B enumerates them.
+The oracle split is not a formality: `out/atomic_semantics.txt` measures **15
+of 109 cells diverging**, and Appendix B enumerates them.
 
 ### A.2 Differential drivers
 
