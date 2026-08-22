@@ -873,7 +873,10 @@ append-only or historical records.
   `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
   commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
   of them.
-- `backrefs_design.md` — **PROPOSED**, the [M6.5.1] design gate in front of
+- `backrefs_design.md` — **PROPOSED, REVISED AFTER R32** (NOT approved at
+  4cd461f: eight HIGH findings; read the PANEL OUTCOME block at the top and
+  §16's what-changed table before any section). The [M6.5.1] design gate in
+  front of
   module `backrefs` (numeric `\1`..`\99` with PCRE2's octal disambiguation,
   the `\g` and `\k` spellings, `(?P=name)`, and `(?J)`/DUPNAMES, which the
   [M6.5] row rules is IMPLEMENTED by this module rather than merely
@@ -908,7 +911,29 @@ append-only or historical records.
   for every capture-bearing pattern, which for this module's whole population
   is advice that does not help — a PRE-EXISTING defect, reproduced on the
   shipped binary with `\K` (§6.2). Measurements: `backrefs_measurements/`.
-  Four ASKs at §15.
+  **What R32 refuted, because a reader of the first draft must not trust their
+  memory of these sections**: (E1) §3.2's central premise — "a non-UNSET slot
+  pair is a capture" — is FALSE while a group is re-entered, since
+  `emit_vm.c:3813-3835` publishes START at open and END at close, so the two
+  slots belong to different iterations; the design's OWN archived cell S3
+  refuted it and two shapes underflow a `size_t` in emitted code. §3.2 is
+  rewritten as **PUBLISH-AT-CLOSE** (a per-group pending slot, the pair
+  published together), measured over 5,808 cells at 138→0 divergences and
+  40→0 reversed spans, with a backref-free control arm that is 0/0 in both
+  disciplines — which is what lets the fix be scoped to referenced groups and
+  keeps §11.3's byte-identity claim. (E2) the erasure is a superset only for
+  an **assertion-free** referenced group (6/10 control cells are false
+  negatives otherwise), so §7.4's chartered nomatch-only prefilter gains a
+  gate it cannot ship without. (E3) a digit run beginning `8`/`9` is **always
+  decimal** — no octal reading exists — and references above `\99` are real.
+  (M-1/C1, found by this lane against its own design) `forces_backref` would
+  have been a third exception covering TWELVE rows to a check whose text says
+  the second builds SR-8; **D67 rules SR-8 built in [M6.4.2]** and §6.1 is
+  rewritten to node stamping. (C2/E7) the proposed complement check shared a
+  source with its subject; (C3) two corpus files were marked python-verifiable
+  in the direction that loses the oracle; (C4) no sabotage row covered the
+  wrong-answer mode; (C5) the `built` column is asserted by nothing today.
+  All five §15 ASKs are RULED. §16 tabulates the rest.
 - `backrefs_measurements/` — the [M6.5.1] lane's eight instruments, its oracle
   helper, its archiver and the archived outputs; see its own CLAUDE.md.
   **No instrument here reads a backreference through pcrec, because pcrec
@@ -919,9 +944,18 @@ append-only or historical records.
   adds compile-error NUMBERS, the name table and three option bits whose
   values are asserted BEHAVIOURALLY at import. Every file in `out/` is written
   by `probes/archive.sh` (R30 M7's rule, inherited: the archiver is the only
-  writer). Its own CLAUDE.md lists the FIVE instruments that produced
-  confident wrong output before being fixed, and the one shape four of them
-  shared.
+  writer — and R32 D1/C14 found every header stamping "module `assertions`",
+  now re-scoped with all NINE outputs re-archived in one batch). Its own
+  CLAUDE.md lists **NINE defects across ten instruments** — five found by this
+  lane, four by R32 — every one producing confident wrong output rather than
+  an error, and the two shapes they fall into: a population or filter that
+  does not contain the thing being measured (seven), and an instrument with no
+  way to FAIL (two). **The tenth entry is the one worth reading**: E1's
+  counterexample was already archived here as cell S3 from the first day; no
+  probe was wrong, nothing compared the archive to the design's claim.
+  `probes/simvm.py` — the R32 critic's own simulator, ADOPTED rather than
+  rewritten so the lane cannot soften the instrument that refuted it — and
+  `probes/probe_publish_discipline.py` make that comparison mechanical.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes
