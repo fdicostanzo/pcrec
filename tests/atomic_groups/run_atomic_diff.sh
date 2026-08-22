@@ -394,7 +394,7 @@ fi
 #   the VM artifact is byte-identical either way and the rewrite changes ENGINE
 #   SELECTION and nothing else. Compared under `--engine=vm` because that is
 #   where both builds produce a VM artifact to compare.
-nd_ans=0; nd_bytes=0; nd_same=0; nd_engine=0; ndd=0
+nd_ans=0; nd_bytes=0; nd_same=0; nd_engine=0; nd_barrier=0; ndd=0
 while IFS=$'\t' read -r cls pat; do
     d="$WORKDIR/d$ndd"; ndd=$((ndd + 1))
     gen "$d/on"  "$pat"                        || continue
@@ -436,10 +436,26 @@ while IFS=$'\t' read -r cls pat; do
         # different paths makes them differ for a reason that has nothing to
         # do with the discharge — measured, on this rule's first run, as ten
         # spurious failures.
+        # TWO PAIRS, because [M6.4.4] split what used to be one question.
+        #   b_*  PRUNE ENABLED — what a user gets. The follow BARRIER is
+        #        visible here and is asserted below, in its direction.
+        #   p_*  PRUNE DISABLED on BOTH arms (`-fno-length-prune`) — the
+        #        comparison §5.4's byte claim is actually about. The barrier
+        #        acts on the length prune and on nothing else, so removing the
+        #        prune AT THE SOURCE isolates the axis instead of sed-erasing
+        #        two stamps and hoping that was all of it. MEASURED: with the
+        #        prune off, the two arms are byte-identical again on every
+        #        dead-cut pattern, which is what makes the split honest rather
+        #        than a relaxation.
         "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -o - -- "$pat" > "$d/b_on.c" 2>/dev/null
         "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -fno-atomic-discharge -o - -- "$pat" > "$d/b_off.c" 2>/dev/null
+        "$PCREC" --features all -p rx --engine=vm --no-captures \
+                 -fno-length-prune -o - -- "$pat" > "$d/p_on.c" 2>/dev/null
+        "$PCREC" --features all -p rx --engine=vm --no-captures \
+                 -fno-length-prune -fno-atomic-discharge \
+                 -o - -- "$pat" > "$d/p_off.c" 2>/dev/null
         nd_bytes=$((nd_bytes + 1))
         # TWO AXES ARE NORMALISED AND EXACTLY TWO, and both are things that
         # MUST differ — they are the flag doing its job, not the emitter
@@ -458,27 +474,65 @@ while IFS=$'\t' read -r cls pat; do
         # existed: those four lines were the ONLY difference on all ten
         # dead-cut patterns, which is §5.4's claim confirmed rather than
         # weakened.
+        # [M6.4.4] STILL TWO NORMALISED AXES — the comparison moved instead.
+        #
+        # §5.4 said the discharge "changes ENGINE SELECTION and nothing else",
+        # and that was stated about an emitter which treated `A_ATOMIC` as
+        # TRANSPARENT TO THE FOLLOW. The tier-1 miscompile the blinded D27
+        # corpus found is the proof it is not: a live `A_ATOMIC` is a BARRIER,
+        # because `(?>X)` matches X's own first success and the follow's
+        # minimum width must not influence which success that is. So a
+        # surviving cut now changes engine selection AND the length prune, and
+        # on the PRUNE-ENABLED build the two arms genuinely differ — the whole
+        # MRL apparatus (the macros, the window parameter, the call sites) is
+        # present with the cut deleted and absent with it alive.
+        #
+        # SO THE PRUNE IS REMOVED AT THE SOURCE RATHER THAN SED-ERASED. `p_on`
+        # and `p_off` are both built `-fno-length-prune`, which takes the one
+        # axis the barrier acts on out of the question entirely and leaves
+        # §5.4's claim standing EXACTLY where it is still true — MEASURED:
+        # byte-identical on every dead-cut pattern once the prune is off.
+        # Normalising the two prune STAMPS instead would have hidden a
+        # thirteen-line machinery difference behind a two-line sed and called
+        # the remainder a byte comparison.
+        #
+        # The barrier itself is not lost from the suite: it is asserted right
+        # after, in its DIRECTION, on the prune-ENABLED pair.
         ag_norm() {
             sed -e 's/^\/\* Engine: .*/ENGINE-NORMALISED/' \
                 -e 's/^#define RX_ENGINE_WHY .*/ENGINE-NORMALISED/' \
                 -e 's/^ *\.engine_why = .*/ENGINE-NORMALISED/' \
                 -e 's/^ *\.flags = .*/FLAGS-NORMALISED/' "$1"
         }
-        ag_norm "$d/b_on.c"  > "$d/b_on.norm"
-        ag_norm "$d/b_off.c" > "$d/b_off.norm"
+        ag_norm "$d/p_on.c"  > "$d/b_on.norm"
+        ag_norm "$d/p_off.c" > "$d/b_off.norm"
         if cmp -s "$d/b_on.norm" "$d/b_off.norm"; then
             nd_same=$((nd_same + 1))
         else
-            bad "§3 emission-neutrality: '$pat' emits DIFFERENT VM MACHINERY with and without the discharge (the engine-why and flags stamps are normalised away; this is everything else). §5.4 says possessify's fixpoint re-derives the identical verdict on the same quantifier, so the discharge must change ENGINE SELECTION and nothing else: $(diff "$d/b_on.norm" "$d/b_off.norm" | head -4 | tr '\n' ' ')"
+            bad "§3 emission-neutrality: '$pat' emits DIFFERENT VM MACHINERY with and without the discharge, compared with the LENGTH PRUNE OFF on both arms so the follow barrier is out of the question (only the engine-why and flags stamps are normalised; this is everything else). §5.4 says possessify's fixpoint re-derives the identical verdict on the same quantifier, so with the prune removed the rewrite must change ENGINE SELECTION and nothing else: $(diff "$d/b_on.norm" "$d/b_off.norm" | head -4 | tr '\n' ' ')"
+        fi
+        # THE BARRIER, ASSERTED IN ITS DIRECTION. With the cut DELETED the
+        # loop prunes against the follow and the artifact carries a real MRL
+        # ceiling; with the cut ALIVE the follow does not cross it, so there is
+        # no follow-derived ceiling left to stamp and the value is "none". A
+        # fix that silently stopped scoping the follow would show up here as
+        # "none" disappearing from the OFF arm — which is the miscompile
+        # coming back, caught on the BYTES rather than only on an answer.
+        on_ceil="$(sed -n 's/^#define RX_VM_PRUNE_CEILING //p' "$d/b_on.c" | head -1)"
+        off_ceil="$(sed -n 's/^#define RX_VM_PRUNE_CEILING //p' "$d/b_off.c" | head -1)"
+        if [ "$off_ceil" = '"none"' ] && [ "$on_ceil" != '"none"' ]; then
+            nd_barrier=$((nd_barrier + 1))
+        else
+            bad "§3 follow barrier: '$pat' — with the cut ALIVE (-fno-atomic-discharge) the follow must not cross it, so the VM artifact must carry NO follow-derived MRL ceiling; got on=$on_ceil off=$off_ceil (want on!=\"none\", off=\"none\")"
         fi
     fi
 done < "$WORKDIR/patlist"
 
 if [ "$nd_ans" -ge 5000 ] && [ "$nd_engine" -ge 8 ] && [ "$nd_bytes" -ge 8 ] \
-   && [ "$nd_same" -eq "$nd_bytes" ]; then
-    ok "§3 discharge: $nd_ans answer cells identical with and without -fno-atomic-discharge (floor 5000); $nd_engine dead-cut patterns move DFA<->VM as the flag says (floor 8); all $nd_bytes of them emit byte-identical VM code either way (§5.4 emission-neutrality)"
+   && [ "$nd_same" -eq "$nd_bytes" ] && [ "$nd_barrier" -eq "$nd_bytes" ]; then
+    ok "§3 discharge: $nd_ans answer cells identical with and without -fno-atomic-discharge (floor 5000); $nd_engine dead-cut patterns move DFA<->VM as the flag says (floor 8); all $nd_bytes of them emit byte-identical VM code either way with the length prune off on both arms (§5.4 emission-neutrality, isolated at the source by [M6.4.4]); and all $nd_barrier of them show the FOLLOW BARRIER in its direction on the prune-ENABLED build — a follow-derived MRL ceiling with the cut deleted, none with it alive"
 elif [ "$fail" -eq 0 ]; then
-    bad "§3 discharge: populations too small — $nd_ans answer cells (floor 5000), $nd_engine engine moves (floor 8), $nd_same/$nd_bytes byte-identical"
+    bad "§3 discharge: populations too small — $nd_ans answer cells (floor 5000), $nd_engine engine moves (floor 8), $nd_same/$nd_bytes byte-identical, $nd_barrier/$nd_bytes barrier-directional"
 fi
 
 # =========================================================================
