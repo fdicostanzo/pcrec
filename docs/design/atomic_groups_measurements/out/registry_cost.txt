@@ -3,18 +3,15 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_registry_cost.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
-# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 04aab56 2026-08-22
+# RUN FROM REPO COMMIT        : 20b641f (lane/agdesign)
 # RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
 #   (r31eng final: named because every probe resolves its pcrec from
 #    its own location, so WHICH TREE produced a number is a fact the
 #    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/atomic_groups_measurements/out/ceiling_shape.txt
-#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
-#      M docs/design/atomic_groups_measurements/out/premises.txt
 #      M docs/design/atomic_groups_measurements/out/registry_cost.txt
-# RUN DATE   : 2026-08-22T10:18:47-04:00
+# RUN DATE   : 2026-08-22T10:26:29-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -105,7 +102,49 @@
      ERROR in libpcre2 and in pcrec (§6.3), so a possessive suffix is
      not itself quantifiable.
 
+== (9) per-row FIELD requirements — an EXTRACTION SHAPE, not a file ==
+  r31chk final T1. The two sites below are in files already in the sweep;
+  what the sweep could not see was the SHAPE. It searched for row COUNTS,
+  KIND LISTS and ROUTING SETS. A row also has to satisfy per-FIELD
+  assertions, and those are a fourth shape:
+    144:            if (!r->syntax || !*r->syntax) bad("%s row %zu: empty syntax", kn, i);
+    145:            if (!r->note   || !*r->note)   bad("%s row %zu (%s): empty note", kn, i, r->syntax);
+    173:                bad("%s row %zu (%s): no quantifiable value — unset would silently "
+    1679:        $syntax == "" || $expect == "" { print "BADROW\t" $0 > "/dev/stderr"; next }
+
+  So the new rows need `note` and `expect` NON-EMPTY as well as
+  `quant`. `expect` is load-bearing: run_reject_tests.sh iterates every
+  NON-BASE dump row and calls row_reject, which requires the row's own
+  syntax to be a CLEAN EXIT-1 REJECTION whose stderr CONTAINS the
+  `expect` text and which writes NO output file. Measured on the four:
+    a*+        exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+    a++        exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+    a?+        exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+    a{1,2}+    exit=1 wrote=no  pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 6)
+    -> exit 1, no file written, and "requires module 'atomic-groups'" is
+       a substring of every one. `expect` = that text is SATISFIABLE.
+
+== (10) enumeration by CALL — silent NON-COVERAGE ==
+  r31chk final T2, and it is §7.3's "half-done invisibly" shape in the
+  very file R3 strengthens. check_table_to_parser does not iterate a kind
+  list at all; it names each kind in an explicit CALL:
+    770:    rows = pcrec_registry(RK_ESC, &n);
+    833:    rows = pcrec_registry(RK_GROUP, &n);
+    1606:    const RegRow *rows = pcrec_registry(RK_ESC, &n);
+  A fifth kind is therefore SILENTLY UNCOVERED by the table->parser
+  diagnostic-agreement check: nothing fails, the rows are simply never
+  compared. R3's per-kind assertion has to cover this check too, or the
+  check must iterate RK_COUNT.
+
 == summary ==
-  This sweep is over src,cli,tests with no curated file list.
-  A future reader who widens it further and finds a tenth site should
-  treat that as this probe's next correction, not as a surprise.
+  SITES (9) AND (10) WERE FOUND BY DEFECT SHAPE, NOT BY FILE. Both live in
+  files this sweep already read; what was missing was the QUESTION. The
+  sweep now extracts five shapes -- row counts, kind lists, routing sets,
+  per-row FIELD assertions, and enumeration by CALL -- and the next
+  correction to it will most likely be a sixth shape rather than a
+  seventh directory.
+  This sweep is over src,cli,tests with no curated file list,
+  and it now reports ELEVEN sites where the first version reported six.
+  A future reader who finds a twelfth should treat it as this probe's next
+  correction, not as a surprise -- and should suspect a new SHAPE before a
+  new directory.
