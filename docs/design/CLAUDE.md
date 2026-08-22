@@ -899,7 +899,7 @@ append-only or historical records.
   Measurements: `atomic_groups_measurements/`. A D6 adversarial panel (R31)
   reviews it before [M6.4.2] starts; §14 is the document's own list of where
   to attack.
-- `atomic_groups_measurements/` — the [M6.4.1] lane's seven probes, its
+- `atomic_groups_measurements/` — the [M6.4.1] lane's eight probes, its
   archiver and the archived outputs; see its own CLAUDE.md. **Every instrument
   here reads a compiler that cannot compile the construct it measures**, so
   every in-pcrec arm works through a proxy (the atomicity-erased twin, or the
