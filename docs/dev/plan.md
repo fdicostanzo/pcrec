@@ -264,7 +264,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
     WRONG where the lane deviated deliberately (possessify's `pss_walk` is NOT
     transparent to `A_ATOMIC`; the free discharge is UNSOUND for a lazy body;
     the STRATS stamp must read the emitted shape, not `Ast.possessive`).
-  - [M6.4.3] STATE:started (cell agd27 created 2026-08-22 10:3x from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py driver + GOAL_FACTS.md = the approved design's Appendix B; sonnet author in flight, in parallel with the design's final revision) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
+  - [M6.4.3] STATE:started (AUTHORED 2026-08-22 11:4x on branch agd27 44ae045 — 8 files / 113 patterns / 137 cells, oracle.py 137/137 reproduced by the manager, nothing in GOAL_FACTS found wrong; acceptance run against the merged module at [M6.4.2]'s merge review (69f3b93); cell agd27 created from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py + GOAL_FACTS.md = the approved design's Appendix B) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
     author denied src/ and tests/; written from the PCRE2 goal; may be
     AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the
     implementation; run against the shipped module at merge review for a
