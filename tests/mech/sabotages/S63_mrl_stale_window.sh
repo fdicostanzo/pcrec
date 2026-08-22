@@ -32,6 +32,6 @@ SAB_DESC="the start++ retry stops recomputing the prefilter window, carrying an 
 SAB_DOC_FIGURE="tests/mrl/run_mrl_tests.sh, ruling 2 (b); k23_design.md §9.1, §14.4"
 SAB_COUNT=1
 SAB_BEFORE='    if (v.nclamp > 0 && prefn)
-        snprintf(retry_win, sizeof retry_win,'
+        /* H3 site 2 of 3 (the RETRY recompute). The recompute itself STAYS on a'
 SAB_AFTER='    if (0 && prefn)  /* SABOTAGE S63 */
-        snprintf(retry_win, sizeof retry_win,'
+        /* H3 site 2 of 3 (the RETRY recompute). The recompute itself STAYS on a'
