@@ -1,0 +1,59 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# docs/spec/match_api.md S3.1's find-all loop: report a match, then resume
+# at its END if non-empty or at the next character boundary past its START
+# if empty; `<prefix>_search`'s offsets are always ABSOLUTE into the
+# subject, never relative to startpos. The .rxt format has no native
+# repeat-loop primitive, so this file hand-simulates the successive steps
+# such a loop would take with `ms`/`ns` at the startpos values the loop
+# itself would visit, checked against libpcre2's own startoffset-driven
+# `pcre2_match` (which is exactly what `<prefix>_search`'s startpos
+# threads, per that section) -- not against a hand-rolled "what the loop
+# should do" guess.
+#
+# Every block carries `features atomic-groups`, per atomic_basic.rxt.
+
+# (?>a?) is nullable -- an atomic group can and does produce an empty
+# match, and does so at the very end of the subject once every non-empty
+# option is exhausted. Simulated loop over "aa": step 1 (p=0) finds a
+# non-empty match and would resume at its end (1); step 2 (p=1) finds
+# another non-empty match and would resume at its end (2); step 3 (p=2)
+# finds the EMPTY match at the end -- the case the loop's special
+# advance rule exists for.
+pattern (?>a?)
+features atomic-groups
+m "aa" 0 1
+ms 1 "aa" 1 2
+ms 2 "aa" 2 2
+
+# The absolute-offset promise: searching from a nonzero startpos still
+# reports the match's true position in the subject, not an offset
+# relative to where the search began.
+pattern (?>a+)b
+features atomic-groups
+ms 1 "xaaab" 1 5
+
+# The atomic trap persists at a nonzero startpos exactly as it does at 0
+# -- it is a property of the pattern at whatever position it is tried
+# from, not specific to position 0.
+pattern (?>a+)a
+features atomic-groups
+ns 1 "xaaab"
+
+# A possessive optional GROUP under the find-all loop: two non-empty
+# matches, then an empty match at the very end -- same empty-match-
+# advance shape as the (?>a?) case above, now through the possessive
+# spelling instead of (?>...).
+pattern (?:ab)?+
+features atomic-groups
+m "abab" 0 2
+ms 2 "abab" 2 4
+ms 4 "abab" 4 4
+
+# A possessive bounded repeat, searched from two different non-adjacent
+# startpos values a real loop would use after a prior non-empty match --
+# the two windows do not overlap and each reports its own absolute span.
+pattern a{1,2}+
+features atomic-groups
+ms 1 "xaaaa" 1 3
+ms 3 "xaaaa" 3 5

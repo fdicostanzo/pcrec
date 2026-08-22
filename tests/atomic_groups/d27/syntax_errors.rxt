@@ -1,0 +1,97 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# Genuine PCRE2 compile-time rejections involving possessive-quantifier
+# syntax or atomic-group syntax -- every pattern below was confirmed to
+# fail `pcre2_compile` on libpcre2 10.46 (see README.md for the command),
+# so a correct implementation must refuse every one of these, never
+# miscompile them (CLAUDE.md's "never miscompile" mandate).
+#
+# Every block carries `features atomic-groups`, so this file tests
+# rejection of genuinely malformed syntax WITH the module enabled --
+# distinct from gating.rxt, which tests the module-DISABLED refusal
+# direction on otherwise-VALID syntax. Conflating the two would let an
+# implementation that only ever checks "is the module enabled" (and never
+# validates the syntax itself) pass this file by accident.
+#
+# A note on what could be measured pre-implementation (build/pcrec today
+# refuses every atomic/possessive construct outright, per the cell brief):
+# `pcrec` ALREADY independently rejects several of these for the SAME
+# reason PCRE2 does, via checks that have nothing to do with the
+# atomic-groups module gate and fire identically with or without
+# `--features atomic-groups` -- confirmed directly against the CLI, not
+# assumed: `^*+`/`^++` (quantified bare anchor -- "quantifier does not
+# follow a repeatable item"), `a{2,1}+` (numbers out of order), `a*?+`/
+# `a??+` (multiple quantifiers on the same item), and `a{65536}+` (number
+# too big -- U5's existing ceiling). The rest (`(?>a`, `(?>a))`, `(?>*a)`,
+# `a+++`, `a?+?`, `a*++`, `a++?`) currently reach only the module-gate
+# refusal ("possessive quantifier requires module 'atomic-groups'" or the
+# `(?>...)` equivalent) because pcrec cannot look past "is this construct
+# implemented yet" -- these are a forward promise, checked here only on
+# exit code (perr, per docs/testing.md, never asserts message text), to
+# be genuinely exercised once the module lands.
+
+# Two quantifiers stacked on one item with no possessive marker involved
+# at all -- PCRE2 rejects this regardless of atomic-groups.
+pattern a*?+
+features atomic-groups
+perr
+
+pattern a*++
+features atomic-groups
+perr
+
+pattern a++?
+features atomic-groups
+perr
+
+pattern a??+
+features atomic-groups
+perr
+
+pattern a?+?
+features atomic-groups
+perr
+
+# A THIRD quantifier marker with nothing left to attach to.
+pattern a+++
+features atomic-groups
+perr
+
+# Unclosed atomic group.
+pattern (?>a
+features atomic-groups
+perr
+
+# Unmatched closing parenthesis after an otherwise-well-formed atomic
+# group.
+pattern (?>a))
+features atomic-groups
+perr
+
+# A bare `*` with no repeatable item before it, inside an atomic group.
+pattern (?>*a)
+features atomic-groups
+perr
+
+# A possessive marker directly on an anchor -- PCRE2 rejects quantifying
+# a bare anchor at all (independent of atomic-groups), so the possessive
+# spelling is rejected the same way the plain quantified-anchor form is.
+pattern ^*+
+features atomic-groups
+perr
+
+pattern ^++
+features atomic-groups
+perr
+
+# Out-of-order bounds, still rejected the same way with a possessive
+# suffix as without one.
+pattern a{2,1}+
+features atomic-groups
+perr
+
+# Repeat count above PCRE2's 65535 ceiling (U5), still rejected with a
+# possessive suffix.
+pattern a{65536}+
+features atomic-groups
+perr

@@ -1,0 +1,189 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# The possessive-quantifier spellings *+ ++ ?+ {n}+ {n,m}+ {n,}+ {,n}+, all
+# measured against libpcre2 10.46 (see README.md for the command). B.1 of
+# the design author's goal facts claims X*+ / X++ / X?+ / X{n,m}+ are
+# defined as (?>X*) / (?>X+) / (?>X?) / (?>X{n,m}); a handful of blocks
+# below re-derive that equivalence directly (same subject, both spellings,
+# both measured, not assumed) rather than just trusting the claim.
+#
+# Every block carries `features atomic-groups` -- see atomic_basic.rxt's
+# header for why it is required on every block, not just some.
+
+# --- star ---
+pattern a*+b
+features atomic-groups
+m "aaab" 0 4
+
+# a*+ eats every 'a' on its first attempt; nothing is left to give back
+# for a trailing 'a', at any start position in the subject.
+pattern a*+a
+features atomic-groups
+n "aaab"
+
+# --- plus ---
+pattern a++
+features atomic-groups
+m "aaab" 0 3
+
+# --- optional ---
+pattern a?+
+features atomic-groups
+m "a" 0 1
+m "" 0 0
+
+# a?+ commits to matching the 'a' if present; with nothing left over,
+# a mandatory trailing 'a' cannot be satisfied.
+pattern a?+a
+features atomic-groups
+n "a"
+
+# Contrast: the ORDINARY (non-possessive) spelling backtracks the ? to
+# empty and the same subject matches. (No `features` needed -- ordinary
+# quantifiers are base syntax.)
+pattern a?a
+m "a" 0 1
+
+# --- classes ---
+pattern [ab]*+c
+features atomic-groups
+m "ababc" 0 5
+
+pattern [ab]*+a
+features atomic-groups
+n "ababa"
+
+# --- exact count: no internal choice, so possessive changes nothing ---
+pattern a{3}+
+features atomic-groups
+m "aaa" 0 3
+
+pattern a{3}+a
+features atomic-groups
+m "aaaa" 0 4
+
+# --- bounded {n,m}+ ---
+pattern a{2,4}+b
+features atomic-groups
+m "aaaab" 0 5
+
+# {2,4}+ greedily and atomically takes the max (4), leaving no 'a' for
+# the trailing literal, at any of the four possible start positions in a
+# 4-character subject.
+pattern a{2,4}+a
+features atomic-groups
+n "aaaa"
+
+# Contrast: the ordinary (non-possessive) {2,4} backtracks the count
+# (4 -> 3) and the same subject matches.
+pattern a{2,4}a
+m "aaaa" 0 4
+
+# --- unbounded {n,}+ ---
+pattern a{2,}+b
+features atomic-groups
+m "aaab" 0 4
+
+pattern a{2,}+a
+features atomic-groups
+n "aaaa"
+
+# --- {,n}+ : PCRE2 10.43+ quantifier form (equivalent to {0,n}+), per B.5 ---
+pattern a{,3}+b
+features atomic-groups
+m "aaab" 0 4
+
+pattern a{,3}+a
+features atomic-groups
+n "aaa"
+
+# --- possessive on a non-capturing group ---
+pattern (?:ab)*+c
+features atomic-groups
+m "ababc" 0 5
+
+pattern (?:ab)*+
+features atomic-groups
+m "ababab" 0 6
+
+# A possessive quantifier over an alternation whose branches can end in
+# two different places -- *+ and ++ (unlike the BRACE forms {n}+/{n,m}+/
+# {n,}+, see captures_under_cut.rxt and atomic_in_quantifiers.rxt for
+# where that distinction matters) commit per-iteration the same way
+# (?>...) would: one iteration of "a" here, no retry to "ab".
+pattern (?:a|ab)*+
+features atomic-groups
+m "aba" 0 1
+
+pattern (?:a|ab)++
+features atomic-groups
+m "aba" 0 1
+
+# --- B.1's equivalence, re-derived directly (both spellings, same subject) ---
+pattern a++
+features atomic-groups
+m "aaa" 0 3
+
+pattern (?>a+)
+features atomic-groups
+m "aaa" 0 3
+
+pattern a?+
+features atomic-groups
+m "a" 0 1
+
+pattern (?>a?)
+features atomic-groups
+m "a" 0 1
+
+pattern a{2,4}+
+features atomic-groups
+m "aaaaa" 0 4
+
+pattern (?>a{2,4})
+features atomic-groups
+m "aaaaa" 0 4
+
+pattern [ab]*+
+features atomic-groups
+m "ababc" 0 4
+
+pattern (?>[ab]*)
+features atomic-groups
+m "ababc" 0 4
+
+# --- negated-class and \d possessive traps ---
+# The `\d` cells below need `classes` added to the features list, not just
+# `atomic-groups`: a block's `features` directive REPLACES pcrec's default
+# feature set rather than adding to it, so `\d` (module `classes`, normally
+# on by default via std1) is NOT available under a bare `features
+# atomic-groups` -- confirmed directly against the CLI (D27 triage,
+# post-[M6.4.2]: `--features atomic-groups` alone refuses `\d++` with
+# "requires module 'classes'"; `--features atomic-groups,classes` accepts
+# it). `[ab]*+`/`[^b]*+` above use a literal class, not `\d`, so they need
+# no such addition.
+#
+# [^b]*+ possessively eats every non-'b' byte -- including the literal
+# 'c' the pattern goes on to require -- so the required 'c' is never
+# available afterward, anywhere in the subject.
+pattern [^b]*+c
+features atomic-groups
+n "aaacx"
+
+pattern [^b]*+b
+features atomic-groups
+m "aaab" 0 4
+
+pattern \d++
+features atomic-groups,classes
+m "123x" 0 3
+
+# The other classic possessive trap, on \d instead of a literal class:
+# \d*+ eats every digit, leaving none for the mandatory trailing \d.
+pattern \d*+\d
+features atomic-groups,classes
+n "123"
+
+pattern (?:[a-c]|abc)*+
+features atomic-groups
+m "abcabc" 0 6

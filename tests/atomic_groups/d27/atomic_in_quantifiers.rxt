@@ -1,0 +1,75 @@
+# [M6.4.3] D27 blinded corpus -- atomic-groups module.
+#
+# (?>X) used as the BODY of an ordinary quantifier: each repetition of the
+# quantifier gets its own INDEPENDENT cut (no backtracking within one
+# iteration's choice), but the quantifier itself can still backtrack on
+# the TOTAL NUMBER of iterations -- which is NOT the same thing as making
+# the whole repeated construct possessive (X++ / (?:X)++), where the
+# iteration COUNT is locked too. The last pair of blocks below measures
+# that distinction directly: same body, same subject, genuinely different
+# answers between "(?>X)+" and "(?:X)++". All spans measured against
+# libpcre2 10.46 (see README.md).
+#
+# Every block carries `features atomic-groups`, per atomic_basic.rxt.
+
+# Per-iteration atomic cut still traps exactly like a single (?>...):
+# iteration 1 commits to "a" (first alternative), iteration 2 can't start
+# (next char is 'b', neither alternative matches), so the + quantifier
+# (which already has its required 1 iteration) stops with the cursor
+# after "a" -- and there is no "c" there, nor anywhere else in the
+# subject once every start position is tried.
+pattern (?:(?>a|ab))+c
+features atomic-groups
+n "abc"
+
+# Here the first alternative's greedy choice per iteration naturally
+# lands on the right total count with no need to reduce it afterward.
+pattern (?>a|aa)+b
+features atomic-groups
+m "aaab" 0 4
+
+# An atomic, possibly-empty body under * with an empty-iteration guard:
+# zero iterations is fine (the group's own first attempt is empty, atomic
+# commits to that, * is satisfied with 0).
+pattern (?>a?)*b
+features atomic-groups
+m "b" 0 1
+
+pattern (?>a?)*b
+features atomic-groups
+m "ab" 0 2
+
+pattern (?>a?)+b
+features atomic-groups
+m "aab" 0 3
+
+pattern (?:(?>ab|a))+c
+features atomic-groups
+m "ababc" 0 5
+
+pattern (?:(?>ab|a))+c
+features atomic-groups
+m "abababc" 0 7
+
+# --- the count-flexibility distinction, measured directly ---
+#
+# (?>aa|a) repeated by an ordinary +: greedy per-iteration choice takes
+# "aa" then "a" (2 iterations, cursor after 3 chars), but the trailing
+# "ab" then fails with only "b" left -- so the ORDINARY + backtracks the
+# ITERATION COUNT down to 1 (just the initial "aa"), leaving "ab" for the
+# literal that follows. This is a normal quantifier-count backtrack; the
+# atomicity only ever applied WITHIN each iteration's own alternative
+# choice, never across iterations.
+pattern (?:(?>aa|a))+ab
+features atomic-groups
+m "aaab" 0 4
+
+# The same body, the same greedy per-iteration process, but the WHOLE
+# repeated construct is possessive this time: once ++ commits to its
+# iteration count, that count itself cannot be reduced either (not just
+# the choice within one iteration) -- so there is no fallback to 1
+# iteration, and (checked at every start position in the subject) no
+# match anywhere.
+pattern (?:aa|a)++ab
+features atomic-groups
+n "aaab"
