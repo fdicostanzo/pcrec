@@ -10,6 +10,17 @@ the date, and the python3, libpcre2 and gcc versions. Same intent as
 **Evidence for the [M6.4.1] panel, never an oracle.** No check in `make test`
 reads anything here; re-run the probe to re-measure.
 
+**EVERY HEADER HERE SAYS `working tree at run time: DIRTY`, and the header
+itself says why.** The archiver stamps `git status --porcelain` and then writes
+its output INTO the tree it just stamped, so the one dirty entry listed under
+each stamp is that output file: `?? docs/design/atomic_groups_measurements/out/
+<thisfile>`. Read the listed entries, not the word. A header whose dirt list
+contains anything OTHER than its own output file is reporting a real
+uncommitted change and the number should be re-taken. (The same is structurally
+true of `../../assertions_measurements/out/`; it is written down here because a
+panel reading `DIRTY` on eight files in a row deserves the explanation in the
+directory rather than in a commit message.)
+
 ## Files
 
 - `atomic_semantics.txt` — `probe_atomic_semantics.py`, 95 cells. Headline:
