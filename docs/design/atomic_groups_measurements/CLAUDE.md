@@ -77,6 +77,17 @@ confuse one lane's numbers with another's.
   in the subset argument is position-dependent. Headline: **0 violations**, with
   a **non-vacuity counter of 202** so the zero is not an artefact of a family
   where possessification never matters.
+- **`probes/probe_premises.sh` — MEASURED, in-pcrec.** The design's §1 premise
+  table and §6.3's error-shape table as ONE re-runnable script, because a
+  premise whose evidence is a shell command quoted in prose is asserted rather
+  than verified (R30 M8's finding, one document over). Headline: `(?>` refuses
+  at offset 0 from the REGISTRY; the four possessive spellings refuse at the
+  `+`'s own offset from `parse.c:987-988`, OUTSIDE it; **`a{,2}b` COMPILES and
+  matches `"aab"` at `0 3`**, so pcrec's base tier already reads `{,n}` as a
+  quantifier and this module must not touch it; and `a*?+` refuses today with
+  `multiple quantifiers on the same item`. It deliberately includes `a*++`,
+  whose message CHANGES when the module lands, so a reject-suite author has the
+  before-picture without reconstructing it.
 - **`probes/probe_rk_alarm.sh` — MEASURED, self-restoring.** What a fifth
   `RegKind` costs (§7.3), on `../assertions_measurements/probes/
   probe_wswitch_alarm.sh`'s shape one enum over. Headline: **0 `-Wswitch`

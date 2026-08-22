@@ -33,7 +33,9 @@ Adopted verbatim from `assertions_design.md` §0.1, which took it from
 
 Every premise below was re-verified against **this worktree's HEAD build**
 (`build/pcrec`, `lane/agdesign`), not inherited from the documents that state
-it. Where a re-verification moved a number, the movement is recorded inline.
+it, and the compiler-side ones are re-verifiable by a read-only critic:
+`probes/probe_premises.sh`, archived as `out/premises.txt`. Where a
+re-verification moved a number, the movement is recorded inline.
 
 ### 0.2 The design in one paragraph
 
@@ -72,6 +74,7 @@ R30 M7's rule, inherited).
 | `probes/cut_proto.c` + `probes/probe_cut_trail.py` | PROTOTYPE, checked vs libpcre2 | that the proposed lowering computes PCRE2's answers, 14/14, **9 non-vacuous** (§3.4) |
 | `probes/probe_free_discharge.py` | MEASURED, in-pcrec + libpcre2 | the free discharge: 0 violations / 532 positive-verdict patterns, and what it rescues (§5.3) |
 | `probes/probe_possessify_under_cut.py` | MEASURED, in-pcrec + libpcre2 | that possessify's verdict survives a cut in all four quantifier positions: 0 / 48,000 (§6.4) |
+| `probes/probe_premises.sh` | MEASURED, in-pcrec | §1's premise table and §6.3's error shapes, as one re-runnable script |
 | `probes/probe_rk_alarm.sh` | MEASURED, self-restoring | that a fifth `RegKind` raises **NO** build alarm (§7.3) |
 | `assertions_measurements/probes/probe_wswitch_alarm.sh` | **re-run, not rebuilt** | that a new `AKind` raises 15 (§3.2) |
 
@@ -86,9 +89,9 @@ archived here as `out/wswitch_alarm_rerun.txt`.
 
 | # | premise | verified how | result |
 |---|---|---|---|
-| P1 | `(?>` refuses, naming module `atomic-groups` | `build/pcrec -p rx '(?>a)'` | `pcrec: (?>...) requires module 'atomic-groups' (pattern offset 0)` |
-| P2 | the possessive suffix refuses, naming the same module, from OUTSIDE the registry | `src/parse/parse.c:987-988`; `build/pcrec -p rx 'a*+'` and `'a{,2}+b'` | `pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)` / `(pattern offset 5)` — the `+` in both cases |
-| P3 | `{,n}` is ALREADY a quantifier in pcrec's base tier | `a{,2}b` compiled and run on `"aab"` | **match 0 3** — the quantifier reading, agreeing with PCRE2 10.46 and python 3.14 |
+| P1 | `(?>` refuses, naming module `atomic-groups` | `probe_premises.sh` | `pcrec: (?>...) requires module 'atomic-groups' (pattern offset 0)` |
+| P2 | the possessive suffix refuses, naming the same module, from OUTSIDE the registry | `src/parse/parse.c:987-988`; `probe_premises.sh` | `pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)` / `(pattern offset 5)` — the `+` in both cases |
+| P3 | `{,n}` is ALREADY a quantifier in pcrec's base tier | `probe_premises.sh` | **match 0 3** — the quantifier reading, agreeing with PCRE2 10.46 and python 3.14 |
 | P4 | `RX_CUT` does not touch the trail | `src/gen/emit_vm.c:4791-4793` (and the `--trace` twin at `:4823-4826`) | `run->resume_depth = slot_values[slot]`, one statement |
 | P5 | the fail label rewinds the trail to the POPPED FRAME's mark | `src/gen/emit_vm.c:5071-5079` | `while (trail_depth > frame.trail_mark) { … }` |
 | P6 | the emitted search loop already retries at later starts and RE-ASKS the prefilter | `src/gen/emit_vm.c:5169-5182`, `:5240-5256` | `attempt_position++` then the recompute block, verbatim in an emitted artifact (`out/ceiling_shape.txt`) |
@@ -759,7 +762,7 @@ exists to prevent.
 
 The structural rule: after the lazy `?` has been consumed
 (`src/parse/parse.c:986`), a following `+` is an ERROR, not a possessive
-marker. **That already happens and was MEASURED on HEAD this session**, so the
+marker. **That already happens and was MEASURED on HEAD this session** (`out/premises.txt`), so the
 module gets it for free rather than having to build it:
 
 | pattern | pcrec on HEAD | libpcre2 10.46 | D26 verdict |

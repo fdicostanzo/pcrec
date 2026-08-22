@@ -57,6 +57,15 @@ directory rather than in a commit message.)
   **48,000 cells, 0 violations** across all four quantifier positions relative
   to the cut (positive verdicts 275 / 75 / 72 / 220), with a **non-vacuity
   counter of 202**.
+- `premises.txt` — `probe_premises.sh`. Headline: `(?>a)` refuses at offset 0;
+  `a*+`/`a++`/`a?+` at offset 2, `a{2}+` at 4, `a{,2}+b` at 5, `a{1,2}+` at 6 —
+  the `+`'s own offset in every case. **`a{,2}b` COMPILES and matches `"aab"` at
+  `0 3`** (the quantifier reading, agreeing with libpcre2 10.46 and python
+  3.14). `a*?+` and `a**` refuse with `multiple quantifiers on the same item`;
+  `a*++` refuses with the possessive message TODAY and will refuse with the
+  multiple-quantifiers one after the module lands. A `--no-captures` DFA
+  artifact carries **0** `RX_ENGINE` defines; the default artifact carries
+  `RX_ENGINE "vm"` and `RX_ENGINE_WHY "capture group at pattern offset 0"`.
 - `rk_alarm.txt` — `probe_rk_alarm.sh`. Headline: **28 files offered, 28
   compiled clean, 0 `-Wswitch` diagnostics** naming a new `RegKind`. A fifth
   row kind's incompleteness is invisible to the compiler, which is why §7.4
