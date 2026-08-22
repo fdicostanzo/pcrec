@@ -253,3 +253,31 @@ detector and should be primary.
 | E14 | LOW | simvm.py `publish` default 'close' | a replay with run(pat, subj) silently gets the corrected model | REVISION 2: 'open' or no default |
 | E10 res. | LOW | §3.1(a):285 "compile error THERE" unqualified | §16 claims the correction applied | REVISION 2 |
 | note | LOW | §3.2.3's emitted shape shows no vm_work call | §3.8 recommends the charge | REVISION 2 |
+
+## Revision 2 (r32chk's items) — lane/brdesign b3d0b32 → e369fac (2 commits; §3.2/§5/§7.2 byte-untouched, hunk-checked; no probe or archive changed)
+
+C2 closed three ways: (a) the per-site count is a DECLARED INTEGER COLUMN
+(the lane names why this was the sharpest: "knows" was doing unearned
+work — a `\<digit>` scanner drifts WITH the emitter, green on an
+incorrect compiler); octal-ambiguous fixtures excluded or explicitly
+counted; (b) a SCOPED guard "≥ N fixtures declare ≥ 1 bref", N a literal,
+explicitly not :1013's global guard; (c) token-level stripping, one pass,
+both callers on the stripped text; S68 still fires (its sabotage is a real
+CALL). N1 accepted with the premise CORRECTED, and it got worse:
+mod_named_groups.c:154-155 PREPENDS each declaration and emit_dfa.c:
+676-677 walks from the head, so the array reaching qsort is in DESCENDING
+group number (STRUCTURAL, both sites) — on a stable glibc the tiebreak-
+less table comes out (name asc, number DESC), and §8.2's walk-back-then-
+forward caller algorithm then selects the HIGHEST-numbered participating
+group: exactly the rule §8.3's "xyy" cell rules out, silently, on the
+development platform. The tiebreak is a CORRECTNESS requirement; §8.2
+corrected; detector as ruled (rows non-decreasing in (name, number) read
+off the artifact + comparator totality). N2: base verified on the shipped
+binary (33/61/6; `\0` is backrefs, dfa|vm, unbuilt) — built 33→47,
+unbuilt 61→49, na 6, total 102; §13 P-11 states the tripwire's 48 and the
+tally's 94 are different sets. N3/N4/N6 (tag range open-ended upward, with
+the reason), N5 (run_backref_diff.sh §7 SPAN-DIVERGENCE section with its
+own exact guard — four guards now), C18 residue (9 cells / 8 patterns),
+S-BR12 flagged CROSS-MILESTONE (ships with [M6.5.2], unvalidatable until
+[M6.4.2]'s stamping; the matrix must not count it). r32eng's E12/E13/E14
++ E10 residual: in the lane's queue (revision 2b).
