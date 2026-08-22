@@ -1,0 +1,154 @@
+# tests/backrefs/d27/octal.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, the \N octal-vs-backreference disambiguation rule (F4).
+#
+# THE RULE: \1..\9 ALWAYS count backreferences over the WHOLE pattern
+# (forward references included) -- never octal, never a literal digit.
+# \10 and above count only the groups BEFORE the escape: if that many
+# groups exist already, it is a backreference; otherwise it falls back to
+# an octal escape (\ddd, at most 3 octal digits total, only digits 0-7).
+# \8 and \9 can NEVER be octal (8 and 9 are not valid octal digits), so
+# they are unconditionally backreferences -- error 115 if no such group,
+# never a fallback. \0 is always octal (there is no group 0). \400 is
+# error 151 (octal value > \377 in 8-bit non-UTF mode).
+#
+# THIS WHOLE FILE IS pcre2-only. python3 `re` has no octal-fallback rule
+# at all: `(a)\10` raises "invalid group reference 10" at compile time --
+# python always reads \NN as a decimal backreference and never falls back
+# to octal, so there is no python expectation for any cell here. Measured
+# directly: python3 -c "import re; re.compile(r'(a)\10')" ->
+# re.error: invalid group reference 10 at position 4.
+#
+# Every measurement below is against real libpcre2 10.46 (br_oracle.py).
+# Nothing here has been run against build/pcrec (module unbuilt).
+
+# --- \1..\9 count the WHOLE pattern, including forward references. A
+# forward \1 can never succeed on its own (F1: unset backref fails), no
+# matter how many groups eventually appear later in the pattern. ---
+# pcre2-only: no octal-fallback rule in python re (see file header)
+pattern \1(a)
+features backrefs
+n "aa"
+n "a"
+
+# --- \10 WITHOUT ten groups before it: octal 010 = byte 0x08, not a
+# backreference (only 0 groups exist before the escape point). The ten
+# groups that follow are then ten ordinary literal-'letter' captures. ---
+# pcre2-only: no octal-fallback rule in python re (see file header)
+pattern \10(a)(b)(c)(d)(e)(f)(g)(h)(i)(j)
+features backrefs
+m "\x08abcdefghij" 0 11
+gp 10 10 11
+
+# --- \10 WITH exactly ten groups before it: now it IS backreference 10. ---
+# pcre2-only: no octal-fallback rule in python re (see file header)
+pattern (a)(b)(c)(d)(e)(f)(g)(h)(i)(j)\10
+features backrefs
+m "abcdefghijj" 0 11
+gp 10 9 10
+n "abcdefghija"
+
+# --- `(a)\10` -- one group before, so \10 cannot be backreference 10
+# (doesn't exist); it octal-izes to 010 = 0x08. ---
+# pcre2-only: no octal-fallback rule in python re (see file header)
+pattern (a)\10
+features backrefs
+m "a\x08" 0 2
+gp 1 0 1
+
+# --- `(a)\18` -- \1 is a valid backref (whole-pattern count, 1 group
+# exists), so the octal-fallback rule for \10+ never even applies here;
+# \18 reads as backref \1 followed by a literal '8'. Contrast with the
+# two cells above, where the LEADING two digits form the escape. ---
+# pcre2-only: \1 vs octal-fallback distinction has no python equivalent
+pattern (a)\18
+features backrefs
+m "a\x018" 0 3
+gp 1 0 1
+
+# --- \8 and \9 are NEVER octal (8, 9 are not octal digits) and NEVER a
+# literal digit outside a class -- always backreferences, unconditionally,
+# even when exactly 8 or 9 groups happen to precede them. ---
+# pcre2-only: python has no \8/\9 backreference concept beyond \1-\9 groups
+pattern (a)(b)(c)(d)(e)(f)(g)(h)\8
+features backrefs
+m "abcdefghh" 0 9
+gp 8 7 8
+
+# pcre2-only: python has no \8/\9 backreference concept beyond \1-\9 groups
+pattern (a)(b)(c)(d)(e)(f)(g)(h)(i)\9
+features backrefs
+m "abcdefghii" 0 10
+gp 9 8 9
+
+# pcre2-only: \8/\9 with no such group is error 115, never octal/literal
+pattern \8
+features backrefs
+perr
+
+pattern \9
+features backrefs
+perr
+
+# --- \0 is always octal (no group 0 exists), up to 3 digits total. ---
+# pcre2-only: python's \0 handling differs entirely (no octal-run concept)
+pattern \0
+features backrefs
+m "\x00" 0 1
+
+# pcre2-only: python's \0 handling differs entirely (no octal-run concept)
+pattern \01
+features backrefs
+m "\x01" 0 1
+
+# pcre2-only: python's \0 handling differs entirely (no octal-run concept)
+pattern \012
+features backrefs
+m "\x0a" 0 1
+
+# --- Three-digit cap: `\0123` reads as octal \012 (0x0a) THEN a literal
+# '3' -- the fourth digit falls outside the 3-digit octal escape. ---
+# pcre2-only: python's \0 handling differs entirely (no octal-run concept)
+pattern \0123
+features backrefs
+m "\x0a3" 0 2
+
+# --- The octal fallback is general, not just an \8/\9-adjacent rule:
+# `\101` with zero groups before it and no group 101 existing anywhere
+# falls back to octal 101 = 0x41 = 'A'. ---
+# pcre2-only: no octal-fallback rule in python re (see file header)
+pattern \101
+features backrefs
+m "A" 0 1
+
+# --- \400: octal value exceeds \377 in 8-bit non-UTF mode -- a genuine
+# PCRE2 compile rejection, independent of the backrefs module's own
+# gating (once the module lands, pcrec must refuse this too). ---
+# pcre2-only: python's octal escape ceiling and error differ
+pattern \400
+features backrefs
+perr
+
+# --- Class-position literals: [\8] [\9] [\k] [\g] are the LITERAL
+# characters '8' '9' 'k' 'g' inside a class -- none of the backreference/
+# subroutine spellings apply once inside [...]. python rejects all four
+# as bad escapes, so this whole block is libpcre2-only. ---
+# pcre2-only: python rejects \8 \9 \k \g as bad escapes inside a class
+pattern [\8]
+features backrefs
+m "8" 0 1
+n "9"
+
+# pcre2-only: python rejects \8 \9 \k \g as bad escapes inside a class
+pattern [\9]
+features backrefs
+m "9" 0 1
+
+# pcre2-only: python rejects \8 \9 \k \g as bad escapes inside a class
+pattern [\k]
+features backrefs
+m "k" 0 1
+
+# pcre2-only: python rejects \8 \9 \k \g as bad escapes inside a class
+pattern [\g]
+features backrefs
+m "g" 0 1

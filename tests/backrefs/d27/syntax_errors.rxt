@@ -1,0 +1,83 @@
+# tests/backrefs/d27/syntax_errors.rxt -- D27 blinded acceptance corpus,
+# module `backrefs`, GENUINE PCRE2 compile-time rejections -- constructs
+# that are invalid PCRE2 syntax independent of any module gate, so once
+# `backrefs` lands, pcrec must ALSO refuse every pattern below (with its
+# own diagnostic wording, per D26 -- the NUMBER/existence of the error is
+# the fact, not pcrec's phrasing of it).
+#
+# All `perr` blocks. Every pattern here compiles under `features
+# backrefs` today too, but for the WRONG reason (the module itself is
+# unbuilt -- "is not implemented yet" -- not because pcrec recognizes the
+# construct as genuinely invalid PCRE2). That is expected of a D27
+# corpus authored before the module lands; see README.md. Once backrefs
+# ships, a green run here means pcrec is rejecting these for the RIGHT
+# reason, and that reconciliation is exactly what the merge review is
+# for. Every compile error NUMBER cited in a comment was read from
+# libpcre2 via br_oracle.compile_err(), never guessed.
+
+# --- \g{0}: there is no group 0 to backreference (group 0 is always the
+# whole match, never itself an addressable backreference target).
+# libpcre2 error 115, "reference to non-existent subpattern". ---
+pattern \g{0}
+features backrefs
+perr
+
+# --- \k<1>: a \k name must start with a non-digit -- \k's argument is
+# ALWAYS a name, never a bare number (contrast \g{1}, which does accept
+# a bare number). libpcre2 error 144, "subpattern name must start with a
+# non-digit". ---
+pattern \k<1>
+features backrefs
+perr
+
+# --- \k{1}: same rule, braced spelling. Error 144. ---
+pattern \k{1}
+features backrefs
+perr
+
+# --- (?P=1): same rule applies to the python-style spelling too --
+# error 144. ---
+pattern (?P=1)
+features backrefs
+perr
+
+# --- \kname (no bracket/quote/brace at all): \k must be immediately
+# followed by a braced, angle-bracketed, or quoted name -- a bare
+# identifier with no delimiter is a syntax error in its own right,
+# independent of anything about the name itself. libpcre2 error 169. ---
+pattern \kname
+features backrefs
+perr
+
+# --- \g{-2} with only one group defined: the relative count runs off
+# the front of the group list. Error 115, same "no such subpattern"
+# family as an out-of-range absolute number. ---
+pattern \g{-2}(a)
+features backrefs
+perr
+
+# --- \g{+2} with no groups at all: the relative-forward count also
+# runs off the end. Error 115. ---
+pattern (a)\g{-1}\g{+1}
+features backrefs
+perr
+
+# --- Duplicate capture names WITHOUT (?J): this is the base case
+# (?J)/(?-J) permit; without it, a duplicate name is always an error.
+# Error 143, "two named subpatterns have the same name". ---
+pattern (?<a>x)(?<a>y)
+features backrefs,named-groups
+perr
+
+# --- \400: octal value exceeds \377 in an 8-bit non-UTF build. Error
+# 151. (Also present in octal.rxt as an acceptance-adjacent fact; kept
+# here too since it is a genuine, module-independent PCRE2 rejection.) ---
+pattern \400
+features backrefs
+perr
+
+# --- \g{nosuch}: a named subroutine/backreference argument that names
+# no group at all. Error 115. ---
+pattern \g{nosuch}(?<a>x)
+features backrefs,named-groups
+perr

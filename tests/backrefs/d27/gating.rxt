@@ -1,0 +1,109 @@
+# tests/backrefs/d27/gating.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, BOTH refusal directions of the module gate. Unlike every
+# other file in this corpus, every cell here HAS been run against real
+# `build/pcrec` (the brief's explicitly permitted exception: "you may run
+# it only to confirm refusal-direction cells"), because these are
+# assertions about pcrec's CURRENT refusal behavior, not about future
+# match semantics. All `perr` blocks; `perr` only asserts nonzero exit,
+# never diagnostic wording (docs/testing.md), so no cell here depends on
+# pcrec's exact message text -- only on the fact that it refuses.
+#
+# TWO REFUSAL DIRECTIONS, confirmed distinct today (different messages,
+# same nonzero exit -- the `perr` block can't see the difference, but the
+# distinction is real and worth a comment trail for whoever reads this at
+# merge):
+#   1. MODULE DISABLED: the feature list passed to pcrec does not include
+#      `backrefs` at all -> "requires module 'backrefs'".
+#   2. MODULE ENABLED, NOT YET IMPLEMENTED: `backrefs` IS in the feature
+#      list, but the module is unbuilt -> "module 'backrefs' is enabled
+#      but ... is not implemented yet".
+#
+# A FINDING WORTH FLAGGING AT MERGE (recorded in full in README.md): the
+# DUPNAMES/(?J) construct does not follow this two-state pattern at all.
+# `(?J)` itself is gated by module `modifiers` (not `backrefs`), and the
+# actual duplicate-name RESOLUTION logic is attributed to module
+# `named-groups` (not `backrefs`), with a message reading "does not
+# implement duplicate group names" / "out of pcrec's scope" -- wording
+# that reads as more final than the "not implemented yet" wording every
+# other backrefs construct gets. Cells 9-11 below document today's actual
+# behavior; none of them assert what SHOULD eventually be true, since
+# that is a module-ownership question for the merge review, not this
+# lane's to settle.
+
+# --- 1. Numeric backreference, module fully disabled. ---
+pattern (a)\1
+features classes
+perr
+
+# --- 2. Numeric backreference, module enabled but unimplemented. ---
+pattern (a)\1
+features backrefs
+perr
+
+# --- 3. Octal/backref escape \8, module disabled -- confirms the gate
+# applies to the ESCAPE RECOGNITION itself, before the octal-vs-backref
+# disambiguation (F4) is ever reached. ---
+pattern \8
+features classes
+perr
+
+# --- 4. \g (any bracket form), module disabled. ---
+pattern (a|b)\g<1>
+features classes
+perr
+
+# --- 5. \g, module enabled but unimplemented (including the
+# subroutine-spelled forms -- pcrec's recognition gate covers \g
+# uniformly regardless of which bracket follows it; see spellings.rxt's
+# out-of-scope note for why match SEMANTICS of \g<name>/\g'name' are not
+# tested by this corpus). ---
+pattern (a|b)\g<1>
+features backrefs
+perr
+
+# --- 6. \k, module disabled. ---
+pattern (?<n>a)\k<n>
+features classes,named-groups
+perr
+
+# --- 7. \k, module enabled (plus named-groups, which IS built) but
+# backrefs itself is unimplemented. ---
+pattern (?<n>a)\k<n>
+features backrefs,named-groups
+perr
+
+# --- 8. (?P=n), module disabled. ---
+pattern (?P<n>a)(?P=n)
+features classes,named-groups
+perr
+
+# --- 9. (?J), with modifiers present, and NO duplicate name anywhere in
+# the pattern at all. MEASURED, not assumed: pcrec refuses this too, and
+# with the SAME "module 'named-groups' does not implement duplicate
+# group names" message as the genuine-duplicate cell below -- pcrec
+# refuses the (?J) directive itself, unconditionally, once its syntax is
+# recognized, rather than deferring to whether a collision is ever
+# actually declared. Worth knowing before assuming cell 10 below is
+# testing something different from this one; today, it is not. ---
+pattern (?J)a
+features modifiers
+perr
+
+# --- 10. (?J) with a genuine duplicate name, modifiers AND named-groups
+# both present (today's finding: the refusal names module `named-groups`,
+# not `backrefs`, and the wording says the spelling is "out of pcrec's
+# scope" rather than "not implemented yet"). ---
+pattern (?J)(?<a>x)(?<a>y)
+features modifiers,named-groups,backrefs
+perr
+
+# --- 11. (?J) with modifiers EXCLUDED (an explicit, non-default feature
+# list that leaves modifiers out) refuses on the (?J) SYNTAX itself,
+# before dupname resolution is ever reached -- a different refusal point
+# than cell 10's, both perr, and the .rxt format can't see the
+# difference in wording, but the comment trail is worth keeping since
+# both are genuinely different refusal sites (module `modifiers`'s own
+# gate vs. module `named-groups`'s dupname refusal). ---
+pattern (?J)(?<a>x)(?<a>y)
+features backrefs,named-groups
+perr

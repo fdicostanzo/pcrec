@@ -1,0 +1,77 @@
+# tests/backrefs/d27/interactions.rxt -- D27 blinded acceptance corpus,
+# module `backrefs`, cross-module interactions: a REFERENCED group under
+# a possessive/atomic quantifier (module `atomic-groups`, which IS built
+# per the registry), and a backreference beside a plain assertion
+# (module `assertions`).
+#
+# Per the differential gate principle (docs/testing.md, "The differential
+# gate principle"): enable exactly the modules the cell exercises, no
+# more -- `features backrefs,atomic-groups` and `features
+# backrefs,assertions` respectively, never a blanket feature list.
+#
+# Every measurement below is against real libpcre2 10.46 (br_oracle.py).
+# Nothing here has been run against build/pcrec (module unbuilt).
+
+# --- A group made possessive (`a*+`, PCRE2's own spelling of
+# `(?>a*)`) is still an ordinary capturing group for reference purposes:
+# once it has committed to its span, `\1` replays exactly that span, with
+# no interaction between the possessive commit and the later backref
+# other than the span being fixed early (no backtrack can revise it). ---
+# pcre2-only: python's possessive-quantifier support diverges from PCRE2
+# in other ways (docs/testing.md's brace-possessive note) and this
+# specific combination with a backreference has no python equivalent
+# construct to compare against cleanly
+pattern ^(a*+)b\1a$
+features backrefs,atomic-groups
+m "aabaaa" 0 6
+gp 1 0 2
+n "baa"
+
+# --- The mirror shape with `++`: same possessive-then-replay contract,
+# one more layer removed from the exact `*+` case above. ---
+# pcre2-only: see note above
+pattern ^(a++)b\1a$
+features backrefs,atomic-groups
+m "aabaaa" 0 6
+gp 1 0 2
+
+# --- An explicit atomic group `(?>...)` wrapping the referenced capture
+# itself. Same contract as the possessive-quantifier forms, spelled the
+# other way. ---
+# pcre2-only: see note above
+pattern ^(?>(a+))b\1a$
+features backrefs,atomic-groups
+m "aabaaa" 0 6
+gp 1 0 2
+
+# --- A backreference beside a plain zero-width assertion: `\B` (NOT a
+# word boundary) between a captured word character and its own replay is
+# necessarily true (replaying the same word-character text can never
+# cross a word/non-word transition against itself), so this always
+# succeeds when the group is non-empty and adjacent to its own replay. ---
+# pcre2-only: python's \B has the same semantics here, but the point of
+# this cell is the MODULE gate (assertions) interacting with backrefs,
+# which isn't independently python-checkable as a *combination fact*
+pattern (a)\B\1
+features backrefs,assertions
+m "aa" 0 2
+gp 1 0 1
+
+# --- The complementary case: `\b` (a real word boundary) placed BETWEEN
+# a group and its own replay of word-character text can never succeed
+# for the same reason `\B` above always does -- replaying identical word
+# characters can't itself be a word/non-word transition. ---
+# pcre2-only: see note above
+pattern ^(a)\b\1$
+features backrefs,assertions
+n "aa"
+
+# --- `\b` placed AFTER the replay (at the true end-of-word boundary)
+# succeeds normally -- the assertion and the backreference don't
+# interact at all here, which is the expected, uninteresting case
+# confirming the module combination doesn't break ordinary use. ---
+# pcre2-only: see note above
+pattern ^(a)\1\b$
+features backrefs,assertions
+m "aa" 0 2
+gp 1 0 1
