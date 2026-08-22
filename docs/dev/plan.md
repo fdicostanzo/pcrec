@@ -238,42 +238,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   3.14 `re` supports both spellings (verified 2026-08-22: `(?>a*)a`, `a*+a`,
   `(?>a|ab)c` all decline as PCRE2 does) and is the base-tier second oracle.
   Substeps:
-  - [M6.4.1] STATE:started — DESIGN GATE (design before code — the
-    engine-touching substep). docs/design/atomic_groups_design.md answering
-    PER CONSTRUCT ((?>...), *+, ++, ?+, {n,m}+ incl. {n}+ and the lazy-then-
-    possessive error shape): (i) the VM lowering of the UNCONDITIONAL cut —
-    what vm_cut may be reused for and what needs its own argument, in
-    particular the no-trail-rewind invariant that possessify's proof licenses
-    and an atomic group does NOT come with (captures written inside the body
-    must still be undone on an OUTER failure; captures retained on success);
-    (ii) THE HYBRID HAZARD — the default path runs the DFA prefilter on what
-    is now the UNCUT language (a superset), so a DFA-reported span/start can
-    be wrong under the cut while the true atomic match starts later: rule
-    what the prefilter may still be used for (sound rejection; a start LOWER
-    BOUND, since uncut matches ⊇ atomic matches) and what it may not (the
-    span end; the start itself), and how the emitted search loop changes;
-    the match-here entry's filter (assertions_design.md §6.3 / R30 E8) gets
-    its own rule; (iii) engine split per the charter above — the VM-forcing
-    EngineAnalysis (select_engine.c's table), the free discharge, and the
-    deferred cut construction with a size estimate of what it would cost;
-    (iv) interaction table: nesting, atomic inside quantifiers and
-    quantified atomic groups, alternation inside, lazy quantifiers inside,
-    empty body, captures inside (retained), \K \G and assertions inside,
-    (?m), the existing possessify/ENG-BREP rungs meeting a user-written
-    possessive (must not double-cut or mis-rung), --engine=dfa refusal
-    wording per the \K precedent; (v) REGISTRY — (?> is row registry.c:623;
-    the possessive suffix refusal is HAND-WRITTEN in parse.c:988 OUTSIDE the
-    registry, so D65's built column cannot see it: rule how possessives
-    become registry-visible (rows, a quant kind, or an explicit exemption
-    with its reason); (vi) SR-8 — D59 names atomic-groups/backrefs as the
-    trigger for the general engines-column consultation: decide whether
-    this module builds it; (vii) D58 residue enumeration (expected: none —
-    a cut is position-free — state it and say why); (viii) module gating
-    and partial-enable; (ix) the identity gate (atomic-free patterns
-    byte-identical with and without the module's analysis, tests/mech/
-    CLAUDE.md placement rule) and the mech sabotage rows the implementation
-    must add. D6 panel (R31) BEFORE implementation; revision; focused
-    re-check.
+  - [M6.4.1] archived to plan_completed.md (completed 2026-08-22 — design APPROVED by the R31 panel at lane/agdesign 21e173e, merged 497a28f: docs/design/atomic_groups_design.md + atomic_groups_measurements/; D67 SR-8 built here; [ENG-CUT] chartered; K29 found)
   - [M6.4.2] STATE:not-started — IMPLEMENTATION (one lane unless the design
     waves it): parser producer (src/parse/mod_atomic_groups.c), AST node(s),
     VM lowering, EngineAnalysis registration, free discharge, corpus
@@ -740,6 +705,7 @@ spine, not before):
   behavior for the tower family. When it lands, tests/vm/run_vm_tests.sh's
   K22 block inverts (refusal -> compiles-and-runs, refusal re-pinned under
   the deny flag) per R25 C1's rewrite plan.
+- [ENG-CUT] STATE:not-started — THE FULL CUT CONSTRUCTION (chartered by the [M6.4.1] design, atomic_groups_design.md §5.5, 2026-08-22; plan row added at the design's merge per R31 D4): replace `A_ATOMIC(X)` with an equivalent cut-free sub-automaton — run X's own priority-first-accept determinisation to fix, per entry state, the single endpoint the cut commits to, and splice that deterministic prefix into the enclosing machine (the primitive is src/ir/dfa.c's priority prune). Plugs into engine_m4.md §5.2's `discharge` socket and therefore BUILDS that socket's plumbing (the fixpoint never calls a registered hook today — select_engine.c:283-294, a live defect in unused code; D67's contract applies: output born ANY_ENGINE, copied nodes keep stamps). SIZE ESTIMATE (analytic, unmeasured on real patterns): worst-case exponential, `|D(X)| × |D(rest)|` states against PCREC_MAX_NFA_STATES and the 32,000/10,000 DFA caps — the rewrite must ESTIMATE BEFORE COMMITTING and DECLINE past the cap; a declining rewrite falls back to the VM, i.e. to module atomic-groups. What it buys: capture-free atomic patterns from VM to DFA — the population is the cut-changes-the-language class MINUS what the free discharge rescues, and it is UNMEASURED on real inputs. EVIDENCE GATE (D50's shape, confirmed by the manager 2026-08-22 under the autonomous-run grant): build when a [BENCH-1]/[ENG-PGO]-class customer exists; the measurement that would open it earlier is that population's size and throughput gap on a real corpus. The day it lands, H4 (the match-here entries' rule) is REOPENED (design §4.4 H5), and the lowering must never ignore atomicity (registry.c:615-622's named trap; sabotage S91).
 - [M4-CALLOUTS] STATE:not-started (step 1 flip COMPLETED 2026-08-14, merge 84e5956 — all counts held at baseline, K14 check re-scoped to the RS_MODULE population; step 2 behavior awaits M4, its ABI ruled by D38/D39) — module `callouts` (D36: Frank re-scoped
   `(?C` from NEVER to PLANNED, 2026-08-12 — LOW PRIORITY, deliberately in
   the queue boonies). Two separable steps: (1) THE FLIP, schedulable any

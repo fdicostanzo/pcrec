@@ -3515,3 +3515,42 @@ c"` from `(0,3)` into `(0,1)`, and
   script, (3) tests — per D48's shape (scripts/tests/<full-filename>.test,
   make testscripts, NEVER part of make test). Non-interactive by
   construction (agents cannot answer prompts).
+
+## 2026-08-22 (thirty-sixth session — [M6.4.1]: the atomic-groups design survives R31)
+
+  - [M6.4.1] STATE:completed (CLOSED 2026-08-22, thirty-sixth session: docs/design/atomic_groups_design.md APPROVED by the R31 panel at 21e173e after three rounds — panel, focused re-check, final re-check — nine HIGH refuted and closed, four new HIGH found against the revisions and closed; merged 497a28f, docs only; the design's §12 is [M6.4.2]'s brief) — formerly STATE:started — DESIGN GATE (design before code — the
+    engine-touching substep). docs/design/atomic_groups_design.md answering
+    PER CONSTRUCT ((?>...), *+, ++, ?+, {n,m}+ incl. {n}+ and the lazy-then-
+    possessive error shape): (i) the VM lowering of the UNCONDITIONAL cut —
+    what vm_cut may be reused for and what needs its own argument, in
+    particular the no-trail-rewind invariant that possessify's proof licenses
+    and an atomic group does NOT come with (captures written inside the body
+    must still be undone on an OUTER failure; captures retained on success);
+    (ii) THE HYBRID HAZARD — the default path runs the DFA prefilter on what
+    is now the UNCUT language (a superset), so a DFA-reported span/start can
+    be wrong under the cut while the true atomic match starts later: rule
+    what the prefilter may still be used for (sound rejection; a start LOWER
+    BOUND, since uncut matches ⊇ atomic matches) and what it may not (the
+    span end; the start itself), and how the emitted search loop changes;
+    the match-here entry's filter (assertions_design.md §6.3 / R30 E8) gets
+    its own rule; (iii) engine split per the charter above — the VM-forcing
+    EngineAnalysis (select_engine.c's table), the free discharge, and the
+    deferred cut construction with a size estimate of what it would cost;
+    (iv) interaction table: nesting, atomic inside quantifiers and
+    quantified atomic groups, alternation inside, lazy quantifiers inside,
+    empty body, captures inside (retained), \K \G and assertions inside,
+    (?m), the existing possessify/ENG-BREP rungs meeting a user-written
+    possessive (must not double-cut or mis-rung), --engine=dfa refusal
+    wording per the \K precedent; (v) REGISTRY — (?> is row registry.c:623;
+    the possessive suffix refusal is HAND-WRITTEN in parse.c:988 OUTSIDE the
+    registry, so D65's built column cannot see it: rule how possessives
+    become registry-visible (rows, a quant kind, or an explicit exemption
+    with its reason); (vi) SR-8 — D59 names atomic-groups/backrefs as the
+    trigger for the general engines-column consultation: decide whether
+    this module builds it; (vii) D58 residue enumeration (expected: none —
+    a cut is position-free — state it and say why); (viii) module gating
+    and partial-enable; (ix) the identity gate (atomic-free patterns
+    byte-identical with and without the module's analysis, tests/mech/
+    CLAUDE.md placement rule) and the mech sabotage rows the implementation
+    must add. D6 panel (R31) BEFORE implementation; revision; focused
+    re-check.

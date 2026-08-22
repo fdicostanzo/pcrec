@@ -11503,3 +11503,27 @@ NEXT, in order: R31 close (approve at the 2c SHA) → merge lane/agdesign
 (docs only) → [ENG-CUT] row + [M6.4.1] → completed → [M6.4.2] lane
 (brief drafted) + the D27 cell [M6.4.3] in parallel → R32 close → merge
 lane/brdesign → [M6.5.1] → completed; [M6.5.2] waits for [M6.4.2].
+
+## 2026-08-22 (EDT), thirty-sixth session (part 5) — [M6.4.1] CLOSED: the atomic-groups design APPROVED at 21e173e and merged (497a28f); [M6.4.2] opens
+
+R31 closed at 11:0x after a fourth revision (2d: r31chk's T1 `expect`
+field — a hard red the sweep had walked past in a file it had already
+opened — and T2, enumeration by CALL; the registry-cost probe widened by
+SHAPE to eleven sites, and its own method lesson corrected: an
+enumeration is bounded by its population AND by the shapes it can
+recognise, the second bound invisible from inside). Manager verification
+instead of a fourth critic round: fourteen archives fresh against their
+probes' live commits, both rebuilt probes re-run to byte-identical
+bodies, tree clean. Merged docs-only (no src/lib/cli/tests/Makefile
+delta on the branch). Plan: [M6.4.1] archived; [ENG-CUT] row added
+(not-started, D50-style gate, H4 reopens the day it lands); D67 recorded
+earlier. Lane/agdesign's worktree removed, branch kept.
+
+THE COUNT FOR THE RECORD: 4c5f508 → 21e173e in six revisions; the panel
+filed 8+16+5 findings, the re-checks 2+3+1+2+… more; nine original HIGH
+and four revision HIGH all closed with measurement; the two central
+results (CUT-INV; the hybrid hazard) never moved and came out stronger.
+Lanes in flight now: agd27 (the blinded corpus, sonnet, cell), brdesign
+(holding at 188bbe7 for r32eng's last round). Next: spawn [M6.4.2]
+(opus, worktree lane/agimpl from 497a28f, the brief drafted this
+morning + the review file's triage as requirements).
