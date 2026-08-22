@@ -11385,3 +11385,53 @@ generic, with a sabotage row (un-stamp A_ATOMIC -> --engine=dfa stops
 refusing -> red). Backrefs' forcing then falls out of its twelve rows.
 Both designs revise to this after their panels; the atomic revision
 brief carries it as manager finding M-1.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 3) — R31 COMPLETE: the atomic-groups design NOT approved at 4c5f508 (9 HIGH), revision round dispatched; R32 half in
+
+R31 in one paragraph (docs/dev/reviews/2026-08-22-r31-atomic-groups-
+design.md is the record). BOTH central results SURVIVED and got
+STRONGER: CUT-INV held against the emitted machinery, nested/quantified/
+captured shapes and a trail-rewinding sabotage; the hybrid hazard,
+which the lane measured through a proxy, was measured by r31chk on the
+LIVE prefilter — rx_prefilter called directly on the capture-inserted
+uncut twins of all 46 R3a patterns: 122/122 window ends equal libpcre2's
+uncut end, 114 cells of silent match loss without H3. What fell is HOW
+it lands: (E1) RULE 3's lift onto vm_poss_star HANGS on nullable bodies
+— `(?:a*)*+` is legal and answered by both oracles and would loop the
+emitted matcher, because §2.2 never possessifies a nullable body so the
+rung has no guard BY DESIGN; (E2) vm_rep has a FOURTH path — the counter
+rung's unbounded arm tails into vm_star, which never reads the flag —
+and on the SHIPPED binary `(?:ab|b){8,}c` already stamps POSSESSIVE with
+a dead cut slot and no cut (K29, pre-existing, harmless today, a
+miscompile under the lift); (E3) H3's "one predicate at :4351" changes
+v.mrl_win, which gates only the STAMP and the --emit-ir text — the
+ceiling is gated on prefn and nclamp at :5231/:5171 — so the design's
+own structural check would agree with the bug; (C1) syntax_dump's
+built derivation routes only doorway syntax, so the four RK_QUANTSUFFIX
+rows derive to DEFECT, and two exact pins (100 rows; 48 qualifying)
+would go red unmentioned; (C3) `grep RX_CUT` matches the unconditional
+#define — green on a compiler that deleted the cut; (C2) the 0/48,000
+possessify-under-cut zero has 59 refutable cells (0.57%), two positions
+contributing none, because the verdict is read off the erased twin and
+the two arms are correlated by construction; (D2) RULE 1 cited a
+"settled house rule" D62 overturned — though D62's own principle
+(kinds = structure, fields = modifier state) supports AKind for
+atomicity; (E6) a REAL python-vs-PCRE2 divergence — python cuts
+`{n}+` per iteration: `(?:a|ab){2}+` on "aba" is (0,3) in libpcre2,
+nomatch in python — missing from the goal facts, which meanwhile
+(C14) leaked the author's own hard-case list to the blinded author;
+(M-1) SR-8 reverses. Fifteen further MEDIUM/LOW. The revision brief is
+the triage section; same lane, focused re-check after.
+
+MANAGER LESSONS. (1) Two independent engine critics were worth it: r31eng
+found the rung/dispatch/gating holes by READING THE EMITTER'S DISPATCH,
+r31chk found the check-vacuity holes by RUNNING THE CHECKS' FAILING
+DIRECTION — disjoint finding sets, both HIGH. (2) A critic's first
+generator can be vacuous too: r31eng's first possessify-under-cut sweep
+had a 0 non-vacuity control and was rebuilt rather than reported;
+r31chk's C2 is the same shape found in the lane's probe. The control
+that would have caught both is the one this project keeps re-learning:
+assert the REFUTABLE population as a floor. (3) The most valuable
+finding of the morning (the tripwire rule, M-1) came from the OTHER
+module's lane measuring its own design honestly — cross-lane reports
+are review input.
