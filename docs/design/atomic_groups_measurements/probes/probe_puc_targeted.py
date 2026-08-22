@@ -153,6 +153,13 @@ FLOOR_CELLS = {
 # is a follow-on opportunity, deliberately not taken in [M6.4.2].
 WRAP = "Q wrapping the atomic group"
 
+# r31chk re-check N2: the WRAP assertion ("0 positive verdicts") passes
+# VACUOUSLY on an empty population, because `if v is None: continue` drops
+# every pattern pcrec refused WITHOUT counting it. A run where pcrec refused
+# all 8,820 would report "assertion holds" and mean nothing. The population
+# itself is therefore asserted too.
+FLOOR_PATS = 8820
+
 
 def main():
     print("libpcre2:", P.version(), "  pcrec:", PCREC)
@@ -225,7 +232,13 @@ def main():
     print("  the quantifier's body IS the atomic group, so §2.2 evaluates (U2)")
     print("  prefix-freeness on `a|ab` read TRANSPARENTLY and declines. No")
     print("  refutable cell exists here BY CONSTRUCTION.")
-    if w["vpos"] != 0:
+    if w["pats"] < FLOOR_PATS:
+        print("  **ASSERTION VACUOUS**: only %d of %d patterns reached the"
+              % (w["pats"], FLOOR_PATS))
+        print("  verdict at all — the rest were refused and silently dropped, so")
+        print("  \"0 positive verdicts\" is a fact about an empty population.")
+        ok = False
+    elif w["vpos"] != 0:
         print("  **ASSERTION FAILED**: a positive verdict appeared here, so the")
         print("  transparency argument above is wrong and this position needs a")
         print("  floor after all.")

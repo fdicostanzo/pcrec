@@ -681,7 +681,7 @@ Appendix A's corpus.
 
 - **No new VM primitive.** §3.1.
 - **No trail-rewind variant of the cut.** A cut that rewound the trail would be
-  a miscompile, not a variant; §11's S88 is its sabotage.
+  a miscompile, not a variant; §11.4's **S89** is its sabotage.
 - **No change to the fail label.** It is already `>`-not-`==` and already
   rewinds to the popped frame's own mark.
 - **No new give-up code** — but **NOT "the caps are unchanged": R31 C10 is
@@ -692,7 +692,7 @@ Appendix A's corpus.
   uncharged trailed write is exactly the defect the SHIPPED
   `tests/mech/sabotages/S87_kreset_trail_uncharged.sh` guards for `\K`, and
   this module owes the same pairing: the `vm_cost` arm, and a CAPACITY sabotage
-  row (§11.4 S94). What is unchanged is the give-up CODE SPACE and the two cap
+  row (§11.4 **S95**). What is unchanged is the give-up CODE SPACE and the two cap
   constants — not the arithmetic that decides when they fire.
 - One further RESOURCE observation, **STRUCTURAL and reported rather than
   fixed**: because the cut discards frames but not trail entries, a
@@ -1199,7 +1199,7 @@ return; }` — and `src/ir/dfa.c:1027`'s `make_state`).
   apply: build it when a [BENCH-1]/[ENG-PGO]-class customer exists.
 - **What it must not do.** Lower `A_ATOMIC` by ignoring atomicity. The registry
   row's own comment (`src/parse/registry.c:615-622`) already records this trap;
-  the construction must be a REWRITE that preserves the language, and §11's S90
+  the construction must be a REWRITE that preserves the language, and §11.4's **S91**
   is the sabotage for exactly this failure.
 
 ---
@@ -1207,7 +1207,7 @@ return; }` — and `src/ir/dfa.c:1027`'s `make_state`).
 ## 6. (iv) The interaction table
 
 Every row MEASURED against libpcre2 10.46 with python3 3.14 alongside;
-`probes/probe_atomic_semantics.py`, 95 cells, `out/atomic_semantics.txt`.
+`probes/probe_atomic_semantics.py`, 109 cells, `out/atomic_semantics.txt`.
 The AGREE column is python-vs-libpcre2; **BOTH-ERR** means both refuse (D26
 tier 2 satisfied, tier 3 wording ours).
 
@@ -1563,27 +1563,49 @@ row's own `syntax` through the same gate-forced-open isolated `Ctx` and reads
 the same three-valued vocabulary off the result. That is more than a line, and
 it is the honest price of R1.
 
-**THE FULL COST, ENUMERATED — C1 + C8, and MEASURED rather than recalled**
-(`probes/probe_registry_cost.sh`, `out/registry_cost.txt`):
+**THE FULL COST — REBUILT IN REVISION 2, BECAUSE THE FIRST TABLE WAS A
+TRANSCRIPT AND NOT A MEASUREMENT.**
 
-| # | site | what it is today | what a fifth kind needs |
+> **r31chk's re-check N1, and it lands on this document's own method.** The
+> revision-1 table was headed "MEASURED rather than recalled" and its probe
+> greped four files: `registry.c`, `syntax_dump.c`, `enabled.c`,
+> `registry_check.c` — **the four the author already knew about**. A grep over
+> the answer you already have is a transcript. The re-check found a SEVENTH
+> site in a fifth file (`tests/spec_mod0/check06_cursor.sh`) the old probe
+> could not have seen.
+>
+> `probes/probe_registry_cost.sh` now SWEEPS `src/`, `cli/` and `tests/` with
+> no curated file list. **It finds NINE sites across SIX files where the
+> re-check named seven, and three of them are EXACT equalities** — so the
+> correction to the correction is recorded too. The lesson generalises past
+> this probe: an enumeration is only as wide as its search population, at
+> every level including the review's.
+
+| # | site | today | after four rows |
 |---|---|---|---|
-| 1 | `syntax_dump.c:443` `built_status_probe` | `doorway_route` + `doorway_call` | the non-doorway compile arm above |
-| 2 | `registry.c:962` `pcrec_registry`'s switch | `default: *n = 0; return NULL` | a `case RK_QUANTSUFFIX` |
-| 3 | `syntax_dump.c:145` `all_kinds[]` | a hardcoded 4-element array, iterated at **`:165` and `:1080`** | the fifth element |
-| 4 | `enabled.c:114` `kinds[]` | a SEPARATE hardcoded 4-element array | the fifth element |
-| 5 | `registry_check.c:444` | `if (total != 100)` | **104** |
-| 6 | `registry_check.c:1473` | `if (qualifying != 48)` | **48 or 52 — decided by the rows' `engines` value, §7.4.1** |
+| 1 | `syntax_dump.c:443` `built_status_probe` | `doorway_route` + `doorway_call`, four prefixes | needs a NON-DOORWAY compile arm, or the rows derive to `BUILT_DEFECT` |
+| 2 | `registry.c:962` `pcrec_registry` | `default: *n = 0; return NULL` | a `case RK_QUANTSUFFIX` |
+| 3 | **THREE** hardcoded `RegKind kinds[]` arrays — `syntax_dump.c:145` (iterated `:165`, `:1080`), `enabled.c:114`, **`registry_check.c:1696`** | 4-element | 5-element ×3. The third was missed by BOTH earlier enumerations |
+| 4 | **SEVEN** `RegKind` switches — `syntax_dump.c:75`, `:88`, `:410`, `:556`; `registry_check.c:110`, `:377`; `pcre2_check.c:225` | name/label/dispatch arms | an arm each. Every one has a `default:`, so **`-Wswitch` names none of them** (§7.3) |
+| 5 | `registry_check.c:444` | `total != 100` — EXACT | **104** |
+| 6 | `registry_check.c:1473` | `qualifying != 48` — EXACT | **52** (VM_ONLY ×4). Retires with the tripwire under M-1 |
+| 7 | **`tests/registry/compliance_section.py:391`** | `len(rows) != 100` — EXACT, and its own comment says "Bumping it is deliberate and belongs in the same commit as the row" | **104**. [DOC-DRV]'s generator |
+| 8 | **`tests/reject/run_reject_tests.sh:1713`** | `niter -eq 99` — EXACT, the NON-BASE count (`(?:` is the one `RS_BASE` row) | **103** |
+| 9 | **`tests/spec_mod0/check06_cursor.sh:170`** `EXPECT_BASE_ANSWERED="(?:...)"`, asserted as a SET at `:243` | one unrouted row | **`(?:...) a*+ a++ a?+ a{1,2}+`** — a SET equality, so no floor absorbs it |
+| — | `tests/registry/run_registry_tests.sh:88`, `:90` | the REGMANIFEST carries `48` and `100` in PROSE | both lines. No grep for a literal in a `.c` finds these |
 
-**One correction to the finding, which does not change the ruling.** C8 says
-"both `all_kinds[]` arrays". Measured, there is ONE array (`syntax_dump.c:145`)
-with TWO USE SITES (`:165`, `:1080`), plus `enabled.c`'s SEPARATE array. Three
-places still have to be edited; the count of arrays is two, not three.
+**The floors that PASS, checked so the table is not one-sided**: `check06_cursor.sh:136` (`ROWS -lt 100`) and the identity sweeps' `-lt 100` guards all hold at 104. The probe prints them.
+
+**One correction to C8 that revision 1 already made and that still stands.** C8 said "both `all_kinds[]` arrays"; measured, there is ONE array of that name (`syntax_dump.c:145`) with TWO use sites, plus differently-named arrays in `enabled.c` and `registry_check.c`. Row 3 above is the corrected count.
 
 #### 7.4.1 The new rows' field values, stated because C8 is right that they are not derivable
 
 `status` = `RS_MODULE`, `roadmap` = `ROADMAP_PLANNED`, `module` =
-`atomic_groups`, `engines` = **`VM_ONLY`**, matching row `registry.c:623` for
+`atomic_groups`, **`quant` = `QF_NO`** — `registry_check.c:173-176` fails any
+row whose `quant` is `QF_NONE` ("no quantifiable value … the question is real
+for BASE rows too"), and `QF_NO` is the measured answer: `a*++` is an ERROR in
+libpcre2 and in pcrec (§6.3), so a possessive suffix is not itself
+quantifiable. `engines` = **`VM_ONLY`**, matching row `registry.c:623` for
 the same reason (§8): a possessive whose §2.2 verdict is negative is not
 DFA-compilable by anything this module ships. `VM_ONLY` makes all four rows
 QUALIFY for the engine-capability tripwire, so `registry_check.c:1473`'s
@@ -1665,7 +1687,7 @@ engines for every pattern) stays rejected here for the same reason it was.
 **The cost, stated so the manager can schedule it.** SR-8 is no longer a
 "deferred consultation" this module can decline; it is a prerequisite of this
 module's engine answer, and it lands in `[M6.4.2]`'s slice 3 alongside the
-discharge. Its own sabotage row (an un-stamped `A_ATOMIC`) is §11.4 S95.
+discharge. Its own sabotage row (an un-stamped `A_ATOMIC`) is §11.4 **S96**.
 
 ---
 
@@ -1857,6 +1879,18 @@ Shape per `tests/mech/sabotages/S85_*`: `SAB_ID`, `SAB_FILE`, `SAB_SUITES`,
 suite word and a log arm before S91/S92/S96/S97 can be scored at all. That is
 slice 4 work and it must precede the sabotage measurement, not follow it.
 
+**EVERY IN-TEXT `SNN` REFERENCE IS RE-AIMED AGAINST THIS TABLE, AND A PROBE
+KEEPS IT THAT WAY — r31chk re-check N3.** The S88-S98 renumbering (C4) left
+FIVE stale cross-references pointing at rows that had moved under them, each
+naming a row whose description no longer matched: §3.5's "S88" (the trail-rewind
+row is S89), §3.5's "S94" (the capacity row is S95), §5.5's "S90" (the
+unconditional-discharge row is S91), §8's "S95" (the un-stamped row is S96),
+and Appendix A.2's "S88 and S93" (the two corpus-only rows are S89 and S94 —
+S88 is a CODEGEN row and would never be caught by a corpus driver). All five
+are corrected. `probes/probe_sref_consistency.sh` now checks every `S(8|9|10)N`
+mention outside this table against the row's own one-line description, so the
+next renumbering cannot leave the same residue.
+
 Every `SAB_DOC_FIGURE` is `[M6.4.2]`'s obligation, measured through the
 canonical driver (`run_sabotage_matrix.sh SNN`), never hand-applied — wave D's
 S82 lesson. **S89, S94 and S97 are the three that matter most**: all three are
@@ -1905,7 +1939,7 @@ the `--engine=dfa` branch-ordering fix (M-1 note 1). Then
 
 **Slice 4 — evidence.** Appendix A's corpus and drivers **including the
 registered `run_sabotage_matrix.sh` suite word** (C11, a blocker for four
-rows); the five codegen rules; sabotage rows S88-S98; the one-shot identity
+rows); the five codegen rules; sabotage rows **S88-S100**; the one-shot identity
 probe; `compliance-refresh`; CLAUDE.md updates.
 
 **Ordering constraints, and there are now three rather than one:**
@@ -2083,7 +2117,7 @@ Modelled on `tests/assertions/run_gstart_diff.sh` / `run_kreset_diff.sh`:
 
 - **`run_atomic_diff.sh` §1 — subjects × startpos against libpcre2.** For each
   corpus pattern, every subject in a generated set × every startpos in
-  `[0, len]`, compared to `pcre2_ctypes`. This is the instrument S88 and S93
+  `[0, len]`, compared to `pcre2_ctypes`. This is the instrument **S89 and S94**
   must go red in, so its subject set must include capture-bearing bodies and
   revdet-eligible bodies by construction, not by luck.
 - **`run_atomic_diff.sh` §2 — the ENGINE differential.** Every pattern compiled
@@ -2142,7 +2176,7 @@ naming them wastes their time or, worse, invites a request to widen the cell.
 The `docs/design/` path is allowlistable.
 
 **B.3 python3 3.14 supports BOTH spellings and is a usable second oracle —
-except for these 13 cells, MEASURED** (`out/atomic_semantics.txt`):
+except for these **15** cells, MEASURED** (`out/atomic_semantics.txt`):
 
 | cell | libpcre2 | python 3.14 | class |
 |---|---|---|---|
