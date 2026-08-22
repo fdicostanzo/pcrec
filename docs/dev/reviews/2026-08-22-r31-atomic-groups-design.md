@@ -256,3 +256,29 @@ to C8 accepted by the critic.
 | N3 | MED | the S88-S98 renumbering | five stale in-text cross-references (:527, :538, :1045, :1511, :1921) — two are inconsistencies among the NEW rows; an implementer reading §3.5 or §5.5 builds the wrong row | REVISION 2: re-aim; a consistency probe over every S-mention |
 | N2 | LOW | probe_puc_targeted's WRAP assertion | `if v is None: continue` drops refused patterns uncounted; no `pats > 0` guard — the 8,820 is printed, not asserted | REVISION 2: floor on pats |
 | C7 | — | residue | :1053 "95 cells" (now 109); :1980 "13" (now 15) | REVISION 2 |
+
+## Revision 2 (r31eng's N1/N2) — lane/agdesign b736071 → a22f044 (3 commits; 12 probes)
+
+N1 CONFIRMED and BROADER: probe_lift_preference.py Part A — lazy
+quantifiers are possessified today on ALL SIX dispatch paths (`a*?b`
+cursor, `(?:ab|b){1,3}?c`, `(?:ab|b)*?c`, `(?:a|bc)*?d` revdet,
+`{8,12}?`/`{8,}?` counter — every one STRATS 0x1); Part B — 7 of 8
+lift-eligible rows MISCOMPILE (three of them the design's own §6 cells
+14/15/16), control `(?>a*?b)c` (A_CAT child, lift never applies). FIX:
+§3.2.2a CARVE-OUT TWO — a lazy A_REP under A_ATOMIC takes the general
+shape; checked preference preconditions at all four rung entries naming
+:2053-2062's argument; §3.2.1 gains a LAZY column per path (rule 5 tests
+both preferences); S99 (lift a lazy body) and S100 (E1's carve-out, which
+revision 1 had left rowless — expected result a TIMEOUT, loud under D45).
+RULE 3 now has THREE conditions — (a) cut-equivalent, (b) preference-
+preserving, (c) nullable-safe — and the lift's scope is greedy non-
+nullable bodies, CHECKED rather than assumed. §14 item 9 rewritten to
+record the PATTERN: the enumeration of §2.2 consequences the emitted
+shapes depend on is EMPIRICAL and has been refuted twice the same way;
+the systematic read of possessify.c's conjuncts is named as [M6.4.2]'s.
+N2: `vm_cuts(const Ast *a, bool under_atomic)` threaded down five walks,
+the stale-flag reason written in. §7.4, §6.4a, §11.3 verifiably untouched
+(hunk-by-hunk), so r31chk's re-check at b736071 stands for C1/C2/C3/C5.
+Lane flag, twice now: §14 item 8 (the identity claim) is unmeasurable
+until the module exists — to be SCHEDULED in [M6.4.2], not attacked now.
+r31chk's N1/N2/N3 + C7 residue: in the lane's queue (revision 2b).
