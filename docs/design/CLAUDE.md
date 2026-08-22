@@ -873,6 +873,55 @@ append-only or historical records.
   `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
   commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
   of them.
+- `backrefs_design.md` — **PROPOSED**, the [M6.5.1] design gate in front of
+  module `backrefs` (numeric `\1`..`\99` with PCRE2's octal disambiguation,
+  the `\g` and `\k` spellings, `(?P=name)`, and `(?J)`/DUPNAMES, which the
+  [M6.5] row rules is IMPLEMENTED by this module rather than merely
+  re-decided). Unpaneled at time of writing — R32 is its D6 panel, before
+  [M6.5.2]. Its spine is one fact: a backreference is not a class-membership
+  test, so caselessness cannot fold away at parse time (D23 boundary 1 comes
+  due), the DFA cannot carry it, and the encoding seam gains its SECOND
+  residual entry. Load-bearing results, each measured: **PCRE2's group count
+  is ASYMMETRIC** — `\1`..`\9` see the whole pattern (`\1(a)` compiles) while
+  `\10`+ see only what precedes them (`\10(a)..(j)` is the octal byte 0x08),
+  so an implementation with one count is wrong in one direction and no
+  groups-before test notices; **the caseless compare's fold is EXACTLY
+  pcrec's own 52-byte `cls_casefold` set**, verified byte for byte on both
+  sides, so the seam entry reuses a table rather than choosing one; **the
+  finite-language expansion's only possible customer is a `--no-captures`
+  build**, because a backreference pattern is capture-bearing by construction
+  and `forces_captures` already sends it to the VM — measured on the shipped
+  compiler, and the reason the expansion is CHARTERED AS A FOLLOW-ON rather
+  than shipped here, with the DECLINE boundary bisected at `|L(G)| = 10,525`
+  (7.1 MB of emitted C); **the backref-erased prefilter is a sound superset
+  but reports a DIFFERENT SPAN on up to 2,525 of 4,000 subjects**, so
+  `engine_m4.md` §6.1's exact-window hybrid is unavailable and VM-only search
+  costs 8.5x-157x; and **libpcre2's own `PCRE2_INFO_NAMETABLE` is sorted
+  (name asc, number asc)**, which is the [M6.5] row's ruled `rx_info.groups`
+  layout, so pcrec reproduces a precedent instead of inventing a convention.
+  Two findings the panel should attack first because they change code outside
+  the module: `tests/codegen/run_codegen_tests.sh`'s [M5-SEAM] check
+  **forbids** a residual entry from appearing in any engine body, which is
+  exactly where a backreference compare must be called from (§4.4 proposes a
+  per-ENTRY `engine_callable` declaration, `next_pos` unchanged); and
+  `src/opt/select_engine.c`'s `--engine=dfa` override advises `--no-captures`
+  for every capture-bearing pattern, which for this module's whole population
+  is advice that does not help — a PRE-EXISTING defect, reproduced on the
+  shipped binary with `\K` (§6.2). Measurements: `backrefs_measurements/`.
+  Four ASKs at §15.
+- `backrefs_measurements/` — the [M6.5.1] lane's eight instruments, its oracle
+  helper, its archiver and the archived outputs; see its own CLAUDE.md.
+  **No instrument here reads a backreference through pcrec, because pcrec
+  cannot compile one** — the in-pcrec arms measure a SEPARATE AXIS on patterns
+  pcrec can compile (the prefilter axis, the fold axis, the expansion's
+  OUTPUT), which is what makes them exact rather than modelled. Borrows
+  `eng_brep_measurements/probes/pcre2_ctypes.py` rather than copying it, and
+  adds compile-error NUMBERS, the name table and three option bits whose
+  values are asserted BEHAVIOURALLY at import. Every file in `out/` is written
+  by `probes/archive.sh` (R30 M7's rule, inherited: the archiver is the only
+  writer). Its own CLAUDE.md lists the FIVE instruments that produced
+  confident wrong output before being fixed, and the one shape four of them
+  shared.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes

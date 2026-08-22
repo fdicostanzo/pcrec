@@ -127,7 +127,7 @@ staleness in the quoted text.
 | P4 | `\k` and `\g` are `ESC_CLASS_SCALAR` rows — a base class port giving the literal letter, no atom port | STRUCTURAL: `src/parse/registry.c:444-445` |
 | P5 | `(?P=n)` is a `GROUP_T` row, `M_backrefs`, `VM_ONLY` | STRUCTURAL: `src/parse/registry.c:611` |
 | P6 | The class position is BASE syntax and already implements PCRE2's octal exactly | MEASURED, `out/octal_rule.txt` axis D: 12 cells, `[\1]`=0x01, `[\10]`=0x08, `[\8]`='8', `[\377]`=0xff, `[\400]` refused — pcrec's base tier agrees with libpcre2 on all 12 |
-| P7 | The VM's mutable state is one flat `slot_values` array, a `resume_stack` of frames and an exact-undo `trail` | STRUCTURAL: `src/gen/emit_vm.c:4667-4677` (the `rx_run_state` type), `:4740-4760` (`_TRAIL`/`_SET`/`_PUSH`), `:5075-5081` (the fail label's rewind loop) |
+| P7 | The VM's mutable state is one flat `slot_values` array, a `resume_stack` of frames and an exact-undo `trail` | STRUCTURAL: `src/gen/emit_vm.c:4667-4676` (the `rx_run_state` type), `:4771-4790` (`_TRAIL`/`_SET`/`_PUSH`), `:5075-5081` (the fail label's rewind loop) |
 | P8 | `forces_captures` sends every captures-wanted group-bearing pattern to the VM | STRUCTURAL `src/opt/select_engine.c:84-92`; MEASURED: `(abc)(abc)` stamps `RX_ENGINE "vm"`, `RX_ENGINE_WHY "capture group at pattern offset 0"`, while `--no-captures` on the same pattern selects the DFA (`out/expand_cost.txt` §0) |
 | P9 | `--engine=vm` suppresses the prefilter; `auto` attaches it | MEASURED: `(a+)b` stamps `RX_VM_PREFILTER "hybrid"` by default and `"none"` under `--engine=vm` |
 | P10 | The `\K` row is the socket's only real customer today, and `forces_kreset` walks the AST | STRUCTURAL: `src/opt/select_engine.c:160-166`, `:176-179` |
@@ -307,10 +307,10 @@ Six properties, each of which the panel should hold this section to:
 
 The emitted test is the two `PCREC_UNSET` comparisons in §3.2, and it is
 total: `run_state_init` fills every slot with `PCREC_UNSET` once per search
-(`emit_vm.c:4862-4866`) and the trail restores it by construction on every
+(`emit_vm.c:4841-4852`) and the trail restores it by construction on every
 rewind to mark 0, so a slot is `PCREC_UNSET` **iff** no live path has written
 it. That is the identical argument wave E made for `\K`'s slot 0
-(`emit_vm.c:5122-5128`), reused rather than re-derived.
+(`emit_vm.c:3752-3765`, `\K`'s slot-0 argument), reused rather than re-derived.
 
 **`PCRE2_MATCH_UNSET_BACKREF` is OUT OF SCOPE**, and it is not free.
 MEASURED: 2 of the 8 U cells flip under the bit (`^(a)?\1$` on `""` becomes
@@ -434,11 +434,11 @@ backtracking the *previous* iteration's value must come back.
 
 1. **`RX_SET` is a trailed write.** `#define <PREFIX>_SET(slot_, v_)` expands
    to `<PREFIX>_TRAIL(slot_); slot_values[(slot_)] = (v_);`
-   (`emit_vm.c:4778-4780`), and `_TRAIL` pushes `{slot_index, saved_value}`
-   where `saved_value` is `slot_values[slot_]` **before** the write
-   (`:4772-4777`). So every capture write records the value it displaced.
+   (`emit_vm.c:4778-4780`), and `_TRAIL` (`:4772-4777`) pushes `{slot_index, saved_value}`
+   where `saved_value` is `slot_values[slot_]` **before** the write. So every capture write records the value it displaced.
 2. **`RX_PUSH` stamps the trail depth into the frame.**
-   `resume_stack[depth].trail_mark = trail_depth` (`emit_vm.c:4787`).
+   `resume_stack[depth].trail_mark = trail_depth` (`emit_vm.c:4781-4790`,
+   the mark written at `:4785`).
 3. **The fail label rewinds to that mark before jumping.**
    ```c
    while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {
@@ -458,7 +458,7 @@ reads two slots, and the trail's contract is that those two slots hold the
 values the current path wrote.
 
 **The one place that contract is deliberately weakened, and why it is still
-safe.** `RX_CUT` (`emit_vm.c:4801-4804`, `vm_cut` at `:1726-1740`) truncates
+safe.** `RX_CUT` (`emit_vm.c:4792-4795`, `vm_cut` at `:1726-1740`) truncates
 the resume stack **without rewinding the trail**. `vm_cut`'s own comment
 argues this is safe because "a frame below the cut carries a trail mark from
 before the loop ran, so unwinding to it still rewinds everything the loop
@@ -473,7 +473,7 @@ corpus rather than leaving it to be discovered.
 
 ### 3.8 The budgets
 
-- **Step budget** (one backtrack resumption, `emit_vm.c:5056-5058`):
+- **Step budget** (one backtrack resumption, `emit_vm.c:5045-5059`):
   unchanged. A backreference pushes no frame, so it costs zero steps directly.
 - **Work budget** (D47 second addendum, `emit_vm.c:1718-1724`): a
   backreference performs O(length) byte comparisons that the fail label never
@@ -511,7 +511,7 @@ the fold *set* is unchanged and shared; only the *place* it is applied moves,
 from parse time to match time, for this one construct.
 
 The shared-definition rule follows `\b`'s precedent exactly
-(`emit_vm.c:3796-3800`: `\b` reads `pcrec_cls_word_esc`, the same table `\w`
+(`emit_vm.c:3776-3800`: `\b` reads `pcrec_cls_word_esc`, the same table `\w`
 compiles from, "interned by content, so a pattern using both emits ONE bitmap
 and the two constructs cannot disagree"). The residual entry's byte backend
 must therefore embed a fold derived from the same source, not a hand-written
