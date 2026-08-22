@@ -192,13 +192,31 @@ AFTER some push inside the body, or in which the atomic group is entered on a
 path that skips the mark-set. Both break clause 2, and §3.3 turns both into
 checks.
 
-### 3.2 The spelling: a NODE KIND, not a flag — and the number that decides it
+### 3.2 The spelling: a NODE KIND, not a flag
 
-`assertions_design.md` §8.3 settled the same question for `(?m)` and recorded
-the house rule it produced: **a construct whose omission from a pass would be a
-silent miscompile gets an `AKind`, because the compiler then enumerates the
-passes that must answer for it.** Re-run of that section's own instrument
-(`probe_wswitch_alarm.sh`, output `out/wswitch_alarm_rerun.txt`, **MEASURED**):
+> **R31 D2 REFUTED THE PRECEDENT THIS SECTION CITED, AND NOT THE CONCLUSION.**
+> The first revision said `assertions_design.md` §8.3 "settled the same
+> question" and produced a house rule for node kinds. It did the opposite:
+> §8.3's own annotation records that **D62 chose the FLAG** for `(?m)`. The
+> sentence is deleted rather than softened.
+>
+> **The conclusion survives on D62's own principle**, which is the right
+> ground and was available all along: *node KINDS encode STRUCTURE, node
+> FIELDS encode parse-resolved MODIFIER STATE.* `(?m)` is a modifier — it
+> changes how one assertion is evaluated and nothing else about the tree's
+> shape. Atomicity is not a modifier: it changes the LANGUAGE (`(?>a*)a`
+> matches nothing where `a*a` matches), it changes the BACKTRACKING (frames
+> that would have been retried are discarded), and it is a bracketing
+> construct with a body. By D62's own test it is structure. Two further
+> supports, both this lane's and both measured: §6.5's revdet finding (a
+> field is CLEARED by `rd_node` on the copy the emitter walks) and the
+> 15-diagnostic measurement below. RULE 1 is now in §14 as an ARGUED claim
+> with its refutation, which is where a conclusion whose first justification
+> was wrong belongs.
+
+The measurement that supports it. Re-run of `assertions_measurements`'
+instrument (`probe_wswitch_alarm.sh`, output `out/wswitch_alarm_rerun.txt`,
+**MEASURED**):
 
 > a new `AKind` enumerator produces **15 `-Wswitch` diagnostics across 6
 > files** — `src/gen/emit_vm.c` ×5, `src/opt/revdet.c` ×4,
@@ -224,18 +242,127 @@ its current meaning: possessify's optimisation mark, deniable by
 would make **`-fno-possessify` a miscompiler** and would let a copy constructor
 delete a language feature. §11 gives both a sabotage row.
 
-**RULE 3. The possessive-rung LIFT is an EMITTER decision, not a stored one.**
-`A_ATOMIC(A_REP(X))` should be emitted through the existing [ENG-BREP]
-possessive rungs (`vm_poss_star`, `vm_poss_chain`, `vm_counter_poss_opt`),
-which cut at every ITERATION boundary rather than once at the group's exit —
-same answers, and a frame requirement independent of the iteration count
-(`src/gen/emit_vm.c:2433-2436`: "the frame requirement is therefore `1 + body`
-instead of `(n-m) * (1 + body)`"). The naive lowering (mark, ordinary star,
-cut) is **STRUCTURAL**ly worse: `vm_star`'s frames rung pushes one frame per
-iteration, so `(?>a*)` on a long subject exhausts `RX_RESUME_FRAMES` where
-`a*+` does not — two spellings PCRE2 calls identical, with different
-`subject_ceiling`s. The emitter decides this locally from `a->l->k == A_REP`;
-nothing is written to the tree, so no flag and no copy can lose it.
+**RULE 3. The possessive-rung LIFT — REWRITTEN AFTER R31 E1, E2 AND E4, WHICH
+REFUTED ITS FIRST FORM ON THREE SEPARATE COUNTS.** What the first revision said
+was: emit `A_ATOMIC(A_REP(X))` through "the existing possessive rungs
+(`vm_poss_star`, `vm_poss_chain`, `vm_counter_poss_opt`)", same answers, and
+the decision is local to the emitter so nothing can lose it. Each clause was
+wrong, and the corrected rule is below the evidence.
+
+#### 3.2.1 `vm_rep` has FIVE dispatch paths, not three — MEASURED
+
+`vm_rep` (`src/gen/emit_vm.c:3458-3492`) tries the cursor rung, then revdet,
+then the counter rung, then falls through to the frames rung, whose bounded and
+unbounded arms are different code. Driving a pattern possessify's SHIPPED
+verdict marks down each one (`probes/probe_cut_dispatch.sh`,
+`out/cut_dispatch.txt`, all `--engine=vm --no-captures`, `strats=0x1` on every
+row):
+
+| rung | witness | `RX_CUT(` call sites | second spelling | mark slot | what actually happens |
+|---|---|---|---|---|---|
+| CURSOR `0x1` | `a*b` | **0** | 0 | 0 | **FRAMELESS.** `vm_cursor_rep` sets `low`, `retry` and `again` to `-1` when possessive (`:2026-2027`): no slot, no labels, no push. There is nothing to cut |
+| FRAMES_BOUNDED `0x2` | `(?:ab\|b){1,3}c` | 3 | 0 | 2 | `vm_poss_chain`, one cut per copy boundary |
+| FRAMES_UNBOUNDED `0x4` | `(?:ab\|b)*c` | 1 | 0 | 2 | `vm_poss_star` — see §3.2.2 |
+| REVDET `0x8` | `(?:a\|bc)*d` | **0** | **1** | 0 | cuts in the SECOND SPELLING — see §3.2.3 |
+| COUNTER, bounded `0x10` | `(?:ab\|b){8,12}c` | 5 | 0 | 2 | `vm_counter_poss_opt` / `vm_poss_chain` |
+| COUNTER, **unbounded** `0x10` | `(?:ab\|b){8,}c` | **0** | **0** | **2** | **K29. NO CUT AT ALL** |
+
+**So the corrected requirement is not "every path ends in a cut" — that is
+wrong for the cursor rung, whose right answer is to emit no cut because it
+pushes nothing.** It is:
+
+> **RULE 3 (corrected). Every dispatch path a SEMANTIC possessive can take must
+> be CUT-EQUIVALENT: it either emits a cut (in EITHER spelling), or it provably
+> pushes no frame a cut would have removed. `[M6.4.2]` owes ONE STRUCTURAL
+> CHECK PER PATH, driven by the six witnesses above, and each check names which
+> of the two answers that path gives.**
+
+#### 3.2.2 The nullable carve-out — E1, and the first form would have HUNG
+
+`vm_poss_star`'s header (`src/gen/emit_vm.c:2483-2492`) states its own
+precondition and says why it is not an omission:
+
+> "NO EMPTY-ITERATION GUARD IS NEEDED, and that is structural rather than an
+> omission. §3.3's guard exists to stop a NULLABLE body iterating forever;
+> §2.2's rule refuses to possessify a nullable body at all … So
+> `a->possessive` on an unbounded repeat implies `!vm_nullable(a->l)`."
+
+**A user-written possessive deletes that antecedent.** `(?:a*)*+`,
+`(?:a?)*+b`, `(?:|a)*+`, `(?:a*)++` and `(?>(?:a*)*)b` are all legal, all
+answered by both oracles, and all have nullable bodies. Routed onto
+`vm_poss_star` they would push and cut at zero consumption forever, and no
+work charge fires to stop them. **RULE 3 therefore carries an explicit
+carve-out: a nullable body takes the GENERAL §3.3 shape — mark, `vm_star`
+WITH its empty-iteration guard, exit cut — never the lift.** And
+`vm_poss_star`'s precondition stops being a comment: `[M6.4.2]` turns it into
+a CHECKED assertion at the top of the function, because a precondition that a
+new caller can silently violate is the shape this whole finding is made of.
+
+#### 3.2.3 There are TWO spellings of a cut, and only one is `RX_CUT`
+
+`vm_revdet_rep` cuts by assigning `run->resume_depth = <prefix>_rvN_frame_mark`
+(`src/gen/emit_vm.c:2833` and `:2966`) and its own comment says it "never goes
+near the RX_CUT macro". `vm_cut`'s header records what that cost once: a
+step-charge probe "reported a confident zero for the revdet rung because the
+first version instrumented only the `RX_CUT` macro". **MEASURED here on
+`(?:a|bc)*d`: 0 `RX_CUT(` call sites, 1 second-spelling cut, and the rung is
+correct.** Every structural check this design proposes (§11.3) matches both
+spellings; a check that matched only `RX_CUT` would inherit that same zero.
+The revdet rung also cuts UNCONDITIONALLY — the assignment is not gated on
+`a->possessive` — so a semantic possessive routed there is safe on the cut
+axis. It is NOT safe on the frame axis: see E4 below.
+
+#### 3.2.4 K29 — the path that emits no cut at all
+
+`vm_counter_fits` accepts an unbounded repeat when `rmin >= K` (`:695`), and
+`vm_counter_rep`'s unbounded arm (`:3355-3358`) hands the tail to `vm_star`,
+which never reads `a->possessive`. MEASURED: `(?:ab|b){8,}c` is stamped
+POSSESSIVE, allocates and writes `RX_SLOT_CUT_MARK0`, and emits neither
+spelling of a cut. Today that is observability only (possessification is
+proof-gated, so the cut it fails to emit would have discarded provably-dead
+frames) — `known_issues.md` **K29**, opened by this panel. Under RULE 3 it
+becomes a MISCOMPILE: a semantic `X{n,}+` through that arm answers the UNCUT
+language. **The K29 fix travels with [M6.4.2]** — emit the exit cut in the
+unbounded tail — and it is a fix to code that predates this module.
+
+#### 3.2.5 E4 — the lift cannot be a purely local emitter decision
+
+The first form said "nothing is written to the tree, so no flag and no copy
+can lose it". That is true of the TREE and false of the EMITTER: `->possessive`
+is read at **23 sites across 8 functions** (`grep -n -- '->possessive'
+src/gen/emit_vm.c`), and three of them are PRE-PASSES that must agree with
+emission exactly or the artifact is malformed rather than merely slow:
+
+- **`vm_count_slots`** (`:1478`, `:1536`, `:1545`, `:1557`) allocates the
+  cut-mark slot. A lift it cannot see means `vm_slot_mark(v, v->nmark++)` runs
+  past `RX_NSLOTS` — an out-of-bounds write in EMITTED code, K27's class.
+- **`vm_cost_rep`** (`:1120`, `:1241-1242`) computes the frame and trail
+  budgets from the possessive branch.
+- **`vm_counter_copies`** (`:717`) and **`vm_rev_canmove`** (`:975`).
+
+And `vm_rev_canmove` is the sharpest: it returns `!a->possessive && …`, so
+under RULE 2 (the module never writes that field) a lifted possessive on the
+revdet rung is given a retreat frame and **can give back — the uncut
+semantics**. §6.5 rules that `rd_shape` declines on `A_ATOMIC`, which closes
+the plain-group case; the LIFTED case reaches `vm_rev_canmove` through the
+A_REP, so it needs the predicate below and not only the decline.
+
+> **RULE 3 (corrected, second half). ONE NAMED SHARED PREDICATE.** `[M6.4.2]`
+> adds `vm_cuts(const Ast *a)` — "this quantifier is cut at its boundaries",
+> true when `a->possessive` (possessify's mark) OR when the emitter's walk has
+> it under an `A_ATOMIC` lift — and **the emitter and all four pre-passes call
+> it instead of reading the field.** `src/gen/CLAUDE.md`'s one-call-one-truth
+> rule, and `vm_cut`'s own header gives the precedent: the work charge became a
+> primitive because "the charge has THREE emission sites in two different
+> spellings" and a probe missed one.
+
+#### 3.2.6 What survives of RULE 3's motivation
+
+The reason for the lift is unchanged and still measured: `vm_star`'s frames
+rung pushes one frame per iteration, so a naively-lowered `(?>a*)` exhausts
+`RX_RESUME_FRAMES` where `a*+` does not — two spellings PCRE2 calls identical
+with different `subject_ceiling`s. The lift is worth having; what R31 refuted
+is the claim that it is free.
 
 ### 3.3 The emitted shape
 
@@ -285,17 +412,44 @@ Three properties of that shape, each with the line that makes it true:
 `probes/cut_proto.c` hand-lowers five atomic patterns onto the emitted VM's own
 machinery — the four macros and the fail label copied VERBATIM from an artifact
 `build/pcrec` produced — and `probes/probe_cut_trail.py` checks every row
-against libpcre2. **PROTOTYPE** (`out/cut_trail_proto.txt`):
+against libpcre2.
 
-> 14 rows, **0 disagreeing with libpcre2**, and **9 of the 14 NON-VACUOUS** —
-> the uncut twin (`(?>` → `(?:`, a two-byte edit) gives a different answer, so
-> `RX_CUT` is load-bearing in the measurement rather than incidental to it.
+> **R31 C6 REFUTED THIS SECTION'S EVIDENCE AND THE PROBE NOW MEASURES WHAT IT
+> CLAIMED.** The first revision reported "14 rows, 0 disagreeing, 9
+> NON-VACUOUS" and named `((?>(a)|ab))c|(abc)` as the row the no-trail-rewind
+> question turns on. The critic injected a trail-rewinding cut into a scratch
+> copy and found that **2 of 14 rows went red — both of them rows the probe
+> labelled VACUOUS — while all nine advertised non-vacuous rows stayed
+> GREEN.** The named row is one of the green ones.
+>
+> **The cause is that these are two different axes and the probe measured
+> one.** *cut-vs-uncut* asks whether the cut changes the answer;
+> *trail-rewind-vs-not* asks whether CUT-INV is doing any work. A row can be
+> vacuous on the first and be the only thing standing between §3.1 and a
+> silent capture loss.
+>
+> The probe now builds **BOTH ARMS every run** — `cut_proto.c` carries a
+> `-DCUT_REWINDS_TRAIL` sabotage arm implementing the natural wrong cut (undo
+> everything the discarded frames would have undone) — and diffs them row by
+> row, so the second column is MEASURED rather than asserted. It FAILS if
+> either column is zero.
 
-The two rows the whole no-trail-rewind question turns on are in there by name:
-`(?>(a)|ab)` (retention) and `((?>(a)|ab))c|(abc)` (the cut succeeds, the
-CONTINUATION fails, and a frame below the mark has to undo the body's writes).
-The second is non-vacuous — the uncut twin reports group 1 = `(0,2)`, the cut
-reports groups 1 and 2 unset and group 3 set.
+**PROTOTYPE** (`out/cut_trail_proto.txt`), after the rebuild:
+
+> **17 rows, 0 disagreeing with libpcre2; 10 discriminate CUT-vs-UNCUT and 4
+> discriminate THE TRAIL INVARIANT.**
+
+And the corrected naming, which is the part worth carrying forward:
+
+- **The trail invariant's failing direction is RETENTION, not undo.** The four
+  rows that go red under the sabotage are `(?>(a)|ab)` on `"ab"` and `"a"`, and
+  `(?>(a)x|ab)` on `"ax"` and `"axb"` — a capture written inside the body on
+  the path the cut commits to, which a rewinding cut erases.
+- **`((?>(a)|ab))c|(abc)` does NOT discriminate it**, and the reason is worth
+  knowing rather than embarrassing: that row tests the UNDO half, and a cut
+  that rewinds the trail gets undo trivially right (it did the undo early).
+  Only retention can catch it. The first revision named the row that tests the
+  half no sabotage of the cut can break.
 
 **What a green run does NOT mean**, stated in the probe's own header: nothing
 here is pcrec's code, and if the module's real lowering differs from the shape
@@ -309,8 +463,17 @@ Appendix A's corpus.
   a miscompile, not a variant; §11's S88 is its sabotage.
 - **No change to the fail label.** It is already `>`-not-`==` and already
   rewinds to the popped frame's own mark.
-- **No new give-up code.** The two array caps and their `RX_R_FRAMES` return are
-  unchanged. One RESOURCE observation, **STRUCTURAL and reported rather than
+- **No new give-up code** — but **NOT "the caps are unchanged": R31 C10 is
+  right and this bullet was wrong.** The mark's `RX_SET` IS trailed (§3.3
+  property 1), so an `A_ATOMIC` inside a quantifier costs one trail entry per
+  entry to the group, and `vm_cost` (`src/gen/emit_vm.c:1311`, one of the
+  fifteen `-Wswitch` sites) needs an `A_ATOMIC` arm that charges it. An
+  uncharged trailed write is exactly the defect the SHIPPED
+  `tests/mech/sabotages/S87_kreset_trail_uncharged.sh` guards for `\K`, and
+  this module owes the same pairing: the `vm_cost` arm, and a CAPACITY sabotage
+  row (§11.4 S94). What is unchanged is the give-up CODE SPACE and the two cap
+  constants — not the arithmetic that decides when they fire.
+- One further RESOURCE observation, **STRUCTURAL and reported rather than
   fixed**: because the cut discards frames but not trail entries, a
   capture-bearing atomic body under a quantifier (`(?>(a))*`) makes the TRAIL the
   binding cap where the FRAMES cap normally binds first (3072 entries at 2
@@ -389,12 +552,45 @@ is **(0,3)** (`out/atomic_semantics.txt` section N, both oracles agreeing).
 A `window_end` of 3 prunes the (0,4) match away, silently, in the DEFAULT
 engine.
 
+> **R31 STRENGTHENED THIS FINDING BY REMOVING ITS ONE UNSTATED PROXY, and the
+> result belongs here rather than in the review.** Everything above compares
+> libpcre2's answer for the pattern with libpcre2's answer for the twin — which
+> assumes, without saying so, that pcrec's `rx_prefilter` reports the twin's
+> leftmost-first end. The `r31chk` critic compiled the capture-inserted uncut
+> twin for all 46 R3a patterns and called `rx_prefilter` DIRECTLY:
+> **122/122 window ends equal the uncut end, and 114 cells across 42 patterns
+> carry a `"prefilter-window"` ceiling AND a window end strictly below the cut
+> match's end.** That is the silent match loss, measured on the emitted
+> prefilter rather than inferred from an oracle — 114 cells the default engine
+> would get wrong the day this module lands without H3.
+
 ### 4.4 The rules
 
-**RULE H1 — REJECTION stays sound. The prefilter's `return 0` is kept.**
-Because the uncut language is a superset, no uncut match means no atomic match.
-0 violations in 17,640 cells, and the argument is a containment, not a
-coincidence: an atomic match's own path is an uncut path.
+**RULE H1 — REJECTION stays sound, FOR EVERY PATTERN THIS MODULE CAN COMPILE.**
+Because the uncut language is a superset, no uncut match means no atomic match;
+an atomic match's own path is an uncut path.
+
+> **SCOPED AFTER R31 E5, and the scope is not cosmetic.** Containment holds
+> only in a POSITIVE context. Under negation a smaller inner language is a
+> LARGER outer one, and the critic's witness is `(?!(?>a|ab)c)abc` on `"abc"`:
+> the cut version matches `(0,3)`, the uncut version does not match at all — so
+> a prefilter built from the uncut twin would REJECT a subject that matches.
+> §4.3's generator contains no negated context and could not have found it.
+>
+> The rule is therefore: **H1 holds while every atomic group occurs in a
+> positive context, which is every pattern module `atomic-groups` can compile,
+> because negative lookaround is module `lookaround` ([M6.6]) and refuses
+> today.** [M6.6] REOPENS H1 the way H5 reopens H4 — written down here so the
+> lookaround design inherits the question instead of rediscovering it, and
+> because "the prefilter may reject" is exactly the kind of rule that gets
+> carried forward as unconditional once nobody remembers why it was true.
+>
+> **The 0-violations-in-17,640 figure is retained and re-labelled.** R31 C13
+> is right that `r1_viol` can fire only on a libpcre2 bug given containment, so
+> within the positive-context family the zero carries no weight; it is the
+> implicit control for the sweep, not evidence for H1. The evidence for H1 is
+> the containment argument plus the scope above. R2's mirror (`start_moved`,
+> 180 cells) IS a real implicit control and is reported as one.
 
 **RULE H2 — the START is a LOWER BOUND, and the mechanism that copes with that
 already ships.** `window[0][0]` may be used to SEED an attempt and may never be
@@ -419,17 +615,49 @@ decouple the recompute from `nclamp` so it is emitted whenever a prefilter
 exists. Correctness does not depend on it.
 
 **RULE H3 — the END may NOT be used as an MRL ceiling on a cut-bearing
-artifact.** `emit_vm.c:4351` reads
+artifact. THE DIAGNOSIS AND THE PREDICATE SURVIVE R31 E3; THE SITE THE FIRST
+REVISION NAMED WAS THE WRONG ONE, AND THE CHECK IT PROPOSED WOULD HAVE AGREED
+WITH THE BUG.**
+
+What the first revision said: edit `emit_vm.c:4351`'s `v.mrl_win =
+job->fit.prefilter` to `&& !has_atomic(root)`, and the artifact's stamp is the
+check. **MEASURED refutation:** `v.mrl_win` has exactly four occurrences —
+`:418` (the declaration), `:4178` (the `--emit-ir` description text), `:4351`
+(the assignment) and **`:4611` (the stamp)**. It is read NOWHERE ELSE. The
+lines that actually build the ceiling are
 
 ```c
-v.mrl_win = job->fit.prefilter;
+:5233   window_end = (size_t)window[0][1] < subject_length ? … : subject_length;   /* entry */
+:5177   window_end = (size_t)window[0][1] < subject_length ? … : subject_length;   /* retry recompute */
 ```
 
-and must become `job->fit.prefilter && !has_atomic(root)`, so that the artifact
-emits `window_end = subject_length` and stamps `RX_VM_PRUNE_CEILING
-"subject-end"`. This is the module's ONE mandatory emitter change outside its
-own lowering, it is one predicate, and the artifact's own stamp is the check
-(§11, `[M6.4-ATOMIC rule 1]`, with sabotage S87 as its failing direction).
+and both are gated on `prefn` and `v.nclamp > 0`, **never on `mrl_win`**. So
+the proposed edit flips the stamp to `"subject-end"` and leaves the ceiling
+live — and `[M6.4-ATOMIC rule 1]` as first written asserts on the stamp, which
+would then be GREEN on a matcher that is silently losing matches. *A check that
+agrees with the bug is worse than no check*, and this one was derived from the
+same variable the bug hides behind.
+
+**The corrected rule, three parts:**
+
+1. **ONE PREDICATE, THREE SITES.** `[M6.4.2]` introduces a single
+   `cut_free_ceiling` predicate (`job->fit.prefilter && !has_atomic(root)`)
+   and reads it at **`:5233`, `:5177` AND `:4611`** — the two emission sites
+   and the stamp — so the stamp cannot disagree with the code it describes.
+   `:4178`'s `--emit-ir` text reads the same predicate for the same reason.
+2. **THE CHECK ASSERTS ON TWO SOURCES.** `[M6.4-ATOMIC rule 1]` (§11.3) pins
+   the emitted `window_end` ASSIGNMENT TEXT — absent, or literally
+   `= subject_length` — **and** the stamp. Either alone is satisfiable by a
+   half-done edit; that is exactly what E3 demonstrated.
+3. **THE CHECK PINS PATTERNS WITH `nclamp > 0`, AND SAYS SO — R31 C5.**
+   `RX_VM_PRUNE_CEILING` is THREE-valued (`:4610-4611`): with `nclamp == 0` it
+   stamps `"none"`, there is no `window_end` local and no ceiling argument at
+   all. The critic measured the histogram over §4.3's 46 R3a patterns as
+   **{prefilter-window 42, none 4}** — so a rule demanding `"subject-end"`
+   would be RED on four correct artifacts, and the sabotage would be invisible
+   on about 9% of the family. The check selects on `nclamp > 0` (equivalently:
+   the artifact declares a `window_end` local) and the corpus file carries both
+   populations.
 
 Two alternatives, both rejected with reasons:
 
