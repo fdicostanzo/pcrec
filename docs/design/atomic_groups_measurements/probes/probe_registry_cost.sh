@@ -2,59 +2,106 @@
 # probe_registry_cost.sh — MEASURED, in-pcrec. What §7.4's four new registry
 # rows ACTUALLY cost.
 #
-# [M6.4.1] REVISION (R31 C1, C8). The first revision said D65's built-status
-# derivation for a non-doorway row "is simply a compile of the syntax string".
-# C1 refuted that: the derivation is `doorway_route` + `doorway_call`, and
-# `doorway_route` recognises FOUR prefixes only. A row whose syntax is `a*+`
-# routes nowhere and derives to PCRECT_BUILT_DEFECT. This probe enumerates
-# every site a fifth `RegKind` has to reach, with the line numbers, and shows
-# the two registry_check pins that move — so §7.4's cost is a measurement
-# rather than a list somebody wrote from memory.
+# [M6.4.1] REVISION 2 (r31chk re-check N1). **THIS PROBE'S FIRST VERSION WAS
+# THE DEFECT IT WAS WRITTEN TO PREVENT.** It carried a table headed "MEASURED
+# rather than recalled" and its search population was four files —
+# registry.c, syntax_dump.c, enabled.c, registry_check.c — the four the author
+# already knew about. A grep over the answer you already have is a transcript,
+# not a measurement. The re-check found a seventh site in a fifth file
+# (tests/spec_mod0/check06_cursor.sh) that the old probe could not have seen.
 #
-# It also re-measures §7.3's companion fact (a new RegKind raises no -Wswitch
-# alarm) INDIRECTLY, by showing the two `default:` arms that swallow it.
+# So this version SWEEPS. It searches ALL of src/, cli/ and tests/ for four
+# kinds of consumer and prints what it finds, without a curated list:
+#
+#   (1) EXACT equalities on the dump's row count      -> these go RED
+#   (2) FLOORS on the row count                        -> these pass
+#   (3) hardcoded RegKind lists                        -> a fifth kind is invisible
+#   (4) doorway-ROUTING set assertions                 -> a non-doorway row lands
+#                                                          in the unrouted bucket
+#
+# **AND THE SWEEP FOUND MORE THAN THE FINDING DID**, which is recorded rather
+# than smoothed over: the re-check named a seventh site; the sweep finds NINE
+# across SIX files, three of them EXACT equalities. The lesson generalises past
+# this probe — an enumeration is only as wide as its search population, at
+# every level including the review's.
 set -e
 PCREC=${1:-build/pcrec}
 REPO=$(git rev-parse --show-toplevel)
 cd "$REPO"
 
-echo "== (a) the derivation cannot reach a non-doorway row =="
-echo "  doorway_route (src/parse/syntax_dump.c:334) recognises exactly:"
-sed -n '334,380p' src/parse/syntax_dump.c | grep -n '\.kind = RK_' \
-    | sed 's/^/     /'
-echo "  and built_status_probe (syntax_dump.c:443) is that route plus the call."
+TREE="src cli tests"
+ROWS_TODAY=$("$PCREC" --list-syntax 2>/dev/null | grep -c '^[^#]')
+NEW=4
+ROWS_AFTER=$((ROWS_TODAY + NEW))
+
+echo "== the number that moves =="
+echo "  --list-syntax rows today : $ROWS_TODAY"
+echo "  after four new rows      : $ROWS_AFTER"
 echo
-echo "  the shipped compiler, asked about the two spellings:"
+
+echo "== (1) EXACT equalities on a dump-derived count — THESE GO RED =="
+grep -rn -- "-eq $ROWS_TODAY\b\|!= $ROWS_TODAY\b\|== $ROWS_TODAY\b\|-eq 99\b\|!= 99\b" \
+    $TREE --include=*.c --include=*.sh --include=*.py 2>/dev/null \
+    | grep -v "^tests/bench/" | sed 's/^/  /' || echo "  (none)"
+echo
+echo "  Each of these is a deliberate anchor, and each says so in its own"
+echo "  comment (compliance_section.py: \"Bumping it is deliberate and belongs"
+echo "  in the same commit as the row\"). The non-base count is 99 rather than"
+echo "  $ROWS_TODAY because \`(?:\` is the one RS_BASE row; four RS_MODULE rows"
+echo "  make it 103."
+echo
+
+echo "== (2) FLOORS on the row count — these PASS at $ROWS_AFTER =="
+grep -rn -- "-lt $ROWS_TODAY\b\|< $ROWS_TODAY\b" $TREE --include=*.c --include=*.sh --include=*.py 2>/dev/null \
+    | grep -iv "bench\|trie\|nbr\|subj\|nn\b" | sed 's/^/  /' || echo "  (none)"
+echo
+
+echo "== (3) hardcoded RegKind lists — a fifth kind is INVISIBLE to the compiler =="
+grep -rn "RegKind [a-z_]*\[\] *=\|case RK_ESC" $TREE --include=*.c 2>/dev/null | sed 's/^/  /'
+echo "  and the switch whose default swallows a fifth kind:"
+grep -rn 'default: *\*n = 0' src/parse/registry.c | sed 's/^/  /'
+echo
+
+echo "== (4) doorway-ROUTING set assertions — a non-doorway row lands unrouted =="
+grep -rn "EXPECT_BASE_ANSWERED\|reaching no doorway" $TREE --include=*.sh 2>/dev/null | sed 's/^/  /'
+echo "  This is a SET equality, not a count, so no floor absorbs it: the four"
+echo "  new rows route nowhere and join the unrouted bucket."
+echo "  expected set today : \"(?:...)\""
+echo "  expected set after : \"(?:...) a*+ a++ a?+ a{1,2}+\""
+echo
+
+echo "== (5) the built-status derivation cannot reach a non-doorway row =="
+echo "  doorway_route (src/parse/syntax_dump.c:334) recognises exactly:"
+sed -n '334,380p' src/parse/syntax_dump.c | grep -n '\.kind = RK_' | sed 's/^/     /'
 printf '    --explain %-8s : %s\n' "'(?>a)'" "$("$PCREC" --explain '(?>a)' 2>&1 | sed -n '2p' | sed 's/^ *//')"
 printf '    --explain %-8s : %s\n' "'a*+'"   "$("$PCREC" --explain 'a*+'   2>&1 | head -1)"
-echo "  -> a row spelled 'a*+' derives to BUILT_DEFECT, not to built/unbuilt."
+echo "  -> such a row derives to BUILT_DEFECT; built_status_probe"
+echo "     (syntax_dump.c:443) needs a NON-DOORWAY compile arm."
 echo
-echo "== (b) every OTHER site a fifth RegKind must reach =="
-echo "  1. pcrec_registry's switch — a fifth kind falls to \`default: *n = 0\`:"
-grep -n 'default: *\*n = 0' src/parse/registry.c | sed 's/^/     /'
-echo "  2. the dump's hardcoded kind list (ONE array, TWO use sites):"
-grep -n 'all_kinds' src/parse/syntax_dump.c | sed 's/^/     /'
-echo "     (C8 called these \"both all_kinds[] arrays\"; measured, it is one"
-echo "      array at :145 iterated at :165 and :1080. The correction does not"
-echo "      change the ruling — three places still have to be edited.)"
-echo "  3. enabled.c's SEPARATE hardcoded list:"
-grep -n 'static const RegKind kinds\[\]' src/parse/enabled.c | sed 's/^/     /'
+
+echo "== (6) the engine-capability tripwire's qualifying count =="
+grep -rn "qualifying != 48" tests/registry/registry_check.c | sed 's/^/  /'
+echo "  VM_ONLY on the four new rows makes this 52. Under M-1 the tripwire is"
+echo "  REPLACED by SR-8 in the same substep, so expect to touch it once and"
+echo "  then delete it."
 echo
-echo "== (c) the two registry_check pins that move =="
-echo "  row total (registry_check.c:444), and what --list-syntax reports today:"
-grep -n 'total != 100' tests/registry/registry_check.c | sed 's/^/     /'
-printf '     --list-syntax rows today: %s   -> becomes 104 with four new rows\n' \
-    "$("$PCREC" --list-syntax 2>/dev/null | grep -c '^[^#]')"
-echo "  the engine-capability tripwire's qualifying count (registry_check.c:1473):"
-grep -n 'qualifying != 48' tests/registry/registry_check.c | sed 's/^/     /'
-echo "     -> the four new rows' \`engines\` value decides whether this becomes"
-echo "        52 or stays 48. §7.4 must STATE the value; it is not derivable"
-echo "        from the row count."
+
+echo "== (7) the REGMANIFEST's prose pins, which no grep for a literal finds =="
+grep -n "of 48 engine-restricted\|100 rows classified" tests/registry/run_registry_tests.sh \
+    | cut -c1-90 | sed 's/^/  /'
+echo "  These are the suite's own manifest lines. They carry the same two"
+echo "  numbers as sites (1) and (6) in PROSE, so a change that updates the"
+echo "  assertions and not these leaves the manifest describing a suite that"
+echo "  no longer exists."
 echo
-echo "== (d) R3's source: the check must read the DUMP, not the table =="
-echo "  registry_check.c:135 already catches a pcrec_registry omission:"
-sed -n '135p' tests/registry/registry_check.c | sed 's/^/     /'
-echo "  so §7.3's \"half-done invisibly\" is only true of the DUMP side"
-echo "  (all_kinds[]), which no check reaches. A per-kind assertion that"
-echo "  ITERATES RK_COUNT over registry.c shares a source with what it checks;"
-echo "  it must parse \`--list-syntax\` OUTPUT instead."
+
+echo "== (8) per-row field requirements the new rows must satisfy =="
+grep -rn "no quantifiable value" tests/registry/registry_check.c | sed 's/^/  /'
+echo "  -> \`quant\` must not be QF_NONE. The value is QF_NO: \`a*++\` is an"
+echo "     ERROR in libpcre2 and in pcrec (§6.3), so a possessive suffix is"
+echo "     not itself quantifiable."
+echo
+echo "== summary =="
+echo "  This sweep is over $(echo $TREE | tr ' ' ',') with no curated file list."
+echo "  A future reader who widens it further and finds a tenth site should"
+echo "  treat that as this probe's next correction, not as a surprise."
