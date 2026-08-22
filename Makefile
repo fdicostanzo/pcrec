@@ -62,6 +62,16 @@ override CCACHE := 0
 else
 export PATH := $(CCACHE_MASQ_DIR):$(PATH)
 export CCACHE_DIR
+# NOHASHDIR + BASEDIR: this file's own tree-build compiles (the pattern
+# rule below) never go through tests/lib/gen_timeout.sh, which sets these
+# for every generated-code compile — so mech's per-sabotage rebuild (a
+# FRESH `git archive HEAD` tree per sabotage, most of whose source files
+# are byte-identical across sabotages) needs them set here too, or a
+# cross-tree hit is blocked the same way a cross-case one was (measured:
+# CFLAGS defaults to -g, and ccache's hash_dir folds the CWD into the hash
+# for correct debug-info paths — probed 2026-08-21, see gen_timeout.sh).
+export CCACHE_NOHASHDIR := 1
+export CCACHE_BASEDIR   := $(CURDIR)
 endif
 endif
 export CCACHE
