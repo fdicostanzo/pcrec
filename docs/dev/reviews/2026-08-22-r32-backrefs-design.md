@@ -199,3 +199,26 @@ both were written; nothing compared the archive to the claim.
 Focused re-check dispatched: r32eng on E1 (incl. the simulator diff, P-1's
 named gap, the scoping's observability), E2, E3; r32chk on C2 (P-10), C3,
 C4, C5 (+ closures, re-runs).
+
+## Focused re-check, r32chk on b3d0b32 — 17/20 CLOSED; C2 narrowed (3 residuals); six NEW
+
+Re-runs: publish_discipline, erasure_hazard, caseless_fold byte-identical;
+expand_cost boundary reproduced a FOURTH time (10,525/10,526, 7,116,509
+B); prefilter_cost timing-only variation (N6). C9's new filler verified:
+all five TRUE patterns no-match against the exact 256 KB subject. C12's
+positive control "refuted the lane's own superset claim" — strong closure.
+C3/C4/C5 and C6-C20 closed with evidence (C16's new baseline: cls26x2
+VM-only 27,609 B vs the expansion's 321,302 B — 11.6x, strengthening the
+decline).
+
+| ID | Sev | Claim | Evidence | Disposition |
+|---|---|---|---|---|
+| C2 (a) | MED | §4.4 per-site count "the test knows because it wrote the pattern" | provenance unspecified: a `\<digit>` text scan is a SECOND implementation of §5's octal rule (`(a)\10` octal → count 0; `(a)\18` → 0 — S-BR8's own fixtures); a hand-typed integer collides with the no-hand-typed-counts rule unless DECLARED | REVISION 2: declared integer column; octal-ambiguous fixtures excluded or explicitly counted |
+| C2 (b) | MED | the complement check's population | all six existing fixtures expect 0 / get 0; deleting the new rows leaves the check green over nothing — the diagnosed shape relocated to the fixture table | REVISION 2: scoped guard "≥ N fixtures declare ≥ 1 bref", N asserted |
+| C2 (c) | LOW | comment stripping | the call spans two lines; a trailing comment on the call line survives a line strip; one pass or two unspecified | REVISION 2: token-level; S68 still fires |
+| N1 | MED | S-BR17 (qsort tiebreak removed) | MEASURED: 8 rows / 4 dup pairs sorted name-only with glibc qsort -O2 → insertion order preserved (stable merge sort unless memory-starved) — undetectable or flaky | REVISION 2: structural detector (emitted (name, number) order / comparator totality) |
+| N2 | MED | §13 P-11 "+12/-12 plus (?J)" | `\0` (ANY_ENGINE, outside the tripwire twelve) ALSO flips built per §9/§14 → 14 flips; the two new `\g<`/`\g'` rows are UNBUILT; correct: built 33→47, unbuilt 61→49, na 6, total 102 — tripwire population ≠ built-tally population | REVISION 2 |
+| N3-N6 | LOW | §7.3 stale figures (40%/2%, 157x, five vs six runs); §0.3's erasure row still "superset (sound)"; S-BR14's detector names a nonexistent §7.2 driver section; a seventh run puts `tag` at 172.9x above the stated ceiling; C18 residue ("all seven" = 9 cells / 8 patterns); S-BR12 observable only after [M6.4.2] | — | REVISION 2 |
+
+Revision 2 dispatched to lane/brdesign (r32eng's re-check still running on
+b3d0b32; §3.2/§5/§7.2 held).
