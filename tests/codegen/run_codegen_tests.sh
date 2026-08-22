@@ -1406,6 +1406,342 @@ else
     bad "[M6.2-KRESET rule 3b]: pcrec failed to compile the DFA fixture 'a(b|c)d'"
 fi
 
+# ===========================================================================
+# [M6.4-ATOMIC] module `atomic-groups` ([M6.4.2]) — FIVE STRUCTURAL RULES
+# ===========================================================================
+#
+# EVERY RULE BELOW MATCHES **BOTH SPELLINGS OF A CUT**, and that is a
+# correction to the design's first form rather than caution. `vm_revdet_rep`
+# cuts by assigning `run->resume_depth = <prefix>_rvN_frame_mark` and its own
+# comment says it "never goes near the RX_CUT macro"; `vm_cut`'s header records
+# what that cost once — a step-charge probe "reported a confident zero for the
+# revdet rung because the first version instrumented only the `RX_CUT` macro".
+# A rule that matched one spelling would inherit that same zero.
+#
+# AND EVERY RULE MATCHES **CALL SITES**, never `grep RX_CUT`. R31 C3, and the
+# failing direction is demonstrable on a SHIPPED artifact with no sabotage at
+# all — `#define RX_CUT(slot_)` is emitted UNCONDITIONALLY on every VM artifact,
+# so `grep -c RX_CUT` is at least 1 on every artifact pcrec has ever produced.
+# MEASURED on this tree, `--engine=vm --no-captures`:
+#
+#     a*+b            grep -c RX_CUT = 1   '^ *RX_CUT(' = 0   2nd spelling = 0
+#     (?>a*)b         grep -c RX_CUT = 1   '^ *RX_CUT(' = 0   2nd spelling = 0
+#     (?:a|bc)*+d     grep -c RX_CUT = 1   '^ *RX_CUT(' = 0   2nd spelling = 1
+#
+# The first two are the CURSOR rung, which is frameless and correctly emits no
+# cut; the third is REVDET, which cuts in the second spelling only. A rule
+# spelled "the artifact contains RX_CUT" is green on all three and would be
+# green on a compiler that emitted no cut at all.
+
+AG='--features atomic-groups'
+agcuts() { grep -c '^ *RX_CUT(' "$1"; }          # spelling 1: the macro call
+agrv()   { grep -cE '^ *run->resume_depth = rx_rv[0-9]+_frame_mark;' "$1"; }  # spelling 2
+
+# --- rule 1: THE CEILING, on TWO SOURCES, scoped to nclamp > 0 --------------
+#
+# The prefilter is the capture-erased DFA and therefore answers for the UNCUT
+# language, so its span END is not a bound on a CUT match's end — 122 refuting
+# cells, and 114 cells of live silent match loss measured on the emitted
+# prefilter. RULE H3 switches the MRL ceiling off on a cut-bearing artifact.
+#
+# TWO SOURCES, AND THAT IS R31 E3's WHOLE FINDING. The design's first form
+# asserted on the STAMP alone, and the stamp is read from `v.mrl_win` while the
+# lines that BUILD the ceiling were gated on `prefn` and `v.nclamp > 0` and
+# never on that flag. MEASURED on this tree by making exactly that half-done
+# edit — the stamp reading the predicate, the two emission sites reading the
+# raw prefilter flag:
+#
+#     half-done edit : stamp "subject-end"   window[0][1] assignments left: 2
+#     as shipped     : stamp "subject-end"   window[0][1] assignments left: 0
+#
+# 1(b) is GREEN on the bug. A check that agrees with the bug is worse than no
+# check, so both are asserted.
+#
+# SCOPED TO `nclamp > 0`, which is R31 C5: `RX_VM_PRUNE_CEILING` is
+# THREE-valued, and with `nclamp == 0` an artifact stamps "none", declares no
+# `window_end` local and has no ceiling to get wrong. Over the design's own 46
+# R3a patterns the histogram is {prefilter-window 42, none 4}, so an unscoped
+# rule would be RED on four CORRECT artifacts. The fixture below is chosen
+# BECAUSE it clamps, and the check asserts that it does before asserting
+# anything else — a fixture that stopped clamping would make this rule vacuous
+# rather than failing.
+if "$PCREC" $AG -p rx -o "$WORKDIR/ag_ceil.c" -- 'x*(?>a|ab)c|abcd' >/dev/null 2>&1; then
+    ag_stamp="$(sed -n 's/.*RX_VM_PRUNE_CEILING "\(.*\)"/\1/p' "$WORKDIR/ag_ceil.c")"
+    ag_win=$(grep -c 'window_end = (size_t)window\[0\]\[1\]' "$WORKDIR/ag_ceil.c")
+    if [ "$ag_stamp" = "none" ]; then
+        bad "[M6.4-ATOMIC rule 1]: the fixture 'x*(?>a|ab)c|abcd' stamps \"none\" (nclamp == 0), so it has no ceiling to get wrong and this rule is measuring NOTHING. Pick a clamping fixture — C5 measured the R3a family at {prefilter-window 42, none 4} and this rule is only meaningful on the first population"
+    elif [ "$ag_win" -ne 0 ]; then
+        bad "[M6.4-ATOMIC rule 1(a)]: the cut-bearing artifact still assigns window_end from the prefilter's window END ($ag_win sites). The prefilter answers for the UNCUT language, so that number is not a bound on this match's end — '(?>a|ab)c|abcd' on \"abcd\" is (0,4) and its uncut twin is (0,3), and a ceiling of 3 prunes the real match away silently"
+    elif [ "$ag_stamp" != "subject-end" ]; then
+        bad "[M6.4-ATOMIC rule 1(b)]: the cut-bearing artifact's RX_VM_PRUNE_CEILING reads \"$ag_stamp\", expected \"subject-end\". The stamp must describe the code beside it; E3's defect was exactly the two disagreeing"
+    else
+        ok "[M6.4-ATOMIC rule 1] (§4.4 H3): a cut-bearing CLAMPING artifact drops the prefilter's window END as its MRL ceiling — asserted on BOTH sources (no window[0][1] assignment AND the stamp reads \"subject-end\"), because a half-done edit satisfies either one alone"
+    fi
+else
+    bad "[M6.4-ATOMIC rule 1]: pcrec failed to compile the fixture 'x*(?>a|ab)c|abcd'"
+fi
+
+# --- rule 1c: an ATOMIC-FREE artifact keeps its ceiling ---------------------
+# The other direction, and without it rule 1 would be green on an emitter that
+# had switched the ceiling off for EVERY pattern — losing D51 ruling 1's whole
+# optimisation on the entire corpus while changing no answer.
+# The twin CAPTURES, because a capture-free pattern with no cut compiles to a
+# pure DFA and has no VM ceiling to keep. `(x)*` is the same quantifier the
+# cut fixture above carries, with a group around it so `forces_captures`
+# selects the VM and the hybrid's prefilter is live.
+if "$PCREC" -p rx -o "$WORKDIR/ag_noceil.c" -- '(x)*(?:a|ab)c|abcd' >/dev/null 2>&1; then
+    ag_stamp2="$(sed -n 's/.*RX_VM_PRUNE_CEILING "\(.*\)"/\1/p' "$WORKDIR/ag_noceil.c")"
+    ag_win2=$(grep -c 'window_end = (size_t)window\[0\]\[1\]' "$WORKDIR/ag_noceil.c")
+    if [ "$ag_stamp2" = "prefilter-window" ] && [ "$ag_win2" -ge 1 ]; then
+        ok "[M6.4-ATOMIC rule 1c]: the ATOMIC-FREE twin '(x)*(?:a|ab)c|abcd' KEEPS its prefilter-window ceiling ($ag_win2 assignment sites, stamp \"prefilter-window\") — H3 is scoped to cut-bearing artifacts, not applied to everything"
+    else
+        bad "[M6.4-ATOMIC rule 1c]: the atomic-free twin stamps \"$ag_stamp2\" with $ag_win2 window[0][1] assignments, expected \"prefilter-window\" and at least 1. H3 must not cost the ceiling on patterns that have no cut"
+    fi
+else
+    bad "[M6.4-ATOMIC rule 1c]: pcrec failed to compile the atomic-free fixture"
+fi
+
+# --- rule 2: -fno-possessify STILL EMITS A WRITTEN CUT ----------------------
+#
+# §3.2 RULE 2: the module never writes `Ast.possessive`, so `-fno-possessify`
+# — which denies possessify's REWRITE — cannot reach a possessive the USER
+# wrote. Storing the module's semantics in that field would make an
+# optimisation flag a MISCOMPILER, which is sabotage row S92.
+#
+# SCOPED TO AN UNDISCHARGED POSSESSIVE, and the scoping is load-bearing rather
+# than cautious (§5.4's carve-out): on a DISCHARGED possessive there is
+# correctly no cut under the flag, because the discharge deleted the node while
+# `run_possessify` did not run to re-mark the quantifier. `(?:a|ab){1,3}+c`'s
+# §2.2 verdict is NEGATIVE — its body's iteration can end in two places — so
+# the discharge declines it and the cut must survive.
+if "$PCREC" $AG -p rx --engine=vm --no-captures -fno-possessify \
+        -o "$WORKDIR/ag_np.c" -- '(?:a|ab){1,3}+c' >/dev/null 2>&1; then
+    ag_c=$(agcuts "$WORKDIR/ag_np.c"); ag_r=$(agrv "$WORKDIR/ag_np.c")
+    if [ $((ag_c + ag_r)) -ge 1 ]; then
+        ok "[M6.4-ATOMIC rule 2] (§3.2 RULE 2): '(?:a|ab){1,3}+c' under -fno-possessify still emits a cut ($ag_c RX_CUT call sites + $ag_r second-spelling) — the flag denies possessify's REWRITE and cannot reach a possessive the USER wrote"
+    else
+        bad "[M6.4-ATOMIC rule 2]: '(?:a|ab){1,3}+c' under -fno-possessify emits NO cut in either spelling. The module has stored its semantics somewhere -fno-possessify can deny, which makes an optimisation flag a miscompiler: the artifact now answers the UNCUT language"
+    fi
+else
+    bad "[M6.4-ATOMIC rule 2]: pcrec failed to compile '(?:a|ab){1,3}+c' under -fno-possessify"
+fi
+
+# --- rule 3: THE MARK IS SET BEFORE THE BODY PUSHES ANYTHING ---------------
+#
+# CUT-INV clause 2, and the sharpest structural property in the lowering: every
+# frame below the mark was pushed BEFORE the body's first trail entry, which is
+# what makes "discard the frames and leave the trail alone" safe. Sabotage row
+# S90 moves the `RX_SET` after the body's first `RX_PUSH`.
+#
+# THE SECOND CLAUSE THE DESIGN FIRST PROPOSED IS DELETED — R31 C15. It asserted
+# that every `RX_CUT(k)` is "textually reachable only from labels after it",
+# and this VM dispatches by COMPUTED GOTO, where textual position carries no
+# reachability at all. An unfalsifiable clause is worse than an absent one.
+if "$PCREC" $AG -p rx --engine=vm --no-captures \
+        -o "$WORKDIR/ag_mark.c" -- '(?>a|ab)c' >/dev/null 2>&1; then
+    ag_set=$(grep -n 'RX_SET(RX_SLOT_CUT_MARK' "$WORKDIR/ag_mark.c" | head -1 | cut -d: -f1)
+    ag_push=$(grep -n '^ *RX_PUSH' "$WORKDIR/ag_mark.c" | head -1 | cut -d: -f1)
+    ag_cut=$(agcuts "$WORKDIR/ag_mark.c")
+    if [ -z "$ag_set" ]; then
+        bad "[M6.4-ATOMIC rule 3]: '(?>a|ab)c' emits no RX_SET of a cut mark at all — the group records no resume depth, so its cut has nothing to cut back TO"
+    elif [ -z "$ag_push" ]; then
+        bad "[M6.4-ATOMIC rule 3]: '(?>a|ab)c' emits no RX_PUSH at all, so this rule is measuring nothing — the fixture's alternation must push a choice point for the cut to have something to discard"
+    elif [ "$ag_set" -ge "$ag_push" ]; then
+        bad "[M6.4-ATOMIC rule 3]: '(?>a|ab)c' sets its cut mark at line $ag_set, AFTER the body's first RX_PUSH at line $ag_push. CUT-INV clause 2 requires the mark to be recorded before ANY frame the body pushes, or the cut truncates to a depth that already includes some of them"
+    elif [ "$ag_cut" -lt 1 ]; then
+        bad "[M6.4-ATOMIC rule 3]: '(?>a|ab)c' records a cut mark and never CUTS to it ($ag_cut call sites) — a dead slot and the uncut language, which is K29's shape one construct over"
+    else
+        ok "[M6.4-ATOMIC rule 3] (CUT-INV clause 2): '(?>a|ab)c' sets its cut mark (line $ag_set) BEFORE the body's first RX_PUSH (line $ag_push) and cuts to it ($ag_cut call sites)"
+    fi
+else
+    bad "[M6.4-ATOMIC rule 3]: pcrec failed to compile '(?>a|ab)c'"
+fi
+
+# --- rule 4: A DISCHARGED PATTERN EMITS NO CUT AND NO VM -------------------
+#
+# TWO INDEPENDENT FACTS, and K29 is why they have to be asserted separately: an
+# artifact can allocate the mark SLOT and emit no CUT (that was K29 exactly,
+# for years), so "no slot" and "no cut" are not each other's proxy.
+#
+# MEASURED on this tree, --no-captures:
+#     a*+b        RX_ENGINE defines = 0   RX_SLOT_CUT_MARK = 0
+#     (?>a|ab)c   RX_ENGINE defines = 2   RX_SLOT_CUT_MARK = 2
+if "$PCREC" $AG -p rx --no-captures -o "$WORKDIR/ag_dis.c" -- 'a*+b' >/dev/null 2>&1; then
+    ag_slot=$(grep -c 'RX_SLOT_CUT_MARK' "$WORKDIR/ag_dis.c")
+    ag_c=$(agcuts "$WORKDIR/ag_dis.c"); ag_r=$(agrv "$WORKDIR/ag_dis.c")
+    ag_eng=$(grep -c '#define RX_ENGINE' "$WORKDIR/ag_dis.c")
+    if [ "$ag_slot" -ne 0 ]; then
+        bad "[M6.4-ATOMIC rule 4]: the DISCHARGED 'a*+b' still allocates a cut-mark slot ($ag_slot references). Its §2.2 verdict is positive, so src/opt/atomic.c must have deleted the A_ATOMIC before emission"
+    elif [ $((ag_c + ag_r)) -ne 0 ]; then
+        bad "[M6.4-ATOMIC rule 4]: the DISCHARGED 'a*+b' still emits a cut ($ag_c RX_CUT call sites + $ag_r second-spelling)"
+    elif [ "$ag_eng" -ne 0 ]; then
+        bad "[M6.4-ATOMIC rule 4]: the DISCHARGED, CAPTURE-FREE 'a*+b' still carries a VM ($ag_eng RX_ENGINE defines). The discharge deletes the node BEFORE SR-8's consultation runs, so nothing forces the VM and the artifact must be a pure DFA — that per-pattern split is the whole payoff, and its absence means the discharge ran too late or not at all"
+    else
+        ok "[M6.4-ATOMIC rule 4] (§5.3): the DISCHARGED capture-free 'a*+b' emits no cut-mark slot, no cut in EITHER spelling, and no VM at all — a pure DFA artifact. The slot and the cut are asserted separately because K29 shows an artifact can have one without the other"
+    fi
+else
+    bad "[M6.4-ATOMIC rule 4]: pcrec failed to compile 'a*+b'"
+fi
+
+# --- rule 5: ONE ASSERTION PER DISPATCH PATH, BOTH PREFERENCES -------------
+#
+# `vm_rep` has FIVE dispatch paths and the design's first form named THREE; the
+# one it missed emitted NO CUT AT ALL, which is K29. Without a per-path check a
+# future rung change silently drops a path again, which is exactly how K29
+# happened.
+#
+# THE REQUIREMENT IS NOT "EVERY PATH ENDS IN A CUT". That is wrong for the
+# CURSOR rung, whose possessive arm is FRAMELESS — `vm_cursor_rep` sets `low`,
+# `retry` and `again` to -1, so there is no slot, no label and no push, and
+# nothing a cut would remove. The requirement is CUT-EQUIVALENCE: emit a cut in
+# EITHER spelling, or provably push no frame.
+#
+# BOTH PREFERENCES PER PATH, which is R31's re-check N1: the proof-gated
+# population these witnesses are drawn from is NOT the population the LIFT
+# creates, and the cursor rung SATISFIES cut-equivalence while answering the
+# wrong language on a lazy body. A greedy witness alone would have been green
+# on the lift that miscompiles 7 of 8 lazy cells. The LAZY witnesses take the
+# general shape (rung stamp plus the group's own cut), which is what "the
+# carve-out fired" looks like from outside.
+ag_paths=0; ag_pathbad=0
+ag_path() {  # ag_path <label> <pattern> <expect-rungs-mask> <min-cut> <min-2nd> <max-push>
+    local lbl="$1" pat="$2" want="$3" mincut="$4" min2="$5" maxpush="$6"
+    local f="$WORKDIR/ag_path.c" rungs c r p
+    if ! "$PCREC" $AG -p rx --engine=vm --no-captures -o "$f" -- "$pat" >/dev/null 2>&1; then
+        bad "[M6.4-ATOMIC rule 5/$lbl]: pcrec failed to compile '$pat'"
+        ag_pathbad=$((ag_pathbad + 1)); return
+    fi
+    rungs="$(sed -n 's/^#define RX_VM_RUNGS \(.*\)u$/\1/p' "$f")"
+    c=$(agcuts "$f"); r=$(agrv "$f"); p=$(grep -c '^ *RX_PUSH' "$f")
+    ag_paths=$((ag_paths + 1))
+    if [ "$rungs" != "$want" ]; then
+        bad "[M6.4-ATOMIC rule 5/$lbl]: '$pat' took rung mask $rungs, expected $want — the dispatch moved, so whatever this row asserts below is about a different path than the one it names"
+        ag_pathbad=$((ag_pathbad + 1)); return
+    fi
+    if [ "$c" -lt "$mincut" ] || [ "$r" -lt "$min2" ]; then
+        bad "[M6.4-ATOMIC rule 5/$lbl]: '$pat' emits $c RX_CUT call sites and $r second-spelling cuts, expected at least $mincut and $min2. Cut-equivalence: this path pushes frames, so it owes a cut in one spelling or the other"
+        ag_pathbad=$((ag_pathbad + 1)); return
+    fi
+    if [ "$maxpush" -ge 0 ] && [ "$p" -gt "$maxpush" ]; then
+        bad "[M6.4-ATOMIC rule 5/$lbl]: '$pat' emits $p RX_PUSH sites, expected at most $maxpush. This path claims cut-equivalence by pushing NOTHING, and it is pushing"
+        ag_pathbad=$((ag_pathbad + 1)); return
+    fi
+    ok "[M6.4-ATOMIC rule 5/$lbl]: '$pat' -> rungs $rungs, $c RX_CUT call sites, $r second-spelling, $p pushes"
+}
+# CURSOR: frameless. NO cut and NO push — cut-equivalent by pushing nothing.
+ag_path "cursor-greedy"   '(?>a*)b'                 0x1  0 0 0
+# CURSOR, LAZY: the carve-out fires, so this is the GENERAL shape — a rung with
+# no collapse (the cut is the group's own, not the rung's).
+ag_path "cursor-lazy"     '(?>a*?)b'                0x1  1 0 -1
+ag_path "frames-bounded-greedy" '(?>(?:ab|b){1,3})c'      0x2  1 0 -1
+ag_path "frames-bounded-lazy"   '(?>(?:ab|b){1,3}?)c'     0x2  1 0 -1
+ag_path "frames-unbounded-greedy" '(?>(?:ab|b)*)c'        0x4  1 0 -1
+ag_path "frames-unbounded-lazy"   '(?>(?:ab|b)*?)c'       0x4  1 0 -1
+# REVDET: cuts in the SECOND SPELLING ONLY. A rule matching `RX_CUT` alone
+# reports a confident zero here — vm_cut's own header records a probe that did.
+ag_path "revdet-greedy"   '(?>(?:a|bc)*)d'          0x8  0 1 -1
+ag_path "revdet-lazy"     '(?>(?:a|bc)*?)d'         0x8  1 1 -1
+ag_path "counter-bounded-greedy" '(?>(?:ab|b){8,12})c'    0x10 1 0 -1
+ag_path "counter-bounded-lazy"   '(?>(?:ab|b){8,12}?)c'   0x10 1 0 -1
+# COUNTER, UNBOUNDED: K29's path. It emitted NEITHER spelling before [M6.4.2]
+# — stamped POSSESSIVE, allocated and WROTE the mark, and read it nowhere.
+ag_path "counter-unbounded-greedy" '(?>(?:ab|b){8,})c'    0x10 1 0 -1
+ag_path "counter-unbounded-lazy"   '(?>(?:ab|b){8,}?)c'   0x10 1 0 -1
+if [ "$ag_paths" -ge 12 ] && [ "$ag_pathbad" -eq 0 ]; then
+    ok "[M6.4-ATOMIC rule 5] (§3.2.1): all $ag_paths dispatch-path witnesses answered — six paths x both preferences, each naming which cut-equivalence answer its path gives"
+else
+    bad "[M6.4-ATOMIC rule 5]: only $ag_paths path witnesses ran ($ag_pathbad failed); the per-path coverage this rule exists for is incomplete"
+fi
+
+# --- rule 5b: THE SUFFIX SPELLING REPRODUCES THE GROUP SPELLING ------------
+#
+# `X q+` is `(?>X q)` — PCRE2's own definition, and src/parse/parse.c desugars
+# to the same tree. So the two must produce the SAME artifact, and that is a
+# far stronger statement than "both compile": it says the lift routes a written
+# possessive onto exactly the rung the proof-gated one takes, with the same
+# slots, the same pushes and the same cuts.
+ag_eq=0; ag_eqbad=0
+# Written as EXPLICIT PAIRS rather than derived by wrapping, because the two
+# spellings do not bracket the same text: `a*+b` is `(?>a*)b`, NOT `(?>a*b)`.
+# A derivation that wrapped the whole pattern would compare a different
+# construct and call the difference a failure — measured, on the first run of
+# this rule.
+#
+# TAB-SEPARATED, and the separator is not arbitrary: the first version used
+# `|`, which is ALTERNATION, so `${agp%%|*}` cut `(?:ab|b){1,3}+c` down to
+# `(?:ab` and five of the six pairs silently vanished into the `|| continue`
+# below. The floor caught it (1 pair against a floor of 6) — which is what
+# floors on a generated population are for.
+#
+# THE COMPARISON NORMALISES TWO AXES AND NOTHING ELSE. Every artifact embeds
+# its own pattern text (the header comment and `rx_info.pattern`) and its own
+# header name, and those MUST differ between two spellings of one construct.
+# What must not differ is the machinery, so those lines are dropped and
+# everything else is compared byte for byte.
+ag_strip() { grep -vE '^( \*     |/\* Generated by pcrec\.|#include "|    \.pattern(_len)? = )' "$1"; }
+while IFS=$'\t' read -r ag_poss ag_grp; do
+    [ -n "$ag_poss" ] || continue
+    "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_s.c" -- "$ag_poss" >/dev/null 2>&1 || continue
+    "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_g.c" -- "$ag_grp"  >/dev/null 2>&1 || continue
+    ag_eq=$((ag_eq + 1))
+    ag_strip "$WORKDIR/ag_s.c" > "$WORKDIR/ag_s.stripped"
+    ag_strip "$WORKDIR/ag_g.c" > "$WORKDIR/ag_g.stripped"
+    if ! cmp -s "$WORKDIR/ag_s.stripped" "$WORKDIR/ag_g.stripped"; then
+        ag_eqbad=$((ag_eqbad + 1))
+        bad "[M6.4-ATOMIC rule 5b]: '$ag_poss' and '$ag_grp' emit DIFFERENT C. PCRE2 defines the suffix AS the group spelling and parse.c desugars to the same tree, so any difference is the lift routing one of them somewhere the other does not go: $(diff "$WORKDIR/ag_s.stripped" "$WORKDIR/ag_g.stripped" | head -4 | tr '\n' ' ')"
+    fi
+done <<AGPAIRS
+a*+b	(?>a*)b
+(?:ab|b){1,3}+c	(?>(?:ab|b){1,3})c
+(?:ab|b)*+c	(?>(?:ab|b)*)c
+(?:a|bc)*+d	(?>(?:a|bc)*)d
+(?:ab|b){8,12}+c	(?>(?:ab|b){8,12})c
+(?:ab|b){8,}+c	(?>(?:ab|b){8,})c
+AGPAIRS
+if [ "$ag_eq" -ge 6 ] && [ "$ag_eqbad" -eq 0 ]; then
+    ok "[M6.4-ATOMIC rule 5b] (§3.2 RULE 1): all $ag_eq suffix/group spelling pairs emit BYTE-IDENTICAL C across all six dispatch paths — the desugaring is real at the emitter, not only at the parser"
+else
+    bad "[M6.4-ATOMIC rule 5b]: $ag_eqbad of $ag_eq spelling pairs differ (floor 6 pairs)"
+fi
+
+# --- rule 5c: PRE-PASS AND EMITTER AGREE ABOUT SLOTS -----------------------
+#
+# E4/S98's detector, generalised. `vm_count_slots` allocates the cut-mark slot
+# and MUST agree with the emitter exactly; when they disagree the mark lands on
+# another family's slot and two live loops share one. FOUND THIS WAY during
+# [M6.4.2]: with RULE 3's condition-(d) decline in `vm_rep` alone, `-fno-
+# possessify '(?>(?:a|bc){2})d'` emitted `RX_SET(RX_SLOT_REVDET0_ENTRY, ...)`
+# and `RX_CUT(2)` onto the revdet loop's OWN entry slot.
+#
+# The signal is read off the ARTIFACT: every `RX_CUT(n)` must name a slot the
+# legend declares as a CUT MARK. A raw `RX_SET(<digit>` is the same defect seen
+# from the other side — `vm_slot_name` could not resolve the slot at all.
+ag_slots=0; ag_slotbad=0
+for agf in '' '-fno-possessify' '-fno-revdet' '-fno-counter'; do
+    for agp in '(?>a*)b' '(?>(?:a|bc){2})d' '(?>(?:ab|b){8,})c' '(?>(?:a|bc)*)d' \
+               '(?>(?:ab|b){1,3})c' '(?>a|ab)c' '(?>ab)+c' '(?>(?:a*)*)b'; do
+        "$PCREC" $AG -p rx --engine=vm --no-captures $agf -o "$WORKDIR/ag_sl.c" \
+            -- "$agp" >/dev/null 2>&1 || continue
+        ag_slots=$((ag_slots + 1))
+        if grep -qE '^ *RX_SET\([0-9]' "$WORKDIR/ag_sl.c"; then
+            ag_slotbad=$((ag_slotbad + 1))
+            bad "[M6.4-ATOMIC rule 5c]: '$agp' [$agf] emits an RX_SET to a RAW SLOT NUMBER — vm_slot_name could not resolve it, so the emitter asked for a slot outside every family vm_count_slots counted"
+            continue
+        fi
+        for ag_n in $(grep -oE '^ *RX_CUT\([0-9]+' "$WORKDIR/ag_sl.c" | grep -oE '[0-9]+' | sort -u); do
+            grep -qE "^#define RX_SLOT_CUT_MARK[0-9]+ +$ag_n\$" "$WORKDIR/ag_sl.c" || {
+                ag_slotbad=$((ag_slotbad + 1))
+                bad "[M6.4-ATOMIC rule 5c]: '$agp' [$agf] emits RX_CUT($ag_n) where slot $ag_n is NOT a cut mark in the legend — the pre-pass and the emitter disagree about the slot map, so the cut is truncating to whatever another family stored there"
+            }
+        done
+    done
+done
+if [ "$ag_slots" -ge 30 ] && [ "$ag_slotbad" -eq 0 ]; then
+    ok "[M6.4-ATOMIC rule 5c] (§3.2.5/E4): $ag_slots artifacts across 8 shapes x 4 flag modes — every RX_CUT names a slot the legend declares a CUT MARK, and no RX_SET reaches a slot vm_slot_name cannot resolve"
+else
+    bad "[M6.4-ATOMIC rule 5c]: $ag_slotbad of $ag_slots artifacts have a pre-pass/emitter slot disagreement (floor 30 artifacts)"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

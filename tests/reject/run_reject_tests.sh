@@ -753,7 +753,13 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # covered the other.
 reject_gated backrefs      '\k'    "module 'backrefs' is enabled but \k is not implemented yet"
 reject_gated lookaround    '(?=a)' "module 'lookaround' is enabled but (?=...) is not implemented yet"
-reject_gated atomic-groups '(?>a)' "module 'atomic-groups' is enabled but (?>...) is not implemented yet"
+# [M6.4.2] THE `atomic-groups` ROW RETIRED HERE, exactly as `\b`/`\B`'s did in
+# [M6.2] wave B and the two `(?m)` spellings' did in wave C, and for the same
+# reason: `--features atomic-groups '(?>a)'` COMPILES now, so a pin asserting
+# it refuses would be pinning a lie. The count going DOWN is the module
+# LANDING, not coverage eroding; the control that says so is
+# tests/atomic_groups/'s corpus, which asserts the same pattern compiles and
+# matches. The arm itself keeps three modules and both positions above.
 reject_gated quoting       '[\Q]'  "module 'quoting' is enabled but \Q in a class is not implemented yet"
 # The `m` LETTER's own arm (src/parse/mod_modifiers.c), which produces its
 # refusal per letter rather than through the `(?` doorway's row — so it needs
@@ -1385,9 +1391,43 @@ reject '[[=a[=b=]=]'  "POSIX collating elements are not supported (pattern offse
 
 echo
 echo "== possessive quantifiers =="
+# THE MODULE-OFF ROWS. `atomic-groups` is not in std1, so a bare invocation
+# still reaches the refusal, and these three are unchanged by [M6.4.2] — the
+# desugaring in `p_rep` consults the RK_QUANTSUFFIX row's own `module` to build
+# exactly this sentence, so the wording has one home and the pin is the
+# independent, hand-written second source for it.
 reject 'a*+' "possessive quantifier requires module 'atomic-groups'"
 reject 'a++' "possessive quantifier requires module 'atomic-groups'"
 reject 'a?+' "possessive quantifier requires module 'atomic-groups'"
+# The BRACE form, which had no pin at all before [M6.4.2] and is a different
+# path: `try_quant` has already consumed `{1,2}` when the `+` is seen, so the
+# blame offset is the `+` at 6 rather than at 2. `{n}+`, `{n,}+` and `{,n}+`
+# take the same path and are corpus cells rather than four more rows.
+reject 'a{1,2}+' "possessive quantifier requires module 'atomic-groups'"
+
+# THE LAZY-THEN-POSSESSIVE FAMILY (atomic_groups_design.md §6.3). After the
+# lazy `?` has been consumed a following `+` is an ERROR, not a possessive
+# marker — libpcre2 10.46 refuses all three with "quantifier does not follow a
+# repeatable item", pcrec refuses them through `p_rep`'s
+# "multiple quantifiers on the same item" guard, and D26 tier 2 (both REFUSE)
+# is what is owed; the wording is tier 3 and ours. DO NOT "fix" the wording to
+# chase 10.46's phrasing — that is exactly the tier-3 effort D26 exists to
+# prevent, and pcrec already carries libpcre2's own sentence at a different
+# site (parse.c's bare-anchor rejection) where it IS the right answer.
+reject 'a*?+'  "multiple quantifiers on the same item (pattern offset 3)"
+reject 'a*?+b' "multiple quantifiers on the same item (pattern offset 3)"
+# THE CONTROL: the pre-existing base-grammar path the two rows above fall into,
+# pinned so a change that moved them would have to move this too.
+reject 'a**'   "multiple quantifiers on the same item (pattern offset 2)"
+# `a*++` IS THE ROW A REJECT-SUITE AUTHOR WOULD NOT THINK TO RE-PIN, and its
+# message CHANGES WITH THE GATE. Module off, the first `+` is still the
+# unimplemented possessive marker. Module ON, the first `+` is CONSUMED as that
+# marker and the SECOND re-enters the quantifier loop, so the guard fires one
+# byte later — still a clean tier-2 refusal, at offset 3 rather than 2. Both
+# halves are pinned because only pinning one would let the other move silently.
+reject 'a*++' "possessive quantifier requires module 'atomic-groups' (pattern offset 2)"
+reject_gated atomic-groups 'a*++' "multiple quantifiers on the same item (pattern offset 3)"
+reject_gated atomic-groups 'a*?+' "multiple quantifiers on the same item (pattern offset 3)"
 
 echo
 echo "== base-grammar MISCOMPILES, fixed 2026-08-10 (K5, K6) =="
@@ -1710,7 +1750,13 @@ else
     # what slack buys — see the summary block below.
     # 67 -> 99 at Q2/SR-9 (100 rows, of which `(?:` is the one base row).
     if [ -z "${REJECT_SHARD_TOTAL:-}" ]; then
-        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 99 ]; then
+        # 99 -> 103 at [M6.4.2]: the four RK_QUANTSUFFIX rows. This is the
+        # NON-BASE count (`(?:` is the one RS_BASE row), and all four new rows
+        # are RS_MODULE, so it moves by exactly four. They join this iteration
+        # for free because their `expect` — "requires module 'atomic-groups'" —
+        # really is a substring of what running their own `syntax` prints at
+        # the closed gate, and module `atomic-groups` is not in std1.
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 103 ]; then
             ok "iterated every non-base row in the dump ($niter)"
         else
             bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
@@ -1922,8 +1968,8 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 274 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 64 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 274 / 99 / 0 / 64 ([M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
+if [ "$nrej" -ne 279 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 65 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 279 / 99 / 0 / 65 ([M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

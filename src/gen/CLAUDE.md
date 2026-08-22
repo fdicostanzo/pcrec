@@ -899,6 +899,78 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   `0`/`NULL`, unchanged, for the overwhelming majority of patterns that
   declare no name).
 
+
+## [M6.4.2] the ATOMIC GROUP's lowering, and the two predicates it is built on
+
+`(?>X)` is a CUT: at the moment the body first succeeds, every choice point the
+body created is discarded. `vm_cut` — built for [ENG-BREP]'s possessification —
+is REUSED UNCHANGED, and that is the design's single most load-bearing claim:
+the no-trail-rewind invariant it rests on is INDEPENDENT of the §2.2 proof that
+licenses today's cuts. `vm_cut`'s header gives two reasons for the rule and
+only ONE is possessify's — discarding the FRAMES is what §2.2 licenses (an
+atomic group has no such licence, and discards frames that are NOT dead; that
+is precisely the semantics), while leaving the TRAIL alone rests on nothing but
+frame arithmetic.
+
+**`vm_atomic` is the general shape** — mark BEFORE any push, body, one cut at
+the body's first success — and **`vm_lifts` / `vm_cuts` are the two predicates
+everything else reads.** The LIFT routes the cut into an `A_REP` child's own
+possessive rung, which cuts PER ITERATION where the general shape cuts once:
+without it `(?>a*)` exhausts `RX_RESUME_FRAMES` where `a*+`, a spelling PCRE2
+calls identical, costs one frame.
+
+**THE LIFT IS NOT FREE, and the same claim was refuted TWICE the same way.**
+Each possessive rung's shape is licensed by a §2.2 CONJUNCT that a
+USER-WRITTEN possessive deletes: `vm_poss_star` emits no empty-iteration guard
+(licensed by §2.2 refusing NULLABLE bodies — routed there, the matcher pushes
+and cuts at zero consumption forever), and all four rungs are GREEDY-ONLY BY
+SIGNATURE (licensed by :2053-2062's preference collapse — 7 of 8 lift-eligible
+LAZY cells miscompile). A third was found by the systematic read: the RUNG'S
+OWN GATE, `vm_rev_canmove`'s exact-count clause. So the lift's scope is greedy,
+non-nullable `A_REP` bodies, CHECKED at each rung's entry rather than assumed —
+and the licence those checks test is "greedy **OR** §2.2-proved", not "greedy",
+because a lazy quantifier with a POSITIVE verdict is legitimately possessified
+today on all six paths and the collapse is sound there BECAUSE the verdict
+holds. Getting that wrong refuses three shipped shapes.
+
+**`under_atomic` IS THREADED, NEVER STORED** (D67's corollary). `struct Ast`
+has no parent pointer and the four pre-passes are independent descents, so a
+node cannot ask whether it is under an `A_ATOMIC`; the obvious alternative is a
+flag written at parse time, and it goes STALE — under `-fno-possessify` the
+free discharge RUNS while `run_possessify` does not, so a flag left behind by a
+deleted `A_ATOMIC` would cut a loop it was passed to leave uncut. It is a
+ONE-LEVEL EDGE property: true only for the `A_REP` that is the direct child of
+a lifting `A_ATOMIC`, false everywhere inside that quantifier's body.
+
+**THE PRE-PASSES ARE NOT ADVISORY, which is why `vm_cuts` is a predicate rather
+than a convention.** `vm_count_slots` allocates the cut-mark slot (a lift it
+cannot see runs `vm_slot_mark(v, v->nmark++)` past `RX_NSLOTS` — an
+out-of-bounds write in EMITTED code, K27's class), `vm_cost_rep` computes the
+budgets, `vm_counter_copies` decides how many body copies exist, and
+`vm_rev_canmove` is the sharpest: read through the raw field, a lifted
+possessive is handed a RETREAT FRAME and can give back, i.e. the uncut
+semantics. `vm_revdet_fits` exists for the same reason one level up, and it
+exists BECAUSE a condition written at only one of the three sites produced a
+measured slot collision.
+
+**`vm_cost`'s A_ATOMIC arm charges the trailed mark** (R31 C10 — "the caps are
+unchanged" was wrong). The mark is written with `vm_set`, the TRAILED writer,
+which is what makes nesting and re-entry work; an uncharged trailed write sizes
+the array one entry short and the artifact refuses a subject it can match.
+
+**RULE H3 is ONE predicate read at THREE sites** — the search entry, the retry
+recompute, and the stamp — because the design's first form read it at the stamp
+only and its own proposed check would have AGREED WITH THE BUG. The retry
+recompute STAYS on a cut-bearing artifact (it re-seeds `attempt_position`,
+which is H2 and is sound); only the CEILING it also computed is dropped.
+
+**THE STRATS STAMP READS `vm_cuts()`, not `Ast.possessive`**, which is a
+deliberate deviation from the design's §6.4(c). RULE 2 holds — this module
+never writes that field — but the LIFT genuinely routes a semantic possessive
+onto the possessive rungs, and a stamp saying BACKTRACKING on an artifact whose
+loop cuts is the exact D46 lie K29 was opened for.
+
+
 ## Conventions
 
 The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this).

@@ -279,10 +279,33 @@ priority subset construction preserves greedy/lazy preference (D3).
 
 === base:quantifiers-possessive
 section: quantifiers
-Module `atomic-groups`. Possessiveness prunes alternatives that a priority
-simulation explores in parallel, so it is a real semantic change needing
-explicit cut support, not a no-op.
-
+date: 2026-08-22
+Module `atomic-groups`, SHIPPED 2026-08-22 ([M6.4.2]). Possessiveness prunes
+alternatives that a priority simulation explores in parallel, so it is a real
+semantic change needing explicit cut support, not a no-op — which is why the
+registry gives these four rows `engines: vm` alone. That mask is ANDed over
+the tree the discharge LEAVES, though, so it is not a property of the
+spelling: `a*+a` and `(?:a|ab)*+c` are VM-forced and `--engine=dfa` refuses
+them by name, while `a*+b` — whose cut can discard nothing, because no `a`
+can also be the following `b` — is discharged and compiles on the DFA,
+`--engine=dfa` included. Measured 2026-08-22 on all three, and worth stating
+at this length because the shorter claim — "possessive means VM" — is false
+for `a*+b`, which is the first shape anyone reaches for. All the
+spellings are built, `{n}+` `{n,}+` `{,n}+` included: PCRE2 defines `X q+` as
+`(?>X q)`, and pcrec desugars the suffix to that exact node at the quantifier
+site in `src/parse/parse.c`, so the suffix and the group are ONE construct
+here — the corpus puts each spelling beside its group twin to say so.
+`--features none` (the bare default) still refuses with the module name;
+`--features atomic-groups` compiles. The registry lists the four suffix rows
+under kind `quant-suffix` rather than `after (?`, and they are not
+quantifiable themselves: `a*?+` and `a*++` are pinned rejections in
+tests/reject/. Oracles: tests/atomic_groups/possessive.rxt and the same
+differential as `(?>...)`. One MEASURED oracle divergence the corpus carries
+with its controls: over a two-exit body the BRACE possessive cuts at the
+GROUP EXIT in PCRE2 and PER ITERATION in python `re`, so `(?:a|ab){2}+` on
+"aba" is (0,3) in PCRE2 and NO MATCH in python, while `(?:a|ab)*+` on "aba"
+is (0,1) in both. pcrec follows PCRE2 (D26); the block is marked
+`# pcre2-only` for exactly that reason.
 === base:quantifier-on-anchors
 section: quantifiers
 rejected as PCRE2 error 109 does; `(^)*` is accepted because a group
@@ -476,10 +499,35 @@ This annotation is keyed to `(?<name>a)` and covers the bundled prose row
 
 === (?>...)
 section: alternation-capturing
-Same reasoning as possessive quantifiers: a cut, not a no-op.
-This annotation is keyed to `(?>...)` and covers the bundled prose row
-`(?>...)`, `(*atomic:...)`.
-
+date: 2026-08-22
+Module `atomic-groups`, SHIPPED 2026-08-22 ([M6.4.2]); design
+`docs/design/atomic_groups_design.md`, panel-approved at R31. The cut is a
+real semantic change, not a no-op: `(?>ab|a)b` matches "abb" while
+`(?>a|ab)b` matches only its first two bytes, because each group commits to
+whichever branch its OWN order tried first — swap the branches and the
+language changes. `--features none` (the bare default) still refuses with the
+module name; `--features atomic-groups` compiles. VM-ONLY by registry row: a
+priority DFA explores the alternatives in parallel and has nowhere to put a
+cut, so a pattern that still carries one after the discharge below selects the
+backtracking engine (SR-8, D67) and `--engine=dfa` refuses it by name
+(`(?>a|ab)b`, measured). A cut whose section-2.2 proof shows it
+can discard nothing is DELETED before engine selection
+(`pcrec_discharge_atomic`; `-fno-atomic-discharge` disables it), which is why
+`(?>a*)b` is still a DFA pattern — accepted even under an explicit
+`--engine=dfa` — and `(?>a*)a` is not. Measured at
+2026-08-22 from the artifacts' own `.engine` stamp: DFA, VM, and VM again for
+`(?>a*)b` under `-fno-atomic-discharge`, which is the flag's controllability
+witness. Oracles:
+tests/atomic_groups/ — every cell produced by libpcre2 10.46 through the
+project's committed ctypes binding — plus `run_atomic_diff.sh`'s differential
+over subjects x start positions on BOTH engines and with the discharge off,
+and `tests/codegen/run_atomic_identity.sh`'s byte-identity gate against the
+pinned pre-module commit.
+The `(*` spelling `(*atomic:...)` is a SEPARATE survey row and is NOT this
+module: it is still answered "requires module 'verbs'" (see that section's
+`base:verbs-module-attribution-gap`), and enabling `atomic-groups` does not
+make it compile.
+This annotation is keyed to `(?>...)`.
 === (?#...)
 section: comment
 module `comments` (previously misattributed to `modifiers`; fixed in this
@@ -864,11 +912,17 @@ docs/pcre2_compliance.md's own Backtracking control verbs section.
 
 === base:verbs-module-attribution-gap
 section: backtracking-verbs
+date: 2026-08-22
 What pcrec does NOT yet claim is which MODULE owns each name:
 `(*atomic:…)` and `(*pla:…)` are answered "requires module 'verbs'"
 though they are atomic groups and lookarounds, and correcting that
 belongs to SR-6 with the module itself.
-
+SHARPER since [M6.4.2] (2026-08-22): `(?>...)` and the possessive suffixes
+now BUILD under module `atomic-groups`, so `(*atomic:...)` is the one
+spelling of a SHIPPED construct that still refuses — and it names `verbs`,
+not `atomic-groups`, so enabling the module that implements the construct
+does not make this spelling compile. Still a naming gap, not a miscompile:
+the refusal is clean and D26-conforming, and SR-6 still owns the fix.
 === base:verbs-out-of-scope-diagnostic
 section: backtracking-verbs
 date: 2026-08-11

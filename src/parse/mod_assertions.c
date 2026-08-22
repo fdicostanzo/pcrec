@@ -109,7 +109,6 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * not the last one parsed. */
     case 'K':
         k = A_KRESET;
-        if (cx->first_kreset_pos == (size_t)-1) cx->first_kreset_pos = at;
         break;
     default:
         /* Unreachable on the shipped table; a registry defect if it ever
@@ -121,6 +120,21 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                       .answered_at = want };
     res.node = pcrec_ast_node(cx, k);
+    /* [M6.4.2 / SR-8, D67] THE STAMP, applied UNIFORMLY to all eight rows
+     * rather than to `\K` alone, so "this module's producer stamps what it
+     * builds" is a property of the port rather than a per-row exception a
+     * future row could be forgotten from. Seven of the eight rows are
+     * ANY_ENGINE and contribute nothing to the pattern-wide AND; `\K`'s is
+     * VM_ONLY and is what `forces_registry` (src/opt/select_engine.c) reads.
+     *
+     * IT ALSO REPLACES `Ctx.first_kreset_pos`, which used to be recorded in
+     * the `'K'` case above: `pcrec_ast_stamp` records the offset for any
+     * DFA-excluding row, first-wins, in the same statement that writes the
+     * row — so the `engine_why` text and its offset come from one place. The
+     * old field's own comment ("read ONLY when the walk already found a node,
+     * so it cannot be stale in the direction that matters") carries over
+     * verbatim and is restated at `Ctx.first_vmonly_pos`. */
+    pcrec_ast_stamp(cx, res.node, rw, at);
 
     /* MULTILINE IS PINNED FALSE HERE, DELIBERATELY AND EXPLICITLY — never
      * copied from `cx->mods` the way parse.c's `^`/`$` cases copy it.

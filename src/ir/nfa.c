@@ -689,6 +689,43 @@ static Frag compile_ast(NB *b, const Ast *a)
                   * so -Wswitch keeps this exhaustive, and falling into the
                   * internal-error below rather than silently recursing means
                   * a future path that reaches here says so loudly. */
+    /* [M6.4.2] TRANSPARENT — the body's machine, with the atomicity ERASED,
+     * and it is the only sound choice this construction has.
+     *
+     * A DFA never backtracks in the first place: subset construction keeps
+     * every alternative alive, which is exactly the NON-atomic semantics. So
+     * there is no machine here that implements the cut, and the two available
+     * answers are "refuse to build one" or "build the machine for the UNCUT
+     * language and be honest about what it answers for". This arm takes the
+     * second, and every consumer of the result has to know it:
+     *
+     *   - As the PREFILTER under a VM artifact, this machine answers for a
+     *     strict SUPERSET of the pattern. Its REJECTION is still sound (no
+     *     uncut match means no atomic match) and its span START is still a
+     *     lower bound, so both keep working. Its span END is NOT an upper
+     *     bound on the cut match's end — MEASURED at 122 refuting cells, and
+     *     114 cells of live silent match loss on the emitted prefilter — which
+     *     is why src/gen/emit_vm.c switches its MRL ceiling off whenever
+     *     `pcrec_has_atomic` holds. atomic_groups_design.md §4.
+     *   - As the ARTIFACT's own machine it is never used: an A_ATOMIC that
+     *     survived the free discharge stamps VM_ONLY through `Ast.reg`, so
+     *     src/opt/select_engine.c has already chosen the VM (or refused
+     *     `--engine=dfa` by name) before this machine is built.
+     *
+     * The REJECTION-soundness half holds only in a POSITIVE context, and every
+     * pattern module `atomic-groups` can compile is one: under negation a
+     * smaller inner language is a LARGER outer one, and `(?!(?>a|ab)c)abc` is
+     * the witness — but negative lookaround is module `lookaround` ([M6.6])
+     * and refuses today. [M6.6] REOPENS that question; it is written here so
+     * the lookaround lowering inherits it rather than rediscovering it.
+     *
+     * `[ENG-CUT]` is the chartered follow-on that would build a real cut
+     * construction (cuts preserve regularity — Berglund et al.); until it
+     * exists, a DFA lowering that simply ignored the atomicity would be a
+     * MISCOMPILE, which is what registry.c's own row comment has warned about
+     * since before there was a producer, and what sabotage row S91 injects. */
+    case A_ATOMIC:
+        return compile_ast(b, a->l);
     }
     ctx_fail(b->cx, 0, "internal error: bad AST node");
 }

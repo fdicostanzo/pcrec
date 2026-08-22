@@ -251,6 +251,45 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   VM_ONLY -> ANY_ENGINE rather than SR-8 (above) finally being built — D59
   has the full argument.
 
+  **[M6.4.2] `A_ATOMIC`, `Ast.reg`, `Ctx.first_atomic_pos` and
+  `RegKind.RK_QUANTSUFFIX`** (docs/design/atomic_groups_design.md, R31).
+
+  - **`A_ATOMIC` is a KIND, not a field**, on D62's OWN principle rather than
+    on a precedent — the first revision of the design cited
+    `assertions_design.md` §8.3 as settling it and the panel found §8.3 says
+    the opposite (D62 chose the FLAG for `(?m)`). D62's test is what carries
+    it: kinds encode STRUCTURE, fields encode parse-resolved MODIFIER state,
+    and atomicity changes the LANGUAGE (`(?>a*)a` matches nothing where `a*a`
+    matches), changes the BACKTRACKING, and brackets a body. Two further
+    supports, both measured: `src/opt/revdet.c`'s `rd_node` CLEARS
+    `Ast.possessive` on the copy the emitter walks, so a field would be
+    silently deleted on a revdet-approved body; and adding an `AKind` raises
+    `-Wswitch` at every pass that must decide about it while adding a FIELD
+    raises none.
+  - **`Ast.reg` is SR-8's stamp (D67)**, spelled as a pointer to the producing
+    registry ROW rather than a copy of its `engines` mask — a copied mask is a
+    second home for a registry fact, and `why`'s text has to come from the row
+    anyway. NULL means ANY_ENGINE, so a FORGOTTEN stamp fails in the UNSOUND
+    direction ON PURPOSE (contract note 2): the generic tripwire in
+    tests/registry/registry_check.c is what catches it, not a lucky default.
+    A discharge's output must not inherit the discharged node's stamp
+    (note 3) — the free discharge is deletion-shaped and satisfies that
+    trivially.
+  - **`Ctx.first_atomic_pos`** is `first_kreset_pos`'s twin, field for field
+    including first-wins, and exists for the DIAGNOSTIC's offset only: the
+    engine verdict WALKS the post-discharge tree, because a parse-time counter
+    would keep counting nodes a rewrite deleted.
+  - **`RK_QUANTSUFFIX` is the first NON-DOORWAY row kind**, and its cost is
+    the thing to read before adding a sixth: a fifth `RegKind` raises NO build
+    alarm at all (MEASURED, 28 files / 0 `-Wswitch` diagnostics — every RegKind
+    switch in the tree carries a `default:`), so the exposure is the hardcoded
+    kind ARRAYS and the enumerations-by-CALL. Twelve sites were touched;
+    eleven were enumerated in the design and the TWELFTH — a
+    `const RegRow *all[4]` in registry_check.c whose loop already ran to
+    RK_COUNT — was found by a SEGFAULT. `check_kind_coverage` (new) reads the
+    `--list-syntax` OUTPUT, which is the only formulation that can see an
+    `all_kinds[]` omission at all.
+
   **[D65] `PcrecBuiltStatus` and `PCREC_UNBUILT_MARKER`.** A THIRD axis on
   `RegRow` beside `RegStatus`/`Roadmap` — has the owning module's producer
   landed for THIS construct — deliberately NOT a fourth `RegRow` field:

@@ -111,7 +111,16 @@ static const NamedFeatureSet g_named_sets[] = {
  * constant and nothing else. */
 const char *const PCREC_DEFAULT_FEATURES = "std1";
 
-static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+/* [M6.4.2] RK_QUANTSUFFIX joins the list, and it MATTERS here rather than
+ * being cosmetic: this array is what `find_module_bits` and `render_modules`
+ * iterate, so a kind missing from it is a module whose name `--features` does
+ * not recognise and a mask whose rendered module list is short. Module
+ * `atomic-groups` owns rows in TWO kinds (`(?>` is RK_GROUP), so the omission
+ * would have been invisible to `--features atomic-groups` and visible only if
+ * a future module owned quant-suffix rows alone. No `-Wswitch` guards this;
+ * `tests/registry/registry_check.c`'s `check_kind_coverage` reads the dump. */
+static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
+                                 RK_QUANTSUFFIX };
 
 /* The one name->bits lookup in this file (a spec's explicit list and a
  * named set's expansion both go through it, so there is no second copy of

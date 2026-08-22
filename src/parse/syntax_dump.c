@@ -76,6 +76,9 @@ static const char *kind_name(RegKind k)
     case RK_GROUP:        return "group";
     case RK_VERB:         return "verb";
     case RK_CLASSBRACKET: return "class-bracket";
+    /* [M6.4.2] the fifth kind, and the one that is NOT a doorway. This name is
+     * a frozen column value in `--list-syntax`'s TSV: consumers key on it. */
+    case RK_QUANTSUFFIX:  return "quant-suffix";
     default:              return "?";
     }
 }
@@ -89,6 +92,12 @@ static const char *doorway_name(RegKind k)
     case RK_GROUP:        return "after '(?'";
     case RK_VERB:         return "after '(*'";
     case RK_CLASSBRACKET: return "after '[' inside a class";
+    /* [M6.4.2] There is no doorway. The possessive suffix is recognised inside
+     * `p_rep` (src/parse/parse.c), after `try_quant` has already accepted the
+     * quantifier — registry.c's header records why giving it one would cost
+     * the base tier a lookup on every quantifier. The word says so rather than
+     * naming a place that does not exist. */
+    case RK_QUANTSUFFIX:  return "a quantifier suffix (no doorway)";
     default:              return "?";
     }
 }
@@ -142,7 +151,18 @@ static void put_expect(StrBuf *sb, const RegRow *r)
     else if (r->status == RS_MODULE) sb_printf(sb, "requires module '%s'", r->module);
 }
 
-static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+/* [M6.4.2] THE ARRAY A FIFTH KIND IS INVISIBLE TO. Every `RegKind` switch in
+ * the tree carries a `default:` — measured, 28 files offered / 28 clean / 0
+ * `-Wswitch` diagnostics for a new enumerator
+ * (atomic_groups_measurements/probes/probe_rk_alarm.sh) — so the compiler
+ * cannot see an omission from THIS list, and neither could any check before
+ * [M6.4.2]. `tests/registry/registry_check.c`'s `check_kind_coverage` now
+ * parses THIS DUMP'S OUTPUT and asserts every `RegKind` name appears in it,
+ * which is the only formulation that can see an omission here at all: a check
+ * that iterated `RK_COUNT` over registry.c would share a source with the thing
+ * it checks, which is this project's signature check-design failure. */
+static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET,
+                                     RK_QUANTSUFFIX };
 
 char *pcrec_syntax_tsv(unsigned flavours)
 {
@@ -413,6 +433,12 @@ static ExtResult doorway_call(Ctx *cx, const Doorway *d, ExtWant want)
     case RK_CLASSBRACKET:
         return pcrec_ext_class_bracket(cx, want, d->sel, d->at, d->from,
                                        d->at_class_open, d->at_content_start);
+    /* [M6.4.2] Unreachable BY CONSTRUCTION rather than by omission:
+     * `doorway_route` above recognises `\\`, `(?`, `(*` and `[` and can never
+     * produce this kind, because there is no doorway to route to. Written out
+     * so the switch stays exhaustive and so a future attempt to route here
+     * says so at the compiler rather than falling into EXT_NOT_MINE. */
+    case RK_QUANTSUFFIX: break;
     default: break;
     }
     return (ExtResult){ .what = EXT_NOT_MINE, .at = 0, .msg = "",
@@ -454,9 +480,61 @@ static PcrecBuiltStatus built_status_probe(const RegRow *r)
          * this is a registry defect for tests/registry/registry_check.c to
          * fail on, never a status this dump may assert. */
         arena_free(&cx.arena);
-        return PCREC_BUILT_DEFECT;
+        /* [M6.4.2] A NON-DOORWAY ROW RAISES INSTEAD OF RETURNING, and for it a
+         * raise is the ORDINARY unbuilt answer rather than a defect: the
+         * doorway arm below classifies on a RETURNED `ExtResult`, while the
+         * quant-suffix arm runs a real parse whose refusal is a `ctx_fail`
+         * that lands exactly here. See that arm for why a raise at a
+         * forced-open gate can only be a missing producer, and where the
+         * malformed-syntax half of the question is checked instead. */
+        return r->kind == RK_QUANTSUFFIX ? PCREC_BUILT_NO : PCREC_BUILT_DEFECT;
     }
     pcrec_parse_mods_init(&cx);
+
+    /* [M6.4.2] THE NON-DOORWAY ARM, and R31 C1 is why it exists.
+     *
+     * The derivation above is `doorway_route` + `doorway_call`, and
+     * `doorway_route` recognises exactly four prefixes — `\`, `(?`, `(*`, `[`.
+     * A row whose `syntax` is `a*+` routes NOWHERE, so under the pre-[M6.4.2]
+     * code every RK_QUANTSUFFIX row derived to `PCREC_BUILT_DEFECT`: not
+     * "unbuilt", not "built", a registry defect. The first revision of the
+     * atomic-groups design claimed the derivation for these rows "is simply a
+     * compile of the syntax string"; measured on the shipped binary,
+     * `--explain 'a*+'` answers "no construct matches". So the honest price of
+     * giving the possessive suffixes rows is this arm.
+     *
+     * WHAT IT DOES: compiles the row's own `syntax` through an ORDINARY PARSE
+     * in the same isolated, gate-forced-open `Ctx` the doorway arm uses, and
+     * classifies on whether the ROW'S OWN PRODUCER STAMPED ANYTHING
+     * (`Ast.reg`, SR-8/D67). Three values, all three reachable:
+     *
+     *   parsed, this row stamped a node  -> BUILT_YES
+     *   parsed, this row stamped nothing -> BUILT_DEFECT: the row's `syntax`
+     *                                      does not exercise its own construct
+     *   the parse RAISED                 -> BUILT_NO
+     *
+     * WHY A RAISE IS `unbuilt` AND NOT `defect`, stated because it is the one
+     * judgement here. With EVERY module forced open, the only thing that can
+     * refuse a well-formed row `syntax` is the construct's own missing
+     * producer. "Well-formed" is not assumed: `tests/reject/run_reject_tests.sh`
+     * RUNS every non-base dump row's `syntax` at the CLOSED gate and requires a
+     * clean exit-1 rejection containing the row's `expect` text — an
+     * INDEPENDENT, hand-written second source for the same rows — so a row
+     * whose syntax was malformed rather than merely unbuilt fails there, in a
+     * check that does not share this one's source. The two halves are
+     * deliberately not merged.
+     *
+     * MEASURED FALSIFIABLE, which is D33 §9.3's rule for a new outcome: with
+     * `p_rep`'s desugaring reverted and everything else in place, all four rows
+     * derive `unbuilt`; with it in place, all four derive `built`. The DEFECT
+     * arm was demonstrated by pointing a row's `syntax` at `ab`. */
+    if (r->kind == RK_QUANTSUFFIX) {
+        Ast *root = pcrec_parse(&cx);
+        PcrecBuiltStatus st = pcrec_ast_stamped_by(root, r) ? PCREC_BUILT_YES
+                                                            : PCREC_BUILT_DEFECT;
+        arena_free(&cx.arena);
+        return st;
+    }
 
     Doorway d;
     if (!doorway_route(r->syntax, cx.patlen, &d)) {
@@ -557,6 +635,10 @@ static const char *doorway_word(RegKind k)
     case RK_GROUP:        return "group";
     case RK_VERB:         return "verb";
     case RK_CLASSBRACKET: return "class-bracket";
+    /* [M6.4.2] `--probe-ask` and `--explain` route by SCANNING for a doorway
+     * opener, so they never reach a quant-suffix row and never print this;
+     * it exists so the mapping is total. */
+    case RK_QUANTSUFFIX:  return "quant-suffix";
     default:              return "?";
     }
 }
@@ -1101,6 +1183,26 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
             size_t slen = strlen(r->syntax);
             size_t cmp = qlen < slen ? qlen : slen;
             bool listed = cmp != 0 && strncmp(query, r->syntax, cmp) == 0;
+            /* [M6.4.2] A NON-DOORWAY ROW IS `listed` ONLY ON AN EXACT MATCH,
+             * and that is the mutual-prefix rule read correctly rather than an
+             * exception to it.
+             *
+             * The prefix half of `listed` is valuable because a DOORWAY row's
+             * `syntax` begins with the doorway text you partially type:
+             * `--explain '(?'` is a catalogue of the `(?` bucket, which is a
+             * real use and one cli case10 has depended on since SR-3. An
+             * RK_QUANTSUFFIX row has no such prefix — its `syntax` must be an
+             * EXECUTABLE pattern (tests/reject/run_reject_tests.sh RUNS it), so
+             * a possessive suffix has to carry an atom, and `a*+`'s leading `a`
+             * is a CARRIER rather than part of the construct.
+             *
+             * Without this clause every one-letter base query matched all four
+             * rows: `--explain 'a'` listed `a*+ a++ a?+ a{1,2}+` and EXITED 0,
+             * where `--explain` on base syntax must exit 1 saying "no construct
+             * matches" (cli case11). MEASURED as an 11-check `make test`
+             * failure before this line existed. */
+            if (listed && r->kind == RK_QUANTSUFFIX && qlen != slen)
+                listed = false;
             bool candidate = q.routed && r->kind == q.d.kind &&
                              r->sel != REG_SEL_ANY && r->sel == q.d.sel;
             /* The bucket's catch-all is shown ONLY when the arbitration

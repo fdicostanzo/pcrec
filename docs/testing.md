@@ -20,7 +20,13 @@ corpus, `tests/cli/run_cli_tests.sh`, `tests/reject/run_reject_tests.sh` (the
 "never miscompile" mandate, per construct),
 `tests/registry/run_registry_tests.sh`, `tests/parse/run_parse_tests.sh`
 (PARSE-1: facts the PARSER computes but never emits — see that directory's
-CLAUDE.md), `tests/codegen/run_codegen_tests.sh`
+CLAUDE.md), `make test-atomic`'s two ([M6.4.2]:
+`tests/atomic_groups/run_atomic_diff.sh`, the module's behavioural instrument
+whose ENGINE arm is where §4's ceiling hazard lives, and
+`tests/codegen/run_atomic_identity.sh`, the byte-identity gate whose reference
+is a PINNED PRE-MODULE COMMIT rather than a `-D` knob — see that script's
+header for why a knob would be useless for this module specifically),
+`tests/codegen/run_codegen_tests.sh`
 (structural assertions that behaviour-preserving optimizations are actually
 PRESENT in the emitted C — see that directory's CLAUDE.md), and
 `tests/known_fail/run_known_fail.sh` (the ratchet that flags a deferred-bug
@@ -352,7 +358,15 @@ easy to scan.
   would silently start lying), bare `{,}`
   (python: {0,}; PCRE2 and pcrec: literal — note `{,n}` WITH a digit is a
   quantifier {0,n} in both since PCRE2 10.43, implemented in pcrec 2026-08-09),
-  possessive quantifiers (python 3.11+ accepts), quantified bare anchors
+  the BRACE possessive over a body whose iteration can end in TWO PLACES
+  (**python cuts PER ITERATION and PCRE2 cuts at the GROUP EXIT**: `(?:a|ab){2}+`
+  on "aba" is (0,3) in PCRE2 and NO MATCH in python, while `(?:a|ab)*+` on the
+  same subject is (0,1) in BOTH — so the divergence is the brace forms
+  specifically, and it runs in the dangerous direction. [M6.4.2];
+  `tests/atomic_groups/` carries a libpcre2 verifier pass over its whole
+  corpus and the affected blocks are `# pcre2-only`, with the `*+`/`++`
+  controls beside them making it a family rather than a one-off),
+  possessive quantifiers otherwise (python 3.11+ accepts), quantified bare anchors
   (`^*` — python accepts, PCRE2 rejects error 109), past-end `pos`
   clamping for nullable patterns (python clamps; pcrec/PCRE2 reject), and
   repeat counts above 65535 (`a{65536}` — python's ceiling is 4294967294,

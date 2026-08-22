@@ -1,0 +1,300 @@
+# tests/atomic_groups/atomic_quant.rxt -- module `atomic-groups` ([M6.4.2]):
+# atomic groups and QUANTIFIERS, in both directions.
+#
+# FOUR FAMILIES, and three of them are carve-outs the emitter has to CHECK
+# rather than assume (docs/design/atomic_groups_design.md §3.2):
+#
+#   - AN ATOMIC GROUP INSIDE A QUANTIFIER (`(?>a|b)*c`). Each iteration cuts
+#     INDEPENDENTLY, which works only because the cut mark is TRAILED and the
+#     group's entry label re-sets it on every entry. A mark written once outside
+#     the loop answers the same thing on the first iteration and diverges after.
+#   - NULLABLE BODIES (`(?>a*)*b`, `(?:a*)*+b`). These take the general lowering
+#     shape, NEVER the possessive-rung lift: `vm_poss_star` emits no
+#     empty-iteration guard, and that is licensed by §2.2 refusing to possessify
+#     a nullable body at all -- a licence a USER-WRITTEN cut deletes. Routed
+#     onto that rung the emitted matcher pushes and cuts at zero consumption
+#     FOREVER, so the failing direction here is a HANG, not a wrong answer.
+#   - LAZY BODIES (`(?>a*?)b`). Same shape one field over: the possessive rungs
+#     are greedy-only BY SIGNATURE, and :2053-2062 argues the preference
+#     collapse as a §2.2 consequence too. `(?>a*?)b` on "aaab" is (3,4) -- the
+#     cut commits to the LAZY choice, which is EMPTY, so the match starts at 3.
+#     Through the lift it would answer (0,4).
+#   - THE CUT BITING (`(?>a*)a` vs `(?>a*)b`). The first is NO MATCH and the
+#     second is (0,4): same group, and only the follow decides whether the cut
+#     costs anything. That pair is also the free discharge's own boundary --
+#     src/opt/atomic.c may delete the second's cut and must never delete the
+#     first's.
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY libpcre2 10.46, not written by
+# hand: a generator drove every (pattern, subject, startpos) cell through the
+# ctypes binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py and
+# emitted the answer. python3 `re` was driven over the SAME cells in the same
+# pass, and a block carries `# pcre2-only` exactly where python disagreed or
+# could not compile the pattern -- detected, never assumed. 13 of 729 cells
+# diverge across this directory, and they are the four families Appendix B.3 of
+# the design names: `\K`/`\G` (python cannot express them at all), the BRACE
+# possessive over a two-exit body (python cuts PER ITERATION, PCRE2 at the GROUP
+# EXIT), U9 (libpcre2's own recorded oddity), and scoped `(?i)` inside a group
+# (python rejects the pattern).
+#
+# `ms`/`ns` CELLS SWEEP EVERY STARTPOS IN [0, n], not a chosen few. The cut
+# makes "the leftmost candidate is not the leftmost match" an ORDINARY
+# occurrence rather than an edge case -- `(?>a|ab)c` on "abc" is NO MATCH while
+# its uncut twin matches (0,3) -- so which start the search reaches, and what it
+# answers there, is the axis this construct moves.
+
+# ====================================================================
+# AN ATOMIC GROUP INSIDE A QUANTIFIER -- each iteration cuts independently
+# ====================================================================
+
+pattern (?>a|b)*c
+features atomic-groups
+m "abac" 0 4
+ms 1 "abac" 1 4
+ms 2 "abac" 2 4
+ms 3 "abac" 3 4
+ns 4 "abac"
+m "c" 0 1
+ns 1 "c"
+m "aabbc" 0 5
+ms 1 "aabbc" 1 5
+ms 2 "aabbc" 2 5
+ms 3 "aabbc" 3 5
+ms 4 "aabbc" 4 5
+ns 5 "aabbc"
+
+pattern (?>a|ab)*c
+features atomic-groups
+m "abc" 2 3
+ms 1 "abc" 2 3
+ms 2 "abc" 2 3
+ns 3 "abc"
+m "aac" 0 3
+ms 1 "aac" 1 3
+ms 2 "aac" 2 3
+ns 3 "aac"
+m "c" 0 1
+ns 1 "c"
+
+# ====================================================================
+# A QUANTIFIED ATOMIC GROUP
+# ====================================================================
+
+pattern (?>ab)+c
+features atomic-groups
+m "ababc" 0 5
+ms 1 "ababc" 2 5
+ms 2 "ababc" 2 5
+ns 3 "ababc"
+ns 4 "ababc"
+ns 5 "ababc"
+m "abc" 0 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+n "c"
+ns 1 "c"
+
+pattern (?>a)*
+features atomic-groups
+m "aaa" 0 3
+ms 1 "aaa" 1 3
+ms 2 "aaa" 2 3
+ms 3 "aaa" 3 3
+m "" 0 0
+
+pattern (?>a|ab)+d
+features atomic-groups
+m "aad" 0 3
+ms 1 "aad" 1 3
+ns 2 "aad"
+ns 3 "aad"
+n "abd"
+ns 1 "abd"
+ns 2 "abd"
+ns 3 "abd"
+
+# ====================================================================
+# NULLABLE BODIES -- CARVE-OUT ONE. Never the lift; the failing direction is a HANG
+# ====================================================================
+
+pattern (?>a*)*b
+features atomic-groups
+m "aaab" 0 4
+ms 1 "aaab" 1 4
+ms 2 "aaab" 2 4
+ms 3 "aaab" 3 4
+ns 4 "aaab"
+m "b" 0 1
+ns 1 "b"
+
+pattern (?>a?)*b
+features atomic-groups
+m "aab" 0 3
+ms 1 "aab" 1 3
+ms 2 "aab" 2 3
+ns 3 "aab"
+m "b" 0 1
+ns 1 "b"
+
+pattern (?>a*)*
+features atomic-groups
+m "aaa" 0 3
+ms 1 "aaa" 1 3
+ms 2 "aaa" 2 3
+ms 3 "aaa" 3 3
+m "" 0 0
+
+pattern (?>(?:a*)*)b
+features atomic-groups
+m "aaab" 0 4
+ms 1 "aaab" 1 4
+ms 2 "aaab" 2 4
+ms 3 "aaab" 3 4
+ns 4 "aaab"
+m "b" 0 1
+ns 1 "b"
+
+pattern (?>(?:|a)*)b
+features atomic-groups
+m "ab" 1 2
+ms 1 "ab" 1 2
+ns 2 "ab"
+m "b" 0 1
+ns 1 "b"
+
+# ====================================================================
+# LAZY BODIES -- CARVE-OUT TWO. The cut commits to the LAZY choice
+# ====================================================================
+
+pattern (?>a*?)b
+features atomic-groups
+m "aaab" 3 4
+ms 1 "aaab" 3 4
+ms 2 "aaab" 3 4
+ms 3 "aaab" 3 4
+ns 4 "aaab"
+m "b" 0 1
+ns 1 "b"
+
+pattern (?>a*?)a
+features atomic-groups
+m "aaa" 0 1
+ms 1 "aaa" 1 2
+ms 2 "aaa" 2 3
+ns 3 "aaa"
+
+pattern (?>a+?)b
+features atomic-groups
+m "aaab" 2 4
+ms 1 "aaab" 2 4
+ms 2 "aaab" 2 4
+ns 3 "aaab"
+ns 4 "aaab"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+
+pattern (?>a{1,3}?)b
+features atomic-groups
+m "aaab" 2 4
+ms 1 "aaab" 2 4
+ms 2 "aaab" 2 4
+ns 3 "aaab"
+ns 4 "aaab"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+
+pattern (?>[ab]*?)b
+features atomic-groups
+m "abab" 1 2
+ms 1 "abab" 1 2
+ms 2 "abab" 3 4
+ms 3 "abab" 3 4
+ns 4 "abab"
+m "b" 0 1
+ns 1 "b"
+
+pattern (?>a*?)
+features atomic-groups
+m "aaa" 0 0
+ms 1 "aaa" 1 1
+ms 2 "aaa" 2 2
+ms 3 "aaa" 3 3
+
+pattern (?>(?:a|bc)*?)d
+features atomic-groups
+m "abcd" 3 4
+ms 1 "abcd" 3 4
+ms 2 "abcd" 3 4
+ms 3 "abcd" 3 4
+ns 4 "abcd"
+m "d" 0 1
+ns 1 "d"
+
+pattern (?>a*?b)c
+features atomic-groups
+m "aabc" 0 4
+ms 1 "aabc" 1 4
+ms 2 "aabc" 2 4
+ns 3 "aabc"
+ns 4 "aabc"
+m "bc" 0 2
+ns 1 "bc"
+ns 2 "bc"
+
+# ====================================================================
+# DOES THE CUT COST ANYTHING? the free discharge's own boundary
+# ====================================================================
+
+pattern (?>a*)a
+features atomic-groups
+n "aaa"
+ns 1 "aaa"
+ns 2 "aaa"
+ns 3 "aaa"
+n "a"
+ns 1 "a"
+
+pattern (?>a*+)a
+features atomic-groups
+n "aaa"
+ns 1 "aaa"
+ns 2 "aaa"
+ns 3 "aaa"
+
+pattern (?>a*)b
+features atomic-groups
+m "aaab" 0 4
+ms 1 "aaab" 1 4
+ms 2 "aaab" 2 4
+ms 3 "aaab" 3 4
+ns 4 "aaab"
+m "b" 0 1
+ns 1 "b"
+
+# ====================================================================
+# THE BRACE FORMS in their GROUP spelling, beside possessive.rxt's suffix twins
+# ====================================================================
+
+pattern (?>(?:a|ab){2})
+features atomic-groups
+m "aba" 0 3
+ns 1 "aba"
+ns 2 "aba"
+ns 3 "aba"
+m "abab" 0 3
+ns 1 "abab"
+ns 2 "abab"
+ns 3 "abab"
+ns 4 "abab"
+
+pattern (?>(?:a|ab){2,3})
+features atomic-groups
+m "ababa" 0 3
+ms 1 "ababa" 2 5
+ms 2 "ababa" 2 5
+ns 3 "ababa"
+ns 4 "ababa"
+ns 5 "ababa"

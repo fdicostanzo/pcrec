@@ -11576,3 +11576,93 @@ nullability preconditions CHECKED at the rung entries (:2250, :2683,
 emission sites (:5697, :5754) now read that same flag as the stamp
 (:5123), so the stamp can no longer disagree with the code. Slices 3-4
 in flight.
+## 2026-08-22 (EDT), thirty-sixth session — [M6.4.2] LANE: module `atomic-groups` implemented, four slices, delivered on lane/agimpl
+
+`(?>...)` and the four possessive suffix spellings (`*+ ++ ?+ {n,m}+`, with
+`{n}+ {n,}+ {,n}+` riding the brace row) BUILD and are oracle-verified. The
+design (`docs/design/atomic_groups_design.md`, R31) was followed; where it was
+WRONG the code follows the measurement and this entry names it.
+
+SLICES, each committed with its own run's numbers. e913a49 slice 1 (A_ATOMIC
+as a new AKind answered by name at every -Wswitch site, both producers,
+RK_QUANTSUFFIX + the registry sites in one commit); af3f116 slice 2 (`vm_atomic`,
+RULE 3's lift under four CHECKED conditions, K29 fixed); e5f02c6 slice 3 (SR-8
+built — one generic EngineAnalysis over the post-discharge tree, `forces_kreset`
+retired — plus the free discharge and H3 at its three real sites); d890a67 →
+a64c0f3 slice 4 (corpus, differential, codegen rules, sabotage rows, identity
+gate, docs).
+
+FIGURES, each from the run named. Corpus `tests/atomic_groups/`: 748 cases, 0
+failed; 722 cells re-verified against libpcre2 10.46, 0 disagreeing; 669
+python-verified, 79 `# pcre2-only`. 13 of 729 generated cells diverge from
+python and they are EXACTLY the four families the design's Appendix B.3 names,
+which is independent confirmation of that table rather than a transcription of
+it. `run_atomic_diff.sh`: 39,326 cells per arm × 3 arms, agreeing with libpcre2
+exactly; non-vacuity 16 of 26 cut patterns MEASURABLY change the answer against
+their two-byte uncut twin; discharge arm 39,326 identical answer cells with 10
+engine moves and 10 byte-identical artifacts; entries 19,292 cells.
+`run_atomic_identity.sh`: 1311 of 1312 artifacts byte-identical against the
+pinned pre-module commit `e2f81d5`, 0 differing, 0 refusal mismatches.
+`run_codegen_tests.sh` 76 checks / 0 failed; registry_check 178 / 0; CLI 270 /
+0; reject 547 / 0 (279 rows, 99 accept-controls, 65 gated pins, 103 iterated).
+K29 → FIXED: 0 → 1 cut call sites on three patterns, answers identical to main
+and to libpcre2 on 35 cells.
+
+THREE PLACES THE APPROVED DESIGN IS WRONG, each caught by a run, not by
+reading. (1) possessify's `pss_walk` is NOT transparent to A_ATOMIC:
+`(?>(?:a|bc)*?)d` on "abcd" answered (0,4) against libpcre2's (3,4) on BOTH
+engines until the atomic body was walked with an EMPTY follow and
+`may_end=true`. (2) The free discharge is UNSOUND for a LAZY body — `(?>a*?)b`
+became (3,4) vs the uncut `a*?b`'s (0,4) — and its set must be keyed on the
+A_ATOMIC, not the A_REP, or `(?>a*+)a` discharges twice and compiles to `a*a`
+(0,3) where the answer is NOMATCH). (3) The STRATS stamp must read `vm_cuts()`,
+not a stored flag. Also: 17 -Wswitch sites, not the design's 15; §12's revdet
+attributions are off by one function; and the registry cost is THIRTEEN sites,
+not eleven (a segfault site, and cli case10/11's routing sweep, whose carrier
+atom `a*+` made every one-letter `--explain` query prefix-match four rows).
+
+COMPLIANCE REFRESH (the `compliance-refresh` skill, all three components).
+Component 1 regenerated: 100 → 104 rows, `(?>...)` now `built`, four new
+`quant-suffix` rows. Component 3: `(?>...)`, `base:quantifiers-possessive` and
+`base:verbs-module-attribution-gap` rewritten and date-stamped; the discharge
+claim in the first is carried by a measurement made for it (`(?>a*)b` stamps
+`.engine = PCREC_ENGINE_DFA`, `(?>a*)a` VM, and `(?>a*)b` VM again under
+`-fno-atomic-discharge`). Component 2, hand-edited: the possessive row and a
+SPLIT of the bundled `(?>...)`, `(*atomic:...)` row, since only the first half
+moved. **The re-measure rule paid for itself inside the refresh:** a draft
+annotation said flatly that these rows are VM-only and `--engine=dfa` refuses
+them, and running it found `a*+b` and `(?>a*)b` COMPILING under an explicit
+`--engine=dfa` — the registry's `engines: vm` mask is ANDed over the tree the
+discharge LEAVES, so engine-forcing is a property of the surviving cut and not
+of the spelling. Both annotations now say so with the three measured witnesses
+(`a*+a` and `(?:a|ab)*+c` refused, `a*+b` accepted).
+
+**STALE CLAIMS FOUND AND CORRECTED WHILE READING THE PAGE TOP TO BOTTOM — none
+of them this wave's, all of them the class the skill exists for.** (a) FOUR
+survey rows read plain `OK` while a bare `pcrec` refused all four: `\A \Z \z`
+(since `211c5da`, 2026-08-19), `\b \B \G` and `\K` (since `f6d5430`, the same
+day — the commit that was itself correcting a two-wave-stale `REJECTED` on
+`\b \B \G` and overshot the gated value), and `(?m)` multiline. All four are
+now `OK-GATED`, decided by running a bare `pcrec` on each construct and reading
+the refusal. Their own annotations said "behind the gate" throughout, so the
+status column and the annotation contradicted each other for three days — a
+pairing `--tension` does not check, because it compares the survey against the
+registry and not against component 3. (b) The reject-suite figures were stale
+in TWO copies (Headline and "How this survey earned its keep"), both pinned at
+[STD1b] 2026-08-13: 274/99/55/99 = 528 where a live run says 279/99/65/103 =
+547. (c) "Keeping this current" step 3 told the next lane to move a landed
+module's rows to "`OK`/`OK-LIMITED`" — the instruction that PRODUCED (a). It
+now names `OK-GATED` as the landing value outside the bare-default set, says to
+decide it by running a bare `pcrec`, and records the four rows as the precedent.
+(d) The built-column explainer called `(?J)` a "permanent, unconditional
+decline", contradicting the ruled PLANNED-LATER disposition three sections above
+it.
+
+LEFT UNDONE, deliberately: the canonical `run_sabotage_matrix.sh` figures for
+S88-S100 (the lane must not run `make mech`; the rows are written, their
+suite words registered in the closed vocabulary first, and two SAB_BEFORE
+anchors were rewritten from the source text after validation caught them
+unappliable). And the U9 ruling: `tests/known_fail/u9_atomic.rxt` holds the two
+patterns with libpcre2's answer, loud, with three live controls each dropping
+one conjunct — pcrec agrees with python `re` and with a hand derivation, D26
+says PCRE2 wins, and the implementation lane is not the place to decide it.

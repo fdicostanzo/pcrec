@@ -1,0 +1,172 @@
+# tests/atomic_groups/atomic_assert.rxt -- module `atomic-groups` ([M6.4.2]):
+# the ASSERTION constructs inside and around a cut.
+#
+# THIS FILE IS WHOLLY `# pcre2-only` FOR THE `\K`/`\G` BLOCKS and partly so
+# elsewhere, for module `assertions`' own reason one construct over: python has
+# no `\K` and no `\G` at all (`re.compile(r"a\Kb")` raises `bad escape \K`),
+# so there is no second oracle for those cells and none can be manufactured.
+#
+# THE CELL WORTH READING FIRST is `(?>a|a\Kb)b` on "abb" -> (0,2). The cut takes
+# branch 1, so the `\K` on branch 2 is NEVER CROSSED and the reported start
+# stays 0. An implementation whose `\K` write escaped the branch that lost --
+# i.e. one that wrote `caps[0][0]` without trailing it -- answers (1,3). That is
+# the intersection of two mechanisms (the cut discards frames; the trail rewinds
+# writes) and neither construct's own directory can test it.
+#
+# `\b`, `(?m)^`, `(?m)$`, `\Z` and `\z` inside the body are here because an
+# assertion in a cut's body is where the group's "first success" and the
+# assertion's own position test have to agree: `(?>a\b)c` on "ac" is NO MATCH,
+# because the group commits to an `a` whose right neighbour is a word character.
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY libpcre2 10.46, not written by
+# hand: a generator drove every (pattern, subject, startpos) cell through the
+# ctypes binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py and
+# emitted the answer. python3 `re` was driven over the SAME cells in the same
+# pass, and a block carries `# pcre2-only` exactly where python disagreed or
+# could not compile the pattern -- detected, never assumed. 13 of 729 cells
+# diverge across this directory, and they are the four families Appendix B.3 of
+# the design names: `\K`/`\G` (python cannot express them at all), the BRACE
+# possessive over a two-exit body (python cuts PER ITERATION, PCRE2 at the GROUP
+# EXIT), U9 (libpcre2's own recorded oddity), and scoped `(?i)` inside a group
+# (python rejects the pattern).
+#
+# `ms`/`ns` CELLS SWEEP EVERY STARTPOS IN [0, n], not a chosen few. The cut
+# makes "the leftmost candidate is not the leftmost match" an ORDINARY
+# occurrence rather than an edge case -- `(?>a|ab)c` on "abc" is NO MATCH while
+# its uncut twin matches (0,3) -- so which start the search reaches, and what it
+# answers there, is the axis this construct moves.
+
+# ====================================================================
+# `\K` inside and around a cut
+# ====================================================================
+
+# python DIVERGES here, measured rather than assumed: "abc" @0 pcre2=('m', 1, 3) python=('ERR', 'bad escape \\K at position 4') (9 of 9 cells)
+# pcre2-only
+pattern (?>a\Kb)c
+features atomic-groups,assertions
+m "abc" 1 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "xabc" 2 4
+ms 1 "xabc" 2 4
+ns 2 "xabc"
+ns 3 "xabc"
+ns 4 "xabc"
+
+# python DIVERGES here, measured rather than assumed: "abb" @0 pcre2=('m', 0, 2) python=('ERR', 'bad escape \\K at position 6') (7 of 7 cells)
+# pcre2-only
+pattern (?>a|a\Kb)b
+features atomic-groups,assertions
+m "abb" 0 2
+ns 1 "abb"
+ns 2 "abb"
+ns 3 "abb"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+
+# python DIVERGES here, measured rather than assumed: "abcc" @0 pcre2=('m', 1, 3) python=('ERR', 'bad escape \\K at position 1') (9 of 9 cells)
+# pcre2-only
+pattern a\K(?>b|bc)c
+features atomic-groups,assertions
+m "abcc" 1 3
+ns 1 "abcc"
+ns 2 "abcc"
+ns 3 "abcc"
+ns 4 "abcc"
+m "abc" 1 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# ====================================================================
+# `\G` inside and around a cut
+# ====================================================================
+
+# python DIVERGES here, measured rather than assumed: "xbc" @0 pcre2=('m', 1, 3) python=('ERR', 'bad escape \\G at position 3') (7 of 7 cells)
+# pcre2-only
+pattern (?>\Ga|b)c
+features atomic-groups,assertions
+m "xbc" 1 3
+ms 1 "xbc" 1 3
+ns 2 "xbc"
+ns 3 "xbc"
+m "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+
+# python DIVERGES here, measured rather than assumed: "abc" @0 pcre2=('n',) python=('ERR', 'bad escape \\G at position 0') (7 of 7 cells)
+# pcre2-only
+pattern \G(?>a|ab)c
+features atomic-groups,assertions
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+
+# ====================================================================
+# `\b` inside a cut body
+# ====================================================================
+
+pattern (?>a\b)c
+features atomic-groups,assertions
+n "ac"
+ns 1 "ac"
+ns 2 "ac"
+n "a c"
+ns 1 "a c"
+ns 2 "a c"
+ns 3 "a c"
+
+pattern (?>a|ab)\bc
+features atomic-groups,assertions
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+n "ac"
+ns 1 "ac"
+ns 2 "ac"
+
+# ====================================================================
+# `$`, `(?m)$`, `(?m)^`, `\Z` and `\z` inside a cut body
+# ====================================================================
+
+pattern (?>a\Z|ab)
+features atomic-groups,assertions
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "a" 0 1
+ns 1 "a"
+
+pattern (?m)(?>a$|ab)
+features atomic-groups,assertions,modifiers
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "a\nb" 0 1
+ns 1 "a\nb"
+ns 2 "a\nb"
+ns 3 "a\nb"
+
+pattern (?m)(?>^a|b)c
+features atomic-groups,assertions,modifiers
+m "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+m "bc" 0 2
+ns 1 "bc"
+ns 2 "bc"
+
+pattern (?>a\z|ab)
+features atomic-groups,assertions
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+m "a" 0 1
+ns 1 "a"

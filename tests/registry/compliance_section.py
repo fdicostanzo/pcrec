@@ -388,8 +388,13 @@ def dump():
     # EXACT, not a floor. This was `< 60` against 67 rows, i.e. seven rows of
     # slack in the one absolute anchor either doc-side check had (R6 T-4).
     # Bumping it is deliberate and belongs in the same commit as the row.
-    if len(rows) != 100:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 100. "
+    # 100 -> 104 at [M6.4.2]: the four RK_QUANTSUFFIX rows (`a*+` `a++` `a?+`
+    # `a{1,2}+`), module `atomic-groups`. They are the first rows in the table
+    # that reach no doorway; they exist so the generated index below can say
+    # something about the possessive spellings at all, instead of leaving a
+    # reader unable to tell "not implemented" from "not in the table".
+    if len(rows) != 104:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 104. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

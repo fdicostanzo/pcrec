@@ -435,6 +435,40 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `not_repeatable` is deliberately NOT part of the predicate: it is a
   per-NODE flag a bare option run sets (R20/SPEC-1), and it must not be
   wrapped — `(?:(?i))*` is error 109 where `(^)*` is not.
+- **mod_atomic_groups.c** — module `atomic-groups` ([M6.4.2]): the `(?>...)`
+  group port (`pcrec_agport_atomic`, wired through ext.c's GENERAL
+  producer-invocation path, mod_named_groups.c's precedent), and
+  `pcrec_atomic_suffix_row`, the lookup parse.c's possessive-suffix desugaring
+  stamps from. Design: docs/design/atomic_groups_design.md, panel-approved R31.
+
+  **TWO SPELLINGS, ONE NODE KIND, TWO PRODUCERS.** `(?>X)` arrives at the port;
+  `X*+ X++ X?+ X{n,m}+` do NOT — `p_rep` in parse.c recognises the `+` after a
+  quantifier it has already accepted and desugars to `A_ATOMIC(A_REP(X))`,
+  PCRE2's own definition. That equivalence is MEASURED over bodies whose
+  iteration can end in two places (18 pairs / 47 cells / 28 non-unique-body /
+  0 disagreeing); the first version of the measurement used only unique-
+  iteration bodies, where per-iteration and group-exit cutting CANNOT differ,
+  and was rebuilt after the R31 panel refuted it as evidence.
+
+  **THE SUFFIXES HAVE REGISTRY ROWS AND NO DOORWAY**, which is a new shape for
+  this directory: `RK_QUANTSUFFIX`, four rows, consulted by the DUMP and by
+  `p_rep`'s stamp lookup and by nothing on the base path. registry.c's header
+  has always listed the possessive `+` as a deliberate exemption because a
+  doorway would cost the base tier a lookup on every quantifier; that reason is
+  preserved exactly and the rows close the OTHER half of the problem — without
+  them `--list-syntax` and the generated compliance index say `(?>...)` is
+  built and say NOTHING about the four suffix spellings, so a reader cannot
+  tell "not implemented" from "not in the table".
+
+  **THE ENGINE STAMP (SR-8, D67), and there is no `forces_atomic`.** Both
+  producers write `Ast.reg` — the ROW, not a copy of its `engines` mask, so the
+  column keeps one home and select_engine.c can also name the construct. An
+  unstamped node claims BOTH engines, which fails in the UNSOUND direction on
+  purpose: what catches a forgotten stamp is the generic tripwire in
+  tests/registry/registry_check.c, not a lucky default. `Ctx.first_atomic_pos`
+  is `first_kreset_pos`'s twin, first-wins, and supplies the DIAGNOSTIC's
+  offset only — the verdict walks the post-discharge tree.
+
 - **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the
   header NOTHING outside this directory includes ([M6.2] wave A; D62;
   assertions_design.md §8.6). `Ctx.mods` is a pointer to an INCOMPLETE

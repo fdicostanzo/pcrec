@@ -7,7 +7,10 @@ The compilation pipeline: pattern → parser (parse/) → AST → NFA → priori
 - **core/** — pipeline driver, arena allocator, string buffer, shared type definitions
 - **parse/** — base-tier PCRE parser with module lookup hooks
 - **ir/** — NFA construction and priority subset construction (DFA)
-- **opt/** — IR/DFA optimization passes (APPROACH §5): minimization
+- **opt/** — IR/DFA optimization passes (APPROACH §5): minimization; and,
+  since [M6.4.2], `atomic.c` — the free discharge, which is not an
+  optimisation at all: it deletes cuts a proof shows are no-ops, which changes
+  which ENGINE a pattern gets and never which strings it matches
 - **gen/** — DFA to gcc-dialect C code emission
 - **gen/enc/** — [M5-SEAM] the ENCODING BACKENDS (D58, DD-12): the
   per-encoding residual block each artifact embeds, one file per encoding

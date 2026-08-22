@@ -308,6 +308,59 @@ registry refactor folded it into the `ESC(...)` rows in `src/parse/registry.c`
 that `S16`/`S17`/`S19` already sabotage. The functionally equivalent edit
 today is deleting the `ESC('d', ...)` row outright, which is what `S15` does.
 
+
+## [M6.4.2] S88-S100, and a SELECTOR COLLISION this numbering made real
+
+Thirteen rows for module `atomic-groups`, and two things about them are worth
+reading before adding a fourteenth.
+
+**THE SUITE WORDS HAD TO BE REGISTERED FIRST.** `run_sabotage_matrix.sh`'s
+suite vocabulary is CLOSED — an unrecognised word scores `UNKNOWN-SUITE` — so
+FOUR of these rows (S91, S92, S96, S97) could not have been SCORED AT ALL until
+`atomicdiff` existed. R31 C11 named that as a blocker rather than a detail, and
+the design's slice ordering makes the registration PRECEDE the sabotage
+measurement. `atomicidentity` was registered with it.
+
+**EVERY ROW'S `SAB_BEFORE` WAS VALIDATED TO OCCUR EXACTLY `SAB_COUNT` TIMES IN
+ITS FILE, AND TWO DID NOT.** S88 matched a `\\n` where the source has `\n`, and
+S89 was a guess at emitted macro text; both were rewritten from the source
+itself. A row whose `SAB_BEFORE` matches nothing is a row that measures
+nothing, and it is the one defect in a sabotage definition that produces no
+error anywhere until somebody reads the count.
+
+**THE SELECTOR HAD A LIVE PREFIX COLLISION, and R31 C4 named its shape a
+numbering ago.** The row filter was `[[ "$base" != "$ONLY"* ]]` — a bare prefix
+match on the basename — and C4 caught a proposed `S87` colliding with the
+shipped `S87_kreset_trail_uncharged.sh`: *"the driver's ID-prefix match would
+have selected two `S87-` rows."* [M6.4.2] took the numbering past two digits
+and made the same hazard REAL for the first time: with `S100_lift_accepts_
+nullable.sh` on disk, `run_sabotage_matrix.sh S10` selected BOTH it and
+`S10_casefold_one_direction.sh` — two unrelated rows, one intended, and a
+figure attributed to whichever finished last. Measured on this tree before the
+fix. The match is now at the ID BOUNDARY (a basename is `S<id>_<name>.sh`, so
+the boundary is the underscore): `S10` selects `S10_*` and nothing else, and
+`S1` selects nothing, which is right — it is not an id.
+
+**S100 IS THE ONLY ROW IN THE TABLE WHOSE FAILING DIRECTION IS NOT AN ANSWER.**
+Removing the lift's nullability carve-out routes a nullable body onto
+`vm_poss_star`, which emits no empty-iteration guard, and the emitted matcher
+pushes and cuts at ZERO CONSUMPTION forever. Its expected result is a TIMEOUT —
+which D45's generated-matcher execution budget makes a loud failure naming the
+case rather than a hang, and without which the row would be unscoreable.
+
+**S89, S94 and S97 are the three that matter most**: all three are invisible to
+every structural check and are caught only by the corpus or by the engine
+assertion. If any scores UNDETECTED the corpus is too small, not the row.
+S97 in particular has the "changes no answer" shape — the discharge's output
+inheriting the discharged node's stamp leaves every match, capture and refusal
+identical and only stops the pattern ever becoming DFA-compilable, so the only
+thing that sees it is `check_free_discharge` in tests/registry/.
+
+**The `SAB_DOC_FIGURE` on all thirteen is a marked PREDICTION.** The
+implementation lane does not run the matrix (the manager does), so each row
+says what it expects and names `run_sabotage_matrix.sh SNN` as the canonical
+figure still owed.
+
 ## Conventions
 
 Anchors are copied from `git show HEAD:<path>`, not from a live working-tree

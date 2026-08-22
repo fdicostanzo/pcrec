@@ -1,0 +1,152 @@
+# tests/atomic_groups/atomic_caps.rxt -- module `atomic-groups` ([M6.4.2]):
+# CAPTURES inside and around a cut.
+#
+# THIS FILE IS CUT-INV, THE LOWERING'S LOAD-BEARING INVARIANT, AS BEHAVIOUR.
+# `RX_CUT` discards resume FRAMES and deliberately does NOT rewind the TRAIL --
+# the frames are dead, the capture writes they would have rewound are not,
+# because a failure OUTSIDE the group still has to restore the group's groups to
+# their pre-group values. The invariant has two halves and only ONE of them
+# discriminates:
+#
+#   RETENTION (section 1). `(?>(a)|ab)` on "ab" is (0,1) with group 1 = (0,1):
+#     a capture written inside the body on the path the cut COMMITS TO. A cut
+#     that wrongly rewound the trail erases it.
+#   UNDO (section 2). `((?>(a)|ab))c|(abc)` on "abc" is (0,3) with groups 1 and
+#     2 UNSET and group 3 = (0,3). This half does NOT discriminate the
+#     invariant, and the reason is worth knowing rather than embarrassing: a cut
+#     that rewinds the trail gets undo trivially right, because it did the undo
+#     early. The design's own prototype named this row as the one the question
+#     turns on and was wrong; only retention can catch it.
+#
+# Section 3 is the possessive spellings' own capture behaviour -- `(a)*+` on
+# "aaa" reports group 1 = (2,3), the LAST iteration, exactly as the uncut
+# spelling does, because possessification changes the machinery and not what the
+# quantifier matches.
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY libpcre2 10.46, not written by
+# hand: a generator drove every (pattern, subject, startpos) cell through the
+# ctypes binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py and
+# emitted the answer. python3 `re` was driven over the SAME cells in the same
+# pass, and a block carries `# pcre2-only` exactly where python disagreed or
+# could not compile the pattern -- detected, never assumed. 13 of 729 cells
+# diverge across this directory, and they are the four families Appendix B.3 of
+# the design names: `\K`/`\G` (python cannot express them at all), the BRACE
+# possessive over a two-exit body (python cuts PER ITERATION, PCRE2 at the GROUP
+# EXIT), U9 (libpcre2's own recorded oddity), and scoped `(?i)` inside a group
+# (python rejects the pattern).
+#
+# `ms`/`ns` CELLS SWEEP EVERY STARTPOS IN [0, n], not a chosen few. The cut
+# makes "the leftmost candidate is not the leftmost match" an ORDINARY
+# occurrence rather than an edge case -- `(?>a|ab)c` on "abc" is NO MATCH while
+# its uncut twin matches (0,3) -- so which start the search reaches, and what it
+# answers there, is the axis this construct moves.
+
+# ====================================================================
+# RETENTION -- the half that DISCRIMINATES the trail invariant
+# ====================================================================
+
+pattern (?>(a)|ab)
+features atomic-groups
+m "ab" 0 1
+g 1 0 1
+ns 1 "ab"
+ns 2 "ab"
+m "a" 0 1
+g 1 0 1
+ns 1 "a"
+
+pattern (?>(a)x|ab)
+features atomic-groups
+m "ax" 0 2
+g 1 0 1
+ns 1 "ax"
+ns 2 "ax"
+m "axb" 0 2
+g 1 0 1
+ns 1 "axb"
+ns 2 "axb"
+ns 3 "axb"
+m "ab" 0 2
+g 1 -1 -1
+ns 1 "ab"
+ns 2 "ab"
+
+# ====================================================================
+# A CAPTURE ABANDONED INSIDE THE BODY, before the cut
+# ====================================================================
+
+pattern (?>(a)x|ab)y
+features atomic-groups
+m "aby" 0 3
+g 1 -1 -1
+ns 1 "aby"
+ns 2 "aby"
+ns 3 "aby"
+m "axy" 0 3
+g 1 0 1
+ns 1 "axy"
+ns 2 "axy"
+ns 3 "axy"
+
+# ====================================================================
+# UNDO on an outer failure -- the half no cut sabotage can break
+# ====================================================================
+
+pattern ((?>(a)|ab))c|(abc)
+features atomic-groups
+m "abc" 0 3
+g 1 -1 -1
+g 2 -1 -1
+g 3 0 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "ac" 0 2
+g 1 0 1
+g 2 0 1
+g 3 -1 -1
+ns 1 "ac"
+ns 2 "ac"
+
+# ====================================================================
+# THE POSSESSIVE SPELLINGS' own capture behaviour
+# ====================================================================
+
+pattern (a)*+
+features atomic-groups
+m "aaa" 0 3
+g 1 2 3
+ms 1 "aaa" 1 3
+g 1 2 3
+ms 2 "aaa" 2 3
+g 1 2 3
+ms 3 "aaa" 3 3
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+
+pattern (a|b)*+c
+features atomic-groups
+m "abc" 0 3
+g 1 1 2
+ms 1 "abc" 1 3
+g 1 1 2
+ms 2 "abc" 2 3
+g 1 -1 -1
+ns 3 "abc"
+m "c" 0 1
+g 1 -1 -1
+ns 1 "c"
+
+pattern (?>(a))*b
+features atomic-groups
+m "aab" 0 3
+g 1 1 2
+ms 1 "aab" 1 3
+g 1 1 2
+ms 2 "aab" 2 3
+g 1 -1 -1
+ns 3 "aab"
+m "b" 0 1
+g 1 -1 -1
+ns 1 "b"

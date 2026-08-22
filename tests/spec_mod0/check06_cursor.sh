@@ -167,7 +167,20 @@ fi
 # diagnostic, which names this exact exception). If this set changes shape,
 # that is itself news: either the comment above is stale, or a row that used
 # to route through a doorway no longer does.
-EXPECT_BASE_ANSWERED="(?:...)"
+#
+# [M6.4.2] THE SET GREW BY FOUR, and it is not the same reason `(?:...)` is
+# here. `(?:` reaches a doorway's byte and the base grammar answers FIRST; the
+# four possessive-suffix rows (`a*+` `a++` `a?+` `a{1,2}+`, kind
+# `quant-suffix`) reach NO DOORWAY AT ALL — the possessive `+` is a quantifier
+# suffix recognised inside `p_rep`, and src/parse/registry.c's header records
+# why giving it a doorway would cost the base tier a lookup on every
+# quantifier. So they land in this bucket by construction and will stay here.
+# It is a SET equality, not a count, so no floor absorbs the change.
+EXPECT_BASE_ANSWERED="(?:...)
+a*+
+a++
+a?+
+a{1,2}+"
 
 FAILS=0
 CLEAR_COMPARED=0

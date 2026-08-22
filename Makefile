@@ -118,6 +118,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
+      test-atomic \
       test-encseam test-resource test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
@@ -290,6 +291,36 @@ test-altcls: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/altcls/run_altdiff.sh' \
 	    'bash tests/altcls/run_altcls_tests.sh'
+
+# [M6.4.2] module `atomic-groups`. Its .rxt corpus rides test-corpus like every
+# other module's; this section is the two things no `.rxt` file can check.
+#
+# `run_atomic_diff.sh` is the behavioural instrument and its ENGINE arm is the
+# one that matters most: §4's hazard — the prefilter answers for the UNCUT
+# language, so its span END is not a bound on a cut match's end — lives in the
+# DIFFERENCE between the default hybrid and `--engine=vm`, and a suite that ran
+# only one of them would not see it. It also carries the `-fno-possessify` arm
+# (the only place sabotage S92 can be red) and the discharge differential (the
+# only thing that checks "changes no answer" for a rewrite that changes which
+# ENGINE a pattern gets).
+#
+# `run_atomic_identity.sh` is §14 item 8's RULED landing gate. It lives in
+# tests/codegen/ with its four siblings by technique and runs HERE because this
+# is the module whose claim it gates — `run_endvar_identity.sh`'s own
+# arrangement. Unlike those four its reference is a PINNED PRE-MODULE COMMIT
+# rather than a `-D` knob, for a reason stated in the script: this module has no
+# stage a knob could sit on, so a knob-built reference would report 100%
+# identical whatever was sabotaged.
+#
+# BOTH ARE FAST ENOUGH TO SIT IN `make test`, and that was work rather than
+# luck: the differential's first form spawned one oracle plus three driver
+# processes PER CELL over ~120,000 cells and measured 44 cells/minute. Batched
+# — one python process for the whole libpcre2 side, one driver process per
+# (pattern, arm) reading cells on stdin — it is ~60s.
+test-atomic: all
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/atomic_groups/run_atomic_diff.sh' \
+	    'bash tests/codegen/run_atomic_identity.sh'
 
 # [M6.2] module `assertions`. Its .rxt corpus rides test-corpus like every
 # other module's; this section is the three things a .rxt file structurally
@@ -506,6 +537,8 @@ ubsan:
 	         tests/altcls/run_altdiff.sh \
 	         tests/altcls/run_altcls_tests.sh \
 	         tests/assertions/run_assertions_tests.sh \
+	         tests/atomic_groups/run_atomic_diff.sh \
+	         tests/codegen/run_atomic_identity.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -556,6 +589,8 @@ asan:
 	         tests/altcls/run_altdiff.sh \
 	         tests/altcls/run_altcls_tests.sh \
 	         tests/assertions/run_assertions_tests.sh \
+	         tests/atomic_groups/run_atomic_diff.sh \
+	         tests/codegen/run_atomic_identity.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \

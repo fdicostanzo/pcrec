@@ -56,17 +56,46 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
-  **TWO analyses are registered since [M6.2] wave E**, and the second is the
-  socket's first real customer. `forces_captures` triggers on the requested
-  OUTPUT rather than the presence of a `(`: `a(b|c)+d` under `--no-captures` is
-  capture-free WORK and stays on the DFA forever. `forces_kreset` triggers on an
-  A_KRESET node ANYWHERE IN THE AST, and the difference in shape is deliberate:
-  the reported start is path-dependent exactly when such a node exists, so the
-  TREE is the honest thing to ask, and a future `discharge` hook that rewrote a
-  `\K` away would flip the verdict on the next fixpoint round where a
-  parse-time counter would keep saying VM forever. Its `engine_why` offset
-  comes from `cx->first_kreset_pos`, read only where the walk already found a
-  node.
+  **[M6.4.2/D67] SR-8 IS BUILT HERE, AND `forces_kreset` RETIRED INTO IT.**
+  `\K` was the first VM_ONLY producer and got a bespoke analysis at [M6.2]
+  wave E; `(?>` is the second, and `tests/registry/registry_check.c`'s tripwire
+  said in advance what to do about it — *"If a SECOND construct arrives here, do
+  not add a second exception: two is when the generic consultation has earned
+  its axis and SR-8 is the right build."* So `forces_registry` replaces
+  `forces_kreset`: producers stamp each node with the registry ROW they were
+  dispatched on (`Ast.reg`, via the ONE `pcrec_ast_stamp` call), and this
+  analysis ANDs `pcrec_ast_engines()` over the POST-DISCHARGE tree with `why`
+  taken from the first DFA-excluding node's row. Backrefs' twelve rows ([M6.5])
+  will need no line here at all.
+
+  The DELETIONS are the point: `has_kreset`, `forces_kreset`,
+  `Ctx.first_kreset_pos` and the tripwire's `\K` exception are all GONE, and
+  `Ctx.first_vmonly_pos` is the one generic offset field where two
+  per-construct ones would have been. `\K`'s shipped diagnostic is reproduced
+  BYTE FOR BYTE by the generic path, which is D67's "same verdict, same
+  position" made checkable.
+
+  **`forces_captures` does NOT retire** (D67 contract note 1): it is
+  REQUEST-derived, a property of the generation request with no registry row
+  behind it. Two kinds of forcing therefore remain, and the `--engine=dfa`
+  override has to tell them apart — `EngineAnalysis` gains a `node_derived`
+  bit and the branch takes the captures arm ONLY when no node-derived analysis
+  contributed a why. **That closed a defect live on the shipped compiler**:
+  `--engine=dfa '(a)\Kb'` answered "pass --no-captures", advice that cannot
+  help, because `\K` still forces the VM after the captures are gone.
+  `RX_ENGINE_WHY`'s first-row rule is untouched — the second why exists only
+  for the override.
+
+  **The FREE DISCHARGE runs from the top of `pcrec_select_engine`**, before the
+  analysis loop and unconditionally, which is what makes a per-ROW column
+  produce a per-PATTERN answer: `--engine=dfa '[^"]*+"'` succeeds because the
+  node is GONE by the time `forces_registry` looks, while `--engine=dfa
+  '(?>a|ab)c'` refuses by name. See atomic.c's own entry for why it is not
+  registered in the `discharge` socket.
+
+  `forces_captures` triggers on the requested OUTPUT rather than the presence
+  of a `(`: `a(b|c)+d` under `--no-captures` is capture-free WORK and stays on
+  the DFA forever.
 
   **THE PARAGRAPH THAT USED TO STAND HERE EXPIRED RATHER THAN BEING WRONG.** It
   ran: every `VM_ONLY` registry row is gated by a module with no producer, so
@@ -145,6 +174,67 @@ construction (src/ir) and emission (src/gen).
   from `job->fit.prefilter` directly rather than recomputed. Tests:
   tests/prefilter/.
 
+- **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
+  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31).
+
+  **`pcrec_discharge_atomic` — THE FREE DISCHARGE.** Deletes every `A_ATOMIC`
+  whose cut is PROVABLY a no-op and splices its body back in. The condition is
+  possessify's §2.2 verdict asked TRANSPARENTLY (with the group's own follow),
+  because the verdict's entire content is *"no retreat into this loop can
+  produce a match the preferred path does not"*, which is precisely *"the cut
+  deletes nothing"* about the ERASED tree. MEASURED at 0 violations over 532
+  positive-verdict patterns (`out/free_discharge.txt`). It ships for the
+  `A_ATOMIC(A_REP(X))` arm ONLY; the plain-group `(?>X)` arm is DEFERRED at
+  ZERO measured cells (R31 E7) and needs a callable (U1)/(U2) predicate over an
+  arbitrary subtree, which possessify.c does not expose.
+
+  **THE VERDICT ALONE IS NOT THE CONDITION, AND THE DESIGN SAID IT WAS.** Two
+  narrowings were forced by measurement during [M6.4.2], both of the shape §14
+  item 9 predicts (a §2.2 CONSEQUENCE an emitted shape depended on):
+
+  - **GREEDY ONLY.** For a greedy body the loop's FIRST exit IS the maximal
+    exit, so the cut fires where §2.2 says the loop lands. For a LAZY one the
+    first exit is the MINIMAL exit, while §2.2's positive verdict rests on the
+    PREFERENCE COLLAPSE — licensed by the FOLLOW forcing the loop to the
+    maximal exit — and the cut fires BEFORE the follow is ever consulted.
+    Measured: `(?>a*?)b` on "aaab" is (3,4) and `a*?b` is (0,4), on a positive
+    verdict. §5.3's own measurement could not have found it: it drives the
+    possessive SUFFIX spellings, and there is no lazy one (`a*?+` is an error),
+    so all 532 positive-verdict patterns are greedy.
+  - **KEYED ON THE GROUP, NOT THE QUANTIFIER.** The verdict is about a GROUP,
+    with that group's follow, and two nested groups over one quantifier ask two
+    different questions. Measured: `(?>a*+)a` parses to
+    A_ATOMIC(A_ATOMIC(A_REP(a))); the inner group's verdict (empty follow,
+    positive) discharged the inner correctly, and the OUTER then found its
+    now-spliced `A_REP` child already in the set and discharged itself on a
+    verdict computed for a different follow — `a*a` on "aaa" is (0,3) where
+    `(?>a*+)a` is NOMATCH.
+
+  **WHY IT IS NOT REGISTERED IN `EngineAnalysis.discharge`**, which is the
+  socket engine_m4.md §5.2 designed with this module named as its customer.
+  Three reasons, the third measured: the socket only runs when the pattern is
+  already VM-FORCED, so a capture-free `a*+` would be discharged differently
+  under `--engine=vm` than by default; `discharge`'s contract is "rewrite so
+  the ENGINE FORCING no longer applies", which a PARTIALLY dischargeable
+  pattern cannot honour; and the fixpoint in select_engine.c NEVER CALLS a
+  registered hook — it sets `rewrote = true` for any non-NULL one and loops, so
+  registering today would run the analysis 8 times and rewrite nothing. It is
+  therefore an ordinary AST pass driven from the top of `pcrec_select_engine`,
+  the same call `run_possessify` already makes for the same reason.
+
+  **NOT gated by `-fno-possessify`.** The discharge is semantics-preserving by
+  its own verdict, and gating it would make an OPTIMISATION flag change which
+  ENGINE a pattern gets. The consequence is that emission-neutrality (a
+  discharged possessive emits byte-identical VM code, because possessify
+  re-derives the same verdict on the same quantifier) holds only in that flag's
+  ABSENCE — under it the discharge runs and `run_possessify` does not.
+
+  **`pcrec_has_atomic`** is H3's predicate, read at EMISSION and therefore
+  POST-discharge: `[^"]*+"` compiles to a pure DFA with the MRL ceiling intact,
+  `(?>a|ab)c` is VM-forced with the ceiling off. **`pcrec_ast_stamped_by`** is
+  D65's built-status signal for a row that reaches no doorway (RK_QUANTSUFFIX),
+  reading the SR-8 stamp rather than a second fact.
+
 - **possessify.c** — [ENG-BREP] POSSESSIFICATION
   (docs/design/eng_brep_design.md §2, D47.1: possessify-first in both the
   application order and the build order). Marks every `A_REP` for which no
@@ -156,6 +246,56 @@ construction (src/ir) and emission (src/gen).
   that needs none. It is monotone — it returns how many quantifiers it NEWLY
   marked, a marked quantifier is never unmarked — which is what lets
   select_engine.c drive it to a fixpoint in two rounds.
+
+  **[M6.4.2] `pcrec_poss_survey` — the SAME verdict, as a QUERY.** The free
+  discharge (atomic.c) needs §2.2's answer on one `A_REP` without marking
+  anything, and a SECOND implementation of §2.2 is the one thing this file must
+  never grow: every conjunct in it is a measured refutation of a simpler rule
+  somebody believed. So the survey runs the same `pss_walk` — same FOLLOW
+  accumulation, same enclosing-loop term, the same lines — and reports positive
+  verdicts through a callback instead of writing `Ast.possessive`. One pass is
+  exact rather than an approximation of the fixpoint: the verdict reads no
+  `possessive` field anywhere, so a second round marks nothing new.
+
+  **A_ATOMIC IS TRANSPARENT AT TWO OF THIS FILE'S THREE SWITCHES AND NOT AT
+  THE THIRD, and the design said all three.** `first_of` and `gk_build` read
+  through the cut, which is right: FIRST is the bytes a node can BEGIN with and
+  a cut removes whole MATCHES, and the position automaton read through the cut
+  has MORE positions and MORE follow edges than a cut-aware one, so the verdict
+  can only become more conservative. `pss_walk` is different, and the
+  difference is that it threads FOLLOW — **and FOLLOW is exactly what the cut
+  cuts.**
+
+  MEASURED, on both engines, before the arm was corrected: with the group's own
+  follow passed through, `(?>(?:a|bc)*?)d` on "abcd" answers **(0,4) where
+  libpcre2 answers (3,4)**. The lazy loop's verdict came out POSITIVE because
+  its follow looked like `{d}` and `may_end` looked false, so the lazy conjunct
+  did not fire — but `d` is not that loop's follow: the group COMMITS at the
+  loop's first exit, which for a lazy loop is the MINIMAL one, and `d` runs
+  only after that commitment. §2.2's collapse argument assumes the loop can be
+  RE-ENTERED, which is precisely what the cut deletes. So an atomic body is
+  walked as a SELF-CONTAINED PATTERN: empty follow, `may_end` true. A
+  quantifier that is not last in the body still gets its real within-body
+  follow from the A_CAT arm.
+
+  §6.4a's 776,160-cell sweep (10,504 REFUTABLE, 0 violations) could not have
+  found this: its generator is `PRE (?>QB q|QB xy) tail`-shaped, so a
+  quantifier inside the group is always followed by something INSIDE it, and
+  the cell where the quantifier ENDS the atomic body is not in its population.
+
+  **THE SURVEY ASKS A DIFFERENT QUESTION AND GETS THE OTHER FOLLOW.** The free
+  discharge asks "would DELETING this group change the answer", whose answer
+  for the erased tree is the TRANSPARENT verdict. The two genuinely differ:
+  `(?>a*)a` is NOMATCH on "aaa" while `a*a` is (0,3), and only the transparent
+  reading refuses to discharge it, while only the cut-aware reading is right
+  about the MARK the emitter needs. Same node, two questions, two follows —
+  which is why `pss_verdict` is factored out and both come from the same lines.
+
+  **STILL SOUND BUT MEASURABLY INCOMPLETE where it IS transparent.** An atomic
+  group IS a unique-match guarantee, so a §2.2 that understood `A_ATOMIC` in
+  `gk_build` would accept all 8,820 patterns in the "quantifier WRAPPING the
+  atomic group" position where transparency accepts 0. Declining is always
+  safe, so that is an opportunity deliberately not taken in [M6.4.2].
 
   **The rule is REPAIRED, and the obvious version of it is measured WRONG.**
   "FIRST(body) disjoint from FOLLOW(quantifier), body non-nullable" is the

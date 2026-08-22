@@ -365,8 +365,12 @@ typedef struct {
     unsigned  strats;      /* [ENG-BREP] the same shape one rung down the
                             * ladder: BITMASK of VmStratKind values present,
                             * set by the same vm_rung_mark() call that sets
-                            * `rungs`, from the same `a->possessive` the
-                            * emitter is about to act on. One call, one
+                            * `rungs`, from the same `vm_cuts()` answer the
+                            * emitter is about to act on ([M6.4.2]: the LIFT
+                            * routes a semantic possessive onto these rungs
+                            * with no `Ast.possessive` behind it, and a stamp
+                            * that said BACKTRACKING on a loop that cuts would
+                            * be the K29 class of lie). One call, one
                             * truth — the macro, the listing section and the
                             * emitted machinery cannot disagree about whether
                             * a quantifier was possessified, because there is
@@ -703,7 +707,7 @@ static bool vm_counter_fits(const Vm *v, const Ast *a)
  * and it is what makes `((a)|ab){4000}` compile — 8 copies where the frames
  * rung wanted four thousand. Shared by the emitter and both pre-passes so the
  * three cannot disagree about how much body there is. */
-static int vm_counter_copies(const Vm *v, const Ast *a)
+static int vm_counter_copies(const Vm *v, const Ast *a, bool cuts)
 {
     const int K = v->unroll_k;
     const int m = a->rmin, nopt = a->rmax - a->rmin;
@@ -714,7 +718,10 @@ static int vm_counter_copies(const Vm *v, const Ast *a)
      * iteration boundary is what the shape buys and unrolling buys nothing on
      * top of it. That is also why §8.5's byte-identity cell is scoped away
      * from this arm — a possessified repeat cannot satisfy it at any --unroll. */
-    if (a->possessive) return mand + (nopt >= K ? 1 : nopt);
+    /* [M6.4.2] `cuts`, not `a->possessive`: a LIFTED semantic possessive takes
+     * the same single re-entered body, and a copy count that disagreed with
+     * emission would size PCREC_MAX_VM_REPEAT_COPIES against the wrong tree. */
+    if (cuts) return mand + (nopt >= K ? 1 : nopt);
     return mand + (nopt >= K ? K + nopt % K : nopt);
 }
 
@@ -752,6 +759,12 @@ static bool vm_nullable(const Ast *a)
          * epsilon (src/ir/nfa.c). */
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: return true;
         case A_CAP:   a = a->l; continue;
+        /* [M6.4.2] TRANSPARENT: the cut removes MATCHES, never BYTES, so
+         * `(?>X)` can match empty exactly when `X` can. `(?>)` is legal and
+         * matches empty (measured: (0,0) on "abc"), and `(?>a*)*b` must get the
+         * empty-iteration guard for the same reason `(?:a*)*b` does — the star
+         * above it is what iterates, and this answer is what tells it so. */
+        case A_ATOMIC: a = a->l; continue;
         case A_REP:   if (a->rmin == 0) return true; a = a->l; continue;
         case A_CAT:
             /* nullable iff EVERY element is */
@@ -770,6 +783,130 @@ static bool vm_nullable(const Ast *a)
         }
         return true;
     }
+}
+
+/* ---- [M6.4.2] THE ATOMIC LIFT: two predicates, five callers ---------------
+ *
+ * `(?>X q)` and `X q+` are the same construct (parse.c desugars the suffix to
+ * `A_ATOMIC(A_REP(X))`), and the naive lowering — vm_atomic's general shape
+ * around an ordinary quantifier — costs `RX_RESUME_FRAMES` where the SAME
+ * language spelled `a*+` costs one frame: `vm_star` pushes one frame per
+ * iteration and the cut only reclaims them at the group's exit. So an
+ * `A_ATOMIC` whose child is an `A_REP` LIFTS its cut into that quantifier's own
+ * possessive rung, which cuts per iteration.
+ *
+ * THE LIFT IS NOT FREE, AND THE R31 PANEL REFUTED THE CLAIM THAT IT IS TWICE,
+ * THE SAME WAY BOTH TIMES. The possessive rungs' shape is licensed by
+ * eng_brep_design.md §2.2's verdict, and each licence is a separate CONJUNCT
+ * of that verdict which a USER-WRITTEN possessive deletes:
+ *
+ *   - `vm_poss_star` HAS NO EMPTY-ITERATION GUARD, and says so, because §2.2
+ *     refuses to possessify a NULLABLE body at all. `(?>(?:a*)*)b` is legal in
+ *     both oracles and has one; routed onto that rung the emitted matcher
+ *     PUSHES AND CUTS AT ZERO CONSUMPTION FOREVER, and no work charge fires to
+ *     stop it. Sabotage row S100's expected result is a TIMEOUT.
+ *   - THE POSSESSIVE RUNGS ARE GREEDY-ONLY BY SIGNATURE — `vm_opt_chain` takes
+ *     `bool greedy`, `vm_poss_chain`/`vm_poss_star`/`vm_counter_poss_opt` do
+ *     not and never read it, and `vm_cursor_rep`'s possessive scan is
+ *     unconditionally maximal — because :2053-2062 argues the PREFERENCE
+ *     COLLAPSE as a §2.2 consequence: under disjointness both preferences land
+ *     on the maximal exit. `(?>a*?)b` has no §2.2 verdict and its lazy exit is
+ *     NOT the maximal one. MEASURED: 7 of 8 lift-eligible lazy cells
+ *     miscompile — `(?>a*?)b` on "aaab" is (3,4) in BOTH oracles and (0,4)
+ *     through the lift. Sabotage row S99.
+ *
+ * §14 item 9 records the shape rather than the two instances: this claim has
+ * been refuted twice the same way, so the enumeration of §2.2 consequences the
+ * emitted shapes depend on is EMPIRICAL and may be incomplete. The systematic
+ * version — read §2.2's conjuncts and ask of EACH which emitted shape depends
+ * on it — is what found the third one, the RUNG'S OWN GATE (`vm_rev_canmove`'s
+ * exact-count clause), which is condition (d) at that function.
+ *
+ * SO THE LIFT'S SCOPE IS GREEDY, NON-NULLABLE `A_REP` BODIES, CHECKED HERE AND
+ * ASSERTED AGAIN AT EACH RUNG'S OWN ENTRY. Everything else takes the general
+ * shape, which is correct for every body and merely more expensive. */
+static bool vm_lifts(const Ast *a)
+{
+    const Ast *r = a->l;
+    if (r->k != A_REP)     return false;   /* the lift is an A_REP shape */
+    if (!r->greedy)        return false;   /* carve-out TWO  (§3.2.2a) */
+    if (vm_nullable(r->l)) return false;   /* carve-out ONE  (§3.2.2)  */
+    return true;
+}
+
+/* DOES THIS `A_REP` EMIT A CUT? The ONE predicate the emitter and all four
+ * pre-passes call instead of reading `->possessive` — src/gen/CLAUDE.md's
+ * one-call-one-truth rule, and `vm_cut`'s own header gives the precedent (the
+ * work charge became a primitive because "the charge has THREE emission sites
+ * in two different spellings" and a probe missed one).
+ *
+ * IT MUST BE ONE PREDICATE BECAUSE THE PRE-PASSES ARE NOT ADVISORY. `->
+ * possessive` is read at 23 sites over 8 functions, three of them pre-passes
+ * that must agree with emission EXACTLY or the artifact is malformed rather
+ * than merely slow: `vm_count_slots` allocates the cut-mark slot (a lift it
+ * cannot see runs `vm_slot_mark(v, v->nmark++)` past `RX_NSLOTS` — an
+ * OUT-OF-BOUNDS WRITE IN EMITTED CODE, K27's class), `vm_cost_rep` computes
+ * the frame and trail budgets from the possessive branch, and `vm_counter_
+ * copies` decides how many body copies exist. Sabotage row S98.
+ *
+ * `vm_rev_canmove` is the SHARPEST of the four and the reason this is a
+ * predicate rather than a convention: it returns `!a->possessive && ...`, so a
+ * lifted possessive read through the raw field is handed a RETREAT FRAME and
+ * CAN GIVE BACK — the uncut semantics, silently. §6.5's `rd_shape` decline
+ * closes the plain-group case and cannot reach this one, because `rd_shape`
+ * sees the `A_REP`, not the `A_ATOMIC` above it.
+ *
+ * THREADED, NOT STORED, and that is a correctness choice rather than an
+ * elegant one (D67's corollary, R31 re-check N2). `struct Ast` has no parent
+ * pointer and the pre-passes are independent descents from the root, so a node
+ * cannot ask whether it is under an `A_ATOMIC`; the obvious alternative is a
+ * `lifted` flag written at parse time, and it goes STALE — under
+ * `-fno-possessify` the free discharge RUNS and `run_possessify` DOES NOT, so
+ * a flag left behind by a deleted `A_ATOMIC` would cut a loop the flag was
+ * passed to leave uncut. Threading has no state a rewrite can leave behind,
+ * because the answer is recomputed from the shape that is actually there.
+ *
+ * `under_atomic` is a ONE-LEVEL EDGE PROPERTY: true only for the `A_REP` that
+ * is the DIRECT child of a lifting `A_ATOMIC`, false everywhere inside that
+ * quantifier's body. A greedy `A_REP` containing a lazy one is closed by that
+ * definition rather than by a special case — measured `(?>(?:a*?b)*)d` at
+ * RUNGS 0x5 / STRATS 0x3, the outer collapse not leaking inward. */
+static bool vm_cuts(const Ast *a, bool under_atomic)
+{
+    return a->possessive || under_atomic;
+}
+
+/* DOES THIS `A_REP` TAKE THE REVERSE-DETERMINISTIC RUNG? `a->revbody` is
+ * src/opt/revdet.c's verdict AND the material the backward walk is emitted
+ * from, so it was read directly at three sites — the emitter, `vm_cost_rep` and
+ * `vm_count_slots`. [M6.4.2] adds a SECOND condition, so it becomes a
+ * predicate, on `vm_counter_fits`'s own precedent ("the one shared predicate
+ * the two pre-passes also call, never a second reading of the same
+ * conditions").
+ *
+ * THE SECOND CONDITION IS RULE 3's (d), and putting it at only ONE of the three
+ * sites is a MEASURED defect rather than a tidiness argument. With the decline
+ * in `vm_rep` alone, `pcrec --engine=vm --no-captures -fno-possessify
+ * '(?>(?:a|bc){2})d'` emitted an artifact whose pre-pass had allocated three
+ * REVDET slots and no mark while the emitter took the FRAMES rung and asked for
+ * a mark — so `RX_SET(RX_SLOT_REVDET0_ENTRY, resume_depth)` and `RX_CUT(2)`
+ * both landed on the revdet loop's OWN entry slot. That is exactly the
+ * two-live-loops-share-one-slot failure `vm_count_slots`' header names, and
+ * exactly why E4 asked for one named predicate rather than three agreeing
+ * readings.
+ *
+ * See `vm_rev_canmove` for what condition (d) IS and why (a), (b) and (c) do
+ * not imply it. The population is measured EMPTY at the default flags —
+ * `rd_shape`'s gate is strictly stronger than §2.2's on everything
+ * constructible, so a revdet-approved exact-count body is always possessified
+ * too — and `-fno-possessify` is what makes the branch live, since the
+ * discharge and the lift both run while `run_possessify` does not. */
+static bool vm_revdet_fits(const Ast *a, bool under_atomic)
+{
+    if (!a->revbody) return false;
+    if (under_atomic && !a->possessive && a->rmax >= 0 && a->rmin == a->rmax)
+        return false;
+    return true;
 }
 
 /* ---- the class pool -----------------------------------------------------*/
@@ -966,13 +1103,46 @@ static bool vm_cursor_fits(const Ast *rep, const uint8_t **seq, int *stride,
  * These two helpers are the DERIVED facts the three sites still share.
  *
  * `vm_rev_canmove`: whether the loop owes a resume frame at all. It does not
- * when it is possessified (no retreat is reachable, by §2.2's verdict) and it
- * does not at an EXACT count (there is one exit, so top and bottom of §2.3's
- * chain are the same position). Both cases still run the backward walk when the
- * body has groups, because the captures still have to be derived. */
-static bool vm_rev_canmove(const Ast *a)
+ * when it CUTS (no retreat is reachable) and it does not at an EXACT count
+ * (there is one exit, so top and bottom of §2.3's chain are the same
+ * position). Both cases still run the backward walk when the body has groups,
+ * because the captures still have to be derived.
+ *
+ * [M6.4.2] THE FIRST CLAUSE READS `vm_cuts`, AND THIS IS THE SHARPEST OF THE
+ * FOUR PRE-PASS SITES (R31 E4). Under RULE 2 the module never writes
+ * `Ast.possessive`, so a LIFTED possessive read through the raw field gets
+ * `!a->possessive == true` here, is handed a retreat frame, and CAN GIVE BACK
+ * — answering the UNCUT language, silently. `rd_shape`'s decline (§6.5) closes
+ * the plain-group case and structurally cannot reach this one: it sees the
+ * `A_REP`, never the `A_ATOMIC` above it.
+ *
+ * THE SECOND CLAUSE IS RULE 3's CONDITION (d), AND IT IS NOT IMPLIED BY THE
+ * OTHER THREE (r31eng's final finding). (a) cut-equivalence, (b)
+ * preference-preservation and (c) nullable-safety are properties of the BODY;
+ * a lift also inherits whatever gate the RUNG it lands on applies to itself,
+ * and those gates were written for a population §2.2 had already filtered.
+ * "There is one exit at an exact count" is a (U1)/(U2) UNIQUE-ITERATION
+ * statement that consults no verdict, and for a body §2.2 REJECTS at
+ * `rmin == rmax` it is false.
+ *
+ * MEASURED EMPTY TODAY, and that is why it is a comment plus a decline rather
+ * than a computation: 14 bodies x 3 exact counts found no body that is
+ * revdet-APPROVED and possessify-REJECTED at `rmin == rmax` — `rd_shape`'s
+ * gate is strictly stronger than §2.2's on everything constructible
+ * (`(?:a|ab){2}c` takes FRAMES_BOUNDED and answers correctly). The
+ * NEIGHBOURING cell is NOT empty and the distinction is the point:
+ * `(?:ab|cd){2,4}c` IS revdet-approved and possessify-rejected, but `rmax >
+ * rmin` there, so `canmove` is true and what would break is the FIRST clause,
+ * which `vm_cuts` covers. One clause of one predicate is covered by E4's fix
+ * and the other by nothing, which is why (d) is its own condition.
+ *
+ * THE DECLINE THAT MAKES IT SAFE BY CONSTRUCTION rather than by luck is in
+ * `vm_rep`: a LIFTED `A_REP` at an exact count does not take this rung at all.
+ * The cell being empty today means that decline costs nothing measurable; the
+ * day either gate moves it is what keeps the answer right. */
+static bool vm_rev_canmove(const Ast *a, bool cuts)
 {
-    return !a->possessive && (a->rmax < 0 || a->rmax > a->rmin);
+    return !cuts && (a->rmax < 0 || a->rmax > a->rmin);
 }
 
 /* `vm_rev_caps`: the body's capturing group NUMBERS, in AST order, which is the
@@ -995,6 +1165,15 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
          * a backward walk over iteration boundaries, and a `\K` position is
          * not on that lattice. */
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        /* [M6.4.2] UNREACHABLE, and it declines rather than descending. This
+         * runs only on a revdet-APPROVED body, and `rd_shape` (src/opt/revdet.c)
+         * declines every body containing an `A_ATOMIC` — an atomic group is not
+         * reversal-invariant, because its cut is defined relative to the
+         * FORWARD priority order. Returning (rather than walking into the body)
+         * keeps this dense index a faithful mirror of what `rd_shape` counted:
+         * a group number this walk invented but `rd_shape` never saw would
+         * break the correspondence PCREC_MAX_REVDET_BODY_GROUPS rests on. */
+        case A_ATOMIC:
             return;
         case A_CAP:
             if (*n < cap) out[(*n)++] = a->capno;
@@ -1048,10 +1227,13 @@ typedef struct {
                                * to honour. */
 } Cost;
 
-static Cost vm_cost(Vm *v, const Ast *a);
+static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic);
 
-static Cost vm_cost_rep(Vm *v, const Ast *a)
+/* [M6.4.2] `under_atomic` is threaded, never stored — see vm_cuts(). It is
+ * TRUE only for the A_REP that is the direct child of a LIFTING A_ATOMIC. */
+static Cost vm_cost_rep(Vm *v, const Ast *a, bool under_atomic)
 {
+    const bool cuts = vm_cuts(a, under_atomic);
     const uint8_t *seq[VM_MAX_STRIDE];
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, nc = 0;
@@ -1091,9 +1273,10 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
      * Counting the EMITTED copies here instead of the ITERATIONS would be a
      * silent cap of precisely the kind the revdet arm below records finding the
      * hard way: the artifact would size for 8 iterations and take 4000. */
-    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && !a->revbody
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc)
+        && !vm_revdet_fits(a, under_atomic)
         && vm_counter_fits(v, a)) {
-        Cost body = vm_cost(v, a->l);
+        Cost body = vm_cost(v, a->l, false);
         const long long K = v->unroll_k;
         const long long mm = a->rmin;
         if (a->rmax < 0) {
@@ -1117,7 +1300,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
          * verbatim — mandatory copies contribute the body only, optional
          * copies contribute a loop frame each as well. If these lines ever
          * diverge from the frames arm below, one of them is wrong. */
-        if (a->possessive) {
+        if (cuts) {
             /* Possessified, the frame requirement stops depending on the
              * iteration count entirely — the cut at every iteration boundary
              * keeps ONE loop frame live at a time — so this mirrors the frames
@@ -1173,14 +1356,15 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
         return c;
     }
 
-    if (!vm_cursor_fits(a, seq, &stride, caps, &nc) && a->revbody) {
-        const bool move = vm_rev_canmove(a);
+    if (!vm_cursor_fits(a, seq, &stride, caps, &nc)
+        && vm_revdet_fits(a, under_atomic)) {
+        const bool move = vm_rev_canmove(a, cuts);
         int grp[PCREC_MAX_REVDET_BODY_GROUPS];
         int ng = 0;
         Cost body;
         vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
         v->nocap++;
-        body = vm_cost(v, a->l);
+        body = vm_cost(v, a->l, false);
         v->nocap--;
         c.frames = 1 + body.frames + (move ? 1 : 0);
         c.pf     = 0;
@@ -1223,7 +1407,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
         return c;
     }
 
-    Cost body = vm_cost(v, a->l);
+    Cost body = vm_cost(v, a->l, false);
 
     if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
         /* cursor rung: ONE live frame ever, one low-water write per entry,
@@ -1238,8 +1422,8 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
          * frame requirement of 0, and pcrec_emit_vm's `fits` test then finds
          * nothing to declare a ceiling for. Under-reporting here would be a
          * silent cap, so the branch has to mirror the emitter exactly. */
-        c.frames = a->possessive ? 0 : 1;
-        c.trail  = (a->possessive ? 0 : 1) + (v->nocap ? 0 : 2 * nc);
+        c.frames = cuts ? 0 : 1;
+        c.trail  = (cuts ? 0 : 1) + (v->nocap ? 0 : 2 * nc);
         return c;
     }
 
@@ -1257,7 +1441,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
      * truthfully (§7's prediction), while for a capture-bearing one the
      * ceiling machinery still has a real per-iteration divisor to work from —
      * just no longer a frames one. */
-    if (a->possessive) {
+    if (cuts) {
         long long peak_mandatory = (long long)a->rmin * body.frames;
         long long peak_loop      = 1 + body.frames;
         c.frames = peak_mandatory > peak_loop ? peak_mandatory : peak_loop;
@@ -1308,7 +1492,7 @@ static Cost vm_cost_rep(Vm *v, const Ast *a)
     return c;
 }
 
-static Cost vm_cost(Vm *v, const Ast *a)
+static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
 {
     Cost c = { 0, 0, 0, 0, false, false };
     switch (a->k) {
@@ -1341,7 +1525,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
         c.trail = 1;
         return c;
     case A_CAP:
-        c = vm_cost(v, a->l);
+        c = vm_cost(v, a->l, false);
         /* [ENG-BREP] no trail entry while capture writes are suppressed —
          * vm_emit's own A_CAP arm reads the same flag, so the cost and the
          * emitted code cannot disagree about whether the write happens. */
@@ -1354,7 +1538,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
          * along the spine is the same number. */
         const Ast *t = a;
         while (t->k == A_CAT) {
-            Cost r = vm_cost(v, t->r);
+            Cost r = vm_cost(v, t->r, false);
             c.frames += r.frames;
             c.trail  += r.trail;
             c.pf     += r.pf;
@@ -1364,7 +1548,7 @@ static Cost vm_cost(Vm *v, const Ast *a)
             t = t->l;
         }
         {
-            Cost h = vm_cost(v, t);
+            Cost h = vm_cost(v, t, false);
             c.frames += h.frames;
             c.trail  += h.trail;
             c.pf     += h.pf;
@@ -1392,9 +1576,9 @@ static Cost vm_cost(Vm *v, const Ast *a)
         while (t->k == A_ALT) { br[--i] = t->r; t = t->l; }
         br[0] = t;
 
-        c = vm_cost(v, br[0]);
+        c = vm_cost(v, br[0], false);
         for (int j = 1; j < nbr; j++) {
-            Cost r = vm_cost(v, br[j]);
+            Cost r = vm_cost(v, br[j], false);
             c.frames = 1 + (c.frames > r.frames ? c.frames : r.frames);
             c.trail  = c.trail > r.trail ? c.trail : r.trail;
             c.pf     = c.pf > r.pf ? c.pf : r.pf;
@@ -1405,7 +1589,38 @@ static Cost vm_cost(Vm *v, const Ast *a)
         return c;
     }
     case A_REP:
-        return vm_cost_rep(v, a);
+        return vm_cost_rep(v, a, under_atomic);
+    /* [M6.4.2] R31 C10, and "no new give-up code; the caps are unchanged" was
+     * WRONG. The atomic group's mark is written with `vm_set`, which is the
+     * TRAILED writer — that is what makes NESTING and RE-ENTRY work (an outer
+     * backtrack restores the mark and the entry label re-sets it) — so an
+     * A_ATOMIC inside a quantifier costs ONE TRAIL ENTRY PER ENTRY TO THE
+     * GROUP. Inside a repeat the multiplication is A_REP's, exactly as it is
+     * for A_CAP's two entries.
+     *
+     * AN UNCHARGED TRAILED WRITE IS THE DEFECT `tests/mech/sabotages/
+     * S87_kreset_trail_uncharged.sh` already guards one construct over: the
+     * artifact sizes `trail_frames` one entry short per group on the deepest
+     * path and answers PCREC_ERR_FRAMES on a subject it can match. Sabotage
+     * row S95 is this module's own, and it needs its OWN row because the
+     * answers do not change — only the stamped `subject_ceiling` moves.
+     *
+     * A LIFTED group charges NOTHING here: its cut mark is the RUNG's, already
+     * counted by `vm_cost_rep`'s possessive arms, and charging again would
+     * double-count. FRAMES are the body's either way — the group pushes none
+     * of its own, and the body's are live until the cut.
+     *
+     * One STRUCTURAL consequence worth knowing, reported rather than fixed:
+     * because the cut discards frames and NOT trail entries, a capture-bearing
+     * atomic body under a quantifier (`(?>(a))*`) makes the TRAIL the binding
+     * cap where FRAMES normally binds first. That is a shift in which cap
+     * fires, not a new failure mode, and rx_info's stamped `subject_ceiling`
+     * reports it honestly either way. */
+    case A_ATOMIC:
+        if (vm_lifts(a)) return vm_cost(v, a->l, true);
+        c = vm_cost(v, a->l, false);
+        c.trail += 1;
+        return c;
     }
     return c;
 }
@@ -1435,7 +1650,11 @@ static Cost vm_cost(Vm *v, const Ast *a)
  * A_REP and turns the hang into the refusal the node cap was always going to
  * produce; see limits.h for why the two share a value and why that makes the
  * check unable to refuse anything that compiles today. */
-static void vm_count_slots(Vm *v, const Ast *a, long long repl)
+/* [M6.4.2] `under_atomic` threaded exactly as in vm_cost — see vm_cuts(). A
+ * lift this pre-pass cannot see runs `vm_slot_mark(v, v->nmark++)` past
+ * `RX_NSLOTS`: an out-of-bounds write in EMITTED code, K27's class. */
+static void vm_count_slots(Vm *v, const Ast *a, long long repl,
+                           bool under_atomic)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
     CapOff caps[VM_MAX_BODY_CAPS];
@@ -1452,30 +1671,40 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
      * `\K` with no new machinery at all. See vm_emit's A_KRESET arm. */
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
-    case A_CAP: vm_count_slots(v, a->l, repl); return;
+    case A_CAP: vm_count_slots(v, a->l, repl, false); return;
+    /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
+     * allocates it, and counting one here as well would make `RX_NSLOTS` one
+     * too large on every possessive spelling. An UNLIFTED one allocates
+     * `vm_atomic`'s mark and pushes nothing. */
+    case A_ATOMIC:
+        if (vm_lifts(a)) { vm_count_slots(v, a->l, repl, true); return; }
+        v->nmark++;
+        vm_count_slots(v, a->l, repl, false);
+        return;
     case A_ALT:
         /* Iterative spine walk (R1 R-2 / D10) — see vm_nullable. One push per
          * A_ALT NODE, which for a left-nested flat alternation of k branches
          * is k-1, exactly what vm_alt emits. */
         while (a->k == A_ALT) {
             v->npush++;
-            vm_count_slots(v, a->r, repl);
+            vm_count_slots(v, a->r, repl, false);
             a = a->l;
         }
-        vm_count_slots(v, a, repl);
+        vm_count_slots(v, a, repl, false);
         return;
     case A_CAT:
-        while (a->k == A_CAT) { vm_count_slots(v, a->r, repl); a = a->l; }
-        vm_count_slots(v, a, repl);
+        while (a->k == A_CAT) { vm_count_slots(v, a->r, repl, false); a = a->l; }
+        vm_count_slots(v, a, repl, false);
         return;
-    case A_REP:
+    case A_REP: {
+        const bool cuts = vm_cuts(a, under_atomic);
         if (a->rmin == 0 && a->rmax == 0) return;
         if (vm_cursor_fits(a, seq, &stride, caps, &nc)) {
             /* [ENG-BREP] the possessive span loop allocates NEITHER — no
              * low-water slot and no resume point. Mirrors vm_cursor_rep's own
              * branch; the two are the same condition read twice, which is the
              * standing hazard this function's header comment is about. */
-            if (!a->possessive) {
+            if (!cuts) {
                 v->nlow++;
                 v->npush++;              /* vm_cursor_rep: exactly one */
             }
@@ -1499,16 +1728,16 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
          * move, because that shape emits a second forward copy for its
          * extension step. The REVERSED body allocates no slots and pushes
          * nothing, so it is not walked here at all. */
-        if (a->revbody) {
+        if (vm_revdet_fits(a, under_atomic)) {
             int grp[PCREC_MAX_REVDET_BODY_GROUPS];
             int ng = 0;
-            bool move = vm_rev_canmove(a);
+            bool move = vm_rev_canmove(a, cuts);
             vm_rev_caps(a->l, grp, &ng, PCREC_MAX_REVDET_BODY_GROUPS);
             if (ng > v->nrevcaps) v->nrevcaps = ng;
             v->nrev++;
             v->npush += 1 + (move ? 1 : 0);
-            vm_count_slots(v, a->l, repl);
-            if (move && !a->greedy) vm_count_slots(v, a->l, repl);
+            vm_count_slots(v, a->l, repl, false);
+            if (move && !a->greedy) vm_count_slots(v, a->l, repl, false);
             return;
         }
         /* [ENG-BREP counter-K] the COUNTER rung, and like the revdet arm above
@@ -1531,9 +1760,9 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
         if (vm_counter_fits(v, a)) {
             const int K = v->unroll_k;
             const int nopt = a->rmax - a->rmin;
-            int copies = vm_counter_copies(v, a);
+            int copies = vm_counter_copies(v, a, cuts);
             v->nctr++;
-            if (a->possessive) v->nmark++;   /* the cut mark, as the frames rung */
+            if (cuts) v->nmark++;   /* the cut mark, as the frames rung */
             /* Emitted PUSH sites: the mandatory phase has none, and the
              * optional phase has one per emitted optional copy — K inside the
              * trip plus the residue's, which is what vm_opt_chain emits for
@@ -1542,10 +1771,10 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
              * vm_cost_rep counts the runtime requirement, which is still one
              * per ITERATION for the non-possessive shapes and ONE for the
              * whole loop possessified. */
-            v->npush += a->possessive ? (nopt >= K ? 1 : nopt)
-                                      : (nopt >= K ? K + nopt % K : nopt);
+            v->npush += cuts ? (nopt >= K ? 1 : nopt)
+                             : (nopt >= K ? K + nopt % K : nopt);
             if (copies > v->maxcopies) v->maxcopies = copies;
-            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl);
+            for (int i = 0; i < copies; i++) vm_count_slots(v, a->l, repl, false);
             return;
         }
         /* frames rung: the star's own push, or one per optional copy. The
@@ -1554,7 +1783,7 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
          * live at a time, not how many are emitted — so this arithmetic is
          * unchanged. The cut mark is the one new slot. */
         v->npush += a->rmax < 0 ? 1 : (a->rmax - a->rmin);
-        if (a->possessive) v->nmark++;
+        if (cuts) v->nmark++;
         /* Frames rung: the body's code is REPLICATED once per mandatory copy
          * and once per optional copy, and each copy's own loops need their own
          * slots — so the count must replicate exactly as the emitter does or
@@ -1586,11 +1815,12 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl)
                              "-- lower a count, or reduce the nesting",
                              total, PCREC_MAX_VM_REPLICATION_PRODUCT);
                 for (int i = 0; i < copies; i++)
-                    vm_count_slots(v, a->l, total);
+                    vm_count_slots(v, a->l, total, false);
             }
             if (a->rmax < 0 && vm_nullable(a->l)) v->nguard++;
         }
         return;
+    }
     }
 }
 
@@ -2000,7 +2230,7 @@ static void vm_alt(Vm *v, int entry, const Ast *a, int next)
  * rewinds them on every retreat and they never accumulate on the trail. */
 static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
                           const uint8_t **seq, int stride,
-                          const CapOff *caps, int ncaps)
+                          const CapOff *caps, int ncaps, bool under_atomic)
 {
     StrBuf *b = v->b;
     /* [ENG-BREP] A POSSESSIFIED span loop owes NOTHING but the scan: no resume
@@ -2016,7 +2246,19 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
      * `slot_values[low]`, allocates no slot, and writes no trail entry. vm_cost_rep
      * and vm_count_slots carry the same branch; all three must agree or two
      * live loops share one slot. */
-    const bool poss = a->possessive;
+    const bool poss = vm_cuts(a, under_atomic);
+    /* [M6.4.2] THE PREFERENCE PRECONDITION, CHECKED, and this rung is where
+     * R31's N1 was FOUND: it satisfies CUT-EQUIVALENCE (it is frameless — no
+     * slot, no labels, no push, so there is nothing a cut would remove) and
+     * still answers the WRONG LANGUAGE on a lazy body. Cut-equivalence is a
+     * claim about FRAMES only; the scan below is unconditionally MAXIMAL, and
+     * `(?>a*?)b` on "aaab" is (3,4) in both oracles and (0,4) here. */
+    if (poss && !a->greedy && !a->possessive)
+        ctx_fail(v->cx, 0,
+                 "internal error: the cursor rung's possessive scan was given "
+                 "a LAZY body with no §2.2 verdict behind it. The scan is "
+                 "unconditionally maximal, which that verdict is what "
+                 "licenses (see the preference-collapse note below)");
     /* [ENG-BREP] a cursor loop NESTED in a revdet loop's forward scan writes no
      * captures either (v->nocap): the enclosing rung's backward walk recovers
      * this body's groups along with every other group in it, and a per-iteration
@@ -2435,9 +2677,29 @@ static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
  * the §7 prediction about `rx_info`'s stamped ceiling, and vm_cost_rep carries
  * the matching arithmetic. */
 static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
-                          int next, int mslot, long long bw)
+                          int next, int mslot, long long bw, bool pref_ok)
 {
     int exitl = vm_label(v);
+    /* [M6.4.2] THE PREFERENCE PRECONDITION, CHECKED. This rung takes no
+     * `greedy` parameter and never reads one — `vm_opt_chain` above does —
+     * because :2053-2062 argues the PREFERENCE COLLAPSE as a §2.2 CONSEQUENCE:
+     * under disjointness a greedy loop tops out by preference and a LAZY one
+     * is FORCED to the same top, so one emitted shape is correct for both.
+     *
+     * SO THE LICENCE IS "GREEDY **OR** §2.2-PROVED", not "greedy". A lazy
+     * quantifier with a POSITIVE verdict is legitimately possessified today —
+     * measured on all six dispatch paths — and the collapse is sound there
+     * BECAUSE the verdict holds. What has no licence is a cut that arrives
+     * with NO verdict: a LIFTED user-written possessive over a lazy body,
+     * where 7 of 8 eligible cells miscompile (`(?>a*?)b` on "aaab" is (3,4) in
+     * both oracles and (0,4) through the lift). `vm_lifts` refuses those, and
+     * this is the checked restatement — a precondition a new caller can
+     * silently violate is the shape R31's E1 and N1 are both made of. */
+    if (!pref_ok)
+        ctx_fail(v->cx, 0,
+                 "internal error: the possessified bounded rung was given a "
+                 "LAZY body with no §2.2 verdict behind it. Its shape ignores "
+                 "preference, which that verdict is what licenses");
     int cur = entry;
 
     for (int j = 0; j < count; j++) {
@@ -2492,9 +2754,32 @@ static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
  * `!vm_nullable(a->l)`, every iteration consumes at least one byte, and the
  * loop terminates on the subject rather than on a guard. */
 static void vm_poss_star(Vm *v, int entry, const Ast *body, int next, int mslot,
-                         long long bw)
+                         long long bw, bool pref_ok)
 {
     int bentry = vm_label(v), bend = vm_label(v), exitl = vm_label(v);
+    /* [M6.4.2] BOTH PRECONDITIONS, CHECKED rather than commented, because a
+     * precondition a NEW CALLER can silently violate is the shape R31's E1 and
+     * N1 are both made of.
+     *
+     * NULLABLE: the paragraph above says this rung needs no empty-iteration
+     * guard because §2.2 refuses nullable bodies. `(?>(?:a*)*)b` is legal in
+     * both oracles, HAS one, and routed here would push and cut at zero
+     * consumption forever with no work charge to stop it — sabotage row S100,
+     * whose expected result is a TIMEOUT (loud under D45, not a hang).
+     *
+     * LAZY: see vm_poss_chain's own check for why the licence is "greedy OR
+     * §2.2-proved" rather than "greedy". */
+    if (vm_nullable(body))
+        ctx_fail(v->cx, 0,
+                 "internal error: the possessified unbounded rung was given a "
+                 "NULLABLE body. It emits no empty-iteration guard, and that "
+                 "is licensed by §2.2 refusing such bodies -- not by anything "
+                 "this rung does");
+    if (!pref_ok)
+        ctx_fail(v->cx, 0,
+                 "internal error: the possessified unbounded rung was given a "
+                 "LAZY body with no §2.2 verdict behind it; its shape ignores "
+                 "preference, which that verdict is what licenses");
 
     vm_lbl(v, entry, "possessified unbounded repeat: one frame for the whole "
                      "loop, however many iterations run");
@@ -2687,14 +2972,16 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
     ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
 }
 
-static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
+static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
+                          bool under_atomic)
 {
     StrBuf *b = v->b;
+    const bool cuts = vm_cuts(a, under_atomic);
     const int loop = v->nrev++;
     const int se = vm_slot_rev(v, loop, 0);
     const int sl = vm_slot_rev(v, loop, 1);
     const int sh = vm_slot_rev(v, loop, 2);
-    const bool move   = vm_rev_canmove(a);
+    const bool move   = vm_rev_canmove(a, cuts);
     const bool greedy = a->greedy;
     int grp[PCREC_MAX_REVDET_BODY_GROUPS];
     int ng = 0;
@@ -2721,7 +3008,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
     const char *role = vm_rolef(v, "reverse-deterministic rung %s, %s%s"
                                    " -- ONE body copy, no replication",
                                 bounds, greedy ? "greedy" : "lazy",
-                                a->possessive ? ", POSSESSIFIED" : "");
+                                !cuts ? ""
+                                  : a->possessive ? ", POSSESSIFIED"
+                                                  : ", ATOMIC (a written cut)");
 
     int scanl = vm_label(v), bodyl = vm_label(v), bodyok = vm_label(v);
     int shortl = vm_label(v), fulll = vm_label(v), commitl = vm_label(v);
@@ -2736,7 +3025,16 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
 
     /* ---- entry ---------------------------------------------------------- */
     vm_lbl(v, entry, role);
-    vm_rung_mark(v, entry, VM_RUNG_REVDET, a->possessive, role);
+    /* [M6.4.2] THE STAMP REPORTS WHAT WAS EMITTED, which for a LIFTED
+     * possessive is the cutting shape. §6.4(c) of the design says the stamp
+     * "stays exactly possessify's verdict" so that `--list-rungs` consumers
+     * can keep reading it as the optimisation's own verdict; that sentence is
+     * about `Ast.possessive` (RULE 2, which holds — this module never writes
+     * the field) and it does not survive the LIFT, which genuinely routes a
+     * semantic possessive onto this rung. A STRATS of BACKTRACKING on an
+     * artifact whose loop cuts is a D46 stamp that lies, and it is the exact
+     * class of lie K29 was opened for. Reported as a deliberate deviation. */
+    vm_rung_mark(v, entry, VM_RUNG_REVDET, cuts, role);
     /* [M4.6d] PREDICTION 6, answered. k23_design.md §4.5 and §13's prediction 6
      * expected this rung to need its own lattice argument and NOT to get it
      * from §4.1's division, because its iteration boundaries are recovered by
@@ -3004,7 +3302,7 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next)
 static void vm_opt_chain(Vm *v, int entry, const Ast *body, int count,
                          int next, bool greedy, long long bw);
 static void vm_poss_chain(Vm *v, int entry, const Ast *body, int count,
-                          int next, int mslot, long long bw);
+                          int next, int mslot, long long bw, bool pref_ok);
 static void vm_star(Vm *v, int cur, const Ast *a, int next);
 
 /* ONE PHASE of the counter rung: `count` iterations, K at a time, with the
@@ -3254,6 +3552,15 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
     const int step = vm_label(v);
     const int stop = vm_label(v);
 
+    /* [M6.4.2] the same checked preference precondition as the two rungs
+     * above: this function never reads `a->greedy`, and that is licensed by
+     * §2.2's collapse rather than by anything here. */
+    if (!a->greedy && !a->possessive)
+        ctx_fail(v->cx, 0,
+                 "internal error: the counter rung's possessive optional phase "
+                 "was given a LAZY body with no §2.2 verdict behind it; its "
+                 "shape ignores preference, which that verdict is what "
+                 "licenses");
     vm_lbl(v, entry, "counter: possessive optional phase begins");
     vm_set(v, ctr, "0", "counter rung: iteration counter (trailed)");
     vm_goto(v, trip);
@@ -3296,8 +3603,10 @@ static void vm_counter_poss_opt(Vm *v, int entry, const Ast *a, int nopt,
  * NOPT == 0 carve-out: a quantifier with rmin == rmax emits no optional-phase
  * reset at all, because a slot written but never read would break the
  * byte-identity property §3.2 promises unconditionally at K > NOPT. */
-static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
+static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next,
+                           bool under_atomic)
 {
+    const bool cuts = vm_cuts(a, under_atomic);
     const int K = v->unroll_k;
     const int m = a->rmin;
     const bool unbounded = a->rmax < 0;
@@ -3307,7 +3616,7 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
      * mandatory copies rather than after them: the cut at the first optional
      * iteration then also discards the mandatory bodies' own dead frames, so
      * the loop is atomic as a whole, which is what "possessive" means. */
-    const int mark = a->possessive ? vm_slot_mark(v, v->nmark++) : -1;
+    const int mark = cuts ? vm_slot_mark(v, v->nmark++) : -1;
     /* [M4.6d] the rung's two MRL quantities, taken once (the frames rung's
      * own reason: per-copy recomputation would be quadratic in the count). */
     const long long F  = v->fmin;
@@ -3328,10 +3637,10 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
                         nopt == 0 ? "none"
                                   : (nopt >= K ? "counted" : "replicated"));
     vm_lbl(v, entry, role);
-    vm_rung_mark(v, entry, VM_RUNG_COUNTER, a->possessive, role);
+    vm_rung_mark(v, entry, VM_RUNG_COUNTER, cuts, role);
     vm_prune_mark(v, entry,
                   v->mrl && (vm_fadd(bw, F) > 0 || v->fdyn != NULL), role);
-    if (a->possessive)
+    if (cuts)
         vm_set(v, mark, "(ptrdiff_t)run->resume_depth",
                "possessive cut mark (resume-stack depth at loop entry)");
     cur = vm_label(v);
@@ -3354,7 +3663,49 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
 
     if (unbounded) {
         /* §11 residual 1: the TAIL is the frames star's, unchanged. The
-         * counter shrank the mandatory prefix and claims nothing else. */
+         * counter shrank the mandatory prefix and claims nothing else.
+         *
+         * [M6.4.2] **K29's FIX, AND IT LANDS BEFORE THE LIFT ON PURPOSE.**
+         * `vm_counter_fits` accepts an unbounded repeat when `rmin >= K`, and
+         * this arm hands the tail to `vm_star`, which never reads
+         * `a->possessive` and emits neither spelling of a cut. So
+         * `(?:ab|b){8,}c` was stamped POSSESSIVE, allocated and WROTE
+         * `RX_SLOT_CUT_MARK0`, and READ IT NOWHERE — a dead slot, a D46 stamp
+         * that lies, and a frame/trail budget computed for a path that was not
+         * emitted. Harmless for ANSWERS while possessification is proof-gated
+         * (the cut it failed to emit would have discarded provably-dead
+         * frames), which is why it survived since [ENG-BREP].
+         *
+         * UNDER THE LIFT IT IS A MISCOMPILE: a semantic `X{n,}+` routed here
+         * would answer the UNCUT language. That is why K29's fix is ordered
+         * BEFORE the lift rather than after it — landing the lift first turns
+         * an observability defect into a wrong answer.
+         *
+         * THE FIX IS THE GENERAL SHAPE'S OWN EXIT CUT, at the star's exit. The
+         * star pushes one frame per iteration and every one of them is live
+         * until the loop leaves; the loop leaves ONLY through `vm_star`'s
+         * `exit` label (its MRL test, its empty-iteration guard, and the pop of
+         * any pushed frame all land there), so one cut there discards the whole
+         * loop's frames AND the mandatory phase's, back to the mark recorded
+         * before any of them. `resume_depth >= mark` holds at that label
+         * because the mark is set before the first push.
+         *
+         * IT CHANGES EMITTED BYTES FOR PATTERNS THAT HAVE NOTHING TO DO WITH
+         * THIS MODULE — every `X{n,}` with `n >= K` and a positive §2.2
+         * verdict. That is deliberate: K29 is a fix to code that predates the
+         * module, and the identity claim in §11.1 is about ATOMIC-FREE patterns
+         * whose emitted C this module does not touch, not about a pre-existing
+         * defect this wave is required to carry. */
+        if (cuts) {
+            int cutl = vm_label(v);
+            vm_star(v, cur, a, cutl);
+            vm_lbl(v, cutl, "counter rung, unbounded tail: the loop is "
+                            "complete -- cut back to the mark (K29)");
+            vm_cut(v, mark, "cut: the loop is complete and owns no live "
+                            "choice point");
+            vm_goto(v, next);
+            return;
+        }
         vm_star(v, cur, a, next);
         return;
     }
@@ -3363,9 +3714,10 @@ static void vm_counter_rep(Vm *v, int entry, const Ast *a, int next)
         vm_goto(v, next);
         return;
     }
-    if (a->possessive) {
+    if (cuts) {
         if (nopt >= K) vm_counter_poss_opt(v, cur, a, nopt, next, ctr, mark, bw);
-        else           vm_poss_chain(v, cur, a->l, nopt, next, mark, bw);
+        else           vm_poss_chain(v, cur, a->l, nopt, next, mark, bw,
+                                     a->greedy || a->possessive);
         return;
     }
     if (nopt >= K) vm_counter_phase(v, cur, a, nopt, next, ctr, true, bw);
@@ -3455,29 +3807,52 @@ static void vm_star(Vm *v, int cur, const Ast *a, int next)
     vm_lbl(v, exit, "unbounded repeat: the exit");
     vm_goto(v, next);}
 
-static void vm_rep(Vm *v, int entry, const Ast *a, int next)
+static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
 {
     const uint8_t *seq[VM_MAX_STRIDE];
     CapOff caps[VM_MAX_BODY_CAPS];
     int stride = 0, ncaps = 0;
+    const bool cuts = vm_cuts(a, under_atomic);
 
     if (a->rmin == 0 && a->rmax == 0) {   /* X{0} matches empty */
+        /* [M6.4.2] CUT-EQUIVALENT trivially, under the lift as well: no code is
+         * emitted, so nothing is pushed and a cut would have nothing to
+         * discard. `(?>a{0})b` and `a{0}+b` both reduce to `b`. */
         vm_lbl(v, entry, "X{0}: matches empty, no code");
         vm_goto(v, next);
         return;
     }
 
     if (vm_cursor_fits(a, seq, &stride, caps, &ncaps)) {
-        vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps);
+        vm_cursor_rep(v, entry, a, next, seq, stride, caps, ncaps, under_atomic);
         return;
     }
 
     /* [ENG-BREP] the ladder's second rung, below the cursor and above the
      * frames. `a->revbody` is src/opt/revdet.c's verdict AND the material the
      * backward walk is emitted from, so this site cannot select the rung
-     * without having the thing the rung needs. */
-    if (a->revbody) {
-        vm_revdet_rep(v, entry, a, next);
+     * without having the thing the rung needs.
+     *
+     * [M6.4.2] RULE 3's CONDITION (d), AND IT IS THIS SITE'S TO ENFORCE. A lift
+     * inherits the SELECTED RUNG's own gate, and `vm_rev_canmove`'s EXACT-COUNT
+     * clause is such a gate: "there is one exit" is a (U1)/(U2)
+     * unique-iteration statement consulting no verdict, so for a body §2.2
+     * rejects at `rmin == rmax` it is false and the retreat frame this rung
+     * then omits is one the loop needed. (a) cut-equivalence, (b)
+     * preference-preservation and (c) nullable-safety are all properties of the
+     * BODY and none of them implies this.
+     *
+     * MEASURED EMPTY TODAY — 14 bodies x 3 exact counts found no
+     * revdet-approved, possessify-rejected body at an exact count, because
+     * `rd_shape`'s gate is strictly stronger than §2.2's on everything
+     * constructible. So DECLINING here costs nothing measurable, and it turns a
+     * cell that is "safe by luck" into one that is safe by construction: a
+     * LIFTED exact-count repeat falls through to the frames rung, which emits
+     * `vm_poss_chain` with `count == 0` — one mark, one cut, no retreat frame
+     * to get wrong. `a->possessive` (the PROVED case) is unaffected and keeps
+     * the rung, because there the verdict is exactly what licenses the gate. */
+    if (vm_revdet_fits(a, under_atomic)) {
+        vm_revdet_rep(v, entry, a, next, under_atomic);
         return;
     }
 
@@ -3486,7 +3861,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * shared predicate the two pre-passes also call, never by a second reading
      * of the same conditions. */
     if (vm_counter_fits(v, a)) {
-        vm_counter_rep(v, entry, a, next);
+        vm_counter_rep(v, entry, a, next, under_atomic);
         return;
     }
 
@@ -3512,12 +3887,15 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
         const char *frole = vm_rolef(v, "frames rung, %s %s, %s%s",
                                      bounded ? "bounded" : "unbounded", fbounds,
                                      a->greedy ? "greedy" : "lazy",
-                                     a->possessive
+                                     !cuts ? ""
+                                       : a->possessive
                                        ? ", POSSESSIFIED (one frame for the"
-                                         " whole loop, no giveback)" : "");
+                                         " whole loop, no giveback)"
+                                       : ", ATOMIC (a written cut: one frame"
+                                         " for the whole loop, no giveback)");
         vm_rung_mark(v, entry, bounded ? VM_RUNG_FRAMES_BOUNDED
                                         : VM_RUNG_FRAMES_UNBOUNDED,
-                     a->possessive, frole);
+                     cuts, frole);
         /* One more iteration plus the follow: the minrest every site on this
          * rung tests, and therefore exactly the predicate for "did this
          * quantifier get a bound at all". */
@@ -3544,7 +3922,7 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
      * loop is atomic as a whole, which is what "possessive" means. Leaving
      * them would also be correct (the verdict says they are dead, so resuming
      * one cannot change the answer); discarding them is simply the win. */
-    if (a->possessive) {
+    if (cuts) {
         int mslot = vm_slot_mark(v, v->nmark++);
         int body0 = vm_label(v);
         vm_lbl(v, entry, "possessified repeat: record the resume-stack depth "
@@ -3563,8 +3941,9 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
             cur = nx;
         }
         if (a->rmax >= 0) vm_poss_chain(v, cur, a->l, a->rmax - a->rmin, next,
-                                        mslot, bw);
-        else              vm_poss_star(v, cur, a->l, next, mslot, bw);
+                                        mslot, bw, a->greedy || a->possessive);
+        else              vm_poss_star(v, cur, a->l, next, mslot, bw,
+                                       a->greedy || a->possessive);
         return;
     }
 
@@ -3594,6 +3973,89 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next)
     }
 
     vm_star(v, cur, a, next);
+}
+
+/* ---- [M6.4.2] THE ATOMIC GROUP ------------------------------------------
+ *
+ * `(?>X)` in the GENERAL shape (design §3.3) — everything the lift declines,
+ * which is every body that is not a greedy, non-nullable `A_REP`:
+ *
+ *     L_entry:  RX_SET(SLOT_CUT_MARKk, run->resume_depth)   // BEFORE any push
+ *               goto L_body
+ *     L_body:   <body>  -> L_cut          // ordinary emission, ordinary frames
+ *     L_cut:    RX_CHARGE_WORK(depth - mark);  RX_CUT(SLOT_CUT_MARKk)
+ *               goto L_next
+ *
+ * `vm_cut` is REUSED UNCHANGED, and that is the design's single most
+ * load-bearing claim (CUT-INV, §3.1). The invariant people worry about — the
+ * cut does not rewind the trail — is INDEPENDENT of the §2.2 proof that
+ * licenses today's cuts. `vm_cut`'s own header gives two reasons for the rule
+ * and only ONE of them is possessify's: discarding the FRAMES is what §2.2
+ * licenses (an atomic group has no such licence, and discards frames that are
+ * NOT dead — that is precisely the semantics), while leaving the TRAIL alone
+ * rests on nothing but frame arithmetic. Stated as the invariant:
+ *
+ *   Let M be the resume depth at entry and T0 the trail depth there. Every
+ *   frame below M was pushed before T0, so its `trail_mark <= T0`; every trail
+ *   entry the body writes has index >= T0; `RX_CUT` sets `resume_depth = M`
+ *   and leaves `trail_depth` alone. So any later pop of any frame below the
+ *   mark still satisfies `trail_depth > frame.trail_mark` for every one of the
+ *   body's entries and unwinds them all. The fail label's `>`-not-`==` is what
+ *   makes that last step true.
+ *
+ * THREE PROPERTIES OF THE SHAPE, each with the line that makes it true:
+ *
+ *  1. THE MARK'S `RX_SET` PRECEDES EVERY `RX_PUSH` IN THE BODY — CUT-INV's
+ *     clause 2, and the reason the emission order below is not cosmetic. It
+ *     also makes the mark itself TRAILED (`vm_set` is the trailing writer),
+ *     which is what makes NESTING and RE-ENTRY work: an outer backtrack
+ *     restores the mark slot and this entry label re-sets it on every entry, so
+ *     `(?>a|b)*c` cuts independently per iteration. Sabotage row S90 moves the
+ *     `RX_SET` after the first push; codegen rule 3 is the check.
+ *  2. `RX_CUT` IS AN ASSIGNMENT, NOT A `min()`, so it is only correct while
+ *     `resume_depth >= mark` at every cut site. That holds because control
+ *     cannot reach `L_cut` after a pop below the entry frame — such a pop
+ *     jumps to a resume label OUTSIDE the group — and nested marks are
+ *     monotone by construction (an inner group's mark is taken at a depth at
+ *     or above this one's).
+ *  3. NOTHING REWINDS THE TRAIL. Captures written inside the body are RETAINED
+ *     on success (`(?>(a)|ab)` on "ab" is (0,1) with group 1 = (0,1)) and
+ *     UNDONE on an outer failure (`((?>(a)|ab))c|(abc)` on "abc" is (0,3) with
+ *     groups 1 and 2 UNSET). Only RETENTION discriminates the invariant: a cut
+ *     that wrongly rewound the trail gets the UNDO half trivially right,
+ *     because it did the undo early. Sabotage row S89.
+ *
+ * The mark slot joins the existing `SLOT_CUT_MARK<n>` family, so it is
+ * greppable and the slot legend names it, and it is spelled in ONE place —
+ * src/gen/CLAUDE.md's two rules. */
+static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+{
+    /* THE LIFT (§3.2, RULE 3): route the cut into the quantifier's own
+     * possessive rung, which cuts PER ITERATION where this shape cuts once at
+     * the group's exit. Without it `(?>a*)` exhausts RX_RESUME_FRAMES where
+     * `a*+` — a spelling PCRE2 calls identical — costs one frame. `vm_lifts`
+     * carries the scope and the evidence. */
+    if (vm_lifts(a)) { vm_rep(v, entry, a->l, next, true); return; }
+
+    int mslot = vm_slot_mark(v, v->nmark++);
+    int bodyl = vm_label(v), cutl = vm_label(v);
+
+    vm_lbl(v, entry, "atomic group: record the resume-stack depth to cut "
+                     "back to (BEFORE the body pushes anything)");
+    vm_set(v, mslot, "(ptrdiff_t)run->resume_depth",
+           "atomic-group cut mark (resume-stack depth at group entry)");
+    vm_goto(v, bodyl);
+
+    /* The body's follow-min is the GROUP's own: the group consumes exactly
+     * what the body consumes, so there is nothing to add. `vm_emit` inherits
+     * `v->fmin` unchanged, which is A_CAP's arm's own reading. */
+    vm_emit(v, bodyl, a->l, cutl);
+
+    vm_lbl(v, cutl, "atomic group: the body's FIRST success -- cut, and never "
+                    "reconsider");
+    vm_cut(v, mslot, "cut: the group is committed; every choice point the body "
+                     "created is discarded, dead or not");
+    vm_goto(v, next);
 }
 
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
@@ -3875,7 +4337,13 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
         vm_alt(v, entry, a, next);
         return;
     case A_REP:
-        vm_rep(v, entry, a, next);
+        /* NOT under an atomic lift: `vm_atomic` is the ONLY caller that passes
+         * true, which is what makes `under_atomic` a one-level edge property
+         * rather than an inherited context. */
+        vm_rep(v, entry, a, next, false);
+        return;
+    case A_ATOMIC:
+        vm_atomic(v, entry, a, next);
         return;
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
@@ -4111,8 +4579,9 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                   "span-loop low-water", "the loop's entry position (S2.5)");
     for (int i = 0; i < v->nmark; i++)
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_mark(v, i),
-                  "possessive cut mark",
-                  "resume-stack depth at loop entry (eng_brep_design.md S2)");
+                  "cut mark",
+                  "resume-stack depth at entry -- a possessified loop's "
+                  "(eng_brep_design.md S2) or an atomic group's ([M6.4.2])");
     for (int i = 0; i < v->nrev; i++) {
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 0),
                   "revdet loop entry", "the capture walk's floor (S2.5)");
@@ -4348,7 +4817,43 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * the ceiling through a macro and never needs to know which of the two it
      * is. `fit.prefilter` is select_engine's verdict and is final by now. */
     v.mrl     = (cx->opt->flags & PCREC_NO_LENGTH_PRUNE) == 0;
-    v.mrl_win = job->fit.prefilter;
+    /* [M6.4.2] RULE H3 — THE ONE PREDICATE, READ AT THREE SITES, and the
+     * three-ness is R31 E3's whole finding.
+     *
+     * The prefilter is the capture-erased DFA, which for a cut-bearing pattern
+     * necessarily answers for the UNCUT language (src/ir/nfa.c lowers an atomic
+     * body transparently, because a subset construction keeps every alternative
+     * alive — which IS the non-atomic semantics). Its REJECTION stays sound (no
+     * uncut match means no atomic match) and its span START stays a lower bound
+     * (H2, and the emitted loop already re-asks it on every retry), but its
+     * span END IS NOT AN UPPER BOUND on the cut match's end:
+     *
+     *   (?>a|ab)c|abcd  on "abcd"   is (0,4);  the uncut twin is (0,3).
+     *
+     * MEASURED: 122 refuting cells over 17,640, and — on the EMITTED prefilter
+     * rather than inferred from an oracle — 114 cells across 42 patterns
+     * carrying a "prefilter-window" ceiling AND a window end strictly BELOW the
+     * cut match's end. That is silent match loss in the DEFAULT engine.
+     *
+     * THE FIRST DESIGN OF THIS FIX EDITED THIS LINE AND NOTHING ELSE, AND THE
+     * CHECK IT PROPOSED WOULD HAVE AGREED WITH THE BUG. `v.mrl_win` was read at
+     * exactly two places — the `--emit-ir` description and the
+     * `RX_VM_PRUNE_CEILING` STAMP — while the lines that BUILD the ceiling (the
+     * search entry's `window_end = min(window[0][1], n)` and the retry
+     * recompute) were gated on `prefn` and `v.nclamp > 0` and never on this
+     * flag. Flipping it would have stamped "subject-end" on an artifact whose
+     * ceiling was still live. So the two emission sites now read this SAME
+     * flag, which is what makes the stamp unable to disagree with the code it
+     * describes — and codegen rule 1 asserts on BOTH sources, because either
+     * alone is satisfiable by a half-done edit.
+     *
+     * `pcrec_has_atomic` is asked of the POST-DISCHARGE tree, so a pattern
+     * whose cut was proved a no-op keeps its ceiling: `[^"]*+"` loses nothing.
+     * Dropping the PREFILTER entirely was the alternative and is strictly
+     * worse — it would discard H1 and H2 as well, and losing the prefilter is
+     * a DD-2 regression by engine_m4.md §4.7's own standard. Keeping rejection
+     * and the start seed while dropping only the ceiling costs one predicate. */
+    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root);
     v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);
@@ -4360,7 +4865,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * is emitted, and it must agree EXACTLY with what the emitter goes on to
      * assign — so the counter mirrors the emitter's own rung decisions rather
      * than approximating them. */
-    vm_count_slots(&v, root, 1);
+    vm_count_slots(&v, root, 1, false);
     /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
      * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
      * compiler-side bound that stops it, and it is checked here — after the
@@ -4378,7 +4883,10 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                  "alternation so the body compiles to a span loop instead",
                  v.maxcopies, PCREC_MAX_VM_REPEAT_COPIES);
     const int nguard_total = v.nguard, nlow_total = v.nlow;
-    const int nmark_total = v.nmark;   /* [ENG-BREP] possessive cut marks */
+    /* [ENG-BREP] possessive cut marks, and since [M6.4.2] atomic-group cut
+     * marks too — one family, because they are the same operation with two
+     * different licences (a proof, or the user writing the cut). */
+    const int nmark_total = v.nmark;
     const int nctr_total  = v.nctr;    /* [ENG-BREP] counter loops, 1 slot each */
     const int nrev_total  = v.nrev;    /* [ENG-BREP] revdet loops, 3 slots each */
     v.nguard_total = nguard_total;
@@ -4391,7 +4899,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
                      + 3 * nrev_total + nctr_total;
 
     /* §2.5's two capacities. */
-    Cost cost = vm_cost(&v, root);
+    Cost cost = vm_cost(&v, root, false);
     long long bt_frames, trail_frames, ceiling = 0;
     bool fits;
     if (cx->opt->frame_capacity > 0) {
@@ -4573,7 +5081,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * PCREC_VM_STRAT_POSSESSIVE is absent from this value — not that the
      * flag was passed. A denied strategy appearing in a stamp is a hard test
      * failure, which is testable precisely because the stamp is built from
-     * `a->possessive` at the point the emitter acts on it.
+     * the same `vm_cuts()` answer the emitter acts on. [M6.4.2]: under
+     * `-fno-possessify` a WRITTEN possessive still cuts — the flag denies the
+     * REWRITE, never a construct the user spelled — so this bit is present on
+     * such an artifact and its absence is the denial's own evidence only for
+     * a pattern with no atomic construct in it.
      *
      * [ABI-NS] (D60): PCREC_VM_STRAT_POSSESSIVE/_BACKTRACKING are the same
      * class of pcrec-contract fact as the rung bits above, and moved to the
@@ -5169,14 +5681,21 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     char retry_win[512];
     retry_win[0] = 0;
     if (v.nclamp > 0 && prefn)
+        /* H3 site 2 of 3 (the RETRY recompute). The recompute itself STAYS on a
+         * cut-bearing artifact — it re-seeds `attempt_position` from the
+         * prefilter, which is H2 and is sound, and D51 ruling 2 is why it
+         * exists at all. Only the CEILING it also computed is dropped. */
         snprintf(retry_win, sizeof retry_win,
                  "        {\n"
                  "            ptrdiff_t window[1][2];\n"
                  "            if (%s(subject, subject_length, attempt_position, window) != 1) return 0;\n"
                  "            attempt_position = (size_t)window[0][0];\n"
-                 "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
+                 "%s"
                  "        }\n",
-                 prefn);
+                 prefn,
+                 v.mrl_win
+                   ? "            window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
+                   : "            window_end = subject_length;\n");
 
     /* [M4.6d] THE MRL CEILING, and D51 ruling 2's three obligations, all
      * discharged in this one function.
@@ -5229,9 +5748,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "%s"
             "    }\n",
             prefn,
-            v.nclamp > 0
+            v.nclamp == 0 ? ""
+              /* H3 site 1 of 3 (the search ENTRY). */
+              : v.mrl_win
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
-              : "");
+              : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
     } else {
         sb_puts(c, "    attempt_position = search_from;\n");
         if (v.nclamp > 0) sb_puts(c, "    window_end = subject_length;\n");

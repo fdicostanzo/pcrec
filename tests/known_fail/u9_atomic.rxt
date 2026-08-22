@@ -1,0 +1,49 @@
+# tests/known_fail/u9_atomic.rxt -- U9, and pcrec DISAGREES WITH libpcre2 here.
+#
+# Read docs/dev/upstream_issues.md U9 first. On libpcre2 10.46 a possessive or
+# atomic BOUNDED repeat `{m,n}+` of a GROUP, preceded by an item that consumed
+# and CAN GIVE BACK, refuses to backtrack into that preceding item:
+#
+#     a?(?:b){0,4}+a   on "a"   libpcre2: NO MATCH   python + a hand
+#     (a?)(?>(b){0,4})a on "a"  libpcre2: NO MATCH   derivation: (0,1)
+#
+# All three conjuncts are necessary, and the three CONTROLS that each drop one
+# are live and green in tests/atomic_groups/possessive.rxt section 9:
+# `a?b{0,4}+a` (a character item, not a group), `a?(?:b)*+a` (`*+`, not
+# `{m,n}+`) and `x?(?:b){0,4}+a` (the prefix consumed nothing) all MATCH in
+# libpcre2, in python and in pcrec.
+#
+# WHY THESE TWO CELLS ARE HERE RATHER THAN IN THE MODULE'S OWN DIRECTORY.
+# D26 makes PCRE2 the SOURCE OF TRUTH for what a pattern matches, so libpcre2's
+# NO MATCH is the expectation of record and it is what these blocks assert.
+# pcrec answers (0,1) -- agreeing with python `re` and with a hand derivation of
+# what a possessive quantifier is supposed to forbid, which is retreat into ITS
+# OWN loop and not the freezing of a preceding `?`. U9's own entry classifies
+# the divergence as PCRE2-SIDE ("all PCRE2-side, none analysis-side") and names
+# THIS EVENT as the one that makes it reachable: "pcrec refuses the spelling
+# today, module `atomic-groups`". [M6.4.2] is the day it stops refusing.
+#
+# SO THIS IS A RULING SOMEBODY OWES, not a bug [M6.4.2] chose to leave. The two
+# available answers are "reproduce libpcre2 exactly, because D26 says so" and
+# "keep the hand-derivation answer, because U9 is filed as libpcre2's own
+# oddity" -- and the module lane is not the place to decide which. The ratchet
+# is the honest holding place: it keeps the cells, it keeps them LOUD, and if
+# pcrec is ever changed to reproduce U9 this file FIRES and says the deferral is
+# over rather than letting the divergence become invisible.
+#
+# EVERY EXPECTATION BELOW IS libpcre2 10.46's, produced through the ctypes
+# binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py, and NOT
+# what pcrec currently answers. That is the whole point of this directory.
+
+pattern a?(?:b){0,4}+a
+features atomic-groups
+n "a"
+ns 1 "a"
+m "ba" 0 2
+ns 1 "ba"
+ns 2 "ba"
+
+pattern (a?)(?>(b){0,4})a
+features atomic-groups
+n "a"
+ns 1 "a"

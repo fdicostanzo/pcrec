@@ -45,6 +45,19 @@ static Ast *node(Ctx *cx, AKind k)
  * body). Kind only — payload fields are the caller's. */
 Ast *pcrec_ast_node(Ctx *cx, AKind k) { return node(cx, k); }
 
+/* [M6.4.2 / SR-8, D67] THE STAMP — see its declaration in core/internal.h for
+ * the contract. It lives here rather than in a module TU because every module
+ * calls it and none of them owns it. */
+void pcrec_ast_stamp(Ctx *cx, Ast *a, const RegRow *rw, size_t at)
+{
+    a->reg = rw;
+    /* FIRST-WINS, and only for a row that actually excludes the DFA: the
+     * `engine_why` stamp names the FIRST such construct, and a row that lowers
+     * to both engines has no `why` to contribute. */
+    if (rw && !(rw->engines & ENGM_DFA) && cx->first_vmonly_pos == (size_t)-1)
+        cx->first_vmonly_pos = at;
+}
+
 /* ---- the BARE ANCHOR rule, in ONE place ([M6.2] wave D) ------------------
  *
  * PCRE2 refuses a quantified bare zero-width assertion (`\b*` is error 109)
@@ -102,6 +115,15 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * under-rejection at a construct's very first cell. */
     case A_CLASS: case A_CAT: case A_ALT: case A_REP: case A_EMPTY:
     case A_CAP:
+    /* [M6.4.2] NOT a bare anchor, and it is `A_CAP`'s answer for `A_CAP`'s
+     * reason: this predicate is about a BARE assertion standing alone as a
+     * group's whole body, and an atomic group is a BRACKETING construct with a
+     * body of its own. `(?>^)` already had its body wrapped by the port, so
+     * what reaches a quantifier is an A_CAT and the base grammar's own rule
+     * applies unchanged; `(?>a)*` is an ordinary quantified group. Measured
+     * against libpcre2 10.46: `(?>^)*` and `(?>a)*` both compile, matching the
+     * `(^)*` / `(a)*` cells this predicate exists to reproduce. */
+    case A_ATOMIC:
         return false;
     }
     return false;
@@ -984,8 +1006,54 @@ have:
         r->greedy = !cx->mods->ungreedy;
         xskip(cx);   /* the lazy marker binds across skips too: (?x)a + ? */
         if (peekc(cx) == '?')      { r->greedy = cx->mods->ungreedy; cx->pos++; }
-        else if (peekc(cx) == '+')
-            ctx_fail(cx, cx->pos, "possessive quantifier requires module 'atomic-groups'");
+        else if (peekc(cx) == '+') {
+            /* [M6.4.2] THE POSSESSIVE SUFFIX, and it is a DESUGARING rather
+             * than a flag: `X q+` is `(?>X q)`, which is PCRE2's own
+             * definition of the construct and is MEASURED to hold over bodies
+             * whose iteration can end in two places (18 pairs / 47 cells / 28
+             * of them non-unique-body / 0 disagreeing —
+             * atomic_groups_measurements/out/atomic_semantics.txt). The first
+             * version of that measurement used only bodies with a unique
+             * iteration and could not have refuted the claim; this comment
+             * names the corrected one deliberately.
+             *
+             * IT DOES NOT WRITE `r->possessive`. That field is possessify's
+             * OPTIMISATION mark, deniable by `-fno-possessify` and CLEARED by
+             * revdet's copy constructor (`src/opt/revdet.c:179`), so storing a
+             * LANGUAGE FEATURE there would make an optimisation flag a
+             * miscompiler and let a copy delete the feature. Sabotage rows S92
+             * and S93. Design §3.2 RULE 2.
+             *
+             * THE ROW IS THE SOURCE OF THE STAMP. `c` is the quantifier's own
+             * selector byte, which is exactly the RK_QUANTSUFFIX row's `sel` —
+             * so the `engines` mask and the `why` text SR-8 reports both come
+             * from the registry rather than from a literal here. Note this is
+             * NOT a base-path lookup: it runs only after a `+` suffix has
+             * actually been seen, so registry.c's stated reason for exempting
+             * this construct from the doorways (a lookup on every quantifier)
+             * is preserved exactly. */
+            const RegRow *rw = pcrec_atomic_suffix_row(c);
+            if (!rw)
+                ctx_fail(cx, cx->pos,
+                         "internal error: no registry row for the possessive "
+                         "quantifier suffix");
+            if (!pcrec_feature_enabled(rw->feature))
+                ctx_fail(cx, cx->pos,
+                         "possessive quantifier requires module '%s'",
+                         rw->module);
+            size_t plus = cx->pos;
+            cx->pos++;                       /* the `+` */
+            Ast *at_ = node(cx, A_ATOMIC);
+            at_->l = r;
+            pcrec_ast_stamp(cx, at_, rw, plus);
+            /* `a` becomes the ATOMIC wrapper, so a second quantifier after it
+             * re-enters this loop's `quantified` guard and `a*++` refuses with
+             * "multiple quantifiers on the same item" — still a clean tier-2
+             * refusal, and a CHANGE from the pre-module message that
+             * tests/reject/ pins by name (design §6.3). */
+            a = at_;
+            continue;
+        }
         a = r;
     }
     return a;

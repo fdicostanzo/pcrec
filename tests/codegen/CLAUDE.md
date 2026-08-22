@@ -708,6 +708,93 @@ dropping the operand because the macro PARAMETER name (`slot_`) is not
 `[0-9]+`. Resolving symbolic operands made it visible. `#define` lines are
 now excluded explicitly.
 
+## **[M6.4.2] `run_atomic_identity.sh`, and the ONE gate here whose reference is a PINNED COMMIT**
+
+The fifth `run_*_identity.sh`, and the paragraph above ("ALL FOUR GATES'
+REFERENCE KNOBS ARE NOW AT THE ACTION") asks to be read before adding one. Its
+answer for this module is that **no knob placement works, because there is no
+action to place one around.** The four predecessors each gate an ANALYSIS
+ACTION — a refinement in `eqclasses`, an interning in `make_state`, an emitter
+dispatch — and the knob works because the action runs on the population under
+test. Module `atomic-groups` refines no alphabet, interns no state and reads no
+byte it did not already read as part of a body: its whole surface is "is there
+an `A_ATOMIC` in the tree", which is FALSE for every pre-module pattern. A knob
+would gate code that never runs on the identity population, so the sweep would
+report 100% identical no matter what was sabotaged — the blindness that
+paragraph warns about, in its purest form.
+
+So the reference is built by `git archive` from a PINNED PRE-MODULE COMMIT,
+`probe_kreset_identity.sh`'s precedent ([M6.2] wave E). It shares NO SOURCES
+with the subject, so no sabotage of this tree can reach it — which also makes
+it strictly stronger than a knob build, and is the direct answer to wave D's
+own finding that a knob build's sabotage CANCELS.
+
+**Three guards keep it from going vacuous**, and the third is this module's
+own. The pin must RESOLVE (a gate that cannot build its reference SAYS so
+rather than skipping); the reference tree must not contain `A_ATOMIC` (a
+mistyped commit resolving to something recent would build a reference that
+agrees everywhere); and the POSITIVE CONTROL is the refusal-mismatch column —
+the pre-module compiler cannot compile an atomic pattern at all, so a run
+reporting zero differing AND zero refusal mismatches has lost its atomic
+population or is comparing two builds of the same tree.
+
+Landing figures: **1311 default and 1312 `--engine=vm` atomic-free corpus
+patterns byte-IDENTICAL, 0 differing, 0 refusal mismatches, 96 atomic patterns
+all refused by the reference.** K29's fix genuinely does move emitted bytes for
+`X{n,}` on the counter rung with a positive §2.2 verdict, and the gate was
+written expecting an exception bucket for it — but NO corpus pattern is in that
+family (0 of 1448), so it asserts a flat zero and the bucket was DELETED rather
+than kept "just in case". A differing-but-expected bucket is exactly the thing
+that quietly absorbs the next real difference.
+
+## **[M6.4.2] the `[M6.4-ATOMIC]` block: five rules plus 5b and 5c**
+
+Every rule matches **BOTH SPELLINGS OF A CUT** and **CALL SITES**, and both are
+corrections the R31 panel forced rather than caution. `vm_revdet_rep` cuts by
+assigning `run->resume_depth = <prefix>_rvN_frame_mark` and never touches the
+`RX_CUT` macro — `vm_cut`'s own header records a step-charge probe that
+"reported a confident zero for the revdet rung" for exactly that reason. And
+`#define RX_CUT(slot_)` is emitted UNCONDITIONALLY on every VM artifact, so
+`grep -c RX_CUT` is at least 1 on every artifact pcrec has ever produced.
+MEASURED on live artifacts before the rules were written:
+
+| pattern | `grep -c RX_CUT` | `'^ *RX_CUT('` | second spelling |
+|---|---|---|---|
+| `a*+b` | 1 | 0 | 0 |
+| `(?>a*)b` | 1 | 0 | 0 |
+| `(?:a|bc)*+d` | 1 | 0 | **1** |
+
+The first two are the CURSOR rung, frameless and correctly cutless; the third
+is REVDET. A rule spelled "the artifact contains `RX_CUT`" is green on all
+three and would be green on a compiler emitting no cut at all.
+
+**Rule 1 asserts on TWO SOURCES because R31 E3 showed one is satisfiable by a
+half-done edit.** The design's first form of RULE H3 edited `v.mrl_win` and
+called the artifact's `RX_VM_PRUNE_CEILING` stamp the check — but that flag was
+read only by the stamp and the `--emit-ir` text, while the lines that BUILD the
+ceiling were gated on `prefn` and `nclamp` and never on it. Measured by making
+exactly that edit: **the stamp reads "subject-end" (1(b) GREEN) with both
+`window_end = window[0][1]` assignments still live (1(a) RED)**. It is also
+SCOPED to `nclamp > 0` (R31 C5): the stamp is three-valued, and an unscoped
+rule is RED on the four correct `"none"` artifacts in every 46-pattern R3a
+sample. Rule 1c is the other direction — an atomic-FREE artifact must KEEP its
+ceiling, or rule 1 would pass on an emitter that switched it off for
+everything.
+
+**Rule 5 drives BOTH PREFERENCES on all six dispatch paths**, which is R31's
+re-check N1: the cursor rung SATISFIES cut-equivalence (it is frameless) and
+still answers the wrong language on a lazy body, so a greedy-only per-path
+check would have been green on the lift that miscompiles 7 of 8 lazy cells.
+
+**Rule 5c is E4/S98's detector, and it found a live bug during the lane.** Every
+`RX_CUT(n)` must name a slot the artifact's own legend declares a CUT MARK.
+With RULE 3's condition-(d) decline written into `vm_rep` alone, `vm_count_slots`
+took the revdet arm while the emitter took the frames arm, and
+`-fno-possessify '(?>(?:a|bc){2})d'` emitted `RX_SET(RX_SLOT_REVDET0_ENTRY, …)`
+and `RX_CUT(2)` onto the revdet loop's OWN entry slot — two live loops sharing
+one slot, which is the failure `vm_count_slots`' header names. Its failing
+direction was then demonstrated by reverting the fix (2 CUT-NOT-A-MARK).
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the

@@ -189,6 +189,13 @@ int main(int argc, char **argv)
          * today — the ground truth §8.1's differential compares against. */
         else if (!no_more_opts && !strcmp(a, "-fno-counter"))
             opt.flags |= PCREC_NO_COUNTER;
+        /* [M6.4.2] the family's newest member, and the only one that denies an
+         * ENGINE rather than a strategy: leaving the proved-dead `A_ATOMIC` in
+         * the tree makes SR-8's consultation see a DFA-excluding node. It
+         * exists so the free discharge's "changes no answer" claim has a
+         * differential; see lib/pcrec.h. */
+        else if (!no_more_opts && !strcmp(a, "-fno-atomic-discharge"))
+            opt.flags |= PCREC_NO_ATOMIC_DISCHARGE;
         /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
          * (D51 ruling 1), D46's controllability half for it. Denying it is
          * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever

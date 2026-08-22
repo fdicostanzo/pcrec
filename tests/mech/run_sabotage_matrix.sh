@@ -68,6 +68,14 @@
 #   mrldiff  mrl                       — added 2026-08-17 ([M4.6d] MRL pruning)
 #   prefilter                          — added 2026-08-17 ([M4.6f] D46 prefilter close-out)
 #   altdiff  altcls                    — added 2026-08-17 ([OPT-ALTCLS] alternation->class normalization)
+#   atomicdiff  atomicidentity         — added 2026-08-22 ([M6.4.2] module atomic-groups)
+#
+# THE TWO NEWEST WORDS WERE A BLOCKER, NOT A DETAIL (R31 C11). This vocabulary
+# is CLOSED — the `*)` arm below scores an unrecognised word as UNKNOWN-SUITE —
+# so four of [M6.4.2]'s thirteen rows (S91, S92, S96, S97) could not have been
+# SCORED AT ALL until `atomicdiff` existed, and the design's slice ordering
+# says the registration must PRECEDE the sabotage measurement rather than
+# follow it.
 #
 # COST, measured before the three new arms were wired rather than asserted
 # after (docs/dev/plan_completed.md's [MOD-0.8c] row forbids claiming a cost): one scratch
@@ -133,11 +141,29 @@ echo
 
 # ---- collect the sabotages to run -------------------------------------
 
+# THE SELECTOR MATCHES AT THE ID BOUNDARY, not by bare prefix, and [M6.4.2] is
+# why. The old rule was `[[ "$base" != "$ONLY"* ]]` — a plain prefix match on
+# the basename — which is exactly the hazard R31 C4 named when it caught a
+# proposed `S87` colliding with the shipped `S87_kreset_trail_uncharged.sh`:
+# "the driver's ID-prefix match would have selected two `S87-` rows".
+#
+# [M6.4.2] took the numbering past two digits and made the same hazard REAL for
+# the first time: with `S100_lift_accepts_nullable.sh` on disk,
+# `run_sabotage_matrix.sh S10` selected BOTH it and
+# `S10_casefold_one_direction.sh` — two unrelated rows, one intended, and a
+# figure attributed to whichever finished last. Measured on this tree before
+# the fix.
+#
+# A basename is `S<id>_<name>.sh`, so the boundary is the underscore. `S10` now
+# selects `S10_*` and nothing else; `S1` selects nothing, which is right — it
+# is not an id. A prefix selecting a RANGE was never a supported thing to want.
 sab_files=()
 for f in "$SCRIPT_DIR"/sabotages/S*.sh; do
     [ -e "$f" ] || continue
     base="$(basename "$f")"
-    if [ -n "$ONLY" ] && [[ "$base" != "$ONLY"* ]]; then continue; fi
+    if [ -n "$ONLY" ] && [[ "$base" != "$ONLY"_* && "$base" != "$ONLY" ]]; then
+        continue
+    fi
     sab_files+=("$f")
 done
 
@@ -330,6 +356,43 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/gstartdiff.log" | grep -oE '[0-9]+')"
                 suite_bits+=("gstartdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            atomicdiff)
+                # [M6.4.2] module `atomic-groups`' behavioural instrument, and
+                # the ONLY arm that can score four of the module's rows. Three
+                # of its four sections exist because nothing else in the tree
+                # asks their question: the ENGINE differential (default hybrid
+                # vs `--engine=vm`) is where §4's ceiling hazard lives — 114
+                # cells of silent match loss were measured on the emitted
+                # prefilter — the `-fno-possessify` arm is the only place S92
+                # can be red, and the DISCHARGE differential is the only thing
+                # that checks "changes no answer" for a rewrite that changes
+                # which ENGINE a pattern gets.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/atomic_groups/run_atomic_diff.sh" \
+                    > "$work/atomicdiff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/atomicdiff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/atomicdiff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("atomicdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            atomicidentity)
+                # [M6.4.2] the byte-identity gate, and the one arm in this
+                # matrix whose reference is a PINNED COMMIT rather than a `-D`
+                # knob on this tree's own sources. That matters HERE more than
+                # anywhere: tests/mech/CLAUDE.md's own finding is that a
+                # knob-built reference is sabotaged TOO, so an edit outside the
+                # knob's gated region CANCELS and the sweep reports 100%
+                # identical under a live sabotage. This reference is built from
+                # `git archive` of a pre-module commit, so no sabotage of this
+                # tree can reach it.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_atomic_identity.sh" \
+                    > "$work/atomicidentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/atomicidentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/atomicidentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("atomicidentity:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
