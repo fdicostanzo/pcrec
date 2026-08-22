@@ -59,7 +59,9 @@ archaeology. No file here was hand-written.
   compare's caselessness is the option in force **at the backreference**
   (`^(a)(?i:\1)$` matches `"aA"`; `^(?i:(a))\1$` does not).
 - `prefilter_cost.txt` — `probe_prefilter_cost.sh`. Headline: losing the
-  prefilter costs **8.5x to 157x** on the three idioms where it filters, and
+  prefilter costs **6.2x to 130x** on the three idioms where it filters (the
+  ratio is stable in order of magnitude, not in its digits — four runs during
+  the lane spanned 6.2-21.7x, 64-157x and 6.2-20.9x), and
   **nothing at all** on the two where the erased approximation matches at
   offset 0 (reported as NOISE, which is a result rather than a failed
   measurement). Both arms compile the identical pattern with the identical

@@ -825,11 +825,17 @@ precedent and its stated reason (`select_engine.c:104-110`): the honest form
 of this question is structural, and it keeps the row correct for a future
 `discharge` hook that rewrote the backreference away.
 
-The three registry rows' `engines` masks stay `VM_ONLY` and are now
-*measured* rather than provisional — with one correction. `registry.c:512`'s
+**The twelve backref-owning registry rows' `engines` masks stay `VM_ONLY`,
+and they stop being provisional.** Frank's 2026-08-12 note called the blanket
+`VM_ONLY` "design intent" that "splits under an AOT compiler" and told readers
+not to treat it as a measured limit; §6.3 measures the split and finds the
+DFA arm has no reachable customer, so `VM_ONLY` is now the rows' actual
+classification on every build pcrec emits by default. One correction:
+`registry.c:512`'s
 `\0` row is already `ANY_ENGINE` and is right: `\0` is octal, an ordinary
-literal, and has no VM requirement at all (rule 1). The nine `VM_ONLY` digit
-rows, the `\k` and `\g` rows and `(?P=n)` keep `VM_ONLY`, and unlike
+literal, and has no VM requirement at all (rule 1). The nine `VM_ONLY` digit rows
+(`\1`..`\9`), the `\k` and `\g` rows and `(?P=n)` — twelve in all — keep
+`VM_ONLY`, and unlike
 `named-groups`' three rows (D59 part 2) they do NOT get that module's free
 ride: D59's own revisit clause names "backrefs" as a live candidate for
 building SR-8, precisely because an `A_BREF` "is not an ordinary A_CAP node".
@@ -936,7 +942,7 @@ SEMANTICS SHIP IN [M6.5]; THE EXPANSION IS CHARTERED AS A FOLLOW-ON ROW.**
 Four reasons, in order:
 
 1. Its only customer is `--no-captures`, which is not the default (D42.1).
-2. Its payoff on that customer is bounded by §7's numbers — 8.5x to 157x on
+2. Its payoff on that customer is bounded by §7's numbers — 6.2x to 130x on
    scanning — which is real, but is the *same* payoff a sound nomatch-only
    prefilter (§7.3) would deliver with no rewrite, no size estimate and no
    fixpoint interaction.
@@ -1002,7 +1008,7 @@ Two conclusions, and they point in opposite directions:
   of those is a window the hybrid would hand the VM wrong.** A VM run
   anchored to `(0,2)` on `"\"''"` does not find the (1,3) match.
 
-So the erasure cannot serve §6.1's role. The rule stands.
+So the erasure cannot serve `engine_m4.md` §6.1's role. The rule stands.
 
 ### 7.3 What it costs, measured on the shipped compiler
 
@@ -1013,16 +1019,28 @@ in `RX_VM_PREFILTER` (`"hybrid"` under `auto`, `"none"` under `--engine=vm`,
 P9). 256 KB of filler whose 7-letter words all differ (so the TRUE backref
 patterns have no match), best of 5 trials × 3 reps.
 
-| idiom | subject | hybrid | vm-only | **vm-only is** |
+**Pasted from `out/prefilter_cost.txt`, not from a separate run** — R30 N2's
+correction, which found an inline table in the assertions design that came
+from a different run than the archive it cited:
+
+| idiom | subject | hybrid (s) | vm-only (s) | **vm-only is** |
 |---|---|---|---|---|
-| quote | nomatch | 0.111 ms | 1.915 ms | **16.8x slower** |
-| quote | latematch | 0.225 ms | 1.919 ms | **8.5x** |
-| tag | nomatch | 0.005 ms | 0.698 ms | **132x** |
-| tag | latematch | 0.005 ms | 0.846 ms | **157x** |
-| digits | nomatch | 0.225 ms | 1.922 ms | **8.5x** |
-| digits | latematch | 0.225 ms | 1.920 ms | **8.5x** |
-| dupword | either | — | — | **NOISE** (see below) |
-| letter | either | — | — | **NOISE** |
+| quote | nomatch | 0.00022634 | 0.00191456 | **8.5x slower** |
+| quote | latematch | 0.00011078 | 0.00191434 | **17.3x** |
+| tag | nomatch | 0.00001090 | 0.00069713 | **64.0x** |
+| tag | latematch | 0.00000539 | 0.00069859 | **129.6x** |
+| digits | nomatch | 0.00022497 | 0.00139382 | **6.2x** |
+| digits | latematch | 0.00011100 | 0.00139627 | **12.6x** |
+| dupword | nomatch / latematch | 0.00000014 / 0.00000011 | 0.00000004 / 0.00000008 | **NOISE** (see below) |
+| letter | nomatch / latematch | 0.00000007 / 0.00000008 | 0.00000002 / 0.00000005 | **NOISE** |
+
+**The RATIOS are stable in order of magnitude and NOT in their digits.** Four
+runs of this probe during the lane gave quote 8.4-21.7x, tag 64-157x and
+digits 6.2-20.9x — the hybrid arm is bimodal between roughly 0.00011 and
+0.00022 s across runs while the vm-only arm barely moves, which is what makes
+the ratio jump. Treat the DIRECTION and the ORDER as established and the
+particular digits as not; the design's ruling does not turn on which end of
+those ranges is right.
 
 **The two NOISE rows are a RESULT, not a failed measurement**, and they are
 the honest counterweight to the 157x: for `\b([a-z]+)\s+\1\b` and `(\w)\1` the
@@ -1031,8 +1049,9 @@ the over-approximation filters nothing and a hybrid built on it would buy
 nothing **even if it were sound**. That is the same fact §7.2's last column
 reports as 40% and 2% selectivity.
 
-**So the cost of the ruling is 8.5x–157x on the families where a prefilter
-would have helped, and zero on the families where it would not** — and there
+**So the cost of the ruling is roughly one to two orders of magnitude
+(6.2x-130x measured) on the families where a prefilter would have helped, and
+zero on the families where it would not** — and there
 is no way to tell which is which without the very analysis §7.4 charters.
 
 ### 7.4 What is chartered rather than built

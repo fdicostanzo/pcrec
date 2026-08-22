@@ -896,7 +896,7 @@ append-only or historical records.
   (7.1 MB of emitted C); **the backref-erased prefilter is a sound superset
   but reports a DIFFERENT SPAN on up to 2,525 of 4,000 subjects**, so
   `engine_m4.md` §6.1's exact-window hybrid is unavailable and VM-only search
-  costs 8.5x-157x; and **libpcre2's own `PCRE2_INFO_NAMETABLE` is sorted
+  costs one to two orders of magnitude (6.2x-130x measured); and **libpcre2's own `PCRE2_INFO_NAMETABLE` is sorted
   (name asc, number asc)**, which is the [M6.5] row's ruled `rx_info.groups`
   layout, so pcrec reproduces a precedent instead of inventing a convention.
   Two findings the panel should attack first because they change code outside
