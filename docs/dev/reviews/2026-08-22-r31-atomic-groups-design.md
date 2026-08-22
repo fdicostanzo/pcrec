@@ -335,3 +335,21 @@ result: FOLLOW-based conjuncts license DELETING FRAMES (no carve-out — an
 atomic group needs no licence for that, §3.1's argument); BODY-based
 conjuncts license the emitted SHAPE and each needs a carve-out —
 nullability (one), preference (two), unique-iteration (the rung gate).
+
+## Revision 2c (r31eng's LOW) — lane/agdesign 03533bb → 3623514 (3 commits; §7.4 and §11.4 untouched)
+
+RULE 3 now has FOUR conditions: (a) cut-equivalent, (b) preference-
+preserving, (c) nullable-safe — BODY properties — and (d) the selected
+RUNG's own gate holds — a rung property the first three cannot imply.
+Emptiness measured in probe_cut_dispatch.sh §2b (14 bodies × 3 exact
+counts: no revdet-approved ∧ possessify-rejected ∧ rmin==rmax body);
+§3.2.1 carries the witness row EMPTY TODAY with its go-live condition,
+and prints the non-empty NEIGHBOUR `(?:ab|cd){2,4}c` (revdet-approved,
+possessify-rejected, rmax>rmin → the retreat frame IS emitted and the
+`!a->possessive` clause — covered by vm_cuts — is what would break): one
+clause of one predicate covered by E4's fix, the other by nothing, which
+is why (d) is its own condition. All eight compiler-resolving probes
+derive the root from their own location (`$PCREC`/`$1` still override;
+verified from /tmp); archive.sh stamps the RUN DIRECTORY; three archives
+re-run for the source change, headline numbers unchanged. §14 item 8 and
+§12 slice 4 record the identity claim as [M6.4.2]'s ruled landing gate.
