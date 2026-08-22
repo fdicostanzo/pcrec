@@ -1,0 +1,64 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_sref_consistency.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 20b641f 2026-08-22
+# RUN FROM REPO COMMIT        : 20b641f (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/registry_cost.txt
+#      M docs/design/atomic_groups_measurements/out/sref_consistency.txt
+# RUN DATE   : 2026-08-22T10:26:30-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+rows defined in §11.4: S88 S89 S90 S91 S92 S93 S94 S95 S96 S97 S98 S99 S100 
+
+  S99  (line 587)
+     the row says : the lift accepts a LAZY body (carve-out two removed)
+     the text says: have. Sabotage row **S99** lifts a lazy body.
+  S89  (line 780)
+     the row says : `RX_CUT` also rewinds the trail to the first discarded frame's mark
+     the text says: a miscompile, not a variant; §11.4's **S89** is its sabotage.
+  S95  (line 791)
+     the row says : `vm_cost`'s `A_ATOMIC` arm charges no trail entry
+     the text says: row (§11.4 **S95**). What is unchanged is the give-up CODE SPACE and the two cap
+  S91  (line 1298)
+     the row says : the discharge fires unconditionally (drops atomicity whether or not the verdict was 
+     the text says: the construction must be a REWRITE that preserves the language, and §11.4's **S91**
+  S96  (line 1832)
+     the row says : the producer does not stamp `A_ATOMIC` with its row's `engines` mask
+     the text says: discharge. Its own sabotage row (an un-stamped `A_ATOMIC`) is §11.4 **S96**.
+  S100  (line 2084)
+     the row says : the lift accepts a NULLABLE body (carve-out one removed)
+     the text says: rows); the five codegen rules; sabotage rows **S88-S100**; **the one-shot identity p
+  S88  (line 2084)
+     the row says : the ceiling predicate is read at the STAMP only, not at `:5233`/`:5177`
+     the text says: rows); the five codegen rules; sabotage rows **S88-S100**; **the one-shot identity p
+  S89  (line 2269)
+     the row says : `RX_CUT` also rewinds the trail to the first discarded frame's mark
+     the text says: `[0, len]`, compared to `pcre2_ctypes`. This is the instrument **S89 and S94**
+  S94  (line 2269)
+     the row says : `rd_shape` ACCEPTS `A_ATOMIC` instead of declining
+     the text says: `[0, len]`, compared to `pcre2_ctypes`. This is the instrument **S89 and S94**
+  S92  (line 2278)
+     the row says : `-fno-possessify` clears the user-written possessive
+     the text says: corpus compiled under `-fno-possessify`. Without it **S92 cannot be scored at
+
+citations checked: 10   undefined: 0
+VERDICT: every cited row exists. THAT IS ALL THIS PROBE ASSERTS.
+APTNESS is a human judgement and this probe does not make it: compare
+"the row says" with "the text says" in each block above. The five
+references this probe was built for all named EXISTING rows, so a
+structural check could never have caught them -- only a reader looking
+at those two lines side by side can.

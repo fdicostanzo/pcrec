@@ -1,0 +1,58 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_puc_targeted.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 26a8e06 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/free_discharge.txt
+#      M docs/design/atomic_groups_measurements/out/possessify_under_cut.txt
+#      M docs/design/atomic_groups_measurements/out/puc_targeted.txt
+# RUN DATE   : 2026-08-22T10:19:17-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27   pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
+
+cells examined (pattern x subject): 776160
+
+QUANTIFIER POSITION               pats   verd+   bites   REFUTABLE   VIOL
+--------------------------------------------------------------------------
+Q inside the atomic body          8820    5250    3402         399      0
+Q wrapping the atomic group       8820       0    3990           0      0
+Q before the atomic group         8820    8310    2065        6130      0
+Q after the atomic group          8820    5250    2490        3975      0
+
+REFUTABLE CELL = verdict POSITIVE **and** the cut BITES (the atomic
+pattern and its uncut twin give libpcre2 different answers). This is
+the only cell that can refute the claim; C2's whole finding is that
+the previous probe's 202 counted a different thing.
+
+ASSERTED FLOORS (a run below one has lost its population):
+  Q inside the atomic body       floor   40   measured   399   ok
+  Q before the atomic group      floor   40   measured  6130   ok
+  Q after the atomic group       floor   40   measured  3975   ok
+
+ASSERTION INSTEAD OF A FLOOR -- Q wrapping the atomic group:
+  positive verdicts: 0 of 8820 patterns. EXPECTED 0, and structurally:
+  the quantifier's body IS the atomic group, so §2.2 evaluates (U2)
+  prefix-freeness on `a|ab` read TRANSPARENTLY and declines. No
+  refutable cell exists here BY CONSTRUCTION.
+  assertion holds.
+
+TOTAL refutable cells: 10504    VIOLATIONS: 0
+
+VERDICT: 0 violations over 10504 REFUTABLE cells, every position above
+its floor. This is the measurement C2 asked for and the previous
+probe's 202 did not provide.

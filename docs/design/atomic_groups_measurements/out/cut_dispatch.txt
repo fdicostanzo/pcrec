@@ -1,0 +1,79 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_cut_dispatch.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+# RUN DATE   : 2026-08-22T10:18:45-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec   (all patterns compiled --engine=vm --no-captures)
+
+=== (1)+(2) vm_rep's FIVE dispatch paths, each driven by a pattern
+===         possessify's shipped verdict MARKS (strats=0x1) ===
+
+  a*b                CURSOR            strats=0x1  | RX_CUT( calls=0  2nd-spelling=0  mark-slot-refs=0 | naive `grep -c RX_CUT`=1
+                       -> CURSOR: the possessive path is FRAMELESS (emit_vm.c:2026-2027 allocate no slot and no retry/again labels). Nothing was pushed, so there is nothing to cut -- cut-equivalent WITHOUT a cut.
+  (?:ab|b){1,3}c     FRAMES_BOUNDED    strats=0x1  | RX_CUT( calls=3  2nd-spelling=0  mark-slot-refs=2 | naive `grep -c RX_CUT`=4
+                       -> FRAMES_BOUNDED: vm_poss_chain, one RX_CUT per copy boundary.
+  (?:ab|b)*c         FRAMES_UNBOUNDED  strats=0x1  | RX_CUT( calls=1  2nd-spelling=0  mark-slot-refs=2 | naive `grep -c RX_CUT`=2
+                       -> FRAMES_UNBOUNDED: vm_poss_star, one RX_CUT. Its no-empty-iteration-guard property is licensed BY §2.2 refusing nullable bodies (emit_vm.c:2483-2492) -- the antecedent RULE 3 must not delete.
+  (?:a|bc)*d         REVDET            strats=0x1  | RX_CUT( calls=0  2nd-spelling=1  mark-slot-refs=0 | naive `grep -c RX_CUT`=1
+                       -> REVDET: cuts in the SECOND SPELLING only. RX_CUT( calls = 0 and the rung is still correct. A check greping RX_CUT reports a false zero here.
+  (?:ab|b){8,12}c    COUNTER           strats=0x1  | RX_CUT( calls=5  2nd-spelling=0  mark-slot-refs=2 | naive `grep -c RX_CUT`=6
+                       -> COUNTER, BOUNDED: vm_counter_poss_opt / vm_poss_chain, RX_CUT per iteration.
+  (?:ab|b){8,}c      COUNTER           strats=0x1  | RX_CUT( calls=0  2nd-spelling=0  mark-slot-refs=2 | naive `grep -c RX_CUT`=1
+                       -> COUNTER, UNBOUNDED: **K29**. vm_counter_rep:3355-3358 tails into vm_star, which never reads a->possessive. Stamped POSSESSIVE, cut-mark slot ALLOCATED AND WRITTEN, and NEITHER spelling of a cut is emitted.
+
+=== (2b) THE RUNG'S OWN GATE — a SECOND filter, independent of the body ===
+r31eng's final finding: RULE 3's (a)(b)(c) are BODY properties, and a lift
+ALSO inherits whatever gate the SELECTED RUNG applies. The instance is
+vm_rev_canmove (emit_vm.c:973-975):
+    static bool vm_rev_canmove(const Ast *a)
+    {
+        return !a->possessive && (a->rmax < 0 || a->rmax > a->rmin);
+  Its EXACT-COUNT clause -- `rmax > rmin` -- suppresses the retreat frame
+  because "there is one exit", which is a UNIQUE-ITERATION statement that
+  consults no verdict. For a body §2.2 REJECTS at an exact count, "one
+  exit" is false.
+
+  Is the cell reachable? It needs: revdet-APPROVED and possessify-REJECTED
+  and rmin == rmax. Swept below; a LIVE line would name one.
+    swept 14 bodies x 3 exact counts. No LIVE line above means the cell is
+    EMPTY TODAY: revdet's own gate is strictly stronger than possessify's on
+    everything constructible here -- e.g. (?:a|ab){2}c takes FRAMES_BOUNDED,
+    not revdet, and answers correctly.
+    NOT-EMPTY at a NON-exact count, and that is a different clause:
+    (?:ab|cd){2,4}c IS revdet-approved and possessify-rejected -- but there
+    rmax > rmin, so canmove is true, the retreat frame IS emitted, and the
+    `!a->possessive` half is what vm_cuts() already covers (E4).
+
+=== (3) C3's failing direction, on the K29 artifact, no sabotage ===
+  pattern            : (?:ab|b){8,}c   (stamped POSSESSIVE, emits no cut)
+  grep -q RX_CUT     : MATCHES -> a rule spelled this way is GREEN
+  the line it matched:
+     131:#define RX_CUT(slot_) do {                                   \
+  grep -c '^ *RX_CUT(' : 0   <- the CALL-SITE form, correctly 0
+  second spelling      : 0   <- also 0
+  mark slot allocated  : 2   <- written, never read: the dead slot K29 names
+
+VERDICT. A structural rule of the form "a cut-bearing artifact contains
+RX_CUT" is satisfied by every VM artifact pcrec has ever emitted, and the
+K29 artifact shows it is satisfied by one that emits no cut. The rule must
+match CALL SITES ('^ *RX_CUT(') **and** the second spelling
+('run->resume_depth = <p>_rvN_frame_mark;'), and a per-path check must
+accept CURSOR's frameless answer rather than demanding a cut there.

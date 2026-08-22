@@ -873,6 +873,46 @@ append-only or historical records.
   `probes/archive.sh`, so one provenance header (probe, probe's own commit, run
   commit + branch + tree-clean, date, python3/libpcre2/gcc versions) covers all
   of them.
+- `atomic_groups_design.md` — **PROPOSED, PANELED (R31) AND REVISED** ([M6.4.1], 2026-08-22; panel `../dev/reviews/2026-08-22-r31-atomic-groups-design.md`). **Read the PANEL OUTCOME block at the top before any section** — it now covers
+  the panel AND its focused re-check, which closed E1-E8 and raised two new
+  findings against claims the first revision had introduced (the lift needed a
+  LAZY carve-out as well as a nullable one — 7 of 8 cells miscompiled — and
+  `vm_cuts` had to be context-threaded because `struct Ast` has no parent
+  pointer). The two central results SURVIVED and came out stronger — the hybrid hazard is now measured on the LIVE prefilter at **114 cells of silent match loss** — while nine HIGH findings hit how they land, and every section they touched carries its annotation inline. What moved: SR-8 is now BUILT by this module (M-1/D67, reversing §8); RULE 3's possessive-rung lift gained a NULLABLE carve-out (it would have HUNG the emitted matcher), a measured FIVE-path dispatch table, and a shared `vm_cuts()` predicate for the emitter and four pre-passes; H3's fix is one predicate at THREE sites, not one at `:4351` (the first form moved the STAMP and not the code, so the design's own check would have agreed with the bug); the structural checks now match CALL SITES and a SECOND CUT SPELLING this lane found while fixing E2; the possessify-under-cut evidence was rebuilt from 59 refutable cells to **10,504**; RULE 1 is re-grounded on D62's own principle after its cited precedent turned out to say the opposite. It also opened **K29** (a pre-existing counter-rung defect) and the D27 goal facts lost their alphabet leak. Original scope:
+  module `atomic-groups`, `(?>...)` plus the possessive spellings `*+ ++ ?+
+  {n,m}+` as SEMANTICS. Its three load-bearing results, each with an
+  instrument: (1) `vm_cut`'s no-trail-rewind invariant is **proof-INDEPENDENT**
+  — the argument that licenses it never mentions possessify's §2.2 verdict —
+  so the [ENG-BREP] cut is reusable UNCHANGED for an unconditional cut, and a
+  prototype on the emitted machinery reproduces PCRE2 on 14/14 rows, 9 of them
+  non-vacuous; (2) **THE HYBRID HAZARD IS REAL AND MEASURED**: the DFA
+  prefilter necessarily runs the UNCUT language, and while its REJECTION and
+  its START survive that (0 violations in 17,640 cells), its span END does
+  NOT — **122 refuting cells** — and today's emitter feeds exactly that end to
+  the VM as the [M4.6d] MRL pruning ceiling, so a one-predicate change at
+  `src/gen/emit_vm.c:4351` is the module's one mandatory emitter fix; (3) the
+  FREE DISCHARGE (an atomic/possessive whose body already satisfies
+  possessify's §2.2 proof is a no-op, so the pattern stays DFA-eligible) is
+  MEASURED sound at **0 violations over 532 positive-verdict patterns** with
+  its own four controls — narrowed by R31 E7 to the possessive spellings only,
+  the plain-group arm deferred for want of evidence. Also: `A_ATOMIC` is a NODE KIND rather than a flag on
+  the measured ground that a new `AKind` raises 15 `-Wswitch` diagnostics
+  where a struct field raises none — and two of the fifteen are the
+  `src/opt/revdet.c` sites where an atomic node must DECLINE or the module
+  ships a miscompile (`rd_node` CLEARS `Ast.possessive` on the reversed copy
+  the emitter walks, `revdet.c:178-179`). The full Berglund cut construction is
+  CHARTERED as follow-on row `[ENG-CUT]` with a size estimate, not built.
+  Measurements: `atomic_groups_measurements/`. A D6 adversarial panel (R31)
+  reviews it before [M6.4.2] starts; §14 is the document's own list of where
+  to attack.
+- `atomic_groups_measurements/` — the [M6.4.1] lane's **twelve** probes (four added across the R31 revisions), its
+  archiver and the archived outputs; see its own CLAUDE.md. **Every instrument
+  here reads a compiler that cannot compile the construct it measures**, so
+  every in-pcrec arm works through a proxy (the atomicity-erased twin, or the
+  possessify verdict stamp `RX_VM_STRATS`) and the design marks each claim
+  MEASURED / PROTOTYPE / STRUCTURAL accordingly. Every file in `out/` is
+  written by `probes/archive.sh`. The `-Wswitch` number is a **re-run** of
+  `assertions_measurements/probes/probe_wswitch_alarm.sh`, not a rebuild.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes

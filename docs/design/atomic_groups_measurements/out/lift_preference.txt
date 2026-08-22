@@ -1,0 +1,62 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_lift_preference.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/ceiling_shape.txt
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+#      M docs/design/atomic_groups_measurements/out/lift_preference.txt
+#      M docs/design/atomic_groups_measurements/out/premises.txt
+#      M docs/design/atomic_groups_measurements/out/registry_cost.txt
+# RUN DATE   : 2026-08-22T10:18:47-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27   pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
+
+=== PART A — lazy quantifiers ARE possessified today, on every path ===
+PATTERN              path                STRATS   cuts     2nd-spelling
+--------------------------------------------------------------------
+a*?b                 CURSOR              0x1      0        0
+(?:ab|b){1,3}?c      FRAMES_BOUNDED      0x1      3        0
+(?:ab|b)*?c          FRAMES_UNBOUNDED    0x1      1        0
+(?:a|bc)*?d          REVDET              0x1      0        1
+(?:ab|b){8,12}?c     COUNTER             0x1      5        0
+(?:ab|b){8,}?c       COUNTER             0x1      0        0
+
+  STRATS 0x1 is VM_STRAT_POSSESSIVE. Every path possessifies a lazy body.
+
+=== PART B — what the LIFT would answer ===
+The lift emits the GREEDY possessive shape, so its answer is the
+greedy possessive spelling's answer, read off libpcre2 directly.
+
+ATOMIC-LAZY        LIFT EMITS     SUBJ     pcre2     python    lift gives  VERDICT
+--------------------------------------------------------------------------------------------
+(?>a*?)b           a*+b           'aaab'   (3, 4)    (3, 4)    (0, 4)      **MISCOMPILE**
+(?>a*?)a           a*+a           'aaa'    (0, 1)    (0, 1)    None        **MISCOMPILE**
+(?>a+?)b           a++b           'aaab'   (2, 4)    (2, 4)    (0, 4)      **MISCOMPILE**
+(?>a{1,3}?)b       a{1,3}+b       'aaab'   (2, 4)    (2, 4)    (0, 4)      **MISCOMPILE**
+(?>[ab]*?)b        [ab]*+b        'abab'   (1, 2)    (1, 2)    None        **MISCOMPILE**
+(?>a*?)            a*+            'aaa'    (0, 0)    (0, 0)    (0, 3)      **MISCOMPILE**
+(?>(?:a|bc)*?)d    (?:a|bc)*+d    'abcd'   (3, 4)    (3, 4)    (0, 4)      **MISCOMPILE**
+(?>a*?)c|ab        a*+c|ab        'aab'    (1, 3)    (1, 3)    (1, 3)      agrees
+(?>a*?b)c          (?>a*b)c       'aabc'   (0, 4)    (0, 4)    (0, 4)      CONTROL ok
+
+oracle agreement on the atomic-lazy column: libpcre2 and python agree on every row
+
+VERDICT: 7 of 8 lift-eligible rows MISCOMPILE, with the control
+holding. A LAZY body under A_ATOMIC must take the general §3.3 shape,
+never the lift — the same deleted-antecedent shape as nullability.

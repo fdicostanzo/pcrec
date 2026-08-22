@@ -1,0 +1,59 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_premises.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+#      M docs/design/atomic_groups_measurements/out/premises.txt
+# RUN DATE   : 2026-08-22T10:18:46-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec binary: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
+
+== P1/P2: the module's two refusal sites, and their offsets ==
+  (?>a)        (?>...) requires module 'atomic-groups' (pattern offset 0)
+  (?>a|b)c     (?>...) requires module 'atomic-groups' (pattern offset 0)
+  a*+          possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+  a++          possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+  a?+          possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+  a{1,2}+      possessive quantifier requires module 'atomic-groups' (pattern offset 6)
+  a{2}+        possessive quantifier requires module 'atomic-groups' (pattern offset 4)
+  a{,2}+b      possessive quantifier requires module 'atomic-groups' (pattern offset 5)
+  (P1 is a REGISTRY row -- src/parse/registry.c. P2 is HAND-WRITTEN at
+   src/parse/parse.c:987-988, OUTSIDE the registry, which is §7's problem.)
+
+== P3: what the BASE tier does with {,n} TODAY -- must not change ==
+  a{,2}b     compile: COMPILES    subject aab -> match 0 3
+  a{,2}      compile: COMPILES    subject aaa -> match 0 2
+  a{2,}      compile: COMPILES    subject aaa -> match 0 3
+  ('match 0 3' for a{,2}b is the QUANTIFIER reading; a literal reading
+   would not match "aab" at all. libpcre2 10.46 and python 3.14 agree.)
+
+== §6.3: the lazy-then-possessive and double-quantifier shapes ==
+  a*?+         multiple quantifiers on the same item (pattern offset 3)
+  a*?+b        multiple quantifiers on the same item (pattern offset 3)
+  a*++         possessive quantifier requires module 'atomic-groups' (pattern offset 2)
+  a**          multiple quantifiers on the same item (pattern offset 2)
+  (a*++ is the row that CHANGES when the module lands: today the FIRST
+   '+' hits the possessive refusal; afterwards it is consumed as the
+   possessive marker and the SECOND re-enters the quantifier loop, so the
+   message becomes 'multiple quantifiers on the same item' -- still a
+   refusal, still D26 tier-2 correct, and a tests/reject pin to re-take.)
+
+== §11.3 rule 4's premise: a DFA artifact carries no RX_ENGINE stamp ==
+  --no-captures (a|bc){1,4}d : RX_ENGINE defines = 0
+  default       (a|bc){1,4}d : #define RX_ENGINE "vm" #define RX_ENGINE_WHY "capture group at pattern offset 0" 

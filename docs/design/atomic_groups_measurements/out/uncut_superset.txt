@@ -1,0 +1,66 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_uncut_superset.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: e45306c 2026-08-22
+# RUN FROM REPO COMMIT        : e45306c (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/
+# RUN DATE   : 2026-08-22T08:45:45-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+
+patterns (unique): 1260   cells (pattern x subject): 17640   cells where the CUT pattern matches and so does its twin: 8237
+
+R1  SOUND REJECTION
+  rule under test : uncut nomatch => cut nomatch (the prefilter may still reject)
+  violations      : 0
+  verdict         : HOLDS on this family -- the prefilter's `return 0` stays sound
+
+R2  START IS A LOWER BOUND
+  rule under test : start_uncut <= start_cut (the prefilter's start may seed the first attempt, never be reported)
+  violations      : 0
+  verdict         : HOLDS on this family
+
+R3a END IS AN UPPER BOUND (the MRL-CEILING rule)
+  rule under test : end_uncut >= end_cut  -- REQUIRED for `window_end` to be a sound MRL ceiling
+  violations      : 122
+  verdict         : REFUTED -- `window_end` from the prefilter DELETES real matches
+     cut (?>a|ab)c|abcd               uncut (?:a|ab)c|abcd               subj 'abcd'    cut=(0, 4) uncut=(0, 3)
+     cut (?>a|ab)c|abcd               uncut (?:a|ab)c|abcd               subj 'xxabcd'  cut=(2, 6) uncut=(2, 5)
+     cut (?>ab|a)b|abcd               uncut (?:ab|a)b|abcd               subj 'abcd'    cut=(0, 4) uncut=(0, 2)
+     cut (?>ab|a)b|abcd               uncut (?:ab|a)b|abcd               subj 'xxabcd'  cut=(2, 6) uncut=(2, 4)
+     cut (?>ab|a)bc|abcd              uncut (?:ab|a)bc|abcd              subj 'abcd'    cut=(0, 4) uncut=(0, 3)
+     cut (?>ab|a)bc|abcd              uncut (?:ab|a)bc|abcd              subj 'xxabcd'  cut=(2, 6) uncut=(2, 5)
+     ... 116 more
+
+R3b end_uncut > end_cut (ceiling merely loose, harmless)
+  rule under test : informational: how often the uncut end OVERSHOOTS
+  violations      : 133
+  verdict         : overshoots (harmless direction)
+     cut (?>a|ab)c|ab                 uncut (?:a|ab)c|ab                 subj 'abc'     cut=(0, 2) uncut=(0, 3)
+     cut (?>a|ab)c|ab                 uncut (?:a|ab)c|ab                 subj 'abcd'    cut=(0, 2) uncut=(0, 3)
+     cut (?>a|ab)c|ab                 uncut (?:a|ab)c|ab                 subj 'aabc'    cut=(1, 3) uncut=(1, 4)
+     cut (?>a|ab)c|ab                 uncut (?:a|ab)c|ab                 subj 'xabc'    cut=(1, 3) uncut=(1, 4)
+     cut (?>a|ab)c|ab                 uncut (?:a|ab)c|ab                 subj 'xxabcd'  cut=(2, 4) uncut=(2, 5)
+     cut (?>a|ab)c|ab                 uncut (?:a|ab)c|ab                 subj 'abcabc'  cut=(0, 2) uncut=(0, 3)
+     ... 127 more
+
+INFORMATIONAL: cells where start_uncut < start_cut (the emitted search loop's `attempt_position++` retry is REACHED): 180
+     cut (?>a*|ab)c                   subj 'abc'     cut=(2, 3) uncut=(0, 3)
+     cut (?>a*|ab)c                   subj 'abcd'    cut=(2, 3) uncut=(0, 3)
+     cut (?>a*|ab)c                   subj 'aabc'    cut=(3, 4) uncut=(1, 4)
+     cut (?>a*|ab)c                   subj 'xabc'    cut=(3, 4) uncut=(1, 4)
+     cut (?>a*|ab)c                   subj 'xxabcd'  cut=(4, 5) uncut=(2, 5)
+     cut (?>a*|ab)c                   subj 'abcabc'  cut=(2, 3) uncut=(0, 3)
+
+NOTE ON R3a's ZERO CASE: a zero here would be a property of THIS family, not a theorem. The design does not rest on it either way -- see atomic_groups_design.md §4.3.

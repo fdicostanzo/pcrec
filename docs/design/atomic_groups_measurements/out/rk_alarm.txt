@@ -1,0 +1,35 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_rk_alarm.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 955e1ae 2026-08-22
+# RUN FROM REPO COMMIT        : 955e1ae (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/rk_alarm.txt
+# RUN DATE   : 2026-08-22T08:47:59-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+baseline: RegKind enumerators today
+  741:    RK_ESC,           /* doorway 1: after '\'             — one byte decides */
+  742:    RK_GROUP,         /* doorway 2: after '(?'            — one byte decides */
+  743:    RK_VERB,          /* doorway 3: after '(*'            — a NAME decides   */
+  744:    RK_CLASSBRACKET,  /* doorway 4: after '[' in a class  — one byte decides */
+
+
+files offered to gcc      : 28
+files that compiled clean : 28
+-Wswitch diagnostics naming the new enumerator: 0
+sites:
+
+VERDICT: a new RegKind raises NO build alarm. Adding one is therefore
+         a change whose incompleteness is INVISIBLE to the compiler,
+         and the design must supply the missing check itself.
+restore VERIFIED: src/core/internal.h is byte-identical to its pre-probe copy
