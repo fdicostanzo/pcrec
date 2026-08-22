@@ -1347,9 +1347,10 @@ measured behaviour today and must be byte-identical after (§11.4's S-BR7).
 `(?J)` is the one construct whose gate is a *different* module's letter
 (`mod_modifiers.c`'s `case 'J'`), the same cross-module shape `(?m)` already
 has for `assertions` — and D65's implementation record already records that
-shape and why the classifier forces `"all"` open rather than one module. So
-`(?J)` under `--features modifiers` alone must refuse naming `backrefs`, and
-under `--features modifiers,backrefs` must work.
+shape and why the classifier forces `"all"` open rather than one module. §10's
+measured matrix is the whole story, including the part that is easy to get
+wrong: `(?J)`'s refusal comes from **two different places** depending on which
+modules are on, and only one of them is the letter this module changes.
 
 ---
 
