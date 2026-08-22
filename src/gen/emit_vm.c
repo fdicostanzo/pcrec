@@ -4809,6 +4809,10 @@ typedef struct {
     long long budget, bt_frames, trail_frames, ceiling;
     int       nstate, nguard, nlow, nmark, ncaps;
     bool      has_budget, prefilter;
+    /* [M6.5.2] does this artifact contain a backreference? Read only by the
+     * listing's prefilter line, which without it names a FLAG the caller did
+     * not pass as the reason a backref pattern has none. */
+    bool      has_bref;
     const char *why;
 } VmStamp;
 
@@ -4874,9 +4878,22 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
      * text. The "yes" text does not need the same split: a forced-on
      * prefilter (-fprefilter under --engine=vm) is the SAME machinery as an
      * auto-derived one, §6.1's exactness claim unchanged either way. */
+    /* [M6.5.2] A THIRD "off" ROUTE, tested FIRST because it is the one no flag
+     * explains: a BACKREFERENCE pattern has no prefilter under ANY invocation.
+     * Erasing a backreference is a real approximation that is not even a
+     * SUPERSET once the referenced group's transitive closure holds an
+     * assertion or an atomic/possessive operator, and where it IS a superset
+     * its leftmost SPAN differs from the true one on a large fraction of
+     * subjects -- so there is no exact window to hand the VM either way
+     * (backrefs_design.md §7). Without this arm the listing said
+     * "NO (--engine=vm)" for a pattern compiled under `auto`, i.e. a
+     * diagnostic naming a flag the caller did not pass. */
     sb_printf(o, "; prefilter    %s\n", st->prefilter
               ? "yes -- the capture-erased forward+reverse DFA pair hands the VM"
                 " an exact window (S6.1); the VM never scans"
+              : st->has_bref
+              ? "NO (backreference) -- the erased approximation is neither a"
+                " sound superset nor the true span (S7); no flag changes this"
               : (cx->opt->flags & PCREC_NO_PREFILTER)
               ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
               : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
@@ -6375,6 +6392,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         st.ncaps = ncaps;
         st.has_budget = has_budget;
         st.prefilter = prefn != NULL;
+        st.has_bref  = (v.enc_mask &
+                        (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)) != 0;
         st.why = job->fit.why;
         vm_render_listing(&v, &job->irsb, &st);
     }
