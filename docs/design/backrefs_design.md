@@ -82,7 +82,22 @@ group's reported span). E3-E9 and E11 CLOSED. Two new:
 |---|---|---|
 | **E12 (MED-HIGH)** | the ASSERTION-FREE gate is necessary but NOT SUFFICIENT — an ATOMIC group or POSSESSIVE quantifier beneath the referenced `A_CAP` breaks the superset for a second structural reason (6/8 cells, controls holding) | §7.2, §7.4, §13 P-7. **This one is the lane's own failure and P-7 says so**: the first draft NAMED this gap, the first revision replaced the gap with a condition and stated the condition without it, leaving both halves on the page unjoined |
 | **E13 (MED)** | for a by-name reference over a dup-name run, the MARKED set must be EVERY member — the resolution chain reads them all at match time, so an unmarked member re-admits E1 through it | §3.2.4 (marked set = union of every `A_BREF`'s `refs`), §11.4 S-BR15b, §11.1 (`dupnames.rxt` had no re-entry cell) |
-| E14, E10 residual, a LOW note | `simvm.py`'s `publish` defaulted to `'close'`, so a reader replaying the refutation got the corrected model silently; §3.1(a) still said "compile error THERE"; §3.2.3 omitted the `vm_work` charge §3.8 recommends | the default is REMOVED (no default, with a message naming both disciplines); §3.1(a); §3.2.3 shows the charge |
+| E14, a LOW note | `simvm.py`'s `publish` defaulted to `'close'`, so a reader replaying the refutation got the corrected model silently; §3.2.3 omitted the `vm_work` charge §3.8 recommends | the default is REMOVED (no default, with a message naming both disciplines); §3.2.3 shows the charge |
+| **E10 residual** | §3.1(a) said "is a compile error THERE" unqualified | §3.1(a) — **and this row previously claimed the fix while the sentence was unchanged.** The edit was applied without an assertion and silently matched nothing; the row is now true, and §3.1(a) records why the correction took two attempts |
+
+**THE LAST r32eng ROUND.** E12, E13, E14, the `RX_CHARGE_WORK` line and the
+primary-column change all CLOSED; both probes reproduce their archives
+exactly. **The nested-backreference gap this lane flagged is MEASURED SAFE**
+in both directions (11 families, 2,402 cells, 145 true hits, 0 vacuous
+families, 0 false negatives in either the shallow or the deep reading;
+publish-at-close correct on nested re-entry with the inner reference live at
+2,692 cells, 0/0) — §7.2 carries the result and the structural reason, and
+§13 P-7 closes the gap. One new finding:
+
+| item | what it found | where it is now |
+|---|---|---|
+| **E15 (MEDIUM)** | the gate was STRUCTURAL where it must be TRANSITIVE — the erasure a prefilter needs is the DEEP one, so a nested reference pulls in a group that may be nowhere beneath the referenced one. In 3 of 5 cells the referenced group passes BOTH conditions and the deep erasure is still a false negative | §7.2, §7.4, §13 P-7 — the conditions hold over the TRANSITIVE CLOSURE of the reference relation, computable from the same `refs` arrays §3.2.4 unions |
+| **E10 residual** | §3.1(a) was UNCHANGED while §16's row recorded it as fixed | §3.1(a) and §16 — **and both now record that the first attempt silently matched nothing.** A change reported by its author with no control on whether it happened is the same shape as the probe defects §0.3 catalogues |
 
 **THE FINAL r32chk PASS.** C2(a)(b)(c), N1, N2, N5 and S-BR12 all CLOSED —
 the prepend correction verified at both sites and re-measured with pcrec's
@@ -336,12 +351,24 @@ Three decisions, each with its reason:
 parse-resolved modifier state. A backreference is not a class under an
 option — it consumes a *variable* number of bytes decided at match time,
 which no `A_CLASS` can express. `src/opt/mrl.c`'s exhaustive-switch-no-default
-rule then earns its keep for the fourth time: adding this member is a compile
-error THERE (`src/opt/mrl.c:19-24`), and `mrl.c:32-35` has already written
-down what the decision is (**0**, P12). It is **not** a compile error
-everywhere — `vm_det_seq` (`emit_vm.c:880`) is one of the four documented
-`default:` sites and declines silently (correctly, §3.6) — so §3.6 and §11.4
-enumerate the sites the alarm does not cover rather than assuming it does.
+rule then earns its keep for the fourth time: adding this member makes
+`mrl.c` FAIL TO BUILD UNDER `make strict` (`src/opt/mrl.c:19-24`) — `-Wswitch`
+is a WARNING that the opt-in gate promotes to an error, not a diagnostic a
+plain `make` produces — and `mrl.c:32-35` has already written down what the
+decision is (**0**, P12). The alarm does not reach everywhere: `vm_det_seq`
+(`emit_vm.c:880`) is one of the four documented `default:` sites and declines
+silently (correctly, §3.6), so §3.6 and §11.4 enumerate the sites it does not
+cover rather than assuming it does.
+
+**(R32 E10, and the correction took two attempts — the first one never
+landed.** An earlier revision reported this sentence fixed and §16's change
+table recorded it as fixed while the sentence still read "is a compile error
+THERE". The edit had been written against a bulleted indentation this
+paragraph does not have and was applied without an assertion, so it silently
+matched nothing. That is the same shape as the defects §0.3 catalogues, one
+layer up: **a change reported by its author with no control on whether it
+happened.** The lane's other edits in that batch carried assertions; this one
+did not.)
 
 **(b) `refs`/`nrefs` rather than a single `capno`, UNIFORMLY.** A reference to
 a duplicated name resolves against a *set* of groups (§8.3), and those numbers
@@ -1571,13 +1598,61 @@ backtracking. The erased copy is a fresh possessive loop that eats the
 following `a` and cannot give it back. A backreference is never atomic even
 when the group it names is.
 
-**So the corrected gate is: the erasure is a superset IFF the referenced
-group is ASSERTION-FREE *and* ATOMIC/POSSESSIVE-FREE.** Both halves are cheap
-and syntactic — beneath the referenced `A_CAP`, no
+**AND THE GATE MUST BE TRANSITIVE, NOT STRUCTURAL (R32 E15) — the third and
+last correction to this claim.** The erasure a DFA prefilter actually needs is
+the DEEP one: a nested reference inside the referenced group must ITSELF be
+erased, which pulls in whatever group THAT reference names — and that group
+may be nowhere beneath the referenced one. A gate that inspects one subtree
+therefore passes patterns whose deep erasure is unsound. MEASURED, same
+positive control (`out/erasure_hazard.txt`, the TRANSITIVE section); in every
+row **group 2 — the referenced group — is assertion-free and
+atomic/possessive-free, so the two-condition gate ACCEPTS all five**:
+
+| true pattern | DEEP erasure | subject | true | deep | false negative? |
+|---|---|---|---|---|---|
+| `^(\Ga)((b)\1)\2$` | `^(\Ga)((b)\1)(?:(?:b)(?:\Ga))$` | `"ababa"` | (0,5) | **None** | **yes** |
+| `^(^a)((b)\1)\2$` | `^(^a)((b)\1)(?:(?:b)(?:^a))$` | `"ababa"` | (0,5) | **None** | **yes** |
+| `(\ba)((b)\1)\2` | `(\ba)((b)\1)(?:(?:b)(?:\ba))` | `"ababa"` | (0,5) | **None** | **yes** |
+| `^(a)((b)\1)\2$` | `^(a)((b)\1)(?:(?:b)(?:a))$` | `"ababa"` | (0,5) | (0,5) | no |
+| `^(a\|c)((b)\1)\2$` | `^(a\|c)((b)\1)(?:(?:b)(?:a\|c))$` | `"ababa"` | (0,5) | (0,5) | no |
+
+**3 of 5.** The assertion sits in group 1, reachable only THROUGH group 2's
+nested `\1`. And the SHALLOW erasure — which keeps the inner reference — is
+sound here but is not a candidate at all: it still contains a backreference,
+so no prefilter DFA can be built from it.
+
+**So the final gate is: both conditions hold over the TRANSITIVE CLOSURE of
+the reference relation** — beneath the referenced `A_CAP` *and* beneath every
+group reachable from it through nested references. It is computable from the
+same `refs` arrays §3.2.4 already unions, so it costs one walk rather than a
+new analysis. Concretely: no
 `A_BOL`/`A_EOL`/`A_END`/`A_WORDB`/`A_NWORDB`/`A_GSTART`/`A_KRESET`, no
-lookaround, and no atomic group or possessive quantifier. **[M6.4] lands
-first, so the second half's population is LIVE from the day this module
-ships** — it is not a future concern.
+lookaround, no atomic group and no possessive quantifier anywhere in that
+closure. **[M6.4] lands first, so the atomic/possessive half's population is
+LIVE from the day this module ships.**
+
+The atomic/possessive half applied transitively was **measured and NOT found
+to bite** (0 of 4 cells) — recorded as measured-and-not-found rather than as
+proved, because four cells are one shape. The gate applies both halves
+transitively regardless, since the cost is the same walk.
+
+**NESTING ITSELF IS SAFE, and that closes P-7's last named gap.** The
+previous revision flagged a nested backreference — a reference inside a
+referenced group — as untested in either direction. The R32 panel measured
+it: over **11 families and 2,402 cells with 145 true hits and 0 vacuous
+families**, the erasure REMAINS a superset for nested references in both the
+shallow and the deep reading, at **0 false negatives**; and publish-at-close
+gives libpcre2's answer on nested re-entry with the inner reference live
+(2,692 cells, 0 divergences and 0 reversed spans). Their `re5_nested_erasure.py`
+re-runs on this tree and reproduces. The figures are the panel's, cited rather
+than re-derived here.
+
+**The structural reason, which is why nesting differs from the other two:** an
+inner group can only be re-set by re-entering the OUTER one, and the trail
+keeps the two in sync, so at the reference site the inner value is the one
+that produced the outer capture. Nesting is language-denoting; an assertion
+and an atomic/possessive operator are not. That is the distinction the gate
+turns on, and it is why the gate names those two and not nesting.
 
 **This does NOT touch §7.1's ruling**, and the direction is why: §7.1 refuses
 the prefilter outright, which is the safe side of an unsound approximation.
@@ -1679,13 +1754,17 @@ analysis §7.4 charters.
 
 Two sound weaker uses, neither in this module:
 
-- **A NOMATCH-ONLY prefilter, GATED ON A REFERENCED GROUP THAT IS BOTH
-  ASSERTION-FREE AND ATOMIC/POSSESSIVE-FREE.**
-  The erasure never false-negatives *under BOTH conditions* (§7.2, corrected
-  after R32 E2 and again after the re-check's E12), so running it and
-  answering `nomatch` outright is sound there and UNSOUND without either half
-  — the first draft chartered this with no condition at all, and the first
-  revision with only the assertion half.
+- **A NOMATCH-ONLY prefilter, GATED ON THE TRANSITIVE CLOSURE of the
+  reference relation being BOTH ASSERTION-FREE AND ATOMIC/POSSESSIVE-FREE.**
+  The erasure never false-negatives *under both conditions applied
+  transitively* (§7.2, corrected three times: R32 E2 added the assertion
+  half, the re-check's E12 the atomic/possessive half, and E15 made both
+  transitive). Running it and answering `nomatch` outright is sound there and
+  UNSOUND without any of the three — the first draft chartered this with no
+  condition at all, the first revision with only the assertion half, and the
+  second with both halves applied to one subtree. **The erasure this charter
+  needs is the DEEP one**, since a shallow erasure still contains a
+  backreference and no DFA can be built from it.
   Measured selectivity on the six families, all of which satisfy the
   condition: 23% to 98%, with three above 59%. It needs a second AST (the
   erasure is a real rewrite), a second NFA/DFA build, the assertion-free
@@ -2484,13 +2563,32 @@ R30 M6's lesson ("a named defect is not a fixed defect") arriving one level
 up: there the lane reproduced a defect it had just read about, here it stated
 a condition beside the evidence that the condition was incomplete.
 
-The corrected gate is assertion-free AND atomic/possessive-free. *Refuted
-by*: a false negative in a family satisfying BOTH halves — none found in
-12,786 distinct pairs across six families, and none in the eighteen control
-cells. **The remaining honest gap**: no family in the sweep contains a
-NESTED backreference (a reference inside a referenced group), which is the
-third structural way a group could stop being a language, and it is untested
-in either direction.
+**And R32 E15 corrected it a THIRD time**: both conditions must hold over the
+TRANSITIVE CLOSURE of the reference relation, not over the referenced group's
+subtree. In 3 of 5 measured cells the referenced group passes both conditions
+and the DEEP erasure is still a false negative, because the assertion sits in
+a group reachable only through a nested reference. So this prediction was
+wrong three times in three different ways — unconditional, then
+one-condition, then structural-where-it-must-be-transitive — which is worth
+recording as the shape of the claim rather than as three separate slips: each
+revision made the condition more specific and each time the specificity was
+still describing the wrong SCOPE.
+
+**The nested-backreference gap the previous revision named is now CLOSED, and
+in the safe direction.** The R32 panel measured it: over 11 families and 2,402
+cells with 145 true hits, the erasure remains a superset for nested
+references in both readings at 0 false negatives, and publish-at-close is
+correct on nested re-entry with the inner reference live (2,692 cells, 0/0).
+The structural reason is in §7.2 and is what makes the gate name assertions
+and atomic/possessive operators but not nesting: nesting is
+language-denoting, those two are not.
+
+*Refuted by*: a false negative in a family whose transitive closure satisfies
+both halves — none found in 12,786 distinct pairs across six families, the
+eighteen shallow control cells, the nine transitive cells, or the panel's
+2,402 nested cells. **The honest residual**: the atomic/possessive half
+applied TRANSITIVELY was measured and not found to bite (0 of 4), which is
+four cells of one shape, not a proof.
 
 **P-8. The seam interface must change (§4.5).** *Refutable by* a size ruling I
 recommend against on generality grounds. R32 E11 made the change slightly
@@ -2629,6 +2727,7 @@ something different, not merely more.
 | **C4** | ten sabotage rows | **§11.4** eighteen, led by the prefilter-on-backref WRONG-ANSWER row and publish-at-open |
 | **C5** | the built column "gains this module's rows for free" | **§11.5** the tally is asserted by NOTHING today; the assertion lands in [M6.4.2] and this module states its movement (+12/-12, plus `(?J)`) |
 | E4, E8, E9, E10, E11 | — | the return protocol carries the failure prefix; one shared fold table + a 256-byte agreement check; the revdet group-in-body interaction named; `-Wswitch` is a warning `make strict` promotes; `pcrec_enc_ready` joins the cost list |
+| **last round E15** | the gate inspected the referenced group's SUBTREE | §7.2/§7.4/§13 P-7: both conditions hold over the TRANSITIVE CLOSURE of the reference relation (3/5 deep-erasure false negatives with the referenced group passing); the nested-backreference gap CLOSED SAFE on the panel's 2,402 cells, with the structural reason recorded |
 | **re-check E12/E13** | the erasure gate was assertion-freedom alone; the marked set was "referenced groups" | §7.2/§7.4/§13 P-7 (gate is assertion-free AND atomic/possessive-free — the population is LIVE because [M6.4] lands first); §3.2.4/§11.4/§11.1 (marked set = union of every `A_BREF`'s `refs`; S-BR15b; `dupnames.rxt` gains re-entry cells) |
 | **re-check C2/N1/N2** | the complement check's count had no provenance; S-BR17 was behavioural; the tally prediction conflated two row sets | §4.4 (declared column + scoped guard + token stripping), §11.4/§8.2 (structural detector; the tiebreak reclassified as CORRECTNESS), §13 P-11/§11.5 (47/49/6 over 102 rows) |
 | C6-C14, C15-C20 | — | §9's built predictions cite §5.3; `\k<n>` undeclared is a REFUSAL; distinct-subject counts and one family removed; the filler's letters now differ; drivers specified with six sections and exact guards; §12's pointers moved under `docs/`; four probe defects fixed; `\0`'s gating decided |
