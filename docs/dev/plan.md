@@ -239,14 +239,31 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   `(?>a|ab)c` all decline as PCRE2 does) and is the base-tier second oracle.
   Substeps:
   - [M6.4.1] archived to plan_completed.md (completed 2026-08-22 — design APPROVED by the R31 panel at lane/agdesign 21e173e, merged 497a28f: docs/design/atomic_groups_design.md + atomic_groups_measurements/; D67 SR-8 built here; [ENG-CUT] chartered; K29 found)
-  - [M6.4.2] STATE:not-started — IMPLEMENTATION (one lane unless the design
-    waves it): parser producer (src/parse/mod_atomic_groups.c), AST node(s),
-    VM lowering, EngineAnalysis registration, free discharge, corpus
-    tests/atomic_groups/ (oracle-verified: python re base tier + libpcre2
-    differential drivers over subjects x startpos, the assertions module's
-    shape), mech sabotage rows, identity gate, CLAUDE.md updates,
-    compliance-refresh, registry built column flips to built for every
-    construct the module ships.
+  - [M6.4.2] STATE:started (lane `lane/agimpl` DELIVERED 2026-08-22; the row stays started until the manager reviews and merges — `completed` is a merge fact, not a lane one) — IMPLEMENTATION, one wave
+    in four slices, awaiting manager review + merge. What landed: `A_ATOMIC`
+    and both producers (`(?>` through a port, `X q+` through `p_rep`'s
+    desugaring); the four RK_QUANTSUFFIX registry rows and THIRTEEN registry
+    sites (the design enumerated eleven; a twelfth was a `const RegRow *all[4]`
+    in registry_check.c whose own loop ran to RK_COUNT, found by a SEGFAULT,
+    and a thirteenth was tests/cli's case10 routing sweep + case11); `vm_atomic`
+    plus the four-condition LIFT with checked rung preconditions; K29 FIXED and
+    ordered before the lift; SR-8 BUILT (D67) with `forces_kreset`, the [M4.7a]
+    tripwire and its `\K` exception all RETIRED into it; the free discharge;
+    RULE H3 at three sites; tests/atomic_groups/ (748 cases, 722 re-verified
+    against libpcre2); run_atomic_diff.sh (39,326 cells x 3 arms + the discharge
+    and entries sections); the byte-identity gate against a PINNED PRE-MODULE
+    COMMIT; seven codegen rules; sabotage rows S88-S100; the `-fno-atomic-
+    discharge` knob.
+    STILL OWED AT CLOSE ([M6.4.4]'s): the canonical `run_sabotage_matrix.sh`
+    figures for S88-S100 (each row carries a marked PREDICTION today — the
+    lane never runs the matrix), and the compliance page refresh.
+    TWO THINGS THE MANAGER MUST RULE, both raised with evidence in the lane's
+    report: U9 (now REACHABLE for the first time, pcrec agreeing with python and
+    a hand derivation against libpcre2 — held in tests/known_fail/u9_atomic.rxt
+    rather than decided by the lane), and three places the approved design is
+    WRONG where the lane deviated deliberately (possessify's `pss_walk` is NOT
+    transparent to `A_ATOMIC`; the free discharge is UNSOUND for a lazy body;
+    the STRATS stamp must read the emitted shape, not `Ast.possessive`).
   - [M6.4.3] STATE:started (cell agd27 created 2026-08-22 10:3x from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py driver + GOAL_FACTS.md = the approved design's Appendix B; sonnet author in flight, in parallel with the design's final revision) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
     author denied src/ and tests/; written from the PCRE2 goal; may be
     AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the

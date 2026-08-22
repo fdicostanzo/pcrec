@@ -2412,7 +2412,7 @@ predicted one spelling per wave; wave E corrected it to one per construct
 that can make a pattern IMPOSSIBLE, and module `assertions` had landed
 all of them by then. Nothing was added after wave D.
 
-## K29 — OPEN, found 2026-08-22 (R31 panel critic r31eng, read-only, on the shipped binary at 4c5f508/036acd6 lineage; defect pre-existing since [ENG-BREP]'s counter rung)
+## K29 — FIXED 2026-08-22 in [M6.4.2] (found the same day by R31 panel critic r31eng, read-only, on the shipped binary at 4c5f508/036acd6 lineage; defect pre-existing since [ENG-BREP]'s counter rung)
 
 **What.** The VM emitter's counter rung has an UNBOUNDED arm that tails
 into the plain frames star: `vm_counter_fits` accepts `rmax < 0` when
@@ -2434,13 +2434,46 @@ delete only provably-dead frames). But it is a D46 stamp that lies
 `RX_NSLOTS`, and the frame/trail budget `vm_cost_rep` computes for the
 possessive path is not the path emitted.
 
-**Why it matters NOW.** [M6.4]'s design (RULE 3) lifts user-written
+**Why it mattered NOW.** [M6.4]'s design (RULE 3) lifts user-written
 possessives `X{n,}+` onto the same rungs; through this arm a SEMANTIC
 possessive would emit an ordinary backtracking star and answer the
-UNCUT language — a miscompile. The fix therefore travels with [M6.4.2]
-(R31 E2 disposition): emit the exit cut in the unbounded tail (or do
-not mark), plus a per-dispatch-path structural check that every
-possessive path ends in a cut. Until then the free-discharge measurement
-in atomic_groups_design.md §5.3 is NOT contaminated — it reads the stamp
-as a proxy for the VERDICT, which the stamp faithfully reports; it is
-the emitted code the stamp is unfaithful to.
+UNCUT language — a miscompile. The fix therefore travelled with [M6.4.2]
+(R31 E2 disposition), and its ORDERING was ruled: the K29 fix lands
+BEFORE the lift, because landing the lift first turns an observability
+defect into a wrong answer. Until it landed the free-discharge
+measurement in atomic_groups_design.md §5.3 was NOT contaminated — it
+reads the stamp as a proxy for the VERDICT, which the stamp faithfully
+reports; it was the emitted code the stamp was unfaithful to.
+
+**THE FIX (2026-08-22, [M6.4.2] slice 2).** `vm_counter_rep`'s unbounded
+arm now emits the exit cut in the tail rather than handing it to
+`vm_star` bare: the star is emitted with its `next` pointing at a new
+label that cuts back to the mark and then takes the continuation. The
+star's exits ALL land there — its MRL test, its empty-iteration guard,
+and the pop of any frame it pushed — so one cut at that label discards
+the whole loop's frames AND the mandatory phase's, back to the mark
+recorded before any of them. `resume_depth >= mark` holds because the
+mark is set before the first push.
+
+**MEASURED, `--engine=vm --no-captures`, RX_CUT call sites before -> after:**
+
+    (?:ab|b){8,}c        0 -> 1
+    (?:ab|b){9,}c        0 -> 1
+    (?:abc|bc){8,}d      0 -> 1
+    (?:ab|b){8,12}c      5 -> 5     (the bounded twin, unmoved)
+    a{8,}b               0 -> 0     (the CURSOR rung: frameless, owes no cut)
+
+and every ANSWER identical to the pre-fix compiler's and to libpcre2's
+over 35 cells. `[M6.4-ATOMIC rule 5]` in tests/codegen/ is the
+per-dispatch-path structural check E2 asked for: six paths x both
+preferences, each naming which cut-equivalence answer its path gives, so
+a future rung change cannot silently drop a path the way this one was
+dropped.
+
+**IT CHANGES EMITTED BYTES, and the identity gate says how much.** The
+fix moves the artifact for every `X{n,}` with `n >= K` and a positive
+§2.2 verdict — patterns with no atomic construct in them. `[M6.4.2]`'s
+byte-identity gate (tests/codegen/run_atomic_identity.sh) measured the
+corpus overlap at ZERO: no `.rxt` pattern anywhere under tests/ is in
+that family, so the gate asserts a flat zero difference and needed no
+exception bucket.

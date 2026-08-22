@@ -55,7 +55,18 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   section 2 would die in the loader and section 1's ceiling would have to be
   loosened until it asserted nothing. Its CPU budget is currently set by K25
   (minimization), not by anything K7's accounting bounds; see its CLAUDE.md
-- **known_fail/** — regressions asserting CORRECT behavior for confirmed-but-deferred bugs (docs/dev/known_issues.md); excluded from `make test` so the suite stays honest. EMPTY as of 2026-08-15 (K18 fixed and moved to tests/base/, joined there by the three axes its own repro could not reach), which the ratchet treats as a legitimate good state rather than an error
+- **known_fail/** — regressions asserting CORRECT behavior for
+  confirmed-but-deferred bugs (docs/dev/known_issues.md); excluded from `make
+  test` so the suite stays honest, and RUN by the ratchet, which fails if one
+  starts passing. **NO LONGER EMPTY as of [M6.4.2]** (it was, from 2026-08-15,
+  when K18 was fixed): `u9_atomic.rxt` holds the two U9 patterns with
+  LIBPCRE2's answer. That entry is unusual for this directory and says so in
+  its own header — U9 is filed as a PCRE2-SIDE oddity, pcrec agrees with python
+  and with a hand derivation, and D26 nonetheless makes PCRE2 the source of
+  truth. The module landing is the event U9's own entry names as making it
+  reachable, so the ratchet is the honest holding place for a ruling nobody has
+  made yet: the cells stay, they stay loud, and if pcrec is ever changed to
+  reproduce U9 this file FIRES
 - **vm/** — the [M4.5b] backtracking VM engine's own tests: the two bounds
   (step budget, frame capacity) each driven to ITS OWN limit and required to
   produce its own code, the honest artifact stamps (frame_capacity,
@@ -240,6 +251,31 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   python-validates-the-plumbing arm had to be re-pointed at the sweep's own
   `\G`-free control patterns.
   See its own CLAUDE.md, and docs/dev/upstream_issues.md U11, U11b and U11c
+- **`atomic_groups/`** — module `atomic-groups` ([M6.4.2]): `(?>...)` and the
+  possessive suffixes `*+ ++ ?+ {n,m}+`, which are the SAME construct (PCRE2
+  defines `X*+` as `(?>X*)` and parse.c desugars to the same tree). Seven
+  `.rxt` files, and the ORACLE RULE is the project's default with the
+  divergences DETECTED rather than declared: every expectation was produced by
+  libpcre2 10.46 through the committed ctypes binding, python `re` was driven
+  over the SAME cells in the same pass, and a block carries `# pcre2-only`
+  exactly where python disagreed or could not compile — 13 of 729 cells, which
+  turn out to be EXACTLY the four families the design's Appendix B.3 predicted
+  (`\K`/`\G`, the BRACE possessive over a two-exit body where python cuts per
+  ITERATION and PCRE2 at the GROUP EXIT, U9, and scoped `(?i)`).
+  `run_atomic_diff.sh` is the behavioural instrument and its ENGINE arm is the
+  point: §4's hazard — the capture-erased prefilter necessarily answers for the
+  UNCUT language, so its span END is not a bound on a cut match's end, measured
+  at 114 cells of silent match loss before RULE H3 — lives in the DIFFERENCE
+  between the default hybrid and `--engine=vm`. It also carries the
+  `-fno-possessify` arm (the only place sabotage S92 can be red), the DISCHARGE
+  differential (the only thing checking "changes no answer" for a rewrite that
+  changes which ENGINE a pattern gets), and the three entries side by side with
+  `\G(?:PAT)` as the match-here oracle. **U9 is NOT here**: its two patterns sit
+  in `known_fail/u9_atomic.rxt` with libpcre2's answer, which pcrec does not
+  reproduce — a ruling somebody owes, held loud rather than decided by the
+  implementation lane. See its own CLAUDE.md for why the sweep had to be
+  batched (44 cells/minute -> 60 seconds) and for the non-vacuity floor that
+  stops the whole thing being green on a compiler that ignores the atomicity
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is
