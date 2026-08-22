@@ -167,3 +167,51 @@ arm + capacity row); C11 (driver suite word; -fno-possessify corpus arm);
 E8 (explicit declining arms); D3, D5, C12, C13, C15, C16 (wording/labels);
 D4 (manager adds the [ENG-CUT] row at merge).
 Focused re-check: r31eng on E1/E2/E3/E4 as revised; r31chk on C1/C2/C3/C5.
+
+## Revision round — lane/agdesign 4c5f508 → b736071 (15 commits; doc 1356 → 2045 lines; 11 probes)
+
+Per-finding dispositions delivered by the lane (all nine HIGH reproduced on
+the shipped binary before rewriting): M-1 §5.1 = the stamping rule, §8 an
+explicit reversal quoting the tripwire, contract notes adopted, S96/S97;
+E1 §3.2.2 nullable bodies take the general shape, checked precondition;
+E2 §3.2.1 the five-path dispatch table MEASURED (probe_cut_dispatch.sh:
+cursor 0 cuts, frames-bounded 3, frames-unbounded 1, revdet 0 RX_CUT + 1
+second-spelling, counter-bounded 5, counter-unbounded 0 with the mark
+written — K29 reproduced), §3.2.4 K29 ordered BEFORE the lift; E3+C5 one
+predicate at :5233/:5177/:4611, rule 1 on two sources scoped nclamp>0,
+S88 designed to turn 1(a) red and 1(b) green; E4 §3.2.5 `vm_cuts(a)`
+shared by emitter + four pre-passes (vm_rev_canmove the sharpest), S98;
+C1+C8 six-row cost table with lines, §7.4.1 field values, R3 reads the
+dump; C2 probe_puc_targeted.py — refutable := positive AND bites, 10,504
+refutable / 0 violations with FLOORS; C3 failing direction on the real K29
+artifact, both spellings; D1/C7 10 (now 15 of 109 with E6's rows); D2
+re-grounded on D62; E6 28 non-unique-body equivalence cells + the per-
+iteration divergence family (§6.2.1, B.3.1); C14 B.6 deleted. All SHOULD
+items done (S88-S98; cut_proto.c trail-rewind arm: 17 rows, 10 cut-, 4
+trail-discriminating; fifteen -Wswitch sites tabulated; vm_cost arm +
+S95; -fno-possessify corpus arm; closed suite vocabulary flagged as a
+slice-4 blocker; explicit declining arms; k23_design quote verbatim).
+
+**Lane finding the panel missed:** a SECOND cut spelling — vm_revdet_rep
+assigns `resume_depth = <prefix>_rvN_frame_mark` (:2833, :2966) and never
+touches RX_CUT; a check matching only `RX_CUT(` reports a false zero on
+the revdet rung (vm_cut's own header records a probe making that mistake).
+Every §11.3 check now matches both spellings (§3.2.3).
+
+**Lane disagreements, all ACCEPTED by the manager:** (1) "every path ends
+in a cut" is too strong — the CURSOR rung's possessive path is frameless
+(:2026-2027), so its correct answer is no cut; requirement restated as
+CUT-EQUIVALENCE. (2) one `all_kinds[]` (syntax_dump.c:145, iterated :165
+and :1080) plus enabled.c:114 — three edit sites, cost unchanged. (3) the
+"Q wrapping the atomic group" position is EMPTY BY CONSTRUCTION (§2.2's
+U2 on `a|ab` read transparently declines; 0 of 8,820) — an assertion, not
+a floor, and a recorded design finding: possessify's transparency toward
+A_ATOMIC is sound but incomplete (deliberately not taken in [M6.4.2]).
+
+**Flagged by the lane:** §14 item 8 (the identity claim) is the largest
+unmeasured claim and cannot be measured until the module exists — the
+re-check is told.
+
+Focused re-check dispatched: r31eng on E1/E2/E3/E4 (+ the new claims:
+cut-equivalence, second-spelling coverage, nullable routing); r31chk on
+C1/C2/C3/C5 (+ C6's discriminating rows, numbering, closures).
