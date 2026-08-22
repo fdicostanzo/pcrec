@@ -45,3 +45,36 @@ two sibling-doc stale lines independently confirmed, and the lane did NOT edit
 them; D26 tiering clean in §6.3; state caps current; all 9 out/ headers
 archiver-written, probe↔output 1:1, both CLAUDE.md files complete; every other
 headline number verbatim against its archive.
+
+## r31eng — engine semantics vs the oracle (received 09:3x)
+
+Probes under the session scratchpad `r31eng/` (ora.py, fd.py, puc.py,
+puc2.py); 40/41 interaction cells independently re-measured, 0 mismatches.
+
+| ID | Sev | Claim / location | Counter-evidence | Verdict | Disposition |
+|---|---|---|---|---|---|
+| E1 | HIGH | RULE 3 (§3.2): lift `A_ATOMIC(A_REP(X))` onto the existing possessive rungs, "same answers" | `vm_poss_star` (emit_vm.c:2483-2492) has NO empty-iteration guard BY DESIGN — §2.2 never possessifies a nullable body; RULE 3 deletes that antecedent. `(?:a*)*+`, `(?:a?)*+b`, `(?:|a)*+`, `(?:a*)++`, `(?>(?:a*)*)b` — all legal, all answered by both oracles — would HANG the emitted matcher (zero-consumption push/cut cycle, no work charge fires) | REFUTED | FIX: explicit nullable carve-out — nullable bodies take the general §3.3 shape (mark, `vm_star` WITH its guard, exit cut); `vm_poss_star`'s precondition becomes a CHECKED assertion; prototype coverage for the lift (cut_proto.c covers only §3.3's general shape) |
+| E2 | HIGH | RULE 3's enumeration of "the possessive rungs" (poss_star, poss_chain, counter_poss_opt) | `vm_counter_fits` accepts unbounded when `rmin >= K` (:695); `vm_counter_rep`'s unbounded arm (:3355-3358) tails into `vm_star`, which never reads `a->possessive` → NO cut emitted. MEASURED on the shipped binary: `(?:ab|b){8,}c` stamps `RX_VM_STRATS 0x1` (POSSESSIVE), allocates `RX_SLOT_CUT_MARK0`, writes it once, reads it NOWHERE; the bounded twin emits 5 cuts | REFUTED | TWO items: (a) PRE-EXISTING, MEDIUM, known_issues row **K29**: the counter rung's unbounded arm under the possessify OPTIMIZATION stamps POSSESSIVE and a dead slot with no cut — harmless for answers (proof-gated) but a D46 observability lie; fix travels with [M6.4.2] (emit the exit cut in the unbounded tail, or do not mark); (b) RULE 3 must enumerate `vm_rep`'s ACTUAL dispatch (cursor / revdet / counter bounded / counter unbounded tail / frames) and every path must end in a cut — a structural check per path |
+| E3 | HIGH | H3 (§4.4): "emit_vm.c:4351 `v.mrl_win = … && !has_atomic(root)` — the ONE mandatory emitter change; the artifact's stamp is the check" | `v.mrl_win` has four occurrences (:418 decl, :4178 --emit-ir text, :4351, :4611 the STAMP); `window_end = min(window[0][1], …)` at :5231-5233 and the retry recompute at :5171 are gated on `prefn` and `v.nclamp > 0`, NEVER on `mrl_win`. The edit flips the stamp to "subject-end" and leaves the ceiling live — the structural check would AGREE WITH THE BUG | REFUTED as specified (diagnosis and predicate survive) | FIX: the site is :5232 and :5171, with :4611 reading the SAME predicate; §11.3 rule 1 must assert on the `window_end` assignment text itself (absent, or `= subject_length`) AND the stamp — two sources |
+| E4 | MED | RULE 2+3: "an emitter decision, nothing written to the tree, no copy can lose it" | `->possessive` is read at 23 sites over 8 functions incl. three PRE-PASSES that must agree exactly with emission: `vm_count_slots` (allocates the cut-mark slot — a lift it cannot see means `vm_slot_mark(v, v->nmark++)` past `RX_NSLOTS`, an OOB write in emitted code, K27's class), `vm_cost_rep` (frame/trail budgets), `vm_counter_copies`, plus `vm_rev_canmove`; and `vm_revdet_rep`'s possessive arm reads the flag → no cut under RULE 2 | WEAKENED | FIX: ONE named shared predicate (e.g. `vm_cuts(a)` = `a->possessive` or lifted-under-A_ATOMIC) used by the emitter AND every pre-pass — src/gen/CLAUDE.md's one-call-one-truth rule; the `A_ATOMIC` `-Wswitch` arms in the pre-passes are where it is threaded |
+| E5 | MED | H1 "containment, not coincidence" | Under NEGATION a smaller inner language is a larger outer one: `(?!(?>a\|ab)c)abc` on "abc" is (0,3) cut vs nomatch uncut (4 cells); §4.3's generator has no negated context | WEAKENED (holds for every pattern THIS module can compile) | FIX: scope H1 to "no negated context" with a reopen condition for [M6.6], as H5 does for H4 |
+| E6 | MED | RULE 1's spelling-pair measurement "8 pairs, both oracles agree" | every section-B row has body `a` — per-iteration vs group-exit cutting CANNOT differ there. Widened: `(?:a\|ab){2}+` on "aba" — libpcre2 **(0,3)**, python **nomatch** (python cuts per iteration); same for `{2,3}+`, `{2,}+`, `{2}+c`. A SEMANTIC divergence on a construct both support, absent from the divergence list and Appendix B | equivalence SURVIVES vs PCRE2; measurement REFUTED as evidence; divergence list incomplete | FIX: re-measure spelling pairs with non-unique-iteration bodies; add the divergence family to §6 and Appendix B as a goal fact ("`{n,m}+` over a non-unique body: take libpcre2") |
+| E7 | LOW-MED | §5.3 discharge for a NON-quantifier body `(?>X)` | the probe reads the verdict off the non-possessive twin's STRATS — needs a quantifier; the `(?>X)` arm is measured at 0 cells; possessify.c exposes no callable subtree verdict; §5.4 runs the discharge BEFORE `run_possessify` (which runs only after engine choice, :233-236) — the plumbing is unspecified | WEAKENED | RULING: ship ONLY the `A_ATOMIC(A_REP)` discharge in [M6.4.2] (measured), via a callable verdict factored out of possessify.c; the plain-group arm is deferred (follow-on or [ENG-CUT]) until measured |
+| E8 | LOW | §6.5 "the compiler will not let the module land" | `-Werror` is `make strict` only (R5-Q1); `rd_shape` declines by fallthrough (:143-146) but `rd_reverse`'s fallthrough is `rd_node`, which NULLs l/r → an EMPTY-BODY atomic, not a declined one | — | FIX: explicit `A_ATOMIC` arms that DECLINE in both; wording |
+
+SURVIVED (evidence): CUT-INV re-derived on the emitted artifact (RX_CUT one
+statement; fail-label `>`; trail_mark at push) — no path to `L_cut` with
+`resume_depth < mark` within this module's constructs; cut_proto.c honestly
+labelled (substrate byte-identical to an artifact, lowering hand-written);
+40/41 table cells + 9 new cells (captures under `*`, `\K`/`\G` at startpos,
+nested atomics) 0 mismatches; H2 on every emitted path (attempt_position
+bounded by subject_length, nclamp==0 artifact declares no window_end); H4 by
+reading both entries (`ctx->len` ceiling; `<prefix>_search` is E3's
+territory); §5.4 item 3 verbatim; free discharge extended into §14 item 4's
+gap — 198 positive × 22 long/repeated subjects = 4,356 cells, 0 violations;
+possessify-under-cut extended into §14 item 3's gap — 600 positive × 18 =
+10,800 cells, 0 violations, non-vacuity 4,966 (the critic's FIRST generator
+was vacuous — 0 non-vacuity — and was rebuilt rather than reported); revdet
+decline stronger than claimed for rd_shape; §4.2's ceiling reading reproduced;
+RULE 3's per-iteration cut HELD for every non-nullable body incl. non-unique
+ones (`(?:a|ab){2}+` routes to poss_chain(count=0), group-exit cut only).
