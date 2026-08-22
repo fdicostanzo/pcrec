@@ -1,7 +1,8 @@
 # Module `backrefs` — design
 
 **[M6.5.1]**, the design gate in front of [M6.5.2]. Covers the numeric
-backreferences `\1`..`\99` with PCRE2's octal disambiguation, the `\g`
+backreferences `\N` for any N (R32 E3: references above `\99` exist and are
+measured to `\812`) with PCRE2's octal disambiguation, the `\g`
 spellings, the `\k` spellings, `(?P=name)`, and — per the [M6.5] row's own
 ruling — **`(?J)`/DUPNAMES, which is implemented here**.
 
@@ -151,6 +152,8 @@ mistaken for "it is a backreference").
 |---|---|---|---|---|
 | `\1` .. `\9` | ok (err 115 if no such group) | yes | **yes** | yes |
 | `\10` .. `\99` | ok, or octal — §5 | yes when the count allows | **yes** | yes |
+| `\100` and above | ok, or octal — §5 | yes when the count allows (measured to `\812`) | **yes** | yes |
+| `\8N` / `\9N` (any N) | ok | **always decimal**, never octal — §5 rule 3' | **yes** | yes |
 | `\g1`, `\g10` | ok | yes | **yes** | no (`bad escape \g`) |
 | `\g{1}`, `\g{10}` | ok | yes | **yes** | no |
 | `\g{-1}`, `\g-1` | ok | yes, relative back | **yes** | no |
@@ -923,8 +926,48 @@ So: **`\1`..`\9` see the whole pattern; `\10`+ see only what precedes them.**
 A design that implements one count for both is wrong in one direction or the
 other, and no test that only uses groups-before will notice.
 
-**Rule 4 — the octal re-read's shape.** Up to three octal digits from the
-first digit; `8` and `9` terminate it (`\18` is `\01` + `'8'`); the value must
+**RULE 3' — A DIGIT RUN BEGINNING WITH 8 OR 9 IS ALWAYS A DECIMAL
+BACKREFERENCE (R32 E3).** Rule 3 as first stated is incomplete, and the gap
+is structural rather than a missing cell: `8` and `9` are not octal digits, so
+for a run starting with one of them the "re-read as octal" branch consumes
+ZERO digits and produces nothing at all. PCRE2 reads the whole decimal number
+instead. MEASURED, `out/octal_rule.txt` axis E — each row varies the group
+count and the boundary is exactly the run's own decimal value:
+
+| escape | g=0 | g=8 | g=9 | g=12 | g=81 | g=82 | g=90 | g=91 | g=100 |
+|---|---|---|---|---|---|---|---|---|---|
+| `\8` | e115 | **ok** | ok | ok | ok | ok | ok | ok | ok |
+| `\9` | e115 | e115 | **ok** | ok | ok | ok | ok | ok | ok |
+| `\81` | e115 | e115 | e115 | e115 | **ok** | ok | ok | ok | ok |
+| `\89` | e115 | e115 | e115 | e115 | e115 | e115 | **ok** | ok | ok |
+| `\91` | e115 | e115 | e115 | e115 | e115 | e115 | e115 | **ok** | ok |
+| `\812` | e115 | e115 | e115 | e115 | e115 | e115 | e115 | e115 | e115 (ok at 812) |
+
+and the count is over the **WHOLE pattern**, like rule 2's and unlike rule 3's:
+`\81` followed by 81 groups compiles and then fails at match time on the unset
+rule — a forward reference — where `\100` followed by 100 groups reads as
+OCTAL `'@'`. The two behave differently *because* `\100` has an octal reading
+and `\81` does not.
+
+**So the disambiguation is one question asked in one order**, and stating it
+this way is what makes rule 3' fall out instead of being a special case:
+
+1. Does the run start with `0`? → octal, at most three digits (rule 1).
+2. Is it a single digit `1`-`9`? → backreference, whole-pattern count (rule 2).
+3. Does the run have a valid octal reading at all (i.e. start with `1`-`7`)?
+   → backreference if that many groups exist SO FAR, else octal (rule 3).
+4. Otherwise (the run starts with `8` or `9`) → decimal backreference,
+   whole-pattern count (rule 3').
+
+**RIDER, also R32 E3: references above `\99` exist.** `\100` with 100 groups
+before it is a backreference to group 100 (measured). A construct table that
+stops at `\99` is too narrow — §2's does not any more.
+
+**Rule 4 — the octal re-read's shape**, which applies only where rule 3 sends
+control (a run starting `1`-`7`). Up to three octal digits from the first
+digit; `8` and `9` TERMINATE it (`\18` is `\01` + `'8'`) — note that
+terminating a run that has already started is a different thing from BEGINNING
+a run, which is rule 3'; the value must
 be ≤ `\377` (`\400` → **error 151**); remaining digits stand for themselves
 (`\1234` with no groups is `\123` + `'4'`). `\o{101}` is the unambiguous form
 and `\o{400}` is error 134 — a different number from `\400`'s, which is D26
@@ -993,44 +1036,59 @@ a backreference. `\10(a)..(j)`'s measured answer is exactly that boundary.
 
 ## 6. Engine selection, the socket, and the expansion (charter (c))
 
-### 6.1 The `forces` entry
+### 6.1 `A_BREF` is STAMPED; SR-8 does the consulting
 
-```c
-static unsigned forces_backref(Ctx *cx, const Ast *a, size_t *why_pos,
-                               const char **why)
-{
-    (void)cx;
-    if (!has_bref(a)) return ENGM_DFA | ENGM_VM;
-    *why_pos = /* the A_BREF's recorded pattern offset */;
-    *why     = "backreference";
-    return ENGM_VM;
-}
-```
+**REWRITTEN AFTER R32 M-1/C1, which the lane's own measurement refuted.**
+The first draft proposed a `forces_backref` entry in `analyses[]` — the `\K`
+exception's shape — and §11.5 claimed the tripwire population would "drop by
+the rows this module builds". Both were wrong, and the second was wrong in a
+way that hid the first.
 
-registered in `analyses[]` (`src/opt/select_engine.c:176-179`) beside
-`captures` and `kreset`. It **walks the AST**, following `forces_kreset`'s
-precedent and its stated reason (`select_engine.c:104-110`): the honest form
-of this question is structural, and it keeps the row correct for a future
-`discharge` hook that rewrote the backreference away.
+**What the measurement found.** `tests/registry/registry_check.c:1379-1458`'s
+engine-capability tripwire fires for any `RS_MODULE` row whose `engines` mask
+excludes `ENGM_DFA` and which carries a wired atom-position producer. Its
+population, read off the shipped binary (`--list-syntax`, module column x
+engines column): **48 rows, of which backrefs owns TWELVE** — `\k<name>`,
+`\g{-1}`, `\1`..`\7`, `\8`, `\9` and `(?P=n)` — against recursion 24,
+lookaround 6 and one each for verbs, conditionals, callouts, branch-reset,
+atomic-groups and assertions. The check's own comment (`:1422-1424`) says: *"If
+a SECOND construct arrives here, do not add a second exception: two is when
+the generic consultation has earned its axis and SR-8 is the right build."*
+`\K` is the first, `(?>` ([M6.4]) is the second, and backrefs would be a third
+exception covering twelve rows.
 
-**The twelve backref-owning registry rows' `engines` masks stay `VM_ONLY`,
-and they stop being provisional.** Frank's 2026-08-12 note called the blanket
-`VM_ONLY` "design intent" that "splits under an AOT compiler" and told readers
-not to treat it as a measured limit; §6.3 measures the split and finds the
-DFA arm has no reachable customer, so `VM_ONLY` is now the rows' actual
-classification on every build pcrec emits by default. One correction:
-`registry.c:512`'s
-`\0` row is already `ANY_ENGINE` and is right: `\0` is octal, an ordinary
-literal, and has no VM requirement at all (rule 1). The nine `VM_ONLY` digit rows
-(`\1`..`\9`), the `\k` and `\g` rows and `(?P=n)` — twelve in all — keep
-`VM_ONLY`, and unlike
-`named-groups`' three rows (D59 part 2) they do NOT get that module's free
-ride: D59's own revisit clause names "backrefs" as a live candidate for
-building SR-8, precisely because an `A_BREF` "is not an ordinary A_CAP node".
-This design does **not** build SR-8 either — the `forces_backref` row above
-answers the question directly, exactly as `forces_kreset` did — and the honest
-statement is that SR-8 remains owed to a module that needs a *general*
-engines-column consultation, of which this is still not one.
+**RULED (D67, shared with R31 M-1): SR-8 IS BUILT IN [M6.4.2].** This module
+consumes it and registers nothing.
+
+So the design here is one sentence: **every `A_BREF` node is stamped at
+construction with its producing row's `engines` mask** (`VM_ONLY` for all
+twelve rows), and SR-8's single generic `EngineAnalysis` ANDs the stamps over
+the post-discharge tree, taking `why_pos`/`why` from the first DFA-excluding
+node's row. There is no backrefs-specific selection code at all. `\0`'s row is
+`ANY_ENGINE` and produces an `A_CLASS` (rule 1), so it stamps DFA-capable and
+nothing about it reaches the VM path — which is the stamping rule getting a
+per-ROW answer right that a per-MODULE one would have got wrong.
+
+Three properties this module needs from the contract, and all three are
+recorded as contract notes in R31 M-1 rather than re-argued here:
+
+- SR-8 subsumes `forces_kreset`, **not** `forces_captures` — §6.2 depends on
+  that distinction.
+- A forgotten stamp defaults to `ANY_ENGINE`, i.e. fails in the UNSOUND
+  direction, which is what keeps the generic tripwire's demand (a VM_ONLY row
+  with a producer must refuse `--engine=dfa` by name) load-bearing rather than
+  ceremonial. §11.4's S-BR12 is this module's instance.
+- Discharge output is born `ANY_ENGINE`; copied body nodes keep their stamps.
+  This module registers no `discharge` hook (§6.3), so it is a consumer of
+  that rule, not a customer.
+
+**The twelve rows keep `VM_ONLY`, and that is now MEASURED rather than
+provisional.** Frank's 2026-08-12 note called the blanket `VM_ONLY` "design
+intent" that "splits under an AOT compiler"; §6.3 measures the split and finds
+its DFA arm has no reachable customer on a default build, so `VM_ONLY` is the
+rows' actual classification. Unlike `named-groups`' three rows (D59 part 2)
+they do NOT get that module's free ride — an `A_BREF` is not an ordinary
+`A_CAP` node, which is exactly the trigger D59's revisit clause named.
 
 ### 6.2 THE `--engine=dfa` REFUSAL, AND A PRE-EXISTING DEFECT THIS MODULE MAKES LOUD
 
@@ -1059,14 +1117,30 @@ Today the population is small (a `\K` pattern that also has a group).
 **With this module it becomes the module's entire population**, since a
 backreference without a capturing group cannot exist.
 
-**RECOMMENDATION.** The captures branch's condition tightens to *the captures
-row is the ONLY thing forcing the VM*: check the construct branch first, or
-equivalently, take the captures branch only when no other analysis contributed
-a `why`. `select_engine.c:267-283`'s loop already records the first
-DFA-excluding `why`, so the information is in hand. This is a **pre-existing**
-defect (the `\K` cell above is on today's shipped binary) that this module's
-population exposes, and it belongs in this module's wave rather than in a
-separate lane only because that is where it becomes reachable.
+**THE DEFECT SURVIVED R32; THE FIRST DRAFT'S FIX DID NOT (E5).** That draft
+said "the loop already records the first DFA-excluding `why`, so the
+information is in hand". It records only the FIRST, and `analyses[]` is
+captures-first *deliberately* (`select_engine.c:168-175` carries the
+rationale), so for `(a)\Kb` the recorded `why` is "capture group at offset 0"
+and the construct's own `why` is never computed at all. Reordering the two
+BRANCHES instead would regress the plain-captures case, which needs exactly
+the `--no-captures` advice the branch exists to give.
+
+**RULING (travels to [M6.4.2] with ASK-3, alongside SR-8):** selection records
+a SECOND `why` — the first **node-derived** exclusion — and takes the captures
+branch only when that second `why` is ABSENT. `RX_ENGINE_WHY`'s first-row rule
+is unchanged, so no artifact stamp moves and no identity gate re-baselines.
+The distinction the fix turns on is R31 M-1's contract note 1: after SR-8
+there are still two kinds of forcing, request-derived (`forces_captures`) and
+node-derived (the stamps), and only the second may suppress the captures
+advice.
+
+**This section stays as the DEFECT RECORD.** The fix is not this module's to
+land — it lands in [M6.4.2]'s engine slice, which lands first and shares the
+population shape. What this module contributes is the measurement that the
+defect's population is about to become universal: every backreference pattern
+has `ncap > 0` by construction, so on a default build every one of them takes
+the branch that gives advice which does not help.
 
 ### 6.3 The expansion: measured, and the recommendation is DO NOT SHIP IT HERE
 
@@ -1090,10 +1164,32 @@ obligation. The question this gate must answer is whether it ships now.
 The expansion's OUTPUT is itself capture-bearing, and even if it were not, the
 INPUT is: a backreference pattern has a capturing group by construction, so
 `forces_captures` (P8) returns `ENGM_VM` for it on every captures-on build no
-matter what `forces_backref` says. Captures are ON by default (D42.1). **The
+matter what the backrefs stamps say. Captures are ON by default (D42.1). **The
 expansion's entire customer set is `--no-captures` builds of backreference
-patterns** — and a caller who passed `--no-captures` has already said they do
-not want the groups, which is a small and self-selected population.
+patterns** — a small and self-selected population, since a caller who passed
+`--no-captures` has already said they do not want the groups.
+
+**AND `--no-captures` IS NOT FREE FOR THIS MODULE, which R32 E6 found and the
+first draft simply had backwards.** Under `--no-captures` **no `A_CAP` node is
+created at all** (`src/parse/parse.c:704-708`; the tree is identical to the
+non-capturing one, and a `--no-captures` artifact emits ZERO `RX_SLOT_*`). So
+a backreference under that flag has nothing to read: §3.2.3's two slots do not
+exist. The first draft's §10 matrix had no `--no-captures` row and never
+noticed.
+
+**RULING: a backreference pattern under `--no-captures` KEEPS INTERNAL SLOTS
+FOR REFERENCED GROUPS AND REPORTS NONE.** The precedent is `\K`'s exactly:
+the flag drops the group slots a caller can SEE, not the machinery a match
+needs. Concretely — `--no-captures` continues to suppress `A_CAP` for
+unreferenced groups, but a group named by some `A_BREF` is built with its
+three slots (§3.2.4's pending pair), those slots never reach `caps_out`,
+`rx_info.ncaps` stays 1, and `rx_group_entry.slot` stays -1. Without that,
+`--no-captures '(a)\1'` either miscompiles or has to be refused, and refusing
+it would delete the expansion's only customer set along with it.
+
+This does not disturb §6.3's conclusion — the expansion is still deferred —
+but it does mean the flag is an axis this module must TEST rather than one it
+can note in passing. §10 gains the row and §11.2's driver gains the arm.
 
 **MEASUREMENT 2 — the cost, on the shipped compiler.** MEASURED,
 `out/expand_cost.txt` §1. Each row hands the rewrite's actual output to
