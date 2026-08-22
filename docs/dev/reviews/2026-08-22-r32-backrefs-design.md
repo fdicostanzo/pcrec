@@ -161,3 +161,41 @@ a row); C6, C7, C8, C9, C10, C11, C12, C13; E10, E11, C14-C20 (wording,
 probes, archiver re-scope + one-batch re-archive). Rulings from §15 as
 sent (ASK-1..4). Focused re-check: r32eng on E1/E2/E3 as revised; r32chk on
 C2/C3/C4/C5.
+
+## Revision round — lane/brdesign 4cd461f → b3d0b32 (27 commits since main; doc 1,708 → 2,341 lines; ten probes)
+
+E1 verified by the lane before adoption (hand-traced `^(?:(a|b\1)y)+` on
+"aybay" to ref_s=2 > ref_e=1; libpcre2 (0,5) g1=(2,4) = publish-at-close's
+answer). The critic's simvm.py ADOPTED with one `publish` parameter
+("a lane that re-implements the instrument that refuted it cannot detect
+that it has softened it"); probe_publish_discipline.py, 5,808 cells in
+three populations — re-entry 2,178 (open: 138 divergences / 40 reversed
+spans; close: 0/0), ordinary 1,452 (0/0 both), backref-free CONTROL 2,178
+(0/0 both). The control arm is what SCOPES the fix: publish-at-close for
+REFERENCED groups only (per-group pending slot; pair published together at
+close, both trailed; +1 slot, +1 trailed write per marked group per
+traverse; A_BREF's emitted code unchanged), so §11.3's byte-identity holds
+by construction. Oracle-side padding only (the probe's first run reported
+a shape mismatch in the CONTROL column and was fixed on that side).
+
+All ten MUSTs and every SHOULD done (table in the lane's report): E2 the
+assertion-free gate with 6/10 false negatives as the POSITIVE control; E3
+rule 3' (8/9-led runs decimal, four ordered questions, `\N` any N); M-1
+stamping + §11.5 (48 stays, wired 1→13, the hand-typed 48 named); E7+C2
+fixture-declared, comment-stripped per-site counting; C3 per-cell
+markings + four upstream_issues entries; C4 eighteen rows led by S-BR14
+prefilter-on-backref; C5 the cross-module tally obligation with +12/-12 +
+(?J); E4 negative-encoded failure prefix; E8 shared fold table + 256-byte
+agreement (S-BR11); E9 S-BR13; C7 bare `\k<n>` a refusal; C8 12,786
+distinct pairs, the `finite` family removed; archiver re-scoped, nine
+outputs re-archived in one batch, dirty lists out/-only. No disagreements;
+two refinements (C15 "pasted" → "selection"; §13 P-11: the +12/-12 depends
+on the `\g<`/`\g'` split landing).
+
+**The lane's lesson, recorded in three places:** E1's counterexample was
+already in the archive — cell S3 disagreed with §3.2's model from the day
+both were written; nothing compared the archive to the claim.
+
+Focused re-check dispatched: r32eng on E1 (incl. the simulator diff, P-1's
+named gap, the scoping's observability), E2, E3; r32chk on C2 (P-10), C3,
+C4, C5 (+ closures, re-runs).
