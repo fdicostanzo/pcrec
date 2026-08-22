@@ -128,19 +128,51 @@ Of PCRE2's syntax surface:
   now maps to the frozen named set `std1` = {`classes`, `modifiers`}, so a
   bare `pcrec` compiles their constructs with no flag needed. `--features
   none` is the only invocation that still refuses them, with the module name.
-- Everything else is `REJECTED` — measured live at this commit (`ab7592d`+,
-  [STD1b], 2026-08-13) from `tests/reject/run_reject_tests.sh`'s own summary,
-  not transcribed: **274** hand-written rows individually assert exit 1 and
+- Three further modules have shipped `OK-GATED` since — built and
+  oracle-verified, but compiled ONLY under an explicit `--features` naming
+  them, and refused by name under the bare default: `assertions` (`\b \B \G`
+  and `\K`, [M6.2], complete 2026-08-19), `named-groups` ([M6.3],
+  2026-08-18) and `atomic-groups` (`(?>...)` and the possessive quantifier
+  suffixes, [M6.4.2], 2026-08-22). **All three `assertions` rows read plain `OK`
+  from 2026-08-19 until 2026-08-22, which this page's own vocabulary
+  reserves for constructs a bare `pcrec` compiles**: `\A \Z \z` at
+  `211c5da` (wave A) and `\b \B \G` + `\K` at `f6d5430` (wave E) — and
+  `f6d5430` was itself correcting a two-wave-stale `REJECTED` on
+  `\b \B \G`, overshooting the gated value on the way past it. All three
+  now read `OK-GATED`, verified by running a bare `pcrec` against `\Aa`,
+  `a\Z`, `a\z`, `a\b`, `a\B` and `a\K` and reading the refusal each
+  time — as does `(?m)` multiline in Option setting, a FOURTH row of the
+  same class: the letter is produced by `modifiers` (default-on) but
+  ATTRIBUTED to `assertions`, so a bare `(?m)^a` answers "inline option
+  'm' (multiline) requires module 'assertions'" while its neighbours
+  `(?s)` and `(?x)` compile — measured the same way, all three in one
+  pass. Their own annotations said "behind the gate" throughout — the
+  status column and the annotation had been contradicting each other for
+  three days, which is the pairing `--tension` does not check.
+- Everything outside those modules is `REJECTED` — measured live at
+  [M6.4.2] (2026-08-22, module `atomic-groups`) from
+  `tests/reject/run_reject_tests.sh`'s own summary,
+  not transcribed: **279** hand-written rows individually assert exit 1 and
   the right diagnostic (most name a module; some — the base-grammar brace
   errors K5/K6/K8, the verb doorway's outcomes, the `unknown escape` pins —
   name a PCRE2-flavoured wording instead, and offsets are pinned where a
   message alone cannot distinguish sites), **99** accept-controls proving the
-  table cannot pass by rejecting everything, **55** `reject_gated` pins
-  asserting the still-refused-under-`--features none` half for constructs
-  whose bare-default refusal changed at [STD1b] (D37), and (SR-4) **99**
+  table cannot pass by rejecting everything, **65** `reject_gated` pins
+  asserting a refusal that holds only under a NON-default `--features` spec
+  — 40 of them `--features none`, pinning the pre-[STD1b] bare behaviour
+  verbatim now that the bare default is `std1` (D37), and 25 GATE-OPEN pins,
+  where the construct's own module is enabled and the pattern is still
+  refused or still gets a particular diagnostic (`a*++` under `--features
+  atomic-groups`; `(?m:a$)` under `--features modifiers`) — the split
+  counted from the same run (this sentence described all of them as the
+  `--features none` half until 2026-08-22, which was true of well under
+  two-thirds) — and (SR-4) **103**
   further checks that iterate `pcrec --list-syntax` so no registry row can
-  escape a probe (`tests/reject/`) — **528** checks passing, **0**
-  known-wrong. **This paragraph previously cited 144/45/66: those figures
+  escape a probe (`tests/reject/`) — **547** checks passing, **0**
+  known-wrong. (The previous figures, 274/99/55/99 = **528**, were measured
+  at `ab7592d`+ on 2026-08-13 and had been overtaken by every wave since;
+  the same "read them from a run" rule applies to the values above.)
+  **This paragraph previously cited 144/45/66: those figures
   were already stale independent of the STD1b flip — `tests/reject/CLAUDE.md`'s
   own count history records several unrelated intermediate values this
   survey never caught up to (the file's own maintenance note: "read them
@@ -490,7 +522,7 @@ not negation; a spelling trap worth a test when implemented.
 |---|---|---|
 | `? * + {n} {n,m} {n,} {,m}` greedy | `OK` | — |
 | `?? *? +? {n,m}? {n,}? {,m}?` lazy | `OK` | — |
-| `?+ *+ ++ {n,m}+ {n,}+ {,m}+` possessive | `REJECTED` | `PLANNED-HARD` |
+| `?+ *+ ++ {n,m}+ {n,}+ {,m}+` possessive | `OK-GATED` | — |
 | quantifier on `^`/`$` | `OK` | — |
 | double quantifier `a**`, `a{2}{3}` | `OK` | — |
 | count above 65535, `a{65536}` | `AGREES-REJECT` | — |
@@ -514,11 +546,34 @@ not negation; a spelling trap worth a test when implemented.
 
 priority subset construction preserves greedy/lazy preference (D3).
 
-**`base:quantifiers-possessive`**
+**`base:quantifiers-possessive`** (2026-08-22)
 
-Module `atomic-groups`. Possessiveness prunes alternatives that a priority
-simulation explores in parallel, so it is a real semantic change needing
-explicit cut support, not a no-op.
+Module `atomic-groups`, SHIPPED 2026-08-22 ([M6.4.2]). Possessiveness prunes
+alternatives that a priority simulation explores in parallel, so it is a real
+semantic change needing explicit cut support, not a no-op — which is why the
+registry gives these four rows `engines: vm` alone. That mask is ANDed over
+the tree the discharge LEAVES, though, so it is not a property of the
+spelling: `a*+a` and `(?:a|ab)*+c` are VM-forced and `--engine=dfa` refuses
+them by name, while `a*+b` — whose cut can discard nothing, because no `a`
+can also be the following `b` — is discharged and compiles on the DFA,
+`--engine=dfa` included. Measured 2026-08-22 on all three, and worth stating
+at this length because the shorter claim — "possessive means VM" — is false
+for `a*+b`, which is the first shape anyone reaches for. All the
+spellings are built, `{n}+` `{n,}+` `{,n}+` included: PCRE2 defines `X q+` as
+`(?>X q)`, and pcrec desugars the suffix to that exact node at the quantifier
+site in `src/parse/parse.c`, so the suffix and the group are ONE construct
+here — the corpus puts each spelling beside its group twin to say so.
+`--features none` (the bare default) still refuses with the module name;
+`--features atomic-groups` compiles. The registry lists the four suffix rows
+under kind `quant-suffix` rather than `after (?`, and they are not
+quantifiable themselves: `a*?+` and `a*++` are pinned rejections in
+tests/reject/. Oracles: tests/atomic_groups/possessive.rxt and the same
+differential as `(?>...)`. One MEASURED oracle divergence the corpus carries
+with its controls: over a two-exit body the BRACE possessive cuts at the
+GROUP EXIT in PCRE2 and PER ITERATION in python `re`, so `(?:a|ab){2}+` on
+"aba" is (0,3) in PCRE2 and NO MATCH in python, while `(?:a|ab)*+` on "aba"
+is (0,1) in both. pcrec follows PCRE2 (D26); the block is marked
+`# pcre2-only` for exactly that reason.
 
 **`base:quantifier-on-anchors`**
 
@@ -597,8 +652,8 @@ cleanly", was true in verdict but reached that verdict after 2.1 GB and
 |---|---|---|
 | `^` | `OK` | — |
 | `$` | `OK` | — |
-| `\A \Z \z` | `OK` | — |
-| `\b \B \G` | `OK` | — |
+| `\A \Z \z` | `OK-GATED` | — |
+| `\b \B \G` | `OK-GATED` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: anchors-assertions -->
 
@@ -670,7 +725,7 @@ skill.
 
 | syntax | status | becomes |
 |---|---|---|
-| `\K` | `OK` | — |
+| `\K` | `OK-GATED` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: match-point -->
 
@@ -713,7 +768,8 @@ a lookbehind is not a translation of it (U11d).
 | `(...)` | `OK-LIMITED` | — |
 | `(?:...)` | `OK` | — |
 | `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `OK-GATED` | — |
-| `(?>...)`, `(*atomic:...)` | `REJECTED` | `PLANNED-HARD` |
+| `(?>...)` | `OK-GATED` | — |
+| `(*atomic:...)` | `REJECTED` | `PLANNED` |
 
 <!-- BEGIN GENERATED ANNOTATIONS: alternation-capturing -->
 
@@ -754,11 +810,36 @@ position: the three lookbehind tails `=` `!` `*` have rows of their own.
 This annotation is keyed to `(?<name>a)` and covers the bundled prose row
 `(?<name>...)` `(?'name'...)` `(?P<name>...)`.
 
-**`(?>...)`**
+**`(?>...)`** (2026-08-22)
 
-Same reasoning as possessive quantifiers: a cut, not a no-op.
-This annotation is keyed to `(?>...)` and covers the bundled prose row
-`(?>...)`, `(*atomic:...)`.
+Module `atomic-groups`, SHIPPED 2026-08-22 ([M6.4.2]); design
+`docs/design/atomic_groups_design.md`, panel-approved at R31. The cut is a
+real semantic change, not a no-op: `(?>ab|a)b` matches "abb" while
+`(?>a|ab)b` matches only its first two bytes, because each group commits to
+whichever branch its OWN order tried first — swap the branches and the
+language changes. `--features none` (the bare default) still refuses with the
+module name; `--features atomic-groups` compiles. VM-ONLY by registry row: a
+priority DFA explores the alternatives in parallel and has nowhere to put a
+cut, so a pattern that still carries one after the discharge below selects the
+backtracking engine (SR-8, D67) and `--engine=dfa` refuses it by name
+(`(?>a|ab)b`, measured). A cut whose section-2.2 proof shows it
+can discard nothing is DELETED before engine selection
+(`pcrec_discharge_atomic`; `-fno-atomic-discharge` disables it), which is why
+`(?>a*)b` is still a DFA pattern — accepted even under an explicit
+`--engine=dfa` — and `(?>a*)a` is not. Measured at
+2026-08-22 from the artifacts' own `.engine` stamp: DFA, VM, and VM again for
+`(?>a*)b` under `-fno-atomic-discharge`, which is the flag's controllability
+witness. Oracles:
+tests/atomic_groups/ — every cell produced by libpcre2 10.46 through the
+project's committed ctypes binding — plus `run_atomic_diff.sh`'s differential
+over subjects x start positions on BOTH engines and with the discharge off,
+and `tests/codegen/run_atomic_identity.sh`'s byte-identity gate against the
+pinned pre-module commit.
+The `(*` spelling `(*atomic:...)` is a SEPARATE survey row and is NOT this
+module: it is still answered "requires module 'verbs'" (see that section's
+`base:verbs-module-attribution-gap`), and enabling `atomic-groups` does not
+make it compile.
+This annotation is keyed to `(?>...)`.
 
 <!-- END GENERATED -->
 
@@ -788,7 +869,7 @@ survey). Pure lexing, `PLANNED`-trivial.
 |---|---|---|
 | `(?i)` `(?i:...)` `(?-i)` | `OK` | — |
 | `(?s)` dotall | `OK` | — |
-| `(?m)` multiline | `OK` | — |
+| `(?m)` multiline | `OK-GATED` | — |
 | `(?x)` `(?xx)` extended | `OK` | — |
 | `(?U)` ungreedy | `OK` | — |
 | `(?n)` no-auto-capture | `OK` | — |
@@ -1293,12 +1374,18 @@ SR-6, when module `verbs` first produces and the scan's semantics get
 remeasured anyway. See also docs/dev/known_issues.md K15 and
 docs/pcre2_compliance.md's own Backtracking control verbs section.
 
-**`base:verbs-module-attribution-gap`**
+**`base:verbs-module-attribution-gap`** (2026-08-22)
 
 What pcrec does NOT yet claim is which MODULE owns each name:
 `(*atomic:…)` and `(*pla:…)` are answered "requires module 'verbs'"
 though they are atomic groups and lookarounds, and correcting that
 belongs to SR-6 with the module itself.
+SHARPER since [M6.4.2] (2026-08-22): `(?>...)` and the possessive suffixes
+now BUILD under module `atomic-groups`, so `(*atomic:...)` is the one
+spelling of a SHIPPED construct that still refuses — and it names `verbs`,
+not `atomic-groups`, so enabling the module that implements the construct
+does not make this spelling compile. Still a naming gap, not a miscompile:
+the refusal is clean and D26-conforming, and SR-6 still owns the fix.
 
 **`base:verbs-out-of-scope-diagnostic`** (2026-08-11)
 
@@ -1459,10 +1546,15 @@ and writes no output file — 144 rows, plus 45 accept-controls, at R7 when this
 was first built; the count has moved several times since and the same
 hand-copied-figures failure mode this document warns about elsewhere (see
 "Keeping this current") applied here too. **Current whole-suite figures,
-measured live at [STD1b] (`ab7592d`, 2026-08-13): 274 hand-written rows, 99
-accept-controls, 55 `reject_gated` pins, 99 iterated, 528 checks passing, 0
+measured live at [M6.4.2] (2026-08-22): 279 hand-written rows, 99
+accept-controls, 65 `reject_gated` pins, 103 iterated, 547 checks passing, 0
 known-wrong — see the Headline above; do not re-copy these either, re-run the
-script.** The table also carries a short manifest naming the rows whose
+script. (Both this paragraph and the Headline held the [STD1b] figures —
+274/99/55/99 = 528 — from 2026-08-13 until 2026-08-22, and went stale
+together: one measurement transcribed into two places, which is exactly the
+shape the sentence above warns about. If a third copy is ever wanted, cite
+the Headline instead of transcribing it.)** The table also carries a short
+manifest naming the rows whose
 deletion the counts alone would not catch. Reproducing the `\v` bug's exact shape on a different
 escape (silently decoding `\d` to a literal `d`) fails 2 reject checks and
 **zero** corpus and codegen checks.
@@ -1492,11 +1584,22 @@ evidence, not from memory:
 2. Run `bash tests/reject/run_reject_tests.sh`. Every `REJECTED` row above is
    only true because that table says so — if a row here has no counterpart
    there, it is an assertion, not a status.
-3. When a module lands, move its rows from `REJECTED` to `OK`/`OK-LIMITED` and
-   add corpus coverage in `tests/<module>/`, then delete its entries from the
-   reject table in the same change (a construct cannot be both supported and
-   asserted to be rejected — and the reject suite's floor check will notice the
-   table shrinking).
+3. When a module lands, move its rows off `REJECTED` and add corpus coverage
+   in `tests/<module>/`. **The landing value is `OK-GATED`, not `OK`, unless
+   the module is in the bare-default named set** (`std1` = {`classes`,
+   `modifiers`} today, D37): `OK` says a bare `pcrec` compiles the construct,
+   which is a stronger claim than a gated module has earned, and getting this
+   wrong is not hypothetical — four rows (`\A \Z \z`, `\b \B \G`, `\K`,
+   `(?m)`) read `OK` from their 2026-08-19 landing until 2026-08-22 while a
+   bare `pcrec` refused all four, and their own annotations said "behind the
+   gate" the whole time. Decide it by RUNNING a bare `pcrec` on the
+   construct, not by reading the roadmap. Then update the reject table in the
+   same change: a construct cannot be both supported and asserted to be
+   rejected — but its rows MOVE rather than disappearing, into
+   `reject_gated` pins: `--features none` for the bare-default half, and a
+   gate-OPEN pin wherever the module is enabled and the pattern is still
+   refused or still earns a particular diagnostic. The reject suite's floor
+   check will notice either way.
 4. Any new `DIVERGENCE-PROVEN` row must cite a measurement against libpcre2,
    not a doc reading, and get an entry in `docs/dev/known_issues.md` if it is not
    fixed in the same change.
@@ -1537,8 +1640,10 @@ rather than current, and would break the `RS_BASE => ROADMAP_NONE` pairing
 field — `docs/design/registry_built_status_memo.md`, ratified wholesale as
 D65 and built in the same session. Per-construct granularity was the point:
 of the 34 rows the repair slice measured, 33 read `built` and one — `(?J)`,
-module `modifiers`' own permanent, unconditional decline to implement
-DUPNAMES — reads `unbuilt`, a distinction a per-module flip could never have
+whose letter refuses unconditionally, gate open or closed (a
+PLANNED-LATER disposition, not a permanent one: see its own annotation
+above and `docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row, RIDES(M4/
+captures), RATIFIED D38) — reads `unbuilt`, a distinction a per-module flip could never have
 expressed.
 
 <!-- BEGIN GENERATED: registry construct index (SR-4) -->
@@ -1550,7 +1655,7 @@ expressed.
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 100 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 104 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 | doorway | syntax | status | built | roadmap | module | engines | PCRE2 semantics |
 |---|---|---|---|---|---|---|---|
@@ -1607,7 +1712,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `(?` | `(?P=n)` | `REJECTED` | `unbuilt` | planned | `backrefs` | vm | python-style backreference to a named group |
 | after `(?` | `(?P>n)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | python-style subroutine call into a named group |
 | after `(?` | `(?PX)` | `AGREES-REJECT` | — | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
-| after `(?` | `(?>...)` | `REJECTED` | `unbuilt` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
+| after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
 | after `(?` | `(?*a)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
 | after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
 | after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
@@ -1654,5 +1759,9 @@ Every non-base construct pcrec knows, as the parser itself sees it — 100 rows 
 | after `[` in a class | `[[:alpha:]]` | `REJECTED` | `built` | planned | `classes` | dfa|vm | POSIX character class |
 | after `[` in a class | `[[.a.]]` | `AGREES-REJECT` | — | never | — | — | POSIX collating element — PCRE2 rejects it, and so must we |
 | after `[` in a class | `[[=a=]]` | `AGREES-REJECT` | — | never | — | — | POSIX equivalence class — PCRE2 rejects it, and so must we |
+| quant-suffix | `a*+` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive `*` — `X*+` is PCRE2's own spelling of `(?>X*)` |
+| quant-suffix | `a++` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive `+` — `X++` is PCRE2's own spelling of `(?>X+)` |
+| quant-suffix | `a?+` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive `?` — `X?+` is PCRE2's own spelling of `(?>X?)` |
+| quant-suffix | `a{1,2}+` | `REJECTED` | `built` | planned | `atomic-groups` | vm | possessive braces — `X{n,m}+` is `(?>X{n,m})`; also {n}+ {n,}+ {,n}+ |
 
 <!-- END GENERATED -->
