@@ -41,8 +41,8 @@ for fn in sorted(f for f in os.listdir(sabdir) if f.endswith(".sh")):
     # case that used to vanish.
     out = subprocess.run(
         ["bash", "-c",
-         'set -a; SAB_ID=; SAB_FILE=; SAB_BEFORE=; SAB_AFTER=; . "%s"; '
-         'printf "%%s\\x00%%s\\x00" "$SAB_FILE" "$SAB_BEFORE"' % path],
+         'set -a; SAB_ID=; SAB_FILE=; SAB_BEFORE=; SAB_AFTER=; SAB_COUNT=; . "%s"; '
+         'printf "%%s\\x00%%s\\x00%%s\\x00" "$SAB_FILE" "$SAB_BEFORE" "${SAB_COUNT:-1}"' % path],
         capture_output=True, text=True)
     if out.returncode != 0 or out.stderr.strip():
         why = (out.stderr.strip().splitlines() or ["exit %d" % out.returncode])[-1]
@@ -53,6 +53,14 @@ for fn in sorted(f for f in os.listdir(sabdir) if f.endswith(".sh")):
         unreadable.append((fn, "NO SAB_FILE/SAB_BEFORE EXTRACTED"))
         continue
     tgt, before = parts[0].strip(), parts[1]
+    # [M6.4.4] the EXACT-COUNT check: mech's apply (tests/mech/lib/replace.py)
+    # refuses unless the anchor occurs exactly SAB_COUNT times, so a presence-
+    # only check here passed S48 while mech scored it ANOMALY (the block had
+    # been duplicated by a refactor). The two instruments now ask the same question.
+    try:
+        want = int((parts[2] if len(parts) > 2 else "1").strip() or "1")
+    except ValueError:
+        want = 1
     if not tgt:
         unreadable.append((fn, "SAB_FILE IS EMPTY"))
         continue
@@ -66,6 +74,8 @@ for fn in sorted(f for f in os.listdir(sabdir) if f.endswith(".sh")):
     body = open(tp, errors="replace").read()
     if before not in body:
         stale.append((fn, tgt, "ANCHOR NOT FOUND"))
+    elif body.count(before) != want:
+        stale.append((fn, tgt, "ANCHOR COUNT %d, SAB_COUNT %d" % (body.count(before), want)))
 
 print("sabotages checked:", len([f for f in os.listdir(sabdir) if f.endswith('.sh')]))
 if unreadable:

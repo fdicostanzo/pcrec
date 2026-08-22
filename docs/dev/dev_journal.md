@@ -11887,3 +11887,18 @@ in. The D27 corpus branch agd27 then merged into tests/atomic_groups/d27/
 message). Full mech matrix launched at 15:36 (build/mech_m64.log,
 PROCS=4, 99 rows incl. S88-S101) — the canonical figures for the
 module's thirteen+one rows; the quiet-box gate follows it.
+
+FULL MECH MATRIX on c324091 (build/mech_m64.log, 15:36 → 16:26, PROCS=4):
+99 rows, UNDETECTED 0 — every one of the module's fourteen rows S88-S101
+DETECTED (S101, the shipped defect's row: atomicdiff 11 fail / 6 pass,
+corpus 13 fail / 245 pass) — and ONE ANOMALY: S48 APPLY-FAILED. Cause:
+the fix lane's pss_verdict factoring left the "effective follow" block
+in possessify.c TWICE (~640 and ~676); S48 declares SAB_COUNT=1, so
+mech's replace.py refused — while the anchor TRIPWIRE only tested
+PRESENCE and reported "all anchors resolve". An instrument gap between
+the two checks, found the first time they disagreed. Fixed both by the
+manager: S48 → SAB_COUNT=2 (both copies are the same site; re-run alone
+→ 1 row, 0 undetected, 0 anomalies, DETECTED); the tripwire now extracts
+SAB_COUNT and requires the EXACT count, failing direction demonstrated
+(S48 at count 1 → "ANCHOR COUNT 2, SAB_COUNT 1"; at 2 → all 99 resolve).
+The merge bar's tripwire and mech's apply now ask the same question.

@@ -20,7 +20,7 @@ SAB_FILE="src/opt/possessify.c"
 SAB_SUITES="possdiff"
 SAB_DESC="FOLLOW loses the FIRST of every enclosing loop's body, so an inner quantifier is possessified against a follow that understates what can come next"
 SAB_DOC_FIGURE="tests/possessify/run_possdiff.sh: the nested-quantifier family diverges (R24 H1 measured 172 counterexamples on its own instrument)"
-SAB_COUNT=1
+SAB_COUNT=2   # [M6.4.4] the effective-follow block exists TWICE since pss_verdict was factored out of pss_walk (possessify.c ~640 and ~676); both copies are the same site and both are sabotaged
 SAB_BEFORE="    uint8_t eff[32];
     memcpy(eff, follow, 32);
     bs_or(eff, encl);"
