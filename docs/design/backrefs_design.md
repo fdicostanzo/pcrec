@@ -17,6 +17,53 @@ so the cross-dependency reduces to reading whatever shape [M6.4] lands.
 
 ---
 
+## PANEL OUTCOME — R32 (2026-08-22)
+
+`../dev/reviews/2026-08-22-r32-backrefs-design.md`, three read-only critics
+against commit 4cd461f. **Read this block before any section.**
+
+**NOT APPROVED at 4cd461f: eight HIGH findings.** The MEASURED facts held
+almost everywhere — the 52-byte fold set (re-measured at 256x256), the octal
+matrix bar one rule, the dupnames resolution rule under a harder battery, the
+`PCRE2_INFO_NAMETABLE` order, the expansion boundary (three independent
+reproductions), the no-prefilter ruling, and this document's reading of the
+shipped `[M5-SEAM]` check. What fell is the design's central premise and four
+of its checks.
+
+| finding | what was wrong | where it is now |
+|---|---|---|
+| **E1 (HIGH)** | §3.2's "a non-UNSET slot pair is a capture" is FALSE while a group is re-entered — the document's OWN archived cell S3 refutes it, and two shapes underflow a `size_t` in emitted code | **§3.2, rewritten as PUBLISH-AT-CLOSE**, with a 5,808-cell sweep |
+| **E2 (HIGH)** | "the erasure is a genuine superset" — false once the referenced group holds an assertion | §7.2, §7.4, §13 P-7 |
+| **M-1/C1 (HIGH)** | `forces_backref` would be a third exception covering TWELVE rows to a check whose text says the second builds SR-8 | §6.1 (stamping), §11.5 — **found by this lane against its own design** |
+| **C2 (HIGH)** | the proposed complement check shares a source with its subject, and its "not in a scan loop" clause has no mechanism | §4.4 |
+| **C3 (HIGH)** | two corpus files marked python-verifiable in the direction that LOSES the oracle | §11.1 |
+| **C4 (HIGH)** | no sabotage row for the wrong-answer failure mode | §11.4 |
+| **C5 (HIGH)** | "the built column gains this module's rows for free" — the tally is asserted by nothing | §11.5 |
+| **E3 (MED-HIGH)** | rule 3 leaves an empty octal run for an 8/9-led digit run | §5 rule 3' |
+| E4-E11, C6-C20 | the return protocol, the fold table, the revdet interaction, `-Wswitch`'s strength, the cost list, oracle pointers, distinct counts, the filler, the drivers, four probe defects | applied in place; §16 tabulates |
+
+**What SURVIVED**, on the panel's own instruments rather than re-runs of this
+lane's: the fold SET over 256x256 pairs; the length claim in byte mode; all
+eight U cells and five E cells; `PCREC_UNSET` cannot collide with (0,0); the
+§3.6/§3.7 mechanism as cited; the CUT paragraph; §5's rules 1, 2, 4, 5 and all
+twelve class cells; the expansion boundary EXACTLY (10,525/10,526); §7.3's
+axis; §8.1's seventeen rows and §8.3's rule under a harder battery — including
+the decisive finding that **PCRE2 does not retry later name-run members when
+the first-set one's compare fails**, which is what makes §8.3's frame-free
+else-if chain the right shape; §8.2's NAMETABLE order over ten patterns;
+`rx_group_entry` unchanged; §10's matrix; §9's `\N{` precedent, now MEASURED.
+
+**The one finding worth naming rather than tabulating**, because it is this
+lane's own failure of a kind the project keeps cataloguing: **E1's
+counterexample was already in this document's archive.** Cell S3 of
+`out/br_semantics.txt` disagreed with §3.2's model from the day both were
+written, and the lane archived the cell, quoted the cell in §3.5, and did not
+run the model against it. The instrument that found it is now committed here
+(`probes/simvm.py`, adopted from the critic rather than rewritten) precisely
+so the next revision cannot repeat that.
+
+---
+
 ## 0. How to read this
 
 ### 0.1 Claim marking
@@ -78,12 +125,19 @@ their repo commit by `probes/archive.sh`.
 | `probes/probe_prefilter_cost.sh` | MEASURED, artifact benchmark | §7: what VM-only search costs, on the SHIPPED compiler's own prefilter axis |
 | `probes/probe_erasure_hazard.py` | MEASURED, libpcre2 | §7: that the erasure is a superset (sound) and that its SPAN is not (unusable for the hybrid) |
 | `probes/probe_expand_cost.py` | MEASURED, in-pcrec | §6: the finite-language expansion compiled by the shipped compiler, and the DECLINE boundary bisected |
+| `probes/simvm.py` | the SIMULATOR, **adopted from R32's critic** | §3.2: the emitted model in both publication disciplines, with the `publish` axis added and nothing else changed |
+| `probes/probe_publish_discipline.py` | MEASURED, libpcre2 vs both models | §3.2: E1's 5,808-cell arm-vs-arm sweep, with a backref-FREE control arm |
 
 **`probes/archive.sh` is the ONLY writer of `out/`.** That rule is inherited
 from R30 M7, where a hand-written header imitating the archiver was named "a
 sharper instance of a control sharing a source with what it controls than
-anything the archiver guards against". No header in this directory was
-hand-written; every one of the nine files in `out/` came out of `archive.sh`.
+anything the archiver guards against". No header in `out/` was hand-written.
+**R32 D1/C14: every header nonetheless said "module `assertions`"** — a
+copy-paste leftover from the archiver this one was derived from, wrong in all
+eight files while their commit refs, dirty lists and content were independently
+correct. The stamp is re-scoped and every output re-archived in ONE batch from
+a committed tree. (`out/CLAUDE.md` is hand-written, says so, and is not an
+archived output — the same distinction the assertions lane draws.)
 
 **Four defects this lane's own instruments had, found by running them.** They
 are recorded because each is a shape this project keeps cataloguing, and
@@ -107,7 +161,22 @@ because a probe that reports confidently wrong numbers is worse than none:
    carries a VACUOUS guard and a structured subject generator for families
    whose positives a random walk never produces.
 
-A fifth is not a defect but a result: `probe_expand_cost.py` crashed on
+**R32 found four more, and they are recorded in the same place for the same
+reason.** `probe_erasure_hazard.py` sampled subjects WITH REPLACEMENT and
+reported the draw count, inflating three families 31.5x, and carried a
+`finite` family identical to `letter` — "seven families" was six. Its
+FALSE-NEG column had no cell in which it could be non-zero, making a table of
+zeros unfalsifiable; E2's assertion-in-group cells are now its POSITIVE
+CONTROL, and the probe refuses to report if that control finds nothing.
+`probe_prefilter_cost.sh`'s guard compared prefilter STAMPS rather than
+ENGINES, so a DFA artifact's empty stamp would have passed, and its filler's
+"7-letter words all differ" were seven IDENTICAL letters — true of the words,
+false of the letters, so `(\w)` matched the "nomatch" subject at offset 0.
+`probe_caseless_fold.py`'s axis A used `.`, which excludes 0x0a, so it swept
+**255** bytes while reporting 256. All four are fixed and each fix is written
+into the probe.
+
+A ninth is not a defect but a result: `probe_expand_cost.py` crashed on
 `([a-z]{4})\1`'s 4.1 MB expansion with `E2BIG`. That is now reported as a row
 ("cannot be passed at all"), because "the expansion cannot be handed to a
 compiler through argv" is a genuine cost of the rewrite §6 declines.
@@ -135,10 +204,12 @@ staleness in the quoted text.
 | P11 | pcrec's ASCII fold is 52 bytes, applied at class-construction sites | STRUCTURAL: `src/parse/parse.c:223-230` (`cls_casefold`), called at `:236`, `:251`, `:566`; RULED D23 |
 | P12 | `mrl.c` already decides what a backreference contributes: **0**, by an explicit written inheritance | STRUCTURAL: `src/opt/mrl.c:32-35` ("Lookaround, backreferences and `(*ATOMIC)` have no producers today; when they gain one, each contributes 0 here until someone measures otherwise") |
 | P13 | `(?J)` reads `unbuilt` in D65's built-status column today | STRUCTURAL: `docs/design/registry_built_status_memo.md`'s implementation record — "exactly one — `(?J)` … reads `unbuilt`"; `docs/pcre2_compliance.md:1643` |
+| P15 | `A_CAP` publishes its START when control traverses the opening position and its END at the closing one — so while a group is re-entered the two slots belong to DIFFERENT iterations | STRUCTURAL: `src/gen/emit_vm.c:3813-3835`, the `vm_set` calls at `:3826` and `:3832`; MEASURED consequence in `out/publish_discipline.txt` |
 | P14 | A residual seam entry may NOT be referenced from any file-scope function body but its own and `main()` | STRUCTURAL: `tests/codegen/run_codegen_tests.sh:895-995`, the `[M5-SEAM]/DD-12(7)` check; sabotage `tests/mech/sabotages/S68_residual_in_hot_loop.sh` |
 
-P14 is the premise that changes this design, and §4.4 is where it is dealt
-with rather than worked around.
+**P15 is the premise the first draft did not check, and §3.2 is where it is
+now dealt with rather than assumed away.** P14 is the one that changes the
+seam, and §4.4 is where that is dealt with rather than worked around.
 
 ---
 
@@ -1880,11 +1951,16 @@ because it needs module `atomic-groups`.
 
 ### 11.3 The identity gate
 
-`tests/codegen/run_backref_identity.sh`, on the four shipped identity gates'
-precedent — with the reference built from a **pinned pre-module commit via
-`git archive`**, not from a `-D` knob.
+`tests/codegen/run_backref_identity.sh`, with the reference built from a
+**pinned pre-module commit via `git archive`**, not from a `-D` knob — and
+RULED (ASK-4) as a **ONE-SHOT sweep** rather than an ongoing gate, on the same
+reasoning as R31/atomic §11.2: **no stage of this module runs on the control
+population**, so a `-D` knob would gate dead code and the cheapness argument
+that justifies the four shipped gates' knob does not apply. The first draft
+argued the opposite ("this gate is ongoing, not one-shot"); the ruling
+supersedes it.
 
-That choice is not stylistic. `assertions_measurements/out/CLAUDE.md` records
+The commit-pinned choice is not stylistic. `assertions_measurements/out/CLAUDE.md` records
 the measurement behind it: under a sabotage a knob-built reference is *itself
 sabotaged*, so an edit outside the knob's gated region CANCELS — "S83's first
 form left the sweep at 1175/1175 identical". A commit-pinned reference shares
