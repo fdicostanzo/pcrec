@@ -237,3 +237,22 @@ byte-untouched by the revision.
 |---|---|---|---|---|
 | N1 | HIGH | RULE 3 (corrected) + CUT-EQUIVALENCE: the lift keys on `a->l->k == A_REP` | the possessive rungs are GREEDY-ONLY by signature (vm_opt_chain :2358 takes `bool greedy`; vm_poss_chain :2437 / vm_poss_star :2494 do not; vm_counter_poss_opt never reads it; vm_cursor_rep's possessive scan :2090-2103 is unconditionally maximal) and :2053-2060 documents the preference collapse as a §2.2 CONSEQUENCE — the same deleted-antecedent shape as E1 on a second axis. Lazy quantifiers ARE possessified today and land on the cursor rung (`a*?b` STRATS 0x1 RUNGS 0x1). The lift miscompiles the design's OWN cells 14-16: `(?>a*?)b` on "aaab" (3,4) → (0,4); `(?>a*?)a` (0,1) → nomatch; `(?>a+?)b` (2,4) → (0,4); six more. Cut-equivalence is frames-only — the cursor rung satisfies it and answers the wrong language | REVISION 2: a LAZY A_REP under A_ATOMIC takes the general shape, never the lift; checked preference preconditions on every rung; a lazy witness per path; a sabotage row |
 | N2 | LOW-MED | `vm_cuts(const Ast *a)` | no parent pointer (internal.h:166-190); the pre-passes are independent root descents — "under a lift" is caller state | RULING: thread `under_atomic` down all five walks (no stored state the free discharge can leave stale — contract note 3's class) |
+
+## Focused re-check, r31chk on b736071 — 13/14 CLOSED (C7: two stale counts); three NEW
+
+All five new/rebuilt probes reproduce byte-identically (registry_cost;
+cut_dispatch incl. the K29 demo; puc_targeted 776,160 / 10,504 refutable /
+0 violations / floors 399·6130·3975 / WRAP 0 of 8,820; cut_trail 17 rows
+/ 10 cut- / 4 trail-discriminating — the 4 are `(?>(a)|ab)` on "ab"/"a"
+and `(?>(a)x|ab)` on "ax"/"axb"; semantics 15 of 109). K29 independently
+confirmed (mark slot allocated :57, written :166, never read); the revdet
+second spelling verified (`resume_depth = rx_rv0_frame_mark` at :200 of
+the artifact, zero `RX_CUT(` call sites). The lane's one-array correction
+to C8 accepted by the critic.
+
+| ID | Sev | New claim | Counter-evidence | Disposition |
+|---|---|---|---|---|
+| N1 | HIGH | §7.4's "FULL COST, ENUMERATED" six-site table | a SEVENTH site in a third file: `tests/spec_mod0/check06_cursor.sh:170` `EXPECT_BASE_ANSWERED="(?:...)"` + the SET-equality assertion at :242 — reads the DUMP, buckets all four new rows UNROUTED, goes RED; the probe greps only the four files the lane already knew (its search population is the answer it had); also `quant` (QF_NO, required by registry_check.c:174) missing from §7.4.1; three spec_mod0 floors go stale (minima, pass) | REVISION 2: probe widened to sweep tests/ and src/ for row-count / kind-list / routing-set consumers; site 7 + the new expected set; `quant` |
+| N3 | MED | the S88-S98 renumbering | five stale in-text cross-references (:527, :538, :1045, :1511, :1921) — two are inconsistencies among the NEW rows; an implementer reading §3.5 or §5.5 builds the wrong row | REVISION 2: re-aim; a consistency probe over every S-mention |
+| N2 | LOW | probe_puc_targeted's WRAP assertion | `if v is None: continue` drops refused patterns uncounted; no `pats > 0` guard — the 8,820 is printed, not asserted | REVISION 2: floor on pats |
+| C7 | — | residue | :1053 "95 cells" (now 109); :1980 "13" (now 15) | REVISION 2 |
