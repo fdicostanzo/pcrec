@@ -11878,3 +11878,12 @@ assertions caught the script rather than the compiler. (5) §14 item 9's
 sharpened conclusion: the systematic "read each §2.2 conjunct" recipe
 would NOT have found this one — it reads only possessify.c, and the
 antecedent lived in the emitter's context.
+
+UNION BATTERY ON THE FIXED MAIN 8e4af41 (build/battery_m64fix.log,
+14:21 → 15:35): test 21,557/0 EXIT=0 (10 min at -j12); strict 0; ubsan 0;
+asan 0; lint 0; zero sanitizer reports — both axes green with the fix
+in. The D27 corpus branch agd27 then merged into tests/atomic_groups/d27/
+(134 live cells; acceptance record in its README and the merge
+message). Full mech matrix launched at 15:36 (build/mech_m64.log,
+PROCS=4, 99 rows incl. S88-S101) — the canonical figures for the
+module's thirteen+one rows; the quiet-box gate follows it.
