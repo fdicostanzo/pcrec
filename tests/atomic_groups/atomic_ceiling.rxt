@@ -1,0 +1,128 @@
+# tests/atomic_groups/atomic_ceiling.rxt -- module `atomic-groups` ([M6.4.2]):
+# THE R3a FAMILY -- patterns whose CUT match ends LATER than their UNCUT twin's.
+#
+# WHY A WHOLE FILE FOR ONE SHAPE. The default engine is a hybrid: a
+# capture-erased forward+reverse DFA pair runs as a prefilter and hands the VM a
+# window. That DFA necessarily answers for the UNCUT language -- subset
+# construction keeps every alternative alive, which is exactly the NON-atomic
+# semantics -- so its span END is NOT an upper bound on the cut match's end:
+#
+#     (?>a|ab)c|abcd   on "abcd"   is (0,4)
+#     (?:a|ab)c|abcd   on "abcd"   is (0,3)      <- the uncut twin
+#
+# Measured at 122 refuting cells over 17,640, and -- on the EMITTED prefilter
+# rather than inferred from an oracle -- 114 cells across 42 patterns carrying a
+# "prefilter-window" ceiling AND a window end strictly below the cut match's
+# end. Without RULE H3 (src/gen/emit_vm.c: the MRL ceiling is switched off on a
+# cut-bearing artifact) those are silent match losses in the DEFAULT engine, on
+# patterns the VM engine gets right. The cells here are the behavioural half;
+# the structural half is tests/codegen/'s `[M6.4-ATOMIC rule 1]`, and the two
+# arms of tests/atomic_groups/run_atomic_diff.sh are what compare the engines.
+#
+# BOTH CLAMP POPULATIONS ARE PRESENT, which is R31 C5's requirement rather than
+# thoroughness: `RX_VM_PRUNE_CEILING` is THREE-valued, and with `nclamp == 0` an
+# artifact stamps "none", declares no `window_end` local and has no ceiling to
+# get wrong. Over the design's own 46 R3a patterns the histogram is
+# {prefilter-window 42, none 4}, so a file made only of the first cannot see a
+# ceiling bug on the second -- and the codegen rule is RED on the second if it
+# is not scoped. Section 2 is the `nclamp == 0` population.
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY libpcre2 10.46, not written by
+# hand: a generator drove every (pattern, subject, startpos) cell through the
+# ctypes binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py and
+# emitted the answer. python3 `re` was driven over the SAME cells in the same
+# pass, and a block carries `# pcre2-only` exactly where python disagreed or
+# could not compile the pattern -- detected, never assumed. 13 of 729 cells
+# diverge across this directory, and they are the four families Appendix B.3 of
+# the design names: `\K`/`\G` (python cannot express them at all), the BRACE
+# possessive over a two-exit body (python cuts PER ITERATION, PCRE2 at the GROUP
+# EXIT), U9 (libpcre2's own recorded oddity), and scoped `(?i)` inside a group
+# (python rejects the pattern).
+#
+# `ms`/`ns` CELLS SWEEP EVERY STARTPOS IN [0, n], not a chosen few. The cut
+# makes "the leftmost candidate is not the leftmost match" an ORDINARY
+# occurrence rather than an edge case -- `(?>a|ab)c` on "abc" is NO MATCH while
+# its uncut twin matches (0,3) -- so which start the search reaches, and what it
+# answers there, is the axis this construct moves.
+
+# ====================================================================
+# THE R3a FAMILY: the cut match ends LATER than the uncut twin's
+# ====================================================================
+
+pattern (?>a|ab)c|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+
+pattern (?>ab|a)b|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+
+pattern x*(?>a|ab)c|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+m "xabcd" 1 5
+ms 1 "xabcd" 1 5
+ns 2 "xabcd"
+ns 3 "xabcd"
+ns 4 "xabcd"
+ns 5 "xabcd"
+
+pattern a*(?>b|bc)d|abcde
+features atomic-groups
+m "abcde" 0 5
+ns 1 "abcde"
+ns 2 "abcde"
+ns 3 "abcde"
+ns 4 "abcde"
+ns 5 "abcde"
+n "bcde"
+ns 1 "bcde"
+ns 2 "bcde"
+ns 3 "bcde"
+ns 4 "bcde"
+
+pattern (?>a|ab)c+|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+n "abccd"
+ns 1 "abccd"
+ns 2 "abccd"
+ns 3 "abccd"
+ns 4 "abccd"
+ns 5 "abccd"
+
+# ====================================================================
+# THE `nclamp == 0` POPULATION -- artifacts that stamp "none"
+# ====================================================================
+
+pattern (?>a|ab)[cd]{1,2}|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+
+pattern (?>ab|a)b|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"

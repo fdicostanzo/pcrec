@@ -1,0 +1,219 @@
+# tests/atomic_groups/atomic_basic.rxt -- module `atomic-groups` ([M6.4.2]):
+# `(?>...)` itself. The cut, alternation priority under it, nesting, the empty
+# body, and what follows the group.
+#
+# WHAT AN ATOMIC GROUP IS, in one sentence: `(?>X)` matches whatever `X` matches
+# at the current position ON `X`'s OWN FIRST ATTEMPT, and then refuses to
+# reconsider -- if what follows fails, the whole group fails rather than letting
+# `X` try again.
+#
+# THE TWO BLOCKS THAT CARRY THE FILE are the alternation-priority pair, and they
+# are the cheapest way to see that the cut is real rather than decoration:
+# `(?>ab|a)b` matches "abb" and `(?>a|ab)b` matches only its first two bytes,
+# because each commits to whichever branch its OWN order tried first. Swap the
+# branches and the language changes. An implementation that lowered the group by
+# ignoring the atomicity -- which is what a naive determinization does, and what
+# src/parse/registry.c's own row comment has warned about since before there was
+# a producer -- answers the same thing for both.
+#
+# `(?>)` IS LEGAL AND MATCHES EMPTY, which is the surprising answer and is why
+# it has a block rather than a comment.
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY libpcre2 10.46, not written by
+# hand: a generator drove every (pattern, subject, startpos) cell through the
+# ctypes binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py and
+# emitted the answer. python3 `re` was driven over the SAME cells in the same
+# pass, and a block carries `# pcre2-only` exactly where python disagreed or
+# could not compile the pattern -- detected, never assumed. 13 of 729 cells
+# diverge across this directory, and they are the four families Appendix B.3 of
+# the design names: `\K`/`\G` (python cannot express them at all), the BRACE
+# possessive over a two-exit body (python cuts PER ITERATION, PCRE2 at the GROUP
+# EXIT), U9 (libpcre2's own recorded oddity), and scoped `(?i)` inside a group
+# (python rejects the pattern).
+#
+# `ms`/`ns` CELLS SWEEP EVERY STARTPOS IN [0, n], not a chosen few. The cut
+# makes "the leftmost candidate is not the leftmost match" an ORDINARY
+# occurrence rather than an edge case -- `(?>a|ab)c` on "abc" is NO MATCH while
+# its uncut twin matches (0,3) -- so which start the search reaches, and what it
+# answers there, is the axis this construct moves.
+
+# ====================================================================
+# THE CUT ITSELF, and alternation priority under it
+# ====================================================================
+
+pattern (?>a|ab)c
+features atomic-groups
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+n "xabc"
+ns 1 "xabc"
+ns 2 "xabc"
+ns 3 "xabc"
+ns 4 "xabc"
+m "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+n "abcx"
+ns 1 "abcx"
+ns 2 "abcx"
+ns 3 "abcx"
+ns 4 "abcx"
+
+pattern (?>ab|a)b
+features atomic-groups
+m "abb" 0 3
+ns 1 "abb"
+ns 2 "abb"
+ns 3 "abb"
+n "ab"
+ns 1 "ab"
+ns 2 "ab"
+m "abbb" 0 3
+ns 1 "abbb"
+ns 2 "abbb"
+ns 3 "abbb"
+ns 4 "abbb"
+
+pattern (?>a|ab)b
+features atomic-groups
+m "abb" 0 2
+ns 1 "abb"
+ns 2 "abb"
+ns 3 "abb"
+m "ab" 0 2
+ns 1 "ab"
+ns 2 "ab"
+
+pattern (?>a|ab)bc
+features atomic-groups
+n "abbc"
+ns 1 "abbc"
+ns 2 "abbc"
+ns 3 "abbc"
+ns 4 "abbc"
+m "abc" 0 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+# ====================================================================
+# NESTING -- an inner cut inside an outer one, and side by side
+# ====================================================================
+
+pattern (?>(?>a|ab)c|abd)
+features atomic-groups
+m "abd" 0 3
+ns 1 "abd"
+ns 2 "abd"
+ns 3 "abd"
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+n "abcd"
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+
+pattern (?>a(?>b|bc))c
+features atomic-groups
+m "abc" 0 3
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "abcc" 0 3
+ns 1 "abcc"
+ns 2 "abcc"
+ns 3 "abcc"
+ns 4 "abcc"
+
+pattern (?>a|b)(?>c|d)
+features atomic-groups
+m "ac" 0 2
+ns 1 "ac"
+ns 2 "ac"
+m "bd" 0 2
+ns 1 "bd"
+ns 2 "bd"
+m "ad" 0 2
+ns 1 "ad"
+ns 2 "ad"
+
+# ====================================================================
+# THE EMPTY BODY. `(?>)` is LEGAL and matches empty
+# ====================================================================
+
+pattern (?>)
+features atomic-groups
+m "abc" 0 0
+ms 1 "abc" 1 1
+ms 2 "abc" 2 2
+ms 3 "abc" 3 3
+m "" 0 0
+
+pattern (?>)a
+features atomic-groups
+m "abc" 0 1
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+m "a" 0 1
+ns 1 "a"
+
+pattern (?>)*a
+features atomic-groups
+m "a" 0 1
+ns 1 "a"
+m "xa" 1 2
+ms 1 "xa" 1 2
+ns 2 "xa"
+
+# ====================================================================
+# WHAT FOLLOWS THE GROUP, including the R3a shape the ceiling file owns
+# ====================================================================
+
+pattern x(?>a|ab)c
+features atomic-groups
+m "xabxac" 3 6
+ms 1 "xabxac" 3 6
+ms 2 "xabxac" 3 6
+ms 3 "xabxac" 3 6
+ns 4 "xabxac"
+ns 5 "xabxac"
+ns 6 "xabxac"
+m "xac" 0 3
+ns 1 "xac"
+ns 2 "xac"
+ns 3 "xac"
+n "xabc"
+ns 1 "xabc"
+ns 2 "xabc"
+ns 3 "xabc"
+ns 4 "xabc"
+
+pattern (?>a|ab)c|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"
+
+pattern (?>ab|a)b|abcd
+features atomic-groups
+m "abcd" 0 4
+ns 1 "abcd"
+ns 2 "abcd"
+ns 3 "abcd"
+ns 4 "abcd"
+m "abb" 0 3
+ns 1 "abb"
+ns 2 "abb"
+ns 3 "abb"

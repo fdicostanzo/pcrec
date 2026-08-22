@@ -1,0 +1,87 @@
+# tests/atomic_groups/atomic_case.rxt -- module `atomic-groups` ([M6.4.2]):
+# CASELESSNESS around, and scoped inside, a cut.
+#
+# THE POINT IS THAT THE CUT IS CASE-BLIND, and that this is structural rather
+# than a property anyone implemented: pcrec folds case into the A_CLASS bitmap
+# AT PARSE TIME (src/parse/parse.c's `cls_casefold`, OS-1/D23), so by the time
+# the emitter sees the tree a caseless `a` is already `[aA]` and the cut has no
+# case axis to get wrong. `(?i)a*+A` on "aaA" is NO MATCH because `a*+` folded
+# to `[aA]*+` and ATE the `A` -- which is the cell that says the fold happened
+# before the possessification, not after.
+#
+# SECTION 2 IS `# pcre2-only` FOR A REASON THAT IS NOT A DIVERGENCE: python
+# REJECTS `(?>(?i)a|ab)c` outright ("global flags not at the start of the
+# expression"), so there is no python answer to compare, right or wrong.
+#
+# EVERY EXPECTATION IN THIS FILE WAS PRODUCED BY libpcre2 10.46, not written by
+# hand: a generator drove every (pattern, subject, startpos) cell through the
+# ctypes binding at docs/design/eng_brep_measurements/probes/pcre2_ctypes.py and
+# emitted the answer. python3 `re` was driven over the SAME cells in the same
+# pass, and a block carries `# pcre2-only` exactly where python disagreed or
+# could not compile the pattern -- detected, never assumed. 13 of 729 cells
+# diverge across this directory, and they are the four families Appendix B.3 of
+# the design names: `\K`/`\G` (python cannot express them at all), the BRACE
+# possessive over a two-exit body (python cuts PER ITERATION, PCRE2 at the GROUP
+# EXIT), U9 (libpcre2's own recorded oddity), and scoped `(?i)` inside a group
+# (python rejects the pattern).
+#
+# `ms`/`ns` CELLS SWEEP EVERY STARTPOS IN [0, n], not a chosen few. The cut
+# makes "the leftmost candidate is not the leftmost match" an ORDINARY
+# occurrence rather than an edge case -- `(?>a|ab)c` on "abc" is NO MATCH while
+# its uncut twin matches (0,3) -- so which start the search reaches, and what it
+# answers there, is the axis this construct moves.
+
+# ====================================================================
+# CASELESS AROUND the group -- the fold happened at parse time
+# ====================================================================
+
+pattern (?i)(?>a|ab)c
+features atomic-groups,modifiers
+n "ABC"
+ns 1 "ABC"
+ns 2 "ABC"
+ns 3 "ABC"
+m "Ac" 0 2
+ns 1 "Ac"
+ns 2 "Ac"
+n "aBc"
+ns 1 "aBc"
+ns 2 "aBc"
+ns 3 "aBc"
+
+pattern (?i)a*+A
+features atomic-groups,modifiers
+n "aaA"
+ns 1 "aaA"
+ns 2 "aaA"
+ns 3 "aaA"
+n "A"
+ns 1 "A"
+
+pattern (?i)(?>ab|a)b
+features atomic-groups,modifiers
+m "ABB" 0 3
+ns 1 "ABB"
+ns 2 "ABB"
+ns 3 "ABB"
+m "abb" 0 3
+ns 1 "abb"
+ns 2 "abb"
+ns 3 "abb"
+
+# ====================================================================
+# CASELESS SCOPED INSIDE the body (python rejects the pattern)
+# ====================================================================
+
+# python DIVERGES here, measured rather than assumed: "ABc" @0 pcre2=('n',) python=('ERR', 'global flags not at the start of the expression at position 3') (8 of 8 cells)
+# pcre2-only
+pattern (?>(?i)a|ab)c
+features atomic-groups,modifiers
+n "ABc"
+ns 1 "ABc"
+ns 2 "ABc"
+ns 3 "ABc"
+n "abc"
+ns 1 "abc"
+ns 2 "abc"
+ns 3 "abc"

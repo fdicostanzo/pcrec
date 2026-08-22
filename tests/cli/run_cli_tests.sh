@@ -677,7 +677,28 @@ case10() {
     # claim/verdict limit is caution, not a live dependency). (?:...)
     # is the one deliberate non-route: the base grammar answers it before
     # any doorway, so there is no call to probe.
+    #
+    # [M6.4.2] THE NON-ROUTING SET GREW BY FOUR, and for a DIFFERENT reason
+    # than `(?:...)`'s, which is why it is now asserted as a SET rather than a
+    # count: `(?:` reaches a doorway's byte and the base grammar answers FIRST,
+    # while the four possessive-suffix rows (kind `quant-suffix`) reach NO
+    # DOORWAY AT ALL — the possessive `+` is a quantifier suffix recognised
+    # inside `p_rep`, and src/parse/registry.c's header records why giving it a
+    # doorway would cost the base tier a lookup on every quantifier. A count
+    # alone would be satisfied by the WRONG four rows dropping out.
     local swept=0 moved=0 noroute=0
+    local noroute_set="" noroute_expect
+    # Space-joined on ONE line: assert_eq reports a mismatch as two values and
+    # a multi-line value makes the report unreadable at exactly the moment it
+    # matters.
+    #
+    # `LC_ALL=C` ON BOTH SIDES, AND IT IS NOT DEFENSIVE PADDING. Under the
+    # default locale `sort` collates by dictionary rules that treat punctuation
+    # as ignorable, so `a?+` and `a++` compare EQUAL and `sort -u` SILENTLY
+    # DROPS ONE — measured here: the set came back four-membered with a`?`+
+    # missing while the count beside it correctly read 10. A set assertion that
+    # can lose a member is worse than the count it replaced.
+    noroute_expect="$(printf '%s\n' '(?:...)' 'a*+' 'a++' 'a?+' 'a{1,2}+' | LC_ALL=C sort | tr '\n' ' ')"
     while IFS= read -r syn; do
         for w in claim verdict; do
             if line="$("$PCREC" --probe-ask "$w" -- "$syn" 2>/dev/null)"; then
@@ -689,8 +710,8 @@ case10() {
                 }
             else
                 noroute=$((noroute + 1))
-                [ "$syn" = '(?:...)' ] || \
-                    fail "case10: a row's syntax no longer routes" "$syn ($w)"
+                noroute_set="$noroute_set$syn
+"
             fi
         done
     done < <(grep -v '^#' "$d/dump.tsv" | cut -f3)
@@ -699,8 +720,12 @@ case10() {
     else
         fail "case10: cursor sweep" "swept=$swept (floor 198) moved=$moved"
     fi
-    assert_eq "case10: exactly one row is base-answered before the doorway" \
-        "2" "$noroute"
+    assert_eq "case10: exactly the named rows reach no doorway" \
+        "$noroute_expect" \
+        "$(printf '%s' "$noroute_set" | grep . | LC_ALL=C sort -u | tr '\n' ' ')"
+    # TWO probes per row (claim and verdict), so the count is 2x the set.
+    assert_eq "case10: ...and each of them was probed at both want levels" \
+        "10" "$noroute"
     # channel-cannot-run is exit 1 and distinct from a measured refusal
     "$PCREC" --probe-ask verdict -- 'abc' >/dev/null 2>"$d/ep2.txt"; rc=$?
     assert_eq "case10: --probe-ask on non-doorway text exits 1" "1" "$rc"

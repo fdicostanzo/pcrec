@@ -1183,6 +1183,26 @@ char *pcrec_syntax_explain(const char *query, unsigned flavours, int *ndissent,
             size_t slen = strlen(r->syntax);
             size_t cmp = qlen < slen ? qlen : slen;
             bool listed = cmp != 0 && strncmp(query, r->syntax, cmp) == 0;
+            /* [M6.4.2] A NON-DOORWAY ROW IS `listed` ONLY ON AN EXACT MATCH,
+             * and that is the mutual-prefix rule read correctly rather than an
+             * exception to it.
+             *
+             * The prefix half of `listed` is valuable because a DOORWAY row's
+             * `syntax` begins with the doorway text you partially type:
+             * `--explain '(?'` is a catalogue of the `(?` bucket, which is a
+             * real use and one cli case10 has depended on since SR-3. An
+             * RK_QUANTSUFFIX row has no such prefix — its `syntax` must be an
+             * EXECUTABLE pattern (tests/reject/run_reject_tests.sh RUNS it), so
+             * a possessive suffix has to carry an atom, and `a*+`'s leading `a`
+             * is a CARRIER rather than part of the construct.
+             *
+             * Without this clause every one-letter base query matched all four
+             * rows: `--explain 'a'` listed `a*+ a++ a?+ a{1,2}+` and EXITED 0,
+             * where `--explain` on base syntax must exit 1 saying "no construct
+             * matches" (cli case11). MEASURED as an 11-check `make test`
+             * failure before this line existed. */
+            if (listed && r->kind == RK_QUANTSUFFIX && qlen != slen)
+                listed = false;
             bool candidate = q.routed && r->kind == q.d.kind &&
                              r->sel != REG_SEL_ANY && r->sel == q.d.sel;
             /* The bucket's catch-all is shown ONLY when the arbitration
