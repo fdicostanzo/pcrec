@@ -31,7 +31,17 @@ SAB_SUITES="gentimeout"
 SAB_DESC="gen_cc runs the compiler directly instead of under the D45 budget (both clocks removed: no RLIMIT_CPU, no wall timeout; nothing else in the tree changes)"
 SAB_DOC_FIGURE="tests/lib/run_gen_timeout_tests.sh: the CPU fire control fails (an over-budget compile succeeds instead of dying of SIGXCPU with the D45 diagnostic)"
 SAB_COUNT=1
+# ANCHOR RE-DERIVED AGAIN 2026-08-22 (thirty-fifth session, manager). [TT-3]'s
+# CCACHE=1 wiring (merge ee57668) replaced the trampoline's `exec "$@"` with
+# `_gen_cc_run "$@"` (the compile/link-split dispatcher), moving this anchor's
+# quoted text. Caught by scripts/m6read_check_sab_anchors.py at the [DOC-DRV]
+# merge review — the tripwire's first live catch since its promotion-readiness
+# fix, and the reason it now joins the merge bar. The re-derived edit still
+# removes BOTH clocks and ONLY the clocks: the sabotaged call still routes
+# through _gen_cc_run, because removing the split as well would be a
+# DIFFERENT sabotage (the fire controls would catch pieces of it for the
+# wrong reason).
 SAB_BEFORE='    GEN_CC_LOG="$(timeout "$wall" bash -c \
-        '"'"'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; exec "$@"'"'"' \
+        '"'"'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; _gen_cc_run "$@"'"'"' \
         _ "$cpu" "$@" 2>&1)"'
-SAB_AFTER='    GEN_CC_LOG="$("$@" 2>&1)"  # SABOTAGE S43: budget not applied (neither clock)'
+SAB_AFTER='    GEN_CC_LOG="$(_gen_cc_run "$@" 2>&1)"  # SABOTAGE S43: budget not applied (neither clock)'

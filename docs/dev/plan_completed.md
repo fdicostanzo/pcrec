@@ -3463,3 +3463,39 @@ c"` from `(0,3)` into `(0,1)`, and
   the only shape-robust consumer and survived D65 unchanged; the two
   hardcoded-count consumers broke. Sonnet-sized; no dependency;
   schedule with the next test-infra window
+
+- [DOC-DRV] STATE:completed (CLOSED 2026-08-22, merge fc36e5e: 90 keyed annotations (38 registry-keyed live-checked, 52 base-keyed vs an independent allowlist), per-section generated annotation blocks, --check-annotations (stale-key + render-drift) and --tension (checked-tension both directions) landed and red-cased, survey untouched per the ruled model, migration manifest complete with zero ASK rows, two pre-existing compliance_section.py bugs fixed; compliance-refresh skill flipped to LANDED with the key-based procedure) — formerly STATE:not-started — COMPLIANCE PAGE AS ANNOTATED DERIVATION
+  (Frank, 2026-08-21, thirty-fifth session, from the "could the entire
+  compliance page be derived from source?" discussion): restructure
+  docs/pcre2_compliance.md so every derivable FACT is generated and the
+  hand-written residue shrinks to the two things that genuinely require a
+  human. THE THREE-COMPONENT MODEL, ruled: (1) GENERATED FACTS from
+  `--list-syntax` (status/module/gating/diagnostic + the [built-status]
+  column once the registry_built_status memo's implementation lands) —
+  never hand-edited, SR-4's cannot-drift property; (2) the INDEPENDENT
+  SURVEY derived from PCRE2's own documentation — NEVER generated from the
+  registry, because its value is answering "what does PCRE2 have that the
+  registry doesn't even list", and deriving it from the registry would
+  certify completeness from the thing being audited (the
+  controls-sharing-a-source class); (3) KEYED ANNOTATIONS — the
+  hand-written measurements and judgment (OK-LIMITED qualifiers, U-list
+  divergences, K-list caveats, D26 tiers, the deferral analysis), each
+  keyed to the construct it describes so staleness is detectable rather
+  than silent, rendered into the page by the generator. The page stays
+  trustworthy through the CHECKED TENSION of independently-derived halves
+  (compliance_section.py), not through full derivation. SCOPE: generator +
+  checker changes, migration of ~600 lines of prose-row content into keyed
+  annotations, prose shrunk to survey + judgment. THE PROCESS IS CARRIED BY
+  A SKILL (Frank's ruling, same discussion): .claude/skills/
+  compliance-refresh/SKILL.md defines the repeatable refresh procedure and
+  its invariants, exists NOW (ahead of this row), and governs the interim
+  discipline until this row lands; update its migration-status section when
+  this row moves. Sequencing: after the built-status column (which lands
+  first and independently); pairs naturally with it (same generator, same
+  checker). The recurring failure this retires: prose rows going stale
+  after waves land (three recorded instances in [M6.2] alone).
+  SCHEDULING RULED (Frank, 2026-08-21, triage ruling 2): CLEARED for
+  the test-infra window BEFORE [M6.4], sequenced AFTER [SR-11] (shared
+  compliance_section.py); the window also absorbs the anchor-checker
+  promotion into make test and the PROCS=4-5 tests/assertions
+  recommendation
