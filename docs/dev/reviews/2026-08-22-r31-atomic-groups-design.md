@@ -353,3 +353,23 @@ derive the root from their own location (`$PCREC`/`$1` still override;
 verified from /tmp); archive.sh stamps the RUN DIRECTORY; three archives
 re-run for the source change, headline numbers unchanged. §14 item 8 and
 §12 slice 4 record the identity claim as [M6.4.2]'s ruled landing gate.
+
+## Final re-check, r31chk on 03533bb/3623514 — N1, N2, N3 CLOSED; two more registry sites + a probe residual
+
+N2: the floor is tested BEFORE the vpos check, two-sided; re-run byte-
+identical. N3: all five re-aims judged APT, not merely resolvable. N1: all
+nine sites independently verified (the 99→103 subtlety confirmed — status
+column 1 base / 94 module / 5 rejected; exactly three `RegKind …[] =`
+arrays exist; the REGMANIFEST prose pins carry 48/100 in English); two
+candidates correctly EXCLUDED (the compliance page's "100 rows" is
+generated; pcre2_check.c iterates RK_COUNT).
+
+| ID | Sev | Claim | Evidence | Disposition |
+|---|---|---|---|---|
+| T1 | HIGH (hard red) | the nine-site table | site TEN, same file as site 1: run_reject_tests.sh iterates every non-base dump row, `$expect == "" → BADROW`, and row_reject requires bare `pcrec -p rx '<syntax>'` to exit EXACTLY 1 with `$expect` a substring of stderr; §7.4.1 never names `expect` (nor `note`, required by registry_check.c:143) — the sweep opened the file and extracted only the count literal | REVISION 2d: field values + site 10 |
+| T2 | MED (silent) | — | site ELEVEN: check_table_to_parser enumerates kinds by explicit CALL (`pcrec_registry(RK_ESC, …)` :770, RK_GROUP :833, check_class_syntax_reach :1606) — a fifth kind is silently uncovered by the table→parser agreement check, in the file R3 strengthens; neither a number, an array nor a switch, so none of the sweep's four extraction shapes matches | REVISION 2d: site 11; R3 covers it; the sweep widened by DEFECT SHAPE (field requirements; enumeration by call) |
+| N3-res. | LOW | probe_sref_consistency.sh | membership-only (all five original stale refs named EXISTING rows and would have passed); `sort -u`+`head -1` shows one line per row so the motivating A.2 site is never displayed; the display grep's population differs from the extractor's (3 of 9 shown lines are inside §11.4) | REVISION 2d: every citing line; same population; honest header |
+
+Method point (the critic's): the enumeration widened by FILE LIST (4 → 6 →
+7 → 9) and then by DEFECT SHAPE (→ 11). Both widenings are now the probe's
+record. No further critic round: the manager verifies 2d directly.

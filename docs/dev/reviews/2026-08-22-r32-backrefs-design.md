@@ -281,3 +281,26 @@ own exact guard — four guards now), C18 residue (9 cells / 8 patterns),
 S-BR12 flagged CROSS-MILESTONE (ships with [M6.5.2], unvalidatable until
 [M6.4.2]'s stamping; the matrix must not count it). r32eng's E12/E13/E14
 + E10 residual: in the lane's queue (revision 2b).
+
+## Final re-check, r32chk on e369fac — C2(a)(b)(c), N1, N2, N5, S-BR12 ALL CLOSED; two LOW wording residuals
+
+C2(a) the declared column with the drift-direction reason; (b) N asserted
+as a literal, not printed — deleting the fixture rows goes red; (c)
+calls_in_bodies() has one call site (:996, invoked twice in one
+substitution) so stripping inside the function reaches both; S68 plants a
+real CALL (its comment text is in emit_dfa.c's SOURCE, not the artifact)
+so stripping cannot hide it. N1: both prepend/walk sites verified
+(mod_named_groups.c:154-155; emit_dfa.c:676-677; ng_cmp_name :655-660
+name-only) and RE-MEASURED with the real input order — no tiebreak →
+`a/7 a/5 a/3 a/1 z/8 …` (name asc, number DESC) → the caller algorithm
+picks the HIGHEST participating member = the "last set" rule "xyy"
+refutes; CORRECTNESS confirmed; the structural detector sound (its order
+half vacuous while names are unique — live exactly when dupnames lands;
+totality exercisable today). N2: 47/49/6 over 102 "matches my prediction
+in every cell"; the two-populations statement is "the part that makes the
+correction durable". N5: §7 SPAN-DIVERGENCE section with the three cells
+and an EXACT fourth guard. S-BR12: cross-milestone, "the matrix must not
+count it". LOW residuals → the in-flight revision: the guard must be
+EXACT, not "at least N"; "UNCHANGED" for next_pos overstates (a comment
+naming it stops being flagged — toward the stated allowlist); strip before
+head-detection with in-comment state across awk records.

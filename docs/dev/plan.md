@@ -282,7 +282,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
     shape), mech sabotage rows, identity gate, CLAUDE.md updates,
     compliance-refresh, registry built column flips to built for every
     construct the module ships.
-  - [M6.4.3] STATE:not-started — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
+  - [M6.4.3] STATE:started (cell agd27 created 2026-08-22 10:3x from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py driver + GOAL_FACTS.md = the approved design's Appendix B; sonnet author in flight, in parallel with the design's final revision) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
     author denied src/ and tests/; written from the PCRE2 goal; may be
     AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the
     implementation; run against the shipped module at merge review for a
