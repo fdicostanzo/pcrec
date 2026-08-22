@@ -92,10 +92,82 @@ def subjects(alpha, maxlen, cap=4000, seed=20260822):
         for t in itertools.product(alpha, repeat=L):
             out.append("".join(t))
     rnd = random.Random(seed)
-    while len(out) < cap:
+    # R32 C8: DISTINCT subjects. The first version sampled WITH REPLACEMENT
+    # and reported the raw draw count, inflating three families 31.5x (127
+    # distinct subjects reported as 4,000). The loop now dedupes and gives
+    # up when the space is exhausted, so the denominator is the size of the
+    # population actually tested.
+    seen = set(out)
+    stall = 0
+    while len(seen) < cap and stall < 20000:
         L = rnd.randint(5, max(5, maxlen))
-        out.append("".join(rnd.choice(alpha) for _ in range(L)))
+        w = "".join(rnd.choice(alpha) for _ in range(L))
+        if w in seen:
+            stall += 1
+            continue
+        seen.add(w)
+        out.append(w)
+        stall = 0
     return out
+
+
+# R32 E2 / C12 -- THE POSITIVE CONTROL, and it is a REFUTATION rather than a
+# reassurance. The FALSE-NEG column had no cell in which it could be
+# non-zero, which makes a table of zeros unfalsifiable. These cells supply
+# one, and running them refutes the design's original superset claim: a
+# group holding a POSITION PREDICATE is not a pure language, so replacing
+# the reference by a copy of the group's text is NOT an over-approximation.
+# Every construct below ships in pcrec today.
+ASSERTION_CELLS = [
+    (r"(\ba)\1",        r"(\ba)\ba",       "aa"),
+    (r"^(\ba)\1$",      r"^(\ba)\ba$",     "aa"),
+    (r"^(^a)\1$",       r"^(^a)^a$",       "aa"),
+    (r"^(\Ga)\1$",      r"^(\Ga)\Ga$",     "aa"),
+    (r"^x((?<=x)a)\1$", r"^x((?<=x)a)(?<=x)a$", "xaa"),
+    (r"(\bfoo)\1",      r"(\bfoo)\bfoo",   "foofoo"),
+    (r"^(a\b)\1$",      r"^(a\b)a\b$",     "aa"),
+    (r"(a)\1",          r"(a)a",           "aa"),
+    (r"(\w)\1",         r"(\w)\w",         "aa"),
+    (r"^(a|b)\1$",      r"^(a|b)(a|b)$",   "aa"),
+]
+
+
+def positive_control():
+    print()
+    print("=" * 112)
+    print("POSITIVE CONTROL (R32 E2 / C12) -- can FALSE-NEG be non-zero?")
+    print("=" * 112)
+    print("A zero column is only evidence if a non-zero one is reachable.")
+    print("These cells put a POSITION PREDICATE inside the referenced group.")
+    print("Such a group is not a pure LANGUAGE -- whether it matches depends")
+    print("on WHERE it is tried -- so substituting its text is not an")
+    print("over-approximation at all.")
+    print()
+    print("%-24s %-26s %-8s %-10s %-10s %s"
+          % ("true pattern", "erasure", "subject", "true", "erased",
+             "FALSE-NEG?"))
+    print("-" * 104)
+    fn = ran = 0
+    for t, e, subj in ASSERTION_CELLS:
+        et, ee = O.compile_err(t), O.compile_err(e)
+        if et or ee:
+            print("%-24s %-26s %-8s SKIPPED (libpcre2 refuses)" % (t, e, repr(subj)))
+            continue
+        ran += 1
+        a = O.compile(t).search(subj)
+        b = O.compile(e).search(subj)
+        bad = a is not None and b is None
+        fn += bad
+        print("%-24s %-26s %-8s %-10s %-10s %s"
+              % (t, e, repr(subj), str(a and a[0]), str(b and b[0]),
+                 "*** YES ***" if bad else "no"))
+    print()
+    print("FALSE NEGATIVES: %d of %d cells." % (fn, ran))
+    print("Non-zero is the point: the FALSE-NEG column CAN move, so a zero")
+    print("in the family table above is a measurement and not a tautology --")
+    print("and the superset property holds only for an ASSERTION-FREE")
+    print("referenced group.")
+    return fn, ran
 
 
 def main():
@@ -171,6 +243,17 @@ def main():
     print("              not.")
     print("  last col  = how often the erasure agrees on NOMATCH, i.e. how")
     print("              much a sound `nomatch`-only prefilter would buy.")
+    print("  subjs     = DISTINCT subjects (R32 C8: the first version")
+    print("              sampled with replacement and inflated three")
+    print("              families 31.5x).")
+    fn, ran = positive_control()
+    if ran == 0:
+        print("REFUSING to report: the positive control did not run")
+        return 2
+    if fn == 0:
+        print("REFUSING to report: the positive control found NO false")
+        print("negative, so the FALSE-NEG column above is unfalsifiable.")
+        return 2
     if total_rows == 0:
         print("REFUSING to report: no idiom ran")
         return 2

@@ -13,6 +13,11 @@ either confirms or refutes:
      count -- the octal FALLBACK, and where its ceiling is.
   C. `\\0` and the `\\0dd` family, including the `\\377` / `\\400`
      boundary.
+  E. A DIGIT RUN BEGINNING WITH 8 OR 9 (R32 E3), which has NO octal
+     reading at all -- 8 and 9 are not octal digits, so the "re-read as
+     octal" branch would consume ZERO digits. The first draft of this
+     probe had no `\\8N`/`\\9N` cell and the design's rule 3 therefore
+     left an empty octal run.
   D. THE CLASS POSITION, which is base syntax in pcrec today
      (FIX-3/K13) -- measured against libpcre2 AND against the built
      `build/pcrec` binary, so the design can say what the module must
@@ -213,6 +218,58 @@ def axis_d(with_pcrec):
     print("makes it the 'must not change' baseline for module `backrefs`.")
 
 
+def axis_e():
+    hdr("E. A DIGIT RUN BEGINNING WITH 8 OR 9 -- always DECIMAL (R32 E3).")
+    print("`\\8` and `\\9` are not octal digits, so no octal reading of the")
+    print("run exists. Each row varies the GROUP COUNT and reports the")
+    print("compile verdict; the boundary is where err 115 stops.")
+    print()
+
+    def g(n):
+        return "".join("(a)" for _ in range(n))
+
+    counts = (0, 1, 8, 9, 10, 12, 81, 82, 90, 91, 100)
+    print("%-8s %s" % ("escape", "  ".join("g=%d" % c for c in counts)))
+    print("-" * 78)
+    for esc in (r"\8", r"\9", r"\80", r"\81", r"\89", r"\91", r"\812"):
+        cells = []
+        for c in counts:
+            e = O.compile_err(g(c) + esc)
+            cells.append("ok" if e is None else "e%d" % e[0])
+        print("%-8s %s" % (esc, "  ".join("%-5s" % x for x in cells)))
+    print()
+    print("The boundary for each run is exactly its own DECIMAL value, which")
+    print("is what makes it a decimal backreference and not anything else.")
+    print()
+    print("DISCRIMINATORS")
+    p81 = g(81) + r"\81"
+    print(r"  81 groups + \81 on 82 a's -> %s  (a backref to group 81)"
+          % (O.compile(p81).search("a" * 82) is not None))
+    f81 = r"\81" + g(81)
+    print(r"  \81 + 81 groups AFTER      -> compiles=%s, matches 81 a's=%s"
+          % (O.compile_err(f81) is None,
+             O.compile(f81).search("a" * 81) is not None))
+    print("     ... so the count is over the WHOLE pattern (a FORWARD")
+    print("     reference, which then fails at match time on the unset")
+    print("     rule) -- NOT the `so far` count a multi-digit run with a")
+    print("     valid octal reading uses.")
+    print(r"  \812 with 812 groups       -> %s"
+          % ("ok" if O.compile_err(g(812) + r"\812") is None else "refused"))
+    print(r"  \812 with  81 groups       -> %s"
+          % ("ok" if O.compile_err(g(81) + r"\812") is None
+             else "err %d" % O.compile_err(g(81) + r"\812")[0]))
+    print()
+    print(r"RIDER (R32 E3): references ABOVE \99 exist, so a construct table")
+    print(r"that stops at \99 is too narrow. And \100 keeps the ORDINARY")
+    print("multi-digit rule, because it HAS an octal reading:")
+    print(r"  100 groups BEFORE + \100, on 101 a's -> %s  (backref to 100)"
+          % (O.compile(g(100) + r"\100").search("a" * 101) is not None))
+    print(r"  \100 + 100 groups AFTER, on '@'+100a -> %s  (OCTAL '@')"
+          % (O.compile(r"\100" + g(100)).search("@" + "a" * 100) is not None))
+    print(r"  \100 with NO groups, on '@'          -> %s  (OCTAL '@')"
+          % (O.compile(r"\100").search("@") is not None))
+
+
 def main():
     if O.SELFCHECK:
         print("ORACLE SELFCHECK FAILED:", O.SELFCHECK)
@@ -223,6 +280,7 @@ def main():
     axis_a()
     axis_b()
     axis_c()
+    axis_e()
     axis_d("--no-pcrec" not in sys.argv)
     return 0
 
