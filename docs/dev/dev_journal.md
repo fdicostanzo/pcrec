@@ -11245,3 +11245,13 @@ only the goal) -> [M6.4.4] close. Then [M6.5] backrefs on the same
 shape, with the dupnames decision point implemented per the row.
 Oracles verified on this box: python 3.14 re handles both spellings
 correctly; libpcre2-8 10.46 present (no pcre2test binary — ctypes).
+
+[M6.5] DESIGN GATE CHARTERED IN PARALLEL (same entry, later the same
+morning): the backrefs design is disjoint from the atomic-groups design
+and the row was already richly ruled (dupnames semantics, the octal
+hint, the D58 caseless-compare seam), so its design gate runs now on a
+second opus lane (lane/brdesign) while [M6.4.1] runs on lane/agdesign.
+Landing order stays 6.4 -> 6.5: the discharge socket's first
+implementation belongs to [M6.4]; backrefs' finite-language expansion is
+its second customer. Two design lanes + the 10-minute stall watchdog
+(cron) in flight; no implementation until a design survives its panel.
