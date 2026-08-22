@@ -40,7 +40,7 @@ it. Where a re-verification moved a number, the movement is recorded inline.
 An atomic group is a **cut**: at the moment its body first succeeds, every
 choice point the body created is discarded, so the group can never be re-run
 with a different answer. pcrec's VM already has that operation —
-`RX_CUT(slot)`, emitted by `vm_cut` (`src/gen/emit_vm.c:1723-1737`), built for
+`RX_CUT(slot)`, emitted by `vm_cut` (`src/gen/emit_vm.c:1726-1737`), built for
 [ENG-BREP]'s possessification — and **this module needs no new VM primitive**:
 §3 shows the one invariant people worry about (the cut does not rewind the
 trail) is *independent of the proof that licenses today's cuts*, and §3.4
@@ -86,12 +86,12 @@ archived here as `out/wswitch_alarm_rerun.txt`.
 
 | # | premise | verified how | result |
 |---|---|---|---|
-| P1 | `(?>` refuses, naming module `atomic-groups` | `build/pcrec -p rx '(?>a)'` | refuses: "requires module 'atomic-groups'" |
-| P2 | the possessive suffix refuses, naming the same module, from OUTSIDE the registry | `src/parse/parse.c:987-988`; `build/pcrec -p rx 'a{,2}+b'` | refuses at pattern offset 5 (the `+`) |
+| P1 | `(?>` refuses, naming module `atomic-groups` | `build/pcrec -p rx '(?>a)'` | `pcrec: (?>...) requires module 'atomic-groups' (pattern offset 0)` |
+| P2 | the possessive suffix refuses, naming the same module, from OUTSIDE the registry | `src/parse/parse.c:987-988`; `build/pcrec -p rx 'a*+'` and `'a{,2}+b'` | `pcrec: possessive quantifier requires module 'atomic-groups' (pattern offset 2)` / `(pattern offset 5)` — the `+` in both cases |
 | P3 | `{,n}` is ALREADY a quantifier in pcrec's base tier | `a{,2}b` compiled and run on `"aab"` | **match 0 3** — the quantifier reading, agreeing with PCRE2 10.46 and python 3.14 |
 | P4 | `RX_CUT` does not touch the trail | `src/gen/emit_vm.c:4791-4793` (and the `--trace` twin at `:4823-4826`) | `run->resume_depth = slot_values[slot]`, one statement |
 | P5 | the fail label rewinds the trail to the POPPED FRAME's mark | `src/gen/emit_vm.c:5071-5079` | `while (trail_depth > frame.trail_mark) { … }` |
-| P6 | the emitted search loop already retries at later starts and RE-ASKS the prefilter | `src/gen/emit_vm.c:5170-5177`, `:5240-5256` | `attempt_position++` then the recompute block, verbatim in an emitted artifact (`out/ceiling_shape.txt`) |
+| P6 | the emitted search loop already retries at later starts and RE-ASKS the prefilter | `src/gen/emit_vm.c:5169-5182`, `:5240-5256` | `attempt_position++` then the recompute block, verbatim in an emitted artifact (`out/ceiling_shape.txt`) |
 | P7 | the artifact STAMPS which MRL ceiling it uses | `#define RX_VM_PRUNE_CEILING` | `"prefilter-window"` by default, `"subject-end"` under `-fno-prefilter` / `--engine=vm` |
 | P8 | `--engine=dfa`'s VM_ONLY-construct refusal branch exists and has run | `src/opt/select_engine.c:321-335` | shipped, first used by `\K` ([M6.2] wave E) |
 | P9 | possessify only ADDS marks and never reads `possessive` in its analysis | `src/opt/possessify.c:631-635` | `if (verdict && !a->possessive)`; no other read |
@@ -138,7 +138,7 @@ Every fact in §3 is derived from those four blocks and nothing else.
 
 ### 3.1 The invariant, and why it does NOT rest on possessify's proof
 
-`vm_cut`'s own comment (`src/gen/emit_vm.c:1673-1687`) states the
+`vm_cut`'s own comment (`src/gen/emit_vm.c:1672-1687`) states the
 no-trail-rewind rule and gives two reasons for it. **They are different
 reasons, and only one of them is possessify's.**
 
@@ -222,7 +222,7 @@ delete a language feature. §11 gives both a sabotage row.
 possessive rungs (`vm_poss_star`, `vm_poss_chain`, `vm_counter_poss_opt`),
 which cut at every ITERATION boundary rather than once at the group's exit —
 same answers, and a frame requirement independent of the iteration count
-(`src/gen/emit_vm.c:3268-3272`: "the frame requirement is therefore `1 + body`
+(`src/gen/emit_vm.c:2433-2436`: "the frame requirement is therefore `1 + body`
 instead of `(n-m) * (1 + body)`"). The naive lowering (mark, ordinary star,
 cut) is **STRUCTURAL**ly worse: `vm_star`'s frames rung pushes one frame per
 iteration, so `(?>a*)` on a long subject exhausts `RX_RESUME_FRAMES` where
@@ -248,7 +248,7 @@ L_cut:    RX_CHARGE_WORK((ptrdiff_t)run->resume_depth - slot_values[SLOT_CUT_MAR
 ```
 
 which is `vm_cut(v, mark, role)` verbatim — the work charge is already inside
-it (`src/gen/emit_vm.c:1728-1734`) and its accounting rule is unchanged here:
+it (`src/gen/emit_vm.c:1728-1735`) and its accounting rule is unchanged here:
 "pushed, then CUT → CHARGED, at every cut: the frames being discarded were
 never popped through `rx_fail`, so nothing counted them." An atomic group's
 discarded frames are in exactly that category.
@@ -393,7 +393,7 @@ coincidence: an atomic match's own path is an uncut path.
 already ships.** `window[0][0]` may be used to SEED an attempt and may never be
 reported. It is already never reported: `rx_report_captures` is called with
 `attempt_position` — the position the VM actually matched at — not with
-`window[0][0]` (`src/gen/emit_vm.c:5254`). And the loop already advances and
+`window[0][0]` (`src/gen/emit_vm.c:5256`). And the loop already advances and
 re-asks the prefilter on failure (P6). **What changes is not the code but its
 status**: D51 ruling 2's obligation (b) records a "STRUCTURAL argument that the
 retry cannot fire" resting on span-equality between the two machines, and
@@ -405,7 +405,7 @@ best thing in this section: the correct behaviour is already shipped, because
 a ruling refused to rest on an argument that has now expired.**
 
 One PERFORMANCE consequence, not a correctness one: the recompute block is
-emitted only when `v.nclamp > 0` (`src/gen/emit_vm.c:5169-5177`). A cut pattern
+emitted only when `v.nclamp > 0` (`src/gen/emit_vm.c:5169-5182`). A cut pattern
 with no MRL clamp sites retries byte-by-byte instead of asking the prefilter
 where the next candidate is. Recommendation (optional, [M6.4.2]'s call):
 decouple the recompute from `nclamp` so it is emitted whenever a prefilter
@@ -442,12 +442,12 @@ find: the DFA artifact's `rx_match` is `rx_search` plus
 `caps[0][0] != ctx->pos`, and BOTH lines break under `\K`. The correction
 recorded there is that a `\K` pattern is VM-forced and so never HAS that entry.
 The same is true here, and for the same two structural reasons
-(`src/gen/emit_vm.c:5266-5290`): `rx_match_anchored` starts at `ctx->pos` and
+(`src/gen/emit_vm.c:5268-5300`): `rx_match_anchored` starts at `ctx->pos` and
 never moves it, so "anchored at the requested position" is a property of the
 call; and it returns `pos - ctx->pos`, computed from positions and never from
 `caps`. **Additionally** — and this is the part that is this module's and not
 `\K`'s — the match-here entries pass `ctx->len` as the ceiling, not a prefilter
-window (D51 ruling 2 obligation (a), `src/gen/emit_vm.c:5187-5191`), so H3's
+window (D51 ruling 2 obligation (a), `src/gen/emit_vm.c:5368` (`<prefix>_match_caps` passes `ctx->pos`; the ceiling argument is `ctx->len`)), so H3's
 hazard cannot reach them either. The obligation this creates is EVIDENCE, on
 wave E's precedent: an entries driver (Appendix A) that runs all three entries
 side by side on the cut corpus.
@@ -464,7 +464,7 @@ question instead of rediscovering it.
 
 ### 5.1 What forces the VM
 
-A third `EngineAnalysis` row (`src/opt/select_engine.c:170-173`), on the `\K`
+A third `EngineAnalysis` row (`src/opt/select_engine.c:160-166`), on the `\K`
 row's shape and for the `\K` row's stated reason — the honest form of the
 question is STRUCTURAL, so the tree is what gets asked:
 
@@ -478,7 +478,7 @@ static unsigned forces_atomic(Ctx *cx, const Ast *a, size_t *why_pos, const char
 }
 ```
 
-`has_atomic` is written to `has_kreset`'s discipline (`:124-155`): iterative on
+`has_atomic` is written to `has_kreset`'s discipline (`:121-158`): iterative on
 both spines, recursive only into a spine element's right child and into
 `A_CAP`/`A_REP`/`A_ATOMIC` bodies, and **no `default:`** — a node kind added
 later must be a compile error here. `first_atomic_pos` is a `Ctx` field on
@@ -486,7 +486,7 @@ later must be a compile error here. `first_atomic_pos` is a `Ctx` field on
 
 Row ORDER: appended after `kreset`, which makes the verdict unchanged (the pass
 ANDs the masks) and the DIAGNOSTIC captures-first, `\K`-second, atomic-third —
-the same rationale the file already records at `:157-167` (the user can act on
+the same rationale the file already records at `:168-176` (the user can act on
 `--no-captures`; "do not write `(?>`" is not advice).
 
 The `why` STRING is per-CONSTRUCT, not per-module: `(?>a|ab)c` says "atomic
@@ -496,7 +496,7 @@ wrote is what makes the message actionable.
 
 ### 5.2 `--engine=dfa` refuses, and needs no new code
 
-The second branch of the override (`src/opt/select_engine.c:326-334`) already
+The second branch of the override (`src/opt/select_engine.c:326-336`, the second `ctx_fail` at `:334-335`) already
 does it:
 
 ```
@@ -563,7 +563,7 @@ with `+` suffixes injected, which this lane did not do).
 
 `engine_m4.md` §5.2 designed the `EngineAnalysis.discharge` hook with this
 module named as a customer. **This design declines to use it, for the two
-reasons `run_possessify`'s own header already gives** (`select_engine.c:200-224`),
+reasons `run_possessify`'s own header already gives** (`select_engine.c:194-231`),
 plus one this lane measured:
 
 1. *The socket only runs when the pattern is VM-FORCED.* A capture-free `a*+b`
@@ -576,7 +576,7 @@ plus one this lane measured:
    node discharged and one not) the rewrite happens and the mask does not move,
    which is exactly the shape §5.2 warns spins the fixpoint.
 3. **STRUCTURAL, and it is a live defect in the socket rather than a design
-   preference**: the fixpoint's discharge loop (`select_engine.c:283-293`) never
+   preference**: the fixpoint's discharge loop (`select_engine.c:283-294`) never
    CALLS a registered hook. It sets `rewrote = true` for any non-NULL
    `discharge` and loops. Registering a hook today would run the analysis pass
    `SELECT_MAX_ROUNDS` = 8 times and rewrite nothing. §5.2 anticipated this
@@ -606,8 +606,17 @@ Frank's companion note rules the long-term answer: cuts preserve regularity
 atomic pattern is DFA-compilable, and the construction's one primitive — the
 sub-expression's OWN priority-first match endpoint, computed ignoring the
 continuation — is what pcrec's subset construction already does
-(`src/core/compile.c:216`'s priority pruning; `src/ir/dfa.c:632-651`'s
-`make_state`).
+(`src/ir/dfa.c:649-654`'s priority pruning — `if (cl->prune) { cl->ks->n = 0;
+return; }` — and `src/ir/dfa.c:1027`'s `make_state`).
+
+> **A citation-drift note, reported because the panel will check both.**
+> `assertions_design.md` §2 cites `src/ir/dfa.c:632-651` for `make_state` and
+> `engine_m4.md` cites `src/core/compile.c:216` for the priority prune. Neither
+> is where those things are on this HEAD: `make_state` is at `:1027` and the
+> prune is at `:649-654`. Both moved after those documents were written. This
+> lane re-derived every line it cites rather than inheriting one, which is
+> constraint (a); the older citations are not corrected here because they are
+> not this lane's to edit.
 
 **Charter for `[ENG-CUT]`:**
 
@@ -721,7 +730,7 @@ with "multiple repeat". D26 tier 2 (RECOGNITION) says pcrec must also REFUSE;
 tier 3 says the wording is ours.
 
 **And pcrec already emits libpcre2's exact sentence for the neighbouring
-case.** `src/parse/parse.c:975` is
+case.** `src/parse/parse.c:974` is
 `ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item")`,
 with a comment recording that the blame position is measured cell for cell
 against PCRE2's. So the module gets tier-2 correctness and an
@@ -732,7 +741,7 @@ requirement is a clean refusal, and matching the wording is a coincidence to be
 noted, not a target to be maintained.
 
 The structural rule: after the lazy `?` has been consumed
-(`src/parse/parse.c:984`), a following `+` is an ERROR, not a possessive
+(`src/parse/parse.c:986`), a following `+` is an ERROR, not a possessive
 marker. Today the `+` branch is `else if` on the same peek, so the lazy case
 already falls through to the loop's next round and hits `multiple quantifiers`.
 [M6.4.2] must confirm which of the two messages fires and pin it in
@@ -786,7 +795,7 @@ reader should look for "why is this a VM artifact".
 
 ### 6.5 The revdet hazard this lane found — STRUCTURAL, and it is the reason §3.2's rule 1 is not cosmetic
 
-`src/opt/revdet.c:179`, in `rd_node` (the reversed-body copy constructor):
+`src/opt/revdet.c:178-179`, in `rd_node` (the reversed-body copy constructor):
 
 ```c
 /* The copy is walk material, never a rung host: nothing analyses it and
@@ -796,7 +805,7 @@ n->possessive = false;
 ```
 
 and that copy IS emitted — `vm_rev_emit(v, revl, a->revbody, wstepl, &R)` at
-`src/gen/emit_vm.c:2887`. `rd_shape` (`revdet.c:127-129`) accepts an `A_REP`
+`src/gen/emit_vm.c:2887`. `rd_shape` (`revdet.c:128-130`) accepts an `A_REP`
 inside the body when `rmin == rmax && rmin >= 1`, so a `{2}+`-shaped item can
 sit inside a revdet-approved body. **If the module had stored its semantics in
 `Ast.possessive`, `rd_node` would silently delete it on the copy the emitter
@@ -808,7 +817,7 @@ measurement matters: `revdet.c:185` is one of the 15 sites, and the compiler
 will not let the module land without answering there.
 
 **THE ANSWER AT BOTH SITES IS DECLINE**, on `\K`'s precedent
-(`revdet.c:100-124`): an atomic group is not reversal-invariant. Its cut is
+(`revdet.c:184-208`): an atomic group is not reversal-invariant. Its cut is
 defined relative to the FORWARD priority order — "the body's first success" is
 not a property a backwards walk can reproduce — so `rd_shape` sets `S->ok =
 false` on `A_ATOMIC` and `rd_reverse` errors on it, exactly as they do for
@@ -1059,7 +1068,8 @@ The one-shot gate above does not survive the wave, so four checks go into
   after it. (CUT-INV clause 2, §3.3 properties 1 and 2.)
 - **`[M6.4-ATOMIC rule 4]`** — a DISCHARGED pattern emits no mark slot and no
   `RX_CUT`; a capture-free discharged pattern emits no VM at all
-  (`RX_ENGINE` absent). (§5.3.)
+  (`RX_ENGINE` absent — MEASURED: a `--no-captures` DFA artifact contains zero
+  `RX_ENGINE` defines). (§5.3.)
 
 ### 11.4 The mech sabotage rows
 
