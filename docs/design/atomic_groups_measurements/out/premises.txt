@@ -3,11 +3,16 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_premises.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 546a39d 2026-08-22
-# RUN FROM REPO COMMIT        : 546a39d (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/atomic_groups_measurements/out/premises.txt
-# RUN DATE   : 2026-08-22T09:06:49-04:00
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+#      M docs/design/atomic_groups_measurements/out/premises.txt
+# RUN DATE   : 2026-08-22T10:18:46-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,7 +22,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-pcrec binary: build/pcrec
+pcrec binary: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
 
 == P1/P2: the module's two refusal sites, and their offsets ==
   (?>a)        (?>...) requires module 'atomic-groups' (pattern offset 0)

@@ -3,13 +3,15 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_cut_dispatch.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 81051d8 2026-08-22
-# RUN FROM REPO COMMIT        : ee64e5b (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/atomic_groups_measurements/out/atomic_semantics.txt
-#      M docs/design/atomic_groups_measurements/out/cut_trail_proto.txt
-#     ?? docs/design/atomic_groups_measurements/out/cut_dispatch.txt
-# RUN DATE   : 2026-08-22T09:41:05-04:00
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+# RUN DATE   : 2026-08-22T10:18:45-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -19,7 +21,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-pcrec: build/pcrec   (all patterns compiled --engine=vm --no-captures)
+pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec   (all patterns compiled --engine=vm --no-captures)
 
 === (1)+(2) vm_rep's FIVE dispatch paths, each driven by a pattern
 ===         possessify's shipped verdict MARKS (strats=0x1) ===
@@ -36,6 +38,29 @@ pcrec: build/pcrec   (all patterns compiled --engine=vm --no-captures)
                        -> COUNTER, BOUNDED: vm_counter_poss_opt / vm_poss_chain, RX_CUT per iteration.
   (?:ab|b){8,}c      COUNTER           strats=0x1  | RX_CUT( calls=0  2nd-spelling=0  mark-slot-refs=2 | naive `grep -c RX_CUT`=1
                        -> COUNTER, UNBOUNDED: **K29**. vm_counter_rep:3355-3358 tails into vm_star, which never reads a->possessive. Stamped POSSESSIVE, cut-mark slot ALLOCATED AND WRITTEN, and NEITHER spelling of a cut is emitted.
+
+=== (2b) THE RUNG'S OWN GATE — a SECOND filter, independent of the body ===
+r31eng's final finding: RULE 3's (a)(b)(c) are BODY properties, and a lift
+ALSO inherits whatever gate the SELECTED RUNG applies. The instance is
+vm_rev_canmove (emit_vm.c:973-975):
+    static bool vm_rev_canmove(const Ast *a)
+    {
+        return !a->possessive && (a->rmax < 0 || a->rmax > a->rmin);
+  Its EXACT-COUNT clause -- `rmax > rmin` -- suppresses the retreat frame
+  because "there is one exit", which is a UNIQUE-ITERATION statement that
+  consults no verdict. For a body §2.2 REJECTS at an exact count, "one
+  exit" is false.
+
+  Is the cell reachable? It needs: revdet-APPROVED and possessify-REJECTED
+  and rmin == rmax. Swept below; a LIVE line would name one.
+    swept 14 bodies x 3 exact counts. No LIVE line above means the cell is
+    EMPTY TODAY: revdet's own gate is strictly stronger than possessify's on
+    everything constructible here -- e.g. (?:a|ab){2}c takes FRAMES_BOUNDED,
+    not revdet, and answers correctly.
+    NOT-EMPTY at a NON-exact count, and that is a different clause:
+    (?:ab|cd){2,4}c IS revdet-approved and possessify-rejected -- but there
+    rmax > rmin, so canmove is true, the retreat frame IS emitted, and the
+    `!a->possessive` half is what vm_cuts() already covers (E4).
 
 === (3) C3's failing direction, on the K29 artifact, no sabotage ===
   pattern            : (?:ab|b){8,}c   (stamped POSSESSIVE, emits no cut)

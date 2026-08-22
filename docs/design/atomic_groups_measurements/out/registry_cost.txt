@@ -3,11 +3,18 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_registry_cost.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: c6f96c4 2026-08-22
-# RUN FROM REPO COMMIT        : c6f96c4 (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
+#      M docs/design/atomic_groups_measurements/out/ceiling_shape.txt
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+#      M docs/design/atomic_groups_measurements/out/premises.txt
 #      M docs/design/atomic_groups_measurements/out/registry_cost.txt
-# RUN DATE   : 2026-08-22T10:10:24-04:00
+# RUN DATE   : 2026-08-22T10:18:47-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15

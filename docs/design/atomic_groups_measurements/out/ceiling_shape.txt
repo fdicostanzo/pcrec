@@ -3,11 +3,17 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_ceiling_shape.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: e45306c 2026-08-22
-# RUN FROM REPO COMMIT        : e45306c (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/atomic_groups_measurements/out/
-# RUN DATE   : 2026-08-22T08:45:46-04:00
+#      M docs/design/atomic_groups_measurements/out/ceiling_shape.txt
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+#      M docs/design/atomic_groups_measurements/out/premises.txt
+# RUN DATE   : 2026-08-22T10:18:46-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,7 +23,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-pcrec binary: build/pcrec (/home/duxevents/pcrec/worktrees/agdesign/build/pcrec)
+pcrec binary: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec (/home/duxevents/pcrec/worktrees/agdesign/build/pcrec)
 pattern under test: (a|bc){1,4}d
 
 THE POSITIVE ARM — captures ON (VM-forced) and the prefilter ON (auto):

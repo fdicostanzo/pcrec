@@ -3,11 +3,19 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/atomic_groups_measurements/probes/probe_lift_preference.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 70fa3ff 2026-08-22
-# RUN FROM REPO COMMIT        : 70fa3ff (lane/agdesign)
+# PROBE LAST CHANGED AT COMMIT: 690c3f4 2026-08-22
+# RUN FROM REPO COMMIT        : 690c3f4 (lane/agdesign)
+# RUN DIRECTORY               : /home/duxevents/pcrec/worktrees/agdesign
+#   (r31eng final: named because every probe resolves its pcrec from
+#    its own location, so WHICH TREE produced a number is a fact the
+#    header must carry rather than one a reader has to assume.)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/atomic_groups_measurements/out/lift_preference.txt
-# RUN DATE   : 2026-08-22T10:04:37-04:00
+#      M docs/design/atomic_groups_measurements/out/ceiling_shape.txt
+#      M docs/design/atomic_groups_measurements/out/cut_dispatch.txt
+#      M docs/design/atomic_groups_measurements/out/lift_preference.txt
+#      M docs/design/atomic_groups_measurements/out/premises.txt
+#      M docs/design/atomic_groups_measurements/out/registry_cost.txt
+# RUN DATE   : 2026-08-22T10:18:47-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,7 +25,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-libpcre2: 10.46 2025-08-27   pcrec: build/pcrec
+libpcre2: 10.46 2025-08-27   pcrec: /home/duxevents/pcrec/worktrees/agdesign/build/pcrec
 
 === PART A — lazy quantifiers ARE possessified today, on every path ===
 PATTERN              path                STRATS   cuts     2nd-spelling
