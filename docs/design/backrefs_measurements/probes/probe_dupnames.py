@@ -96,6 +96,14 @@ def q2_refusals():
         (r"((?J)(?<a>x))(?<a>y)",  "(?J) set inside a group, dup outside"),
         (r"(?-J)(?J)(?<a>x)(?<a>y)", "(?J) after (?-J)"),
         (r"(?J)(?<a>x)(?<a>y)\1", "numeric backref to a dup-named group"),
+        # THE SEPARATING CELLS for "checked AT THE DECLARATION" vs
+        # "(?J) anywhere in the pattern legalises everything". Named by
+        # the design review as missing; measured here rather than argued.
+        (r"(?<a>x)(?<a>y)(?J)",    "(?J) AFTER both declarations"),
+        (r"(?<a>x)(?<a>y)(?J)\k<a>", "same, plus a by-name reference"),
+        (r"(?J)(?<a>x)(?-J)(?<a>y)", "(?J) then (?-J) before the second"),
+        (r"(?J)(?<a>x)(?:(?-J)q)(?<a>y)",
+         "(?-J) SCOPED AWAY before the second declaration"),
     ]
     print("%-30s %-11s %-11s %s"
           % ("pattern", "options=0", "DUPNAMES", "note"))

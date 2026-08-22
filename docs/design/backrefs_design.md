@@ -1069,12 +1069,31 @@ MEASURED, `out/dupnames.txt` §2, libpcre2 with and without `PCRE2_DUPNAMES`
 | `(?J:(?<a>x)(?<a>y))(?<a>z)` | **err 143** | ok | third outside |
 | `((?J)(?<a>x))(?<a>y)` | **err 143** | ok | `(?J)` inside a group |
 | `(?-J)(?J)(?<a>x)(?<a>y)` | ok | ok | re-enabled |
+| `(?<a>x)(?<a>y)(?J)` | **err 143** | ok | **`(?J)` AFTER both declarations does not help** |
+| `(?<a>x)(?<a>y)(?J)\k<a>` | **err 143** | ok | same, with the reference present |
+| `(?J)(?<a>x)(?-J)(?<a>y)` | **err 143** | **err 143** | **an inline `(?-J)` BEATS the API bit** |
+| `(?J)(?<a>x)(?:(?-J)q)(?<a>y)` | **ok** | ok | the `(?-J)` is SCOPED away before the second declaration |
 
-**The rule those thirteen rows determine: the duplicate check is made AT EACH
-DECLARATION, against the `(?J)` state in force AT THAT DECLARATION.** Not at
-the pattern's start, not globally. `(?<a>x)(?J)(?<a>y)` is legal because the
-*second* declaration is under `(?J)`; `(?J:(?<a>x))(?<a>y)` is not, because
-the second is not.
+**The rule those seventeen rows determine: the duplicate check is made AT EACH
+DECLARATION, against the SCOPED `(?J)` state in force AT THAT DECLARATION.**
+Not at the pattern's start, not globally, and not once for the whole compile.
+The last four rows are the separating cells and each kills a plausible
+alternative reading:
+
+- `(?<a>x)(?<a>y)(?J)` is **error 143**, which kills "`(?J)` anywhere in the
+  pattern legalises everything" — the reading the first three rows are equally
+  consistent with.
+- `(?J)(?<a>x)(?-J)(?<a>y)` is **error 143 EVEN WITH `PCRE2_DUPNAMES` SET**,
+  which is the sharpest cell in the matrix: the *inline* letter is not a way
+  of turning the option on, it is the authoritative scoped state, and it can
+  turn the API option OFF. Every other row in this table leaves that
+  ambiguous.
+- `(?J)(?<a>x)(?:(?-J)q)(?<a>y)` is **ok**, so the `(?-J)` really is scoped to
+  its group and restored at the closing paren — the ordinary modifier-scope
+  discipline, not a special case.
+
+`(?<a>x)(?J)(?<a>y)` is legal because the *second* declaration is under
+`(?J)`; `(?J:(?<a>x))(?<a>y)` is not, because the second is not.
 
 That is `Ast.multiline`'s and `caseless`'s shape once more, one layer up: a
 scoped parser-state bool saved and restored at group boundaries. So
@@ -1256,20 +1275,27 @@ single `\g` row and would be claimed by this module's port. It is a
 SUBROUTINE CALL (§2, measured), so claiming it would be a miscompile of the
 kind D26 tier 1 forbids. Two ways to be truthful:
 
-- **(preferred) two new `RK_ESC` rows with tails `<` and `'`**, module
-  `recursion`, mirroring `registry.c:611-612`'s `(?P=` / `(?P>` split
-  exactly. The registry already arbitrates multiple rows in one
-  `(kind, sel)` bucket — `registry.c:446-452`'s comment on the `\p`/`\P`
-  longhand notes that those two "are alone in their `(RK_ESC, sel)` bucket
-  (no arbitration to affect)", which states the mechanism by implication.
-  **This is STRUCTURAL-with-a-caveat and §13 P-5 is the check**: the panel
-  should verify that `RK_ESC` rows honour the tail field the way `RK_GROUP`
-  rows do, because if they do not, the fallback is (b).
-- **(fallback) one row, and the atom port refuses the `<`/`'` tails** naming
-  module `recursion` in its own message. Truthful, but invisible to
-  `--list-syntax` and therefore to D65's column and to the compliance index —
-  which is exactly the "34 rows read identically" problem the memo was
-  written about.
+- **(preferred, and STRUCTURAL — the mechanism exists and is in use) two new
+  `RK_ESC` rows with tails `<` and `'`**, module `recursion`, mirroring
+  `registry.c:611-612`'s `(?P=` / `(?P>` split exactly.
+
+  Verified rather than assumed, because the first draft of this section marked
+  it as the document's weakest claim: `esc_answer` (`src/parse/ext.c:193-200`)
+  reads the tail at the cursor and passes it to
+  `pcrec_registry_arbitrate(RK_ESC, c, tl, avail, &amb)`, and that function
+  (`src/parse/registry.c`) is **kind-agnostic** — it matches `sel`, then calls
+  `pcrec_registry_row_answers`, which delegates to the row's `recognise` hook
+  or to `pcrec_recognise_tail_default(at, avail, r->tail)`, and breaks ties by
+  `rank`. **The shipped precedent is `\N`**: `registry.c:333` is
+  `{RK_ESC, 'N', "{", ...}` and `registry.c:349` is
+  `{RK_ESC, 'N', "{U+", ...}` — two `RK_ESC` rows in ONE `(kind, sel)` bucket,
+  arbitrated by tail and rank, exactly the shape `\g<` and `\g'` need.
+- **(fallback, no longer needed) one row, and the atom port refuses the `<`/`'`
+  tails** naming module `recursion` in its own message. Truthful, but
+  invisible to `--list-syntax` and therefore to D65's column and to the
+  compliance index — which is exactly the "34 rows read identically" problem
+  the memo was written about. Recorded because it is the answer if the panel
+  finds something wrong with the arbitration reading above.
 
 **`--features backrefs` gating.** The module is `FEAT_BACKREFS`
 (`internal.h:753`), already allocated. Partial enable follows every other
@@ -1502,15 +1528,18 @@ claim in the document with no number behind it.
 FIX: that reordering the two branches does not break the `\K`-free captures
 case. The check is the existing `tests/cli` refusal cells.
 
-**P-5. `RK_ESC` rows honour a tail selector (§9).**
-*Refuted by*: reading `pcrec_ext_escape`'s arbitration
-(`src/parse/ext.c:317-340`) and finding that it keys only on `(kind, sel)`.
-If so, the `\g<`/`\g'` split takes §9's fallback (b) and the registry cannot
-see those two spellings — which weakens the D65 column claim but changes no
-semantics. **This is the weakest structural claim in the document** and I have
-marked it so rather than checking it, because it is a five-minute read the
-panel can do independently and a claim I would rather have contested than
-confirmed by its own author.
+**P-5. `RK_ESC` rows honour a tail selector (§9). CHECKED, and it was the
+document's weakest claim until it was.** The first draft left this unverified
+and said so. It is now STRUCTURAL with a shipped precedent (`\N{` and `\N{U+`,
+two `RK_ESC` rows in one bucket, `registry.c:333` and `:349`), and §9 carries
+the chain. The residual named in an earlier revision — whether
+`pcrec_recognise_tail_default` treats `RK_ESC` differently — is CLOSED by
+reading it: its whole body is
+`if (!tail) return true; return at && tl <= avail && memcmp(at, tail, tl) == 0;`
+(`src/parse/registry.c`), which mentions no `RegKind` at all. *Refuted by*: a
+`rank` interaction — the two new `\g` rows must outrank the tail-less `\g`
+row, and the existing `\g` row's rank field must be checked at
+implementation time.
 
 **P-6. The expansion should not ship (§6.3).**
 *Refuted by*: a corpus of real `--no-captures` backref patterns in which
@@ -1538,13 +1567,15 @@ adding two strings to `decls_byte`/`defs_byte` and the design is simpler. **I
 recommend against it on the lookbehind argument (§4.5's last paragraph), not
 on size.**
 
-**P-9. The `(?J)` scoping rule (§8.1).**
-*Refuted by*: a cell where the check is NOT at the declaration — e.g. if
-`(?J)` appearing anywhere legalises everything before it. `(?J:(?<a>x))(?<a>y)`
-being error 143 rules that out for the scoped form; the unscoped
-`(?<a>x)(?J)(?<a>y)` being legal is consistent with "at the declaration" and
-ALSO with "anywhere at or before the second declaration". A cell separating
-those two — `(?<a>x)(?<a>y)(?J)` — is **not in the archive** and should be.
+**P-9. The `(?J)` scoping rule (§8.1). RESOLVED — the separating cells were
+missing from the first draft and are now measured.** `(?<a>x)(?<a>y)(?J)` is
+error 143, which kills "anywhere in the pattern"; `(?J)(?<a>x)(?-J)(?<a>y)` is
+error 143 *even with `PCRE2_DUPNAMES` set*, which shows the inline letter is
+authoritative over the API bit; `(?J)(?<a>x)(?:(?-J)q)(?<a>y)` compiles, which
+shows the ordinary scope-restore applies. *Refuted by*: a cell where the state
+at the declaration is not what decides — the obvious remaining one is a
+declaration inside a `(?|...)` branch reset, which pcrec does not implement
+and which is out of scope.
 
 ---
 

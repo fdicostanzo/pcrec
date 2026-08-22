@@ -4,10 +4,11 @@
 # PROBE      : docs/design/backrefs_measurements/probes/probe_dupnames.py
 # ARGS       : (none)
 # PROBE LAST CHANGED AT COMMIT: 831e498 2026-08-22
-# RUN FROM REPO COMMIT        : 9b55272 (lane/brdesign)
+# RUN FROM REPO COMMIT        : 252f1d8 (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/backrefs_measurements/out/
-# RUN DATE   : 2026-08-22T08:50:30-04:00
+#      M docs/design/backrefs_measurements/out/dupnames.txt
+#      M docs/design/backrefs_measurements/probes/probe_dupnames.py
+# RUN DATE   : 2026-08-22T09:03:30-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -55,6 +56,10 @@ pattern                        options=0   DUPNAMES    note
 ((?J)(?<a>x))(?<a>y)           err 143     ok          (?J) set inside a group, dup outside
 (?-J)(?J)(?<a>x)(?<a>y)        ok          ok          (?J) after (?-J)
 (?J)(?<a>x)(?<a>y)\1           ok          ok          numeric backref to a dup-named group
+(?<a>x)(?<a>y)(?J)             err 143     ok          (?J) AFTER both declarations
+(?<a>x)(?<a>y)(?J)\k<a>        err 143     ok          same, plus a by-name reference
+(?J)(?<a>x)(?-J)(?<a>y)        err 143     err 143     (?J) then (?-J) before the second
+(?J)(?<a>x)(?:(?-J)q)(?<a>y)   ok          ok          (?-J) SCOPED AWAY before the second declaration
 
 NOTE the (?J) row: an INLINE (?J) is a compile option, so whether
 it works without the API bit is itself the measurement.
