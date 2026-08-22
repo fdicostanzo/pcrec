@@ -452,6 +452,16 @@ OCTAL_CLASS = [
         B(r"^[\9]$", [("9",), ("\x09",)], BR),
         B(r"^[\k]$", [("k",)], BR),
         B(r"^[\g]$", [("g",)], BR),
+        B(r"^[\g<]$", [("g",), ("<",), ("x",)], BR,
+          note="THE CELL THE TWO NEW `recursion` ROWS COULD HAVE BROKEN. The "
+               "class doorway arbitrates on the SAME tail the atom doorway "
+               "does, so adding `RK_ESC` rows with tails `<` and `'` would "
+               "have taken `[\\g<]` away from the base `\\g` row -- and with "
+               "it the literal-fallback answer, which is BASE syntax. The new "
+               "rows therefore carry the identical base scalar class port, "
+               "and these three cells are what says so."),
+        B(r"^[\g']$", [("g",), ("'",), ("<",)], BR),
+        B(r"^[\g<1>]$", [("g",), ("<",), ("1",), (">",), ("x",)], BR),
         B(r"^[\377]$", [("\xff",)], BR),
         B(r"^[\400]$", [("\x00",)], BR),
         B(r"^[\0]$", [("\x00",)], BR),

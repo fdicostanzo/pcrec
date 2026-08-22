@@ -63,6 +63,33 @@ pattern ^[\g]$
 features backrefs
 m "g" 0 1
 
+# THE CELL THE TWO NEW `recursion` ROWS COULD HAVE BROKEN. The class doorway arbitrates on the SAME tail the atom doorway does, so adding `RK_ESC` rows with tails `<` and `'` would have taken `[\g<]` away from the base `\g` row -- and with it the literal-fallback answer, which is BASE syntax. The new rows therefore carry the identical base scalar class port, and these three cells are what says so.
+# python DIVERGES here, measured rather than assumed: "g" @0 pcre2=('m', 0, 1) python=('ERR', 'bad escape \\g at position 2') (3 of 3 cells)
+# pcre2-only
+pattern ^[\g<]$
+features backrefs
+m "g" 0 1
+m "<" 0 1
+n "x"
+
+# python DIVERGES here, measured rather than assumed: "g" @0 pcre2=('m', 0, 1) python=('ERR', 'bad escape \\g at position 2') (3 of 3 cells)
+# pcre2-only
+pattern ^[\g']$
+features backrefs
+m "g" 0 1
+m "'" 0 1
+n "<"
+
+# python DIVERGES here, measured rather than assumed: "g" @0 pcre2=('m', 0, 1) python=('ERR', 'bad escape \\g at position 2') (5 of 5 cells)
+# pcre2-only
+pattern ^[\g<1>]$
+features backrefs
+m "g" 0 1
+m "<" 0 1
+m "1" 0 1
+m ">" 0 1
+n "x"
+
 pattern ^[\377]$
 features backrefs
 m "\xff" 0 1

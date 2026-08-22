@@ -37,7 +37,7 @@ regression which has started passing). `run.sh` alone certifies only the first
 of the eight.
 
 `make strict` is separate and opt-in: it recompiles every source with
-`-Werror`, writes nothing, links nothing, and touches `build/` not at all, so it
+`-Werror` **and, since [M6.5.2], `-Wshadow`**, writes nothing, links nothing, and touches `build/` not at all, so it
 is safe to run while `make test` is in flight. It exists because the project
 already had a warnings-as-errors gate BY ACCIDENT —
 `tests/codegen/run_trie_identity.sh` compiles the whole tree and fails on any
@@ -45,6 +45,18 @@ warning, and R7 measured that this accident was for a while the only thing
 catching a class of offset bug. Now it is a gate someone chose. Validated the
 way any gate should be: adding one unused variable to `src/core/sb.c` leaves
 plain `make` succeeding and makes `make strict` fail.
+
+**`-Wshadow` joined it at [M6.5.2], and it is a row that lane EARNED.**
+`-Wall -Wextra` does not include it, and a local named after an enclosing
+parameter is a silent miscompile of exactly the shape `src/gen/emit_vm.c` is
+exposed to: a new arm declared `const unsigned entry = ...` for a seam-entry
+id, shadowing `vm_emit`'s LABEL parameter of the same name, and every
+`^(a)\1$`-shaped artifact came out with a DUPLICATE LABEL that would not
+compile. The corpus caught it inside one run — but a shadowed variable that
+happens to hold a PLAUSIBLE value is the version that does NOT get caught, and
+this makes the whole class a compile error. The tree was measured clean under
+it before it was added (0 warnings across every source plus `cli/main.c`), so
+it costs nothing today and refuses the next one.
 
 **TWO of the eight can SKIP, and both skips are loud** (three, counting
 `make test-backrefs`, whose two scripts print PC-3's own SKIP banner and exit 0

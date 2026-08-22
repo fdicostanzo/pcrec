@@ -4629,8 +4629,14 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * byte backend. */
         StrBuf *bb = v->b;
         char fn[96];
-        const unsigned entry = a->caseless ? PCREC_ENCE_BREF_CASELESS
-                                           : PCREC_ENCE_BREF;
+        /* NOT named `entry`: that is `vm_emit`'s LABEL parameter, and naming
+         * a local after it here shadowed it — `vm_lbl(v, entry, ...)` then
+         * emitted the label `PCREC_ENCE_BREF` (2) instead of the caller's, so
+         * every `^(a)\1$`-shaped artifact carried a DUPLICATE LABEL and did
+         * not compile. Caught by the corpus within one run; recorded because
+         * `-Wall -Wextra` does not include `-Wshadow`. */
+        const unsigned seam_entry = a->caseless ? PCREC_ENCE_BREF_CASELESS
+                                                : PCREC_ENCE_BREF;
         /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
          * EMITTED, and this is `engine_callable`'s one consumer on the compile
          * path (enc.h). DD-12 (7) forbids the matching machinery from
@@ -4647,12 +4653,12 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * backend, which declares both compare entries callable; it is the
          * NEXT backend this line is for. */
         if (!pcrec_enc_entry_engine_callable(
-                pcrec_enc_by_id(v->cx->opt->encoding), entry))
+                pcrec_enc_by_id(v->cx->opt->encoding), seam_entry))
             ctx_fail(v->cx, 0,
                      "internal error: this encoding's backreference compare is "
                      "not declared engine-callable, so it cannot be routed "
                      "through the seam from an engine body");
-        v->enc_mask |= entry;
+        v->enc_mask |= seam_entry;
         snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
                  a->caseless ? "_caseless" : "");
         vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",
@@ -5251,9 +5257,9 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         pcrec_bref_mark(root, mk, nmarkarr);
         int *pend = arena_alloc(&cx->arena, (size_t)nmarkarr * sizeof *pend);
         int npend = 0, highest = 0;
-        for (int g = 0; g < nmarkarr; g++) {
-            pend[g] = -1;
-            if (g > 0 && mk[g]) { pend[g] = npend++; highest = g; }
+        for (int grp = 0; grp < nmarkarr; grp++) {
+            pend[grp] = -1;
+            if (grp > 0 && mk[grp]) { pend[grp] = npend++; highest = grp; }
         }
         v.ngroups = cx->want_caps ? (int)cx->ncap : highest;
         v.pend_of = pend;

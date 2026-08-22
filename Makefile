@@ -536,11 +536,24 @@ smoke: all
 # a `make test` running in another shell and turned that suite into a screenful
 # of exit-126 "HARNESS FAILURE" lines. A diagnostic target that can break a
 # concurrent run is a trap; this one is safe to invoke at any time.
+# [M6.5.2] -Wshadow JOINS THE GATE, and it is a row this lane earned rather
+# than a tidy-up. `-Wall -Wextra` does not include it, and a local named after
+# an enclosing parameter is a silent miscompile of exactly the shape this
+# emitter is exposed to: a new arm declared `const unsigned entry = ...` for a
+# seam-entry id, shadowing `vm_emit`'s LABEL parameter of the same name, and
+# every `^(a)\1$`-shaped artifact came out with a DUPLICATE LABEL and would
+# not compile. The corpus caught it inside one run — but a shadowed variable
+# that happens to hold a PLAUSIBLE value is the version that does not get
+# caught, and this gate makes the whole class a compile error.
+#
+# The tree was measured clean under it before it was added (0 warnings across
+# every source plus cli/main.c), so this costs nothing today and refuses the
+# next one.
 strict:
 	@set -e; for f in $(LIBSRCS) cli/main.c; do \
-	    $(CC) $(ALLFLAGS) -Werror -c -o /dev/null $$f; \
+	    $(CC) $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
-	@echo "strict: whole tree compiles clean with -Werror"
+	@echo "strict: whole tree compiles clean with -Werror -Wshadow"
 
 # Self-tests for scripts/ (watchdog today), run ON CHANGE via make dependency
 # rather than per suite run — opt-in like strict, never part of `make test`
