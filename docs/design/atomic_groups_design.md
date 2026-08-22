@@ -169,9 +169,13 @@ to. Stated as the invariant it is (**STRUCTURAL**, from §2's four blocks):
 
 Each of the three clauses is checkable against the four blocks:
 
-- *frames below `M` were pushed before `T0`* — `RX_PUSH` is monotone in
-  `resume_depth` and the only thing that lowers it is a pop or a cut, both of
-  which leave the frames below untouched;
+- *frames below `M` were pushed before `T0`* — the frames at indices `< M` are
+  exactly the frames present at ENTRY, so they were pushed before entry and
+  therefore before `T0`. None of them can be OVERWRITTEN while the group runs:
+  every push during the body happens at index `≥ M`, because `RX_PUSH` is
+  monotone in `resume_depth` and the only things that lower it are a pop (which
+  leaves the group entirely if it goes below `M`) and an inner `RX_CUT` (whose
+  mark is `≥ M`, §3.3 property 2);
 - *`F.trail_mark ≤ T0`* — `RX_PUSH` records `trail_mark = trail_depth` at push
   time and `trail_depth` is monotone between pops;
 - *the unwind is `>`, not `==`* — `src/gen/emit_vm.c:5076`.
@@ -739,25 +743,37 @@ Appendix A carries.
 **MEASURED:** libpcre2 10.46 refuses `a*?+`, `a*?+b` and `a*++` with
 **"quantifier does not follow a repeatable item"**; python refuses all three
 with "multiple repeat". D26 tier 2 (RECOGNITION) says pcrec must also REFUSE;
-tier 3 says the wording is ours.
+tier 3 says the wording is ours. **pcrec already refuses all three** — see the
+table below — so this section is a pinning obligation, not an implementation
+one.
 
-**And pcrec already emits libpcre2's exact sentence for the neighbouring
-case.** `src/parse/parse.c:974` is
-`ctx_fail(cx, cx->pos - 1, "quantifier does not follow a repeatable item")`,
-with a comment recording that the blame position is measured cell for cell
-against PCRE2's. So the module gets tier-2 correctness and an
-incidentally-matching tier-3 wording for free, by routing `a*?+` into the
-existing `multiple quantifiers on the same item` / `not repeatable` path rather
-than by writing a new message. **Do not gold-plate this** (D26): the
-requirement is a clean refusal, and matching the wording is a coincidence to be
-noted, not a target to be maintained.
+pcrec DOES carry libpcre2's exact sentence at
+`src/parse/parse.c:974` — `ctx_fail(cx, cx->pos - 1, "quantifier does not
+follow a repeatable item")`, with a comment recording that the blame position
+was measured against PCRE2's cell for cell — but that is NOT the message this
+shape produces; the `multiple quantifiers on the same item` guard fires first
+(MEASURED below). **Do not "fix" that** (D26): the requirement is a clean
+refusal naming nothing false, both messages are ours to word, and changing a
+shipped diagnostic to chase 10.46's phrasing is exactly the tier-3 effort D26
+exists to prevent.
 
 The structural rule: after the lazy `?` has been consumed
 (`src/parse/parse.c:986`), a following `+` is an ERROR, not a possessive
-marker. Today the `+` branch is `else if` on the same peek, so the lazy case
-already falls through to the loop's next round and hits `multiple quantifiers`.
-[M6.4.2] must confirm which of the two messages fires and pin it in
-`tests/reject/`; either satisfies D26.
+marker. **That already happens and was MEASURED on HEAD this session**, so the
+module gets it for free rather than having to build it:
+
+| pattern | pcrec on HEAD | libpcre2 10.46 | D26 verdict |
+|---|---|---|---|
+| `a*?+`  | `multiple quantifiers on the same item (pattern offset 3)` | `quantifier does not follow a repeatable item` | tier 2 ✓ (both REFUSE); tier 3 wording ours |
+| `a*?+b` | same, offset 3 | same | ✓ |
+| `a*++`  | `possessive quantifier requires module 'atomic-groups' (offset 2)` | `quantifier does not follow a repeatable item` | ✓ today; **after the module lands the first `+` is consumed as the possessive marker and the second re-enters the quantifier loop, so this becomes `multiple quantifiers on the same item`** — still a refusal, still tier-2 correct |
+| `a**`   | `multiple quantifiers on the same item (offset 2)` | (the same family) | the CONTROL: this is the existing path `a*?+` already falls into |
+
+The mechanism is `src/parse/parse.c:963-964`'s `if (quantified) ctx_fail(…)`
+guard, reached because the lazy `?` ends the round and the `+` starts a new
+one. **[M6.4.2] owes only the `tests/reject/` pins**, one per row above,
+including the `a*++` row whose message CHANGES when the module lands — which is
+the row a reject-suite author would otherwise not think to re-pin.
 
 ### 6.4 The existing possessify / [ENG-BREP] rungs meeting a user-written possessive
 
