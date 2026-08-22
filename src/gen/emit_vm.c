@@ -4629,7 +4629,30 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * byte backend. */
         StrBuf *bb = v->b;
         char fn[96];
-        v->enc_mask |= a->caseless ? PCREC_ENCE_BREF_CASELESS : PCREC_ENCE_BREF;
+        const unsigned entry = a->caseless ? PCREC_ENCE_BREF_CASELESS
+                                           : PCREC_ENCE_BREF;
+        /* THE BACKEND'S OWN DECLARATION IS CONSULTED BEFORE THE CALL IS
+         * EMITTED, and this is `engine_callable`'s one consumer on the compile
+         * path (enc.h). DD-12 (7) forbids the matching machinery from
+         * depending on the encoding, and `tests/codegen`'s [M5-SEAM] check
+         * enforces it from OUTSIDE, on the artifact. This is the same rule
+         * enforced from INSIDE, at the one site that could break it: an
+         * emitter may route a construct through a residual entry only if the
+         * backend says that entry may be called from an engine body.
+         *
+         * A backend whose compare declared `engine_callable = false` would
+         * otherwise emit an artifact the codegen check then rejects — a
+         * failure two steps and one test run away from its cause. Refusing
+         * here makes it one step and names it. Unreachable for the byte
+         * backend, which declares both compare entries callable; it is the
+         * NEXT backend this line is for. */
+        if (!pcrec_enc_entry_engine_callable(
+                pcrec_enc_by_id(v->cx->opt->encoding), entry))
+            ctx_fail(v->cx, 0,
+                     "internal error: this encoding's backreference compare is "
+                     "not declared engine-callable, so it cannot be routed "
+                     "through the seam from an engine body");
+        v->enc_mask |= entry;
         snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
                  a->caseless ? "_caseless" : "");
         vm_lbl(v, entry, vm_rolef(v, "backreference to %s%s",

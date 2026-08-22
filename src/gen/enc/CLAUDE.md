@@ -53,7 +53,17 @@ exactly why a structural check is the only instrument that can see it.
   `-e utf8` refusal path reads it.
 
   **`engine_callable` is the other half**, and it is a fact about the ENTRY
-  rather than about any artifact. `next_pos` carries `false`: unanchoredness
+  rather than about any artifact. **It has a consumer on the compile path, not
+  only in a test**: `src/gen/emit_vm.c`'s `A_BREF` arm asks
+  `pcrec_enc_entry_engine_callable` before it emits the call, so an emitter may
+  route a construct through a residual entry only if the BACKEND says that
+  entry may be called from an engine body. That is the same rule
+  `tests/codegen`'s [M5-SEAM] check enforces from OUTSIDE, enforced from
+  INSIDE at the one site that could break it — a backend whose compare
+  declared `false` would otherwise emit an artifact the codegen check rejects
+  two steps and one test run away from the cause. Failing direction
+  demonstrated by flipping the byte backend's `PCREC_ENCE_BREF` row to
+  `false`: `(a)\1` refuses by name instead of compiling. `next_pos` carries `false`: unanchoredness
   is the automaton's own self-loop, so there is no external advance for an
   engine to route through, and an engine that DID route through it would match
   identically under this backend while changing the hot path's shape under any
