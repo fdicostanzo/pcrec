@@ -11695,3 +11695,18 @@ so the module answers the UNCUT language here. D27's thesis measured for
 the second time: tests derived from the code inherit its alphabet; the
 lane's 53-pattern differential and 748-case corpus never had this shape.
 Fix lane opened (lane/agfix from 69f3b93).
+
+D27 CORPUS CORRECTED (464ab1f): the author triaged its 15 corpus-side
+failures — the `features` directive REPLACES std1 (modifiers/classes/
+assertions added where the pattern needs them; `(?m)^(?>a+)$` needed
+TWO modules found in two steps); three lookaround cells commented out
+with intent preserved (module unbuilt); the seven enabled-direction
+gating cells were VACUOUS perr pre-module ("everything refused, gate or
+not") and are now real `m` cases verified against libpcre2 AND end-to-end
+through --emit-main against the refreshed binary; the author's own mini-
+harness re-ran all live m/n cells: 111/112, the one the miscompile. Re-
+run from the main tree against 69f3b93: 133/134, the one failure
+`(?:aa|a)++ab`. (Manager foot-gun recorded: the first re-run used the
+agd27 WORKTREE's pre-module binary because a `cd` had moved the shell —
+22/134 — PCREC must be set explicitly when the harness runs from a
+different tree.)
