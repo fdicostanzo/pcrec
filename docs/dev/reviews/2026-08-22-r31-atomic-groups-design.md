@@ -308,3 +308,30 @@ to print a verdict). N2: `w["pats"] >= 8820` asserted (re-run unchanged:
 §6.4a and §11.3 untouched across the whole revision (hunk-checked).
 Final re-checks dispatched: r31eng (N1/N2 at a22f044, sections unchanged
 since), r31chk (N1/N2/N3 at 03533bb, incl. the hunt for a tenth site).
+
+## Final re-check, r31eng on a22f044 — N1 CLOSED, N2 CLOSED; one NEW LOW
+
+N1: probe reproduces exactly (Part A all six paths; Part B 7/8 miscompile,
+A_CAT control holds, bonus agreeing row). SCOPE attacked three ways and
+HELD: (1) a greedy A_REP whose body contains a lazy one — closed by
+construction (`under_atomic` is a one-level edge property; measured
+`(?:a*?b)*d` RUNGS 0x5 / STRATS 0x3, the outer collapse not leaking
+inward, five subjects matching libpcre2 with the atomic twin agreeing);
+(2) the counter rung's inner copies go through vm_emit_f → their own walk
+with the flag false; (3) `X q?+` is an error in all three. N2: threading
+is right, and the stored-flag alternative is REFUTED as reachable (under
+-fno-possessify the discharge runs while run_possessify does not — a stale
+flag would cut a loop the flag was passed to leave uncut); the one-level
+definition also closes N1's scope question, so the two fixes compose.
+§14 item 8: critic agrees — a landing gate in [M6.4.2], unmeasurable
+before the module exists (a sweep now compares a tree against itself).
+
+| ID | Sev | Claim | Evidence | Disposition |
+|---|---|---|---|---|
+| N3' | LOW | RULE 3's (a)(b)(c) as the complete admissibility test | the lift also inherits each RUNG's own gate: vm_rev_canmove (:968-975) suppresses the retreat frame on the exact-count clause — "there is one exit" is a (U1)/(U2) unique-iteration statement consulting no verdict. NOT live: 14 bodies × 3 counts found no revdet-approved body possessify rejects (revdet's gate strictly stronger on everything constructible; `(?:a|ab){2}c` takes FRAMES_BOUNDED, answers correctly) — safe by luck, not construction | REVISION 2c: one clause on RULE 3 (… AND the selected rung's gate), vm_rev_canmove named; an EMPTY witness row "revdet-approved, §2.2-rejected"; probes resolve build/pcrec from their own location |
+
+The §2.2 conjunct split the critic produced is itself the durable
+result: FOLLOW-based conjuncts license DELETING FRAMES (no carve-out — an
+atomic group needs no licence for that, §3.1's argument); BODY-based
+conjuncts license the emitted SHAPE and each needs a carve-out —
+nullability (one), preference (two), unique-iteration (the rung gate).
