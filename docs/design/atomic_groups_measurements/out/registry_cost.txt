@@ -1,0 +1,65 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_registry_cost.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 34d593f 2026-08-22
+# RUN FROM REPO COMMIT        : 34d593f (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/registry_cost.txt
+# RUN DATE   : 2026-08-22T09:42:28-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+== (a) the derivation cannot reach a non-doorway row ==
+  doorway_route (src/parse/syntax_dump.c:334) recognises exactly:
+     8:            *d = (Doorway){ .kind = RK_ESC, .sel = c1, .at = i, .from = 0,
+     15:            *d = (Doorway){ .kind = RK_GROUP,
+     22:            *d = (Doorway){ .kind = RK_VERB, .sel = -1, .at = i, .from = 0,
+     29:            *d = (Doorway){ .kind = RK_CLASSBRACKET,
+     37:            *d = (Doorway){ .kind = RK_CLASSBRACKET, .sel = c1, .at = i,
+  and built_status_probe (syntax_dump.c:443) is that route plus the call.
+
+  the shipped compiler, asked about the two spellings:
+    --explain '(?>a)'  : route          after '(?'  selector '>'
+    --explain 'a*+'    : pcrec: no construct matches 'a*+' — it is either base syntax or not a construct pcrec knows
+  -> a row spelled 'a*+' derives to BUILT_DEFECT, not to built/unbuilt.
+
+== (b) every OTHER site a fifth RegKind must reach ==
+  1. pcrec_registry's switch — a fifth kind falls to `default: *n = 0`:
+     962:    default:              *n = 0;                                                      return NULL;
+  2. the dump's hardcoded kind list (ONE array, TWO use sites):
+     145:static const RegKind all_kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+     165:    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
+     167:        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
+     1080:    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
+     1082:        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
+     (C8 called these "both all_kinds[] arrays"; measured, it is one
+      array at :145 iterated at :165 and :1080. The correction does not
+      change the ruling — three places still have to be edited.)
+  3. enabled.c's SEPARATE hardcoded list:
+     114:static const RegKind kinds[] = { RK_ESC, RK_GROUP, RK_VERB, RK_CLASSBRACKET };
+
+== (c) the two registry_check pins that move ==
+  row total (registry_check.c:444), and what --list-syntax reports today:
+     444:    if (total != 100) {
+     --list-syntax rows today: 100   -> becomes 104 with four new rows
+  the engine-capability tripwire's qualifying count (registry_check.c:1473):
+     1473:    if (qualifying != 48)
+     -> the four new rows' `engines` value decides whether this becomes
+        52 or stays 48. §7.4 must STATE the value; it is not derivable
+        from the row count.
+
+== (d) R3's source: the check must read the DUMP, not the table ==
+  registry_check.c:135 already catches a pcrec_registry omission:
+             if (!rows || n == 0) { bad("kind %s: no rows", kind_name((RegKind)k)); continue; }
+  so §7.3's "half-done invisibly" is only true of the DUMP side
+  (all_kinds[]), which no check reaches. A per-kind assertion that
+  ITERATES RK_COUNT over registry.c shares a source with what it checks;
+  it must parse `--list-syntax` OUTPUT instead.
