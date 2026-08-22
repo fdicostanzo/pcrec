@@ -517,16 +517,32 @@ each of which is a claim the panel can check:
   declining on the kind needs no field read. **Adding `A_BREF` to
   `vm_det_seq` would be a miscompile**, because the length is a match-time
   quantity.
-- **The revdet rung DECLINES, and — CORRECTED — it does so BY CONSTRUCTION
-  and with an alarm.** An earlier revision of this section claimed
+- **The revdet rung declines a backreference IN THE BODY — but the rung is
+  NOT declined for the group-in-body / reference-outside shape (R32 E9), and
+  that interaction needs naming.** `(?:(a|bb)x)+y` takes the revdet rung with
+  a capturing group inside the loop body; the forward scan SUPPRESSES the
+  per-iteration capture writes (`v->nocap`, `emit_vm.c:3820-3824`) and the
+  backward walk reconstructs the last iteration's values. A reference OUTSIDE
+  that loop — `(?:(a|bb)x)+\1`, this document's own N5/N6 cells — therefore
+  reads slots written by the backward walk rather than by the loop. The panel
+  traced it as CORRECT and the N5/N6 cells agree with libpcre2, but it was
+  unnamed and untested in the first draft. **Publish-at-close interacts here
+  and the interaction must be designed, not assumed**: a marked group's
+  pending slot is written per iteration, so the suppression rule must suppress
+  or reconstruct it in step with the pair. §11.4's S-BR13 is the sabotage and
+  §11.2's driver carries the shape.
+- **The revdet rung DECLINES a backreference in the body, and — CORRECTED —
+  it does so BY CONSTRUCTION and with an alarm.** An earlier revision of this section claimed
   `src/opt/revdet.c`'s `rd_shape` has a `default:` arm from which a new kind
   would inherit something. **It does not.** Its switch covers the kinds it
   accepts and *falls out* of the switch into `S->ok = false; return;`
   (`src/opt/revdet.c:89-140`, the two statements after the `A_ALT` arm), so an
   unlisted kind declines — the safe direction. And because the switch is on an
-  enum with no `default:`, adding `A_BREF` raises `-Wswitch`, which
-  `make strict` promotes to an error. So this site both declines correctly and
-  says so, which is strictly better than the first draft claimed. S-BR4 stays
+  enum with no `default:`, adding `A_BREF` raises `-Wswitch` — a WARNING,
+  which `make strict` promotes to an error and a plain `make` does not (R32
+  E10: the first draft called it "a compile error" without the qualifier). So
+  this site declines correctly, and says so to anyone running the opt-in
+  gate. S-BR4 stays
   a sabotage row (§11.4) because the failing direction — someone *adding* an
   `A_BREF` arm that accepts — is the mistake the alarm invites.
 - **The counter rung is fine**, because it replicates the body without
@@ -616,11 +632,15 @@ corpus rather than leaving it to be discovered.
   backreference performs O(length) byte comparisons that the fail label never
   sees, which is the *exact* definition of a work unit ("per-iteration work
   the fail label NEVER SEES", `emit_vm.c:1695-1712`). **RECOMMENDATION: charge
-  `took` work units on success and the compared prefix length on failure**,
-  through the existing `vm_work` primitive — one call, one truth. Without it,
-  `(a*)\1` over a long subject does unbounded byte comparison per step, and
-  DD-2's robustness claim is quietly false for this module's whole population.
-  This is BELIEVED-with-a-gate: §13 P-3 names the measurement.
+  the compare's actual work through the existing `vm_work` primitive** — one
+  call, one truth — namely `took` on success and, on failure, the prefix
+  length the entry now returns (§4.2's negative encoding, which exists
+  BECAUSE of this charge: R32 E4 found the first draft recommending a charge
+  its own signature could not express). Without it, `(a*)\1` over a long
+  subject does unbounded byte comparison per step and DD-2's robustness claim
+  is quietly false for this module's whole population. Still
+  BELIEVED-with-a-gate on the SIZE of the effect: §13 P-3 names the
+  measurement.
 - **Frames/trail capacity**: unchanged (§3.2 property 2).
 - **MRL**: contributes 0 (P12).
 
@@ -1270,37 +1290,77 @@ IS the pattern's DFA. A backreference has no such identity. APPROACH §2's
 "backrefs → their referenced sub-pattern" is a real approximation, and this
 section measures both halves of what that costs.
 
-### 7.2 The erasure is SOUND as a language and USELESS as a window
+### 7.2 The erasure is a superset ONLY FOR AN ASSERTION-FREE GROUP, and its span is useless either way
 
-MEASURED, `out/erasure_hazard.txt`: seven idiom families, each with a
-generated subject population (exhaustive to length 4 over the family's
-alphabet, then sampled, plus structured extras where a random walk produces no
-positives).
+**CORRECTED AFTER R32 E2.** The first draft claimed the erasure "is a genuine
+SUPERSET — as it must be, since the captured text is always in the referenced
+group's language". The premise is false when the group is not a *language* at
+all.
 
-| idiom | subjects | true hits | FALSE-NEG | **SPAN DIFF** | nomatch agreement |
+MEASURED, `out/erasure_hazard.txt`'s POSITIVE CONTROL — cells that put a
+POSITION PREDICATE inside the referenced group, every construct shipping in
+pcrec today:
+
+| true pattern | erasure | subject | true | erased | false negative? |
 |---|---|---|---|---|---|
-| `(["'])[^"']*\1` | 4000 | 1716 | **0** | **367** | 1359/2284 (60%) |
-| `<([a-z]+)>[^<]*</\1>` | 4160 | 24 | **0** | 0 | 4064/4136 (98%) |
-| `\b([a-z]+)\s+\1\b` | 4000 | 419 | **0** | **100** | 1426/3581 (40%) |
-| `([0-9]+)-\1` | 4000 | 1058 | **0** | **786** | 2176/2942 (74%) |
-| `(\w)\1` | 4000 | 3808 | **0** | **1785** | 3/192 (2%) |
-| `(a\|b)\1` | 4000 | 3808 | **0** | **1785** | 3/192 (2%) |
-| `(a*)b\1` | 4000 | 3912 | **0** | **2525** | 88/88 (100%) |
+| `(\ba)\1` | `(\ba)\ba` | `"aa"` | (0,2) | **None** | **yes** |
+| `^(\ba)\1$` | `^(\ba)\ba$` | `"aa"` | (0,2) | **None** | **yes** |
+| `^(^a)\1$` | `^(^a)^a$` | `"aa"` | (0,2) | **None** | **yes** |
+| `^(\Ga)\1$` | `^(\Ga)\Ga$` | `"aa"` | (0,2) | **None** | **yes** |
+| `^x((?<=x)a)\1$` | `^x((?<=x)a)(?<=x)a$` | `"xaa"` | (0,3) | **None** | **yes** |
+| `(\bfoo)\1` | `(\bfoo)\bfoo` | `"foofoo"` | (0,6) | **None** | **yes** |
+| `(a)\1` | `(a)a` | `"aa"` | (0,2) | (0,2) | no |
+| `(\w)\1` | `(\w)\w` | `"aa"` | (0,2) | (0,2) | no |
+| `^(a\|b)\1$` | `^(a\|b)(a\|b)$` | `"aa"` | (0,2) | (0,2) | no |
 
-Two conclusions, and they point in opposite directions:
+**6 of 10 FALSE NEGATIVES.** The reason is one sentence: a group containing an
+assertion does not denote a set of strings, it denotes a set of strings *at
+positions*, and substituting a copy of the group re-evaluates the assertion at
+the REFERENCE's position rather than at the group's. `\b` before the second
+`a` of `"aa"` is false; `\b` before the first is true; the captured TEXT does
+not carry that.
 
-- **FALSE-NEG is 0 in all seven families.** The erasure is a genuine
-  SUPERSET — as it must be, since the captured text is always in the
-  referenced group's language — so a `nomatch` verdict from it is
-  trustworthy.
-- **SPAN DIFF is large in six of seven.** Concrete cells, from the archive:
+**So the corrected claim is: the erasure is a superset IFF the referenced
+group is ASSERTION-FREE.** That condition is cheap and syntactic — no
+`A_BOL`/`A_EOL`/`A_END`/`A_WORDB`/`A_NWORDB`/`A_GSTART`/`A_KRESET` and no
+lookaround beneath the referenced `A_CAP`.
+
+**This does NOT touch §7.1's ruling**, and the direction is why: §7.1 refuses
+the prefilter outright, which is the safe side of an unsound approximation.
+E2 makes the refusal MORE justified, not less. What it does touch is §7.4's
+chartered follow-on, which assumed soundness it does not have.
+
+**The family table, on DISTINCT subjects (R32 C8).** The first draft sampled
+with replacement and reported the raw draw count, inflating three families
+31.5x, and carried a `finite` family that is the same language pair as
+`letter` over the same subject list — seven families were six:
+
+| idiom | distinct subjects | true hits | FALSE-NEG | **SPAN DIFF** | nomatch agreement |
+|---|---|---|---|---|---|
+| `(["'])[^"']*\1` | 4,000 | 1,744 | **0** | **389** | 1322/2256 (59%) |
+| `<([a-z]+)>[^<]*</\1>` | 4,160 | 24 | **0** | 0 | 4064/4136 (98%) |
+| `\b([a-z]+)\s+\1\b` | 3,279 | 350 | **0** | **100** | 940/2929 (32%) |
+| `([0-9]+)-\1` | 1,093 | 280 | **0** | **220** | 597/813 (73%) |
+| `(\w)\1` | 127 | 114 | **0** | **52** | 3/13 (23%) |
+| `(a*)b\1` | 127 | 120 | **0** | **78** | 7/7 (100%) |
+
+12,786 distinct subject-family pairs over six families. Two conclusions,
+pointing in opposite directions:
+
+- **FALSE-NEG is 0 in all six** — and that zero is now a MEASUREMENT rather
+  than a tautology, because the positive control above shows the column can
+  move. None of the six families has an assertion inside the referenced
+  group, which is exactly the condition the corrected claim names.
+- **SPAN DIFF is large in five of six.** Concrete cells from the archive:
   `(["'])[^"']*\1` on `"\"''"` is truly (1,3) and the erasure says (0,2);
   `([0-9]+)-\1` on `"11-1"` is truly (1,4) and the erasure says (0,4);
   `(a*)b\1` on `"ba"` is truly (0,1) and the erasure says (0,2). **Every one
-  of those is a window the hybrid would hand the VM wrong.** A VM run
-  anchored to `(0,2)` on `"\"''"` does not find the (1,3) match.
+  is a window the hybrid would hand the VM wrong**, and a VM anchored to
+  (0,2) on `"\"''"` does not find the (1,3) match.
 
-So the erasure cannot serve `engine_m4.md` §6.1's role. The rule stands.
+Span divergence is independent of the assertion question: it is large even on
+the families where the superset property holds. So the erasure fails
+`engine_m4.md` §6.1's exact-window role twice over, and §7.1's rule stands.
 
 ### 7.3 What it costs, measured on the shipped compiler
 
@@ -1355,13 +1415,19 @@ is no way to tell which is which without the very analysis §7.4 charters.
 
 Two sound weaker uses, neither in this module:
 
-- **A NOMATCH-ONLY prefilter.** The erasure never false-negatives (§7.2), so
-  running it and answering `nomatch` outright is sound. It buys 40%–98% on
-  four of the six non-vacuous families and 2% on two. It needs a second AST
-  (the erasure is a real rewrite), a second NFA/DFA build, and its own
-  selectivity measurement to decide whether the second build pays for itself
+- **A NOMATCH-ONLY prefilter, GATED ON AN ASSERTION-FREE REFERENCED GROUP.**
+  The erasure never false-negatives *under that condition* (§7.2, corrected
+  after R32 E2), so running it and answering `nomatch` outright is sound
+  there and UNSOUND without it — the first draft chartered this with no
+  condition at all, on a superset claim that does not hold in general.
+  Measured selectivity on the six families, all of which satisfy the
+  condition: 23% to 98%, with three above 59%. It needs a second AST (the
+  erasure is a real rewrite), a second NFA/DFA build, the assertion-free
+  gate, and its own measurement of whether the second build pays for itself
   — a `discharge`-socket-shaped piece of work, and the same follow-on row
-  §6.3 charters is the natural home.
+  §6.3 charters is the natural home. **The gate is not optional and is the
+  first thing that row must build**: without it the feature deletes real
+  matches, which is the one failure class D26 refuses outright.
 - **A literal-prefix skip.** `<([a-z]+)>...` cannot start anywhere but at a
   `<`. That is the DFA's existing memchr machinery over a prefix the pattern
   already has, and it is sound with no approximation at all. Not built here
@@ -1596,6 +1662,18 @@ them:**
 | `(?J)` (modifiers) | `unbuilt` (P13) | **built** |
 | `\g<` `\g'` | **no row at all** | **NEW rows**, module `recursion`, unbuilt |
 
+**Two caveats on that table, both R32 C6.** First, `built_status_probe` drives
+each row's `syntax` field ALONE, and `\1`, `\k<name>` and `(?P=n)` are all
+ERROR 115 standalone in PCRE2 (no such group). They classify `built` only
+because §5.3 defers reference VALIDITY to end of parse, so the doorway
+produces a node and the refusal comes later — the built-status classifier
+reads `ExtResult.answered_at`, not the eventual verdict. That dependency is
+real and is cited here rather than left implicit. Second, the column's
+granularity is the ATOM POSITION only: `[\1]` compiles in every feature set
+today (P6) while `\1` reads `unbuilt`, and after this module `\1` reads
+`built` with `[\1]` unchanged. Neither is a defect; both are facts a reader
+of the index needs.
+
 The last line is the one that needs argument. Today `\g<name>` reaches the
 single `\g` row and would be claimed by this module's port. It is a
 SUBROUTINE CALL (§2, measured), so claiming it would be a miscompile of the
@@ -1673,13 +1751,37 @@ Two facts that table carries, and both matter to this module:
 
 **After this module lands**, the matrix the corpus must pin:
 
-| `--features` | `(a)\1` | `(?J)(?<a>x)(?<a>y)` | `\k<n>` |
+| `--features` | `(a)\1` | `(?J)(?<a>x)(?<a>y)` | `\k<n>` | `(?<n>a)\k<n>` |
+|---|---|---|---|---|
+| `std1` | refuse: needs `backrefs` | refuse: needs `backrefs` | refuse: needs `backrefs` | refuse: needs `backrefs` |
+| `backrefs` | **compiles** | refuse: needs `modifiers` | refuse: needs `named-groups` | refuse: needs `named-groups` |
+| `backrefs,modifiers` | **compiles** | refuse: needs `named-groups` | refuse: needs `named-groups` | refuse: needs `named-groups` |
+| `backrefs,named-groups` | **compiles** | refuse: needs `modifiers` | **REFUSE: error-115 class** | **compiles** |
+| `backrefs,modifiers,named-groups` | **compiles** | **compiles** | **REFUSE: error-115 class** | **compiles** |
+
+**R32 C7: the bare `\k<n>` cell is a REFUSAL, not a compile.** `\k<n>` names
+a group `n` that the pattern never declares, and PCRE2 answers error 115
+(measured, `out/spellings.txt`'s `\k<name>` row is `^(?<n>a)\k<n>$` — the
+DECLARED form). The first draft's table pinned the undeclared form as
+compiling, which `gated.rxt` would have turned into a tier-1 divergence
+against libpcre2. The fourth column is the declared form and is the cell that
+actually exercises the module. **Every accept cell in `gated.rxt` is
+oracle-verified against libpcre2 before it is written** — a gating suite's
+cells are as much a compatibility claim as a corpus's.
+
+**AND THE `--no-captures` AXIS (R32 E6), which the first draft omitted
+entirely:**
+
+| build | `(a)\1` on `"aa"` | `rx_info.ncaps` | `caps[1]` |
 |---|---|---|---|
-| `std1` | refuse: needs `backrefs` | refuse: needs `backrefs` | refuse: needs `backrefs` |
-| `backrefs` | **compiles** | refuse: needs `modifiers` | refuse: needs `named-groups` |
-| `backrefs,modifiers` | **compiles** | refuse: needs `named-groups` | refuse: needs `named-groups` |
-| `backrefs,named-groups` | **compiles** | refuse: needs `modifiers` | **compiles** |
-| `backrefs,modifiers,named-groups` | **compiles** | **compiles** | **compiles** |
+| default (captures on) | (0,2) | 2 | (0,1) |
+| `--no-captures` | **(0,2) — must still match** | **1** | not delivered |
+
+Under `--no-captures` no `A_CAP` node is created at all
+(`src/parse/parse.c:704-708`), so §6.3's ruling applies: a group NAMED BY A
+BACKREFERENCE keeps its internal slots (§3.2.4's three) and reports none.
+`--no-captures '(a)\1'` must match `"aa"` and must deliver no group offsets.
+§11.2's driver carries the arm.
 
 `\k<name>`, `(?P=name)` and `\g{name}` need `named-groups` because there is
 nothing to name otherwise; `(?J)` needs `modifiers` because the letter lives
@@ -1699,45 +1801,82 @@ here".
 
 ### 11.1 `tests/backrefs/` — the corpus
 
-Shaped on `tests/assertions/` (its `CLAUDE.md` is the model, and its oracle
-discipline is the part that transfers):
+Shaped on `tests/assertions/`, whose `CLAUDE.md` is the model and whose oracle
+discipline is the part that transfers. **The oracle column below is per FILE
+and, where R32 C3 found the first draft wrong, per CELL** — a whole-file
+marking that is right for most of a file and wrong for four cells loses the
+oracle exactly where the module is load-bearing.
 
 | file | contents | oracle |
 |---|---|---|
-| `numeric.rxt` | `\1`..`\9`, unset, empty, quantified (§3.3, §3.4, §3.6 cells) | python-verifiable — MEASURED 0 divergences on all U/E/Q/N/P cells |
-| `octal.rxt` | §5's rules 1-4, atom position, with the discriminator subjects | **`# pcre2-only`** — python's octal disambiguation is not measured here and must not be assumed |
-| `octal_class.rxt` | §5.2's must-not-change class cells, run with the module ON | python-verifiable |
-| `selfref.rxt` | §3.5's S and F cells | **`# pcre2-only`** — python REFUSES all seven at compile time |
+| `numeric.rxt` | `\1`..`\9`, unset, empty, quantified (§3.3, §3.4, §3.6) | python-verifiable — MEASURED 0 divergences on all U/E/Q/N/P cells |
+| `octal.rxt` | §5's rules 1-4 and 3', atom position, with discriminator subjects | **`# pcre2-only`** |
+| `octal_class.rxt` | §5.2's must-not-change class cells, module ON | **MIXED — per cell.** 8 of 12 python-verifiable; `[\8]` `[\9]` `[\k]` `[\g]` are the LITERAL characters in PCRE2 and pcrec and are ERRORS in python; `[\400]` is a refusal cell |
+| `selfref.rxt` | §3.5's S and F cells **plus §3.2's RE-ENTRY class** | **`# pcre2-only`** — python refuses all of them at compile time |
 | `spellings.rxt` | `\g`/`\k`/`(?P=n)` (§2) | **`# pcre2-only`** except the `(?P=name)` rows |
-| `caseless.rxt` | §4's axis-B scoping cells and the 52-byte fold | python-verifiable |
+| `caseless.rxt` | §4's axis-B scoping cells and the 52-byte fold | **MIXED — per cell.** 5 of 9 python-verifiable; `^(?i)(a)(?-i)\1$` and `^((?i)a)\1$` are ERRORS in python ("global flags not at the start"), and those two are precisely §3.1(c)'s and F7's load-bearing cells |
 | `dupnames.rxt` | §8's resolution cells | **`# pcre2-only`** — python has no `(?J)` and no `\k` |
-| `nested.rxt` | §3.7's N cells and the cut interaction (§3.7's last paragraph) | python-verifiable for N1-N6 |
-| `gated.rxt` | §10's matrix | n/a (refusal cells) |
+| `nested.rxt` | §3.7's N cells, the cut interaction, and the revdet group-in-body shape (§3.6) | python-verifiable for N1-N6 |
+| `nocaps.rxt` | §6.3/§10's `--no-captures` axis (R32 E6) | libpcre2 for the match; the ncaps/slot facts are pcrec-only reflection assertions |
+| `gated.rxt` | §10's two matrices | n/a for refusals; **every ACCEPT cell oracle-verified against libpcre2 first** (R32 C7) |
 
-**Every `# pcre2-only` marking must go into `docs/dev/upstream_issues.md`**
-under the standing rule `tests/assertions/CLAUDE.md` states, and §12 is the
-list.
+**THE `selfref.rxt` ADDITION IS E1'S LANDING CONDITION.** The re-entry class —
+`(a|b\1)+`, `^(?:(a|b\1)y)+`, `^(?:(a|b\1))+$` and their relatives — is the
+population that refuted §3.2's first draft, and the first draft's `selfref.rxt`
+took only the S/F cells that AGREED. Cells that agree under both publication
+disciplines cannot detect the difference between them; the file must carry the
+ones that do not.
+
+**Every `# pcre2-only` marking and every per-cell exclusion goes into
+`docs/dev/upstream_issues.md`** under the standing rule
+`tests/assertions/CLAUDE.md` states. Four entries, not one: the S/F compile
+refusals, the `(?i)`-placement refusals, the class-position literal
+divergences, and the total `(?J)`/`\k` absence. §12 carries them to the D27
+author.
 
 ### 11.2 The differential drivers
 
-Two, following `run_kreset_diff.sh`'s shape and its central idea:
+Two, and they follow `run_kreset_diff.sh` in a way the first draft's citation
+did not: R32 C10 found that driver has **six sections and three population
+guards**, where the first draft described one section and no guard.
 
-- **`run_backref_diff.sh`** — subjects × startpos, both pcrec engines against
-  libpcre2, over a generated space with startpos taking every value in
-  `[0, n]`. The startpos axis is not optional: `(a)\1` at startpos 1 on
-  `"xaa"` is (1,3) and at startpos 2 is no match (MEASURED, cells P1/P2), and
-  a suite that fixed startpos at 0 could not tell a correct implementation
-  from one that ignores the argument.
-- **`run_dupnames_diff.sh`** — §8.3's resolution rule swept over generated
-  name-runs of size 1-4 with every subset of the run participating, against
-  libpcre2. The rule is a *choice among candidates*, and a hand-picked cell
-  set is exactly what §8.3's table shows is needed to separate four candidate
-  rules; a sweep is what shows no fifth rule fits.
+**`run_backref_diff.sh`**, sections:
 
-**The cross-module cell** from §3.7 — a possessive quantifier followed by a
-backreference into it — goes in `run_backref_diff.sh` and not in a `.rxt`,
-because it needs module `atomic-groups` and therefore a feature-set the base
-corpus does not carry.
+1. **The subject sweep**, both pcrec engines against libpcre2, over a
+   generated space with startpos taking EVERY value in `[0, n]`. Not
+   optional: `(a)\1` on `"xaa"` is (1,3) at startpos 1 and no match at
+   startpos 2 (cells P1/P2), so a suite that fixed startpos could not tell a
+   correct implementation from one that ignores the argument.
+2. **The three entries** — `<prefix>_search`, `<prefix>_match`,
+   `<prefix>_match_caps` — because a `.rxt` block drives only the first. The
+   match-here oracle is `\G(?:PAT)` exactly as wave E used it.
+3. **The RE-ENTRY arm** (§3.2), which is where publish-at-close is observable
+   and nowhere else.
+4. **The `--no-captures` arm** (R32 E6): the match must be identical and
+   `rx_info.ncaps` must be 1.
+5. **The find-all loop**, since a backreference's span feeds the next
+   iteration's startpos.
+6. **The `--engine=dfa` refusal** (§6.2), by name, with the module enabled.
+
+Three POPULATION GUARDS, asserted EXACT rather than as floors, because every
+one of them is a way for the suite to pass while measuring nothing:
+
+- the number of cells whose pattern actually contains a backreference;
+- the number of re-entry cells (section 3) — a run reporting zero divergences
+  with an empty re-entry population is the first draft's `selfref.rxt`;
+- the number of cells where the two engines DISAGREE, which must be 0, paired
+  with a nonzero count of cells where both produced a match (an all-refusal
+  run agrees trivially).
+
+**`run_dupnames_diff.sh`** sweeps §8.3's resolution rule over generated
+name-runs of size 1-4 with every subset participating, against libpcre2, with
+the same exact-count guard on runs of size >= 2. The rule is a CHOICE AMONG
+CANDIDATES; §8.3's table shows a hand-picked set is needed to separate four,
+and a sweep is what shows no fifth fits.
+
+The cross-module cell from §3.7 — a possessive quantifier followed by a
+backreference into it — goes in `run_backref_diff.sh` rather than a `.rxt`,
+because it needs module `atomic-groups`.
 
 ### 11.3 The identity gate
 
@@ -1762,36 +1901,86 @@ setting `SAB_ID`, `SAB_FILE`, `SAB_SUITES`, `SAB_DESC`, `SAB_BEFORE`,
 `SAB_AFTER`, `SAB_COUNT`, applied through `lib/replace.py` to a fresh
 `git archive HEAD` tree.
 
+**R32 C4 refuted the first draft's completeness**: it had no row for the
+WRONG-ANSWER failure mode §7.2 measures, none for §5.3's deferred validity,
+none for §8.2's qsort tiebreak, and none for engine registration. Those four
+are added, S-BR14 first because it is the one whose failure is a wrong answer
+rather than a refusal. E1, E8, E9 and SR-8 add four more.
+
 | id | sabotage | what must fail | why it is not covered otherwise |
 |---|---|---|---|
+| **S-BR14** | **a DFA prefilter is attached to a backref pattern** (`fit.prefilter` forced true) | `run_backref_diff.sh` §7.2 cells | **the wrong-answer mode.** §7.2 measures spans differing on up to 389 subjects in one family; nothing else in the suite would notice, because every refusal still refuses and every non-prefiltered pattern still passes |
+| **S-BR15** | **publish-at-OPEN restored** (`A_CAP` writes the pair on traverse) | `selfref.rxt`'s re-entry cells, `run_backref_diff.sh` §3 | E1 exactly. 138 divergences and 40 reversed-span cells in the 5,808-cell sweep — and ZERO in the backref-free population, so no existing suite sees it |
 | S-BR1 | the unset test becomes `ref_e > ref_s` | `numeric.rxt`'s E cells | turns every empty capture into a failure; every non-empty cell still passes |
-| S-BR2 | the `caseless` field is ignored (always case-sensitive) | `caseless.rxt` | D62 control 3's exact residual; no compiler diagnostic |
-| S-BR3 | `vm_nullable` returns false for `A_BREF` | `numeric.rxt` Q6 (`^(a?)\1{3}$` on `""`) | an unguarded nullable body is a hang, not a wrong answer |
-| S-BR4 | `revdet.c`'s `rd_shape` gains an arm ACCEPTING `A_BREF` | `nested.rxt` | the `-Wswitch` alarm (§3.6) tells you an arm is missing; it does not tell you which arm is right |
-| S-BR5 | the compare is inlined instead of calling the seam entry | `codegen` (§4.4's complement check) | **changes no answer** under the byte backend — the S68 shape |
-| S-BR6 | the module's atom port also claims the CLASS position | `octal_class.rxt` | 12 base cells that a module-off run cannot see |
+| S-BR2 | the `caseless` field is ignored | `caseless.rxt` | D62 control 3's residual; no compiler diagnostic |
+| S-BR3 | `vm_nullable` returns false for `A_BREF` | `numeric.rxt` Q6 | an unguarded nullable body is a hang, not a wrong answer — caught by the harness's derived timeout |
+| S-BR4 | `revdet.c`'s `rd_shape` gains an arm ACCEPTING `A_BREF` | `nested.rxt` | the `-Wswitch` alarm says an arm is missing, not which arm is right |
+| S-BR5 | the compare is inlined instead of calling the seam entry | `codegen` (§4.4's fixture-declared count) | **changes no answer** under the byte backend — the S68 shape |
+| S-BR6 | the module's atom port also claims the CLASS position | `octal_class.rxt` | 12 base cells a module-off run cannot see |
 | S-BR7 | the gate check is dropped from the new atom port | `reject` | a construct that compiles with its module off |
 | S-BR8 | rule 3's count uses the whole pattern instead of "so far" | `octal.rxt` | every groups-before cell still passes; only `\10(a)..(j)` fails |
+| **S-BR8b** | rule 3' routed through the octal branch (an 8/9-led run) | `octal.rxt` axis-E cells | the octal branch consumes zero digits, so the failure is a silent mis-parse, not an error |
 | S-BR9 | §8.3's resolution takes the first by NUMBER rather than first SET | `dupnames.rxt` | the `"yy"` cell only |
 | S-BR10 | §8.3's resolution takes the LAST set | `dupnames.rxt` | the `"xyy"` cell only |
+| **S-BR11** | the residual entry's fold table diverges from `cls_casefold` by one byte | the 256-byte agreement check (§4.1) | two spellings of one fact with no control between them — R32 E8 |
+| **S-BR12** | an `A_BREF` node is left UNSTAMPED (defaults to `ANY_ENGINE`) | `registry`/engine-selection, and §6.2's refusal by name | SR-8's unsound-direction default (R31 M-1 note 2): the pattern silently routes to the DFA and miscompiles |
+| **S-BR13** | the revdet capture suppression drops the PENDING slot but keeps the pair | `nested.rxt`'s group-in-body cells | R32 E9's unnamed interaction; correct today by accident, and publish-at-close is what makes it designable |
+| **S-BR16** | §5.3's deferred validity check is skipped | `octal.rxt`, `gated.rxt` | a reference to a nonexistent group is SILENTLY ACCEPTED and then reads `PCREC_UNSET` forever — a pattern that should be error-115 becomes one that never matches |
+| **S-BR17** | §8.2's qsort number tiebreak removed | `dupnames.rxt`, `codegen` identity | `qsort` is not stable, so the emitted table's row order becomes unspecified — a REPRODUCIBILITY defect that passes every behavioural test |
 
-S-BR8, S-BR9 and S-BR10 exist as three separate rows on purpose: each is a
+S-BR8/S-BR8b, S-BR9 and S-BR10 exist as separate rows on purpose: each is a
 plausible implementation, each passes the majority of the corpus, and each is
-caught by exactly one cell. A single "resolution is wrong" sabotage would not
+caught by exactly one cell. A single "the rule is wrong" sabotage would not
 show that the corpus discriminates between them.
 
-### 11.5 The registry checks
+### 11.5 The registry checks, and what this module MOVES
 
-`tests/registry/registry_check.c` already asserts the row invariants. Two
-additions:
+**REWRITTEN AFTER R32 M-1/C1.** The first draft said this module's rows would
+leave the tripwire population "the same movement D59 recorded for
+`named-groups` (51 → 48)". That is wrong twice, and the second error hid the
+first.
 
-- `check_engine_capability_tripwire`'s `qualifying` population drops by the
-  rows this module builds — the same movement D59 recorded for
-  `named-groups` (51 → 48). The number must be re-derived from the run, never
-  copied into prose (`tests/mech/CLAUDE.md`'s founding complaint).
-- `check_built_status_defects` gains this module's rows for free; the
-  `--list-syntax` counts (33 built / 61 unbuilt today) move and
-  `compliance-refresh` regenerates the index.
+- `named-groups`' three rows left the population by **RECLASSIFICATION** to
+  `ANY_ENGINE` — the `r->engines & ENGM_DFA` test at
+  `registry_check.c:1389` skips them before the wired-producer branch is ever
+  reached.
+- This module's twelve rows correctly KEEP `VM_ONLY` (§6.1), so they do not
+  leave. **`qualifying` stays 48 and `wired` goes from 1 to 13**, which under
+  the shipped check is twelve `bad(...)` hits.
+
+Under D67 (SR-8 built in [M6.4.2]) the check itself changes shape: the `\K`
+exception retires, and the demand becomes generic — every `RS_MODULE`,
+non-DFA row with a producer must be STAMPED and must refuse `--engine=dfa` by
+name. This module then adds twelve rows to the stamped-and-refusing
+population and needs no exception.
+
+**Three pins this module MOVES, each of which is hand-typed today:**
+
+| pin | today | after |
+|---|---|---|
+| `registry_check.c:1473-1477`'s exact `qualifying` count | **48, hand-typed**, with a hand-written breakdown naming "12 ESC rows (`\K \k \g`, `\1..\7`, `\8 \9`)" | unchanged at 48 — but the breakdown comment's module attribution must be re-derived, and the `wired` count it does not currently assert must |
+| the built/unbuilt tally | **33 built / 61 unbuilt / 6 na** (`registry_built_status_memo.md:382-384`) | +12 built, -12 unbuilt (plus `(?J)`: +1/-1) |
+| `tests/reject/`'s `reject_gated` pins | `\k` pinned as an enabled-but-unbuilt control | `\k` leaves that population; the pin must move to a still-unbuilt row |
+
+**AND THE BUILT-STATUS TALLY IS ASSERTED BY NOTHING TODAY (R32 C5).**
+`check_built_status_defects` (`registry_check.c:1694-1744`) asserts
+`defects == 0` only; the built/unbuilt counts are interpolated into the `ok()`
+STRING and compared against nothing, and PC-3 never reads the column. So
+"33/61" is a number in a memo with no test behind it, and §9's seven-row
+prediction table would have had no check either.
+
+**RULING (cross-panel, lands in [M6.4.2] as the first module to flip rows):**
+`registry_check` asserts the built/unbuilt/na tallies EXACT, in this file's own
+established convention (`check_class_ports`, `check_class_syntax_reach`), and
+each module's landing moves them. R31 C8's pins join the same assertion. This
+module's obligation is therefore to MOVE a number that will by then be
+asserted, rather than to introduce the assertion — and to state its movement,
+which is the table above.
+
+`check_engine_capability_tripwire`'s counts must be **re-derived from a run,
+never copied into prose** — `tests/mech/CLAUDE.md`'s founding complaint, and
+the reason the twelve-row figure in §6.1 is cited to a `--list-syntax` query
+rather than to this document.
 
 ---
 
