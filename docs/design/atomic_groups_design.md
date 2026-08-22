@@ -762,7 +762,7 @@ never moves it, so "anchored at the requested position" is a property of the
 call; and it returns `pos - ctx->pos`, computed from positions and never from
 `caps`. **Additionally** — and this is the part that is this module's and not
 `\K`'s — the match-here entries pass `ctx->len` as the ceiling, not a prefilter
-window (D51 ruling 2 obligation (a), `src/gen/emit_vm.c:5368` (`<prefix>_match_caps` passes `ctx->pos`; the ceiling argument is `ctx->len`)), so H3's
+window (D51 ruling 2 obligation (a), `src/gen/emit_vm.c:5341` and `:5372` — both match-here entries pass `ctx->len` as the ceiling), so H3's
 hazard cannot reach them either. The obligation this creates is EVIDENCE, on
 wave E's precedent: an entries driver (Appendix A) that runs all three entries
 side by side on the cut corpus.
@@ -1294,8 +1294,9 @@ Two corrections, both this lane's error:
   enumerated, 15-site warning — which is the whole value — but it does not
   block a build.
 - **`rd_shape` and `rd_reverse` do not fail the same way, and the second one is
-  dangerous.** `rd_shape` declines by FALLTHROUGH (`revdet.c:143-146`), so an
-  unhandled `A_ATOMIC` there is safe by accident. `rd_reverse`'s fallthrough is
+  dangerous.** `rd_shape` declines by FALLTHROUGH — its switch ends
+  `}` then `S->ok = false; return;` at `revdet.c:146-148` — so an unhandled
+  `A_ATOMIC` there is safe by accident. `rd_reverse`'s fallthrough is
   `rd_node`, which copies the node and NULLs `l` and `r` — so an unhandled
   `A_ATOMIC` becomes an **EMPTY-BODY atomic group**, silently, rather than a
   declined one. That is a miscompile produced by a warning nobody turned into
@@ -1838,7 +1839,7 @@ round; the note says what happened.**
    transparently.
 7. **H4: the match-here entries need no change (§4.4).** STRUCTURAL.
    **[R31 E-survived by reading both entries: `ctx->len` ceiling at `:5341`
-   and `:5371`.]** *Refute by:* an entry path that passes a prefilter window as
+   and `:5372`.]** *Refute by:* an entry path that passes a prefilter window as
    the ceiling.
 8. **The identity claim (§11.1).** ARGUED from "the module has no alphabet or
    state action". *Refute by:* any emitted byte that moves on an atomic-free
