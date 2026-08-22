@@ -911,22 +911,25 @@ not want the groups, which is a small and self-selected population.
 `out/expand_cost.txt` §1. Each row hands the rewrite's actual output to
 today's binary on the DFA path:
 
+Pasted from `out/expand_cost.txt` rather than re-typed (R30 N2):
+
 | family | source | \|L(G)\| | pattern | emitted | gcc | outcome |
 |---|---|---|---|---|---|---|
-| `(a\|b)\1` | alt2 | 2 | 5 B | 13.7 KB | 0.06 s | compiled |
-| `(abc)\1` | lit3 | 1 | 6 B | 12.4 KB | 0.05 s | compiled |
-| `([a-z])\1` | cls26 | 26 | 77 B | 22.1 KB | 0.06 s | compiled |
-| `((?:a\|b\|c\|d\|e){3})\1` | alt5x3 | 125 | 874 B | 35.3 KB | 0.06 s | compiled |
-| `([a-z]{2})\1` | cls26x2 | 676 | 3.4 KB | **321 KB** | 0.14 s | compiled |
-| `([a-z]{3})\1` | cls26x3 | 17,576 | 123 KB | — | — | **REFUSED**: >32000 DFA states |
-| `([a-z]{4})\1` | cls26x4 | 456,976 | 4.1 MB | — | — | **cannot even be passed**: `E2BIG` |
+| `(a\|b)\1` | alt2 | 2 | 5 B | 13,657 B | 0.05 s | compiled |
+| `(abc)\1` | lit3 | 1 | 6 B | 12,351 B | 0.06 s | compiled |
+| `([a-z])\1` | cls26 | 26 | 77 B | 22,113 B | 0.07 s | compiled |
+| `((?:a\|b\|c\|d\|e){3})\1` | alt5x3 | 125 | 874 B | 35,261 B | 0.06 s | compiled |
+| `([a-z]{2})\1` | cls26x2 | 676 | 3,379 B | **321,302 B** | 0.15 s | compiled |
+| `([a-z]{3})\1` | cls26x3 | 17,576 | 123,031 B | — | — | **REFUSED**: >32000 DFA states |
+| `([a-z]{4})\1` | cls26x4 | 456,976 | 4,112,783 B | — | — | **cannot even be passed**: `E2BIG` |
 
 **MEASUREMENT 3 — the DECLINE boundary, bisected rather than estimated.**
 MEASURED, `out/expand_cost.txt` §2, on the shipped compiler with endpoints
 checked first so the bisection is known to bracket a boundary:
 
-> **largest `|L(G)|` that compiles: 10,525** — a 73.7 KB pattern producing
-> **7.1 MB of emitted C** and 2.0 s of gcc.
+> `endpoint check: k=1 compiles=True ; k=17576 compiles=False`
+> **largest `|L(G)|` that compiles: 10,525** — a 73,674-byte pattern producing
+> **7,116,509 bytes of emitted C** and 1.99 s of gcc.
 > **smallest that does not: 10,526** — "pattern too complex for the DFA
 > engine (>32000 states)".
 
