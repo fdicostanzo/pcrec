@@ -533,8 +533,15 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
 
 Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
 {
-    if (!cx->pending_refs) return root;
-
+    /* THE EARLY RETURN IS ON THE RESOLUTION HALF ONLY, and putting it in front
+     * of BOTH halves was a real defect this module's own byte-identity gate
+     * caught: a backref-FREE pattern has no pending references, so the strip
+     * below never ran and every `--no-captures` artifact with a group kept the
+     * `A_CAP` wrappers the parser now builds unconditionally. The answers were
+     * unaffected — that is what makes it the kind of defect only an identity
+     * sweep sees — but the emitted C moved for every such pattern, which is
+     * exactly the claim §11.3 exists to make. */
+    if (cx->pending_refs) {
     /* THE LEFTMOST FAILURE IS THE ONE REPORTED. The list is prepended, so it
      * is in reverse source order; a compile that has more than one bad
      * reference should name the first one a reader would reach. */
@@ -568,6 +575,7 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
                  "%s refers to a capture group named '%s', which this pattern "
                  "does not declare", worst->what, worst->name);
     }
+    }
 
     /* §6.3's `--no-captures` RULING. The flag drops the group slots a CALLER
      * can see, not the machinery a match needs — `\K`'s precedent exactly. So
@@ -575,9 +583,11 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
      * three internal slots); every other one loses the wrapper it was given,
      * which restores the tree a `--no-captures` parse has always produced.
      *
-     * A pattern with no reference never reaches this line at all (the early
-     * return above), which is the stronger half of the same claim. */
-    if (!cx->want_caps) {
+     * A pattern with no reference marks NOTHING, so every wrapper goes and the
+     * tree is what a `--no-captures` parse has always produced — which is the
+     * stronger half of the same claim, and the half the early return above
+     * used to skip. */
+    if (!cx->want_caps && cx->ncap > 0) {
         int nkeep = (int)cx->ncap + 1;
         bool *keep = arena_alloc(&cx->arena, (size_t)nkeep * sizeof *keep);
         memset(keep, 0, (size_t)nkeep * sizeof *keep);

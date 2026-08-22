@@ -1167,6 +1167,83 @@ elif [ "$resid_bad" -eq 0 ]; then
     ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a backreference compare; comment stripping is token-level and runs before the body tracking)"
 fi
 
+# ---- [M6.5-DUPNAMES] THE REFLECTION TABLE'S ORDER, READ OFF THE ARTIFACT ---
+# backrefs_design.md §8.2, and R32's re-check is why this is STRUCTURAL rather
+# than a behavioural `.rxt` cell.
+#
+# THE FACT. `rx_info.groups` is documented "sorted, bsearch-able", and with
+# `(?J)` the table can now hold ADJACENT ROWS WITH EQUAL NAMES. libpcre2's own
+# `PCRE2_INFO_NAMETABLE` is sorted (name ASCENDING, then number ASCENDING) —
+# measured over ten patterns — and `docs/spec/match_api.md` §6's caller
+# algorithm (bsearch, walk BACK to the run's first row, then FORWARD to the
+# first participating one) selects the LOWEST-numbered participating member
+# ONLY IF the within-name order is ascending. Get it backwards and the table
+# encodes the "last set" rule §8.3's `"xyy"` cell rules out.
+#
+# WHY NOT A BEHAVIOURAL ROW. Without the tiebreak, whether the emitted order
+# is wrong depends on TWO unspecified properties agreeing: `qsort`'s stability
+# and the direction `Ctx.named_groups` is walked in. `mod_named_groups.c`
+# PREPENDS and `emit_dfa.c` walks from the head, so on glibc (a stable merge
+# sort) a name-only comparator yields DESCENDING numbers within a run — but a
+# check that depends on that coincidence is not a control. Reading the order
+# off the ARTIFACT depends on neither.
+#
+# STRICTLY increasing, not merely non-decreasing, and that is the COMPARATOR
+# TOTALITY half: a comparator returning 0 for rows that differ in NUMBER would
+# leave them in whatever order the sort happened to produce, and two rows equal
+# in BOTH fields would be a duplicate the table must never contain. The order
+# half is live exactly when a dup-name pattern is compiled; the totality half
+# is exercisable on every fixture with two or more names, which is why the
+# fixture set below has both kinds.
+#
+# SABOTAGE: S118 removes the number tiebreak from `ng_cmp_name`.
+dup_bad=0; dup_files=0; dup_rows=0; dup_dupname=0
+while IFS=$'\t' read -r nm feats pat; do
+    [ -n "$nm" ] || continue
+    if ! "$PCREC" -p rx --features "$feats" -o - -- "$pat" \
+            > "$WORKDIR/$nm.c" 2>"$WORKDIR/$nm.err"; then
+        bad "[M6.5-DUPNAMES] pcrec refused the fixture '$pat': $(head -1 "$WORKDIR/$nm.err")"
+        dup_bad=$((dup_bad + 1)); continue
+    fi
+    # The emitted rows, as `<name>\t<number>` in artifact order.
+    sed -n 's/^    { "\([^"]*\)", \([0-9-]*\), .*/\1\t\2/p' "$WORKDIR/$nm.c" \
+        > "$WORKDIR/$nm.rows"
+    n=$(grep -c . "$WORKDIR/$nm.rows" || true)
+    if [ "$n" -lt 2 ]; then
+        bad "[M6.5-DUPNAMES] the fixture '$pat' emitted $n reflection rows — fewer than two cannot exhibit an ORDER at all"
+        dup_bad=$((dup_bad + 1)); continue
+    fi
+    dup_files=$((dup_files + 1)); dup_rows=$((dup_rows + n))
+    if [ "$(cut -f1 "$WORKDIR/$nm.rows" | sort | uniq -d | wc -l)" -gt 0 ]; then
+        dup_dupname=$((dup_dupname + 1))
+    fi
+    if ! out=$(awk -F'\t' '
+        NR > 1 {
+            if ($1 < pn || ($1 == pn && $2 <= pv)) {
+                printf "row %d (%s,%s) does not strictly follow (%s,%s)\n", NR, $1, $2, pn, pv
+                bad = 1
+            }
+        }
+        { pn = $1; pv = $2 }
+        END { exit bad }
+    ' "$WORKDIR/$nm.rows"); then
+        bad "[M6.5-DUPNAMES] '$pat': the emitted rx_group_entry rows are not STRICTLY increasing in (name, number) — $out. A caller doing match_api.md §6's bsearch-then-walk would select the wrong member of a duplicated name's run, which is the resolution rule §8.3's \"xyy\" cell rules out"
+        dup_bad=$((dup_bad + 1))
+    fi
+    # TAB-separated: name, features, pattern.
+done <<EOF
+dupA	backrefs,named-groups,modifiers	(?J)(?<z>1)(?<a>2)(?<z>3)(?<a>4)\k<a>
+dupB	backrefs,named-groups,modifiers	(?J)(?<b>x)(?<a>y)(?<b>z)\k<b>
+dupC	backrefs,named-groups,modifiers	(?J)(?<n>1)|(?<n>2)|(?<n>3)
+dupD	named-groups	(?<zeta>a)(?<alpha>b)(?<mu>c)
+dupE	named-groups	(?<a>1)(?<aa>2)(?<b>3)
+EOF
+if [ "$dup_files" -ne 5 ] || [ "$dup_dupname" -ne 3 ]; then
+    bad "[M6.5-DUPNAMES] POPULATION: $dup_files fixtures emitted a table and $dup_dupname of them carry a DUPLICATED name, expected EXACTLY 5 and 3. The ORDER half of this check is vacuous while every name is unique — it goes live exactly when a dup-name pattern is in the set — so losing those three would leave the totality half alone"
+elif [ "$dup_bad" -eq 0 ]; then
+    ok "[M6.5-DUPNAMES] §8.2: $dup_rows reflection rows across $dup_files artifacts ($dup_dupname with a duplicated name) are STRICTLY increasing in (name, number), read off the ARTIFACT — so neither qsort's stability nor the declaration list's direction is being trusted"
+fi
+
 # ---- [K27] the emitted prefilter on the contract's legal NULL subject -----
 # docs/spec/match_api.md §3.1: `s` may be NULL when `n == 0`. The emitted
 # unanchored search body used to reach `memchr(s + pos, c, n - pos)` with

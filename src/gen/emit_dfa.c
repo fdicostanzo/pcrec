@@ -652,11 +652,46 @@ typedef struct {
  * invented, which is what makes the array bsearch-able by name exactly as
  * docs/spec/match_api.md §6 always said it would be, and settles the
  * paragraph that section left open (docs/dev/decisions.md's [M6.3] entry). */
+/* [M6.5.2] THE NUMBER TIEBREAK, AND IT IS A CORRECTNESS REQUIREMENT rather
+ * than the reproducibility nicety it would have been before `(?J)` existed.
+ *
+ * MEASURED (backrefs_design.md §8.2, `PCRE2_INFO_NAMETABLE` read for ten
+ * patterns): libpcre2's own table is sorted (name ASCENDING, then number
+ * ASCENDING) — `(?<z>1)(?<a>2)(?<z>3)(?<a>4)` comes back a/2, a/4, z/1, z/3 —
+ * so this is a reproduction of an external precedent, not a pcrec convention.
+ *
+ * WHY WITHOUT IT THE TABLE ENCODES THE WRONG RULE, which is what R32's
+ * re-check found by reading two sites together. `mod_named_groups.c` PREPENDS
+ * each declaration onto `Ctx.named_groups` and the loop below walks that list
+ * FROM THE HEAD, so the array reaching `qsort` is in DESCENDING group number.
+ * Under a name-only comparator and a STABLE sort — glibc's is a merge sort —
+ * the emitted rows for one name would come out (name asc, number DESC), and
+ * `docs/spec/match_api.md` §6's caller algorithm (bsearch, walk BACK to the
+ * run's first row, then FORWARD to the first participating one) would then
+ * select the HIGHEST-numbered participating group. That is precisely the
+ * "last set" rule §8.3's `"xyy"` cell rules out: `(?J)^(?<a>x)(?<a>y)\k<a>$`
+ * matches "xyx" and NOT "xyy". The table would have encoded a resolution rule
+ * the emitted matcher does not use, silently, on the platform pcrec is
+ * developed on.
+ *
+ * The reproducibility argument — an unstable `qsort` leaves equal rows in
+ * unspecified order — is also true, and is now the SECOND reason rather than
+ * the first. D59 left the tiebreak unpinned; this module pins it.
+ *
+ * ITS DETECTOR IS STRUCTURAL, not behavioural: `tests/codegen`'s
+ * [M6.5-DUPNAMES] check reads the emitted rows' order off the ARTIFACT and
+ * asserts it is non-decreasing in (name, number), plus a comparator-TOTALITY
+ * assertion (it returns 0 only for rows equal in BOTH fields). Neither depends
+ * on `qsort`'s stability or on the list's direction, which is what a
+ * behavioural row here would have depended on. Sabotage row S118. */
 static int ng_cmp_name(const void *a, const void *b)
 {
     const NamedGroup *const *pa = a;
     const NamedGroup *const *pb = b;
-    return strcmp((*pa)->name, (*pb)->name);
+    int c = strcmp((*pa)->name, (*pb)->name);
+    if (c != 0) return c;
+    return (*pa)->number < (*pb)->number ? -1
+         : (*pa)->number > (*pb)->number ?  1 : 0;
 }
 
 static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,

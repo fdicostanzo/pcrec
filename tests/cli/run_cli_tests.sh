@@ -660,8 +660,19 @@ case10() {
     # vocabulary — both cells were false the day before the producers wired
     # in (D33 §9.3), and the doorway still must not move the cursor even
     # when producing (fields 4/5 equal; the CALLER moves at result).
+    # [M6.5.2] THE `end` FIELD (the ninth) MOVED 0 -> 2, and it is a fix
+    # rather than a drift. `ExtResult.end` is "one past the construct", the
+    # value the CALLER advances to at RESULT — and this branch (the escape
+    # doorway's own SET port) left it at the zero-initialiser while `esc_atom`
+    # compensated by assuming every atom producer's construct is exactly the
+    # two-byte escape. Module `backrefs` has atom constructs that are longer
+    # (`\k<name>`, `\g{-1}`, an octal re-read), so `esc_atom` now advances to
+    # whatever the producer reports, and a producer that reports 0 would rewind
+    # the cursor to the start of the pattern. The cursor fields (4 and 5) are
+    # UNCHANGED at 2 and 2, which is the property this cell exists for: the
+    # doorway still does not move `cx->pos` even when producing.
     assert_eq "case10: --features classes --probe-ask result produces a node" \
-        "escape	result	result	2	2	node	0	0	0	" \
+        "escape	result	result	2	2	node	0	0	2	" \
         "$("$PCREC" --features classes --probe-ask result -- '\d')"
     assert_eq "case10: ...and the posix class produces members, cursor unmoved" \
         "class-bracket	result	result	1	1	members	1	0	10	" \

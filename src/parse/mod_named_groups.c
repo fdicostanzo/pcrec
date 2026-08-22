@@ -190,14 +190,28 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
                "this declaration to allow duplicates)");
 
     /* NUMBERING (see header): unconditional on `cx->mods.nocap` — a named
-     * group always gets a number, even under (?n). `want_caps` still gates
-     * whether an A_CAP node is actually built, exactly as a plain group. */
+     * group always gets a number, even under (?n).
+     *
+     * [M6.5.2] AND THE `A_CAP` WRAPPER IS NOW BUILT UNCONDITIONALLY TOO,
+     * exactly as `p_group_body`'s plain-`(` hook does it and for the same
+     * reason: under `--no-captures` a group a BACKREFERENCE names still needs
+     * its internal slots (§6.3), and "will any reference name this group" is
+     * not a question this line can answer — a forward reference makes it
+     * unanswerable here in principle. `pcrec_bref_resolve` deletes the
+     * wrapper of every group nothing reads, which for a pattern with no
+     * reference deletes ALL of them and reproduces this port's pre-[M6.5]
+     * output.
+     *
+     * Leaving this site gated while `p_group_body` was not is exactly the
+     * two-homes drift the shared `pcrec_is_bare_anchor` predicate exists to
+     * prevent one construct over, and it was a live miscompile rather than an
+     * inconsistency: `--no-captures '(?<n>a)\k<n>'` answered NOMATCH on "aa"
+     * because the reference had no slots to read. `run_backref_diff.sh`'s §4
+     * arm is what found it. */
     cx->ncap++;
-    int capno = 0;
-    if (cx->want_caps) {
-        capno = (int)cx->ncap;
-        if (cx->first_cap_pos == (size_t)-1) cx->first_cap_pos = at;
-    }
+    int capno = (int)cx->ncap;
+    if (cx->want_caps && cx->first_cap_pos == (size_t)-1)
+        cx->first_cap_pos = at;
 
     /* Recorded regardless of `want_caps` — the name/number pairing is a
      * LEXICAL fact about the pattern text (the same tier `ngroups`
