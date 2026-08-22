@@ -413,3 +413,170 @@ pattern x?(?:b){0,4}+a
 features atomic-groups
 m "a" 0 1
 ns 1 "a"
+
+# ====================================================================
+# 10.  THE TIER-1 REGRESSION: A TWO-EXIT BODY UNDER AN OVERLAPPING
+#      FOLLOW ([M6.4.4])
+# ====================================================================
+#
+# The blinded D27 corpus found `(?:aa|a)++ab` answering (0,4) on "aaab" where
+# libpcre2 10.46 and python3 `re` both say NO MATCH, in every mode, on every
+# frames rung. The defect SHIPPED — live in main from [M6.4.2]'s merge
+# (69f3b93) until [M6.4.4] — and every section above was green on it.
+#
+# WHY THEY WERE GREEN, which is the part worth keeping. `vm_atomic` emitted the
+# atomic body with the caller's follow-min still in force, and the possessive
+# rungs turn that number into a loop bound: they end the loop at the first
+# position where "one more iteration PLUS THE FOLLOW" does not fit. For an
+# UNCUT loop that shortcut is answer-preserving, because the exit it jumps to
+# is one a retreat could reach anyway. Under a cut there is no retreat, so the
+# loop stops where the greedy run would have walked on — and the follow then
+# matches there.
+#
+# THAT IS ONLY VISIBLE WHEN THE FOLLOW CAN MATCH AT THE EARLY EXIT. Every
+# possessive cell above this one has a follow whose first byte cannot also
+# start a body iteration (`(?:a|ab)++c`), so the early exit landed on a `c`
+# the loop could never have eaten and no answer moved. The shape that sees it
+# needs BOTH halves: a TWO-EXIT body (so the stopping position is a choice,
+# not a byte-determined fact) and an OVERLAPPING follow at least two bytes
+# wide.
+#
+# EVERY PATTERN HERE IS PAIRED WITH ITS ONE-BYTE-FOLLOW TWIN, which matches.
+# A section of nothing but NO MATCH would pass on a compiler that refused the
+# whole family, and that is not what is being asserted.
+#
+# `(?:aa|a)++ab` is UNSATISFIABLE and that is the cleanest statement of the
+# semantics: the loop eats the maximal run of `a`s and commits, so the `a` the
+# follow needs has already been consumed. Any match at all is the uncut
+# language leaking through.
+
+# ---- the frames-unbounded rung (0x4) -------------------------------------
+
+pattern (?:aa|a)++ab
+features atomic-groups
+n "aaab"
+n "aaaab"
+n "aab"
+n "ab"
+ns 1 "aaab"
+
+pattern (?:aa|a)++b
+features atomic-groups
+m "aaab" 0 4
+m "aab" 0 3
+m "ab" 0 2
+
+pattern (?:aa|a)*+ab
+features atomic-groups
+n "aaab"
+n "aab"
+
+pattern (?:aa|a)*+b
+features atomic-groups
+m "aaab" 0 4
+
+pattern (?:a|aa)++ab
+features atomic-groups
+n "aaab"
+
+pattern (?:a|aa)++b
+features atomic-groups
+m "aaab" 0 4
+
+# ---- the group spelling, same rung ---------------------------------------
+
+pattern (?>(?:aa|a)+)ab
+features atomic-groups
+n "aaab"
+n "aaaab"
+
+pattern (?>(?:aa|a)+)b
+features atomic-groups
+m "aaab" 0 4
+
+# ---- the frames-bounded rung (0x2) ---------------------------------------
+
+pattern (?:aa|a){1,3}+ab
+features atomic-groups
+n "aaab"
+n "aaaab"
+
+pattern (?:aa|a){1,3}+b
+features atomic-groups
+m "aaab" 0 4
+m "aaaaab" 0 6
+
+# ---- the counter rung (0x10) ---------------------------------------------
+
+pattern (?:aa|a){8,12}+ab
+features atomic-groups
+n "aaab"
+
+# pcre2-only
+# python cuts the BRACE possessive PER ITERATION where PCRE2 cuts at the
+# GROUP EXIT, so python answers NO MATCH here. Appendix B.3's family, and the
+# same divergence section 8 above already carries.
+pattern (?:aa|a){8,12}+b
+features atomic-groups
+m "aaaaaaaaab" 0 10
+
+# ---- the revdet rung (0x8) -----------------------------------------------
+
+pattern (?:a|bc)*+ab
+features atomic-groups
+n "bcab"
+n "aaab"
+
+pattern (?:a|bc)*+b
+features atomic-groups
+m "bcaab" 0 5
+
+# ---- the cursor rung (0x1): ALREADY CORRECT before the fix ---------------
+#
+# This rung takes no follow-derived early exit, so these two answered right
+# throughout. They are the section's internal control: a "fix" that worked by
+# disabling the cut wholesale would leave the rows above green and turn these
+# red.
+
+pattern a++ab
+features atomic-groups
+n "aaab"
+
+pattern a++b
+features atomic-groups
+m "aaab" 0 4
+
+# ---- the loop INSIDE the group, not its direct child ---------------------
+#
+# `under_atomic` is FALSE for these loops — the general shape carries the cut,
+# and possessify's own §2.2 verdict was computed against the body's EMPTY
+# follow while the emitter was still carrying `ab`. A per-rung fix would have
+# missed them; the boundary scoping covers them.
+
+pattern (?>a(?:aa|a)+)ab
+features atomic-groups
+n "aaab"
+n "aaaab"
+
+pattern (?>a(?:aa|a)+)b
+features atomic-groups
+m "aaab" 0 4
+
+pattern (?>(?:aa|a)+a)ab
+features atomic-groups
+n "aaaab"
+
+pattern (?>(?:aa|a)+a)b
+features atomic-groups
+m "aaaab" 0 5
+
+# ---- the UNCUT twin, which DOES match -------------------------------------
+#
+# No module needed and python-verified: the two-byte edit that removes the
+# atomicity restores the (0,4) the sections above must NOT produce. This is
+# the cell that makes the whole section a statement about the cut rather than
+# about the pattern family.
+
+pattern (?:aa|a)+ab
+m "aaab" 0 4
+m "aab" 0 3

@@ -26,5 +26,5 @@ SAB_SUITES="possdiff"
 SAB_DESC="the lazy-only non-nullable-remainder conjunct dropped: a lazy quantifier on the disjointness arm is possessified even when the match can end at it"
 SAB_DOC_FIGURE="tests/possessify/run_possdiff.sh: the lazy nullable-remainder family diverges"
 SAB_COUNT=1
-SAB_BEFORE="    else if (base_ok && disjoint && lazy && may_end)     verdict = false;"
-SAB_AFTER="    else if (false)                                     verdict = false;  /* SABOTAGE S45 */"
+SAB_BEFORE='    if (base_ok && disjoint && lazy && may_end)      return false;'
+SAB_AFTER='    if (false)                                       return false;  /* SABOTAGE S45 */'

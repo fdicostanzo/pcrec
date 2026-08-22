@@ -919,6 +919,38 @@ possessive rung, which cuts PER ITERATION where the general shape cuts once:
 without it `(?>a*)` exhausts `RX_RESUME_FRAMES` where `a*+`, a spelling PCRE2
 calls identical, costs one frame.
 
+**THE FOLLOW DOES NOT CROSS A CUT** ([M6.4.4], and the fix for a TIER-1
+MISCOMPILE THAT SHIPPED — `(?:aa|a)++ab` answered (0,4) on "aaab" against both
+oracles' NO MATCH, from `69f3b93` until the fix). `vm_atomic` sets
+`v->fmin`/`v->fdyn` to 0/NULL for the whole body and restores them after the
+cut, on BOTH routes out — the general shape and the lift.
+
+It is a SEMANTIC boundary, not a lost optimisation. `(?>X)` matches X's OWN
+FIRST SUCCESS, and which success that is must be decided without consulting
+what follows the group, because the cut makes the choice final. `v->fmin` is
+exactly such a consultation: the MRL machinery turns it into a loop bound, and
+every possessive rung ends its loop at the first position where "one more
+iteration PLUS THE FOLLOW" does not fit. For an UNCUT loop that shortcut is
+answer-preserving and `vm_opt_chain`'s own comment proves it — the body branch
+has no accepting leaf there, so the skip is the only survivor, AND THE SKIP IS
+STILL AVAILABLE TO RETREAT TO. Under a cut it is not.
+
+**Scoped at the BOUNDARY rather than per rung, and the shapes that forced
+that:** `(?>a(?:aa|a)+)ab` and `(?>(?:aa|a)+a)ab` put the loop one level
+INSIDE the group, where `under_atomic` is FALSE and the cut comes from
+possessify's own §2.2 verdict — a verdict computed against the body's EMPTY
+follow while the emitter was still carrying `ab`. Two passes disagreeing about
+WHICH FOLLOW THEY MEAN is the whole defect; zeroing at the boundary makes them
+agree by construction for every shape. The body's INTERNAL follows survive
+untouched, because the concatenation arm rebuilds its suffix sums from
+`v->fmin`.
+
+This is RULE H3 one level down, and the same sentence: the prefilter answers
+for the UNCUT language, so its span end is not a bound on a cut match's end;
+`v->fmin` answers for the follow, so it is not a bound on a cut body's search.
+Sabotage row S101; regression family `cut2` in
+tests/atomic_groups/run_atomic_diff.sh; witnesses in possessive.rxt section 10.
+
 **THE LIFT IS NOT FREE, and the same claim was refuted TWICE the same way.**
 Each possessive rung's shape is licensed by a §2.2 CONJUNCT that a
 USER-WRITTEN possessive deletes: `vm_poss_star` emits no empty-iteration guard

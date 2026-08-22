@@ -11723,3 +11723,108 @@ identity sweep as its own target; §3.2.2b) is mid-`make test`, sequential
 and timestamped on purpose so per-section wall times are measured, not
 guessed; manager-verified on its binary: all seven witnesses agree with
 libpcre2 and the tripwire prints "all anchors resolve" (99 rows).
+## 2026-08-22 (EDT), thirty-sixth session — [M6.4.4] FIX ROUND: a TIER-1 MISCOMPILE THAT SHIPPED, found by the blinded corpus after the merge
+
+`(?:aa|a)++ab` on "aaab" answered (0,4) in main from [M6.4.2]'s merge
+(`69f3b93`) until this lane. libpcre2 10.46 and python3 `re` both say NO
+MATCH. It was wrong on every frames rung, in every mode — default,
+`-fno-possessify`, `-fno-atomic-discharge` — and 748 corpus cases plus a
+39,326-cell x 3-arm differential were green over it the whole time. The
+[M6.4.3] D27 corpus, written from the PCRE2 goal by an author denied `src/`
+and `tests/`, found it on its acceptance run. That is the second time D27 has
+paid for itself with a tier-1 defect nothing else saw, and this time the
+defect had already shipped.
+
+ROOT CAUSE, and it is one sentence: **the emitter carried the follow's minimum
+width across the cut.** `vm_atomic` emitted the atomic body with the caller's
+`v->fmin` still in force, and the MRL machinery turns that number into a loop
+bound — every possessive rung ends its loop at the first position where "one
+more iteration PLUS THE FOLLOW" does not fit. For an UNCUT loop the shortcut
+is answer-preserving, and `vm_opt_chain`'s own comment proves it: the body
+branch has no accepting leaf there, so the skip is the only survivor, AND THE
+SKIP IS STILL AVAILABLE TO RETREAT TO. Under a cut it is not. The loop stops
+where the greedy run would have walked on, and the follow matches there — the
+uncut language, out of a possessive quantifier. `-fno-length-prune` gave the
+right answer on every failing witness and the same answer on the passing ones,
+which is what identified the prune as the carrier rather than the cut, the
+mark or the alternation frames.
+
+THE FIX is one scoping at the BOUNDARY, not a patch per rung: `v->fmin` and
+`v->fdyn` are zeroed for the whole atomic body and restored after the cut, on
+BOTH routes out of `vm_atomic`. The general shape needed it as much as the
+lift — `(?>a(?:aa|a)+)ab` puts the loop one level INSIDE the group, where
+`under_atomic` is false and possessify's own §2.2 verdict was computed against
+the body's EMPTY follow while the emitter still carried `ab`. Two passes
+disagreeing about WHICH FOLLOW THEY MEAN is the whole defect; zeroing at the
+boundary makes them agree by construction. The body's INTERNAL follows survive
+— the concatenation arm rebuilds suffix sums from `v->fmin` — so
+`(?>(?:aa|a)+a)` still gives its loop the trailing `a`. Nothing atomic-FREE
+changes, because `vm_atomic` is reached for `A_ATOMIC` alone.
+
+**WHY THE WHOLE CORPUS WAS GREEN, which is the finding worth more than the
+fix.** Every `cut` pattern in the tree had a follow whose first byte cannot
+also start a body iteration — `(?>a|ab)c`, `(?:a|ab)++c`, `(?>a*)b`. Under
+that disjointness the early exit lands on a byte the loop could never have
+eaten, the follow fails there too, and NO ANSWER MOVES. The alphabet was
+uniform in a way nobody had noticed, and it was uniform in the DESIGN's
+examples as well, which is why three adversarial review rounds did not catch
+it either. The shape that sees it needs both halves: a TWO-EXIT body (so the
+loop's stopping position is a choice, not a byte-determined fact) and an
+OVERLAPPING follow at least two bytes wide.
+
+WHAT LANDED, with the numbers from the runs.
+- The fix, and the differential extended with the missing family: class
+  `cut2`, 30 patterns, all five possessive rungs — coverage ASSERTED by ORing
+  the artifacts' own `RX_VM_RUNGS` to 0x1f, never inferred from the
+  quantifier spelling — and both preferences. Sweep 39,326 -> 61,586 cells x
+  3 arms, 0 disagreements with libpcre2. The family's non-vacuity floor is
+  kept SEPARATE from the `cut` family's and measures 30/30 (floor 18): a
+  merged counter would have stayed green with the entire family answering its
+  uncut twin, which is the state the tree was in.
+- possessive.rxt section 10: the five witnesses as named cells, each PAIRED
+  with its one-byte-follow twin that matches, so the section cannot pass on a
+  compiler that refuses the family. 258 cases / 0 failed; 225 of them
+  python-verified at 0 disagreements; the `{8,12}+` pair is `# pcre2-only`
+  for Appendix B.3's brace/two-exit family, measured not assumed.
+- Sabotage row S101 — the only row in the matrix whose defect SHIPPED.
+  Validated end to end: applies at 1 site, builds, reproduces (0,4), and
+  takes the differential to 2,484 disagreeing cells + 4 follow-barrier
+  failures (11 red where the fixed tree is 8 green); possessive.rxt goes 13
+  red.
+- A NEW STRUCTURAL CHECK, because rules 1-5 could not have seen this: §3 of
+  the differential now asserts the FOLLOW BARRIER in its DIRECTION — with a
+  dead cut DELETED the VM artifact carries a follow-derived MRL ceiling, with
+  the same cut ALIVE it carries none. 10/10.
+- §5.4's emission-neutrality claim CORRECTED rather than relaxed. A live
+  `A_ATOMIC` now changes the length prune as well as engine selection, so the
+  byte comparison runs with `-fno-length-prune` on BOTH arms — removing the
+  one axis the barrier acts on AT THE SOURCE, measured byte-identical on all
+  ten dead-cut patterns. Normalising the two prune STAMPS instead would have
+  hidden a thirteen-line machinery difference behind a two-line sed. The
+  design doc carries the dated correction at §5.4 and a new §11.3 rule 6.
+- The identity sweep moved OUT of `make test` to the opt-in
+  `make test-atomic-identity`, and off the ubsan/asan lists (it never runs a
+  generated matcher, and the only thing it would instrument is a compiler
+  built from a pinned PRE-MODULE commit). Archived result in docs/testing.md:
+  1312/1313 same, 0 differing, 0 refusal mismatches, 1565-pattern corpus, 116
+  atomic members the reference refuses as the positive control.
+- THREE stale sabotage anchors re-derived from live source, all found by
+  `scripts/m6read_check_sab_anchors.py` in one run: S45 (`pss_verdict`'s
+  factoring turned an `else if` chain into early returns), S63 (H3's site-2
+  comment was inserted between the guard and the `snprintf` its anchor
+  spanned) and S90 — a THIRD nobody had seen, broken by THIS lane's own
+  comment rewrite inside `vm_atomic`, and caught in the same run. Re-derived
+  programmatically from the live file rather than hand-transcribed; each
+  verified to apply at exactly `SAB_COUNT` sites and to build; S90
+  additionally checked to still produce its intended defect (the sabotaged
+  matcher SEGFAULTS on `(?>ab|a)b`, the cut reading a mark slot never
+  written). The tripwire is now three-for-three on live catches.
+
+ONE PREMISE I WAS GIVEN THAT THE MEASUREMENT DID NOT SUPPORT, recorded because
+the next person will otherwise re-derive it: the identity gate was described
+as costing "~26 minutes forever" in `make test`. MEASURED on this box: 71 s
+standalone, and `make test-atomic` was 1m35s with BOTH scripts (they run
+concurrently under `run_group`) against 1m38s with the differential alone.
+Moving it out is right on the design's own reading of what it asserts, but it
+is not a speed-up and must not be reported as one. Where `make test`'s wall
+time actually goes is a separate question and is not answered by this lane.

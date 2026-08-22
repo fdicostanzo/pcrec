@@ -16,6 +16,13 @@ Frank's 2026-08-12 companion note (same file, under the M4 design notes).
 critics plus manager findings, on this document at commit **4c5f508**.
 **NOT APPROVED at 4c5f508; this is the revision.**
 
+> **POST-APPROVAL (D27), 2026-08-22 — `[M6.4.4]`.** The approved design was
+> WRONG in one more place, and the blinded corpus found it after the module
+> merged: a TIER-1 MISCOMPILE that shipped (`(?:aa|a)++ab` on `"aaab"`).
+> RULE 3 gains condition **(e)**, and **§3.2.2b** is the new carve-out — the
+> first one on the CONTEXT axis rather than the body's. See the review file's
+> **P1**, and §14 item 9 for what it says about this document's method.
+
 **The two central results SURVIVED and came out stronger:**
 
 - **CUT-INV** (§3.1) — attacked on the emitted machinery, on nested, quantified
@@ -447,9 +454,17 @@ at §3.2.2a and summarised here:
 > no frame a cut would have removed; (b) PREFERENCE-PRESERVING; (c)
 > NULLABLE-SAFE; **AND (d) the SELECTED RUNG'S OWN GATE holds.** The existing
 > possessive rungs satisfy (a) and fail (b) and (c) for exactly the bodies §2.2
-> refuses. `[M6.4.2]` owes ONE STRUCTURAL CHECK PER PATH, driven by BOTH witness
-> columns above, and each check names which answer that path gives to each of
-> the four conditions.**
+> refuses; **AND (e) the path's own PRUNING must not read the FOLLOW** —
+> added by `[M6.4.4]`, §3.2.2b: the possessive rungs' MRL early exit is
+> licensed by a retreat that a cut destroys, so the body is emitted with
+> `v->fmin`/`v->fdyn` zeroed. `[M6.4.2]` owes ONE STRUCTURAL CHECK PER PATH,
+> driven by BOTH witness columns above, and each check names which answer that
+> path gives to each condition.**
+
+**(e) IS ON A THIRD AXIS.** (a)(b)(c) are properties of the BODY and (d) is a
+property of the RUNG; (e) is a property of the CONTEXT the lift is emitted in,
+and no reading of the body or the rung reaches it. That is why it survived
+three review rounds and a 39,326-cell differential — see §3.2.2b and §14 item 9.
 
 **(d) IS A SEPARATE FILTER AND (a)(b)(c) DO NOT IMPLY IT — r31eng's final
 finding.** (a), (b) and (c) are properties of the BODY. A lift also inherits
@@ -590,6 +605,75 @@ have. Sabotage row **S99** lifts a lazy body.
 both oracles and in pcrec today (§6.3), so the lazy-then-possessive SPELLING
 never reaches the emitter. The reachable spelling is `(?>X*?)`, which is what
 every cell above uses.
+
+#### 3.2.2b CARVE-OUT THREE — the follow does not cross a cut ([M6.4.4], post-approval)
+
+**Found by the [M6.4.3] blinded corpus AFTER this document was approved and
+the module merged, on a defect that SHIPPED** (main `69f3b93` → `[M6.4.4]`).
+Carve-outs one and two are properties of the BODY; this one is a property of
+the CONTEXT, which is why neither the rule nor §14 item 9's "read each §2.2
+conjunct" recipe would have reached it.
+
+**THE INVARIANT.** Every possessive rung ends its loop at the first position
+where *one more iteration PLUS THE FOLLOW* does not fit — `vm_poss_star`
+(`emit_vm.c:2791`), `vm_poss_chain` (`:2714`), the MRL bound built from
+`v->fmin`. `vm_opt_chain`'s own comment (`:2624`) carries the argument that
+makes it answer-preserving: *"the BODY branch has no accepting leaf — so the
+skip is the only survivor and the frame that would have offered the other
+branch is never pushed."* **That argument assumes the skipped exit is
+RETREATABLE. Under a cut it is not.** The loop must run as far as the BODY
+goes and then commit; stopping early at a position the greedy run would have
+walked past manufactures exactly the exit the cut exists to destroy.
+
+**THE WITNESS**, `(?:aa|a)++ab` on `"aaab"` — libpcre2 10.46 and python3 `re`
+both NO MATCH, pcrec (0,4) in every mode. The loop takes `"aa"`, reaches
+offset 2 with two bytes left, MRL says 1 + 2 > 2, exits without the third
+`a`, and the follow matches `"ab"` there: the UNCUT language, out of a
+possessive quantifier. All five measured shapes, and the control:
+
+| pattern | rung | before | after | oracles |
+|---|---|---|---|---|
+| `(?:aa\|a)++ab` | `0x4` | (0,4) | nomatch | nomatch |
+| `(?:aa\|a)*+ab` | `0x4` | (0,4) | nomatch | nomatch |
+| `(?>(?:aa\|a)+)ab` | `0x4` | (0,4) | nomatch | nomatch |
+| `(?:aa\|a){1,3}+ab` | `0x2` | (0,4) | nomatch | nomatch |
+| `(?:a\|aa)++ab` | `0x4` | (0,4) | nomatch | nomatch |
+| `a++ab` (CONTROL) | `0x1` | nomatch | nomatch | nomatch |
+
+The cursor rung was right throughout — it takes no follow-derived early exit —
+which is what localised the defect. `-fno-length-prune` gave the correct
+answer on all five, identifying the PRUNE as the carrier rather than the cut,
+the mark or the alternation frames.
+
+> **CARVE-OUT THREE. The atomic body is emitted with `v->fmin = 0` and
+> `v->fdyn = NULL`, restored after the cut, on BOTH routes out of
+> `vm_atomic` — the general shape AND the lift.** `(?>X)` matches X's OWN
+> FIRST SUCCESS, and the follow's minimum width must not influence which
+> success that is.
+
+**THE GENERAL SHAPE NEEDS IT AS MUCH AS THE LIFT**, and that is why the fix is
+at the BOUNDARY rather than in each rung. `(?>a(?:aa|a)+)ab` puts the loop one
+level INSIDE the group, where `under_atomic` is FALSE and the cut comes from
+possessify's own §2.2 verdict — a verdict computed against the body's EMPTY
+follow while the emitter was still carrying `ab`. Two passes disagreeing about
+WHICH FOLLOW THEY MEAN is the whole defect; zeroing at the boundary makes them
+agree by construction. Internal follows survive: the concatenation arm rebuilds
+its suffix sums from `v->fmin` (`:4321`), so `(?>(?:aa|a)+a)` still gives its
+loop the trailing `a`.
+
+**THE GENERATOR GAP IT EXPOSED, which is the part worth more than the fix.**
+No sweep in this design or in `[M6.4.2]` ever generated **a two-exit body under
+a follow of nonzero minimum width that overlaps the body's first set**. Every
+`cut` pattern was `(?>a|ab)c`, `(?:a|ab)++c`, `(?>a*)b` — follows disjoint from
+the body, where the early exit lands on a byte the loop could never have eaten
+and NO ANSWER MOVES. §6's table, Appendix A's generator and Appendix B.3's
+divergence families share that alphabet. `[M6.4.4]` closes it with class
+`cut2` in `run_atomic_diff.sh`: 30 patterns, all five rungs (coverage ASSERTED
+by ORing the artifacts' own `RX_VM_RUNGS` to `0x1f`), both preferences, and a
+non-vacuity floor kept SEPARATE from the `cut` family's — 30/30 measured,
+because the old floor cleared 15 without them and a merged counter would have
+stayed green with the whole family answering its uncut twin. Also §11.3 rule 6
+(the barrier asserted in its direction), possessive.rxt §10, sabotage **S101**.
 
 #### 3.2.3 There are TWO spellings of a cut, and only one is `RX_CUT`
 
@@ -1241,6 +1325,32 @@ should not read "emission-neutral" as unconditional.
 For a plain `(?>X)` group the discharge is not emission-neutral at all (there
 is no possessify rung to re-derive it), and the emitted VM loses a
 provably-dead mark and cut — which is a win, not a difference to worry about.
+
+> **CORRECTION, [M6.4.4] (2026-08-22, `lane/agfix`) — A SECOND CARVE-OUT, and
+> this one was not a flag.** "The discharge changes ENGINE SELECTION and
+> nothing else" was written about an emitter that treated `A_ATOMIC` as
+> TRANSPARENT TO THE FOLLOW. It is not, and the tier-1 miscompile the
+> [M6.4.3] blinded corpus found is the proof: `vm_atomic` must scope
+> `v->fmin`/`v->fdyn` to zero across the body, because `(?>X)` matches X's own
+> first success and the follow's minimum width must not influence which
+> success that is (see `src/gen/emit_vm.c`'s `vm_atomic` header for the full
+> derivation, and §11.3's new rule). A LIVE `A_ATOMIC` is therefore a
+> BARRIER, and deleting it changes the LENGTH PRUNE as well as the engine:
+> under `-fno-atomic-discharge` a dead-cut artifact keeps its whole MRL
+> apparatus with the cut gone and loses it with the cut alive — thirteen lines
+> of machinery, not a stamp.
+>
+> **The claim is still checkable and is still checked**, in the form that is
+> true: Appendix A §3's driver now compares the two arms with the LENGTH PRUNE
+> DISABLED ON BOTH (`-fno-length-prune`), which removes the one axis the
+> barrier acts on at the source rather than normalising two stamps over a
+> difference that big. MEASURED byte-identical on all ten dead-cut patterns
+> that way. The barrier itself is asserted separately, in its direction, on
+> the prune-enabled build — 10/10.
+>
+> Read together with the carve-out above: emission-neutrality is not
+> unconditional, and the two conditions are now `-fno-possessify` and the
+> length prune.
 
 ### 5.5 The FULL cut construction, chartered not built — proposed row `[ENG-CUT]`
 
@@ -1932,6 +2042,17 @@ positive control** — the reference cannot compile an atomic pattern at all, so
 a run reporting zero differing AND zero refusal mismatches has lost its atomic
 population or is comparing two builds of the same tree.
 
+> **[M6.4.4] (2026-08-22): this gate is OPT-IN, `make test-atomic-identity`.**
+> [M6.4.2] wired it into `make test` via `test-atomic`, which §14 item 8's
+> own wording ("the landing gate") does not ask for and which the pinned
+> reference argues against: every run re-answers the same question about a
+> moment that has passed, and the answer cannot move unless someone edits
+> PRE-MODULE code. It stays a gate for the module's own re-landings and it is
+> the `atomicidentity` arm of the mech matrix. Its archived result is in
+> docs/testing.md, "The atomic landing gate" — 1312/1313 same, 0 differing, 0
+> refusal mismatches, over a 1565-pattern corpus whose 116 atomic members the
+> reference refuses.
+
 ### 11.3 The PERMANENT structural checks
 
 > **R31 C3 REFUTED THREE OF THE FOUR RULES AS SPELLED, AND THE FAILING
@@ -1988,6 +2109,20 @@ sabotage row, and each matching **BOTH spellings of a cut** (§3.2.3):
   must emit `RX_CUT(` call sites; REVDET must emit the second spelling. Without
   rule 5 a future rung change silently drops a path, which is exactly how K29
   happened.
+
+**RULE 6 — THE FOLLOW BARRIER. Added by [M6.4.4] (2026-08-22), after the
+[M6.4.3] blinded corpus found a tier-1 miscompile that rules 1-5 and a
+39,326-cell differential were all green over.** On a cut-bearing artifact the
+emitted VM must carry NO follow-derived MRL ceiling: `(?>X)` matches X's own
+first success, so the minimum width of what FOLLOWS the group must not bound
+the body's search. Checked in its DIRECTION, on a dead-cut pattern compiled
+both ways: with the cut DELETED the artifact stamps a real
+`RX_VM_PRUNE_CEILING`, with the same cut ALIVE (`-fno-atomic-discharge`) it
+stamps `"none"`. Rules 1-5 could not see this: every one of them reads a
+CUT-BEARING artifact and asks what it contains, and the defect was a number
+the emitter carried INTO the body — visible only by comparing an artifact
+against the same pattern without its cut. See §5.4's correction, and
+`src/gen/emit_vm.c`'s `vm_atomic` header for the derivation.
 
 ### 11.4 The mech sabotage rows
 
@@ -2200,6 +2335,17 @@ round; the note says what happened.**
    `[M6.4.2]` should consider: read `possessify.c`'s §2.2 conjuncts and ask of
    EACH one which emitted shape depends on it. Two of the five conjuncts have
    now produced a defect this way.
+   **REFUTED A THIRD TIME, and NOT by a §2.2 conjunct ([M6.4.4], §3.2.2b).**
+   The MRL follow-bound is a FIFTH antecedent of the same kind on a THIRD AXIS
+   — not the body and not the rung, but the CONTEXT: `vm_opt_chain`'s
+   answer-preservation argument assumes the skipped exit is RETREATABLE, which
+   a cut makes false. The systematic recipe above would NOT have found it,
+   because it only reads `possessify.c`. The honest statement is now stronger
+   than "empirical and may be incomplete": the enumeration must cover every
+   argument the emitted shape rests on, wherever it is written, and two of the
+   three defects so far were found by someone RUNNING the shipped compiler
+   rather than by reading it — E1/N1 by the R31 panel, this one by the
+   `[M6.4.3]` blinded corpus, after approval and after merge.
 10. **§7.4's ruling that four dump-only rows are worth their cost.** ARGUED,
     and **the cost went UP after C1** (a new derivation arm, six sites, two
     pins). *Refute by:* showing R3's `--list-syntax`-parsing check still cannot

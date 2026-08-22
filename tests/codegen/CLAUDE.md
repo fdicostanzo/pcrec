@@ -710,6 +710,18 @@ now excluded explicitly.
 
 ## **[M6.4.2] `run_atomic_identity.sh`, and the ONE gate here whose reference is a PINNED COMMIT**
 
+> **[M6.4.4]: THIS ONE IS OPT-IN.** It is not in `make test`, not in
+> `make test-atomic`, and not on the `ubsan`/`asan` lists — `make
+> test-atomic-identity` runs it. The design ruled it a ONE-SHOT LANDING gate
+> (§11.2, §14 item 8) and the pinned reference below is exactly why that
+> reading is right: every run re-answers the same question about a moment that
+> has passed, and the answer cannot move unless someone edits PRE-MODULE code.
+> Its archived result lives in docs/testing.md, "The atomic landing gate". The
+> four `-D`-knob gates above are NOT affected: their references track the
+> current tree, so they are standing invariants and stay in `make test`.
+> It also has no sanitizer axis to offer — it never runs a generated matcher,
+> it compares emitted C as TEXT.
+
 The fifth `run_*_identity.sh`, and the paragraph above ("ALL FOUR GATES'
 REFERENCE KNOBS ARE NOW AT THE ACTION") asks to be read before adding one. Its
 answer for this module is that **no knob placement works, because there is no

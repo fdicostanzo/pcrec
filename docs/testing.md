@@ -20,12 +20,11 @@ corpus, `tests/cli/run_cli_tests.sh`, `tests/reject/run_reject_tests.sh` (the
 "never miscompile" mandate, per construct),
 `tests/registry/run_registry_tests.sh`, `tests/parse/run_parse_tests.sh`
 (PARSE-1: facts the PARSER computes but never emits — see that directory's
-CLAUDE.md), `make test-atomic`'s two ([M6.4.2]:
+CLAUDE.md), `make test-atomic` ([M6.4.2]:
 `tests/atomic_groups/run_atomic_diff.sh`, the module's behavioural instrument
-whose ENGINE arm is where §4's ceiling hazard lives, and
-`tests/codegen/run_atomic_identity.sh`, the byte-identity gate whose reference
-is a PINNED PRE-MODULE COMMIT rather than a `-D` knob — see that script's
-header for why a knob would be useless for this module specifically),
+whose ENGINE arm is where §4's ceiling hazard lives — and since [M6.4.4] the
+only script in that section; the byte-identity gate moved to the opt-in
+`make test-atomic-identity`, see "The atomic landing gate" below),
 `tests/codegen/run_codegen_tests.sh`
 (structural assertions that behaviour-preserving optimizations are actually
 PRESENT in the emitted C — see that directory's CLAUDE.md), and
@@ -850,6 +849,49 @@ a failing local gate.
 CI itself stays deferred, not rejected (Frank, 2026-08-12): revisit when a
 red lands on `main` that this local pre-push discipline should have caught,
 or when a second regular contributor appears.
+
+## The atomic landing gate ([M6.4.4], 2026-08-22) — OPT-IN, and its archived result
+
+`tests/codegen/run_atomic_identity.sh` is module `atomic-groups`' byte-identity
+gate. It is NOT part of `make test`, and not on the `ubsan`/`asan` lists
+either. Run it on demand:
+
+    make test-atomic-identity
+    ATOMIC_IDENTITY_REF=<sha> make test-atomic-identity   # against a moved base
+
+**WHY IT IS OPT-IN.** The design ruled it a ONE-SHOT LANDING GATE (atomic
+groups design §11.2, §14 item 8) and [M6.4.2] did not honour that when it
+wired the script into `test-atomic`. What it asserts is a claim about a
+MOMENT — that the module changed no atomic-FREE pattern's emitted bytes when
+it landed — measured against the PINNED PRE-MODULE COMMIT `e2f81d5`. That pin
+is exactly what makes it one-shot: every run re-answers the same landing
+question, and the answer cannot move unless someone edits pre-module code.
+
+**IT IS NOT DELETED AND MUST NOT BE.** It still gates the module's own
+re-landings (a rebase onto a moved base, a revert-and-reapply), and it is the
+`atomicidentity` arm of the sabotage matrix, where it scores rows the
+differential cannot.
+
+**THE ARCHIVED RESULT** — so the landing claim survives without being
+recomputed. Measured 2026-08-22 on `lane/agfix` at the [M6.4.4] fix, against
+a reference compiler built from `e2f81d5`:
+
+| arm | same | differing | refused by both | refusal mismatch |
+|---|---|---|---|---|
+| default | 1312 | 0 | 137 | 0 |
+| `--engine=vm` | 1313 | 0 | 136 | 0 |
+
+Corpus 1565 patterns; 116 atomic, 1449 atomic-free. POSITIVE CONTROL: the
+reference refuses all 116 atomic patterns, so a zero-difference result is a
+measurement against a genuinely different compiler rather than a build
+compared with itself. The [M6.4.2] landing measured the same claim at
+1311/1312 same, 0 differing — the counts moved only because [M6.4.4] added
+atomic-free patterns to the corpus it extracts from.
+
+**RUNTIME**, measured on this box (12 cores, 2026-08-22): 71 s standalone. It
+was never the expensive part of `make test` — see the wall-time note in
+"Tiered testing" — so this move is a correctness-of-composition change, not a
+performance one, and it should not be reported as a speed-up.
 
 ## Internal parallelism and section composition ([TT-2], 2026-08-15)
 

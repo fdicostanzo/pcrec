@@ -4028,14 +4028,72 @@ static void vm_rep(Vm *v, int entry, const Ast *a, int next, bool under_atomic)
  * The mark slot joins the existing `SLOT_CUT_MARK<n>` family, so it is
  * greppable and the slot legend names it, and it is spelled in ONE place —
  * src/gen/CLAUDE.md's two rules. */
+/* [M6.4.4] THE FOLLOW DOES NOT CROSS A CUT — the tier-1 miscompile the
+ * blinded D27 corpus found on `(?:aa|a)++ab`, and the reason this scoping is a
+ * SEMANTIC boundary rather than a missed optimisation.
+ *
+ * `(?>X)` matches X's OWN FIRST SUCCESS. Which success that is must be decided
+ * without consulting what follows the group, because the cut makes the choice
+ * final: a determination that peeked at the follow would pick a DIFFERENT (and
+ * always later) success than X alone reaches, and then commit to it.
+ *
+ * `v->fmin` is exactly such a peek. It is the minimum width of what follows,
+ * and the MRL machinery turns it into a bound: every possessive rung ends its
+ * loop at the first position where "one more iteration PLUS THE FOLLOW" does
+ * not fit (`vm_poss_star` :2791, `vm_poss_chain` :2714), and the mandatory
+ * copies gate on it likewise. FOR AN UNCUT LOOP THAT SHORTCUT IS
+ * ANSWER-PRESERVING and `vm_opt_chain`'s own comment proves it: the body
+ * branch has no accepting leaf there, so the skip is the only survivor — and
+ * the skip is still AVAILABLE to retreat to. UNDER A CUT IT IS NOT. The loop
+ * must run as far as the BODY goes and then commit; stopping early at a
+ * position the greedy run would have walked past manufactures an exit the cut
+ * exists to destroy.
+ *
+ * MEASURED, on `(?:aa|a)++ab` over "aaab" (libpcre2 10.46 and python3 `re`
+ * both NOMATCH): the loop takes "aa", reaches offset 2 with two bytes left,
+ * MRL says one more iteration (1) plus the follow (2) does not fit in 2, exits
+ * without the third `a`, and the follow matches "ab" — (0,4), the UNCUT
+ * language. With the follow cut off at the group boundary the bound is the
+ * body's own width, the loop takes the third `a`, the follow fails at offset 3
+ * and there is nothing to retreat to. `-fno-length-prune` gave the right
+ * answer throughout, which is what identified the prune as the carrier.
+ *
+ * SO BOTH ROUTES OUT OF THIS FUNCTION SCOPE IT, and the general shape needed
+ * it just as much as the lift: `(?>a(?:aa|a)+)ab` puts the loop one level
+ * INSIDE the group, where `under_atomic` is false and possessify's own §2.2
+ * verdict was computed against the body's EMPTY follow while the emitter was
+ * still carrying `ab` — the two disagreeing about which follow they mean is
+ * the whole defect. Cutting `fmin`/`fdyn` at the boundary makes them agree by
+ * construction, for every shape, instead of at each rung by hand.
+ *
+ * WHAT IS NOT LOST: the body's INTERNAL follows. The concatenation arm rebuilds
+ * suffix sums from `v->fmin` (:4321), so `(?>(?:aa|a)+a)` still gives its loop
+ * the trailing `a` as a follow — only the group's OUTER follow is dropped. And
+ * nothing atomic-FREE changes: this function is reached for `A_ATOMIC` alone,
+ * so `run_atomic_identity.sh`'s claim is untouched.
+ *
+ * This is H3 (§4.4) one level down and it is the same sentence: the prefilter
+ * answers for the UNCUT language, so its span end is not a bound on a cut
+ * match's end; `v->fmin` answers for the follow, so it is not a bound on a cut
+ * body's search. */
 static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
 {
+    const char *sd = v->fdyn;
+    long long   sf = v->fmin;
+    v->fmin = 0;
+    v->fdyn = NULL;
+
     /* THE LIFT (§3.2, RULE 3): route the cut into the quantifier's own
      * possessive rung, which cuts PER ITERATION where this shape cuts once at
      * the group's exit. Without it `(?>a*)` exhausts RX_RESUME_FRAMES where
      * `a*+` — a spelling PCRE2 calls identical — costs one frame. `vm_lifts`
      * carries the scope and the evidence. */
-    if (vm_lifts(a)) { vm_rep(v, entry, a->l, next, true); return; }
+    if (vm_lifts(a)) {
+        vm_rep(v, entry, a->l, next, true);
+        v->fmin = sf;
+        v->fdyn = sd;
+        return;
+    }
 
     int mslot = vm_slot_mark(v, v->nmark++);
     int bodyl = vm_label(v), cutl = vm_label(v);
@@ -4046,9 +4104,11 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
            "atomic-group cut mark (resume-stack depth at group entry)");
     vm_goto(v, bodyl);
 
-    /* The body's follow-min is the GROUP's own: the group consumes exactly
-     * what the body consumes, so there is nothing to add. `vm_emit` inherits
-     * `v->fmin` unchanged, which is A_CAP's arm's own reading. */
+    /* The body's follow-min is ZERO, not the group's — see this function's
+     * header. The group consumes exactly what the body consumes, so a
+     * CAPTURING wrapper would inherit `v->fmin` unchanged (A_CAP's arm's own
+     * reading); an ATOMIC one must not, because the cut makes the body's
+     * choice final and the follow is not allowed to influence it. */
     vm_emit(v, bodyl, a->l, cutl);
 
     vm_lbl(v, cutl, "atomic group: the body's FIRST success -- cut, and never "
@@ -4056,6 +4116,11 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
     vm_cut(v, mslot, "cut: the group is committed; every choice point the body "
                      "created is discarded, dead or not");
     vm_goto(v, next);
+
+    /* The follow is back in force AFTER the cut: `next` and everything past it
+     * are outside the group and prune normally. Only the body was scoped. */
+    v->fmin = sf;
+    v->fdyn = sd;
 }
 
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)

@@ -138,6 +138,17 @@ fi
 #
 #   cut       the cut BITES — the atomic answer differs from the uncut twin's
 #             somewhere. §3's discharge must DECLINE these.
+#   cut2      [M6.4.4] the same claim over the shape this file DID NOT HAVE
+#             and the blinded D27 corpus did: a TWO-EXIT body under an
+#             OVERLAPPING follow. Every `cut` row above has a follow whose
+#             first byte cannot also start a body iteration (`(?:a|ab)*+c`),
+#             and that disjointness is precisely what made the tier-1 defect
+#             invisible here — the emitter's early loop exit landed at a
+#             position where the follow could not match anyway, so no answer
+#             moved. `(?:aa|a)++ab` on "aaab" moves: the exit lands where the
+#             follow CAN match, which is the whole bug. Carried under EVERY
+#             possessive rung and both preferences, with its own non-vacuity
+#             floor and its own asserted rung coverage.
 #   dead      the cut is provably a no-op — §2.2's verdict is positive, so the
 #             free discharge SHOULD delete it. §3's population.
 #   carve     a body the LIFT must decline: nullable or lazy. If the lift ever
@@ -199,6 +210,54 @@ PATSPEC=(
     "control:[ab]+c"
     "control:(?:a|ab)c"
     "control:(?:ab)+c"
+    # ---- [M6.4.4] the two-exit / overlapping-follow family ---------------
+    # BODY x QUANTIFIER FORM x PREFERENCE. The bodies are two-exit (a shared
+    # prefix, so the loop's stopping position is a CHOICE rather than a
+    # byte-determined fact) and the follow OVERLAPS the body's first set and
+    # is two bytes wide — which is what makes "one more iteration plus the
+    # follow does not fit" reachable at a position where the follow itself
+    # still does. The rung each form lands on is ASSERTED below, not
+    # commented: `nrung2` ORs the artifacts' own RX_VM_RUNGS and the floor is
+    # all five bits.
+    "cut2:(?:aa|a)++ab"
+    "cut2:(?:aa|a)*+ab"
+    "cut2:(?:aa|a){1,3}+ab"
+    "cut2:(?:aa|a){8,12}+ab"
+    "cut2:(?:aa|a){8,}+ab"
+    "cut2:(?>(?:aa|a)+)ab"
+    "cut2:(?>(?:aa|a)*)ab"
+    "cut2:(?>(?:aa|a){1,3})ab"
+    "cut2:(?>(?:aa|a)+?)ab"
+    "cut2:(?>(?:aa|a)*?)ab"
+    "cut2:(?>(?:aa|a){1,3}?)ab"
+    "cut2:(?:a|aa)++ab"
+    "cut2:(?:a|aa){1,3}+ab"
+    "cut2:(?>(?:a|aa)+?)ab"
+    "cut2:(?:ab|a)++ab"
+    "cut2:(?:ab|a)*+ab"
+    "cut2:(?:ab|a){1,3}+ab"
+    "cut2:(?:a|ab)++ab"
+    "cut2:(?:a|ab)*+ab"
+    "cut2:(?:a|ab){1,3}+ab"
+    "cut2:(?:(?:a|ab)(?:c|cd))*+ac"
+    "cut2:(?:(?:a|ab)(?:c|cd))++ac"
+    "cut2:(?:(?:a|ab)(?:c|cd)){1,3}+ac"
+    # the REVDET rung (0x8) needs a reverse-deterministic body; `a|bc` is one
+    # and its first set still overlaps the follow.
+    "cut2:(?:a|bc)*+ab"
+    "cut2:(?:a|bc)++ab"
+    "cut2:(?>(?:a|bc)*)ab"
+    # the CURSOR rung (0x1). These two were ALREADY RIGHT before the fix —
+    # that rung takes no follow-derived early exit — so they are the family's
+    # internal control: a fix that "worked" by disabling the cut everywhere
+    # would not show up in the rows above, and would here.
+    "cut2:a++ab"
+    "cut2:a*+ab"
+    # the loop one level INSIDE the group rather than as its direct child,
+    # where `under_atomic` is FALSE and the general shape carries the cut. The
+    # per-rung fix would have missed these; the boundary scoping covers them.
+    "cut2:(?>a(?:aa|a)+)ab"
+    "cut2:(?>(?:aa|a)+a)ab"
 )
 
 gen() { # gen <outdir> <pattern> [extra pcrec args]
@@ -230,12 +289,13 @@ gen() { # gen <outdir> <pattern> [extra pcrec args]
 # shape introduces.
 
 : > "$WORKDIR/patlist"
-ncut=0; ndead=0; ncarve=0; nctl=0
+ncut=0; ncut2=0; ndead=0; ncarve=0; nctl=0
 for spec in "${PATSPEC[@]}"; do
     cls="${spec%%:*}"; pat="${spec#*:}"
     printf '%s\t%s\n' "$cls" "$pat" >> "$WORKDIR/patlist"
     case "$cls" in
-        cut) ncut=$((ncut + 1)) ;; dead) ndead=$((ndead + 1)) ;;
+        cut) ncut=$((ncut + 1)) ;; cut2) ncut2=$((ncut2 + 1)) ;;
+        dead) ndead=$((ndead + 1)) ;;
         carve) ncarve=$((ncarve + 1)) ;; *) nctl=$((nctl + 1)) ;;
     esac
 done
@@ -247,7 +307,12 @@ done
 # pcrec.
 : > "$WORKDIR/twinlist"
 while IFS=$'\t' read -r cls pat; do
-    [ "$cls" = "cut" ] || continue
+    # BOTH cut classes. [M6.4.4] added `cut2` and this filter said `cut`
+    # alone, so the family's twins were never handed to the oracle, every
+    # lookup came back with zero rows, and the new floor read 0/30 — which is
+    # what a floor is FOR, and is the second time in this file's short life
+    # that a population assertion caught the script rather than the compiler.
+    case "$cls" in cut|cut2) ;; *) continue ;; esac
     printf 'twin\t%s\n' "$(printf '%s' "$pat" | sed 's/(?>/(?:/g; s/\([*+?}]\)+/\1/g')" \
         >> "$WORKDIR/twinlist"
 done < "$WORKDIR/patlist"
@@ -279,7 +344,7 @@ for f in "$WORKDIR"/subjects/*; do
 done
 NCELL=$(wc -l < "$WORKDIR/cells")
 
-npat=0; ncells=0; nvm=0; nnp=0; ndiff=0; nbite=0
+npat=0; ncells=0; nvm=0; nnp=0; ndiff=0; nbite=0; nbite2=0; nrung2=0
 : > "$WORKDIR/diffs.txt"
 
 
@@ -337,14 +402,28 @@ while IFS=$'\t' read -r cls pat; do
 
     # DOES THE CUT BITE on this subject set? Measured against the UNCUT twin's
     # own oracle column, not inferred from the pattern's shape.
-    if [ "$cls" = "cut" ]; then
+    if [ "$cls" = "cut" ] || [ "$cls" = "cut2" ]; then
         tw="$(printf '%s' "$pat" | sed 's/(?>/(?:/g; s/\([*+?}]\)+/\1/g')"
         AGPAT="$tw" awk -F'\t' '$1 == ENVIRON["AGPAT"] { print $4 }' \
             "$WORKDIR/oracle.tsv" > "$d/twin"
         if [ "$(wc -l < "$d/twin")" -eq "$NCELL" ] \
            && ! cmp -s "$d/want" "$d/twin"; then
-            nbite=$((nbite + 1))
+            if [ "$cls" = "cut" ]; then nbite=$((nbite + 1))
+            else                        nbite2=$((nbite2 + 1)); fi
         fi
+    fi
+
+    # [M6.4.4] WHICH RUNG did this family member actually land on? READ OFF
+    # THE ARTIFACT, never inferred from the quantifier's spelling — the whole
+    # point of the family is to reach every possessive rung, and a
+    # rung-selection change that quietly collapsed three forms onto one would
+    # otherwise leave the claim "under EVERY possessive rung" true only in the
+    # comment. The `--engine=vm` arm is the one that always has a VM artifact
+    # to read.
+    if [ "$cls" = "cut2" ]; then
+        r2="$(sed -n 's/^#define RX_VM_RUNGS \(0x[0-9a-f]*\)u\{0,1\}.*/\1/p' \
+              "$d/vm/gen.c" | head -1)"
+        if [ -n "$r2" ]; then nrung2=$(( nrung2 | r2 )); fi
     fi
 done < "$WORKDIR/patlist"
 
@@ -371,6 +450,23 @@ if [ "$nbite" -ge 15 ]; then
 else
     bad "non-vacuity: only $nbite of $ncut cut patterns have a subject where the cut changes the answer (floor 15). The sweep above would pass on a compiler that ignored the atomicity"
 fi
+# [M6.4.4] THE FAMILY'S OWN NON-VACUITY, kept SEPARATE from the one above and
+# not folded into it. The `cut` rows already clear 15 on their own, so a
+# combined counter would have stayed green with this entire family answering
+# its uncut twin — which is exactly the state the tree was in before the fix,
+# and exactly what a merged floor cannot see.
+if [ "$ncut2" -ge 25 ] && [ "$nbite2" -ge 18 ]; then
+    ok "non-vacuity [two-exit / overlapping follow]: $ncut2 patterns in the family (floor 25) and the cut MEASURABLY changes the answer on $nbite2 of them (floor 18), each measured against its own two-byte uncut twin. This is the family the tier-1 miscompile lived in: before the fix these rows answered the UNCUT language on the frames rungs"
+else
+    bad "non-vacuity [two-exit / overlapping follow]: $ncut2 patterns (floor 25), only $nbite2 with a cut that changes the answer (floor 18) — the family that carries [M6.4.4]'s regression is not measuring what it claims"
+fi
+# EVERY POSSESSIVE RUNG, ASSERTED FROM THE ARTIFACTS. 0x1 cursor, 0x2
+# frames-bounded, 0x4 frames-unbounded, 0x8 revdet, 0x10 counter.
+if [ "$nrung2" -eq 31 ]; then
+    ok "rung coverage [two-exit / overlapping follow]: the family's artifacts report RX_VM_RUNGS covering all five bits (0x1f = cursor | frames-bounded | frames-unbounded | revdet | counter), read off the emitted artifacts rather than inferred from the quantifier spellings"
+else
+    bad "rung coverage [two-exit / overlapping follow]: the family's artifacts cover RX_VM_RUNGS $(printf '0x%x' "$nrung2"), not 0x1f — a possessive rung has no member of this family on it, so the fix is unverified there"
+fi
 if [ "$ncells" -ge 20000 ]; then
     ok "cell floor: $ncells default-engine cells (floor 20000)"
 else
@@ -394,7 +490,7 @@ fi
 #   the VM artifact is byte-identical either way and the rewrite changes ENGINE
 #   SELECTION and nothing else. Compared under `--engine=vm` because that is
 #   where both builds produce a VM artifact to compare.
-nd_ans=0; nd_bytes=0; nd_same=0; nd_engine=0; ndd=0
+nd_ans=0; nd_bytes=0; nd_same=0; nd_engine=0; nd_barrier=0; ndd=0
 while IFS=$'\t' read -r cls pat; do
     d="$WORKDIR/d$ndd"; ndd=$((ndd + 1))
     gen "$d/on"  "$pat"                        || continue
@@ -436,10 +532,26 @@ while IFS=$'\t' read -r cls pat; do
         # different paths makes them differ for a reason that has nothing to
         # do with the discharge — measured, on this rule's first run, as ten
         # spurious failures.
+        # TWO PAIRS, because [M6.4.4] split what used to be one question.
+        #   b_*  PRUNE ENABLED — what a user gets. The follow BARRIER is
+        #        visible here and is asserted below, in its direction.
+        #   p_*  PRUNE DISABLED on BOTH arms (`-fno-length-prune`) — the
+        #        comparison §5.4's byte claim is actually about. The barrier
+        #        acts on the length prune and on nothing else, so removing the
+        #        prune AT THE SOURCE isolates the axis instead of sed-erasing
+        #        two stamps and hoping that was all of it. MEASURED: with the
+        #        prune off, the two arms are byte-identical again on every
+        #        dead-cut pattern, which is what makes the split honest rather
+        #        than a relaxation.
         "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -o - -- "$pat" > "$d/b_on.c" 2>/dev/null
         "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -fno-atomic-discharge -o - -- "$pat" > "$d/b_off.c" 2>/dev/null
+        "$PCREC" --features all -p rx --engine=vm --no-captures \
+                 -fno-length-prune -o - -- "$pat" > "$d/p_on.c" 2>/dev/null
+        "$PCREC" --features all -p rx --engine=vm --no-captures \
+                 -fno-length-prune -fno-atomic-discharge \
+                 -o - -- "$pat" > "$d/p_off.c" 2>/dev/null
         nd_bytes=$((nd_bytes + 1))
         # TWO AXES ARE NORMALISED AND EXACTLY TWO, and both are things that
         # MUST differ — they are the flag doing its job, not the emitter
@@ -458,27 +570,65 @@ while IFS=$'\t' read -r cls pat; do
         # existed: those four lines were the ONLY difference on all ten
         # dead-cut patterns, which is §5.4's claim confirmed rather than
         # weakened.
+        # [M6.4.4] STILL TWO NORMALISED AXES — the comparison moved instead.
+        #
+        # §5.4 said the discharge "changes ENGINE SELECTION and nothing else",
+        # and that was stated about an emitter which treated `A_ATOMIC` as
+        # TRANSPARENT TO THE FOLLOW. The tier-1 miscompile the blinded D27
+        # corpus found is the proof it is not: a live `A_ATOMIC` is a BARRIER,
+        # because `(?>X)` matches X's own first success and the follow's
+        # minimum width must not influence which success that is. So a
+        # surviving cut now changes engine selection AND the length prune, and
+        # on the PRUNE-ENABLED build the two arms genuinely differ — the whole
+        # MRL apparatus (the macros, the window parameter, the call sites) is
+        # present with the cut deleted and absent with it alive.
+        #
+        # SO THE PRUNE IS REMOVED AT THE SOURCE RATHER THAN SED-ERASED. `p_on`
+        # and `p_off` are both built `-fno-length-prune`, which takes the one
+        # axis the barrier acts on out of the question entirely and leaves
+        # §5.4's claim standing EXACTLY where it is still true — MEASURED:
+        # byte-identical on every dead-cut pattern once the prune is off.
+        # Normalising the two prune STAMPS instead would have hidden a
+        # thirteen-line machinery difference behind a two-line sed and called
+        # the remainder a byte comparison.
+        #
+        # The barrier itself is not lost from the suite: it is asserted right
+        # after, in its DIRECTION, on the prune-ENABLED pair.
         ag_norm() {
             sed -e 's/^\/\* Engine: .*/ENGINE-NORMALISED/' \
                 -e 's/^#define RX_ENGINE_WHY .*/ENGINE-NORMALISED/' \
                 -e 's/^ *\.engine_why = .*/ENGINE-NORMALISED/' \
                 -e 's/^ *\.flags = .*/FLAGS-NORMALISED/' "$1"
         }
-        ag_norm "$d/b_on.c"  > "$d/b_on.norm"
-        ag_norm "$d/b_off.c" > "$d/b_off.norm"
+        ag_norm "$d/p_on.c"  > "$d/b_on.norm"
+        ag_norm "$d/p_off.c" > "$d/b_off.norm"
         if cmp -s "$d/b_on.norm" "$d/b_off.norm"; then
             nd_same=$((nd_same + 1))
         else
-            bad "§3 emission-neutrality: '$pat' emits DIFFERENT VM MACHINERY with and without the discharge (the engine-why and flags stamps are normalised away; this is everything else). §5.4 says possessify's fixpoint re-derives the identical verdict on the same quantifier, so the discharge must change ENGINE SELECTION and nothing else: $(diff "$d/b_on.norm" "$d/b_off.norm" | head -4 | tr '\n' ' ')"
+            bad "§3 emission-neutrality: '$pat' emits DIFFERENT VM MACHINERY with and without the discharge, compared with the LENGTH PRUNE OFF on both arms so the follow barrier is out of the question (only the engine-why and flags stamps are normalised; this is everything else). §5.4 says possessify's fixpoint re-derives the identical verdict on the same quantifier, so with the prune removed the rewrite must change ENGINE SELECTION and nothing else: $(diff "$d/b_on.norm" "$d/b_off.norm" | head -4 | tr '\n' ' ')"
+        fi
+        # THE BARRIER, ASSERTED IN ITS DIRECTION. With the cut DELETED the
+        # loop prunes against the follow and the artifact carries a real MRL
+        # ceiling; with the cut ALIVE the follow does not cross it, so there is
+        # no follow-derived ceiling left to stamp and the value is "none". A
+        # fix that silently stopped scoping the follow would show up here as
+        # "none" disappearing from the OFF arm — which is the miscompile
+        # coming back, caught on the BYTES rather than only on an answer.
+        on_ceil="$(sed -n 's/^#define RX_VM_PRUNE_CEILING //p' "$d/b_on.c" | head -1)"
+        off_ceil="$(sed -n 's/^#define RX_VM_PRUNE_CEILING //p' "$d/b_off.c" | head -1)"
+        if [ "$off_ceil" = '"none"' ] && [ "$on_ceil" != '"none"' ]; then
+            nd_barrier=$((nd_barrier + 1))
+        else
+            bad "§3 follow barrier: '$pat' — with the cut ALIVE (-fno-atomic-discharge) the follow must not cross it, so the VM artifact must carry NO follow-derived MRL ceiling; got on=$on_ceil off=$off_ceil (want on!=\"none\", off=\"none\")"
         fi
     fi
 done < "$WORKDIR/patlist"
 
 if [ "$nd_ans" -ge 5000 ] && [ "$nd_engine" -ge 8 ] && [ "$nd_bytes" -ge 8 ] \
-   && [ "$nd_same" -eq "$nd_bytes" ]; then
-    ok "§3 discharge: $nd_ans answer cells identical with and without -fno-atomic-discharge (floor 5000); $nd_engine dead-cut patterns move DFA<->VM as the flag says (floor 8); all $nd_bytes of them emit byte-identical VM code either way (§5.4 emission-neutrality)"
+   && [ "$nd_same" -eq "$nd_bytes" ] && [ "$nd_barrier" -eq "$nd_bytes" ]; then
+    ok "§3 discharge: $nd_ans answer cells identical with and without -fno-atomic-discharge (floor 5000); $nd_engine dead-cut patterns move DFA<->VM as the flag says (floor 8); all $nd_bytes of them emit byte-identical VM code either way with the length prune off on both arms (§5.4 emission-neutrality, isolated at the source by [M6.4.4]); and all $nd_barrier of them show the FOLLOW BARRIER in its direction on the prune-ENABLED build — a follow-derived MRL ceiling with the cut deleted, none with it alive"
 elif [ "$fail" -eq 0 ]; then
-    bad "§3 discharge: populations too small — $nd_ans answer cells (floor 5000), $nd_engine engine moves (floor 8), $nd_same/$nd_bytes byte-identical"
+    bad "§3 discharge: populations too small — $nd_ans answer cells (floor 5000), $nd_engine engine moves (floor 8), $nd_same/$nd_bytes byte-identical, $nd_barrier/$nd_bytes barrier-directional"
 fi
 
 # =========================================================================

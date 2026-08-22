@@ -28,9 +28,11 @@ SAB_BEFORE='    vm_set(v, mslot, "(ptrdiff_t)run->resume_depth",
            "atomic-group cut mark (resume-stack depth at group entry)");
     vm_goto(v, bodyl);
 
-    /* The body'"'"'s follow-min is the GROUP'"'"'s own: the group consumes exactly
-     * what the body consumes, so there is nothing to add. `vm_emit` inherits
-     * `v->fmin` unchanged, which is A_CAP'"'"'s arm'"'"'s own reading. */
+    /* The body'"'"'s follow-min is ZERO, not the group'"'"'s — see this function'"'"'s
+     * header. The group consumes exactly what the body consumes, so a
+     * CAPTURING wrapper would inherit `v->fmin` unchanged (A_CAP'"'"'s arm'"'"'s own
+     * reading); an ATOMIC one must not, because the cut makes the body'"'"'s
+     * choice final and the follow is not allowed to influence it. */
     vm_emit(v, bodyl, a->l, cutl);'
 SAB_AFTER='    vm_goto(v, bodyl);   /* SABOTAGE S90: mark moved BELOW the body */
     vm_emit(v, bodyl, a->l, cutl);
