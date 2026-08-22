@@ -95,7 +95,7 @@ static const char defs_byte[] =
  * 65,536 byte pairs, by tests/backrefs/fold_agreement_check.c against
  * `pcrec_ascii_fold` (src/core/fold.c) — which is also what `cls_casefold`
  * derives its class widening from. Two spellings of one fact with a MECHANISM
- * between them, not a comment (R32 E8; sabotage row S-BR11). A `tolower()`
+ * between them, not a comment (R32 E8; sabotage row S116). A `tolower()`
  * here would be a DEFECT rather than a shortcut: it is locale-dependent at the
  * CALLER's run time, in a locale pcrec does not control, and an artifact whose
  * answers change with `setlocale` is not the self-contained matcher APPROACH

@@ -1,4 +1,4 @@
-# S113 (design row S-BR10) — §8.3's RESOLUTION TAKES THE LAST SET MEMBER.
+# S115 (design row S-BR10) — §8.3's RESOLUTION TAKES THE LAST SET MEMBER.
 #
 # THE SECOND of the four candidate rules, and the one that "walk the run and
 # keep the last one you saw set" produces naturally.
@@ -15,12 +15,12 @@
 # one, so a table emitted in descending number selects the highest-numbered
 # participant. Two independent routes to the same wrong rule, which is why
 # both have rows.
-SAB_ID="S113-resolution-last-set"
+SAB_ID="S115-resolution-last-set"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="dupnamesdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
-SAB_DESC="The emitted chain over a duplicated name's run drops its `else`, so every set member overwrites the previous one and resolution becomes \"LAST set\" instead of \"first set\". (?J)^(?<a>x)(?<a>y)\\k<a>\$ then matches \"xyy\" and not \"xyx\" -- the exact inversion of the measured answer"
-SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on exactly the \"xyx\"/\"xyy\" cell of dupnames.rxt. Canonical figure owed from run_sabotage_matrix.sh S113."
+SAB_DESC="The emitted chain over a duplicated name's run drops its trailing else keyword, so every set member overwrites the previous one and resolution becomes \"LAST set\" instead of \"first set\". (?J)^(?<a>x)(?<a>y)\\k<a>\$ then matches \"xyy\" and not \"xyx\" -- the exact inversion of the measured answer"
+SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on exactly the \"xyx\"/\"xyy\" cell of dupnames.rxt. Canonical figure owed from run_sabotage_matrix.sh S115."
 SAB_COUNT=1
 SAB_BEFORE='                i ? "else " : "", ns, ns, ne,'
-SAB_AFTER='                "", ns, ns, ne,   /* SABOTAGE S113: no else, last wins */'
+SAB_AFTER='                "", ns, ns, ne,   /* SABOTAGE S115: no else, last wins */'

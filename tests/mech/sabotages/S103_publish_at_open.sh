@@ -1,4 +1,4 @@
-# S101 (design row S-BR15) — PUBLISH-AT-OPEN RESTORED.
+# S103 (design row S-BR15) — PUBLISH-AT-OPEN RESTORED.
 #
 # R32 E1 EXACTLY, as a row. `A_CAP` used to WRITE ON TRAVERSE: the start slot
 # at the opening position, the end slot at the closing one. On iteration n > 1
@@ -18,14 +18,14 @@
 # backref-FREE control population at 0 divergences in BOTH publication
 # disciplines: publication is unobservable without a backreference, because at
 # match completion every group is closed.
-SAB_ID="S101-publish-at-open"
+SAB_ID="S103-publish-at-open"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="brefdiff dupnamesdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs"
 SAB_DESC="A_CAP's emission writes the START slot at the opening position again instead of a per-group PENDING slot, so a re-entered group holds a HALF-OPEN pair that a backreference reads as a capture. (a|b\\1)+ on \"ab\" answers (0,2) g1=(1,2) where libpcre2 says (0,1) g1=(0,1), and ^(?:(a|b\\1)y)+ on \"aybay\" underflows a size_t in the emitted compare"
-SAB_DOC_FIGURE="PREDICTED: brefdiff RED (§1 span AND group-span cells, §3's population); the backrefs corpus RED on selfref.rxt's re-entry block. Canonical figure owed from run_sabotage_matrix.sh S101."
+SAB_DOC_FIGURE="PREDICTED: brefdiff RED (§1 span AND group-span cells, §3's population); the backrefs corpus RED on selfref.rxt's re-entry block. Canonical figure owed from run_sabotage_matrix.sh S103."
 SAB_COUNT=1
 SAB_BEFORE='            if (marked)
                 vm_set(v, vm_slot_pend(v, a->capno), "(ptrdiff_t)scan_position",'
-SAB_AFTER='            if (0)   /* SABOTAGE S101: publish at OPEN, as before R32 E1 */
+SAB_AFTER='            if (0)   /* SABOTAGE S103: publish at OPEN, as before R32 E1 */
                 vm_set(v, vm_slot_pend(v, a->capno), "(ptrdiff_t)scan_position",'

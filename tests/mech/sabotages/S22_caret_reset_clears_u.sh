@@ -13,13 +13,16 @@ SAB_COUNT=1
 # `ModState ns = cx->mods;` became `ParseMods ns = *cx->mods;` (both the
 # type name and the deref changed). Intent (the (?^) reset also clears
 # ungreedy, contradicting the measured U-survives-^ rule) unchanged.
+# RE-ANCHORED AGAIN 2026-08-22 ([M6.5.2]): `(?^)` now preserves `dupnames`
+# alongside `ungreedy`, because `(?J)(?<a>x)(?^)(?<a>y)` COMPILES in libpcre2
+# 10.46 -- measured, not inherited from the letter list, and clearing it would
+# turn a legal pattern into an error. The anchor spans the whole reset block
+# so the flip still clears EVERY preserved letter rather than only the one
+# that existed when the row was written; intent (the (?^) reset clears
+# ungreedy, contradicting the measured U-survives-^ rule) unchanged.
 SAB_BEFORE="    ParseMods ns = *cx->mods;
     if (caret) {
-        bool keep_ungreedy = ns.ungreedy;
-        ns = (ParseMods){0};
-        ns.ungreedy = keep_ungreedy;
-    }"
+        bool keep_ungreedy = ns.ungreedy;"
 SAB_AFTER="    ParseMods ns = *cx->mods;
     if (caret) {
-        ns = (ParseMods){0};
-    }"
+        bool keep_ungreedy = false;   /* SABOTAGE S22: the reset clears U */"

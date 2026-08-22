@@ -1,4 +1,4 @@
-# S116 (design row S-BR13) — THE REVDET CAPTURE SUPPRESSION DROPS THE PENDING
+# S118 (design row S-BR13) — THE REVDET CAPTURE SUPPRESSION DROPS THE PENDING
 # SLOT BUT KEEPS THE PAIR.
 #
 # R32 E9's UNNAMED INTERACTION, made a row. The reverse-deterministic rung
@@ -20,16 +20,16 @@
 #
 # The interaction was traced CORRECT and UNTESTED in the first design. It is
 # `nested.rxt`'s group-in-body block that sees it.
-SAB_ID="S116-revdet-drops-pending"
+SAB_ID="S118-revdet-drops-pending"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/nested.rxt"
 SAB_DESC="A_CAP's PENDING write is emitted unconditionally while the published pair stays under the revdet suppression, so inside a reverse-deterministic loop's forward scan the two halves of one publication come apart. The reference then reads a pair published from a stale pending value"
-SAB_DOC_FIGURE="PREDICTED: brefdiff RED; the corpus RED on nested.rxt's group-in-body block ((?:(a|bb)x)+\\1). Canonical figure owed from run_sabotage_matrix.sh S116."
+SAB_DOC_FIGURE="PREDICTED: brefdiff RED; the corpus RED on nested.rxt's group-in-body block ((?:(a|bb)x)+\\1). Canonical figure owed from run_sabotage_matrix.sh S118."
 SAB_COUNT=1
 SAB_BEFORE='        if (!v->nocap) {
             if (marked)
                 vm_set(v, vm_slot_pend(v, a->capno), "(ptrdiff_t)scan_position",'
-SAB_AFTER='        if (1) {   /* SABOTAGE S116: the pending write escapes the suppression */
+SAB_AFTER='        if (1) {   /* SABOTAGE S118: the pending write escapes the suppression */
             if (marked)
                 vm_set(v, vm_slot_pend(v, a->capno), "(ptrdiff_t)scan_position",'

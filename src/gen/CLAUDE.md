@@ -1003,6 +1003,60 @@ onto the possessive rungs, and a stamp saying BACKTRACKING on an artifact whose
 loop cuts is the exact D46 lie K29 was opened for.
 
 
+## [M6.5.2] the BACKREFERENCE's lowering, and PUBLISH-AT-CLOSE
+
+`A_BREF` emits a chain of UNSET tests over the referenced groups' published
+slots, in ASCENDING GROUP NUMBER, and one call to the encoding seam. That is
+the whole of it — **the correction R32 E1 forced is entirely in `A_CAP`'s
+emission, not in `A_BREF`'s.**
+
+**WHAT E1 FOUND.** `A_CAP` wrote its start slot when control traversed the
+OPENING position and its end at the CLOSING one — "write on traverse". On
+iteration n > 1 of a quantified group that leaves start holding iteration n's
+and end holding iteration n-1's: NEITHER is `PCREC_UNSET`, so a reference's
+"is it set" test passes on a pair that IS NOT A CAPTURE. `(a|b)+` on "ab" is
+libpcre2 (0,1) with group 1 = (0,1); the write-on-traverse model answers (0,2)
+with group 1 = (1,2). And `^(?:(a|b)y)+` on "aybay" leaves `ref_start = 2 >
+ref_end = 1`, so the emitted `(size_t)(ref_end - ref_start)` UNDERFLOWS to
+`SIZE_MAX` and the compare reads out of bounds — K27's class, in emitted code.
+
+**THE CORRECTION IS SCOPED, AND THE MEASUREMENT IS WHAT LICENSES THAT.** A
+group some `A_BREF` names is MARKED: its opening position goes to a per-group
+PENDING slot (a sixth slot class, above the counters, so no existing
+artifact's numbering moves) and the PAIR is published together at the close.
+Every unmarked group emits exactly the two writes it always did. An arm-vs-arm
+sweep over 5,808 cells — same simulator, same AST, same search order, same
+trail discipline, differing only in publication — found publish-at-open at 138
+divergences and 40 reversed spans, publish-at-close at 0 and 0, **and the
+backref-FREE control population at 0/0 in BOTH**. Publication is unobservable
+without a backreference, because at match completion every group is closed.
+That is what makes §11.3's byte-identity gate hold by construction.
+
+`vm_marked` is ONE predicate read at the four sites that must agree (the cost
+analysis, the slot count, `A_CAP`'s emission and the slot legend), for the
+reason `vm_cursor_fits` is one predicate: a fact three sites each re-derive is
+a fact one of them will eventually derive differently.
+
+**THE SUPPRESSION COVERS BOTH HALVES OR NEITHER.** Inside a
+reverse-deterministic loop's forward scan (`v->nocap`) the capture writes are
+suppressed and §3.4's backward walk reconstructs them. The pending write and
+the pair it feeds are ONE publication, so suppressing half would leave the
+reconstructed pair beside a stale pending value from an earlier iteration —
+written as one guarded block so that is structural rather than remembered.
+(The backward walk and the cursor rung both write the published pair DIRECTLY,
+both halves adjacent, so they are already publications in the sense a
+reference needs.)
+
+**THE COMPARE ROUTES THROUGH THE SEAM FROM BIRTH**, and `Ast.caseless` picks
+WHICH entry at emit time — never a runtime flag, D18/D23's rule. An inline
+`(s[i] | 32) == (s[j] | 32)` here would be byte arithmetic that is correct
+today and silently wrong under a UTF-8 backend, which is the residue class D58
+scope item 3 enumerates by name. The work charge goes through `vm_work_at`,
+the same primitive every other charge site uses, and is charged EITHER WAY:
+`took` on success, and on failure the entry's negative encoding carries the
+prefix it compared, because `(a*)` over a long subject does O(n) byte
+comparisons the fail label never sees.
+
 ## Conventions
 
 The emitter produces a self-contained .c file (or paired .c/.h if options.header_name is set). Symbols are prefixed with the user's chosen identifier (default "rx"). Emitted code must stay warning-clean under -Wall -Wextra -Werror (the harness enforces this).
@@ -1022,6 +1076,18 @@ and `emit_residual_defs` (exported as `pcrec_emit_residual`, called by BOTH
 emitters, so the definitions land in the `.c` once). There is no encoding
 test in either, and adding one is a design stop rather than a patch. The
 first residual entry is `<prefix>_next_pos` (docs/spec/match_api.md §3.1.1).
+
+**[M6.5.2] BOTH FUNCTIONS TAKE A MASK NOW**, because the seam gained its
+SECOND and THIRD entries (`<prefix>_bref_match` and its caseless twin) and an
+artifact with no backreference must not carry them. `Job.enc_mask` starts at
+`PCREC_ENCE_NEXT_POS` and the VM emitter ORs in whichever compare entries its
+`A_BREF` arm actually emits calls to — which is why the prologue is written
+AFTER the program body, the same "discovered by emitting" discipline the class
+pool and the cursor local already follow. `pcrec_enc_ready` moved with the
+change (from `decls != NULL` to "has a non-empty entries array"), and that
+third site is what R32 E11 found the first design's cost list missing. See
+`enc/CLAUDE.md` for D58's revisit clause and why the road not taken (two more
+string fields) does not generalise.
 
 `emit_rx_abi_types` gained a paragraph POINTING at the residual entries,
 and that paragraph must stay independent of BOTH axes the block sits

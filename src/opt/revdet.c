@@ -146,7 +146,7 @@ static void rd_shape(Shape *S, const Ast *a)
          * capture published — and there is no reversed spelling of "compare
          * against what group k captured". Declining costs those bodies the
          * rung and is always correct (this file's own invariant: declining is
-         * always available and always safe). Sabotage row S-BR4 makes this arm
+         * always available and always safe). Sabotage row S108 makes this arm
          * ACCEPT instead, because the `-Wswitch` alarm that brought a reader
          * here says an arm is MISSING, never which arm is right. */
         case A_BREF:

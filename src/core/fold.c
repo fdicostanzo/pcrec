@@ -21,7 +21,7 @@
  * 65,536 byte pairs asserting that the SHIPPED residual entry — compiled out of
  * an artifact pcrec actually emitted, not out of this file — induces exactly
  * the partition this table does. That is a control with two independent
- * sources, which is the only kind this project counts. Sabotage row S-BR11
+ * sources, which is the only kind this project counts. Sabotage row S116
  * moves the residual's fold by one byte and the check goes red.
  *
  * WHAT IS IN IT — MEASURED, not assumed (backrefs_design.md §4.1, axis A over

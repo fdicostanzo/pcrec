@@ -46,7 +46,7 @@
 #   §7  THE SPAN-DIVERGENCE SECTION, which exists for exactly one sabotage.
 #       Its population is the subjects on which the backref-ERASED
 #       approximation reports a DIFFERENT span from the true pattern. A
-#       prefilter planted on a backref pattern (S-BR14) is INVISIBLE on any
+#       prefilter planted on a backref pattern (S102) is INVISIBLE on any
 #       subject where the two spans agree, so a section that quietly lost
 #       these subjects would pass while the compiler miscompiles.
 #
@@ -530,7 +530,7 @@ if [ "$dfa_bad" -eq 0 ]; then
 fi
 
 # ---- §8 THE SPAN-DIVERGENCE SECTION --------------------------------------
-# This section exists for exactly ONE sabotage (S-BR14: a DFA prefilter forced
+# This section exists for exactly ONE sabotage (S102: a DFA prefilter forced
 # onto a backref pattern), and it is named here so that row has a DETECTOR
 # rather than a gesture.
 #
@@ -561,7 +561,7 @@ fi
 # erasure's window FAILS TO CONTAIN the true match — a start above the true
 # start, or an end below the true end. On `11-1` and `ba` the erased window
 # contains the answer and the VM still finds it, so those two subjects would
-# have scored S100 as UNDETECTED while looking like coverage.
+# have scored S102 as UNDETECTED while looking like coverage.
 #
 # The three below were found by SWEEPING the family space for that property
 # rather than chosen, and they come from three DIFFERENT families so the
@@ -618,11 +618,11 @@ PY
     esac
 done < "$WORKDIR/span.tsv"
 # GUARD 4, EXACT: all five subjects genuinely span-diverge. A run that lost
-# one is a run whose S-BR14 detector shrank.
+# one is a run whose S102 detector shrank.
 if [ "$span_div" -ne 3 ] || [ "$span_cells" -ne 3 ]; then
     bad "§8 POPULATION: $span_div of $span_cells subjects span-DIVERGE USABLY between the true pattern and its backref-erasure, expected EXACTLY 3. A prefilter sabotage is invisible on any subject where the erasure's window contains the true match"
 elif [ "$span_bad" -eq 0 ]; then
-    ok "§8: 3 usably span-diverging subjects, each measured against libpcre2 for BOTH the true pattern and its erasure, and pcrec answers the TRUE span on every one (S100's only detector)"
+    ok "§8: 3 usably span-diverging subjects, each measured against libpcre2 for BOTH the true pattern and its erasure, and pcrec answers the TRUE span on every one (S102's only detector)"
 fi
 
 # ---- §9 THE 256-BYTE FOLD AGREEMENT CHECK (§4.1, R32 E8) ----------------
@@ -633,7 +633,7 @@ fi
 # Two spellings of one fact with nothing between them is this project's named
 # failure shape pointed the other way, and `tests/backrefs/fold_agreement_check.c`
 # is the mechanism that discharges it — see that file for both sides'
-# independence. Sabotage row S114.
+# independence. Sabotage row S116.
 FOLD="$WORKDIR/fold"; mkdir -p "$FOLD"
 if ! "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" -- '(?i:(.))(?i:\1)' \
         >/dev/null 2>"$FOLD/pc.log"; then

@@ -56,6 +56,20 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
+  **[M6.5.2] AND IT IS WHERE THE PREFILTER IS REFUSED.** A backref-bearing
+  pattern gets `fit.prefilter = false`, and `-fprefilter` on one is a REFUSAL
+  rather than a silent override — D46's do-or-die posture, applied to a request
+  the pattern cannot honour. The reason is §7.1's and it is measured twice
+  over: the capture-erased approximation a prefilter would be built from is not
+  even a SUPERSET once the referenced group's transitive closure holds an
+  assertion or an atomic/possessive operator (12 of 18 positive-control cells
+  are false negatives across those two reasons, plus 3 of 5 for the transitive
+  case), and where it IS a superset its leftmost SPAN differs from the true one
+  on up to 389 subjects in one family — so the EXACT anchored window
+  `engine_m4.md` §6.1's hybrid needs cannot be had either way. That line is
+  also what makes `src/ir/nfa.c`'s missing `A_BREF` arm unreachable rather than
+  lucky: nothing builds a machine for a language a backreference is not in.
+
   **[M6.4.2/D67] SR-8 IS BUILT HERE, AND `forces_kreset` RETIRED INTO IT.**
   `\K` was the first VM_ONLY producer and got a bespoke analysis at [M6.2]
   wave E; `(?>` is the second, and `tests/registry/registry_check.c`'s tripwire
@@ -175,7 +189,24 @@ construction (src/ir) and emission (src/gen).
   tests/prefilter/.
 
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
-  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31).
+  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
+  plus [M6.5.2]'s two BACKREFERENCE tree predicates, which live here for this
+  file's own stated reason: five switches over `AKind` with NO `default:` arm,
+  so a node kind added later is a compile error at each of them rather than a
+  silent inheritance.
+
+  **`pcrec_has_bref`** is §7.1's predicate — does anything here compare subject
+  text to subject text — and its ONE reader is `select_engine.c`, which forces
+  `EngineFit.prefilter` OFF for such a pattern. **`pcrec_bref_mark`** computes
+  §3.2.4's MARKED SET: the union of every `A_BREF`'s `refs`, which for a
+  by-name reference over a duplicated name is EVERY member of the run and not
+  merely the member some analysis thinks it resolves to. R32's re-check E13 is
+  why: §8.3's chain reads them all at MATCH time, so an unmarked member is read
+  under write-on-traverse and E1 returns through it — and the measured cell
+  shows there is no member to pick, because
+  `(?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$` on "aba" resolves to the SECOND
+  member, which is the one being re-entered. Both are asked of the
+  POST-DISCHARGE tree, exactly as `pcrec_has_atomic` is.
 
   **`pcrec_discharge_atomic` — THE FREE DISCHARGE.** Deletes every `A_ATOMIC`
   whose cut is PROVABLY a no-op and splices its body back in. The condition is

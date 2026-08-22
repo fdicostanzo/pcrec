@@ -1,4 +1,4 @@
-# S118 (design row S-BR17) — §8.2's NUMBER TIEBREAK IS REMOVED FROM THE
+# S120 (design row S-BR17) — §8.2's NUMBER TIEBREAK IS REMOVED FROM THE
 # REFLECTION TABLE'S COMPARATOR.
 #
 # THE ONE ROW IN THIS FAMILY WHOSE DETECTOR IS STRUCTURAL RATHER THAN
@@ -22,15 +22,15 @@
 # list's direction). So the detector reads the emitted rows' ORDER off the
 # ARTIFACT — `tests/codegen`'s [M6.5-DUPNAMES] check, strictly increasing in
 # (name, number) — which depends on neither.
-SAB_ID="S118-qsort-tiebreak-removed"
+SAB_ID="S120-qsort-tiebreak-removed"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
 SAB_DESC="ng_cmp_name loses its number tiebreak, so rows sharing a name come out in whatever order the sort leaves them -- on glibc, DESCENDING, because the declaration list is prepended and walked from the head. The emitted table then encodes the \"last set\" resolution rule while the matcher implements \"first set\", and no MATCH-semantics test can see the disagreement"
-SAB_DOC_FIGURE="PREDICTED: codegen RED on [M6.5-DUPNAMES] for the three dup-name fixtures; the corpus GREEN (the emitted matcher is unchanged). Canonical figure owed from run_sabotage_matrix.sh S118."
+SAB_DOC_FIGURE="PREDICTED: codegen RED on [M6.5-DUPNAMES] for the three dup-name fixtures; the corpus GREEN (the emitted matcher is unchanged). Canonical figure owed from run_sabotage_matrix.sh S120."
 SAB_COUNT=1
 SAB_BEFORE='    int c = strcmp((*pa)->name, (*pb)->name);
     if (c != 0) return c;
     return (*pa)->number < (*pb)->number ? -1
          : (*pa)->number > (*pb)->number ?  1 : 0;'
-SAB_AFTER='    return strcmp((*pa)->name, (*pb)->name);   /* SABOTAGE S118 */'
+SAB_AFTER='    return strcmp((*pa)->name, (*pb)->name);   /* SABOTAGE S120 */'

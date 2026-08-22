@@ -9,5 +9,20 @@ SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="cls_casefold: 'cls_has(b,c) || cls_has(b,c+32)' -> 'cls_has(b,c+32)' (fold one direction only)"
 SAB_DOC_FIGURE="tests/codegen/CLAUDE.md: 1 codegen check + 8 caseless.rxt cases"
 SAB_COUNT=1
-SAB_BEFORE="        if (cls_has(b, c) || cls_has(b, c + 32)) {"
-SAB_AFTER="        if (cls_has(b, c + 32)) {"
+# RE-ANCHORED 2026-08-22 ([M6.5.2]): `cls_casefold` no longer runs its own
+# `'A'..'Z'` loop testing BOTH cases -- it walks all 256 bytes and sets each
+# set byte's PARTNER from `pcrec_ascii_fold` (src/core/fold.c), because the
+# fold now needs to exist as an OBJECT a test can read (a caseless
+# backreference compare cannot fold at parse time, so the fold is spelled a
+# second time in the encoding residual and the two are tied by
+# tests/backrefs/fold_agreement_check.c). The rewrite is behaviour-preserving
+# by construction: the table's only non-identity entries are the 52 ASCII
+# letters, each mapping to its partner.
+#
+# INTENT UNCHANGED, and re-expressed against the new shape: fold in ONE
+# direction only. Setting `c` from `fold[c]` instead of `fold[c]` from `c`
+# widens `[A]` to nothing and `[a]` to nothing, so a caseless class stops
+# being case-closed -- the same asymmetry the old anchor produced by dropping
+# one arm of its `||`.
+SAB_BEFORE="        if (cls_has(b, c)) cls_set(b, pcrec_ascii_fold[c]);"
+SAB_AFTER="        if (cls_has(b, c) && c >= 'a') cls_set(b, pcrec_ascii_fold[c]);"

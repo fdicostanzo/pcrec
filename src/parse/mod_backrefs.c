@@ -150,7 +150,7 @@ static const char *br_strndup(Ctx *cx, const char *s, size_t len)
  * groups-before will notice it: `\1`..`\9` see the WHOLE pattern (`\1(a)`
  * compiles), while `\10`+ see only what PRECEDES them (`\10(a)..(j)` is the
  * octal byte 0x08, and `(a)\10` is octal 010 rather than "group 1 then '0'").
- * Sabotage rows S-BR8 and S-BR8b are the two directions.
+ * Sabotage rows S112 and S113 are the two directions.
  *
  * THE OCTAL SCAN ITSELF IS NOT WRITTEN HERE. `pcrec_clsport_octal`
  * (src/parse/parse.c) is the base grammar's own measured rule — selector digit
@@ -158,7 +158,7 @@ static const char *br_strndup(Ctx *cx, const char *s, size_t len)
  * the ran-out offset — and it is what the CLASS position uses. Calling it is
  * what keeps the atom and class positions from acquiring two implementations
  * of one PCRE2 fact, which is the shape §5.2 forbids the module to disturb and
- * sabotage S-BR6 pins: with this module ENABLED every class cell must stay
+ * sabotage S110 pins: with this module ENABLED every class cell must stay
  * byte-identical to the base tier's answer. */
 ExtResult pcrec_brport_digit(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from)

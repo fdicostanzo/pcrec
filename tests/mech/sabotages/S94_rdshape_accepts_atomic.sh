@@ -24,10 +24,14 @@ SAB_HARNESS_TARGET="tests/atomic_groups/atomic_quant.rxt"
 SAB_DESC="rd_shape ACCEPTS a body containing an A_ATOMIC instead of declining, so the reverse-deterministic rung is offered a body whose cut a backwards walk cannot reproduce. rd_reverse's own arm then ctx_fails by design -- the pair is deliberate: without the loud arm the fallthrough would build an EMPTY-BODY atomic group in the reversed body and miscompile silently"
 SAB_DOC_FIGURE="PREDICTED: the revdet-eligible slice of the atomic corpus RED (an internal error rather than a wrong answer, which is the designed outcome), nothing else moving. Canonical figure owed from run_sabotage_matrix.sh S94."
 SAB_COUNT=1
+# RE-ANCHORED 2026-08-22 ([M6.5.2]): module `backrefs` added its own
+# declining arm (`case A_BREF:`) directly after this one, so the anchor's old
+# `case A_CAP:` tail no longer follows it. Narrowed to the arm itself, which
+# is what the row is about; intent unchanged.
 SAB_BEFORE='        case A_ATOMIC:
             S->ok = false;
             return;
-        case A_CAP:'
+        /* [M6.5.2] DECLINE, and it is an EXPLICIT arm rather than the'
 SAB_AFTER='        case A_ATOMIC:
             a = a->l; continue;   /* SABOTAGE S94: accept instead of decline */
-        case A_CAP:'
+        /* [M6.5.2] DECLINE, and it is an EXPLICIT arm rather than the'

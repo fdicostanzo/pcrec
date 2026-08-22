@@ -966,7 +966,7 @@ fi
 # plants a real CALL in a hot loop, and stripping comments cannot hide a call.
 #
 # SABOTAGES: tests/mech/sabotages/S68_residual_in_hot_loop.sh (a real call to
-# next_pos in the DFA's skip loop) and S-BR5 (the backreference compare
+# next_pos in the DFA's skip loop) and S109 (the backreference compare
 # inlined instead of routed through the seam). Neither changes an answer.
 
 # residual_names <file> — the residual entry names this artifact declares.
@@ -1196,7 +1196,7 @@ fi
 # is exercisable on every fixture with two or more names, which is why the
 # fixture set below has both kinds.
 #
-# SABOTAGE: S118 removes the number tiebreak from `ng_cmp_name`.
+# SABOTAGE: S120 removes the number tiebreak from `ng_cmp_name`.
 dup_bad=0; dup_files=0; dup_rows=0; dup_dupname=0
 while IFS=$'\t' read -r nm feats pat; do
     [ -n "$nm" ] || continue

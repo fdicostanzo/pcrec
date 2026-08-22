@@ -420,7 +420,7 @@ struct Ast {
      * ANY ANALYSIS THAT PATTERN-MATCHES `case A_BREF:` AND DOES NOT READ THIS
      * FIELD reproduces src/opt/possessify.c's pre-D62 bug, and no compiler
      * diagnostic will say so — D62 control 3's accepted residual, covered here
-     * and by sabotage row S-BR2. */
+     * and by sabotage row S106. */
     bool       caseless;
 };
 
@@ -1572,7 +1572,7 @@ Ast *pcrec_ast_char(Ctx *cx, unsigned c);
  * it, and `tests/backrefs/fold_agreement_check.c` asserts the SHIPPED
  * `$_bref_match_caseless` residual entry induces the identical partition over
  * all 65,536 byte pairs. Two spellings of one fact, with a mechanism between
- * them instead of a comment (R32 E8; sabotage row S-BR11). */
+ * them instead of a comment (R32 E8; sabotage row S116). */
 extern const unsigned char pcrec_ascii_fold[256];
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.

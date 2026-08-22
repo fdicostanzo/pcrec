@@ -29,7 +29,7 @@
  *
  * THE SWEEP IS ORDERED PAIRS, not the 52-byte set, because equality under a
  * fold is a RELATION and the two sides could agree on which bytes fold while
- * disagreeing about what they fold TO. Sabotage row S114 moves exactly one
+ * disagreeing about what they fold TO. Sabotage row S116 moves exactly one
  * byte ('z' stops folding) — the smallest divergence this check must still
  * see, and one a caseless corpus that happened to use no 'z' would not.
  *

@@ -1,4 +1,4 @@
-# S100 (design row S-BR14) — A DFA PREFILTER IS ATTACHED TO A BACKREF PATTERN.
+# S102 (design row S-BR14) — A DFA PREFILTER IS ATTACHED TO A BACKREF PATTERN.
 #
 # THE WRONG-ANSWER ROW, and R32 C4 added it because the first design's
 # eighteen rows had none. Every other row in this module's family fails as a
@@ -18,12 +18,12 @@
 # WHAT CATCHES IT is `run_backref_diff.sh` §8, whose population is exactly the
 # subjects on which the two spans DIVERGE — five of them, asserted EXACT,
 # because this sabotage is INVISIBLE on any subject where they agree.
-SAB_ID="S100-prefilter-on-backref"
+SAB_ID="S102-prefilter-on-backref"
 SAB_FILE="src/opt/select_engine.c"
 SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs"
 SAB_DESC="EngineFit.prefilter is no longer forced false for a backref-bearing pattern, so the capture-erased DFA pair is built and hands the VM a window computed for a DIFFERENT language. The failure is a WRONG SPAN on the subjects where the erasure's leftmost match differs from the true one -- and on every other subject the answers are identical, which is why only run_backref_diff.sh's span-divergence section can see it"
-SAB_DOC_FIGURE="PREDICTED: brefdiff RED in §8 (the span-divergence section). Canonical figure owed from run_sabotage_matrix.sh S100."
+SAB_DOC_FIGURE="PREDICTED: brefdiff RED in §8 (the span-divergence section). Canonical figure owed from run_sabotage_matrix.sh S102."
 SAB_COUNT=1
 SAB_BEFORE='        fit.prefilter = has_bref ? false'
-SAB_AFTER='        fit.prefilter = false ? false   /* SABOTAGE S100 */'
+SAB_AFTER='        fit.prefilter = false ? false   /* SABOTAGE S102 */'

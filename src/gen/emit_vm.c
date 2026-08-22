@@ -745,7 +745,7 @@ static int vm_slot_ctr(Vm *v, int i)
  *
  * IT SITS AT THE TOP OF THE LAYOUT, above the counters, so every base below it
  * is unmoved and a backref-free artifact's slot numbering is untouched.
- * Sabotage row S-BR15 restores publish-at-open; S-BR15b marks only one member
+ * Sabotage row S103 restores publish-at-open; S104 marks only one member
  * of a duplicated name's run. */
 static int vm_slot_pend(Vm *v, int group)
 {
@@ -870,7 +870,7 @@ static bool vm_nullable(const Ast *a)
          * group 1 = (0,0), and `^(a?)\1{3}$` matches "" at (0,0). Answering
          * false here would let a nullable quantifier body lose its
          * empty-iteration guard, and `(\1)*` would loop forever on a
-         * zero-width iteration. Sabotage row S-BR3, whose detector is the
+         * zero-width iteration. Sabotage row S107, whose detector is the
          * harness's derived timeout rather than a wrong span. */
         case A_BREF: return true;
         case A_CAP:   a = a->l; continue;
@@ -4534,7 +4534,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * pair sitting beside a stale pending value from an earlier iteration.
          * Writing it as one guarded block is what makes "in step with the
          * pair" structural rather than a rule someone has to remember —
-         * sabotage row S-BR13 drops the pending write alone. (The backward
+         * sabotage row S118 drops the pending write alone. (The backward
          * walk writes the published pair DIRECTLY, both halves adjacent, so it
          * is already a publication in the sense a reference needs.) */
         if (!v->nocap) {
@@ -4606,7 +4606,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * capture, the entry returns 0, and the reference succeeds having
          * consumed nothing. An implementation testing `ref_end > ref_start` as
          * a proxy for "is it set" turns every empty capture into a failure —
-         * sabotage row S-BR1.
+         * sabotage row S105.
          *
          * `ref_start <= ref_end` IS STRUCTURAL, not hoped for: a published
          * pair records the start before the body ran and the end after it, so
@@ -4623,7 +4623,7 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
          * length rather than a bool, and why there are TWO entries rather than
          * one with a `caseless` flag — D18/D23's rule is that an option
          * compiles away, and D23 measured a runtime fold indirection costing
-         * 26% on a pattern with no letters in it. Sabotage row S-BR5 inlines
+         * 26% on a pattern with no letters in it. Sabotage row S109 inlines
          * the compare, and the codegen check's fixture-declared per-site count
          * is its only possible detector: inlining changes NO ANSWER under the
          * byte backend. */

@@ -102,6 +102,34 @@ fi
 # Both builds emit SELF-CONTAINED C to stdout: writing to two different paths
 # would put a different `#include "<name>.h"` line in each and every comparison
 # would "differ" for a reason unrelated to this module.
+#
+# THE D37 FEATURE STAMP IS COMPARED PAST, and it is not a loosening — it is the
+# precedent tests/cli case10 set for exactly this situation ("case10's old
+# `--features all` byte-identity pin was updated to compare past these 4 stamp
+# lines rather than the whole file, since the stamp differing IS the fix").
+#
+# WHY IT DIFFERS HERE, measured rather than waved away: `render_modules`
+# (src/parse/enabled.c) renders the enabled module list by walking the registry
+# in TABLE ORDER and taking each module name at its FIRST row. This module adds
+# two rows naming module `recursion` at `RK_ESC 'g'` — well before the
+# `RK_GROUP` rows where that name previously first appeared — so under
+# `--features all` the stamp's list moves `recursion` earlier. NOTHING ELSE
+# MOVES: the mask is identical, the gate state is identical, and D37's own
+# promise (that the stamp's value can be passed back to `--features` and give
+# the same gate state) is order-independent. `tests/cli` case14 is where the
+# stamp's CONTENT is pinned, so dropping it here loses no coverage.
+#
+# THE FILTER IS ASSERTED, not trusted: exactly three stamp lines must be
+# removed from each side, so a filter that silently matched nothing (leaving
+# the difference in) or matched too much (hiding a real one) is a named
+# failure rather than a quieter sweep.
+stamp_strip() {
+    grep -vE '^/\* Feature set: |^#define PCREC_FEATURE_SET |^#define PCREC_FEATURE_MODULES '
+}
+stamp_count() {
+    grep -cE '^/\* Feature set: |^#define PCREC_FEATURE_SET |^#define PCREC_FEATURE_MODULES ' \
+        || true
+}
 gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 
@@ -195,7 +223,7 @@ fi
 # ---- THE SWEEP, three axes ----------------------------------------------
 sweep() { # sweep <label> <extra pcrec args>
     local label="$1" args="$2"
-    local same=0 diff=0 refused=0 mism=0
+    local same=0 diff=0 refused=0 mism=0 stampbad=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -211,14 +239,29 @@ sweep() { # sweep <label> <extra pcrec args>
                 >> "$WORKDIR/diff.$label"
             continue
         fi
-        if [ "$a" = "$b" ]; then
+        local na nb sa sb
+        na="$(printf '%s\n' "$a" | stamp_count)"
+        nb="$(printf '%s\n' "$b" | stamp_count)"
+        if [ "$na" -ne 3 ] || [ "$nb" -ne 3 ]; then
+            stampbad=$((stampbad + 1))
+            printf 'STAMP FILTER %s: subject %s lines, reference %s lines, want 3 each\n' \
+                "$pat" "$na" "$nb" >> "$WORKDIR/diff.$label"
+            continue
+        fi
+        sa="$(printf '%s\n' "$a" | stamp_strip)"
+        sb="$(printf '%s\n' "$b" | stamp_strip)"
+        if [ "$sa" = "$sb" ]; then
             same=$((same + 1))
         else
             diff=$((diff + 1))
             printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
         fi
     done < "$WORKDIR/plain"
-    echo "backref-identity[$label]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism"
+    echo "backref-identity[$label]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad"
+    if [ "$stampbad" -ne 0 ]; then
+        bad "[$label] the D37 stamp filter matched the wrong number of lines on $stampbad artifacts — it must remove EXACTLY three, so a filter that stopped matching (leaving a difference in) or started over-matching (hiding one) says so"
+        head -5 "$WORKDIR/diff.$label" >&2
+    fi
     if [ "$mism" -ne 0 ]; then
         bad "[$label] $mism backref-FREE patterns are accepted by one build and refused by the other. This module must not change what pcrec ACCEPTS on a pattern with no backreference in it:"
         head -10 "$WORKDIR/diff.$label" >&2
@@ -230,8 +273,9 @@ sweep() { # sweep <label> <extra pcrec args>
     if [ "$same" -lt 700 ]; then
         bad "[$label] only $same patterns compared identical (floor 700) — the sweep is not populated"
     fi
-    if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$same" -ge 700 ]; then
-        ok "[$label] byte identity: ALL $same backref-free corpus patterns emit IDENTICAL C against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches"
+    if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$stampbad" -eq 0 ] \
+       && [ "$same" -ge 700 ]; then
+        ok "[$label] byte identity: ALL $same backref-free corpus patterns emit IDENTICAL C (past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches"
     fi
 }
 

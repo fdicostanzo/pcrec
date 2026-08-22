@@ -1,4 +1,4 @@
-# S107 (design row S-BR5) — THE COMPARE IS INLINED INSTEAD OF ROUTED THROUGH
+# S109 (design row S-BR5) — THE COMPARE IS INLINED INSTEAD OF ROUTED THROUGH
 # THE SEAM.
 #
 # THE S68 SHAPE, one construct over: IT CHANGES NO ANSWER. Under the byte
@@ -16,12 +16,12 @@
 # WHAT CATCHES IT is the codegen check's fixture-DECLARED per-site count —
 # the artifact must call `rx_bref_match` exactly as many times as the fixture
 # says, and an inlined compare calls it zero times. Nothing behavioural can.
-SAB_ID="S107-compare-inlined"
+SAB_ID="S109-compare-inlined"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness"
 SAB_HARNESS_TARGET="tests/backrefs/numeric.rxt"
 SAB_DESC="The A_BREF emission writes an inline byte-compare loop instead of calling the encoding residual entry. Under the byte backend the ANSWERS ARE IDENTICAL, so every corpus and every differential stays green; what moves is that the compare stopped being replaceable by another encoding's backend"
-SAB_DOC_FIGURE="PREDICTED: codegen RED on the per-site count for the residbref1/residbref3/residbrefci/residbrefboth fixtures; the corpus and brefdiff GREEN. Canonical figure owed from run_sabotage_matrix.sh S107."
+SAB_DOC_FIGURE="PREDICTED: codegen RED on the per-site count for the residbref1/residbref3/residbrefci/residbrefboth fixtures; the corpus and brefdiff GREEN. Canonical figure owed from run_sabotage_matrix.sh S109."
 SAB_COUNT=1
 SAB_BEFORE='            "        took = %s(subject, subject_length,\n"
             "                  (size_t)ref_start, (size_t)ref_end,\n"
@@ -31,4 +31,4 @@ SAB_AFTER='            "        { size_t i_; took = (ptrdiff_t)(ref_end - ref_st
             "              if (scan_position + i_ >= subject_length ||\n"
             "                  subject[scan_position + i_] != subject[ref_start + i_])\n"
             "                  { took = -(ptrdiff_t)i_ - 1; break; } }\n"
-            "        (void)0;   /* SABOTAGE S107: %.0s */\n",'
+            "        (void)0;   /* SABOTAGE S109: %.0s */\n",'

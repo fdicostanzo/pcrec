@@ -1,4 +1,4 @@
-# S117 (design row S-BR16) — §5.3's DEFERRED VALIDITY CHECK IS SKIPPED.
+# S119 (design row S-BR16) — §5.3's DEFERRED VALIDITY CHECK IS SKIPPED.
 #
 # R32 C4 added this row because the first design had none for it, and the
 # failure mode is the quietest in the family: A REFERENCE TO A NONEXISTENT
@@ -18,12 +18,12 @@
 # the emitted chain has no arm at all — which is why the row's detector is
 # both `octal.rxt`/`spellings.rxt`'s refusal cells and any pattern that should
 # match.
-SAB_ID="S117-deferred-validity-skipped"
+SAB_ID="S119-deferred-validity-skipped"
 SAB_FILE="src/parse/parse.c"
 SAB_SUITES="harness reject brefdiff"
 SAB_HARNESS_TARGET="tests/backrefs"
 SAB_DESC="pcrec_parse_info stops running the end-of-parse resolution pass, so a reference to a group the pattern never declares is accepted silently and every A_BREF is left with an EMPTY refs array. (a)\\2 compiles instead of raising the error-115-class diagnostic, and every backreference stops matching"
-SAB_DOC_FIGURE="PREDICTED: the corpus RED across tests/backrefs; reject RED on the error-115 cells. Canonical figure owed from run_sabotage_matrix.sh S117."
+SAB_DOC_FIGURE="PREDICTED: the corpus RED across tests/backrefs; reject RED on the error-115 cells. Canonical figure owed from run_sabotage_matrix.sh S119."
 SAB_COUNT=1
 SAB_BEFORE='    return pcrec_bref_resolve(cx, a);'
-SAB_AFTER='    return a;   /* SABOTAGE S117: nothing resolves, nothing refuses */'
+SAB_AFTER='    return a;   /* SABOTAGE S119: nothing resolves, nothing refuses */'

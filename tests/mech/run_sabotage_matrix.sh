@@ -433,8 +433,8 @@ run_one() {
                 # WRITTEN model of the rule and checks that model against
                 # libpcre2 as well as checking pcrec against libpcre2, so a
                 # sabotage of the rule and a sabotage of the emitted chain
-                # score differently here — which is the whole reason S-BR9 and
-                # S-BR10 are separate rows.
+                # score differently here — which is the whole reason S114 and
+                # S115 are separate rows.
                 PCREC="$pcrec" CC="$CC" bash "$tree/tests/backrefs/run_dupnames_diff.sh" \
                     > "$work/dupnamesdiff.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/dupnamesdiff.log" | grep -oE '[0-9]+')"

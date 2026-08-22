@@ -683,7 +683,7 @@ typedef struct {
  * asserts it is non-decreasing in (name, number), plus a comparator-TOTALITY
  * assertion (it returns 0 only for rows equal in BOTH fields). Neither depends
  * on `qsort`'s stability or on the list's direction, which is what a
- * behavioural row here would have depended on. Sabotage row S118. */
+ * behavioural row here would have depended on. Sabotage row S120. */
 static int ng_cmp_name(const void *a, const void *b)
 {
     const NamedGroup *const *pa = a;
