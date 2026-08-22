@@ -590,14 +590,26 @@ socket" call `run_possessify` made. It is NOT gated by `-fno-possessify`: the
 discharge is semantics-preserving by its own verdict, and gating it would make
 an optimisation flag change which ENGINE a pattern gets.
 
-**One consequence worth stating because it is a genuinely nice property.** For
-the possessive spellings, discharging is EMISSION-NEUTRAL on the VM path: if
-the discharge fires, possessify's fixpoint re-derives the identical verdict on
-the same quantifier and re-marks it, so the emitted VM code is byte-identical
-whether or not the discharge ran. The discharge changes ENGINE SELECTION and
-nothing else. For a plain `(?>X)` group it is not neutral (there is no
-possessify rung to re-derive it), and the emitted VM loses a provably-dead
-mark and cut — which is a win, not a difference to worry about.
+**One consequence worth stating because it is a genuinely nice property, and
+one carve-out that keeps it honest.** For the possessive spellings, discharging
+is EMISSION-NEUTRAL on the VM path: if the discharge fires, possessify's
+fixpoint re-derives the identical verdict on the same quantifier and re-marks
+it, so the emitted VM code is byte-identical whether or not the discharge ran.
+The discharge changes ENGINE SELECTION and nothing else. That is a CHECKABLE
+claim, and Appendix A §3's driver checks it.
+
+**The carve-out: `-fno-possessify`.** With that flag, `run_possessify` does not
+run (`select_engine.c:236`), so a DISCHARGED `a*+` emits a plain backtracking
+loop where the undischarged one would emit a cut. Emission-neutrality therefore
+holds only in the flag's absence. It is not a correctness problem — the
+discharge's own verdict says the two lower to the same answers, which is what
+makes the discharge legal in the first place — but it is the reason §11.3's
+rule 2 has to be scoped to an UNDISCHARGED possessive, and the reason a reader
+should not read "emission-neutral" as unconditional.
+
+For a plain `(?>X)` group the discharge is not emission-neutral at all (there
+is no possessify rung to re-derive it), and the emitted VM loses a
+provably-dead mark and cut — which is a win, not a difference to worry about.
 
 ### 5.5 The FULL cut construction, chartered not built — row `[ENG-CUT]`
 
@@ -1059,9 +1071,13 @@ The one-shot gate above does not survive the wave, so four checks go into
 - **`[M6.4-ATOMIC rule 1]`** — a cut-bearing artifact stamps
   `RX_VM_PRUNE_CEILING "subject-end"` and its search entry contains
   `window_end = subject_length`, never a `window[0][1]` assignment. (§4's H3.)
-- **`[M6.4-ATOMIC rule 2]`** — `-fno-possessify` on a pattern with a
-  user-written possessive still emits `RX_CUT`. (§3.2 rule 2: the flag denies
-  the REWRITE, never a written possessive.)
+- **`[M6.4-ATOMIC rule 2]`** — `-fno-possessify` on a pattern with an
+  UNDISCHARGED user-written possessive (e.g. `(?:a|ab){1,3}+c`, whose §2.2
+  verdict is MEASURED negative — `out/free_discharge.txt`'s second control)
+  still emits `RX_CUT`. (§3.2 rule 2: the flag denies the possessification
+  REWRITE, never a written possessive.) **The scoping is load-bearing**: on a
+  DISCHARGED possessive there is correctly no cut to emit, so a rule written
+  without it would be red on a correct compiler — see §5.4's carve-out.
 - **`[M6.4-ATOMIC rule 3]`** — inside the emitted function, the mark's
   `RX_SET(RX_SLOT_CUT_MARKk, …)` appears BEFORE every `RX_PUSH` that the atomic
   body emits, and every `RX_CUT(k)` is textually reachable only from labels
@@ -1116,6 +1132,85 @@ One wave, four slices, in this order:
 H3 (slice 3) is the only thing in this list that can silently lose a match on a
 pattern the compiler otherwise gets right, so it should not be the last thing
 written.
+
+---
+
+## 13. What this design does NOT measure
+
+- **Any pcrec behaviour on an atomic pattern.** pcrec refuses all of them. Every
+  in-pcrec measurement here is on a PROXY (the atomicity-erased twin, the
+  possessive-verdict stamp) or on emitted code for a pattern that has no cut.
+- **The cost of the lowering.** No throughput number for a cut artifact exists
+  and none could; §3.2 rule 3's frame-count argument is STRUCTURAL, not
+  benchmarked.
+- **The real-corpus size of the discharge's win.** §5.3 measures a generated
+  family; the `.rxt` corpus was not swept with `+` suffixes injected.
+- **The `[ENG-CUT]` size blowup on real patterns.** §5.5's bound is analytic.
+- **Anything under `--encoding` other than byte.** §9 argues there is nothing
+  to measure; that argument is not itself a measurement.
+
+---
+
+## 14. ARGUED claims, with the experiment that refutes each
+
+The panel should start here.
+
+1. **CUT-INV holds for an unconditional cut (§3.1).** STRUCTURAL, and
+   PROTOTYPE-checked at 14/14. *Refute by:* finding a reachable path on which a
+   frame below the mark has `trail_mark > T0` — e.g. a lowering where the atomic
+   group can be ENTERED from a resume label that skips the mark-set, or where
+   an enclosing construct pushes its frame AFTER the body has written. The
+   prototype tests one lowering; it does not enumerate lowerings.
+2. **`RX_CUT`'s assignment is safe because `resume_depth ≥ mark` at every cut
+   site (§3.3 property 2).** ARGUED. *Refute by:* a construct that can jump to
+   `L_cut` after popping below the entry frame. Nested lookaround (M6.6) is the
+   place to look; this design does not cover it.
+3. **possessify's §2.2 verdict survives a cut (§6.4a).** MEASURED at 0/48,000
+   but ARGUED as a theorem. *Refute by:* a pattern where the cut deletes the
+   uncut winner and the best surviving path IS a retreat-into-Q path. The
+   generator used four positions and one quantifier per pattern; two
+   quantifiers, or a quantifier straddling a nested cut, is the unexplored
+   region.
+4. **The free discharge's condition is exactly §2.2 (§5.3).** MEASURED at
+   0/532 patterns. *Refute by:* a positive-verdict pattern whose possessive and
+   plain spellings differ on a subject outside the 16 used. Long subjects and
+   subjects with repeated structure are the obvious gap.
+5. **H1 (sound rejection) and H2 (start lower bound) (§4.4).** MEASURED at
+   0 violations in 17,640 cells, and ARGUED by containment. *Refute by:* a
+   pattern where the erased NFA is NOT a superset — which would mean
+   `nfa.c`'s `A_ATOMIC` arm does something other than lower the body
+   transparently. That is a claim about code nobody has written.
+6. **H4: the match-here entries need no change (§4.4).** STRUCTURAL, on lines
+   that exist. *Refute by:* an entry path that passes a prefilter window as the
+   ceiling. R30 E8 found exactly this class of thing by reading the entries
+   rather than the search loop, and this design has read them once.
+7. **The identity claim (§11.1).** ARGUED from "the module has no alphabet or
+   state action". *Refute by:* any emitted byte that moves on an atomic-free
+   pattern. The pinned-commit sweep is the experiment and it has not been run.
+8. **Rule 3's frame argument (§3.2).** STRUCTURAL from `vm_star`'s shape.
+   *Refute by:* measuring `subject_ceiling` on `(?>a*)` lowered naively vs
+   `a*+`; if they are equal the lift is unnecessary.
+9. **§7.4's ruling that four dump-only rows are worth their cost.** ARGUED.
+   *Refute by:* showing that `registry_check`'s new per-kind assertion is not
+   enough to make a half-landed fifth kind loud — §7.3 MEASURED that the
+   compiler will not help.
+
+---
+
+## 15. Open questions for Frank
+
+1. **§7.4 (the registry rows).** This design recommends four `RK_QUANTSUFFIX`
+   rows over the cheaper explicit exemption, on a [DOC-DRV] consistency
+   argument. The exemption is defensible and is what `registry.c` does today.
+   **Manager/Frank's call**; nothing else in the module depends on it.
+2. **§10 (one wave or two).** The design recommends one. Splitting at the
+   discharge is the only truthful split.
+3. **§5.5 (`[ENG-CUT]`).** Chartered here with a size estimate and an evidence
+   gate borrowed from D50. Confirm the gate, or ask for the population
+   measurement that would open it.
+4. **§8 (SR-8).** Two named tripwire exceptions will exist after this module.
+   Recording that as the trigger for a dedicated SR-8 row (rather than letting
+   backrefs add a third) is a scheduling call.
 
 ---
 
@@ -1240,80 +1335,3 @@ plausible implementation is wrong in the direction of returning an ANSWER
 rather than an error.
 
 ---
-
-## 13. What this design does NOT measure
-
-- **Any pcrec behaviour on an atomic pattern.** pcrec refuses all of them. Every
-  in-pcrec measurement here is on a PROXY (the atomicity-erased twin, the
-  possessive-verdict stamp) or on emitted code for a pattern that has no cut.
-- **The cost of the lowering.** No throughput number for a cut artifact exists
-  and none could; §3.2 rule 3's frame-count argument is STRUCTURAL, not
-  benchmarked.
-- **The real-corpus size of the discharge's win.** §5.3 measures a generated
-  family; the `.rxt` corpus was not swept with `+` suffixes injected.
-- **The `[ENG-CUT]` size blowup on real patterns.** §5.5's bound is analytic.
-- **Anything under `--encoding` other than byte.** §9 argues there is nothing
-  to measure; that argument is not itself a measurement.
-
----
-
-## 14. ARGUED claims, with the experiment that refutes each
-
-The panel should start here.
-
-1. **CUT-INV holds for an unconditional cut (§3.1).** STRUCTURAL, and
-   PROTOTYPE-checked at 14/14. *Refute by:* finding a reachable path on which a
-   frame below the mark has `trail_mark > T0` — e.g. a lowering where the atomic
-   group can be ENTERED from a resume label that skips the mark-set, or where
-   an enclosing construct pushes its frame AFTER the body has written. The
-   prototype tests one lowering; it does not enumerate lowerings.
-2. **`RX_CUT`'s assignment is safe because `resume_depth ≥ mark` at every cut
-   site (§3.3 property 2).** ARGUED. *Refute by:* a construct that can jump to
-   `L_cut` after popping below the entry frame. Nested lookaround (M6.6) is the
-   place to look; this design does not cover it.
-3. **possessify's §2.2 verdict survives a cut (§6.4a).** MEASURED at 0/48,000
-   but ARGUED as a theorem. *Refute by:* a pattern where the cut deletes the
-   uncut winner and the best surviving path IS a retreat-into-Q path. The
-   generator used four positions and one quantifier per pattern; two
-   quantifiers, or a quantifier straddling a nested cut, is the unexplored
-   region.
-4. **The free discharge's condition is exactly §2.2 (§5.3).** MEASURED at
-   0/532 patterns. *Refute by:* a positive-verdict pattern whose possessive and
-   plain spellings differ on a subject outside the 16 used. Long subjects and
-   subjects with repeated structure are the obvious gap.
-5. **H1 (sound rejection) and H2 (start lower bound) (§4.4).** MEASURED at
-   0 violations in 17,640 cells, and ARGUED by containment. *Refute by:* a
-   pattern where the erased NFA is NOT a superset — which would mean
-   `nfa.c`'s `A_ATOMIC` arm does something other than lower the body
-   transparently. That is a claim about code nobody has written.
-6. **H4: the match-here entries need no change (§4.4).** STRUCTURAL, on lines
-   that exist. *Refute by:* an entry path that passes a prefilter window as the
-   ceiling. R30 E8 found exactly this class of thing by reading the entries
-   rather than the search loop, and this design has read them once.
-7. **The identity claim (§11.1).** ARGUED from "the module has no alphabet or
-   state action". *Refute by:* any emitted byte that moves on an atomic-free
-   pattern. The pinned-commit sweep is the experiment and it has not been run.
-8. **Rule 3's frame argument (§3.2).** STRUCTURAL from `vm_star`'s shape.
-   *Refute by:* measuring `subject_ceiling` on `(?>a*)` lowered naively vs
-   `a*+`; if they are equal the lift is unnecessary.
-9. **§7.4's ruling that four dump-only rows are worth their cost.** ARGUED.
-   *Refute by:* showing that `registry_check`'s new per-kind assertion is not
-   enough to make a half-landed fifth kind loud — §7.3 MEASURED that the
-   compiler will not help.
-
----
-
-## 15. Open questions for Frank
-
-1. **§7.4 (the registry rows).** This design recommends four `RK_QUANTSUFFIX`
-   rows over the cheaper explicit exemption, on a [DOC-DRV] consistency
-   argument. The exemption is defensible and is what `registry.c` does today.
-   **Manager/Frank's call**; nothing else in the module depends on it.
-2. **§10 (one wave or two).** The design recommends one. Splitting at the
-   discharge is the only truthful split.
-3. **§5.5 (`[ENG-CUT]`).** Chartered here with a size estimate and an evidence
-   gate borrowed from D50. Confirm the gate, or ask for the population
-   measurement that would open it.
-4. **§8 (SR-8).** Two named tripwire exceptions will exist after this module.
-   Recording that as the trigger for a dedicated SR-8 row (rather than letting
-   backrefs add a third) is a scheduling call.
