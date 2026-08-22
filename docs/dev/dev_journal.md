@@ -11828,3 +11828,17 @@ concurrently under `run_group`) against 1m38s with the differential alone.
 Moving it out is right on the design's own reading of what it asserts, but it
 is not a speed-up and must not be reported as one. Where `make test`'s wall
 time actually goes is a separate question and is not answered by this lane.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 8) — the FIX merged (8e4af41): D27 134/134, tripwire all-resolve, battery re-running on the fixed state
+
+lane/agfix 99fc4e8 (make test EXIT=0, sequential and timestamped) merged
+at 14:20 with the usual two both-sides doc conflicts. On the merged
+main: scripts/m6read_check_sab_anchors.py "all anchors resolve" (99
+rows); the D27 corpus (464ab1f) 134 pass / 0 fail / 0 compile failures
+— the miscompile cell green. Union battery launched on 8e4af41 (build/
+battery_m64fix.log, 14:21). Owed before [M6.4] closes: that battery; the
+full mech matrix (S88-S101's canonical figures — the lane could not run
+`make mech`); the quiet-box gate; merging branch agd27 into
+tests/atomic_groups/d27/ (after the battery — the tree must not change
+under it); the archive commit; the row flips; Frank's U9 ruling is the
+one item that stays OPEN past the close (held loud in known_fail).

@@ -286,7 +286,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
     the opt-in `make test-atomic-identity` (§11.2/§14 item 8's ruled one-shot
     landing gate), and THREE stale sabotage anchors re-derived from live source
     (S45, S63 and S90 — the tripwire's second and third live catches).
-  - [M6.4.3] STATE:started (AUTHORED 2026-08-22 11:4x on branch agd27 44ae045 — 8 files / 113 patterns / 137 cells, oracle.py 137/137 reproduced by the manager, nothing in GOAL_FACTS found wrong; acceptance run against the merged module at [M6.4.2]'s merge review (69f3b93); cell agd27 created from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py + GOAL_FACTS.md = the approved design's Appendix B) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
+  - [M6.4.3] STATE:started (AUTHORED 2026-08-22 11:4x on branch agd27 44ae045; CORRECTED 464ab1f after the first acceptance run — 15 corpus-side cells, the miscompile cell untouched; vs main 69f3b93 133/134 (the miscompile); vs the FIXED main 8e4af41 134/134 — merges into tests/atomic_groups/d27/ after the battery — 8 files / 113 patterns / 137 cells, oracle.py 137/137 reproduced by the manager, nothing in GOAL_FACTS found wrong; acceptance run against the merged module at [M6.4.2]'s merge review (69f3b93); cell agd27 created from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py + GOAL_FACTS.md = the approved design's Appendix B) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
     author denied src/ and tests/; written from the PCRE2 goal; may be
     AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the
     implementation; run against the shipped module at merge review for a
