@@ -48,6 +48,29 @@ per this directory's house style. In brief:
 are **TWO SPELLINGS OF A CUT** in the emitter, and only one is `RX_CUT`
 (§3.2.3). Every check in §11.3 now matches both.
 
+### R31 FOCUSED RE-CHECK (revision 2)
+
+E1-E8 all CLOSED. Two NEW findings against claims the FIRST REVISION
+introduced, both fixed here:
+
+- **N1 (HIGH) — the lift had a nullability carve-out and no PREFERENCE
+  carve-out**, and the two are the same defect one §2.2 conjunct over: the
+  possessive rungs are GREEDY-ONLY by signature and `emit_vm.c:2053-2062`
+  argues the preference collapse as a §2.2 CONSEQUENCE. MEASURED: **7 of 8
+  lift-eligible lazy cells miscompile**, three of them this document's own §6
+  cells 14-16. It also refutes the formulation revision 1 introduced —
+  **cut-equivalence is a FRAMES-only claim, and the cursor rung satisfies it
+  while answering the wrong language.** §3.2.2a; RULE 3 now has three
+  conditions.
+- **N2 (LOW/MED) — `vm_cuts(const Ast *a)` is not implementable**: `struct Ast`
+  has no parent pointer. Threaded as `vm_cuts(a, under_atomic)` rather than
+  stored, because a stored lift flag goes stale the moment the discharge
+  deletes the `A_ATOMIC` above it — M-1 contract note 3's class. §3.2.5.
+
+**§14 item 9 now records the pattern rather than just the two instances:** this
+claim has been refuted twice the same way, so the enumeration of §2.2
+consequences the emitted shapes depend on is EMPIRICAL and may be incomplete.
+
 Written to be attacked: §14 is this document's own list of where to start, and
 it now carries what the first round did and did not move.
 
@@ -97,9 +120,13 @@ UNCUT language, so its span END is not a bound on the cut match's end —
 **122 refuting cells**, and **114 cells of live silent match loss measured on
 the emitted prefilter** (§4) — and the fix is one predicate read at THREE
 sites, not one. A **lowering that survives all five of `vm_rep`'s dispatch
-paths** (§3.2.1), including a nullable carve-out that stops the emitted matcher
-hanging (§3.2.2), the K29 fix for the path that emits no cut at all (§3.2.4),
-and one shared predicate the emitter and four pre-passes call (§3.2.5). And an
+paths** (§3.2.1) under all THREE conditions a path must meet —
+cut-equivalence, preference-preservation and nullable-safety — which means two
+carve-outs, one that stops the emitted matcher HANGING (§3.2.2) and one that
+stops it answering the WRONG LANGUAGE on a lazy body (§3.2.2a), plus the K29
+fix for the path that emits no cut at all (§3.2.4) and one shared predicate,
+CONTEXT-THREADED rather than stored, that the emitter and four pre-passes call
+(§3.2.5). And an
 **engine split** in which a cut is VM-forcing unless it is provably a no-op —
 the free discharge, whose condition is possessify's own §2.2 verdict, MEASURED
 sound at 0 violations over 532 positive-verdict patterns, narrowed after R31 to
@@ -121,6 +148,7 @@ R30 M7's rule, inherited).
 | `probes/probe_cut_dispatch.sh` | MEASURED, in-pcrec | **NEW (R31 E2/E4/C3/K29)**: `vm_rep`'s five dispatch paths, the SECOND cut spelling, and C3's failing direction on a real artifact (§3.2.1) |
 | `probes/probe_puc_targeted.py` | MEASURED, both arms | **NEW (R31 C2)**: the REFUTABLE region — 10,504 cells with asserted per-position floors (§6.4a) |
 | `probes/probe_registry_cost.sh` | MEASURED, in-pcrec | **NEW (R31 C1/C8)**: what a fifth `RegKind` actually costs, site by site (§7.4) |
+| `probes/probe_lift_preference.py` | MEASURED, both arms | **NEW (R31 re-check N1)**: lazy bodies are possessified on all six paths, and 7 of 8 lift-eligible cells miscompile (§3.2.2a) |
 | `probes/probe_premises.sh` | MEASURED, in-pcrec | §1's premise table and §6.3's error shapes, as one re-runnable script |
 | `probes/probe_ceiling_shape.sh` | STRUCTURAL, in-pcrec | that today's emitter really does feed the prefilter's span end to the VM as a ceiling, with both negative arms (§4.2) |
 | `probes/cut_proto.c` + `probes/probe_cut_trail.py` | PROTOTYPE, checked vs libpcre2 | that the proposed lowering computes PCRE2's answers — 17/17, **10 cut-discriminating and 4 trail-discriminating** on two measured axes after C6 (§3.4) |
@@ -331,17 +359,36 @@ row):
 | COUNTER, bounded `0x10` | `(?:ab\|b){8,12}c` | 5 | 0 | 2 | `vm_counter_poss_opt` / `vm_poss_chain` |
 | COUNTER, **unbounded** `0x10` | `(?:ab\|b){8,}c` | **0** | **0** | **2** | **K29. NO CUT AT ALL** |
 
+**Each path also has a LAZY witness, and every one of them is possessified
+today** (`probes/probe_lift_preference.py` Part A — added by the R31 re-check,
+§3.2.2a). The per-path check needs both, because the proof-gated population
+this table is drawn from is not the population the lift creates:
+
+| rung | greedy witness | LAZY witness |
+|---|---|---|
+| CURSOR | `a*b` | `a*?b` |
+| FRAMES_BOUNDED | `(?:ab\|b){1,3}c` | `(?:ab\|b){1,3}?c` |
+| FRAMES_UNBOUNDED | `(?:ab\|b)*c` | `(?:ab\|b)*?c` |
+| REVDET | `(?:a\|bc)*d` | `(?:a\|bc)*?d` |
+| COUNTER, bounded | `(?:ab\|b){8,12}c` | `(?:ab\|b){8,12}?c` |
+| COUNTER, unbounded | `(?:ab\|b){8,}c` | `(?:ab\|b){8,}?c` |
+
 **So the corrected requirement is not "every path ends in a cut" — that is
 wrong for the cursor rung, whose right answer is to emit no cut because it
-pushes nothing.** It is:
+pushes nothing. And it is not cut-equivalence alone either: R31's re-check
+(N1) showed the cursor rung SATISFIES cut-equivalence and still answers the
+wrong language on a lazy body.** The rule has three conditions, stated in full
+at §3.2.2a and summarised here:
 
-> **RULE 3 (corrected). Every dispatch path a SEMANTIC possessive can take must
-> be CUT-EQUIVALENT: it either emits a cut (in EITHER spelling), or it provably
-> pushes no frame a cut would have removed. `[M6.4.2]` owes ONE STRUCTURAL
-> CHECK PER PATH, driven by the six witnesses above, and each check names which
-> of the two answers that path gives.**
+> **RULE 3 (corrected). A dispatch path is an acceptable LIFT target only if it
+> is (a) CUT-EQUIVALENT — it emits a cut in EITHER spelling, or provably pushes
+> no frame a cut would have removed; (b) PREFERENCE-PRESERVING; and (c)
+> NULLABLE-SAFE. The existing possessive rungs satisfy (a) and fail (b) and (c)
+> for exactly the bodies §2.2 refuses. `[M6.4.2]` owes ONE STRUCTURAL CHECK PER
+> PATH, driven by BOTH witness columns above, and each check names which
+> answer that path gives to each of the three conditions.**
 
-#### 3.2.2 The nullable carve-out — E1, and the first form would have HUNG
+#### 3.2.2 Carve-out ONE: nullable bodies — E1, and the first form would have HUNG
 
 `vm_poss_star`'s header (`src/gen/emit_vm.c:2483-2492`) states its own
 precondition and says why it is not an omission:
@@ -361,6 +408,92 @@ WITH its empty-iteration guard, exit cut — never the lift.** And
 `vm_poss_star`'s precondition stops being a comment: `[M6.4.2]` turns it into
 a CHECKED assertion at the top of the function, because a precondition that a
 new caller can silently violate is the shape this whole finding is made of.
+
+#### 3.2.2a Carve-out TWO: LAZY bodies — R31 re-check N1, and it is the same defect one field over
+
+**Revision 1 fixed nullability and left preference, and the two have the
+identical shape.** `vm_poss_star`'s no-guard property is licensed by §2.2
+refusing nullable bodies; the possessive rungs' right to IGNORE PREFERENCE is
+licensed by §2.2 in exactly the same way, and `emit_vm.c:2053-2062` says so in
+as many words:
+
+> "The PREFERENCE disappears when the quantifier is possessified, and that is
+> the analysis's conclusion rather than a shortcut. … On the disjointness arm
+> a greedy loop tops out by preference, and a LAZY one is FORCED to the same
+> top: at any non-maximal exit the body could iterate again, so that byte is
+> in FIRST(X), so by disjointness the follow cannot begin there — and the lazy
+> conjunct (non-nullable remainder) is what rules out the match simply ENDING
+> there instead. Both preferences therefore land on the maximal exit, **which
+> is what makes one emitted shape correct for both**."
+
+Every clause of that argument is §2.2's. `(?>a*?)b` has no §2.2 verdict, its
+lazy exit is not the maximal one, and the one emitted shape is wrong for it.
+
+**The signatures corroborate, and they are the cheapest check a reader can
+make.** `vm_opt_chain` takes `bool greedy` (`:2358`). `vm_poss_chain`
+(`:2437`), `vm_poss_star` (`:2494`) and `vm_counter_poss_opt` (`:3247`) **do
+not take it and do not read it**; `vm_cursor_rep`'s possessive scan is
+unconditionally maximal (`:2090-2103`). The possessive rungs are greedy-only by
+signature.
+
+**MEASURED, and BROADER than the re-check reported** (`probes/probe_lift_preference.py`,
+`out/lift_preference.txt`). Part A: lazy quantifiers are possessified today on
+**every one of the six dispatch paths**, not only on the cursor rung —
+`a*?b` CURSOR, `(?:ab|b){1,3}?c` FRAMES_BOUNDED, `(?:ab|b)*?c`
+FRAMES_UNBOUNDED, `(?:a|bc)*?d` REVDET, `(?:ab|b){8,12}?c` and
+`(?:ab|b){8,}?c` COUNTER, all `RX_VM_STRATS 0x1`. So the collapse is relied on
+across the whole ladder. Part B, what the lift would ANSWER (it emits the
+GREEDY possessive shape, so its answer is readable off libpcre2 by compiling
+that spelling):
+
+| `(?>X q?)` | lift emits | subject | libpcre2 **and** python | the lift gives |
+|---|---|---|---|---|
+| `(?>a*?)b` | `a*+b` | `"aaab"` | **(3,4)** | (0,4) |
+| `(?>a*?)a` | `a*+a` | `"aaa"` | **(0,1)** | nomatch |
+| `(?>a+?)b` | `a++b` | `"aaab"` | **(2,4)** | (0,4) |
+| `(?>a{1,3}?)b` | `a{1,3}+b` | `"aaab"` | **(2,4)** | (0,4) |
+| `(?>[ab]*?)b` | `[ab]*+b` | `"abab"` | **(1,2)** | nomatch |
+| `(?>a*?)` | `a*+` | `"aaa"` | **(0,0)** | (0,3) |
+| `(?>(?:a\|bc)*?)d` | `(?:a\|bc)*+d` | `"abcd"` | **(3,4)** | (0,4) |
+| `(?>a*?b)c` — **CONTROL** | n/a | `"aabc"` | (0,4) | (0,4) agrees |
+
+**7 of 8 lift-eligible rows miscompile, both oracles agreeing on every correct
+answer, and three of them are this document's own §6 table cells 14, 15 and
+16.** The control holds because its `A_ATOMIC` child is an `A_CAT`, not an
+`A_REP`, so the lift never applies — which is also the exact scope of the
+carve-out.
+
+> **CARVE-OUT TWO. A LAZY `A_REP` under `A_ATOMIC` takes the GENERAL §3.3
+> shape — mark, the ordinary lazy loop with its own preference, exit cut —
+> NEVER the lift.** And, as with carve-out one, the precondition stops being a
+> comment: `[M6.4.2]` turns *"this rung's body is greedy"* into a CHECKED
+> assertion at the top of `vm_poss_chain`, `vm_poss_star`,
+> `vm_counter_poss_opt` and `vm_cursor_rep`'s possessive arm, naming
+> `:2053-2062`'s argument and the missing `greedy` parameter as the reason.
+
+**AND IT REFUTES THE FORMULATION REVISION 1 INTRODUCED, which is the part
+worth carrying.** RULE 3 (corrected) said every path must be CUT-EQUIVALENT —
+emit a cut, or provably push no frame a cut would have removed. **The cursor
+rung SATISFIES cut-equivalence (it is frameless) and still answers the wrong
+language.** Cut-equivalence is a claim about FRAMES only; a lowering also has
+to preserve the body's PREFERENCE and its EMPTY-ITERATION behaviour. So:
+
+> **RULE 3 (corrected, third form). A dispatch path is an acceptable target
+> for the lift only if it is (a) CUT-EQUIVALENT, (b) PREFERENCE-PRESERVING and
+> (c) NULLABLE-SAFE. The existing possessive rungs satisfy (a) and fail (b)
+> for lazy bodies and (c) for nullable ones, because both are §2.2
+> consequences. The lift therefore applies to GREEDY, NON-NULLABLE bodies
+> only; everything else takes §3.3.**
+
+§3.2.1's witness table gains a LAZY member per path (the Part A patterns
+above), so the per-path structural check (codegen rule 5) tests both
+preferences rather than only the one the proof-gated population happens to
+have. Sabotage row **S99** lifts a lazy body.
+
+**One thing this carve-out does NOT need to cover.** `a*?+` is an ERROR in
+both oracles and in pcrec today (§6.3), so the lazy-then-possessive SPELLING
+never reaches the emitter. The reachable spelling is `(?>X*?)`, which is what
+every cell above uses.
 
 #### 3.2.3 There are TWO spellings of a cut, and only one is `RX_CUT`
 
@@ -411,22 +544,46 @@ semantics**. §6.5 rules that `rd_shape` declines on `A_ATOMIC`, which closes
 the plain-group case; the LIFTED case reaches `vm_rev_canmove` through the
 A_REP, so it needs the predicate below and not only the decline.
 
-> **RULE 3 (corrected, second half). ONE NAMED SHARED PREDICATE.** `[M6.4.2]`
-> adds `vm_cuts(const Ast *a)` — "this quantifier is cut at its boundaries",
-> true when `a->possessive` (possessify's mark) OR when the emitter's walk has
-> it under an `A_ATOMIC` lift — and **the emitter and all four pre-passes call
-> it instead of reading the field.** `src/gen/CLAUDE.md`'s one-call-one-truth
-> rule, and `vm_cut`'s own header gives the precedent: the work charge became a
-> primitive because "the charge has THREE emission sites in two different
-> spellings" and a probe missed one.
+> **RULE 3 (corrected, second half). ONE NAMED SHARED PREDICATE, AND ITS
+> CONTEXT IS THREADED — R31 re-check N2.** Revision 1 wrote this as
+> `vm_cuts(const Ast *a)`, which **is not implementable**: `struct Ast`
+> (`src/core/internal.h:166-190`) has `l` and `r` and **no parent pointer**,
+> and the pre-passes are independent descents from the root, so a node cannot
+> ask whether it is under an `A_ATOMIC`. The signature is
+> **`vm_cuts(const Ast *a, bool under_atomic)`**, with `under_atomic` carried
+> down all five walks — the emitter's and the four pre-passes' — and set true
+> when the walk descends through an `A_ATOMIC` whose child is this `A_REP`.
+>
+> **THREADED AND NOT STORED, deliberately.** The obvious alternative is a
+> `lifted` flag written onto the `A_REP` at parse time. It goes STALE the
+> moment the free discharge deletes the `A_ATOMIC` above it and splices the
+> body back in: the `A_REP` keeps a flag describing a parent that no longer
+> exists, and the emitter cuts a loop nothing asked to be cut. That is exactly
+> the class M-1 contract note 3 rules against for engine stamps — *a rewrite
+> must not leave state behind that describes the tree it replaced* — and
+> threading has no state a rewrite can leave behind, because the answer is
+> recomputed on every walk from the shape that is actually there. §5.4's
+> discharge and this predicate are then independent by construction rather
+> than by ordering.
+>
+> The emitter and all four pre-passes call it instead of reading the field:
+> `src/gen/CLAUDE.md`'s one-call-one-truth rule, and `vm_cut`'s own header
+> gives the precedent — the work charge became a primitive because "the charge
+> has THREE emission sites in two different spellings" and a probe missed one.
 
 #### 3.2.6 What survives of RULE 3's motivation
 
 The reason for the lift is unchanged and still measured: `vm_star`'s frames
 rung pushes one frame per iteration, so a naively-lowered `(?>a*)` exhausts
 `RX_RESUME_FRAMES` where `a*+` does not — two spellings PCRE2 calls identical
-with different `subject_ceiling`s. The lift is worth having; what R31 refuted
-is the claim that it is free.
+with different `subject_ceiling`s. The lift is worth having; what R31 refuted,
+twice, is the claim that it is free.
+
+**Its scope after both carve-outs is: GREEDY, NON-NULLABLE bodies.** That is
+still the whole of the idiom the lift exists for (`[^"]*+"`, `a*+b`,
+`(?:ab|b){1,3}+c`), so the win is intact — but it is now a scope the emitter
+must CHECK rather than a shape it may assume, and §3.2.2 and §3.2.2a each turn
+their half of it into an assertion at the rung's own entry.
 
 ### 3.3 The emitted shape
 
@@ -1071,7 +1228,7 @@ tier 2 satisfied, tier 3 wording ours).
 | 11 | alternation priority, longer first | `(?>ab\|a)b` on `"abb"` | (0,3) | |
 | 12 | alternation priority, shorter first | `(?>a\|ab)b` on `"abb"` | (0,2) | |
 | 13 | priority + longer follow | `(?>a\|ab)bc` on `"abbc"` | nomatch | |
-| 14 | **lazy inside** | `(?>a*?)b` on `"aaab"` | **(3,4)** | the cut commits to the LAZY choice (empty), so the match starts at 3 |
+| 14 | **lazy inside** | `(?>a*?)b` on `"aaab"` | **(3,4)** | the cut commits to the LAZY choice (empty), so the match starts at 3. **R31 N1: this cell, and 15 and 16, are what the possessive-rung lift would MISCOMPILE — see §3.2.2a** |
 | 15 | lazy inside, then `a` | `(?>a*?)a` on `"aaa"` | (0,1) | |
 | 16 | lazy plus | `(?>a+?)b` on `"aaab"` | (2,4) | |
 | 17 | **captures RETAINED** | `(?>(a)\|ab)` on `"ab"` | (0,1) g1=(0,1) | §3.1's success half |
@@ -1691,6 +1848,8 @@ Shape per `tests/mech/sabotages/S85_*`: `SAB_ID`, `SAB_FILE`, `SAB_SUITES`,
 | **S96** | the producer does not stamp `A_ATOMIC` with its row's `engines` mask | §5.1 / M-1's SR-8 contract | the engine-selection assertion RED; `--engine=dfa '(?>a\|ab)c'` SUCCEEDS instead of refusing |
 | **S97** | the discharge's output INHERITS the discharged node's stamp | M-1 contract note 3 | the fixpoint fails to converge to DFA while every answer stays correct — the "changes no answer" shape, invisible to the corpus and visible only to the engine assertion |
 | **S98** | `vm_cuts()` is not called by `vm_count_slots` (it reads `->possessive` directly) | §3.2.5 / E4 | slot-count assertions RED; on a deep pattern, an OOB slot write in EMITTED code (K27's class) |
+| **S99** | the lift accepts a LAZY body (carve-out two removed) | §3.2.2a / R31 N1 | the lazy-inside corpus RED — `(?>a*?)b` on `"aaab"` answers (0,4) where both oracles say (3,4); codegen rule 5's LAZY witnesses RED. **Its greedy witnesses stay GREEN**, which is why the per-path check needs both columns |
+| **S100** | the lift accepts a NULLABLE body (carve-out one removed) | §3.2.2 / E1 | the emitted matcher HANGS — so this row's expected result is a TIMEOUT, and D45 makes a timeout a loud FAILURE naming the case rather than a hang. The only row in this table whose failing direction is not an answer |
 
 **C11's driver requirement, which is a real blocker and not a detail.**
 `run_sabotage_matrix.sh`'s suite vocabulary is CLOSED (`:54-70`, with
@@ -1729,11 +1888,13 @@ enumerated none of them:**
 `tests/reject/` pins move from "requires module" to the real diagnostics,
 including `a*++`'s, whose message CHANGES (§6.3).
 
-**Slice 2 — lowering.** `vm_atomic` (§3.3); the possessive-rung lift with the
-**nullable carve-out** (§3.2.2) and `vm_poss_star`'s precondition turned into a
-CHECKED assertion; the **`vm_cuts()` shared predicate** threaded through the
-emitter and all four pre-passes (§3.2.5); the **K29 fix** in
-`vm_counter_rep`'s unbounded tail (§3.2.4).
+**Slice 2 — lowering.** `vm_atomic` (§3.3); the possessive-rung lift under
+**both carve-outs** — nullable (§3.2.2) and LAZY (§3.2.2a) — with the
+preconditions of `vm_poss_star`, `vm_poss_chain`, `vm_counter_poss_opt` and
+`vm_cursor_rep`'s possessive arm turned into CHECKED assertions; the
+**`vm_cuts(a, under_atomic)` shared predicate** THREADED through the emitter
+and all four pre-passes (§3.2.5 — it cannot be a node field, and it must not be
+a stored one); the **K29 fix** in `vm_counter_rep`'s unbounded tail (§3.2.4).
 
 **Slice 3 — engine.** **SR-8**: stamping, the generic analysis over the
 post-discharge tree, `forces_kreset`'s retirement, the tripwire's retirement,
@@ -1845,13 +2006,17 @@ round; the note says what happened.**
    state action". *Refute by:* any emitted byte that moves on an atomic-free
    pattern. The pinned-commit sweep is the experiment and **it has still not
    been run** — this is now the largest unmeasured claim in the document.
-9. **RULE 3's per-path cut-equivalence (§3.2.1).** MEASURED for the six
-   witnesses on the SHIPPED possessify verdict; ARGUED that the same six paths
-   are the ones a SEMANTIC possessive reaches. *Refute by:* a semantic
-   possessive whose dispatch differs from its proof-gated twin's — the
-   nullable carve-out (§3.2.2) is exactly such a case and is why the carve-out
-   is a rule and not a note. **[R31 E1/E2: the first form was refuted here
-   twice.]**
+9. **RULE 3's per-path conditions (§3.2.1, §3.2.2, §3.2.2a).** MEASURED for
+   twelve witnesses (six greedy, six lazy) on the SHIPPED possessify verdict;
+   ARGUED that the same paths are the ones a SEMANTIC possessive reaches.
+   *Refute by:* a §2.2 CONSEQUENCE the possessive rungs rely on that is not
+   nullability and not preference. **This claim has now been refuted TWICE in
+   the same way — E1 found nullability, N1 found preference — so the honest
+   statement is that the enumeration of consequences is EMPIRICAL and may be
+   incomplete.** The systematic version, which this design does NOT do and
+   `[M6.4.2]` should consider: read `possessify.c`'s §2.2 conjuncts and ask of
+   EACH one which emitted shape depends on it. Two of the five conjuncts have
+   now produced a defect this way.
 10. **§7.4's ruling that four dump-only rows are worth their cost.** ARGUED,
     and **the cost went UP after C1** (a new derivation arm, six sites, two
     pins). *Refute by:* showing R3's `--list-syntax`-parsing check still cannot
