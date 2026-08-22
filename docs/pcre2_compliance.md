@@ -1305,8 +1305,13 @@ ordered questions), `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\g{name}`, `\k<n>`
 `\k'n'` `\k{n}` and `(?P=n)`. VM-only, by all twelve rows' `engines` mask
 consumed through SR-8's generic consultation (D67) — there is no
 backrefs-specific engine analysis. Oracles: tests/backrefs/ (226 generated
-cells) plus two differentials totalling 14,128 compared cells against
-libpcre2.
+cells, every one driven through libpcre2 before it was written) plus two
+differentials whose PRIMARY arms compare 14,128 cells against libpcre2 on the
+match span AND every group span — 13,300 over 35 patterns x 91 subjects x every
+startpos, and 828 over name-runs of size 1..4 with every subset participating.
+Their other arms (both engine selections, --no-captures, the three entry
+points, the find-all loop, the span-divergence detector and a 65,536-pair fold
+agreement) compare more again.
 
 **THE OCTAL ASYMMETRY IS THE PART A READER SHOULD KNOW.** `\1`..`\9` count
 groups over the WHOLE pattern (`\1(a)` compiles — the group is AFTER the
