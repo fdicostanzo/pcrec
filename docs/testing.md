@@ -988,6 +988,15 @@ while looking like coverage. The three subjects now used were found by SWEEPING
 the family space for the containment property, and come from three different
 families.
 
+**BOTH SCRIPTS JOIN THE SANITIZER LISTS, on BOTH AXES.** They are on `make
+ubsan`'s and `make asan`'s suite lists, and — unlike the atomic differential
+beside them, which hardcodes its generated-code compile flags — they read
+`GENCFLAGS` and `LIBPCREC` from the environment, so the emitted matchers they
+compile and RUN are instrumented too. That is K27's lesson applied rather than
+rediscovered: the battery's generated-code axis only ever sees what some script
+actually runs, and the emitted backreference compare does pointer arithmetic
+over subject offsets nothing else in the tree's generated code does.
+
 **`tests/backrefs/run_dupnames_diff.sh` — the resolution rule, checked THREE
 ways.** The `.rxt` cells separate four candidate readings ("first by number",
 "last set", "any one of them", "first NON-empty") and each is caught by exactly

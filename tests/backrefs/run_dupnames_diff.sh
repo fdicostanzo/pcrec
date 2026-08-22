@@ -40,6 +40,10 @@ export ROOT_DIR
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
+# See run_backref_diff.sh's own note: the generated-code axis is
+# instrumentable, so `make ubsan` / `make asan` reach the emitted matchers this
+# script compiles and runs.
+GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11}"
 FEATS="backrefs,named-groups,modifiers"
 
 WORKDIR="$(mktemp -d)"
@@ -149,7 +153,7 @@ while IFS=$'\t' read -r key ng pat; do
             >/dev/null 2>"$d/pc.log"; then
         bad "pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi
-    if ! $CC -O1 -std=gnu11 -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_batch.c" \
+    if ! $CC $GENCFLAGS -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_batch.c" \
             "$d/gen.c" 2>"$d/cc.log"; then
         bad "'$pat': the matcher did not compile: $(head -3 "$d/cc.log" | tr '\n' ' ')"
         continue

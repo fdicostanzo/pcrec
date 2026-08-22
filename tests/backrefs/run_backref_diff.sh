@@ -67,6 +67,15 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
+# THE GENERATED-CODE AXIS IS INSTRUMENTABLE, and that is deliberate: this
+# script COMPILES AND RUNS emitted matchers, and the emitted backreference
+# compare does pointer arithmetic over subject offsets the rest of the tree's
+# generated code does not. K27's lesson is that the sanitizer battery's
+# generated-code axis only sees what some script actually RUNS, so `make
+# ubsan` / `make asan` pass GENCFLAGS and this reads it rather than hardcoding
+# its own flags. `LIBPCREC` likewise, for §9's check, which links the library.
+GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11}"
+LIBA="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
 FEATS="backrefs,named-groups,modifiers,classes,atomic-groups,assertions"
 # Exported because several sections drive the oracle through an inline
 # python heredoc that has to find the committed ctypes binding.
@@ -221,7 +230,7 @@ build_and_run() {
         bad "$key ($extra): pcrec refused '$pat': $(head -1 "$d/pc.log")"
         return 1
     fi
-    if ! $CC -O1 -std=gnu11 -I"$d" -o "$d/drv" "$drv" "$d/gen.c" \
+    if ! $CC $GENCFLAGS -I"$d" -o "$d/drv" "$drv" "$d/gen.c" \
             2>"$d/cc.log"; then
         bad "$key ($extra): the generated matcher for '$pat' did not compile: $(head -3 "$d/cc.log" | tr '\n' ' ')"
         return 1
@@ -324,7 +333,7 @@ while IFS=$'\t' read -r key ng pat; do
         bad "§4 '$pat': RX_NCAPS is not 1 under --no-captures — a referenced group keeps its INTERNAL slots and must report NONE (§6.3)"
         continue
     fi
-    if ! $CC -O1 -std=gnu11 -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_batch.c" \
+    if ! $CC $GENCFLAGS -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_batch.c" \
             "$d/gen.c" 2>"$d/cc.log"; then
         bad "§4 '$pat': the --no-captures matcher did not compile: $(head -3 "$d/cc.log" | tr '\n' ' ')"
         continue
@@ -360,7 +369,7 @@ while IFS=$'\t' read -r key ng pat; do
             -- "$pat" >/dev/null 2>"$d/pc.log"; then
         bad "§5 pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi
-    if ! $CC -O1 -std=gnu11 -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_entries.c" \
+    if ! $CC $GENCFLAGS -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_entries.c" \
             "$d/gen.c" 2>"$d/cc.log"; then
         bad "§5 '$pat': the entries driver did not compile: $(head -3 "$d/cc.log" | tr '\n' ' ')"
         continue
@@ -469,7 +478,7 @@ while IFS=$'\t' read -r key ng pat; do
             >/dev/null 2>"$d/pc.log"; then
         bad "§6 pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi
-    $CC -O1 -std=gnu11 -I"$d" -o "$d/drv" "$WORKDIR/findall.c" "$d/gen.c" \
+    $CC $GENCFLAGS -I"$d" -o "$d/drv" "$WORKDIR/findall.c" "$d/gen.c" \
         2>"$d/cc.log" || { bad "§6 '$pat': find-all driver did not compile"; continue; }
     : > "$d/got"
     for s in "$WORKDIR"/subjects/*; do
@@ -606,7 +615,7 @@ PY
             -- "$truepat" >/dev/null 2>&1; then
         bad "§8 '$key': pcrec refused '$truepat'"; span_bad=$((span_bad + 1)); continue
     fi
-    $CC -O1 -std=gnu11 -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_batch.c" "$d/gen.c" \
+    $CC $GENCFLAGS -I"$d" -o "$d/drv" "$SCRIPT_DIR/bref_batch.c" "$d/gen.c" \
         2>/dev/null || { bad "§8 '$key': did not compile"; span_bad=$((span_bad+1)); continue; }
     got=$(printf '%s\t0\n' "$d/subj" | "$d/drv")
     want=$(printf '%s' "$res" | awk '{print $1}')
@@ -640,9 +649,9 @@ if ! "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" -- '(?i:(.))(?i:\1)' \
     bad "§9: pcrec refused the caseless-backreference fixture: $(head -1 "$FOLD/pc.log")"
 elif ! grep -q 'rx_bref_match_caseless' "$FOLD/gen.h"; then
     bad "§9: the fixture artifact carries no rx_bref_match_caseless entry — this check has lost the thing it compares against, which is exactly the empty-population shape it exists to avoid"
-elif ! $CC -O1 -std=gnu11 -I"$FOLD" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
+elif ! $CC $GENCFLAGS -I"$FOLD" -I"$ROOT_DIR/src" -I"$ROOT_DIR/lib" \
         -o "$FOLD/chk" "$SCRIPT_DIR/fold_agreement_check.c" "$FOLD/gen.c" \
-        "$ROOT_DIR/build/libpcrec.a" 2>"$FOLD/cc.log"; then
+        "$LIBA" 2>"$FOLD/cc.log"; then
     bad "§9: the fold-agreement check did not compile: $(head -5 "$FOLD/cc.log" | tr '\n' ' ')"
 else
     if foldout=$("$FOLD/chk" 2>&1); then
