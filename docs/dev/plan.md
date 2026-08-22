@@ -239,7 +239,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
   `(?>a|ab)c` all decline as PCRE2 does) and is the base-tier second oracle.
   Substeps:
   - [M6.4.1] archived to plan_completed.md (completed 2026-08-22 — design APPROVED by the R31 panel at lane/agdesign 21e173e, merged 497a28f: docs/design/atomic_groups_design.md + atomic_groups_measurements/; D67 SR-8 built here; [ENG-CUT] chartered; K29 found)
-  - [M6.4.2] STATE:not-started — IMPLEMENTATION (one lane unless the design
+  - [M6.4.2] STATE:started (2026-08-22 11:0x, opus lane/agimpl from 497a28f; implements the approved design 21e173e per its §12 — one wave, four slices, K29 fix before the lift, H3 not last; SR-8 built here per D67; the identity sweep is the landing gate) — IMPLEMENTATION (one lane unless the design
     waves it): parser producer (src/parse/mod_atomic_groups.c), AST node(s),
     VM lowering, EngineAnalysis registration, free discharge, corpus
     tests/atomic_groups/ (oracle-verified: python re base tier + libpcre2
