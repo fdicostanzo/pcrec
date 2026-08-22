@@ -264,6 +264,28 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
     WRONG where the lane deviated deliberately (possessify's `pss_walk` is NOT
     transparent to `A_ATOMIC`; the free discharge is UNSOUND for a lazy body;
     the STRATS stamp must read the emitted shape, not `Ast.possessive`).
+    POST-MERGE FIX ROUND, lane `lane/agfix` from 69f3b93 (2026-08-22, delivered;
+    the manager reviews and merges): [M6.4.3]'s BLINDED corpus, run against the
+    merged module, found a TIER-1 MISCOMPILE this row's own 748 cases and
+    39,326-cell differential were green over — `(?:aa|a)++ab` on "aaab" gave
+    (0,4) against libpcre2's and python's NO MATCH, on every frames rung, in
+    every mode. ROOT CAUSE: `vm_atomic` emitted the atomic body with the
+    caller's follow-min still in force, and the possessive rungs turn that into
+    a loop bound ("one more iteration plus the follow does not fit" -> exit),
+    which is answer-preserving only while a retreat to that exit still exists.
+    THE FOLLOW DOES NOT CROSS A CUT: `v->fmin`/`v->fdyn` are now scoped to zero
+    for the whole atomic body, on both routes out of `vm_atomic`. The corpus
+    gap was UNIFORM and nobody had noticed it — every `cut` pattern in the tree
+    had a follow disjoint from its body's first set, so the early exit always
+    landed where the follow failed anyway. Closed by class `cut2`: 30 patterns,
+    two-exit bodies under overlapping follows, all five possessive rungs
+    (0x1f ASSERTED from the artifacts), its own non-vacuity floor (30/30, kept
+    SEPARATE because the old floor cleared 15 without them); possessive.rxt
+    section 10; sabotage row S101 — the only row in the matrix whose defect
+    SHIPPED. Also in that lane: the identity gate moved OUT of `make test` to
+    the opt-in `make test-atomic-identity` (§11.2/§14 item 8's ruled one-shot
+    landing gate), and THREE stale sabotage anchors re-derived from live source
+    (S45, S63 and S90 — the tripwire's second and third live catches).
   - [M6.4.3] STATE:started (AUTHORED 2026-08-22 11:4x on branch agd27 44ae045 — 8 files / 113 patterns / 137 cells, oracle.py 137/137 reproduced by the manager, nothing in GOAL_FACTS found wrong; acceptance run against the merged module at [M6.4.2]'s merge review (69f3b93); cell agd27 created from main 59cbbda; allowlist docs/testing.md + docs/spec/match_api.md + the docs-side pcre2_ctypes.py + GOAL_FACTS.md = the approved design's Appendix B) — D27 BLINDED CORPUS (scripts/mk_d27_cell.sh;
     author denied src/ and tests/; written from the PCRE2 goal; may be
     AUTHORED IN PARALLEL with [M6.4.2] since the author never sees the

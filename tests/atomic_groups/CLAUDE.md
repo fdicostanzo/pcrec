@@ -27,7 +27,11 @@ at R31 (`docs/dev/reviews/2026-08-22-r31-atomic-groups-design.md`).
 - **possessive.rxt** — the four suffix spellings including `{n}+`, `{n,}+` and
   `{,n}+`. Section 6 is the EQUIVALENCE as cells, each spelling beside its
   group twin. Section 8 is where python `re` diverges and `*+`/`++` do not,
-  which is what makes the controls beside it load-bearing.
+  which is what makes the controls beside it load-bearing. **Section 10
+  ([M6.4.4]) is the tier-1 regression** — see "the shape this directory did
+  not have" below. Every pattern in it is PAIRED with its one-byte-follow
+  twin, which matches: a section of nothing but NO MATCH would pass on a
+  compiler that refused the whole family.
 - **atomic_caps.rxt** — CUT-INV as behaviour. `RX_CUT` discards FRAMES and
   deliberately does not rewind the TRAIL, and only ONE of the invariant's two
   halves discriminates: RETENTION (`(?>(a)|ab)` on "ab" is (0,1) with group 1 =
@@ -51,14 +55,26 @@ at R31 (`docs/dev/reviews/2026-08-22-r31-atomic-groups-design.md`).
 - **run_atomic_diff.sh** — the behavioural instrument, four sections. Its
   ENGINE arm is the most important thing here: §4's hazard lives in the
   DIFFERENCE between the default hybrid and `--engine=vm`, and a suite running
-  only one would not see it.
+  only one would not see it. §3 additionally asserts the FOLLOW BARRIER in its
+  direction ([M6.4.4]): with a dead cut DELETED the VM artifact carries a
+  follow-derived MRL ceiling, with the same cut ALIVE it carries none. §5.4's
+  emission-neutrality is still checked, with the length prune removed from
+  BOTH arms at the source (`-fno-length-prune`) rather than sed-erased —
+  because a live `A_ATOMIC` now legitimately changes the prune, and
+  normalising two stamps would have hidden a thirteen-line machinery
+  difference behind them.
 - **atomic_batch.c**, **atomic_oracle.py** — the batch drivers the sweep needs.
   See "the sweep had to be batched" below.
 - **atomic_entries.c** — all three entries of one cut-bearing artifact, side by
   side (H4). The match-here ORACLE is `\G(?:PAT)`, wave D's trick.
 
 `tests/codegen/run_atomic_identity.sh` is this module's byte-identity gate and
-lives there by technique; `make test-atomic` runs it.
+lives there by technique. **Since [M6.4.4] it is OPT-IN**, not part of
+`make test-atomic` or of `make test`: the design ruled it a one-shot LANDING
+gate (§11.2, §14 item 8) and its reference is a pinned pre-module commit, so
+every run re-answers the same question about a moment that has passed. Run it
+with `make test-atomic-identity`; its archived result is in docs/testing.md,
+"The atomic landing gate".
 
 ## THE ORACLE RULE, and why the divergences were DETECTED rather than declared
 
@@ -110,6 +126,52 @@ Because the comparison is POSITIONAL, both batch programs treat an unreadable
 input line as a HARD failure, and the driver's output LINE COUNT is asserted
 per arm. A driver that dropped a line would shift every later cell against the
 wrong answer — the one failure mode the batched shape introduces.
+
+## THE SHAPE THIS DIRECTORY DID NOT HAVE, AND WHAT IT COST ([M6.4.4])
+
+The blinded D27 corpus found `(?:aa|a)++ab` answering (0,4) on "aaab" where
+libpcre2 10.46 and python3 `re` both say NO MATCH — in every mode, on every
+frames rung. **The defect SHIPPED**: live in main from [M6.4.2]'s merge
+(`69f3b93`) to [M6.4.4], with 748 corpus cases and a 39,326-cell x 3-arm
+differential green over it the whole time.
+
+ROOT CAUSE, one sentence: `vm_atomic` emitted the atomic body with the
+caller's follow-min still in force, and the possessive rungs turn that number
+into a loop bound — they end the loop at the first position where "one more
+iteration PLUS THE FOLLOW" does not fit. For an UNCUT loop that is
+answer-preserving because the exit it jumps to is one a retreat could reach
+anyway; under a cut there is no retreat, so the loop stops where the greedy
+run would have walked on and the follow matches there. The fix scopes
+`v->fmin`/`v->fdyn` to zero across the whole atomic body: THE FOLLOW DOES NOT
+CROSS A CUT.
+
+**WHY EVERY CELL HERE WAS GREEN ON IT, which is the part to keep.** Every
+`cut` pattern in this directory and in `run_atomic_diff.sh` had a follow whose
+first byte cannot also start a body iteration — `(?>a|ab)c`, `(?:a|ab)++c`,
+`(?>a*)b`. Under that disjointness the early exit lands on a byte the loop
+could never have eaten, the follow fails there too, and NO ANSWER MOVES. The
+alphabet was uniform in a way nobody had noticed, which is D27's own thesis
+arriving a second time: tests derived from the implementation inherit the
+implementer's shapes, and the shape absent here was absent from the design's
+own examples too.
+
+THE FAMILY THAT SEES IT needs BOTH halves: a **two-exit body** (so the loop's
+stopping position is a CHOICE rather than a byte-determined fact) and an
+**overlapping follow at least two bytes wide** (so the early exit lands
+somewhere the follow can actually match). It is class `cut2` in
+`run_atomic_diff.sh` — 30 patterns, all five possessive rungs (the coverage is
+ASSERTED from the artifacts' own `RX_VM_RUNGS`, ORed to 0x1f, never inferred
+from the quantifier spelling), both preferences, its own non-vacuity floor of
+18 (measured 30/30). The floor is kept SEPARATE from the `cut` family's on
+purpose: the `cut` rows clear 15 by themselves, so a merged counter would
+have stayed green with this entire family answering its uncut twin — which is
+the state the tree was actually in.
+
+Sabotage row **S101** re-introduces it, and is the only row in the matrix
+whose defect shipped. Validated: applies at 1 site, builds, reproduces
+`(?:aa|a)++ab` = (0,4) on "aaab", and takes this directory's differential to
+2,484 disagreeing cells plus 4 follow-barrier failures — 11 checks red where
+the fixed tree is 8 green.
 
 ## EVERY POPULATION IS ASSERTED, NEVER PRINTED
 

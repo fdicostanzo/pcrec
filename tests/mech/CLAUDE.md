@@ -348,6 +348,36 @@ pushes and cuts at ZERO CONSUMPTION forever. Its expected result is a TIMEOUT �
 which D45's generated-matcher execution budget makes a loud failure naming the
 case rather than a hang, and without which the row would be unscoreable.
 
+## [M6.4.4] S101, THE ONLY ROW IN THE TABLE WHOSE DEFECT SHIPPED
+
+Every other row in this directory re-introduces a defect that was caught
+before it landed, or one that never existed outside the row. **S101 undoes a
+fix for a defect that was live in main** — `(?:aa|a)++ab` answering (0,4) on
+"aaab" against libpcre2's and python's NO MATCH, from [M6.4.2]'s merge
+(`69f3b93`) until [M6.4.4]. The blinded D27 corpus found it; 748 corpus cases
+and a 39,326-cell x 3-arm differential had been green over it.
+
+That makes the row's *scoring* unusually informative rather than merely
+confirmatory: it is a direct measurement of the corpus gap that let the defect
+through. The suites it should redden are `atomicdiff` (2,484 disagreeing cells
+plus 4 follow-barrier failures, measured on the applied tree) and `harness` on
+possessive.rxt section 10 (13 cases). The rows it must NOT redden are the ones
+whose follows are disjoint from their bodies — which is the whole `cut` class
+that existed before, and the reason the gap was invisible.
+
+**AND THE ANCHOR TRIPWIRE EARNED ITS KEEP AGAIN, THREE TIMES IN ONE LANE.**
+`scripts/m6read_check_sab_anchors.py` was RED on arrival at [M6.4.4] with
+three stale anchors, all from ordinary refactoring in the preceding lane:
+S45 (`pss_verdict`'s factoring turned an `else if ... verdict = false` chain
+into early returns), S63 (H3's site-2 comment was inserted between the guard
+and the `snprintf` the anchor spanned) and S90 (a comment rewrite inside
+`vm_atomic` — caused by [M6.4.4]'s own fix, and caught in the same run that
+found the other two). All three were RE-DERIVED FROM THE LIVE SOURCE
+programmatically rather than hand-transcribed, then verified to apply at
+exactly `SAB_COUNT` sites and to build. S90's re-derived form was additionally
+checked to still produce its intended defect: the sabotaged matcher SEGFAULTS
+on `(?>ab|a)b`, because the cut reads a mark slot that was never written.
+
 **S89, S94 and S97 are the three that matter most**: all three are invisible to
 every structural check and are caught only by the corpus or by the engine
 assertion. If any scores UNDETECTED the corpus is too small, not the row.

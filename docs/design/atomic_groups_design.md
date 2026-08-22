@@ -1242,6 +1242,32 @@ For a plain `(?>X)` group the discharge is not emission-neutral at all (there
 is no possessify rung to re-derive it), and the emitted VM loses a
 provably-dead mark and cut — which is a win, not a difference to worry about.
 
+> **CORRECTION, [M6.4.4] (2026-08-22, `lane/agfix`) — A SECOND CARVE-OUT, and
+> this one was not a flag.** "The discharge changes ENGINE SELECTION and
+> nothing else" was written about an emitter that treated `A_ATOMIC` as
+> TRANSPARENT TO THE FOLLOW. It is not, and the tier-1 miscompile the
+> [M6.4.3] blinded corpus found is the proof: `vm_atomic` must scope
+> `v->fmin`/`v->fdyn` to zero across the body, because `(?>X)` matches X's own
+> first success and the follow's minimum width must not influence which
+> success that is (see `src/gen/emit_vm.c`'s `vm_atomic` header for the full
+> derivation, and §11.3's new rule). A LIVE `A_ATOMIC` is therefore a
+> BARRIER, and deleting it changes the LENGTH PRUNE as well as the engine:
+> under `-fno-atomic-discharge` a dead-cut artifact keeps its whole MRL
+> apparatus with the cut gone and loses it with the cut alive — thirteen lines
+> of machinery, not a stamp.
+>
+> **The claim is still checkable and is still checked**, in the form that is
+> true: Appendix A §3's driver now compares the two arms with the LENGTH PRUNE
+> DISABLED ON BOTH (`-fno-length-prune`), which removes the one axis the
+> barrier acts on at the source rather than normalising two stamps over a
+> difference that big. MEASURED byte-identical on all ten dead-cut patterns
+> that way. The barrier itself is asserted separately, in its direction, on
+> the prune-enabled build — 10/10.
+>
+> Read together with the carve-out above: emission-neutrality is not
+> unconditional, and the two conditions are now `-fno-possessify` and the
+> length prune.
+
 ### 5.5 The FULL cut construction, chartered not built — proposed row `[ENG-CUT]`
 
 > **R31 D4: there is no `[ENG-CUT]` row in `docs/dev/plan.md`.** The first
@@ -1932,6 +1958,17 @@ positive control** — the reference cannot compile an atomic pattern at all, so
 a run reporting zero differing AND zero refusal mismatches has lost its atomic
 population or is comparing two builds of the same tree.
 
+> **[M6.4.4] (2026-08-22): this gate is OPT-IN, `make test-atomic-identity`.**
+> [M6.4.2] wired it into `make test` via `test-atomic`, which §14 item 8's
+> own wording ("the landing gate") does not ask for and which the pinned
+> reference argues against: every run re-answers the same question about a
+> moment that has passed, and the answer cannot move unless someone edits
+> PRE-MODULE code. It stays a gate for the module's own re-landings and it is
+> the `atomicidentity` arm of the mech matrix. Its archived result is in
+> docs/testing.md, "The atomic landing gate" — 1312/1313 same, 0 differing, 0
+> refusal mismatches, over a 1565-pattern corpus whose 116 atomic members the
+> reference refuses.
+
 ### 11.3 The PERMANENT structural checks
 
 > **R31 C3 REFUTED THREE OF THE FOUR RULES AS SPELLED, AND THE FAILING
@@ -1988,6 +2025,20 @@ sabotage row, and each matching **BOTH spellings of a cut** (§3.2.3):
   must emit `RX_CUT(` call sites; REVDET must emit the second spelling. Without
   rule 5 a future rung change silently drops a path, which is exactly how K29
   happened.
+
+**RULE 6 — THE FOLLOW BARRIER. Added by [M6.4.4] (2026-08-22), after the
+[M6.4.3] blinded corpus found a tier-1 miscompile that rules 1-5 and a
+39,326-cell differential were all green over.** On a cut-bearing artifact the
+emitted VM must carry NO follow-derived MRL ceiling: `(?>X)` matches X's own
+first success, so the minimum width of what FOLLOWS the group must not bound
+the body's search. Checked in its DIRECTION, on a dead-cut pattern compiled
+both ways: with the cut DELETED the artifact stamps a real
+`RX_VM_PRUNE_CEILING`, with the same cut ALIVE (`-fno-atomic-discharge`) it
+stamps `"none"`. Rules 1-5 could not see this: every one of them reads a
+CUT-BEARING artifact and asks what it contains, and the defect was a number
+the emitter carried INTO the body — visible only by comparing an artifact
+against the same pattern without its cut. See §5.4's correction, and
+`src/gen/emit_vm.c`'s `vm_atomic` header for the derivation.
 
 ### 11.4 The mech sabotage rows
 
