@@ -956,11 +956,11 @@ reference compiler built from the pinned pre-module commit `5286265`:
 
 | arm | same | differing | refused by both | refusal mismatch |
 |---|---|---|---|---|
-| default | 1498 | 0 | 149 | 0 |
-| `--engine=vm` | 1499 | 0 | 148 | 0 |
-| `--no-captures` | 1498 | 0 | 149 | 0 |
+| default | 1501 | 0 | 149 | 0 |
+| `--engine=vm` | 1502 | 0 | 148 | 0 |
+| `--no-captures` | 1501 | 0 | 149 | 0 |
 
-Corpus 1771 patterns; 124 backref-bearing, 1647 backref-free. POSITIVE CONTROL:
+Corpus 1774 patterns; 124 backref-bearing, 1650 backref-free. POSITIVE CONTROL:
 the reference REFUSES all 124, so a zero-difference result is a measurement
 against a genuinely different compiler rather than a build compared with
 itself.

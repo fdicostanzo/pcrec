@@ -867,7 +867,7 @@ moves `recursion` earlier. The mask, the gate state and D37's own promise (the
 stamp's value can be passed back to `--features`) are order-independent, and
 case14 is where the stamp's CONTENT is pinned.
 
-Result at landing: default 1498/0, vm 1499/0, nocaptures 1498/0 identical, with
+Result at landing: default 1501/0, vm 1502/0, nocaptures 1501/0 identical, with
 the positive control at 124/124 backref-bearing patterns REFUSED by the
 pre-module compiler.
 
