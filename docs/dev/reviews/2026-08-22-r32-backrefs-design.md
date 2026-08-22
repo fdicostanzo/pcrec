@@ -349,3 +349,26 @@ column-0 brace and desynchronise `inbody`), in-comment state carried
 across awk records, one pass. S68 still fires (real call). r32eng's last
 round (E12/E13 + the nested-backreference gap) runs on e8c9098's
 sections, which 188bbe7 does not touch.
+
+## Last round, r32eng on e8c9098/188bbe7 — E12, E13, E14 CLOSED; the nested gap MEASURED SAFE; E10 residual STILL OPEN; one NEW (E15)
+
+Both probes reproduce their archives exactly (publish_discipline 5,808
+with REVERSED-SPAN the primary column; erasure_hazard positive control
+12 of 18). E12 closed with the right sentence ("the reference compares
+TEXT and has no backtracking of its own — the asymmetry is between the
+group and its erased copy"). E13 closed (union of refs; S-BR15b; three
+`# pcre2-only` re-entry cells). THE NESTED-BACKREFERENCE GAP: publish-at-
+close correct on nested re-entry with the inner reference live (1,452 +
+1,240 cells, close 0/0); the erasure REMAINS a superset for nested
+references — 11 families, 2,402 cells, 0 vacuous (the critic's first
+pass had three zero-hit families and was rebuilt with a VACUOUS guard),
+145 true hits, 0 false negatives in BOTH the shallow and the deep
+reading — with the structural reason: an inner group is re-set only by
+re-entering the outer, the trail keeps them in sync, so at the reference
+site the inner value is the one that produced the outer capture; nesting
+is language-denoting, assertions and atomic/possessive are not.
+
+| ID | Sev | Claim | Evidence | Disposition |
+|---|---|---|---|---|
+| E15 | MED | the gate is a property of the subtree BENEATH the referenced A_CAP | the erasure a prefilter DFA needs is the DEEP one (a nested reference is itself erased, pulling in a group nowhere beneath the referenced one); with group 2 assertion-/atomic-free in every row the gate ACCEPTS: `^(\Ga)((b)\1)\2$` on "ababa" (0,5), deep erasure None; `^(^a)((b)\1)\2$`; `(\ba)((b)\1)\2` — 3 of 5 deep-erasure FALSE NEGATIVES; the shallow erasure is sound but still holds a backreference | LAST REVISION: the condition over the TRANSITIVE CLOSURE of the reference relation, computable from the unioned `refs`; the three cells into the positive control; atomic/possessive transitive cells not found to bite — stated, not assumed |
+| E10 res. | LOW | §3.1(a):338-344 unchanged | §16's row at :85 records it FIXED — the change table claims a correction not made | LAST REVISION: wording + a true table |
