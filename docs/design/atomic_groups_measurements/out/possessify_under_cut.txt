@@ -1,0 +1,41 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/atomic_groups_measurements/probes/probe_possessify_under_cut.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 73f6cc0 2026-08-22
+# RUN FROM REPO COMMIT        : 73f6cc0 (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/possessify_under_cut.txt
+# RUN DATE   : 2026-08-22T08:52:18-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27   pcrec: build/pcrec
+
+cells (pattern x subject): 48000    patterns pcrec refused: 0
+
+QUANTIFIER POSITION            verdict+ verdict-  refused VIOLATIONS
+Q inside the atomic body            275      475        0          0
+Q wrapping the atomic group          75      675        0          0
+Q before the atomic group            72      678        0          0
+Q after the atomic group            220      530        0          0
+
+REFUTING CONDITION: a POSITIVE possessify verdict on a quantifier
+whose possessive spelling changes libpcre2's answer for the
+ATOMIC pattern. Total: 0
+
+VERDICT: possessify's §2.2 verdict survives the cut on this
+family, in all four quantifier positions. This is EVIDENCE,
+NOT A PROOF -- the subset argument's hole (§6.4) is closed by
+measurement over a generated family, not by a theorem.
+
+NON-VACUITY (a subsample): cells where the possessive spelling DOES
+change libpcre2's answer, verdict ignored: 202. If this were 0 the
+zero above would mean nothing.
