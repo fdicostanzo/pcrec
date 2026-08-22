@@ -304,23 +304,41 @@ test-altcls: all
 # only thing that checks "changes no answer" for a rewrite that changes which
 # ENGINE a pattern gets).
 #
-# `run_atomic_identity.sh` is §14 item 8's RULED landing gate. It lives in
-# tests/codegen/ with its four siblings by technique and runs HERE because this
-# is the module whose claim it gates — `run_endvar_identity.sh`'s own
-# arrangement. Unlike those four its reference is a PINNED PRE-MODULE COMMIT
-# rather than a `-D` knob, for a reason stated in the script: this module has no
-# stage a knob could sit on, so a knob-built reference would report 100%
-# identical whatever was sabotaged.
-#
-# BOTH ARE FAST ENOUGH TO SIT IN `make test`, and that was work rather than
-# luck: the differential's first form spawned one oracle plus three driver
+# THE DIFFERENTIAL IS FAST ENOUGH TO SIT IN `make test`, and that was work
+# rather than luck: its first form spawned one oracle plus three driver
 # processes PER CELL over ~120,000 cells and measured 44 cells/minute. Batched
 # — one python process for the whole libpcre2 side, one driver process per
 # (pattern, arm) reading cells on stdin — it is ~60s.
+#
+# `run_atomic_identity.sh` IS NOT HERE. It is `test-atomic-identity` below.
 test-atomic: all
-	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
-	    'bash tests/atomic_groups/run_atomic_diff.sh' \
-	    'bash tests/codegen/run_atomic_identity.sh'
+	bash tests/atomic_groups/run_atomic_diff.sh
+
+# [M6.4.4] THE LANDING GATE, OPT-IN — moved out of `make test` on the design's
+# own reading of it (§11.2, §14 item 8: a ONE-SHOT LANDING GATE), which
+# [M6.4.2] did not honour when it wired the script into `test-atomic`.
+#
+# WHAT IT ASSERTS is a claim about a MOMENT, not a standing invariant: that
+# module `atomic-groups` changed no atomic-FREE pattern's emitted bytes when it
+# landed. Its reference is the PINNED PRE-MODULE COMMIT e2f81d5 — not a `-D`
+# knob like its four siblings in tests/codegen/, because this module has no
+# stage a knob could sit on and a knob-built reference would report 100%
+# identical whatever was sabotaged. That pin is exactly what makes it one-shot:
+# it re-answers the same landing question on every run, and the answer cannot
+# change unless someone edits pre-module code, which is not what `make test` is
+# for. Every commit after the landing pays to re-prove a fact about the
+# landing.
+#
+# IT IS NOT DELETED AND MUST NOT BE. It stays a gate for the module's own
+# re-landings (a rebase onto a moved base, a revert-and-reapply), it is the
+# `atomicidentity` arm of the sabotage matrix — where it scores rows the
+# differential cannot — and its archived result is recorded in
+# docs/testing.md so the landing claim survives without being recomputed.
+#
+#     make test-atomic-identity          # the gate, on demand
+#     ATOMIC_IDENTITY_REF=<sha> make test-atomic-identity   # a moved base
+test-atomic-identity: all
+	bash tests/codegen/run_atomic_identity.sh
 
 # [M6.2] module `assertions`. Its .rxt corpus rides test-corpus like every
 # other module's; this section is the three things a .rxt file structurally
@@ -511,6 +529,13 @@ UBSAN_ENV    = PCREC=$(CURDIR)/$(UBSAN_DIR)/pcrec CC=$(CC) \
                UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
                PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
 
+# [M6.4.4] `tests/codegen/run_atomic_identity.sh` is deliberately ABSENT
+# from both sanitizer lists as well as from `make test`. It never runs a
+# generated matcher (it compares emitted C as TEXT), so it has no compilee
+# axis at all, and the only thing it would instrument is a compiler built
+# from the PINNED PRE-MODULE COMMIT — code that is not in this tree.
+# `make test-atomic-identity` still honours SANFLAGS for anyone who wants
+# that particular measurement on purpose.
 ubsan:
 	@echo "== ubsan: building the compiler axis at $(UBSAN_DIR)/ =="
 	$(MAKE) BUILD_DIR=$(UBSAN_DIR) CFLAGS="$(UBSAN_CFLAGS)" all
@@ -538,7 +563,6 @@ ubsan:
 	         tests/altcls/run_altcls_tests.sh \
 	         tests/assertions/run_assertions_tests.sh \
 	         tests/atomic_groups/run_atomic_diff.sh \
-	         tests/codegen/run_atomic_identity.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -590,7 +614,6 @@ asan:
 	         tests/altcls/run_altcls_tests.sh \
 	         tests/assertions/run_assertions_tests.sh \
 	         tests/atomic_groups/run_atomic_diff.sh \
-	         tests/codegen/run_atomic_identity.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
@@ -661,6 +684,6 @@ clean:
 .PHONY: all test test-corpus test-cli test-reject test-registry test-parse \
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
-        test-known-fail test-thread \
+        test-known-fail test-thread test-atomic test-atomic-identity \
         test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
         fuzz clean
