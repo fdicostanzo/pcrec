@@ -205,95 +205,161 @@ gen() { # gen <outdir> <pattern> [extra pcrec args]
     local d="$1" pat="$2"; shift 2
     mkdir -p "$d"
     "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
-    $CC -O2 -I"$d" -o "$d/t" "$ROOT_DIR/tests/fuzz/fuzz_driver.c" "$d/gen.c" \
+    $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/atomic_batch.c" "$d/gen.c" \
         2>>"$d/err" || return 1
 }
 
 # =========================================================================
 # §1 + §2 + §2b   THE SUBJECT SWEEP, three arms
 # =========================================================================
-npat=0; ncells=0; nvm=0; nnp=0; ndiff=0
-ncut=0; ndead=0; ncarve=0; nctl=0
-nbite=0            # patterns where the cut MEASURABLY changes the answer
-: > "$WORKDIR/diffs.txt"
-: > "$WORKDIR/cells.tsv"
+#
+# BATCHED, and the batching is a MEASUREMENT rather than tidiness. The first
+# version of this sweep spawned one `pcre2_oracle` and three `fuzz_driver`
+# processes PER CELL, over ~120,000 cells: measured at 44 cells per minute,
+# i.e. about eleven hours for one run, which is not a test anyone runs and
+# certainly not a sabotage-matrix arm. The oracle side is now ONE python
+# process (atomic_oracle.py, driving the same libpcre2 through the project's
+# committed ctypes binding) and the pcrec side is one process per (pattern,
+# arm) reading cells on stdin (atomic_batch.c). Same cells, same comparison,
+# ~200 processes instead of ~480,000.
+#
+# THE COMPARISON IS POSITIONAL, so a batch driver that dropped a line would
+# shift every subsequent answer. Both batch programs treat an unreadable line
+# as a HARD failure for exactly that reason, and the line COUNTS are asserted
+# here as well — belt and braces, because this is the one failure mode the
+# shape introduces.
 
+: > "$WORKDIR/patlist"
+ncut=0; ndead=0; ncarve=0; nctl=0
 for spec in "${PATSPEC[@]}"; do
     cls="${spec%%:*}"; pat="${spec#*:}"
-    d="$WORKDIR/p$npat"; npat=$((npat + 1))
+    printf '%s\t%s\n' "$cls" "$pat" >> "$WORKDIR/patlist"
     case "$cls" in
         cut) ncut=$((ncut + 1)) ;; dead) ndead=$((ndead + 1)) ;;
         carve) ncarve=$((ncarve + 1)) ;; *) nctl=$((nctl + 1)) ;;
     esac
+done
 
+# THE UNCUT TWINS, for the non-vacuity measurement only. A two-byte edit —
+# `(?>` to `(?:`, a possessive `+` dropped — so a divergence is attributable to
+# the ATOMICITY and to nothing else; a hand-written twin can differ in
+# something else and make the measurement unreadable. Never compared against
+# pcrec.
+: > "$WORKDIR/twinlist"
+while IFS=$'\t' read -r cls pat; do
+    [ "$cls" = "cut" ] || continue
+    printf 'twin\t%s\n' "$(printf '%s' "$pat" | sed 's/(?>/(?:/g; s/\([*+?}]\)+/\1/g')" \
+        >> "$WORKDIR/twinlist"
+done < "$WORKDIR/patlist"
+
+# DEDUPED ON THE PATTERN, and the duplicate is not hypothetical: the UNCUT
+# twin of `(?>a|ab)c` IS `(?:a|ab)c`, which is also a `control` row, so the
+# oracle emitted its cells TWICE and every consumer reading the column back
+# with `awk '$1 == p'` got a 2x-length column. The length assertions below
+# caught it — which is what they are for — but the fix belongs here.
+cat "$WORKDIR/patlist" "$WORKDIR/twinlist" \
+    | awk -F'\t' '!seen[$2]++' > "$WORKDIR/alllist"
+if ! python3 "$SCRIPT_DIR/atomic_oracle.py" "$WORKDIR/alllist" \
+        "$WORKDIR/subjects" "$WORKDIR/oracle.tsv" 2>"$WORKDIR/oracle.log"; then
+    if grep -q 'libpcre2 unavailable' "$WORKDIR/oracle.log"; then
+        echo "SKIP: libpcre2 is not available — this differential needs it (PC-3's pattern: a loud skip, never a silent pass)"
+        echo "checks passed: 0"; echo "checks failed: 0"; exit 0
+    fi
+    bad "the libpcre2 oracle pass failed: $(head -3 "$WORKDIR/oracle.log")"
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+
+# THE CELL LIST, in one fixed order every arm is driven with.
+: > "$WORKDIR/cells"
+for f in "$WORKDIR"/subjects/*; do
+    len=$(wc -c < "$f")
+    for sp in $(seq 0 "$len"); do
+        printf '%s\t%s\n' "$f" "$sp" >> "$WORKDIR/cells"
+    done
+done
+NCELL=$(wc -l < "$WORKDIR/cells")
+
+npat=0; ncells=0; nvm=0; nnp=0; ndiff=0; nbite=0
+: > "$WORKDIR/diffs.txt"
+
+
+while IFS=$'\t' read -r cls pat; do
+    d="$WORKDIR/p$npat"; npat=$((npat + 1))
     if ! gen "$d" "$pat"; then
-        bad "could not build a default-engine artifact for '$pat': $(head -2 "$d/err")"
-        continue
+        bad "could not build a default-engine artifact for '$pat': $(head -2 "$d/err")"; continue
     fi
     if ! gen "$d/vm" "$pat" --engine=vm; then
-        bad "could not build a --engine=vm artifact for '$pat': $(head -2 "$d/vm/err")"
-        continue
+        bad "could not build a --engine=vm artifact for '$pat': $(head -2 "$d/vm/err")"; continue
     fi
     if ! gen "$d/np" "$pat" -fno-possessify; then
-        bad "could not build a -fno-possessify artifact for '$pat': $(head -2 "$d/np/err")"
+        bad "could not build a -fno-possessify artifact for '$pat': $(head -2 "$d/np/err")"; continue
+    fi
+
+    # The oracle's answers for THIS pattern, in the cell list's order. `awk`
+    # with an exact field compare, never a regex: a pattern is a regex and
+    # matching one against a table of regexes is how a sweep silently compares
+    # the wrong rows.
+    # `AGPAT=... awk ... ENVIRON["AGPAT"]`, NOT `awk -v p="$pat"`. awk's `-v`
+    # processes BACKSLASH ESCAPES in the value, so a pattern containing `\G`
+    # arrives as `G` and matches nothing — measured: §4's whole oracle column
+    # came back with 0 rows for every one of its 26 patterns. `ENVIRON` is the
+    # only assignment form that passes the bytes through unchanged.
+    AGPAT="$pat" awk -F'\t' '$1 == ENVIRON["AGPAT"] { print $4 }' \
+        "$WORKDIR/oracle.tsv" > "$d/want"
+    if [ "$(wc -l < "$d/want")" -ne "$NCELL" ]; then
+        bad "'$pat': the oracle produced $(wc -l < "$d/want") answers for $NCELL cells — the sweep compares POSITIONALLY, so a short column would silently compare every later cell against the wrong answer"
         continue
     fi
 
-    # THE UNCUT TWIN, built ONLY to measure whether the cut BITES on this
-    # subject set. It is a two-byte edit — `(?>` to `(?:` and a possessive `+`
-    # dropped — so a divergence is attributable to the ATOMICITY and to
-    # nothing else; a hand-written twin can differ in something else and make
-    # the measurement unreadable. It is never compared against pcrec.
-    twin="$(printf '%s' "$pat" | sed 's/(?>/(?:/g; s/\([*+?}]\)+/\1/g')"
-
-    bites=0
-    for f in "$WORKDIR"/subjects/*; do
-        len=$(wc -c < "$f")
-        for sp in $(seq 0 "$len"); do
-            want="$("$ORACLE" "$pat" "$f" "$sp" 2>/dev/null)"
-            case "$want" in "match "*|nomatch) ;; *) continue ;; esac
-
-            got="$(timeout 10 "$d/t" "$f" "$sp" 2>/dev/null)"
-            ncells=$((ncells + 1))
-            [ "$got" = "$want" ] || { ndiff=$((ndiff + 1)); printf \
-                'DEFAULT %s [%s] startpos %s: pcrec %s / libpcre2 %s\n' \
-                "$pat" "$(basename "$f")" "$sp" "$got" "$want" >> "$WORKDIR/diffs.txt"; }
-
-            gotv="$(timeout 10 "$d/vm/t" "$f" "$sp" 2>/dev/null)"
-            nvm=$((nvm + 1))
-            [ "$gotv" = "$want" ] || { ndiff=$((ndiff + 1)); printf \
-                'VM      %s [%s] startpos %s: pcrec %s / libpcre2 %s\n' \
-                "$pat" "$(basename "$f")" "$sp" "$gotv" "$want" >> "$WORKDIR/diffs.txt"; }
-
-            gotn="$(timeout 10 "$d/np/t" "$f" "$sp" 2>/dev/null)"
-            nnp=$((nnp + 1))
-            [ "$gotn" = "$want" ] || { ndiff=$((ndiff + 1)); printf \
-                'NOPOSS  %s [%s] startpos %s: pcrec %s / libpcre2 %s\n' \
-                "$pat" "$(basename "$f")" "$sp" "$gotn" "$want" >> "$WORKDIR/diffs.txt"; }
-
-            if [ "$bites" -eq 0 ] && [ "$cls" = "cut" ]; then
-                tw="$("$ORACLE" "$twin" "$f" "$sp" 2>/dev/null)"
-                [ "$tw" = "$want" ] || bites=1
-            fi
-            printf '%s\t%s\t%s\t%s\t%s\n' "$cls" "$pat" "$(basename "$f")" \
-                "$sp" "$want" >> "$WORKDIR/cells.tsv"
-        done
+    "$d/t"    < "$WORKDIR/cells" > "$d/got"   2>/dev/null
+    "$d/vm/t" < "$WORKDIR/cells" > "$d/gotv"  2>/dev/null
+    "$d/np/t" < "$WORKDIR/cells" > "$d/gotn"  2>/dev/null
+    for arm in got:DEFAULT gotv:VM gotn:NOPOSS; do
+        af="${arm%%:*}"; an="${arm#*:}"
+        if [ "$(wc -l < "$d/$af")" -ne "$NCELL" ]; then
+            bad "'$pat' [$an]: the batch driver produced $(wc -l < "$d/$af") answers for $NCELL cells — a dropped line shifts every later comparison"
+            continue
+        fi
+        n_bad=$(paste "$d/$af" "$d/want" | awk -F'\t' '$1 != $2' | wc -l)
+        case "$an" in
+            DEFAULT) ncells=$((ncells + NCELL)) ;;
+            VM)      nvm=$((nvm + NCELL)) ;;
+            *)       nnp=$((nnp + NCELL)) ;;
+        esac
+        if [ "$n_bad" -ne 0 ]; then
+            ndiff=$((ndiff + n_bad))
+            printf '%s %s: %s cells differ, first:\n' "$an" "$pat" "$n_bad" >> "$WORKDIR/diffs.txt"
+            paste "$WORKDIR/cells" "$d/$af" "$d/want" \
+                | awk -F'\t' '$3 != $4 { print "   [" $1 "] @" $2 ": pcrec " $3 " / libpcre2 " $4 }' \
+                | head -3 >> "$WORKDIR/diffs.txt"
+        fi
     done
-    [ "$bites" -eq 1 ] && nbite=$((nbite + 1))
-done
+
+    # DOES THE CUT BITE on this subject set? Measured against the UNCUT twin's
+    # own oracle column, not inferred from the pattern's shape.
+    if [ "$cls" = "cut" ]; then
+        tw="$(printf '%s' "$pat" | sed 's/(?>/(?:/g; s/\([*+?}]\)+/\1/g')"
+        AGPAT="$tw" awk -F'\t' '$1 == ENVIRON["AGPAT"] { print $4 }' \
+            "$WORKDIR/oracle.tsv" > "$d/twin"
+        if [ "$(wc -l < "$d/twin")" -eq "$NCELL" ] \
+           && ! cmp -s "$d/want" "$d/twin"; then
+            nbite=$((nbite + 1))
+        fi
+    fi
+done < "$WORKDIR/patlist"
 
 if [ "$ndiff" -eq 0 ]; then
     ok "§1/§2/§2b differential: $ncells DEFAULT (hybrid, prefilter LIVE), $nvm --engine=vm (prefilter OFF) and $nnp -fno-possessify cells over $npat patterns x $NSUBJ subjects x every startpos in [0, n] agree with libpcre2 exactly"
 else
     bad "§1/§2/§2b differential: $ndiff cells disagree with libpcre2:"
-    head -30 "$WORKDIR/diffs.txt" >&2
+    head -40 "$WORKDIR/diffs.txt" >&2
 fi
 
-# THE NON-VACUITY FLOORS. A sweep of patterns whose cut never bites would
-# agree with libpcre2 on a compiler that ignored the atomicity entirely, which
-# is the exact defect src/parse/registry.c's row comment has warned about since
-# before there was a producer. `nbite` is measured against the two-byte UNCUT
-# twin rather than assumed from the pattern's shape.
+# THE NON-VACUITY FLOORS. A sweep of patterns whose cut never bites would agree
+# with libpcre2 on a compiler that ignored the atomicity entirely, which is the
+# exact defect src/parse/registry.c's row comment has warned about since before
+# there was a producer. `nbite` is MEASURED against each pattern's two-byte
+# uncut twin rather than assumed from its shape.
 if [ "$ncut" -ge 20 ] && [ "$ndead" -ge 8 ] && [ "$ncarve" -ge 10 ] \
    && [ "$nctl" -ge 3 ]; then
     ok "population: $ncut cut / $ndead dead-cut / $ncarve carve-out / $nctl control patterns (floors 20/8/10/3)"
@@ -329,23 +395,26 @@ fi
 #   SELECTION and nothing else. Compared under `--engine=vm` because that is
 #   where both builds produce a VM artifact to compare.
 nd_ans=0; nd_bytes=0; nd_same=0; nd_engine=0; ndd=0
-for spec in "${PATSPEC[@]}"; do
-    cls="${spec%%:*}"; pat="${spec#*:}"
+while IFS=$'\t' read -r cls pat; do
     d="$WORKDIR/d$ndd"; ndd=$((ndd + 1))
     gen "$d/on"  "$pat"                        || continue
     gen "$d/off" "$pat" -fno-atomic-discharge   || continue
-    for f in "$WORKDIR"/subjects/*; do
-        len=$(wc -c < "$f")
-        for sp in 0 1 2 "$len"; do
-            [ "$sp" -le "$len" ] || continue
-            a="$(timeout 10 "$d/on/t"  "$f" "$sp" 2>/dev/null)"
-            b="$(timeout 10 "$d/off/t" "$f" "$sp" 2>/dev/null)"
-            nd_ans=$((nd_ans + 1))
-            [ "$a" = "$b" ] || { ndiff=$((ndiff + 1)); printf \
-                'DISCHARGE %s [%s] startpos %s: on=%s off=%s\n' \
-                "$pat" "$(basename "$f")" "$sp" "$a" "$b" >> "$WORKDIR/diffs.txt"; }
-        done
-    done
+    "$d/on/t"  < "$WORKDIR/cells" > "$d/a" 2>/dev/null
+    "$d/off/t" < "$WORKDIR/cells" > "$d/b" 2>/dev/null
+    if [ "$(wc -l < "$d/a")" -ne "$NCELL" ] || [ "$(wc -l < "$d/b")" -ne "$NCELL" ]; then
+        bad "§3 discharge: '$pat' produced a short answer column ($(wc -l < "$d/a") / $(wc -l < "$d/b") for $NCELL cells)"
+    else
+        nd_ans=$((nd_ans + NCELL))
+        nd_bad=$(paste "$d/a" "$d/b" | awk -F'\t' '$1 != $2' | wc -l)
+        if [ "$nd_bad" -ne 0 ]; then
+            ndiff=$((ndiff + nd_bad))
+            printf 'DISCHARGE %s: %s cells differ with and without -fno-atomic-discharge\n' \
+                "$pat" "$nd_bad" >> "$WORKDIR/diffs.txt"
+            paste "$WORKDIR/cells" "$d/a" "$d/b" \
+                | awk -F'\t' '$3 != $4 { print "   [" $1 "] @" $2 ": on=" $3 " off=" $4 }' \
+                | head -3 >> "$WORKDIR/diffs.txt"
+        fi
+    fi
     # THE ENGINE MOVED, which is what the discharge is FOR. Read off the
     # artifact rather than assumed: a `dead` pattern with no captures must
     # compile to a pure DFA with the discharge on, and to a VM artifact with it
@@ -361,18 +430,49 @@ for spec in "${PATSPEC[@]}"; do
             bad "§3 discharge: '$pat' has a §2.2-dead cut, so --no-captures must give a PURE DFA with the discharge ON and a VM artifact with it OFF; got on=$(grep -c '#define RX_ENGINE' "$d/e_on.c") off=$(grep -c '#define RX_ENGINE' "$d/e_off.c") RX_ENGINE defines"
         fi
         # EMISSION NEUTRALITY, on the VM path, for the discharged spellings.
+        #
+        # EMITTED TO STDOUT (`-o -`), never to two files. Every artifact
+        # embeds its own `#include "<name>.h"`, so writing the two builds to
+        # different paths makes them differ for a reason that has nothing to
+        # do with the discharge — measured, on this rule's first run, as ten
+        # spurious failures.
         "$PCREC" --features all -p rx --engine=vm --no-captures \
-                 -o "$d/b_on.c"  -- "$pat" 2>/dev/null
+                 -o - -- "$pat" > "$d/b_on.c" 2>/dev/null
         "$PCREC" --features all -p rx --engine=vm --no-captures \
-                 -fno-atomic-discharge -o "$d/b_off.c" -- "$pat" 2>/dev/null
+                 -fno-atomic-discharge -o - -- "$pat" > "$d/b_off.c" 2>/dev/null
         nd_bytes=$((nd_bytes + 1))
-        if cmp -s "$d/b_on.c" "$d/b_off.c"; then
+        # TWO AXES ARE NORMALISED AND EXACTLY TWO, and both are things that
+        # MUST differ — they are the flag doing its job, not the emitter
+        # wobbling:
+        #
+        #   RX_ENGINE_WHY / .engine_why / the Engine: comment. With the
+        #     discharge ON nothing forces the VM (the artifact is a VM one only
+        #     because `--engine=vm` asked), so the why reads "--engine=vm";
+        #     with it OFF the surviving A_ATOMIC forces it and the why names
+        #     the construct. That IS the per-pattern split being observable.
+        #   .flags. The artifact stamps which pcrec_options flags built it, and
+        #     `-fno-atomic-discharge` is one of them (bit 12): 4 vs 4100.
+        #
+        # Everything else — every label, every slot, every cut, every capacity
+        # — is compared byte for byte. MEASURED before the normalisation
+        # existed: those four lines were the ONLY difference on all ten
+        # dead-cut patterns, which is §5.4's claim confirmed rather than
+        # weakened.
+        ag_norm() {
+            sed -e 's/^\/\* Engine: .*/ENGINE-NORMALISED/' \
+                -e 's/^#define RX_ENGINE_WHY .*/ENGINE-NORMALISED/' \
+                -e 's/^ *\.engine_why = .*/ENGINE-NORMALISED/' \
+                -e 's/^ *\.flags = .*/FLAGS-NORMALISED/' "$1"
+        }
+        ag_norm "$d/b_on.c"  > "$d/b_on.norm"
+        ag_norm "$d/b_off.c" > "$d/b_off.norm"
+        if cmp -s "$d/b_on.norm" "$d/b_off.norm"; then
             nd_same=$((nd_same + 1))
         else
-            bad "§3 emission-neutrality: '$pat' emits DIFFERENT VM bytes with and without the discharge. §5.4 says possessify's fixpoint re-derives the identical verdict on the same quantifier, so the discharge must change ENGINE SELECTION and nothing else"
+            bad "§3 emission-neutrality: '$pat' emits DIFFERENT VM MACHINERY with and without the discharge (the engine-why and flags stamps are normalised away; this is everything else). §5.4 says possessify's fixpoint re-derives the identical verdict on the same quantifier, so the discharge must change ENGINE SELECTION and nothing else: $(diff "$d/b_on.norm" "$d/b_off.norm" | head -4 | tr '\n' ' ')"
         fi
     fi
-done
+done < "$WORKDIR/patlist"
 
 if [ "$nd_ans" -ge 5000 ] && [ "$nd_engine" -ge 8 ] && [ "$nd_bytes" -ge 8 ] \
    && [ "$nd_same" -eq "$nd_bytes" ]; then
@@ -387,44 +487,56 @@ fi
 # Driven over the CUT class only: the entries' claim is that §4's ceiling
 # hazard cannot reach them, and the R3a shapes are where it would.
 ne_cells=0; ne_bad=0; ne_pat=0
-for spec in "${PATSPEC[@]}"; do
-    cls="${spec%%:*}"; pat="${spec#*:}"
+# The `\G(?:PAT)` wraps, in ONE more oracle pass. `\G` binds only its first
+# branch without the `(?:...)`, which would silently turn the oracle into a
+# different question for exactly the alternation patterns §4 cares most about.
+: > "$WORKDIR/entpats"
+while IFS=$'\t' read -r cls pat; do
+    [ "$cls" = "cut" ] || continue
+    printf 'ent\t\\G(?:%s)\n' "$pat" >> "$WORKDIR/entpats"
+done < "$WORKDIR/patlist"
+python3 "$SCRIPT_DIR/atomic_oracle.py" "$WORKDIR/entpats" "$WORKDIR/subjects" \
+    "$WORKDIR/entoracle.tsv" 2>/dev/null || {
+    bad "§4: could not compute the \\G match-here oracle column"; }
+while IFS=$'\t' read -r cls pat; do
     [ "$cls" = "cut" ] || continue
     d="$WORKDIR/e$ne_pat"; ne_pat=$((ne_pat + 1))
     mkdir -p "$d"
     "$PCREC" --features all -p rx -o "$d/gen.c" -- "$pat" 2>/dev/null || continue
     $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/atomic_entries.c" "$d/gen.c" \
         2>"$d/err" || { bad "§4: could not build the entries driver for '$pat': $(head -2 "$d/err")"; continue; }
-    for f in "$WORKDIR"/subjects/*; do
-        len=$(wc -c < "$f")
-        for sp in $(seq 0 "$len"); do
-            # THE MATCH-HERE ORACLE: libpcre2's answer for `\G(?:PAT)` at `sp`
-            # IS the match-here answer for `PAT` at `sp`.
-            hw="$("$ORACLE" "\\G(?:$pat)" "$f" "$sp" 2>/dev/null)"
-            case "$hw" in "match "*|nomatch) ;; *) continue ;; esac
-            line="$(timeout 10 "$d/t" "$f" "$sp" 2>/dev/null)"
-            ne_cells=$((ne_cells + 1))
-            mh="$(printf '%s' "$line" | sed 's/.*| match \([-0-9]*\).*/\1/')"
-            cp="$(printf '%s' "$line" | sed 's/.*| caps \([-0-9]*\).*/\1/')"
-            case "$hw" in
-                nomatch)
-                    if [ "${mh:-0}" -ge 0 ] 2>/dev/null; then
-                        ne_bad=$((ne_bad + 1))
-                        printf 'ENTRY %s [%s] @%s: libpcre2 says NO anchored match, _match returned %s\n' \
-                            "$pat" "$(basename "$f")" "$sp" "$mh" >> "$WORKDIR/diffs.txt"
-                    fi ;;
-                *)
-                    e="$(printf '%s' "$hw" | awk '{print $3}')"
-                    want=$((e - sp))
-                    if [ "${mh:-x}" != "$want" ] || [ "${cp:-x}" != "$want" ]; then
-                        ne_bad=$((ne_bad + 1))
-                        printf 'ENTRY %s [%s] @%s: consumed length _match=%s _match_caps=%s, libpcre2 (via \\G) says %s\n' \
-                            "$pat" "$(basename "$f")" "$sp" "$mh" "$cp" "$want" >> "$WORKDIR/diffs.txt"
-                    fi ;;
-            esac
-        done
-    done
-done
+    # THE MATCH-HERE ORACLE column for this pattern, computed in the same
+    # single oracle pass as everything else: libpcre2's answer for `\G(?:PAT)`
+    # at `sp` IS the match-here answer for `PAT` at `sp`.
+    AGPAT="\\G(?:$pat)" awk -F'\t' '$1 == ENVIRON["AGPAT"] { print $4 }' \
+        "$WORKDIR/entoracle.tsv" > "$d/hw"
+    if [ "$(wc -l < "$d/hw")" -ne "$NCELL" ]; then
+        bad "§4: the \\G oracle column for '$pat' has $(wc -l < "$d/hw") rows for $NCELL cells"
+        continue
+    fi
+    sed 's/\t/ /' "$WORKDIR/cells" | "$d/t" > "$d/ent" 2>/dev/null
+    if [ "$(wc -l < "$d/ent")" -ne "$NCELL" ]; then
+        bad "§4: the entries driver for '$pat' produced $(wc -l < "$d/ent") lines for $NCELL cells"
+        continue
+    fi
+    ne_cells=$((ne_cells + NCELL))
+    ne_this=$(paste "$WORKDIR/cells" "$d/ent" "$d/hw" | awk -F'\t' '
+        {
+            sp = $2; line = $3; hw = $4
+            mh = line; sub(/.*\| match /, "", mh); sub(/ .*/, "", mh)
+            cp = line; sub(/.*\| caps /, "", cp);  sub(/ .*/, "", cp)
+            if (hw == "nomatch") { if (mh + 0 >= 0) { print; bad++ } }
+            else {
+                split(hw, a, " "); want = a[3] - sp
+                if (mh + 0 != want || cp + 0 != want) { print; bad++ }
+            }
+        }' | wc -l)
+    if [ "$ne_this" -ne 0 ]; then
+        ne_bad=$((ne_bad + ne_this))
+        printf 'ENTRY %s: %s cells disagree with libpcre2 (via \\G(?:PAT))\n' \
+            "$pat" "$ne_this" >> "$WORKDIR/diffs.txt"
+    fi
+done < "$WORKDIR/patlist"
 if [ "$ne_bad" -eq 0 ] && [ "$ne_cells" -ge 5000 ]; then
     ok "§4 entries: $ne_cells cells over $ne_pat cut patterns — <prefix>_match and <prefix>_match_caps agree with libpcre2's own anchored answer (\\G(?:PAT)) on the CONSUMED LENGTH, which is the number a D38 callout advances by and is NOT the reported span's width"
 elif [ "$ne_bad" -ne 0 ]; then
