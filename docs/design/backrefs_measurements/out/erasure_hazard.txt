@@ -3,12 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/backrefs_measurements/probes/probe_erasure_hazard.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: c35d1ed 2026-08-22
-# RUN FROM REPO COMMIT        : 9d4285d (lane/brdesign)
+# PROBE LAST CHANGED AT COMMIT: 557b6ae 2026-08-22
+# RUN FROM REPO COMMIT        : 536be9e (lane/brdesign)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/backrefs_measurements/out/erasure_hazard.txt
-#      M docs/design/backrefs_measurements/out/publish_discipline.txt
-# RUN DATE   : 2026-08-22T10:22:12-04:00
+# RUN DATE   : 2026-08-22T10:33:35-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -99,3 +98,35 @@ Non-zero is the point: the FALSE-NEG column CAN move, so a zero
 in the family table above is a measurement and not a tautology --
 and the superset property holds only for a referenced group that
 is BOTH assertion-free AND atomic/possessive-free.
+
+================================================================================================================
+TRANSITIVE CONTROL (R32 E15) -- the DEEP erasure
+================================================================================================================
+Group 2 (the referenced one) is assertion-free AND
+atomic/possessive-free in every row, so a gate that inspects only
+the subtree beneath the referenced A_CAP ACCEPTS all of them.
+
+true pattern             DEEP erasure                         subject  true      deep      FALSE-NEG?
+----------------------------------------------------------------------------------------------------------------
+^(\Ga)((b)\1)\2$         ^(\Ga)((b)\1)(?:(?:b)(?:\Ga))$       'ababa'  (0, 5)    None      *** YES ***
+^(^a)((b)\1)\2$          ^(^a)((b)\1)(?:(?:b)(?:^a))$         'ababa'  (0, 5)    None      *** YES ***
+(\ba)((b)\1)\2           (\ba)((b)\1)(?:(?:b)(?:\ba))         'ababa'  (0, 5)    None      *** YES ***
+^(a)((b)\1)\2$           ^(a)((b)\1)(?:(?:b)(?:a))$           'ababa'  (0, 5)    (0, 5)    no
+^(a|c)((b)\1)\2$         ^(a|c)((b)\1)(?:(?:b)(?:a|c))$       'ababa'  (0, 5)    (0, 5)    no
+
+DEEP-ERASURE FALSE NEGATIVES: 3 of 5.
+The assertion is in GROUP 1, reachable only THROUGH group 2's
+nested reference -- so the condition must hold over the TRANSITIVE
+CLOSURE of the reference relation, not over one subtree.
+
+The ATOMIC/POSSESSIVE half, transitively -- NOT found to bite:
+----------------------------------------------------------------------------------------------------------------
+^(a*+)((b)\1)\2$           'ababa'   true=(0, 5)    deep=(0, 5)    no
+^(a*+)b((c)\1)\2$          'abcaca'  true=(0, 6)    deep=(0, 6)    no
+^((?>a))((b)\1)\2$         'ababa'   true=(0, 5)    deep=(0, 5)    no
+^(a++)((b)\1)\2$           'ababa'   true=(0, 5)    deep=(0, 5)    no
+
+atomic/possessive transitive false negatives: 0 of 4 --
+MEASURED AND NOT FOUND, which is weaker than proved: these are one
+shape. The gate applies BOTH halves transitively regardless,
+because the cost of doing so is the same walk.

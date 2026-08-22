@@ -127,7 +127,13 @@ archaeology. No file here was hand-written.
   cells ARE false negatives** — 6 for each structural reason, with 6 controls
   (plain, `\w`, alternation, greedy `a*`, lazy `a*?`) holding — `(\ba)\1` matches `"aa"` and
   `(\ba)\ba` does not — so the erasure is a superset only for a group that is BOTH
-  assertion-free AND atomic/possessive-free, and the zero column above is a measurement rather than
+  assertion-free AND atomic/possessive-free — **and the file's TRANSITIVE
+  section (R32 E15) shows those conditions must hold over the transitive
+  closure of the reference relation, not over the referenced group's subtree:
+  3 of 5 DEEP-erasure cells are false negatives while the referenced group
+  passes both conditions, because the assertion sits in a group reachable
+  only through a nested reference. The atomic/possessive half applied
+  transitively is 0 of 4 — measured and not found, not proved** — and the zero column above is a measurement rather than
   a tautology. The probe REFUSES to report if that control finds nothing.
 - `expand_cost.txt` — `probe_expand_cost.py`. Two headlines. §0: **a default
   build sends `(abc)(abc)` to the VM naming "capture group at pattern offset
