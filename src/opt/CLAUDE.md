@@ -477,6 +477,29 @@ construction (src/ir) and emission (src/gen).
   are needed); failing-direction controls tests/mech/sabotages/S50-S52.
 
 - **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half
+
+  **[M6.5.2] `A_BREF` CONTRIBUTES 0, and it is EXACT rather than
+  conservative** — this file said so before the kind existed ("Lookaround,
+  backreferences and `(*ATOMIC)` have no producers today; when they gain one,
+  each contributes 0 here until someone measures otherwise"), and the measured
+  answer is that 0 is right for a reason the other zero-width members do not
+  share. They consume nothing EVER; a backreference consumes `ref_end -
+  ref_start` bytes, a match-time quantity with no compile-time lower bound
+  above zero — a group can publish an EMPTY capture, so 0 is genuinely
+  attainable. Any positive value would be an OVER-estimate, this file's unsound
+  direction.
+
+  MEASURED on the emitted artifact rather than argued: `(a)\1{3}c` emits
+  `RX_PRUNE_TOO_SHORT(scan_position, 1)` before the reference chain — the `c`
+  alone, with all three references contributing nothing to the follow-min. That
+  is the under-estimate, and it prunes less rather than deleting a live
+  position. **The [M6.4] failure mode has no analogue here**: what crossed a
+  cut there was a follow-BOUND carried into a loop past a construct that
+  changes where the loop can end, and a backreference brackets nothing and
+  bounds nothing — it contributes a term, and the term is the safe one.
+  `EngineFit.prefilter` is false for these patterns, so `Vm.mrl_win` is false
+  too and the ceiling stamps `subject-end` or `none` rather than a
+  prefilter window.
   (`pcrec_minw`; docs/design/k23_impl/k23_design.md §4.3, adopted by D51
   ruling 1 as K23's fix of record). The least number of subject bytes any
   match of a node can consume, over the eight AST kinds. That is the whole

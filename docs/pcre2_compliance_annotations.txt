@@ -763,28 +763,43 @@ the report that found it):
   'assertions'") — only `--features none` reproduces the original
   142-cell closed-gate figure now.**
 
-**The population still shrinks toward zero, and [M6.3] changed WHICH
-event closes the `J`-half, not whether it closes.** 142 → 8 is what
-opening the gate already does: every letter whose module lands and
-VALIDATES the letter stops deferring. `m`'s 4 cells close when
-`assertions` lands. `J`'s 4 cells DO NOT close when `named-groups` (the
-module already shipped, 2026-08-18) lands a producer — they close only
-when a FUTURE dupnames producer lands inside it (`docs/pcre2_options.md`'s
-`PCRE2_DUPNAMES` row, RIDES(M4/captures), RATIFIED D38 — so this is a
-real, scheduled-later event, not the settled-forever state a same-day
-intermediate draft of this entry briefly recorded). Until then `J`'s
-cells keep deferring, with the true-owning-module wording the `(?J)`
-annotation above states.
+**THE POPULATION HAS REACHED ZERO. RE-MEASURED 2026-08-22 ([M6.5.2]): all
+EIGHT cells now give the GRAMMAR error at the open gate**, so the open-gate
+deferral count for this entry is **0**, not 8:
 
-**REVISIT TRIGGER**, therefore, is TWO events, not one: re-measure when
-`assertions` lands and delete the `m`-half of this entry when its
-open-gate count reaches zero; re-measure when a dupnames producer lands
-inside `named-groups` and delete the `J`-half the same way. Re-ordering
-the check so run validity is decided before the module gate was
-considered and NOT taken: it would move a grammar decision ahead of the
-gate for a benefit that expires on its own, and the option-run grammar is
-one home (`mod_modifiers.c`) precisely so the doorway does not acquire a
-second copy of it.
+    --features all '(?m--)' '(?m--:a)' '(?^m-)' '(?^m-:a)'
+    --features all '(?J--)' '(?J--:a)' '(?^J-)' '(?^J-:a)'
+        -> all eight: "invalid hyphen in option setting (pattern offset 4)"
+
+Both halves closed by the mechanism this entry predicted, in two separate
+landings: 142 → 8 was opening the gate, and 8 → 0 is every letter whose
+module lands and VALIDATES the letter. `m`'s 4 cells closed when
+`assertions` shipped; `J`'s 4 closed on 2026-08-22 when module `backrefs`
+shipped the letter — **which is the event this entry named and MIS-LOCATED**:
+it said the `J`-half closes "when a FUTURE dupnames producer lands INSIDE
+`named-groups`", and the producer landed inside `backrefs` instead, because
+the letter's meaning is the rule for resolving a reference to a duplicated
+name. The prediction that it would close, and by what mechanism, was right;
+the module it named was not. Recorded rather than quietly corrected, since
+this entry's whole subject is a deferral that expires on its own.
+
+**AT THE BARE DEFAULT the cells still defer**, and that is the GATE rather
+than this deferral: `std1` is {`classes`, `modifiers`}, so bare `(?m--)`
+answers "requires module 'assertions'" and bare `(?J--)` answers "requires
+module 'backrefs'" — measured the same day. Those close when the modules
+join a named default set (D37's announced-boundary rule), which is a
+different event from this one.
+
+**REVISIT TRIGGER: DISCHARGED, both halves.** The re-ordering this entry
+considered and did NOT take — deciding run validity before the module gate —
+is now moot for the measured population, and the reason for not taking it
+stands unchanged: it would move a grammar decision ahead of the gate for a
+benefit that has now expired on its own, and the option-run grammar is one
+home (`mod_modifiers.c`) precisely so the doorway does not acquire a second
+copy of it. The entry is KEPT rather than deleted because the mechanism it
+records — a validity check ordered after a module gate, producing a
+diagnostic category that expires as modules land — is the thing worth
+remembering, and because its prediction was checkable and half-wrong.
 
 Found by the MOD-0.8b D27 blinded writer (recorded in
 `docs/dev/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
@@ -859,7 +874,7 @@ date: 2026-08-22
 PCRE2's own DFA matcher does not.
 
 **Module `backrefs` SHIPPED 2026-08-22 ([M6.5.2]).** Every spelling in the
-bundled row below parses and matches: the numeric forms (`\1`..`\N` for any
+bundled row above parses and matches: the numeric forms (`\1`..`\N` for any
 N — measured to `\812`, with PCRE2's octal disambiguation resolved by four
 ordered questions), `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\g{name}`, `\k<n>`
 `\k'n'` `\k{n}` and `(?P=n)`. VM-only, by all twelve rows' `engines` mask
