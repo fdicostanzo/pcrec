@@ -369,6 +369,25 @@ Gated count 61 -> 64 (one row left, four arrived). The generalisation for the
 next module: when a module's last unbuilt construct lands, move the PIN, not
 the MECHANISM.
 
+## [SR-11] the row iterator now resolves columns by NAME (2026-08-21)
+
+D65's `NF != 15` hardcode (below) was the minimal repair. The durable fix
+(docs/spec/table_contract.md, [SR-11]) routes the iterator through
+tests/lib/table.sh: `table_awk_map` resolves `status`/`syntax`/`module`/
+`expect` by NAME into an `awk -v` string, and `table_header_ncols` supplies
+the field-count guard from the header's OWN declared count rather than a
+literal — so the next appended column is a non-event here, not a fourth
+site to fix by hand. Both calls are checked for failure BEFORE the awk
+runs: an unresolved column would otherwise leave `$AWKVARS`/`$NHDR` empty
+and let awk read an undefined field variable as 0/"" — a silent mis-parse,
+not a failure — so a resolution failure now `bad()`s the section by name
+and forces the coverage floor's `nexpected` to `-1` (never a legitimate
+count), which cannot coincidentally agree with `$niter` and mask the
+failure. Sabotage-validated end to end: a wrapper `pcrec` that drops
+`module` from the dump's header fails this section naming "could not
+resolve --list-syntax's columns by name" AND the coverage floor ("dump has
+-1 non-base rows"), never a silent zero-coverage pass.
+
 ## [D65] the row iterator is a FORMAT consumer of `--list-syntax`, and the
 ## first survey of its consumers missed that (2026-08-21, tail lane)
 

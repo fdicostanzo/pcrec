@@ -4,7 +4,12 @@ Chartered by Frank, 2026-08-21 (thirty-fifth session), generalizing
 [SR-11]: "if it was meant to be read, it might be prep'd for it —
 #comments are ignored and a #header:col1 col2... row." This document IS
 the contract; [SR-11] tracks converting the in-tree consumers and landing
-the checks. Status: CONTRACT RULED; consumer conversion pending [SR-11].
+the checks. Status: CONTRACT RULED; [SR-11] parts 2-3 LANDED 2026-08-21 —
+tests/lib/table.sh is the one implementation, tests/reject/
+run_reject_tests.sh's row iterator and tests/cli/run_cli_tests.sh's case10
+and tests/spec_mod0/check09_every_feature_toggles.sh are converted, and both
+checks below (HEADER TRUTHFULNESS, GENERATOR AGREEMENT) are landed and
+sabotage-validated.
 
 ## Scope
 

@@ -294,6 +294,15 @@ rows from BOTH tables plus the four-field count — a bare count would be
 satisfied by any fifty rows, and a dump of one table would silently lose the
 case distinction that is the whole point of there being two.
 
+**[SR-11] (2026-08-21): case10's field-count pin is now the contract's own
+HEADER TRUTHFULNESS check.** `table_check_truthfulness` (tests/lib/table.sh)
+replaces the `NF != 16` literal: every data row's field count is compared
+against the HEADER's own declared count, never a hardcoded number, so the
+next appended column changes nothing here — this is the "correct final
+form of case10" docs/spec/table_contract.md names it as. Sabotage-validated
+against a real `pcrec` wrapper that injects an extra tab into one data row:
+the assertion fails naming the exact count mismatch, not a silent pass.
+
 Case 10's load-bearing assertion is the FIELD COUNT, not the content. SR-4 makes
 tests/reject/ iterate `--list-syntax` and renders docs/pcre2_compliance.md from
 it, so the TSV is an interface with consumers. The dump forbids tabs and

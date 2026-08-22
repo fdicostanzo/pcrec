@@ -48,8 +48,41 @@ def dump():
     out = subprocess.run([PCREC, "--list-syntax"], capture_output=True, text=True)
     if out.returncode != 0:
         sys.exit(f"compliance_section: pcrec --list-syntax failed: {out.stderr}")
+    lines = out.stdout.splitlines()
+
+    # [SR-11] GENERATOR AGREEMENT (docs/spec/table_contract.md, "The
+    # checks"): COLS above is this script's own transcription of
+    # --list-syntax's column order, and a transcription that stops matching
+    # its source is exactly the D65 failure shape one level up
+    # (docs/design/registry_built_status_memo.md's Correction section) — a
+    # hardcoded field COUNT drifted silently until an appended column broke
+    # two consumers. So COLS is cross-checked here against the dump's OWN
+    # header line rather than trusted. tests/lib/table.sh implements the
+    # identical contract rule for shell/awk consumers (comment-skip, "the
+    # last `#` line before the first data row is the header"); this is
+    # python and cannot source that file, so it re-implements the same rule
+    # rather than diverging from it, and THIS check is what keeps the two
+    # implementations from being able to disagree silently about what the
+    # header says.
+    header = None
+    for line in lines:
+        if line.startswith("#"):
+            header = line
+            continue
+        break  # first data row: `header` is now fixed (table.sh's rule 3)
+    if header is None:
+        sys.exit("compliance_section: --list-syntax produced no header line")
+    dump_cols = header[1:].split("\t")
+    if dump_cols != COLS:
+        sys.exit("compliance_section: COLS (this script's column list) does "
+                  "not match --list-syntax's own header — a column was "
+                  "appended, renamed or reordered in the dump without "
+                  "updating COLS in the same commit.\n"
+                  f"  COLS   = {COLS!r}\n"
+                  f"  header = {dump_cols!r}")
+
     rows = []
-    for line in out.stdout.splitlines():
+    for line in lines:
         if line.startswith("#") or not line:
             continue
         f = line.split("\t")

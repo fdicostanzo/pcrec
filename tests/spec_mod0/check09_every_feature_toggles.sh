@@ -64,6 +64,12 @@
 # Run: check09_every_feature_toggles.sh <check07-output> <registry.tsv> <floors.txt> <pcrec-path>
 
 set -u
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# [SR-11] table_contract.md's one implementation (tests/lib/table.sh): the
+# registry dump's module column is resolved by NAME below rather than a
+# hardcoded `cut -f4`.
+. "$ROOT_DIR/tests/lib/table.sh"
 OUT="${1:?usage: check09_every_feature_toggles.sh <check07-output> <registry.tsv> <floors.txt> <pcrec-path>}"
 REG="${2:?}"
 FLOORS="${3:?}"
@@ -84,8 +90,11 @@ if [ ! -x "$PCREC" ]; then
     exit 2
 fi
 
-# module names the registry declares (column 4), minus the empty ones
-REG_NAMES=$(grep -v '^#' "$REG" | cut -f4 | grep -v '^$' | sort -u)
+# module names the registry declares (the `module` column, resolved by name
+# rather than a hardcoded `cut -f4` — [SR-11]/table_contract.md), minus the
+# empty ones
+MODCOL="$(table_col_index "$REG" module)" || exit 2
+REG_NAMES=$(grep -v '^#' "$REG" | cut -f"$MODCOL" | grep -v '^$' | sort -u)
 NREG=$(echo "$REG_NAMES" | grep -c .)
 
 # names check07 reported
