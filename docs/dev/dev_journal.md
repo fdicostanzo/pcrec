@@ -11842,3 +11842,39 @@ full mech matrix (S88-S101's canonical figures — the lane could not run
 tests/atomic_groups/d27/ (after the battery — the tree must not change
 under it); the archive commit; the row flips; Frank's U9 ruling is the
 one item that stays OPEN past the close (held loud in known_fail).
+
+THE FIX LANE'S REPORT, the parts that correct the record: (1) the
+manager's "identity sweep costs ~26 minutes forever" premise did NOT
+survive measurement — the gate is 71 s standalone and `make test-atomic`
+ran 1m35 with both scripts vs 1m38 with the differential alone
+(run_group runs them concurrently); the lane's 33-minute figure was its
+own SEQUENTIAL, shared-box run shape. The move to its own opt-in target
+`make test-atomic-identity` stands on the design's reading (§11.2/§14
+item 8: a one-shot landing gate against a pinned pre-module commit —
+archived in docs/testing.md "The atomic landing gate": 116 atomic / 1449
+atomic-free, default 1312/0/137/0, vm 1313/0/136/0, positive control
+refuses all 116), not on speed. Per-section wall times, sequential:
+assertions+identity-gates group 458 s, the .rxt corpus 392 s, rungselect
+242 s, counterk 166 s, mrl 115 s, atomic diff 100 s (grew from ~60 s by
+the 30 new patterns). (2) The tripwire had been red on THREE anchors, not
+two — S90 was broken by the fix lane's own comment rewrite inside
+vm_atomic and caught in the same run; all three re-derived
+programmatically, each verified to apply at exactly SAB_COUNT sites and
+to build, S90's re-derived form checked to still produce its defect (a
+SEGFAULT). Three live catches for the tripwire in one day. (3) S101 (the
+follow crosses the cut again) validated end to end without `make mech`:
+applies at one site, builds, reproduces (0,4), and run_atomic_diff.sh
+reports 2,484 disagreeing cells + 4 follow-barrier failures against it.
+(4) The differential's new two-exit family: 30 patterns, the cut changes
+the answer on 30/30 (floor 18), kept as ITS OWN floor because the `cut`
+family clears 15 on its own and a merged counter would have stayed green
+in exactly the state the tree was in; rung coverage 0x1f read off the
+artifacts; 61,586 cells × 3 arms (was 39,326 × 3); a follow-barrier check
+asserted in its DIRECTION (rule 6 — rules 1-5 read what a cut-bearing
+artifact CONTAINS, while the defect was a number carried INTO the body).
+The family's first floor run read 0/30 and was RIGHT — the twin filter
+still said `cut` alone — the second time that file's population
+assertions caught the script rather than the compiler. (5) §14 item 9's
+sharpened conclusion: the systematic "read each §2.2 conjunct" recipe
+would NOT have found this one — it reads only possessify.c, and the
+antecedent lived in the emitter's context.
