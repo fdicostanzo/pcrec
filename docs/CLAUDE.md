@@ -24,24 +24,52 @@ Process and status documents for pcrec. The architecture itself lives in
   syntax reference, with a status vocabulary that separates verified from
   believed and clean-rejection from miscompile. Periodically re-surveyed;
   its `REJECTED` rows are backed by tests/reject/ rather than asserted.
-  **TWO SURFACES CONFUSED A LANE ONCE** ([M6.2] wave E, 2026-08-19): the
-  hand-written PROSE rows carry the shipped status (`OK`, `OK-GATED`,
-  `OK-LIMITED`) and the GENERATED index at the bottom's `status`/`roadmap`
-  columns are the registry's own two fields, where `REJECTED | planned`
-  means "not BASE grammar; the `module` column names the owner" — true
-  identically for a shipped construct (`\d`) and an unbuilt one, which is
-  what 34 rows of SHIPPED modules read (`classes` 12, `modifiers` 12,
-  `assertions` 7, `named-groups` 3, measured 2026-08-19) and what the wave-E
-  lane misread as module-specific staleness.
-  **[D65] (2026-08-21) THE GENERATED INDEX NOW ANSWERS THE QUESTION
+  **[DOC-DRV] (2026-08-21) RESTRUCTURED THE PAGE INTO THREE COMPONENTS OF
+  DIFFERENT PROVENANCE, held in checked tension** — chartered by the wave-E
+  confusion below, carried by the `compliance-refresh` skill:
+  (1) **generated facts**, the "Registry construct index" at the file's end,
+  printed by `pcrec --list-syntax` (unchanged from SR-4/D65, below);
+  (2) **the independent survey**, every section's hand-written `syntax |
+  status | becomes` table — deliberately never generated from the registry,
+  since its value is answering "what does PCRE2 have that the registry
+  doesn't even list"; (3) **keyed annotations**,
+  `docs/pcre2_compliance_annotations.txt` — the measurements and judgment
+  that used to sit inline in each row's notes column, now construct-KEYED
+  (90 records, migrated from ~90 prose rows plus three section-level
+  analysis blocks) and rendered back per section by
+  `tests/registry/compliance_section.py --write-annotations`, checked for
+  staleness by `--check-annotations` (a key naming a construct that no
+  longer exists, or a page render that has drifted from the store, fails
+  `make test` naming it) — the mechanism that retires the recurring failure
+  the wave-E incident below is one instance of. `--tension` reports the
+  checked-tension between components 1 and 2 (informational). See the
+  page's own intro section and `.claude/skills/compliance-refresh/SKILL.md`.
+  **TWO SURFACES CONFUSED A LANE ONCE** ([M6.2] wave E, 2026-08-19), the
+  incident [DOC-DRV] exists to retire the recurrence of: the hand-written
+  PROSE rows carried the shipped status (`OK`, `OK-GATED`, `OK-LIMITED`)
+  and the GENERATED index at the bottom's `status`/`roadmap` columns are
+  the registry's own two fields, where `REJECTED | planned` means "not
+  BASE grammar; the `module` column names the owner" — true identically
+  for a shipped construct (`\d`) and an unbuilt one, which is what 34 rows
+  of SHIPPED modules read (`classes` 12, `modifiers` 12, `assertions` 7,
+  `named-groups` 3, measured 2026-08-19) and what the wave-E lane misread
+  as module-specific staleness.
+  **[D65] (2026-08-21) THE GENERATED INDEX ANSWERS THE QUESTION
   DIRECTLY**: a `built` column (`built`/`unbuilt`/`—`), derived live per row
   by `pcrec_construct_built_status` (docs/design/registry_built_status_memo.md,
   ratified wholesale) — never a hand-declared field. Of the 34 "shipped"
   rows above, 33 read `built` and one, `(?J)`, reads `unbuilt` (module
   `modifiers`' own permanent DUPNAMES decline), a distinction the old
-  per-module count could not express. The file's shrunk "How to read the
+  per-module count could not express. The file's "How to read the
   generated index below" section explains the column; docs/design/CLAUDE.md's
   own entry on the memo carries the design record and rulings.
+- `pcre2_compliance_annotations.txt` — [DOC-DRV]'s KEYED ANNOTATION STORE,
+  component 3 of `pcre2_compliance.md`'s three-component model above: one
+  record per construct (or bundled group of related spellings), format
+  documented in the file's own header. Data, not prose — never read as a
+  reference document on its own; edit it and run
+  `tests/registry/compliance_section.py --write-annotations` to render the
+  edit into `pcre2_compliance.md`.
 - `pcre2_options.md` — [PC-5]'s option-by-option sibling survey: every
   PCRE2 compile/match/dfa-match/substitute flag, `EXTRA_*` bit and
   BSR/NEWLINE value, each with a PROPOSED pcrec disposition (Frank rules)

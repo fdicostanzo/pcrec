@@ -22,9 +22,9 @@ section):
 
 1. **GENERATED FACTS** — derived from the compiler, never hand-edited.
    Source: `build/pcrec --list-syntax` (the registry's status/roadmap/module
-   fields; plus the built-status column once the registry_built_status memo's
-   implementation lands — docs/design/registry_built_status_memo.md).
-   Property: cannot drift from the compiler (SR-4). The checker is
+   fields, plus the `built` column — LANDED, D65,
+   docs/design/registry_built_status_memo.md). Property: cannot drift from
+   the compiler (SR-4). The checker is
    `tests/registry/compliance_section.py`.
 2. **THE INDEPENDENT SURVEY** — the PCRE2-side construct inventory, derived
    from PCRE2's own documentation (pcre2syntax.html; PC-2 is the periodic
@@ -41,7 +41,10 @@ section):
    caveats, D26 tier assignments, and the deferral analysis with its revisit
    triggers. Hand-written is correct here — but each annotation must name the
    construct it belongs to, so staleness is detectable ("annotation names a
-   construct that moved") instead of silent.
+   construct that moved") instead of silent. LANDED as
+   `docs/pcre2_compliance_annotations.txt` ([DOC-DRV], 2026-08-21; see
+   "Status of the migration" below): the checker is
+   `tests/registry/compliance_section.py --check-annotations`.
 
 The page is trustworthy because components 1 and 2 are INDEPENDENTLY derived
 and held in CHECKED TENSION. Removing the tension by deriving everything from
@@ -61,13 +64,20 @@ any change to the registry or `--list-syntax` output.
    the registry or the dump code, not the page.
 2. **Reconcile component 3 against what changed.** For every construct whose
    generated facts moved (new module built, gate opened, diagnostic changed):
-   find its annotations and re-verify each against the current tree —
-   measurements re-run, never carried forward on faith (a number you did not
-   just measure is a number you are quoting). Delete annotations whose
-   premise is gone; date-stamp corrections. Grep the PROSE rows for the
-   construct too — until the prose-row-to-keyed-annotation migration is
-   complete, the prose rows ARE the annotation store and go stale the same
-   way.
+   find its annotation by KEY in `docs/pcre2_compliance_annotations.txt`
+   (the construct's `syntax` for a registry-backed key; grep the section's
+   own material for a `base:` key covering several bundled spellings — see
+   that file's own header) and re-verify it against the current tree —
+   measurements re-run, never carried forward on faith (a number you did
+   not just measure is a number you are quoting). Delete annotations whose
+   premise is gone; date-stamp corrections. Then run
+   `tests/registry/compliance_section.py --write-annotations` to render
+   the edit back into the page, and `--check-annotations` to confirm no
+   key went stale in the process (a construct removed or renamed from the
+   registry in the same change orphans its annotation, and this is the
+   check that catches it — the `docs/pcre2_compliance.md` survey table's
+   own `syntax | status | becomes` row still needs its own hand edit
+   separately, since that half is never generated).
 3. **Re-run component 2 only when PC-2 fires or PCRE2 moves.** The survey
    refresh reads pcre2syntax.html (and the PCRE2 changelog for the delta),
    compares against BOTH the previous survey and the generated index, and
@@ -75,8 +85,9 @@ any change to the registry or `--list-syntax` output.
    for Frank — never by quietly adding registry rows to make the comparison
    clean.
 4. **Both-direction check.** After any refresh, run the full registry section
-   (`make test-registry` covers compliance_section.py, registry_check, PC-3)
-   and read the page top to bottom once — the prose-mangling lesson
+   (`make test-registry` covers compliance_section.py — `--check`,
+   `--names`, `--check-annotations` and `--tension` — plus registry_check
+   and PC-3) and read the page top to bottom once — the prose-mangling lesson
    (learnings §"prose that describes code has no test") applies to this file
    more than any other.
 5. **Record.** A refresh that changed anything gets a line in the journal
@@ -86,12 +97,34 @@ any change to the registry or `--list-syntax` output.
 
 ## Status of the migration (update this section as it moves)
 
-- As of 2026-08-21: components 1+2 exist in today's page (generated index +
-  hand-written survey/prose rows); component 3 exists only INSIDE the prose
-  rows, not yet as keyed annotations. The restructure (migrate ~600 lines of
-  prose-row content into construct-keyed annotations rendered by the
-  generator, shrink the prose to survey + judgment) is chartered as plan row
-  [DOC-DRV]; the built-status column (registry_built_status_memo.md, rulings
-  pending) lands first and independently.
-- Until [DOC-DRV] lands, step 2's grep-the-prose-rows clause is the live
-  discipline.
+- **LANDED, 2026-08-21 ([DOC-DRV]).** All three components now exist as
+  designed: component 1 (generated construct index) unchanged from SR-4;
+  component 2 (the survey) is every section's `syntax | status | becomes`
+  table, hand-written, notes column dropped; component 3 (keyed
+  annotations) lives in `docs/pcre2_compliance_annotations.txt` — 90
+  records (38 keyed to a live registry `syntax`, 52 `base:`-keyed for
+  base-tier/cross-cutting material) migrated from the prose rows' former
+  notes columns and from three section-level analysis blocks (the
+  Unicode-properties K16 byte census, the option-run doorway ordering
+  deep-dive, the backtracking-verbs Q1/K15/K14 intro material) — and
+  renders back into the page as one `<!-- BEGIN GENERATED ANNOTATIONS:
+  <slug> -->` block per section.
+- `tests/registry/compliance_section.py` gained `--check-annotations` /
+  `--write-annotations` (component 3's drift detector: a stale key or a
+  page-vs-store render mismatch fails `make test` naming it) and
+  `--tension` (the checked-tension report between components 1 and 2,
+  both directions, informational by design). All wired into
+  `tests/registry/run_registry_tests.sh`.
+- Step 2's grep-the-prose-rows clause is RETIRED: annotations are now
+  found by their key, not by grepping prose, and a construct whose
+  generated facts move is exactly what `--check-annotations` catches if
+  its annotation goes unreconciled.
+- Residual, recorded rather than silently absorbed: three prose rows'
+  original content was ambiguous enough at migration time to warrant a
+  documented judgment call rather than a literal split (bundling several
+  related spellings — e.g. `\d \D \s \S \w \W \h \H \V \N` — under one
+  representative registry key); see the lane's hand-back migration
+  manifest for the full row-by-row disposition. No row was left
+  unclassified (disposition ASK): every prose row's content is now either
+  an annotation, kept in the survey table, or logged as dropped-as-
+  derivable/dropped-trivial.

@@ -10,6 +10,39 @@ useful prior art, since pcrec is also non-backtracking by construction.
 **Last surveyed: 2026-08-09** against pcrec at `ddb73a2`+ and libpcre2 10.46.
 This is a living document; see "Keeping this current" at the end.
 
+**This page is three components of DIFFERENT provenance, held in checked
+tension ([DOC-DRV], 2026-08-21).** Ruled by Frank, carried by the
+`compliance-refresh` skill:
+
+1. **Generated facts** — the "Registry construct index" at the end of this
+   file, printed by `pcrec --list-syntax` and never hand-edited (SR-4,
+   D65). Cannot drift from the compiler because it is the compiler that
+   writes it.
+2. **The independent survey** — every section's `syntax | status |
+   becomes` table above, hand-maintained from PCRE2's own documentation.
+   Deliberately NOT generated from the registry: its value is answering
+   "what does PCRE2 have that pcrec's registry doesn't even list", and
+   deriving it from the registry would certify completeness from the
+   thing being audited.
+3. **Keyed annotations** — the measurements and judgment that used to sit
+   inline in each row's notes column (OK-LIMITED qualifiers, oracle
+   divergences, K-list caveats, D26 tiers, deferral analysis) now live
+   construct-keyed in `docs/pcre2_compliance_annotations.txt` and render
+   back into this page as the small `<!-- BEGIN GENERATED ANNOTATIONS:
+   ... -->` block after each section's table — `make test`
+   (`tests/registry/compliance_section.py --check-annotations`) fails if a
+   key names a construct that no longer exists or if the rendered text
+   has drifted from the store, so a wave landing does not leave a stale
+   claim sitting unnoticed the way it did before this restructure (three
+   recorded instances in [M6.2] alone — see docs/dev/plan.md's [DOC-DRV]
+   row).
+
+Components 1 and 2 are independently derived and checked against each
+other (`compliance_section.py --tension`, informational); component 3 is
+checked for staleness against component 1's live construct list. Edit the
+survey tables directly; edit annotations in the `.txt` store and re-run
+`--write-annotations`; never hand-edit inside a generated marker.
+
 ## What the statuses mean
 
 Frank asked for compliant / mostly compliant / anticipated compliance /
@@ -58,16 +91,26 @@ fields (D24).** The registry landed (SR-1) and SR-4 connected it to this file �
 but not by rendering the whole document, which was the original plan and would
 have been a bad trade. What is generated is the **construct index** at the end:
 one row per registry row, printed by the compiler itself, so the INVENTORY
-cannot drift. What stays hand-written is everything that makes this a survey
-rather than a listing — the DFA-feasibility judgements, the `PLANNED` vs
-`PLANNED-HARD` calls and their reasoning, the divergence post-mortems, and every
-row about BASE syntax, which the registry deliberately does not describe.
+cannot drift. What stays hand-written is the SURVEY — the `syntax | status |
+becomes` verdict in each section's table above, which makes this a survey
+rather than a listing, and every row about BASE syntax, which the registry
+deliberately does not describe. The DFA-feasibility judgements, the `PLANNED`
+vs `PLANNED-HARD` reasoning, the divergence post-mortems and the rest of the
+analysis that used to sit in each row's notes column are now the KEYED
+ANNOTATIONS ([DOC-DRV], see this file's intro above) —
+`docs/pcre2_compliance_annotations.txt`, rendered back per section.
 
-Two `make test` checks hold the seam (`tests/registry/compliance_section.py`):
-the generated index must match `pcrec --list-syntax`, and every module named in
-the prose above must be a module the registry actually knows. The second is the
-one that catches the realistic failure — a module renamed in `registry.c` leaves
-this document confidently describing something that no longer exists.
+Four `make test` checks hold the seams (`tests/registry/compliance_section.py`):
+the generated index must match `pcrec --list-syntax` (`--check`); every module
+named in the hand-written prose must be a module the registry actually knows
+(`--names`) — the one that catches the realistic component-2 failure, a module
+renamed in `registry.c` leaving this document confidently describing something
+that no longer exists; every annotation key must name a live construct and the
+page's annotation blocks must match the store (`--check-annotations`) — the
+component-3 equivalent, and the one that retires the recurring failure this
+restructure exists for (a construct's annotation going stale after a wave
+lands with nothing to notice); and the checked-tension report between the
+survey and the registry (`--tension`, informational).
 
 ## Headline
 
