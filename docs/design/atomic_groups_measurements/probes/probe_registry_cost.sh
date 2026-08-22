@@ -25,7 +25,15 @@
 # this probe — an enumeration is only as wide as its search population, at
 # every level including the review's.
 set -e
-PCREC=${1:-build/pcrec}
+# r31eng final: RESOLVED FROM THIS SCRIPT'S OWN LOCATION, not from the
+# caller's working directory. A bare relative `build/pcrec` makes the probe's
+# answer depend on where it was invoked from — it silently measures a DIFFERENT
+# compiler (or none). Every probe in this directory had the same shape; all
+# were fixed together. An explicit $1 still overrides, and the archive header
+# names the run directory so a reader can see which tree produced a number.
+_PROBE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+_REPO_ROOT=$(CDPATH= cd -- "$_PROBE_DIR/../../../.." && pwd)
+PCREC=${1:-$_REPO_ROOT/build/pcrec}
 REPO=$(git rev-parse --show-toplevel)
 cd "$REPO"
 

@@ -71,6 +71,19 @@ introduced, both fixed here:
 claim has been refuted twice the same way, so the enumeration of §2.2
 consequences the emitted shapes depend on is EMPIRICAL and may be incomplete.
 
+**r31eng's FINAL re-check closed N1 and N2**, attacking the one-level
+`under_atomic` definition three ways (a greedy `A_REP` with a lazy body,
+`(?>(?:a*?b)*)d`, measured `STRATS 0x3 / RUNGS 0x5` with the outer collapse not
+leaking inward; the counter rung's inner copies through `vm_emit_f`; and the
+only other spelling being an error) and refuting the stored-flag alternative as
+REACHABLE rather than merely inelegant — under `-fno-possessify` the discharge
+runs and `run_possessify` does not, so a stale flag would cut a loop the flag
+was passed to leave uncut. It raised one LOW, now **RULE 3 condition (d)**: the
+lift also inherits the SELECTED RUNG's own gate, `vm_rev_canmove`'s exact-count
+clause is such a gate, and the cell is MEASURED EMPTY today (§3.2.1).
+**§14 item 8 is also now RULED** — the identity claim is scheduled in
+`[M6.4.2]` as a landing gate, not left open for a panel that cannot measure it.
+
 r31chk's re-check closed C1-C6, C8-C11 and C14-C16 and raised three more,
 all against revision 1:
 
@@ -397,6 +410,7 @@ this table is drawn from is not the population the lift creates:
 | REVDET | `(?:a\|bc)*d` | `(?:a\|bc)*?d` |
 | COUNTER, bounded | `(?:ab\|b){8,12}c` | `(?:ab\|b){8,12}?c` |
 | COUNTER, unbounded | `(?:ab\|b){8,}c` | `(?:ab\|b){8,}?c` |
+| REVDET, exact count, §2.2-REJECTED | **EMPTY TODAY** — see (d) below | the cell that goes live if `rd_shape` or §2.2 moves |
 
 **So the corrected requirement is not "every path ends in a cut" — that is
 wrong for the cursor rung, whose right answer is to emit no cut because it
@@ -407,11 +421,45 @@ at §3.2.2a and summarised here:
 
 > **RULE 3 (corrected). A dispatch path is an acceptable LIFT target only if it
 > is (a) CUT-EQUIVALENT — it emits a cut in EITHER spelling, or provably pushes
-> no frame a cut would have removed; (b) PREFERENCE-PRESERVING; and (c)
-> NULLABLE-SAFE. The existing possessive rungs satisfy (a) and fail (b) and (c)
-> for exactly the bodies §2.2 refuses. `[M6.4.2]` owes ONE STRUCTURAL CHECK PER
-> PATH, driven by BOTH witness columns above, and each check names which
-> answer that path gives to each of the three conditions.**
+> no frame a cut would have removed; (b) PREFERENCE-PRESERVING; (c)
+> NULLABLE-SAFE; **AND (d) the SELECTED RUNG'S OWN GATE holds.** The existing
+> possessive rungs satisfy (a) and fail (b) and (c) for exactly the bodies §2.2
+> refuses. `[M6.4.2]` owes ONE STRUCTURAL CHECK PER PATH, driven by BOTH witness
+> columns above, and each check names which answer that path gives to each of
+> the four conditions.**
+
+**(d) IS A SEPARATE FILTER AND (a)(b)(c) DO NOT IMPLY IT — r31eng's final
+finding.** (a), (b) and (c) are properties of the BODY. A lift also inherits
+whatever gate the rung it lands on applies to itself, and those gates were
+written for a population §2.2 had already filtered. The instance:
+`vm_rev_canmove` (`src/gen/emit_vm.c:973-975`)
+
+```c
+return !a->possessive && (a->rmax < 0 || a->rmax > a->rmin);
+```
+
+suppresses the retreat frame on TWO clauses, and its comment gives a different
+reason for each — "it does not when it is possessified (no retreat is
+reachable, by §2.2's verdict)" and "it does not at an EXACT count (there is one
+exit)". The first is `vm_cuts()`'s business (§3.2.5). **The second is not: "there
+is one exit" is a (U1)/(U2) unique-iteration statement that consults no verdict
+at all**, and for a body §2.2 REJECTS at an exact count it is false.
+
+**MEASURED EMPTY TODAY, and the sweep is in the probe rather than in this
+sentence** (`probe_cut_dispatch.sh` §2b): 14 bodies × 3 exact counts, looking
+for a body that is revdet-APPROVED and possessify-REJECTED at `rmin == rmax`.
+**None exists** — `rd_shape`'s gate is strictly stronger than §2.2's on
+everything constructible here, e.g. `(?:a|ab){2}c` takes FRAMES_BOUNDED and
+answers correctly. So this is a rule with an empty population, written down
+because either gate moving makes it live.
+
+**The neighbouring cell is NOT empty, and the distinction is the point.**
+`(?:ab|cd){2,4}c` IS revdet-approved and possessify-rejected — but `rmax >
+rmin` there, so `canmove` is true, the retreat frame IS emitted, and what would
+break is the `!a->possessive` half, which `vm_cuts()` already covers. One
+clause of one predicate is covered by E4's fix and the other is covered by
+nothing; that is exactly why (d) is its own condition rather than a note on
+(a).
 
 #### 3.2.2 Carve-out ONE: nullable bodies — E1, and the first form would have HUNG
 
@@ -1964,8 +2012,8 @@ the `--engine=dfa` branch-ordering fix (M-1 note 1). Then
 
 **Slice 4 — evidence.** Appendix A's corpus and drivers **including the
 registered `run_sabotage_matrix.sh` suite word** (C11, a blocker for four
-rows); the five codegen rules; sabotage rows **S88-S100**; the one-shot identity
-probe; `compliance-refresh`; CLAUDE.md updates.
+rows); the five codegen rules; sabotage rows **S88-S100**; **the one-shot identity probe, which is §14 item 8's ruled landing gate and
+the module's own acceptance condition rather than an optional measurement**; `compliance-refresh`; CLAUDE.md updates.
 
 **Ordering constraints, and there are now three rather than one:**
 
@@ -2063,8 +2111,15 @@ round; the note says what happened.**
    the ceiling.
 8. **The identity claim (§11.1).** ARGUED from "the module has no alphabet or
    state action". *Refute by:* any emitted byte that moves on an atomic-free
-   pattern. The pinned-commit sweep is the experiment and **it has still not
-   been run** — this is now the largest unmeasured claim in the document.
+   pattern. The pinned-commit sweep is the experiment and **it has not been
+   run** — it cannot be, before the module exists, because §11.2's reference is
+   a build from a pinned PRE-MODULE commit.
+   **RULED after the R31 re-check (r31eng, agreed by this lane): it is
+   SCHEDULED IN `[M6.4.2]` AS A LANDING GATE**, using §11.2's reference
+   machinery, rather than attacked now. It is not an open question for the
+   panel; it is an obligation on the implementation, and slice 4 carries it.
+   Recorded here so that "unmeasured" is not mistaken for "unowned" — this
+   lane raised it in three consecutive reports and this is its disposition.
 9. **RULE 3's per-path conditions (§3.2.1, §3.2.2, §3.2.2a).** MEASURED for
    twelve witnesses (six greedy, six lazy) on the SHIPPED possessify verdict;
    ARGUED that the same paths are the ones a SEMANTIC possessive reaches.

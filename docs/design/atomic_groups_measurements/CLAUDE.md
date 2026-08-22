@@ -118,7 +118,8 @@ anything else.
   `multiple quantifiers on the same item`. It deliberately includes `a*++`,
   whose message CHANGES when the module lands, so a reject-suite author has the
   before-picture without reconstructing it.
-- **`probes/probe_cut_dispatch.sh` — MEASURED, in-pcrec. NEW (R31 E2/E4/C3).**
+- **`probes/probe_cut_dispatch.sh` — MEASURED, in-pcrec. NEW (R31 E2/E4/C3),
+  EXTENDED by r31eng's final re-check with §2b, the RUNG'S OWN GATE.**
   Three questions in one instrument because they are one question: which
   emitted code actually cuts. It drives a possessified pattern down each of
   `vm_rep`'s FIVE dispatch paths and reports what the artifact contains.
@@ -130,7 +131,21 @@ anything else.
   before; and **the COUNTER rung's UNBOUNDED arm emits no cut at all** (K29),
   which gives C3 its failing direction on a REAL SHIPPED ARTIFACT with no
   sabotage: `grep -q RX_CUT` matches the unconditional `#define` on an artifact
-  that emits no cut.
+  that emits no cut. **§2b sweeps for a body that is revdet-APPROVED and
+  possessify-REJECTED at an EXACT count** — the cell where `vm_rev_canmove`'s
+  "there is one exit" clause would be false — over 14 bodies × 3 counts, and
+  finds NONE, so RULE 3's condition (d) ships with a measured-empty population
+  and the sweep is what a reader re-runs when either gate moves. It also names
+  the NEIGHBOURING cell that is NOT empty (`(?:ab|cd){2,4}c`, a different
+  clause, covered by `vm_cuts()`), because an empty sweep beside a non-empty
+  neighbour is the pair that shows the sweep was aimed at the right thing.
+
+**EVERY PROBE HERE RESOLVES `pcrec` FROM ITS OWN LOCATION**, not from the
+caller's working directory (r31eng final). A bare relative `build/pcrec` makes
+a probe's answer depend on where it was invoked, silently measuring a different
+compiler or none; all eight had that shape and all were fixed together.
+`$PCREC` / `$1` still override, and `archive.sh` now stamps the RUN DIRECTORY
+so which tree produced a number is carried rather than assumed.
 - **`probes/probe_puc_targeted.py` — MEASURED, both arms. NEW (R31 C2).**
   `probe_possessify_under_cut.py`'s successor on the axis that matters. C2
   refuted that probe's non-vacuity counter (202) as evidence: it counts

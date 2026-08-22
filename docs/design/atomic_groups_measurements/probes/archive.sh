@@ -29,6 +29,10 @@ m = importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.version
   echo "# ARGS       : ${*:-(none)}"
   echo "# PROBE LAST CHANGED AT COMMIT: $(git log -1 --format='%h %ad' --date=short -- "$PROBE" 2>/dev/null || echo 'uncommitted')"
   echo "# RUN FROM REPO COMMIT        : $(git rev-parse --short HEAD) ($(git rev-parse --abbrev-ref HEAD))"
+  echo "# RUN DIRECTORY               : $REPO"
+  echo "#   (r31eng final: named because every probe resolves its pcrec from"
+  echo "#    its own location, so WHICH TREE produced a number is a fact the"
+  echo "#    header must carry rather than one a reader has to assume.)"
   echo "#   working tree at run time  : $(test -z "$(git status --porcelain)" && echo clean || echo 'DIRTY — see below')"
   test -z "$(git status --porcelain)" || git status --porcelain | sed 's/^/#     /'
   echo "# RUN DATE   : $(date -Is)"

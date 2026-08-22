@@ -41,7 +41,16 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, "..", "..", "eng_brep_measurements", "probes"))
 import pcre2_ctypes as P  # noqa: E402
 
-PCREC = os.environ.get("PCREC", "build/pcrec")
+# r31eng final: RESOLVED FROM THIS SCRIPT'S OWN LOCATION, not from the caller's
+# working directory. A bare relative "build/pcrec" makes the probe's answer
+# depend on where it was invoked from — it silently measures a DIFFERENT
+# compiler (or none) when run from the repo root vs from the worktree vs from
+# probes/. Every probe in this directory had the same shape; all were fixed
+# together. $PCREC still overrides, and the archive header names the run
+# directory so a reader can see which tree produced a number.
+_REPO = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                     "..", "..", "..", ".."))
+PCREC = os.environ.get("PCREC", os.path.join(_REPO, "build", "pcrec"))
 
 # Atomic groups chosen BECAUSE they bite: each has a prefix-ordered alternation
 # (or a greedy star) whose committed choice can be the wrong one.

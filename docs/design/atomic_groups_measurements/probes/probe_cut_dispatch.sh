@@ -29,7 +29,15 @@
 #
 # Usage: probe_cut_dispatch.sh [path-to-pcrec]
 set -e
-PCREC=${1:-build/pcrec}
+# r31eng final: RESOLVED FROM THIS SCRIPT'S OWN LOCATION, not from the
+# caller's working directory. A bare relative `build/pcrec` makes the probe's
+# answer depend on where it was invoked from — it silently measures a DIFFERENT
+# compiler (or none). Every probe in this directory had the same shape; all
+# were fixed together. An explicit $1 still overrides, and the archive header
+# names the run directory so a reader can see which tree produced a number.
+_PROBE_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+_REPO_ROOT=$(CDPATH= cd -- "$_PROBE_DIR/../../../.." && pwd)
+PCREC=${1:-$_REPO_ROOT/build/pcrec}
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
@@ -71,6 +79,39 @@ row '(?:a|bc)*d'       'REVDET: cuts in the SECOND SPELLING only. RX_CUT( calls 
 row '(?:ab|b){8,12}c'  'COUNTER, BOUNDED: vm_counter_poss_opt / vm_poss_chain, RX_CUT per iteration.'
 row '(?:ab|b){8,}c'    'COUNTER, UNBOUNDED: **K29**. vm_counter_rep:3355-3358 tails into vm_star, which never reads a->possessive. Stamped POSSESSIVE, cut-mark slot ALLOCATED AND WRITTEN, and NEITHER spelling of a cut is emitted.'
 echo
+echo "=== (2b) THE RUNG'S OWN GATE — a SECOND filter, independent of the body ==="
+echo "r31eng's final finding: RULE 3's (a)(b)(c) are BODY properties, and a lift"
+echo "ALSO inherits whatever gate the SELECTED RUNG applies. The instance is"
+echo "vm_rev_canmove (emit_vm.c:973-975):"
+sed -n '973,975p' src/gen/emit_vm.c | sed 's/^/    /'
+echo "  Its EXACT-COUNT clause -- \`rmax > rmin\` -- suppresses the retreat frame"
+echo "  because \"there is one exit\", which is a UNIQUE-ITERATION statement that"
+echo "  consults no verdict. For a body §2.2 REJECTS at an exact count, \"one"
+echo "  exit\" is false."
+echo
+echo "  Is the cell reachable? It needs: revdet-APPROVED and possessify-REJECTED"
+echo "  and rmin == rmax. Swept below; a LIVE line would name one."
+for b in 'a' '[ab]' '(?:a|bc)' '(?:a|ab)' '(?:ab?)' '(?:ab|a)' '(?:a|b)' '(?:abc)' \
+         '(?:a|bb)' '(?:ab|cd)' '(?:a|ab|abc)' '(?:ab|abc)' '(?:a+|ab)' '(?:a*)'; do
+    for c in '{2}' '{3}' '{4}'; do
+        p="$b$c"'c'
+        "$PCREC" -p rx --engine=vm --no-captures -o "$TMP/g.c" "$p" 2>/dev/null || continue
+        rg=$(grep -o 'RX_VM_RUNGS 0x[0-9a-f]*'  "$TMP/g.c" | cut -d' ' -f2)
+        sg=$(grep -o 'RX_VM_STRATS 0x[0-9a-f]*' "$TMP/g.c" | cut -d' ' -f2)
+        [ "$rg" = "0x8" ] && [ "$sg" = "0x2" ] && \
+            echo "    **LIVE** $p  (revdet-approved AND possessify-rejected, exact count)"
+    done
+done
+echo "    swept 14 bodies x 3 exact counts. No LIVE line above means the cell is"
+echo "    EMPTY TODAY: revdet's own gate is strictly stronger than possessify's on"
+echo "    everything constructible here -- e.g. (?:a|ab){2}c takes FRAMES_BOUNDED,"
+echo "    not revdet, and answers correctly."
+echo "    NOT-EMPTY at a NON-exact count, and that is a different clause:"
+echo "    (?:ab|cd){2,4}c IS revdet-approved and possessify-rejected -- but there"
+echo "    rmax > rmin, so canmove is true, the retreat frame IS emitted, and the"
+echo "    \`!a->possessive\` half is what vm_cuts() already covers (E4)."
+echo
+
 echo "=== (3) C3's failing direction, on the K29 artifact, no sabotage ==="
 "$PCREC" -p rx --engine=vm --no-captures -o "$TMP/k29.c" '(?:ab|b){8,}c'
 echo "  pattern            : (?:ab|b){8,}c   (stamped POSSESSIVE, emits no cut)"
