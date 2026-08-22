@@ -10,6 +10,39 @@ useful prior art, since pcrec is also non-backtracking by construction.
 **Last surveyed: 2026-08-09** against pcrec at `ddb73a2`+ and libpcre2 10.46.
 This is a living document; see "Keeping this current" at the end.
 
+**This page is three components of DIFFERENT provenance, held in checked
+tension ([DOC-DRV], 2026-08-21).** Ruled by Frank, carried by the
+`compliance-refresh` skill:
+
+1. **Generated facts** — the "Registry construct index" at the end of this
+   file, printed by `pcrec --list-syntax` and never hand-edited (SR-4,
+   D65). Cannot drift from the compiler because it is the compiler that
+   writes it.
+2. **The independent survey** — every section's `syntax | status |
+   becomes` table above, hand-maintained from PCRE2's own documentation.
+   Deliberately NOT generated from the registry: its value is answering
+   "what does PCRE2 have that pcrec's registry doesn't even list", and
+   deriving it from the registry would certify completeness from the
+   thing being audited.
+3. **Keyed annotations** — the measurements and judgment that used to sit
+   inline in each row's notes column (OK-LIMITED qualifiers, oracle
+   divergences, K-list caveats, D26 tiers, deferral analysis) now live
+   construct-keyed in `docs/pcre2_compliance_annotations.txt` and render
+   back into this page as the small `<!-- BEGIN GENERATED ANNOTATIONS:
+   ... -->` block after each section's table — `make test`
+   (`tests/registry/compliance_section.py --check-annotations`) fails if a
+   key names a construct that no longer exists or if the rendered text
+   has drifted from the store, so a wave landing does not leave a stale
+   claim sitting unnoticed the way it did before this restructure (three
+   recorded instances in [M6.2] alone — see docs/dev/plan.md's [DOC-DRV]
+   row).
+
+Components 1 and 2 are independently derived and checked against each
+other (`compliance_section.py --tension`, informational); component 3 is
+checked for staleness against component 1's live construct list. Edit the
+survey tables directly; edit annotations in the `.txt` store and re-run
+`--write-annotations`; never hand-edit inside a generated marker.
+
 ## What the statuses mean
 
 Frank asked for compliant / mostly compliant / anticipated compliance /
@@ -58,16 +91,26 @@ fields (D24).** The registry landed (SR-1) and SR-4 connected it to this file �
 but not by rendering the whole document, which was the original plan and would
 have been a bad trade. What is generated is the **construct index** at the end:
 one row per registry row, printed by the compiler itself, so the INVENTORY
-cannot drift. What stays hand-written is everything that makes this a survey
-rather than a listing — the DFA-feasibility judgements, the `PLANNED` vs
-`PLANNED-HARD` calls and their reasoning, the divergence post-mortems, and every
-row about BASE syntax, which the registry deliberately does not describe.
+cannot drift. What stays hand-written is the SURVEY — the `syntax | status |
+becomes` verdict in each section's table above, which makes this a survey
+rather than a listing, and every row about BASE syntax, which the registry
+deliberately does not describe. The DFA-feasibility judgements, the `PLANNED`
+vs `PLANNED-HARD` reasoning, the divergence post-mortems and the rest of the
+analysis that used to sit in each row's notes column are now the KEYED
+ANNOTATIONS ([DOC-DRV], see this file's intro above) —
+`docs/pcre2_compliance_annotations.txt`, rendered back per section.
 
-Two `make test` checks hold the seam (`tests/registry/compliance_section.py`):
-the generated index must match `pcrec --list-syntax`, and every module named in
-the prose above must be a module the registry actually knows. The second is the
-one that catches the realistic failure — a module renamed in `registry.c` leaves
-this document confidently describing something that no longer exists.
+Four `make test` checks hold the seams (`tests/registry/compliance_section.py`):
+the generated index must match `pcrec --list-syntax` (`--check`); every module
+named in the hand-written prose must be a module the registry actually knows
+(`--names`) — the one that catches the realistic component-2 failure, a module
+renamed in `registry.c` leaving this document confidently describing something
+that no longer exists; every annotation key must name a live construct and the
+page's annotation blocks must match the store (`--check-annotations`) — the
+component-3 equivalent, and the one that retires the recurring failure this
+restructure exists for (a construct's annotation going stale after a wave
+lands with nothing to notice); and the checked-tension report between the
+survey and the registry (`--tension`, informational).
 
 ## Headline
 
@@ -121,45 +164,229 @@ survey earned its keep").
 
 ## Quoting
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `\` + non-alphanumeric | `OK` | — | escaped punctuation is a literal; corpus-covered |
-| `\Q...\E` | `REJECTED` | `PLANNED` | module `quoting`. Pure front-end lexing; `PLANNED`-easy whenever wanted |
+| syntax | status | becomes |
+|---|---|---|
+| `\` + non-alphanumeric | `OK` | — |
+| `\Q...\E` | `REJECTED` | `PLANNED` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: quoting -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:quoting-backslash-nonalnum`**
+
+Escaped punctuation is a literal; corpus-covered.
+
+**`\Q`**
+
+Pure front-end lexing; `PLANNED`-easy whenever wanted.
+
+<!-- END GENERATED -->
 
 ## Braced items
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| whitespace inside `{ }` in `\g{2}` etc. | `REJECTED` | — | reached only via constructs that are themselves rejected. **This row's scope was too narrow and its dismissal was wrong for the case that mattered** (R7): the REPEAT quantifier is base-tier and very much reached, and pcrec silently compiled `a{ 1}` as literal text until K8. See the Quantifiers section |
-| `\u{...}` (ALT_BSUX) | `OUT-OF-SCOPE` | — | an ECMAScript-compatibility spelling gated on a PCRE2 option pcrec does not model |
+| syntax | status | becomes |
+|---|---|---|
+| whitespace inside `{ }` in `\g{2}` etc. | `REJECTED` | — |
+| `\u{...}` (ALT_BSUX) | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: braced-items -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:braced-whitespace-scope`**
+
+Reached only via constructs that are themselves rejected. **This row's
+scope was too narrow and its dismissal was wrong for the case that
+mattered** (R7): the REPEAT quantifier is base-tier and very much reached,
+and pcrec silently compiled `a{ 1}` as literal text until K8. See the
+Quantifiers section.
+
+**`base:alt-bsux-u-brace`**
+
+An ECMAScript-compatibility spelling gated on a PCRE2 option pcrec does not
+model.
+
+<!-- END GENERATED -->
 
 ## Escaped characters
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `\a` `\e` `\f` `\n` `\r` `\t` | `OK` | — | each verified byte-for-byte against libpcre2 during this survey |
-| `\xhh` | `OK` | — | 1–2 hex digits; `digits missing after \x` matches PCRE2 error 178 |
-| `\x{hh..}` | `REJECTED` | — | module `unicode-props` |
-| `\cx` | `REJECTED` | — | module `misc`. Trivially implementable; base tier simply does not include it |
-| `\0dd`, `\ddd` as an ATOM | `REJECTED` | — | module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so they share an owner |
-| `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — | **FIX-3 (K13), 2026-08-11.** A backreference is impossible inside a class, so PCRE2 falls back and pcrec now agrees: `\0`..`\7` open an octal escape (up to three octal digits; above `\377` it is PCRE2 error 151, wording and offset reproduced), `\8` `\9` `\g` `\k` are the LITERAL characters (the complete fallback set over all 62 `[\c]` probes), tails re-enter as members (`[\k<n>]` matches k `<` n `>`), and decoded escapes are ordinary range endpoints (`[0-\k]`, `[\1-\7]`). Measured cell-by-cell against libpcre2 10.46 — tests/probes/probe_fix3.c, 41 cells, zero disagreements; pinned by tests/base/class_escape_fallbacks.rxt (127 cases) and the `[\400]`/`[\377]` boundary rows in tests/reject/. Until this change all twelve answered "requires module 'backrefs'" here — the K13 over-promise |
-| `\o{ddd..}` | `REJECTED` | — | module `misc` |
-| `\N{U+hh..}` | `REJECTED` | — | module `unicode-props` — the registry's answer, which is authoritative (this row said `classes` until DOC-1, 2026-08-11, contradicting the generated index below; the pointer it gave to a "note under Character types" pointed at a note that did not exist — it does now) |
-| `\U`, `\uhhhh` (ALT_BSUX) | `OUT-OF-SCOPE` | — | option-gated compatibility spellings |
+| syntax | status | becomes |
+|---|---|---|
+| `\a` `\e` `\f` `\n` `\r` `\t` | `OK` | — |
+| `\xhh` | `OK` | — |
+| `\x{hh..}` | `REJECTED` | — |
+| `\cx` | `REJECTED` | — |
+| `\0dd`, `\ddd` as an ATOM | `REJECTED` | — |
+| `\0dd`..`\ddd`, `\8` `\9` `\g` `\k` INSIDE A CLASS | `OK` | — |
+| `\o{ddd..}` | `REJECTED` | — |
+| `\N{U+hh..}` | `REJECTED` | — |
+| `\U`, `\uhhhh` (ALT_BSUX) | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: escaped-characters -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:escapes-control-letters`**
+
+Each verified byte-for-byte against libpcre2 during this survey.
+
+**`base:hex-escape-xhh`**
+
+1–2 hex digits; `digits missing after \x` matches PCRE2 error 178.
+
+**`base:hex-escape-braced`**
+
+Module `unicode-props`.
+
+**`\cX`**
+
+Trivially implementable; base tier simply does not include it.
+
+**`\0`**
+
+module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so
+they share an owner.
+
+**`base:class-escape-fallbacks`** (2026-08-11)
+
+**FIX-3 (K13), 2026-08-11.** A backreference is impossible inside a class,
+so PCRE2 falls back and pcrec now agrees: `\0`..`\7` open an octal escape
+(up to three octal digits; above `\377` it is PCRE2 error 151, wording and
+offset reproduced), `\8` `\9` `\g` `\k` are the LITERAL characters (the
+complete fallback set over all 62 `[\c]` probes), tails re-enter as members
+(`[\k<n>]` matches k `<` n `>`), and decoded escapes are ordinary range
+endpoints (`[0-\k]`, `[\1-\7]`). Measured cell-by-cell against libpcre2
+10.46 — tests/probes/probe_fix3.c, 41 cells, zero disagreements; pinned by
+tests/base/class_escape_fallbacks.rxt (127 cases) and the `[\400]`/`[\377]`
+boundary rows in tests/reject/. Until this change all twelve answered
+"requires module 'backrefs'" here — the K13 over-promise.
+
+**`\N{U+0041}`** (2026-08-11)
+
+The registry's answer is authoritative here (this row said `classes` until
+DOC-1, 2026-08-11, contradicting the generated index below; the pointer it
+gave to a "note under Character types" pointed at a note that did not
+exist — it does now).
+
+**`base:alt-bsux-U-uhhhh`**
+
+Option-gated compatibility spellings.
+
+<!-- END GENERATED -->
 
 ## Character types
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `.` | `OK` | — | excludes `\n` only, PCRE2's default. `(?s)` dotall is `OK` by default since [STD1b] (module `modifiers`, MOD-0.5c; still refused under `--features none`) |
-| `\d \D \s \S \w \W \h \H \V \N` | `OK` | — | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions, negation as the probe-asserted complement. Default-on since [STD1b] (`ab7592d`, 2026-08-13): `classes` is in the bare-default named set `std1` (D37), so a bare `pcrec` compiles these with no flag; `--features none` still refuses with the module name, and `--features classes`/`--features std1` are unchanged. Oracles: tests/classes/, PC-4. **The `\N` spelling clash** (the note the Escaped-characters table references): `\N` here is the BARE form only — "any character except newline", a class-shaped predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a code point by number, module `unicode-props`; K10 recorded the `[\N{U+41}]` class-position divergence, FIXED 2026-08-12 by MOD-0.6 — see docs/dev/known_issues.md K10), and `\N{name}` is real PCRE2 syntax pcrec will never implement (`never`). Three meanings on one selector byte, resolved by the registry's tails — which is why the two `\N{` rows sit in the registry SHORTEST-tail-first (SR-9's precedence rule) |
-| `\v` | `REJECTED` | `PLANNED` | **Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2 10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as well as outside. Now `REJECTED` to module `classes` like its negation `\V`. It survived because python `re` also reads `\v` as `0x0B`, so the base-tier oracle agreed with the bug — see "How this survey earned its keep" |
-| `\C` | `REJECTED` | `PLANNED` | "one code unit". In the ASCII tier that is just "any byte", i.e. trivial. PCRE2 forbids it under its own DFA matcher in UTF modes for the reason that will apply to us in M5 |
-| `\p{..}` `\P{..}` | `REJECTED` | — | module `unicode-props`, M5. Single-position predicates, so DFA-friendly; the work is Unicode tables, not engine |
-| `\R` | `REJECTED` | `PLANNED` | module `misc`. Not a single character — a small alternation of literal sequences (CR, LF, CRLF), so still regular and `PLANNED`-feasible |
-| `\X` | `REJECTED` | `PLANNED-HARD` | extended grapheme cluster: variable-length, Unicode-table-driven segmentation. Regular in principle, substantial in practice. M5 at the earliest |
+| syntax | status | becomes |
+|---|---|---|
+| `.` | `OK` | — |
+| `\d \D \s \S \w \W \h \H \V \N` | `OK` | — |
+| `\v` | `REJECTED` | `PLANNED` |
+| `\C` | `REJECTED` | `PLANNED` |
+| `\p{..}` `\P{..}` | `REJECTED` | — |
+| `\R` | `REJECTED` | `PLANNED` |
+| `\X` | `REJECTED` | `PLANNED-HARD` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: character-types -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:dot`**
+
+Excludes `\n` only, PCRE2's default. `(?s)` dotall is `OK` by default since
+[STD1b] (module `modifiers`, MOD-0.5c; still refused under `--features
+none`).
+
+**`\d`** (2026-08-12)
+
+Module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): both positions,
+negation as the probe-asserted complement. Default-on since [STD1b]
+(`ab7592d`, 2026-08-13): `classes` is in the bare-default named set `std1`
+(D37), so a bare `pcrec` compiles these with no flag; `--features none`
+still refuses with the module name, and `--features classes`/`--features
+std1` are unchanged. Oracles: tests/classes/, PC-4. **The `\N` spelling
+clash** (the note the Escaped-characters table references): `\N` here is
+the BARE form only — "any character except newline", a class-shaped
+predicate owned by `classes`. `\N{U+hh..}` is a DIFFERENT construct (a
+code point by number, module `unicode-props`; K10 recorded the
+`[\N{U+41}]` class-position divergence, FIXED 2026-08-12 by MOD-0.6 — see
+docs/dev/known_issues.md K10), and `\N{name}` is real PCRE2 syntax pcrec
+will never implement (`never`). Three meanings on one selector byte,
+resolved by the registry's tails — which is why the two `\N{` rows sit in
+the registry SHORTEST-tail-first (SR-9's precedence rule).
+This annotation is keyed to `\d` as the representative spelling of the
+bundled prose row `\d \D \s \S \w \W \h \H \V \N`; all nine share it.
+
+**`\v`** (2026-08-09)
+
+**Was a proven divergence, fixed 2026-08-09.** PCRE2 defines `\v` as
+vertical WHITESPACE (`0x0a 0x0b 0x0c 0x0d 0x85`, measured against libpcre2
+10.46); pcrec decoded it as vertical tab `0x0B` only, inside classes as
+well as outside. Now `REJECTED` to module `classes` like its negation `\V`.
+It survived because python `re` also reads `\v` as `0x0B`, so the
+base-tier oracle agreed with the bug — see "How this survey earned its
+keep".
+
+**`\C`**
+
+"one code unit". In the ASCII tier that is just "any byte", i.e. trivial.
+PCRE2 forbids it under its own DFA matcher in UTF modes for the reason
+that will apply to us in M5.
+
+**`\P{L}`**
+
+Single-position predicates, so DFA-friendly; the work is Unicode tables,
+not engine.
+This annotation is keyed to `\P{L}` (not `\p{L}`) to avoid colliding with
+the Unicode-properties section's own `\p{L}` row below; it covers the
+bundled prose row `\p{..}` `\P{..}`.
+
+**`\R`**
+
+Not a single character — a small alternation of literal sequences (CR, LF,
+CRLF), so still regular and `PLANNED`-feasible.
+
+**`\X`**
+
+extended grapheme cluster: variable-length, Unicode-table-driven
+segmentation. Regular in principle, substantial in practice. M5 at the
+earliest.
+
+<!-- END GENERATED -->
 
 ## Unicode properties (general category, PCRE2 special, binary, script, bidi)
+
+| syntax | status | becomes |
+|---|---|---|
+| `\p{L}` `\p{Lu}` … (general categories) | `REJECTED` | — |
+| `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `REJECTED` | — |
+| `\p{<binary property>}` | `REJECTED` | — |
+| `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `REJECTED` | — |
+| `\p{Bidi_Class:..}` `\p{BC:..}` | `REJECTED` | — |
+
+All of these lower to byte-range sets over UTF-8, which APPROACH §4/§10 already
+commits to. The blocker is table generation and size, not matching.
+
+<!-- BEGIN GENERATED ANNOTATIONS: unicode-properties -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:uprops-k16-byte-census`** (2026-08-12)
 
 **A RULED, deliberate tier-2 divergence (K16, D26; Frank, 2026-08-12):**
 libpcre2 treats 164 of 256 possible `\p{...}` BODY bytes (`!"#$%`, `{|~`,
@@ -168,162 +395,611 @@ appear — error 146 at the bad byte, before the name scan continues and
 regardless of the 128/48 caps — where pcrec's MOD-0.6 scanner reads past
 them as ordinary name characters and refuses in its own
 unknown-name/generic category at its scan-completion offset. Both engines
-refuse every such pattern and the module attribution is identical, which is
-what keeps this tier 2. Found by R19's engine critic
-(docs/dev/reviews/2026-08-12-r19-mod06.md); recorded at docs/dev/known_issues.md
-K16 with the full byte census; fix deferred to the first `unicode-props`
-producer, when the scanner is remeasured anyway. The reject pins for
-`\p{!}`/`\p{9}`/`\p{=}` claim pcrec's own current behavior, not oracle
-agreement, until then.
+refuse every such pattern and the module attribution is identical, which
+is what keeps this tier 2. Found by R19's engine critic
+(docs/dev/reviews/2026-08-12-r19-mod06.md); recorded at
+docs/dev/known_issues.md K16 with the full byte census; fix deferred to
+the first `unicode-props` producer, when the scanner is remeasured anyway.
+The reject pins for `\p{!}`/`\p{9}`/`\p{=}` claim pcrec's own current
+behavior, not oracle agreement, until then.
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `\p{L}` `\p{Lu}` … (general categories) | `REJECTED` | — | module `unicode-props`, M5 |
-| `\p{Xan}` `\p{Xps}` `\p{Xsp}` `\p{Xuc}` `\p{Xwd}` | `REJECTED` | — | same |
-| `\p{<binary property>}` | `REJECTED` | — | same |
-| `\p{scriptname}` `\p{sc:..}` `\p{scx:..}` | `REJECTED` | — | same |
-| `\p{Bidi_Class:..}` `\p{BC:..}` | `REJECTED` | — | same |
+**`\p{L}`**
 
-All of these lower to byte-range sets over UTF-8, which APPROACH §4/§10 already
-commits to. The blocker is table generation and size, not matching.
+M5.
+This annotation is keyed to `\p{L}` and covers the survey's general-
+category row (`\p{L}` `\p{Lu}` …); the four rows beneath it in the same
+table (`\p{Xan}` etc., binary properties, script names, `Bidi_Class`) carry
+no distinct content of their own — each reads only "same" in the
+source prose, pointing back to this one. See the [DOC-DRV] migration
+manifest: those four rows are disposition dropped-trivial, not silently
+omitted.
+
+<!-- END GENERATED -->
 
 ## Character classes
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `[...]`, `[^...]`, `[x-y]` | `OK` | — | corpus-covered incl. `]` first, `-` last, high bytes, out-of-order range rejection |
-| `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `OK` | — | module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): all 14 names, both polarities. Default-on since [STD1b] (`ab7592d`, 2026-08-13): `classes` is in the bare-default named set `std1` (D37); `--features none` still refuses with the module name (`[[:<:]]`/`[[:>:]]` are assertions, module `assertions`, still refused in every configuration — not in `std1`). Oracles: tests/classes/ (every name pinned without libpcre2 since R16), PC-4 |
-| `[[.ch.]]` collating elements, `[[=ch=]]` equivalence classes | `AGREES-REJECT` | — | **Was a proven divergence, fixed 2026-08-09.** PCRE2 does not support these and REJECTS them ("POSIX collating elements are not supported"); pcrec silently accepted them as a class of literal `[` `.` `a` characters. Now rejected with PCRE2's own wording, so rejecting IS compliance here. The trigger was pinned against libpcre2 rather than guessed: `[` + `.`/`=` opens a collating element ONLY when the matching `.]`/`=]` terminator appears later, and a negated class suppresses it — so `[.a]`, `[.]`, `[[.]`, `[a[.b]`, `[^.a.]` and `[a.b.]` must all still COMPILE. Over-rejecting here would break patterns PCRE2 accepts, which is why those six are accept-controls in `tests/reject/` |
-| `\Q...\E` inside a class | `REJECTED` | — | module `quoting` |
-| `[x&&y]`, `[x--y]`, `[x~~y]` (UTS#18 set ops) | `OK` | `PLANNED` | pure bitmap algebra at parse time; no engine implication at all |
-| `(?[...])` Perl extended classes, `& - ^ ! +` operators | `REJECTED` | `PLANNED` | same — a parser feature that produces one bitmap. Note `^` means XOR here, not negation; a spelling trap worth a test when implemented |
+| syntax | status | becomes |
+|---|---|---|
+| `[...]`, `[^...]`, `[x-y]` | `OK` | — |
+| `[[:alpha:]]`, `[[:^alpha:]]` and the 14 POSIX names | `OK` | — |
+| `[[.ch.]]` collating elements, `[[=ch=]]` equivalence classes | `AGREES-REJECT` | — |
+| `\Q...\E` inside a class | `REJECTED` | — |
+| `[x&&y]`, `[x--y]`, `[x~~y]` (UTS#18 set ops) | `OK` | `PLANNED` |
+| `(?[...])` Perl extended classes, `& - ^ ! +` operators | `REJECTED` | `PLANNED` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: character-classes -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:class-brackets-basic`**
+
+corpus-covered incl. `]` first, `-` last, high bytes, out-of-order range
+rejection.
+
+**`[[:alpha:]]`** (2026-08-12)
+
+Module `classes` SHIPPED THESE 2026-08-12 (MOD-0.3): all 14 names, both
+polarities. Default-on since [STD1b] (`ab7592d`, 2026-08-13): `classes` is
+in the bare-default named set `std1` (D37); `--features none` still
+refuses with the module name (`[[:<:]]`/`[[:>:]]` are assertions, module
+`assertions`, still refused in every configuration — not in `std1`).
+Oracles: tests/classes/ (every name pinned without libpcre2 since R16),
+PC-4.
+
+**`[[.a.]]`** (2026-08-09)
+
+**Was a proven divergence, fixed 2026-08-09.** PCRE2 does not support
+these and REJECTS them ("POSIX collating elements are not supported");
+pcrec silently accepted them as a class of literal `[` `.` `a` characters.
+Now rejected with PCRE2's own wording, so rejecting IS compliance here.
+The trigger was pinned against libpcre2 rather than guessed: `[` + `.`/`=`
+opens a collating element ONLY when the matching `.]`/`=]` terminator
+appears later, and a negated class suppresses it — so `[.a]`, `[.]`,
+`[[.]`, `[a[.b]`, `[^.a.]` and `[a.b.]` must all still COMPILE.
+Over-rejecting here would break patterns PCRE2 accepts, which is why those
+six are accept-controls in `tests/reject/`. This covers both collating
+elements (`[[.ch.]]`) and equivalence classes (`[[=ch=]]`); see also
+`[[=a=]]`'s own (stub) annotation.
+
+**`[[=a=]]`**
+
+See `[[.a.]]`'s annotation — the same finding and fix cover both
+collating elements and equivalence classes.
+
+**`base:class-quoting-e`**
+
+Module `quoting`.
+
+**`base:class-set-ops-uts18`**
+
+pure bitmap algebra at parse time; no engine implication at all.
+
+**`(?[[a]])`**
+
+same — a parser feature that produces one bitmap. Note `^` means XOR here,
+not negation; a spelling trap worth a test when implemented.
+
+<!-- END GENERATED -->
 
 ## Quantifiers
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `? * + {n} {n,m} {n,} {,m}` greedy | `OK` | — | `{,m}` = `{0,m}` per PCRE2 10.43+, found by our own fuzzer |
-| `?? *? +? {n,m}? {n,}? {,m}?` lazy | `OK` | — | priority subset construction preserves greedy/lazy preference (D3) |
-| `?+ *+ ++ {n,m}+ {n,}+ {,m}+` possessive | `REJECTED` | `PLANNED-HARD` | module `atomic-groups`. Possessiveness prunes alternatives that a priority simulation explores in parallel, so it is a real semantic change needing explicit cut support, not a no-op |
-| quantifier on `^`/`$` | `OK` | — | rejected as PCRE2 error 109 does; `(^)*` is accepted because a group wrapper makes it quantifiable, matching PCRE2 |
-| double quantifier `a**`, `a{2}{3}` | `OK` | — | rejected, corpus-covered. Note the WORDING differs on `a{1}{2}`: PCRE2 says error 109, pcrec says "multiple quantifiers on the same item". Same verdict, and the offset agrees |
-| count above 65535, `a{65536}` | `AGREES-REJECT` | — | PCRE2 error 105. **Was a MISCOMPILE until 2026-08-10 (K5, FIX-1)** — silently reinterpreted as literal text, so the emitted matcher accepted a different language than the pattern named. The overflow is judged only once the form is CONFIRMED to be a quantifier, which is what PCRE2 does: `a{65536x}`, `a{65536,x}` and `a{65536` all stay literal in both engines |
-| `{m,n}` with nothing to quantify, `{1}` | `AGREES-REJECT` | — | PCRE2 error 109. **Was a MISCOMPILE until 2026-08-10 (K6, FIX-1)**; `*`, `+` and `?` had always been rejected in this position and only `{` was missed, because `try_quant` is reached from `p_rep`, i.e. after an atom. Malformed braces (`{}`, `{,}`, `{1`, `a{`) stay literal in both engines, and the reject suite's accept-controls pin that |
-| space/tab inside `{m,n}`, `a{ 1}` | `OK` | — | PCRE2 (following Perl 5.34) skips 0x20 and 0x09 in each of the four gaps `{`_m_`,`_n_`}`, and no other byte. **Was a MISCOMPILE until 2026-08-10 (K8)** — silently literal text, and invisible to a verdict comparison because both engines accept in quantifier position. Whitespace never joins digits (`a{1 2}` is literal) nor stands in for a number (`a{ }`, `a{ , }` stay literal). Found by R7's spec critic, not by the 49 probes that certified K5/K6 |
-| brace diagnostic PRECEDENCE | `OK` | — | measured, not assumed: in atom position PCRE2 answers 105 for `{65536}` and 104 for `{3,1}`, not 109; and too-big beats out-of-order, so `a{65536,1}` is 105. pcrec agrees on all three, offsets included |
-| large bounded repeat, `a{0,65535}` | `OK-LIMITED` | `PLANNED` | limit kind: RESOURCE cap. **K7, fixed 2026-08-18 ([M4.7b]); this row previously made two claims that were wrong as written, corrected here.** The BOUNDED-OPTIONAL form is correct up to the NFA size cap and refuses above it in ~0.1 s and ~11 MB (bisected: `a{0,31999}` compiles, `a{0,32000}` refuses; `a{0,20000}` compiles at 13 MB; `a{0,65535}` refuses on the 131072-state NFA cap). The EXACT-COUNT form is correct to `a{9795}` (bisected; `a{9796}` refuses) and refuses above it on the subset-element bound (`a{65535}`: 216 MB, 0.9 s). Neither form can exhaust memory or abort a caller any more, and a compile under a caller-set memory limit now reports "out of memory compiling this pattern" rather than killing the caller's process. Not a miscompile; no wrong code is emitted, and no pattern that compiled before this fix compiles to different bytes after it. **The two corrected claims, kept visible because the doc's own vocabulary is what made them wrong:** (1) this row said "limit kind: RESOURCE cap", which the table at the top of this file defines as "correct until a measured size, THEN A CLEAN FAILURE" — the defining property K7 was filed for not having, so the row asserted a category it did not meet; (2) it said the process "is SIGKILLed", which was true only with no limit set — under a caller's limit it SIGABRTed, and the difference matters because a caller who set a limit is exactly the caller the row was describing. A third statement, "`a{65535}` does hit the cap cleanly", was true in verdict but reached that verdict after 2.1 GB and 12.3 s, which is not what "cleanly" means anywhere else in this document |
+| syntax | status | becomes |
+|---|---|---|
+| `? * + {n} {n,m} {n,} {,m}` greedy | `OK` | — |
+| `?? *? +? {n,m}? {n,}? {,m}?` lazy | `OK` | — |
+| `?+ *+ ++ {n,m}+ {n,}+ {,m}+` possessive | `REJECTED` | `PLANNED-HARD` |
+| quantifier on `^`/`$` | `OK` | — |
+| double quantifier `a**`, `a{2}{3}` | `OK` | — |
+| count above 65535, `a{65536}` | `AGREES-REJECT` | — |
+| `{m,n}` with nothing to quantify, `{1}` | `AGREES-REJECT` | — |
+| space/tab inside `{m,n}`, `a{ 1}` | `OK` | — |
+| brace diagnostic PRECEDENCE | `OK` | — |
+| large bounded repeat, `a{0,65535}` | `OK-LIMITED` | `PLANNED` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: quantifiers -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:quantifiers-greedy`**
+
+`{,m}` = `{0,m}` per PCRE2 10.43+, found by our own fuzzer.
+
+**`base:quantifiers-lazy`**
+
+priority subset construction preserves greedy/lazy preference (D3).
+
+**`base:quantifiers-possessive`**
+
+Module `atomic-groups`. Possessiveness prunes alternatives that a priority
+simulation explores in parallel, so it is a real semantic change needing
+explicit cut support, not a no-op.
+
+**`base:quantifier-on-anchors`**
+
+rejected as PCRE2 error 109 does; `(^)*` is accepted because a group
+wrapper makes it quantifiable, matching PCRE2.
+
+**`base:double-quantifier`**
+
+rejected, corpus-covered. Note the WORDING differs on `a{1}{2}`: PCRE2
+says error 109, pcrec says "multiple quantifiers on the same item". Same
+verdict, and the offset agrees.
+
+**`base:quantifier-count-overflow`** (2026-08-10)
+
+PCRE2 error 105. **Was a MISCOMPILE until 2026-08-10 (K5, FIX-1)** —
+silently reinterpreted as literal text, so the emitted matcher accepted a
+different language than the pattern named. The overflow is judged only
+once the form is CONFIRMED to be a quantifier, which is what PCRE2 does:
+`a{65536x}`, `a{65536,x}` and `a{65536` all stay literal in both engines.
+
+**`base:quantifier-nothing-to-quantify`** (2026-08-10)
+
+PCRE2 error 109. **Was a MISCOMPILE until 2026-08-10 (K6, FIX-1)**; `*`,
+`+` and `?` had always been rejected in this position and only `{` was
+missed, because `try_quant` is reached from `p_rep`, i.e. after an atom.
+Malformed braces (`{}`, `{,}`, `{1`, `a{`) stay literal in both engines,
+and the reject suite's accept-controls pin that.
+
+**`base:quantifier-brace-whitespace`** (2026-08-10)
+
+PCRE2 (following Perl 5.34) skips 0x20 and 0x09 in each of the four gaps
+`{`_m_`,`_n_`}`, and no other byte. **Was a MISCOMPILE until 2026-08-10
+(K8)** — silently literal text, and invisible to a verdict comparison
+because both engines accept in quantifier position. Whitespace never joins
+digits (`a{1 2}` is literal) nor stands in for a number (`a{ }`, `a{ , }`
+stay literal). Found by R7's spec critic, not by the 49 probes that
+certified K5/K6.
+
+**`base:quantifier-brace-precedence`**
+
+measured, not assumed: in atom position PCRE2 answers 105 for `{65536}`
+and 104 for `{3,1}`, not 109; and too-big beats out-of-order, so
+`a{65536,1}` is 105. pcrec agrees on all three, offsets included.
+
+**`base:quantifier-large-bounded-repeat`** (2026-08-18)
+
+limit kind: RESOURCE cap. **K7, fixed 2026-08-18 ([M4.7b]); this row
+previously made two claims that were wrong as written, corrected here.**
+The BOUNDED-OPTIONAL form is correct up to the NFA size cap and refuses
+above it in ~0.1 s and ~11 MB (bisected: `a{0,31999}` compiles,
+`a{0,32000}` refuses; `a{0,20000}` compiles at 13 MB; `a{0,65535}` refuses
+on the 131072-state NFA cap). The EXACT-COUNT form is correct to `a{9795}`
+(bisected; `a{9796}` refuses) and refuses above it on the subset-element
+bound (`a{65535}`: 216 MB, 0.9 s). Neither form can exhaust memory or abort
+a caller any more, and a compile under a caller-set memory limit now
+reports "out of memory compiling this pattern" rather than killing the
+caller's process. Not a miscompile; no wrong code is emitted, and no
+pattern that compiled before this fix compiles to different bytes after
+it. **The two corrected claims, kept visible because the doc's own
+vocabulary is what made them wrong:** (1) this row said "limit kind:
+RESOURCE cap", which the table at the top of this file defines as
+"correct until a measured size, THEN A CLEAN FAILURE" — the defining
+property K7 was filed for not having, so the row asserted a category it
+did not meet; (2) it said the process "is SIGKILLed", which was true only
+with no limit set — under a caller's limit it SIGABRTed, and the
+difference matters because a caller who set a limit is exactly the caller
+the row was describing. A third statement, "`a{65535}` does hit the cap
+cleanly", was true in verdict but reached that verdict after 2.1 GB and
+12.3 s, which is not what "cleanly" means anywhere else in this document.
+
+<!-- END GENERATED -->
 
 ## Anchors and simple assertions
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `^` | `OK` | — | start of subject, accepted and correct in every position (probed at class open, mid-pattern, and per alternation branch — DOC-1, 2026-08-11, which found the old `OK-LIMITED` stating no limit; the multiline gap it gestured at is `$`'s too and both rows now carry it the same way). Multiline `^` is `REJECTED` — since MOD-0.5c the gate-open answer names module `assertions` per-letter (the MOD-0.5a ruling); the DFA-state-context design for it is DD-6. One SPEED caveat, not a correctness limit: unanchored patterns with `^` in some branches stay on the slower ENG_ATTEMPT engine until DD-7's unification (D8) |
-| `$` | `OK` | — | end of subject or before a final newline — PCRE2's default. Mid-pattern `$` is fully general via EOL-variant states |
-| `\A \Z \z` | `OK` | — | module `assertions` SHIPPED THESE 2026-08-19 ([M6.2] wave A), behind the gate: `--features assertions` compiles them, a bare invocation still refuses by name (`assertions` is not in the bare-default set `std1`). `\A` and `\Z` turned out to be EXACT ALIASES of the `^`/`$` nodes pcrec has shipped since M1 — pcrec's own node comments are PCRE2's definitions word for word — so they cost no engine work at all (measured, 1,008 differential cells / 0 disagreements). `\z` is genuinely stronger than `\Z` and needed a third closure view, interned only where it differs from the EOL view, so a `\z`-free pattern's artifact is byte-identical (gated: tests/codegen/run_endvar_identity.sh). Oracle note: python `re` is the WRONG oracle for `\Z` (its `\Z` is PCRE2's `\z`) — tests/assertions/ carries its own libpcre2 verifier, U11 |
-| `\b \B \G` | `OK` | — | module `assertions` SHIPPED THESE 2026-08-19 ([M6.2] waves B and D), behind the gate, and this row is CORRECTED — it said `REJECTED` and described the work as pending for two waves after those waves landed. `\b`/`\B` cost a byte-equivalence-class refinement, a bit of DFA state identity, a class-indexed accept and runtime start-state seeding from a byte OUTSIDE the search window at `startpos > 0` (assertions_design.md §3.8, whose reverse TERMINATION half was a lost-match defect found by the R30 re-check). `\G` cost a third closure bit, a second interior start-state family and a three-way start dispatch — and did NOT need DD-4's wrap toggle, because ENG_ATTEMPT already emits the un-self-looped shape and `\G` is `start_max = startpos`. Oracles: tests/assertions/wordb_basic.rxt, wordb_empty_compose.rxt, wordb_engattempt.rxt, wordb_vm.rxt (the wave B corpus, shard-split 2026-08-21 — see tests/assertions/CLAUDE.md) and gpos.rxt (the latter `# pcre2-only` in its entirety — python has no `\G` at all, U11c) |
+| syntax | status | becomes |
+|---|---|---|
+| `^` | `OK` | — |
+| `$` | `OK` | — |
+| `\A \Z \z` | `OK` | — |
+| `\b \B \G` | `OK` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: anchors-assertions -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:anchor-caret`** (2026-08-11)
+
+start of subject, accepted and correct in every position (probed at class
+open, mid-pattern, and per alternation branch — DOC-1, 2026-08-11, which
+found the old `OK-LIMITED` stating no limit; the multiline gap it gestured
+at is `$`'s too and both rows now carry it the same way). Multiline `^` is
+`REJECTED` — since MOD-0.5c the gate-open answer names module `assertions`
+per-letter (the MOD-0.5a ruling); the DFA-state-context design for it is
+DD-6. One SPEED caveat, not a correctness limit: unanchored patterns with
+`^` in some branches stay on the slower ENG_ATTEMPT engine until DD-7's
+unification (D8).
+
+**`base:anchor-dollar`**
+
+end of subject or before a final newline — PCRE2's default. Mid-pattern
+`$` is fully general via EOL-variant states.
+
+**`\A`** (2026-08-19)
+
+Module `assertions` SHIPPED THESE 2026-08-19 ([M6.2] wave A), behind the
+gate: `--features assertions` compiles them, a bare invocation still
+refuses by name (`assertions` is not in the bare-default set `std1`). `\A`
+and `\Z` turned out to be EXACT ALIASES of the `^`/`$` nodes pcrec has
+shipped since M1 — pcrec's own node comments are PCRE2's definitions word
+for word — so they cost no engine work at all (measured, 1,008
+differential cells / 0 disagreements). `\z` is genuinely stronger than `\Z`
+and needed a third closure view, interned only where it differs from the
+EOL view, so a `\z`-free pattern's artifact is byte-identical (gated:
+tests/codegen/run_endvar_identity.sh). Oracle note: python `re` is the
+WRONG oracle for `\Z` (its `\Z` is PCRE2's `\z`) — tests/assertions/
+carries its own libpcre2 verifier, U11.
+This annotation is keyed to `\A` and covers the bundled prose row
+`\A \Z \z`.
+
+**`\b`** (2026-08-19)
+
+Module `assertions` SHIPPED THESE 2026-08-19 ([M6.2] waves B and D),
+behind the gate, and this row was CORRECTED in the source document — it
+said `REJECTED` and described the work as pending for two waves after
+those waves landed. `\b`/`\B` cost a byte-equivalence-class refinement, a
+bit of DFA state identity, a class-indexed accept and runtime start-state
+seeding from a byte OUTSIDE the search window at `startpos > 0`
+(assertions_design.md §3.8, whose reverse TERMINATION half was a
+lost-match defect found by the R30 re-check). `\G` cost a third closure
+bit, a second interior start-state family and a three-way start dispatch —
+and did NOT need DD-4's wrap toggle, because ENG_ATTEMPT already emits the
+un-self-looped shape and `\G` is `start_max = startpos`. Oracles:
+tests/assertions/wordb_basic.rxt, wordb_empty_compose.rxt,
+wordb_engattempt.rxt, wordb_vm.rxt (the wave B corpus, shard-split
+2026-08-21 — see tests/assertions/CLAUDE.md) and gpos.rxt (the latter
+`# pcre2-only` in its entirety — python has no `\G` at all, U11c).
+This annotation is keyed to `\b` and covers the bundled prose row
+`\b \B \G`. This is the row whose staleness (read `REJECTED` for two
+waves after the module shipped) motivated the [DOC-DRV] restructure
+itself — see docs/dev/plan.md's [DOC-DRV] row and the compliance-refresh
+skill.
+
+<!-- END GENERATED -->
 
 ## Reported match point setting
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `\K` | `OK` | — | module `assertions` SHIPPED THIS 2026-08-19 ([M6.2] wave E, the module's last construct), behind the gate. **VM-ONLY, and the old `PLANNED-HARD` reasoning on this row was RIGHT ABOUT THE OBSTRUCTION AND WRONG ABOUT THE SHAPE.** It said `\K` "interacts directly with the reverse machine". It does not: `\K` changes no LANGUAGE, so `src/ir/nfa.c` lowers it to an epsilon and the capture-erased prefilter built for `a\Kb` is the machine `ab` builds — which is exactly what the hybrid needs, since the prefilter's span start is then the PRE-`\K` start and is used only to bound the search. The real obstruction is narrower: the reported position is a property of the WINNING PATH and a subset state is a priority-ordered SET, which does not carry one. A tagged DFA (Laurikari) recovers exactly such positions; pcrec's is not one and this is recorded as closed BY CHOICE rather than by mathematics (assertions_design.md §6.1, R30 E7). PCRE2 likewise does not support `\K` in its own DFA matcher. So a `\K` pattern is VM-forced (the second `forces_*` row in src/opt/select_engine.c) and `--engine=dfa` REFUSES it by name rather than silently downgrading (D44.6). The write is a trailed capture write to group 0's start slot, so a `\K` crossed on a path that then LOSES is undone: `(?:a\K|ax)c` on "axc" is (0,3). Oracle: tests/assertions/kreset.rxt, `# pcre2-only` in its entirety — python has no `\K` at all and a lookbehind is not a translation of it (U11d) |
+| syntax | status | becomes |
+|---|---|---|
+| `\K` | `OK` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: match-point -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`\K`** (2026-08-19)
+
+Module `assertions` SHIPPED THIS 2026-08-19 ([M6.2] wave E, the module's
+last construct), behind the gate. **VM-ONLY, and the old `PLANNED-HARD`
+reasoning on this row was RIGHT ABOUT THE OBSTRUCTION AND WRONG ABOUT THE
+SHAPE.** It said `\K` "interacts directly with the reverse machine". It
+does not: `\K` changes no LANGUAGE, so `src/ir/nfa.c` lowers it to an
+epsilon and the capture-erased prefilter built for `a\Kb` is the machine
+`ab` builds — which is exactly what the hybrid needs, since the
+prefilter's span start is then the PRE-`\K` start and is used only to
+bound the search. The real obstruction is narrower: the reported position
+is a property of the WINNING PATH and a subset state is a
+priority-ordered SET, which does not carry one. A tagged DFA (Laurikari)
+recovers exactly such positions; pcrec's is not one and this is recorded
+as closed BY CHOICE rather than by mathematics (assertions_design.md
+§6.1, R30 E7). PCRE2 likewise does not support `\K` in its own DFA
+matcher. So a `\K` pattern is VM-forced (the second `forces_*` row in
+src/opt/select_engine.c) and `--engine=dfa` REFUSES it by name rather
+than silently downgrading (D44.6). The write is a trailed capture write to
+group 0's start slot, so a `\K` crossed on a path that then LOSES is
+undone: `(?:a\K|ax)c` on "axc" is (0,3). Oracle: tests/assertions/
+kreset.rxt, `# pcre2-only` in its entirety — python has no `\K` at all and
+a lookbehind is not a translation of it (U11d).
+
+<!-- END GENERATED -->
 
 ## Alternation, capturing, atomic groups
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `a\|b` | `OK` | — | incl. empty branches; leftmost-first preference via priority pruning (D3) |
-| `(...)` | `OK-LIMITED` | — | limit kind: CAPABILITY not yet built. Parses and groups correctly, but capture SPANS are not reported — only the overall match. Captures arrive with the M4 VM engine |
-| `(?:...)` | `OK` | |
-| `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `OK-GATED` | — | module `named-groups`, SHIPPED 2026-08-18 ([M6.3]): all three declaring spellings parse and capture as their group number (opening-paren order, exactly as an unnamed group — including under `(?n)`, which suppresses a PLAIN group's number but NOT a named one's, measured). `rx_info.groups` is populated, sorted by NAME (strcmp, byte-exact and case-sensitive — "name"/"NAME" are two distinct groups, even under `(?i)`, measured both oracles) — PCRE2's own `PCRE2_INFO_NAMETABLE` is sorted the identical way, measured directly (tests/probes/probe_named_groups.c), which is this module's own evidence for the sort key docs/spec/match_api.md §6 had left open (fixed only for today's ref-empty rows — see D59). A duplicate name is a compile error (PCRE2 error 143, no DUPNAMES); `(?J)`/DUPNAMES itself stays OUT OF SCOPE — see its own row below. Backreference-BY-NAME spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) stay module `backrefs`, unaffected — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING position: the three lookbehind tails `=` `!` `*` have rows of their own. `--features none` (the bare default) still refuses with the module name; `--features named-groups` compiles. Oracles: tests/named_groups/ |
-| `(?>...)`, `(*atomic:...)` | `REJECTED` | `PLANNED-HARD` | module `atomic-groups` / `verbs`. Same reasoning as possessive quantifiers: a cut, not a no-op |
+| syntax | status | becomes |
+|---|---|---|
+| `a\|b` | `OK` | — |
+| `(...)` | `OK-LIMITED` | — |
+| `(?:...)` | `OK` | — |
+| `(?<name>...)` `(?'name'...)` `(?P<name>...)` | `OK-GATED` | — |
+| `(?>...)`, `(*atomic:...)` | `REJECTED` | `PLANNED-HARD` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: alternation-capturing -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:alternation-basic`**
+
+incl. empty branches; leftmost-first preference via priority pruning (D3).
+
+**`base:capturing-group-limit`**
+
+limit kind: CAPABILITY not yet built. Parses and groups correctly, but
+capture SPANS are not reported — only the overall match. Captures arrive
+with the M4 VM engine.
+
+**`(?<name>a)`** (2026-08-18)
+
+Module `named-groups`, SHIPPED 2026-08-18 ([M6.3]): all three declaring
+spellings parse and capture as their group number (opening-paren order,
+exactly as an unnamed group — including under `(?n)`, which suppresses a
+PLAIN group's number but NOT a named one's, measured). `rx_info.groups` is
+populated, sorted by NAME (strcmp, byte-exact and case-sensitive —
+"name"/"NAME" are two distinct groups, even under `(?i)`, measured both
+oracles) — PCRE2's own `PCRE2_INFO_NAMETABLE` is sorted the identical way,
+measured directly (tests/probes/probe_named_groups.c), which is this
+module's own evidence for the sort key docs/spec/match_api.md §6 had left
+open (fixed only for today's ref-empty rows — see D59). A duplicate name
+is a compile error (PCRE2 error 143, no DUPNAMES); `(?J)`/DUPNAMES itself
+stays OUT OF SCOPE — see its own row below. Backreference-BY-NAME
+spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) stay module `backrefs`,
+unaffected — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING
+position: the three lookbehind tails `=` `!` `*` have rows of their own.
+`--features none` (the bare default) still refuses with the module name;
+`--features named-groups` compiles. Oracles: tests/named_groups/.
+This annotation is keyed to `(?<name>a)` and covers the bundled prose row
+`(?<name>...)` `(?'name'...)` `(?P<name>...)`.
+
+**`(?>...)`**
+
+Same reasoning as possessive quantifiers: a cut, not a no-op.
+This annotation is keyed to `(?>...)` and covers the bundled prose row
+`(?>...)`, `(*atomic:...)`.
+
+<!-- END GENERATED -->
 
 ## Comment
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(?#....)` | `REJECTED` | `PLANNED` | module `comments` (previously misattributed to `modifiers`; fixed in this survey). Pure lexing, `PLANNED`-trivial |
+| syntax | status | becomes |
+|---|---|---|
+| `(?#....)` | `REJECTED` | `PLANNED` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: comment -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`(?#...)`**
+
+module `comments` (previously misattributed to `modifiers`; fixed in this
+survey). Pure lexing, `PLANNED`-trivial.
+
+<!-- END GENERATED -->
 
 ## Option setting
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(?i)` `(?i:...)` `(?-i)` | `OK` | — | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5c): the D23 fold driven by scoped parse state (`cx->mods`), the measured 17/17 group-scope rule (leaks across sibling branches, restored at the enclosing `)`). Default-on since [STD1b] (`ab7592d`, 2026-08-13): `modifiers` is in the bare-default named set `std1` (D37); `--features none` still refuses with the module name, `--features modifiers`/`--features std1` unchanged. Oracles: tests/modifiers/, spec_mod0 check12 |
-| `(?s)` dotall | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): `.` census 255 -> 256, measured against the oracle. Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(?m)` multiline | `OK` | — | module `assertions` SHIPPED THIS 2026-08-19 ([M6.2] wave C). MOD-0.5a's ruling held: `^`/`$` at internal newlines IS assertion-engine work, so the letter is produced by module `modifiers`' option run and attributed to `assertions`, and needs BOTH enabled (`--features assertions,modifiers`; `modifiers` is default-on under `std1`, `assertions` is not, so a bare invocation still refuses by the letter's own name). Scoped by construction: `(?m)` is resolved AT PARSE TIME onto the `^`/`$` node (D62, `Ast.multiline`), so `(?m:...)`, `(?m)...(?-m)` and a mid-pattern `(?m)` are right without any downstream pass re-deriving scope — and the SCOPED cells are the ones D47.5's own wording did not ask for and the pre-cure code got wrong. `\A`/`\Z`/`\z` are UNAFFECTED under `(?m)`, PCRE2's own rule. **`(?m)^` is NOT the mirror of `(?m)$`**: PCRE2's multiline `^` does not match after a newline that ENDS the string (python3 `re`'s does — upstream_issues.md U11b, found here as a live defect first). `(?-m)` remains an accepted no-op. Oracles: tests/assertions/multiline.rxt (both oracles, 2,700+ cells), tests/assertions/run_mline_diff.sh (a generated sweep against libpcre2 on both engines) |
-| `(?x)` `(?xx)` extended | `OK` | — | module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5d): skip set {09,0A,0B,0C,0D,20,85} (NOT `\s`'s set — NEL is skipped), `#`-comments to 0x0A only (the NEWLINE_LF convention), xx's class-interior {09,20} deletion ahead of the endpoint rule (the D30 §7 `(?xx)[a- ]` hazard, now compiled correctly), doubled-x ADJACENCY rule incl. the later-bare-x downgrade — every clause probe-measured (probe_mod05*.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(?U)` ungreedy | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): default greed inverted at quantifier construction, `?` re-inverts; NOT reset by `(?^)` (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(?n)` no-auto-capture | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting (`--count-groups` oracle-tied via check02's channel); does NOT imply J (measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(?J)` dup names | `REJECTED` | `planned` | Per-letter attributed to module `named-groups` (duplicate NAMES are named-group semantics — the same dispatch logic `(?m)` already uses for `assertions`), MOD-0.5a's original ruling ("J is observable only through named groups") — [M6.3] (2026-08-18) briefly moved this to a K14 OUT-OF-SCOPE reading and then RULED it back: `docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row is `RIDES(M4/captures)`, RATIFIED D38, a PLANNED-LATER disposition, not NEVER — (?J) does not meet K14's "architecturally out of scope per the survey" bar. The letter refuses UNCONDITIONALLY, gate open or closed, naming its true owning module WITHOUT the false "requires" framing ("module 'named-groups' does not implement duplicate group names" — "requires module 'named-groups'" would read as "enabling it fixes this", which named-groups shipping (without dupnames) disproved); `(?-J)` accepted no-op. Pin: tests/reject/ reject_gated |
-| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK` | — | MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0 diff cells over 256x256; all four a-sub pairs census-identical) — accepted and applied as nothing, which is exactly PCRE2's observable behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own that day (DD-12). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(?^)` reset options | `OK` | — | module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): resets i,m,n,s,x,xx to the HARDWIRED defaults; U and J SURVIVE — "unset imnsx" is the measured rule, and the reset is to-constant, not to-compile-option (both from probe_mod05b.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none` still refuses with the module name |
-| `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — | these bound a BACKTRACKING search. pcrec is O(n) by construction, so there is nothing to limit. D22 also removes the adversarial-input motivation. `LIMIT_RECURSION` is PCRE2's older synonym for `LIMIT_DEPTH` — it was in pcrec's verb tables but missing from this row until the K14 check compared them (2026-08-11) |
-| `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — | knobs for PCRE2 implementation internals that pcrec does not have |
-| `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` | match-time semantics, expressible; no owner yet |
-| `(*UTF)` `(*UCP)` | `REJECTED` | `PLANNED` | module `verbs`; the underlying capability is M5 |
-| `(*CASELESS_RESTRICT)` `(*TURKISH_CASING)` | `OUT-OF-SCOPE` | — | for the ASCII tier — revisit with DD-1's Unicode work |
+| syntax | status | becomes |
+|---|---|---|
+| `(?i)` `(?i:...)` `(?-i)` | `OK` | — |
+| `(?s)` dotall | `OK` | — |
+| `(?m)` multiline | `OK` | — |
+| `(?x)` `(?xx)` extended | `OK` | — |
+| `(?U)` ungreedy | `OK` | — |
+| `(?n)` no-auto-capture | `OK` | — |
+| `(?J)` dup names | `REJECTED` | `planned` |
+| `(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)` | `OK` | — |
+| `(?^)` reset options | `OK` | — |
+| `(*LIMIT_DEPTH=)` `(*LIMIT_HEAP=)` `(*LIMIT_MATCH=)` `(*LIMIT_RECURSION=)` | `OUT-OF-SCOPE` | — |
+| `(*NO_JIT)` `(*NO_START_OPT)` `(*NO_AUTO_POSSESS)` `(*NO_DOTSTAR_ANCHOR)` | `OUT-OF-SCOPE` | — |
+| `(*NOTEMPTY)` `(*NOTEMPTY_ATSTART)` | `REJECTED` | `PLANNED` |
+| `(*UTF)` `(*UCP)` | `REJECTED` | `PLANNED` |
+| `(*CASELESS_RESTRICT)` `(*TURKISH_CASING)` | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: option-setting -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`(?i)`** (2026-08-12)
+
+Module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5c): the D23 fold
+driven by scoped parse state (`cx->mods`), the measured 17/17 group-scope
+rule (leaks across sibling branches, restored at the enclosing `)`).
+Default-on since [STD1b] (`ab7592d`, 2026-08-13): `modifiers` is in the
+bare-default named set `std1` (D37); `--features none` still refuses with
+the module name, `--features modifiers`/`--features std1` unchanged.
+Oracles: tests/modifiers/, spec_mod0 check12.
+This annotation is keyed to `(?i)` and covers the bundled prose row
+`(?i)` `(?i:...)` `(?-i)`.
+
+**`(?s)`** (2026-08-12)
+
+Module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): `.` census 255 -> 256,
+measured against the oracle. Default-on since [STD1b] (`ab7592d`,
+2026-08-13, D37 `std1` set); `--features none` still refuses with the
+module name.
+
+**`(?m)`** (2026-08-19)
+
+Module `assertions` SHIPPED THIS 2026-08-19 ([M6.2] wave C). MOD-0.5a's
+ruling held: `^`/`$` at internal newlines IS assertion-engine work, so the
+letter is produced by module `modifiers`' option run and attributed to
+`assertions`, and needs BOTH enabled (`--features assertions,modifiers`;
+`modifiers` is default-on under `std1`, `assertions` is not, so a bare
+invocation still refuses by the letter's own name). Scoped by
+construction: `(?m)` is resolved AT PARSE TIME onto the `^`/`$` node (D62,
+`Ast.multiline`), so `(?m:...)`, `(?m)...(?-m)` and a mid-pattern `(?m)`
+are right without any downstream pass re-deriving scope — and the SCOPED
+cells are the ones D47.5's own wording did not ask for and the pre-cure
+code got wrong. `\A`/`\Z`/`\z` are UNAFFECTED under `(?m)`, PCRE2's own
+rule. **`(?m)^` is NOT the mirror of `(?m)$`**: PCRE2's multiline `^` does
+not match after a newline that ENDS the string (python3 `re`'s does —
+upstream_issues.md U11b, found here as a live defect first). `(?-m)`
+remains an accepted no-op. Oracles: tests/assertions/multiline.rxt (both
+oracles, 2,700+ cells), tests/assertions/run_mline_diff.sh (a generated
+sweep against libpcre2 on both engines).
+
+**`(?x)`** (2026-08-12)
+
+Module `modifiers` SHIPPED THESE 2026-08-12 (MOD-0.5d): skip set
+{09,0A,0B,0C,0D,20,85} (NOT `\s`'s set — NEL is skipped), `#`-comments to
+0x0A only (the NEWLINE_LF convention), xx's class-interior {09,20}
+deletion ahead of the endpoint rule (the D30 §7 `(?xx)[a- ]` hazard, now
+compiled correctly), doubled-x ADJACENCY rule incl. the later-bare-x
+downgrade — every clause probe-measured (probe_mod05*.c). Default-on
+since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set); `--features none`
+still refuses with the module name.
+This annotation is keyed to `(?x)` and covers the bundled prose row
+`(?x)` `(?xx)`.
+
+**`(?U)`** (2026-08-12)
+
+Module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): default greed inverted
+at quantifier construction, `?` re-inverts; NOT reset by `(?^)` (measured).
+Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` set);
+`--features none` still refuses with the module name.
+
+**`(?n)`** (2026-08-12)
+
+Module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): plain `(` stops counting
+(`--count-groups` oracle-tied via check02's channel); does NOT imply J
+(measured). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1`
+set); `--features none` still refuses with the module name.
+
+**`(?J)`** (2026-08-18)
+
+Per-letter attributed to module `named-groups` (duplicate NAMES are
+named-group semantics — the same dispatch logic `(?m)` already uses for
+`assertions`), MOD-0.5a's original ruling ("J is observable only through
+named groups") — [M6.3] (2026-08-18) briefly moved this to a K14
+OUT-OF-SCOPE reading and then RULED it back: `docs/pcre2_options.md`'s
+`PCRE2_DUPNAMES` row is `RIDES(M4/captures)`, RATIFIED D38, a
+PLANNED-LATER disposition, not NEVER — (?J) does not meet K14's
+"architecturally out of scope per the survey" bar. The letter refuses
+UNCONDITIONALLY, gate open or closed, naming its true owning module
+WITHOUT the false "requires" framing ("module 'named-groups' does not
+implement duplicate group names" — "requires module 'named-groups'" would
+read as "enabling it fixes this", which named-groups shipping (without
+dupnames) disproved); `(?-J)` accepted no-op. Pin: tests/reject/
+reject_gated.
+
+**`(?a)`**
+
+MEASURED NO-OPS at options=0 C locale (probe_mod05.c: `(?ri)` vs `(?i)` 0
+diff cells over 256x256; all four a-sub pairs census-identical) —
+accepted and applied as nothing, which is exactly PCRE2's observable
+behaviour in this mode. They become real under UTF/UCP: MOD-0.6/M5 own
+that day (DD-12). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37
+`std1` set); `--features none` still refuses with the module name.
+This annotation is keyed to `(?a)` and covers the bundled prose row
+`(?a)` `(?aD)` `(?aS)` `(?aW)` `(?aP)` `(?aT)` `(?r)`.
+
+**`(?^)`**
+
+Module `modifiers` SHIPPED 2026-08-12 (MOD-0.5c): resets i,m,n,s,x,xx to
+the HARDWIRED defaults; U and J SURVIVE — "unset imnsx" is the measured
+rule, and the reset is to-constant, not to-compile-option (both from
+probe_mod05b.c). Default-on since [STD1b] (`ab7592d`, 2026-08-13, D37
+`std1` set); `--features none` still refuses with the module name.
+
+**`base:verbs-limit-depth`**
+
+these bound a BACKTRACKING search. pcrec is O(n) by construction, so
+there is nothing to limit. D22 also removes the adversarial-input
+motivation. `LIMIT_RECURSION` is PCRE2's older synonym for `LIMIT_DEPTH`
+— it was in pcrec's verb tables but missing from this row until the K14
+check compared them (2026-08-11).
+
+**`base:verbs-no-jit-family`**
+
+knobs for PCRE2 implementation internals that pcrec does not have.
+
+**`base:verbs-notempty`**
+
+match-time semantics, expressible; no owner yet.
+
+**`base:verbs-utf-ucp`**
+
+module `verbs`; the underlying capability is M5.
+
+**`base:verbs-caseless-turkish`**
+
+for the ASCII tier — revisit with DD-1's Unicode work.
+
+**`base:option-run-doorway-ordering`** (2026-08-12)
 
 **A RULED, deliberate tier-2 divergence (D26; manager ruling 2026-08-12,
 MOD-0.8c): the per-letter MODULE GATE answers before the option run's own
-VALIDITY check.** An option run that is BOTH invalid as a run AND contains a
-letter pcrec defers to another module is reported as the deferral, not as the
-invalidity:
+VALIDITY check.** An option run that is BOTH invalid as a run AND contains
+a letter pcrec defers to another module is reported as the deferral, not
+as the invalidity:
 
     $ build/pcrec --features modifiers -o - '(?m--)'
     pcrec: inline option 'm' (multiline) requires module 'assertions'
     libpcre2 10.46: error 194, "invalid hyphen in option setting"
 
-`(?i--)`, whose letters are all implemented, IS diagnosed as the malformed run
-it is — so the ordering is only observable through a deferred letter. At
-measurement time (2026-08-12) that was exactly two letters, `m` (→
+`(?i--)`, whose letters are all implemented, IS diagnosed as the malformed
+run it is — so the ordering is only observable through a deferred letter.
+At measurement time (2026-08-12) that was exactly two letters, `m` (→
 `assertions`) and `J` (→ `named-groups`) — both still true after [M6.3]
-(2026-08-18): `J`'s wording moved (twice, same day — see the `(?J)` row
-above) but it still names `named-groups` as its owning module, so both
-letters remain MODULE-shaped deferrals, just with `J`'s phrasing avoiding
-the false "requires" framing (`named-groups` IS enabled once this
-diagnostic is reachable; enabling it again would not fix anything).
+(2026-08-18): `J`'s wording moved (twice, same day — see the `(?J)`
+annotation above) but it still names `named-groups` as its owning module,
+so both letters remain MODULE-shaped deferrals, just with `J`'s phrasing
+avoiding the false "requires" framing (`named-groups` IS enabled once
+this diagnostic is reachable; enabling it again would not fix anything).
 
-**Why this is tier 2 and not tier 1.** Both engines REFUSE, and neither emits
-anything: what differs is which REFUSAL CATEGORY the user is told about, which
-is the same distinction that keeps K15 at tier 2. Nothing miscompiles, no
-pattern changes meaning, and pcrec's answer is not false — `(?m--)` genuinely
-does need module `assertions` before it could ever compile. It is simply the
-less useful of two true sentences, and D26 puts diagnostic category for a
-construct pcrec has not implemented outside the exact tier.
+**Why this is tier 2 and not tier 1.** Both engines REFUSE, and neither
+emits anything: what differs is which REFUSAL CATEGORY the user is told
+about, which is the same distinction that keeps K15 at tier 2. Nothing
+miscompiles, no pattern changes meaning, and pcrec's answer is not false —
+`(?m--)` genuinely does need module `assertions` before it could ever
+compile. It is simply the less useful of two true sentences, and D26 puts
+diagnostic category for a construct pcrec has not implemented outside the
+exact tier.
 
-**MEASURED 2026-08-12** (re-measured for this entry, not transcribed from the
-report that found it):
+**MEASURED 2026-08-12** (re-measured for this entry, not transcribed from
+the report that found it):
 
 - Over `tests/spec_mod0/check14_option_runs.c`'s generated space: **286
   deferred cells of 4,385 compared — 189 by letter, 97 by doorway byte.**
   That is every deferral, of which the ordering divergence is the subset
   landing on an invalid run.
 - Over PC-3's own option-run space (19,448 cells: the Q2 alphabet, runs of
-  length 0-3, both terminator shapes), **14,986 cells are runs libpcre2 calls
-  invalid** (error 111 or 194). Of those, pcrec diagnoses 14,844 as invalid and
-  DEFERS on **142** at the closed gate — all to `modifiers`, the
-  row-level deferral before the run is ever read — and diagnoses 14,978 and
-  defers on **8** with the gate open (4 to `assertions`, 4 to `named-groups`:
-  `(?m--)`, `(?m--:a)`, `(?^m-)`, `(?^m-:a)` and the `J` equivalents). Nothing
-  is accepted in either state. **"Closed gate" here meant the bare default at
-  measurement time (2026-08-12), when the bare default was empty; since
-  [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` = {`classes`, `modifiers`}) the
-  BARE default reproduces the 8-cell gate-open figures for `modifiers`
-  letters (verified live: bare `(?m--)` and `--features modifiers '(?m--)'`
-  both give `requires module 'assertions'`) — only `--features none`
-  reproduces the original 142-cell closed-gate figure now.**
+  length 0-3, both terminator shapes), **14,986 cells are runs libpcre2
+  calls invalid** (error 111 or 194). Of those, pcrec diagnoses 14,844 as
+  invalid and DEFERS on **142** at the closed gate — all to `modifiers`,
+  the row-level deferral before the run is ever read — and diagnoses
+  14,978 and defers on **8** with the gate open (4 to `assertions`, 4 to
+  `named-groups`: `(?m--)`, `(?m--:a)`, `(?^m-)`, `(?^m-:a)` and the `J`
+  equivalents). Nothing is accepted in either state. **"Closed gate" here
+  meant the bare default at measurement time (2026-08-12), when the bare
+  default was empty; since [STD1b] (`ab7592d`, 2026-08-13, D37 `std1` =
+  {`classes`, `modifiers`}) the BARE default reproduces the 8-cell
+  gate-open figures for `modifiers` letters (verified live: bare
+  `(?m--)` and `--features modifiers '(?m--)'` both give "requires module
+  'assertions'") — only `--features none` reproduces the original
+  142-cell closed-gate figure now.**
 
-**The population still shrinks toward zero, and [M6.3] changed WHICH event
-closes the `J`-half, not whether it closes.** 142 → 8 is what opening the
-gate already does: every letter whose module lands and VALIDATES the
-letter stops deferring. `m`'s 4 cells close when `assertions` lands. `J`'s
-4 cells DO NOT close when `named-groups` (the module already shipped,
-2026-08-18) lands a producer — they close only when a FUTURE dupnames
-producer lands inside it (`docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row,
-RIDES(M4/captures), RATIFIED D38 — so this is a real, scheduled-later
-event, not the settled-forever state a same-day intermediate draft of
-this entry briefly recorded). Until then `J`'s cells keep deferring, with
-the true-owning-module wording the `(?J)` row above states.
+**The population still shrinks toward zero, and [M6.3] changed WHICH
+event closes the `J`-half, not whether it closes.** 142 → 8 is what
+opening the gate already does: every letter whose module lands and
+VALIDATES the letter stops deferring. `m`'s 4 cells close when
+`assertions` lands. `J`'s 4 cells DO NOT close when `named-groups` (the
+module already shipped, 2026-08-18) lands a producer — they close only
+when a FUTURE dupnames producer lands inside it (`docs/pcre2_options.md`'s
+`PCRE2_DUPNAMES` row, RIDES(M4/captures), RATIFIED D38 — so this is a
+real, scheduled-later event, not the settled-forever state a same-day
+intermediate draft of this entry briefly recorded). Until then `J`'s
+cells keep deferring, with the true-owning-module wording the `(?J)`
+annotation above states.
 
 **REVISIT TRIGGER**, therefore, is TWO events, not one: re-measure when
 `assertions` lands and delete the `m`-half of this entry when its
@@ -337,148 +1013,389 @@ second copy of it.
 
 Found by the MOD-0.8b D27 blinded writer (recorded in
 `docs/dev/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
-document-don't-reorder. **No K row**: `docs/dev/known_issues.md` is for confirmed
-BUGS deferred rather than fixed, and this is a ruled category divergence with a
-self-closing population — the same treatment shape as this file's K15 and K16
-paragraphs, minus the defect.
+document-don't-reorder. **No K row**: `docs/dev/known_issues.md` is for
+confirmed BUGS deferred rather than fixed, and this is a ruled category
+divergence with a self-closing population — the same treatment shape as
+this file's K15 and K16 paragraphs, minus the defect.
+
+<!-- END GENERATED -->
 
 ## Newline convention and `\R`
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(*CR)` `(*LF)` `(*CRLF)` `(*ANYCRLF)` `(*ANY)` `(*NUL)` | `REJECTED` | `PLANNED` | module `verbs`. Newline convention is a compile-time parameter affecting `$`, `.` and `\R` — exactly the kind of thing D18 says should be hyperspecialized away |
-| `(*BSR_ANYCRLF)` `(*BSR_UNICODE)` | `REJECTED` | `PLANNED` | same, scoped to `\R` |
+| syntax | status | becomes |
+|---|---|---|
+| `(*CR)` `(*LF)` `(*CRLF)` `(*ANYCRLF)` `(*ANY)` `(*NUL)` | `REJECTED` | `PLANNED` |
+| `(*BSR_ANYCRLF)` `(*BSR_UNICODE)` | `REJECTED` | `PLANNED` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: newline-convention -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:newline-convention-verbs`**
+
+module `verbs`. Newline convention is a compile-time parameter affecting
+`$`, `.` and `\R` — exactly the kind of thing D18 says should be
+hyperspecialized away.
+
+**`base:newline-bsr`**
+
+same, scoped to `\R`.
+
+<!-- END GENERATED -->
 
 ## Lookaround
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(?=...)` `(?!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround`. Lookahead is automaton intersection — feasible, not cheap, and it multiplies states |
-| `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` | module `lookaround`. Fixed-length lookbehind is tractable via the reverse machine D7 already builds; variable-length is much harder |
-| `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` verbose spellings | `REJECTED` | — | module `verbs`; same underlying feature |
-| `[[:<:]]` `[[:>:]]` | `REJECTED` | `PLANNED` | module `assertions` since MOD-0.3a (2026-08-12; the split the earlier text assigned to whoever implemented the doorway) — they are NOT character classes but zero-width WORD BOUNDARY assertions PCRE2 inherited from its Unix ancestry, measured on "abc def" (`[[:<:]]def` matches [4,7), `abc[[:>:]]` matches [0,3)); `^` does not negate them. Found by PC-3's generated name differential (FIX-2), not by reading. **And they are POSITION-RESTRICTED (R9/C3-4):** libpcre2 accepts them ONLY as a class's ENTIRE content, so `[[:<:]]` compiles while `[x[:<:]]`, `[[:<:]a]` and even `[^[:<:]]` are all error 130 — unlike every ordinary POSIX name, which works in any position. pcrec promised module `classes` for all of those until R9; it now answers "unknown POSIX class name", and `check_posix_positions` in tests/registry/ crosses name against position, which is the axis pair neither earlier differential varied |
-| `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` | module `lookaround`. The non-atomic variants are defined by their backtracking behaviour. **This row was RIGHT and the registry was WRONG** until R8/C4-8: `(?*...)` had no registry row, so the `(?` catch-all answered "requires module 'modifiers'" for it. Three homes, one disagreeing — the `\v` shape exactly, and found the same way, by reading an outside source rather than by any test |
+| syntax | status | becomes |
+|---|---|---|
+| `(?=...)` `(?!...)` | `REJECTED` | `PLANNED-HARD` |
+| `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` |
+| `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` verbose spellings | `REJECTED` | — |
+| `[[:<:]]` `[[:>:]]` | `REJECTED` | `PLANNED` |
+| `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: lookaround -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`(?=...)`**
+
+Lookahead is automaton intersection — feasible, not cheap, and it
+multiplies states.
+
+**`(?<=...)`**
+
+Fixed-length lookbehind is tractable via the reverse machine D7 already
+builds; variable-length is much harder.
+
+**`base:lookaround-verb-spellings`**
+
+module `verbs`; same underlying feature.
+
+**`base:posix-word-boundary-classes`**
+
+Module `assertions` since MOD-0.3a (2026-08-12; the split the earlier
+text assigned to whoever implemented the doorway) — they are NOT
+character classes but zero-width WORD BOUNDARY assertions PCRE2 inherited
+from its Unix ancestry, measured on "abc def" (`[[:<:]]def` matches
+[4,7), `abc[[:>:]]` matches [0,3)); `^` does not negate them. Found by
+PC-3's generated name differential (FIX-2), not by reading. **And they are
+POSITION-RESTRICTED (R9/C3-4):** libpcre2 accepts them ONLY as a class's
+ENTIRE content, so `[[:<:]]` compiles while `[x[:<:]]`, `[[:<:]a]` and
+even `[^[:<:]]` are all error 130 — unlike every ordinary POSIX name,
+which works in any position. pcrec promised module `classes` for all of
+those until R9; it now answers "unknown POSIX class name", and
+`check_posix_positions` in tests/registry/ crosses name against position,
+which is the axis pair neither earlier differential varied.
+
+**`(?*a)`**
+
+**This row was RIGHT and the registry was WRONG** until R8/C4-8:
+`(?*...)` had no registry row, so the `(?` catch-all answered "requires
+module 'modifiers'" for it. Three homes, one disagreeing — the `\v` shape
+exactly, and found the same way, by reading an outside source rather than
+by any test. The non-atomic variants are defined by their backtracking
+behaviour.
+
+<!-- END GENERATED -->
 
 ## Substring scan, script runs
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(*scan_substring:...)` `(*scs:...)` | `OUT-OF-SCOPE` | — | (revisit post-M4) — re-matches against previously CAPTURED text, so it needs capture state at match time |
-| `(*script_run:...)` `(*sr:...)` `(*atomic_script_run:...)` `(*asr:...)` | `REJECTED` | — | module `verbs`. Needs Unicode script data (M5); the assertion itself is regular |
+| syntax | status | becomes |
+|---|---|---|
+| `(*scan_substring:...)` `(*scs:...)` | `OUT-OF-SCOPE` | — |
+| `(*script_run:...)` `(*sr:...)` `(*atomic_script_run:...)` `(*asr:...)` | `REJECTED` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: substring-scan -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:scan-substring`**
+
+(revisit post-M4) — re-matches against previously CAPTURED text, so it
+needs capture state at match time.
+
+**`base:script-run`**
+
+module `verbs`. Needs Unicode script data (M5); the assertion itself is
+regular.
+
+<!-- END GENERATED -->
 
 ## Backreferences
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)` | `REJECTED` | `PLANNED-HARD` | module `backrefs`. **Backreferences are not a regular language** — no DFA can do them, and PCRE2's own DFA matcher does not. They need the M4 VM engine plus capture state. Note also D23's boundary: a CASELESS backreference compares subject text to subject text, which cannot fold into the automaton and needs a match-time comparison. All ATOM position: inside a class these spellings are not backreferences at all — octal or literal fallback, supported since FIX-3 (K13); see Escaped characters. The module, when it lands, must not touch the class position |
+| syntax | status | becomes |
+|---|---|---|
+| `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)` | `REJECTED` | `PLANNED-HARD` |
+
+<!-- BEGIN GENERATED ANNOTATIONS: backreferences -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`\1`**
+
+**Backreferences are not a regular language** — no DFA can do them, and
+PCRE2's own DFA matcher does not. They need the M4 VM engine plus capture
+state. Note also D23's boundary: a CASELESS backreference compares
+subject text to subject text, which cannot fold into the automaton and
+needs a match-time comparison. All ATOM position: inside a class these
+spellings are not backreferences at all — octal or literal fallback,
+supported since FIX-3 (K13); see Escaped characters. The module, when it
+lands, must not touch the class position.
+This annotation is keyed to `\1` and covers the bundled prose row
+`\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)`.
+
+<!-- END GENERATED -->
 
 ## Subroutine references and recursion
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` … | `REJECTED` | `PLANNED-HARD` | modules `recursion` / `backrefs`. Recursion makes the pattern language context-free, which is outside both a DFA and a plain Pike VM; it needs a recursive/backtracking matcher. Unsupported by PCRE2's DFA matcher too |
-| `(?R(grouplist))` and capture-retaining forms | `OUT-OF-SCOPE` | — | (revisit post-M4) — capture-state dependent |
+| syntax | status | becomes |
+|---|---|---|
+| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` … | `REJECTED` | `PLANNED-HARD` |
+| `(?R(grouplist))` and capture-retaining forms | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: subroutine-recursion -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`(?R)`**
+
+Modules `recursion` / `backrefs`. Recursion makes the pattern language
+context-free, which is outside both a DFA and a plain Pike VM; it needs a
+recursive/backtracking matcher. Unsupported by PCRE2's DFA matcher too.
+This annotation is keyed to `(?R)` and covers the bundled prose row
+`(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` ….
+
+**`base:recursion-grouplist`**
+
+(revisit post-M4) — capture-state dependent.
+
+<!-- END GENERATED -->
 
 ## Conditional patterns
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(?(n)...)` `(?(<name>)...)` `(?(name)...)` | `REJECTED` | `PLANNED-HARD` | module `conditionals`. The condition is "did group N participate", i.e. capture state — explicitly unsupported by `pcre2_dfa_match` for the same reason |
-| `(?(R)` `(?(Rn)` `(?(R&name)` | `REJECTED` | — | recursion-dependent |
-| `(?(DEFINE)...)` | `REJECTED` | — | only useful with subroutine calls |
-| `(?(assert)...)` | `REJECTED` | — | lookaround-dependent |
-| `(?(VERSION>=n.m)...)` | `OUT-OF-SCOPE` | — | tests the PCRE2 library version; meaningless for a different implementation. If a compatibility layer (V-A) ever wants it, it is a parse-time constant fold |
+| syntax | status | becomes |
+|---|---|---|
+| `(?(n)...)` `(?(<name>)...)` `(?(name)...)` | `REJECTED` | `PLANNED-HARD` |
+| `(?(R)` `(?(Rn)` `(?(R&name)` | `REJECTED` | — |
+| `(?(DEFINE)...)` | `REJECTED` | — |
+| `(?(assert)...)` | `REJECTED` | — |
+| `(?(VERSION>=n.m)...)` | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: conditional-patterns -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`(?(1)a|b)`**
+
+The condition is "did group N participate", i.e. capture state —
+explicitly unsupported by `pcre2_dfa_match` for the same reason.
+
+**`base:conditional-recursion-test`**
+
+recursion-dependent.
+
+**`base:conditional-define`**
+
+only useful with subroutine calls.
+
+**`base:conditional-assert`**
+
+lookaround-dependent.
+
+**`base:conditional-version`**
+
+tests the PCRE2 library version; meaningless for a different
+implementation. If a compatibility layer (V-A) ever wants it, it is a
+parse-time constant fold.
+
+**`base:conditional-name-disambiguation`**
 
 **Disambiguation trap worth recording**: PCRE2 resolves `(?(name)` as a
-group-reference condition when a group of that name exists and as a recursion
-test otherwise. Any conforming implementation must replicate that rule exactly
-or it will silently miscompile ambiguous patterns.
+group-reference condition when a group of that name exists and as a
+recursion test otherwise. Any conforming implementation must replicate
+that rule exactly or it will silently miscompile ambiguous patterns.
+
+<!-- END GENERATED -->
 
 ## Backtracking control verbs
 
-**Since Q1 (2026-08-10, D25) the `(*` doorway distinguishes NAMES.** Everything
-in this section is still `REJECTED`, but a name PCRE2 does not have is now told
-so — `(*NOTAVERB)` gets PCRE2's own "(*VERB) not recognized or malformed"
-instead of a promise that module `verbs` will one day implement it. The
-distinction runs deeper than the table below shows: PCRE2 keeps TWO name tables
-selected by the CASE of the first byte, with a different error for each, and its
-argument rules are PER-NAME (`(*ACCEPT:x)` compiles, `(*CR:x)` does not,
-`(*MARK)` alone is an error, `LIMIT_*` takes `=digits` with a magnitude limit,
-and a name over 128 bytes is a third complaint again). pcrec reproduces all of
-it, and `tests/registry/pcre2_check.c` re-measures every bit of it against
+| syntax | status | becomes |
+|---|---|---|
+| `(*FAIL)` `(*F)` | `REJECTED` | `PLANNED` |
+| `(*ACCEPT)` | `REJECTED` | `PLANNED-HARD` |
+| `(*COMMIT)` `(*PRUNE)` `(*SKIP)` `(*SKIP:NAME)` `(*THEN)` `(*MARK:NAME)` `(*:NAME)` | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: backtracking-verbs -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:verbs-doorway-q1`** (2026-08-10)
+
+**Since Q1 (2026-08-10, D25) the `(*` doorway distinguishes NAMES.**
+Everything in this section is still `REJECTED`, but a name PCRE2 does not
+have is now told so — `(*NOTAVERB)` gets PCRE2's own "(*VERB) not
+recognized or malformed" instead of a promise that module `verbs` will
+one day implement it. The distinction runs deeper than the table below
+shows: PCRE2 keeps TWO name tables selected by the CASE of the first
+byte, with a different error for each, and its argument rules are
+PER-NAME (`(*ACCEPT:x)` compiles, `(*CR:x)` does not, `(*MARK)` alone is
+an error, `LIMIT_*` takes `=digits` with a magnitude limit, and a name
+over 128 bytes is a third complaint again). pcrec reproduces all of it,
+and `tests/registry/pcre2_check.c` re-measures every bit of it against
 libpcre2 on each run. `pcrec --list-verbs` prints the tables.
 
-**A RULED, deliberate tier-2 divergence (K15, D26; Frank, 2026-08-12):** for a
-verb "name" over the 128-code-unit cap made ENTIRELY of non-identifier bytes,
-pcrec answers "subpattern name is too long (maximum 128 code units)" where
-libpcre2 10.46 answers error 160, "(*VERB) not recognized or malformed", at
-offset 2. Root cause: pcrec's extent scan (`pcrec_verb_name_extent_scan`,
-scans.c) reads every byte up to `)` `:` `=` EOF before it ever compares the run
-to a table entry, so an over-cap run hits the length check first; libpcre2's
-own scan stops at the first non-alnum/`_` byte and reports "not recognized"
-about the short prefix it actually extracted. Both are honest refusals of a
-name that can never match a real verb — the two engines diverge on which
-REFUSAL CATEGORY, never on accept vs. reject, which is what keeps this at tier
-2 rather than tier 1. Found by the R18 panel's engine critic
-(docs/dev/reviews/2026-08-12-r18-mod04.md), recorded at docs/dev/known_issues.md K15,
-and confirmed on both controls: UNDER the 128-byte cap a non-identifier run
-gets "not recognized" on both sides (agreement — K15's own control), and OVER
-the cap an IDENTIFIER run gets the exact same "too long" text on both sides
-(also agreement — the 128-byte rule itself is right for identifier names).
-`tests/registry/pcre2_check.c`'s `k15_excluded()` carries the one exclusion
-this divergence needs, scoped to that single cell; extending the extent scan
-to stop at the first non-identifier byte is deferred to SR-6, when module
-`verbs` first produces and the scan's semantics get remeasured anyway.
+**`base:verbs-k15-name-length`** (2026-08-12)
 
-What pcrec does NOT yet claim is which MODULE owns each name: `(*atomic:…)` and
-`(*pla:…)` are answered "requires module 'verbs'" though they are atomic groups
-and lookarounds, and correcting that belongs to SR-6 with the module itself.
+**A RULED, deliberate tier-2 divergence (K15, D26; Frank, 2026-08-12):**
+for a verb "name" over the 128-code-unit cap made ENTIRELY of
+non-identifier bytes, pcrec answers "subpattern name is too long
+(maximum 128 code units)" where libpcre2 10.46 answers error 160, "(*VERB)
+not recognized or malformed", at offset 2. Root cause: pcrec's extent scan
+(`pcrec_verb_name_extent_scan`, scans.c) reads every byte up to `)` `:`
+`=` EOF before it ever compares the run to a table entry, so an over-cap
+run hits the length check first; libpcre2's own scan stops at the first
+non-alnum/`_` byte and reports "not recognized" about the short prefix it
+actually extracted. Both are honest refusals of a name that can never
+match a real verb — the two engines diverge on which REFUSAL CATEGORY,
+never on accept vs. reject, which is what keeps this at tier 2 rather
+than tier 1. Found by the R18 panel's engine critic
+(docs/dev/reviews/2026-08-12-r18-mod04.md), recorded at
+docs/dev/known_issues.md K15, and confirmed on both controls: UNDER the
+128-byte cap a non-identifier run gets "not recognized" on both sides
+(agreement — K15's own control), and OVER the cap an IDENTIFIER run gets
+the exact same "too long" text on both sides (also agreement — the
+128-byte rule itself is right for identifier names).
+`tests/registry/pcre2_check.c`'s `k15_excluded()` carries the one
+exclusion this divergence needs, scoped to exactly that cell; extending
+the extent scan to stop at the first non-identifier byte is deferred to
+SR-6, when module `verbs` first produces and the scan's semantics get
+remeasured anyway. See also docs/dev/known_issues.md K15 and
+docs/pcre2_compliance.md's own Backtracking control verbs section.
 
-**Since MOD-0.1's K14 fix (2026-08-11) the diagnostic honours this section's
-own OUT-OF-SCOPE calls:** every name below marked OUT-OF-SCOPE carries
-`ROADMAP_NEVER` in the verb tables and answers "... is outside pcrec's scope
-and no module will implement it" instead of promising module `verbs`.
-`compliance_section.py --names` holds this section and the column together in
-both directions, so editing an OUT-OF-SCOPE cell here without moving the
-column (or vice versa) fails `make test`. (`(?C` callouts at the `(?` doorway
-carried the same OUT-OF-SCOPE/`ROADMAP_NEVER` pairing until [M4-CALLOUTS] step
-1 moved it to `PLANNED` — see the Callouts section below. The live population
-of non-verb `ROADMAP_NEVER` rows is zero as a result; the check that ties this
-column to the prose stays column-derived rather than deleted, so it re-arms
-the day a second such row exists.)
+**`base:verbs-module-attribution-gap`**
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(*FAIL)` `(*F)` | `REJECTED` | `PLANNED` | module `verbs`. The one verb PCRE2's DFA matcher DOES support: in a priority simulation it is simply a path that never reaches an accept state |
-| `(*ACCEPT)` | `REJECTED` | `PLANNED-HARD` | module `verbs`. Expressible in principle (force an accept), but it interacts with the two-pass end-then-start architecture |
-| `(*COMMIT)` `(*PRUNE)` `(*SKIP)` `(*SKIP:NAME)` `(*THEN)` `(*MARK:NAME)` `(*:NAME)` | `OUT-OF-SCOPE` | — | these are DEFINED in terms of a backtracking engine's search order — which alternatives to abandon and where to resume. A simulation engine explores all alternatives at once, so there is no backtracking tree to prune. PCRE2's own DFA matcher supports none of them. `(*MARK)` additionally requires reporting state back to the caller |
+What pcrec does NOT yet claim is which MODULE owns each name:
+`(*atomic:…)` and `(*pla:…)` are answered "requires module 'verbs'"
+though they are atomic groups and lookarounds, and correcting that
+belongs to SR-6 with the module itself.
+
+**`base:verbs-out-of-scope-diagnostic`** (2026-08-11)
+
+**Since MOD-0.1's K14 fix (2026-08-11) the diagnostic honours this
+section's own OUT-OF-SCOPE calls:** every name below marked OUT-OF-SCOPE
+carries `ROADMAP_NEVER` in the verb tables and answers "... is outside
+pcrec's scope and no module will implement it" instead of promising
+module `verbs`. `compliance_section.py --names` holds this section and
+the column together in both directions, so editing an OUT-OF-SCOPE cell
+here without moving the column (or vice versa) fails `make test`. (`(?C`
+callouts at the `(?` doorway carried the same OUT-OF-SCOPE/`ROADMAP_NEVER`
+pairing until [M4-CALLOUTS] step 1 moved it to `PLANNED` — see the
+Callouts section below. The live population of non-verb `ROADMAP_NEVER`
+rows is zero as a result; the check that ties this column to the prose
+stays column-derived rather than deleted, so it re-arms the day a second
+such row exists.)
+
+**`base:verb-fail`**
+
+module `verbs`. The one verb PCRE2's DFA matcher DOES support: in a
+priority simulation it is simply a path that never reaches an accept
+state.
+
+**`(*ACCEPT)`**
+
+Expressible in principle (force an accept), but it interacts with the
+two-pass end-then-start architecture.
+
+**`base:verbs-backtracking-control-family`**
+
+these are DEFINED in terms of a backtracking engine's search order —
+which alternatives to abandon and where to resume. A simulation engine
+explores all alternatives at once, so there is no backtracking tree to
+prune. PCRE2's own DFA matcher supports none of them. `(*MARK)`
+additionally requires reporting state back to the caller.
+
+<!-- END GENERATED -->
 
 ## Callouts
 
-**[M4-CALLOUTS] step 1 (D36, Frank, 2026-08-12; flipped 2026-08-14):**
-re-scoped from `OUT-OF-SCOPE` to `PLANNED`, module `callouts`, explicitly LOW
-priority — parked behind the M4 VM engine that hosts the behavior (callouts
-are engine-forcing like backrefs: the compiled DFA erases the pattern
-positions a callout fires at, so callout patterns compile to the VM engine
-only). The PATTERN layer (syntax, where callouts may appear) is D26-exact and
-PCRE2-compatible; the CALLBACK CONTRACT mirrors `pcre2_callout_block` field
-for field; the REGISTRATION API is pcrec-native (a compile-time-bound `extern`
-the embedding program defines, zero cost when absent) rather than a runtime
-`pcre2_set_callout`-style registration. The obstacle that kept this
-`OUT-OF-SCOPE` no longer applies as a permanent one: generated code's zero
-runtime dependency on pcrec is preserved by the static-extern binding, not by
-refusing the construct. Step 2 (the behavior itself) is not yet built — see
-`docs/dev/plan.md`'s `[M4-CALLOUTS]` row.
+| syntax | status | becomes |
+|---|---|---|
+| `(?C)` `(?Cn)` `(?C"text")` | `REJECTED` | `PLANNED` |
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `(?C)` `(?Cn)` `(?C"text")` | `REJECTED` | `PLANNED` | module `callouts`, M4-hosted, VM-only (D36). Callback block and return semantics (0/positive/negative) mirror `pcre2_callout_block` field for field; fire-point precision is documented engine-relative, with PCRE2's own `PCRE2_NO_START_OPTIMIZE` latitude as the cited precedent that fire counts are not the contract |
+<!-- BEGIN GENERATED ANNOTATIONS: callouts -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`(?C1)`** (2026-08-14)
+
+**[M4-CALLOUTS] step 1 (D36, Frank, 2026-08-12; flipped 2026-08-14):**
+re-scoped from `OUT-OF-SCOPE` to `PLANNED`, module `callouts`, explicitly
+LOW priority — parked behind the M4 VM engine that hosts the behavior
+(callouts are engine-forcing like backrefs: the compiled DFA erases the
+pattern positions a callout fires at, so callout patterns compile to the
+VM engine only). The PATTERN layer (syntax, where callouts may appear) is
+D26-exact and PCRE2-compatible; the CALLBACK CONTRACT mirrors
+`pcre2_callout_block` field for field; the REGISTRATION API is
+pcrec-native (a compile-time-bound `extern` the embedding program
+defines, zero cost when absent) rather than a runtime
+`pcre2_set_callout`-style registration. The obstacle that kept this
+`OUT-OF-SCOPE` no longer applies as a permanent one: generated code's
+zero runtime dependency on pcrec is preserved by the static-extern
+binding, not by refusing the construct. Step 2 (the behavior itself) is
+not yet built — see `docs/dev/plan.md`'s `[M4-CALLOUTS]` row.
+
+Module `callouts`, M4-hosted, VM-only (D36). Callback block and return
+semantics (0/positive/negative) mirror `pcre2_callout_block` field for
+field; fire-point precision is documented engine-relative, with PCRE2's
+own `PCRE2_NO_START_OPTIMIZE` latitude as the cited precedent that fire
+counts are not the contract.
+
+<!-- END GENERATED -->
 
 ## Replacement strings
 
-| syntax | status | becomes | notes |
-|---|---|---|---|
-| `$1` `${n}` `$<name>` `$&` `` $` `` `$'` `$_` `$+` `$*MARK`, `\l \u \L \U \E` | `OUT-OF-SCOPE` | — | pcrec compiles a MATCHER. It has no substitution API, and APPROACH does not propose one. Listed for completeness because pcre2syntax.html covers it; a substitution layer would be a separate product decision |
+| syntax | status | becomes |
+|---|---|---|
+| `$1` `${n}` `$<name>` `$&` `` $` `` `$'` `$_` `$+` `$*MARK`, `\l \u \L \U \E` | `OUT-OF-SCOPE` | — |
+
+<!-- BEGIN GENERATED ANNOTATIONS: replacement-strings -->
+
+<!-- Generated by tests/registry/compliance_section.py from
+     docs/pcre2_compliance_annotations.txt. Do not edit by
+     hand: `make test` fails on drift. Edit the annotation
+     store and re-run with --write-annotations. -->
+
+**`base:replacement-strings`**
+
+pcrec compiles a MATCHER. It has no substitution API, and APPROACH does
+not propose one. Listed for completeness because pcre2syntax.html covers
+it; a substitution layer would be a separate product decision.
+
+<!-- END GENERATED -->
 
 ---
 

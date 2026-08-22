@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SR-4: make `pcrec --list-syntax` load-bearing for docs/pcre2_compliance.md.
+r"""SR-4: make `pcrec --list-syntax` load-bearing for docs/pcre2_compliance.md.
 
 WHAT THIS DOES NOT DO, and why. The plan text said the compliance document is
 "RENDERED from" the dump. Taken literally that would replace a hand-written
@@ -14,30 +14,325 @@ delimited section of the file, regenerates it from the dump, and fails the
 build when the checked-in copy has drifted. Everything outside the markers is
 written by a human and left alone.
 
-Two checks, doing different jobs:
+[DOC-DRV], 2026-08-21: a THIRD component joined the first two — the hand-
+written measurements and judgment that used to live inline in each prose
+row's notes column now live construct-KEYED in
+docs/pcre2_compliance_annotations.txt (component 3, format documented in
+that file's own header) and are rendered back into the page as one small
+generated block per section, immediately after that section's own
+hand-written (component 2, survey) table. The survey itself — each
+section's `syntax | status | becomes` table — is UNCHANGED by this: it
+stays hand-written prose, same as always. Only the notes moved.
 
-  --check   the generated section matches the current dump (inventory drift)
-  --names   every ``module `X` `` named anywhere in the prose is a module the
-            registry actually knows (analysis drift)
+Four checks, doing different jobs:
 
-The second is the one that catches the realistic failure. A module renamed in
-registry.c leaves the prose quietly describing a module that no longer exists,
-and no test in this repo would have noticed before now.
+  --check              the generated construct index matches the current
+                        dump (component 1 inventory drift)
+  --names              every ``module `X` `` named anywhere in the prose is a
+                        module the registry actually knows (component 2
+                        analysis drift)
+  --check-annotations  every annotation KEY names a live construct (a stale
+                        key — renamed/removed in registry.c, or a dropped
+                        BASE_KEYS entry — fails naming it) and the page's
+                        generated annotation blocks match the store
+                        (component 3 drift, both the key-liveness sense and
+                        the render-drift sense)
+  --tension             informational: backtick-quoted tokens in the
+                        hand-written survey prose vs. the registry's
+                        RS_MODULE `syntax` set, both directions reported —
+                        the CHECKED TENSION between components 1 and 2
+
+The --names check is the one that catches the realistic component-2 failure:
+a module renamed in registry.c leaves the prose quietly describing a module
+that no longer exists, and no test in this repo would have noticed before
+now. --check-annotations is the equivalent net for component 3: an
+annotation whose construct moved or vanished is exactly the recurring
+staleness [DOC-DRV] exists to retire (the `\b \B \G` row that read
+`REJECTED` for two waves after both had shipped — see docs/dev/plan.md's
+[DOC-DRV] row).
 
 Usage:
-    compliance_section.py --render          print the section
-    compliance_section.py --check           exit 1 on drift (used by make test)
-    compliance_section.py --names           exit 1 on an unknown module name
-    compliance_section.py --write           update the doc in place
+    compliance_section.py --render              print the construct index
+    compliance_section.py --check               exit 1 on index drift (make test)
+    compliance_section.py --names               exit 1 on an unknown module name
+    compliance_section.py --write                update the doc's construct index in place
+    compliance_section.py --check-annotations    exit 1 on a stale key or render drift (make test)
+    compliance_section.py --write-annotations    update the doc's annotation blocks in place
+    compliance_section.py --tension              print the checked-tension report (informational)
 """
 import subprocess, sys, os, re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 PCREC = os.environ.get("PCREC", os.path.join(ROOT, "build", "pcrec"))
 DOC = os.path.join(ROOT, "docs", "pcre2_compliance.md")
+ANNOT_PATH = os.path.join(ROOT, "docs", "pcre2_compliance_annotations.txt")
 
 BEGIN = "<!-- BEGIN GENERATED: registry construct index (SR-4) -->"
 END = "<!-- END GENERATED -->"
+
+# [DOC-DRV] component 3, KEYED ANNOTATIONS: the hand-written measurements
+# and judgment migrated out of docs/pcre2_compliance.md's prose-row notes
+# columns into docs/pcre2_compliance_annotations.txt (format documented in
+# that file's own header), rendered back into the page by this script as
+# one small generated block per section, immediately after that section's
+# own hand-written (component 2, survey) table.
+#
+# SECTIONS — every section of docs/pcre2_compliance.md that carries a
+# component-2 survey table and therefore may carry component-3
+# annotations, in the order they appear in the page. A section with zero
+# annotations still gets an (empty) generated block, so the marker pair
+# always exists and `--check-annotations` can always find it.
+SECTIONS = [
+    "quoting", "braced-items", "escaped-characters", "character-types",
+    "unicode-properties", "character-classes", "quantifiers",
+    "anchors-assertions", "match-point", "alternation-capturing",
+    "comment", "option-setting", "newline-convention", "lookaround",
+    "substring-scan", "backreferences", "subroutine-recursion",
+    "conditional-patterns", "backtracking-verbs", "callouts",
+    "replacement-strings",
+]
+
+# BASE_KEYS — the annotation store's `base:*` keys' own inventory: the
+# base-tier and cross-cutting constructs docs/pcre2_compliance.md discusses
+# that the registry deliberately does not itemize (SR-4's own header: "the
+# registry deliberately does not describe" base grammar), so nothing can
+# generate this list the way `--list-syntax` generates the registry's own.
+# Typed out INDEPENDENTLY of docs/pcre2_compliance_annotations.txt (not
+# derived from it) so a `base:` key that drifts — renamed or deleted in one
+# place and not the other — fails rather than silently agreeing with
+# itself. Update this list in the SAME commit as any `base:` key change in
+# the annotation store.
+BASE_KEYS = frozenset([
+    "base:alt-bsux-u-brace", "base:alt-bsux-U-uhhhh",
+    "base:alternation-basic", "base:anchor-caret", "base:anchor-dollar",
+    "base:braced-whitespace-scope", "base:capturing-group-limit",
+    "base:class-brackets-basic", "base:class-escape-fallbacks",
+    "base:class-quoting-e", "base:class-set-ops-uts18",
+    "base:conditional-assert", "base:conditional-define",
+    "base:conditional-name-disambiguation",
+    "base:conditional-recursion-test", "base:conditional-version",
+    "base:dot", "base:double-quantifier", "base:escapes-control-letters",
+    "base:hex-escape-braced", "base:hex-escape-xhh",
+    "base:lookaround-verb-spellings", "base:newline-bsr",
+    "base:newline-convention-verbs", "base:option-run-doorway-ordering",
+    "base:posix-word-boundary-classes", "base:quantifier-brace-precedence",
+    "base:quantifier-brace-whitespace", "base:quantifier-count-overflow",
+    "base:quantifier-large-bounded-repeat",
+    "base:quantifier-nothing-to-quantify", "base:quantifier-on-anchors",
+    "base:quantifiers-greedy", "base:quantifiers-lazy",
+    "base:quantifiers-possessive", "base:quoting-backslash-nonalnum",
+    "base:recursion-grouplist", "base:replacement-strings",
+    "base:scan-substring", "base:script-run", "base:uprops-k16-byte-census",
+    "base:verb-fail", "base:verbs-backtracking-control-family",
+    "base:verbs-caseless-turkish", "base:verbs-doorway-q1",
+    "base:verbs-k15-name-length", "base:verbs-limit-depth",
+    "base:verbs-module-attribution-gap", "base:verbs-no-jit-family",
+    "base:verbs-notempty", "base:verbs-out-of-scope-diagnostic",
+    "base:verbs-utf-ucp",
+])
+
+ANNOT_KEY_RE = re.compile(r'(?m)^=== (\S+)\n')
+BEGIN_ANNOT_RE = re.compile(r'<!-- BEGIN GENERATED ANNOTATIONS: (\S+) -->')
+
+
+def parse_annotations():
+    """Parse docs/pcre2_compliance_annotations.txt into a list of dicts
+    {key, section, date, text}, in file order — see that file's own header
+    for the format. A record with no `section: ` line gets section=None,
+    which check_annotations() reports as a failure (every record must name
+    where it renders)."""
+    text = open(ANNOT_PATH).read()
+    pieces = ANNOT_KEY_RE.split(text)
+    records = []
+    # pieces[0] is the file's leading comment block (discarded); then
+    # alternating (key, body) pairs.
+    for i in range(1, len(pieces), 2):
+        key = pieces[i]
+        lines = pieces[i + 1].splitlines()
+        section = None
+        date = None
+        idx = 0
+        if idx < len(lines) and lines[idx].startswith("section: "):
+            section = lines[idx][len("section: "):].strip()
+            idx += 1
+        if idx < len(lines) and lines[idx].startswith("date: "):
+            date = lines[idx][len("date: "):].strip()
+            idx += 1
+        body = "\n".join(lines[idx:]).strip("\n")
+        records.append({"key": key, "section": section, "date": date,
+                         "text": body})
+    return records
+
+
+def check_annotations(rows):
+    """--check-annotations: every annotation key names a LIVE construct —
+    a current `--list-syntax` `syntax` value for a plain key, or a
+    BASE_KEYS entry for a `base:` key (a stale key, from a construct
+    renamed/removed in src/parse/registry.c or a base: entry dropped from
+    BASE_KEYS, fails here naming it) — plus no duplicate keys and every
+    record names a section this script knows how to render. Returns the
+    parsed records on success, None on failure (mirrors dump()'s
+    exit-on-failure shape but as a return so --check-annotations can print
+    its own PASS/FAIL rather than a bare traceback)."""
+    records = parse_annotations()
+    live_syntax = {r["syntax"] for r in rows}
+    seen = set()
+    dup = sorted({r["key"] for r in records if r["key"] in seen or seen.add(r["key"])})
+    bad_section = [(r["key"], r["section"]) for r in records
+                   if r["section"] not in SECTIONS]
+    bad_keys = []
+    for r in records:
+        k = r["key"]
+        if k.startswith("base:"):
+            if k not in BASE_KEYS:
+                bad_keys.append(k)
+        elif k not in live_syntax:
+            bad_keys.append(k)
+
+    ok = True
+    if dup:
+        print(f"FAIL: duplicate annotation key(s) in {ANNOT_PATH}: "
+              f"{', '.join(dup)}", file=sys.stderr)
+        ok = False
+    if bad_section:
+        names = ", ".join(f"{k!r} -> {s!r}" for k, s in bad_section)
+        print(f"FAIL: annotation(s) name a section this script does not "
+              f"know (add it to SECTIONS if it's real): {names}",
+              file=sys.stderr)
+        ok = False
+    if bad_keys:
+        print(f"FAIL: {len(bad_keys)} stale annotation key(s) in {ANNOT_PATH} "
+              f"do not name a live construct (a plain key must be a current "
+              f"`pcrec --list-syntax` `syntax` value; a `base:` key must be "
+              f"in this script's BASE_KEYS): {', '.join(bad_keys)}",
+              file=sys.stderr)
+        ok = False
+    if not ok:
+        return None
+    nbase = len([r for r in records if r["key"].startswith("base:")])
+    print(f"PASS: all {len(records)} annotation keys name live constructs "
+          f"({len(records) - nbase} registry, {nbase} base), no duplicates, "
+          f"no unknown section")
+    return records
+
+
+def render_annotations_block(slug, records):
+    recs = [r for r in records if r["section"] == slug]
+    out = [f"<!-- BEGIN GENERATED ANNOTATIONS: {slug} -->", "",
+           "<!-- Generated by tests/registry/compliance_section.py from",
+           "     docs/pcre2_compliance_annotations.txt. Do not edit by",
+           "     hand: `make test` fails on drift. Edit the annotation",
+           "     store and re-run with --write-annotations. -->", ""]
+    if not recs:
+        out.append("*(no annotations keyed to this section)*")
+        out.append("")
+    backtick = "`"
+    for r in recs:
+        stamp = f" ({r['date']})" if r["date"] else ""
+        out.append(f"**{backtick}{r['key']}{backtick}**{stamp}")
+        out.append("")
+        out.append(r["text"])
+        out.append("")
+    out.append(END)
+    # No trailing "\n" after END: splice_annotations's tail slice (the
+    # untouched text starting right after the original END marker) begins
+    # with the newline that terminates END's own line, so appending one
+    # here too would double it — one extra blank line per section, growing
+    # without bound across repeated --write-annotations runs. Measured
+    # live: it did, before this fix.
+    return "\n".join(out).rstrip("\n")
+
+
+def splice_annotations(text, records):
+    """Replace every existing `BEGIN GENERATED ANNOTATIONS: <slug>` ...
+    `END GENERATED` region in `text` with a freshly rendered one for that
+    slug. Returns (new_text, missing_slugs) — missing_slugs are SECTIONS
+    entries with no marker pair in the page at all, which --check-
+    annotations and --write-annotations both treat as a hard failure (a
+    section that never got its marker pair added is not "no annotations",
+    it is un-wired)."""
+    out = []
+    pos = 0
+    found = set()
+    for m in BEGIN_ANNOT_RE.finditer(text):
+        slug = m.group(1)
+        end_at = text.index(END, m.end())
+        out.append(text[pos:m.start()])
+        out.append(render_annotations_block(slug, records))
+        pos = end_at + len(END)
+        found.add(slug)
+    out.append(text[pos:])
+    missing = [s for s in SECTIONS if s not in found]
+    return "".join(out), missing
+
+
+def check_tension(rows, text):
+    """The CHECKED-TENSION guard between component 1 (the registry) and
+    component 2 (the independent survey): every backtick-quoted token in
+    the page's hand-written survey prose (everything OUTSIDE any generated
+    marker pair) is compared against the registry's own `syntax` set for
+    `RS_MODULE` rows (the constructs PCRE2 has that pcrec's base grammar
+    does not — the population a survey row should exist for; `RS_BASE` and
+    `RS_REJECTED`/AGREES-REJECT rows are excluded: base grammar is the
+    survey's whole subject rather than one token in it, and the five
+    AGREES-REJECT rows — `\\N{name}`, `(?PX)`, `(?q)`, `[[.a.]]`,
+    `[[=a=]]` — are "PCRE2 doesn't have this either" trivia the survey has
+    never carried a row for). Reports BOTH directions and is informational
+    by design (exit 0 regardless): a registry construct the survey prose
+    never quotes verbatim is a real, occasionally legitimate gap (a
+    generic placeholder like `(?n)` standing in for `(?0)`..`(?9)` is
+    exactly this shape) rather than a defect, and this check's job is to
+    surface it where nothing did before, not to force every gap to zero
+    the way an exact-count check would."""
+    # Strip every generated region (the SR-4 index AND all annotation
+    # blocks) before scanning for survey tokens, so an annotation's own
+    # backtick-quoted cross-references (rendered FROM the registry) cannot
+    # be mistaken for hand-written survey coverage.
+    stripped = []
+    pos = 0
+    markers = sorted(
+        [(m.start(), m.end()) for m in BEGIN_ANNOT_RE.finditer(text)] +
+        ([(text.index(BEGIN), text.index(BEGIN) + len(BEGIN))] if BEGIN in text else [])
+    )
+    for start, end in markers:
+        end_at = text.index(END, end) + len(END)
+        stripped.append(text[pos:start])
+        pos = end_at
+    stripped.append(text[pos:])
+    survey_text = "".join(stripped)
+    survey_tokens = set(re.findall(r'`([^`\n]+)`', survey_text))
+
+    module_syntax = {r["syntax"] for r in rows if r["status"] == "module"}
+    registry_only = sorted(module_syntax - survey_tokens)
+    print(f"INFO: checked-tension (survey vs. registry, RS_MODULE "
+          f"population {len(module_syntax)}): {len(registry_only)} "
+          f"registry construct(s) never appear as a literal backtick token "
+          f"in the hand-written survey prose (some legitimately — a "
+          f"generic placeholder like `(?n)` standing in for the whole "
+          f"`(?0)`..`(?9)` family is expected here, not a defect):")
+    for s in registry_only:
+        print(f"      registry-only: {s}")
+
+    # The other direction: a backtick token that LOOKS like PCRE2 syntax
+    # (opens with `\`, `(` or `[` — the three doorway bytes) but names no
+    # registry row at all, module or base. Filtered to syntax-shaped
+    # tokens on purpose: an unfiltered survey_tokens - all_syntax diff is
+    # mostly noise (identifiers, file names, flag spellings quoted for
+    # other reasons), and this direction's real audit value is narrower —
+    # "the survey discusses a construct the registry has never heard of",
+    # which base-tier notation (`\d`-shaped but never registry-tracked by
+    # design) already accounts for most of, so this is reported but not
+    # expected to run near zero the way the registry-only direction might.
+    all_syntax = {r["syntax"] for r in rows}
+    syntax_shaped = {t for t in survey_tokens if t[:1] in "\\([" and t not in all_syntax}
+    print(f"INFO: checked-tension (registry vs. survey): "
+          f"{len(syntax_shaped)} syntax-shaped backtick token(s) in the "
+          f"survey prose name no registry row at all (expected for base-"
+          f"tier notation, which the registry deliberately does not "
+          f"track — SR-4's own header):")
+    for s in sorted(syntax_shaped):
+        print(f"      survey-only: {s}")
+    return registry_only, sorted(syntax_shaped)
 
 COLS = ["kind", "selector", "syntax", "module", "feature", "flavours",
         "engines", "status", "diag", "flags", "expect", "note", "roadmap",
@@ -148,8 +443,14 @@ def render(rows):
 
 def splice(text, section):
     if BEGIN in text:
-        head = text[:text.index(BEGIN)]
-        tail = text[text.index(END) + len(END):].lstrip("\n")
+        begin_at = text.index(BEGIN)
+        head = text[:begin_at]
+        # [DOC-DRV]: search for END starting AFTER this BEGIN, not from
+        # the start of the file — the annotation blocks this script also
+        # generates now contribute their own earlier "<!-- END GENERATED
+        # -->" occurrences, and an unqualified text.index(END) would find
+        # the wrong one and slice backwards.
+        tail = text[text.index(END, begin_at) + len(END):].lstrip("\n")
         return head + section + ("\n" + tail if tail else "")
     return text.rstrip("\n") + "\n\n" + section
 
@@ -164,9 +465,28 @@ def main():
         known |= {p for m in list(known) for p in m.split("/")}
         text = open(DOC).read()
         # only the hand-written half: the generated section is by construction
-        # consistent, so including it would dilute the check
+        # consistent, so including it would dilute the check. Search for END
+        # starting AFTER this BEGIN (not from the start of the file) — same
+        # reasoning as splice()'s fix above: an unqualified text.index(END)
+        # now finds an annotation block's earlier END instead of this one's.
         if BEGIN in text:
-            text = text[:text.index(BEGIN)] + text[text.index(END) + len(END):]
+            begin_at = text.index(BEGIN)
+            text = text[:begin_at] + text[text.index(END, begin_at) + len(END):]
+        # [DOC-DRV]: same reasoning extends to the annotation blocks — their
+        # "module `X`" mentions are rendered from docs/pcre2_compliance_
+        # annotations.txt, not typed into the page, so scanning them here
+        # would be scanning the store a second time under a different name
+        # rather than checking anything new. Build the stripped text from
+        # the ORIGINAL match offsets in one pass rather than mutating
+        # `text` while iterating over them, which would read each
+        # subsequent match's offset against an already-shortened string.
+        kept, pos = [], 0
+        for m in BEGIN_ANNOT_RE.finditer(text):
+            end_at = text.index(END, m.end()) + len(END)
+            kept.append(text[pos:m.start()])
+            pos = end_at
+        kept.append(text[pos:])
+        text = "".join(kept)
         bad = sorted({m for m in re.findall(r"module `([a-z0-9/-]+)`", text)
                       if m not in known})
         if bad:
@@ -283,7 +603,9 @@ def main():
             print("FAIL: docs/pcre2_compliance.md has no generated section — run "
                   "tests/registry/compliance_section.py --write", file=sys.stderr)
             return 1
-        cur = text[text.index(BEGIN):text.index(END) + len(END)] + "\n"
+        # search for END starting after this BEGIN — see splice()'s comment
+        begin_at = text.index(BEGIN)
+        cur = text[begin_at:text.index(END, begin_at) + len(END)] + "\n"
         if cur != section:
             print("FAIL: docs/pcre2_compliance.md's generated construct index has "
                   "drifted from `pcrec --list-syntax`", file=sys.stderr)
@@ -296,6 +618,57 @@ def main():
             return 1
         print(f"PASS: pcre2_compliance.md's construct index matches the dump "
               f"({len(rows)} rows)")
+        return 0
+
+    # [DOC-DRV] component 3: the annotation store <-> page seam. Same
+    # render/--write/--check shape SR-4 already established for component 1
+    # above, applied to N named blocks instead of one.
+    if mode == "--check-annotations":
+        records = check_annotations(rows)
+        if records is None:
+            return 1
+        new_text, missing = splice_annotations(text, records)
+        if missing:
+            print(f"FAIL: docs/pcre2_compliance.md is missing the generated-"
+                  f"annotations marker pair for section(s): "
+                  f"{', '.join(missing)} — add\n"
+                  f"      <!-- BEGIN GENERATED ANNOTATIONS: <slug> -->\n"
+                  f"      <!-- END GENERATED -->\n"
+                  f"      right after that section's survey table, then "
+                  f"re-run --write-annotations", file=sys.stderr)
+            return 1
+        if new_text != text:
+            print("FAIL: docs/pcre2_compliance.md's annotation blocks have "
+                  "drifted from docs/pcre2_compliance_annotations.txt",
+                  file=sys.stderr)
+            print("      fix: tests/registry/compliance_section.py "
+                  "--write-annotations", file=sys.stderr)
+            for a, b in zip(text.splitlines(), new_text.splitlines()):
+                if a != b:
+                    print(f"      doc:  {a}\n      store: {b}", file=sys.stderr)
+                    break
+            return 1
+        print(f"PASS: pcre2_compliance.md's {len(SECTIONS)} annotation "
+              f"blocks match docs/pcre2_compliance_annotations.txt "
+              f"({len(records)} records)")
+        return 0
+
+    if mode == "--write-annotations":
+        records = check_annotations(rows)
+        if records is None:
+            return 1
+        new_text, missing = splice_annotations(text, records)
+        if missing:
+            print(f"FAIL: cannot write — section(s) with no marker pair in "
+                  f"the page yet: {', '.join(missing)}", file=sys.stderr)
+            return 1
+        open(DOC, "w").write(new_text)
+        print(f"wrote {len(records)} annotation record(s) across "
+              f"{len(SECTIONS)} section blocks into {DOC}")
+        return 0
+
+    if mode == "--tension":
+        check_tension(rows, text)
         return 0
 
     sys.exit(f"unknown mode {mode}")

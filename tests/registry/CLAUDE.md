@@ -957,6 +957,76 @@ mis-assigning `(?0)`'s module fails `--check`, and one `--write` makes it pass.
 The control for a wrong module name is the hand-written table in tests/reject/,
 never this.
 
+## `--check-annotations` / `--write-annotations` / `--tension` ([DOC-DRV])
+
+The compliance page's THREE-COMPONENT restructure (2026-08-21, plan row
+[DOC-DRV], carried by `.claude/skills/compliance-refresh/SKILL.md`): the
+~90 rows' worth of hand-written measurement and judgment that used to sit
+inline in each prose row's notes column now lives construct-KEYED in
+`docs/pcre2_compliance_annotations.txt` (format in that file's own header)
+and renders back into the page as one `<!-- BEGIN GENERATED ANNOTATIONS:
+<slug> -->` block per section, immediately after that section's own
+hand-written `syntax | status | becomes` survey table (which this
+restructure leaves untouched — only the notes column moved).
+
+- `--check-annotations` — two things, same shape `--check` already has for
+  the construct index: (1) every annotation KEY names a LIVE construct — a
+  plain key must equal a current `pcrec --list-syntax` `syntax` value, a
+  `base:`-prefixed key must be in this script's own `BASE_KEYS` allowlist
+  (typed independently of the store, so a rename in one place and not the
+  other fails); (2) the page's 21 generated annotation blocks must match
+  what the store renders. Also asserts no duplicate keys and no annotation
+  naming a section this script doesn't know.
+- `--write-annotations` — regenerates all 21 blocks in place from the
+  store, the `--write` equivalent.
+- `--tension` — the CHECKED-TENSION guard between component 1 (registry)
+  and component 2 (survey), both directions, **informational by design
+  (always exits 0)**: a registry `RS_MODULE` row whose `syntax` never
+  appears as a literal backtick token in the hand-written survey prose,
+  and a syntax-shaped backtick token (opens `\`, `(` or `[`) in the survey
+  that names no registry row at all. Both directions carry real, EXPECTED
+  noise and are reported rather than gated for it — the registry side
+  because the survey often writes a generic placeholder (`(?n)` for the
+  whole `(?0)`..`(?9)` recursion family, `...` bodies instead of a
+  registry row's literal probe text) where a literal-token match would
+  never fire; the survey side because base-tier notation (`\d`-shaped)
+  is, by SR-4's own design, never registry-tracked at all. Measured at
+  landing: 94 `RS_MODULE` rows, 60 without a literal survey token; ~120
+  syntax-shaped survey tokens, most of them base-tier or placeholder
+  notation.
+
+**Two bugs found and fixed while building this, both worth knowing before
+touching `splice`/`splice_annotations` again:**
+
+1. `render_annotations_block` originally ended its return value with an
+   explicit trailing `"\n"` after the `END` marker. `splice_annotations`'s
+   untouched TAIL slice (the text starting right after the ORIGINAL `END`
+   marker, carried through unchanged) begins with the newline that already
+   terminates `END`'s own line — so the explicit trailing newline doubled
+   it, growing the page by one blank line per section on every
+   `--write-annotations` run. Fixed by dropping the trailing newline and
+   letting the tail supply it, the same way `splice()` already relies on
+   its own tail slice for the newline after the SR-4 marker.
+2. Three PRE-EXISTING call sites (`splice()`, the `--names` mode's
+   SR-4-block-stripping, and `--check`) called `text.index(END)` with no
+   start offset — safe while `END`'s literal (`<!-- END GENERATED -->`)
+   appeared exactly once in the file, and silently wrong the moment this
+   restructure introduced 21 more occurrences of it (one per annotation
+   block), all of which sit EARLIER in the file than the SR-4 marker they
+   were meant to find. An unqualified `text.index(END)` after
+   `text.index(BEGIN)` would find the wrong, earlier `END` and slice
+   backwards. All three now search `text.index(END, begin_at)`, anchored
+   to their own `BEGIN`'s offset. Caught by running `--check`/`--names`
+   against the restructured page, not by inspection — both failed with an
+   empty or nonsensical `doc:` comparison line before the fix.
+
+Both are exercised by the checks above on every `make test` run now (a
+regression in either would either grow the page unboundedly on the next
+`--write-annotations`, or make `--check`/`--check-annotations` compare
+against the wrong span), but neither has a DEDICATED regression test of
+its own beyond that — noted here since neither bug would announce itself
+loudly if partially reintroduced (e.g. one call site left unqualified).
+
 ## Two hand-written assertions that must not be tidied away (R5 N-1)
 
 `check_table_to_parser` ends with two hand-written `expect_msg` calls for the
