@@ -1,0 +1,59 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.4.1] module `atomic-groups` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/assertions_measurements/probes/probe_wswitch_alarm.sh
+# ARGS       : /home/duxevents/pcrec/worktrees/agdesign
+# PROBE LAST CHANGED AT COMMIT: f600843 2026-08-18
+# RUN FROM REPO COMMIT        : 955e1ae (lane/agdesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/atomic_groups_measurements/out/rk_alarm.txt
+#     ?? docs/design/atomic_groups_measurements/out/wswitch_alarm_rerun.txt
+# RUN DATE   : 2026-08-22T08:51:25-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.4.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+repo         : /home/duxevents/pcrec/worktrees/agdesign
+gcc          : 15
+header sha   : 10177ac19f00  (before edit)
+
+probe enumerator A_PROBE_ONLY_M6_1 appended to AKind
+
+=== gcc -fsyntax-only -Wall -Wextra, every .c that switches on a node kind ===
+src/opt/possessify.c:165:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/possessify.c:428:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/possessify.c:648:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/ir/nfa.c:492:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/gen/emit_vm.c:744:9: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/gen/emit_vm.c:988:9: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/gen/emit_vm.c:1314:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/gen/emit_vm.c:1443:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/gen/emit_vm.c:3604:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/mrl.c:90:9: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/revdet.c:93:9: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/revdet.c:185:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/revdet.c:321:9: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/revdet.c:402:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+src/opt/altcls.c:378:5: warning: enumeration value ‘A_PROBE_ONLY_M6_1’ not handled in switch [-Wswitch]
+
+total -Wswitch diagnostics : 15
+distinct files             : 6
+
+by file:
+        5 src/gen/emit_vm.c
+        1 src/ir/nfa.c
+        1 src/opt/altcls.c
+        1 src/opt/mrl.c
+        3 src/opt/possessify.c
+        4 src/opt/revdet.c
+
+Under `make strict` (-Werror) each of these is a BUILD FAILURE.
+The complementary arm is zero by construction: adding a struct FIELD
+warns nowhere, which is why a flag's failure mode is silent.
+
+header RESTORED (byte-identical to the pre-run copy)
