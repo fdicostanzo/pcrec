@@ -24,9 +24,11 @@ confuse one lane's numbers with another's.
 
 **REVISED AFTER R31 AND ITS FOCUSED RE-CHECK (2026-08-22).** Four of the
 instruments below were REBUILT because the panel refuted what they measured
-rather than what they reported, and FOUR are new — the last of them
-(`probe_lift_preference.py`) written for a finding against a claim the FIRST
-REVISION introduced. Each entry says which. The pattern is worth naming because
+rather than what they reported, and SIX are new. Two of them
+(`probe_lift_preference.py`, `probe_sref_consistency.sh`) were written for
+findings against claims the FIRST REVISION introduced, and one
+(`probe_registry_cost.sh`) was REWRITTEN because the re-check showed its search
+population was the answer it already had. Each entry says which. The pattern is worth naming because
 it repeated four times: **an instrument can produce a correct number about the
 wrong population**, and every one of these was a zero that could not have been
 anything else.
@@ -157,7 +159,28 @@ anything else.
   never applies and the row must agree; the probe FAILS if the control breaks,
   and equally if NOTHING miscompiles (which would refute N1 rather than confirm
   the fix).
-- **`probes/probe_registry_cost.sh` — MEASURED, in-pcrec. NEW (R31 C1/C8).**
+- **`probes/probe_sref_consistency.sh` — MEASURED, document-internal. NEW
+  (r31chk re-check N3).** Every `SNN` sabotage citation outside §11.4's table,
+  looked up in the table and printed NEXT TO the citing sentence so a reader
+  can judge aptness — which a membership test cannot. It exists because C4's
+  renumbering left five stale references, one of them naming a CODEGEN row as
+  what a CORPUS driver would catch. **Its own first run reported 0 mentions
+  and 9 undefined rows** — the id list was newline-separated and the `case`
+  membership test matched nothing — caught only because the probe refuses to
+  print a verdict when it checked nothing. The note stays in the file.
+- **`probes/probe_registry_cost.sh` — MEASURED, in-pcrec. REWRITTEN AS A SWEEP
+  (r31chk re-check N1); the first version was the defect it was written to
+  prevent.** It carried a table headed "MEASURED rather than recalled" and
+  greped four files — the four the author already knew about. A grep over the
+  answer you already have is a transcript. It now sweeps `src/`, `cli/` and
+  `tests/` with no curated list, classifying hits as EXACT equalities (go red),
+  FLOORS (pass), kind lists and doorway-routing SET assertions. Headline: **nine
+  sites across six files where the re-check named seven** — three EXACT
+  equalities (`run_reject_tests.sh:1713` `-eq 99`, `registry_check.c:444`,
+  `compliance_section.py:391`), a THIRD hardcoded `kinds[]` array
+  (`registry_check.c:1696`) both earlier enumerations missed, seven `RegKind`
+  switches, and the REGMANIFEST's two PROSE pins. It closes by telling the
+  reader that a tenth site is its next correction, not a surprise.
   What §7.4's four rows actually cost, site by site with line numbers, because
   the first revision said the built-status derivation was "simply a compile of
   the syntax string" and it is `doorway_route` + `doorway_call` over four

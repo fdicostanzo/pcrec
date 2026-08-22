@@ -82,12 +82,19 @@ directory rather than in a commit message.)
   unbounded), and **7 of 8 lift-eligible cells MISCOMPILE** — `(?>a*?)b` on
   `"aaab"` is (3,4) in both oracles and (0,4) under the lift; `(?>a*?)` on
   `"aaa"` is (0,0) and (0,3). The `(?>a*?b)c` CONTROL holds.
-- `registry_cost.txt` — `probe_registry_cost.sh`. Headline: `doorway_route`
-  recognises four prefixes; `--explain 'a*+'` = "no construct matches"; the
-  `default: *n = 0` arm at `registry.c:962`; `all_kinds[]` at
-  `syntax_dump.c:145` used at `:165` and `:1080`; `enabled.c:114`'s separate
-  array; `registry_check.c:444` `total != 100` (→104) and `:1473`
-  `qualifying != 48` (→52).
+- `registry_cost.txt` — `probe_registry_cost.sh`, REWRITTEN AS A SWEEP over
+  `src cli tests`. Headline: **nine sites across six files.** Three EXACT
+  row-count equalities go RED — `run_reject_tests.sh:1713` (`-eq 99` → 103),
+  `registry_check.c:444` (100 → 104), `compliance_section.py:391` (100 → 104).
+  Three hardcoded `kinds[]` arrays (`syntax_dump.c:145`, `enabled.c:114`,
+  `registry_check.c:1696`) and seven `RegKind` switches, none of which
+  `-Wswitch` names. `check06_cursor.sh:170`'s doorway-routing SET assertion.
+  `registry_check.c:1473` `qualifying != 48` → 52. The REGMANIFEST's two prose
+  pins. Plus the floors that PASS at 104, printed so the table is not
+  one-sided.
+- `sref_consistency.txt` — `probe_sref_consistency.sh`. Headline: 9 `SNN`
+  citations outside §11.4, 0 undefined, each printed beside the row's own
+  description so a reader can judge aptness.
 - `premises.txt` — `probe_premises.sh`. Headline: `(?>a)` refuses at offset 0;
   `a*+`/`a++`/`a?+` at 2, `a{2}+` at 4, `a{,2}+b` at 5, `a{1,2}+` at 6.
   **`a{,2}b` COMPILES and matches `"aab"` at `0 3`.** `a*?+` and `a**` refuse

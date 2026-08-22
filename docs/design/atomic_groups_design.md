@@ -71,6 +71,30 @@ introduced, both fixed here:
 claim has been refuted twice the same way, so the enumeration of §2.2
 consequences the emitted shapes depend on is EMPIRICAL and may be incomplete.
 
+r31chk's re-check closed C1-C6, C8-C11 and C14-C16 and raised three more,
+all against revision 1:
+
+- **N1 (HIGH) — §7.4's cost table was a TRANSCRIPT, not a measurement.** Its
+  probe greped the four files the author already knew about, so it could not
+  have found the seventh site the re-check found. The probe now SWEEPS
+  `src/`, `cli/` and `tests/`, **and finds NINE sites across SIX files** —
+  including three EXACT row-count equalities and a THIRD hardcoded `kinds[]`
+  array that BOTH earlier enumerations missed. §7.4.
+- **N3 (MEDIUM) — five stale sabotage cross-references** survived C4's
+  renumbering, one of them naming a CODEGEN row as what a CORPUS driver would
+  catch. Re-aimed, with `probes/probe_sref_consistency.sh` added so the next
+  renumbering cannot repeat it. §11.4.
+- **N2 (LOW) — `probe_puc_targeted.py`'s WRAP assertion passed vacuously** on
+  an empty population (refused patterns were dropped uncounted). It now
+  asserts the population too.
+
+**The method finding underneath N1 is the one to carry**, and it applies to
+this document and to the review alike: *an enumeration is only as wide as its
+search population.* The first table searched four files and found six sites;
+the re-check searched wider and found seven; the sweep searches `src cli tests`
+and finds nine. §7.4 says so, and the probe tells a future reader that a tenth
+site is a correction rather than a surprise.
+
 Written to be attacked: §14 is this document's own list of where to start, and
 it now carries what the first round did and did not move.
 
@@ -148,7 +172,8 @@ R30 M7's rule, inherited).
 | `probes/probe_cut_dispatch.sh` | MEASURED, in-pcrec | **NEW (R31 E2/E4/C3/K29)**: `vm_rep`'s five dispatch paths, the SECOND cut spelling, and C3's failing direction on a real artifact (§3.2.1) |
 | `probes/probe_puc_targeted.py` | MEASURED, both arms | **NEW (R31 C2)**: the REFUTABLE region — 10,504 cells with asserted per-position floors (§6.4a) |
 | `probes/probe_registry_cost.sh` | MEASURED, in-pcrec | **NEW (R31 C1/C8)**: what a fifth `RegKind` actually costs, site by site (§7.4) |
-| `probes/probe_lift_preference.py` | MEASURED, both arms | **NEW (R31 re-check N1)**: lazy bodies are possessified on all six paths, and 7 of 8 lift-eligible cells miscompile (§3.2.2a) |
+| `probes/probe_lift_preference.py` | MEASURED, both arms | **NEW (r31eng re-check N1)**: lazy bodies are possessified on all six paths, and 7 of 8 lift-eligible cells miscompile (§3.2.2a) |
+| `probes/probe_sref_consistency.sh` | MEASURED, document-internal | **NEW (r31chk re-check N3)**: every `SNN` citation outside §11.4 resolves to a row whose description matches (§11.4) |
 | `probes/probe_premises.sh` | MEASURED, in-pcrec | §1's premise table and §6.3's error shapes, as one re-runnable script |
 | `probes/probe_ceiling_shape.sh` | STRUCTURAL, in-pcrec | that today's emitter really does feed the prefilter's span end to the VM as a ceiling, with both negative arms (§4.2) |
 | `probes/cut_proto.c` + `probes/probe_cut_trail.py` | PROTOTYPE, checked vs libpcre2 | that the proposed lowering computes PCRE2's answers — 17/17, **10 cut-discriminating and 4 trail-discriminating** on two measured axes after C6 (§3.4) |
