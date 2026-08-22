@@ -373,3 +373,35 @@ generated; pcre2_check.c iterates RK_COUNT).
 Method point (the critic's): the enumeration widened by FILE LIST (4 → 6 →
 7 → 9) and then by DEFECT SHAPE (→ 11). Both widenings are now the probe's
 record. No further critic round: the manager verifies 2d directly.
+
+## Revision 2d (r31chk's T1/T2 + the sref residual) — 3623514 → 21e173e; VERDICT: APPROVED
+
+T1: `note` and `expect` named in §7.4.1; `expect` stated as a BEHAVIOURAL
+commitment (exit exactly 1, substring of stderr, no output file) and
+MEASURED on the shipped binary for all four spellings — `expect =
+requires module 'atomic-groups'`; the consequence drawn that `syntax`
+must be an executable pattern (`a*+`, not `*+`) because row_reject RUNS
+it. Site 10. T2: site 11; R3 extended — minimum: the per-kind assertion
+covers check_table_to_parser by name; ruled for [M6.4.2]: the check
+iterates RK_COUNT. The probe widened by SHAPE (five extraction shapes,
+eleven sites) and the method lesson CORRECTED in the PANEL OUTCOME block
+after T1/T2 refuted its first form: "an enumeration is bounded by its
+population AND by the shapes it knows how to recognise, and the second
+bound is invisible from inside." The sref probe rebuilt: every citing
+line, extractor's population, the A.2 site now displayed; its header says
+it cannot judge aptness. Two `set -e` foot-guns recorded at the line.
+
+**Manager verification at 21e173e (no further critic round):** tree
+clean; all fourteen archives' "PROBE LAST CHANGED AT COMMIT" stamps equal
+each probe's live last-change commit; probe_registry_cost.sh and
+probe_sref_consistency.sh re-run by the manager into scratch — bodies
+IDENTICAL to the archives; §7.4's table and the probe agree at eleven.
+
+**VERDICT — APPROVED at 21e173e.** Three rounds (panel, focused re-check,
+final re-check) over 4c5f508 → b736071 → a22f044 → 03533bb → 3623514 →
+21e173e: nine HIGH refuted and closed, four new HIGH found against the
+revisions (lazy bodies under the lift; the seventh/tenth/eleventh
+registry sites; the reverse of nothing — the second cut spelling was the
+lane's own find), every one closed with measurement; the two central
+results never moved. [M6.4.2] implements THIS document; its §12 and the
+triage tables above are the brief.
