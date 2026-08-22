@@ -479,7 +479,7 @@ Appendix A's corpus.
 - **No new give-up code** — but **NOT "the caps are unchanged": R31 C10 is
   right and this bullet was wrong.** The mark's `RX_SET` IS trailed (§3.3
   property 1), so an `A_ATOMIC` inside a quantifier costs one trail entry per
-  entry to the group, and `vm_cost` (`src/gen/emit_vm.c:1311`, one of the
+  entry to the group, and `vm_cost` (`src/gen/emit_vm.c:1314`, one of the
   fifteen `-Wswitch` sites) needs an `A_ATOMIC` arm that charges it. An
   uncharged trailed write is exactly the defect the SHIPPED
   `tests/mech/sabotages/S87_kreset_trail_uncharged.sh` guards for `\K`, and
@@ -1634,27 +1634,55 @@ row.
 
 ## 12. Proposed wave structure for [M6.4.2]
 
-One wave, four slices, in this order:
+One wave, four slices, in this order. **Slice 3 grew after R31** — SR-8 is no
+longer optional (M-1) and H3's fix is three sites, not one (E3).
 
-- **Slice 1 — parse + node + refusals.** `A_ATOMIC`, the producer in
-  `src/parse/mod_atomic_groups.c`, the suffix desugaring, the `a*?+` error
-  path, `Ctx.first_atomic_pos`, and the FIFTEEN `-Wswitch` sites answered
-  (§3.2). `tests/reject/` pins move from "requires module" to the real
-  diagnostics.
-- **Slice 2 — lowering.** `vm_atomic`, the possessive-rung lift (§3.2 rule 3),
-  `rd_shape`/`rd_reverse` declines (§6.5), `nfa.c` transparent arm, `mrl.c`
-  width arm.
-- **Slice 3 — engine.** `forces_atomic`, `pcrec_discharge_atomic`, the
-  `--engine=dfa` refusal (which needs no code), and **H3's one predicate**.
-- **Slice 4 — evidence.** Appendix A's corpus and drivers, the four codegen
-  rules, the seven sabotage rows, the one-shot identity probe, `compliance-refresh`,
-  the registry rows and `registry_check` assertion (§7.4), CLAUDE.md updates.
+**Slice 1 — parse + node + the fifteen sites.** `A_ATOMIC`, the producer in
+`src/parse/mod_atomic_groups.c` (which also STAMPS the node's `engines` mask,
+§5.1), the suffix desugaring, the `a*?+` pins (§6.3), `Ctx.first_atomic_pos`,
+the four `RK_QUANTSUFFIX` rows and the six registry sites of §7.4's table.
+**The fifteen `-Wswitch` sites, named — R31 C9, because the first revision
+enumerated none of them:**
 
-H3 (slice 3) is the only thing in this list that can silently lose a match on a
-pattern the compiler otherwise gets right, so it should not be the last thing
-written.
+| file | sites | what the arm must do |
+|---|---|---|
+| `src/gen/emit_vm.c` | `:744`, `:988`, `:1314`, `:1443`, `:3604` | emit (`vm_atomic` / the lift), and `vm_cost`'s trail charge (C10) |
+| `src/opt/revdet.c` | `:93`, `:185`, `:321`, `:402` | DECLINE explicitly at all four (§6.5) — `:185`'s fallthrough builds an EMPTY-BODY atomic |
+| `src/opt/possessify.c` | `:165`, `:428`, `:648` | transparent (body's FIRST/FOLLOW/nullability), which §6.4a measured sound and §6.4's wrapping note measured incomplete |
+| `src/ir/nfa.c` | `:492` | transparent — the UNCUT erasure the prefilter is built from (§4.1) |
+| `src/opt/mrl.c` | `:90` | `minw(A_ATOMIC) = minw(body)` |
+| `src/opt/altcls.c` | `:378` | decline (an atomic group is not a class) |
 
----
+`tests/reject/` pins move from "requires module" to the real diagnostics,
+including `a*++`'s, whose message CHANGES (§6.3).
+
+**Slice 2 — lowering.** `vm_atomic` (§3.3); the possessive-rung lift with the
+**nullable carve-out** (§3.2.2) and `vm_poss_star`'s precondition turned into a
+CHECKED assertion; the **`vm_cuts()` shared predicate** threaded through the
+emitter and all four pre-passes (§3.2.5); the **K29 fix** in
+`vm_counter_rep`'s unbounded tail (§3.2.4).
+
+**Slice 3 — engine.** **SR-8**: stamping, the generic analysis over the
+post-discharge tree, `forces_kreset`'s retirement, the tripwire's retirement,
+the `--engine=dfa` branch-ordering fix (M-1 note 1). Then
+`pcrec_discharge_atomic` over the **`A_REP` arm only** (E7), with the callable
+§2.2 verdict factored out of `possessify.c`. Then **H3's three sites** —
+`:5233`, `:5177`, `:4611` reading ONE predicate (§4.4).
+
+**Slice 4 — evidence.** Appendix A's corpus and drivers **including the
+registered `run_sabotage_matrix.sh` suite word** (C11, a blocker for four
+rows); the five codegen rules; sabotage rows S88-S98; the one-shot identity
+probe; `compliance-refresh`; CLAUDE.md updates.
+
+**Ordering constraints, and there are now three rather than one:**
+
+1. **H3 before anything ships.** It is the only item that silently loses a
+   match on a pattern the compiler otherwise gets right — 114 measured cells.
+2. **The K29 fix before the lift.** The lift routes semantic possessives onto
+   the rung whose unbounded arm emits no cut; landing the lift first turns an
+   observability defect into a miscompile.
+3. **The driver suite word before the sabotage measurement.** C11: four rows
+   cannot be scored at all until `run_atomic_diff.sh` is a registered suite.
 
 ## 13. What this design does NOT measure
 
@@ -1662,76 +1690,132 @@ written.
   in-pcrec measurement here is on a PROXY (the atomicity-erased twin, the
   possessive-verdict stamp) or on emitted code for a pattern that has no cut.
 - **The cost of the lowering.** No throughput number for a cut artifact exists
-  and none could; §3.2 rule 3's frame-count argument is STRUCTURAL, not
-  benchmarked.
+  and none could; §3.2.6's frame-count argument is STRUCTURAL, not benchmarked.
 - **The real-corpus size of the discharge's win.** §5.3 measures a generated
   family; the `.rxt` corpus was not swept with `+` suffixes injected.
 - **The `[ENG-CUT]` size blowup on real patterns.** §5.5's bound is analytic.
 - **Anything under `--encoding` other than byte.** §9 argues there is nothing
   to measure; that argument is not itself a measurement.
 
----
+**ADDED AFTER R31 C16 — things the first revision measured without saying it
+was relying on them, or did not measure at all:**
+
+- **The window-end proxy, now closed by the panel rather than by this lane.**
+  §4's finding assumed `rx_prefilter`'s window end equals libpcre2's uncut
+  leftmost-first end. The `r31chk` critic measured it directly (122/122) and
+  the result is folded into §4.3. This lane did not take that measurement and
+  says so.
+- **R3a clamp-site coverage.** 4 of the 46 R3a patterns stamp `"none"` and
+  carry no ceiling at all (C5). The corpus must contain both populations; the
+  first revision did not know there were two.
+- **The refutable sub-population of §6.4.** Now measured (10,504 cells), but
+  only after C2 showed the first number counted a different thing. What is
+  still unmeasured is the same claim with an INDEPENDENT verdict source —
+  §6.4a's stated correlation.
+- **Whether the prototype discriminates what it claims.** Now measured on two
+  axes (§3.4), after C6 showed the first column was the wrong one.
+- **The registry pins and the built-derivability of a non-doorway row.** Now
+  measured (§7.4), after C1 showed the derivation could not reach the rows.
+- **The `(?>X)` plain-group discharge.** Zero cells, which is why E7 defers it.
+- **`vm_cost`'s trail arithmetic for `A_ATOMIC`.** Named (C10), not computed.
 
 ## 14. ARGUED claims, with the experiment that refutes each
 
-The panel should start here.
+The panel should start here. **Items marked [R31 …] were attacked in the first
+round; the note says what happened.**
 
-1. **CUT-INV holds for an unconditional cut (§3.1).** STRUCTURAL, and
-   PROTOTYPE-checked at 14/14. *Refute by:* finding a reachable path on which a
-   frame below the mark has `trail_mark > T0` — e.g. a lowering where the atomic
-   group can be ENTERED from a resume label that skips the mark-set, or where
-   an enclosing construct pushes its frame AFTER the body has written. The
-   prototype tests one lowering; it does not enumerate lowerings.
+1. **CUT-INV holds for an unconditional cut (§3.1).** STRUCTURAL, and now
+   PROTOTYPE-checked on TWO axes (17 rows, 4 discriminating the invariant).
+   *Refute by:* a reachable path on which a frame below the mark has
+   `trail_mark > T0` — e.g. entering the group from a resume label that skips
+   the mark-set. The prototype tests one lowering; it does not enumerate
+   lowerings. **[R31: attacked on the emitted machinery, on nested/quantified/
+   captured shapes, and with a trail-rewriting sabotage. Not refuted. The
+   prototype's EVIDENCE was refuted (C6) and rebuilt.]**
 2. **`RX_CUT`'s assignment is safe because `resume_depth ≥ mark` at every cut
    site (§3.3 property 2).** ARGUED. *Refute by:* a construct that can jump to
-   `L_cut` after popping below the entry frame. Nested lookaround (M6.6) is the
-   place to look; this design does not cover it.
-3. **possessify's §2.2 verdict survives a cut (§6.4a).** MEASURED at 0/48,000
-   but ARGUED as a theorem. *Refute by:* a pattern where the cut deletes the
-   uncut winner and the best surviving path IS a retreat-into-Q path. The
-   generator used four positions and one quantifier per pattern; two
-   quantifiers, or a quantifier straddling a nested cut, is the unexplored
-   region.
+   `L_cut` after popping below the entry frame. **[R31 E-survived: "no path to
+   `L_cut` with `resume_depth < mark` within this module's constructs".
+   Lookaround (M6.6) remains the unexplored place; this design does not cover
+   it.]**
+3. **`A_ATOMIC` is a node KIND and not a field (§3.2 RULE 1).** ARGUED, on
+   D62's own principle (structure vs parse-resolved modifier state) plus §6.5's
+   revdet finding plus the 15-diagnostic measurement. **ADDED TO THIS LIST BY
+   R31 D2**, which refuted the precedent the first revision cited. *Refute by:*
+   showing atomicity is a modifier under D62's test — i.e. that it does not
+   change the language, the backtracking, or the tree's bracketing — or by
+   showing the fifteen sites can all be answered from a field without a
+   `rd_node`-shaped loss.
 4. **The free discharge's condition is exactly §2.2 (§5.3).** MEASURED at
-   0/532 patterns. *Refute by:* a positive-verdict pattern whose possessive and
-   plain spellings differ on a subject outside the 16 used. Long subjects and
-   subjects with repeated structure are the obvious gap.
-5. **H1 (sound rejection) and H2 (start lower bound) (§4.4).** MEASURED at
-   0 violations in 17,640 cells, and ARGUED by containment. *Refute by:* a
-   pattern where the erased NFA is NOT a superset — which would mean
-   `nfa.c`'s `A_ATOMIC` arm does something other than lower the body
-   transparently. That is a claim about code nobody has written.
-6. **H4: the match-here entries need no change (§4.4).** STRUCTURAL, on lines
-   that exist. *Refute by:* an entry path that passes a prefilter window as the
-   ceiling. R30 E8 found exactly this class of thing by reading the entries
-   rather than the search loop, and this design has read them once.
-7. **The identity claim (§11.1).** ARGUED from "the module has no alphabet or
+   0/532 patterns and, by the panel, 0 over 198 positive patterns × 22
+   long/repeated subjects = 4,356 further cells. *Refute by:* a
+   positive-verdict pattern whose spellings differ on a subject outside both
+   sets. **[R31: extended into this item's own stated gap and not refuted. The
+   `(?>X)` plain-group arm is now DEFERRED (E7) because it had zero cells.]**
+5. **possessify's §2.2 verdict survives a cut (§6.4a).** MEASURED at 0 over
+   **10,504 REFUTABLE cells** with asserted per-position floors, after C2
+   refuted the first non-vacuity counter. *Refute by:* a pattern where the cut
+   deletes the uncut winner and the best surviving path IS a retreat-into-Q
+   path. **Still one quantifier per pattern**; two quantifiers, or one
+   straddling a nested cut, is the unexplored region — and the verdict source
+   is still correlated with the bite arm (§6.4a).
+6. **H1 (sound rejection) (§4.4).** ARGUED by containment, **now SCOPED to
+   positive contexts after R31 E5 found `(?!(?>a|ab)c)abc`.** *Refute by:* a
+   POSITIVE-context pattern where the erased NFA is not a superset — which
+   would mean `nfa.c`'s `A_ATOMIC` arm does something other than lower the body
+   transparently.
+7. **H4: the match-here entries need no change (§4.4).** STRUCTURAL.
+   **[R31 E-survived by reading both entries: `ctx->len` ceiling at `:5341`
+   and `:5371`.]** *Refute by:* an entry path that passes a prefilter window as
+   the ceiling.
+8. **The identity claim (§11.1).** ARGUED from "the module has no alphabet or
    state action". *Refute by:* any emitted byte that moves on an atomic-free
-   pattern. The pinned-commit sweep is the experiment and it has not been run.
-8. **Rule 3's frame argument (§3.2).** STRUCTURAL from `vm_star`'s shape.
-   *Refute by:* measuring `subject_ceiling` on `(?>a*)` lowered naively vs
-   `a*+`; if they are equal the lift is unnecessary.
-9. **§7.4's ruling that four dump-only rows are worth their cost.** ARGUED.
-   *Refute by:* showing that `registry_check`'s new per-kind assertion is not
-   enough to make a half-landed fifth kind loud — §7.3 MEASURED that the
-   compiler will not help.
-
----
+   pattern. The pinned-commit sweep is the experiment and **it has still not
+   been run** — this is now the largest unmeasured claim in the document.
+9. **RULE 3's per-path cut-equivalence (§3.2.1).** MEASURED for the six
+   witnesses on the SHIPPED possessify verdict; ARGUED that the same six paths
+   are the ones a SEMANTIC possessive reaches. *Refute by:* a semantic
+   possessive whose dispatch differs from its proof-gated twin's — the
+   nullable carve-out (§3.2.2) is exactly such a case and is why the carve-out
+   is a rule and not a note. **[R31 E1/E2: the first form was refuted here
+   twice.]**
+10. **§7.4's ruling that four dump-only rows are worth their cost.** ARGUED,
+    and **the cost went UP after C1** (a new derivation arm, six sites, two
+    pins). *Refute by:* showing R3's `--list-syntax`-parsing check still cannot
+    see an `all_kinds[]` omission.
+11. **`vm_cuts()` can be computed by the emitter's walk without storing it
+    (§3.2.5).** ARGUED — the pre-passes walk the tree separately from the
+    emitter, so "under an `A_ATOMIC`" has to be derivable at each of them.
+    *Refute by:* a pre-pass whose walk does not carry enough context to answer
+    it, which would force a stored field after all and reopen RULE 2.
 
 ## 15. Open questions for Frank
 
-1. **§7.4 (the registry rows).** This design recommends four `RK_QUANTSUFFIX`
-   rows over the cheaper explicit exemption, on a [DOC-DRV] consistency
-   argument. The exemption is defensible and is what `registry.c` does today.
-   **Manager/Frank's call**; nothing else in the module depends on it.
+**Two of the first revision's four are now RULED and are struck.**
+
+1. ~~§7.4 (the registry rows)~~ — **still open, and the cost is now known.**
+   R1 (four `RK_QUANTSUFFIX` rows) stands per the manager's triage, but C1
+   raised its price: a new derivation arm in `built_status_probe`, six sites,
+   and two moving pins (§7.4). The cheaper explicit exemption is still
+   defensible and is what `registry.c` does today. **Frank's call**; nothing
+   else in the module depends on it, except that under SR-8 an exempted
+   construct has no row for the generic analysis to name (§5.1).
 2. **§10 (one wave or two).** The design recommends one. Splitting at the
-   discharge is the only truthful split.
-3. **§5.5 (`[ENG-CUT]`).** Chartered here with a size estimate and an evidence
-   gate borrowed from D50. Confirm the gate, or ask for the population
-   measurement that would open it.
-4. **§8 (SR-8).** Two named tripwire exceptions will exist after this module.
-   Recording that as the trigger for a dedicated SR-8 row (rather than letting
-   backrefs add a third) is a scheduling call.
+   discharge is the only truthful split — and slice 3 is now larger than the
+   first revision assumed, because SR-8 is in it.
+3. **§5.5 (`[ENG-CUT]`).** Chartered with a size estimate and a D50-style
+   evidence gate. Confirm the gate, or ask for the population measurement that
+   would open it. **D4:** the plan row does not exist yet; the manager adds
+   `[ENG-CUT] STATE:not-started` at merge, and this document says "chartered
+   for the plan row" rather than claiming one exists.
+4. ~~§8 (SR-8)~~ — **RULED by the manager (D67): [M6.4.2] builds it.** No
+   longer a question. Recorded here struck rather than deleted so the reversal
+   is visible.
+5. **NEW, from E7.** The plain-group `(?>X)` discharge is deferred for want of
+   evidence. If Frank wants it in `[M6.4.2]`, the missing piece is a callable
+   (U1)/(U2) predicate over an arbitrary subtree — strictly more than the
+   `A_REP` verdict E7's ruling asks for — and it should be scoped as its own
+   slice rather than folded in.
 
 ---
 
