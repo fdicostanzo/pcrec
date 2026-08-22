@@ -26,6 +26,56 @@ BUILD_DIR ?= build
 LINTGEN ?= 0
 export LINTGEN
 
+# CCACHE ([TT-3], Frank chartered 2026-08-21) — opt-in compile caching for
+# BOTH compile paths: this file's own tree-build compiles below, and the
+# GENCFLAGS generated-artifact compiles every test suite runs through
+# tests/lib/gen_timeout.sh's gen_cc. Wiring is PATH MASQUERADE — the shape
+# already validated in the union battery (build/battery_union2.log, "ccache
+# via PATH masquerade"): when CCACHE=1, ccache's own compiler-name symlink
+# directory is prepended to PATH, so every `gcc` invocation anywhere in this
+# process tree (this Makefile's recipes, recursive $(MAKE) calls, and every
+# test script's child processes, since PATH is inherited) resolves to ccache
+# transparently. CC itself stays the single word "gcc", NEVER "ccache gcc" —
+# that shape broke `env`'s word-splitting in UBSAN_ENV/ASAN_ENV below the
+# first time it was tried (docs/dev/dev_journal.md, 2026-08-21: unquoted
+# CC=$(CC) inside an `env VAR=... VAR=...` recipe treats the second word of
+# a spaced value as env's OWN command).
+#
+# gen_cc's own compile+link SPLIT (tests/lib/gen_timeout.sh, the fix for the
+# ~10%-cacheable measurement — ccache cannot cache a combined compile-and-
+# link invocation) is gated on this same CCACHE var, exported below exactly
+# like LINTGEN above.
+#
+# Default 0: a plain `make`/`make test` prepends nothing to PATH, exports
+# CCACHE=0, and gen_cc's split never activates — byte-for-byte the same
+# compiler commands as before this row (measured, not assumed: see
+# docs/testing.md's ccache section for the command-line diff).
+CCACHE          ?= 0
+CCACHE_MASQ_DIR ?= /usr/lib/ccache
+CCACHE_DIR      ?= $(CURDIR)/build-ccache
+ifeq ($(CCACHE),1)
+ifeq ($(wildcard $(CCACHE_MASQ_DIR)/gcc),)
+$(warning CCACHE=1 requested but $(CCACHE_MASQ_DIR)/gcc is missing — ccache's \
+  masquerade symlinks are not installed at that path, so compiles will run \
+  uncached; falling back to CCACHE=0. See docs/testing.md's ccache section.)
+override CCACHE := 0
+else
+export PATH := $(CCACHE_MASQ_DIR):$(PATH)
+export CCACHE_DIR
+# NOHASHDIR + BASEDIR: this file's own tree-build compiles (the pattern
+# rule below) never go through tests/lib/gen_timeout.sh, which sets these
+# for every generated-code compile — so mech's per-sabotage rebuild (a
+# FRESH `git archive HEAD` tree per sabotage, most of whose source files
+# are byte-identical across sabotages) needs them set here too, or a
+# cross-tree hit is blocked the same way a cross-case one was (measured:
+# CFLAGS defaults to -g, and ccache's hash_dir folds the CWD into the hash
+# for correct debug-info paths — probed 2026-08-21, see gen_timeout.sh).
+export CCACHE_NOHASHDIR := 1
+export CCACHE_BASEDIR   := $(CURDIR)
+endif
+endif
+export CCACHE
+
 LIBSRCS := $(wildcard src/core/*.c) $(wildcard src/parse/*.c) \
            $(wildcard src/ir/*.c) $(wildcard src/opt/*.c) \
            $(wildcard src/gen/*.c) $(wildcard src/gen/enc/*.c)

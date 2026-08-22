@@ -74,7 +74,14 @@ Process and status documents for pcrec. The architecture itself lives in
   live-vs-pending-VM population-accounting rule (an out-of-range `g` is a
   hard failure, an out-of-range `gp` is counted separately and
   self-activates once `RX_NCAPS` grows to cover it), and the python-`re`
-  oracle tier that checks both identically.
+  oracle tier that checks both identically. Also (added [TT-3], 2026-08-21)
+  "Compile caching (`CCACHE=1`)": the opt-in ccache toggle, its two
+  diagnosed-and-fixed blockers (compile+link shape, then a per-case
+  `-I<tmpdir>` flag plus `hash_dir` under `-g`), and the MEASURED verdict —
+  a clear NO for `make test` (real 64.59% hit rate, still 4x+ plain's wall
+  time — the workload is thousands of sub-millisecond compiles, the wrong
+  shape for caching's own overhead), a qualified YES for `make mech`'s
+  per-sabotage tree rebuild (25-29% faster warm, single-row samples).
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and

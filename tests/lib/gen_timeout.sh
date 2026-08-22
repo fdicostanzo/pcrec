@@ -1,6 +1,29 @@
 # tests/lib/gen_timeout.sh — D45's ONE implementation of the generated-code
 # compile budget. Sourced by every suite that compiles emitted C.
 #
+# GEN_LIB_ROOT — the repo root, computed once here (was previously computed
+# again, identically, further down near gen_run; ONE implementation).
+GEN_LIB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
+
+# [TT-3] ccache config, exported ONCE here rather than left to whichever
+# caller happens to set CCACHE=1 first. Both fixes below were found NEEDED
+# TOGETHER by a micro-probe (2026-08-21) after a full cold+warm `make test`
+# cycle under the compile+link split alone (see _gen_cc_run) raised
+# cacheability from ~10% to 65% but left HITS at 0.02% (2/11,765,
+# build/battery_union2.log's successor measurement): ccache always hashes
+# the full compiler argument list, and nearly every gen_cc call site passes
+# an ABSOLUTE, per-case tmp-dir path in an `-I` flag — so even byte-identical
+# content (tests/harness/driver.c never changes) never matched its own prior
+# compile (probed 0/2 hits). `-g` (the sanitizer axes' flag) compounds it:
+# ccache's `hash_dir` option additionally folds the CWD into the hash for
+# correct debug-info paths, so a `-g` compile from two different case
+# directories still missed even after canonicalizing `-I` (probed 0/2 hits
+# at hash_dir's default, 1/2 — a HIT — with CCACHE_NOHASHDIR=1).
+if [ "${CCACHE:-0}" = "1" ]; then
+    export CCACHE_NOHASHDIR=1
+    export CCACHE_BASEDIR="$GEN_LIB_ROOT"
+fi
+#
 # D45 (docs/dev/decisions.md, Frank, 2026-08-15): "every compile of GENERATED
 # code in the test infrastructure ... is wrapped in a timeout; exceeding it is
 # a loud test FAILURE naming the case, never a hang and never a silent skip."
@@ -103,6 +126,135 @@ pcrec_timeout_secs() {
     esac
 }
 
+# _gen_cc_run <compiler> <argv...> — [TT-3] the ccache-cacheability shape fix.
+#
+# WHY THIS EXISTS. ccache cannot cache a combined compile-AND-link invocation
+# (a .c source with -o and no -c): it only recognizes the single
+# preprocess-and-compile-to-one-object shape. Nearly every gen_cc call site in
+# this tree passes one or more .c sources straight to `-o <binary>` in ONE
+# gcc invocation (compile driver.c/gen.c and link in the same command), which
+# is exactly the shape ccache passes through uncached — MEASURED 2026-08-21:
+# only 540/5466 compile calls were cacheable under a naive PATH-masquerade
+# wiring (build/battery_union2.log). This function is the SINGLE place that
+# reshapes the call: split each .c source into its own `-c` compile (the
+# shape ccache caches), then link the resulting objects — same inputs, same
+# compiler, same flags, same final artifact, different invocation SHAPE.
+#
+# GATED on CCACHE=1 (house style, same shape as LINTGEN above): when unset
+# (the default), this is byte-for-byte the original one-shot call — no shape
+# change, no ccache dependency, nothing about a plain `make test` differs.
+# A call that already passes `-c` (pc4's split-by-hand, the D45 controls, the
+# codegen multi-engine fixture) is already the cacheable shape and is left
+# untouched either way.
+# SPLIT ALONE MEASURED INSUFFICIENT (2026-08-21 follow-up): a full cold+warm
+# `make test` cycle with only the split above raised cacheable calls to 65%
+# but HITS stayed at 0.02% (2/11,765). Cause, isolated by micro-probe: ccache
+# always hashes the full compiler argument list, and every one of these calls
+# carries an `-I<per-case-tmp-dir>` flag whose VALUE is a fresh `mktemp`
+# directory every single case — so even a source that never changes
+# (tests/harness/driver.c, compiled ~20,000 times with identical content)
+# never matched its own prior compile (probed 0/2 hits). The fix:
+# CANONICALIZE the invocation before compiling. Every one of this file's
+# call sites shares one shape — `-I <dir> ... -o <dir>/<name> src1.c
+# [src2.c ...]`, the SAME <dir> in both places — so `cd`-ing into that
+# directory and rewriting its `-I<dir>` to the textually-stable `-I.` makes
+# the argument list identical across cases whenever the CONTENT is (probed:
+# HIT). Sources that already live in <dir> (the varying per-case gen.c/pa.c)
+# are referenced by their bare basename post-`cd` for the same reason;
+# sources that live elsewhere (a fixed shared driver, e.g. tests/harness/
+# driver.c or possdiff_driver.c) keep their own absolute path, which was
+# already invocation-stable on its own.
+gen_cc_relativize() {
+    local outdir="$1"
+    shift
+    local out_flags=() f i n=$# args=("$@")
+    i=0
+    while [ "$i" -lt "$n" ]; do
+        f="${args[$i]}"
+        if [ "$f" = "-I" ] && [ "$((i + 1))" -lt "$n" ] && [ "${args[$((i + 1))]}" = "$outdir" ]; then
+            out_flags+=("-I.")
+            i=$((i + 2))
+            continue
+        fi
+        case "$f" in
+            "-I$outdir") out_flags+=("-I.") ;;
+            *) out_flags+=("$f") ;;
+        esac
+        i=$((i + 1))
+    done
+    printf '%s\n' "${out_flags[@]}"
+}
+export -f gen_cc_relativize
+
+_gen_cc_run() {
+    local cc="$1"
+    shift
+    if [ "${CCACHE:-0}" != "1" ]; then
+        "$cc" "$@"
+        return $?
+    fi
+    local a has_c=0
+    for a in "$@"; do
+        if [ "$a" = "-c" ]; then has_c=1; break; fi
+    done
+    if [ "$has_c" -eq 1 ]; then
+        "$cc" "$@"
+        return $?
+    fi
+    local out="" flags=() csrcs=()
+    local args=("$@") n i
+    n=${#args[@]}
+    i=0
+    while [ "$i" -lt "$n" ]; do
+        a="${args[$i]}"
+        if [ "$a" = "-o" ] && [ -z "$out" ]; then
+            out="${args[$((i + 1))]}"
+            i=$((i + 2))
+            continue
+        fi
+        case "$a" in
+            *.c) csrcs+=("$a") ;;
+            *) flags+=("$a") ;;
+        esac
+        i=$((i + 1))
+    done
+    # Safety net: not the compile+link shape this split understands (no -o,
+    # or no .c sources at all — e.g. linking pre-built .o's) — run the
+    # original call rather than guess at a reshaping.
+    if [ -z "$out" ] || [ "${#csrcs[@]}" -eq 0 ]; then
+        "$cc" "$@"
+        return $?
+    fi
+    local outdir outbase cflags=() rc=0 src ob objs=() used=" "
+    outdir="$(dirname "$out")"
+    outbase="$(basename "$out")"
+    while IFS= read -r a; do cflags+=("$a"); done < <(gen_cc_relativize "$outdir" "${flags[@]}")
+    ( cd "$outdir" || exit 1
+      for src in "${csrcs[@]}"; do
+          if [ "$(dirname "$src")" = "$outdir" ]; then
+              relsrc="$(basename "$src")"
+          else
+              relsrc="$src"
+          fi
+          ob="$(basename "$src" .c).o"
+          # Collision guard: two sources reducing to the same object
+          # basename (never observed across today's call sites, but
+          # a silent link-time clobber would be a worse bug than a
+          # slightly uglier name) get an index suffix instead.
+          case "$used" in
+              *" $ob "*) ob="$(basename "$src" .c)_$(echo -n "$src" | cksum | cut -d' ' -f1).o" ;;
+          esac
+          used="$used$ob "
+          "$cc" "${cflags[@]}" -c -o "$ob" "$relsrc" || exit $?
+          objs+=("$ob")
+      done
+      "$cc" "${cflags[@]}" -o "$outbase" "${objs[@]}"
+    )
+    rc=$?
+    return "$rc"
+}
+export -f _gen_cc_run
+
 # gen_cc <case-label> <compiler-argv...>
 #
 # Runs one compile of GENERATED C under the budget. Always leaves the
@@ -131,8 +283,13 @@ gen_cc() {
     # Soft=hard would escalate straight to SIGKILL and destroy exactly that
     # distinction. The rlimit is per-process, not per-tree; the pathology
     # class is one cc1 grinding, and cc1 gets its own bounded counter.
+    # The whole split sequence (compile, compile, ..., link when CCACHE=1)
+    # runs under the SAME budget as the original one-shot call — ccache
+    # makes a hit near-instant, so the sum comfortably fits, and a real
+    # miss on every source is still bounded by the same numbers a plain
+    # compile was bounded by.
     GEN_CC_LOG="$(timeout "$wall" bash -c \
-        'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; exec "$@"' \
+        'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; _gen_cc_run "$@"' \
         _ "$cpu" "$@" 2>&1)"
     rc=$?
     if [ "$rc" -eq 152 ] || printf '%s' "$GEN_CC_LOG" | grep -q 'CPU time limit exceeded'; then
@@ -215,10 +372,10 @@ gen_run_secs() {
 # 124/122 are checked EXACTLY by callers, same reasoning as gen_cc: 139 is a
 # crash and 137 an external OOM-kill, and either called "timeout" sends the
 # reader hunting a slow box instead of a bug.
-GEN_LIB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
 gen_run() {
     local what="$1"
     shift
+    # GEN_LIB_ROOT: computed once, see the file header.
     "$GEN_LIB_ROOT/scripts/watchdog" \
         -l "$what" -c "$(gen_cpu_secs)" -s "$(gen_run_secs)" -m "${GENRUNMEM:-512m}" \
         -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" -- "$@"

@@ -269,11 +269,17 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
 - **mech/** — GENERATES the sabotage-detection matrix ([MECH-1]) rather than
   hand-maintaining "disabling X fails N cases" figures, which have gone
   stale every time this project tried to keep them by hand. `make mech`
-  (not part of `make test`: ~6 minutes, builds the tree once per sabotage
-  from a fresh `git archive HEAD`) — see its CLAUDE.md
+  (not part of `make test`: builds the tree once per sabotage from a
+  fresh `git archive HEAD`; the full matrix measures ~50 min at `PROCS=4`,
+  2026-08-21, correcting an earlier "~6 minutes" figure that undercounted
+  it) — see its CLAUDE.md. [TT-3]'s `CCACHE=1` toggle (docs/testing.md
+  "Compile caching") is a qualified win here specifically (25-29% faster
+  warm on single-row samples) even though it is a measured NO for
+  `make test` — the tree-rebuild-per-sabotage shape is the opposite of
+  `make test`'s thousands-of-sub-millisecond-compiles shape.
 
 ## Conventions
 
-.rxt format: comments (#), pattern blocks (pattern <regex>), and match/nomatch assertions (m/n with subject and expected span). See docs/testing.md for the full format spec. Run tests via `make test` or `bash tests/harness/run.sh [files...]`. Env vars: PCREC, CC, GENCFLAGS, KEEP=1 (preserve temp dir), VERBOSE=1 (per-test output), LINTGEN=1 (SAN-1: rides the GENCFLAGS compile pass with `gcc -fanalyzer` on every generated matcher — `make test LINTGEN=1`; opt-in, see docs/testing.md "Sanitizer + lint battery").
+.rxt format: comments (#), pattern blocks (pattern <regex>), and match/nomatch assertions (m/n with subject and expected span). See docs/testing.md for the full format spec. Run tests via `make test` or `bash tests/harness/run.sh [files...]`. Env vars: PCREC, CC, GENCFLAGS, KEEP=1 (preserve temp dir), VERBOSE=1 (per-test output), LINTGEN=1 (SAN-1: rides the GENCFLAGS compile pass with `gcc -fanalyzer` on every generated matcher — `make test LINTGEN=1`; opt-in, see docs/testing.md "Sanitizer + lint battery"), CCACHE=1 ([TT-3]: routes generated-code and tree-build compiles through ccache — opt-in, MEASURED a clear NO for `make test`'s own workload, see docs/testing.md "Compile caching").
 
 Maintenance: update this file when subdirectories/test modules are added or removed.
