@@ -84,6 +84,22 @@ group's reported span). E3-E9 and E11 CLOSED. Two new:
 | **E13 (MED)** | for a by-name reference over a dup-name run, the MARKED set must be EVERY member — the resolution chain reads them all at match time, so an unmarked member re-admits E1 through it | §3.2.4 (marked set = union of every `A_BREF`'s `refs`), §11.4 S-BR15b, §11.1 (`dupnames.rxt` had no re-entry cell) |
 | E14, E10 residual, a LOW note | `simvm.py`'s `publish` defaulted to `'close'`, so a reader replaying the refutation got the corrected model silently; §3.1(a) still said "compile error THERE"; §3.2.3 omitted the `vm_work` charge §3.8 recommends | the default is REMOVED (no default, with a message naming both disciplines); §3.1(a); §3.2.3 shows the charge |
 
+**THE FINAL r32chk PASS.** C2(a)(b)(c), N1, N2, N5 and S-BR12 all CLOSED —
+the prepend correction verified at both sites and re-measured with pcrec's
+REAL input order, which produces `a/7 a/5 a/3 a/1` without the tiebreak:
+exactly the "last set" rule §8.3's `"xyy"` cell rules out, so the correctness
+reclassification in §8.2 is confirmed on the critic's own instrument rather
+than on this lane's reading. Two LOW wording items applied here: §4.4's
+scoped guard said "asserted EXACT" in its heading and "at least N" — a floor
+— in the same sentence (now EXACT, with the reason a floor fails on three
+fixtures); and §4.4 called `next_pos`'s check "UNCHANGED" when token-level
+stripping does change it in one direction, stopping a comment naming it
+inside a body from being flagged. That is the check coming into line with its
+OWN stated allowlist (`:922-926`), not a loosening past it — but it is a
+change, and the implementation constraint it carries (strip before
+head-detection and the column-0 brace rules; carry in-comment state across
+awk records) is now written down.
+
 **One observation carried into the instrument**: in one of the critic's
 populations publish=open gave ZERO divergences and 243 REVERSED SPANS, because
 a reversed span makes the simulator's compare fail and failing sometimes
@@ -1001,19 +1017,49 @@ from the TEST, not from the artifact:**
   is. **S68 must still fire after that refactor** — it does, and the reason
   is that S68's sabotage puts a real CALL in a hot loop, not a comment, so
   stripping comments cannot hide it; the panel verified the anchor survives.
-- **A SCOPED non-vacuity guard, asserted EXACT.** (C2(b).) All six existing
-  fixtures declare zero bref entries and get zero, so the complement check is
-  satisfied over an empty population — delete this module's fixture rows and
-  it stays green. The guard is therefore not the global "found no residual
-  entry" one (`run_codegen_tests.sh:1013`), which `next_pos` keeps satisfied
-  unconditionally: it is **"at least N fixtures declare >= 1 bref entry", with
-  N a literal asserted in the check**, in this file's own exact-count
-  convention. A run that finds fewer has lost its population and says so.
+- **A SCOPED non-vacuity guard, asserted EXACT — not a floor.** (C2(b), and
+  the final re-check's wording item 1: the previous revision announced
+  "asserted EXACT" in its own heading and then stated a floor, "at least N",
+  in the same bullet.) All six existing fixtures declare zero bref entries
+  and get zero, so the complement check is satisfied over an empty
+  population — delete this module's fixture rows and it stays green. The
+  guard is therefore not the global "found no residual entry" one
+  (`run_codegen_tests.sh:1013`), which `next_pos` keeps satisfied
+  unconditionally: it is **"EXACTLY N fixtures declare >= 1 bref entry", N a
+  literal asserted in the check**, in this file's own exact-count convention
+  (`check_class_ports`, `check_class_syntax_reach`, and §11.2's own guards,
+  which are all exact). **A floor is the wrong shape here for a concrete
+  reason**: the module adds three backref-bearing fixtures, so "at least 2"
+  passes while one of them silently loses its declaration — which is the
+  population-shrinking failure the guard exists to catch, arriving through
+  the guard itself. A run that finds any other number has lost or gained a
+  fixture and says so.
 - The **"not in a scan loop" clause is DROPPED.** No mechanism exists to
   express it and inventing an awk loop-tracker to check one clause would be a
   second control with the same author as the thing it checks.
-- `next_pos` keeps `engine_callable = false` and its check is UNCHANGED,
-  including S68 — verified by the panel to survive this refactor.
+- `next_pos` keeps `engine_callable = false`, and its check is **unchanged
+  EXCEPT in one direction: a comment naming it inside a function body stops
+  being flagged.** (Final re-check wording item 2 — saying "UNCHANGED" flatly
+  was wrong, and wrong in the direction that hides a real behaviour change.)
+  Today `calls_in_bodies()` matches with a raw `index($0, want)` and no
+  comment filtering, so a comment mentioning `<prefix>_next_pos` inside an
+  engine body IS reported as a violation. That is STRICTER than the check's
+  own stated allowlist, which says a residual name "may appear (a) in a
+  comment" (`run_codegen_tests.sh:922-926`). Token-level stripping therefore
+  brings the implementation into line with its documented contract rather
+  than loosening it past one — but it is a change, and a reader comparing the
+  two must be told which way it moves. **S68 still fires**: its sabotage puts
+  a real CALL in a hot loop, not a comment.
+
+  **The implementation constraint, because it is not obvious and getting it
+  wrong silently breaks the existing check:** the strip must run BEFORE
+  head-detection and before the column-0 brace rules
+  (`/^[A-Za-z_].*\(/`, `/^\{/`, `/^\}/`), since a comment can otherwise
+  contain text that looks like a definition head or a brace at column 0 and
+  desynchronise the `inbody` tracking. And because a `/* ... */` region spans
+  records, **in-comment state must be carried across awk records** rather
+  than decided per line. One pass, state threaded, then the existing rules
+  run on the stripped text.
 
 **The alternative, named and rejected:** emit the compare as an ordinary
 `static` helper in the emitter's own output, outside the seam. That keeps the
