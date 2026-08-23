@@ -153,7 +153,7 @@ long long pcrec_minw(const Ast *a)
         case A_REP:
             /* `rmax == -1` (unbounded) is not special: the MINIMUM is rmin
              * copies whether or not there is a maximum. */
-            return mrl_sat_add(acc, mrl_sat_mul(a->rmin, pcrec_minw(a->l)));
+            return mrl_sat_add(acc, mrl_sat_mul(a->u.rep.rmin, pcrec_minw(a->l)));
         }
         /* No default arm: see the header comment. Reaching here means a new
          * AKind was added and this switch was not extended, which -Wswitch

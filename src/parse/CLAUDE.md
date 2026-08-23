@@ -211,7 +211,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   escapes the group save/restore — the measured leak-to-enclosing-`)` rule),
   or does save/apply/`pcrec_parse_body`/restore for `:`; per-letter refusals; `m` is **REAL since [M6.2] wave C** — it sets the scoped
   multiline state, and `p_atom`'s `^`/`$` rows resolve that state onto the
-  node at the assertion itself (D62, `Ast.multiline`), which is what makes
+  node at the assertion itself (D62, `Ast.u.anch.multiline`), which is what makes
   `(?m:...)` and `(?m)...(?-m)` right by construction rather than by a
   downstream pass re-deriving scope. Its wave-A pair of refusals (module-off,
   and enabled-but-unbuilt) retired with the letter, along with their two
@@ -341,7 +341,7 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `N_END` NFA kind, a third closure view (src/ir/dfa.c) and a third position
   view in both emitters, per D62's kinds-encode-structure principle.
 
-  **`Ast.multiline` is deliberately left at the arena's zero here**, and that
+  **`Ast.u.anch.multiline` is deliberately left at the arena's zero here**, and that
   is the alias claim's fine print rather than an omission: PCRE2's `\A`/`\Z`
   are UNAFFECTED by multiline, so `(?m)\Z` still means the subject end while
   `(?m)$` means before every newline. parse.c's `^`/`$` cases copy the scoped
@@ -534,8 +534,8 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   (src/opt/possessify.c, reading the parser's END-OF-PATTERN multiline state
   at verdict time: a scope-blind miscompile waiting for `(?m)` to be
   accepted). If a pass elsewhere needs to know what a modifier decided, the
-  answer is a FIELD ON THE NODE set by the parser — `Ast.greedy` from `(?U)`,
-  `Ast.multiline` from `(?m)` — not a wider read. `pcrec_parse_mods_init`
+  answer is a FIELD ON THE NODE set by the parser — `Ast.u.rep.greedy` from `(?U)`,
+  `Ast.u.anch.multiline` from `(?m)` — not a wider read. `pcrec_parse_mods_init`
   (parse.c) is the ONE seeding entry point; `src/core/compile.c`'s two
   `cx.mods = (ModState){...}` assignments are gone, and every Ctx that can
   reach a parser or a doorway port (including syntax_dump.c's two query
@@ -670,7 +670,7 @@ either.
 caller-owned, so D29's "set parse state, parse body, restore" had nothing to
 set and `(?i:a)b` was inexpressible. The field is `cx->mods.caseless` since
 MOD-0.5c widened the PARSE-1 bool into the ModState struct; it is seeded
-from `opt->caseless` in compile.c — one home, seeded once — and
+from `opt->u.bref.caseless` in compile.c — one home, seeded once — and
 saved/restored around every BODY-CARRYING group (the save/restore placement
 moved to p_group_body's body tail at MOD-0.5c; a bare option run escapes
 its own paren pair's restore by construction — see parse.c's comment at the

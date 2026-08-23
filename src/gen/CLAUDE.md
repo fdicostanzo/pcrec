@@ -694,7 +694,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     cursor and the frames, and it is what makes a bounded repeat's emitted size
     independent of its COUNT: `((a)|b){0,4000}c` was refused by the replication
     cap and now compiles to 292 lines. `src/opt/revdet.c` selects it and leaves
-    the body's reversed AST on `Ast.revbody`; `vm_revdet_rep` emits it.
+    the body's reversed AST on `Ast.u.rep.revbody`; `vm_revdet_rep` emits it.
 
     Four things to understand before editing it:
 
@@ -996,7 +996,7 @@ only and its own proposed check would have AGREED WITH THE BUG. The retry
 recompute STAYS on a cut-bearing artifact (it re-seeds `attempt_position`,
 which is H2 and is sound); only the CEILING it also computed is dropped.
 
-**THE STRATS STAMP READS `vm_cuts()`, not `Ast.possessive`**, which is a
+**THE STRATS STAMP READS `vm_cuts()`, not `Ast.u.rep.possessive`**, which is a
 deliberate deviation from the design's §6.4(c). RULE 2 holds — this module
 never writes that field — but the LIFT genuinely routes a semantic possessive
 onto the possessive rungs, and a stamp saying BACKTRACKING on an artifact whose
@@ -1047,7 +1047,7 @@ written as one guarded block so that is structural rather than remembered.
 both halves adjacent, so they are already publications in the sense a
 reference needs.)
 
-**THE COMPARE ROUTES THROUGH THE SEAM FROM BIRTH**, and `Ast.caseless` picks
+**THE COMPARE ROUTES THROUGH THE SEAM FROM BIRTH**, and `Ast.u.bref.caseless` picks
 WHICH entry at emit time — never a runtime flag, D18/D23's rule. An inline
 `(s[i] | 32) == (s[j] | 32)` here would be byte arithmetic that is correct
 today and silently wrong under a UTF-8 backend, which is the residue class D58

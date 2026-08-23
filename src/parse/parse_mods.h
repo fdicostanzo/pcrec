@@ -16,7 +16,7 @@
  * have possessified a quantifier whose retreat is the only way to the match —
  * two measured lost-match cells (assertions_design.md §8.1.1), shipping the
  * day the `m` letter is accepted. The cure resolves the fact onto the node
- * (`Ast.multiline`); THIS FILE is what stops the next analysis re-deriving it
+ * (`Ast.u.anch.multiline`); THIS FILE is what stops the next analysis re-deriving it
  * from a separate source it has to keep in sync, which is this project's
  * recorded check-design failure mode.
  *
@@ -29,8 +29,8 @@
  *
  * DO NOT include this from src/opt/, src/ir/, src/gen/, src/core/ or cli/.
  * If a pass there needs to know something a modifier decided, the answer is a
- * FIELD ON THE NODE set by the parser, in the shape `Ast.greedy` (from `(?U)`)
- * and `Ast.multiline` (from `(?m)`) already have. */
+ * FIELD ON THE NODE set by the parser, in the shape `Ast.u.rep.greedy` (from `(?U)`)
+ * and `Ast.u.anch.multiline` (from `(?m)`) already have. */
 #ifndef PCREC_PARSE_MODS_H
 #define PCREC_PARSE_MODS_H
 
@@ -47,7 +47,7 @@ struct ParseMods {
      *
      * ITS ONE CONSUMER IS THE PARSER, and that is now structural rather than
      * a convention (see this file's header): `p_atom`'s `^`/`$` cases copy it
-     * onto the node as `Ast.multiline`, at the position of the assertion
+     * onto the node as `Ast.u.anch.multiline`, at the position of the assertion
      * itself, and every downstream analysis reads the node. D47.5's live-gate
      * requirement is satisfied by that read, not by this field — the gate is
      * live, and it is now also SCOPE-CORRECT, which D47.5's own wording did

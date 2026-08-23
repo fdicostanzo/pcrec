@@ -294,7 +294,7 @@ ExtResult pcrec_modport_optrun(Ctx *cx, const RegRow *rw, ExtWant want,
              *
              * The bit's ONE consumer is the parser itself — `p_atom`'s `^`
              * and `$` rows copy the state IN FORCE AT THE ASSERTION onto
-             * `Ast.multiline` (D62; src/parse/parse.c). Nothing downstream
+             * `Ast.u.anch.multiline` (D62; src/parse/parse.c). Nothing downstream
              * reads this struct, which src/parse/parse_mods.h makes a compile
              * error rather than a convention. That is why `(?m:...)` and
              * `(?m)...(?-m)` are right by construction here: the set/restore

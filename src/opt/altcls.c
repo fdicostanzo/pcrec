@@ -155,7 +155,7 @@ static Ast *altcls_rebuild_alt(Ctx *cx, Ast **arr, size_t n)
 static Ast *altcls_class_from_bits(Ctx *cx, const uint8_t bits[32])
 {
     Ast *c = pcrec_ast_node(cx, A_CLASS);
-    memcpy(c->cls, bits, 32);
+    memcpy(c->u.cls.bits, bits, 32);
     return c;
 }
 
@@ -186,7 +186,7 @@ static bool altcls_branch_peel(Ctx *cx, Ast *branch, int *byte0_out, Ast **rest_
     Ast **arr;
     size_t n = altcls_cat_flatten(cx, branch, &arr);
     if (arr[0]->k != A_CLASS) return false;
-    int bit = altcls_single_bit(arr[0]->cls);
+    int bit = altcls_single_bit(arr[0]->u.cls.bits);
     if (bit < 0) return false;
     *byte0_out = bit;
     *rest_out = altcls_rebuild_cat(cx, arr + 1, n - 1);
@@ -328,9 +328,9 @@ static Ast *altcls_walk_alt(Ctx *cx, Ast *a)
                 while (j < n && br[j]->k == A_CLASS) j++;
                 if (j - k >= 2) {
                     uint8_t bits[32];
-                    memcpy(bits, br[k]->cls, 32);
+                    memcpy(bits, br[k]->u.cls.bits, 32);
                     for (size_t x = k + 1; x < j; x++)
-                        for (int b = 0; b < 32; b++) bits[b] |= br[x]->cls[b];
+                        for (int b = 0; b < 32; b++) bits[b] |= br[x]->u.cls.bits[b];
                     out[m++] = altcls_class_from_bits(cx, bits);
                     cx->job->altcls_merges++;
                     any_rewritten = true;

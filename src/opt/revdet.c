@@ -6,7 +6,7 @@
  * choice-bearing — so the span-loop cursor cannot have it — may still be
  * emitted as ONE body copy rather than `n` of them, provided the consumed run's
  * decomposition into iterations is UNIQUE and RECOVERABLE FROM THE RIGHT. This
- * pass finds those quantifiers and sets `Ast.revbody` to the body's REVERSED
+ * pass finds those quantifiers and sets `Ast.u.rep.revbody` to the body's REVERSED
  * AST; src/gen/emit_vm.c is what acts on the mark, and the reversed AST is also
  * the thing it emits the backward walk from. One field, so the verdict and the
  * material for it cannot disagree.
@@ -160,7 +160,7 @@ static void rd_shape(Shape *S, const Ast *a)
             a = a->l;
             continue;
         case A_REP:
-            if (a->rmin != a->rmax || a->rmin < 1) { S->ok = false; return; }
+            if (a->u.rep.rmin != a->u.rep.rmax || a->u.rep.rmin < 1) { S->ok = false; return; }
             a = a->l;
             continue;
         case A_CAT:
@@ -208,9 +208,24 @@ static Ast *rd_node(Ctx *cx, const Ast *src)
     *n = *src;
     n->l = n->r = NULL;
     /* The copy is walk material, never a rung host: nothing analyses it and
-     * nothing may read a stale verdict off it. */
-    n->revbody = NULL;
-    n->possessive = false;
+     * nothing may read a stale verdict off it.
+     *
+     * [D70] GUARDED ON THE KIND, and the guard is load-bearing rather than
+     * tidy. `rd_node` is the copy constructor for EVERY kind `rd_reverse`
+     * handles — A_CLASS, A_EMPTY, the six position predicates, A_CAP, A_REP,
+     * A_CAT, A_ALT, plus that function's tail fallthrough — so before the
+     * union these two writes landed on nodes of every kind and were simply
+     * DEAD for all but A_REP. After it they are writes THROUGH `u.rep` on
+     * whatever payload the node actually owns: on an A_CLASS node they
+     * overwrite bytes of `u.cls.bits`, i.e. they corrupt the reversed body's
+     * class bitmap. The D70 migration survey caught this site; it is the one
+     * generic walker in the tree that touched a per-kind field without
+     * switching on `k`, and the guard is what makes the refactor
+     * behaviour-preserving rather than a miscompiler. */
+    if (n->k == A_REP) {
+        n->u.rep.revbody = NULL;
+        n->u.rep.possessive = false;
+    }
     return n;
 }
 
@@ -345,7 +360,7 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
     for (;;) {
         switch (a->k) {
         case A_CLASS:
-            memcpy(out, a->cls, 32);
+            memcpy(out, a->u.cls.bits, 32);
             return;
         case A_CAP: case A_REP:
             a = a->l;
@@ -373,7 +388,7 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
              * below fail and the quantifier keep its machinery.
              *
              * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected
-             * for `Ast.multiline` awareness and needing none: widening is
+             * for `Ast.u.anch.multiline` awareness and needing none: widening is
              * opaque to what an assertion means, so it cannot be wrong about
              * WHERE a `$` is true. The full inspection is recorded at the
              * field itself (src/core/internal.h). */
@@ -462,7 +477,7 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
      * nested bounded repeats as the largest unexplored corner, and §3.4's
      * capture derivation — which this rung's backward walk implements — is
      * explicitly single-level. Taken as a scope bound, not argued. */
-    if (!in_rep && !(a->rmin == 0 && a->rmax == 0)) {
+    if (!in_rep && !(a->u.rep.rmin == 0 && a->u.rep.rmax == 0)) {
         Shape S = { 0, true };
         rd_shape(&S, a->l);
         if (S.ok) {
@@ -471,7 +486,7 @@ static void rd_rep(Rd *R, Ast *a, bool in_rep)
                 const Ast *rev = rd_reverse(R->cx, a->l);
                 if (pcrec_uniq_iteration(R->scratch, rev, &why)
                     && rd_alt_disjoint(rev)) {
-                    a->revbody = rev;
+                    a->u.rep.revbody = rev;
                     R->marked++;
                 }
             }

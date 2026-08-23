@@ -284,7 +284,7 @@ construction (src/ir) and emission (src/gen).
   never grow: every conjunct in it is a measured refutation of a simpler rule
   somebody believed. So the survey runs the same `pss_walk` — same FOLLOW
   accumulation, same enclosing-loop term, the same lines — and reports positive
-  verdicts through a callback instead of writing `Ast.possessive`. One pass is
+  verdicts through a callback instead of writing `Ast.u.rep.possessive`. One pass is
   exact rather than an approximation of the fixpoint: the verdict reads no
   `possessive` field anywhere, so a second round marks nothing new.
 
@@ -359,7 +359,7 @@ construction (src/ir) and emission (src/gen).
   match — measured as lost-match cells, correct answer `(0,1)`, possessified
   answer NO MATCH. D47.5's own recorded obligation names the leading-`(?m)`
   shape, the one the old code got right, so discharging it would have left
-  both defects live. The cure: `first_of` reads `a->multiline` off the NODE,
+  both defects live. The cure: `first_of` reads `a->u.anch.multiline` off the NODE,
   the parser resolves it at the `$` itself, `ParseMods` is now incomplete
   outside `src/parse/` so no later pass can repeat the mistake, and `\z`
   (A_END) takes the same exemption with no gate at all — its satisfying set is
@@ -422,12 +422,12 @@ construction (src/ir) and emission (src/gen).
   consumed run decomposes into iterations UNIQUELY and RECOVERABLY FROM THE
   RIGHT, so src/gen/emit_vm.c can emit ONE body copy instead of `rmax` of them.
 
-  **The verdict and the material for it are ONE FIELD.** `Ast.revbody` holds the
+  **The verdict and the material for it are ONE FIELD.** `Ast.u.rep.revbody` holds the
   body's REVERSED AST and is non-NULL exactly when the rung applies, so the
   three emitter sites that must agree about the rung (`vm_cost_rep`,
   `vm_count_slots`, `vm_rep`) read one field rather than each re-deciding — and
   the site that selects the rung cannot select it without having the thing the
-  rung needs. `Ast.possessive`'s precedent, one rung down.
+  rung needs. `Ast.u.rep.possessive`'s precedent, one rung down.
 
   **The rule is TWO unique-iteration checks and each has a witness.** FORWARD
   (on the body) is what makes the emitted scan deterministic and licenses the

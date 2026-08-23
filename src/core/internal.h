@@ -113,7 +113,7 @@ typedef enum {
      * rule of its own. `[\G]` is error 107, so the row keeps
      * RF_CLASS_INVALID.
      *
-     * `Ast.multiline` is meaningless here and is never read: `\G` is an
+     * `Ast.u.anch.multiline` is meaningless here and is never read: `\G` is an
      * absolute position test like `\A`/`\z`, unaffected by every option. */
     A_GSTART,
     /* [M6.2 wave E] `\K` — RESET THE REPORTED START of the match to here
@@ -145,7 +145,7 @@ typedef enum {
      * joins `pcrec_is_bare_anchor` rather than earning a rule of its own.
      * `[\K]` is error 107, so the registry row keeps RF_CLASS_INVALID.
      *
-     * `Ast.multiline` is meaningless here and is never read. */
+     * `Ast.u.anch.multiline` is meaningless here and is never read. */
     A_KRESET,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
@@ -179,7 +179,7 @@ typedef enum {
      * would have been retried are discarded), and it BRACKETS a body. Two
      * further supports, both measured by the design lane:
      *
-     *   - `src/opt/revdet.c:179`'s `rd_node` CLEARS `Ast.possessive` on the
+     *   - `src/opt/revdet.c:226`'s `rd_node` CLEARS `Ast.u.rep.possessive` on the
      *     reversed copy the emitter walks, so a module that stored its
      *     semantics in that field would have them silently deleted on a
      *     revdet-approved body (design §6.5). A kind survives the copy.
@@ -196,7 +196,7 @@ typedef enum {
      * invariant `vm_cut` relies on is INDEPENDENT of the §2.2 proof that
      * licenses today's cuts (design §3.1, CUT-INV).
      *
-     * `l` is the body; `r` is unused. `Ast.possessive` is NEVER written for
+     * `l` is the body; `r` is unused. `Ast.u.rep.possessive` is NEVER written for
      * this construct (design §3.2 RULE 2): that field keeps its meaning as
      * possessify's deniable optimisation mark, so `-fno-possessify` cannot
      * become a miscompiler and a copy constructor cannot delete a language
@@ -371,7 +371,7 @@ struct Ast {
              * NULL otherwise — so this one field is BOTH the verdict and the artifact
              * the emitter needs, and the three sites that must agree about the rung
              * (vm_cost_rep, vm_count_slots, vm_rep) read one field instead of each
-             * re-deciding. Ast.possessive's precedent, one rung down.
+             * re-deciding. Ast.u.rep.possessive's precedent, one rung down.
              *
              * The reversed body is what the emitted backward walk matches: it recovers
              * the previous iteration boundary for a retreat and, per §3.4's corrected
@@ -460,7 +460,7 @@ struct Ast {
              * emitted code path with the chain length at one, rather than a second,
              * rarer, less-tested path.
              *
-             * `Ast.capno` is NOT reused for this: on an `A_CAP` it means "this node IS
+             * `Ast.u.cap.no` is NOT reused for this: on an `A_CAP` it means "this node IS
              * group k", a different fact, and overloading it would make two facts
              * compete for one field. */
             const int  *refs;
@@ -473,7 +473,7 @@ struct Ast {
              * in force at the REFERENCE, not at the group. `^(a)(?i:\1)$` matches
              * "aA"; `^(?i:(a))\1$` does not; `^((?i)a)\1$` does not.
              *
-             * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.multiline`'s sibling
+             * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.u.anch.multiline`'s sibling
              * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
              * because the operand is subject text not known until the match runs. So
              * this field selects WHICH residual seam entry the emitter calls
@@ -2317,7 +2317,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root);        /* src/opt/select_engine.c 
 /* The §2.2 rule as a pass: mark every A_REP for which no retreat into the loop
  * can produce a match the preferred path does not. A REWRITE, not an analysis
  * that returns a verdict (§2.8) — it does not observe that the loop needs no
- * frames, it MAKES the quantifier one that needs none, by setting Ast.possessive
+ * frames, it MAKES the quantifier one that needs none, by setting Ast.u.rep.possessive
  * for src/gen/emit_vm.c to act on.
  *
  * Returns the number of quantifiers it newly marked, which is what makes it
@@ -2350,7 +2350,7 @@ bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
  * It runs THE SAME WALK `pcrec_possessify` runs — same FOLLOW accumulation,
  * same enclosing-loop term, same four conjuncts, the same lines of code — and
  * calls `fn(user, rep)` once for every `A_REP` whose verdict is POSITIVE,
- * WITHOUT writing `Ast.possessive`. A second implementation of §2.2 is the one
+ * WITHOUT writing `Ast.u.rep.possessive`. A second implementation of §2.2 is the one
  * thing this file must never grow (every conjunct in it is a measured
  * refutation of a simpler rule somebody believed), so the discharge asks
  * possessify rather than re-deriving anything.
@@ -2416,7 +2416,7 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row);  /* src/opt/atomic.c
 /* ---- [ENG-BREP] the reverse-deterministic rung (engine_m4.md §2.5) ---- */
 
 /* Mark every A_REP whose consumed run decomposes into iterations UNIQUELY and
- * RECOVERABLY FROM THE RIGHT, by setting Ast.revbody to the body's reversed
+ * RECOVERABLY FROM THE RIGHT, by setting Ast.u.rep.revbody to the body's reversed
  * AST. The emitter then owes it ONE body copy instead of `rmax` of them.
  *
  * Not monotone in possessify's sense and not a fixpoint: the verdict depends
