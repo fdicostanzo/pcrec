@@ -109,7 +109,18 @@ Process and status documents for pcrec. The architecture itself lives in
   a clear NO for `make test` (real 64.59% hit rate, still 4x+ plain's wall
   time — the workload is thousands of sub-millisecond compiles, the wrong
   shape for caching's own overhead), a qualified YES for `make mech`'s
-  per-sabotage tree rebuild (25-29% faster warm, single-row samples).
+  per-sabotage tree rebuild (25-29% faster warm, single-row samples). Also
+  (added [TT-6], 2026-08-23) "The `timeout` binary itself (`TIMEOUT_BIN`)":
+  this box's default `timeout` is uutils coreutils 0.8.0 (~108.7ms pure
+  wall per call, ~0 CPU) against GNU coreutils' ~4.2ms; `tests/lib/
+  timeout_bin.sh` resolves and announces a faster binary once per process
+  and every suite's bare `timeout` call was swapped to `"$TIMEOUT_BIN"` —
+  MEASURED 6.31x wall on an isolated `make test-corpus` run (identical
+  case counts before/after), a wash on the full `-j12 -Otarget make test`
+  total (concurrent sections hide a sleeping worker's wall time), and a
+  named finding that two `tests/bench/run_bench.sh` budgets (COMPILE-SPEED,
+  GCC-TIME) measured the wrapper's own launch cost inside their number and
+  now read lower and more honestly.
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and

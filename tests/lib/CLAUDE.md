@@ -5,6 +5,34 @@ section targets depend on.
 
 ## Files
 
+- **timeout_bin.sh** — [TT-6] resolves `TIMEOUT_BIN` ONCE per process: the
+  coreutils `timeout` binary every suite should invoke instead of a bare
+  `timeout`. THE FINDING (docs/dev/tt4_measurement.md, "The `timeout`
+  binary itself"): this box's default `/usr/bin/timeout` is uutils
+  coreutils 0.8.0, which POLLS its child instead of blocking on it —
+  MEASURED ~108.7ms of pure wall per call, ~0 CPU; `/usr/bin/gnutimeout`
+  (GNU coreutils 9.7) does the identical job in ~4.2ms. Detection order:
+  env override, else the default `timeout` bare if it self-identifies as
+  GNU (the common case, changes nothing for a stranger's box — D2/R5-Q1),
+  else `/usr/bin/gnutimeout`, else `gtimeout` (Homebrew/macOS), else plain
+  `timeout` (a box with no GNU coreutils `timeout` pays the uutils tax
+  exactly as before this file existed — never a hard failure). Announces
+  the resolved choice once per top-level script to stderr, only when it
+  differs from plain `timeout`, gated by an exported
+  `TT6_TIMEOUT_BIN_ANNOUNCED` so a script sourcing this both directly and
+  transitively (via `gen_timeout.sh`) prints exactly once. POSIX sh, no
+  bashisms — sourced from bash scripts AND from `scripts/Makefile`'s
+  recipe under its default `/bin/sh`. A SEPARATE file from `gen_timeout.sh`
+  because not every bare-`timeout` caller sources that file (`tests/
+  reject/run_reject_tests.sh`, `tests/bench/run_bench.sh`, `tests/bench/
+  compare/compare.sh` do not — folding this in would make them take on
+  D45's CPU/wall-budget machinery just to get a binary name); those three
+  plus `scripts/Makefile` source `timeout_bin.sh` directly instead.
+  MEASURED (docs/testing.md "The `timeout` binary itself"): 6.31x wall on
+  an isolated `make test-corpus` run (identical case counts before/after),
+  a wash on the full `-j12 -Otarget make test` total (concurrent sections
+  hide a sleeping worker's wall time — the tax shows where sections run
+  closer to serially: the sanitizer axes, `make mech` rows, `PROCS=1`).
 - **gen_timeout.sh** — D45's ONE implementation of the generated-code
   compile budget — CPU-PRIMARY since the D45 third addendum (2026-08-16):
   `gen_cpu_secs` (10s plain / 60s sanitizer, `GENCPU`/`GENCPU_SAN`,
@@ -38,7 +66,10 @@ section targets depend on.
   clear NO for `make test` (a cold/warm cycle came in at 4x+ the plain
   baseline even at a real 64.59% hit rate — thousands of sub-millisecond
   compiles is the wrong shape for caching's own overhead), a qualified YES
-  for `make mech`'s per-sabotage tree rebuild.
+  for `make mech`'s per-sabotage tree rebuild. **[TT-6] sources
+  `timeout_bin.sh`** (above) for `gen_cc`'s own wall wrapper, which now
+  invokes `"$TIMEOUT_BIN"` rather than a bare `timeout` — this is
+  sabotage S43's anchor line, re-derived in the same change.
 - **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md
   (the RULED contract for tabular `pcrec` command output — `#` comments,
   header-names-columns, append-only, optional `#section NAME` blocks), the

@@ -1920,6 +1920,114 @@ tree-build-dominated workflow, might still want the toggle even though the
 project's own generated-code-heavy suites do not benefit) is a manager
 call, not this row's to make.
 
+## The `timeout` binary itself (`TIMEOUT_BIN`, [TT-6], 2026-08-23)
+
+**The finding** (`docs/dev/tt4_measurement.md`, "The `timeout` binary
+itself"; [TT-4.1]/[TT-5] chartered [TT-6] off it). This box's default
+`/usr/bin/timeout` is **uutils coreutils 0.8.0**, which polls its child
+instead of blocking on it: MEASURED ~108.7ms of pure WALL per call, ~0 CPU.
+`/usr/bin/gnutimeout` (GNU coreutils 9.7, also installed here) does the
+identical job in ~4.2ms — uutils costs ~104.5ms of pure wall ABOVE bare
+exec, per call, regardless of the duration being bounded. Every pcrec
+invocation and every per-case matcher run in `tests/harness/run.sh`
+(~19k calls in `test-corpus` alone, ~23,252 with the rest of the corpus
+tally) and `gen_cc`'s wall wrapper each paid this once per call, unbounded
+by what the harness itself does.
+
+**The fix.** `tests/lib/timeout_bin.sh` (new) resolves `TIMEOUT_BIN` once
+per process: an env override wins outright; otherwise the default `timeout`
+on `PATH` is used bare if it self-identifies as GNU coreutils (the common
+case on a stranger's box — this changes NOTHING for them, same binary, same
+invocation, D2/R5-Q1's "a stranger's `make` must not fail" spirit extended
+to "must not even notice"); otherwise `/usr/bin/gnutimeout`, then `gtimeout`
+(Homebrew's coreutils prefix, macOS) are tried in turn if present and GNU;
+otherwise it falls back to plain `timeout`, so a box with no GNU coreutils
+`timeout` anywhere pays the uutils tax exactly as it did before this file
+existed — never a hard failure over a missing binary. The resolved choice
+is printed once per top-level script to stderr, only when it differs from
+plain `timeout`, so a log names which binary ran without spamming a log
+sourced by every one of a suite's per-case subshells.
+
+`tests/lib/gen_timeout.sh` sources it (its `gen_cc` wall wrapper was the
+single highest-traffic call site) and every other file in the tree that
+invoked a bare `timeout` was swapped to `"$TIMEOUT_BIN"`: `tests/harness/
+run.sh` (pcrec's own invocation, and the ~19k-call per-case matcher run —
+the two sites the finding named directly), `tests/cli/run_cli_tests.sh`,
+`tests/vm/run_vm_tests.sh` and `tests/thread/run_thread_tests.sh` (already
+sourced `gen_timeout.sh`, so `TIMEOUT_BIN` came for free), and
+`tests/reject/run_reject_tests.sh`, `tests/bench/run_bench.sh`,
+`tests/bench/compare/compare.sh` and `scripts/Makefile`'s
+`tests/%.testreport` recipe (`make testscripts`, not part of `make test`),
+none of which sourced `gen_timeout.sh`, so each gained its own
+`. tests/lib/timeout_bin.sh`. `tests/mech/run_sabotage_matrix.sh` needed no
+separate change: it drives generated patterns through `tests/harness/
+run.sh`, which now carries the fix.
+
+**The bench gate's two budgets measure the wrapper's own launch cost, and
+now measure it honestly instead of not at all.** `tests/bench/run_bench.sh`
+COMPILE-SPEED and GCC-TIME bracket their wall-clock timer (`cs_t0`/`cs_t1`,
+`g_t0`/`g_t1`) AROUND the `timeout` invocation itself, so the wrapper's
+launch cost sat INSIDE `COMPILE_BUDGET_SECS` (0.4s, measured median
+0.114s) and `GCC_O1_BUDGET_SECS`/`GCC_O2_BUDGET_SECS` (2s, measured
+~0.214-0.222s) — a large fraction of a ~0.1-0.2s measurement was uutils'
+own overhead, not pcrec's or gcc's. Both numbers read LOWER and MORE
+HONEST after this swap; `tests/bench/CLAUDE.md`'s archived medians predate
+it and need re-measurement before either budget is next retuned.
+THROUGHPUT's `run_bdriver` (and `compare.sh`'s `run_driver`) are
+unaffected: the driver binary reports `secs=`/`mbps=` (or `status=`/
+`secs=`/`mbps=`) about its OWN internal loop, not wall time measured
+around the wrapper, so the K22 guard's exit-124 assertion (`tests/vm/
+run_vm_tests.sh`, see its own CLAUDE.md) and every other exit-124-shaped
+check are unaffected in the same way — both uutils and GNU `timeout` exit
+124 identically on a real timeout.
+
+### Measured (this box, 2026-08-23)
+
+| measurement | before (uutils `timeout`) | after (`TIMEOUT_BIN`=`/usr/bin/gnutimeout`) | ratio |
+|---|---|---|---|
+| `make test` wall (`-j12 -Otarget`, `build/before.log`/`build/after.log`) | 10:32.82 | 10:15.96 | 1.03x |
+| `make test` user+sys (`/usr/bin/time -v`) | 2021.91s + 1970.06s = 3991.97s | 1988.06s + 1854.53s = 3842.59s | 1.04x |
+| `make test-corpus` wall, isolated, quiet box (`build/corpus_before.log`/`build/corpus_after.log`) | 6:44.24 | 1:04.08 | **6.31x** |
+| `make test-corpus` user+sys, isolated | 250.43s + 261.11s = 511.54s | 324.63s + 210.92s = 535.55s | ~1x (CPU-bound work is unchanged; wall dropped because the sleep-per-call tax is gone, not because less work ran) |
+
+**Why the full `make test` figure barely moves while the isolated section
+shows 6.3x.** `-j12 -Otarget` runs many independently-scheduled `test-*`
+sections concurrently; at the load this produces (33-41 measured during the
+full run), a section that is mostly SLEEPING (uutils polling a child) is
+invisible in the wall total — other sections' real CPU work fills the same
+wall-clock window regardless. The tax only shows up in wall time where
+sections run close to serially: an isolated single-section run (`make
+test-corpus` alone, box otherwise idle — the pair above), the sanitizer
+axes' own serial-ish battery legs, `make mech`'s per-sabotage rows, and any
+single-worker (`PROCS=1`) run. `test-corpus`'s own PROCS=12 internal
+fan-out (`parallel: 121 of 121 file workers reported`) is unaffected either
+way — both runs used it identically — which is why the isolated pair is the
+number to trust for what this fix actually buys, not the full-suite total.
+
+Case counts are IDENTICAL between before and after in every comparison
+above (`corpus 22358/0`, `cli 270/0`, `reject` 282 rejections/105 rows
+iterated/99 accept controls/0 known-wrong — checked line for line, sorted,
+between `build/before.log` and `build/after.log`) — the swap changes which
+binary runs, never what a check asserts.
+
+### Overriding the choice
+
+`TIMEOUT_BIN=/path/to/timeout make test` (or any suite script run
+directly) pins a specific binary, skipping detection entirely — useful to
+force plain `timeout` back on for an A/B comparison, or to point at a
+binary this file's detection order does not find. `tests/lib/
+timeout_bin.sh`'s own header has the full detection order.
+
+### Sabotage anchor
+
+`tests/mech/sabotages/S43_d45_timeout_removed.sh`'s `SAB_BEFORE` targets
+`gen_cc`'s wall-wrapper line in `tests/lib/gen_timeout.sh`, which this
+change edited (the bare `timeout` token became `"$TIMEOUT_BIN"`) — the
+anchor was re-derived in the same commit; see that file's own history
+comments. `scripts/m6read_check_sab_anchors.py`: 118 sabotages checked
+(119 anchor sites), all anchors resolve. `bash tests/mech/
+run_sabotage_matrix.sh S43`: `gentmo:2fail/16pass`, DETECTED.
+
 ## The encoding seam's checks ([M5-SEAM], 2026-08-18)
 
 D58 built the DD-12 residual seam ahead of M6: an artifact embeds exactly

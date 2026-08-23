@@ -22,7 +22,13 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   independent suite scripts concurrently as one Makefile section recipe
   (`test-codegen`, `test-vm`), with the lost-worker-hard-fails discipline
   every other parallel path in the tree follows; see its own CLAUDE.md and
-  docs/testing.md "Internal parallelism and section composition ([TT-2])"
+  docs/testing.md "Internal parallelism and section composition ([TT-2])".
+  `timeout_bin.sh` ([TT-6], 2026-08-23) resolves `TIMEOUT_BIN` once per
+  process — this box's default `timeout` is uutils coreutils (~108ms/call
+  pure wall, ~0 CPU) against GNU coreutils' ~4ms; every bare `timeout` call
+  in the tree now runs through it. MEASURED 6.31x wall on an isolated
+  `make test-corpus` run; see docs/testing.md "The `timeout` binary
+  itself".
 - **harness/** — test runner (run.sh), driver template (driver.c), python-re oracle (verify_rxt.py)
 - **base/** — base-tier test corpus (.rxt files); every expectation cross-verified against python3 re (blocks marked `# pcre2-only` excepted — see docs/testing.md)
 - **cli/** — CLI-surface and library-API tests (run_cli_tests.sh), part of `make test`
