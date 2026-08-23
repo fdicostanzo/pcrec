@@ -51,6 +51,16 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   trust the result unless the AFTER text is actually present afterward. One
   mechanism for every sabotage, whether it is a substitution, an insertion
   (BEFORE is a prefix of AFTER), or a deletion (AFTER is empty).
+- **rows_for.sh** ([TT-8], 2026-08-23) — lists the `SAB_ID`s whose
+  `SAB_FILE`/`SAB_FILE2`/`SAB_HARNESS_TARGET` matches one or more given
+  paths, at a path-component boundary. What D69's tiered re-run policy
+  (below) needs to answer "which rows" for a changed-files list without a
+  hand read of `sabotages/`. A path matching no row prints nothing and
+  exits 0 (success, not failure — it means the anchor tripwire alone
+  covers the change); a malformed definition (missing `SAB_ID`/`SAB_FILE`)
+  is a FATAL exit 2 naming the file, never a silent skip. Does NOT match a
+  full-corpus `harness` row (no `SAB_HARNESS_TARGET`) against an unrelated
+  path — see its own header for why that is deliberate rather than a gap.
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
   `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`
@@ -1176,3 +1186,39 @@ with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.
   on the [M6.5] close row: a multi-hunk sabotage mechanism, and a row for
   the Glushkov A_BREF arm itself (load-bearing for possessify, no row).
   Row numbering unchanged (S102-S107, S109-S120).
+
+## [TT-8] the PROCS leak into inner suite sharding, fixed (2026-08-23)
+
+`run_sabotage_matrix.sh`'s `PROCS` (row-level concurrency) was reaching the
+`reject` and `harness` arms' OWN internal PROCS mechanisms undivided,
+through the environment, rather than through the explicit `INNER_PROCS`
+budget (`ncpu/PROCS`, the same formula `JOBS` already uses) those two arms'
+command lines now carry. Measured live with `ps`/`/proc/<pid>/environ`
+sampling, not only read from the dispatch code: a single-row `PROCS=4` run
+of `S15` showed `run_reject_tests.sh` spawning 4 `REJECT_SHARD_TOTAL=4`
+workers before the fix and 3 (`INNER_PROCS = 12/4`) after; `S15` and
+`S107` both reproduce byte-identical fail/pass figures across leaked,
+fixed, and genuinely-serial (no `PROCS` set) runs. Full account, the D69
+evidence this lane also produced, and the manager's exact re-validation
+commands: docs/testing.md's "[TT-8] the PROCS leak into inner suite
+sharding, fixed" and "D69 — the mech re-run policy is TIERED" sections,
+docs/dev/tt8_mech.md.
+
+## D69 — the mech re-run policy is TIERED, and how to run it (2026-08-23)
+
+Full matrix != every merge. `docs/dev/decisions.md` D69 tiers the re-run
+obligation by what changed (docs-only -> tripwire; tests-only -> tripwire +
+the changed rows; src changed -> tripwire + the rows whose `SAB_FILE` or
+target changed; module/milestone CLOSE -> the full matrix), on the argument
+that a row's verdict is a property of the pair (compiler, corpus) and this
+lane's retro-diff of `build/mech_m64.log` (99 rows) against
+`build/mech_m65.log` (118 rows) found ZERO rows flipping DETECTED ->
+UNDETECTED without their own `SAB_FILE`/definition changing across 99 rows
+in common — the measurement the ruling's risk acceptance rests on. The
+tripwire is `python3 scripts/m6read_check_sab_anchors.py`; the rows for a
+changed-files list are `bash tests/mech/rows_for.sh <path>...` (above).
+Full tiers table, the anchor-drift/new-row accounting for the two
+exceptions the retro-diff DID find (`S48`'s anchor-count fix, `S107`/
+`S108` undetected-from-birth), and the earlier-journal corroboration:
+docs/testing.md's "D69 — the mech re-run policy is TIERED, and how to run
+it" section.

@@ -1197,6 +1197,161 @@ in both modes. No new implementation work was needed for TT-2's mech item;
 this note exists so a future reader of the TT-2 plan row does not go
 looking for parallel mech and conclude it is missing.
 
+### [TT-8] the PROCS leak into inner suite sharding, fixed (2026-08-23)
+
+`run_sabotage_matrix.sh`'s `PROCS` is documented above as ROW-level
+concurrency only. It was not: two of the suite arms it dispatches per row
+— `reject` (`tests/reject/run_reject_tests.sh`) and `harness`
+(`tests/harness/run.sh`) — read `PROCS` from **their own environment** to
+size their own internal worker count (the reject-shard dispatch and the
+per-file dispatch respectively, both pre-existing mechanisms unrelated to
+mech). The driver invoked both without overriding `PROCS` on their command
+lines, so whatever `PROCS` the driver itself was started with reached them
+UNDIVIDED — a bash quirk where a variable already in a process's
+environment keeps its export attribute through a plain reassignment
+(`PROCS="${PROCS:-1}"` does not clear it). `make mech`'s own default
+(`PROCS=${PROCS:-$(nproc)}`, Makefile) sets exactly this up: at
+`PROCS=4`, every concurrently-running row that reached `reject` or
+`harness` ALSO tried to shard 4-way internally — oversubscription on top
+of the row-level concurrency the box was actually sized for.
+
+**Measured directly**, not only read from the dispatch code
+(`docs/dev/chain_profile.md` "(b) mech per-row scoping" named the risk
+from reading it, and flagged that it had not been confirmed live): a
+`ps`/`/proc/<pid>/environ` sample taken during a single-row `PROCS=4 bash
+tests/mech/run_sabotage_matrix.sh S15` run showed `run_reject_tests.sh`
+receiving `PROCS=4` from the environment and spawning 4
+`REJECT_SHARD_TOTAL=4` workers — from a run that named exactly ONE
+sabotage, so the leak does not need the row-level scheduler (which never
+even engages for a single named row) to fire.
+
+**Fix**: `INNER_PROCS`, computed exactly like `JOBS` already is
+(`ncpu / PROCS`, minimum 1) and passed EXPLICITLY as `PROCS="$INNER_PROCS"`
+on the `reject` and `harness` arms' own command lines — never left for the
+environment to supply. At outer `PROCS=4` on this box's 12 cores,
+`INNER_PROCS` is 3: the same sample re-taken post-fix shows
+`run_reject_tests.sh` receiving `PROCS=3` and spawning
+`REJECT_SHARD_TOTAL=3` workers, matching `JOBS`'s existing division for
+the build step.
+
+**Validated same-figures, not just same-mechanism**: `S15`
+(`reject registry pc3`) and `S107` (`harness brefdiff`, `harness` scoped to
+one file) each ran three ways — leaked `PROCS=4` (pre-fix), the default
+with no `PROCS` set at all (genuinely serial, both pre- and post-fix since
+1 leaked undivided equals 1 computed), and fixed `PROCS=4` — and all three
+produced byte-identical per-suite fail/pass figures and verdicts
+(`S15`: `reject:17fail/542pass,registry:3fail/177pass+compliance-FAIL,
+pc3:0fail/168pass`, DETECTED; `S107`: `corpus:9fail/79pass,
+brefdiff:4fail/10pass`, DETECTED, in all three runs). A full-corpus
+`harness` row (`S66`) was confirmed by the same `ps`/environ method to
+divide correctly post-fix (parent `run.sh` receiving `PROCS=3`, dispatching
+3 file-workers instead of the pre-fix leaked 4) but was not run to
+completion in either form under this fix's own single-row validation
+budget — a full-corpus row's own wall time is a separate, larger
+measurement (see "One mech row: cold/warm/plain, measured" above and
+`docs/dev/chain_profile.md`), owed to the PROCS re-validation sweep this
+fix unblocks (below), not to this fix's own correctness claim.
+
+Note the asymmetry this creates at outer `PROCS=1` (the default, or an
+explicit `PROCS=1`): `INNER_PROCS` is `ncpu/1 = ncpu`, so a LONE row now
+gets the whole box for its `reject`/`harness` arms too — a real change
+from the pre-fix behavior (nothing was in the environment to leak, so the
+arms defaulted internally to serial), and the same precedent `JOBS`
+already set for the build step at `PROCS=1`. The `S15`/`S107` measurements
+above cover exactly this case (their "default, no `PROCS` set" runs) and
+found no figure change, which is what licenses treating it as a speed-only
+change rather than a behavior change.
+
+**PROCS re-validation, still owed** (`docs/dev/plan.md` [TT-8]): with the
+leak fixed, `docs/dev/chain_profile.md`'s standing `PROCS=4` figure (set
+from a 20-sabotage measurement on 2026-08-12, never re-measured against
+the current 118-row matrix or against higher `PROCS` on this box's 12
+cores) needs a fresh sweep — a ~20-row sample spanning every target class
+(harness-targeted, reject, the four full-corpus `harness` rows, script-only)
+at `PROCS=3`, `4`, `6`, each under `/usr/bin/time -v` with logs under
+`build/`, then ONE full 118-row matrix at the chosen setting as the
+chain's mech "after" figure. This is box-exclusive, serialized-with-other-
+lanes work (docs/dev/plan.md's BOX RULE) and is the manager's run, not a
+lane's — see `docs/dev/tt8_mech.md` for the exact commands.
+
+### D69 — the mech re-run policy is TIERED, and how to run it (2026-08-23)
+
+The full 118-row matrix costs ~60 min per run (`docs/dev/chain_profile.md`)
+and was never a documented merge obligation — this file's own table above
+says "run manually … when a sabotage table's figures are in doubt". D69
+(`docs/dev/decisions.md`) rules a cheaper default, on the argument that a
+row's verdict is a property of the pair (compiler, corpus) and flips only
+when (1) its `SAB_HARNESS_TARGET` changes (exact, grep-able), (2a) its own
+anchor drifts (caught STATICALLY, seconds, by
+`scripts/m6read_check_sab_anchors.py`, already on the merge bar), or (2b) a
+compiler change elsewhere masks or unreaches the sabotaged path (the S108
+single-site shape — not derivable from a diff, only a run finds it).
+
+**The four tiers** (Frank: "I am ok with this risk"):
+
+| what changed | run |
+|---|---|
+| docs / test-infrastructure only | the anchor tripwire only |
+| tests changed, src unchanged | tripwire + the rows whose target is among the changed files (single-row runs) |
+| src changed | tripwire + the rows whose `SAB_FILE` or target changed |
+| module or milestone CLOSE | the FULL matrix (where 2b's risk concentrates, and where a lane's new rows run anyway) |
+
+An UNDETECTED row from any of these tiers is a finding diagnosed by
+measurement, per the 2026-08-22 lesson (`tests/mech/CLAUDE.md`'s "A
+sabotage that zero checks catch is the finding, not a bug") — never argued
+from reading the sabotage's own description.
+
+**The tripwire**, every tier:
+
+    python3 scripts/m6read_check_sab_anchors.py
+
+**Finding the rows for a changed path**, tiers 2 and 3 —
+`tests/mech/rows_for.sh` lists the `SAB_ID`s whose `SAB_FILE`,
+`SAB_FILE2` (the [M6.5.2-FIX] second-site field) or `SAB_HARNESS_TARGET`
+matches a given path at a path-component boundary (a directory argument
+matches everything under it, and vice versa); a path matching no row
+prints nothing and exits 0 (success — the tripwire alone covers it), a
+malformed sabotage definition is a FATAL exit 2 naming the file, never a
+silent skip:
+
+    for r in $(bash tests/mech/rows_for.sh path/one path/two ...); do
+        bash tests/mech/run_sabotage_matrix.sh "$r"
+    done
+
+It deliberately does NOT match a full-corpus `harness` row (no
+`SAB_HARNESS_TARGET` set) against an unrelated changed path — that row's
+own `SAB_FILE` still matches normally if IT changed; the "unrelated src
+change I don't name" case is D69's accepted 2b risk, closed only by a
+CLOSE running the full matrix, not by this helper. Validated in the
+failing direction: a path matching nothing prints nothing (`docs/
+APPROACH_typo.md` against the current sabotage set, exit 0), and a
+sabotage file missing `SAB_ID` is a FATAL exit 2 naming the file (tested
+with a scratch stub, never committed).
+
+**The retro-diff evidence** the risk acceptance rests on:
+`build/mech_m64.log` (99 rows, HEAD `c324091`, 2026-08-22 15:36) against
+`build/mech_m65.log` (118 rows, HEAD `5edba64`, 2026-08-22 23:26) — 99 rows
+in common. Of those, 50 show a changed CELL, and every one is a PASS-COUNT-
+only move (fail counts and verdicts identical, DETECTED both times),
+consistent with ordinary corpus/check growth between the two HEADs. The one
+row whose VERDICT changed, `S48-poss-no-enclosing-first`
+(`APPLY-FAILED`/ANOMALY in m64 -> DETECTED in m65), is category 2a: its own
+anchor count needed fixing after an intervening refactor duplicated the
+anchor text (`git log`: fixed in commit `34ede2c`, "the pss_verdict
+refactor" — the sabotage's OWN definition changed, exactly the kind of
+move D69 expects and excludes). The two UNDETECTED rows in m65
+(`S107-bref-not-nullable`, `S108-rdshape-accepts-bref`) are both rows with
+NO entry in m64 at all — new rows, undetected from birth
+(`tests/mech/CLAUDE.md`'s own account of both), not a pre-existing row
+flipping. **Zero rows were observed flipping DETECTED -> UNDETECTED without
+their own `SAB_FILE`/definition changing**, across this 99-row-common pair
+— the measurement D69's text names as still owed. Earlier journal figures
+(`docs/dev/dev_journal.md`: 35 rows undetected:0 twice, pre-2026-08-15; the
+85-row `undetected: 0` figure `tests/mech/CLAUDE.md` records at `ae6e41f`,
+2026-08-21) corroborate the same "no flip" pattern as far back as archived
+figures exist, though only m64/m65 have raw logs on disk to diff cell by
+cell — the others are prose summaries only.
+
 ## Sanitizer + lint battery (SAN-1, 2026-08-13)
 
 **K26 caveat (2026-08-18): the LEAK tier of this battery is currently a

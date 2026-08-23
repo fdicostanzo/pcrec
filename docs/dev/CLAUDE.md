@@ -125,6 +125,15 @@ Append-only where noted; the restart/status-recovery record for the project.
   candidate list with the measurement each needs before becoming a row.
   Written 2026-08-23; re-read before citing its numbers if the battery
   driver or `tests/mech/sabotages/` have changed since.
+- `tt8_mech.md` — [TT-8]'s memo: the mech `PROCS` leak into inner
+  `reject`/`harness` sharding (found live via `ps`/`/proc/<pid>/environ`
+  sampling, not only read from the dispatch code), the `INNER_PROCS` fix,
+  single-row before/after validation, the D69 retro-diff evidence
+  (`build/mech_m64.log` vs `mech_m65.log`: zero rows observed flipping
+  DETECTED -> UNDETECTED without their own `SAB_FILE`/definition changing),
+  and the manager's still-owed commands (the PROCS re-validation sweep, the
+  full "after" matrix) — both box-exclusive and not run by this lane.
+  Written 2026-08-23.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `learnings.md` — the consolidated learnings digest, distilled from a
