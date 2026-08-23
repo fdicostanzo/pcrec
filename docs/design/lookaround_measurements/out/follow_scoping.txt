@@ -3,11 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/lookaround_measurements/probes/probe_follow_scoping.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 9f08814 2026-08-23
-# RUN FROM REPO COMMIT        : 055d0cc (lane/ladesign)
+# PROBE LAST CHANGED AT COMMIT: d1df741 2026-08-23
+# RUN FROM REPO COMMIT        : d1df741 (lane/ladesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/lookaround_measurements/out/follow_scoping.txt
-# RUN DATE   : 2026-08-23T15:07:08-04:00
+#      M docs/design/lookaround_measurements/out/follow_scoping.txt
+# RUN DATE   : 2026-08-23T15:49:19-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -93,13 +93,24 @@ rather than hidden, because a sweep without it measures nothing.
 
 body, wrapped + followed   engine       | prune sites
 ------------------------------------------------------------------------------
-a{3}                       vm           | alone=['1'] followed=['3']   <- EXACT COUNT -- FIXED per §2.5, and it PRUNES
-ab                         vm           | alone=[] followed=[]   <- a literal run -- fixed, no rung
-(a)(b)                     vm           | alone=[] followed=[]   <- two captures -- fixed, no rung
-a|bc                       vm           | alone=[] followed=[]   <- two fixed branches -- no rung
-a{2,3}                     vm           | alone=['1'] followed=['3']   <- bounded variable -- REFUSED by §2.5
-a+                         vm           | alone=['1'] followed=['3']   <- unbounded -- REFUSED by §2.5
-a(?=b+c)                   dfa          | alone=[] followed=[]   <- FIXED width 1, but it CONTAINS a lookahead whose body is unbounded
+a{3}                       vm           | alone=['1']     followed=['3']       <- EXACT COUNT -- FIXED per §2.5, and it PRUNES
+ab                         vm           | alone=[]        followed=[]          <- a literal run -- fixed, no rung
+(a)(b)                     vm           | alone=[]        followed=[]          <- two captures -- fixed, no rung
+a|bc                       vm           | alone=[]        followed=[]          <- two fixed branches -- no rung
+a{2,3}                     vm           | alone=['1']     followed=['3']       <- bounded variable -- REFUSED by §2.5
+a+                         vm           | alone=['1']     followed=['3']       <- unbounded -- REFUSED by §2.5
+(?:ab){2}                  vm           | alone=['1']     followed=['3']       <- an exact count over a GROUP -- FIXED, and it PRUNES
+a{2}                       vm           | alone=['1']     followed=['3']       <- a second exact count -- FIXED, and it PRUNES
+a(?=b+c)                   -            | alone=REFUSED   followed=REFUSED     <- fixed width 1 but CONTAINS a lookahead -- pcrec REFUSES it (the module is not built), so this row is a REFUSAL, not a measurement
+
+
+THE LAST ROW READS `REFUSED` AND THAT IS THE POINT (R33 V-4): pcrec
+cannot compile a lookaround at all, so the nesting cell CANNOT be
+measured in-pcrec today. §3.4's sentence about a lookbehind body
+containing a lookahead is therefore ARGUED FROM PCRE2's semantics
+(the inner assertion's cursor runs AHEAD of the entry position, so
+`cursor + bodyremaining == p` does not hold inside it), and it is
+marked ARGUED in the design rather than MEASURED.
 
 READ THIS AS: a lookbehind body that §2.5 ADMITS can still carry a
 prune site whose literal moves with the follow, so the lookbehind

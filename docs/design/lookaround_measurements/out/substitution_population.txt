@@ -3,13 +3,13 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/lookaround_measurements/probes/probe_substitution_population.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 055d0cc 2026-08-23
-# RUN FROM REPO COMMIT        : 055d0cc (lane/ladesign)
+# PROBE LAST CHANGED AT COMMIT: d1df741 2026-08-23
+# RUN FROM REPO COMMIT        : d1df741 (lane/ladesign)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/lookaround_measurements/out/englook_sizing.txt
+#      M docs/design/lookaround_measurements/out/follow_scoping.txt
 #      M docs/design/lookaround_measurements/out/substitution_population.txt
-#     ?? docs/design/lookaround_measurements/out/follow_scoping.txt
-# RUN DATE   : 2026-08-23T15:07:09-04:00
+# RUN DATE   : 2026-08-23T15:49:19-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -50,7 +50,7 @@ WHAT QUALIFIES FOR TEXTUAL SUBSTITUTION
     Q1 perr / no behavioural cell              87 blocks      0 cells
     Q2 no substitutable assertion              87 blocks    754 cells
     Q3 assertion inside a character class       0 blocks      0 cells
-    Q4 scoped (?m: or (?-m)                    31 blocks   1106 cells
+    Q4 modifier state not constant             31 blocks   1106 cells
     Q5 \K inside a substituted body             0 blocks      0 cells
     Q6 block marked # pcre2-deviates (D68)      0 blocks      0 cells
 

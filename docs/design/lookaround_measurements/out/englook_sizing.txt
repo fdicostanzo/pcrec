@@ -3,12 +3,12 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/lookaround_measurements/probes/probe_englook_sizing.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 055d0cc 2026-08-23
-# RUN FROM REPO COMMIT        : 055d0cc (lane/ladesign)
+# PROBE LAST CHANGED AT COMMIT: d1df741 2026-08-23
+# RUN FROM REPO COMMIT        : d1df741 (lane/ladesign)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/lookaround_measurements/out/englook_sizing.txt
-#     ?? docs/design/lookaround_measurements/out/follow_scoping.txt
-# RUN DATE   : 2026-08-23T15:07:09-04:00
+#      M docs/design/lookaround_measurements/out/follow_scoping.txt
+# RUN DATE   : 2026-08-23T15:49:19-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -18,8 +18,6 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-/home/duxevents/pcrec/worktrees/ladesign/docs/design/lookaround_measurements/probes/probe_englook_sizing.py:52: SyntaxWarning: "\z" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\z"? A raw string is also an option.
-  `(?!\z)` and `(?=\n?\z)` contain ANCHORS, which are not letters of Sigma;
 pcrec  : /home/duxevents/pcrec/worktrees/ladesign/build/pcrec (present)
 python3: 3.14.4
 caps   : PCREC_MAX_DFA_STATES_GOTO=10000  PCREC_MAX_DFA_STATES_TABLE=32000 (src/core/limits.h:47-49)
@@ -48,12 +46,13 @@ a|bc         real       |     3 x 4         |     3 x 4         | 4           | 
 [^\"']       real       |     2 x 2         |     2 x 2         | 2           | a negated class (the backrefs lane's own idiom)
 \w+          real       |     2 x 2         |     2 x 2         | n/a (unbounded or dot: +) | an UNBOUNDED body -- a lookAHEAD only (§2.5)
 \d{3}        real       |     4 x 2         |     4 x 2         | 4           | a counted body
-(a|b)c       real       |     3 x 3         |     3 x 3         | n/a (token '|') | an alternation inside a concatenation
+(a|b)c       real       |     3 x 3         |     3 x 3         | n/a (token '|') | an alternation inside a concatenation -- the tokeniser does not model it
+ac|bc        real       |     3 x 4         |     3 x 4         | 5           | THE SAME LANGUAGE, expanded: (a|b)c == ac|bc. R33 V-5 -- the emitted table says 3 and the component is 5, a NON-CONTROL under-count the n/a row hid
 https?       real       |     6 x 5         |     6 x 5         | 6           | a realistic literal-ish body
 \d{4}-\d{2}-\d{2} control    |    11 x 3         |    11 x 3         | 11          | a date shape -- a longer counted body
 [a-z]{12}    control    |    13 x 2         |    13 x 2         | 13          | a 12-long class run
-(?:ab|cd){8} control    |    25 x 5         |    25 x 5         | n/a (? with nothing before ) | a repeated two-way alternation
-(?:a|b|c|d){10} control    |    11 x 2         |    11 x 2         | n/a (? with nothing before ) | a repeated four-way alternation
+(?:ab|cd){8} control    |    25 x 5         |    25 x 5         | n/a (token '|') | a repeated two-way alternation
+(?:a|b|c|d){10} control    |    11 x 2         |    11 x 2         | n/a (token '|') | a repeated four-way alternation
 [01]*1[01]{12} control    | 12288 x 3         |    14 x 3         | n/a (unbounded or dot: *) | bench case (f)'s shape -- the known state-explosion idiom
 
 # A `None` column means the artifact carries no table of that name --
@@ -74,12 +73,25 @@ https?       real       |     6 x 5         |     6 x 5         | 6           | 
     \w+          engine=dfa
     \d{3}        engine=dfa
     (a|b)c       engine=vm
+    ac|bc        engine=dfa
     https?       engine=dfa
     \d{4}-\d{2}-\d{2} engine=dfa
     [a-z]{12}    engine=dfa
     (?:ab|cd){8} engine=dfa
     (?:a|b|c|d){10} engine=dfa
     [01]*1[01]{12} engine=dfa
+
+AGREEMENT BETWEEN THE TWO COLUMNS, counted rather than asserted (R33 V-5:
+the design said "everywhere else the two agree" and that was not a count):
+  rows total                  : 22
+  MODELLED (a prototype number): 16
+  NOT MODELLED (n/a)           : 6  -> \n?\z, \w+, (a|b)c, (?:ab|cd){8}, (?:a|b|c|d){10}, [01]*1[01]{12}
+  modelled rows where emitted != prototype: 2
+      a|bc         emitted 3     prototype 4      (UNDER-COUNT)
+      ac|bc        emitted 3     prototype 5      (UNDER-COUNT)
+  ** an n/a row is NOT an agreement**: six bodies have no prototype
+  number at all, and `ac|bc` shows one of them (`(a|b)c`) is a real
+  under-count the n/a hid -- 3 emitted against 5.
 
 ==============================================================================
 MAIN AUTOMATA
@@ -124,6 +136,7 @@ bar                      [^\"']         | PROTO   |         8 |           8 |   
 bar                      \w+            | lower   |         8 |           8 |          64 | ok
 bar                      \d{3}          | PROTO   |        16 |           8 |         128 | ok
 bar                      (a|b)c         | lower   |        12 |          12 |         144 | ok
+bar                      ac|bc          | PROTO   |        20 |          16 |         320 | ok
 bar                      https?         | PROTO   |        24 |          20 |         480 | ok
 bar                      \d{4}-\d{2}-\d{2} | PROTO   |        44 |          12 |         528 | ok
 bar                      [a-z]{12}      | PROTO   |        52 |           8 |         416 | ok
@@ -145,6 +158,7 @@ bar                      [01]*1[01]{12} | lower   |     49152 |          12 |   
 \d{4}                    \w+            | lower   |        10 |           4 |          40 | ok
 \d{4}                    \d{3}          | PROTO   |        20 |           4 |          80 | ok
 \d{4}                    (a|b)c         | lower   |        15 |           6 |          90 | ok
+\d{4}                    ac|bc          | PROTO   |        25 |           8 |         200 | ok
 \d{4}                    https?         | PROTO   |        30 |          10 |         300 | ok
 \d{4}                    \d{4}-\d{2}-\d{2} | PROTO   |        55 |           6 |         330 | ok
 \d{4}                    [a-z]{12}      | PROTO   |        65 |           4 |         260 | ok
@@ -166,6 +180,7 @@ bar                      [01]*1[01]{12} | lower   |     49152 |          12 |   
 \w+                      \w+            | lower   |         4 |           4 |          16 | ok
 \w+                      \d{3}          | PROTO   |         8 |           4 |          32 | ok
 \w+                      (a|b)c         | lower   |         6 |           6 |          36 | ok
+\w+                      ac|bc          | PROTO   |        10 |           8 |          80 | ok
 \w+                      https?         | PROTO   |        12 |          10 |         120 | ok
 \w+                      \d{4}-\d{2}-\d{2} | PROTO   |        22 |           6 |         132 | ok
 \w+                      [a-z]{12}      | PROTO   |        26 |           4 |         104 | ok
@@ -187,6 +202,7 @@ bar                      [01]*1[01]{12} | lower   |     49152 |          12 |   
 [a-z]+@[a-z]+\.[a-z]+    \w+            | lower   |        12 |           8 |          96 | ok
 [a-z]+@[a-z]+\.[a-z]+    \d{3}          | PROTO   |        24 |           8 |         192 | ok
 [a-z]+@[a-z]+\.[a-z]+    (a|b)c         | lower   |        18 |          12 |         216 | ok
+[a-z]+@[a-z]+\.[a-z]+    ac|bc          | PROTO   |        30 |          16 |         480 | ok
 [a-z]+@[a-z]+\.[a-z]+    https?         | PROTO   |        36 |          20 |         720 | ok
 [a-z]+@[a-z]+\.[a-z]+    \d{4}-\d{2}-\d{2} | PROTO   |        66 |          12 |         792 | ok
 [a-z]+@[a-z]+\.[a-z]+    [a-z]{12}      | PROTO   |        78 |           8 |         624 | ok
@@ -208,6 +224,7 @@ bar                      [01]*1[01]{12} | lower   |     49152 |          12 |   
 [01]*1[01]{12}           \w+            | lower   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
 [01]*1[01]{12}           \d{3}          | PROTO   |     49152 |           6 |      294912 | OVER the 32,000 state cap
 [01]*1[01]{12}           (a|b)c         | lower   |     36864 |           9 |      331776 | OVER the 32,000 state cap
+[01]*1[01]{12}           ac|bc          | PROTO   |     61440 |          12 |      737280 | OVER the 32,000 state cap
 [01]*1[01]{12}           https?         | PROTO   |     73728 |          15 |     1105920 | OVER the 32,000 state cap
 [01]*1[01]{12}           \d{4}-\d{2}-\d{2} | PROTO   |    135168 |           9 |     1216512 | OVER the 32,000 state cap
 [01]*1[01]{12}           [a-z]{12}      | PROTO   |    159744 |           6 |      958464 | OVER the 32,000 state cap
@@ -229,6 +246,7 @@ bar                      [01]*1[01]{12} | lower   |     49152 |          12 |   
 (?:a|b|c|d){10}          \w+            | lower   |        22 |           4 |          88 | ok
 (?:a|b|c|d){10}          \d{3}          | PROTO   |        44 |           4 |         176 | ok
 (?:a|b|c|d){10}          (a|b)c         | lower   |        33 |           6 |         198 | ok
+(?:a|b|c|d){10}          ac|bc          | PROTO   |        55 |           8 |         440 | ok
 (?:a|b|c|d){10}          https?         | PROTO   |        66 |          10 |         660 | ok
 (?:a|b|c|d){10}          \d{4}-\d{2}-\d{2} | PROTO   |       121 |           6 |         726 | ok
 (?:a|b|c|d){10}          [a-z]{12}      | PROTO   |       143 |           4 |         572 | ok
@@ -236,8 +254,8 @@ bar                      [01]*1[01]{12} | lower   |     49152 |          12 |   
 (?:a|b|c|d){10}          (?:a|b|c|d){10} | lower   |       121 |           4 |         484 | ok
 (?:a|b|c|d){10}          [01]*1[01]{12} | lower   |    135168 |           6 |      811008 | OVER the 32,000 state cap
 
-ROWS: 126.  Over the 32,000 STATE cap: 18.
-ROWS WHERE THE PROTOTYPE EXCEEDS THE EMITTED LOWER BOUND: 6
+ROWS: 132.  Over the 32,000 STATE cap: 19.
+ROWS WHERE THE PROTOTYPE EXCEEDS THE EMITTED LOWER BOUND: 12
   (each of those is a row the FIRST version of this probe under-stated)
 
 VACUITY GUARD: the population must contain at least one row that COULD
@@ -247,9 +265,9 @@ be over the cap, or a count measures nothing.
       real result rather than an artefact of a small population
 
 THE SPLIT THAT MATTERS, because the controls are deliberately extreme:
-  CONTROL rows      (a deliberately huge body or main):  62, 18 over cap
+  CONTROL rows      (a deliberately huge body or main):  64, 19 over cap
   NON-CONTROL rows  (the assertion expansions + the enumerable real
-                     lookaround population)          :  64, 0 over cap
+                     lookaround population)          :  68, 0 over cap
 
 # THE HONEST READING, and it is the input [ENG-LOOK] asked for rather
 # than a verdict this lane is entitled to give:
