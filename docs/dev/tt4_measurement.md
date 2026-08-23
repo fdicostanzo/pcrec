@@ -368,11 +368,69 @@ baseline (`shape C`) driver's output byte for byte. 0 mismatches.
 
 ### Atomic-groups pool results (the second-worst section)
 
-<!-- ATOMIC_RESULTS_PLACEHOLDER -->
+Baseline: **13.316s serial / 1.743s parallel** (64 one-shot compile+link
+calls).
+
+| N | shape | serial median | serial x baseline | parallel median | parallel x baseline |
+|---|---|---|---|---|---|
+| 1 | A | 13.364s | 1.00x | 1.814s | 0.96x |
+| 1 | B | 13.257s | 1.00x | 1.756s | 0.99x |
+| 4 | A | 6.537s | 2.04x | 0.990s | 1.76x |
+| 4 | B | 5.031s | 2.65x | 0.798s | 2.19x |
+| 8 | A | 5.354s | 2.49x | 0.781s | 2.23x |
+| 8 | B | 3.627s | 3.67x | **0.640s** | **2.73x** |
+| 16 | A | 4.810s | 2.77x | 1.225s | 1.42x |
+| 16 | B | 2.970s | 4.48x | 0.782s | 2.23x |
+| 64 | A | 4.307s | 3.09x | 4.258s | 0.41x |
+| 64 | B | 2.449s | 5.44x | 2.477s | 0.70x |
+
+**Best measured speed-up: shape B, N=8, 2.73x (0.640s vs. 1.743s).** Same
+pattern as the corpus pool: 8 batches of 8 is the sweet spot for a 64-
+pattern pool on this 12-core box, and N=64 (one batch, no parallelism)
+is again WORSE than baseline under parallel mode for both shapes (0.41x/
+0.70x) — the same non-monotonic "batch count near core count wins, not
+the biggest N" shape the corpus pool showed, now confirmed on a SECOND,
+independently-collected pool with a different pattern population and a
+different `--features` set, not a one-pool coincidence. Peak RSS at N=64
+(shape B, the pool's largest batch, all 64 patterns in one TU): 96,812 KB
+(~95 MB). Correctness: 32/32 sampled outputs matched the baseline
+exactly.
 
 ### Failure isolation
 
-<!-- FAILURE_ISOLATION_PLACEHOLDER -->
+`bench.py --failure-isolation N=16` (corpus pool): plants a syntax error
+(`THIS IS A PLANTED SYNTAX ERROR;`) appended to ONE member's `gen.c` in a
+16-pattern batch, then measures shape B's (TU-batching) all-or-nothing
+compile cost against falling back to per-pattern compilation for the same
+16 members.
+
+- **Shape B, whole batch**: fails as expected (`rc=1`), in **0.231s** —
+  fast, because gcc's own parse error aborts the single TU compile early;
+  ALL 16 members are blocked, not just the corrupted one (this is the
+  cost TU-batching's failure mode imposes: one bad pattern anywhere in
+  the batch takes every OTHER member in it down too, even though they
+  compile fine on their own).
+- **Per-pattern fallback, all 16 members individually** (same corrupted
+  source directory, so the planted error still fires — this reproduces
+  what a real fallback path would see): **2.993s**, exactly one nonzero
+  exit (the planted one; the other 15 succeed).
+
+**The real cost of TU-batching's failure mode, if [TT-4.2] adopts it, is
+not the 0.231s detection — it is the requirement to REDO the other 15
+good members' compiles from scratch once the batch is known to have
+failed** (2.993s of per-pattern work that the batch's own 0.231s failure
+did not avoid, only revealed). At N=16 that is a small absolute cost, but
+it scales with N: [TT-4.2]'s failure-isolation design (named explicitly in
+docs/dev/plan.md's [TT-4] charter as an owed requirement, "fall back to
+per-pattern for the failing members and attribute the failure to the
+right pattern") has a real number to design against now rather than an
+assumed one — a bigger batch size trades a lower steady-state compile
+cost (this memo's own N-sweep above) against a bigger all-or-nothing
+retry cost on ANY single failing member, and `test-corpus`'s own `perr`
+population (patterns EXPECTED to fail pcrec, not gcc — a different failure
+class, upstream of this one) means a batching design has to decide
+whether `perr` patterns are even eligible to enter a TU batch in the first
+place, since they never reach gen.c/gcc at all.
 
 ### Emitter-side obstacles (measured, not assumed)
 
@@ -429,3 +487,47 @@ and compiled under the harness's exact `GENCFLAGS`):
   the body and reading the values from a per-prefix comment instead, or
   simply refusing to co-batch patterns with different `--features` sets)
   — not assumed away.
+
+## What the numbers say
+
+**Unlike [TT-3]'s ccache row, this one is a measured YES, not a refuted
+prediction — batching genuinely helps this workload, on both pools
+tried, by a real multiple, under the harness's own execution shape.**
+Stated as plainly as the evidence supports:
+
+- TU-batching (shape B) beats link-batching (shape A) at every batch size
+  on both pools — concatenating source amortizes more of the fixed
+  per-call cost (process start, header/ABI parsing, one link instead of
+  N+1 objects plus a link) than splitting compile from link alone.
+- The best speed-up is NOT at the largest batch size tried. It is at the
+  batch size whose BATCH COUNT is close to the box's core count (16
+  batches of 16 for a 256-pattern pool on 12 cores; 8 batches of 8 for a
+  64-pattern pool) — 3.66x and 2.73x respectively. Larger batches (N=64,
+  N=256) look BETTER in the serial numbers (7.39x, 5.44x) and are
+  measurably WORSE than the plain baseline under the harness's actual
+  12-way-parallel execution (0.47x-0.96x on the corpus pool, 0.41x-0.70x
+  on atomic) because too few batches starve most of the box's cores. Any
+  design reading only the serial column would ship a regression.
+- The speed-up is not free of a real cost: TU-batching's failure mode is
+  all-or-nothing per batch (one bad member blocks every other member in
+  its batch, confirmed directly with a planted syntax error — 0.231s to
+  fail, but the 15 good co-members then need re-compiling from scratch,
+  2.993s more, to recover what the batch's own failure destroyed), and
+  TU-batching cannot mix patterns compiled with different `--features`
+  values without a real emitter fix (`PCREC_FEATURE_SET`/
+  `PCREC_FEATURE_MODULES`, confirmed by a genuine `-Werror` compile
+  failure, not inferred).
+- The `perr` population (patterns pcrec is EXPECTED to reject, never
+  reaching gcc at all) is a design question this memo surfaces but does
+  not answer: whether/how such patterns enter a batch is [TT-4.2]'s to
+  decide, not measured here.
+
+**No recommendation about the harness's own design is made beyond what
+these numbers directly support** — [TT-4.2] is where batch-size choice,
+the `--features`-homogeneity constraint, and the failure-isolation
+fallback get designed, gated on a D6 panel per the plan row. What this
+memo delivers is the number that gates it: batching is worth building,
+somewhere in the batch-count-near-core-count neighbourhood rather than
+"as big as possible," with two confirmed, non-hypothetical obstacles
+(feature-set collision, all-or-nothing batch failure) already in hand
+for that design to solve rather than discover.

@@ -177,16 +177,21 @@ def main():
         t1 = time.monotonic()
         print(f"failure-isolation N={N}: shape B batch rc={rc} (expect nonzero) "
               f"wall={t1-t0:.3f}s -- whole batch fails on ONE planted syntax error")
-        # cost of falling back to per-pattern for just the batch members:
+        # Cost of falling back to per-pattern for just the batch members --
+        # against src_dir (the SAME corrupted copy the batch failure used),
+        # not the pristine args.patterns pool, or the planted error would
+        # never be exercised in the fallback and every member would
+        # trivially "succeed" (bug caught 2026-08-23 before being reported:
+        # the first version of this block compiled against args.patterns).
         t0 = time.monotonic()
         fallback_rcs = []
         for p in batch:
-            rc2, wall2, out2, exe2 = build_batch_C(script_dir, args.patterns, d, p, gencflags)
+            rc2, wall2, out2, exe2 = build_batch_C(script_dir, src_dir, d, p, gencflags)
             fallback_rcs.append(rc2)
         t1 = time.monotonic()
         print(f"failure-isolation N={N}: per-pattern fallback for all {N} members "
               f"(the planted-error one still fails elsewhere) wall={t1-t0:.3f}s, "
-              f"rcs={fallback_rcs}")
+              f"rcs={fallback_rcs} (expect exactly one nonzero -- the planted one)")
         return
 
     sizes = [int(x) for x in args.sizes.split(",")]

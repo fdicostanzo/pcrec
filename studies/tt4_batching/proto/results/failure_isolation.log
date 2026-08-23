@@ -1,0 +1,2 @@
+failure-isolation N=16: shape B batch rc=1 (expect nonzero) wall=0.231s -- whole batch fails on ONE planted syntax error
+failure-isolation N=16: per-pattern fallback for all 16 members (the planted-error one still fails elsewhere) wall=2.993s, rcs=[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1] (expect exactly one nonzero -- the planted one)
