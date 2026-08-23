@@ -2070,6 +2070,19 @@ rows move in the other direction; the `(*` doorway row itself stays
 `verbs`/`unbuilt` (it is `(*ACCEPT)`'s row and this module does not build
 verbs); and any alpha row added by §8.2 is born `built`.
 
+**THE COLUMN FLIPS ON THE PORT, NOT ON THE EMITTER (R33 C2-2), and §11's wave
+structure depends on it.** `pcrec_construct_built_status` classifies on the
+doorway's returned `ExtResult` at `WANT_RESULT`
+(`src/parse/syntax_dump.c:544-575`) and never runs the emitter. So a wave that
+wires `pcrec_laport_group` flips all six rows the moment it lands, whatever
+the emitter does — which is why waves B and C are FOLDED and why a landing bar
+phrased as "six rows still `unbuilt` after the port is wired" cannot be met.
+
+**AND NO ROW OUTSIDE MODULE `lookaround` MOVES.** In particular the `(?(`
+conditional-group row stays `unbuilt` (§13, R33 C1-9): a reader must not take
+this module's six as unlocking assertion-conditions, which is exactly the
+over-claim this section is where someone would make.
+
 ---
 
 ## 9. The identity gate and the sabotage rows (charter (viii))
