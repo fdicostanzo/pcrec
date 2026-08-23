@@ -186,10 +186,13 @@ that merely compiles proves nothing about what it is.
 | `(?<!*X)` | **err 109** | — the `*` is read as a quantifier | err | refuse |
 | `(?=)` `(?!)` `(?<=)` `(?<!)` | ok, all four | zero-width with an empty body: `a(?=)b` is (0,2), `a(?!)b` is NOMATCH | ok | **SHIPS** (§2.6) |
 
-**SHIP/REFUSE SPLIT: eighteen spellings ship, two refuse, and the two that
-refuse are refused because PCRE2 does not have them.** There is no spelling in
-this module's territory that PCRE2 has and pcrec declines — the declines are
-about BODIES (§2.5), not spellings.
+**SHIP/REFUSE SPLIT: EIGHTEEN spellings ship and THREE refuse** — `(*nanla:`
+and `(*nanlb:`, which PCRE2 does not have (err 195), and `(?<!*X)`, which
+PCRE2 reads as a quantifier and rejects (err 109). **There is no spelling in
+this module's territory that PCRE2 HAS and pcrec declines.** Every decline
+this module makes is about a BODY (§2.5), not a spelling, and that is the
+distinction D26 tier 1/2 cares about: which constructs are REAL and who owns
+them is exact here, and the capability limits are stated separately.
 
 ### 2.2 The atomicity discriminator, because it is the whole difference
 
