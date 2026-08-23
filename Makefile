@@ -687,6 +687,88 @@ asan:
 	done
 	@echo "asan: suite green under ASan+LSan, both axes"
 
+# ---------------------------------------------------------------------------
+# [TT-7]: ONE combined ASan+UBSan axis, in place of running `ubsan` and
+# `asan` back to back (docs/dev/chain_profile.md candidate (a), 2026-08-23:
+# 32m35s + 42m25s = 75m00s measured for the two separate passes at m65 —
+# two rebuilds, two full 26-script suite passes, for two sanitizer families
+# that gcc/clang support combining in one build). The reason the Makefile's
+# OWN comment above (lines 576-580) gives for keeping axes separate is about
+# TSan ("combining ASan/UBSan instrumentation with an already-TSan'd build
+# is not how sanitizers compose on this toolchain") — that says nothing
+# about combining ASan and UBSan WITH EACH OTHER, which is a routine,
+# well-supported combination in general. `tests/thread/` stays excluded
+# here for the SAME TSan reason `ubsan`/`asan` exclude it, unchanged.
+#
+# `ubsan:`/`asan:` above are UNTOUCHED and stay available as opt-in singles
+# if the combined axis is not adopted; this target is purely additive. The
+# adoption call itself is PENDING a real timing run on this box (docs/dev/
+# tt7_combined_axis.md and docs/testing.md's "[TT-7] combined axis"
+# subsection record the pending decision and what would flip it).
+SAN_DIR     := build-san
+# Mirrors UBSAN_CFLAGS (-fsanitize=undefined -fno-sanitize-recover=undefined)
+# and ASAN_CFLAGS (-fsanitize=address,leak) combined onto one sanitizer list.
+# The two single-axis CFLAGS differ in exactly one place beyond their
+# sanitizer lists: UBSAN_CFLAGS carries -fno-sanitize-recover=undefined and
+# ASAN_CFLAGS does not. That flag only affects the `undefined` sanitizer (it
+# is meaningless to `address`/`leaf`), so it is safe to carry into the
+# combined flags unconditionally -- it keeps UBSan's "first-hit abort with a
+# stack trace" property (the same reason `ubsan:` itself sets it) without
+# changing ASan/LSan's behavior at all. Both single axes already share
+# -O1 -g, so there is nothing else to reconcile.
+SAN_CFLAGS  := -O1 -g -fsanitize=address,undefined,leak -fno-sanitize-recover=undefined
+# UBSAN_ENV and ASAN_ENV set DIFFERENT *_OPTIONS env vars
+# (UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" vs
+# ASAN_OPTIONS="detect_leaks=1" + LSAN_OPTIONS=""); a combined run needs
+# both exported together, unremarkable but a real wiring step.
+SAN_ENV      = PCREC=$(CURDIR)/$(SAN_DIR)/pcrec CC=$(CC) \
+               LIBPCREC=$(CURDIR)/$(SAN_DIR)/libpcrec.a \
+               LIBA=$(CURDIR)/$(SAN_DIR)/libpcrec.a \
+               GENCFLAGS="-O1 -std=gnu11 -Wall -Wextra $(SAN_CFLAGS)" \
+               SANFLAGS="$(SAN_CFLAGS)" \
+               UBSAN_OPTIONS="print_stacktrace=1:halt_on_error=1" \
+               ASAN_OPTIONS="detect_leaks=1" \
+               LSAN_OPTIONS="" \
+               PROCS=$${PROCS:-$$(nproc)} TMPDIR=$${TMPDIR:-/var/tmp}
+
+# Same suite list as `ubsan:`/`asan:` (tests/thread/ excluded, same TSan
+# reason; see docs/testing.md's Exclusions section for the full rationale).
+san:
+	@echo "== san: building the compiler axis at $(SAN_DIR)/ =="
+	$(MAKE) BUILD_DIR=$(SAN_DIR) CFLAGS="$(SAN_CFLAGS)" all
+	@echo "== san: running the suite, both axes instrumented =="
+	@set -e; \
+	for s in tests/harness/run.sh tests/cli/run_cli_tests.sh \
+	         tests/reject/run_reject_tests.sh \
+	         tests/registry/run_registry_tests.sh \
+	         tests/parse/run_parse_tests.sh \
+	         tests/codegen/run_codegen_tests.sh \
+	         tests/codegen/run_trie_identity.sh \
+	         tests/codegen/run_endvar_identity.sh \
+	         tests/codegen/run_wordctx_identity.sh \
+	         tests/codegen/run_mlinectx_identity.sh \
+	         tests/codegen/run_gstart_identity.sh \
+	         tests/codegen/run_vm_identity.sh \
+	         tests/codegen/run_ir_listing.sh \
+	         tests/vm/run_vm_tests.sh \
+	         tests/encseam/run_encseam_tests.sh \
+	         tests/possessify/run_possdiff.sh \
+	         tests/possessify/run_possessify_tests.sh \
+	         tests/rungselect/run_rungdiff.sh \
+	         tests/rungselect/run_rungselect_tests.sh \
+	         tests/altcls/run_altdiff.sh \
+	         tests/altcls/run_altcls_tests.sh \
+	         tests/assertions/run_assertions_tests.sh \
+	         tests/atomic_groups/run_atomic_diff.sh \
+	         tests/backrefs/run_backref_diff.sh \
+	         tests/backrefs/run_dupnames_diff.sh \
+	         tests/lib/run_gen_timeout_tests.sh \
+	         tests/known_fail/run_known_fail.sh; do \
+	    echo "-- san: $$s --"; \
+	    env $(SAN_ENV) bash "$$s" || exit 1; \
+	done
+	@echo "san: suite green under -fsanitize=address,undefined, both axes"
+
 # `make lint` — static analysis survey (SAN-1 item 3). Adopts what earns its
 # place, records rejections with reasons (OPT-A's convention). Degrades
 # loudly-but-gracefully per tool, the PC-3 libpcre2-absent SKIP pattern:
@@ -752,5 +834,5 @@ clean:
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
         test-backrefs test-backrefs-identity \
-        test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
+        test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
