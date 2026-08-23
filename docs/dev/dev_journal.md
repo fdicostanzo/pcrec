@@ -12028,3 +12028,16 @@ class exactly), and their duplicates — NO implementation divergence.
 The author's cell binary refreshed; corrections requested. Union
 battery launched on 3aa446f (build/battery_m65.log, 20:59). Owed: mech
 (118 rows), gate, archive, close.
+
+D27 CORPUS CORRECTED (brd27 672a2f4, 21:1x): the author's root cause for
+its seven cells — a directive-ordering slip that left three `features`
+lines stranded BEFORE their `pattern` (so the harness attached them to
+the wrong block — which is also why the first run blamed the :52/:54
+block that was in fact correct), plus the three vacuous enabled-
+direction perr gating cells re-measured as real m/gp cases against
+libpcre2; the (?J) attribution observation RESOLVED by the built module
+("requires module 'backrefs'"). oracle.py 190/190; the author's own
+from-spec end-to-end driver 140/140; re-run from the main tree vs
+3aa446f: 207 pass / 0 fail / 0 compile failures / pending-vm 0. The
+backrefs acceptance record: the blinded corpus found NO implementation
+divergence — one module in two today; the other found a tier-1.
