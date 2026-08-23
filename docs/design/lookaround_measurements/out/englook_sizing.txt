@@ -1,0 +1,256 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_englook_sizing.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: e129604 2026-08-23
+# RUN FROM REPO COMMIT        : e129604 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/englook_sizing.txt
+#     ?? docs/design/lookaround_measurements/out/expansions.txt
+#     ?? docs/design/lookaround_measurements/out/substitution_population.txt
+# RUN DATE   : 2026-08-23T14:15:37-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec  : /home/duxevents/pcrec/worktrees/ladesign/build/pcrec (present)
+python3: 3.14.4
+caps   : PCREC_MAX_DFA_STATES_GOTO=10000  PCREC_MAX_DFA_STATES_TABLE=32000 (src/core/limits.h:47-49)
+
+==============================================================================
+COMPONENT AUTOMATA -- each BODY compiled ALONE
+==============================================================================
+The forward machine is the Sigma*.L recognizer a LOOKBEHIND needs; the
+reverse machine is the reverse(L).Sigma* one a LOOKAHEAD needs.
+
+body         origin     | forward st x cls    | reverse st x cls    | note
+--------------------------------------------------------------------------------------------------------------
+\w           expansion  |     2 x 2           |     2 x 2           | \b, \B  (four bodies, all \w)
+\n           expansion  |     2 x 2           |     2 x 2           | (?m)^, (?m)$  ((?<=\n), (?=\n))
+\n?\z        expansion  |     5 x 2           |     3 x 2           | \Z and default-flags $   ((?=\n?\z))
+foo          real       |     4 x 3           |     4 x 3           | [ENG-LOOK]'s own example (?<=foo)bar
+\d           real       |     2 x 2           |     2 x 2           | [ENG-LOOK]'s own example (?<!\d)\d{4}(?!\d)
+\d{4}        real       |     5 x 2           |     5 x 2           | the same example's MAIN pattern
+,            real       |     2 x 2           |     2 x 2           | the construct table's (?<=,)\w+
+ab           real       |     3 x 3           |     3 x 3           | a two-byte fixed body
+abc          real       |     4 x 4           |     4 x 4           | a three-byte fixed body
+a|bc         real       |     3 x 4           |     3 x 4           | two branches, different fixed lengths (§2.5)
+[a-z]        real       |     2 x 2           |     2 x 2           | a range class
+[^\"']       real       |     2 x 2           |     2 x 2           | a negated class (the backrefs lane's own idiom)
+\w+          real       |     2 x 2           |     2 x 2           | an UNBOUNDED body -- a lookAHEAD only (§2.5)
+\d{3}        real       |     4 x 2           |     4 x 2           | a counted body
+(a|b)c       real       |     3 x 3           |     3 x 3           | an alternation inside a concatenation
+https?       real       |     6 x 5           |     6 x 5           | a realistic literal-ish body
+\d{4}-\d{2}-\d{2} control    |    11 x 3           |    11 x 3           | a date shape -- a longer counted body
+[a-z]{12}    control    |    13 x 2           |    13 x 2           | a 12-long class run
+(?:ab|cd){8} control    |    25 x 5           |    25 x 5           | a repeated two-way alternation
+(?:a|b|c|d){10} control    |    11 x 2           |    11 x 2           | a repeated four-way alternation
+[01]*1[01]{12} control    | 12288 x 3           |    14 x 3           | bench case (f)'s shape -- the known state-explosion idiom
+
+# A `None` column means the artifact carries no table of that name --
+# a VM-routed artifact. `RX_ENGINE` is stamped only for the VM, so its
+# ABSENCE is what reads `dfa` below:
+    \w           engine=dfa
+    \n           engine=dfa
+    \n?\z        engine=dfa
+    foo          engine=dfa
+    \d           engine=dfa
+    \d{4}        engine=dfa
+    ,            engine=dfa
+    ab           engine=dfa
+    abc          engine=dfa
+    a|bc         engine=dfa
+    [a-z]        engine=dfa
+    [^\"']       engine=dfa
+    \w+          engine=dfa
+    \d{3}        engine=dfa
+    (a|b)c       engine=vm
+    https?       engine=dfa
+    \d{4}-\d{2}-\d{2} engine=dfa
+    [a-z]{12}    engine=dfa
+    (?:ab|cd){8} engine=dfa
+    (?:a|b|c|d){10} engine=dfa
+    [01]*1[01]{12} engine=dfa
+
+==============================================================================
+MAIN AUTOMATA
+==============================================================================
+main pattern                 | forward st x cls    | reverse st x cls    | note
+----------------------------------------------------------------------------------------------------
+bar                          |     4 x 4           |     4 x 4           | the [ENG-LOOK] example's main
+\d{4}                        |     5 x 2           |     5 x 2           | the second example's main
+\w+                          |     2 x 2           |     2 x 2           | the construct table's main
+[a-z]+@[a-z]+\.[a-z]+        |     6 x 4           |     6 x 4           | a realistic main
+[01]*1[01]{12}               | 12288 x 3           |    14 x 3           | CONTROL: a large main (bench case (f)'s shape)
+(?:a|b|c|d){10}              |    11 x 2           |    11 x 2           | CONTROL: a second large main
+
+==============================================================================
+THE PRODUCT BOUND, against the caps
+==============================================================================
+worst-case |D(main)| x |D(component)|, and the STATES x CLASSES figure
+beside it, because wave B's own over-cap number (38,009 vs 32,000) was
+the second quantity and not the first.
+
+main                     body         | st product | cls product | st x cls    | verdict
+----------------------------------------------------------------------------------------------------
+bar                      \w           |         8 |           8 |          64 | ok
+bar                      \n           |         8 |           8 |          64 | ok
+bar                      \n?\z        |        20 |           8 |         160 | ok
+bar                      foo          |        16 |          12 |         192 | ok
+bar                      \d           |         8 |           8 |          64 | ok
+bar                      \d{4}        |        20 |           8 |         160 | ok
+bar                      ,            |         8 |           8 |          64 | ok
+bar                      ab           |        12 |          12 |         144 | ok
+bar                      abc          |        16 |          16 |         256 | ok
+bar                      a|bc         |        12 |          16 |         192 | ok
+bar                      [a-z]        |         8 |           8 |          64 | ok
+bar                      [^\"']       |         8 |           8 |          64 | ok
+bar                      \w+          |         8 |           8 |          64 | ok
+bar                      \d{3}        |        16 |           8 |         128 | ok
+bar                      (a|b)c       |        12 |          12 |         144 | ok
+bar                      https?       |        24 |          20 |         480 | ok
+bar                      \d{4}-\d{2}-\d{2} |        44 |          12 |         528 | ok
+bar                      [a-z]{12}    |        52 |           8 |         416 | ok
+bar                      (?:ab|cd){8} |       100 |          20 |        2000 | ok
+bar                      (?:a|b|c|d){10} |        44 |           8 |         352 | ok
+bar                      [01]*1[01]{12} |     49152 |          12 |      589824 | OVER the 32,000 state cap
+\d{4}                    \w           |        10 |           4 |          40 | ok
+\d{4}                    \n           |        10 |           4 |          40 | ok
+\d{4}                    \n?\z        |        25 |           4 |         100 | ok
+\d{4}                    foo          |        20 |           6 |         120 | ok
+\d{4}                    \d           |        10 |           4 |          40 | ok
+\d{4}                    \d{4}        |        25 |           4 |         100 | ok
+\d{4}                    ,            |        10 |           4 |          40 | ok
+\d{4}                    ab           |        15 |           6 |          90 | ok
+\d{4}                    abc          |        20 |           8 |         160 | ok
+\d{4}                    a|bc         |        15 |           8 |         120 | ok
+\d{4}                    [a-z]        |        10 |           4 |          40 | ok
+\d{4}                    [^\"']       |        10 |           4 |          40 | ok
+\d{4}                    \w+          |        10 |           4 |          40 | ok
+\d{4}                    \d{3}        |        20 |           4 |          80 | ok
+\d{4}                    (a|b)c       |        15 |           6 |          90 | ok
+\d{4}                    https?       |        30 |          10 |         300 | ok
+\d{4}                    \d{4}-\d{2}-\d{2} |        55 |           6 |         330 | ok
+\d{4}                    [a-z]{12}    |        65 |           4 |         260 | ok
+\d{4}                    (?:ab|cd){8} |       125 |          10 |        1250 | ok
+\d{4}                    (?:a|b|c|d){10} |        55 |           4 |         220 | ok
+\d{4}                    [01]*1[01]{12} |     61440 |           6 |      368640 | OVER the 32,000 state cap
+\w+                      \w           |         4 |           4 |          16 | ok
+\w+                      \n           |         4 |           4 |          16 | ok
+\w+                      \n?\z        |        10 |           4 |          40 | ok
+\w+                      foo          |         8 |           6 |          48 | ok
+\w+                      \d           |         4 |           4 |          16 | ok
+\w+                      \d{4}        |        10 |           4 |          40 | ok
+\w+                      ,            |         4 |           4 |          16 | ok
+\w+                      ab           |         6 |           6 |          36 | ok
+\w+                      abc          |         8 |           8 |          64 | ok
+\w+                      a|bc         |         6 |           8 |          48 | ok
+\w+                      [a-z]        |         4 |           4 |          16 | ok
+\w+                      [^\"']       |         4 |           4 |          16 | ok
+\w+                      \w+          |         4 |           4 |          16 | ok
+\w+                      \d{3}        |         8 |           4 |          32 | ok
+\w+                      (a|b)c       |         6 |           6 |          36 | ok
+\w+                      https?       |        12 |          10 |         120 | ok
+\w+                      \d{4}-\d{2}-\d{2} |        22 |           6 |         132 | ok
+\w+                      [a-z]{12}    |        26 |           4 |         104 | ok
+\w+                      (?:ab|cd){8} |        50 |          10 |         500 | ok
+\w+                      (?:a|b|c|d){10} |        22 |           4 |          88 | ok
+\w+                      [01]*1[01]{12} |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[a-z]+@[a-z]+\.[a-z]+    \w           |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \n           |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \n?\z        |        30 |           8 |         240 | ok
+[a-z]+@[a-z]+\.[a-z]+    foo          |        24 |          12 |         288 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d           |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d{4}        |        30 |           8 |         240 | ok
+[a-z]+@[a-z]+\.[a-z]+    ,            |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    ab           |        18 |          12 |         216 | ok
+[a-z]+@[a-z]+\.[a-z]+    abc          |        24 |          16 |         384 | ok
+[a-z]+@[a-z]+\.[a-z]+    a|bc         |        18 |          16 |         288 | ok
+[a-z]+@[a-z]+\.[a-z]+    [a-z]        |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    [^\"']       |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \w+          |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d{3}        |        24 |           8 |         192 | ok
+[a-z]+@[a-z]+\.[a-z]+    (a|b)c       |        18 |          12 |         216 | ok
+[a-z]+@[a-z]+\.[a-z]+    https?       |        36 |          20 |         720 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d{4}-\d{2}-\d{2} |        66 |          12 |         792 | ok
+[a-z]+@[a-z]+\.[a-z]+    [a-z]{12}    |        78 |           8 |         624 | ok
+[a-z]+@[a-z]+\.[a-z]+    (?:ab|cd){8} |       150 |          20 |        3000 | ok
+[a-z]+@[a-z]+\.[a-z]+    (?:a|b|c|d){10} |        66 |           8 |         528 | ok
+[a-z]+@[a-z]+\.[a-z]+    [01]*1[01]{12} |     73728 |          12 |      884736 | OVER the 32,000 state cap
+[01]*1[01]{12}           \w           |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \n           |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \n?\z        |     61440 |           6 |      368640 | OVER the 32,000 state cap
+[01]*1[01]{12}           foo          |     49152 |           9 |      442368 | OVER the 32,000 state cap
+[01]*1[01]{12}           \d           |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \d{4}        |     61440 |           6 |      368640 | OVER the 32,000 state cap
+[01]*1[01]{12}           ,            |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           ab           |     36864 |           9 |      331776 | OVER the 32,000 state cap
+[01]*1[01]{12}           abc          |     49152 |          12 |      589824 | OVER the 32,000 state cap
+[01]*1[01]{12}           a|bc         |     36864 |          12 |      442368 | OVER the 32,000 state cap
+[01]*1[01]{12}           [a-z]        |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           [^\"']       |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \w+          |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \d{3}        |     49152 |           6 |      294912 | OVER the 32,000 state cap
+[01]*1[01]{12}           (a|b)c       |     36864 |           9 |      331776 | OVER the 32,000 state cap
+[01]*1[01]{12}           https?       |     73728 |          15 |     1105920 | OVER the 32,000 state cap
+[01]*1[01]{12}           \d{4}-\d{2}-\d{2} |    135168 |           9 |     1216512 | OVER the 32,000 state cap
+[01]*1[01]{12}           [a-z]{12}    |    159744 |           6 |      958464 | OVER the 32,000 state cap
+[01]*1[01]{12}           (?:ab|cd){8} |    307200 |          15 |     4608000 | OVER the 32,000 state cap
+[01]*1[01]{12}           (?:a|b|c|d){10} |    135168 |           6 |      811008 | OVER the 32,000 state cap
+[01]*1[01]{12}           [01]*1[01]{12} | 150994944 |           9 |  1358954496 | OVER the 32,000 state cap
+(?:a|b|c|d){10}          \w           |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \n           |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \n?\z        |        55 |           4 |         220 | ok
+(?:a|b|c|d){10}          foo          |        44 |           6 |         264 | ok
+(?:a|b|c|d){10}          \d           |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \d{4}        |        55 |           4 |         220 | ok
+(?:a|b|c|d){10}          ,            |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          ab           |        33 |           6 |         198 | ok
+(?:a|b|c|d){10}          abc          |        44 |           8 |         352 | ok
+(?:a|b|c|d){10}          a|bc         |        33 |           8 |         264 | ok
+(?:a|b|c|d){10}          [a-z]        |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          [^\"']       |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \w+          |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \d{3}        |        44 |           4 |         176 | ok
+(?:a|b|c|d){10}          (a|b)c       |        33 |           6 |         198 | ok
+(?:a|b|c|d){10}          https?       |        66 |          10 |         660 | ok
+(?:a|b|c|d){10}          \d{4}-\d{2}-\d{2} |       121 |           6 |         726 | ok
+(?:a|b|c|d){10}          [a-z]{12}    |       143 |           4 |         572 | ok
+(?:a|b|c|d){10}          (?:ab|cd){8} |       275 |          10 |        2750 | ok
+(?:a|b|c|d){10}          (?:a|b|c|d){10} |       121 |           4 |         484 | ok
+(?:a|b|c|d){10}          [01]*1[01]{12} |    135168 |           6 |      811008 | OVER the 32,000 state cap
+
+ROWS: 126.  Over the 32,000 STATE cap: 18.
+
+VACUITY GUARD: the population must contain at least one row that COULD
+be over the cap, or a count measures nothing.
+  largest state product in the population: 150994944  (cap 32000)
+  ok: the population reaches 4719x the cap, so the split below is a
+      real result rather than an artefact of a small population
+
+THE SPLIT THAT MATTERS, because the controls are deliberately extreme:
+  CONTROL rows      (a deliberately huge body or main):  62, 18 over cap
+  NON-CONTROL rows  (the assertion expansions + the enumerable real
+                     lookaround population)          :  64, 0 over cap
+
+# THE HONEST READING, and it is the input [ENG-LOOK] asked for rather
+# than a verdict this lane is entitled to give:
+#  * every component measured here is SMALL -- the bodies the assertion
+#    family expands to are one class or one literal, and the real
+#    lookaround bodies in an enumerable population are short literals
+#    and classes. The product's STATE growth on this population is
+#    therefore multiplicative by a small constant, not exponential.
+#  * the quantity that bit wave B is STATES x CLASSES, and the ALPHABET
+#    product is where a body with its own refinement costs most. That
+#    column is the one [ENG-LOOK] should carry into its design gate.
+#  * NOTHING HERE MEASURES A PRODUCT. pcrec cannot build one, so every
+#    number above is a bound computed from two separately-measured
+#    machines. A real product is smaller than the bound whenever the
+#    components share structure, and [ENG-LOOK]'s decline rule has to
+#    be written against the bound anyway.

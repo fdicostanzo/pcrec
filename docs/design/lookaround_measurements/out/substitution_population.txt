@@ -1,0 +1,108 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_substitution_population.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 668c280 2026-08-23
+# RUN FROM REPO COMMIT        : e129604 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/expansions.txt
+#     ?? docs/design/lookaround_measurements/out/substitution_population.txt
+# RUN DATE   : 2026-08-23T14:15:37-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+corpus root : /home/duxevents/pcrec/worktrees/ladesign/tests/assertions
+files       : 17
+python3     : 3.14.4
+
+==============================================================================
+THE WHOLE CORPUS
+==============================================================================
+  blocks (pattern lines)          : 468
+  ALL cells (m/n/ms/ns/g/gp)      : 10187
+  BEHAVIOURAL cells (m/n/ms/ns)   : 10120
+  capture-slot cells (g/gp)       : 67
+
+  THE 10,120 THE CHARTER QUOTES IS THE BEHAVIOURAL COUNT, and this
+  probe's first draft said the opposite -- that 10,120 was the ALL-cells
+  figure and the behavioural one was smaller. It is the other way round:
+  10,120 behavioural + 67 capture-slot cells = 10,187 total. The error
+  is recorded rather than quietly corrected because a design that
+  reported its population against the wrong denominator would have
+  understated the driver's reach.
+
+==============================================================================
+WHAT QUALIFIES FOR TEXTUAL SUBSTITUTION
+==============================================================================
+  QUALIFYING blocks               : 270 of 468  (58%)
+  QUALIFYING behavioural cells    : 8495 of 10120  (84%)
+  ... carrying capture-slot cells : 13
+
+  DISQUALIFIED, by rule:
+    Q1 perr / no behavioural cell              87 blocks      0 cells
+    Q2 no substitutable assertion              87 blocks    754 cells
+    Q3 assertion inside a character class       0 blocks      0 cells
+    Q4 scoped (?m: or (?-m)                    24 blocks    871 cells
+    Q5 \K inside a substituted body             0 blocks      0 cells
+
+  Substitutable assertion OCCURRENCES in qualifying blocks, by token:
+    \b   83
+    ^    66
+    $    65
+    \z   47
+    \B   39
+    \A   37
+    \Z   31
+
+==============================================================================
+PER FILE
+==============================================================================
+  file                                       blocks (qual)    cells (qual)
+  tests/assertions/absolute.rxt               57 ( 37)         849 ( 849)
+  tests/assertions/d27/anchors_abs.rxt        25 ( 25)          48 (  48)
+  tests/assertions/d27/composition.rxt         7 (  6)          14 (  13)
+  tests/assertions/d27/gating.rxt             26 (  6)           8 (   6)
+  tests/assertions/d27/gstart.rxt              8 (  0)          18 (   0)
+  tests/assertions/d27/kreset.rxt             14 (  3)          23 (   4)
+  tests/assertions/d27/multiline.rxt          16 ( 12)          28 (  23)
+  tests/assertions/d27/syntax_errors.rxt      37 (  0)           0 (   0)
+  tests/assertions/d27/word_boundary.rxt      12 ( 12)          27 (  27)
+  tests/assertions/gate.rxt                   16 ( 16)         304 ( 304)
+  tests/assertions/gpos.rxt                   43 ( 12)         324 (  68)
+  tests/assertions/kreset.rxt                 54 (  8)         544 (  86)
+  tests/assertions/multiline.rxt              89 ( 69)        3325 (2459)
+  tests/assertions/wordb_basic.rxt            17 ( 17)        1224 (1224)
+  tests/assertions/wordb_empty_compose.rxt    19 ( 19)        1368 (1368)
+  tests/assertions/wordb_engattempt.rxt       16 ( 16)        1152 (1152)
+  tests/assertions/wordb_vm.rxt               12 ( 12)         864 ( 864)
+
+==============================================================================
+THE EXPANSION MULTIPLIER
+==============================================================================
+A qualifying block yields ONE expanded pattern per substitution POLICY,
+not one per assertion: the driver substitutes EVERY substitutable
+occurrence in the pattern at once, because a half-substituted pattern
+tests neither form. Two policies are worth generating and the second is
+the one that finds bugs:
+
+  P1  ALL-AT-ONCE  -- every occurrence replaced. 270 patterns.
+  P2  ONE-AT-A-TIME -- one occurrence replaced per generated pattern,
+      the rest left folded. This is the MIXED form, where a folded
+      assertion and an expanded one must agree INSIDE ONE PATTERN, and
+      it is where an interaction between the two lowerings would show.
+      368 patterns (one per occurrence).
+
+  TOTAL GENERATED PATTERNS: 638, over 8495 behavioural cells each time
+  i.e. roughly 8495 three-way comparisons for P1 and 8495 for P2.
+
+  (P2's cell count is not cells x occurrences: each generated pattern
+   is checked against its OWN block's cells, and every occurrence in a
+   block comes from the same block. The two policies therefore cost
+   about the same per-cell total, which is why both are proposed.)
