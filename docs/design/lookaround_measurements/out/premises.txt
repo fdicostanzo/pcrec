@@ -1,0 +1,238 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_premises.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 149efad 2026-08-23
+# RUN FROM REPO COMMIT        : d1d4378 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/premises.txt
+# RUN DATE   : 2026-08-23T13:43:51-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec binary: build/pcrec (d1d4378)
+
+=== AXIS A: every lookaround spelling's refusal on HEAD ===============
+# columns: exit-status | pattern | diagnostic
+exit=1 | (?=a)b                                     | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?!a)b                                     | pcrec: (?!...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<=a)b                                    | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<!a)b                                    | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?*a)b                                     | pcrec: (?*...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<*a)b                                    | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (*pla:a)b                                  | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*positive_lookahead:a)b                   | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*nla:a)b                                  | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*negative_lookahead:a)b                   | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*plb:a)b                                  | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*positive_lookbehind:a)b                  | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*nlb:a)b                                  | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*negative_lookbehind:a)b                  | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*napla:a)b                                | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*non_atomic_positive_lookahead:a)b        | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*naplb:a)b                                | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (*non_atomic_positive_lookbehind:a)b       | pcrec: (*...) requires module 'verbs' (pattern offset 0)
+exit=1 | (?=)                                       | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?!)                                       | pcrec: (?!...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<=)                                      | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<!)                                      | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?=a)*                                     | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?=a)+                                     | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?=a){2}                                   | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?!a)?                                     | pcrec: (?!...) requires module 'lookaround' (pattern offset 0)
+exit=1 | a(?=b)                                     | pcrec: (?=...) requires module 'lookaround' (pattern offset 1)
+exit=1 | a(?<=b)                                    | pcrec: (?<...) requires module 'lookaround' (pattern offset 1)
+exit=1 | (?=(a))b                                   | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<=a|bc)x                                 | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<=a*)x                                   | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?=a)(?=b)                                 | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?=(?<=a)b)c                               | pcrec: (?=...) requires module 'lookaround' (pattern offset 0)
+exit=1 | (?<=(?=a)b)c                               | pcrec: (?<...) requires module 'lookaround' (pattern offset 0)
+
+=== AXIS B: the registry rows for module 'lookaround' today ==========
+# from --list-syntax; columns per the dump's own header
+kind=group sel== syntax=(?=...)      engines=vm   status=module roadmap=planned quant=yes built=unbuilt
+kind=group sel=! syntax=(?!...)      engines=vm   status=module roadmap=planned quant=yes built=unbuilt
+kind=group sel=< syntax=(?<=...)     engines=vm   status=module roadmap=planned quant=yes built=unbuilt
+kind=group sel=< syntax=(?<!...)     engines=vm   status=module roadmap=planned quant=yes built=unbuilt
+kind=group sel=< syntax=(?<*a)       engines=vm   status=module roadmap=planned quant=yes built=unbuilt
+kind=group sel=* syntax=(?*a)        engines=vm   status=module roadmap=planned quant=yes built=unbuilt
+# row count for module 'lookaround':
+6
+# any lookaround row reading 'built'? (expect NONE before [M6.6.2])
+0
+
+=== AXIS C: the (* alpha-spelling doorway ============================
+# The twelve lookaround verb names below are in the VERB NAME table
+# (src/parse/mod_verbs.c) but the (* DOORWAY row is a single FIXED row
+# naming module 'verbs' (src/parse/registry.c verb_rows). D26 makes the
+# MODULE a tier-2 (exact) fact, so an answer of 'verbs' for a construct
+# module 'lookaround' owns is the same defect class registry.c:692
+# already records for (?*...). Reported as a MEASUREMENT, not inferred:
+(*pla:a)b                                -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*plb:a)b                                -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*nla:a)b                                -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*nlb:a)b                                -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*napla:a)b                              -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*naplb:a)b                              -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*positive_lookahead:a)b                 -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*positive_lookbehind:a)b                -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*negative_lookahead:a)b                 -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*negative_lookbehind:a)b                -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*non_atomic_positive_lookahead:a)b      -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+(*non_atomic_positive_lookbehind:a)b     -> pcrec: (*...) requires module 'verbs' (pattern offset 0)
+# the verb NAME table's own lookaround entries (grep, for provenance):
+178:{"pla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+179:{"plb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+180:{"napla",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+181:{"naplb",                          VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+182:{"nla",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+183:{"nlb",                            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+184:{"positive_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+185:{"positive_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+186:{"non_atomic_positive_lookahead",  VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+187:{"non_atomic_positive_lookbehind", VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+188:{"negative_lookahead",             VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+189:{"negative_lookbehind",            VF_ARG | VF_EMPTYARG | VF_GROUPARG, 0, NULL, ROADMAP_NONE, QV_YES},
+# the (* doorway row that answers for all of them:
+831:FIXED(RK_VERB, REG_SEL_ANY, "(*ACCEPT)", verbs, VM_ONLY,
+
+=== AXIS D: vm_cut and the atomic lowering, as they are in src/ ======
+# vm_cut's definition (the substrate §3 reuses):
+    static void vm_cut(Vm *v, int slot, const char *role)
+    {
+        /* BEFORE the cut, necessarily: RX_CUT overwrites `run->resume_depth` with the mark,
+         * so after it runs the count this charge needs no longer exists. */
+        {
+            char cnt[192];
+            snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
+            vm_work(v, cnt, "work charge: frames discarded by this cut");
+        }
+        sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
+        vm_ev(v, VE_CUT, slot, 0, role);
+    }
+# vm_cut's line number:
+2119:static void vm_cut(Vm *v, int slot, const char *role)
+# vm_atomic's body (the shape §3.1 mirrors), from its signature:
+    static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+    {
+        const char *sd = v->fdyn;
+        long long   sf = v->fmin;
+        v->fmin = 0;
+        v->fdyn = NULL;
+    
+        /* THE LIFT (§3.2, RULE 3): route the cut into the quantifier's own
+         * possessive rung, which cuts PER ITERATION where this shape cuts once at
+         * the group's exit. Without it `(?>a*)` exhausts RX_RESUME_FRAMES where
+         * `a*+` — a spelling PCRE2 calls identical — costs one frame. `vm_lifts`
+         * carries the scope and the evidence. */
+        if (vm_lifts(a)) {
+            vm_rep(v, entry, a->l, next, true);
+            v->fmin = sf;
+            v->fdyn = sd;
+            return;
+        }
+    
+        int mslot = vm_slot_mark(v, v->nmark++);
+        int bodyl = vm_label(v), cutl = vm_label(v);
+    
+        vm_lbl(v, entry, "atomic group: record the resume-stack depth to cut "
+                         "back to (BEFORE the body pushes anything)");
+        vm_set(v, mslot, "(ptrdiff_t)run->resume_depth",
+               "atomic-group cut mark (resume-stack depth at group entry)");
+        vm_goto(v, bodyl);
+    
+        /* The body's follow-min is ZERO, not the group's — see this function's
+         * header. The group consumes exactly what the body consumes, so a
+         * CAPTURING wrapper would inherit `v->fmin` unchanged (A_CAP's arm's own
+         * reading); an ATOMIC one must not, because the cut makes the body's
+         * choice final and the follow is not allowed to influence it. */
+        vm_emit(v, bodyl, a->l, cutl);
+    
+        vm_lbl(v, cutl, "atomic group: the body's FIRST success -- cut, and never "
+                        "reconsider");
+        vm_cut(v, mslot, "cut: the group is committed; every choice point the body "
+                         "created is discarded, dead or not");
+        vm_goto(v, next);
+    
+        /* The follow is back in force AFTER the cut: `next` and everything past it
+         * are outside the group and prune normally. Only the body was scoped. */
+        v->fmin = sf;
+        v->fdyn = sd;
+    }
+# the five primitives' signatures:
+1987:static void vm_lbl(Vm *v, int id, const char *role)
+2008:static void vm_goto(Vm *v, int id)
+2014:static void vm_fail(Vm *v)
+2026:static void vm_push_at(Vm *v, int lblid, const char *posexpr, const char *role)
+2037:static void vm_push(Vm *v, int lblid, const char *role)
+2042:static void vm_set(Vm *v, int slot, const char *val, const char *role)
+2105:static void vm_work_at(Vm *v, const char *indent, const char *countexpr,
+2114:static void vm_work(Vm *v, const char *countexpr, const char *role)
+# the A_BREF arm's seam call, which §4's back-step mirrors:
+4655:        if (!pcrec_enc_entry_engine_callable(
+4662:        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
+
+=== AXIS E: the assertions module's alphabet-context machinery =======
+# the AST kinds that exist today (src/core/internal.h):
+68:    A_CLASS,   /* byte class (literals normalized to singleton classes) */
+69:    A_CAT,     /* l r */
+70:    A_ALT,     /* l | r  (l is preferred branch) */
+71:    A_REP,     /* l{rmin,rmax}, rmax == -1 for unbounded; greedy flag */
+72:    A_EMPTY,   /* matches empty string */
+73:    A_BOL,     /* ^ and \A : start of subject */
+74:    A_EOL,     /* $ and \Z : end of subject or before a final \n */
+86:    A_END,
+97:    A_WORDB,
+98:    A_NWORDB,
+118:    A_GSTART,
+149:    A_KRESET,
+168:    A_CAP,
+219:    A_ATOMIC,
+# the seam's entries today (src/gen/enc/enc.h):
+79:    PCREC_ENCE_NEXT_POS       = 1u << 0,
+84:    PCREC_ENCE_BREF           = 1u << 1,
+85:    PCREC_ENCE_BREF_CASELESS  = 1u << 2
+# the seam's entry table (src/gen/enc/enc_byte.c):
+    static const PcrecEncEntry entries_byte[] = {
+        { PCREC_ENCE_NEXT_POS,      false, decls_byte,    defs_byte    },
+        { PCREC_ENCE_BREF,          true,  decls_bref,    defs_bref    },
+        { PCREC_ENCE_BREF_CASELESS, true,  decls_bref_ci, defs_bref_ci },
+        { 0, false, NULL, NULL }
+    };
+# select_engine's forcing rules (which ones a lookaround would join):
+71:     * has to tell them apart. `forces_captures` is REQUEST-derived — a
+99:static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
+112: * the per-construct `forces_kreset` that stood here.
+145: * reason `forces_kreset` did, generalised: the socket exists for REWRITES that
+151: * WHAT DOES *NOT* RETIRE INTO IT: `forces_captures` (D67 contract note 1). That
+243:    { "captures", forces_captures, NULL, false },
+# mrl.c's written-down inheritance for lookaround (P: it says ZERO):
+     *
+     * EVERY CONSERVATIVE CASE UNDER-ESTIMATES, which is the safe direction: a
+     * bound below the truth prunes less and can never delete a live position.
+     *   - `A_CLASS` is 1 byte in BOTH encodings. Exact for ascii, deliberately
+     *     LOOSE for utf8, where a class holding only non-ASCII code points really
+     *     needs 2 or more (§9.5 keeps the tightening as an unbuilt option).
+     *   - the zero-width nodes contribute 0.
+     *   - an unbounded `A_REP` contributes `rmin * minw(body)` like any other.
+     * Lookaround, backreferences and `(*ATOMIC)` have no producers today; when
+     * they gain one, each contributes 0 here until someone measures otherwise,
+     * and the exhaustive switch is what forces that decision to be made.
+     */
+    
+    #include <string.h>
+    
+    #include "core/internal.h"
+    
+    /* The saturation ceiling. `A_REP` multiplies, and a tower of bounded repeats
+     * multiplies repeatedly, so an unsaturated `long long` can overflow — and a
+     * WRAPPED product is not merely wrong, it is wrong in the UNSOUND direction
+     * whenever it lands on a small positive value that still over-estimates some

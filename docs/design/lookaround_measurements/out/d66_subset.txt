@@ -1,0 +1,172 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_d66_subset.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: ef949fe 2026-08-23
+# RUN FROM REPO COMMIT        : d1d4378 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/captures.txt
+#     ?? docs/design/lookaround_measurements/out/d66_subset.txt
+#     ?? docs/design/lookaround_measurements/out/lookbehind_length.txt
+#     ?? docs/design/lookaround_measurements/out/prefilter_hazard.txt
+#     ?? docs/design/lookaround_measurements/out/premises.txt
+#     ?? docs/design/lookaround_measurements/out/spellings.txt
+# RUN DATE   : 2026-08-23T13:43:54-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3  : 3.14.4
+la_oracle SELFCHECK: none
+pcrec    : present
+
+==============================================================================
+S1 -- IS A ONE-CHARACTER LOOKAROUND REALLY THE ASSERTION IT CLAIMS TO BE?
+==============================================================================
+The identity gate's POSITIVE CONTROL rests on these equivalences. If any
+row disagrees, the control is testing the wrong thing.
+
+construct  expansion                            | cells | disagreements
+\b         (?:(?<!\w)(?=\w)|(?<=\w)(?!\w))      |    80 | 0
+\B         (?:(?<!\w)(?!\w)|(?<=\w)(?=\w))      |    80 | 0
+\A         (?<!\C)                              |    80 | 0
+\z         (?!\C)                               |    80 | 0
+(?m)^      (?:\A|(?<=\n)(?!\z))                 |    80 | 0
+(?m)$      (?:(?=\n)|\z)                        |    80 | 0
+
+# NOTE the \A/\z rows use \C (any code unit), which is NOT the pcrec
+# spelling of anything -- they are here only to show the shape, and a
+# disagreement there is about \C, not about the anchor.
+
+==============================================================================
+S1b -- THE ARTIFACT-LEVEL POSITIVE CONTROL, on the SHIPPED compiler
+==============================================================================
+What the identity gate's positive control would compare, TODAY, with
+the lookaround half refused. This measures what the control can and
+cannot see before [M6.6.2] lands.
+  (every pcrec call below passes `--features all`; the DEFAULT is
+   `std1`, which does NOT enable module `assertions` -- measured:
+   `\bfoo` under the default refuses with "requires module
+   'assertions'". That gating is a fact §10 and §9 both consume.)
+  \bfoo                        RX_NCAPS=1
+  (?<!\w)(?=\w)foo             REFUSED: pcrec: module 'lookaround' is enabled but (?<...) is not implemented yet (pattern offset 0)
+  (?m)^foo                     RX_NCAPS=1
+  (?:\A|(?<=\n)(?!\z))foo      REFUSED: pcrec: module 'lookaround' is enabled but (?<...) is not implemented yet (pattern offset 6)
+  \Bfoo                        RX_NCAPS=1
+  foo                          RX_NCAPS=1
+
+  # and the artifact SIZE + a content digest past the embedded
+  # pattern text, which is what a byte-identity gate compares:
+    \bfoo        bytes=21287  sha1(full)=fd3b75c98e552958
+    foo          bytes=18792  sha1(full)=893861a2f9e2e1d5
+
+==============================================================================
+S2 -- (?m)^ AS A SELF-ORACLE: folded implementation vs the expansion
+==============================================================================
+D66 needs the core lookbehind-anchor form. The check that would catch a
+wrong lowering is a differential between today's FOLDED (?m)^ and the
+expansion `\A|(?<=\n)(?!\z)`. Both arms measured: libpcre2 against
+itself (is the expansion even correct?) and pcrec's shipped (?m)^
+against libpcre2's (does pcrec already agree?).
+
+subject    | (?m)^X vs expansion        | pcre2 folded   | pcre2 expanded | same?
+''         | (?m)^\w / expansion        | nomatch        | nomatch        | yes
+'a'        | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+'\n'       | (?m)^\w / expansion        | nomatch        | nomatch        | yes
+'a\n'      | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+'\na'      | (?m)^\w / expansion        | (1,2)          | (1,2)          | yes
+'a\nb'     | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+'a\n\nb'   | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+'\n\n'     | (?m)^\w / expansion        | nomatch        | nomatch        | yes
+'abc\ndef\n' | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+'\r\n'     | (?m)^\w / expansion        | nomatch        | nomatch        | yes
+'a\r\nb\r\n' | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+'x\ny\nz'  | (?m)^\w / expansion        | (0,1)          | (0,1)          | yes
+
+EXPANSION DISAGREEMENTS with the folded form (libpcre2 vs itself): 0
+  ... and with the OPTION-LESS expansion arm (the probe defect): 3
+  Both numbers are reported because the second one is what an
+  uncorrected probe would have published as a finding about (?m)^.
+
+# the (?!\z) conjunct is load-bearing. Same sweep WITHOUT it:
+  `\A|(?<=\n)` (no (?!\z)) disagrees with (?m)^ on 4 of 36 cells
+
+# pcrec's own shipped (?m)^ against libpcre2, same subjects:
+  pcrec (?m)^ vs libpcre2: 0 disagreements over 24 cells
+
+==============================================================================
+S3 -- CAN AN H3 VIOLATION COEXIST WITH A LIVE PREFILTER-WINDOW CEILING?
+==============================================================================
+Swept over a small shape space rather than argued. A shape QUALIFIES
+when BOTH hold: (a) pcrec's artifact for the ERASURE stamps
+RX_VM_PRUNE_CEILING = "prefilter-window", and (b) libpcre2 says the
+erasure anchored at the true match's start ends BEFORE the true end.
+
+  ((?:a(?!q)|aq)(?:xy){0,4}q)          ceiling="prefilter-window"   H3-sharp hits=5    <== QUALIFIES
+  ((?:a(?!q)|aq)[xy]{0,4}q)            ceiling="prefilter-window"   H3-sharp hits=5    <== QUALIFIES
+  ((?:a(?!q)|aq)(?:xy){0,3}q)          ceiling="prefilter-window"   H3-sharp hits=5    <== QUALIFIES
+  ((?:a(?!q)|aq)(?:ab){0,4}q)          ceiling="prefilter-window"   H3-sharp hits=3    <== QUALIFIES
+  ((?:a(?!q)|aq)q)                     ceiling="none"               H3-sharp hits=3  
+  ((?:a(?!q)|aq)(?:xy){0,4})           ceiling="none"               H3-sharp hits=7  
+  ((?:a(?=z)|aq)(?:xy){0,4}q)          ceiling="prefilter-window"   H3-sharp hits=5    <== QUALIFIES
+  ((?:a(?=z)|aq)[xy]{0,4}q)            ceiling="prefilter-window"   H3-sharp hits=5    <== QUALIFIES
+  ((?:a(?=z)|aq)(?:xy){0,3}q)          ceiling="prefilter-window"   H3-sharp hits=5    <== QUALIFIES
+  ((?:a(?=z)|aq)(?:ab){0,4}q)          ceiling="prefilter-window"   H3-sharp hits=3    <== QUALIFIES
+  ((?:a(?=z)|aq)q)                     ceiling="none"               H3-sharp hits=3  
+  ((?:a(?=z)|aq)(?:xy){0,4})           ceiling="none"               H3-sharp hits=8  
+  ((?:a(?<=xa)|aq)(?:xy){0,4}q)        ceiling="prefilter-window"   H3-sharp hits=4    <== QUALIFIES
+  ((?:a(?<=xa)|aq)[xy]{0,4}q)          ceiling="prefilter-window"   H3-sharp hits=4    <== QUALIFIES
+  ((?:a(?<=xa)|aq)(?:xy){0,3}q)        ceiling="prefilter-window"   H3-sharp hits=4    <== QUALIFIES
+  ((?:a(?<=xa)|aq)(?:ab){0,4}q)        ceiling="prefilter-window"   H3-sharp hits=2    <== QUALIFIES
+  ((?:a(?<=xa)|aq)q)                   ceiling="none"               H3-sharp hits=2  
+  ((?:a(?<=xa)|aq)(?:xy){0,4})         ceiling="none"               H3-sharp hits=6  
+  ((?:a(?!q)|ab)(?:xy){0,4}q)          ceiling="prefilter-window"   H3-sharp hits=0  
+  ((?:a(?!q)|ab)[xy]{0,4}q)            ceiling="prefilter-window"   H3-sharp hits=0  
+  ((?:a(?!q)|ab)(?:xy){0,3}q)          ceiling="prefilter-window"   H3-sharp hits=0  
+  ((?:a(?!q)|ab)(?:ab){0,4}q)          ceiling="prefilter-window"   H3-sharp hits=0  
+  ((?:a(?!q)|ab)q)                     ceiling="none"               H3-sharp hits=0  
+  ((?:a(?!q)|ab)(?:xy){0,4})           ceiling="none"               H3-sharp hits=0  
+  ((?:ab(?!q)|abq)(?:xy){0,4}q)        ceiling="prefilter-window"   H3-sharp hits=1    <== QUALIFIES
+  ((?:ab(?!q)|abq)[xy]{0,4}q)          ceiling="prefilter-window"   H3-sharp hits=1    <== QUALIFIES
+  ((?:ab(?!q)|abq)(?:xy){0,3}q)        ceiling="prefilter-window"   H3-sharp hits=1    <== QUALIFIES
+  ((?:ab(?!q)|abq)(?:ab){0,4}q)        ceiling="prefilter-window"   H3-sharp hits=1    <== QUALIFIES
+  ((?:ab(?!q)|abq)q)                   ceiling="none"               H3-sharp hits=1  
+  ((?:ab(?!q)|abq)(?:xy){0,4})         ceiling="none"               H3-sharp hits=2  
+
+VACUITY GUARD (condition (a) must be REACHABLE in this population):
+  ok: 20 of 30 erasures carry a LIVE prefilter-window ceiling,
+      so a zero below would have been a real result
+
+SHAPES TRIED: 30.  QUALIFYING (both conditions): 16
+  ((?:a(?!q)|aq)(?:xy){0,4}q)   erasure ((?:a|aq)(?:xy){0,4}q)
+      subj='aqq'      true=(0, 3)  erased-anchored-there=(0, 2)
+      subj='aqxyq'    true=(0, 5)  erased-anchored-there=(0, 2)
+      subj='aaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+  ((?:a(?!q)|aq)[xy]{0,4}q)   erasure ((?:a|aq)[xy]{0,4}q)
+      subj='aqq'      true=(0, 3)  erased-anchored-there=(0, 2)
+      subj='aqxyq'    true=(0, 5)  erased-anchored-there=(0, 2)
+      subj='aaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+  ((?:a(?!q)|aq)(?:xy){0,3}q)   erasure ((?:a|aq)(?:xy){0,3}q)
+      subj='aqq'      true=(0, 3)  erased-anchored-there=(0, 2)
+      subj='aqxyq'    true=(0, 5)  erased-anchored-there=(0, 2)
+      subj='aaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+  ((?:a(?!q)|aq)(?:ab){0,4}q)   erasure ((?:a|aq)(?:ab){0,4}q)
+      subj='aqq'      true=(0, 3)  erased-anchored-there=(0, 2)
+      subj='aaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+      subj='xaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+  ((?:a(?=z)|aq)(?:xy){0,4}q)   erasure ((?:a|aq)(?:xy){0,4}q)
+      subj='aqq'      true=(0, 3)  erased-anchored-there=(0, 2)
+      subj='aqxyq'    true=(0, 5)  erased-anchored-there=(0, 2)
+      subj='aaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+  ((?:a(?=z)|aq)[xy]{0,4}q)   erasure ((?:a|aq)[xy]{0,4}q)
+      subj='aqq'      true=(0, 3)  erased-anchored-there=(0, 2)
+      subj='aqxyq'    true=(0, 5)  erased-anchored-there=(0, 2)
+      subj='aaqq'     true=(1, 4)  erased-anchored-there=(1, 3)
+  ... and 10 more qualifying shapes

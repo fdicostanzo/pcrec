@@ -1,0 +1,132 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_prefilter_hazard.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: fcb1609 2026-08-23
+# RUN FROM REPO COMMIT        : d1d4378 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/captures.txt
+#     ?? docs/design/lookaround_measurements/out/lookbehind_length.txt
+#     ?? docs/design/lookaround_measurements/out/prefilter_hazard.txt
+#     ?? docs/design/lookaround_measurements/out/premises.txt
+#     ?? docs/design/lookaround_measurements/out/spellings.txt
+# RUN DATE   : 2026-08-23T13:43:54-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3  : 3.14.4
+la_oracle SELFCHECK: none
+erase() fixture problems: none
+
+==============================================================================
+THE ERASURES, printed in full (backrefs §0.3 defect 2: an erasure
+nobody can read is an erasure nobody can check)
+==============================================================================
+lead-pos-la    (?=\w)\w+                ->  \w+
+lead-neg-la    (?!ab)\w\w               ->  \w\w
+lead-pos-lb    (?<=,)\w+                ->  \w+
+lead-neg-lb    (?<!\w)\w+               ->  \w+
+trail-pos-la   \w+(?=,)                 ->  \w+
+trail-pos-lb   \w+(?<=b)                ->  \w+
+mid-neg-la     a(?!b)\w                 ->  a\w
+word-pair      (?<!\w)\w+(?!\w)         ->  \w+
+H3-control     a(?!b)|ab                ->  a|ab
+H3-control-2   a(?<=xa)|ab              ->  a|ab
+H3-control-3   (?:a(?=c)|ab)c?          ->  (?:a|ab)c?
+
+==============================================================================
+H1 / H2 / H3, cell by cell
+==============================================================================
+family         subject    | P            | erase(P)     | H1    H2    H3nai   H3sharp
+--------------------------------------------------------------------------------------
+lead-pos-la    '  abc'    | (2,5)        | (2,5)        | -     -     -       -    
+lead-pos-la    'abc'      | (0,3)        | (0,3)        | -     -     -       -    
+lead-pos-la    'a b'      | (0,1)        | (0,1)        | -     -     -       -    
+lead-pos-la    ''         | nomatch      | nomatch      | -     -     -       -    
+lead-pos-la    ' a'       | (1,2)        | (1,2)        | -     -     -       -    
+lead-neg-la    'abcd'     | (1,3)        | (0,2)        | -     -     FAIL    -    
+lead-neg-la    'xycd'     | (0,2)        | (0,2)        | -     -     -       -    
+lead-neg-la    'ab'       | nomatch      | (0,2)        | -     -     -       -    
+lead-neg-la    'aab'      | (0,2)        | (0,2)        | -     -     -       -    
+lead-pos-lb    'ab,cd'    | (3,5)        | (0,2)        | -     -     FAIL    -    
+lead-pos-lb    ',ab'      | (1,3)        | (1,3)        | -     -     -       -    
+lead-pos-lb    'abcd'     | nomatch      | (0,4)        | -     -     -       -    
+lead-pos-lb    'a,,b'     | (3,4)        | (0,1)        | -     -     FAIL    -    
+lead-neg-lb    'ab cd'    | (0,2)        | (0,2)        | -     -     -       -    
+lead-neg-lb    ' abc'     | (1,4)        | (1,4)        | -     -     -       -    
+lead-neg-lb    'abc'      | (0,3)        | (0,3)        | -     -     -       -    
+lead-neg-lb    'a-b'      | (0,1)        | (0,1)        | -     -     -       -    
+trail-pos-la   'ab,cd'    | (0,2)        | (0,2)        | -     -     -       -    
+trail-pos-la   'abcd'     | nomatch      | (0,4)        | -     -     -       -    
+trail-pos-la   ',ab,'     | (1,3)        | (1,3)        | -     -     -       -    
+trail-pos-la   'a,b,'     | (0,1)        | (0,1)        | -     -     -       -    
+trail-pos-lb   'abc'      | (0,2)        | (0,3)        | -     -     -       -    
+trail-pos-lb   'ab'       | (0,2)        | (0,2)        | -     -     -       -    
+trail-pos-lb   'cba'      | (0,2)        | (0,3)        | -     -     -       -    
+trail-pos-lb   'xbxb'     | (0,4)        | (0,4)        | -     -     -       -    
+mid-neg-la     'abac'     | (2,4)        | (0,2)        | -     -     FAIL    -    
+mid-neg-la     'aab'      | (0,2)        | (0,2)        | -     -     -       -    
+mid-neg-la     'acab'     | (0,2)        | (0,2)        | -     -     -       -    
+mid-neg-la     'aa'       | (0,2)        | (0,2)        | -     -     -       -    
+word-pair      'ab cd'    | (0,2)        | (0,2)        | -     -     -       -    
+word-pair      'abc'      | (0,3)        | (0,3)        | -     -     -       -    
+word-pair      ' a '      | (1,2)        | (1,2)        | -     -     -       -    
+word-pair      'a-b'      | (0,1)        | (0,1)        | -     -     -       -    
+H3-control     'ab'       | (0,2)        | (0,1)        | -     -     FAIL    FAIL 
+H3-control     'ac'       | (0,1)        | (0,1)        | -     -     -       -    
+H3-control     'abab'     | (0,2)        | (0,1)        | -     -     FAIL    FAIL 
+H3-control     'xab'      | (1,3)        | (1,2)        | -     -     FAIL    FAIL 
+H3-control-2   'ab'       | (0,2)        | (0,1)        | -     -     FAIL    FAIL 
+H3-control-2   'xa'       | (1,2)        | (1,2)        | -     -     -       -    
+H3-control-2   'xab'      | (1,2)        | (1,2)        | -     -     -       -    
+H3-control-2   'abab'     | (0,2)        | (0,1)        | -     -     FAIL    FAIL 
+H3-control-3   'abc'      | (0,3)        | (0,1)        | -     -     FAIL    FAIL 
+H3-control-3   'ac'       | (0,2)        | (0,2)        | -     -     -       -    
+H3-control-3   'ab'       | (0,2)        | (0,1)        | -     -     FAIL    FAIL 
+H3-control-3   'abcabc'   | (0,3)        | (0,1)        | -     -     FAIL    FAIL 
+
+TOTALS over 45 cells:
+  H1 violations (rejection unsound)          : 0
+  H2 violations (erased start too LATE)      : 0
+  H3 violations, NAIVE leftmost-vs-leftmost  : 12
+  H3 violations, SHARP anchored-at-true-start: 8  <- THE NUMBER THAT
+                                                    MATTERS
+cells where erase(P) and P give DIFFERENT spans: 14
+
+VACUITY GUARDS
+  ok: the positive control produced 8 H3 violation(s), so a zero
+      in that column would have been a real result
+  ok: 14 cells exercise the erasure
+
+==============================================================================
+IN-PCREC ARM: what the SHIPPED emitter does with the erased pattern
+==============================================================================
+pcrec cannot compile a lookaround, so this arm compiles the ERASURE --
+which is exactly the machine the hybrid would attach as a prefilter --
+and reads the artifact's own stamps. It answers ONE question: would the
+MRL ceiling (`v.mrl_win`, emit_vm.c:5319) be live on these patterns?
+If it would, H3's violations are silent match loss in the DEFAULT
+engine, exactly as they were for atomic groups (114 cells).
+
+erased pattern           | engine   | prefilter  | prune ceiling
+(\w+)                    | vm       | hybrid     | none
+(\w\w)                   | vm       | hybrid     | none
+(\w+)                    | vm       | hybrid     | none
+(\w+)                    | vm       | hybrid     | none
+(\w+)                    | vm       | hybrid     | none
+(\w+)                    | vm       | hybrid     | none
+(a\w)                    | vm       | hybrid     | none
+(\w+)                    | vm       | hybrid     | none
+(a|ab)                   | vm       | hybrid     | none
+(a|ab)                   | vm       | hybrid     | none
+((?:a|ab)c?)             | vm       | hybrid     | none
+
+# and the same question asked of the artifact's own IR listing:

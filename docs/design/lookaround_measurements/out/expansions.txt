@@ -1,0 +1,138 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_expansions.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 668c280 2026-08-23
+# RUN FROM REPO COMMIT        : e129604 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/expansions.txt
+# RUN DATE   : 2026-08-23T14:15:34-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3  : 3.14.4
+la_oracle SELFCHECK: none
+pcrec    : present
+
+==============================================================================
+E1 -- IS EACH EXPANSION EQUIVALENT? (libpcre2 against itself)
+==============================================================================
+Both arms are wrapped `(?m:...)` or plain to match the folded form's own
+option state. A first version of this measurement put `(?m)` on ONE arm
+and reported three disagreements that were about `$`, not about the
+expansion -- see out/CLAUDE.md defect 4. The tails below therefore
+include `$` and `\b` DELIBERATELY, because those are option-sensitive
+and are where a one-armed wrapping shows up.
+
+construct expansion                            | cells | disagreements
+------------------------------------------------------------------------------
+\b        (?:(?<=\w)(?!\w)|(?<!\w)(?=\w))      |   108 | 0
+\B        (?:(?<=\w)(?=\w)|(?<!\w)(?!\w))      |   108 | 0
+(?m)^     (?:\A|(?<=\n)(?!\z))                 |   108 | 0
+(?m)$     (?:(?=\n)|\z)                        |   108 | 0
+\Z        (?=\n?\z)                            |   108 | 0
+$         (?=\n?\z)                            |   108 | 0
+^         \A                                   |   108 | 0
+\A        \A                                   |   108 | 0
+\z        \z                                   |   108 | 0
+\G        -                                    |   --  | NO EXPANSION (a PRIMITIVE against startpos -- NO lookaround expansion exists)
+\K        -                                    |   --  | NO EXPANSION (a match-START operator, not an assertion -- no expansion, and PCRE2 REFUSES it inside a lookaround (err 199))
+
+TOTAL: 972 cells, 0 disagreements
+
+# VACUITY GUARD: a WRONG expansion must be able to show up here.
+# The control is `(?m)^` expanded WITHOUT the (?!\z) term, which D66's
+# own text says is load-bearing:
+    `\A|(?<=\n)` (no (?!\z)) disagrees on 4 of 108 cells
+
+==============================================================================
+E2 -- DOES EACH BODY FALL INSIDE THE SUBSET §2.5 SHIPS?
+==============================================================================
+A lookAHEAD body has NO width rule -- any body is legal. A lookBEHIND
+body must have every top-level branch fixed-width. Measured per body by
+asking libpcre2 for PCRE2_INFO_MAXLOOKBEHIND on a lookbehind built from
+it, and by asking whether the body compiles as a lookbehind at all.
+
+body          dir     note                           | pcre2 as (?<=B) | maxlb | ships?
+----------------------------------------------------------------------------------------------------
+(?<=\w)       behind  one class, width 1             | ok              | 1     | YES (fixed width 1)
+(?!\w)        ahead   one class                      | ok              | 1     | YES (a lookahead has no width rule)
+(?<!\w)       behind  one class, width 1             | ok              | 1     | YES (fixed width 1)
+(?=\w)        ahead   one class                      | ok              | 1     | YES (a lookahead has no width rule)
+(?<=\n)       behind  one literal, width 1           | ok              | 1     | YES (fixed width 1)
+(?!\z)        ahead   an ANCHOR as the body          | ok              | 0     | YES (a lookahead has no width rule)
+(?=\n)        ahead   one literal                    | ok              | 1     | YES (a lookahead has no width rule)
+(?=\n?\z)     ahead   OPTIONAL + anchor -- widths 1..2 | ok              | 1     | YES (a lookahead has no width rule)
+
+# BODIES pcrec's §2.5 RULE REFUSES AS LOOKBEHINDS THOUGH PCRE2 ACCEPTS
+# THEM. Note the column: PCRE2 says `ok` to all three, because PCRE2
+# ships variable-length lookbehind and pcrec does not. maxlb alone
+# cannot show this -- an OPTIONAL body has minw 0 and maxw 1, and
+# PCRE2 publishes only the max -- so the classification is by the
+# BODY's own shape and is stated, not read off the oracle:
+    (?<=\n?\z   )x  pcre2=ok       maxlb=1    minw=0 maxw=1  pcrec: REFUSED (variable)
+    (?<=\n?     )x  pcre2=ok       maxlb=1    minw=0 maxw=1  pcrec: REFUSED (variable)
+    (?<=\w?     )x  pcre2=ok       maxlb=1    minw=0 maxw=1  pcrec: REFUSED (variable)
+    (?<=\n      )x  pcre2=ok       maxlb=1    minw=1 maxw=1  pcrec: SHIPS
+    (?<=\w      )x  pcre2=ok       maxlb=1    minw=1 maxw=1  pcrec: SHIPS
+    ^ `(?=\n?\z)` is a LOOKAHEAD in the \Z/$ expansion, so its
+      optional body is legal THERE and would be refused as a
+      LOOKBEHIND. The distinction is DIRECTION, not the body -- which
+      is why every expansion in E1 compiles under §2.5 despite one of
+      them containing an optional.
+
+==============================================================================
+E3 -- python3 `re` on each expansion (the D27 goal-facts input)
+==============================================================================
+construct expansion                            | python3 re
+------------------------------------------------------------------------------------------
+\b        (?:(?<=\w)(?!\w)|(?<!\w)(?=\w))      | ok
+\B        (?:(?<=\w)(?=\w)|(?<!\w)(?!\w))      | ok
+(?m)^     (?:\A|(?<=\n)(?!\z))                 | ok
+(?m)$     (?:(?=\n)|\z)                        | ok
+\Z        (?=\n?\z)                            | ok
+$         (?=\n?\z)                            | ok
+^         \A                                   | ok
+\A        \A                                   | ok
+\z        \z                                   | ok
+\G        -                                    | (no expansion)
+\K        -                                    | (no expansion)
+
+# and the FOLDED spellings, for the same author:
+    \b        -> ok
+    \B        -> ok
+    (?m)^     -> ok
+    (?m)$     -> ok
+    \Z        -> ok
+    $         -> ok
+    ^         -> ok
+    \A        -> ok
+    \z        -> ok
+    \G        -> PatternError: bad escape \G at position 0
+    \K        -> PatternError: bad escape \K at position 0
+
+# the variable-width lookbehind the charter warns about, as its own cell:
+    (?<=\n?\z)x      python=PatternError: look-behind requires fixed-width pattern pcre2=ok
+    (?<=\n?)x        python=PatternError: look-behind requires fixed-width pattern pcre2=ok
+    (?<=\w)x         python=ok                                             pcre2=ok
+    (?<!\w)x         python=ok                                             pcre2=ok
+    (?<=\n)x         python=ok                                             pcre2=ok
+
+==============================================================================
+E4 -- pcrec's SHIPPED FOLDED form against libpcre2's EXPANSION
+==============================================================================
+The D66 self-oracle's shape, run on the expansions themselves. pcrec
+compiles the FOLDED spelling (module `assertions`, shipped); libpcre2
+evaluates the EXPANSION. Agreement here is what makes §6.3's corpus-wide
+driver worth building; a disagreement would kill the hand-off.
+
+
+  pcrec FOLDED vs libpcre2 EXPANDED: 0 disagreements over 324 cells (0 patterns skipped)
