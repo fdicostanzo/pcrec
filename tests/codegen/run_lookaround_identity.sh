@@ -50,16 +50,32 @@
 #       (the module has not landed) and no `u.rep` (the union has not landed).
 #       A mistyped pin that resolved to something recent would otherwise build
 #       a reference that agrees everywhere and report a clean bill of health.
-#   (b) THE GATE IS DEMONSTRATED RED. Run this, and it must FAIL loudly:
+#   (b) THE GATE IS DEMONSTRATED RED, and this is the recipe that was run.
+#       In `vm_rep`'s mandatory-copies loop (`src/gen/emit_vm.c`, the
+#       `for (int i = 0; i < a->u.rep.rmin; i++) {` inside the POSSESSIVE arm
+#       — the line is not unique in the file, so edit it BY LINE NUMBER, not
+#       with a bare `sed`), swap the one read `a->u.rep.rmin` for
+#       `a->u.rep.rmax`. That is a single-site read swap: a bounded `{m,n}`
+#       then emits `n` mandatory body copies where it owes `m`.
 #
-#         sed -i 's/vm_fmul(a->u.rep.rmin - i, bw)/vm_fmul(a->u.rep.rmax - i, bw)/' \
-#             src/gen/emit_vm.c
+#         python3 - <<'EOF'
+#         P="src/gen/emit_vm.c"; L=open(P).read().split("\n")
+#         i = next(j for j,x in enumerate(L)
+#                  if x.strip() == "for (int i = 0; i < a->u.rep.rmin; i++) {"
+#                  and 4000 < j < 4200)
+#         L[i] = L[i].replace("a->u.rep.rmin", "a->u.rep.rmax")
+#         open(P,"w").write("\n".join(L))
+#         EOF
 #         make -j12 && bash tests/codegen/run_lookaround_identity.sh   # RED
 #         git checkout src/gen/emit_vm.c && make -j12                  # revert
 #
-#       Measured at wave 0 on exactly that edit: see the lane's report and the
-#       journal entry for the differing counts. A gate that has never been seen
-#       red is a gate nobody has checked.
+#       MEASURED at wave 0 on exactly that edit: differing stdout comparisons
+#       default 39, --engine=vm 43, -fno-prefilter 39, --no-captures 22 —
+#       `checks failed: 4`, one per axis. Representative differing patterns:
+#       `((?:a{0,2}b)+c)`, `(?:aa|a)++b`, `(?:a\K){2,}b`. Note that all four
+#       axes caught it but with DIFFERENT counts, which is the argument for
+#       running four: no single axis sees the whole surface. A gate that has
+#       never been seen red is a gate nobody has checked.
 #
 # THE BUCKET SPLIT IS WAVE E'S, NOT THIS WAVE'S. When module `lookaround`
 # actually lands, this script grows a grammar-aware classifier that splits the
@@ -164,7 +180,15 @@ python3 - "$ROOT_DIR/tests/reject/run_reject_tests.sh" "$REJPAT" <<'PY'
 import shlex, sys
 src, out = sys.argv[1], sys.argv[2]
 pats, skipped = [], 0
-for line in open(src, encoding="utf-8", errors="surrogateescape"):
+# Rows may be CONTINUED with a trailing backslash; join them before parsing,
+# or shlex chokes on the dangling escape and 11 real reject rows are lost.
+raw, joined = open(src, encoding="utf-8", errors="surrogateescape").read(), []
+for line in raw.split("\n"):
+    if joined and joined[-1].endswith("\\"):
+        joined[-1] = joined[-1][:-1] + " " + line.strip()
+    else:
+        joined.append(line.rstrip())
+for line in joined:
     s = line.strip()
     if not (s.startswith("reject ") or s.startswith("accept ")
             or s.startswith("reject_gated ")):
