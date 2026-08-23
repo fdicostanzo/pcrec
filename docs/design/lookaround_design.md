@@ -89,6 +89,54 @@ on the body's own site. A second: the `Σ*·L` prototype's fixture list carried
 **3**, the SUBSET size — and the subset size is the right column, because
 [ENG-LOOK] must decline on what it is about to BUILD.
 
+### R33 ROUND 3 — THE VERIFIER's PASS (2026-08-23)
+
+**Verdict on the revision: FIX-AGAIN — three blocking, all TEXT-ONLY, plus
+nine non-blocking.** No fix was refuted; **every HIGH fix was independently
+CONFIRMED**, the verifier's own probes agreeing with this lane's archives
+byte-for-byte. It also EXTENDED C1-1's lookbehind half to exact-count GROUPS,
+which are the sharper cells — a reader is likelier to think a group is not a
+rung than to think `a{3}` is not:
+
+```
+((?:(?:ab){2}))c -> bound 1     ((?:(?:ab){2}))cde -> bound 3
+((?:a{2}))b      -> bound 1     ((?:a{2}))bcd      -> bound 3
+```
+
+Both are now in §3.4's evidence.
+
+| item | what was wrong | where it is now |
+|---|---|---|
+| **V-1 (BLOCKING)** | §3.2.1 said "§3.6 restates" the scoping and §3.6 did not — the section a reader following "the atomic shape MINUS the cut" actually reads | §3.6 carries the sentence |
+| **V-2 (BLOCKING)** | §6.3's P1/P2 still read 270/368 after the Q4 fix, and they must sum to 624 | **263 + 361 = 624** |
+| **V-3 (BLOCKING)** | §11's B+C bar (three rows `built`) and §8.3 ("flips all six the moment the port lands") contradicted each other | both say the split is **the port's own tail check**: B+C recognises the three lookahead tails and DECLINES the three `<` tails at `WANT_RESULT`; wave D deletes the decline |
+| **V-4** | F3's last row printed a COMPILE FAILURE as a measurement — `a(?=b+c)` is refused (the module is not built) and `bounds()` returned the same `None` for "refused" and "no sites" | `bounds()` returns `"REFUSED"`; §3.4's nesting sentence is **ARGUED from PCRE2**, not measured |
+| **V-5** | §5.8's "everywhere else the two agree" was not a count and was false | **counted**: 22 rows, 16 modelled, 6 n/a, **TWO** under-counts — and `ac|bc` (i.e. `(a|b)c` written out, a NON-CONTROL) is **3 against 5**, which the `n/a` row was hiding. The `(?:` rows' n/a reason was the prototype's TOKENISER, not the body; `(?:` is normalised and they now say "nested alternation" |
+| **V-6** | §11's A2 budget covered the `-Wswitch`-visible arms and not the FOUR kind switches carrying a `default:` | tabulated and **each inspected**: `revdet.c:370` widens to all bytes (sound), `emit_vm.c:1132` declines (sound), `:1176` returns −1 (sound, gated), `:3132` is a hard `ctx_fail` (sound and loud) |
+| **V-7** | S-LA17's anchor would be the two-line idiom `vm_atomic` already carries at `:4246-4247`, so `SAB_COUNT=1` is dishonest | the row requires an anchor including `vm_look`'s own surrounding text |
+| **V-8** | "restores at `L_next`" — `vm_atomic` has TWO returns and restores at both | "on every return path of `vm_look`", with `:4256-4257` and `:4285-4286` cited |
+| **V-9** | the C1-1 row cited a §3.7 note that does not exist | cites §3.6's restatement instead |
+| **V-10** | §9.3 called out `--features` only for `\K`; `std1` is FROZEN at `{classes, modifiers}`, so it lacks `lookaround` too | **every** cell carries `features lookaround`; the rows needing `assertions` or `backrefs` name those as well |
+| **V-11** | P-10..P-16 were out of order | P-1..P-16 in order |
+| nit | S-LA13's "five hits" — `grep` returns seven LINES, five of them sites | stated as seven lines / five sites |
+
+**TWO MORE PROBE DEFECTS OF THIS LANE'S OWN, both found by implementing the
+verifier's items** (defects 12 and 13 in
+`lookaround_measurements/out/CLAUDE.md`, thirteen total):
+
+1. **V-12 was one bug and the fix found a second.** The class walk tested
+   `c == "^" and clspos == 0`, which fires for EVERY leading-position caret
+   rather than only the negation — so `[^^]` consumed BOTH carets as
+   "not content", the `]` then read as the literal-first `]`, the class never
+   closed, and **`[^^]$` lost its `$` entirely**. Fixing it exposed a
+   sibling: an ESCAPE inside a class was not counted as content, so `[\]]`
+   had the same failure. Both fixed; **the population is CONFIRMED unchanged
+   at 263 / 8,260**, which is what V-12 asked for.
+2. The `(?:`-normalisation in the sizing prototype (V-5) means six rows'
+   stated `n/a` reasons were describing the TOKENISER and not the body. A
+   reason that names the instrument instead of the subject is the same shape
+   as a refusal printed as a measurement (V-4), one layer over.
+
 ---
 
 ## 0. How to read this

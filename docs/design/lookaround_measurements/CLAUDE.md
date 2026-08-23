@@ -59,7 +59,9 @@ STRUCTURAL / ARGUED accordingly.
   lane's first simplification of the lookbehind ruling, C1-3's non-atomic
   branch-retry cells and C1-7's `\K` refusal-scope controls.
 - `probes/archive.sh` — the ONLY writer of `out/`.
-- `out/` — archived output; see its own CLAUDE.md, which carries the ELEVEN
-  instrument defects this lane found by running its own probes — two of them
-  in the R33 fix round, and one of those is a wrong EXPECTATION caught by a
-  self-check that refused to publish.
+- `out/` — archived output; see its own CLAUDE.md, which carries the THIRTEEN
+  instrument defects this lane found by running its own probes — FOUR of them
+  across the two R33 rounds. Two are worth the shape rather than the count: a
+  wrong EXPECTATION caught by a self-check that refused to publish, and a
+  COMPILE FAILURE rendered as a measurement because one return value meant
+  both "refused" and "nothing found".
