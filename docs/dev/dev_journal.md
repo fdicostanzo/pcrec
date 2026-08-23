@@ -11991,3 +11991,40 @@ for the record: the first patch's `def main():` anchor never matched
 (the function is `def main(argv):`) so the marker constant was not
 defined until the verifier's NameError said so — a replacement without
 an assertion, the shape the backrefs lane owned this morning.
+
+## 2026-08-22 (EDT), thirty-sixth session (part 12) — [M6.5.2] MERGED (3aa446f): the blinded corpus found NO implementation divergence this time
+
+The backrefs lane delivered at fb97bab (21 commits; make test 23,798/0
+incl. corpus 22,133; its OWN ubsan and asan both EXIT=0 with zero
+sanitizer reports; strict green with -Wshadow newly promoted; identity
+gate 1501/1502/1501 byte-identical on three axes against the pinned pre-
+module 5286265 with the positive control refusing all 124 backref
+patterns — and the nocaptures axis caught a real bug: pcrec_bref_resolve's
+early return skipped the unreferenced-A_CAP strip, so every --no-captures
+artifact with a group emitted different bytes). Three measured
+disagreements with the approved design, all accepted: §11.2's span-
+divergence population had one detector in three (the hybrid's planted
+window must FAIL TO CONTAIN the true match to change an answer — swept
+for the property instead of picking cells); §10's matrix mis-predicts
+`(?<n>a)\k<n>` under std1 (pcrec names the LEFTMOST unhandled construct,
+the declaration); §9's `\g`-row prediction silently depended on moving
+the relative-reference validity check to §5.3's single resolution site.
+Registry 104→106 rows, 38→52 built, 60→48 unbuilt, qualifying 52→54,
+wired 6→18 (the D67 generic capability check CAUGHT twelve rows lacking
+witnesses). Sabotage rows S102-S120 (renumbered — S100/S101 collided
+with the atomic lane's). Four stale anchors re-derived from its own
+edits (S10, S22, S26, S94).
+
+MERGE at 20:5x: clean auto-merge (the lane never touched journal/plan);
+compliance page regenerated from the merged store — both sides had
+regenerated today (D68, the backrefs refresh) — 106 rows, 90 keys,
+--check and --check-annotations green; tripwire 118 sabotages, all
+anchors resolve. D27 ACCEPTANCE RUN (brd27 9c3f9aa vs 3aa446f): 193 pass
+/ 7 fail, pending-vm 0, and ALL SEVEN are corpus-side — three caseless
+cells missing `modifiers` in their features line (one of them `\xdf`
+under `flags i` with no features at all), three enabled-direction
+gating cells that were VACUOUS perr pre-module (the atomic author's
+class exactly), and their duplicates — NO implementation divergence.
+The author's cell binary refreshed; corrections requested. Union
+battery launched on 3aa446f (build/battery_m65.log, 20:59). Owed: mech
+(118 rows), gate, archive, close.
