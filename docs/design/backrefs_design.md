@@ -2014,6 +2014,24 @@ closes.
 
 ## 9. Registry visibility and D65's `built` column (charter (viii))
 
+> **AMENDMENT, 2026-08-22 ([M6.5.2] landing, manager):** this section's `built`
+> prediction for the `\g` row silently depended on a change the design never
+> stated. The row derives `built` only if the RELATIVE-reference validity
+> check (`\g{-n}` with too few groups before it) is NOT done at the port:
+> `br_relative` now computes the arithmetic and never refuses (a
+> `PendingRef.number` may be <= 0), and validity is asked at §5.3's single
+> end-of-parse resolution site. Without that move §9's own predicted figures
+> do not come out. Measured by the implementation lane (its report §5c) and
+> accepted; recorded here rather than left as tribal knowledge. Two further
+> corrections from the same landing: §11.2's span-divergence population had
+> one detector in three — a planted prefilter changes an answer only when
+> the erased window FAILS TO CONTAIN the true match, so the driver sweeps for
+> that property and asserts it per cell (run_backref_diff.sh §8); and §10's
+> matrix mis-predicts `(?<n>a)\k<n>` under std1 — pcrec names the LEFTMOST
+> construct it cannot handle, the declaration, so it says `named-groups`
+> (pinned as measured in tests/reject).
+
+
 D65's `built` column is DERIVED, not declared: `pcrec_construct_built_status`
 (`src/parse/syntax_dump.c`, declared `src/core/internal.h:1754`) drives the
 doorway with all features forced open and reads `ExtResult.answered_at`. So a
