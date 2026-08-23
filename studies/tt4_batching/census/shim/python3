@@ -12,9 +12,20 @@ set -u
 : "${TT4_LOG:?TT4_LOG not set}"
 
 script="unparsed"
+skip_next=0
 for a in "$@"; do
+    if [ "$skip_next" = "1" ]; then skip_next=0; continue; fi
     case "$a" in
         *.py) script="$(basename "$a")"; break ;;
+        # -c/-m take a VALUE as the NEXT argument (inline code / module
+        # name) -- that value is not a script path and must be skipped
+        # too, or it gets misread as the "script" name (found live:
+        # `python3 -c "$MULTILINE_SNIPPET"` logged the snippet's own text,
+        # embedded newlines and all, corrupting the TSV row -- 2 of 46,356
+        # Stage A2 records, fixed here 2026-08-23 for future runs).
+        -c) script="inline:-c"; skip_next=1; break ;;
+        -m) skip_next=1; continue ;;
+        -) script="stdin:-"; break ;;   # `python3 - args... <<'HEREDOC'`
         -*) continue ;;
         *) script="$(basename "$a")"; break ;;
     esac

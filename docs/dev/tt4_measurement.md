@@ -488,6 +488,129 @@ and compiled under the harness's exact `GENCFLAGS`):
   simply refusing to co-batch patterns with different `--features` sets)
   — not assumed away.
 
+## Stage A2: the remainder
+
+Manager review of Stage A: `make test` totals **3,777 CPU-s**, of which
+gcc is 647s (17%) and pcrec 275s (7%) — **76% ("remainder") was
+unattributed.** Batching gcc at the Stage B numbers above therefore caps
+at roughly gcc's OWN 17% share of the suite's total CPU, not anywhere
+near the whole thing — worth stating plainly before anyone reads 3.66x as
+"the suite gets 3.66x faster." Also worth restating against the plan
+row's own premise: this census measured **4,845 gcc calls total across
+`make test`**, not the "~20,000 tiny compile-and-link gcc invocations"
+`docs/dev/plan.md`'s [TT-4] charter cites — the ~20,000 figure is closer
+to the true count of GENERATED-MATCHER EXECUTIONS (Stage A2 below finds
+19,185 for `corpus` alone) than of gcc invocations; the two were
+conflated in the charter's own framing.
+
+**Method**: added `timeout` and `python3` PATH shims (same transparent-
+wrapper shape as `gcc`/`cc`/`pcrec` — see studies/tt4_batching/census/
+CLAUDE.md) to attribute the remainder directly, named from the harness's
+own code: `tests/harness/run.sh:356` execs the compiled matcher **ONCE
+PER CASE** (`out="$(timeout "$RUN_SECS" "$bdir/t" "$subj" "$pos")"`
+inside a bash command substitution), and pcrec itself is also invoked
+through `timeout` (run.sh:262). Re-censused the top remainder sections
+from Stage A (`corpus`, `assertions`, `rungselect`, `counterk`,
+`backrefs`, `mrl`, plus `altcls` as a small control) with both new shims
+wired in, serially, box idle, `TT4_SECTION_TIMEOUT=1000`. All 7 completed
+within their bound (none skipped). `shim/timeout` classifies each call by
+its COMMAND target (skipping leading timeout options), not by section —
+`pcrec-target`, `driver-target` (the compiled `t` binary), or
+`other:<basename>`.
+
+**A methodological finding surfaced immediately and had to be resolved
+before the table below means anything**: naively summing per-call WALL
+time for the ~19,000 matcher-run spawns (as this memo's Stage A gcc/pcrec
+tables do successfully for the much-smaller gcc/pcrec call counts) gives
+a number — 2,013.72 core-seconds for `corpus` — that EXCEEDS the
+section's own measured CPU-seconds (947.50s from `/usr/bin/time -v`,
+which is a real physical upper bound on total processor time, unlike a
+wall-time sum). This is not a bug in the shim; it is what happens when
+thousands of near-instant processes (median matcher execution is
+microseconds) are spawned faster than 12 cores can service them — the
+summed WALL time is dominated by **scheduling queue wait**, not compute,
+and stops being a valid core-seconds estimate at this call volume. The
+table below therefore reports matcher-run wall-sum as its own column,
+explicitly flagged, and EXCLUDES it from the residue computation (residue
+= section CPU minus gcc minus pcrec minus python3 ONLY) rather than
+silently producing a nonsensical negative "remainder."
+
+```
+section          gcc-s  pcrec#   pcrec-s   runs# runs-wallsum    py3-s  sec-wall   sec-cpu  residue*  residue%
+----------------------------------------------------------------------------------------------------------------------------------
+corpus          261.39    2271     16.75   19185      2013.72     0.00    468.91    947.50    669.35     70.6%
+assertions       50.87    7651     70.31       0         0.00    17.87    478.09   1273.40   1134.35     89.1%
+rungselect       44.29    5761     24.52       0         0.00     0.00    323.30    435.90    367.10     84.2%
+counterk         20.20     156     12.81       0         0.00     0.00    225.01    269.30    236.29     87.7%
+backrefs         24.00     193      0.49       0         0.00     2.50    235.58    268.75    241.76     90.0%
+mrl              48.28    3273      6.91       0         0.00     0.00    134.62    201.61    146.42     72.6%
+altcls            7.90     101      0.28       0         0.00     0.00     26.10     26.39     18.21     69.0%
+```
+(residue = sec-cpu − gcc-s − pcrec-s − py3-s; runs-wallsum NOT subtracted, see above)
+
+**The single biggest, least expected finding: `corpus` is the ONLY one of
+the seven sections with any `driver-target` (matcher-run) timeout calls
+at all — 19,185 of them. The other six show ZERO.** Checked directly
+(`grep -n "run.sh\|harness/run" tests/assertions/run_assertions_tests.sh
+tests/rungselect/run_rungdiff.sh tests/counterk/run_counterkdiff.sh` — no
+hits in any): `assertions`, `rungselect`, `counterk`, `backrefs`, `mrl`
+do NOT go through `tests/harness/run.sh` AT ALL. Each is its own
+purpose-built C DIFFERENTIAL DRIVER that loops over its entire subject
+sweep INSIDE ONE PROCESS — i.e., every one of these six sections has
+ALREADY adopted the "one process, many cases, no re-exec" shape that
+this memo's own manager-requested exec-cost prototype cell (below)
+measures as a lever. **The per-case-exec shape the manager's remainder
+question was worried about is a property of `tests/harness/run.sh`
+specifically, not of the suite generally** — it is real, and it is
+`corpus`-shaped (and, per Stage A's ranking, `test-known-fail`, which
+also drives run.sh, though its wall is near-zero since the directory is
+empty). For the six differential sections, the 69-90% "residue" is real
+CPU work happening inside their own compiled drivers' subject sweeps —
+genuinely invisible to ANY exec-based shim by construction, since no new
+process is ever spawned for it. This is the STATED BLIND SPOT: anything
+that runs inside an already-running process (a differential driver's own
+sweep loop, python's own interpreter loop, bash's own string/loop
+overhead within a script) cannot be attributed by a shim that only sees
+process boundaries, no matter which binaries get named.
+
+**A second, smaller finding, informative for the D45 CPU-budget
+mechanism specifically**: `tests/lib/gen_timeout.sh`'s `gen_cc` wraps
+every generated-code compile in `timeout WALL bash -c 'ulimit ...;
+_gen_cc_run ...'` (the D45 CPU-budget enforcement) — logged by
+`shim/timeout` as `other:bash`, one record per gcc call, in the sections
+that route through it: `corpus` 1,906 calls / 403.97s wall-sum (vs.
+261.39s of that being the REAL gcc compile per the direct `gcc`-tool
+shim — the ~142.6s difference is the wrapper's own bash-fork+ulimit
+overhead, ~75ms/call at this volume), `rungselect` 206/62.69s,
+`mrl` 153/58.98s, `counterk` 60/25.08s, `altcls` 41/10.72s.
+`assertions` and `backrefs` show ZERO `other:bash` records despite having
+real gcc calls (50.87s and 24.00s respectively) — their compile sites
+call `$CC` directly rather than through `gen_cc`, a second real
+divergence in how sections reach the compiler, found by the same shim
+rather than assumed.
+
+**python3, by script** (only two sections used it in this re-census):
+`assertions` — `verify_pcre2.py` 15.05s, `pcre2_oracle` 2.52s (plus
+several small `<script:...>` odds under 0.15s each, all from inline
+`python3 - args <<'PY'` heredoc invocations whose classifier reads the
+FIRST non-flag argv token, not the heredoc body); `backrefs` —
+`bref_oracle.py` 2.15s plus similar small heredoc-argv odds. **A real,
+minor classifier bug was found and fixed mid-run**: `shim/python3`'s
+first version read the VALUE of a `-c "..."` invocation
+(`tests/backrefs/run_dupnames_diff.sh:59`'s multi-line inline snippet) as
+if it were a script name, corrupting 2 of 46,356 log lines (embedded
+newlines broke the TSV's one-record-per-line assumption — both excluded
+automatically by the summarizer's own field-count check, logged as
+parse warnings, and visible in the raw log for anyone who wants to see
+them). Fixed for future runs (`-c`/`-m` now correctly skip their value
+argument); not re-run, since the two affected records are negligible
+(0.004% of the log) and re-running the whole 7-section census again was
+not in this row's remaining time budget.
+
+### The exec-cost prototype cell (a lever measured on the same footing as gcc-batching)
+
+<!-- EXECCOST_PLACEHOLDER -->
+
 ## What the numbers say
 
 **Unlike [TT-3]'s ccache row, this one is a measured YES, not a refuted
