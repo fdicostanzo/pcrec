@@ -1156,3 +1156,21 @@ All three were run through the canonical driver before handback — `1 rows
 hand-applied, which is wave D's S82 lesson: a hand-validated failing direction
 and the driver's can differ, and only the driver's is reproducible. Re-validate
 with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.
+
+## Retired rows
+
+- **S108_rdshape_accepts_bref — RETIRED 2026-08-23 (manager ruling at the
+  [M6.5] close).** Measured UNOBSERVABLE by the [M6.5.2] fix lane: the
+  sabotage flips `rd_shape`'s verdict for a backreference body, but
+  `pcrec_uniq_iteration`'s Glushkov arm (`possessify.c` `case A_BREF:
+  g->ok = false`) independently declines every such body — the two gates
+  are coextensive — so the reverse rung is never offered it and the
+  emitted artifact is byte-identical to clean on the whole population.
+  The wall in `rd_reverse` is real and fires when BOTH gates are removed,
+  but the matrix applies ONE before/after hunk in ONE file, so that
+  control is inexpressible today. A scored row that cannot go red is not
+  a control, and the matrix has no expected-undetected mechanism; hence
+  retired rather than left as a standing UNDETECTED. Residuals recorded
+  on the [M6.5] close row: a multi-hunk sabotage mechanism, and a row for
+  the Glushkov A_BREF arm itself (load-bearing for possessify, no row).
+  Row numbering unchanged (S102-S107, S109-S120).
