@@ -17,5 +17,10 @@ re-measure before load-bearing use.
   a separate Claude session, adopted 2026-08-16). Harness + 43 validated
   candidates + measured studies behind a generator design. See its
   CLAUDE.md and `precompiled-simd-matchers.md`.
+- `tt4_batching/` — [TT-4.1] measurement study for batched test compilation:
+  a gcc/cc/pcrec invocation-census shim (`census/`) over one full `make
+  test`, and a batching prototype (`proto/`) measuring three compile-shapes
+  at several batch sizes on the two worst sections the census names. Backs
+  docs/dev/tt4_measurement.md. See its own CLAUDE.md.
 
 Maintenance: update this file when studies are added/removed.
