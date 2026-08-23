@@ -1137,119 +1137,399 @@ and the measured cost of the flat one is that a pattern loses a pruning
 ceiling it would rarely have had — against a silent match loss if the shape
 analysis is wrong anywhere.
 
-### 5.7 THE DFA-ELIGIBLE SUBSET — recommendation: HAND TO [DD-11]
+### 5.7 THE DFA ANSWER IS [ENG-LOOK], AND THERE IS NO FOLD
 
-D66's customer is a **one-character fixed lookaround whose body is a single
-class**, which IS module `assertions`' alphabet-context assertion. The
-recognizer is easy to state:
+**RULED by Frank, 2026-08-23 13:5x, and this section is a rewrite rather than
+a recommendation.** An earlier revision of this design proposed a
+ONE-CHARACTER FOLD: recognize a lookaround whose body is a single class and
+rewrite it into the assertions module's existing context-assertion node, so
+`(?<=\n)`-shaped lookarounds stayed DFA-eligible. **That is refused.** Frank's
+words, recorded in the `[ENG-LOOK]` plan row: *"my concern is unnecessary
+special handling code and duplicate code paths … is the one character
+optimization the best form, or merely one that works for the immediate
+need?"* It is the latter. **No one-character fold ships anywhere.**
 
-> An `A_LOOK` is **context-eligible** when `look_atomic`, its body is a single
-> `A_CLASS` node, it has no captures and no alternation, and (for a
-> lookbehind) `look_nbranch == 1 && look_widths[0] == 1`. It desugars to the
-> assertions module's context assertion of the same polarity and direction.
-> The `\z`/`\A`-shaped end forms `(?!\C)`-style desugar to the existing
-> `A_END`/`A_BOL` nodes.
+**THE GENERAL FORM IS CHARTERED AS `[ENG-LOOK]`** (plan.md, `43a3125`):
+lookaround by PRODUCT CONSTRUCTION in the DFA. `(?<=L)` at `p` holds iff
+`subject[..p] ∈ Σ*·L` — a property of text the forward scan has ALREADY
+CONSUMED — so the main automaton is product-constructed with each body's
+recognizer during determinization and the assertion becomes a predicate on the
+product state; `(?=L)` is the same property in the REVERSE machine; bounded
+lookahead in the forward pass is a k-byte delayed acceptance; unbounded
+lookahead in the forward pass is DROPPED (a superset — §5.3, and sound for
+end-finding) and resolved in the reverse pass or by the VM. **Today's
+assertions machinery IS that construction for one-class bodies** and becomes
+an INSTANCE, then gets deleted under an identity gate — which is exactly why a
+fold would have been the duplicate path rather than a step toward it.
 
-**THE EQUIVALENCES ARE MEASURED AND THEY HOLD.** `out/d66_subset.txt` S1,
-**80 cells each, 0 disagreements**, over 16 subjects × 5 option-scoped tails:
+**SO THIS MODULE'S §5 IS THREE SENTENCES.**
+
+1. **[M6.6.2] ships the VM lowering as THE SEMANTICS.** Every lookaround
+   pattern is VM-routed: the six registry rows stay `VM_ONLY` and SR-8 stamps
+   (§5.1). The VM remains the exact verifier and the only engine that can
+   carry captures, backreferences and nested lookaround inside a body — a
+   fact §3.5 already measured (`(?<=(a)(b))c` reports both groups).
+2. **The DFA answer is `[ENG-LOOK]`**, a follow-on ENGINE row with its own
+   design gate and its own D6 panel. Not this module's to build and not this
+   module's to prejudge.
+3. **What this design HANDS [ENG-LOOK]** is §5.3-§5.6's prefilter soundness
+   statement and hazard measurement, §5.8's sizing inputs, and §3's sub-program
+   requirement (§6.4). Those three are the row's own stated prerequisites and
+   they are discharged here.
+
+### 5.8 SIZING INPUTS FOR [ENG-LOOK]
+
+The `[ENG-LOOK]` row says **MEASUREMENT FIRST** and names the number: the size
+of each body's component automaton and the expected product growth against the
+caps, with wave B's 38,009-against-32,000 as the precedent. MEASURED,
+`out/englook_sizing.txt`.
+
+**THE METHOD, stated so a panel can reject it.** The component a lookBEHIND
+body `L` needs is the recognizer for `Σ*·L`, and **pcrec's UNANCHORED FORWARD
+DFA for the pattern `L` IS that machine** — unanchoredness is the automaton's
+own self-loop (D58's "Why" paragraph), which is precisely the `Σ*` prefix. The
+component a lookAHEAD needs is `reverse(L)·Σ*`, and pcrec's REVERSE machine
+for the same pattern is that. So the probe compiles the BODY ALONE and reads
+**the emitter's own array dimensions** out of the emitted C —
+`len(rx_forward_is_accepting[])` for states, `len(rx_forward_next_state[]) /
+states` for classes — with no model in between and nothing derived by the
+probe itself. The caps are `PCREC_MAX_DFA_STATES_GOTO = 10000` and
+`PCREC_MAX_DFA_STATES_TABLE = 32000` (`src/core/limits.h:47-49`).
+
+**THE COMPONENTS ARE SMALL.** Every body in the assertion-family expansions
+and every body in an enumerable real-lookaround population:
+
+| body | origin | forward st × cls | reverse st × cls |
+|---|---|---|---|
+| `\w` | `\b`, `\B`'s four bodies | 2 × 2 | 2 × 2 |
+| `\n` | `(?m)^`, `(?m)$` | 2 × 2 | 2 × 2 |
+| `\n?\z` | `\Z` and default `$` | 5 × 2 | 3 × 2 |
+| `foo` | ENG-LOOK's own `(?<=foo)bar` | 4 × 3 | 4 × 3 |
+| `\d` | ENG-LOOK's own `(?<!\d)\d{4}(?!\d)` | 2 × 2 | 2 × 2 |
+| `,` `[a-z]` `[^"']` `\w+` | the construct table's | 2 × 2 | 2 × 2 |
+| `ab` / `abc` / `a\|bc` | fixed bodies, incl. §2.5's two-branch cell | 3-4 × 3-4 | same |
+| `\d{3}` / `\d{4}` | counted | 4-5 × 2 | same |
+| `https?` | a realistic literal-ish body | 6 × 5 | 6 × 5 |
+| **controls** | `\d{4}-\d{2}-\d{2}` / `[a-z]{12}` / `(?:ab\|cd){8}` / `(?:a\|b\|c\|d){10}` | 11-25 × 2-5 | same |
+| **control** | `[01]*1[01]{12}` — bench case (f)'s shape | **12288 × 3** | 14 × 3 |
+
+**THE PRODUCT BOUND, and the split is the result.** The bound is
+`|D(main)| × Π|D(component)|` — an UPPER bound, which is the right quantity
+because the row's decline rule ([ENG-CUT]'s shape: ESTIMATE BEFORE COMMITTING)
+must be written against a bound and not a hope. Reported beside the
+**states × classes** product, because wave B's own over-cap number was that
+second quantity and not the first.
 
 ```
-\b     ==  (?:(?<!\w)(?=\w)|(?<=\w)(?!\w))     80 cells, 0 disagreements
-\B     ==  (?:(?<!\w)(?!\w)|(?<=\w)(?=\w))     80 cells, 0 disagreements
-(?m)^  ==  (?:\A|(?<=\n)(?!\z))                80 cells, 0 disagreements
-(?m)$  ==  (?:(?=\n)|\z)                       80 cells, 0 disagreements
+ROWS: 126.  Over the 32,000 STATE cap: 18.
+  CONTROL rows     (a deliberately huge body or main): 62, 18 over cap
+  NON-CONTROL rows (the assertion expansions + the enumerable
+                    real lookaround population)      : 64,  0 over cap
+  largest state product in the population: 150,994,944 -- 4,719x the cap
 ```
 
-**RECOMMENDATION: [M6.6.2] does NOT ship the desugar. [DD-11] does, and this
-module builds the door.** Four reasons, in the order they should be attacked:
+**The vacuity guard is what makes the zero worth reading.** A table of
+"0 over cap" over a population containing no cell that COULD be over measures
+nothing — this lane published exactly that once already (§5.5). The control
+bodies exist so the guard can pass, and it does: the population reaches
+4,719x the cap.
 
-1. **The desugar has no population in this milestone.** Today no lookaround
-   compiles at all, so a desugar shipped here changes exactly zero existing
-   artifacts and is exercised only by patterns the module itself introduces.
-   Its customer is D66's core reduction, which is [DD-11]'s work by D66's own
-   ruling.
-2. **It would make this module's own identity gate measure the wrong thing.**
-   §9's gate asserts that a lookaround-free artifact is byte-identical to the
-   pre-module compiler's. A desugar landing in the same wave adds a second way
-   for a lookaround pattern to compile, and the module's corpus could not then
-   distinguish "the VM lowering is right" from "the desugar caught it" — which
-   is the alphabet problem D27 exists for, arriving inside the module.
-3. **The door is cheap and it is already open.** The recognizer is a pure
-   function of one `A_LOOK` node's three fields plus its body — nothing about
-   §3's lowering has to change for it to be added later, and §3.1(c)'s
-   parse-time widths are exactly what it reads. The measured equivalence table
-   above is the other half of the door: [DD-11] does not have to re-derive it.
-4. **It is the honest scope.** Frank's grant covers a design for a module. A
-   parse-time rewrite that changes which ENGINE a pattern gets is an
-   optimization pass, and `m46e_impl`'s two declines are this project's own
-   precedent for what a new selection axis costs (a D46 stamp+force pair, a
-   permanent sabotage row).
+**THE HONEST READING, which is an input rather than a verdict this lane is
+entitled to give:**
 
-**THE POSITIVE CONTROL §9 NEEDS COMES FROM THIS SECTION ANYWAY**, which is why
-the equivalences were measured here and not deferred: see §9.2.
+- Every component the assertion family and an enumerable real population
+  produce is **2 to 25 states**, so the product's STATE growth on that
+  population is multiplicative by a small constant. Largest non-control
+  `states × classes`: **720**.
+- The explosion, when it comes, comes from a body or a main that is **already
+  a state-explosion shape** (`[01]*1[01]{12}` at 12,288 states — DD-9's own
+  case (f)). That is a real population for the decline rule to decline on, and
+  it means the rule is load-bearing rather than ceremonial.
+- **NOTHING HERE MEASURES A PRODUCT.** pcrec cannot build one, so every number
+  is a bound computed from two separately-measured machines. A real product is
+  smaller wherever the components share structure — which is [ENG-LOOK]'s own
+  first measurement to make, and §12 P-11 says so.
 
 ---
 
-## 6. The D66 hand-off (charter (v))
+## 6. THE ASSERTION-FAMILY REPLACEMENTS, and the D66 / DD-14 hand-off
 
-### 6.1 What [DD-11] gets from this module
+**Frank, 2026-08-23:** *"for lookaround, consider as test cases/design
+examples the replacements we were discussing, e.g. `^` under `(?m)`."*
 
-D66 re-bases DD-7's reverse-BOT variant and D63's second instance onto a core
-reduction: optimize the **core lookbehind-anchor form once** so every
-desugared anchor benefits, rather than implementing against `^`'s special
-case. What that needs from module `lookaround`, and this module delivers all
-three:
+The replacements are [DD-11]/D66's definition-expansion forms: each member of
+the assertion family rewritten as the lookaround it IS. This section uses them
+three ways — as DESIGN EXAMPLES worked through §3's lowering (§6.2), as a
+TEST-CORPUS GENERATOR (§6.3), and as ORACLE-DIVERGENCE input for §7 (§6.5) —
+and states what the PRODUCT-side substitution is and is not (§6.4).
 
-1. **A one-character fixed lookbehind that lowers correctly** — §3.4 with
-   `m == 1, k == 1`, the narrowest possible instance of the general shape, so
-   [DD-11] is optimizing a construct with a corpus behind it rather than one
-   invented for the occasion.
-2. **`PCREC_ENCE_BACK_STEP`**, the seam entry the desugared anchor's back-step
-   routes through, so a UTF-8 backend does not have to revisit the anchor
-   optimizer at all (§4.2).
-3. **The measured equivalence** `(?m)^ == \A|(?<=\n)(?!\z)` (§5.7), which is
-   the rewrite's correctness statement.
+### 6.1 The table, measured rather than transcribed
 
-### 6.2 The `(?m)^` self-oracle: design of the check
+MEASURED, `out/expansions.txt` E1: **972 cells, 0 disagreements**, over 18
+subjects × 6 tails, with **both arms carrying the same option state**.
 
-The check [DD-11] needs is a differential between today's **folded** `(?m)^`
-and the **expansion**. Its shape, designed here and built there:
+| construct | expansion | cells | disagreements |
+|---|---|---|---|
+| `\b` | `(?:(?<=\w)(?!\w)\|(?<!\w)(?=\w))` | 108 | **0** |
+| `\B` | `(?:(?<=\w)(?=\w)\|(?<!\w)(?!\w))` | 108 | **0** |
+| `(?m)^` | `(?:\A\|(?<=\n)(?!\z))` | 108 | **0** |
+| `(?m)$` | `(?:(?=\n)\|\z)` | 108 | **0** |
+| `\Z` | `(?=\n?\z)` | 108 | **0** |
+| `$` (default flags) | `(?=\n?\z)` — i.e. `$` IS `\Z`, measured | 108 | **0** |
+| `^` (default flags) | `\A` | 108 | **0** |
+| `\A`, `\z` | PRIMITIVES — they are the floor, no expansion | — | — |
+| `\G` | **NO EXPANSION**: a primitive against `startpos` | — | — |
+| `\K` | **NO EXPANSION**: a match-START operator, and PCRE2 refuses it inside a lookaround (err 199, §2.7) | — | — |
 
-- **Driver**: `tests/assertions/run_multiline_expansion_diff.sh`, modelled on
-  `tests/backrefs/run_backref_diff.sh` — a pattern list, a subject corpus, one
-  artifact per arm, a cell-by-cell compare of `match S E` / `nomatch`.
-- **Population**: every `pattern` line of `tests/assertions/d27/multiline.rxt`
-  and `composition.rxt`, each compiled TWICE — once as written, once with
-  every `(?m)^` textually replaced by `(?:\A|(?<=\n)(?!\z))`. The rewrite is
-  a driver-side textual one on the PATTERN, **not** a compiler pass, so the
-  check cannot be satisfied by the pass it is checking. **That is the whole
-  design decision**: a differential whose two arms both come from the compiler
-  under test is `../dev/` 's recurring failure, and this one's second arm
-  comes from the test.
-- **Subjects**: the corpus's own, plus the boundary set S2 measured on —
-  `"" "a" "\n" "a\n" "\na" "a\nb" "a\n\nb" "\n\n" "abc\ndef\n" "\r\n"
-  "a\r\nb\r\n" "x\ny\nz"` — because those are where the two forms could
-  differ.
-- **Oracle**: neither arm. The check is **self-oracular** — the two arms must
-  agree with EACH OTHER — which is what makes it usable before the desugar
-  exists and after.
+**THE VACUITY GUARD FIRES**: `\A|(?<=\n)` — the D66 expansion with the
+`(?!\z)` term dropped — disagrees with `(?m)^` on **4 of 108** cells. So a
+wrong expansion CAN show up in this table, and the zeros above are results.
 
-**Both directions are already measured**, `out/d66_subset.txt` S2:
+**AND pcrec's SHIPPED FOLDED FORMS AGREE WITH libpcre2's EXPANSIONS**:
+`out/expansions.txt` E4, **0 disagreements over 324 cells**, on artifacts
+compiled `--features all --emit-main` and run. That is the D66 self-oracle
+run on the expansions themselves, and it is what makes §6.3's corpus-wide
+driver worth building rather than speculative.
 
-- **libpcre2 against itself: 0 disagreements** between the folded and the
-  expanded form over 36 cells, once **both arms carry `(?m)`**.
-- **pcrec's own shipped `(?m)^` against libpcre2: 0 disagreements over 24
-  cells**, on artifacts compiled with `--features all --emit-main` and run.
-- **The `(?!\z)` conjunct is NOT decorative**: dropping it makes the expansion
-  disagree with `(?m)^` on **4 of 36** cells. A check built on
-  `\A|(?<=\n)` alone would pass on a wrong rewrite.
+### 6.2 Each replacement worked through §3's lowering
+
+The design examples the charter asks for. Every expansion's bodies, and what
+§3 emits for each.
+
+| expansion | its lookaround bodies | direction | §2.5 verdict | §3's emitted shape |
+|---|---|---|---|---|
+| `\b`, `\B` | `(?<=\w)`, `(?<!\w)`, `(?=\w)`, `(?!\w)` | two behind, two ahead | **SHIPS** — one class, fixed width 1 | the lookbehinds take §3.4 with `m == 1, k == 1`: guard `scan_position < 1`, one back-step, one class test, the end-check. The lookaheads take §3.2/§3.3 with a one-node body |
+| `(?m)^` | `(?<=\n)`, `(?!\z)` | one behind, one ahead | **SHIPS** — width 1; `(?!\z)`'s body is an ANCHOR, width 0 | `(?!\z)` is §3.3's negative shape over an `A_END` body: one push, an anchor test, the cut. **The narrowest instance of the negative form in the whole module** |
+| `(?m)$` | `(?=\n)`, plus a bare `\z` | one ahead | **SHIPS** | §3.2 over one class |
+| `\Z`, `$` | `(?=\n?\z)` | ahead | **SHIPS** — and it is the interesting one | the body is `\n?\z`: an OPTIONAL then an anchor, widths 1..2. **A lookAHEAD has no width rule at all**, so this compiles; the SAME body as a lookbehind would be refused by §2.5 |
+| `^`, `\A`, `\z` | none | — | — | no lookaround is emitted; these are the primitives |
+
+**THE ONE CELL WORTH THE PANEL'S ATTENTION is `(?=\n?\z)`.** It is the only
+expansion whose body is variable-width, and it ships **because the width rule
+is a property of DIRECTION and not of the body** (§2.5 constrains lookbehind
+branches only). MEASURED, `out/expansions.txt` E2, with the discriminating
+column written out: `(?<=\n?\z)x`, `(?<=\n?)x` and `(?<=\w?)x` all compile in
+PCRE2 (maxlb 1) and all have `minw 0, maxw 1`, so **pcrec refuses all three as
+LOOKBEHINDS** while accepting the identical body inside a lookahead.
+`PCRE2_INFO_MAXLOOKBEHIND` alone cannot show this — it publishes only the max
+— which is why the classification is stated from the body's shape and marked
+as such rather than read off the oracle.
+
+**CONSEQUENCE, and it is the section's main design result: every assertion in
+the family expands to a lookaround [M6.6.2] CAN COMPILE.** Nothing in the
+expansion set needs variable-length lookbehind, a backreference in a
+lookbehind, or `\K` in a lookaround. The subset §2.5 ships is exactly big
+enough for the D66 chain, which is a coincidence worth checking rather than
+assuming — and §12 P-12 is how to refute it.
+
+**AND EACH BODY'S ENG-LOOK COMPONENT IS TINY** (§5.8): `\w` and `\n` are 2×2,
+`\n?\z` is 5×2 forward and 3×2 reverse. The expanded corpus is therefore also
+the cheapest possible population for `[ENG-LOOK]`'s product construction to be
+measured on first.
+
+### 6.3 THE SUBSTITUTION DRIVER — a corpus generator, designed here, built in [M6.6.2]
+
+**Textually replacing each assertion by its expansion turns the assertions
+module's corpus into a LOOKAROUND corpus for free.** The assertions corpus is
+468 blocks and **10,120 behavioural cells**, every one libpcre2-verified. It
+is also, by construction, the corpus of a module that already ships — so its
+expectations are not this lane's guesses.
+
+**IT IS A CORPUS GENERATOR, NOT A PRODUCT MECHANISM** (Frank, 13:4x; the
+[DD-14] row's own text). It emits PATTERNS that the compiler sees as ordinary
+user-written lookarounds. §6.4 is where the product side goes.
+
+**THE THREE-WAY CHECK, per cell:**
+
+```
+  A  the EXPANDED pattern compiled by pcrec        (the new lookaround path)
+  B  the FOLDED pattern compiled by pcrec          (the shipped assertions path)
+  C  libpcre2 on the EXPANDED pattern              (the external oracle)
+
+  A == B  is the SELF-ORACLE D66 describes: pcrec's two lowerings of one
+          language must agree. It needs no external oracle at all, which is
+          what makes it usable on every cell including the ones python cannot
+          take.
+  A == C  is the ordinary differential, and it is what stops A == B passing
+          because BOTH lowerings are wrong the same way.
+```
+
+**Both comparisons are required and neither is sufficient**, and that is the
+whole design of the check: `A == B` alone is satisfiable by a compiler that is
+consistently wrong, and `A == C` alone does not test the folded path the
+expansion is supposed to be equivalent to.
+
+**WHICH CELLS QUALIFY.** MEASURED (pure text; no compiler ran),
+`out/substitution_population.txt`:
+
+```
+  blocks                          468
+  behavioural cells            10,120     (+ 67 capture-slot cells = 10,187)
+
+  QUALIFYING blocks               270 of 468   (58%)
+  QUALIFYING behavioural cells  8,495 of 10,120 (84%)
+
+  disqualified, by rule:
+    Q1 perr / no behavioural cell     87 blocks     0 cells
+    Q2 no substitutable assertion     87 blocks   754 cells
+    Q3 assertion inside a class        0 blocks     0 cells
+    Q4 scoped (?m: or (?-m)           24 blocks   871 cells
+    Q5 \K inside a substituted body    0 blocks     0 cells
+```
+
+**THE FIVE QUALIFICATION RULES, each with the reason it exists:**
+
+- **Q1 — the block must have a behavioural cell.** A `perr` block asserts
+  pcrec REFUSES the pattern; the expansion changes the reason for the refusal,
+  so the assertion under test is gone. 87 blocks, and they cost 0 cells
+  precisely because they have none.
+- **Q2 — the pattern must contain a substitutable assertion.** `\G` and `\K`
+  have no lookaround definition (§6.1). 87 blocks, 754 cells.
+- **Q3 — no substitutable assertion inside a CHARACTER CLASS.** `[\b]` is the
+  BACKSPACE byte and `[^a]` is a negation; substituting either produces a
+  different pattern, not a rewritten one. **It costs 0 blocks on this corpus
+  and the rule is still required** — a `sed`-based driver would be wrong the
+  first time a class contained one, and the backrefs lane's own `sed 's/\\1//'`
+  defect is the precedent for exactly this.
+- **Q4 — no scoped `(?m:` or `(?-m)`.** `^` and `$` mean different things
+  under different multiline states, so a textual driver must know the state at
+  each occurrence. With `(?m)` leading and unscoped the state is constant and
+  knowable; with a scoped group it is not, and resolving it is a parser — which
+  is what the driver is trying not to be. **The most expensive rule: 24
+  blocks, 871 cells.** A driver that later grows a scope tracker recovers
+  them, and §11's follow-on says so.
+- **Q5 — `\K` must not land inside a substituted body**, since PCRE2 refuses
+  it (err 199). It cannot, given the bracketing rule below, and it is counted
+  anyway so the claim is a number rather than an argument: 0.
+
+**THE BRACKETING RULE, and it is what keeps the corpus's cells reusable.**
+Every multi-branch expansion is wrapped `(?:...)` before insertion, so `a\bc`
+becomes `a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))c` and not the top-level-alternation
+pattern a naive splice produces. **`(?:` is NON-CAPTURING, so group numbers
+are unchanged and every `g`/`gp` capture-slot expectation survives untouched**
+— which is why the driver reuses the corpus's cells verbatim instead of
+re-deriving them. 13 capture-slot cells ride along.
+
+**TWO SUBSTITUTION POLICIES, and the second is the one that finds bugs:**
+
+- **P1 ALL-AT-ONCE** — every occurrence in the pattern replaced. **270
+  patterns.** A half-substituted pattern tests neither form, so this is the
+  baseline policy.
+- **P2 ONE-AT-A-TIME** — one occurrence replaced per generated pattern, the
+  rest left folded. **368 patterns** (one per occurrence). This is the MIXED
+  form, where a folded assertion and an expanded one must agree INSIDE ONE
+  PATTERN, and it is where an interaction between the two lowerings would show
+  — a `\b` lowered to `A_WORDB` beside a `(?<=\w)(?!\w)` lowered to `A_LOOK`,
+  in the same artifact, sharing the same alphabet refinement.
+
+**638 generated patterns over ~8,495 cells each.** The driver's own home is
+`tests/lookaround/run_expansion_diff.sh`, and it is **also [DD-11]'s
+regression harness** — the row's substitutions have to keep this green.
+
+**THE DRIVER'S OWN FAILURE MODE, named because every check in this project
+that has failed has failed this way:** the expansion table it substitutes FROM
+must not be derived from the compiler. It is a literal table in the driver,
+transcribed from D66 and [DD-11] and independently verified against libpcre2
+(§6.1). If [DD-11] later rewrites the assertions to their definitions on the
+[DD-14] primitive, **the driver's table and the compiler's must remain two
+sources**, or `A == B` becomes a tautology.
+
+### 6.4 THE PRODUCT-SIDE SUBSTITUTION IS [DD-14]'s, NOT THIS MODULE'S
+
+**RULED (Frank, 13:4x):** *"for the actual substitutions, let's get the group
+reference piece in so that they share code/handling before we do the
+substitutions. I don't want parallel mechanisms if we can avoid it."* The
+order is `[M6.6]` lookaround → `[DD-14]` subroutine calls (`(?1)`, `(?&n)`,
+`\g<n>`, `(?R)` — module `recursion`, the label-call primitive) → `[DD-11]`'s
+definition substitutions IMPLEMENTED ON that primitive (an insertion is a
+NON-RECURSIVE CALL to the inserted body's entry label; compile-time splicing
+is an optimization of it, never a second mechanism) → D66's core
+lookbehind-anchor optimizer.
+
+**SO THIS DESIGN PROPOSES NO PARSE-TIME OR IR-TIME DESUGAR MECHANISM FOR
+ASSERTIONS.** Not a fold (§5.7), not an expansion. What it owes instead is to
+make §3's lowering a shape the call primitive can target.
+
+**WHAT LOOKAROUND MUST PROVIDE, and §3 already provides it:**
+
+1. **EVERY LOOKAROUND BODY IS A SELF-CONTAINED SUB-PROGRAM WITH A CLEAN ENTRY
+   AND EXIT LABEL.** §3.2's shape is `L_entry → L_body → L_ok`, where
+   `L_body` is the body's own entry produced by an ordinary `vm_emit` call and
+   `L_ok` is the single exit. The body has **exactly one entry** (nothing
+   jumps into its middle) and **exactly one success exit** (`L_ok`); failure
+   leaves through the shared fail label like every other construct. That is
+   precisely a call target: push a return label, `goto L_body`, and
+   pop-and-`goto*` at `L_ok`.
+2. **THE SUB-PROGRAM'S STATE IS IN TRAILED SLOTS, NOT IN LOCALS.**
+   `SLOT_LOOK_MARK<n>` and `SLOT_LOOK_POS<n>` are `stv` slots written by
+   `vm_set` (§3.2), so a call that re-enters the same body from a different
+   site re-initialises them at the entry label and an outer backtrack restores
+   them. A design that had put the saved cursor in a C local would have been
+   correct for one entry and wrong for a call primitive — the same reason
+   [ENG-BREP counter-K] ruled its counter a trailed slot rather than a local.
+3. **NO LABEL IS SHARED BETWEEN TWO LOOKAROUNDS.** `vm_label()` allocates per
+   emission, and the slot families are indexed per node (`v->nmark++`), so two
+   lookarounds over the same body text get two sub-programs. **[DD-14]'s
+   sharing is a later optimization and must not be assumed here** — but
+   nothing in §3 prevents it, because the entry label is the only way in.
+
+**WHAT A SUBROUTINE CALL INTO A LOOKBEHIND ALTERNATIVE WOULD ADDITIONALLY
+NEED, stated because it is the non-obvious half.** §3.4's branch structure is
+`L_b1 … L_bm`, and each branch carries **its own compile-time width `k_i`**
+used three times: the `scan_position < k_i` guard, the `$_back_step(..., k_i)`
+argument, and the `RX_CHARGE_WORK(k_i)` literal. A call that targets a
+lookbehind BRANCH therefore needs the width to travel with the call, and there
+are only two honest ways:
+
+- **(a) the width is a property of the CALL SITE**, i.e. each call site emits
+  its own guard/back-step/charge and jumps to `L_body_i` (the branch's forward
+  body, past the back-step). That keeps the sub-program width-free and is what
+  §3.4's label layout already permits, because `L_body_i` is a distinct label
+  from `L_b_i`.
+- **(b) the width travels in a slot**, which turns three compile-time
+  constants into runtime reads and costs the emitted code its `k` literals.
+
+**RECOMMENDATION (a)**, and §3.4's labels are laid out for it: the back-step
+and its guard sit in `L_b_i` and the body starts at `L_body_i`, so a call can
+target either. This is recorded as a hand-off obligation rather than built —
+[DD-14] rules it — and §12 P-13 is the prediction that the split is enough.
+
+### 6.5 The `(?m)^` self-oracle, and both directions are already measured
+
+The check [DD-11] and D66 need is §6.3's driver restricted to the multiline
+family. Its shape:
+
+- **Driver**: the §6.3 driver, run over
+  `tests/assertions/multiline.rxt` + `d27/multiline.rxt` (89 + 16 blocks,
+  3,325 + 28 cells; 69 + 12 qualifying).
+- **Oracle**: **neither arm** — the two arms must agree with each other, which
+  is what makes it usable before [DD-11] exists and after.
+- **Subjects**: the corpus's own, plus the boundary set §6.1 measured on.
+
+**Both directions measured, `out/d66_subset.txt` S2 and `out/expansions.txt`
+E1/E4:**
+
+- libpcre2 folded vs libpcre2 expanded: **0 disagreements**.
+- pcrec's shipped `(?m)^` vs libpcre2: **0 disagreements over 24 cells**.
+- pcrec folded vs libpcre2 expanded, over the whole expansion table: **0 over
+  324 cells**.
+- the `(?!\z)` conjunct's necessity: **4 of 36** cells — non-vacuous.
 
 **AND THE FIRST VERSION OF THIS MEASUREMENT WAS WRONG IN THE INTERESTING
-DIRECTION.** It put `(?m)` on the folded arm only, so a `$` tail meant
-`(?m)$` on one side and plain `$` on the other, and it reported **3
-disagreements** — which, published, would have read as *"the D66 expansion is
-not equivalent to `(?m)^`"* and would have killed the hand-off. Both numbers
-are in the archive. §12 P-6 is the prediction that keeps this honest.
+DIRECTION**, which is why it is stated twice in this document. It put `(?m)`
+on the folded arm only, so a `$` tail meant `(?m)$` on one side and plain `$`
+on the other, and it reported **3 disagreements** — which, published, would
+have read as *"the D66 expansion is not equivalent to `(?m)^`"* and would have
+killed the hand-off. Both numbers are in the archive.
+
+### 6.6 What [DD-11] and [ENG-LOOK] each get, in one list
+
+| consumer | what this module hands it | where |
+|---|---|---|
+| **[DD-14]** | a lookaround body that is already a self-contained sub-program with one entry and one exit; the width-at-the-call-site recommendation for lookbehind branches | §6.4 |
+| **[DD-11]** | the verified expansion table; the substitution driver's design and its 8,495-cell population; the self-oracle's two-comparison shape | §6.1, §6.3 |
+| **D66** | a one-character fixed lookbehind that lowers correctly (§3.4 at `m=1, k=1`); `PCREC_ENCE_BACK_STEP` so a UTF-8 backend never revisits the anchor optimizer | §3.4, §4 |
+| **[ENG-LOOK]** | the prefilter-soundness statement and the measured match-START hazard; the component-automaton sizes and product bounds; the sub-program shape it will LIFT | §5.3-§5.6, §5.8, §6.4 |
 
 ---
 
@@ -1411,32 +1691,44 @@ split lookaround-bearing vs lookaround-free by a grammar-aware classifier that
 
 **"No lookaround exists today, so this module changes nothing for the existing
 population" is TRIVIALLY TRUE and therefore worth nothing.** The gate needs a
-control that can go red. Two, and they are different:
+control that can go red.
 
-**Control A — THE REFUSAL CONTROL** (inherited from `run_backref_identity.sh`):
-the pre-module reference must REFUSE every lookaround-bearing pattern
-(`ctl_bad == 0 && ctl_ok == nb`), proving the reference really is a different
-compiler and not a rebuild of the same tree. Floors: **≥ 700 lookaround-free
-patterns, ≥ 60 lookaround-bearing.**
+**THE CONTROL IS THE ORDINARY ONE**, inherited from
+`run_backref_identity.sh`: the pre-module reference must **REFUSE every
+lookaround-bearing pattern** (`ctl_bad == 0 && ctl_ok == nb`), which proves
+the reference really is a different compiler and not a rebuild of the same
+tree compared against itself. Floors: **≥ 700 lookaround-free patterns,
+≥ 60 lookaround-bearing.**
 
-**Control B — THE EQUIVALENCE CONTROL, and it is this module's own.** §5.7
-measured that a one-character lookaround IS an assertions-module context
-assertion, at **0 disagreements over 80 cells** for each of four
-decompositions. So the post-module compiler must produce **the same ANSWERS**
-for `\b` and for `(?<!\w)(?=\w)|(?<=\w)(?!\w)`, cell for cell, on the
-assertions module's own D27 corpus subjects.
+**AN EARLIER REVISION PROPOSED A SECOND, EQUIVALENCE-BASED CONTROL and it is
+WITHDRAWN.** It rested on the one-character FOLD — a lookaround whose body is
+a single class rewritten into the assertions module's context-assertion node —
+so that `\bfoo` and `(?<!\w)(?=\w)foo` could be compared. **Frank ruled the
+fold out entirely** (§5.7): it is a duplicate code path, and the general form
+is `[ENG-LOOK]`'s product construction. With no fold there is no artifact
+relationship to assert, and a control built on a mechanism that does not exist
+is worse than no second control — it would have gone green by construction.
 
-**IT IS AN ANSWER-EQUALITY CONTROL, NOT A BYTE-IDENTITY ONE, AND THIS DESIGN
-SAYS SO RATHER THAN OVERCLAIMING.** The charter asks whether a one-char
-lookaround pattern can produce a **byte-identical artifact** to its `\b`
-equivalent. **It cannot, and should not**: `\b` compiles to `A_WORDB`, which
-the DFA can carry, and `(?<!\w)(?=\w)` compiles to `A_LOOK`, which is
-`VM_ONLY` — so the two artifacts differ in engine, in `RX_ENGINE_WHY`, in slot
-count and in size. The MEASURED baseline is in `out/d66_subset.txt` S1b:
-`\bfoo` today is 21,287 bytes with `RX_NCAPS 1`; `foo` is 18,792. Byte
-identity between the two arms would only become available **if [DD-11] ships
-§5.7's desugar**, at which point it becomes the sharpest possible check of it
-— and that is the door §5.7 refers to. **§12 P-5 is the prediction.**
+**WHAT SURVIVES THE WITHDRAWAL, and it belongs to §6 rather than §9**: the
+measured equivalences themselves. `\b`, `\B`, `(?m)^`, `(?m)$` against their
+lookaround decompositions are **0 disagreements over 80 cells each**
+(`out/d66_subset.txt` S1), and the whole expansion table is **0 over 972**
+(`out/expansions.txt` E1). Those numbers are not an identity control; they are
+the correctness statement of §6.3's SUBSTITUTION DRIVER, whose `A == B` arm is
+a far stronger check of the same territory over **8,495 cells** rather than 80
+— and one that runs on the shipped compiler instead of comparing two
+compilers. **§6.3 is therefore where this module's real cross-lowering
+assurance lives**, and §9 is the ordinary byte-identity gate it always was.
+
+**THE BASELINE THIS RECORDS FOR LATER.** MEASURED, `out/d66_subset.txt` S1b:
+today `\bfoo` compiles to a 21,287-byte artifact and `foo` to 18,792, and
+`(?<!\w)(?=\w)foo` refuses with the D65 enabled-but-unbuilt diagnostic. After
+[M6.6.2] the second will compile and will **NOT** be byte-identical to the
+first: `\b` is `A_WORDB` and DFA-carryable, `A_LOOK` is `VM_ONLY`, so the two
+differ in engine, in `RX_ENGINE_WHY`, in slot count and in size. **That
+difference is the expected outcome, not a defect** — and the day `[ENG-LOOK]`
+lands and deletes the special machinery, byte identity between them becomes
+that row's own identity gate rather than this one's.
 
 ### 9.3 The sabotage rows
 
