@@ -12371,3 +12371,85 @@ OPEN: [M6.6.2] implementation NOT cleared (Frank rules the five §14 ASKs);
 [DD-14] design gate may run alongside it; K30 small fix queued; the gate's
 archived bench numbers predate the timeout swap (re-baseline at the next
 gate run); compliance refresh rides [M6.6.2]'s landing.
+
+## 2026-08-23 (EDT), thirty-seventh session (part 4) — the design session: all five ASKs ruled, D70, the environment model discussed; [M6.6.2] CLEARED for next session
+
+Frank: "we'll start implementing next session; however let's go over these
+issues and design this session so we're ready." The rulings, in order:
+
+\K IN LOOKAROUND: Frank recalled the old start-before-attempt-point
+semantics ((?<=\Kfoo)bar matching "foobar"); MEASURED on 10.46 — default
+err 199, and under PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK exactly his example:
+(3,9)="foobar" on "baxfoobarbaz". Perl heritage, made an error by PCRE2
+10.38. RULED: not wanted ("bad mojo"), refusal permanent; the measurement
+pinned as a §2.7 amendment so nobody re-hunts the reference.
+
+ASK 1 → D70: Frank's concern was complexity/flexibility of per-kind
+fields accreting on struct Ast ("union of types is a fine way to deal
+with it"). RULED: one A_LOOK kind AND a TAGGED UNION of per-kind payload
+structs for ALL per-kind fields (cls/rmin/rmax/capno/multiline + look_*;
+~200+ mechanical access-site renames), landing as [M6.6.2]'s OPENING wave
+— pure refactor, byte-identity gate over the full corpus (cheap post-
+TT-6). Cross-kind fields stay common with the survey recorded. The union
+buys reading/containment; D62's discipline still does enforcement.
+
+ASK 2: EMIT the lookbehind end-check on BOTH arms — the polarity
+asymmetry decided it (a declined branch on (?<! is the assertion
+SUCCEEDING, so a wrong width is a FALSE MATCH): hard RX_R_* return on the
+negative arm, cheap decline on the positive; it is the width analysis's
+only runtime witness and becomes semantics at variable-length.
+
+ASK 3: YES — twelve alpha-spelling registry rows (aliases of the six
+primaries), D65 built column + SR-8 witnesses.
+
+SEQUENCING EXPLORED: "what if we parked 6.6 for the subroutine stuff
+first?" — assessed and DECLINED: DD-14 is unruled with its four gating
+questions all on the caller side; lookaround is designed and ready; the
+callee half of DD-14 is largely paid for by 6.6.2 (sub-program contract,
+fmin/fdyn scoping — same rule, different reason: unknown follow vs
+overlapping follow —, the one-frame trail idiom, RX_CUT, budgets,
+verification template); splice and call share the callee contract and
+differ only in linkage, splice = the statically-resolved case. DD-14's
+design gate runs CONCURRENTLY with 6.6.2 (charter additions recorded on
+the row, cd4e883). Clarified: the body is INJECTED at the site —
+"sub-program" is a discipline about the spliced region (zero runtime
+overhead, one foldable label), and vm_look's disciplined splice IS the
+future inliner — DD-14 inline-eligible calls and (f)'s A_BREF reduction
+are its second and third consumers.
+
+ASK 3a: the substitution driver BUILDS in 6.6.2 wave E2 (263/8,260;
+test infrastructure; the product-side substitution still waits for
+DD-14 per the morning's no-parallel-mechanisms ruling). Frank confirmed
+"equivalent" in the expansion corpus means MATCHING equivalence (972
+cells/0 vs libpcre2), not performance — performance parity is ENG-LOOK's
+acceptance test.
+
+THE ENVIRONMENT MODEL (DD-11 territory, discussed, deliberately NOT
+pre-ruled into the row — journaled as context instead at Frank's
+hesitancy): replacements are AST TEMPLATES parsed once by the ONE parser
+from a typed definitions table (registry row carries the pointer; the
+table is self-verified by the substitution driver's three-way check —
+one source, the oracle independent); selection is a SCOPE-RESOLVED
+ENVIRONMENT lookup, a flag is a BINDING-MUTATION OPERATOR (Frank: "an
+event, generally a flag, sets a replacement with scope … elegant model
+that doesn't track flags as much"); scope is parse-order within the
+enclosing group (a mid-sequence mutation binds the FOLLOWING siblings —
+the binding point is a sibling event, not an ancestor); two entry kinds —
+replacement bindings ((?m), (?s)) and PARAMETER bindings ((?i), (?U))
+consumed by leaf construction, one scoping mechanism. RESOLUTION RULED
+(Frank "ok, sounds good"): PROPAGATE/capture-at-build, never walk-up —
+the binding point isn't an ancestor; injection makes contextual meaning
+poisonous (transplanted subtrees must be position-independent); D62 is
+the law with a measured bug behind it. Three tiers: consumed at build
+(class folding), stored resolved in the D70 payload where match time
+needs it (bref caseless, greedy, multiline), never-in-tree ((?x)).
+
+ASK 4: FOUR identity-gate axes — default, standard second,
+-fno-prefilter (isolates the §5.6 ceiling-drop conditional),
+--no-captures (the backrefs-precedent axis); positive control = every
+lookaround pattern refuses under the pinned pre-module binary.
+
+[M6.6.2] IS CLEARED TO START AT THE NEXT SESSION with: D70's union
+refactor as the opening wave, then design §11's waves A2 → B+C → D →
+E1/E2 → F, all five ask rulings in force, DD-14's design gate (opus,
+read-only) alongside. Session ends here; tree clean and pushed.
