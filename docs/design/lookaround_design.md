@@ -620,6 +620,28 @@ with, on `struct Ast`:
     int  look_nbranch;
 ```
 
+> **D70 AMENDMENT (Frank, 2026-08-23; landed [M6.6.2] wave 0).** The sketch
+> above is superseded in its SPELLING, not in its content. `struct Ast`'s
+> per-kind fields now live in a tagged union keyed by `AKind k`, so A_LOOK's
+> payload joins as a union MEMBER and never as five more top-level fields:
+> `struct { bool behind, neg, atomic; const int *widths; int nbranch; } look;`
+> read as `n->u.look.behind`, `n->u.look.widths`, and so on — alongside the
+> existing `n->u.rep.rmin`, `n->u.cls.bits`, `n->u.cap.no`, `n->u.anch.multiline`
+> and `n->u.bref.refs`. D70 makes this binding: **no module may add a new
+> top-level per-kind field.**
+>
+> **`int look_widths[]` is an arena `int *`, NOT a flexible array member** —
+> D70 says so explicitly, and it is recorded here so the implementer does not
+> build one. A flexible array member cannot live in a union, cannot be
+> preceded by another member, and would make `sizeof(Ast)` a lie for the
+> zeroing arena that allocates every node at a fixed size.
+>
+> Decisions (a)-(d) below are UNAFFECTED: the union changes where the payload
+> lives, not whether A_LOOK is one kind or four, and D62's discipline carries
+> over unchanged because the union is a reading and containment mechanism, not
+> a checking one (C does not police union member access). The wave-0 ownership
+> survey behind the union is recorded in `src/core/CLAUDE.md`.
+
 Four decisions, each with its reason.
 
 **(a) ONE KIND, NOT FOUR (or eight).** The measured argument for a node kind
