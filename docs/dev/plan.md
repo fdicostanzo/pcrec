@@ -273,7 +273,7 @@ differentiator — see [M4-SUBST]'s beyond-PCRE2 direction. Developer-
 experience directions that serve the niche are the [V-*] rows below,
 including V-G/V-H (added this session).
 
-- [TT-4] STATE:not-started — BATCHED COMPILATION IN THE TEST HARNESS
+- [TT-4] STATE:started (2026-08-23, thirty-seventh session, on Frank's "go tt-4"; expanded into [TT-4.1]-[TT-4.3] below) — BATCHED COMPILATION IN THE TEST HARNESS
   (chartered by Frank, 2026-08-22 22:3x, "charter TT-4 after M6.5 closes,
   measurement stage first"; START AFTER [M6.5] CLOSES — the next
   infrastructure row, pulled forward because every lane today paid the
@@ -311,6 +311,21 @@ including V-G/V-H (added this session).
   box; the sanitizer batteries and mech ride the same path; docs/testing.md
   records the before/after. NOT in scope: the .rxt-as-specification format
   (a separate discussion Frank has deferred; separable from batching).
+  - [TT-4.1] STATE:started — MEASUREMENT (Frank's order: first, before any
+    harness change). Census over one `make test` by section (the `test-*`
+    targets): invocation counts (pcrec, gcc one-shot, gcc -c, link) and wall
+    time split pcrec / gcc / link / run / harness-overhead; name the two
+    worst sections; prototype batching on them in a SCRATCH driver (studies/
+    tt4_batching/, never the harness) at several batch sizes and REPORT THE
+    MEASURED SPEED-UP, or the measured slowdown (TT-3's lesson). Output: a
+    measurement memo with method, blind spots and numbers from runs.
+  - [TT-4.2] STATE:not-started — DESIGN, gated on [TT-4.1]'s numbers
+    (gcc/link-step batching only; per-pattern artifacts preserved; failure
+    isolation; D45 per-pattern semantics; GENCFLAGS rides through). Panel
+    (D6) if the numbers open the row; an honest NO closes it like TT-3.
+  - [TT-4.3] STATE:not-started — LANDING: the harness batches; `make test`
+    wall and core-minutes re-measured on the same box; sanitizer batteries
+    and mech ride the same path; docs/testing.md records before/after.
 - [REL-META] STATE:not-started — META-PLAN ROW for FIRST-RELEASE +
   CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
   "we are within a few solid efforts of having a first release"; this
