@@ -421,7 +421,7 @@ including V-G/V-H (added this session).
   before/after first, then the battery on the merged swap (= the axes'
   "after"), then [TT-7]'s combined-axis run, then [TT-8]'s matrices.
   Frank gets the whole-chain before/after at the end.
-- [TT-7] STATE:started (2026-08-23, Frank's #2; PREP MERGED 9582091: `make san` target, build-san/, distinctness verified through the real generated-matcher path, D45 budgets byte-identical to either single axis, docs PENDING; LSan is a no-op on this box under ANY axis — K26, ptrace_scope=1; OWED: the manager's timing run `gnutimeout 5400 /usr/bin/time -v make -j12 san` vs the battery_tt6 ubsan+asan walls, then the adoption flip) — ONE
+- [TT-7] STATE:completed (ADOPTED 2026-08-23 14:2x: `make san` MEASURED 45:50 vs ubsan 26:58 + asan 36:45 = 63:43 on the same tree — −17:54 per chain, identical 1569 PASS lines, zero reports; the battery's sanitizer stage is now `san`, ubsan/asan opt-in singles; docs/testing.md "[TT-7] combined axis — ADOPTED") — formerly STATE:started (2026-08-23, Frank's #2; PREP MERGED 9582091: `make san` target, build-san/, distinctness verified through the real generated-matcher path, D45 budgets byte-identical to either single axis, docs PENDING; LSan is a no-op on this box under ANY axis — K26, ptrace_scope=1; OWED: the manager's timing run `gnutimeout 5400 /usr/bin/time -v make -j12 san` vs the battery_tt6 ubsan+asan walls, then the adoption flip) — ONE
   COMBINED `-fsanitize=address,undefined` AXIS, measurement first: a
   `make san` target building a third separate tree (build-san/) with the
   combined flags on BOTH axes exactly as ubsan/asan do; measure its wall

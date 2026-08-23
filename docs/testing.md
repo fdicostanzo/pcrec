@@ -1920,7 +1920,7 @@ Measured (table above), the ruling:
   land in the inventory above with a triage before any fix (the
   findings-discipline that produced F1's clean arc).
 
-### [TT-7] combined axis (2026-08-23) — PENDING
+### [TT-7] combined axis (2026-08-23) — ADOPTED: `make san` is the battery's sanitizer stage
 
 `docs/dev/chain_profile.md` candidate (a), 2026-08-23: today's `ubsan` and
 `asan` cost 32m35s + 42m25s = 75m00s combined at commit m65 — two separate
@@ -1965,13 +1965,26 @@ byte-identical under the combined flags vs. either single axis (all four
 budget functions, sourced and called directly — the axis check is a boolean
 `-fsanitize=` substring match, not per-sanitizer).
 
-**Status: PENDING the manager's timing run.** No suite-scale wall-time
-number exists for the combined axis yet — the memo's own estimate
-(chain_profile.md §4a, ~45-55 min) is an explicit hypothesis, not a
-measurement. The candidate does not become a battery-integration ruling
-(the "Battery integration" section above, or its own row here) until that
-run reports `san`'s real wall time against `ubsan`+`asan`'s combined total,
-per the memo's stated pass criteria.
+**Status: ADOPTED (manager, 2026-08-23 14:2x, from the timing run).**
+MEASURED on the same tree (HEAD 5935ea9/b2d3fce, docs-only commits
+between; box load ~1.3 at start; `build/san_m1.log` vs
+`build/battery_tt6.log`):
+
+| stage | wall | PASS lines | FAIL | sanitizer reports |
+|---|---|---|---|---|
+| `make ubsan` | 26:58 | 1569 | 0 | 0 |
+| `make asan` | 36:45 | 1569 | 0 | 0 |
+| `make san` (combined) | **45:50** | 1569 | 0 | 0 |
+
+`san` < `ubsan` + `asan` = 63:43 by **17:54**, identical PASS population,
+zero reports — all three pass criteria met. RULING: the union battery's
+sanitizer stage is `san`; the order is test → strict → san → lint (the
+"Battery integration" section's chain, with one sanitizer stage instead of
+two); `ubsan` and `asan` remain as opt-in single axes for diagnosing a
+report the combined build attributes ambiguously. The chain_profile.md
+estimate (~45-55 min) was confirmed at its low end. Caveat carried from
+K26: LSan is a no-op on this box under every axis (`ptrace_scope=1`), so
+the `leak` component of `san` is inert here exactly as `asan`'s was.
 
 ## Compile caching (`CCACHE=1`, [TT-3], 2026-08-21) — MEASURED NO for `make test`
 
