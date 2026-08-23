@@ -12226,3 +12226,87 @@ not `gcc`.
 Merged: 19ea394 (studies + docs only; nothing under src/ tests/ Makefile;
 no battery). Plan: [TT-4.1] completed, [TT-4.2] awaits the set decision,
 [TT-5] stage 1 done, [TT-6] chartered. Next: Frank rules the set.
+
+## 2026-08-23 (EDT), thirty-seventh session (part 2) — Frank's set ruling; [TT-6] [TT-7-prep] [TT-8] merged; the battery drops 11 minutes; [M6.6] design gate opened; subroutines sequenced
+
+FRANK'S RULING (11:1x): "spend the effort where it has the greatest
+impact; if test is 10 minutes, spend the least time there — insofar as
+it's not called as part of the other tests. Approve 1-3 as per your
+recommendations. #4 I am ok with this risk. 6 and 7 probably not worth
+it. 5 as a follow-on if needed." [TT-4] CLOSED (measured NO for gcc
+batching — 17% of suite CPU for the most design surface; TT-3's shape);
+[TT-6] timeout swap, [TT-7] combined sanitizer axis, [TT-8] mech PROCS
+started; D69 (tiered mech re-run policy) adopted with the risk accepted.
+Three sonnet lanes, box-exclusive timed runs serialized through the
+manager.
+
+[TT-6] (merge 5935ea9): tests/lib/timeout_bin.sh resolves TIMEOUT_BIN
+(GNU when the default is uutils; plain `timeout` on a stranger's box);
+every bare call in 9 scripts + scripts/Makefile swapped. MEASURED: the
+isolated test-corpus section 6:44.24 → 1:04.08 (6.31x, identical
+22,358/0); the full `make -j12 -Otarget test` 10:32.82 → 10:15.96 only —
+at load 33-41 the suite is OVERSUBSCRIBED (21 sections × PROCS=12
+workers) and a sleeping worker's wall is hidden behind other sections'
+CPU; the tax bites where sections run serially. S43's anchor re-derived
+(the binary-name token moved), tripwire 118/119; D69 rows for the merge
+(rows_for.sh → S11, S43) both DETECTED in 19 s total. Finding on the
+gate: tests/bench/run_bench.sh's COMPILE-SPEED and GCC-TIME budgets
+bracketed the `timeout` launch INSIDE their measured number — archived
+gate results predate the swap (flagged in tests/bench/CLAUDE.md).
+
+[TT-8] (merge bbf7847): the PROCS leak was LIVE — `PROCS=4` on a single
+row spawned 4 REJECT_SHARD_TOTAL=4 workers, because run_sabotage_matrix
+.sh never overrode PROCS on the reject/harness arms; fixed with an
+explicit INNER_PROCS=ncpu/PROCS on those command lines (S15/S107
+figures byte-identical across leaked/serial/fixed). D69 EVIDENCE: the 99
+rows common to the m64 (c324091) and m65 (5edba64) matrices — 50
+pass-count-only changes, ONE verdict change (S48 ANOMALY→DETECTED, its
+own anchor fix 34ede2c), ZERO rows flipping DETECTED→UNDETECTED without
+their own definition changing; S107/S108 were new rows, undetected from
+birth. tests/mech/rows_for.sh maps changed paths → rows (failing
+direction tested). Owed: the PROCS sweep + full after-matrix.
+
+[TT-7] prep (merge 9582091): `make san` = build-san/ with
+-fsanitize=address,undefined,leak -fno-sanitize-recover=undefined on both
+axes, suite list byte-identical to asan's; UB and heap-overflow
+diagnoses distinct through the real generated-matcher path; D45 budgets
+byte-identical to either single axis (180/60/60/60). LSan is a NO-OP on
+this box under any axis (K26, ptrace_scope=1). Owed: the timing run.
+
+THE BATTERY ON 5935ea9 (build/battery_tt6.log, 12:18 → 13:32): test
+10:16 / strict 6 s / ubsan 26:58 / asan 36:45 / lint 33 s, all EXIT=0,
+zero sanitizer reports — 74:38 against yesterday's 85:53 (−11:15), the
+sanitizer axes each −5.6 min from the timeout swap alone. `make san`
+timing launched at 13:33 (build/san_m1.log; baseline to beat 63:43).
+
+[M6.6] DESIGN GATE OPENED (13:2x, Frank: "how about some design for the
+next lane?") — [M6.6.1] chartered per construct (construct table incl.
+PCRE2 10.46's lookbehind length rule measured cell by cell, \K inside
+lookaround, captures in negative forms, quantified lookaround; VM
+lowering with emitted code — lookahead as cut + pos restore, lookbehind
+as back-step + forward body + end-check; the back-step as the seam's
+THIRD residual entry; engine selection with the one-character DFA-
+eligible subset D66 needs; D27 goal-facts; identity gate; sabotage
+rows). Opus lane/ladesign, probe-only while the box is timing. FRANK'S
+TWO ADDITIONS: (1) the assertion-family REPLACEMENTS ((?m)^ ≡
+\A|(?<=\n)(?!\z), (?m)$, \Z, \b) as design examples and as test cases —
+the assertions D27 corpus (10,120 cells) textually expanded into a
+lookaround corpus with a three-way check (expanded-under-pcrec vs
+folded-under-pcrec vs libpcre2), the D66 self-oracle; (2) "for the
+actual substitutions, let's get the group reference piece in so that
+they share code/handling … I don't want parallel mechanisms" —
+SUBROUTINES: [DD-14] ruled in and sequenced M6.6 → DD-14 ((?1) (?&n)
+\g<n> (?R), the label-call primitive) → DD-11's substitutions ON that
+primitive → D66's optimizer; the backrefs follow-up (f) joins it
+(b2d3fce). The design is told: no product-side desugar in M6.6; the
+one-character FOLD (lookaround → context assertion, the opposite
+direction) is presented as a ruling request with both options costed —
+the manager's recommendation to Frank: ship the fold in M6.6 as a
+generic IR pass over any body so DD-11 calls the same pass (one
+recognizer, two callers), with the offset-0 semantics of `(?<=\n)`
+measured, not assumed.
+
+Process: the classifier blocked a pkill/setsid relaunch of the battery
+(and a plain ps right after); the tool's native background mode ran the
+85-minute chain fine. Sonnet lanes idle after every background exit —
+the watchdog now nudges on exit instead of waiting a tick.
