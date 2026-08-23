@@ -118,6 +118,13 @@ Append-only where noted; the restart/status-recovery record for the project.
   (PCRE2, python re) found by our differential tooling; the citable
   rationale behind oracle exclusions. Add an entry whenever tooling
   implicates another engine.
+- `chain_profile.md` — [TT-5] stage-1 read-only profile of the per-merge
+  validation chain (`make test`/`strict`/`ubsan`/`asan`/`lint`/mech):
+  stage wall times across three logged runs (a growth trend, not one
+  sample), what each stage re-does that another already did, and a ranked
+  candidate list with the measurement each needs before becoming a row.
+  Written 2026-08-23; re-read before citing its numbers if the battery
+  driver or `tests/mech/sabotages/` have changed since.
 - `reviews/` — compiled checkpoint critic reviews (D6), one file per
   checkpoint: findings, triage dispositions, reflection.
 - `learnings.md` — the consolidated learnings digest, distilled from a
