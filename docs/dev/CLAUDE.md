@@ -201,9 +201,9 @@ Append-only where noted; the restart/status-recovery record for the project.
   byte-identical to either single axis, all four `tests/lib/gen_timeout.sh`
   functions), and the exact command + pass criteria for the manager's
   timing run. See also `docs/testing.md`'s "[TT-7] combined axis"
-  subsection. **STATUS: PENDING** the timing run — `make san` exists and is
-  small-scale-verified, `ubsan`/`asan` are untouched, and nothing here rules
-  on adoption.
+  subsection. **STATUS: PENDING** the timing run — WHICH RAN 2026-08-23 (45:50 vs 63:43, adopted; see
+  docs/testing.md "[TT-7] combined axis — ADOPTED"); the memo's own text
+  predates the adoption and stays as the evidence record.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.

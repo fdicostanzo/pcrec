@@ -116,8 +116,9 @@ Process and status documents for pcrec. The architecture itself lives in
   at m65, `docs/dev/chain_profile.md` candidate (a)) — diagnosis
   distinctness verified small-scale, D45's budgets confirmed
   byte-identical to either single axis, `ubsan`/`asan` left untouched.
-  STATUS PENDING the manager's own timing run (`docs/dev/
-  tt7_combined_axis.md` has the evidence and the exact command).
+  ADOPTED 2026-08-23 (manager timing run: `make san` 45:50 vs
+  ubsan+asan 63:43, identical PASS population, zero reports) — the
+  battery's sanitizer stage is `san`; ubsan/asan stay as opt-in singles.
   (added [TT-6], 2026-08-23) "The `timeout` binary itself (`TIMEOUT_BIN`)":
   this box's default `timeout` is uutils coreutils 0.8.0 (~108.7ms pure
   wall per call, ~0 CPU) against GNU coreutils' ~4.2ms; `tests/lib/
