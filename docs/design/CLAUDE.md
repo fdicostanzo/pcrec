@@ -1038,25 +1038,57 @@ append-only or historical records.
   **three** sites (R31 E3's finding consumed, not repeated). The ruling is
   necessary rather than precautionary: **the hazard coexists with a live
   `prefilter-window` ceiling on 16 of 30 swept shapes**, measured on the
-  shipped compiler's own stamp. The **DFA-eligible subset D66 wants is
-  RECOMMENDED TO [DD-11] with the door built and the equivalences measured**
-  (`\b`, `\B`, `(?m)^`, `(?m)$` against their lookaround decompositions, 80
-  cells each, 0 disagreements) — not shipped here, because it has no population
-  in this milestone and would make the module's own identity gate measure the
-  wrong thing; §9.2 is explicit that the resulting positive control is an
-  ANSWER-equality one and **not** a byte-identity one, since `\b` is
-  DFA-carryable and `A_LOOK` is `VM_ONLY`. Two of the charter's own premises
+  shipped compiler's own stamp. **THE DFA ANSWER IS NOT THIS
+  MODULE'S** (Frank, 2026-08-23): the one-character FOLD is ruled out as a
+  duplicate code path, the general form is chartered as **`[ENG-LOOK]`** —
+  lookaround by PRODUCT CONSTRUCTION, `(?<=L)` at p being `subject[..p] ∈
+  Σ*·L` — and §5 hands that row its three stated prerequisites instead. One of
+  them is new measurement this lane owed nobody until the ruling: **the
+  component-automaton SIZES, read off the emitter's own array dimensions**
+  after compiling each body alone, since pcrec's unanchored forward DFA for
+  `L` IS the `Σ*·L` recognizer. Every assertion-expansion and
+  enumerable-real-lookaround body is **2-25 states**; the product bound clears
+  the 32,000 cap on **64 of 64 non-control rows** while the deliberately-
+  extreme controls put **18 of 62** over it, so the zero is a result and not a
+  small population. **§6 IS THE OTHER HALF OF THAT RULING AND IS THE SECTION
+  TO READ FIRST**: every member of the assertion family IS a lookaround, so
+  [DD-11]/D66's expansions (`\b` ≡ `(?<=\w)(?!\w)|(?<!\w)(?=\w)`, `(?m)^`
+  ≡ `\A|(?<=\n)(?!\z)`, `\Z` ≡ `(?=\n?\z)`, …) are this module's own
+  design examples — all nine verified equivalent at **972 cells / 0
+  disagreements**, with the `(?!\z)`-dropped control firing at 4/108 — and
+  **every one of them compiles under the fixed-per-branch rule**, because the
+  only variable-width body in the family sits inside a lookAHEAD where there
+  is no width rule (the same body one direction over would be refused; §12
+  P-12 attacks the coincidence). Textually substituting them into the
+  assertions module's shipped corpus is a **CORPUS GENERATOR, not a product
+  mechanism** (the PRODUCT-side substitution is [DD-14]'s subroutine-call
+  primitive, ruled and sequenced), and it converts **8,495 of that corpus's
+  10,120 libpcre2-verified cells** into a lookaround corpus with a
+  two-comparison self-oracle — `A == B` (pcrec's two lowerings of one
+  language) *and* `A == C` (libpcre2), neither sufficient alone. §6.3 costs
+  all five qualification rules separately; the expensive one is scoped `(?m:`
+  at 24 blocks / 871 cells and the character-class one costs **0 on this
+  corpus and is still required**. §6.4 states what the lowering owes [DD-14]
+  and shows §3 already provides it: every lookaround body is a self-contained
+  sub-program with ONE entry and ONE success exit, its state in trailed slots
+  rather than C locals. §9.2 accordingly **WITHDRAWS** the fold-based positive
+  control the first revision proposed and keeps the ordinary refusal control,
+  recording that a control built on a mechanism that does not exist would have
+  gone green by construction. Two of the charter's own premises
   were **refuted** and §7 says so: python `re` ACCEPTS quantified lookaround
   (all fourteen forms, agreeing with libpcre2 on all nine behavioural cells)
   and AGREES with libpcre2 on every capture cell — marking either
   `# pcre2-only` would throw away a working oracle, which is R32 C3 in the
-  other direction. It also reports a **D26 tier-2 registry defect this module
+  other direction. **A third was refuted by the charter's own 2026-08-23
+  addition**: python is warned to choke on "several expansions", and it takes
+  ALL NINE, because the variable-width lookbehind it rejects appears in none
+  of them — so the expanded corpus stays python-verifiable. It also reports a **D26 tier-2 registry defect this module
   owns**: all twelve alpha spellings answer *"requires module `verbs`"*,
   because the `(*` doorway is one `FIXED` row while the names live in
   `mod_verbs.c` — the same defect one doorway over from the one
   `registry.c:692` already records for `(?*`. Four ASKs for Frank (§14), none
   of them ruling contradictions. Measurements: `lookaround_measurements/`.
-- `lookaround_measurements/` — the [M6.6.1] lane's six probes, its oracle
+- `lookaround_measurements/` — the [M6.6.1] lane's NINE probes, its oracle
   helper and its archiver; see its own CLAUDE.md. **No instrument reads a
   lookaround through pcrec, because pcrec cannot compile one** — every
   in-pcrec arm measures a separate axis on patterns pcrec CAN compile (the
@@ -1064,7 +1096,7 @@ append-only or historical records.
   assertions module's already-shipped `\b` and `(?m)^` artifacts). Borrows
   `../backrefs_measurements/probes/br_oracle.py`, which borrows
   `pcre2_ctypes.py` — two levels, no second binding. Its `out/CLAUDE.md`
-  carries **SEVEN instrument defects the lane found by running its own
+  carries **NINE instrument defects the lane found by running its own
   probes**, every one producing a confident wrong number: **two constants that
   are wrong at the value a reader would take from the documentation's list
   order** (`PCRE2_INFO_MAXLOOKBEHIND` at 23 read a different field and would
@@ -1077,7 +1109,13 @@ append-only or historical records.
   reading — **a sweep population that could not contain a qualifying shape**,
   reporting "0 qualifying" over a space in which 0 was the only possible
   answer. The reachability guard that replaced it is what turned that zero
-  into the 16-of-30 the design's prefilter ruling rests on.
+  into the 16-of-30 the design's prefilter ruling rests on — **and the ninth
+  defect is that same shape recurring in a SECOND probe of this lane's own**,
+  the `[ENG-LOOK]` sizing sweep, whose first "0 over the cap" was over a
+  population three orders of magnitude below it. It was found by applying the
+  sixth defect's lesson rather than by a panel, which is the argument for
+  writing a reachability guard into every sweep rather than into the one that
+  has already failed.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes
