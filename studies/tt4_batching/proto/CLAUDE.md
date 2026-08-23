@@ -67,10 +67,20 @@ documents how to reproduce them.
   the harness's OWN shape (`tests/harness/run.sh:356`'s exact one-
   `timeout`-spawn-per-case pattern, reproduced in a generated bash
   script) against (ii) one process per PATTERN via `multidriver_gen.py`,
-  3 reps, median. See docs/dev/tt4_measurement.md's "Stage A2: the
-  remainder" -> "exec-cost prototype cell" for the result (245.59x on a
-  16-pattern/35-case sample) and why the ratio should scale UP, not down,
-  at `corpus`'s real ~10-cases/pattern average.
+  3 reps, median. `--timeout-bins` (added 2026-08-23, second manager
+  finding) runs shape (i) once per listed `timeout` binary — this box has
+  BOTH uutils coreutils' `timeout` (`/usr/bin/timeout`, the real one
+  `run.sh` uses) and GNU coreutils' (`/usr/bin/gnutimeout`) installed,
+  and they are NOT equivalent: uutils costs ~108.7ms/call at ~0 CPU, GNU
+  ~4.2ms — a THIRD, independent lever this file's first version had
+  conflated into the (i)-vs-(ii) comparison. See
+  docs/dev/tt4_measurement.md's "The `timeout` binary itself" and "exec-
+  cost prototype cell" sections for the decomposed result (uutils-harness
+  1.00x / GNU-harness 31.18x / one-process-per-pattern 173.59x, i.e. the
+  TRUE exec-batching-specific lever beyond just fixing the timeout binary
+  is only 5.57x, not the 245.59x this row first reported before the
+  three-way split existed) and why the remaining ratio should scale UP,
+  not down, at `corpus`'s real ~10-cases/pattern average.
 - **results/** — committed sweep output (`*_results.json` from `bench.py`,
   `*_bench.log` its stdout) for the two pools used in the memo: `corpus`
   (256 patterns, `tests/base`, default/no-`--features` bucket — the

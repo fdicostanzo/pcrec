@@ -607,52 +607,100 @@ argument); not re-run, since the two affected records are negligible
 (0.004% of the log) and re-running the whole 7-section census again was
 not in this row's remaining time budget.
 
-### The exec-cost prototype cell (a lever measured on the same footing as gcc-batching)
+### The `timeout` binary itself: a third, independent, near-free lever
+
+**Manager finding, verified directly on this box before being written up**:
+`/usr/bin/timeout` here is **uutils coreutils 0.8.0**
+(`/usr/bin/timeout -> ../lib/cargo/bin/coreutils/timeout`), not GNU
+coreutils. Microbenchmark (50x `timeout 5 true` vs. bare `true`, this
+memo's own repro, matching the manager's numbers almost exactly):
+
+| binary | mean wall/call | CPU/call |
+|---|---|---|
+| bare `true` | 0.4ms | — |
+| `/usr/bin/gnutimeout` (GNU coreutils 9.7, also installed on this box) | 4.2ms | ~0 |
+| `/usr/bin/timeout` (uutils 0.8.0) | **108.7ms** | ~0 |
+
+**uutils' `timeout` costs ~104.5ms of PURE WALL per call above bare exec,
+at essentially ZERO CPU** — this is sleep/poll-wait time, not compute, and
+it is a property of THIS ONE BINARY, not of "spawning processes" in
+general (`gnutimeout` pays only ~3.8ms of the same tax). Cross-checked
+against Stage A2's own census: `census.tsv`'s `corpus` timeout calls
+(23,252 of them — driver-target, pcrec-target, and `gen_cc`'s
+`other:bash` wrapper combined) average **114.3ms/call**, matching the
+microbenchmark closely; `rungselect`/`mrl`/`counterk`/`altcls` (206/153/
+60/41 calls respectively) show HIGHER per-call means (261-418ms) because
+those calls wrap real, non-trivial gcc compiles, and the ~104.5ms tax is
+additive on top of real work, not the whole story there.
+
+**Because this overhead is ~0 CPU, it does NOT show up in `sec_cpu`
+(the residue computation above is UNAFFECTED by it) — it is a WALL-CLOCK-
+only cost**, and the right way to size it is per-section wall, not %-of-
+suite-CPU:
+
+| section | timeout calls | wall-sum | projected wall-sum @ ~104.5ms/call saved |
+|---|---|---|---|
+| `corpus` | 23,252 | 2,657.42s | ~2,429.8s |
+| `rungselect` | 206 | 62.69s | ~21.5s |
+| `mrl` | 153 | 58.98s | ~16.0s |
+| `counterk` | 60 | 25.08s | ~6.3s |
+| `altcls` | 41 | 10.72s | ~4.3s |
+
+For `corpus`, whose `driver-target`/`other:bash` calls run inside each of
+~12 file-worker processes SERIALLY (no further parallelism within one
+worker's own case loop), that wall-sum savings divides roughly by the
+section's own ~12-way worker count: **~2,429.8s / 12 ≈ 200s of `corpus`'s
+468.91s measured section wall (≈43%) is plausibly recoverable by
+substituting `gnutimeout` for `timeout` on `PATH` — zero harness redesign,
+zero batching, one binary swap.** This is corroborated directly by the
+exec-cost prototype cell below, not merely projected from the
+microbenchmark.
+
+### The exec-cost prototype cell (three shapes, same footing)
 
 `studies/tt4_batching/proto/bench_execcost.py`, corpus pool, 16 patterns,
 their REAL cases pulled from the actual `.rxt` source files (never
-synthetic — `extract_cases.py`), 3 repeats, median:
+synthetic — `extract_cases.py`), 3 repeats, median, now with a THIRD
+variant added per the manager's request (`--timeout-bins`):
 
-- **(i) the harness's own shape** — one `timeout RUN_SECS "$bdir/t" subj
-  pos` spawn per CASE, reproduced exactly as `tests/harness/run.sh:356`
-  does it (a generated bash script, one command-substitution line per
-  case, never editing `run.sh` itself): **35 cases, 3.8128s median**
-  (~109ms/case — three forks per case: the `$(...)` command-substitution
-  subshell, `timeout` itself, and the driver binary, matching `run.sh`'s
-  own nesting exactly).
-- **(ii) one process per PATTERN**, reading all of that pattern's cases
-  from stdin in a loop inside a single already-running process
-  (`multidriver_gen.py` — a tiny purpose-built driver, never
-  `tests/harness/driver.c`): **16 spawns, 0.0155s median** (~1ms/pattern).
-- **Speed-up: 245.59x** (3.8128s -> 0.0155s).
+| shape | median (35 cases / 16 patterns) | vs. uutils-harness |
+|---|---|---|
+| (i-uutils) harness's own shape, `/usr/bin/timeout` (`run.sh:356`'s literal spawn-per-case, unmodified) | 3.8189s | 1.00x |
+| (i-gnu) SAME shape, `/usr/bin/gnutimeout` substituted (nothing else changed) | 0.1225s | **31.18x** |
+| (ii) one process per PATTERN, `multidriver_gen.py` (no per-case exec at all) | 0.0220s | **173.59x** |
 
-**This ratio is not a fixed constant — it scales with cases-per-pattern,
-and this 16-pattern sample's average (35/16 ≈ 2.2 cases/pattern) is LOWER
-than `corpus`'s real average** (19,185 driver-target calls / ~1,906
-patterns ≈ 10.1 cases/pattern per Stage A2's own count). Shape (i)'s cost
-scales with the CASE count (each case pays the full three-fork tax);
-shape (ii)'s cost scales with the PATTERN count (each extra case for an
-already-open process is just another loop iteration, no fork at all) —
-so at `corpus`'s real ~10 cases/pattern, exec-batching's speed-up would
-be LARGER than 245x, not smaller, because the fixed per-pattern process
-cost that shape (ii) still pays gets amortized over more cases per spawn.
-This memo does not re-measure at the full 1,906-pattern scale (out of
-this row's remaining time budget) — the 16-pattern cell establishes the
-DIRECTION and rough MAGNITUDE, not a scaled-up promise.
+**This decomposes what looked like a single "245.59x exec-batching win" in
+the first cut of this cell into two SEPARATE, independently-measured
+effects, and the split matters for design**: swapping ONLY the `timeout`
+binary — no redesign — already recovers **31.18x** of the gap (per-case
+means: uutils 109.1ms, GNU 3.5ms, both matching the standalone
+microbenchmark closely, cross-validating both measurements). Going the
+REST of the way to full exec-batching (one process per pattern) adds a
+further **5.57x** on top of the GNU-timeout number (0.1225s → 0.0220s) —
+real, but a much smaller share of the total 173.59x than the first cut's
+framing implied. **Most of what this row originally reported as "the cost
+of per-case process spawning" was actually "the cost of THIS BOX's
+particular `timeout` implementation."** The 5.57x remaining is the
+TRUE exec-batching-specific lever, isolated from the binary-choice
+confound.
 
-**Sizing this lever against gcc-batching's, using Stage A2's own numbers**:
-`corpus`'s residue (669.35s) includes ~142.58s of `gen_cc`'s own bash/
-ulimit wrapping overhead (a THIRD thing, not exec-per-case) — subtracting
-that leaves roughly **~527-669s** of `corpus`'s CPU plausibly attributable
-to matcher-run exec overhead plus ordinary bash-loop cost (the exact split
-between "timeout/fork tax" and "bash's own string/loop processing" is not
-separable with these shims alone — both are eliminated together by shape
-(ii)). Against `make test`'s total 3,777 CPU-s, that is **roughly
-14-18%** of the WHOLE SUITE's CPU, concentrated entirely in `corpus` (and
-negligibly in `test-known-fail`, which shares `run.sh`'s shape but has an
-empty corpus today) — a slice comparable in size to gcc's OWN 647s/17%
-share, even though only ONE section uses this exec shape at all (Stage
-A2's other six sections already loop internally, per the finding above).
+**Scaling note unchanged from the first cut**: this 16-pattern sample's
+average (35/16 ≈ 2.2 cases/pattern) is lower than `corpus`'s real average
+(≈10.1 cases/pattern per Stage A2's own count); shape (ii)'s remaining
+5.57x-over-GNU-timeout edge would likely grow at higher cases/pattern
+(more loop iterations amortizing the same one process-spawn), not shrink
+— not re-measured at full scale, same time-budget reason as before.
+
+**Sizing all three levers together, using Stage A2's own numbers**:
+`corpus`'s CPU residue (669.35s, ~70.6% of its 947.50s section CPU) is
+essentially UNTOUCHED by the timeout-binary swap (that lever saves WALL,
+not CPU — the overhead was already ~0 CPU) — it is instead explained by
+`gen_cc`'s own wrapper overhead (~142.58s, separately measured above) plus
+real bash-loop/fork CPU cost plus the TRUE exec-batching share. The three
+levers are measuring three DIFFERENT axes of the same section's cost
+(gcc-batching: CPU; timeout-swap: wall; exec-batching: mostly wall, with
+a small CPU component from fewer fork/exec calls) and should not be
+summed naively — see "What the numbers say" for how they combine.
 
 ## What the numbers say
 
@@ -661,26 +709,41 @@ prediction — batching genuinely helps this workload, on both pools
 tried, by a real multiple, under the harness's own execution shape.**
 Stated as plainly as the evidence supports:
 
-**Two independent, non-overlapping levers, each with a measured ceiling —
-neither one alone gets close to the whole suite, and reading either
-number as "the suite gets Nx faster" would overstate it:**
+**Three independent levers, on two DIFFERENT axes (CPU vs. wall-clock) —
+none alone gets close to the whole suite, and the two wall-clock levers
+in particular must not be added to the CPU one as if they were the same
+currency:**
 
-| lever | best measured multiple | applies to | measured ceiling on `make test`'s total CPU (3,777s) |
-|---|---|---|---|
-| gcc-batching (Stage B) | 3.66x (shape B, N=16, corpus pool) | every section that compiles generated C (all but `reject`/`resource`) | gcc is 647s/17% of total CPU — batching it at 3.66x caps the WHOLE SUITE's win at roughly that 17% share, not 3.66x suite-wide |
-| exec-batching (Stage A2) | 245.59x (16-pattern sample; likely higher at `corpus`'s real ~10 cases/pattern, see below) | ONLY sections using `tests/harness/run.sh`'s per-case shape — measured to be `corpus` alone (plus near-zero `test-known-fail`) | ~527-669s, roughly 14-18% of total CPU, concentrated entirely in one section |
+| lever | axis | best measured multiple | applies to | measured ceiling |
+|---|---|---|---|---|
+| gcc-batching (Stage B) | CPU | 3.66x (shape B, N=16, corpus pool) | every section that compiles generated C (all but `reject`/`resource`) | gcc is 647s/17% of `make test`'s total 3,777 CPU-s — net CPU SAVED at 3.66x = 17.13% x (1 − 1/3.66) ≈ **12%** of the suite's total CPU |
+| `timeout`-binary swap | WALL | 31.18x on the `timeout` call itself (uutils 108.7ms/call vs. GNU coreutils 3.5-4.2ms/call, this box) | any section using `timeout` at all — measured concentrated in `corpus` (23,252 calls) | ≈**200s of `corpus`'s 468.91s section wall (≈43%)**, near-zero CPU effect (the overhead being removed was already ~0% CPU) |
+| exec-batching (one process/pattern), NET of the timeout-swap above | mostly WALL | 5.57x (0.1225s → 0.0220s on the 16-pattern sample, AFTER the timeout binary is already fixed) | ONLY `corpus` (the sole section using `run.sh`'s per-case shape at all — Stage A2 found the other six already loop internally) | a further wall reduction on top of the timeout-swap's own ≈43%, magnitude not separately re-measured at full `corpus` scale |
 
-The two levers are **structurally independent and could both be adopted**
-(one attacks gcc invocation count, the other attacks matcher-run
-invocation count, and `corpus` is the one section paying for both) — but
-neither is "the fix" on its own, and their ceilings ADD to roughly
-31-35% of `make test`'s total CPU at best, not 100%. The remaining ~65%+
-(the six differential sections' own internal sweep compute, plus python3
-oracle time, plus whatever bash-loop/fork overhead this memo could not
-separate from matcher-run cost) is either genuine compute this project
-already wants done, or a THIRD kind of lever (parallelizing/optimizing
-the differential drivers' own internal sweeps) this row was not chartered
-to investigate.
+**The first cut of this memo reported exec-batching's ceiling as
+"245.59x / ~14-18% of suite CPU," conflating two effects that Stage A2's
+manager review correctly separated: most of that number was the
+`timeout`-binary choice (a wall-clock, near-zero-CPU, one-line-PATH-fix
+lever), not an inherent cost of per-case process spawning.** The
+TRUE exec-batching-specific lever, isolated, is the much smaller 5.57x.
+This is corrected here rather than left standing — the earlier number was
+measured correctly but INTERPRETED too broadly before the binary-level
+decomposition existed.
+
+**The three levers are structurally independent and could all be adopted
+together** (`corpus` is the one section paying for all three costs at
+once: gcc invocation count, `timeout`-binary overhead, and per-case exec
+count) — but none is "the fix" alone, and the CPU-axis ceiling (gcc-
+batching, ~12%) and the wall-axis ceilings (timeout-swap ~43% of
+`corpus`'s wall, exec-batching a further increment on top) answer
+DIFFERENT questions ("how much less core-time does the suite consume" vs.
+"how much sooner does `corpus` finish") and must not be summed into one
+percentage. The remaining majority of both axes — six differential
+sections' own internal sweep compute, python3 oracle time, `gen_cc`'s own
+wrapper overhead, ordinary bash-loop cost — is either genuine compute
+this project already wants done, or a further kind of lever (parallelizing/
+optimizing the differential drivers' own internal sweeps) this row was
+not chartered to investigate.
 
 Stated as plainly as the evidence supports, on the gcc-batching lever
 specifically:
@@ -736,26 +799,45 @@ somewhere in the batch-count-near-core-count neighbourhood rather than
 (feature-set collision, all-or-nothing batch failure) already in hand
 for that design to solve rather than discover.
 
-**On the exec-batching lever (Stage A2) specifically**: also a measured
-YES within its narrow scope — `corpus` alone, where it applies — and by a
-far larger multiple (245.59x vs. gcc-batching's 3.66x) because it removes
-THREE forks per case (subshell, `timeout`, driver) rather than amortizing
-one compile's fixed cost across a batch. But its scope is narrow BY
-MEASUREMENT, not by assumption: five of the six other re-censused
-sections already use the "one process, many cases" shape this lever
-would introduce for `corpus` — they adopted it independently, for their
-own differential-driver reasons, before this row ever asked the question.
-Its own failure-isolation cost is flagged, not measured (no crashing
-case existed in this cell's 16-pattern sample) — the SAME open design
-question TU-batching has for gcc, and likely the harder version of it,
-since per-case exec isolation is `run.sh`'s CURRENT crash/timeout/give-up
-attribution mechanism, not an incidental side effect.
+**On the `timeout`-binary swap specifically**: the single HIGHEST-
+LEVERAGE, LOWEST-RISK finding in this whole memo — a measured ~43% wall
+reduction on `corpus` (the suite's single worst section by wall AND by
+gcc-CPU) from substituting one binary on `PATH`, zero harness redesign,
+zero batch-size/failure-isolation/`--features`-homogeneity design
+questions to answer. It is explicitly named by the manager as its own,
+SEPARATE row — not something this row implements — because a
+system-`PATH`-dependent behavior swap (this box happens to have BOTH
+`timeout` implementations installed; that is not guaranteed on every
+machine `make test` runs on) needs its own scoping, not a rider on a
+batching memo.
 
-**Combined, honestly**: the two levers' measured ceilings add to roughly
-31-35% of `make test`'s total CPU (17% gcc-batching + 14-18%
-exec-batching, concentrated in `corpus`), not the 76% this row set out to
-attribute. The remaining majority is real compute — six differential
-drivers' own internal sweeps, oracle/python3 time, and bash/fork overhead
-this memo's shims cannot see past a process boundary — which this row
-correctly reports as UNADDRESSED rather than assumed solved by either
-lever.
+**On the exec-batching lever (Stage A2) specifically, corrected**: also a
+measured YES within its narrow scope — `corpus` alone, where it applies —
+but by a FAR SMALLER multiple than this memo's first cut reported once
+decomposed from the timeout-binary effect: **5.57x, not 245.59x**, is the
+part attributable to reducing PROCESS COUNT itself (one exec per pattern
+vs. one per case) rather than to `timeout`'s own overhead. Its scope is
+narrow BY MEASUREMENT, not by assumption: five of the six other
+re-censused sections already use the "one process, many cases" shape this
+lever would introduce for `corpus` — they adopted it independently, for
+their own differential-driver reasons, before this row ever asked the
+question. Its own failure-isolation cost is flagged, not measured (no
+crashing case existed in this cell's 16-pattern sample) — the SAME open
+design question TU-batching has for gcc, and likely the harder version of
+it, since per-case exec isolation is `run.sh`'s CURRENT crash/timeout/
+give-up attribution mechanism, not an incidental side effect.
+
+**Combined, honestly, across all three**: gcc-batching's CPU ceiling
+(~12% net suite-wide) and the `timeout`-swap's wall ceiling (~43% of
+`corpus`'s own wall) are on DIFFERENT axes and answer different questions
+— they should not be added into one percentage. Exec-batching's TRUE,
+decomposed contribution (5.57x on top of an already-fixed timeout binary)
+is smaller than this memo first reported, and is itself layered on top of
+the timeout-swap rather than independent of it. None of the three, alone
+or combined, accounts for `make test`'s full CPU or wall cost — the
+remaining majority is real compute: six differential drivers' own
+internal sweeps, oracle/python3 time, `gen_cc`'s own wrapper overhead, and
+ordinary bash-loop cost this memo's shims cannot see past a process
+boundary — which this row correctly reports as UNADDRESSED rather than
+assumed solved by any lever, and the `timeout`-binary finding specifically
+is flagged as its own row rather than folded into [TT-4.2]'s scope.

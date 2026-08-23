@@ -154,16 +154,26 @@ Append-only where noted; the restart/status-recovery record for the project.
   spawns) — the other six (`assertions`, `rungselect`, `counterk`,
   `backrefs`, `mrl`, `altcls`) already run their whole subject sweep
   inside ONE process via their own C differential drivers, invisible to
-  any exec-boundary shim by construction. A second, independent
-  "exec-batching" lever (one process per pattern reading all its cases,
-  vs. `run.sh`'s one-spawn-per-case shape) measured 245.59x on a
-  16-pattern sample, applicable narrowly to `corpus`. Both levers'
-  ceilings, stated honestly, add to ~31-35% of the suite's total CPU, not
-  76% — the majority is real differential-driver/oracle compute this row
-  reports as unaddressed rather than assumed solved. Evidence lives in
+  any exec-boundary shim by construction. **A second manager finding
+  (same day) then DECOMPOSED what first looked like one "245.59x
+  exec-batching" lever into TWO separate effects**: this box's
+  `/usr/bin/timeout` is uutils coreutils (0.8.0), measured costing
+  ~108.7ms/call at ~0 CPU vs. GNU coreutils' ~4ms — a WALL-CLOCK-only,
+  near-free, one-`PATH`-substitution lever worth ~43% of `corpus`'s own
+  section wall alone, explicitly scoped as ITS OWN row rather than folded
+  into batching design; the TRUE exec-batching-specific lever (reducing
+  process COUNT, not `timeout`'s own overhead), isolated once the binary
+  choice is fixed, is a much smaller 5.57x. Three levers, on two
+  different axes (CPU vs. wall), stated honestly: gcc-batching nets ~12%
+  of the suite's total CPU; the `timeout`-swap and exec-batching levers
+  answer a wall-clock question, concentrated entirely in `corpus`, and
+  are not additive with the CPU figure. The remaining majority of both
+  axes is real differential-driver/oracle compute this row reports as
+  unaddressed rather than assumed solved. Evidence lives in
   `studies/tt4_batching/` (census shim, bench harness, committed results);
   see its own CLAUDE.md. No recommendation about the harness's own design
-  beyond what the numbers directly support — that is [TT-4.2]'s row.
+  beyond what the numbers directly support — that is [TT-4.2]'s row (the
+  `timeout`-binary swap is a separate row again, per the manager).
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.

@@ -77,6 +77,11 @@ def main():
     ap.add_argument("--outdir", required=True)
     ap.add_argument("--reps", type=int, default=3)
     ap.add_argument("--run-secs", default="10")
+    ap.add_argument("--timeout-bins", default="/usr/bin/timeout",
+                     help="comma-separated list of timeout binaries to run shape (i) "
+                          "against, one full measurement per binary -- e.g. "
+                          "/usr/bin/timeout,/usr/bin/gnutimeout to compare uutils vs "
+                          "GNU coreutils' timeout on the SAME harness shape")
     args = ap.parse_args()
 
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -130,29 +135,46 @@ def main():
     # ---- shape (i): harness's own per-case exec shape, via a generated
     # bash script reproducing run.sh:356's exact line
     #   out="$(timeout "$RUN_SECS" "$bdir/t" "$subj" "$pos")"
-    # for every case, in order.
-    bash_lines = ["#!/usr/bin/env bash", "set -u"]
-    for prefix, subj, pos in all_cases:
-        exe = harness_bins[prefix]
-        # subj is already .rxt-escaped text; pass through double-quoted
-        # exactly as run.sh does (single-quoting the shell script's own
-        # literal so subj's backslash escapes reach the C decoder
-        # unmolested, matching run.sh's own quoting of $subj).
-        safe_subj = subj.replace("'", "'\\''")
-        bash_lines.append(f"out=\"$(timeout {args.run_secs} '{exe}' '{safe_subj}' '{pos}')\"")
-    bash_script = os.path.join(args.outdir, "shape_i.sh")
-    with open(bash_script, "w") as f:
-        f.write("\n".join(bash_lines) + "\n")
+    # for every case, in order. Run once per --timeout-bins entry (default:
+    # just the box's real /usr/bin/timeout, i.e. run.sh's own actual
+    # behaviour) -- a manager finding (2026-08-23) is that on THIS box
+    # /usr/bin/timeout is uutils coreutils 0.8.0, measured costing ~108ms
+    # of pure WALL per call at 0 CPU (50x `timeout 5 true` probe), vs. GNU
+    # coreutils' timeout (installed here as /usr/bin/gnutimeout, 9.7) at
+    # ~4ms/call -- so this comparison isolates how much of shape (i)'s own
+    # cost is THIS SPECIFIC BINARY CHOICE rather than fork/exec/subshell
+    # overhead in general.
+    med_i_by_bin = {}
+    for timeout_bin in args.timeout_bins.split(","):
+        label = os.path.basename(timeout_bin)
+        bash_lines = ["#!/usr/bin/env bash", "set -u"]
+        for prefix, subj, pos in all_cases:
+            exe = harness_bins[prefix]
+            # subj is already .rxt-escaped text; pass through double-quoted
+            # exactly as run.sh does (single-quoting the shell script's own
+            # literal so subj's backslash escapes reach the C decoder
+            # unmolested, matching run.sh's own quoting of $subj).
+            safe_subj = subj.replace("'", "'\\''")
+            bash_lines.append(f"out=\"$({timeout_bin} {args.run_secs} '{exe}' '{safe_subj}' '{pos}')\"")
+        bash_script = os.path.join(args.outdir, f"shape_i_{label}.sh")
+        with open(bash_script, "w") as f:
+            f.write("\n".join(bash_lines) + "\n")
 
-    walls_i = []
-    for rep in range(args.reps):
-        t0 = time.monotonic()
-        subprocess.run(["bash", bash_script], check=True)
-        t1 = time.monotonic()
-        walls_i.append(t1 - t0)
-    med_i = statistics.median(walls_i)
-    min_i = min(walls_i)
-    print(f"shape=(i) harness-per-case-exec  median={med_i:.4f}s min={min_i:.4f}s reps={walls_i}")
+        walls_i = []
+        for rep in range(args.reps):
+            t0 = time.monotonic()
+            subprocess.run(["bash", bash_script], check=True)
+            t1 = time.monotonic()
+            walls_i.append(t1 - t0)
+        med_i = statistics.median(walls_i)
+        min_i = min(walls_i)
+        med_i_by_bin[label] = med_i
+        print(f"shape=(i) harness-per-case-exec [{label}]  median={med_i:.4f}s min={min_i:.4f}s reps={walls_i}")
+    # Use the FIRST --timeout-bins entry (the box's real /usr/bin/timeout by
+    # default, matching run.sh's own actual behaviour) as "the" shape-(i)
+    # number for the final speed-up line below, if the caller wants a
+    # single headline ratio.
+    med_i = next(iter(med_i_by_bin.values()))
 
     # ---- shape (ii): one process per PATTERN, all its cases via stdin.
     cases_by_prefix = {}
