@@ -351,8 +351,27 @@ including V-G/V-H (added this session).
   testing.md SAN-1's reasons for separate axes must be read first),
   mech per-row scoping (which sections a row really needs), CCACHE=1 for
   mech ([TT-3]'s qualified yes), PROCS for mech, pipelining stages on a
-  quiet box. STAGE 2: Frank picks; each pick becomes its own row with a
-  measurement-first stage. Output: docs/dev/chain_profile.md.
+  quiet box. STAGE 1 DONE (6f1e941, docs/dev/chain_profile.md: chain
+  2h26m on m65; three-log trend; ubsan/asan/mech +20% in one day with no
+  growth alarm; SAN-1's separate-axes reason is TSan-specific; mech PROCS=4
+  never re-validated at 118 rows and leaks into inner harness sharding;
+  CCACHE=1 for mech). CANDIDATE (h), added 2026-08-23 from Frank's
+  question "are the sabotage tests dependent on the tests themselves; do
+  they need re-running if the tests don't change?": a row's verdict is a
+  property of the PAIR (compiler, corpus) — it flips when (1) its
+  SAB_HARNESS_TARGET changes (exact, grep-able), (2a) its anchor drifts
+  (caught STATICALLY by the tripwire, seconds, already on the bar), or
+  (2b) a compiler change elsewhere MASKS or unreaches the sabotaged path
+  (S108's single-site shape; NOT derivable from the diff — only a run
+  finds it). No row has yet been observed flipping DETECTED→UNDETECTED
+  from a compiler change alone. Tiered policy proposed, NOT ruled: docs/
+  infra-only → tripwire; tests-only → tripwire + rows targeting the
+  changed files; src changed → tripwire + rows whose SAB_FILE or target
+  changed, full matrix at module close. MEASUREMENT FIRST: diff the
+  2026-08-18..22 mech matrices in build/ (different HEADs, known diffs)
+  for any row that flipped without its SAB_FILE/target changing. Frank
+  (08:5x): "wait for the census memo and decide as a set" — STAGE 2 is
+  the set decision once [TT-4.1]'s memo lands. Output: chain_profile.md.
 - [REL-META] STATE:not-started — META-PLAN ROW for FIRST-RELEASE +
   CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
   "we are within a few solid efforts of having a first release"; this
