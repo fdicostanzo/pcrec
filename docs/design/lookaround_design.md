@@ -17,6 +17,80 @@ written before the panel rather than after.
 
 ---
 
+## PANEL OUTCOME — R33 (2026-08-23)
+
+`../dev/reviews/2026-08-23-r33-lookaround-design.md`, three read-only critics
+against commit `9c10236`. **Read this block before any section.**
+
+**FIVE HIGH, THIRTEEN MEDIUM, SEVEN LOW — every one accepted as a design
+edit, and NONE refutes the mechanism.** §3's lowering, §4's seam entry, §5's
+prefilter ruling and §6's replacement table all survived; what fell is the
+scoping the lowering never stated, one measurement METHOD, one wave's landing
+bar, an unbudgeted arm count, and a rule that was a substring test.
+
+| finding | what was wrong | where it is now |
+|---|---|---|
+| **C1-1 (HIGH)** | `v->fmin`/`v->fdyn` are baked into a body's prune bound as a LITERAL, and a lookahead's follow OVERLAPS its own body — so `(?!(a+)b)a+b` on `"aab"` prunes the body, the negative assertion SUCCEEDS, and the answer is a **FALSE MATCH**. §3.6 derived the non-atomic form BY DELETING THE CUT, which is where `vm_atomic`'s own header attributes the scoping | **§3.2's new rule (a property of the OVERLAP, not of the cut)**, §3.4's per-direction ruling, §3.7's charge note, **S-LA17**, §12 P-14 |
+| **C2-1 (HIGH)** | §5.8's method: the emitted forward DFA is ACCEPT-PRUNED (`nfa.c:766-781`), so every accepting state is a dead sink — it is the *leftmost-occurrence* automaton, not `Σ*·L`, and it UNDER-counts | **§5.8 rewritten**: the emitted number is a LOWER BOUND, a PROTOTYPE subset construction supplies `\|D(Σ*·L)\|`, and the cap claim is re-stated against it |
+| **C2-2 (HIGH)** | D65 flips `built` when the PORT answers at `WANT_RESULT` (`syntax_dump.c:544-575`), not when the emitter lands — wave B's "six rows still `unbuilt`" is unmeetable, and as specified wave B ships a compliance index that says `built` for six constructs that cannot compile | **§11 waves B and C FOLDED**, bars rewritten; §8.3 gains the mechanism sentence |
+| **C2-3 (HIGH)** | **23 `case A_ATOMIC` sites in 10 files** need an `A_LOOK` arm; §11 named four. Two of the unnamed ones are the predicates §5.6's ruling depends on | **§11's new WAVE A2 arm budget, by file**, with `pcrec_has_lookaround` placed beside `pcrec_has_atomic` (`atomic.c:37`) |
+| **C3-1 (HIGH)** | §6.3's Q4 was a SUBSTRING test (`"(?m:" in pat`) — misses `(?im:` and, as this lane's own fix then found, **seven non-leading bare `(?m)` blocks** | **§6.3 Q4 parses the letter set**; the population moves **270/8,495 → 263/8,260** and C3-1's own "inert today" is refuted |
+
+**THE MEDIUMS AND LOWS**, each applied in place: C1-2 (§3.3's "no position
+slot" is false for the negative lookbehind — the four cells are now one shape
+table with their slot counts), C1-3 (§3.6 draws the non-atomic lookbehind and
+its branch retry, measured), C1-4 (§3.4 emits the `$_BACK_STEP_NONE` check
+S-LA7 needs), C1-5 (§3.4's end-check claim split by polarity; ASK 2 with it),
+C1-6 (§3.7's charge is per ATTEMPT POSITION — the `O(n·Σk_i)` shape and a
+long-subject cell), C1-7 (§2.7's `\K` refusal gains its eleven refused and
+four compiling controls), C1-8 (§3.1 says "three flags and the width table"),
+C1-9 (§13: assertion-CONDITIONS stay module `conditionals`), C2-4 (§5.4's
+H1/H2 relabelled a PLUMBING CHECK — they are unfalsifiable by construction, and
+§5.6 ruling 1's warrant moves onto §5.3 + §5.5), C2-5 (S-LA10 needs
+`--features assertions,lookaround` or it is masked), C2-6 (wave F carries the
+three reject-table rows), C2-7 (§9.3 gains a `SAB_SUITES` column; the two
+differential drivers get mech arms), C2-8 (S-LA15/S-LA16 written out),
+C2-9 (wave C's bar no longer depends on D and F), C2-10 (S-LA13 restated —
+the two CEILING BUILDERS are the two sites, and `--emit-ir` is a fourth
+reader), C2-11 (§5.5 gains the EMITTED window numbers), C2-12 (S-LA5 names its
+row and its detector is capture-free), C2-13 (S-LA1's body must be one
+possessify cannot narrow), C2-14 (S-LA9 predicts `PCREC_ERR_STEPS`, not a
+hang), C3-2 (Q3 consumes a leading `]`), C3-3 (Q6, costed 0/0).
+**C3-4 and C3-5 are [M6.6.2] doc-sweep items** and are listed in §11 rather
+than edited here — they are in `tests/assertions/CLAUDE.md`, not this lane's
+file.
+
+**NOTHING WAS REJECTED.** Two findings came back STRONGER than filed, both
+because implementing the fix measured something the critic had not:
+
+1. **C1-1's lookbehind half.** This lane's first response was a
+   simplification: §2.5 ships only FIXED-width lookbehind branches, a
+   fixed-width body has no quantifier, so the hazard cannot arise behind.
+   **MEASURED FALSE** — `a{3}` is fixed-width by §2.5's own rule AND is
+   lowered as an `A_REP` that takes a cursor rung with an MRL clamp whose
+   literal moves with the follow (1 → 3). The simplification would have left
+   the lookbehind unscoped on exactly the bodies §2.5 admits. §3.4 carries the
+   ruling C1-1 actually asked for.
+2. **C3-1's "inert today".** The fix is NOT inert. C3 named `(?im:`-style
+   letter sets, of which this corpus has **zero** — that half is inert as
+   filed — but the substring test also missed **seven non-leading bare
+   `(?m)`** blocks (`a$(?m)`, `\Ga|(?m)^b`, `(?m)^a|(?m)b`, …), which the
+   corrected parser excludes. Those are blocks the old rule would have
+   substituted under a multiline assumption that is false for part of the
+   pattern.
+
+**ONE PROBE DEFECT OF THIS LANE'S OWN, found in the fix round** and recorded
+with the others in `lookaround_measurements/out/CLAUDE.md`: the new
+follow-scoping probe's atomic CONTROL compared whole bound-literal LISTS and
+reported the control failing, because `(?>(a+)b)a+b` emits two sites — the
+atomic body's (unchanged) and the trailing `a+b`'s own. The comparison is now
+on the body's own site. A second: the `Σ*·L` prototype's fixture list carried
+`a|b → 2`, the MINIMAL DFA's size, where the construction correctly answers
+**3**, the SUBSET size — and the subset size is the right column, because
+[ENG-LOOK] must decline on what it is about to BUILD.
+
+---
+
 ## 0. How to read this
 
 ### 0.1 Claim marking
@@ -593,6 +667,55 @@ reader must not have to go and check that they still hold:
    **unset** and g2=(0,1). **Only RETENTION discriminates**, because a cut that
    wrongly rewound the trail gets the UNDO half right by accident.
 
+### 3.2.1 THE FOLLOW MUST BE SCOPED, and NOT because of the cut (R33 C1-1)
+
+**`vm_look` SAVES AND ZEROES `v->fmin` AND `v->fdyn` ACROSS EVERY BODY
+EMISSION AND RESTORES THEM AT `L_next` — for every direction, every polarity
+and both atomicities.**
+
+**WHY, and the reason is the one an implementer must carry:** `v->fmin` is the
+minimum width of what FOLLOWS the node being emitted, and it is baked into a
+body's rung bound as a **literal**. A lookahead's follow starts at the
+assertion's ENTRY position, so the body's bytes and the follow's bytes are
+**the same bytes** and `bodyremaining + fmin` DOUBLE-COUNTS them.
+
+**MEASURED that the mechanism is real** (`out/follow_scoping.txt` F1, on this
+lane's own build): the same body gets a different bound literal when something
+follows it, on **3 of 3** pairs —
+
+```
+(?:(a+)b)        ->  RX_PRUNE_TOO_SHORT(rx_span_cursor, 1)
+(?:(a+)b)a+b     ->  RX_PRUNE_TOO_SHORT(rx_span_cursor, 3)   <- the SAME body
+((?:aa|a)+)      ->  RX_PRUNE_TOO_SHORT(scan_position, 1)
+((?:aa|a)+)bcd   ->  RX_PRUNE_TOO_SHORT(scan_position, 4)
+```
+
+— and the CONTROL holds: an atomic group's body keeps bound **1** whether or
+not something follows, because `vm_atomic` already zeroes both terms
+(`emit_vm.c:4244-4247`, restored at `:4285-4286`).
+
+**AND THE ATTRIBUTION IS THE PART THAT MATTERS.** `vm_atomic`'s own header
+says the scoping is there because *"`(?>X)` matches X's OWN FIRST SUCCESS …
+`v->fmin` is exactly such a peek"* — i.e. because of the CUT. **That reason
+does not transfer, and §3.6 derives the non-atomic form BY DELETING THE
+CUT.** An implementer following §3.6 as first written had this document's own
+stated reason to delete the scoping with it. So the rule is stated here as a
+property of the **OVERLAP** and §3.6 restates it.
+
+**WHAT AN UNSCOPED BODY WOULD ANSWER** — MEASURED against both oracles
+(`out/follow_scoping.txt` F2):
+
+| pattern | subject | libpcre2 10.46 | python `re` | unscoped |
+|---|---|---|---|---|
+| `(?=(a+)b)a+b` | `"aab"` | **(0,3)** g1=(0,2) | (0,3) | body bound 1+2=3 → **MISSED MATCH** |
+| `(?!(a+)b)a+b` | `"aab"` | **nomatch** | nomatch | body pruned to fail → the negative assertion **SUCCEEDS** → **FALSE MATCH** |
+| `(?*(a+)b)a+b` | `"aab"` | **(0,3)** g1=(0,2) | ERR | as row 1 — and §3.6's arm is the one most likely to lose it |
+
+**The negative row is the dangerous one**: an unsound prune inside a negative
+assertion turns "the body could not be shown to match" into "the assertion
+holds". That is a false positive, not a missed match, and §9.3's **S-LA17** is
+its detector.
+
 **`vm_cut` IS REUSED UNCHANGED**, and the reason is the one
 `atomic_groups_design.md` §3.1 established and this design consumes rather
 than re-proves: the no-trail-rewind invariant rests on frame arithmetic, not
@@ -683,6 +806,7 @@ level 1):
               RX_PUSH(&&L_b2, scan_position)                 // try branch 2 on failure
               RX_CHARGE_WORK(k_1)                            // the back-step's own work
               scan_position = $_back_step(subject, subject_length, scan_position, k_1);
+              if (scan_position == $_BACK_STEP_NONE) goto L_b2;   // (R33 C1-4)
               goto L_body1
     L_body1:  <B_1>                          -> L_end1
     L_end1:   if (scan_position != (size_t)slot_values[SLOT_LOOK_POSk]) goto rx_fail;
@@ -691,6 +815,7 @@ level 1):
     L_bm:     if (scan_position < k_m) goto rx_fail;          // LAST branch: no push
               RX_CHARGE_WORK(k_m)
               scan_position = $_back_step(subject, subject_length, scan_position, k_m);
+              if (scan_position == $_BACK_STEP_NONE) goto rx_fail;  // (R33 C1-4)
               goto L_bodym
     L_bodym:  <B_m>                          -> L_endm
     L_endm:   if (scan_position != (size_t)slot_values[SLOT_LOOK_POSk]) goto rx_fail;
@@ -703,6 +828,37 @@ level 1):
 The NEGATIVE lookbehind is §3.3's shape wrapped round this one: the entry
 pushes `L_neg_ok` first, every branch's success falls into `L_body_won`, and
 running out of branches falls through to `L_neg_ok` by ordinary failure.
+
+**THE LOOKBEHIND'S OWN FOLLOW RULING (R33 C1-1), and this lane's first answer
+to it was MEASURED FALSE.** The tempting derivation was: §2.5 ships only
+FIXED-width branches, a fixed-width body has no quantifier to prune, so
+§3.2.1's hazard cannot arise behind. **It is false.** MEASURED
+(`out/follow_scoping.txt` F3): `a{3}` is fixed-width **by §2.5's own rule**
+and is lowered as an `A_REP` that takes a cursor rung with an MRL clamp whose
+literal moves with the follow —
+
+```
+((?:a{3}))x    ->  RX_PRUNE_TOO_SHORT(rx_span_cursor, 1)
+((?:a{3}))xyz  ->  RX_PRUNE_TOO_SHORT(rx_span_cursor, 3)
+((?:ab))xyz    ->  (no prune site: a literal run has no rung)
+```
+
+A design that had shipped the derivation would have left the lookbehind
+unscoped on exactly the bodies §2.5 admits.
+
+**THE ARITHMETIC, per direction, and it does NOT reach the same answer.** For
+`(?<=X)` the body ENDS at the entry position `p`, so a cursor inside it
+satisfies `cursor + bodyremaining == p` and the emitted test becomes
+`p + fmin <= ceiling` — **exactly the follow's real requirement**, hence
+ARGUED-SOUND in both polarities, and even a useful prune.
+
+**THE RULE IS UNIFORM ANYWAY, and the last row of F3's table is why**: a
+lookbehind body may CONTAIN a lookahead (`(?<=a(?=b+c))x`, fixed width 1),
+and that inner lookahead's scoping requirement is unconditional. Scoping at
+`vm_look` for every direction and polarity is **one rule at one site**; the
+cost is the lookbehind's lost (sound) prune, and F3 prices it — `a{3}` behind
+a 3-byte follow keeps bound 1 instead of 3. One rule that is sometimes
+conservative beats two rules that must agree.
 
 **`scan_position < k_i` IS THE START-OF-SUBJECT GUARD and it is emitted rather
 than delegated.** The seam entry could carry it (§4 gives it a sentinel), and
@@ -722,8 +878,18 @@ started at `pos - k` that succeeds ends at `pos`. The check therefore cannot
 fail on a correct compiler. It is emitted because it is **the only runtime
 evidence that the new `pcrec_maxw` analysis agrees with the emitter**: if the
 width table is wrong, this comparison turns a silent wrong answer into a
-clean no-match at that branch. That is a weaker outcome than an abort and a
-much better one than a miscompile. It also **stops being redundant** the day
+clean no-match at that branch.
+
+**BUT ONLY ON THE POSITIVE ARM, and R33 C1-5 is right that the first draft's
+sentence was true of one polarity and asserted of both.** For `(?<=X)` a
+branch the end-check declines is the assertion FAILING, so a wrong width
+degrades to a clean no-match — weaker than an abort, far better than a
+miscompile. **For `(?<!X)` a declined branch is the assertion SUCCEEDING**, so
+a wrong width is a **FALSE MATCH**, indistinguishable from a legitimate
+non-match: on the negative arm the end-check IS the miscompile it was claimed
+to prevent. §14 ASK 2 splits accordingly (a hard return on the negative arm,
+the cheap decline on the positive one), and §9.3's **S-LA11** carries a
+`(?<!` cell as well as `(?<=(a|bc))x`.
 the variable-length follow-on (§11) lands, which is the second argument for
 adopting PCRE2's shape now rather than a shape that has to be replaced.
 §14 ASK 2 offers Frank the alternative: `assert()`-style abort under a debug
@@ -823,6 +989,15 @@ Two charges are this module's own:
   **Charging the compile-time constant rather than the runtime cost is
   deliberate**: it makes the artifact's work accounting independent of the
   encoding backend, which is DD-12 (7)'s whole posture.
+  **AND IT IS PER ATTEMPT POSITION, which the first draft did not say (R33
+  C1-6):** it fires once per branch TRIED per candidate start, and
+  `rx_search`'s bump-along walks every position, so a **leading** multi-branch
+  lookbehind charges up to **`n · Σk_i`** over one search. Against
+  `VM_DEFAULT_WORK_BUDGET = 1000000000LL` (`emit_vm.c:159`), four branches
+  summing to width 20 reach the budget at a ~50 MB subject —
+  `PCREC_ERR_WORK` where PCRE2 matches. §10.1's population gains one
+  long-subject leading-lookbehind cell so the shape is MEASURED at [M6.6.2]
+  rather than reasoned about here.
 
 **FRAMES.** A positive/negative lookaround adds at most **one** frame beyond
 what its body needs (the negative form's `L_neg_ok`); a lookbehind adds at
@@ -1071,9 +1246,14 @@ fixture-tested `erase()` printed in full, and both vacuity guards passing (14
 cells exercise the erasure; the positive control produces 8 violations, so a
 zero would have been a real result).
 
+**H1 AND H2 ARE A PLUMBING CHECK, NOT EVIDENCE (R33 C2-4).** §5.3's proof
+makes an H1 or H2 "FAIL" impossible for ANY population, so their zeros confirm
+the comparison is wired up and nothing more. **H3 is the falsifiable column**
+— it has 8 real violations — and §5.6's ruling rests on §5.3 plus §5.5.
+
 ```
-H1 violations (rejection unsound)            : 0
-H2 violations (erased start too LATE)        : 0
+H1 violations (rejection unsound)            : 0   <- PLUMBING CHECK
+H2 violations (erased start too LATE)        : 0   <- PLUMBING CHECK
 H3 violations, NAIVE leftmost-vs-leftmost    : 12
 H3 violations, SHARP anchored-at-true-start  : 8
 ```
@@ -1135,8 +1315,12 @@ ruling look free when it is necessary.
 
 ### 5.6 THE RULING
 
-1. **The prefilter SHIPS.** H1 and H2 hold at 0 violations over 45 cells, so
-   rejection and start-seeding are sound. Dropping the prefilter would be a
+1. **The prefilter SHIPS**, on §5.3's PROOF and §5.5's measurement — **not on
+   §5.4's H1/H2 columns, which R33 C2-4 correctly calls unfalsifiable by
+   construction.** Because `L(P) ⊆ L(erase(P))` at every position (§5.3, a
+   one-line proof), no population can produce an H1 or H2 "FAIL": those
+   columns are a PLUMBING CHECK that the comparison is wired up, not evidence
+   that the property holds. They are relabelled as such in §5.4. Dropping the prefilter would be a
    DD-2 regression by `engine_m4.md` §4.7's own standard and would cost the
    one-to-two orders of magnitude `backrefs_design.md` §7.3 measured for the
    module that had to.
@@ -2103,10 +2287,16 @@ three per-field sabotage rows as the control D62 requires.*
 
 **ASK 2 — the end-check: emit, or assert-and-elide?** §3.4 shows it is
 provably redundant for the shipped subset and emits it anyway as the width
-analysis's only runtime evidence. The alternative is an `assert()`-shaped
-abort under a debug build and nothing under `-DNDEBUG`. *Recommendation: emit
-it, because it is one comparison per branch and it becomes load-bearing the
-day variable-length lands.*
+analysis's only runtime evidence. **R33 C1-5 SPLIT THIS BY POLARITY and the
+recommendation splits with it.** For `(?<=X)` a declined branch is the
+assertion FAILING, so a wrong width degrades to a clean no-match. For
+`(?<!X)` a declined branch is the assertion SUCCEEDING, so a wrong width is a
+**FALSE MATCH** indistinguishable from a legitimate non-match — on that arm
+the end-check IS the miscompile it was supposed to prevent.
+*Recommendation: EMIT it on both arms, and on the NEGATIVE arm make a failed
+end-check a hard `RX_R_*` return rather than a branch decline, so the one
+polarity where silence is unsafe is not silent. The positive arm keeps the
+cheap decline.*
 
 **ASK 3 — do the six short alpha spellings get their own DUMP ROWS?** §8.2's
 module-attribution fix is a correctness matter and is not in question. Whether
