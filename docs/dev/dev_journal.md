@@ -12453,3 +12453,41 @@ lookaround pattern refuses under the pinned pre-module binary.
 refactor as the opening wave, then design §11's waves A2 → B+C → D →
 E1/E2 → F, all five ask rulings in force, DD-14's design gate (opus,
 read-only) alongside. Session ends here; tree clean and pushed.
+
+## 2026-08-23 (EDT), thirty-eighth session (part 1) — [M6.6.2] OPENED: wave 0 (D70 union refactor) and the [DD-14] design gate launched alongside
+
+Frank: "proceed to scheduled build. this is probably the most complicated
+section we have built in this project so proceed deliberately" — then
+"proceed autonomously. ping me if there are major issues."
+
+Wake: tree clean at eacac76, smoke 6/6 green, no lanes, no worktrees. Two
+findings at briefing time, both from reading rather than running: (1) the
+design's WAVE A (`pcrec_maxw`) does NOT exist yet — §11's wave list is
+intact from wave A onward; (2) FOURTEEN mech sabotage rows (S08 S09 S39
+S59 S66 S77 S81 S92 S98 S99 S100 S103 S118 + whatever the lane's own grep
+adds) anchor on the exact field names D70 renames (`->cls`, `->rmin`,
+`->multiline`, …), so the "pure refactor" drifts anchors by construction —
+re-homing + `m6read_check_sab_anchors.py` 0-stale + the D69 targeted rows
+are on wave 0's landing bar, which nothing in D70's text anticipated.
+
+SEQUENCING DECIDED for the build: wave 0 (D70) → A+A2 (one lane:
+`pcrec_maxw` + the A_LOOK enumerator with its `u.look` payload and all 23
+budgeted arms + the four `default:` sites re-inspected) → B+C (the parse
+hook + lookahead lowering, the design's hardest wave) → D → E/E2 → F, each
+SERIAL because every one touches the files D70 renames in; [DD-14]'s
+design gate runs concurrently as the only parallel lane (disjoint: docs +
+probes, src/ read-only). Three-lane cap respected (two in flight).
+
+THE IDENTITY GATE IS BUILT AT WAVE 0, not wave E: the D70 lane writes
+`tests/codegen/run_lookaround_identity.sh` (pinned `git archive` reference
+eacac76, the four ruled axes default / --engine=vm / -fno-prefilter /
+--no-captures) in a STRICT_ALL pure-refactor mode — every pattern × axis
+byte-identical INCLUDING the D37 stamp and the refusal text — with a
+demonstrated red (one swapped emitter read, count recorded, reverted). The
+bucket split (lookaround-bearing vs free) is wave E's addition to the same
+script, so there is one gate, not a throwaway.
+
+LANES: d70union (opus, worktrees/d70union, brief
+scratchpad/brief_d70union.md) and dd14design (opus, worktrees/dd14design,
+brief scratchpad/brief_dd14design.md). Watchdog cron 10 min. plan.md:
+[M6.6.2] STATE:started, [DD-14] STATE:started (95876c8).
