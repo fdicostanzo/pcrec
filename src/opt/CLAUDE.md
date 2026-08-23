@@ -56,6 +56,20 @@ construction (src/ir) and emission (src/gen).
   hooks registered (§5.2's own instruction: the bound exists from day one so a
   later rewrite pair cannot loop).
 
+  **[M6.5.2] AND IT IS WHERE THE PREFILTER IS REFUSED.** A backref-bearing
+  pattern gets `fit.prefilter = false`, and `-fprefilter` on one is a REFUSAL
+  rather than a silent override — D46's do-or-die posture, applied to a request
+  the pattern cannot honour. The reason is §7.1's and it is measured twice
+  over: the capture-erased approximation a prefilter would be built from is not
+  even a SUPERSET once the referenced group's transitive closure holds an
+  assertion or an atomic/possessive operator (12 of 18 positive-control cells
+  are false negatives across those two reasons, plus 3 of 5 for the transitive
+  case), and where it IS a superset its leftmost SPAN differs from the true one
+  on up to 389 subjects in one family — so the EXACT anchored window
+  `engine_m4.md` §6.1's hybrid needs cannot be had either way. That line is
+  also what makes `src/ir/nfa.c`'s missing `A_BREF` arm unreachable rather than
+  lucky: nothing builds a machine for a language a backreference is not in.
+
   **[M6.4.2/D67] SR-8 IS BUILT HERE, AND `forces_kreset` RETIRED INTO IT.**
   `\K` was the first VM_ONLY producer and got a bespoke analysis at [M6.2]
   wave E; `(?>` is the second, and `tests/registry/registry_check.c`'s tripwire
@@ -175,7 +189,24 @@ construction (src/ir) and emission (src/gen).
   tests/prefilter/.
 
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
-  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31).
+  walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
+  plus [M6.5.2]'s two BACKREFERENCE tree predicates, which live here for this
+  file's own stated reason: five switches over `AKind` with NO `default:` arm,
+  so a node kind added later is a compile error at each of them rather than a
+  silent inheritance.
+
+  **`pcrec_has_bref`** is §7.1's predicate — does anything here compare subject
+  text to subject text — and its ONE reader is `select_engine.c`, which forces
+  `EngineFit.prefilter` OFF for such a pattern. **`pcrec_bref_mark`** computes
+  §3.2.4's MARKED SET: the union of every `A_BREF`'s `refs`, which for a
+  by-name reference over a duplicated name is EVERY member of the run and not
+  merely the member some analysis thinks it resolves to. R32's re-check E13 is
+  why: §8.3's chain reads them all at MATCH time, so an unmarked member is read
+  under write-on-traverse and E1 returns through it — and the measured cell
+  shows there is no member to pick, because
+  `(?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$` on "aba" resolves to the SECOND
+  member, which is the one being re-entered. Both are asked of the
+  POST-DISCHARGE tree, exactly as `pcrec_has_atomic` is.
 
   **`pcrec_discharge_atomic` — THE FREE DISCHARGE.** Deletes every `A_ATOMIC`
   whose cut is PROVABLY a no-op and splices its body back in. The condition is
@@ -446,6 +477,29 @@ construction (src/ir) and emission (src/gen).
   are needed); failing-direction controls tests/mech/sabotages/S50-S52.
 
 - **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half
+
+  **[M6.5.2] `A_BREF` CONTRIBUTES 0, and it is EXACT rather than
+  conservative** — this file said so before the kind existed ("Lookaround,
+  backreferences and `(*ATOMIC)` have no producers today; when they gain one,
+  each contributes 0 here until someone measures otherwise"), and the measured
+  answer is that 0 is right for a reason the other zero-width members do not
+  share. They consume nothing EVER; a backreference consumes `ref_end -
+  ref_start` bytes, a match-time quantity with no compile-time lower bound
+  above zero — a group can publish an EMPTY capture, so 0 is genuinely
+  attainable. Any positive value would be an OVER-estimate, this file's unsound
+  direction.
+
+  MEASURED on the emitted artifact rather than argued: `(a)\1{3}c` emits
+  `RX_PRUNE_TOO_SHORT(scan_position, 1)` before the reference chain — the `c`
+  alone, with all three references contributing nothing to the follow-min. That
+  is the under-estimate, and it prunes less rather than deleting a live
+  position. **The [M6.4] failure mode has no analogue here**: what crossed a
+  cut there was a follow-BOUND carried into a loop past a construct that
+  changes where the loop can end, and a backreference brackets nothing and
+  bounds nothing — it contributes a term, and the term is the safe one.
+  `EngineFit.prefilter` is false for these patterns, so `Vm.mrl_win` is false
+  too and the ceiling stamps `subject-end` or `none` rather than a
+  prefilter window.
   (`pcrec_minw`; docs/design/k23_impl/k23_design.md §4.3, adopted by D51
   ruling 1 as K23's fix of record). The least number of subject bytes any
   match of a node can consume, over the eight AST kinds. That is the whole

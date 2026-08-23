@@ -69,6 +69,14 @@
 #   prefilter                          — added 2026-08-17 ([M4.6f] D46 prefilter close-out)
 #   altdiff  altcls                    — added 2026-08-17 ([OPT-ALTCLS] alternation->class normalization)
 #   atomicdiff  atomicidentity         — added 2026-08-22 ([M6.4.2] module atomic-groups)
+#   brefdiff  dupnamesdiff  brefidentity — added 2026-08-22 ([M6.5.2] module backrefs)
+#
+# THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
+# lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
+# sabotage naming a word that does not exist yet is scored UNKNOWN-SUITE and
+# cannot be scored AT ALL. Eight of [M6.5.2]'s seventeen rows depend on
+# `brefdiff`, `dupnamesdiff` or `brefidentity`, so the registration precedes
+# the measurement rather than following it.
 #
 # THE TWO NEWEST WORDS WERE A BLOCKER, NOT A DETAIL (R31 C11). This vocabulary
 # is CLOSED — the `*)` arm below scores an unrecognised word as UNKNOWN-SUITE —
@@ -393,6 +401,61 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/atomicidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/atomicidentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("atomicidentity:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            brefdiff)
+                # [M6.5.2] module `backrefs`' behavioural instrument, and the
+                # only arm that can score most of that module's rows. Three of
+                # its eight sections exist because nothing else in the tree
+                # asks their question: the RE-ENTRY arm is where
+                # publish-at-close is observable AND NOWHERE ELSE (R32 E1's
+                # 5,808-cell sweep found a backref-FREE control population 0/0
+                # in BOTH publication disciplines, so no other suite can see
+                # the difference); the `--no-captures` arm is the only place
+                # §6.3's "keeps internal slots, reports none" ruling is
+                # exercised; and the SPAN-DIVERGENCE section exists for exactly
+                # one sabotage, because a prefilter planted on a backref
+                # pattern is invisible on any subject where the true span and
+                # the erased one agree.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/backrefs/run_backref_diff.sh" \
+                    > "$work/brefdiff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/brefdiff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/brefdiff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("brefdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            dupnamesdiff)
+                # [M6.5.2] §8.3's RESOLUTION RULE, swept rather than sampled.
+                # Its own arm rather than `brefdiff`'s because it asks a
+                # different KIND of question: it carries an INDEPENDENTLY
+                # WRITTEN model of the rule and checks that model against
+                # libpcre2 as well as checking pcrec against libpcre2, so a
+                # sabotage of the rule and a sabotage of the emitted chain
+                # score differently here — which is the whole reason S114 and
+                # S115 are separate rows.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/backrefs/run_dupnames_diff.sh" \
+                    > "$work/dupnamesdiff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/dupnamesdiff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/dupnamesdiff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("dupnamesdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            brefidentity)
+                # [M6.5.2] the byte-identity gate, pinned-commit reference like
+                # `atomicidentity`'s and for that arm's reason. Its THIRD axis
+                # is this module's own: under `--no-captures` the parser now
+                # builds an `A_CAP` for every numbered group and deletes the
+                # unreferenced ones at end of parse, so "a backref-free
+                # pattern's tree is what it always was" is a claim about a
+                # DELETION rather than about code that never ran.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_backref_identity.sh" \
+                    > "$work/brefidentity.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
+                suite_bits+=("brefidentity:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

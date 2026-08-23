@@ -751,7 +751,23 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # in-class wording at a different site from the macro's (`res.msg` beside the
 # K12 endpoint payload, not through `UNBUILT`) and a pin on one has never
 # covered the other.
-reject_gated backrefs      '\k'    "module 'backrefs' is enabled but \k is not implemented yet"
+# [M6.5.2] THE `backrefs` ROW MOVED, it did not retire. `--features backrefs
+# '\k'` COMPILES its way to a SHAPE error now ("\k must be followed by a name
+# in <>, '' or {}"), because the module builds that row — so a pin asserting
+# the enabled-but-unbuilt sentence would be pinning a lie, exactly as
+# `atomic-groups`' was one module earlier.
+#
+# BUT THE ARM STILL NEEDS THREE MODULES (see above: a single module's row
+# cannot tell "the sentence is right" from "the sentence happens to be right
+# for THAT module"), so the pin moves to a row that is still unbuilt rather
+# than leaving two. `\g<` is module `recursion`'s, and it is a row THIS module
+# ADDED: the `\g` doorway carries two different constructs — braces and bare
+# digits are BACKREFERENCES, angle brackets and quotes are SUBROUTINE CALLS
+# (measured, backrefs_design.md §2) — so claiming the second half would be the
+# miscompile D26 tier 1 forbids, and it is born unbuilt naming `recursion`.
+# §11.5 named this move in advance as one of the three pins this module
+# disturbs.
+reject_gated recursion     '\g<1>' "module 'recursion' is enabled but \g is not implemented yet"
 reject_gated lookaround    '(?=a)' "module 'lookaround' is enabled but (?=...) is not implemented yet"
 # [M6.4.2] THE `atomic-groups` ROW RETIRED HERE, exactly as `\b`/`\B`'s did in
 # [M6.2] wave B and the two `(?m)` spellings' did in wave C, and for the same
@@ -963,18 +979,29 @@ accept '(?-i)'
 #   3. THE RULING: names the true owning module (named-groups — duplicate
 #      NAMES are named-group semantics, same dispatch logic 'm' already
 #      uses for 'assertions') without the false "requires" framing.
-reject_gated modifiers '(?J)a'     "module 'named-groups' does not implement duplicate group names"
+#   4. [M6.5.2] THE LETTER IS BUILT, and the owner turns out to be
+#      `backrefs` (ASK-1, ruled with R32). Wording 3 was right about the
+#      DECLARING half and silent about the RESOLVING one: what makes `(?J)`
+#      mean anything is the resolution rule for a reference to a duplicated
+#      name — first of the name-run by ascending number that is SET
+#      (backrefs_design.md §8.3, measured against four candidate rules) —
+#      and that machinery is module `backrefs`'. So the split the compliance
+#      page now records is: declaring a duplicate name is `named-groups`,
+#      resolving a reference to one and the letter itself are `backrefs`.
+#      With `backrefs` OFF the letter refuses naming it, and "requires
+#      module 'backrefs'" is TRUE in the way wording 1 was not — enabling
+#      it does fix this.
+reject_gated modifiers '(?J)a'     "inline option 'J' (dupnames) requires module 'backrefs'"
 # [STD1b] (D37, 2026-08-13): `modifiers` is default-on now, so `(?m)a`/
 # `(?J)a` reach this SAME diagnosis bare, with no `--features` at all — the
 # std1-BOUNDARY proof: std1 = {classes, modifiers} and nothing wider, so
-# `m`'s real module ('assertions') and J's owning module ('named-groups',
-# which does not implement dupnames) must both still be refused by a bare
-# invocation. If std1's mask ever silently grew to include 'assertions'
-# or 'named-groups' gained dupnames support, the corresponding row is what
-# would flip from reject to accept.
+# `m`'s real module ('assertions') and J's owning module ('backrefs' since
+# [M6.5.2]) must both still be refused by a bare invocation. If std1's mask
+# ever silently grew to include 'assertions' or 'backrefs', the
+# corresponding row is what would flip from reject to accept.
 # (`(?m)a`'s bare pin already lives further down, alongside its five
 # sibling letters' gate conversion — not duplicated here.)
-reject '(?J)a'     "module 'named-groups' does not implement duplicate group names"
+reject '(?J)a'     "inline option 'J' (dupnames) requires module 'backrefs'"
 
 # ---- [M6.3] module `named-groups` — GATED pins. The producer's own
 # corpus (tests/named_groups/) carries the MATCH-semantics half; these are
@@ -993,8 +1020,52 @@ reject '(?J)a'     "module 'named-groups' does not implement duplicate group nam
 # nothing else at the `(?` doorway moves.
 reject_gated named-groups '(?<x>a)\k<x>'   "requires module 'backrefs'"
 reject_gated named-groups '(?<x>a)(?P=x)'  "requires module 'backrefs'"
+# [M6.5.2] the SAME boundary, now proven from the other side: with
+# `backrefs` still off the letter refuses naming it, so enabling
+# named-groups and modifiers alone does NOT make a duplicate name legal.
 reject_gated named-groups,modifiers '(?J)(?<dup>a)(?<dup>b)' \
-    "module 'named-groups' does not implement duplicate group names"
+    "inline option 'J' (dupnames) requires module 'backrefs'"
+# And with all three on, the duplicate DECLARATION is legal and the thing
+# that still refuses is a name pcrec does not know — the error-115 class.
+reject_gated named-groups,modifiers,backrefs '(?J)(?<dup>a)(?<dup>b)\k<nope>' \
+    "does not declare"
+
+# ---- [M6.5.2] module `backrefs`' PARTIAL-ENABLE MATRIX ------------------
+# backrefs_design.md §10's after-table, as pins. It is the module's real
+# partial-enable boundary and it needs THREE modules to state: the numeric
+# spellings need `backrefs` alone; the by-name spellings additionally need
+# `named-groups`, because without it there is no such thing as a group NAME;
+# and `(?J)` additionally needs `modifiers`, because the LETTER lives in that
+# module's option-run dispatch even though `backrefs` owns what it means. A
+# `.rxt` block can assert THAT a pattern refuses but not WHICH module it
+# names, and which module a diagnostic promises is the tier-2 fact under D26 —
+# so the matrix lives here.
+#
+# ONE CELL OF THE DESIGN'S TABLE IS CORRECTED HERE, measured: it predicts that
+# `(?<n>a)\k<n>` under `std1` refuses naming `backrefs`. It refuses naming
+# `named-groups`, and that is right — pcrec reports the LEFTMOST construct it
+# cannot handle, and the DECLARATION comes first. The design's table read the
+# reference as the leftmost construct because that is the one the row is about.
+reject_gated backrefs '(?J)(?<a>x)(?<a>y)'   "requires module 'modifiers'"
+reject_gated backrefs '\k<n>'                "requires module 'named-groups'"
+reject_gated backrefs '(?<n>a)\k<n>'         "requires module 'named-groups'"
+reject_gated backrefs,modifiers '(?J)(?<a>x)(?<a>y)' \
+    "requires module 'named-groups'"
+reject_gated backrefs,named-groups '(?J)(?<a>x)(?<a>y)' \
+    "requires module 'modifiers'"
+# The by-name spelling with BOTH modules on: a well-formed name the pattern
+# never declares is the error-115 class, raised by §5.3's END-OF-PARSE pass
+# rather than at the escape. R32 C7 caught the first design's table pinning
+# this cell as COMPILING, which `gated.rxt` would have turned into a tier-1
+# divergence against libpcre2.
+reject_gated backrefs,named-groups '\k<n>'   "does not declare"
+reject_gated backrefs,modifiers,named-groups '\k<n>' "does not declare"
+# And the bare default (std1 = {classes, modifiers}) refuses all three of the
+# module's own spellings by ITS name — the std1-BOUNDARY proof for this
+# module, the shape `(?J)a` already carries above.
+reject '(a)\1'    "\\1 (backreference/octal) requires module 'backrefs'"
+reject '\k<n>'    "\\k requires module 'backrefs'"
+reject '(a)\g{-1}' "\\g requires module 'backrefs'"
 # The measured wall (tests/probes/probe_named_groups.c, U10): 128 bytes is
 # the longest name PCRE2 accepts; python `re` has no such ceiling, so this
 # is the one boundary in this block that cannot be a co-verified `.rxt`
@@ -1756,7 +1827,15 @@ else
         # for free because their `expect` — "requires module 'atomic-groups'" —
         # really is a substring of what running their own `syntax` prints at
         # the closed gate, and module `atomic-groups` is not in std1.
-        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 103 ]; then
+        #
+        # 103 -> 105 at [M6.5.2]: the two new `RK_ESC` rows with tails `<` and
+        # `'`, module `recursion`, which split the `\g` doorway's two
+        # constructs apart (§9). Both are RS_MODULE and both refuse at the
+        # closed gate naming `recursion`, so they join the iteration on the
+        # same terms the quantifier-suffix rows did. Nothing RETIRED from this
+        # count: every row module `backrefs` built was already in it and still
+        # refuses at the CLOSED gate, which is what this loop measures.
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 105 ]; then
             ok "iterated every non-base row in the dump ($niter)"
         else
             bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
@@ -1968,8 +2047,18 @@ fi
 # genuinely changed TEXT rather than just moving behind `--features none`
 # (`\d{3,1}`, the three malformed-hyphen runs, the tier-1 miscompile guard
 # proof, the std1-boundary proof for `(?J)a`).
-if [ "$nrej" -ne 279 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 65 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 279 / 99 / 0 / 65 ([M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
+# [M6.5.2] gated 65 -> 66: module `backrefs` landed and the arm's pin MOVED
+# rather than retiring. `--features backrefs '\k'` now reaches a SHAPE error
+# (the module builds that row), so the enabled-but-unbuilt pin moved to
+# `recursion`'s `\g<1>` — a row THIS module added, born unbuilt, splitting the
+# `\g` doorway's SUBROUTINE half away from its BACKREFERENCE half. Net zero
+# there; the +1 is a NEW gated row asserting that with all three of
+# backrefs/named-groups/modifiers enabled a duplicate name is legal and what
+# still refuses is a reference to a name the pattern never declares (the
+# error-115 class). Rejections and controls are unmoved: every construct this
+# module built already refused at the CLOSED gate and still does.
+if [ "$nrej" -ne 282 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 73 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 282 / 99 / 0 / 73 ([M6.5.2] moved rejections 279 -> 282 and gated 65 -> 73. The three new rejections are the module's own std1-BOUNDARY proof -- (a)\\1, \\k<n> and (a)\\g{-1} refused by the BARE default naming backrefs, the shape (?J)a already carried. The seven new gated rows are backrefs_design.md S10's partial-enable MATRIX, which needs THREE modules to state and which a .rxt block cannot express because which module a diagnostic PROMISES is the tier-2 fact under D26; one of its cells CORRECTS the design (under std1 `(?<n>a)\\k<n>` names named-groups, not backrefs, because pcrec reports the LEFTMOST construct it cannot handle and the DECLARATION comes first). Before those, gated 65 -> 66: the enabled-but-unbuilt pin MOVED backrefs -> recursion (\\g<1>, a row that module added born unbuilt) rather than retiring, net zero, and one NEW gated row asserts that with backrefs+named-groups+modifiers a duplicate NAME is legal while a reference to an undeclared one is still the error-115 class. Before that, [M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi

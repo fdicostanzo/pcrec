@@ -59,6 +59,27 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   a compile that never happened. `--emit-ir` therefore runs a REAL compile and
   throws the C away — the cost of the guarantee, on a debug tool.
 
+- **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
+  R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
+  none: exactly the 52 ASCII letters, each with one partner, and no byte
+  >= 0x80 (MEASURED over all 256 bytes against libpcre2's 8-bit non-UTF build,
+  and re-measured against pcrec's own class fold at zero disagreements).
+
+  **It exists because the fold has to exist TWICE and cannot be made to exist
+  once.** Until module `backrefs` it had one consumer: `cls_casefold` in
+  src/parse/parse.c, which WIDENS a class bitmap at parse time so the emitted
+  matcher has no flag, no branch and no `tolower()` (D23). A caseless
+  BACKREFERENCE cannot fold at parse time — its operand is subject text nobody
+  has seen — so the fold appears a second time inside the encoding residual
+  `$_bref_match_caseless` (src/gen/enc/enc_byte.c), which is TEXT compiled by
+  someone else's toolchain and cannot call a `static` function here. Two
+  spellings of one fact with nothing between them is the shape this project
+  keeps cataloguing; this table is what
+  `tests/backrefs/fold_agreement_check.c` ties the two to, over all 65,536
+  ordered byte pairs, with the residual side read out of an artifact pcrec
+  actually emitted. `cls_casefold` derives its widening from it, so the
+  parse-time fold IS this table by construction.
+
 - **arena.c** — zeroing arena allocator; 16-byte aligned blocks, minimum 64KB per block.
   **[M4.7b/K7]** carries a `Ctx *cx` back-pointer, and a failed malloc now
   calls `ctx_nomem()` instead of `abort()`. That one pointer is K7's worst

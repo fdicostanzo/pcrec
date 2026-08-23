@@ -276,6 +276,33 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   implementation lane. See its own CLAUDE.md for why the sweep had to be
   batched (44 cells/minute -> 60 seconds) and for the non-vacuity floor that
   stops the whole thing being green on a compiler that ignores the atomicity
+- **`backrefs/`** — module `backrefs` ([M6.5.2]): every backreference
+  spelling, PCRE2's octal disambiguation at the atom position, and
+  `(?J)`/DUPNAMES. Nine `.rxt` files, and they are **GENERATED** —
+  `gen_corpus.py` drove every cell through libpcre2 10.46 before it was
+  written and python3 `re` over the same cells in the same pass, so the
+  `# pcre2-only` markings are COMPUTED rather than declared. That matters more
+  here than anywhere else in the tree: this module has the largest oracle
+  divergence pcrec has met (of 25 measured spellings, 20 are accepted by
+  libpcre2 and only 5 also work in python), and R32 C3 found the first test
+  plan marking two files python-verifiable IN THE DIRECTION THAT LOSES THE
+  ORACLE. Census at landing: 226 cells, 50 blocks python-verified, 62
+  `# pcre2-only`, 31 `perr`; the four divergence families are filed as U12.
+
+  **`selfref.rxt` is the file to read first.** The RE-ENTRY class —
+  `(a|b\1)+` and relatives, a live reference INSIDE the group it names — is
+  where publishing a capture at the group's OPEN differs from publishing at
+  its CLOSE, and the first design's version of this file took only the cells
+  that AGREED. Cells that agree under both disciplines cannot detect the
+  difference between them.
+
+  `run_backref_diff.sh` is the behavioural instrument (nine sections, four
+  EXACT population guards, three of them asking questions nothing else in the
+  tree asks), `run_dupnames_diff.sh` sweeps §8.3's resolution rule with an
+  INDEPENDENTLY WRITTEN model of the rule checked against libpcre2 alongside
+  pcrec, and `fold_agreement_check.c` ties the two spellings of pcrec's ASCII
+  fold over all 65,536 ordered byte pairs. The module's byte-identity gate is
+  `codegen/run_backref_identity.sh`, opt-in as `make test-backrefs-identity`.
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is

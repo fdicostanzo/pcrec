@@ -42,6 +42,9 @@ bool pcrec_has_atomic(const Ast *a)
             return true;
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        /* [M6.5.2] A backreference carries no subtree at all — `l` and `r` are
+         * unused — so it can neither BE a cut nor CONTAIN one. */
+        case A_BREF:
             return false;
         case A_CAP: case A_REP:
             a = a->l;
@@ -89,6 +92,9 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        /* [M6.5.2] no subtree; the `a->reg == row` test at the top of the loop
+         * has already answered for the node itself. */
+        case A_BREF:
             return false;
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
@@ -203,6 +209,9 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
     switch (a->k) {
     case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+    /* [M6.5.2] TRANSPARENT to nothing and containing nothing: a backreference
+     * has no body for a cut to hide in. */
+    case A_BREF:
         return a;
     case A_CAP: case A_REP:
         a->l = dis_walk(d, a->l);
@@ -265,4 +274,95 @@ Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root)
     d.cx = cx;
     pcrec_poss_survey(cx, root, ds_add, &d);
     return dis_walk(&d, root);
+}
+
+/* ---- [M6.5.2] the two BACKREFERENCE tree predicates ----------------------
+ *
+ * They live here, beside `pcrec_has_atomic` and `pcrec_ast_stamped_by`, for
+ * the reason this file's header gives: three switches over `AKind` with NO
+ * `default:` arm, so a node kind added later is a compile error at each of
+ * them rather than a silent inheritance. These two make it five.
+ *
+ * BOTH ARE ASKED OF THE POST-DISCHARGE TREE, exactly as `pcrec_has_atomic`
+ * is. Nothing discharges a backreference today — §6.3 measured the
+ * finite-language expansion and DECLINED to ship it, because its only possible
+ * customer is a `--no-captures` build and the size boundary is a source-size
+ * judgement no corpus exists to make yet — but asking the tree rather than a
+ * parse-time counter is what keeps that a decision about scope instead of an
+ * assumption baked into two call sites. */
+
+/* §7.1's predicate: does anything here compare subject text to subject text? */
+bool pcrec_has_bref(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_BREF:
+            return true;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+            return false;
+        case A_CAP: case A_REP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (pcrec_has_bref(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (pcrec_has_bref(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        return false;
+    }
+}
+
+/* §3.2.4's MARKED SET: the UNION of every `A_BREF`'s `refs`.
+ *
+ * EVERY MEMBER OF A DUPLICATED NAME'S RUN, not merely the one a given match
+ * resolves to (R32 re-check E13). §8.3's chain reads each member's pair at
+ * MATCH time until it finds a published one, so an unmarked member is read
+ * under write-on-traverse and re-admits E1 through it — and the measured cell
+ * is not a corner: `(?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$` on "aba" is (0,3)
+ * with group 1 UNSET and group 2 = (1,3), so the chain falls through the unset
+ * FIRST member to the second, which is the one being RE-ENTERED. There is no
+ * statically resolved member to mark.
+ *
+ * A number out of `mark`'s range is ignored rather than clamped: `nmark` is
+ * `ncap + 1` and resolution already refused every reference above it, so an
+ * out-of-range entry cannot exist — and if one ever could, writing past the
+ * array is the failure this guard makes impossible instead of unlikely. */
+void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_BREF:
+            for (int i = 0; i < a->nrefs; i++)
+                if (a->refs[i] > 0 && a->refs[i] < nmark) mark[a->refs[i]] = true;
+            return;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+            return;
+        case A_CAP: case A_REP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                pcrec_bref_mark(a->r, mark, nmark);
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                pcrec_bref_mark(a->r, mark, nmark);
+                a = a->l;
+            }
+            continue;
+        }
+        return;
+    }
 }

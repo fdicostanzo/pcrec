@@ -895,7 +895,7 @@ else
     bad "[ABI-NS]: pcrec failed to compile 'a(b|c)+d' --no-captures for the DFA-side universal-constant check"
 fi
 
-# ---- [M5-SEAM] RESIDUAL ENTRIES ARE NEVER CALLED FROM THE ENGINE ----------
+# ---- [M5-SEAM] EVERY RESIDUAL ENTRY IS CALLED EXACTLY AS DECLARED ---------
 # docs/dev/plan.md [DD-12] (7), ruled in as a requirement by Frank: "NO
 # encoding conditionals anywhere ... per-encoding inline-function headers are
 # the WRONG seam for the HOT PATH and the RIGHT seam for the enumerable
@@ -904,35 +904,82 @@ fi
 # header (allowlist of named residual sites)". This is that check.
 #
 # WHY IT CANNOT BE A BEHAVIOUR TEST. Under the byte backend a residual entry
-# is the identity (`<prefix>_next_pos` returns `pos + 1`), so an engine that
-# advanced through it would MATCH IDENTICALLY and every oracle in this tree
-# would stay green — while the artifact had acquired exactly the cross-seam
-# call DD-12 forbids, and the UTF-8 backend would then silently change the
-# hot path's shape and speed. Same charter as this file's header: a property
-# no correctness test can see.
+# is the identity or near it (`<prefix>_next_pos` returns `pos + 1`; the
+# backreference compare is a memcmp), so an engine that advanced through the
+# first, or INLINED the second, would MATCH IDENTICALLY and every oracle in
+# this tree would stay green — while the artifact had acquired exactly the
+# cross-seam coupling DD-12 (7) forbids, or lost the seam routing D58 scope
+# item 3 requires. Same charter as this file's header: a property no
+# correctness test can see.
 #
-# THE POPULATION IS DERIVED, NOT TYPED. The residual entry NAMES are read out
-# of the artifact itself (every residual declaration is preceded by the
-# backend's own "ENCODING RESIDUAL entry" comment line), so a backend that
-# adds a second entry is covered the day it lands rather than the day someone
-# remembers to extend a list here. Finding NO residual entry is a FAILURE,
-# not a pass: that is the empty-population shape this directory's CLAUDE.md
-# exists about.
+# [M6.5.2] THE CHECK CHANGES SHAPE, because the seam gained its SECOND and
+# THIRD entries and they are not like the first.
 #
-# ALLOWLIST. A residual name may appear (a) in a comment, (b) as its own
-# declaration, and (c) inside its OWN definition. Anywhere else inside a
-# file-scope function body is a violation — which for a generated artifact
-# means an engine body, since those are the only other functions in it.
+# `<prefix>_next_pos` has no business anywhere inside the matcher:
+# unanchoredness is the automaton's own self-loop, so there is no external
+# advance for an engine to route through. A BACKREFERENCE COMPARE has no
+# automaton representation whatsoever — forbidding the call forbids the
+# construct. So "never called from an engine body" stops being the rule and
+# becomes the DECLARED COUNT ZERO case of one:
 #
-# SABOTAGE: tests/mech/sabotages/S68_residual_in_hot_loop.sh, which makes
-# emit_dfa.c's bitmap prefilter skip loop advance via `<prefix>_next_pos`.
-# That sabotage changes NO answer, which is the point.
+#     the number of CALL SITES of <prefix>_<entry> inside file-scope function
+#     bodies other than the entry's own definition and main() must EXACTLY
+#     equal the count the FIXTURE TABLE declares.
+#
+# THE EXPECTATION COMES FROM THE TEST, NOT FROM THE ARTIFACT, and that is
+# R32 E7/C2's whole finding about the first draft of this change. A check whose
+# population is read out of the artifact's own residual declarations goes GREEN
+# exactly when the thing it guards is broken: an emitter that inlines the
+# compare AND drops the entry from the artifact's mask leaves nothing to
+# assert, and :1013's global empty-population guard does not notice, because
+# `next_pos` is unconditional and keeps it satisfied.
+#
+# AND THE COUNT IS A DECLARED INTEGER, NOT A COUNT OF ANYTHING. Deriving it by
+# scanning the fixture's PATTERN for `\<digit>` would be a SECOND
+# IMPLEMENTATION of PCRE2's octal disambiguation (backrefs_design.md §5), and
+# it would get the same cells wrong that rule exists to get right: `(a)\10` is
+# octal and contains ZERO backreferences, `(a)\18` is `\01` then a literal '8'
+# and contains zero. Worse, a scanner and the emitter would drift in the SAME
+# direction — green on an incorrect compiler. So a human wrote the integer
+# beside the pattern, and every octal-ambiguous spelling is kept OUT of the
+# fixture set (every fixture below uses a single-digit reference, which rule 2
+# makes unconditionally a backreference).
+#
+# COMMENT STRIPPING IS TOKEN-LEVEL AND HAPPENS FIRST. The emitted call spans
+# three physical lines and carries an intent comment on the label above it, so
+# a line-level strip leaves text a count rule could satisfy from a comment
+# alone. The strip removes /* */ and // regions — carrying in-comment state
+# ACROSS records, since a block comment spans lines — and it runs BEFORE
+# head-detection and the column-0 brace rules, because a comment can otherwise
+# contain something that looks like a definition head or a `}` at column 0 and
+# desynchronise the `inbody` tracking. String and character literals are
+# skipped so a `/*` inside one cannot open a comment.
+#
+# THIS CHANGES `next_pos`'s OWN CHECK IN EXACTLY ONE DIRECTION, and saying so
+# matters because it is the direction that HIDES things: today a COMMENT naming
+# `<prefix>_next_pos` inside an engine body IS reported as a violation, which
+# is STRICTER than this check's own stated allowlist ("a residual name may
+# appear (a) in a comment"). Demonstrated before this rewrite: the shipped
+# `index($0, want)` rule flags a body whose only mention is a comment. Token
+# stripping brings the implementation INTO LINE with its documented contract
+# rather than loosening it past one. S68 still fires either way: its sabotage
+# plants a real CALL in a hot loop, and stripping comments cannot hide a call.
+#
+# SABOTAGES: tests/mech/sabotages/S68_residual_in_hot_loop.sh (a real call to
+# next_pos in the DFA's skip loop) and S109 (the backreference compare
+# inlined instead of routed through the seam). Neither changes an answer.
 
 # residual_names <file> — the residual entry names this artifact declares.
+# Reads the RAW file: the marker it keys on lives in a comment, which is
+# exactly what the stripper below removes.
 residual_names() {
     awk '
         /ENCODING RESIDUAL entry/ { want = 1; next }
-        want && /^[a-z_].*\(.*\);[[:space:]]*$/ {
+        # The first line at column 0 after the marker that looks like a
+        # declaration HEAD. Matching the head rather than the terminating `;`
+        # is what makes this work for an entry whose declaration spans several
+        # physical lines, which the two backreference entries do.
+        want && /^[A-Za-z_][A-Za-z0-9_ *]*[ *][a-z_][A-Za-z0-9_]*\(/ {
             line = $0
             sub(/\(.*/, "", line)
             sub(/^.*[^A-Za-z0-9_]/, "", line)
@@ -942,41 +989,92 @@ residual_names() {
     ' "$1" | sort -u
 }
 
-# calls_in_bodies <file> <name> — lines referencing <name> inside a
-# file-scope function body OTHER than <name>'s own definition and the
-# artifact's `--emit-main` `main()`.
+# calls_in_bodies <file> <name> — how many TOKEN occurrences of <name> sit
+# inside a file-scope function body other than <name>'s own definition and the
+# artifact's `--emit-main` `main()`. Prints the count, then the offending
+# lines (which the caller shows only on a mismatch).
 #
 # `main` is ALLOWLISTED because it is a CALLER, not an engine: DD-12 (7)'s
 # rule is about the artifact's matching machinery depending on the encoding,
 # and a demo `main()` doing find-all through `<prefix>_next_pos` would be the
-# documented caller protocol rather than a violation of it. It does not call
-# it today; the allowlist entry is here so that a later `--emit-main` that
-# does is not reported as a derailment it is not.
+# documented caller protocol rather than a violation of it.
+#
+# TOKEN, not substring: `rx_bref_match` is a proper prefix of
+# `rx_bref_match_caseless`, so a substring rule would count every caseless call
+# as a case-sensitive one and both fixtures would pass with the emitter wired
+# backwards.
 calls_in_bodies() {
     awk -v want="$2" '
-        # a file-scope definition head: `<type> <name>(...)` at column 0,
-        # followed by `{` at column 0. Track the name; the emitted artifact
-        # puts every definition in exactly this shape.
-        /^[A-Za-z_].*\(/ && !/;[[:space:]]*$/ { head = $0; next }
-        /^\{/ && head != "" {
-            fname = head
-            sub(/\(.*/, "", fname)
-            sub(/^.*[^A-Za-z0-9_]/, "", fname)
-            inbody = 1
-            head = ""
-            next
+        # ---- token-level comment/literal stripping, state carried across
+        # records (a /* ... */ region spans lines) ----
+        function strip(s,   out, i, n, c2, c1, d) {
+            out = ""; i = 1; n = length(s)
+            while (i <= n) {
+                if (incomment) {
+                    d = index(substr(s, i), "*/")
+                    if (d == 0) return out
+                    i += d + 1; incomment = 0; continue
+                }
+                c1 = substr(s, i, 1); c2 = substr(s, i, 2)
+                if (c2 == "/*") { incomment = 1; i += 2; continue }
+                if (c2 == "//") return out
+                if (c1 == "\"" || c1 == "'"'"'") {
+                    # A STRING OR CHARACTER LITERAL IS ONE TOKEN, and its
+                    # contents are not identifiers: a `/*` inside one does not
+                    # open a comment, and a residual NAME inside one is not a
+                    # call. Both halves matter — the first would desynchronise
+                    # the comment state, the second would make a correct
+                    # compiler go red on an exact count. Escapes are honoured
+                    # so a literal `\"` does not end the token early.
+                    i++
+                    while (i <= n) {
+                        if (substr(s, i, 1) == "\\") { i += 2; continue }
+                        if (substr(s, i, 1) == c1) { i++; break }
+                        i++
+                    }
+                    out = out "\"\""
+                    continue
+                }
+                out = out c1; i++
+            }
+            return out
         }
-        /^\}/ { inbody = 0; fname = ""; next }
-        inbody && fname != want && fname != "main" && index($0, want) {
-            print FILENAME ":" FNR ": " $0
+        # how many TOKEN occurrences of `want` are in `s`
+        function ntok(s, want,   k, cnt, before, after, pos) {
+            cnt = 0; pos = 1
+            while ((k = index(substr(s, pos), want)) > 0) {
+                k += pos - 1
+                before = (k == 1) ? "" : substr(s, k - 1, 1)
+                after  = substr(s, k + length(want), 1)
+                if (before !~ /[A-Za-z0-9_]/ && after !~ /[A-Za-z0-9_]/) cnt++
+                pos = k + length(want)
+            }
+            return cnt
         }
+        {
+            line = strip($0)
+            if (line ~ /^[A-Za-z_].*\(/ && line !~ /;[[:space:]]*$/) { head = line; next }
+            if (line ~ /^\{/ && head != "") {
+                fname = head
+                sub(/\(.*/, "", fname)
+                sub(/^.*[^A-Za-z0-9_]/, "", fname)
+                inbody = 1; head = ""; next
+            }
+            if (line ~ /^\}/) { inbody = 0; fname = ""; next }
+            if (inbody && fname != want && fname != "main") {
+                k = ntok(line, want)
+                if (k > 0) { total += k; hits = hits FILENAME ":" FNR ": " line "\n" }
+            }
+        }
+        END { print total + 0; printf "%s", hits }
     ' "$1"
 }
 
 resid_total=0
 resid_bad=0
 resid_files=0
-while IFS=$'\t' read -r nm pat extra; do
+resid_brefdecl=0
+while IFS=$'\t' read -r nm pat extra decl; do
     [ -n "$nm" ] || continue
     [ "$extra" = "-" ] && extra=""
     # BOTH artifact forms: split (.h carries the declaration) and
@@ -987,34 +1085,163 @@ while IFS=$'\t' read -r nm pat extra; do
         bad "[M5-SEAM] residual: pcrec failed to compile the fixture '$pat' ($extra)"
         continue
     fi
+    # The DECLARED entry set, from the TEST. `decl` is a comma-separated list
+    # of `<suffix>:<expected engine-body call count>` pairs.
+    want_set=""
+    nbref=0
+    for pair in $(printf '%s' "$decl" | tr ',' ' '); do
+        want_set="$want_set rx_${pair%%:*}"
+        case "${pair%%:*}" in bref_match|bref_match_caseless) nbref=$((nbref + 1)) ;; esac
+    done
+    want_set="$(printf '%s\n' $want_set | sort -u | tr '\n' ' ')"
+    [ "$nbref" -gt 0 ] && resid_brefdecl=$((resid_brefdecl + 1))
+
     for f in "$WORKDIR/$nm.h" "$WORKDIR/${nm}_sc.c"; do
-        names="$(residual_names "$f")"
-        [ -n "$names" ] || continue
+        [ -f "$f" ] || continue
+        got_set="$(residual_names "$f" | tr '\n' ' ')"
         resid_files=$((resid_files + 1))
-        for rn in $names; do
-            resid_total=$((resid_total + 1))
-            hits="$(calls_in_bodies "$WORKDIR/$nm.c" "$rn"; calls_in_bodies "$WORKDIR/${nm}_sc.c" "$rn")"
-            if [ -n "$hits" ]; then
-                resid_bad=$((resid_bad + 1))
-                bad "[M5-SEAM/DD-12(7)] '$rn' is referenced from an engine body in the '$pat' artifact — a hot path calling into the encoding residual is the derailment DD-12 (7) forbids, and it changes no answer under the byte backend, so nothing else in this tree will tell you: $(printf '%s' "$hits" | head -2 | tr '\n' ' ')"
+        # (1) THE ARTIFACT CARRIES EXACTLY THE DECLARED ENTRIES. This is the
+        # half that stops an emitter from inlining the compare AND dropping the
+        # entry from the artifact's mask, which would otherwise leave the
+        # count rule below with nothing to count.
+        if [ "$(printf '%s' "$got_set" | tr -s ' ')" != "$(printf '%s' "$want_set" | tr -s ' ')" ]; then
+            resid_bad=$((resid_bad + 1))
+            bad "[M5-SEAM/D58] '$pat' ($extra): the artifact declares residual entries [$got_set] where this fixture declares [$want_set] — the encoding seam's per-artifact mask moved. An entry that vanishes from the mask takes its call-count check with it, which is why this is asserted from the TEST and not read off the artifact"
+        fi
+    done
+    # (2) THE PER-SITE COUNT, over both artifact forms' definitions (.c).
+    for pair in $(printf '%s' "$decl" | tr ',' ' '); do
+        rn="rx_${pair%%:*}"
+        wantn="${pair##*:}"
+        resid_total=$((resid_total + 1))
+        out1="$(calls_in_bodies "$WORKDIR/$nm.c" "$rn")"
+        out2="$(calls_in_bodies "$WORKDIR/${nm}_sc.c" "$rn")"
+        n1="$(printf '%s' "$out1" | head -1)"
+        n2="$(printf '%s' "$out2" | head -1)"
+        hits="$(printf '%s\n%s' "$out1" "$out2" | tail -n +2)"
+        for got in "$n1" "$n2"; do
+            [ "$got" = "$wantn" ] && continue
+            resid_bad=$((resid_bad + 1))
+            if [ "$wantn" = "0" ]; then
+                bad "[M5-SEAM/DD-12(7)] '$rn' is referenced $got time(s) from an engine body in the '$pat' artifact and this fixture declares 0 — a hot path calling into the encoding residual is the derailment DD-12 (7) forbids, and it changes no answer under the byte backend, so nothing else in this tree will tell you: $(printf '%s' "$hits" | head -2 | tr '\n' ' ')"
+            else
+                bad "[M5-SEAM/D58] '$rn' is called $got time(s) from engine bodies in the '$pat' artifact, where this fixture declares $wantn — either the compare stopped routing through the seam (D58 scope item 3: encoding-sensitive byte arithmetic in shared emitter code is what the seam exists to prevent, and it changes no answer under the byte backend) or a call site appeared that the test did not write"
             fi
         done
     done
-    # TAB-separated: name, pattern, extra pcrec args ('-' for none). The
+    # TAB-separated: name, pattern, extra pcrec args ('-' for none), and the
+    # DECLARED residual entries as `<suffix>:<engine-body call count>`. The
     # separator is a TAB precisely because every other candidate ('|', ',')
-    # is regex syntax the fixture patterns need.
+    # is regex syntax the fixture patterns need — and the count column is a
+    # HUMAN-WRITTEN integer, never derived: see this block's header for the
+    # `(a)\10` / `(a)\18` cells that a pattern scanner would get wrong.
 done <<EOF
-residmemchr	a(b|c)+d	--no-captures
-residbitmap	[ab]c[de]	--no-captures
-residanchor	^ab(c|d)	--no-captures
-residvm	a(b|c)+d	-
-residvmonly	(x)(a|bc)+d	--engine=vm
-residmain	a(b|c)+d	--emit-main
+residmemchr	a(b|c)+d	--no-captures	next_pos:0
+residbitmap	[ab]c[de]	--no-captures	next_pos:0
+residanchor	^ab(c|d)	--no-captures	next_pos:0
+residvm	a(b|c)+d	-	next_pos:0
+residvmonly	(x)(a|bc)+d	--engine=vm	next_pos:0
+residmain	a(b|c)+d	--emit-main	next_pos:0
+residbref1	(a|b)\1	--features backrefs	next_pos:0,bref_match:1
+residbref3	(a)(b)\2\1\2	--features backrefs	next_pos:0,bref_match:3
+residbrefci	(?i:(a))(?i:\1)	--features backrefs,modifiers	next_pos:0,bref_match_caseless:1
+residbrefboth	(a)\1(?i:\1)	--features backrefs,modifiers	next_pos:0,bref_match:1,bref_match_caseless:1
 EOF
+# THE SCOPED NON-VACUITY GUARD, EXACT AND NOT A FLOOR (R32 C2(b), and the
+# final re-check's wording item 1). The GLOBAL guard below cannot serve here:
+# `next_pos` is unconditional, so it stays satisfied even if every
+# backref-bearing fixture were deleted, and the check would go green over an
+# empty population — the diagnosed shape relocated into the fixture table.
+#
+# A FLOOR IS THE WRONG SHAPE FOR A CONCRETE REASON: four fixtures declare a
+# bref entry, so "at least 3" passes while one of them silently loses its
+# declaration — which is the population-shrinking failure the guard exists to
+# catch, arriving through the guard itself. EXACT is this file's own
+# convention (check_class_ports, check_class_syntax_reach).
+if [ "$resid_brefdecl" -ne 4 ]; then
+    bad "[M5-SEAM/D58]: $resid_brefdecl fixtures declare a backreference residual entry, expected EXACTLY 4 — the population this check's second entry pair is asserted over moved. Deleting a fixture row must go RED here, which is the whole reason this guard is not the global one below"
+fi
 if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
     bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/gen/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
 elif [ "$resid_bad" -eq 0 ]; then
-    ok "[M5-SEAM/DD-12(7)]: $resid_total residual entr(y|ies) across $resid_files emitted surfaces, none referenced from any engine body"
+    ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a backreference compare; comment stripping is token-level and runs before the body tracking)"
+fi
+
+# ---- [M6.5-DUPNAMES] THE REFLECTION TABLE'S ORDER, READ OFF THE ARTIFACT ---
+# backrefs_design.md §8.2, and R32's re-check is why this is STRUCTURAL rather
+# than a behavioural `.rxt` cell.
+#
+# THE FACT. `rx_info.groups` is documented "sorted, bsearch-able", and with
+# `(?J)` the table can now hold ADJACENT ROWS WITH EQUAL NAMES. libpcre2's own
+# `PCRE2_INFO_NAMETABLE` is sorted (name ASCENDING, then number ASCENDING) —
+# measured over ten patterns — and `docs/spec/match_api.md` §6's caller
+# algorithm (bsearch, walk BACK to the run's first row, then FORWARD to the
+# first participating one) selects the LOWEST-numbered participating member
+# ONLY IF the within-name order is ascending. Get it backwards and the table
+# encodes the "last set" rule §8.3's `"xyy"` cell rules out.
+#
+# WHY NOT A BEHAVIOURAL ROW. Without the tiebreak, whether the emitted order
+# is wrong depends on TWO unspecified properties agreeing: `qsort`'s stability
+# and the direction `Ctx.named_groups` is walked in. `mod_named_groups.c`
+# PREPENDS and `emit_dfa.c` walks from the head, so on glibc (a stable merge
+# sort) a name-only comparator yields DESCENDING numbers within a run — but a
+# check that depends on that coincidence is not a control. Reading the order
+# off the ARTIFACT depends on neither.
+#
+# STRICTLY increasing, not merely non-decreasing, and that is the COMPARATOR
+# TOTALITY half: a comparator returning 0 for rows that differ in NUMBER would
+# leave them in whatever order the sort happened to produce, and two rows equal
+# in BOTH fields would be a duplicate the table must never contain. The order
+# half is live exactly when a dup-name pattern is compiled; the totality half
+# is exercisable on every fixture with two or more names, which is why the
+# fixture set below has both kinds.
+#
+# SABOTAGE: S120 removes the number tiebreak from `ng_cmp_name`.
+dup_bad=0; dup_files=0; dup_rows=0; dup_dupname=0
+while IFS=$'\t' read -r nm feats pat; do
+    [ -n "$nm" ] || continue
+    if ! "$PCREC" -p rx --features "$feats" -o - -- "$pat" \
+            > "$WORKDIR/$nm.c" 2>"$WORKDIR/$nm.err"; then
+        bad "[M6.5-DUPNAMES] pcrec refused the fixture '$pat': $(head -1 "$WORKDIR/$nm.err")"
+        dup_bad=$((dup_bad + 1)); continue
+    fi
+    # The emitted rows, as `<name>\t<number>` in artifact order.
+    sed -n 's/^    { "\([^"]*\)", \([0-9-]*\), .*/\1\t\2/p' "$WORKDIR/$nm.c" \
+        > "$WORKDIR/$nm.rows"
+    n=$(grep -c . "$WORKDIR/$nm.rows" || true)
+    if [ "$n" -lt 2 ]; then
+        bad "[M6.5-DUPNAMES] the fixture '$pat' emitted $n reflection rows — fewer than two cannot exhibit an ORDER at all"
+        dup_bad=$((dup_bad + 1)); continue
+    fi
+    dup_files=$((dup_files + 1)); dup_rows=$((dup_rows + n))
+    if [ "$(cut -f1 "$WORKDIR/$nm.rows" | sort | uniq -d | wc -l)" -gt 0 ]; then
+        dup_dupname=$((dup_dupname + 1))
+    fi
+    if ! out=$(awk -F'\t' '
+        NR > 1 {
+            if ($1 < pn || ($1 == pn && $2 <= pv)) {
+                printf "row %d (%s,%s) does not strictly follow (%s,%s)\n", NR, $1, $2, pn, pv
+                bad = 1
+            }
+        }
+        { pn = $1; pv = $2 }
+        END { exit bad }
+    ' "$WORKDIR/$nm.rows"); then
+        bad "[M6.5-DUPNAMES] '$pat': the emitted rx_group_entry rows are not STRICTLY increasing in (name, number) — $out. A caller doing match_api.md §6's bsearch-then-walk would select the wrong member of a duplicated name's run, which is the resolution rule §8.3's \"xyy\" cell rules out"
+        dup_bad=$((dup_bad + 1))
+    fi
+    # TAB-separated: name, features, pattern.
+done <<EOF
+dupA	backrefs,named-groups,modifiers	(?J)(?<z>1)(?<a>2)(?<z>3)(?<a>4)\k<a>
+dupB	backrefs,named-groups,modifiers	(?J)(?<b>x)(?<a>y)(?<b>z)\k<b>
+dupC	backrefs,named-groups,modifiers	(?J)(?<n>1)|(?<n>2)|(?<n>3)
+dupD	named-groups	(?<zeta>a)(?<alpha>b)(?<mu>c)
+dupE	named-groups	(?<a>1)(?<aa>2)(?<b>3)
+EOF
+if [ "$dup_files" -ne 5 ] || [ "$dup_dupname" -ne 3 ]; then
+    bad "[M6.5-DUPNAMES] POPULATION: $dup_files fixtures emitted a table and $dup_dupname of them carry a DUPLICATED name, expected EXACTLY 5 and 3. The ORDER half of this check is vacuous while every name is unique — it goes live exactly when a dup-name pattern is in the set — so losing those three would leave the totality half alone"
+elif [ "$dup_bad" -eq 0 ]; then
+    ok "[M6.5-DUPNAMES] §8.2: $dup_rows reflection rows across $dup_files artifacts ($dup_dupname with a duplicated name) are STRICTLY increasing in (name, number), read off the ARTIFACT — so neither qsort's stability nor the declaration list's direction is being trusted"
 fi
 
 # ---- [K27] the emitted prefilter on the contract's legal NULL subject -----

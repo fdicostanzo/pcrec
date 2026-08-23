@@ -185,8 +185,14 @@
 /* as ESC, but inside a class the byte is BASE syntax: one fixed literal,
  * carried as a BASE scalar class port (MOD-0.3d — the port replaced
  * RF_CLASS_BASE; ExtPort.base means the gate never touches it). */
-#define ESC_CLASS_SCALAR(sel, syn, mod, eng, note, q, ce, lit) \
-    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, true, (lit), NULL, NULL}}
+/* [M6.5.2] `afn` is the ATOM-position producer. The two rows using this macro
+ * are `\k` and `\g`, and both gained one with module `backrefs`; the
+ * parameter exists rather than a second macro because the CLASS half — a base
+ * literal fallback, ungated — is the fact the macro is named for and it does
+ * not move. A row wanting no atom producer writes `NO_PORT` longhand rather
+ * than passing NULL here, so this macro never has to mean two things. */
+#define ESC_CLASS_SCALAR(sel, syn, mod, eng, note, q, ce, lit, afn) \
+    {RK_ESC, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, {PORT_FN, false, 0, NULL, (afn)}, {PORT_SCALAR, true, (lit), NULL, NULL}}
 /* \0..\9 -> "\N (backreference/octal) requires module 'backrefs'".
  * NOT named ESC_OCTAL: \1..\9 are never octal in PCRE2 — see the note above
  * the digit rows. The macro is named for the DIAGNOSTIC SHAPE it produces,
@@ -205,13 +211,13 @@
 #define GROUP_LEXICAL(sel, syn, mod, eng, note) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, RF_LEXICAL, (note), ROADMAP_PLANNED, QF_LEXICAL, NULL, 0, NULL, NO_PORT, NO_PORT}
 #define ESC_DIGIT(sel, syn, eng, note, q, ce) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, {PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}}
 /* as ESC_DIGIT, but the class answer is one fixed literal byte: \8 and \9
  * (8 and 9 are not octal digits, so no continuation is ever read — measured
  * at FIX-3, the [\81] cell). \0..\7 need the octal SCAN and get a PORT_FN
  * class port when it wires in (slice 3). */
 #define ESC_DIGIT_LIT(sel, syn, eng, note, q, ce, lit) \
-    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, {PORT_SCALAR, true, (lit), NULL, NULL}}
+    {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, {PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_SCALAR, true, (lit), NULL, NULL}}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note, q) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT}
@@ -441,8 +447,45 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  * matches k < n >), so the class position is base syntax exactly as `\b` is.
  * The ten digit rows carry the same flag: `[\0]`..`[\7]` are octal there and
  * `[\8]` `[\9]` are the literal digits. Measured: tests/probes/probe_fix3.c. */
-ESC_CLASS_SCALAR('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k'),
-ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g'),
+/* [M6.5.2] BOTH ROWS GAIN AN ATOM PRODUCER, and `\g`'s doorway turns out to
+ * carry TWO CONSTRUCTS where the table had one row.
+ *
+ * MEASURED discriminator (backrefs_design.md §2, `out/spellings.txt`): a
+ * SUBROUTINE call re-runs the group's PATTERN, so `^(a|b)\g<1>$` matches "ab";
+ * a BACKREFERENCE compares the captured TEXT, so `^(a|b)\1$`, `^(a|b)\g{1}$`
+ * and `^(a|b)\g1$` all report NO MATCH on that subject. The split runs exactly
+ * along the DELIMITER — braces and bare digits are backreferences, angle
+ * brackets and single quotes are subroutine calls — so the two halves belong
+ * to two different modules and this module may claim only one of them.
+ *
+ * Claiming both would be a MISCOMPILE of the kind D26 tier 1 forbids, so the
+ * `<` and `'` tails get their own rows below, module `recursion`, born
+ * UNBUILT. That is `registry.c`'s own `(?P=` / `(?P>` split exactly, and the
+ * arbitration that makes it work is measured rather than assumed: two
+ * `RK_ESC` rows in ONE `(kind, sel)` bucket, elected by tail and rank, is the
+ * shipped `\N{` / `\N{U+` shape. The base `\g` row is rank 0, so the two
+ * tailed rows outrank it and this module's port never sees `\g<` or `\g'`. */
+ESC_CLASS_SCALAR('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k', pcrec_brport_k),
+ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g', pcrec_brport_g),
+/* The subroutine half. `class_expect` is MEASURED for each row's own syntax
+ * (`[\g<1>]` is the four bytes g < 1 >, `[\g'1']` the three g ' 1) because
+ * inside a class `\g` is the literal letter and the rest of the spelling is
+ * ordinary members — the same base fallback the row above carries, which is
+ * why these two carry the identical BASE scalar class port rather than
+ * NO_PORT. Without it, `[\g<]` would stop being the letter `g` the day these
+ * rows landed: the class doorway arbitrates on the same tail. */
+{RK_ESC, 'g', "<", "\\g<1>", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, 0,
+ "subroutine call into a group by number or name: \\g<1> \\g<name> — NOT a "
+ "backreference (it re-runs the group's pattern)",
+ ROADMAP_PLANNED, QF_NO, "set 4", 25, NULL,
+ NO_PORT, {PORT_SCALAR, true, 'g', NULL, NULL}},
+{RK_ESC, 'g', "'", "\\g'1'", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, 0,
+ "subroutine call into a group, quoted spelling: \\g'1' \\g'name' — NOT a "
+ "backreference",
+ ROADMAP_PLANNED, QF_NO, "set 3", 25, NULL,
+ NO_PORT, {PORT_SCALAR, true, 'g', NULL, NULL}},
 
 /* MOD-0.6 phase 2: longhand rather than the ESC macro, for exactly one
  * reason — `recognise` carries `pcrec_registry_uprops_recognise`, a MARKER
@@ -608,7 +651,14 @@ GROUP_T('<', "*", "(?<*a)",   lookaround,   VM_ONLY,
  "python-style named capture group",
  ROADMAP_PLANNED, QF_YES, NULL, 25, NULL,
  {PORT_FN, false, 0, NULL, pcrec_ngport_declare}, NO_PORT},
-GROUP_T('P', "=", "(?P=n)",      backrefs,     VM_ONLY, "python-style backreference to a named group", QF_NO),
+/* [M6.5.2] longhand, for mod_named_groups.c's row's reason: a wired PORT_FN,
+ * which `GROUP_T` has no parameter for. Everything else is what GROUP_T would
+ * have built, rank 25 included. */
+{RK_GROUP, 'P', "=", "(?P=n)", M_backrefs, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, 0,
+ "python-style backreference to a named group",
+ ROADMAP_PLANNED, QF_NO, NULL, 25, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_brport_pname}, NO_PORT},
 GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group", QF_NO),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
          "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141", QF_NO),

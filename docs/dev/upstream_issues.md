@@ -490,3 +490,68 @@ becomes wave E's oracle device, from libpcre2's own engine with no arithmetic
 of the script's own. That is worth recording beside the exclusion because it
 is the shape of the answer whenever an entry point has no oracle flag: find
 the PATTERN SPELLING that asks the oracle the same question.
+
+---
+
+## U12 — python `re`: FOUR divergences on backreferences (module `backrefs`, [M6.5.2])
+
+- **Status**: four unrelated divergences, filed together because all four were
+  found authoring the same corpus (`tests/backrefs/`) and because together
+  they are the largest oracle loss pcrec has met — **of 25 measured spellings,
+  20 are accepted by libpcre2 and only 5 also work in python `re`**. Each is
+  divergence-by-design rather than a bug on either side, and each is DETECTED
+  rather than assumed: `tests/backrefs/gen_corpus.py` drives every cell through
+  both oracles in one pass and writes `# pcre2-only` where they disagree, with
+  the first disagreement and the cell count recorded in the file.
+
+- **Divergence 1 — SELF- AND FORWARD REFERENCES are python COMPILE ERRORS.**
+  `(a\1)`, `^(\1a)$`, `\2(a)(b)` and `(\2(a)|b)+` all COMPILE in libpcre2 and
+  are governed entirely by the unset-reference rule (an unset reference FAILS
+  at match time; it does not match empty). python `re` refuses every one of
+  them at compile time — "cannot refer to an open group", "invalid group
+  reference" — so there is no python-derived expectation for any of them.
+  MEASURED: 9 cells over 8 distinct patterns (`(\2(a)|b)+` appears twice, on
+  `"ba"` and `"baa"`, and answers (0,1) both times).
+
+  **This is the module's largest oracle loss and it lands exactly where the
+  module is hardest.** The RE-ENTRY class — `(a|b\1)+` and relatives, a live
+  reference INSIDE the group it names — is where the difference between
+  publishing a capture at the group's OPEN and at its CLOSE is observable, and
+  python cannot express a single cell of it. So `tests/backrefs/selfref.rxt`
+  is wholly `# pcre2-only`, and the second oracle for that population is not a
+  second regex engine but a SIMULATOR of the emitted model, run in both
+  publication disciplines (`docs/design/backrefs_measurements/probes/simvm.py`,
+  adopted from the R32 panel rather than written by the implementing lane).
+
+- **Divergence 2 — `\g`, `\k` and `(?J)` DO NOT EXIST in python `re`.** python
+  has `\1`, `(?P<n>...)` and `(?P=n)`, and nothing else this module implements:
+  `\g1`, `\g{-1}`, `\g{name}`, `\k<n>`, `\k'n'`, `\k{n}` and the `(?J)` letter
+  are all "bad escape" / "unknown extension" there. It also rejects the
+  `(?<n>...)` declaring spelling (U10 divergence 1), so `^(?<n>a)(?P=n)$` —
+  legal PCRE2, and the ONE by-name reference form python does have — is still a
+  python compile error as written. `tests/backrefs/dupnames.rxt` is therefore
+  wholly `# pcre2-only`, and `spellings.rxt` is all but one block.
+
+- **Divergence 3 — `(?i)` ANYWHERE BUT THE PATTERN START is a python compile
+  error**, and it takes the two cells that decide WHERE a backreference's
+  caselessness is read. libpcre2 answers `^((?i)a)\1$` and `^(?i)(a)(?-i)\1$`
+  cleanly (both NO MATCH on "aA": the compare's caselessness is the option in
+  force AT THE REFERENCE, not at the group). python refuses both with "global
+  flags not at the start of the expression". So `caseless.rxt` is MIXED — most
+  of it is python-verifiable and the two load-bearing cells are not, which is
+  the direction R32 C3 found the first test plan getting backwards.
+
+- **Divergence 4 — the CLASS position, already filed as U7, reaches this
+  module too.** `[\8]`, `[\9]`, `[\g]` and `[\k]` are the LITERAL characters in
+  PCRE2 (and in pcrec, as BASE syntax the module gate never touches), and
+  python rejects all four as bad escapes; `[\400]` is a PCRE2 error 151 with no
+  python analogue. So 4 of `octal_class.rxt`'s 12 cells have no python oracle —
+  and that file's whole purpose is to pin that this module does NOT change the
+  class position, so losing the second oracle there is worth naming rather than
+  absorbing.
+
+- **What pcrec does about it**: nothing, in the compiler. The corpus records
+  the divergences per block with the measured evidence, `gen_corpus.py`
+  computes the markings rather than trusting a plan, and libpcre2 10.46 is the
+  oracle of record for every cell python cannot arbitrate — which for this
+  module is 62 of 112 blocks.

@@ -118,7 +118,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
-      test-atomic \
+      test-atomic test-backrefs \
       test-encseam test-resource test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
@@ -340,6 +340,55 @@ test-atomic: all
 test-atomic-identity: all
 	bash tests/codegen/run_atomic_identity.sh
 
+# [M6.5.2] module `backrefs`. Its .rxt corpus rides test-corpus like every
+# other module's; this section is the things a .rxt file structurally cannot
+# check.
+#
+# TWO SCRIPTS, and they are separate because they ask different KINDS of
+# question. `run_backref_diff.sh` compares pcrec against libpcre2 over a
+# generated space — nine sections, four EXACT population guards, and three
+# sections that exist because nothing else in the tree asks their question
+# (the RE-ENTRY arm, where publish-at-close is observable and nowhere else;
+# the `--no-captures` arm, the only place §6.3's "keeps internal slots,
+# reports none" is exercised; and the SPAN-DIVERGENCE section, which is the
+# only possible detector for a prefilter planted on a backref pattern).
+# `run_dupnames_diff.sh` additionally carries an INDEPENDENTLY WRITTEN model
+# of §8.3's resolution rule and checks THAT against libpcre2, which is what
+# shows no fifth rule fits where a hand-picked cell set can only separate
+# four.
+#
+# `run_backref_identity.sh` IS NOT HERE. It is `test-backrefs-identity` below,
+# on the ruling ASK-4 gave it and for the reason `test-atomic-identity` has.
+test-backrefs: all
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/backrefs/run_backref_diff.sh' \
+	    'bash tests/backrefs/run_dupnames_diff.sh'
+
+# [M6.5.2] THE LANDING GATE, OPT-IN — the same shape and the same ruling as
+# `test-atomic-identity` above (ASK-4, ruled with R32): a ONE-SHOT claim about
+# a MOMENT, not a standing invariant.
+#
+# WHAT IT ASSERTS: that module `backrefs` changed no backref-FREE pattern's
+# emitted bytes when it landed, on three axes — the default selection,
+# `--engine=vm`, and `--no-captures`. The third is this module's own and is
+# the reason the gate is not a formality: under that flag the parser now
+# builds an `A_CAP` for EVERY numbered group and deletes the unreferenced ones
+# at end of parse (§6.3, because a FORWARD reference makes "will this group be
+# referenced" unanswerable at the opening paren), so "the tree is what it
+# always was" is a claim about a DELETION rather than about code that never
+# ran.
+#
+# Its reference is the PINNED PRE-MODULE COMMIT 5286265 rather than a `-D`
+# knob, for the reason tests/mech/CLAUDE.md records: a knob-built reference is
+# sabotaged too. And here a knob would be worse than weak — NO STAGE OF THIS
+# MODULE RUNS ON THE CONTROL POPULATION, so it would gate dead code and the
+# sweep would report 100% identical whatever was sabotaged.
+#
+#     make test-backrefs-identity        # the gate, on demand
+#     BACKREF_IDENTITY_REF=<sha> make test-backrefs-identity   # a moved base
+test-backrefs-identity: all
+	bash tests/codegen/run_backref_identity.sh
+
 # [M6.2] module `assertions`. Its .rxt corpus rides test-corpus like every
 # other module's; this section is the three things a .rxt file structurally
 # cannot check, PLUS the wave's byte-identity gate.
@@ -487,11 +536,24 @@ smoke: all
 # a `make test` running in another shell and turned that suite into a screenful
 # of exit-126 "HARNESS FAILURE" lines. A diagnostic target that can break a
 # concurrent run is a trap; this one is safe to invoke at any time.
+# [M6.5.2] -Wshadow JOINS THE GATE, and it is a row this lane earned rather
+# than a tidy-up. `-Wall -Wextra` does not include it, and a local named after
+# an enclosing parameter is a silent miscompile of exactly the shape this
+# emitter is exposed to: a new arm declared `const unsigned entry = ...` for a
+# seam-entry id, shadowing `vm_emit`'s LABEL parameter of the same name, and
+# every `^(a)\1$`-shaped artifact came out with a DUPLICATE LABEL and would
+# not compile. The corpus caught it inside one run — but a shadowed variable
+# that happens to hold a PLAUSIBLE value is the version that does not get
+# caught, and this gate makes the whole class a compile error.
+#
+# The tree was measured clean under it before it was added (0 warnings across
+# every source plus cli/main.c), so this costs nothing today and refuses the
+# next one.
 strict:
 	@set -e; for f in $(LIBSRCS) cli/main.c; do \
-	    $(CC) $(ALLFLAGS) -Werror -c -o /dev/null $$f; \
+	    $(CC) $(ALLFLAGS) -Wshadow -Werror -c -o /dev/null $$f; \
 	done
-	@echo "strict: whole tree compiles clean with -Werror"
+	@echo "strict: whole tree compiles clean with -Werror -Wshadow"
 
 # Self-tests for scripts/ (watchdog today), run ON CHANGE via make dependency
 # rather than per suite run — opt-in like strict, never part of `make test`
@@ -563,6 +625,8 @@ ubsan:
 	         tests/altcls/run_altcls_tests.sh \
 	         tests/assertions/run_assertions_tests.sh \
 	         tests/atomic_groups/run_atomic_diff.sh \
+	         tests/backrefs/run_backref_diff.sh \
+	         tests/backrefs/run_dupnames_diff.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -614,6 +678,8 @@ asan:
 	         tests/altcls/run_altcls_tests.sh \
 	         tests/assertions/run_assertions_tests.sh \
 	         tests/atomic_groups/run_atomic_diff.sh \
+	         tests/backrefs/run_backref_diff.sh \
+	         tests/backrefs/run_dupnames_diff.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
@@ -685,5 +751,6 @@ clean:
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
+        test-backrefs test-backrefs-identity \
         test-spec smoke hooks strict testscripts ubsan asan lint mech bench \
         fuzz clean

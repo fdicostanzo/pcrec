@@ -115,6 +115,11 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * under-rejection at a construct's very first cell. */
     case A_CLASS: case A_CAT: case A_ALT: case A_REP: case A_EMPTY:
     case A_CAP:
+    /* [M6.5.2] NOT a bare anchor, and MEASURED rather than assumed: `\1*`,
+     * `(\w)\1+` and `^(a?)\1{3}$` all compile in libpcre2 10.46 and are
+     * corpus cells, so a backreference is an ORDINARY REPEATABLE ATOM. It
+     * consumes text, which is the property this list's members all lack. */
+    case A_BREF:
     /* [M6.4.2] NOT a bare anchor, and it is `A_CAP`'s answer for `A_CAP`'s
      * reason: this predicate is about a BARE assertion standing alone as a
      * group's whole body, and an atomic group is a BRACKETING construct with a
@@ -244,11 +249,19 @@ static int cls_peek_past_dash(Ctx *cx)
  * remove. A new class-producing construct must call this itself. */
 static void cls_casefold(uint8_t *b)
 {
-    for (unsigned c = 'A'; c <= 'Z'; c++)
-        if (cls_has(b, c) || cls_has(b, c + 32)) {
-            cls_set(b, c);
-            cls_set(b, c + 32);
-        }
+    /* [M6.5.2] DERIVED FROM `pcrec_ascii_fold` (src/core/fold.c) rather than
+     * from its own `'A'..'Z'` loop, and the change is behaviour-preserving by
+     * construction: the table's ONLY non-identity entries are the 52 ASCII
+     * letters, each mapping to its partner, so setting `fold[c]` for every set
+     * `c` sets exactly the bits the loop used to set. What it buys is that the
+     * fold now has ONE OBJECT a test can read — the caseless backreference
+     * compare has to spell the same partition a second time in the encoding
+     * residual (D23 boundary 1: an option that cannot compile away), and
+     * `tests/backrefs/fold_agreement_check.c` ties the two over all 65,536
+     * byte pairs. See fold.c for why two unchecked spellings were the shape
+     * R32 E8 refused. */
+    for (unsigned c = 0; c < 256; c++)
+        if (cls_has(b, c)) cls_set(b, pcrec_ascii_fold[c]);
 }
 
 static Ast *char_node(Ctx *cx, unsigned c)
@@ -258,6 +271,14 @@ static Ast *char_node(Ctx *cx, unsigned c)
     if (cx->mods->caseless) cls_casefold(a->cls);
     return a;
 }
+
+/* [M6.5.2] The SAME constructor, exposed for module TUs, and exposed for the
+ * same reason `pcrec_ast_class_from_bits` above it is: the caseless fold is
+ * applied HERE and a producer that built its own singleton `A_CLASS` would
+ * silently lose it. Module `backrefs`' digit port needs it because PCRE2's
+ * rules 1 and 3 make `\0` and a re-read multi-digit run ORDINARY CHARACTERS —
+ * `(?i)\101` matches "a" — and that fold is not optional. */
+Ast *pcrec_ast_char(Ctx *cx, unsigned c) { return char_node(cx, c); }
 
 /* The ONE constructor for a produced byte-set (MOD-0.3c): every set-producing
  * port builds its A_CLASS here, so the fold-BEFORE-negate order (see
@@ -333,11 +354,26 @@ static Ast *esc_atom(Ctx *cx)
     cx->pos = save;
     ExtResult r = pcrec_ext_escape(cx, WANT_RESULT, nextc(cx), false, epos);
     /* THE SPLICE (MOD-0.3c — the line D33 §9.3 promised would replace the
-     * wall, visibly): a produced atom node is the construct. The cursor
-     * already sits past the two-byte escape, which is the whole construct
-     * for every current producer (\d..\V, \N); a longer-bodied atom
-     * producer must carry its own end and advance here. */
-    if (r.what == EXT_NODE) return r.node;
+     * wall, visibly): a produced atom node is the construct.
+     *
+     * [M6.5.2] AND THE CURSOR NOW MOVES TO THE PRODUCER'S OWN `end`, which is
+     * the obligation the original comment here recorded in advance: "the
+     * cursor already sits past the two-byte escape, which is the whole
+     * construct for every current producer; a LONGER-BODIED ATOM PRODUCER
+     * must carry its own end and advance here." Module `backrefs` is that
+     * producer — `\k<name>`, `\g{-1}`, `\10` and an octal re-read are all
+     * longer than two bytes — and the failure of NOT doing this is not a
+     * refusal: `^(?<n>a)\k<n>$` compiled to a matcher that consumed the
+     * reference and then went on to match `<`, `n` and `>` as LITERALS. It
+     * matched a different language, silently.
+     *
+     * Every producer reports `end`, and the two that used to leave it implicit
+     * (the escape doorway's own set port, and module `assertions`' atom port)
+     * now say so — the group doorway's splice at p_group_body has read `end`
+     * this way since MOD-0.5c, so this is the escape doorway catching up with
+     * the contract check06 already measures ("the CALLER advances at
+     * RESULT"). */
+    if (r.what == EXT_NODE) { cx->pos = r.end; return r.node; }
     pcrec_ext_finish(cx, &r);
     /* The wall (K11's fix is this shape): the escape doorway cannot decline
      * today — even "no row" is a refusal — so reaching here means the
@@ -721,13 +757,29 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * syntax queries) the tree produced below is byte-identical to D31's,
      * which is what makes engine_m4.md §5.4's byte-identity gate structural.
      * See A_CAP's own comment in core/internal.h. */
+    /* [M6.5.2] THE WRAPPER IS NOW BUILT UNCONDITIONALLY, and `--no-captures`
+     * gets its tree back by DELETION at end of parse (`pcrec_bref_resolve`,
+     * src/parse/mod_backrefs.c) rather than by never building it here.
+     *
+     * The reason is §6.3's ruling and it is not a preference: under
+     * `--no-captures` a BACKREFERENCED group still needs its internal slots,
+     * and "will any reference name this group" is not a question this line can
+     * answer. The group may be referenced from text that has not been parsed
+     * yet (`\1(a)` compiles), and the lexical pre-scan that could answer it is
+     * the one `Ctx.ncap`'s own comment records as dead. So the wrapper is
+     * built, and the pass that knows every reference removes the ones nothing
+     * reads — which for a pattern with NO reference removes ALL of them and
+     * reproduces this function's pre-[M6.5] output exactly.
+     *
+     * `first_cap_pos` STAYS gated on `want_caps`: it is `forces_captures`'
+     * `why_pos`, a fact about a build that PROMISES group offsets, and a
+     * `--no-captures` build promises none. */
     int capno = 0;
     if (cx->pat[cx->pos - 1] == '(' && !cx->mods->nocap) {
         cx->ncap++;
-        if (cx->want_caps) {
-            capno = (int)cx->ncap;
-            if (cx->first_cap_pos == (size_t)-1) cx->first_cap_pos = apos;
-        }
+        capno = (int)cx->ncap;
+        if (cx->want_caps && cx->first_cap_pos == (size_t)-1)
+            cx->first_cap_pos = apos;
     }
     /* The scope boundary (moved from p_group at MOD-0.5c — see its comment):
      * a body-carrying group saves/restores the scoped state around ITS body,
@@ -1198,5 +1250,11 @@ Ast *pcrec_parse_info(Ctx *cx, AltInfo *info)
             ctx_fail(cx, cx->pos, "unmatched closing parenthesis");
         ctx_fail(cx, cx->pos, "unexpected character in pattern");
     }
-    return a;
+    /* [M6.5.2] §5.3's DEFERRED RESOLUTION, at the one place that has the
+     * whole-pattern count and every name declaration in hand. It is a no-op —
+     * one NULL test — for every pattern with no backreference, and this is the
+     * ONLY parse entry point, so `--count-groups`, `--explain` and the
+     * built-status probe all inherit one definition of "group k exists"
+     * instead of each acquiring their own. */
+    return pcrec_bref_resolve(cx, a);
 }

@@ -492,8 +492,15 @@ static void check_wellformed(void)
      * `a{1,2}+`), module `atomic-groups`. They are the first rows in the table
      * that reach no doorway — see RK_QUANTSUFFIX's own comment in
      * src/core/internal.h for why they exist and what they cost. */
-    if (total != 104) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 104. If you added or "
+    /* 104 -> 106 at [M6.5.2]: the two new `RK_ESC` rows with tails `<` and
+     * `'`, module `recursion`. The `\g` doorway carries TWO CONSTRUCTS and the
+     * table had ONE row for it — a subroutine call re-runs the group's
+     * PATTERN (`^(a|b)\g<1>$` matches "ab") where a backreference compares the
+     * captured TEXT (`^(a|b)\g{1}$` does not), MEASURED. Module `backrefs`
+     * claims the brace-and-bare-digit half and may not claim the other, so the
+     * angle-bracket and quote tails get rows of their own, born unbuilt. */
+    if (total != 106) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 106. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -632,12 +639,16 @@ static void check_row_ranks(void)
             }
         }
     }
-    if (tailed != 18)
-        bad("row ranks: %d tailed rows, 18 expected — the tailed population "
+    /* [M6.5.2] 18 -> 20: the two `\g<` / `\g'` rows. Both are RK_ESC, both
+     * carry rank 25 (the tailed tier), and both beat the base `\g` row's rank
+     * 0 — which is exactly what the split needs, since that base row is the
+     * bucket's fallback and would otherwise claim a construct it must not. */
+    if (tailed != 20)
+        bad("row ranks: %d tailed rows, 20 expected — the tailed population "
             "moved; re-derive it from the table (do NOT just edit this number)",
         tailed);
     else if (badrows == 0)
-        ok("row ranks: all 18 tailed rows sit above the fallback tier");
+        ok("row ranks: all 20 tailed rows sit above the fallback tier");
 }
 
 /* The generated probe space for one bucket: every row's tail, every proper
@@ -1571,25 +1582,45 @@ static void check_class_ports(void)
      * `+` directly and looks the row up only to STAMP from it. A port on one
      * of them would be a port nothing can ever call, so a future edit that
      * adds one moves this number and is caught here. */
-    if (scalar != 5 || set != 10 || fn != 9 || aports != 34)
-        bad("class ports: populations moved — %d scalar (5: b g k 8 9), "
+    /* [M6.5.2]: SCALAR 5 -> 7 and ATOM PORTS 34 -> 47, and the two moves are
+     * independent facts about one module.
+     *
+     * The SCALAR move is the two NEW `recursion` rows (`\g<1>`, `\g'1'`),
+     * which carry the SAME base literal-fallback class port the base `\g` row
+     * does — `[\g<]` is the letter `g` followed by ordinary members, and it
+     * must stay that way. Giving them NO_PORT instead would have changed a
+     * BASE fact the day these rows landed, because the class doorway
+     * arbitrates on the same tail the atom doorway does.
+     *
+     * The ATOM move is THIRTEEN: the ten digit rows (`\0`..`\9`, whose port
+     * owns PCRE2's octal disambiguation and is the only one here that can
+     * produce a CHARACTER rather than a reference), plus `\k`, `\g` and
+     * `(?P=n)`. The two new `recursion` rows add NONE — they are born unbuilt,
+     * which is the whole point of splitting them out. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 47)
+        bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
+            "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (34: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (47: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
             "\\b and \\B since wave B, \\G since wave D, \\K since "
-            "wave E, and `(?>...)` since [M6.4.2]). A "
+            "wave E, `(?>...)` since [M6.4.2], and the thirteen backrefs rows "
+            "since [M6.5.2]). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 5 scalar + 10 SET + 9 FN class ports, 34 atom "
+        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 47 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
            "-- module `assertions` is now COMPLETE -- + `(?>...)`, "
-           "[M6.4.2]; the four RK_QUANTSUFFIX rows add none, having no "
+           "[M6.4.2], + the ten digit rows and \\k \\g (?P=n), [M6.5.2] "
+           "-- module `backrefs` -- while the two new \\g< / \\g' rows add "
+           "only their base literal-fallback CLASS port; "
+           "the four RK_QUANTSUFFIX rows add none, having no "
            "doorway to be called from); scalar and SET "
            "values oracle-tied "
            "(class_expect column / fallback law / census popcounts), as "
@@ -1699,26 +1730,68 @@ static void check_engine_capability(void)
      * `bites` is a pattern whose cut/write genuinely changes the language, so
      * no rewrite can discharge it; `name` is the text the refusal must contain,
      * which is `select_engine.c`'s `why` for that row. */
+    /* [M6.5.2] `tail` JOINS THE KEY, and it is not decoration: the `\g`
+     * doorway now holds THREE rows in one (RK_ESC, 'g') bucket — the
+     * backreference half (no tail, module `backrefs`, wired) and the two
+     * subroutine halves (tails `<` and `'`, module `recursion`, unwired) — so
+     * a (kind, sel) key alone would hand a `recursion` row the `backrefs`
+     * witness the day someone wires it. NULL matches any tail, which is what
+     * every pre-existing row wants. */
     static const struct {
         RegKind     kind;
         int         sel;
+        const char *tail;
         const char *feats;
         const char *bites;
         const char *name;
     } WITNESS[] = {
         /* `\K` moves the REPORTED START, which a subset state (a set, not a
          * path) cannot carry. Nothing discharges it. */
-        { RK_ESC,         'K', "assertions",    "a\\Kb",           "\\K" },
+        { RK_ESC,         'K', NULL, "assertions",    "a\\Kb",           "\\K" },
         /* `(?>a|ab)c` on "abc" is (2,3) and `(?:a|ab)c` is (0,3): the cut
          * changes the LANGUAGE, so the discharge must decline it. */
-        { RK_GROUP,       '>', "atomic-groups", "(?>a|ab)c",       "(?>...)" },
+        { RK_GROUP,       '>', NULL, "atomic-groups", "(?>a|ab)c",       "(?>...)" },
         /* The four possessive spellings, each over a body whose iteration can
          * end in two places — §2.2 refuses those, so the discharge does too.
          * `(?:a|ab)*+c` on "abc" is NOMATCH where `(?:a|ab)*c` is (0,3). */
-        { RK_QUANTSUFFIX, '*', "atomic-groups", "(?:a|ab)*+c",     "possessive quantifier" },
-        { RK_QUANTSUFFIX, '+', "atomic-groups", "(?:a|ab)++c",     "possessive quantifier" },
-        { RK_QUANTSUFFIX, '?', "atomic-groups", "(?:a|ab)?+c",     "possessive quantifier" },
-        { RK_QUANTSUFFIX, '{', "atomic-groups", "(?:a|ab){1,3}+c", "possessive quantifier" },
+        { RK_QUANTSUFFIX, '*', NULL, "atomic-groups", "(?:a|ab)*+c",     "possessive quantifier" },
+        { RK_QUANTSUFFIX, '+', NULL, "atomic-groups", "(?:a|ab)++c",     "possessive quantifier" },
+        { RK_QUANTSUFFIX, '?', NULL, "atomic-groups", "(?:a|ab)?+c",     "possessive quantifier" },
+        { RK_QUANTSUFFIX, '{', NULL, "atomic-groups", "(?:a|ab){1,3}+c", "possessive quantifier" },
+        /* [M6.5.2] THE TWELVE BACKREFS ROWS. Every witness here bites for the
+         * same reason and it needs no cleverness: a backreference compares
+         * SUBJECT TEXT to SUBJECT TEXT at a pair of positions the backtracking
+         * state holds, which is not a regular construct at all — there is no
+         * rewrite that discharges it (§6.3 measured the finite-language
+         * expansion and DECLINED to ship it) and no flag that makes one
+         * DFA-compilable.
+         *
+         * THE REFUSAL MUST NAME THE ROW, NOT THE CAPTURES, and that is the
+         * property this check is really asserting for this module. Every
+         * backreference pattern has `ncap > 0` by construction, so before
+         * [M6.4.2]'s second-why fix `--engine=dfa '(a)\1'` would have taken
+         * the CAPTURES branch and advised `--no-captures` — advice that does
+         * not help, since `\1` still forces the VM after the captures are
+         * gone. D67 contract note 1 is what makes these twelve name
+         * themselves; twelve rows is also what made SR-8 the right build
+         * rather than a third named exception.
+         *
+         * The digit witnesses declare exactly as many groups as they
+         * reference, so each row's OWN number is the one that forces. */
+        { RK_ESC, '1', NULL, "backrefs", "(a)\\1",                        "\\1" },
+        { RK_ESC, '2', NULL, "backrefs", "(a)(b)\\2",                     "\\2" },
+        { RK_ESC, '3', NULL, "backrefs", "(a)(b)(c)\\3",                  "\\3" },
+        { RK_ESC, '4', NULL, "backrefs", "(a)(b)(c)(d)\\4",               "\\4" },
+        { RK_ESC, '5', NULL, "backrefs", "(a)(b)(c)(d)(e)\\5",            "\\5" },
+        { RK_ESC, '6', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)\\6",         "\\6" },
+        { RK_ESC, '7', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)(g)\\7",      "\\7" },
+        { RK_ESC, '8', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)(g)(h)\\8",   "\\8" },
+        { RK_ESC, '9', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9", "\\9" },
+        /* `\g` with NO tail is the backreference half; the two tailed rows in
+         * this bucket are `recursion`'s and have no producer to witness. */
+        { RK_ESC,   'g', NULL, "backrefs",              "(a)\\g{-1}",       "\\g{-1}" },
+        { RK_ESC,   'k', NULL, "backrefs,named-groups", "(?<n>a)\\k<n>",    "\\k<name>" },
+        { RK_GROUP, 'P', "=",  "backrefs,named-groups", "(?<n>a)(?P=n)",    "(?P=n)" },
     };
 
     int qualifying = 0, wired = 0, checked = 0, bads = 0;
@@ -1752,12 +1825,20 @@ static void check_engine_capability(void)
             wired++;
 
             const char *bites = NULL, *name = NULL, *feats = NULL;
-            for (size_t w = 0; w < sizeof WITNESS / sizeof WITNESS[0]; w++)
-                if (WITNESS[w].kind == r->kind && WITNESS[w].sel == r->sel) {
-                    bites = WITNESS[w].bites; name = WITNESS[w].name;
-                    feats = WITNESS[w].feats;
-                    break;
-                }
+            for (size_t w = 0; w < sizeof WITNESS / sizeof WITNESS[0]; w++) {
+                if (WITNESS[w].kind != r->kind || WITNESS[w].sel != r->sel)
+                    continue;
+                /* A witness with a tail matches only a row with that exact
+                 * tail; a witness with none matches any. */
+                if (WITNESS[w].tail &&
+                    (!r->tail || strcmp(WITNESS[w].tail, r->tail) != 0))
+                    continue;
+                if (!WITNESS[w].tail && r->tail)
+                    continue;
+                bites = WITNESS[w].bites; name = WITNESS[w].name;
+                feats = WITNESS[w].feats;
+                break;
+            }
             if (!bites) {
                 bad("engine capability: '%s' (module '%s') is VM_ONLY and has "
                     "a WIRED PRODUCER, but no witness names it in this check. "
@@ -1780,11 +1861,23 @@ static void check_engine_capability(void)
 
     /* EXACT, this file's own convention. 48 -> 52 at [M6.4.2] (the four
      * RK_QUANTSUFFIX rows, all VM_ONLY); 1 -> 6 wired (`\K` since [M6.2] wave
-     * E, plus `(?>` and the four suffix rows). A deliberate move edits these
-     * numbers in the same change; a silent one is the defect. */
-    if (qualifying != 52 || wired != 6)
+     * E, plus `(?>` and the four suffix rows).
+     *
+     * 52 -> 54 and 6 -> 18 at [M6.5.2]. The two ADDED rows are `\g<` and
+     * `\g'`, module `recursion`, VM_ONLY and unwired. The TWELVE newly wired
+     * are backrefs' — and they KEEP `VM_ONLY` rather than reclassifying the
+     * way `named-groups`' three rows did (D59 part 2), because those rows
+     * genuinely lower to both engines and these genuinely do not: a
+     * backreference is not a regular construct, so the column cannot be made
+     * true by editing it. That twelve, measured by this lane against its own
+     * design, is what turned SR-8 from "a third named exception" into D67's
+     * generic build.
+     *
+     * A deliberate move edits these numbers in the same change; a silent one
+     * is the defect. */
+    if (qualifying != 54 || wired != 18)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA and %d of "
-            "them have a wired producer, expected 52 and 6 -- the VM_ONLY "
+            "them have a wired producer, expected 54 and 18 -- the VM_ONLY "
             "population or its producer set moved", qualifying, wired);
     else if (bads == 0) {
         char label[288];
@@ -2016,10 +2109,35 @@ static void check_built_status_defects(void)
      * pre-module 33 plus five — `(?>...)` and the four RK_QUANTSUFFIX rows.
      * The 6 n/a are the RS_BASE/RS_REJECTED rows, where the question does not
      * arise. Bumping these is deliberate and belongs in the same commit as the
-     * producer that moves them. */
-    else if (checked != 104 || built != 38 || unbuilt != 60 || na != 6)
+     * producer that moves them.
+     *
+     * [M6.5.2]: 106 rows = 52 built + 48 unbuilt + 6 n/a, re-derived from a
+     * run rather than predicted. FOURTEEN rows flip to `built` — the twelve
+     * VM_ONLY ones the engine-capability check counts, PLUS `\0` (module
+     * `backrefs`, but ANY_ENGINE, because it produces an ordinary character
+     * and is not one of the twelve) PLUS `(?J)` (module `modifiers`, whose
+     * letter this module builds). TWO rows are ADDED born UNBUILT (`\g<`,
+     * `\g'`), so unbuilt is 60 - 14 + 2 = 48.
+     *
+     * THE TWO POPULATIONS ARE DIFFERENT SETS and saying so is the point: the
+     * engine-capability check counts RS_MODULE rows whose `engines` mask
+     * EXCLUDES the DFA (54 of them), while this tally counts every RS_MODULE
+     * row plus the 6 n/a. The first is a subset of the second, they move for
+     * different reasons, and an earlier prediction that used one number for
+     * both was wrong twice.
+     *
+     * FOUR OF THESE ROWS CLASSIFY `built` ONLY BECAUSE OF §5.3's DEFERRAL, and
+     * that dependency is real rather than incidental: `\1`, `\g{-1}`,
+     * `\k<name>` and `(?P=n)` are all error-115-class STANDALONE in PCRE2 (no
+     * such group), and the derivation drives each row's `syntax` ALONE. They
+     * produce a node because module `backrefs` defers reference VALIDITY to
+     * end of parse, and the classifier reads `ExtResult.answered_at`, not the
+     * eventual verdict. The `\g` row is where that stopped being theoretical:
+     * while its relative resolution refused AT THE PORT it read `unbuilt`, and
+     * the fix was to give "does this number name a group" ONE home. */
+    else if (checked != 106 || built != 52 || unbuilt != 48 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 104 = 38 + 60 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 106 = 52 + 48 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "

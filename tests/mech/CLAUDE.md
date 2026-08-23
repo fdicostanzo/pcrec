@@ -348,6 +348,62 @@ pushes and cuts at ZERO CONSUMPTION forever. Its expected result is a TIMEOUT �
 which D45's generated-matcher execution budget makes a loud failure naming the
 case rather than a hang, and without which the row would be unscoreable.
 
+## [M6.5.2] S102-S120, NINETEEN ROWS, AND THE ID SPACE'S FIRST REAL COLLISION
+
+Nineteen rows for module `backrefs`, and four things about them are worth
+reading before adding a twentieth.
+
+**THE SUITE WORDS WERE REGISTERED FIRST, DELIBERATELY.** `brefdiff`,
+`dupnamesdiff` and `brefidentity` went into the vocabulary and got their arms
+BEFORE any row named them, because the vocabulary is CLOSED and eight of these
+nineteen would otherwise have scored `UNKNOWN-SUITE` — which is not "failed",
+it is "not measured". That is R31 C11's lesson applied rather than
+rediscovered.
+
+**S100 AND S101 WERE ALREADY TAKEN**, by `S100_lift_accepts_nullable.sh` and
+`S101_follow_crosses_cut.sh`, so this module's rows start at S102. The first
+draft of them did not check, and the collision would have been silent in the
+worst way: two files with the same id, `SAB_ID` strings disagreeing with their
+basenames, and the ID-boundary selector (fixed one numbering earlier) selecting
+whichever the glob reached first. **Check the highest existing id before
+numbering a block of rows**; `ls tests/mech/sabotages | sed 's/^S\([0-9]*\)_.*/\1/' | sort -n | tail -1`
+is the whole procedure.
+
+**EVERY `SAB_BEFORE` WAS VALIDATED TO OCCUR EXACTLY `SAB_COUNT` TIMES, and one
+row had a defect no anchor check could see.** S115's `SAB_DESC` contained a
+BACKTICKED word inside a DOUBLE-QUOTED string — a live command substitution
+the moment the matrix sources the file, which bash reported as a syntax error
+in the middle of an unrelated `$( )`. The anchor was fine; the row was not.
+Single-quote `SAB_BEFORE`/`SAB_AFTER` (they already are, for `$` and `\`) and
+keep backticks out of the double-quoted fields.
+
+**FOUR ROWS OF SOMEBODY ELSE'S WERE RE-ANCHORED**, and the tripwire is what
+said so — it was RED on arrival at this lane with S10, S22, S26 and S94 all
+stale, every one from this lane's own ordinary edits (`cls_casefold` rewritten
+to derive from a shared fold table; `(?^)` gaining a second preserved letter;
+the option set/unset block gaining `set_J`/`un_J`; a new declining arm landing
+between `A_ATOMIC`'s and `A_CAP`'s in `rd_shape`). All four were re-derived
+FROM THE LIVE SOURCE. **S10's re-derivation changed the sabotage's SHAPE** —
+its old anchor was a two-armed `||` that no longer exists — so its INTENT was
+re-verified by APPLYING it: with the row live, `-i '[A]'` stops matching "a"
+and still matches "A", which is the one-direction fold the row is named for. A
+re-anchored row whose intent nobody re-checked is a row that measures something
+else.
+
+**THE ROW WHOSE FAILING DIRECTION IS NOT AN ANSWER IS S107** (`vm_nullable`
+false for `A_BREF`), and its detector is the harness's derived TIMEOUT: a
+reference whose group published an empty capture consumes nothing, so a
+quantifier over it loses its empty-iteration guard and loops forever. **The row
+whose failing direction is not a REFUSAL either is S102** (a prefilter planted
+on a backref pattern) — it changes a SPAN, on a population that is invisible
+unless the erasure's window fails to CONTAIN the true match, which is why
+`run_backref_diff.sh` §8 exists and asserts its three subjects exactly.
+
+**AND S109 IS THE S68 SHAPE ONE CONSTRUCT OVER**: inlining the backreference
+compare instead of routing it through the encoding seam changes NO ANSWER under
+the byte backend, so every corpus and every differential stays green. Its only
+possible detector is the codegen check's fixture-DECLARED per-site call count.
+
 ## [M6.4.4] S101, THE ONLY ROW IN THE TABLE WHOSE DEFECT SHIPPED
 
 Every other row in this directory re-introduces a defect that was caught

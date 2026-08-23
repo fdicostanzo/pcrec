@@ -15,7 +15,7 @@ bash tests/harness/run.sh tests/base        # one component directory
 bash tests/harness/run.sh tests/base/quantifiers.rxt   # one file
 ```
 
-`make test` is NOT equivalent to `run.sh`: it runs SEVEN scripts — the .rxt
+`make test` is NOT equivalent to `run.sh`: it runs EIGHT scripts — the .rxt
 corpus, `tests/cli/run_cli_tests.sh`, `tests/reject/run_reject_tests.sh` (the
 "never miscompile" mandate, per construct),
 `tests/registry/run_registry_tests.sh`, `tests/parse/run_parse_tests.sh`
@@ -25,15 +25,19 @@ CLAUDE.md), `make test-atomic` ([M6.4.2]:
 whose ENGINE arm is where §4's ceiling hazard lives — and since [M6.4.4] the
 only script in that section; the byte-identity gate moved to the opt-in
 `make test-atomic-identity`, see "The atomic landing gate" below),
+`make test-backrefs` ([M6.5.2]: `tests/backrefs/run_backref_diff.sh` and
+`run_dupnames_diff.sh` — see "The backrefs behavioural suite" below; that
+module's byte-identity gate is likewise opt-in as
+`make test-backrefs-identity`),
 `tests/codegen/run_codegen_tests.sh`
 (structural assertions that behaviour-preserving optimizations are actually
 PRESENT in the emitted C — see that directory's CLAUDE.md), and
 `tests/known_fail/run_known_fail.sh` (the ratchet that flags a deferred-bug
 regression which has started passing). `run.sh` alone certifies only the first
-of the seven.
+of the eight.
 
 `make strict` is separate and opt-in: it recompiles every source with
-`-Werror`, writes nothing, links nothing, and touches `build/` not at all, so it
+`-Werror` **and, since [M6.5.2], `-Wshadow`**, writes nothing, links nothing, and touches `build/` not at all, so it
 is safe to run while `make test` is in flight. It exists because the project
 already had a warnings-as-errors gate BY ACCIDENT —
 `tests/codegen/run_trie_identity.sh` compiles the whole tree and fails on any
@@ -42,7 +46,22 @@ catching a class of offset bug. Now it is a gate someone chose. Validated the
 way any gate should be: adding one unused variable to `src/core/sb.c` leaves
 plain `make` succeeding and makes `make strict` fail.
 
-**TWO of the seven can SKIP, and both skips are loud.** `run_parse_tests.sh` is
+**`-Wshadow` joined it at [M6.5.2], and it is a row that lane EARNED.**
+`-Wall -Wextra` does not include it, and a local named after an enclosing
+parameter is a silent miscompile of exactly the shape `src/gen/emit_vm.c` is
+exposed to: a new arm declared `const unsigned entry = ...` for a seam-entry
+id, shadowing `vm_emit`'s LABEL parameter of the same name, and every
+`^(a)\1$`-shaped artifact came out with a DUPLICATE LABEL that would not
+compile. The corpus caught it inside one run — but a shadowed variable that
+happens to hold a PLAUSIBLE value is the version that does NOT get caught, and
+this makes the whole class a compile error. The tree was measured clean under
+it before it was added (0 warnings across every source plus `cli/main.c`), so
+it costs nothing today and refuses the next one.
+
+**TWO of the eight can SKIP, and both skips are loud** (three, counting
+`make test-backrefs`, whose two scripts print PC-3's own SKIP banner and exit 0
+when libpcre2 is absent at run time — a green run without it is a WEAKER result
+than a green run with it, and the banner is how you tell which one you got). `run_parse_tests.sh` is
 the second: without libpcre2 it still compares pcrec's branch count against its
 independent reference, but the stage that ARBITRATES that reference — libpcre2's
 error-127 / error-154 thresholds — prints a SKIP banner instead. The comparison
@@ -892,6 +911,124 @@ atomic-free patterns to the corpus it extracts from.
 was never the expensive part of `make test` — see the wall-time note in
 "Tiered testing" — so this move is a correctness-of-composition change, not a
 performance one, and it should not be reported as a speed-up.
+
+## The backrefs landing gate ([M6.5.2], 2026-08-22) — OPT-IN, three axes, and its archived result
+
+`tests/codegen/run_backref_identity.sh` is module `backrefs`' byte-identity
+gate, and the second in the tree whose reference is a PINNED COMMIT rather than
+a `-D` knob. It is NOT part of `make test`. Run it on demand:
+
+    make test-backrefs-identity
+    BACKREF_IDENTITY_REF=<sha> make test-backrefs-identity   # a moved base
+
+**WHY IT IS OPT-IN AND WHY THE REFERENCE IS A COMMIT** — ASK-4, ruled with
+R32, on the same reasoning `test-atomic-identity` was ruled on one module
+earlier. It asserts a claim about a MOMENT, and NO STAGE OF THIS MODULE RUNS ON
+THE CONTROL POPULATION: a backref-free pattern creates no `A_BREF`, stamps no
+VM_ONLY row, marks no group, allocates no pending slot and adds no residual
+entry to the artifact's mask. A `-D` knob would therefore gate DEAD CODE and
+the sweep would report 100% identical no matter what was sabotaged — the
+blindness `tests/mech/CLAUDE.md` records, in its purest form.
+
+**THREE AXES, and the third is this module's own.** Under `--no-captures` the
+parser now builds an `A_CAP` for EVERY numbered group and deletes the
+unreferenced ones at end of parse — because §6.3 rules that a group a
+BACKREFERENCE names keeps its internal slots and reports none, and "will any
+reference name this group" cannot be answered at the opening paren (a FORWARD
+reference makes it unanswerable there in principle). So "the tree is what it
+always was" is a claim about a DELETION, and this axis is what turns it from an
+argument into a measurement. **It earned its keep on the first run**: the
+resolution pass's early return skipped the strip for a backref-FREE pattern, so
+every `--no-captures` artifact with a group emitted different bytes while
+answering identically.
+
+**IT COMPARES PAST D37's THREE FEATURE-STAMP LINES**, with the filter asserted
+to remove EXACTLY three from each side — `tests/cli` case10's precedent, not a
+loosening. `render_modules` renders the enabled module list by walking the
+registry in TABLE ORDER, and this module adds two rows naming module
+`recursion` at `RK_ESC 'g'` (before the `RK_GROUP` rows where that name
+previously first appeared), so under `--features all` the stamp's list moves
+`recursion` earlier. The mask and the gate state are unchanged, D37's own
+promise is order-independent, and `tests/cli` case14 pins the stamp's content.
+
+**THE ARCHIVED RESULT** — measured 2026-08-22 on `lane/brimpl`, against a
+reference compiler built from the pinned pre-module commit `5286265`:
+
+| arm | same | differing | refused by both | refusal mismatch |
+|---|---|---|---|---|
+| default | 1501 | 0 | 149 | 0 |
+| `--engine=vm` | 1502 | 0 | 148 | 0 |
+| `--no-captures` | 1501 | 0 | 149 | 0 |
+
+Corpus 1774 patterns; 124 backref-bearing, 1650 backref-free. POSITIVE CONTROL:
+the reference REFUSES all 124, so a zero-difference result is a measurement
+against a genuinely different compiler rather than a build compared with
+itself.
+
+## The backrefs behavioural suite ([M6.5.2], 2026-08-22)
+
+`make test-backrefs` runs two scripts concurrently, and they are separate
+because they ask different KINDS of question.
+
+**`tests/backrefs/run_backref_diff.sh` — nine sections, four EXACT population
+guards.** §1 sweeps 35 patterns x 91 subjects x every startpos in [0, n] against
+libpcre2, comparing the match span AND EVERY GROUP SPAN — the group spans are
+the sharper detector here, because the re-entry family contains subjects on
+which the outer span agrees and the group does not. §2 asserts the DEFAULT
+selection and `--engine=vm` agree (both are VM artifacts, but the default is
+where the prefilter was forced OFF). §3 counts the RE-ENTRY population, which
+is where publish-at-close is observable AND NOWHERE ELSE — a 5,808-cell
+arm-vs-arm sweep found the backref-FREE control at 0 divergences in BOTH
+publication disciplines. §4 is the `--no-captures` arm. §5 drives the three
+entry points against the `\G(?:PAT)`-wrapped oracle. §6 is the find-all loop.
+§7 asserts the `--engine=dfa` refusal BY NAME **with its OCTAL control**:
+`(a)\10` is the byte 0x08 and must compile to a pure DFA, which is the
+per-NODE half of SR-8's stamping rule. §8 is the SPAN-DIVERGENCE section. §9 is
+the fold agreement.
+
+**§8 CORRECTS THE DESIGN, and the correction is worth reading.**
+`backrefs_design.md` §11.2 names three cells as the span-divergence population;
+measured here, only ONE of them is a DETECTOR. A span DIFFERENCE is not enough:
+the hybrid uses the prefilter's span START to seed `attempt_position` (and the
+emitted loop re-asks it on every retry, so a start that is too LOW costs
+attempts and no answers) and its span END as the MRL ceiling. A planted
+prefilter changes an ANSWER only when the erasure's window FAILS TO CONTAIN the
+true match. On `11-1` for `([0-9]+)-\1` (true (1,4), erased (0,4)) and on `ba`
+for `(a*)b\1` (true (0,1), erased (0,2)) the window contains the answer and the
+VM still finds it — so those two would have scored the sabotage as UNDETECTED
+while looking like coverage. The three subjects now used were found by SWEEPING
+the family space for the containment property, and come from three different
+families.
+
+**BOTH SCRIPTS JOIN THE SANITIZER LISTS, on BOTH AXES.** They are on `make
+ubsan`'s and `make asan`'s suite lists, and — unlike the atomic differential
+beside them, which hardcodes its generated-code compile flags — they read
+`GENCFLAGS` and `LIBPCREC` from the environment, so the emitted matchers they
+compile and RUN are instrumented too. That is K27's lesson applied rather than
+rediscovered: the battery's generated-code axis only ever sees what some script
+actually runs, and the emitted backreference compare does pointer arithmetic
+over subject offsets nothing else in the tree's generated code does.
+
+**`tests/backrefs/run_dupnames_diff.sh` — the resolution rule, checked THREE
+ways.** The `.rxt` cells separate four candidate readings ("first by number",
+"last set", "any one of them", "first NON-empty") and each is caught by exactly
+one cell. What a hand-picked set cannot show is that no FIFTH rule fits, so this
+sweeps name-runs of size 1..4 with EVERY SUBSET participating and checks (1)
+pcrec against libpcre2 on 828 cells, (2) an INDEPENDENTLY WRITTEN model of the
+rule — implemented in python from the rule's own sentence — against libpcre2 on
+158 cells, and (3) both populations EXACT. Failing direction demonstrated: the
+model perturbed to "last set" disagrees with libpcre2 on 32 of 158.
+
+**The 65,536-pair FOLD AGREEMENT (§9)** is the mechanism R32 E8 asked for.
+pcrec's ASCII fold exists TWICE and cannot be made to exist once — a parse-time
+class widener (D23) and match-time arithmetic in the encoding residual, because
+a caseless backreference's operand is subject text nobody has seen at compile
+time. `fold_agreement_check.c` compares the SHIPPED
+`rx_bref_match_caseless` — compiled out of an artifact pcrec actually emitted —
+against `pcrec_ascii_fold` (src/core/fold.c), which `cls_casefold` derives its
+widening from. Ordered PAIRS, not the 52-byte set, because equality under a fold
+is a RELATION and two sides could agree on WHICH bytes fold while disagreeing
+about what they fold TO.
 
 ## Internal parallelism and section composition ([TT-2], 2026-08-15)
 

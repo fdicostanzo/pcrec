@@ -58,6 +58,29 @@ struct ParseMods {
     bool    ungreedy;   /* U — quantifier greed default inverted; a
                          * trailing `?` then RE-inverts. NOT reset by ^ */
     bool    nocap;      /* n — plain `(` stops counting as a capture */
+    /* [M6.5.2] J — DUPLICATE GROUP NAMES ARE LEGAL (PCRE2_DUPNAMES).
+     *
+     * MEASURED, backrefs_design.md §8.1 over seventeen cells: the duplicate
+     * check is made AT EACH DECLARATION, against the SCOPED `(?J)` state in
+     * force AT THAT DECLARATION. Not at the pattern's start, not globally, and
+     * not once per compile. `(?<a>x)(?J)(?<a>y)` is legal because the SECOND
+     * declaration is under `(?J)`; `(?J:(?<a>x))(?<a>y)` is not, because the
+     * second is not; `(?<a>x)(?<a>y)(?J)` is an error, which kills the reading
+     * that `(?J)` anywhere legalises everything.
+     *
+     * So it is `caseless`'s and `multiline`'s shape exactly — a scoped parser
+     * bool saved and restored at group boundaries — and its ONE consumer is
+     * `mod_named_groups.c`'s duplicate check, which reads it at the
+     * declaration site. Nothing downstream reads it, which this header makes a
+     * compile error rather than a convention.
+     *
+     * THERE IS NO `PCREC_DUPNAMES` OPTION BIT (ASK-2, ruled): inline `(?J)`
+     * only. `(?i)` has both spellings for a historical reason `(?J)` does not
+     * share, and `pcrec_options.flags` stays as D44.8 froze it. A libpcre2
+     * cell that separates the two is measured and recorded: an inline `(?-J)`
+     * BEATS the API bit, so the letter — not an option word — is the
+     * authoritative state even in PCRE2. */
+    bool    dupnames;
     uint8_t xlevel;     /* 0 off / 1 `x` / 2 `xx` — consumed by the
                          * MOD-0.5d lexer; the state exists so one run
                          * parser owns every letter */

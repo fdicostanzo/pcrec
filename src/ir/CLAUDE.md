@@ -170,6 +170,31 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   built for `a\Kb` is the machine `ab` builds, and its span start is the
   PRE-`\K` start by construction — exactly the quantity the hybrid may bound
   the VM's search with, and exactly the one §6.3 rule 1 forbids writing out.
+  **[M6.5.2] ADDS ONE ARM AND IT IS THE OPPOSITE OF `\K`'s.** `A_BREF` has
+  NO MACHINE — a backreference is not regular — and `compile_ast` falls into
+  its internal error DELIBERATELY rather than approximating. Two
+  approximations exist and both are refused HERE rather than in a comment:
+  erasing the reference to epsilon is a SUBSET (it deletes real matches, the
+  one failure class D26 refuses outright), and replacing it with a copy of the
+  referenced group's machine is APPROACH §2's erasure, which is not even a
+  SUPERSET once that group's transitive closure holds an assertion or an
+  atomic/possessive operator — MEASURED at 12 of 18 positive-control cells
+  across the two reasons, plus 3 of 5 for the transitive one. Even where it IS
+  a superset its leftmost SPAN differs from the true one on a large fraction
+  of subjects, so it cannot serve as `engine_m4.md` §6.1's exact anchored
+  window either.
+
+  **Nothing builds that machine, and that is ENFORCED UPSTREAM rather than
+  assumed**: `src/opt/select_engine.c` forces `EngineFit.prefilter` OFF for a
+  backref-bearing pattern and REFUSES `-fprefilter` on one by name, and the
+  pattern is VM-forced by its rows' stamps, so `src/core/compile.c`'s build
+  condition (`chosen == ENGM_DFA || fit.prefilter`) is false. Reaching the arm
+  means one of those two facts stopped being true — which is exactly when a
+  loud internal error is worth more than a machine that answers for a
+  different language. Contrast `\K` above: an epsilon there is right BECAUSE
+  the construct changes no language; a backreference changes it, so there is
+  no honest epsilon.
+
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

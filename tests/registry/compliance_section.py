@@ -393,8 +393,17 @@ def dump():
     # that reach no doorway; they exist so the generated index below can say
     # something about the possessive spellings at all, instead of leaving a
     # reader unable to tell "not implemented" from "not in the table".
-    if len(rows) != 104:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 104. "
+    # 104 -> 106 at [M6.5.2]: two new `RK_ESC` rows with tails `<` and `'`,
+    # module `recursion`. The `\g` doorway carries TWO CONSTRUCTS and the table
+    # had ONE row for it -- a subroutine call re-runs the group's PATTERN where
+    # a backreference compares the captured TEXT (measured) -- so module
+    # `backrefs` claims the brace-and-bare-digit half and the angle-bracket and
+    # quote tails get rows of their own, born unbuilt. Without them the
+    # generated index would say `\g` is built and say NOTHING about the
+    # subroutine spellings, which is the same reader problem the quantifier
+    # suffix rows were added to close.
+    if len(rows) != 106:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 106. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

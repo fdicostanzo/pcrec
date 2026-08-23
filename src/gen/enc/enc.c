@@ -18,7 +18,7 @@ static const PcrecEnc enc_utf8_pending = {
     /* NOT a backend: the NAME exists so `--encoding=utf8` is a recognised
      * member refused for a stated reason, rather than an unknown value. The
      * backend (lowering instance + this row's residual text) is M5's. */
-    PCREC_ENC_UTF8, "utf8", NULL, NULL
+    PCREC_ENC_UTF8, "utf8", NULL
 };
 
 static const PcrecEnc *const enc_table[] = {
@@ -54,6 +54,37 @@ void pcrec_enc_names(char *buf, size_t cap)
         if (k + ln + 1 < cap) { memcpy(buf + k, n, ln); k += ln; }
     }
     buf[k] = 0;
+}
+
+/* [M6.5.2] THE TWO EMITTERS, one loop each over the backend's entries.
+ *
+ * A backend with no table emits nothing, which is what keeps the `-e utf8`
+ * refusal path from ever reaching here; `emit_residual_*` in
+ * src/gen/emit_dfa.c checks `pcrec_enc_ready` first anyway, because a NULL
+ * text pointer reaching this far would otherwise emit a TRUNCATED artifact
+ * instead of failing. */
+void pcrec_enc_emit_decls(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                          const char *prefix)
+{
+    if (!e || !e->entries) return;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+        if (mask & t->id) pcrec_enc_emit_text(sb, t->decls, prefix);
+}
+
+void pcrec_enc_emit_defs(StrBuf *sb, const PcrecEnc *e, unsigned mask,
+                         const char *prefix)
+{
+    if (!e || !e->entries) return;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+        if (mask & t->id) pcrec_enc_emit_text(sb, t->defs, prefix);
+}
+
+bool pcrec_enc_entry_engine_callable(const PcrecEnc *e, unsigned id)
+{
+    if (!e || !e->entries) return false;
+    for (const PcrecEncEntry *t = e->entries; t->decls; t++)
+        if (t->id == id) return t->engine_callable;
+    return false;
 }
 
 void pcrec_enc_emit_text(StrBuf *sb, const char *text, const char *prefix)

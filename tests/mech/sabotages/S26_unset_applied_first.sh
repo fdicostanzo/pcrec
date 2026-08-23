@@ -22,22 +22,26 @@ SAB_BEFORE="    if (set_i) ns.caseless = true;
     if (set_U) ns.ungreedy = true;
     if (set_n) ns.nocap = true;
     if (set_m) ns.multiline = true;
+    if (set_J) ns.dupnames = true;
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;
     if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
     if (un_U) ns.ungreedy = false;
     if (un_n) ns.nocap = false;
     if (un_m) ns.multiline = false;
+    if (un_J) ns.dupnames = false;
     if (un_x) ns.xlevel = 0;"
 SAB_AFTER="    if (un_i) ns.caseless = false;
     if (un_s) ns.dotall = false;
     if (un_U) ns.ungreedy = false;
     if (un_n) ns.nocap = false;
     if (un_m) ns.multiline = false;
+    if (un_J) ns.dupnames = false;
     if (un_x) ns.xlevel = 0;
     if (set_i) ns.caseless = true;
     if (set_s) ns.dotall = true;
     if (set_U) ns.ungreedy = true;
     if (set_n) ns.nocap = true;
     if (set_m) ns.multiline = true;
+    if (set_J) ns.dupnames = true;
     if (xlvl >= 0) ns.xlevel = (uint8_t)xlvl;"

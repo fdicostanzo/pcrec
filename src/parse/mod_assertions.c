@@ -119,6 +119,13 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
 
     ExtResult res = { .what = EXT_NODE, .at = at, .msg = "",
                       .answered_at = want };
+    /* [M6.5.2] `end` reported explicitly: every construct this port produces
+     * IS the two-byte escape, so it is `cx->pos` — but `esc_atom` now
+     * ADVANCES to whatever a producer reports rather than assuming that, since
+     * module `backrefs` has atom constructs of its own that are longer
+     * (`\k<name>`, `\g{-1}`). Leaving it zero would rewind the cursor to the
+     * start of the pattern. */
+    res.end = cx->pos;
     res.node = pcrec_ast_node(cx, k);
     /* [M6.4.2 / SR-8, D67] THE STAMP, applied UNIFORMLY to all eight rows
      * rather than to `\K` alone, so "this module's producer stamps what it

@@ -53,6 +53,137 @@ static const char defs_byte[] =
 "    return pos + 1;\n"
 "}\n";
 
+/* ---- entry 2 and 3: the BACKREFERENCE COMPARE ([M6.5.2], D58 scope item 3)
+ *
+ * A backreference compares SUBJECT TEXT against SUBJECT TEXT. Every other
+ * construct pcrec compiles is a 256-bit bitmap or a position predicate, which
+ * is why caselessness folds away at parse time (D23) — there is no bitmap to
+ * widen here, because the operand is text nobody has seen at compile time. So
+ * the fold has to happen at MATCH time, in the one place an encoding is
+ * allowed to differ: this residual.
+ *
+ * TWO ENTRIES, NOT ONE WITH A FLAG. D18/D23's rule is that an option compiles
+ * away — "the generated code has no flag, no branch and no tolower()" — and
+ * D23 MEASURED the alternative (a runtime fold indirection) costing 26% on a
+ * pattern containing no letters at all. The emitter picks the entry at emit
+ * time from `Ast.caseless`, so the caseless artifact pays for the fold and the
+ * case-sensitive one pays nothing.
+ *
+ * THE RETURN IS A LENGTH, AND THE SIGN CARRIES A SECOND FACT. Under this
+ * backend the compare cannot change length, so `took` is always
+ * `ref_end - ref_start` on success — but the signature is designed for the
+ * backend that does not exist yet, where it is NOT: `(?i)^(ss)\1$` on
+ * "ss\xdf" is no match in an 8-bit build and a UTF-8 build has to answer the
+ * sharp-s family differently, with one captured character folding to two and
+ * the consumed length no longer equalling the captured one. Returning a length
+ * is what lets that backend give a different answer WITHOUT THE SHARED EMITTER
+ * CHANGING A CHARACTER — it never computes a length, it only adds the one it
+ * is given. That is DD-12 (7) working as designed rather than being worked
+ * around.
+ *
+ * On FAILURE the value is negative and `-(r) - 1` is the number of subject
+ * bytes that DID compare equal. That is not decoration: `(a*)\1` over a long
+ * subject fails the compare after O(n) byte comparisons, and those are work
+ * the fail label never sees — the exact definition of a WORK UNIT (D47's
+ * second addendum). A bare `-1` sentinel could not carry the number, which is
+ * R32 E4: the first draft recommended charging the compared prefix and its own
+ * signature could not express it. `-(r) - 1` rather than `-r` so that a
+ * zero-length prefix is representable, keeping the ordinary "no match, nothing
+ * compared" case at -1.
+ *
+ * THE FOLD IS SPELLED ARITHMETICALLY AND IS TIED TO pcrec's OWN, over all
+ * 65,536 byte pairs, by tests/backrefs/fold_agreement_check.c against
+ * `pcrec_ascii_fold` (src/core/fold.c) — which is also what `cls_casefold`
+ * derives its class widening from. Two spellings of one fact with a MECHANISM
+ * between them, not a comment (R32 E8; sabotage row S116). A `tolower()`
+ * here would be a DEFECT rather than a shortcut: it is locale-dependent at the
+ * CALLER's run time, in a locale pcrec does not control, and an artifact whose
+ * answers change with `setlocale` is not the self-contained matcher APPROACH
+ * promises.
+ *
+ * ENGINE-CALLABLE, unlike `next_pos`, and the seam's check reads that off the
+ * row rather than from a list of its own — see `engine_callable` in enc.h. */
+static const char decls_bref[] =
+"/* $_bref_match -- the ENCODING RESIDUAL entry for a CASE-SENSITIVE\n"
+" * backreference compare (pcrec DD-12/D58).\n"
+" *\n"
+" * PRECONDITION: ref_start <= ref_end <= n. The caller passes a PUBLISHED\n"
+" * capture pair, and a published pair is ordered BY CONSTRUCTION -- the start\n"
+" * was recorded before the group's body ran and the end after it.\n"
+" *\n"
+" * RETURNS, and the sign carries two different facts:\n"
+" *     >= 0   the number of SUBJECT bytes consumed at `at`. This need not\n"
+" *            equal ref_end - ref_start: under an encoding whose case\n"
+" *            folding is not length-preserving it may differ, which is why\n"
+" *            this entry returns a length rather than a bool.\n"
+" *     <  0   no match, and -(result) - 1 is the number of subject bytes\n"
+" *            that DID compare equal before the mismatch (0 when the very\n"
+" *            first unit differs, or when fewer than the needed bytes\n"
+" *            remain). That prefix is the WORK the compare actually did and\n"
+" *            is what the caller charges against its work budget.\n"
+" *\n"
+" * Reads s only at offsets in [ref_start, ref_end) and [at, n).\n"
+" *\n"
+" * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
+" * character and the compare is length-preserving. An artifact compiled for\n"
+" * another encoding exports this same entry with that encoding's body. */\n"
+"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
+"                       size_t ref_start, size_t ref_end, size_t at);\n";
+
+static const char defs_bref[] =
+"/* byte encoding: one byte is one character, so the compare is a memcmp with\n"
+" * a prefix count. */\n"
+"ptrdiff_t $_bref_match(const unsigned char *s, size_t n,\n"
+"                       size_t ref_start, size_t ref_end, size_t at)\n"
+"{\n"
+"    size_t need = ref_end - ref_start;\n"
+"    size_t i;\n"
+"    for (i = 0; i < need; i++) {\n"
+"        if (at + i >= n || s[at + i] != s[ref_start + i])\n"
+"            return -(ptrdiff_t)i - 1;\n"
+"    }\n"
+"    return (ptrdiff_t)need;\n"
+"}\n";
+
+static const char decls_bref_ci[] =
+"/* $_bref_match_caseless -- the ENCODING RESIDUAL entry for a CASELESS\n"
+" * backreference compare (pcrec DD-12/D58): $_bref_match, folding case.\n"
+" *\n"
+" * Same contract, same return protocol. THIS artifact folds the 52 ASCII\n"
+" * letters and nothing else, which is what an 8-bit non-UTF match does: in\n"
+" * the C locale bytes >= 0x80 have no case, so folding them would be a guess\n"
+" * about a locale the caller owns and pcrec does not. */\n"
+"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
+"                                size_t ref_start, size_t ref_end, size_t at);\n";
+
+static const char defs_bref_ci[] =
+"/* The fold is spelled arithmetically and covers exactly A-Z <-> a-z. No\n"
+" * tolower(): that is locale-dependent at YOUR run time, and this matcher's\n"
+" * answers must not change with setlocale(). */\n"
+"ptrdiff_t $_bref_match_caseless(const unsigned char *s, size_t n,\n"
+"                                size_t ref_start, size_t ref_end, size_t at)\n"
+"{\n"
+"    size_t need = ref_end - ref_start;\n"
+"    size_t i;\n"
+"    for (i = 0; i < need; i++) {\n"
+"        unsigned char x, y;\n"
+"        if (at + i >= n) return -(ptrdiff_t)i - 1;\n"
+"        x = s[at + i];\n"
+"        y = s[ref_start + i];\n"
+"        if (x >= 'A' && x <= 'Z') x = (unsigned char)(x + 32);\n"
+"        if (y >= 'A' && y <= 'Z') y = (unsigned char)(y + 32);\n"
+"        if (x != y) return -(ptrdiff_t)i - 1;\n"
+"    }\n"
+"    return (ptrdiff_t)need;\n"
+"}\n";
+
+static const PcrecEncEntry entries_byte[] = {
+    { PCREC_ENCE_NEXT_POS,      false, decls_byte,    defs_byte    },
+    { PCREC_ENCE_BREF,          true,  decls_bref,    defs_bref    },
+    { PCREC_ENCE_BREF_CASELESS, true,  decls_bref_ci, defs_bref_ci },
+    { 0, false, NULL, NULL }
+};
+
 const PcrecEnc pcrec_enc_backend_byte = {
-    PCREC_ENC_BYTE, "byte", decls_byte, defs_byte
+    PCREC_ENC_BYTE, "byte", entries_byte
 };

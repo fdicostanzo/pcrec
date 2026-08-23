@@ -469,6 +469,61 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   is `first_kreset_pos`'s twin, first-wins, and supplies the DIAGNOSTIC's
   offset only — the verdict walks the post-discharge tree.
 
+- **mod_backrefs.c** — module `backrefs` ([M6.5.2]): four producing ports and
+  the end-of-parse resolution pass they all feed. Design:
+  docs/design/backrefs_design.md, panel-approved R32.
+
+  **FOUR PORTS, ONE NODE KIND, AND ONE PORT THAT ALSO PRODUCES CHARACTERS.**
+  `pcrec_brport_digit` owns the ten digit rows and PCRE2's octal
+  disambiguation, which makes it the only producer in this directory that can
+  return something that is not its module's construct: rules 1 and 3 make `\0`
+  and a re-read multi-digit run ORDINARY CHARACTERS. `pcrec_brport_g`,
+  `pcrec_brport_k` and `pcrec_brport_pname` are pure reference producers.
+
+  **THE OCTAL RULE IS FOUR ORDERED QUESTIONS**, and stating it in that order is
+  what makes rule 3' fall out instead of being a special case: does the run
+  start with `0` (octal, at most three digits); is it a single digit 1-9
+  (backreference, WHOLE-pattern count); does it have an octal reading at all,
+  i.e. start 1-7 (backreference if that many groups exist SO FAR, else octal);
+  otherwise it starts 8 or 9, which are not octal digits, so the re-read would
+  consume ZERO digits and PCRE2 reads the whole DECIMAL number. The ASYMMETRY
+  between questions 2 and 3 is the finding, and no test using only
+  groups-before will see an implementation that gets it backwards.
+  **The octal SCAN itself is not written here**: `pcrec_clsport_octal`
+  (parse.c) is the base grammar's own measured rule and the CLASS position's
+  producer, so calling it is what keeps the two positions from acquiring two
+  implementations of one PCRE2 fact.
+
+  **THE STAMP GOES ON THE `A_BREF` AND NOWHERE ELSE**, which is a per-NODE
+  answer to a per-ROW question rather than a forgotten stamp. `\1`'s row is
+  VM_ONLY, but `(a)\10` is the octal byte 0x08 — an ordinary character with no
+  VM requirement — so stamping the character node the octal re-read produces
+  would refuse `--engine=dfa '(a)\10'` for a construct that is not there.
+  Asserted in both directions by `run_backref_diff.sh` §7.
+
+  **NOTHING HERE RESOLVES A REFERENCE.** Every port RECORDS one (`PendingRef`,
+  core/internal.h) and `pcrec_bref_resolve` settles all of them at end of
+  parse — which is what makes forward references legal BY CONSTRUCTION rather
+  than by an exception, and what gives the numeric, relative and by-name
+  spellings ONE definition of "group k exists". That single definition is
+  load-bearing rather than tidy: while the relative form refused at the port
+  for a number out of range, the `\g` row's own `syntax` (`\g{-1}`, standalone)
+  refused there too, and D65's built-status derivation called a construct this
+  module BUILDS `unbuilt`. The ONE thing that cannot be deferred is rule 3's
+  backref-vs-octal decision, because deferring it would let a later group
+  retroactively turn an octal literal into a reference.
+
+  **AND IT DELETES `A_CAP` WRAPPERS.** Under `--no-captures` a group a
+  BACKREFERENCE names still needs its internal slots (§6.3), and "will any
+  reference name this group" cannot be answered at the opening paren — a
+  FORWARD reference makes it unanswerable there in principle, and the lexical
+  pre-scan that could answer it is the one `Ctx.ncap`'s comment records as
+  dead. So `p_group_body` and `mod_named_groups.c` now build the wrapper for
+  every numbered group and this pass removes the ones nothing reads; for a
+  pattern with no reference that is ALL of them, which is what makes the
+  emitted C identical to what it always was. `tests/codegen/run_backref_identity.sh`
+  is where that stops being an argument.
+
 - **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the
   header NOTHING outside this directory includes ([M6.2] wave A; D62;
   assertions_design.md §8.6). `Ctx.mods` is a pointer to an INCOMPLETE

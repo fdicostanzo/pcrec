@@ -101,6 +101,23 @@ long long pcrec_minw(const Ast *a)
          * direction. */
         case A_WORDB:
         case A_NWORDB:
+        /* [M6.5.2] A BACKREFERENCE CONTRIBUTES 0, and this file said so
+         * before the kind existed: "Lookaround, backreferences and
+         * (*ATOMIC) have no producers today; when they gain one, each
+         * contributes 0 here until someone measures otherwise."
+         *
+         * IT IS EXACT RATHER THAN CONSERVATIVE, which is worth stating because
+         * the other members of this arm are exact for a different reason. They
+         * consume nothing ever; a backreference consumes `ref_end - ref_start`
+         * bytes, a MATCH-TIME quantity with no compile-time lower bound above
+         * zero — a group can publish an EMPTY capture (`^(x?)y\1z$` on "yz" is
+         * (0,2) with group 1 = (0,0)), so 0 is genuinely attainable. Any
+         * positive value here would be an OVER-estimate, this file's unsound
+         * direction, and would prune positions where the match really is.
+         *
+         * The same fact is why `vm_nullable` must answer TRUE for this kind
+         * (src/gen/emit_vm.c): the two are one property read by two passes. */
+        case A_BREF:
         /* [M6.2 wave D] `\G` consumes nothing either — it compares the
          * position against `startpos` and reads no byte at all. */
         case A_GSTART:

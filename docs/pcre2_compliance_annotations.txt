@@ -97,8 +97,18 @@ Trivially implementable; base tier simply does not include it.
 
 === \0
 section: escaped-characters
+date: 2026-08-22
 module `backrefs` — PCRE2 resolves octal-vs-backreference by context, so
-they share an owner.
+they share an owner. SHIPPED 2026-08-22 ([M6.5.2]): `\0` is ALWAYS octal
+(at most three digits COUNTING the leading zero, so `\0377` is `\037` then a
+literal `'7'`) and can never be a backreference, because there is no group 0
+to address. It keeps its `backrefs` gate — moving it to the base grammar
+would be a compatibility change to the BASE tier made as a side effect of a
+module landing, and no build that accepts `\0` today stops accepting it. Its
+row is the one member of the digit family that is ANY_ENGINE, and the
+character node it produces is deliberately NOT stamped with the row: `(a)\10`
+is the octal byte 0x08 and compiles to a pure DFA, while `(a)\1` refuses
+`--engine=dfa` by name — asserted in both directions.
 
 === base:class-escape-fallbacks
 section: escaped-characters
@@ -496,10 +506,13 @@ oracles) — PCRE2's own `PCRE2_INFO_NAMETABLE` is sorted the identical way,
 measured directly (tests/probes/probe_named_groups.c), which is this
 module's own evidence for the sort key docs/spec/match_api.md §6 had left
 open (fixed only for today's ref-empty rows — see D59). A duplicate name
-is a compile error (PCRE2 error 143, no DUPNAMES); `(?J)`/DUPNAMES itself
-stays OUT OF SCOPE — see its own row below. Backreference-BY-NAME
-spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) stay module `backrefs`,
-unaffected — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING
+is a compile error (PCRE2 error 143) **unless `(?J)` is in force at that
+declaration** — DUPNAMES SHIPPED 2026-08-22 ([M6.5.2]) and the split is:
+DECLARING a duplicate name is this module's (the check below is conditional
+on the scoped letter), RESOLVING a reference to one, and the `(?J)` letter
+itself, are module `backrefs`'. Backreference-BY-NAME
+spellings (`\k<n>` `\k'n'` `\k{n}` `(?P=n)`) are module `backrefs`, SHIPPED
+in the same landing — Since Q2/SR-9 `(?<` names ONLY this module at the DECLARING
 position: the three lookbehind tails `=` `!` `*` have rows of their own.
 `--features none` (the bare default) still refuses with the module name;
 `--features named-groups` compiles. Oracles: tests/named_groups/.
@@ -616,21 +629,50 @@ set); `--features none` still refuses with the module name.
 
 === (?J)
 section: option-setting
-date: 2026-08-18
-Per-letter attributed to module `named-groups` (duplicate NAMES are
-named-group semantics — the same dispatch logic `(?m)` already uses for
-`assertions`), MOD-0.5a's original ruling ("J is observable only through
-named groups") — [M6.3] (2026-08-18) briefly moved this to a K14
-OUT-OF-SCOPE reading and then RULED it back: `docs/pcre2_options.md`'s
-`PCRE2_DUPNAMES` row is `RIDES(M4/captures)`, RATIFIED D38, a
-PLANNED-LATER disposition, not NEVER — (?J) does not meet K14's
-"architecturally out of scope per the survey" bar. The letter refuses
-UNCONDITIONALLY, gate open or closed, naming its true owning module
-WITHOUT the false "requires" framing ("module 'named-groups' does not
-implement duplicate group names" — "requires module 'named-groups'" would
-read as "enabling it fixes this", which named-groups shipping (without
-dupnames) disproved); `(?-J)` accepted no-op. Pin: tests/reject/
-reject_gated.
+date: 2026-08-22
+**SUPPORTED since 2026-08-22 ([M6.5.2]), and the OWNER is module
+`backrefs`** — ASK-1, ruled with R32. The attribution has now moved four
+times and the history is kept because each move was wrong for a different
+reason:
+
+1. **`named-groups`, with "requires" framing** (MOD-0.5a) — true while that
+   module did not exist, a LIE the moment it shipped WITHOUT dupnames, since
+   "requires X" reads as "enabling X fixes this".
+2. **K14's ROADMAP_NEVER shape** ([M6.3], briefly) — wrong the other way:
+   `docs/pcre2_options.md`'s `PCRE2_DUPNAMES` row is `RIDES(M4/captures)`,
+   RATIFIED D38, a PLANNED-LATER disposition, and `(?J)` does not meet K14's
+   "architecturally out of scope per the survey" bar.
+3. **`named-groups`, without the "requires" framing** ([M6.3], ruled) — right
+   about the DECLARING half and silent about the RESOLVING one.
+4. **`backrefs`, with "requires" back and TRUE this time** ([M6.5.2]). What
+   makes the letter mean anything is the rule for resolving a reference to a
+   duplicated name, and that machinery is this module's. **The split the page
+   now records: DECLARING a duplicate name is `named-groups`; RESOLVING a
+   reference to one, and the letter itself, are `backrefs`.**
+
+**THE SCOPING RULE, MEASURED over seventeen libpcre2 cells**: the duplicate
+check is made AT EACH DECLARATION, against the SCOPED `(?J)` state in force at
+THAT declaration. Four cells separate it from every plausible alternative —
+`(?<a>x)(?J)(?<a>y)` is LEGAL (the second declaration is under it);
+`(?J:(?<a>x))(?<a>y)` is an error (the second is not); `(?<a>x)(?<a>y)(?J)` is
+an error, which kills "(?J) anywhere legalises everything"; and
+`(?J)(?<a>x)(?-J)(?<a>y)` is an error EVEN WITH the PCRE2_DUPNAMES API bit
+set, which is what settles pcrec having the letter and no option bit.
+
+**THE RESOLUTION RULE: the FIRST member of the name-run, by ASCENDING GROUP
+NUMBER, that is SET** — "set" including set-to-empty. Measured against four
+candidate rules over eighteen cells, and swept over name-runs of size 1..4
+with every subset participating. `rx_info.groups` may now hold adjacent rows
+with equal names, sorted (name asc, then NUMBER asc) — libpcre2's own
+`PCRE2_INFO_NAMETABLE` order, measured — because
+`docs/spec/match_api.md` §6's caller algorithm selects the lowest-numbered
+participating member only if that order holds.
+
+`(?-J)` accepted, and it really does turn the state back off. With `backrefs`
+disabled the letter refuses naming it; with `modifiers` disabled the `(?`
+doorway's own row refuses first, naming `modifiers` — two refusal sites for
+one construct, both pinned. Pins: tests/reject/, tests/cli case11,
+tests/backrefs/dupnames.rxt.
 
 === (?a)
 section: option-setting
@@ -730,28 +772,43 @@ the report that found it):
   'assertions'") — only `--features none` reproduces the original
   142-cell closed-gate figure now.**
 
-**The population still shrinks toward zero, and [M6.3] changed WHICH
-event closes the `J`-half, not whether it closes.** 142 → 8 is what
-opening the gate already does: every letter whose module lands and
-VALIDATES the letter stops deferring. `m`'s 4 cells close when
-`assertions` lands. `J`'s 4 cells DO NOT close when `named-groups` (the
-module already shipped, 2026-08-18) lands a producer — they close only
-when a FUTURE dupnames producer lands inside it (`docs/pcre2_options.md`'s
-`PCRE2_DUPNAMES` row, RIDES(M4/captures), RATIFIED D38 — so this is a
-real, scheduled-later event, not the settled-forever state a same-day
-intermediate draft of this entry briefly recorded). Until then `J`'s
-cells keep deferring, with the true-owning-module wording the `(?J)`
-annotation above states.
+**THE POPULATION HAS REACHED ZERO. RE-MEASURED 2026-08-22 ([M6.5.2]): all
+EIGHT cells now give the GRAMMAR error at the open gate**, so the open-gate
+deferral count for this entry is **0**, not 8:
 
-**REVISIT TRIGGER**, therefore, is TWO events, not one: re-measure when
-`assertions` lands and delete the `m`-half of this entry when its
-open-gate count reaches zero; re-measure when a dupnames producer lands
-inside `named-groups` and delete the `J`-half the same way. Re-ordering
-the check so run validity is decided before the module gate was
-considered and NOT taken: it would move a grammar decision ahead of the
-gate for a benefit that expires on its own, and the option-run grammar is
-one home (`mod_modifiers.c`) precisely so the doorway does not acquire a
-second copy of it.
+    --features all '(?m--)' '(?m--:a)' '(?^m-)' '(?^m-:a)'
+    --features all '(?J--)' '(?J--:a)' '(?^J-)' '(?^J-:a)'
+        -> all eight: "invalid hyphen in option setting (pattern offset 4)"
+
+Both halves closed by the mechanism this entry predicted, in two separate
+landings: 142 → 8 was opening the gate, and 8 → 0 is every letter whose
+module lands and VALIDATES the letter. `m`'s 4 cells closed when
+`assertions` shipped; `J`'s 4 closed on 2026-08-22 when module `backrefs`
+shipped the letter — **which is the event this entry named and MIS-LOCATED**:
+it said the `J`-half closes "when a FUTURE dupnames producer lands INSIDE
+`named-groups`", and the producer landed inside `backrefs` instead, because
+the letter's meaning is the rule for resolving a reference to a duplicated
+name. The prediction that it would close, and by what mechanism, was right;
+the module it named was not. Recorded rather than quietly corrected, since
+this entry's whole subject is a deferral that expires on its own.
+
+**AT THE BARE DEFAULT the cells still defer**, and that is the GATE rather
+than this deferral: `std1` is {`classes`, `modifiers`}, so bare `(?m--)`
+answers "requires module 'assertions'" and bare `(?J--)` answers "requires
+module 'backrefs'" — measured the same day. Those close when the modules
+join a named default set (D37's announced-boundary rule), which is a
+different event from this one.
+
+**REVISIT TRIGGER: DISCHARGED, both halves.** The re-ordering this entry
+considered and did NOT take — deciding run validity before the module gate —
+is now moot for the measured population, and the reason for not taking it
+stands unchanged: it would move a grammar decision ahead of the gate for a
+benefit that has now expired on its own, and the option-run grammar is one
+home (`mod_modifiers.c`) precisely so the doorway does not acquire a second
+copy of it. The entry is KEPT rather than deleted because the mechanism it
+records — a validity check ordered after a module gate, producing a
+diagnostic category that expires as modules land — is the thing worth
+remembering, and because its prediction was checkable and half-wrong.
 
 Found by the MOD-0.8b D27 blinded writer (recorded in
 `docs/dev/reviews/2026-08-12-r20-mod08.md` as SPEC divergence 2) and ruled
@@ -821,14 +878,65 @@ regular.
 
 === \1
 section: backreferences
+date: 2026-08-22
 **Backreferences are not a regular language** — no DFA can do them, and
-PCRE2's own DFA matcher does not. They need the M4 VM engine plus capture
-state. Note also D23's boundary: a CASELESS backreference compares
-subject text to subject text, which cannot fold into the automaton and
-needs a match-time comparison. All ATOM position: inside a class these
-spellings are not backreferences at all — octal or literal fallback,
-supported since FIX-3 (K13); see Escaped characters. The module, when it
-lands, must not touch the class position.
+PCRE2's own DFA matcher does not.
+
+**Module `backrefs` SHIPPED 2026-08-22 ([M6.5.2]).** Every spelling in the
+bundled row above parses and matches: the numeric forms (`\1`..`\N` for any
+N — measured to `\812`, with PCRE2's octal disambiguation resolved by four
+ordered questions), `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\g{name}`, `\k<n>`
+`\k'n'` `\k{n}` and `(?P=n)`. VM-only, by all twelve rows' `engines` mask
+consumed through SR-8's generic consultation (D67) — there is no
+backrefs-specific engine analysis. Oracles: tests/backrefs/ (226 generated
+cells, every one driven through libpcre2 before it was written) plus two
+differentials whose PRIMARY arms compare 14,128 cells against libpcre2 on the
+match span AND every group span — 13,300 over 35 patterns x 91 subjects x every
+startpos, and 828 over name-runs of size 1..4 with every subset participating.
+Their other arms (both engine selections, --no-captures, the three entry
+points, the find-all loop, the span-divergence detector and a 65,536-pair fold
+agreement) compare more again.
+
+**THE OCTAL ASYMMETRY IS THE PART A READER SHOULD KNOW.** `\1`..`\9` count
+groups over the WHOLE pattern (`\1(a)` compiles — the group is AFTER the
+escape), while `\10`+ count only groups BEFORE the escape (`\10(a)..(j)` is
+the OCTAL byte 0x08, and `(a)\10` is octal 010 rather than "group 1 then
+'0'"). A run beginning `8` or `9` is ALWAYS decimal, because those are not
+octal digits and the re-read would consume nothing. Measured cell by cell.
+
+**AN UNSET REFERENCE FAILS; AN EMPTY ONE SUCCEEDS**, and the two are one `if`
+apart: `^(a)?\1$` on "" is NO MATCH, while `^(x?)y\1z$` on "yz" is (0,2) with
+group 1 = (0,0). `PCRE2_MATCH_UNSET_BACKREF` would flip 2 of the 8 measured
+unset cells and is explicitly out of scope (it needs a second emitted shape
+for one construct, selected by an option pcrec does not have).
+
+**A REFERENCE INSIDE A RE-ENTERED GROUP SEES THE LAST *COMPLETED* ITERATION.**
+`(a|b\1)+` on "ab" is (0,1) with group 1 = (0,1). That is why a referenced
+group's capture pair is PUBLISHED TOGETHER at the group's close rather than
+written as control traverses each end — under the latter a re-entered group
+holds a half-open pair that is neither UNSET nor a capture, and two shapes
+underflow a `size_t` in emitted code.
+
+**D23's BOUNDARY, and it is where the encoding seam earned its second
+customer.** A CASELESS backreference compares subject text to subject text,
+which cannot fold into the automaton, so the fold happens at MATCH time in the
+encoding residual `$_bref_match_caseless` — the [M5-SEAM]'s second and third
+entries. The caselessness is the option in force AT THE REFERENCE, not at the
+group: `^(a)(?i:\1)$` matches "aA" and `^(?i:(a))\1$` does not.
+
+**NO PREFILTER**, and that is measured rather than cautious: the
+capture-erased approximation a hybrid would be built from is not even a
+SUPERSET once the referenced group's transitive closure holds an assertion or
+an atomic/possessive operator (12 of 18 positive-control cells are false
+negatives), and where it IS a superset its leftmost SPAN differs from the true
+one on up to 389 subjects in one family. The cost is one to two orders of
+magnitude on the families where a prefilter would have helped, and a
+nomatch-only filter gated on that closure is chartered rather than dropped.
+
+All ATOM position: inside a class these spellings are not backreferences at
+all — octal or literal fallback, supported since FIX-3 (K13); see Escaped
+characters. **The module does not touch the class position**, which
+tests/backrefs/octal_class.rxt pins with the module ENABLED.
 This annotation is keyed to `\1` and covers the bundled prose row
 `\1` `\g1` `\g{n}` `\g{+n}` `\g{-n}` `\k<n>` `\k'n'` `\k{n}` `(?P=n)`.
 

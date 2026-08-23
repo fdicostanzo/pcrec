@@ -169,6 +169,29 @@ static First first_of(const Ast *a)
         r.nullable = false;
         return r;
     }
+    /* [M6.5.2] A BACKREFERENCE WIDENS TO EVERY BYTE AND IS NULLABLE — the
+     * maximally conservative answer, and the one this analysis's own safe
+     * direction demands.
+     *
+     * `first_of` feeds the §2.2 follow-set disjointness test, and this
+     * analysis is UNSOUND when it under-states what a construct can match: a
+     * FIRST set that is too small makes two sets look disjoint, possessifies a
+     * quantifier whose retreat is the only way to the match, and deletes it
+     * silently. A backreference's first byte is whatever the referenced group
+     * captured, which is not a compile-time fact at all, so the only honest
+     * answer is "any of the 256". NULLABLE because an empty capture makes the
+     * whole construct consume nothing.
+     *
+     * That combination makes every disjointness test involving it FAIL, so a
+     * quantifier near a backreference keeps its machinery — the direction
+     * `pcrec_revdet_first` already takes for `$`, and the direction this file
+     * is allowed to be wrong in. */
+    case A_BREF: {
+        First r;
+        memset(r.f, 0xff, 32);
+        r.nullable = true;
+        return r;
+    }
     case A_EMPTY:
     /* [M6.2 wave E] `\K` takes A_EMPTY's arm, and it is the ONE arm in this
      * switch that needs no closure argument at all.
@@ -449,6 +472,16 @@ static GkParts gk_build(Gk *g, const Ast *a)
         cls_set(r.last, (unsigned)p);
         return r;
     }
+    /* [M6.5.2] DECLINE THE WHOLE CONSTRUCTION. Every other member of the arm
+     * below is a genuine epsilon in the position automaton this builds; a
+     * backreference is not — it consumes a variable amount of text, so it has
+     * no POSITION and the (U1)/(U2) unique-iteration argument the automaton
+     * exists to decide is not expressible over it. Declining is always
+     * available and always safe here (the caller reads `g->ok`), and it costs
+     * only the possessification of a quantifier whose body holds a reference. */
+    case A_BREF:
+        g->ok = false;
+        return gk_parts_empty(true);
     case A_EMPTY:
     case A_BOL:
     case A_EOL:
@@ -706,7 +739,10 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
     /* [M6.2 wave E] `\K` joins them with no caveat: this walk only HUNTS
      * for A_REP nodes to offer the verdict to, and a leaf hosts none. What
      * `\K` MEANS to the analysis is `first_of`'s answer, above. */
-    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+    /* [M6.5.2] a leaf: this walk only HUNTS for A_REP nodes to offer the
+     * verdict to, and a backreference hosts none. What it MEANS to the
+     * analysis is `first_of`'s answer above (every byte, nullable). */
+    case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
         return;
 
     case A_CAP:

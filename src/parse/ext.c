@@ -271,6 +271,13 @@ static ExtResult esc_answer(Ctx *cx, ExtWant want, int c, bool in_class,
             ExtResult res = { .what = in_class ? EXT_MEMBERS : EXT_NODE,
                               .at = at, .msg = "", .answered_at = w };
             res.node = pcrec_ast_class_from_bits(cx, p->set, p->scalar != 0);
+            /* [M6.5.2] `end` IS NOW REPORTED HERE TOO, because `esc_atom`
+             * stopped assuming every atom producer's construct is exactly the
+             * two-byte escape. For a set port it IS — the cursor already sits
+             * past the selector — so this is that fact written down rather
+             * than left implicit at the ONE call site that used to encode it.
+             * The scalar branch above has always reported it. */
+            res.end = cx->pos;
             return res;
         }
     }

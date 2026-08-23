@@ -807,6 +807,70 @@ and `RX_CUT(2)` onto the revdet loop's OWN entry slot — two live loops sharing
 one slot, which is the failure `vm_count_slots`' header names. Its failing
 direction was then demonstrated by reverting the fix (2 CUT-NOT-A-MARK).
 
+## [M6.5.2] the `[M6.5-DUPNAMES]` block, and `run_backref_identity.sh`
+
+**`[M6.5-DUPNAMES]` — the reflection table's ORDER, read off the ARTIFACT.**
+With `(?J)` the `rx_info.groups` table can hold ADJACENT ROWS WITH EQUAL NAMES,
+and `docs/spec/match_api.md` §6's caller algorithm (bsearch, walk BACK to the
+run's first row, then FORWARD to the first participating one) selects the
+LOWEST-numbered participating member ONLY IF the within-name order is
+ascending. Get it backwards and the table encodes the "last set" rule
+`backrefs_design.md` §8.3's `"xyy"` cell rules out — while the emitted matcher
+still implements "first set", so the two disagree and NO match-semantics test
+can see it.
+
+**WHY IT IS STRUCTURAL RATHER THAN A BEHAVIOURAL `.rxt` CELL**, and this is
+R32's re-check finding: without the number tiebreak, whether the emitted order
+is wrong depends on TWO unspecified properties agreeing — `qsort`'s stability
+and the direction `Ctx.named_groups` is walked in. `mod_named_groups.c`
+PREPENDS and `emit_dfa.c` walks from the head, so on glibc (a stable merge
+sort) a name-only comparator yields DESCENDING numbers within a run. A check
+that depends on that coincidence is not a control. Reading the order off the
+ARTIFACT depends on neither.
+
+**STRICTLY increasing, not merely non-decreasing**, and that is the COMPARATOR
+TOTALITY half: a comparator returning 0 for rows that differ in NUMBER would
+leave them in whatever order the sort produced, and two rows equal in BOTH
+fields would be a duplicate the table must never contain. The ORDER half is
+live exactly when a dup-name pattern is compiled; the TOTALITY half is
+exercisable on every fixture with two or more names, which is why the fixture
+set has both kinds and asserts EXACTLY 5 tables of which EXACTLY 3 carry a
+duplicated name. Failing direction demonstrated: with the tiebreak removed,
+three fixtures go red naming the offending row pair. Sabotage S120.
+
+**`run_backref_identity.sh` — the module's byte-identity gate, and the SECOND
+one here whose reference is a PINNED COMMIT.** Same ruling and same reasoning
+as `run_atomic_identity.sh` (ASK-4, ruled with R32): a knob-built reference is
+sabotaged too, and here a knob would be worse than weak — NO STAGE OF THIS
+MODULE RUNS ON THE CONTROL POPULATION, so it would gate dead code and the
+sweep would report 100% identical whatever was sabotaged.
+
+**THREE AXES, and the third is this module's own.** Under `--no-captures` the
+parser now builds an `A_CAP` for EVERY numbered group and deletes the
+unreferenced ones at end of parse (§6.3, because a FORWARD reference makes
+"will this group be referenced" unanswerable at the opening paren), so "the
+tree is what it always was" is a claim about a DELETION rather than about code
+that never ran. **That axis found a real defect on its first run**: the
+resolution pass's early return skipped the strip for a backref-FREE pattern, so
+every `--no-captures` artifact with a group emitted different bytes while
+answering identically — which is exactly the class of defect only an identity
+sweep sees.
+
+**IT COMPARES PAST D37's THREE FEATURE-STAMP LINES**, with the filter asserted
+to remove EXACTLY three from each side, and that is the precedent `tests/cli`
+case10 set rather than a loosening. `render_modules` (src/parse/enabled.c)
+renders the enabled module list by walking the registry in TABLE ORDER and
+taking each module name at its FIRST row; this module adds two rows naming
+module `recursion` at `RK_ESC 'g'`, well before the `RK_GROUP` rows where that
+name previously first appeared, so under `--features all` the stamp's list
+moves `recursion` earlier. The mask, the gate state and D37's own promise (the
+stamp's value can be passed back to `--features`) are order-independent, and
+case14 is where the stamp's CONTENT is pinned.
+
+Result at landing: default 1501/0, vm 1502/0, nocaptures 1501/0 identical, with
+the positive control at 124/124 backref-bearing patterns REFUSED by the
+pre-module compiler.
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the
@@ -927,20 +991,81 @@ oracles would stay green, and the artifact would have acquired exactly the
 cross-seam call that makes the hot path's shape and speed depend on the
 encoding the moment a second backend lands.
 
-Two design points worth keeping:
+**[M6.5.2] THE CHECK CHANGED SHAPE, because the seam gained its SECOND and
+THIRD entries and they are not like the first.** `<prefix>_next_pos` has no
+business anywhere inside the matcher — unanchoredness is the automaton's own
+self-loop, so there is no external advance to route through. A BACKREFERENCE
+COMPARE has no automaton representation whatsoever, so forbidding the call
+forbids the construct. "Never called from an engine body" is therefore no
+longer the rule; it is the DECLARED-COUNT-ZERO case of one:
+
+> the number of CALL SITES of `<prefix>_<entry>` inside file-scope function
+> bodies other than the entry's own definition and `main()` must EXACTLY equal
+> the count the FIXTURE TABLE declares.
+
+Three design points, and the first two are R32 E7/C2's whole finding about the
+first draft of this change:
+
+- **THE EXPECTATION COMES FROM THE TEST, NOT FROM THE ARTIFACT.** A check whose
+  population is read out of the artifact's own residual declarations goes GREEN
+  exactly when the thing it guards is broken: an emitter that inlines the
+  compare AND drops the entry from the mask leaves nothing to assert, and the
+  global empty-population guard does not notice because `next_pos` is
+  unconditional and keeps it satisfied. So each fixture row DECLARES which
+  entries its artifact must carry, and the artifact's declared set is asserted
+  to EQUAL it.
+- **THE COUNT IS A DECLARED INTEGER, NOT A COUNT OF ANYTHING.** Deriving it by
+  scanning the fixture's PATTERN for `\<digit>` would be a SECOND
+  IMPLEMENTATION of PCRE2's octal disambiguation, and it would get the same
+  cells wrong that rule exists to get right — `(a)\10` is octal and contains
+  ZERO backreferences, `(a)\18` is `\01` then a literal `'8'`. Worse, a
+  scanner and the emitter would drift in the SAME direction, i.e. green on an
+  incorrect compiler. A human wrote the integer beside the pattern, and every
+  octal-ambiguous spelling is kept out of the fixture set.
+- **THE SCOPED GUARD IS EXACT, NOT A FLOOR.** The global guard cannot serve:
+  `next_pos` is unconditional, so it stays satisfied even if every
+  backref-bearing fixture were deleted. Four fixtures declare a bref entry, and
+  a floor of "at least 3" would pass while one silently lost its declaration —
+  which is the population-shrinking failure the guard exists to catch, arriving
+  through the guard itself.
+
+**COMMENT STRIPPING IS TOKEN-LEVEL AND RUNS FIRST**, and it changes
+`next_pos`'s own check in EXACTLY ONE DIRECTION — the direction that hides
+things, which is why it is named rather than absorbed. Before it, a COMMENT
+naming `<prefix>_next_pos` inside an engine body was reported as a violation,
+which is STRICTER than this check's own stated allowlist ("a residual name may
+appear (a) in a comment"). **Demonstrated before the rewrite** on a synthetic
+body whose only mention was a comment: flagged. Token stripping brings the
+implementation INTO LINE with its documented contract rather than loosening it
+past one. S68 still fires either way — its sabotage plants a real CALL, and
+stripping comments cannot hide a call.
+
+The stripper carries in-comment state ACROSS records (a `/* */` region spans
+lines), skips string and character literals so a `/*` inside one cannot open a
+comment and a residual NAME inside one is not counted as a call, and runs
+BEFORE head-detection and the column-0 brace rules — because a comment can
+otherwise contain something that looks like a definition head or a `}` at
+column 0 and desynchronise the `inbody` tracking. Matching is at TOKEN
+boundaries, not substring: `rx_bref_match` is a proper prefix of
+`rx_bref_match_caseless`, and a substring rule would count every caseless call
+as a case-sensitive one and pass with the emitter wired backwards.
+
+**Every failing direction was demonstrated before the check was trusted**: a
+declared count moved 1 -> 2 goes red; deleting a bref fixture row reddens the
+scoped guard; a body whose only mentions are comments and a string literal
+counts 0; a body with one real call plus its intent comment counts 1 for each
+of the two entry names.
 
 - **The population is DERIVED, not typed.** The residual entry NAMES are
   read out of the artifact (each residual declaration is preceded by the
-  backend's own `ENCODING RESIDUAL entry` comment), so a backend adding a
-  second entry is covered the day it lands rather than the day someone
-  remembers to extend a list here. Finding NO residual entry at all is a
-  FAILURE — the empty-population shape this file's charter is about.
+  backend's own `ENCODING RESIDUAL entry` comment) — used now to CHECK the
+  fixture's declaration rather than to BE it. Finding NO residual entry at
+  all is still a FAILURE.
 - **The check reads FUNCTION BODIES, not the whole file.** A residual name
   legitimately appears in comments, in its own declaration, and inside its
-  own definition; anywhere else inside a file-scope function body is the
-  violation. Six emission shapes (DFA memchr-prefilter, DFA bitmap-
-  prefilter, anchored, VM, `--engine=vm`, `--emit-main`) in both artifact
-  forms.
+  own definition. Ten emission shapes now (DFA memchr-prefilter, DFA bitmap-
+  prefilter, anchored, VM, `--engine=vm`, `--emit-main`, and four
+  backreference fixtures) in both artifact forms.
 
 Sabotage: `tests/mech/sabotages/S68_residual_in_hot_loop.sh` routes the
 emitted bitmap prefilter's skip loop through `<prefix>_next_pos` — the edit

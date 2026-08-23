@@ -387,6 +387,15 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
     case A_NWORDB:
     /* [M6.2 wave D] `\G` likewise: zero-width, nothing to merge or factor. */
     case A_GSTART:
+    /* [M6.5.2] A backreference is a LEAF to both stages and must stay one.
+     * Stage 1 merges an alternation run of single-BYTE branches into one
+     * class; a backreference consumes a variable number of bytes decided at
+     * match time, so it is not a byte and `(a|\1)` must not become a class.
+     * Stage 2 factors a shared literal PREFIX; a backreference has no
+     * compile-time first byte to share. Taking the leaf arm is the answer to
+     * both, and it is the same answer for the same reason `\G` gets it: the
+     * node is opaque to a transformation that reasons about bytes. */
+    case A_BREF:
     /* [M6.2 wave E] `\K` likewise AS A LEAF — but it is the first kind here
      * that could be damaged by the two stages rather than merely unserved by
      * them, so the reason it is safe is written down instead of assumed.
