@@ -48,8 +48,18 @@ STRUCTURAL / ARGUED accordingly.
   the EMITTER'S OWN ARRAY DIMENSIONS out of the emitted C
   (`len(rx_forward_is_accepting[])` for states, `next_state/states` for
   classes) after compiling each BODY ALONE — pcrec's unanchored forward DFA
-  for `L` IS the `Σ*·L` recognizer a lookbehind needs, and its reverse machine
-  is the `reverse(L)·Σ*` a lookahead needs, so no model sits in between.
+  for `L` was claimed to BE the `Σ*·L` recognizer — **REFUTED by R33 C2-1**:
+  it is accept-pruned, so every accepting state is a dead sink and it
+  UNDER-counts. The emitted numbers are now reported as a LOWER BOUND beside a
+  self-checked subset construction for `|D(Σ*·L)|`, and anchor-bearing bodies
+  are excluded from the prototype column and say so.
+- `probes/probe_follow_scoping.py` — **R33 C1-1's probe**: the emitter's own
+  prune-bound literals (does the follow really change them?), the three
+  predicted miscompile cells in both oracles, the `a{3}` row that refuted this
+  lane's first simplification of the lookbehind ruling, C1-3's non-atomic
+  branch-retry cells and C1-7's `\K` refusal-scope controls.
 - `probes/archive.sh` — the ONLY writer of `out/`.
-- `out/` — archived output; see its own CLAUDE.md, which carries the NINE
-  instrument defects this lane found by running its own probes.
+- `out/` — archived output; see its own CLAUDE.md, which carries the ELEVEN
+  instrument defects this lane found by running its own probes — two of them
+  in the R33 fix round, and one of those is a wrong EXPECTATION caught by a
+  self-check that refused to publish.
