@@ -64,6 +64,17 @@ export TT4_REAL_PCREC="$REAL_PCREC"
 SHIMMED_PATH="$SHIM_DIR:$PATH"
 SHIMMED_PCREC="$SHIM_DIR/pcrec"
 
+# Per-section timeout: a single stuck/slow section must not silently eat the
+# whole run's budget (that is exactly what happened 2026-08-23 -- an outer
+# `timeout 1800 run_section_census.sh` fired mid-`assertions`, and every
+# section queued after it was simply never reached). `timeout` runs its
+# child in a new session, so it can and does deliver the signal to the
+# whole `make`/bash/gcc process tree, not just the direct child.
+# TT4_SECTION_TIMEOUT is a single default for every section; override per
+# invocation for a section known to run long (assertions measured needing
+# it — see the memo's "1800s bound" note).
+TT4_SECTION_TIMEOUT="${TT4_SECTION_TIMEOUT:-900}"
+
 run_one_section() {
     local sec="$1" log="$2"
     local target="test-$sec"
@@ -71,10 +82,14 @@ run_one_section() {
     load_before="$(awk '{print $1}' /proc/loadavg)"
     before=$EPOCHREALTIME
     PATH="$SHIMMED_PATH" PCREC="$SHIMMED_PCREC" TT4_SECTION="$sec" TT4_LOG="$log" \
+        timeout "$TT4_SECTION_TIMEOUT" \
         /usr/bin/time -v -o "$OUTDIR/$sec.time" \
         make -C "$ROOT_DIR" "$target" \
         > "$OUTDIR/$sec.stdout" 2> "$OUTDIR/$sec.stderr"
     local rc=$?
+    if [ "$rc" -eq 124 ]; then
+        echo "run_section_census.sh: SECTION TIMEOUT: $sec exceeded TT4_SECTION_TIMEOUT=${TT4_SECTION_TIMEOUT}s -- its census.tsv rows for this run are PARTIAL, do not trust them without re-running with a larger timeout" >&2
+    fi
     after=$EPOCHREALTIME
     load_after="$(awk '{print $1}' /proc/loadavg)"
     local wall
@@ -120,11 +135,27 @@ if [ "${1:-}" = "--validate" ]; then
 fi
 
 sections=("$@")
-[ "${#sections[@]}" -eq 0 ] && sections=("${ALL_SECTIONS[@]}")
+fresh_run=0
+if [ "${#sections[@]}" -eq 0 ]; then
+    sections=("${ALL_SECTIONS[@]}")
+    fresh_run=1
+fi
 
+# RESUME SAFETY: a call naming EXPLICIT sections (the resume-after-timeout
+# shape) APPENDS to the existing census.tsv/summary instead of truncating
+# them -- a bound (timeout, kill) firing mid-run must not cost the sections
+# that already finished. Only the no-args "run everything" shape starts
+# fresh. (Bug found and fixed 2026-08-23: the original version truncated
+# unconditionally, which would have discarded 11 already-completed
+# sections' records the first time this script was re-invoked to cover a
+# timeout's missing tail -- caught before that happened, not after.)
 MASTER_LOG="$OUTDIR/census.tsv"
-: > "$MASTER_LOG"
-: > "$OUTDIR/run_section_census.summary"
+if [ "$fresh_run" -eq 1 ] || [ ! -s "$MASTER_LOG" ]; then
+    : > "$MASTER_LOG"
+    : > "$OUTDIR/run_section_census.summary"
+else
+    echo "run_section_census.sh: RESUMING -- appending to existing $MASTER_LOG ($(wc -l < "$MASTER_LOG") records already present)" >&2
+fi
 
 overall_rc=0
 for sec in "${sections[@]}"; do
