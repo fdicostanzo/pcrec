@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+# studies/tt4_batching/census/shim/timeout — [TT-4.1] Stage A2 census shim.
+#
+# tests/harness/run.sh execs the compiled matcher ONCE PER CASE
+# (`timeout "$RUN_SECS" "$bdir/t" "$subj" "$pos"`, run.sh:356) and pcrec
+# ONCE PER PATTERN BLOCK via the same wrapper (run.sh:262); Stage A's gcc/
+# pcrec-only shim had no visibility into either of those, which is most of
+# why 76% of `make test`'s own CPU showed up as unattributed "remainder".
+# This shim classifies each `timeout` call by its COMMAND target (the
+# argument after the duration, skipping any leading timeout OPTIONS) —
+# `pcrec` (a compile), `t` (a matcher-driver run, tests/harness/driver.c's
+# own convention), or `other:<basename>` — and logs it exactly like
+# shim/gcc's TSV, transparently execing the REAL `timeout`
+# (`TT4_REAL_TIMEOUT`, resolved by the driver via `command -v timeout`
+# BEFORE this dir was prepended to PATH) with the identical argv.
+#
+# Option parsing covers the shapes actually used in this tree (checked by
+# grep before writing this): the bare `timeout N cmd...` shape
+# (tests/harness/run.sh, tests/lib/gen_timeout.sh) and the one flagged
+# shape found (`timeout -s KILL N cmd...`, tests/resource/
+# run_resource_tests.sh) -- GNU coreutils' full option grammar (-k/
+# --kill-after, --preserve-status, --foreground, -v/--verbose, and
+# --signal/-s taking either a separate or `=`-joined value) is handled
+# defensively even where unused today, so an unrecognised leading token
+# reads as `class=other:unparsed` rather than silently misclassifying or
+# crashing.
+
+set -u
+
+: "${TT4_REAL_TIMEOUT:?TT4_REAL_TIMEOUT not set}"
+: "${TT4_LOG:?TT4_LOG not set}"
+
+args=("$@")
+i=0
+n=${#args[@]}
+parse_ok=1
+while [ "$i" -lt "$n" ]; do
+    a="${args[$i]}"
+    case "$a" in
+        --preserve-status|--foreground|-v|--verbose) i=$((i+1)) ;;
+        -k|--kill-after) i=$((i+2)) ;;
+        --kill-after=*) i=$((i+1)) ;;
+        -s|--signal) i=$((i+2)) ;;
+        --signal=*|-s*) i=$((i+1)) ;;
+        --) i=$((i+1)); break ;;
+        -*) i=$((i+1)) ;;  # unrecognised option: skip one token defensively
+        *) break ;;        # first non-option token: the DURATION
+    esac
+done
+duration_idx=$i
+cmd_idx=$((i+1))
+if [ "$cmd_idx" -lt "$n" ]; then
+    target="$(basename "${args[$cmd_idx]}")"
+else
+    target="unparsed"
+    parse_ok=0
+fi
+
+case "$target" in
+    pcrec) cls="pcrec-target" ;;
+    t) cls="driver-target" ;;
+    unparsed) cls="other:unparsed" ;;
+    *) cls="other:$target" ;;
+esac
+
+start=$EPOCHREALTIME
+"$TT4_REAL_TIMEOUT" "$@"
+rc=$?
+end=$EPOCHREALTIME
+wall="$(awk -v s="$start" -v e="$end" 'BEGIN{printf "%.6f", e - s}')"
+
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$start" "$wall" "$cls" "${TT4_SECTION:-unknown}" "$rc" "timeout" "$#" \
+    >> "$TT4_LOG"
+
+exit "$rc"

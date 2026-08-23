@@ -1,0 +1,6 @@
+16 patterns, 35 total cases
+shape=(i) harness-per-case-exec [timeout]  median=3.8189s min=3.8114s reps=[3.811447404907085, 3.8189434990053996, 3.8201255870517343]
+shape=(i) harness-per-case-exec [gnutimeout]  median=0.1225s min=0.1120s reps=[0.1224663769826293, 0.12527775496710092, 0.11201946507208049]
+shape=(ii) one-process-per-pattern median=0.0220s min=0.0204s reps=[0.026823419029824436, 0.022044421057216823, 0.020365621079690754]
+
+exec-batching speed-up (median): 173.24x (35 cases across 16 patterns, 35 spawns in shape (i) vs 16 in shape (ii))

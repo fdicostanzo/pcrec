@@ -1,0 +1,30 @@
+WARNING: build/tt4_census_a2/census.tsv:42170: malformed record: "1787496209.815184\t0.050365\tscript:tt4meas','docs','design','eng_brep_measurements','probes'))"
+WARNING: build/tt4_census_a2/census.tsv:42171: malformed record: 'import pcre2_ctypes\tbackrefs\t0\tpython3\t2'
+section          gcc-s  pcrec#   pcrec-s   runs# runs-wallsum    py3-s  sec-wall   sec-cpu  residue*  residue%
+----------------------------------------------------------------------------------------------------------------------------------
+(* residue = sec-cpu - gcc-s - pcrec-s - py3-s ONLY -- runs-wallsum is NOT
+   subtracted; see the note below on why it cannot be treated as core-seconds)
+corpus          261.39    2271     16.75   19185      2013.72     0.00    468.91    947.50    669.35     70.6%
+assertions       50.87    7651     70.31       0         0.00    17.87    478.09   1273.40   1134.35     89.1%
+rungselect       44.29    5761     24.52       0         0.00     0.00    323.30    435.90    367.10     84.2%
+counterk         20.20     156     12.81       0         0.00     0.00    225.01    269.30    236.29     87.7%
+backrefs         24.00     193      0.49       0         0.00     2.50    235.58    268.75    241.76     90.0%
+mrl              48.28    3273      6.91       0         0.00     0.00    134.62    201.61    146.42     72.6%
+altcls            7.90     101      0.28       0         0.00     0.00     26.10     26.39     18.21     69.0%
+
+python3 core-seconds by script, per section:
+  assertions   verify_pcre2.py                15.05s
+  assertions   pcre2_oracle                   2.52s
+  assertions   oracle.tsv                     0.11s
+  assertions   subjects                       0.08s
+  assertions   tt4meas                        0.07s
+  assertions   patterns                       0.03s
+  assertions   mlscan.py                      0.02s
+  backrefs     bref_oracle.py                 2.15s
+  backrefs     unparsed                       0.18s
+  backrefs     patterns.tsv                   0.06s
+  backrefs     subjects                       0.06s
+  backrefs     tmp.kmccB7jtRz                 0.05s
+
+2366 timeout calls with an unrecognised target class:
+  other:bash: 2366

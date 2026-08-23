@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+# studies/tt4_batching/census/shim/gcc — [TT-4.1] Stage A invocation-census
+# shim. Installed on PATH ahead of the real compiler by
+# run_section_census.sh; transparently execs the real gcc (found by the
+# DRIVER, via `command -v gcc`, BEFORE this dir was prepended — never
+# re-resolved here, which would just find this same script again) with the
+# identical argv, forwarding stdout/stderr and exit status unchanged, and
+# appends one TSV record per call to $TT4_LOG:
+#
+#   epoch_start<TAB>wall_seconds<TAB>class<TAB>section<TAB>rc<TAB>tool<TAB>argc
+#
+# class is one of:
+#   compile-c   -c present (compile-only; also covers -c -E etc.)
+#   one-shot    no -c, at least one .c/.cc/.cpp/.cxx source in argv (the
+#               harness's dominant shape: compile-and-link in one call)
+#   link-only   no -c, no source extensions in argv (linking .o/.a inputs)
+#
+# This file is also hard-linked/copied as `cc` in the same directory (see
+# run_section_census.sh) — tests/encseam/run_encseam_tests.sh is the one
+# script in the tree that defaults CC to `cc` rather than `gcc`, a real
+# name-bypass a gcc-only shim would silently miss. $0's basename is what
+# gets logged as `tool`, so the two identities are distinguishable in the
+# log without being two different scripts to maintain.
+#
+# A single `printf ... >> "$TT4_LOG"` is one write(2) syscall for a record
+# well under PIPE_BUF (4096 on Linux); concurrent workers (PROCS>1) appending
+# to the same regular file with O_APPEND each get an atomic, non-interleaved
+# line by that guarantee — no flock, which would add per-call lock-acquire
+# overhead to a workload of thousands of sub-millisecond compiles (measured
+# cost of THAT overhead is exactly the kind of thing this study is trying to
+# avoid perturbing). Validated by run_section_census.sh's shim on/off smoke
+# check: identical PASS/FAIL summary, and the log line count must equal the
+# gcc-call count an independent method (strace -f -e trace=execve counting,
+# or a known section's expected call count) predicts.
+
+set -u
+
+: "${TT4_REAL_GCC:?TT4_REAL_GCC not set — run_section_census.sh must export it}"
+: "${TT4_LOG:?TT4_LOG not set — run_section_census.sh must export it}"
+
+tool="$(basename "$0")"
+
+has_c=0
+nsrc=0
+for a in "$@"; do
+    case "$a" in
+        -c) has_c=1 ;;
+        *.c|*.cc|*.cpp|*.cxx) nsrc=$((nsrc + 1)) ;;
+    esac
+done
+
+start=$EPOCHREALTIME
+"$TT4_REAL_GCC" "$@"
+rc=$?
+end=$EPOCHREALTIME
+
+wall="$(awk -v s="$start" -v e="$end" 'BEGIN{printf "%.6f", e - s}')"
+
+if [ "$has_c" -eq 1 ]; then
+    cls="compile-c"
+elif [ "$nsrc" -gt 0 ]; then
+    cls="one-shot"
+else
+    cls="link-only"
+fi
+
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$start" "$wall" "$cls" "${TT4_SECTION:-unknown}" "$rc" "$tool" "$#" \
+    >> "$TT4_LOG"
+
+exit "$rc"
