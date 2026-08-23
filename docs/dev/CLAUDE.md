@@ -130,6 +130,27 @@ Append-only where noted; the restart/status-recovery record for the project.
   the journal TAIL remains the mandatory session-start read for current
   work; update this file at session close only when a NEW lesson class
   appears.
+- `tt4_measurement.md` — [TT-4.1] MEASUREMENT memo (Frank's order: measure
+  before any harness change to `make test`'s batched compilation).
+  Stage A: a `gcc`/`cc`/`pcrec` invocation-census shim over one full
+  `make test`, section by section — invocation counts, gcc-bound
+  core-seconds, section wall+CPU; names `corpus` (255.79s gcc-core) and
+  `atomic` (70.65s) as the two worst gcc-bound sections, NOT the
+  `rungselect`/`counterk` sections whose wall is largest among the rest
+  (dominated by match-execution/harness-loop time, not gcc) — with a
+  direct shim-off isolation measurement backing that split. Stage B: a
+  batching prototype (never the harness) measuring three compile shapes
+  (one-shot baseline / link-batching / whole-TU batching) at several
+  batch sizes on real patterns from those two sections — best measured
+  speed-up 3.66x (shape B / TU-batching, N=16, against the harness's own
+  12-way-parallel baseline), a confirmed emitter-side obstacle
+  (`PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` are unprefixed `#define`s
+  that collide when TU-concatenating matchers built with different
+  `--features`), and the measured cost of one batch member failing to
+  compile. Evidence lives in `studies/tt4_batching/` (census shim,
+  bench harness, committed results); see its own CLAUDE.md. No
+  recommendation about the harness's own design beyond what the numbers
+  directly support — that is [TT-4.2]'s row.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.
