@@ -1,0 +1,26 @@
+shape=C(baseline)      mode=serial   median=  13.316s min=  13.296s reps=[13.400164698017761, 13.315792900975794, 13.295872997958213]
+shape=C(baseline)      mode=parallel median=   1.743s min=   1.742s reps=[1.741774067049846, 1.7434713279362768, 1.7882944829761982]
+shape=A N=   1 mode=serial   median=  13.364s min=  13.216s reps=[13.40236761199776, 13.2155151150655, 13.363855266012251]
+shape=A N=   1 mode=parallel median=   1.814s min=   1.808s reps=[1.828003227012232, 1.8077140919631347, 1.8141754120588303]
+shape=B N=   1 mode=serial   median=  13.257s min=  13.220s reps=[13.318672449095175, 13.219805571017787, 13.256771516986191]
+shape=B N=   1 mode=parallel median=   1.756s min=   1.726s reps=[1.764676338993013, 1.7261571219423786, 1.7555825320305303]
+shape=A N=   4 mode=serial   median=   6.537s min=   6.491s reps=[6.5455809300765395, 6.5368673069169745, 6.49088355503045]
+shape=A N=   4 mode=parallel median=   0.990s min=   0.979s reps=[0.9793488450814039, 0.9895007780287415, 1.0472510219551623]
+shape=B N=   4 mode=serial   median=   5.031s min=   4.978s reps=[5.031039358931594, 5.0346395609667525, 4.977685261052102]
+shape=B N=   4 mode=parallel median=   0.798s min=   0.794s reps=[0.8159380409633741, 0.7942122579552233, 0.7975062279729173]
+shape=A N=   8 mode=serial   median=   5.354s min=   5.274s reps=[5.449790659942664, 5.353517129085958, 5.27420892205555]
+shape=A N=   8 mode=parallel median=   0.781s min=   0.777s reps=[0.8634530530543998, 0.7806014339439571, 0.7773678239900619]
+shape=B N=   8 mode=serial   median=   3.627s min=   3.610s reps=[3.6267181140137836, 3.656997711979784, 3.610010080039501]
+shape=B N=   8 mode=parallel median=   0.640s min=   0.632s reps=[0.6324918179307133, 0.6395276400726289, 0.6397368119796738]
+shape=A N=  16 mode=serial   median=   4.810s min=   4.804s reps=[4.803757974994369, 4.809808891965076, 4.8447954130824655]
+shape=A N=  16 mode=parallel median=   1.225s min=   1.190s reps=[1.224937184015289, 1.2625203810166568, 1.1898529920727015]
+shape=B N=  16 mode=serial   median=   2.970s min=   2.942s reps=[2.9415184049867094, 2.9849634579150006, 2.9698229460045695]
+shape=B N=  16 mode=parallel median=   0.782s min=   0.771s reps=[0.7824983529280871, 0.7709010239923373, 0.7856689530890435]
+shape=A N=  64 mode=serial   median=   4.307s min=   4.242s reps=[4.306601673946716, 4.336793537018821, 4.242244936991483]
+shape=A N=  64 mode=parallel median=   4.258s min=   4.235s reps=[4.257706209900789, 4.26119034003932, 4.2350301831029356]
+shape=B N=  64 mode=serial   median=   2.449s min=   2.448s reps=[2.449147803010419, 2.4484724489739165, 2.4520519110374153]
+shape=B N=  64 mode=parallel median=   2.477s min=   2.457s reps=[2.457011700957082, 2.490277182077989, 2.476874900981784]
+peak RSS for the N=64 TU compile (shape B): rc=0 wall=2.393s max_rss_kb=96812
+
+correctness check: baseline (shape C) vs the same batch's shape-B executable
+correctness: 32 matched, 0 mismatched
