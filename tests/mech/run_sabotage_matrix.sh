@@ -50,6 +50,45 @@
 #                   number of sabotage definitions requested: a run that
 #                   produces no row (e.g. a definition failing validation) is
 #                   a loud FATAL, not a silently smaller denominator.
+#                   [TT-8 FIX] PROCS ALSO DERIVES INNER_PROCS, a per-row
+#                   shard-width budget for the two suite arms (`reject`,
+#                   `harness`) that read PROCS from their OWN environment to
+#                   pick their internal worker count (tests/reject/
+#                   run_reject_tests.sh's REJECT_SHARD dispatch,
+#                   tests/harness/run.sh's per-file dispatch). Computed the
+#                   same way JOBS already is (nproc/PROCS, min 1) and passed
+#                   EXPLICITLY on each inner invocation's command line —
+#                   never left to the environment. Before this fix, PROCS
+#                   (an env var, once set by the caller, keeps bash's export
+#                   attribute through this script's own `PROCS="${PROCS:-1}"`
+#                   reassignment) reached those two scripts UNDIVIDED: at
+#                   `PROCS=4` (this repo's `make mech` default, Makefile's
+#                   `PROCS=${PROCS:-$(nproc)}`), up to 4 concurrently-running
+#                   ROWS each additionally sharded 4-way internally the
+#                   moment they hit `reject` or `harness` — up to 16-way
+#                   fan-out on top of the row-level concurrency the box was
+#                   actually sized for. Measured directly (ps-sampled during
+#                   a single-row `PROCS=4` run of S15: `run_reject_tests.sh`
+#                   spawned 4 `REJECT_SHARD_TOTAL=4` workers from a run
+#                   requesting exactly ONE sabotage — the leak does not need
+#                   PROCS>1 at the ROW scheduler to fire, since a lone row
+#                   still inherits the unwidened PROCS from its own
+#                   environment). docs/dev/chain_profile.md "(b) mech
+#                   per-row scoping" named this risk from reading the
+#                   dispatch code; this is the confirming measurement and
+#                   fix. At outer PROCS=1 (a lone row, whether from the
+#                   default or an explicit `PROCS=1`) INNER_PROCS is
+#                   `ncpu/1 = ncpu`, same precedent as JOBS already sets for
+#                   the build step at PROCS=1 — the one running row is
+#                   entitled to the whole box for its own internal work.
+#                   That is a REAL change from pre-fix PROCS=1 (which left
+#                   the inner suites serial, since nothing was in the
+#                   environment to leak): validated to produce the SAME
+#                   fail/pass figures per row as the old serial path, which
+#                   is reject's/harness's own established contract for their
+#                   PROCS mechanisms ("Summary line format is identical in
+#                   both modes") — see docs/testing.md and tests/mech/
+#                   tt8_mech.md for the measurement.
 #
 # SUITE VOCABULARY (the words that may appear in a sabotage's SAB_SUITES):
 #   codegen  trie  reject  harness   — the original four
@@ -125,6 +164,15 @@ ncpu="$(nproc 2>/dev/null || echo 2)"
 if [ -z "${JOBS:-}" ]; then
     JOBS=$(( ncpu / PROCS )); [ "$JOBS" -ge 1 ] || JOBS=1
 fi
+# [TT-8 FIX] the per-row budget for the two suite arms that read PROCS from
+# THEIR OWN environment to pick an internal worker count (`reject`,
+# `harness` — see the header comment above). Computed exactly like JOBS,
+# and always passed EXPLICITLY on those two arms' command lines below —
+# never left for the environment to supply, which is what let the outer
+# row-concurrency PROCS leak into inner suite sharding undivided (measured:
+# a single-row `PROCS=4` run spawned 4 REJECT_SHARD workers instead of the
+# whole-box share a lone row should have gotten).
+INNER_PROCS=$(( ncpu / PROCS )); [ "$INNER_PROCS" -ge 1 ] || INNER_PROCS=1
 ONLY="${1:-}"
 
 MADE_SCRATCH=0
@@ -727,7 +775,11 @@ run_one() {
                 any_ran=1
                 ;;
             reject)
-                PCREC="$pcrec" bash "$tree/tests/reject/run_reject_tests.sh" \
+                # [TT-8 FIX] PROCS explicit, never inherited: see INNER_PROCS
+                # above. run_reject_tests.sh reads PROCS itself to size its
+                # REJECT_SHARD_TOTAL dispatch.
+                PCREC="$pcrec" PROCS="$INNER_PROCS" \
+                    bash "$tree/tests/reject/run_reject_tests.sh" \
                     > "$work/reject.log" 2>&1
                 p="$(grep -m1 '^checks passed:' "$work/reject.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/reject.log" | grep -oE '[0-9]+')"
@@ -738,7 +790,11 @@ run_one() {
             harness)
                 local target_arg=()
                 [ -n "$SAB_HARNESS_TARGET" ] && target_arg=("$tree/$SAB_HARNESS_TARGET")
-                PCREC="$pcrec" CC="$CC" bash "$tree/tests/harness/run.sh" "${target_arg[@]}" \
+                # [TT-8 FIX] PROCS explicit, never inherited: see INNER_PROCS
+                # above. run.sh reads PROCS itself to size its per-file
+                # worker dispatch.
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" \
+                    bash "$tree/tests/harness/run.sh" "${target_arg[@]}" \
                     > "$work/harness.log" 2>&1
                 p="$(grep -m1 '^cases passed:' "$work/harness.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^cases failed:' "$work/harness.log" | grep -oE '[0-9]+')"
