@@ -890,10 +890,10 @@ non-match: on the negative arm the end-check IS the miscompile it was claimed
 to prevent. §14 ASK 2 splits accordingly (a hard return on the negative arm,
 the cheap decline on the positive one), and §9.3's **S-LA11** carries a
 `(?<!` cell as well as `(?<=(a|bc))x`.
-the variable-length follow-on (§11) lands, which is the second argument for
-adopting PCRE2's shape now rather than a shape that has to be replaced.
-§14 ASK 2 offers Frank the alternative: `assert()`-style abort under a debug
-build, silence under `-DNDEBUG`.
+
+It also **stops being redundant** the day the variable-length follow-on (§11)
+lands, which is the second argument for adopting PCRE2's shape now rather than
+a shape that has to be replaced.
 
 ### 3.5 Why forward-plus-end-check rather than a reverse machine
 
