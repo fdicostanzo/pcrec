@@ -509,7 +509,22 @@ from "this bit disables checking".
 **RULING: pcrec REFUSES `\K` inside a lookaround**, matching PCRE2's default,
 and does not implement the extra option (D38's option survey territory, not
 this module's). The refusal is a parse-time check in the module's hook: while
-parsing a lookaround body, an `A_KRESET` node is an error. **The check is
+parsing a lookaround body, an `A_KRESET` node is an error.
+
+**THE SCOPE IS RECURSIVE, AND R33 C1-7 is right that "while parsing a
+lookaround body" has two readings.** The check must descend through nested
+groups AND nested lookarounds, and must NOT fire after the assertion closes.
+MEASURED both directions (`out/follow_scoping.txt` F5):
+
+**REFUSED (err 199), eleven cells** — `(?=(a\K))x`, `(?=a(?:\K))x`,
+`(?=(?:(?=\K)))x`, `(?*a\K)x`, `(?<*\Ka)x`, `(*pla:a\K)x`, `(*nlb:\Ka)x`,
+`(?<=\Ka)x`, `(?=a\K)x`, `(?!a\K)x`, `(?<!\Ka)x`. The first three are the
+ones a check testing only IMMEDIATE children would miss.
+
+**COMPILES, four cells** — `(?=a)\Kb`, `a(?=b)\Kc`, `(?<=a)\Kb`, `a\Kb`.
+These are what a check that latched on "a lookaround was seen" would wrongly
+break. **S-LA10's prediction names both sets**, so the row cannot go green by
+being too broad. **The check is
 NEEDED rather than free** — `\K` is module `assertions`, already shipped, so
 without it `(?=a\K)b` would compile today's `\K` inside tomorrow's lookaround
 and quietly change the reported match start. §9's S-LA10.
@@ -518,7 +533,7 @@ and quietly change the reported match start. §9's S-LA10.
 
 ## 3. The VM lowering (charter (ii))
 
-### 3.1 The one new AST kind, and its three fields
+### 3.1 The one new AST kind, its three flags and its width table
 
 ```c
 A_LOOK,      /* a lookaround: run the body as a sub-match, keep the VERDICT
@@ -553,9 +568,19 @@ node FIELDS encode parse-resolved state*.
 **This is a judgement call and §14 ASK 1 puts it to Frank**, because the honest
 counter-argument is real: `look_behind` changes the emitted control flow more
 than `Ast.multiline` changes `$`'s, so calling it "modifier state" is
-generous. What settles it for this design is that **all three fields are read
+generous. What settles it for this design is that **all three flags are read
 at exactly ONE site** (`vm_look`, §3.2), so there is no second reader to drift
-— which is not true of `.multiline` and is why D62 needed three controls.
+— which is not true of `.multiline` and is why D62 needed three controls. The
+WIDTH TABLE has two readers (the parse hook that computes it, §3.4's emission
+that consumes it) and its detector is S-LA11.
+
+**(a′) THERE ARE FIVE PARSE-RESOLVED FIELDS, NOT THREE (R33 C1-8).** The
+three bools plus `look_widths[]` and `look_nbranch`. The width table is
+parse-resolved emitter-read state exactly like the flags — §3.1(c) argues it
+must be STORED rather than recomputed for the same reason — so the document
+says **"three flags and the width table"** wherever it used to say "three
+fields". Its detector is **S-LA11** (the parse-hook width rule), not a fourth
+per-field row, and §9.3 says so rather than leaving the asymmetry unexplained.
 
 **(b) D62 CONTROL 3'S OBLIGATION COMES WITH THE FIELDS.** An analysis that
 pattern-matches `case A_LOOK:` and does not read `.look_neg` reproduces
@@ -782,6 +807,25 @@ does not survive; `(?!(a)x)(a)` on `"ab"` is (0,1) with g1 unset and
 g2=(0,1), which proves the answer is being read rather than truncated by
 libpcre2's trailing-unset rule (the padding `la_oracle.ngroups()` exists for).
 
+**THE FOUR SHAPES AND THEIR SLOT COUNTS (R33 C1-2).** §3.3's heading says "no
+position slot", and that is true of the lookAHEAD only: §3.4's lookbehind
+end-check reads `SLOT_LOOK_POS`, so the NEGATIVE LOOKBEHIND needs it too. The
+counts are tabulated here because §3.7's frame and slot budget is derived from
+them and the first draft's flat "two slots per lookaround" was wrong three
+ways:
+
+| shape | mark slot | position slot | why |
+|---|---|---|---|
+| `(?=X)` positive lookahead | yes | **yes** | the cut needs the mark; the cursor restore needs the position |
+| `(?!X)` negative lookahead | yes | **no** | the pushed frame restores the cursor (P7) — §3.3's finding |
+| `(?*X)` non-atomic lookahead | **no** | yes | nothing is cut; `L_ok` re-reads the position on every re-success (§3.6) |
+| `(?<=X)` positive lookbehind | yes | yes | as the lookahead, plus the end-check reads the position |
+| `(?<!X)` negative lookbehind | yes | **YES** | the pushed frame restores the cursor, **but the END-CHECK still compares against the entry position**, so the slot is needed even though the restore is free |
+| `(?<*X)` non-atomic lookbehind | no | yes | §3.6 |
+
+So it is **at most two slots and sometimes one**, and §3.7 says so rather than
+"two per lookaround".
+
 **The `L_body_won` cut is not an optimisation.** It discards the body's frames
 **and the `L_neg_ok` frame**, because the mark was taken before the push. If
 it did not, the failing assertion would leave a live choice point that later
@@ -957,6 +1001,46 @@ rewind to a frame below the assertion, which is exactly when it should be.
 **No mark slot is allocated for a non-atomic form**, which is how a reader
 tells the two apart in the emitted C and in `--emit-ir`.
 
+**THE NON-ATOMIC LOOKBEHIND, drawn (R33 C1-3).** §3.6's first version drew
+only the lookahead and said the non-atomic form allocates no mark — which is
+true and misleading, because for `(?<*X)` the thing that survives is §3.4's
+**per-branch retry frames**, and they become observable:
+
+```
+    L_entry:  RX_SET(SLOT_LOOK_POSk, scan_position)     // no mark
+              goto L_b1
+    L_b1:     if (scan_position < k_1) goto L_b2;
+              RX_PUSH(&&L_b2, scan_position)            // KEPT LIVE, not cut
+              RX_CHARGE_WORK(k_1)
+              scan_position = $_back_step(..., k_1);
+              if (scan_position == $_BACK_STEP_NONE) goto L_b2;
+              goto L_body1
+    L_body1:  <B_1>                     -> L_end1
+    L_end1:   if (scan_position != (size_t)slot_values[SLOT_LOOK_POSk]) goto rx_fail;
+              goto L_ok
+    ...
+    L_ok:     scan_position = (size_t)slot_values[SLOT_LOOK_POSk];
+              goto L_next                               // no cut: L_b2 stays live
+```
+
+**In the atomic form those frames are discarded by the cut; here they are
+LOAD-BEARING** — a failure in the follow retreats into a LATER BRANCH,
+re-runs `$_back_step` with that branch's own `k`, and undoes branch 1's
+captures through the ordinary trail rewind.
+
+MEASURED, `out/follow_scoping.txt` F4 — the cell that separates the two
+lookbehind atomicities across branches:
+
+| pattern | subject | libpcre2 10.46 |
+|---|---|---|
+| `(?<*(a)\|(ba))c\2` | `"bacba"` | **(2,5)** g1=unset g2=(0,2) — retried into branch 2 |
+| `(?<=(a)\|(ba))c\2` | `"bacba"` | **nomatch** — atomic, keeps branch 1 |
+| `(?<*(a)\|(ba))c` | `"bac"` | (2,3) g1=(1,2) — no follow to force a retry |
+| `(?<*(ba)\|(a))c\2` | `"baca"` | (2,4) g2=(1,2) — branch order reversed |
+
+§10.2's `nonatomic_behind.rxt` carries `(?<*(a)|(ba))c` on `"bacba"` by
+name: it is the ONE cell that goes red if the branch frames are cut.
+
 ### 3.7 The budgets (D42 item 6, D47's second addendum)
 
 **MEASURED that a lookaround body's work is real and unbounded in the
@@ -1002,7 +1086,8 @@ Two charges are this module's own:
 **FRAMES.** A positive/negative lookaround adds at most **one** frame beyond
 what its body needs (the negative form's `L_neg_ok`); a lookbehind adds at
 most `m-1` (one per non-final branch), all of which the cut discards on
-success. The mark and position slots are two `stv` slots per lookaround, which
+success. The mark and position slots are **at most two** `stv` slots per lookaround and
+sometimes one — §3.3's table has the per-shape counts (R33 C1-2) — which
 is the same accounting `SLOT_CUT_MARK<n>` already has and joins the same
 greppable family (`src/gen/CLAUDE.md`'s two rules): **`SLOT_LOOK_MARK<n>` and
 `SLOT_LOOK_POS<n>`**, spelled in one place, named in the slot legend.
@@ -2069,28 +2154,49 @@ from `git show HEAD:<path>` because the matrix builds from `git archive HEAD`.
 Numbering starts at the highest existing id + 1 (to be taken at [M6.6.2], not
 guessed here). D69 makes a module CLOSE a **full-matrix** run.
 
-| id | the CLAIM it defends | file | the sabotage | prediction |
-|---|---|---|---|---|
-| **S-LA1** | §3.2: the positive lookahead CUTS | `src/gen/emit_vm.c` | delete the `vm_cut` call from `vm_look`'s atomic arm | the atomicity discriminator cells go red (`(?=(a\|ab))\1$` starts matching); every non-alternating cell stays green — which is what makes it a row |
-| **S-LA2** | §3.2: the cursor is RESTORED after a positive lookaround | `src/gen/emit_vm.c` | drop the `scan_position = slot_values[POS]` line | every lookahead becomes width-consuming; the whole corpus goes red — a coarse row, kept because its absence would be worse |
-| **S-LA3** | §3.3: the negative form CUTS on body success | `src/gen/emit_vm.c` | replace `RX_CUT(MARK); goto rx_fail` with `goto rx_fail` | the negative corpus goes red **while the positive cells stay green**; the failing assertion leaves a live choice point that later succeeds |
-| **S-LA4** | §3.3: the negative form's frame is pushed BEFORE the body | `src/gen/emit_vm.c` | move the `RX_PUSH` after the first body emission | captures written by a failing negative body survive — `(?!(a)x)ab` reports g1=(0,1) where PCRE2 says unset |
-| **S-LA5** | §5.2: SR-8's `VM_ONLY` stamp is what stops the DFA compiling an erased lookaround | `src/parse/registry.c` | flip one lookaround row's `engines` to `ANY_ENGINE` | the corpus goes red loudly (`(?=a)b` on `"b"` answers (0,1)) — **unlike backrefs' `next_pos` hazard, this one is detectable, and the row proves it** |
-| **S-LA6** | §4.4: the back-step routes through the SEAM, not inline arithmetic | `src/gen/emit_vm.c` | replace the `$_back_step(...)` call with `scan_position - k` | **NO ANSWER CHANGES** under the byte backend. The fixture-declared per-site count in `run_codegen_tests.sh` is the ONLY detector — S109's shape exactly |
-| **S-LA7** | §4.2(3): the seam's sentinel is checked at the call site | `src/gen/emit_vm.c` | drop the `$_BACK_STEP_NONE` comparison, keeping the `scan_position < k` guard | **no answer changes today** (the guard is exact under the byte backend); the codegen check for the sentinel comparison is the detector. A row that exists FOR THE BACKEND THAT DOES NOT EXIST YET, and says so |
-| **S-LA8** | §3.8: a lookbehind reads bytes BEFORE `startpos` | `src/gen/emit_vm.c` | clamp the back-step guard to `scan_position - startpos < k` | the corpus's `ms`-startpos cells go red; every startpos-0 cell stays green |
-| **S-LA9** | §2.6: `vm_nullable` answers TRUE for `A_LOOK` | `src/gen/emit_vm.c` | return `false` from the `A_LOOK` arm | `(?:(?=a))*b` loses its empty-iteration guard and the matcher **HANGS**. The row's suite assignment must therefore be one with a per-case timeout (D45), and the row says so |
-| **S-LA10** | §2.7: `\K` inside a lookaround is refused | `src/parse/mod_lookaround.c` | delete the `A_KRESET`-in-body check | `(?=a\K)b` compiles and silently reports a different match start; the reject-table cell goes red |
-| **S-LA11** | §2.5: the width rule is per-BRANCH and the branches are TOP-LEVEL | `src/parse/mod_lookaround.c` | accept a branch whose `minw != maxw` | `(?<=(a\|bc))x` compiles and answers with the WRONG alternative's captures on the `bac`-shaped cells (§2.4 level 2) |
-| **S-LA12** | §5.6: the `v.mrl_win` predicate excludes lookaround | `src/gen/emit_vm.c` | drop `&& !pcrec_has_lookaround(root)` | the 16 qualifying shapes from `out/d66_subset.txt` S3 lose their matches. **This row needs the corpus to CONTAIN one of those shapes**, which §10 makes a population requirement rather than a hope |
-| **S-LA13** | §5.6(3): the predicate is read at ALL THREE sites | `src/gen/emit_vm.c` (**two sites**) | flip the STAMP's source while leaving the two ceiling-building sites live | the stamp says `subject-end` while the ceiling is live — **detectable only by codegen rule 1's both-sources assertion**, which is R31 E3's finding as a row |
-| **S-LA14** | §3.1(b)/D62 control 3: `.look_neg` is READ | `src/gen/emit_vm.c` | ignore `.look_neg` in `vm_look` (always emit the positive shape) | every negative cell goes red. Three rows, one per field — `.look_behind` and `.look_atomic` get **S-LA15** and **S-LA16** on the same principle |
+Every row carries a `SAB_SUITES` assignment (R33 C2-7 — the first version
+assigned none, so the module's two differential drivers sat outside the
+matrix and would have scored UNDETECTED). The two new arms, `lookaround` and
+`laexpand`, are wired in wave F / wave E2 and must have SKIP-is-not-a-pass
+exercised in the failing direction, as `pc3` was.
+
+**AND EVERY DETECTOR CELL DECLARES ITS FEATURES (R33 C2-5).** The sabotage
+matrix runs under the DEFAULT feature set, which is `std1` and does NOT
+include `assertions` — so a `\K` or `\b` cell is refused by the assertions
+gate regardless of the sabotage, and the row goes green on a broken compiler.
+That is S108's masking shape. Rows whose cells need another module say so.
+
+| id | the CLAIM it defends | file | SAB_SUITES | the sabotage | prediction |
+|---|---|---|---|---|---|
+| **S-LA1** | §3.2: the positive lookahead CUTS | `emit_vm.c` | `harness lookaround` | delete `vm_cut` from `vm_look`'s atomic arm | the atomicity discriminator goes red. **The detector body must be one `possessify.c` provably cannot narrow (R33 C2-13)** — it has 3 `A_ATOMIC` sites, and if it possessifies the body's alternation the choice points the cut removed never existed and the row goes green on a broken compiler. `(?=(a\|ab))\1$` needs `backrefs` enabled; check the body against the LANDED possessify, not this sketch |
+| **S-LA2** | §3.2: the cursor is RESTORED | `emit_vm.c` | `harness lookaround` | drop the `scan_position = slot_values[POS]` line | every lookahead becomes width-consuming; the corpus goes red. Coarse, kept because its absence would be worse |
+| **S-LA3** | §3.3: the negative form CUTS on body success | `emit_vm.c` | `harness lookaround` | replace `RX_CUT(MARK); goto rx_fail` with `goto rx_fail` | the negative corpus goes red **while the positive cells stay green** |
+| **S-LA4** | §3.3: the frame is pushed BEFORE the body | `emit_vm.c` | `harness lookaround` | move the `RX_PUSH` after the first body emission | `(?!(a)x)ab` reports g1=(0,1) where PCRE2 says unset |
+| **S-LA5** | §5.2: SR-8's `VM_ONLY` stamp is what stops the DFA compiling an erased lookaround | `registry.c` | `harness lookaround registry` | flip **the `(?=...)` row's** `engines` to `ANY_ENGINE` — **the row must be NAMED (R33 C2-12)**, because SR-8 ANDs per-row stamps and flipping one frees only patterns written with that spelling | `(?=a)b` on `"b"` answers (0,1). **The detector must be CAPTURE-FREE**: `(a)(?=b)c` keeps the VM regardless of the flip (measured: `(a)b` stamps `RX_ENGINE "vm"`), masking the row. `(?=a)b` satisfies both |
+| **S-LA6** | §4.4: the back-step routes through the SEAM | `emit_vm.c` **+ 2nd site** | `codegen` | replace `$_back_step(...)` with `scan_position - k` **and** drop the enc-mask OR | **NO ANSWER CHANGES** under the byte backend; the fixture-declared per-site count is the only detector — S109's shape |
+| **S-LA7** | §3.4/§4.2(3): the sentinel is checked at the call site | `emit_vm.c` | `codegen` | delete the `$_BACK_STEP_NONE` comparison, keeping the `scan_position < k` guard | **no answer changes today** (the guard is exact under the byte backend); the codegen check for the comparison is the detector. A row FOR THE BACKEND THAT DOES NOT EXIST YET, and it says so. **C1-4 is why it has an anchor at all** — §3.4's first shape emitted no such check |
+| **S-LA8** | §3.8: a lookbehind reads bytes BEFORE `startpos` | `emit_vm.c` | `harness lookaround` | clamp the guard to `scan_position - startpos < k` | the corpus's `ms` cells go red; every startpos-0 cell stays green |
+| **S-LA9** | §2.6: `vm_nullable` answers TRUE for `A_LOOK` | `emit_vm.c` | `harness lookaround` | return `false` from the `A_LOOK` arm | **`PCREC_ERR_STEPS`, not a hang (R33 C2-14)** — every VM artifact carries a step budget by default and `--fno-step-budget` is the only opt-out, so the lost empty-iteration guard BURNS the budget and returns. The harness must treat the error return as the failure; the timeout-suite assignment is dropped unless the cell is compiled `--fno-step-budget`, and the row says which |
+| **S-LA10** | §2.7: `\K` inside a lookaround is refused | `mod_lookaround.c` | `reject` | delete the `A_KRESET`-in-body check | `(?=a\K)b` compiles. **The cell MUST pass `--features assertions,lookaround` (R33 C2-5)** — under the default `std1` it is refused by the assertions gate and the row goes green regardless. The prediction names §2.7's eleven refused and four compiling cells, so a too-broad check fails it too |
+| **S-LA11** | §2.5: the width rule is per-BRANCH and TOP-LEVEL; and the width TABLE is right (C1-8) | `mod_lookaround.c` | `harness lookaround` | accept a branch whose `minw != maxw` | `(?<=(a\|bc))x` compiles and answers with the wrong alternative's captures. **Carries a `(?<!` cell too (R33 C1-5)**, because on the negative arm a wrong width is a FALSE MATCH rather than a decline |
+| **S-LA12** | §5.6: `v.mrl_win` excludes lookaround | `emit_vm.c` | `harness lookaround` | drop `&& !pcrec_has_lookaround(root)` | the 16 qualifying shapes lose their matches. Needs §10.1(1)'s witness in the corpus |
+| **S-LA13** | §5.6(3): the predicate is read at ALL the ceiling sites | `emit_vm.c` **+ 2nd site** | `codegen irlisting` | **RESTATED (R33 C2-10): sabotage the two ceiling BUILDERS — the retry recompute at `:6176` and the search entry at `:6233` — and LEAVE THE STAMP reading the flag.** The first version had it backwards: the stamp is a one-site expression (`:5603`) and flipping its source needs no second site | the stamp says one thing and the ceiling does another; only codegen rule 1's both-sources assertion catches it. **`--emit-ir`'s description (`:5076`) is a FOURTH reader** — `grep -n mrl_win` returns five hits — and rule 1 covers it |
+| **S-LA14** | §3.1(b)/D62 control 3: `.look_neg` is READ | `emit_vm.c` | `harness lookaround` | ignore `.look_neg` in `vm_look` (always emit the positive shape) | every negative cell goes red |
+| **S-LA15** | `.look_behind` is READ | `emit_vm.c` | `harness lookaround` | ignore `.look_behind`: emit the lookAHEAD shape for a lookbehind (no back-step, no end-check) | every `(?<=`/`(?<!` cell goes red; `lookbehind.rxt` and `startpos.rxt` both. **Written out rather than asserted (R33 C2-8)** |
+| **S-LA16** | `.look_atomic` is READ | `emit_vm.c` | `harness lookaround laexpand` | ignore `.look_atomic`: always emit the cut | the NON-ATOMIC forms behave atomically. **Observable only through `nonatomic_*.rxt`'s `# pcre2-only` cells**, so this row needs C2-7's `lookaround` mech arm to exist or it scores UNDETECTED — the row says so |
+| **S-LA17** | §3.2.1: the body's follow is SCOPED | `emit_vm.c` | `harness lookaround` | delete the `v->fmin`/`v->fdyn` save-zero-restore from `vm_look` | **`(?=(a+)b)a+b` on `"aab"` goes from (0,3) to nomatch, and `(?!(a+)b)a+b` on `"aab"` goes from nomatch to (0,3) — a FALSE MATCH.** The second cell is the one that matters and both are in §3.2.1's measured table. **NEW in the R33 round (C1-1)**: no row defended the one silent miscompile in §3 |
 
 **Two of these need the TWO-SITE mechanism** (`tests/mech/CLAUDE.md`'s S108,
 `SAB_FILE2/BEFORE2/AFTER2/COUNT2` through the same `replace.py`): **S-LA6**,
 because the emitter change and the enc-mask OR must move together or the
 artifact declares an entry it never calls and the check fires for the wrong
-reason; and **S-LA13**, which is two sites by construction.
+reason; and **S-LA13**, which is two sites by construction — **though not the
+two the first version named** (R33 C2-10).
+
+**SEVENTEEN ROWS, and the count is stated because the first version's own
+numbers disagreed**: §9.3 specified fourteen, the text claimed sixteen, and
+the lane's report said nineteen (R33 C2-8). S-LA15 and S-LA16 are now written
+out rather than promised, and §14 ASK 1 may appeal to them.
 
 **ANCHOR DRIFT is an ANOMALY, not a failure**, and `replace.py` refuses to run
 when the anchor is not found exactly `SAB_COUNT` times. Every row above must
@@ -2130,7 +2236,11 @@ row above is otherwise unfalsifiable:
    belongs in `tests/lookaround/prefilter.rxt` by name.
 2. **The corpus MUST contain `ms`/`ns` startpos cells over a lookbehind**, or
    **S-LA8** cannot go red and §3.8's contract claim is untested.
-3. **The corpus MUST contain an EMPTY capture inside a lookaround and a
+3. **The corpus MUST contain a LONG-SUBJECT LEADING multi-branch lookbehind**
+   (R33 C1-6), or §3.7's `n·Σk_i` work-charge shape is reasoned about and
+   never measured — and it is the one shape that can reach `PCREC_ERR_WORK`
+   where PCRE2 matches.
+4. **The corpus MUST contain an EMPTY capture inside a lookaround and a
    re-entered group across one**, because those are where the trail discipline
    §3.2(3) and §3.3 rely on is discriminating rather than incidental — S105's
    own lesson one construct over.
@@ -2164,12 +2274,14 @@ corpus is a BREADTH instrument**, and §11's landing bar asks for both.
 | `lookahead.rxt` | `(?=` and `(?!`: bodies, contexts, degenerate forms | python-verifiable |
 | `lookbehind.rxt` | `(?<=` and `(?<!`: fixed bodies, same-length alternatives | python-verifiable |
 | `lookbehind_widths.rxt` | **different-length branches** — G1's cells | **`# pcre2-only`** |
-| `nonatomic.rxt` | `(?*` `(?<*` and their `(*napla:`/`(*naplb:` spellings | **`# pcre2-only`** (G5) |
-| `alpha_spellings.rxt` | all twelve alpha spellings, one cell each proving the construct | **`# pcre2-only`** (G4) |
+| `nonatomic_ahead.rxt` | `(?*` only — lands at wave B+C (R33 C2-9) | **`# pcre2-only`** (G5) |
+| `nonatomic_behind.rxt` | `(?<*`, carrying §3.6's measured witness `(?<*(a)\|(ba))c\2` on `"bacba"` by name — wave D | **`# pcre2-only`** |
+| `alpha_spellings.rxt` | all twelve alpha spellings, one cell each proving the construct, plus the `(*napla:`/`(*naplb:` cells split out of the old `nonatomic.rxt` — wave F | **`# pcre2-only`** (G4) |
 | `captures.rxt` | the four polarity/outcome combinations, with `g` lines | python-verifiable (G9) |
 | `quantified.rxt` | `(?=a)*` and family, including the empty-iteration cells | python-verifiable (G8) |
 | `nesting.rxt` | lookaround in lookaround, backref in lookaround, atomic in lookaround | mixed; per-block |
 | `startpos.rxt` | `ms`/`ns` cells over a lookbehind | python-verifiable |
+| `workbudget.rxt` | §3.7's long-subject LEADING multi-branch lookbehind cell (R33 C1-6), so the `n·Σk_i` charge shape is measured rather than reasoned about | python-verifiable |
 | `prefilter.rxt` | §10.1(1)'s qualifying shapes | python-verifiable |
 | `refused.rxt` | the `perr` cells: variable bodies, `\K`, backref-to-variable | n/a (`perr`) |
 | `gated.rxt` | the enabled-but-unbuilt and module-disabled diagnostics | n/a |
@@ -2362,6 +2474,28 @@ because all three are read at ONE site.* Refute by finding a second reader —
 `atomic_groups_design.md` §6.5 found one, and `revdet.c`'s clearing of
 `Ast.possessive` on a reversed copy is the exact shape to look for.
 
+**P-14 (the follow scoping).** *`vm_look` zeroing `fmin`/`fdyn` across the
+body is necessary AND sufficient — no other emitter state leaks the follow
+into a lookaround body.* Refute by finding a second carrier: `v->fdyn` is
+handled here, but the mandatory-copy gate and `vm_cursor_fits`'s three call
+sites read `v->fmin` indirectly, and a fourth reader would be the shape R31 E3
+found for `mrl_win`. **A green corpus is NOT evidence** — S-LA17's two cells
+are, and only for the shapes they cover.
+
+**P-15 (the lookbehind's soundness).** *An inherited `fmin` is arithmetically
+SOUND for a lookbehind, because the body ends at the entry position, so the
+uniform scoping costs only a prune.* Refute by exhibiting a lookbehind body
+whose cursor does NOT satisfy `cursor + bodyremaining == p` — a nested
+lookahead inside the body is the candidate, since its own cursor is ahead of
+`p`, and F3's last row is where to start.
+
+**P-16 (the prototype's column).** *`|D(Σ*·L)|` computed as a SUBSET size is
+the right quantity for `[ENG-LOOK]`'s decline rule.* Refute by showing the
+construction minimises before the product is taken (in which case the minimal
+size is the right column, and `a|b`'s 3 should be 2), or by finding a body in
+the population where the subset construction and pcrec's own determinisation
+disagree in the OTHER direction.
+
 **P-11 (the ENG-LOOK sizing).** *Every assertion-family and enumerable-real
 lookaround body has a component automaton of 2-25 states, so the product bound
 clears the 32,000 cap on all 64 non-control rows.* Refute by exhibiting a
@@ -2421,6 +2555,14 @@ frameless work was invisible once before.
   alphabet and would need its own.
 - **The `--engine=dfa` advice defect** (§5.1). Pre-existing, reproduced, not
   fixed here; do not repeat it.
+- **ASSERTION-CONDITION GROUPS** — `(?(?=a)ab|cd)`, `(?(?<=a)b|c)`,
+  `(?(?!a)x|y)` (R33 C1-9). PCRE2 has them and pcrec routes them to the
+  `(?(` doorway, module `conditionals`, which stays refused after this module
+  lands. MEASURED on HEAD: `(?(?=a)ab|cd)` answers *"module 'conditionals' is
+  enabled but `(?(...)` is not implemented yet"* while `(?=a)b` answers the
+  same sentence for `lookaround` — two different doorways, correct by
+  construction. **This module unlocks none of them**, and §8.3 is where a
+  reader would otherwise over-claim coverage.
 
 ---
 
