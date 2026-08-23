@@ -55,6 +55,38 @@ STALENESS at landing (C3): APPROACH.md:145 (4 of 18 spellings); docs/pcre2_compl
 
 ASKs for Frank (§14) — manager's recommendation to carry to him with the approved design: ASK 1 one node kind (with S-LA15/16 specified per C2-8); ASK 2 emit the end-check; ASK 3 dump rows for the six short alpha spellings; ASK 3a build the substitution driver in [M6.6.2]; ASK 4 `-fno-prefilter` third axis, `--no-captures` fourth.
 
+## Round 2 — verifier (opus, r33v) on the fix round d6cdf16 (2026-08-23 15:4x)
+
+All 25 round-1 findings applied by the design lane (none rejected; two came
+back STRONGER when measured: C1-1's lookbehind half — exact counts take a
+cursor rung with the follow-bound baked in; C3-1 — seven non-leading `(?m)`
+blocks, population 270/8,495 → 263/8,260). The verifier independently
+CONFIRMED all five HIGH fixes with its own probes (follow-scoping probe
+byte-identical; an independent subset construction agreeing on every
+modelled Σ*·L size; syntax_dump.c's per-row classification; the 23-site
+`case A_ATOMIC` census, all in default-less switches; the substitution
+population and three adversarial blocks) and EXTENDED C1-1's lookbehind
+hazard from `a{3}` to exact-count groups generally (`((?:(?:ab){2}))c` 1 vs
+`...cde` 3).
+
+VERDICT: FIX-AGAIN — three text-only blockers introduced by the fix round:
+V-1 §3.2.1 says "§3.6 restates" the scoping and §3.6 does not (the section
+C1-1 named as the one that invites the deletion); V-2 §6.3's P1/P2 counts
+270/368 are pre-fix and contradict their own 624 total (wave E2's bar
+asserts against them); V-3 §11's folded B+C bar (three rows built, three
+unbuilt) contradicts §8.3's "flips all six whatever the emitter does" — the
+split needs the port to DECLINE the `<` tails at WANT_RESULT. Nine
+non-blocking: V-4 F3's last row is a compile failure printed as a
+measurement (`a(?=b+c)` refused → `[]`), V-5 §5.8's "everywhere else agree"
+false (six rows without a prototype number; `(a|b)c` non-control under-count
+3 vs 5; cap conclusion survives), V-6 four `default:`-carrying kind switches
+`-Wswitch` won't flag (revdet.c:346, emit_vm.c:1108/1151/3018 — all sound
+today, to be tabled in A2), V-7 S-LA17's anchor collides with vm_atomic's
+idiom, V-8 "restores at L_next" → every return path, V-9 a PANEL OUTCOME
+cite to §3.7 with nothing there, V-10 std1 is FROZEN so every lookaround
+cell carries `features lookaround`, V-11 P-n order, V-12 `[^^]$` drops the
+`$` in occurrences(). Round 3 dispatched to the lane (all twelve).
+
 ---
 
 # APPENDIX — critic C1 report (verbatim)
@@ -1027,3 +1059,7 @@ C3-4 MEDIUM tests/assertions/CLAUDE.md:24 defines PCRE2 \Z as (?=\n?\Z) — circ
 C3-5 LOW tests/assertions/CLAUDE.md:53 "module lookaround, which does not exist" goes false at landing.
 STALENESS: APPROACH.md:145 lists 4 of 18 spellings; docs/pcre2_compliance.md:1208-1216 hand table rows REJECTED/PLANNED-HARD → OK / OK-LIMITED (fixed-per-branch) / alpha pending; generated index 1855-1867 via compliance-refresh; annotations key base:lookaround-verb-spellings ("module verbs") wrong after §8.2; match_api.md clean; registry.c:691-693,706 historical comment fine. Pre-existing: compliance.md:1215 [[:<:]] row REJECTED while annotation says shipped (MOD-0.3a).
 CONFIRMED: population count exact (Q1 87b/0c, Q2 87b/754c, Q3 0/0, Q4 24b/871c, Q5 0/0); 18 ship / 3 refuse with err 195/109; max_varlookbehind 255 (err 200), fixed ceiling 32759 (err 120); \K err 199 all four; 14 quantified forms compile in python; 7 capture cells match python; 9 expansions python-clean; 6 registry rows VM_ONLY (580,581,599,600,601,707); (?(?=a)b|c) refused by conditionals doorway — out of scope; PCRE2_INFO_MAXLOOKBEHIND index 15.
+
+# APPENDIX — verifier r33v report (round 2, verbatim, delivered in-message)
+
+(verifier text appended by manager from the lane's message — see the Round 2 block above for the summary; the full text follows)
