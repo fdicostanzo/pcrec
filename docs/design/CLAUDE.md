@@ -996,7 +996,43 @@ append-only or historical records.
   `probes/simvm.py` — the R32 critic's own simulator, ADOPTED rather than
   rewritten so the lane cannot soften the instrument that refuted it — and
   `probes/probe_publish_discipline.py` make that comparison mechanical.
-- `lookaround_design.md` — **PROPOSED, UNPANELED** ([M6.6.1], 2026-08-23): the
+- `lookaround_design.md` — **PROPOSED, PANELED (R33) AND REVISED**
+  ([M6.6.1], 2026-08-23; panel
+  `../dev/reviews/2026-08-23-r33-lookaround-design.md`). **Read the PANEL
+  OUTCOME block at the top before any section.** Five HIGH, thirteen MEDIUM
+  and seven LOW — **every one accepted as a design edit, none refuting the
+  mechanism.** §3's lowering, §4's seam entry, §5's prefilter ruling and §6's
+  replacement table all held; what fell is a scoping the lowering never
+  stated, one measurement METHOD, one wave's landing bar, an unbudgeted arm
+  count, and a rule that was a substring test. **C1-1 is the one worth
+  reading**: `v->fmin`/`v->fdyn` are baked into a body's prune bound as a
+  LITERAL and a lookahead's follow OVERLAPS its own body, so an unscoped body
+  makes `(?!(a+)b)a+b` on `"aab"` answer **(0,3) — a FALSE MATCH** where PCRE2
+  says nomatch; `vm_atomic` scopes both terms but its own header attributes
+  that to THE CUT, and §3.6 derived the non-atomic form BY DELETING THE CUT.
+  Now §3.2.1 states the rule as a property of the OVERLAP, S-LA17 defends it,
+  and the mechanism is reproduced on this build (3 of 3 bodies' bound literal
+  moves with the follow). **Two findings came back STRONGER than filed,
+  because implementing the fix measured something the critic had not**: this
+  lane's first answer to C1-1's lookbehind half was a simplification (a
+  fixed-width body has no quantifier, so the hazard cannot arise behind) that
+  is **MEASURED FALSE** — `a{3}` is fixed-width by §2.5's own rule AND takes a
+  cursor rung whose bound moves 1→3 — and C3-1's "inert today" is refuted by
+  its own fix, since the substring test also missed **seven non-leading bare
+  `(?m)` blocks** C3 did not name, moving the driver population
+  270/8,495 → **263/8,260**. C2-1 refuted §5.8's METHOD (pcrec's unanchored
+  forward DFA is ACCEPT-PRUNED — every accepting state a dead sink — so it is
+  the leftmost-occurrence automaton, not `Σ*·L`, and it UNDER-counts:
+  `a|bc` emits 3 where `|D(Σ*·L)|` is 4, inside this module's own shipped
+  population); §5.8 now reports the emitted number as a LOWER BOUND beside a
+  self-checked subset construction, 6 product rows move, and **the conclusion
+  survives** (64 non-control rows, 0 over the cap). C2-2 found D65 flips
+  `built` on the PORT and not the emitter, so waves B and C are FOLDED; C2-3
+  budgeted the **23 `case A_ATOMIC` sites in 10 files** the first version put
+  at four, including the two predicates §5.6's ruling depends on. Original
+  content below.
+- `lookaround_design.md` (**pre-R33 summary, retained for history — read the
+  R33 entry above first**) — the
   design gate in front of [M6.6.2], module `lookaround` — the last module of
   M6. Covers `(?=` `(?!` `(?<=` `(?<!`, the non-atomic `(?*` `(?<*`, and
   PCRE2's twelve alpha-assertion spellings. R33 is its D6 panel; §12 is the
@@ -1088,7 +1124,7 @@ append-only or historical records.
   `mod_verbs.c` — the same defect one doorway over from the one
   `registry.c:692` already records for `(?*`. Four ASKs for Frank (§14), none
   of them ruling contradictions. Measurements: `lookaround_measurements/`.
-- `lookaround_measurements/` — the [M6.6.1] lane's NINE probes, its oracle
+- `lookaround_measurements/` — the [M6.6.1] lane's TEN probes, its oracle
   helper and its archiver; see its own CLAUDE.md. **No instrument reads a
   lookaround through pcrec, because pcrec cannot compile one** — every
   in-pcrec arm measures a separate axis on patterns pcrec CAN compile (the
