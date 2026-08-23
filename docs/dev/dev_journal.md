@@ -12143,3 +12143,15 @@ undetected 0 / anomalies 0; lane make test EXIT=0. The close record's
 residual "multi-hunk mechanism" is DONE; tests/mech/CLAUDE.md keeps the
 single-site measurement as the reason two sites are needed. No battery
 re-run (test infrastructure only; the compiler is unchanged).
+
+RESIDUAL for the next mech run (lane's note, 01:5x): the S108 landing is
+the first change to run_sabotage_matrix.sh's applier since it was built;
+single-row S107's figures through the modified path are BYTE-IDENTICAL to
+its pre-extension figures (the evidence the optional second site is inert
+for one-site rows), but the next FULL matrix is the first pass of all 118
+rows through it — expected a no-op; "measured beats argued", so the next
+mech trailer is the complete confirmation. Record defects found by the
+lane's verification and fixed (ca45696): wake.md's standing-facts line
+had kept "117 scored rows (S108 retired)"; tests/mech/CLAUDE.md's heading
+said "Retired rows" over a re-instated row. Session ends here: main
+clean and pushed, no lanes, no worktrees, no cron.
