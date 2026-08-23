@@ -970,7 +970,7 @@ itself.
 `make test-backrefs` runs two scripts concurrently, and they are separate
 because they ask different KINDS of question.
 
-**`tests/backrefs/run_backref_diff.sh` — nine sections, four EXACT population
+**`tests/backrefs/run_backref_diff.sh` — ten sections, five EXACT population
 guards.** §1 sweeps 35 patterns x 91 subjects x every startpos in [0, n] against
 libpcre2, comparing the match span AND EVERY GROUP SPAN — the group spans are
 the sharper detector here, because the re-entry family contains subjects on
@@ -984,7 +984,22 @@ entry points against the `\G(?:PAT)`-wrapped oracle. §6 is the find-all loop.
 §7 asserts the `--engine=dfa` refusal BY NAME **with its OCTAL control**:
 `(a)\10` is the byte 0x08 and must compile to a pure DFA, which is the
 per-NODE half of SR-8's stamping rule. §8 is the SPAN-DIVERGENCE section. §9 is
-the fold agreement.
+the fold agreement. §10 (added 2026-08-22) is STRUCTURAL: it reads the
+empty-iteration guard off the ARTIFACT for four unbounded-over-nullable-
+backreference fixtures and asserts its ABSENCE on three bounded controls.
+
+**§10 EXISTS BECAUSE A BEHAVIOURAL CELL COULD NOT SEE ITS PROPERTY.**
+`vm_nullable(A_BREF)` is a static answer, but the guard it arms only DOES
+anything when the referenced group publishes an EMPTY capture — a property of
+the SUBJECT. The corpus held the shape (`^(a*)\1*$`) with every subject making
+group 1 non-empty, so sabotage row S107 scored UNDETECTED in the 118-row matrix
+on 5edba64 against a module that was CORRECT. The fix was both halves: the
+corpus gained the "EMPTY CAPTURE UNDER AN UNBOUNDED QUANTIFIER" block
+(numeric.rxt), and this section asks the pattern-only question that no subject
+can silently satisfy. The bounded controls are what make it falsifiable —
+`\1{3}` is a repeat over the same nullable body and correctly emits NO guard,
+so "every backreference in a repeat body has a guard" would be green on a
+compiler that emitted one unconditionally.
 
 **§8 CORRECTS THE DESIGN, and the correction is worth reading.**
 `backrefs_design.md` §11.2 names three cells as the span-divergence population;
