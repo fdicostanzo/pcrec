@@ -311,7 +311,24 @@ including V-G/V-H (added this session).
   box; the sanitizer batteries and mech ride the same path; docs/testing.md
   records the before/after. NOT in scope: the .rxt-as-specification format
   (a separate discussion Frank has deferred; separable from batching).
-  - [TT-4.1] STATE:started — MEASUREMENT (Frank's order: first, before any
+  - [TT-4.1] STATE:completed (2026-08-23, merge 19ea394; docs/dev/
+    tt4_measurement.md + studies/tt4_batching/) — MEASURED: make test =
+    3,777 CPU-s, gcc 647 (17%, 4,845 calls — the row's "~20,000" premise
+    was wrong by 4x), pcrec 275 (7%); TU-batching beats link-batching at
+    every N, best 3.66x (corpus pool, N=16) / 2.73x (atomic, N=8) against
+    the 12-way baseline — the sweet spot is batch COUNT near core width,
+    N=64/256 REGRESS under parallel execution (0.41-0.96x); ceiling ~12%
+    of suite CPU. Two confirmed obstacles: mixed --features sets collide
+    on unprefixed PCREC_FEATURE_SET/PCREC_FEATURE_MODULES #defines; a
+    batch fails all-or-nothing (recovery of 15 good members 2.99 s).
+    THE BIGGER FINDING: this box's `timeout` is uutils 0.8.0 and costs
+    ~108 ms WALL per call at zero CPU (GNU /usr/bin/gnutimeout: 4 ms);
+    corpus makes 23,252 such calls ≈ 2,430 s of sleep across 12 workers
+    ≈ ~200 s (~43%) of its 469 s section wall, paid again on each
+    sanitizer axis → chartered as [TT-6]. Exec-batching (one driver run
+    per pattern instead of one per case) is a further 5.57x on corpus's
+    per-case loop AFTER the timeout swap, corpus-only (the other sections
+    already loop inside their own C drivers). — formerly STATE:started — MEASUREMENT (Frank's order: first, before any
     harness change). Census over one `make test` by section (the `test-*`
     targets): invocation counts (pcrec, gcc one-shot, gcc -c, link) and wall
     time split pcrec / gcc / link / run / harness-overhead; name the two
@@ -329,6 +346,19 @@ including V-G/V-H (added this session).
     FRANK (2026-08-23, 08:3x): if the row proves worthwhile he wants to SEE
     the before/after timings for testing — present them to him at the
     close, whole chain (make test, battery stages, mech), not make test only.
+- [TT-6] STATE:not-started — THE `timeout` BINARY TAX (found by [TT-4.1]
+  2026-08-23, manager-verified: uutils coreutils 0.8.0 `timeout` sleeps
+  ~108 ms per call at zero CPU; GNU `gnutimeout` 4 ms). ~10 test scripts
+  call `timeout` bare (pcrec calls, every per-case matcher run in
+  tests/harness/run.sh:356, gen_cc's wall wrapper). LANDING SHAPE: a
+  tests/lib helper resolving TIMEOUT_BIN (prefer GNU when the default is
+  uutils; plain `timeout` elsewhere so a stranger's box is unaffected) used
+  by every script; before/after `make test` wall on this box (projected
+  ≈ −200 s on corpus's 469 s section wall, also on each sanitizer axis
+  and per mech row); the D45 timeout semantics (exit 124, SIGTERM→KILL)
+  must be re-verified against the GNU binary in the failing direction.
+  Measurement is DONE (tt4_measurement.md "The timeout binary itself");
+  Frank decides the set with [TT-4.2]/[TT-5] stage 2.
 - [TT-5] STATE:started (2026-08-23, thirty-seventh session; chartered by
   Frank: "we are in the multiple hours for overall testing right now and
   it's slowing development … consider some other testing moves outside
