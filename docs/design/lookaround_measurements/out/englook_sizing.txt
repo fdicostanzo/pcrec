@@ -3,13 +3,12 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/lookaround_measurements/probes/probe_englook_sizing.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: e129604 2026-08-23
-# RUN FROM REPO COMMIT        : e129604 (lane/ladesign)
+# PROBE LAST CHANGED AT COMMIT: 055d0cc 2026-08-23
+# RUN FROM REPO COMMIT        : 055d0cc (lane/ladesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/lookaround_measurements/out/englook_sizing.txt
-#     ?? docs/design/lookaround_measurements/out/expansions.txt
-#     ?? docs/design/lookaround_measurements/out/substitution_population.txt
-# RUN DATE   : 2026-08-23T14:15:37-04:00
+#      M docs/design/lookaround_measurements/out/englook_sizing.txt
+#     ?? docs/design/lookaround_measurements/out/follow_scoping.txt
+# RUN DATE   : 2026-08-23T15:07:09-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -19,6 +18,8 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
+/home/duxevents/pcrec/worktrees/ladesign/docs/design/lookaround_measurements/probes/probe_englook_sizing.py:52: SyntaxWarning: "\z" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\z"? A raw string is also an option.
+  `(?!\z)` and `(?=\n?\z)` contain ANCHORS, which are not letters of Sigma;
 pcrec  : /home/duxevents/pcrec/worktrees/ladesign/build/pcrec (present)
 python3: 3.14.4
 caps   : PCREC_MAX_DFA_STATES_GOTO=10000  PCREC_MAX_DFA_STATES_TABLE=32000 (src/core/limits.h:47-49)
@@ -29,29 +30,31 @@ COMPONENT AUTOMATA -- each BODY compiled ALONE
 The forward machine is the Sigma*.L recognizer a LOOKBEHIND needs; the
 reverse machine is the reverse(L).Sigma* one a LOOKAHEAD needs.
 
-body         origin     | forward st x cls    | reverse st x cls    | note
---------------------------------------------------------------------------------------------------------------
-\w           expansion  |     2 x 2           |     2 x 2           | \b, \B  (four bodies, all \w)
-\n           expansion  |     2 x 2           |     2 x 2           | (?m)^, (?m)$  ((?<=\n), (?=\n))
-\n?\z        expansion  |     5 x 2           |     3 x 2           | \Z and default-flags $   ((?=\n?\z))
-foo          real       |     4 x 3           |     4 x 3           | [ENG-LOOK]'s own example (?<=foo)bar
-\d           real       |     2 x 2           |     2 x 2           | [ENG-LOOK]'s own example (?<!\d)\d{4}(?!\d)
-\d{4}        real       |     5 x 2           |     5 x 2           | the same example's MAIN pattern
-,            real       |     2 x 2           |     2 x 2           | the construct table's (?<=,)\w+
-ab           real       |     3 x 3           |     3 x 3           | a two-byte fixed body
-abc          real       |     4 x 4           |     4 x 4           | a three-byte fixed body
-a|bc         real       |     3 x 4           |     3 x 4           | two branches, different fixed lengths (§2.5)
-[a-z]        real       |     2 x 2           |     2 x 2           | a range class
-[^\"']       real       |     2 x 2           |     2 x 2           | a negated class (the backrefs lane's own idiom)
-\w+          real       |     2 x 2           |     2 x 2           | an UNBOUNDED body -- a lookAHEAD only (§2.5)
-\d{3}        real       |     4 x 2           |     4 x 2           | a counted body
-(a|b)c       real       |     3 x 3           |     3 x 3           | an alternation inside a concatenation
-https?       real       |     6 x 5           |     6 x 5           | a realistic literal-ish body
-\d{4}-\d{2}-\d{2} control    |    11 x 3           |    11 x 3           | a date shape -- a longer counted body
-[a-z]{12}    control    |    13 x 2           |    13 x 2           | a 12-long class run
-(?:ab|cd){8} control    |    25 x 5           |    25 x 5           | a repeated two-way alternation
-(?:a|b|c|d){10} control    |    11 x 2           |    11 x 2           | a repeated four-way alternation
-[01]*1[01]{12} control    | 12288 x 3           |    14 x 3           | bench case (f)'s shape -- the known state-explosion idiom
+PROTOTYPE self-check problems: none
+
+body         origin     | fwd st x cls (LOWER) | rev st x cls (LOWER) | |D(S*.L)|   | note
+------------------------------------------------------------------------------------------------------------------------
+\w           expansion  |     2 x 2         |     2 x 2         | 2           | \b, \B  (four bodies, all \w)
+\n           expansion  |     2 x 2         |     2 x 2         | 2           | (?m)^, (?m)$  ((?<=\n), (?=\n))
+\n?\z        expansion  |     5 x 2         |     3 x 2         | n/a (anchor or assertion \z) | \Z and default-flags $   ((?=\n?\z))
+foo          real       |     4 x 3         |     4 x 3         | 4           | [ENG-LOOK]'s own example (?<=foo)bar
+\d           real       |     2 x 2         |     2 x 2         | 2           | [ENG-LOOK]'s own example (?<!\d)\d{4}(?!\d)
+\d{4}        real       |     5 x 2         |     5 x 2         | 5           | the same example's MAIN pattern
+,            real       |     2 x 2         |     2 x 2         | 2           | the construct table's (?<=,)\w+
+ab           real       |     3 x 3         |     3 x 3         | 3           | a two-byte fixed body
+abc          real       |     4 x 4         |     4 x 4         | 4           | a three-byte fixed body
+a|bc         real       |     3 x 4         |     3 x 4         | 4           | two branches, different fixed lengths (§2.5)
+[a-z]        real       |     2 x 2         |     2 x 2         | 2           | a range class
+[^\"']       real       |     2 x 2         |     2 x 2         | 2           | a negated class (the backrefs lane's own idiom)
+\w+          real       |     2 x 2         |     2 x 2         | n/a (unbounded or dot: +) | an UNBOUNDED body -- a lookAHEAD only (§2.5)
+\d{3}        real       |     4 x 2         |     4 x 2         | 4           | a counted body
+(a|b)c       real       |     3 x 3         |     3 x 3         | n/a (token '|') | an alternation inside a concatenation
+https?       real       |     6 x 5         |     6 x 5         | 6           | a realistic literal-ish body
+\d{4}-\d{2}-\d{2} control    |    11 x 3         |    11 x 3         | 11          | a date shape -- a longer counted body
+[a-z]{12}    control    |    13 x 2         |    13 x 2         | 13          | a 12-long class run
+(?:ab|cd){8} control    |    25 x 5         |    25 x 5         | n/a (? with nothing before ) | a repeated two-way alternation
+(?:a|b|c|d){10} control    |    11 x 2         |    11 x 2         | n/a (? with nothing before ) | a repeated four-way alternation
+[01]*1[01]{12} control    | 12288 x 3         |    14 x 3         | n/a (unbounded or dot: *) | bench case (f)'s shape -- the known state-explosion idiom
 
 # A `None` column means the artifact carries no table of that name --
 # a VM-routed artifact. `RX_ENGINE` is stamped only for the VM, so its
@@ -97,136 +100,145 @@ worst-case |D(main)| x |D(component)|, and the STATES x CLASSES figure
 beside it, because wave B's own over-cap number (38,009 vs 32,000) was
 the second quantity and not the first.
 
-main                     body         | st product | cls product | st x cls    | verdict
-----------------------------------------------------------------------------------------------------
-bar                      \w           |         8 |           8 |          64 | ok
-bar                      \n           |         8 |           8 |          64 | ok
-bar                      \n?\z        |        20 |           8 |         160 | ok
-bar                      foo          |        16 |          12 |         192 | ok
-bar                      \d           |         8 |           8 |          64 | ok
-bar                      \d{4}        |        20 |           8 |         160 | ok
-bar                      ,            |         8 |           8 |          64 | ok
-bar                      ab           |        12 |          12 |         144 | ok
-bar                      abc          |        16 |          16 |         256 | ok
-bar                      a|bc         |        12 |          16 |         192 | ok
-bar                      [a-z]        |         8 |           8 |          64 | ok
-bar                      [^\"']       |         8 |           8 |          64 | ok
-bar                      \w+          |         8 |           8 |          64 | ok
-bar                      \d{3}        |        16 |           8 |         128 | ok
-bar                      (a|b)c       |        12 |          12 |         144 | ok
-bar                      https?       |        24 |          20 |         480 | ok
-bar                      \d{4}-\d{2}-\d{2} |        44 |          12 |         528 | ok
-bar                      [a-z]{12}    |        52 |           8 |         416 | ok
-bar                      (?:ab|cd){8} |       100 |          20 |        2000 | ok
-bar                      (?:a|b|c|d){10} |        44 |           8 |         352 | ok
-bar                      [01]*1[01]{12} |     49152 |          12 |      589824 | OVER the 32,000 state cap
-\d{4}                    \w           |        10 |           4 |          40 | ok
-\d{4}                    \n           |        10 |           4 |          40 | ok
-\d{4}                    \n?\z        |        25 |           4 |         100 | ok
-\d{4}                    foo          |        20 |           6 |         120 | ok
-\d{4}                    \d           |        10 |           4 |          40 | ok
-\d{4}                    \d{4}        |        25 |           4 |         100 | ok
-\d{4}                    ,            |        10 |           4 |          40 | ok
-\d{4}                    ab           |        15 |           6 |          90 | ok
-\d{4}                    abc          |        20 |           8 |         160 | ok
-\d{4}                    a|bc         |        15 |           8 |         120 | ok
-\d{4}                    [a-z]        |        10 |           4 |          40 | ok
-\d{4}                    [^\"']       |        10 |           4 |          40 | ok
-\d{4}                    \w+          |        10 |           4 |          40 | ok
-\d{4}                    \d{3}        |        20 |           4 |          80 | ok
-\d{4}                    (a|b)c       |        15 |           6 |          90 | ok
-\d{4}                    https?       |        30 |          10 |         300 | ok
-\d{4}                    \d{4}-\d{2}-\d{2} |        55 |           6 |         330 | ok
-\d{4}                    [a-z]{12}    |        65 |           4 |         260 | ok
-\d{4}                    (?:ab|cd){8} |       125 |          10 |        1250 | ok
-\d{4}                    (?:a|b|c|d){10} |        55 |           4 |         220 | ok
-\d{4}                    [01]*1[01]{12} |     61440 |           6 |      368640 | OVER the 32,000 state cap
-\w+                      \w           |         4 |           4 |          16 | ok
-\w+                      \n           |         4 |           4 |          16 | ok
-\w+                      \n?\z        |        10 |           4 |          40 | ok
-\w+                      foo          |         8 |           6 |          48 | ok
-\w+                      \d           |         4 |           4 |          16 | ok
-\w+                      \d{4}        |        10 |           4 |          40 | ok
-\w+                      ,            |         4 |           4 |          16 | ok
-\w+                      ab           |         6 |           6 |          36 | ok
-\w+                      abc          |         8 |           8 |          64 | ok
-\w+                      a|bc         |         6 |           8 |          48 | ok
-\w+                      [a-z]        |         4 |           4 |          16 | ok
-\w+                      [^\"']       |         4 |           4 |          16 | ok
-\w+                      \w+          |         4 |           4 |          16 | ok
-\w+                      \d{3}        |         8 |           4 |          32 | ok
-\w+                      (a|b)c       |         6 |           6 |          36 | ok
-\w+                      https?       |        12 |          10 |         120 | ok
-\w+                      \d{4}-\d{2}-\d{2} |        22 |           6 |         132 | ok
-\w+                      [a-z]{12}    |        26 |           4 |         104 | ok
-\w+                      (?:ab|cd){8} |        50 |          10 |         500 | ok
-\w+                      (?:a|b|c|d){10} |        22 |           4 |          88 | ok
-\w+                      [01]*1[01]{12} |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[a-z]+@[a-z]+\.[a-z]+    \w           |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    \n           |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    \n?\z        |        30 |           8 |         240 | ok
-[a-z]+@[a-z]+\.[a-z]+    foo          |        24 |          12 |         288 | ok
-[a-z]+@[a-z]+\.[a-z]+    \d           |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    \d{4}        |        30 |           8 |         240 | ok
-[a-z]+@[a-z]+\.[a-z]+    ,            |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    ab           |        18 |          12 |         216 | ok
-[a-z]+@[a-z]+\.[a-z]+    abc          |        24 |          16 |         384 | ok
-[a-z]+@[a-z]+\.[a-z]+    a|bc         |        18 |          16 |         288 | ok
-[a-z]+@[a-z]+\.[a-z]+    [a-z]        |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    [^\"']       |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    \w+          |        12 |           8 |          96 | ok
-[a-z]+@[a-z]+\.[a-z]+    \d{3}        |        24 |           8 |         192 | ok
-[a-z]+@[a-z]+\.[a-z]+    (a|b)c       |        18 |          12 |         216 | ok
-[a-z]+@[a-z]+\.[a-z]+    https?       |        36 |          20 |         720 | ok
-[a-z]+@[a-z]+\.[a-z]+    \d{4}-\d{2}-\d{2} |        66 |          12 |         792 | ok
-[a-z]+@[a-z]+\.[a-z]+    [a-z]{12}    |        78 |           8 |         624 | ok
-[a-z]+@[a-z]+\.[a-z]+    (?:ab|cd){8} |       150 |          20 |        3000 | ok
-[a-z]+@[a-z]+\.[a-z]+    (?:a|b|c|d){10} |        66 |           8 |         528 | ok
-[a-z]+@[a-z]+\.[a-z]+    [01]*1[01]{12} |     73728 |          12 |      884736 | OVER the 32,000 state cap
-[01]*1[01]{12}           \w           |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           \n           |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           \n?\z        |     61440 |           6 |      368640 | OVER the 32,000 state cap
-[01]*1[01]{12}           foo          |     49152 |           9 |      442368 | OVER the 32,000 state cap
-[01]*1[01]{12}           \d           |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           \d{4}        |     61440 |           6 |      368640 | OVER the 32,000 state cap
-[01]*1[01]{12}           ,            |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           ab           |     36864 |           9 |      331776 | OVER the 32,000 state cap
-[01]*1[01]{12}           abc          |     49152 |          12 |      589824 | OVER the 32,000 state cap
-[01]*1[01]{12}           a|bc         |     36864 |          12 |      442368 | OVER the 32,000 state cap
-[01]*1[01]{12}           [a-z]        |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           [^\"']       |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           \w+          |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
-[01]*1[01]{12}           \d{3}        |     49152 |           6 |      294912 | OVER the 32,000 state cap
-[01]*1[01]{12}           (a|b)c       |     36864 |           9 |      331776 | OVER the 32,000 state cap
-[01]*1[01]{12}           https?       |     73728 |          15 |     1105920 | OVER the 32,000 state cap
-[01]*1[01]{12}           \d{4}-\d{2}-\d{2} |    135168 |           9 |     1216512 | OVER the 32,000 state cap
-[01]*1[01]{12}           [a-z]{12}    |    159744 |           6 |      958464 | OVER the 32,000 state cap
-[01]*1[01]{12}           (?:ab|cd){8} |    307200 |          15 |     4608000 | OVER the 32,000 state cap
-[01]*1[01]{12}           (?:a|b|c|d){10} |    135168 |           6 |      811008 | OVER the 32,000 state cap
-[01]*1[01]{12}           [01]*1[01]{12} | 150994944 |           9 |  1358954496 | OVER the 32,000 state cap
-(?:a|b|c|d){10}          \w           |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          \n           |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          \n?\z        |        55 |           4 |         220 | ok
-(?:a|b|c|d){10}          foo          |        44 |           6 |         264 | ok
-(?:a|b|c|d){10}          \d           |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          \d{4}        |        55 |           4 |         220 | ok
-(?:a|b|c|d){10}          ,            |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          ab           |        33 |           6 |         198 | ok
-(?:a|b|c|d){10}          abc          |        44 |           8 |         352 | ok
-(?:a|b|c|d){10}          a|bc         |        33 |           8 |         264 | ok
-(?:a|b|c|d){10}          [a-z]        |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          [^\"']       |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          \w+          |        22 |           4 |          88 | ok
-(?:a|b|c|d){10}          \d{3}        |        44 |           4 |         176 | ok
-(?:a|b|c|d){10}          (a|b)c       |        33 |           6 |         198 | ok
-(?:a|b|c|d){10}          https?       |        66 |          10 |         660 | ok
-(?:a|b|c|d){10}          \d{4}-\d{2}-\d{2} |       121 |           6 |         726 | ok
-(?:a|b|c|d){10}          [a-z]{12}    |       143 |           4 |         572 | ok
-(?:a|b|c|d){10}          (?:ab|cd){8} |       275 |          10 |        2750 | ok
-(?:a|b|c|d){10}          (?:a|b|c|d){10} |       121 |           4 |         484 | ok
-(?:a|b|c|d){10}          [01]*1[01]{12} |    135168 |           6 |      811008 | OVER the 32,000 state cap
+THE COMPONENT COLUMN IS THE PROTOTYPE |D(Sigma*.L)| WHERE THE BODY IS
+MODELLED, and the emitted LOWER BOUND where it is not -- each row says
+which. R33 C2-1: the emitted forward table UNDER-counts (it is the
+leftmost-occurrence automaton, accept-pruned), so a bound computed from
+it is not a bound. `a|bc` is the row that shows it inside this module's
+own shipped population: emitted 3, prototype 4.
+
+main                     body           | src     | st product | cls product | st x cls  | verdict
+----------------------------------------------------------------------------------------------------------------
+bar                      \w             | PROTO   |         8 |           8 |          64 | ok
+bar                      \n             | PROTO   |         8 |           8 |          64 | ok
+bar                      \n?\z          | lower   |        20 |           8 |         160 | ok
+bar                      foo            | PROTO   |        16 |          12 |         192 | ok
+bar                      \d             | PROTO   |         8 |           8 |          64 | ok
+bar                      \d{4}          | PROTO   |        20 |           8 |         160 | ok
+bar                      ,              | PROTO   |         8 |           8 |          64 | ok
+bar                      ab             | PROTO   |        12 |          12 |         144 | ok
+bar                      abc            | PROTO   |        16 |          16 |         256 | ok
+bar                      a|bc           | PROTO   |        16 |          16 |         256 | ok
+bar                      [a-z]          | PROTO   |         8 |           8 |          64 | ok
+bar                      [^\"']         | PROTO   |         8 |           8 |          64 | ok
+bar                      \w+            | lower   |         8 |           8 |          64 | ok
+bar                      \d{3}          | PROTO   |        16 |           8 |         128 | ok
+bar                      (a|b)c         | lower   |        12 |          12 |         144 | ok
+bar                      https?         | PROTO   |        24 |          20 |         480 | ok
+bar                      \d{4}-\d{2}-\d{2} | PROTO   |        44 |          12 |         528 | ok
+bar                      [a-z]{12}      | PROTO   |        52 |           8 |         416 | ok
+bar                      (?:ab|cd){8}   | lower   |       100 |          20 |        2000 | ok
+bar                      (?:a|b|c|d){10} | lower   |        44 |           8 |         352 | ok
+bar                      [01]*1[01]{12} | lower   |     49152 |          12 |      589824 | OVER the 32,000 state cap
+\d{4}                    \w             | PROTO   |        10 |           4 |          40 | ok
+\d{4}                    \n             | PROTO   |        10 |           4 |          40 | ok
+\d{4}                    \n?\z          | lower   |        25 |           4 |         100 | ok
+\d{4}                    foo            | PROTO   |        20 |           6 |         120 | ok
+\d{4}                    \d             | PROTO   |        10 |           4 |          40 | ok
+\d{4}                    \d{4}          | PROTO   |        25 |           4 |         100 | ok
+\d{4}                    ,              | PROTO   |        10 |           4 |          40 | ok
+\d{4}                    ab             | PROTO   |        15 |           6 |          90 | ok
+\d{4}                    abc            | PROTO   |        20 |           8 |         160 | ok
+\d{4}                    a|bc           | PROTO   |        20 |           8 |         160 | ok
+\d{4}                    [a-z]          | PROTO   |        10 |           4 |          40 | ok
+\d{4}                    [^\"']         | PROTO   |        10 |           4 |          40 | ok
+\d{4}                    \w+            | lower   |        10 |           4 |          40 | ok
+\d{4}                    \d{3}          | PROTO   |        20 |           4 |          80 | ok
+\d{4}                    (a|b)c         | lower   |        15 |           6 |          90 | ok
+\d{4}                    https?         | PROTO   |        30 |          10 |         300 | ok
+\d{4}                    \d{4}-\d{2}-\d{2} | PROTO   |        55 |           6 |         330 | ok
+\d{4}                    [a-z]{12}      | PROTO   |        65 |           4 |         260 | ok
+\d{4}                    (?:ab|cd){8}   | lower   |       125 |          10 |        1250 | ok
+\d{4}                    (?:a|b|c|d){10} | lower   |        55 |           4 |         220 | ok
+\d{4}                    [01]*1[01]{12} | lower   |     61440 |           6 |      368640 | OVER the 32,000 state cap
+\w+                      \w             | PROTO   |         4 |           4 |          16 | ok
+\w+                      \n             | PROTO   |         4 |           4 |          16 | ok
+\w+                      \n?\z          | lower   |        10 |           4 |          40 | ok
+\w+                      foo            | PROTO   |         8 |           6 |          48 | ok
+\w+                      \d             | PROTO   |         4 |           4 |          16 | ok
+\w+                      \d{4}          | PROTO   |        10 |           4 |          40 | ok
+\w+                      ,              | PROTO   |         4 |           4 |          16 | ok
+\w+                      ab             | PROTO   |         6 |           6 |          36 | ok
+\w+                      abc            | PROTO   |         8 |           8 |          64 | ok
+\w+                      a|bc           | PROTO   |         8 |           8 |          64 | ok
+\w+                      [a-z]          | PROTO   |         4 |           4 |          16 | ok
+\w+                      [^\"']         | PROTO   |         4 |           4 |          16 | ok
+\w+                      \w+            | lower   |         4 |           4 |          16 | ok
+\w+                      \d{3}          | PROTO   |         8 |           4 |          32 | ok
+\w+                      (a|b)c         | lower   |         6 |           6 |          36 | ok
+\w+                      https?         | PROTO   |        12 |          10 |         120 | ok
+\w+                      \d{4}-\d{2}-\d{2} | PROTO   |        22 |           6 |         132 | ok
+\w+                      [a-z]{12}      | PROTO   |        26 |           4 |         104 | ok
+\w+                      (?:ab|cd){8}   | lower   |        50 |          10 |         500 | ok
+\w+                      (?:a|b|c|d){10} | lower   |        22 |           4 |          88 | ok
+\w+                      [01]*1[01]{12} | lower   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[a-z]+@[a-z]+\.[a-z]+    \w             | PROTO   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \n             | PROTO   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \n?\z          | lower   |        30 |           8 |         240 | ok
+[a-z]+@[a-z]+\.[a-z]+    foo            | PROTO   |        24 |          12 |         288 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d             | PROTO   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d{4}          | PROTO   |        30 |           8 |         240 | ok
+[a-z]+@[a-z]+\.[a-z]+    ,              | PROTO   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    ab             | PROTO   |        18 |          12 |         216 | ok
+[a-z]+@[a-z]+\.[a-z]+    abc            | PROTO   |        24 |          16 |         384 | ok
+[a-z]+@[a-z]+\.[a-z]+    a|bc           | PROTO   |        24 |          16 |         384 | ok
+[a-z]+@[a-z]+\.[a-z]+    [a-z]          | PROTO   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    [^\"']         | PROTO   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \w+            | lower   |        12 |           8 |          96 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d{3}          | PROTO   |        24 |           8 |         192 | ok
+[a-z]+@[a-z]+\.[a-z]+    (a|b)c         | lower   |        18 |          12 |         216 | ok
+[a-z]+@[a-z]+\.[a-z]+    https?         | PROTO   |        36 |          20 |         720 | ok
+[a-z]+@[a-z]+\.[a-z]+    \d{4}-\d{2}-\d{2} | PROTO   |        66 |          12 |         792 | ok
+[a-z]+@[a-z]+\.[a-z]+    [a-z]{12}      | PROTO   |        78 |           8 |         624 | ok
+[a-z]+@[a-z]+\.[a-z]+    (?:ab|cd){8}   | lower   |       150 |          20 |        3000 | ok
+[a-z]+@[a-z]+\.[a-z]+    (?:a|b|c|d){10} | lower   |        66 |           8 |         528 | ok
+[a-z]+@[a-z]+\.[a-z]+    [01]*1[01]{12} | lower   |     73728 |          12 |      884736 | OVER the 32,000 state cap
+[01]*1[01]{12}           \w             | PROTO   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \n             | PROTO   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \n?\z          | lower   |     61440 |           6 |      368640 | OVER the 32,000 state cap
+[01]*1[01]{12}           foo            | PROTO   |     49152 |           9 |      442368 | OVER the 32,000 state cap
+[01]*1[01]{12}           \d             | PROTO   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \d{4}          | PROTO   |     61440 |           6 |      368640 | OVER the 32,000 state cap
+[01]*1[01]{12}           ,              | PROTO   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           ab             | PROTO   |     36864 |           9 |      331776 | OVER the 32,000 state cap
+[01]*1[01]{12}           abc            | PROTO   |     49152 |          12 |      589824 | OVER the 32,000 state cap
+[01]*1[01]{12}           a|bc           | PROTO   |     49152 |          12 |      589824 | OVER the 32,000 state cap
+[01]*1[01]{12}           [a-z]          | PROTO   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           [^\"']         | PROTO   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \w+            | lower   |     24576 |           6 |      147456 | over the 10,000 goto cap (table engine only)
+[01]*1[01]{12}           \d{3}          | PROTO   |     49152 |           6 |      294912 | OVER the 32,000 state cap
+[01]*1[01]{12}           (a|b)c         | lower   |     36864 |           9 |      331776 | OVER the 32,000 state cap
+[01]*1[01]{12}           https?         | PROTO   |     73728 |          15 |     1105920 | OVER the 32,000 state cap
+[01]*1[01]{12}           \d{4}-\d{2}-\d{2} | PROTO   |    135168 |           9 |     1216512 | OVER the 32,000 state cap
+[01]*1[01]{12}           [a-z]{12}      | PROTO   |    159744 |           6 |      958464 | OVER the 32,000 state cap
+[01]*1[01]{12}           (?:ab|cd){8}   | lower   |    307200 |          15 |     4608000 | OVER the 32,000 state cap
+[01]*1[01]{12}           (?:a|b|c|d){10} | lower   |    135168 |           6 |      811008 | OVER the 32,000 state cap
+[01]*1[01]{12}           [01]*1[01]{12} | lower   | 150994944 |           9 |  1358954496 | OVER the 32,000 state cap
+(?:a|b|c|d){10}          \w             | PROTO   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \n             | PROTO   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \n?\z          | lower   |        55 |           4 |         220 | ok
+(?:a|b|c|d){10}          foo            | PROTO   |        44 |           6 |         264 | ok
+(?:a|b|c|d){10}          \d             | PROTO   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \d{4}          | PROTO   |        55 |           4 |         220 | ok
+(?:a|b|c|d){10}          ,              | PROTO   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          ab             | PROTO   |        33 |           6 |         198 | ok
+(?:a|b|c|d){10}          abc            | PROTO   |        44 |           8 |         352 | ok
+(?:a|b|c|d){10}          a|bc           | PROTO   |        44 |           8 |         352 | ok
+(?:a|b|c|d){10}          [a-z]          | PROTO   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          [^\"']         | PROTO   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \w+            | lower   |        22 |           4 |          88 | ok
+(?:a|b|c|d){10}          \d{3}          | PROTO   |        44 |           4 |         176 | ok
+(?:a|b|c|d){10}          (a|b)c         | lower   |        33 |           6 |         198 | ok
+(?:a|b|c|d){10}          https?         | PROTO   |        66 |          10 |         660 | ok
+(?:a|b|c|d){10}          \d{4}-\d{2}-\d{2} | PROTO   |       121 |           6 |         726 | ok
+(?:a|b|c|d){10}          [a-z]{12}      | PROTO   |       143 |           4 |         572 | ok
+(?:a|b|c|d){10}          (?:ab|cd){8}   | lower   |       275 |          10 |        2750 | ok
+(?:a|b|c|d){10}          (?:a|b|c|d){10} | lower   |       121 |           4 |         484 | ok
+(?:a|b|c|d){10}          [01]*1[01]{12} | lower   |    135168 |           6 |      811008 | OVER the 32,000 state cap
 
 ROWS: 126.  Over the 32,000 STATE cap: 18.
+ROWS WHERE THE PROTOTYPE EXCEEDS THE EMITTED LOWER BOUND: 6
+  (each of those is a row the FIRST version of this probe under-stated)
 
 VACUITY GUARD: the population must contain at least one row that COULD
 be over the cap, or a count measures nothing.

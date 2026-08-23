@@ -3,12 +3,13 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/lookaround_measurements/probes/probe_substitution_population.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 668c280 2026-08-23
-# RUN FROM REPO COMMIT        : e129604 (lane/ladesign)
+# PROBE LAST CHANGED AT COMMIT: 055d0cc 2026-08-23
+# RUN FROM REPO COMMIT        : 055d0cc (lane/ladesign)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/lookaround_measurements/out/expansions.txt
-#     ?? docs/design/lookaround_measurements/out/substitution_population.txt
-# RUN DATE   : 2026-08-23T14:15:37-04:00
+#      M docs/design/lookaround_measurements/out/englook_sizing.txt
+#      M docs/design/lookaround_measurements/out/substitution_population.txt
+#     ?? docs/design/lookaround_measurements/out/follow_scoping.txt
+# RUN DATE   : 2026-08-23T15:07:09-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -41,21 +42,22 @@ THE WHOLE CORPUS
 ==============================================================================
 WHAT QUALIFIES FOR TEXTUAL SUBSTITUTION
 ==============================================================================
-  QUALIFYING blocks               : 270 of 468  (58%)
-  QUALIFYING behavioural cells    : 8495 of 10120  (84%)
+  QUALIFYING blocks               : 263 of 468  (56%)
+  QUALIFYING behavioural cells    : 8260 of 10120  (82%)
   ... carrying capture-slot cells : 13
 
   DISQUALIFIED, by rule:
     Q1 perr / no behavioural cell              87 blocks      0 cells
     Q2 no substitutable assertion              87 blocks    754 cells
     Q3 assertion inside a character class       0 blocks      0 cells
-    Q4 scoped (?m: or (?-m)                    24 blocks    871 cells
+    Q4 scoped (?m: or (?-m)                    31 blocks   1106 cells
     Q5 \K inside a substituted body             0 blocks      0 cells
+    Q6 block marked # pcre2-deviates (D68)      0 blocks      0 cells
 
   Substitutable assertion OCCURRENCES in qualifying blocks, by token:
     \b   83
-    ^    66
-    $    65
+    $    62
+    ^    62
     \z   47
     \B   39
     \A   37
@@ -75,9 +77,9 @@ PER FILE
   tests/assertions/d27/syntax_errors.rxt      37 (  0)           0 (   0)
   tests/assertions/d27/word_boundary.rxt      12 ( 12)          27 (  27)
   tests/assertions/gate.rxt                   16 ( 16)         304 ( 304)
-  tests/assertions/gpos.rxt                   43 ( 12)         324 (  68)
-  tests/assertions/kreset.rxt                 54 (  8)         544 (  86)
-  tests/assertions/multiline.rxt              89 ( 69)        3325 (2459)
+  tests/assertions/gpos.rxt                   43 ( 11)         324 (  61)
+  tests/assertions/kreset.rxt                 54 (  7)         544 (  73)
+  tests/assertions/multiline.rxt              89 ( 64)        3325 (2244)
   tests/assertions/wordb_basic.rxt            17 ( 17)        1224 (1224)
   tests/assertions/wordb_empty_compose.rxt    19 ( 19)        1368 (1368)
   tests/assertions/wordb_engattempt.rxt       16 ( 16)        1152 (1152)
@@ -92,15 +94,15 @@ occurrence in the pattern at once, because a half-substituted pattern
 tests neither form. Two policies are worth generating and the second is
 the one that finds bugs:
 
-  P1  ALL-AT-ONCE  -- every occurrence replaced. 270 patterns.
+  P1  ALL-AT-ONCE  -- every occurrence replaced. 263 patterns.
   P2  ONE-AT-A-TIME -- one occurrence replaced per generated pattern,
       the rest left folded. This is the MIXED form, where a folded
       assertion and an expanded one must agree INSIDE ONE PATTERN, and
       it is where an interaction between the two lowerings would show.
-      368 patterns (one per occurrence).
+      361 patterns (one per occurrence).
 
-  TOTAL GENERATED PATTERNS: 638, over 8495 behavioural cells each time
-  i.e. roughly 8495 three-way comparisons for P1 and 8495 for P2.
+  TOTAL GENERATED PATTERNS: 624, over 8260 behavioural cells each time
+  i.e. roughly 8260 three-way comparisons for P1 and 8260 for P2.
 
   (P2's cell count is not cells x occurrences: each generated pattern
    is checked against its OWN block's cells, and every occurrence in a

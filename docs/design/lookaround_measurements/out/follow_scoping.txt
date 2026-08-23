@@ -1,0 +1,165 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_follow_scoping.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 9f08814 2026-08-23
+# RUN FROM REPO COMMIT        : 055d0cc (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/follow_scoping.txt
+# RUN DATE   : 2026-08-23T15:07:08-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+pcrec   : present
+la_oracle SELFCHECK: none
+
+==============================================================================
+F1 -- THE EMITTER'S BOUND LITERALS: does the follow really change them?
+==============================================================================
+R33 C1-1 named four patterns. Reproduced here against this lane's own
+build rather than quoted, because the whole fix rests on the mechanism
+being real.
+
+pattern                  | emitted RX_PRUNE_TOO_SHORT(cursor, N)
+------------------------------------------------------------------------------
+(?:(a+)b)                | [('rx_span_cursor', '1')]
+(?:(a+)b)a+b             | [('rx_span_cursor', '3'), ('rx_span_cursor', '1')]   <- the SAME body, alone and followed
+((?:aa|a)+)              | [('scan_position', '1'), ('scan_position', '1')]
+((?:aa|a)+)bcd           | [('scan_position', '4'), ('scan_position', '4')]   <- a second body, alone and followed
+((?:ab|a)+)              | [('scan_position', '1'), ('scan_position', '1')]
+((?:ab|a)+)xyz           | [('scan_position', '4'), ('scan_position', '4')]   <- a third
+
+BODIES WHOSE BOUND MOVED WHEN A FOLLOW WAS ADDED: 3 of 3
+
+# THE CONTROL, and it is what makes the numbers above mean what
+# C1-1 says: an ATOMIC group's body does NOT inherit the follow,
+# because vm_atomic zeroes fmin/fdyn (emit_vm.c:4244-4247).
+(?>(a+)b)                | [('rx_span_cursor', '1')]
+(?>(a+)b)a+b             | [('rx_span_cursor', '1'), ('rx_span_cursor', '1')]
+   the ATOMIC BODY's own site is bf[0]; the second entry in the
+   followed row is the trailing `a+b`'s own site, a DIFFERENT
+   node -- comparing whole lists conflates them
+  atomic body's own bound is follow-INDEPENDENT: YES (('rx_span_cursor', '1') vs ('rx_span_cursor', '1'))
+
+==============================================================================
+F2 -- THE PREDICTED CELLS: what the right answer is, and which way it fails
+==============================================================================
+pattern            subject  | libpcre2 10.46         | python3 re             | the failure an unscoped body would cause
+----------------------------------------------------------------------------------------------------------------------
+(?=(a+)b)a+b       'aab'    | (0,3) g:(0,2)          | (0,3) g:(0,2)          | MISSED MATCH: body bound 1+2=3, no cursor clears it -> nomatch
+(?!(a+)b)a+b       'aab'    | nomatch                | nomatch                | FALSE MATCH: body pruned to fail -> the NEGATIVE assertion SUCCEEDS
+(?*(a+)b)a+b       'aab'    | (0,3) g:(0,2)          | ERR                    | as row 1; §3.6 is the arm most likely to lose the scoping
+(?<=(a+)b)c        'aabc'   | ERR                    | ERR                    | LOOKBEHIND: body ENDS at entry, so an inherited bound is SOUND here
+(?<!(a+)b)c        'aabc'   | ERR                    | ERR                    | LOOKBEHIND NEGATIVE: an early body failure still FLIPS the verdict
+
+# THE CONTROLS: the same shapes with the assertion REMOVED, so a reader
+# can see that the answers above are about the assertion and not about
+# the body:
+    (a+)b              'aab'    -> (0,3) g:(0,2)
+    a+b                'aab'    -> (0,3)
+
+# THE TWO LOOKBEHIND ROWS ABOVE ARE err 125 AND THAT IS THE POINT:
+    (?<=(a+)b)c        -> err 125 (length of lookbehind assertion is not limited)
+    (?<!(a+)b)c        -> err 125 (length of lookbehind assertion is not limited)
+# a VARIABLE-width lookbehind body is refused by PCRE2 and by §2.5, so
+# the lookahead's own counterexample shape has no lookbehind spelling.
+# F3 is where the lookbehind's real cells are.
+
+==============================================================================
+F3 -- CAN A LOOKBEHIND BODY EVEN HAVE A PRUNE SITE? (measured, and the
+==============================================================================
+     answer refuted this lane's first simplification)
+
+The tempting derivation: §2.5 ships only FIXED-width lookbehind
+branches, a fixed-width body has no quantifier to prune, so the hazard
+cannot arise behind. **THAT IS FALSE**, and one row below is why: an
+EXACT COUNT `a{3}` is fixed-width by §2.5's rule AND is lowered as an
+`A_REP` that takes a cursor rung with an MRL clamp. A design that had
+shipped the derivation would have left the lookbehind unscoped on
+exactly the bodies §2.5 admits.
+
+A capture wrapper is needed to force the VM at all (a capture-free
+pattern compiles to the DFA, which has no prune sites); it is stated
+rather than hidden, because a sweep without it measures nothing.
+
+body, wrapped + followed   engine       | prune sites
+------------------------------------------------------------------------------
+a{3}                       vm           | alone=['1'] followed=['3']   <- EXACT COUNT -- FIXED per §2.5, and it PRUNES
+ab                         vm           | alone=[] followed=[]   <- a literal run -- fixed, no rung
+(a)(b)                     vm           | alone=[] followed=[]   <- two captures -- fixed, no rung
+a|bc                       vm           | alone=[] followed=[]   <- two fixed branches -- no rung
+a{2,3}                     vm           | alone=['1'] followed=['3']   <- bounded variable -- REFUSED by §2.5
+a+                         vm           | alone=['1'] followed=['3']   <- unbounded -- REFUSED by §2.5
+a(?=b+c)                   dfa          | alone=[] followed=[]   <- FIXED width 1, but it CONTAINS a lookahead whose body is unbounded
+
+READ THIS AS: a lookbehind body that §2.5 ADMITS can still carry a
+prune site whose literal moves with the follow, so the lookbehind
+needs its own ruling and cannot inherit the lookahead's by
+derivation. R33 C1-1 said exactly this and it is now measured.
+
+THE ARITHMETIC, per direction (ARGUED, with the cells that would break it):
+  LOOKAHEAD:  the body's bytes and the follow's bytes are THE SAME
+              BYTES (both start at the entry position p), so
+              `cursor + bodyremaining + fmin` double-counts and the
+              bound is UNSOUND. Under the NEGATIVE polarity an unsound
+              prune makes the body fail, which makes the assertion
+              SUCCEED -- a FALSE MATCH, not a missed one.
+  LOOKBEHIND: the body ENDS at p, so a cursor inside it satisfies
+              `cursor + bodyremaining == p` and the test becomes
+              `p + fmin <= ceiling` -- EXACTLY the follow's real
+              requirement, hence SOUND in both polarities.
+  BUT the last row of the table above is the reason the RULE is still
+  uniform: a lookbehind body may CONTAIN a lookahead, and that inner
+  lookahead's scoping requirement is unconditional. Scoping at
+  `vm_look` for every direction and polarity is one rule at one site;
+  the cost is the lookbehind's lost (sound) prune, and the table above
+  prices it -- `a{3}` behind a 3-byte follow keeps bound 1 instead of 3.
+
+==============================================================================
+F4 -- THE NON-ATOMIC LOOKBEHIND's BRANCH RETRY (R33 C1-3)
+==============================================================================
+The cell that separates the two lookbehind atomicities ACROSS BRANCHES,
+which is what §3.6 has to draw and §10's nonatomic.rxt has to contain.
+
+pattern                    subject    | libpcre2                   | note
+(?<*(a)|(ba))c\2           'bacba'    | (2,5) g:_ (0,2)            | NON-atomic: retries into branch 2
+(?<=(a)|(ba))c\2           'bacba'    | nomatch                    | atomic: keeps branch 1, so \2 is unset
+(?<*(a)|(ba))c             'bac'      | (2,3) g:(1,2) _            | no follow to force a retry: branch 1 wins
+(?<*(ba)|(a))c\2           'baca'     | (2,4) g:_ (1,2)            | branch order reversed
+(?*(a)|(ab))\2             'abab'     | (0,2) g:_ (0,2)            | the LOOKAHEAD analogue, for comparison
+(?=(a)|(ab))\2             'abab'     | nomatch                    |   ... atomic
+
+==============================================================================
+F5 -- `\K`'s REFUSAL SCOPE (R33 C1-7): the NEGATIVE controls
+==============================================================================
+§2.7 says the hook rejects an A_KRESET 'while parsing a lookaround
+body'. That sentence has two readings and only one matches PCRE2. The
+REFUSED set must be recursive through nested groups AND nested
+lookarounds; the COMPILING set is what a too-broad check would break.
+
+REFUSED (err 199 expected):
+    (?=(a\K))x           -> err 199
+    (?=a(?:\K))x         -> err 199
+    (?=(?:(?=\K)))x      -> err 199
+    (?*a\K)x             -> err 199
+    (?<*\Ka)x            -> err 199
+    (*pla:a\K)x          -> err 199
+    (*nlb:\Ka)x          -> err 199
+    (?<=\Ka)x            -> err 199
+    (?=a\K)x             -> err 199
+    (?!a\K)x             -> err 199
+    (?<!\Ka)x            -> err 199
+COMPILES (a too-broad check would break these):
+    (?=a)\Kb             -> ok
+    a(?=b)\Kc            -> ok
+    (?<=a)\Kb            -> ok
+    a\Kb                 -> ok
