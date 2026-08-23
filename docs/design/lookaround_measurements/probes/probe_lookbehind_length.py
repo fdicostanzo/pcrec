@@ -41,7 +41,7 @@ def show(v):
     if v is None:
         return "nomatch"
     span, groups = v
-    g = " ".join("(%d,%d)" % (s, e) if s >= 0 else "unset" for s, e in groups)
+    g = " ".join("_" if x is None else "(%d,%d)" % x for x in groups)
     return "(%d,%d)%s" % (span[0], span[1], (" g:" + g) if g else "")
 
 

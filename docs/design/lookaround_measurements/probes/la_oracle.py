@@ -123,9 +123,46 @@ def maxlookbehind(pat, options=0):
     return out.value
 
 
+# PCRE2_INFO_CAPTURECOUNT's index, derived by the same sweep as
+# MAXLOOKBEHIND above (0, 1, 2, 3 for `a`, `(a)`, `(a)(b)`, `(?:a)(c)(d)(e)`)
+# and re-asserted in _selfcheck() on every import.
+PCRE2_INFO_CAPTURECOUNT = 4
+
+
+def ngroups(pat, options=0):
+    """How many capture groups `pat` has, from PCRE2 itself. None if it does
+    not compile.
+
+    This is load-bearing rather than convenience. libpcre2 TRUNCATES trailing
+    unset ovector pairs (`pcre2_match` returns the highest captured pair plus
+    one), so a pattern whose ONLY group sits inside a negative lookahead
+    reports NO groups on a successful match while python reports one unset
+    group. Comparing the two oracles without padding to a known count reads
+    that difference as a DIVERGENCE about semantics when it is a difference
+    about report shape -- the same one-directional padding rule
+    tests/backrefs/bref_oracle.py states in its own header."""
+    try:
+        c = br.compile(pat, options)
+    except Exception:                                       # noqa: BLE001
+        return None
+    out = ctypes.c_uint32(0)
+    if _lib.pcre2_pattern_info_8(c._code, PCRE2_INFO_CAPTURECOUNT,
+                                 ctypes.byref(out)) != 0:
+        return None
+    return out.value
+
+
+def _pad(groups, n):
+    g = [None if x is None or (isinstance(x, tuple) and x[0] < 0) else tuple(x)
+         for x in groups]
+    while len(g) < n:
+        g.append(None)
+    return g[:n]
+
+
 def search(pat, subj, start=0, options=0):
-    """(span, groups) or None. `groups` is [(s,e), ...] for groups 1..N with
-    (-1,-1) for an unset one, exactly the shape bref_oracle.py reports."""
+    """'ERR', None, or (span, groups), where `groups` has exactly one entry
+    per capture group of `pat` -- `None` for unset -- PADDED per ngroups()."""
     try:
         c = br.compile(pat, options)
     except Exception:                                       # noqa: BLE001
@@ -133,7 +170,7 @@ def search(pat, subj, start=0, options=0):
     r = c.search(subj, start)
     if r is None:
         return None
-    return r
+    return (r[0], _pad(r[1], ngroups(pat, options) or 0))
 
 
 def pyre(pat):
@@ -145,8 +182,11 @@ def pyre(pat):
 
 
 def pyre_search(pat, subj, start=0):
-    """python's answer in the same vocabulary as search(): 'ERR', None, or
-    (span, groups)."""
+    """python's answer in the SAME vocabulary and the SAME shape as search():
+    'ERR', None, or (span, groups) with one entry per group and `None` for
+    unset. python spells an unset group (-1,-1); that is normalised here so a
+    reader comparing the two columns is comparing semantics, not report
+    conventions (see ngroups())."""
     c, err = pyre(pat)
     if err:
         return "ERR"
@@ -154,7 +194,8 @@ def pyre_search(pat, subj, start=0):
     if m is None:
         return None
     return (m.span(),
-            [m.span(i) for i in range(1, (c.groups or 0) + 1)])
+            _pad([m.span(i) for i in range(1, (c.groups or 0) + 1)],
+                 c.groups or 0))
 
 
 def _selfcheck():
@@ -184,6 +225,15 @@ def _selfcheck():
                            [(p, g, w) for p, g, w in got]))
     # `abc` answering 0 rather than 3 is what separates this index from
     # MINLENGTH, which is the field a one-cell check would confuse it with.
+    # (2b) PCRE2_INFO_CAPTURECOUNT, same treatment.
+    cc = [(p, ngroups(p), w) for p, w in
+          [("a", 0), ("(a)", 1), ("(a)(b)", 2), ("(?:a)(c)(d)(e)", 3),
+           ("(?!(a))b", 1)]]
+    if any(g != w for _, g, w in cc):
+        problems.append("PCRE2_INFO_CAPTURECOUNT index %d gives %r"
+                        % (PCRE2_INFO_CAPTURECOUNT, cc))
+    # The last cell is the one that matters: a group living only inside a
+    # negative lookahead still COUNTS, which is what padding depends on.
     # (3) the python side is really python's `re`, not a re-export of pcre2:
     # `(?<=a|bc)` is a PCRE2-legal pattern python REFUSES. If this passes,
     # `pyre` is bound to the wrong engine.
