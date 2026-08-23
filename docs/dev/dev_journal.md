@@ -12155,3 +12155,74 @@ lane's verification and fixed (ca45696): wake.md's standing-facts line
 had kept "117 scored rows (S108 retired)"; tests/mech/CLAUDE.md's heading
 said "Retired rows" over a re-instated row. Session ends here: main
 clean and pushed, no lanes, no worktrees, no cron.
+
+## 2026-08-23 (EDT), thirty-seventh session (part 1) — [TT-4.1] measured; [TT-5] profiled; the `timeout` tax found
+
+Frank's "go tt-4" at 07:5x. [TT-4] expanded into 4.1 measurement / 4.2
+design / 4.3 landing; a sonnet lane (worktrees/tt4meas) ran the census
+and the prototype; a read-only sonnet lane wrote the [TT-5] chain profile
+in parallel from the existing battery/mech logs. Frank, 08:3x: "we are in
+the multiple hours for overall testing … it's slowing development";
+wants the before/after timings if [TT-4] proves worthwhile, and other
+testing moves considered as a SET once the census memo lands.
+
+[TT-5] STAGE 1 (6f1e941, docs/dev/chain_profile.md): the per-merge chain
+on m65 was 2h26m — test 10m14s, strict 6s, ubsan 32m35s, asan 42m25s,
+lint 33s, mech 60m08s — and ubsan/asan/mech each grew ~20% in the single
+day backrefs landed, with no growth alarm. Verified by the manager before
+commit: SAN-1's reason for separate sanitizer axes (Makefile:577-580) is
+about TSan, not ASan-vs-UBSan — nothing blocks one combined axis; mech's
+PROCS=4 came from a 20-row measurement on 08-12 and passes through the
+environment into each row's inner run.sh/reject sharding (4 rows × 4-way
+= 16 processes on 12 cores). Candidate (h) added from Frank's question
+"are the sabotage tests dependent on the tests themselves": a row's
+verdict is a property of the (compiler, corpus) PAIR — it flips on its
+target changing (exact), on anchor drift (caught statically by the
+tripwire), or on a compiler change MASKING the sabotaged path (S108's
+shape; not derivable from a diff). Tiered re-run policy proposed, not
+ruled; measurement first (diff the 08-18..22 matrices for any row that
+flipped without its SAB_FILE/target changing).
+
+[TT-4.1] (merge 19ea394, docs/dev/tt4_measurement.md, studies/
+tt4_batching/). Census by PATH shims (gcc/cc/pcrec, later timeout/
+python3) over each test-* target run serially: make test = 3,777 CPU-s;
+gcc 647 (17%, 4,845 calls — the row's "~20,000" premise was 4x off);
+pcrec 275 (7%); 76% neither. Prototype on 256 real corpus patterns: TU-
+batching beats link-only batching at every N; best 3.66x at N=16 against
+the 12-way baseline (atomic pool 2.73x at N=8); N=64/256 look best
+serially and REGRESS under parallel execution (0.41-0.96x) because batch
+count falls below core width — a design reading serial numbers would
+ship a regression. Ceiling ~12% of suite CPU. Obstacles confirmed by
+compile failure, not inferred: mixed --features sets collide on
+unprefixed PCREC_FEATURE_SET/PCREC_FEATURE_MODULES; batch failure is
+all-or-nothing (recovering 15 good members costs 2.99 s). The census's
+first 1800 s bound fired mid-run (sized from the -j12 whole-suite wall;
+serial sections sum to ~38 min) — kept as a finding, resumed per section.
+
+THE FINDING OF THE DAY, from the A2 records and verified by the manager
+directly: this box's `timeout` is uutils coreutils 0.8.0 and costs ~108
+ms of pure WALL per call at zero CPU (50× `timeout 5 true`: 108.2 ms
+mean; `/usr/bin/gnutimeout`, GNU 9.7, also installed: ~4 ms). The harness
+wraps every pcrec call and every per-case matcher run in it: corpus makes
+23,252 calls ≈ 2,430 s of sleep across 12 workers ≈ ~200 s (~43%) of its
+469 s section wall — which is also why 12 workers ran at load 1.4. Paid
+again on each sanitizer axis and per mech row. Chartered as [TT-6]
+(measurement done; landing = a TIMEOUT_BIN helper + before/after + the
+D45 semantics re-verified against GNU in the failing direction). The
+lane's first "245x exec-batching" number decomposed under the third
+variant into 31x from the binary swap alone and 5.57x from one-driver-
+per-pattern on top — corrected in the memo, "measured correctly,
+interpreted too broadly". Exec-batching is corpus-only: the other heavy
+sections already loop inside their own C differential drivers.
+
+Lane-process note: the sonnet lane went idle after EVERY background task
+exit and did not resume on its own; each resumption took a manager ping
+(four in the session). Liveness was never in doubt (WIP commits, logs),
+but "idle after background exit" is a lane shape the watchdog prompt
+should treat as "nudge immediately", not "wait a tick". Unrelated finding
+from the lane: tests/encseam/run_encseam_tests.sh defaults CC to `cc`,
+not `gcc`.
+
+Merged: 19ea394 (studies + docs only; nothing under src/ tests/ Makefile;
+no battery). Plan: [TT-4.1] completed, [TT-4.2] awaits the set decision,
+[TT-5] stage 1 done, [TT-6] chartered. Next: Frank rules the set.
