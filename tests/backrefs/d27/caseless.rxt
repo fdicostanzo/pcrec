@@ -1,0 +1,80 @@
+# tests/backrefs/d27/caseless.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, caseless backreference semantics (F7, F8): `(?i)` is read
+# AT THE BACKREFERENCE, not at the group's own declaration, and the fold
+# in an 8-bit non-UTF build covers exactly the 52 ASCII letters and
+# nothing else.
+#
+# Every measurement below is against real libpcre2 10.46 (br_oracle.py).
+# Nothing here has been run against build/pcrec (module unbuilt).
+
+# --- The SCOPED `(?i:...)` form is python-checkable both ways: caseless
+# on the REFERENCE, plain group -- "aA" matches ('a' captured literally,
+# \1 compared caselessly). ---
+pattern ^(a)(?i:\1)$
+features backrefs,modifiers
+m "aA" 0 2
+gp 1 0 1
+n "AA"
+
+# --- The mirror: caseless on the GROUP, plain reference -- caselessness
+# does not transfer to the backreference's own comparison. "aA" fails
+# (group captures 'a' caselessly-matched-but-literally-stored; \1 then
+# requires an exact-byte repeat of "a", and gets 'A'); "aa"/"AA" both
+# succeed (\1 sees an exact repeat either way). ---
+pattern ^(?i:(a))\1$
+features backrefs,modifiers
+n "aA"
+m "aa" 0 2
+gp 1 0 1
+m "AA" 0 2
+gp 1 0 1
+
+# --- The GLOBAL `(?i)` forms decide the same question and are
+# libpcre2-legal, but python REFUSES a global flag anywhere but the
+# pattern's own start ("global flags not at the start of the
+# expression") -- so both cells below are pcre2-only, per F15. ---
+# pcre2-only: python refuses a non-leading global (?i) (F15)
+pattern ^((?i)a)\1$
+features backrefs,modifiers
+n "aA"
+m "aa" 0 2
+gp 1 0 1
+
+# --- `^(?i)(a)(?-i)\1$`: the leading `(?i)` IS at the pattern start (so
+# this whole pattern is otherwise python-legal syntax), but the `(?-i)`
+# mid-pattern still trips python's "global flags not at the start" rule.
+# Semantically: group captures caselessly (accepts 'A'), (?-i) then
+# turns caselessness back off before \1, so \1 needs an EXACT repeat of
+# whatever byte the group actually captured. ---
+# pcre2-only: python refuses (?-i) mid-pattern even with a leading (?i) (F15)
+pattern ^(?i)(a)(?-i)\1$
+features backrefs,modifiers
+m "AA" 0 2
+gp 1 0 1
+n "Aa"
+
+# --- F8: the caseless fold in an 8-bit non-UTF build covers exactly the
+# 52 ASCII letters. A plain ASCII pair folds; a Latin-1 high-byte pair
+# that WOULD fold under Unicode case-mapping (0xC0 A-grave / 0xE0
+# a-grave) does NOT, and neither does the classic sharp-s/ss pseudo-fold.
+# Uses the CLI-level `flags i` directive (pcrec -i), not inline (?i) --
+# confirmed this needs no `modifiers` feature at all (a separate
+# mechanism from the inline (?i)/(?-i) group modifier tested above).
+# All three cells ARE python-checkable: verify_rxt.py's own `flags i` ->
+# `re.IGNORECASE | re.ASCII` mapping folds exactly the same 52 letters
+# and agrees with libpcre2 on all three subjects (measured directly). ---
+pattern ^(a)\1$
+features backrefs
+flags i
+m "aA" 0 2
+gp 1 0 1
+
+pattern ^(\xc0)\1$
+features backrefs
+flags i
+n "\xc0\xe0"
+
+pattern ^(\xdf)\1$
+features backrefs
+flags i
+n "\xdfss"

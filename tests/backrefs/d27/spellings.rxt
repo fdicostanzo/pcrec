@@ -1,0 +1,138 @@
+# tests/backrefs/d27/spellings.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, every backreference SPELLING PCRE2 accepts: \g{n} \g{-n} \gN
+# \g-N \g{name}, \k<n> \k'n' \k{n}, (?P=n) -- and the subroutine-vs-
+# backreference split at \g<name>/\g'name' (F6), which this file explicitly
+# does NOT exercise as backref semantics (see the note below).
+#
+# Named forms need `features backrefs,named-groups` since \k<name>,
+# \g{name} and (?P=name) all reference a name declared with a named-group
+# construct.
+#
+# Every measurement below is against real libpcre2 10.46 (br_oracle.py).
+# Nothing here has been run against build/pcrec (module unbuilt).
+
+# --- Numeric spellings: \g{n}, \gN (no braces), \g-N (no braces, negative
+# relative), \g{-n} (braced negative relative). All are BACKREFERENCES,
+# confirmed by requiring the group's OWN text to repeat (a subroutine call
+# would re-run the alternation fresh and accept either branch again). ---
+# pcre2-only: python3 re has no \g escape at all (F5)
+pattern ^(a|b)\g{1}$
+features backrefs
+m "aa" 0 2
+gp 1 0 1
+m "bb" 0 2
+gp 1 0 1
+n "ab"
+
+# pcre2-only: python3 re has no \g escape at all (F5)
+pattern ^(a)(b)\g2$
+features backrefs
+m "abb" 0 3
+gp 1 0 1
+gp 2 1 2
+n "aba"
+
+# pcre2-only: python3 re has no \g escape at all (F5)
+pattern ^(a)(b)\g-1$
+features backrefs
+m "abb" 0 3
+gp 2 1 2
+
+# --- \g{-n} / \g{+n}: relative backreferences counted from the escape's
+# own position. -1 is the nearest group BEFORE; +1 is the nearest group
+# AFTER (and, being forward, is unset the first time it is reached --
+# F1 governs it exactly like any other forward reference). ---
+# pcre2-only: python3 re has no \g escape at all (F5)
+pattern ^(a)(b)\g{-1}$
+features backrefs
+m "abb" 0 3
+gp 2 1 2
+
+# pcre2-only: python3 re has no \g escape at all (F5)
+pattern ^(a)(b)\g{-2}$
+features backrefs
+m "aba" 0 3
+gp 1 0 1
+
+# pcre2-only: python3 re has no \g escape at all (F5); also a forward ref (F1/F3)
+pattern \g{+1}(a)
+features backrefs
+n "aa"
+n "a"
+
+# --- \k<name>, \k'name', \k{name}: the three named-backreference
+# spellings, all agreeing with each other and with numeric \1. ---
+# pcre2-only: python3 re has no \k escape at all (F5)
+pattern (?<n>a)\k<n>
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+n "ab"
+
+# pcre2-only: python3 re has no \k escape at all (F5)
+pattern (?<n>a)\k'n'
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+
+# pcre2-only: python3 re has no \k escape at all (F5)
+pattern (?<n>a)\k{n}
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+
+# --- (?P=n): the python-style named backreference. This spelling IS
+# python-expressible via (?P<n>...)(?P=n). ---
+pattern (?P<n>a)(?P=n)
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+n "ab"
+
+# --- \g{name}: the braced form also accepts a NAME, not just a number,
+# and is a backreference (not a subroutine call) exactly like \g{1}. ---
+# pcre2-only: python3 re has no \g escape at all (F5)
+pattern (?<n>a)\g{n}
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+
+# --- A numeric backreference also works against a NAMED group (names are
+# cosmetic; the group still has an ordinal number). ---
+# pcre2-only: named-group + bare-\1 combination isn't independently python-checkable here
+# (python CAN express this one, in fact -- (?P<n>a)\1 -- but the (?<n>...)
+# spelling used elsewhere in this file is not, so this cell is kept
+# consistent with its neighbors rather than singled out)
+pattern (?<n>a)\1
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+
+# ============================================================================
+# THE SUBROUTINE-VS-BACKREFERENCE SPLIT (F6) -- NOT exercised as backref
+# semantics in this file.
+#
+# `\g<name>` and `\g'name'` (angle brackets and quotes) are SUBROUTINE
+# CALLS in PCRE2, not backreferences: `^(a|b)\g<1>$` matches "ab" (the
+# call re-runs the alternation fresh and can pick the OTHER branch),
+# where every backreference spelling above requires the SAME text to
+# repeat. Measured: \g<1> and \g'1' both match "ab"; \g{1}, \g1, \g-1
+# and \g{-1} do not (confirmed above). A cell asserting \g<name>/\g'name'
+# MATCH BEHAVIOR is testing module `recursion`, per the D27 brief for
+# this lane -- out of scope here. The two compile-only cells below only
+# assert that pcrec's *recognition* of the \g escape is gated the same
+# way regardless of which bracket follows it (both spellings are refused
+# identically today; see gating.rxt for the module-boundary detail).
+# ============================================================================
+
+# out-of-scope note: \g<name> is a SUBROUTINE CALL (module recursion), not
+# a backreference (F6) -- this cell only checks pcrec's current refusal,
+# not subroutine match behavior
+pattern (a|b)\g<1>
+features backrefs
+perr
+
+# out-of-scope note: \g'name' is ALSO a subroutine call (F6), same as \g<name>
+pattern (a|b)\g'1'
+features backrefs
+perr

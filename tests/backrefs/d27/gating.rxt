@@ -1,0 +1,132 @@
+# tests/backrefs/d27/gating.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, the MODULE-DISABLED refusal direction of the gate, plus a
+# few module-ENABLED cells kept here for CLI-surface continuity now that
+# `backrefs` has landed (2026-08-22, module landing at main 3aa446f).
+# Unlike every other file in this corpus, every cell here HAS been run
+# against real `build/pcrec` (the brief's explicitly permitted exception:
+# "you may run it only to confirm refusal-direction cells"; the
+# module-enabled cells below were additionally verified against libpcre2
+# for their match semantics, since they now assert real behavior, not
+# just refusal). `perr` only asserts nonzero exit, never diagnostic
+# wording (docs/testing.md), so no `perr` cell here depends on pcrec's
+# exact message text -- only on the fact that it refuses.
+#
+# HISTORY WORTH KEEPING: before the module landed, cells 2, 7, and 10
+# below were `perr` blocks asserting the MODULE-ENABLED-BUT-UNIMPLEMENTED
+# refusal direction ("module 'backrefs' is enabled but ... is not
+# implemented yet"). Once the module landed, those three patterns started
+# compiling successfully with the same `features` lines, which is
+# EXACTLY the intended outcome -- module landing turning a "not
+# implemented yet" refusal into a real answer is success, not a corpus
+# bug -- so per merge-review instruction they were converted in place to
+# real `m`/`gp` cases, verified against libpcre2. The MODULE-DISABLED
+# cells (1, 3, 4, 6, 8, 9, 11) are untouched: disabling a built module via
+# `--features` still refuses today, by design, and always will.
+#
+# THE DUPNAMES/(?J) MODULE-ATTRIBUTION FINDING flagged in the pre-landing
+# version of this file (and in dupnames.rxt) is now RESOLVED, per R32
+# ASK-1: the landed module attributes BOTH `(?J)` and its duplicate-name
+# RESOLUTION logic to `backrefs` (measured: `pcrec: inline option 'J'
+# (dupnames) requires module 'backrefs'` -- no more mention of
+# `named-groups` in that refusal). Cells 9 and 11 below are updated to
+# match; their OUTCOME (still `perr`, for a different reason) was already
+# correct pre-landing and needed no logic change, only comment upkeep.
+
+# --- 1. Numeric backreference, module fully disabled. ---
+pattern (a)\1
+features classes
+perr
+
+# --- 2. Numeric backreference, module ENABLED -- landed 2026-08-22.
+# Was `perr` (module enabled but unimplemented); now a real match cell,
+# verified against libpcre2 (also re-checked end-to-end against the
+# refreshed build/pcrec by hand: compiles, matches). ---
+pattern (a)\1
+features backrefs
+m "aa" 0 2
+gp 1 0 1
+n "ab"
+
+# --- 3. Octal/backref escape \8, module disabled -- confirms the gate
+# applies to the ESCAPE RECOGNITION itself, before the octal-vs-backref
+# disambiguation (F4) is ever reached. ---
+pattern \8
+features classes
+perr
+
+# --- 4. \g (any bracket form), module disabled. ---
+pattern (a|b)\g<1>
+features classes
+perr
+
+# --- 5. \g<1>: with `backrefs` enabled, the refusal reason CHANGES
+# (measured, post-landing: "\g requires module 'recursion'", not a
+# backrefs-unimplemented message) but the OUTCOME is unchanged --
+# still `perr`. \g<name>/\g'name' are SUBROUTINE CALLS (F6, module
+# `recursion`, unbuilt), not backreferences, and pcrec's own registry now
+# reflects that attribution directly rather than folding \g<...> under
+# `backrefs`'s own recognition gate the way it did pre-landing; see
+# spellings.rxt's out-of-scope note for why match SEMANTICS of
+# \g<name>/\g'name' are not tested by this corpus regardless. ---
+pattern (a|b)\g<1>
+features backrefs
+perr
+
+# --- 6. \k, module disabled. ---
+pattern (?<n>a)\k<n>
+features classes,named-groups
+perr
+
+# --- 7. \k, module ENABLED (plus named-groups) -- landed 2026-08-22.
+# Was `perr`; now a real match cell, verified against libpcre2. ---
+pattern (?<n>a)\k<n>
+features backrefs,named-groups
+m "aa" 0 2
+gp 1 0 1
+n "ab"
+
+# --- 8. (?P=n), module disabled. ---
+pattern (?P<n>a)(?P=n)
+features classes,named-groups
+perr
+
+# --- 9. (?J), with modifiers present, and NO duplicate name anywhere in
+# the pattern at all. MEASURED both before and after the module landed:
+# `(?J)` refuses unconditionally, once its own syntax is recognized
+# (module `modifiers`), REGARDLESS of whether a collision is ever
+# actually declared -- pre-landing the refusal named `named-groups`;
+# post-landing (R32 ASK-1) it names `backrefs` directly ("inline option
+# 'J' (dupnames) requires module 'backrefs'"). The OUTCOME (perr, with
+# `modifiers` alone) is unchanged either way; `backrefs` is still absent
+# from this cell's feature list on purpose, to keep testing the same
+# thing cell 11 tests from the other side. ---
+pattern (?J)a
+features modifiers
+perr
+
+# --- 10. (?J) with a genuine duplicate name, modifiers, named-groups AND
+# backrefs all present -- module ENABLED, landed 2026-08-22 (R32 ASK-1
+# attributes DUPNAMES resolution to `backrefs`). Was `perr`; now a real
+# match cell (F9's core resolution rule: \k<a> picks the FIRST member of
+# the name-run that is set), verified against libpcre2. ---
+pattern (?J)^(?<a>x)(?<a>y)\k<a>$
+features modifiers,named-groups,backrefs
+m "xyx" 0 3
+gp 1 0 1
+gp 2 1 2
+n "xyy"
+
+# --- 11. (?J) with modifiers EXCLUDED (an explicit, non-default feature
+# list that leaves modifiers out) refuses on the (?J) SYNTAX itself,
+# before dupname resolution is ever reached -- a different refusal SITE
+# than cell 9's (module `modifiers`'s own gate vs., pre-landing, module
+# `named-groups`'s dupname refusal / post-landing, module `backrefs`'s
+# own "requires module 'backrefs'" via cell 9 above once modifiers is
+# present but backrefs is not). Both `perr`, and the .rxt format can't
+# see the difference in wording, but the comment trail is worth keeping.
+# Outcome unaffected by the R32 ASK-1 landing -- `backrefs` is present
+# here but `modifiers` is not, so the (?J) syntax gate itself is what
+# fires, same as pre-landing. ---
+pattern (?J)(?<a>x)(?<a>y)
+features backrefs,named-groups
+perr

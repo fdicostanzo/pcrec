@@ -1,0 +1,123 @@
+# tests/backrefs/d27/numeric.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, numeric-backreference core semantics: \1..\9, unset vs empty,
+# self/forward references, references under quantifiers, nested repeats
+# (re-decided per iteration), and startpos.
+#
+# AUTHORED FROM THE PCRE2 GOAL (libpcre2 10.46 via
+# docs/design/backrefs_measurements/probes/br_oracle.py), src/ and tests/
+# denied. EVERY m/n/ms/ns/g expectation below was measured against real
+# libpcre2, not derived from any pcrec source. See README.md for the full
+# oracle/divergence table. Every block needs `features backrefs` since a
+# backreference is entirely unrecognized syntax without it (see gating.rxt).
+#
+# NOTHING in this file has been run against build/pcrec: the backrefs
+# module is UNBUILT (registry: every backrefs esc row is `unbuilt`), so
+# these cells will show as pattern-compile failures under today's binary.
+# That is expected and correct for a D27 corpus -- see README.md.
+
+# --- F1: an UNSET group's backreference FAILS. Not "matches empty". ---
+pattern ^(a)?\1$
+features backrefs
+n ""
+n "a"
+
+# --- F2: an EMPTY capture IS SET, and is distinct from F1 by one `if`. ---
+pattern ^(x?)y\1z$
+features backrefs
+m "yz" 0 2
+gp 1 0 0
+m "xyxz" 0 4
+gp 1 0 1
+n "xyz"
+
+# --- F3: self-references COMPILE and are governed by F1: \1 is always
+# unset while its own group is still open, in a single (non-looping) pass,
+# so the pattern is legal but can never match anything. libpcre2-only:
+# python3 `re` refuses "cannot refer to an open group" at compile time. ---
+# pcre2-only: python refuses self-references at compile time (F3)
+pattern (a\1)
+features backrefs
+n "a"
+n "aa"
+
+# pcre2-only: python refuses self-references at compile time (F3)
+pattern ^(\1a)$
+features backrefs
+n "a"
+
+# --- F3: forward references COMPILE. A bare forward reference (no loop
+# to set the group first) can never succeed, because \2 is evaluated
+# before group 2 ever runs. libpcre2-only (python: "invalid group
+# reference"). ---
+# pcre2-only: python refuses forward references at compile time (F3)
+pattern \2(a)(b)
+features backrefs
+n "ab"
+n ""
+
+# --- F3/F14: `(\2(a)|b)+` -- the forward-ref branch can never be taken
+# (group 2 only ever sets inside the branch that can't run), so the whole
+# construct behaves like `(b)+` in practice. First iteration only, exactly
+# as GOAL_FACTS states. libpcre2-only (python: same compile refusal). ---
+# pcre2-only: python refuses forward references at compile time (F3)
+pattern (\2(a)|b)+
+features backrefs
+m "baa" 0 1
+gp 1 0 1
+m "b" 0 1
+gp 1 0 1
+n "aa"
+
+# --- References inside quantifiers. `(a)\1*` -- verified three-way
+# unanimous with python re, so this block IS python-checkable. ---
+pattern (a)\1*
+features backrefs
+m "abaa" 0 1
+gp 1 0 1
+n "b"
+
+# --- `(\w)\1+` requires module classes for \w. python-checkable. ---
+pattern (\w)\1+
+features backrefs,classes
+m "abba" 1 3
+gp 1 1 2
+n "abc"
+
+# --- Nested repeats RE-DECIDE the referenced capture per iteration
+# (F13): the backreference sees whichever capture is current at the
+# point it is evaluated, not a value frozen at loop entry. ---
+pattern ^(?:(a|b)\1)+$
+features backrefs
+m "aabb" 0 4
+gp 1 2 3
+
+pattern (?:(a|bb)x)+\1
+features backrefs
+m "axbbxbb" 0 7
+gp 1 2 4
+n "axbbxa"
+
+# --- F14: a reference inside a RE-ENTERED group sees the LAST
+# *COMPLETED* iteration's capture, not the one currently in progress.
+# `(a|b\1)+` on "ab": iteration 2's `b\1` fails because \1 still holds
+# iteration 1's completed capture "a" -- not because anything is unset.
+# This is the module's sharpest cell class. ---
+pattern (a|b\1)+
+features backrefs
+m "ab" 0 1
+gp 1 0 1
+
+pattern ^(?:(a|b\1)y)+
+features backrefs
+m "aybay" 0 5
+gp 1 2 4
+
+# --- F12: startpos matters. `(a)\1` on "xaa" is (1,3) at startpos 0 and
+# 1, and no match at startpos 2 (only one 'a' remains). ---
+pattern (a)\1
+features backrefs
+m "xaa" 1 3
+gp 1 1 2
+ms 1 "xaa" 1 3
+gp 1 1 2
+ns 2 "xaa"

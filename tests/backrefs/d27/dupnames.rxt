@@ -1,0 +1,191 @@
+# tests/backrefs/d27/dupnames.rxt -- D27 blinded acceptance corpus, module
+# `backrefs`, DUPNAMES / (?J) resolution semantics (F9, F10, F11).
+#
+# THE RESOLUTION RULE (F9): under (?J), a by-name backreference resolves
+# to the FIRST group of the name-run, IN ASCENDING NUMBER, THAT IS SET --
+# "set" includes set-to-empty. This is a NUMBER-ascending rule, not a
+# most-recently-run rule: a lower-numbered same-name group that is set
+# wins even if a higher-numbered member of the same name has since run
+# (possibly many times, inside a repeat) and is "more current". Numeric
+# references (`\1`, `\2`, ...) are completely unaffected by dupnames --
+# they always mean the group with that literal ordinal number, never
+# name-resolved.
+#
+# A REGISTRY FINDING FROM AUTHORING TIME, NOW RESOLVED (R32 ASK-1,
+# landed 2026-08-22 at main 3aa446f): pre-landing, `build/pcrec
+# --list-syntax` scoped (?J) itself under module `modifiers` and the
+# ACTUAL dupname-resolution logic under module `named-groups`, not
+# `backrefs`. The landed module attributes BOTH to `backrefs` (measured
+# post-landing: `pcrec: inline option 'J' (dupnames) requires module
+# 'backrefs'` -- `named-groups` no longer appears in that refusal at
+# all). Every cell in this file still needs `features
+# backrefs,named-groups,modifiers` (`modifiers` for (?J)'s own syntax,
+# `named-groups` for the underlying named-capture declarations, `backrefs`
+# for \k/\g/(?P=n) recognition AND, as of this landing, DUPNAMES
+# resolution itself) -- unchanged by the attribution move, since this
+# corpus's semantics always came from PCRE2 (D26), never from pcrec's own
+# module boundaries.
+#
+# Every measurement below is against real libpcre2 10.46 (br_oracle.py).
+# ADDITIONALLY, as of this landing, every cell in this file was re-run
+# end-to-end against the real build/pcrec (compile + build the generated
+# matcher + run every m/n/g/gp case) and all 30 measured cases pass with
+# ZERO implementation divergence -- see README.md's acceptance section.
+
+# --- F9 core: two members of the same name-run, both set (matched in
+# sequence) -- \k<a> resolves to the FIRST (group 1's "x"), never the
+# most-recently-run (group 2's "y"). ---
+# pcre2-only: python3 re has no \k/(?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)\k<a>$
+features backrefs,named-groups,modifiers
+m "xyx" 0 3
+gp 1 0 1
+gp 2 1 2
+n "xyy"
+
+# --- F9: an ALTERNATION where only one branch of the name-run ever
+# runs -- the first is UNSET (never taken), so resolution falls through
+# to the second, which IS set. ---
+# pcre2-only: python3 re has no \k/(?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?:(?<a>x)|(?<a>y))\k<a>$
+features backrefs,named-groups,modifiers
+m "yy" 0 2
+gp 2 0 1
+
+# --- F9: "set" INCLUDES set-to-empty. Group 1 matches the empty string
+# (via `x?` choosing not to consume), which still counts as SET -- so
+# \k<a> resolves to group 1's EMPTY capture, not group 2's "y". ---
+# pcre2-only: python3 re has no \k/(?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?<a>x?)(?<a>y)\k<a>$
+features backrefs,named-groups,modifiers
+m "y" 0 1
+gp 1 0 0
+gp 2 0 1
+n "yy"
+
+# --- F9: a THREE-WAY name-run. All three members run in sequence, so
+# resolution is group 1's "x" no matter how many later same-name members
+# also ran. ---
+# pcre2-only: python3 re has no \k/(?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)(?<a>z)\k<a>$
+features backrefs,named-groups,modifiers
+m "xyzx" 0 4
+gp 1 0 1
+gp 2 1 2
+gp 3 2 3
+n "xyzy"
+n "xyzz"
+
+# --- F9's sharpest cell (the shape named in the brief): a name-run
+# member declared inside a quantifier that resets each iteration, PLUS a
+# reference to the SAME run from inside that quantified group -- the
+# by-NUMBER resolution rule (a lower-numbered same-name group, if set,
+# always wins) takes priority over F14's "last-completed-iteration"
+# rule, which would otherwise apply if this were an ordinary
+# (non-dupname) self-reference through a repeat. ---
+#
+# Group 1 ("q"?) is OPTIONAL and outside the loop; group 2 (inside the
+# `+`) is repeated and may reference \k<a> on each entry.
+#
+# - "a"/"aa": group 1 never runs (unset). \k<a> falls through to group 2,
+#   and (being the only set member) behaves exactly like F14's ordinary
+#   self-through-a-repeat rule: each iteration sees the PREVIOUS
+#   iteration's completed capture. "aba" needs iteration1="a",
+#   iteration2="b"+prev("a")="ba".
+# - "qbq": group 1 DOES run ("q"), so \k<a> ALWAYS resolves to group 1's
+#   "q" -- group 2's own iteration history is irrelevant to the
+#   resolution once a lower-numbered member is set. Contrast "pbp" (no
+#   group1) below with plain \1 group1 unset cases above: this is the
+#   cell that would trip an implementation applying F14's "last
+#   completed iteration of the SAME group" logic to a dupname reference
+#   instead of the NUMBER-ascending, whole-run resolution F9 actually
+#   requires.
+# pcre2-only: python3 re has no \k/(?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$
+features backrefs,named-groups,modifiers
+m "a" 0 1
+gp 2 0 1
+m "aa" 0 2
+gp 2 1 2
+m "aba" 0 3
+gp 2 1 3
+n "ab"
+m "qbq" 0 3
+gp 1 0 1
+gp 2 1 3
+m "qbqbq" 0 5
+gp 1 0 1
+gp 2 3 5
+n "qbqb"
+
+# --- F9: numeric references to dup'd groups are completely unaffected
+# by the name run -- \1 always means group 1 by ordinal number, and \2
+# always means group 2, regardless of both sharing a name. ---
+# pcre2-only: python3 re has no (?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)\1$
+features backrefs,named-groups,modifiers
+m "xyx" 0 3
+gp 1 0 1
+gp 2 1 2
+n "xyy"
+
+# pcre2-only: python3 re has no (?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)\2$
+features backrefs,named-groups,modifiers
+m "xyy" 0 3
+gp 1 0 1
+gp 2 1 2
+n "xyx"
+
+# --- F9: all four by-name spellings resolve identically -- \k<a>,
+# \k'a', \k{a}, (?P=a), and \g{a} all pick the same member. ---
+# pcre2-only: python3 re has no \k/\g/(?J) support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)\k'a'$
+features backrefs,named-groups,modifiers
+m "xyx" 0 3
+n "xyy"
+
+# pcre2-only: python3 re has no \k/\g/(?J) support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)\k{a}$
+features backrefs,named-groups,modifiers
+m "xyx" 0 3
+n "xyy"
+
+# --- (?P=a) IS python-syntax, but python has no (?J)/DUPNAMES concept
+# to allow the duplicate declaration in the first place, so the whole
+# pattern (not just the reference spelling) is pcre2-only here. ---
+# pcre2-only: python3 re has no (?J)/DUPNAMES support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)(?P=a)$
+features backrefs,named-groups,modifiers
+m "xyx" 0 3
+n "xyy"
+
+# pcre2-only: python3 re has no \g/(?J) support at all (F5)
+pattern (?J)^(?<a>x)(?<a>y)\g{a}$
+features backrefs,named-groups,modifiers
+m "xyx" 0 3
+n "xyy"
+
+# --- F10: (?J) is checked AT EACH DECLARATION, not just once for the
+# whole pattern. A duplicate declared BEFORE (?J) appears is legal (the
+# checking mode when the SECOND declaration is reached is what matters);
+# a duplicate declared inside a (?J:...) SCOPED group does not carry the
+# permission back out to a sibling declaration outside that scope. ---
+# pcre2-only: python3 re has no (?J) support at all (F5)
+pattern (?<a>x)(?J)(?<a>y)
+features backrefs,named-groups,modifiers
+m "xy" 0 2
+gp 1 0 1
+gp 2 1 2
+
+# pcre2-only: python3 re has no (?J) support at all (F5)
+pattern (?J:(?<a>x))(?<a>y)
+features backrefs,named-groups,modifiers
+perr
+
+# --- (?-J) turns duplicate-name checking back ON. A name declared
+# again after (?-J) collides just as it would with no (?J) at all. ---
+# pcre2-only: python3 re has no (?J)/(?-J) support at all (F5)
+pattern (?J)(?<a>x)(?<a>y)(?-J)(?<a>z)
+features backrefs,named-groups,modifiers
+perr
