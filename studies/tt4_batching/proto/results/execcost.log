@@ -1,0 +1,5 @@
+16 patterns, 35 total cases
+shape=(i) harness-per-case-exec  median=3.8128s min=3.8088s reps=[3.80876717006322, 3.8177456440171227, 3.812845875043422]
+shape=(ii) one-process-per-pattern median=0.0155s min=0.0150s reps=[0.02062055200804025, 0.015525331953540444, 0.014998249942436814]
+
+exec-batching speed-up (median): 245.59x (35 cases across 16 patterns, 35 spawns in shape (i) vs 16 in shape (ii))

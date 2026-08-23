@@ -1,12 +1,16 @@
-# studies/tt4_batching/proto/ — [TT-4.1] Stage B batching prototype
+# studies/tt4_batching/proto/ — [TT-4.1] Stage B/A2 batching prototypes
 
 Measures, on real generated matchers (never the harness — patterns are
-collected by running `build/pcrec` directly), whether batching compilation
-(one TU/link per N patterns instead of one gcc call per pattern) is
-actually faster under the harness's own execution shape, at several batch
-sizes, before any harness change. See docs/dev/tt4_measurement.md's
-"Stage B" section for the numbers and what they mean; this file documents
-how to reproduce them.
+collected by running `build/pcrec` directly), two independent levers:
+whether batching COMPILATION (one TU/link per N patterns instead of one
+gcc call per pattern, Stage B) is actually faster under the harness's own
+execution shape at several batch sizes, and whether batching EXECUTION
+(one process reading all of a pattern's cases instead of one process
+spawn per case, Stage A2's addendum) is faster than
+`tests/harness/run.sh`'s own per-case `timeout` shape. Neither touches
+the harness. See docs/dev/tt4_measurement.md's "Stage B" and "Stage A2:
+the remainder" sections for the numbers and what they mean; this file
+documents how to reproduce them.
 
 ## Files
 
@@ -49,12 +53,31 @@ how to reproduce them.
   the batch failure used, or the planted error is never exercised and
   every fallback compile trivially "succeeds" (a bug caught and fixed
   2026-08-23, same day as the baseline-remeasurement one).
+- **extract_cases.py** — [Stage A2, 2026-08-23] pulls the REAL `m`/`n`/
+  `ms`/`ns` case lines that follow a collected pattern's own `pattern`
+  line in its SOURCE `.rxt` file (never synthetic cases) — the same
+  subject/startpos values `tests/harness/run.sh` itself would run.
+- **multidriver_gen.py** — [Stage A2] emits a ONE-PATTERN driver that
+  reads ALL of that pattern's cases from stdin (`subject<TAB>startpos`
+  per line) in a loop inside a SINGLE process, instead of
+  `tests/harness/driver.c`'s shape of one process per case. A tiny,
+  purpose-built copy — never `tests/harness/driver.c` itself.
+- **bench_execcost.py** — [Stage A2] the manager-requested exec-cost
+  comparison: for a fixed pattern sample and their real cases, times (i)
+  the harness's OWN shape (`tests/harness/run.sh:356`'s exact one-
+  `timeout`-spawn-per-case pattern, reproduced in a generated bash
+  script) against (ii) one process per PATTERN via `multidriver_gen.py`,
+  3 reps, median. See docs/dev/tt4_measurement.md's "Stage A2: the
+  remainder" -> "exec-cost prototype cell" for the result (245.59x on a
+  16-pattern/35-case sample) and why the ratio should scale UP, not down,
+  at `corpus`'s real ~10-cases/pattern average.
 - **results/** — committed sweep output (`*_results.json` from `bench.py`,
   `*_bench.log` its stdout) for the two pools used in the memo: `corpus`
   (256 patterns, `tests/base`, default/no-`--features` bucket — the
   worst gcc-bound section per Stage A) and `atomic` (64 patterns,
   `tests/atomic_groups` restricted to `--features atomic-groups` — the
-  second worst). Machine/date context: studies/tt4_batching/CLAUDE.md.
+  second worst); plus `execcost.log` (Stage A2's exec-cost cell output).
+  Machine/date context: studies/tt4_batching/CLAUDE.md.
 
 ## Reproduce
 
@@ -70,6 +93,11 @@ how to reproduce them.
 
 Failure isolation: `bench.py --patterns /tmp/tt4proto/corpus_pool --outdir
 /tmp/tt4proto/out --failure-isolation 16`.
+
+Exec-cost cell: `python3 studies/tt4_batching/proto/bench_execcost.py
+--patterns /tmp/tt4proto/corpus_pool --limit 16 --outdir /tmp/tt4proto/execcost
+--reps 3` (uses the SAME `corpus_pool` collected above — no separate
+collection step).
 
 Pattern pools themselves are NOT committed (scratch, regenerable from the
 command above); only the sweep's own `results.json`/log output is, under

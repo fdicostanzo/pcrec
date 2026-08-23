@@ -147,10 +147,23 @@ Append-only where noted; the restart/status-recovery record for the project.
   (`PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES` are unprefixed `#define`s
   that collide when TU-concatenating matchers built with different
   `--features`), and the measured cost of one batch member failing to
-  compile. Evidence lives in `studies/tt4_batching/` (census shim,
-  bench harness, committed results); see its own CLAUDE.md. No
-  recommendation about the harness's own design beyond what the numbers
-  directly support — that is [TT-4.2]'s row.
+  compile. **Stage A2** (manager-requested, same day): Stage A left 76%
+  of `make test`'s 3,777 CPU-s unattributed; added `timeout`/`python3`
+  shims and re-censused the top remainder sections, finding `corpus` is
+  the ONLY section with any per-case matcher-run exec at all (19,185
+  spawns) — the other six (`assertions`, `rungselect`, `counterk`,
+  `backrefs`, `mrl`, `altcls`) already run their whole subject sweep
+  inside ONE process via their own C differential drivers, invisible to
+  any exec-boundary shim by construction. A second, independent
+  "exec-batching" lever (one process per pattern reading all its cases,
+  vs. `run.sh`'s one-spawn-per-case shape) measured 245.59x on a
+  16-pattern sample, applicable narrowly to `corpus`. Both levers'
+  ceilings, stated honestly, add to ~31-35% of the suite's total CPU, not
+  76% — the majority is real differential-driver/oracle compute this row
+  reports as unaddressed rather than assumed solved. Evidence lives in
+  `studies/tt4_batching/` (census shim, bench harness, committed results);
+  see its own CLAUDE.md. No recommendation about the harness's own design
+  beyond what the numbers directly support — that is [TT-4.2]'s row.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.

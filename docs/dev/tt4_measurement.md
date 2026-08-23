@@ -609,7 +609,50 @@ not in this row's remaining time budget.
 
 ### The exec-cost prototype cell (a lever measured on the same footing as gcc-batching)
 
-<!-- EXECCOST_PLACEHOLDER -->
+`studies/tt4_batching/proto/bench_execcost.py`, corpus pool, 16 patterns,
+their REAL cases pulled from the actual `.rxt` source files (never
+synthetic — `extract_cases.py`), 3 repeats, median:
+
+- **(i) the harness's own shape** — one `timeout RUN_SECS "$bdir/t" subj
+  pos` spawn per CASE, reproduced exactly as `tests/harness/run.sh:356`
+  does it (a generated bash script, one command-substitution line per
+  case, never editing `run.sh` itself): **35 cases, 3.8128s median**
+  (~109ms/case — three forks per case: the `$(...)` command-substitution
+  subshell, `timeout` itself, and the driver binary, matching `run.sh`'s
+  own nesting exactly).
+- **(ii) one process per PATTERN**, reading all of that pattern's cases
+  from stdin in a loop inside a single already-running process
+  (`multidriver_gen.py` — a tiny purpose-built driver, never
+  `tests/harness/driver.c`): **16 spawns, 0.0155s median** (~1ms/pattern).
+- **Speed-up: 245.59x** (3.8128s -> 0.0155s).
+
+**This ratio is not a fixed constant — it scales with cases-per-pattern,
+and this 16-pattern sample's average (35/16 ≈ 2.2 cases/pattern) is LOWER
+than `corpus`'s real average** (19,185 driver-target calls / ~1,906
+patterns ≈ 10.1 cases/pattern per Stage A2's own count). Shape (i)'s cost
+scales with the CASE count (each case pays the full three-fork tax);
+shape (ii)'s cost scales with the PATTERN count (each extra case for an
+already-open process is just another loop iteration, no fork at all) —
+so at `corpus`'s real ~10 cases/pattern, exec-batching's speed-up would
+be LARGER than 245x, not smaller, because the fixed per-pattern process
+cost that shape (ii) still pays gets amortized over more cases per spawn.
+This memo does not re-measure at the full 1,906-pattern scale (out of
+this row's remaining time budget) — the 16-pattern cell establishes the
+DIRECTION and rough MAGNITUDE, not a scaled-up promise.
+
+**Sizing this lever against gcc-batching's, using Stage A2's own numbers**:
+`corpus`'s residue (669.35s) includes ~142.58s of `gen_cc`'s own bash/
+ulimit wrapping overhead (a THIRD thing, not exec-per-case) — subtracting
+that leaves roughly **~527-669s** of `corpus`'s CPU plausibly attributable
+to matcher-run exec overhead plus ordinary bash-loop cost (the exact split
+between "timeout/fork tax" and "bash's own string/loop processing" is not
+separable with these shims alone — both are eliminated together by shape
+(ii)). Against `make test`'s total 3,777 CPU-s, that is **roughly
+14-18%** of the WHOLE SUITE's CPU, concentrated entirely in `corpus` (and
+negligibly in `test-known-fail`, which shares `run.sh`'s shape but has an
+empty corpus today) — a slice comparable in size to gcc's OWN 647s/17%
+share, even though only ONE section uses this exec shape at all (Stage
+A2's other six sections already loop internally, per the finding above).
 
 ## What the numbers say
 
@@ -617,6 +660,30 @@ not in this row's remaining time budget.
 prediction — batching genuinely helps this workload, on both pools
 tried, by a real multiple, under the harness's own execution shape.**
 Stated as plainly as the evidence supports:
+
+**Two independent, non-overlapping levers, each with a measured ceiling —
+neither one alone gets close to the whole suite, and reading either
+number as "the suite gets Nx faster" would overstate it:**
+
+| lever | best measured multiple | applies to | measured ceiling on `make test`'s total CPU (3,777s) |
+|---|---|---|---|
+| gcc-batching (Stage B) | 3.66x (shape B, N=16, corpus pool) | every section that compiles generated C (all but `reject`/`resource`) | gcc is 647s/17% of total CPU — batching it at 3.66x caps the WHOLE SUITE's win at roughly that 17% share, not 3.66x suite-wide |
+| exec-batching (Stage A2) | 245.59x (16-pattern sample; likely higher at `corpus`'s real ~10 cases/pattern, see below) | ONLY sections using `tests/harness/run.sh`'s per-case shape — measured to be `corpus` alone (plus near-zero `test-known-fail`) | ~527-669s, roughly 14-18% of total CPU, concentrated entirely in one section |
+
+The two levers are **structurally independent and could both be adopted**
+(one attacks gcc invocation count, the other attacks matcher-run
+invocation count, and `corpus` is the one section paying for both) — but
+neither is "the fix" on its own, and their ceilings ADD to roughly
+31-35% of `make test`'s total CPU at best, not 100%. The remaining ~65%+
+(the six differential sections' own internal sweep compute, plus python3
+oracle time, plus whatever bash-loop/fork overhead this memo could not
+separate from matcher-run cost) is either genuine compute this project
+already wants done, or a THIRD kind of lever (parallelizing/optimizing
+the differential drivers' own internal sweeps) this row was not chartered
+to investigate.
+
+Stated as plainly as the evidence supports, on the gcc-batching lever
+specifically:
 
 - TU-batching (shape B) beats link-batching (shape A) at every batch size
   on both pools — concatenating source amortizes more of the fixed
@@ -644,6 +711,20 @@ Stated as plainly as the evidence supports:
   reaching gcc at all) is a design question this memo surfaces but does
   not answer: whether/how such patterns enter a batch is [TT-4.2]'s to
   decide, not measured here.
+- **Exec-batching (the second lever) has its own un-measured cost this
+  row flags rather than solves**: `run.sh`'s per-CASE process isolation is
+  what lets it attribute a crash, a timeout, or a VM give-up to the EXACT
+  case that caused it (`tests/harness/run.sh`'s `trc` discrimination at
+  the timeout/crash/give-up branches). Collapsing many cases into one
+  process (shape (ii)) means a crash on case 7 of 10 could take cases
+  8-10 down with it, or (worse) corrupt state that makes case 8 read as a
+  false pass/fail — the SAME class of failure-isolation problem TU-
+  batching has for gcc, unmeasured here because this cell's 16-pattern
+  sample happened to contain no crashing cases. A real design needs
+  either per-case `fork()` inside the batched driver (cheaper than
+  `timeout`+shell but not free) or an accepted "attribute to the whole
+  batch, fall back per-case on any anomaly" rule — the same shape
+  [TT-4.2] already owes gcc-batching.
 
 **No recommendation about the harness's own design is made beyond what
 these numbers directly support** — [TT-4.2] is where batch-size choice,
@@ -654,3 +735,27 @@ somewhere in the batch-count-near-core-count neighbourhood rather than
 "as big as possible," with two confirmed, non-hypothetical obstacles
 (feature-set collision, all-or-nothing batch failure) already in hand
 for that design to solve rather than discover.
+
+**On the exec-batching lever (Stage A2) specifically**: also a measured
+YES within its narrow scope — `corpus` alone, where it applies — and by a
+far larger multiple (245.59x vs. gcc-batching's 3.66x) because it removes
+THREE forks per case (subshell, `timeout`, driver) rather than amortizing
+one compile's fixed cost across a batch. But its scope is narrow BY
+MEASUREMENT, not by assumption: five of the six other re-censused
+sections already use the "one process, many cases" shape this lever
+would introduce for `corpus` — they adopted it independently, for their
+own differential-driver reasons, before this row ever asked the question.
+Its own failure-isolation cost is flagged, not measured (no crashing
+case existed in this cell's 16-pattern sample) — the SAME open design
+question TU-batching has for gcc, and likely the harder version of it,
+since per-case exec isolation is `run.sh`'s CURRENT crash/timeout/give-up
+attribution mechanism, not an incidental side effect.
+
+**Combined, honestly**: the two levers' measured ceilings add to roughly
+31-35% of `make test`'s total CPU (17% gcc-batching + 14-18%
+exec-batching, concentrated in `corpus`), not the 76% this row set out to
+attribute. The remaining majority is real compute — six differential
+drivers' own internal sweeps, oracle/python3 time, and bash/fork overhead
+this memo's shims cannot see past a process boundary — which this row
+correctly reports as UNADDRESSED rather than assumed solved by either
+lever.
