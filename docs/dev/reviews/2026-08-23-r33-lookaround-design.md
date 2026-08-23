@@ -87,6 +87,25 @@ cite to §3.7 with nothing there, V-10 std1 is FROZEN so every lookaround
 cell carries `features lookaround`, V-11 P-n order, V-12 `[^^]$` drops the
 `$` in occurrences(). Round 3 dispatched to the lane (all twelve).
 
+## Round 3 — resolution and APPROVAL (manager, 2026-08-23 16:0x)
+
+The design lane applied all twelve round-2 items at 46868d6 (V-1's sentence
+verbatim in §3.6 ¶1; V-2's 263 + 361 = 624 stated inline; V-3 resolved on
+both sides — the split is the port's own tail check, B+C declines the `<`
+tails at WANT_RESULT, wave D deletes the decline). Implementing the items
+found two more instrument defects (thirteen total in the lane's own ledger):
+V-12 was two bugs (leading-caret AND in-class escapes not counted as
+content — `[\]]` failed identically), population confirmed unchanged at
+263/8,260; and §5.8's n/a reasons described the tokeniser, not the bodies —
+recounted as 22 rows / 16 modelled / 6 n/a / TWO under-counts (`a|bc` 3/4,
+`ac|bc` 3/5). Manager spot-checked the three blockers in the frozen text.
+
+**docs/design/lookaround_design.md is APPROVED at 46868d6** (2,756 lines;
+merged to main 9fced73). Three rounds: 25 findings round 1 (5 HIGH), 12
+round 2 (3 blocking, all against the revisions — the R32 pattern repeated),
+0 outstanding. The §14 ASKs go to Frank with the manager's recommendations;
+[M6.6.2] implementation starts on Frank's word, not before.
+
 ---
 
 # APPENDIX — critic C1 report (verbatim)
