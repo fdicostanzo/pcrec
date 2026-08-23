@@ -32,8 +32,24 @@ STRUCTURAL / ARGUED accordingly.
 - `probes/probe_captures.py` — §2 axis C, the capture and budget cells.
 - `probes/probe_prefilter_hazard.py` — §5, H1/H2/H3 with its own `erase()`
   (fixture-tested at import) and two vacuity guards.
-- `probes/probe_d66_subset.py` — §5/§6, the positive control, the `(?m)^`
+- `probes/probe_d66_subset.py` — §5.5/§6.5/§9.2, the equivalences, the `(?m)^`
   self-oracle and the ceiling-coexistence sweep.
+- `probes/probe_expansions.py` — §6.1/§6.2, the [DD-11]/D66 assertion-family
+  EXPANSIONS: equivalence in libpcre2 (972 cells, 0 disagreements, with the
+  `(?!\z)`-dropped vacuity control firing at 4/108), each body classified
+  against the design's §2.5 width rule, python's verdict per expansion, and
+  pcrec's SHIPPED FOLDED forms against libpcre2's EXPANSIONS (0 over 324
+  cells) — the D66 self-oracle run on the table itself.
+- `probes/probe_substitution_population.py` — §6.3, **PURE TEXT**: how much of
+  `tests/assertions/` the substitution driver qualifies. Runs no compiler and
+  no matcher, because the question is a property of the corpus text and
+  answering it by running the driver would require the driver to exist.
+- `probes/probe_englook_sizing.py` — §5.8, `[ENG-LOOK]`'s sizing inputs. Reads
+  the EMITTER'S OWN ARRAY DIMENSIONS out of the emitted C
+  (`len(rx_forward_is_accepting[])` for states, `next_state/states` for
+  classes) after compiling each BODY ALONE — pcrec's unanchored forward DFA
+  for `L` IS the `Σ*·L` recognizer a lookbehind needs, and its reverse machine
+  is the `reverse(L)·Σ*` a lookahead needs, so no model sits in between.
 - `probes/archive.sh` — the ONLY writer of `out/`.
-- `out/` — archived output; see its own CLAUDE.md, which carries the SEVEN
+- `out/` — archived output; see its own CLAUDE.md, which carries the NINE
   instrument defects this lane found by running its own probes.

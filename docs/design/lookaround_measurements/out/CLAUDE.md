@@ -32,7 +32,10 @@ is WHAT the dirty list contains — in every file here it is `out/` files only.
 | `lookbehind_length.txt` | `probe_lookbehind_length.py` | §2 axis B: which bodies compile and with which error number; the TWO-LEVEL preference order; the bisected `max_varlookbehind` default and the fixed-length ceiling; `PCRE2_INFO_MAXLOOKBEHIND` for composite bodies; the subject-start and startpos cells |
 | `captures.txt` | `probe_captures.py` | §2 axis C / §3: captures retained by a positive lookaround, discarded by a negative one, unset when a positive one fails after partially capturing; the empty-iteration cells; `\K`'s refusal and the extra-option bit; the budget witness |
 | `prefilter_hazard.txt` | `probe_prefilter_hazard.py` | §5: H1/H2/H3 on the erasure, with the SHARP anchored-at-true-start form of H3 alongside the naive one, `erase()` fixture-tested, both vacuity guards |
-| `d66_subset.txt` | `probe_d66_subset.py` | §5/§6: the positive control's equivalences, the `(?m)^` self-oracle in both directions, and the sweep that finds the H3 hazard coexisting with a live prefilter-window ceiling |
+| `d66_subset.txt` | `probe_d66_subset.py` | §5.5/§6.5/§9.2: the equivalences, the `(?m)^` self-oracle in both directions, and the sweep that finds the H3 hazard coexisting with a live prefilter-window ceiling |
+| `expansions.txt` | `probe_expansions.py` | §6.1/§6.2: the nine [DD-11]/D66 assertion-family expansions verified equivalent (972 cells, 0 disagreements), each body classified against §2.5, python's verdict per expansion, and pcrec's folded forms against libpcre2's expansions |
+| `substitution_population.txt` | `probe_substitution_population.py` | §6.3: PURE TEXT — how many of `tests/assertions/`'s 468 blocks and 10,120 cells the substitution driver qualifies, with each of the five rules costed |
+| `englook_sizing.txt` | `probe_englook_sizing.py` | §5.8: `[ENG-LOOK]`'s component-automaton sizes and product bounds against the 10,000/32,000 caps, with deliberately-extreme controls |
 
 ## Probe defects this lane found by running its own instruments
 
@@ -72,3 +75,20 @@ before:
    one unset group. `la_oracle.ngroups()` pads both sides to
    `PCRE2_INFO_CAPTURECOUNT` (index also derived by sweep) so a difference in
    the table is a difference in semantics.
+8. **`probe_substitution_population.py` reported the corpus's two cell counts
+   THE WRONG WAY ROUND** — its first draft said 10,120 was the ALL-cells
+   figure and the behavioural population was smaller. It is the reverse:
+   10,120 behavioural + 67 capture-slot = 10,187. Published, it would have
+   UNDERSTATED the driver's own reach against the wrong denominator. The
+   probe now says so in its output rather than silently carrying the fix.
+9. **`probe_englook_sizing.py`'s first table read "0 over the cap" over a
+   population in which no row could have been.** Every body was 2-6 states and
+   every main 2-6, so the largest product was three orders of magnitude below
+   32,000. The reachability guard now asserts the population reaches the cap;
+   with the deliberately-extreme controls added it reaches 4,719x it, and the
+   result splits into 64 non-control rows (0 over) against 62 control rows
+   (18 over) — which is a finding, where the first version was a tautology.
+   **This is the same defect as number 6, in a different probe, found by
+   applying number 6's own lesson** — which is the argument for writing a
+   reachability guard into every sweep this project produces rather than into
+   the one that has already failed.

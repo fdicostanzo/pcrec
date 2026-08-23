@@ -201,6 +201,13 @@ that merely compiles proves nothing about what it is.
 | `(?<!*X)` | **err 109** | — the `*` is read as a quantifier | err | refuse |
 | `(?=)` `(?!)` `(?<=)` `(?<!)` | ok, all four | zero-width with an empty body: `a(?=)b` is (0,2), `a(?!)b` is NOMATCH | ok | **SHIPS** (§2.6) |
 
+**THE FAMILY THIS TABLE'S CONSTRUCTS ARE ALREADY IN.** Every member of the
+assertion family module `assertions` ships — `\b` `\B` `(?m)^` `(?m)$` `\Z`
+`$` `^` — HAS a definition in terms of these spellings, verified equivalent at
+972 cells / 0 disagreements (§6.1). So the constructs below are not a new
+surface bolted beside the assertions module; they are the vocabulary it is
+already written in, and §6 uses that three ways.
+
 **SHIP/REFUSE SPLIT: EIGHTEEN spellings ship and THREE refuse** — `(*nanla:`
 and `(*nanlb:`, which PCRE2 does not have (err 195), and `(?<!*X)`, which
 PCRE2 reads as a quantifier and rejects (err 109). **There is no spelling in
@@ -339,6 +346,17 @@ Consequences, each checkable against §2.3's table:
   conservative; §11's follow-on row carries the refinement.
 - `(?<=(?=a)b)x`, `(?<=(?<=a)b)x`, `(?<=a(?!b))x` — **ship**: a nested
   lookaround is zero-width, so it contributes 0 to both `minw` and `maxw`.
+
+**THE RULE IS EXACTLY BIG ENOUGH FOR THE ASSERTION FAMILY, and that is
+measured rather than arranged.** Every one of the nine [DD-11]/D66 expansions
+(§6.1) compiles under this rule: their lookbehind bodies are `(?<=\w)`,
+`(?<!\w)` and `(?<=\n)` — one class or one literal, fixed width 1 — and the
+only variable-width body in the whole family, `\n?\z`, sits inside a
+lookAHEAD (`\Z` ≡ `(?=\n?\z)`) where there is no width rule at all. **The
+same body one direction over would be refused**, and `out/expansions.txt` E2
+prints that discriminating row: `(?<=\n?\z)x`, `(?<=\n?)x` and `(?<=\w?)x`
+all compile in PCRE2 with `maxlb 1` and all have `minw 0, maxw 1`, so pcrec
+refuses all three as lookbehinds. §12 P-12 is how to refute the coincidence.
 
 **`pcrec_maxw` DOES NOT EXIST (P11) and this module writes it**, beside
 `pcrec_minw` in `src/opt/mrl.c`, with that file's `default:`-less exhaustive
