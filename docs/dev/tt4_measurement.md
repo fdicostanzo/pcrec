@@ -275,4 +275,157 @@ have finished the full 21-section sweep even without the mid-run kill.
 
 ## Stage B: batching prototype
 
-<!-- STAGE_B_PLACEHOLDER -->
+studies/tt4_batching/proto/ — never the harness, three call shapes over a
+FIXED pool of real generated patterns, batch size N in {1,4,16,64,256}
+(patterns split into pool-size/N batches of N), each cell measured SERIAL
+(clean per-call attribution) and 12-way PARALLEL over batches
+(`concurrent.futures`, matching the harness's own `PROCS=$(nproc)` shape),
+median/min of 3 reps:
+
+- **C (baseline)**: one gcc call per PATTERN, compile+link, using a
+  generated single-pattern dispatch driver that reproduces
+  `tests/harness/driver.c`'s exact protocol byte for byte (verified
+  directly — see "Emitter-side obstacles" below) — the harness's own
+  shape, same `GENCFLAGS` (`-O1 -std=gnu11 -Wall -Wextra -Werror`). C does
+  NOT depend on N (a bug in the first version of `bench.py` re-measured it
+  once per N anyway — 5x redundant runs, caught and fixed before it burned
+  the time budget); its median/min are reused as the N-independent
+  baseline row.
+- **A (link-batching)**: `gcc -c` per member of the batch plus the batch's
+  dispatch driver, then ONE link of all N+1 objects.
+- **B (TU-batching)**: concatenate the N members' `gen.c` bodies into one
+  file, compile THAT plus the dispatch driver in ONE gcc call
+  (compile+link).
+
+### Pattern pools
+
+Both pools collected directly from `build/pcrec` run over real `.rxt`
+blocks (`studies/tt4_batching/proto/collect_patterns.py`; never touches
+the harness), restricted to a single `--features` bucket per pool (see
+"Emitter-side obstacles" below for why):
+
+- **corpus pool**: 256 patterns from `tests/base/` (the default/no-
+  `--features` bucket — `test-corpus`, the worst gcc-bound section, is
+  dominated by this directory).
+- **atomic pool**: 64 patterns from `tests/atomic_groups/` restricted to
+  `--features atomic-groups` exactly (the module's seven `.rxt` files mix
+  several different `--features` combinations — `atomic-groups`,
+  `atomic-groups,assertions`, `atomic-groups,modifiers`, etc. — so the
+  pool is filtered to the single largest homogeneous bucket, 81 of 121
+  collectible blocks, capped at 64 for a clean power-of-two batch-size
+  ladder).
+
+### Corpus-pool results (the worst section)
+
+Baseline: **50.990s serial / 6.573s parallel** (256 one-shot compile+link
+calls — the harness's own shape and cost, measured directly).
+
+| N | shape | serial median | serial x baseline | parallel median | parallel x baseline |
+|---|---|---|---|---|---|
+| 1 | A | 50.277s | 1.01x | 6.640s | 0.99x |
+| 1 | B | 50.266s | 1.01x | 6.410s | 1.03x |
+| 4 | A | 22.803s | 2.24x | 3.112s | 2.11x |
+| 4 | B | 17.337s | 2.94x | 2.403s | 2.74x |
+| 16 | A | 15.987s | 3.19x | 2.722s | 2.41x |
+| 16 | B | 9.158s | 5.57x | **1.798s** | **3.66x** |
+| 64 | A | 14.219s | 3.59x | 4.382s | 1.50x |
+| 64 | B | 7.191s | 7.09x | 2.681s | 2.45x |
+| 256 | A | 13.993s | 3.64x | 13.987s | 0.47x |
+| 256 | B | 6.895s | 7.39x | 6.864s | 0.96x |
+
+**Best measured speed-up (against the PARALLEL baseline, the realistic
+comparison — that is how the harness runs today): shape B, N=16, 3.66x
+(1.798s vs 6.573s).** Shape B beats shape A at every single N (TU
+concatenation amortizes the fixed per-call cost — process start, header
+parsing, link — harder than link-batching alone, which still pays a
+separate `-c` compile per member). Under SERIAL measurement, larger N is
+monotonically better for both shapes (7.39x at N=256 for shape B) — but
+that is not the harness's own execution shape.
+
+**N=64 and N=256 are WORSE than N=16 under PARALLEL mode, and this is the
+one non-monotonic, easy-to-miss finding in the whole sweep.** Batch COUNT,
+not batch size, is what feeds the 12-way parallel dispatcher: at N=64
+there are only 256/64=4 batches for 12 cores (8 sit idle — parallel
+median 2.681s, barely better than N=16's serial-adjacent 9.158s divided
+by not-quite-4); at N=256 there is exactly ONE batch, so "parallel mode"
+has nothing to parallelize over and shape A's N=256 parallel cell (13.987s,
+**0.47x — SLOWER than the plain baseline**) is really just 256 serial `-c`
+compiles inside that one unparallelized batch job, worse than the harness
+already gets today from spreading 256 one-shot compiles across 12 cores.
+**The batch size that maximizes real speed-up is the one whose batch COUNT
+is close to the core count** (16 batches on a 12-core box), not the
+largest N tried — a naive "bigger batches are always better" reading of
+the serial numbers alone would have picked N=256 and shipped something
+2.45-7.7x worse than N=16 under the harness's actual parallel shape.
+
+**Peak RSS**: the single N=256 TU compile (shape B) measured **213,240 KB
+(~208 MB)** peak resident set — not alarming, no non-linear blow-up
+observed at this pool's scale (256 DFA-sized matchers).
+
+**Correctness**: 8 patterns from the N=256 batch, checked against 4
+subjects each (32 total) — every batched executable's output matched the
+baseline (`shape C`) driver's output byte for byte. 0 mismatches.
+
+### Atomic-groups pool results (the second-worst section)
+
+<!-- ATOMIC_RESULTS_PLACEHOLDER -->
+
+### Failure isolation
+
+<!-- FAILURE_ISOLATION_PLACEHOLDER -->
+
+### Emitter-side obstacles (measured, not assumed)
+
+Two-matcher coexistence in one TU was probed BEFORE building the full
+sweep (`build/pcrec -p rx0001 ...` / `-p rx0002 ...`, then concatenated
+and compiled under the harness's exact `GENCFLAGS`):
+
+- **Every symbol that must be per-matcher-unique IS prefixed correctly**:
+  entry-point functions (`rx0001_search`, `rx0001_match`,
+  `rx0001_match_caps`, `rx0001_info`, `rx0001_group_names`, the internal
+  `rx0001_forward_*` DFA helpers, computed-goto labels, static const
+  tables), and the capture-count macro (`RX0001_NCAPS`, not a bare
+  `RX_NCAPS` — the harness's own `driver.c` only ever sees `RX_NCAPS`
+  unprefixed because `run.sh` always compiles with the fixed literal
+  prefix `-p rx`; a batching design has to generate its own dispatch
+  driver rather than reuse `driver.c` verbatim for exactly this reason).
+  Grepped directly (`grep -nE '^(static |const )' rx0001.c` against the
+  prefixed name list): zero unprefixed declarations found in either probe
+  pattern's generated `.c`.
+- **The shared PCRE ABI block IS include-guarded and byte-identical
+  across matchers** (`#ifndef PCREC_RX_ABI_H` / `#define
+  PCREC_RX_ABI_H`, `PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES`/
+  `PCREC_ENGINE_DFA`/`PCREC_VM_RUNG_*`/etc.) — the SAME constants
+  regardless of prefix or pattern, so the second matcher's include of an
+  identical guarded block is simply skipped by the preprocessor, and two
+  matchers concatenated into one TU compiled clean under `-Wall -Wextra
+  -Werror` with zero warnings.
+- **A REAL obstacle, confirmed by direct compile failure, not inferred**:
+  `PCREC_FEATURE_SET` and `PCREC_FEATURE_MODULES` are UNPREFIXED `#define`s
+  written directly into each generated `gen.c` BODY (not inside the
+  guarded header block, and not guarded at all). Two matchers compiled
+  with the SAME `--features` value redefine them identically — legal C,
+  no warning, confirmed compiling clean. Two matchers compiled with
+  DIFFERENT `--features` values (probed: `--features named-groups` vs.
+  `--features backrefs`) fail TU-concatenation with a genuine compiler
+  error under `-Werror`:
+
+  ```
+  batch_tu.c:537:9: error: 'PCREC_FEATURE_MODULES' redefined [-Werror]
+    537 | #define PCREC_FEATURE_MODULES "backrefs"
+        |         ^~~~~~~~~~~~~~~~~~~~~
+  batch_tu.c:4:9: note: this is the location of the previous definition
+      4 | #define PCREC_FEATURE_MODULES "named-groups"
+  ```
+
+  This is the reason both Stage B pools above are restricted to a single
+  homogeneous `--features` bucket (`collect_patterns.py
+  --require-features`) — a real, TU-batching-only obstacle (shape A,
+  link-batching, is UNAFFECTED: each member is still its own separate
+  preprocessing unit under `-c`, so two different `--features` values
+  never collide). Any [TT-4.2] design that batches at the TU level rather
+  than the link-step level owes this a real fix (moving the two
+  `#define`s inside the already-guarded ABI block, or dropping them from
+  the body and reading the values from a per-prefix comment instead, or
+  simply refusing to co-batch patterns with different `--features` sets)
+  — not assumed away.
