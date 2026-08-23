@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# studies/tt4_batching/census/shim/python3 — [TT-4.1] Stage A2 census shim.
+# Same transparent-wrapper shape as shim/gcc and shim/timeout: classifies
+# by the SCRIPT name (first argument ending .py, or the first non-option
+# argument's basename otherwise -- covers `python3 -c '...'` too, logged
+# as `other:-c`), execs the REAL python3 (TT4_REAL_PYTHON3) with identical
+# argv, logs one TSV record.
+
+set -u
+
+: "${TT4_REAL_PYTHON3:?TT4_REAL_PYTHON3 not set}"
+: "${TT4_LOG:?TT4_LOG not set}"
+
+script="unparsed"
+for a in "$@"; do
+    case "$a" in
+        *.py) script="$(basename "$a")"; break ;;
+        -*) continue ;;
+        *) script="$(basename "$a")"; break ;;
+    esac
+done
+
+start=$EPOCHREALTIME
+"$TT4_REAL_PYTHON3" "$@"
+rc=$?
+end=$EPOCHREALTIME
+wall="$(awk -v s="$start" -v e="$end" 'BEGIN{printf "%.6f", e - s}')"
+
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$start" "$wall" "script:$script" "${TT4_SECTION:-unknown}" "$rc" "python3" "$#" \
+    >> "$TT4_LOG"
+
+exit "$rc"

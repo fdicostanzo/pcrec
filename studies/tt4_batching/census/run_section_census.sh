@@ -3,8 +3,8 @@
 #
 # Runs each `test-*` Makefile section ONE AT A TIME (never overlapping with
 # another section — internal PROCS parallelism WITHIN a section is left as
-# the Makefile already sets it, default $(nproc)) with the gcc/cc/pcrec
-# shims (./shim/) wired onto PATH, and records:
+# the Makefile already sets it, default $(nproc)) with the gcc/cc/pcrec/
+# timeout/python3 shims (./shim/) wired onto PATH, and records:
 #   - one combined TSV invocation log ($OUTDIR/census.tsv) tagged per line
 #     with the section (TT4_SECTION) — see shim/gcc and shim/pcrec headers
 #     for the exact column format;
@@ -40,11 +40,22 @@ ALL_SECTIONS=(corpus cli reject registry parse gentimeout codegen vm \
     possessify rungselect counterk mrl prefilter altcls assertions atomic \
     backrefs encseam resource capturediff known-fail thread)
 
-# ---- resolve the REAL compiler and pcrec BEFORE the shim goes on PATH -----
+# ---- resolve the REAL compiler, pcrec, timeout, python3 BEFORE the shim
+# goes on PATH -----
 REAL_GCC="$(command -v gcc)"
+REAL_TIMEOUT="$(command -v timeout)"
+REAL_PYTHON3="$(command -v python3)"
 REAL_PCREC="$ROOT_DIR/build/pcrec"
 if [ -z "$REAL_GCC" ] || [ ! -x "$REAL_GCC" ]; then
     echo "run_section_census.sh: cannot resolve real gcc via command -v" >&2
+    exit 2
+fi
+if [ -z "$REAL_TIMEOUT" ] || [ ! -x "$REAL_TIMEOUT" ]; then
+    echo "run_section_census.sh: cannot resolve real timeout via command -v" >&2
+    exit 2
+fi
+if [ -z "$REAL_PYTHON3" ] || [ ! -x "$REAL_PYTHON3" ]; then
+    echo "run_section_census.sh: cannot resolve real python3 via command -v" >&2
     exit 2
 fi
 if [ ! -x "$REAL_PCREC" ]; then
@@ -52,10 +63,14 @@ if [ ! -x "$REAL_PCREC" ]; then
     exit 2
 fi
 REAL_GCC="$(readlink -f "$REAL_GCC")"
+REAL_TIMEOUT="$(readlink -f "$REAL_TIMEOUT")"
+REAL_PYTHON3="$(readlink -f "$REAL_PYTHON3")"
 REAL_PCREC="$(readlink -f "$REAL_PCREC")"
 
 export TT4_REAL_GCC="$REAL_GCC"
 export TT4_REAL_PCREC="$REAL_PCREC"
+export TT4_REAL_TIMEOUT="$REAL_TIMEOUT"
+export TT4_REAL_PYTHON3="$REAL_PYTHON3"
 
 # NOT exported globally: PATH/PCREC only get the shim wired in for an
 # actual census run (run_one_section) or the "WITH shim" validate leg — the
@@ -81,8 +96,15 @@ run_one_section() {
     local before after load_before load_after
     load_before="$(awk '{print $1}' /proc/loadavg)"
     before=$EPOCHREALTIME
+    # $REAL_TIMEOUT (absolute path, resolved before the shim went on PATH)
+    # here, NOT the bare `timeout` name -- this outer per-section wrapper is
+    # THIS SCRIPT's own instrumentation, not the workload being measured,
+    # and PATH is already set to SHIMMED_PATH for the command this line
+    # launches, so a bare `timeout` would resolve to shim/timeout and
+    # self-log an artifact call every section (caught before it shipped:
+    # 2026-08-23, Stage A2).
     PATH="$SHIMMED_PATH" PCREC="$SHIMMED_PCREC" TT4_SECTION="$sec" TT4_LOG="$log" \
-        timeout "$TT4_SECTION_TIMEOUT" \
+        "$REAL_TIMEOUT" "$TT4_SECTION_TIMEOUT" \
         /usr/bin/time -v -o "$OUTDIR/$sec.time" \
         make -C "$ROOT_DIR" "$target" \
         > "$OUTDIR/$sec.stdout" 2> "$OUTDIR/$sec.stderr"
