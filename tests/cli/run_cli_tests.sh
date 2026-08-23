@@ -390,7 +390,7 @@ EOF
     fi
 
     local runout runrc
-    runout="$(timeout 10 "$d/smoke" 2>"$d/smoke_stderr.txt")"
+    runout="$("$TIMEOUT_BIN" 10 "$d/smoke" 2>"$d/smoke_stderr.txt")"
     runrc=$?
     if [ $runrc -ge 124 ]; then
         fail "case7: library-API smoke test does not crash or hang" \
@@ -1897,7 +1897,7 @@ EOF
     fi
 
     local runout runrc
-    runout="$(timeout 10 "$d/k9" 2>"$d/k9_stderr.txt")"
+    runout="$("$TIMEOUT_BIN" 10 "$d/k9" 2>"$d/k9_stderr.txt")"
     runrc=$?
     if [ $runrc -ge 124 ]; then
         fail "case16: K9 embedded-NUL probe does not crash or hang" \

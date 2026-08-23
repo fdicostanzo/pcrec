@@ -41,7 +41,15 @@ SAB_COUNT=1
 # through _gen_cc_run, because removing the split as well would be a
 # DIFFERENT sabotage (the fire controls would catch pieces of it for the
 # wrong reason).
-SAB_BEFORE='    GEN_CC_LOG="$(timeout "$wall" bash -c \
+#
+# ANCHOR RE-DERIVED AGAIN 2026-08-23 ([TT-6]). The bare `timeout` binary name
+# was replaced with `"$TIMEOUT_BIN"` (tests/lib/timeout_bin.sh's resolved
+# choice, sourced at this file's own top) -- the uutils-vs-GNU coreutils
+# `timeout` finding, docs/dev/tt4_measurement.md. The sabotage's INTENT is
+# unchanged: it still removes both clocks and only the clocks, routing
+# through _gen_cc_run exactly as before; only the literal binary-name token
+# in the quoted anchor text moved.
+SAB_BEFORE='    GEN_CC_LOG="$("$TIMEOUT_BIN" "$wall" bash -c \
         '"'"'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; _gen_cc_run "$@"'"'"' \
         _ "$cpu" "$@" 2>&1)"'
 SAB_AFTER='    GEN_CC_LOG="$(_gen_cc_run "$@" 2>&1)"  # SABOTAGE S43: budget not applied (neither clock)'

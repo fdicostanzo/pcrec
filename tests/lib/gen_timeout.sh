@@ -5,6 +5,11 @@
 # again, identically, further down near gen_run; ONE implementation).
 GEN_LIB_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")/../.." && pwd)"
 
+# [TT-6] TIMEOUT_BIN — the coreutils `timeout` this file's own gen_cc wall
+# wrapper (below) invokes, resolved once by tests/lib/timeout_bin.sh (see
+# that file for the finding and the detection order).
+. "$GEN_LIB_ROOT/tests/lib/timeout_bin.sh"
+
 # [TT-3] ccache config, exported ONCE here rather than left to whichever
 # caller happens to set CCACHE=1 first. Both fixes below were found NEEDED
 # TOGETHER by a micro-probe (2026-08-21) after a full cold+warm `make test`
@@ -288,7 +293,7 @@ gen_cc() {
     # makes a hit near-instant, so the sum comfortably fits, and a real
     # miss on every source is still bounded by the same numbers a plain
     # compile was bounded by.
-    GEN_CC_LOG="$(timeout "$wall" bash -c \
+    GEN_CC_LOG="$("$TIMEOUT_BIN" "$wall" bash -c \
         'ulimit -S -t "$1" 2>/dev/null; ulimit -H -t $(($1 + 30)) 2>/dev/null; shift; _gen_cc_run "$@"' \
         _ "$cpu" "$@" 2>&1)"
     rc=$?

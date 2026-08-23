@@ -516,7 +516,7 @@ k22_tower() { # k22_tower <depth>  -> the pattern on stdout
 }
 # The POSITIVE CONTROL FIRST, because a guard that refuses everything also
 # makes the hang go away. Depth 15 is k22_repro.txt's own "compiles" row.
-if timeout 20 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22ok.c" \
+if "$TIMEOUT_BIN" 20 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22ok.c" \
         -- "$(k22_tower 15)" >/dev/null 2>&1; then
     ok "[K22] a depth-15 nested-{0,2} tower still compiles -- the product guard refuses only what the node cap was going to refuse anyway"
 else
@@ -524,7 +524,7 @@ else
 fi
 rm -f "$WORKDIR/k22.c"
 for k22d in 30 40; do
-    out="$(timeout 5 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22.c" \
+    out="$("$TIMEOUT_BIN" 5 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22.c" \
            -- "$(k22_tower "$k22d")" 2>&1)"; rc=$?
     if [ "$rc" -eq 0 ]; then
         bad "[K22] a depth-$k22d nested-{0,2} tower COMPILED; it replicates its body 2^$k22d times"

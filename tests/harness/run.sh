@@ -259,7 +259,7 @@ flush_block() {
     # which is the one compile a change to the compiler can actually slow down.
     # gen_timeout.sh derives it from the same flags everything else does, and
     # carries the measurement the numbers come from.
-    pcrec_err="$(timeout "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
+    pcrec_err="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx "${pflags[@]+"${pflags[@]}"}" -o "$bdir/gen.c" -- "$cur_pattern" 2>&1 >/dev/null)"
     local pcrec_rc=$?
 
     if [ "$cur_is_perr" = "1" ]; then
@@ -353,7 +353,7 @@ flush_block() {
         # deliberately: this loop runs thousands of sub-millisecond cells,
         # and watchdog's fixed per-invocation cost belongs on per-pattern
         # and long-run sites, not here. $RUN_SECS is computed once above.
-        out="$(timeout "$RUN_SECS" "$bdir/t" "$subj" "$pos")"
+        out="$("$TIMEOUT_BIN" "$RUN_SECS" "$bdir/t" "$subj" "$pos")"
         trc=$?
         if [ $trc -eq 124 ]; then
             record_fail "$cur_file" "$line" \

@@ -77,6 +77,16 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
+# [TT-6] resolves TIMEOUT_BIN once for this file's own bare `timeout` calls
+# below (this suite does not source tests/lib/gen_timeout.sh). NOTE: the
+# COMPILE-SPEED (cs_t0/cs_t1) and GCC-TIME (g_t0/g_t1) sections below bracket
+# their wall-clock measurement AROUND the `timeout` invocation itself, so
+# swapping to a faster binary changes the archived budget numbers in this
+# directory's CLAUDE.md (they predate this swap) -- see docs/testing.md.
+# THROUGHPUT's run_bdriver is unaffected: it reads secs=/mbps= that bdriver.c
+# reports about itself, not wall time around the wrapper.
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
+
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 SKIP_BUDGETS="${SKIP_BUDGETS:-0}"
@@ -379,7 +389,7 @@ cs_log="$cs_dir/pcrec_errors.log"
 # attribution if it fires.
 COMPILE_SPEED_TIMEOUT="${COMPILE_SPEED_TIMEOUT:-30}"
 cs_t0=$(now_ns)
-timeout "$COMPILE_SPEED_TIMEOUT" bash -c '
+"$TIMEOUT_BIN" "$COMPILE_SPEED_TIMEOUT" bash -c '
     pcrec="$1"; outdir="$2"; log="$3"; shift 3
     i=0
     fail=0
@@ -477,7 +487,7 @@ if [ $? -ne 0 ]; then
 else
     kw_pat="$(cat "$kw_pat_file")"
     kw_t0=$(now_ns)
-    kw_err="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen.c" -- "$kw_pat" 2>&1 >/dev/null)"
+    kw_err="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen.c" -- "$kw_pat" 2>&1 >/dev/null)"
     kw_rc=$?
     kw_t1=$(now_ns)
     kw_secs=$(elapsed_secs "$kw_t0" "$kw_t1")
@@ -503,7 +513,7 @@ else
     # same list with 2% of characters turned into 2-element classes
     kw_cls_pat="$(cat "$kw_dir/pattern_cls.txt")"
     kwc_t0=$(now_ns)
-    kwc_err="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen_cls.c" -- "$kw_cls_pat" 2>&1 >/dev/null)"
+    kwc_err="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$kw_dir/gen_cls.c" -- "$kw_cls_pat" 2>&1 >/dev/null)"
     kwc_rc=$?
     kwc_t1=$(now_ns)
     kwc_secs=$(elapsed_secs "$kwc_t0" "$kwc_t1")
@@ -557,7 +567,7 @@ for entry in "${GCC_TIME_PATTERNS[@]}"; do
     echo "  pattern '$pat' (~$nstates DFA states)"
 
     pc_t0=$(now_ns)
-    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$pdir/gen.c" -- "$pat" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx -o "$pdir/gen.c" -- "$pat" 2>&1 >/dev/null)"
     pc_rc=$?
     pc_t1=$(now_ns)
     if [ $pc_rc -ne 0 ]; then
@@ -575,7 +585,7 @@ for entry in "${GCC_TIME_PATTERNS[@]}"; do
         fi
 
         g_t0=$(now_ns)
-        gerr="$(timeout "$tmo" "$CC" "$flag" -std=gnu11 -c -o "$pdir/gen_$opt.o" "$pdir/gen.c" 2>&1)"
+        gerr="$("$TIMEOUT_BIN" "$tmo" "$CC" "$flag" -std=gnu11 -c -o "$pdir/gen_$opt.o" "$pdir/gen.c" 2>&1)"
         grc=$?
         g_t1=$(now_ns)
         gsecs=$(elapsed_secs "$g_t0" "$g_t1")
@@ -729,7 +739,7 @@ run_bdriver() {
     local secs_all=() mbps_all=()
     RB_SECS=""; RB_MBPS=""; RB_SPREAD=""
     for ((i = 0; i < BENCH_TRIALS; i++)); do
-        out="$(timeout "$tmo" $PIN "$bin" "$subj" "$iters" 2>&1)"
+        out="$("$TIMEOUT_BIN" "$tmo" $PIN "$bin" "$subj" "$iters" 2>&1)"
         rc=$?
         if [ $rc -eq 124 ]; then RB_RC="dnf"; RB_RAW="$out"; return; fi
         if [ $rc -ne 0 ]; then RB_RC="error"; RB_RAW="$out"; return; fi
@@ -760,14 +770,14 @@ build_bench_bin() {
     shift 2
     mkdir -p "$patdir"
     local perr
-    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx "$@" -o "$patdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx "$@" -o "$patdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         record_hard_error "pcrec failed to compile THROUGHPUT pattern '$pattern': $perr"
         BB_OK=0
         return
     fi
     local berr
-    berr="$(timeout 60 "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
+    berr="$("$TIMEOUT_BIN" 60 "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
         -I"$patdir" -o "$patdir/t" "$SCRIPT_DIR/bdriver.c" "$patdir/gen.c" 2>&1)"
     if [ $? -ne 0 ]; then
         record_hard_error "$CC failed to build bdriver for pattern '$pattern': $berr"

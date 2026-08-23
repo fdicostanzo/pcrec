@@ -238,7 +238,7 @@ for idx in "${!TS2_NAMES[@]}"; do
     dir="$WORKDIR/ts2_$name"
     mkdir -p "$dir"
 
-    perr="$(timeout "$TIMEOUT" "$PCREC" -p rx -o "$dir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$TIMEOUT" "$PCREC" -p rx -o "$dir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         bad "TS-2 '$name': pcrec failed to compile pattern '$pattern': $perr"
         continue
@@ -295,12 +295,12 @@ echo "== [TS-3] library concurrency, ${ITERS} iters/thread, 8 threads x 8 patter
 
 ts3_dir="$WORKDIR/ts3"
 mkdir -p "$ts3_dir"
-berr="$(timeout 120 "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+berr="$("$TIMEOUT_BIN" 120 "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
     -o "$ts3_dir/ts3" "$SCRIPT_DIR/ts3_driver.c" "${LIBSRCS[@]}" -lpthread 2>&1)"
 if [ $? -ne 0 ]; then
     bad "TS-3: $CC failed to build the TSan library+driver: $berr"
 else
-    out="$(timeout "$TIMEOUT" "$ts3_dir/ts3" "$ITERS" 2>&1)"; rc=$?
+    out="$("$TIMEOUT_BIN" "$TIMEOUT" "$ts3_dir/ts3" "$ITERS" 2>&1)"; rc=$?
     if echo "$out" | grep -q "WARNING: ThreadSanitizer"; then
         bad "TS-3: ThreadSanitizer reported a race -- see output below"
         echo "$out" >&2
@@ -401,12 +401,12 @@ else
             esac
         done
         SAB_LIBSRCS+=("$sab_src_dir/compile.c")
-        berr="$(timeout 120 "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
+        berr="$("$TIMEOUT_BIN" 120 "$CC" $TSANFLAGS $CFLAGS_COMMON -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
             -o "$sab3_dir/ts3_sab" "$SCRIPT_DIR/ts3_driver.c" "${SAB_LIBSRCS[@]}" -lpthread 2>&1)"
         if [ $? -ne 0 ]; then
             bad "TS-3 sabotage: $CC failed to build the sabotaged library+driver: $berr"
         else
-            sab_out="$(TSAN_OPTIONS="halt_on_error=1" timeout "$TIMEOUT" "$sab3_dir/ts3_sab" "$ITERS" 2>&1)"
+            sab_out="$(TSAN_OPTIONS="halt_on_error=1" "$TIMEOUT_BIN" "$TIMEOUT" "$sab3_dir/ts3_sab" "$ITERS" 2>&1)"
             if echo "$sab_out" | grep -q "SUMMARY: ThreadSanitizer: data race.*compile\.c.*pcrec_compile"; then
                 ok "TS-3 sabotage: TSan caught the planted race -- $(echo "$sab_out" | grep "SUMMARY: ThreadSanitizer")"
             else

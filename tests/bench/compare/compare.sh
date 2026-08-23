@@ -86,6 +86,10 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
+# [TT-6] resolves TIMEOUT_BIN once for this file's own bare `timeout` calls
+# below (this suite does not source tests/lib/gen_timeout.sh).
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"
+
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
@@ -197,7 +201,7 @@ extract_field() {
 run_driver() {
     local tmo="$1"; shift
     local out rc
-    out="$(timeout "$tmo" $PIN "$@" 2>&1)"
+    out="$("$TIMEOUT_BIN" "$tmo" $PIN "$@" 2>&1)"
     rc=$?
     DRV_RAW="$out"
     if [ $rc -eq 124 ]; then
@@ -247,7 +251,7 @@ echo
 echo "== BUILD =="
 
 ENG_PCRE2="$WORKDIR/eng_pcre2"
-berr="$(timeout "$BUILD_TIMEOUT" "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
+berr="$("$TIMEOUT_BIN" "$BUILD_TIMEOUT" "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
     -o "$ENG_PCRE2" "$SCRIPT_DIR/eng_pcre2.c" -ldl 2>&1)"
 if [ $? -ne 0 ]; then
     record_hard_error "failed to build eng_pcre2: $berr"
@@ -263,7 +267,7 @@ if [ ! -f "$ENG_PY" ]; then
 fi
 echo "  eng_py.py: $ENG_PY"
 
-probe_out="$(timeout 30 "$ENG_PCRE2" probe 2>&1)"
+probe_out="$("$TIMEOUT_BIN" 30 "$ENG_PCRE2" probe 2>&1)"
 probe_rc=$?
 JIT_LIB_AVAILABLE=0
 PCRE2_VERSION="unknown"
@@ -739,7 +743,7 @@ process_case() {
     # shellcheck disable=SC2206
     local extra_flags=(${CASE_FLAGS[$id]:-})
     local perr
-    perr="$(timeout "$PCREC_TIMEOUT" "$PCREC" -p rx "${extra_flags[@]}" -o "$cdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
+    perr="$("$TIMEOUT_BIN" "$PCREC_TIMEOUT" "$PCREC" -p rx "${extra_flags[@]}" -o "$cdir/gen.c" -- "$pattern" 2>&1 >/dev/null)"
     if [ $? -ne 0 ]; then
         record_hard_error "pcrec failed to compile case $id pattern '$pattern': $perr"
         CASE_VALID[$id]="error"; CASE_REASON[$id]="pcrec compile failure: $perr"
@@ -773,7 +777,7 @@ process_case() {
     fi
 
     local berr
-    berr="$(timeout "$BUILD_TIMEOUT" "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
+    berr="$("$TIMEOUT_BIN" "$BUILD_TIMEOUT" "$CC" -O2 -std=gnu11 -Wall -Wextra -Werror \
         -I"$cdir" -o "$cdir/eng_pcrec" "$SCRIPT_DIR/eng_pcrec.c" "$cdir/gen.c" 2>&1)"
     if [ $? -ne 0 ]; then
         record_hard_error "$CC failed to build eng_pcrec for case $id: $berr"
