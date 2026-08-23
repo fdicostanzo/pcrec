@@ -1304,6 +1304,24 @@ SHAPES TRIED: 30.  QUALIFYING (ceiling live AND H3-sharp violated): 16
       subj='aaqq'   true=(1,4)  erased-anchored-there=(1,3)
 ```
 
+**THE WINDOW END IS NOW READ OFF THE EMITTED PREFILTER, NOT MODELLED (R33
+C2-11).** The first version took ceiling-LIVENESS from the artifact and the
+window END from libpcre2 — inconsistent with the atomic lane's precedent this
+section cites, where the ends came from the emitted prefilter
+(`emit_vm.c:5299-5301`). R33's critic called `rx_prefilter` directly on the
+erasure's own artifact and the numbers CONFIRM the modelled ones:
+
+| subject | EMITTED window | true match (libpcre2) |
+|---|---|---|
+| `"aqq"` | **(0,2)** | (0,3) |
+| `"aqxyq"` | **(0,2)** | (0,5) |
+| `"aaqq"` | **(1,3)** | (1,4) |
+
+on the erasure `((?:a|aq)(?:xy){0,4}q)`, whose artifact stamps
+`RX_VM_PRUNE_CEILING "prefilter-window"`. So the hazard is measured on the
+machine that would actually run, not on a stand-in — which is what §5.4's own
+argument demands.
+
 **THE FIRST VERSION OF THIS SWEEP REPORTED 0 QUALIFYING OVER A SPACE IN WHICH
 0 WAS THE ONLY POSSIBLE ANSWER**, because every tail it used was nullable and
 the emitter raises no clamp site for a nullable-follow bounded repeat, so
@@ -1401,34 +1419,79 @@ of each body's component automaton and the expected product growth against the
 caps, with wave B's 38,009-against-32,000 as the precedent. MEASURED,
 `out/englook_sizing.txt`.
 
-**THE METHOD, stated so a panel can reject it.** The component a lookBEHIND
-body `L` needs is the recognizer for `Σ*·L`, and **pcrec's UNANCHORED FORWARD
-DFA for the pattern `L` IS that machine** — unanchoredness is the automaton's
-own self-loop (D58's "Why" paragraph), which is precisely the `Σ*` prefix. The
-component a lookAHEAD needs is `reverse(L)·Σ*`, and pcrec's REVERSE machine
-for the same pattern is that. So the probe compiles the BODY ALONE and reads
-**the emitter's own array dimensions** out of the emitted C —
-`len(rx_forward_is_accepting[])` for states, `len(rx_forward_next_state[]) /
-states` for classes — with no model in between and nothing derived by the
-probe itself. The caps are `PCREC_MAX_DFA_STATES_GOTO = 10000` and
+**THE METHOD — AND ITS FIRST VERSION WAS REFUTED BY R33 C2-1.** That version
+claimed *"pcrec's UNANCHORED FORWARD DFA for the pattern `L` IS the `Σ*·L`
+recognizer — unanchoredness is the automaton's own self-loop"*. **The identity
+is FALSE.** `nfa_wrap_unanchored` (`src/ir/nfa.c:766-781`) adds the self-loop
+as the **lowest-priority** start alternative and D3 ACCEPT-PRUNING then kills
+that thread at the first accept — so **every accepting state in the emitted
+forward table is a dead sink**. A `Σ*·L` predicate machine must be TOTAL and
+must RE-ACCEPT at every later position (`(?<=foo)` has to answer YES at offset
+6 of `"foofoo"` having already accepted at 3); this one stops answering after
+the first occurrence. It is a **leftmost-occurrence search automaton**, not the
+component.
+
+**AND IT UNDER-COUNTS, which is the half that breaks a bound.** Truncation at
+the first accept deletes states whenever a branch is prefix-dominated:
+`a|ab` emits **2** forward states where `|D(Σ*·L)|` is **3**; `ab|abc` emits
+**3** where it is **4**. A decline rule written against an under-count declines
+too little — the failure direction that matters — and §2.5 ships
+`(?<=a|bc)`-shaped bodies outright, so the under-counted class is inside this
+module's own population.
+
+**SO §5.8 NOW REPORTS TWO COLUMNS**, and every number below says which:
+
+- **MEASURED-LOWER** — the emitted forward/reverse table dimensions, read off
+  the artifact exactly as before (`len(rx_forward_is_accepting[])` for states,
+  `next_state/states` for classes), **relabelled as a LOWER BOUND** on the
+  component. Still worth reporting: it is the only in-pcrec number, and the
+  forward/reverse asymmetry it shows is the tell C2-1 used.
+- **PROTOTYPE-EXACT** — `|D(Σ*·L)|` computed by an explicit subset
+  construction in the probe. A **MODEL** (pcrec does not build this machine),
+  marked PROTOTYPE everywhere, and **self-checked at import** on C2-1's own
+  two cells plus five hand-derivable ones; if the construction is wrong the
+  probe says so instead of publishing a number.
+
+**IT IS THE SUBSET SIZE, NOT THE MINIMAL DFA'S**, and one of this lane's own
+fixtures established the difference: `a|b` was written expecting **2** — the
+minimal DFA for "ends in a or b" really has 2 states — and the construction
+answers **3**, because a subset construction distinguishes "ended with a" from
+"ended with b". The construction is right and the expectation was wrong. **The
+subset size is the correct column**, because `[ENG-LOOK]`'s
+estimate-before-committing rule must decline on what it is about to BUILD, not
+on what `src/opt/minimize.c` would leave afterwards.
+
+**ANCHOR-BEARING BODIES ARE EXCLUDED FROM THE PROTOTYPE COLUMN AND SAY SO.**
+`(?!\z)` and `(?=\n?\z)` contain ANCHORS, which are not letters of `Σ`;
+`Σ*·L` is the wrong question for them and `[ENG-LOOK]`'s row handles them as
+the delayed-acceptance case rather than as a product component.
+
+The caps are `PCREC_MAX_DFA_STATES_GOTO = 10000` and
 `PCREC_MAX_DFA_STATES_TABLE = 32000` (`src/core/limits.h:47-49`).
 
 **THE COMPONENTS ARE SMALL.** Every body in the assertion-family expansions
 and every body in an enumerable real-lookaround population:
 
-| body | origin | forward st × cls | reverse st × cls |
-|---|---|---|---|
-| `\w` | `\b`, `\B`'s four bodies | 2 × 2 | 2 × 2 |
-| `\n` | `(?m)^`, `(?m)$` | 2 × 2 | 2 × 2 |
-| `\n?\z` | `\Z` and default `$` | 5 × 2 | 3 × 2 |
-| `foo` | ENG-LOOK's own `(?<=foo)bar` | 4 × 3 | 4 × 3 |
-| `\d` | ENG-LOOK's own `(?<!\d)\d{4}(?!\d)` | 2 × 2 | 2 × 2 |
-| `,` `[a-z]` `[^"']` `\w+` | the construct table's | 2 × 2 | 2 × 2 |
-| `ab` / `abc` / `a\|bc` | fixed bodies, incl. §2.5's two-branch cell | 3-4 × 3-4 | same |
-| `\d{3}` / `\d{4}` | counted | 4-5 × 2 | same |
-| `https?` | a realistic literal-ish body | 6 × 5 | 6 × 5 |
-| **controls** | `\d{4}-\d{2}-\d{2}` / `[a-z]{12}` / `(?:ab\|cd){8}` / `(?:a\|b\|c\|d){10}` | 11-25 × 2-5 | same |
-| **control** | `[01]*1[01]{12}` — bench case (f)'s shape | **12288 × 3** | 14 × 3 |
+| body | origin | fwd st × cls (LOWER) | rev st × cls (LOWER) | `\|D(Σ*·L)\|` (PROTOTYPE) |
+|---|---|---|---|---|
+| `\w` | `\b`, `\B`'s four bodies | 2 × 2 | 2 × 2 | 2 |
+| `\n` | `(?m)^`, `(?m)$` | 2 × 2 | 2 × 2 | 2 |
+| `\n?\z` | `\Z` and default `$` | 5 × 2 | 3 × 2 | n/a — ANCHOR |
+| `foo` | ENG-LOOK's own `(?<=foo)bar` | 4 × 3 | 4 × 3 | 4 |
+| `\d` | ENG-LOOK's own `(?<!\d)\d{4}(?!\d)` | 2 × 2 | 2 × 2 | 2 |
+| `,` `[a-z]` `[^"']` | the construct table's | 2 × 2 | 2 × 2 | 2 |
+| `\w+` | unbounded — a lookAHEAD only | 2 × 2 | 2 × 2 | n/a — unbounded |
+| `ab` / `abc` | fixed literal runs | 3 × 3 / 4 × 4 | same | 3 / 4 |
+| **`a\|bc`** | **§2.5's two-branch cell** | **3 × 4** | 3 × 4 | **4** ← the UNDER-COUNT |
+| `\d{3}` / `\d{4}` | counted | 4 × 2 / 5 × 2 | same | 4 / 5 |
+| `https?` | a realistic literal-ish body | 6 × 5 | 6 × 5 | 6 |
+| **controls** | `\d{4}-\d{2}-\d{2}` / `[a-z]{12}` | 11 × 3 / 13 × 2 | same | 11 / 13 |
+| **control** | `(?:ab\|cd){8}` / `(?:a\|b\|c\|d){10}` | 25 × 5 / 11 × 2 | same | n/a — nested alternation |
+| **control** | `[01]*1[01]{12}` — bench case (f)'s shape | **12288 × 3** | 14 × 3 | n/a — unbounded |
+
+**`a|bc` IS THE ROW THAT SHOWS C2-1's UNDER-COUNT INSIDE THIS MODULE'S OWN
+SHIPPED POPULATION**: emitted 3, prototype 4. Everywhere else the two agree,
+which is why the conclusion below survives the correction.
 
 **THE PRODUCT BOUND, and the split is the result.** The bound is
 `|D(main)| × Π|D(component)|` — an UPPER bound, which is the right quantity
@@ -1437,13 +1500,23 @@ must be written against a bound and not a hope. Reported beside the
 **states × classes** product, because wave B's own over-cap number was that
 second quantity and not the first.
 
+**The component factor is the PROTOTYPE where the body is modelled and the
+emitted LOWER BOUND where it is not**; each row of the probe's output says
+which.
+
 ```
 ROWS: 126.  Over the 32,000 STATE cap: 18.
+ROWS WHERE THE PROTOTYPE EXCEEDS THE EMITTED LOWER BOUND: 6
   CONTROL rows     (a deliberately huge body or main): 62, 18 over cap
   NON-CONTROL rows (the assertion expansions + the enumerable
                     real lookaround population)      : 64,  0 over cap
   largest state product in the population: 150,994,944 -- 4,719x the cap
 ```
+
+**SIX ROWS WERE UNDER-STATED BY THE FIRST VERSION** and the conclusion is
+unchanged: on the non-control population the corrected product still clears
+the cap on all 64 rows. That is the honest form of C2-1's fix — the method was
+wrong, the numbers moved, and the ruling did not.
 
 **The vacuity guard is what makes the zero worth reading.** A table of
 "0 over cap" over a population containing no cell that COULD be over measures
@@ -1583,16 +1656,36 @@ expansion is supposed to be equivalent to.
   blocks                          468
   behavioural cells            10,120     (+ 67 capture-slot cells = 10,187)
 
-  QUALIFYING blocks               270 of 468   (58%)
-  QUALIFYING behavioural cells  8,495 of 10,120 (84%)
+  QUALIFYING blocks               263 of 468   (56%)
+  QUALIFYING behavioural cells  8,260 of 10,120 (82%)
 
   disqualified, by rule:
     Q1 perr / no behavioural cell     87 blocks     0 cells
     Q2 no substitutable assertion     87 blocks   754 cells
     Q3 assertion inside a class        0 blocks     0 cells
-    Q4 scoped (?m: or (?-m)           24 blocks   871 cells
+    Q4 modifier state not constant    31 blocks  1,106 cells
     Q5 \K inside a substituted body    0 blocks     0 cells
+    Q6 block marked # pcre2-deviates   0 blocks     0 cells
 ```
+
+**THESE NUMBERS MOVED IN THE R33 FIX ROUND, from 270/8,495, and the reason is
+worth more than the numbers.** C3-1 found Q4 implemented as a SUBSTRING TEST
+(`"(?m:" in pat`) and predicted the fix would be *inert today*, naming
+`(?im:`-style multi-letter sets as the miss. **The first half is right and the
+prediction is not.** This corpus has **zero** multi-letter modifier sets — so
+that half IS inert as filed — but the substring test also missed **seven
+NON-LEADING bare `(?m)` blocks**:
+
+```
+\Ga|(?m)^b      a\Kb(?m)$      a(?m)$      a(?m)^b
+a(?m)^b|c       a$(?m)         (?m)^a|(?m)b
+```
+
+Every one has a multiline state that CHANGES partway through the pattern, so
+`^` and `$` mean different things at different offsets — and the old rule
+would have substituted them under a single assumption that is false for part
+of the pattern. **The fix is not inert; it removes 7 blocks and 235 cells that
+would have been substituted WRONG.**
 
 **THE FIVE QUALIFICATION RULES, each with the reason it exists:**
 
@@ -1604,20 +1697,32 @@ expansion is supposed to be equivalent to.
   have no lookaround definition (§6.1). 87 blocks, 754 cells.
 - **Q3 — no substitutable assertion inside a CHARACTER CLASS.** `[\b]` is the
   BACKSPACE byte and `[^a]` is a negation; substituting either produces a
-  different pattern, not a rewritten one. **It costs 0 blocks on this corpus
-  and the rule is still required** — a `sed`-based driver would be wrong the
-  first time a class contained one, and the backrefs lane's own `sed 's/\\1//'`
-  defect is the precedent for exactly this.
-- **Q4 — no scoped `(?m:` or `(?-m)`.** `^` and `$` mean different things
-  under different multiline states, so a textual driver must know the state at
-  each occurrence. With `(?m)` leading and unscoped the state is constant and
-  knowable; with a scoped group it is not, and resolving it is a parser — which
-  is what the driver is trying not to be. **The most expensive rule: 24
-  blocks, 871 cells.** A driver that later grows a scope tracker recovers
-  them, and §11's follow-on says so.
+  different pattern, not a rewritten one. **The class walk consumes one
+  literal `]` after `[` or `[^` (R33 C3-2)** — PCRE2's literal-first rule, so
+  `[]\b]` is a class containing `]` and a backspace and not a class that
+  closed immediately. **It costs 0 blocks on this corpus and the rule is still
+  required** — a `sed`-based driver would be wrong the first time a class
+  contained one, and the backrefs lane's own `sed 's/\\1//'` defect is the
+  precedent for exactly this.
+- **Q4 — THE MODIFIER STATE MUST BE CONSTANT, and the rule is a PARSER, not
+  a substring test (R33 C3-1).** `^` and `$` mean different things under
+  different multiline states, so a textual driver must know the state at each
+  occurrence. A **bare leading `(?m)`** makes it constant and knowable;
+  everything else does not — a scoped `(?im:...)`, a mid-pattern `(?-m)`, or a
+  second `(?m)` after anything at all. The rule therefore finds every `(?`
+  followed by a modifier LETTER SET (optionally `-` and a second set)
+  terminated by `:` or `)`, and asks whether `m` appears on either side of the
+  `-`, exempting only the bare leading `(?m)`. **The most expensive rule: 31
+  blocks, 1,106 cells.** A driver that later grows a real scope tracker
+  recovers them, and §11 says so.
 - **Q5 — `\K` must not land inside a substituted body**, since PCRE2 refuses
   it (err 199). It cannot, given the bracketing rule below, and it is counted
   anyway so the claim is a number rather than an argument: 0.
+- **Q6 — a block marked `# pcre2-deviates` (D68) is EXCLUDED (R33 C3-3).**
+  That marker says pcrec deliberately diverges from libpcre2 on the block, so
+  the `A == C` arm — which compares against libpcre2 — would false-FAIL on it.
+  **Costed 0/0**: no such block exists in this corpus today, and the rule is
+  here so a future one is excluded rather than reported as a driver failure.
 
 **THE BRACKETING RULE, and it is what keeps the corpus's cells reusable.**
 Every multi-branch expansion is wrapped `(?:...)` before insertion, so `a\bc`
@@ -2089,62 +2194,105 @@ number is reported as **cells / failures / triage outcomes**, not as a pass.
 
 In order, each wave landable and testable on its own.
 
-**WAVE A — the width analysis, alone.** `pcrec_maxw` in `src/opt/mrl.c` beside
-`pcrec_minw`, with that file's `default:`-less exhaustive switch and
-`PCREC_W_UNBOUNDED`. **No lookaround anywhere.** It is testable on its own
-against `pcrec_minw` on the whole corpus (`maxw >= minw` for every node of
-every pattern in `tests/`), and landing it first means the analysis §2.5 rests
-on has a green suite behind it before any construct depends on it.
-*Landing bar: `make test` green; a `maxw >= minw` sweep over the corpus; the
-`-Wswitch` alarm demonstrated (add a dummy enumerator, count, revert).*
+**WAVE A — the width analysis, alone.** `pcrec_maxw` in `src/opt/mrl.c`
+beside `pcrec_minw`, with that file's `default:`-less exhaustive switch and
+`PCREC_W_UNBOUNDED`. **No lookaround anywhere.** Testable on its own against
+`pcrec_minw` over the whole corpus (`maxw >= minw` for every node of every
+pattern in `tests/`).
+*Landing bar: `make test` green; the `maxw >= minw` sweep; the `-Wswitch`
+alarm demonstrated (add a dummy enumerator, count, revert).*
 
-**WAVE B — the parse hook and the refusals.** `src/parse/mod_lookaround.c`,
-`pcrec_laport_group`, the six registry rows wired, the `A_LOOK` node kind with
-its three fields and its widths, §2.5's per-branch check, §2.7's `\K` check.
-**No emitter arm yet** — every accepted pattern hits the emitter's
-`ctx_fail`. *Landing bar: `tests/lookaround/refused.rxt` and `gated.rxt`
-green; the reject table green; `--list-syntax` shows six rows still `unbuilt`;
-the identity gate green on all three axes (nothing compiles differently yet,
-so this is the wave where byte-identity is cheapest to establish).*
+**WAVE A2 — THE WALKER ARMS, budgeted by file (R33 C2-3).** Adding `A_LOOK`
+makes **23 `case A_ATOMIC`-shaped sites in 10 files** a `-Wswitch` error under
+`make strict`. §11's first version named four of them. The budget:
 
-**WAVE C — the LOOKAHEAD lowering.** `vm_look`'s positive, negative and
-non-atomic arms; `vm_nullable`'s `A_LOOK` arm; the two slot families; `mrl.c`
-and `maxw`'s `A_LOOK` arms; `nfa.c`'s epsilon arm; SR-8 already stamps.
-*Landing bar: `lookahead.rxt`, `captures.rxt`, `quantified.rxt`,
-`nonatomic.rxt` green; the four lookahead rows read `built`; S-LA1..S-LA5,
-S-LA9, S-LA14..S-LA16 all DETECTED.*
+| file | arms | what the `A_LOOK` arm must decide |
+|---|---|---|
+| `src/opt/atomic.c` | 5 | **`pcrec_has_atomic` (`:37`) and `pcrec_has_bref` (`:295`)** — the two predicates §5.6's ruling depends on; `pcrec_has_lookaround` is placed HERE beside them, and `pcrec_atomic_discharge` (`:264`) is the post-discharge precedent §5.6(4) mirrors |
+| `src/opt/revdet.c` | 4 | must DECLINE — `rd_node` clears `Ast.possessive` on the reversed copy (`:178-179`), the shape `atomic_groups_design.md` §6.5 found |
+| `src/opt/possessify.c` | 3 | must not possessify ACROSS the assertion boundary (and see S-LA1/C2-13) |
+| `src/gen/emit_vm.c` | 5 | `vm_emit`, `vm_nullable`, `vm_cost`, `vm_cuts`'s walk, the listing |
+| `src/opt/altcls.c` | 1 | decline |
+| `src/opt/mrl.c` | 1 | 0 (§3.1(d)), plus `maxw`'s new arm from wave A |
+| `src/opt/select_engine.c` | 1 | SR-8 stamps; no new predicate (§5.1) |
+| `src/ir/nfa.c` | 1 | the epsilon arm (§5.2) |
+| `src/parse/parse.c` | 1 | **`pcrec_is_bare_anchor` (`:99`)** — decides whether a bare construct as a group's whole body is wrapped so it can be QUANTIFIED, and §2.6 ships quantified lookaround |
+| `src/parse/mod_backrefs.c` | 1 | descend |
 
-**WAVE D — the SEAM ENTRY and the LOOKBEHIND.** `PCREC_ENCE_BACK_STEP`, the
-`enc_byte.c` row, the `A_LOOK` arm's mask OR, §3.4's emitted shape, the
-codegen fixture rows and **the second exact-count guard with its literal N
-written into the check**. *Landing bar: `lookbehind.rxt`,
-`lookbehind_widths.rxt`, `startpos.rxt` green; all six rows `built`; the
-[M5-SEAM] check green with the new fixtures and its guard's N stated in the
-commit message; S-LA6..S-LA8, S-LA11 DETECTED.*
+*Landing bar: `make strict` clean; every arm's decision recorded in the commit;
+`pcrec_has_lookaround` placed and its post-discharge call site matching
+`pcrec_has_atomic`'s.*
 
-**WAVE E — the PREFILTER predicate.** §5.6's one predicate at **three** sites,
-codegen rule 1 extended to assert on both sources for lookaround as it does
-for atomic. *Landing bar: `prefilter.rxt` green — including the measured
-witness `((?:a(?!q)|aq)(?:xy){0,4}q)` on `"aqq"`; S-LA12 and S-LA13 DETECTED;
-the identity gate green on all three axes including `-fno-prefilter`.*
+**WAVE B+C — THE PARSE HOOK AND THE LOOKAHEAD LOWERING, TOGETHER (R33 C2-2).**
+The first version split them and gave wave B the bar *"six rows still
+`unbuilt`"*. **That bar is unmeetable**: D65 derives `built` from the PORT's
+`ExtResult` at `WANT_RESULT` (`src/parse/syntax_dump.c:544-575`) and never
+runs the emitter, so a wave that wires `pcrec_laport_group` flips all six rows
+to `built` while every accepted pattern still hits the emitter's `ctx_fail` —
+shipping a compliance index that says `built` for six constructs that cannot
+compile, the precise lie D65's column exists to prevent. Folding the two waves
+is the simpler of C2-2's two remedies and needs no throwaway refusal path.
+Deliverables: `src/parse/mod_lookaround.c`, `pcrec_laport_group`, the six rows
+wired, `A_LOOK` with its three flags and its width table, §2.5's per-branch
+check, §2.7's `\K` check, `vm_look`'s positive/negative/non-atomic arms,
+§3.2.1's scoping, `vm_nullable`'s arm, the two slot families, `nfa.c`'s
+epsilon arm.
+*Landing bar: `refused.rxt`, `gated.rxt`, `lookahead.rxt`, `captures.rxt`,
+`quantified.rxt` and **`nonatomic_ahead.rxt`** green; `--list-syntax` shows
+the **three lookahead-side rows** (`(?=`, `(?!`, `(?*`) reading `built` and
+the three lookbehind-side rows still `unbuilt` — a REAL transition, not one
+that happened a wave earlier; S-LA1..S-LA5, S-LA9, S-LA14..S-LA17 DETECTED.*
+
+**(R33 C2-9 and C2-2's passing note, both applied above: `nonatomic.rxt` is
+SPLIT — `nonatomic_ahead.rxt` lands here and the `(?<*` / `(*naplb:` cells go
+to waves D and F — and "the four lookahead rows" was a miscount, there are
+THREE.)**
+
+**WAVE D — THE SEAM ENTRY AND THE LOOKBEHIND.** `PCREC_ENCE_BACK_STEP`, the
+`enc_byte.c` row, the mask OR, §3.4's emitted shape **including the
+`$_BACK_STEP_NONE` checks (C1-4)**, the codegen fixture rows and **the second
+exact-count guard with its literal N written into the check**.
+*Landing bar: `lookbehind.rxt`, `lookbehind_widths.rxt`, `startpos.rxt`,
+`nonatomic_behind.rxt` green; all six rows `built`; the [M5-SEAM] check green
+with its guard's N stated in the commit message; S-LA6..S-LA8, S-LA11
+DETECTED.*
+
+**WAVE E — THE PREFILTER PREDICATE.** §5.6's one predicate at **three** sites,
+codegen rule 1 extended to assert on both sources, and **`--emit-ir`'s
+description counted as the fourth reader (C2-10)**.
+*Landing bar: `prefilter.rxt` green — including the measured witness
+`((?:a(?!q)|aq)(?:xy){0,4}q)` on `"aqq"`; S-LA12 and S-LA13 DETECTED; the
+identity gate green on all three axes.*
 
 **WAVE E2 — THE SUBSTITUTION DRIVER (§6.3).** `tests/lookaround/
 run_expansion_diff.sh`: the literal expansion table (transcribed from D66 /
-[DD-11], NOT derived from the compiler), the five qualification rules, the
-`(?:...)` bracketing, both substitution policies, and the two-comparison check.
-Landable the moment Wave D closes, because the expansions need lookbehind.
-*Landing bar: the driver green over its measured population — **270 blocks /
-8,495 cells**, P1 and P2 — with the per-rule disqualification counts printed
-and asserted against §6.3's numbers, so a driver that silently stopped
-substituting shows up as a population change rather than as a pass. A
-`--policy=none` control arm (substitute nothing) must report 8,495 trivially
-equal cells, or `A == B` is not comparing two lowerings at all.*
+[DD-11], NOT derived from the compiler), the five qualification rules **as
+PARSERS not substring tests (C3-1)**, the `(?:...)` bracketing, both
+substitution policies, and the two-comparison check.
+*Landing bar: the driver green over its measured population — **263 blocks /
+8,260 cells**, P1 and P2 — with the per-rule disqualification counts printed
+and asserted against §6.3's numbers; a `--policy=none` control arm must report
+8,260 trivially equal cells, or `A == B` is not comparing two lowerings at
+all. **Plus a `laexpand` mech arm (C2-7)** wired in `run_sabotage_matrix.sh`,
+with SKIP-is-not-a-pass exercised in the failing direction as `pc3` was.*
 
-**WAVE F — the alpha spellings.** §8.2's name-table module field, the twelve
+**WAVE F — THE ALPHA SPELLINGS.** §8.2's name-table module field, the twelve
 names, the six proposed rows if Frank rules for them (§14 ASK 3).
-*Landing bar: `alpha_spellings.rxt` green; all twelve refuse-or-compile with
-module `lookaround`; the SR-8 capability check green with witnesses for every
-new row; the compliance page refreshed via the `compliance-refresh` skill.*
+*Landing bar: `alpha_spellings.rxt` and the remaining `nonatomic` cells green;
+all twelve refuse-or-compile with module `lookaround`; the SR-8 capability
+check green with witnesses for every new row; **the three reject-table rows
+`(*pla:a)`, `(*naplb:a)`, `(*negative_lookbehind:a)` move out of
+`tests/reject/run_reject_tests.sh:1355-1361`'s `verbs` loop, and `(*pla)`'s
+FORM-error row at `:1295` is asserted UNCHANGED** (a form mismatch is decided
+before module attribution, so it must survive — C2-6); a `lookaround` mech arm
+wired (C2-7); the compliance page refreshed via the `compliance-refresh`
+skill.*
+
+**[M6.6.2]'s DOC SWEEP (R33 C3-4, C3-5), listed here rather than edited by
+this lane because they are in `tests/assertions/`, not this design's file:**
+`tests/assertions/CLAUDE.md:24` defines `\Z` as `(?=\n?\Z)`, which is
+CIRCULAR — the correct expansion is `(?=\n?\z)`; and `:53` goes false the day
+this module lands. Both are one-line edits owed at wave F.
 
 **THE CLOSE ([M6.6.4])** is D69-tier: a module close is the **FULL** 118-row
 matrix, plus the battery, the gate, the compliance refresh and the archive.
