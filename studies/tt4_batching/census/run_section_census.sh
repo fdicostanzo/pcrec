@@ -56,8 +56,13 @@ REAL_PCREC="$(readlink -f "$REAL_PCREC")"
 
 export TT4_REAL_GCC="$REAL_GCC"
 export TT4_REAL_PCREC="$REAL_PCREC"
-export PCREC="$SHIM_DIR/pcrec"
-export PATH="$SHIM_DIR:$PATH"
+
+# NOT exported globally: PATH/PCREC only get the shim wired in for an
+# actual census run (run_one_section) or the "WITH shim" validate leg — the
+# "WITHOUT shim" validate leg below must see the tree's ordinary PATH/PCREC
+# untouched, or the comparison is not testing what it claims to.
+SHIMMED_PATH="$SHIM_DIR:$PATH"
+SHIMMED_PCREC="$SHIM_DIR/pcrec"
 
 run_one_section() {
     local sec="$1" log="$2"
@@ -65,7 +70,7 @@ run_one_section() {
     local before after load_before load_after
     load_before="$(awk '{print $1}' /proc/loadavg)"
     before=$EPOCHREALTIME
-    TT4_SECTION="$sec" TT4_LOG="$log" \
+    PATH="$SHIMMED_PATH" PCREC="$SHIMMED_PCREC" TT4_SECTION="$sec" TT4_LOG="$log" \
         /usr/bin/time -v -o "$OUTDIR/$sec.time" \
         make -C "$ROOT_DIR" "$target" \
         > "$OUTDIR/$sec.stdout" 2> "$OUTDIR/$sec.stderr"
@@ -95,7 +100,7 @@ if [ "${1:-}" = "--validate" ]; then
     log="$OUTDIR/${sec}.validate.tsv"
     : > "$log"
     tstart=$EPOCHREALTIME
-    TT4_SECTION="$sec" TT4_LOG="$log" \
+    PATH="$SHIMMED_PATH" PCREC="$SHIMMED_PCREC" TT4_SECTION="$sec" TT4_LOG="$log" \
         make -C "$ROOT_DIR" "$target" > "$OUTDIR/${sec}.withvalidate.out" 2>&1
     rc_on=$?
     tend=$EPOCHREALTIME
