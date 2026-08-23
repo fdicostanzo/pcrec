@@ -1,0 +1,186 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_spellings.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 77a10e2 2026-08-23
+# RUN FROM REPO COMMIT        : d1d4378 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/premises.txt
+#     ?? docs/design/lookaround_measurements/out/spellings.txt
+# RUN DATE   : 2026-08-23T13:43:51-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3  : 3.14.4
+la_oracle SELFCHECK: none
+
+========================================================================
+AXIS A1 -- COMPILE STATUS of every spelling, both oracles
+========================================================================
+spelling                                 | libpcre2 10.46               | python3 re
+----------------------------------------------------------------------------------------------------
+(?=a)b                                   | ok                           | ok
+(?!a)b                                   | ok                           | ok
+(?<=a)b                                  | ok                           | ok
+(?<!a)b                                  | ok                           | ok
+(?*a)b                                   | ok                           | PatternError: unknown extension ?* at position 1
+(?<*a)b                                  | ok                           | PatternError: unknown extension ?<* at position 1
+(*pla:a)b                                | ok                           | PatternError: nothing to repeat at position 1
+(*nla:a)b                                | ok                           | PatternError: nothing to repeat at position 1
+(*plb:a)b                                | ok                           | PatternError: nothing to repeat at position 1
+(*nlb:a)b                                | ok                           | PatternError: nothing to repeat at position 1
+(*napla:a)b                              | ok                           | PatternError: nothing to repeat at position 1
+(*naplb:a)b                              | ok                           | PatternError: nothing to repeat at position 1
+(*positive_lookahead:a)b                 | ok                           | PatternError: nothing to repeat at position 1
+(*negative_lookahead:a)b                 | ok                           | PatternError: nothing to repeat at position 1
+(*positive_lookbehind:a)b                | ok                           | PatternError: nothing to repeat at position 1
+(*negative_lookbehind:a)b                | ok                           | PatternError: nothing to repeat at position 1
+(*non_atomic_positive_lookahead:a)b      | ok                           | PatternError: nothing to repeat at position 1
+(*non_atomic_positive_lookbehind:a)b     | ok                           | PatternError: nothing to repeat at position 1
+(*nanla:a)b                              | err 195 @7 ((*alpha_assertion) not recognized) | PatternError: nothing to repeat at position 1
+(*nanlb:a)b                              | err 195 @7 ((*alpha_assertion) not recognized) | PatternError: nothing to repeat at position 1
+(?<!*a)b                                 | err 109 @4 (quantifier does not follow a repeatable item) | PatternError: nothing to repeat at position 4
+(?=)                                     | ok                           | ok
+(?!)                                     | ok                           | ok
+(?<=)                                    | ok                           | ok
+(?<!)                                    | ok                           | ok
+a(?=)b                                   | ok                           | ok
+a(?!)b                                   | ok                           | ok
+a(?<=)b                                  | ok                           | ok
+a(?<!)b                                  | ok                           | ok
+
+========================================================================
+AXIS A2 -- THE DISCRIMINATORS: what each spelling actually DOES
+========================================================================
+Each block gives the answer on subjects chosen so that a WRONG reading
+of the construct gives a different answer.
+
+--- DIRECTION + POLARITY, on one alphabet -----------------------
+pattern                    subject  | libpcre2               | python re              | note
+(?=a)\w                    'ab'     | (0,1)                  | (0,1)                  | positive lookahead: asserts 'a' next, consumes it
+(?=a)\w                    'ba'     | (1,2)                  | (1,2)                  |   ... at offset 1
+(?!a)\w                    'ab'     | (1,2)                  | (1,2)                  | negative lookahead: refuses 'a' here
+(?!a)\w                    'ba'     | (0,1)                  | (0,1)                  |   ...
+(?<=a)\w                   'ab'     | (1,2)                  | (1,2)                  | positive lookbehind: 'a' BEHIND the cursor
+(?<=a)\w                   'ba'     | nomatch                | nomatch                |   ...
+(?<!a)\w                   'ab'     | (0,1)                  | (0,1)                  | negative lookbehind
+(?<!a)\w                   'ba'     | (0,1)                  | (0,1)                  |   ...
+
+--- ZERO WIDTH: the assertion consumes nothing ------------------
+pattern                    subject  | libpcre2               | python re              | note
+^(?=a)a$                   'a'      | (0,1)                  | (0,1)                  | lookahead then the same byte: matches
+^(?=a).$                   'a'      | (0,1)                  | (0,1)                  |   ... and `.` is what consumes it
+^(?=aa)a$                  'a'      | nomatch                | nomatch                | body longer than the subject: fails
+^a(?<=a)$                  'a'      | (0,1)                  | (0,1)                  | lookbehind at end-of-subject over the byte just read
+
+--- ATOMICITY -- registry.c:702-704's own discriminator, reproduced 
+pattern                    subject  | libpcre2               | python re              | note
+(?=(a|ab))\1$              'abab'   | nomatch                | nomatch                | ATOMIC lookahead: keeps its FIRST success
+(?*(a|ab))\1$              'abab'   | (2,4) g:(2,4)          | ERR                    | NON-ATOMIC (? spelling: retries
+(*napla:(a|ab))\1$         'abab'   | (2,4) g:(2,4)          | ERR                    | NON-ATOMIC verb spelling: same construct
+(*pla:(a|ab))\1$           'abab'   | nomatch                | ERR                    | ATOMIC verb spelling: same as (?=)
+
+--- ATOMICITY of the LOOKBEHIND pair ----------------------------
+pattern                    subject  | libpcre2               | python re              | note
+^(?<*(a|ba))\1             'ba'     | nomatch                | ERR                    | non-atomic lookbehind, at pos 0 (vacuous)
+(?<*(a|ba))c               'bac'    | (2,3) g:(0,2)          | ERR                    | non-atomic positive lookbehind
+(?<=(a|ba))c               'bac'    | (2,3) g:(0,2)          | ERR                    | atomic positive lookbehind, same body
+(*naplb:(a|ba))c           'bac'    | (2,3) g:(0,2)          | ERR                    | verb spelling of the non-atomic one
+
+--- VERB vs (? SPELLING equivalence, one cell each --------------
+pattern                    subject  | libpcre2               | python re              | note
+(*pla:a)\w                 'ab'     | (0,1)                  | ERR                    | (*pla:) == (?=)
+(?=a)\w                    'ab'     | (0,1)                  | (0,1)                  | 
+(*nlb:a)\w                 'ba'     | (0,1)                  | ERR                    | (*nlb:) == (?<!)
+(?<!a)\w                   'ba'     | (0,1)                  | (0,1)                  | 
+
+========================================================================
+AXIS A3 -- THE DEGENERATE BODIES, on real subjects
+========================================================================
+pattern          subject  | libpcre2           | python re         
+a(?=)b           'ab'     | (0,2)              | (0,2)             
+a(?!)b           'ab'     | nomatch            | nomatch           
+a(?<=)b          'ab'     | (0,2)              | (0,2)             
+a(?<!)b          'ab'     | nomatch            | nomatch           
+(?=)             ''       | (0,0)              | (0,0)             
+(?!)             ''       | nomatch            | nomatch           
+(?=)a            'a'      | (0,1)              | (0,1)             
+a(?!)|ab         'ab'     | (0,2)              | (0,2)             
+(?:(?!))|a       'a'      | (0,1)              | (0,1)             
+
+========================================================================
+AXIS A4 -- QUANTIFIED LOOKAROUND
+========================================================================
+PCRE2 accepts a quantifier on a lookaround; python3 `re` DOES NOT.
+The interesting cell is the EMPTY-ITERATION rule: a lookaround is
+zero-width, so a `*` over one can never make progress.
+
+pattern                | libpcre2 compile           | python compile            
+(?=a)*                 | ok                         | ok                        
+(?=a)+                 | ok                         | ok                        
+(?=a)?                 | ok                         | ok                        
+(?=a){2}               | ok                         | ok                        
+(?=a){0,3}             | ok                         | ok                        
+(?!a)?                 | ok                         | ok                        
+(?!a)*                 | ok                         | ok                        
+(?<=a)*                | ok                         | ok                        
+(?<!a)+                | ok                         | ok                        
+(?:(?=a))*             | ok                         | ok                        
+(?:(?=a))+             | ok                         | ok                        
+(?:(?!a))*             | ok                         | ok                        
+(?=a)*+                | ok                         | ok                        
+(?=(a))*               | ok                         | ok                        
+
+pattern                  subject  | libpcre2                 | python re               
+^(?=a)*a$                'a'      | (0,1)                    | (0,1)                   
+^(?=a)+a$                'a'      | (0,1)                    | (0,1)                   
+^(?:(?=a))*a$            'a'      | (0,1)                    | (0,1)                   
+^(?:(?=a))*b$            'b'      | (0,1)                    | (0,1)                   
+^(?=a){2}a$              'a'      | (0,1)                    | (0,1)                   
+^(?!b)*a$                'a'      | (0,1)                    | (0,1)                   
+^(?=(a))*a$              'a'      | (0,1) g:(0,1)            | (0,1) g:(0,1)           
+^(?=(a))+a$              'a'      | (0,1) g:(0,1)            | (0,1) g:(0,1)           
+^(?:(?=(a)))*a$          'a'      | (0,1) g:(0,1)            | (0,1) g:(0,1)           
+
+========================================================================
+AXIS A5 -- NESTING and the constructs a lookaround may CONTAIN
+========================================================================
+pattern                        subject    | libpcre2                 | python re               
+(?=(?<=a)b)b                   'ab'       | (1,2)                    | (1,2)                   
+(?=(?<=a)b)b                   'cb'       | nomatch                  | nomatch                 
+(?<=(?=a)a)b                   'ab'       | (1,2)                    | (1,2)                   
+(?<=a(?=b))b                   'ab'       | (1,2)                    | (1,2)                   
+(?<!(?<=a)b)c                  'abc'      | nomatch                  | nomatch                 
+(?=a)(?=\w)a                   'a'        | (0,1)                    | (0,1)                   
+(?=(?>a|ab))ab                 'ab'       | (0,2)                    | (0,2)                   
+(?=(a))\1b                     'ab'       | (0,2) g:(0,1)            | (0,2) g:(0,1)           
+(a)(?=\1)                      'aa'       | (0,1) g:(0,1)            | (0,1) g:(0,1)           
+(a)(?<=\1)                     'aa'       | (0,1) g:(0,1)            | (0,1) g:(0,1)           
+(?=a\b)a                       'a b'      | (0,1)                    | (0,1)                   
+(?<=\ba)b                      'ab'       | (1,2)                    | (1,2)                   
+(?<=^a)b                       'ab'       | (1,2)                    | (1,2)                   
+(?=a$)a                        'a'        | (0,1)                    | (0,1)                   
+(?=a*+)a                       'aaa'      | (0,1)                    | (0,1)                   
+
+========================================================================
+AXIS A6 -- LOOKAROUND AT PATTERN START and the MATCH START it reports
+========================================================================
+This is the cell §5's prefilter argument is built on: erasing the
+lookaround gives a SUPERSET LANGUAGE, but the reported match START of
+the erased pattern is what the hybrid would hand the VM.
+
+pattern                  subject        | libpcre2         | python re        | erased pattern -> its span
+(?=\w)\w+                '  abc'        | (2,5)            | (2,5)            | \w+        -> (2,5)
+(?<=,)\w+                'ab,cd'        | (3,5)            | (3,5)            | \w+        -> (0,2)
+(?<!\w)\w+               'ab cd'        | (0,2)            | (0,2)            | \w+        -> (0,2)
+(?!ab)\w\w               'abcd'         | (1,3)            | (1,3)            | \w\w       -> (0,2)
+\w+(?=,)                 'ab,cd'        | (0,2)            | (0,2)            | \w+        -> (0,2)
+\w+(?<=b)                'abc'          | (0,2)            | (0,2)            | \w+        -> (0,3)

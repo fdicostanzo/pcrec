@@ -1,0 +1,152 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [M6.6.1] module `lookaround` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/lookaround_measurements/probes/probe_captures.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 77a10e2 2026-08-23
+# RUN FROM REPO COMMIT        : d1d4378 (lane/ladesign)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/lookaround_measurements/out/captures.txt
+#     ?? docs/design/lookaround_measurements/out/lookbehind_length.txt
+#     ?? docs/design/lookaround_measurements/out/premises.txt
+#     ?? docs/design/lookaround_measurements/out/spellings.txt
+# RUN DATE   : 2026-08-23T13:43:52-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [M6.6.1] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3  : 3.14.4
+la_oracle SELFCHECK: none
+
+==============================================================================
+C1 -- POSITIVE lookaround that SUCCEEDS: captures RETAINED?
+==============================================================================
+pattern                            subject    | libpcre2 10.46             | python3 re                 | note
+(?=(a))a                           'a'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | positive lookahead, body captured 'a'
+(?=(a)(b))ab                       'ab'       | (0,2) g:(0,1) (1,2)        | (0,2) g:(0,1) (1,2)        | two groups inside
+(?<=(a))b                          'ab'       | (1,2) g:(0,1)              | (1,2) g:(0,1)              | positive LOOKBEHIND's capture
+(?<=(a)(b))c                       'abc'      | (2,3) g:(0,1) (1,2)        | (2,3) g:(0,1) (1,2)        | two groups inside a lookbehind
+(?=(a|b))\w                        'b'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | which alternative the group holds
+a(?=(b))b                          'ab'       | (0,2) g:(1,2)              | (0,2) g:(1,2)              | capture then the same text consumed after
+(?=(?:x)?(a))a                     'a'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | an optional that did not participate
+
+==============================================================================
+C2 -- NEGATIVE lookaround whose ASSERTION SUCCEEDS: captures DISCARDED?
+==============================================================================
+pattern                            subject    | libpcre2 10.46             | python3 re                 | note
+(?!(a))b                           'b'        | (0,1) g:_                  | (0,1) g:_                  | body failed outright: nothing was written
+(?!(a)x)ab                         'ab'       | (0,2) g:_                  | (0,2) g:_                  | body captured 'a' THEN failed on x -- retained?
+(?<!(a)x)b                         'axb'      | nomatch                    | nomatch                    |   ... the lookbehind mirror (assertion FAILS here)
+(?<!(z)x)b                         'axb'      | (2,3) g:_                  | (2,3) g:_                  |   ... assertion SUCCEEDS, body wrote nothing
+(?!(a)x)(a)                        'ab'       | (0,1) g:_ (0,1)            | (0,1) g:_ (0,1)            | a SECOND group outside, to prove the answer is read
+(?!(?:(a)|(b))z)\w                 'az'       | (1,2) g:_ _                | (1,2) g:_ _                | which of two inner groups, if either
+
+==============================================================================
+C3 -- POSITIVE lookaround that FAILS AFTER PARTIALLY CAPTURING
+==============================================================================
+pattern                            subject    | libpcre2 10.46             | python3 re                 | note
+# The observable shape: the failing lookaround is in a branch whose
+# SIBLING matches, so the search continues and the group is readable.
+(?:(?=(a)x)y|(a))                  'ab'       | (0,1) g:_ (0,1)            | (0,1) g:_ (0,1)            | lookahead captures 'a', fails on x; branch 2 matches
+(?:(?=(a)x)y|.)                    'ab'       | (0,1) g:_                  | (0,1) g:_                  | same, sibling consumes anything
+(?:(?<=(a)x)y|(b))                 'axb'      | (2,3) g:_ (2,3)            | (2,3) g:_ (2,3)            | lookbehind mirror
+(?:(?=(a))x|(a))                   'ab'       | (0,1) g:_ (0,1)            | (0,1) g:_ (0,1)            | lookahead SUCCEEDS then the follow fails
+(?=(a))x|(a)                       'ab'       | (0,1) g:_ (0,1)            | (0,1) g:_ (0,1)            | same without the group wrapper
+(?:(?=(a)|(b))x|\w)                'ab'       | (0,1) g:_ _                | (0,1) g:_ _                | two inner alternatives, follow fails
+
+==============================================================================
+C4 -- A LOOKAROUND UNDER A QUANTIFIER
+==============================================================================
+pattern                            subject    | libpcre2 10.46             | python3 re                 | note
+^(?=(a))*a$                        'a'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | star over a positive lookahead with a capture
+^(?=(a))+a$                        'a'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | plus
+^(?=(a)){2}a$                      'a'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | exact 2
+^(?:(?=(a)))*a$                    'a'        | (0,1) g:(0,1)              | (0,1) g:(0,1)              | wrapped in a non-capturing group
+^(?=(a))*b$                        'b'        | (0,1) g:_                  | (0,1) g:_                  | the body never succeeds: how many iterations?
+^(?!(a))*b$                        'b'        | (0,1) g:_                  | (0,1) g:_                  | star over a NEGATIVE lookahead
+^(?<=(a))*                         'a'        | (0,0) g:_                  | (0,0) g:_                  | star over a lookbehind at pos 0
+a(?<=(a))*b                        'ab'       | (0,2) g:(0,1)              | (0,2) g:(0,1)              |   ... mid-pattern
+
+# THE EMPTY-ITERATION QUESTION. A lookaround is zero-width, so `*` over
+# one can never make progress. Does PCRE2 loop forever, iterate once,
+# or refuse? Timed, because 'it did not hang' is the measurement:
+    ^(?=a)*a$                  'a'    -> (0,1)                in 0.0000 s
+    ^(?:(?=a))*a$              'a'    -> (0,1)                in 0.0000 s
+    ^(?:(?=a)|b)*a$            'a'    -> (0,1)                in 0.0000 s
+    ^(?:(?!x))*a$              'a'    -> (0,1)                in 0.0000 s
+    ^(?:(?=(a)))*a$            'a'    -> (0,1) g:(0,1)        in 0.0000 s
+
+==============================================================================
+C5 -- \K, \G and the reported MATCH START
+==============================================================================
+pattern                            subject    | libpcre2 10.46             | python3 re                 | note
+a\Kb                               'ab'       | (1,2)                      | ERR                        | \K outside any lookaround, the control
+    (?<=\Ka)x / (?=a\K)x etc are COMPILE ERRORS -- see probe_lookbehind_length.py B1
+
+# PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK: does the runtime expose the knob,
+# and what does it do? Measured, because err 199's own text names it.
+    bits that enable \K in a lookaround: ['0x40']
+    (?=a\K)x   extra=0       -> err 199 (\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK))
+    (?=a\K)x   extra=0x40    -> ok
+    (?<=\Ka)x  extra=0x40    -> ok
+    (?<=a*)x   extra=0x40    -> err 125 (length of lookbehind assertion is not limited)
+               ^ CONTROL: an UNRELATED lookbehind error must survive,
+                 or the bit is disabling checks wholesale rather than this one
+    a\Kb       extra=0x40    -> ok
+               ^ CONTROL: plain \K, which was already legal, still is
+    the documentation-order guess 0x8000 -> err 199 (\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK))
+
+# \G inside a lookaround (the assertions module's own construct):
+    (?=\Ga)a       subj='aa'   sp=0 -> (0,1)
+    (?=\Ga)a       subj='aa'   sp=1 -> (1,2)
+    (?<=\Ga)b      subj='ab'   sp=0 -> (1,2)
+
+==============================================================================
+C6 -- BUDGET: is there unbounded work INSIDE a lookaround body?
+==============================================================================
+pattern                            subject    | libpcre2 10.46             | python3 re                 | note
+# D42.6 asks whether a lookaround body's steps must be counted. If a
+# body can burn unbounded work while the assertion as a whole is
+# zero-width, then a budget that does not count them is not a budget.
+#
+# THE FIRST VERSION OF THIS AXIS WAS VACUOUS and the reason is worth
+# more than the axis. It used `(?=(a+)+c)x` on 'a'*n + 'b' and measured
+# 0.0000 s at every n -- not because the body is cheap but because
+# PCRE2's own START OPTIMIZATION sees a REQUIRED CODE UNIT ('x') that
+# the subject does not contain and never runs the match at all. A probe
+# whose subject cannot reach the construct reports a confident zero.
+# Both arms are kept below so the vacuity is visible rather than fixed
+# away -- and the same optimization is a fact §5's prefilter section
+# needs, since it is PCRE2 doing exactly what a prefilter does.
+
+pattern                  n      | libpcre2                     | seconds
+^(a+)+$                  n=16   | nomatch                      | 0.0041
+^(a+)+$                  n=20   | nomatch                      | 0.0656
+^(a+)+$                  n=24   | MATCH-LIMIT/ERR: pcre2_match error -47: match limit | 0.2509
+^(?=(a+)+$)              n=16   | nomatch                      | 0.0041
+^(?=(a+)+$)              n=20   | nomatch                      | 0.0657
+^(?=(a+)+$)              n=24   | MATCH-LIMIT/ERR: pcre2_match error -47: match limit | 0.2508
+^(a|a)+$                 n=16   | nomatch                      | 0.0120
+^(a|a)+$                 n=20   | nomatch                      | 0.1906
+^(a|a)+$                 n=24   | MATCH-LIMIT/ERR: pcre2_match error -47: match limit | 0.3044
+^(?=(a|a)+$)             n=16   | nomatch                      | 0.0121
+^(?=(a|a)+$)             n=20   | nomatch                      | 0.1902
+^(?=(a|a)+$)             n=24   | MATCH-LIMIT/ERR: pcre2_match error -47: match limit | 0.3040
+^(?=(a+)+$)x             n=16   | nomatch                      | 0.0000
+^(?=(a+)+$)x             n=20   | nomatch                      | 0.0000
+^(?=(a+)+$)x             n=24   | nomatch                      | 0.0000
+^(?!(a+)+$)y             n=16   | nomatch                      | 0.0000
+^(?!(a+)+$)y             n=20   | nomatch                      | 0.0000
+^(?!(a+)+$)y             n=24   | nomatch                      | 0.0000
+
+# READ THIS AS: `^(?=(a+)+$)` costs the SAME as `^(a+)+$` at every n and
+# reaches libpcre2's own match limit (error -47) at the same n. The work
+# a lookaround body does is real, is unbounded in the subject, and is
+# metered by PCRE2 through the same counter as everything else. The
+# `x`-suffixed row is the vacuity control and reads 0.0000 throughout.
