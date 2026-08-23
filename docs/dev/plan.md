@@ -278,6 +278,44 @@ differentiator — see [M4-SUBST]'s beyond-PCRE2 direction. Developer-
 experience directions that serve the niche are the [V-*] rows below,
 including V-G/V-H (added this session).
 
+- [TT-4] STATE:not-started — BATCHED COMPILATION IN THE TEST HARNESS
+  (chartered by Frank, 2026-08-22 22:3x, "charter TT-4 after M6.5 closes,
+  measurement stage first"; START AFTER [M6.5] CLOSES — the next
+  infrastructure row, pulled forward because every lane today paid the
+  cost). THE PROBLEM, measured: `make test` is ~120 core-minutes (~10 min at
+  -j12) across ~20,000 tiny compile-and-link gcc invocations; the sequential
+  per-section wall times from the [M6.5.2] lane's timestamped run were
+  assertions+identity gates 458 s (the four identity gates compile ~1,200
+  corpus patterns TWICE, ~2,400 gcc calls), the .rxt corpus 392 s (~1,800
+  patterns, pcrec→gcc→link→run each), rungselect 242 s, counterk 166 s, mrl
+  115 s, atomic diff 100 s. [TT-3] showed caching cannot rescue this shape
+  (compile-and-link single invocations; warm ccache 4x SLOWER). THE IDEA
+  (Frank's, and [V-E]'s multi-pattern compilation unit with the harness as
+  its first real customer): one translation unit per BATCH of N matchers
+  (each already carries its own prefix — the emitter was designed for
+  coexistence) plus one dispatching driver — one gcc call and one link per
+  batch; the saving is the fixed per-call cost (process start, pcrec.h
+  parse, link) times N, largest in the gcc-bound suites; matcher RUN time
+  unchanged. STAGES: (1) MEASUREMENT FIRST (Frank's order) — instrument
+  tests/harness/run.sh and the main differential drivers to split wall
+  time per section into pcrec / gcc / link / run and count invocations over
+  one `make test`; identify the two worst sections; prototype batching on
+  them in a scratch driver and REPORT THE MEASURED SPEED-UP before any
+  harness change (TT-3's lesson: the obvious idea measured as a slowdown).
+  (2) DESIGN, gated on (1)'s numbers: batching at the gcc/link step ONLY —
+  per-pattern .c artifacts keep existing so every per-artifact instrument
+  (codegen rules, identity gates, D46 stamps, the anchor tripwire, the D27
+  cells' perr attribution) reads exactly what it reads today; FAILURE
+  ISOLATION (a member that fails to compile or crashes under a sanitizer
+  must not take its batch down — fall back to per-pattern for the failing
+  members and attribute the failure to the right pattern; D45's per-pattern
+  gen-timeout semantics preserved; GENCFLAGS rides through); an emitter-side
+  question only if two matchers cannot coexist in one TU (then [V-E]'s work
+  is the prerequisite, measured not assumed). (3) LANDING: the harness
+  batches; `make test` wall time and core-minutes re-measured on the same
+  box; the sanitizer batteries and mech ride the same path; docs/testing.md
+  records the before/after. NOT in scope: the .rxt-as-specification format
+  (a separate discussion Frank has deferred; separable from batching).
 - [REL-META] STATE:not-started — META-PLAN ROW for FIRST-RELEASE +
   CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
   "we are within a few solid efforts of having a first release"; this

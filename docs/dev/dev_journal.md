@@ -12052,3 +12052,26 @@ reserved with zero rows, S103's wiring a close residual). The corrected
 D27 corpus merged into tests/backrefs/d27/ (207 cells). Tripwire on the
 final tree re-run; full mech matrix launched (build/mech_m65.log, 118
 rows, PROCS=4); the quiet-box gate follows.
+
+[TT-4] CHARTERED (Frank, 22:3x, during the mech run; committed with the
+[M6.5] close because mech archives HEAD per sabotage): batched
+compilation in the test harness — one TU per batch of N matchers plus a
+dispatching driver, one gcc call and link per batch — MEASUREMENT STAGE
+FIRST per Frank's order, then design gated on the numbers (gcc/link-step
+batching only, per-pattern artifacts preserved, failure isolation, D45
+semantics), then landing. Starts after [M6.5] closes. The .rxt-as-
+specification format is a separate, deferred discussion.
+
+FULL MECH MATRIX on 5edba64 (build/mech_m65.log, 22:25 → 23:26, PROCS=4):
+118 rows, 0 anomalies (the tripwire's exact-count check held), and TWO
+UNDETECTED — both backrefs rows: S107 (bref-not-nullable: vm_nullable
+answers false for A_BREF) and S108 (rdshape-accepts-bref: the reverse-
+deterministic rung accepts a reference in its body). Seventeen of the
+module's nineteen rows DETECTED, incl. S102 prefilter-on-backref, S103
+publish-at-open, S104 mark-one-run-member and S120 the tiebreak. The two
+undetected rows are a finding, not a shrug: either no cell in the
+corpus/differentials reaches the behaviour the sabotage changes (a
+nullable reference under an empty-iteration guard; a reference inside a
+revdet-eligible body), or the sabotage is unobservable and the row's
+claim is wrong. Fix lane opened (lane/brfix from 5edba64); the close
+waits on it and on the gate.
