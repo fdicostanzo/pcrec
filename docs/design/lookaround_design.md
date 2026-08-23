@@ -1285,7 +1285,7 @@ entitled to give:**
 
 ---
 
-## 6. THE ASSERTION-FAMILY REPLACEMENTS, and the D66 / DD-14 hand-off
+## 6. THE ASSERTION-FAMILY REPLACEMENTS, and the D66 / DD-14 hand-off (charter (v), and Frank's 2026-08-23 addition)
 
 **Frank, 2026-08-23:** *"for lookaround, consider as test cases/design
 examples the replacements we were discussing, e.g. `^` under `(?m)`."*
