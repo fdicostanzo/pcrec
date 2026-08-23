@@ -193,6 +193,13 @@ run_one() {
         SAB_COUNT=1
         SAB_HARNESS_TARGET=""
         SAB_DOC_FIGURE=""
+        # [M6.5.2-FIX] THE OPTIONAL SECOND SITE. Reset here with the rest, so
+        # a two-site row cannot leak its extra site into the next row's
+        # subshell -- the same reason SAB_COUNT is reset rather than defaulted.
+        SAB_FILE2=""
+        SAB_BEFORE2=""
+        SAB_AFTER2=""
+        SAB_COUNT2=1
         # shellcheck disable=SC1090
         source "$sab_path"
         for v in SAB_ID SAB_FILE SAB_SUITES SAB_DESC SAB_BEFORE SAB_AFTER; do
@@ -223,6 +230,46 @@ run_one() {
                 "$SAB_ID" "$SAB_FILE" "$work/apply.log"
             [ "$KEEP" = "1" ] || rm -rf "$work"
             exit 0
+        fi
+
+        # [M6.5.2-FIX] THE OPTIONAL SECOND SITE, and it exists because a
+        # ONE-HUNK MUTATION CANNOT FALSIFY A DEFENCE-IN-DEPTH PAIR. S108 is the
+        # case that forced it: `rd_shape` declining a backreference body and
+        # `pcrec_uniq_iteration`'s Glushkov model declining the same body are
+        # INDEPENDENT gates on the same input, so removing either one changes
+        # no emitted byte and the row scored UNDETECTED against correct code.
+        # Removing BOTH reaches the wall the row was written to test.
+        #
+        # OPTIONAL BY CONSTRUCTION: 117 of 118 rows set no SAB_FILE2 and take
+        # the branch below zero times, so this cannot change what a one-site
+        # row means. It is deliberately not a general N-site list -- a row
+        # needing three coordinated edits is describing a refactor, not a
+        # plausible mistake, and should be several rows or none.
+        #
+        # SAME APPLIER, SAME LOUDNESS: the second site goes through replace.py
+        # like the first, so a drifted second anchor is an ANOMALY rather than
+        # a silent no-op, and scripts/m6read_check_sab_anchors.py checks BOTH
+        # sites (it reports SITES as well as rows, so a second site that no
+        # instrument reads is impossible by construction).
+        if [ -n "$SAB_FILE2" ]; then
+            for v in SAB_BEFORE2 SAB_AFTER2; do
+                if [ -z "${!v}" ]; then
+                    printf '%s\t%s\tAPPLY-FAILED\t-\t-\tANOMALY (SAB_FILE2 set but %s empty)\n' \
+                        "$SAB_ID" "$SAB_FILE2" "$v"
+                    [ "$KEEP" = "1" ] || rm -rf "$work"
+                    exit 0
+                fi
+            done
+            printf '%s' "$SAB_BEFORE2" > "$work/before2.txt"
+            printf '%s' "$SAB_AFTER2"  > "$work/after2.txt"
+            if ! python3 "$SCRIPT_DIR/lib/replace.py" \
+                    "$tree/$SAB_FILE2" "$work/before2.txt" "$work/after2.txt" \
+                    "$SAB_COUNT2" > "$work/apply2.log" 2>&1; then
+                printf '%s\t%s\tAPPLY-FAILED\t-\t-\tANOMALY (second-site anchor drifted from HEAD -- see %s)\n' \
+                    "$SAB_ID" "$SAB_FILE2" "$work/apply2.log"
+                [ "$KEEP" = "1" ] || rm -rf "$work"
+                exit 0
+            fi
         fi
 
         if ! make -C "$tree" -j"$JOBS" all CC="$CC" > "$work/build.log" 2>&1; then
