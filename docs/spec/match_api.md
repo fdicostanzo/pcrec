@@ -1108,6 +1108,7 @@ sorted the identical way — measured directly
 `alpha`/`mu`/`zeta` order), the evidence behind this choice
 (docs/dev/decisions.md D59) rather than an invented pcrec-only
 convention.
+**[M6.5.2], 2026-08-22 — superseded for duplicated names: the key is now (name asc, number asc); see §6.0.**
 
 **This does not fix the key for `ref`-bearing rows, and that is
 deliberate.** Every row this module produces has `ref` NULL/empty (§2's
@@ -1172,6 +1173,32 @@ DFA artifact stamps, having no resume stack to bound (measured:
 `.work_budget = -1` on a `--no-captures` build). `0` is not a legal
 output value and `-1` is not a legal input value. §8 restates this at
 the options side.
+
+### 6.0 Duplicate-name runs — the sort key and the caller's algorithm ([M6.5.2], 2026-08-22)
+
+**The sort key is (name asc, number asc).** [M6.3] fixed it as `strcmp` on the
+NAME "for every row this module can produce today" — a name-only key, written
+when duplicate names were impossible. Module `backrefs` ships `(?J)`, so a name
+may now label a RUN of rows; within a run the rows are ordered by ASCENDING
+group number, and that tiebreak is a CORRECTNESS requirement, not a
+reproducibility nicety: `mod_named_groups.c` PREPENDS declarations and the
+emitter walks from the head, so a name-only comparator on a stable sort yields
+DESCENDING numbers within a run and the algorithm below would select the
+wrong member. The emitted comparator is `src/gen/emit_dfa.c`'s `ng_cmp_name`;
+`tests/codegen/run_codegen_tests.sh`'s `[M6.5-DUPNAMES]` check reads the rows
+off the artifact and asserts them STRICTLY increasing in (name, number) — the
+strictness is the comparator-totality half. Sabotage S120 removes the tiebreak.
+
+**The caller's algorithm for a name that may be duplicated.** `bsearch` by
+name returns SOME row of the run; walk BACK to the run's first row (the
+previous row with a different name, plus one), then FORWARD to the first row
+whose slot PARTICIPATED in the match (both offsets set). That row is the
+group a by-name reference resolved to — PCRE2's documented "first of the set
+that is set" rule, measured (backrefs design §8.3: first of the name-run by
+ascending number that is SET, where "set" includes set-to-empty) — and it is
+the SAME algorithm the emitted `\k<name>` resolution uses, so the caller and
+the matcher cannot disagree about which member a name meant. A run none of
+whose members participated is an unset name.
 
 ### 6.1 `rx_info` is link-time, not runtime, data
 

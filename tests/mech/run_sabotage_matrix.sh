@@ -74,9 +74,13 @@
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
 # sabotage naming a word that does not exist yet is scored UNKNOWN-SUITE and
-# cannot be scored AT ALL. Eight of [M6.5.2]'s seventeen rows depend on
-# `brefdiff`, `dupnamesdiff` or `brefidentity`, so the registration precedes
-# the measurement rather than following it.
+# cannot be scored AT ALL. Fifteen of [M6.5.2]'s NINETEEN rows (S102-S120)
+# depend on `brefdiff` or `dupnamesdiff`, so the registration precedes the
+# measurement rather than following it. `brefidentity` is REGISTERED AND
+# RESERVED with ZERO rows as of the merge (2026-08-22): the one-shot identity
+# gate is not a per-sabotage suite today; the lane's own candidate for it is
+# S103 (publish-at-open perturbs A_CAP emission, which backref-FREE patterns
+# share) — on the [M6.5] close's residual list, not wired by a merge-time guess.
 #
 # THE TWO NEWEST WORDS WERE A BLOCKER, NOT A DETAIL (R31 C11). This vocabulary
 # is CLOSED — the `*)` arm below scores an unrecognised word as UNKNOWN-SUITE —
