@@ -79,7 +79,7 @@ SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="brefdiff harness"
 SAB_HARNESS_TARGET="tests/backrefs/nested.rxt"
 SAB_DESC="rd_shape ACCEPTS a backreference in a quantifier body instead of declining. MEASURED UNOBSERVABLE (2026-08-22): the arm's verdict does flip, but pcrec_uniq_iteration's Glushkov model declines every such body independently (why=model-error, possessify.c's own A_BREF arm), so rd_reverse and its internal-error wall are never reached and the artifact is byte-identical. Documented NOT A CONTROL -- see this row's header for the measurement and for the two-hunk sabotage that would be one"
-SAB_DOC_FIGURE="MEASURED 2026-08-22: UNDETECTED, and expected to stay so. Emitted artifact byte-identical to clean on all four probe bodies; rd_reverse never called (uniq_iteration declines first, why=model-error). Not a corpus gap -- see header."
+SAB_DOC_FIGURE="MEASURED 2026-08-22, run_sabotage_matrix.sh S108 at a1cd705: UNDETECTED -- ZERO CHECKS FAILED, corpus 0fail/36pass, brefdiff 0fail/11pass (1 rows, undetected: 1, anomalies: 0). Expected and DOCUMENTED, not a finding: the emitted artifact is byte-identical to clean on all four probe bodies because rd_reverse is never called (uniq_iteration declines first, why=model-error). Not a corpus gap -- see header."
 SAB_COUNT=1
 SAB_BEFORE='        case A_BREF:
             S->ok = false;
