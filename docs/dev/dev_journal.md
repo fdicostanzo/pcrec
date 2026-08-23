@@ -12310,3 +12310,64 @@ Process: the classifier blocked a pkill/setsid relaunch of the battery
 (and a plain ps right after); the tool's native background mode ran the
 85-minute chain fine. Sonnet lanes idle after every background exit —
 the watchdog now nudges on exit instead of waiting a tick.
+
+## 2026-08-23 (EDT), thirty-seventh session (part 3) — [TT-7]/[TT-8] closed (chain 2h26m → ~1h26m); [M6.6.1] lookaround design APPROVED through R33's three rounds; K30
+
+THE CHAIN, measured end to end on today's tree: test 10:16 (-j12; corpus
+alone 6:44→1:04 isolated) / strict 6 s / san 45:50 (ADOPTED: one combined
+-fsanitize=address,undefined,leak axis, vs ubsan 26:58 + asan 36:45 =
+63:43 on the same HEAD — identical 1569 PASS lines, zero reports; battery
+is now test → strict → san → lint; ubsan/asan stay opt-in singles) / lint
+33 s / mech 28:43 (full 118 rows at PROCS=6, undetected 0, anomalies 0;
+PROCS=4 measured 36:35; rows byte-identical across widths EXCEPT S18's
+reject figure = shards+1 → K30: run_reject_tests.sh's --list-syntax guard
+sits outside the shard gate; the first full pass through the two-site
+applier was the expected no-op). Yesterday 2h26m → ~1h26m, −41%, compiler
+untouched. [TT-8]'s lane one-liner for the 20-row sample was INVALID (the
+matrix takes ONE id prefix) — the sweep became two full matrices, better
+evidence anyway. D69 cuts the matrix from most merges besides.
+
+[M6.6.1] — the lookaround design gate, opened at 13:2x, APPROVED at 16:0x.
+Frank's three rulings shaped it mid-flight: the assertion-family
+replacements as design examples and corpus (the substitution driver over
+the assertions D27 corpus: 263 patterns / 8,260 cells qualify, three-way
+self-oracle); subroutines first (DD-14 → DD-11 on the call primitive, no
+parallel insertion mechanisms); and NO one-character fold — the general
+form chartered as [ENG-LOOK] (product construction; today's context bits
+the one-class instance, deleted later under the identity gate). The design
+(46868d6, merged 9fced73): 18 spellings ship / 3 refuse (each refusal a
+PCRE2 fact, err 195/109); lookbehind fixed-per-TOP-LEVEL-branch ships,
+variable refuses (PCRE2 10.46 runs two preference orders that disagree —
+branches in written order, step-back lengths longest-first within one; the
+fixed subset is where they coincide); VM lowering = cut + position restore
+on RX_CUT, negative = one extra frame (the fail label already restores
+position and rewinds the trail); back-step = the seam's third residual
+entry, zero interface change (enc.h's own prediction held); every body a
+self-contained sub-program (DD-14's call target).
+
+R33: three critics (2 opus, 1 sonnet), then a verifier round, then a text
+round — 25 + 12 findings, 0 outstanding. The catches that mattered: C1-1
+the fmin/fdyn FOLLOW-SCOPING miscompile class ((?!(a+)b)a+b would FALSE-
+MATCH; the rule is a property of the overlap, not the cut; S-LA17 guards
+it; the verifier extended it to exact-count GROUPS); C2-1 the ENG-LOOK
+sizing method refuted (the unanchored forward DFA is ACCEPT-PRUNED — every
+accepting state a dead sink — so emitted counts are lower bounds; the
+subset-size column is what the decline rule needs; cap conclusion
+survives); C2-2 D65 flips on the PORT (waves folded; the split is the
+port's own tail check, V-3); C2-3 the 23 walker arms budgeted (+ V-6's
+four default-carrying switches -Wswitch cannot see); C3-1 the substitution
+qualifier now parses modifier-letter sets (population 270/8,495 →
+263/8,260). The verifier's round found three FALSE STATEMENTS INSIDE HIGH
+FIXES (the R32 pattern: findings against the revisions); the lane's own
+instrument-defect ledger reached thirteen, every one a confident wrong
+number — the strongest argument yet for the reachability-guard habit.
+
+Frank's design principle recorded to memory ("general mechanisms, not
+special cases"): implement-then-replace is fine; parallel paths are not.
+
+Merged today, in order: 19ea394 tt4meas, 6f1e941 chain profile, 9582091
+tt7san prep, bbf7847 tt8mech, 5935ea9 tt6timeout, 9fced73 ladesign.
+OPEN: [M6.6.2] implementation NOT cleared (Frank rules the five §14 ASKs);
+[DD-14] design gate may run alongside it; K30 small fix queued; the gate's
+archived bench numbers predate the timeout swap (re-baseline at the next
+gate run); compliance refresh rides [M6.6.2]'s landing.
