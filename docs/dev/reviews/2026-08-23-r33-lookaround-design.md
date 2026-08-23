@@ -1062,4 +1062,98 @@ CONFIRMED: population count exact (Q1 87b/0c, Q2 87b/754c, Q3 0/0, Q4 24b/871c, 
 
 # APPENDIX — verifier r33v report (round 2, verbatim, delivered in-message)
 
-(verifier text appended by manager from the lane's message — see the Round 2 block above for the summary; the full text follows)
+(delivered in the verifier's message to the manager; transcribed here. Its
+scratch mirror: symlinks to build/, tests/, src/ so the committed probes ran
+unmodified; `git status --porcelain` on the worktree empty; all commands
+niced and bounded, single-process.)
+
+VERDICT: FIX-AGAIN. 12 findings — 0 HIGH-refuting, 1 MED-HIGH, 5 MEDIUM,
+6 LOW; 3 blocking (V-1, V-2, V-3), all text-only.
+
+VERIFIED (fix id → probe): C1-1 — follow-scoping probe re-run byte-identical
+(F1 3/3 bodies moved, atomic control holds; F3 `a{3}` 1→3); two added
+lookbehind bodies extend the ruling to exact-count GROUPS:
+`((?:(?:ab){2}))c` → bound 1 vs `((?:(?:ab){2}))cde` → bound 3, and
+`((?:a{2}))b` → 1 vs `((?:a{2}))bcd` → 3, both §2.5-admitted and
+libpcre2-verified (`(?<=(?:ab){2})c` on "ababc" → (4,5)); S-LA17's red cells
+traced through the emitted RX_PRUNE_TOO_SHORT macro with mrl_win off —
+`(?!(a+)b)a+b` on "aab" answers (0,3) unscoped vs libpcre2's nomatch.
+C2-1 — an independent subset-size computation (suffix-set enumeration, a
+different method from the probe's NFA walk) agrees on every modelled body:
+`a|bc` 4, `foo` 4, `\w` 2, `https?` 6, `(?:ab){2}` 5, fixtures 3/4/3/4/5;
+nfa.c:771-781 confirms the self-loop is lowest-priority and accept-pruned;
+the subset size (not the minimal DFA) is the column ENG-LOOK needs because
+the decline rule prices what it would BUILD; cap claim re-stated correctly.
+C2-2 — syntax_dump.c:580-608 classifies per RegRow on
+doorway_call(...WANT_RESULT), never the emitter; the six rows at
+registry.c:580,581,599,600,601,707 confirmed. C2-3 — 23 `case A_ATOMIC`
+sites in 10 files, per-file counts exact, all in default-less switches so
+-Wswitch fires; predicate lines atomic.c:37/:295, parse.c:99 correct.
+C3-1 — 263/8,260 byte-identical (Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1106,
+Q5 0/0, Q6 0/0); adversarial blocks classify as stated ((?im:^)a and
+a(?-m:$) → Q4; []\b]x and [^]\b]x → Q3 in-class; bare leading (?m)
+exempt; (?:^)a not a modifier group). Also independently reproduced: C1-9's
+conditionals-doorway sentence verbatim; C2-11's three emitted rx_prefilter
+windows (0,2)/(0,2)/(1,3) with the prefilter-window ceiling stamp; §3.2's
+`((?>ab)c)` emitted-C sample line for line; VM_DEFAULT_WORK_BUDGET and the
+two DFA caps; S-LA13's four mrl_win line numbers. Cross-references: no
+dangling §/P-/S-LA anywhere; the §3.4 splice clean.
+
+V-1 MED-HIGH (BLOCKING): §3.2.1:728-729 says "§3.6 restates it"; §3.6
+(976-1045) contains no statement of the scoping rule — and §3.6 is the
+section C1-1 named as the one inviting the deletion. Fix: one sentence in
+§3.6 (vm_look still saves/zeroes/restores v->fmin/v->fdyn around the body;
+the rule is a property of the OVERLAP, not the cut).
+V-2 MEDIUM (BLOCKING): §6.3's P1 "270 patterns" / P2 "368 patterns" are the
+pre-fix numbers, contradict their own "624 generated patterns" total
+(270+368=638), and wave E2's landing bar asserts against them. Probe says
+263 / 361 / 624. Fix: the two numbers.
+V-3 MEDIUM (BLOCKING): §8.3's revised sentence ("wires pcrec_laport_group →
+flips ALL SIX rows whatever the emitter does") contradicts §11 B+C's bar
+(three built / three unbuilt). The split requires the ONE port function to
+DECLINE the three `<` tails at WANT_RESULT — a refusal path §11 claims
+folding avoids. Fix: two sentences (the port accepts the lookahead tails and
+declines the `<` tails at B+C; wave D deletes the decline; §8.3 "flips every
+row whose tail the port ACCEPTS").
+V-4 MEDIUM: out/follow_scoping.txt F3's last row `a(?=b+c) | dfa |
+alone=[] followed=[]` is a COMPILE FAILURE rendered as a measurement (the
+pattern is refused — lookaround unimplemented; bounds() returns None on
+non-zero exit, printed as []; "dfa" because empty output lacks the engine
+stamp), and §3.4 cites it as load-bearing ("the last row of F3's table is
+why"). Conclusion survives as ARGUED-from-PCRE2 (`(?<=a(?=b+c))x` compiles
+in 10.46). Eighth instance of the lane's confident-wrong-cell species.
+V-5 MEDIUM: §5.8's "everywhere else the two agree" — six of twenty rows
+carry no prototype number; one of them, `(a|b)c` (labelled real, not
+control), is an accept-pruned under-count: emitted 3 vs true 5, so the
+under-count is live on 4 of the 64 non-control product rows (bar×(a|b)c
+reads 12 where the bound is 20). The prototype's n/a reason is its
+tokeniser (any `(?:` group → "? with nothing before it"), not "nested
+alternation". Cap conclusion survives (20 ≪ 32,000).
+V-6 MEDIUM: A2's bar (-Wswitch via make strict) cannot see the FOUR kind
+switches that carry a default: and no case A_ATOMIC — revdet.c:346 (widens,
+sound), emit_vm.c:1108 (declines rung, sound), emit_vm.c:1151 (returns −1,
+the "no captures by default" shape, unreachable behind 1108), emit_vm.c:3018
+(loud ctx_fail). All sound for A_LOOK today; table them in A2 (the
+[M6.2 wave C] four-default-sites precedent).
+V-7 LOW: S-LA17's two-line anchor idiom will exist twice after [M6.6.2]
+(vm_atomic :4246-4247 shares it) — the row needs a longer SAB_BEFORE or the
+sabotage lands in vm_atomic and triages DETECTED for the wrong reason.
+V-8 LOW: "restores them at L_next" is runtime language for a compile-time
+restore with (today) TWO return-path sites (:4256-4257, :4285-4286);
+vm_look will have more. Phrase as "on every return path".
+V-9 LOW: the PANEL OUTCOME's C1-1 row cites "§3.7's charge note" — §3.7 has
+none. Add it or drop the cite.
+V-10 LOW: §9.3 names only `assertions` as non-default; STD1_MODULES is
+FROZEN at {classes, modifiers} (enabled.c:80-86), so EVERY lookaround cell
+carries `features lookaround`; the live risk is a missing directive —
+S108's shape.
+V-11 LOW: §12's list runs P-1..P-9, P-14..P-16, P-11..P-13, P-10 after the
+splice; cosmetic.
+V-12 LOW: occurrences() (probe_substitution_population.py:69-111) leaves
+clspos 0 for a leading `^`, so `[^^]$` never closes the class and the `$`
+is dropped ([] measured). Not in today's corpus; under-counting direction;
+same species as C3-2, in the function C3-2 just fixed. Wave E2 builds the
+real driver from these rules.
+Nit: S-LA13's "grep -n mrl_win returns five hits" — seven lines (the field
+declaration :448 and a comment :5302 are not sites); the five sites and four
+named line numbers correct.
