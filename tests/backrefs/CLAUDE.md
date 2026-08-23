@@ -37,9 +37,24 @@ Re-run it after changing a cell list:
 
     python3 tests/backrefs/gen_corpus.py     # rewrites the .rxt files in place
 
-Current census, from that run: **237 cells, 50 blocks python-verified, 65
-`# pcre2-only`, 31 `perr`.** `verify_rxt.py` passes 221/221 on the
-python-verifiable half; the harness passes 442/442 over the whole directory.
+Current census, from that run: **244 cells, 53 blocks python-verified, 65
+`# pcre2-only`, 31 `perr`.** `python3 tests/harness/verify_rxt.py
+tests/backrefs/` passes 234/234 on the python-verifiable half; `bash
+tests/harness/run.sh tests/backrefs/*.rxt` passes 455/455 over this
+directory's own cells.
+
+**The two harness figures differ, and the command is why.** `run.sh
+tests/backrefs/` (the DIRECTORY, no glob) also walks `d27/` — the [M6.5.3]
+blinded corpus — and reports 662. Both numbers are correct for what they
+were asked; quote the command with the figure. (The 442 this paragraph
+carried until 2026-08-22 was the pre-d27 value of the 455 figure, correct
+when written and made confusing only by d27 landing beside it.)
+
+The 2026-08-22 additions are the "EMPTY CAPTURE UNDER AN UNBOUNDED
+QUANTIFIER" block in `numeric.rxt` (+7 cells, +13 harness cases): the live
+population of the empty-iteration guard, without which sabotage row S107
+scored UNDETECTED against a module that was correct. See that block's own
+comment and the row's header.
 
 ## Files
 
