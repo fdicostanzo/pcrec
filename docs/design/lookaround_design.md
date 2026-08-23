@@ -580,8 +580,6 @@ and quietly change the reported match start. §9's S-LA10.
 
 ---
 
-## 3. The VM lowering (charter (ii))
-
 **AMENDMENT (2026-08-23, post-approval, manager + Frank): the OLD semantics
 behind the flag, measured.** Frank recalled `\K` inside a lookbehind moving
 the reported match START before the attempt point. MEASURED on this box's
@@ -595,6 +593,8 @@ bit is a D38 ruling event, docs/pcre2_options.md). If ever adopted, the
 design consequence is one deliberate exception to §3's rule: `\K` writes
 the match-start slot, and inside a lookbehind body that write must SURVIVE
 the position restore that discards the body's other effects.
+
+## 3. The VM lowering (charter (ii))
 
 ### 3.1 The one new AST kind, its three flags and its width table
 
