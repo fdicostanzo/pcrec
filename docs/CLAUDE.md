@@ -118,6 +118,17 @@ Process and status documents for pcrec. The architecture itself lives in
   byte-identical to either single axis, `ubsan`/`asan` left untouched.
   STATUS PENDING the manager's own timing run (`docs/dev/
   tt7_combined_axis.md` has the evidence and the exact command).
+  (added [TT-6], 2026-08-23) "The `timeout` binary itself (`TIMEOUT_BIN`)":
+  this box's default `timeout` is uutils coreutils 0.8.0 (~108.7ms pure
+  wall per call, ~0 CPU) against GNU coreutils' ~4.2ms; `tests/lib/
+  timeout_bin.sh` resolves and announces a faster binary once per process
+  and every suite's bare `timeout` call was swapped to `"$TIMEOUT_BIN"` —
+  MEASURED 6.31x wall on an isolated `make test-corpus` run (identical
+  case counts before/after), a wash on the full `-j12 -Otarget make test`
+  total (concurrent sections hide a sleeping worker's wall time), and a
+  named finding that two `tests/bench/run_bench.sh` budgets (COMPILE-SPEED,
+  GCC-TIME) measured the wrapper's own launch cost inside their number and
+  now read lower and more honestly.
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and

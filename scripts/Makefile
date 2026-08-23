@@ -33,7 +33,7 @@ REPORTS := $(TESTS:.test=.testreport)
 test: $(REPORTS)
 
 tests/%.testreport: tests/%.test %
-	timeout 600 bash $< > $@ 2>&1
+	. ../tests/lib/timeout_bin.sh && "$$TIMEOUT_BIN" 600 bash $< > $@ 2>&1
 
 clean:
 	rm -f tests/*.testreport

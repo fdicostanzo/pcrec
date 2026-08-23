@@ -42,6 +42,18 @@ engines — the cross-engine matrix lives in compare/.
 
 ## Conventions
 
+**[TT-6] (2026-08-23): COMPILE_BUDGET_SECS and GCC_O1/O2's `measured` figures
+below PREDATE the `TIMEOUT_BIN` swap and read HIGH.** `run_bench.sh` times
+COMPILE-SPEED and GCC-TIME by bracketing wall time AROUND the `timeout`
+invocation itself (`cs_t0`/`cs_t1`, `g_t0`/`g_t1` — see docs/testing.md "The
+`timeout` binary itself"), so on a box whose default `timeout` is uutils
+coreutils (this one, ~108.7ms/call pure wall) a real fraction of each
+~0.1-0.2s number below was the WRAPPER'S OWN LAUNCH COST, not pcrec's or
+gcc's. The three rows read lower and more honest after the swap; nobody has
+re-measured a fresh median against the new binary yet, so treat the exact
+values below as stale until that happens — the SHAPE of the argument (loose
+budgets, single-sample noise) still holds.
+
 Budgets are SUPPOSED to be measured-median/1.75 (D12). Two of the nine are
 not, and saying otherwise is a claim this project has now made three times
 and refuted twice — so here is the actual table, from the budget and the
