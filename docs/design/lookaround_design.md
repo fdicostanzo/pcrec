@@ -460,13 +460,18 @@ compile must be rejected with a pattern offset, not discovered by the emitter
 derivation that can disagree with the first. Same rule as `Ast.caseless` on
 `A_BREF` (D62): resolved once, at the position that knows.
 
-**(d) `mrl.c` GAINS AN `A_LOOK` ARM AND THE ANSWER IS NOT ALWAYS 0.** P12
-records the inherited default (0). It is right for a **lookahead**: the
-assertion consumes nothing and the bytes it inspects are ahead of the cursor,
-so it adds nothing to the minimum remaining length. It is **also 0 for a
-lookbehind** — the bytes are *behind* the cursor and `minw` counts bytes still
-to be consumed. So the inherited answer stands for both, but it now stands
-**because it was checked**, and `pcrec_maxw`'s new arm answers 0 as well.
+**(d) `mrl.c` GAINS AN `A_LOOK` ARM AND THE ANSWER IS 0 — BUT IT IS NOW 0
+BECAUSE IT WAS CHECKED.** P12 records the inherited default, written before
+any producer existed: *"Lookaround, backreferences and `(*ATOMIC)` have no
+producers today; when they gain one, each contributes 0 here until someone
+measures otherwise."* Checked: it is right for a **lookahead**, which consumes
+nothing and inspects bytes ahead of the cursor, so it adds nothing to the
+minimum remaining length; and it is right for a **lookbehind** too, because
+those bytes are *behind* the cursor and `minw` counts bytes still to be
+consumed. `pcrec_maxw`'s new arm answers 0 for the same reason. **The value
+does not change and the claim's status does** — from an inherited placeholder
+to a checked answer — which is the whole content of this bullet and is why it
+is a bullet rather than a silent `return 0;`.
 
 ### 3.2 The shape, and it is `vm_atomic`'s with two lines added
 
