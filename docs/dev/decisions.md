@@ -5290,3 +5290,44 @@ An UNDETECTED row from any of these is a finding diagnosed by measurement
 (the 2026-08-22 lesson), never by reading. The accepted risk is 2b between
 closes; the retro-diff of the archived matrices rides [TT-8] as evidence of
 its rate. Revisit if a 2b flip is ever observed outside a close.
+
+## D70 — the AST's per-kind fields move into a TAGGED UNION of payload structs; A_LOOK lands as a union member, never as more top-level fields (Frank, 2026-08-23)
+
+**Context.** `struct Ast` was union-by-convention: per-kind fields sit on
+the one node type and are dead for other kinds (`cls[32]` A_CLASS-only,
+`rmin`/`rmax` A_REP, `capno` A_CAP, `multiline` A_BOL/A_EOL). The
+lookaround design's ASK 1 proposed continuing the convention (three
+`look_*` flags + a width-table pointer on the node). Frank: "I'm not
+worried about memory but complexity and flexibility. Using a union of
+types is a fine way to deal with it."
+
+**Decision.** One `A_LOOK` kind (ASK 1's first half stands), and the
+per-kind fields — existing AND new — move into a tagged union of per-kind
+payload structs (`n->u.rep.rmin`, `n->u.cls.bits`, `n->u.cap.no`,
+`n->u.look.behind/neg/atomic/widths/nbranch`, …), keyed by the existing
+`AKind k`. Fields the migration survey measures as genuinely CROSS-kind
+stay common fields, with the survey recorded. No module may add a new
+top-level per-kind field after this lands; new kinds add a union member.
+
+**Why.** Complexity and flexibility, not memory: `u.rep.rmin` carries its
+ownership in its name; accretion of top-level fields per new module stops;
+and one general mechanism replaces the per-module temptation to attach
+payloads ad hoc (the no-parallel-mechanisms rule, same day's memory file).
+The union is NOT a checking mechanism — C does not police union member
+access — so D62's discipline (parse-resolved state, per-field comments,
+per-field sabotage rows) carries over unchanged; the union buys reading
+and containment, not enforcement.
+
+**How it lands.** As the OPENING wave of [M6.6.2] (before the design's
+wave A2), a PURE refactor: ~200+ mechanical access-site renames, zero
+behaviour change, gated by BYTE-IDENTITY of every emitted artifact over
+the full corpus plus `make test` — the same gate discipline the identity
+gates use, and cheap post-[TT-6] (corpus ≈ 1:04). A_LOOK's payload then
+joins the union in the design's own waves. The design doc's §3.1 field
+sketch is AMENDED by this decision (and its `int look_widths[]` sketch
+reads as an arena `int *` — recorded here so the implementer does not
+build a flexible-array member).
+
+**Revisit when:** a field's ownership is contested by a second kind (then
+it becomes common with a comment, not a union pun), or a future
+allocation-model change makes the arena pointer in a payload wrong.
