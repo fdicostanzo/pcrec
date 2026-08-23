@@ -192,9 +192,50 @@ def main():
     sizes = [int(x) for x in args.sizes.split(",")]
     results = []
 
+    # Shape C (baseline: one gcc call per PATTERN) does not depend on N at
+    # all -- it is the same 256-pattern, one-at-a-time workload regardless
+    # of what batch size A/B are being compared against. Measuring it
+    # separately, ONCE per mode, rather than re-running it identically
+    # inside every N iteration (the first version of this script did that
+    # -- 5x redundant baseline runs, caught before it burned the time
+    # budget) -- its `median`/`min` are reused as the N-independent
+    # baseline row for every N in the results/summary below.
+    baseline = {}
+    for mode in ("serial", "parallel"):
+        walls = []
+        for rep in range(args.reps):
+            d = os.path.join(args.outdir, f"run_C_baseline_{mode}_{rep}")
+            shutil.rmtree(d, ignore_errors=True)
+            os.makedirs(d, exist_ok=True)
+            t0 = time.monotonic()
+            failures = 0
+            def do_C(p, d=d):
+                rc, wall, out, exe = build_batch_C(script_dir, args.patterns, d, p, gencflags)
+                return rc
+            if mode == "serial":
+                for p in all_prefixes:
+                    if do_C(p) != 0:
+                        failures += 1
+            else:
+                with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as ex:
+                    for rc in ex.map(do_C, all_prefixes):
+                        if rc != 0:
+                            failures += 1
+            t1 = time.monotonic()
+            walls.append(t1 - t0)
+            if failures:
+                print(f"WARNING: shape=C(baseline) mode={mode} rep={rep}: {failures} pattern(s) failed to compile", file=sys.stderr)
+            shutil.rmtree(d, ignore_errors=True)
+        median_w = statistics.median(walls)
+        min_w = min(walls)
+        baseline[mode] = {"median": median_w, "min": min_w, "reps": walls}
+        print(f"shape=C(baseline)      mode={mode:<8} median={median_w:>8.3f}s min={min_w:>8.3f}s reps={walls}")
+
     for N in sizes:
+        results.append({"shape": "C", "N": N, "mode": "serial", **baseline["serial"]})
+        results.append({"shape": "C", "N": N, "mode": "parallel", **baseline["parallel"]})
         batches = chunk(all_prefixes, N)
-        for shape in ("C", "A", "B"):
+        for shape in ("A", "B"):
             for mode in ("serial", "parallel"):
                 walls = []
                 for rep in range(args.reps):
@@ -203,36 +244,21 @@ def main():
                     os.makedirs(d, exist_ok=True)
                     t0 = time.monotonic()
                     failures = 0
-                    if shape == "C":
-                        tasks = all_prefixes  # one gcc call per PATTERN, not per batch
-                        def do_C(p, d=d):
-                            rc, wall, out, exe = build_batch_C(script_dir, args.patterns, d, p, gencflags)
-                            return rc
-                        if mode == "serial":
-                            for p in tasks:
-                                if do_C(p) != 0:
-                                    failures += 1
-                        else:
-                            with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as ex:
-                                for rc in ex.map(do_C, tasks):
-                                    if rc != 0:
-                                        failures += 1
+                    build_fn = build_batch_A if shape == "A" else build_batch_B
+                    def do_batch(item, d=d, build_fn=build_fn):
+                        bid, members = item
+                        rc, wall, out, exe = build_fn(script_dir, args.patterns, d, members, gencflags, bid)
+                        return rc
+                    items = list(enumerate(batches))
+                    if mode == "serial":
+                        for item in items:
+                            if do_batch(item) != 0:
+                                failures += 1
                     else:
-                        build_fn = build_batch_A if shape == "A" else build_batch_B
-                        def do_batch(item, d=d, build_fn=build_fn):
-                            bid, members = item
-                            rc, wall, out, exe = build_fn(script_dir, args.patterns, d, members, gencflags, bid)
-                            return rc
-                        items = list(enumerate(batches))
-                        if mode == "serial":
-                            for item in items:
-                                if do_batch(item) != 0:
+                        with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as ex:
+                            for rc in ex.map(do_batch, items):
+                                if rc != 0:
                                     failures += 1
-                        else:
-                            with concurrent.futures.ThreadPoolExecutor(max_workers=args.parallel) as ex:
-                                for rc in ex.map(do_batch, items):
-                                    if rc != 0:
-                                        failures += 1
                     t1 = time.monotonic()
                     walls.append(t1 - t0)
                     if failures:
