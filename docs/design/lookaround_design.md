@@ -582,6 +582,20 @@ and quietly change the reported match start. §9's S-LA10.
 
 ## 3. The VM lowering (charter (ii))
 
+**AMENDMENT (2026-08-23, post-approval, manager + Frank): the OLD semantics
+behind the flag, measured.** Frank recalled `\K` inside a lookbehind moving
+the reported match START before the attempt point. MEASURED on this box's
+10.46: with `PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK` (0x40, the bit §2.7's sweep
+derived), `(?<=\Kfoo)bar` on `"baxfoobarbaz"` matches **(3,9) = "foobar"**
+— the start moves back INTO the lookbehind; `(?<=foo\K)bar` gives (6,9);
+`(?=\Kfoo)foobar` gives (3,9). This is Perl's pre-deprecation `\K`
+heritage; PCRE2 made it err 199 by default in 10.38. pcrec's refusal is the
+right D26 tier (the oracle is pinned at options=0; adopting any `EXTRA_*`
+bit is a D38 ruling event, docs/pcre2_options.md). If ever adopted, the
+design consequence is one deliberate exception to §3's rule: `\K` writes
+the match-start slot, and inside a lookbehind body that write must SURVIVE
+the position restore that discards the body's other effects.
+
 ### 3.1 The one new AST kind, its three flags and its width table
 
 ```c
