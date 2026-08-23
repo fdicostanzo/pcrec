@@ -12113,3 +12113,24 @@ SHAPE and none of its live POPULATION (ask which input axis the property
 varies over); defence in depth blinds single-edit mutation testing (an
 UNDETECTED row is a question — diagnose by measurement, never by
 reading). Session ends here; Frank afk; context near compaction.
+
+POST-CLOSE ADDENDUM (00:5x, 2026-08-23). The fix lane, following the
+manager's first-preference ruling ("make S108 a two-site sabotage"),
+MEASURED that the two-site control IS expressible and observable: ~40
+optional lines in run_sabotage_matrix.sh (SAB_FILE2/BEFORE2/AFTER2/
+COUNT2 through the same replace.py, a drifted second anchor an ANOMALY)
+plus the tripwire reading both sites (118 rows / 119 sites); against the
+corpus AS IT STANDS the two-site S108 yields 65 harness failures with 33
+"a backreference reached the reverse-deterministic body reversal" walls
+(nested.rxt, its declared target, 22 of them). The close record's
+"inexpressible today" (41e541a, the retirement) was the manager
+repeating the lane's earlier report instead of waiting for the
+measurement the ruling had asked for. MANAGER ERROR, recorded flatly:
+worktrees/brfix was REMOVED after declaring the lane complete while its
+validation chain was running — done-working ≠ done-verifying, the
+2026-08-19 lesson, repeated; the commits survived only by the WIP
+discipline. RULING: the close stands; the two-site S108 + harness
+extension LANDS POST-CLOSE as the row's own residual (lane/brfix
+13e2ea7+, validating in worktrees/brfix2: single-row DETECTED, tripwire
+118/119, make test green; no battery re-run — test infrastructure only);
+S108 re-instated; the record corrected on landing.
