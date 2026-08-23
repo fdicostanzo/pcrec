@@ -592,7 +592,11 @@ right D26 tier (the oracle is pinned at options=0; adopting any `EXTRA_*`
 bit is a D38 ruling event, docs/pcre2_options.md). If ever adopted, the
 design consequence is one deliberate exception to §3's rule: `\K` writes
 the match-start slot, and inside a lookbehind body that write must SURVIVE
-the position restore that discards the body's other effects.
+the position restore that discards the body's other effects. **RULED
+(Frank, 2026-08-23, same conversation): NOT WANTED — "it's considered bad
+mojo and weird; I don't want to goof with our set-up." The refusal is
+permanent unless a future Frank ruling reopens it; do not propose the
+EXTRA bit's adoption from this paragraph.**
 
 ## 3. The VM lowering (charter (ii))
 
