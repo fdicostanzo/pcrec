@@ -75,35 +75,47 @@ def occurrences(pat):
     out = []
     i, n = 0, len(pat)
     incls = False
-    clspos = 0
+    clspos = 0          # characters of CONTENT seen since `[` (or `[^`)
+    expect_neg = False  # the very next char may be the negating `^`
     while i < n:
         c = pat[i]
         if c == "\\" and i + 1 < n:
             tok = pat[i:i + 2]
             if tok in SUBSTITUTABLE or tok in NO_DEFINITION:
                 out.append((tok, i, incls))
+            if incls:
+                # R33 V-12(b), found while fixing V-12(a): an ESCAPE inside a
+                # class is CONTENT. Without this, `[\]]` left clspos at 0, the
+                # following `]` read as the literal-first `]`, the class never
+                # closed, and every assertion after it was swallowed.
+                clspos += 1
+                expect_neg = False
             i += 2
             continue
         if incls:
             # R33 C3-2: a `]` IMMEDIATELY after `[` or `[^` is a LITERAL, not
-            # the closing bracket (PCRE2's literal-first rule). `clspos`
-            # records how far into the class we are, so the first position
-            # (or the first after `^`) does not close it.
-            if c == "]" and clspos > 0:
-                incls = False
-            elif c == "^" and clspos == 0:
-                clspos = 0          # a leading ^ does not count as content
+            # the closing bracket (PCRE2's literal-first rule).
+            #
+            # R33 V-12(a): the first version tested `c == "^" and clspos == 0`,
+            # which fires for EVERY leading-position `^` rather than only the
+            # negation -- so `[^^]` consumed BOTH carets as "not content", the
+            # `]` then read as literal-first, the class never closed, and
+            # `[^^]$` lost its `$` entirely. `expect_neg` is true for exactly
+            # one character position, which is what "the negating caret" means.
+            if expect_neg and c == "^":
+                expect_neg = False
                 i += 1
                 continue
+            expect_neg = False
+            if c == "]" and clspos > 0:
+                incls = False
             clspos += 1
             i += 1
             continue
         if c == "[":
             incls = True
             clspos = 0
-            # a leading ^ inside a class is a NEGATION, and the walk above
-            # never records it because `incls` is already true on the next
-            # iteration -- stated so a reader does not have to derive it
+            expect_neg = True
             i += 1
             continue
         if c in ("^", "$"):
@@ -195,7 +207,7 @@ TOT = {"blocks": 0, "cells": 0, "behavioural": 0, "gcells": 0}
 REJ = {"Q1 perr / no behavioural cell": [0, 0],
        "Q2 no substitutable assertion": [0, 0],
        "Q3 assertion inside a character class": [0, 0],
-       "Q4 scoped (?m: or (?-m)": [0, 0],
+       "Q4 modifier state not constant": [0, 0],
        "Q5 \\K inside a substituted body": [0, 0],
        "Q6 block marked # pcre2-deviates (D68)": [0, 0]}
 QUAL = {"blocks": 0, "cells": 0, "gcells": 0}
@@ -230,7 +242,7 @@ for path in files:
         elif in_class:
             why = "Q3 assertion inside a character class"
         elif scoped:
-            why = "Q4 scoped (?m: or (?-m)"
+            why = "Q4 modifier state not constant"
         elif any(d.startswith("# pcre2-deviates") for d in b["dirs"]) or \
                 any(l.startswith("# pcre2-deviates") for l in b["lead"]):
             # R33 C3-3: a block D68 marks as DELIBERATELY diverging from

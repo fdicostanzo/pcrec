@@ -49,7 +49,7 @@ THE METHOD -- **AND ITS FIRST VERSION WAS REFUTED BY R33 C2-1.**
                        publishing a number.
 
   ANCHOR-BEARING BODIES ARE EXCLUDED FROM THE PROTOTYPE COLUMN AND SAY SO.
-  `(?!\z)` and `(?=\n?\z)` contain ANCHORS, which are not letters of Sigma;
+  `(?!\\z)` and `(?=\\n?\\z)` contain ANCHORS, which are not letters of Sigma;
   `Sigma*.L` is not the right question for them and [ENG-LOOK]'s own row
   handles them as the delayed-acceptance / anchor case rather than as a
   product component.
@@ -147,7 +147,14 @@ class _Unmodelled(Exception):
 
 def _classes(body):
     """Tokenise the body into a list of (kind, payload) where kind is
-    'set' | '|' | '(' | ')' | '?' | '{n,m}'."""
+    'set' | '|' | '(' | ')' | '?' | '{n,m}'.
+
+    R33 V-5: `(?:` is normalised to `(` FIRST. Without that the `?` was read
+    as a quantifier with nothing before it, and every `(?:...)` row reported
+    its n/a reason as "? with nothing before" -- a TOKENISER limit printed as
+    if it were a statement about the body. The real reason those rows are
+    unmodelled is the nested alternation inside them, and now they say so."""
+    body = body.replace("(?:", "(")
     out = []
     i, n = 0, len(body)
     while i < n:
@@ -319,7 +326,12 @@ BODIES = [
     (r"[^\"']",   "real",      "a negated class (the backrefs lane's own idiom)"),
     (r"\w+",      "real",      "an UNBOUNDED body -- a lookAHEAD only (§2.5)"),
     (r"\d{3}",    "real",      "a counted body"),
-    (r"(a|b)c",   "real",      "an alternation inside a concatenation"),
+    (r"(a|b)c",   "real",      "an alternation inside a concatenation -- the "
+                               "tokeniser does not model it"),
+    (r"ac|bc",    "real",      "THE SAME LANGUAGE, expanded: (a|b)c == ac|bc. "
+                               "R33 V-5 -- the emitted table says 3 and the "
+                               "component is 5, a NON-CONTROL under-count the "
+                               "n/a row hid"),
     (r"https?",   "real",      "a realistic literal-ish body"),
     # --- THE VACUITY CONTROLS. Without a body whose component is LARGE, a
     # table reading "0 over the cap" is unfalsifiable -- the population would
@@ -390,6 +402,22 @@ print("# ABSENCE is what reads `dfa` below:")
 for body in comp:
     print("    %-12s engine=%s" % (body, comp[body]["engine"]))
 
+print()
+print("AGREEMENT BETWEEN THE TWO COLUMNS, counted rather than asserted (R33 V-5:")
+print("the design said \"everywhere else the two agree\" and that was not a count):")
+_mod = [(b, c) for b, c in comp.items() if isinstance(c.get("proto"), int)]
+_una = [b for b, c in comp.items() if not isinstance(c.get("proto"), int)]
+_dis = [(b, c["forward_states"], c["proto"]) for b, c in _mod
+        if c["forward_states"] != c["proto"]]
+print("  rows total                  : %d" % len(comp))
+print("  MODELLED (a prototype number): %d" % len(_mod))
+print("  NOT MODELLED (n/a)           : %d  -> %s" % (len(_una), ", ".join(_una)))
+print("  modelled rows where emitted != prototype: %d" % len(_dis))
+for b, lo, pr in _dis:
+    print("      %-12s emitted %-5s prototype %-5s  (UNDER-COUNT)" % (b, lo, pr))
+print("  ** an n/a row is NOT an agreement**: six bodies have no prototype")
+print("  number at all, and `ac|bc` shows one of them (`(a|b)c`) is a real")
+print("  under-count the n/a hid -- 3 emitted against 5.")
 print()
 print("=" * 78)
 print("MAIN AUTOMATA")

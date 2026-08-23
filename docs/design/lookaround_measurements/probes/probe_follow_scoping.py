@@ -65,10 +65,18 @@ _BOUND = re.compile(r"RX_PRUNE_TOO_SHORT\((\w+),\s*(\d+)\)")
 
 
 def bounds(pat):
-    """Every emitted prune bound literal, in order."""
+    """Every emitted prune bound literal, in order -- or the string "REFUSED"
+    when pcrec will not compile the pattern at all.
+
+    R33 V-4: the first version returned None for BOTH "refused" and "no such
+    pattern", and the caller printed None as an empty site list -- so
+    `a(?=b+c)`, which pcrec REFUSES because module `lookaround` is not built,
+    was published as a measurement reading "no prune sites". A compile failure
+    printed as a measurement is the shape this lane's own defect list is
+    about."""
     src = emit(pat)
     if src is None:
-        return None
+        return "REFUSED"
     return _BOUND.findall(src)
 
 
@@ -198,16 +206,32 @@ if os.path.exists(PCREC):
                        (r"a|bc",   "two fixed branches -- no rung"),
                        (r"a{2,3}", "bounded variable -- REFUSED by §2.5"),
                        (r"a+",     "unbounded -- REFUSED by §2.5"),
-                       (r"a(?=b+c)", "FIXED width 1, but it CONTAINS a lookahead"
-                                     " whose body is unbounded")]:
+                       # R33 verifier: exact-count GROUPS behave like `a{3}`
+                       # and are the sharper cells, because a reader is more
+                       # likely to think a group is not a rung.
+                       (r"(?:ab){2}", "an exact count over a GROUP -- FIXED, and it PRUNES"),
+                       (r"a{2}",      "a second exact count -- FIXED, and it PRUNES"),
+                       (r"a(?=b+c)",  "fixed width 1 but CONTAINS a lookahead -- "
+                                      "pcrec REFUSES it (the module is not built), "
+                                      "so this row is a REFUSAL, not a measurement")]:
         alone = "((?:" + body + "))x"
         followed = "((?:" + body + "))xyz"
         ba, bf = bounds(alone), bounds(followed)
         src = emit(followed) or ""
-        eng = "vm" if 'RX_ENGINE "vm"' in src else "dfa"
-        print("%-26s %-12s | alone=%s followed=%s   <- %s"
-              % (body, eng, [x[1] for x in (ba or [])],
-                 [x[1] for x in (bf or [])], note))
+        eng = "vm" if 'RX_ENGINE "vm"' in src else ("dfa" if src else "-")
+        def fmt(b):
+            return "REFUSED" if b == "REFUSED" else [x[1] for x in b]
+        print("%-26s %-12s | alone=%-9s followed=%-9s   <- %s"
+              % (body, eng, fmt(ba), fmt(bf), note))
+    print()
+    print()
+    print("THE LAST ROW READS `REFUSED` AND THAT IS THE POINT (R33 V-4): pcrec")
+    print("cannot compile a lookaround at all, so the nesting cell CANNOT be")
+    print("measured in-pcrec today. §3.4's sentence about a lookbehind body")
+    print("containing a lookahead is therefore ARGUED FROM PCRE2's semantics")
+    print("(the inner assertion's cursor runs AHEAD of the entry position, so")
+    print("`cursor + bodyremaining == p` does not hold inside it), and it is")
+    print("marked ARGUED in the design rather than MEASURED.")
     print()
     print("READ THIS AS: a lookbehind body that §2.5 ADMITS can still carry a")
     print("prune site whose literal moves with the follow, so the lookbehind")
