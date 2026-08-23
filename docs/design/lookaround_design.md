@@ -483,36 +483,52 @@ lookahead arm is `vm_atomic` (`emit_vm.c:4204-4292`) plus a saved position.
               goto L_next
 ```
 
-Emitted C, at the same depth as `backrefs_design.md` §3.2 and
-`atomic_groups_design.md` §3.3, for `(?=ab)c`:
+Emitted C. **This is not a hand-drawn sample**: it is the SHIPPED emitter's
+own output for `((?>ab)c)` (`--features all`, `build/pcrec` at `d1d4378`) with
+the two `A_LOOK` lines added and the group wrapper kept so the artifact is
+VM-routed. Everything else — the one-line class tests, the decimal byte
+constants, the numeric slot index inside `RX_CUT`, the `__attribute__((unused))`
+on every label — is reproduced rather than invented, because a design whose
+emitted code does not look like the emitter's is a design a panel cannot
+check.
 
 ```c
+rx_L0: __attribute__((unused));
+    RX_SET(RX_SLOT_GROUP1_START, (ptrdiff_t)scan_position);
+    goto rx_L2;
 // lookahead: record the resume-stack depth to cut back to (BEFORE the body pushes anything)
-rx_L3: __attribute__((unused));
+rx_L2: __attribute__((unused));
     RX_SET(RX_SLOT_LOOK_MARK0, (ptrdiff_t)run->resume_depth);
-    RX_SET(RX_SLOT_LOOK_POS0, (ptrdiff_t)scan_position);
-    goto rx_L4;
-// class 'a'
-rx_L4: __attribute__((unused));
-    if (scan_position < subject_length && (subject[scan_position] == 'a')) {
-        scan_position++;
-        goto rx_L5;
-    }
-    goto rx_fail;
-// class 'b'
+    RX_SET(RX_SLOT_LOOK_POS0, (ptrdiff_t)scan_position);      // <-- ADDED vs (?>ab)
+    goto rx_L5;
 rx_L5: __attribute__((unused));
-    if (scan_position < subject_length && (subject[scan_position] == 'b')) {
-        scan_position++;
-        goto rx_L6;
-    }
+    if (scan_position < subject_length && (subject[scan_position] == 97)) { scan_position++; goto rx_L7; }
+    goto rx_fail;
+rx_L7: __attribute__((unused));
+    if (scan_position < subject_length && (subject[scan_position] == 98)) { scan_position++; goto rx_L6; }
     goto rx_fail;
 // lookahead: the body's FIRST success -- cut, restore the cursor, and never reconsider
 rx_L6: __attribute__((unused));
-    RX_CHARGE_WORK((ptrdiff_t)run->resume_depth - slot_values[RX_SLOT_LOOK_MARK0]);
-    RX_CUT(RX_SLOT_LOOK_MARK0);
-    scan_position = (size_t)slot_values[RX_SLOT_LOOK_POS0];
-    goto rx_L7;
+    RX_CHARGE_WORK((ptrdiff_t)run->resume_depth - slot_values[4]);
+    RX_CUT(4);
+    scan_position = (size_t)slot_values[5];                   // <-- ADDED vs (?>ab)
+    goto rx_L4;
+rx_L4: __attribute__((unused));
+    if (scan_position < subject_length && (subject[scan_position] == 99)) { scan_position++; goto rx_L3; }
+    goto rx_fail;
+// group 1 closes
+rx_L3: __attribute__((unused));
+    RX_SET(RX_SLOT_GROUP1_END, (ptrdiff_t)scan_position);
 ```
+
+**THE TWO ADDED LINES ARE THE ENTIRE DIFFERENCE between `(?>ab)c` and
+`(?=ab)c`,** which is the strongest form §3's central claim can take: the
+positive lookahead is the atomic group plus a saved cursor. Note the
+asymmetry the real output shows and a hand-drawn sample would have hidden —
+`vm_set` emits the NAMED slot (`RX_SLOT_LOOK_MARK0`) while `vm_cut` emits the
+NUMERIC one (`RX_CUT(4)`), because `vm_slot_name` names the family and
+`vm_cut` formats an index. Reading `slot_values[5]` for the position is the
+same convention.
 
 **Three properties, each with the line that makes it true.** They are
 `atomic_groups_design.md` §3.3's three, re-stated for this construct because a
@@ -561,18 +577,46 @@ the cursor and the captures restored**.
               goto L_next
 ```
 
-**There is no capture snapshot and no position slot, and P7 is why.** The fail
-label (`emit_vm.c:6063-6071`) does two things before transferring control to a
-popped frame's label: it assigns `scan_position` from that frame's
-`resume_position`, and it rewinds the trail down to that frame's `trail_mark`.
-The frame pushed at `L_entry` recorded the cursor **before** the body ran and
-its trail mark **before** any capture the body would write. So arriving at
-`L_neg_ok` means the cursor is already back and every capture the body wrote
-is already undone. **MEASURED that this is the right semantics**, `out/
-captures.txt` C2: `(?!(a)x)ab` on `"ab"` is (0,2) with g1 **unset** — the body
-captured `"a"` and then failed on `x`, and the capture does not survive;
-`(?!(a)x)(a)` on `"ab"` is (0,1) with g1 unset and g2=(0,1), which proves the
-answer is being read rather than truncated.
+**There is no capture snapshot and no position slot, and P7 is why. Here are
+the two macros, quoted from a real artifact rather than described** (`build/
+pcrec` at `d1d4378`, `((a|b)c)`):
+
+```c
+#define RX_PUSH(lbl_, p_) do {                                \
+        if (run->resume_depth >= RX_RESUME_FRAMES) return RX_R_FRAMES;  \
+        run->resume_stack[run->resume_depth].resume_label    = (lbl_);  \
+        run->resume_stack[run->resume_depth].resume_position = (p_);    \
+        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \
+        run->resume_depth++;                                            \
+    } while (0)
+```
+
+and the fail label (`emit_vm.c:6061-6073`, emitted verbatim into every VM
+artifact):
+
+```c
+    {
+        const unsigned frame_index = --run->resume_depth;
+        scan_position = run->resume_stack[frame_index].resume_position;
+        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {
+            run->trail_depth--;
+            slot_values[run->trail[run->trail_depth].slot_index] =
+                run->trail[run->trail_depth].saved_value;
+        }
+        goto *run->resume_stack[frame_index].resume_label;
+    }
+```
+
+Put those two side by side and the negative form's whole requirement is
+discharged by the push: `RX_PUSH` records the cursor **and** `trail_depth` at
+entry, and the fail label restores the first and rewinds to the second before
+jumping. So arriving at `L_neg_ok` means the cursor is already back and every
+capture the body wrote is already undone. **MEASURED that this is the right
+semantics**, `out/captures.txt` C2: `(?!(a)x)ab` on `"ab"` is (0,2) with g1
+**unset** — the body captured `"a"` and then failed on `x`, and the capture
+does not survive; `(?!(a)x)(a)` on `"ab"` is (0,1) with g1 unset and
+g2=(0,1), which proves the answer is being read rather than truncated by
+libpcre2's trailing-unset rule (the padding `la_oracle.ngroups()` exists for).
 
 **The `L_body_won` cut is not an optimisation.** It discards the body's frames
 **and the `L_neg_ok` frame**, because the mark was taken before the push. If
