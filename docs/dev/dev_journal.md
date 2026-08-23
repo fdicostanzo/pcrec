@@ -12134,3 +12134,12 @@ extension LANDS POST-CLOSE as the row's own residual (lane/brfix
 13e2ea7+, validating in worktrees/brfix2: single-row DETECTED, tripwire
 118/119, make test green; no battery re-run — test infrastructure only);
 S108 re-instated; the record corrected on landing.
+
+POST-CLOSE LANDING (01:4x): lane/brfix 13e2ea7 merged — S108 RE-INSTATED
+as a two-site sabotage (DETECTED: 65 harness failures / 33 walls on the
+corpus as it stands), the matrix's optional second site, the tripwire
+reading 118 rows / 119 anchor sites; single-row S107 and S108 both
+undetected 0 / anomalies 0; lane make test EXIT=0. The close record's
+residual "multi-hunk mechanism" is DONE; tests/mech/CLAUDE.md keeps the
+single-site measurement as the reason two sites are needed. No battery
+re-run (test infrastructure only; the compiler is unchanged).

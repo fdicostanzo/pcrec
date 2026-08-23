@@ -1159,8 +1159,10 @@ with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.
 
 ## Retired rows
 
-- **S108_rdshape_accepts_bref — RETIRED 2026-08-23 (manager ruling at the
-  [M6.5] close).** Measured UNOBSERVABLE by the [M6.5.2] fix lane: the
+- **S108_rdshape_accepts_bref — RETIRED 2026-08-23 at the [M6.5] close, then
+  RE-INSTATED the same hour as a TWO-SITE sabotage** (the matrix gained an
+  optional second site; the single-site form below was measured
+  unobservable and is kept as the record of why two sites are needed). Measured UNOBSERVABLE by the [M6.5.2] fix lane: the
   sabotage flips `rd_shape`'s verdict for a backreference body, but
   `pcrec_uniq_iteration`'s Glushkov arm (`possessify.c` `case A_BREF:
   g->ok = false`) independently declines every such body — the two gates
