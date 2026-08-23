@@ -69,7 +69,7 @@ of 30 swept shapes**), so this module keeps the prefilter and drops the
 ceiling, which is exactly [M6.4.2]'s H3 one construct over (§5); and the
 **DFA-eligible subset** D66 wants, which this design **recommends handing to
 [DD-11] with the door built and the equivalences measured** rather than
-shipping here (§5.4, §6).
+shipping here (§5.7, §6).
 
 ### 0.3 Measurements this lane produced
 
@@ -83,8 +83,8 @@ their repo commit by `probes/archive.sh` in ONE batch from a committed tree.
 | `probes/probe_spellings.py` | MEASURED, both oracles | §2.1/§2.2: compile status and the DISCRIMINATORS (direction, polarity, width, atomicity); the degenerate bodies; quantified lookaround; nesting; the match-START cells |
 | `probes/probe_lookbehind_length.py` | MEASURED, libpcre2 + python | §2.3: which bodies compile with which error number; the TWO preference orders; the bisected `max_varlookbehind` default (**255**) and the fixed ceiling (**32759**); `MAXLOOKBEHIND` for composite bodies; the subject-start and **startpos** cells |
 | `probes/probe_captures.py` | MEASURED, both oracles | §2.4/§3.5: captures across all four polarity/outcome combinations; the empty-iteration cells; `\K`'s refusal and its extra-option bit; the BUDGET witness |
-| `probes/probe_prefilter_hazard.py` | MEASURED, libpcre2 + in-pcrec | §5.5: H1/H2/H3 over 45 cells, with the SHARP anchored-at-true-start form of H3 beside the naive one, a fixture-tested `erase()`, and two vacuity guards |
-| `probes/probe_d66_subset.py` | MEASURED, libpcre2 + in-pcrec | §5.4/§6/§9: the positive control's six equivalences (80 cells each); the `(?m)^` self-oracle in BOTH directions; and the sweep that finds the H3 hazard **coexisting with a live prefilter-window ceiling on 16 of 30 shapes** |
+| `probes/probe_prefilter_hazard.py` | MEASURED, libpcre2 + in-pcrec | §5.3-§5.4: H1/H2/H3 over 45 cells, with the SHARP anchored-at-true-start form of H3 beside the naive one, a fixture-tested `erase()`, and two vacuity guards |
+| `probes/probe_d66_subset.py` | MEASURED, libpcre2 + in-pcrec | §5.5/§5.7/§6/§9: the positive control's six equivalences (80 cells each); the `(?m)^` self-oracle in BOTH directions; and the sweep that finds the H3 hazard **coexisting with a live prefilter-window ceiling on 16 of 30 shapes** |
 
 **`probes/archive.sh` is the ONLY writer of `out/`.** R30 M7's rule, inherited
 through two lanes. R32 D1/C14 found the backrefs archiver stamping the wrong
@@ -110,7 +110,7 @@ The other five (a vacuous budget axis killed by PCRE2's own start
 optimization; a `(?m)` on one arm only; a tail set blind to the defect a
 sibling axis found; a sweep population that could not contain a qualifying
 shape; and two oracles compared across a report-shape difference) are in
-`out/CLAUDE.md`. **The fourth is the one a panel should note**: §5.6's first
+`out/CLAUDE.md`. **The fourth is the one a panel should note**: §5.5's first
 sweep reported "0 qualifying shapes" over a space in which 0 was the only
 possible answer, and the reachability guard that now stands is what turned
 that into the **16 of 30** this design's H3 ruling rests on.
@@ -141,7 +141,7 @@ MEASURED/STRUCTURAL, `out/premises.txt`, at `d1d4378`.
 | P13 | The default feature set is `std1` and it does **NOT** enable module `assertions` | MEASURED, `out/d66_subset.txt` S1b: `\bfoo` under the default refuses "requires module 'assertions'"; under `--features all` it compiles. §9 and §10 both consume this |
 | P14 | With module `lookaround` ENABLED, the refusal is the D65 **enabled-but-unbuilt** one | MEASURED, S1b: `--features all` on `(?<!\w)(?=\w)foo` gives "module 'lookaround' is **enabled but** `(?<...)` **is not implemented yet**" — a different diagnostic from P1's, and the one the built-status machinery reads |
 | P15 | A residual seam entry may not be referenced from any file-scope function body but its own and `main()` — **unless the entry declares `engine_callable`** | STRUCTURAL, `tests/codegen/run_codegen_tests.sh:898ff`, and the fixture table's fourth column now declares `<suffix>:<count>` per fixture with an EXACT guard asserting **4** fixtures declare a `bref` entry |
-| P16 | pcrec's own compiled artifact is leftmost-**FIRST**, not leftmost-longest | MEASURED: `(a|ab)` compiled with `--emit-main` and run on `"ab"` prints `match 0 1`. **This is what makes §5.5's PCRE2-anchored model of the prefilter faithful rather than a guess** |
+| P16 | pcrec's own compiled artifact is leftmost-**FIRST**, not leftmost-longest | MEASURED: `(a|ab)` compiled with `--emit-main` and run on `"ab"` prints `match 0 1`. **This is what makes §5.4's PCRE2-anchored model of the prefilter faithful rather than a guess** |
 
 **Two charter premises did not survive.** The [M6.6.1] row says the D27
 goal-facts list should carry *"python lacks … the non-atomic forms; python's
@@ -989,7 +989,7 @@ not repeat backrefs' unhelpful advice" as a landing item, not a fix.
 backref-erased pattern is not even a superset once the referenced group's
 transitive closure holds an assertion. `atomic-groups` **kept** the prefilter
 and dropped only the window-end ceiling. **This module is the atomic-groups
-case**, and §5.5 measures it rather than reasoning by analogy.
+case**, and §5.4 measures it rather than reasoning by analogy.
 
 **The lowering that makes the prefilter exist**: `src/ir/nfa.c` gains an
 `A_LOOK` arm that lowers the node to **epsilon** — the assertion is simply
