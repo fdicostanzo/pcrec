@@ -12075,3 +12075,41 @@ nullable reference under an empty-iteration guard; a reference inside a
 revdet-eligible body), or the sabotage is unobservable and the row's
 claim is wrong. Fix lane opened (lane/brfix from 5edba64); the close
 waits on it and on the gate.
+
+## 2026-08-23 (EDT), thirty-sixth session (part 13) — [M6.5] CLOSED: module `backrefs` ships; the grant's two modules are done
+
+THE CLOSE EVIDENCE: union battery on 3aa446f all five stages green (test
+22,138/0, strict, ubsan, asan, lint, zero sanitizer reports); full mech
+on 5edba64 118 rows / 0 anomalies, with its two UNDETECTED rows resolved
+by MEASUREMENT — S107 a corpus gap against a correct module (the empty-
+iteration guard acts only when the referenced group captures EMPTY at
+run time, a property of the SUBJECT; the corpus had the shape and none
+of the live population; +7 cells, a structural §10 check reading the
+guard off the artifact with bounded controls, failing direction 4→0,
+single-row DETECTED) and S108 measured UNOBSERVABLE (rd_shape's verdict
+flips but the Glushkov arm independently declines every backref body —
+coextensive gates; the wall is real and reachable only by a two-hunk
+sabotage the matrix cannot express) and RETIRED rather than left as a
+standing finding (117 scored rows); tripwire 117 all resolve; the D27
+corpus 207/207 with zero implementation divergences; gate 13/13 at load
+0.36 (41e541a, archived results-ubuntubudu-20260823.md). Rows
+[M6.5.2]/[M6.5.3]/[M6.5.4] → completed; [M6.5] archived with Frank's six
+backref follow-ups (a)-(f) — (f) in the core-reduction form: A_BREF →
+subroutine-call under the singleton predicate, inlined by the
+`recursion` module's inliner, one path — and three residuals (S103 →
+brefidentity; a multi-hunk sabotage mechanism; a row for the Glushkov
+A_BREF arm); [M6.0] reads backrefs DONE, lookaround [M6.6] NOT cleared
+unprompted. [TT-4] chartered, starts next (measurement first).
+
+THE TWO DAYS' COUNT. Two modules designed, panelled (six critics, R31 +
+R32, thirty-odd HIGH refuted), implemented, blinded-corpus-tested and
+closed in ~20 hours under one autonomous grant: atomic-groups' corpus
+found a tier-1 miscompile three panels missed and it was fixed at its
+root the same afternoon; backrefs' corpus found none. U9 ruled (D68,
+suspected PCRE2 defect). SR-8 built (D67). K29 found and fixed. The
+tripwire caught drift four times and its own count gap once. Two new
+lesson classes from the last round: a corpus can hold a property's
+SHAPE and none of its live POPULATION (ask which input axis the property
+varies over); defence in depth blinds single-edit mutation testing (an
+UNDETECTED row is a question — diagnose by measurement, never by
+reading). Session ends here; Frank afk; context near compaction.
