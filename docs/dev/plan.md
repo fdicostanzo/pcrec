@@ -346,7 +346,7 @@ including V-G/V-H (added this session).
     FRANK (2026-08-23, 08:3x): if the row proves worthwhile he wants to SEE
     the before/after timings for testing — present them to him at the
     close, whole chain (make test, battery stages, mech), not make test only.
-- [TT-6] STATE:started (APPROVED by Frank 2026-08-23 11:1x as #1 of the set; lane/tt6timeout) — THE `timeout` BINARY TAX (found by [TT-4.1]
+- [TT-6] STATE:completed (MERGED 5935ea9, 2026-08-23 12:1x: tests/lib/timeout_bin.sh resolves TIMEOUT_BIN — GNU when the default is uutils, plain `timeout` elsewhere; every bare call swapped in 9 scripts + scripts/Makefile; MEASURED test-corpus isolated 6:44.24→1:04.08 (6.31x, identical 22,358/0), make -j12 test 10:32.82→10:15.96 (oversubscribed at load 33-41, sleep hidden — the saving shows where sections run serially: the sanitizer axes and mech rows; battery_tt6.log is that number); S43 anchor re-derived, tripwire 118/119; D69 rows S11+S43 DETECTED on the merge in 19 s total; bench COMPILE-SPEED/GCC-TIME budgets had the wrapper's launch cost inside their number — archived gate results predate the swap, flagged in tests/bench/CLAUDE.md) — formerly STATE:started (APPROVED by Frank 2026-08-23 11:1x as #1 of the set; lane/tt6timeout) — THE `timeout` BINARY TAX (found by [TT-4.1]
   2026-08-23, manager-verified: uutils coreutils 0.8.0 `timeout` sleeps
   ~108 ms per call at zero CPU; GNU `gnutimeout` 4 ms). ~10 test scripts
   call `timeout` bare (pcrec calls, every per-case matcher run in
@@ -417,7 +417,7 @@ including V-G/V-H (added this session).
   before/after first, then the battery on the merged swap (= the axes'
   "after"), then [TT-7]'s combined-axis run, then [TT-8]'s matrices.
   Frank gets the whole-chain before/after at the end.
-- [TT-7] STATE:started (2026-08-23, Frank's #2; lane/tt7san) — ONE
+- [TT-7] STATE:started (2026-08-23, Frank's #2; PREP MERGED 9582091: `make san` target, build-san/, distinctness verified through the real generated-matcher path, D45 budgets byte-identical to either single axis, docs PENDING; LSan is a no-op on this box under ANY axis — K26, ptrace_scope=1; OWED: the manager's timing run `gnutimeout 5400 /usr/bin/time -v make -j12 san` vs the battery_tt6 ubsan+asan walls, then the adoption flip) — ONE
   COMBINED `-fsanitize=address,undefined` AXIS, measurement first: a
   `make san` target building a third separate tree (build-san/) with the
   combined flags on BOTH axes exactly as ubsan/asan do; measure its wall
@@ -430,7 +430,7 @@ including V-G/V-H (added this session).
   faster AND as diagnostic, the battery adopts it and ubsan/asan stay as
   opt-in singles. SAN-1's separate-axes reason is TSan-specific
   (Makefile:577-580) — not a blocker.
-- [TT-8] STATE:started (2026-08-23, Frank's #3 + #4; lane/tt8mech) —
+- [TT-8] STATE:started (2026-08-23, Frank's #3 + #4; (a)(b)(c) MERGED bbf7847: the leak was LIVE — PROCS=4 on a single row spawned 4 REJECT_SHARD_TOTAL=4 workers; fixed with INNER_PROCS=ncpu/PROCS passed explicitly on the reject/harness arms, S15/S107 figures byte-identical across leaked/serial/fixed; D69 evidence: 99 common rows m64↔m65, ZERO flipped DETECTED→UNDETECTED without their own definition changing; tests/mech/rows_for.sh maps changed paths→rows, failing-direction tested; OWED: the PROCS sweep (~20 rows at 3/4/6) and the full after-matrix — docs/dev/tt8_mech.md has the one-liners) —
   MECH: (a) the PROCS LEAK: run_sabotage_matrix.sh's PROCS (row
   concurrency) reaches the inner tests/harness/run.sh and reject sharding
   through the environment — fix so inner scripts get an explicit per-row
