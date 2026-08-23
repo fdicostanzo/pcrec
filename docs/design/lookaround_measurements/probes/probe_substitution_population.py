@@ -75,6 +75,7 @@ def occurrences(pat):
     out = []
     i, n = 0, len(pat)
     incls = False
+    clspos = 0
     while i < n:
         c = pat[i]
         if c == "\\" and i + 1 < n:
@@ -84,12 +85,22 @@ def occurrences(pat):
             i += 2
             continue
         if incls:
-            if c == "]":
+            # R33 C3-2: a `]` IMMEDIATELY after `[` or `[^` is a LITERAL, not
+            # the closing bracket (PCRE2's literal-first rule). `clspos`
+            # records how far into the class we are, so the first position
+            # (or the first after `^`) does not close it.
+            if c == "]" and clspos > 0:
                 incls = False
+            elif c == "^" and clspos == 0:
+                clspos = 0          # a leading ^ does not count as content
+                i += 1
+                continue
+            clspos += 1
             i += 1
             continue
         if c == "[":
             incls = True
+            clspos = 0
             # a leading ^ inside a class is a NEGATION, and the walk above
             # never records it because `incls` is already true on the next
             # iteration -- stated so a reader does not have to derive it
@@ -99,6 +110,40 @@ def occurrences(pat):
             out.append((c, i, False))
         i += 1
     return out
+
+
+# R33 C3-1: Q4 WAS A SUBSTRING TEST and it misses `(?im:`, `(?i-m:`, `(?xm:`
+# and every other letter set that contains `m` alongside another letter. It is
+# INERT on today's corpus (the counts below are byte-identical before and
+# after this fix) and it corrupts cells the moment such a block is added --
+# exactly the growth failure a substring test hides. The rule is now: find any
+# `(?` followed by a MODIFIER LETTER SET (the letters PCRE2 accepts, optional
+# `-` and a second set) terminated by `:` or `)`, and ask whether `m` appears
+# on either side of the `-`.
+_MODLETTERS = "imnsxUJxa"          # the letters mod_modifiers.c accepts
+_MODRE = re.compile(r"\(\?([a-zA-Z]*)(?:-([a-zA-Z]*))?([:\)])")
+
+
+def has_scoped_m(pat):
+    """True when `m` is turned on or off by any inline modifier group that is
+    NOT a bare leading `(?m)`.
+
+    A LEADING unscoped `(?m)` is fine -- the multiline state is then constant
+    for the whole pattern and the driver can resolve `^`/`$` textually. Every
+    other appearance (a scoped `(?im:...)`, a mid-pattern `(?-m)`, a second
+    `(?m)` after something else) means the state varies with position, which a
+    textual driver cannot follow without being a parser."""
+    for m in _MODRE.finditer(pat):
+        on, off, term = m.group(1) or "", m.group(2) or "", m.group(3)
+        if not any(ch in _MODLETTERS for ch in on + off):
+            continue                      # not a modifier group at all
+        touches_m = ("m" in on) or ("m" in off)
+        if not touches_m:
+            continue
+        if term == ")" and m.start() == 0 and not off and on == "m":
+            continue                      # the bare leading `(?m)`
+        return True
+    return False
 
 
 def blocks(path):
@@ -151,7 +196,8 @@ REJ = {"Q1 perr / no behavioural cell": [0, 0],
        "Q2 no substitutable assertion": [0, 0],
        "Q3 assertion inside a character class": [0, 0],
        "Q4 scoped (?m: or (?-m)": [0, 0],
-       "Q5 \\K inside a substituted body": [0, 0]}
+       "Q5 \\K inside a substituted body": [0, 0],
+       "Q6 block marked # pcre2-deviates (D68)": [0, 0]}
 QUAL = {"blocks": 0, "cells": 0, "gcells": 0}
 per_token = {}
 per_file = {}
@@ -174,7 +220,7 @@ for path in files:
         occ = occurrences(pat)
         subs = [o for o in occ if o[0] in SUBSTITUTABLE]
         in_class = [o for o in subs if o[2]]
-        scoped = ("(?m:" in pat) or ("(?-m" in pat) or ("(?m-" in pat)
+        scoped = has_scoped_m(pat)
 
         why = None
         if is_perr or not beh:
@@ -185,6 +231,14 @@ for path in files:
             why = "Q3 assertion inside a character class"
         elif scoped:
             why = "Q4 scoped (?m: or (?-m)"
+        elif any(d.startswith("# pcre2-deviates") for d in b["dirs"]) or \
+                any(l.startswith("# pcre2-deviates") for l in b["lead"]):
+            # R33 C3-3: a block D68 marks as DELIBERATELY diverging from
+            # libpcre2 would false-fail the A == C arm, which compares against
+            # libpcre2. Costed 0/0 today -- no such block exists in this
+            # corpus -- and the rule is here so a future one is excluded
+            # rather than reported as a driver failure.
+            why = "Q6 block marked # pcre2-deviates (D68)"
         if why:
             REJ[why][0] += 1
             REJ[why][1] += len(beh)

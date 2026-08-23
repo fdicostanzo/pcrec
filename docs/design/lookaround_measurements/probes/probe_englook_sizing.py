@@ -10,16 +10,49 @@ property in the REVERSE machine. That row says MEASUREMENT FIRST, and names
 the number it needs: the size of each body's component automaton, and the
 expected product growth against the caps.
 
-THE METHOD, stated because a reader must be able to reject it:
+THE METHOD -- **AND ITS FIRST VERSION WAS REFUTED BY R33 C2-1.**
 
-  The component [ENG-LOOK] needs for a lookBEHIND body L is the recognizer for
-  Sigma*.L. **pcrec's UNANCHORED FORWARD DFA for the pattern `L` IS that
-  machine** -- unanchoredness is the automaton's own self-loop (D58's "Why"
-  paragraph says so in as many words), which is exactly the Sigma* prefix. The
-  component for a lookAHEAD body is reverse(L).Sigma*, and pcrec's REVERSE
-  machine for the same pattern is that. So compiling the BODY ALONE and
-  reading the two tables off the artifact gives both components, with no model
-  in between.
+  The first version claimed: "pcrec's UNANCHORED FORWARD DFA for the pattern
+  `L` IS the Sigma*.L recognizer -- unanchoredness is the automaton's own
+  self-loop." **That identity is FALSE.** `src/ir/nfa.c:766-781`
+  (`nfa_wrap_unanchored`) adds the self-loop as the LOWEST-PRIORITY start
+  alternative, and D3 ACCEPT-PRUNING then kills the self-loop thread at the
+  first accept -- so every accepting state in the emitted forward table is a
+  DEAD SINK. A Sigma*.L predicate machine must be TOTAL and must RE-ACCEPT at
+  every later position (`(?<=foo)` has to answer YES at offset 6 of "foofoo"
+  having already accepted at 3); this machine stops answering after the first
+  occurrence. It is a LEFTMOST-OCCURRENCE SEARCH automaton, not the component.
+
+  It also UNDER-COUNTS, which is the half that breaks a bound: truncation at
+  the first accept deletes states whenever an alternation branch is
+  prefix-dominated -- `a|ab` emits 2 forward states where the minimal
+  D(Sigma*.L) has 3, and `ab|abc` emits 3 where the minimum is 4. A decline
+  rule written against an under-count declines too little, which is the
+  failure direction that matters, and §2.5 ships `(?<=a|bc)`-shaped bodies
+  outright.
+
+  SO THIS PROBE NOW REPORTS TWO COLUMNS:
+
+    MEASURED-LOWER  -- the emitted forward/reverse table dimensions, exactly
+                       as before, RELABELLED as a LOWER BOUND on the
+                       component and no longer as the component itself. It is
+                       still worth reporting: it is the only in-pcrec number,
+                       and the forward/reverse asymmetry it shows is the tell
+                       C2-1 used.
+    PROTOTYPE-EXACT -- |D(Sigma*.L)| computed HERE by an explicit subset
+                       construction over a small NFA for L. It is a MODEL --
+                       pcrec does not build this machine -- and it is marked
+                       PROTOTYPE everywhere it appears. Its SELF-CHECK is
+                       C2-1's own two cells (`a|ab` -> 3, `ab|abc` -> 4) plus
+                       four hand-checkable ones, asserted at import: if the
+                       construction is wrong, this probe says so instead of
+                       publishing a number.
+
+  ANCHOR-BEARING BODIES ARE EXCLUDED FROM THE PROTOTYPE COLUMN AND SAY SO.
+  `(?!\z)` and `(?=\n?\z)` contain ANCHORS, which are not letters of Sigma;
+  `Sigma*.L` is not the right question for them and [ENG-LOOK]'s own row
+  handles them as the delayed-acceptance / anchor case rather than as a
+  product component.
 
   STATE COUNT is `len(rx_forward_is_accepting[])`; CLASS COUNT is
   `len(rx_forward_next_state[]) / states`, since the transition table is
@@ -94,6 +127,179 @@ def dims(src):
     return res
 
 
+# ---------------------------------------------------------------------------
+# THE PROTOTYPE: |D(Sigma*.L)| by explicit subset construction.
+#
+# A MODEL, not a measurement of pcrec -- marked PROTOTYPE wherever its numbers
+# appear. It covers exactly the body syntax this lane's populations use:
+# literals, `.`-free classes ([...], \w, \d, \n), concatenation, alternation,
+# `?`, and bounded {n} / {n,m}. Anything else raises, and the caller reports
+# the body as NOT MODELLED rather than guessing.
+#
+# The alphabet is COLLAPSED to the distinct character sets the body mentions
+# plus one "everything else" letter, which is what makes the state count the
+# same as it would be over the full 256-byte alphabet while keeping the
+# construction small enough to read.
+# ---------------------------------------------------------------------------
+class _Unmodelled(Exception):
+    pass
+
+
+def _classes(body):
+    """Tokenise the body into a list of (kind, payload) where kind is
+    'set' | '|' | '(' | ')' | '?' | '{n,m}'."""
+    out = []
+    i, n = 0, len(body)
+    while i < n:
+        c = body[i]
+        if c == "\\":
+            if i + 1 >= n:
+                raise _Unmodelled("trailing backslash")
+            e = body[i + 1]
+            if e == "w":
+                out.append(("set", frozenset(["W"])))
+            elif e == "d":
+                out.append(("set", frozenset(["D"])))
+            elif e == "n":
+                out.append(("set", frozenset(["\n"])))
+            elif e in "zAbBGK":
+                raise _Unmodelled("anchor or assertion \\%s" % e)
+            else:
+                out.append(("set", frozenset([e])))
+            i += 2
+            continue
+        if c == "[":
+            j = body.index("]", i + 1)
+            out.append(("set", frozenset([body[i:j + 1]])))
+            i = j + 1
+            continue
+        if c in "|()?":
+            out.append((c, None))
+            i += 1
+            continue
+        if c == "{":
+            j = body.index("}", i)
+            spec = body[i + 1:j]
+            lo, _, hi = spec.partition(",")
+            out.append(("{}", (int(lo), int(hi) if hi else int(lo))))
+            i = j + 1
+            continue
+        if c in "*+.":
+            raise _Unmodelled("unbounded or dot: %s" % c)
+        out.append(("set", frozenset([c])))
+        i += 1
+    return out
+
+
+def _branches(toks):
+    """Split top-level alternation; expand ? and {n,m} into explicit
+    alternatives. Returns a list of lists-of-sets (each an exact word shape)."""
+    depth = 0
+    parts, cur = [], []
+    for k, v in toks:
+        if k == "(":
+            depth += 1
+        elif k == ")":
+            depth -= 1
+        if k == "|" and depth == 0:
+            parts.append(cur)
+            cur = []
+        else:
+            cur.append((k, v))
+    parts.append(cur)
+    out = []
+    for part in parts:
+        seqs = [[]]
+        for idx, (k, v) in enumerate(part):
+            if k == "set":
+                seqs = [s + [v] for s in seqs]
+            elif k == "?":
+                if not seqs or not seqs[0]:
+                    raise _Unmodelled("? with nothing before it")
+                seqs = [s[:-1] for s in seqs] + seqs
+            elif k == "{}":
+                lo, hi = v
+                base = [s[-1] for s in seqs]
+                nseqs = []
+                for s in seqs:
+                    head, last = s[:-1], s[-1]
+                    for r in range(lo, hi + 1):
+                        nseqs.append(head + [last] * r)
+                seqs = nseqs
+            elif k in "()":
+                # only non-capturing/parenthesised alternation-free groups are
+                # modelled; a nested alternation raises
+                continue
+            else:
+                raise _Unmodelled("token %r" % k)
+        out.extend(seqs)
+    if any("|" == k for part in parts for k, _v in part):
+        raise _Unmodelled("nested alternation")
+    return out
+
+
+def dsigma_star_l(body):
+    """|D(Sigma*.L)| -- PROTOTYPE. Raises _Unmodelled for a body outside the
+    covered syntax."""
+    words = _branches(_classes(body))
+    if not words:
+        raise _Unmodelled("no branches")
+    # alphabet letters: every distinct set mentioned, plus OTHER
+    letters = sorted({frozenset(s) for w in words for s in w}, key=lambda x: sorted(x))
+    OTHER = object()
+    alpha = list(letters) + [OTHER]
+    maxlen = max(len(w) for w in words)
+
+    def matches(letter, wanted):
+        return letter is not OTHER and letter == wanted
+
+    # NFA states: (word index, position). Plus the always-live start.
+    start = frozenset([("S", 0)])
+    seen = {start: 0}
+    work = [start]
+    while work:
+        st = work.pop()
+        for a in alpha:
+            nxt = set([("S", 0)])          # the Sigma* self-loop, always live
+            for (wi, pos) in st:
+                if wi == "S":
+                    for j, w in enumerate(words):
+                        if w and matches(a, w[0]):
+                            nxt.add((j, 1))
+                    continue
+                w = words[wi]
+                if pos < len(w) and matches(a, w[pos]):
+                    nxt.add((wi, pos + 1))
+            f = frozenset(nxt)
+            if f not in seen:
+                seen[f] = len(seen)
+                work.append(f)
+    del maxlen
+    return len(seen)
+
+
+# THE FIXTURES, and one of them corrected the probe's own expectation.
+# `a|b` was written expecting 2 -- the MINIMAL DFA for "strings ending in a
+# or b" really does have 2 states -- and the construction answers 3, because
+# a SUBSET CONSTRUCTION distinguishes "ended with a" from "ended with b" and
+# nothing here merges them. The construction is right and the expectation was
+# wrong, so the column is THE SUBSET SIZE, which is what a determinization
+# WOULD BUILD before `src/opt/minimize.c` runs. That is the number
+# [ENG-LOOK]'s estimate-before-committing rule needs (it must decline on what
+# it is about to construct, not on what it would have after minimising), and
+# the realised component may be smaller. C2-1's own two cells (`a|ab` -> 3,
+# `ab|abc` -> 4) are subset sizes too and are reproduced exactly.
+_PROTO_SELFCHECK = []
+for _b, _want in [("a|ab", 3), ("ab|abc", 4), ("a", 2), ("ab", 3),
+                  ("abc", 4), ("a|b", 3), ("a|bc", 4)]:
+    try:
+        _got = dsigma_star_l(_b)
+    except _Unmodelled as _e:                                  # noqa: BLE001
+        _got = "UNMODELLED: %s" % _e
+    if _got != _want:
+        _PROTO_SELFCHECK.append((_b, _got, _want))
+
+
 # (label, body-as-a-pattern, where it comes from)
 BODIES = [
     # (a) the assertion-family expansions' bodies
@@ -152,9 +358,15 @@ print("=" * 78)
 print("The forward machine is the Sigma*.L recognizer a LOOKBEHIND needs; the")
 print("reverse machine is the reverse(L).Sigma* one a LOOKAHEAD needs.")
 print()
-print("%-12s %-10s | %-19s | %-19s | %s"
-      % ("body", "origin", "forward st x cls", "reverse st x cls", "note"))
-print("-" * 110)
+print("PROTOTYPE self-check problems:", _PROTO_SELFCHECK or "none")
+if _PROTO_SELFCHECK:
+    print("  !! the subset construction is WRONG on its own fixtures; every")
+    print("  !! PROTOTYPE-EXACT number below is unusable")
+print()
+print("%-12s %-10s | %-17s | %-17s | %-11s | %s"
+      % ("body", "origin", "fwd st x cls (LOWER)", "rev st x cls (LOWER)",
+         "|D(S*.L)|", "note"))
+print("-" * 120)
 comp = {}
 for body, origin, note in BODIES:
     src, err = artifact(body)
@@ -162,11 +374,15 @@ for body, origin, note in BODIES:
         print("%-12s %-10s | REFUSED: %s" % (body, origin, err[:50]))
         continue
     d = dims(src)
+    try:
+        d["proto"] = dsigma_star_l(body)
+    except _Unmodelled as ex:                                   # noqa: BLE001
+        d["proto"] = "n/a (%s)" % str(ex)[:22]
     comp[body] = d
-    print("%-12s %-10s | %5s x %-11s | %5s x %-11s | %s"
+    print("%-12s %-10s | %5s x %-9s | %5s x %-9s | %-11s | %s"
           % (body, origin,
              d["forward_states"], d["forward_classes"],
-             d["reverse_states"], d["reverse_classes"], note))
+             d["reverse_states"], d["reverse_classes"], d["proto"], note))
 print()
 print("# A `None` column means the artifact carries no table of that name --")
 print("# a VM-routed artifact. `RX_ENGINE` is stamped only for the VM, so its")
@@ -201,11 +417,19 @@ print("worst-case |D(main)| x |D(component)|, and the STATES x CLASSES figure")
 print("beside it, because wave B's own over-cap number (38,009 vs 32,000) was")
 print("the second quantity and not the first.")
 print()
-print("%-24s %-12s | %-9s | %-11s | %-11s | verdict"
-      % ("main", "body", "st product", "cls product", "st x cls"))
-print("-" * 100)
+print("THE COMPONENT COLUMN IS THE PROTOTYPE |D(Sigma*.L)| WHERE THE BODY IS")
+print("MODELLED, and the emitted LOWER BOUND where it is not -- each row says")
+print("which. R33 C2-1: the emitted forward table UNDER-counts (it is the")
+print("leftmost-occurrence automaton, accept-pruned), so a bound computed from")
+print("it is not a bound. `a|bc` is the row that shows it inside this module's")
+print("own shipped population: emitted 3, prototype 4.")
+print()
+print("%-24s %-14s | %-7s | %-9s | %-9s | %-9s | verdict"
+      % ("main", "body", "src", "st product", "cls product", "st x cls"))
+print("-" * 112)
 over = 0
 rows = 0
+under = 0
 for pat, _n in MAINS:
     if pat not in mains:
         continue
@@ -216,12 +440,16 @@ for pat, _n in MAINS:
         c = comp[body]
         if not (m["forward_states"] and c["forward_states"]):
             continue
-        st = m["forward_states"] * c["forward_states"]
+        proto = c.get("proto")
+        if isinstance(proto, int):
+            csz, src_ = proto, "PROTO"
+            if proto > c["forward_states"]:
+                under += 1
+        else:
+            csz, src_ = c["forward_states"], "lower"
+        st = m["forward_states"] * csz
         cls = None
         if m["forward_classes"] and c["forward_classes"]:
-            # the product alphabet is at most the product of the two
-            # refinements, and at least the coarser -- the UPPER bound is what
-            # a decline rule must use
             cls = m["forward_classes"] * c["forward_classes"]
         stcls = st * cls if cls else None
         rows += 1
@@ -231,10 +459,12 @@ for pat, _n in MAINS:
             over += 1
         elif st > CAP_GOTO:
             verdict = "over the 10,000 goto cap (table engine only)"
-        print("%-24s %-12s | %9d | %11s | %11s | %s"
-              % (pat, body, st, cls, stcls, verdict))
+        print("%-24s %-14s | %-7s | %9d | %11s | %11s | %s"
+              % (pat, body, src_, st, cls, stcls, verdict))
 print()
 print("ROWS: %d.  Over the 32,000 STATE cap: %d." % (rows, over))
+print("ROWS WHERE THE PROTOTYPE EXCEEDS THE EMITTED LOWER BOUND: %d" % under)
+print("  (each of those is a row the FIRST version of this probe under-stated)")
 print()
 print("VACUITY GUARD: the population must contain at least one row that COULD")
 print("be over the cap, or a count measures nothing.")
