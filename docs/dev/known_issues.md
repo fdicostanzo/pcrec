@@ -2477,3 +2477,31 @@ byte-identity gate (tests/codegen/run_atomic_identity.sh) measured the
 corpus overlap at ZERO: no `.rxt` pattern anywhere under tests/ is in
 that family, so the gate asserts a flat zero difference and needed no
 exception bucket.
+
+## K30 — OPEN (found 2026-08-23, [TT-8]'s PROCS sweep) — `run_reject_tests.sh`'s `--list-syntax` section runs UNSHARDED in every shard, so a sabotage row's reject figure depends on the inner shard width
+
+**Symptom.** Sabotage S18-tsv-empty (pcrec_syntax_tsv returns "" early)
+measured `reject:5fail` in every matrix through 2026-08-22, `reject:4fail`
+in the 2026-08-23 PROCS=4 full matrix and `reject:3fail` at PROCS=6 — i.e.
+shards + 1. Those earlier matrices ran the inner reject suite at 4 shards
+by the [TT-8] PROCS leak; the fixed matrix derives INNER_PROCS = ncpu/PROCS
+(3 at PROCS=4, 2 at PROCS=6), so the figure now moves with PROCS.
+
+**Cause.** tests/reject/run_reject_tests.sh:1752-1754 — the `--list-syntax`
+dump and its "produced no dump … every check below would pass vacuously"
+guard sit OUTSIDE the `callidx % SHARD_TOTAL` gate that `reject()`/
+`accept()` use, so every shard child runs the dump and, under S18, every
+shard reports that guard's failure once. [TT-2]'s "same Summary counts at
+any PROCS" claim is therefore false for this section under this sabotage
+(true for the healthy tree: the guard passes in every shard and the per-row
+probes below it ARE gated).
+
+**Consequence.** The matrix's documented "byte-identical to a PROCS=1 run"
+property holds only for rows whose suites are shard-independent; S18 is the
+one known exception. Not a detection defect — S18 is DETECTED at every
+width.
+
+**Fix (small).** Run the dump once and shard its row loop like the rest, or
+confine the guard to shard 0 (a `[ "$SHARD_INDEX" -eq 0 ]` around the `bad`).
+Then re-measure S18 at PROCS=1/4/6 — the figure should be constant — and
+drop this entry. Lands with the next reject-table change or [TT-8]'s close.

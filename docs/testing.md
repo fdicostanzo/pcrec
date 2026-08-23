@@ -1187,6 +1187,14 @@ that is the trigger, not the plan row's original naming.
 
 ### mech's own PROCS mechanism (pre-existing, not TT-2 work)
 
+**Measured setting (2026-08-23, [TT-8], after the PROCS-leak fix and the
+[TT-6] timeout swap): `PROCS=6 make mech`** — full 118-row matrix 28:43 at
+PROCS=6 vs 36:36 at PROCS=4 on the same HEAD (6b0ef30), rows byte-identical
+except S18-tsv-empty's reject figure, which is shards+1 (K30, a reject-script
+sharding property, not a detection difference). The inner suites get
+INNER_PROCS = ncpu/PROCS explicitly; at PROCS=1 the inner suites now shard at
+ncpu (a behaviour change from the leaked `1`, same figures).
+
 `tests/mech/run_sabotage_matrix.sh` already had `PROCS=N` support (added
 2026-08-12, three days before this row opened) — see "Running the tests"
 above: N sabotages built and run concurrently, each in its own scratch tree
