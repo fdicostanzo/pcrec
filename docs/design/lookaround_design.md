@@ -998,7 +998,7 @@ prefilter's DFA answer for the lookaround-free language.
 
 **THE HAZARD THAT CREATES, NAMED RATHER THAN BURIED.** One lowering now serves
 two consumers with different soundness requirements: as a **prefilter** the
-erasure is sound (§5.5), and as **the DFA engine's own machine** it is a
+erasure is sound (§5.4), and as **the DFA engine's own machine** it is a
 miscompile. Only SR-8's `VM_ONLY` stamp stands between them. `atomic-groups`
 has the identical coupling (`nfa.c` lowers an atomic body transparently) and
 the identical guard, so this is precedent rather than novelty — but with one
