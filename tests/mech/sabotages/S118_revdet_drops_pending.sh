@@ -29,7 +29,7 @@ SAB_DOC_FIGURE="PREDICTED: brefdiff RED; the corpus RED on nested.rxt's group-in
 SAB_COUNT=1
 SAB_BEFORE='        if (!v->nocap) {
             if (marked)
-                vm_set(v, vm_slot_pend(v, a->capno), "(ptrdiff_t)scan_position",'
+                vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",'
 SAB_AFTER='        if (1) {   /* SABOTAGE S118: the pending write escapes the suppression */
             if (marked)
-                vm_set(v, vm_slot_pend(v, a->capno), "(ptrdiff_t)scan_position",'
+                vm_set(v, vm_slot_pend(v, a->u.cap.no), "(ptrdiff_t)scan_position",'

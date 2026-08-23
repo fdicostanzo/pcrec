@@ -19,11 +19,11 @@ SAB_ID="S98-countslots-reads-field"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="codegen harness atomicdiff"
 SAB_HARNESS_TARGET="tests/atomic_groups/possessive.rxt"
-SAB_DESC="vm_count_slots's A_REP arm reads a->possessive directly instead of the shared vm_cuts() predicate, so a LIFTED possessive's cut mark is never counted: the emitter then asks for a slot past RX_NSLOTS, or lands on another family's slot. An out-of-bounds write in EMITTED code (K27's class), or two live loops sharing one slot"
+SAB_DESC="vm_count_slots's A_REP arm reads a->u.rep.possessive directly instead of the shared vm_cuts() predicate, so a LIFTED possessive's cut mark is never counted: the emitter then asks for a slot past RX_NSLOTS, or lands on another family's slot. An out-of-bounds write in EMITTED code (K27's class), or two live loops sharing one slot"
 SAB_DOC_FIGURE="PREDICTED: codegen rule 5c RED (an RX_CUT naming a slot the legend does not declare a cut mark), slot-count assertions RED, and on a deep pattern an OOB slot write in the emitted matcher. Canonical figure owed from run_sabotage_matrix.sh S98."
 SAB_COUNT=1
 SAB_BEFORE='    case A_REP: {
         const bool cuts = vm_cuts(a, under_atomic);'
 SAB_AFTER='    case A_REP: {
-        const bool cuts = a->possessive;   /* SABOTAGE S98 */
+        const bool cuts = a->u.rep.possessive;   /* SABOTAGE S98 */
         (void)under_atomic;'

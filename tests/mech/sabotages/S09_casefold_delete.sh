@@ -15,13 +15,13 @@ SAB_COUNT=1
 SAB_BEFORE="static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
-    cls_set(a->cls, c & 0xff);
-    if (cx->mods->caseless) cls_casefold(a->cls);
+    cls_set(a->u.cls.bits, c & 0xff);
+    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
     return a;
 }"
 SAB_AFTER="static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
-    cls_set(a->cls, c & 0xff);
+    cls_set(a->u.cls.bits, c & 0xff);
     return a;
 }"

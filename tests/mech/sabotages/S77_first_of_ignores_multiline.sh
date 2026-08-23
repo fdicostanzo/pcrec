@@ -10,7 +10,7 @@
 # reader off — must go red".
 #
 # THE READER is `first_of`'s `A_EOL` arm in src/opt/possessify.c. With
-# `a->multiline` consulted, a multiline `$` in a quantifier's FOLLOW widens
+# `a->u.anch.multiline` consulted, a multiline `$` in a quantifier's FOLLOW widens
 # FOLLOW to all bytes and the quantifier is NOT possessified. With the read
 # turned off, every `$` takes the transparent arm — which is precisely the
 # shipped pre-cure behaviour, and precisely the miscompile: the retreat into
@@ -50,5 +50,5 @@ SAB_HARNESS_TARGET="tests/assertions/multiline.rxt"
 SAB_DESC="possessify's first_of stops reading Ast.multiline, so a multiline \$ in a quantifier's follow is treated as transparent and the quantifier is possessified — D62's accepted residual made live: the CAPTURE-BEARING '(?m)([^c]{1,3})\$' on \"a\\nc\" loses its match entirely, in the scoped spellings too (capture-free spellings route to the DFA, which has no backtracking to remove, and stay green)"
 SAB_DOC_FIGURE="tests/assertions/multiline.rxt: the capture-bearing D47.5 cells (section 4b) go red; the capture-free ones in section 4 and tests/assertions/gate.rxt's non-multiline cells stay green"
 SAB_COUNT=1
-SAB_BEFORE='        if (a->multiline) {'
+SAB_BEFORE='        if (a->u.anch.multiline) {'
 SAB_AFTER='        if (0) {   /* SABOTAGE S77 */'

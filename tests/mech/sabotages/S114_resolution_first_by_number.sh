@@ -22,7 +22,7 @@ SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
 SAB_DESC="The emitted else-if chain over a duplicated name's run is truncated to its FIRST member, so resolution becomes \"first by number\" unconditionally instead of \"first that is SET\". (?J)^(?:(?<a>x)|(?<a>y))\\k<a>\$ stops matching \"yy\"; every cell where the first member participates is unaffected"
 SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on exactly the \"yy\" cell of dupnames.rxt's resolution block. Canonical figure owed from run_sabotage_matrix.sh S114."
 SAB_COUNT=1
-SAB_BEFORE='        for (int i = 0; i < a->nrefs; i++) {
+SAB_BEFORE='        for (int i = 0; i < a->u.bref.nrefs; i++) {
             char ns[144], ne[144];'
-SAB_AFTER='        for (int i = 0; i < 1 && i < a->nrefs; i++) {   /* SABOTAGE S114 */
+SAB_AFTER='        for (int i = 0; i < 1 && i < a->u.bref.nrefs; i++) {   /* SABOTAGE S114 */
             char ns[144], ne[144];'

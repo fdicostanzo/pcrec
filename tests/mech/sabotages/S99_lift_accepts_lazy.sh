@@ -26,5 +26,5 @@ SAB_HARNESS_TARGET="tests/atomic_groups/atomic_quant.rxt"
 SAB_DESC="vm_lifts drops its greedy condition, so a LAZY A_REP under an A_ATOMIC is routed onto the possessive rungs whose shape ignores preference. '(?>a*?)b' on \"aaab\" then answers (0,4) where both oracles give (3,4): the cut must commit to the LAZY choice, which is EMPTY, so the match starts at 3"
 SAB_DOC_FIGURE="PREDICTED: the lazy-inside corpus RED (tests/atomic_groups/atomic_quant.rxt section 4), codegen rule 5's LAZY witnesses RED with its GREEDY witnesses GREEN -- that asymmetry is why the per-path check needs both columns. Canonical figure owed from run_sabotage_matrix.sh S99."
 SAB_COUNT=1
-SAB_BEFORE='    if (!r->greedy)        return false;   /* carve-out TWO  (§3.2.2a) */'
+SAB_BEFORE='    if (!r->u.rep.greedy)        return false;   /* carve-out TWO  (§3.2.2a) */'
 SAB_AFTER='    /* SABOTAGE S99: carve-out two removed */'

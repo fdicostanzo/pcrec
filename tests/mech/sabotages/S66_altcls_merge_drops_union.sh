@@ -24,14 +24,14 @@ SAB_DESC="stage 1's OR loop that unions every branch's class bitmap into the mer
 SAB_DOC_FIGURE="src/opt/altcls.c's file header (STAGE 1 soundness paragraph: 'the bitmap is the union'); docs/dev/plan.md's [OPT-ALTCLS] row"
 SAB_COUNT=1
 SAB_BEFORE='                    uint8_t bits[32];
-                    memcpy(bits, br[k]->cls, 32);
+                    memcpy(bits, br[k]->u.cls.bits, 32);
                     for (size_t x = k + 1; x < j; x++)
-                        for (int b = 0; b < 32; b++) bits[b] |= br[x]->cls[b];
+                        for (int b = 0; b < 32; b++) bits[b] |= br[x]->u.cls.bits[b];
                     out[m++] = altcls_class_from_bits(cx, bits);
 '
 SAB_AFTER='                    /* SABOTAGE S66: the union loop is gone -- only the
                      * first branch survives the merge. */
                     uint8_t bits[32];
-                    memcpy(bits, br[k]->cls, 32);
+                    memcpy(bits, br[k]->u.cls.bits, 32);
                     out[m++] = altcls_class_from_bits(cx, bits);
 '
