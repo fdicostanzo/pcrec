@@ -273,7 +273,7 @@ differentiator — see [M4-SUBST]'s beyond-PCRE2 direction. Developer-
 experience directions that serve the niche are the [V-*] rows below,
 including V-G/V-H (added this session).
 
-- [TT-4] STATE:started (2026-08-23, thirty-seventh session, on Frank's "go tt-4"; expanded into [TT-4.1]-[TT-4.3] below) — BATCHED COMPILATION IN THE TEST HARNESS
+- [TT-4] STATE:completed (CLOSED 2026-08-23 on Frank's ruling after [TT-4.1]'s measurement: gcc is 17% of make test's CPU and make test is ~10 of the chain's ~150 minutes — TU-batching's 3.66x on gcc nets ~12% of suite CPU for the most design surface on the list (feature-set collisions, all-or-nothing batches); Frank: "6 and 7 probably not worth it … spend the effort where it has the greatest impact; if test is 10 minutes, spend the least time there". [TT-4.2]/[TT-4.3] NOT started — the measured NO, TT-3's shape; the prototype and numbers stay in studies/tt4_batching/ for the day the profile points at gcc again. The row's lasting yield is the census method and the [TT-6] finding) — formerly STATE:started (2026-08-23, on Frank's "go tt-4"; expanded into [TT-4.1]-[TT-4.3] below) — BATCHED COMPILATION IN THE TEST HARNESS
   (chartered by Frank, 2026-08-22 22:3x, "charter TT-4 after M6.5 closes,
   measurement stage first"; START AFTER [M6.5] CLOSES — the next
   infrastructure row, pulled forward because every lane today paid the
@@ -336,17 +336,17 @@ including V-G/V-H (added this session).
     tt4_batching/, never the harness) at several batch sizes and REPORT THE
     MEASURED SPEED-UP, or the measured slowdown (TT-3's lesson). Output: a
     measurement memo with method, blind spots and numbers from runs.
-  - [TT-4.2] STATE:not-started — DESIGN, gated on [TT-4.1]'s numbers
+  - [TT-4.2] STATE:closed-not-started (Frank, 2026-08-23: not worth it on the numbers) — DESIGN, gated on [TT-4.1]'s numbers
     (gcc/link-step batching only; per-pattern artifacts preserved; failure
     isolation; D45 per-pattern semantics; GENCFLAGS rides through). Panel
     (D6) if the numbers open the row; an honest NO closes it like TT-3.
-  - [TT-4.3] STATE:not-started — LANDING: the harness batches; `make test`
+  - [TT-4.3] STATE:closed-not-started (with [TT-4.2]; exec-batching, the memo's lever 7, likewise) — LANDING: the harness batches; `make test`
     wall and core-minutes re-measured on the same box; sanitizer batteries
     and mech ride the same path; docs/testing.md records before/after.
     FRANK (2026-08-23, 08:3x): if the row proves worthwhile he wants to SEE
     the before/after timings for testing — present them to him at the
     close, whole chain (make test, battery stages, mech), not make test only.
-- [TT-6] STATE:not-started — THE `timeout` BINARY TAX (found by [TT-4.1]
+- [TT-6] STATE:started (APPROVED by Frank 2026-08-23 11:1x as #1 of the set; lane/tt6timeout) — THE `timeout` BINARY TAX (found by [TT-4.1]
   2026-08-23, manager-verified: uutils coreutils 0.8.0 `timeout` sleeps
   ~108 ms per call at zero CPU; GNU `gnutimeout` 4 ms). ~10 test scripts
   call `timeout` bare (pcrec calls, every per-case matcher run in
@@ -400,8 +400,48 @@ including V-G/V-H (added this session).
   changed, full matrix at module close. MEASUREMENT FIRST: diff the
   2026-08-18..22 mech matrices in build/ (different HEADs, known diffs)
   for any row that flipped without its SAB_FILE/target changing. Frank
-  (08:5x): "wait for the census memo and decide as a set" — STAGE 2 is
-  the set decision once [TT-4.1]'s memo lands. Output: chain_profile.md.
+  (08:5x): "wait for the census memo and decide as a set". STAGE 2 RULED
+  by Frank (11:1x, 2026-08-23): "spend the effort where it has the
+  greatest impact; if test is 10 minutes, spend the least time there —
+  insofar as it's not called as part of the other tests. Approve 1-3 as
+  per your recommendations. #4 I am ok with this risk. 6 and 7 probably
+  not worth it. 5 as a follow-on if needed." → #1 [TT-6] timeout swap
+  (STARTED); #2 [TT-7] one combined ASan+UBSan axis, measurement first
+  (STARTED); #3 [TT-8] mech PROCS re-validation + the PROCS leak into
+  inner sharding (STARTED); #4 the tiered mech re-run policy ADOPTED as
+  D69 (risk accepted by Frank; the retro-diff of the m64/m65 matrices
+  rides [TT-8] as evidence, not as a gate); #5 CCACHE=1 for mech — follow-
+  on if the [TT-8] numbers leave mech long; #6/#7 gcc/exec batching —
+  closed with [TT-4]. BOX RULE for the three lanes: every timed run is
+  box-exclusive and serializes through the manager — [TT-6]'s
+  before/after first, then the battery on the merged swap (= the axes'
+  "after"), then [TT-7]'s combined-axis run, then [TT-8]'s matrices.
+  Frank gets the whole-chain before/after at the end.
+- [TT-7] STATE:started (2026-08-23, Frank's #2; lane/tt7san) — ONE
+  COMBINED `-fsanitize=address,undefined` AXIS, measurement first: a
+  `make san` target building a third separate tree (build-san/) with the
+  combined flags on BOTH axes exactly as ubsan/asan do; measure its wall
+  against ubsan+asan run back-to-back on the same HEAD (after [TT-6]
+  lands, so the axes are measured without the sleep); verify the
+  DIAGNOSES stay distinct (the sanitizer findings inventory in
+  docs/testing.md lists the historical reports — replant one of each
+  kind, or a known UB and a known leak, and show the combined build
+  reports both with their own tool names); if the combined axis is
+  faster AND as diagnostic, the battery adopts it and ubsan/asan stay as
+  opt-in singles. SAN-1's separate-axes reason is TSan-specific
+  (Makefile:577-580) — not a blocker.
+- [TT-8] STATE:started (2026-08-23, Frank's #3 + #4; lane/tt8mech) —
+  MECH: (a) the PROCS LEAK: run_sabotage_matrix.sh's PROCS (row
+  concurrency) reaches the inner tests/harness/run.sh and reject sharding
+  through the environment — fix so inner scripts get an explicit per-row
+  PROCS budget (JOBS already divides; do the same for the inner shard
+  width) and measure the matrix at PROCS=4 before/after, then re-validate
+  PROCS at 118 rows (sample of ~20 rows at PROCS=3/4/6, then ONE full
+  matrix at the chosen setting = the chain's mech "after" figure); (b)
+  D69's evidence: diff the m64 (99 rows) and m65 (118 rows) matrices and
+  any earlier matrix in the journal for a row that flipped verdict
+  without its SAB_FILE/target changing; (c) document D69's tiered policy
+  in docs/testing.md's mech section and tests/mech/CLAUDE.md.
 - [REL-META] STATE:not-started — META-PLAN ROW for FIRST-RELEASE +
   CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
   "we are within a few solid efforts of having a first release"; this

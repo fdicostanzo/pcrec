@@ -5264,3 +5264,29 @@ skips the marked blocks and COUNTS the skips; the count is asserted.
 three conjuncts on the new release; if it matches the derivation, drop
 the exclusion and the annotation); or an upstream report is filed and
 answered (record the answer on U9).
+
+## D69 — mech re-run policy is TIERED by what changed (Frank, 2026-08-23)
+
+A sabotage row's verdict is a property of the PAIR (compiler, corpus). It
+flips when (1) its SAB_HARNESS_TARGET changes — exact, grep-able; (2a) its
+anchor drifts — caught STATICALLY by scripts/m6read_check_sab_anchors.py
+in seconds, already on the merge bar; (2b) a compiler change elsewhere
+MASKS or unreaches the sabotaged path (S108's single-site shape) — not
+derivable from a diff, only a run finds it. No row has yet been observed
+flipping DETECTED→UNDETECTED from a compiler change alone (the undetected
+rows to date were undetected from birth). The full 118-row matrix costs
+~60 min per run and was the manager's every-merge bar, not a documented
+obligation (docs/testing.md: "run manually … when a sabotage table's
+figures are in doubt").
+
+RULING (Frank: "I am ok with this risk"):
+- docs / test-infrastructure-only change → the anchor tripwire only;
+- tests changed, src unchanged → tripwire + the rows whose target is among
+  the changed files (single-row runs);
+- src changed → tripwire + the rows whose SAB_FILE or target changed;
+- module or milestone CLOSE → the FULL matrix (where 2b's risk
+  concentrates, and where a lane's new rows run anyway).
+An UNDETECTED row from any of these is a finding diagnosed by measurement
+(the 2026-08-22 lesson), never by reading. The accepted risk is 2b between
+closes; the retro-diff of the archived matrices rides [TT-8] as evidence of
+its rate. Revisit if a 2b flip is ever observed outside a close.
