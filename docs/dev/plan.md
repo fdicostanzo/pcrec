@@ -1142,7 +1142,7 @@ spine, not before):
   module or a real consumer, whichever asks first; measure the
   convention's effect on the censuses through the existing probe
   pipeline before writing any table
-- [DD-14] STATE:not-started (CROSS-NOTE 2026-08-19: [DD-11] now carries
+- [DD-14] STATE:not-started (RULED IN AND SEQUENCED by Frank 2026-08-23 13:4x: "for the actual substitutions, let's get the group reference piece in so that they share code/handling before we do the substitutions. I don't want parallel mechanisms if we can avoid it" — "subroutines". ORDER: [M6.6] lookaround → [DD-14] subroutine calls (?1) (?&n) \g<n> (?R) — module `recursion`, the label-call primitive — → [DD-11]'s definition substitutions IMPLEMENTED ON that primitive (an insertion = a non-recursive call to the inserted body's entry label; compile-time splicing an optimization of it, never a second mechanism) → D66's core lookbehind-anchor optimizer. The [M6.5] follow-up (f) (A_BREF → subroutine call under the singleton predicate) joins the same primitive. The DD-14 DESIGN GATE may open in parallel with [M6.6.2]'s implementation — disjoint parser hooks; both touch src/gen/emit_vm.c, so the second to land rebases. The M6.6 design's TEST-side substitution driver (textual expansion of the assertions D27 corpus into lookaround patterns) is a corpus generator, not a product mechanism, and stands) (CROSS-NOTE 2026-08-19: [DD-11] now carries
   Frank's GENERALIZED definition/insertion direction — the assertion
   family as scope-resolved definitions whose replacement values are
   inserted rx; this row's call primitive is that idea's substrate, so a
