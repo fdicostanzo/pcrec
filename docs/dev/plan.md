@@ -326,6 +326,33 @@ including V-G/V-H (added this session).
   - [TT-4.3] STATE:not-started — LANDING: the harness batches; `make test`
     wall and core-minutes re-measured on the same box; sanitizer batteries
     and mech ride the same path; docs/testing.md records before/after.
+    FRANK (2026-08-23, 08:3x): if the row proves worthwhile he wants to SEE
+    the before/after timings for testing — present them to him at the
+    close, whole chain (make test, battery stages, mech), not make test only.
+- [TT-5] STATE:started (2026-08-23, thirty-seventh session; chartered by
+  Frank: "we are in the multiple hours for overall testing right now and
+  it's slowing development … consider some other testing moves outside
+  [TT-4] … perhaps some more profiling will spark ideas") — VALIDATION-
+  CHAIN PROFILE AND CANDIDATE MOVES. The per-merge chain measured
+  2026-08-22 on 3aa446f/5edba64 (build/battery_m65.log, build/mech_m65.log):
+  test 10m14s, strict 6s, ubsan 32m35s, asan 42m25s, lint 33s, mech 60m08s
+  (118 rows, PROCS=4) — ~2.5 h, of which the two sanitizer axes + mech are
+  ~135 min; `make test` is the SMALLER part, so [TT-4]'s batching only
+  reaches the hours if it rides the sanitizer and mech paths ([TT-4.3]).
+  STAGE 1 (read-only, from the existing timestamped logs + the drivers'
+  source; no runs while the [TT-4.1] census is timing): where the minutes
+  go inside each stage (section-level for the sanitizer axes; row-level
+  for mech as far as the log allows — it has no per-row timestamps, a
+  blind spot to name), what each stage RE-does that another already did
+  (the sanitizer axes recompile the whole suite twice; mech rebuilds pcrec
+  per row), and a candidate list with the evidence each needs before
+  it is a row: e.g. one combined `-fsanitize=address,undefined` axis
+  instead of two (halves ~75 min IF the diagnoses stay distinct — docs/
+  testing.md SAN-1's reasons for separate axes must be read first),
+  mech per-row scoping (which sections a row really needs), CCACHE=1 for
+  mech ([TT-3]'s qualified yes), PROCS for mech, pipelining stages on a
+  quiet box. STAGE 2: Frank picks; each pick becomes its own row with a
+  measurement-first stage. Output: docs/dev/chain_profile.md.
 - [REL-META] STATE:not-started — META-PLAN ROW for FIRST-RELEASE +
   CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
   "we are within a few solid efforts of having a first release"; this
