@@ -67,9 +67,19 @@ start survive that (**0 violations**) while its window END does not (**8
 violations of 45**, and the hazard **coexists with a live prune ceiling on 16
 of 30 swept shapes**), so this module keeps the prefilter and drops the
 ceiling, which is exactly [M6.4.2]'s H3 one construct over (§5); and the
-**DFA-eligible subset** D66 wants, which this design **recommends handing to
-[DD-11] with the door built and the equivalences measured** rather than
-shipping here (§5.7, §6).
+**DFA answer**, which is **not this module's**: Frank ruled the one-character
+fold out as a duplicate code path, the general form is chartered as
+`[ENG-LOOK]` (lookaround by PRODUCT CONSTRUCTION in the DFA), and this design
+hands that row its three stated prerequisites — the soundness statement, the
+measured component-automaton sizes, and a lowering whose every body is already
+a self-contained sub-program (§5.7, §5.8, §6.4). One more thing follows from
+the mechanism and is why §6 exists at all: **every member of the assertion
+family IS a lookaround**, so the [DD-11]/D66 expansions (`\b`, `(?m)^`, `\Z`,
+…) are this module's own design examples — all nine verified equivalent at
+**972 cells / 0 disagreements** — and textually substituting them into the
+assertions module's shipped corpus turns **8,495 of its 10,120
+libpcre2-verified cells** into a lookaround corpus with a two-comparison
+self-oracle (§6.3).
 
 ### 0.3 Measurements this lane produced
 
@@ -84,7 +94,10 @@ their repo commit by `probes/archive.sh` in ONE batch from a committed tree.
 | `probes/probe_lookbehind_length.py` | MEASURED, libpcre2 + python | §2.3: which bodies compile with which error number; the TWO preference orders; the bisected `max_varlookbehind` default (**255**) and the fixed ceiling (**32759**); `MAXLOOKBEHIND` for composite bodies; the subject-start and **startpos** cells |
 | `probes/probe_captures.py` | MEASURED, both oracles | §2.4/§3.5: captures across all four polarity/outcome combinations; the empty-iteration cells; `\K`'s refusal and its extra-option bit; the BUDGET witness |
 | `probes/probe_prefilter_hazard.py` | MEASURED, libpcre2 + in-pcrec | §5.3-§5.4: H1/H2/H3 over 45 cells, with the SHARP anchored-at-true-start form of H3 beside the naive one, a fixture-tested `erase()`, and two vacuity guards |
-| `probes/probe_d66_subset.py` | MEASURED, libpcre2 + in-pcrec | §5.5/§5.7/§6/§9: the positive control's six equivalences (80 cells each); the `(?m)^` self-oracle in BOTH directions; and the sweep that finds the H3 hazard **coexisting with a live prefilter-window ceiling on 16 of 30 shapes** |
+| `probes/probe_d66_subset.py` | MEASURED, libpcre2 + in-pcrec | §6.5/§9.2: the six equivalences (80 cells each); the `(?m)^` self-oracle in BOTH directions; and §5.5's sweep, which finds the H3 hazard **coexisting with a live prefilter-window ceiling on 16 of 30 shapes** |
+| `probes/probe_expansions.py` | MEASURED, both oracles + in-pcrec | §6.1/§6.2: the nine [DD-11]/D66 expansions verified equivalent (**972 cells, 0 disagreements**, vacuity guard firing at 4/108); each body classified against §2.5; python's verdict per expansion; and pcrec's shipped FOLDED forms against libpcre2's EXPANSIONS (**0 over 324 cells**) |
+| `probes/probe_substitution_population.py` | MEASURED, PURE TEXT | §6.3: how much of `tests/assertions/` the substitution driver gets — **270 of 468 blocks, 8,495 of 10,120 cells** — with each of the five qualification rules costed separately. Runs no compiler: the question is a property of the corpus text |
+| `probes/probe_englook_sizing.py` | MEASURED, in-pcrec | §5.8: `[ENG-LOOK]`'s sizing inputs, read off the **emitter's own array dimensions** — every component 2-25 states, product bound **64 non-control rows / 0 over the 32,000 cap** against **62 control rows / 18 over** |
 
 **`probes/archive.sh` is the ONLY writer of `out/`.** R30 M7's rule, inherited
 through two lanes. R32 D1/C14 found the backrefs archiver stamping the wrong
@@ -106,11 +119,13 @@ numbers in this document should be trusted more than a first draft's:
    option does not work. A 32-bit sweep found exactly one bit — **0x40** —
    with two controls.
 
-The other five (a vacuous budget axis killed by PCRE2's own start
+The other seven (a vacuous budget axis killed by PCRE2's own start
 optimization; a `(?m)` on one arm only; a tail set blind to the defect a
 sibling axis found; a sweep population that could not contain a qualifying
-shape; and two oracles compared across a report-shape difference) are in
-`out/CLAUDE.md`. **The fourth is the one a panel should note**: §5.5's first
+shape; two oracles compared across a report-shape difference; a probe that
+reported the corpus's two cell counts THE WRONG WAY ROUND, understating its
+own driver's reach; and a sizing table whose "0 over the cap" was over a
+population in which no row could have been) are in `out/CLAUDE.md`. **The fourth is the one a panel should note**: §5.5's first
 sweep reported "0 qualifying shapes" over a space in which 0 was the only
 possible answer, and the reachability guard that now stands is what turned
 that into the **16 of 30** this design's H3 ruling rests on.
@@ -1552,6 +1567,7 @@ expectation invites the author to write it in anyway.
 | G4 | **The alpha spellings do not exist in python at all.** All twelve produce "nothing to repeat at position 1", because python reads `(*` as a quantified `(` | `(*pla:a)b` |
 | G5 | **The non-atomic forms do not exist in python.** `(?*` and `(?<*` are "unknown extension" | `(?*a)b`, `(?<*a)b` |
 | G6 | **`\K` does not exist in python**, so every `\K` cell in this module (all of which are pcre2 COMPILE ERRORS, err 199) is a compile error in python for a **different reason** — "bad escape \K". The author must not treat the agreement as agreement | `(?=a\K)x` |
+| G7a | **THE ASSERTION-FAMILY EXPANSIONS ARE ALL PYTHON-COMPATIBLE, and this refutes the charter's own warning.** Every one of the nine (§6.1) compiles in python: `(?<=\w)`, `(?<!\w)`, `(?<=\n)` are fixed-width-1 lookbehinds, and `\Z`/`$`'s optional body sits in a lookAHEAD (`(?=\n?\z)`) where python has no width rule. **So the expanded corpus stays python-verifiable and `# pcre2-only` must NOT be put on it** | `(?=\n?\z)x` — python ok; `(?<=\n?\z)x` — python "look-behind requires fixed-width pattern". The DIRECTION is the whole difference |
 | G7 | **`\A`/`\Z`/`\z` differ between the oracles** (inherited from `assertions_design.md`, not this module's, and it bites here because lookaround bodies contain them): python's `\Z` is PCRE2's `\z` | `(?<=a)b\Z` vs `(?<=a)b\z` |
 
 ### 7.2 NOT divergences — the charter expected these and they are refuted
@@ -1560,6 +1576,7 @@ expectation invites the author to write it in anyway.
 |---|---|---|
 | G8 | *"python lacks quantified lookaround"* | **FALSE.** python compiles all fourteen forms tried (`(?=a)*`, `(?=a)+`, `(?=a){2}`, `(?!a)?`, `(?=a)*+`, `(?=(a))*`, …) and **agrees with libpcre2 on all nine behavioural cells** (`out/spellings.txt` A4). `# pcre2-only` on a quantified-lookaround cell would throw away a working oracle — which is R32 C3's finding (two corpus files marked python-verifiable in the direction that LOSES the oracle), in the other direction |
 | G9 | *"python's handling of captures in negative lookahead"* differs | **FALSE.** The two oracles agree on **all 27 capture cells** in `out/captures.txt` — C1 (positive, retained), C2 (negative, discarded), C3 (positive that fails after capturing, unset), C4 (under a quantifier). python is a usable oracle for the whole capture axis |
+| G9a | *"python `re` cannot take several expansions"* (the 2026-08-23 charter addition) | **FALSE for every expansion in the family.** MEASURED, `out/expansions.txt` E3: all nine compile in python. The variable-width lookbehind python rejects — `(?<=\n?\z)` — appears in NO expansion, because `\Z`'s definition is a lookAHEAD. The warning is real about the CONSTRUCT and wrong about the SET |
 | G10 | *"python's same-width lookbehind rule"* is one rule | **It is narrower than "same width".** python accepts `(?<=ab\|cd)x` (two branches, same length) and rejects `(?<=a\|bc)x`. So the divergence is about **differing** widths, not about alternation |
 
 ### 7.3 What the blinded author should be told about pcrec, and nothing more
@@ -1574,7 +1591,14 @@ expectation invites the author to write it in anyway.
 - That a lookbehind reads subject bytes before `startpos` (§3.8) — so the
   corpus should contain `ms`/`ns` cells, which is the axis a startpos-blind
   corpus would miss entirely.
-- **Nothing about the cut, the seam entry, the slots, or the prefilter.**
+- That the ASSERTION FAMILY has lookaround definitions (§6.1's table), because
+  the author's corpus should contain the expansions as ordinary patterns — they
+  are the most heavily-exercised real lookarounds this module will ever see and
+  they are the [M6.6.3] author's cheapest source of non-invented cells.
+- **Nothing about the cut, the seam entry, the slots, the prefilter, the
+  substitution driver, or `[ENG-LOOK]`.** The driver is a TEST-side generator
+  built from the same table; an author who knew about it would be writing the
+  driver's corpus a second time instead of an independent one.
 
 ---
 
@@ -1804,6 +1828,28 @@ row above is otherwise unfalsifiable:
    §3.2(3) and §3.3 rely on is discriminating rather than incidental — S105's
    own lesson one construct over.
 
+### 10.1a THE SECOND POPULATION: the expanded assertions corpus
+
+§10.1's ~380 blocks are the module's OWN corpus, written by the [M6.6.3]
+blinded author. **§6.3's substitution driver contributes a second population
+an order of magnitude larger and costs nothing to author**: 638 generated
+patterns over **8,495 libpcre2-verified behavioural cells**, every expectation
+inherited from a module that already ships.
+
+The two populations are complementary rather than redundant, and the
+difference is worth stating because a reader could take the larger one as a
+reason to shrink the smaller:
+
+| | the module corpus (§10.1) | the expanded corpus (§6.3) |
+|---|---|---|
+| authored by | a D27-blinded author, from §2 and §7 | nobody — generated from a shipped corpus |
+| covers | every SPELLING, every body shape, the refusals, the alpha forms, `ms` startpos, the prefilter witness | **one body shape**: the assertion family's, which is one class or one literal |
+| its oracle | python where §7 allows, libpcre2 otherwise | the two-comparison self-oracle, plus libpcre2 |
+| what it would MISS alone | — | every construct §2 ships that no expansion uses: variable bodies, captures inside a lookaround, the non-atomic forms, quantified lookaround, nesting, the alpha spellings |
+
+**So the expanded corpus is a DEPTH instrument on one shape and the module
+corpus is a BREADTH instrument**, and §11's landing bar asks for both.
+
 ### 10.2 `tests/lookaround/` — the files
 
 | file | what it holds | oracle |
@@ -1823,7 +1869,9 @@ row above is otherwise unfalsifiable:
 
 Plus `tests/lookaround/run_lookaround_diff.sh` and `la_oracle.py`, modelled on
 `run_backref_diff.sh` / `bref_oracle.py`, for the `# pcre2-only` blocks the
-`re`-based harness cannot verify.
+`re`-based harness cannot verify — and
+`tests/lookaround/run_expansion_diff.sh`, §6.3's substitution driver, which is
+also [DD-11]'s regression harness.
 
 ### 10.3 The acceptance run
 
@@ -1877,6 +1925,18 @@ codegen rule 1 extended to assert on both sources for lookaround as it does
 for atomic. *Landing bar: `prefilter.rxt` green — including the measured
 witness `((?:a(?!q)|aq)(?:xy){0,4}q)` on `"aqq"`; S-LA12 and S-LA13 DETECTED;
 the identity gate green on all three axes including `-fno-prefilter`.*
+
+**WAVE E2 — THE SUBSTITUTION DRIVER (§6.3).** `tests/lookaround/
+run_expansion_diff.sh`: the literal expansion table (transcribed from D66 /
+[DD-11], NOT derived from the compiler), the five qualification rules, the
+`(?:...)` bracketing, both substitution policies, and the two-comparison check.
+Landable the moment Wave D closes, because the expansions need lookbehind.
+*Landing bar: the driver green over its measured population — **270 blocks /
+8,495 cells**, P1 and P2 — with the per-rule disqualification counts printed
+and asserted against §6.3's numbers, so a driver that silently stopped
+substituting shows up as a population change rather than as a pass. A
+`--policy=none` control arm (substitute nothing) must report 8,495 trivially
+equal cells, or `A == B` is not comparing two lowerings at all.*
 
 **WAVE F — the alpha spellings.** §8.2's name-table module field, the twelve
 names, the six proposed rows if Frank rules for them (§14 ASK 3).
@@ -1952,6 +2012,30 @@ because all three are read at ONE site.* Refute by finding a second reader —
 `atomic_groups_design.md` §6.5 found one, and `revdet.c`'s clearing of
 `Ast.possessive` on a reversed copy is the exact shape to look for.
 
+**P-11 (the ENG-LOOK sizing).** *Every assertion-family and enumerable-real
+lookaround body has a component automaton of 2-25 states, so the product bound
+clears the 32,000 cap on all 64 non-control rows.* Refute by exhibiting a
+realistic lookaround body whose component is large — a long alternation of
+literals (a keyword set) is the obvious candidate and is NOT in the population,
+which §5.8 should be attacked for. The controls show the failure mode is real
+(18 of 62 over cap), so the gap is in the population, not the method.
+
+**P-12 (the subset is exactly big enough).** *Every one of the nine
+[DD-11]/D66 expansions compiles under §2.5's rule — none needs variable-length
+lookbehind, a backreference in a lookbehind, or `\K` in a lookaround.* This
+is a COINCIDENCE the design leans on and it is checkable: refute by finding a
+member of the assertion family whose lookaround definition needs a
+variable-width LOOKBEHIND. `\Z`'s `(?=\n?\z)` is the near miss — the same
+body one direction over would be refused — so the attack is to find a
+definition where the optional sits behind rather than ahead.
+
+**P-13 (the DD-14 hand-off).** *§3.4's label layout is enough for a subroutine
+call to target a lookbehind branch's forward body, with the width staying a
+property of the CALL SITE (§6.4(a)).* Refute by finding state the branch body
+reads that the call site cannot supply — `SLOT_LOOK_POS<n>`, which the
+end-check compares against, is the candidate: it is set at `L_entry`, which a
+call targeting `L_body_i` would skip.
+
 **P-10 (the budget).** *A lookaround body's work is counted by the existing
 single decrement, and this module adds only the cut charge and the back-step
 literal.* Refute by finding a shape where the assertion's cost is not visible
@@ -1969,8 +2053,17 @@ frameless work was invisible once before.
   where the referenced group is fixed-width; the refinement is chartered.
 - **`PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK`** (§2.7). The bit is measured and named;
   adopting an extra-option is D38's survey territory.
-- **The DFA-eligible desugar** (§5.7). Recommended to [DD-11] with the door
-  built and the equivalences measured.
+- **The one-character FOLD.** RULED OUT by Frank (§5.7) — a duplicate code
+  path. Nothing in this design recognizes a lookaround in order to rewrite it
+  into an assertion node.
+- **Lookaround in the DFA at all.** `[ENG-LOOK]`'s product construction, its
+  own row with its own design gate. This module hands it §5.3-§5.6, §5.8 and
+  §6.4 and prejudges nothing else.
+- **Any PRODUCT-side substitution of assertions by their definitions** (§6.4).
+  RULED: it is built on [DD-14]'s subroutine-call primitive, after lookaround
+  lands. This design proposes no parse-time or IR-time desugar mechanism.
+- **The substitution driver's IMPLEMENTATION** — designed in §6.3, built in
+  [M6.6.2] wave E2.
 - **`(*ACCEPT)`-family verbs inside a lookaround.** Module `verbs` has no
   producer; nothing here anticipates one.
 - **A DFA lowering of lookaround as a cut construction.** The `[ENG-CUT]`
@@ -2004,6 +2097,16 @@ surface-inventory question. *Recommendation: yes — otherwise the compliance
 index says the module ships six constructs while twelve more spellings of the
 same six are invisible, and SR-8's capability check will want witnesses
 either way.*
+
+**ASK 3a — does the substitution driver land in [M6.6.2] or [DD-11]?** §6.3
+designs it and §11 puts it in wave E2, on the ground that it is this module's
+cheapest and largest correctness instrument and that [DD-11] then inherits a
+harness rather than writing one. The alternative is to design it here and let
+[DD-11] build it. *Recommendation: build it in [M6.6.2]. A generator whose
+population is 8,495 already-verified cells is worth more to the module that
+introduces the construct than to the row that later rewrites the other side of
+it — and if it lands later, [M6.6.2] ships with only the ~380-cell corpus a
+blinded author could write.*
 
 **ASK 4 — is `-fno-prefilter` the right third identity axis?** §9.1 replaces
 backrefs' `--no-captures` with it because §5.6's ruling is the only thing this
