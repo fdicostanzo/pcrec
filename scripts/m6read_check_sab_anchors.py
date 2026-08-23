@@ -32,7 +32,15 @@ sabdir = os.path.join(root, "tests/mech/sabotages")
 # never corrupted the anchor at all, so the resulting "all resolve" was read as
 # a checker failure when in fact nothing had been sabotaged. Prove the sabotage
 # reached the target before believing what the check says about it.
+# [M6.5.2-FIX] A ROW MAY CARRY A SECOND SITE, and this tool checks BOTH.
+# `run_sabotage_matrix.sh` grew an optional SAB_FILE2/BEFORE2/AFTER2/COUNT2
+# for S108, whose claim needs two independent gates removed at once. A second
+# site the tripwire did not read would be exactly the blind spot this file
+# exists to close -- a stale anchor there fails the row's apply at mech time
+# and nowhere earlier. SITES are counted and printed alongside rows, so
+# "sabotages checked: 118" can never again be mistaken for "anchors checked".
 unreadable, stale = [], []
+sites = 0
 for fn in sorted(f for f in os.listdir(sabdir) if f.endswith(".sh")):
     path = os.path.join(sabdir, fn)
     # SAB_FILE / SAB_BEFORE are shell assignments; ask bash for their values so
@@ -41,8 +49,11 @@ for fn in sorted(f for f in os.listdir(sabdir) if f.endswith(".sh")):
     # case that used to vanish.
     out = subprocess.run(
         ["bash", "-c",
-         'set -a; SAB_ID=; SAB_FILE=; SAB_BEFORE=; SAB_AFTER=; SAB_COUNT=; . "%s"; '
-         'printf "%%s\\x00%%s\\x00%%s\\x00" "$SAB_FILE" "$SAB_BEFORE" "${SAB_COUNT:-1}"' % path],
+         'set -a; SAB_ID=; SAB_FILE=; SAB_BEFORE=; SAB_AFTER=; SAB_COUNT=; '
+         'SAB_FILE2=; SAB_BEFORE2=; SAB_AFTER2=; SAB_COUNT2=; . "%s"; '
+         'printf "%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00%%s\\x00" '
+         '"$SAB_FILE" "$SAB_BEFORE" "${SAB_COUNT:-1}" '
+         '"$SAB_FILE2" "$SAB_BEFORE2" "${SAB_COUNT2:-1}"' % path],
         capture_output=True, text=True)
     if out.returncode != 0 or out.stderr.strip():
         why = (out.stderr.strip().splitlines() or ["exit %d" % out.returncode])[-1]
@@ -72,12 +83,40 @@ for fn in sorted(f for f in os.listdir(sabdir) if f.endswith(".sh")):
         stale.append((fn, tgt, "TARGET MISSING"))
         continue
     body = open(tp, errors="replace").read()
+    sites += 1
     if before not in body:
         stale.append((fn, tgt, "ANCHOR NOT FOUND"))
     elif body.count(before) != want:
         stale.append((fn, tgt, "ANCHOR COUNT %d, SAB_COUNT %d" % (body.count(before), want)))
 
-print("sabotages checked:", len([f for f in os.listdir(sabdir) if f.endswith('.sh')]))
+    # The optional SECOND site, asked the identical question. A row that names
+    # SAB_FILE2 with no anchor is UNREADABLE rather than fine: the matrix will
+    # score it ANOMALY, and this tool must not say "resolves" about a site it
+    # could not read.
+    tgt2 = parts[3].strip() if len(parts) > 3 else ""
+    if tgt2:
+        before2 = parts[4] if len(parts) > 4 else ""
+        try:
+            want2 = int((parts[5] if len(parts) > 5 else "1").strip() or "1")
+        except ValueError:
+            want2 = 1
+        if not before2.strip():
+            unreadable.append((fn, "SAB_FILE2 SET BUT SAB_BEFORE2 IS EMPTY"))
+        else:
+            tp2 = os.path.join(root, tgt2)
+            sites += 1
+            if not os.path.exists(tp2):
+                stale.append((fn, tgt2, "SITE 2: TARGET MISSING"))
+            else:
+                body2 = open(tp2, errors="replace").read()
+                if before2 not in body2:
+                    stale.append((fn, tgt2, "SITE 2: ANCHOR NOT FOUND"))
+                elif body2.count(before2) != want2:
+                    stale.append((fn, tgt2, "SITE 2: ANCHOR COUNT %d, SAB_COUNT2 %d"
+                                  % (body2.count(before2), want2)))
+
+print("sabotages checked:", len([f for f in os.listdir(sabdir) if f.endswith('.sh')]),
+      "(%d anchor sites)" % sites)
 if unreadable:
     print("UNREADABLE ROWS:", len(unreadable), "-- the tripwire is BLIND to these")
     for fn, why in unreadable:
