@@ -63,18 +63,18 @@ n "Aa"
 # All three cells ARE python-checkable: verify_rxt.py's own `flags i` ->
 # `re.IGNORECASE | re.ASCII` mapping folds exactly the same 52 letters
 # and agrees with libpcre2 on all three subjects (measured directly). ---
-features backrefs
 pattern ^(a)\1$
+features backrefs
 flags i
 m "aA" 0 2
 gp 1 0 1
 
-features backrefs
 pattern ^(\xc0)\1$
+features backrefs
 flags i
 n "\xc0\xe0"
 
-features backrefs
 pattern ^(\xdf)\1$
+features backrefs
 flags i
 n "\xdfss"

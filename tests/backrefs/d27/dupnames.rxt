@@ -11,20 +11,26 @@
 # they always mean the group with that literal ordinal number, never
 # name-resolved.
 #
-# A REGISTRY FINDING WORTH FLAGGING AT MERGE (not a GOAL_FACTS error --
-# see README.md's divergence list): `build/pcrec --list-syntax` currently
-# scopes (?J) itself under module `modifiers` (`requires module
-# 'modifiers'`) and scopes the ACTUAL dupname-resolution logic under
-# module `named-groups`, not `backrefs` -- e.g. `pcrec: inline option 'J'
-# (dupnames): module 'named-groups' does not implement duplicate group
-# names`. Every cell in this file still needs `features
-# backrefs,named-groups,modifiers` (backrefs for \k/\g/(?P=n) recognition
-# itself), but whichever module actually lands DUPNAMES resolution, this
-# corpus's semantics come from PCRE2 (D26) and do not change either way.
+# A REGISTRY FINDING FROM AUTHORING TIME, NOW RESOLVED (R32 ASK-1,
+# landed 2026-08-22 at main 3aa446f): pre-landing, `build/pcrec
+# --list-syntax` scoped (?J) itself under module `modifiers` and the
+# ACTUAL dupname-resolution logic under module `named-groups`, not
+# `backrefs`. The landed module attributes BOTH to `backrefs` (measured
+# post-landing: `pcrec: inline option 'J' (dupnames) requires module
+# 'backrefs'` -- `named-groups` no longer appears in that refusal at
+# all). Every cell in this file still needs `features
+# backrefs,named-groups,modifiers` (`modifiers` for (?J)'s own syntax,
+# `named-groups` for the underlying named-capture declarations, `backrefs`
+# for \k/\g/(?P=n) recognition AND, as of this landing, DUPNAMES
+# resolution itself) -- unchanged by the attribution move, since this
+# corpus's semantics always came from PCRE2 (D26), never from pcrec's own
+# module boundaries.
 #
 # Every measurement below is against real libpcre2 10.46 (br_oracle.py).
-# Nothing here has been run against build/pcrec (module unbuilt; today
-# pcrec refuses (?J) entirely regardless of features, see gating.rxt).
+# ADDITIONALLY, as of this landing, every cell in this file was re-run
+# end-to-end against the real build/pcrec (compile + build the generated
+# matcher + run every m/n/g/gp case) and all 30 measured cases pass with
+# ZERO implementation divergence -- see README.md's acceptance section.
 
 # --- F9 core: two members of the same name-run, both set (matched in
 # sequence) -- \k<a> resolves to the FIRST (group 1's "x"), never the
