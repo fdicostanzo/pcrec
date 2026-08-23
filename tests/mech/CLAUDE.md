@@ -1157,7 +1157,7 @@ hand-applied, which is wave D's S82 lesson: a hand-validated failing direction
 and the driver's can differ, and only the driver's is reproducible. Re-validate
 with `bash tests/mech/run_sabotage_matrix.sh S85`, `S86` and `S87`.
 
-## Retired rows
+## Rows with a documented history (retired and re-instated)
 
 - **S108_rdshape_accepts_bref — RETIRED 2026-08-23 at the [M6.5] close, then
   RE-INSTATED the same hour as a TWO-SITE sabotage** (the matrix gained an
