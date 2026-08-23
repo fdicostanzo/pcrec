@@ -109,7 +109,15 @@ Process and status documents for pcrec. The architecture itself lives in
   a clear NO for `make test` (real 64.59% hit rate, still 4x+ plain's wall
   time — the workload is thousands of sub-millisecond compiles, the wrong
   shape for caching's own overhead), a qualified YES for `make mech`'s
-  per-sabotage tree rebuild (25-29% faster warm, single-row samples).
+  per-sabotage tree rebuild (25-29% faster warm, single-row samples). Also
+  (added [TT-7], 2026-08-23) "[TT-7] combined axis": `make san`, ONE
+  combined `-fsanitize=address,undefined,leak` axis proposed in place of
+  running `ubsan` then `asan` (75m00s measured for the two separate passes
+  at m65, `docs/dev/chain_profile.md` candidate (a)) — diagnosis
+  distinctness verified small-scale, D45's budgets confirmed
+  byte-identical to either single axis, `ubsan`/`asan` left untouched.
+  STATUS PENDING the manager's own timing run (`docs/dev/
+  tt7_combined_axis.md` has the evidence and the exact command).
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and

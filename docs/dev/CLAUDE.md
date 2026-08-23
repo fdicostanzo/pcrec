@@ -181,6 +181,20 @@ Append-only where noted; the restart/status-recovery record for the project.
   see its own CLAUDE.md. No recommendation about the harness's own design
   beyond what the numbers directly support — that is [TT-4.2]'s row (the
   `timeout`-binary swap is a separate row again, per the manager).
+- `tt7_combined_axis.md` — [TT-7] evidence memo for `make san`, the ONE
+  combined `-fsanitize=address,undefined,leak` axis proposed to replace
+  running `ubsan` and `asan` back to back (chain_profile.md candidate (a),
+  75m00s measured for the two separate passes at m65). Diagnosis
+  distinctness (three scratch sabotages plus three planted into copies of
+  `tests/harness/driver.c` against a real generated matcher, each caught by
+  its own tool — the leak case reproduces K26's documented LSan-no-op on
+  this box, unaffected by combining), D45 budget parity (measured
+  byte-identical to either single axis, all four `tests/lib/gen_timeout.sh`
+  functions), and the exact command + pass criteria for the manager's
+  timing run. See also `docs/testing.md`'s "[TT-7] combined axis"
+  subsection. **STATUS: PENDING** the timing run — `make san` exists and is
+  small-scale-verified, `ubsan`/`asan` are untouched, and nothing here rules
+  on adoption.
 - `wake.md` — untracked (gitignored) hand-off brief for session start/resume;
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.

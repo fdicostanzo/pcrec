@@ -1765,6 +1765,59 @@ Measured (table above), the ruling:
   land in the inventory above with a triage before any fix (the
   findings-discipline that produced F1's clean arc).
 
+### [TT-7] combined axis (2026-08-23) — PENDING
+
+`docs/dev/chain_profile.md` candidate (a), 2026-08-23: today's `ubsan` and
+`asan` cost 32m35s + 42m25s = 75m00s combined at commit m65 — two separate
+`BUILD_DIR` rebuilds and two full 26-script suite passes for two sanitizer
+families gcc supports combining in one build (`-fsanitize=address,undefined`
+compiled and linked together is a routine, well-supported combination).
+
+**The stated reason two axes exist here is about TSan, not about
+ASan-vs-UBSan** — `Makefile:576-580`, directly above the `ubsan:`/`asan:`
+targets: "TSan already lives in `tests/thread` ...; combining ASan/UBSan
+instrumentation with an already-TSan'd build is not how these sanitizers
+compose on this toolchain." That is why `tests/thread/` is excluded from
+BOTH `ubsan` and `asan` (Exclusions, above) — it says nothing about
+combining ASan and UBSan WITH EACH OTHER, which SAN-1 was never asked.
+
+**`make san`** — a THIRD tree, `build-san/` (gitignored, same shape as
+`build-ubsan/`/`build-asan/`), both axes instrumented, same 26-script suite
+list and `tests/thread/` exclusion as `ubsan`/`asan` (same TSan reason,
+unchanged):
+
+```
+SAN_CFLAGS := -O1 -g -fsanitize=address,undefined,leak -fno-sanitize-recover=undefined
+```
+
+Mirrors `UBSAN_CFLAGS` and `ASAN_CFLAGS` combined; the two single-axis
+`CFLAGS` differ in exactly one flag beyond their sanitizer lists
+(`-fno-sanitize-recover=undefined`, UBSan-only in effect since it does not
+apply to `address`/`leak`), carried into the combined flags since it costs
+ASan/LSan nothing and keeps UBSan's own fatal-first-hit property. `SAN_ENV`
+exports both single axes' `*_OPTIONS` together. `ubsan:`/`asan:` are
+UNTOUCHED and stay available as opt-in singles either way.
+
+**Diagnosis distinctness, budget behavior under D45, and the exact
+measurement command for the manager's timing run**: `docs/dev/
+tt7_combined_axis.md` — three scratch sabotages (UB, heap-overflow, a K26-
+canary-sized leak) plus the same three planted into copies of `tests/
+harness/driver.c` compiled against a real generated matcher, each caught by
+its own tool with the right diagnostic and file/line (the leak reproduces
+K26's documented LSan-no-op on this box either way, unaffected by
+combining); `tests/lib/gen_timeout.sh`'s D45 budgets measured
+byte-identical under the combined flags vs. either single axis (all four
+budget functions, sourced and called directly — the axis check is a boolean
+`-fsanitize=` substring match, not per-sanitizer).
+
+**Status: PENDING the manager's timing run.** No suite-scale wall-time
+number exists for the combined axis yet — the memo's own estimate
+(chain_profile.md §4a, ~45-55 min) is an explicit hypothesis, not a
+measurement. The candidate does not become a battery-integration ruling
+(the "Battery integration" section above, or its own row here) until that
+run reports `san`'s real wall time against `ubsan`+`asan`'s combined total,
+per the memo's stated pass criteria.
+
 ## Compile caching (`CCACHE=1`, [TT-3], 2026-08-21) — MEASURED NO for `make test`
 
 **The charter's own predictions were refuted, not confirmed.** ccache 4.12.3
