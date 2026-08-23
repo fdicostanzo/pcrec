@@ -111,7 +111,7 @@ comment and the row's header.
 
 ## The instruments
 
-- **run_backref_diff.sh** — nine sections, four EXACT population guards. Three
+- **run_backref_diff.sh** — ten sections, five EXACT population guards. Four
   of the sections exist because nothing else in the tree asks their question:
   §3 (the RE-ENTRY arm, where publish-at-close is observable AND NOWHERE ELSE —
   a 5,808-cell arm-vs-arm sweep found the backref-FREE control at 0/0 in BOTH
@@ -119,6 +119,14 @@ comment and the row's header.
   "keeps internal slots, reports none" ruling is exercised) and §8 (the
   SPAN-DIVERGENCE section, the only possible detector for a prefilter planted
   on a backref pattern). §9 is the 65,536-pair fold agreement.
+  §10 (added 2026-08-22) is STRUCTURAL and is the lane's own lesson: it reads
+  the empty-iteration guard off the ARTIFACT for 4 unbounded-over-nullable-
+  backreference fixtures and asserts its ABSENCE on 3 bounded controls,
+  because the behavioural half of that property is only visible on a subject
+  where the referenced group captures EMPTY — and the absence of exactly
+  those subjects is what let sabotage row S107 score UNDETECTED against a
+  correct module. Failing direction measured on the S107 build: all 4
+  guard-bearing fixtures emit the marker 0 times.
 - **run_dupnames_diff.sh** — §8.3 swept rather than sampled, and checked THREE
   ways: pcrec against libpcre2, an INDEPENDENTLY WRITTEN model of the rule
   against libpcre2, and both populations asserted exact. The `.rxt` cells
