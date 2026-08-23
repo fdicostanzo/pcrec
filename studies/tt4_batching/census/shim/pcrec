@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# studies/tt4_batching/census/shim/pcrec — [TT-4.1] Stage A pcrec-side
+# invocation-census shim. Any suite script that honours `PCREC=` (grep
+# confirmed most of the tree does — see the Stage A memo for the exact
+# roster and the one confirmed blind spot) can be pointed at this file
+# instead of build/pcrec directly; it times and logs the call, then execs
+# the REAL pcrec binary (TT4_REAL_PCREC, resolved by run_section_census.sh
+# to the worktree's build/pcrec absolute path BEFORE this shim is wired in)
+# with the identical argv, forwarding stdout/stderr/exit status unchanged.
+#
+# Log line format matches the gcc/cc shim's (see shim/gcc's header) so one
+# summarizer reads both:
+#   epoch_start<TAB>wall_seconds<TAB>class<TAB>section<TAB>rc<TAB>tool<TAB>argc
+# class is always "pcrec" here — there is no compile/link-shape axis on this
+# side, only the section split.
+
+set -u
+
+: "${TT4_REAL_PCREC:?TT4_REAL_PCREC not set — run_section_census.sh must export it}"
+: "${TT4_LOG:?TT4_LOG not set — run_section_census.sh must export it}"
+
+start=$EPOCHREALTIME
+"$TT4_REAL_PCREC" "$@"
+rc=$?
+end=$EPOCHREALTIME
+
+wall="$(awk -v s="$start" -v e="$end" 'BEGIN{printf "%.6f", e - s}')"
+
+printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$start" "$wall" "pcrec" "${TT4_SECTION:-unknown}" "$rc" "pcrec" "$#" \
+    >> "$TT4_LOG"
+
+exit "$rc"
