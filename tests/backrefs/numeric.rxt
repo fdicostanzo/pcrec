@@ -110,13 +110,42 @@ m "abbbc" 1 4
 g 1 1 2
 n "abcd"
 
-# The shape that looks paradoxical: the outer `\1*` iterates over a body whose LENGTH changes as group 1 is re-decided by backtracking. It works because the reference reads the slots as they are at that instant and the loop's own frames restore them.
+# The shape that looks paradoxical: the outer `\1*` iterates over a body whose LENGTH changes as group 1 is re-decided by backtracking. It works because the reference reads the slots as they are at that instant and the loop's own frames restore them. THE EMPTY SUBJECT IS THE ONE THAT ARMS THE GUARD -- see the block below for why it was added.
 pattern ^(a*)\1*$
 features backrefs
 m "aaa" 0 3
 g 1 0 3
 m "aaaa" 0 4
 g 1 0 4
+m "" 0 0
+g 1 0 0
+
+# ====================================================================
+# EMPTY CAPTURE UNDER AN UNBOUNDED QUANTIFIER (S3.6): the empty-iteration guard's only live population
+# ====================================================================
+
+# `(a?)` publishes an EMPTY capture on "b", so `\1*` iterates at zero width and the guard is what ends it. The two non-empty subjects are the control: they take the same rung with the guard never firing, so a green pair here and a red "b" is the guard, not the rung.
+pattern ^(a?)\1*b$
+features backrefs
+m "b" 0 1
+g 1 0 0
+m "ab" 0 2
+g 1 0 1
+m "aab" 0 3
+g 1 0 1
+
+# The `{n,}` spelling of unbounded, which reaches the same star rung by a different parse than `*` does -- and its NOMATCH control, since an empty group cannot supply the two iterations "aa" would need.
+pattern ^(a?)\1{2,}$
+features backrefs
+m "" 0 0
+g 1 0 0
+n "aa"
+
+# The degenerate spelling: a group that can ONLY capture empty, so no subject exists on which this reference consumes anything.
+pattern ^()\1+$
+features backrefs
+m "" 0 0
+g 1 0 0
 
 # ====================================================================
 # STARTPOS (§11.2 F12): which start the search is given is an axis

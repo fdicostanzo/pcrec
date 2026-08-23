@@ -661,6 +661,73 @@ else
     fi
 fi
 
+# ---- §10: THE EMPTY-ITERATION GUARD IS EMITTED, READ OFF THE ARTIFACT ------
+#
+# WHY THIS EXISTS, and it is the lane's own lesson turned into a check. Row
+# S107 (`vm_nullable` answering FALSE for `A_BREF`) scored UNDETECTED in the
+# 118-row matrix on 5edba64 against a module that was CORRECT. The corpus held
+# the guard's SHAPE — `^(a*)\1*$` — and none of its live population: every
+# subject made group 1 non-empty, so the reference consumed bytes on every
+# iteration and the guard was never what ended the loop. A behavioural cell
+# only sees this guard when the referenced group publishes an EMPTY capture,
+# which is a property of the SUBJECT, not of the pattern.
+#
+# SO THIS HALF IS STRUCTURAL, and asks the pattern-only question directly:
+# does the artifact for an unbounded quantifier over a reference CARRY the
+# guard? That cannot be silently satisfied by a subject nobody wrote, and it
+# stays true for a family member whose empty-capture subject is missing.
+# tests/backrefs/numeric.rxt's "EMPTY CAPTURE UNDER AN UNBOUNDED QUANTIFIER"
+# block is the behavioural half; the two fail in different directions.
+#
+# THE POPULATION IS ASSERTED EXACT, both ways. A guard-BEARING row that stops
+# bearing one is the sabotage; a guard-FREE control that starts bearing one
+# means the predicate widened past the property under test. The bounded rows
+# are the controls that make the check falsifiable: `\1{3}` is a repeat over
+# the same nullable body and correctly emits NO guard, because a bounded chain
+# terminates on its own count — so "every artifact with a backreference in a
+# repeat body has a guard" would be GREEN on a compiler that emitted the guard
+# unconditionally, and this check would say nothing.
+#
+# FAILING DIRECTION, MEASURED 2026-08-22 on the S107 sabotage: each of the
+# four guard-bearing fixtures below emits the marker 0 times instead of once,
+# so `guard_bearing` collapses from 4 to 0 and this section goes RED naming
+# the first one. Clean tree: 4 and 3, the figures asserted below.
+GUARDMARK="empty-iteration guard"
+GD="$WORKDIR/guard"; mkdir -p "$GD"
+guard_bearing=0; guard_free=0; guard_bad=0; guard_cells=0
+while IFS=$'\t' read -r want pat; do
+    [ -n "$want" ] || continue
+    guard_cells=$((guard_cells + 1))
+    if ! "$PCREC" -p rx --features "$FEATS" --engine=vm -o "$GD/g.c" -- "$pat" \
+            >/dev/null 2>"$GD/g.log"; then
+        bad "§10: pcrec refused the fixture '$pat': $(head -1 "$GD/g.log")"
+        guard_bad=$((guard_bad + 1)); continue
+    fi
+    n=$(grep -c "$GUARDMARK" "$GD/g.c" || true)
+    case "$want:$n" in
+        bear:1) guard_bearing=$((guard_bearing + 1)) ;;
+        free:0) guard_free=$((guard_free + 1)) ;;
+        bear:*) bad "§10: '$pat' is an UNBOUNDED quantifier over a nullable backreference and its artifact carries the empty-iteration guard $n time(s), expected exactly 1 — a zero-width iteration has nothing to stop it (sabotage row S107)"
+                guard_bad=$((guard_bad + 1)) ;;
+        free:*) bad "§10: '$pat' is a BOUNDED repeat and its artifact carries the empty-iteration guard $n time(s), expected 0 — if the guard appears here the predicate has widened past the property this section tests, and the guard-bearing half stops meaning anything"
+                guard_bad=$((guard_bad + 1)) ;;
+    esac
+done <<'EOF'
+bear	^(a?)\1*b$
+bear	^(a*)\1*$
+bear	^(a?)\1{2,}$
+bear	^()\1+$
+free	^(a?)\1{3}$
+free	^(a)\1{2}$
+free	^(a?)(?:\1){2}x$
+EOF
+if [ "$guard_bad" -eq 0 ] && [ "$guard_bearing" -eq 4 ] && [ "$guard_free" -eq 3 ] \
+        && [ "$guard_cells" -eq 7 ]; then
+    ok "§10: the empty-iteration guard is emitted for all 4 unbounded-over-nullable-backreference fixtures and for NONE of the 3 bounded controls, read off the artifact — the pattern-only half of the property whose subject-dependent half S107 slipped through"
+elif [ "$guard_bad" -eq 0 ]; then
+    bad "§10 POPULATION: $guard_bearing guard-bearing / $guard_free guard-free over $guard_cells fixtures, expected EXACTLY 4 / 3 / 7. Deleting a fixture must go RED here — the population is the check"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

@@ -332,12 +332,52 @@ NUMERIC = [
           note="Q3 is the one that needs the SEARCH to move: the match is at "
                "(1,4) with group 1 = (1,2), so an implementation that only "
                "ever tried offset 0 answers nomatch."),
-        B(r"^(a*)\1*$", [("aaa",), ("aaaa",)], BR, groups=1,
+        B(r"^(a*)\1*$", [("aaa",), ("aaaa",), ("",)], BR, groups=1,
           note="The shape that looks paradoxical: the outer `\\1*` iterates "
                "over a body whose LENGTH changes as group 1 is re-decided by "
                "backtracking. It works because the reference reads the slots "
                "as they are at that instant and the loop's own frames restore "
-               "them."),
+               "them. THE EMPTY SUBJECT IS THE ONE THAT ARMS THE GUARD -- see "
+               "the block below for why it was added."),
+    ]),
+    ("EMPTY CAPTURE UNDER AN UNBOUNDED QUANTIFIER (S3.6): the "
+     "empty-iteration guard's only live population", [
+        # THE SHAPE THE FAMILY ABOVE WAS MISSING, and it was missing for a
+        # reason worth writing down: `vm_nullable(A_BREF)` is a STATIC answer,
+        # but the empty-iteration guard it arms only DOES anything when the
+        # referenced group publishes an EMPTY capture at run time. Every
+        # subject in the block above makes group 1 non-empty ("aaa" -> (0,3)),
+        # so the reference consumes bytes on every iteration and the guard is
+        # never the thing that ends the loop.
+        #
+        # MEASURED, 2026-08-22, on the S107 sabotage (`vm_nullable` answering
+        # FALSE for `A_BREF`): the whole block above stays GREEN, and so does
+        # `^(a?)\1{3}$` -- a BOUNDED repeat never reaches the unbounded star
+        # rung that carries the guard at all. That is why sabotage row S107
+        # scored UNDETECTED in the 118-row matrix on 5edba64 while the module
+        # was, in fact, correct: the corpus had the guard's shape and none of
+        # its live population.
+        #
+        # THE FAILURE IS NOT A HANG. Also measured: the sabotaged artifact
+        # answers `PCREC_ERR_FRAMES` in 0.10s on `^(a?)\1*b$` / "b" -- the
+        # zero-width iterations exhaust the frame stack and give up LOUDLY
+        # (D45), rather than spinning until a timeout. So these are ordinary
+        # wrong-answer cells and the harness catches them as such.
+        B(r"^(a?)\1*b$", [("b",), ("ab",), ("aab",)], BR, groups=1,
+          note="`(a?)` publishes an EMPTY capture on \"b\", so `\\1*` "
+               "iterates at zero width and the guard is what ends it. The "
+               "two non-empty subjects are the control: they take the same "
+               "rung with the guard never firing, so a green pair here and a "
+               "red \"b\" is the guard, not the rung."),
+        B(r"^(a?)\1{2,}$", [("",), ("aa",)], BR, groups=1,
+          note="The `{n,}` spelling of unbounded, which reaches the same star "
+               "rung by a different parse than `*` does -- and its NOMATCH "
+               "control, since an empty group cannot supply the two "
+               "iterations \"aa\" would need."),
+        B(r"^()\1+$", [("",)], BR, groups=1,
+          note="The degenerate spelling: a group that can ONLY capture empty, "
+               "so no subject exists on which this reference consumes "
+               "anything."),
     ]),
     ("STARTPOS (§11.2 F12): which start the search is given is an axis", [
         B(r"(a)\1", [("xaa",)], BR, groups=1, sweep=True,

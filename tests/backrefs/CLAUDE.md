@@ -37,9 +37,24 @@ Re-run it after changing a cell list:
 
     python3 tests/backrefs/gen_corpus.py     # rewrites the .rxt files in place
 
-Current census, from that run: **237 cells, 50 blocks python-verified, 65
-`# pcre2-only`, 31 `perr`.** `verify_rxt.py` passes 221/221 on the
-python-verifiable half; the harness passes 442/442 over the whole directory.
+Current census, from that run: **244 cells, 53 blocks python-verified, 65
+`# pcre2-only`, 31 `perr`.** `python3 tests/harness/verify_rxt.py
+tests/backrefs/` passes 234/234 on the python-verifiable half; `bash
+tests/harness/run.sh tests/backrefs/*.rxt` passes 455/455 over this
+directory's own cells.
+
+**The two harness figures differ, and the command is why.** `run.sh
+tests/backrefs/` (the DIRECTORY, no glob) also walks `d27/` — the [M6.5.3]
+blinded corpus — and reports 662. Both numbers are correct for what they
+were asked; quote the command with the figure. (The 442 this paragraph
+carried until 2026-08-22 was the pre-d27 value of the 455 figure, correct
+when written and made confusing only by d27 landing beside it.)
+
+The 2026-08-22 additions are the "EMPTY CAPTURE UNDER AN UNBOUNDED
+QUANTIFIER" block in `numeric.rxt` (+7 cells, +13 harness cases): the live
+population of the empty-iteration guard, without which sabotage row S107
+scored UNDETECTED against a module that was correct. See that block's own
+comment and the row's header.
 
 ## Files
 
@@ -96,7 +111,7 @@ python-verifiable half; the harness passes 442/442 over the whole directory.
 
 ## The instruments
 
-- **run_backref_diff.sh** — nine sections, four EXACT population guards. Three
+- **run_backref_diff.sh** — ten sections, five EXACT population guards. Four
   of the sections exist because nothing else in the tree asks their question:
   §3 (the RE-ENTRY arm, where publish-at-close is observable AND NOWHERE ELSE —
   a 5,808-cell arm-vs-arm sweep found the backref-FREE control at 0/0 in BOTH
@@ -104,6 +119,14 @@ python-verifiable half; the harness passes 442/442 over the whole directory.
   "keeps internal slots, reports none" ruling is exercised) and §8 (the
   SPAN-DIVERGENCE section, the only possible detector for a prefilter planted
   on a backref pattern). §9 is the 65,536-pair fold agreement.
+  §10 (added 2026-08-22) is STRUCTURAL and is the lane's own lesson: it reads
+  the empty-iteration guard off the ARTIFACT for 4 unbounded-over-nullable-
+  backreference fixtures and asserts its ABSENCE on 3 bounded controls,
+  because the behavioural half of that property is only visible on a subject
+  where the referenced group captures EMPTY — and the absence of exactly
+  those subjects is what let sabotage row S107 score UNDETECTED against a
+  correct module. Failing direction measured on the S107 build: all 4
+  guard-bearing fixtures emit the marker 0 times.
 - **run_dupnames_diff.sh** — §8.3 swept rather than sampled, and checked THREE
   ways: pcrec against libpcre2, an INDEPENDENTLY WRITTEN model of the rule
   against libpcre2, and both populations asserted exact. The `.rxt` cells
