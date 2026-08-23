@@ -151,7 +151,7 @@ the mechanism and is why §6 exists at all: **every member of the assertion
 family IS a lookaround**, so the [DD-11]/D66 expansions (`\b`, `(?m)^`, `\Z`,
 …) are this module's own design examples — all nine verified equivalent at
 **972 cells / 0 disagreements** — and textually substituting them into the
-assertions module's shipped corpus turns **8,495 of its 10,120
+assertions module's shipped corpus turns **8,260 of its 10,120
 libpcre2-verified cells** into a lookaround corpus with a two-comparison
 self-oracle (§6.3).
 
@@ -170,8 +170,9 @@ their repo commit by `probes/archive.sh` in ONE batch from a committed tree.
 | `probes/probe_prefilter_hazard.py` | MEASURED, libpcre2 + in-pcrec | §5.3-§5.4: H1/H2/H3 over 45 cells, with the SHARP anchored-at-true-start form of H3 beside the naive one, a fixture-tested `erase()`, and two vacuity guards |
 | `probes/probe_d66_subset.py` | MEASURED, libpcre2 + in-pcrec | §6.5/§9.2: the six equivalences (80 cells each); the `(?m)^` self-oracle in BOTH directions; and §5.5's sweep, which finds the H3 hazard **coexisting with a live prefilter-window ceiling on 16 of 30 shapes** |
 | `probes/probe_expansions.py` | MEASURED, both oracles + in-pcrec | §6.1/§6.2: the nine [DD-11]/D66 expansions verified equivalent (**972 cells, 0 disagreements**, vacuity guard firing at 4/108); each body classified against §2.5; python's verdict per expansion; and pcrec's shipped FOLDED forms against libpcre2's EXPANSIONS (**0 over 324 cells**) |
-| `probes/probe_substitution_population.py` | MEASURED, PURE TEXT | §6.3: how much of `tests/assertions/` the substitution driver gets — **270 of 468 blocks, 8,495 of 10,120 cells** — with each of the five qualification rules costed separately. Runs no compiler: the question is a property of the corpus text |
-| `probes/probe_englook_sizing.py` | MEASURED, in-pcrec | §5.8: `[ENG-LOOK]`'s sizing inputs, read off the **emitter's own array dimensions** — every component 2-25 states, product bound **64 non-control rows / 0 over the 32,000 cap** against **62 control rows / 18 over** |
+| `probes/probe_substitution_population.py` | MEASURED, PURE TEXT | §6.3: how much of `tests/assertions/` the substitution driver gets — **263 of 468 blocks, 8,260 of 10,120 cells** — with each of the five qualification rules costed separately. Runs no compiler: the question is a property of the corpus text |
+| `probes/probe_englook_sizing.py` | MEASURED-LOWER + PROTOTYPE | §5.8: `[ENG-LOOK]`'s sizing inputs. **REWRITTEN AFTER R33 C2-1**: the emitted table dimensions are now a LOWER BOUND (the forward DFA is accept-pruned, not `Σ*·L`), and a self-checked subset construction supplies `\|D(Σ*·L)\|`. Product bound **64 non-control rows / 0 over the 32,000 cap** against **62 control rows / 18 over**; **6 rows the first version under-stated** |
+| `probes/probe_follow_scoping.py` | MEASURED, both oracles + in-pcrec | §3.2.1/§3.4/§3.6/§2.7: **R33 C1-1's mechanism reproduced** (3 of 3 bodies' prune-bound literal moves with the follow, atomic control holding); the three predicted cells; the `a{3}` row that refuted this lane's own simplification; C1-3's non-atomic-lookbehind retry cells; C1-7's `\K` refusal-scope controls |
 
 **`probes/archive.sh` is the ONLY writer of `out/`.** R30 M7's rule, inherited
 through two lanes. R32 D1/C14 found the backrefs archiver stamping the wrong
@@ -1829,7 +1830,7 @@ re-deriving them. 13 capture-slot cells ride along.
   — a `\b` lowered to `A_WORDB` beside a `(?<=\w)(?!\w)` lowered to `A_LOOK`,
   in the same artifact, sharing the same alphabet refinement.
 
-**638 generated patterns over ~8,495 cells each.** The driver's own home is
+**624 generated patterns over ~8,260 cells each.** The driver's own home is
 `tests/lookaround/run_expansion_diff.sh`, and it is **also [DD-11]'s
 regression harness** — the row's substitutions have to keep this green.
 
@@ -1934,7 +1935,7 @@ killed the hand-off. Both numbers are in the archive.
 | consumer | what this module hands it | where |
 |---|---|---|
 | **[DD-14]** | a lookaround body that is already a self-contained sub-program with one entry and one exit; the width-at-the-call-site recommendation for lookbehind branches | §6.4 |
-| **[DD-11]** | the verified expansion table; the substitution driver's design and its 8,495-cell population; the self-oracle's two-comparison shape | §6.1, §6.3 |
+| **[DD-11]** | the verified expansion table; the substitution driver's design and its 8,260-cell population; the self-oracle's two-comparison shape | §6.1, §6.3 |
 | **D66** | a one-character fixed lookbehind that lowers correctly (§3.4 at `m=1, k=1`); `PCREC_ENCE_BACK_STEP` so a UTF-8 backend never revisits the anchor optimizer | §3.4, §4 |
 | **[ENG-LOOK]** | the prefilter-soundness statement and the measured match-START hazard; the component-automaton sizes and product bounds; the sub-program shape it will LIFT | §5.3-§5.6, §5.8, §6.4 |
 
@@ -2131,7 +2132,7 @@ lookaround decompositions are **0 disagreements over 80 cells each**
 (`out/d66_subset.txt` S1), and the whole expansion table is **0 over 972**
 (`out/expansions.txt` E1). Those numbers are not an identity control; they are
 the correctness statement of §6.3's SUBSTITUTION DRIVER, whose `A == B` arm is
-a far stronger check of the same territory over **8,495 cells** rather than 80
+a far stronger check of the same territory over **8,260 cells** rather than 80
 — and one that runs on the shipped compiler instead of comparing two
 compilers. **§6.3 is therefore where this module's real cross-lowering
 assurance lives**, and §9 is the ordinary byte-identity gate it always was.
@@ -2249,8 +2250,8 @@ row above is otherwise unfalsifiable:
 
 §10.1's ~380 blocks are the module's OWN corpus, written by the [M6.6.3]
 blinded author. **§6.3's substitution driver contributes a second population
-an order of magnitude larger and costs nothing to author**: 638 generated
-patterns over **8,495 libpcre2-verified behavioural cells**, every expectation
+an order of magnitude larger and costs nothing to author**: 624 generated
+patterns over **8,260 libpcre2-verified behavioural cells**, every expectation
 inherited from a module that already ships.
 
 The two populations are complementary rather than redundant, and the
@@ -2601,7 +2602,7 @@ designs it and §11 puts it in wave E2, on the ground that it is this module's
 cheapest and largest correctness instrument and that [DD-11] then inherits a
 harness rather than writing one. The alternative is to design it here and let
 [DD-11] build it. *Recommendation: build it in [M6.6.2]. A generator whose
-population is 8,495 already-verified cells is worth more to the module that
+population is 8,260 already-verified cells is worth more to the module that
 introduces the construct than to the row that later rewrites the other side of
 it — and if it lands later, [M6.6.2] ships with only the ~380-cell corpus a
 blinded author could write.*
