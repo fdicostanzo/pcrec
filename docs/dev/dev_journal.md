@@ -12041,3 +12041,14 @@ from-spec end-to-end driver 140/140; re-run from the main tree vs
 3aa446f: 207 pass / 0 fail / 0 compile failures / pending-vm 0. The
 backrefs acceptance record: the blinded corpus found NO implementation
 divergence — one module in two today; the other found a tier-1.
+
+UNION BATTERY ON 3aa446f (build/battery_m65.log, 20:59 → 22:24): test
+22,138/0 EXIT=0; strict 0; ubsan 0; asan 0; lint 0; zero sanitizer
+reports. Edit window used: the lane's three reported prose/registration
+gaps closed on main (match_api.md §6.0 with the (name asc, number asc)
+key and the dup-run caller algorithm; S102's header population 3; the
+matrix's registration comment true — `brefidentity` registered and
+reserved with zero rows, S103's wiring a close residual). The corrected
+D27 corpus merged into tests/backrefs/d27/ (207 cells). Tripwire on the
+final tree re-run; full mech matrix launched (build/mech_m65.log, 118
+rows, PROCS=4); the quiet-box gate follows.
