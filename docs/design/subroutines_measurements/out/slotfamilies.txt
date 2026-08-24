@@ -1,0 +1,80 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_slotfamilies.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : e5181e6 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/subroutines_design.md
+#     ?? docs/design/subroutines_measurements/out/slotfamilies.txt
+#     ?? docs/design/subroutines_measurements/probes/probe_slotfamilies.py
+#     ?? docs/design/subroutines_measurements/prototype/slotproto_cutmark.c
+#     ?? docs/design/subroutines_measurements/prototype/slotproto_pending.c
+# RUN DATE   : 2026-08-23T21:11:47-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+prototypes: /home/duxevents/pcrec/worktrees/dd14design/docs/design/subroutines_measurements/prototype (adopted from the R34 C2 panel unchanged)
+
+=== AXIS P -- SLOT_GROUP<n>_PENDING ====================================
+  pattern: ^(a(?1)?b)\1$      failure direction: LOST MATCH
+
+  'abab'           capturesW=match 0 4 0 2          +pending=match 0 4 0 2          pcre2=match 0 4 0 2         
+  'aabbaabb'       capturesW=nomatch                +pending=match 0 8 0 4          pcre2=match 0 8 0 4            <-- CAPTURES-ONLY W DISAGREES
+  'aaabbbaaabbb'   capturesW=nomatch                +pending=match 0 12 0 6         pcre2=match 0 12 0 6           <-- CAPTURES-ONLY W DISAGREES
+  'ab'             capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'aabb'           capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'abba'           capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'aabbab'         capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'abaabb'         capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  ''               capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'a'              capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'b'              capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'aabbaabbaabb'   capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+  'ababab'         capturesW=nomatch                +pending=nomatch                pcre2=nomatch               
+
+  W as §5.3 FIRST WROTE it : 11 agree, 2 DISAGREE
+  W + the SLOT_GROUP<n>_PENDING slot : 13 agree, 0 DISAGREE
+
+=== AXIS C -- SLOT_CUT_MARK<n> ====================================
+  pattern: ^((?>a(?1)?))a$      failure direction: FALSE MATCH
+  non-atomic control: ^((?:a(?1)?))a$
+
+  'a'              capturesW=nomatch                +mark=nomatch                pcre2=nomatch               
+  'aa'             capturesW=match 0 2 0 1          +mark=nomatch                pcre2=nomatch                  <-- CAPTURES-ONLY W DISAGREES (and EQUALS the non-atomic language)
+  'aaa'            capturesW=match 0 3 0 2          +mark=nomatch                pcre2=nomatch                  <-- CAPTURES-ONLY W DISAGREES (and EQUALS the non-atomic language)
+  'aaaa'           capturesW=match 0 4 0 3          +mark=nomatch                pcre2=nomatch                  <-- CAPTURES-ONLY W DISAGREES (and EQUALS the non-atomic language)
+  'aaaaa'          capturesW=match 0 5 0 4          +mark=nomatch                pcre2=nomatch                  <-- CAPTURES-ONLY W DISAGREES (and EQUALS the non-atomic language)
+  'b'              capturesW=nomatch                +mark=nomatch                pcre2=nomatch               
+  'ab'             capturesW=nomatch                +mark=nomatch                pcre2=nomatch               
+  ''               capturesW=nomatch                +mark=nomatch                pcre2=nomatch               
+  'aaaaaaaa'       capturesW=match 0 8 0 7          +mark=nomatch                pcre2=nomatch                  <-- CAPTURES-ONLY W DISAGREES (and EQUALS the non-atomic language)
+  'aaaaaa'         capturesW=match 0 6 0 5          +mark=nomatch                pcre2=nomatch                  <-- CAPTURES-ONLY W DISAGREES (and EQUALS the non-atomic language)
+
+  W as §5.3 FIRST WROTE it : 4 agree, 6 DISAGREE
+  W + the SLOT_CUT_MARK<n> slot : 10 agree, 0 DISAGREE
+
+=== REACHABILITY GUARDS =============================================
+  (a) each axis's two builds disagree somewhere: OK
+  (b) each fixed build agrees with libpcre2 everywhere: OK
+
+WHY THE LANE'S OWN CORPUS COULD NOT SEE THIS. Both axes need a
+SECOND lexical construct whose slot is live across a call:
+  axis P needs a group that a BACKREFERENCE names (otherwise the
+     group is not marked and publish-at-close never fires);
+  axis C needs an ATOMIC GROUP live at two recursion depths.
+`probe_callproto.py`'s four patterns have neither -- P1..P4 are plain
+capturing groups and alternations -- so every cell agreed and the
+rule went unexercised. The lesson is the project's own: a control
+that shares its alphabet with the thing it controls does not control
+it, and this corpus shared the DESIGN's alphabet.

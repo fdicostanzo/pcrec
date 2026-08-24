@@ -59,8 +59,11 @@ return label in it (§5.1), because a separate array's entries get clobbered by
 a second call made after the first returns and that is a real bug — **derived
 in §5.2 and then BUILT: the rejected design gets 3 of 50 cells wrong, one of
 them a false match, while agreeing on the other 47** (§5.9). (1) plus the measurement that **`\K` is NOT restored by a
-return** (§3.4) says the restore is over a **compile-time capture-slot set**,
-never a trail rewind, and the entry values are stored **in the trail itself** by
+return** (§3.4) says the restore is over a **compile-time set of slots** —
+**every slot family, not the captures**, a correction R34's C2 panel forced
+with two executed prototypes after this design's first version cost a LOST
+MATCH on publish-at-close and FIVE FALSE MATCHES on a cut mark (§5.3) — never
+a trail rewind, and the entry values are stored **in the trail itself** by
 a trailed self-write at the call site — no new storage anywhere (§5.3). The
 **addressable-body** question (charter addition (i)) collapses once written
 out: "once-emitted-with-two-linkages" needs a per-*activation* answer at the
@@ -98,6 +101,7 @@ their repo commit by `probes/archive.sh` from a committed tree.
 | `probes/probe_atomicity.py` | MEASURED | §3.2: the naive cell that decides nothing and the isolated cell that decides it; four atomic controls; quantified calls and the empty-body guard; calls inside lookaround/atomic/lookbehind; the retry COST against an inlined control |
 | `probes/probe_leftrec.py` | MEASURED | §3.3: direct, indirect and nullable-prefix left recursion; the two guards; **the decisive sweep that refutes the same-position reading**; `(?R)` under a quantifier; a call inside a lookbehind; depth requirement vs subject; and the error-140 sweep that shows the charter's premise is not about recursion at all |
 | `probes/probe_linkage.sh` + `prototype/gen_linkage.py` | PROTOTYPE | §6: three hand-written matchers in the emitter's own idiom, differing only in linkage; a 52-cell agreement control first, then emitted-size by call count and run time on two corpora (mixed, and lexical-only — the corpus HYBRID's whole claim rests on) |
+| `probes/probe_slotfamilies.py` + `prototype/slotproto_pending.c` + `slotproto_cutmark.c` | PROTOTYPE + MEASURED | §5.3b: **the restore set, refuted twice.** Two prototypes ADOPTED UNCHANGED from R34's C2 panel and rebuilt from source by this lane, each compiled two ways differing in ONE slot: captures-only W loses matches on `SLOT_GROUP<n>_PENDING` (11/2) and produces FALSE MATCHES on `SLOT_CUT_MARK<n>` (4/6) whose language is exactly the non-atomic control's; the general rule is 13/0 and 10/0 |
 | `probes/probe_callproto.py` + `prototype/callproto.c` | PROTOTYPE + MEASURED | §5.9: **§5's whole lowering, built and run against libpcre2** — the frame that carries the return label, the non-popping return, the fail label's one added line, the `\|W\|` trailed save/restore — on four patterns each of which is a design claim; compiled TWICE, the second with `-DBROKEN_ARRAY` for §5.2's rejected design, so the bug is REPRODUCED rather than argued |
 | `probes/probe_prefilter.py` | MEASURED, libpcre2 + in-pcrec | §8: what a DFA prefilter is worth on call-**shaped** patterns, measured on their INLINED equivalents (which pcrec compiles today), each pair verified equivalent **420 cells / 0 disagreements** before any timing |
 | `probes/probe_population.py` | MEASURED, PURE TEXT | §10: the census — **6** call spellings in `tests/**/*.rxt`'s 2,161 pattern lines, every one of them a `perr` row testing a refusal, against **226** backreferences |
@@ -806,7 +810,9 @@ The shape:
     L_site:   RX_CALL(&&L_ret, scan_position)   // a resume frame with a return label
               RX_SET(W[0], slot_values[W[0]])   // §5.3: |W| trailed SELF-writes,
               ...                               //  parking the caller's values on
-              RX_SET(W[n-1], slot_values[W[n-1]])  // the trail at fixed offsets
+              RX_SET(W[n-1], slot_values[W[n-1]])  // the trail at fixed offsets.
+                                                //  W is EVERY slot family, not
+                                                //  the captures -- §5.3a
               goto L_entry_g
     L_entry_g:  <the callee's body>                -> L_exit_g
     L_exit_g: RX_RETURN                            // restore W, then goto* the frame's ret
@@ -920,7 +926,7 @@ because a frame is never overwritten while it is live.
 heap frame, and the frame chain is the backtrack stack — which is a
 convergence rather than evidence, and is marked ARGUED where it appears.
 
-### 5.3 The capture save/restore, and the trail IS the storage
+### 5.3 The ACTIVATION-PRIVATE save/restore, and the trail IS the storage
 
 §3.1 MEASURED H-RESTORE: the callee writes and the return puts the entry
 values back. §3.4(b) MEASURED that **`\K` is not restored**, and pcrec spells
@@ -928,25 +934,123 @@ values back. §3.4(b) MEASURED that **`\K` is not restored**, and pcrec spells
 the trail to the call frame's mark*, is a **miscompile**: it would undo the
 `\K` and answer (0,4) where PCRE2 answers (3,4).
 
-So the restore is over a **compile-time set W of CAPTURE slots**:
+**THE SET IS NOT "THE CAPTURE SLOTS", AND THIS DESIGN'S FIRST VERSION SAID IT
+WAS.** R34's C2 panel refuted it with two executed prototypes; §5.3a states
+the general rule, §5.3b is the measurement, and §5.3c is the machinery, which
+is unchanged.
 
-> **W(g)** = **`g`'s OWN two slots**, ∪ the slot indices of every capturing
-> group lexically inside `g`'s body, ∪ W(h) for every group `h` that `g`'s
-> body calls — the least fixpoint over the call graph. `W(0)` is every
-> capture slot. **Slots 0 and 1 are never members**, because
-> `RX_SLOT_WHOLE_START` is `\K`'s and `RX_SLOT_WHOLE_END` is written at
-> accept.
+#### 5.3a THE RULE
 
-**`g`'s OWN SLOTS ARE IN `W(g)`, and this design's first draft left them
-out.** MEASURED, `out/captures.txt` C3: `^((a)(?1)?(b))$` on `"aabb"` answers
-g1 = **(0,4)**. Group 1's START is written at entry, so the recursive call
-overwrites it with 1 — and the outer level's answer is 0. Without `g`'s own
-slots in `W` the emitted matcher reports **g1 = (1,4)**, a wrong span on a
-correct match, which no `m`/`n` expectation would catch and only a `g` line
-would. §5.9's prototype is where the omission was found, by building the
-mechanism and running it.
+> **W(g)** = **every slot that any node in `g`'s TRANSITIVE body can WRITE** —
+> `g`'s own capture slots, every slot allocated to a construct lexically
+> inside `g`'s body (of **any** of the seven families below), ∪ W(h) for every
+> group `h` that `g`'s body calls; the least fixpoint over the call graph.
+> `W(0)` is every slot in the artifact except the two below.
+> **Slots 0 and 1 are NEVER members** — `RX_SLOT_WHOLE_START` is `\K`'s
+> (§3.4(b), MEASURED) and `RX_SLOT_WHOLE_END` is written only at accept.
 
-and the entry values are stored **in the trail**, with no new array:
+**pcrec HAS SEVEN SLOT FAMILIES AND ONLY ONE OF THEM IS CAPTURES.**
+STRUCTURAL, `vm_slot_name` (`emit_vm.c:645-697`), whose layout arithmetic is
+the authoritative census:
+
+| family | allocated per | written | read |
+|---|---|---|---|
+| `SLOT_GROUP<n>_START/END` | capturing group | at the group's open/close | at accept, by `A_BREF`, by the caps copy-out |
+| `SLOT_GROUP<n>_PENDING` | **MARKED** group ([M6.5.2] publish-at-close, `pend_of`) | at the group's OPEN | at the group's CLOSE, to publish the pair |
+| `SLOT_EMPTY_GUARD<n>` | quantifier with a nullable body | at an iteration's entry | at the iteration's end, to stop a zero-width loop |
+| `SLOT_SPAN_LOW<n>` | non-possessive cursor rung (`vm_slot_low`, `:2431/:2492`) | at the rung's entry | at the rung's retreat |
+| `SLOT_CUT_MARK<n>` | **LEXICAL** atomic group / possessive rung (`v->nmark++`) | at the group's entry | by `RX_CUT` at the group's exit |
+| `SLOT_REVDET<n>_{ENTRY,LOW,HI}` | revdet rung (`v->nrev++`) | at the rung's entry | during the backward walk |
+| `SLOT_COUNTER<n>` | counter-K rung (`v->nctr++`) | at the loop's entry | per iteration |
+
+**Every one of them is written at a lexical construct's ENTRY and read at that
+construct's EXIT, and there is ONE slot per lexical construct.** That is
+exactly the property a recursive call breaks: two activations of the same
+lexical construct are **nested**, not sequential, so the inner activation's
+write is still in the slot when the outer activation reads it.
+
+**WHY THE FIRST VERSION BELIEVED OTHERWISE.** It inherited
+`lookaround_design.md` §6.4(2) — *"a call that re-enters the same body from a
+different site re-initialises them at the entry label"* — which is TRUE for
+**sequential** re-entry, the only kind that design had. §12 P-2's first
+version even named `SLOT_LOOK_MARK`/`_POS` as the candidates and predicted
+they were safe *"because each is re-initialised at its own entry label on
+every entry"*. **The re-initialisation is not the question; the OVERWRITE
+is.** A slot re-initialised at entry has been overwritten for its caller.
+
+#### 5.3b THE MEASUREMENT — two families, two failure directions
+
+`out/slotfamilies.txt`, from `probes/probe_slotfamilies.py`, which **rebuilds
+both prototypes from source and re-runs the comparison** — the prototypes are
+the C2 critic's own, ADOPTED unchanged for the reason `docs/design/CLAUDE.md`
+records about `simvm.py`: a lane that rewrites the instrument that refuted it
+cannot be trusted not to soften it.
+
+**AXIS P — `SLOT_GROUP<n>_PENDING`, and the failure is a LOST MATCH.**
+`^(a(?1)?b)\1$`. The backreference MARKS group 1, so it lowers
+publish-at-close: the open position goes to the pending slot and the pair is
+published at the close. The inner activation overwrites the outer's pending
+value, so the outer publishes the wrong start.
+
+| | | |
+|---|---|---|
+| W as first written (captures only) | **11 agree, 2 DISAGREE** | `"aabbaabb"` and `"aaabbbaaabbb"` answer **nomatch** where 10.46 answers (0,8) g1=(0,4) and (0,12) g1=(0,6) |
+| W + the pending slot | **13 agree, 0 DISAGREE** | |
+
+**AXIS C — `SLOT_CUT_MARK<n>`, and the failure is a FALSE MATCH.**
+`^((?>a(?1)?))a$`, which 10.46 does not match at any length. One mark slot per
+LEXICAL atomic group; the inner activation's mark overwrites the outer's, so
+the outer's `RX_CUT` — an assignment, `run->resume_depth = slot_values[slot]`
+(`emit_vm.c:5783-5785`) — becomes a **no-op**.
+
+| | | |
+|---|---|---|
+| W as first written | **4 agree, 6 DISAGREE** | false matches on `"aa"`, `"aaa"`, `"aaaa"`, `"aaaaa"`, `"aaaaaa"`, `"aaaaaaaa"` |
+| W + the mark slot | **10 agree, 0 DISAGREE** | |
+
+**AND THE FALSE-MATCH SET IS EXACTLY THE NON-ATOMIC CONTROL'S LANGUAGE** —
+every broken cell equals `^((?:a(?1)?))a$`'s answer. The bug is not "the
+answer differs"; it is *"the atomic group stopped being atomic"*, which is a
+nameable miscompile and is why the row is a class rather than an instance.
+
+**THE OTHER FIVE FAMILIES ARE THE SAME SHAPE AND ARE ARGUED, NOT MEASURED**,
+and the document says which is which:
+
+- **`SLOT_EMPTY_GUARD<n>`** — §2.6's own guard. A nullable callee under `*`
+  whose loop is lexically inside the callee has one guard slot; two
+  activations share it, so the outer loop's guard reads the inner's position.
+  Predicted direction: an empty iteration is admitted or a legal one refused.
+- **`SLOT_SPAN_LOW<n>`**, **`SLOT_REVDET<n>_*`**, **`SLOT_COUNTER<n>`** — rung
+  state. `counterk_design.md` already ruled the counter TRAILED rather than a
+  local, and its stated reason is one activation over: *"a body-internal frame
+  from iteration 1 resumes reading a stale local"*. A nested activation is
+  that argument with a second index.
+- **`SLOT_LOOK_MARK`/`_POS`** — `[M6.6.2]`'s, unlanded, so this design cannot
+  measure them. §12 P-2 predicts they fail the same way for a recursive call
+  inside a lookaround, and **that prediction replaces the first version's
+  prediction that they were safe.**
+
+**WHY THIS LANE'S OWN CORPUS COULD NOT SEE IT.** Both axes need a SECOND
+lexical construct whose slot is live across a call: axis P needs a group a
+**backreference** names (otherwise it is not marked and publish-at-close never
+fires), axis C needs an **atomic group live at two depths**.
+`probe_callproto.py`'s P1–P4 are plain capturing groups and alternations and
+have neither, so all 50 cells agreed and the rule went unexercised. **The
+corpus shared the DESIGN's alphabet**, which is the project's own check-design
+lesson arriving on this lane. §10.2 adds `slotfamilies.rxt` with both cells
+plus the five argued families' shapes, and §9.3 adds a sabotage row per family.
+
+#### 5.3c THE MACHINERY, unchanged by the correction
+
+W is derived **once**, in `src/opt/callgraph.c`, from the same SCC pass §4.3's
+transitive mark and §4.4's `minw` fixpoint use — one mechanism, four
+consumers. The per-node slot demand is **not** re-derived there: `emit_vm.c`
+already has `vm_count_slots`, the pre-pass that counts every family for the
+layout, and W is that walk restricted to a subtree and unioned over the call
+graph. **A second slot census would be a second thing to disagree with the
+layout**, which is `src/gen/CLAUDE.md`'s standing rule about the slot families.
+
+The entry values are stored **in the trail**, with no new array:
 
 - **At the call site, immediately after `RX_CALL`:** for each `s ∈ W`, emit
   `RX_SET(s, slot_values[s])` — a **trailed self-write**. P7 STRUCTURAL:
@@ -974,18 +1078,31 @@ Four properties:
    restore covers everything B could have touched, and B's own restore already
    ran.
 4. **THE COST IS `2·|W|` TRAILED WRITES PER CALL**, known at compile time, and
-   it joins `vm_cost`'s trail accounting (§5.7) rather than being discovered as
-   a `PCREC_ERR_FRAMES` on a pattern the artifact can match — S87 and S95's
-   shape, two constructs over.
+   §5.7 re-derives what `|W|` now is.
 
-**THE ALTERNATIVE THIS DESIGN DID NOT TAKE**, recorded because it is cheaper at
-entry and a panel will think of it: a **runtime backward walk** of the trail
-from the top down to the call frame's mark, re-applying `saved_value` for every
-record whose `slot_index` is a capture slot, pushing new trail records as it
-goes. It needs no `W`, no entry cost, and no fixpoint — but it costs O(the
-callee's writes) at every return instead of O(|W|), doubles trail usage, and
-needs a **runtime** slot-kind test that is exactly the `\K` distinction this
-section was nearly wrong about. §12 P-5 is its refutation experiment.
+**`g`'s OWN CAPTURE SLOTS ARE IN `W(g)`, and an earlier draft left them out
+too.** MEASURED, `out/captures.txt` C3: `^((a)(?1)?(b))$` on `"aabb"` answers
+g1 = **(0,4)**. Group 1's START is written at entry, so the recursive call
+overwrites it with 1. Without them the matcher reports **g1 = (1,4)**, a wrong
+span on a correct match, which no `m`/`n` expectation catches and only a `g`
+line does. §5.9's prototype found that one; C2's found the other six families.
+**Two independent omissions of the same shape, caught by two different
+executions — which is the argument for §12's rule that a load-bearing ARGUED
+claim gets an experiment, not a paragraph.**
+
+**THE ALTERNATIVE THIS DESIGN DID NOT TAKE**, and the correction changes its
+price: a **runtime backward walk** of the trail from the top down to the call
+frame's mark, re-applying `saved_value` and pushing new trail records as it
+goes. It needs no `W` and no fixpoint. Its cost was O(the callee's writes)
+against O(|W|), and **now that `|W|` is every family rather than the captures,
+that comparison moves toward the walk** — a callee containing twenty groups,
+three rungs and an atomic group has a large static `W` and may write four
+slots on a given path. What it still needs is the **runtime slot-kind test**
+that distinguishes slot 0 from the rest, which is exactly the `\K` distinction
+§3.4(b) measured — one comparison against a compile-time constant, since the
+excluded slots are 0 and 1 and every other slot index is fair game. **§12 P-5
+is re-priced accordingly and is now the strongest open alternative in this
+document rather than a footnote.**
 
 ### 5.4 The callee CONTRACT (charter addition (iii))
 
@@ -1153,6 +1270,18 @@ sees them all. Three charges are this module's own:
   artifact that under-sizes `trail_frames` returns `PCREC_ERR_FRAMES` on a
   pattern it can match — S87/S95's exact failure mode — so S-SR7 is a
   two-site row.
+
+  **AND `|W|` IS BIGGER THAN THIS SECTION FIRST PRICED IT.** §5.3a's rule is
+  every slot family, not the captures, so for a callee with `c` capture groups
+  (of which `c_marked` are marked), `q` nullable quantifiers, `r` non-possessive cursor
+  rungs, `m` lexical atomic/possessive cuts, `v` revdet rungs and `k` counter
+  rungs, `|W| = 2c + c_marked + q + r + m + 3v + k` plus the transitive union
+  over the calls it makes. **For the shapes this module's own corpus uses that
+  is 2–8 slots**; for `(?R)` on a large pattern it is the whole slot space
+  minus two, which is the honest upper bound and is exactly `RX_NSLOTS − 2`.
+  The cost is still a compile-time constant and still lands in `vm_cost`, but
+  it is no longer negligible, and §12 P-5's alternative gets cheaper as it
+  grows.
 - **The recursion itself is `Cost.unbounded`**, so the artifact stamps a
   ceiling rather than silently capping (P12).
 
@@ -1716,6 +1845,11 @@ measurement behind it rather than a worry.
 | **S-SR4** | §3.2: the return does NOT cut | `emit_vm.c` | `harness recursion` | add `RX_CUT` at the return | the same cell, and **the four atomic controls of §3.2 stay green**, which is what distinguishes this row from S-SR3 |
 | **S-SR5** | §3.1: the callee INHERITS the caller's captures | `emit_vm.c` | `harness recursion` | zero `W`'s slots at the call site instead of parking them | `^(a)(b\1)(?2)$` on `"ababa"` goes from (0,5) to nomatch |
 | **S-SR6** | §3.4(b): `W` EXCLUDES slots 0 and 1, so a `\K` in a callee survives | `callgraph.c` | `harness recursion` | let `W` include slot 0 | `^(a\Kb)(?1)$` on `"abab"` answers (0,4) where 10.46 answers (3,4). **This is the row for the design the measurements killed**, and its cell needs `features assertions,recursion` |
+| **S-SR6a** | §5.3a: `W` includes the **PENDING** family | `callgraph.c` | `harness recursion backrefs` | drop `SLOT_GROUP<n>_PENDING` from `W` | **LOST MATCH**: `^(a(?1)?b)\1$` on `"aabbaabb"` answers nomatch where 10.46 answers (0,8) g1=(0,4). MEASURED at 11/2 (§5.3b). The cell needs a group a BACKREFERENCE names, or the group is not marked and the family is never allocated |
+| **S-SR6b** | §5.3a: `W` includes the **CUT_MARK** family | `callgraph.c` | `harness recursion atomic-groups` | drop `SLOT_CUT_MARK<n>` from `W` | **FALSE MATCH**: `^((?>a(?1)?))a$` matches `"aa".."aaaaaaaa"` where 10.46 matches nothing, and the false-match set is EXACTLY `^((?:a(?1)?))a$`'s language — the atomic group stopped being atomic. MEASURED at 4/6 (§5.3b). The cell needs an atomic group LIVE AT TWO DEPTHS |
+| **S-SR6c** | §5.3a: `W` includes the **EMPTY_GUARD** family | `callgraph.c` | `harness recursion` | drop `SLOT_EMPTY_GUARD<n>` from `W` | ARGUED, not measured (§5.3b): a nullable callee whose quantifier is lexically inside it shares one guard slot across activations, so the outer loop's guard reads the inner's position — an admitted empty iteration (`PCREC_ERR_STEPS`) or a refused legal one. **The row's PREDICTION is stated as a prediction**, and `[DD-14]` implementation must replace it with the measured cell or drop the row |
+| **S-SR6d** | §5.3a: `W` includes the **rung** families (`SPAN_LOW`, `REVDET*`, `COUNTER`) | `callgraph.c` | `harness recursion` | drop them from `W` | ARGUED. `counterk_design.md`'s own reason for making the counter TRAILED rather than a local — *"a body-internal frame from iteration 1 resumes reading a stale local"* — is this argument with a second index. Detected by a callee containing a `{n,m}` loop called at two depths; the cell is written at implementation against the LANDED rung selection, because which rung a body gets is a compile-time choice this document cannot fix |
+| **S-SR6e** | §5.3a: `W` includes `SLOT_LOOK_MARK`/`_POS` | `callgraph.c` | `harness recursion lookaround` | drop them from `W` | ARGUED and **NOT LANDABLE UNTIL `[M6.6.2]` DOES**. §12 P-2's first version predicted these were SAFE; that prediction is withdrawn. The row is written now so the obligation is not lost, and `[DD-14]`'s close must either land it or record why not |
 | **S-SR7** | §5.7: `vm_cost` charges `2·\|W\|` trail entries per call | `emit_vm.c` **+ 2nd site** | `harness recursion codegen` | charge `\|W\|` instead of `2·\|W\|` | **no answer changes** until the trail is exhausted, then `PCREC_ERR_FRAMES` on a pattern the artifact can match — S87/S95's exact shape, so the detector is a deep-call cell **and** the codegen count |
 | **S-SR8** | §5.6: the depth capacity FIRES and is its own code | `emit_vm.c` | `harness recursion` | return `RX_R_FRAMES` instead of `RX_R_RECURSE` | the left-recursion cells report the wrong give-up. **Only detectable if the corpus distinguishes the codes**, so §10.2's `.rxt` needs a give-up-code expectation — which does not exist today (`tests/harness/CLAUDE.md`: the driver prints `steps`/`frames`) and §11 wave A adds |
 | **S-SR9** | §2.6: `vm_nullable` answers TRUE for a nullable callee | `emit_vm.c` | `harness recursion` | return `false` from the `A_CALL` arm | **`PCREC_ERR_STEPS` or `_FRAMES`, not a hang** — every VM artifact carries a step budget by default — on `^(?(DEFINE)(?<g>a?))(?&g)*$`. The harness must score the error return as the failure |
@@ -1733,7 +1867,7 @@ measurement behind it rather than a worry.
 emission must move together or the artifact declares a capacity it does not
 use; and **S-SR13**, which is two sites by construction.
 
-**SEVENTEEN ROWS**, and the count is stated because
+**TWENTY-ONE ROWS** (seventeen plus §5.3a's five per-family additions, minus none), and the count is stated because
 `lookaround_design.md` §9.3 records its own first version disagreeing with
 itself three ways. **A `recursion` mech ARM must be wired** in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
@@ -1814,6 +1948,7 @@ is not a party to at all. §14 ASK 5 asks whether that is enough.
 | `leftrec.rxt` | the give-up cells: direct, indirect, and nullable-prefix left recursion, each expecting `PCREC_ERR_RECURSE`; **and the `^(a\|(?1)a)$` on `"a"×200` cell that must MATCH** (§3.3) |
 | `dupnames.rxt` | §3.4(c)'s call/reference split, including the unset-first-declaration discriminator |
 | `kreset.rxt` | §3.4(b)'s three `\K` cells, `features assertions,recursion` |
+| **`slotfamilies.rxt`** | §5.3b's two MEASURED cells — `^(a(?1)?b)\1$` on `"aabbaabb"` (features `recursion,backrefs`) and `^((?>a(?1)?))a$` on `"aa".."aaaaaaaa"` with its `^((?:a(?1)?))a$` control (features `recursion,atomic-groups`) — plus a cell per ARGUED family as `[DD-14]` lands them. **This file is the one that would have caught the design's own error**, and it exists because the lane's first corpus shared the design's alphabet |
 | `quantified.rxt` | §2.6's twelve quantified spellings and the nullable-callee guard |
 | `inlookaround.rxt` | §3.4(d)/(e): a call in a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind |
 | `nocaptures.rxt` | §4.3's marked-set cells, one-hop and two-hop, run on the `--no-captures` axis |
@@ -1951,20 +2086,24 @@ pay for `call_top` and `call_mark`, so the array version's saving is smaller
 than it looks, and if a corrected array design existed the row would have to be
 re-argued on simplicity alone.
 
-**P-2 (the restore set).** *`W` — `g`'s own slots plus the transitive
-capture-slot write set, excluding slots 0 and 1 — is exactly the right restore
-set.* **This design's first draft got it wrong** (it omitted `g`'s own slots)
-and §5.9's prototype is what found it, by reporting `g1 = (1,4)` where libpcre2
-says `(0,4)` — a wrong span on a correct match, which only a `g` expectation
-line catches. **Refute** by
-exhibiting a non-capture slot whose value must be restored by a return, or a
-capture slot whose value must NOT be. `\K` is the second kind and §3.4(b)
-measured it; the candidates for the first kind are the counter slots
-`[ENG-BREP counter-K]` allocates and `SLOT_LOOK_MARK`/`_POS`. **The prediction
-is that none of them needs restoring** because each is re-initialised at its own
-entry label on every entry — but that is an inspection of code
-`[M6.6.2]` has not landed yet, so it is ARGUED and this is where it is
-recorded.
+**P-2 (the restore set).** *`W` = every slot any node in `g`'s transitive
+body can WRITE, minus slots 0 and 1.* **THIS ROW HAS ALREADY BEEN REFUTED
+TWICE AND IS THE MOST INSTRUCTIVE ROW IN THIS DOCUMENT.** The first version
+restored the captures reachable from `g`'s body; §5.9's prototype showed `g`'s
+OWN slots were missing (`g1 = (1,4)` for libpcre2's `(0,4)`). The second
+version restored the capture slots; **R34's C2 panel showed six more families
+were missing**, with `SLOT_GROUP<n>_PENDING` costing a LOST MATCH and
+`SLOT_CUT_MARK<n>` costing FIVE FALSE MATCHES whose language is exactly the
+non-atomic control's (§5.3b). Both refutations came from EXECUTION, not from
+reading. **Refute the third version** by exhibiting a slot outside `{0, 1}`
+whose value must NOT be restored by a return — `\K`'s is the only one this
+lane has found and it is why the exclusion is stated as a pair of indices
+rather than as a family. The live candidates are any slot a FUTURE module
+allocates whose meaning is *"a fact about the whole match"* rather than
+*"state of a lexical construct"*: `\K`'s is the existing instance, and a
+`(*MARK)` name slot would be the next. **§10.2's `slotfamilies.rxt` and §9.3's
+per-family sabotage rows exist so the third version is defended by cells
+rather than by this paragraph.**
 
 **P-3 (the depth capacity is enough).** *Every shape PCRE2 answers `rc −52` on
 is non-terminating, so pcrec's depth capacity catches all of them, and pcrec's
@@ -1986,14 +2125,20 @@ same shape and that this lane's cell is somehow special, which the `n + 2`
 give-up depths make unlikely.
 
 **P-5 (the static `W` beats the runtime trail walk).** *Saving `|W|` values at
-entry costs less than walking the callee's trail at return.* **Refute** by
-measuring a population where `|W|` is large and the callee writes few slots —
-a called group containing twenty capture groups of which one branch writes two.
-The static version pays 40 writes; the walk pays 4. **The experiment is a
-prototype in `gen_linkage.py`'s idiom with both restores**, and it is not run
-here.
-
-**P-6 (the lookaround body must not be a call).** *`k = 1` is the whole
+entry costs less than walking the callee's trail at return.* **RE-PRICED after
+§5.3's correction, and it may now be false.** When `W` was the captures it was
+2–6 slots; §5.3a's rule makes it every family, up to `RX_NSLOTS − 2` for
+`(?R)`. The walk pays O(the callee's writes ON THIS PATH), which is often far
+smaller — a twenty-group callee that takes a branch writing two slots pays 4
+against a static 40+. The walk's own costs are unchanged: it doubles trail
+usage and needs a runtime slot-kind test, which §3.4(b) makes a single
+comparison against a compile-time constant (`slot > 1`) rather than a family
+lookup. **Refute** — in either direction — with a prototype in
+`slotproto_*.c`'s idiom carrying BOTH restores over a population that varies
+`|W|` against the per-path write count. **It is not run here, and this is the
+strongest open alternative in the document**: §11 wave B+C should build the
+static form (it is the simpler one to get right) and §11 wave G should measure
+the walk against it before the module closes.**P-6 (the lookaround body must not be a call).** *`k = 1` is the whole
 argument, and it is measured.* **Refute** by finding a lookaround shape with
 more than one use site — which `lookaround_design.md` §6.4(3) says cannot
 happen because `vm_label()` allocates per emission — or by showing the emitted
