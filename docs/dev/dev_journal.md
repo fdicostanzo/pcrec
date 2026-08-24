@@ -13065,3 +13065,18 @@ fixed-per-branch lookbehind, VM-only per the ruled design. M6.0's ruled
 list is now FIVE MODULES DONE (assertions, named-groups, atomic-groups,
 backrefs, lookaround). The gate-bench re-baseline stays queued (not
 cited by this close).
+
+## 2026-08-24 (EDT), thirty-eighth session (part 18, CLOSE) — the final landed-tree make test: 24,868/0; session ends; DD-14 next
+
+The final make test on the shipped tree: rc=0, 24,868 cases passed / 0
+failed / 0 compile failures / 0 pending-vm — the d27 corpus riding the
+walk. Module `lookaround` is shipped and validated end to end. Frank's
+closing ruling: [DD-14]'s IMPLEMENTATION is picked up NEXT SESSION —
+that is the clearance the wake queue carries. Session totals: eight
+build waves + a design gate merged and validated; the [DD-14]
+subroutines design approved through R34's three rounds with all six
+ASKs ruled (D71); the ruled M6 module list COMPLETE at five; two
+tooling defects fixed en route (rows_for.sh's never-worked targeted
+tier, K30) and one filed (K31 watch item); one API outage survived on
+WIP-commit discipline. Tree clean, pushed, no lanes, no worktrees, cron
+torn down at close.
