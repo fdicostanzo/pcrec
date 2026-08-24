@@ -215,7 +215,7 @@ subject as today. **Both arrays, one descriptor.**
    ratio that is the wrong shape — `--backtrack-frames=N` over-provisions the
    resume stack by ~4.5× relative to the trail it pairs it with. The descriptor
    makes it moot for a caller-buffer user; the CLI flag's own asymmetry is
-   filed as §11's item 9 rather than fixed here.
+   filed as §11's item 10 rather than fixed here.
 2. `PCREC_ERR_FRAMES` already means "either array ran out" — both guards return
    it (`src/gen/emit_vm.c:7565`, `:7574`). This design does not change that,
    and §5's spec text says so plainly, because a caller who has just been told
@@ -504,7 +504,7 @@ an argument for (c), not (b).**
 I recommend (a) rather than (c) only because (c) is a behaviour change to
 shipped artifacts that deserves its own evidence — how shallow is "shallow
 enough" is a population question this lane has no population for. Filed as
-§11's item 10.
+§11's item 11.
 
 ---
 
@@ -646,13 +646,25 @@ Ordered, with the section that specifies each. Nothing here is built.
 7. **Emit the sizing surface** (§5.4): `_RESUME_FRAME_SIZE`, `_TRAIL_FRAME_SIZE`,
    `_BUFFER_ALIGN` macros, the two capacity macros moved into the header, and
    `rx_info`'s four new fields with `abi` 2 → 3 (§10).
-8. **The capacity type.** The descriptor's counts are `size_t`; the depth
+8. **Emit the whole surface on a DFA artifact too, inert** — the three `_in`
+   entries, the descriptor type and all five macros, with the four sizing
+   macros and the four `rx_info` fields reading `0` and an `_in` entry
+   ignoring its descriptor. This is §4's "reserved but unreachable" shape,
+   the one the give-up codes already have, and it is a DEPARTURE from §6.3's
+   rule that per-artifact capacity macros are VM-only. The reason the
+   departure is right: §6.3's macros report what the artifact DID, so a
+   DFA artifact genuinely has nothing to report; these report what a caller
+   needs in order to CALL it, and engine selection is not the caller's
+   choice. §6.3's own closing warning — "a consumer that `#if`s on
+   `RX_ENGINE` is writing code that does not compile against half the
+   artifacts pcrec produces" — is the failure this avoids. Spec §10.4.
+9. **The capacity type.** The descriptor's counts are `size_t`; the depth
    counters are `unsigned` (`:7407`). Either widen the counters or clamp and
    document the ceiling — a caller passing `nframes > UINT_MAX` must not get a
    silently truncated capacity. §12's P-3 is this.
-9. `--backtrack-frames=N` sets both capacities to N with no trail control
+10. `--backtrack-frames=N` sets both capacities to N with no trail control
    (§4). Filed, not fixed here.
-10. The stamped default's own value — **ASK-1** (§7.4), Frank's call.
+11. The stamped default's own value — **ASK-1** (§7.4), Frank's call.
 
 **The cells** (§10.3 of the subroutines design records that the harness has no
 way to EXPECT a give-up; a `gu` directive has since landed per D72):
@@ -701,7 +713,7 @@ way to EXPECT a give-up; a `gu` directive has since landed per D72):
   SECOND matching loop for the `_in` entry — two copies of the loop, which is
   the parallel mechanism Frank's standing direction rules out, so the honest
   fallback is instead to accept the regression or drop the feature.
-- **P-3.** The `size_t` → `unsigned` narrowing (item 8) is the most likely
+- **P-3.** The `size_t` → `unsigned` narrowing (item 9) is the most likely
   place a real implementation introduces a silent bug, because a 4 GB
   reservation is a plausible thing for the very caller this feature targets to
   hand over. Predict: the first implementation clamps without documenting it.
