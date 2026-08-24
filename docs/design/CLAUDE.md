@@ -1178,10 +1178,11 @@ append-only or historical records.
   emitted function gains a **SECOND indirect jump**, amending
   `emit_vm.c:9-12`'s stated one-`goto *` invariant. The charter's
   "once-emitted-with-two-linkages" **collapses** when written out, leaving
-  SPLICE / HYBRID / CALL, PROTOTYPE-measured at ~300 / ~80 / ~80 emitted bytes
-  per call site with SPLICE smaller AND faster at one site — which is also the
-  measured NO to "should a lookaround body compile as a call" (a lookaround
-  body is `k = 1` by construction). Engine selection is `VM_ONLY`
+  SPLICE / HYBRID / CALL, PROTOTYPE-measured at **298.6 / 87.6 / 80.1** emitted
+  bytes per call site (least-squares over k = 0…16), with **CALL smallest at
+  every k and SPLICE fastest** — which at one call site (197 bytes, 10–12%) is
+  the measured NO to "should a lookaround body compile as a call", a lookaround
+  body being `k = 1` by construction. Engine selection is `VM_ONLY`
   structurally; the prefilter is dropped in wave 1 because erasing a call is
   **not** a superset, and that costs a MEASURED **21×–350×**, which is why the
   sound construction (splice the non-recursive callee's NFA fragment, `Σ*` for

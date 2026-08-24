@@ -69,15 +69,19 @@ a trailed self-write at the call site — no new storage anywhere (§5.3). The
 out: "once-emitted-with-two-linkages" needs a per-*activation* answer at the
 exit and the only per-activation channel is the call record, so the honest
 three-way choice is SPLICE / HYBRID / CALL, and **PROTOTYPE-measured** they cost
-~300 / ~80 / ~80 emitted bytes per call site, with SPLICE **smaller and faster
-at one site** (§6). That last number is also the answer to charter addition
+**298.6 / 87.6 / 80.1 emitted bytes per call site** (least-squares over
+k = 0…16), with **CALL the SMALLEST at every k and SPLICE the FASTEST** —
+which is the trade §6.3 rules on and §6.4 turns into the measured NO for a
+lookaround body (at one call site CALL is 197 bytes smaller and 10–12%
+slower). That last number is also the answer to charter addition
 (ii): a lookaround body has exactly one use site by construction, so **no
 lookaround body should compile as a call**, and the premise of charter addition
 (iii) survives — `vm_look`'s disciplined splice **is** the inliner, one callee
 contract with two linkages (§6.4). **§5 was not left as prose** — the whole
 lowering is hand-built in the emitter's idiom and run against libpcre2 on four
-patterns at **45 cells agreeing, 4 agreed-in-kind (both engines refused), 0
-disagreeing**, and that run is what found this design's own capture restore set
+patterns — **of 50 cells: 45 agree, 4 agreed-in-kind (both engines refused), 1
+excluded as a minimum-length cell the prototype cannot model, 0 disagree** —
+and that run is what found this design's own capture restore set
 incomplete (§5.9), which is the argument for executing a design section that
 can be executed. Engine selection is `VM_ONLY` structurally
 and the prefilter is the one place this design costs a real number: erasing a
@@ -1519,10 +1523,31 @@ probe refuses to print a number until they agree.
 | 8 | 3179 | 1706 | 1356 |
 | 16 | **5543** | **2320** | **1992** |
 
-**~300 bytes per call site for SPLICE, ~80 for the other two.** The `k = 0`
-baseline row is the reachability control: with no call site SPLICE and HYBRID
-are literally the same code (779 = 779), so the axis is measuring the linkage
-and not the generator's scaffolding.
+**THE SLOPE IS THE MEASUREMENT** — least-squares over k = 0…16, `-O2`:
+
+| | bytes per call site |
+|---|---|
+| SPLICE | **298.6** |
+| HYBRID | **87.6** |
+| CALL | **80.1** |
+
+**THE `k = 0` ROW CONTROLS ONE THING AND R34's LENS3-2 WAS RIGHT THAT THE
+FIRST VERSION OVER-READ IT.** It controls that SPLICE and HYBRID are literally
+the same code with no call site — 779 = 779, and MEASURED equal at `-O0`,
+`-O1`, `-O2` and `-Os`. **CALL at `k = 0` is a different program** (it routes
+the lexical occurrence through the linkage) and does not belong to that
+control; its 708 was unexplained, and it is explained now:
+
+| `-O0` | `-O1` | `-O2` | `-Os` |
+|---|---|---|---|
+| 1368 / 1368 / **1523** | 727 / 727 / **760** | 779 / 779 / **708** | 538 / 538 / **628** |
+
+**CALL is LARGER at three of the four levels and smaller only at `-O2`**,
+which is what its source says it should be (8 labels against 6, two `goto *`
+against one, one `RX_CALL` against none). **The `-O2` k = 0 gap is one
+optimiser's layout, not a property of the linkage**, so the absolute
+intercepts are not comparable between variants and every ruling below rests on
+the slope.
 
 **TIME**, best of three, 2,000,000 reps, two corpora:
 
@@ -1581,7 +1606,8 @@ A lookaround body has **exactly one use site by construction** —
 slot families are indexed per node, so two lookarounds over the same body text
 get two sub-programs."* So `k = 1` always, and §6.2 measured `k = 1`:
 
-- SPLICE **1001 bytes**, HYBRID **1090**, CALL **804**;
+- SPLICE **1001 bytes**, HYBRID **1090**, CALL **804** (and per-site slopes
+  298.6 / 87.6 / 80.1);
 - SPLICE **0.57 s** mixed and **1.04 s** lexical, CALL **0.64** and **1.15**.
 
 CALL is 197 bytes smaller and 10–12% slower. **A call to a body with one caller

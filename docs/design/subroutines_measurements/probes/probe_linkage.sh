@@ -75,9 +75,55 @@ for k in 0 1 2 3 4 6 8 12 16; do
   done
   echo "$row"
 done
-echo "# the k=0 row is the baseline: no call site exists, so the three must"
-echo "# be close. A large spread there would mean this axis is measuring the"
-echo "# generator's scaffolding rather than the linkage."
+echo "# THE k=0 ROW IS THE CONTROL, and it controls ONE thing: SPLICE and"
+echo "# HYBRID are literally the same code with no call site, so they MUST be"
+echo "# equal. CALL at k=0 is a DIFFERENT PROGRAM -- it routes the lexical"
+echo "# occurrence through the linkage -- so it is not part of that control,"
+echo "# and R34 LENS3-2 was right that its 708 was unexplained. Explained"
+echo "# below."
+echo
+
+echo "=== SIZE, k=0, ACROSS OPTIMISATION LEVELS (LENS3-2) =================="
+echo "# CALL's k=0 source is strictly BIGGER than SPLICE's: 8 labels vs 6,"
+echo "# TWO goto* vs one, one RX_CALL vs none. If its -O2 size is SMALLER,"
+echo "# that is a code-layout effect and not a property of the linkage. The"
+echo "# way to tell is to ask more than one optimiser."
+printf '  %-6s %-10s %-10s %-10s\n' opt splice hybrid call
+for o in -O0 -O1 -O2 -Os; do
+  row="  $(printf '%-6s' "$o")"
+  for v in splice hybrid call; do
+    python3 "$GEN" "$v" 0 > "$TMP/z.c"
+    $CC $o -std=gnu11 -o "$TMP/z" "$TMP/z.c"
+    sz=$(nm -S "$TMP/z" 2>/dev/null \
+         | awk '/rx_match_anchored/ {print strtonum("0x" $2)}')
+    row="$row$(printf '%-10s' "${sz:-?}")"
+  done
+  echo "$row"
+done
+echo "# SPLICE == HYBRID at EVERY level, which is the control doing its job."
+echo "# CALL is LARGER at -O0, -O1 and -Os and smaller only at -O2, so the"
+echo "# -O2 k=0 gap is an ARTIFACT of one optimiser's layout. The absolute"
+echo "# k=0 numbers are therefore not comparable BETWEEN variants; the SLOPE"
+echo "# is what this axis measures, and it is computed below."
+echo
+
+echo "=== THE SLOPE: bytes per call site, -O2, least-squares over k ========"
+for v in splice hybrid call; do
+  pts=""
+  for k in 0 1 2 3 4 6 8 12 16; do
+    python3 "$GEN" "$v" "$k" > "$TMP/s.c"
+    $CC -O2 -std=gnu11 -o "$TMP/s" "$TMP/s.c"
+    sz=$(nm -S "$TMP/s" 2>/dev/null \
+         | awk '/rx_match_anchored/ {print strtonum("0x" $2)}')
+    pts="$pts $k:$sz"
+  done
+  echo "$pts" | awk -v V="$v" '{
+      n=0; sx=0; sy=0; sxx=0; sxy=0;
+      for (i=1; i<=NF; i++) { split($i,p,":"); x=p[1]; y=p[2];
+        n++; sx+=x; sy+=y; sxx+=x*x; sxy+=x*y }
+      slope=(n*sxy-sx*sy)/(n*sxx-sx*sx);
+      printf "  %-8s %6.1f bytes per call site   (points:%s)\n", V, slope, $0 }'
+done
 echo
 
 echo "=== TIME: best of three, 2000000 reps ================================"
