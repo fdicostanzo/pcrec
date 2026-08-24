@@ -171,7 +171,7 @@ Each was checked against **this worktree's build** and against `src/` at
 | P2 | **`(?&name)` refuses naming `named-groups`, not `recursion`, under the default set** | MEASURED, axis A: `(?<n>a)(?&n)` under `std1` answers *"`(?<...)` requires module 'named-groups' (pattern offset 0)"* — the DECLARATION is refused before the call is reached. Not a defect; recorded because a corpus cell that expects the `recursion` sentence must enable `named-groups` too, and §9.3 says so |
 | P3 | **The `\g` escape doorway is SHARED between two modules and the TAIL decides** | MEASURED, axis A: `--list-syntax` gives `\g{-1}` → module `backrefs`, `built`; `\g<1>` and `\g'1'` → module `recursion`, `unbuilt`. `(a)\g{1}`, `(a)\g1` and `(a)\1` all COMPILE on HEAD today. So `pcrec_brport_g` already discriminates, and this module extends that one port rather than adding a second |
 | P4 | Exactly **26** registry rows carry module `recursion`, all `vm`, all `unbuilt` | MEASURED, axis B. The rows are per-selector at the `(?` doorway: `(?1)`…`(?9)` are **nine separate rows**, `(?-1)`…`(?-9)` **nine more**, and `(?+1)` is **one** — with no `(?+2)`…`(?+9)` sibling. §8.1 owns the asymmetry |
-| P5 | **`(?(DEFINE)...)` is module `conditionals`, which has exactly ONE row and no producer** | MEASURED, axis B: `(?(DEFINE)(?<x>a))(?&x)` answers *"module 'conditionals' is enabled but `(?(...)` is not implemented yet"*, and `--list-syntax` shows one `conditionals` row, `(?(1)a|b)`. This module unlocks none of it — §2.5 |
+| P5 | **`(?(DEFINE)...)` is module `conditionals`, which has exactly ONE row and no producer** | MEASURED, axis B: `(?(DEFINE)(?<x>a))(?&x)` answers *"module 'conditionals' is enabled but `(?(...)` is not implemented yet"*, and `--list-syntax` shows one `conditionals` row, `(?(1)a\|b)`. This module unlocks none of it — §2.5 |
 | P6 | The give-up code space is `PCREC_ERR_STEPS (-2)`, `_FRAMES (-3)`, `_WORK (-4)`, `_FLOOR (-4)` | MEASURED, axis C, quoted from `emit_dfa.c:391-394` and from a real artifact. **The `ERR_FLOOR` move −4 → −5 touches EIGHT source-of-truth sites and four archived samples**, all enumerated in §5.6 from this axis's own grep |
 | P7 | `RX_SET` is `RX_TRAIL` followed by the write, and **`RX_TRAIL` records the OLD value unconditionally** | STRUCTURAL, `emit_vm.c:5763-5771`, quoted in full. There is no same-value elision, which is what makes §5.3's **trailed self-write** a legal way to park an entry value on the trail |
 | P8 | The fail label restores `scan_position` from the popped frame AND rewinds the trail to that frame's mark | STRUCTURAL, `emit_vm.c:6063-6072`. §5.1 adds exactly one line to it and §5.5 is why |
@@ -834,23 +834,27 @@ whole point: §3.2 MEASURED that the call is backtrackable, so the callee's
 choice points must survive the return — and so must the return label they will
 come back through.
 
-**ORDINARY FRAMES CARRY `call_top`,** and the fail label gains **one line**:
+**ORDINARY FRAMES CARRY `call_top` AND `call_mark`,** and the fail label gains
+**two lines** — the shape §5.9's prototype ships:
 
 ```c
-        run->call_top = run->resume_stack[frame_index].call_top;
+        run->call_top   = run->resume_stack[frame_index].call_top;
+        run->call_depth = run->resume_stack[frame_index].call_mark;
 ```
 
-restoring which activation is current, exactly as the line above it restores
-`scan_position` and the loop below it rewinds the trail. `call_depth` is
-recomputed the same way — it is a **counter for the capacity check and for the
-diagnostic**, not the structure, so it is restored from a per-frame `call_mark`
-in the same line (§5.6).
+restoring which activation is current and how deep the recursion is, exactly as
+the line above them restores `scan_position` and the loop below them rewinds the
+trail. **The second line is the capacity counter's, not the structure's**
+(§5.6) — `call_top` alone is enough for correctness, and `call_depth` exists so
+a give-up can name its cause. If §14 ASK 1 rules `PCREC_ERR_RECURSE` out, that
+line and the field go with it and the mechanism is unaffected, which is the
+cleanest evidence that the counter is separable.
 
 **A CALL FRAME'S `resume_label` IS `rx_fail`.** When the frames inside a call
 are exhausted, the call itself has no alternatives, so popping the call frame
 must continue failing. Making its resume label `rx_fail` is not a placeholder:
 it means the fail label needs **no knowledge of frame kinds** and no branch —
-the one added line above runs for every frame and is correct for both. The
+the two added lines above run for every frame and are correct for both. The
 cost is one extra backtrack step per abandoned call, which is countable, is
 charged to the step budget at the site the budget is already charged, and is
 exactly the extra one per call §3.2's cost table MEASURED in PCRE2 (ratio →
@@ -1014,24 +1018,40 @@ The single hardest cell, and it is the one §5.2's bug lives in. Pattern
 `^(?(DEFINE)(?<g>a|ab))(?&g)c$` on `"abc"` — §3.2's discriminator:
 
 ```
-  RX_CALL(&&L_ret, 0)          frame#0 = {label rx_fail, pos 0, trail 0,
-                                          call_top SENTINEL, ret &&L_ret}
+  RX_CALL(&&L_ret, 0)          frame#0 = {label rx_fail, pos 0, trail_mark 0,
+                                          call_top SENTINEL, call_mark 0,
+                                          ret &&L_ret}
                                call_top = 0, call_depth = 1
+  RX_SET(2, slot_values[2])    trail[0] = {slot 2, g's OLD start}   |W| = 2
+  RX_SET(3, slot_values[3])    trail[1] = {slot 3, g's OLD end}
   L_entry_g:  RX_PUSH(&&L_alt2, 0)     frame#1 = {label &&L_alt2, pos 0,
-                                                  trail 0, call_top 0}
-              'a' matches, pos = 1
-  L_exit_g:   RX_RETURN         call_top = SENTINEL, call_depth = 0,
+                                                  trail_mark 2, call_top 0,
+                                                  call_mark 1}
+              'a' matches, pos = 1;  RX_SET(3, 1)  -> trail[2]
+  L_exit_g:   restore W from trail[0], trail[1]   -> trail[3], trail[4]
+              RX_RETURN         call_top = SENTINEL, call_depth = 0,
                                 goto *&&L_ret       <- frame#0 STAYS
   L_ret:      'c' vs subject[1] = 'b'  -> goto rx_fail
-  rx_fail:    pop frame#1 -> pos = 0, trail rewound, call_top = 0,
+  rx_fail:    pop frame#1 -> pos = 0, trail rewound TO 2 (which UNDOES the
+                             restore and re-establishes the callee's g),
+                             call_top = 0, call_depth = 1,
                              goto *&&L_alt2
   L_alt2:     'ab' matches, pos = 2
-  L_exit_g:   RX_RETURN         reads frame#call_top = frame#0 -> &&L_ret
+  L_exit_g:   restore W from trail[0], trail[1]   (still there: they are
+                             BELOW frame#1's mark and were never rewound)
+              RX_RETURN         reads frame#call_top = frame#0 -> &&L_ret
   L_ret:      'c' vs subject[2] = 'c'  -> match (0,3)
 ```
 
+**Two things in that trace are worth reading twice.** The rewind to frame#1's
+mark **undoes the return's restore**, which is §5.3 property 1 doing exactly
+what §3.2's measurement requires — the callee's own capture state comes back
+when we re-enter it. And the two save records at `trail[0]`/`trail[1]` sit
+**below** frame#1's mark, so no rewind that keeps the call alive can reach
+them, which is why the second `RX_RETURN` finds them where it left them.
+
 **The pop of frame#1 restored `call_top` to 0, which is why the second
-`RX_RETURN` finds the right label.** Delete that one line from the fail label
+`RX_RETURN` finds the right label.** Delete the `call_top` line from the fail label
 and the second return reads `resume_stack[SENTINEL]` — S-SR2's sabotage, and
 its prediction is that every multi-alternative callee goes red while a
 single-path callee stays green.
