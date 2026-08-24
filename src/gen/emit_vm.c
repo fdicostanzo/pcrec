@@ -7713,7 +7713,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `call_top` joins the FIRST group, not the second, because an attempt at
      * the next start position must not inherit the previous attempt's
      * activation. */
-    char reset_call_top[80];
+    char reset_call_top[160];
     reset_call_top[0] = 0;
     if (v.has_calls)
         snprintf(reset_call_top, sizeof reset_call_top,

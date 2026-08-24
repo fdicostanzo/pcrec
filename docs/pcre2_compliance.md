@@ -1993,7 +1993,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 118 rows 
 | after `(?` | `(?'name'...)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
 | after `(?` | `(?P<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | python-style named capture group |
 | after `(?` | `(?P=n)` | `REJECTED` | `built` | planned | `backrefs` | vm | python-style backreference to a named group |
-| after `(?` | `(?P>n)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | python-style subroutine call into a named group |
+| after `(?` | `(?P>n)` | `REJECTED` | `built` | planned | `recursion` | vm | python-style subroutine call into a named group |
 | after `(?` | `(?PX)` | `AGREES-REJECT` | — | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
 | after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
 | after `(?` | `(?*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) — also spelled `(*napla:a)`, `(*non_atomic_positive_lookahead:a)` |
@@ -2001,29 +2001,29 @@ Every non-base construct pcrec knows, as the parser itself sees it — 118 rows 
 | after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
 | after `(?` | `(?(1)a\|b)` | `REJECTED` | `unbuilt` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
-| after `(?` | `(?&name)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into the named group |
-| after `(?` | `(?R)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse the whole pattern |
-| after `(?` | `(?0)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse the whole pattern (synonym for (?R)) |
-| after `(?` | `(?1)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 1 |
-| after `(?` | `(?2)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 2 |
-| after `(?` | `(?3)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 3 |
-| after `(?` | `(?4)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 4 |
-| after `(?` | `(?5)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 5 |
-| after `(?` | `(?6)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 6 |
-| after `(?` | `(?7)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 7 |
-| after `(?` | `(?8)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 8 |
-| after `(?` | `(?9)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | recurse into capture group 9 |
-| after `(?` | `(?+1)(a)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT |
-| after `(?` | `(a)(?-01)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, leading zero |
-| after `(?` | `(a)(?-1)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call to the group 1 to the LEFT |
-| after `(?` | `(a)(a)(?-2)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 2 to the left |
-| after `(?` | `(a)(a)(a)(?-3)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 3 to the left |
-| after `(?` | `(a)(a)(a)(a)(?-4)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 4 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(?-5)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 5 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(?-6)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 6 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(?-7)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 7 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
+| after `(?` | `(?&name)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into the named group |
+| after `(?` | `(?R)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse the whole pattern |
+| after `(?` | `(?0)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1 |
+| after `(?` | `(?1)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 1 |
+| after `(?` | `(?2)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 2 |
+| after `(?` | `(?3)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 3 |
+| after `(?` | `(?4)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 4 |
+| after `(?` | `(?5)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 5 |
+| after `(?` | `(?6)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 6 |
+| after `(?` | `(?7)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 7 |
+| after `(?` | `(?8)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 8 |
+| after `(?` | `(?9)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 9 |
+| after `(?` | `(?+1)(a)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT |
+| after `(?` | `(a)(?-01)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, leading zero |
+| after `(?` | `(a)(?-1)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call to the group 1 to the LEFT |
+| after `(?` | `(a)(a)(?-2)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 2 to the left |
+| after `(?` | `(a)(a)(a)(?-3)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 3 to the left |
+| after `(?` | `(a)(a)(a)(a)(?-4)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 4 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(?-5)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 5 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(?-6)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 6 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(?-7)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 7 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
+| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
 | after `(?` | `(?[[a]])` | `REJECTED` | `unbuilt` | planned | `extended-classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
 | after `(?` | `(?)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | empty option setting |
 | after `(?` | `(?-i)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |
