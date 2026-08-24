@@ -12603,3 +12603,47 @@ now a documented class with a discipline at the union.
 
 NEXT: lane/waveA (opus) — design §11 waves A + A2 (brief
 scratchpad/brief_waveA.md). Then B+C.
+
+## 2026-08-23 (EDT), thirty-eighth session (part 5) — defensive checkpoint at ~21:5x: R34 rounds 1+1b closed (20/20 fixed), verifier running; waves A+A2 in flight; san in flight
+
+STATE IF THIS SESSION DIES HERE. main = 9251f30 (wave 0 merged at
+a9739e1; post-merge make/strict/lint clean; `make san` started 21:23 in
+the background, log scratchpad/battery_wave0.log, not yet reported).
+Worktrees: worktrees/waveA (lane/waveA from a9739e1, opus, design §11
+waves A + A2 — pcrec_maxw + A_LOOK enumerator/u.look payload + the
+walker arms; brief scratchpad/brief_waveA.md; no commit yet at 21:3x);
+worktrees/dd14design (lane/dd14design FROZEN at 0ea8ba4, tree clean —
+the subroutines design after R34 rounds 1 and 1b: 20 findings FIXED, 0
+disputed, doc 2,764 lines, 26 sabotage rows, 11 probes, 4 prototypes;
+plus the lane's own self-audit at 0ea8ba4 which found TWO of its own
+MEASURED claims with no probe behind them — P-12 and the goto* relation
+— and put both under archived probes, fixing a `grep -c`-zero-under-
+`set -e` defect on the way). R34 verifier (opus, read-only, brief
+scratchpad/brief_r34_verifier.md) launched ~21:4x against 0ea8ba4;
+report pending. Record: docs/dev/reviews/2026-08-23-r34-subroutines-
+design.md (triage + all condensed reports; fixed column filled).
+
+ROUND 1b's headline (C1): a whole construct FAMILY the design lacked — a
+call whose TARGET is inside a lookaround/atomic group (`^ab(?<=(ab))(?1)$`
+on "abab" → (0,4)) — now §3.5 + §5.4's "the body is its own region";
+§6.3's splice/linkage split becomes MANDATORY for a wrapped target and
+moves to wave B+C. The leading-zero family (`(?01)` = group 1, `(?00)` =
+root; relative zero = ERR 126) re-opened ASK 3 for the `0` doorway. Depth
+capacity converted to subject sizes (1024 ≈ 2 KB vs PCRE2's 800 KB in
+0.24 s; runaways cost PCRE2 2.58 s at n=20k vs constant-time refusal).
+The lane's own vacuous-cell ledger grew by two (unanchored `(a\g<00>?b)`
+cannot discriminate root from group 1; a `\g<-01>` cell with the wrong
+subject). ASKs for Frank now SIX (ASK 6: lift of the possessive-rung
+decline for call-bearing bodies — never / wave-G measured / non-nullable
+only; rec (a) with (c) chartered).
+
+NEXT IN ORDER: (1) verifier report → round 2 to the lane (if any) →
+merge lane/dd14design (re-verify P11/P13 internal.h citations at the
+rebase, LENS3-3) → plan row [DD-14] = design delivered, ASKs 1-6 to
+Frank; (2) waveA lands → review → merge → battery → wave B+C lane
+(brief scratchpad/brief_waveBC.md, includes the bucket-split gate
+classifier moved up from wave E and the `lookaround` mech arm moved up
+from F); (3) D → E/E2 → F per §11. Cron watchdog d1a3801c active.
+Process notes: lanes report only via SendMessage (plain output is
+invisible — three lanes went idle silently before I asked); the
+scratchpad path is a REQUIREMENT in briefs (the /tmp/sr_pf deviation).
