@@ -464,11 +464,19 @@ typedef struct {
                            * vm_mrl_gate, never re-derived from the flags. */
     bool      mrl_win;    /* [M4.6d] the CEILING is the prefilter's match-end
                            * window (D51 ruling 2) rather than the subject
-                           * end. Set from job->fit.prefilter BEFORE the walk;
-                           * the walk itself never reads it, because the
-                           * ceiling is hidden behind the emitted macro — it
-                           * exists so the stamp can DISCLOSE which form is
-                           * active rather than leaving it to be discovered. */
+                           * end. Set ONCE before the walk, from
+                           * job->fit.prefilter AND the two suppressing
+                           * predicates ([M6.4.2]'s atomic, [M6.6.2] wave E's
+                           * lookaround); the walk itself never reads it,
+                           * because the ceiling is hidden behind the emitted
+                           * macro. FOUR READERS, and the four-ness is R31 E3:
+                           * the --emit-ir description, the RX_VM_PRUNE_CEILING
+                           * stamp, and the TWO lines that BUILD the ceiling
+                           * (the search entry and the retry recompute). A
+                           * reader that re-derived from job->fit.prefilter
+                           * instead would let the stamp disagree with the code
+                           * it describes — that was the defect, and codegen
+                           * rule 1 asserts on both sources because of it. */
     long long ndynskip;   /* [M4.6d] times vm_dyn_add took its LENGTH RETREAT,
                            * dropping an outer runtime follow-min term because
                            * the composed expression grew past
@@ -5549,7 +5557,7 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                  "  runtime-term length retreats: %lld%s\n",
               !v->mrl ? "none (-fno-length-prune)"
                       : v->mrl_win ? "min(subject_length, prefilter window end) -- D51 ruling 2"
-                                   : "the subject end (no prefilter on this artifact)",
+                                   : "the subject end -- either no prefilter, or the prefilter's window END is not a bound on this match's end because the pattern carries an ATOMIC GROUP (atomic_groups_design.md 4.4 H3) or a LOOKAROUND (lookaround_design.md 5.6)",
               v->nclamp, v->ndynskip,
               v->ndynskip ? "  <- an outer counter-derived term was DROPPED"
                             " (sound: it under-estimates), so this artifact"
@@ -5791,38 +5799,44 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * worse — it would discard H1 and H2 as well, and losing the prefilter is
      * a DD-2 regression by engine_m4.md §4.7's own standard. Keeping rejection
      * and the start seed while dropping only the ceiling costs one predicate. */
-    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root);
-    /* [M6.6.2 wave A2] THE LOOKAROUND PREDICATE IS PLACED HERE AND IS NOT YET
-     * IN THE EXPRESSION ABOVE. READ THAT SENTENCE BEFORE ASSUMING THIS LINE
-     * DOES ANYTHING: today it does not, on purpose.
+    /* [M6.6.2 wave E] AND THE SECOND CONJUNCT, WHICH ARRIVES AT THE SAME
+     * PLACE THROUGH A DIFFERENT DOOR. Design §5.6(2).
      *
-     * Design §5.6(2) makes the finished line
+     * `src/ir/nfa.c`'s `A_LOOK` arm lowers a lookaround to EPSILON — the
+     * assertion is simply erased — so the prefilter answers for the
+     * lookaround-FREE language. `L(P) SUBSET L(erase(P))` at every position
+     * (§5.3, a one-line proof), which keeps H1 (rejection) and H2 (the span
+     * START, re-asked on every retry) sound; the span END is again NOT an
+     * upper bound:
      *
-     *     v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
-     *                                    && !pcrec_has_lookaround(root);
+     *   ((?:a(?!q)|aq)(?:xy){0,4}q)  on "aqq"  is (0,3);  the erased twin
+     *   ((?:a|aq)(?:xy){0,4}q) anchored there ends at 2.
      *
-     * for the reason the paragraph above gives about the cut, arriving through
-     * a different door: the prefilter is built from the lookaround-ERASED
-     * pattern (src/ir/nfa.c's A_LOOK arm is an epsilon), so its window END is
-     * not an upper bound on the real match's end, while its REJECTION and its
-     * span START stay sound (design §5.3's one-line proof).
+     * MEASURED (§5.4/§5.5): 8 sharp H3 violations over 45 cells, and — on the
+     * EMITTED prefilter of the erasure rather than an oracle — 16 of 30 swept
+     * shapes carry a LIVE "prefilter-window" ceiling AND a window end strictly
+     * below the true match's end. The witness above is in
+     * tests/lookaround/prefilter.rxt by name, and before this conjunct landed
+     * pcrec answered NOMATCH on all three of its subjects.
      *
-     * WAVE A2 DELIBERATELY STOPS SHORT OF THE `&&`, because this wave has NO
-     * PRODUCER of A_LOOK — the predicate cannot be anything but false, so
-     * adding the conjunct would be untestable AND would pre-satisfy sabotage
-     * row S-LA12, whose whole job is to delete it once wave E has a corpus
-     * that can go red. What is placed here is the CALL SITE and its POSITION:
-     * post-discharge, beside `pcrec_has_atomic`, on the same `root`, so that
-     * wave E's edit is one conjunct rather than a decision about where to ask.
+     * THE FLAT PREDICATE IS DELIBERATE. §5.4 shows the hazard needs a
+     * lookaround inside an ALTERNATION, so a narrower predicate could ask for
+     * that shape; it is rejected because the shape condition is a second
+     * analysis with no independent check, and its failure mode is silent match
+     * loss where the flat one's is a pruning ceiling a pattern rarely had.
      *
-     * AND §5.6(3) IS THE OTHER HALF OF WAVE E, restated here because the
-     * paragraph above records the atomic version of exactly this mistake: this
-     * flag is not the only thing that must change. The lines that BUILD the
-     * ceiling (the search entry and the retry recompute, below) are gated
-     * separately, and codegen rule 1 asserts on both sources. S-LA13 is that
-     * row, and it sabotages the two BUILDERS while leaving the stamp reading
-     * the flag. */
-    (void)pcrec_has_lookaround(root);
+     * `pcrec_has_lookaround` is asked of the POST-DISCHARGE tree for the same
+     * reason `pcrec_has_atomic` is: a pass that ever proves a lookaround
+     * vacuous and deletes it gives the pattern its ceiling back.
+     *
+     * AND §5.6(3) IS THE OTHER HALF OF THIS WAVE, which is why the paragraph
+     * above about R31 E3 is stated once and applies to both conjuncts: the two
+     * lines that BUILD the ceiling read this SAME flag, and codegen rule 1
+     * asserts on BOTH sources for BOTH modules through one shared check.
+     * S-LA13 is the row, and it sabotages the two BUILDERS while leaving the
+     * stamp reading the flag. */
+    v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
+                                   && !pcrec_has_lookaround(root);
     v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);
@@ -6746,7 +6760,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
               /* H3 site 1 of 3 (the search ENTRY). */
               : v.mrl_win
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
-              : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
+              : "        window_end = subject_length;  /* atomic- or lookaround-bearing artifact: the prefilter answers for the UNCUT, LOOKAROUND-ERASED language, so its span END is not a bound on this match's end */\n");
     } else {
         sb_puts(c, "    attempt_position = search_from;\n");
         if (v.nclamp > 0) sb_puts(c, "    window_end = subject_length;\n");
