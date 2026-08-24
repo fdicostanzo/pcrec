@@ -2009,6 +2009,27 @@ ExtResult pcrec_agport_atomic(Ctx *cx, const RegRow *rw, ExtWant want,
  * node — src/parse/mod_atomic_groups.c. */
 const RegRow *pcrec_atomic_suffix_row(int quant_byte);
 
+/* [M6.6.2] src/parse/mod_lookaround.c — module `lookaround`. THE ONE PORT ALL
+ * SIX ROWS DISPATCH THROUGH (design §8.1): `(?=...)` `(?!...)` `(?*...)` and
+ * the three `(?<` tails `=` `!` `*`. It returns an `A_LOOK` node whose three
+ * `u.look` flags it resolves from the row's own `sel`/`tail` — the six
+ * constructs differ in NOTHING ELSE — stamped with the row (SR-8/D67).
+ *
+ * ONE PORT AND NOT SIX, because a second one would be a second place the
+ * `<`-tail split is decided; and that split is exactly how D65's `built`
+ * column moves in two waves rather than one. At [M6.6.2] wave B+C the port
+ * ACCEPTS the three lookahead tails and DECLINES the three `<` tails at
+ * `WANT_RESULT` (the "gate open, port missing" refusal
+ * `pcrec_construct_built_status` reads), so three rows read `built` and three
+ * read `unbuilt`; wave D deletes the decline when the back-step seam entry
+ * lands. See the file's header for what wave D changes and what it does not.
+ *
+ * IT ALSO OWNS §2.7's `\K` CHECK — an `A_KRESET` anywhere in a lookaround
+ * body is a parse-time refusal, recursively through nested groups and nested
+ * lookarounds, matching libpcre2's default (err 199). */
+ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
+                             size_t at, size_t from);
+
 /* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
  *
  * Scans a subpattern name at `p[i..n)`: a leading ASCII letter or `_`, then
