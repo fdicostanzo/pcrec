@@ -12952,3 +12952,15 @@ three concurrent suites, and the pair of one-offs goes to
 known_issues.md as a watch item. make test re-running on the merged
 tree. WAVE F opened (lane/waveF, opus): alpha spellings, the D71.3
 registry family field, K30, the doc sweep, compliance refresh.
+
+ADDENDUM (part 14, ~05:4x): make test on the E2-merged tree is GREEN
+(rc=0, 0 real failures; the expansion driver rode test-lookaround inside
+it) — waveE2's one unconfirmed landing-bar item is confirmed, on the
+better tree (wave E's emit_vm.c changes included). PROCESS LESSON, mine:
+I removed worktrees/waveE2 while the lane's background make test was
+still running in it (its deliverable said so); the run died at Error 127
+with the ground gone. Harmless here — my merged-tree run superseded it —
+but the rule going forward: BEFORE `git worktree remove`, check the
+process table for live processes with cwd/paths under the worktree, and
+wait or kill deliberately. The lane's correction message
+(MAKETESTEXIT=2 is not a test failure) is on record.
