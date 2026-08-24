@@ -174,9 +174,18 @@ static bool bucket_has_tail(RegKind kind, int sel)
  * on to recognise this shape from OUTSIDE — one define shared with that
  * classifier rather than two copies of the sentence, so a reword here
  * cannot silently stop being classified as `unbuilt`. */
-#define UNBUILT(pos, fmt, ...) \
-    REFUSE((pos), "module '%s' " PCREC_UNBUILT_MARKER " " fmt \
-           " is not implemented yet", r->module, ##__VA_ARGS__)
+/* [M6.6.2] THE MACRO ITSELF MOVED TO internal.h, beside `REFUSE` and
+ * `BAD_ROW`, and for `pcrec_ext_gate`'s reason at MOD-0.4: a second consumer
+ * arrived. `src/parse/mod_lookaround.c` declines the three `(?<` tails at
+ * `WANT_RESULT` until wave D lands the back-step, and that decline owes the
+ * SAME SENTENCE this arm renders — so it renders it through the SAME macro
+ * rather than through a hand-written copy of the wording. Two homes for one
+ * sentence is D24's shape, and it would have been a live one: a reword here
+ * would have left the port's copy behind, and `PCREC_UNBUILT_MARKER` (the
+ * substring D65's classifier keys on) sits inside it.
+ *
+ * THE RATIONALE STAYS HERE, where the arm is, and is not duplicated at the
+ * definition — the same split MOD-0.4 made for `pcrec_ext_gate`. */
 
 /* ---- doorway 1: after '\' ----------------------------------------------
  * `c` is the byte after the backslash and the cursor sits just past it. Called

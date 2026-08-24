@@ -2282,6 +2282,22 @@ ExtWant pcrec_ext_gate(const RegRow *r, ExtWant want);
         snprintf(res_.msg, sizeof res_.msg, __VA_ARGS__);                    \
         return res_;                                                         \
     } while (0)
+/* THE ENABLED-BUT-UNBUILT REFUSAL, promoted out of ext.c at [M6.6.2] when a
+ * SECOND consumer arrived (src/parse/mod_lookaround.c's wave B+C tail
+ * decline) — `pcrec_ext_gate`'s move at MOD-0.4, one construct later, and for
+ * that move's reason: one definition rather than a second copy of the
+ * sentence. The full rationale for the DIAGNOSTIC lives at ext.c's arm and is
+ * deliberately not duplicated here.
+ *
+ * IT READS `r` FROM THE ENCLOSING SCOPE, exactly as `REFUSE` reads `want`, and
+ * that convention is the price of both macros being macros: the includer must
+ * name the dispatching `const RegRow *` `r`. `PCREC_UNBUILT_MARKER` is inside
+ * the format on purpose — it is the substring `pcrec_construct_built_status`
+ * keys on to recognise this shape from outside (D65), so a reword that lost it
+ * would silently stop a construct being classified `unbuilt`. */
+#define UNBUILT(pos, fmt, ...) \
+    REFUSE((pos), "module '%s' " PCREC_UNBUILT_MARKER " " fmt \
+           " is not implemented yet", r->module, ##__VA_ARGS__)
 /* A row whose diag value does not belong to its kind is a registry defect,
  * not a pattern error — see REFUSE above; the wording is deliberately not a
  * "requires module" diagnostic since nothing a caller writes can produce it. */

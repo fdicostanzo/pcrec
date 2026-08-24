@@ -734,7 +734,7 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 #
 #     --features backrefs       '\k'     -> "module 'backrefs' is enabled but
 #                                            \k is not implemented yet"
-#     --features lookaround     '(?=a)'  -> ... '(?=...)' ...
+#     --features lookaround     '(?<=a)' -> ... '(?<=...)' ...
 #     --features atomic-groups  '(?>a)'  -> ... '(?>...)' ...
 #     --features quoting        '[\Q]'   -> ... '\Q in a class' ...
 #
@@ -771,7 +771,22 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # §11.5 named this move in advance as one of the three pins this module
 # disturbs.
 reject_gated recursion     '\g<1>' "module 'recursion' is enabled but \g is not implemented yet"
-reject_gated lookaround    '(?=a)' "module 'lookaround' is enabled but (?=...) is not implemented yet"
+# [M6.6.2] wave B+C: THE `lookaround` ROW MOVED WITHIN ITS OWN MODULE, it did
+# not retire. `--features lookaround '(?=a)'` COMPILES now, so the old pin
+# would be pinning a lie — but this module lands across two waves and its three
+# LOOKBEHIND rows are still unbuilt, so the pin moves to one of those instead
+# of costing the arm its third module. Wave D retires it, and the arm will need
+# a third module from somewhere else then (see the paragraph above for why one
+# module cannot tell "the sentence is right" from "the sentence happens to be
+# right for THAT module").
+#
+# AND THIS ROW IS NOW PINNING SOMETHING THE OLD ONE DID NOT. The three `(?<`
+# tails are declined by module `lookaround`'s OWN PORT at `WANT_RESULT` — not
+# by ext.c's port-missing fallthrough — and the port renders the sentence
+# through the SAME macro (moved to internal.h at this wave for exactly that
+# call). So the row asserts the two sites agree, which is the drift a
+# hand-written copy of the wording in the port would eventually have produced.
+reject_gated lookaround    '(?<=a)' "module 'lookaround' is enabled but (?<=...) is not implemented yet"
 # [M6.4.2] THE `atomic-groups` ROW RETIRED HERE, exactly as `\b`/`\B`'s did in
 # [M6.2] wave B and the two `(?m)` spellings' did in wave C, and for the same
 # reason: `--features atomic-groups '(?>a)'` COMPILES now, so a pin asserting

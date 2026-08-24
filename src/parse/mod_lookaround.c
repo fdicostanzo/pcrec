@@ -165,15 +165,24 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * demotes a disabled module's ask to WANT_VERDICT, which ext.c answers
      * with the module refusal before any port runs. `want` is still READ, by
      * the REFUSE macro below, which stamps it as `answered_at`. */
-    const LaRow *k = la_kind(rw);
+    /* `UNBUILT` below reads the dispatching row from a variable named `r`,
+     * exactly as `REFUSE` reads the gated ask level from one named `want` —
+     * internal.h states that convention at both macros. */
+    const RegRow *r = rw;
+    const LaRow *k = la_kind(r);
     if (!k) BAD_ROW(at, "a module 'lookaround' row");
 
     /* THE WAVE B+C SPLIT (§8.3). Declined BEFORE the body is parsed: a
      * construct with no lowering owes its diagnostic at its own offset, not
-     * after a sub-parse that might raise a different one first. */
+     * after a sub-parse that might raise a different one first.
+     *
+     * IT RENDERS THROUGH ext.c's OWN MACRO rather than a hand-written copy of
+     * the sentence (the macro moved to internal.h at this wave for exactly
+     * this call): `PCREC_UNBUILT_MARKER` is the substring D65's classifier
+     * keys on, so a second spelling of it here would be a second home for the
+     * fact that decides a row's `built` column. */
     if (!k->built)
-        REFUSE(at, "module '%s' " PCREC_UNBUILT_MARKER " %s is not "
-                   "implemented yet", rw->module, k->shown);
+        UNBUILT(at, "%s", k->shown);
 
     /* A body-carrying group, so the SCOPED inline-option state is saved and
      * restored around the body exactly as `p_group_body`'s plain-`(` tail and
