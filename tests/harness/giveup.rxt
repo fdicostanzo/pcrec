@@ -1,0 +1,28 @@
+# tests/harness/giveup.rxt — [DD-14 wave A commit 3] the `gu` directive's
+# own positive corpus: two cells where a typed give-up code IS reachable
+# today, with no new construct, through the `engine`/`budget` directives
+# this commit also adds (docs/testing.md's "The `gu` directive").
+#
+# Lives here rather than under a module directory because it is testing
+# HARNESS VOCABULARY (does `gu` correctly score a give-up), not any
+# particular regex construct's behavior — the same reason run.sh/driver.c
+# themselves live in tests/harness/ rather than under tests/base/.
+#
+# The two patterns and budgets below are the SAME cells
+# tests/vm/run_vm_tests.sh's own `build()` calls use to drive each bound to
+# its own limit (§4/§4.5 there): '(a*)*b' at --step-budget=50 for STEPS,
+# '((a)|b)*c' at --backtrack-frames=4 for FRAMES. That file exercises them
+# through its own C driver (`err_steps`/`err_frames`); this file exercises
+# the identical mechanism through the .rxt corpus's own vocabulary, which
+# before this commit had no way to assert a give-up at all (§10.3).
+
+pattern (a*)*b
+engine vm
+budget steps=50
+budget frames=4096
+gu steps "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+
+pattern ((a)|b)*c
+engine vm
+budget frames=4
+gu frames "aaaaaaaaaaaaaaaaaaaaa"
