@@ -2505,3 +2505,32 @@ width.
 confine the guard to shard 0 (a `[ "$SHARD_INDEX" -eq 0 ]` around the `bad`).
 Then re-measure S18 at PROCS=1/4/6 — the figure should be constant — and
 drop this entry. Lands with the next reject-table change or [TT-8]'s close.
+
+## K31 — OPEN (watch item, 2026-08-24, thirty-eighth session) — two unreproducible one-off suite failures under concurrent load
+
+**Symptom.** Twice in one night, a suite failed once under heavy concurrent
+load and was clean on immediate re-run with nothing changed:
+(1) `run_vm_identity.sh` reported `REFUSAL MISMATCH: default refused,
+--no-captures accepted: (ab|cd)(ef|gh)` during waveE's `make test` while a
+full mech matrix and the identity gate ran concurrently — the pattern
+compiles clean under every axis on re-run and under the pinned reference;
+(2) the post-D+E battery's `make san` stage exited Error 1 immediately
+after the harness stage (`parallel: 134 of 134 file workers reported`)
+while other suites ran concurrently — the full clean re-run on the same
+sha (6cf861c-era main) is green end to end (`san rc=0`, zero reports,
+both axes; log scratchpad archived in the journal's part-14 addendum).
+
+**Suspects, none confirmed.** /tmp is a 7.6G tmpfs shared by every
+concurrent suite's scratch (waveE's hypothesis); a transient under
+memory/pid pressure; or a real load-dependent race in a suite driver
+(worst case). Neither failure was caught in the act.
+
+**Watch instruction.** A THIRD instance gets an investigation lane, not a
+re-run: capture the failing tree's /tmp usage, dmesg tail, and the
+failing suite's whole log before anything is re-run. Until then, a
+single-suite failure during concurrent batteries is re-run once before
+being treated as real — and a re-run pass does NOT close the incident,
+it lands here.
+
+**Milestone.** None scheduled; watch item. Revisit if a third instance
+appears or when [TT-5]'s chain work next touches suite concurrency.

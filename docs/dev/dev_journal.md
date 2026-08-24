@@ -12964,3 +12964,12 @@ but the rule going forward: BEFORE `git worktree remove`, check the
 process table for live processes with cwd/paths under the worktree, and
 wait or kill deliberately. The lane's correction message
 (MAKETESTEXIT=2 is not a test failure) is on record.
+
+ADDENDUM (part 14, ~05:5x): the `make san` clean re-run is GREEN — rc=0,
+zero reports, both axes, end to end on the same-generation tree. The
+battery's Error 1 is therefore the SECOND unreproducible under-load
+one-off of the night (with waveE's vm_identity refusal mismatch); the
+pair is now K31, a watch item with a third-instance investigation
+protocol (capture /tmp, dmesg, and the whole suite log BEFORE any
+re-run). D+E's battery obligations are fully discharged: gate 6/0,
+strict clean, test rc=0, targeted mech 8×(0/0), san green.
