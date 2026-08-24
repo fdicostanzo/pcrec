@@ -2577,6 +2577,22 @@ and asserted against §6.3's numbers; a `--policy=none` control arm must report
 8,260 trivially equal cells, or `A == B` is not comparing two lowerings at
 all. **Plus a `laexpand` mech arm (C2-7)** wired in `run_sabotage_matrix.sh`,
 with SKIP-is-not-a-pass exercised in the failing direction as `pc3` was.*
+**AMENDED AT WAVE E2's LANDING (lane/waveE2 86fa038, merged 154141b):** two
+corrections from the build. (1) §6.3's parenthetical that P2 costs "about the
+same per-cell total" as P1 UNDERSTATES IT BY 52%: each of P2's 361 patterns is
+checked against its OWN block's cells, so the total is sum(cells_b × occ_b) =
+**12,543**, not 8,260 (measured, verified independently by the lane). (2) The
+expectation that S-LA16 scores DETECTED under this arm is STRUCTURALLY WRONG:
+every expansion in §6.1's table is an ATOMIC lookaround — `(?*`/`(?<*` appear
+in none — so a sabotage forcing `atomic=true` is invisible to this population
+at any cell count; S-LA16's detector is `run_lookaround_diff.sh` §2's exact
+13-cell disagreement assertion (suite `harness lookaround`), and the arm's
+measured per-row census (8 detected / 7 structurally blind) lives in
+tests/mech/CLAUDE.md. Also recorded: §6.1's \\A/\\z primitives make 84 of
+P2's patterns the IDENTITY (37+47, asserted exactly and excluded from the
+headline), and 8 P1 / 29 P2 patterns are the primitive-to-primitive `^`→`\\A`
+rewrite — counted and asserted so a substitution that silently became the
+identity cannot pass unnoticed.
 
 **WAVE F — THE ALPHA SPELLINGS.** §8.2's name-table module field, the twelve
 names, the six proposed rows if Frank rules for them (§14 ASK 3).

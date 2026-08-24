@@ -12915,3 +12915,40 @@ a run_vm_identity refusal mismatch under concurrent load, clean on
 re-run — reported, not diagnosed. Post-D+E battery (gate, strict,
 test, targeted mech, san) running on main. Six of eight waves merged;
 E2 in flight; F next.
+
+## 2026-08-24 (EDT), thirty-eighth session (part 14) — wave E2 MERGED (154141b): 29,063 three-way comparisons, 0 disagreements; wave F opened
+
+The substitution driver landed: 887 generated patterns (P1 263, P2 361,
+control 263) over 29,063 three-way A/B/C comparisons, 0 disagreements,
+with the population matching §6.3's table to the digit and ASSERTED, not
+floored. The lane's discipline was the story: the identity rows (§6.1's
+\A/\z primitives — 84 of P2's patterns) are counted, asserted equal to
+37+47, and EXCLUDED from the headline, because "a substitution that
+silently became the identity would pass every comparison in the file";
+five anti-tautology controls surround the check (the table re-verified
+against libpcre2 BEFORE use, written out a second time so §0 cannot
+import what it checks; a 16-cell vacuity guard from dropping (?!\z); the
+module guard; cell-fidelity; B==C attribution — the arm that localised
+S130's worked example to the lookaround path without opening a file).
+Its witness printer was wrong TWICE (awk -v escape-processing printed \w
+as w — a DIFFERENT pattern than the one that failed; the fix landed on
+the wrong pipeline stage and printed empty) — both caught by controls,
+and the printer is now driven on EVERY run over a three-cell fixture
+built to disagree on exactly one cell. The laexpand arm was assigned by
+MEASUREMENT: one arm-only mech run per candidate row — 8 detected, 7
+structurally blind with each blindness explained (S131's is the design's
+own §11 bar being wrong: every §6.1 expansion is atomic; amended). Two
+design corrections recorded in the doc: P2's cell arithmetic (12,543,
++52% over the parenthetical) and the S-LA16 expectation. Driver re-run
+green on the MERGED tree (wave E had touched emit_vm.c) — 11/0.
+
+Post-D+E battery: gate 6/0, strict clean, test rc=0, 8 targeted rows
+0/0 — but the SAN stage FAILED ONCE (Error 1 after the harness stage)
+under concurrent load; the clean re-run is past that point and green so
+far (log scratchpad/san_full.log) — the same shape as waveE's
+unreproducible vm_identity one-off. Diagnosis pending the re-run's end;
+if it lands green, the working theory is /tmp or load contention during
+three concurrent suites, and the pair of one-offs goes to
+known_issues.md as a watch item. make test re-running on the merged
+tree. WAVE F opened (lane/waveF, opus): alpha spellings, the D71.3
+registry family field, K30, the doc sweep, compliance refresh.
