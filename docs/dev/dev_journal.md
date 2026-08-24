@@ -13273,3 +13273,15 @@ real timing gap in the design's §3.4(d), tier-2, never a miscompile →
 plan row [DD-14.LB] (deferred width re-check after callgraph build;
 same timing class as A2's la_has_kreset obligation; wave D or E).
 Standing fact changes: known_fail carries dd14_bc_open.rxt (2 cells).
+
+ADDENDUM (part 4, ~13:5x): [DD-14.A2] CLOSED with its deliverable in —
+30 AKind switch sites on the landed tree (26 alarm + 4 `default:`; the
+design's 27 + three `lookaround` additions: pcrec_has_lookaround,
+pcrec_maxw — P13 discharged for the switch — and la_has_kreset), dummy
+and real enumerator alarm at the SAME 26 sites; identity 2657/0 (2247
+compiled + 410 refused identically, reference = a pre-wave-A snapshot of
+main's binary); mech 88/88 DETECTED; test-resource 19/0 solo three
+times with the A/B control showing the reference binary also blows the
+cap under load. Design §4.4a's "fourteen carry a default:" corrected to
+FOUR (b11a55b). Worktrees srA/srA2/srCorpus removed; 83 orphaned empty
+mech scratch dirs cleared from /tmp (34% now). srBC's san4 running.
