@@ -3,12 +3,16 @@
 `(?=X)` `(?!X)` `(?<=X)` `(?<!X)` and the two non-atomic spellings `(?*X)`
 `(?<*X)`. Design: `docs/design/lookaround_design.md`, panel-approved at R33.
 
-**WHAT LANDED AT WAVE B+C IS THE LOOKAHEAD HALF.** The three `(?<` tails are
-recognised by the parse hook and DECLINED at `WANT_RESULT`, which is what keeps
-their registry rows `unbuilt`; wave D lands the back-step and the four
-lookbehind files (`lookbehind.rxt`, `lookbehind_widths.rxt`, `startpos.rxt`,
-`nonatomic_behind.rxt`), wave E `prefilter.rxt`, wave F `alpha_spellings.rxt`.
-`gated.rxt` carries the split's own cells and wave D deletes three of them.
+**ALL SIX CONSTRUCTS ARE BUILT AS OF WAVE D.** Wave B+C landed the lookahead
+half and DECLINED the three `(?<` tails at `WANT_RESULT`, which is what kept
+their registry rows `unbuilt`; wave D landed the back-step seam entry, deleted
+the decline, and added the five lookbehind files (`lookbehind.rxt`,
+`lookbehind_widths.rxt`, `startpos.rxt`, `nonatomic_behind.rxt`,
+`workbudget.rxt`). Wave E adds `prefilter.rxt`, wave F `alpha_spellings.rxt`.
+`gated.rxt` carried the split's own three enabled-but-unbuilt cells and wave D
+RETIRED them — they would now be pinning a lie, and `lookbehind.rxt` asserting
+the same three spellings compile and match is the control that says the count
+going down is the module landing.
 
 ## The files, and every expectation in them is GENERATED
 
@@ -52,7 +56,51 @@ lookbehind files (`lookbehind.rxt`, `lookbehind_widths.rxt`, `startpos.rxt`,
   ten. Carries §2.2's non-atomic half and §3.2.1's row 3, which is the arm an
   implementer following "the atomic shape MINUS the cut" is most likely to
   lose the follow-scoping in.
-- **refused.rxt** — the `perr` cells: §2.7's `\K`-in-lookaround refusal
+- **lookbehind.rxt** — `(?<=` and `(?<!` with FIXED bodies and SAME-length
+  alternatives, which is what keeps the file python-verifiable: python's rule
+  is narrower than "same width" (it accepts `(?<=ab|cd)x` and rejects
+  `(?<=a|bc)x`), so the divergence is about DIFFERING widths and not about
+  alternation at all (G10). Carries design §3.4's B5 guard cells by name
+  (`(?<=a)b` on "b" is NOMATCH where `(?<!a)b` is (0,1)), the two
+  fixed-width-quantifier cells F3 measured (`a{3}` and `(?:ab){2}` — both are
+  `A_REP`s that take a cursor rung whose MRL literal moves with the follow,
+  which is why the lookbehind's body is scoped too), captures inside a
+  lookbehind, both nesting orders, and the assertion family's own three bodies
+  (`\w`, `\n`).
+- **lookbehind_widths.rxt** — DIFFERENT-length branches, `# pcre2-only` in its
+  entirety (G1). **It carries §2.4's preference-order measurement, which is the
+  sharpest cell in the module**: `(?<=(a)|(aa))c` on "aac" answers g1=(1,2) and
+  `(?<=(aa)|(a))c` answers g1=(0,2) — top-level branches in WRITTEN order,
+  never by length, and an implementation that ordered them by width would get
+  exactly one of the two right. It also carries the three ZERO-WIDTH-branch
+  cells that FOUND A DEFECT: width 0 is a legal fixed width, and the emitted
+  guard for it was `scan_position < 0` — an always-false `size_t` comparison
+  the harness's `-Werror` generated build refuses.
+- **startpos.rxt** — `ms`/`ns` cells over a lookbehind, and **the axis a
+  startpos-blind corpus would miss entirely**. A lookbehind READS SUBJECT BYTES
+  BEFORE `startpos` (§3.8, measured in both oracles: `(?<=a)b` on "ab" at
+  startpos 1 MATCHES, `(?<!a)b` does not), which is a contract question rather
+  than a syntax one. Sabotage row S135 clamps the guard to
+  `scan_position - startpos < k`; without this file it could not go red. Every
+  block pairs its `ms` cells with startpos-0 controls, because the file is
+  about the WINDOW and not about the pattern.
+- **nonatomic_behind.rxt** — `(?<*`, `# pcre2-only` (G5), carrying §3.6's
+  measured witness `(?<*(a)|(ba))c\2` on "bacba" BY NAME **and its atomic
+  control `(?<=(a)|(ba))c\2` in the same file**. That pair is the one thing
+  that goes red if the per-branch retry frames are cut: (2,5) with g2=(0,2)
+  against NOMATCH, on one subject, from one character's difference in the
+  spelling. In the atomic form those frames are discarded by the cut; here they
+  are LOAD-BEARING.
+- **workbudget.rxt** — §3.7's long-subject LEADING multi-branch lookbehind
+  (R33 C1-6), so the `n·Σk_i` charge shape is MEASURED rather than reasoned
+  about. Every branch is width 2 so python verifies it. The subjects are 1000
+  bytes: the budget itself is only reachable at ~50 MB, which a corpus cannot
+  carry, so this file measures the SHAPE and the short cells beside it are the
+  control that the answer does not depend on the length.
+- **refused.rxt** — the `perr` cells: §2.5's VARIABLE-WIDTH family (and their
+  libpcre2 verdicts are NOT one verdict — pcrec AGREES with PCRE2's err 125 on
+  the unbounded bodies and refuses what PCRE2 COMPILES on the bounded ones,
+  which the generator records per block), §2.7's `\K`-in-lookaround refusal
   (including the three nested spellings an immediate-children check would
   miss) and the unterminated forms. **Every block records BOTH oracles'
   verdicts**, because the agreement here is not agreement: libpcre2 refuses
@@ -70,6 +118,15 @@ lookbehind files (`lookbehind.rxt`, `lookbehind_widths.rxt`, `startpos.rxt`,
 - **run_lookaround_diff.sh** — the behavioural instrument, `make
   test-lookaround`, four sections. See its own header; two things about it are
   worth knowing before adding to it.
+
+  **ITS SUBJECT SET GREW AT WAVE D, 19 -> 26**, and that is not a detail: the
+  sweep is only as sharp as the subjects it runs over, and a differing-width
+  lookbehind needs a subject on which ONE branch fits and the other does not
+  (`ax`, `bcx`, `cx`), §2.4's preference-order cells need `aac`/`ac`/`c` to
+  tell branch 1 from branch 2 by its captures, and §3.6's F4 fourth row is
+  measured on `baca` specifically. Growing it re-derives every per-pattern cell
+  count in the same change — including §2's, whose disagreement total the
+  additions happened to leave at 13.
 
   **ITS POPULATION GUARDS ARE EXACT NUMBERS AND ONE HAS ALREADY GONE STALE**
   — during the wave that wrote it, when three `\K` cells were added to
@@ -104,18 +161,22 @@ detector. `std1` is a FROZEN named set, `{classes, modifiers}`, so it does not
 contain this module: a cell that forgot the feature would pass BY REFUSAL, on
 a correct compiler and on a sabotaged one alike. That is S108's masking shape
 applied to a whole file. Blocks needing `assertions` (the `\K` cells),
-`backrefs` (the discriminator) or `atomic-groups` (`(?=a)*+`) name those too.
+`backrefs` (the discriminator), `classes` (the `\w` lookbehind bodies) or
+`atomic-groups` (`(?=a)*+`) name those too.
 
-## Census at the wave B+C landing
+## Census at the wave D landing
 
 Read it from a run — `python3 tests/lookaround/gen_corpus.py` prints the table
 and `tests/harness/verify_rxt.py tests/lookaround` prints the python-side one —
 rather than from here, for the reason `tests/reject/CLAUDE.md` records about
-hand-copied figures. At the landing it was **78 blocks / 113 answer cells / 15
-`# pcre2-only` / 16 `perr`** — 81 blocks / 118 cells / 18 `# pcre2-only` / 16
-`perr` after §2.7's three compiling `\K` cells were added — 166 harness cases,
-and 1,022 pcre2-only cells re-verified against libpcre2 by §1 of the
-differential.
+hand-copied figures. At wave B+C's landing it was **81 blocks / 118 cells / 18
+`# pcre2-only` / 16 `perr`**, 166 harness cases, 1,022 pcre2-only cells
+re-verified by §1. At wave D's it is **175 blocks / 335 answer cells / 48
+`# pcre2-only` / 40 `perr`**, 451 harness cases, 302 python-verified cases, and
+§1's pcre2-only population went **14 -> 44 answer-bearing blocks / 4,268
+cells** — the biggest single move that guard will ever see, because
+`lookbehind_widths.rxt` and `nonatomic_behind.rxt` are `# pcre2-only` in their
+entirety.
 
 ## What this directory does NOT hold
 

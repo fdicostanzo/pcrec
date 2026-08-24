@@ -82,7 +82,17 @@ enum {
      * say an option compiles away and D23 MEASURED a runtime fold indirection
      * costing 26% on a pattern with no letters in it. */
     PCREC_ENCE_BREF           = 1u << 1,
-    PCREC_ENCE_BREF_CASELESS  = 1u << 2
+    PCREC_ENCE_BREF_CASELESS  = 1u << 2,
+    /* [M6.6.2 wave D] In the mask only when the artifact contains a
+     * LOOKBEHIND. D58 named this entry before it existed — see the "ROAD NOT
+     * TAKEN" paragraph above, which predicted it by name as the reason the
+     * entries table is a table — and lookaround_design.md §4.3 makes the
+     * prediction falsifiable: ONE enumerator, ONE row in `entries_byte[]`,
+     * and the `A_LOOK` arm ORs the bit when `u.look.behind`. No field is
+     * added to `PcrecEncEntry`, no signature changes, `pcrec_enc_ready` is
+     * untouched, both emit functions are untouched, and the third-encoding
+     * recipe in this header is unchanged. */
+    PCREC_ENCE_BACK_STEP      = 1u << 3
 };
 
 typedef struct {

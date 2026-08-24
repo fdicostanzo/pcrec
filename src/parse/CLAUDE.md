@@ -455,22 +455,40 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `pcrec_registry_arbitrate` matched to elect the row — so the port cannot
   elect a different construct than the registry did.
 
-  **THE WAVE B+C SPLIT IS THAT TABLE'S `built` COLUMN, AND IT IS A TAIL CHECK
-  RATHER THAN A THROWAWAY REFUSAL PATH.** D65 derives a row's `built` status
-  from the PORT's `ExtResult` at `WANT_RESULT` (syntax_dump.c) and never runs
-  the emitter, so the column flips for exactly the rows whose tail this port
-  ACCEPTS. At wave B+C it recognises the three LOOKAHEAD tails and DECLINES
-  the three `<` tails with the enabled-but-unbuilt refusal, so `--list-syntax`
-  reads `built` for three rows and `unbuilt` for three — MEASURED on the
-  landing, and no row outside module `lookaround` moved. **Wave D deletes the
-  three `false` rows** when the back-step seam entry lands; nothing else in
-  the file changes for the lookbehind, because `u.look.behind` is already set
-  from the same table.
+  **THE WAVE B+C SPLIT WAS THAT TABLE'S `built` COLUMN, AND WAVE D SPENT IT.**
+  D65 derives a row's `built` status from the PORT's `ExtResult` at
+  `WANT_RESULT` (syntax_dump.c) and never runs the emitter, so the column
+  flips for exactly the rows whose tail this port ACCEPTS. Wave B+C recognised
+  the three LOOKAHEAD tails and DECLINED the three `<` tails with the
+  enabled-but-unbuilt refusal — three rows `built`, three `unbuilt`, no row
+  outside module `lookaround` moved. **Wave D landed the back-step seam entry
+  (`PCREC_ENCE_BACK_STEP`), deleted the decline, and DELETED THE `built`
+  COLUMN WITH IT**: it carried exactly one fact, that `vm_look` had no
+  back-step, and there is nothing left for it to say. All six rows read
+  `built`; the registry tally moved 55+45 -> 58+42 and the SR-8 witness gate
+  demanded three new witnesses automatically, with no edit to the gate.
 
-  The decline is an `EXT_REFUSAL` and not an `EXT_NOT_MINE` because the `(?`
+  The decline WAS an `EXT_REFUSAL` and not an `EXT_NOT_MINE` because the `(?`
   doorway CANNOT decline (its catch-all is REJECTED, so `EXT_NOT_MINE` from it
   is a registry defect the wall reports). A refusal answered AT `WANT_RESULT`
-  is D33's "gate open, port missing" signal, which is the one D65 reads.
+  is D33's "gate open, port missing" signal, which is the one D65 reads — and
+  §2.5's VARIABLE-WIDTH refusal, which is what this port answers in its place,
+  is deliberately NOT that signal: the module is enabled and the row is built,
+  so it is the CAPABILITY tier and is worded as one.
+
+  **AND IT OWNS §2.5's WIDTH RULE, added at wave D.** `la_widths` walks the
+  body's TOP-LEVEL branches and stores each one's fixed width in
+  `u.look.widths`/`nbranch` (arena `int *`, D70). Two things about it are not
+  the first thing a reader expects. WRITTEN ORDER IS THE REVERSE OF THE WALK —
+  `p_alt_info` left-nests a flat alternation, so descending the `->l` spine
+  yields branches BACKWARDS and the table is filled from the END, which is
+  what makes `widths[0]` the branch PCRE2 tries first (§2.4 level 1, measured:
+  `(?<=(a)|(aa))c` on "aac" reports g1=(1,2)). And the BRANCH COUNT comes from
+  `AltInfo.nbr`, computed by the loop that DROVE the parse, never re-derived
+  from the text: a `|`-counting scanner would be a second implementation of
+  the branch-splitting rule and would get `(?<=(a|bc))x` (refused, ONE branch
+  of width 1..2) and `(?<=a|bc)x` (shipped, TWO fixed branches) exactly
+  backwards — the two cells §2.5 exists to distinguish.
 
   **IT ALSO OWNS §2.7's `\K` CHECK, WHICH IS NEEDED RATHER THAN FREE.** `\K`
   is module `assertions` and already ships, so without a check `(?=a\K)b`

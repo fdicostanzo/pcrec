@@ -381,6 +381,20 @@ Gated count 61 -> 64 (one row left, four arrived). The generalisation for the
 next module: when a module's last unbuilt construct lands, move the PIN, not
 the MECHANISM.
 
+**[M6.6.2] EXERCISED THAT GENERALISATION TWICE, IN BOTH DIRECTIONS.** At wave
+B+C the `lookaround` pin moved WITHIN its own module — `(?=a)` compiled, so
+the pin went to `(?<=a)`, which the port still declined — a loan against wave
+D that cost the arm nothing. At wave D the loan came due: the back-step landed,
+all six rows read `built`, and no spelling of module `lookaround` can carry the
+enabled-but-unbuilt sentence any more. The row RETIRED and the arm's third
+module was re-homed to `conditionals` (`(?(1)a|b)`), which is chosen rather
+than picked: it is the row lookaround_design.md R33 C1-9 names by name — a
+reader must not take three lookbehind rows going `built` as unlocking
+ASSERTION-CONDITIONS — so a wave that made that mistake trips here. Net zero
+gated rows; the control that the count going down is a module LANDING is
+`tests/lookaround/lookbehind.rxt`, which asserts the same three spellings
+compile and match.
+
 ## [SR-11] the row iterator now resolves columns by NAME (2026-08-21)
 
 D65's `NF != 15` hardcode (below) was the minimal repair. The durable fix

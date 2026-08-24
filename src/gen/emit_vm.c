@@ -1950,10 +1950,21 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      *              (cursor only). `RX_CUT` adds no trail entry.
      *
      * An over-charge costs a lower stamped `subject_ceiling` and nothing else;
-     * an under-charge is the K27-class failure named above. */
+     * an under-charge is the K27-class failure named above.
+     *
+     * [WAVE D] `+ nbranch` IS THE LOOKBEHIND's OWN FRAMES, and it is read off
+     * the WIDTH TABLE's companion count rather than off `.look.behind` — so
+     * this analysis still reads NONE of design §3.1(a)'s three flags and
+     * `vm_look` remains their single reader. `nbranch` is 0 for a LOOKAHEAD
+     * (the parse hook writes the two width fields together and NULL/0 is the
+     * lookahead's ANSWER, not a placeholder), so a lookahead's charge is
+     * unchanged to the line. For a lookbehind the exact figure is `m - 1` —
+     * one retry frame per NON-final branch, all of which the cut discards on
+     * success (§3.7) — so `+ m` deliberately over-charges by one, in the
+     * direction this whole analysis is documented to err in. */
     case A_LOOK:
         c = vm_cost(v, a->l, false);
-        c.frames += 1;
+        c.frames += 1 + a->u.look.nbranch;
         c.trail  += 2;
         return c;
     }
@@ -2038,6 +2049,14 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
          * pushed BEFORE the body (§3.3). The positive and non-atomic forms
          * push nothing of their own. */
         if (a->u.look.neg) v->npush++;
+        /* [WAVE D] AND A LOOKBEHIND's PER-BRANCH RETRY FRAMES, one per
+         * NON-final branch (§3.4): `vm_look_behind` pushes `&&L_b(i+1)` for
+         * every branch but the last, so the count is `nbranch - 1`. EXACT
+         * here rather than the safe-direction union `vm_cost` takes, because
+         * this walk's under-count is the one that lets an artifact past the
+         * resume-point cap. `nbranch` is 0 for a lookahead, so the guard is
+         * what keeps `-1` from being charged to one. */
+        if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
         vm_count_slots(v, a->l, repl, false);
         return;
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
@@ -4513,14 +4532,17 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
 
 /* ---- [M6.6.2] THE LOOKAROUND ---------------------------------------------
  *
- * `(?=X)` `(?!X)` `(?*X)` — and, when wave D lands the back-step seam entry,
- * `(?<=X)` `(?<!X)` `(?<*X)`. Design: docs/design/lookaround_design.md §3.
+ * `(?=X)` `(?!X)` `(?*X)` `(?<=X)` `(?<!X)` `(?<*X)` — all six, since wave D
+ * landed the back-step seam entry. Design: docs/design/lookaround_design.md
+ * §3. TWO functions: `vm_look_behind` below emits §3.4's per-branch back-step
+ * chain, and `vm_look` after it is the whole construct.
  *
  * A lookaround is A SUB-MATCH WHOSE RESULT IS A VERDICT AND WHOSE POSITION IS
  * DISCARDED, and every line below follows from that one sentence. It is not a
- * new kind of matching — the body is the same AST this function already walks,
- * emitted by `vm_emit` with ordinary frames — so unlike a backreference it
- * needs no new operation. What it needs is A CUT AND A POSITION RESTORE.
+ * new kind of matching — the body is the same AST `vm_emit` already walks,
+ * emitted with ordinary frames — so unlike a backreference it needs no new
+ * operation. What it needs is A CUT AND A POSITION RESTORE, plus (behind
+ * only) a BACK-STEP and an END-CHECK.
  *
  *   POSITIVE ATOMIC (§3.2) — `vm_atomic`'s shape plus a saved cursor:
  *
@@ -4536,7 +4558,7 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  *   and `(?=ab)c`, which is the strongest form §3's central claim can take.
  *
  *   NEGATIVE (§3.3) — the same, with ONE FRAME PUSHED FIRST AND NO SNAPSHOT
- *   MACHINERY AT ALL, which is the finding that makes this function short:
+ *   MACHINERY AT ALL, which is the finding that makes `vm_look` short:
  *
  *     L_entry:  RX_SET(SLOT_LOOK_MARKk, run->resume_depth)
  *               RX_PUSH(&&L_neg_ok, scan_position)      // "the body failed"
@@ -4627,10 +4649,13 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * include this function's own text — `v->fmin = 0; v->fdyn = NULL;` is the
  * SAME TWO LINES `vm_atomic` carries.
  *
- * RESTORED ON EVERY RETURN PATH, not at one label (R33 V-8): this function has
- * a single exit today and the restore sits on it, and wave D's per-branch
- * lookbehind loop must keep that property rather than attach the restore to a
- * label some path skips.
+ * RESTORED ON EVERY RETURN PATH, not at one label (R33 V-8). `vm_look` still
+ * has a SINGLE EXIT and the restore sits on it, and wave D kept that property
+ * on purpose rather than attaching the restore to a label some path skips:
+ * the per-branch lookbehind chain is emitted by a HELPER that returns
+ * normally, and every branch leaves through the same `L_ok` the lookahead
+ * arm uses. There is no return path in this section that does not pass the
+ * two restore lines at `vm_look`'s end.
  *
  * `vm_cut` IS REUSED UNCHANGED, on the argument `atomic_groups_design.md` §3.1
  * established and this construct consumes rather than re-proves: the
@@ -4638,6 +4663,300 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  * §2.2 verdict. A lookahead's cut discards frames that are NOT dead, exactly
  * as an atomic group's does — which is the semantics, and is what §2.2's
  * atomicity discriminator measures. */
+/* [M6.6.2 wave D] THE LOOKBEHIND's BRANCH CHAIN (design §3.4), emitted here
+ * rather than inline in `vm_look` because it is the one part of this
+ * construct that is a LOOP over a table and everything else is straight-line.
+ *
+ * Per TOP-LEVEL BRANCH `i` of fixed width `k_i`, in WRITTEN ORDER (§2.4 level
+ * 1 — MEASURED: `(?<=(a)|(aa))c` on "aac" reports g1=(1,2) and
+ * `(?<=(aa)|(a))c` reports g1=(0,2), so the FIRST branch written wins in
+ * both, whichever is longer):
+ *
+ *     L_bi:     if (scan_position < k_i) goto L_b(i+1);   // not enough subject
+ *               RX_PUSH(&&L_b(i+1), scan_position)        // retry the NEXT branch
+ *               RX_CHARGE_WORK(k_i)
+ *               scan_position = $_back_step(subject, subject_length,
+ *                                           scan_position, k_i);
+ *               if (scan_position == $_BACK_STEP_NONE) goto rx_fail;
+ *               goto L_bodyi
+ *     L_bodyi:  <B_i>                                     -> L_endi
+ *     L_endi:   if (scan_position != (size_t)slot_values[POS]) <decline>
+ *               goto L_ok
+ *
+ * and the LAST branch pushes nothing and sends both of its failure paths to
+ * `rx_fail` — for `(?<=` that is the assertion failing, and for `(?<!` it is
+ * the pop of the `L_neg_ok` frame, i.e. the assertion HOLDING (§3.3's wrapper
+ * needs no second shape: running out of branches IS ordinary failure).
+ *
+ * WHY FORWARD-PLUS-END-CHECK AND NOT A REVERSE MACHINE (§3.5), in one line
+ * each, because an implementer will ask: pcrec's reverse pass is a DFA over
+ * the CAPTURE-ERASED pattern and a lookbehind body may contain captures
+ * (measured: `(?<=(a)(b))c` on "abc" reports g1=(0,1) g2=(1,2)), a
+ * backreference and nested lookaround, none of which survive erasure; a
+ * reverse VM would be a SECOND emitter over a mirrored AST, whose measured
+ * cost is `revdet.c`'s `rd_node` clearing `Ast.possessive` on the reversed
+ * copy; and the forward body reuses `vm_emit` UNCHANGED, so every rung, prune
+ * and budget charge works inside a lookbehind on the day it works outside one.
+ * The price is stated rather than hidden: `m` branches run the body up to `m`
+ * times per candidate position, bounded by the compile-time constant Σk_i.
+ *
+ * THREE THINGS IN THIS SHAPE ARE NOT THE FIRST THING A READER EXPECTS.
+ *
+ * 1. `scan_position < k_i` IS THE START-OF-SUBJECT GUARD, AND IT READS THE
+ *    ABSOLUTE POSITION, NEVER `startpos`. A lookbehind READS SUBJECT BYTES
+ *    BEFORE THE SEARCH WINDOW and that is the semantics, not an oversight —
+ *    MEASURED in both oracles: `(?<=a)b` on "ab" AT STARTPOS 1 MATCHES (1,2),
+ *    and `(?<!a)b` on the same input at the same startpos does NOT. Clamping
+ *    this to `scan_position - startpos < k` is sabotage row S135, whose
+ *    prediction is that `startpos.rxt`'s `ms` cells go red while every
+ *    startpos-0 cell stays green. The guard is emitted AS WELL AS delegated
+ *    to the seam entry's sentinel because a `size_t` compare against a
+ *    compile-time constant is free and because the branch has somewhere
+ *    better to go than failure — the NEXT branch.
+ *
+ * 2. THE SENTINEL CHECK IS FOR THE BACKEND THAT DOES NOT EXIST YET (§4.2(3),
+ *    R33 C1-4). Under the byte backend the guard above is EXACT, so
+ *    `$_BACK_STEP_NONE` can never come back and this comparison is dead code
+ *    that changes no answer — which is exactly why sabotage row S134 deleting
+ *    it is a CODEGEN row rather than a behavioural one. Under UTF-8, `k`
+ *    characters is at least `k` bytes, so the guard still soundly rejects but
+ *    stops being exact, and this check is what keeps the shape correct.
+ *    IT LEAVES BY `rx_fail` RATHER THAN BY `goto L_b(i+1)`, and the design's
+ *    own sketch had the latter: the assignment has already CLOBBERED
+ *    `scan_position` with the sentinel, so a direct jump would run the next
+ *    branch's guard against `(size_t)-1` and back-step from there — and the
+ *    frame pushed two lines up would be left live to retry that branch a
+ *    SECOND time. `rx_fail` pops that very frame, which restores both the
+ *    cursor and the trail and lands on `L_b(i+1)`, which is the retry the
+ *    push was written for.
+ *
+ * 3. THE END-CHECK IS PROVABLY REDUNDANT FOR THE SUBSET THIS MODULE SHIPS AND
+ *    IS EMITTED ANYWAY. A branch with `minw == maxw == k` consumes exactly k
+ *    bytes on every successful path, so a body started at `pos - k` that
+ *    succeeds ends at `pos` and this comparison cannot fail on a correct
+ *    compiler. It is emitted because it is THE ONLY RUNTIME EVIDENCE that
+ *    `pcrec_maxw` — this module's one piece of genuinely new analysis — agrees
+ *    with what the emitter did with it, and because it stops being redundant
+ *    the day the variable-length follow-on lands.
+ *
+ *    AND ITS FAILURE ACTION SPLITS BY POLARITY (R33 C1-5; Frank's ASK 2
+ *    ruling). For `(?<=X)` a declined branch is the assertion FAILING, so a
+ *    wrong width degrades to a clean no-match — weaker than an abort, far
+ *    better than a miscompile, and the cheap `goto rx_fail` is right. For
+ *    `(?<!X)` a declined branch is the assertion SUCCEEDING, so a wrong width
+ *    is a FALSE MATCH indistinguishable from a legitimate non-match: on that
+ *    arm the end-check would BE the miscompile it exists to prevent. So the
+ *    negative arm returns HARD out of the matcher instead.
+ *
+ *    WHICH `RX_R_*`, AND THE HONEST ANSWER IS THAT NONE OF THE THREE MEANS
+ *    "INTERNAL ERROR". D49 gives the artifact exactly three give-up codes —
+ *    `RX_R_STEPS`, `RX_R_FRAMES`, `RX_R_WORK`, all inside [PCREC_ERR_FLOOR,
+ *    -2] — and reserves everything strictly below the floor for a future
+ *    abort semantic. Adding a fourth is an ABI renumber, and [DD-14]'s ASK 1
+ *    has already ruled one in for `PCREC_ERR_RECURSE` (FLOOR -4 -> -5), so
+ *    minting a code here would collide with a ruling this lane does not own.
+ *    `RX_R_FRAMES` is used, and it is chosen by ELIMINATION rather than by
+ *    fit: `RX_R_WORK` is the code THIS MODULE's own budget shape produces
+ *    legitimately (§3.7 — a leading multi-branch lookbehind charges n·Σk_i
+ *    and reaches the work budget on a ~50 MB subject, which is what
+ *    `tests/lookaround/workbudget.rxt` exists to measure), and `RX_R_STEPS`
+ *    is what a lookaround that lost its `vm_nullable` arm produces (sabotage
+ *    row S127's own prediction). `RX_R_FRAMES` is the one of the three least
+ *    entangled with this module's measured failure modes, so seeing it from a
+ *    lookbehind-bearing pattern is the strongest available signal that the
+ *    width analysis and the emitter disagree. The SAFETY property the ruling
+ *    asked for holds whichever code is chosen — a hard return out of the
+ *    matcher is not a false match — and the choice of code is a diagnostic
+ *    question flagged for a ruling, not a correctness one.
+ *
+ * THE BRANCH NODES ARE WALKED HERE AND THE WIDTHS ARE NOT RE-DERIVED. §3.1(c)
+ * stores `u.look.widths` precisely so this function does not recompute them;
+ * what it must still do is find the branch SUBTREES, because `vm_emit` needs
+ * them. The walk fills its array from the END for `p_alt_info`'s reason (a
+ * flat alternation is LEFT-NESTED, so the spine yields branches backwards) —
+ * the same loop shape `mod_lookaround.c`'s `la_widths` uses, so index `i`
+ * pairs branch `i` with `widths[i]` by construction — and a spine that
+ * disagrees with `nbranch` is `ctx_fail`, not a silently mispaired table. */
+static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
+{
+    StrBuf *b = v->b;
+    const int m = a->u.look.nbranch;
+    const bool neg = a->u.look.neg;
+
+    if (m < 1 || a->u.look.widths == NULL)
+        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
+                           "no width table — the parse hook did not run");
+    if (pslot < 0)
+        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
+                           "no position slot — the end-check has nothing to "
+                           "compare against");
+
+    /* THE SEAM, CONSULTED BEFORE THE CALL IS EMITTED, exactly as the `A_BREF`
+     * arm consults it and for that arm's reason: an emitter may route a
+     * construct through a residual entry only if the BACKEND declares that
+     * entry callable from an engine body. Unreachable for the byte backend,
+     * which declares this one `true`; it is the NEXT backend this line is
+     * for. */
+    if (!pcrec_enc_entry_engine_callable(
+            pcrec_enc_by_id(v->cx->opt->encoding), PCREC_ENCE_BACK_STEP))
+        ctx_fail(v->cx, 0,
+                 "internal error: this encoding's back-step is not declared "
+                 "engine-callable, so a lookbehind cannot be routed through "
+                 "the seam from an engine body");
+    v->enc_mask |= PCREC_ENCE_BACK_STEP;
+
+    const Ast **br = arena_alloc(&v->cx->arena, (size_t)m * sizeof *br);
+    int *bl   = arena_alloc(&v->cx->arena, (size_t)m * sizeof *bl);
+    int *bodl = arena_alloc(&v->cx->arena, (size_t)m * sizeof *bodl);
+    int *endl = arena_alloc(&v->cx->arena, (size_t)m * sizeof *endl);
+    {
+        int i = m;
+        const Ast *t = a->l;
+        for (; t->k == A_ALT; t = t->l) {
+            if (i <= 1)
+                ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
+                                   "alternation spine is longer than its "
+                                   "stored branch count");
+            br[--i] = t->r;
+        }
+        if (i != 1)
+            ctx_fail(v->cx, 0, "internal error: a lookbehind body's "
+                               "alternation spine is shorter than its stored "
+                               "branch count");
+        br[0] = t;
+    }
+    for (int i = 0; i < m; i++) {
+        bl[i]   = vm_label(v);
+        bodl[i] = vm_label(v);
+        endl[i] = vm_label(v);
+    }
+
+    vm_goto(v, bl[0]);
+
+    for (int i = 0; i < m; i++) {
+        const int k = a->u.look.widths[i];
+        const bool last = (i + 1 == m);
+
+        /* `vm_rolef`'s buffer is 160 bytes and it TRUNCATES rather than
+         * failing, so this role is kept short enough to survive a 2-digit
+         * branch index and width — a truncated comment in the emitted C is a
+         * sentence that stops mid-word, which is what the first version of
+         * this line shipped. */
+        vm_lbl(v, bl[i], vm_rolef(v,
+               "lookbehind branch %d of %d, fixed width %d: step back and run "
+               "the branch FORWARD%s", i + 1, m, k,
+               last ? " (the LAST branch: no retry frame)" : ""));
+
+        /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
+         * see this function's header, note 1, and sabotage row S135.
+         *
+         * NOT EMITTED FOR A ZERO-WIDTH BRANCH, and that is the CONDITION
+         * being unsatisfiable rather than an exception carved out for one
+         * body shape: "fewer than 0 characters precede the cursor" is false
+         * for every cursor, and `scan_position` is a `size_t`, so the emitted
+         * test would be `scan_position < 0` — which gcc proves false under
+         * `-Wextra` (`-Wtype-limits`) and the harness's `-Werror` generated
+         * build then REFUSES. Found by `(?<=)x` and `(?<!)x`, §2.6's
+         * degenerate bodies, which are legal in both oracles and ship. The
+         * back-step call and its sentinel check are still emitted at width 0,
+         * because D58's rule is about WHERE the arithmetic lives and not
+         * about whether this particular constant makes it a no-op. */
+        if (last) {
+            if (k > 0)
+                sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
+                          k, v->p);
+            /* A NOTE AND NOT AN `assert`, and the reason is the listing's
+              * own convention rather than taste: `VE_ASSERT` renders
+              * "-> L<a>" and `a` is the label taken when the assertion HOLDS
+              * (the `^` and `(?m)^` arms set it to `next`). These three sites
+              * leave by `rx_fail`, which is not a label id, so an ASSERT event
+              * here would print a confident `-> L0` naming a label the code
+              * never jumps to. */
+            vm_ev(v, VE_NOTE, 0, 0, k > 0 ? vm_rolef(v,
+                  "lookbehind: fewer than %d characters precede the cursor, "
+                  "and this is the last branch -- the assertion fails here", k)
+                  : "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                    "guard is emitted -- the condition it would test is false "
+                    "for every cursor");
+        } else {
+            if (k > 0) {
+                sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
+                          k, v->p, bl[i + 1]);
+                vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
+                      "lookbehind: fewer than %d characters precede the "
+                      "cursor, so try the next branch", k));
+            } else {
+                vm_ev(v, VE_NOTE, 0, 0,
+                      "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                      "guard is emitted -- the condition it would test is "
+                      "false for every cursor");
+            }
+            vm_push(v, bl[i + 1],
+                    "lookbehind: the NEXT-BRANCH continuation -- this branch's "
+                    "body failing retreats into the branch written after it");
+        }
+
+        {
+            char cnt[32];
+            snprintf(cnt, sizeof cnt, "%d", k);
+            vm_work(v, cnt, "work charge: the back-step, charged as the "
+                            "compile-time width rather than the runtime cost "
+                            "so the accounting does not depend on the "
+                            "encoding backend");
+        }
+
+        /* THE SEAM CALL. Never `scan_position - k` here: that is byte
+         * arithmetic which is correct today and silently wrong under a UTF-8
+         * backend, it is what D58 scope item 3 exists to prevent, and the
+         * [M6.6] plan row forbids it in its own text. Sabotage row S133
+         * inlines it and the [M5-SEAM] fixture-declared per-site count is its
+         * only possible detector, because inlining changes NO ANSWER under
+         * this backend. */
+        sb_printf(b, "    scan_position = %s_back_step(subject, "
+                     "subject_length, scan_position, %d);\n", v->p, k);
+        vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
+              "lookbehind: the ENCODING SEAM's back-step, %d character%s",
+              k, k == 1 ? "" : "s"));
+        sb_printf(b, "    if (scan_position == %s_BACK_STEP_NONE) goto %s_fail;\n",
+                  v->p, v->p);
+        vm_ev(v, VE_NOTE, 0, 0,
+              "lookbehind: the back-step ran off the start of the subject -- "
+              "dead under the byte backend, where the guard above is exact");
+        vm_goto(v, bodl[i]);
+
+        /* The body, forward, through `vm_emit` unchanged (§3.5(3)). */
+        vm_emit(v, bodl[i], br[i], endl[i]);
+
+        vm_lbl(v, endl[i], neg
+               ? "lookbehind END-CHECK (negative): the branch must finish "
+                 "exactly where the assertion started. On THIS polarity a "
+                 "declined branch would be the assertion SUCCEEDING, i.e. a "
+                 "FALSE MATCH, so a disagreement returns HARD"
+               : "lookbehind END-CHECK: the branch must finish exactly where "
+                 "the assertion started -- the only runtime evidence that the "
+                 "width analysis and this emission agree");
+        {
+            char sl[64];
+            vm_slot_expr(v, pslot, sl, sizeof sl);
+            if (neg) {
+                sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
+                             "return %s_R_FRAMES;\n", sl, v->up);
+                vm_ev(v, VE_NOTE, 0, 0,
+                      "lookbehind end-check FAILED on the negative arm -- a "
+                      "hard return rather than a decline, because a decline "
+                      "here is a false match");
+            } else {
+                sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
+                             "goto %s_fail;\n", sl, v->p);
+                vm_ev(v, VE_NOTE, 0, 0,
+                      "lookbehind end-check FAILED -- this branch declines");
+            }
+        }
+        vm_goto(v, okl);
+    }
+    (void)mslot;
+}
+
 static void vm_look(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
@@ -4648,26 +4967,16 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
     v->fmin = 0;
     v->fdyn = NULL;
 
-    /* WAVE D's territory, refused LOUDLY rather than mis-emitted. Nothing can
-     * reach it today — `pcrec_laport_group` declines the three `<` tails at
-     * WANT_RESULT, which is what keeps their registry rows `unbuilt` — so this
-     * is the same shape wave A2's `ctx_fail` had: a half-landed wave D that
-     * deleted the port's decline without landing the back-step would emit the
-     * LOOKAHEAD shape for a lookbehind, which is precisely sabotage row S130's
-     * miscompile, silently. */
-    if (a->u.look.behind)
-        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look "
-                           "before wave D — the back-step is not built");
-
     const bool neg    = a->u.look.neg;
     const bool atomic = a->u.look.atomic;
+    const bool behind = a->u.look.behind;
 
     /* The two families, allocated per shape off the shared predicates. -1 is
      * "this shape does not take one", and every use below is guarded. */
     const int mslot = vm_look_needs_mark(a) ? vm_slot_lookmark(v, v->nlookmark++) : -1;
     const int pslot = vm_look_needs_pos(a)  ? vm_slot_lookpos(v,  v->nlookpos++)  : -1;
 
-    const int bodyl = vm_label(v), okl = vm_label(v);
+    const int okl = vm_label(v);
     const int negokl = neg ? vm_label(v) : -1;
 
     /* THE ENTRY LABEL'S ROLE IS THE LISTING'S RECORD OF THE THREE FLAGS
@@ -4676,12 +4985,12 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
      * writes the emitted C comment and the VE_LABEL event, so the two cannot
      * drift about what this construct is. */
     vm_lbl(v, entry,
-           neg    ? (a->u.look.behind ? "negative lookbehind: record the resume-stack depth to cut back to (BEFORE any push), then push the body-failed continuation"
-                                      : "negative lookahead: record the resume-stack depth to cut back to (BEFORE any push), then push the body-failed continuation")
-           : atomic ? (a->u.look.behind ? "positive lookbehind (atomic): record the resume-stack depth to cut back to, and the cursor to come back to"
-                                        : "positive lookahead (atomic): record the resume-stack depth to cut back to, and the cursor to come back to")
-                    : (a->u.look.behind ? "positive lookbehind (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated"
-                                        : "positive lookahead (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated"));
+           neg    ? (behind ? "negative lookbehind: record the resume-stack depth to cut back to (BEFORE any push), the cursor the END-CHECK compares against, then push the body-failed continuation"
+                            : "negative lookahead: record the resume-stack depth to cut back to (BEFORE any push), then push the body-failed continuation")
+           : atomic ? (behind ? "positive lookbehind (atomic): record the resume-stack depth to cut back to, and the cursor to come back to (which is also what the END-CHECK compares against)"
+                              : "positive lookahead (atomic): record the resume-stack depth to cut back to, and the cursor to come back to")
+                    : (behind ? "positive lookbehind (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated and the per-branch retry frames STAY LIVE"
+                              : "positive lookahead (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated"));
 
     if (mslot >= 0)
         vm_set(v, mslot, "(ptrdiff_t)run->resume_depth",
@@ -4692,12 +5001,22 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
     if (neg)
         vm_push(v, negokl, "negative lookaround: the BODY-FAILED continuation "
                            "-- reaching it means the assertion HOLDS");
-    vm_goto(v, bodyl);
 
     /* The body's follow-min is ZERO, not the assertion's — see this function's
      * header. Emitted through `vm_emit` like any other subtree, which is why
-     * §3.7's budget needs nothing new to count its work. */
-    vm_emit(v, bodyl, a->l, okl);
+     * §3.7's budget needs nothing new to count its work.
+     *
+     * A LOOKBEHIND SENDS EVERY BRANCH TO THE SAME `okl`, so the tail below is
+     * one shape for both directions: what changes is how control GETS there
+     * (one body, or `m` back-step-then-body branches), never what happens
+     * once it has. */
+    if (behind) {
+        vm_look_behind(v, a, okl, mslot, pslot);
+    } else {
+        const int bodyl = vm_label(v);
+        vm_goto(v, bodyl);
+        vm_emit(v, bodyl, a->l, okl);
+    }
 
     if (neg) {
         vm_lbl(v, okl, "negative lookaround: the body SUCCEEDED, so the "
