@@ -2294,6 +2294,23 @@ const VerbName  *pcrec_registry_verb_find(const VerbTable *t,
 /* Iteration for tests and for --list-verbs; `which` is 0 (the upper table) or
  * 1 (the lower one), matching the order docs and dumps present them in. */
 const VerbTable *pcrec_registry_verb_tables(int which);
+/* [M6.6.2 wave F] THE NAME's OWN ROW, or NULL when the name has none — which
+ * is every verb except the twelve `(*` alpha lookaround spellings, and NULL
+ * is what makes the `(*` doorway row the default (design §8.2's "everything
+ * else inherits").
+ *
+ * DESIGN §8.2 ASKED FOR AN OPTIONAL MODULE/FEATURE PAIR ON THE VerbName; this
+ * is that recommendation in the form ASK 3's own ruling made available. Frank
+ * ruled YES to a REGISTRY ROW for each of the twelve, and a row already
+ * carries the module and the feature AS A CHECKED PAIR (registry.c's `M_*`
+ * macros exist so a row cannot print one module while carrying another
+ * module's bit). Copying that pair onto the VerbName as well would be a
+ * second home for it (D24) needing a mechanism to keep the two equal, so the
+ * name resolves to the ROW instead — which is strictly more than the pair,
+ * since the row also carries the port, the syntax, the engines mask and the
+ * roadmap the doorway now reads. Defined in registry.c beside the rows,
+ * because it reads `tail` AS A NAME and only those rows license that reading. */
+const RegRow *pcrec_registry_verb_name_row(const char *name, size_t len);
 /* PCRE2's cap on a verb NAME and the complaint past it — shared by both
  * tables, so it is not a VerbTable field. Returns the message; sets *max. */
 const char *pcrec_registry_verb_name_limit(size_t *max);

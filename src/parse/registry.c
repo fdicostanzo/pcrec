@@ -843,12 +843,108 @@ REJECTED(RK_GROUP, REG_SEL_ANY, "(?q)", "unrecognized character after (? or (?-"
  * malformed"). The probe was a fabrication in PCRE2's eyes, one that no check
  * reading only pcrec's own files could see. `(*ACCEPT)` is a real verb,
  * compiles there, and reaches this doorway here. */
+/* [M6.6.2 wave F] THE TWELVE ALPHA LOOKAROUND SPELLINGS, and they are the
+ * FIRST ROWS IN THIS TABLE THAT NEVER DISPATCH (RF_INDEX, internal.h; D71
+ * item 3, Frank 2026-08-23).
+ *
+ * WHY THEY EXIST AT ALL. Before this wave `--list-syntax` and the compliance
+ * index said module `lookaround` ships SIX constructs, while TWELVE more
+ * spellings of those same six existed in PCRE2, were written by users, and
+ * were invisible to every surface pcrec publishes — the inventory question
+ * design §8.2 raised and §14 ASK 3 put to Frank, who ruled YES for all twelve
+ * (not the six short names alone): a spelling a caller can write is a
+ * spelling the index owes a line for, and the six LONG forms are exactly as
+ * writable as the six short ones.
+ *
+ * WHY THEY DO NOT DISPATCH. The `(*` doorway decides by NAME, through
+ * mod_verbs.c's two VerbName tables (D25/Q1) — not by a selector byte — so
+ * these rows have no byte-keyed dispatch identity to keep, which is precisely
+ * the split D71 item 3 names ("which row fires" vs "what does PCRE2's surface
+ * look like"). `pcrec_registry_arbitrate` skips them; `tail` is the NAME, and
+ * mod_verbs.c's `pcrec_registry_verb_name_row` is what reads it.
+ *
+ * THE `family` COLUMN IS THE PRIMARY'S OWN `syntax`, and it is load-bearing
+ * rather than documentation: src/parse/mod_lookaround.c's `la_kind` resolves
+ * it to the primary ROW and reads that row's three `u.look` flags, so an
+ * alias cannot disagree with its primary about which construct it is. The
+ * ALIAS→PRIMARY assignment below is MEASURED against libpcre2 10.46 rather
+ * than transcribed from the design's table: 84 templates x 19 subjects, every
+ * startpos, match span and every group span, 0 divergences — and the two
+ * shapes PCRE2 does NOT have (`(*nanla:` / `(*nanlb:`, err 195) are asserted
+ * absent by the same run and have no rows here, which is the control that
+ * makes the twelve a list rather than a guess.
+ *
+ * `QF_YES` on all twelve, MEASURED the way the column requires (libpcre2's
+ * own verdict on `a<syntax>*`): all twelve quantify.
+ *
+ * BORN `built`, and derived rather than declared: D65 drives each row's own
+ * `syntax` through the `(*` doorway at a forced-open gate
+ * (src/parse/syntax_dump.c), so these rows read `built` because the doorway
+ * really does produce for them — the wiring below is the `aport`, and the
+ * column follows it exactly as it follows every other row's. */
+#define VERB_LA(name, syn, prim, note) \
+    {RK_VERB, REG_SEL_ANY, (name), (syn), M_lookaround, FLAV_PCRE2, VM_ONLY, \
+     RS_MODULE, RD_MODULE, NULL, NULL, RF_INDEX, (note), ROADMAP_PLANNED, \
+     QF_YES, NULL, 0, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, \
+     NO_PORT, (prim)}
+
 static const RegRow verb_rows[] = {
+VERB_LA("pla", "(*pla:a)", "(?=...)",
+        "positive lookahead, alpha spelling of (?=...)"),
+VERB_LA("positive_lookahead", "(*positive_lookahead:a)", "(?=...)",
+        "positive lookahead, long alpha spelling of (?=...)"),
+VERB_LA("nla", "(*nla:a)", "(?!...)",
+        "negative lookahead, alpha spelling of (?!...)"),
+VERB_LA("negative_lookahead", "(*negative_lookahead:a)", "(?!...)",
+        "negative lookahead, long alpha spelling of (?!...)"),
+VERB_LA("plb", "(*plb:a)", "(?<=...)",
+        "positive lookbehind, alpha spelling of (?<=...)"),
+VERB_LA("positive_lookbehind", "(*positive_lookbehind:a)", "(?<=...)",
+        "positive lookbehind, long alpha spelling of (?<=...)"),
+VERB_LA("nlb", "(*nlb:a)", "(?<!...)",
+        "negative lookbehind, alpha spelling of (?<!...)"),
+VERB_LA("negative_lookbehind", "(*negative_lookbehind:a)", "(?<!...)",
+        "negative lookbehind, long alpha spelling of (?<!...)"),
+VERB_LA("napla", "(*napla:a)", "(?*a)",
+        "non-atomic positive lookahead, alpha spelling of (?*...)"),
+VERB_LA("non_atomic_positive_lookahead", "(*non_atomic_positive_lookahead:a)",
+        "(?*a)",
+        "non-atomic positive lookahead, long alpha spelling of (?*...)"),
+VERB_LA("naplb", "(*naplb:a)", "(?<*a)",
+        "non-atomic positive lookbehind, alpha spelling of (?<*...)"),
+VERB_LA("non_atomic_positive_lookbehind",
+        "(*non_atomic_positive_lookbehind:a)", "(?<*a)",
+        "non-atomic positive lookbehind, long alpha spelling of (?<*...)"),
+/* THE DOORWAY ROW STAYS LAST, and that is a requirement rather than a
+ * convention now: `pcrec_registry_arbitrate` elects the LAST REG_SEL_ANY row
+ * it walks as the kind's catch-all. The twelve above carry RF_INDEX and are
+ * skipped before that arm is reached (registry.c's arbitration comment), so
+ * this row is still the only candidate — but a thirteenth alpha row written
+ * WITHOUT the flag would silently steal the doorway, which is why
+ * registry_check asserts the catch-all this doorway resolves to by name. */
 FIXED(RK_VERB, REG_SEL_ANY, "(*ACCEPT)", verbs, VM_ONLY,
       "(*...) requires module 'verbs'",
       "backtracking verb ((*SKIP), (*ACCEPT)), start-of-pattern option ((*CR), (*UTF)) "
       "or script run ((*script_run:...))", QF_FORM),
 };
+
+/* mod_verbs.c's name→row link. Kept HERE, beside the rows, because it reads
+ * `tail` as a NAME — a reading only these rows license — and a copy of that
+ * loop in the doorway would be a second place the convention is spelled out.
+ * Returns NULL for every name with no row of its own, which is every verb but
+ * these twelve, and NULL is what makes the doorway's own row the default
+ * (design §8.2's "everything else inherits"). */
+const RegRow *pcrec_registry_verb_name_row(const char *name, size_t len)
+{
+    size_t n;
+    const RegRow *rows = pcrec_registry(RK_VERB, &n);
+    for (size_t i = 0; i < n; i++) {
+        if (!(rows[i].flags & RF_INDEX) || !rows[i].tail) continue;
+        if (strlen(rows[i].tail) == len && memcmp(rows[i].tail, name, len) == 0)
+            return &rows[i];
+    }
+    return NULL;
+}
 
 /* ---- doorway 3's NAME tables (Q1) ---------------------------------------
  * Moved to src/parse/mod_verbs.c at MOD-0.4 (the migration test), WITH their

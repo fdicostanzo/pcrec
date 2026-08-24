@@ -721,13 +721,23 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
      * construct that is not a quantifier at all. */
     if (peekc(cx) == '*') {
         ExtResult r = pcrec_ext_verb(cx, WANT_RESULT, apos);
+        /* THE SPLICE, and [M6.6.2] wave F is the wave the paragraph below
+         * was written for — though not by the module the paragraph expected.
+         * What accepts a form here is not module `verbs`: it is module
+         * `lookaround`, through the twelve alpha spellings' own registry rows
+         * (design §8.2, D71 item 3). The site is the same either way, because
+         * what this branch handles is a doorway OUTCOME, not a module.
+         *
+         * It is doorway 2's splice, line for line, for doorway 2's reasons:
+         * the port carried `end` past its own `)`, the caller advances
+         * (check06's rule), and the return bypasses the body tail below,
+         * which would otherwise parse the construct's body a second time. */
+        if (r.what == EXT_NODE) { cx->pos = r.end; return r.node; }
         pcrec_ext_finish(cx, &r);
-        /* The wall: this doorway cannot decline (D25 — four answers, all
-         * refusals today). When module 'verbs' first accepts a form, the
-         * accepted outcome is handled HERE, branching around the body parse
-         * below — the PARSE-1 fallthrough-discard shape is a compile-time
-         * impossibility now, because an unhandled outcome hits this line
-         * instead of flowing into p_alt. */
+        /* The wall: every other outcome. This doorway cannot decline (D25 —
+         * four answers, all refusals), so the PARSE-1 fallthrough-discard
+         * shape is a compile-time impossibility here: an unhandled outcome
+         * hits this line instead of flowing into p_alt. */
         ctx_fail(cx, apos, "internal error: verb doorway returned an unhandled outcome");
     }
     /* Doorway 2, with the base grammar answering first: `(?:` is the one

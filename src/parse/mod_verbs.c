@@ -276,7 +276,14 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
                              const RegRow **elected)
 {
     const RegRow *r = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
-    *elected = r;   /* MOD-0.7 slice 2 — doorway 3's single row */
+    *elected = r;   /* MOD-0.7 slice 2 — doorway 3's own row */
+    /* [M6.6.2 wave F] THE ASK LEVEL BEFORE ANY GATE, kept because this
+     * doorway now gates TWICE: once on its own row (below, for every refusal
+     * decided before the name is known) and once more on the NAME's row, when
+     * the name turns out to answer for a different module. Re-gating from the
+     * ORIGINAL ask rather than from the demoted one is what makes the second
+     * gate a fresh question instead of a second demotion. */
+    const ExtWant asked = want;
     want = pcrec_ext_gate(r, want);
     const char *pat = cx->pat;
     size_t n = cx->patlen;
@@ -416,7 +423,59 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
         REFUSE(at, "(*%.*s) is outside pcrec's scope and no module will implement it (see docs/pcre2_compliance.md)",
                (int)namelen, name);
 
-    REFUSE(at, "%s", r->msg);
+    /* ---- [M6.6.2] WAVE F: A NAME MAY ANSWER FOR A DIFFERENT MODULE --------
+     *
+     * THE DEFECT THIS CLOSES (design §8.2, MEASURED at P3). All twelve alpha
+     * lookaround spellings answered *"(*...) requires module 'verbs'"* — the
+     * WRONG MODULE, which is the one fact the diagnostic exists to carry —
+     * because the `(*` doorway is a single row (registry.c's `verb_rows`
+     * catch-all) whose module answered for every name in both tables. It is
+     * the same shape `registry.c:692` already records one doorway over, for
+     * `(?*...)`: a catch-all naming its own module for a construct that
+     * belongs to another.
+     *
+     * THE FIX IS A ROW LOOKUP BY NAME, not a special case. `verb_rows` gained
+     * twelve RF_INDEX rows whose `tail` is the alpha name (D71 item 3), and
+     * from here on `r` is THE ROW THIS NAME ANSWERS FOR — its own row when it
+     * has one, the doorway's when it does not, which is every other verb and
+     * is what "everything else inherits" means. Nothing below this line is
+     * lookaround-specific: the gate, the port call and the two refusals all
+     * read `r`, so the SECOND module to give a verb name a row of its own
+     * needs no edit here.
+     *
+     * IT IS PLACED AFTER THE FORM AND POSITION CHECKS ON PURPOSE (R33 C2-6).
+     * `(*pla)` is a REAL name in a form PCRE2 does not accept, and PCRE2
+     * decides that before it decides anything about modules — so its
+     * "(*alpha_assertion) not recognized" must survive this wave unchanged,
+     * and it does, because the form mismatch above has already returned. The
+     * reject table pins that row explicitly for the same reason. */
+    const RegRow *nrow = pcrec_registry_verb_name_row(name, namelen);
+    if (nrow) {
+        r = nrow;
+        *elected = r;
+        want = pcrec_ext_gate(r, asked);
+    }
+
+    /* THE PRODUCER, in the shape doorways 1 and 2 already use: position
+     * selects the port, an open gate selects the level, and PORT_NONE falls
+     * through to the refusals below unchanged. `from` is the body's FIRST
+     * BYTE — one past the `:` this form's own terminator scan stopped on —
+     * so `pcrec_laport_group` parses `(*pla:X)`'s `X` from exactly where it
+     * parses `(?=X)`'s. The doorway never moves `cx->pos`; the result
+     * carries `end` and the CALLER advances (check06's rule). */
+    if (want == WANT_RESULT && r->aport.kind == PORT_FN)
+        return r->aport.fn(cx, r, want, at, i + 1);
+
+    /* THE TERMINAL REFUSAL, now two shapes rather than one. The doorway's own
+     * row is RD_FIXED and keeps its exact sentence, byte for byte — every
+     * verb in the tree still reads "(*...) requires module 'verbs'". A NAME's
+     * own row is RD_MODULE and renders the template from the row, which is
+     * what puts the RIGHT module in the diagnostic and is the whole point of
+     * the lookup above. */
+    if (r->diag == RD_FIXED)
+        REFUSE(at, "%s", r->msg);
+    REFUSE(at, "(*%.*s:...) requires module '%s'", (int)namelen, name,
+           r->module);
 }
 
 /* The elected-row wrapper (MOD-0.7 slice 2; ext.c's wrappers carry the full
