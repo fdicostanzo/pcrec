@@ -13118,3 +13118,9 @@ event; an internal error placed INSIDE the give-up range would be
 mis-read by a caller's "raise a bound and retry" logic; the driver
 prints "internal" and run.sh keeps it a HARD failure even under `gu`,
 so no corpus cell can ever expect it. Recorded as D72.
+
+ADDENDUM (part 1, ~10:2x): Frank asked why PCREC_ERR_INTERNAL sits BELOW
+the floor (answer: it is not a give-up — no bound a caller could raise
+cures an analysis/emission disagreement, and F2's trap obligation is the
+right treatment) and CONFIRMED D72. The assumption is now a ruling; the
+headline in decisions.md updated in place.

@@ -5399,7 +5399,7 @@ row=construct. (4) Subroutines without DEFINE is half a feature; the
 the buffer's entry-point shape; the family field's first customer (wave
 F) measures the index change.
 
-## D72 — `PCREC_ERR_INTERNAL (-6)` is minted BELOW the floor in [DD-14]'s ABI event, and the lookbehind end-check returns it (manager ruling under stated assumption, 2026-08-24; Frank to confirm or revert)
+## D72 — `PCREC_ERR_INTERNAL (-6)` is minted BELOW the floor in [DD-14]'s ABI event, and the lookbehind end-check returns it (manager ruling 2026-08-24 ~09:5x, CONFIRMED by Frank 2026-08-24 ~10:2x)
 
 **Context.** D71.1 charters a one-time pre-v1 renumber: `PCREC_ERR_RECURSE
 (-5)`, `PCREC_ERR_FLOOR` −4 → −5. Independently, [M6.6.2] wave D's
@@ -5433,6 +5433,6 @@ truthful one.
 **Cost of reversal.** One `#define`, one sentinel, one return site, one
 name in the [ABI-NS] lists; pre-v1.
 
-**Revisit when:** Frank rules; or a second producer of `_R_INTERNAL`
+**Revisit when:** a second producer of `_R_INTERNAL`
 appears (then the code's doc gains a list of its producers, and a
 sabotage row asserts each).
