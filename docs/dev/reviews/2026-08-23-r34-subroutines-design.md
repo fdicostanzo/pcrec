@@ -51,7 +51,17 @@ half (16 shapes, no counterexample), the DEFINE substitute (147 cells / 0).
 ## Round 2 — the VERIFIER's pass (against 0ea8ba4; report scratchpad/r34/verifier_report.md, condensed below)
 
 The R32/R33 pattern held a third time: 16 findings, 6 HIGH, every HIGH
-inside a round-1 fix. Triage (all ACCEPT unless noted):
+inside a round-1 fix. Triage (all ACCEPT unless noted). ROUND 2 CLOSED by
+the lane at 85a9bd6 (8 commits, doc 2,984 lines, 12 probes, 27 sabotage
+rows, 16/16 FIXED, 0 disputed; lane report scratchpad/r34/lane_round2.md —
+notable: the lane repeated V-5's own failure class one commit after being
+told of it (ebe65fc claimed an edit its script never wrote; fb970a2 made
+it) and left the honest message; V-3 produced a NEW construct family, the
+`{0}`-defined callee, measured for plain/recursive/atomic/rung-bearing
+callees, with §4.4c, S-SR19 and zerodef.rxt; V-11's re-runs vary 2×, so
+the doc now quotes growth ratios, not stopwatch readings; V-12's audit
+found two more unplaced files and two rows hidden by range notation).
+A HIGH-only verifier re-check follows.
 
 | id | sev | claim | disposition |
 |---|---|---|---|
