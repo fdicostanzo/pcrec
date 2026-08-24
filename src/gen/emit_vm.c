@@ -211,8 +211,14 @@ typedef enum {
     VE_STRAT,    /* [ENG-BREP] a: the A_REP's own entry label id,
                   *       b: VmStratKind ordinal                    */
     VE_CUT,      /* [ENG-BREP] a: the cut-mark slot_values slot    */
-    VE_PRUNE     /* [M4.6d] a: the A_REP's own entry label id,
+    VE_PRUNE,    /* [M4.6d] a: the A_REP's own entry label id,
                   *       b: VmPruneKind ordinal                    */
+    /* [DD-14 wave B+C] the SUBROUTINE CALL's two events. Both write C, so
+     * unlike VE_RUNG/VE_STRAT/VE_PRUNE they belong in the PROGRAM trace:
+     * a call and a return are things that EXECUTE. */
+    VE_CALL,     /* a: the callee region's entry label id,
+                  *    b: the return label id                       */
+    VE_RETURN    /* a: the callee region's entry label id           */
 } VEKind;
 
 /* [D46] the S2.5 rung ladder's own small named value set, ONE PER
@@ -295,6 +301,11 @@ typedef struct {
     int         a, b;
     const char *role;   /* arena-owned; NULL when there is nothing to say */
 } VEvent;
+
+/* [DD-14 wave B+C] `Cost` gains a TAG and is forward-declared here, because
+ * `Vm` now carries the per-region cost memo and `Vm` is defined first. The
+ * struct's own definition and every comment on it are unmoved. */
+typedef struct Cost Cost;
 
 typedef struct {
     Ctx      *cx;
@@ -539,6 +550,37 @@ typedef struct {
                            * rather than trusting that the flag was passed —
                            * D47.3's do-or-die discipline, applied to a
                            * charge instead of to a rung. */
+    /* [DD-14 wave B+C] THE CALL GRAPH AND THE PER-REGION TABLES.
+     *
+     * `cg` is `cx->callgraph` (NULL for a call-free pattern), and every field
+     * below is indexed by TARGET INDEX — `pcrec_callgraph_target(cg, i)` is
+     * the group number, `0` meaning the ROOT.
+     *
+     * `has_calls` GATES EVERY BYTE THIS MODULE ADDS TO AN ARTIFACT, and it is
+     * one flag rather than a condition re-derived at each of the six emission
+     * sites for the reason §9.1's identity gate needs: the resume frame gains
+     * two fields, `RX_PUSH` gains a line, the fail label gains a line, the two
+     * reset functions gain a line each, and the `RX_CALL` macro appears — so a
+     * call-FREE artifact is byte-identical to a pre-module one BY
+     * CONSTRUCTION, never by a filtered comparison.
+     *
+     * `rgn_w`/`rgn_nw` are `W` (§5.3a), computed HERE and not in
+     * `src/opt/callgraph.c` because they are SLOT INDICES and slot indices are
+     * this file's own layout — see that file's header for the full argument. */
+    const struct CallGraph *cg;
+    bool      has_calls;
+    int       nregion;    /* emitted callee regions == pcrec_callgraph_ntargets */
+    long long ncall;      /* emitted RX_CALL SITES, counted as they are written
+                           * — `nclamp`'s discipline applied to a call: a check
+                           * can assert the sites EXIST rather than trusting
+                           * that the graph ran. NOT the gate (`has_calls` is),
+                           * because a call parked under `X{0}` emits no site
+                           * while its region is still emitted. */
+    int      *rgn_lbl;    /* region i's ENTRY label id */
+    int      *rgn_exit;   /* region i's EXIT label id (where RX_RETURN sits) */
+    int     **rgn_w;      /* W(i), ascending slot indices */
+    int      *rgn_nw;     /* |W(i)| */
+    Cost     *rgn_cost;   /* region i's own cost, memoised (§5.7) */
     /* class bitmap pool, deduplicated */
     uint8_t (*cls)[32];
     int       ncls, clscap;
@@ -1048,7 +1090,32 @@ static bool vm_nullable(const Ast *a)
          * ending the search on `^(?(DEFINE)(?<g>a?))(?&g)*$` rather than a
          * wrong span — so its detector must notice an ERROR, not a
          * mismatch. */
-        case A_CALL: return true;
+        /* [DD-14 wave B+C] THE FIXPOINT'S ANSWER, READ OFF THE NODE.
+         *
+         * §2.6: a call is nullable iff its CALLEE is, and that is a fixpoint
+         * over the call graph with cycle bottom `false` iterated UP — measured
+         * on 10.46, where a NULLABLE callee (`(?&g)*` with `g` = `a?`) and an
+         * EMPTY one both TERMINATE under `*`, i.e. something bounds the empty
+         * iteration and this answer is what emits it.
+         *
+         * THE FIELD'S POLARITY IS INVERTED AND THAT IS THE WHOLE POINT.
+         * `u.call.nonnullable` reads FALSE from the arena, so an un-run
+         * fixpoint answers NULLABLE — the guard is emitted, which costs a slot
+         * and a test and can never lose a match. The other polarity's zero
+         * would DROP the guard on a nullable callee and hang the emitted
+         * matcher, which is the direction wave A2's `return true` placeholder
+         * was chosen to avoid and the reason the field is not simply
+         * `nullable`. `pcrec_emit_vm` runs the fixpoint before the first
+         * consumer; the polarity is what makes that ordering a performance
+         * property rather than a correctness one.
+         *
+         * DESIGN §2.6's FURTHER RULING RIDES ON THIS ARM and is NOT discharged
+         * by it: `vm_poss_star` emits no empty-iteration guard and fires no
+         * work charge, so a nullable callee routed onto the possessive rung
+         * loops at zero consumption for ever. What keeps that unreachable is
+         * the RUNG DECLINE in `src/opt/possessify.c` (D71.6) — S-SR9a's row.
+         * This arm is S-SR9's. */
+        case A_CALL: return !a->u.call.nonnullable;
         case A_CAP:   a = a->l; continue;
         /* [M6.4.2] TRANSPARENT: the cut removes MATCHES, never BYTES, so
          * `(?>X)` can match empty exactly when `X` can. `(?>)` is legal and
@@ -1556,7 +1623,7 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
  *
  * Conservative in the safe direction throughout: over-estimating cost lowers
  * the stamped ceiling, which under-promises rather than over-promises. */
-typedef struct {
+struct Cost {
     long long frames, trail;  /* max simultaneously live (bounded part) */
     long long pf, pt;         /* per-ITERATION frames/trail of the outermost
                                * growing quantifier — the divisor the stamped
@@ -1573,7 +1640,7 @@ typedef struct {
                                * same way and the distinction only decides
                                * whether the EXACT requirement is worth trying
                                * to honour. */
-} Cost;
+};
 
 static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic);
 
@@ -2073,9 +2140,57 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * UNREACHABLE IN THIS WAVE: nothing produces an `A_CALL`, and `vm_emit`'s
      * arm is the same hard failure — this arm and that one are what make
      * taking only part of wave B+C impossible. */
-    case A_CALL:
-        ctx_fail(v->cx, 0, "internal error: A_CALL reached vm_cost before "
-                           "wave B+C's call graph");
+    /* [DD-14 wave B+C] THREE CHARGES, and §5.7's own headline is that only
+     * the second is new machinery: "nothing new is needed to COUNT a call's
+     * work", because the callee is emitted by `vm_emit` and every push, pop
+     * and cut inside it goes through the same primitives the fail label's
+     * single decrement already sees.
+     *
+     *   1. THE CALLEE REGION'S OWN COST, read from the per-region memo
+     *      `pcrec_emit_vm` computed before this walk. It cannot be computed
+     *      here: `vm_cost(v, a->u.call.body, false)` recurses for ever on a
+     *      recursive callee, which is design §4.4's hang in the one function
+     *      that has a `Ctx` to fail through and therefore the one place where
+     *      failing loudly would have been available and still wrong.
+     *   2. THE SAVE/RESTORE — `2 * |W|` trail entries per call site, a
+     *      compile-time constant (§5.3 property 4). An artifact that
+     *      under-sizes `trail_frames` returns PCREC_ERR_FRAMES on a pattern it
+     *      can MATCH, which is S87/S95's exact failure mode, and S-SR7 is the
+     *      two-site row that pins it against the emission.
+     *   3. THE CALL FRAME ITSELF, one resume frame per activation. It is not
+     *      popped by the return (§5.1 — the callee's choice points must
+     *      survive it, §3.2 MEASURED), so it is LIVE for the whole activation
+     *      and belongs in the simultaneous count.
+     *
+     * A CYCLIC TARGET IS `unbounded` AND `growable`, which is P12's
+     * honest-ceiling machinery reused rather than rebuilt: the depth of a
+     * recursion is data-dependent by nature, so the artifact stamps a
+     * `subject_ceiling` and says what it enforces instead of pretending the
+     * limit is not there. `RX_CHARGE_WORK` is NOT used (§5.7): a call
+     * discards nothing, and the work counter's customers are cuts and
+     * back-steps.
+     *
+     * THE UN-RUN CASE IS THE SOUND ONE. Before `pcrec_emit_vm` fills the memo
+     * there is no `cg` at all, and this arm then charges only the frame and
+     * the (zero) saves — but the arm is unreachable in that state, because a
+     * tree with an `A_CALL` has a graph by construction (compile.c runs the
+     * pass before emission). The guard is written anyway, in the OVER-charging
+     * direction, because a cost analysis that reads an absent table should
+     * refuse to under-promise rather than trust its caller. */
+    case A_CALL: {
+        int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
+        if (idx < 0 || !v->rgn_cost) {
+            c.frames += 1;
+            c.unbounded = c.growable = true;
+            return c;
+        }
+        c = v->rgn_cost[idx];
+        c.frames += 1;
+        c.trail  += 2LL * a->u.call.nsave;
+        if (pcrec_callgraph_reaches(v->cg, idx, idx))
+            c.unbounded = c.growable = true;
+        return c;
+    }
     }
     return c;
 }
@@ -2213,9 +2328,36 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      * `br_strip_caps` (src/parse/mod_backrefs.c) descend `A_REP`
      * UNCONDITIONALLY — no `{0,0}` guard at all — and the three whole-tree
      * predicates have no prune either, so THIS was the only site affected. */
+    /* [DD-14 wave B+C] THE CALL SITE ITSELF ALLOCATES NOTHING AND DESCENDS
+     * NOWHERE, and §4.4c's "GRAPH" verdict is discharged ONE LEVEL UP rather
+     * than here — which is a simplification of the design and is worth stating
+     * as one.
+     *
+     * §4.4c's rule is "the layout accounts for EVERY EMITTED REGION — each
+     * lexical occurrence as today, PLUS one for each emitted callee region".
+     * `pcrec_emit_vm` implements exactly that by calling this function ONCE
+     * PER REGION, in ascending target order, after the main-body walk — and
+     * `vm_emit` then emits the regions in the same order, so the running
+     * counters and the pre-pass agree site for site, which is the property
+     * this whole function exists to hold. There is nothing left for the arm to
+     * do: a call SITE emits a frame push, |W| trailed writes and a `goto`, and
+     * not one of them allocates a slot.
+     *
+     * THAT IS ALSO WHY §4.4c's PROPOSED PARAMETER ("count this subtree as a
+     * region even if a `{0,0}` ancestor would prune it") IS NOT HERE. The
+     * region walk starts AT the callee's own `A_CAP`, so no `{0,0}` ancestor
+     * is on the path at all — the prune this function takes at its `rmin == 0
+     * && rmax == 0` guard is in the MAIN-BODY walk, where it is CORRECT
+     * (`X{0}` emits nothing lexically and must allocate nothing). The region's
+     * slots are counted by the separate call, which is what closes the hole
+     * S-SR19 defends: `^(?:((?>a|ab))){0}(?1)z$` allocates the region's cut
+     * mark even though the lexical occurrence allocates none.
+     *
+     * `repl` DOES NOT MULTIPLY A REGION. A call under `{0,4000}` replicates
+     * the SITE — a push and a goto per copy — and the region is emitted ONCE,
+     * so the region's own count is taken at `repl == 1`. */
     case A_CALL:
-        ctx_fail(v->cx, 0, "internal error: A_CALL reached vm_count_slots "
-                           "before wave B+C's call graph");
+        return;
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
      * allocates it, and counting one here as well would make `RX_NSLOTS` one
      * too large on every possessive spelling. An UNLIFTED one allocates
@@ -5228,6 +5370,337 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
     v->fdyn = sd;
 }
 
+/* [DD-14 wave B+C] `W`, THE ACTIVATION-PRIVATE RESTORE SET (design §5.3a).
+ *
+ *   W(g) = every SLOT INSTANCE the EMITTED REGION for g can write,
+ *          union W(h) for every h that region calls,
+ *          MINUS slots 0 and 1.
+ *
+ * IT IS NOT "THE CAPTURE SLOTS", AND THAT ANSWER IS MEASURED WRONG RATHER
+ * THAN MERELY INCOMPLETE — the row this design had refuted TWICE, by two
+ * different executions:
+ *
+ *   `SLOT_GROUP<n>_PENDING`  a LOST MATCH. `^(a(?1)?b)\1$` on "aabbaabb"
+ *                            answers nomatch where 10.46 answers (0,8): the
+ *                            backreference MARKS group 1, so it lowers
+ *                            publish-at-close, and the inner activation
+ *                            overwrites the outer's pending value. 11/2.
+ *   `SLOT_CUT_MARK<n>`       SIX FALSE MATCHES, and the false-match set is
+ *                            EXACTLY the non-atomic control's language:
+ *                            `^((?>a(?1)?))a$` starts matching "aa".."aaaaaaaa"
+ *                            because the inner activation's mark overwrites
+ *                            the outer's, so the outer's `RX_CUT` — an
+ *                            ASSIGNMENT — becomes a no-op and the atomic group
+ *                            stops being atomic. 4/6.
+ *
+ * EVERY FAMILY IS THE SAME SHAPE: each is written at a construct's ENTRY and
+ * read at that construct's EXIT, and two ACTIVATIONS of one construct are
+ * NESTED rather than sequential, so the inner write is still in the slot when
+ * the outer reads it. Five of the seven families replicate PER EMITTED COPY,
+ * not per lexical construct (`^((?>a)){3}$` has ONE atomic group and FOUR cut
+ * marks), which is why the set is built from the COUNTER RANGES this region's
+ * own `vm_count_slots` pass consumed rather than from a walk over its nodes.
+ *
+ * SLOTS 0 AND 1 ARE EXCLUDED BY CONSTRUCTION rather than by a filter: the
+ * capture half below starts at group 1, and no other family's base reaches
+ * below `2 * (ngroups + 1)`. §3.4(b) MEASURED why it matters — `\K` is NOT
+ * restored by a return (`^(a\Kb)(?1)$` on "abab" is (3,4)) and pcrec spells
+ * `\K` as a write to `RX_SLOT_WHOLE_START`, which is slot 0. A return that
+ * restored "everything the callee wrote" would answer (0,4).
+ *
+ * AND `g`'s OWN CAPTURE SLOTS ARE MEMBERS, which an earlier draft left out and
+ * the design's own prototype refuted: `^((a)(?1)?(b))$` on "aabb" is g1 =
+ * (0,4), so the recursive call OVERWROTE group 1's start with 1 and the return
+ * put 0 back. Without them the matcher reports g1 = (1,4) — a wrong span on a
+ * correct match, which no `m`/`n` expectation catches and only a `g` line
+ * does. */
+typedef struct { int guard, low, mark, rev, ctr, lookmark, lookpos; } VmSnap;
+
+static VmSnap vm_snap(const Vm *v)
+{
+    VmSnap s;
+    s.guard = v->nguard; s.low = v->nlow; s.mark = v->nmark;
+    s.rev = v->nrev; s.ctr = v->nctr;
+    s.lookmark = v->nlookmark; s.lookpos = v->nlookpos;
+    return s;
+}
+
+/* The region's CAPTURE half: every group whose `A_CAP` lies inside it. Walked
+ * ITERATIVELY on `A_CAT`/`A_ALT` spines (D10/DD-10/K20) and STOPPING AT AN
+ * `A_CALL` — following `.body` would be design §4.4's non-terminating walk,
+ * and it is unnecessary: what a NESTED call writes arrives through the
+ * transitive union below, over the graph, which terminates by construction. */
+static void vm_w_caps(Vm *v, const Ast *a, bool *w, int nstate)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF: case A_CALL:
+            return;
+        case A_CAP: {
+            int g = a->u.cap.no;
+            if (g > 0 && g <= v->ngroups) {
+                if (2 * g + 1 < nstate) { w[2 * g] = true; w[2 * g + 1] = true; }
+                if (vm_marked(v, g)) {
+                    int ps = vm_slot_pend(v, g);
+                    if (ps >= 0 && ps < nstate) w[ps] = true;
+                }
+            }
+            a = a->l;
+            continue;
+        }
+        case A_REP: case A_ATOMIC: case A_LOOK:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT: {
+            const AKind k = a->k;
+            const Ast *t = a;
+            for (; t->k == k; t = t->l) vm_w_caps(v, t->r, w, nstate);
+            a = t;
+            continue;
+        }
+        }
+        return;
+    }
+}
+
+/* Publish one round of the nullability fixpoint onto the `A_CALL` nodes. Same
+ * shape as `src/opt/callgraph.c`'s `minw` publisher and for the same reason:
+ * the walkers that READ the answer are bare `const Ast *` descents with no
+ * context, so the node is the only place both sides can meet. */
+static void vm_publish_nonnull(Vm *v, Ast *a, const bool *nn)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF:
+            return;
+        case A_CALL: {
+            int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+            a->u.call.nonnullable = i >= 0 ? nn[i] : false;
+            return;
+        }
+        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT: {
+            const AKind k = a->k;
+            Ast *t = a;
+            for (; t->k == k; t = t->l) vm_publish_nonnull(v, t->r, nn);
+            a = t;
+            continue;
+        }
+        }
+        return;
+    }
+}
+
+/* Publish `W` onto every `A_CALL` node: `u.call.save`/`nsave`, read by
+ * `vm_call`'s save emission, by `vm_region`'s restore emission and by
+ * `vm_cost`'s `2 * |W|` trail charge. Three readers, one write. */
+static void vm_publish_saves(Vm *v, Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF:
+            return;
+        case A_CALL: {
+            int i = pcrec_callgraph_index(v->cg, a->u.call.target);
+            if (i < 0)
+                ctx_fail(v->cx, 0, "internal error: subroutine call to group "
+                                   "%d is not in the call graph",
+                         a->u.call.target);
+            a->u.call.save  = v->rgn_w[i];
+            a->u.call.nsave = v->rgn_nw[i];
+            return;
+        }
+        case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT: {
+            const AKind k = a->k;
+            Ast *t = a;
+            for (; t->k == k; t = t->l) vm_publish_saves(v, t->r);
+            a = t;
+            continue;
+        }
+        }
+        return;
+    }
+}
+
+static void vm_w_range(bool *w, int nstate, int lo, int hi)
+{
+    for (int i = lo; i < hi; i++) if (i >= 0 && i < nstate) w[i] = true;
+}
+
+/* [DD-14 wave B+C] THE CALL SITE (design §5.1, §5.3).
+ *
+ *     L_site:  RX_CALL(&&L_ret, scan_position)   ; a resume frame carrying a
+ *                                                 ; RETURN LABEL
+ *              RX_SET(W[0], slot_values[W[0]])   ; |W| trailed SELF-writes
+ *              ...                               ; parking the caller's values
+ *              RX_SET(W[n-1], slot_values[W[n-1]])
+ *              goto L_callee_g
+ *     L_ret:   <the continuation>
+ *
+ * THE SAVES COME AFTER THE PUSH AND THE ORDER IS LOAD-BEARING (§5.1). The call
+ * frame's `trail_mark` is then EXACTLY the index of the first save, so the
+ * return reads `W[j]`'s parked value at `trail[trail_mark + j]` with `j` a
+ * compile-time constant — no search, no loop, no runtime slot test. It also
+ * means a rewind that ABANDONS the call discards the saves along with the
+ * frame that owned them.
+ *
+ * THE SELF-WRITE IS HOW THE TRAIL BECOMES THE STORAGE, with no new array
+ * anywhere. `RX_SET` is `RX_TRAIL` then the write, and `RX_TRAIL` records the
+ * old value UNCONDITIONALLY with no same-value elision (P7, quoted at the
+ * macro) — so `RX_SET(s, slot_values[s])` leaves the slot UNCHANGED and parks
+ * its current value on the trail at a known offset. The restore at the
+ * region's exit is itself TRAILED, which is why backtracking INTO a returned
+ * call correctly re-establishes the callee's own values (§3.2 requires it;
+ * §3.1's per-level cells show it is the observable semantics).
+ *
+ * WHY THE SET IS `W` AND NOT "THE CAPTURES", and this is the row the design
+ * had refuted TWICE: the capture-only version loses `SLOT_GROUP<n>_PENDING`
+ * (a LOST MATCH, measured 11/2) and `SLOT_CUT_MARK<n>` (SIX FALSE MATCHES
+ * whose language is exactly the non-atomic control's, measured 4/6). `W` is
+ * every slot the emitted REGION can write, over the REGION's own indices,
+ * minus slots 0 and 1 — `\K` writes slot 0 and is MEASURED not to be restored
+ * by a return (§3.4(b)). `vm_region_w` builds it.
+ *
+ * NOTHING IS CUT HERE. §3.2 MEASURED the call BACKTRACKABLE on 10.46 (atomic
+ * before 10.30), with four atomic controls refusing, so the return may not be
+ * an `RX_CUT` and the callee's choice points stay live across it. */
+static void vm_call(Vm *v, int entry, const Ast *a, int next)
+{
+    vm_charge(v);
+    const int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
+    if (idx < 0 || !v->rgn_lbl)
+        ctx_fail(v->cx, 0, "internal error: subroutine call to group %d has no "
+                           "emitted region", a->u.call.target);
+
+    const int ret = vm_label(v);
+    vm_lbl(v, entry, a->u.call.target == 0
+                     ? "call the WHOLE PATTERN (anchors included)"
+                     : "call a capture group's pattern");
+    /* Through a primitive, like every other emitted push: the listing's
+     * PROGRAM trace and the artifact are two views of one walk (§10's drift
+     * rule), and a call is a thing that EXECUTES. */
+    sb_printf(v->b, "    %s_CALL(&&%s_L%d, scan_position);\n", v->up, v->p, ret);
+    vm_ev(v, VE_CALL, v->rgn_lbl[idx], ret,
+          vm_rolef(v, "call group %d; the frame carries the return label",
+                   a->u.call.target));
+    v->ncall++;
+    for (int j = 0; j < a->u.call.nsave; j++) {
+        /* Sized from what it holds — `up` is at most 80 bytes and
+         * `vm_slot_name` writes at most 48 — for the reason `vm_slot_expr`
+         * states one function over: a silently TRUNCATED slot name is an
+         * artifact that names the wrong cell, and this file has already been
+         * bitten once by a too-small snprintf buffer. */
+        char val[160];
+        char nm[48];
+        if (vm_slot_name(v, a->u.call.save[j], nm, sizeof nm))
+            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
+        else
+            snprintf(val, sizeof val, "slot_values[%d]", a->u.call.save[j]);
+        vm_set(v, a->u.call.save[j], val,
+               "park this activation's value on the trail (a trailed SELF-write)");
+    }
+    vm_goto(v, v->rgn_lbl[idx]);
+    vm_lbl(v, ret, "the call returned; continue here");
+    vm_goto(v, next);
+}
+
+/* [DD-14 wave B+C] ONE SHARED CALLEE REGION PER DISTINCT CALLED GROUP, EMITTED
+ * AFTER THE MAIN BODY, WITH ITS OWN EXIT (design §3.5, §5.4, §6.3).
+ *
+ * THE EXIT IS THE WHOLE OF §6.3's SPLIT, and §3.5 is why it is a RULE rather
+ * than an optimisation. A call reaches the GROUP, not the group's LEXICAL
+ * OCCURRENCE, and the occurrence's wrapper is a property of the occurrence:
+ * MEASURED on 10.46, `^ab(?<=(ab))(?1)$` matches "abab" (the callee must leave
+ * through its OWN exit, not the lookbehind's end-check-cut-and-restore),
+ * `^(?!(z|zy))x(?1)c$` matches "xzyc" (it must RETRY inside a region whose
+ * lexical home is cut on the assertion's success), and `^(?>(a|ab))z(?1)c$`
+ * matches "azabc" (it must GIVE BACK, though its lexical home is atomic). An
+ * emitter that let the region fall out through the occurrence's continuation
+ * gets all three wrong, and `^(?:(?<g>a|ab)){0}(?&g)c$` has no lexical
+ * emission to fall out of at all.
+ *
+ * THE FOLLOW IS SCOPED TO ZERO ACROSS THE BODY (§5.4), for a reason one
+ * construct over from `vm_look`'s: there the follow OVERLAPS the body, here it
+ * is UNKNOWN, because a shared body has many callers with different follows
+ * and a prune bound baked from one caller's follow is wrong for every other.
+ * `vm_emit_fd` saves, zeroes and restores both terms on every path out.
+ *
+ * THE RESTORE READS THE TRAIL AT A COMPILE-TIME OFFSET off the ACTIVATION's
+ * own frame (§5.3c). The saves cannot have been rewound while the activation
+ * is live: every frame the body pushed has a `trail_mark` at or above
+ * `trail_mark + |W|`, so no rewind that keeps the call alive can reach them,
+ * and one that does has popped the call frame itself.
+ *
+ * AND THE `goto *` IS WRITTEN OUT HERE RATHER THAN HIDDEN IN AN `RX_RETURN`
+ * MACRO, which is a deliberate deviation from §5.1's sketch. §5.8's invariant
+ * is `goto *` count == 1 + the number of emitted SHARED CALLEE BODIES, and
+ * S-SR13 asserts THE RELATION rather than a constant — so it must be
+ * assertible over the artifact's TEXT. A macro puts one `goto *` in the
+ * definition and none at the uses, which makes the count `1 + (has_calls ? 1 :
+ * 0)` and the relation unstateable. Inline, the artifact carries exactly one
+ * per region and the check is a grep. */
+static void vm_region(Vm *v, int i)
+{
+    const int g = pcrec_callgraph_target(v->cg, i);
+    const Ast *body = pcrec_callgraph_body(v->cg, i);
+
+    vm_emit_fd(v, v->rgn_lbl[i], body, v->rgn_exit[i], 0, NULL);
+    vm_lbl(v, v->rgn_exit[i],
+           vm_rolef(v, "the callee region for %s returns",
+                    g == 0 ? "the whole pattern" : "a capture group"));
+    for (int j = 0; j < v->rgn_nw[i]; j++) {
+        char val[192];
+        snprintf(val, sizeof val,
+                 "run->trail[run->resume_stack[run->call_top].trail_mark + %d]"
+                 ".saved_value", j);
+        vm_set(v, v->rgn_w[i][j], val,
+               "restore the caller's value, itself TRAILED so a retreat into "
+               "this callee re-establishes the callee's own");
+    }
+    /* THE SECOND INDIRECT JUMP (§5.8), and the amendment to this file's own
+     * opening comment: the property that matters is that the indirect jumps
+     * are OFF THE HOT PATH — one per backtrack, one per call return — and that
+     * there is still no per-byte dispatch, so D13's table-vs-computed-goto
+     * arbitration does not arise.
+     *
+     * THE FRAME IS NOT POPPED. §3.2 MEASURED the call backtrackable, so the
+     * callee's choice points must survive the return and so must the return
+     * label they will come back through. `call_top` walks DOWN the activation
+     * chain to the frame this one was entered from — a linked list through
+     * frames that already exist, which is what makes it stable under the frame
+     * array's own growth (§5.1 property 2).
+     *
+     * THE SENTINEL TEST IS D72's CODE, not a give-up. Reaching a region's exit
+     * with no live activation means the artifact's own analyses disagree — a
+     * region is only ever entered from the `RX_CALL` two lines above its
+     * `goto`, so it is unreachable — and PCREC_ERR_INTERNAL is exactly the
+     * "the artifact detected an inconsistency between its own analyses" code
+     * D72 minted, strictly below the give-up floor so a caller's raise-a-bound
+     * retry cannot loop on it. Without the test the same event is
+     * `resume_stack[(unsigned)-1]`, which is K27's class in emitted code. */
+    sb_printf(v->b,
+        "    {\n"
+        "        const unsigned %s_call_frame = run->call_top;\n"
+        "        if (%s_call_frame >= %s_RESUME_FRAMES) return %s_R_INTERNAL;\n"
+        "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
+        "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
+        "    }\n",
+        v->p, v->p, v->up, v->up, v->p, v->p);
+    vm_ev(v, VE_RETURN, v->rgn_lbl[i], 0,
+          "return to the caller through the frame's own label");
+}
+
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
@@ -5726,8 +6199,8 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
      * (§4.4c) and `vm_cost`'s graph-fed charge. Any two of them without the
      * third fail here, loudly, instead of emitting an artifact. */
     case A_CALL:
-        ctx_fail(v->cx, 0, "internal error: A_CALL reached the VM emitter "
-                           "before wave B+C's call linkage");
+        vm_call(v, entry, a, next);
+        return;
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
 }
@@ -6141,6 +6614,22 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
              * executes, and neither a rung nor a strategy selection writes C
              * of its own to trace. */
             break;
+        /* [DD-14 wave B+C] BOTH WRITE C, so like VE_CUT and unlike
+         * VE_RUNG/VE_STRAT/VE_PRUNE they belong in the straight-line trace:
+         * a call and a return are things that EXECUTE. */
+        case VE_CALL: {
+            char tgt[40];
+            snprintf(tgt, sizeof tgt, "callee L%d, return L%d", e->a, e->b);
+            sb_printf(o, "         CALL    %-28s ; %s\n", tgt,
+                      e->role ? e->role : "subroutine call");
+            break;
+        }
+        case VE_RETURN:
+            sb_printf(o, "         RETURN  %-28s ; %s\n", "goto* frame.call_ret",
+                      e->role ? e->role
+                              : "the callee region's own exit (never the "
+                                "lexical occurrence's)");
+            break;
         case VE_CUT: {
             /* [ENG-BREP] this one DOES write C, so unlike the two above it
              * belongs in the trace. */
@@ -6204,7 +6693,7 @@ static long long vm_ceiling(long long cap, long long per)
     return cap / per;
 }
 
-void pcrec_emit_vm(Ctx *cx, const Ast *root)
+void pcrec_emit_vm(Ctx *cx, Ast *root)
 {
     Job *job = cx->job;
     StrBuf *c = &job->csb;
@@ -6349,11 +6838,98 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * '(a)\1'` must still MATCH "aa" and must deliver no group offsets). */
     const int ncaps = cx->want_caps ? v.ngroups + 1 : 1;
 
+    /* [DD-14 wave B+C] THE CALL GRAPH, AND THE NULLABILITY FIXPOINT THAT MUST
+     * PRECEDE EVERY OTHER WALK.
+     *
+     * `cx->callgraph` is NULL for a call-free pattern, so `has_calls` is the
+     * ONE flag every byte this module adds to an artifact is gated on — the
+     * frame's two fields, `RX_PUSH`'s extra line, `RX_CALL`, the fail label's
+     * line and the two resets. §9.1's identity claim is therefore structural.
+     *
+     * THE NULLABLE FIXPOINT RUNS FIRST because `vm_nullable` is consulted by
+     * `vm_cost`, `vm_count_slots`, `vm_lifts` and the emitter itself, and its
+     * `A_CALL` arm reads `u.call.nonnullable`. The polarity makes running late
+     * a PERFORMANCE fault rather than a correctness one (an unset field reads
+     * "nullable", which emits a guard that is never wrong), but running it
+     * here makes the answer the real one.
+     *
+     * BOTTOM `false`, ITERATED UP (§2.6), which is the OPPOSITE direction from
+     * `minw`'s and for the opposite reason: nullability's least fixpoint over
+     * a cycle is "not nullable", and a round that finds a nullable path raises
+     * it. `n` rounds suffice — each settles at least one more target — and the
+     * extra round is asserted to change nothing rather than assumed to. */
+    v.cg = cx->callgraph;
+    v.has_calls = v.cg != NULL;
+    v.nregion = pcrec_callgraph_ntargets(v.cg);
+    if (v.has_calls) {
+        const int nt = v.nregion;
+        bool *nn = arena_alloc(&cx->arena, (size_t)nt * sizeof *nn);
+        for (int i = 0; i < nt; i++) nn[i] = false;   /* == "nullable", the bottom */
+        for (int round = 0; round <= nt; round++) {
+            bool changed = false;
+            vm_publish_nonnull(&v, root, nn);
+            for (int i = 0; i < nt; i++)
+                if (!nn[i] && !vm_nullable(pcrec_callgraph_body(v.cg, i))) {
+                    nn[i] = true;
+                    changed = true;
+                }
+            if (!changed) break;
+            if (round == nt)
+                ctx_fail(cx, 0, "internal error: the subroutine nullability "
+                                "fixpoint did not settle in %d rounds", nt);
+        }
+        vm_publish_nonnull(&v, root, nn);
+
+        v.rgn_lbl  = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_lbl);
+        v.rgn_exit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_exit);
+        v.rgn_w    = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_w);
+        v.rgn_nw   = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_nw);
+        v.rgn_cost = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_cost);
+        for (int i = 0; i < nt; i++) { v.rgn_w[i] = NULL; v.rgn_nw[i] = 0; }
+    }
+
     /* Slot counting first: RX_NSLOTS has to be known before the rx_run_state type
      * is emitted, and it must agree EXACTLY with what the emitter goes on to
      * assign — so the counter mirrors the emitter's own rung decisions rather
      * than approximating them. */
     vm_count_slots(&v, root, 1, false);
+    /* [DD-14 wave B+C] AND ONE PASS PER EMITTED CALLEE REGION, IN ASCENDING
+     * TARGET ORDER — design §4.4c's rule, and the order is what makes the
+     * running counters and the emitter agree.
+     *
+     * §4.4c: "the layout accounts for EVERY EMITTED REGION — each lexical
+     * occurrence as today, PLUS one for each emitted callee region — and `W`
+     * is computed over the CALLEE REGION's own indices." Three separate facts
+     * make a lexical-only count wrong, and the first is the one no reasoning
+     * from the tree finds: `X{0}` EMITS NOTHING AND COUNTS NOTHING, and a
+     * callee parked there is a REAL IDIOM (the classic pre-DEFINE spelling,
+     * measured matching on 10.46 for plain, recursive, atomic and rung-bearing
+     * callees), so the region the emitter must produce has slot instances that
+     * NOTHING COUNTED. The failure is `vm_slot_mark(v, v->nmark++)` past
+     * `RX_NSLOTS` — an out-of-bounds write in EMITTED code, K27's class, which
+     * this function's own header names. S-SR19 is its detector and its cell
+     * must carry a RUNG-BEARING or ATOMIC callee: a callee with only capture
+     * slots allocates from a family `{0}` does not prune, so a plain cell goes
+     * green on a broken layout.
+     *
+     * "DOUBLE-COUNTING" IS THE CORRECT COUNT. A called group's body is walked
+     * twice — once at its lexical position, once as a region — because the
+     * emitter emits it twice, as two programs with different exits (§3.5,
+     * §6.3). The SNAPSHOTS taken around each region pass are what `W` is built
+     * from: they are exactly the counter ranges that region consumed, which is
+     * the only place the region's own indices exist. */
+    VmSnap *snap_before = NULL, *snap_after = NULL;
+    if (v.has_calls) {
+        snap_before = arena_alloc(&cx->arena,
+                                  (size_t)v.nregion * sizeof *snap_before);
+        snap_after  = arena_alloc(&cx->arena,
+                                  (size_t)v.nregion * sizeof *snap_after);
+        for (int i = 0; i < v.nregion; i++) {
+            snap_before[i] = vm_snap(&v);
+            vm_count_slots(&v, pcrec_callgraph_body(v.cg, i), 1, false);
+            snap_after[i] = vm_snap(&v);
+        }
+    }
     /* [M4.5c fix] REFUSE BEFORE EMITTING. PCREC_MAX_VM_NODES alone let
      * `((a)|b){0,4000}c` through at 3.5 MB (D45's own case); this is the
      * compiler-side bound that stops it, and it is checked here — after the
@@ -6400,6 +6976,115 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     const int nstate = 2 * (v.ngroups + 1) + nguard_total + nlow_total
                      + nmark_total + 3 * nrev_total + nctr_total
                      + v.npend_total + nlookmark_total + nlookpos_total;
+
+    /* [DD-14 wave B+C] `W` PER REGION, THEN THE REGIONS' OWN COSTS — in that
+     * order, because `vm_cost`'s call arm charges `2 * |W|` of trail and
+     * cannot do so before `W` exists.
+     *
+     * The three families of member are collected in three different ways and
+     * each way is forced by the layout: the CAPTURE slots by a walk (they are
+     * indexed by GROUP NUMBER and are shared with the lexical occurrence), the
+     * other seven families by the COUNTER RANGES this region's own
+     * `vm_count_slots` pass consumed (they are per EMITTED COPY, so the ranges
+     * are the only place the region's own indices exist), and the callees'
+     * sets by the graph's TRANSITIVE relation.
+     *
+     * THE UNION IS TAKEN FROM THE UNMODIFIED SETS. `reaches` is already
+     * transitive, so `W(i) = base(i) | union of base(j) over reaches(i, j)`
+     * needs one pass — but only if the right-hand side reads the ORIGINAL
+     * sets. OR-ing in place would make the result depend on iteration order,
+     * which is the shape of bug that shows up on one pattern in a corpus. */
+    if (v.has_calls) {
+        const int nt = v.nregion;
+        bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+        for (int i = 0; i < nt; i++) {
+            base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
+            memset(base[i], 0, (size_t)nstate * sizeof **base);
+            vm_w_caps(&v, pcrec_callgraph_body(v.cg, i), base[i], nstate);
+            vm_w_range(base[i], nstate,
+                       vm_slot_guard(&v, snap_before[i].guard),
+                       vm_slot_guard(&v, snap_after[i].guard));
+            vm_w_range(base[i], nstate,
+                       vm_slot_low(&v, snap_before[i].low),
+                       vm_slot_low(&v, snap_after[i].low));
+            vm_w_range(base[i], nstate,
+                       vm_slot_mark(&v, snap_before[i].mark),
+                       vm_slot_mark(&v, snap_after[i].mark));
+            vm_w_range(base[i], nstate,
+                       vm_slot_rev(&v, snap_before[i].rev, 0),
+                       vm_slot_rev(&v, snap_after[i].rev, 0));
+            vm_w_range(base[i], nstate,
+                       vm_slot_ctr(&v, snap_before[i].ctr),
+                       vm_slot_ctr(&v, snap_after[i].ctr));
+            vm_w_range(base[i], nstate,
+                       vm_slot_lookmark(&v, snap_before[i].lookmark),
+                       vm_slot_lookmark(&v, snap_after[i].lookmark));
+            vm_w_range(base[i], nstate,
+                       vm_slot_lookpos(&v, snap_before[i].lookpos),
+                       vm_slot_lookpos(&v, snap_after[i].lookpos));
+        }
+        for (int i = 0; i < nt; i++) {
+            bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
+            memcpy(w, base[i], (size_t)nstate * sizeof *w);
+            for (int j = 0; j < nt; j++) {
+                if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
+                for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
+            }
+            /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
+             * Nothing above can put them there — the capture walk starts at
+             * group 1 and no family's base reaches below `2*(ngroups+1)` — so
+             * this is an ASSERTION written as a filter, and the filter is what
+             * makes it one line rather than a paragraph nobody checks. */
+            int n = 0;
+            for (int k = 2; k < nstate; k++) if (w[k]) n++;
+            int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
+            int q = 0;
+            for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
+            v.rgn_w[i]  = lst;
+            v.rgn_nw[i] = n;
+        }
+        vm_publish_saves(&v, root);
+
+        /* THE REGIONS' OWN COSTS, memoised so `vm_cost`'s `A_CALL` arm never
+         * has to walk a callee — which for a recursive one is design §4.4's
+         * non-terminating descent.
+         *
+         * A CYCLIC TARGET IS `unbounded` AND SETTLED FIRST, which is what
+         * makes the rest a finite DAG evaluation: a recursion's depth is
+         * data-dependent by nature, so P12's honest-ceiling machinery is
+         * reused rather than a number invented. Everything else is evaluated
+         * once its whole reachable set is settled, and `nt` rounds suffice
+         * because each round settles at least one more target. */
+        for (int i = 0; i < nt; i++)
+            if (pcrec_callgraph_reaches(v.cg, i, i)) {
+                Cost u = { 0, 0, 0, 0, true, true };
+                v.rgn_cost[i] = u;
+            }
+        {
+            bool *done = arena_alloc(&cx->arena, (size_t)nt * sizeof *done);
+            for (int i = 0; i < nt; i++)
+                done[i] = pcrec_callgraph_reaches(v.cg, i, i);
+            for (int round = 0; round <= nt; round++) {
+                bool changed = false, all = true;
+                for (int i = 0; i < nt; i++) {
+                    if (done[i]) continue;
+                    bool ready = true;
+                    for (int j = 0; j < nt; j++)
+                        if (j != i && pcrec_callgraph_reaches(v.cg, i, j)
+                                   && !done[j]) ready = false;
+                    if (!ready) { all = false; continue; }
+                    v.rgn_cost[i] =
+                        vm_cost(&v, pcrec_callgraph_body(v.cg, i), false);
+                    done[i] = true;
+                    changed = true;
+                }
+                if (all) break;
+                if (!changed)
+                    ctx_fail(cx, 0, "internal error: the subroutine cost "
+                                    "memo did not settle");
+            }
+        }
+    }
 
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root, false);
@@ -6471,6 +7156,17 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     {
         int rootentry = vm_label(&v);
         int acc = vm_label(&v);
+        /* [DD-14 wave B+C] THE REGIONS' LABELS ARE ALLOCATED BEFORE THE MAIN
+         * BODY IS WALKED, because a call site in the main body needs the
+         * region's entry label to `goto`, and a region may call another region
+         * (or itself) — so no emission order makes the labels available late.
+         * The regions themselves are emitted AFTER the accept label, which is
+         * where §6.3 puts them: one shared copy per DISTINCT called group,
+         * reached only by `goto`, never fallen into. */
+        for (int i = 0; i < v.nregion; i++) {
+            v.rgn_lbl[i]  = vm_label(&v);
+            v.rgn_exit[i] = vm_label(&v);
+        }
         vm_emit(&v, rootentry, root, acc);
         /* THROUGH vm_lbl, not a direct sb_printf. This was the one place that
          * emitted a label by a second route, and it is exactly the drift
@@ -6485,6 +7181,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         vm_ev(&v, VE_ACCEPT, 0, 0, NULL);
         sb_printf(v.b, "    goto %s_accept;\n", v.p);
         /* rootentry is label 0 by construction; the prologue jumps to it */
+
+        /* [DD-14 wave B+C] THE SHARED CALLEE REGIONS (§6.3). Emitted in the
+         * SAME ascending target order the slot pre-pass counted them in, which
+         * is what keeps the running slot counters and `vm_count_slots`'
+         * totals agreeing site for site. */
+        for (int i = 0; i < v.nregion; i++) vm_region(&v, i);
     }
 
     /* BEFORE the prologue, which is where the declarations are written, and
@@ -6689,11 +7391,49 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "typedef struct {\n"
         "    ptrdiff_t slot_values[%s_NSLOTS];\n"
         "    struct { const void *resume_label; size_t resume_position;\n"
-        "             unsigned trail_mark;%s } resume_stack[%s_RESUME_FRAMES];\n"
+        "             unsigned trail_mark;%s%s } resume_stack[%s_RESUME_FRAMES];\n"
         "    struct { unsigned slot_index; ptrdiff_t saved_value; }\n"
         "             trail[%s_TRAIL_FRAMES];\n"
-        "    unsigned resume_depth, trail_depth;\n",
-        v.up, v.tracing ? " int id;" : "", v.up, v.up);
+        "    unsigned resume_depth, trail_depth;%s\n",
+        v.up, v.tracing ? " int id;" : "",
+        /* [DD-14 wave B+C] THE CALL RECORD IS THE RESUME FRAME (design §5.1),
+         * and §5.2 is why it is a DERIVATION rather than a preference. The
+         * obvious alternative — `const void *call_stack[N]` indexed by call
+         * depth and POPPED at the return — has a bug that needs three events
+         * to appear: A returns, its continuation calls B (overwriting A's
+         * return label), B fails, the backtracker resumes inside A's callee,
+         * and A's second return lands in B's continuation. The frame's depth
+         * mark restores the DEPTH and cannot restore the CONTENTS. §5.9 BUILT
+         * both and measured it: the array build is wrong on 3 of 50 cells, one
+         * of them a FALSE MATCH, and agrees on the other 47 — which is what
+         * localises the failure to the clobber sequence.
+         *
+         * A frame is never overwritten while it is live, so the structure
+         * whose contents the backtracker already restores is the right home.
+         *
+         * `call_top` IS ON EVERY FRAME, NOT ONLY ON CALL FRAMES: it is what
+         * the fail label restores, so an ORDINARY frame pushed inside a callee
+         * has to carry which activation was current when it was pushed
+         * (§5.5's drawn cell — the pop of an alternation frame is what lets the
+         * SECOND `RX_RETURN` find the right label). It is a resume-stack INDEX
+         * rather than a depth, so a nested activation's chain is a linked list
+         * through frames that already exist.
+         *
+         * THERE IS NO `call_depth` AND NO `call_mark` (D71.1). The design's
+         * §5.1 has three fields and a two-line fail label; the ruling keeps
+         * the CODE `PCREC_ERR_RECURSE` as a reserved ABI fact and moves the
+         * recursion-depth COUNTER to a [V-H] diagnostic generation axis, so
+         * the default artifact's give-up for a deep call is
+         * `PCREC_ERR_FRAMES` — calls consume ordinary frames, and the frame
+         * capacity is the ceiling. Two fields, one line.
+         *
+         * EMITTED ONLY ON A CALL-BEARING ARTIFACT, which is what makes §9.1's
+         * byte-identity claim structural: a call-free pattern's `rx_run_state`
+         * is the one it has always had. */
+        v.has_calls ? " const void *call_ret; unsigned call_top;" : "",
+        v.up, v.up,
+        v.has_calls ? "\n    unsigned call_top;   /* the CURRENT activation's"
+                      " frame index, or CALL_TOP_NONE */" : "");
     if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
@@ -6724,6 +7464,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * has room to travel, not about which side of the floor it lands on.
      * `vm_look_behind`'s negative-arm end-check is its one producer today. */
     sb_printf(c, "#define %s_R_INTERNAL ((ptrdiff_t)PCREC_ERR_INTERNAL)\n\n", v.up);
+    /* [DD-14 wave B+C] "no subroutine call is active". Out of range for the
+     * frame array on purpose, so a return with no live activation indexes
+     * nothing — the region exit's own guard turns that into
+     * `PCREC_ERR_INTERNAL` (D72) rather than K27's class in emitted code. */
+    if (v.has_calls)
+        sb_printf(c, "#define %s_CALL_TOP_NONE ((unsigned)-1)\n\n", v.up);
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
      *
@@ -6819,6 +7565,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
             "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
             "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
+            "%s"
             "        run->resume_depth++;                                             \\\n"
             "    } while (0)\n"
             /* [ENG-BREP] the possessive CUT. No trail rewind, deliberately —
@@ -6827,7 +7574,11 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "#define %s_CUT(slot_) do {                                   \\\n"
             "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up);
+            v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up,
+            v.has_calls ? "        run->resume_stack[run->resume_depth]"
+                          ".call_top = run->call_top;                      \\\n"
+                        : "",
+            v.up);
     } else {
         /* The traced forms. Same mechanism, same order of operations, one
          * fprintf each — deliberately NOT a separate implementation: a traced
@@ -6850,6 +7601,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
             "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
             "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
+            "%s"
             "        run->resume_stack[run->resume_depth].id = (id_);                             \\\n"
             "        fprintf(stderr, \"[%s] push  #%%u resume L%%d at scan_position %%zu"
                         " (trail %%u)\\n\",                                 \\\n"
@@ -6861,8 +7613,71 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "                run->resume_depth, slot_values[(slot_)]);                        \\\n"
             "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v.up, v.up, v.up, v.up, v.p, v.up, v.up, v.up, v.up, v.p,
-            v.up, v.p);
+            v.up, v.up, v.up, v.up, v.p, v.up, v.up, v.up, v.up,
+            v.has_calls ? "        run->resume_stack[run->resume_depth]"
+                          ".call_top = run->call_top;                      \\\n"
+                        : "",
+            v.p, v.up, v.p);
+    }
+
+    /* [DD-14 wave B+C] `RX_CALL` — `RX_PUSH` with a RETURN LABEL and one more
+     * line (design §5.1). Emitted only on a call-bearing artifact.
+     *
+     * A CALL FRAME'S `resume_label` IS THE FAIL LABEL ITSELF, and that is not
+     * a placeholder: when the frames inside a call are exhausted the call has
+     * no alternatives of its own, so popping it must continue failing. Making
+     * it `&&<prefix>_fail` means the fail label needs NO knowledge of frame
+     * kinds and no branch — its one added line runs for every frame and is
+     * correct for both. The cost is one extra backtrack step per abandoned
+     * call, charged where the budget is already charged; §3.2 MEASURED PCRE2
+     * doing TWICE the backtracks of an inlined control over 1..8 call sites,
+     * which is the same order of overhead.
+     *
+     * THE FRAME IS NOT POPPED BY THE RETURN (§5.1), which is the whole point:
+     * §3.2 measured the call BACKTRACKABLE, so the callee's choice points must
+     * survive the return and so must the label they will come back through.
+     *
+     * ONE CAPACITY TEST, NOT TWO (D71.1). The design's §5.6 has a second
+     * counter against `RX_CALL_DEPTH` answering `PCREC_ERR_RECURSE`; the
+     * ruling keeps the CODE reserved and moves the COUNTER to a diagnostic
+     * generation axis, so a deep call exhausts the ordinary frame capacity and
+     * answers `PCREC_ERR_FRAMES`. "Rebuild with the diagnostic axis to learn
+     * which bound" is the documented story. */
+    if (v.has_calls) {
+        if (!v.tracing)
+            sb_printf(c,
+                "/* A subroutine call: a resume frame that also carries the\n"
+                " * label to come back to. It is NOT popped by the return --\n"
+                " * the callee's choice points stay live across it, so a later\n"
+                " * failure can retreat back INTO the call. */\n"
+                "#define %s_CALL(ret_, p_) do {                               \\\n"
+                "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES; \\\n"
+                "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
+                "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
+                "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
+                "        run->resume_stack[run->resume_depth].call_top = run->call_top;   \\\n"
+                "        run->resume_stack[run->resume_depth].call_ret = (ret_);          \\\n"
+                "        run->call_top = run->resume_depth;                               \\\n"
+                "        run->resume_depth++;                                             \\\n"
+                "    } while (0)\n\n",
+                v.up, v.up, v.up, v.p);
+        else
+            sb_printf(c,
+                "#define %s_CALL(ret_, p_) do {                               \\\n"
+                "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES; \\\n"
+                "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
+                "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
+                "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
+                "        run->resume_stack[run->resume_depth].call_top = run->call_top;   \\\n"
+                "        run->resume_stack[run->resume_depth].call_ret = (ret_);          \\\n"
+                "        run->resume_stack[run->resume_depth].id = -1;                    \\\n"
+                "        fprintf(stderr, \"[%s] call  #%%u at scan_position %%zu"
+                            " (trail %%u)\\n\",                              \\\n"
+                "                run->resume_depth, (size_t)(p_), run->trail_depth);      \\\n"
+                "        run->call_top = run->resume_depth;                               \\\n"
+                "        run->resume_depth++;                                             \\\n"
+                "    } while (0)\n\n",
+                v.up, v.up, v.up, v.p, v.p);
     }
 
     /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
@@ -6880,10 +7695,29 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    for (i = 0; i < %s_NSLOTS; i++) run->slot_values[i] = PCREC_UNSET;\n"
         "    run->resume_depth = 0; run->trail_depth = 0;\n",
         v.p, v.p, v.up);
+    /* [DD-14 wave B+C] §5.6 site 5a — NOT an `ERR_FLOOR` site but a MISSING
+     * INITIALISER, and R34's LENS2-7 found it by noticing the design's own
+     * prototype set the sentinel BY HAND in `main()`, which is exactly the
+     * kind of scaffolding a prototype hides behind. Without it the very first
+     * return of a search reads `resume_stack[garbage]`. */
+    if (v.has_calls)
+        sb_printf(c, "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
     if (has_budget) sb_printf(c, "    run->steps_left = %s_STEP_BUDGET;\n", v.up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_printf(c, "    run->work_left = %s_WORK_BUDGET;\n", v.up);
     sb_puts(c, "}\n\n");
+
+    /* [DD-14 wave B+C] §5.6 site 5b — the per-START-POSITION reset. It rewinds
+     * the trail and zeroes `resume_depth` WITHOUT resetting the budgets,
+     * deliberately (a bump-along must not buy itself a fresh allowance);
+     * `call_top` joins the FIRST group, not the second, because an attempt at
+     * the next start position must not inherit the previous attempt's
+     * activation. */
+    char reset_call_top[80];
+    reset_call_top[0] = 0;
+    if (v.has_calls)
+        snprintf(reset_call_top, sizeof reset_call_top,
+                 "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
 
     sb_printf(c,
         "/* Roll the run state back to as-if-untouched WITHOUT resetting the\n"
@@ -6893,8 +7727,9 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "{\n"
         "    while (run->trail_depth) { run->trail_depth--; run->slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value; }\n"
         "    run->resume_depth = 0;\n"
+        "%s"
         "}\n\n",
-        v.p, v.p);
+        v.p, v.p, reset_call_top);
 
     /* ---- the class bitmaps ------------------------------------------------
      * File-scope `static const` (TS-1: all-const tables, no mutable globals),
@@ -7106,7 +7941,41 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "    {\n"
             "        const unsigned frame_index = --run->resume_depth;\n"
             "        scan_position = run->resume_stack[frame_index].resume_position;\n"
-            "%s", pop_tr);
+            "%s"
+            "%s", pop_tr,
+            /* [DD-14 wave B+C] §5.5's ONE ADDED LINE, and it restores WHICH
+             * ACTIVATION IS CURRENT — exactly as the line above it restores
+             * `scan_position` and the loop below it rewinds the trail.
+             *
+             * IT RUNS FOR EVERY FRAME AND NEEDS NO BRANCH, which is what a
+             * call frame's `resume_label` being the fail label itself buys
+             * (see `RX_CALL`): the fail label needs no knowledge of frame
+             * kinds, so this is a line rather than a test.
+             *
+             * §5.5's DRAWN CELL IS WHY IT IS NOT OPTIONAL, and this lane
+             * REPRODUCED it before adding the line: on `^(a(?1)?b)$` / "aaabbb"
+             * the retreat pops the innermost call frame and then an ordinary
+             * alternation frame INSIDE the enclosing activation, and without
+             * this restore `call_top` still names the POPPED call frame — so
+             * the enclosing activation's return reads `trail_mark` one level
+             * too deep and restores the wrong values. Measured on the traced
+             * artifact: group 1 came back (2,5) where it must be (1,5), one
+             * level off at every depth, and the whole match was lost.
+             *
+             * THE DESIGN CALLS THIS "the fail label's TWO lines" (§5.1/§5.5).
+             * Under D71.1 the second — `call_depth = resume_stack[..].call_mark`
+             * — does not exist in the default artifact at all, because the
+             * recursion-depth COUNTER moved to a diagnostic generation axis
+             * and calls consume ordinary frames. S-SR2 names THIS line, which
+             * §9.3 already records as the one whose deletion changes answers;
+             * S-SR2a, the other line's row, moves to that axis with it.
+             *
+             * EMITTED ONLY ON A CALL-BEARING ARTIFACT — §9.1's byte-identity
+             * claim, held by construction rather than by a filtered diff. */
+            v.has_calls
+              ? "        run->call_top = run->resume_stack[frame_index]"
+                ".call_top;\n"
+              : "");
     }
     sb_puts(c,
         "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"

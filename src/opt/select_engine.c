@@ -555,12 +555,50 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * so that "VM-only, no prefilter" reads as THIS module's answer rather
          * than as a permanent verdict. */
         const bool has_bref = pcrec_has_bref(root);
-        if (force_on && has_bref)
+        /* [DD-14] A CALL-BEARING PATTERN GETS NO PREFILTER EITHER, and this
+         * line is WAVE E's by the design's own schedule (§8.2, §11 wave E,
+         * sabotage row S-SR17). It lands HERE, in wave B+C, because without it
+         * this wave ships something worse than a missing optimisation.
+         *
+         * ERASING A CALL IS NOT A SUPERSET — IT IS A DIFFERENT LANGUAGE, and
+         * the counterexample is one line (§8.2): `a(?1)b` with group 1 = `x`
+         * matches "axb"; erase the call and `ab` is left, which does not. So
+         * the prefilter's rejection would be a FALSE NEGATIVE and the hybrid
+         * would answer nomatch on a matching subject. That is unlike
+         * `lookaround`'s erasure (a one-line superset proof, §5.3 there) and
+         * exactly like `backrefs`' above.
+         *
+         * AND IT IS NOT A LATENT HAZARD TODAY, WHICH IS WHY IT COULD NOT WAIT.
+         * `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `ctx_fail`s
+         * by name (design §4.4a site 25, DECLINE, "unreachable: VM_ONLY, no
+         * prefilter"), and "unreachable" was true only while nothing produced
+         * an `A_CALL`. MEASURED on this branch before this line existed: every
+         * one of `(a)(?1)`, `(?R)`, `(?<n>a)(?&n)` answered `pcrec: internal
+         * error: bad AST node` — a capture-bearing pattern routes to the VM,
+         * the VM asks for its prefilter, and the prefilter build walks a node
+         * it refuses. So the choice was not "ship the optimisation early", it
+         * was "ship a compiler that cannot compile the module's own corpus".
+         * REPORTED: S-SR17 therefore lands in wave B+C rather than wave E, and
+         * wave E's remaining deliverable is the identity gate and SR-8's
+         * stamps, not this predicate.
+         *
+         * THE COST IS MEASURED AND STATED rather than hidden, exactly as the
+         * backrefs paragraph above states its own: 21x-350x on the sparse-
+         * candidate shape a prefilter exists for, over the NON-RECURSIVE half
+         * of the population (§8.3, on the inlined equivalents, 15 pairs
+         * verified equivalent at 420 cells / 0 disagreements before any
+         * timing). §8.3's sound construction — splice an acyclic callee's NFA
+         * fragment, `Sigma*` for a cyclic one — is wave G's, and it is
+         * designed and scheduled rather than waved at. */
+        const bool has_call = pcrec_has_call(root);
+        if (force_on && (has_bref || has_call))
             ctx_fail(cx, why_pos,
                      "-fprefilter cannot be honoured for a pattern containing a "
-                     "backreference: the prefilter is a capture-erased DFA, and "
-                     "erasing a backreference changes the language it answers "
-                     "for (drop -fprefilter)");
+                     "%s: the prefilter is a capture-erased DFA, and "
+                     "erasing a %s changes the language it answers "
+                     "for (drop -fprefilter)",
+                     has_bref ? "backreference" : "subroutine call",
+                     has_bref ? "backreference" : "subroutine call");
         if (force_on && force_off)
             ctx_fail(cx, why_pos,
                      "-fprefilter and -fno-prefilter cannot both be requested");
@@ -570,7 +608,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
                      "compiles to the DFA engine, which carries no separate "
                      "prefilter to force (pass --engine=vm, or drop "
                      "-fprefilter)");
-        fit.prefilter = has_bref ? false
+        fit.prefilter = (has_bref || has_call) ? false
                        : force_on ? true
                        : force_off ? false
                        : (fit.chosen == ENGM_VM) &&

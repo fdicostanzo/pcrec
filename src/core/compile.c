@@ -215,6 +215,25 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * paying for an automaton first. */
     pcrec_select_engine(&cx, root);
 
+    /* [DD-14 wave B+C] THE CALL GRAPH, and its POSITION IS THE DESIGN rather
+     * than a convenience (src/opt/callgraph.c's header, and wave A2's finding
+     * at commit 513de65).
+     *
+     * It is the only writer of `Ast.u.call.body`, and `.body` is a CACHE of
+     * "which subtree is that group's, IN THE TREE THE EMITTER WILL WALK". Two
+     * passes above rebuild nodes rather than mutating them — `pcrec_altcls`
+     * allocates a fresh `A_CAP` over a merged class, and
+     * `pcrec_select_engine`'s free discharge splices an `A_ATOMIC` out — so a
+     * `.body` captured at end of parse (where the design put it) can name a
+     * subtree that is no longer here. Under `CALL_LINKAGE` that emits the
+     * callee REGION from the stale subtree and the LEXICAL occurrence from the
+     * new one: two programs for one group.
+     *
+     * IT RUNS BEFORE THE MACHINE BUILDS AND BEFORE EMISSION, and a call-free
+     * pattern returns from it having allocated one array and walked the tree
+     * once — `cx.callgraph` stays NULL and nothing downstream changes. */
+    pcrec_callgraph_build(&cx, root);
+
     /* The DFA pair is built when the DFA IS the engine, and also when the VM
      * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the
      * prefilter is deliberately off (D44/R21 E-6) and so nothing needs an
