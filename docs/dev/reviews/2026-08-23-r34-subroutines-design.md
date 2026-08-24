@@ -10,7 +10,7 @@ contested claim measured on BOTH sides against libpcre2 10.46 via the
 lane's own `sr_oracle.py` and against `prototype/callproto.c` rebuilt from
 source. ROUND 1 STATUS: findings dispatched to the design lane 2026-08-23
 ~21:2x; dispositions below are the manager's triage, the FIXED column is
-filled in from the lane's round-1 report.
+filled in from the lane's round-1 report (076b4a2, 14 FIXED, 0 disputed; round 1b = C1's findings pending; a VERIFIER round follows). The lane's own additions during the round: ASK 6 (lift of the possessive-rung decline for call-bearing bodies: never / wave-G measured / non-nullable-only), §4.3's transitive marking withdrawn, sabotage table now 25 rows.
 
 ## Triage
 
@@ -22,22 +22,22 @@ filled in from the lane's round-1 report.
 | LENS1-4 | MED | leading-zero absolute calls `(?01)`=group 1, `(?00)`=root — fourth missing family; naive `(?0)`-row wiring miscompiles | ACCEPT — rows, resolver rule for both doorways, ASK 3 note | |
 | LENS1-5 | MED | depth capacity never converted to a user-facing subject size (1024 ≈ 2 KB vs PCRE2's 800 KB) | ACCEPT — §5.6/ASK 2 state default + implied sizes | |
 | LENS1-6 | LOW | §3.4 silent on `\G` / non-zero start inside a callee (measured: composes) | ACCEPT — one row | |
-| LENS2-1 | HIGH | restore set W is capture-slots-only; PENDING and CUT_MARK slots un-restored = lost match / five false matches (two-build prototypes) | ACCEPT — W = every slot the transitive body can write minus 0/1; cells + rows per family; re-price P-5 | |
-| LENS2-2 | HIGH | `A_CALL.body` is a back edge; §4.4's naive descents hang the compiler on `(a(?1))` | ACCEPT — per-site decline vs descend-through-graph; visited-set row | |
-| LENS2-3 | MED | `call_mark` missing from §5.1's listing; field/line counts disagree | ACCEPT | |
-| LENS2-4 | MED | S-SR2's "one added line" is two; one changes no answer (masking) | ACCEPT — anchor call_top; codegen row for call_depth | |
-| LENS2-5 | MED | "exactly two `goto *`" false both ways | ACCEPT — 1 + one per shared callee body | |
-| LENS2-6 | MED | `minw` fixpoint not expressible as a bare arm; gloss undefined for `^(a(?1)?b)$` | ACCEPT (with LENS1-2) | |
-| LENS2-7 | MED | run_state_init / reset_for_next_attempt missing from the ERR_FLOOR/run-state site list | ACCEPT | |
-| LENS2-8 | MED | two wave numbering schemes, contradictory; A2's bar depends on E's gate | ACCEPT — one scheme | |
-| LENS2-9 | MED | arm budget is 27 sites, not "ten files" | ACCEPT — 27-row site table | |
-| LENS2-10 | MED | §5.5's MEASURED cite measured a different pattern | ACCEPT | |
-| LENS2-11 | MED | S-SR9's budget backstop assumption vs frameless rungs (unmeasured) | ACCEPT — per-rung statement; possessive spelling in the detector | |
-| LENS3-1 | HIGH | §0.2 + docs/design/CLAUDE.md invert the size result (CALL is smallest; SPLICE is faster) | ACCEPT | |
-| LENS3-2 | MED | k=0 control silent on CALL's 708-vs-779 baseline | ACCEPT — explain or extend | |
+| LENS2-1 | HIGH | restore set W is capture-slots-only; PENDING and CUT_MARK slots un-restored = lost match / five false matches (two-build prototypes) | ACCEPT — W = every slot the transitive body can write minus 0/1; cells + rows per family; re-price P-5 | aee0cfa (both prototypes re-run: 11/2→13/0; 4/6→10/0; §5.3a/b/c; S-SR6a-e; P-5 re-priced) |
+| LENS2-2 | HIGH | `A_CALL.body` is a back edge; §4.4's naive descents hang the compiler on `(a(?1))` | ACCEPT — per-site decline vs descend-through-graph; visited-set row | 52abcc7 (whole-tree predicates must NOT follow .body — callee is also a lexical node; §4.3 transitive marking WITHDRAWN; S-SR11 = TIMEOUT row) |
+| LENS2-3 | MED | `call_mark` missing from §5.1's listing; field/line counts disagree | ACCEPT | 5ca6693 |
+| LENS2-4 | MED | S-SR2's "one added line" is two; one changes no answer (masking) | ACCEPT — anchor call_top; codegen row for call_depth | 5ca6693 (+S-SR2a codegen row, dies with ASK 1) |
+| LENS2-5 | MED | "exactly two `goto *`" false both ways | ACCEPT — 1 + one per shared callee body | 5ca6693 (measured 1 / 2; relation asserted) |
+| LENS2-6 | MED | `minw` fixpoint not expressible as a bare arm; gloss undefined for `^(a(?1)?b)$` | ACCEPT (with LENS1-2) | 52abcc7 (§4.4b Kleene from ∞; P-12 added: ^(a(?1)b)$ compiles, matches nothing) |
+| LENS2-7 | MED | run_state_init / reset_for_next_attempt missing from the ERR_FLOOR/run-state site list | ACCEPT | 5ca6693 (sites 5a/5b) |
+| LENS2-8 | MED | two wave numbering schemes, contradictory; A2's bar depends on E's gate | ACCEPT — one scheme | 10aeb59 (letters; A2 bar = default-axis byte-diff) |
+| LENS2-9 | MED | arm budget is 27 sites, not "ten files" | ACCEPT — 27-row site table | 52abcc7 (27-row site table, census matches C2) |
+| LENS2-10 | MED | §5.5's MEASURED cite measured a different pattern | ACCEPT | 5ca6693 |
+| LENS2-11 | MED | S-SR9's budget backstop assumption vs frameless rungs (unmeasured) | ACCEPT — per-rung statement; possessive spelling in the detector | 10aeb59 (SHARPER: vm_poss_star has no guard and no charge, emit_vm.c:918-922/:2919; rung admission declines call-bearing bodies; S-SR9a TIMEOUT row; NEW ASK 6) |
+| LENS3-1 | HIGH | §0.2 + docs/design/CLAUDE.md invert the size result (CALL is smallest; SPLICE is faster) | ACCEPT | 6c50429 |
+| LENS3-2 | MED | k=0 control silent on CALL's 708-vs-779 baseline | ACCEPT — explain or extend | 6c50429 (708 vs 779 is a -O2 layout artifact — CALL larger at -O0/-O1/-Os; rulings now rest on slopes 298.6/87.6/80.1 B/site) |
 | LENS3-3 | MED | P11/P13 internal.h citations drift +86 lines under D70 | MANAGER — re-verify at rebase onto post-D70 main | |
 | LENS3-4 | MED | plan.md DD-11 row's walk-up phrasing contradicts the 2026-08-23 ruling | MANAGER — FIXED main 573eca7 | yes |
-| LENS3-5 | LOW | §0.2's 45/4/0 omits the 1 excluded cell | ACCEPT | |
+| LENS3-5 | LOW | §0.2's 45/4/0 omits the 1 excluded cell | ACCEPT | 6c50429 |
 
 Convergences: LENS1-2 = LENS2-6 (two critics, two witnesses, one defect);
 LENS1-3 = LENS2-10. Confirmed by re-measurement (not refuted): the four
