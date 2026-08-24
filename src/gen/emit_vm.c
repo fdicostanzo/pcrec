@@ -8208,9 +8208,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (root_minw >= PCREC_MINW_MAX)
         sb_printf(c,
             "    /* The whole pattern's MINIMUM WIDTH is at the analysis\n"
-            "     * ceiling (%s_VM_ROOT_MINW): no subject this machine can\n"
-            "     * address is long enough, so the answer is NOMATCH before\n"
-            "     * a single frame is pushed. */\n"
+            "     * ceiling (%s_VM_ROOT_MINW). Where the remaining subject\n"
+            "     * cannot hold it the answer is NOMATCH before a single\n"
+            "     * frame is pushed. Reaching the ceiling usually means the\n"
+            "     * language is EMPTY (a recursion with no base case), in\n"
+            "     * which case this fires for every subject; it can also\n"
+            "     * mean the true minimum merely saturated the analysis,\n"
+            "     * and the comparison is exactly right either way. */\n"
             "    if ((unsigned long long)(subject_length - search_from)\n"
             "            < %s_VM_ROOT_MINW) return 0;\n",
             v.up, v.up);
