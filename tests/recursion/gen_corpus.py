@@ -263,12 +263,39 @@ class GU:
 
 
 class PERR:
-    """A block asserting `pcrec` refuses to compile -- either because
-    libpcre2 ALSO refuses (a real syntax error, `kind='pcre2'`) or because
-    pcrec's registry gate is closed / the module has no producer yet
-    (`kind='pcrec'`, checked against build/pcrec directly). `.rxt`'s `perr`
-    only asserts a nonzero exit (docs/testing.md); the message is recorded
-    as a comment for a human reader, never checked by the harness.
+    """A block asserting `pcrec` refuses to compile -- for one of THREE
+    reasons, and the kind names which:
+
+      `kind='pcre2'`       libpcre2 ALSO refuses (a real syntax error). The
+                           generator asserts that it does.
+      `kind='pcrec'`       pcrec's registry gate is closed, or the module has
+                           no producer yet. Checked against build/pcrec.
+      `kind='capability'`  **libpcre2 COMPILES IT AND PCREC WILL NOT** -- a
+                           D26 tier-2 CAPABILITY limit, and the third row of
+                           the same truth table rather than a special case of
+                           either neighbour. [DD-14.LB] added it because the
+                           lookbehind width rule produces exactly this row and
+                           the other two kinds RECORD THE WRONG FACT for it:
+                           `pcre2` would assert a refusal that does not exist,
+                           and `pcrec` would write "MEASURED, build/pcrec ..."
+                           and say nothing at all about the oracle -- turning
+                           the most important sentence about the cell (what
+                           10.46 DOES with it) into something a reader has to
+                           take on trust. It is the shape
+                           `tests/lookaround/gen_corpus.py` already renders one
+                           module over, in that generator's own words.
+
+                           IT REQUIRES `oracle`, a subject, and asserts BOTH
+                           halves: that libpcre2 compiles the pattern (else the
+                           cell is a `pcre2` one) and that pcrec refuses it
+                           (else the limit is gone and the cell must be
+                           rewritten as a live `B`). A capability limit that
+                           quietly stopped being one is exactly the kind of
+                           stale pin `parked=` exists to make loud, and this
+                           kind makes it loud in the generator instead.
+
+    `.rxt`'s `perr` only asserts a nonzero exit (docs/testing.md); the message
+    is recorded as a comment for a human reader, never checked by the harness.
 
     `features`, when given, is used for BOTH the verification call to
     build/pcrec AND the `.rxt` file's own `features` line -- they must be
@@ -282,11 +309,27 @@ class PERR:
     by this lane's own independent features check, fixed by collapsing to
     one field.)"""
 
-    def __init__(self, pat, kind, features=None, note=None):
+    KINDS = ('pcre2', 'pcrec', 'capability')
+
+    def __init__(self, pat, kind, features=None, note=None, oracle=None):
+        if kind not in self.KINDS:
+            raise SystemExit('gen_corpus: PERR(%r): kind %r is not one of %r'
+                             % (pat, kind, self.KINDS))
+        # The `oracle` subject is REQUIRED for a capability limit and FORBIDDEN
+        # otherwise -- GU's `ruling` discipline, for GU's reason: the citation
+        # is what separates a measured claim from an unexplained one, and a
+        # field that is sometimes meaningful is a field a reader gets wrong.
+        if (kind == 'capability') != (oracle is not None):
+            raise SystemExit("gen_corpus: PERR(%r): kind='capability' REQUIRES "
+                             "`oracle` (a subject to record libpcre2's answer "
+                             "on -- 'the oracle accepts this' is not a claim "
+                             "without one), and no other kind may carry it"
+                             % pat)
         self.pat = pat
         self.kind = kind
         self.features = features
         self.note = note
+        self.oracle = oracle
 
 
 def render_m_cells(pat, cells, groups, lines, census):
@@ -337,15 +380,34 @@ def render(block, census):
                                  'libpcre2 compiles it (%r)' % (block.pat, a))
             lines.append('# libpcre2 ALSO refuses to compile this: %s' % a[1])
         else:
-            bad, msg = pcrec_refuses(block.pat, block.features)
-            if not bad:
-                raise SystemExit('gen_corpus: %r marked kind=pcrec but '
-                                 'build/pcrec (main, no producer) COMPILES '
-                                 'it -- the refusal this cell pins does not '
-                                 'exist' % block.pat)
             feat_note = (' under --features %s' % block.features
                         if block.features else ' under std1 (no --features)')
-            lines.append("# MEASURED, build/pcrec off main%s: %s" % (feat_note, msg))
+            if block.kind == 'capability':
+                a = pcre2_answer(block.pat, block.oracle, 0)
+                if a[0] == 'ERR':
+                    raise SystemExit("gen_corpus: %r marked kind=capability "
+                                     "but libpcre2 REFUSES it (%s) -- that is "
+                                     "a kind='pcre2' cell" % (block.pat, a[1]))
+                if a[0] == 'rc':
+                    raise SystemExit("gen_corpus: %r marked kind=capability "
+                                     "gave libpcre2 a give-up on %r (%s); a "
+                                     "capability limit is pinned against an "
+                                     "ANSWER, not a give-up"
+                                     % (block.pat, block.oracle, a[1]))
+                said = ('nomatch' if a[0] == 'n' else '(%d,%d)' % (a[1], a[2]))
+                lines.append("# MEASURED: libpcre2 10.46 ACCEPTS this pattern "
+                             "and answers %s on %r -- pcrec's refusal is a "
+                             "CAPABILITY limit, stated as one (D26 tier 2: "
+                             "which constructs are real is exact, what pcrec "
+                             "builds is a separate statement)"
+                             % (said, block.oracle))
+            bad, msg = pcrec_refuses(block.pat, block.features)
+            if not bad:
+                raise SystemExit('gen_corpus: %r marked kind=%s but '
+                                 'build/pcrec COMPILES it -- the refusal this '
+                                 'cell pins does not exist'
+                                 % (block.pat, block.kind))
+            lines.append("# MEASURED, build/pcrec%s: %s" % (feat_note, msg))
         lines.append('pattern ' + block.pat)
         if block.features:
             lines.append('features ' + block.features)
@@ -1291,43 +1353,133 @@ QUANTIFIED = [
 # ===========================================================================
 # inlookaround.rxt -- SS3.4(d)/(e) and SS3.5's mirror image
 # ===========================================================================
-# [DD-14 wave B+C, code lane] THE TWO CELLS BELOW ARE PARKED, AND THE REASON
-# IS A TIMING GAP THE DESIGN DOES NOT ADDRESS rather than a wrong answer.
-LBWIDTH = (
-    "tests/known_fail/dd14_bc_open.rxt, %s. pcrec REFUSES this "
-    "(\"variable-length lookbehind is not implemented ... this one is "
-    "unbounded\") where 10.46 accepts it -- a tier-2 OVER-rejection, never a "
-    "miscompile. `pcrec_maxw`'s A_CALL arm answers PCREC_W_UNBOUNDED, which "
-    "design SS3.4(d) says is EXACT for a recursive callee and a sound "
-    "over-estimate for any other; tightening it for an ACYCLIC callee needs "
-    "the call graph, and the LOOKBEHIND WIDTH RULE (`la_widths`, "
-    "src/parse/mod_lookaround.c) runs INSIDE THE PARSE HOOK -- where it must, "
-    "to raise its refusal with a pattern offset -- while the graph does not "
-    "exist until every call is resolved at end of parse and every rewriting "
-    "pass has run. So no A_CALL arm of `pcrec_maxw` can make this compile: "
-    "the width is decided before the callee is known. THE FIX IS A DEFERRED "
-    "WIDTH RE-CHECK (the parse hook records the lookbehind instead of "
-    "refusing when its body carries a call; a post-graph pass recomputes and "
-    "refuses), which is a change to a landed module's core and a diagnostic "
-    "offset this wave did not take on.")
+# [DD-14.LB] THE TWO PARKED CELLS ARE UNPARKED, and the two of them went to
+# DIFFERENT PLACES -- which is the finding, not an accident of bookkeeping.
+#
+# Wave B+C parked both as one kind of thing: "pcrec OVER-REJECTS what libpcre2
+# accepts, because of WHEN a pass runs". That was right about cell 1 and wrong
+# about cell 2, and the timing gap was what hid the difference. [DD-14.LB]
+# closed the gap (`pcrec_postresolve`, src/opt/postresolve.c: the parse hook
+# RECORDS a lookbehind whose body carries a call, and a pass after
+# `pcrec_callgraph_build` re-asks module `lookaround`'s own rule at the
+# recorded offset). Cell 1 then COMPILES AND MATCHES and is a live `B` below.
+# Cell 2 is still refused -- and its diagnostic changed from "this one is
+# unbounded" to "this one can match 1..2 characters", at the same offset,
+# which is the whole story in one sentence: **the refusal was never about the
+# call graph. Its lookbehind body is ONE top-level branch of width 1..2** --
+# the alternation lives inside the CALLEE -- so it is `(?<=(a|bc))x` reached
+# through a call, `lookaround_design.md` SS2.5's chartered-not-shipped
+# longest-first step-back loop, already a RULED `perr` in
+# tests/lookaround/refused.rxt. subroutines_design.md SS3.4(d)'s own
+# measurement table says as much about 10.46's side of it ("the
+# variable-length lookbehind 10.43+ allows"). It is a kind='capability' cell
+# now, which is a RULING with a citation rather than an open disagreement.
+#
+# tests/known_fail/dd14_bc_open.rxt is EMPTY of cells as of this wave.
 
 INLOOKAROUND = [
-    ("A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d) -- pcrec's "
-     "own lookbehind subset is fixed-PER-BRANCH, so this composes without "
-     "new machinery: a recursive callee has no bounded width and refuses.", [
-        B(r"^(?:(?<g>ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
-          parked=LBWIDTH % "cell 1", note="fixed width 2."),
-        B(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
-          parked=LBWIDTH % "cell 2",
-          note="widths 1 and 2, the fixed-PER-BRANCH form pcrec ships "
-               "(lookaround_design.md SS2.5)."),
+    ("A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d, and its "
+     "2026-08-24 [DD-14.LB] amendment) -- the width analysis descends into "
+     "`A_CALL` through the call graph's `maxw` memo, and it does so in "
+     "`pcrec_postresolve` because the parse hook runs before any callee is "
+     "bound. Fixed-PER-BRANCH is still the shipped subset: what a call "
+     "changes is WHEN the width is known, never WHICH widths qualify.", [
+        B(r"^(?:(?<g>ab)){0}ab(?<=(?&g))$", [('m', "ab"), ('n', "a"),
+          ('n', "abab")], RCLA + ",named-groups", groups=0,
+          note="THE CELL THE DEFERRED RE-CHECK EXISTS FOR (wave B+C's parked "
+               "cell 1): a callee of fixed width 2, refused as \"unbounded\" "
+               "until the width question was moved past the call graph. The "
+               "two `n` rows are the control that the lookbehind is doing "
+               "work rather than being ignored."),
+        B(r"^(?:(?<g>ab)){0}zab(?<=z(?&g))$", [('m', "zab"), ('n', "ab")],
+          RCLA + ",named-groups", groups=0,
+          note="THE CALL IS NOT ALONE IN ITS BRANCH -- width 1 + 2. A branch "
+               "is a CONCATENATION and `pcrec_maxw` sums it; a re-check that "
+               "only understood a bare call would pass the cell above and "
+               "fail this one."),
+        B(r"^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$",
+          [('m', "cde"), ('n', "cd")], RCLA + ",named-groups", groups=0,
+          note="A TWO-HOP ACYCLIC CHAIN: the lookbehind calls `g`, which "
+               "calls `h`. Width 3 is only reachable by iterating the `maxw` "
+               "fixpoint twice -- a single pass over the graph settles `h` "
+               "and leaves `g` at UNBOUNDED, which would refuse this cell."),
+        B(r"^(?:(?<g>a)){0}(?:(?<h>bc)){0}xbc(?<=(?&g)|(?&h))$",
+          [('m', "xbc"), ('n', "xa"), ('n', "xz")], RCLA + ",named-groups",
+          groups=0,
+          note="FIXED-PER-BRANCH, THROUGH CALLS, WITH THE WIDTHS DIFFERING: "
+               "two top-level branches of widths 1 and 2, each a call. This "
+               "is the form pcrec's subset ships (`(?<=a|bc)x`'s shape), and "
+               "it is the cell wave B+C's parked note MEANT to be describing "
+               "-- unlike cell 2 below, the alternation is at the "
+               "lookbehind body's OWN top level."),
+        B(r"^(?:(?<g>a)){0}(?:(?<h>bc)){0}xa(?<=(?&g)|(?&h))$", [('m', "xa")],
+          RCLA + ",named-groups", groups=0,
+          note="the same pattern shape entered through the OTHER branch, so "
+               "both widths in the table are exercised rather than just the "
+               "first one the emitter tries."),
+        B(r"^(?:(?<g>ab)){0}ac(?<!(?&g))$", [('m', "ac"), ('n', "ab")],
+          RCLA + ",named-groups", groups=0,
+          note="THE NEGATIVE POLARITY, and it is the one that matters most: "
+               "on `(?<!` a width that is too SMALL is a FALSE MATCH rather "
+               "than a lost one (lookaround_design.md SS3.4, sabotage row "
+               "S-LA11), so a `maxw` memo that under-estimated a callee "
+               "would show up here and nowhere else."),
+        B(r"^(?:(?<g>b)){0}ab(?<=a(?=(?&g))b)$", [('m', "ab")],
+          RCLA + ",named-groups", groups=0,
+          note="THE CALL IS INSIDE A NESTED LOOKAHEAD INSIDE THE LOOKBEHIND, "
+               "so it contributes 0 to both widths and the body is fixed "
+               "width 2. The parse hook DEFERS this one anyway "
+               "(`pcrec_has_call` descends into A_LOOK) and the deferred ask "
+               "returns the identical table -- the cell pins that the "
+               "over-deferral is harmless, which is the claim "
+               "src/parse/mod_lookaround.c makes at the deferral site."),
+        PERR(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", 'capability', oracle="ab",
+             features=RCLA + ",named-groups",
+             note="WAVE B+C's PARKED CELL 2, RULED. ONE top-level branch -- "
+                  "an `A_CALL` -- of width 1..2, because the alternation is "
+                  "inside the CALLEE. That is `(?<=(a|bc))x` reached through "
+                  "a call: lookaround_design.md SS2.5 CHARTERS the "
+                  "longest-first step-back loop it needs and does not ship "
+                  "it, and tests/lookaround/refused.rxt pins the call-free "
+                  "twin with this same citation. Note the DIAGNOSTIC below, "
+                  "which is how the two questions were told apart: before "
+                  "[DD-14.LB] pcrec said \"unbounded\" here, a claim about "
+                  "the call graph that was FALSE; it now says \"1..2\", "
+                  "which is a claim about the shipped subset and is true. "
+                  "Letting a body that is exactly one `A_CALL` borrow the "
+                  "callee's top-level branch split was considered and "
+                  "rejected -- it does not generalise (`(?<=x(?&g))` is one "
+                  "branch again) and it would invert SS2.4's MEASURED "
+                  "ordering, since PCRE2 tries a single variable branch "
+                  "step-back LONGEST-FIRST while branches are tried in "
+                  "written order."),
         PERR(r"^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$", 'pcre2',
              features=RCLA + ",named-groups",
              note="a RECURSIVE callee inside a lookbehind has no bounded "
-                  "width -- libpcre2 itself refuses this (err 125), which "
-                  "is the same answer pcrec's fixed-per-branch rule must "
-                  "give once `pcrec_maxw`'s A_CALL arm exists (design "
-                  "SS3.4d: infinity for any callee in a cycle)."),
+                  "width -- libpcre2 itself refuses this (err 125), and "
+                  "pcrec now refuses it from `pcrec_postresolve` AT THE SAME "
+                  "OFFSET (26) with \"this one is unbounded\". The `maxw` "
+                  "fixpoint reaches UNBOUNDED here as a FIXED POINT: the "
+                  "published value saturates `mrl_sat_add` and never leaves "
+                  "the top (design SS3.4d: infinity for any callee in a "
+                  "cycle)."),
+        PERR(r"^(?:(?<g>a(?&h)?b)){0}(?:(?<h>(?&g))){0}aabb(?<=(?&g))$",
+             'pcre2', features=RCLA + ",named-groups",
+             note="MUTUAL recursion, a cycle of length TWO. Refused by both, "
+                  "at the same offset (44). A `maxw` implementation that "
+                  "tested only SELF-recursion -- `target i calls target i` "
+                  "-- would compile this one and emit a back-step for an "
+                  "unbounded body."),
+        PERR(r"^(?:(?<h>a(?&h)?b)){0}(?:(?<g>(?&h)x)){0}abx(?<=(?&g))$",
+             'pcre2', features=RCLA + ",named-groups",
+             note="THE CALLEE IS NOT IN A CYCLE AND STILL HAS NO WIDTH: `g` "
+                  "is acyclic and calls `h`, which is recursive. Refused by "
+                  "both, at the same offset (44). This is the cell that "
+                  "rules out `pcrec_callgraph_reaches(i, i)` as the maxw "
+                  "rule -- `g` is not in a cycle, so a cycle TEST answers "
+                  "\"finite\" here, while the fixpoint's SATURATION "
+                  "propagates the callee's UNBOUNDED into `g` for free. One "
+                  "mechanism instead of two."),
     ]),
     ("A CALL INSIDE A LOOKAHEAD OR AN ATOMIC GROUP IS ORDINARY (design "
      "SS3.4e) -- nothing in this module is special-cased for them.", [

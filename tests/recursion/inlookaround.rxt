@@ -32,20 +32,73 @@
 # D71 (the give-up-code axis, D71.1) and D72 (PCREC_ERR_INTERNAL).
 
 # ====================================================================
-# A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d) -- pcrec's own lookbehind subset is fixed-PER-BRANCH, so this composes without new machinery: a recursive callee has no bounded width and refuses.
+# A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d, and its 2026-08-24 [DD-14.LB] amendment) -- the width analysis descends into `A_CALL` through the call graph's `maxw` memo, and it does so in `pcrec_postresolve` because the parse hook runs before any callee is bound. Fixed-PER-BRANCH is still the shipped subset: what a call changes is WHEN the width is known, never WHICH widths qualify.
 # ====================================================================
 
-# PARKED IN tests/known_fail/ -- NOT A CELL IN THIS FILE.
-# pattern: ^(?:(?<g>ab)){0}ab(?<=(?&g))$
-# tests/known_fail/dd14_bc_open.rxt, cell 1. pcrec REFUSES this ("variable-length lookbehind is not implemented ... this one is unbounded") where 10.46 accepts it -- a tier-2 OVER-rejection, never a miscompile. `pcrec_maxw`'s A_CALL arm answers PCREC_W_UNBOUNDED, which design SS3.4(d) says is EXACT for a recursive callee and a sound over-estimate for any other; tightening it for an ACYCLIC callee needs the call graph, and the LOOKBEHIND WIDTH RULE (`la_widths`, src/parse/mod_lookaround.c) runs INSIDE THE PARSE HOOK -- where it must, to raise its refusal with a pattern offset -- while the graph does not exist until every call is resolved at end of parse and every rewriting pass has run. So no A_CALL arm of `pcrec_maxw` can make this compile: the width is decided before the callee is known. THE FIX IS A DEFERRED WIDTH RE-CHECK (the parse hook records the lookbehind instead of refusing when its body carries a call; a post-graph pass recomputes and refuses), which is a change to a landed module's core and a diagnostic offset this wave did not take on.
+# THE CELL THE DEFERRED RE-CHECK EXISTS FOR (wave B+C's parked cell 1): a callee of fixed width 2, refused as "unbounded" until the width question was moved past the call graph. The two `n` rows are the control that the lookbehind is doing work rather than being ignored.
+pattern ^(?:(?<g>ab)){0}ab(?<=(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+m "ab" 0 2
+n "a"
+n "abab"
 
-# PARKED IN tests/known_fail/ -- NOT A CELL IN THIS FILE.
-# pattern: ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
-# tests/known_fail/dd14_bc_open.rxt, cell 2. pcrec REFUSES this ("variable-length lookbehind is not implemented ... this one is unbounded") where 10.46 accepts it -- a tier-2 OVER-rejection, never a miscompile. `pcrec_maxw`'s A_CALL arm answers PCREC_W_UNBOUNDED, which design SS3.4(d) says is EXACT for a recursive callee and a sound over-estimate for any other; tightening it for an ACYCLIC callee needs the call graph, and the LOOKBEHIND WIDTH RULE (`la_widths`, src/parse/mod_lookaround.c) runs INSIDE THE PARSE HOOK -- where it must, to raise its refusal with a pattern offset -- while the graph does not exist until every call is resolved at end of parse and every rewriting pass has run. So no A_CALL arm of `pcrec_maxw` can make this compile: the width is decided before the callee is known. THE FIX IS A DEFERRED WIDTH RE-CHECK (the parse hook records the lookbehind instead of refusing when its body carries a call; a post-graph pass recomputes and refuses), which is a change to a landed module's core and a diagnostic offset this wave did not take on.
+# THE CALL IS NOT ALONE IN ITS BRANCH -- width 1 + 2. A branch is a CONCATENATION and `pcrec_maxw` sums it; a re-check that only understood a bare call would pass the cell above and fail this one.
+pattern ^(?:(?<g>ab)){0}zab(?<=z(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+m "zab" 0 3
+n "ab"
 
-# a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), which is the same answer pcrec's fixed-per-branch rule must give once `pcrec_maxw`'s A_CALL arm exists (design SS3.4d: infinity for any callee in a cycle).
+# A TWO-HOP ACYCLIC CHAIN: the lookbehind calls `g`, which calls `h`. Width 3 is only reachable by iterating the `maxw` fixpoint twice -- a single pass over the graph settles `h` and leaves `g` at UNBOUNDED, which would refuse this cell.
+pattern ^(?:(?<h>cd)){0}(?:(?<g>(?&h)e)){0}cde(?<=(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+m "cde" 0 3
+n "cd"
+
+# FIXED-PER-BRANCH, THROUGH CALLS, WITH THE WIDTHS DIFFERING: two top-level branches of widths 1 and 2, each a call. This is the form pcrec's subset ships (`(?<=a|bc)x`'s shape), and it is the cell wave B+C's parked note MEANT to be describing -- unlike cell 2 below, the alternation is at the lookbehind body's OWN top level.
+pattern ^(?:(?<g>a)){0}(?:(?<h>bc)){0}xbc(?<=(?&g)|(?&h))$
+features recursion,lookaround,atomic-groups,named-groups
+m "xbc" 0 3
+n "xa"
+n "xz"
+
+# the same pattern shape entered through the OTHER branch, so both widths in the table are exercised rather than just the first one the emitter tries.
+pattern ^(?:(?<g>a)){0}(?:(?<h>bc)){0}xa(?<=(?&g)|(?&h))$
+features recursion,lookaround,atomic-groups,named-groups
+m "xa" 0 2
+
+# THE NEGATIVE POLARITY, and it is the one that matters most: on `(?<!` a width that is too SMALL is a FALSE MATCH rather than a lost one (lookaround_design.md SS3.4, sabotage row S-LA11), so a `maxw` memo that under-estimated a callee would show up here and nowhere else.
+pattern ^(?:(?<g>ab)){0}ac(?<!(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+m "ac" 0 2
+n "ab"
+
+# THE CALL IS INSIDE A NESTED LOOKAHEAD INSIDE THE LOOKBEHIND, so it contributes 0 to both widths and the body is fixed width 2. The parse hook DEFERS this one anyway (`pcrec_has_call` descends into A_LOOK) and the deferred ask returns the identical table -- the cell pins that the over-deferral is harmless, which is the claim src/parse/mod_lookaround.c makes at the deferral site.
+pattern ^(?:(?<g>b)){0}ab(?<=a(?=(?&g))b)$
+features recursion,lookaround,atomic-groups,named-groups
+m "ab" 0 2
+
+# WAVE B+C's PARKED CELL 2, RULED. ONE top-level branch -- an `A_CALL` -- of width 1..2, because the alternation is inside the CALLEE. That is `(?<=(a|bc))x` reached through a call: lookaround_design.md SS2.5 CHARTERS the longest-first step-back loop it needs and does not ship it, and tests/lookaround/refused.rxt pins the call-free twin with this same citation. Note the DIAGNOSTIC below, which is how the two questions were told apart: before [DD-14.LB] pcrec said "unbounded" here, a claim about the call graph that was FALSE; it now says "1..2", which is a claim about the shipped subset and is true. Letting a body that is exactly one `A_CALL` borrow the callee's top-level branch split was considered and rejected -- it does not generalise (`(?<=x(?&g))` is one branch again) and it would invert SS2.4's MEASURED ordering, since PCRE2 tries a single variable branch step-back LONGEST-FIRST while branches are tried in written order.
+# MEASURED: libpcre2 10.46 ACCEPTS this pattern and answers (0,2) on 'ab' -- pcrec's refusal is a CAPABILITY limit, stated as one (D26 tier 2: which constructs are real is exact, what pcrec builds is a separate statement)
+# MEASURED, build/pcrec under --features recursion,lookaround,atomic-groups,named-groups: pcrec: variable-length lookbehind is not implemented: every alternative of a lookbehind must have a fixed length (this one can match 1..2 characters) (pattern offset 20)
+pattern ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+perr
+
+# a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), and pcrec now refuses it from `pcrec_postresolve` AT THE SAME OFFSET (26) with "this one is unbounded". The `maxw` fixpoint reaches UNBOUNDED here as a FIXED POINT: the published value saturates `mrl_sat_add` and never leaves the top (design SS3.4d: infinity for any callee in a cycle).
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 26: length of lookbehind assertion is not limited
 pattern ^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+perr
+
+# MUTUAL recursion, a cycle of length TWO. Refused by both, at the same offset (44). A `maxw` implementation that tested only SELF-recursion -- `target i calls target i` -- would compile this one and emit a back-step for an unbounded body.
+# libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 44: length of lookbehind assertion is not limited
+pattern ^(?:(?<g>a(?&h)?b)){0}(?:(?<h>(?&g))){0}aabb(?<=(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
+perr
+
+# THE CALLEE IS NOT IN A CYCLE AND STILL HAS NO WIDTH: `g` is acyclic and calls `h`, which is recursive. Refused by both, at the same offset (44). This is the cell that rules out `pcrec_callgraph_reaches(i, i)` as the maxw rule -- `g` is not in a cycle, so a cycle TEST answers "finite" here, while the fixpoint's SATURATION propagates the callee's UNBOUNDED into `g` for free. One mechanism instead of two.
+# libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 44: length of lookbehind assertion is not limited
+pattern ^(?:(?<h>a(?&h)?b)){0}(?:(?<g>(?&h)x)){0}abx(?<=(?&g))$
 features recursion,lookaround,atomic-groups,named-groups
 perr
 
