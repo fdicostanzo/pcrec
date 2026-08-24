@@ -5817,7 +5817,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * shapes carry a LIVE "prefilter-window" ceiling AND a window end strictly
      * below the true match's end. The witness above is in
      * tests/lookaround/prefilter.rxt by name, and before this conjunct landed
-     * pcrec answered NOMATCH on all three of its subjects.
+     * pcrec answered NOMATCH on every one of that block's matching subjects.
      *
      * THE FLAT PREDICATE IS DELIBERATE. §5.4 shows the hazard needs a
      * lookaround inside an ALTERNATION, so a narrower predicate could ask for
