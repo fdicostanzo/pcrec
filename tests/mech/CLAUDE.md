@@ -1494,3 +1494,72 @@ were produced side by side from the same real log (2026-08-24):
 
 `laexpand` is the second arm here that can decline, so the verdict suffix now
 NAMES the arms that skipped rather than assuming `pc3`.
+
+## [DD-14 wave B+C] S143-S166 + S168, and the SEVEN ROWS THAT CERTIFY NOTHING
+
+The wave that makes subroutine calls compile and match added 26 rows (S143-S166,
+S168; S102 was RE-HOMED, see below). Final verdicts, all measured at the wave's
+close on the branch's own tree:
+
+| verdict | rows |
+|---|---|
+| **DETECTED (19)** | S102, S143, S144, S145, S146, S147, S148, S149, S154, S155, S156, S158, S159, S161, S162, S163, S165, S166, S168 |
+| **UNDETECTED (7)** | S150, S151, S152, S153, S157, S160, S164 |
+
+**AN UNDETECTED ROW HERE IS NOT A REGRESSED GUARD.** This directory's standing
+reading of `UNDETECTED` — "a guard regressed and is the thing to go fix" — is
+right for a row whose population is known adequate. All seven of these are the
+OTHER case: the sabotage was verified applied, the shipped behaviour is correct,
+and the corpus contains no subject on which the removed thing is OBSERVABLE.
+Each row carries its measurement and what is owed in its own `SAB_DOC_FIGURE`,
+and each stays in the matrix so a later wave's cell can flip it. In one line each:
+
+- **S150** (`W` drops the cut-mark family) — design §5.3b's axis-C was measured
+  on a PROTOTYPE with ONE emitted copy of the atomic group. Under CALL_LINKAGE
+  the lexical occurrence and the callee region are separate code with separate
+  mark slots, so the clobber needs two REGION activations and an outer cut whose
+  truncation matters — and the mis-read depth is LARGER, which discards fewer
+  frames rather than resurrecting a match. The premise moved, not the guard.
+- **S151 / S152** (`W` drops the empty-guard / span-counter families) — the wave
+  ADDED cells that allocate both families in a recursive callee re-entered at two
+  depths (the artifact legends name `RX_SLOT_EMPTY_GUARD0` and
+  `RX_SLOT_SPAN_LOW0`), and the answers still do not move. So they are not
+  undetected for want of a population. §9.3 told the implementation wave to
+  "replace [the prediction] with the measured cell or DROP the row"; the wave
+  replaced the population, could not produce the measurement, and kept the rows.
+- **S153** (`W` drops the lookaround families) — the family §5.3b could not
+  measure at all, because [M6.6.2] had not landed. Now measured on a lookahead
+  inside a recursive callee live at two depths: no answer moves. P-12 P-2's
+  withdrawal stands on the general argument, and the shipped `W` includes them.
+- **S157** (possessify stops declining a call) — **the row's own target was
+  wrong and the finding is which arm actually protects the corpus.** `(?&g)*+`
+  never reaches `possessify.c`: parse.c desugars the possessive SUFFIX to
+  `A_ATOMIC(A_REP(...))` and `vm_lifts` routes the cut, declining on
+  `vm_nullable(r->l)` — the call-graph fixpoint, which is **S156's** arm and IS
+  detected. possessify's decline governs AUTOMATIC possessification only, whose
+  hang shape this corpus does not contain.
+- **S160** (revdet stops declining a call) — `rd_shape` is one of FIVE
+  independent declines (`rd_reverse`'s own `ctx_fail`, `rd_alt_disjoint`,
+  `vm_revdet_fits`), and no corpus quantifier body carrying a call is otherwise
+  revdet-eligible: the rung wants a unique-iteration body, which a call's
+  all-bytes FIRST set denies.
+- **S164** (region slots uncounted) — the sabotage does not produce the
+  out-of-bounds write the row predicts on this population; it produces a SLOT
+  COLLISION (`RX_NSLOTS` 6 -> 5, a resume depth and a publish position sharing
+  cell 4), and no cell reads both on one answer-changing path. The `asan` suite
+  §9.3 assigns DOES NOT EXIST as a mech arm, so the memory-safety half was never
+  scored either.
+
+**FOUR ROWS WERE DEAD ON ARRIVAL AND THE MATRIX IS WHY WE KNOW.** S147 cleared
+the complement of `W` instead of `W` (which is exactly what the callee writes,
+so it changed nothing); S148's `k=2` bound is an assertion nothing sets, so the
+row had to SEED it; S162 read `v->fmin`, which is already 0 at `vm_region`, so
+it needed a two-site static to capture a real caller's follow; S159 aimed at
+`pcrec_has_atomic`, which `mrl_win` short-circuits out of reach — re-pointed at
+`pcrec_bref_mark` it went from UNDETECTED to 106 corpus failures. All four are
+the same class: **a sabotage that removes something already unreachable proves
+nothing about the guard it names**, and only running it says which one you wrote.
+
+**S102 WAS RE-HOMED.** Its anchor sat in `select_engine.c` on a line this wave
+rewrote (`fit.prefilter` now also refuses a call-bearing pattern). It is the
+backref twin of the new **S165**, and both are DETECTED.
