@@ -10,18 +10,18 @@ contested claim measured on BOTH sides against libpcre2 10.46 via the
 lane's own `sr_oracle.py` and against `prototype/callproto.c` rebuilt from
 source. ROUND 1 STATUS: findings dispatched to the design lane 2026-08-23
 ~21:2x; dispositions below are the manager's triage, the FIXED column is
-filled in from the lane's round-1 report (076b4a2, 14 FIXED, 0 disputed; round 1b = C1's findings pending; a VERIFIER round follows). The lane's own additions during the round: ASK 6 (lift of the possessive-rung decline for call-bearing bodies: never / wave-G measured / non-nullable-only), §4.3's transitive marking withdrawn, sabotage table now 25 rows.
+filled in from the lane's round-1 report (076b4a2, 14 FIXED, 0 disputed; round 1b (C1) complete at d1580a8: 6 FIXED, 0 disputed — 20/20 fixed, 26 sabotage rows, doc 2,764 lines; VERIFIER round launched ~21:4x). The lane's own additions during the round: ASK 6 (lift of the possessive-rung decline for call-bearing bodies: never / wave-G measured / non-nullable-only), §4.3's transitive marking withdrawn, sabotage table now 25 rows.
 
 ## Triage
 
 | id | sev | claim | disposition | fixed |
 |---|---|---|---|---|
-| LENS1-1 | HIGH | a call whose TARGET is inside a lookaround/atomic group is a missing construct family; emit-once-and-jump miscompiles three measured cells | ACCEPT — callee body is its own region; SPLICE-lexical + CALL-linkage mandatory for wrapped targets; §6.4 re-argued for nested groups | |
-| LENS1-2 | HIGH | `minw` gloss "min over non-recursive branches" miscompiles under indirect recursion (`"xb"` witness) | ACCEPT — least fixpoint over the SCC-condensed call graph (= LENS2-6) | |
-| LENS1-3 | MED | §5.5 cites `a\|ab` which cannot match "xyxy" | ACCEPT (= LENS2-10) | |
-| LENS1-4 | MED | leading-zero absolute calls `(?01)`=group 1, `(?00)`=root — fourth missing family; naive `(?0)`-row wiring miscompiles | ACCEPT — rows, resolver rule for both doorways, ASK 3 note | |
-| LENS1-5 | MED | depth capacity never converted to a user-facing subject size (1024 ≈ 2 KB vs PCRE2's 800 KB) | ACCEPT — §5.6/ASK 2 state default + implied sizes | |
-| LENS1-6 | LOW | §3.4 silent on `\G` / non-zero start inside a callee (measured: composes) | ACCEPT — one row | |
+| LENS1-1 | HIGH | a call whose TARGET is inside a lookaround/atomic group is a missing construct family; emit-once-and-jump miscompiles three measured cells | ACCEPT — callee body is its own region; SPLICE-lexical + CALL-linkage mandatory for wrapped targets; §6.4 re-argued for nested groups | a2a5219 (§3.5 new family; §5.4 body-is-its-own-region; split MANDATORY for wrapped targets, moved to B+C; S-SR18) |
+| LENS1-2 | HIGH | `minw` gloss "min over non-recursive branches" miscompiles under indirect recursion (`"xb"` witness) | ACCEPT — least fixpoint over the SCC-condensed call graph (= LENS2-6) | 278f6e3 (witness + P-12 control = the spec; mrl.rxt; P-11a) |
+| LENS1-3 | MED | §5.5 cites `a\|ab` which cannot match "xyxy" | ACCEPT (= LENS2-10) | 5ca6693 |
+| LENS1-4 | MED | leading-zero absolute calls `(?01)`=group 1, `(?00)`=root — fourth missing family; naive `(?0)`-row wiring miscompiles | ACCEPT — rows, resolver rule for both doorways, ASK 3 note | 278f6e3 (§2.4a; relative zero = ERR 126 measured; +3 rows; ASK 3 re-opened for the 0 doorway; leadingzero.rxt) |
+| LENS1-5 | MED | depth capacity never converted to a user-facing subject size (1024 ≈ 2 KB vs PCRE2's 800 KB) | ACCEPT — §5.6/ASK 2 state default + implied sizes | 1e7e65e (2 KB vs 800 KB in 0.24 s; runaway −52 quadratic 2.58 s at 20k vs constant) |
+| LENS1-6 | LOW | §3.4 silent on `\G` / non-zero start inside a callee (measured: composes) | ACCEPT — one row | 1e7e65e (§3.4(e2)) |
 | LENS2-1 | HIGH | restore set W is capture-slots-only; PENDING and CUT_MARK slots un-restored = lost match / five false matches (two-build prototypes) | ACCEPT — W = every slot the transitive body can write minus 0/1; cells + rows per family; re-price P-5 | aee0cfa (both prototypes re-run: 11/2→13/0; 4/6→10/0; §5.3a/b/c; S-SR6a-e; P-5 re-priced) |
 | LENS2-2 | HIGH | `A_CALL.body` is a back edge; §4.4's naive descents hang the compiler on `(a(?1))` | ACCEPT — per-site decline vs descend-through-graph; visited-set row | 52abcc7 (whole-tree predicates must NOT follow .body — callee is also a lexical node; §4.3 transitive marking WITHDRAWN; S-SR11 = TIMEOUT row) |
 | LENS2-3 | MED | `call_mark` missing from §5.1's listing; field/line counts disagree | ACCEPT | 5ca6693 |
