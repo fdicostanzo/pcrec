@@ -147,12 +147,28 @@ overrode this**: `PCREC_ERR_RECURSE` is reserved and `ERR_FLOOR` moves
 default artifact — it is a diagnostic-generation-axis-only build (`--trace`'s
 shape), emitted only when asked for. **The DEFAULT artifact's give-up for a
 deep or runaway call is `PCREC_ERR_FRAMES`.** Every `gu` cell in
-`leftrec.rxt`/`quantified.rxt` is therefore written `gu frames`, with a
-comment recording that the diagnostic-axis variant (once it exists) would
-instead read `gu recurse` on the same cell. If Frank revisits D71.1 (it is
-explicitly marked revisitable — "a second diagnostic axis wants the [V-H]
-namespace"), only that comment needs to flip, not the cell's pattern or
-subject.
+`leftrec.rxt`/`quantified.rxt` is therefore written `gu frames "<subject>"`,
+with a comment recording that the diagnostic-axis variant (once it exists)
+would instead read `gu recurse "<subject>"` on the same cell. If Frank
+revisits D71.1 (it is explicitly marked revisitable — "a second diagnostic
+axis wants the [V-H] namespace"), only that comment needs to flip, not the
+cell's pattern or subject.
+
+**THE DIRECTIVE TAKES A SUBJECT, AND AN EARLIER DRAFT OF THIS CORPUS DID
+NOT GIVE IT ONE.** The landed wave A grammar (measured directly against
+`worktrees/srA`'s `tests/harness/run.sh`, since this worktree's own harness
+predates wave A's merge): `^gu[[:space:]]+(steps|frames|work|recurse)
+[[:space:]]+"(.*)"[[:space:]]*$` — no bare `gu <code>` form, no `gus`
+startpos variant. The manager's review caught this before merge (a bare
+`gu frames` line is a hard parse error under the real grammar, same
+`unparseable .rxt line` failure this file's own `GU` class docstring now
+warns against); fixed in `gen_corpus.py` (the `GU.subj` field, already
+carried for the oracle cross-check comment, is now ALSO what gets written
+into the directive line) rather than by hand-editing the four `.rxt` lines.
+Each subject is chosen for REACHABILITY, stated in the cell's own comment,
+and cross-checked against the design's own archived measurement where one
+exists (`docs/design/subroutines_measurements/out/leftrec.txt` L2/L3/L6 use
+the identical subjects for the identical shapes).
 
 ## What could not be oracled
 
@@ -161,7 +177,8 @@ subject.
   no oracle to check it against. Each `GU` block instead records what
   libpcre2 itself does on the *same* cell as a comment (almost always its
   own guard, `rc -52`), purely as a shape cross-check, never as the
-  assertion.
+  assertion. (What COULD be checked, and was: the directive's own GRAMMAR —
+  see "The `gu frames`-vs-`recurse` note" above.)
 - **`gated.rxt`'s P2 cell** (`(?&n)(?<n>a)` under `--features recursion`
   alone). Design §9.3 predicts this should refuse naming `named-groups`
   once the call itself parses (the declaration `(?<n>a)` is what needs that
@@ -187,9 +204,22 @@ subject.
 
 ## Current harness-run state (as of this corpus's landing)
 
-`bash tests/harness/run.sh tests/recursion`: **20 cases pass, 273 fail**
-(289 ordinary cases + 4 `gu`-directive hard errors = 293 total). Fully
-reconciled, not just tallied:
+**Two different harnesses give two different results, and both are
+reported because they answer different questions.**
+
+`bash tests/harness/run.sh tests/recursion` **in THIS worktree** (branched
+off `main` at `05d75a9`, before wave A's `gu` directive merged): **20 cases
+pass, 273 fail** (289 ordinary cases + 4 `gu`-directive hard errors = 293
+total) — the 4 `gu` lines report `unparseable .rxt line (hard error)`
+because this worktree's own `tests/harness/run.sh` has no `gu` parser at
+all yet. This is the honest state of THIS worktree today, not a defect in
+the four cells (see below).
+
+`bash tests/harness/run.sh <this corpus>` run **against `worktrees/srA`'s
+`tests/harness/run.sh`** (wave A's own worktree, read-only — no file in
+`srA` was touched) — the REAL grammar this corpus's `gu` lines are written
+against: **20 cases pass, 273 fail, and ALL FOUR `gu` LINES PARSE**. Fully
+reconciled:
 
 - **20 passes** = 15 `perr` blocks (all genuinely refuse under today's
   built `build/pcrec`, verified live by the generator itself) + 3 cases
@@ -198,21 +228,27 @@ reconciled, not just tallied:
   `inlookaround.rxt`'s W3 INLINE control (`^(?>(a|ab))z(?:a|ab)c$`, which
   needs only the already-shipped `atomic-groups` module and deliberately
   carries no call construct at all).
-- **4 FORMAT failures**, all `gu frames` lines reported `unparseable .rxt
-  line (hard error)` — the wave A `gu` directive (design §10.3) has not
-  merged into this worktree (this worktree branched off `main` at
-  `05d75a9`; wave A landed in a separate lane, `lane/srA`). **A known,
-  reported gap, not a corpus defect** — once wave A merges, these 4 blocks
-  are expected to parse and then (correctly) still fail to compile, same as
-  every other block, until wave B+C lands.
-- **269 ordinary case failures** = every remaining `m`/`n`/`g` case,
-  reporting `module 'recursion' is enabled but ... is not implemented yet`
-  (113 distinct pattern-compile failures) — the correct, expected state per
+- **0 FORMAT failures.** Every `gu frames "<subject>"` line now parses
+  cleanly under the real grammar and is scored as an ordinary pattern-
+  compile failure instead (`module 'recursion' is enabled but ... is not
+  implemented yet`) — exactly like every other block, because the module
+  still has no producer. Verified directly: `worktrees/srA`'s run against
+  `leftrec.rxt:42/49/56` and `quantified.rxt:140` all report
+  `pattern '...' failed to compile: ... is enabled but ... is not
+  implemented yet`, not `unparseable`.
+- **273 case failures** = every remaining `m`/`n`/`g` case (113 distinct
+  pattern-compile failures) — the correct, expected state per
   `docs/testing.md`'s "expected-unsupported" policy. Zero `requires module
   'recursion'` (std1-closed) refusals appear among the failures, because
   every real corpus block deliberately declares `features recursion` (or
   more) — the closed-gate wording is exercised only by `refused.rxt`'s and
   `gated.rxt`'s own `perr` cells, which pass.
+
+**In THIS worktree, until wave A merges here too**, the run against the
+LOCAL `tests/harness/run.sh` will keep showing the 4-format-failure result
+above — that is expected and will resolve itself the moment wave A lands on
+this branch's ancestry (or this branch rebases onto it), with no further
+edit to this corpus needed.
 
 ## Checks run
 
@@ -236,4 +272,13 @@ reconciled, not just tallied:
   `libpcre2-8.so.0` (own `CDLL` load, own struct/argtypes, own `.rxt`
   parser and escape decoder) — zero code shared with `gen_corpus.py` or
   `sr_oracle.py`. 25/25 agreed.
-- **Harness parse run**: see "Current harness-run state" above.
+- **Harness parse run**: see "Current harness-run state" above — run both
+  against this worktree's own harness (pre-wave-A) and, read-only, against
+  `worktrees/srA`'s (wave A's real `gu` grammar), because only the second
+  can actually validate the `gu` cells.
+- **`gu` grammar conformance**: caught by the manager's review before
+  merge, not by this lane's own checks — the initial `gu frames` cells
+  (design §10.3's directive, described only in prose at the time this
+  corpus was first written) omitted the REQUIRED subject the landed wave A
+  grammar takes. Fixed in `gen_corpus.py` (see the `GU` class's own
+  docstring) and re-verified against `worktrees/srA`'s real parser above.

@@ -384,14 +384,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `(?(DEFINE)...)` never appears in this corpus (it stays module
   `conditionals`'s doorway until D71 decision 4's registry row lands, wave
   F, not started); every callee-only body uses the oracle-verified
-  `{0}`-callee idiom instead. Carries the wave A `gu <code>` give-up
-  directive (design §10.3) for `leftrec.rxt`'s and `quantified.rxt`'s
-  unconditional-recursion cells — unparseable in THIS worktree today since
-  wave A landed in a separate lane, a reported and reconciled gap, not a
-  corpus defect. See its own CLAUDE.md for the full file-by-file breakdown,
-  the `gu frames`-vs-`recurse` note (D71.1), what could not be oracled (P2's
-  masking cell, the `--no-captures` axis), and the reconciled harness-run
-  state.
+  `{0}`-callee idiom instead. Carries the wave A `gu <code> "<subject>"`
+  give-up directive (design §10.3) for `leftrec.rxt`'s and
+  `quantified.rxt`'s unconditional-recursion cells — the REQUIRED subject
+  was missing from an earlier draft (caught in review before merge) and is
+  now verified, read-only, against the real grammar in `worktrees/srA`
+  (this worktree's own `tests/harness/run.sh` predates wave A's merge, so
+  the four `gu` lines still show as `unparseable` locally — a reported and
+  reconciled gap, not a corpus defect, that resolves itself once wave A
+  lands on this branch's ancestry). See its own CLAUDE.md for the full
+  file-by-file breakdown, the `gu frames`-vs-`recurse` note (D71.1), what
+  could not be oracled (P2's masking cell, the `--no-captures` axis), and
+  the reconciled harness-run state (both against this worktree and against
+  `srA`'s real parser).
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is
