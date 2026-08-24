@@ -55,7 +55,7 @@
  * `(?=(?:(?=\K)))x` — the three an immediate-children check would miss — and
  * its four COMPILING cells (`(?=a)\Kb`, `a(?=b)\Kc`, `(?<=a)\Kb`, `a\Kb`) are
  * what a check latching on "a lookaround was seen" would wrongly break. Both
- * sets are `tests/lookaround/refused.rxt`'s and sabotage row S127's.
+ * sets are `tests/lookaround/refused.rxt`'s and sabotage row S128's.
  *
  * WHAT THIS FILE DELIBERATELY DOES NOT DO. It writes `widths = NULL` and
  * `nbranch = 0`: the width TABLE is the LOOKBEHIND's (§2.5, §3.1(c)) and wave

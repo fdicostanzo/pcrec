@@ -31,7 +31,7 @@
 # lookaround consumes nothing on every path, so `vm_nullable` MUST answer
 # true for it or the star loses its empty-iteration guard. The failure is NOT
 # a hang: every VM artifact carries a step budget, so the lost guard BURNS it
-# and returns PCREC_ERR_STEPS. Sabotage row S125, whose detector has to
+# and returns PCREC_ERR_STEPS. Sabotage row S127, whose detector has to
 # notice an ERROR return.
 pattern ^(?=a)*a$
 features lookaround

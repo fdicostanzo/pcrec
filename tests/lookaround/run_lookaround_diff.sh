@@ -19,7 +19,7 @@
 #       `(?*(a|ab))\1$` differ in exactly one thing — whether the assertion
 #       commits to the body's first success — and design §2.2 measures that on
 #       "abab" as NOMATCH vs (2,4). A compiler that emitted the cut for both
-#       (sabotage S127) or for neither (S122) answers the two IDENTICALLY, so
+#       (sabotage S131) or for neither (S122) answers the two IDENTICALLY, so
 #       the section asserts an EXACT number of disagreeing cells as well as
 #       agreement with libpcre2 on each side. An arm that only checked
 #       agreement would go green on both sabotages.
@@ -261,7 +261,7 @@ if [ "$na" -gt 0 ] && [ "$na" -eq "$nb" ]; then
     # which is the DIRECTION the discriminator has to have. They are the
     # (subject, startpos) pairs on which the body has a SECOND success that
     # `\1$` can use: "ab"@0, "aab"@0-1, "abab"@0-2, "aaab"@0-2, "aaaab"@0-3.
-    # A compiler that cut BOTH spellings (S127) or NEITHER (S122) answers the
+    # A compiler that cut BOTH spellings (S131) or NEITHER (S122) answers the
     # two identically and scores 0 here.
     if [ "$ndis" -eq 13 ]; then
         ok "§2 the atomicity discriminator: both forms agree with libpcre2 over $na cells each, and they DISAGREE WITH EACH OTHER on exactly $ndis — the cut is emitted for \`(?=\` and not for \`(?*\`, which is the whole difference between the two families (§2.2)"

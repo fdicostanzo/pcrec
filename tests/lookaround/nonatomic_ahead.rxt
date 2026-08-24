@@ -30,7 +30,7 @@
 # §2.2's ATOMICITY DISCRIMINATOR, the NON-ATOMIC half, and the cell that
 # fixes `(?*` as a construct rather than a spelling. On "abab" it is (2,4)
 # where `(?=(a|ab))\1$` -- lookahead.rxt's own cell -- is NOMATCH: the body
-# RETRIES, finds "ab", and \1 ends the subject. Sabotage row S127 always
+# RETRIES, finds "ab", and \1 ends the subject. Sabotage row S131 always
 # emits the cut and this cell goes red.
 # python DIVERGES here, measured rather than assumed: 'abab' @0 pcre2=('m',
 # 2, 4, (2, 4)) python=('ERR', 'unknown extension ?* at position 1') (2 cells

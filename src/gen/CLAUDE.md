@@ -544,7 +544,7 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     the scoping. Measured on the landed build: `(?:(a+)b)` prunes at 1 and
     `(?:(a+)b)a+b` at 3, while `(?=(a+)b)` and `(?=(a+)b)a+b` BOTH prune at 1.
     The negative form is where an unscoped body is a FALSE MATCH rather than
-    a missed one; sabotage row S128 is its detector and its anchor has to
+    a missed one; sabotage row S132 is its detector and its anchor has to
     exceed the two-line idiom, because `vm_atomic` carries the same two lines.
 
   **TWO NEW SLOT FAMILIES, `SLOT_LOOK_MARK<n>` and `SLOT_LOOK_POS<n>`,

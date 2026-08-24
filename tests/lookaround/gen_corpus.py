@@ -89,12 +89,12 @@ LOOKAHEAD = [
  cell("(?=(a+)b)a+b", LA, [("aab", 0), ("aaab", 0), ("ab", 0)],
       "§3.2.1's ROW 1, BY NAME. The body and the follow are THE SAME BYTES, "
       "so an unscoped `v->fmin` bounds the body at 1+2=3 and this cell "
-      "becomes a MISSED MATCH. Sabotage row S128."),
+      "becomes a MISSED MATCH. Sabotage row S132."),
  cell("(?!(a+)b)a+b", LA, [("aab", 0), ("aac", 0)],
       "§3.2.1's ROW 2, BY NAME, AND IT IS THE DANGEROUS ONE. An unsound "
       "prune inside a NEGATIVE assertion prunes the body to FAIL, which "
       "makes the assertion HOLD -- a FALSE MATCH, not a missed one. This "
-      "cell goes from nomatch to (0,3) under S128."),
+      "cell goes from nomatch to (0,3) under S132."),
  cell("(?=(a|ab))a", LA, [("abab", 0), ("ab", 0)],
       "The atomicity DISCRIMINATOR's body without the backreference; the "
       "discriminating cell itself needs `backrefs` and is below."),
@@ -127,6 +127,17 @@ LOOKAHEAD = [
  cell("(?=a)(?=ab)abc", LA, [("abc", 0), ("acb", 0)],
       "TWO assertions in sequence at the same position: independent slots, "
       "independent marks, and both restores must land on the same byte."),
+ cell(r"(?=a)\Kb", "assertions," + LA, [("ab", 0), ("b", 0)],
+      "§2.7's FOUR COMPILING CELLS, the half a too-broad `\\K` check breaks. "
+      "The refusal is about `\\K` INSIDE the assertion; once the assertion "
+      "has closed, `\\K` is the ordinary construct module `assertions` "
+      "already ships. A check that latched on \"a lookaround was seen\" "
+      "would wrongly refuse these, so sabotage row S128's prediction names "
+      "BOTH sets and the row cannot go green by being too broad."),
+ cell(r"a(?=b)\Kc", "assertions," + LA, [("abc", 0), ("abd", 0)], None),
+ cell(r"a\Kb", "assertions," + LA, [("ab", 0)],
+      "...and the control with no lookaround at all, which must be untouched "
+      "by anything this module does."),
  cell("(?=(?:aa|a)b)a+b", LA, [("aab", 0), ("ab", 0)],
       "A body whose iteration can end in TWO places, which is the shape "
       "atomic_groups_design.md had to rebuild its own measurement around."),
@@ -183,7 +194,7 @@ QUANTIFIED = [
       "answer true for it or the star loses its empty-iteration guard. The "
       "failure is NOT a hang: every VM artifact carries a step budget, so "
       "the lost guard BURNS it and returns PCREC_ERR_STEPS. Sabotage row "
-      "S125, whose detector has to notice an ERROR return."),
+      "S127, whose detector has to notice an ERROR return."),
  cell("^(?:(?=a))*a$", LA, [("a", 0)], "The same, one group deeper."),
  cell("^(?:(?=a)|b)*a$", LA, [("a", 0), ("ba", 0)],
       "The same with a CONSUMING alternative beside the zero-width one."),
@@ -226,7 +237,7 @@ NONATOMIC = [
       "that fixes `(?*` as a construct rather than a spelling. On \"abab\" "
       "it is (2,4) where `(?=(a|ab))\\1$` -- lookahead.rxt's own cell -- is "
       "NOMATCH: the body RETRIES, finds \"ab\", and \\1 ends the subject. "
-      "Sabotage row S127 always emits the cut and this cell goes red."),
+      "Sabotage row S131 always emits the cut and this cell goes red."),
  cell("(?*a)b", LA, [("ab", 0), ("bb", 0)],
       "The plain shape: same answer as `(?=a)b`, which is the CONTROL that "
       "the two differ only where a retry is possible."),
@@ -328,7 +339,7 @@ GATED = [
       "all, so a `\\K`-in-lookaround row whose detector forgot the feature "
       "would score green on a compiler with the check deleted. The same "
       "pattern WITH `--features assertions,lookaround` is in refused.rxt, "
-      "and that is the one sabotage row S123 names.", perr=True),
+      "and that is the one sabotage row S128 names.", perr=True),
  cell("(?<name>a)b", "named-groups", [("ab", 0)],
       "AND NO ROW OUTSIDE MODULE `lookaround` MOVED. `(?<` is three "
       "constructs and a name; this is the name, and it still belongs to "

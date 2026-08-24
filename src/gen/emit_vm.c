@@ -4623,7 +4623,7 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  *
  * The negative row is the dangerous one: an unsound prune inside a negative
  * assertion turns "the body could not be shown to match" into "the assertion
- * holds". Sabotage row S128 is its detector, and that row's anchor has to
+ * holds". Sabotage row S132 is its detector, and that row's anchor has to
  * include this function's own text — `v->fmin = 0; v->fdyn = NULL;` is the
  * SAME TWO LINES `vm_atomic` carries.
  *
@@ -4653,7 +4653,7 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
      * WANT_RESULT, which is what keeps their registry rows `unbuilt` — so this
      * is the same shape wave A2's `ctx_fail` had: a half-landed wave D that
      * deleted the port's decline without landing the back-step would emit the
-     * LOOKAHEAD shape for a lookbehind, which is precisely sabotage row S126's
+     * LOOKAHEAD shape for a lookbehind, which is precisely sabotage row S130's
      * miscompile, silently. */
     if (a->u.look.behind)
         ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look "

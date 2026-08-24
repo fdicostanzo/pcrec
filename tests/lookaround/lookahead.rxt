@@ -112,7 +112,7 @@ n "ab"
 
 # §3.2.1's ROW 1, BY NAME. The body and the follow are THE SAME BYTES, so an
 # unscoped `v->fmin` bounds the body at 1+2=3 and this cell becomes a MISSED
-# MATCH. Sabotage row S128.
+# MATCH. Sabotage row S132.
 pattern (?=(a+)b)a+b
 features lookaround
 m "aab" 0 3
@@ -125,7 +125,7 @@ g 1 0 1
 # §3.2.1's ROW 2, BY NAME, AND IT IS THE DANGEROUS ONE. An unsound prune
 # inside a NEGATIVE assertion prunes the body to FAIL, which makes the
 # assertion HOLD -- a FALSE MATCH, not a missed one. This cell goes from
-# nomatch to (0,3) under S128.
+# nomatch to (0,3) under S132.
 pattern (?!(a+)b)a+b
 features lookaround
 n "aab"
@@ -205,6 +205,37 @@ pattern (?=a)(?=ab)abc
 features lookaround
 m "abc" 0 3
 n "acb"
+
+# §2.7's FOUR COMPILING CELLS, the half a too-broad `\K` check breaks. The
+# refusal is about `\K` INSIDE the assertion; once the assertion has closed,
+# `\K` is the ordinary construct module `assertions` already ships. A check
+# that latched on "a lookaround was seen" would wrongly refuse these, so
+# sabotage row S128's prediction names BOTH sets and the row cannot go green
+# by being too broad.
+# python DIVERGES here, measured rather than assumed: 'ab' @0 pcre2=('n',)
+# python=('ERR', 'bad escape \\K at position 5') (2 cells in this block)
+# pcre2-only
+pattern (?=a)\Kb
+features assertions,lookaround
+n "ab"
+n "b"
+
+# python DIVERGES here, measured rather than assumed: 'abc' @0 pcre2=('n',)
+# python=('ERR', 'bad escape \\K at position 6') (2 cells in this block)
+# pcre2-only
+pattern a(?=b)\Kc
+features assertions,lookaround
+n "abc"
+n "abd"
+
+# ...and the control with no lookaround at all, which must be untouched by
+# anything this module does.
+# python DIVERGES here, measured rather than assumed: 'ab' @0 pcre2=('m', 1,
+# 2) python=('ERR', 'bad escape \\K at position 1') (1 cells in this block)
+# pcre2-only
+pattern a\Kb
+features assertions,lookaround
+m "ab" 1 2
 
 # A body whose iteration can end in TWO places, which is the shape
 # atomic_groups_design.md had to rebuild its own measurement around.

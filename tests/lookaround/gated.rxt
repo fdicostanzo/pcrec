@@ -117,7 +117,7 @@ perr
 # `\K`-in-lookaround row whose detector forgot the feature would score green
 # on a compiler with the check deleted. The same pattern WITH `--features
 # assertions,lookaround` is in refused.rxt, and that is the one sabotage row
-# S123 names.
+# S128 names.
 # MEASURED: libpcre2 10.46 also refuses: \K is not allowed in lookarounds
 # (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK); python3 `re` refuses: bad
 # escape \K at position 4
