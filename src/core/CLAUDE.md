@@ -138,7 +138,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `k`, `l`, `r`, `not_repeatable` and `reg` stay COMMON.
 
   **[M6.6.2 wave A2] THE FIRST MEMBER ADDED UNDER THE RULE IS `u.look`**
-  (`A_LOOK`: `behind`, `neg`, `atomic`, `widths`, `nbranch`), and it is worth
+  (`A_LOOK`: `behind`, `neg`, `atomic`, `widths`, `nbranch`, and since
+  [DD-14.LB] `at`), and it is worth
   reading as the worked example the rule was written for. The design's own
   sketch (`lookaround_design.md` §3.1) proposed FIVE new TOP-LEVEL fields, one
   of them an `int look_widths[]` FLEXIBLE ARRAY MEMBER. D70 refuses both
@@ -152,6 +153,31 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   MEASURES it cross-kind. The union buys reading and containment, NOT
   checking: C does not police member access, so D62's discipline (parse-
   resolved state, per-field comments, per-field sabotage rows) is unchanged.
+
+  **[DD-14.LB] `u.look` GAINED `at`, A PATTERN OFFSET ON A NODE — THE FIRST OF
+  ITS KIND, AND THE RULE IT SETS IS WHERE SUCH A FIELD MAY LIVE.** `Ast`
+  carries no position of any kind (PARSE-1's own note) and that is deliberate;
+  `AltInfo.last_bar` exists because of it. What forced one here is a TIMING
+  gap: a lookbehind whose body carries a call cannot have its width decided in
+  the parse hook (the callee is not bound yet) and cannot be refused anywhere
+  else without an offset. So the hook records the assertion's own offset and
+  `pcrec_postresolve` refuses there. **The field is a UNION MEMBER, not a
+  common one**, and that is the containment D70 buys: "this construct's parse
+  hook deferred a decision and left the offset for it" is a fact about
+  lookarounds, not about nodes, and the next module that needs one adds it to
+  ITS member rather than growing the common block for everybody. It is written
+  UNCONDITIONALLY for every `A_LOOK` rather than only when pending, because a
+  conditionally-valid field is a field a later reader gets wrong.
+
+  **AND `u.look.widths == NULL` NOW CARRIES A THIRD MEANING, chosen for its
+  FAILURE MODE.** `!behind` -> NULL with `nbranch == 0` (a lookahead has no
+  width rule); `behind && widths` -> resolved; `behind && !widths` -> PENDING.
+  The three are disjoint and exhaustive, and the pending state reuses NULL
+  rather than taking a new boolean **because `vm_look_behind` was already loud
+  about NULL** — so a post-resolution pass that goes missing is an internal
+  error on the first call-bearing lookbehind. A `bool pending` beside a zeroed
+  width table would have made the same loss a wrong span, and on a negative
+  lookbehind a false match. Sabotage S169 is that experiment.
 
   **[DD-14 wave A2] THE SECOND MEMBER ADDED UNDER THE RULE IS `u.call`**
   (`A_CALL`: `target`, `body`, `link`, `nsave`, `save`, plus a new `CallLink`
@@ -198,13 +224,30 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   test, while the other polarity's zero would DROP it and hang the matcher on
   `(?&g)*` with a nullable callee.
 
-  **`maxw` IS DELIBERATELY ABSENT**, and the asymmetry is the point:
-  `pcrec_maxw`'s safe direction is the opposite one, so a zero would be its
-  SILENT MISCOMPILE. Its arm already answers `PCREC_W_UNBOUNDED`
-  unconditionally, which is EXACT for a recursive callee and a sound
-  over-estimate otherwise. Tightening it for an acyclic callee would need a
-  writer that runs before the PARSE-TIME lookbehind width rule, which the call
-  graph cannot be — see `src/opt/CLAUDE.md`'s `mrl.c` entry.
+  **[DD-14.LB] `maxw` ARRIVED, AS A PAIR, AND THE PAIR IS WHY IT WAS ABSENT.**
+  Wave B+C's entry here read *"`maxw` IS DELIBERATELY ABSENT, and the asymmetry
+  is the point: `pcrec_maxw`'s safe direction is the opposite one, so a zero
+  would be its SILENT MISCOMPILE"* — and that half is still exactly right. A
+  bare `long long maxw` whose arena zero is 0 would be an UNDER-estimated
+  maximum, which lets a variable-width branch through the lookbehind rule as
+  fixed, which on a NEGATIVE lookbehind is a false match. So the field ships as
+  `maxw` PLUS `maxw_known`, and `pcrec_maxw`'s arm reads the first only through
+  the second: false — the arena's zero — means "answer `PCREC_W_UNBOUNDED`",
+  which is what the arm answered before the memo existed. That is
+  `nonnullable`'s inversion trick spelled with two fields instead of one,
+  because unlike nullability there is no polarity of a WIDTH that makes its
+  zero safe.
+
+  **THE OTHER HALF OF THE OLD ENTRY WAS A TIMING CLAIM AND IT WAS ANSWERED BY
+  MOVING THE CONSUMER.** It said tightening the arm *"would need a writer that
+  runs before the PARSE-TIME lookbehind width rule, which the call graph cannot
+  be"*. True — so the rule stopped being parse-time-only: `pcrec_postresolve`
+  (src/opt/postresolve.c) re-asks module `lookaround`'s own rule after
+  `pcrec_callgraph_build`, and the memo is read where it exists. **The
+  generalisable form: when a memo cannot be written early enough for its
+  consumer, check whether the CONSUMER can be moved later before concluding the
+  memo is impossible.** See `src/opt/CLAUDE.md`'s `mrl.c` and `postresolve.c`
+  entries.
 
   **`save`/`nsave` ARE FILLED BY THE EMITTER, NOT BY `callgraph.c`**, which is
   a deviation from design §4.1(d)'s letter and not from its principle. §4.1(d)

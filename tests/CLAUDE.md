@@ -74,20 +74,20 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   made yet: the cells stay, they stay loud, and if pcrec is ever changed to
   reproduce U9 this file FIRES.
 
-  **[DD-14] wave B+C ADDED `dd14_bc_open.rxt`, THREE CELLS IN THE SAME
-  HOLDING-PLACE SHAPE** — each a RULING nobody has made rather than a bug
-  somebody found. `^(a?(?1)b)$` answers NOMATCH rather than giving up, because
-  design §4.4b's `minw` Kleene fixpoint gives the callee INFINITY (its
-  language IS empty: `X = a? X b` has no base case) and §12 P-12 RULES the MRL
-  prune read that as "no position can match" — while its two SIBLINGS in
-  `leftrec.rxt` still give up, because neither carries a quantifier for a bound
-  to hang on, so the class answers two ways on a shape that is not about
-  recursion. And TWO calls inside a LOOKBEHIND are OVER-REJECTED (a tier-2
-  refusal, never a miscompile), because `la_widths` runs in the PARSE HOOK —
-  where it must, to refuse with a pattern offset — and the call graph does not
-  exist until every call is resolved at end of parse, so **no `A_CALL` arm of
-  `pcrec_maxw` can make them compile**; the fix a ruling would order is a
-  DEFERRED WIDTH RE-CHECK
+  **[DD-14] wave B+C ADDED `dd14_bc_open.rxt` AND [DD-14.LB] CLOSED IT** — all
+  three of its cells left, by three different doors, and the directory is empty
+  of `.rxt` again (the ratchet's own "legitimate good state"). `^(a?(?1)b)$`
+  was a CORPUS BUG rather than an owed ruling and is live in `leftrec.rxt` as a
+  ruled nomatch. Of the two calls inside a LOOKBEHIND, cell 1 now COMPILES —
+  the parked note's own charter, a DEFERRED WIDTH RE-CHECK, is built
+  (`pcrec_postresolve`, src/opt/postresolve.c) — and cell 2 is still refused,
+  because **its parked note named the wrong cause**: its lookbehind body is ONE
+  top-level branch of width 1..2 (the alternation lives inside the CALLEE), so
+  it is `(?<=(a|bc))x` reached through a call, a §2.5 capability limit
+  `lookaround/refused.rxt` has pinned all along. Both are live cells in
+  `recursion/inlookaround.rxt` now. The generalisable lesson is in that file's
+  own CLAUDE.md: **a parked cell's stated CAUSE is a claim, and discharging it
+  is not the same as closing the cell**
 - **vm/** — the [M4.5b] backtracking VM engine's own tests: the two bounds
   (step budget, frame capacity) each driven to ITS OWN limit and required to
   produce its own code, the honest artifact stamps (frame_capacity,
@@ -427,16 +427,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `--engine=dfa` refusal with its control. It REUSES `backrefs`'
   `bref_oracle.py` and `bref_batch.c` rather than making a third copy.
 
-  **THREE CELLS ARE PARKED IN `known_fail/dd14_bc_open.rxt`**, each because a
-  RULING is owed rather than a bug is open: `^(a?(?1)b)$` answers NOMATCH
-  rather than giving up (design §4.4b's `minw` fixpoint gives the callee
-  infinity — its language IS empty — and §12 P-12 RULES the MRL prune read
-  that as "no position can match", while its two siblings still give up
-  because neither carries a quantifier for a bound to hang on), and two calls
-  inside a LOOKBEHIND are OVER-REJECTED because `la_widths` runs in the PARSE
-  HOOK and the call graph does not exist until end of parse. See its own
-  CLAUDE.md for the full file list, the `gu frames`-vs-`recurse` note (D71.1),
-  and the reconciled harness-run state.
+  **NO CELL IS PARKED ANY MORE.** Wave B+C parked three in
+  `known_fail/dd14_bc_open.rxt`; [DD-14.LB] closed the file. `^(a?(?1)b)$` was
+  a corpus bug (a `gu frames` expectation that could not have come from
+  libpcre2 at all — a give-up is pcrec's own artifact behaviour) and is live in
+  `leftrec.rxt` as a RULED nomatch. The two calls inside a LOOKBEHIND are both
+  live in `inlookaround.rxt`: one as a MATCH, once the deferred width re-check
+  moved the width question past `pcrec_callgraph_build`, and one as a ruled
+  `perr`, because its refusal was never the timing over-rejection it was parked
+  as. See `known_fail/CLAUDE.md` for the worked example and the
+  `gu frames`-vs-`recurse` note (D71.1).
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is

@@ -268,8 +268,9 @@ retired with it.
    spellings must now COMPILE and answer §2.1's discriminator, so a compiler
    that merely stopped REFUSING fails.
 3. **The 22 `\g` blocks render as `perr` under `wave='D'`** — see the header.
-4. **THREE CELLS ARE PARKED** in `tests/known_fail/dd14_bc_open.rxt`, because
-   each is a RULING nobody has made rather than a bug. See below.
+4. **NO CELL IS PARKED ANY MORE.** Wave B+C parked three in
+   `tests/known_fail/dd14_bc_open.rxt`; [DD-14.LB] closed the file and all
+   three cells are live here. See below.
 
 ### P2's cell is DISCHARGED
 
@@ -292,34 +293,57 @@ still answers correctly while reporting `RX_NCAPS 1`. Both halves are needed:
 the answer alone can be right by accident on a subject the callee's own text
 happens to match. `nocaptures.rxt` keeps its ordinary-axis pins beside it.
 
-## The three parked cells (`tests/known_fail/dd14_bc_open.rxt`)
+## The three formerly-parked cells — CLOSED by [DD-14.LB]
 
 `known_fail` is excluded from `make test` and RUN by the ratchet, which fails
 if a cell there starts PASSING — `u9_atomic.rxt`'s shape, and its own header's
 principle: *"the cells stay, they stay loud, and if pcrec is ever changed to
-reproduce it this file FIRES"*. Each cell's former position in the live corpus
-carries a comment stanza pointing here, written by `gen_corpus.py`'s `parked=`
-argument so the two cannot drift.
+reproduce it this file FIRES"*. **All three cells wave B+C parked have now
+left, by three different doors, and the three doors are the point.**
 
-- **`^(a?(?1)b)$` answers NOMATCH, not `gu frames`.** Design §4.4b's `minw`
-  Kleene fixpoint gives this callee `minw = infinity` — its language IS empty,
-  since `X = a? X b` has no base case — and §12 P-12 RULES that the MRL prune
-  reads that as *"no position can match"*. So pcrec refuses the subject in
-  constant time where 10.46 spends its own `rc -52` finding out, and §5.9
-  scores exactly that pair "agreed in kind". **The class answers two ways**,
-  which is what needs a ruling: the two SIBLING cells in `leftrec.rxt` still
-  give up, because neither carries a quantifier for an MRL bound to hang on —
-  so which answer a left recursion gets depends on whether the pattern happens
-  to contain a quantifier, and that is not a fact about recursion.
-- **Two calls inside a LOOKBEHIND are OVER-REJECTED** (a tier-2 refusal, never
-  a miscompile), and **no `A_CALL` arm of `pcrec_maxw` can fix it**:
-  `la_widths` runs in the PARSE HOOK, where it must, because that is the only
-  place with a pattern OFFSET to refuse at — and the call graph does not exist
-  until every call is resolved at end of parse and every rewriting pass has
-  run. Design §3.4(d) says the width analysis descends into the callee and does
-  not say WHEN it runs. The fix a ruling would order is a DEFERRED WIDTH
-  RE-CHECK, which is a change to a landed module's core plus a new `u.look`
-  field for the diagnostic's offset.
+- **`^(a?(?1)b)$` answers NOMATCH, not `gu frames`** — and it was A CORPUS BUG
+  rather than an owed ruling (removed 2026-08-24 on manager review, before the
+  other two). Design §4.4b's `minw` Kleene fixpoint gives this callee
+  `minw = infinity` — its language IS empty, since `X = a? X b` has no base
+  case — and §12 P-12 RULES that the MRL prune reads that as *"no position can
+  match"*. So pcrec refuses the subject in constant time where 10.46 spends its
+  own `rc -52` finding out, and §5.9 scores exactly that pair "agreed in kind".
+  The parked expectation could not have come from libpcre2 at all: **a give-up
+  is pcrec's own artifact behaviour, never an oracle fact.** The cell is live
+  in `leftrec.rxt` as a RULED nomatch, rendered by `gen_corpus.py`'s `GU` block
+  with `code=None` plus a required `ruling=` citation.
+- **Cell 1, `^(?:(?<g>ab)){0}ab(?<=(?&g))$`, was parked correctly and its
+  charter was right.** A tier-2 over-rejection caused by TIMING: `la_widths`
+  runs in the PARSE HOOK, where it must, because that is the only place with a
+  pattern OFFSET to refuse at, and the call graph does not exist until every
+  call is resolved and every rewriting pass has run — so no `A_CALL` arm of
+  `pcrec_maxw` could have fixed it. [DD-14.LB] built the DEFERRED WIDTH
+  RE-CHECK the note asked for (`u.look.at` records the offset,
+  `widths == NULL` on a lookbehind means pending, and `pcrec_postresolve` —
+  src/opt/postresolve.c — re-asks module `lookaround`'s own rule after
+  `pcrec_callgraph_build`). The cell is a live match cell in
+  `inlookaround.rxt`.
+- **Cell 2, `^(?:(?<g>a|ab)){0}ab(?<=(?&g))$`, WAS PARKED WITH THE WRONG
+  CAUSE**, and this is the entry worth reading twice. It was parked alongside
+  cell 1 as the same timing over-rejection, with a note calling it *"the
+  fixed-PER-BRANCH form pcrec ships"*. It is not. Its lookbehind body is ONE
+  top-level branch — an `A_CALL` — of width 1..2, because the alternation lives
+  inside the CALLEE; that is `(?<=(a|bc))x` reached through a call, which
+  `lookaround_design.md` §2.5 CHARTERS the longest-first step-back loop for and
+  does not ship, and which `tests/lookaround/refused.rxt` has pinned as a D26
+  tier-2 CAPABILITY limit all along. Fixing the timing left the refusal
+  standing and changed the SENTENCE — from *"this one is unbounded"*, a claim
+  about the call graph and false, to *"this one can match 1..2 characters"*, a
+  claim about the shipped subset and true — at the same offset. That diagnostic
+  is the entire evidence that separated the two cells. It is now a live ruled
+  `perr` in `inlookaround.rxt`, and the fixed-per-branch form its note MEANT to
+  describe is a live match cell beside it (`(?<=(?&g)|(?&h))`, widths 1 and 2,
+  alternation at the body's own top level).
+
+**THE LESSON, stated so it outlives these three cells: a parked cell's stated
+CAUSE is a claim, and it can be wrong even when the disagreement is real.
+Discharging the named cause is not the same as closing the cell — re-measure
+before assuming the two coincide.**
 
 ## Checks run
 
