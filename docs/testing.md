@@ -597,6 +597,30 @@ project journal entry.
 | `make test-thread` | `tests/thread/run_thread_tests.sh` | yes |
 | `make test-capturediff` | `tests/fuzz/run_capturediff_gate.sh` | yes |
 | `make test-spec` | `tests/spec_mod0/run_spec_mod0.sh` | **no** — standalone D27 suite, wrapped anyway |
+| `make test-recursion-lbsweep` | `tests/recursion/run_lookbehind_call_sweep.py` | **no** — opt-in ([DD-14.LB]), see below |
+
+**[DD-14.LB] (2026-08-24) — `test-recursion-lbsweep`, and why its verdict is a
+CLASSIFICATION rather than a pass count.** A call inside a lookbehind, swept:
+908 generated patterns (11 callee width-classes × 14 lookbehind body templates
+× both polarities) × 22 subjects, every cell asked of libpcre2 AND of a real
+compiled artifact. It is opt-in on `test-lookaround-identity`'s ruling — 900-odd
+`gcc` invocations for an answer that cannot change unless someone edits the
+width analysis — and it exists beside `tests/recursion/inlookaround.rxt` rather
+than instead of it, because that corpus is a set of AIMED questions and
+therefore inherits its author's alphabet, which is D27's own finding.
+
+The part to understand before reading its output: **a pattern libpcre2 compiles
+and pcrec REFUSES is expected and does not fail the run.** PCRE2 10.43+ ships
+variable-length lookbehinds; `lookaround_design.md` §2.5 charters that loop
+rather than shipping it, so the over-rejection is a ruled D26 tier-2 limit.
+Scoring those as failures would make the instrument useless and scoring them as
+passes would make it blind, so it checks instead that every one of them is the
+§2.5 WIDTH refusal — never a crash, an internal error, a give-up, or a
+diagnostic naming the wrong module. What DOES fail the run: a span
+`disagree`, a `bad_refusal`, `pcrec_only` (pcrec compiling what libpcre2
+refuses — the direction that would mean the width rule had gone soft), a build
+failure, or a give-up. Measured at the wave: 9,240 cells, 9,240 agree, 0
+disagree, 220 pcrec-refuses with bad_refusal 0, 268 both-refuse, 0 pcrec-only.
 
 **[ENG-BREP] (2026-08-16) — the D45 positive control needed `-fno-revdet`, and
 that is D46's own scenario reached from the outside.** `run_gen_timeout_tests.sh`

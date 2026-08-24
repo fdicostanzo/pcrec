@@ -234,6 +234,17 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * once — `cx.callgraph` stays NULL and nothing downstream changes. */
     pcrec_callgraph_build(&cx, root);
 
+    /* [DD-14.LB] THE POST-RESOLUTION CHECKS, and their position is the whole
+     * mechanism: every rule that must refuse AT A PATTERN OFFSET and cannot be
+     * decided until the graph exists is asked HERE, from the offsets the parse
+     * hooks recorded on the nodes. Today the list is module `lookaround`'s
+     * §2.5 fixed-width rule for a lookbehind whose body carries a call —
+     * `pcrec_maxw`'s `A_CALL` arm cannot answer at parse time, because the
+     * callee is bound by the line above. It runs BEFORE the machine builds so
+     * a refused pattern still costs no automaton, and it is a walk and an
+     * early return for every pattern that recorded nothing. */
+    pcrec_postresolve(&cx, root);
+
     /* The DFA pair is built when the DFA IS the engine, and also when the VM
      * wants it as its prefilter (§6.1) — but NOT for `--engine=vm`, where the
      * prefilter is deliberately off (D44/R21 E-6) and so nothing needs an

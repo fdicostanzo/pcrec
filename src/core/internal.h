@@ -693,12 +693,47 @@ struct Ast {
              * when `minw == maxw`, which is also why an under-estimating
              * `pcrec_maxw` is a silent miscompile rather than a lost
              * optimisation. WRITTEN by the parse hook (wave D), READ by §3.4's
-             * emitted back-step. Sabotage row S-LA11. */
+             * emitted back-step. Sabotage row S-LA11.
+             *
+             * [DD-14.LB] `NULL` ON A LOOKBEHIND MEANS **PENDING**, and that is
+             * this field's one extra state rather than a second field. The
+             * hook cannot compute the table when the body carries an `A_CALL`
+             * — `pcrec_maxw`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` there
+             * because the callee is not bound until `pcrec_callgraph_build`
+             * runs over the FINAL tree — so it records the assertion instead
+             * (`at` below) and `pcrec_postresolve` (src/opt/postresolve.c)
+             * fills this in or refuses. THE THREE STATES ARE DISJOINT AND
+             * EXHAUSTIVE: `!behind` -> NULL and `nbranch == 0` (a lookahead
+             * has no width rule); `behind && widths` -> resolved; `behind &&
+             * !widths` -> pending, `nbranch` already correct. `vm_look_behind`
+             * ctx_fails on the pending shape, which is what makes a DELETED
+             * post-resolution pass a loud internal error rather than a NULL
+             * dereference (sabotage row S-LB1). */
             const int  *widths;
             /* how many entries `widths` holds — the body's top-level branch
              * count, which is `AltInfo.nbr` (PARSE-1) for the body parse.
-             * WRITTEN and READ with `widths`; the two are one fact. */
+             * WRITTEN and READ with `widths`; the two are one fact — EXCEPT
+             * in the pending state above, where the hook knows the branch
+             * count (the parse just produced it) and not the widths, which is
+             * exactly why the deferred pass needs nothing but this node. */
             int         nbranch;
+            /* [DD-14.LB] THE ASSERTION'S OWN PATTERN OFFSET — the `at` the
+             * parse hook was dispatched on, i.e. the offset of the construct's
+             * opening `(`. WRITTEN by the parse hook for EVERY A_LOOK, READ by
+             * `pcrec_lookaround_fix_widths` when it refuses a body whose width
+             * could only be decided after the call graph existed.
+             *
+             * IT EXISTS BECAUSE `Ast` CARRIES NO POSITION OF ANY KIND
+             * (PARSE-1's own note), and a deferred refusal with no offset
+             * would be the tier-2 regression D26 forbids: the hook's own
+             * refusals for call-FREE bodies point at the assertion, and the
+             * deferred one must point at the same byte or the two timings
+             * would be observably different diagnostics for one rule. It is
+             * written UNCONDITIONALLY rather than only when pending, because
+             * "the offset this construct was parsed at" is a fact about every
+             * lookaround and a conditionally-valid field is a field a later
+             * reader gets wrong. */
+            size_t      at;
         } look;
 
         /* [DD-14] A_CALL: the subroutine-call payload — ONE RESOLVED TARGET,
@@ -842,22 +877,50 @@ struct Ast {
              *                 safe and why `pcrec_emit_vm` fills them for
              *                 every node before it emits a byte.
              *
-             * `maxw` IS DELIBERATELY ABSENT. `pcrec_maxw`'s safe direction is
-             * the opposite one, so a zero would be its silent miscompile — and
-             * its arm already answers `PCREC_W_UNBOUNDED` unconditionally,
-             * which is the exact answer for a recursive callee (§3.4(d):
-             * libpcre2 refuses that inside a lookbehind, error 125) and a
-             * sound over-estimate for every other. Tightening it for an
-             * ACYCLIC callee is an optimisation with no customer; it would
-             * need its own field, initialised by a writer that runs before
-             * the parse-time lookbehind width rule, which the call graph
-             * cannot (the graph does not exist until every call is resolved).
+             * `maxw` WAS DELIBERATELY ABSENT UNTIL [DD-14.LB], and the
+             * paragraph that argued for its absence is kept here because the
+             * half of it that was right is still right. `pcrec_maxw`'s safe
+             * direction is the OPPOSITE of `minw`'s, so a plain `long long
+             * maxw` whose arena zero is `0` would be its SILENT MISCOMPILE —
+             * an under-estimated maximum lets a variable-width branch through
+             * the lookbehind rule as fixed, which on a NEGATIVE lookbehind is
+             * a false match. That is why the pair below is TWO fields and not
+             * one: `maxw_known` is the arena-zero-safe half, exactly as
+             * `nonnullable`'s inverted polarity is, and `pcrec_maxw`'s arm
+             * reads `maxw` ONLY through it.
              *
-             * WRITTEN by `src/opt/callgraph.c`'s fixpoint (`minw`) and by
-             * `src/gen/emit_vm.c` (`nonnullable`, whose recurrence is
-             * `vm_nullable` and lives there; `save`/`nsave`, whose SLOT
-             * INDICES are the emitter's own layout and exist nowhere else). */
+             * WHAT CHANGED IS THE "no customer" HALF. The customer is module
+             * `lookaround`'s fixed-width rule, and the timing objection this
+             * paragraph used to raise — "it would need a writer that runs
+             * before the parse-time lookbehind width rule, which the call
+             * graph cannot" — is answered by moving the CONSUMER rather than
+             * the writer: `pcrec_postresolve` (src/opt/postresolve.c) re-asks
+             * the width question after `pcrec_callgraph_build`, so the memo is
+             * read where it exists. See `pcrec_postresolve`'s declaration and
+             * docs/design/subroutines_design.md §3.4(d)'s 2026-08-24
+             * amendment.
+             *
+             *   `maxw`       the callee's greatest width, VALID ONLY when
+             *                `maxw_known`. `PCREC_W_UNBOUNDED` is a legal
+             *                value and is the fixpoint's answer for every
+             *                callee in a cycle and every callee that can
+             *                reach one.
+             *   `maxw_known` false — i.e. "answer PCREC_W_UNBOUNDED". The
+             *                arena's zero is the SOUND direction for this
+             *                pair for the reason above, and it is the answer
+             *                `pcrec_maxw` gave for every call before this
+             *                field existed, so a walker that legitimately
+             *                runs before the fixpoint (the parse hook itself)
+             *                sees exactly the old behaviour.
+             *
+             * WRITTEN by `src/opt/callgraph.c`'s two fixpoints (`minw`,
+             * `maxw`/`maxw_known`) and by `src/gen/emit_vm.c` (`nonnullable`,
+             * whose recurrence is `vm_nullable` and lives there; `save`/
+             * `nsave`, whose SLOT INDICES are the emitter's own layout and
+             * exist nowhere else). */
             long long   minw;
+            long long   maxw;
+            bool        maxw_known;
             bool        nonnullable;
         } call;
     } u;
@@ -2387,6 +2450,29 @@ const RegRow *pcrec_atomic_suffix_row(int quant_byte);
 ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from);
 
+/* [DD-14.LB] MODULE `lookaround`'s HALF OF THE DEFERRED WIDTH RE-CHECK — the
+ * §2.5 fixed-width rule, asked a SECOND TIME, at a second TIMING.
+ *
+ * THE RULE STAYS IN THE MODULE AND THE TIMING LIVES IN THE PASS. That split
+ * is the whole point of these two declarations: `pcrec_postresolve` knows
+ * WHEN the graph exists and in what ORDER to visit, and knows nothing about
+ * lookbehind widths; this file's implementation knows the width rule and its
+ * three refusal sentences, and knows nothing about the call graph. A pass
+ * that inlined the rule would be a SECOND derivation of "is this branch
+ * fixed-width" for the hook's to disagree with — the failure `u.look.widths`
+ * is stored to prevent one level down.
+ *
+ * `_pending` answers "did the hook defer this node": true exactly for an
+ * `A_LOOK` that is a lookbehind whose `widths` is still NULL. `_fix_widths`
+ * resolves such a node — filling `u.look.widths` — or refuses via `ctx_fail`
+ * at `u.look.at` with the hook's own wording, BYTE FOR BYTE (the doorway
+ * epilogue `pcrec_ext_finish` is itself `ctx_fail(cx, at, "%s", msg)`, so the
+ * two paths render identically by construction and not by transcription). It
+ * is a no-op on any node `_pending` declines, so a future second caller
+ * cannot use it to re-derive an already-resolved table. */
+bool pcrec_lookaround_width_pending(const Ast *a);
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a);
+
 /* [M6.5.2] src/parse/mod_named_groups.c — THE GROUP-NAME GRAMMAR, one home.
  *
  * Scans a subpattern name at `p[i..n)`: a leading ASCII letter or `_`, then
@@ -2542,11 +2628,48 @@ bool pcrec_has_call(const Ast *a);
  * IT DOES FOUR THINGS: binds `.body` for every call from the FINAL tree; sets
  * `link = CALL_LINKAGE` on every node (§6.3 — the arena's `CALL_SPLICE` is
  * the wrong default in the unsound direction, a spliced recursive call being
- * an infinite emitter); runs §4.4b's `minw` Kleene fixpoint; and re-asks
- * module `lookaround`'s §2.7 `\K` refusal THROUGH the graph, which its own
- * parse hook structurally cannot (`.body` is NULL there and a forward call's
- * target is not yet parsed). */
+ * an infinite emitter); runs §4.4b's `minw` Kleene fixpoint; and runs
+ * [DD-14.LB]'s `maxw` fixpoint, its MIRROR IN EVERY SENSE INCLUDING THE ONE
+ * THAT MATTERS (it descends from `PCREC_W_UNBOUNDED` where `minw` descends
+ * from `PCREC_MINW_MAX`, because over-estimating is `pcrec_maxw`'s free
+ * direction and under-estimating is its miscompile).
+ *
+ * IT ASKS NO MODULE'S QUESTION. Wave B+C's draft re-asked module
+ * `lookaround`'s §2.7 `\K` refusal here, and MEASUREMENT deleted the check
+ * (PCRE2's `\K` rule is LEXICAL — see this file's own standing note, and
+ * `tests/recursion/kreset.rxt`). The graph-needing checks that DID survive
+ * live in `pcrec_postresolve` below, which is a separate pass so that
+ * "build the graph" and "enforce somebody's rule with it" stay separate
+ * jobs. */
 void pcrec_callgraph_build(Ctx *cx, Ast *root);
+
+/* [DD-14.LB] THE POST-RESOLUTION CHECKS — src/opt/postresolve.c. The pass for
+ * every rule that (a) must refuse a pattern AT A PATTERN OFFSET and (b) cannot
+ * be decided until the call graph exists.
+ *
+ * IT IS A GENERAL MECHANISM WITH ONE CUSTOMER TODAY, not a fold of that
+ * customer. The shape it generalises is a TIMING gap, and the gap is
+ * structural rather than incidental: a module's parse hook is the only place
+ * in this compiler that holds a pattern offset, and `Ast` carries no position
+ * of any kind (PARSE-1), so a rule that needs the graph has nowhere to raise
+ * its diagnostic from — unless the hook RECORDS the offset on the node and a
+ * later pass reads it back. Every future rule of that shape (§6.3's splice
+ * eligibility, a variable-length lookbehind follow-on, a call inside a
+ * construct some module has not met yet) is the same three moves, so the
+ * pass owns the WALK and the ORDER and each module owns its own RULE.
+ *
+ * ORDER IS PART OF THE CONTRACT: it visits the recorded constructs in
+ * ASCENDING PATTERN OFFSET, so a pattern with two offending lookbehinds
+ * refuses at the FIRST, which is what the parse hook would have done and what
+ * every other diagnostic in this compiler does. A walk order would have
+ * reported whichever the tree spine reached first, which for a left-nested
+ * `A_CAT` is the LAST one written.
+ *
+ * IT RUNS AFTER `pcrec_callgraph_build` AND BEFORE THE MACHINE BUILDS, and it
+ * is a NO-OP for a call-free pattern (`cx->callgraph == NULL` and nothing was
+ * ever recorded), which is what keeps such a pattern's compile byte-identical
+ * to what it was before module `recursion` existed. */
+void pcrec_postresolve(Ctx *cx, Ast *root);
 
 /* The graph's readers, for `src/gen/emit_vm.c`, which owns the two fixpoints
  * whose RECURRENCE lives in the emitter — `vm_nullable`'s (a `static` there,

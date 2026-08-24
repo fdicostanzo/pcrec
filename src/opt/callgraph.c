@@ -236,6 +236,58 @@ static void cg_minw_publish(void *ud, const Ast *a)
     ((Ast *)a)->u.call.minw = i >= 0 ? m->val[i] : 0;
 }
 
+/* ---- the maxw fixpoint ([DD-14.LB]) --------------------------------------
+ *
+ * `minw`'s MIRROR, and mirrored in the sense that matters: `pcrec_minw`'s free
+ * direction is DOWN and `pcrec_maxw`'s is UP, so this iteration starts at
+ * `PCREC_W_UNBOUNDED` and descends where that one starts at `PCREC_MINW_MAX`
+ * and descends too — both begin at the value that is SAFE to be wrong with and
+ * approach the truth from the safe side, which for `maxw` is from ABOVE.
+ *
+ * A TARGET IN A CYCLE IS A FIXED POINT AT UNBOUNDED, WITH NO CYCLE TEST. The
+ * `reach` closure two functions up could answer "is target i in a cycle"
+ * directly (`reaches(i,i)`), and this fixpoint deliberately does not ask it:
+ * `mrl_sat_add` saturates, so a body that calls back into its own SCC reads
+ * the published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED`,
+ * and never leaves the top. The same absorption gives the RIGHT answer for a
+ * target that merely REACHES a cycle without being in one (`g = (?&h)x` with
+ * `h` recursive is genuinely unbounded), which an `reaches(i,i)` test would
+ * have got wrong unless it were widened into exactly this propagation. One
+ * mechanism, and the cycle test would have been a second one.
+ *
+ * TERMINATION AND THE ROUND BOUND are `minw`'s argument unchanged, read in the
+ * other direction: every arm of `pcrec_maxw`'s recurrence is a sum, a max or a
+ * constant — a superior-function system in Knuth's sense — the values are
+ * non-increasing and bounded below by 0, and each round settles at least one
+ * more target, so `n` rounds suffice and the `n + 1`-th is ASSERTED to change
+ * nothing. An under-run fixpoint here would leave a target at UNBOUNDED, which
+ * is an OVER-estimate and therefore safe (a lookbehind refused that PCRE2
+ * accepts is the tier-2 over-rejection this wave is removing, never a
+ * miscompile); an over-run one is impossible.
+ *
+ * `maxw_known` IS PUBLISHED WITH `maxw` AND ONLY BY THIS LOOP. It is what
+ * makes `pcrec_maxw`'s arm answer the OLD, sound `PCREC_W_UNBOUNDED` at every
+ * timing before this pass — the parse hook's, above all, which is exactly
+ * where the deferred re-check exists to avoid answering. */
+
+typedef struct { const struct CallGraph *cg; const long long *val; } CgMaxw;
+
+static void cg_maxw_publish(void *ud, const Ast *a)
+{
+    CgMaxw *m = ud;
+    if (a->k != A_CALL) return;
+    int i = cg_index(m->cg, a->u.call.target);
+    /* A target the graph does not carry cannot happen (`cg_scan` collected
+     * every `A_CALL`'s target and `cg_bind` has already failed loudly for a
+     * target with no body), and if it somehow did, `maxw_known = false` is the
+     * answer that costs an over-estimate rather than a miscompile — the same
+     * polarity choice the field itself is. */
+    Ast *n = (Ast *)a;
+    if (i >= 0) { n->u.call.maxw = m->val[i]; n->u.call.maxw_known = true; }
+    else        { n->u.call.maxw = PCREC_W_UNBOUNDED;
+                  n->u.call.maxw_known = false; }
+}
+
 /* ---- WAVE A2's SECOND OBLIGATION, DISCHARGED BY MEASUREMENT --------------
  *
  * `mod_lookaround.c`'s `la_has_kreset` cannot see through a call: it runs
@@ -395,6 +447,26 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                                 "fixpoint did not settle in %d rounds", n);
         }
         cg_walk(root, cg_minw_publish, &m);
+    }
+
+    /* ---- THE `maxw` FIXPOINT ([DD-14.LB]) — see cg_maxw_publish above --- */
+    {
+        long long *val = arena_alloc(&cx->arena, nn * sizeof *val);
+        for (int i = 0; i < n; i++) val[i] = PCREC_W_UNBOUNDED;
+        CgMaxw m = { cg, val };
+        for (int round = 0; round <= n; round++) {
+            bool changed = false;
+            cg_walk(root, cg_maxw_publish, &m);
+            for (int i = 0; i < n; i++) {
+                long long nv = pcrec_maxw(cg->body[i]);
+                if (nv < val[i]) { val[i] = nv; changed = true; }
+            }
+            if (!changed) break;
+            if (round == n)
+                ctx_fail(cx, 0, "internal error: the subroutine maximum-width "
+                                "fixpoint did not settle in %d rounds", n);
+        }
+        cg_walk(root, cg_maxw_publish, &m);
     }
 }
 

@@ -316,6 +316,97 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
     return true;
 }
 
+/* [DD-14.LB] §2.5's REFUSAL SENTENCE — ONE HOME, TWO TIMINGS.
+ *
+ * The width rule is asked twice now (see this file's `pcrec_lookaround_
+ * fix_widths` below and `pcrec_postresolve`'s declaration in internal.h), and
+ * the two asks must produce the SAME BYTES: they are one rule, and a caller
+ * who writes a call into a lookbehind body must not get a differently-worded
+ * refusal from the one who did not. The two paths RAISE it differently and
+ * cannot share that — the hook is inside a doorway and owes an `ExtResult`,
+ * the pass is not and calls `ctx_fail` — so what is shared is the text.
+ *
+ * IT IS BYTE-IDENTICAL BY CONSTRUCTION AND NOT BY TRANSCRIPTION: the doorway
+ * epilogue is `ctx_fail(cx, r->at, "%s", r->msg)` (src/parse/ext.c), so
+ * `REFUSE(at, "%s", buf)` here and `ctx_fail(cx, at, "%s", buf)` there render
+ * the same string at the same offset through the same formatter. `buf` is 256
+ * bytes for `ExtResult.msg`'s reason, which is the buffer the hook's text used
+ * to be formatted straight into. It cannot truncate: the longest arm is 148
+ * bytes of template and 166 with both widths at their widest
+ * (`PCREC_W_UNBOUNDED` is `1 << 40`, 13 digits) — and a width that large is
+ * refused by the arm ABOVE it anyway, so 166 is a ceiling no live path
+ * reaches.
+ *
+ * THE ORDER OF THE THREE ARMS IS PART OF THE RULE, not of either caller.
+ * UNBOUNDED IS TESTED FIRST because `PCREC_W_UNBOUNDED` is itself above
+ * `INT_MAX`, so the other order reports every `a*` body as "too long" — a
+ * different and wrong claim. Here pcrec AGREES WITH PCRE2, whose own answer
+ * is err 125 "length of lookbehind assertion is not limited" (§2.5). */
+#define LA_MSG_MAX 256
+static void la_width_refusal(char *buf, size_t n, long long lo, long long hi)
+{
+    if (hi >= PCREC_W_UNBOUNDED)
+        snprintf(buf, n, "variable-length lookbehind is not implemented: "
+                         "every alternative of a lookbehind must have a "
+                         "fixed length (this one is unbounded)");
+    /* A FIXED width too large to store. Only reachable through a nested
+     * exact-count tower; the emitter's own node cap would refuse it a step
+     * later, and refusing here keeps `widths` an `int` table rather than
+     * making the whole analysis 64-bit for a pattern nothing can compile. */
+    else if (hi > INT_MAX)
+        snprintf(buf, n, "this lookbehind is too long");
+    else
+        snprintf(buf, n, "variable-length lookbehind is not implemented: every "
+                         "alternative of a lookbehind must have a fixed length "
+                         "(this one can match %lld..%lld characters)", lo, hi);
+}
+
+/* [DD-14.LB] THE TWO HALVES OF THE DEFERRED RE-CHECK — internal.h's
+ * declarations carry the argument for the split; this is the rule.
+ *
+ * `_pending` IS THE `widths == NULL` STATE READ OUT LOUD, and it is a function
+ * rather than an open-coded test at the pass because the encoding of "pending"
+ * is this module's business: if a later wave gives the state its own field the
+ * pass does not change. It answers false for a LOOKAHEAD without looking at
+ * `widths` at all — a lookahead's NULL is the ANSWER (there is no width rule
+ * for one), not a deferral, and conflating the two would send every lookahead
+ * through the pass. */
+bool pcrec_lookaround_width_pending(const Ast *a)
+{
+    return a->k == A_LOOK && a->u.look.behind && a->u.look.widths == NULL;
+}
+
+/* Resolve a deferred lookbehind's width table, or refuse at the offset the
+ * hook recorded. A NO-OP on anything `_pending` declines, which is what keeps
+ * a second caller from re-deriving a table that already exists — §3.1(c)'s
+ * whole reason for storing it.
+ *
+ * `pcrec_maxw` IS THE SAME FUNCTION THE HOOK CALLED, and that is the point of
+ * doing this here rather than teaching the hook to look through a call: by
+ * this timing `src/opt/callgraph.c` has published `u.call.maxw`, so the arm
+ * that answered `PCREC_W_UNBOUNDED` at parse time answers the callee's real
+ * maximum — UNBOUNDED still, and exactly, for a callee in a cycle (design
+ * §3.4(d): libpcre2 refuses that itself, err 125). Nothing about the RULE
+ * moved; only the moment it is asked. */
+void pcrec_lookaround_fix_widths(Ctx *cx, Ast *a)
+{
+    if (!pcrec_lookaround_width_pending(a)) return;
+
+    const int nbr = a->u.look.nbranch;
+    if (nbr < 1)
+        ctx_fail(cx, 0, "internal error: a deferred lookbehind carries no "
+                        "branch count");
+
+    long long lo = 0, hi = 0;
+    int *w = arena_alloc(&cx->arena, (size_t)nbr * sizeof *w);
+    if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
+        char buf[LA_MSG_MAX];
+        la_width_refusal(buf, sizeof buf, lo, hi);
+        ctx_fail(cx, a->u.look.at, "%s", buf);
+    }
+    a->u.look.widths = w;
+}
+
 ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from)
 {
@@ -401,32 +492,51 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * longest-first step-back loop §2.5 charters and this module does not
      * build. Saying "enable the module" to a caller who already has would be
      * an actionable-sounding lie, which is D33's own distinction. */
+    /* [DD-14.LB] AND THE OFFSET, for EVERY A_LOOK — see `u.look.at`. It is
+     * written before the branch below because the deferred arm needs it and
+     * "the offset this construct was parsed at" is true of the other two. */
+    a->u.look.at = at;
+
     if (!k->behind) {
         a->u.look.widths  = NULL;
         a->u.look.nbranch = 0;
+    } else if (pcrec_has_call(body)) {
+        /* [DD-14.LB] THE DEFERRAL. A body carrying an `A_CALL` cannot be
+         * measured HERE, and the obstacle is TIMING rather than analysis:
+         * `pcrec_maxw`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` at this
+         * instant because `u.call.maxw_known` is still the arena's false —
+         * the callee is not bound, and a FORWARD call's target has not been
+         * parsed at all — so asking the rule now would refuse
+         * `^(?:(?<g>ab)){0}ab(?<=(?&g))$`, which libpcre2 10.46 compiles and
+         * matches. So the node RECORDS (`widths` NULL, `nbranch` and `at`
+         * set) and `pcrec_postresolve` asks the same rule once the graph
+         * exists.
+         *
+         * `pcrec_has_call` IS THE TEST AND NOT "is any width unbounded",
+         * because the two are different questions and only this one is stable:
+         * a body that is variable-width for an ORDINARY reason (`(?<=a+)`)
+         * must still refuse HERE, at parse time, where every call-free
+         * lookbehind refusal has always been raised — that is the control this
+         * wave keeps byte-identical. Deferring only what genuinely cannot be
+         * answered yet is also what keeps the pass's customer list honest.
+         *
+         * IT OVER-DEFERS, KNOWINGLY AND HARMLESSLY: a call inside a NESTED
+         * lookaround in the body (`(?<=a(?=(?&g))b)`) contributes 0 to both
+         * widths, so the hook could have answered — `pcrec_has_call` descends
+         * into `A_LOOK` and says "call" anyway. The deferred ask returns the
+         * identical table, and a second, narrower predicate ("a call on a
+         * width-bearing path") would be a third place this module decides what
+         * contributes width, for the `A_LOOK` arm of `pcrec_maxw` to disagree
+         * with. The cost is one visit in a pass that runs anyway. */
+        a->u.look.widths  = NULL;
+        a->u.look.nbranch = info.nbr;
     } else {
         long long lo = 0, hi = 0;
         int *w = arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
         if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
-            /* UNBOUNDED IS TESTED FIRST because `PCREC_W_UNBOUNDED` is
-             * itself above `INT_MAX`, so the other order reports every `a*`
-             * body as "too long" — which is a different and wrong claim.
-             * Here pcrec AGREES WITH PCRE2, whose own answer is err 125
-             * "length of lookbehind assertion is not limited" (§2.5). */
-            if (hi >= PCREC_W_UNBOUNDED)
-                REFUSE(at, "variable-length lookbehind is not implemented: "
-                           "every alternative of a lookbehind must have a "
-                           "fixed length (this one is unbounded)");
-            /* A FIXED width too large to store. Only reachable through a
-             * nested exact-count tower; the emitter's own node cap would
-             * refuse it a step later, and refusing here keeps `widths` an
-             * `int` table rather than making the whole analysis 64-bit for a
-             * pattern nothing can compile. */
-            if (hi > INT_MAX)
-                REFUSE(at, "this lookbehind is too long");
-            REFUSE(at, "variable-length lookbehind is not implemented: every "
-                       "alternative of a lookbehind must have a fixed length "
-                       "(this one can match %lld..%lld characters)", lo, hi);
+            char buf[LA_MSG_MAX];
+            la_width_refusal(buf, sizeof buf, lo, hi);
+            REFUSE(at, "%s", buf);
         }
         a->u.look.widths  = w;
         a->u.look.nbranch = info.nbr;

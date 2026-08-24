@@ -471,6 +471,34 @@ test-recursion: all
 test-recursion-identity: all
 	bash tests/codegen/run_recursion_identity.sh
 
+# [DD-14.LB] A CALL INSIDE A LOOKBEHIND, SWEPT — OPT-IN, and deliberately NOT
+# a prerequisite of `test:` above. Same shape and same ruling as
+# `test-lookaround-identity` below (ASK-4): it compiles and LINKS one artifact
+# per pattern — 900-odd `gcc` invocations — and the answer cannot change unless
+# someone edits the width analysis, which is not what `make test` is for. The
+# standing invariants for this feature already ride `make test`:
+# `tests/recursion/inlookaround.rxt`'s 21 blocks, the known-fail ratchet, and
+# the anchor tripwire.
+#
+# WHAT IT ADDS over that corpus is the thing a corpus structurally cannot be:
+# the corpus is a set of AIMED questions, each written to kill a specific wrong
+# implementation, and it therefore inherits its author's alphabet (D27's own
+# finding). This enumerates a product space — 11 callee width-classes × 14
+# lookbehind body templates × both polarities × 22 subjects — and asks libpcre2
+# about every cell.
+#
+# ITS VERDICT IS A CLASSIFICATION. A pattern libpcre2 compiles and pcrec
+# refuses is EXPECTED (PCRE2 10.43+ ships variable-length lookbehinds;
+# lookaround_design.md §2.5 charters that loop rather than shipping it) and
+# does not fail the run. What fails it is a span DISAGREEMENT, a refusal that
+# is not the §2.5 width limit, pcrec compiling what libpcre2 refuses, a build
+# failure, or a give-up.
+#
+#     make test-recursion-lbsweep          # ~4 min, needs libpcre2
+#     SWEEP_TMP=/var/tmp/x make test-recursion-lbsweep
+test-recursion-lbsweep: all
+	python3 tests/recursion/run_lookbehind_call_sweep.py
+
 # [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
 # and the same ruling as `test-atomic-identity` and `test-backrefs-identity`
 # above (ASK-4): a claim about a MOMENT, re-answered on demand, not a standing

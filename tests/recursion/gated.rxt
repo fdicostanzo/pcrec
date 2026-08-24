@@ -36,17 +36,17 @@
 # ====================================================================
 
 # numeric call, closed.
-# MEASURED, build/pcrec off main under std1 (no --features): pcrec: (?1...) requires module 'recursion' (pattern offset 3)
+# MEASURED, build/pcrec under std1 (no --features): pcrec: (?1...) requires module 'recursion' (pattern offset 3)
 pattern (a)(?1)
 perr
 
 # by-name call, closed -- the doorway refuses before it ever asks whether `named-groups` is available.
-# MEASURED, build/pcrec off main under std1 (no --features): pcrec: (?&...) requires module 'recursion' (pattern offset 0)
+# MEASURED, build/pcrec under std1 (no --features): pcrec: (?&...) requires module 'recursion' (pattern offset 0)
 pattern (?&n)(?<n>a)
 perr
 
 # THE WRONG MODULE ENABLED BUYS NOTHING: the gate is per-row, not per-pattern. `backrefs` alone does not unlock a call.
-# MEASURED, build/pcrec off main under --features backrefs: pcrec: (?1...) requires module 'recursion' (pattern offset 3)
+# MEASURED, build/pcrec under --features backrefs: pcrec: (?1...) requires module 'recursion' (pattern offset 3)
 pattern (a)(?1)
 features backrefs
 perr
@@ -74,7 +74,7 @@ n "ac"
 # ====================================================================
 
 # **NOT OBSERVABLE IN ITS TRUE FORM TODAY.** MEASURED: with `recursion` enabled and `named-groups` NOT enabled, this pattern refuses today naming 'recursion' (module `recursion` has no producer at all yet, so the parser never gets far enough to ask about `named-groups`). Once [DD-14] wave B+C lands the `(?&` PARSE, the design's claim is that this SAME cell must then refuse naming 'named-groups' instead -- because the declaration `(?<n>a)` is what needs that module, and a call can reach it lexically before the resolver ever runs. This row passes VACUOUSLY today (nonzero exit, wrong reason) -- S108's masking shape, named by the design itself. THE CODE LANE MUST RE-CHECK THIS CELL'S MESSAGE ONCE WAVE B+C LANDS, not just its exit code. **DISCHARGED, [DD-14] wave B+C**: MEASURED on the landed binary, `--features recursion -- '(?&n)(?<n>a)'` now answers `(?&n) names a capture group, which requires module 'named-groups'` -- the design's prediction, from the port's own gate check, which sits BEFORE the name grammar for `br_name_ref`'s reason (without that module there is no such thing as a group NAME). The row is no longer vacuous.
-# MEASURED, build/pcrec off main under --features recursion: pcrec: (?&n) names a capture group, which requires module 'named-groups' (pattern offset 0)
+# MEASURED, build/pcrec under --features recursion: pcrec: (?&n) names a capture group, which requires module 'named-groups' (pattern offset 0)
 pattern (?&n)(?<n>a)
 features recursion
 perr

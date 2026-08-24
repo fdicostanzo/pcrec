@@ -312,32 +312,42 @@ long long pcrec_maxw(const Ast *a)
             /* UNBOUNDED — see the header. This is the one arm where minw's
              * "and it is EXACT" argument does not carry over to maxw. */
             return mrl_sat_add(acc, PCREC_W_UNBOUNDED);
-        /* [DD-14] UNBOUNDED, and unlike `pcrec_minw`'s arm this one is SOUND
-         * AS IT STANDS rather than a placeholder — the asymmetry is the whole
-         * point of this file having two headers.
+        /* [DD-14] UNBOUNDED UNLESS THE FIXPOINT HAS SAID OTHERWISE, and the
+         * asymmetry with `pcrec_minw`'s arm is the whole point of this file
+         * having two headers.
          *
          * This function's safe direction is OVER-estimating, and unbounded is
          * the top of it. A recursive callee's maximum width genuinely IS
          * unbounded, and design §3.4(d) measured that libpcre2 refuses exactly
-         * that inside a lookbehind (error 125) — so the consequence of this
-         * arm, "a lookbehind branch containing a call is never fixed-width",
-         * is the answer the oracle gives, not a limitation. `A_BREF`'s arm one
-         * up reaches the same place by the same reasoning.
+         * that inside a lookbehind (error 125). `A_BREF`'s arm one up stops
+         * there for the same reason and has no fixpoint to consult.
          *
-         * WHAT WAVE B+C MAY TIGHTEN, and only as an optimisation: for an
-         * ACYCLIC callee `callgraph.c` can supply an exact finite maximum, and
-         * a fixed-width lookbehind branch containing a non-recursive call
-         * would then compile. Tightening this arm is safe only THROUGH that
-         * memo — deriving it here by following `u.call.body` is design §4.4's
-         * hang, and an under-estimate is this file's silent miscompile.
+         * [DD-14.LB] TIGHTENED FOR AN ACYCLIC CALLEE, AND ONLY THROUGH THE
+         * MEMO — which is the tightening the wave-B+C text at this arm
+         * chartered, in the words it chartered it in: "for an ACYCLIC callee
+         * `callgraph.c` can supply an exact finite maximum, and a fixed-width
+         * lookbehind branch containing a non-recursive call would then
+         * compile. Tightening this arm is safe only THROUGH that memo —
+         * deriving it here by following `u.call.body` is design §4.4's hang,
+         * and an under-estimate is this file's silent miscompile."
          *
-         * P13 IS DISCHARGED FOR THE SWITCH. Design §4.4b made this arm
-         * conditional on `lookaround_design.md` §11 wave A having landed,
-         * because `pcrec_maxw` did not exist when the design was written. It
-         * exists on this HEAD, so the pair is symmetric HERE — and it is still
-         * not symmetric in the fixpoint, which is wave B+C's. */
+         * `maxw_known` IS WHAT MAKES READING IT SAFE AT EVERY TIMING. This
+         * function is called from module `lookaround`'s parse hook, where the
+         * fixpoint has NOT run and `.body` is NULL — and the arena zeroes
+         * `maxw_known` to false, so at that timing this arm answers exactly
+         * what it answered before the memo existed. The flag is the field, not
+         * a guard on it: a bare `maxw` would have an arena zero of 0, which is
+         * an UNDER-estimate, which is this file's silent miscompile and on a
+         * negative lookbehind a false match.
+         *
+         * P13 IS DISCHARGED FOR THE SWITCH AND NOW FOR THE FIXPOINT. Design
+         * §4.4b made this arm conditional on `lookaround_design.md` §11 wave A
+         * having landed, because `pcrec_maxw` did not exist when the design was
+         * written; the pair is symmetric here and, since [DD-14.LB], in
+         * `src/opt/callgraph.c` as well. */
         case A_CALL:
-            return mrl_sat_add(acc, PCREC_W_UNBOUNDED);
+            return mrl_sat_add(acc, a->u.call.maxw_known ? a->u.call.maxw
+                                                         : PCREC_W_UNBOUNDED);
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_maxw(a->r));
             a = a->l;

@@ -123,6 +123,71 @@ construction (src/ir) and emission (src/gen).
   slot 0 so it survives the ASSERTION. The file's own `\K` note carries the
   measurement; cells in `tests/recursion/kreset.rxt`.
 
+  **[DD-14.LB] IT ALSO RUNS THE `maxw` FIXPOINT**, `minw`'s mirror, descending
+  from `PCREC_W_UNBOUNDED` because over-estimating is `pcrec_maxw`'s free
+  direction and under-estimating is its miscompile. **It uses NO CYCLE TEST**,
+  and the `reach` closure sitting right there is why that is worth stating:
+  `reaches(i, i)` would answer "is target i in a cycle" directly, and it is the
+  WRONG question. `mrl_sat_add` saturates, so a target in a cycle reads its own
+  published `PCREC_W_UNBOUNDED`, computes `k + UNBOUNDED == UNBOUNDED` and
+  never leaves the top — and the same absorption gives the right answer for a
+  target that merely REACHES a cycle without being in one (`g = (?&h)x` with
+  `h` recursive is genuinely unbounded), which a cycle test gets wrong unless
+  it is widened into exactly this propagation. One mechanism instead of two,
+  with a cell for each half in `tests/recursion/inlookaround.rxt`.
+
+- **postresolve.c** — [DD-14.LB] THE POST-RESOLUTION CHECKS: the pass for every
+  rule that must refuse a pattern AT A PATTERN OFFSET and cannot be decided
+  until the call graph exists. Run from `pcrec_compile` immediately after
+  `pcrec_callgraph_build`.
+
+  **IT EXISTS BECAUSE TWO FACTS COLLIDE AND NEITHER WILL MOVE.** A module's
+  parse hook is the only place in this compiler that holds a pattern offset
+  (`Ast` carries no position of any kind — PARSE-1, and `AltInfo.last_bar`
+  exists because of it), and the call graph does not exist until after parse
+  and after every rewriting pass (`callgraph.c` above, wave A2's finding). So a
+  rule whose answer depends on a callee is DECIDED where it cannot be RAISED
+  and raised where it cannot be decided.
+
+  **THE RESOLUTION IS THREE MOVES AND THEY ARE A SHAPE, NOT A CASE:** the hook
+  RECORDS (the offset, on the node, in the module's own `u.*` payload), the
+  graph is BUILT, this pass RE-ASKS the module's own rule at the recorded
+  offset. Today's one customer is module `lookaround`'s §2.5 fixed-width rule
+  for a lookbehind whose body carries a call; the shape recurs (§6.3's splice
+  eligibility, a variable-length lookbehind follow-on, the next module that
+  meets a call), so a second occurrence extends a list rather than inventing a
+  second post-graph timing.
+
+  **THE SPLIT OF OWNERSHIP IS THE DESIGN.** This file owns the WALK and the
+  ORDER and knows nothing about lookbehind widths;
+  `src/parse/mod_lookaround.c` owns the RULE and its three refusal sentences
+  and knows nothing about the call graph. Inlining the rule here would be a
+  second derivation of "is this branch fixed-width" for the hook's own to
+  disagree with — the failure `Ast.u.look.widths` is stored to prevent, one
+  level down.
+
+  **ORDER IS PART OF THE CONTRACT**: recorded constructs are visited in
+  ASCENDING PATTERN OFFSET, so a pattern with two offending lookbehinds refuses
+  at the FIRST, which is what the hook would have done. Walk order is not that
+  order and is not close to it — a flat concatenation is LEFT-NESTED, so a
+  spine walk reaches the RIGHTMOST element first and would report the LAST
+  offender.
+
+  **A SKIPPED PASS IS LOUD BY CONSTRUCTION.** The pending state is encoded as
+  `u.look.widths == NULL`, which `vm_look_behind` already `ctx_fail`s on by
+  name — so losing this pass is an internal error on the first call-bearing
+  lookbehind rather than a back-step of width zero. Encoding "pending" in a new
+  boolean instead would have made the same loss a WRONG SPAN, and on a negative
+  lookbehind a FALSE MATCH. Its walk is its own (the house style — `revdet.c`,
+  `possessify.c`, `select_engine.c`, `altcls.c` and `callgraph.c` each carry
+  one, because what varies is which edges they follow) and it does not follow
+  `u.call.body`, which is both design §4.4's non-terminating compile and
+  redundant, since a lookbehind inside a called group is visited at its own
+  lexical position anyway. Sabotage: S169 (never called; DETECTED,
+  14fail/23pass, every failure a pattern-compile failure) and S170 (resolves
+  but never refuses; DETECTED, 4fail/33pass, the opposite half of the same
+  file). Tests: `tests/recursion/inlookaround.rxt`.
+
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass
@@ -650,22 +715,41 @@ construction (src/ir) and emission (src/gen).
   pins both directions is `tests/recursion/mrl.rxt`: infinity must be
   REACHABLE and must not be reached by an APPROXIMATION.
 
-  **AND `pcrec_maxw`'s ARM NEEDED NO CHANGE, WHICH IS THE ASYMMETRY THIS FILE
-  EXISTS TO STATE.** It answers `PCREC_W_UNBOUNDED` unconditionally — EXACT
-  for a recursive callee (design §3.4(d) measured libpcre2 refusing exactly
-  that inside a lookbehind, error 125) and a sound OVER-estimate for every
-  other, which is this function's safe direction. Tightening it for an ACYCLIC
-  callee is an optimisation with a cost the wave did not pay: **its consumer,
-  the lookbehind fixed-width rule, runs in the PARSE HOOK** — where it must, to
-  refuse with a pattern offset — and the call graph does not exist until every
-  call is resolved. So no `A_CALL` arm of `maxw` can make a call inside a
-  lookbehind compile; the fix is a DEFERRED WIDTH RE-CHECK, and the two cells
-  it would turn green are parked in `tests/known_fail/dd14_bc_open.rxt`.
+  **[DD-14.LB] `pcrec_maxw`'s ARM NOW READS A MEMO TOO, AND THE ASYMMETRY IS
+  IN HOW IT READS IT.** The arm was `PCREC_W_UNBOUNDED` unconditionally through
+  wave B+C — EXACT for a recursive callee (design §3.4(d) measured libpcre2
+  refusing exactly that inside a lookbehind, error 125) and a sound
+  OVER-estimate for every other, which is this function's safe direction. It
+  now answers `u.call.maxw` when `u.call.maxw_known`, filled by a SECOND Kleene
+  fixpoint in `callgraph.c`, `minw`'s mirror descending from
+  `PCREC_W_UNBOUNDED`.
 
-  **`pcrec_maxw`'s ONLY CALLER IS module `lookaround`'s width rule**, so its
-  own instrument is still `tests/mrl/maxw_check.c` — see that
-  directory's CLAUDE.md for why the three existing instruments structurally
-  cannot see it.
+  **THE SECOND FIELD IS THE WHOLE ASYMMETRY.** `minw`'s memo needs no validity
+  flag because the arena's zero (0) is its SOUND direction — an under-estimate
+  prunes less and can never delete a live position — which is what lets
+  `possessify.c` call `pcrec_minw` before the graph exists. `maxw`'s safe
+  direction is the opposite one, so a bare `long long maxw` whose arena zero is
+  0 would be a silent MISCOMPILE (an under-estimated maximum lets a
+  variable-width branch through the lookbehind rule as fixed, and on a NEGATIVE
+  lookbehind that is a false match). `maxw_known` is the arena-zero-safe half,
+  exactly as `u.call.nonnullable`'s inverted polarity is: false means "answer
+  `PCREC_W_UNBOUNDED`", which is what the arm answered before the memo existed.
+
+  **AND WHAT MOVED WAS THE CONSUMER, NOT THE WRITER.** Wave B+C's objection to
+  tightening this arm was a TIMING one and it was correct: the consumer, module
+  `lookaround`'s fixed-width rule, runs in the PARSE HOOK — where it must, to
+  refuse with a pattern offset — and the graph does not exist until every call
+  is resolved. [DD-14.LB] answered it by re-asking the rule after the graph
+  exists (`postresolve.c` below) rather than by trying to make the hook see
+  through a call. The two cells the objection was written about are no longer
+  parked: one compiles, and the other turned out to be a §2.5 capability limit
+  the timing gap was masking (`tests/recursion/inlookaround.rxt`).
+
+  **`pcrec_maxw`'s ONLY CALLER IS module `lookaround`'s width rule**, at BOTH
+  of its timings now, so its own instrument is still `tests/mrl/maxw_check.c` —
+  see that directory's CLAUDE.md for why the three existing instruments
+  structurally cannot see it. Sabotage: S171 (the `maxw` fixpoint stopped after
+  one round; DETECTED, 2fail/35pass, on the two-hop chain cell alone).
 
   **THE ONE THING A UTF-8 BACKEND MUST REVISIT.** `A_CLASS` answers 1 byte in
   both functions. For `minw` that is a deliberate LOOSE under-estimate and

@@ -711,6 +711,62 @@ with. If wave A has not landed when §11's wave B+C does, this module ships
 `minw`'s arm alone and the lookbehind width rule refuses call-bearing bodies
 outright until it can.
 
+##### AMENDMENT, 2026-08-24 ([DD-14.LB]) — "composes without new machinery" was wrong, and the reason is TIMING
+
+The paragraph above is right about the ANALYSIS and wrong about the
+ARRANGEMENT, and waves A2 and B+C found the gap from opposite ends. It says
+"the width analysis descends into `A_CALL` by descending into the callee" and
+does not say **when** it runs. It runs in module `lookaround`'s PARSE HOOK —
+where it must, because `Ast` carries no position of any kind (PARSE-1) and a
+body pcrec will not compile has to be refused with a pattern OFFSET — and at
+that instant `u.call.body` is NULL, because §4.2's bind was moved to the FINAL
+tree (`callgraph.c`'s header, wave A2's finding at 513de65) and a FORWARD
+call's target has not been parsed at all. **So no `A_CALL` arm of `pcrec_maxw`
+can make a call-bearing lookbehind compile**: the width is decided before the
+callee is known, and the "refuses call-bearing bodies outright until it can"
+fallback is not a temporary state a later arm removes.
+
+**THE FIX MOVES THE CONSUMER, NOT THE WRITER.** The hook RECORDS the assertion
+(its offset, in the new `Ast.u.look.at`; `u.look.widths == NULL` on a
+lookbehind now MEANS pending) when `pcrec_has_call(body)`, and a new pass —
+`pcrec_postresolve`, `src/opt/postresolve.c`, run from `pcrec_compile`
+immediately after `pcrec_callgraph_build` — re-asks the module's OWN rule at
+the recorded offset. `pcrec_maxw`'s `A_CALL` arm reads a memo
+(`u.call.maxw`/`u.call.maxw_known`) filled by a new Kleene fixpoint in
+`callgraph.c`, `minw`'s mirror descending from `PCREC_W_UNBOUNDED`; the
+`maxw_known` half exists so the arena's zero stays the SOUND answer
+(`PCREC_W_UNBOUNDED`) at every timing before the fixpoint, the parse hook's
+above all.
+
+**THE PASS IS A GENERAL MECHANISM AND THIS IS ITS FIRST CUSTOMER.** The shape
+is "a rule that must refuse at a pattern offset and cannot be decided until the
+graph exists", and it recurs — §6.3's splice eligibility, a variable-length
+lookbehind follow-on, the next module that meets a call — so the pass owns the
+WALK and the ORDER (ascending pattern offset, so a pattern with two offending
+lookbehinds refuses at the first, which is what the hook would have done) and
+each module owns its RULE.
+
+**AND THE SECOND ROW OF THE TABLE ABOVE IS NOT PCREC'S SUBSET**, which the
+timing gap was masking. `^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$` has ONE top-level
+branch in its lookbehind body — an `A_CALL` — of width 1..2; the alternation is
+inside the CALLEE. The table's own annotation says what 10.46 is doing there:
+*"the variable-length lookbehind 10.43+ allows"*. pcrec refuses it after this
+amendment too, with the true sentence ("this one can match 1..2 characters")
+instead of the false one ("unbounded"), because it is `(?<=(a|bc))x` reached
+through a call — `lookaround_design.md` §2.5's chartered-not-shipped
+longest-first step-back loop, already a ruled `perr` in
+`tests/lookaround/refused.rxt`. Letting a body that is exactly one `A_CALL`
+borrow the callee's top-level branch split was considered and REJECTED: it is a
+special case that does not generalise (`(?<=x(?&g))` is one branch again), and
+it would invert §2.4's MEASURED ordering — PCRE2 tries a single variable branch
+step-back LONGEST-FIRST, while a two-branch treatment tries written order,
+which is observable in captures inside the callee.
+
+What DOES ship after the amendment is every call-bearing lookbehind whose
+top-level branches are each fixed: rows 1 and 5 of the table (row 5 refused,
+exactly, at 10.46's own offset), a two-hop acyclic callee chain, and an
+alternation of calls written at the body's own top level.
+
 #### (e) A call inside a lookahead or an atomic group is ordinary
 
 MEASURED, L8: `(?=(?&g))`, `(?!(?&g))` and `(?>(?&g))` all behave as the

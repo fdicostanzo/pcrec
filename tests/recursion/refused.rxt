@@ -36,22 +36,22 @@
 # ====================================================================
 
 # the classic library idiom -- still refused today by the doorway, not by the name.
-# MEASURED, build/pcrec off main under std1 (no --features): pcrec: (?(...) requires module 'conditionals' (pattern offset 0)
+# MEASURED, build/pcrec under std1 (no --features): pcrec: (?(...) requires module 'conditionals' (pattern offset 0)
 pattern (?(DEFINE)(?<w>a))(?&w)b
 perr
 
 # `(?(R)` -- the whole-pattern-recursion CONDITION, not a call. A different construct at the same doorway.
-# MEASURED, build/pcrec off main under std1 (no --features): pcrec: (?(...) requires module 'conditionals' (pattern offset 3)
+# MEASURED, build/pcrec under std1 (no --features): pcrec: (?(...) requires module 'conditionals' (pattern offset 3)
 pattern (a)(?(R)b|c)
 perr
 
 # `(?(1)` -- the numbered-group CONDITION.
-# MEASURED, build/pcrec off main under std1 (no --features): pcrec: (?(...) requires module 'conditionals' (pattern offset 3)
+# MEASURED, build/pcrec under std1 (no --features): pcrec: (?(...) requires module 'conditionals' (pattern offset 3)
 pattern (a)(?(1)b|c)
 perr
 
 # THE SAME PATTERN WITH `recursion` ENABLED. D71 decision 4 rules `(?(DEFINE)...)` a FUTURE `recursion` row ([DD-14] wave F, not started at the time this corpus was written) -- design SS2.5's own 'RULED: no DEFINE' conclusion is SUPERSEDED by that later ruling. TODAY, enabling `recursion` changes nothing: the doorway is still `conditionals`'s until wave F lands. This cell is the one to re-home (out of refused.rxt, into a DEFINE-idiom accept cell) the day it does.
-# MEASURED, build/pcrec off main under --features recursion: pcrec: (?(...) requires module 'conditionals' (pattern offset 0)
+# MEASURED, build/pcrec under --features recursion: pcrec: (?(...) requires module 'conditionals' (pattern offset 0)
 pattern (?(DEFINE)(?<w>a))(?&w)b
 features recursion
 perr

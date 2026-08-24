@@ -5092,9 +5092,19 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
     const int m = a->u.look.nbranch;
     const bool neg = a->u.look.neg;
 
+    /* [DD-14.LB] AND THIS IS NOW A LIVE DETECTOR RATHER THAN A GUARD AGAINST
+     * THE IMPOSSIBLE. `widths == NULL` on a lookbehind is the PENDING state
+     * (internal.h's `u.look.widths`): the parse hook records it when the body
+     * carries an `A_CALL` and `pcrec_postresolve` (src/opt/postresolve.c)
+     * fills it in. So the two ways here are "the hook did not run" and "the
+     * post-resolution pass did not run", and BOTH are named — a compiler that
+     * lost the second pass would otherwise emit a back-step of width zero for
+     * a lookbehind it never checked, which is a miscompile and not a
+     * diagnostic. Sabotage row S-LB1 deletes the pass and lands here. */
     if (m < 1 || a->u.look.widths == NULL)
         ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
-                           "no width table — the parse hook did not run");
+                           "no width table — the parse hook did not run, or "
+                           "its deferred width re-check did not");
     if (pslot < 0)
         ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look with "
                            "no position slot — the end-check has nothing to "

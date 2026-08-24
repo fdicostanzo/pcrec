@@ -600,6 +600,35 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   of width 1..2) and `(?<=a|bc)x` (shipped, TWO fixed branches) exactly
   backwards — the two cells §2.5 exists to distinguish.
 
+  **[DD-14.LB] THE WIDTH RULE IS NOW ASKED AT TWO TIMINGS, AND THE HOOK IS
+  STILL ONE OF THEM.** A body carrying an `A_CALL` cannot be measured in the
+  hook — `pcrec_maxw`'s `A_CALL` arm answers `PCREC_W_UNBOUNDED` there, because
+  the callee is bound over the FINAL tree by `pcrec_callgraph_build` and a
+  FORWARD call's target has not been parsed at all — so the hook RECORDS
+  instead: `u.look.at` takes the assertion's offset, `u.look.nbranch` takes the
+  branch count the parse just produced, and `u.look.widths` stays NULL, which
+  on a lookbehind now MEANS PENDING. `pcrec_postresolve`
+  (src/opt/postresolve.c) then calls this module's own
+  `pcrec_lookaround_fix_widths` after the graph exists. **The RULE did not
+  move and neither did the hook's refusals**: everything a CALL-FREE body was
+  refused for is still refused here, at the same offset, in the same bytes —
+  measured across 354 pattern blocks with 352 byte-identical, all 43
+  `tests/lookaround/` refusals among them.
+
+  Three details are worth knowing before touching it. The refusal SENTENCE has
+  ONE home (`la_width_refusal`) because it is raised two different ways — the
+  hook owes an `ExtResult` and the pass calls `ctx_fail` — and ext.c's epilogue
+  is itself `ctx_fail(cx, at, "%s", msg)`, so the two render identically by
+  construction rather than by transcription. The deferral test is
+  `pcrec_has_call(body)` and NOT "is any width unbounded", because those are
+  different questions and only this one is stable: a body variable-width for an
+  ORDINARY reason (`(?<=a+)`) must still refuse in the hook. And it
+  OVER-DEFERS knowingly — a call inside a NESTED lookaround in the body
+  contributes 0 to both widths, and `pcrec_has_call` descends into `A_LOOK` and
+  says "call" anyway; the deferred ask returns the identical table, and a
+  narrower predicate would be a third place this module decides what
+  contributes width. A cell pins the over-deferral harmless.
+
   **IT ALSO OWNS §2.7's `\K` CHECK, WHICH IS NEEDED RATHER THAN FREE.** `\K`
   is module `assertions` and already ships, so without a check `(?=a\K)b`
   would compile today's `\K` inside tomorrow's lookaround and quietly move
