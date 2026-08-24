@@ -498,7 +498,18 @@ ESC_SET('V', "\\V", classes, ANY_ENGINE, "any character that is not vertical whi
  * arbitration that makes it work is measured rather than assumed: two
  * `RK_ESC` rows in ONE `(kind, sel)` bucket, elected by tail and rank, is the
  * shipped `\N{` / `\N{U+` shape. The base `\g` row is rank 0, so the two
- * tailed rows outrank it and this module's port never sees `\g<` or `\g'`. */
+ * tailed rows outrank it and this module's port never sees `\g<` or `\g'`.
+ *
+ * [DD-14 wave D] AND THE TWO TAILED ROWS BELOW NOW SHARE THAT SAME PORT
+ * FUNCTION, `pcrec_brport_g` — not a second one. Design §4.2 ruled it "NOT A
+ * NEW PORT" precisely because arbitration, not the port, is what keeps a
+ * `\g<1>` call from ever being read as a `\g{1}` reference: whichever row
+ * wins the tail race is the row whose `at`/`from` reach the port, and
+ * `pcrec_brport_g`'s own `<`/`'` arms (mod_backrefs.c) discriminate on the
+ * SAME byte the registry just arbitrated on. `pcrec_call_node`/
+ * `pcrec_call_by_name` (mod_recursion.c) are what keep the CALL's zero
+ * family and name rule in that module rather than this one's port growing a
+ * second copy of either. */
 ESC_CLASS_SCALAR('k', "\\k<name>", backrefs, VM_ONLY, "backreference by name: \\k<n> \\k'n' \\k{n} — literal 'k' inside a class", QF_NO, "set 7", 'k', pcrec_brport_k),
 ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number or relative position: \\g1 \\g{-1} \\g{name} — literal 'g' inside a class", QF_NO, "err 108", 'g', pcrec_brport_g),
 /* The subroutine half. `class_expect` is MEASURED for each row's own syntax
@@ -513,13 +524,13 @@ ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number o
  "subroutine call into a group by number or name: \\g<1> \\g<name> — NOT a "
  "backreference (it re-runs the group's pattern)",
  ROADMAP_PLANNED, QF_NO, "set 4", 25, NULL,
- NO_PORT, {PORT_SCALAR, true, 'g', NULL, NULL}, NULL},
+ {PORT_FN, false, 0, NULL, pcrec_brport_g}, {PORT_SCALAR, true, 'g', NULL, NULL}, NULL},
 {RK_ESC, 'g', "'", "\\g'1'", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
  RD_MODULE, NULL, NULL, 0,
  "subroutine call into a group, quoted spelling: \\g'1' \\g'name' — NOT a "
  "backreference",
  ROADMAP_PLANNED, QF_NO, "set 3", 25, NULL,
- NO_PORT, {PORT_SCALAR, true, 'g', NULL, NULL}, NULL},
+ {PORT_FN, false, 0, NULL, pcrec_brport_g}, {PORT_SCALAR, true, 'g', NULL, NULL}, NULL},
 
 /* MOD-0.6 phase 2: longhand rather than the ESC macro, for exactly one
  * reason — `recognise` carries `pcrec_registry_uprops_recognise`, a MARKER
