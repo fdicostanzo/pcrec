@@ -1136,14 +1136,15 @@ reference compiler built from the pinned commit `ac4917d`:
 
 | axis | same | differing | refused by both | refusal mismatch | stamp-filter-bad | stamp-moved |
 |---|---|---|---|---|---|---|
-| `default` | 2198 | 0 | 240 | 0 | 0 | 0 |
-| `--engine=vm` | 2199 | 0 | 239 | 0 | 0 | 0 |
-| `-fno-prefilter` | 2199 | 0 | 239 | 0 | 0 | 0 |
-| `--no-captures` | 2198 | 0 | 240 | 0 | 0 | 0 |
+| `default` | 2199 | 0 | 240 | 0 | 0 | 0 |
+| `--engine=vm` | 2200 | 0 | 239 | 0 | 0 | 0 |
+| `-fno-prefilter` | 2200 | 0 | 239 | 0 | 0 | 0 |
+| `--no-captures` | 2199 | 0 | 240 | 0 | 0 | 0 |
 
-Corpus 2568 patterns; **130 call-bearing** (floor 60), **2438 call-free** (floor
-700). Classifier self-test 19/19. POSITIVE CONTROL on all four axes: the
-reference REFUSES all 130 call-bearing patterns, `ctl_bad == 0`.
+`checks passed: 8  checks failed: 0`, rc 0. Corpus 2575 patterns; **136
+call-bearing** (floor 60), **2439 call-free** (floor 700). Classifier self-test
+19/19. POSITIVE CONTROL on all four axes: the reference REFUSES all 136
+call-bearing patterns, `ctl_bad == 0` and `ctl_ok == 136` on each.
 
 **EXERCISED IN THE FAILING DIRECTION**, which is the half a green run cannot
 supply. One byte of an emitted comment was changed on a path every call-FREE
