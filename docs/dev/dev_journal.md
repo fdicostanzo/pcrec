@@ -12843,3 +12843,16 @@ S128 rather than ship the check undefended.
 Wave D opened (lane/waveD, opus): the seam's third residual entry, the
 fixed-per-branch lookbehind with the end-check on both arms (Frank's ASK
 2 ruling), four rows + S130 re-homed. Post-B+C battery running on main.
+
+## 2026-08-24 (EDT), thirty-eighth session (part 11) — the API outage: both wave lanes died mid-wave (500/529), resumed ~02:4x; post-B+C battery GREEN
+
+Between ~00:5x and ~02:4x the Anthropic API returned 500/529 and BOTH
+in-flight lanes died: waveD just after WIP 3 (vm_look's lookbehind shape,
+committed, tree clean), waveE just after WIP 3b/4 (one uncommitted
+tests/mech/CLAUDE.md edit). The WIP-commit discipline did its job — the
+stranded work is minutes, not hours, on both branches. Both lanes resumed
+by SendMessage at 02:4x with resume instructions (re-verify the last
+commit builds; waveE inspects its uncommitted delta deliberately).
+Meanwhile the post-B+C battery on main b6338f6 completed GREEN: strict
+clean, make test rc=0, `make san` green both axes (battery DONE 01:26).
+Waves 0/A/A2/B+C are all battery-validated.
