@@ -192,10 +192,11 @@ construction (src/ir) and emission (src/gen).
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
   plus [M6.5.2]'s two BACKREFERENCE tree predicates and [M6.6.2]'s
   `pcrec_has_lookaround`, which live here for this file's own stated reason:
-  switches over `AKind` with NO `default:` arm, so a node kind added later is a
-  compile error at each of them rather than a silent inheritance. Five of the
-  six sites are here; the file is the tree's densest concentration of that
-  alarm and that is why each new whole-tree predicate keeps landing in it.
+  SIX switches over `AKind` with NO `default:` arm, so a node kind added later
+  is a compile error at each of them rather than a silent inheritance. That is
+  six of the tree's twenty-FIVE such sites in one file — its densest
+  concentration of the alarm, and the reason each new whole-tree predicate
+  keeps landing here rather than beside its own module.
 
   **`pcrec_has_lookaround`** ([M6.6.2], `lookaround_design.md` §5.6) is
   `pcrec_has_atomic`'s TWIN and is placed beside it because the two are read in
