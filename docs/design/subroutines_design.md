@@ -451,9 +451,16 @@ combination the search reaches:
 
 (the numbers are the smallest `match_limit` that still reaches the answer —
 **PCRE2's own backtrack counter**, not pcrec's). The series is 2ⁿ⁺¹ against
-2ⁿ+1: **a call costs its body's backtracks plus one, and the ratio tends to
-2**. That extra one per call is the return, and §5.1's shape is where pcrec
-pays the same.
+2ⁿ+1: **a call-linked search does TWICE the backtracks of the same language
+inlined**, and the ratio is monotone and tending to 2.0 across 1…8 call sites.
+
+**WHAT THE FACTOR OF 2 IS, and this reading is ARGUED rather than measured**
+(§12 P-10): each *activation* of a call appears to cost one backtrack beyond
+what the body itself costs — which is what §5.1's non-popping call frame also
+costs, since an abandoned call frame pops through the fail label like any
+other. What is MEASURED is the ratio; the attribution to the return is an
+interpretation, and the experiment that would settle it is a callout count of
+the activations against the limit.
 
 **WHAT THIS RULES OUT.** `RX_CUT` at the return label — the shape the plan row
 offers as the alternative — is wrong for 10.46. The return must leave the
@@ -855,10 +862,11 @@ are exhausted, the call itself has no alternatives, so popping the call frame
 must continue failing. Making its resume label `rx_fail` is not a placeholder:
 it means the fail label needs **no knowledge of frame kinds** and no branch —
 the two added lines above run for every frame and are correct for both. The
-cost is one extra backtrack step per abandoned call, which is countable, is
-charged to the step budget at the site the budget is already charged, and is
-exactly the extra one per call §3.2's cost table MEASURED in PCRE2 (ratio →
-2.0).
+cost is one extra backtrack step per abandoned call, which is countable and is
+charged to the step budget at the site the budget is already charged. §3.2
+MEASURED PCRE2 doing **twice** the backtracks of an inlined control over 1…8
+call sites, which is the same order of overhead — the RATIO is measured, the
+attribution to the return is ARGUED (§12 P-10).
 
 **THREE PROPERTIES, each with the line that makes it true.**
 
@@ -1126,9 +1134,10 @@ through the same primitives and `emit_vm.c:6051`'s single decrement —
 sees them all. Three charges are this module's own:
 
 - **The call frame's own pop** — one step per abandoned call, at the fail
-  label, already counted. §3.2 MEASURED that PCRE2 charges the same extra one
-  per call (ratio → 2.0 against an inlined control), so pcrec's accounting and
-  PCRE2's agree in SHAPE, which is what D42.6 asks for.
+  label, already counted. §3.2 MEASURED PCRE2 doing **twice** the backtracks of
+  an inlined control over 1…8 call sites, so pcrec's accounting and PCRE2's
+  agree in SHAPE (a bounded constant factor, not a different growth), which is
+  what D42.6 asks for.
 - **The save/restore** — `2·|W|` trail entries per call, a compile-time
   constant, added to `vm_cost`'s `trail` for the call site and to `pt` (the
   per-iteration trail) when the call sits under a growing quantifier. An
@@ -2003,12 +2012,15 @@ splice, `[ENG-CUT]` cuts, `callouts` calls a function pointer (**which is an
 indirect CALL, not an indirect jump, and S-SR13's count must be written to
 distinguish them or the row fires when `callouts` lands**).
 
-**P-10 (PCRE2's cost shape).** *A call costs its body's backtracks plus one, so
-pcrec's per-call frame is the same accounting PCRE2 does.* Measured as a ratio
-tending to **2.0** over 8 call sites (§3.2). **Refute** by finding a shape where
-PCRE2's ratio diverges from pcrec's emitted step count — the obvious candidate
-is a call whose callee is possessified by `src/opt/possessify.c`, where pcrec
-removes choice points PCRE2 keeps.
+**P-10 (PCRE2's cost shape).** *The factor of 2 §3.2 measures is one extra
+backtrack per call ACTIVATION, which is what pcrec's non-popping call frame
+also costs.* **The RATIO is MEASURED (2.0 over 1…8 call sites); the
+ATTRIBUTION is ARGUED**, and this row exists because the two are easy to
+conflate. **Refute** by counting activations with a callout and showing the
+excess is not one per activation — or by finding a shape where PCRE2's ratio
+diverges from pcrec's emitted step count, the obvious candidate being a callee
+`src/opt/possessify.c` possessifies, where pcrec removes choice points PCRE2
+keeps.
 
 **P-11 (the harness directive is required).** *`PCREC_ERR_RECURSE` cannot be
 asserted by any existing `.rxt` expectation.* **Refute** by finding a spelling
