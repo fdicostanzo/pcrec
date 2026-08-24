@@ -2526,6 +2526,23 @@ Ast *pcrec_discharge_atomic(Ctx *cx, Ast *root);      /* src/opt/atomic.c */
  * its REJECTION stay sound, so the fix is to drop the MRL ceiling only. */
 bool pcrec_has_atomic(const Ast *a);                  /* src/opt/atomic.c */
 
+/* [M6.6.2] Does this tree carry an `A_LOOK`? `pcrec_has_atomic`'s TWIN, and
+ * declared beside it because it is read in the same expression, at the same
+ * point, for the same reason.
+ *
+ * ASKED OF THE POST-DISCHARGE TREE (design §5.6(4)). The prefilter is built
+ * from the lookaround-ERASED pattern (src/ir/nfa.c lowers an A_LOOK to an
+ * epsilon, the only sound choice for a subset construction), so its window END
+ * is NOT an upper bound on the real match's end — the identical hazard the
+ * cut has, arriving through a different door. Its span START and its REJECTION
+ * stay sound (L(P) is a subset of L(erase(P)) at every position, design §5.3),
+ * so the fix is again to drop the MRL ceiling only.
+ *
+ * FLAT, not shaped: design §5.6 names the narrower "a lookaround inside an
+ * alternation" predicate and rejects it — a second analysis with no
+ * independent check, against a silent match loss if it is wrong anywhere. */
+bool pcrec_has_lookaround(const Ast *a);              /* src/opt/atomic.c */
+
 /* Does any node in `a` carry `row` as its SR-8 producing stamp — i.e. did that
  * row's producer actually build something here?
  *

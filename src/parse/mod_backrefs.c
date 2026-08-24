@@ -505,6 +505,13 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
             if (a->u.cap.no > 0 && a->u.cap.no < nkeep && keep[a->u.cap.no]) return a;
             a = a->l;
             continue;
+        /* [M6.6.2] DESCENDS with them. A group inside a lookaround body that
+         * no surviving reference names must be stripped under
+         * `--no-captures` exactly as one anywhere else is — the body is an
+         * ordinary sub-pattern for this purpose, and a `A_CAP` left behind
+         * there would make a `--no-captures` artifact carry a wrapper the
+         * design says it does not. */
+        case A_LOOK:
         case A_REP: case A_ATOMIC:
             a->l = br_strip_caps(a->l, keep, nkeep);
             return a;

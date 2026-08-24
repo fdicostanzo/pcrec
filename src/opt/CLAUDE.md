@@ -190,10 +190,26 @@ construction (src/ir) and emission (src/gen).
 
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
-  plus [M6.5.2]'s two BACKREFERENCE tree predicates, which live here for this
-  file's own stated reason: five switches over `AKind` with NO `default:` arm,
-  so a node kind added later is a compile error at each of them rather than a
-  silent inheritance.
+  plus [M6.5.2]'s two BACKREFERENCE tree predicates and [M6.6.2]'s
+  `pcrec_has_lookaround`, which live here for this file's own stated reason:
+  switches over `AKind` with NO `default:` arm, so a node kind added later is a
+  compile error at each of them rather than a silent inheritance. Five of the
+  six sites are here; the file is the tree's densest concentration of that
+  alarm and that is why each new whole-tree predicate keeps landing in it.
+
+  **`pcrec_has_lookaround`** ([M6.6.2], `lookaround_design.md` §5.6) is
+  `pcrec_has_atomic`'s TWIN and is placed beside it because the two are read in
+  ONE expression, at one site, at one point in the pipeline — `Vm.mrl_win` in
+  src/gen/emit_vm.c, post-discharge. Same hazard through a different door: the
+  prefilter is built from the lookaround-ERASED pattern (src/ir/nfa.c lowers an
+  `A_LOOK` to an epsilon), so its window END is not an upper bound on the real
+  match's end, while its rejection and its span START stay sound. FLAT rather
+  than shaped — §5.6 names the narrower "a lookaround inside an alternation"
+  predicate and rejects it as a second analysis with no independent check.
+  **AT WAVE A2 THE PREDICATE IS PLACED AND ITS CONJUNCT IS NOT YET IN
+  `v.mrl_win`**: wave E adds `&& !pcrec_has_lookaround(root)` and sabotage row
+  S-LA12 deletes it. Nothing produces an `A_LOOK` before wave B+C, so the
+  conjunct could not be exercised and would pre-satisfy its own detector.
 
   **`pcrec_has_bref`** is §7.1's predicate — does anything here compare subject
   text to subject text — and its ONE reader is `select_engine.c`, which forces

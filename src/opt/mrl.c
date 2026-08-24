@@ -41,6 +41,15 @@
  * Lookaround, backreferences and `(*ATOMIC)` have no producers today; when
  * they gain one, each contributes 0 here until someone measures otherwise,
  * and the exhaustive switch is what forces that decision to be made.
+ *
+ * [M6.6.2] THAT SENTENCE HAS NOW BEEN CASHED FOR ALL THREE, and it was right
+ * about each — but only `A_ATOMIC` inherited its 0 unexamined. `A_BREF` got a
+ * measured argument at [M6.5.2] (0 is EXACT, because a group can publish an
+ * empty capture) and `A_LOOK` got one at [M6.6.2] (0 for a LOOKAHEAD because
+ * it consumes nothing, and 0 for a LOOKBEHIND because its bytes are behind
+ * the cursor and this file counts bytes still to be consumed). The value the
+ * placeholder predicted and the value the check produced agree in every case;
+ * what changed is that they are now claims rather than defaults.
  */
 
 #include <string.h>
@@ -135,6 +144,27 @@ long long pcrec_minw(const Ast *a)
          * NFA (src/ir/nfa.c), so `pcrec_minw` of a pattern with one is the
          * same number as `pcrec_minw` of the pattern without it, which is
          * what makes the prune bound this file computes indifferent to it. */
+        /* [M6.6.2] A LOOKAROUND CONTRIBUTES 0, AND IT IS 0 BECAUSE IT WAS
+         * CHECKED — not because this file's header inherited it (design
+         * §3.1(d)). The header's original sentence ("Lookaround,
+         * backreferences and `(*ATOMIC)` have no producers today; when they
+         * gain one, each contributes 0 here until someone measures otherwise")
+         * was a placeholder written before any producer existed. Checked:
+         *
+         *   - for a LOOKAHEAD it is right because the construct inspects bytes
+         *     AHEAD of the cursor and consumes none, so it adds nothing to the
+         *     minimum number of bytes still to be consumed;
+         *   - for a LOOKBEHIND it is right too, and for a reason the first
+         *     reading gets backwards: those bytes are BEHIND the cursor, and
+         *     this analysis counts bytes still to be CONSUMED. A lookbehind of
+         *     width 3 does not require three more bytes of subject; it
+         *     requires three bytes already passed.
+         *
+         * The VALUE does not change and the CLAIM'S STATUS does, which is the
+         * whole content of this comment. The body is NOT descended into for
+         * the same reason: whatever the body needs, the OUTER match does not
+         * consume it. */
+        case A_LOOK:
         case A_KRESET:
             return acc;
         case A_CAT:
@@ -230,6 +260,18 @@ long long pcrec_maxw(const Ast *a)
          * Neither reads or advances the cursor. */
         case A_GSTART:
         case A_KRESET:
+        /* [M6.6.2] 0 for `pcrec_minw`'s arm's reason, read at the other end of
+         * the interval: a lookaround consumes nothing on EVERY path, not
+         * merely on some, so 0 is exact at the maximum as well as at the
+         * minimum. See that arm for why a lookbehind's width does not appear
+         * here either.
+         *
+         * THIS IS THE ARM WHOSE OWN CONSUMER IS THE FIXED-WIDTH RULE, so the
+         * exactness matters twice: a NESTED lookaround inside a lookbehind
+         * branch (`(?<=a(?=b)c)`) contributes 0 at both ends, which makes that
+         * branch fixed-width 2 rather than variable — the answer libpcre2
+         * gives. The body is not descended into. */
+        case A_LOOK:
             return acc;
         case A_BREF:
             /* UNBOUNDED — see the header. This is the one arm where minw's

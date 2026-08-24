@@ -115,6 +115,23 @@ static void rd_shape(Shape *S, const Ast *a)
          * Declining here is what makes that unreachable rather than
          * unlikely: rd_reverse and rd_alt_disjoint below both run only on a
          * body this scan approved. */
+        /* [M6.6.2] DECLINES, and this is the arm the other three in this file
+         * rest on: it is what makes them unreachable rather than merely
+         * unlikely.
+         *
+         * The reason is `\K`'s, one construct out. This rung suppresses the
+         * per-iteration capture writes and RECOVERS them by walking BACKWARDS
+         * over the iteration boundaries (§3.4). A lookaround has no reversed
+         * spelling at all: its body runs FORWARD even for a lookbehind
+         * (design §3.5 — forward body plus an end-check, not a reverse
+         * machine), and its verdict is a property of a sub-match at a position
+         * the backward walk is not at. There is nothing on the boundary
+         * lattice to recover.
+         *
+         * Declining costs a quantifier whose body holds a lookaround its
+         * one-body-copy lowering, which is always available and always safe:
+         * the denied build replicates, and replication is the ground truth. */
+        case A_LOOK:
         case A_KRESET:
             S->ok = false;
             return;
@@ -266,7 +283,23 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * FORWARD walk published, and there is no mirrored spelling of that.
      * Unreachable — `rd_shape` declines every body carrying one — and the
      * fallthrough this replaces would have COPIED the node into a reversed
-     * body that compares the same span while the walk runs the other way. */
+     * body that compares the same span while the walk runs the other way.
+     *
+     * [M6.6.2] A LOOKAROUND JOINS THEM, and it is the strongest case of the
+     * three. `\K` and `A_BREF` are merely not reversal-invariant; a
+     * lookaround's body is not even reversed WHEN IT IS EMITTED FORWARD —
+     * design §3.5 lowers a LOOKBEHIND as back-step + FORWARD body +
+     * end-check, precisely because there is no reverse machine to write it
+     * with. Producing a "reversed" A_LOOK here would be inventing a construct
+     * that does not exist anywhere in this compiler.
+     *
+     * Unreachable: `rd_shape` declines every body carrying one (above), and
+     * this runs only on a body `rd_shape` approved. The tail fallthrough at
+     * the bottom of this function would have COPIED the node — through
+     * `rd_node`, whose D70 kind guard means the copy would have kept a valid
+     * `u.look` and therefore looked entirely plausible. That is the silent
+     * outcome this arm replaces with a loud one. */
+    case A_LOOK:
     case A_BREF:
         ctx_fail(cx, 0, "internal error: a backreference reached the "
                         "reverse-deterministic body reversal, which its shape "
@@ -391,7 +424,18 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
              * for `Ast.u.anch.multiline` awareness and needing none: widening is
              * opaque to what an assertion means, so it cannot be wrong about
              * WHERE a `$` is true. The full inspection is recorded at the
-             * field itself (src/core/internal.h). */
+             * field itself (src/core/internal.h).
+             *
+             * [M6.6.2] RE-INSPECTED FOR `A_LOOK`, one of the same four sites
+             * (design §11's second table), and SOUND for the same reason
+             * TWICE OVER. Widening is opaque to what a lookaround asserts, so
+             * it cannot be wrong about it; and `rd_shape`'s new A_LOOK arm
+             * declines every body carrying one, so this default is not even
+             * reachable with a lookaround in hand. Note that this function's
+             * own header calls the body reaching it "NON-NULLABLE and
+             * assertion-free", which a lookaround is not — that description is
+             * a statement of what the shape scan guarantees, so the decline
+             * arm is what keeps it true, not this default. */
             memset(out, 0xff, 32);
             return;
         }
@@ -426,6 +470,14 @@ static bool rd_alt_disjoint(const Ast *a)
          * the forward cut. Unreachable (rd_shape rejects the body long
          * before), and written out rather than left to the switch's tail
          * because this file's two fallthroughs disagree about what is safe. */
+        /* [M6.6.2] DECLINES, A_ATOMIC's arm for A_ATOMIC's reason: `false` is
+         * the sound direction here in the way `true` is not. A decline keeps
+         * the quantifier's machinery, which is always correct; an approval
+         * would hand the emitter a rung whose backward walk cannot reproduce a
+         * sub-match verdict. Unreachable (`rd_shape` rejects the body first),
+         * and written out rather than left to a fallthrough because this
+         * file's two fallthroughs disagree about what is safe. */
+        case A_LOOK:
         case A_ATOMIC:
             return false;
         case A_CAP: case A_REP:
@@ -504,6 +556,28 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
      * hosts none. The verdict about `\K` is rd_shape's, one level down.
      * [M6.5.2] `A_BREF` joins for the identical reason. */
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
+        return;
+    /* [M6.6.2] DOES NOT DESCEND, and this is the ONE arm in this file where
+     * the decline is a CHOICE rather than a correctness requirement — which is
+     * why it is separated from A_ATOMIC's transparent arm below and says so.
+     *
+     * A_ATOMIC is transparent here because a quantifier that merely SITS
+     * INSIDE an atomic group is an ordinary quantifier the emitter still has
+     * to lower, and denying it the rung costs a real lowering for no reason.
+     * The same argument would apply to a lookaround body — the rung's verdict
+     * is local to the quantifier's own decomposition — so descending would
+     * probably be sound. It is not taken, for a reason that is about EVIDENCE
+     * rather than about the argument: nothing produces an A_LOOK in this wave,
+     * so a rung granted inside a lookaround body could not be exercised by any
+     * test in the tree, and "probably sound, entirely unmeasured" is the shape
+     * this project has been bitten by. Declining is always safe (the denied
+     * build replicates, and replication is the ground truth), so the cost is a
+     * missed optimisation on a body that does not exist yet.
+     *
+     * A LATER WAVE MAY MAKE THIS DESCEND once there is a corpus that can go
+     * red; the arm is written as a decline so that change is a deliberate one
+     * with a measurement behind it. */
+    case A_LOOK:
         return;
     case A_CAP:
     /* [M6.4.2] TRANSPARENT, and NOT the same question the three arms above
