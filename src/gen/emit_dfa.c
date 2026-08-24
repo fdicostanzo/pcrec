@@ -373,7 +373,7 @@ static void emit_rx_abi_types(StrBuf *sb)
         "\n"
         "/* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a\n"
         " * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the\n"
-        " * engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK). D49: those\n"
+        " * engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK/_RECURSE). D49: those\n"
         " * codes PROPAGATE, they are not collapsed to -1, and a caller doing\n"
         " * an exact `== -1` test sees them as distinct values. Values\n"
         " * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort\n"
@@ -384,14 +384,24 @@ static void emit_rx_abi_types(StrBuf *sb)
         "\n"
         /* [ABI-NS] (D60 + addendum, 2026-08-18): the give-up code space is a
          * pcrec-contract fact, not a per-artifact one -- every artifact means
-         * the same thing by -2/-3/-4, so it is spelled ONCE here rather than
-         * once per --prefix. Formerly <PREFIX>_ERR_STEPS/_FRAMES/_WORK/_FLOOR
-         * (emit_ncaps_macros); DELETED there, no alias -- the house rule
-         * D44.2/PCREC_ENC_BYTE already set. */
-        "#define PCREC_ERR_STEPS  (-2)\n"
-        "#define PCREC_ERR_FRAMES (-3)\n"
-        "#define PCREC_ERR_WORK   (-4)\n"
-        "#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
+         * the same thing by -2/-3/-4/-5, so it is spelled ONCE here rather
+         * than once per --prefix. Formerly <PREFIX>_ERR_STEPS/_FRAMES/_WORK/
+         * _FLOOR (emit_ncaps_macros); DELETED there, no alias -- the house
+         * rule D44.2/PCREC_ENC_BYTE already set.
+         *
+         * [DD-14 wave A, D71 item 1] PCREC_ERR_RECURSE (-5) joins the block
+         * and PCREC_ERR_FLOOR moves -4 -> -5 (D49's own re-open clause,
+         * exercised): the recursion-depth GIVE-UP CODE is reserved now, but
+         * its COUNTER is not in the default artifact (D71 item 1 -- a
+         * future [V-H] diagnostic-generation axis). No producer emits
+         * PCREC_ERR_RECURSE yet; the code exists so the ABI does not need a
+         * second pre-release renumber when module 'recursion' lands one. */
+        "#define PCREC_ERR_STEPS   (-2)\n"
+        "#define PCREC_ERR_FRAMES  (-3)\n"
+        "#define PCREC_ERR_WORK    (-4)\n"
+        "#define PCREC_ERR_RECURSE (-5)  /* [DD-14] reserved: no producer "
+        "yet (D71 item 1) */\n"
+        "#define PCREC_ERR_FLOOR   (-5)  /* give-ups: [FLOOR,-2]; "
         "below: reserved (D49) */\n"
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract

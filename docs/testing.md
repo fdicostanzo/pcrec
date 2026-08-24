@@ -292,11 +292,16 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
    `2+2*slot` after the leading `match` token.
 5. **[K21-class fix, 2026-08-15]**: `rx_search`'s return is actually
    three-valued, not boolean — a VM artifact can also GIVE UP (a negative
-   RX_ERR_STEPS/RX_ERR_FRAMES sentinel when it exhausts its step budget or
-   backtrack-frame capacity; a DFA artifact never returns one). The driver
+   RX_ERR_STEPS/RX_ERR_FRAMES/RX_ERR_WORK/RX_ERR_RECURSE sentinel when it
+   exhausts its step budget, backtrack-frame capacity, or (RECURSE, [DD-14]
+   wave A, reserved with no producer yet, D71 item 1) its recursion depth;
+   a DFA artifact never returns one). The driver
    discriminates this explicitly rather than treating the return as a bool
    (the shape that was wrong — see docs/dev/known_issues.md K21): on a
-   give-up it prints `steps\n` or `frames\n` and exits `3`, not `0`, and
+   give-up it prints `steps\n`/`frames\n`/`work\n`/`recurse\n` (an
+   unrecognized code prints `giveup <N>\n`, [DD-14] wave A —
+   the earlier version of this line folded every non-STEPS code into
+   `"frames"`, mislabelling WORK give-ups) and exits `3`, not `0`, and
    `run.sh`'s per-case loop treats exit `3` as its own HARD harness-level
    failure — alongside the existing timeout (`124`) and crash (`>=126`)
    branches, never compared against a `match`/`nomatch` expectation. Dormant

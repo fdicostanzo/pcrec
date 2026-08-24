@@ -90,7 +90,9 @@ emitted macro whose VALUE is a property of pcrec's CONTRACT rather than of
 one artifact moves from a per-`<PREFIX>` spelling to one canonical,
 unprefixed `PCREC_*` spelling in the shared `PCREC_RX_ABI_H` block (§2):
 the give-up code space (`<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR` →
-`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`), the caps-array unset
+`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`; **[DD-14 wave A, D71 item 1,
+2026-08-24]: `PCREC_ERR_RECURSE` joins it and `PCREC_ERR_FLOOR` moves
+−4 → −5 — see §4's own revision note**), the caps-array unset
 sentinel (`<PREFIX>_UNSET` → `PCREC_UNSET`), and the nine D46 stamp BIT
 constants (`<PREFIX>_VM_RUNG_CURSOR`/etc., `<PREFIX>_VM_STRAT_POSSESSIVE`/
 `_BACKTRACKING`, `<PREFIX>_VM_PRUNE_CLAMPED`/`_UNCLAMPED` →
@@ -168,7 +170,9 @@ noted under group 2, which are `PCREC_*`-named yet per-artifact):
    unconditionally on every artifact (DFA-only included, the same
    "reserved but unreachable" shape §4 already had): the give-up code
    space `PCREC_ERR_STEPS`/`PCREC_ERR_FRAMES`/`PCREC_ERR_WORK`/
-   `PCREC_ERR_FLOOR` (§4), the caps-array unset sentinel `PCREC_UNSET`
+   `PCREC_ERR_RECURSE`/`PCREC_ERR_FLOOR` (§4 — `_RECURSE` joined and
+   `_FLOOR` moved −4 → −5 at [DD-14] wave A, D71 item 1), the caps-array
+   unset sentinel `PCREC_UNSET`
    (§5), the two engine constants `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`
    (§6), and the nine D46 stamp bit constants `PCREC_VM_RUNG_CURSOR`/
    `_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`/`_REVDET`/`_COUNTER`,
@@ -207,7 +211,7 @@ typedef struct rx_ctx {
 
 /* returns matched length >= 0 (anchored at ctx->pos), -1 (fail), or a
  * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
- * engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK). D49: those
+ * engine can give up (PCREC_ERR_STEPS/_FRAMES/_WORK/_RECURSE). D49: those
  * codes PROPAGATE, they are not collapsed to -1, and a caller doing
  * an exact `== -1` test sees them as distinct values. Values
  * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
@@ -216,10 +220,11 @@ typedef struct rx_ctx {
  * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */
 typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);
 
-#define PCREC_ERR_STEPS  (-2)
-#define PCREC_ERR_FRAMES (-3)
-#define PCREC_ERR_WORK   (-4)
-#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+#define PCREC_ERR_STEPS   (-2)
+#define PCREC_ERR_FRAMES  (-3)
+#define PCREC_ERR_WORK    (-4)
+#define PCREC_ERR_RECURSE (-5)  /* [DD-14] reserved: no producer yet (D71 item 1) */
+#define PCREC_ERR_FLOOR   (-5)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
 
 #define PCREC_UNSET ((ptrdiff_t)-1)
 
@@ -340,7 +345,7 @@ Searches `s[startpos..n)` for the leftmost match and returns:
 |---|---|
 | `1` | match found; if `caps != NULL`, `<PREFIX>_NCAPS` pairs are written, `caps[0]` the whole-match span (no second name for it) |
 | `0` | no match; `caps` (if non-NULL) is left **untouched** — the `int` return alone communicates match/no-match |
-| `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` | engine gave up (§4); `caps` also left **untouched** |
+| `<PREFIX>_ERR_STEPS` / `_FRAMES` / `_WORK` / `_RECURSE` | engine gave up (§4); `caps` also left **untouched**. `_RECURSE` is reserved with no producer yet ([DD-14] wave A, D71 item 1) |
 
 Note that `0` here means **no match**, not a zero-length match. A
 zero-length match is a success: it returns `1` with
@@ -816,10 +821,11 @@ given input is a property of that entry (§3.3's caveat, measured in both
 directions).
 
 ```c
-#define PCREC_ERR_STEPS  (-2)
-#define PCREC_ERR_FRAMES (-3)
-#define PCREC_ERR_WORK   (-4)
-#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+#define PCREC_ERR_STEPS   (-2)
+#define PCREC_ERR_FRAMES  (-3)
+#define PCREC_ERR_WORK    (-4)
+#define PCREC_ERR_RECURSE (-5)  /* [DD-14] reserved: no producer yet (D71 item 1) */
+#define PCREC_ERR_FLOOR   (-5)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
 ```
 
 **[ABI-NS], 2026-08-18 (D60).** These four were spelled `<PREFIX>_ERR_STEPS`/
@@ -829,8 +835,18 @@ pcrec-CONTRACT fact, not a per-artifact one, and moved them unprefixed
 into the shared `PCREC_RX_ABI_H` block (§2) — the per-`<PREFIX>` spelling
 is DELETED, not aliased. The block above is quoted verbatim from a fresh
 `-p rx --no-captures` build of `'a(b|c)+d'`; a `-p foo` build of the same
-pattern emits the byte-identical four lines (§1/§2's cross-prefix
+pattern emits the byte-identical lines (§1/§2's cross-prefix
 identity property, now covering these constants too).
+
+**[DD-14] wave A, 2026-08-24 (D71 item 1).** `PCREC_ERR_RECURSE` joins the
+block and `PCREC_ERR_FLOOR` moves −4 → −5 — D49's own re-open clause
+("getting the partition wrong pre-release costs a renumber and nothing
+else"), exercised. The CODE is reserved now; the recursion-depth COUNTER
+that would produce it is NOT in the default artifact (D71 item 1 — a
+future `[V-H]` diagnostic-generation axis, a separate emitted variant, not
+a runtime flag). No arm in any emitter returns `PCREC_ERR_RECURSE` today —
+it is exactly as unreachable on every artifact as `PCREC_ERR_STEPS` etc.
+are on a DFA-only one, the same "reserved but unreachable" shape.
 
 Verified against both a DFA-only artifact (`--no-captures`, no counter
 exists, these codes are reserved-but-unreachable) and a captures-default

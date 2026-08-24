@@ -392,7 +392,9 @@ engines in two functions cannot collide on them. The file-scope names are:
   RETIRED at [M4.4] (D44.2) — no compatibility alias. **[ABI-NS] (D60 +
   addendum, 2026-08-18)**: the same guard now also carries every emitted
   UNIVERSAL MACRO, unprefixed and unconditional on every artifact — the
-  give-up code space (`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`), the
+  give-up code space (`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`; **[DD-14
+  wave A, 2026-08-24, D71 item 1]: `PCREC_ERR_RECURSE` joined and `_FLOOR`
+  moved −4 → −5 — reserved, no producer yet**), the
   caps-array unset sentinel (`PCREC_UNSET`), the two engine constants
   (`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, new — naming `rx_info.engine`'s
   formerly number-only contract), and the nine D46 stamp bit constants

@@ -376,10 +376,13 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  *
  * Searches s[startpos..n) and returns 1 on a match, 0 on no match, or a
  * NEGATIVE typed give-up code when the engine ran out of budget: the
- * artifact's `<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`, all inside
+ * artifact's `<PREFIX>_ERR_STEPS`/`_FRAMES`/`_WORK`/`_RECURSE`, all inside
  * [`<PREFIX>_ERR_FLOOR`, -2] (D49; the same code space `<prefix>_match`
- * and `<prefix>_match_caps` return, docs/spec/match_api.md §4). The return
- * is therefore NOT two-valued: `if (<prefix>_search(...))` treats a give-up
+ * and `<prefix>_match_caps` return, docs/spec/match_api.md §4).
+ * [DD-14 wave A, D71 item 1] `_RECURSE` is RESERVED, no producer today —
+ * the recursion-depth counter is a future diagnostic-generation axis, not
+ * part of the default artifact.
+ * The return is therefore NOT two-valued: `if (<prefix>_search(...))` treats a give-up
  * as a match, and a caller that must not do that tests `== 1` (or `> 0`)
  * for "matched" and `< 0` for "gave up". Values strictly below the floor
  * are reserved for a future abort semantic and no emitted matcher produces

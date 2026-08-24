@@ -307,6 +307,13 @@ D49 then partitions the negative space rather than leaving it open-ended:
  */
 ```
 
+**AMENDED ([DD-14] wave A, 2026-08-24, D71 item 1).** A fourth typed
+give-up, `RX_ERR_RECURSE` (unprefixed at [ABI-NS]: `PCREC_ERR_RECURSE`),
+joins `RX_ERR_STEPS`/`_FRAMES`/`_WORK` inside `[RX_ERR_FLOOR, -2]`, and
+the floor itself moves — this is a spelling-record note, not a
+correction; docs/spec/match_api.md §4 is the current authoritative
+contract and states the moved value.
+
 The floor is emitted as a NAME beside the codes (per-prefix, with its three
 siblings — see `src/gen/emit_dfa.c`'s `emit_ncaps_macros` for why that
 placement was chosen over the shared ABI block, and when to revisit it)
@@ -514,6 +521,14 @@ moves.
   literal:
 
       if (ret < RX_ERR_FLOOR) __builtin_trap();
+
+  **AMENDED ([DD-14] wave A, 2026-08-24, D71 item 1)**: `RX_ERR_RECURSE`
+  joins the block inside the floor too, but is RESERVED with no producer
+  yet — the recursion-depth counter that would return it is a future
+  diagnostic-generation axis, not part of the default artifact. So the
+  set that a matcher DOES produce today is unchanged; the set the floor
+  must clear grew by one, and the floor moved to match (docs/spec/
+  match_api.md §4 is the current authoritative value).
 
   What this cost, stated because the ruling accepted it with eyes open: a
   future abort semantic loses `-2` as its cheapest encoding and must live

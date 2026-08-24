@@ -6524,9 +6524,16 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * collapses it to -1 per D38.4's frozen return space, and only
      * <prefix>_search — which D38 says nothing about — has room for the
      * honest code), so they get their own PER-PREFIX names. */
-    sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
-    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
-    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)\n\n", v.up);
+    sb_printf(c, "#define %s_R_STEPS   ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
+    sb_printf(c, "#define %s_R_FRAMES  ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
+    sb_printf(c, "#define %s_R_WORK    ((ptrdiff_t)PCREC_ERR_WORK)\n", v.up);
+    /* [DD-14 wave A] %s_R_RECURSE joins its three siblings, sentinel only:
+     * D71 item 1 reserves the CODE now and defers the recursion-depth
+     * COUNTER to a future [V-H] diagnostic axis, so no arm in this file
+     * returns %s_R_RECURSE yet -- it exists so the search entry's collapse
+     * (below) and every consumer of the sentinel family already agree on
+     * its name before module 'recursion' supplies a producer. */
+    sb_printf(c, "#define %s_R_RECURSE ((ptrdiff_t)PCREC_ERR_RECURSE)\n\n", v.up);
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
      *
@@ -7111,9 +7118,18 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    for (;;) {\n"
         "        ctx.pos = attempt_position;\n"
         "        result = %s_match_anchored(&ctx, &run%s%s);\n"
-        "        if (result == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
-        "        if (result == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
-        "        if (result == %s_R_WORK)   return PCREC_ERR_WORK;\n"
+        "        if (result == %s_R_STEPS)   return PCREC_ERR_STEPS;\n"
+        "        if (result == %s_R_FRAMES)  return PCREC_ERR_FRAMES;\n"
+        "        if (result == %s_R_WORK)    return PCREC_ERR_WORK;\n"
+        /* [DD-14 wave A] the fourth PROPAGATION line, D49's whole point:
+         * a give-up must reach the caller with its own code, never fold
+         * into a plain no-match. No arm returns %s_R_RECURSE yet (D71
+         * item 1 -- no producer this wave), so this line is dead code on
+         * every artifact today and stays that way until module
+         * 'recursion' lands one; it is added HERE, with its siblings,
+         * rather than later, so the collapse is never missing a code the
+         * ABI already reserves. */
+        "        if (result == %s_R_RECURSE) return PCREC_ERR_RECURSE;\n"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(&run);\n"
         "        if (attempt_position >= subject_length) return 0;\n"
@@ -7132,7 +7148,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v.ngst > 0 ? ", search_from" : "",
-        v.up, v.up, v.up, v.p, retry_win, v.p);
+        v.up, v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -7178,7 +7194,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
         " * return space is >= 0 matched length, -1 no match, and a distinct\n"
         " * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up\n"
-        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK). Anything BELOW the floor\n"
+        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK, PCREC_ERR_RECURSE\n"
+        " * -- [DD-14]: reserved, no producer yet, D71 item 1). Anything BELOW the floor\n"
         " * stays reserved for the future abort semantic and is what a callout\n"
         " * call site traps on.\n"
         " *\n"
