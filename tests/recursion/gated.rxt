@@ -48,6 +48,7 @@ perr
 # THE WRONG MODULE ENABLED BUYS NOTHING: the gate is per-row, not per-pattern. `backrefs` alone does not unlock a call.
 # MEASURED, build/pcrec off main under --features backrefs: pcrec: (?1...) requires module 'recursion' (pattern offset 3)
 pattern (a)(?1)
+features backrefs
 perr
 
 # ====================================================================
@@ -57,11 +58,13 @@ perr
 # numeric call, enabled -- 'enabled but ... not implemented yet', never the closed-gate wording; a reader must be able to tell 'nobody asked for this' from 'somebody asked and it isn't built'.
 # MEASURED, build/pcrec off main under --features recursion: pcrec: module 'recursion' is enabled but (?1...) is not implemented yet (pattern offset 3)
 pattern (a)(?1)
+features recursion
 perr
 
 # by-name call, enabled -- same wording family, verified separately because the by-name doorway is a DIFFERENT registry row from the numeric one.
 # MEASURED, build/pcrec off main under --features recursion: pcrec: module 'recursion' is enabled but (?&...) is not implemented yet (pattern offset 0)
 pattern (?&n)(?<n>a)
+features recursion
 perr
 
 # ====================================================================
@@ -71,6 +74,7 @@ perr
 # **NOT OBSERVABLE IN ITS TRUE FORM TODAY.** MEASURED: with `recursion` enabled and `named-groups` NOT enabled, this pattern refuses today naming 'recursion' (module `recursion` has no producer at all yet, so the parser never gets far enough to ask about `named-groups`). Once [DD-14] wave B+C lands the `(?&` PARSE, the design's claim is that this SAME cell must then refuse naming 'named-groups' instead -- because the declaration `(?<n>a)` is what needs that module, and a call can reach it lexically before the resolver ever runs. This row passes VACUOUSLY today (nonzero exit, wrong reason) -- S108's masking shape, named by the design itself. THE CODE LANE MUST RE-CHECK THIS CELL'S MESSAGE ONCE WAVE B+C LANDS, not just its exit code.
 # MEASURED, build/pcrec off main under --features recursion: pcrec: module 'recursion' is enabled but (?&...) is not implemented yet (pattern offset 0)
 pattern (?&n)(?<n>a)
+features recursion
 perr
 
 # ====================================================================

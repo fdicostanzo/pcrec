@@ -53,4 +53,5 @@ perr
 # THE SAME PATTERN WITH `recursion` ENABLED. D71 decision 4 rules `(?(DEFINE)...)` a FUTURE `recursion` row ([DD-14] wave F, not started at the time this corpus was written) -- design SS2.5's own 'RULED: no DEFINE' conclusion is SUPERSEDED by that later ruling. TODAY, enabling `recursion` changes nothing: the doorway is still `conditionals`'s until wave F lands. This cell is the one to re-home (out of refused.rxt, into a DEFINE-idiom accept cell) the day it does.
 # MEASURED, build/pcrec off main under --features recursion: pcrec: (?(...) requires module 'conditionals' (pattern offset 0)
 pattern (?(DEFINE)(?<w>a))(?&w)b
+features recursion
 perr

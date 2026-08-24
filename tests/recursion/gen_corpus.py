@@ -179,15 +179,25 @@ class PERR:
     pcrec's registry gate is closed / the module has no producer yet
     (`kind='pcrec'`, checked against build/pcrec directly). `.rxt`'s `perr`
     only asserts a nonzero exit (docs/testing.md); the message is recorded
-    as a comment for a human reader, never checked by the harness."""
+    as a comment for a human reader, never checked by the harness.
 
-    def __init__(self, pat, kind, features=None, note=None,
-                 gate_features=None):
+    `features`, when given, is used for BOTH the verification call to
+    build/pcrec AND the `.rxt` file's own `features` line -- they must be
+    the SAME string, or the corpus would verify one gate and pin another.
+    (An earlier draft of this generator kept them as two separate fields,
+    `features` and `gate_features`, and only the second reached
+    build/pcrec -- so gated.rxt's 'enabled but not implemented' cells were
+    verified under `--features recursion` but WRITTEN with no `features`
+    line at all, meaning the harness would actually have exercised the
+    CLOSED-gate wording while the comment claimed the enabled one. Caught
+    by this lane's own independent features check, fixed by collapsing to
+    one field.)"""
+
+    def __init__(self, pat, kind, features=None, note=None):
         self.pat = pat
         self.kind = kind
         self.features = features
         self.note = note
-        self.gate_features = gate_features  # features passed to pcrec, if kind == 'pcrec'
 
 
 def render_m_cells(pat, cells, groups, lines, census):
@@ -234,14 +244,14 @@ def render(block, census):
                                  'libpcre2 compiles it (%r)' % (block.pat, a))
             lines.append('# libpcre2 ALSO refuses to compile this: %s' % a[1])
         else:
-            bad, msg = pcrec_refuses(block.pat, block.gate_features)
+            bad, msg = pcrec_refuses(block.pat, block.features)
             if not bad:
                 raise SystemExit('gen_corpus: %r marked kind=pcrec but '
                                  'build/pcrec (main, no producer) COMPILES '
                                  'it -- the refusal this cell pins does not '
                                  'exist' % block.pat)
-            feat_note = (' under --features %s' % block.gate_features
-                        if block.gate_features else ' under std1 (no --features)')
+            feat_note = (' under --features %s' % block.features
+                        if block.features else ' under std1 (no --features)')
             lines.append("# MEASURED, build/pcrec off main%s: %s" % (feat_note, msg))
         lines.append('pattern ' + block.pat)
         if block.features:
@@ -375,7 +385,7 @@ REFUSED = [
                   "call. A different construct at the same doorway."),
         PERR(r"(a)(?(1)b|c)", 'pcrec',
              note="`(?(1)` -- the numbered-group CONDITION."),
-        PERR(r"(?(DEFINE)(?<w>a))(?&w)b", 'pcrec', gate_features=RC,
+        PERR(r"(?(DEFINE)(?<w>a))(?&w)b", 'pcrec', features=RC,
              note="THE SAME PATTERN WITH `recursion` ENABLED. D71 decision 4 "
                   "rules `(?(DEFINE)...)` a FUTURE `recursion` row ([DD-14] "
                   "wave F, not started at the time this corpus was written) "
@@ -400,26 +410,26 @@ GATED = [
         PERR(r"(?&n)(?<n>a)", 'pcrec',
              note="by-name call, closed -- the doorway refuses before it "
                   "ever asks whether `named-groups` is available."),
-        PERR(r"(a)(?1)", 'pcrec', gate_features="backrefs",
+        PERR(r"(a)(?1)", 'pcrec', features="backrefs",
              note="THE WRONG MODULE ENABLED BUYS NOTHING: the gate is "
                   "per-row, not per-pattern. `backrefs` alone does not "
                   "unlock a call."),
     ]),
     ("THE GATE, ENABLED BUT NOT YET IMPLEMENTED (`--features recursion`, no "
      "producer). D65's second diagnostic.", [
-        PERR(r"(a)(?1)", 'pcrec', gate_features=RC,
+        PERR(r"(a)(?1)", 'pcrec', features=RC,
              note="numeric call, enabled -- 'enabled but ... not "
                   "implemented yet', never the closed-gate wording; a "
                   "reader must be able to tell 'nobody asked for this' from "
                   "'somebody asked and it isn't built'."),
-        PERR(r"(?&n)(?<n>a)", 'pcrec', gate_features=RC,
+        PERR(r"(?&n)(?<n>a)", 'pcrec', features=RC,
              note="by-name call, enabled -- same wording family, "
                   "verified separately because the by-name doorway is a "
                   "DIFFERENT registry row from the numeric one."),
     ]),
     ("P2's CELL (design SS9.3): `(?&n)` should refuse for `named-groups` "
      "FIRST once the call itself parses, not for `recursion`.", [
-        PERR(r"(?&n)(?<n>a)", 'pcrec', gate_features=RC,
+        PERR(r"(?&n)(?<n>a)", 'pcrec', features=RC,
              note="**NOT OBSERVABLE IN ITS TRUE FORM TODAY.** MEASURED: "
                   "with `recursion` enabled and `named-groups` NOT enabled, "
                   "this pattern refuses today naming 'recursion' (module "
@@ -517,10 +527,10 @@ RELATIVE = [
     ]),
     ("A RELATIVE VALUE OF ZERO IS ALWAYS ERROR 126 (design SS2.4a) -- in "
      "every spelling, leading zero or not.", [
-        PERR(r"(a)(?-00)", 'pcre2', note="`(?-00)`"),
-        PERR(r"(a)(?+00)", 'pcre2', note="`(?+00)`"),
-        PERR(r"(a)(?-0)", 'pcre2', note="`(?-0)`"),
-        PERR(r"(a)\g<-0>", 'pcre2', note="`\\g<-0>`"),
+        PERR(r"(a)(?-00)", 'pcre2', features=RC, note="`(?-00)`"),
+        PERR(r"(a)(?+00)", 'pcre2', features=RC, note="`(?+00)`"),
+        PERR(r"(a)(?-0)", 'pcre2', features=RC, note="`(?-0)`"),
+        PERR(r"(a)\g<-0>", 'pcre2', features=RC, note="`\\g<-0>`"),
     ]),
 ]
 
@@ -913,12 +923,13 @@ INLOOKAROUND = [
     ("A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d) -- pcrec's "
      "own lookbehind subset is fixed-PER-BRANCH, so this composes without "
      "new machinery: a recursive callee has no bounded width and refuses.", [
-        B(r"^(?:(?<g>ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA, groups=0,
+        B(r"^(?:(?<g>ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
           note="fixed width 2."),
-        B(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA, groups=0,
+        B(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
           note="widths 1 and 2, the fixed-PER-BRANCH form pcrec ships "
                "(lookaround_design.md SS2.5)."),
         PERR(r"^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$", 'pcre2',
+             features=RCLA + ",named-groups",
              note="a RECURSIVE callee inside a lookbehind has no bounded "
                   "width -- libpcre2 itself refuses this (err 125), which "
                   "is the same answer pcrec's fixed-per-branch rule must "
@@ -927,11 +938,11 @@ INLOOKAROUND = [
     ]),
     ("A CALL INSIDE A LOOKAHEAD OR AN ATOMIC GROUP IS ORDINARY (design "
      "SS3.4e) -- nothing in this module is special-cased for them.", [
-        B(r"^(?:(?<g>ab)){0}(?=(?&g))ab$", [('m', "ab")], RCL, groups=0,
+        B(r"^(?:(?<g>ab)){0}(?=(?&g))ab$", [('m', "ab")], RCL + ",named-groups", groups=0,
           note="positive lookahead."),
-        B(r"^(?:(?<g>ab)){0}(?!(?&g))ac$", [('m', "ac")], RCL, groups=0,
+        B(r"^(?:(?<g>ab)){0}(?!(?&g))ac$", [('m', "ac")], RCL + ",named-groups", groups=0,
           note="negative lookahead."),
-        B(r"^(?:(?<g>ab)){0}(?>(?&g))$", [('m', "ab")], RCA, groups=0,
+        B(r"^(?:(?<g>ab)){0}(?>(?&g))$", [('m', "ab")], RCA + ",named-groups", groups=0,
           note="atomic group."),
     ]),
     ("SS3.5's MIRROR IMAGE: a call TO A GROUP WHOSE LEXICAL HOME lives "

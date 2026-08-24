@@ -37,17 +37,18 @@
 
 # fixed width 2.
 pattern ^(?:(?<g>ab)){0}ab(?<=(?&g))$
-features recursion,lookaround,atomic-groups
+features recursion,lookaround,atomic-groups,named-groups
 m "ab" 0 2
 
 # widths 1 and 2, the fixed-PER-BRANCH form pcrec ships (lookaround_design.md SS2.5).
 pattern ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
-features recursion,lookaround,atomic-groups
+features recursion,lookaround,atomic-groups,named-groups
 m "ab" 0 2
 
 # a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), which is the same answer pcrec's fixed-per-branch rule must give once `pcrec_maxw`'s A_CALL arm exists (design SS3.4d: infinity for any callee in a cycle).
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 26: length of lookbehind assertion is not limited
 pattern ^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$
+features recursion,lookaround,atomic-groups,named-groups
 perr
 
 # ====================================================================
@@ -56,17 +57,17 @@ perr
 
 # positive lookahead.
 pattern ^(?:(?<g>ab)){0}(?=(?&g))ab$
-features recursion,lookaround
+features recursion,lookaround,named-groups
 m "ab" 0 2
 
 # negative lookahead.
 pattern ^(?:(?<g>ab)){0}(?!(?&g))ac$
-features recursion,lookaround
+features recursion,lookaround,named-groups
 m "ac" 0 2
 
 # atomic group.
 pattern ^(?:(?<g>ab)){0}(?>(?&g))$
-features recursion,atomic-groups
+features recursion,atomic-groups,named-groups
 m "ab" 0 2
 
 # ====================================================================

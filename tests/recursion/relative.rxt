@@ -144,19 +144,23 @@ g 2 1 2
 # `(?-00)`
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 8: a relative value of zero is not allowed
 pattern (a)(?-00)
+features recursion
 perr
 
 # `(?+00)`
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 8: a relative value of zero is not allowed
 pattern (a)(?+00)
+features recursion
 perr
 
 # `(?-0)`
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 7: a relative value of zero is not allowed
 pattern (a)(?-0)
+features recursion
 perr
 
 # `\g<-0>`
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 5: a relative value of zero is not allowed
 pattern (a)\g<-0>
+features recursion
 perr
