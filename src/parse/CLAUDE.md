@@ -64,7 +64,21 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   holds the `(*` doorway's two verb-NAME tables — 31 upper + 19 lower, chosen by
   the CASE of the first name byte exactly as libpcre2 chooses between its own
   two. Every bit of those tables is measured against libpcre2 and re-measured on
-  every run by tests/registry/pcre2_check.c
+  every run by tests/registry/pcre2_check.c.
+
+  **[M6.6.2 wave F] IT ALSO HOLDS THE FIRST ROWS THAT NEVER DISPATCH.** The
+  twelve `(*` alpha lookaround spellings (`VERB_LA`) carry `RF_INDEX`: they
+  are real, distinct PCRE2 spellings the compliance index owes a line for,
+  and none of them is selected by a byte, because the `(*` doorway decides by
+  NAME. `pcrec_registry_arbitrate` skips them in ONE line — placed BEFORE the
+  `REG_SEL_ANY` arm, which is load-bearing: that arm assigns the kind's
+  catch-all unconditionally, so a skip placed after it would let the last
+  alpha row steal the `(*` doorway and make every verb in the tree answer
+  "requires module 'lookaround'". `pcrec_registry_verb_name_row` (also here,
+  beside the rows, because it reads `tail` AS A NAME) is what mod_verbs.c
+  resolves a scanned name through. D71 item 3; `check_index_rows` in
+  tests/registry/registry_check.c asserts both halves against the ENGINE's
+  own dispatch rather than by re-reading the flag.
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
   mod_verbs.c at MOD-0.4 — see its own entry below; declared in internal.h
@@ -146,7 +160,32 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   forced-open gate, since neither routes through this epilogue at all —
   see docs/design/registry_built_status_memo.md's implementation record
   and tests/registry/CLAUDE.md item 10 for the measurement).
-- **mod_verbs.c** — module `verbs` (MOD-0.4), the MIGRATION TEST: moves
+- **mod_verbs.c** — the `(*` doorway. **[M6.6.2 wave F] IT IS NO LONGER
+  PURE MIGRATION: it PRODUCES, and not for its own module.** The doorway now
+  resolves a scanned NAME to that name's own registry row when it has one
+  (`pcrec_registry_verb_name_row`, registry.c) and keeps its own row when it
+  does not — which is every verb except the twelve alpha lookaround
+  spellings. From that point on nothing in the function is
+  lookaround-specific: `r` is "the row this name answers for", and the gate,
+  the port call and both terminal refusals all read it, so the SECOND module
+  to give a verb name a row of its own needs no edit here. This closes the
+  defect design §8.2 measured at P3 — all twelve alpha spellings answered
+  *"requires module 'verbs'"*, the wrong module, because ONE catch-all row
+  answered for every name in both tables.
+
+  **THE ROW LOOKUP SITS AFTER THE FORM AND POSITION CHECKS, DELIBERATELY**
+  (R33 C2-6). `(*pla)` is a real name in a form PCRE2 does not accept, and a
+  form mismatch is decided BEFORE module attribution in PCRE2 as in pcrec —
+  so its "(*alpha_assertion) not recognized" must survive this wave, and
+  tests/reject/ pins it with that reason at the row. Move the lookup one
+  statement earlier and that row goes red while `(*pla:a)`'s stays green,
+  which is what makes the ordering measurable rather than asserted.
+
+  The doorway also GATES TWICE now — once on its own row for every refusal
+  decided before the name is known, and again on the name's row, recomputed
+  from the ORIGINAL ask rather than the demoted one.
+
+  Historically (MOD-0.4), the MIGRATION TEST: moves
   `pcrec_ext_verb` here from ext.c WITH the `(*` doorway's two VerbName
   tables and their four accessors (was registry.c) and their whole
   measured-grammar comments (the probes-and-code-together rule
@@ -455,6 +494,18 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `pcrec_registry_arbitrate` matched to elect the row — so the port cannot
   elect a different construct than the registry did.
 
+  **[M6.6.2 wave F] ONE PORT FOR EIGHTEEN ROWS, and `la_kind` is still the
+  ONE PLACE the flags are decided.** The twelve `(*` alpha spellings carry
+  the same port in their own `aport`, and an alias row is resolved through
+  its `family` — the primary's own `syntax` (D71 item 3) — to the PRIMARY
+  ROW, whose `sel`/`tail` then select the LaRow. So an alias gets no flags of
+  its own to be wrong about, and twelve more LaRow entries would have been
+  twelve more chances for `(*nla:` to come out positive. The resolution is
+  ONE LEVEL by construction (a primary has no `family`); a dangling or
+  chained reference falls out as NULL and reaches `BAD_ROW`, and
+  `check_families` in tests/registry/registry_check.c fails it long before a
+  user could.
+
   **THE WAVE B+C SPLIT WAS THAT TABLE'S `built` COLUMN, AND WAVE D SPENT IT.**
   D65 derives a row's `built` status from the PORT's `ExtResult` at
   `WANT_RESULT` (syntax_dump.c) and never runs the emitter, so the column
@@ -619,8 +670,16 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 - **syntax_dump.c** — rendering the registry as text (SR-3) AND, since
   MOD-0.7, querying the live parse front: `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,
-  `quantifiable` and `class_expect`, all on 2026-08-11; columns are APPENDED,
-  never reordered, so consumers' positional reads survive), `--list-verbs`
+  `quantifiable` and `class_expect`, all on 2026-08-11, 16 at D65's `built`
+  and 17 at [M6.6.2] wave F's `family`; columns are APPENDED,
+  never reordered, so consumers' positional reads survive),
+  `--list-families` (TSV, 7 columns — D71 item 3's INDEX LAYER: one line per
+  family, where a family is the rows sharing a key and a row's key is its
+  `family` column if set and its own `syntax` otherwise, with `built` ANDed
+  over the members. A SECOND dump for `--list-verbs`' reason: `--list-syntax`
+  is per-ROW and its consumers depend on that — tests/reject/ probes every
+  non-base row's own `syntax`, and a collapsed dump would have silently
+  dropped twelve probes), `--list-verbs`
   (TSV, 6 columns — the Q1 name tables, which are not RegRows and so cannot
   appear in the row dump whose format SR-4 froze), `--explain`, and since
   MOD-0.1's slice 8 `pcrec_probe_ask` (`--probe-ask` — ONE doorway call at a

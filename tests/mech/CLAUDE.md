@@ -554,6 +554,47 @@ failure per module** — with `1(b)`, `1(d)` and both `1c` twins green, and
 `irlisting` green because the fourth reader is untouched. That disjointness is
 the row's point, and it is S88's own argument one module over.
 
+## [M6.6.2] wave F — S142, and the row exists because THREE of the family
+## check's four claims are covered somewhere else and the fourth is not
+
+`check_families` (tests/registry/registry_check.c) is D71 item 3's tripwire
+and asserts four things about a family — no dangling `family` reference, no
+chain, exactly one canonical member, and members that AGREE on module,
+engines and status. Three of those break loudly elsewhere the moment they
+break: a dangling reference reaches `la_kind`'s `BAD_ROW` and reddens the
+module's corpus; a widened `engines` mask drops the row out of SR-8's
+qualifying population and fires `check_engine_capability`'s exact 66/36/36
+count; a moved `built` fires the built-status tally's 118 = 70 + 42 + 6.
+
+**THE MODULE AXIS IS WHERE THIS CHECK IS ALONE**, and it is alone for this
+repository's signature reason: the parser RENDERS the diagnostic from the row
+and tests/reject/'s dump-driven loop READS the same row for its expectation,
+so the two agree in unison about a wrong module. The hand-written second
+source covers THREE of the twelve alpha spellings by design (one short, one
+non-atomic, one long), so S142 sabotages a FOURTH — `(*napla:` — which that
+layer genuinely cannot see. `check_feature_module_bijection` cannot see it
+either: the sabotage swaps in `M_verbs`, a VALID feature/module pair.
+
+**NOT A `built` SABOTAGE, deliberately.** Flipping a member `unbuilt` does
+break the family's AND rule, but it also moves the built-status tally, so the
+family check would not be the detector and the row would be measuring
+something already measured.
+
+What goes wrong without the check: `--list-families` and the compliance
+page's generated index print ONE line per family reading module from the
+canonical member, so a disagreeing member is silently overruled in the index
+while `(*napla:a)` itself answers "requires module 'verbs'" to a caller — the
+precise defect design §8.2 measured at P3 and this wave was built to fix,
+restored for one spelling and invisible in the page meant to report it.
+
+**TWO EXISTING ROWS' ANCHORS MOVED IN THE SAME WAVE**, both caught by
+`scripts/m6read_check_sab_anchors.py` on the branch rather than by a failed
+run: `RegRow` gained a `family` field (D71 item 3) and every macro and
+longhand row in registry.c initialises it explicitly, so S110's `ESC_DIGIT`
+body now ends `..., NULL}` and S126's longhand AFTER row carries its own
+`NULL` rather than relying on a zero default nobody wrote. Neither sabotage
+changed; only the text each is spelled against.
+
 ## Conventions
 
 Anchors are copied from `git show HEAD:<path>`, not from a live working-tree

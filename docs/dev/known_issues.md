@@ -2478,7 +2478,7 @@ corpus overlap at ZERO: no `.rxt` pattern anywhere under tests/ is in
 that family, so the gate asserts a flat zero difference and needed no
 exception bucket.
 
-## K30 — OPEN (found 2026-08-23, [TT-8]'s PROCS sweep) — `run_reject_tests.sh`'s `--list-syntax` section runs UNSHARDED in every shard, so a sabotage row's reject figure depends on the inner shard width
+## K30 — CLOSED 2026-08-24 ([M6.6.2] wave F) — `run_reject_tests.sh`'s `--list-syntax` section runs UNSHARDED in every shard, so a sabotage row's reject figure depends on the inner shard width
 
 **Symptom.** Sabotage S18-tsv-empty (pcrec_syntax_tsv returns "" early)
 measured `reject:5fail` in every matrix through 2026-08-22, `reject:4fail`
@@ -2505,3 +2505,32 @@ width.
 confine the guard to shard 0 (a `[ "$SHARD_INDEX" -eq 0 ]` around the `bad`).
 Then re-measure S18 at PROCS=1/4/6 — the figure should be constant — and
 drop this entry. Lands with the next reject-table change or [TT-8]'s close.
+
+**CLOSED 2026-08-24, [M6.6.2] wave F** — the next reject-table change, as
+predicted. **The SECOND remedy is the one that was available and the first
+one is not**, which is worth recording because the entry offered them as
+alternatives: every shard child runs its OWN slice of the `row_reject` loop
+and needs its own `probe.tsv` to do it, so a shard that skipped the dump
+would skip its rows and the section's global coverage assertion would then
+correctly report that the table was not covered. The dump therefore stays
+per-shard (it is one `--list-syntax` call) and only the vacuity `bad` moved
+inside a gate — `[ -z "${REJECT_SHARD_TOTAL:-}" ]`, the idiom the BADROW
+report and the coverage-count assertion in the same section already use,
+which is a plain PROCS=1 run or the top-level dispatcher after aggregation
+and never a child.
+
+**MEASURED, at the two widths the entry asked for**, single-row mech runs on
+the fixed tree (`run_sabotage_matrix.sh S18`):
+
+| | S18-tsv-empty's reject figure | verdict |
+|---|---|---|
+| before (PROCS=4, INNER_PROCS=3) | `reject:4fail` | DETECTED |
+| before (PROCS=6, INNER_PROCS=2) | `reject:3fail` | DETECTED |
+| **after (PROCS=4)** | **`reject:1fail/454pass`** | DETECTED |
+| **after (PROCS=6)** | **`reject:1fail/454pass`** | DETECTED |
+
+The figure is now CONSTANT across the widths and the pass count is identical
+too, so [TT-2]'s "same Summary counts at any PROCS" claim is true for this
+section again. Detection never changed — S18 was DETECTED at every width
+before and after; what changed is that the number a reader compares between
+matrices no longer moves with the harness's own parallelism.

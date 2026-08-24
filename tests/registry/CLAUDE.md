@@ -317,9 +317,9 @@ directory asserts that the description and the shipped parser actually agree.
 
 10. **[D65] the BUILT-STATUS defect assertion** (docs/dev/plan.md's post-M6.2
     queue item 4; docs/design/registry_built_status_memo.md, ratified
-    wholesale 2026-08-21) — `check_built_status_defects` iterates all 106
+    wholesale 2026-08-21) — `check_built_status_defects` iterates all 118
     rows (100 when this paragraph was written; 104 at [M6.4.2], 106 at
-    [M6.5.2]) and calls `pcrec_construct_built_status` (src/parse/syntax_dump.c),
+    [M6.5.2], 118 at [M6.6.2] wave F's twelve alpha-spelling INDEX rows) and calls `pcrec_construct_built_status` (src/parse/syntax_dump.c),
     the SAME function `pcrec --list-syntax`'s new `built` column calls, on
     every one. It is a defect check, not a status check: `--list-syntax` and
     the generated compliance index render `built`/`unbuilt`/`—`, and this

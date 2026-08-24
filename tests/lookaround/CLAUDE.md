@@ -115,6 +115,42 @@ going down is the module landing.
   file of nothing but `perr` passes just as well on a compiler that refuses
   everything, which is precisely the state a half-landed module gate puts the
   compiler in.
+- **alpha_spellings.rxt** — ALL TWELVE `(*` alpha spellings ([M6.6.2] wave F;
+  design §2.1, §10.2), 26 blocks / 52 cells / 2 `perr`, and `# pcre2-only` in
+  its ENTIRETY — computed, as always, not assumed: python3 `re` has no `(*`
+  alpha assertion of any kind, so this file's only behavioural oracle is
+  `run_lookaround_diff.sh` §1's libpcre2 sweep, which is also why that
+  section's population guard moved 45 -> 69 in the same change.
+
+  **WHAT EACH CELL HAS TO PROVE, because "it compiles" proves nothing about
+  what a construct IS.** An alpha spelling resolves through ONE table to a
+  primary's three `u.look` flags, so the failure this file exists to catch is
+  a MIS-RESOLUTION — `(*nla:` wired to the positive primary, `(*plb:` to the
+  lookahead one, `(*napla:` to the atomic one — each of which is a compiling,
+  plausible, WRONG matcher. So every spelling carries:
+
+  1. **the polarity-and-direction cell**, `(*X:a)b` over `"ab"`/`"b"`/`"xb"`,
+     whose three answers are pairwise DISTINCT across the four primaries that
+     shape can reach (`(?=` all-nomatch, `(?!` 1,2 / 0,1 / 1,2, `(?<=` 1,2 /
+     n / n, `(?<!` n / 0,1 / 1,2). One cell separates positive from negative
+     AND ahead from behind, in both directions;
+  2. **the atomicity discriminator**, which is the axis (1) structurally
+     cannot see — `(?=`/`(?*` and `(?<=`/`(?<*` give IDENTICAL answers to
+     (1). §2.2's `"abab"` witness carries it for the four lookahead
+     spellings and §3.6's `"bacba"` witness for the four positive-lookbehind
+     ones. **The negative spellings get none and cannot**: PCRE2 has no
+     non-atomic negative form at all (`(*nanla:`/`(*nanlb:` are err 195,
+     measured), so there is no second construct for them to be confused
+     with, and they get a second DIRECTION separation instead.
+
+  **THE LONG FORMS CARRY THE SAME CELLS AS THE SHORT ONES**, which is what
+  makes six of the twelve registry rows more than paperwork: a long spelling
+  resolved to the wrong primary — or to no primary, falling back to the `(*`
+  doorway's own answer — produces different lines here, not a different
+  comment. The two `perr` cells reach the shared port's OTHER two checks
+  through an alias: §2.5's width rule (`(*plb:(a|bc))x`) and §2.7's `\K`
+  refusal (`(*positive_lookahead:a\K)b`, deliberately the LONG spelling).
+
 - **prefilter.rxt** — §10.1(1)'s qualifying shapes, and the ONE file in this
   directory whose cells were chosen by MEASURING A COMPILER rather than by
   reading the design. Design §5.6 drops the MRL window-end ceiling for any
@@ -183,6 +219,15 @@ going down is the module landing.
   the second time it has earned itself. `prefilter.rxt`'s `(?*!` cell is the
   added block. Re-derived from the run and changed deliberately, per the rule
   above.
+
+  **AND 45 -> 69 AT WAVE F**, its third firing and its largest single move
+  after wave D's: `alpha_spellings.rxt` ENTIRE. That makes this sweep the only
+  behavioural oracle behind all twelve new spellings, and the sharpest one
+  available — it drives each pattern through libpcre2 at every startpos over
+  the shared subject set and compares the span AND every group span, so an
+  alias resolved to the wrong primary disagrees here on subjects the corpus's
+  own three cases never reach. Measured at the wave: 69 blocks / 6,693 cells /
+  0 disagreements.
 
   **IT REUSES `tests/backrefs/bref_oracle.py` AND `bref_batch.c` RATHER THAN
   COPYING THEM.** Design §10.2 asks for `la_oracle.py` "modelled on" those

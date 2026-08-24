@@ -19,5 +19,12 @@ SAB_HARNESS_TARGET="tests/backrefs/octal_class.rxt"
 SAB_DESC="The digit rows' CLASS port is replaced by the module's atom port, so [\\1] stops being the byte 0x01 and the class position acquires backreference semantics PCRE2 does not have there. Twelve measured base cells move; every atom-position cell is unaffected"
 SAB_DOC_FIGURE="PREDICTED: the corpus RED on octal_class.rxt; registry RED on check_class_ports (the FN class-port population moves). Canonical figure owed from run_sabotage_matrix.sh S110."
 SAB_COUNT=1
-SAB_BEFORE='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}}'
-SAB_AFTER='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_brport_digit}}   /* SABOTAGE S110 */'
+# ANCHOR MOVED at [M6.6.2] wave F (caught by
+# scripts/m6read_check_sab_anchors.py on the same branch, which is what that
+# tripwire is for): `RegRow` gained a `family` field (D71 item 3) and every
+# macro in registry.c initialises it explicitly, so the ESC_DIGIT body this
+# row anchors on now ends `..., NULL}`. The SABOTAGE is unchanged -- it still
+# points the digit rows' CLASS port at the ATOM producer -- only the text it
+# is spelled against moved.
+SAB_BEFORE='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_clsport_octal}, NULL}'
+SAB_AFTER='{PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_FN, true, 0, NULL, pcrec_brport_digit}, NULL}   /* SABOTAGE S110 */'
