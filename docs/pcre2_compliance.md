@@ -1854,9 +1854,9 @@ Every non-base construct pcrec knows, as the parser itself sees it — 106 rows 
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
 | after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead |
 | after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead |
-| after `(?` | `(?<=...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | positive lookbehind |
-| after `(?` | `(?<!...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | negative lookbehind |
-| after `(?` | `(?<*a)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
+| after `(?` | `(?<=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookbehind |
+| after `(?` | `(?<!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookbehind |
+| after `(?` | `(?<*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
 | after `(?` | `(?<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
 | after `(?` | `(?'name'...)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
 | after `(?` | `(?P<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | python-style named capture group |

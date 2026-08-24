@@ -771,22 +771,33 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # §11.5 named this move in advance as one of the three pins this module
 # disturbs.
 reject_gated recursion     '\g<1>' "module 'recursion' is enabled but \g is not implemented yet"
-# [M6.6.2] wave B+C: THE `lookaround` ROW MOVED WITHIN ITS OWN MODULE, it did
-# not retire. `--features lookaround '(?=a)'` COMPILES now, so the old pin
-# would be pinning a lie — but this module lands across two waves and its three
-# LOOKBEHIND rows are still unbuilt, so the pin moves to one of those instead
-# of costing the arm its third module. Wave D retires it, and the arm will need
-# a third module from somewhere else then (see the paragraph above for why one
-# module cannot tell "the sentence is right" from "the sentence happens to be
-# right for THAT module").
+# [M6.6.2] wave B+C moved THE `lookaround` ROW WITHIN ITS OWN MODULE, from
+# `(?=a)` to `(?<=a)`: the lookahead half had landed, so the old pin would have
+# been pinning a lie, while the module's three LOOKBEHIND rows were still
+# unbuilt and could carry it. That was explicitly a loan against wave D.
 #
-# AND THIS ROW IS NOW PINNING SOMETHING THE OLD ONE DID NOT. The three `(?<`
-# tails are declined by module `lookaround`'s OWN PORT at `WANT_RESULT` — not
-# by ext.c's port-missing fallthrough — and the port renders the sentence
-# through the SAME macro (moved to internal.h at this wave for exactly that
-# call). So the row asserts the two sites agree, which is the drift a
-# hand-written copy of the wording in the port would eventually have produced.
-reject_gated lookaround    '(?<=a)' "module 'lookaround' is enabled but (?<=...) is not implemented yet"
+# [M6.6.2] WAVE D CALLED THE LOAN IN AND THE ROW RETIRED. `--features
+# lookaround '(?<=a)'` COMPILES now — module `lookaround` has no unbuilt
+# construct left, all six rows read `built` — so there is no spelling of this
+# module that can carry the enabled-but-unbuilt sentence any more, and the
+# count going DOWN here is the module LANDING rather than coverage eroding.
+# The control that says so is tests/lookaround/lookbehind.rxt, which asserts
+# the same pattern compiles and matches, and tests/registry's built-status
+# tally, which asserts the three rows moved and that NO ROW OUTSIDE THIS
+# MODULE MOVED WITH THEM.
+#
+# SO THE ARM'S THIRD MODULE COMES FROM `conditionals`, and the row is chosen
+# rather than picked. The arm needs THREE modules for the reason the paragraph
+# above states — a single module's row cannot tell "the sentence is right" from
+# "the sentence happens to be right for THAT module" — and `(?(` is the row
+# lookaround_design.md R33 C1-9 names by name: a reader must not take three
+# lookbehind rows going `built` as unlocking ASSERTION-CONDITIONS, which are a
+# different construct in a different module. Pinning it here says that in the
+# one place a wave that got it wrong would trip over. It is also a row that
+# will not build for milestones (module `conditionals` is not in Frank's ruled
+# M6 list at all), which is what the re-homing paragraph above asks of a
+# candidate.
+reject_gated conditionals  '(?(1)a|b)' "module 'conditionals' is enabled but (?(...) is not implemented yet"
 # [M6.4.2] THE `atomic-groups` ROW RETIRED HERE, exactly as `\b`/`\B`'s did in
 # [M6.2] wave B and the two `(?m)` spellings' did in wave C, and for the same
 # reason: `--features atomic-groups '(?>a)'` COMPILES now, so a pin asserting
