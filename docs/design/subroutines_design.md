@@ -1313,13 +1313,19 @@ is unchanged.
 
 #### 5.3a THE RULE
 
-> **W(g)** = **every slot that any node in `g`'s TRANSITIVE body can WRITE** —
-> `g`'s own capture slots, every slot allocated to a construct lexically
-> inside `g`'s body (of **any** of the seven families below), ∪ W(h) for every
-> group `h` that `g`'s body calls; the least fixpoint over the call graph.
+> **W(g)** = **every SLOT INSTANCE the EMITTED REGION for `g` can write** —
+> `g`'s own capture slots, plus every instance any of the seven families below
+> allocates **within that region** (which for five of the seven is **per
+> emitted copy**, not per lexical construct — §5.3a′), ∪ W(h) for every group
+> `h` that `g`'s body calls; the least fixpoint over the call graph.
 > `W(0)` is every slot in the artifact except the two below.
 > **Slots 0 and 1 are NEVER members** — `RX_SLOT_WHOLE_START` is `\K`'s
 > (§3.4(b), MEASURED) and `RX_SLOT_WHOLE_END` is written only at accept.
+>
+> **"the EMITTED REGION", not "`g`'s body"**, is the operative phrase: §4.4c
+> measured that the callee region and the lexical occurrence are different
+> code with different slot indices, and that a callee under `X{0}` has a
+> region the lexical walk never visits at all.
 
 **pcrec HAS SEVEN SLOT FAMILIES AND ONLY ONE OF THEM IS CAPTURES.**
 STRUCTURAL, `vm_slot_name` (`emit_vm.c:645-697`), whose layout arithmetic is
@@ -1327,23 +1333,30 @@ the authoritative census:
 
 | family | allocated per | written | read |
 |---|---|---|---|
-| `SLOT_GROUP<n>_START/END` | capturing group | at the group's open/close | at accept, by `A_BREF`, by the caps copy-out |
-| `SLOT_GROUP<n>_PENDING` | **MARKED** group ([M6.5.2] publish-at-close, `pend_of`) | at the group's OPEN | at the group's CLOSE, to publish the pair |
-| `SLOT_EMPTY_GUARD<n>` | quantifier with a nullable body | at an iteration's entry | at the iteration's end, to stop a zero-width loop |
-| `SLOT_SPAN_LOW<n>` | non-possessive cursor rung (`vm_slot_low`, `:2431/:2492`) | at the rung's entry | at the rung's retreat |
-| `SLOT_CUT_MARK<n>` | **LEXICAL** atomic group / possessive rung (`v->nmark++`) | at the group's entry | by `RX_CUT` at the group's exit |
-| `SLOT_REVDET<n>_{ENTRY,LOW,HI}` | revdet rung (`v->nrev++`) | at the rung's entry | during the backward walk |
-| `SLOT_COUNTER<n>` | counter-K rung (`v->nctr++`) | at the loop's entry | per iteration |
+| `SLOT_GROUP<n>_START/END` | **LEXICAL NODE** — a capturing group | at the group's open/close | at accept, by `A_BREF`, by the caps copy-out |
+| `SLOT_GROUP<n>_PENDING` | **LEXICAL NODE** — a MARKED group ([M6.5.2] publish-at-close, `pend_of`) | at the group's OPEN | at the group's CLOSE, to publish the pair |
+| `SLOT_EMPTY_GUARD<n>` | **EMITTED COPY** of an **UNBOUNDED frames-rung** quantifier with a nullable body (`:1971`) | at an iteration's entry | at the iteration's end, to stop a zero-width loop |
+| `SLOT_SPAN_LOW<n>` | **EMITTED COPY** of a non-possessive cursor rung (`vm_slot_low`, `:2431/:2492`) | at the rung's entry | at the rung's retreat |
+| `SLOT_CUT_MARK<n>` | **EMITTED COPY** of an atomic group / possessive rung (`v->nmark++`) | at the group's entry | by `RX_CUT` at the group's exit |
+| `SLOT_REVDET<n>_{ENTRY,LOW,HI}` | **EMITTED COPY** of a revdet rung (`v->nrev++`) | at the rung's entry | during the backward walk |
+| `SLOT_COUNTER<n>` | **EMITTED COPY** of a counter-K rung (`v->nctr++`) | at the loop's entry | per iteration |
+
+**"EMITTED COPY" IS THE WHOLE OF §5.3a′ AND IT IS MEASURED**, not a caveat:
+`vm_count_slots` walks a quantified body `copies` times, so one lexical
+construct under `{N}` allocates `N`-ish instances. `out/slotcount.txt` axes A
+and B, in the column above's own terms — and the paragraph below is the
+evidence for the column rather than a correction appended under it.
 
 **Every one of them is written at a construct's ENTRY and read at that
 construct's EXIT**, which is the property a recursive call breaks: two
 activations of the same construct are **nested**, not sequential, so the inner
 activation's write is still in the slot when the outer activation reads it.
 
-**BUT "ONE SLOT PER LEXICAL CONSTRUCT" IS FALSE, AND AN EARLIER VERSION OF
-THIS SECTION SAID IT** (R34 V-2). Only **GROUP** and **PENDING** are per
-lexical node. The other five are allocated **PER EMITTED COPY**, because
-`vm_count_slots` walks a quantified body `copies` times. MEASURED,
+##### 5.3a′ THE EVIDENCE FOR THE "allocated per" COLUMN
+
+**AN EARLIER VERSION OF THIS SECTION CLAIMED "ONE SLOT PER LEXICAL
+CONSTRUCT"** and R34's V-2 refuted it; the table above is now written in the
+corrected terms rather than carrying the correction underneath. MEASURED,
 `out/slotcount.txt` axes A and B:
 
 | pattern | slots |
@@ -1413,10 +1426,14 @@ nameable miscompile and is why the row is a class rather than an instance.
 **THE OTHER FIVE FAMILIES ARE THE SAME SHAPE AND ARE ARGUED, NOT MEASURED**,
 and the document says which is which:
 
-- **`SLOT_EMPTY_GUARD<n>`** — §2.6's own guard. A nullable callee under `*`
-  whose loop is lexically inside the callee has one guard slot; two
-  activations share it, so the outer loop's guard reads the inner's position.
-  Predicted direction: an empty iteration is admitted or a legal one refused.
+- **`SLOT_EMPTY_GUARD<n>`** — §2.6's own guard, and it is the family with the
+  **narrowest live population**: MEASURED (`out/slotcount.txt` axis A) that a
+  bounded repeat allocates **none** — the trigger is an **unbounded
+  frames-rung** quantifier with a nullable body. Where one IS allocated,
+  each emitted copy of that quantifier gets its own instance, and two
+  ACTIVATIONS of the same copy share it — so the outer loop's guard reads the
+  inner's position. Predicted direction: an empty iteration admitted, or a
+  legal one refused.
 - **`SLOT_SPAN_LOW<n>`**, **`SLOT_REVDET<n>_*`**, **`SLOT_COUNTER<n>`** — rung
   state. `counterk_design.md` already ruled the counter TRAILED rather than a
   local, and its stated reason is one activation over: *"a body-internal frame
@@ -2416,7 +2433,7 @@ measurement behind it rather than a worry.
 | **S-SR6** | §3.4(b): `W` EXCLUDES slots 0 and 1, so a `\K` in a callee survives | `callgraph.c` | `harness recursion` | let `W` include slot 0 | `^(a\Kb)(?1)$` on `"abab"` answers (0,4) where 10.46 answers (3,4). **This is the row for the design the measurements killed**, and its cell needs `features assertions,recursion` |
 | **S-SR6a** | §5.3a: `W` includes the **PENDING** family | `callgraph.c` | `harness recursion backrefs` | drop `SLOT_GROUP<n>_PENDING` from `W` | **LOST MATCH**: `^(a(?1)?b)\1$` on `"aabbaabb"` answers nomatch where 10.46 answers (0,8) g1=(0,4). MEASURED at 11/2 (§5.3b). The cell needs a group a BACKREFERENCE names, or the group is not marked and the family is never allocated |
 | **S-SR6b** | §5.3a: `W` includes the **CUT_MARK** family | `callgraph.c` | `harness recursion atomic-groups` | drop `SLOT_CUT_MARK<n>` from `W` | **FALSE MATCH**: `^((?>a(?1)?))a$` matches `"aa".."aaaaaaaa"` where 10.46 matches nothing, and the false-match set is EXACTLY `^((?:a(?1)?))a$`'s language — the atomic group stopped being atomic. MEASURED at 4/6 (§5.3b). The cell needs an atomic group LIVE AT TWO DEPTHS |
-| **S-SR6c** | §5.3a: `W` includes the **EMPTY_GUARD** family | `callgraph.c` | `harness recursion` | drop `SLOT_EMPTY_GUARD<n>` from `W` | ARGUED, not measured (§5.3b): a nullable callee whose quantifier is lexically inside it shares one guard slot across activations, so the outer loop's guard reads the inner's position — an admitted empty iteration (`PCREC_ERR_STEPS`) or a refused legal one. **The row's PREDICTION is stated as a prediction**, and `[DD-14]` implementation must replace it with the measured cell or drop the row |
+| **S-SR6c** | §5.3a: `W` includes the **EMPTY_GUARD** family | `callgraph.c` | `harness recursion` | drop `SLOT_EMPTY_GUARD<n>` from `W` | ARGUED, not measured (§5.3b): a nullable callee whose quantifier is inside it shares its guard slot across ACTIVATIONS, so the outer loop's guard reads the inner's position. **The cell must use an UNBOUNDED quantifier** — MEASURED, a bounded repeat allocates no guard at all, so a `{0,5}` cell would go green on a broken compiler — an admitted empty iteration (`PCREC_ERR_STEPS`) or a refused legal one. **The row's PREDICTION is stated as a prediction**, and `[DD-14]` implementation must replace it with the measured cell or drop the row |
 | **S-SR6d** | §5.3a: `W` includes the **rung** families (`SPAN_LOW`, `REVDET*`, `COUNTER`) | `callgraph.c` | `harness recursion` | drop them from `W` | ARGUED. `counterk_design.md`'s own reason for making the counter TRAILED rather than a local — *"a body-internal frame from iteration 1 resumes reading a stale local"* — is this argument with a second index. Detected by a callee containing a `{n,m}` loop called at two depths; the cell is written at implementation against the LANDED rung selection, because which rung a body gets is a compile-time choice this document cannot fix |
 | **S-SR6e** | §5.3a: `W` includes `SLOT_LOOK_MARK`/`_POS` | `callgraph.c` | `harness recursion lookaround` | drop them from `W` | ARGUED and **NOT LANDABLE UNTIL `[M6.6.2]` DOES**. §12 P-2's first version predicted these were SAFE; that prediction is withdrawn. The row is written now so the obligation is not lost, and `[DD-14]`'s close must either land it or record why not |
 | **S-SR7** | §5.7: `vm_cost` charges `2·\|W\|` trail entries per call | `emit_vm.c` **+ 2nd site** | `harness recursion codegen` | charge `\|W\|` instead of `2·\|W\|` | **no answer changes** until the trail is exhausted, then `PCREC_ERR_FRAMES` on a pattern the artifact can match — S87/S95's exact shape, so the detector is a deep-call cell **and** the codegen count |
