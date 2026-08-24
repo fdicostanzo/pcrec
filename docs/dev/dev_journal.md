@@ -12535,3 +12535,44 @@ entered the repo; the lane removed it). Lesson for briefs: the scratchpad
 path is a REQUIREMENT and the agent echoes where it wrote; a lane that
 spawns a sub-lane inherits the obligation to say so in its report (this
 one did).
+
+## 2026-08-23 (EDT), thirty-eighth session (part 3) — R34 round 1: 22 findings (5 HIGH); the D70 gate's corpus blind spot closed in-wave
+
+R34 on the subroutines design: 22 findings, 5 HIGH, 0 disputed so far,
+record docs/dev/reviews/2026-08-23-r34-subroutines-design.md. The HIGHs:
+(C2-1) the restore set W is CAPTURE-slots-only and pcrec has five other
+activation-private slot families — two-build prototypes MEASURED a LOST
+MATCH (`^(a(?1)?b)\1$` on "aabbaabb", the PENDING slot) and FIVE FALSE
+MATCHES (`^((?>a(?1)?))a$`, the CUT_MARK slot: atomicity silently degrades
+to non-atomic at depth); the general rule replaces the enumeration — W =
+every slot the transitive body can write. (C2-2) `A_CALL.body` is the
+AST's first back edge and §4.4's naive descents hang the COMPILER on
+`(a(?1))`. (C1-1) a whole construct family is missing — a call whose
+TARGET is inside a lookaround/atomic group (`^ab(?<=(ab))(?1)$` on "abab"
+→ (0,4)): the callee must be emitted as its own cut-free, back-step-free
+region, so splice+linkage is mandatory there, and §6.4's k=1 argument does
+not cover NESTED groups. (C1-2 = C2-6) the minw gloss "min over
+non-recursive branches" is a miscompile under indirect recursion (`"xb"`
+witness) — least fixpoint over the SCC-condensed graph. (C3-1) §0.2 and
+the CLAUDE.md index INVERT the design's own size table (CALL is smallest;
+SPLICE is faster). The lesson repeats R32/R33's: every one of these sat
+inside a MEASURED or executed section — C2 and C1 both rebuilt the
+prototype from source and both reproduced 45/4/0/1 exactly, and the
+miscompiles are in what the prototype did NOT cover (no marked group
+spanning a call, no atomic group live at two depths, no wrapped target).
+A fourth missing spelling family surfaced too (`(?01)` = group 1, `(?00)`
+= root; the registry's `(?0)` row makes naive wiring a miscompile).
+Manager-side: plan.md's DD-11 walk-up phrasing annotated (573eca7).
+Round 1 dispatched to the design lane in two messages (C2+C3, then C1).
+
+The D70 lane's control b1 was the session's other lesson: the REAL hazard
+(rd_node's unguarded clear) moved the four-axis gate by ZERO bytes — all
+44 revdet-eligible corpus patterns are lowercase ASCII and the clobber
+zeroes bitmap bytes 9 and 16-23 (H-O, 0x80-0xBF) — while constructed
+witnesses show a CAPTURE miscompile with the whole-match span unchanged
+(`((H)|I){3}J` on "HHHJ": groups unset). Ruled in-wave: witness cells for
+both clobbered ranges (tests/rungselect/revdet_highbytes.rxt), mech row
+S121 deleting the guard, b1 re-run expected RED. Delivery at e38ad19 was
+otherwise complete: population 2,049 × 4 axes = 8,196 comparisons, 0
+differing, stamp included; b2 synthetic red 39/43/39/22 per axis; full
+mech 118/0/0; sizeof(Ast) 104 → 72.
