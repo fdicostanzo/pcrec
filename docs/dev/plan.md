@@ -204,7 +204,7 @@ per-PATTERN: cut-constructible → ENGM_DFA, else VM.
 
 ## M5 — UTF-8
 
-- [M5.0] STATE:not-started — milestone (expand on arrival): byte-wise UTF-8 automata, \p{...} module. NOTE ([M5-SEAM], completed 2026-08-18, see plan_completed.md): the residual seam, per-pattern `--encoding` scalar, and `<prefix>_next_pos` already SHIPPED as the D58 prelude — what remains here is the UTF-8 lowering instance (CharSet → byte-sequence fragments), \p{...}, DD-1 folding, the UTF PC-4 oracle twin, and DD-12 (7)(a)'s two M5-time structural checks (hot-loop shape identity ASCII-vs-UTF-8; the second-backend validation of the seam D58's revisit-when names)
+- [M5.0] STATE:not-started — milestone (expand on arrival): byte-wise UTF-8 automata, \p{...} module. CROSS-NOTE 2026-08-23 ([M6.6.2] wave A): `pcrec_maxw`'s A_CLASS arm answers 1 BYTE and is EXACT only because src/core/compile.c refuses PCREC_ENC_UTF8 by name; the day a UTF-8 backend lands that arm must become the encoding's maximum code-unit length (minw's identical-looking arm stays sound as an under-estimate) or the lookbehind fixed-width rule silently accepts variable-width branches. Recorded at both functions and in src/opt/CLAUDE.md; this row owns the change. NOTE ([M5-SEAM], completed 2026-08-18, see plan_completed.md): the residual seam, per-pattern `--encoding` scalar, and `<prefix>_next_pos` already SHIPPED as the D58 prelude — what remains here is the UTF-8 lowering instance (CharSet → byte-sequence fragments), \p{...}, DD-1 folding, the UTF PC-4 oracle twin, and DD-12 (7)(a)'s two M5-time structural checks (hot-loop shape identity ASCII-vs-UTF-8; the second-backend validation of the seam D58's revisit-when names)
 
 ## M6 — PCRE feature modules
 

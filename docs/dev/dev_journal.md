@@ -12753,3 +12753,20 @@ axes twice over — the inert-enumerator claim is measured, not argued.
 Wave B+C opened (lane/waveBC, opus): the port, `vm_look`'s three arms,
 the corpus, ten sabotage rows, the gate's bucket split. Post-merge
 battery running on main.
+
+ADDENDUM (part 8): the waveA lane's own delivery arrived after the merge
+with two corrections to the manager's nudge, both accepted. (1) The
+design missed NO site — 23 was exact file for file; the 24th is wave A's
+own `pcrec_maxw` arm, which §11's mrl.c row already anticipated as "1
+(+maxw's)"; the §11 amendment records the emit_vm.c row's error as a
+NAMING error (vm_cuts/listing → vm_rev_caps/vm_count_slots), not a
+budget shortfall. (2) The hygiene commit 549e2e2 touched three .c files
+after the matrix ran at db05198, so "changes no code the matrix built"
+was false; the lane compiled both revisions and compared OBJECT CODE:
+mrl.o and altcls.o byte-identical, revdet.o differs by exactly one
+`ctx_fail` call site in `rd_reverse`'s A_LOOK arm (doubly unreachable:
+rd_shape declines, no producer exists) plus alignment NOPs — with the
+gate re-run green on 549e2e2 and anchors 0 stale, the seven affected
+rows (S50 S58 S59 S66 S94 S108 S121) were not re-run; object identity is
+the stronger evidence. The UTF-8 maxw obligation now has a home on the
+[M5.0] row.
