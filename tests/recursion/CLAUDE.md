@@ -63,25 +63,32 @@ It rewrites the `.rxt` files in place and prints a per-file census. A
 second run with no source change is a no-op (`git diff` empty — checked,
 see below).
 
-**`(?(DEFINE)...)` DOES NOT APPEAR ANYWHERE IN THIS CORPUS.** It is module
-`conditionals`'s construct at the `(?(` doorway until D71 decision 4's
-registry row lands (`[DD-14]` wave F — not started when this corpus was
-written; see `refused.rxt`'s own note that design §2.5's "RULED: no
-DEFINE" is SUPERSEDED by that later ruling). Every callee-only body in this
-corpus uses the oracle-verified **`{0}`-callee idiom** instead —
-`(?:(?<g>BODY)){0}` — a REPEAT of a GROUP, base syntax, needing only
-`recursion` (plus `named-groups` for a named callee). Design §2.5/§4.4c
-measured it an exact substitute for plain, recursive, atomic and
-rung-bearing callees; this generator re-verifies every such cell against
-libpcre2 itself rather than trusting that claim.
+**`(?(DEFINE)...)` IS THIS MODULE'S SINCE `[DD-14]` WAVE F** (D71 item 4,
+overruling design §2.5's "RULED: no DEFINE"). It is a TAILED row on the
+`(?(` doorway — tail `DEFINE)` — and everything else at that doorway is
+still `conditionals`'. It lowers to the SAME NODE the `{0}`-callee idiom
+produces (an `A_REP` with `rmin == rmax == 0` over the body), which is why
+`define.rxt` and `zerodef.rxt` carry the two spellings SIDE BY SIDE: they
+are two spellings of one construct, and the corpus asserts they agree
+rather than assuming it. `tests/codegen/run_codegen_tests.sh`'s rule 4
+asserts the stronger form — the two artifacts are identical byte for byte
+once the pattern text and offsets are normalised away.
+
+The OTHER files keep the **`{0}`-callee idiom** — `(?:(?<g>BODY)){0}`,
+a REPEAT of a GROUP, base syntax — wherever a callee-only body is wanted.
+That is deliberate and not an oversight: those cells were oracle-verified
+in that spelling, and re-spelling a cell moves a measurement without
+re-measuring it.
 
 ## Files
 
 - **`refused.rxt`** — the `conditionals` refusals this module does NOT
-  unlock: `(?(DEFINE)`, `(?(R)`, `(?(1)`, each pinned by running today's
-  built `build/pcrec` (this worktree, off `main`, no subroutine-call
-  producer). Includes the cell showing `--features recursion` changes
-  nothing — the doorway is still `conditionals`'s until wave F lands.
+  unlock: `(?(R)`, `(?(1)`, each pinned by running today's built
+  `build/pcrec`. **Wave F rewrote this file's point.** Its two `(?(DEFINE)`
+  cells moved to `define.rxt` (the construct is `recursion`'s now), and what
+  remains is the SPLIT: the last cell runs `(a)(?(1)b|c)` WITH `recursion`
+  enabled and pins that it is still refused — one doorway, two modules,
+  and enabling this one must not unlock the other's conditions.
 - **`gated.rxt`** — the two D65 diagnostics (`requires module 'recursion'`
   under std1 vs `... is enabled but ... is not implemented yet` under a
   partial set), P2's masking cell, and the positive control. **P2's cell is
@@ -117,11 +124,36 @@ libpcre2 itself rather than trusting that claim.
   pcrec spells `\K` as a write to the same slot as group 0's start and `W`
   (the callee's restored slot set) must exclude it.
 - **`zerodef.rxt`** — the `X{0}` callee family (plain, recursive, atomic,
-  rung-bearing), each against its `{1}` NON-`{0}` twin (the same callee
+  rung-bearing), each with its `(?(DEFINE)` TWIN (`[DD-14]` wave F: the two
+  spellings lower to one node, so the pair is the assertion) and each
+  against its `{1}` NON-`{0}` twin (the same callee
   emitted lexically once as well as called) — design §4.4c's own control
   shape (`^((?>a)){1}b$` allocates cut marks, `{0}` allocates none). The
   atomic and rung-bearing rows are the LOAD-BEARING ones; the plain row is
   the control that a naive fix would pass vacuously.
+- **`define.rxt`** (`[DD-14]` wave F) — D71 item 4's construct: the library
+  idiom itself, a numbered callee inside a DEFINE, the
+  body-does-not-run-lexically pair, two definitions in one DEFINE, a
+  RECURSIVE callee, a DEFINE placed AFTER its call, an alternation inside
+  the defined group, an empty body, a body defining no group, a quantified
+  DEFINE, scoped `(?i)` reaching the body, and two DEFINEs in one pattern.
+  Plus four refusals: PCRE2's own single-branch rule twice (same wording,
+  same offset — `at + 3`), and the pair that shows the tail INCLUDES the
+  `)` (`(?(define)` and `(?(DEF)` are name conditions on 10.46, so without
+  it this module would have claimed `(?(DEFINED)`). The empty-body and
+  group-less-body cells are there because "legal" is the surprising answer:
+  the wave's brief expected a refusal and libpcre2 has no such rule.
+- **`realworld.rxt`** (`[DD-14]` wave F, `[LIB]` entry #1) — the RFC 5322
+  email specimen in all THREE spellings (hand-inlined `orig.rx`,
+  `{0}`-factored `factored.rx`, and a `(?(DEFINE)`-factored one) over
+  fourteen subjects from the specimen's own manifest. The patterns are READ
+  from `docs/design/subroutines_measurements/email_specimen/` and the DEFINE
+  spelling is DERIVED from `factored.rx` by the generator — a hand-typed
+  third copy of 400 bytes could disagree about one character class and this
+  corpus would pin the disagreement. **The 1 MB throughput subjects and the
+  deep-repetition set 057-064 are EXCLUDED, with the reason in the file
+  header**: five of those measured `PCREC_ERR_FRAMES` on the factored
+  spelling at wave B+C, and that number is wave G's and `[FB]`'s to move.
 - **`leadingzero.rxt`** — design §2.4a's pair on the ANCHORED
   discriminator: `^(a(?01)?b)$` on `"aabb"` is `(0,4)` (group 1),
   `^(a(?00)?b)$` is nomatch (the root) — the whole digit run after `(?` or
