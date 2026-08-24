@@ -13529,3 +13529,10 @@ lesson worth keeping — a real observation with an unchecked cause
 attached, the same class as the cell-2 parked note. Item 1's other half
 (the runner archives HEAD per row; the COMPLETE trailer prints one SHA)
 stands and is owed a line in tests/mech/CLAUDE.md at the close.
+
+ADDENDUM (part 10, ~17:5x): make test on the D+LB-merged main (9675dcb):
+corpus 25,271 / 0 (+24 from D, +30 from LB), every section green except
+tests/resource's 45 s CPU cap under load 12 (waves E and F building) —
+the K31-addendum shape, fourth time today, same pattern; solo re-run +
+san chained behind it (scratchpad/retest_resource_LB.log,
+san_LBmerged.log).
