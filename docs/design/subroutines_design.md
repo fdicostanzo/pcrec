@@ -661,6 +661,13 @@ of one name.
 And a call **does not retry into the later members**:
 `^(?<a>x)(q)(?<a>y)(?&a)z$` matches `"xqyxz"` and not `"xqyyz"`.
 
+**THE RULE IS UNIFORM ACROSS ALL FOUR BY-NAME CALL SPELLINGS**, which the first
+version measured for `(?&name)` only. MEASURED, `out/wrapped_target.txt` axis
+J: `(?&a)`, `(?P>a)`, `\g<a>` and `\g'a'` all match `"qyx"` and all refuse
+`"qyy"` on `^(?:(?<a>x)|q)(?<a>y)X$` — **first declaration, statically, in
+every spelling**. So §4.2's resolver applies one rule at one site, and there is
+no per-spelling arm to get wrong.
+
 **THE DESIGN CONSEQUENCE is that `A_CALL` DOES NOT REUSE `A_BREF`'s `refs[]`
 SET.** `A_BREF` carries a set *"even when it has one element, deliberately"*
 (`internal.h:385-400`) because a by-name reference resolves at MATCH time over
@@ -694,6 +701,26 @@ construct they are wrapped in, including the atomic wrapper suppressing the
 call's retries (T4). Nothing in this module is special-cased for them, and
 §6.4's callee contract is why: the callee's own follow scoping is the same rule
 `lookaround_design.md` §3.2.1 states, for the same reason one construct over.
+
+#### (e2) `\G`, a non-zero startpos, and `\A`/`\z` inside a callee
+
+MEASURED, `out/wrapped_target.txt` axis G:
+
+| pattern | subject | startpos | 10.46 |
+|---|---|---|---|
+| `(?(DEFINE)(?<g>\Ga))(?&g)` | `"xa"` | 0 | nomatch |
+| `(?(DEFINE)(?<g>\Ga))(?&g)` | `"xa"` | **1** | **(1,2)** |
+| `(?(DEFINE)(?<g>\Aa))x?(?&g)` | `"xa"` | 0 | nomatch |
+| `(?(DEFINE)(?<g>a\z))x(?&g)` | `"xa"` | 0 | (0,2) |
+| `(?(DEFINE)(?<g>a\z))x(?&g)b` | `"xab"` | 0 | nomatch |
+
+**All four compose with no rule of this module's own.** `\G` is an absolute
+test against `startpos`, `\A` and `\z` are absolute tests against the
+SUBJECT's ends, and a call changes neither the subject nor `startpos` — so
+inside a callee they mean exactly what they mean outside one. This is
+`lookaround_design.md` §3.8's finding for a second construct, and like that one
+it is recorded because **the absence of a rule is a claim** that a panel should
+be able to check.
 
 #### (f) `(?R)` under a quantifier, and the anchors again
 
@@ -1475,6 +1502,22 @@ justification is gone deserves to be re-asked rather than spent.
 `unbounded` by its own definition, so the honest-ceiling machinery is reused,
 not rebuilt.
 
+**AND A DEPTH IS NOT A NUMBER A CALLER CAN READ — IT IS A SUBJECT SIZE.**
+R34's LENS1-5 asked for the conversion and it cuts both ways. MEASURED, this
+lane, on the two canonical shapes:
+
+| | pcrec at `RX_CALL_DEPTH = 1024` | libpcre2 10.46 |
+|---|---|---|
+| **the LEGITIMATE deep recursion** — `^(a(?1)?b)$` on `aⁿbⁿ`, which needs nesting `n` for a `2n`-byte subject | gives up at **a ~2 KB subject** | **matches an 800 KB subject in 0.24 s** (n = 400,000, from the heap) |
+| **the RUNAWAY** — `^(a\|(?1)a)$` on `aⁿb` | gives up in **~0 s at any n** (the prototype's whole run is 0.13 s, process startup included) | `rc −52` costs **0.0001 s / 0.0073 s / 0.17 s / 2.58 s** at n = 100 / 1,000 / 5,000 / 20,000 — **quadratic in the subject** |
+
+**The right-hand column is not one verdict.** On the runaway, a **bounded
+depth is strictly better than PCRE2's guard** — pcrec refuses in constant time
+where 10.46 spends 2.6 s finding out, which is exactly the DD-2 robustness
+property D22 asks for. On the legitimate recursion, pcrec refuses a subject
+**390× smaller** than PCRE2 accepts. **Both facts belong in the same sentence
+whenever the capacity is discussed**, and §14 ASK 2 now carries the pair.
+
 **THE `ERR_FLOOR` MOVE, −4 → −5, TOUCHES EIGHT SOURCE-OF-TRUTH SITES.**
 MEASURED by grep, `out/premises.txt` axis C (the four `m6read_samples/` files
 are archived samples of emitted output, listed separately because they are
@@ -2028,6 +2071,14 @@ starts, default arm vs `-fno-prefilter`, answers verified equal on every cell:
 | R14 | `(?<w>cat)midcat-cat` | 27.6 µs | 7.21 ms | **262×** |
 | R15 | `(?<w>[a-z]+)#[a-z]+` | 349 µs | 7.36 ms | **21×** |
 
+**AND NO PAIR IN THE POPULATION IS RECURSIVE**, which bounds what the number
+covers: a recursive call has no finite inlining, so all 15 pairs are
+NON-RECURSIVE shapes and **the 21×–350× is what a prefilter is worth on the
+spliceable half of the population** (§6.3's eligible set, §8.3's exact `nfa.c`
+arm). For the recursive half, §8.3's `Σ*` arm is the only sound approximation
+and its value is **not measured here** — which is a second reason §11 wave G
+carries a measurement obligation rather than a switch.
+
 **INDEPENDENTLY SPOT-CHECKED** by this lane with a different driver on R11's
 inlined pattern: 0.0096 s vs 0.1621 s over 20 passes of a 1 MB subject —
 **16.9×**, the same order. The relative noise on the sub-100 µs default-arm
@@ -2450,10 +2501,14 @@ answers agree with PCRE2's on every terminating shape up to the stamped depth.*
 **Refute** by exhibiting a pattern PCRE2 answers −52 on that pcrec's depth
 capacity does **not** catch (it would have to be a recursion that neither
 terminates nor deepens), or a pattern that needs more depth than the stamped
-value and that a user would reasonably write. §3.3 pinned that
-`^(a(?1)?b)$` needs depth ≈ subject and PCRE2 satisfies it from the heap, so
-**the second half of this prediction is the weak one** and §14 ASK 2 asks what
-the default should be.
+value and that a user would reasonably write. **THE SECOND HALF IS THE WEAK ONE
+AND IT NOW CARRIES ITS NUMBER**: at 1024, `^(a(?1)?b)$` gives up at a **~2 KB**
+subject where 10.46 matches **800 KB in 0.24 s** (§5.6, MEASURED). The first
+half is the strong one and it carries its number too — PCRE2's own `−52` costs
+**2.58 s at a 20 KB subject** and grows quadratically, where a stamped depth
+costs nothing. **A refutation has to say which of the two shapes it is
+attacking**, because this design trades one for the other on purpose and §14
+ASK 2 is where the exchange rate is set.
 
 **P-4 (no same-position guard).** *Building the O(1) per-callee entry-position
 guard would be a miscompile, not a conservative approximation.* Already
@@ -2625,9 +2680,18 @@ redundant, which is ASK 1's answer arriving from the other side;
 (c) a **large** default with the memory cost stamped, following D49.2's
 work-budget reasoning (*"too low refuses ordinary large-subject matches on the
 shipped path, which is the worse error"*).
+**AND THE CHOICE IS A SUBJECT SIZE, NOT A DEPTH** (R34 LENS1-5). MEASURED
+(§5.6): at 1024, `^(a(?1)?b)$` gives up at a **~2 KB** subject where 10.46
+matches **800 KB** — a factor of 390. In the other direction a bounded depth is
+**strictly better than 10.46's**: on the runaway `^(a|(?1)a)$` pcrec refuses in
+constant time where PCRE2's own `rc −52` costs 0.0001 / 0.0073 / 0.17 / **2.58
+seconds** at n = 100 / 1k / 5k / 20k. So the number Frank is picking is *"the
+deepest legitimate nesting a caller may have"*, and its cost is bytes of
+`resume_stack`, not time.
 *Recommendation: (c), with a bring-up value calibrated at implementation the
-way the step budget's 500M and the work budget's 10⁹ were, and the honest
-ceiling stamped so a caller can read it.*
+way the step budget's 500M and the work budget's 10⁹ were, and BOTH implied
+subject sizes stated in the release note beside the stamp — a ceiling a caller
+cannot convert into a subject size is a number nobody can act on.*
 
 **ASK 3 — how granular are the registry rows for multi-digit calls?** §8.1
 MEASURED three missing families: `(?10)`+, `(?-10)`+, `(?+2)`…`(?+9)`, and
