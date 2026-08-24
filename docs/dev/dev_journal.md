@@ -13311,3 +13311,27 @@ libpcre2 over ≥60 subjects + three 1 MB throughput subjects — the
 BC/orig-vs-BC/factored gap on the no-`@` subject is the measurement of
 what wave G's splice must recover. Candidate for tests/recursion/
 realworld.rxt and for pcrec-bench.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 5) — the email specimen measured: factoring is strictly worse today, and wave G's bar becomes byte-identity with the hand-inlined pattern
+
+srEmail (sonnet, read-only, ~14:2x-14:4x) measured Frank's RFC 5322
+specimen: original vs `{0}`-idiom factored on post-A2 main and lane/srBC
+against libpcre2 over 85 subjects and three 1 MB throughput subjects.
+Archived: docs/design/subroutines_measurements/email_specimen/ (085c084).
+CORRECTNESS: orig and factored agree under libpcre2 85/85; MAIN/orig,
+BC/orig 0 disagreements; BC/factored 0 wrong ANSWERS but FIVE
+PCREC_ERR_FRAMES give-ups on deep repetition (a call frame outlives its
+return, S-SR3 → a frame per `(?&x)` iteration; 2048 default). COST:
+BC/factored is the VM (the definitions' groups are captures), no
+prefilter, no rungs: no-`@` MB 155 ms vs 6.5 ms (~23×, the wave-G
+number), and 1 MB of `a` → STEPS give-up after ~6 s where the DFA takes
+4 ms (the pattern's `atom+(\.atom+)*` backtracking shape, structurally
+impossible in the DFA, reopened by forcing the VM). READABILITY: the
+factored form wins. CONCLUSION recorded on [DD-14.G] and [DD-14.FB]: one
+cause (the callee is a CALL), one cure for the acyclic case — SPLICE +
+DEAD-CAPTURE ELISION (a group reached only through calls can never leave
+a visible capture, §3.1's restore) → the DFA engine with its prefilter;
+wave G's checkable bar is byte-identity between the factored and the
+hand-inlined artifacts. This is the specimen the design's §8.4 said did
+not exist, and it turns wave G from an optimisation into the thing that
+makes the module worth using for factoring.

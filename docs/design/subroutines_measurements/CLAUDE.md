@@ -143,3 +143,12 @@ again with a second lexical construct in play
 (`prototype/slotproto_*.c`), found the whole capture-slots-only RULE wrong. A
 design section that can be executed should be — and by someone who did not
 write it.
+
+- `email_specimen/` — (2026-08-24, thirty-ninth session) the RFC 5322
+  email pattern, original vs `{0}`-idiom subroutine-factored, measured by
+  the srEmail lane on post-A2 main and lane/srBC against libpcre2 10.46:
+  85 subjects (0 answer disagreements; 5 FRAMES give-ups on deep
+  repetition for the factored form), three 1 MB throughput subjects
+  (prefilter loss ~23×; a STEPS give-up where the DFA takes 4 ms). Its
+  README carries the conclusion that sets wave G's bar (byte-identity
+  with the hand-inlined pattern). Scripts regenerate the subjects.
