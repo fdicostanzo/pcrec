@@ -475,6 +475,9 @@ Per D71.2's requirement that the release note state both:
 
 ### 7.4 ASK-1: should the stamped default for call-bearing patterns be RAISED?
 
+**RULED (Frank, 2026-08-24, decisions.md D73): NO — KEEP 2048/3072 (option (a)).** The caller-provided buffer is the path around the limit for callers who need depth or a small thread stack; the limit only bites unusual patterns. The user docs must state the capacity, its implied subject size, the musl/small-stack caveat (K33) and the `_in` remedy — a [REL-META] obligation. The analysis below is the record the ruling was made on.
+
+
 D71 item 2 carries forward ASK 2's "larger for call-bearing patterns". **The
 measurements say raising it makes the [TS-4] problem the SAME ruling cites
 strictly worse, and I cannot settle a release-note-visible number that Frank

@@ -13577,3 +13577,9 @@ dependency graph, defaults = today's artifact (identity-gated), and the
 value-add units ([V-I] results→struct helper, [M4-SUBST] search/replace,
 rx code management, the [V-H]/[ENG-PGO] diagnostic variants, FB's `_in`
 entries, [LIB] regions) as drop-ins on the same switch. Spine candidate.
+
+ADDENDUM (part 11, ~18:4x): the D+LB tree's battery is GREEN — san
+rc=0 in 45 min, zero reports both axes (test 25,271/0, resource 19/19
+solo, strict earlier). [DD-14.FB]'s SPEC half MERGED (0f62433) with
+§7.4's ASK-1 marked RULED (D73). Waves E and F are in their landing
+runs.
