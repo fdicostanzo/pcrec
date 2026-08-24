@@ -100,7 +100,7 @@ their repo commit by `probes/archive.sh` from a committed tree.
 |---|---|---|
 | `probes/sr_oracle.py` | not a probe, the ORACLE HELPER | borrows `../lookaround_measurements/probes/la_oracle.py` → `br_oracle.py` → `pcre2_ctypes.py` (three levels, no copy) and adds the three things this lane needs: `match_limits()` returning the **RAW** `pcre2_match` rc so a give-up is a CELL and not a traceback; `callout_trace()`, a `pcre2_set_callout` callback reading the **live ovector inside a call**; and `depth_of()`, a depth-limit bisector. Behavioural `SELFCHECK` on all three |
 | `probes/probe_premises.sh` | MEASURED + STRUCTURAL, in-pcrec | §1: every spelling's refusal on HEAD under both feature sets, the 26 registry rows and their `built` column, the shared `\g` doorway, the give-up code space and **every site the `ERR_FLOOR` move touches**, `RX_TRAIL`/`RX_SET`/`RX_PUSH`/`RX_CUT` and the fail label quoted from `src/`, the `[M6.5]` resolution machinery, and the label-address/`goto *` census |
-| `probes/probe_spellings.py` | MEASURED, both oracles | §2: **ten call spellings and nine reference spellings separated by ONE cell** (`(a|b)X` on `"ab"`); the relative and forward forms; `(?R)`/`(?0)`/`\g<0>`; two-digit group numbers; the `(?(DEFINE))` idiom and a DEFINE-less equivalent swept over 11 subjects; python's verdict on the whole vocabulary |
+| `probes/probe_spellings.py` | MEASURED, both oracles | §2: **ten call spellings and nine reference spellings separated by ONE cell** (`(a\|b)X` on `"ab"`); the relative and forward forms; `(?R)`/`(?0)`/`\g<0>`; two-digit group numbers; the `(?(DEFINE))` idiom and a DEFINE-less equivalent swept over 11 subjects; python's verdict on the whole vocabulary |
 | `probes/probe_captures.py` | MEASURED, libpcre2 + CALLOUTS | §3.1/§3.4: the capture state after return, **during** the call, at depth > 1, after a failed call; inheritance; `\K`; `(?J)` duplicate names and the call/reference resolution split |
 | `probes/probe_atomicity.py` | MEASURED | §3.2: the naive cell that decides nothing and the isolated cell that decides it; four atomic controls; quantified calls and the empty-body guard; calls inside lookaround/atomic/lookbehind; the retry COST against an inlined control |
 | `probes/probe_leftrec.py` | MEASURED | §3.3: direct, indirect and nullable-prefix left recursion; the two guards; **the decisive sweep that refutes the same-position reading**; `(?R)` under a quantifier; a call inside a lookbehind; depth requirement vs subject; and the error-140 sweep that shows the charter's premise is not about recursion at all |
@@ -242,6 +242,9 @@ MEASURED on libpcre2 10.46 and python 3.14 `re`, `out/spellings.txt` A1/A2/A7.
 | `\g'1'`, `\g'name'`, `\g'-1'` | call | ERR | call | **SHIPS** | one row (`\g'1'`) |
 | `(?R)`, `(?0)` | whole-pattern call | ERR | call | **SHIPS** | two rows |
 | **`\g<0>`, `\g'0'`** | **whole-pattern call** | ERR | call | **SHIPS** | **no row** (§2.4, §8.1) |
+| **`(?01)`, `(?001)`, `(?0001)` …** | **group 1** | ERR | call | **SHIPS** | **no row** (§2.4a) |
+| **`(?00)`, `\g<00>`, `\g'00'`** | **the ROOT** | ERR | call | **SHIPS** | **no row** (§2.4a) |
+| **`(?-01)`, `\g<-02>`** | relative, leading zero | ERR | call | **SHIPS** | `(a)(?-01)` has a row; `\g<-0N>` does not |
 | `\1`, `\g1`, `\g{1}`, `\g{-1}` | reference | `\1` only | reference | already ships | module `backrefs` |
 | `\k<n>`, `\k'n'`, `\k{n}`, `(?P=n)`, `\g{n}` | reference | `(?P=n)` only | reference | already ships | module `backrefs` |
 | `(?(DEFINE)…)` | a never-executed container | ERR | **conditional** | **REFUSES** — module `conditionals` | one row, `unbuilt` |
@@ -306,6 +309,45 @@ resolver, not a new field.
 That is a structural consequence of the measurement and it is the reason §4.1's
 node stores a *target group number* with `0` reserved, rather than a pointer to
 an `A_CAP`.
+
+#### 2.4a LEADING ZEROS, and why the naive `0` doorway is a MISCOMPILE
+
+**A FOURTH SPELLING FAMILY THE CHARTER'S LIST DOES NOT HAVE** (R34 LENS1-4).
+MEASURED, `out/wrapped_target.txt` axis Z, on the **anchored** discriminator —
+`(?R)` re-runs the anchors (§2.4) so it answers nomatch on `"aabb"`, while a
+call to group 1 answers (0,4):
+
+| pattern | `"aabb"` | target |
+|---|---|---|
+| `^(a(?1)?b)$` | (0,4) | group 1 |
+| **`^(a(?01)?b)$`** | **(0,4)** | **group 1** |
+| **`^(a(?001)?b)$`**, `^(a(?0001)?b)$` | **(0,4)** | **group 1** |
+| `^(a(?R)?b)$`, `^(a(?0)?b)$` | nomatch | the root |
+| **`^(a(?00)?b)$`** | **nomatch** | **the root** |
+| `^(a\g<1>?b)$`, **`^(a\g<01>?b)$`**, **`^(a\g'01'?b)$`** | (0,4) | group 1 |
+| `^(a\g<0>?b)$`, **`^(a\g<00>?b)$`**, **`^(a\g'00'?b)$`** | nomatch | the root |
+
+and the relative forms take a leading zero too — `^(a)(b)\g<-01>$` and
+`^(a)(b)(?-01)$` match `"abb"`, `^(a)(b)\g<-02>$` matches `"aba"` — while a
+relative value of **zero** stays **error 126** in every spelling
+(`(?-00)`, `(?+00)`, `(?-0)`, `\g<-0>`).
+
+> **THE RULE, uniform across the `(?` and `\g` doorways: parse the WHOLE DIGIT
+> RUN as decimal; the value 0 is the ROOT; a RELATIVE value of 0 is error 126.**
+
+**THE MISCOMPILE.** pcrec's registry keys the `(?` doorway on **the character
+after `(?`** (P4), and it has a row whose selector is `0`, described as
+*"recurse the whole pattern (synonym for `(?R)`)"*. A port wired to that row's
+description — *"selector `0` means the root"* — compiles **`(?01)` as the
+root**, and `^(a(?01)?b)$` on `"aabb"` answers **nomatch where 10.46 answers
+(0,4)**. The row's own description is the trap, and it is the second time in
+this document that a doorway keyed on one character has to be told to read the
+whole run: the first is §2.2's `(?10)`.
+
+**This re-opens §14 ASK 3 for the `0` doorway specifically** — whatever
+granularity Frank rules for `(?N)`, the `0` row's *description* has to stop
+saying "synonym for `(?R)`" without qualification, because `(?0…)` is a
+one-character prefix of two different targets.
 
 ### 2.5 The `(?(DEFINE)…)` idiom is `conditionals`', and what a DEFINE-less
 ### design costs
@@ -945,6 +987,27 @@ graph, memoised, with the empty language explicit.**
   reads as *"no position can match"*. §12 P-12 is its cell.
 - mutual recursion is a SYSTEM, solved on the condensation, which is why this
   lives in `callgraph.c` beside W and `vm_nullable` rather than in `mrl.c`.
+
+**AND THE WITHDRAWN GLOSS HAS A WITNESS THAT LOSES A MATCH.** R34's C1 panel
+built it; MEASURED here, `out/wrapped_target.txt` axis M:
+
+```
+^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$
+        "xb"    -> (0,2)        "xbbb"  -> (0,4)
+        "xbb"   -> (0,3)        "xbbbb" -> (0,5)
+```
+
+`g`'s **only** branch is `(?&h)b`, so `g` has **no non-recursive branch at
+all** — and the pattern matches. The withdrawn gloss has nothing to minimise
+over, gives **∞**, and the MRL prune turns every row above into **nomatch**.
+The least fixpoint gives `minw(h) = 1` (the `x` branch) and `minw(g) = 2`,
+which is right.
+
+**THE CONTROL IS §12 P-12's OWN CELL**, and it is what stops the fix from
+being "never answer ∞": `^(?(DEFINE)(?<g>a(?&g)b))(?&g)$` matches nothing on
+`""`, `"ab"`, `"aabb"`, `"aaabbb"` — there ∞ is the *correct* fixpoint. **The
+two cells together are the specification**: ∞ must be reachable and must not be
+reached by an approximation. `mrl.rxt`'s `"xb"` cell is the first.
 
 **AND `pcrec_maxw` DOES NOT EXIST YET** (P13): `lookaround_design.md` §11
 wave A builds it. §11's wave B+C therefore reads *"`minw`'s arm, and `maxw`'s
@@ -1889,7 +1952,7 @@ existing rows already read `engines=vm` (P4), so **no row's engine mask
 changes** and SR-8's generic post-discharge consultation (D67) does the work
 with no new predicate — `lookaround_design.md` §5.1's finding, one module over.
 
-**THREE ROW FAMILIES ARE MISSING FROM THE REGISTRY AND THIS MODULE OWNS THEM**
+**FOUR ROW FAMILIES ARE MISSING FROM THE REGISTRY AND THIS MODULE OWNS THEM**
 (MEASURED, `out/premises.txt` axis B against `out/spellings.txt` A7a):
 
 | missing | measured legal on 10.46 | why it is missing |
@@ -1897,6 +1960,7 @@ with no new predicate — `lookaround_design.md` §5.1's finding, one module ove
 | `(?10)`, `(?12)`, … and `(?-10)`, … | yes — `(a)×10(?10)` matches `"a"×11` | the rows are keyed on the **character** after `(?`, so `(?1)`…`(?9)` are nine rows and multi-digit runs have no row of their own |
 | `(?+2)` … `(?+9)` | yes — `^(?+2)(a)(b)$` matches `"bab"` | `(?+1)` has a row and its eight siblings do not, while `(?-1)`…`(?-9)` all do |
 | **`\g<0>`, `\g'0'`** | yes — `(a\g<0>?b)` matches `"aabb"` | §2.4: two whole-pattern spellings nobody listed |
+| **LEADING-ZERO absolutes** — `(?01)`, `(?001)`, `\g<01>`, `\g'01'` (group 1) and `(?00)`, `\g<00>`, `\g'00'` (the root) | yes — §2.4a's anchored table | the `0` row exists and its DESCRIPTION makes the naive wiring a miscompile (§2.4a) |
 
 **AND ONE COLUMN IS WRONG.** The `quant` column reads `no` on the nine
 `(?1)`…`(?9)` rows and `yes` on `(?R)`, `(?0)`, `(?+1)` and every `(?-N)`.
@@ -2212,6 +2276,8 @@ is not a party to at all. §14 ASK 5 asks whether that is enough.
 | `leftrec.rxt` | the give-up cells: direct, indirect, and nullable-prefix left recursion, each expecting `PCREC_ERR_RECURSE`; **and the `^(a\|(?1)a)$` on `"a"×200` cell that must MATCH** (§3.3) |
 | `dupnames.rxt` | §3.4(c)'s call/reference split, including the unset-first-declaration discriminator |
 | `kreset.rxt` | §3.4(b)'s three `\K` cells, `features assertions,recursion` |
+| **`leadingzero.rxt`** | §2.4a's pair on the ANCHORED discriminator: `^(a(?01)?b)$` on `"aabb"` must be (0,4) and `^(a(?00)?b)$` must be nomatch, with the `\g<01>`/`\g<00>`/`\g'01'`/`\g'00'` siblings and the four relative-zero error cells. **The unanchored form is not usable here** — both answers are (0,4) — and the file says so, because that is the cell shape this lane's own first draft used |
+| **`mrl.rxt`** | §4.4b's two fixpoint cells: `^(?(DEFINE)(?<g>(?&h)b)(?<h>x\|(?&g)))(?&g)$` on `"xb"`…`"xbbbb"` must MATCH (the withdrawn gloss loses them), and `^(?(DEFINE)(?<g>a(?&g)b))(?&g)$` must match NOTHING (∞ is right there). **The pair is the specification** — ∞ reachable, and not reached by an approximation |
 | **`slotfamilies.rxt`** | §5.3b's two MEASURED cells — `^(a(?1)?b)\1$` on `"aabbaabb"` (features `recursion,backrefs`) and `^((?>a(?1)?))a$` on `"aa".."aaaaaaaa"` with its `^((?:a(?1)?))a$` control (features `recursion,atomic-groups`) — plus a cell per ARGUED family as `[DD-14]` lands them. **This file is the one that would have caught the design's own error**, and it exists because the lane's first corpus shared the design's alphabet |
 | `quantified.rxt` | §2.6's twelve quantified spellings and the nullable-callee guard |
 | `inlookaround.rxt` | §3.4(d)/(e): a call **in** a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind. **AND §3.5's mirror image**: a call **TO** a group whose lexical home is a lookbehind (W1), a negative lookahead (W2), an atomic group (W3), an atomic group the subject never runs (W4) and a positive lookahead (W5) — each with its wrapper-isolating control and, where the language permits, the inline control. `features recursion,lookaround,atomic-groups` |
@@ -2459,6 +2525,21 @@ run-time outcome. If a `--step-budget`-style flag could make a left-recursive
 pattern refuse at COMPILE time the directive would be unnecessary, and it
 cannot: §3.3 measured that PCRE2 compiles them all and this design follows.
 
+**P-11a (the `minw` fixpoint).** *Kleene iteration from ∞ downward over the
+SCC-condensed call graph gives the exact `minw` for every callee, and no
+cheaper approximation does.* **The first version's approximation is already
+refuted**: "the minimum over the non-recursive branches" loses the match on
+`^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$` / `"xb"`, MEASURED (§4.4b), where
+`g` has no non-recursive branch and the true answer is 2. **Refute the
+fixpoint** by exhibiting a callee whose iterated value is not the least
+solution — the candidates are shapes where `minw`'s own recurrence is not
+monotone, which for the current `AKind` set it is (every arm is a sum, a min or
+a constant). §12 P-12 is the ∞ half of the same claim, and there is no
+prediction for `pcrec_maxw` because **it does not exist yet** (P13): its
+`A_CALL` arm is `∞` for any callee in a cycle, which §3.4(d) MEASURED PCRE2
+agreeing with (error 125 inside a lookbehind), and `lookaround_design.md` §11
+wave A owns the rest.
+
 **P-12 (the empty-language callee).** *A callee whose least `minw` solution is
 ∞ matches nothing, that is a LEGAL compile, and pcrec's MRL prune reads it as
 "no position can match".* MEASURED, this lane, against libpcre2 10.46:
@@ -2557,6 +2638,11 @@ Options: (a) add the eight missing `(?+N)` rows and one row each for the
 multi-digit families, keeping the per-digit shape; (b) **collapse** each family
 to ONE row with a syntax like `(?N)`, `(?+N)`, `(?-N)`, deleting seventeen rows;
 (c) leave the surface as it is and fix only the `quant` column.
+**AND §2.4a RE-OPENS THIS FOR THE `0` DOORWAY SPECIFICALLY.** `(?0…)` is a
+one-character prefix of **two different targets** — `(?0)`/`(?00)` are the root
+and `(?01)` is group 1 — so whichever granularity is ruled, the existing `(?0)`
+row's description (*"synonym for `(?R)`"*) must stop standing unqualified: a
+port written from it miscompiles `(?01)`, MEASURED.
 *Recommendation: (b).* Nineteen rows for one construct is a compliance index
 that reports the doorway's implementation rather than PCRE2's surface, and D65's
 `built` column plus SR-8's witnesses make each row a real obligation. (b) is a
