@@ -1773,15 +1773,17 @@ Two measured facts frame what this buys, and the release note states both:
 - **The depth ceiling is small, and it is a SUBJECT SIZE, not a number.**
   MEASURED on a default `-p rx --features all` build of `^(a(?1)?b)$` (a
   pattern whose recursion depth grows with the subject): it matches up to
-  a **684-byte** subject and returns `PCREC_ERR_FRAMES` at 686, where
-  libpcre2 10.46 matches 800 KB.
+  a **684-byte** subject and returns `PCREC_ERR_FRAMES` at a 686-byte one.
+  libpcre2 10.46 matches 800 KB of the same shape — that half is not
+  measured here but cited from `docs/design/subroutines_design.md` §5.6.
 - **The refusal is CONSTANT-TIME, which is the half PCRE2 does not have.**
   MEASURED on the same build, the left-recursive runaway `^(a|(?1)a)$`
   over aⁿb returns `PCREC_ERR_FRAMES` in **0.0006 s at every n from 100 to
-  100,000** — flat across a 1,000× range — where libpcre2 pays a cost
-  growing as the square of the subject (2.6–5.6 s at n = 20,000). Refusing
-  a legitimate deep match is the price of refusing a runaway in constant
-  time; §10.6 is how a caller who wants the depth buys it back.
+  100,000** — flat across a 1,000× range. libpcre2 pays a cost growing as
+  the square of the subject there (2.6–5.6 s at n = 20,000, cited from the
+  same section, which measures the exponent at 2.04). Refusing a legitimate
+  deep match is the price of refusing a runaway in constant time; §10.6 is
+  how a caller who wants the depth buys it back.
 
 ### 10.2 The three new entries, and the descriptor
 
