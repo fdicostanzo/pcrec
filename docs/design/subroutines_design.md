@@ -988,7 +988,7 @@ clause is withdrawn.
 
 MEASURED by census (`switch` on a node kind, per function, at `eacac76`):
 **emit_vm.c 8, atomic.c 5, revdet.c 5, possessify.c 3, and six files with one
-each = 27.** Fourteen carry a `default:`, so `-Wswitch` will not name them.
+each = 27.** **Four** carry a `default:` (the first version of this sentence said "fourteen", a typo the [DD-14] wave A2 lane caught by measurement — 30 switch sites on the landed tree, 26 alarming + 4 `default:`, the +3 over this census all added by module `lookaround` after eacac76: `pcrec_has_lookaround`, `pcrec_maxw`, `la_has_kreset`), so `-Wswitch` will not name them.
 
 **THE CENSUS IS SWITCH-ONLY, AND THAT IS A SCOPE, NOT A COMPLETENESS CLAIM**
 (R34 V-14). `-Wswitch` fires on `switch` statements, so a `switch`-shaped
