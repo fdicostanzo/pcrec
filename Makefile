@@ -411,8 +411,23 @@ test-backrefs-identity: all
 # `run_lookaround_identity.sh` IS NOT HERE. It is `test-lookaround-identity`
 # below, on the ruling `test-atomic-identity` and `test-backrefs-identity`
 # have.
+# [M6.6.2 wave E2] THE SUBSTITUTION DRIVER rides this section too, and it is a
+# DIFFERENT KIND of instrument from the differential above rather than more of
+# it (design §10.1a). `run_lookaround_diff.sh` runs the module's OWN corpus —
+# every spelling, every body shape, the refusals, the alpha forms — which is a
+# BREADTH instrument. `run_expansion_diff.sh` re-expresses `tests/assertions/`'s
+# 8,260 libpcre2-verified cells as lookarounds and drives 887 generated patterns
+# through a THREE-WAY check (pcrec on the expanded pattern, pcrec on the folded
+# one, libpcre2 on the expanded one), which is a DEPTH instrument on exactly one
+# body shape: the assertion family's, a class or a literal. Neither substitutes
+# for the other, and §11's landing bar asks for both.
+#
+# It SKIPS LOUDLY without libpcre2, like every other oracle-dependent script
+# here, and it parallelizes internally on PROCS (default nproc). MEASURED on the
+# project box: 40s warm, 1m43s cold, at PROCS=12.
 test-lookaround: all
 	bash tests/lookaround/run_lookaround_diff.sh
+	bash tests/lookaround/run_expansion_diff.sh
 
 # [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
 # and the same ruling as `test-atomic-identity` and `test-backrefs-identity`

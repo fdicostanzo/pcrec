@@ -64,8 +64,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
   `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`
-  `endvaridentity` `assertions` `kresetdiff` `lookaround`, plus the per-lane
-  arms listed below),
+  `endvaridentity` `assertions` `kresetdiff` `lookaround` `laexpand`, plus the
+  per-lane arms listed below),
   `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
@@ -138,6 +138,29 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   alternatives outright, and has no `(?<*` at all). §2's exact disagreement
   count stayed 13 across a subject-set growth of 19 -> 26, which is the only
   kind of evidence an exact literal can give that it measures what it names.
+- `laexpand` → `tests/lookaround/run_expansion_diff.sh`, the SUBSTITUTION
+  DRIVER ([M6.6.2] wave E2, design §6.3). **A different KIND of net from
+  `lookaround` above, and the difference is what decides which rows it is
+  assigned to.** That one runs the module's own ~175-block corpus — BREADTH,
+  every spelling and every body shape. This one re-expresses
+  `tests/assertions/`'s 8,260 libpcre2-verified cells as lookarounds and drives
+  887 generated patterns through a THREE-WAY check per cell (pcrec on the
+  expanded pattern, pcrec on the FOLDED one, libpcre2 on the expanded one) —
+  DEPTH, over exactly the body shapes the assertion family uses, which is one
+  class or one literal. It brings 2,943 NONZERO-STARTPOS cells with it for
+  free, which is the axis §3.8's contract lives on.
+
+  **THE ROWS IT IS NOT ASSIGNED TO ARE AS MUCH A RESULT AS THE ONES IT IS**, and
+  both were MEASURED before anything was assigned — see the wave E2 section
+  below for the 15-row table. Every expansion in §6.1's table is an ATOMIC
+  lookaround with a FIXED-WIDTH body, so a sabotage of the non-atomic flag
+  (S131) or of the lookbehind width rule (S136) is invisible here HOWEVER MANY
+  CELLS RUN. Assigning this arm to those rows would have bought a bigger
+  denominator and no evidence — the shape this directory exists to refuse.
+
+  SKIP-is-not-a-pass exercised in the failing direction as `pc3` was; it is the
+  SECOND arm here that can decline for want of an oracle, and the verdict block
+  now NAMES the arms that skipped instead of assuming `pc3`.
 - `assertions` → `tests/assertions/run_assertions_tests.sh`, module
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the
@@ -161,7 +184,7 @@ against the `reject` arm's **54.75s** that S15-S20 were already paying. All
 three together cost about a fifth of the one arm those rows already ran, which
 is why the retagging below was not a cost question.
 
-## `pc3` can SKIP, and a skip is not a pass
+## TWO arms can SKIP, and a skip is not a pass
 
 `pcre2_check.c` dlopens libpcre2 and exits 0 with `SKIP:` lines when it is
 absent — the convention that keeps a stranger's clone green. The arm reproduces
@@ -172,10 +195,14 @@ the verdict logic refuses to let it read as evidence:
   `UNDETECTED` — the latter is a finding, and it would be a false one;
 - a row that ran something else carries `(pc3 SKIPPED -- no oracle)` appended
   to its verdict, because "caught by nothing" means something different when
-  one of the nets was not in the water;
+  one of the nets was not in the water. **Since [M6.6.2] wave E2 the suffix
+  NAMES the arms that skipped** rather than assuming `pc3` — with one skipped
+  arm it renders exactly as it always did, and with both it reads
+  `(pc3 laexpand SKIPPED -- no oracle)`;
 - the end-of-run summary lists every skipped row, and the completion trailer
   counts them: `== mech run COMPLETE: N rows (undetected: U, anomalies: A,
-  pc3-skipped: S) at <SHA> ==`.
+  oracle-skipped: S) at <SHA> ==` (the field was `pc3-skipped:` before wave E2,
+  when `pc3` was the only arm that could produce it).
 
 That last field is new in the trailer; the grep-able prefix is unchanged.
 

@@ -435,7 +435,7 @@ def expansion_for(tok, ml):
 
 
 def introduces_lookaround(occs, ml, which):
-    """True when at least one of the expansions this substitution inserts
+    r"""True when at least one of the expansions this substitution inserts
     IS a lookaround.
 
     Computed from the TABLE and from the occurrences replaced, never by
@@ -564,6 +564,18 @@ def main():
                 REJ[why][0] += 1
                 REJ[why][1] += len(beh)
                 continue
+
+            # THE PLAN FILES ARE TAB-SEPARATED and a pattern is their last
+            # field, so a TAB inside a pattern would silently truncate it
+            # in the shell driver's `read -r`. No block in the corpus has
+            # one today; this is the guard that keeps that a fact rather
+            # than an assumption the day one is added.
+            if "\t" in pat or "\n" in pat:
+                sys.stderr.write("expand_corpus: FATAL: qualifying block "
+                                 "%s:%d has a TAB or NEWLINE in its pattern, "
+                                 "which the tab-separated work plan cannot "
+                                 "carry\n" % (rel, b["lineno"]))
+                return 2
 
             qual["blocks"] += 1
             qual["beh"] += len(beh)

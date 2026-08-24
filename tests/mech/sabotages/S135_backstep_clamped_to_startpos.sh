@@ -28,9 +28,19 @@
 # RED; every startpos-0 cell in `lookbehind.rxt`, `lookbehind_widths.rxt` and
 # `nonatomic_behind.rxt` stays GREEN. A row that took the whole corpus with it
 # would not be evidence that this axis is covered.
+#
+# [M6.6.2 wave E2] `laexpand` ADDED TO THIS ROW, and it was MEASURED before it
+# was assigned (2026-08-24, one laexpand-only mech run per row: 8 of the
+# module's 15 rows DETECTED, 7 UNDETECTED — the table is in
+# tests/mech/CLAUDE.md). What the substitution driver sees here that the
+# module's own corpus does not is DEPTH: 8,260 libpcre2-verified cells
+# belonging to a module that already ships, re-expressed as lookarounds. For
+# this row, the inherited corpus contributes 2,943 of its 8,260 qualifying cells
+# AT A NONZERO STARTPOS, over `\b`/`\B`-expanded lookbehinds — which is the
+# axis §3.8's contract lives on, arriving here for free.
 SAB_ID="S135-backstep-clamped-to-startpos"
 SAB_FILE="src/gen/emit_vm.c"
-SAB_SUITES="harness lookaround"
+SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look_behind's start-of-subject guard is clamped to the SEARCH WINDOW (scan_position - search_from < k) instead of the subject, so a lookbehind can no longer read bytes before startpos — which is what design §3.8 measures both oracles doing"
 SAB_DOC_FIGURE="PREDICTED: tests/lookaround/startpos.rxt RED on its ms/ns cells (a positive lookbehind stops matching, and a NEGATIVE one starts matching where it must not — a FALSE MATCH); every startpos-0 cell in lookbehind.rxt, lookbehind_widths.rxt and nonatomic_behind.rxt GREEN. Canonical figure owed from run_sabotage_matrix.sh S135."

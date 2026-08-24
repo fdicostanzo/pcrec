@@ -13,9 +13,19 @@
 # THE `(void)` LINES IN THE AFTER TEXT ARE NOT DECORATION: `b` and `sl` have no
 # other use in this block, and a sabotage that fails to BUILD scores as a
 # harness error rather than as a detection.
+#
+# [M6.6.2 wave E2] `laexpand` ADDED TO THIS ROW, and it was MEASURED before it
+# was assigned (2026-08-24, one laexpand-only mech run per row: 8 of the
+# module's 15 rows DETECTED, 7 UNDETECTED — the table is in
+# tests/mech/CLAUDE.md). What the substitution driver sees here that the
+# module's own corpus does not is DEPTH: 8,260 libpcre2-verified cells
+# belonging to a module that already ships, re-expressed as lookarounds. For
+# this row, the assertion CONSUMES its body's bytes, and every expansion in
+# §6.1's table is zero-width by construction — so the whole 8,260-cell
+# population moves, on both the `(?=`/`(?!` and the `(?<=`/`(?<!` halves.
 SAB_ID="S123-look-no-cursor-restore"
 SAB_FILE="src/gen/emit_vm.c"
-SAB_SUITES="harness lookaround"
+SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look's positive arm stops restoring scan_position from SLOT_LOOK_POS, so the assertion CONSUMES its body's bytes — a zero-width construct that is not zero-width"
 SAB_DOC_FIGURE="PREDICTED: most of tests/lookaround/ goes red; (?=ab)abc no longer matches \"abc\". Canonical figure owed from run_sabotage_matrix.sh S123."

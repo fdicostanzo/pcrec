@@ -290,13 +290,21 @@ if [ -n "${EXPAND_WORKER:-}" ]; then
             # A DISAGREEING CELL IS A FINDING ABOUT THE COMPILER, not about
             # the expectation. The minimal witness is printed here so the
             # triage does not need the temp tree.
+            # THE TWO PATTERNS TRAVEL IN THE ENVIRONMENT, NOT IN `-v`.
+            # awk processes escape sequences in a `-v` assignment, so
+            # `-v gp="$gpat"` turns `\G` into `G` and `\w` into `w` — it
+            # prints a DIFFERENT PATTERN from the one that failed, and
+            # warns on stderr while doing it. Found by this script's own
+            # "the workers wrote to stderr" guard, on sabotage row S130.
+            # `ENVIRON` is not escape-processed.
+            GPAT="$gpat" ORIGPAT="$pat" \
             paste "$bdir/cells" "$d/a.out" "$d/b.out" "$d/oracle/$gid" \
-                | awk -F'\t' -v bid="$bid" -v gid="$gid" -v gp="$gpat" \
-                      -v orig="$pat" -v n=0 '
+                | awk -F'\t' -v bid="$bid" -v gid="$gid" -v pol="$pol" '
+                  BEGIN { gp = ENVIRON["GPAT"]; orig = ENVIRON["ORIGPAT"]; n = 0 }
                   $3 != $4 || $3 != $5 {
                     if (n++ < 3)
-                      printf "W\t%s\t%s\tsubject %s startpos %s\tA[%s]=%s\tB[%s]=%s\tC=%s\n",
-                             bid, gid, $1, $2, gp, $3, orig, $4, $5
+                      printf "W\t%s\t%s\t%s\tsubject %s startpos %s\tA[%s]=%s\tB[%s]=%s\tC=%s\n",
+                             pol, bid, gid, $1, $2, gp, $3, orig, $4, $5
                   }'
         fi
     done < "$bdir/gen.tsv"
@@ -605,7 +613,7 @@ report_policy() {
     fi
     if [ "$abbad" -ne 0 ] || [ "$acbad" -ne 0 ]; then
         bad "policy $pol: $abbad cells where A != B (pcrec's two lowerings of one language DISAGREE) and $acbad where A != C (pcrec disagrees with libpcre2 on the expanded pattern), over $cells cells. EVERY ONE IS A FINDING ABOUT THE COMPILER — never an expectation to adjust, never a cell to exclude"
-        awk -F'\t' '$1 == "W"' "$RECS" | head -12 | sed 's/^/    /' >&2
+        awk -F'\t' -v p="$pol" '$1 == "W" && $2 == p' "$RECS" | head -12 | sed 's/^/    /' >&2
         return
     fi
     case "$pol" in

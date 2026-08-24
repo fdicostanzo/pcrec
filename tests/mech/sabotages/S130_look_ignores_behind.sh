@@ -22,9 +22,19 @@
 # role text, the slots are still allocated, and `vm_count_slots`' extra
 # per-branch pushes become an over-count (safe). A lookbehind simply becomes a
 # LOOKAHEAD, so `(?<=a)b` matches "ab" at 0 where the truth is (1,2).
+#
+# [M6.6.2 wave E2] `laexpand` ADDED TO THIS ROW, and it was MEASURED before it
+# was assigned (2026-08-24, one laexpand-only mech run per row: 8 of the
+# module's 15 rows DETECTED, 7 UNDETECTED — the table is in
+# tests/mech/CLAUDE.md). What the substitution driver sees here that the
+# module's own corpus does not is DEPTH: 8,260 libpcre2-verified cells
+# belonging to a module that already ships, re-expressed as lookarounds. For
+# this row, three expansions are LOOKBEHINDS (`(?<=\w)`, `(?<!\w)`, `(?<=\n)`),
+# so a lookbehind emitted with the lookahead shape inspects the wrong side
+# of the cursor on the `\b`, `\B` and `(?m)^` populations.
 SAB_ID="S130-look-ignores-behind"
 SAB_FILE="src/gen/emit_vm.c"
-SAB_SUITES="harness lookaround"
+SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look stops reading Ast.u.look.behind, so a LOOKBEHIND is emitted with the lookAHEAD shape — the body runs FORWARD from the cursor with no back-step and no end-check, and the assertion inspects the bytes after the cursor instead of the ones before it"
 SAB_DOC_FIGURE="PREDICTED: every (?<= , (?<! and (?<* cell goes red — lookbehind.rxt, lookbehind_widths.rxt, startpos.rxt and nonatomic_behind.rxt all RED, workbudget.rxt RED — while every lookAHEAD cell (lookahead.rxt, captures.rxt, quantified.rxt, nonatomic_ahead.rxt) stays GREEN. Canonical figure owed from run_sabotage_matrix.sh S130."

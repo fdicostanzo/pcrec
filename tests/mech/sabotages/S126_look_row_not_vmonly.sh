@@ -24,9 +24,19 @@
 # already VM-forcing — so a capture-bearing detector would MASK the row.
 # `(?=a)b` satisfies both requirements and is in `lookahead.rxt` by name, with
 # its own comment saying so.
+#
+# [M6.6.2 wave E2] `laexpand` ADDED TO THIS ROW, and it was MEASURED before it
+# was assigned (2026-08-24, one laexpand-only mech run per row: 8 of the
+# module's 15 rows DETECTED, 7 UNDETECTED — the table is in
+# tests/mech/CLAUDE.md). What the substitution driver sees here that the
+# module's own corpus does not is DEPTH: 8,260 libpcre2-verified cells
+# belonging to a module that already ships, re-expressed as lookarounds. For
+# this row, the driver compiles every expanded pattern through the DEFAULT
+# engine selection, so the erased-lookaround prefilter answers for the
+# wrong language on the whole expanded population.
 SAB_ID="S126-look-row-not-vmonly"
 SAB_FILE="src/parse/registry.c"
-SAB_SUITES="harness lookaround registry"
+SAB_SUITES="harness lookaround registry laexpand"
 SAB_HARNESS_TARGET="tests/lookaround/lookahead.rxt"
 SAB_DESC="the (?=...) registry row's engines mask is widened from VM_ONLY to ANY_ENGINE, so SR-8 stops forcing the VM for a positive lookahead and the pattern is compiled from nfa.c's epsilon lowering — the lookaround-ERASED language"
 SAB_DOC_FIGURE="PREDICTED: (?=a)b answers (0,1) on \"b\" where the truth is NOMATCH; the registry arm's engine-capability tripwire also fires (a VM_ONLY row with a producer must refuse --engine=dfa by name). Canonical figure owed from run_sabotage_matrix.sh S126."

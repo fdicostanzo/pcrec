@@ -192,3 +192,108 @@ entirety.
   `(?>(?i))*` the same way, and `src/parse/parse.c`'s A_CAP arm records the
   pre-existing question. Giving the lookaround its own cell would be giving
   one question two homes.
+
+## `run_expansion_diff.sh` + `expand_corpus.py` — THE SUBSTITUTION DRIVER (wave E2)
+
+**A different KIND of instrument from `run_lookaround_diff.sh`, not more of
+it** (design §10.1a). That one runs the module's OWN corpus — every spelling,
+every body shape, the refusals, the alpha forms, `ms` startpos, the prefilter
+witness — and is a BREADTH instrument. This one re-expresses
+`tests/assertions/`'s corpus as lookarounds and is a DEPTH instrument on
+exactly ONE body shape: the assertion family's, which is one class or one
+literal. Neither substitutes for the other and §11's landing bar asks for both.
+
+**WHAT IT DOES.** Every assertion module `assertions` ships has a lookaround
+DEFINITION (§6.1). Replacing each assertion in that module's corpus by its
+definition turns 468 blocks / 10,120 libpcre2-verified cells into a lookaround
+corpus for free — 263 blocks / 8,260 cells of it — whose expectations are not
+this module's guesses, because they were written for a module that already
+ships. **It is a CORPUS GENERATOR, not a product mechanism** (Frank,
+2026-08-23; design §6.4): it emits PATTERN TEXT the compiler sees as an
+ordinary user-written lookaround. Nothing under `src/` changed for it, and the
+product-side substitution is [DD-14]'s, on the subroutine-call primitive.
+
+**THE THREE-WAY CHECK, per cell, and both halves are required.** `A` is the
+expanded pattern compiled by pcrec, `B` the folded pattern compiled by pcrec,
+`C` libpcre2 on the expanded pattern. `A == B` is D66's SELF-ORACLE — pcrec's
+two lowerings of one language must agree, which needs no external oracle at
+all. `A == C` is what stops `A == B` passing because BOTH lowerings are wrong
+the same way. Measured at the wave: **887 generated patterns / 29,063
+three-way comparisons, 0 disagreements**, match span AND every group span.
+
+**FIVE THINGS KEEP IT FROM BEING A TAUTOLOGY**, and they are the part to read
+before changing anything here, because every check this project has written
+that FAILED, failed by sharing a source with the thing it controls:
+
+1. **The expansion table is LITERAL** (`expand_corpus.py`), transcribed from
+   §6.1 / D66 / [DD-11] and never derived from the compiler. Read out of
+   `src/parse/mod_assertions.c` it would make `A == B` two spellings of one
+   source agreeing with themselves. **If [DD-11] later rewrites the assertions
+   to their definitions on the [DD-14] primitive, this table and the
+   compiler's must remain TWO SOURCES.**
+2. **§0 re-verifies the table against libpcre2 before a row of it is used** —
+   42 patterns (7 expandable rows × 6 tails) / 2,646 cells, both arms carrying
+   the same option state, 0 disagreements. §6.5 records why that last clause
+   is not a detail: the first version of this measurement put `(?m)` on the
+   folded arm only and reported 3 disagreements that were the measurement's.
+3. **§0 CARRIES ITS OWN FAILING DIRECTION** — the VACUITY GUARD. `\A|(?<=\n)`,
+   the D66 expansion with its `(?!\z)` term dropped, is asserted to DISAGREE on
+   **exactly 16** cells. A table check that could only report agreement would
+   report agreement for a table of nine identity rows.
+4. **The `--policy=none` CONTROL ARM** — the same pipeline with no
+   substitution, so the generated pattern IS the original and every cell must
+   come out trivially equal. It is a SEPARATE compile of the same text, not a
+   reuse of arm B's artifact. **And its converse**: §2/§3 assert that their
+   patterns are textually DIFFERENT from their source and count how many
+   INSERT a lookaround (199 of P1's 263, 248 of P2's 361). A substitution that
+   silently became the identity would pass every comparison in the file.
+5. **§1c the CELL-FIDELITY GUARD** — arm B against `tests/assertions/`'s OWN
+   stated expectations, all 8,260 cells. The corpus's expectations are the one
+   input no arm of this driver produced, and without this guard a bug in the
+   subject decoding would feed the same wrong subject to all three arms, they
+   would agree, and the driver would be green while measuring nothing.
+
+**THE SIX QUALIFICATION RULES ARE PARSERS, NOT SUBSTRING TESTS** (R33 C3-1,
+C3-2), and each carries the reason it exists at its own site. Q3's class walk
+consumes one literal `]` after `[` or `[^` (PCRE2's literal-first rule), so
+`[]\b]` is a class containing `]` and a backspace; Q4 finds every `(?` followed
+by a modifier LETTER SET (optional `-`, second set) terminated by `:` or `)`
+and exempts only a bare LEADING `(?m)`, because `^`/`$` mean different things
+under different multiline states.
+
+**THE POPULATION NUMBERS ARE GUARDS, NOT DECORATION**, and they are EXACT: 468
+/ 10,120 / 67 for the whole corpus, 263 / 8,260 / 13 qualifying, and the
+per-rule table Q1 87/0, Q2 87/754, Q3 0/0, Q4 31/1,106, Q5 0/0, Q6 0/0 —
+re-counted on HEAD at the wave with **zero delta** against design §6.3. A
+qualification rule that quietly stopped firing would SHRINK this population,
+and a smaller population is the one failure mode a green run cannot show. When
+the assertions corpus grows, re-derive from a run and change the literals
+DELIBERATELY; **never relax one to a floor**, the lesson `tests/reject/
+CLAUDE.md` and this file's own §1 guard already record.
+
+**THE IDENTITY ROWS ARE ACCOUNTED FOR, NOT TOLERATED.** `\A` and `\z` are
+PRIMITIVES in §6.1 — the floor of the definition chain — so an
+occurrence-level substitution of one of them is the identity: 56 of P1's 263
+patterns and 84 of P2's 361, and that 84 is asserted to equal the `\A` (37) +
+`\z` (47) occurrence count rather than merely tolerated. They are excluded
+from the headline "cells that compared two lowerings".
+
+**BOTH ARMS COMPILE WITH ONE FEATURE SET** — the block's own plus
+`lookaround`, `classes` (for `\w` in `\b`/`\B`'s bodies) and `assertions` (for
+the `\z` INSIDE `(?=\n?\z)`, which a block needing no module at all needs after
+substitution). A wider set on arm A would be a SECOND difference between the
+two lowerings, and a disagreement could then not be attributed to the
+substitution. §1b is the failing-direction control on that: the five expansion
+shapes are REFUSED without module `lookaround` and accepted with it, so arm A
+is the lookaround path and not the assertions path wearing different text.
+
+**IT REUSES `tests/backrefs/bref_oracle.py` AND `bref_batch.c`**, the same two
+files `run_lookaround_diff.sh` reuses, for the same D24 reason — this would
+have been the FOURTH copy of one mechanism. One oracle invocation per BLOCK
+covers all of that block's generated patterns.
+
+**RUNTIME AND WIRING.** `make test-lookaround` runs it beside
+`run_lookaround_diff.sh`; it parallelizes internally on `PROCS` (default
+`nproc`) and MEASURED 40s warm / 1m43s cold at PROCS=12 on the project box.
+`--policy=P1|P2|none` runs one arm alone. It SKIPS LOUDLY without libpcre2,
+and the skip banner says explicitly that `A == B` alone is not the check.
