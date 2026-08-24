@@ -1,7 +1,37 @@
-/* mod_verbs.c — module `verbs` (MOD-0.4): the `(*` doorway, the migration
- * test.
+/* mod_verbs.c — the `(*` doorway.
  *
- * MOD-0.4 is PURE MIGRATION, not the first slice of a producing module: no
+ * ==== [M6.6.2] WAVE F: THIS DOORWAY PRODUCES NOW, AND NOT FOR ITS OWN
+ * ==== MODULE. Read this before the MOD-0.4 account below, which describes
+ * ==== the file as it was and which two of its sentences no longer hold.
+ *
+ * A NAME MAY ANSWER FOR A DIFFERENT MODULE THAN THE DOORWAY. `verb_answer`
+ * resolves a scanned name to THAT NAME'S OWN REGISTRY ROW when it has one
+ * (`pcrec_registry_verb_name_row`, registry.c) and keeps the doorway's own
+ * row when it does not — which is every verb except the twelve `(*` alpha
+ * lookaround spellings. From that point on `r` is "the row this name answers
+ * for", and the gate, the port call and both terminal refusals read it, so
+ * nothing below the lookup is lookaround-specific and the SECOND module to
+ * give a verb name a row of its own needs no edit here.
+ *
+ * WHAT THAT MAKES FALSE IN THE MOD-0.4 HEADER BELOW, said explicitly rather
+ * than left for a reader to notice:
+ *
+ *   "no verb starts producing here, the parse.c doorway-3 wall stays"
+ *       — a name whose row carries a `PORT_FN` reaches it at an open gate,
+ *         and parse.c's doorway-3 branch gained the SPLICE the wall's own
+ *         comment always said would replace it. The wall is still there for
+ *         every other outcome.
+ *   "If a future slice needs a producer, the seam to extend is
+ *    `verb_rows[0]`'s `aport`"
+ *       — the seam that was actually extended is the NAME's row's `aport`,
+ *         which is the same seam one level finer: it lets ONE name produce
+ *         without claiming that every name at this doorway does.
+ *
+ * Everything else in that account — the scan staying in scans.c, the shared
+ * gate and refusal macros, the four table-drawn answers, the VF_* form
+ * computation — is unchanged and still describes this file. ====
+ *
+ * MOD-0.4 WAS PURE MIGRATION, not the first slice of a producing module: no
  * verb starts producing here, the parse.c doorway-3 wall (ctx_fail after
  * pcrec_ext_finish) stays, and gate ON and gate OFF behaviour both stay
  * byte-identical to the pre-move build. What moves is EXISTING, MEASURED
@@ -445,10 +475,24 @@ static ExtResult verb_answer(Ctx *cx, ExtWant want, size_t at,
      *
      * IT IS PLACED AFTER THE FORM AND POSITION CHECKS ON PURPOSE (R33 C2-6).
      * `(*pla)` is a REAL name in a form PCRE2 does not accept, and PCRE2
-     * decides that before it decides anything about modules — so its
-     * "(*alpha_assertion) not recognized" must survive this wave unchanged,
-     * and it does, because the form mismatch above has already returned. The
-     * reject table pins that row explicitly for the same reason. */
+     * decides that before it decides anything about modules, so its
+     * "(*alpha_assertion) not recognized" survives this wave: the form
+     * mismatch above has already returned.
+     *
+     * WHAT THE ORDERING PROTECTS IS THE ANSWER LEVEL, NOT THE MESSAGE, and
+     * that is MEASURED on a control build with this block moved above the
+     * form check rather than argued. The message does not move at all — it
+     * comes from the VerbName TABLE's `unknown_msg`, not from `r` — so the
+     * reject table's message-only row for `(*pla)` is structurally blind to
+     * the difference, and a first draft of this comment claimed the opposite.
+     * What DOES move is `answered_at`: `--features lookaround --probe-ask
+     * result -- '(*pla)'` reads `verdict` here and `result` on the control.
+     * `result` is D33's "the gate was OPEN and the port had nothing to say"
+     * signal, so the control has a FORM ERROR reporting itself as an answer
+     * given with module `lookaround`'s gate open — this wave's own
+     * misattribution, one level down. tests/cli/'s case10 pins all four cells
+     * (both gate states x `(*pla)` and `(*pla:a)`), because `--probe-ask` is
+     * the channel that can see it. */
     const RegRow *nrow = pcrec_registry_verb_name_row(name, namelen);
     if (nrow) {
         r = nrow;

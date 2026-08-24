@@ -175,11 +175,23 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
 
   **THE ROW LOOKUP SITS AFTER THE FORM AND POSITION CHECKS, DELIBERATELY**
   (R33 C2-6). `(*pla)` is a real name in a form PCRE2 does not accept, and a
-  form mismatch is decided BEFORE module attribution in PCRE2 as in pcrec —
-  so its "(*alpha_assertion) not recognized" must survive this wave, and
-  tests/reject/ pins it with that reason at the row. Move the lookup one
-  statement earlier and that row goes red while `(*pla:a)`'s stays green,
-  which is what makes the ordering measurable rather than asserted.
+  form mismatch is decided BEFORE module attribution in PCRE2 as in pcrec, so
+  its "(*alpha_assertion) not recognized" survives this wave.
+
+  **WHAT THE ORDERING PROTECTS IS THE ANSWER LEVEL, NOT THE MESSAGE**, and a
+  CONTROL BUILD refuted the first version of this paragraph, which claimed
+  the reject table's `(*pla)` row would go red if the lookup moved. It does
+  not: the form refusal's text comes from the VerbName TABLE's `unknown_msg`,
+  not from the elected row, so it is byte-identical on either side of the
+  form check and a message-only pin cannot see the difference. What DOES move
+  is `answered_at` — `--features lookaround --probe-ask result -- '(*pla)'`
+  reads `verdict` on the shipped compiler and `result` on the control, which
+  is D33's "the gate was OPEN and the port had nothing to say" signal. The
+  control therefore has a FORM ERROR reporting itself as an answer given with
+  module `lookaround`'s gate open: this wave's own misattribution one level
+  down. `tests/cli/`'s case10 pins all four cells (both gate states x
+  `(*pla)` and `(*pla:a)`), since `--probe-ask` is the channel that can see
+  it and the reject table is not.
 
   The doorway also GATES TWICE now — once on its own row for every refusal
   decided before the name is known, and again on the name's row, recomputed
