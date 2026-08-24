@@ -16,7 +16,7 @@
  *                             returned call
  *   P3  ^(a|(?1)a)$        -- §3.3's cell: n-1 nested recursions ALL ENTERED
  *                             AT OFFSET 0, which must MATCH "a"*n
- *   P4  ^(?(DEFINE)(?<g>a|ab))(?&g)(?&g)y$
+ *   P4  ^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$
  *                          -- §5.2's clobber sequence: call A, A returns,
  *                             call B, B fails, retreat into A's callee, A
  *                             returns AGAIN. A separate call_stack[] array
@@ -355,7 +355,7 @@ rx_fail: __attribute__((unused));
     }
 }
 
-/* ---- P4: ^(?(DEFINE)(?<g>a|ab))(?&g)(?&g)y$ ----------------------------
+/* ---- P4: ^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$ ----------------------------
  * §5.2's CLOBBER SEQUENCE, built. Two sequential calls to one shared body.
  * With a separate call_stack[] indexed by depth, the second call overwrites
  * the first call's return label and the retreat into the first callee returns

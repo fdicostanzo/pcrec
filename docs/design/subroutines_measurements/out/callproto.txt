@@ -3,15 +3,13 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_callproto.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 
-# RUN FROM REPO COMMIT        : 58cd141 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: 8ad0b6f 2026-08-23
+# RUN FROM REPO COMMIT        : 6c50429 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/subroutines_design.md
-#      M docs/design/subroutines_measurements/out/atomicity.txt
-#     ?? docs/design/subroutines_measurements/out/callproto.txt
-#     ?? docs/design/subroutines_measurements/probes/probe_callproto.py
-#     ?? docs/design/subroutines_measurements/prototype/callproto.c
-# RUN DATE   : 2026-08-23T20:38:18-04:00
+#      M docs/design/subroutines_measurements/out/callproto.txt
+#      M docs/design/subroutines_measurements/prototype/callproto.c
+# RUN DATE   : 2026-08-23T21:20:55-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15

@@ -931,6 +931,7 @@ line:
         run->resume_stack[run->resume_depth].resume_position = (p_);    \
         run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \
         run->resume_stack[run->resume_depth].call_top = run->call_top;  \
+        run->resume_stack[run->resume_depth].call_mark = run->call_depth; \
         run->resume_stack[run->resume_depth].call_ret = (ret_);         \
         run->call_top = run->resume_depth;                              \
         run->resume_depth++;  run->call_depth++;                        \
@@ -949,8 +950,13 @@ whole point: §3.2 MEASURED that the call is backtrackable, so the callee's
 choice points must survive the return — and so must the return label they will
 come back through.
 
-**ORDINARY FRAMES CARRY `call_top` AND `call_mark`,** and the fail label gains
-**two lines** — the shape §5.9's prototype ships:
+**THE FRAME GAINS THREE FIELDS AND THE FAIL LABEL GAINS TWO LINES**, and this
+document says so in one place because R34's LENS2-3 found it saying three
+different things. The three fields are `call_ret` (NULL on an ordinary frame),
+`call_top` (which activation was current) and `call_mark` (how deep the
+recursion was); §5.9's prototype carries all three, and every other section
+that counts them points here. **The two lines are `call_top`'s and
+`call_mark`'s** — the shape §5.9's prototype ships:
 
 ```c
         run->call_top   = run->resume_stack[frame_index].call_top;
@@ -969,7 +975,8 @@ cleanest evidence that the counter is separable.
 are exhausted, the call itself has no alternatives, so popping the call frame
 must continue failing. Making its resume label `rx_fail` is not a placeholder:
 it means the fail label needs **no knowledge of frame kinds** and no branch —
-the two added lines above run for every frame and are correct for both. The
+the two added lines above run for every frame and are correct for both
+(§5.1's three-fields/two-lines statement is the one this document counts by). The
 cost is one extra backtrack step per abandoned call, which is countable and is
 charged to the step budget at the site the budget is already charged. §3.2
 MEASURED PCRE2 doing **twice** the backtracks of an inlined control over 1…8
@@ -1284,8 +1291,10 @@ its prediction is that every multi-alternative callee goes red while a
 single-path callee stays green.
 
 **Now the §5.2 bug, in the same notation**, on a pattern with a call after a
-call (`^(?(DEFINE)(?<g>a|ab))(?&g)(?&g)y$` on `"xyxy"`, MEASURED (0,4),
-`out/atomicity.txt` T3): with a separate array, the second `RX_CALL` writes
+call (`^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$` on `"xyxy"`, MEASURED (0,4),
+`out/atomicity.txt` T3 — **the first version wrote the callee as `a|ab`, which
+does not match that subject at all**, R34 LENS2-10; the conclusion is
+unaffected but the cell was not the measured one): with a separate array, the second `RX_CALL` writes
 `call_stack[0]` and the first call's return label is gone. With frames, the
 second call is **frame#2** and frame#0 is untouched.
 
@@ -1328,6 +1337,8 @@ evidence of a past emission and are **not** edited):
 | 3 | `src/gen/emit_vm.c:5680-5682` | the per-prefix internal sentinels: `%s_R_RECURSE` joins `_R_STEPS`/`_R_FRAMES`/`_R_WORK` |
 | 4 | `src/gen/emit_vm.c:6248-6250` | the search entry's collapse — the new code must PROPAGATE, D49's whole point |
 | 5 | `src/gen/emit_vm.c:6314-6315` | the emitted eleven-line give-up comment block |
+| 5a | **`src/gen/emit_vm.c:5833`** `<prefix>_run_state_init` | **NOT an `ERR_FLOOR` site — a MISSING INITIALISER.** It sets `resume_depth`, `trail_depth` and the budgets; it must also set **`call_top = CALL_TOP_NONE`** and **`call_depth = 0`**. Without the first, the very first `RX_RETURN` of a search reads `resume_stack[garbage]`. `prototype/callproto.c` sets the sentinel by hand in `main()`, which is exactly the kind of scaffolding a prototype hides behind — R34's LENS2-7 found it |
+| 5b | **`src/gen/emit_vm.c:5848`** `<prefix>_reset_for_next_attempt` | the per-START-POSITION reset. It rewinds the trail and zeroes `resume_depth` **without resetting the budgets, deliberately**; `call_top` and `call_depth` join the first group, not the second — a bump-along must not inherit the previous attempt's activation, and must not inherit its recursion depth either |
 | 6 | `lib/pcrec.h:380` | the ABI prose naming `[<PREFIX>_ERR_FLOOR, -2]` |
 | 7 | `docs/spec/match_api.md:171, 209, 213, 222, 822, 850` | the authoritative contract, including the `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` obligation |
 | 8 | `tests/codegen/run_codegen_tests.sh:848, 883` | the two name lists the `[ABI-NS]` check reads |
@@ -1389,15 +1400,26 @@ are cuts and back-steps; a call is neither.
 label, which fires once per backtrack and never per byte"*. MEASURED (P9): the
 emitter has one `goto *` and a real artifact has one.
 
-**`RX_RETURN` IS A SECOND, and it fires once per call return.** The comment
-must be amended rather than quietly falsified, and the amendment is the honest
-form of the same property: *two* indirect jumps, both off the hot path, one per
-backtrack and one per call return, and **still no per-byte dispatch** — which
-is the property `emit_vm.c:11-12` actually cares about (D13's
-table-vs-computed-goto arbitration does not arise). Wave A owns the edit, and
-**S-SR13 is a codegen row asserting the count**: a call-free artifact has
-exactly one `goto *` and a call-bearing one has exactly two. That row is what
-stops a future construct adding a third without anyone noticing.
+**`RX_RETURN` IS A SECOND, and there is ONE PER EMITTED SHARED CALLEE BODY —
+not "exactly two".** R34's LENS2-5 found the first version's count false in
+both directions. §6.3 emits one shared copy per *distinct called group*, each
+ending in one `RX_RETURN`, so:
+
+> **`goto *` count = 1 (the fail label) + one per emitted SHARED CALLEE BODY.**
+>
+> A call-free artifact is **1** (MEASURED, P9). A pattern calling one group is
+> **2**. A pattern calling three distinct groups is **4** — however many call
+> SITES there are, because the sites share the body. And after wave G splices
+> every eligible site, a non-recursive call-bearing artifact is back to **1**.
+
+The amendment to `emit_vm.c:9-12` is the honest form of the property it
+actually cares about: the indirect jumps are **off the hot path** — one per
+backtrack, one per call return — and there is **still no per-byte dispatch**,
+so D13's table-vs-computed-goto arbitration does not arise. Wave A owns the
+edit, and **S-SR13 asserts the RELATION, not a constant**: it counts the shared
+callee bodies in the artifact and requires `goto *` to be exactly one more.
+That is what stops a future construct adding one without anyone noticing, and
+it survives wave G, which a constant would not.
 
 **AND THE STREAMING CONSTRAINT GAINS A SECOND CONSUMER.** `emit_vm.c:15-17`
 records that APPROACH §6's A-4/A-5 *"a `&&label` does not survive a return"* is
@@ -1955,7 +1977,8 @@ measurement behind it rather than a worry.
 | id | the CLAIM it defends | file | `SAB_SUITES` | the sabotage | prediction |
 |---|---|---|---|---|---|
 | **S-SR1** | §5.3: the return RESTORES `W` | `emit_vm.c` | `harness recursion` | delete the restore loop from `RX_RETURN`'s emission | `(a\|b)(?1)` on `"ab"` reports g1=(1,2) where PCRE2 says (0,1). **The detector body must contain a group the callee WRITES** — a callee with no capture inside it leaves `W` empty and the row goes green on a broken compiler |
-| **S-SR2** | §5.1/§5.5: the fail label restores `call_top` | `emit_vm.c` | `harness recursion` | delete the one added line | §5.5's drawn cell goes red — every callee with more than one alternative — **while a single-path callee stays green**, which is the pair that names the failure |
+| **S-SR2** | §5.1/§5.5: the fail label restores **`call_top`** | `emit_vm.c` | `harness recursion` | delete the **`call_top`** line — **NAMED, because the block is TWO lines and deleting the other one changes no answer** (R34 LENS2-4): a two-line `SAB_BEFORE` is an ambiguous anchor `replace.py` refuses, and a row that deleted `call_depth` instead would score GREEN on a broken compiler | §5.5's drawn cell goes red — every callee with more than one alternative — **while a single-path callee stays green**, which is the pair that names the failure |
+| **S-SR2a** | §5.1/§5.6: the fail label restores **`call_depth`** | `emit_vm.c` **+ 2nd site** | `codegen` | delete the `call_depth` line | **NO ANSWER CHANGES** — the counter is the capacity check's and the diagnostic's, not the structure's (§5.1). A leaked `call_depth` makes `RX_CALL` refuse early, so the detector is a codegen count plus a deep-recursion cell that must still reach its answer. **This row DIES WITH ASK 1**: if Frank rules `PCREC_ERR_RECURSE` out, the field, the line and this row go together |
 | **S-SR3** | §5.1: the call frame is NOT popped by the return | `emit_vm.c` | `harness recursion` | make `RX_RETURN` decrement `resume_depth` | the backtrack-into-a-returned-call corpus goes red; `^(?(DEFINE)(?<g>a\|ab))(?&g)c$` on `"abc"` answers nomatch where 10.46 answers (0,3) |
 | **S-SR4** | §3.2: the return does NOT cut | `emit_vm.c` | `harness recursion` | add `RX_CUT` at the return | the same cell, and **the four atomic controls of §3.2 stay green**, which is what distinguishes this row from S-SR3 |
 | **S-SR5** | §3.1: the callee INHERITS the caller's captures | `emit_vm.c` | `harness recursion` | zero `W`'s slots at the call site instead of parking them | `^(a)(b\1)(?2)$` on `"ababa"` goes from (0,5) to nomatch |
@@ -1972,7 +1995,7 @@ measurement behind it rather than a worry.
 | **S-SR11** | §4.4: no walker FOLLOWS `.body` where the rule says DECLINE | `atomic.c` | `harness recursion` | make `pcrec_has_atomic`'s `A_CALL` arm descend into `.body` | **THE COMPILER HANGS** on `(a(?1))` — there is no answer to compare, so no answer-comparison row can detect it. **This row is scored by the harness TIMEOUT**, and it is the one sabotage in this module whose detector is "the process did not finish". `tests/mech/`'s timeout suite is the assignment, and the row says so rather than sitting in `harness` where a hang reads as an infrastructure failure |
 | **S-SR11a** | §4.3: a two-hop call chain survives `--no-captures` | `atomic.c` | `harness recursion` | drop `mark[target] = true` from `pcrec_bref_mark`'s `A_CALL` arm | `(a(?3))(b)((c))` under `--no-captures` loses group 3's slots. **Note this is NOT a transitivity row** — §4.3 withdrew that — it is the one-line arm's row, and the two-hop shape is used because it is the cell the withdrawn fixpoint claimed to need |
 | **S-SR12** | §4.4: `revdet.c`'s `A_CALL` arm DECLINES | `revdet.c` | `harness recursion` | descend instead of declining | `vm_rev_emit`'s `default:` fires: *"internal error: bad AST node in the backward walk"*. **A hard compile error, which is the right failure** — the row asserts it is reached, not that an answer changed |
-| **S-SR13** | §5.8: exactly TWO indirect jumps in a call-bearing artifact, ONE in a call-free one | `emit_vm.c` **+ 2nd site** | `codegen` | make the return a `switch` over a return-site id | **no answer changes.** The codegen count is the only detector — S109's shape, and the row that stops a third `goto *` arriving unremarked |
+| **S-SR13** | §5.8: `goto *` count == 1 + the number of emitted SHARED CALLEE BODIES | `emit_vm.c` **+ 2nd site** | `codegen` | make the return a `switch` over a return-site id | **no answer changes.** The codegen count is the only detector — S109's shape. **It asserts the RELATION and not a constant (R34 LENS2-5)**, so it holds for a one-callee artifact (2), a three-callee artifact (4), a call-free one (1) and a wave-G fully-spliced one (1), where a hard-coded "two" would fire on three of the four |
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
 | **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
 | **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
@@ -2275,9 +2298,11 @@ finding a way to make D65's `WANT_RESULT` answer "not yet" without a throwaway
 refusal path — `lookaround_design.md` §11's C2-2 concluded there is none, and
 this design consumes that conclusion rather than re-deriving it.
 
-**P-9 (the second `goto *` is the last one).** *A call-bearing artifact has
-exactly two indirect jumps and a call-free one exactly one.* **Refute** by
-naming a chartered construct that needs a third — `[DD-11]`'s insertions
+**P-9 (the `goto *` relation).** *An artifact has exactly `1 + (emitted shared
+callee bodies)` indirect jumps.* The first version said "exactly two", which
+R34's LENS2-5 refuted in both directions (three distinct callees give four; a
+wave-G splice gives one). **Refute the relation** by naming a chartered
+construct that needs another — `[DD-11]`'s insertions
 splice, `[ENG-CUT]` cuts, `callouts` calls a function pointer (**which is an
 indirect CALL, not an indirect jump, and S-SR13's count must be written to
 distinguish them or the row fires when `callouts` lands**).
