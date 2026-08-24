@@ -71,6 +71,17 @@ lookbehind files (`lookbehind.rxt`, `lookbehind_widths.rxt`, `startpos.rxt`,
   test-lookaround`, four sections. See its own header; two things about it are
   worth knowing before adding to it.
 
+  **ITS POPULATION GUARDS ARE EXACT NUMBERS AND ONE HAS ALREADY GONE STALE**
+  — during the wave that wrote it, when three `\K` cells were added to
+  `lookahead.rxt` after §1's count was taken (python has no `\K` at all, so
+  all three computed as `# pcre2-only` and the population went 11 to 14). The
+  guard FIRED, loudly, which is what it is for; the lesson is the one
+  `tests/reject/CLAUDE.md` records about hand-copied figures, and the remedy is
+  the same: when a cell is added, re-derive the number from a run and change it
+  DELIBERATELY. **Do not relax it to a floor.** A floor would let the
+  population SHRINK, and the cells this section exists for are exactly the ones
+  no other check in the tree can see.
+
   **§2 IS THE ONLY ARM IN THIS TREE WHOSE POPULATION MUST DISAGREE WITH
   ITSELF.** `(?=` and `(?*` differ in exactly one emitted line, so a compiler
   that cut BOTH or cut NEITHER answers them identically — and an arm that only
@@ -101,8 +112,10 @@ Read it from a run — `python3 tests/lookaround/gen_corpus.py` prints the table
 and `tests/harness/verify_rxt.py tests/lookaround` prints the python-side one —
 rather than from here, for the reason `tests/reject/CLAUDE.md` records about
 hand-copied figures. At the landing it was **78 blocks / 113 answer cells / 15
-`# pcre2-only` / 16 `perr`**, 158 harness cases, and 803 pcre2-only cells
-re-verified against libpcre2 by §1 of the differential.
+`# pcre2-only` / 16 `perr`** — 81 blocks / 118 cells / 18 `# pcre2-only` / 16
+`perr` after §2.7's three compiling `\K` cells were added — 166 harness cases,
+and 1,022 pcre2-only cells re-verified against libpcre2 by §1 of the
+differential.
 
 ## What this directory does NOT hold
 

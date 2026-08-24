@@ -223,9 +223,17 @@ for fn in sorted(os.listdir(d)):
 open(out, "w").write("".join("%s\t%s\n" % (f, p) for f, p, _ in pats))
 sys.stderr.write("po: %d pcre2-only answer-bearing blocks\n" % len(pats))
 PY
+# THE NUMBER IS EXACT AND HAND-DERIVED, and it has already gone stale ONCE —
+# during the wave that wrote it, when three `\K` cells were added to
+# lookahead.rxt after the count was taken (python has no `\K` at all, so all
+# three computed as `# pcre2-only` and the population went 11 -> 14). The guard
+# FIRED, which is what it is for. **When a cell is added, re-derive this number
+# from a run and change it deliberately; never relax it to a floor** — a floor
+# would let the population SHRINK, and the cells this section exists for are
+# exactly the ones no other check in the tree can see.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 11 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 11 this guard is computed against — a cell was added or lost, and the guard must be re-derived DELIBERATELY rather than relaxed to a floor"
+if [ "$NPO" -ne 14 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 14 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do
