@@ -12491,3 +12491,47 @@ LANES: d70union (opus, worktrees/d70union, brief
 scratchpad/brief_d70union.md) and dd14design (opus, worktrees/dd14design,
 brief scratchpad/brief_dd14design.md). Watchdog cron 10 min. plan.md:
 [M6.6.2] STATE:started, [DD-14] STATE:started (95876c8).
+
+## 2026-08-23 (EDT), thirty-eighth session (part 2) — [DD-14] design DELIVERED (e5181e6); R34 panel opened; the D70 lane's punning hazard
+
+THE D70 LANE'S SURVEY FOUND THE HAZARD THE DECISION DID NOT ANTICIPATE:
+`rd_node` (src/opt/revdet.c, the reversal copy constructor) unconditionally
+clears `revbody`/`possessive` — A_REP-only fields — on nodes of EVERY kind.
+Dead writes today; under the union a live clobber of `u.cls.bits[]` on a
+reversed A_CLASS. A third disposition shape ("generic helper sanitising a
+per-kind field"), neither latent bug nor cross-kind field. RULED: kind-guard
+it, guard the sibling write in mod_assertions.c:164 too (harmless today,
+a clobber the day A_KRESET/A_GSTART/A_END gain a payload), state the
+discipline once at the union, and use the UNGUARDED clobber as the identity
+gate's red demonstration — the real miscompile is the better positive
+control. The lane's gate found "a corpus blind spot" doing exactly that
+(its report pending). Full mech at 9546b26: 118 rows, undetected 0,
+anomalies 0.
+
+[DD-14] DELIVERED at e5181e6 (15 commits, 7,636 insertions, all under
+docs/design/): subroutines_design.md 2,159 lines §0-§14 + measurements.
+The charter's premises did not survive measurement: PCRE2 10.46 has NO
+compile-time left-recursion refusal (err 140 is a VERB-name error; the
+guard is match-time rc −52 whose obvious "ancestor at same position"
+reading is a MISCOMPILE — `^(a|(?1)a)$` recurses 199 deep at offset 0 and
+matches); the plan row's "explicit call stack of label addresses" is a
+BUG when a second call follows a returned one (built both ways: the
+frame-based design 45/0 vs libpcre2, the separate array wrong 3/50 with a
+false match) — a CALL IS A RESUME FRAME; `\K` is NOT restored by a return
+so the restore is a compile-time slot set, not a trail rewind; a call and
+a backref resolve a duplicated name DIFFERENTLY (first declaration
+statically vs first SET member) so A_CALL must not reuse A_BREF's refs[];
+the prototype says SPLICE (~300 B) is smaller AND faster than HYBRID/CALL
+(~80 B) at one site, so no lookaround body compiles as a call and the
+splice-is-the-inliner premise stands. Five ASKs (ERR_RECURSE keep?,
+RX_CALL_DEPTH default, registry row granularity — 19 rows for one
+construct —, DEFINE hint, single-oracle D27). Report saved at
+scratchpad/r34/lane_report.md. R34 panel launched: C1 semantics (opus),
+C2 mechanism-vs-emitter (opus), C3 charter/consistency/staleness (sonnet).
+
+PROCESS FINDING: the design lane's sonnet sub-lane wrote build scratch to
+`/tmp/sr_pf` instead of the session scratchpad — a scope deviation (nothing
+entered the repo; the lane removed it). Lesson for briefs: the scratchpad
+path is a REQUIREMENT and the agent echoes where it wrote; a lane that
+spawns a sub-lane inherits the obligation to say so in its report (this
+one did).
