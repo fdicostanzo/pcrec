@@ -6757,10 +6757,29 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "    }\n",
             prefn,
             v.nclamp == 0 ? ""
-              /* H3 site 1 of 3 (the search ENTRY). */
+              /* H3 site 1 of 3 (the search ENTRY).
+               *
+               * [M6.6.2 wave E] THE EMITTED COMMENT BELOW SAYS "cut-bearing"
+               * AND IS NOT GENERALIZED TO NAME THE LOOKAROUND CASE, WHICH IS
+               * A RULING RATHER THAN AN OVERSIGHT. Generalizing it was tried
+               * and REVERTED: the string is emitted into every artifact this
+               * arm reaches, and 54 of those are ATOMIC-bearing and therefore
+               * LOOKAROUND-FREE, so widening it moved 37 bytes on 54 patterns
+               * that do not use this module — which
+               * run_lookaround_identity.sh's default and --no-captures axes
+               * caught as 54 differing comparisons while --engine=vm and
+               * -fno-prefilter stayed green (§9.1's own predicted signature,
+               * arriving for a reason §9.1 did not predict).
+               *
+               * Making it accurate per-artifact would need a SECOND flag
+               * recording WHY the ceiling was dropped, and a second flag beside
+               * `v.mrl_win` is the two-sources-that-can-disagree defect this
+               * whole predicate exists to avoid. The accurate, both-cases
+               * description lives where it costs no bytes: `--emit-ir`'s
+               * PRUNING line and this file's `mrl_win` field comment. */
               : v.mrl_win
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
-              : "        window_end = subject_length;  /* atomic- or lookaround-bearing artifact: the prefilter answers for the UNCUT, LOOKAROUND-ERASED language, so its span END is not a bound on this match's end */\n");
+              : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
     } else {
         sb_puts(c, "    attempt_position = search_from;\n");
         if (v.nclamp > 0) sb_puts(c, "    window_end = subject_length;\n");

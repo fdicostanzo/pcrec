@@ -132,6 +132,17 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   against libpcre2, which for `nonatomic_ahead.rxt` is the only oracle those
   cells have (python has no `(?*` at all). SKIP-is-not-a-pass exercised in the
   failing direction as `pc3` was.
+
+  **AND ITS §1 SWEEP IS BOUNDED BY A SHARED SUBJECT SET, WHICH IS A COVERAGE
+  FACT AND NOT A DEFECT.** All three sections drive a SHARED 19-subject list
+  drawn from the corpus's own alphabet, so §1 does not re-drive a pcre2-only
+  block's OWN subjects — it re-drives its PATTERN over those nineteen.
+  MEASURED at wave E: S140 turns `tests/lookaround/prefilter.rxt` red at
+  31fail/22pass and leaves this arm at 0fail/5pass, because not one of the
+  nineteen subjects contains a `q` and the hazard the row is about is
+  therefore unreachable here. **When a row's detector is a specific subject,
+  the `.rxt` file is the detector and this arm is not** — assign both, but do
+  not read the assignment as coverage.
 - `assertions` → `tests/assertions/run_assertions_tests.sh`, module
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the
@@ -469,6 +480,46 @@ thing that sees it is `check_free_discharge` in tests/registry/.
 implementation lane does not run the matrix (the manager does), so each row
 says what it expects and names `run_sabotage_matrix.sh SNN` as the canonical
 figure still owed.
+
+## [M6.6.2] wave E — S140/S141, and a row whose population had to be MEASURED
+
+Two rows for design §5.6's prefilter ruling, taken from the END of the id range
+(S140/S141) so a concurrent wave-D lane could take ids from the middle without
+either lane guessing the other's. **The manager renumbers at merge if the two
+ranges met.**
+
+**S140's POPULATION IS THE ONE THING ABOUT THESE ROWS WORTH COPYING.** The row
+deletes `&& !pcrec_has_lookaround(root)` from `v.mrl_win`, and it can only
+score DETECTED if the corpus holds a pattern that BOTH raises a clamp site (so
+the ceiling is live) AND loses a match when it comes back. Neither half is
+visible by reading the design: `lookaround_design.md` §5.5 records its own
+first sweep reporting **0 qualifying shapes over a space in which 0 was the
+only possible answer**, because every tail it tried was nullable and a
+nullable-follow bounded repeat raises no clamp site at all. So every clamping
+block in `tests/lookaround/prefilter.rxt` was compiled by pcrec at `8720029` —
+the tree immediately before the predicate landed — its `RX_VM_PRUNE_CEILING`
+read off the artifact, and its matcher run on those exact subjects, before the
+row was written. Five shapes qualified out of ten tried. **A sabotage row whose
+detector cells were chosen by reading a design rather than by running the
+pre-fix compiler is a row that has not been shown to be falsifiable.**
+
+**S141 IS S88'S OTHER HALF, AND THE DESIGN'S FIRST SKETCH HAD IT BACKWARDS**
+(R33 C2-10). `v.mrl_win` has FOUR readers — the `--emit-ir` PRUNING
+description, the `RX_VM_PRUNE_CEILING` stamp, and the TWO lines that BUILD the
+ceiling. The sketch had the row sabotage the STAMP and needing a second site to
+do it; the stamp is a one-site expression, so flipping its source needs no
+second site. The BUILDERS are the pair that is two sites by construction, so
+S141 uses `SAB_FILE2/BEFORE2/AFTER2/COUNT2` to gate both of them on
+`job->fit.prefilter` while LEAVING THE STAMP reading the flag. S88 does the
+entry site alone, for the atomic module; S141 does entry AND retry.
+
+**IT IS SCORED BY A CHECK THAT IS ONE FUNCTION FOR TWO MODULES.**
+`[M6.4-ATOMIC rule 1]` and `[M6.6-LOOKAROUND rule 1]` are two calls to
+`ceil_drop` in `tests/codegen/run_codegen_tests.sh`, which asserts on all four
+readers; MEASURED, S141 turns exactly `1(a)` red on each — **2fail/77pass, one
+failure per module** — with `1(b)`, `1(d)` and both `1c` twins green, and
+`irlisting` green because the fourth reader is untouched. That disjointness is
+the row's point, and it is S88's own argument one module over.
 
 ## Conventions
 
