@@ -160,8 +160,19 @@ ExtResult pcrec_asrtport_atom(Ctx *cx, const RegRow *rw, ExtWant want,
      * every test in the tree; the day wave C accepts the `m` letter, that
      * version would leak multiline-`$` machinery into `\Z` silently. This
      * line and this comment exist so the next author cannot "harmonize" the
-     * two sites, which is exactly the harmonization that would break it. */
-    res.node->u.anch.multiline = false;
+     * two sites, which is exactly the harmonization that would break it.
+     *
+     * [D70] GUARDED ON THE KIND. This port produces EIGHT kinds and only two
+     * of them own `u.anch` — the pin ran for A_END, A_WORDB, A_NWORDB,
+     * A_GSTART and A_KRESET too. Today that aliases nothing, because those
+     * five kinds have no payload of their own; the day any of them gains one
+     * it becomes a silent clobber of it, and nobody will re-read this line
+     * then. The guard costs nothing, changes no bit today, and is what the
+     * union's discipline (see the union in src/core/internal.h) requires of
+     * every writer: touch `u.<payload>` only under a kind check that owns
+     * it. */
+    if (k == A_BOL || k == A_EOL)
+        res.node->u.anch.multiline = false;
 
     /* THE ALIAS IS EXACT AT options = 0, AND THE FUTURE HAS ONE KNOWN
      * CONSUMER OF WHAT IT ERASES. `PCRE2_NOTBOL`/`PCRE2_NOTEOL` affect `^`

@@ -329,12 +329,22 @@ struct Ast {
      * reading `u.rep.rmin` on an A_CLASS node compiles, and hands you class
      * bitmap bytes. The union buys READING and CONTAINMENT, not enforcement,
      * so D62's discipline governs exactly as before — parse-resolved state,
-     * per-field comments, per-field sabotage rows. The one NEW hazard the
-     * union introduces is that a write through the WRONG member now CORRUPTS
-     * a live payload where it used to be dead: src/opt/revdet.c's `rd_node`
-     * is the site the survey caught doing exactly that, and it is now
-     * kind-guarded. A generic walker that touches a payload without
-     * switching on `k` is a bug; there are none today.
+     * per-field comments, per-field sabotage rows.
+     *
+     * THE DISCIPLINE THE UNION ADDS, and it is the one rule a writer must
+     * carry: A WRITER MAY TOUCH `u.<payload>` ONLY UNDER A KIND CHECK THAT
+     * OWNS IT, and a GENERIC COPY OR SANITISE HELPER — one that runs for
+     * kinds it does not enumerate — MUST GUARD rather than write
+     * unconditionally. The reason is measured rather than stylistic: the D70
+     * migration survey found exactly two unconditional per-kind writes on
+     * generic paths, `src/opt/revdet.c`'s `rd_node` (which cleared A_REP's
+     * `revbody`/`possessive` on every kind it copies, and through `u.rep`
+     * would overwrite `u.cls.bits` on a reversed A_CLASS node — a real
+     * miscompile) and `src/parse/mod_assertions.c`'s multiline pin (which ran
+     * for all eight of that port's kinds, harmless only because five of them
+     * have no payload YET). Both are now kind-guarded. Before the union both
+     * writes were merely DEAD; after it, the first is a clobber and the
+     * second is a clobber waiting for its payload.
      *
      * THE ARENA ZEROES THE WHOLE ALLOCATION, union included, so every "the
      * arena zeroes, so ..." argument in the comments below still holds

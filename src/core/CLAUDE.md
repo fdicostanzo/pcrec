@@ -181,25 +181,46 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
     for any producer's node and `pcrec_ast_engines()` reads it for any node,
     regardless of `k`. It was expected to be common and the survey confirms it.
 
-  **THE ONE PUNNING HAZARD THE SURVEY FOUND**, recorded because the union is
-  what makes it live: `src/opt/revdet.c`'s `rd_node` is the reversal copy
-  constructor for EVERY kind `rd_reverse` handles, and it unconditionally
-  cleared two A_REP-only fields (`revbody`, `possessive`) on all of them.
-  Before D70 those writes were simply DEAD for non-A_REP nodes. After it they
-  would be writes through `u.rep` onto whatever payload the node actually
-  owns — on an A_CLASS node they overwrite bytes of `u.cls.bits`, corrupting
-  the reversed body's class bitmap. The clear is now guarded on
-  `n->k == A_REP`, which is behaviour-preserving because the cleared values
-  are only ever read for A_REP. **That is the shape to look for**: a generic
-  walker that touches a per-kind field without switching on `k`. There are no
-  others in the tree today.
+### The THIRD disposition shape: a generic helper sanitising a per-kind field
 
-  A second, benign cross-kind WRITE is recorded rather than guarded:
-  `src/parse/mod_assertions.c` pins `u.anch.multiline` false for all eight of
-  its rows, i.e. also on A_END, A_WORDB, A_NWORDB, A_GSTART and A_KRESET.
-  Those kinds have no payload of their own, so the write aliases nothing and
-  is read back nowhere; the line and its (deliberate, forward-looking to wave
-  C) comment are kept verbatim.
+  The survey went looking for two dispositions — per-kind (a union member) and
+  cross-kind (a common field) — and measured a THIRD, which is where both of
+  this refactor's hazards live. A field can be per-kind in every READ and
+  still be WRITTEN unconditionally by a generic copy or sanitise helper that
+  runs for kinds it never enumerates. Before the union such a write is merely
+  DEAD; after it, it is a write through the wrong union member onto whatever
+  payload the node actually owns.
+
+  | site | field(s) | kinds it ran for | disposition |
+  |---|---|---|---|
+  | `src/opt/revdet.c` `rd_node` | `revbody`, `possessive` | **every** kind `rd_reverse` copies | union member + **KIND GUARD** |
+  | `src/parse/mod_assertions.c` port | `multiline` | all **eight** of the port's rows | shared `u.anch` + **KIND GUARD** |
+
+  **`rd_node` was the live one.** It is the reversal copy constructor for
+  every kind `rd_reverse` handles — A_CLASS, A_EMPTY, the six position
+  predicates, A_CAP, A_REP, A_CAT, A_ALT, plus the function-tail fallthrough —
+  and it unconditionally cleared two A_REP-only fields on all of them. Through
+  `u.rep` that clear overwrites bytes of `u.cls.bits` on a reversed A_CLASS
+  node: it corrupts the reversed body's class bitmap, which is a miscompile,
+  not a cosmetic issue. It is now guarded on `n->k == A_REP`, which is
+  behaviour-preserving because those values are only ever read for A_REP —
+  and the identity gate's positive control is the UNGUARDED build, so the
+  claim is measured rather than argued.
+
+  **The assertions pin was the latent one, and is guarded too** rather than
+  merely recorded. It writes `u.anch.multiline = false` for all eight of the
+  port's rows, i.e. also on A_END, A_WORDB, A_NWORDB, A_GSTART and A_KRESET.
+  Today those five kinds have no payload, so it aliases nothing — but the day
+  any of them gains one it becomes a silent clobber, and nobody will re-read
+  that line then. The deliberate, forward-looking comment is kept verbatim
+  above the guard.
+
+  **THE RULE THIS YIELDS**, stated at the union in `internal.h` and repeated
+  here because it is the thing a future author needs: a writer may touch
+  `u.<payload>` only under a kind check that owns it, and a generic copy or
+  sanitise helper MUST guard rather than write unconditionally. Those two are
+  the only such sites in the tree today; the shape to grep for is a helper
+  that takes a node of unconstrained kind and assigns a per-kind field.
 
   **`A_CAP` and D31 ([M4.5b]).** D31 ruled the group erasure STAYS, on a
   MEASURED compile-time cost; engine_m4.md §11.3 records that the VM
