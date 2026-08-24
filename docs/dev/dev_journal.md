@@ -13610,3 +13610,12 @@ excluded until G/FB). tests/recursion 553/0; make test 25,423/0. srE was
 told to rebase onto main (F's classifier fix and E's four axes touch the
 same gate script) before delivering. Battery on the F-merged tree: make
 test running.
+
+ADDENDUM (part 12, ~19:5x): make test on the F-merged main (bbc921f):
+corpus 25,423 / 0; the one red = tests/resource's CPU cap under load 14
+(srE's mech rows), the FIFTH identical instance today, every prior one
+clean solo — solo re-run + san chained (scratchpad/retest_resource_F.log,
+san_Fmerged.log). Close-time note for K31: the 45 s cap is a
+CPU-under-contention measurement by construction; a check that is only
+right on a quiet box should say so or measure a ratio against a
+calibration compile — a [TT-family] row at the close.
