@@ -1,0 +1,381 @@
+# spellings.rxt -- [M6.6.3] D27 spelling-equivalence corpus.
+# All 18 spellings behind the 6 constructs (sec 2.1), the sec 2.2
+# atomicity discriminator (both directions), sec 2.6's degenerate
+# empty bodies (all four polarities) and quantified lookaround
+# (G8's refutation + empty-iteration termination). Alpha-spelling
+# blocks are pcre2-only by construction (G4/G5: python cannot parse
+# `(*` at all, a different failure than any semantic divergence).
+
+# PLA spelling '(?=)'
+pattern (?=a)
+features lookaround
+m "a" 0 0
+n "b"
+m "ab" 0 0
+n ""
+
+# pcre2-only
+# PLA spelling '(*pla:)' [alpha]
+pattern (*pla:a)
+features lookaround
+m "a" 0 0
+n "b"
+m "ab" 0 0
+n ""
+
+# pcre2-only
+# PLA spelling '(*positive_lookahead:)' [alpha]
+pattern (*positive_lookahead:a)
+features lookaround
+m "a" 0 0
+n "b"
+m "ab" 0 0
+n ""
+
+# NLA spelling '(?!)'
+pattern a(?!a)
+features lookaround
+m "a" 0 1
+n "b"
+m "ab" 0 1
+n ""
+
+# pcre2-only
+# NLA spelling '(*nla:)' [alpha]
+pattern a(*nla:a)
+features lookaround
+m "a" 0 1
+n "b"
+m "ab" 0 1
+n ""
+
+# pcre2-only
+# NLA spelling '(*negative_lookahead:)' [alpha]
+pattern a(*negative_lookahead:a)
+features lookaround
+m "a" 0 1
+n "b"
+m "ab" 0 1
+n ""
+
+# PLB spelling '(?<=)'
+pattern (?<=a)c
+features lookaround
+n "za"
+n "zb"
+n "z"
+n ""
+
+# pcre2-only
+# PLB spelling '(*plb:)' [alpha]
+pattern (*plb:a)c
+features lookaround
+n "za"
+n "zb"
+n "z"
+n ""
+
+# pcre2-only
+# PLB spelling '(*positive_lookbehind:)' [alpha]
+pattern (*positive_lookbehind:a)c
+features lookaround
+n "za"
+n "zb"
+n "z"
+n ""
+
+# NLB spelling '(?<!)'
+pattern (?<!a)c
+features lookaround
+n "za"
+n "zb"
+n "z"
+n ""
+
+# pcre2-only
+# NLB spelling '(*nlb:)' [alpha]
+pattern (*nlb:a)c
+features lookaround
+n "za"
+n "zb"
+n "z"
+n ""
+
+# pcre2-only
+# NLB spelling '(*negative_lookbehind:)' [alpha]
+pattern (*negative_lookbehind:a)c
+features lookaround
+n "za"
+n "zb"
+n "z"
+n ""
+
+# pcre2-only
+# NAPLA spelling '(?*)'
+pattern (?*(a|ab))\1$
+features lookaround,backrefs
+m "ab" 0 2
+g 1 0 2
+
+# pcre2-only
+# NAPLA spelling '(*napla:)' [alpha]
+pattern (*napla:(a|ab))\1$
+features lookaround,backrefs
+m "ab" 0 2
+g 1 0 2
+
+# pcre2-only
+# NAPLA spelling '(*non_atomic_positive_lookahead:)' [alpha]
+pattern (*non_atomic_positive_lookahead:(a|ab))\1$
+features lookaround,backrefs
+m "ab" 0 2
+g 1 0 2
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# NAPLB spelling '(?<*)'
+pattern (?<*(a|ba))c
+features lookaround
+perr
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# NAPLB spelling '(*naplb:)' [alpha]
+pattern (*naplb:(a|ba))c
+features lookaround
+perr
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# NAPLB spelling '(*non_atomic_positive_lookbehind:)' [alpha]
+pattern (*non_atomic_positive_lookbehind:(a|ba))c
+features lookaround
+perr
+
+# sec 2.2 atomicity discriminator: atomic lookahead (?= keeps FIRST alt
+pattern (?=(a|ab))\1$
+features lookaround,backrefs
+n "abab"
+n "aab"
+n "ab"
+m "a" 0 1
+g 1 0 1
+
+# pcre2-only
+# sec 2.2 atomicity discriminator: non-atomic (?* retries to find a later alt
+pattern (?*(a|ab))\1$
+features lookaround,backrefs
+m "abab" 2 4
+g 1 2 4
+m "aab" 1 3
+g 1 1 3
+m "ab" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+
+# pcre2-only
+# sec 2.2 atomicity discriminator: napla == (?* -- same answer, alpha spelling
+pattern (*napla:(a|ab))\1$
+features lookaround,backrefs
+m "abab" 2 4
+g 1 2 4
+m "aab" 1 3
+g 1 1 3
+m "ab" 0 2
+g 1 0 2
+m "a" 0 1
+g 1 0 1
+
+# pcre2-only
+# sec 2.2 atomicity discriminator: pla == (?= -- same answer, alpha spelling
+pattern (*pla:(a|ab))\1$
+features lookaround,backrefs
+n "abab"
+n "aab"
+n "ab"
+m "a" 0 1
+g 1 0 1
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# sec 2.1/2.4 lookbehind atomicity: atomic lookbehind keeps a SPECIFIC branch (sec 2.4 order)
+pattern (?<=(a|ba))c
+features lookaround
+perr
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# sec 2.1/2.4 lookbehind atomicity: non-atomic lookbehind, same body
+pattern (?<*(a|ba))c
+features lookaround
+perr
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# sec 2.1/2.4 lookbehind atomicity: naplb == (?<* -- alpha spelling
+pattern (*naplb:(a|ba))c
+features lookaround
+perr
+
+# TRIAGE (manager, [M6.6.3] acceptance): a grouped alternation is ONE top-level
+# branch of width 1..2 -- VARIABLE, refused per the extract's own length rule
+# (libpcre2 accepts: G2). The author asserted PCRE2's acceptance; corpus-wrong.
+# pcre2-only
+# sec 2.1/2.4 lookbehind atomicity: plb == (?<= -- alpha spelling
+pattern (*plb:(a|ba))c
+features lookaround
+perr
+
+# sec 2.6 degenerate empty body
+pattern a(?=)b
+features lookaround
+m "ab" 0 2
+n "a"
+n "b"
+
+# sec 2.6 degenerate empty body
+pattern a(?!)b
+features lookaround
+n "ab"
+n "a"
+
+# sec 2.6 degenerate empty body
+pattern a(?<=)b
+features lookaround
+m "ab" 0 2
+n "a"
+
+# sec 2.6 degenerate empty body
+pattern a(?<!)b
+features lookaround
+n "ab"
+n "a"
+
+# sec 2.6 degenerate empty body
+pattern (?:(?!))|a
+features lookaround
+m "a" 0 1
+n ""
+n "b"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern (?=a)*+
+features atomic-groups,lookaround
+m "a" 0 0
+m "b" 0 0
+m "" 0 0
+m "aa" 0 0
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern (?=a)*
+features lookaround
+m "a" 0 0
+m "b" 0 0
+m "" 0 0
+m "aa" 0 0
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern (?=a)+
+features lookaround
+m "a" 0 0
+n "b"
+n ""
+m "aa" 0 0
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern (?=a){2}
+features lookaround
+m "a" 0 0
+n "b"
+n ""
+m "aa" 0 0
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern (?!a)?
+features lookaround
+m "a" 0 0
+m "b" 0 0
+m "" 0 0
+m "aa" 0 0
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?=a)*a$
+features lookaround
+m "a" 0 1
+n "b"
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?:(?=a))*a$
+features lookaround
+m "a" 0 1
+n "b"
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?:(?=a)|b)*a$
+features lookaround
+m "a" 0 1
+n "b"
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?:(?!x))*a$
+features lookaround
+m "a" 0 1
+n "b"
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?:(?=(a)))*a$
+features lookaround
+m "a" 0 1
+g 1 0 1
+n "b"
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?=(a))*a$
+features lookaround
+m "a" 0 1
+g 1 0 1
+n "b"
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?=(a))*b$
+features lookaround
+n "a"
+m "b" 0 1
+g 1 -1 -1
+n ""
+n "aa"
+
+# sec 2.6 quantified lookaround (refutes G8)
+pattern ^(?!(a))*b$
+features lookaround
+n "a"
+m "b" 0 1
+g 1 -1 -1
+n ""
+n "aa"
+

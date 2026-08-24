@@ -414,3 +414,13 @@ DETECTED under this arm; it does not, and the reason is structural** — there i
 no non-atomic spelling anywhere in §6.1's table. S131 stays with `harness` +
 `lookaround`, where `run_lookaround_diff.sh` §2's exact disagreement count is
 the only thing in the tree that can see it.
+
+- `d27/` — the [M6.6.3] BLINDED corpus (D27): 7 .rxt files (457 blocks,
+  1,819 harness cases after acceptance triage) written from the design
+  extract and the oracles only, never from src/ or tests/; plus the
+  author's generators and from-scratch checker, kept for provenance. See
+  d27/README.md for the authorship, the acceptance run (0 pcrec-wrong
+  cells) and the three corpus-wrong triage classes. Rides make test via
+  the harness walk; NOT enumerated by run_lookaround_diff.sh or
+  run_expansion_diff.sh (flat globs), so their population guards are
+  unaffected.

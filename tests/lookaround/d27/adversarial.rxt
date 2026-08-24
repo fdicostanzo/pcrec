@@ -1,0 +1,140 @@
+# adversarial.rxt -- [M6.6.3] D27 hand-targeted adversarial corpus.
+# Six named trap classes from the brief's own "Think:" paragraph
+# (cut-on-wrong-arm, cursor-restore, forgot-to-cut, follow-scoping,
+# branch-width-boundary, lookbehind-vs-startpos-clamp) plus sec
+# 10.1's population requirement 4 (empty capture inside a
+# lookaround; a re-entered group across one). Every expectation is
+# still an oracle read -- only the pattern/subject CHOICE is
+# hand-designed here.
+
+# ADVERSARIAL: cut-on-wrong-arm. (?!(a+)b)a+b on "aab" must be NOMATCH (the brief's own named trap) -- a wrong lowering that lets the outer a+ inherit backtrack positions the inner lookahead's (a+) already tried would wrongly match.
+pattern (?!(a+)b)a+b
+features lookaround
+n "aab"
+n "ab"
+n "aaab"
+n "b"
+
+# ADVERSARIAL: cursor-restore. Groups 1/2 come from INSIDE the lookbehind (must be retained per sec 2.5's capture rule) while groups 3/4 come from AFTER it and must see the position exactly where the lookbehind assertion ended, not mid-body.
+pattern (?<=(a)(b))(c)(d)
+features lookaround
+m "abcd" 2 4
+g 1 0 1
+g 2 1 2
+g 3 2 3
+g 4 3 4
+m "xabcd" 3 5
+g 1 1 2
+g 2 2 3
+g 3 3 4
+g 4 4 5
+m "abcde" 2 4
+g 1 0 1
+g 2 1 2
+g 3 2 3
+g 4 3 4
+
+# ADVERSARIAL: forgot-to-cut. (?=(a+))\1b on greedy runs of 'a' -- the atomic lookahead takes the MAXIMAL run and \1 must match that exact (non-backtracked) run before 'b'; a lowering that let the lookahead's a+ retry shorter would falsely succeed on subjects where only a shorter \1 plus 'b' fits.
+pattern (?=(a+))\1b
+features lookaround,backrefs
+m "aaab" 0 4
+g 1 0 3
+m "aaaab" 0 5
+g 1 0 4
+m "ab" 0 2
+g 1 0 1
+m "aab" 0 3
+g 1 0 2
+
+# ADVERSARIAL: follow-scoping. Two chained lookaheads before a backref+literal continuation -- the continuation must see the ORIGINAL position (both assertions are zero-width), not a position either assertion's internal body scan advanced to.
+pattern (?=a)(?=(a))\1b
+features lookaround,backrefs
+m "ab" 0 2
+g 1 0 1
+n "a"
+n "b"
+
+# pcre2-only
+# ADVERSARIAL: branch-width boundary (SHIP side). An EXACT quantifier a{3} is fixed width 3 -- must ship, not be confused with a bounded-VARIABLE quantifier of the same max.
+pattern (?<=a{3}|bb)x
+features lookaround
+m "aaax" 3 4
+m "bbx" 2 3
+n "aax"
+n "bx"
+n "x"
+
+# pcre2-only
+# ADVERSARIAL: branch-width boundary (SHIP side), composite grouped branches -- widths 2 and 3, computed through a nested non-capturing group rather than read off a flat alternation.
+pattern (?<=(?:a{2})|(?:a{3}))x
+features lookaround
+m "aax" 2 3
+m "aaax" 3 4
+n "ax"
+n "x"
+
+# ADVERSARIAL: lookbehind-vs-startpos clamp. (?<=abc)x on "abcx" searched from startpos=3 MUST MATCH (3,4) -- the lookbehind reads bytes [0,3) which are entirely BEFORE startpos, exactly sec 3.8's contract ("a lookbehind reads subject bytes before startpos"). A wrong clamp that treats startpos as an absolute floor (like ^) would wrongly answer NOMATCH here. The startpos=4 cell is the boundary control (no 'x' left to match, unrelated to the clamp); "zzzabcx" from startpos=3 is the same shape with real bytes sitting even further before startpos.
+pattern (?<=abc)x
+features lookaround
+ms 3 "abcx" 3 4
+ns 4 "abcx"
+ms 3 "zzzabcx" 6 7
+
+# ADVERSARIAL: tightest clamp boundary -- (?<=ab)x needs exactly 2 bytes before the position; "bx" from startpos=1 has only 1 byte available before startpos and MUST be NOMATCH (the byte at index 0 does not exist -- startpos=1 there is itself the very first position), while "bx" from startpos=2 (past the whole 2-byte subject) is also NOMATCH for the ordinary reason (no 'x' left).
+pattern (?<=ab)x
+features lookaround
+ms 3 "zabx" 3 4
+ms 2 "abx" 2 3
+ns 1 "bx"
+ns 2 "bx"
+
+# sec 10.1 requirement 4a: empty capture inside a lookaround -- group 1 captures the EMPTY string (0,0) whenever no 'x' precedes 'a', a shape trail-discipline bugs specifically miss (an unset-vs-empty confusion).
+pattern (?=(x*))a
+features lookaround
+m "a" 0 1
+g 1 0 0
+m "xa" 1 2
+g 1 1 1
+m "xxa" 2 3
+g 1 2 2
+n "b"
+
+# sec 10.1 requirement 4b: re-entered group across a lookaround. Group 1 (the outer, re-entered each iteration of +) and group 2 (the lookahead's own inner capture, also re-entered) must both reflect the LAST successful iteration's values, not an earlier iteration's stale trail.
+pattern ((?=(a+))a)+
+features lookaround
+m "aaab" 0 3
+g 1 2 3
+g 2 2 3
+m "a" 0 1
+g 1 0 1
+g 2 0 1
+m "aaaa" 0 4
+g 1 3 4
+g 2 3 4
+n "b"
+
+# sec 10.1 requirement 4b, second shape: a re-entered ALTERNATION whose two branches populate DIFFERENT capture groups through a lookaround each -- an iteration taking branch 2 must leave groups 1/2 exactly as branch 1's LAST iteration left them (PCRE2 capture semantics), not reset to unset.
+pattern (?:(a)(?=(b))|(c)(?=(d)))+
+features lookaround
+m "abcd" 0 1
+g 1 0 1
+g 2 1 2
+g 3 -1 -1
+g 4 -1 -1
+m "ab" 0 1
+g 1 0 1
+g 2 1 2
+g 3 -1 -1
+g 4 -1 -1
+m "cdab" 0 1
+g 1 -1 -1
+g 2 -1 -1
+g 3 0 1
+g 4 1 2
+m "abab" 0 1
+g 1 0 1
+g 2 1 2
+g 3 -1 -1
+g 4 -1 -1
+n "x"
+
