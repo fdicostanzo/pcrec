@@ -253,6 +253,23 @@ that FAILED, failed by sharing a source with the thing it controls:
    subject decoding would feed the same wrong subject to all three arms, they
    would agree, and the driver would be green while measuring nothing.
 
+**AND A SIXTH GUARD OF A DIFFERENT KIND, §1d, WHICH THIS LANE OWES TO ITS OWN
+DEFECTS.** The WITNESS PRINTER — the code that names the failing subject and
+both patterns when a cell disagrees — only ever executes when something else
+has already failed, so on a green tree it is dead code that looks like
+coverage. It was **wrong twice** before the control existed, and both times
+only a SABOTAGED tree revealed it: first it passed the patterns through
+`awk -v`, which ESCAPE-PROCESSES its assignments and printed `\G` as `G` (the
+driver's own "the workers wrote to stderr" guard caught that one, on mech row
+S130); then the `ENVIRON` fix put the assignment on the `paste` that FEEDS the
+pipeline rather than the `awk` that reads it, and every witness printed `A[]=`.
+**A misquoted witness is worse than no witness** — it sends the triage after a
+pattern that was never compiled. `emit_witnesses` is therefore a FUNCTION, and
+§1d drives it on every run over a three-cell fixture built to disagree on
+exactly one cell, asserting both patterns byte for byte with their backslashes
+intact and a silent stderr. Validated in the failing direction against both
+real defects.
+
 **THE SIX QUALIFICATION RULES ARE PARSERS, NOT SUBSTRING TESTS** (R33 C3-1,
 C3-2), and each carries the reason it exists at its own site. Q3's class walk
 consumes one literal `]` after `[` or `[^` (PCRE2's literal-first rule), so
@@ -296,4 +313,16 @@ covers all of that block's generated patterns.
 `run_lookaround_diff.sh`; it parallelizes internally on `PROCS` (default
 `nproc`) and MEASURED 40s warm / 1m43s cold at PROCS=12 on the project box.
 `--policy=P1|P2|none` runs one arm alone. It SKIPS LOUDLY without libpcre2,
-and the skip banner says explicitly that `A == B` alone is not the check.
+and the skip banner says explicitly that `A == B` alone is not the check. Green
+at the wave: **11 checks passed, 0 failed**.
+
+**AND IT IS A `mech` SUITE WORD, `laexpand`, measured before it was assigned**
+— 8 of the module's 15 sabotage rows DETECTED by this arm alone, 7 UNDETECTED,
+with the seven explained by the population rather than waved at (every
+expansion is an ATOMIC lookaround with a FIXED-WIDTH body and no `\K`). The
+row table and the S130 worked example are in `tests/mech/CLAUDE.md`. **Design
+§11's wave-E2 landing bar asked for S131 (S-LA16, `.atomic` ignored) to score
+DETECTED under this arm; it does not, and the reason is structural** — there is
+no non-atomic spelling anywhere in §6.1's table. S131 stays with `harness` +
+`lookaround`, where `run_lookaround_diff.sh` §2's exact disagreement count is
+the only thing in the tree that can see it.
