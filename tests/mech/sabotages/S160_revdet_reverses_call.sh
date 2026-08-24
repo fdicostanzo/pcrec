@@ -24,6 +24,13 @@
 SAB_ID="S160-revdet-reverses-call"
 SAB_FILE="src/opt/revdet.c"
 SAB_SUITES="harness recursion rungdiff"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="rd_shape stops declining an A_CALL, so a call-bearing quantifier body is admitted to the reverse-deterministic rung and the reversal walk reaches a node it has no rule for"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR12): vm_rev_emit's default: fires -- \"internal error: bad AST node in the backward walk\" -- a HARD COMPILE ERROR, which is the RIGHT failure. The row asserts the wall is REACHED, not that an answer changed. Design 4.4a records that (7)'s default: is now reachable in a NEW WAY because a call can carry a whole SUBTREE into the backward walk rather than a single node, and that sites (14)-(18) declining is what keeps it a diagnostic rather than a miscompile. || MEASURED UNDETECTED: corpus 0fail/346pass, recdiff 0fail/7pass, rungdiff 0fail/205pass. \`rd_shape\`'s decline is not the arm that keeps the reversal unreachable on this population -- \`rd_reverse\`'s own \`case A_CALL:\` \`ctx_fail\`, \`rd_alt_disjoint\` and \`vm_revdet_fits\` each refuse independently, and no corpus quantifier body carrying a call is otherwise revdet-eligible (the rung wants a unique-iteration body, which a call's all-bytes FIRST set denies). What is owed is a body that WOULD take the rung but for the call; the shipped five-arm decline is unchanged."

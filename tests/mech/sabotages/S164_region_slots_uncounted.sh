@@ -37,6 +37,13 @@
 SAB_ID="S164-region-slots-uncounted"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion/zerodef.rxt"
 SAB_DESC="vm_count_slots is not run per emitted callee region, so a callee's own slot instances are never counted and the emitter assigns past RX_NSLOTS -- an OUT-OF-BOUNDS WRITE in emitted code, K27's class"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR19): an OUT-OF-BOUNDS SLOT WRITE, K27's class, which vm_count_slots' own header names ('a lift this pre-pass cannot see runs vm_slot_mark(v, v->nmark++) past RX_NSLOTS'). THE CELL MUST CARRY A RUNG-BEARING OR ATOMIC CALLEE UNDER {0} -- ^(?:((?>a|ab))){0}(?1)z\$ -- because a callee with only CAPTURE slots allocates from a family {0} does not prune and the row goes green. zerodef.rxt is written on exactly that requirement. Under ASan the failure is a REPORT; without it, silent corruption, which is why the asan suite is assigned as well. || MEASURED UNDETECTED: corpus 0fail/23pass on zerodef.rxt, recdiff 0fail/7pass. The sabotage does NOT produce an out-of-bounds write on this population, it produces a SLOT COLLISION: with the region's cut mark uncounted, \`vm_slot_mark(v, 0)\` and \`vm_slot_pend(v, 1)\` both resolve to slot 4 on ^(?:((?>a|ab))){0}(?1)z\\$ (RX_NSLOTS 6 -> 5), so a resume depth and a publish-at-close position share a cell -- and the two cells this file carries do not read the collided values on a path that changes their answer. The \`asan\` suite the design assigns DOES NOT EXIST as a mech arm, so the memory-safety half was never scored here either. THE SHIPPED LAYOUT IS CORRECT (RX_NSLOTS 6, the region counted); what is owed is a cell whose collided slots are both live on one path."

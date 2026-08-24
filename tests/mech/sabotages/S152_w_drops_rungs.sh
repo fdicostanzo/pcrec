@@ -40,6 +40,13 @@
 SAB_ID="S152-w-drops-rungs"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="W drops the three RUNG families (SPAN_LOW, REVDET, COUNTER), so a callee containing a quantifier called at two depths shares its rung state across activations -- counterk_design's own reason for making the counter TRAILED, with a second index"
 SAB_DOC_FIGURE="ARGUED, not measured (design 5.3b). counterk_design.md's OWN reason for making the counter a TRAILED slot rather than a local -- \"a body-internal frame from iteration 1 resumes reading a stale local\" -- is this argument with a second index. The detector is a callee containing an {n,m} loop called at two depths; WHICH RUNG that body gets is a compile-time choice this row cannot fix, so the cell is written against the LANDED rung selection and quantified.rxt is the population. || MEASURED UNDETECTED: corpus 0fail/346pass, recdiff 0fail/7pass, after the wave added TWO cells that allocate the family -- ^(?:(?<g>a{1,3}b(?&g)?)){0}(?&g)\\$ (legend: RX_SLOT_SPAN_LOW0, no guard) and the EMPTY_GUARD cell above, both re-entered at two depths. ARGUED and still argued; counterk_design.md's own reason for making the counter TRAILED rather than a local is this argument with a second index, and it remains reasoning rather than a cell. Same disposition as S151."

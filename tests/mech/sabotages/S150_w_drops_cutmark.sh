@@ -40,6 +40,13 @@
 SAB_ID="S150-w-drops-cutmark"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion/slotfamilies.rxt"
 SAB_DESC="W drops the SLOT_CUT_MARK<n> family, so a recursive activation overwrites the outer's mark and the outer's RX_CUT -- an ASSIGNMENT -- becomes a no-op: the atomic group stops being atomic, and the false-match set is exactly the non-atomic control's language"
 SAB_DOC_FIGURE="MEASURED (design 5.3b axis C): W as first written gives 4 agree / 6 DISAGREE -- ^((?>a(?1)?))a\$ FALSE-MATCHES \"aa\"..\"aaaaaaaa\", which 10.46 matches at no length. W plus the mark slot is 10/0. || MEASURED UNDETECTED at [DD-14] wave B+C's close: corpus 0fail/47pass, recdiff 0fail/7pass, WITH THE SABOTAGE VERIFIED APPLIED (the artifact for ^((?>a(?1)?))a\$ shows RX_SLOT_CUT_MARK1 gone from the call site's saves) and the answers unchanged -- nomatch at every length 2..8, which is correct. THE FINDING IS ABOUT THE LINKAGE, and it is a divergence from 5.3b's own measurement rather than from the compiler: that axis was measured on a PROTOTYPE with ONE emitted copy of the atomic group entered from both the lexical path and the call, while under CALL_LINKAGE the lexical occurrence and the region are SEPARATE code with SEPARATE mark slots (CUT_MARK0 and CUT_MARK1 in that artifact). The clobber therefore needs two ACTIVATIONS OF THE REGION and an outer cut whose truncation MATTERS -- and the outer cut then reads a LARGER depth, which discards FEWER frames rather than resurrecting a match on these subjects. THE SHIPPED BEHAVIOUR IS UNCHANGED AND CORRECT (the family IS in W); what is owed is a witness that makes the under-cut observable, and until one exists this row certifies less than its text claims."

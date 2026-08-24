@@ -44,6 +44,13 @@
 SAB_ID="S153-w-drops-look"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion/inlookaround.rxt"
 SAB_DESC="W drops the SLOT_LOOK_MARK / SLOT_LOOK_POS families, so a recursive call INSIDE a lookaround shares the assertion's cut mark and saved cursor across activations"
 SAB_DOC_FIGURE="ARGUED (design 5.3b), and the design's OWN FIRST VERSION PREDICTED THESE TWO WERE SAFE -- 12 P-2 named SLOT_LOOK_MARK/_POS as candidates and argued they were fine \"because each is re-initialised at its own entry label on every entry\". THAT PREDICTION IS WITHDRAWN: the re-initialisation is not the question, the OVERWRITE is. A slot re-initialised at entry has already been overwritten for its caller. || MEASURED UNDETECTED: corpus 0fail/20pass, recdiff 0fail/7pass, after the wave added ^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)\\$ -- a LOOKAHEAD inside a RECURSIVE callee, artifact legend RX_SLOT_LOOK_MARK0 and RX_SLOT_LOOK_POS0, live at two depths. This is the family 5.3b could not measure at all ([M6.6.2] had not landed) and the one 12 P-2's FIRST version predicted was SAFE. **That prediction is now measured rather than argued in one direction**: on this population the two families' membership in W changes no answer. P-2's withdrawal stands on the general argument (a slot re-initialised at entry has been overwritten FOR ITS CALLER), and the shipped W includes them; what is owed is a witness."
