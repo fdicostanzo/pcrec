@@ -12997,3 +12997,14 @@ at both widths. D65: 118 rows / 70 built, zero out-of-module movement.
 Gate: 202 bearing, free unchanged (+26 = exactly the new corpus).
 [M6.6.2] is COMPLETE-PENDING-CLOSE; next [M6.6.3] (the blinded corpus,
 brief ready) and [M6.6.4] (full matrix + battery + gate + archive).
+
+## 2026-08-24 (EDT), thirty-eighth session (part 16) — [M6.6.3] opened: the la27 cell and the blinded author; the close validation running
+
+The D27 cell built (mk_d27_cell.sh la27): the author sees ONLY the
+committed design extract (§2 construct table + §7 goal facts + §10.1
+population — cut so the cell can allow the spec without the
+implementation sections), the la_oracle.py ctypes chain, docs/testing.md,
+lib/pcrec.h and a prebuilt build/. Author spawned (sonnet, the brd27
+precedent). Meanwhile the [M6.6.4]-tier close validation runs on main
+5ae833f: FULL matrix → gate → strict → test → san
+(scratchpad/close_m662.log).
