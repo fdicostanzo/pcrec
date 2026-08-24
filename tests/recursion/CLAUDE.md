@@ -9,14 +9,28 @@ time this corpus was written). Decisions: `docs/dev/decisions.md` D71 (the
 give-up-code diagnostic axis, D71.1 in particular) and D72
 (`PCREC_ERR_INTERNAL`).
 
-**NOTHING IN `src/` IMPLEMENTS A SUBROUTINE CALL YET.** This corpus was
-written by the wave B+C CORPUS lane running *ahead of* the wave B+C CODE
-lane (both concurrent, per `docs/dev/plan.md`'s `[DD-14.BC]` row) — every
-`m`/`n` block here is oracle-correct against libpcre2 today and is EXPECTED
-to report a pattern-compile failure (`... is enabled but ... is not
-implemented yet`) until wave B+C lands. That is `docs/testing.md`'s own
-"expected-unsupported" policy working as designed, not a corpus defect —
-see "Current harness-run state" below for the exact, reconciled count.
+**WAVE B+C HAS LANDED, AND THIS SECTION IS THE PRESENT TENSE.** The corpus
+was written by the wave B+C CORPUS lane running *ahead of* the wave B+C CODE
+lane (both concurrent, per `docs/dev/plan.md`'s `[DD-14.BC]` row), so its
+first version said "nothing in `src/` implements a subroutine call yet" and
+expected every `m`/`n` block to report a pattern-compile failure. That is no
+longer true of anything here: the three `(?` ports, the resolver's call rule,
+`src/opt/callgraph.c` and the emitter's call linkage all ship, and **this
+directory runs 306 cases / 0 failures**.
+
+**WHAT IS STILL EXPECTED-UNSUPPORTED IS THE `\g` FAMILY, AND IT IS MARKED
+RATHER THAN RED.** Design §8.1 requires the two `\g` registry rows to stay
+`unbuilt` until wave D wires their port — D65 flips `built` from the PORT's
+answer, and a wave that flipped them while the emitter could not compile the
+spelling would ship a compliance index that lies — so the 22 blocks whose
+pattern carries `\g<` or `\g'` render as `perr` blocks under
+`gen_corpus.py`'s `wave='D'` marker, with **the oracle's answer carried in a
+`# WAVE D ORACLE:` comment beside each cell**. That is `APPROACH.md` §7's
+expected-unsupported policy as `docs/testing.md` states it (step 2: pin the
+compile error via `perr`; step 3: once the component is implemented, replace
+those blocks with real cases), and wave D's edit is to delete one keyword
+argument and re-run the generator — the `m`/`n`/`g` lines that come back are
+the ones libpcre2 gives THEN, never a transcription of what it gave now.
 
 ## THE CORPUS IS GENERATED, and there is no python arm
 
@@ -172,6 +186,12 @@ the identical subjects for the identical shapes).
 
 ## What could not be oracled
 
+**TWO OF THE THREE ENTRIES BELOW ARE DISCHARGED** by [DD-14] wave B+C and are
+kept with their discharge recorded rather than deleted, because each names a
+real limit of the `.rxt` format that the next module will meet again. See
+"P2's cell is DISCHARGED" and "The `--no-captures` axis is no longer a gap"
+above.
+
 - **Every `gu frames` cell's give-up itself.** `gu` asserts pcrec's OWN
   give-up behaviour, which libpcre2 has no equivalent code for — there is
   no oracle to check it against. Each `GU` block instead records what
@@ -202,53 +222,104 @@ the identical subjects for the identical shapes).
   `RX_NCAPS`/slot survival. Reported as a gap, not invented as harness
   syntax, per the lane brief.
 
-## Current harness-run state (as of this corpus's landing)
+## Current harness-run state
 
-**Two different harnesses give two different results, and both are
-reported because they answer different questions.**
+**MEASURED ON THIS TREE at [DD-14] wave B+C's landing**, with
+`bash tests/harness/run.sh tests/recursion`:
 
-`bash tests/harness/run.sh tests/recursion` **in THIS worktree** (branched
-off `main` at `05d75a9`, before wave A's `gu` directive merged): **20 cases
-pass, 273 fail** (289 ordinary cases + 4 `gu`-directive hard errors = 293
-total) — the 4 `gu` lines report `unparseable .rxt line (hard error)`
-because this worktree's own `tests/harness/run.sh` has no `gu` parser at
-all yet. This is the honest state of THIS worktree today, not a defect in
-the four cells (see below).
+    cases passed: 306
+    cases failed: 0
 
-`bash tests/harness/run.sh <this corpus>` run **against `worktrees/srA`'s
-`tests/harness/run.sh`** (wave A's own worktree, read-only — no file in
-`srA` was touched) — the REAL grammar this corpus's `gu` lines are written
-against: **20 cases pass, 273 fail, and ALL FOUR `gu` LINES PARSE**. Fully
-reconciled:
+Fully reconciled, in the three stages the code lane passed through:
 
-- **20 passes** = 15 `perr` blocks (all genuinely refuse under today's
-  built `build/pcrec`, verified live by the generator itself) + 3 cases
-  from `spellings.rxt`'s backreference REFERENCE control (`(a|b)\1`, which
-  needs only the already-shipped `backrefs` module) + 2 cases from
-  `inlookaround.rxt`'s W3 INLINE control (`^(?>(a|ab))z(?:a|ab)c$`, which
-  needs only the already-shipped `atomic-groups` module and deliberately
-  carries no call construct at all).
-- **0 FORMAT failures.** Every `gu frames "<subject>"` line now parses
-  cleanly under the real grammar and is scored as an ordinary pattern-
-  compile failure instead (`module 'recursion' is enabled but ... is not
-  implemented yet`) — exactly like every other block, because the module
-  still has no producer. Verified directly: `worktrees/srA`'s run against
-  `leftrec.rxt:42/49/56` and `quantified.rxt:140` all report
-  `pattern '...' failed to compile: ... is enabled but ... is not
-  implemented yet`, not `unparseable`.
-- **273 case failures** = every remaining `m`/`n`/`g` case (113 distinct
-  pattern-compile failures) — the correct, expected state per
-  `docs/testing.md`'s "expected-unsupported" policy. Zero `requires module
-  'recursion'` (std1-closed) refusals appear among the failures, because
-  every real corpus block deliberately declares `features recursion` (or
-  more) — the closed-gate wording is exercised only by `refused.rxt`'s and
-  `gated.rxt`'s own `perr` cells, which pass.
+| stage | passed | failed |
+|---|---|---|
+| the corpus as merged, on the pre-B+C compiler | 20 | 273 |
+| the ports + the linkage, before any corpus edit | 223 | 70 |
+| after the four corrections below | **306** | **0** |
 
-**In THIS worktree, until wave A merges here too**, the run against the
-LOCAL `tests/harness/run.sh` will keep showing the 4-format-failure result
-above — that is expected and will resolve itself the moment wave A lands on
-this branch's ancestry (or this branch rebases onto it), with no further
-edit to this corpus needed.
+The **20 / 273** row is the corpus's own landing figure and its composition is
+unchanged from what this file recorded then: 15 `perr` blocks that genuinely
+refused, 3 cases from `spellings.rxt`'s backreference REFERENCE control
+(`(a|b)\1`, which needs only the already-shipped `backrefs` module) and 2 from
+`inlookaround.rxt`'s W3 INLINE control (which carries no call construct at
+all). **The four `gu` lines parse** — this worktree now carries wave A, so the
+`unparseable .rxt line` result this file used to record against the LOCAL
+harness is gone, and the reconciliation against `worktrees/srA` it needed is
+retired with it.
+
+### The four corrections, all made at `gen_corpus.py` and none to an expectation
+
+1. **`dupnames.rxt`'s `features` line gains `backrefs`.** `(?J)` is dispatched
+   by module `modifiers`' option-run port and its LETTER is module `backrefs`'
+   — the [M6.5] split the compliance page records — so every DUPNAMES cell was
+   refusing with *"inline option 'J' (dupnames) requires module 'backrefs'"*
+   and the whole file was red for a reason that is not about subroutine calls.
+   Design §9.3 names the cell's features and did not follow the letter to its
+   own module.
+2. **`gated.rxt`'s ENABLED-BUT-UNBUILT section is REPLACED BY ITS POSITIVE
+   HALF**, and that replacement is this wave's own deliverable rather than a
+   corpus defect: D65 flips `built` from the PORT, so the wave that wires the
+   port is the wave that must stop pinning *"module 'recursion' is enabled but
+   `(?1...)` is not implemented yet"*. **The generator's own guard said so,
+   unprompted, on its first run against the new binary** — *"'(a)(?1)' marked
+   kind=pcrec but build/pcrec COMPILES it — the refusal this cell pins does not
+   exist"*. The replacement asserts the flip from the OTHER side: the same two
+   spellings must now COMPILE and answer §2.1's discriminator, so a compiler
+   that merely stopped REFUSING fails.
+3. **The 22 `\g` blocks render as `perr` under `wave='D'`** — see the header.
+4. **THREE CELLS ARE PARKED** in `tests/known_fail/dd14_bc_open.rxt`, because
+   each is a RULING nobody has made rather than a bug. See below.
+
+### P2's cell is DISCHARGED
+
+This file used to record `gated.rxt`'s P2 cell as **NOT OBSERVABLE IN ITS TRUE
+FORM** and demand that the code lane re-check its MESSAGE rather than its exit
+code. Done, and it answers as design §9.3 predicted: `--features recursion --
+'(?&n)(?<n>a)'` now refuses with *"`(?&n)` names a capture group, which
+requires module 'named-groups'"*, from the port's own gate check, which sits
+BEFORE the name grammar for `br_name_ref`'s reason (without that module there
+is no such thing as a group NAME). The row is no longer vacuous.
+
+### The `--no-captures` axis is no longer a gap
+
+This file recorded that no `.rxt` directive for `--no-captures` exists anywhere
+in the tree and that the code lane owed a `run_recursion_diff.sh`-shaped
+instrument. **It exists**: `tests/recursion/run_recursion_diff.sh` §1 compiles
+the one-hop and two-hop cells under the flag and asserts BOTH halves — the
+called group's slots survive in the emitted C (the slot legend) AND the matcher
+still answers correctly while reporting `RX_NCAPS 1`. Both halves are needed:
+the answer alone can be right by accident on a subject the callee's own text
+happens to match. `nocaptures.rxt` keeps its ordinary-axis pins beside it.
+
+## The three parked cells (`tests/known_fail/dd14_bc_open.rxt`)
+
+`known_fail` is excluded from `make test` and RUN by the ratchet, which fails
+if a cell there starts PASSING — `u9_atomic.rxt`'s shape, and its own header's
+principle: *"the cells stay, they stay loud, and if pcrec is ever changed to
+reproduce it this file FIRES"*. Each cell's former position in the live corpus
+carries a comment stanza pointing here, written by `gen_corpus.py`'s `parked=`
+argument so the two cannot drift.
+
+- **`^(a?(?1)b)$` answers NOMATCH, not `gu frames`.** Design §4.4b's `minw`
+  Kleene fixpoint gives this callee `minw = infinity` — its language IS empty,
+  since `X = a? X b` has no base case — and §12 P-12 RULES that the MRL prune
+  reads that as *"no position can match"*. So pcrec refuses the subject in
+  constant time where 10.46 spends its own `rc -52` finding out, and §5.9
+  scores exactly that pair "agreed in kind". **The class answers two ways**,
+  which is what needs a ruling: the two SIBLING cells in `leftrec.rxt` still
+  give up, because neither carries a quantifier for an MRL bound to hang on —
+  so which answer a left recursion gets depends on whether the pattern happens
+  to contain a quantifier, and that is not a fact about recursion.
+- **Two calls inside a LOOKBEHIND are OVER-REJECTED** (a tier-2 refusal, never
+  a miscompile), and **no `A_CALL` arm of `pcrec_maxw` can fix it**:
+  `la_widths` runs in the PARSE HOOK, where it must, because that is the only
+  place with a pattern OFFSET to refuse at — and the call graph does not exist
+  until every call is resolved at end of parse and every rewriting pass has
+  run. Design §3.4(d) says the width analysis descends into the callee and does
+  not say WHEN it runs. The fix a ruling would order is a DEFERRED WIDTH
+  RE-CHECK, which is a change to a landed module's core plus a new `u.look`
+  field for the diagnostic's offset.
 
 ## Checks run
 
