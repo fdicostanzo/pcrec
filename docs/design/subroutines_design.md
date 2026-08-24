@@ -750,47 +750,136 @@ nothing references, and a referenced group keeps its slots (9 mentions vs 0).
 `pcrec_bref_mark`'s union must include every `A_CALL.target` — otherwise
 `(a)(?1)` under `--no-captures` deletes group 1 and the call has no body.
 
-Two properties, and the second is the one a panel should check:
+Two properties, and the second was WRONG in this design's first version:
 
 1. **`target == 0` marks nothing** — the root is not an `A_CAP` and is never
    deleted.
-2. **The mark is TRANSITIVE.** A call to group 1 keeps group 1; if group 1's
-   body calls group 3, group 3 must be kept too. The fixpoint is the same one
-   §5.3's write set needs, so it is computed **once**, in
-   `src/opt/callgraph.c`, and both consumers read it.
+2. **THE MARK IS NOT TRANSITIVE, and does not need a fixpoint.** The first
+   version said it was: *"if group 1's body calls group 3, group 3 must be kept
+   too"*. True, and it happens for free — the call to group 3 is an `A_CALL`
+   **node in the tree**, so `pcrec_bref_mark`'s whole-tree walk reaches it
+   wherever it sits and marks 3 directly. The arm is `mark[target] = true` and
+   no descent. §4.4's rule about `.body` is where this comes from, and it is
+   the cheaper half of that finding.
 
 `pcrec_has_bref`'s sibling `pcrec_has_call` is placed beside it in
 `src/opt/atomic.c`, where the tree predicates live (`lookaround_design.md`
 §11 wave A2 puts `pcrec_has_lookaround` there for the same reason).
 
-### 4.4 The walker arms, budgeted by file
+### 4.4 `.body` IS A BACK EDGE, and the 27 sites that must decide about it
 
-Adding `A_CALL` makes every exhaustive `AKind` switch a `-Wswitch` error under
-`make strict`. STRUCTURAL, from the same census `lookaround_design.md` §11
-wave A2 took (the file list is stable; the per-file arm counts are re-derived
-at implementation, not guessed here):
+**`A_CALL.body` is the AST's FIRST `Ast*` → `Ast*` BACK EDGE.** Every walker in
+`src/` today assumes a TREE: `pcrec_minw` (`mrl.c:90`), `pcrec_has_atomic`
+(`atomic.c:40`) and `pcrec_has_bref` (`:298`) are bare `const Ast *` walkers
+with **no context parameter, no memo and no visited set** — a tree-wide grep
+for `visited|memoi|acyclic|cycle` finds one unrelated hit in `possessify.c`.
+This design's first version told three of them to *"descend into `.body`"*.
+**On `(a(?1))`, `(a\g<1>?b)` or any `(?R)` that hangs the COMPILER**, in
+predicates asked of every pattern (`atomic.c:264`, `select_engine.c`) — a
+non-terminating compile, which no answer-comparison test can detect because
+there is no answer. R34's C2 panel raised it; the fix is per site and the rule
+that generates it is one sentence.
 
-| file | what the `A_CALL` arm must decide |
-|---|---|
-| `src/opt/atomic.c` | `pcrec_has_call` is PLACED here; `pcrec_has_atomic` and `pcrec_has_bref` must **descend into `.body`** — a call to a group containing an atomic group carries that atomic group's consequences |
-| `src/opt/revdet.c` | **DECLINE.** The reverse walk has no notion of a call and `vm_rev_emit`'s `default:` is a hard `ctx_fail` — the arm must stop the tree from reaching it |
-| `src/opt/possessify.c` | must not possessify ACROSS a call boundary, and must treat a call's follow set as the callee's FIRST set — `pcrec_revdet_first` has a `default:` that widens to all bytes, which is sound; possessify's own arm is not automatic |
-| `src/gen/emit_vm.c` | `vm_emit` (§5), `vm_nullable` (§2.6: nullable iff the callee is, a fixpoint), `vm_cost` (§5.7), `vm_cuts`'s walk, the `--emit-ir` listing |
-| `src/opt/altcls.c` | decline |
-| `src/opt/mrl.c` | **NOT 0.** A call consumes what its callee consumes, so `pcrec_minw(A_CALL)` is the callee's `minw` — and for a recursive callee the fixpoint's least solution, which is the minimum over the non-recursive branches. `pcrec_maxw` is the callee's `maxw`, `PCREC_W_UNBOUNDED` when recursive (§3.4(d)) |
-| `src/opt/select_engine.c` | forces `VM_ONLY` and, in wave 1, forces the prefilter OFF (§8) |
-| `src/ir/nfa.c` | wave 1: the pattern never reaches the NFA (VM_ONLY, no prefilter). Wave 3 builds the sound approximation (§8.3) |
-| `src/parse/parse.c` | `pcrec_is_bare_anchor` — §2.6 measured that every call spelling is quantifiable, so a bare call as a group's whole body must be wrapped so it can be quantified |
-| `src/parse/mod_backrefs.c` | descend into `.body` |
+**THE RULE.** Every callee is **also a lexical node of the same tree** —
+`target` names an `A_CAP` that §4.3 keeps alive, and `target == 0` is the root.
+So:
 
-**AND THE `default:`-CARRYING SWITCHES `-Wswitch` WILL NOT NAME.**
-`lookaround_design.md` §11 names four (`revdet.c:370`, `emit_vm.c:1132`,
-`:1176`, `:3132`) and re-inspects them by hand. **This module inherits that
-obligation with a different verdict on one of them**: `vm_rev_emit`'s
-`default:` is *"internal error: bad AST node in the backward walk"* — a hard
-compile error, loud, and reachable if a call ever reaches the backward walk.
-That is why `revdet.c`'s arm must DECLINE rather than descend, and S-SR12 is
-its detector.
+> **A WHOLE-TREE predicate MUST NOT follow `.body`.** It already visits the
+> callee at the callee's own lexical position, so following the edge is
+> *redundant* as well as non-terminating. `A_CALL`'s arm contributes what the
+> CALL NODE ITSELF means and descends no further.
+>
+> **A SUBTREE-RELATIVE analysis** — one that asks *"what does THIS node do"*,
+> whose answer for a call genuinely is the callee's — goes through
+> `src/opt/callgraph.c`: the SCC-condensed call graph, a **memoised** fixpoint,
+> cycles answered by the family's own bottom (§4.4a).
+
+That rule takes the hang off **most** of the sites for free, which is why it
+is stated before the table rather than after it.
+
+**AND IT SIMPLIFIES §4.3.** §4.3's first version made `pcrec_bref_mark`'s
+marking **transitive** over the call graph. It does not need to be: a call from
+inside group 1's body to group 3 is an `A_CALL` node *in the tree*, so the
+whole-tree walk marks 3 wherever it sits. The `A_CALL` arm is
+`mark[target] = true` and nothing else — **no fixpoint**, and §4.3's transitive
+clause is withdrawn.
+
+#### 4.4a THE 27 SITES
+
+MEASURED by census (`switch` on a node kind, per function, at `eacac76`):
+**emit_vm.c 8, atomic.c 5, revdet.c 5, possessify.c 3, and six files with one
+each = 27.** Fourteen carry a `default:`, so `-Wswitch` will not name them.
+
+| # | site | kind | the `A_CALL` arm |
+|---|---|---|---|
+| 1 | `emit_vm.c:857` `vm_nullable` | **GRAPH** | nullable iff the callee is — SCC fixpoint, memoised, cycle bottom = `false` then iterate up (§2.6) |
+| 2 | `:1108` `vm_det_seq` | **DECLINE** | a call is not a stride; its `default:` already returns 0 |
+| 3 | `:1151` `vm_cap_offsets` | **DECLINE** | `return -1`; gated by (2)'s approval |
+| 4 | `:1273` `vm_rev_caps` | **DECLINE** | the backward walk; (7) is why |
+| 5 | `:1618` `vm_cost` | **GRAPH** | the callee's cost, `Cost.unbounded` on a cycle; plus the site's own `2·\|W\|` trail (§5.7) |
+| 6 | `:1804` `vm_count_slots` | **LEXICAL ONLY** | the call SITE allocates no slot family of its own; the callee's slots are counted at the callee's lexical position. Following `.body` would DOUBLE-COUNT the layout |
+| 7 | `:3018` `vm_rev_emit` | **DECLINE** | its `default:` is a hard `ctx_fail`, *"bad AST node in the backward walk"* — loud and correct, and (11)–(15) must stop the tree reaching it |
+| 8 | `:4294` `vm_emit` | **PRODUCER** | §5 |
+| 9 | `atomic.c:40` `pcrec_has_atomic` | **DECLINE** | whole-tree predicate — the callee's `A_ATOMIC` is found at its lexical position |
+| 10 | `:92` `pcrec_ast_stamped_by` | **DECLINE** | whole-tree; the `A_CALL` node's own `Ast.reg` is what it contributes |
+| 11 | `:209` `dis_walk` | **LEXICAL ONLY** | a tree REWRITE; following `.body` would discharge the callee twice |
+| 12 | `:298` `pcrec_has_bref` | **DECLINE** | whole-tree |
+| 13 | `:342` `pcrec_bref_mark` | **DECLINE** | `mark[target] = true`, no descent, no fixpoint — the simplification above |
+| 14 | `revdet.c:93` `rd_shape` | **DECLINE** | a call is not a revdet-able shape |
+| 15 | `:219` `rd_reverse` | **DECLINE** | the reversal must refuse rather than produce a reversed call |
+| 16 | `:346` `pcrec_revdet_first` | **WIDEN** | its `default:` widens to ALL BYTES, the sound direction; an explicit arm so the widening is a decision rather than a fallthrough |
+| 17 | `:389` `rd_alt_disjoint` | **DECLINE** | not disjoint → the quantifier keeps its machinery |
+| 18 | `:485` `rd_walk` | **DECLINE** | do not enter a call-bearing subtree |
+| 19 | `possessify.c:165` `first_of` | **WIDEN** (wave B+C) | the callee's FIRST set is the exact answer and needs the graph; widening to all bytes is sound and free. **GRAPH is a wave-G optimisation, not a correctness need** |
+| 20 | `:466` `gk_build` | **DECLINE** | |
+| 21 | `:737` `pss_walk` | **DECLINE** | must not possessify ACROSS a call boundary |
+| 22 | `altcls.c:378` `altcls_walk` | **DECLINE** | |
+| 23 | `mrl.c:90` `pcrec_minw` | **GRAPH** | §4.4b — and its bare signature cannot express a fixpoint, so the fixpoint lives in `callgraph.c` and `pcrec_minw` reads the memo |
+| 24 | `select_engine.c:168` `first_dfa_excluding` | **DECLINE** | the `A_CALL` node's own row is `VM_ONLY`; the callee's rows are found lexically |
+| 25 | `nfa.c:492` `compile_ast` | **DECLINE** (wave B+C) | unreachable: `VM_ONLY`, no prefilter. **Wave G replaces this with §8.3's approximation**, which is the one site where following the graph is the point |
+| 26 | `parse.c:101` `pcrec_is_bare_anchor` | **`false`** | §2.6 MEASURED every call spelling is quantifiable, so a bare call as a group's whole body must be wrapped |
+| 27 | `mod_backrefs.c:498` `br_strip_caps` | **LEXICAL ONLY** | a tree REWRITE, same reason as (11) |
+
+**FOUR SITES CARRY A `default:` AND ARE INSPECTED BY HAND** — (2), (3), (7) and
+(16) — the same four `lookaround_design.md` §11 names, with the same verdicts
+and one addition: **(7)'s `default:` is now REACHABLE in a new way**, because a
+call can carry a whole subtree into the backward walk rather than a single
+node, so (14)–(18) declining is what keeps it a diagnostic rather than a
+miscompile.
+
+#### 4.4b `pcrec_minw` FOR A RECURSIVE CALLEE
+
+§4.4's first version said *"the least fixpoint's minimum over the non-recursive
+branches"*. **That rule is undefined for the headline pattern.**
+`^(a(?1)?b)$` has no alternation at all — the recursion is under `?` — so there
+are no "branches" to minimise over. And `^(a(?1)b)$`, which **compiles on 10.46
+and matches nothing** (C2 measured it), has no non-recursive branch whatever;
+its least solution is ∞ / the empty language.
+
+**THE RULE: Kleene iteration from ∞ downward, over the SCC-condensed call
+graph, memoised, with the empty language explicit.**
+
+- initialise `minw(g) = ∞` for every `g` in a cycle, and compute acyclic
+  callees bottom-up as today;
+- iterate the ordinary `minw` recurrence with `A_CALL ↦ minw(target)` until a
+  round changes nothing (it terminates: the values are non-increasing and
+  bounded below by 0);
+- **`minw(g) = ∞` at the fixpoint means the callee matches NOTHING.** That is
+  a legal compile — PCRE2 accepts `^(a(?1)b)$` — so it must not be an error;
+  it makes `minw` of anything containing the call `∞`, which the MRL prune
+  reads as *"no position can match"*. §12 P-12 is its cell.
+- mutual recursion is a SYSTEM, solved on the condensation, which is why this
+  lives in `callgraph.c` beside W and `vm_nullable` rather than in `mrl.c`.
+
+**AND `pcrec_maxw` DOES NOT EXIST YET** (P13): `lookaround_design.md` §11
+wave A builds it. §11's wave B+C therefore reads *"`minw`'s arm, and `maxw`'s
+if wave A has landed"* rather than treating the pair as symmetric — a call's
+`maxw` is `∞` for any recursive callee anyway (§3.4(d) measured PCRE2 refusing
+exactly that inside a lookbehind, error 125).
+
+**ONE MECHANISM, FOUR CONSUMERS.** `callgraph.c` computes the SCC condensation
+once and answers: `W` (§5.3), `vm_nullable` (§2.6), `minw` (here), and the
+splice-eligibility test (§6.3). A fifth would be wave G's `nfa.c` arm.
 
 ---
 
@@ -1854,7 +1943,8 @@ measurement behind it rather than a worry.
 | **S-SR8** | §5.6: the depth capacity FIRES and is its own code | `emit_vm.c` | `harness recursion` | return `RX_R_FRAMES` instead of `RX_R_RECURSE` | the left-recursion cells report the wrong give-up. **Only detectable if the corpus distinguishes the codes**, so §10.2's `.rxt` needs a give-up-code expectation — which does not exist today (`tests/harness/CLAUDE.md`: the driver prints `steps`/`frames`) and §11 wave A adds |
 | **S-SR9** | §2.6: `vm_nullable` answers TRUE for a nullable callee | `emit_vm.c` | `harness recursion` | return `false` from the `A_CALL` arm | **`PCREC_ERR_STEPS` or `_FRAMES`, not a hang** — every VM artifact carries a step budget by default — on `^(?(DEFINE)(?<g>a?))(?&g)*$`. The harness must score the error return as the failure |
 | **S-SR10** | §4.3: a CALL TARGET joins the marked set | `atomic.c` | `harness recursion` | drop `A_CALL.target` from `pcrec_bref_mark`'s union | **the `--no-captures` axis only.** `(a)(?1)` under `--no-captures` loses group 1's slots and the call has no body. Needs the gate's fourth axis to exist |
-| **S-SR11** | §4.3: the mark is TRANSITIVE | `callgraph.c` | `harness recursion` | mark only the direct target | `(a(?3))(b)((c))` under `--no-captures` — a two-hop chain — goes red while a one-hop cell stays green |
+| **S-SR11** | §4.4: no walker FOLLOWS `.body` where the rule says DECLINE | `atomic.c` | `harness recursion` | make `pcrec_has_atomic`'s `A_CALL` arm descend into `.body` | **THE COMPILER HANGS** on `(a(?1))` — there is no answer to compare, so no answer-comparison row can detect it. **This row is scored by the harness TIMEOUT**, and it is the one sabotage in this module whose detector is "the process did not finish". `tests/mech/`'s timeout suite is the assignment, and the row says so rather than sitting in `harness` where a hang reads as an infrastructure failure |
+| **S-SR11a** | §4.3: a two-hop call chain survives `--no-captures` | `atomic.c` | `harness recursion` | drop `mark[target] = true` from `pcrec_bref_mark`'s `A_CALL` arm | `(a(?3))(b)((c))` under `--no-captures` loses group 3's slots. **Note this is NOT a transitivity row** — §4.3 withdrew that — it is the one-line arm's row, and the two-hop shape is used because it is the cell the withdrawn fixpoint claimed to need |
 | **S-SR12** | §4.4: `revdet.c`'s `A_CALL` arm DECLINES | `revdet.c` | `harness recursion` | descend instead of declining | `vm_rev_emit`'s `default:` fires: *"internal error: bad AST node in the backward walk"*. **A hard compile error, which is the right failure** — the row asserts it is reached, not that an answer changed |
 | **S-SR13** | §5.8: exactly TWO indirect jumps in a call-bearing artifact, ONE in a call-free one | `emit_vm.c` **+ 2nd site** | `codegen` | make the return a `switch` over a return-site id | **no answer changes.** The codegen count is the only detector — S109's shape, and the row that stops a third `goto *` arriving unremarked |
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
@@ -1867,7 +1957,7 @@ measurement behind it rather than a worry.
 emission must move together or the artifact declares a capacity it does not
 use; and **S-SR13**, which is two sites by construction.
 
-**TWENTY-ONE ROWS** (seventeen plus §5.3a's five per-family additions, minus none), and the count is stated because
+**TWENTY-TWO ROWS** (seventeen, plus §5.3a's five per-family additions, plus §4.4's hang row, with S-SR11 retargeted), and the count is stated because
 `lookaround_design.md` §9.3 records its own first version disagreeing with
 itself three ways. **A `recursion` mech ARM must be wired** in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
