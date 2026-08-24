@@ -884,19 +884,27 @@ ATOMICITY = [
 # leftrec.rxt -- SS3.3: no compile-time refusal; the depth capacity gives up
 # ===========================================================================
 LEFTREC = [
-    ("THE GIVE-UP CELLS: direct, indirect and nullable-prefix left "
+    ("THE EMPTY-LANGUAGE CELLS: direct, indirect and nullable-prefix left "
      "recursion, each with no non-recursive branch reachable on the given "
-     "subject (design SS3.3/SS5.6/SS9.3 S-SR8). `gu frames` per D71.1 -- "
-     "the default artifact's give-up for a deep/runaway call is "
-     "PCREC_ERR_FRAMES; PCREC_ERR_RECURSE only exists under the diagnostic "
-     "generation axis, unbuilt here.", [
-        GU(r"^((?1)a)$", "a", "frames", RC,
+     "subject (design SS3.3/SS5.6/SS9.3 S-SR8). ALL THREE ARE RULED "
+     "NOMATCH, not give-ups, and that uniformity is [DD-14.EMPTY]'s whole "
+     "content: SS4.4b's fixpoint gives every one of them minw = INFINITY at "
+     "the ROOT, and wave E made the search entry answer NOMATCH on that "
+     "before pushing a frame. At wave B+C the first two read `gu frames` "
+     "and the third read `n`, decided by whether the pattern happened to "
+     "carry a quantifier for the MRL bound to ride on. A `gu frames` cell "
+     "is still the right expectation for a genuinely RUNAWAY shape WITH a "
+     "base case (see quantified.rxt's `^(?R)*$`), where the language is "
+     "not empty and no width bound can rule the subject out.", [
+        GU(r"^((?1)a)$", "a", None, RC,
+           ruling="design SS4.4b + SS12 P-12, landed as [DD-14.EMPTY] in wave E. This cycle has NO BASE CASE, so SS4.4b's Kleene-from-infinity fixpoint over the call graph gives its callee minw = INFINITY, and P-12 RULES that infinity is REACHABLE, is a LEGAL COMPILE, and means the language is EMPTY. Wave E made that ruling UNIFORM: `<prefix>_search` compares the remaining subject against the ROOT's minimum width and answers NOMATCH before a single frame is pushed (the artifact stamps it, `RX_VM_ROOT_MINW`). BEFORE wave E this cell read `gu frames`, and the reason was an ACCIDENT OF SHAPE rather than a fact about recursion: the MRL bound had to be emitted somewhere, its sibling `^(a?(?1)b)$` held a `a?` quantifier to carry one and this cell held no quantifier at all, so one empty language answered in constant time and the other ran until the frame buffer gave up. MEASURED at wave E: `pcrec_minw(root)` is PCREC_MINW_MAX (2^40) on ALL THREE siblings once `pcrec_callgraph_build` has run. libpcre2 10.46 spends its own nested-recursion guard (rc -52) to reach the same refusal; SS5.9 scores the pair 'agreed in kind' and SS5.6 records that on a runaway a BOUNDED answer is strictly better than 10.46's, whose rc -52 grows QUADRATICALLY in the subject. A give-up is pcrec's own artifact behaviour and never an oracle fact, which is why this expectation could move without the oracle moving.",
            note="DIRECT: group 1's body is `(?1)a` with no alternative -- "
                 "the call is unconditional, so no subject terminates it. "
                 "SUBJECT CHOICE: the shortest legal one, \"a\" -- the "
                 "runaway is reachable at ANY length, so there is nothing "
                 "to gain from a longer one."),
-        GU(r"^(?:(?<p>(?&q)a)){0}(?:(?<q>(?&p)b)){0}(?&p)$", "ab", "frames", RCN,
+        GU(r"^(?:(?<p>(?&q)a)){0}(?:(?<q>(?&p)b)){0}(?&p)$", "ab", None, RCN,
+           ruling="design SS4.4b + SS12 P-12, landed as [DD-14.EMPTY] in wave E. This cycle has NO BASE CASE, so SS4.4b's Kleene-from-infinity fixpoint over the call graph gives its callee minw = INFINITY, and P-12 RULES that infinity is REACHABLE, is a LEGAL COMPILE, and means the language is EMPTY. Wave E made that ruling UNIFORM: `<prefix>_search` compares the remaining subject against the ROOT's minimum width and answers NOMATCH before a single frame is pushed (the artifact stamps it, `RX_VM_ROOT_MINW`). BEFORE wave E this cell read `gu frames`, and the reason was an ACCIDENT OF SHAPE rather than a fact about recursion: the MRL bound had to be emitted somewhere, its sibling `^(a?(?1)b)$` held a `a?` quantifier to carry one and this cell held no quantifier at all, so one empty language answered in constant time and the other ran until the frame buffer gave up. MEASURED at wave E: `pcrec_minw(root)` is PCREC_MINW_MAX (2^40) on ALL THREE siblings once `pcrec_callgraph_build` has run. libpcre2 10.46 spends its own nested-recursion guard (rc -52) to reach the same refusal; SS5.9 scores the pair 'agreed in kind' and SS5.6 records that on a runaway a BOUNDED answer is strictly better than 10.46's, whose rc -52 grows QUADRATICALLY in the subject. A give-up is pcrec's own artifact behaviour and never an oracle fact, which is why this expectation could move without the oracle moving.",
            note="INDIRECT: p calls q calls p, a two-node cycle with no "
                 "non-recursive branch on either side. SUBJECT CHOICE: "
                 "\"ab\" -- design SS3.3's own L2 measurement (`out/"
@@ -925,17 +933,20 @@ LEFTREC = [
                 "FIRST item' misses this shape. SUBJECT CHOICE: \"ab\" -- "
                 "design SS3.3's own L3 measurement uses this exact "
                 "subject for the identical pattern. "
-                "**AND NOTE WHAT THIS CELL DOES NOT SHARE WITH ITS TWO "
-                "SIBLINGS ABOVE.** All three have an EMPTY language, but "
-                "only this one answers in constant time: the MRL bound has "
-                "to be EMITTED somewhere, and the `a?` quantifier is the "
-                "only place in the three that carries one. The siblings "
-                "give up instead -- so today the class answers two ways "
-                "depending on whether the pattern happens to hold a "
-                "quantifier, a shape that has nothing to do with recursion. "
-                "That non-uniformity is a REPORTED FOLLOW-UP (root-level "
-                "minw = infinity answered at the search entry, before any "
-                "frame is pushed), NOT something wave B+C implemented."),
+                "**AND WHAT IT NO LONGER FAILS TO SHARE WITH ITS TWO "
+                "SIBLINGS ABOVE.** All three have an EMPTY language. At wave "
+                "B+C only this one answered in constant time, because the "
+                "MRL bound has to be EMITTED somewhere and the `a?` "
+                "quantifier was the only place in the three that carried "
+                "one; the siblings gave up instead, so the class answered "
+                "two ways depending on whether the pattern happened to "
+                "hold a quantifier -- a shape with nothing to do with "
+                "recursion. [DD-14.EMPTY] (wave E) removed that "
+                "non-uniformity at its root: `<prefix>_search` now "
+                "compares the remaining subject against the ROOT's "
+                "minimum width, so all three answer NOMATCH before a "
+                "frame is pushed and this cell is no longer the lucky "
+                "one."),
     ]),
     ("THE CELL THAT MUST MATCH (design SS3.3, L5b): 199 nested "
      "recursions, every one entered at offset 0 -- refusing this would be "
