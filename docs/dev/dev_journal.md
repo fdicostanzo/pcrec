@@ -13583,3 +13583,30 @@ rc=0 in 45 min, zero reports both axes (test 25,271/0, resource 19/19
 solo, strict earlier). [DD-14.FB]'s SPEC half MERGED (0f62433) with
 §7.4's ASK-1 marked RULED (D73). Waves E and F are in their landing
 runs.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 12) — WAVE F MERGED (514f154): the inventory catches up with the behaviour; DEFINE is a row, not a mechanism
+
+srF (opus, 11 commits) delivered and merged: smoke 6/6, anchors resolve,
+strict clean, `(?(DEFINE)(?<g>ab))(?&g)$` compiles, 36 recursion rows.
+Its headline measurement: all four of §8.1's "missing families" already
+compiled and agreed with libpcre2 (the ports read the whole digit run);
+what was missing was the INVENTORY — so they land as RF_INDEX rows and
+the wave moved no artifact byte (identity 2199/2199 once its classifier
+learned that `(?(DEFINE)` is now this module's — the gate caught that
+gap, as designed). Four design corrections, each measured: the quant
+column was wrong on 13 rows, not 9; the DEFINE row is ANY_ENGINE, not
+VM_ONLY (a definition is zero-width; `--engine=dfa --no-captures` on a
+`{0}` body yields a pure DFA); 10.46 has no "non-definition body"
+refusal (`(?(DEFINE)abc)` is accepted); S-SR13 already existed (extended
+with four DEFINE fixtures — a definition nobody calls costs no region).
+D71.4 delivered as "one row, zero new mechanism" MADE CHECKABLE: codegen
+rule 4 asserts the DEFINE and `{0}` spellings emit the same program byte
+for byte. The compliance page's subroutine survey row had read REJECTED
+since B+C landed — the recurring failure the refresh skill's header
+records — now OK-LIMITED (call-specific, measured frame cost).
+realworld.rxt is [LIB]'s entry #1 (orig/factored/DEFINE agree on the
+specimen's 85 subjects; the throughput and deep-repetition subjects
+excluded until G/FB). tests/recursion 553/0; make test 25,423/0. srE was
+told to rebase onto main (F's classifier fix and E's four axes touch the
+same gate script) before delivering. Battery on the F-merged tree: make
+test running.
