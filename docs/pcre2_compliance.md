@@ -1962,8 +1962,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 118 rows 
 | after `\` | `\K` | `REJECTED` | `built` | planned | `assertions` | vm | reset the reported start of the match |
 | after `\` | `\k<name>` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
 | after `\` | `\g{-1}` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
-| after `\` | `\g<1>` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) |
-| after `\` | `\g'1'` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference |
+| after `\` | `\g<1>` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) |
+| after `\` | `\g'1'` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference |
 | after `\` | `\p{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
 | after `\` | `\P{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
 | after `\` | `\Q` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
