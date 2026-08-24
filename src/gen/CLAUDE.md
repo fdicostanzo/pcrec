@@ -513,6 +513,29 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   does not arise: the VM has no per-byte dispatch at all, so its one indirect
   jump is on the cold path by construction.
 
+  **[M6.6.2 wave A2] FIVE `A_LOOK` ARMS LANDED HERE INERT, AND TWO OF THEM ARE
+  DELIBERATELY INCOMPLETE.** Nothing produces an `A_LOOK` until wave B+C, so
+  `vm_emit`'s arm is a LOUD `ctx_fail` naming the wave rather than a lowering,
+  and that is what makes the other four safe to land unfinished.
+  `vm_count_slots` descends into the body and allocates NONE of the
+  lookaround's own slots (wave B+C owes them, in the same edit as `vm_look` —
+  under-counting there is an out-of-bounds write in EMITTED code), and
+  `vm_cost` charges the body plus one frame and two trail entries against
+  `lookaround_design.md` §3.2/§3.3's DESIGNED shape rather than a landed one.
+  `vm_nullable` answers TRUE (§2.6 — the arm that stops a quantified
+  lookaround burning its step budget) and `vm_rev_caps` declines. NONE of the
+  five reads `u.look.behind`/`.neg`/`.atomic`: §3.1(a) settles one kind rather
+  than four on the strength of those flags having exactly ONE reader
+  (`vm_look`), so an arm here that consulted one would be the second reader
+  that argument denies exists.
+
+  **`pcrec_has_lookaround` IS CALLED AND ITS ANSWER IS DISCARDED**, beside
+  `v.mrl_win`, and the site says so at length. Wave E adds the conjunct; wave
+  A2 places only the CALL and its POSITION (post-discharge, on the same
+  `root` as `pcrec_has_atomic`), because with no producer the predicate cannot
+  be anything but false and adding the conjunct now would pre-satisfy sabotage
+  row S-LA12. Do not read the call as live.
+
   The pieces worth knowing before editing it:
 
   - **`slot_values`, one flat array** (§2.4) holding capture pairs, empty-iteration

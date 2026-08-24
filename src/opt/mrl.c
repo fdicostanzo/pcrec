@@ -1,4 +1,12 @@
-/* [M4.6d] MINIMUM-REMAINING-LENGTH (MRL) pruning: the minimum-width analysis.
+/* [M4.6d] MINIMUM-REMAINING-LENGTH (MRL) pruning: the width analysis.
+ *
+ * TWO FUNCTIONS LIVE HERE, and the second arrived long after the first.
+ * `pcrec_minw` is [M4.6d]'s and is what this header describes; `pcrec_maxw`
+ * ([M6.6.2] wave A, at the bottom of the file) is its mirror, with the SAME
+ * saturating arithmetic, the SAME exhaustive-switch obligation, and the
+ * OPPOSITE sound direction. Everything below about under-estimating being
+ * safe is about `pcrec_minw` ALONE; read `pcrec_maxw`'s own header before
+ * touching an arm there.
  *
  * docs/design/k23_impl/k23_design.md §4.3, adopted by D51 ruling 1 as K23's
  * fix of record. `pcrec_minw(a)` is the least number of subject bytes any
@@ -33,6 +41,15 @@
  * Lookaround, backreferences and `(*ATOMIC)` have no producers today; when
  * they gain one, each contributes 0 here until someone measures otherwise,
  * and the exhaustive switch is what forces that decision to be made.
+ *
+ * [M6.6.2] THAT SENTENCE HAS NOW BEEN CASHED FOR ALL THREE, and it was right
+ * about each — but only `A_ATOMIC` inherited its 0 unexamined. `A_BREF` got a
+ * measured argument at [M6.5.2] (0 is EXACT, because a group can publish an
+ * empty capture) and `A_LOOK` got one at [M6.6.2] (0 for a LOOKAHEAD because
+ * it consumes nothing, and 0 for a LOOKBEHIND because its bytes are behind
+ * the cursor and this file counts bytes still to be consumed). The value the
+ * placeholder predicted and the value the check produced agree in every case;
+ * what changed is that they are now claims rather than defaults.
  */
 
 #include <string.h>
@@ -128,6 +145,27 @@ long long pcrec_minw(const Ast *a)
          * same number as `pcrec_minw` of the pattern without it, which is
          * what makes the prune bound this file computes indifferent to it. */
         case A_KRESET:
+        /* [M6.6.2] A LOOKAROUND CONTRIBUTES 0, AND IT IS 0 BECAUSE IT WAS
+         * CHECKED — not because this file's header inherited it (design
+         * §3.1(d)). The header's original sentence ("Lookaround,
+         * backreferences and `(*ATOMIC)` have no producers today; when they
+         * gain one, each contributes 0 here until someone measures otherwise")
+         * was a placeholder written before any producer existed. Checked:
+         *
+         *   - for a LOOKAHEAD it is right because the construct inspects bytes
+         *     AHEAD of the cursor and consumes none, so it adds nothing to the
+         *     minimum number of bytes still to be consumed;
+         *   - for a LOOKBEHIND it is right too, and for a reason the first
+         *     reading gets backwards: those bytes are BEHIND the cursor, and
+         *     this analysis counts bytes still to be CONSUMED. A lookbehind of
+         *     width 3 does not require three more bytes of subject; it
+         *     requires three bytes already passed.
+         *
+         * The VALUE does not change and the CLAIM'S STATUS does, which is the
+         * whole content of this comment. The body is NOT descended into for
+         * the same reason: whatever the body needs, the OUTER match does not
+         * consume it. */
+        case A_LOOK:
             return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));
@@ -159,5 +197,128 @@ long long pcrec_minw(const Ast *a)
          * AKind was added and this switch was not extended, which -Wswitch
          * catches at build time; the trap is for a build that suppressed it. */
         return 0;
+    }
+}
+
+/* [M6.6.2 wave A] THE MAXIMUM WIDTH, and it is `pcrec_minw` MIRRORED IN EVERY
+ * SENSE INCLUDING THE ONE THAT MATTERS: the sound direction is REVERSED.
+ *
+ * `pcrec_minw` may under-estimate for free. This function may OVER-estimate
+ * for free, and an UNDER-estimate here is the silent miscompile. The reason is
+ * its consumer: `lookaround_design.md` §2.5 admits a lookbehind branch only
+ * when `minw == maxw`, and emits a back-step of exactly that many bytes. A
+ * maxw below the truth makes a VARIABLE-width branch look fixed, and the
+ * artifact then steps the wrong distance with no diagnostic anywhere. So every
+ * arm below that cannot answer exactly rounds UP, and PCREC_W_UNBOUNDED is
+ * where rounding up runs out.
+ *
+ * THE SWITCH IS EXHAUSTIVE WITH NO DEFAULT ARM for `pcrec_minw`'s reason, one
+ * step stronger: a new kind inheriting a `default: return 0` here would claim
+ * a new construct is ZERO-WIDTH, which is not merely a loose bound but a false
+ * one, and it is the direction that deletes bytes from a back-step.
+ *
+ * THE ENCODING. `A_CLASS` answers 1 byte, which is EXACT for everything pcrec
+ * can compile today and not merely conservative: `PCREC_ENC_UTF8` has no
+ * backend and `src/core/compile.c:196` REFUSES it by name, so no artifact
+ * exists in which a class consumes two bytes. That refusal is this arm's
+ * guard. When the utf8 backend lands, `pcrec_minw`'s 1 STAYS SOUND (it is an
+ * under-estimate, its safe side) and THIS ONE DOES NOT — it must become the
+ * encoding's maximum code-unit length, or the fixed-width rule silently
+ * accepts variable-width branches. The two functions look identical here and
+ * have opposite obligations, which is exactly why it is written on both.
+ *
+ * WHAT IS UNBOUNDED, and each is a decision rather than a fallthrough:
+ *   - `rmax == -1`: no static ceiling on the repetition count.
+ *   - `A_BREF`: a backreference consumes `ref_end - ref_start` bytes, a
+ *     MATCH-TIME quantity. `pcrec_minw` answers 0 EXACTLY (a group can
+ *     publish an empty capture); the upper end has no such exact answer,
+ *     because the referenced group's own width is not reachable from this
+ *     node (it holds candidate NUMBERS, not the group's AST) and a quantified
+ *     group's published capture is whatever its LAST iteration consumed. So:
+ *     unbounded, deliberately, and a lookbehind branch containing a
+ *     backreference is therefore never fixed-width — which is the answer
+ *     libpcre2 gives too. */
+long long pcrec_maxw(const Ast *a)
+{
+    long long acc = 0;
+
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS:
+            /* One byte, exactly — see the header's ENCODING paragraph. */
+            return mrl_sat_add(acc, 1);
+        case A_EMPTY:
+        case A_BOL:
+        case A_EOL:
+        case A_END:
+        /* The assertions consume no byte at their widest either: `\b`/`\B`
+         * READ the bytes around the position without consuming one, so 0 is
+         * exact at BOTH ends of the interval, not conservative at either. */
+        case A_WORDB:
+        case A_NWORDB:
+        /* `\G` compares the position against `startpos`; `\K` writes one.
+         * Neither reads or advances the cursor. */
+        case A_GSTART:
+        case A_KRESET:
+        /* [M6.6.2] 0 for `pcrec_minw`'s arm's reason, read at the other end of
+         * the interval: a lookaround consumes nothing on EVERY path, not
+         * merely on some, so 0 is exact at the maximum as well as at the
+         * minimum. See that arm for why a lookbehind's width does not appear
+         * here either.
+         *
+         * THIS IS THE ARM WHOSE OWN CONSUMER IS THE FIXED-WIDTH RULE, so the
+         * exactness matters twice: a NESTED lookaround inside a lookbehind
+         * branch (`(?<=a(?=b)c)`) contributes 0 at both ends, which makes that
+         * branch fixed-width 2 rather than variable — the answer libpcre2
+         * gives. The body is not descended into. */
+        case A_LOOK:
+            return acc;
+        case A_BREF:
+            /* UNBOUNDED — see the header. This is the one arm where minw's
+             * "and it is EXACT" argument does not carry over to maxw. */
+            return mrl_sat_add(acc, PCREC_W_UNBOUNDED);
+        case A_CAT:
+            acc = mrl_sat_add(acc, pcrec_maxw(a->r));
+            a = a->l;
+            continue;
+        case A_CAP:
+            a = a->l;
+            continue;
+        /* `maxw(A_ATOMIC(X)) <= maxw(X)`, and the bound is used as an upper
+         * one so `<=` is all this file needs. `pcrec_minw`'s arm calls the
+         * atomic group TRANSPARENT because the cut removes MATCHES and never
+         * BYTES; the same sentence read from the other end says every string
+         * the group matches is one the body matches, so the body's maximum
+         * is an upper bound on the group's. It can be LOOSE — the cut may
+         * have removed the widest match — and loose UP is this file's safe
+         * direction. It is `A_CAP`'s arm for a slightly weaker reason. */
+        case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_ALT: {
+            long long l = pcrec_maxw(a->l), r = pcrec_maxw(a->r);
+            return mrl_sat_add(acc, l > r ? l : r);
+        }
+        case A_REP: {
+            /* `rmax == -1` (unbounded) IS special here, unlike in `minw`:
+             * the maximum is the repetition count times the body's width,
+             * and an absent count is PCREC_W_UNBOUNDED.
+             *
+             * Note what the saturating multiply then does for free, and it
+             * is the whole reason PCREC_W_UNBOUNDED shares MRL_MINW_MAX's
+             * value: `mrl_sat_mul(UNBOUNDED, 0)` is 0, so `(?:\b)*` and
+             * `(?:)*` answer 0 rather than "unbounded" — a zero-width body
+             * repeated any number of times still consumes nothing, and a
+             * lookbehind branch made of them is legitimately fixed-width. */
+            long long reps = a->u.rep.rmax < 0 ? PCREC_W_UNBOUNDED
+                                               : (long long)a->u.rep.rmax;
+            return mrl_sat_add(acc, mrl_sat_mul(reps, pcrec_maxw(a->l)));
+        }
+        }
+        /* No default arm: see `pcrec_minw`'s trap and the header. Returning
+         * PCREC_W_UNBOUNDED rather than 0 is deliberate — if a build ever
+         * suppresses -Wswitch, the trap must answer in the SAFE direction for
+         * THIS function, which is the opposite of minw's 0. */
+        return PCREC_W_UNBOUNDED;
     }
 }

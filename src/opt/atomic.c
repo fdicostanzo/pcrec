@@ -10,6 +10,13 @@
  *                         the rows that reach no doorway)
  *   pcrec_discharge_atomic delete every cut that is PROVABLY a no-op
  *
+ * plus the two [M6.5.2] backreference walks below, and — since [M6.6.2] —
+ * `pcrec_has_lookaround`, which is placed HERE and not in a lookaround file
+ * because it is `pcrec_has_atomic`'s twin in every respect that matters: same
+ * shape, same post-discharge reading, same single consumer (`Vm.mrl_win`), and
+ * the two are read in ONE expression at that consumer. A predicate whose only
+ * job is to sit beside another one in a boolean AND belongs beside it.
+ *
  * RECURSION DISCIPLINE (D10/DD-10/R1 R-2, and K20 the third time): `A_CAT` and
  * `A_ALT` spines are LEFT-NESTED and as long as the pattern, so every walk
  * below descends a spine ITERATIVELY and recurses only into the items hanging
@@ -46,6 +53,14 @@ bool pcrec_has_atomic(const Ast *a)
          * unused — so it can neither BE a cut nor CONTAIN one. */
         case A_BREF:
             return false;
+        /* [M6.6.2] DESCENDS INTO THE BODY. A cut inside a lookaround body is
+         * still a cut in the tree — `(?=(?>a|ab))b` carries one — and this
+         * predicate's question is "is there a cut in the ARTIFACT", not "is
+         * there one on the outer path". Answering false would drop the MRL
+         * window ceiling's exclusion for a pattern that still has a cut in it,
+         * which is design §4's measured silent match loss reached through a
+         * new door. */
+        case A_LOOK:
         case A_CAP: case A_REP:
             a = a->l;
             continue;
@@ -62,6 +77,64 @@ bool pcrec_has_atomic(const Ast *a)
             }
             continue;
         }
+        return false;
+    }
+}
+
+/* ---- has_lookaround: §5.6's predicate, and it is has_atomic's twin --------
+ *
+ * [M6.6.2] Does this tree carry an `A_LOOK`? Read at EMISSION, AFTER the
+ * discharge, for the reason `pcrec_has_atomic` is read there and design
+ * §5.6(4) states: if a future pass ever deletes a provably vacuous lookaround
+ * (§5.7's territory, and NOT `pcrec_discharge_atomic`'s — see its A_LOOK arm),
+ * the pattern should get its MRL window ceiling back. Asking the tree rather
+ * than a parse-time counter is what keeps that a decision about scope instead
+ * of an assumption baked into a call site.
+ *
+ * WHY THE PREDICATE IS FLAT rather than shaped. §5.4 shows the prefilter
+ * hazard needs a lookaround INSIDE AN ALTERNATION, so this could have asked
+ * for that shape instead of for any lookaround. Design §5.6 names and rejects
+ * that: a shape condition is a second analysis with no independent check, the
+ * atomic precedent is a flat predicate, and the measured cost of flat is that
+ * a pattern loses a pruning ceiling it would rarely have had — against a
+ * SILENT MATCH LOSS if the shape analysis is wrong anywhere.
+ *
+ * ITS CONSUMER IS `Vm.mrl_win` (src/gen/emit_vm.c), in the same expression as
+ * `pcrec_has_atomic` and at the same point in the pipeline. Design §5.6(3) is
+ * the part an editor must carry: the flag is not the only thing that has to
+ * change, because the lines that BUILD the ceiling are gated separately, and
+ * codegen rule 1 asserts on both sources. Sabotage rows S-LA12 and S-LA13. */
+bool pcrec_has_lookaround(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_LOOK:
+            return true;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        /* no subtree at all — `l` and `r` are unused on a backreference. */
+        case A_BREF:
+            return false;
+        case A_CAP: case A_REP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (pcrec_has_lookaround(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (pcrec_has_lookaround(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        /* No default arm — this file's header rule. A kind added later must be
+         * a compile error here, because "can this construct CONTAIN a
+         * lookaround" is a question only its author can answer, and inheriting
+         * "no" leaves a live window ceiling on an artifact that has one. */
         return false;
     }
 }
@@ -96,6 +169,12 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
          * has already answered for the node itself. */
         case A_BREF:
             return false;
+        /* [M6.6.2] DESCENDS, generically: this walk is not about lookaround at
+         * all, it asks whether ANY row's producer built anything anywhere in
+         * the tree, and a node built inside a lookaround body is still a node
+         * this row's producer built. The `a->reg == row` test at the top of
+         * the loop has already answered for the A_LOOK node itself. */
+        case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
@@ -213,6 +292,26 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
      * has no body for a cut to hide in. */
     case A_BREF:
         return a;
+    /* [M6.6.2] DESCENDS INTO THE BODY, and the A_LOOK node itself is never
+     * touched. Two halves, and they are different decisions:
+     *
+     * DESCENDING is right because the discharge is about A_ATOMIC nodes, and a
+     * dead cut inside a lookaround body is as dead as one anywhere else. The
+     * discharge is a DELETION that splices a body in, so what it does inside
+     * the lookaround body cannot change the body's own sub-program contract:
+     * §5.3's verdict is "the cut deletes nothing", and a rewrite that deletes
+     * nothing cannot change what the body matches, which is the only thing the
+     * enclosing assertion reads.
+     *
+     * NOT DELETING THE A_LOOK is the other half, and design §5.7 is why it is
+     * written down rather than assumed. A future pass MAY delete a provably
+     * vacuous lookaround (§5.6(4) is built on that possibility — it is why
+     * `pcrec_has_lookaround` is asked of the POST-discharge tree). This pass is
+     * not that pass: its whole verdict machinery is possessify's §2.2 answer
+     * about an A_REP, which says nothing about whether an assertion is
+     * vacuous. Inventing a lookaround deletion here would be a second,
+     * unmeasured rewrite riding a verdict computed for a different question. */
+    case A_LOOK:
     case A_CAP: case A_REP:
         a->l = dis_walk(d, a->l);
         return a;
@@ -301,6 +400,13 @@ bool pcrec_has_bref(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
             return false;
+        /* [M6.6.2] DESCENDS. A backreference inside a lookaround body compares
+         * subject text to subject text exactly as one anywhere else does —
+         * `(?=(a)\1)` is a real pattern — and §7.1's consequence (a
+         * backref-bearing pattern gets NO prefilter) has to follow it in
+         * there. Answering false would hand such a pattern a prefilter built
+         * from an approximation that is not even a sound superset. */
+        case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
@@ -347,6 +453,11 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
             return;
+        /* [M6.6.2] DESCENDS, for `pcrec_has_bref`'s reason: the marked set is
+         * the UNION of every A_BREF's `refs` over the WHOLE tree, and a
+         * reference the mark missed is read under write-on-traverse — E1
+         * re-admitted through a lookaround body. */
+        case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;

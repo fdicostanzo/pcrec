@@ -129,6 +129,24 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * against libpcre2 10.46: `(?>^)*` and `(?>a)*` both compile, matching the
      * `(^)*` / `(a)*` cells this predicate exists to reproduce. */
     case A_ATOMIC:
+    /* [M6.6.2] NOT a bare anchor, and it is `A_ATOMIC`'s answer for
+     * `A_ATOMIC`'s reason with a measurement of its own behind it.
+     *
+     * This predicate is about a BARE zero-width construct standing alone as a
+     * group's whole body; a lookaround is a BRACKETING construct with a body.
+     * The rule it encodes is PCRE2's GRAMMAR, not "is this zero-width" — which
+     * matters here more than anywhere else in this list, because a lookaround
+     * IS zero-width and the reflex answer is therefore the wrong one.
+     *
+     * ANSWERING `true` WOULD REFUSE `(?=a)*`, AND DESIGN §2.6 MEASURED THAT
+     * QUANTIFIED LOOKAROUND SHIPS: all fourteen forms compile in BOTH oracles,
+     * including `(?=a)*+`, and the empty-iteration cells (`^(?=a)*a$`,
+     * `^(?:(?=a))*a$`, `^(?:(?=a)|b)*a$`, `^(?:(?!x))*a$`, `^(?:(?=(a)))*a$`)
+     * all terminate in 0.0000s and agree with python. `false` is what lets
+     * `try_quant` accept the quantifier, and `vm_nullable`'s A_LOOK arm is
+     * what stops accepting it from hanging. The two are one decision read by
+     * two passes. */
+    case A_LOOK:
         return false;
     }
     return false;

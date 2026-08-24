@@ -20,6 +20,17 @@ and `tests/counterk/` inherited:
   nowhere when denied, that D51 ruling 2's three obligations have code behind
   them, and that K23 actually COLLAPSED.
 
+**A FOURTH ARRIVED WITH [M6.6.2] wave A** and it does not fit the shape above,
+which is why it is called out rather than folded into the list:
+`maxw_check.c` (run as `run_mrl_tests.sh` §8) reads a number the compiler
+NEVER EMITS. `src/opt/mrl.c` gained `pcrec_maxw` — `pcrec_minw`'s twin with the
+opposite sound direction — whose only consumer is the lookaround module's
+fixed-width rule, which does not exist yet. So none of the three instruments
+above can be red because of it: there is no bound to emit, no differential arm
+to disagree, and no `.rxt` cell whose answer depends on it. The check links
+`libpcrec.a`, parses every `pattern` line in `tests/` to an AST and calls the
+two analyses directly.
+
 ## What this directory is, and what it is NOT
 
 **It is the IMPLEMENTATION lane's test directory.** The `.rxt` files here are
@@ -106,6 +117,22 @@ above, and found nothing.
   `../possessify/possdiff_driver.c` (as the rung-select and counter-K suites
   do) because the claim is identical for every member of D47.3's deny family.
 - `run_mrl_tests.sh` — the structural checks and acceptance cells.
+- `maxw_check.c` — [M6.6.2 wave A] `pcrec_maxw` against the whole `.rxt`
+  corpus, from BOTH SIDES, because either inequality alone is passed by a
+  degenerate implementation: `maxw >= minw` at every NODE (passed by
+  `return PCREC_W_UNBOUNDED;`) AND every oracle-verified span in the corpus
+  within the root's `maxw` (passed by `return 0;`). The second is the only
+  constraint on maxw in this tree that does not come from pcrec — the spans
+  are python-`re`- and libpcre2-verified — and it is the direction that
+  miscompiles, since an under-estimated maxw makes a variable-width
+  lookbehind branch look fixed. `PCREC_MAXW_SABOTAGE={zero,unbounded,swap}`
+  corrupts what the check reads — `zero` and `unbounded` are the two
+  degenerate implementations that pass one inequality each, `swap` returns
+  `minw` — and `run_mrl_tests.sh` §8 requires all three to make it FAIL, on
+  `tests/parse/branch_count_check.c`'s rule that an unsabotaged green check is
+  worth nothing. Measured at wave A: 122 files, 2168 blocks,
+  1914 patterns parsed, 254 refused, 12,637 nodes swept (9,583 with a bounded
+  maxw), 8,901 oracle spans, 0 violations.
 
 ## What the two scripts carry that the corpus cannot
 

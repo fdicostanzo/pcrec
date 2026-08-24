@@ -190,10 +190,27 @@ construction (src/ir) and emission (src/gen).
 
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
-  plus [M6.5.2]'s two BACKREFERENCE tree predicates, which live here for this
-  file's own stated reason: five switches over `AKind` with NO `default:` arm,
-  so a node kind added later is a compile error at each of them rather than a
-  silent inheritance.
+  plus [M6.5.2]'s two BACKREFERENCE tree predicates and [M6.6.2]'s
+  `pcrec_has_lookaround`, which live here for this file's own stated reason:
+  SIX switches over `AKind` with NO `default:` arm, so a node kind added later
+  is a compile error at each of them rather than a silent inheritance. That is
+  six of the tree's twenty-FIVE such sites in one file — its densest
+  concentration of the alarm, and the reason each new whole-tree predicate
+  keeps landing here rather than beside its own module.
+
+  **`pcrec_has_lookaround`** ([M6.6.2], `lookaround_design.md` §5.6) is
+  `pcrec_has_atomic`'s TWIN and is placed beside it because the two are read in
+  ONE expression, at one site, at one point in the pipeline — `Vm.mrl_win` in
+  src/gen/emit_vm.c, post-discharge. Same hazard through a different door: the
+  prefilter is built from the lookaround-ERASED pattern (src/ir/nfa.c lowers an
+  `A_LOOK` to an epsilon), so its window END is not an upper bound on the real
+  match's end, while its rejection and its span START stay sound. FLAT rather
+  than shaped — §5.6 names the narrower "a lookaround inside an alternation"
+  predicate and rejects it as a second analysis with no independent check.
+  **AT WAVE A2 THE PREDICATE IS PLACED AND ITS CONJUNCT IS NOT YET IN
+  `v.mrl_win`**: wave E adds `&& !pcrec_has_lookaround(root)` and sabotage row
+  S-LA12 deletes it. Nothing produces an `A_LOOK` before wave B+C, so the
+  conjunct could not be exercised and would pre-satisfy its own detector.
 
   **`pcrec_has_bref`** is §7.1's predicate — does anything here compare subject
   text to subject text — and its ONE reader is `select_engine.c`, which forces
@@ -476,7 +493,36 @@ construction (src/ir) and emission (src/gen).
   Tests: tests/rungselect/ (its own CLAUDE.md explains why three separate checks
   are needed); failing-direction controls tests/mech/sabotages/S50-S52.
 
-- **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half
+- **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half, and
+  since [M6.6.2] wave A the WIDTH analysis in both directions
+
+  **[M6.6.2 wave A] `pcrec_maxw` JOINED `pcrec_minw` IN THIS FILE, AND ITS
+  SOUND DIRECTION IS THE OPPOSITE ONE.** Everything below about
+  under-estimating being safe describes `pcrec_minw` alone. `pcrec_maxw` — the
+  greatest number of subject bytes any match of a node can consume — may
+  OVER-estimate for free, and an UNDER-estimate is its silent miscompile,
+  because its consumer is the lookaround module's fixed-width rule
+  (`lookaround_design.md` §2.5: a lookbehind branch is admitted only when
+  `minw == maxw`, and the artifact then back-steps exactly that many bytes).
+  Two functions, one arithmetic, opposite obligations — which is why each
+  carries its own header saying which way it rounds. `PCREC_W_UNBOUNDED`
+  (core/internal.h) is where rounding up runs out, and it is deliberately the
+  SAME VALUE as `PCREC_MINW_MAX` so that unbounded ABSORBS through
+  `mrl_sat_add` and, at `mrl_sat_mul(UNBOUNDED, 0)`, correctly collapses to 0
+  for an unbounded repeat of a zero-width body.
+
+  **NOTHING CALLS `pcrec_maxw` YET** (wave B+C's parse hook is its first
+  caller), so its only instrument is `tests/mrl/maxw_check.c` — see that
+  directory's CLAUDE.md for why the three existing instruments structurally
+  cannot see it.
+
+  **THE ONE THING A UTF-8 BACKEND MUST REVISIT.** `A_CLASS` answers 1 byte in
+  both functions. For `minw` that is a deliberate LOOSE under-estimate and
+  stays sound under any encoding; for `maxw` it is EXACT only because
+  `PCREC_ENC_UTF8` has no backend and `src/core/compile.c:196` refuses it by
+  name. When that refusal goes, `maxw`'s arm must become the encoding's
+  maximum code-unit length or the fixed-width rule silently accepts
+  variable-width branches. The two arms look identical and are not.
 
   **[M6.5.2] `A_BREF` CONTRIBUTES 0, and it is EXACT rather than
   conservative** — this file said so before the kind existed ("Lookaround,

@@ -873,6 +873,32 @@ static bool vm_nullable(const Ast *a)
          * zero-width iteration. Sabotage row S107, whose detector is the
          * harness's derived timeout rather than a wrong span. */
         case A_BREF: return true;
+        /* [M6.6.2] TRUE, AND GETTING IT WRONG IS A BUDGET BURN RATHER THAN A
+         * WRONG SPAN — which makes it the arm most likely to be written by
+         * reflex and least likely to be caught by a corpus reading answers.
+         *
+         * A lookaround consumes nothing on EVERY path, whatever its body is:
+         * that is the construct's definition (keep the verdict, throw the
+         * position away), and it is why `pcrec_minw` and `pcrec_maxw` both
+         * answer 0. `false` here would deny the empty-iteration guard to a
+         * quantifier above one, and design §2.6 measured that quantified
+         * lookaround SHIPS — all fourteen forms compile in both oracles, and
+         * `^(?=a)*a$`, `^(?:(?=a))*a$`, `^(?:(?=a)|b)*a$`, `^(?:(?!x))*a$`
+         * and `^(?:(?=(a)))*a$` all answer in 0.0000s and agree with python.
+         * That is only true because the guard is there.
+         *
+         * WHAT THE FAILURE LOOKS LIKE, stated because "it hangs" is the
+         * intuitive and wrong answer (design §9.3, R33 C2-14): every VM
+         * artifact carries a step budget by default and `--fno-step-budget` is
+         * the only opt-out, so the lost guard BURNS the budget and returns
+         * PCREC_ERR_STEPS. A harness that only compares spans scores that as
+         * an error rather than as a mismatch, which is what sabotage row
+         * S-LA9's detector has to be written to notice.
+         *
+         * NOT TRANSPARENT, unlike A_ATOMIC below: this answer does not depend
+         * on the body at all. A lookaround whose body consumes bytes still
+         * consumes none itself. */
+        case A_LOOK: return true;
         case A_CAP:   a = a->l; continue;
         /* [M6.4.2] TRANSPARENT: the cut removes MATCHES, never BYTES, so
          * `(?>X)` can match empty exactly when `X` can. `(?>)` is legal and
@@ -1136,7 +1162,14 @@ static int vm_det_seq(const Ast *a, const uint8_t **out, int cap)
          * [M6.2 wave C] ONE OF §8.3's FOUR `default:` SITES, inspected for
          * `Ast.u.anch.multiline` awareness and needing none: this DECLINES on the
          * kind, and a `$` is zero-width under either spelling. The full
-         * inspection is recorded at the field (src/core/internal.h). */
+         * inspection is recorded at the field (src/core/internal.h).
+         *
+         * [M6.6.2] RE-INSPECTED FOR `A_LOOK` and SOUND UNCHANGED, for the
+         * sentence directly above: a lookaround is ZERO-WIDTH, so "scan ahead
+         * by stride" is wrong for it exactly as it is for `$`, and declining
+         * on the kind is the right answer without reading a field. This is
+         * also the site that GATES the next one — `vm_cap_offsets` runs only
+         * on a body this function approved. */
         return 0;
     }
 }
@@ -1174,6 +1207,11 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
         return at;
     }
     default:
+        /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the third of design §11's four
+         * `default:`-carrying sites. SOUND, and GATED by the row above: `-1`
+         * IS the decline, and this runs only on a body `vm_det_seq` already
+         * approved — which it cannot be with a lookaround in it, since that
+         * function declines on the kind. Both halves hold independently. */
         return -1;   /* unreachable for a vm_det_seq-approved body */
     }
 }
@@ -1292,7 +1330,17 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
          * FORWARD priority order. Returning (rather than walking into the body)
          * keeps this dense index a faithful mirror of what `rd_shape` counted:
          * a group number this walk invented but `rd_shape` never saw would
-         * break the correspondence PCREC_MAX_REVDET_BODY_GROUPS rests on. */
+         * break the correspondence PCREC_MAX_REVDET_BODY_GROUPS rests on.
+         *
+         * [M6.6.2] A LOOKAROUND JOINS IT, same arm and same reason one step
+         * further out: `rd_shape` declines every body containing one (a
+         * lookaround has no reversed spelling at all — its body runs FORWARD
+         * even for a lookbehind, design §3.5), so this is unreachable, and
+         * returning rather than walking into the body keeps this dense index a
+         * faithful mirror of what `rd_shape` counted. A group number this walk
+         * invented from inside a lookaround body would break exactly the
+         * correspondence named above. */
+        case A_LOOK:
         case A_ATOMIC:
             return;
         case A_CAP:
@@ -1763,6 +1811,43 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
         c = vm_cost(v, a->l, false);
         c.trail += 1;
         return c;
+    /* [M6.6.2] THE BODY'S COST PLUS ONE FRAME AND TWO TRAIL ENTRIES, and the
+     * three numbers are three separate claims about design §3.2/§3.3's shape:
+     *
+     *   frames += 1   the NEGATIVE form pushes a resume frame BEFORE the body
+     *                 (§3.3, and sabotage row S-LA4 moves the push after it),
+     *                 so a lookaround's own frame is not zero the way an
+     *                 atomic group's is. Charged for BOTH polarities rather
+     *                 than read off `.neg`: see below.
+     *   trail  += 2   one for the cut's mark, exactly as A_ATOMIC charges
+     *                 (`RX_CUT` on the atomic spellings), and one for the
+     *                 cursor SAVE — `slot_values[POS] = scan_position`, the
+     *                 write §3.2 restores from and sabotage row S-LA2 drops.
+     *                 A trailed write that is not charged sizes `trail_frames`
+     *                 short on the deepest path and answers PCREC_ERR_FRAMES
+     *                 on a subject the artifact can match; S87 is the standing
+     *                 guard for that failure on another construct.
+     *
+     * IT DOES NOT READ `.neg` OR `.atomic`, ON PURPOSE, and that is the
+     * decision rather than an oversight. This analysis is documented as
+     * "conservative in the safe direction throughout: over-estimating cost
+     * lowers the stamped ceiling, which under-promises rather than
+     * over-promises". Charging the union of what any spelling needs is
+     * therefore free in the safe direction, and it keeps design §3.1(a)'s
+     * one-reader property intact — the three flags stay read at `vm_look`
+     * alone, so there is no second reader to drift and no D62 control 3
+     * obligation lands on this file.
+     *
+     * WAVE B+C MUST RE-CHECK THE TWO CONSTANTS against `vm_look` as landed —
+     * this arm is written against §3.2's designed shape, and nothing produces
+     * an A_LOOK yet, so no artifact can currently disagree with it. An
+     * over-charge costs a lower stamped `subject_ceiling` and nothing else; an
+     * under-charge is the K27-class failure named above. */
+    case A_LOOK:
+        c = vm_cost(v, a->l, false);
+        c.frames += 1;
+        c.trail  += 2;
+        return c;
     }
     return c;
 }
@@ -1823,6 +1908,29 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
+    /* [M6.6.2] DESCENDS INTO THE BODY AND ALLOCATES NOTHING OF ITS OWN — a
+     * DELIBERATELY INCOMPLETE arm, and this comment is the handover.
+     *
+     * Descending is required and is not the open question: the body's own
+     * groups, marks and resume points are emitted (wave B+C's `vm_look` emits
+     * the body through `vm_emit`) and must be counted, or two live loops share
+     * one slot. `false` is passed for `under_atomic` because a lookaround's
+     * cut, when it has one, is the ASSERTION's and not a lift of a quantifier
+     * beneath it — the same reading `vm_atomic`'s unlifted branch takes.
+     *
+     * WHAT IS MISSING IS THE LOOKAROUND'S OWN SLOTS. Design §3.2 gives it a
+     * saved cursor and §3.6's non-atomic arms a second family; those are wave
+     * B+C's to add, HERE, in the same edit that writes `vm_look`. This
+     * function's header states the consequence of getting that wrong and it is
+     * not a missed optimisation: `vm_slot_mark(v, v->nmark++)` past
+     * `RX_NSLOTS` is an out-of-bounds write in EMITTED code, K27's class.
+     *
+     * IT IS SAFE TO LAND INCOMPLETE ONLY BECAUSE NOTHING PRODUCES AN A_LOOK IN
+     * THIS WAVE and `vm_emit`'s own arm is a hard `ctx_fail`, so no artifact
+     * can be built from a tree this walk under-counted. Wave B+C removing that
+     * ctx_fail without extending this arm is the exact edit this comment
+     * exists to stop. */
+    case A_LOOK: vm_count_slots(v, a->l, repl, false); return;
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
      * allocates it, and counting one here as well would make `RX_NSLOTS` one
      * too large on every possessive spelling. An UNLIFTED one allocates
@@ -3130,6 +3238,14 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
         return;
     }
     default:
+        /* [M6.6.2] RE-INSPECTED FOR `A_LOOK`, the fourth and last of design
+         * §11's `default:`-carrying sites. SOUND AND LOUD: this falls to a
+         * hard compile error rather than a silent accept, which is the right
+         * outcome, because a lookaround reaching the BACKWARD WALK would mean
+         * the reversed body contains one — a thing that has no meaning (design
+         * §3.5 lowers even a lookbehind with a FORWARD body). It is now
+         * doubly unreachable: `rd_shape` declines the body, and `rd_reverse`
+         * raises its own named error before this walk is ever emitted. */
         break;
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
@@ -4757,6 +4873,24 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     case A_ATOMIC:
         vm_atomic(v, entry, a, next);
         return;
+    /* [M6.6.2 wave A2] A LOUD ARM, NOT A SILENT ACCEPT, and it is the reason
+     * every other A_LOOK arm in this wave is allowed to be inert.
+     *
+     * Nothing produces an A_LOOK until wave B+C wires `pcrec_laport_group`
+     * (src/parse/mod_lookaround.c), so this is unreachable today. It is
+     * written as a hard compile error rather than left to the tail
+     * `ctx_fail` below because the tail's message names no construct: a
+     * half-landed wave B+C — a parse hook that builds the node before the
+     * lowering exists — would report "bad AST node in VM emitter" and send the
+     * next reader hunting for tree corruption.
+     *
+     * WAVE B+C REPLACES THIS LINE WITH `vm_look(v, entry, a, next);` and owes,
+     * in the SAME edit, `vm_count_slots`' A_LOOK arm (see its own note) and a
+     * re-check of `vm_cost`'s two constants. Those three are one change; this
+     * arm is what makes taking only one of them impossible. */
+    case A_LOOK:
+        ctx_fail(v->cx, 0, "internal error: A_LOOK reached the emitter before "
+                           "wave B+C — the lookaround lowering is not built");
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
 }
@@ -5317,6 +5451,37 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * a DD-2 regression by engine_m4.md §4.7's own standard. Keeping rejection
      * and the start seed while dropping only the ceiling costs one predicate. */
     v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root);
+    /* [M6.6.2 wave A2] THE LOOKAROUND PREDICATE IS PLACED HERE AND IS NOT YET
+     * IN THE EXPRESSION ABOVE. READ THAT SENTENCE BEFORE ASSUMING THIS LINE
+     * DOES ANYTHING: today it does not, on purpose.
+     *
+     * Design §5.6(2) makes the finished line
+     *
+     *     v.mrl_win = job->fit.prefilter && !pcrec_has_atomic(root)
+     *                                    && !pcrec_has_lookaround(root);
+     *
+     * for the reason the paragraph above gives about the cut, arriving through
+     * a different door: the prefilter is built from the lookaround-ERASED
+     * pattern (src/ir/nfa.c's A_LOOK arm is an epsilon), so its window END is
+     * not an upper bound on the real match's end, while its REJECTION and its
+     * span START stay sound (design §5.3's one-line proof).
+     *
+     * WAVE A2 DELIBERATELY STOPS SHORT OF THE `&&`, because this wave has NO
+     * PRODUCER of A_LOOK — the predicate cannot be anything but false, so
+     * adding the conjunct would be untestable AND would pre-satisfy sabotage
+     * row S-LA12, whose whole job is to delete it once wave E has a corpus
+     * that can go red. What is placed here is the CALL SITE and its POSITION:
+     * post-discharge, beside `pcrec_has_atomic`, on the same `root`, so that
+     * wave E's edit is one conjunct rather than a decision about where to ask.
+     *
+     * AND §5.6(3) IS THE OTHER HALF OF WAVE E, restated here because the
+     * paragraph above records the atomic version of exactly this mistake: this
+     * flag is not the only thing that must change. The lines that BUILD the
+     * ceiling (the search entry and the retry recompute, below) are gated
+     * separately, and codegen rule 1 asserts on both sources. S-LA13 is that
+     * row, and it sabotages the two BUILDERS while leaving the stamp reading
+     * the flag. */
+    (void)pcrec_has_lookaround(root);
     v.fmin    = 0;   /* nothing follows the whole pattern */
 
     pcrec_gen_names(cx, &g);

@@ -555,6 +555,38 @@ static Frag compile_ast(NB *b, const Ast *a)
      * Reversal is identity for the most trivial reason in the file: there is
      * nothing to reverse. */
     case A_KRESET: return frag_single(b, N_EPS);
+    /* [M6.6.2] A LOOKAROUND LOWERS TO AN EPSILON, BODY AND ALL, and that is
+     * the design (lookaround_design.md §5.2/§5.3) rather than a shortcut.
+     *
+     * It is a DIFFERENT claim from `\K`'s epsilon one arm up. `\K` contributes
+     * nothing to the LANGUAGE, so erasing it is exact. Erasing a lookaround is
+     * NOT exact — it throws away a filter — and the machine built from this
+     * arm therefore recognises a strict SUPERSET. That is the whole point and
+     * it is a one-line proof: a lookaround consumes nothing, so every string P
+     * matches at a position, erase(P) also matches at that position, i.e.
+     * L(P) is a subset of L(erase(P)) EVERYWHERE. Design §5.3.
+     *
+     * THE BODY IS NOT COMPILED, which is what makes the superset a superset
+     * rather than a wrong machine. Splicing the body in as if it were
+     * consuming text would demand bytes the outer match never consumes.
+     *
+     * THE CONSEQUENCE IS LOAD-BEARING, and it is `\K`'s consequence with one
+     * clause deleted. A lookaround pattern is VM-forced
+     * (src/opt/select_engine.c reads the six VM_ONLY rows' stamps), so the
+     * only DFA ever built from this node is the hybrid's PREFILTER — literally
+     * the machine the lookaround-free pattern builds. Its REJECTION is sound
+     * (a position the superset rejects, the real pattern rejects too) and its
+     * span START is sound (a lower bound), so the prefilter SHIPS. Its span
+     * END is NOT an upper bound, which is why `Vm.mrl_win` must exclude a
+     * lookaround-bearing artifact — the identical hazard an atomic group has,
+     * measured for that construct at 114 cells of silent match loss. See
+     * `pcrec_has_lookaround` (src/opt/atomic.c) and design §5.6.
+     *
+     * The general DFA construction — product construction with each body's
+     * recognizer — is chartered as `[ENG-LOOK]` and is not this arm.
+     * Reversal is identity for the same trivial reason `\K`'s is: an epsilon
+     * has nothing to reverse. */
+    case A_LOOK:   return frag_single(b, N_EPS);
     case A_CAT: {
         /* flatten the left-leaning spine iteratively (R-2); in reverse mode
          * the sequence order flips: rev(X·Y) = rev(Y)·rev(X) */

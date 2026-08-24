@@ -411,6 +411,23 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * across a byte, which is the only rewrite that would change the reported
      * start. */
     case A_KRESET:
+    /* [M6.6.2] A LEAF TO BOTH STAGES, `A_BREF`'s arm for `A_BREF`'s reason
+     * and one more of its own.
+     *
+     * Stage 1 merges an alternation run of single-BYTE branches into one
+     * class. A lookaround is not a byte — it consumes none at all — so
+     * `(a|(?=b))` must not become a class, and taking the leaf arm is what
+     * says so. Stage 2 factors a shared literal PREFIX and needs a
+     * compile-time first byte; a lookaround has none.
+     *
+     * THE BODY IS NOT WALKED EITHER, which is the extra half. Normalising an
+     * alternation INSIDE a lookaround body would be sound (the body is an
+     * ordinary sub-pattern) and is declined for the same reason the other
+     * inert arms in this wave decline: no producer exists, so a rewrite in
+     * there could not be exercised by any test, and this pass changes tree
+     * SHAPE — the one class of edit a byte-identity gate is built to notice.
+     * Declining costs an optimisation on a body that does not exist yet. */
+    case A_LOOK:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);

@@ -177,6 +177,20 @@ static const RegRow *first_dfa_excluding(const Ast *a)
          * `analyses[]` gains no line for this module. */
         case A_BREF:
             return NULL;
+        /* [M6.6.2] DESCENDS, and there is NO new predicate anywhere for this
+         * module (design §5.1). SR-8 does the whole job through `Ast.reg`: the
+         * six registry rows are VM_ONLY, their producer stamps every A_LOOK it
+         * builds, and the `a->reg && !(a->reg->engines & ENGM_DFA)` test at
+         * the top of this loop finds it — which is why `analyses[]` gains no
+         * line, exactly as it gained none for backrefs.
+         *
+         * The DESCENT is the part that is not free. This switch's own comment
+         * below says inheriting "no" is the silent wrong answer because it
+         * would let a VM-only construct NESTED inside the new kind reach the
+         * DFA — and a lookaround body is a place other modules' constructs
+         * live. `(?=\K)` is refused by design §2.7, but `(?=(?>a))` is not,
+         * and its A_ATOMIC has to be found. */
+        case A_LOOK:
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;

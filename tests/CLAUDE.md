@@ -178,6 +178,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   compile-time constant) that the differential, the structural checks and the
   step-collapse cell all agreed with, because all three were derived from the
   model the bug was in.
+
+  **[M6.6.2] IT ALSO HOSTS `maxw_check.c`**, which is a different KIND of
+  instrument from the three above and says so in its own CLAUDE.md: it reads a
+  number the compiler never emits. `src/opt/mrl.c` gained `pcrec_maxw`
+  (`pcrec_minw`'s twin with the OPPOSITE sound direction — over-estimating is
+  free, under-estimating is the silent miscompile), whose only consumer is the
+  lookaround module's fixed-width rule and does not exist yet, so no corpus, no
+  differential and no structural check can be red because of it. Half of what
+  it asserts comes from OUTSIDE pcrec: every oracle-verified span in the whole
+  `.rxt` corpus must fit inside its pattern's `maxw`.
 - **`prefilter/`** — [M4.6f] the D46 close-out for the PREFILTER axis:
   `RX_VM_PREFILTER` (the stamp) and `-fprefilter`/`-fno-prefilter` (the
   force pair) for `fit.prefilter` (src/opt/select_engine.c, engine_m4.md

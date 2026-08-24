@@ -26,6 +26,35 @@ SAB_FILE="src/opt/mrl.c"
 SAB_SUITES="mrl mrldiff"
 SAB_DESC="pcrec_minw reports 0 bytes for a byte class, so every follow-min collapses to 0 and no bound is emitted anywhere: the fix silently stops being a fix while every answer stays correct"
 SAB_DOC_FIGURE="tests/mrl/run_mrl_tests.sh §1: the exemplar inside eight steps"
+#
+# [M6.6.2 wave A] THE ANCHOR WAS RE-HOMED, and the drift is worth recording
+# because it is the R33 V-7 shape arriving on an existing row. `src/opt/mrl.c`
+# gained `pcrec_maxw`, whose `A_CLASS` arm is `pcrec_minw`'s LINE FOR LINE —
+# `return mrl_sat_add(acc, 1);` — so the old one-line anchor started matching
+# TWICE and `replace.py` refuses on the count (scripts/m6read_check_sab_anchors.py
+# reported it as ANCHOR COUNT 2, SAB_COUNT 1). The anchor now carries
+# `pcrec_minw`'s own SIGNATURE, which is the only text in the file that can
+# tell the two arms apart and cannot be made ambiguous by a comment edit.
+#
+# IT STILL SABOTAGES `minw` ALONE, deliberately. `pcrec_maxw`'s A_CLASS arm has
+# its own error direction (under-estimating maxw admits a variable-width
+# lookbehind branch as fixed) and its own detector
+# (tests/mrl/maxw_check.c's CHECK 2), so it is a DIFFERENT claim and owes a
+# different row rather than being folded into this one.
 SAB_COUNT=1
-SAB_BEFORE='            return mrl_sat_add(acc, 1);'
-SAB_AFTER='            return mrl_sat_add(acc, 0);  /* SABOTAGE S58 */'
+SAB_BEFORE='long long pcrec_minw(const Ast *a)
+{
+    long long acc = 0;
+
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS:
+            return mrl_sat_add(acc, 1);'
+SAB_AFTER='long long pcrec_minw(const Ast *a)
+{
+    long long acc = 0;
+
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS:
+            return mrl_sat_add(acc, 0);  /* SABOTAGE S58 */'

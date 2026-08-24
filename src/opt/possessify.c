@@ -192,6 +192,33 @@ static First first_of(const Ast *a)
         r.nullable = true;
         return r;
     }
+    /* [M6.6.2] A LOOKAROUND WIDENS TO EVERY BYTE AND IS NULLABLE — the same
+     * maximally conservative answer `A_BREF` gets, reached differently.
+     *
+     * NULLABLE is the LITERAL truth: a lookaround consumes nothing on every
+     * path. The widening is the conservative half, and it is the half that
+     * matters. This analysis is UNSOUND when it under-states what a construct
+     * admits: a FIRST set that is too small makes two sets look disjoint,
+     * possessifies a quantifier whose retreat is the only route to the match,
+     * and deletes it silently. A lookaround is a GATE — it decides which
+     * continuations are live without contributing a byte of its own — and this
+     * representation has no way to express a gate at all. `fst_empty(true)`
+     * would model it as ABSENT, which is exactly the under-statement the file
+     * is not allowed to make.
+     *
+     * The combination makes every disjointness test that meets one FAIL, so a
+     * quantifier near a lookaround keeps its machinery. That is the direction
+     * `pcrec_revdet_first` already takes for `$` and the one this file is
+     * allowed to be wrong in. Note the arm does not read the body: a body that
+     * cannot match makes the assertion FAIL rather than making it narrower,
+     * and "0xff plus nullable" already dominates whatever the body would
+     * contribute. */
+    case A_LOOK: {
+        First r;
+        memset(r.f, 0xff, 32);
+        r.nullable = true;
+        return r;
+    }
     case A_EMPTY:
     /* [M6.2 wave E] `\K` takes A_EMPTY's arm, and it is the ONE arm in this
      * switch that needs no closure argument at all.
@@ -482,6 +509,28 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_BREF:
         g->ok = false;
         return gk_parts_empty(true);
+    /* [M6.6.2] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for a reason
+     * one step subtler, and the subtlety is why it is written out.
+     *
+     * A lookaround genuinely IS zero-width, so `gk_parts_empty(true)` — the
+     * epsilon arm below — looks correct and is even arguably SOUND for the two
+     * questions this automaton decides: erasing a lookaround yields a SUPERSET
+     * language (design §5.3), and (U1) one-unambiguity and (U2) prefix-freeness
+     * are both inherited by a subset. So the automaton would not be lied to.
+     *
+     * It declines anyway, and the reason is that this automaton is not the
+     * only thing possessify decides on. The verdict it feeds is combined with
+     * a FOLLOW-set disjointness test, and design §3.2.1 is explicit that a
+     * lookaround body's follow is NOT the enclosing follow — the assertion's
+     * bytes and the follow's bytes are THE SAME BYTES. Modelling the node as a
+     * genuine epsilon here while the follow machinery cannot see the boundary
+     * is how a positive verdict gets assembled from two half-right halves.
+     * Declining is always available and always safe (the caller reads
+     * `g->ok`), and it costs only the possessification of a quantifier whose
+     * body holds an assertion. */
+    case A_LOOK:
+        g->ok = false;
+        return gk_parts_empty(true);
     case A_EMPTY:
     case A_BOL:
     case A_EOL:
@@ -743,6 +792,47 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * verdict to, and a backreference hosts none. What it MEANS to the
      * analysis is `first_of`'s answer above (every byte, nullable). */
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET: case A_BREF:
+        return;
+
+    /* [M6.6.2] THIS WALK DOES NOT ENTER A LOOKAROUND BODY AT ALL, so no
+     * quantifier inside one is ever possessified. Three reasons, in the order
+     * they were weighed.
+     *
+     * 1. THE FOLLOW DOES NOT CROSS THE BOUNDARY (design §3.2.1). This walk
+     *    THREADS follow, and a lookahead's follow starts at the assertion's
+     *    ENTRY position — so the body's bytes and the follow's bytes are the
+     *    same bytes, and passing `follow` inward would double-count them. The
+     *    A_ATOMIC arm below meets a version of this and answers it by walking
+     *    the body with an EMPTY follow, which is available here too.
+     *
+     * 2. BUT THAT ANSWER WOULD HAVE TO READ `.atomic`, AND THAT IS THE REAL
+     *    OBJECTION. Empty-follow-plus-`may_end` is right for the ATOMIC
+     *    spellings, which commit to the body's first success; it is NOT right
+     *    for `(?*` / `(*napla:`, which can be re-entered, so a quantifier at
+     *    the end of a non-atomic body does have somewhere to retreat to. An
+     *    arm that got this right would make possessify a SECOND READER of
+     *    `Ast.u.look.atomic` — and design §3.1(a) settles ONE KIND rather than
+     *    four precisely on the claim that all three flags are read at exactly
+     *    one site (`vm_look`), "so there is no second reader to drift". This
+     *    arm would be that second reader, and D62 control 3 is the record of
+     *    what happens to a flag with two homes.
+     *
+     * 3. DECLINING IS ALWAYS SAFE. Not possessifying costs run-time work and
+     *    emitted size, never an answer, and nothing produces an A_LOOK in this
+     *    wave, so a verdict granted in there could not be exercised by any
+     *    test in the tree.
+     *
+     * CONSEQUENCE WORTH RECORDING, because design §9.3's S-LA1 (C2-13) asks
+     * for it: possessify cannot narrow ANY lookaround body, whatever is in it.
+     * The row wants a detector body possessify provably cannot touch, and the
+     * proof is now structural rather than per-shape — it does not enter. The
+     * alternation in `(?=(a|ab))\1$` is doubly safe: this pass only ever marks
+     * A_REP nodes, and an alternation with no quantifier over it offers none.
+     *
+     * `first_of` and `gk_build` above are the OTHER two questions and answer
+     * differently: FIRST widens (a lookaround is opaque, so nothing near it is
+     * possessified either) and the position automaton declines outright. */
+    case A_LOOK:
         return;
 
     case A_CAP:

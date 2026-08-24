@@ -427,6 +427,64 @@ else
     bad "not one corpus pattern carries a bound -- the corpus cannot see this pass at all"
 fi
 
+# ---------------------------------------------------------------------------
+# 8. [M6.6.2 wave A] `pcrec_maxw` OVER THE WHOLE .rxt CORPUS (maxw_check.c).
+#
+# The only check in this directory that reads a number the compiler never
+# emits. `pcrec_maxw` has no artifact of its own until the lookaround module's
+# fixed-width rule consumes it, so nothing above — not the corpus, not the
+# differential, not sections 1-7 — can be red because of it. maxw_check.c
+# links libpcrec.a, parses every `pattern` line in tests/ to an AST and calls
+# the two analyses directly: `maxw >= minw` at every NODE, and every
+# ORACLE-VERIFIED span in the corpus within the root's maxw. See its header
+# for why one inequality alone is worthless.
+#
+# THREE SABOTAGES, each of which must make it FAIL. `zero` and `unbounded` are
+# the two degenerate implementations that pass one inequality each; `swap`
+# returns minw, which passes CHECK 1 by construction. An unsabotaged green
+# check is worth nothing (branch_count_check.c's rule).
+# ---------------------------------------------------------------------------
+LIB="${LIBPCREC:-$ROOT_DIR/build/libpcrec.a}"
+MAXWBIN="$WORKDIR/maxw_check"
+if [ ! -f "$LIB" ]; then
+    bad "maxw: $LIB not built — run 'make' first"
+elif ! "$CC" -O1 -g -Wall -Wextra -std=gnu11 \
+        -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" ${SANFLAGS:-} \
+        -o "$MAXWBIN" "$SCRIPT_DIR/maxw_check.c" "$LIB" 2>"$WORKDIR/maxw.build"; then
+    bad "maxw: FAILED TO BUILD maxw_check.c"
+    sed -n '1,20p' "$WORKDIR/maxw.build" >&2
+else
+    # every .rxt in the tree, so the population grows with the corpus rather
+    # than with this script (section 7's rule).
+    find "$ROOT_DIR/tests" -name '*.rxt' -print0 | sort -z > "$WORKDIR/rxt.list"
+    if xargs -0 -a "$WORKDIR/rxt.list" "$MAXWBIN" > "$WORKDIR/maxw.out" 2>&1; then
+        # ONE INVOCATION, ASSERTED. `xargs` SPLITS when the argument list
+        # outgrows ARG_MAX, and a split run would print two summaries and
+        # apply the non-vacuity floors to two partial populations — each of
+        # which could pass while neither saw the whole corpus. Today the list
+        # is ~5 KB against a 2 MB limit; this line is what makes the day it
+        # is not a loud failure instead of a quietly weaker check.
+        nrun="$(grep -c '^=== \[M6' "$WORKDIR/maxw.out")"
+        if [ "$nrun" = "1" ]; then
+            ok "maxw: maxw >= minw at every node, and every oracle span within maxw"
+            sed -n 's/^  /    maxw: /p' "$WORKDIR/maxw.out"
+        else
+            bad "maxw: xargs SPLIT the corpus into $nrun invocations — the floors saw partial populations"
+        fi
+    else
+        bad "maxw: the sweep FAILED"
+        sed -n '1,25p' "$WORKDIR/maxw.out" >&2
+    fi
+    for sab in zero unbounded swap; do
+        if PCREC_MAXW_SABOTAGE="$sab" xargs -0 -a "$WORKDIR/rxt.list" "$MAXWBIN" \
+                >/dev/null 2>&1; then
+            bad "maxw sabotage '$sab' PASSED — the sweep is not reading maxw"
+        else
+            ok "maxw sabotage '$sab' correctly caught"
+        fi
+    done
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

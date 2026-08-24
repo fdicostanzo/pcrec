@@ -135,7 +135,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   live in `union { ... } u`, keyed by the existing `AKind k`:
   `n->u.cls.bits`, `n->u.rep.{rmin,rmax,greedy,possessive,revbody}`,
   `n->u.cap.no`, `n->u.anch.multiline`, `n->u.bref.{refs,nrefs,caseless}`.
-  `k`, `l`, `r`, `not_repeatable` and `reg` stay COMMON. The rule D70 makes
+  `k`, `l`, `r`, `not_repeatable` and `reg` stay COMMON.
+
+  **[M6.6.2 wave A2] THE FIRST MEMBER ADDED UNDER THE RULE IS `u.look`**
+  (`A_LOOK`: `behind`, `neg`, `atomic`, `widths`, `nbranch`), and it is worth
+  reading as the worked example the rule was written for. The design's own
+  sketch (`lookaround_design.md` §3.1) proposed FIVE new TOP-LEVEL fields, one
+  of them an `int look_widths[]` FLEXIBLE ARRAY MEMBER. D70 refuses both
+  halves: they go in a member, and the width table is an arena `const int *`
+  because a flexible array cannot live in a union, cannot be preceded by
+  another member, and would make `sizeof(Ast)` a lie for the zeroing arena
+  that allocates every node at one fixed size. The union member is 24 bytes
+  against `u.cls.bits`'s 32, so `sizeof(Ast)` is unchanged. The rule D70 makes
   operative: **no module may add a new top-level per-kind field** — a new kind
   adds a union MEMBER, and a field joins the common block only when a survey
   MEASURES it cross-kind. The union buys reading and containment, NOT
