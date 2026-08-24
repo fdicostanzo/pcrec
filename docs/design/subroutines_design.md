@@ -1603,3 +1603,406 @@ cells sit outside the matrix and score UNDETECTED.
 **ANCHOR DRIFT IS AN ANOMALY, NOT A FAILURE.** Every anchor above is
 re-derived against the code as landed, never against this document's sketch —
 the seven drifted anchors tranche A had to re-home are the precedent.
+
+---
+
+## 10. The D27 goal-facts list, the population, and the harness gap
+
+### 10.1 python `re` HAS NO SUBROUTINE CALL, and that changes what D27 is
+
+D27's whole mechanism is a **spec-first author denied `src/` and `tests/`** who
+tests the promise rather than the implementation. It works because the author
+has an oracle the implementation's author did not write. For every module so
+far that oracle has been **two** oracles — python `re` and libpcre2 — with the
+divergences enumerated so the author knows which one rules each cell.
+
+**For this module python rules NOTHING.** MEASURED, `out/spellings.txt` A7,
+all nine call spellings plus both zero spellings:
+
+| spelling | python 3.14 `re` |
+|---|---|
+| `(?1)`, `(?0)`, `(?R)` | `PatternError: unknown extension` |
+| `(?-1)` | `PatternError: missing flag at position 8` — python reads it as an **inline-flag group**, so the error does not even mention a subpattern |
+| `(?&n)`, `(?<n>…)` | `PatternError: unknown extension ?<n` — python needs `(?P<n>…)`, so the DECLARATION fails first |
+| `(?P>n)` | `PatternError: unknown extension ?P>` |
+| `\g<1>`, `\g'1'`, `\g<0>`, `\g{1}` | `PatternError: bad escape \g` — `\g` is a **replacement-template** escape in python, never a pattern one |
+| `\1`, `(?P=n)` | **compiles** — the reference spellings, which are `backrefs`' |
+
+**WHAT THE BLINDED AUTHOR MUST BE TOLD, and nothing more:**
+
+1. **libpcre2 10.46 is the ONLY oracle for every cell of this module.** Use
+   `tests/backrefs/bref_oracle.py` or `tests/assertions/verify_pcre2.py`; do
+   not reach for python, and do not treat python's refusal as a divergence to
+   record — it is an absence, and §7's whole table is that one fact.
+2. **The two reference spellings python DOES have are a trap.** `\1` and
+   `(?P=n)` compile in python and mean something *different* from `\g<1>` and
+   `(?P>n)`. An author who checks *"does python agree"* on a cell containing
+   `\1` is checking `backrefs`, not this module. §2.1's one-cell discriminator
+   (`(a|b)X` on `"ab"`) is the tool, and the author should be given it.
+3. **The constructs, and that all ten spellings SHIP.** No refusal list to
+   test against, unlike every previous module — the refusals in this territory
+   belong to `conditionals` (`(?(DEFINE)`) and are not this module's.
+4. **`(?R)` re-runs the whole pattern INCLUDING the anchors** (§2.4), which is
+   the single most counter-intuitive fact here and the one a promise-first
+   author is most likely to get wrong in the same direction the implementer
+   would.
+5. **Nothing about the implementation.** Not the linkage, not the call graph,
+   not `W`, not the depth capacity's value.
+
+**AND THE SINGLE-ORACLE SITUATION IS A REAL WEAKENING, SO SAY SO.** The
+project's own check-design lesson is that *controls sharing a source with what
+they control do not control it*. Here the corpus and the compiler both answer
+to libpcre2 — which is D26's design (PCRE2 **is** the source of truth), so it
+is not the failure mode; the failure mode would be a corpus derived from
+pcrec's own behaviour. The mitigations are (a) the D27 author never sees
+`src/`, so the corpus cannot inherit the implementation's alphabet, and (b)
+§9.2's second control (SPLICE artifact vs LINKAGE artifact) compares **two of
+this compiler's own lowerings** against each other, which is a check libpcre2
+is not a party to at all. §14 ASK 5 asks whether that is enough.
+
+### 10.2 `tests/recursion/` — the files
+
+| file | what it pins |
+|---|---|
+| `refused.rxt` | the `conditionals` refusals this module does NOT unlock: `(?(DEFINE)`, `(?(R)`, `(?(1)` — each with its module name, D26 tier 2 |
+| `gated.rxt` | the two D65 diagnostics: `requires module 'recursion'` under `std1`, `enabled but … not implemented yet` under a partial set; **and P2's cell**, `(?&n)` refusing for `named-groups` first |
+| `spellings.rxt` | the ten call spellings, each with §2.1's `(a\|b)X` on `"ab"` discriminator beside the same pattern on `"aa"` |
+| `relative.rxt` | `(?±N)` and `\g<±N>` at four distances, forward and backward, with the leading-zero and relative-zero cells |
+| `whole.rxt` | `(?R)`/`(?0)`/`\g<0>`/`\g'0'`, and **the anchor cells** — `^(a(?R)?b)$` on `"aabb"` is nomatch and `^(a(?1)?b)$` is (0,4) |
+| `captures.rxt` | §3.1's cells: after return, at depth 3, after a failed call, and the INHERITANCE cell `^(a)(b\1)(?2)$` on `"ababa"` with its `"abab"` control |
+| `atomicity.rxt` | §3.2's isolated discriminator and **all four atomic controls** — a file whose green depends on both directions |
+| `leftrec.rxt` | the give-up cells: direct, indirect, and nullable-prefix left recursion, each expecting `PCREC_ERR_RECURSE`; **and the `^(a\|(?1)a)$` on `"a"×200` cell that must MATCH** (§3.3) |
+| `dupnames.rxt` | §3.4(c)'s call/reference split, including the unset-first-declaration discriminator |
+| `kreset.rxt` | §3.4(b)'s three `\K` cells, `features assertions,recursion` |
+| `quantified.rxt` | §2.6's twelve quantified spellings and the nullable-callee guard |
+| `inlookaround.rxt` | §3.4(d)/(e): a call in a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind |
+| `nocaptures.rxt` | §4.3's marked-set cells, one-hop and two-hop, run on the `--no-captures` axis |
+| `d27/` | the blinded corpus, §10.1's brief |
+
+**Every expectation is oracle-verified against libpcre2 10.46** — the corpus
+generator's shape is `tests/backrefs/gen_corpus.py`'s, and it uses
+`bref_oracle.py` rather than a fourth copy of the binding.
+
+### 10.3 THE HARNESS GAP: there is no way to EXPECT a give-up
+
+STRUCTURAL, and it blocks `leftrec.rxt` and S-SR8. `docs/testing.md`'s block
+vocabulary is `pattern` / `flags` / `features` / `perr` / `m` / `n` / `ms` /
+`ns` / `g` / `gp`. **None of them can say "this pattern gives up".**
+`tests/harness/driver.c:189` prints `"steps"` or `"frames"` and exits 3, and
+`run.sh` scores exit 3 as a **HARD harness-level failure** (`:371-378`) —
+deliberately, because a give-up taken for a match was K21.
+
+So wave A adds **one directive**:
+
+```
+gu <code>    # asserts the search GAVE UP with this typed code
+             # <code> in { steps, frames, work, recurse }
+```
+
+with the driver printing the new code and `run.sh` scoring `gu` against exit 3
+instead of hard-failing. That is a harness change in a module's design, which
+is unusual and is called out for the panel: it is **not** optional, because
+`PCREC_ERR_RECURSE` is this module's only observable for every left-recursive
+pattern, and a code no test can assert is a code nobody defends. `tests/vm/
+run_vm_tests.sh:112/136` already asserts the other two codes **outside** the
+`.rxt` corpus, which is the precedent for the shape and the reason the
+directive is worth generalising rather than special-casing.
+
+---
+
+## 11. The implementation brief
+
+In order, each wave landable and testable on its own.
+
+**WAVE A — THE GIVE-UP CODE SPACE, ALONE.** `PCREC_ERR_RECURSE (-5)`,
+`PCREC_ERR_FLOOR` −4 → −5, at §5.6's eight source-of-truth sites plus the two
+design records; the `%s_R_RECURSE` sentinel and its propagation through the
+search entry; `tests/codegen/run_codegen_tests.sh`'s two name lists; §10.3's
+`gu` directive in the harness and `docs/testing.md`. **No `A_CALL` anywhere,
+no producer for the new code.** The riskiest edit in the module is the frozen
+ABI, so it lands by itself where a bisect can find it.
+*Landing bar: `make test` green; `make strict` clean; the `[ABI-NS]` codegen
+check green with the new name; a hand-built artifact shown to carry the new
+`#define`; `gu` exercised in the FAILING direction (a `gu frames` block on a
+pattern that matches must FAIL) before any cell relies on it.*
+
+**WAVE A2 — `A_CALL` AND THE WALKER ARMS, NO PRODUCER.** The kind, its D70
+union payload, and the arms in all ten files of §4.4 — every one of them
+declining or descending, decided and recorded per file in the commit message.
+The four `default:`-carrying switches re-inspected by hand against the landed
+code, since `-Wswitch` will not name them.
+*Landing bar: `make strict` clean; the `-Wswitch` alarm demonstrated (add a
+dummy enumerator, count, revert); the identity gate green on all four axes,
+which at this wave is trivially true and is run anyway to prove the harness
+works before it is needed.*
+
+**WAVE B+C — THE PORTS, THE RESOLVER, THE CALL GRAPH AND THE LINKAGE,
+TOGETHER.** They are one wave for §8.1's reason: D65 flips a row to `built`
+from the PORT's answer and never runs the emitter, so a port-only wave ships a
+compliance index that says `built` for constructs that cannot compile.
+Deliverables: `src/parse/mod_recursion.c` with `pcrec_rcport_num` /
+`_rel` / `_name`; `PendingRef.kind` and the resolver's two rules (§4.2);
+`src/opt/callgraph.c` — the graph, its SCCs, the transitive mark (§4.3) and the
+`W` fixpoint (§5.3); `pcrec_has_call`; the frame's two new fields, `RX_CALL`,
+`RX_RETURN`, the fail label's one line, the save/restore emission, the depth
+capacity and `RX_CALL_DEPTH`'s stamp; `vm_cost`'s arm; `vm_nullable`'s
+fixpoint arm; `pcrec_minw`/`pcrec_maxw`'s arms.
+**The `\g` tails are DECLINED at `WANT_RESULT`** so their rows stay `unbuilt`
+until wave D — one branch in `pcrec_brport_g`, not a throwaway path.
+*Landing bar: `spellings.rxt`, `relative.rxt`, `whole.rxt` (the `(?R)`/`(?0)`
+half), `captures.rxt`, `atomicity.rxt`, `leftrec.rxt`, `quantified.rxt`,
+`nocaptures.rxt` green; `--list-syntax` shows the `(?` rows `built` and the two
+`\g` rows still `unbuilt`; S-SR1..S-SR6, S-SR8..S-SR12, S-SR14, S-SR16
+DETECTED.*
+
+**WAVE D — THE `\g` TAILS AND THE ZERO FAMILY.** `pcrec_brport_g`'s `<` and
+`'` arms produce `PEND_CALL`; `\g<0>`/`\g'0'` resolve to the root; the decline
+deleted.
+*Landing bar: `spellings.rxt`'s `\g` cells and `whole.rxt`'s zero cells green;
+all existing rows `built`; S-SR15 DETECTED; **the `backrefs` corpus asserted
+UNCHANGED**, because this wave edits a port `backrefs` owns.*
+
+**WAVE E — ENGINE SELECTION, THE PREFILTER PREDICATE, AND THE GATE.** §8.2's
+one line in `select_engine.c`; SR-8's stamps; the four-axis identity gate with
+its floors and its positive control.
+*Landing bar: `inlookaround.rxt` green; the identity gate green on all four
+axes with `ctl_bad == 0`; S-SR17 DETECTED; the `--engine=dfa` refusal for a
+call-bearing pattern pinned.*
+
+**WAVE F — THE REGISTRY.** §8.1's three missing row families (subject to
+ASK 3's granularity ruling), the `quant` column fix on nine rows, the D65
+`built` tally, SR-8 witnesses for every new row, a `recursion` mech arm in
+`run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
+direction, the compliance page refreshed via the `compliance-refresh` skill.
+*Landing bar: `--list-syntax`'s row count stated in the commit message; the
+SR-8 capability check green with a witness for every new row; `dupnames.rxt`
+and `kreset.rxt` green; S-SR13 DETECTED.*
+
+**WAVE G — THE SPLICE LINKAGE.** §6.3's eligibility rule driven from
+`callgraph.c`'s SCCs and a size budget; `nfa.c`'s `A_CALL` arm (§8.3) and the
+prefilter restored for spliceable patterns; the `-fno-splice-calls` axis; §9.2's
+SPLICE-vs-LINKAGE `A == B` control over the whole corpus.
+*Landing bar: `A == B` over every cell of `tests/recursion/` on both linkages;
+`lookaround_measurements/probes/probe_prefilter_hazard.py`'s H1/H2/H3 re-run
+against the call population with its window-end result stated; the §6.2 size
+and time numbers re-measured on the SHIPPED emitter and compared against the
+PROTOTYPE's, with the discrepancy recorded whichever way it goes.*
+
+**THE CLOSE** is D69-tier: the FULL sabotage matrix, the battery, the gate, the
+compliance refresh and the archive.
+
+---
+
+## 12. What would refute this — predictions for the panel
+
+Each is a claim this design would rather have attacked than believed.
+
+**P-1 (the frame IS the call record).** *A separate `call_stack[]` array cannot
+be made correct more cheaply than putting the return label in the resume
+frame.* §5.2 derives the clobber bug in three events. **Refute** by exhibiting a
+separate-array design that survives the sequence *call A → A returns → call B →
+B fails → backtrack into A's callee → A returns again* without a second undo
+log or a per-frame high-water mark. The sharpest attack is that ordinary frames
+already pay 4 bytes for `call_top`, so the array version's memory saving is
+smaller than it looks — which would make this a wash rather than a win, and the
+row should then be re-argued on simplicity alone.
+
+**P-2 (the restore set).** *`W` — the transitive capture-slot write set,
+excluding slots 0 and 1 — is exactly the right restore set.* **Refute** by
+exhibiting a non-capture slot whose value must be restored by a return, or a
+capture slot whose value must NOT be. `\K` is the second kind and §3.4(b)
+measured it; the candidates for the first kind are the counter slots
+`[ENG-BREP counter-K]` allocates and `SLOT_LOOK_MARK`/`_POS`. **The prediction
+is that none of them needs restoring** because each is re-initialised at its own
+entry label on every entry — but that is an inspection of code
+`[M6.6.2]` has not landed yet, so it is ARGUED and this is where it is
+recorded.
+
+**P-3 (the depth capacity is enough).** *Every shape PCRE2 answers `rc −52` on
+is non-terminating, so pcrec's depth capacity catches all of them, and pcrec's
+answers agree with PCRE2's on every terminating shape up to the stamped depth.*
+**Refute** by exhibiting a pattern PCRE2 answers −52 on that pcrec's depth
+capacity does **not** catch (it would have to be a recursion that neither
+terminates nor deepens), or a pattern that needs more depth than the stamped
+value and that a user would reasonably write. §3.3 pinned that
+`^(a(?1)?b)$` needs depth ≈ subject and PCRE2 satisfies it from the heap, so
+**the second half of this prediction is the weak one** and §14 ASK 2 asks what
+the default should be.
+
+**P-4 (no same-position guard).** *Building the O(1) per-callee entry-position
+guard would be a miscompile, not a conservative approximation.* Already
+**refuted in the guard's favour** — §3.3's 199-deep matching cell is the
+counterexample and it is measured. Recorded so nobody re-proposes it: the
+attack that would revive it is a demonstration that PCRE2's own guard has the
+same shape and that this lane's cell is somehow special, which the `n + 2`
+give-up depths make unlikely.
+
+**P-5 (the static `W` beats the runtime trail walk).** *Saving `|W|` values at
+entry costs less than walking the callee's trail at return.* **Refute** by
+measuring a population where `|W|` is large and the callee writes few slots —
+a called group containing twenty capture groups of which one branch writes two.
+The static version pays 40 writes; the walk pays 4. **The experiment is a
+prototype in `gen_linkage.py`'s idiom with both restores**, and it is not run
+here.
+
+**P-6 (the lookaround body must not be a call).** *`k = 1` is the whole
+argument, and it is measured.* **Refute** by finding a lookaround shape with
+more than one use site — which `lookaround_design.md` §6.4(3) says cannot
+happen because `vm_label()` allocates per emission — or by showing the emitted
+size difference matters more than the 10–12% time difference at `k = 1`.
+
+**P-7 (the wave-G prefilter is sound).** *Splicing a non-recursive callee's NFA
+fragment is exact and `Σ*` for a recursive one is a superset, so the prefilter
+is sound.* **Refute** by exhibiting a call-bearing pattern whose true leftmost
+match START differs from the approximated pattern's — which is
+`lookaround_design.md` §5.4's own finding one construct over (**0 violations on
+the start, 8 of 45 on the window END**), and `Σ*` is a far looser superset than
+lookaround erasure. **The prediction is that the window end is violated MORE
+often here, not less**, and §11 wave G refuses to land without the re-run.
+
+**P-8 (one wave, not two, for the port and the emitter).** *A port-only wave
+would flip six rows to `built` while the emitter still fails.* **Refute** by
+finding a way to make D65's `WANT_RESULT` answer "not yet" without a throwaway
+refusal path — `lookaround_design.md` §11's C2-2 concluded there is none, and
+this design consumes that conclusion rather than re-deriving it.
+
+**P-9 (the second `goto *` is the last one).** *A call-bearing artifact has
+exactly two indirect jumps and a call-free one exactly one.* **Refute** by
+naming a chartered construct that needs a third — `[DD-11]`'s insertions
+splice, `[ENG-CUT]` cuts, `callouts` calls a function pointer (**which is an
+indirect CALL, not an indirect jump, and S-SR13's count must be written to
+distinguish them or the row fires when `callouts` lands**).
+
+**P-10 (PCRE2's cost shape).** *A call costs its body's backtracks plus one, so
+pcrec's per-call frame is the same accounting PCRE2 does.* Measured as a ratio
+tending to **2.0** over 8 call sites (§3.2). **Refute** by finding a shape where
+PCRE2's ratio diverges from pcrec's emitted step count — the obvious candidate
+is a call whose callee is possessified by `src/opt/possessify.c`, where pcrec
+removes choice points PCRE2 keeps.
+
+**P-11 (the harness directive is required).** *`PCREC_ERR_RECURSE` cannot be
+asserted by any existing `.rxt` expectation.* **Refute** by finding a spelling
+in `docs/testing.md` that can — the vocabulary is `perr`/`m`/`n`/`ms`/`ns`/`g`/
+`gp` and `perr` is COMPILE-time, so the claim rests on a give-up being a
+run-time outcome. If a `--step-budget`-style flag could make a left-recursive
+pattern refuse at COMPILE time the directive would be unnecessary, and it
+cannot: §3.3 measured that PCRE2 compiles them all and this design follows.
+
+---
+
+## 13. Explicitly out of scope
+
+- **`(?(DEFINE)…)` and every other conditional.** Module `conditionals`,
+  one registry row, no producer. §2.5 measures a DEFINE-less substitute that
+  agrees on 11/11 subjects, so nothing here is blocked by it.
+- **`(?(R)`, `(?(R1)`, `(?(R&name)` — the RECURSION CONDITIONS.** They are the
+  natural companion of this module and they are `conditionals`' doorway, not
+  this one's. `registry.c:57` already notes that `(?(R)` is *"a recursion
+  condition or a NAMED-GROUP condition depending on"* context. **This module
+  unlocks none of them** and §8.1's tally must not imply otherwise.
+- **Reproducing `rc −52` cell for cell.** §3.3 RULED: the depth capacity is
+  the guard, the code is pcrec's own, and the exact predicate 10.46 uses was
+  not pinned by black-box probing.
+- **A compile-time left-recursion refusal.** PCRE2 has none (§3.3, measured),
+  and `^(a|(?1)a)$` proves a static refusal would lose matches.
+- **The DFA.** A call-bearing pattern is `VM_ONLY` structurally. `[ENG-LOOK]`'s
+  product construction has no analogue here — the language is not regular.
+- **The prefilter, in wave 1.** §8.3 designs the sound construction and
+  wave G builds it. The 21×–350× number is stated so the deferral is a decision
+  rather than an omission.
+- **The `[DD-11]` environment model.** §7 states the interface and designs none
+  of it.
+- **Streaming.** §5.8: a call stack of label addresses is the second consumer of
+  APPROACH §6's A-4/A-5 constraint. `[M3.0]`'s design gate owns it; cross-noted
+  there.
+- **`(*ACCEPT)`-family verbs inside a callee.** Module `verbs` has no producer.
+  PCRE2 gives `(*ACCEPT)` a special meaning inside a recursion; nothing here
+  anticipates it, and the day `verbs` gains a producer this section is where it
+  will be found.
+- **Tail-call or self-recursion optimisation.** A recursive call whose
+  continuation is empty could reuse its caller's frame. Not designed, not
+  measured, and the K19/K22 lesson says an optimisation without a measurement
+  is a code path without a customer.
+- **A user-facing recursion-depth OPTION.** `RX_CALL_DEPTH` is a stamped
+  artifact constant like `RX_RESUME_FRAMES`. Making it a `pcrec_options` field
+  is D18/`[OS-0]` territory and needs a caller who asked.
+
+---
+
+## 14. ASKs for Frank
+
+**ASK 1 — keep the new give-up code, now that its premise is gone?** The plan
+row reserves *"a NEW typed give-up code below D49's ERR_FLOOR"* for *"a bounded
+DEPTH capacity"* on *"an explicit call stack"*. §5.2 shows the separate call
+stack is wrong and §5.1 puts the call record in the resume frame — so calls
+consume ORDINARY FRAMES and the capacity failure is already
+`PCREC_ERR_FRAMES`. `PCREC_ERR_RECURSE` is now a **second counter over the same
+array**, bought for diagnosis: a caller that gets `_RECURSE` knows to raise a
+recursion bound, one that gets `_FRAMES` does not know which bound to raise.
+It costs an increment, a decrement, a compare, a per-frame `call_mark`, and an
+`ERR_FLOOR` move across eight source-of-truth sites (§5.6).
+*Recommendation: KEEP IT.* The move is cheap now and impossible after v1, D49's
+own text says a pre-release renumber *"costs a renumber and nothing else"*, and
+a give-up whose type does not name its cause is the failure mode D42.3's
+collapse was superseded for. But the row's justification changed under it, so
+it is asked rather than assumed.
+
+**ASK 2 — what is `RX_CALL_DEPTH`'s default?** §3.3 MEASURED that PCRE2
+satisfies `^(a(?1)?b)$` on an 800 KB subject — depth ≈ 400,000 — **from the
+heap**, and that pcrec's array is fixed (P12: `RX_RESUME_FRAMES` defaults to
+2048). A recursive pattern's depth is data-dependent by nature, so any fixed
+number refuses some subject PCRE2 matches. Three shapes:
+(a) a **small** default (say 256) — cheap, and a nested-structure parser gives
+up on deep input;
+(b) **derive it from `RX_RESUME_FRAMES`** — calls already consume frames, so
+the depth ceiling is at most the frame ceiling and a separate number is
+redundant, which is ASK 1's answer arriving from the other side;
+(c) a **large** default with the memory cost stamped, following D49.2's
+work-budget reasoning (*"too low refuses ordinary large-subject matches on the
+shipped path, which is the worse error"*).
+*Recommendation: (c), with a bring-up value calibrated at implementation the
+way the step budget's 500M and the work budget's 10⁹ were, and the honest
+ceiling stamped so a caller can read it.*
+
+**ASK 3 — how granular are the registry rows for multi-digit calls?** §8.1
+MEASURED three missing families: `(?10)`+, `(?-10)`+, `(?+2)`…`(?+9)`, and
+`\g<0>`/`\g'0'`. The registry is keyed on the character after `(?`, so
+`(?1)`…`(?9)` are nine rows and the two-digit forms have none — while
+`(?-1)`…`(?-9)` are nine rows and `(?+1)` is one, an asymmetry nobody chose.
+Options: (a) add the eight missing `(?+N)` rows and one row each for the
+multi-digit families, keeping the per-digit shape; (b) **collapse** each family
+to ONE row with a syntax like `(?N)`, `(?+N)`, `(?-N)`, deleting seventeen rows;
+(c) leave the surface as it is and fix only the `quant` column.
+*Recommendation: (b).* Nineteen rows for one construct is a compliance index
+that reports the doorway's implementation rather than PCRE2's surface, and D65's
+`built` column plus SR-8's witnesses make each row a real obligation. (b) is a
+change to `backrefs`-adjacent rows too and is therefore Frank's call, not a
+lane's.
+
+**ASK 4 — should the `conditionals` refusal for `(?(DEFINE)` point at the
+substitute?** §2.5 MEASURED that `^(?!)(?<w>X)|^BODY$` reproduces DEFINE's
+semantics on 11/11 subjects. A user's library pattern will refuse with
+*"module 'conditionals' is enabled but `(?(...)` is not implemented yet"*, which
+is correct (D26 tier 2) and unhelpful. Options: (a) leave it — D26 tier 3 says
+wording is not an obligation; (b) add a one-line hint to that specific
+diagnostic; (c) document the substitute in `docs/pcre2_compliance.md` and leave
+the diagnostic alone.
+*Recommendation: (c).* A hint in a diagnostic is a second place the substitute
+has to stay correct, and the compliance page is where a user with a refusing
+pattern is already sent.
+
+**ASK 5 — is a SINGLE-ORACLE D27 corpus acceptable for this module?** §10.1
+MEASURED that python `re` has no subroutine call of any spelling, so for the
+first time the blinded author has one oracle instead of two. The project's own
+check-design lesson is about controls sharing a source with what they control;
+here the shared source is **libpcre2**, which D26 makes the source of truth, so
+it is the design rather than the defect — but the author's oracle and the
+implementer's oracle are now the same document. Mitigations designed in: the
+author still cannot see `src/`, and §9.2's second control compares two of
+pcrec's OWN lowerings (SPLICE vs LINKAGE) against each other, which libpcre2 is
+not a party to.
+*Recommendation: PROCEED, with the SPLICE-vs-LINKAGE control promoted from
+"nice" to a wave-G landing bar (§11 does that), and with the D27 brief saying
+explicitly that python's refusal is an ABSENCE and not a divergence to record —
+because an author told "compare both oracles" will otherwise record nine
+divergences that are one fact.*
