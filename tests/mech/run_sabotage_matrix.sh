@@ -112,6 +112,15 @@
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
+#   laexpand   — added 2026-08-24 ([M6.6.2] wave E2, R33 C2-7 / design §11);
+#     the SUBSTITUTION DRIVER. It is a different KIND of net from `lookaround`
+#     above and the difference decides which rows it can score: `lookaround`
+#     runs the module's OWN corpus, ~175 hand-shaped blocks; `laexpand` runs
+#     8,260 libpcre2-verified cells belonging to a module that already ships,
+#     re-expressed as lookarounds — DEPTH on one body shape (a class or a
+#     literal) where the other is BREADTH. It is also the SECOND arm here that
+#     can decline for want of an oracle, which is why the verdict block below
+#     no longer names `pc3` as the only one
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -336,6 +345,7 @@ run_one() {
         any_fail=0
         any_ran=0
         any_skip=0      # an assigned suite could not run for want of an ORACLE
+        skipped_arms=() # ...and WHICH ones, so the verdict can name them
         any_anom=0      # a check binary would not build in the sabotaged tree
 
         for suite in $SAB_SUITES; do
@@ -595,6 +605,59 @@ run_one() {
                 suite_bits+=("laround:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
+                ;;
+            laexpand)
+                # [M6.6.2 wave E2] THE SUBSTITUTION DRIVER (design §6.3),
+                # `tests/lookaround/run_expansion_diff.sh`. A DIFFERENT KIND OF
+                # NET from the `lookaround` arm above, and the difference is
+                # what decides which rows it is assigned to: that one runs the
+                # module's own ~175-block corpus, and this one runs 8,260
+                # libpcre2-verified cells that belong to a module which already
+                # ships (`tests/assertions/`), textually re-expressed as
+                # lookarounds. BREADTH there, DEPTH here — over exactly the
+                # body shapes the assertion family uses, which is one class or
+                # one literal.
+                #
+                # SO IT SEES A NARROWER SET OF ROWS THAN ITS POPULATION SIZE
+                # SUGGESTS, and the rows it is NOT assigned to are as much a
+                # result as the ones it is. Every expansion in §6.1's table is
+                # an ATOMIC lookaround with a FIXED-WIDTH body, so a sabotage
+                # of the non-atomic flag (S131) or of the width rule (S136) is
+                # INVISIBLE here however many cells run — those two are scored
+                # by the `lookaround` and `harness` arms, on the module corpus
+                # that contains `(?*` and the variable-width refusals. Assigning
+                # this arm to them would have bought a bigger denominator and no
+                # evidence. The per-row measurement is in tests/mech/CLAUDE.md.
+                #
+                # SKIP-IS-NOT-A-PASS, exercised in the failing direction as
+                # `pc3` was. The script prints `SKIP:` and `checks passed: 0 /
+                # checks failed: 0` when libpcre2 is absent, and a bare scrape
+                # of those two numbers reads `0fail/0pass` — which the verdict
+                # block would then be free to call UNDETECTED, i.e. a FINDING,
+                # from an arm that never ran. So the `SKIP:` banner is detected
+                # FIRST and the row is marked skipped instead. Validated by
+                # pointing the oracle import at a nonexistent module: the cell
+                # reads `laexpand:SKIPPED-no-oracle` and the verdict carries
+                # `(laexpand SKIPPED -- no oracle)` — see tests/mech/CLAUDE.md.
+                #
+                # PROCS is passed EXPLICITLY (the [TT-8 FIX] rule): this script
+                # reads PROCS from its own environment to pick a worker count,
+                # so the outer row-concurrency PROCS would otherwise leak in
+                # undivided.
+                PCREC="$pcrec" CC="$CC" PROCS="$INNER_PROCS" \
+                    bash "$tree/tests/lookaround/run_expansion_diff.sh" \
+                    > "$work/laexpand.log" 2>&1
+                if grep -q '^SKIP:' "$work/laexpand.log"; then
+                    suite_bits+=("laexpand:SKIPPED-no-oracle")
+                    any_skip=1
+                    skipped_arms+=("laexpand")
+                else
+                    p="$(grep -m1 '^checks passed:' "$work/laexpand.log" | grep -oE '[0-9]+')"
+                    f="$(grep -m1 '^checks failed:' "$work/laexpand.log" | grep -oE '[0-9]+')"
+                    suite_bits+=("laexpand:${f:-ERR}fail/${p:-?}pass")
+                    [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                    any_ran=1
+                fi
                 ;;
             kresetdiff)
                 # [M6.2 wave E] `\K`'s behavioural instrument. Its own arm for
@@ -897,6 +960,7 @@ run_one() {
                     if grep -q '^SKIP:' "$work/pc3.log"; then
                         suite_bits+=("pc3:SKIPPED-no-oracle")
                         any_skip=1
+                        skipped_arms+=("pc3")
                     else
                         p="$(grep -m1 '^checks passed:' "$work/pc3.log" | grep -oE '[0-9]+')"
                         f="$(grep -m1 '^checks failed:' "$work/pc3.log" | grep -oE '[0-9]+')"
@@ -924,16 +988,16 @@ run_one() {
             esac
         done
 
-        # THE SKIP MUST NEVER READ AS A PASS. `pc3` is the only arm that can
-        # decline to run — it needs libpcre2 — and a skipped oracle contributes
-        # no evidence in either direction. So a row whose ONLY nets skipped is
+        # THE SKIP MUST NEVER READ AS A PASS. TWO arms can decline to run —
+        # `pc3` and, since [M6.6.2] wave E2, `laexpand`; both need libpcre2 —
+        # and a skipped oracle contributes no evidence in either direction. So a row whose ONLY nets skipped is
         # INCONCLUSIVE, never UNDETECTED (which is a finding, and would be a
         # false one), and a row that did run something still carries the skip
         # visibly in its verdict, because "caught by nothing" means something
         # different when one of the nets was not in the water.
         verdict="DETECTED"
         if [ "$any_ran" -eq 0 ] && [ "$any_skip" -eq 1 ]; then
-            verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle)"
+            verdict="INCONCLUSIVE -- every assigned suite SKIPPED (no libpcre2 oracle: $(IFS=' '; echo "${skipped_arms[*]}"))"
         elif [ "$any_ran" -eq 0 ] && [ "$any_anom" -eq 1 ]; then
             verdict="ANOMALY (every assigned check binary failed to build)"
         elif [ "$any_ran" -eq 0 ]; then
@@ -941,8 +1005,10 @@ run_one() {
         elif [ "$any_fail" -eq 0 ]; then
             verdict="**UNDETECTED -- ZERO CHECKS FAILED**"
         fi
+        # The suffix NAMES the arms that skipped rather than assuming `pc3`:
+        # with one skipped arm it renders exactly as it always did.
         [ "$any_ran" -gt 0 ] && [ "$any_skip" -eq 1 ] && \
-            verdict="$verdict (pc3 SKIPPED -- no oracle)"
+            verdict="$verdict ($(IFS=' '; echo "${skipped_arms[*]}") SKIPPED -- no oracle)"
         [ "$any_ran" -gt 0 ] && [ "$any_anom" -eq 1 ] && \
             verdict="$verdict + ANOMALY (a check binary failed to build)"
 
@@ -1034,9 +1100,10 @@ if [ "${anomalies:-0}" -gt 0 ]; then
     grep 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
 fi
 if [ "${oracle_skipped:-0}" -gt 0 ]; then
-    echo "*** $oracle_skipped row(s) ran with the pc3 arm SKIPPED: libpcre2-8-0 is absent, so the ***"
-    echo "*** EXTERNAL oracle contributed nothing to those verdicts. Read them accordingly —    ***"
-    echo "*** for the rows whose only external answer is PC-3, this run did not measure them.   ***"
+    echo "*** $oracle_skipped row(s) ran with an ORACLE-DEPENDENT arm SKIPPED (pc3 and/or       ***"
+    echo "*** laexpand): libpcre2-8-0 is absent, so the EXTERNAL oracle contributed nothing to   ***"
+    echo "*** those verdicts. Read them accordingly — for the rows whose only external answer is ***"
+    echo "*** one of those two, this run did not measure them. The row cell names which arm.     ***"
     grep 'SKIPPED-no-oracle' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
 fi
 
@@ -1069,6 +1136,6 @@ fi
 # same root as the no-`pgrep -f` rule above, which is that a command line is
 # not an identity.
 echo
-echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, pc3-skipped: ${oracle_skipped:-0}) at $SHA =="
+echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
 
 exit 0

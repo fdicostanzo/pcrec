@@ -12,9 +12,19 @@
 # The three flags have exactly ONE reader between them, `vm_look`, which is
 # what the one-kind argument rests on — so these three rows are also the
 # standing check that no SECOND reader has appeared to drift from it.
+#
+# [M6.6.2 wave E2] `laexpand` ADDED TO THIS ROW, and it was MEASURED before it
+# was assigned (2026-08-24, one laexpand-only mech run per row: 8 of the
+# module's 15 rows DETECTED, 7 UNDETECTED — the table is in
+# tests/mech/CLAUDE.md). What the substitution driver sees here that the
+# module's own corpus does not is DEPTH: 8,260 libpcre2-verified cells
+# belonging to a module that already ships, re-expressed as lookarounds. For
+# this row, `(?!` read as `(?=` inverts three of the five expansions (`\b`, `\B`,
+# `(?m)^` each contain a negative conjunct), so the substituted corpus
+# answers the complement of what the folded one does.
 SAB_ID="S129-look-ignores-neg"
 SAB_FILE="src/gen/emit_vm.c"
-SAB_SUITES="harness lookaround"
+SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look ignores Ast.u.look.neg and always emits the POSITIVE shape, so (?! behaves as (?= — the D62 control-3 failure, in a new construct, with no compiler diagnostic to report it"
 SAB_DOC_FIGURE="PREDICTED: every negative cell goes red and every positive cell stays green. Canonical figure owed from run_sabotage_matrix.sh S129."

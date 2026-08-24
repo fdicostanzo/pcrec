@@ -21,9 +21,19 @@
 # ORDER is the whole mechanism. The claim defended is the same one — the
 # push's placement relative to the body — and the direction is safe: this
 # sabotage cannot be repaired by anything downstream.
+#
+# [M6.6.2 wave E2] `laexpand` ADDED TO THIS ROW, and it was MEASURED before it
+# was assigned (2026-08-24, one laexpand-only mech run per row: 8 of the
+# module's 15 rows DETECTED, 7 UNDETECTED — the table is in
+# tests/mech/CLAUDE.md). What the substitution driver sees here that the
+# module's own corpus does not is DEPTH: 8,260 libpcre2-verified cells
+# belonging to a module that already ships, re-expressed as lookarounds. For
+# this row, the same negative-form family as S124 — `\b`, `\B` and `(?m)^` all
+# expand to something containing `(?!`, so a negative assertion that can
+# never hold is visible on thousands of inherited cells.
 SAB_ID="S125-look-push-after-body"
 SAB_FILE="src/gen/emit_vm.c"
-SAB_SUITES="harness lookaround"
+SAB_SUITES="harness lookaround laexpand"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look emits the negative form's body-failed RX_PUSH after the body instead of before it, so the frame that carries the entry cursor and trail mark is never reached and a negative assertion can never hold"
 SAB_DOC_FIGURE="PREDICTED: every negative cell goes red, AHEAD AND BEHIND since wave D — the assertion never succeeds — while every positive and non-atomic cell stays green. Canonical figure owed from run_sabotage_matrix.sh S125."

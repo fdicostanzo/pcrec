@@ -64,8 +64,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
   `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`
-  `endvaridentity` `assertions` `kresetdiff` `lookaround`, plus the per-lane
-  arms listed below),
+  `endvaridentity` `assertions` `kresetdiff` `lookaround` `laexpand`, plus the
+  per-lane arms listed below),
   `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
@@ -149,6 +149,29 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   therefore unreachable here. **When a row's detector is a specific subject,
   the `.rxt` file is the detector and this arm is not** — assign both, but do
   not read the assignment as coverage.
+- `laexpand` → `tests/lookaround/run_expansion_diff.sh`, the SUBSTITUTION
+  DRIVER ([M6.6.2] wave E2, design §6.3). **A different KIND of net from
+  `lookaround` above, and the difference is what decides which rows it is
+  assigned to.** That one runs the module's own ~175-block corpus — BREADTH,
+  every spelling and every body shape. This one re-expresses
+  `tests/assertions/`'s 8,260 libpcre2-verified cells as lookarounds and drives
+  887 generated patterns through a THREE-WAY check per cell (pcrec on the
+  expanded pattern, pcrec on the FOLDED one, libpcre2 on the expanded one) —
+  DEPTH, over exactly the body shapes the assertion family uses, which is one
+  class or one literal. It brings 2,943 NONZERO-STARTPOS cells with it for
+  free, which is the axis §3.8's contract lives on.
+
+  **THE ROWS IT IS NOT ASSIGNED TO ARE AS MUCH A RESULT AS THE ONES IT IS**, and
+  both were MEASURED before anything was assigned — see the wave E2 section
+  below for the 15-row table. Every expansion in §6.1's table is an ATOMIC
+  lookaround with a FIXED-WIDTH body, so a sabotage of the non-atomic flag
+  (S131) or of the lookbehind width rule (S136) is invisible here HOWEVER MANY
+  CELLS RUN. Assigning this arm to those rows would have bought a bigger
+  denominator and no evidence — the shape this directory exists to refuse.
+
+  SKIP-is-not-a-pass exercised in the failing direction as `pc3` was; it is the
+  SECOND arm here that can decline for want of an oracle, and the verdict block
+  now NAMES the arms that skipped instead of assuming `pc3`.
 - `assertions` → `tests/assertions/run_assertions_tests.sh`, module
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the
@@ -172,7 +195,7 @@ against the `reject` arm's **54.75s** that S15-S20 were already paying. All
 three together cost about a fifth of the one arm those rows already ran, which
 is why the retagging below was not a cost question.
 
-## `pc3` can SKIP, and a skip is not a pass
+## TWO arms can SKIP, and a skip is not a pass
 
 `pcre2_check.c` dlopens libpcre2 and exits 0 with `SKIP:` lines when it is
 absent — the convention that keeps a stranger's clone green. The arm reproduces
@@ -183,10 +206,14 @@ the verdict logic refuses to let it read as evidence:
   `UNDETECTED` — the latter is a finding, and it would be a false one;
 - a row that ran something else carries `(pc3 SKIPPED -- no oracle)` appended
   to its verdict, because "caught by nothing" means something different when
-  one of the nets was not in the water;
+  one of the nets was not in the water. **Since [M6.6.2] wave E2 the suffix
+  NAMES the arms that skipped** rather than assuming `pc3` — with one skipped
+  arm it renders exactly as it always did, and with both it reads
+  `(pc3 laexpand SKIPPED -- no oracle)`;
 - the end-of-run summary lists every skipped row, and the completion trailer
   counts them: `== mech run COMPLETE: N rows (undetected: U, anomalies: A,
-  pc3-skipped: S) at <SHA> ==`.
+  oracle-skipped: S) at <SHA> ==` (the field was `pc3-skipped:` before wave E2,
+  when `pc3` was the only arm that could produce it).
 
 That last field is new in the trailer; the grep-able prefix is unchanged.
 
@@ -1292,3 +1319,97 @@ exceptions the retro-diff DID find (`S48`'s anchor-count fix, `S107`/
 `S108` undetected-from-birth), and the earlier-journal corroboration:
 docs/testing.md's "D69 — the mech re-run policy is TIERED, and how to run
 it" section.
+
+## [M6.6.2 wave E2] the `laexpand` arm, and the SEVEN ROWS IT CANNOT SEE
+
+`tests/lookaround/run_expansion_diff.sh` (design §6.3) became a suite word on
+2026-08-24. **Every row's assignment was MEASURED before it was made** — one
+`laexpand`-ONLY mech run per row, so each cell below is what this arm sees ON
+ITS OWN rather than what the row's other nets already saw:
+
+| row | what it sabotages | `laexpand` |
+|---|---|---|
+| S122 | positive lookahead stops cutting | **UNDETECTED** |
+| S123 | the entry cursor is not restored | DETECTED |
+| S124 | negative lookaround fails without cutting | DETECTED |
+| S125 | the negative form's `RX_PUSH` moves after the body | DETECTED |
+| S126 | the `(?=` registry row loses `VM_ONLY` | DETECTED |
+| S127 | `vm_nullable`'s `A_LOOK` arm answers false | DETECTED |
+| S128 | `\K`-in-lookaround goes unchecked | **UNDETECTED** |
+| S129 | `.negative` ignored | DETECTED |
+| S130 | `.behind` ignored | DETECTED |
+| S131 | `.atomic` ignored (design's S-LA16) | **UNDETECTED** |
+| S132 | the follow is not scoped across the body | **UNDETECTED** |
+| S133 | the back-step is inlined | **UNDETECTED** |
+| S134 | the back-step sentinel goes unchecked | **UNDETECTED** |
+| S135 | the back-step guard is clamped to `startpos` | DETECTED |
+| S136 | the width rule accepts a variable body | **UNDETECTED** |
+
+**8 DETECTED, 7 UNDETECTED, and the seven are the part worth reading.** They
+are not a gap in the arm; they are a property of its POPULATION, and it is a
+population nobody chose — it is whatever `tests/assertions/` happens to
+contain, re-expressed through §6.1's nine definitions:
+
+- **Every expansion in the table is an ATOMIC lookaround.** `(?*` and `(?<*`
+  appear in none of them, so **S131 and S122** — the two rows about whether the
+  cut is emitted — are invisible here however many cells run. S131 is design
+  §9.3's S-LA16, and §11's wave-E2 landing bar asked for it to score DETECTED
+  under this arm; **it does not, and the reason is structural rather than a
+  shortfall in coverage.** It stays DETECTED by `harness` + `lookaround`, which
+  is where the design assigned it and where `run_lookaround_diff.sh` §2's exact
+  DISAGREEMENT count lives — the only arm in the tree that can see it at all.
+- **Every expansion's lookbehind body is FIXED-WIDTH** (`\w`, `\n`, both width
+  1), so **S136**'s widened width rule refuses nothing this population contains.
+- **No expansion contains `\K`** — §6.1 rules `\K` out of the family and Q5
+  counts the residual at 0 — so **S128** has nothing to bite on.
+- **Every expansion's body is a SINGLE NODE with no follow to double-count**,
+  so **S132**'s unscoped follow is a no-op over `\w`, `\n` and `\n?\z`.
+- **S133 and S134** are structural rows whose own suites are `codegen harness`;
+  the inlined back-step and the unchecked sentinel are behaviour-preserving on
+  a one-byte back-step, which is the only kind this population has.
+
+**ASSIGNING THE ARM TO THE SEVEN WOULD HAVE BOUGHT A BIGGER DENOMINATOR AND NO
+EVIDENCE**, which is the shape this directory exists to refuse. The measurement
+is the deliverable; the assignment follows it.
+
+**THE WORKED EXAMPLE IS S130**, and it shows the driver's ATTRIBUTION working
+rather than just its detection. Under `.behind` ignored, the arm reports:
+
+    §1c the cell-fidelity guard      PASS   (arm B still answers all 8,260 cells
+                                             exactly as tests/assertions/ states)
+    the B == C attribution arm       PASS   (the FOLDED pattern still agrees
+                                             with libpcre2 on all 8,260)
+    §2 policy P1                     FAIL   1,737 of 8,260 cells: A != B and A != C
+    §3 policy P2                     FAIL   2,242 of 12,543 cells: A != B and A != C
+    §4 the --policy=none control     PASS   (all 263 patterns still trivially equal)
+
+Read together those five lines say something no single failure count does:
+the folded path is untouched, the control is untouched, and the ONLY thing that
+moved is the lowering the substitution introduced. A green `B == C` beside a red
+`A == C` localises the defect to the lookaround path before anyone opens a file.
+
+**AND THE ARM FOUND A DEFECT IN THE DRIVER ITSELF, on this row**, which is
+recorded because the guard that caught it is one a reader might otherwise think
+decorative. `run_expansion_diff.sh`'s parent FAILS if a worker writes anything
+to stderr. Under S130 it did: the witness printer passed the failing pattern to
+`awk` through `-v`, which **escape-processes its assignments** — so it printed
+`\G` as `G` and `\w` as `w`, i.e. a DIFFERENT PATTERN from the one that failed,
+and warned while doing it. The patterns now travel in `ENVIRON`, which is not
+escape-processed. A witness that misquotes the pattern is worse than no witness;
+this was only visible on a run where something failed, which is why the arm's
+first sabotaged run is when it surfaced.
+
+**THE SKIP IS EXERCISED IN THE FAILING DIRECTION**, as `pc3`'s was. With the
+oracle module moved aside, `run_expansion_diff.sh` prints its `SKIP:` banner and
+`checks passed: 0 / checks failed: 0` — so a BARE scrape of those two numbers
+records `laexpand:0fail/0pass`, `any_fail` stays clear, `any_ran` is set, and the
+verdict block is then free to call the row **UNDETECTED**: a FINDING, produced by
+an arm that never ran. The arm therefore tests for the `SKIP:` banner FIRST and
+records `laexpand:SKIPPED-no-oracle` with `any_skip=1` instead. Both readings
+were produced side by side from the same real log (2026-08-24):
+
+    the BARE scrape      laexpand:0fail/0pass         -> would read as UNDETECTED
+    the arm as wired     laexpand:SKIPPED-no-oracle   -> any_skip=1, any_ran unchanged
+
+`laexpand` is the second arm here that can decline, so the verdict suffix now
+NAMES the arms that skipped rather than assuming `pc3`.

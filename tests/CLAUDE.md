@@ -348,6 +348,26 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `backrefs/bref_oracle.py` and `bref_batch.c` rather than making a third copy
   of one mechanism. The byte-identity gate is `codegen/run_lookaround_
   identity.sh`, opt-in as `make test-lookaround-identity`.
+
+  **`run_expansion_diff.sh` (wave E2) rides the same section and is a
+  DIFFERENT KIND of instrument, not more of the same one** (design §10.1a).
+  `run_lookaround_diff.sh` runs the module's OWN corpus — every spelling, every
+  body shape, the refusals — which is BREADTH. This one re-expresses
+  `tests/assertions/`'s 8,260 libpcre2-verified cells as lookarounds
+  (`expand_corpus.py` substitutes each assertion by its §6.1 definition) and
+  drives 887 generated patterns through a THREE-WAY check per cell: pcrec on
+  the expanded pattern, pcrec on the FOLDED one, and libpcre2 on the expanded
+  one. `A == B` is D66's self-oracle and needs no external oracle at all;
+  `A == C` is what stops it passing because both lowerings are wrong the same
+  way; **neither is sufficient and both are asserted**. That is DEPTH, on
+  exactly one body shape. **It is a corpus GENERATOR and not a product
+  mechanism** — nothing under `src/` changed for it, and the product-side
+  substitution is [DD-14]'s. Its expansion table is LITERAL and is re-verified
+  against libpcre2 (with a vacuity guard that must DISAGREE) before a row of it
+  is used, because a table derived from the compiler would make `A == B` a
+  tautology; a `--policy=none` control arm and a cell-fidelity guard against
+  the corpus's own expectations are the other two anti-tautology rows. Measured
+  at the wave: 29,063 three-way comparisons, 0 disagreements.
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is
