@@ -978,6 +978,6 @@ clean:
         test-known-fail test-thread test-atomic test-atomic-identity \
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
-        test-recursion test-recursion-identity \
+        test-recursion test-recursion-identity test-recursion-lbsweep \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

@@ -13491,3 +13491,31 @@ decline made explicit (S157's fate), [DD-14.EMPTY] (measure root minw on
 the three siblings first, then the one-site nomatch), run_recursion_diff
 on both axes. Briefs for F and G are drafted (brief_srF.md,
 brief_srG.md); G's bar is the specimen's byte-identity.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 10) — [DD-14.LB] MERGED (2a9dfeb): the post-resolution checks pass; known_fail empty; wave F opens
+
+srLB delivered at 3b67bd3 (12 commits) and merged after review with one
+Makefile conflict (D's and LB's new opt-in targets in the same
+neighbourhood — both kept). On main: smoke 6/6, anchors resolve, strict
+clean, `^(?:(?<g>ab)){0}ab(?<=(?&g))$` compiles, tests/known_fail/ has
+no .rxt. The mechanism: `pcrec_postresolve` after the call graph — the
+hook RECORDS, the pass re-asks the module's OWN rule at the recorded
+offset (ascending), so the diagnostic bytes are identical at both
+timings; `u.call.maxw` with a saturating Kleene fixpoint (no cycle
+test needed). Findings: parked cell 2 was NEVER in the shipped subset —
+a single variable-width branch reached through a call is the ruled
+§2.5 limit, the twin of refused.rxt's `(?<=(a|bc))x`; closing the
+timing gap corrected the SENTENCE ("unbounded" → "1..2") at the same
+offset, and a reject row pins that wording because a true refusal for
+a false reason is invisible to an exit code. Lesson recorded in
+tests/known_fail/CLAUDE.md: a parked cell's stated CAUSE is a claim.
+Evidence beyond the bar: identity vs 67e40b9 96/96 call-bearing
+identical with exactly six newly-compiling patterns; the opt-in
+`make test-recursion-lbsweep` (9,240 cells, 9,240 agree, bad_refusal 0);
+five reject rows pinning refusal OFFSETS that are libpcre2's own. The
+lane's first full matrix was killed at 16:39 — by me, by PID, per the
+one-suite ruling; it re-ran the 46 missing rows: 166 = 159 DETECTED / 7
+expected-UNDETECTED. Its "archives HEAD per row" observation is owed a
+line in tests/mech/CLAUDE.md (wave F or close). Battery on the D+LB
+tree: make test running; san after. WAVE F opens (opus, brief_srF.md)
+concurrent with E.
