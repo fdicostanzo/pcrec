@@ -306,6 +306,13 @@ decides whether to perform it — and then run the row through
   Runs under `make test-vm`, not `make test-codegen`, for a measured reason —
   see the note below.
 
+- **run_lookaround_identity.sh** / **lookaround_classify.py** — [M6.6.2]
+  module `lookaround`'s BYTE-IDENTITY GATE and the grammar-aware classifier
+  that splits its population. Two modes since wave B+C (bucket by default,
+  pure-refactor on demand) and a THREE-part positive control; the classifier
+  is a scan and not a grep because `(?=` in a class is three literal bytes and
+  `(?<name>` is a named group. Full entry: the `[M6.6.2]` section below. Opt-in
+  as `make test-lookaround-identity`, never part of `make test`.
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
@@ -871,7 +878,7 @@ Result at landing: default 1501/0, vm 1502/0, nocaptures 1501/0 identical, with
 the positive control at 124/124 backref-bearing patterns REFUSED by the
 pre-module compiler.
 
-## [M6.6.2 wave 0] `run_lookaround_identity.sh` — module `lookaround`'s gate, running in PURE-REFACTOR mode
+## [M6.6.2] `run_lookaround_identity.sh` — module `lookaround`'s gate: BUCKET mode by default since wave B+C, pure-refactor mode on demand
 
 **The THIRD gate here whose reference is a PINNED COMMIT**, and the one where
 the pin is not merely preferable but the only possibility. `LOOKAROUND_
@@ -881,19 +888,34 @@ tagged union. A `-D` knob could not build this reference even in principle: a
 refactor has no gated region, and no knob can make one build use `n->rmin` and
 the other `n->u.rep.rmin` without BEING the refactor.
 
-**WHAT IT ASSERTS TODAY IS STRONGER THAN WHAT IT WILL ASSERT AT LANDING.**
-Wave 0 is D70's refactor — ~250 mechanical access-site renames, zero behaviour
-change, no new kind, no module — so the claim is not "a lookaround-FREE
-pattern is unmoved" but that EVERY pattern in the population is unmoved. That
-is `STRICT_ALL=1` (the default, and the only mode until the manager flips it at
-waves B+C): for every pattern on every axis, subject and reference must agree
-on EXIT STATUS, on the FULL RAW STDOUT, and on STDERR (the refusal text).
+**IT HAS TWO MODES, AND WAVE B+C FLIPPED WHICH ONE IS THE DEFAULT.**
 
-**NO STAMP STRIP, and that is the rule rather than an omission.**
+`STRICT_ALL=1` was wave 0's claim and is STRONGER than the one a module gate
+normally makes: D70's refactor was ~250 mechanical access-site renames with
+zero behaviour change, so the assertion was not "a lookaround-FREE pattern is
+unmoved" but that EVERY pattern in the population is unmoved, on the FULL RAW
+STDOUT with no stamp strip. **That mode goes red BY CONSTRUCTION the moment a
+lookaround compiles** — `(?=`, `(?!` and `(?*` patterns now build and the
+pinned reference refuses every one — which is a correct answer to the wrong
+question. It is KEPT RUNNABLE and kept documented, because it is the right
+mode for the next change of that kind (a rebase of wave 0 onto a moved base,
+any later pure refactor), and a red under it should be read as "the mode does
+not fit this tree" before it is read as a defect.
+
+`STRICT_ALL=0` is the default since wave B+C and is the ordinary module-gate
+claim: **a lookaround-FREE pattern's emitted bytes did not move.** The
+population is split by `lookaround_classify.py` and only the FREE bucket is
+compared, on all four axes.
+
+**THE STAMP STRIP IS ALLOWED IN BUCKET MODE AND ASSERTED, NOT TRUSTED.**
 `run_backref_identity.sh` is entitled to filter D37's three feature-stamp lines
-because a MODULE legitimately moves them. Wave 0 changes no module and no
-feature, so the stamp must be identical too — and a run whose only differences
-ARE the stamp is a FINDING for the manager, never a normaliser to add here.
+because a MODULE legitimately moves them, and this wave is such a module. So
+the three lines are stripped — and the strip REPORTS HOW MANY LINES IT REMOVED
+and requires exactly three on each side of every compiled comparison. A filter
+that quietly removed four would be absorbing precisely the difference the gate
+exists to report; a wrong count is its own failure class, `STAMP FILTER`.
+Under `STRICT_ALL=1` nothing is stripped and a stamp-only difference is a
+FINDING for the manager.
 
 **FOUR AXES** (ASK-4): `default`, `--engine=vm`, `-fno-prefilter`,
 `--no-captures`. The default alone is blind to most of `src/gen/emit_vm.c`,
@@ -915,20 +937,34 @@ NEWLINES — so a difference confined to trailing bytes is invisible to them. At
 a pure refactor that blind spot is not acceptable, so this sweep captures
 stdout, stderr and exit status as bytes and compares them exactly.
 
-**THE POSITIVE CONTROL IS IN TWO PARTS**, because "0 differences" between a
-tree and itself is worth nothing. (a) The reference is ASSERTED pre-refactor:
-it must contain neither `A_LOOK` nor `u.rep.`, so a mistyped pin that resolved
-to something recent fails loudly instead of reporting a clean bill of health.
-(b) The gate is DEMONSTRATED RED — the recipe is in the script header (swap
-`a->u.rep.rmin` for `a->u.rep.rmax` at one `vm_rep` site in
+**THE POSITIVE CONTROL IS NOW IN THREE PARTS**, because "0 differences"
+between a tree and itself is worth nothing. (a) The reference is ASSERTED
+pre-refactor: it must contain neither `A_LOOK` nor `u.rep.`, so a mistyped pin
+that resolved to something recent fails loudly instead of reporting a clean
+bill of health. (b) The gate is DEMONSTRATED RED — the recipe is in the script
+header (swap `a->u.rep.rmin` for `a->u.rep.rmax` at one `vm_rep` site in
 `src/gen/emit_vm.c`, rebuild, run, revert). A gate nobody has seen red is a
-gate nobody has checked.
+gate nobody has checked. **(c), added at wave B+C and the one design §9.2 calls
+the half that can actually fail: the BEARING bucket must be REFUSED IN FULL by
+the reference** (`ctl_bad == 0 && ctl_ok == nb`). (a) and (b) are claims about
+the PIN and about the SCRIPT; (c) is a claim about the two COMPILERS, and it is
+re-answered on every run.
 
-**The bucket split is WAVE E's, not this wave's**, and the script carries a
-marked `WAVE E HOOK` where it goes. It is deliberately not built now: at wave 0
-the strict claim covers the whole population, and a differing-but-expected
-bucket introduced early is exactly what would quietly absorb the first real
-difference.
+**THE BUCKET SPLIT ([M6.6.2] wave B+C; it was the `WAVE E HOOK`), and it is a
+GRAMMAR-AWARE SCAN because it cannot be a grep.** `(?=` inside a character
+class is three literal bytes, `\(?=` is an escaped paren, and `(?<name>` is a
+NAMED GROUP belonging to a different module — SR-9 split that selector by TAIL
+after a 256-byte sweep found exactly three lookaround tails (`=`, `!`, `*`) and
+the named-group path for every other byte. A substring test gets all three
+wrong in the direction that ADMITS a pattern to the identity population,
+which is a silent pass. `lookaround_classify.py` tracks backslash escapes and
+class depth and FAILS SAFE toward BEARING: a truncated `(?` or `(?<`, and any
+`(*name:` whose name merely contains "look", go there though no rule names
+them. **Control (c) is what makes failing safe safe**: over-classifying costs a
+pattern from the identity population and is caught LOUDLY, because a
+lookaround-free pattern filed as bearing is one the reference COMPILES.
+Measured at the wave B+C landing: 85 bearing / 2048 free, floors 60 and 700,
+control 85/85, and 0 differences on all four axes.
 
 **On demand, via `make test-lookaround-identity`** — not in `make test`, on the
 ruling `test-atomic-identity` and `test-backrefs-identity` have and for the

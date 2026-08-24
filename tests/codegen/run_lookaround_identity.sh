@@ -37,17 +37,25 @@
 # so the sweep captures stdout, stderr and exit status as bytes and compares
 # them exactly.
 #
-# NO STAMP STRIP, and that is a rule rather than an omission. `run_atomic_
-# identity.sh`'s successors are entitled to normalise the D37 feature stamp
-# because a MODULE changes it legitimately. Wave 0 changes no module and no
-# feature, so the stamp must be identical too. If a run reports differences
-# that are ONLY the stamp, that is a FINDING to take to the manager — not a
-# strip to add here.
+# NO STAMP STRIP UNDER `STRICT_ALL=1`, and that is a rule rather than an
+# omission. `run_atomic_identity.sh`'s successors are entitled to normalise the
+# D37 feature stamp because a MODULE changes it legitimately. A pure refactor
+# changes no module and no feature, so under that mode the stamp must be
+# identical too and a difference that is ONLY the stamp is a FINDING to take to
+# the manager. **In the default BUCKET mode the three stamp lines ARE stripped,
+# and the strip is ASSERTED to remove exactly three** — see "THE STAMP STRIP IS
+# NOW ALLOWED" below, which is the wave B+C amendment to this paragraph rather
+# than a contradiction of it.
 #
 # THE POSITIVE CONTROL IS IN TWO PARTS, because "0 differences" between a tree
 # and itself is worth exactly nothing:
 #   (a) THE REFERENCE IS ASSERTED PRE-REFACTOR — it must contain no `A_LOOK`
 #       (the module has not landed) and no `u.rep` (the union has not landed).
+#       **Wave B+C adds a THIRD part, (c), which is the one design §9.2 calls
+#       "the half that can actually fail": the bearing bucket must be REFUSED
+#       IN FULL by the reference (`ctl_bad == 0 && ctl_ok == nb`). Part (b)
+#       below is a claim about the SCRIPT; part (c) is a claim about the two
+#       COMPILERS, re-answered on every run.**
 #       A mistyped pin that resolved to something recent would otherwise build
 #       a reference that agrees everywhere and report a clean bill of health.
 #   (b) THE GATE IS DEMONSTRATED RED — TWICE, and the two results together are
@@ -130,18 +138,39 @@
 #       statement about THIS POPULATION, and a population can be blind to a
 #       real bug in a way that is invisible until someone constructs the cell.
 #
-# THE BUCKET SPLIT IS WAVE E'S, NOT THIS WAVE'S. When module `lookaround`
-# actually lands, this script grows a grammar-aware classifier that splits the
-# population into lookaround-BEARING and lookaround-FREE, compares only the
-# free bucket for identity, and uses the bearing bucket as the refusal-mismatch
-# positive control the way `run_atomic_identity.sh` does. The hook is marked
-# `WAVE E HOOK` below. It is deliberately NOT built now: at wave 0 the strict
-# claim covers the whole population, and a bucket split introduced early is
-# exactly the thing that would quietly absorb a real difference.
+# THE BUCKET SPLIT LANDED AT WAVE B+C, AND `STRICT_ALL` NOW DEFAULTS TO 0.
+# The strict claim above was true for exactly as long as no pattern in the
+# corpus compiled to something the reference cannot build. Wave B+C ends that:
+# `(?=`, `(?!` and `(?*` patterns now compile, and the pinned pre-module
+# reference REFUSES every one of them, so `STRICT_ALL=1` goes red BY
+# CONSTRUCTION on this tree. That is a correct answer to the wrong question,
+# and the gate's job from here is the ordinary one every module's identity gate
+# has: **a lookaround-FREE pattern's emitted bytes did not move**.
+#
+#   STRICT_ALL=0  (DEFAULT since wave B+C) -- split the population with the
+#                 grammar-aware classifier below, compare only the FREE bucket
+#                 for byte identity on all four axes, and use the BEARING
+#                 bucket as the refusal-mismatch positive control.
+#   STRICT_ALL=1  the PURE-REFACTOR MODE, kept runnable and kept documented.
+#                 It is the right mode for a change that adds no construct -- a
+#                 rebase of wave 0 onto a moved base, or any later refactor of
+#                 the same kind -- and it is the STRONGER claim when it
+#                 applies. Do not run it on a tree where a lookaround compiles
+#                 and read the red as a finding; the finding is that the mode
+#                 does not fit the tree.
+#
+# THE STAMP STRIP IS NOW ALLOWED, AND ONLY NOW (design §9.1). Wave 0 forbade it
+# because that wave changed no module and no feature, so a stamp difference was
+# a finding. This wave DOES change what the D37 stamp describes, so the three
+# stamp lines are normalised away in bucket mode. **The strip asserts it
+# removed EXACTLY THREE lines from each side of every compiled comparison**;
+# anything else is a `STAMP FILTER` failure and not a silent normalisation,
+# because a strip that quietly removed four lines would be absorbing exactly
+# the difference this gate exists to report. STRICT_ALL=1 still strips nothing.
 #
 # Usage: bash tests/codegen/run_lookaround_identity.sh
 # Env: PCREC (default <root>/build/pcrec), CC, KEEP=1, SANFLAGS,
-#      LOOKAROUND_IDENTITY_REF (the pin), STRICT_ALL (default 1; see above),
+#      LOOKAROUND_IDENTITY_REF (the pin), STRICT_ALL (default 0; see above),
 #      JOBS (sweep concurrency, default nproc)
 
 set -u
@@ -152,7 +181,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
-STRICT_ALL="${STRICT_ALL:-1}"
+STRICT_ALL="${STRICT_ALL:-0}"
 JOBS="${JOBS:-$(nproc 2>/dev/null || echo 4)}"
 
 # THE PIN. `eacac76` is [M6.6.2]'s branch point — the last commit before D70's
@@ -269,17 +298,66 @@ if [ "$npat" -lt 1400 ]; then
     die "population is only $npat patterns (floor 1400) — the gate is not populated, and a zero-difference result over too small a corpus is not the measurement this gate exists to make"
 fi
 
-# ---- WAVE E HOOK ---------------------------------------------------------
-# When module `lookaround` lands, split "$PATFILE" here into a
-# lookaround-BEARING and a lookaround-FREE bucket with a grammar-aware
-# classifier (the `(?=` `(?!` `(?<=` `(?<!` `(?*` forms, class- and
-# escape-aware, failing SAFE into the BEARING bucket), compare only the FREE
-# bucket for byte identity, and assert the BEARING bucket as a refusal-mismatch
-# positive control — `run_atomic_identity.sh`'s shape exactly. Until then
-# STRICT_ALL below covers the whole population, which is the stronger claim.
+# ---- THE BUCKET SPLIT ([M6.6.2] wave B+C; was the WAVE E HOOK) ------------
+# A pattern is lookaround-BEARING if it contains any of the module's spellings.
+# It cannot be a substring test: `(?=` inside a character class is three
+# literal bytes, `\(?=` is an escaped paren, and `(?<name>` is a NAMED GROUP
+# this module does not touch (SR-9 split that byte by TAIL for exactly this
+# reason). So the classifier is a grammar-aware scan tracking backslash escapes
+# and class depth.
+#
+# IT FAILS SAFE TOWARD THE BEARING BUCKET, and the CONTROL is what makes that
+# safe rather than merely convenient. Over-classifying costs a pattern from the
+# identity population — a weaker gate — and would ALSO be caught, loudly,
+# because the bearing bucket is asserted to be REFUSED BY THE REFERENCE IN
+# FULL: a `(?i)` pattern misfiled as bearing makes `ctl_bad` nonzero and the
+# control goes red. UNDER-classifying is the dangerous direction, and it is
+# what the scan is written to avoid: a truncated `(?` or `(?<` at end of
+# pattern, and any `(*name:` whose name merely CONTAINS "look", go to BEARING
+# though no rule above names them.
+if [ "$STRICT_ALL" = "1" ]; then
+    cp "$PATFILE" "$WORKDIR/sweepfile"
+    echo "lookaround-identity: STRICT_ALL=1 — the PURE-REFACTOR mode: the whole population, no bucket split, no stamp strip"
+else
+python3 "$SCRIPT_DIR/lookaround_classify.py" "$PATFILE" \
+        "$WORKDIR/bearing" "$WORKDIR/free" || \
+    die "the bucket classifier failed — without a split there is no identity population and no control"
+
+nb=$(grep -c . "$WORKDIR/bearing" || true)
+nf=$(grep -c . "$WORKDIR/free" || true)
+echo "lookaround-identity: bucket split — $nb lookaround-BEARING, $nf lookaround-FREE"
+if [ "$nf" -lt 700 ]; then
+    die "only $nf lookaround-FREE patterns (floor 700) — the identity population is too small for a zero-difference result to mean anything"
+fi
+if [ "$nb" -lt 60 ]; then
+    die "only $nb lookaround-BEARING patterns (floor 60) — the POSITIVE CONTROL has no population, so an identical result below would prove nothing"
+fi
+
+# ---- THE POSITIVE CONTROL: the reference REFUSES every bearing pattern ----
+# "No lookaround exists today, so this module changes nothing for the existing
+# population" is TRIVIALLY TRUE and therefore worth nothing (design §9.2). This
+# is the half that can actually go red: it proves the reference really is a
+# DIFFERENT COMPILER and not a rebuild of this tree compared against itself.
+ctl_ok=0; ctl_bad=0
+while IFS= read -r pat; do
+    [ -n "$pat" ] || continue
+    if "$REF" --features all -p rx -o - -- "$pat" >/dev/null 2>&1; then
+        ctl_bad=$((ctl_bad + 1))
+        [ "$ctl_bad" -le 5 ] && echo "  CONTROL: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
+    else
+        ctl_ok=$((ctl_ok + 1))
+    fi
+done < "$WORKDIR/bearing"
+if [ "$ctl_bad" -eq 0 ] && [ "$ctl_ok" -eq "$nb" ]; then
+    ok "positive control: the pre-module reference REFUSES all $ctl_ok lookaround-BEARING patterns — so it really is a different compiler, and the zero-difference result below is a measurement rather than a build compared against itself"
+else
+    bad "positive control: the pre-module reference COMPILED $ctl_bad of $nb lookaround-bearing patterns. Either the pin is wrong or the classifier OVER-classified (a lookaround-free pattern filed as bearing) — read the accepted patterns above before trusting anything below"
+fi
+    cp "$WORKDIR/free" "$WORKDIR/sweepfile"
+fi
 
 # ---- THE SWEEP -----------------------------------------------------------
-python3 - "$PCREC" "$REF" "$PATFILE" "$WORKDIR" "$STRICT_ALL" "$JOBS" <<'PY'
+python3 - "$PCREC" "$REF" "$WORKDIR/sweepfile" "$WORKDIR" "$STRICT_ALL" "$JOBS" <<'PY'
 import subprocess, sys, os
 from concurrent.futures import ThreadPoolExecutor
 
@@ -298,6 +376,29 @@ def run(binary, args, pat):
                        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return r.returncode, r.stdout, r.stderr
 
+# THE D37 FEATURE STAMP, and the strip is ASSERTED rather than trusted (design
+# §9.1). In bucket mode this wave legitimately changes what the stamp
+# describes, so the three lines are normalised away — but a strip that removed
+# four lines, or two, would be absorbing exactly the difference this gate
+# exists to report. So `stamp_strip` returns the surviving bytes AND the count
+# it removed, every compiled comparison checks that count is 3, and a wrong
+# count is its own failure class (`STAMP FILTER`) rather than a quiet pass.
+# STRICT_ALL=1 does not strip at all: a pure refactor changes no module and no
+# feature, so a stamp difference is a finding there.
+STAMP = (b"/* Feature set:", b"#define PCREC_FEATURE_SET",
+         b"#define PCREC_FEATURE_MODULES")
+
+def stamp_strip(out):
+    keep, removed = [], 0
+    for line in out.split(b"\n"):
+        if any(line.startswith(m) for m in STAMP):
+            removed += 1
+        else:
+            keep.append(line)
+    return b"\n".join(keep), removed
+
+stampbad = 0
+
 fails = 0
 for label, args in AXES:
     same = refused_both = 0
@@ -311,6 +412,19 @@ for label, args in AXES:
     with ThreadPoolExecutor(max_workers=jobs) as ex:
         for pat, (ac, ao, ae), (bc, bo, be) in ex.map(one, pats):
             why = []
+            if strict != "1":
+                if ao:
+                    ao, na_ = stamp_strip(ao)
+                    if na_ != 3:
+                        stampbad += 1
+                        log.write("STAMP FILTER %r :: subject stdout had %d "
+                                  "stamp lines, not 3\n" % (pat, na_))
+                if bo:
+                    bo, nb_ = stamp_strip(bo)
+                    if nb_ != 3:
+                        stampbad += 1
+                        log.write("STAMP FILTER %r :: reference stdout had %d "
+                                  "stamp lines, not 3\n" % (pat, nb_))
             if ac != bc: why.append("EXIT(subject=%d reference=%d)" % (ac, bc))
             if ao != bo: why.append("STDOUT(%d vs %d bytes)" % (len(ao), len(bo)))
             # stderr is the refusal text; compared for every pattern under
@@ -335,10 +449,13 @@ for label, args in AXES:
     if ndiff:
         fails += 1
         print("  [%s] %d comparisons DIFFER between this tree and the "
-              "pinned pre-refactor reference. This wave changes no module and "
-              "no feature, so EVERY difference is a finding — including one "
-              "that is only the D37 feature stamp. Do not add a normaliser; "
-              "take it to the manager." % (label, ndiff), file=sys.stderr)
+              "pinned pre-module reference over the lookaround-FREE bucket. "
+              "Every one is a finding: this module is not supposed to move a "
+              "byte of a pattern that does not use it. (Under STRICT_ALL=1 "
+              "the population is the WHOLE corpus and the D37 stamp is not "
+              "stripped, so a red there may instead mean the mode does not "
+              "fit the tree — see this script's header.)"
+              % (label, ndiff), file=sys.stderr)
         with open(os.path.join(work, "diff." + label),
                   encoding="utf-8", errors="surrogateescape") as f:
             for i, line in enumerate(f):
@@ -346,14 +463,22 @@ for label, args in AXES:
                 print("  " + line.rstrip(), file=sys.stderr)
     else:
         print("  [%s] byte identity under STRICT_ALL=%s: all %d patterns "
-              "agree on EXIT STATUS, on the full raw stdout (no stamp strip) "
-              "and on stderr, against a compiler built from the pinned "
-              "pre-refactor commit, which shares no sources with this tree "
-              "(%d compiled identically, %d refused identically)"
-              % (label, strict, len(pats), same, refused_both))
+              "agree on EXIT STATUS, on stdout (%s) and on stderr, against a "
+              "compiler built from the pinned pre-module commit, which shares "
+              "no sources with this tree (%d compiled identically, %d refused "
+              "identically)"
+              % (label, strict, len(pats),
+                 "full raw bytes, no stamp strip" if strict == "1"
+                 else "past exactly the three D37 stamp lines, asserted",
+                 same, refused_both))
 
 res.close()
-sys.exit(1 if fails else 0)
+if stampbad:
+    print("  STAMP FILTER: %d stdout captures did not carry exactly three D37 "
+          "stamp lines. The strip is asserted, not trusted: a filter that "
+          "removes the wrong number of lines is absorbing the difference this "
+          "gate exists to report." % stampbad, file=sys.stderr)
+sys.exit(1 if (fails or stampbad) else 0)
 PY
 sweep_rc=$?
 
@@ -366,9 +491,17 @@ nax=0
 while IFS=$'\t' read -r label ndiff same refused total _rest; do
     nax=$((nax + 1))
     if [ "$ndiff" -eq 0 ]; then
-        ok "[$label] BYTE IDENTITY over all $total patterns against the pinned pre-refactor commit $REFCOMMIT: $same compiled identically, $refused refused identically, 0 differing on exit status, raw stdout (no stamp strip) or stderr"
+        if [ "$STRICT_ALL" = "1" ]; then
+            ok "[$label] BYTE IDENTITY over all $total patterns (STRICT_ALL=1: the WHOLE population) against the pinned pre-module commit $REFCOMMIT: $same compiled identically, $refused refused identically, 0 differing on exit status, raw stdout (no stamp strip) or stderr"
+        else
+            ok "[$label] BYTE IDENTITY over all $total lookaround-FREE patterns against the pinned pre-module commit $REFCOMMIT: $same compiled identically, $refused refused identically, 0 differing on exit status, stdout past exactly the three asserted D37 stamp lines, or stderr"
+        fi
     else
-        bad "[$label] $ndiff of $total comparisons DIFFER from the pre-refactor reference — every one is a finding at a pure refactor"
+        if [ "$STRICT_ALL" = "1" ]; then
+            bad "[$label] $ndiff of $total comparisons DIFFER from the reference under STRICT_ALL=1. That mode claims the WHOLE population is unmoved, which is FALSE on any tree where a lookaround compiles — check that the mode fits before reading this as a defect"
+        else
+            bad "[$label] $ndiff of $total lookaround-FREE comparisons DIFFER from the pre-module reference — every one is a finding: this module must not move a byte of a pattern that does not use it"
+        fi
     fi
 done < "$WORKDIR/axis_results"
 if [ "$nax" -ne 4 ]; then
