@@ -12810,3 +12810,36 @@ registry, strict green in its logs; gate/mech pending).
 LESSON (Frank's, twice tonight): before recommending a surface change,
 read the layer under it — the registry's own header had already ruled
 the question with measurements, and the design doc did not know.
+
+## 2026-08-24 (EDT), thirty-eighth session (part 10) — wave B+C MERGED (b6338f6); wave D opened
+
+The hardest wave landed on every bar at e85a83a and merged b6338f6.
+Manager review of vm_look against §3.2/§3.3/§3.6: the mark is recorded
+BEFORE the negative form's push (so the body-success cut discards the
+continuation frame and the fail lands on the enclosing choice point);
+positive atomic cuts then restores the cursor and keeps captures;
+body-exhausted on the negative arm rides the fail label's pop; non-atomic
+restores without cutting; fmin/fdyn zeroed for the body and restored —
+the shape is the design's. The port decides all three flags in ONE table
+whose `built` column is the wave split. Numbers: corpus 22,651/0; gate
+bucket mode 85 bearing / 2,048 free, reference refuses 85/85, four axes
+0 differing; 1,022 pcre2-only cells verified; the atomicity
+discriminator's two forms disagree on exactly 13 cells (asserted exact);
+10 of 11 rows DETECTED, S130 UNDETECTED by construction until D. Design
+§7's G8/G9 REFUTED (python verifies quantified lookaround and captures
+100%); G5 holds. Deviation accepted: no la_oracle.py — bref_oracle.py
+and bref_batch.c are generic and now have a third consumer (no parallel
+mechanism). Four findings from the lane: R33 V-7's anchor collision
+arrived at the EXISTING row S101 (fmin/fdyn's two lines now appear twice);
+a D24 two-homes defect of its own (the UNBUILT marker hand-written) caught
+by the reject pin and fixed by promoting the macro; SR-8's capability
+check keyed on "has a port" and had never needed to tell that from
+"built" — re-keyed on D65's column so wave D's rows demand witnesses with
+no edit; and its own §1 population guard went stale mid-wave and
+contaminated the first S122..S132 batch — re-run clean. S-LA10 (the \K
+check) was in §9.3 but in NO wave's landing bar; the lane landed it as
+S128 rather than ship the check undefended.
+
+Wave D opened (lane/waveD, opus): the seam's third residual entry, the
+fixed-per-branch lookbehind with the end-check on both arms (Frank's ASK
+2 ruling), four rows + S130 re-homed. Post-B+C battery running on main.
