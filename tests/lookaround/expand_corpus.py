@@ -600,14 +600,17 @@ def main():
                                  % (rel, b["lineno"]))
                 return 2
             # BOTH ARMS COMPILE WITH ONE FEATURE SET, and it is the block's
-            # own plus the two modules the EXPANSIONS need: `lookaround`
-            # for the assertions themselves and `classes` for the `\w` in
-            # `\b`/`\B`'s bodies. Giving arm A a wider set than arm B
-            # would make the feature list a second difference between the
-            # two lowerings, and then a disagreement could not be
-            # attributed to the substitution.
+            # own plus the three modules the EXPANSIONS need: `lookaround`
+            # for the assertions themselves, `classes` for the `\w` in
+            # `\b`/`\B`'s bodies, and `assertions` for the `\z`/`\A`
+            # INSIDE the expansions (`$` expands to `(?=\n?\z)`, so a
+            # block that needed no module at all needs one after
+            # substitution). Giving arm A a wider set than arm B would make
+            # the feature list a SECOND difference between the two
+            # lowerings, and then a disagreement could not be attributed to
+            # the substitution — so the widening is applied to both.
             want = [x for x in feats.split(",") if x]
-            for extra in ("lookaround", "classes"):
+            for extra in ("lookaround", "classes", "assertions"):
                 if extra not in want:
                     want.append(extra)
             feats = ",".join(want)
