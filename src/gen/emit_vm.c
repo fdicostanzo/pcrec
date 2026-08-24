@@ -6273,6 +6273,22 @@ typedef struct {
      * listing's prefilter line, which without it names a FLAG the caller did
      * not pass as the reason a backref pattern has none. */
     bool      has_bref;
+    /* [DD-14 wave E] does this artifact contain a SUBROUTINE CALL? Read by
+     * the same listing line, for the same reason and with a DIFFERENT
+     * argument behind it. A backreference's erasure is a real approximation
+     * that is sometimes a superset; a CALL's erasure is not an approximation
+     * at all -- it is a DIFFERENT LANGUAGE (design subroutines_design.md
+     * SS8.2: `a(?1)b` with group 1 = `x` matches "axb", and the erased `ab`
+     * does not). Without this arm the listing said "NO (--engine=vm)" for
+     * every call-bearing pattern compiled under `auto`, i.e. it named a flag
+     * the caller did not pass as the reason -- MEASURED on this branch
+     * before the arm existed, the identical defect [M6.5.2] found for
+     * backreferences one module earlier. */
+    bool      has_call;
+    /* [DD-14.EMPTY] the root's MINIMUM WIDTH, `pcrec_minw(root)` read AFTER
+     * `pcrec_callgraph_build` has run its fixpoint (see the search entry's
+     * own comment for why the ORDER is the whole content of this field). */
+    long long root_minw;
     const char *why;
 } VmStamp;
 
@@ -6354,9 +6370,30 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
               : st->has_bref
               ? "NO (backreference) -- the erased approximation is neither a"
                 " sound superset nor the true span (S7); no flag changes this"
+              /* [DD-14 wave E] THE FOURTH "off" ROUTE, and it is tested
+               * before the two flag routes for the same reason the
+               * backreference arm is: no flag explains it. A SUBROUTINE
+               * CALL's erasure is not a loose approximation, it is a
+               * different language (design SS8.2), so there is no window to
+               * hand the VM under ANY invocation -- and `-fprefilter`
+               * REFUSES rather than overriding (src/opt/select_engine.c). */
+              : st->has_call
+              ? "NO (subroutine call) -- erasing a call is a DIFFERENT"
+                " language, not a superset (S8.2); no flag changes this,"
+                " and -fprefilter refuses"
               : (cx->opt->flags & PCREC_NO_PREFILTER)
               ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
               : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
+    /* [DD-14.EMPTY] the ROOT MINIMUM WIDTH, listed only when it reached the
+     * analysis ceiling -- the debug-listing half of the artifact stamp
+     * `<PREFIX>_VM_ROOT_MINW`, off the SAME `root_minw` value the emitted
+     * guard is built from. Below the ceiling there is nothing to report that
+     * the PRUNING section does not already say per quantifier. */
+    if (st->root_minw >= PCREC_MINW_MAX)
+        sb_printf(o, "; root minw    unbounded (%lld) -- matches nothing:"
+                     " the search entry answers NOMATCH before any frame is"
+                     " pushed (SS4.4b's fixpoint, SS12 P-12)\n",
+                  st->root_minw);
     /* [D46] the rung stamp's QUICK-GLANCE summary: which rung KINDS appear
      * ANYWHERE in this program, not which one "the" program uses -- the
      * rung is selected per A_REP, so a pattern with two quantified bodies
@@ -6709,6 +6746,35 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     StrBuf *c = &job->csb;
     Vm v;
     GenNames g;
+    /* [DD-14.EMPTY] THE ROOT'S MINIMUM WIDTH, AND THE READ ORDER IS THE
+     * WHOLE POINT.
+     *
+     * `pcrec_minw` reads an `A_CALL`'s contribution off `u.call.minw`, which
+     * is the Kleene-from-infinity fixpoint `pcrec_callgraph_build` computes
+     * and caches on the node (src/opt/mrl.c's `A_CALL` arm, design SS4.4b).
+     * That pass runs at src/core/compile.c AFTER `pcrec_select_engine` and
+     * BEFORE this emitter, so:
+     *
+     *   - asked in `select_engine.c`, `pcrec_minw(root)` reads the ARENA'S
+     *     ZERO and answers a FINITE number. MEASURED on all three empty-
+     *     language cells of tests/recursion/leftrec.rxt + mrl.rxt: 1, 1, 0.
+     *     That is sound (this analysis's safe direction is UNDER-estimating)
+     *     but it is USELESS -- it never reaches infinity, so a root check
+     *     placed at engine selection can never fire. The plan row's
+     *     "engine selection is where the root predicate lives" is therefore
+     *     WRONG ABOUT THE SITE, and this comment is the correction of record.
+     *   - asked HERE, the fixpoint is final. The same three cells MEASURE
+     *     PCREC_MINW_MAX (1099511627776 = 2^40).
+     *
+     * WHY THIS EMITTER AND NOT emit_dfa.c TOO. The only construct that can
+     * drive a root minw to the ceiling is a call whose callee's language is
+     * EMPTY (`X = a? X b`), and `A_CALL` is structurally VM_ONLY (design
+     * SS8.1), so a pattern that can reach the ceiling can only reach THIS
+     * emitter. MEASURED rather than argued: over every `pattern` line under
+     * tests/ (2,568 distinct), exactly FOUR reach the ceiling and all four
+     * are call-bearing -- so the DFA arm would be dead code AND would move
+     * bytes on a population the identity gates hold constant. */
+    const long long root_minw = pcrec_minw(root);
 
     memset(&v, 0, sizeof v);
     v.cx = cx;
@@ -7261,6 +7327,23 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * derived default when neither was passed). */
     sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
               job->fit.prefilter ? "hybrid" : "none");
+    /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH STAMP, emitted only when the
+     * search entry's root check above was emitted -- one condition, read
+     * twice, never two conditions that could disagree. It is a NUMBER
+     * rather than a string because the emitted guard READS it: a stamp the
+     * artifact only talks about can drift from the artifact's behaviour,
+     * and this one cannot. The accompanying comment is the SR-8-shaped
+     * sentence a reader greps for ("matches nothing"). */
+    if (root_minw >= PCREC_MINW_MAX)
+        sb_printf(c,
+            "/* [DD-14] root minw unbounded: matches nothing. This pattern's\n"
+            " * minimum width is at the analysis ceiling -- design\n"
+            " * subroutines_design.md SS4.4b's call-graph fixpoint reached\n"
+            " * INFINITY, which SS12 P-12 rules a legal compile meaning the\n"
+            " * language is EMPTY. <prefix>_search answers NOMATCH before any\n"
+            " * frame is pushed. */\n"
+            "#define %s_VM_ROOT_MINW %lluULL\n",
+            v.up, (unsigned long long)root_minw);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
      * for the same §5.4 byte-identity reason the comment above states), but
@@ -8080,6 +8163,58 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         g.searchfn, v.p,
         v.nclamp > 0 ? "    size_t window_end;\n" : "");
 
+    /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK: the search entry answers
+     * NOMATCH BEFORE ANY FRAME IS PUSHED when the whole pattern's minimum
+     * width cannot fit in what is left of the subject.
+     *
+     * WHAT IT FIXES. Design SS12 P-12 rules that a callee whose language is
+     * EMPTY (`X = a? X b` has no base case) gets `minw = INFINITY` from
+     * SS4.4b's fixpoint, that this is a LEGAL COMPILE, and that the MRL
+     * prune reads it as "no position can match". Before this line the ruling
+     * was only honoured where a QUANTIFIER happened to carry the bound:
+     * `^(a?(?1)b)$` answered NOMATCH in O(1) because its `a?` emits an MRL
+     * clamp, while its siblings `^((?1)a)$` and the indirect two-node cycle
+     * held no quantifier at all and RAN UNTIL THE FRAME BUFFER GAVE UP. Same
+     * ruling, same empty language, two different answers, and the thing that
+     * decided which was whether the pattern happened to contain a `?`.
+     *
+     * IT IS THE GENERAL MRL BOUND APPLIED AT THE ROOT, NOT AN EMPTY-LANGUAGE
+     * SPECIAL CASE, and the emitted comparison is the same one every clamp
+     * inside the program makes: can the remaining subject hold what still
+     * has to be consumed. That is why it is written as a WIDTH COMPARISON
+     * rather than an unconditional `return 0`, and the distinction is not
+     * cosmetic. `PCREC_MINW_MAX` is reached by TWO routes -- the call
+     * fixpoint's genuine infinity, and `mrl_sat_add`/`mrl_sat_mul`
+     * SATURATION on a pattern whose true minimum is merely enormous -- and
+     * this function cannot tell them apart from the value alone. An
+     * unconditional `return 0` would be a MISCOMPILE on the second route for
+     * a subject of 2^40 bytes or more, which `size_t` can represent; the
+     * width comparison is exactly right on both routes and needs no
+     * distinction to be exactly right.
+     *
+     * WHY IT IS EMITTED CONDITIONALLY. Emitting it for EVERY artifact would
+     * be a strictly more general optimisation and it would move bytes on
+     * every pattern in the tree, which the four standing byte-identity gates
+     * exist to forbid. The condition is a benefit gate, not a semantic one:
+     * below the ceiling the check is a micro-optimisation the MRL clamps
+     * already make inside the program, at the ceiling it is the difference
+     * between an answer and a give-up. Widening it to every artifact is a
+     * separate, gate-bearing change.
+     *
+     * MEASURED: of the 2,568 distinct `pattern` lines under tests/, exactly
+     * four reach the ceiling -- `^((?1)a)$`, `^(a?(?1)b)$`, the indirect
+     * cycle, and mrl.rxt's `^(?:(?<g>a(?&g)b)){0}(?&g)$` -- and every one of
+     * them is call-bearing, so no call-free artifact gains a byte. */
+    if (root_minw >= PCREC_MINW_MAX)
+        sb_printf(c,
+            "    /* The whole pattern's MINIMUM WIDTH is at the analysis\n"
+            "     * ceiling (%s_VM_ROOT_MINW): no subject this machine can\n"
+            "     * address is long enough, so the answer is NOMATCH before\n"
+            "     * a single frame is pushed. */\n"
+            "    if ((unsigned long long)(subject_length - search_from)\n"
+            "            < %s_VM_ROOT_MINW) return 0;\n",
+            v.up, v.up);
+
     /* The recompute, spelled once and used only where a bound reads it. */
     char retry_win[512];
     retry_win[0] = 0;
@@ -8362,6 +8497,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         st.prefilter = prefn != NULL;
         st.has_bref  = (v.enc_mask &
                         (PCREC_ENCE_BREF | PCREC_ENCE_BREF_CASELESS)) != 0;
+        /* [DD-14 wave E] NOT read off `enc_mask`, unlike its neighbour: a
+         * call has no residual encoding entry to leave a bit in. The AST
+         * predicate is the one source `select_engine.c` forces the prefilter
+         * off from, so the listing reports the SAME fact rather than a
+         * second derivation of it. */
+        st.has_call  = pcrec_has_call(root);
+        st.root_minw = root_minw;
         st.why = job->fit.why;
         vm_render_listing(&v, &job->irsb, &st);
     }
