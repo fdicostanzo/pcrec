@@ -1,0 +1,135 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_atomicity.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 9cbf31c 2026-08-23
+# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/
+# RUN DATE   : 2026-08-23T20:13:37-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+
+=== T1: the NAIVE cell, which decides NOTHING ========================
+# `(a|ab)` is reachable BOTH lexically and by the call, so a match is
+# explained by the LEXICAL group retrying and says nothing about the
+# call. Recorded so a reader does not mistake it for the evidence.
+  ^(a|ab)(?1)c$                                'ababc'      ((0, 5), [(0, 2)])            # matches under BOTH hypotheses
+  ^(a|ab)(?1)c$                                'aabc'       ((0, 4), [(0, 1)])            # ditto
+
+=== T2: THE ISOLATED CELL -- only the call can reach the body ========
+# `(?(DEFINE)(?<g>a|ab))` -- group g NEVER runs lexically, so the only
+# alternation frame in existence belongs to the CALL. The follow `c`
+# fails after the first alternative and succeeds after the second.
+#   ATOMIC          -> nomatch
+#   BACKTRACKABLE   -> (0,3)
+  ^(?(DEFINE)(?<g>a|ab))(?&g)c$                'abc'        ((0, 3), [None])              # THE DISCRIMINATOR
+  ^(?(DEFINE)(?<g>a|ab))(?&g)c$                'ac'         ((0, 2), [None])              # control: the FIRST alternative already works, so this must match under both hypotheses
+  ^(?(DEFINE)(?<g>ab|a))(?&g)c$                'ac'         ((0, 2), [None])              # branch order reversed: the SECOND alternative is the one needed
+# the (?!)-guarded-branch spelling of the same isolation, in case
+# DEFINE itself is doing something special:
+  ^(?!)(?<g>a|ab)|^(?&g)c$                     'abc'        ((0, 3), [None])              # same question, no DEFINE
+  ^(?!)(?<g>ab|a)|^(?&g)c$                     'abc'        ((0, 3), [None])              # reversed, no DEFINE
+# and with a QUANTIFIER rather than an alternation as the callee's
+# choice point, so the finding is not about alternation:
+  ^(?(DEFINE)(?<g>a+))(?&g)ab$                 'aaab'       ((0, 4), [None])              # a+ inside the call must give bytes back
+  ^(?(DEFINE)(?<g>a*))(?&g)a$                  'aaa'        ((0, 3), [None])              # a* likewise
+  ^(?(DEFINE)(?<g>a{1,3}))(?&g)aa$             'aaa'        ((0, 3), [None])              # a bounded repeat
+
+=== T3: the same at DEPTH -- a retreat that crosses a RETURN =========
+  ^(?(DEFINE)(?<g>a(?&g)?b|x|xy))(?&g)$        'axyb'       ((0, 4), [None])              # the retreat has to re-enter the INNER call after the outer returned
+  ^(?(DEFINE)(?<g>a(?&g)?b|x|xy))(?&g)$        'axb'        ((0, 3), [None])              # control, depth 2
+  ^(?(DEFINE)(?<g>(?:x|xy)))(?&g)(?&g)y$       'xxyy'       ((0, 4), [None])              # two calls to the same body; the FIRST has to retry
+  ^(?(DEFINE)(?<g>(?:x|xy)))(?&g)(?&g)y$       'xyxy'       ((0, 4), [None])              # and here the SECOND has to retry
+
+=== T4: ATOMIC CONTROLS -- shapes that SHOULD refuse to retry ========
+  ^(?(DEFINE)(?<g>(?>a|ab)))(?&g)c$            'abc'        None                          # the callee body is ATOMIC: expect nomatch
+  ^(?(DEFINE)(?<g>a|ab))(?>(?&g))c$            'abc'        None                          # the CALL SITE is wrapped in an atomic group: expect nomatch
+  ^(?(DEFINE)(?<g>a|ab))(?&g)++c$              'abc'        None                          # a possessive quantifier on the call: expect nomatch
+  ^(?(DEFINE)(?<g>a+))(?>(?&g))ab$             'aaab'       None                          # atomic wrapper around a giving-back callee: expect nomatch
+
+=== T5: QUANTIFIED calls and the empty-body guard ====================
+  ^(?(DEFINE)(?<g>ab))(?&g){2}$                'abab'       ((0, 4), [None])              # a bounded repeat of a call
+  ^(?(DEFINE)(?<g>ab))(?&g)+$                  'ababab'     ((0, 6), [None])              # an unbounded repeat
+  ^(?(DEFINE)(?<g>ab))(?&g)*$                  ''           ((0, 0), [None])              # zero iterations
+  ^(?(DEFINE)(?<g>a?))(?&g)*$                  'aaa'        ((0, 3), [None])              # a NULLABLE callee under an unbounded quantifier -- the empty-iteration guard's territory
+  ^(?(DEFINE)(?<g>))(?&g)*$                    ''           ((0, 0), [None])              # an EMPTY callee under an unbounded quantifier
+  ^(a?)(?1)*$                                  'aaa'        ((0, 3), [(0, 1)])            # the same without DEFINE
+  ^(?R)*$                                      ''           MATCH-TIME rc=-52 nested recursion at the same subject position  # recursion under a quantifier: legal at all?
+  ^(?R)?$                                      ''           MATCH-TIME rc=-52 nested recursion at the same subject position  # and under ?
+  ^(?R)$                                       ''           MATCH-TIME rc=-52 nested recursion at the same subject position  # and bare
+  ^a(?R)*b$                                    'aabb'       None                          # with something consumed before it
+  ^(?(DEFINE)(?<g>))(?&g)*$                    ''           ((0, 0), [None])              # an EMPTY callee under * -- the same shape without (?R)
+  ^(?(DEFINE)(?<g>(?&g)?))(?&g)$               ''           MATCH-TIME rc=-52 nested recursion at the same subject position  # a callee that recurses at the same position, no quantifier
+  ^(a(?R)?b)*$                                 'abab'       ((0, 4), [(2, 4)])            # (?R) under a quantifier, with a base case
+  ^(a(?R)*b)$                                  'ab'         ((0, 2), [(0, 2)])            # a recursive call under a * inside the body
+
+=== T6: a call INSIDE an atomic group, a lookaround, a lookbehind ====
+  ^(?(DEFINE)(?<g>a|ab))(?=(?&g)c)abc$         'abc'        ((0, 3), [None])              # the call lives inside a positive lookahead
+  ^(?(DEFINE)(?<g>a|ab))(?!(?&g)c)abd$         'abd'        ((0, 3), [None])              # and a negative one
+  ^(?(DEFINE)(?<g>ab))x(?<=(?&g))$             'xab'        None                          # a call inside a LOOKBEHIND: what does 10.46 say about the width?
+  ^(?(DEFINE)(?<g>ab))ab(?<=(?&g))$            'ab'         ((0, 2), [None])              # a fixed-width call inside a lookbehind
+  ^(?(DEFINE)(?<g>a|ab))ab(?<=(?&g))$          'ab'         ((0, 2), [None])              # a VARIABLE-width call inside a lookbehind
+  ^(?(DEFINE)(?<g>a+))aa(?<=(?&g))$            'aa'         ERR 125 length of lookbehind assertion is not limited
+  ^(?(DEFINE)(?<g>ab))(?>(?&g))$               'ab'         ((0, 2), [None])              # inside an atomic group
+  ^(?(DEFINE)(?<g>\Kab))(?&g)$                 'ab'         ((0, 2), [None])              # a \K reached only by a call
+
+=== T7: the SHAPE OF THE COST -- retries a call can produce ==========
+# If a call is backtrackable, a call to a body with k alternatives
+# inside a follow that fails costs k attempts, and n calls in
+# sequence cost k^n. Measured by the SMALLEST match_limit that still
+# reaches the answer -- PCRE2's own count of backtracks.
+# (a) n CALLS to a 2-way body, only the all-long combination works:
+  n=1: ('limit', 4)   (subject 3 bytes)
+  n=2: ('limit', 8)   (subject 5 bytes)
+  n=3: ('limit', 16)   (subject 7 bytes)
+  n=4: ('limit', 32)   (subject 9 bytes)
+  n=5: ('limit', 64)   (subject 11 bytes)
+  n=6: ('limit', 128)   (subject 13 bytes)
+  n=7: ('limit', 256)   (subject 15 bytes)
+  n=8: ('limit', 512)   (subject 17 bytes)
+# (b) THE CONTROL: the same language with the body INLINED n times,
+#     no calls at all. If (a) and (b) track, a call costs what its
+#     body costs and nothing more.
+  n=1: ('limit', 3)
+  n=2: ('limit', 5)
+  n=3: ('limit', 9)
+  n=4: ('limit', 17)
+  n=5: ('limit', 33)
+  n=6: ('limit', 65)
+  n=7: ('limit', 129)
+  n=8: ('limit', 257)
+# (c) the RATIO, call / inlined:
+  n=1  calls=4        inlined=3        ratio=1.333
+  n=2  calls=8        inlined=5        ratio=1.600
+  n=3  calls=16       inlined=9        ratio=1.778
+  n=4  calls=32       inlined=17       ratio=1.882
+  n=5  calls=64       inlined=33       ratio=1.939
+  n=6  calls=128      inlined=65       ratio=1.969
+  n=7  calls=256      inlined=129      ratio=1.984
+  n=8  calls=512      inlined=257      ratio=1.992
+# (d) REACHABILITY: the sequence must GROW, or no retry happened.
+  the call series grew 128x from n=1 to n=8 -- retries ARE being forced
+
+# (e) and a RECURSIVE body, where the retry crosses a return:
+  depth<=1 (subject  3 bytes): ('limit', 10)
+  depth<=2 (subject  5 bytes): ('limit', 16)
+  depth<=3 (subject  7 bytes): ('limit', 22)
+  depth<=4 (subject  9 bytes): ('limit', 28)
+  depth<=5 (subject 11 bytes): ('limit', 34)
+  depth<=6 (subject 13 bytes): ('limit', 40)
+
+=== REACHABILITY GUARD ==============================================
+outcomes populated: ['giveup', 'match', 'nomatch', 'refuse']
+both match and no-match occur: the atomicity cells are separating two answers, not reporting one

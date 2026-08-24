@@ -135,6 +135,14 @@ cell(r"^(?(DEFINE)(?<g>(?&g)?))(?&g)$", "",
      "a callee that recurses at the same position, no quantifier")
 cell(r"^(a(?R)?b)*$", "abab", "(?R) under a quantifier, with a base case")
 cell(r"^(a(?R)*b)$", "ab", "a recursive call under a * inside the body")
+print("# THE REGISTRY'S `quant` COLUMN CLAIM: the (?1)..(?9) rows read")
+print("# quant=no while (?R)/(?0)/(?+1)/(?-N) read quant=yes. Is any of the")
+print("# ten call spellings NOT quantifiable?")
+for pat in [r"^(a)(?1)*$", r"^(a)(?-1)*$", r"^(?<n>a)(?&n)*$",
+            r"^(a)\g<1>*$", r"^(a)\g'1'*$", r"^(?P<n>a)(?P>n)*$",
+            r"^(a)(?1){2}$", r"^(a)(?1)+$", r"^(a)(?1)?$",
+            r"^(a)(?1)*+$", r"^(a)(?1)*?$", r"^(a\g<0>*b)$"]:
+    cell(pat, "aaa", "quantified call")
 print()
 
 print("=== T6: a call INSIDE an atomic group, a lookaround, a lookbehind ====")

@@ -1,0 +1,177 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_spellings.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 9cbf31c 2026-08-23
+# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/
+# RUN DATE   : 2026-08-23T20:13:36-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+
+=== A1: the CALL spellings ==========================================
+# each row: does it compile, and is it a CALL (matches 'ab') or a
+# REFERENCE (would need 'aa')?  The subject is 'ab' throughout, so a
+# match IS the call verdict and a no-match IS the reference verdict.
+  (a|b)(?1)                          'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (a|b)(?-1)                         'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (?<n>a|b)(?&n)                     'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (?P<n>a|b)(?P>n)                   'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (a|b)\g<1>                         'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (?<n>a|b)\g<n>                     'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (a|b)\g'1'                         'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (?<n>a|b)\g'n'                     'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (a|b)\g<-1>                        'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+  (a|b)\g'-1'                        'ab'         ((0, 2), [(0, 1)])                        # CALL if it matches
+
+# and the same ten against 'aa', where BOTH a call and a reference
+# match -- so this column alone would have told a reader nothing:
+  (a|b)(?1)                          'aa'         ((0, 2), [(0, 1)])                      
+  (a|b)(?-1)                         'aa'         ((0, 2), [(0, 1)])                      
+  (?<n>a|b)(?&n)                     'aa'         ((0, 2), [(0, 1)])                      
+  (?P<n>a|b)(?P>n)                   'aa'         ((0, 2), [(0, 1)])                      
+  (a|b)\g<1>                         'aa'         ((0, 2), [(0, 1)])                      
+  (?<n>a|b)\g<n>                     'aa'         ((0, 2), [(0, 1)])                      
+  (a|b)\g'1'                         'aa'         ((0, 2), [(0, 1)])                      
+  (?<n>a|b)\g'n'                     'aa'         ((0, 2), [(0, 1)])                      
+  (a|b)\g<-1>                        'aa'         ((0, 2), [(0, 1)])                      
+  (a|b)\g'-1'                        'aa'         ((0, 2), [(0, 1)])                      
+
+=== A2: the REFERENCE spellings that share a doorway with a call =====
+# `\g` is ONE escape selector serving TWO modules; the TAIL decides.
+  (a|b)\1                            'ab'         None                                      # REFERENCE if it does NOT match
+  (a|b)\g1                           'ab'         None                                      # REFERENCE if it does NOT match
+  (a|b)\g{1}                         'ab'         None                                      # REFERENCE if it does NOT match
+  (a|b)\g{-1}                        'ab'         None                                      # REFERENCE if it does NOT match
+  (?<n>a|b)\k<n>                     'ab'         None                                      # REFERENCE if it does NOT match
+  (?P<n>a|b)(?P=n)                   'ab'         None                                      # REFERENCE if it does NOT match
+  (?<n>a|b)\k'n'                     'ab'         None                                      # REFERENCE if it does NOT match
+  (?<n>a|b)\k{n}                     'ab'         None                                      # REFERENCE if it does NOT match
+  (?<n>a|b)\g{n}                     'ab'         None                                      # REFERENCE if it does NOT match
+
+=== A3: the RELATIVE forms, at several distances =====================
+# (?+N) counts groups to the RIGHT of the call, (?-N) to the LEFT.
+# The subjects are chosen so that the WRONG target gives a different
+# answer, not merely a different capture.
+  ^(a)(?-1)$                         'aa'         ((0, 2), [(0, 1)])                        # (?-1) -> group 1
+  ^(a)(b)(?-1)$                      'abb'        ((0, 3), [(0, 1), (1, 2)])                # (?-1) -> group 2 (the NEAREST left)
+  ^(a)(b)(?-2)$                      'aba'        ((0, 3), [(0, 1), (1, 2)])                # (?-2) -> group 1
+  ^(?+1)(a)$                         'aa'         ((0, 2), [(1, 2)])                        # (?+1) -> group 1, a FORWARD call
+  ^(?+2)(a)(b)$                      'bab'        ((0, 3), [(1, 2), (2, 3)])                # (?+2) -> group 2, forward past one
+  ^(a)(?-01)$                        'aa'         ((0, 2), [(0, 1)])                        # leading zero in a relative call
+  ^(a)\g<-1>$                        'aa'         ((0, 2), [(0, 1)])                        # \g<-N> is the same relative rule
+  ^\g<+1>(a)$                        'aa'         ((0, 2), [(1, 2)])                        # \g<+N> forward
+  ^(a)(b)(?2)$                       'abb'        ((0, 3), [(0, 1), (1, 2)])                # ABSOLUTE (?2) for contrast
+
+# the FORWARD call is the one that makes a call unlike a reference:
+# a forward REFERENCE can only ever be unset, a forward CALL works.
+  ^(?+1)(a|b)$                       'ab'         ((0, 2), [(1, 2)])                        # forward CALL: runs group 1's pattern early
+  ^\2(a|b)(c)$                       'abc'        None                                      # forward REFERENCE, for contrast
+
+=== A4: (?R) and (?0): what does 'the whole pattern' include? ========
+  \((a(?R)?b)\)                      '(ab)'       ((0, 4), [(1, 3)])                        # (?R) inside a group
+  ^(a(?1)?b)$                        'aabb'       ((0, 4), [(0, 4)])                        # (?1) recursion, anchors OUTSIDE the group
+  ^(a(?R)?b)$                        'aabb'       None                                      # (?R) re-runs ^...$ TOO -- the anchors come with it
+  ^(a(?R)?b)$                        'ab'         ((0, 2), [(0, 2)])                        # depth 1 only: the anchors still fit
+  (a(?R)?b)                          'aabb'       ((0, 4), [(0, 4)])                        # unanchored (?R): does it reach depth 2?
+  (a(?0)?b)                          'aabb'       ((0, 4), [(0, 4)])                        # (?0) is documented as a synonym for (?R)
+  (a)(?0)                            'aa'         None                                      # a (?0) with no terminating alternative
+
+# the SAME body written three ways, one subject, so the difference
+# between 'the whole pattern' and 'group 1' is a single cell:
+  ^(a(?R)?b)$                        'aabb'       None                                    
+  ^(a(?0)?b)$                        'aabb'       None                                    
+  ^(a(?1)?b)$                        'aabb'       ((0, 4), [(0, 4)])                      
+
+=== A5: the (?(DEFINE)...) idiom =====================================
+  ^(?(DEFINE)(?<w>[a-z]+))(?&w)-(?&w)$ 'foo-bar'    ((0, 7), [None])                          # the library-pattern idiom: define once, call twice
+  ^(?(DEFINE)(?<w>[a-z]+))(?&w)-(?&w)$ 'foo-'       None                                      # and it really is required to match
+  ^(?:(?<w>[a-z]+))?(?&w)-(?&w)$     'foo-bar'    ((0, 7), [(0, 2)])                        # a DEFINE-LESS spelling of the same intent: optional group
+  ^(?!)(?<w>[a-z]+)|(?&w)-(?&w)$     'foo-bar'    ((0, 7), [None])                          # another DEFINE-less dodge: an unreachable branch
+  ^(?<w>[a-z]+)?+(?&w)-(?&w)$        'foo-bar'    None                                      # possessive-optional dodge
+# what DEFINE actually costs a caller who cannot have it: the group
+# is still THERE, so it can match, and its capture is visible:
+  ^(?:(?<w>[a-z]+))?(?&w)-(?&w)$     'foo-bar'    ((0, 7), [(0, 2)])                      
+  ^(?(DEFINE)(?<w>[a-z]+))(?&w)-(?&w)$ 'foo-bar'    ((0, 7), [None])                        
+
+=== A6: REFUSALS and their PCRE2 error numbers =======================
+  (a)(?2)                            'aa'         ERR 115 reference to non-existent subpattern
+  (a)(?9)                            'aa'         ERR 115 reference to non-existent subpattern
+  (a)(?-2)                           'aa'         ERR 115 reference to non-existent subpattern
+  (a)(?+2)                           'aa'         ERR 115 reference to non-existent subpattern
+  (?<n>a)(?&m)                       'aa'         ERR 115 reference to non-existent subpattern
+  (a)\g<2>                           'aa'         ERR 115 reference to non-existent subpattern
+  (a)\g<m>                           'aa'         ERR 115 reference to non-existent subpattern
+  (a)(?0                             'aa'         ERR 114 missing closing parenthesis
+  (a)(?&)                            'aa'         ERR 162 subpattern name expected
+  (a)\g<>                            'aa'         ERR 162 subpattern name expected
+  (a)(?+0)                           'aa'         ERR 126 a relative value of zero is not allowed
+  (a)(?-0)                           'aa'         ERR 126 a relative value of zero is not allowed
+  (a)\g<0>                           'aa'         None                                      # \g<0>: is it the whole pattern?
+  (a)\g'0'                           'aa'         None                                      # \g'0'
+
+=== A7a: TWO SPELLINGS THE CHARTER'S LIST DOES NOT HAVE ==============
+# A6 found `\g<0>` and `\g'0'` COMPILING. Group 0 is the whole
+# pattern, so these should be (?R) synonyms -- measured, not assumed:
+  (a\g<0>?b)                         'aabb'       ((0, 4), [(0, 4)])                        # \g<0> as whole-pattern recursion
+  (a\g'0'?b)                         'aabb'       ((0, 4), [(0, 4)])                        # \g'0' likewise
+  ^(a\g<0>?b)$                       'aabb'       None                                      # and it carries the anchors, exactly as (?R) does
+  (a(?R)?b)                          'aabb'       ((0, 4), [(0, 4)])                        # the (?R) control, same subject
+
+# GROUP NUMBERS ABOVE 9: pcrec's registry has rows for (?1)..(?9)
+# only. Does PCRE2 accept a two-digit absolute call?
+  (a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?10) 'aaaaaaaaaaa' ((0, 11), [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10)])  # (?10) with ten groups
+  (a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?12) 'aaaaaaaaaaaaa' ((0, 13), [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10), (10, 11), (11, 12)])  # (?12)
+  (a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10) 'aaaaaaaaaaa' ((0, 11), [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10)])  # (?-10), two-digit relative
+  (a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?+1)(b) 'aaaaaaaaaabb' ((0, 12), [(0, 1), (1, 2), (2, 3), (3, 4), (4, 5), (5, 6), (6, 7), (7, 8), (8, 9), (9, 10), (11, 12)])  # (?+1) past ten groups
+
+=== A7b: DEFINE-LESS EQUIVALENCE, swept ==============================
+# A5 found `^(?!)(?<w>X)|BODY$` reproducing DEFINE's semantics on one
+# cell. One cell is an anecdote. Here it is against the DEFINE form
+# over a subject set that includes the failing and the capturing ones.
+  'foo-bar'    DEFINE=((0, 7), [None])         dodge=((0, 7), [None])           optional=((0, 7), [(0, 2)])        <-- DIFFERS
+  'foo-'       DEFINE=None                     dodge=None                       optional=None                    
+  '-bar'       DEFINE=None                     dodge=None                       optional=None                    
+  'a-b'        DEFINE=((0, 3), [None])         dodge=((0, 3), [None])           optional=((0, 3), [None])        
+  ''           DEFINE=None                     dodge=None                       optional=None                    
+  '-'          DEFINE=None                     dodge=None                       optional=None                    
+  'foo-bar-baz' DEFINE=None                     dodge=None                       optional=None                    
+  'FOO-bar'    DEFINE=None                     dodge=None                       optional=None                    
+  'foo bar'    DEFINE=None                     dodge=None                       optional=None                    
+  'x-y'        DEFINE=((0, 3), [None])         dodge=((0, 3), [None])           optional=((0, 3), [None])        
+  'aaa-aaa'    DEFINE=((0, 7), [None])         dodge=((0, 7), [None])           optional=((0, 7), [(0, 2)])        <-- DIFFERS
+  the (?!)-branch dodge agrees with DEFINE on 11/11 subjects
+
+=== A7: python `re` on the whole vocabulary ==========================
+# The D27 goal-facts question: which cells does python rule?
+  (a|b)(?1)                          PatternError: unknown extension ?1 at position 6
+  (a|b)(?-1)                         PatternError: missing flag at position 8
+  (?<n>a|b)(?&n)                     PatternError: unknown extension ?<n at position 1
+  (?P<n>a|b)(?P>n)                   PatternError: unknown extension ?P> at position 11
+  (a|b)\g<1>                         PatternError: bad escape \g at position 5
+  (a|b)\g'1'                         PatternError: bad escape \g at position 5
+  (a(?R)?b)                          PatternError: unknown extension ?R at position 3
+  (a)(?0)                            PatternError: unknown extension ?0 at position 4
+  (?(DEFINE)(?<x>a))(?&x)            PatternError: unknown group name 'DEFINE' at position 3
+  (a|b)\1                            compiles
+  (?P<n>a|b)(?P=n)                   compiles
+  (?P<n>a|b)(?P=n)                   compiles
+  (?<n>a|b)\k<n>                     PatternError: unknown extension ?<n at position 1
+  (a|b)\g{1}                         PatternError: bad escape \g at position 5
+  (a)\g<0>                           PatternError: bad escape \g at position 3
+
+=== REACHABILITY GUARD ==============================================
+outcomes populated by the cells above: ['match', 'nomatch', 'refuse']
+all three outcomes present: the table separates compile, match and no-match rather than reporting one of them everywhere

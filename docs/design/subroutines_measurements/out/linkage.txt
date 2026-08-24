@@ -1,0 +1,60 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_linkage.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 7795726 2026-08-23
+# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/
+# RUN DATE   : 2026-08-23T20:13:37-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+flags: -O2 -std=gnu11
+
+=== CONTROL: do the three linkages agree, cell by cell? ==============
+  all three linkages agree on 13 subjects x 4 call-counts (52 cells)
+
+=== SIZE: bytes of rx_match_anchored, by call-count ==================
+  k        splice     hybrid     call      
+  0       779       779       708       
+  1       1001      1090      804       
+  2       1384      1191      884       
+  3       1704      1266      964       
+  4       1976      1350      1044      
+  6       2584      1526      1196      
+  8       3179      1706      1356      
+  12      4339      1992      1696      
+  16      5543      2320      1992      
+# the k=0 row is the baseline: no call site exists, so the three must
+# be close. A large spread there would mean this axis is measuring the
+# generator's scaffolding rather than the linkage.
+
+=== TIME: best of three, 2000000 reps ================================
+# TWO corpora. The MIXED one exercises every occurrence; the LEXICAL
+# one dies before the first call site and is the corpus HYBRID's whole
+# claim rests on -- it must track SPLICE and beat CALL, or the extra
+# body copy buys nothing.
+  --- mixed corpus ---
+  k        splice       hybrid       call        
+  1       0.60        0.63        0.71        
+  2       0.85        0.94        1.07        
+  4       1.07        1.28        1.30        
+  8       1.47        1.77        1.90        
+  --- lex corpus ---
+  k        splice       hybrid       call        
+  1       1.07        1.07        1.11        
+  2       1.03        1.06        1.07        
+  4       0.97        1.05        1.06        
+  8       0.96        1.05        1.12        
+# NOTE both corpora include subjects that do NOT match, so the
+# bump-along loop and the fail label are exercised, not only the happy
+# path.
