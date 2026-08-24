@@ -25,3 +25,9 @@ tests/fuzz/failures/
 worktrees/
 scripts/tests/*.testreport
 build-ccache/
+
+# [DD-14 wave F] the email specimen's SUBJECT FILES are derived, not source:
+# 372 KB of binaries `gen_subjects.py` reproduces deterministically, whose
+# integrity check is the COMMITTED manifest.tsv. tests/recursion/gen_corpus.py
+# regenerates them on demand when it needs them for realworld.rxt.
+docs/design/subroutines_measurements/email_specimen/subjects/

@@ -1120,6 +1120,61 @@ static int put_agreement(StrBuf *sb, const RegRow *r, const Live *C,
                     "own doorway");
         return 1;
     }
+    /* [DD-14 wave F] A BYTE-KEYED INDEX ROW ELECTS ITS PRIMARY, AND THAT IS
+     * THE CORRECT ANSWER RATHER THAN AN EXEMPTION.
+     *
+     * The clause above is right for every ordinary row: a row's own canonical
+     * syntax must reach THAT row. An RF_INDEX row is the one shape for which
+     * that sentence is false BY CONSTRUCTION — it exists to give a real PCRE2
+     * spelling a line in the inventory, and `pcrec_registry_arbitrate` skips
+     * it before any arm runs (D71 item 3), so it can never be elected
+     * anywhere. Demanding it here would report a design decision as a defect.
+     *
+     * BUT NOTHING IS WEAKENED, because the honest claim is still checkable
+     * and still specific: the spelling must reach a REAL row, and that row
+     * must belong to the SAME MODULE. `(?10)` elects `(?1)`; `\g<0>` elects
+     * `\g<1>`. A wrong `sel` on an index row would elect a different module's
+     * row (or none) and fires here; so would an index row whose spelling
+     * PCRE2 accepts but whose doorway pcrec never wired.
+     *
+     * THE ELECTED ROW IS NOT ALWAYS THE FAMILY'S PRIMARY, and that is why
+     * this clause tests the MODULE rather than the `family` string: `(?01)`
+     * belongs to the `(?1)` family (it means group 1) and dispatches on the
+     * `(?0)` row (it enters on the zero byte). Both facts are true and they
+     * are different facts — exactly the split D71 item 3 exists to make.
+     *
+     * The TWELVE `(*` alpha index rows do not reach this branch at all: their
+     * doorway resolves them BY NAME through mod_verbs.c, so they really are
+     * elected and the ordinary clause above passes for them. */
+    if (C->r.row != r && (r->flags & RF_INDEX) != 0) {
+        if (!C->r.row) {
+            sb_printf(sb, "DISSENT: election: index row '%s' elected NO row "
+                          "for its own syntax -- the spelling reaches no "
+                          "doorway, so nothing can compile it", r->syntax);
+            return 1;
+        }
+        if ((C->r.row->flags & RF_INDEX) != 0) {
+            sb_printf(sb, "DISSENT: election: index row '%s' elected another "
+                          "INDEX row '%s' -- an index row must never be "
+                          "elected, so one of the two is reachable",
+                      r->syntax, C->r.row->syntax);
+            return 1;
+        }
+        if (!r->module || !C->r.row->module ||
+            strcmp(r->module, C->r.row->module) != 0) {
+            sb_printf(sb, "DISSENT: election: index row '%s' (module '%s') "
+                          "elected '%s' (module '%s') -- an index row is a "
+                          "SPELLING of its own module's construct, so a "
+                          "cross-module election means its selector is wrong",
+                      r->syntax, r->module ? r->module : "(none)",
+                      C->r.row->syntax,
+                      C->r.row->module ? C->r.row->module : "(none)");
+            return 1;
+        }
+        sb_printf(sb, "ok  (index row; spelling elects '%s', same module)",
+                  C->r.row->syntax);
+        return 0;
+    }
     if (C->r.row != r) {
         sb_printf(sb, "DISSENT: election: '%s' elected %s%s%s for its own syntax",
                   r->syntax,

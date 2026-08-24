@@ -447,6 +447,24 @@ table are deliberately absent from `sabotages/`:
   way the project's convention already asks ("add its check here in the same
   change").
 
+**AND ONE SABOTAGE ROW IS OWED BY A DIFFERENT DELIVERABLE ENTIRELY.**
+`S-SR2a` (subroutines_design.md §9.3) sabotages the fail label's restore of
+`call_depth` — the recursion-depth COUNTER. **It is not written, and wave F
+did not write it, because the thing it sabotages IS NOT IN THE DEFAULT
+ARTIFACT**: D71 item 1 ruled the counter a DIAGNOSTIC GENERATION AXIS in
+`[V-H]`'s namespace (`--trace`'s shape, a separate emitted variant the
+artifact stamps, never a runtime flag), emitted only when the post-discharge
+tree contains a call. A sabotage row against a field no default artifact
+carries would be UNDETECTED for a reason that is not a finding.
+
+So the row is **OWED BY `[V-H]`'s AXIS**, and it lands with it: when the
+diagnostic variant ships, S-SR2a's detector is the codegen count of the
+restore site PLUS a deep-recursion cell that must still reach its answer
+(a leaked `call_depth` makes `RX_CALL` refuse early, which no answer-based
+check sees). Recorded here rather than in the design so the next person to
+open this directory looking for the row finds out why it is absent —
+this file's own standing rule about a claim with no checker.
+
 One sabotage was ADAPTED rather than copied literally: `S15-drop-d-row`
 translates `tests/reject/CLAUDE.md`'s "drop `{'d', \"classes\"},` from
 `esc_modules`" — `esc_modules` as a distinct table no longer exists; the SR-2

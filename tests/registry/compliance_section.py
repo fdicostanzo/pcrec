@@ -108,7 +108,14 @@ BASE_KEYS = frozenset([
     "base:braced-whitespace-scope", "base:capturing-group-limit",
     "base:class-brackets-basic", "base:class-escape-fallbacks",
     "base:class-quoting-e", "base:class-set-ops-uts18",
-    "base:conditional-assert", "base:conditional-define",
+    "base:conditional-assert",
+    # "base:conditional-define" RETIRED at [DD-14] wave F: `(?(DEFINE)` is
+    # a real registry row now (module `recursion`, D71 item 4), so its
+    # annotation is keyed to that row's own `syntax` and checked against a
+    # live dump instead of against this allowlist. Left as a comment rather
+    # than deleted so a reader who greps for the old key finds out where it
+    # went; the entry itself must go, or a base key nothing uses would sit
+    # here forever certifying a construct that no longer needs one.
     "base:conditional-name-disambiguation",
     "base:conditional-recursion-test", "base:conditional-version",
     "base:dot", "base:double-quantifier", "base:escapes-control-letters",
@@ -410,8 +417,12 @@ def dump():
     # primaries' family lines, so this count is of ROWS and the index's own
     # line count is smaller; both numbers are asserted, separately, because
     # they answer different questions.
-    if len(rows) != 118:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 118. "
+    # 118 -> 128 at [DD-14] wave F: module `recursion`'s nine RF_INDEX rows
+    # (design §8.1's four missing spelling families) plus the `(?(DEFINE)` row
+    # (D71 item 4). Nine of the ten are spellings the compiler ALREADY handled
+    # and no surface named; the tenth is a new construct.
+    if len(rows) != 128:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 128. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

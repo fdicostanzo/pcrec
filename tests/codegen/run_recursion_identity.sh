@@ -62,7 +62,8 @@
 # `(?*`, `(?<=`/`(?<!`/`(?<*` (lookbehind), `(?<name>` (named group), `(?'`
 # (named group, quoted), `(?P<` (named group), `(?P=` (backref by name),
 # `(?>` (atomic group, module `atomic-groups`' doorway), `(?#` (comment),
-# `(?(` (conditional), and an inline-option run (leading letter, `^` or
+# `(?(` (conditional) EXCEPT `(?(DEFINE)`, which is this module's since
+# wave F, and an inline-option run (leading letter, `^` or
 # `-`). FAILS SAFE TOWARD THE CALL BUCKET, `run_atomic_
 # identity.sh`'s and `lookaround_classify.py`'s shared rule: an unrecognised
 # `(?` tail is classified call-bearing, which only costs a pattern from the
@@ -190,7 +191,23 @@ NOT_CALL = re.compile(
                                     # got wrong, measured against the
                                     # positive control below)
     r"|#"                          # (?#...)   comment
-    r"|\("                         # (?(...)   conditional
+    r"|\((?!DEFINE\))"            # (?(...)   conditional -- module
+                                    # `conditionals`', NOT this module's --
+                                    # EXCEPT `(?(DEFINE)`, which [DD-14] wave
+                                    # F moved to module `recursion` as a
+                                    # tailed row (D71 item 4). The negative
+                                    # lookahead is what keeps this gate HONEST
+                                    # rather than convenient: a DEFINE-bearing
+                                    # pattern with NO CALL in it --
+                                    # `(?(DEFINE)abc)^x$` -- really is a
+                                    # pattern this module changed, so it
+                                    # belongs in the population the reference
+                                    # is EXPECTED to refuse and not in the one
+                                    # required to be byte-identical. THE GATE
+                                    # FOUND THIS ITSELF: four such cells
+                                    # arrived with wave F's own corpus and it
+                                    # reported them as refusal mismatches
+                                    # before the classifier had been told.
     r"|[)^JUainmrsx]"              # (?imsx...) (?) (?^)  inline option run
                                     # -- the EXACT letter set GROUP_OPT rows
                                     # in registry.c carry, not a blanket

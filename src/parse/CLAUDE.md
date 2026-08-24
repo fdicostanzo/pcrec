@@ -79,6 +79,30 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   resolves a scanned name through. D71 item 3; `check_index_rows` in
   tests/registry/registry_check.c asserts both halves against the ENGINE's
   own dispatch rather than by re-reading the flag.
+
+  **[DD-14 wave F] AND THE FIRST *BYTE-KEYED* INDEX ROWS** (`INDEX_RC`,
+  nine of them, module `recursion`). They are the other shape of RF_INDEX
+  and the reason the flag's contract had to be generalised past its
+  verb-shaped first customer. The twelve alpha spellings have NO byte-keyed
+  dispatch identity to keep — their doorway decides by name, so `tail` is
+  that name and `pcrec_registry_verb_name_row` resolves it back. These nine
+  DO have one, and it belongs to their PRIMARY: `(?10)` really is elected by
+  the `(?1)` row's bucket and `\g<0>` by the `\g<` row's. So each records
+  the true selector byte (never `REG_SEL_ANY`, which would claim "no byte
+  selects me") and has no name to resolve. `check_index_rows` now asks the
+  verb-name questions of RK_VERB index rows only, and asks the OTHER shape
+  for a real selector instead; the non-election sweep applies to both.
+
+  **WHAT THE NINE ARE FOR**: design §8.1's four MISSING SPELLING FAMILIES —
+  `(?10)`/`(?-10)` (multi-digit), `(?+2)`…`(?+9)`, `\g<0>`/`\g'0'`, and the
+  leading-zero absolutes `(?01)`/`(?00)`/`\g<01>`/`\g'01'`. Every one of
+  them ALREADY COMPILED CORRECTLY before wave F, MEASURED against libpcre2
+  10.46 — the ports read the whole digit run and never read the row's
+  selector as a number — so what was missing was the INVENTORY, never the
+  behaviour, and the wave moved no artifact byte. They also carry
+  `family`, which collapses module `recursion`'s 35 rows into NINE
+  `--list-families` lines.
+
   **[DD-14 wave B+C] AND THE FIRST ROWS WHOSE PORT IS CHOSEN BY FAMILY.**
   Module `recursion`'s twenty-four `(?` rows carry one of THREE ports
   (`GROUP_RC`/`GROUP_RC_T`, mirroring `GROUP_LA`/`GROUP_LA_T`'s shape), and
@@ -754,10 +778,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   is where that stops being an argument.
 
 - **mod_recursion.c** — module `recursion` ([DD-14] wave B+C, `\g` doorway
-  wired at wave D): THREE atom ports at the `(?` doorway plus two exported
-  helpers `mod_backrefs.c` calls, and one construct family whose whole design
-  turns on a single measured cell. Design:
+  wired at wave D, `(?(DEFINE)` added at wave F): FOUR atom ports at the `(?`
+  doorway plus two exported helpers `mod_backrefs.c` calls, and one construct
+  family whose whole design turns on a single measured cell. Design:
   docs/design/subroutines_design.md, panel-approved at R34.
+
+  **THE FOURTH PORT IS `pcrec_rcport_define`, AND IT IS NOT A CALL PORT.**
+  D71 item 4 moved `(?(DEFINE)...)` here from `conditionals` as a TAILED row
+  on the `(?(` doorway (tail `DEFINE)`, rank 25); everything else at that
+  doorway is still `conditionals`'. The port parses the body and returns an
+  `A_REP` with `rmin == rmax == 0` over it — the node `p_rep` builds for
+  `(?:BODY){0}` — so nothing below the parser gained a line, and
+  `tests/codegen/run_codegen_tests.sh`'s rule 4 asserts the two spellings'
+  artifacts are identical byte for byte. It is also the ONE row in this
+  module that is not `VM_ONLY`: a DEFINE defines, it does not call, and
+  `(?:(?<g>a)){0}b` MEASURABLY compiles to a pure DFA under
+  `--engine=dfa --no-captures`. See the port's own header for the rest.
 
   **WHAT SEPARATES THIS MODULE FROM `backrefs` IS ONE CELL**, and every
   consequence follows from it: `(a|b)\1` on "ab" is NOMATCH and `(a|b)(?1)`
@@ -772,6 +808,9 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `_name` the two by-name spellings. The family is what a reader of the
   registry needs to see at the row, which is also why `registry.c` gained two
   macros (`GROUP_RC`/`GROUP_RC_T`) rather than one taking a function pointer.
+  The DEFINE row is written LONGHAND for the field the macros fix: its engine
+  mask. A macro exists to make the fixed fields unmissable, and a variant
+  differing in one of them is exactly the row that must be read in full.
 
   **THE LEADING-ZERO RULE IS THIS FILE'S SHARPEST TRAP** (§2.4a, R34 LENS1-4).
   The registry keys the `(?` doorway on THE CHARACTER AFTER `(?`, and it has a

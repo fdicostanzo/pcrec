@@ -2120,6 +2120,15 @@ fi
 # sites share the body), and a wave-G fully-spliced artifact is back to 1. A
 # hard-coded "two" fires on three of those four.
 #
+# [DD-14 WAVE F] THE LAST FOUR FIXTURES ARE THE `(?(DEFINE)` SPELLING, and
+# they are here because D71 item 4's claim is that the DEFINE lowers to the
+# `{0}`-callee shape and adds NO MECHANISM. If that claim were false, the
+# relation is where it would break first: a DEFINE that emitted its body
+# lexically would change the count, and one that emitted a region per call
+# SITE rather than per group would too. `(?(DEFINE)(a))b` -- a definition
+# NOBODY CALLS -- is the floor of the set and MEASURED at 1: the definition
+# costs no region at all, which is the same thing `X{0}` has always done.
+#
 # THE RELATION IS ASSERTIBLE ONLY BECAUSE THE `goto *` IS WRITTEN INLINE. The
 # design's §5.1 sketches `RX_RETURN` as a MACRO, which would put one `goto *`
 # in the definition and none at the uses -- making the artifact's count
@@ -2131,7 +2140,11 @@ for dd14_row in \
     '2|(a)(?1)' \
     '2|(a)(?1)(?1)(?1)' \
     '4|(a)(b)(c)(?1)(?2)(?3)' \
-    '2|a(?R)?b' ; do
+    '2|a(?R)?b' \
+    '2|(?(DEFINE)(a))(?1)b' \
+    '4|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
+    '1|(?(DEFINE)(a))b' \
+    '2|(?(DEFINE)(?<w>a(?&w)?b))(?&w)' ; do
     dd14_want="${dd14_row%%|*}"
     dd14_pat="${dd14_row#*|}"
     if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
@@ -2212,6 +2225,68 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_rb.c" -- '((?:a|b
     fi
 else
     bad "[DD-14-RECURSION rule 3]: pcrec failed to compile the fixture '((?:a|b))(?1)'"
+fi
+
+# RULE 4 ([DD-14] wave F, D71 item 4) -- `(?(DEFINE)X)` AND `(?:X){0}` EMIT
+# THE SAME PROGRAM, and this is the rule that makes "one row, zero new
+# mechanism" checkable rather than merely asserted.
+#
+# The port produces an `A_REP` with rmin == rmax == 0 over the parsed body --
+# the node `p_rep` builds for `(?:X){0}` -- so every pass below the parser
+# sees a shape it already had. If that is true, the two spellings' artifacts
+# can differ ONLY in the places the PATTERN TEXT itself appears: the header
+# echo, the `#include` of the per-output header, and the byte OFFSET in the
+# engine-selection reason (the capture group sits at a different column in the
+# two spellings). Everything else -- every label, every frame, every slot,
+# every stamped constant -- must be identical byte for byte.
+#
+# THE NORMALISATION IS DELIBERATELY NARROW: the pattern's own text and any
+# `offset N` are erased, and NOTHING ELSE. A rule that filtered more would
+# start hiding the differences it exists to find.
+#
+# AND IT CARRIES ITS OWN POSITIVE CONTROL. A comparison that normalised away
+# everything would pass on any two patterns, so a THIRD pattern that is
+# genuinely a different program is run through the identical pipeline and must
+# NOT compare equal. Without it this rule would go green on a normaliser that
+# had quietly started deleting the whole file.
+dd14_norm() {   # $1 = artifact, $2 = the pattern text to erase
+    # FOUR THINGS ARE ERASED AND NOTHING ELSE, each of them a fact about the
+    # pattern's TEXT rather than about the program:
+    #   * the pattern verbatim (the header echo and the IR listing),
+    #   * the `.pattern` / `.pattern_len` stamp -- one whole line, because the
+    #     emitter writes it C-string-escaped (`?` becomes `\?` to keep a
+    #     trigraph out of the source) and re-deriving that escaping here would
+    #     be a second copy of the emitter's rule,
+    #   * any byte OFFSET (the capture group sits at a different column in the
+    #     two spellings),
+    #   * the `#include` of the per-output header.
+    # A fifth erasure would start hiding the differences this rule exists to
+    # find, which is what the positive control below is watching for.
+    dd14_raw=$(printf '%s' "$2" | sed 's/[][\\.*^$/&|]/\\&/g')
+    sed -e "s|$dd14_raw||g" \
+        -e 's/^\( *\)\.pattern = ".*",$/\1.pattern = "P",/' \
+        -e 's/offset [0-9][0-9]*/offset N/g' \
+        -e 's/\.pattern_len = [0-9][0-9]*/.pattern_len = N/' \
+        -e 's/^#include ".*\.h"$/#include "H"/' "$1"
+}
+dd14_zero='(?:(a)){0}(?1)b'
+dd14_def='(?(DEFINE)(a))(?1)b'
+dd14_ctl='(?:(a)){1}(?1)b'
+if "$PCREC" -p rx --features all -o "$WORKDIR/dd14_z.c" -- "$dd14_zero" >/dev/null 2>&1 &&
+   "$PCREC" -p rx --features all -o "$WORKDIR/dd14_d.c" -- "$dd14_def"  >/dev/null 2>&1 &&
+   "$PCREC" -p rx --features all -o "$WORKDIR/dd14_c.c" -- "$dd14_ctl"  >/dev/null 2>&1; then
+    dd14_norm "$WORKDIR/dd14_z.c" "$dd14_zero" > "$WORKDIR/dd14_z.n"
+    dd14_norm "$WORKDIR/dd14_d.c" "$dd14_def"  > "$WORKDIR/dd14_d.n"
+    dd14_norm "$WORKDIR/dd14_c.c" "$dd14_ctl"  > "$WORKDIR/dd14_c.n"
+    if ! cmp -s "$WORKDIR/dd14_z.n" "$WORKDIR/dd14_d.n"; then
+        bad "[DD-14-RECURSION rule 4] (D71 item 4): '$dd14_def' and '$dd14_zero' emit DIFFERENT programs once the pattern text and offsets are normalised away -- $(diff "$WORKDIR/dd14_z.n" "$WORKDIR/dd14_d.n" | grep -c '^[<>]') differing lines. The DEFINE lowering has grown a mechanism of its own, which is exactly what 'one row, zero new mechanism' rules out"
+    elif cmp -s "$WORKDIR/dd14_z.n" "$WORKDIR/dd14_c.n"; then
+        bad "[DD-14-RECURSION rule 4]: THE POSITIVE CONTROL FAILED -- '$dd14_ctl' normalises equal to '$dd14_zero' too, so the normaliser is erasing the program and this rule proves nothing about the DEFINE"
+    else
+        ok "[DD-14-RECURSION rule 4] (D71 item 4): '$dd14_def' and '$dd14_zero' emit the SAME program byte for byte (pattern text and offsets normalised), while the '{1}' control does not -- the DEFINE really is the {0}-callee shape"
+    fi
+else
+    bad "[DD-14-RECURSION rule 4]: pcrec failed to compile one of the three fixtures"
 fi
 
 echo

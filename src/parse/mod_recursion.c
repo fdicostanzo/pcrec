@@ -352,3 +352,125 @@ ExtResult pcrec_call_by_name(Ctx *cx, const RegRow *rw, ExtWant want,
 {
     return rc_name_call(cx, rw, want, at, body, blen, end, what);
 }
+
+/* ---- `(?(DEFINE)...)` (D71 item 4, design §2.5 as SUPERSEDED) ------------
+ *
+ * DESIGN §2.5 RULED "NO DEFINE, AND THE COST IS ONE LINE OF DOCUMENTATION".
+ * D71 ITEM 4 OVERRULED IT, and the reason it could is the reason this port is
+ * twenty lines: `(?(DEFINE)BODY)` is a conditional group whose condition is
+ * never true, so its body never runs at the lexical position and exists only
+ * to be called — which is EXACTLY what `(?:BODY){0}` already means and
+ * already ships (§4.4c's `{0}` callees, MEASURED for plain, recursive, atomic
+ * and rung-bearing bodies). "Subroutines without DEFINE is half a feature;
+ * the `{0}` layout rule the R34 verifier forced already IS DEFINE's
+ * semantics."
+ *
+ * SO THIS PORT PRODUCES THE NODE THE `{0}` IDIOM PRODUCES AND NOTHING ELSE.
+ * An `A_REP` with `rmin == rmax == 0` over the parsed body — the same shape
+ * `p_rep` builds for `(?:BODY){0}` — so `callgraph.c`, `vm_count_slots`,
+ * `emit_vm.c` and the linkage see a construct they already handle and NOT ONE
+ * LINE was added to any of them for this row. That is D71 item 4's "one row,
+ * zero new mechanism" taken literally, and the corpus asserts it the way it
+ * has to be asserted: `tests/recursion/zerodef.rxt` carries the `{0}`
+ * spelling and `tests/recursion/define.rxt` the DEFINE spelling of the same
+ * cells, and they must agree.
+ *
+ * THE ROW IS ON THE `(?(` DOORWAY AND TAILED `DEFINE)`, which is why the rest
+ * of `(?(` stays module `conditionals`': one byte, two constructs, told apart
+ * by a literal tail exactly as `(?P<`/`(?P=`/`(?P>` are (SR-9, rank 25). A
+ * `(?(` that is not `(?(DEFINE)` never reaches this file.
+ *
+ * `DEFINE` IS CASE-SENSITIVE AND THE TAIL INCLUDES THE `)`. Both are
+ * MEASURED, not assumed: `(?(define)(?<w>a))` is error "reference to
+ * non-existent subpattern" on 10.46 (lowercase is read as a NAME condition,
+ * not the keyword) and `(?(DEF)...)` likewise, so a tail of `DEFINE` without
+ * its closing parenthesis would claim `(?(DEFINED)` — a name condition
+ * belonging to `conditionals` — for this module. The seven bytes `DEFINE)`
+ * are the whole discriminator.
+ *
+ * THE ONE REFUSAL IS THE MULTI-BRANCH BODY, and it is PCRE2's own rule rather
+ * than an implementation limit: `(?(DEFINE)a|b)` is error "DEFINE subpattern
+ * contains more than one branch" at OFFSET 3 — measured at `at + 3` in every
+ * position tried (`(?(DEFINE)a|b)`, `^(?(DEFINE)a|b)$`, `xx(?(DEFINE)a|b)`),
+ * which is the byte after `(?(` where the condition begins, so this port
+ * blames the same byte. `(?:a|b){0}` has no such rule and compiles, which is
+ * the one place the two spellings genuinely differ and the reason this cannot
+ * be a pure desugaring at the syntax level.
+ *
+ * WHAT IS *NOT* REFUSED, because it was measured rather than guessed:
+ * `(?(DEFINE))` (an empty body), `(?(DEFINE)abc)` (a body defining no group
+ * at all) and a QUANTIFIED DEFINE (`(?(DEFINE)(?<w>a))*`) all COMPILE on
+ * 10.46. An earlier reading of the brief expected a refusal for "anything but
+ * a group-definition body"; libpcre2 has no such rule and neither does this.
+ *
+ * THE ROW IS `ANY_ENGINE`, AND IT IS THE ONLY ROW IN THIS MODULE THAT IS.
+ * Design §8.1's "every row is VM_ONLY" is a claim about SUBROUTINE CALLS, and
+ * it is structural for them: `^(a(?1)?b)$` generates a^n b^n, which is not
+ * regular. A DEFINE is not a call — it is a zero-width definition, and the
+ * pattern that contains one is exactly as regular as the pattern without it.
+ * MEASURED on the shipped compiler: `(?:(?<g>a)){0}b` compiles to a PURE DFA
+ * under `--engine=dfa --no-captures`, so marking this row VM_ONLY would
+ * refuse a construct the DFA engine demonstrably handles — and would do it
+ * asymmetrically, since the `{0}` spelling of the same thing would still
+ * compile. What forces the VM in every REAL use of a DEFINE is the CALL that
+ * reads it, which carries its own row and its own stamp.
+ */
+ExtResult pcrec_rcport_define(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from)
+{
+    const char *p = cx->pat;
+    const size_t n = cx->patlen;
+
+    /* `from` IS ALREADY THE BODY. ext.c's general producer path hands a
+     * tailed row `cx->pos + 2 + strlen(tail)` — "the position right after the
+     * row's own full selector prefix" — so for tail `DEFINE)` that is the
+     * byte after the keyword's closing parenthesis, which is where the body
+     * starts. Nothing is recomputed here; the row's tail is checked only
+     * because a row wired to this port without one would silently parse the
+     * keyword as the body. */
+    if (!rw->tail || strcmp(rw->tail, "DEFINE)") != 0 || from > n)
+        BAD_ROW(at, "the (?(DEFINE) row");
+    const size_t bodyat = from;
+
+    /* A body-carrying group, so the SCOPED inline-option state is saved and
+     * restored around the body exactly as `p_group_body`'s plain-`(` tail,
+     * mod_atomic_groups.c's port and mod_lookaround.c's do. The DEFINE itself
+     * captures nothing (PCRE2 gives it no number), so `cx->ncap` is untouched
+     * here — the groups INSIDE the body number normally, which is what makes
+     * `(?(DEFINE)([a-z]+))^(?1)-(?1)$` name group 1 and MEASURED-match. */
+    ParseMods saved_mods = *cx->mods;
+    size_t    saved_pos  = cx->pos;
+    cx->pos = bodyat;
+
+    AltInfo info;
+    Ast *body = pcrec_parse_body(cx, &info);
+
+    if (cx->pos >= n || p[cx->pos] != ')') {
+        *cx->mods = saved_mods;
+        cx->pos = saved_pos;
+        REFUSE(at, "missing closing ) for group");
+    }
+    size_t end = cx->pos + 1;
+    *cx->mods = saved_mods;
+    cx->pos = saved_pos;
+
+    /* PCRE2's own rule, at PCRE2's own offset (see the header). `nbr` is the
+     * branch count `pcrec_parse_body` reports, which is 1 for a body with no
+     * top-level `|` — including an EMPTY body, which compiles. */
+    if (info.nbr > 1)
+        REFUSE(at + 3, "DEFINE subpattern contains more than one branch");
+
+    /* THE `{0}` NODE, and every field is `p_rep`'s for `(?:BODY){0}`.
+     * `greedy` is semantically dead at a zero repetition — the emitter writes
+     * "X{0}: matches empty, no code" — but it is set from the SAME scoped
+     * `(?U)` state `p_rep` reads, so the two spellings produce structurally
+     * identical trees and the corpus can assert that rather than assume it. */
+    Ast *a = pcrec_ast_node(cx, A_REP);
+    pcrec_ast_stamp(cx, a, rw, at);
+    a->l = body;
+    a->u.rep.rmin = 0;
+    a->u.rep.rmax = 0;
+    a->u.rep.greedy = !cx->mods->ungreedy;
+
+    return rc_result_node(a, at, end, want);
+}

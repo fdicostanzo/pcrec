@@ -1255,7 +1255,11 @@ case11() {
     # `listed` says.
     assert_field "case11: ...so the catch-all is 'listed', not an election" \
         "$out" "(?q)" "select" "listed"
-    assert_eq "case11: ...and the row set is unchanged by the retagging" "45" \
+    # 45 -> 50 at [DD-14] wave F: the five byte-keyed `(?` INDEX rows
+    # (`(?10)`, `(?01)`, `(?00)`, `(?+2)(a)(b)`, `(a)x10(?-10)`), which the
+    # `(?` prefix rule finds exactly as it finds every other row in the
+    # bucket. They are SHOWN and never ELECTED — see the exempt split below.
+    assert_eq "case11: ...and the row set is unchanged by the retagging" "50" \
         "$(explain_field "$out" "@header" "rows")"
     out="$("$PCREC" --explain '[[:alpha]')"
     assert_field "case11: an unclosed delimiter pair DECLINES" "$out" \
@@ -1326,7 +1330,7 @@ case11() {
     # populations are asserted. Every displayed row must win its OWN syntax and
     # agree; the ONE exception is the single RS_BASE row, whose syntax reaches
     # no doorway.
-    local blocks=0 selfel=0 agreed=0 exempt=0 answered=0 q
+    local blocks=0 selfel=0 agreed=0 exempt=0 idxel=0 answered=0 q
     local queries=('\v' '\d' '\N{U+0041}' '(?<' '(?P' '(?i-m:' '(?iZ)' '(?C1)'
                    '(?(1)' '(?-1)' '[[:alpha:]]' '[[.a.]]' '[[:foo:]]'
                    '(*ACCEPT)' '(*NOTAVERB)' '\p{Foo}' '(?' '(?:' '\Q')
@@ -1342,8 +1346,16 @@ case11() {
               "  own elected"*)
                   v="${line#*elected}"; v="${v#"${v%%[! ]*}"}"
                   blocks=$((blocks + 1))
+                  # [DD-14 wave F] THREE buckets, not two. A block that
+                  # elects neither `self` nor `—` is a byte-keyed INDEX row
+                  # electing its PRIMARY, which is what an index row is for
+                  # (D71 item 3) and is a DIFFERENT fact from the RS_BASE
+                  # row's "reaches no doorway at all". Folding them together
+                  # would let either population grow behind the other's
+                  # number.
                   if [ "$v" = "self" ]; then selfel=$((selfel + 1))
-                  else exempt=$((exempt + 1)); fi ;;
+                  elif [ "$v" = "—" ]; then exempt=$((exempt + 1))
+                  else idxel=$((idxel + 1)); fi ;;
             esac
             case "$line" in
               "  agree"*)
@@ -1382,11 +1394,23 @@ case11() {
     # it by prefix, `(?:` by both rules. A third exempt block would mean a row
     # stopped electing itself while still reporting agreement, which is the
     # one combination the two sweeps cannot produce together.
-    if [ "$exempt" -eq 2 ] && [ "$selfel" -eq $((blocks - 2)) ]; then
-        pass "case11: exactly $exempt blocks are base-grammar exempt ($selfel/$blocks elected their own row)"
+    #
+    # [DD-14 wave F] AND WHY 5 INDEX-ELECTED, counted SEPARATELY. Module
+    # `recursion`'s five byte-keyed `(?` index rows appear in the `(?` prefix
+    # query and each elects its PRIMARY — `(?10)` elects `(?1)`, `(?01)`
+    # elects `(?0)` (the family and the dispatch differ, which is the whole
+    # point of the split). They are not "exempt": their election is ASSERTED,
+    # by `put_agreement`'s own index-row clause, which requires a real row of
+    # the SAME MODULE. What is pinned here is the SIZE of that population, so
+    # a sixth byte-keyed index row cannot arrive unremarked and neither can
+    # one that quietly stopped being shown.
+    if [ "$exempt" -eq 2 ] && [ "$idxel" -eq 5 ] &&
+       [ "$selfel" -eq $((blocks - 7)) ]; then
+        pass "case11: exactly $exempt blocks are base-grammar exempt and $idxel are index rows electing their primary ($selfel/$blocks elected their own row)"
     else
         fail "case11: election sweep" \
              "exempt=$exempt (want exactly 2: the RS_BASE row in 2 queries)" \
+             "idxel=$idxel (want exactly 5: the byte-keyed (? index rows)" \
              "self=$selfel blocks=$blocks"
     fi
     # and no query on the shipped table may exit 3

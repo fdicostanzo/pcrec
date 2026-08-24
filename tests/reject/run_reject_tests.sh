@@ -2025,7 +2025,22 @@ else
         # in this wave moved WITHIN the hand-written table, out of the `verbs`
         # loop and into a `lookaround` one, and both loops still probe at the
         # closed gate.
-        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 117 ]; then
+        # 117 -> 127 at [DD-14] WAVE F: module `recursion`'s nine RF_INDEX
+        # spellings (design §8.1's four missing families) plus the
+        # `(?(DEFINE)` row (D71 item 4). They join this iteration on the same
+        # terms every other row does — MEASURED at the closed gate, each one
+        # really does print "requires module 'recursion'" for its own
+        # `syntax`: `(?10)` through the `(?1` doorway, `(?01)` through
+        # `(?0`, `\g<0>` through `\g`, and `(?(DEFINE)(?<w>a))` through the
+        # `DEFINE)` tail on `(?(`. That last one is the load-bearing case
+        # for this wave, because the TAIL-LESS `(?(` row beside it is module
+        # `conditionals`': if the tail ever stopped winning the arbitration,
+        # this loop would see the wrong module name in the refusal.
+        #
+        # NOTHING RETIRED. The nine index rows are spellings the compiler
+        # ALREADY handled; before this wave they had no row and so no probe
+        # here, which is precisely the coverage gap the wave closed.
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 127 ]; then
             ok "iterated every non-base row in the dump ($niter)"
         else
             bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"

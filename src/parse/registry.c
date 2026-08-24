@@ -271,10 +271,39 @@
  * documentation fact with no parser consumer (`quant` is read only by
  * `--list-syntax` and by tests/reject) — and moving it here would put a wave-F
  * deliverable inside a wave-B+C diff. */
-#define GROUP_RC(sel, syn, note, q, port) \
-    {RK_GROUP, (sel), NULL, (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, {PORT_FN, false, 0, NULL, (port)}, NO_PORT, NULL}
-#define GROUP_RC_T(sel, tl, syn, note, q, port) \
-    {RK_GROUP, (sel), (tl), (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 25, NULL, {PORT_FN, false, 0, NULL, (port)}, NO_PORT, NULL}
+#define GROUP_RC(sel, syn, note, q, port, fam) \
+    {RK_GROUP, (sel), NULL, (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, {PORT_FN, false, 0, NULL, (port)}, NO_PORT, (fam)}
+#define GROUP_RC_T(sel, tl, syn, note, q, port, fam) \
+    {RK_GROUP, (sel), (tl), (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 25, NULL, {PORT_FN, false, 0, NULL, (port)}, NO_PORT, (fam)}
+/* [DD-14 wave F] AN INDEX ROW FOR ONE OF MODULE `recursion`'s MISSING
+ * SPELLINGS (RF_INDEX, internal.h; D71 item 3). Design §8.1 MEASURED four
+ * families of spelling that PCRE2 accepts, that pcrec ALREADY COMPILES
+ * CORRECTLY, and that no row in this table names — so `--list-syntax`,
+ * `tests/reject/` and the compliance index were all silent about them while
+ * the compiler handled them. This macro is how they get a line.
+ *
+ * IT NEVER DISPATCHES, and that is the whole point of the flag: `(?10)`
+ * enters at the `(?1)` row's byte and `\g<0>` at the `\g<` row's, exactly as
+ * they did before this wave. `pcrec_rcport_num` / `_rel` / `pcrec_brport_g`
+ * re-read the whole digit run and were always the code that answered — the
+ * SPELLINGS are what were missing from the inventory, never the behaviour,
+ * which is why every one of these rows is `built` on the day it lands and why
+ * this wave moves no artifact byte.
+ *
+ * `sel` IS THE REAL DISPATCHING BYTE rather than REG_SEL_ANY, unlike the
+ * twelve `(*` alpha rows: those genuinely have no byte-keyed identity (their
+ * doorway decides by name), while these do — `(?10)` really is elected by the
+ * `1` bucket. Recording the true byte keeps the row HONEST about where its
+ * spelling enters, and RF_INDEX is what keeps it from being elected there:
+ * `pcrec_registry_arbitrate` skips the flag before any arm runs, which
+ * `tests/registry/registry_check.c`'s dispatch sweep asserts over every
+ * (kind x selector x text).
+ *
+ * `family` IS THE PRIMARY ROW'S OWN `syntax` and is REQUIRED (the flag's
+ * contract): an index row exists to be a member of a family, and the family
+ * is the line the index actually prints. */
+#define INDEX_RC(kind, sel, syn, note, q, ce, fam) \
+    {(kind), (sel), NULL, (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, RF_INDEX, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, NO_PORT, NO_PORT, (fam)}
 /* PCRE2 rejects it, and the byte that decides is the one AFTER the selector.
  * Takes `ce`: its one caller is an RK_ESC row, which is class-reachable.
  * Rank 25 = the tailed tier (MOD-0.2; see RegRow.rank) — its caller is the
@@ -523,14 +552,47 @@ ESC_CLASS_SCALAR('g', "\\g{-1}",   backrefs, VM_ONLY, "backreference by number o
  RD_MODULE, NULL, NULL, 0,
  "subroutine call into a group by number or name: \\g<1> \\g<name> — NOT a "
  "backreference (it re-runs the group's pattern)",
- ROADMAP_PLANNED, QF_NO, "set 4", 25, NULL,
+ ROADMAP_PLANNED, QF_YES, "set 4", 25, NULL,
  {PORT_FN, false, 0, NULL, pcrec_brport_g}, {PORT_SCALAR, true, 'g', NULL, NULL}, NULL},
 {RK_ESC, 'g', "'", "\\g'1'", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
  RD_MODULE, NULL, NULL, 0,
  "subroutine call into a group, quoted spelling: \\g'1' \\g'name' — NOT a "
  "backreference",
- ROADMAP_PLANNED, QF_NO, "set 3", 25, NULL,
+ ROADMAP_PLANNED, QF_YES, "set 3", 25, NULL,
  {PORT_FN, false, 0, NULL, pcrec_brport_g}, {PORT_SCALAR, true, 'g', NULL, NULL}, NULL},
+/* [DD-14 wave F] THE FOUR MISSING `\g` SPELLINGS, as INDEX rows (see
+ * INDEX_RC above; these are longhand for the ESC kind's `class_expect`, which
+ * that macro takes but the four values differ per row and are MEASURED, never
+ * reasoned: `[\g<0>]` is the four bytes g < 0 > and `[\g<01>]` the five
+ * g < 0 1 >, re-derived here against libpcre2 10.46 by the same census
+ * tests/probes/probe_class_expect.c runs).
+ *
+ * `\g<0>` AND `\g'0'` ARE §2.4's TWO WHOLE-PATTERN SPELLINGS NOBODY LISTED,
+ * and the leading-zero pair is §2.4a's rule reaching this doorway: the digit
+ * run is read as decimal, so `\g<01>` is GROUP 1 while `\g<00>` is the root
+ * — the same one-character-prefix trap the `(?0)` row's note is qualified
+ * for, one doorway over. All four are MEASURED compiling and agreeing with
+ * libpcre2 today (wave D wired the arms); what was missing is the LINE. */
+{RK_ESC, 'g', NULL, "\\g<0>", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_INDEX,
+ "subroutine call to the WHOLE PATTERN, angle-bracket spelling -- \\g<0> and "
+ "\\g<00> are the root, \\g<01> is group 1",
+ ROADMAP_PLANNED, QF_YES, "set 4", 0, NULL, NO_PORT, NO_PORT, "\\g<1>"},
+{RK_ESC, 'g', NULL, "\\g<01>", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_INDEX,
+ "subroutine call into group 1, LEADING-ZERO angle-bracket spelling -- the "
+ "whole digit run is read as decimal",
+ ROADMAP_PLANNED, QF_YES, "set 5", 0, NULL, NO_PORT, NO_PORT, "\\g<1>"},
+{RK_ESC, 'g', NULL, "\\g'0'", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_INDEX,
+ "subroutine call to the WHOLE PATTERN, quoted spelling -- \\g'0' and "
+ "\\g'00' are the root, \\g'01' is group 1",
+ ROADMAP_PLANNED, QF_YES, "set 3", 0, NULL, NO_PORT, NO_PORT, "\\g'1'"},
+{RK_ESC, 'g', NULL, "\\g'01'", M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE,
+ RD_MODULE, NULL, NULL, RF_INDEX,
+ "subroutine call into group 1, LEADING-ZERO quoted spelling -- the whole "
+ "digit run is read as decimal",
+ ROADMAP_PLANNED, QF_YES, "set 4", 0, NULL, NO_PORT, NO_PORT, "\\g'1'"},
 
 /* MOD-0.6 phase 2: longhand rather than the ESC macro, for exactly one
  * reason — `recognise` carries `pcrec_registry_uprops_recognise`, a MARKER
@@ -704,7 +766,7 @@ GROUP_LA_T('<', "*", "(?<*a)",
  "python-style backreference to a named group",
  ROADMAP_PLANNED, QF_NO, NULL, 25, NULL,
  {PORT_FN, false, 0, NULL, pcrec_brport_pname}, NO_PORT, NULL},
-GROUP_RC_T('P', ">", "(?P>n)", "python-style subroutine call into a named group", QF_NO, pcrec_rcport_name),
+GROUP_RC_T('P', ">", "(?P>n)", "python-style subroutine call into a named group", QF_YES, pcrec_rcport_name, NULL),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
          "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141", QF_NO),
 /* VM_ONLY is design intent with a recorded split (docs/dev/plan.md, backrefs/
@@ -762,8 +824,40 @@ GROUP('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),
-GROUP_RC('&',  "(?&name)", "recurse into the named group", QF_NO, pcrec_rcport_name),
-GROUP_RC('R',  "(?R)", "recurse the whole pattern", QF_YES, pcrec_rcport_num),
+/* [DD-14 wave F] `(?(DEFINE)...)` IS MODULE `recursion`'s, TAILED OFF THE
+ * `(?(` DOORWAY (D71 item 4, Frank 2026-08-23, overruling design §2.5's "no
+ * DEFINE"). The rest of `(?(` stays `conditionals`': one byte, two
+ * constructs, told apart by a literal tail, which is the `(?P<`/`(?P=`/`(?P>`
+ * shape this table already ships three times.
+ *
+ * THE TAIL IS `DEFINE)` AND INCLUDES THE PARENTHESIS, MEASURED: on 10.46
+ * `(?(define)(?<w>a))` and `(?(DEF)(?<w>a))` are both "reference to
+ * non-existent subpattern" — lowercase and prefixes are read as NAME
+ * conditions — so a tail of `DEFINE` alone would claim `(?(DEFINED)` for this
+ * module, which is a name condition and `conditionals`'.
+ *
+ * LONGHAND RATHER THAN `GROUP_RC_T`, FOR ONE FIELD: `ANY_ENGINE`. Every other
+ * row in this module is VM_ONLY and structurally so — a subroutine call
+ * generates a non-regular language. A DEFINE generates NOTHING at its lexical
+ * position: it is `(?:BODY){0}`, which MEASURABLY compiles to a pure DFA
+ * (`--engine=dfa --no-captures '(?:(?<g>a)){0}b'` on the shipped binary), so
+ * VM_ONLY here would refuse what the DFA engine handles and would refuse it
+ * asymmetrically against the `{0}` spelling of the same construct. What
+ * forces the VM in any real use is the CALL that reads the definition, and
+ * that carries its own row and its own stamp. The macro is not extended for
+ * this: a macro exists to make the FIXED fields unmissable, and a variant
+ * differing in an engine mask is exactly the row that must be read in full.
+ *
+ * `QF_YES`, MEASURED: `(?(DEFINE)(?<w>a))*` compiles on 10.46 (a zero-width
+ * construct is still a quantifier target). */
+{RK_GROUP, '(', "DEFINE)", "(?(DEFINE)(?<w>a))", M_recursion, FLAV_PCRE2,
+ ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "define-only group: the body never runs where it is written and exists to be "
+ "called -- the same thing (?:BODY){0} means",
+ ROADMAP_PLANNED, QF_YES, NULL, 25, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_rcport_define}, NO_PORT, NULL},
+GROUP_RC('&',  "(?&name)", "recurse into the named group", QF_YES, pcrec_rcport_name, NULL),
+GROUP_RC('R',  "(?R)", "recurse the whole pattern", QF_YES, pcrec_rcport_num, NULL),
 /* [DD-14] THE DESCRIPTION IS QUALIFIED, and §2.4a is why the unqualified
  * version is a trap rather than a wording preference: `(?0...)` is a
  * ONE-CHARACTER PREFIX OF TWO DIFFERENT TARGETS. `(?0)` and `(?00)` are the
@@ -773,16 +867,19 @@ GROUP_RC('R',  "(?R)", "recurse the whole pattern", QF_YES, pcrec_rcport_num),
  * MISCOMPILES it. `pcrec_rcport_num` re-reads the whole digit run for
  * exactly that reason, and this row says so where a reader of the table
  * will meet it. */
-GROUP_RC('0',  "(?0)", "recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1", QF_YES, pcrec_rcport_num),
-GROUP_RC('1',  "(?1)", "recurse into capture group 1", QF_NO, pcrec_rcport_num),
-GROUP_RC('2',  "(?2)", "recurse into capture group 2", QF_NO, pcrec_rcport_num),
-GROUP_RC('3',  "(?3)", "recurse into capture group 3", QF_NO, pcrec_rcport_num),
-GROUP_RC('4',  "(?4)", "recurse into capture group 4", QF_NO, pcrec_rcport_num),
-GROUP_RC('5',  "(?5)", "recurse into capture group 5", QF_NO, pcrec_rcport_num),
-GROUP_RC('6',  "(?6)", "recurse into capture group 6", QF_NO, pcrec_rcport_num),
-GROUP_RC('7',  "(?7)", "recurse into capture group 7", QF_NO, pcrec_rcport_num),
-GROUP_RC('8',  "(?8)", "recurse into capture group 8", QF_NO, pcrec_rcport_num),
-GROUP_RC('9',  "(?9)", "recurse into capture group 9", QF_NO, pcrec_rcport_num),
+GROUP_RC('0',  "(?0)", "recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1", QF_YES, pcrec_rcport_num, NULL),
+INDEX_RC(RK_GROUP, '0', "(?00)", "recurse the whole pattern, leading-zero spelling -- any all-zero digit run is the root", QF_YES, NULL, "(?0)"),
+GROUP_RC('1',  "(?1)", "recurse into capture group 1", QF_YES, pcrec_rcport_num, NULL),
+GROUP_RC('2',  "(?2)", "recurse into capture group 2", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('3',  "(?3)", "recurse into capture group 3", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('4',  "(?4)", "recurse into capture group 4", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('5',  "(?5)", "recurse into capture group 5", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('6',  "(?6)", "recurse into capture group 6", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('7',  "(?7)", "recurse into capture group 7", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('8',  "(?8)", "recurse into capture group 8", QF_YES, pcrec_rcport_num, "(?1)"),
+GROUP_RC('9',  "(?9)", "recurse into capture group 9", QF_YES, pcrec_rcport_num, "(?1)"),
+INDEX_RC(RK_GROUP, '1', "(?10)", "recurse into capture group 10 -- a MULTI-DIGIT absolute call; the whole digit run after (? is read as decimal, so nine byte-keyed rows serve every group number", QF_YES, NULL, "(?1)"),
+INDEX_RC(RK_GROUP, '0', "(?01)", "recurse into capture group 1, LEADING-ZERO spelling -- (?01) is group 1 and NOT the root, which (?0)'s own note is qualified for", QF_YES, NULL, "(?1)"),
 /* THE RELATIVE SUBROUTINE CALLS. `(?+N)` calls the Nth group to the RIGHT and
  * `(?-N)` the Nth to the LEFT — the relative spellings of `(?1)`..`(?9)` above,
  * which this table has always called `recursion`. Both used to fall to the
@@ -801,17 +898,19 @@ GROUP_RC('9',  "(?9)", "recurse into capture group 9", QF_NO, pcrec_rcport_num),
  * already spells that family out twice, and a literal tail cannot be
  * misinterpreted by a future reader. */
 GROUP_RC('+',  "(?+1)(a)",
-      "relative subroutine call to the Nth group to the RIGHT", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "0", "(a)(?-01)", "relative subroutine call, leading zero", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "1", "(a)(?-1)", "relative subroutine call to the group 1 to the LEFT", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "2", "(a)(a)(?-2)", "relative subroutine call, 2 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "3", "(a)(a)(a)(?-3)", "relative subroutine call, 3 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "4", "(a)(a)(a)(a)(?-4)", "relative subroutine call, 4 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", "relative subroutine call, 5 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", "relative subroutine call, 6 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", "relative subroutine call, 7 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", "relative subroutine call, 8 to the left", QF_YES, pcrec_rcport_rel),
-GROUP_RC_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", "relative subroutine call, 9 to the left", QF_YES, pcrec_rcport_rel),
+      "relative subroutine call to the Nth group to the RIGHT", QF_YES, pcrec_rcport_rel, NULL),
+INDEX_RC(RK_GROUP, '+', "(?+2)(a)(b)", "relative forward subroutine call, 2 to the right -- (?+1) has a byte-keyed row and its eight siblings ride it, the whole digit run being read as decimal", QF_YES, NULL, "(?+1)(a)"),
+GROUP_RC_T('-', "0", "(a)(?-01)", "relative subroutine call, leading zero", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "1", "(a)(?-1)", "relative subroutine call to the group 1 to the LEFT", QF_YES, pcrec_rcport_rel, NULL),
+GROUP_RC_T('-', "2", "(a)(a)(?-2)", "relative subroutine call, 2 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "3", "(a)(a)(a)(?-3)", "relative subroutine call, 3 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "4", "(a)(a)(a)(a)(?-4)", "relative subroutine call, 4 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", "relative subroutine call, 5 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", "relative subroutine call, 6 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", "relative subroutine call, 7 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", "relative subroutine call, 8 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+GROUP_RC_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", "relative subroutine call, 9 to the left", QF_YES, pcrec_rcport_rel, "(a)(?-1)"),
+INDEX_RC(RK_GROUP, '-', "(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)", "relative backward subroutine call, 10 to the left -- a MULTI-DIGIT relative call; the ten byte-keyed digit rows serve every distance", QF_YES, NULL, "(a)(?-1)"),
 
 /* THE EXTENDED CHARACTER CLASS, R8/C4-7's third misattribution. `(?[...])` is a
  * character class with set operations (`[a]&&[b]`, `[a]-[b]`), not an option

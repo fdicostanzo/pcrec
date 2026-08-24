@@ -543,11 +543,16 @@ HDR = """# tests/recursion/%s -- module `recursion` ([DD-14]): %s
 # `spellings.rxt` opens with it) -- so marking this corpus python-verifiable
 # on the strength of those two spellings would be checking the wrong module.
 #
-# `(?(DEFINE)...)` DOES NOT APPEAR ANYWHERE IN THIS CORPUS. It is module
-# `conditionals`'s construct until D71 decision 4's registry row lands
-# ([DD-14] wave F, not started when this corpus was written); every callee-
-# only body below uses the oracle-verified `{0}`-callee idiom instead
-# (design SS2.5/SS4.4c).
+# `(?(DEFINE)...)` IS THIS MODULE'S SINCE [DD-14] WAVE F (D71 item 4,
+# overruling design SS2.5's "RULED: no DEFINE"). It is a TAILED row on the
+# `(?(` doorway -- the rest of `(?(` is still `conditionals`' -- and it lowers
+# to the SAME NODE the `{0}`-callee idiom produces, an A_REP with
+# rmin == rmax == 0 over the body. That is why define.rxt and zerodef.rxt
+# carry the two spellings SIDE BY SIDE on the same cells: they are two
+# spellings of one construct, and the corpus asserts they agree rather than
+# assuming it. Where a body must be callee-only, `{0}` remains the spelling
+# used in the OTHER files, because those cells were oracle-verified in that
+# form and re-spelling them would move a measurement without re-measuring it.
 #
 # NOTHING IN src/ IMPLEMENTS A SUBROUTINE CALL YET. Every ordinary `m`/`n`
 # block in this corpus is therefore EXPECTED to report a pattern-compile
@@ -588,28 +593,29 @@ RCK = "recursion,assertions"
 # refused.rxt
 # ===========================================================================
 REFUSED = [
-    ("THE `conditionals` REFUSALS THIS MODULE DOES NOT UNLOCK (design SS2.5, "
-     "SS13). `(?(` is module `conditionals`'s doorway; `(?(DEFINE)...)`, "
-     "`(?(R)` and `(?(1)` all name it, never `recursion` -- REGARDLESS of "
-     "whether `recursion` itself is enabled, which the last cell pins.", [
-        PERR(r"(?(DEFINE)(?<w>a))(?&w)b", 'pcrec',
-             note="the classic library idiom -- still refused today by the "
-                  "doorway, not by the name."),
+    ("THE `conditionals` REFUSALS THIS MODULE DOES NOT UNLOCK. `(?(` is "
+     "module `conditionals`'s doorway for EVERY CONDITION -- `(?(R)`, "
+     "`(?(1)`, `(?(<name>)` -- and enabling `recursion` unlocks none of "
+     "them, which the last cell pins. [DD-14 wave F] The ONE exception is "
+     "`(?(DEFINE)`, which D71 item 4 moved to `recursion` as a TAILED row; "
+     "its cells left this file for define.rxt, and design SS2.5's own "
+     "'RULED: no DEFINE' conclusion is SUPERSEDED by that ruling.", [
+        PERR(r"(a)(?(1)b|c)", 'pcrec',
+             note="`(?(1)` -- the numbered-group CONDITION, closed gate."),
         PERR(r"(a)(?(R)b|c)", 'pcrec',
              note="`(?(R)` -- the whole-pattern-recursion CONDITION, not a "
                   "call. A different construct at the same doorway."),
         PERR(r"(a)(?(1)b|c)", 'pcrec',
              note="`(?(1)` -- the numbered-group CONDITION."),
-        PERR(r"(?(DEFINE)(?<w>a))(?&w)b", 'pcrec', features=RC,
-             note="THE SAME PATTERN WITH `recursion` ENABLED. D71 decision 4 "
-                  "rules `(?(DEFINE)...)` a FUTURE `recursion` row ([DD-14] "
-                  "wave F, not started at the time this corpus was written) "
-                  "-- design SS2.5's own 'RULED: no DEFINE' conclusion is "
-                  "SUPERSEDED by that later ruling. TODAY, enabling "
-                  "`recursion` changes nothing: the doorway is still "
-                  "`conditionals`'s until wave F lands. This cell is the "
-                  "one to re-home (out of refused.rxt, into a DEFINE-idiom "
-                  "accept cell) the day it does."),
+        PERR(r"(a)(?(1)b|c)", 'pcrec', features=RC,
+             note="THE SAME PATTERN WITH `recursion` ENABLED, and this is "
+                  "the cell that pins the SPLIT wave F introduced. `(?(` now "
+                  "carries TWO modules' constructs: the `DEFINE)` tail is "
+                  "`recursion`'s (D71 item 4 -- see define.rxt, where the "
+                  "cell that used to live here has moved) and EVERYTHING "
+                  "ELSE at that doorway is still `conditionals`'. Enabling "
+                  "`recursion` must not unlock a numbered-group condition, "
+                  "and this is what says so."),
     ]),
 ]
 
@@ -1099,6 +1105,12 @@ ZERODEF = [
      "load-bearing on its own (design SS4.4c/SS9.3 S-SR19).", [
         B(r"^(?:(?<g>a|ab)){0}(?&g)c$", [('m', "abc")], RCN, groups=1,
           note="the classic pre-DEFINE idiom, parked under `{0}`."),
+        B(r"^(?(DEFINE)(?<g>a|ab))(?&g)c$", [('m', "abc")], RCN, groups=1,
+          note="[DD-14 wave F] THE DEFINE SPELLING OF THE CELL ABOVE, and "
+               "the pair is the assertion: D71 item 4 lowers `(?(DEFINE)X)` "
+               "to the node `(?:X){0}` produces, so the two cells must give "
+               "the SAME answer and the same group. If they ever diverge, "
+               "the lowering has grown a second mechanism."),
         B(r"^(?:(?<g>a|ab)){1}(?&g)c$", [('m', "aabc"), ('n', "abc")], RCN,
           groups=1,
           note="the NON-{0} CONTROL: the SAME callee, emitted lexically "
@@ -1108,6 +1120,10 @@ ZERODEF = [
     ("RECURSIVE: a callee whose own body calls itself, parked under `{0}` "
      "(design SS4.4c, axis Z0).", [
         B(r"^(x)?(?:(?<h>a(?2)?b)){0}(?2)$", [('m', "aabb")], RCN, groups=2),
+        B(r"^(x)?(?(DEFINE)(?<h>a(?2)?b))(?2)$", [('m', "aabb")], RCN,
+          groups=2,
+          note="the DEFINE spelling: a RECURSIVE callee defined inside a "
+               "DEFINE, which is the library idiom users actually write."),
         B(r"^(x)?(?:(?<h>a(?2)?b)){1}(?2)$", [('m', "aabbaabb")], RCN,
           groups=2,
           note="the NON-{0} CONTROL: the lexical copy runs once (matching "
@@ -1117,8 +1133,12 @@ ZERODEF = [
      "callee allocates a CUT_MARK slot family that a lexical-only count "
      "would miss entirely once the callee sits under `{0}`.", [
         B(r"^(?:((?>a|ab))){0}(?1)z$", [('m', "az"), ('n', "abz")],
-          RCN.replace("named-groups", "") + ",atomic-groups" if False
-          else RC + ",atomic-groups", groups=1),
+          RC + ",atomic-groups", groups=1),
+        B(r"^(?(DEFINE)((?>a|ab)))(?1)z$", [('m', "az"), ('n', "abz")],
+          RC + ",atomic-groups", groups=1,
+          note="the DEFINE spelling of the LOAD-BEARING atomic cell -- the "
+               "CUT_MARK family a lexical-only slot count would miss has to "
+               "be counted through this doorway too."),
         B(r"^(?:((?>a|ab))){1}(?1)z$", [('m', "aaz"), ('n', "aabz")],
           RC + ",atomic-groups", groups=1,
           note="the NON-{0} CONTROL."),
@@ -1127,10 +1147,222 @@ ZERODEF = [
      "callee whose OWN quantifier needs rung state (an empty-iteration "
      "guard family here), parked under `{0}`.", [
         B(r"^(?:(a?)){0}(?1)*b$", [('m', "b")], RC, groups=1),
+        B(r"^(?(DEFINE)(a?))(?1)*b$", [('m', "b")], RC, groups=1,
+          note="the DEFINE spelling of the LOAD-BEARING rung-bearing cell."),
         B(r"^(?:(a?)){1}(?1)*b$", [('m', "ab"), ('m', "aaab")], RC, groups=1,
           note="the NON-{0} CONTROL."),
     ]),
 ]
+
+# ===========================================================================
+# define.rxt -- D71 item 4: `(?(DEFINE)...)` is module `recursion`'s, and it
+# lowers to the `{0}`-callee shape. [DD-14] wave F.
+# ===========================================================================
+DEFINE = [
+    ("THE LIBRARY IDIOM ITSELF (D71 item 4). `(?(DEFINE)BODY)` is a "
+     "conditional group whose condition is never true, so BODY never runs "
+     "where it is written and exists only to be CALLED. That is exactly what "
+     "`(?:BODY){0}` means, and wave F lowers the two to the SAME NODE -- see "
+     "zerodef.rxt, where every cell carries both spellings side by side.", [
+        B(r"(?(DEFINE)(?<w>[a-z]+))^(?&w)-(?&w)$",
+          [('m', "foo-bar"), ('n', "-bar"), ('n', "foo-")], RCN, groups=1,
+          note="the shape a user copies out of a library: define once, call "
+               "twice. The DEFINE body leaves group 1 UNSET, which the `g` "
+               "line records -- the definition never ran."),
+        B(r"(?(DEFINE)([a-z]+))^(?1)-(?1)$", [('m', "foo-bar")], RC,
+          groups=1,
+          note="a NUMBERED callee inside the DEFINE: the groups in the body "
+               "number normally and are callable by number, so this needs no "
+               "`named-groups` at all."),
+        B(r"^(?(DEFINE)(?<w>x))a$", [('m', "a"), ('n', "xa")], RCN, groups=1,
+          note="THE BODY DOES NOT RUN LEXICALLY, and \"xa\" is the cell that "
+               "says so: if the DEFINE consumed its body this would match and "
+               "\"a\" would not."),
+        B(r"(?(DEFINE)(?<a>x)(?<b>y))^(?&a)(?&b)$", [('m', "xy")], RCN,
+          groups=2,
+          note="TWO definitions in ONE DEFINE -- a concatenation is one "
+               "branch, which is what PCRE2's single-branch rule permits."),
+        B(r"(?(DEFINE)(?<p>a(?&p)?b))^(?&p)$",
+          [('m', "ab"), ('m', "aabb"), ('n', "aab")], RCN, groups=1,
+          note="A RECURSIVE CALLEE DEFINED IN A DEFINE. The language is "
+               "a^n b^n, which is not regular -- the whole reason the CALL "
+               "rows are VM_ONLY, reached through the definition doorway."),
+        B(r"^(?&w)$(?(DEFINE)(?<w>[a-z]+))", [('m', "foo")], RCN, groups=1,
+          note="THE DEFINE COMES AFTER THE CALL. A forward call is legal by "
+               "construction (design SS2.3) because the resolver runs at end "
+               "of parse, and a DEFINE is just a place a group is declared."),
+        B(r"(?(DEFINE)(?<w>a|b))^(?&w)$", [('m', "a"), ('m', "b")], RCN,
+          groups=1,
+          note="AN ALTERNATION *INSIDE* the defined group is fine -- PCRE2's "
+               "single-branch rule is about the DEFINE's own top level, not "
+               "about what a group in the body may contain. The refusal cell "
+               "below is the other half of this pair."),
+        B(r"(?(DEFINE))^x$", [('m', "x")], RC, groups=0,
+          note="AN EMPTY DEFINE COMPILES, measured on 10.46. The brief for "
+               "this wave expected a refusal for a body that defines nothing; "
+               "libpcre2 has no such rule, so neither does pcrec."),
+        B(r"(?(DEFINE)abc)^x$", [('m', "x")], RC, groups=0,
+          note="AND SO DOES A BODY THAT DEFINES NO GROUP AT ALL. Also "
+               "measured, also not a refusal."),
+        B(r"(?(DEFINE)(?<w>a))*^x$", [('m', "x")], RCN, groups=1,
+          note="A QUANTIFIED DEFINE. A zero-width construct is still a "
+               "repeatable item -- the row reads `quantifiable yes` because "
+               "of this cell, not because of a reading of the docs."),
+        B(r"(?i)(?(DEFINE)(?<w>a))^(?&w)$", [('m', "A")], RCNM.replace(",backrefs", ""),
+          groups=1,
+          note="THE SCOPED OPTION STATE reaches the body: `(?i)` set before "
+               "the DEFINE applies inside it, and the port saves and restores "
+               "`cx->mods` around the body parse exactly as every other "
+               "body-carrying port does."),
+        B(r"(?(DEFINE)(?<w>a))(?(DEFINE)(?<v>b))^(?&w)(?&v)$", [('m', "ab")],
+          RCN, groups=2,
+          note="TWO DEFINEs in one pattern."),
+    ]),
+    ("THE ONE REFUSAL, AND IT IS PCRE2'S OWN RULE rather than a pcrec limit: "
+     "a DEFINE's own top level may carry only ONE branch. pcrec reproduces "
+     "PCRE2's wording at PCRE2's own offset -- MEASURED at `at + 3` (the "
+     "byte after `(?(`, where the condition begins) in three positions.", [
+        PERR(r"(?(DEFINE)(?<w>a)|(?<v>b))^(?&w)$", 'pcre2', features=RCN,
+             note="two branches, each defining a group."),
+        PERR(r"(?(DEFINE)a|b)^x$", 'pcre2', features=RC,
+             note="two branches defining nothing -- the rule is about the "
+                  "BRANCH COUNT and not about what the branches contain."),
+    ]),
+    ("THE TAIL IS `DEFINE)` AND IT INCLUDES THE PARENTHESIS, which is what "
+     "keeps this row from claiming conditions that are `conditionals`'. "
+     "MEASURED: on 10.46 a lowercase or truncated keyword is read as a NAME "
+     "condition, so both of these are 'reference to non-existent subpattern' "
+     "there -- and here they are the `conditionals` doorway's refusal, with "
+     "`recursion` ENABLED in both cells.", [
+        PERR(r"(?(define)(?<w>a))^x$", 'pcre2', features=RCN,
+             note="lowercase `define` is NOT the keyword."),
+        PERR(r"(?(DEF)(?<w>a))^x$", 'pcre2', features=RCN,
+             note="a PREFIX of the keyword is not the keyword either -- and "
+                  "without the `)` in the tail, `(?(DEFINED)` would have been "
+                  "claimed by this module too."),
+    ]),
+]
+
+# ===========================================================================
+# realworld.rxt -- [LIB] entry #1 takes its first corpus seat: the RFC 5322
+# email specimen, in all three spellings. [DD-14] wave F.
+# ===========================================================================
+# THE PATTERNS ARE READ FROM THE SPECIMEN DIRECTORY, NEVER RETYPED. A
+# transcription of a 426-byte pattern is a transcription error waiting to
+# happen, and the whole point of this file is that the pattern is the one the
+# srEmail lane MEASURED (docs/design/subroutines_measurements/email_specimen/).
+_ES = os.path.join(ROOT, "docs", "design", "subroutines_measurements",
+                   "email_specimen")
+
+
+def _spec(name):
+    with open(os.path.join(_ES, name), "rb") as fh:
+        return fh.read().decode("latin-1").rstrip("\n")
+
+
+def _define_spelling(factored):
+    """The DEFINE spelling of `factored.rx`, DERIVED from it rather than
+    written out: peel the four `(?:(?<name>...)){0}` definition wrappers off
+    the front and put their bodies inside ONE `(?(DEFINE)...)`. Deriving it is
+    the point -- a hand-typed third copy of the same 400 bytes could disagree
+    with the other two about a character class and the corpus would happily
+    pin the disagreement."""
+    defs, rest = "", factored
+    for _ in range(4):
+        j = rest.index("){0}")
+        seg = rest[:j + 1]
+        assert seg.startswith("(?:") and seg.endswith(")"), seg[:24]
+        defs += seg[3:-1]
+        rest = rest[j + 4:]
+    return "(?(DEFINE)" + defs + ")" + rest
+
+
+# The subject SET, by manifest id. FOURTEEN of the specimen's 85, chosen to
+# span the pattern's four sub-languages (dot-atom, quoted, IPv4 literal,
+# bracket general form) in both the matching and the non-matching direction.
+#
+# WHAT IS DELIBERATELY EXCLUDED, and why, because a corpus that silently drops
+# the hard subjects is worse than one that never had them:
+#
+#   * THE THREE 1 MB THROUGHPUT SUBJECTS. They are a PERFORMANCE measurement
+#     (README.md's table), not a semantic one, and they belong to the
+#     benchmark project, not to a correctness corpus that runs in `make test`.
+#
+#   * SUBJECTS 057-064, THE DEEP-REPETITION SET. Five of them (058, 059, 061,
+#     063, 064) MEASURED `PCREC_ERR_FRAMES` on the factored spelling at wave
+#     B+C: every `(?&x)` iteration is a CALL and a call is a resume frame that
+#     survives its return (design SS5.1/SS5.3), so a 2048-frame default
+#     artifact gives up ~2 K iterations in. That give-up is REAL and it is
+#     WAVE G's and [FB]'s to move -- wave G by splicing the eligible callees
+#     so they stop costing a frame each, [FB] by making the frame buffer
+#     caller-provided (D71 item 2). Pinning them here as `gu frames` would
+#     freeze a number both of those waves exist to change, and pinning them as
+#     matches would be a corpus that fails the day it lands. They stay in the
+#     specimen, measured, in README.md's own table.
+REALWORLD_IDS = [0, 1, 4, 11, 12, 21, 23, 32, 34, 36, 40, 43, 46, 49]
+
+
+def _realworld_subjects():
+    """THE SUBJECT FILES ARE REGENERATED, NOT COMMITTED, and that is the
+    specimen directory's own choice rather than this generator's: its README
+    calls the 85 subjects "regenerable by `gen_subjects.py`" and the srEmail
+    lane deliberately left 372 KB of derived binaries out of the repo. This
+    generator honours that instead of reversing it in a lane that does not
+    own the directory -- it runs the specimen's own generator when the files
+    are absent.
+
+    THE INTEGRITY CHECK IS `manifest.tsv`, WHICH *IS* COMMITTED.
+    `gen_subjects.py` rewrites it on every run, so a subject set that
+    regenerated DIFFERENTLY shows up as a tracked diff in a file this
+    generator did not touch -- a louder signal than any assertion here could
+    be, and one that survives the .rxt being regenerated on a different
+    machine."""
+    subs = os.path.join(_ES, "subjects")
+    if not all(os.path.exists(os.path.join(subs, "%03d.bin" % i))
+               for i in REALWORLD_IDS):
+        subprocess.run([sys.executable, os.path.join(_ES, "gen_subjects.py")],
+                       check=True, stdout=subprocess.DEVNULL)
+    out = []
+    for i in REALWORLD_IDS:
+        with open(os.path.join(subs, "%03d.bin" % i), "rb") as fh:
+            out.append(fh.read().decode("latin-1"))
+    return out
+
+
+def _realworld():
+    orig = _spec("orig.rx")
+    fact = _spec("factored.rx")
+    defd = _define_spelling(fact)
+    subj = _realworld_subjects()
+    cells = [('m', x) for x in subj]      # the tag is a HINT; render() asks
+    return [                              # libpcre2 and writes what it says
+        ("THE ORIGINAL, hand-inlined -- the CONTROL. It has no call in it at "
+         "all, needs no module, and is here so the two factored spellings "
+         "have something to be compared against inside this file rather than "
+         "only in the specimen's own log.", [
+            B(orig, cells, "", groups=0,
+              note="orig.rx, read from the specimen directory."),
+        ]),
+        ("THE `{0}`-FACTORED SPELLING (factored.rx): the four textually "
+         "repeated sub-languages -- atom, qchar, label, octet -- named once "
+         "and called. Design SS8.4 found the 'calls as FACTORING rather than "
+         "recursion' population EMPTY; this specimen is its first real "
+         "member.", [
+            B(fact, cells, RCN, groups=4,
+              note="factored.rx, read from the specimen directory."),
+        ]),
+        ("THE `(?(DEFINE)` SPELLING, DERIVED from factored.rx by this "
+         "generator (never retyped). It is the spelling a library author "
+         "would actually write, and wave F is what makes it compile. Its "
+         "answers must equal the other two spellings' on every subject -- "
+         "which is the assertion this whole file exists for, since all three "
+         "cells here get their expectations from the SAME oracle run.", [
+            B(defd, cells, RCN, groups=4,
+              note="derived from factored.rx: the four {0} wrappers peeled "
+                   "off and their bodies put inside one DEFINE."),
+        ]),
+    ]
+
 
 # ===========================================================================
 # leadingzero.rxt -- SS2.4a: the whole digit run is decimal; 0 is the root
@@ -1685,6 +1917,15 @@ def main():
          "FINAL tree, so the callee region and the lexical occurrence are "
          "one program",
          REBIND),
+        ("define.rxt",
+         "D71 item 4: `(?(DEFINE)...)` is module `recursion`'s, tailed off "
+         "the `(?(` doorway and lowered as the `{0}`-callee shape",
+         DEFINE),
+        ("realworld.rxt",
+         "[LIB] entry #1: the RFC 5322 email specimen in all three "
+         "spellings -- hand-inlined, `{0}`-factored and `(?(DEFINE)`-factored "
+         "-- over fourteen of its own manifest's subjects",
+         _realworld()),
         ("nocaptures.rxt",
          "SS4.3: a call target joins the marked set -- one-hop and "
          "two-hop, ordinary-axis pins (the --no-captures axis itself is a "

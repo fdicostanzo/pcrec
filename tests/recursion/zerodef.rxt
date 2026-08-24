@@ -16,11 +16,16 @@
 # `spellings.rxt` opens with it) -- so marking this corpus python-verifiable
 # on the strength of those two spellings would be checking the wrong module.
 #
-# `(?(DEFINE)...)` DOES NOT APPEAR ANYWHERE IN THIS CORPUS. It is module
-# `conditionals`'s construct until D71 decision 4's registry row lands
-# ([DD-14] wave F, not started when this corpus was written); every callee-
-# only body below uses the oracle-verified `{0}`-callee idiom instead
-# (design SS2.5/SS4.4c).
+# `(?(DEFINE)...)` IS THIS MODULE'S SINCE [DD-14] WAVE F (D71 item 4,
+# overruling design SS2.5's "RULED: no DEFINE"). It is a TAILED row on the
+# `(?(` doorway -- the rest of `(?(` is still `conditionals`' -- and it lowers
+# to the SAME NODE the `{0}`-callee idiom produces, an A_REP with
+# rmin == rmax == 0 over the body. That is why define.rxt and zerodef.rxt
+# carry the two spellings SIDE BY SIDE on the same cells: they are two
+# spellings of one construct, and the corpus asserts they agree rather than
+# assuming it. Where a body must be callee-only, `{0}` remains the spelling
+# used in the OTHER files, because those cells were oracle-verified in that
+# form and re-spelling them would move a measurement without re-measuring it.
 #
 # NOTHING IN src/ IMPLEMENTS A SUBROUTINE CALL YET. Every ordinary `m`/`n`
 # block in this corpus is therefore EXPECTED to report a pattern-compile
@@ -41,6 +46,12 @@ features recursion,named-groups
 m "abc" 0 3
 g 1 -1 -1
 
+# [DD-14 wave F] THE DEFINE SPELLING OF THE CELL ABOVE, and the pair is the assertion: D71 item 4 lowers `(?(DEFINE)X)` to the node `(?:X){0}` produces, so the two cells must give the SAME answer and the same group. If they ever diverge, the lowering has grown a second mechanism.
+pattern ^(?(DEFINE)(?<g>a|ab))(?&g)c$
+features recursion,named-groups
+m "abc" 0 3
+g 1 -1 -1
+
 # the NON-{0} CONTROL: the SAME callee, emitted lexically once (`{1}`) as well as called -- "abc" now fails because the LEXICAL copy must also consume.
 pattern ^(?:(?<g>a|ab)){1}(?&g)c$
 features recursion,named-groups
@@ -53,6 +64,13 @@ n "abc"
 # ====================================================================
 
 pattern ^(x)?(?:(?<h>a(?2)?b)){0}(?2)$
+features recursion,named-groups
+m "aabb" 0 4
+g 1 -1 -1
+g 2 -1 -1
+
+# the DEFINE spelling: a RECURSIVE callee defined inside a DEFINE, which is the library idiom users actually write.
+pattern ^(x)?(?(DEFINE)(?<h>a(?2)?b))(?2)$
 features recursion,named-groups
 m "aabb" 0 4
 g 1 -1 -1
@@ -75,6 +93,13 @@ m "az" 0 2
 g 1 -1 -1
 n "abz"
 
+# the DEFINE spelling of the LOAD-BEARING atomic cell -- the CUT_MARK family a lexical-only slot count would miss has to be counted through this doorway too.
+pattern ^(?(DEFINE)((?>a|ab)))(?1)z$
+features recursion,atomic-groups
+m "az" 0 2
+g 1 -1 -1
+n "abz"
+
 # the NON-{0} CONTROL.
 pattern ^(?:((?>a|ab))){1}(?1)z$
 features recursion,atomic-groups
@@ -87,6 +112,12 @@ n "aabz"
 # ====================================================================
 
 pattern ^(?:(a?)){0}(?1)*b$
+features recursion
+m "b" 0 1
+g 1 -1 -1
+
+# the DEFINE spelling of the LOAD-BEARING rung-bearing cell.
+pattern ^(?(DEFINE)(a?))(?1)*b$
 features recursion
 m "b" 0 1
 g 1 -1 -1
