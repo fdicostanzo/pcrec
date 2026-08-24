@@ -13162,3 +13162,50 @@ prefilter only); ruling parked.
 D72 CONFIRMED by Frank (~10:2x) after the "why below the floor" exchange.
 srA2 at 4822297 awaits merge (strict green, identity 2657/0, mech re-run
 in flight); srCorpus accepted at 704a3af, parked for the B+C base.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 3) — WAVE A2 MERGED (ac4917d); the three pinned identity gates RETIRE; WAVE B+C OPENS (lane/srBC from 086624a)
+
+[DD-14.A] CLOSED (0f0e5e5): the six pkill'd D69 rows re-run by the
+manager on merged main — S37 S38 S130 S135 S140 S141 all DETECTED —
+71/71. srA's deliverable landed complete (18 [ABI-NS] constants, the gu
+failing-direction transcript, all eight §5.6 sites at their actual
+lines; S136 is the one row exercising the re-pointed end-check,
+DETECTED).
+
+GATE RETIREMENT (0f0e5e5): the lookaround, atomic and backref identity
+gates each build a PRE-MODULE reference from a pinned commit and their
+positive controls refuse any pin that already carries the module; wave
+A's ABI event changed every artifact's #define block, so from 0c75c96
+on they would go red on every cell for a non-reason and no valid pin
+exists. Filtering the lines out was rejected on the gates' own "a
+filtered gate is a check-design failure" precedent. Each now REFUSES
+loudly (guard on PCREC_ERR_INTERNAL in emit_dfa.c) naming the last
+valid run and the successor: the [DD-14] four-axis gate (wave E),
+pinned at ac4917d. CLAUDE.md/Makefile annotated. Frank may prefer a
+different disposition — flagged.
+
+[DD-14.A2] MERGED at ac4917d after diff review (commit messages carry
+one verdict per site; 26 -Wswitch alarm sites vs the design's 13
+predicted — the design's census predates lookaround's own A2 arms and
+counts differently; the lane recorded the drift). smoke 6/6, anchors
+resolve, strict clean on the merged tree. Merged BEFORE its mech sweep
+finished (single-row sequential, 26/88 at 25 min; the arms are inert)
+— the sweep's verdicts land with its deliverable; an UNDETECTED would
+be an anchor-class fix on main. A2's inspection of the eight
+switch-less walkers found a REAL DESIGN GAP: `u.call.body` is resolved
+at end-of-parse but `pcrec_altcls` rebuilds nodes and
+`pcrec_discharge_atomic` splices afterwards, so the callee pointer can
+name a subtree no longer in the tree (two programs for one group under
+CALL_LINKAGE); and `la_has_kreset` runs in the parse hook before
+`.body` exists. Both are now binding obligations in the B+C brief with
+the manager's recommendation (bind callees late from `target` over the
+FINAL tree; `.body` is a cache).
+
+WAVE B+C OPENED ~10:4x: worktree srBC on lane/srBC from 086624a (=
+ac4917d + lane/srCorpus merged: 17 files / 111 blocks / 141 cells / 15
+refusals / 4 gu). Brief: scratchpad/brief_srBC.md (230 lines): ports +
+resolver + callgraph.c + RX_CALL/RX_RETURN + the two A2 obligations +
+23 sabotage rows + the recursion mech arm; identity reference = git
+archive ac4917d. The merged-tree make test is running on main
+(scratchpad/maketest_A2merged.log); san follows when it ends (one heavy
+suite at a time).
