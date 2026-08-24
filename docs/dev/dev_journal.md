@@ -13519,3 +13519,13 @@ expected-UNDETECTED. Its "archives HEAD per row" observation is owed a
 line in tests/mech/CLAUDE.md (wave F or close). Battery on the D+LB
 tree: make test running; san after. WAVE F opens (opus, brief_srF.md)
 concurrent with E.
+
+CORRECTION ON RECORD (srLB, ~17:5x): 3b67bd3's commit message ("TWO
+PROCESS FINDINGS", item 1) attributes the 16:39 stop of its full matrix
+to a possible `pkill -f` from another lane. WRONG: it was the manager's
+cwd-verified PID stop under the one-suite ruling; no lane used a pattern
+kill after srA2's incident. The lane's own diagnosis of its error is the
+lesson worth keeping — a real observation with an unchecked cause
+attached, the same class as the cell-2 parked note. Item 1's other half
+(the runner archives HEAD per row; the COMPLETE trailer prints one SHA)
+stands and is owed a line in tests/mech/CLAUDE.md at the close.
