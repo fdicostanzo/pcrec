@@ -6746,6 +6746,25 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      *     faster than stepping one byte at a time.
      *
      * (c) WHICH FORM IS ACTIVE is stamped: `<PREFIX>_VM_PRUNE_CEILING`, above.
+     *
+     * (d) AND THE EMITTED COMMENT ON THE NO-CEILING ARM SAYS "cut-bearing" AND
+     *     IS NOT GENERALIZED TO NAME THE LOOKAROUND CASE. [M6.6.2] wave E, and
+     *     it is a RULING rather than an oversight. Generalizing it was tried
+     *     and REVERTED: that string is emitted into every artifact this arm
+     *     reaches, and 54 of those are ATOMIC-bearing and therefore
+     *     LOOKAROUND-FREE, so widening it moved 37 bytes on 54 patterns that do
+     *     not use the module — which `run_lookaround_identity.sh` caught as 54
+     *     differing comparisons on the default and --no-captures axes with
+     *     --engine=vm and -fno-prefilter GREEN. That is design §9.1's own
+     *     predicted signature for a mis-edited `v.mrl_win`, arriving for a
+     *     reason §9.1 did not predict: prose, not the predicate.
+     *
+     *     Making the string accurate per artifact would need a SECOND flag
+     *     recording WHY the ceiling was dropped, and a second flag beside
+     *     `v.mrl_win` is the two-sources-that-can-disagree defect the predicate
+     *     exists to avoid. The accurate, both-cases description therefore lives
+     *     where it costs no emitted bytes: `--emit-ir`'s PRUNING line and the
+     *     `mrl_win` field comment at the top of this file.
      */
     if (prefn) {
         sb_printf(c,
@@ -6757,26 +6776,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
             "    }\n",
             prefn,
             v.nclamp == 0 ? ""
-              /* H3 site 1 of 3 (the search ENTRY).
-               *
-               * [M6.6.2 wave E] THE EMITTED COMMENT BELOW SAYS "cut-bearing"
-               * AND IS NOT GENERALIZED TO NAME THE LOOKAROUND CASE, WHICH IS
-               * A RULING RATHER THAN AN OVERSIGHT. Generalizing it was tried
-               * and REVERTED: the string is emitted into every artifact this
-               * arm reaches, and 54 of those are ATOMIC-bearing and therefore
-               * LOOKAROUND-FREE, so widening it moved 37 bytes on 54 patterns
-               * that do not use this module — which
-               * run_lookaround_identity.sh's default and --no-captures axes
-               * caught as 54 differing comparisons while --engine=vm and
-               * -fno-prefilter stayed green (§9.1's own predicted signature,
-               * arriving for a reason §9.1 did not predict).
-               *
-               * Making it accurate per-artifact would need a SECOND flag
-               * recording WHY the ceiling was dropped, and a second flag beside
-               * `v.mrl_win` is the two-sources-that-can-disagree defect this
-               * whole predicate exists to avoid. The accurate, both-cases
-               * description lives where it costs no bytes: `--emit-ir`'s
-               * PRUNING line and this file's `mrl_win` field comment. */
+              /* H3 site 1 of 3 (the search ENTRY). */
               : v.mrl_win
               ? "        window_end = (size_t)window[0][1] < subject_length ? (size_t)window[0][1] : subject_length;\n"
               : "        window_end = subject_length;  /* cut-bearing artifact: the prefilter answers for the UNCUT language, so its span END is not a bound on this match's end */\n");
