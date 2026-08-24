@@ -61,6 +61,12 @@ it) and left the honest message; V-3 produced a NEW construct family, the
 callees, with §4.4c, S-SR19 and zerodef.rxt; V-11's re-runs vary 2×, so
 the doc now quotes growth ratios, not stopwatch readings; V-12's audit
 found two more unplaced files and two rows hidden by range notation).
+CORRECTION from the lane, unprompted, minutes later: its report's claim
+that the archive-freshness and per-id coverage checks were "in the tree"
+was FALSE — both were ad-hoc shell in its session; it named this as the
+same defect class (a settled-sounding sentence with nothing behind it, in
+the report about that class). Ruled: stay frozen; land them as
+`probes/check_selfconsistency.sh` in round 3, failing loudly.
 A HIGH-only verifier re-check follows.
 
 | id | sev | claim | disposition |
