@@ -13234,3 +13234,16 @@ yet built, most remaining ones are obscure and should be DEFERRED.
 to it — to be worked out with Frank when [DD-14] closes. Manager reading:
 [DD-14] runs to its D69 close as chartered; the queue after it is a
 ruling conversation, not the parked M6.5(f)/M7/M5 rows by default.
+
+ADDENDUM (part 3, ~11:3x): the merged-tree `make san` was STOPPED by the
+manager at its codegen stage (harness stage green, 0 reports, after the
+GENCPU_SAN raise): srBC had reached "tests/recursion 270/0" and started
+its full make test, srA2's mech still ran, and load hit 85 on 12 cores —
+three heavy suites again. The A+A2 tree's san pass is DEFERRED to the
+B+C-merged tree's battery (A = a #define block, A2 = inert arms; the
+risk window is hours, not a release). The first san attempt's harness
+stage had already killed cc1 on k18_cost_gates.rxt:91 under load →
+D45's fourth addendum (GENCPU_SAN 60→200 s, 51.9 s quiet measured).
+Process lesson, mine: `pgrep -f "<cmd>"` from a shell whose own command
+line contains <cmd> matches ITSELF — kill by the pid from `ps`, never
+from a pattern that the killing shell can match.
