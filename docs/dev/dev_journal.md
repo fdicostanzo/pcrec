@@ -12576,3 +12576,30 @@ S121 deleting the guard, b1 re-run expected RED. Delivery at e38ad19 was
 otherwise complete: population 2,049 × 4 axes = 8,196 comparisons, 0
 differing, stamp included; b2 synthetic red 39/43/39/22 per axis; full
 mech 118/0/0; sizeof(Ast) 104 → 72.
+
+## 2026-08-23 (EDT), thirty-eighth session (part 4) — [M6.6.2] WAVE 0 MERGED (a9739e1); waves A+A2 opened
+
+D70 landed: merge a9739e1 (lane/d70union 777c31c, 10 commits, 42 files).
+Final numbers: gate population 2,056 (2,168 .rxt lines + 338 reject-table
+patterns, deduped) × 4 axes = 8,224 comparisons, 0 differing on exit
+status / raw stdout (stamp included) / stderr; control b1 (the real hazard)
+RED on default/vm/noprefilter at 7 each and correctly 0 on --no-captures
+(A_CAP nodes are never born there, so the corrupted capture reconstruction
+is never emitted — the one axis structurally blind to this bug); control
+b2 (synthetic rmin/rmax swap) 39/43/39/22. corpus 22,485/0 (+127 cases:
+tests/rungselect/revdet_highbytes.rxt, 7 patterns covering bitmap byte 9
+and bytes 16-23, rung verified by the RX_VM_RUNGS stamp = 0x8, python +
+libpcre2 0 disagreements, 61/127 fail under the unguarded build). S121
+DETECTED (corpus 61fail/66pass). Anchors 13 stale → 0; 119 sabotages /
+120 sites. Full mech at 9546b26 118/0/0. sizeof(Ast) 104 → 72. Post-merge
+battery (make/strict/lint/san) running in the background on main.
+
+Lessons this wave: a green identity gate is a statement about ITS
+POPULATION — the real miscompile moved zero bytes until the cells were
+constructed, and only a capture-aware (g-line) check sees it because the
+whole-match span is unchanged; `--emit-main` prints only span 0. And the
+third disposition shape (generic helper sanitising a per-kind field) is
+now a documented class with a discipline at the union.
+
+NEXT: lane/waveA (opus) — design §11 waves A + A2 (brief
+scratchpad/brief_waveA.md). Then B+C.
