@@ -476,7 +476,36 @@ construction (src/ir) and emission (src/gen).
   Tests: tests/rungselect/ (its own CLAUDE.md explains why three separate checks
   are needed); failing-direction controls tests/mech/sabotages/S50-S52.
 
-- **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half
+- **mrl.c** — [M4.6d] MINIMUM-REMAINING-LENGTH pruning's analysis half, and
+  since [M6.6.2] wave A the WIDTH analysis in both directions
+
+  **[M6.6.2 wave A] `pcrec_maxw` JOINED `pcrec_minw` IN THIS FILE, AND ITS
+  SOUND DIRECTION IS THE OPPOSITE ONE.** Everything below about
+  under-estimating being safe describes `pcrec_minw` alone. `pcrec_maxw` — the
+  greatest number of subject bytes any match of a node can consume — may
+  OVER-estimate for free, and an UNDER-estimate is its silent miscompile,
+  because its consumer is the lookaround module's fixed-width rule
+  (`lookaround_design.md` §2.5: a lookbehind branch is admitted only when
+  `minw == maxw`, and the artifact then back-steps exactly that many bytes).
+  Two functions, one arithmetic, opposite obligations — which is why each
+  carries its own header saying which way it rounds. `PCREC_W_UNBOUNDED`
+  (core/internal.h) is where rounding up runs out, and it is deliberately the
+  SAME VALUE as `PCREC_MINW_MAX` so that unbounded ABSORBS through
+  `mrl_sat_add` and, at `mrl_sat_mul(UNBOUNDED, 0)`, correctly collapses to 0
+  for an unbounded repeat of a zero-width body.
+
+  **NOTHING CALLS `pcrec_maxw` YET** (wave B+C's parse hook is its first
+  caller), so its only instrument is `tests/mrl/maxw_check.c` — see that
+  directory's CLAUDE.md for why the three existing instruments structurally
+  cannot see it.
+
+  **THE ONE THING A UTF-8 BACKEND MUST REVISIT.** `A_CLASS` answers 1 byte in
+  both functions. For `minw` that is a deliberate LOOSE under-estimate and
+  stays sound under any encoding; for `maxw` it is EXACT only because
+  `PCREC_ENC_UTF8` has no backend and `src/core/compile.c:196` refuses it by
+  name. When that refusal goes, `maxw`'s arm must become the encoding's
+  maximum code-unit length or the fixed-width rule silently accepts
+  variable-width branches. The two arms look identical and are not.
 
   **[M6.5.2] `A_BREF` CONTRIBUTES 0, and it is EXACT rather than
   conservative** — this file said so before the kind existed ("Lookaround,

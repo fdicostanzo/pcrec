@@ -2474,6 +2474,45 @@ long long pcrec_minw(const Ast *a);                  /* src/opt/mrl.c */
  * "doomed", which at 2^40 remaining bytes it is. */
 #define PCREC_MINW_MAX (1LL << 40)
 
+/* [M6.6.2 wave A] The MAXIMUM number of subject bytes any match of `a` can
+ * consume — `pcrec_minw`'s twin, and its DIRECTION IS THE OPPOSITE ONE.
+ *
+ * `pcrec_minw` may UNDER-estimate for free (a bound below the truth prunes
+ * less). `pcrec_maxw` may OVER-estimate for free, and under-estimating is the
+ * silent-miscompile direction: its first consumer is the lookaround module's
+ * FIXED-WIDTH rule (`lookaround_design.md` §2.5 — a lookbehind branch is
+ * admitted only when `minw == maxw`), so a maxw below the truth admits a
+ * VARIABLE-width branch as fixed and the emitted back-step steps the wrong
+ * distance. Every conservative arm in src/opt/mrl.c's `pcrec_maxw` therefore
+ * rounds UP, and `PCREC_W_UNBOUNDED` is where rounding up runs out.
+ *
+ * `maxw(a) >= minw(a)` for every node of every tree, and that is checked
+ * rather than asserted: tests/mrl/maxw_check.c sweeps it over every node of
+ * every pattern in the whole `.rxt` corpus. */
+long long pcrec_maxw(const Ast *a);                  /* src/opt/mrl.c */
+
+/* "This node's maximum width has no static bound" — an unbounded quantifier,
+ * a backreference, or any arithmetic that ran off the top.
+ *
+ * IT IS DELIBERATELY THE SAME VALUE AS `PCREC_MINW_MAX`, and the reason is
+ * that it must COMPOSE with `mrl_sat_add`/`mrl_sat_mul` rather than need a
+ * check at every arm:
+ *
+ *   - `mrl_sat_add(UNBOUNDED, anything)` saturates, so unbounded ABSORBS
+ *     through a concatenation, which is what "unbounded" has to do;
+ *   - `mrl_sat_mul(UNBOUNDED, 0)` is 0, so an unbounded repeat of a
+ *     ZERO-WIDTH body is correctly 0 (`(?:\b)*` consumes nothing however many
+ *     times it runs) instead of being needlessly widened;
+ *   - `mrl_sat_mul(UNBOUNDED, k>0)` saturates, so a bounded repeat of an
+ *     unbounded body stays unbounded.
+ *
+ * The cost of sharing the value is that a SATURATED-but-finite maxw is
+ * indistinguishable from a genuinely unbounded one. That is maxw's SAFE
+ * direction (it reads as "no static bound", the conservative answer) and it
+ * is why the sharing is written down here rather than discovered later.
+ * A consumer asks `w >= PCREC_W_UNBOUNDED`, never `w == `. */
+#define PCREC_W_UNBOUNDED PCREC_MINW_MAX
+
 /* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
  * says so, the VM itself, and the four entry points). */
