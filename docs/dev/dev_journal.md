@@ -12770,3 +12770,15 @@ gate re-run green on 549e2e2 and anchors 0 stale, the seven affected
 rows (S50 S58 S59 S66 S94 S108 S121) were not re-run; object identity is
 the stronger evidence. The UTF-8 maxw obligation now has a home on the
 [M5.0] row.
+
+ADDENDUM (part 8, 23:3x): the post-wave-A battery on 72b6a60 is GREEN —
+strict clean, make test green, `make san` green under
+-fsanitize=address,undefined on both axes (44:54, box shared with the
+B+C lane). Waves 0/A/A2 are validated on every battery axis. Also this
+half-hour: Frank ruled ASK 1 (split: reserve the code + floor now; the
+counter is a [V-H] diagnostic generation axis, emitted only for
+call-bearing patterns), ASK 2 ((b) larger stamped frame default, both
+subject sizes in the release note) and ASK 3 ((d) — NOT the design's (b):
+the byte-keyed dispatch rows stand as R6 ruled; a `family` field serves
+the INDEX layer and lands at wave F with the alpha aliases as its first
+customer; the dogfood idea noted under SR-10 as a check, never dispatch).
