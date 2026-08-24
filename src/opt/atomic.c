@@ -82,8 +82,11 @@ bool pcrec_has_atomic(const Ast *a)
          * detect a non-terminating compile, because there is no answer.
          *
          * The `A_CALL` NODE ITSELF is not a cut and cannot be one, so `false`
-         * is what the node contributes. Sabotage row S-SR18 is the row that
-         * makes the descent a detected failure rather than a comment. */
+         * is what the node contributes. SABOTAGE ROW S-SR11 IS THIS ARM'S:
+         * it makes this very case DESCEND into `.body`, and its predicted
+         * result is that THE COMPILER HANGS on `(a(?1))` — no answer to
+         * compare, so no answer-comparison test can score it, which is why
+         * the row's suite is the TIMEOUT one. */
         case A_CALL:
             return false;
         case A_CAT:
@@ -561,7 +564,15 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
          * ever could, writing past the array is the failure this guard makes
          * impossible instead of unlikely. There is no `Ctx` in this
          * signature to fail loudly through; the guard is the file's
-         * established answer to that. */
+         * established answer to that.
+         *
+         * TWO SABOTAGE ROWS OWN THIS ARM, and they are not the same row:
+         * S-SR10 drops `A_CALL.target` from the union (detected on the
+         * `--no-captures` axis ONLY — `(a)(?1)` loses group 1's slots), and
+         * S-SR11a deletes the `mark[target] = true` line to defend the
+         * TWO-HOP case (`(a(?3))(b)((c))` under `--no-captures`), which is
+         * the cell that shows the mark reaching group 3 through the call
+         * NODE rather than through a transitive walk. */
         case A_CALL:
             if (a->u.call.target > 0 && a->u.call.target < nmark)
                 mark[a->u.call.target] = true;
@@ -604,9 +615,11 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
  * the others: the arm it needs is `return true`, so it stops at the first
  * call and never has anywhere to descend to.
  *
- * NO CALL SITE YET. Wave E wires it (§8.2's prefilter forcing, in
- * `src/opt/select_engine.c`), which is the wave with a producer and therefore
- * the first wave in which it can answer anything but false. It is EXTERNAL
+ * NO CALL SITE YET. Wave E wires it as `&& !pcrec_has_call(root)` (§8.2's
+ * prefilter forcing, in `src/opt/select_engine.c`), which is the wave with a
+ * producer and therefore the first wave in which it can answer anything but
+ * false; SABOTAGE ROW S-SR17 deletes that conjunct once it exists, so adding
+ * it now would pre-satisfy its own detector. It is EXTERNAL
  * rather than static for exactly that reason: an unused static is a
  * `-Wunused-function` error under `make strict`, and adding a fake call site
  * to silence it would pre-satisfy the sabotage row that owns the real one. */

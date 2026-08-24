@@ -1043,7 +1043,11 @@ static bool vm_nullable(const Ast *a)
          * nullable callee routed there loops at zero consumption for ever.
          * What keeps that unreachable is the RUNG DECLINES, in
          * `src/opt/possessify.c`'s `pss_walk` and `src/opt/revdet.c`'s
-         * `rd_shape` — not this answer. */
+         * `rd_shape` — not this answer. THOSE ARE S-SR9a's ROW; THIS ARM IS
+         * S-SR9's, which returns `false` here and predicts the step budget
+         * ending the search on `^(?(DEFINE)(?<g>a?))(?&g)*$` rather than a
+         * wrong span — so its detector must notice an ERROR, not a
+         * mismatch. */
         case A_CALL: return true;
         case A_CAP:   a = a->l; continue;
         /* [M6.4.2] TRANSPARENT: the cut removes MATCHES, never BYTES, so

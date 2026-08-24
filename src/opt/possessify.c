@@ -908,7 +908,14 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * account of a call, structurally, exactly as it cannot narrow a
      * lookaround body. `first_of` and `gk_build` above are the OTHER two
      * questions and answer differently — FIRST widens to all bytes, the
-     * position automaton declines outright. */
+     * position automaton declines outright.
+     *
+     * SABOTAGE ROW S-SR9a IS THIS ARM'S, and its suite is `timeout` rather
+     * than an answer comparison: letting this walk possessify a call-bearing
+     * body routes `^(?(DEFINE)(?<g>a?))(?&g)*+$` onto `vm_poss_star`, which
+     * emits NO empty-iteration guard and fires no work charge, so the
+     * artifact HANGS. Design §2.6's RULED rung decline is what this arm and
+     * `rd_shape`'s implement between them. */
     case A_CALL:
         return;
 

@@ -151,7 +151,11 @@ static void rd_shape(Shape *S, const Ast *a)
          *
          * DECLINING IS ALWAYS AVAILABLE AND ALWAYS SAFE — this file's own
          * invariant. The denied build replicates, and replication is the
-         * ground truth. Sabotage row S-SR16's site. */
+         * ground truth. SABOTAGE ROW S-SR12 IS THIS ARM'S: it descends
+         * instead of declining, and the predicted result is `vm_rev_emit`'s
+         * `default:` firing — "internal error: bad AST node in the backward
+         * walk", a hard compile error, which is the right failure and is why
+         * that `default:` is re-inspected rather than replaced. */
         case A_CALL:
             S->ok = false;
             return;
