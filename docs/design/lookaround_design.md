@@ -2685,6 +2685,15 @@ property of the CALL SITE (§6.4(a)).* Refute by finding state the branch body
 reads that the call site cannot supply — `SLOT_LOOK_POS<n>`, which the
 end-check compares against, is the candidate: it is set at `L_entry`, which a
 call targeting `L_body_i` would skip.
+**AMENDED 2026-08-23 (R34 V-10, [DD-14] design merged a59bbb5): the hand-off is
+DECLINED.** `subroutines_design.md` §5.4/§6.4 rules that no lookaround body
+compiles as a call and that a called group's body is emitted as its OWN
+region with its own exit — a call never jumps into a lookbehind branch's
+lexical body, so (a)'s call-site-owned width is moot. What survives of this
+prediction is its refutation candidate, now a MEASURED fact on the other
+side: the state a wrapped body reads that a call cannot supply is the EXIT
+(`SLOT_LOOK_POS<n>`'s end-check and `L_ok`'s position restore), which is
+exactly why [DD-14] gives a wrapped target its own region (its §3.5).
 
 **P-14 (the follow scoping).** *`vm_look` zeroing `fmin`/`fdyn` across the
 body is necessary AND sufficient — no other emitter state leaks the follow
