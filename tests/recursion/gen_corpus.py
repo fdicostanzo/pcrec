@@ -658,10 +658,10 @@ SPELLINGS = [
         B(r"(a|b)(?-1)", [('m', "ab")], RC, groups=1, note="`(?-N)`"),
         B(r"(?<g>a|b)(?&g)", [('m', "ab")], RCN, groups=1, note="`(?&name)`"),
         B(r"(?<g>a|b)(?P>g)", [('m', "ab")], RCN, groups=1, note="`(?P>name)`"),
-        B(r"(a|b)\g<1>", [('m', "ab")], RC, groups=1, note="`\\g<N>`", wave='D'),
-        B(r"(a|b)\g'1'", [('m', "ab")], RC, groups=1, note="`\\g'N'`", wave='D'),
-        B(r"(?<g>a|b)\g<g>", [('m', "ab")], RCN, groups=1, note="`\\g<name>`", wave='D'),
-        B(r"(?<g>a|b)\g'g'", [('m', "ab")], RCN, groups=1, note="`\\g'name'`", wave='D'),
+        B(r"(a|b)\g<1>", [('m', "ab")], RC, groups=1, note="`\\g<N>`"),
+        B(r"(a|b)\g'1'", [('m', "ab")], RC, groups=1, note="`\\g'N'`"),
+        B(r"(?<g>a|b)\g<g>", [('m', "ab")], RCN, groups=1, note="`\\g<name>`"),
+        B(r"(?<g>a|b)\g'g'", [('m', "ab")], RCN, groups=1, note="`\\g'name'`"),
     ]),
     ("THE `\\g` DOORWAY'S OTHER CONSTRUCT IS `backrefs`'S, NOT THIS "
      "MODULE'S -- the split runs exactly along the delimiter (`<`/`'` here "
@@ -695,13 +695,13 @@ RELATIVE = [
     ]),
     ("LEADING ZEROS ON A RELATIVE VALUE (design SS2.4a) -- accepted, same "
      "target as without the zero.", [
-        B(r"^(a)(b)\g<-01>$", [('m', "abb")], RC, groups=2, wave='D'),
+        B(r"^(a)(b)\g<-01>$", [('m', "abb")], RC, groups=2),
         B(r"^(a)(b)(?-01)$", [('m', "abb")], RC, groups=2),
-        B(r"^(a)(b)\g<-02>$", [('m', "aba")], RC, groups=2, wave='D'),
+        B(r"^(a)(b)\g<-02>$", [('m', "aba")], RC, groups=2),
     ]),
     ("`\\g<+-N>` OBEYS THE SAME RELATIVE RULE the `(?` doorway does.", [
-        B(r"^\g<+1>(a)$", [('m', "aa")], RC, groups=1, wave='D'),
-        B(r"^(a)(b)\g<-1>$", [('m', "abb")], RC, groups=2, wave='D'),
+        B(r"^\g<+1>(a)$", [('m', "aa")], RC, groups=1),
+        B(r"^(a)(b)\g<-1>$", [('m', "abb")], RC, groups=2),
     ]),
     ("A RELATIVE VALUE OF ZERO IS ALWAYS ERROR 126 (design SS2.4a) -- in "
      "every spelling, leading zero or not.", [
@@ -727,8 +727,8 @@ WHOLE = [
         B(r"^(a(?0)?b)$", [('n', "aabb")], RC, groups=1, note="`(?0)` is `(?R)`."),
         B(r"^(a\g<0>?b)$", [('n', "aabb")], RC, groups=1,
           note="`\\g<0>` -- a spelling the charter's list did not have "
-               "(design SS2.4) -- is `(?R)` too.", wave='D'),
-        B(r"^(a\g'0'?b)$", [('n', "aabb")], RC, groups=1, note="and so is `\\g'0'`.", wave='D'),
+               "(design SS2.4) -- is `(?R)` too."),
+        B(r"^(a\g'0'?b)$", [('n', "aabb")], RC, groups=1, note="and so is `\\g'0'`."),
         B(r"(a(?R)?b)", [('m', "aabb")], RC, groups=1,
           note="UNANCHORED: with the anchors gone, `(?R)` reaches depth 2."),
     ]),
@@ -918,9 +918,9 @@ DUPNAMES = [
         B(r"^(?J)(?:(?<a>x)|q)(?<a>y)(?P>a)$", [('m', "qyx"), ('n', "qyy")],
           RCNM, groups=2),
         B(r"^(?J)(?:(?<a>x)|q)(?<a>y)\g<a>$", [('m', "qyx"), ('n', "qyy")],
-          RCNM, groups=2, wave='D'),
+          RCNM, groups=2),
         B(r"^(?J)(?:(?<a>x)|q)(?<a>y)\g'a'$", [('m', "qyx"), ('n', "qyy")],
-          RCNM, groups=2, wave='D'),
+          RCNM, groups=2),
     ]),
 ]
 
@@ -1095,12 +1095,12 @@ LEADINGZERO = [
                "SS2.4a's own miscompile warning)."),
     ]),
     ("THE `\\g` DOORWAY TAKES THE SAME RULE.", [
-        B(r"^(a\g<1>?b)$", [('m', "aabb")], RC, groups=1, wave='D'),
-        B(r"^(a\g<01>?b)$", [('m', "aabb")], RC, groups=1, wave='D'),
-        B(r"^(a\g'01'?b)$", [('m', "aabb")], RC, groups=1, wave='D'),
-        B(r"^(a\g<0>?b)$", [('n', "aabb")], RC, groups=1, wave='D'),
-        B(r"^(a\g<00>?b)$", [('n', "aabb")], RC, groups=1, wave='D'),
-        B(r"^(a\g'00'?b)$", [('n', "aabb")], RC, groups=1, wave='D'),
+        B(r"^(a\g<1>?b)$", [('m', "aabb")], RC, groups=1),
+        B(r"^(a\g<01>?b)$", [('m', "aabb")], RC, groups=1),
+        B(r"^(a\g'01'?b)$", [('m', "aabb")], RC, groups=1),
+        B(r"^(a\g<0>?b)$", [('n', "aabb")], RC, groups=1),
+        B(r"^(a\g<00>?b)$", [('n', "aabb")], RC, groups=1),
+        B(r"^(a\g'00'?b)$", [('n', "aabb")], RC, groups=1),
     ]),
     ("THE RELATIVE FORMS TAKE A LEADING ZERO TOO (design SS2.4a) -- "
      "already exercised in relative.rxt; cross-referenced here rather "
@@ -1257,12 +1257,12 @@ QUANTIFIED = [
           note="`(?&name){n}`"),
         B(r"^(?<g>a)(?P>g){2}b$", [('m', "aaab")], RCN, groups=1,
           note="`(?P>name){n}`"),
-        B(r"^(a)\g<1>{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g<N>{n}`", wave='D'),
-        B(r"^(a)\g'1'{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g'N'{n}`", wave='D'),
+        B(r"^(a)\g<1>{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g<N>{n}`"),
+        B(r"^(a)\g'1'{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g'N'{n}`"),
         B(r"^(?<g>a)\g<g>{2}b$", [('m', "aaab")], RCN, groups=1,
-          note="`\\g<name>{n}`", wave='D'),
+          note="`\\g<name>{n}`"),
         B(r"^(?<g>a)\g'g'{2}b$", [('m', "aaab")], RCN, groups=1,
-          note="`\\g'name'{n}`", wave='D'),
+          note="`\\g'name'{n}`"),
         B(r"(a(?R)*b)", [('m', "aabb")], RC, groups=1, note="`(?R)*`"),
     ]),
     ("THE EMPTY-BODY GUARD (design SS2.6): a NULLABLE or EMPTY callee "
