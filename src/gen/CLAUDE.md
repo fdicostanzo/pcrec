@@ -535,6 +535,33 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   - **THE NON-ATOMIC `(?*` ARM IS THE ATOMIC SHAPE MINUS THE CUT**, and it
     allocates no mark slot, which is how a reader tells the two atomicities
     apart in the emitted C and in `--emit-ir`.
+  - **[WAVE D] THE LOOKBEHIND IS `vm_look_behind`, A PER-BRANCH CHAIN IN
+    FRONT OF THE SAME `L_ok`.** Per top-level branch `i` of fixed width
+    `k_i`, in WRITTEN order: an ABSOLUTE `scan_position < k_i` guard, a
+    next-branch push (the LAST branch pushes nothing), `RX_CHARGE_WORK(k_i)`
+    with `k_i` a literal, the SEAM's `<prefix>_back_step`, the
+    `<prefix>_BACK_STEP_NONE` check, the body FORWARD through `vm_emit`
+    unchanged, and an END-CHECK against `SLOT_LOOK_POS`. Because every branch
+    leaves through the same `L_ok` the lookahead arm uses, `vm_look` still has
+    a SINGLE EXIT and §3.2.1's restore still sits on it — R33 V-8's
+    requirement kept by construction rather than by a second restore.
+
+    Four things about it are not the first thing a reader expects. THE GUARD
+    READS THE ABSOLUTE POSITION, never `startpos`: a lookbehind reads subject
+    bytes BEFORE the search window and that is the semantics, measured in both
+    oracles (S135 clamps it and `startpos.rxt`'s 24 `ms`/`ns` cells go red,
+    exactly and only those). IT IS NOT EMITTED AT ALL FOR A ZERO-WIDTH BRANCH,
+    because `scan_position < 0` on a `size_t` is what `-Wtype-limits` refuses
+    and `(?<=)x` is a legal pattern. THE SENTINEL ARM LEAVES BY `rx_fail`
+    rather than jumping to the next branch, because the assignment has already
+    clobbered the cursor with `(size_t)-1` and the pushed frame would
+    otherwise retry that branch twice — the pop restores both and lands where
+    the push meant. AND THE END-CHECK's FAILURE ACTION SPLITS BY POLARITY: a
+    cheap `goto rx_fail` on `(?<=`, where a declined branch is the assertion
+    failing, and a HARD `RX_R_*` return on `(?<!`, where a declined branch is
+    the assertion SUCCEEDING and a wrong width would be a FALSE MATCH (Frank's
+    ASK 2 ruling; `RX_R_FRAMES` is used and the site records why none of D49's
+    three codes actually means "internal error").
   - **THE FOLLOW IS SCOPED ACROSS THE BODY AND NOT BECAUSE OF THE CUT**
     (§3.2.1, R33 C1-1 — the one silent miscompile in §3). `vm_atomic`'s own
     header attributes its identical save-zero-restore to the cut, and THAT
@@ -559,12 +586,21 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   past `RX_NSLOTS` — an out-of-bounds write in EMITTED code, K27's class. It
   is at most two slots per lookaround and sometimes one: `(?=` takes both,
   `(?!` takes only the mark (the pushed frame restores the cursor), `(?*`
-  takes only the cursor. `vm_count_slots` also counts the negative form's ONE
-  extra resume point.
+  takes only the cursor — and a negative LOOKBEHIND takes BOTH even though the
+  restore is free, because the end-check compares against the entry position.
+  `vm_count_slots` also counts the negative form's ONE extra resume point AND
+  (wave D) the lookbehind's `nbranch - 1` per-branch retry frames, EXACTLY:
+  that walk's under-count is the one that lets an artifact past the
+  resume-point cap.
 
   `vm_cost`'s +1 frame / +2 trail were RE-CHECKED against `vm_look` as landed
   and stand: exact for the shape that needs most, a safe-direction over-charge
-  for the others (`RX_CUT` adds no trail entry). `vm_nullable` answers TRUE
+  for the others (`RX_CUT` adds no trail entry). Wave D added `+ nbranch` to
+  the frame charge and read it off the WIDTH TABLE's companion count rather
+  than off `.look.behind` — `nbranch` is 0 for a lookahead, so that charge is
+  unchanged to the line, and the exact lookbehind figure is `m - 1`, so `+ m`
+  over-charges by one in the direction this analysis is documented to err in.
+  `vm_nullable` answers TRUE
   (§2.6 — the arm that stops a quantified lookaround burning its step budget)
   and `vm_rev_caps` declines. Apart from `vm_look` itself, NO arm in this file
   reads `u.look.behind`/`.neg`/`.atomic`: §3.1(a) settles one kind rather than
