@@ -13080,3 +13080,41 @@ tooling defects fixed en route (rows_for.sh's never-worked targeted
 tier, K30) and one filed (K31 watch item); one API outage survived on
 WIP-commit discipline. Tree clean, pushed, no lanes, no worktrees, cron
 torn down at close.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 1) — [DD-14] IMPLEMENTATION OPENS: waves A and A2 spawned; the PCREC_ERR_INTERNAL assumption
+
+Frank's order: "describe next phase then proceed to build". Woke on
+ee66fb7 (clean; no lanes, no worktrees, cron down). The phase is the
+`recursion` module's build per subroutines_design.md §11's letters
+A / A2 / B+C / D / E / F / G plus D71's additions (the caller-provided
+frame buffer's API shape at match_api.md; the DEFINE row; the Perl-arm
+D27 corpus), closing at D69 tier. Session runs autonomously.
+
+OPENED at ~09:4x: two concurrent lanes from main (ee66fb7).
+- lane/srA (worktree worktrees/srA, sonnet; brief scratchpad/brief_srA.md):
+  wave A — PCREC_ERR_RECURSE (-5), ERR_FLOOR −4→−5 at §5.6's sites 1-8
+  (5a/5b are B+C's), the `_R_RECURSE` sentinel + propagation, the
+  driver printing every code by name, the `gu <code>` harness directive
+  exercised in the failing direction. Three bisectable commits.
+- lane/srA2 (worktrees/srA2, opus; brief_srA2.md): wave A2 — `A_CALL`,
+  the `u.call` D70 payload + `CallLink`, the 27 arms of §4.4a with GRAPH
+  sites as LOUD placeholders (callgraph.c is B+C's), `pcrec_has_call`
+  external and unwired, the D70 survey's `u.call` answers, the eight
+  switch-less walkers inspected and reported; byte-identity of every
+  corpus artifact vs main's build/pcrec as a plain diff.
+Merge order: A first, A2 rebased onto it (disjoint emit_vm.c hunks).
+Watchdog cron every 10 min.
+
+MANAGER RULING UNDER STATED ASSUMPTION (Frank to confirm or revert; it
+is one ABI line and a comment): wave A's commit 2 also mints
+`PCREC_ERR_INTERNAL (-6)` BELOW the floor — D49's reserved "abort"
+space, which is exactly what F2's `if (ret < PCREC_ERR_FLOOR)
+__builtin_trap()` obligation exists for — and re-points the lookbehind
+end-check's negative-arm hard return (RX_R_FRAMES by ELIMINATION,
+a42cd0e finding (b), with its own comment asking for this ruling "at
+DD-14 clearance") to it. Reasons: the renumber is chartered as a
+ONE-TIME pre-v1 ABI event, so a second mint later would be a second
+event; an internal error placed INSIDE the give-up range would be
+mis-read by a caller's "raise a bound and retry" logic; the driver
+prints "internal" and run.sh keeps it a HARD failure even under `gu`,
+so no corpus cell can ever expect it. Recorded as D72.
