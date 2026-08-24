@@ -368,6 +368,30 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   tautology; a `--policy=none` control arm and a cell-fidelity guard against
   the corpus's own expectations are the other two anti-tautology rows. Measured
   at the wave: 29,063 three-way comparisons, 0 disagreements.
+- **`recursion/`** — module `recursion` ([DD-14]): subroutine calls `(?N)`
+  `(?±N)` `(?&name)` `(?P>name)` `\g<N>`/`\g<name>`/`\g<±N>` `\g'N'`/`\g'name'`
+  `(?R)` `(?0)` `\g<0>` `\g'0'`. **Written by the wave B+C CORPUS lane running
+  AHEAD of the wave B+C CODE lane** — nothing in `src/` implements a
+  subroutine call yet, so every ordinary `m`/`n` block here is EXPECTED to
+  report a pattern-compile failure until that lane lands (`docs/testing.md`'s
+  "expected-unsupported" policy). Seventeen `.rxt` files, **GENERATED** —
+  `gen_corpus.py` drives every cell (including every `g` line) through
+  libpcre2 10.46 via `docs/design/subroutines_measurements/probes/
+  sr_oracle.py` before writing it, and **there is no python arm at all**:
+  design §10.1 MEASURED python3 `re` has no subroutine-call construct
+  whatsoever (an ABSENCE, not a divergence) — `\1`/`(?P=n)` compile in python
+  but are `backrefs`'s reference construct, a trap the design names by name.
+  `(?(DEFINE)...)` never appears in this corpus (it stays module
+  `conditionals`'s doorway until D71 decision 4's registry row lands, wave
+  F, not started); every callee-only body uses the oracle-verified
+  `{0}`-callee idiom instead. Carries the wave A `gu <code>` give-up
+  directive (design §10.3) for `leftrec.rxt`'s and `quantified.rxt`'s
+  unconditional-recursion cells — unparseable in THIS worktree today since
+  wave A landed in a separate lane, a reported and reconciled gap, not a
+  corpus defect. See its own CLAUDE.md for the full file-by-file breakdown,
+  the `gu frames`-vs-`recurse` note (D71.1), what could not be oracled (P2's
+  masking cell, the `--no-captures` axis), and the reconciled harness-run
+  state.
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is
