@@ -177,6 +177,53 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `sizeof(Ast)` is unchanged: the member is 32 bytes on LP64, which is
   `u.cls.bits`'s own 32.
 
+### [DD-14 wave A2] The EIGHT SWITCH-LESS WALKERS, inspected
+
+  `subroutines_design.md` §4.4a's census is `switch`-shaped, which is exactly
+  the set `-Wswitch` covers **and exactly the set it covers, no more**. The
+  residual it names is 72 further `->k ==` dispatch points and **eight AST
+  walkers with no kind switch at all**. The design assigns their arms to wave
+  B+C; wave A2 was the wave with the tree open, so each was READ and its
+  behaviour on an `A_CALL` recorded. **NONE needs a guard, and none can be
+  reached in wave A2 anyway (no producer).**
+
+  | walker | what it does with an `A_CALL` today | guard needed? |
+  |---|---|---|
+  | `emit_vm.c` `vm_lifts` | its argument is an `A_ATOMIC`; `r->k != A_REP` DECLINES the lift for a call body. If the body is `A_REP((?1))` it declines again through `vm_nullable(r->l)`, which answers `true`. | no — but B+C must re-read it once `vm_nullable` becomes the graph fixpoint, because the lift of `(?>(?1)*)` then depends on the CALLEE's nullability |
+  | `emit_vm.c` `bare` | `while (k == A_CAP)` — stops AT the call and returns it. A call is not transparent to anything. | no |
+  | `emit_vm.c` `vm_alt` | flattens the `A_ALT` spine and hands each branch to `vm_emit`. A call branch reaches `vm_emit`'s arm — `ctx_fail` today, `vm_call` in B+C. Generic in the branch kind. | no |
+  | `nfa.c` `trie_key` | requires every spine leaf to be `A_CLASS`; an `A_CALL` leaf makes it return false (INELIGIBLE). Dead for a call-bearing pattern anyway once wave E forces the prefilter off. | no |
+  | `nfa.c` `ast_bare` | `while (k == A_CAP)` — stops at the call, `bare`'s answer. | no |
+  | `altcls.c` `altcls_walk_alt` | flattens `A_ALT`, calls `altcls_walk` per branch (which now has an explicit `case A_CALL: return a;`), then merges only RUNS of `A_CLASS` branches — a call breaks the run. | no |
+  | `altcls.c` `altcls_branch_peel` | requires the branch's FIRST flattened atom to be a single-byte `A_CLASS`; a leading call DECLINES. A call later in the branch is carried through `altcls_rebuild_cat` **by pointer**, never copied. | no |
+  | `altcls.c` `altcls_cat_flatten` | a pure spine flattener with no kind assumption; a non-`A_CAT` node is a length-1 spine of itself. | no |
+
+  **AND THE INSPECTION FOUND SOMETHING THE SWITCH CENSUS COULD NOT — A PASS
+  ORDERING HAZARD FOR `u.call.body`, WHICH THE DESIGN DOES NOT ADDRESS.**
+  `.body` is filled by the end-of-parse resolution pass (`pcrec_bref_resolve`,
+  called at the END of `pcrec_parse`, parse.c). **Two later passes REBUILD
+  nodes rather than mutating them**, so a pointer captured at resolution can
+  be left naming a subtree that is no longer in the tree:
+
+  - `pcrec_altcls` (`src/core/compile.c`, immediately after parse) allocates
+    NEW nodes: `altcls_walk`'s `A_REP`/`A_CAP` arms do `*r = *a; r->l = body;`,
+    and stages 1 and 2 rebuild spines and merge branches into a fresh
+    `A_CLASS`. On `((?:a|b))(?1)` the tree's group 1 becomes a NEW `A_CAP`
+    over `[ab]` while `.body` still names the OLD one over the alternation.
+  - `pcrec_discharge_atomic` (via `pcrec_select_engine`) SPLICES an `A_ATOMIC`
+    out, so a callee whose root was that node is reached through `.body` with
+    the cut still in it.
+
+  The consequence is not academic: under `CALL_LINKAGE` the callee REGION is
+  emitted from `.body` while the lexical occurrence is emitted from the new
+  node — two different programs for one group — and §4.4c computes `W` and the
+  region's slot INDICES over whichever one it was handed. **WAVE B+C OWES ONE
+  OF THREE ANSWERS**: resolve `.body` AFTER the rewriting passes, have every
+  rewriting pass update it, or exempt callee subtrees from rewriting. Note
+  `possessify` and `revdet` are NOT in this list — they annotate fields on the
+  SAME nodes, so `.body` sees their results. Nothing is reachable in wave A2
+  (no producer), which is why this is recorded rather than fixed here.
+
 ### The D70 ownership survey
 
   Every read and write of every non-`k`/`l`/`r` field of `struct Ast` across
