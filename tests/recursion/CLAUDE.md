@@ -9,23 +9,27 @@ time this corpus was written). Decisions: `docs/dev/decisions.md` D71 (the
 give-up-code diagnostic axis, D71.1 in particular) and D72
 (`PCREC_ERR_INTERNAL`).
 
-**WAVE B+C HAS LANDED, AND THIS SECTION IS THE PRESENT TENSE.** The corpus
-was written by the wave B+C CORPUS lane running *ahead of* the wave B+C CODE
-lane (both concurrent, per `docs/dev/plan.md`'s `[DD-14.BC]` row), so its
-first version said "nothing in `src/` implements a subroutine call yet" and
-expected every `m`/`n` block to report a pattern-compile failure. That is no
-longer true of anything here: the three `(?` ports, the resolver's call rule,
-`src/opt/callgraph.c` and the emitter's call linkage all ship, and **this
-directory runs 306 cases / 0 failures**.
+**WAVE D HAS ALSO LANDED, AND THIS SECTION IS AGAIN THE PRESENT TENSE.**
+Wave B+C shipped the three `(?` ports, the resolver's call rule,
+`src/opt/callgraph.c` and the emitter's call linkage, leaving the `\g<`/`\g'`
+family `unbuilt` (below). Wave D wired `pcrec_brport_g`'s `<`/`'` arms
+(`src/parse/mod_backrefs.c`, design §4.2's "NOT A NEW PORT" ruling), so
+`\g<N>`/`\g<name>`/`\g<±N>`/`\g<0>` and `\g'N'`/`\g'name'`/`\g'0'` all compile
+and match now too. **This directory runs 371 cases / 0 failures** — the 22
+`\g` blocks (below) went from `perr` to real `m`/`n`/`g` lines by ONE edit to
+`gen_corpus.py` (deleting each block's `wave='D'` keyword argument) and a
+re-run, exactly as the paragraph below always said they would; nothing about
+the CELLS changed, only what pcrec answers them with.
 
-**WHAT IS STILL EXPECTED-UNSUPPORTED IS THE `\g` FAMILY, AND IT IS MARKED
-RATHER THAN RED.** Design §8.1 requires the two `\g` registry rows to stay
-`unbuilt` until wave D wires their port — D65 flips `built` from the PORT's
-answer, and a wave that flipped them while the emitter could not compile the
-spelling would ship a compliance index that lies — so the 22 blocks whose
-pattern carries `\g<` or `\g'` render as `perr` blocks under
+**WHAT USED TO BE EXPECTED-UNSUPPORTED WAS THE `\g` FAMILY, AND IT WAS MARKED
+RATHER THAN RED — THIS PARAGRAPH IS KEPT AS THE RECORD OF WHY, PAST TENSE.**
+Design §8.1 required the two `\g` registry rows to stay `unbuilt` until wave D
+wired their port — D65 flips `built` from the PORT's answer, and a wave that
+flipped them while the emitter could not compile the spelling would have
+shipped a compliance index that lies — so the 22 blocks whose pattern carries
+`\g<` or `\g'` rendered as `perr` blocks under
 `gen_corpus.py`'s `wave='D'` marker, with **the oracle's answer carried in a
-`# WAVE D ORACLE:` comment beside each cell**. That is `APPROACH.md` §7's
+`# WAVE D ORACLE:` comment beside each cell**. That was `APPROACH.md` §7's
 expected-unsupported policy as `docs/testing.md` states it (step 2: pin the
 compile error via `perr`; step 3: once the component is implemented, replace
 those blocks with real cases), and wave D's edit is to delete one keyword
@@ -224,19 +228,30 @@ above.
 
 ## Current harness-run state
 
-**MEASURED ON THIS TREE at [DD-14] wave B+C's landing**, with
+**MEASURED ON THIS TREE at [DD-14] wave D's landing**, with
 `bash tests/harness/run.sh tests/recursion`:
 
-    cases passed: 306
+    cases passed: 371
     cases failed: 0
 
-Fully reconciled, in the three stages the code lane passed through:
+Fully reconciled, in the four stages the code lane passed through:
 
 | stage | passed | failed |
 |---|---|---|
 | the corpus as merged, on the pre-B+C compiler | 20 | 273 |
 | the ports + the linkage, before any corpus edit | 223 | 70 |
-| after the four corrections below | **306** | **0** |
+| after the four corrections below (wave B+C close) | 306 | 0 |
+| after `gen_corpus.py` sheds `wave='D'` (wave D close) | **371** | **0** |
+
+**THE WAVE D DELTA IS +65, AND IT IS EXACTLY THE 22 `\g` BLOCKS' CELL COUNT.**
+The 22 blocks that used to render one `perr` case each now render their real
+`m`/`n`/`g` lines — several cells per block for the `g` (group-span)
+directives — so the count moved by cells, not by blocks; no block was added
+or removed, no expectation outside the `\g` family changed, and `git diff`
+over `tests/recursion/*.rxt` at this wave touches only the six files whose
+patterns carry `\g<` or `\g'`
+(`spellings.rxt`, `relative.rxt`, `whole.rxt`, `leadingzero.rxt`,
+`quantified.rxt`, `dupnames.rxt`).
 
 The **20 / 273** row is the corpus's own landing figure and its composition is
 unchanged from what this file recorded then: 15 `perr` blocks that genuinely
