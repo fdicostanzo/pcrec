@@ -21,7 +21,7 @@ MEASURED, both oracles, by the [M6.1] design lane and reproduced by this one:
 | `a*\Z` | `"aaa\n"` | `(0, 3)` | `(4, 4)` — a different SPAN |
 
 **python's `\Z` IS PCRE2's `\z`.** python has no single escape for PCRE2's
-`\Z`; the only spelling is `(?=\n?\Z)`, which needs module `lookaround`. Both
+`\Z`; the only spelling is `(?=\n?\z)`, which needs module `lookaround`. Both
 divergences run in the dangerous direction — python reports no match, or a
 shorter one, exactly where PCRE2 matches — so a cell written from python would
 encode `\z` and this suite would go green on a `\Z`-compiled-as-`\z`
@@ -50,7 +50,10 @@ rule.
 close to `a\Kb` and is not the same construct — different backtracking, and
 it cannot express the variable-width shapes `\K` exists for — so a cell
 written that way would encode a translation and then check the translation.
-It also needs module `lookaround`, which does not exist.
+It also needs module `lookaround`, which SHIPS since [M6.6.2] — so the reason
+this paragraph stands is now the FIRST one alone (a lookbehind is a different
+construct, not a translation of `\K`), and no longer the availability of the
+module.
 
 **Every block whose pattern contains `\Z` therefore carries `# pcre2-only`**
 (which makes `tests/harness/verify_rxt.py` skip it) and is verified against
