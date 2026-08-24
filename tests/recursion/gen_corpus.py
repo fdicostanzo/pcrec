@@ -1116,12 +1116,83 @@ SLOTFAMILIES = [
           note="THE NON-ATOMIC CONTROL -- the exact language the false "
                "matches above would reproduce on a broken compiler."),
     ]),
+    # [DD-14 wave B+C, code lane] SS10.2 asks for "a cell per ARGUED family as
+    # [DD-14] lands them", and this is that section.
+    ("THE THREE ARGUED FAMILIES, ONE CELL EACH (design SS5.3b's five ARGUED "
+     "rows, collapsed to the three that a pattern can reach). SS5.3b measured "
+     "TWO families (PENDING and CUT_MARK) and REASONED about five; each cell "
+     "below is a callee that ALLOCATES the family in question and is RE-ENTERED "
+     "at two depths, which is the configuration the argument is about -- a "
+     "slot written at a construct's ENTRY and read at its EXIT, with two "
+     "ACTIVATIONS of one emitted copy NESTED rather than sequential. Each was "
+     "checked to allocate its family in the shipped artifact before being "
+     "written: the slot legend names it.", [
+        B(r"^(?:(?<g>(?:a?)*b(?&g)?)){0}(?&g)$",
+          [('m', "b"), ('m', "bb"), ('m', "ab"), ('m', "abb"), ('m', "aabb"),
+           ('m', "abab"), ('n', "")],
+          RCN, groups=1,
+          note="SLOT_EMPTY_GUARD (S-SR6c) and SLOT_SPAN_LOW (S-SR6d). The "
+               "callee holds `(?:a?)*` -- an UNBOUNDED frames-rung quantifier "
+               "with a NULLABLE body, which is the ONLY shape that allocates "
+               "an empty guard: MEASURED, `^(a?){0,5}$` allocates NONE while "
+               "`^(a?)*$` and `^(a?)+$` allocate one each, so a bounded cell "
+               "would go green on a broken compiler. Artifact legend: "
+               "RX_SLOT_EMPTY_GUARD0 and RX_SLOT_SPAN_LOW0."),
+        B(r"^(?:(?<g>a{1,3}b(?&g)?)){0}(?&g)$",
+          [('m', "ab"), ('m', "aab"), ('m', "abab"), ('m', "aabaab"),
+           ('m', "aaab"), ('n', "a")],
+          RCN, groups=1,
+          note="SLOT_SPAN_LOW (S-SR6d) on its own, without the guard: "
+               "`a{1,3}` takes the CURSOR rung and allocates a low-water "
+               "mark. WHICH RUNG a body gets is a compile-time choice the "
+               "design says this cell has to be written against as LANDED "
+               "rather than as predicted; the artifact legend is what was "
+               "read (RX_SLOT_SPAN_LOW0, no guard)."),
+        B(r"^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$",
+          [('m', "ab"), ('m', "aabb"), ('m', "aaabbb"), ('n', "a"),
+           ('n', "abb")],
+          RCL + ",named-groups", groups=1,
+          note="SLOT_LOOK_MARK and SLOT_LOOK_POS (S-SR6e), the family "
+               "SS5.3b could not measure because [M6.6.2] had not landed -- "
+               "and the family SS12 P-2's FIRST version predicted was SAFE "
+               "\"because each is re-initialised at its own entry label on "
+               "every entry\". That prediction is WITHDRAWN: the "
+               "re-initialisation is not the question, the OVERWRITE is. A "
+               "lookahead INSIDE a recursive callee is live at two depths. "
+               "Artifact legend: RX_SLOT_LOOK_MARK0 and RX_SLOT_LOOK_POS0."),
+    ]),
 ]
 
 # ===========================================================================
 # quantified.rxt -- SS2.6: a call is an ordinary repeatable item
 # ===========================================================================
 QUANTIFIED = [
+    # [DD-14 wave B+C, code lane] S157's OWN WITNESS, and it is here rather
+    # than in atomicity.rxt because its point is the RUNG rather than the
+    # atomicity: `(?&g)*+` over a NULLABLE callee is the one shape design
+    # SS2.6 rules the rung must DECLINE, since `vm_poss_star` emits NO
+    # empty-iteration guard and NO work charge and `eng_brep_design.md` SS2.2's
+    # nullable refusal CANNOT SEE a callee that lives elsewhere in the tree.
+    # On the shipped compiler it takes the BACKTRACKING rung and matches;
+    # sabotage S157 admits it to the possessive one and the matcher HANGS,
+    # which the harness scores through its own run budget.
+    ("A POSSESSIVE QUANTIFIER OVER A NULLABLE CALLEE (design SS2.6's RULED "
+     "rung decline, D71 item 6). The rung admission DECLINES a call-bearing "
+     "body -- on every rung, until SS5.7's accounting has a measurement behind "
+     "it -- so this compiles onto the ordinary backtracking rung, which HAS "
+     "the empty-iteration guard and the step budget.", [
+        B(r"^(?:(?<g>a?)){0}(?&g)*+$", [('m', "aaa"), ('m', "")],
+          RCN + ",atomic-groups", groups=1,
+          note="the nullable callee under a POSSESSIVE star. MEASURED on the "
+               "landed build: RX_VM_STRATS reads 0x2 -- BACKTRACKING only, "
+               "no POSSESSIVE bit -- which is the rung decline being "
+               "observable in the artifact rather than inferred."),
+        B(r"^(?:(?<g>a?)){0}(?&g)*$", [('m', "aaa"), ('m', "")], RCN,
+          groups=1,
+          note="THE CONTROL: the same callee under an ordinary star, so the "
+               "pair separates \"the possessive spelling is declined\" from "
+               "\"the nullable callee is mishandled\"."),
+    ]),
     ("A CALL IS A REPEATABLE ITEM, twelve spellings (design SS2.6).", [
         B(r"^(a)(?1){2}b$", [('m', "aaab")], RC, groups=1, note="`(?N){n}`"),
         B(r"^(a)(?1)+b$", [('m', "aaab")], RC, groups=1, note="`(?N)+`"),

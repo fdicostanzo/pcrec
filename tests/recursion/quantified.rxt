@@ -32,6 +32,26 @@
 # D71 (the give-up-code axis, D71.1) and D72 (PCREC_ERR_INTERNAL).
 
 # ====================================================================
+# A POSSESSIVE QUANTIFIER OVER A NULLABLE CALLEE (design SS2.6's RULED rung decline, D71 item 6). The rung admission DECLINES a call-bearing body -- on every rung, until SS5.7's accounting has a measurement behind it -- so this compiles onto the ordinary backtracking rung, which HAS the empty-iteration guard and the step budget.
+# ====================================================================
+
+# the nullable callee under a POSSESSIVE star. MEASURED on the landed build: RX_VM_STRATS reads 0x2 -- BACKTRACKING only, no POSSESSIVE bit -- which is the rung decline being observable in the artifact rather than inferred.
+pattern ^(?:(?<g>a?)){0}(?&g)*+$
+features recursion,named-groups,atomic-groups
+m "aaa" 0 3
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+
+# THE CONTROL: the same callee under an ordinary star, so the pair separates "the possessive spelling is declined" from "the nullable callee is mishandled".
+pattern ^(?:(?<g>a?)){0}(?&g)*$
+features recursion,named-groups
+m "aaa" 0 3
+g 1 -1 -1
+m "" 0 0
+g 1 -1 -1
+
+# ====================================================================
 # A CALL IS A REPEATABLE ITEM, twelve spellings (design SS2.6).
 # ====================================================================
 
