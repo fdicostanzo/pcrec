@@ -703,7 +703,12 @@ lookbehind subset is **fixed-per-branch** (`lookaround_design.md` §2.5), which
 is stricter, and the rule composes without new machinery: the width analysis
 descends into `A_CALL` by descending into the callee, and **refuses on a
 recursive callee** because the fixpoint does not converge to a constant.
-`pcrec_maxw` is `[M6.6.2]` wave A's (P13) and gains one `A_CALL` arm here.
+`pcrec_maxw` **does not exist yet** (P13): `lookaround_design.md` §11 wave A
+builds it, and its `A_CALL` arm is this module's to add **once that lands** —
+`∞` for any callee in a cycle, which is what PCRE2's error 125 above agrees
+with. If wave A has not landed when §11's wave B+C does, this module ships
+`minw`'s arm alone and the lookbehind width rule refuses call-bearing bodies
+outright until it can.
 
 #### (e) A call inside a lookahead or an atomic group is ordinary
 
@@ -1156,8 +1161,9 @@ constant. Saving first would work too and would put the block at
 read in the emitted C and because a rewind that abandons the call then
 discards the saves along with the frame that owned them.
 
-and `RX_CALL` / `RX_RETURN` are `RX_PUSH` with one more field and one more
-line:
+and `RX_CALL` / `RX_RETURN` are `RX_PUSH` with **three more fields**
+(`call_ret`, `call_top`, `call_mark`) and the two lines that maintain the
+activation chain:
 
 ```c
 #define RX_CALL(ret_, p_) do {                                          \
@@ -2532,7 +2538,10 @@ Deliverables: `src/parse/mod_recursion.c` with `pcrec_rcport_num` /
 (`call_ret`, `call_top`, `call_mark`), `RX_CALL`, `RX_RETURN`, the fail
 label's **two** lines, the save/restore emission, the depth
 capacity and `RX_CALL_DEPTH`'s stamp; `vm_cost`'s arm; `vm_nullable`'s
-fixpoint arm; `pcrec_minw`/`pcrec_maxw`'s arms.
+fixpoint arm; **`pcrec_minw`'s arm (§4.4b's fixpoint, computed in
+`callgraph.c`), and `pcrec_maxw`'s ONLY IF `lookaround_design.md` §11 wave A
+has landed** — P13: it does not exist today, so the two are NOT symmetric
+and this wave must not assume they are.
 **The `\g` tails are DECLINED at `WANT_RESULT`** so their rows stay `unbuilt`
 until wave D — one branch in `pcrec_brport_g`, not a throwaway path.
 *Landing bar: `spellings.rxt`, `relative.rxt`, `whole.rxt` (the `(?R)`/`(?0)`
