@@ -85,7 +85,7 @@ and that run is what found this design's own capture restore set
 incomplete (§5.9), which is the argument for executing a design section that
 can be executed. Engine selection is `VM_ONLY` structurally
 and the prefilter is the one place this design costs a real number: erasing a
-call is **not** a superset, so wave 1 drops the prefilter for call-bearing
+call is **not** a superset, so wave E drops the prefilter for call-bearing
 patterns as `backrefs` does — and that is **MEASURED at 21×–350×** on the
 sparse-candidate shape a prefilter exists for (§8), which is why the sound
 construction that gets it back is designed here and scheduled rather than
@@ -351,11 +351,38 @@ MEASURED, `out/atomicity.txt` T5:
 | `^(a?)(?1)*$` | `"aaa"` | (0,3) |
 | `^(?R)*$` | `""` | **`rc -52`** |
 
-So a call is a repeatable item and the existing **empty-iteration guard** is
-what stops a nullable callee's loop — `vm_nullable` needs an `A_CALL` arm and
-its answer is *"nullable iff the callee's body is nullable"*, which for a
-recursive callee is a fixpoint over the call graph and for a call to group 0
-is *"is the whole pattern nullable"*. §4.4 owns it and S-SR9 defends it.
+So a call is a repeatable item, and `vm_nullable` needs an `A_CALL` arm whose
+answer is *"nullable iff the callee's body is nullable"* — a fixpoint over the
+call graph (§4.4b's, §4.4a site 1), and for a call to group 0 *"is the whole
+pattern nullable"*.
+
+**BUT "THE EMPTY-ITERATION GUARD STOPS IT" IS NOT TRUE OF EVERY RUNG, AND THE
+FIRST VERSION SAID IT WAS** (R34 LENS2-11). What bounds a nullable callee
+depends on which rung the quantifier is routed onto, and the possessive one has
+neither a guard nor a charge:
+
+| the callee under… | what bounds it | STRUCTURAL |
+|---|---|---|
+| `*` / `+` / `{n,}` on a backtracking rung | the **empty-iteration guard** (a `SLOT_EMPTY_GUARD` slot), then the **step budget** — a step is one backtrack resumption (`emit_vm.c:6039-6046`) and an empty iteration produces one | `vm_nullable` gates the guard's emission |
+| a **cursor / revdet** rung | the rung is only admitted for shapes the rung's own predicate approves; a nullable body is not one | `vm_revdet_fits`, `vm_det_seq` |
+| **`*+` / `(?>…*)` — the POSSESSIVE rung** | **NOTHING.** `vm_poss_star` (`emit_vm.c:2919`) **emits no empty-iteration guard and fires no work charge**, and `emit_vm.c:918-922` says so in terms: *"routed onto that rung the emitted matcher PUSHES AND CUTS AT ZERO CONSUMPTION FOREVER, and no work charge fires to stop it. Sabotage row S100's expected result is a TIMEOUT."* | quoted |
+
+**WHY THAT IS SAFE TODAY, and what a call does to it.** `vm_poss_star` is safe
+because `eng_brep_design.md` §2.2 **refuses to possessify a nullable body at
+all**, so the unguarded rung is never reached with one. That verdict is
+computed over **the body's own subtree** — and a call's body is *somewhere
+else in the tree*. So:
+
+> **RULED: rung admission DECLINES a call-bearing body**, on every rung, until
+> §5.7's accounting has a measurement behind it. A call is emitted on the
+> ordinary backtracking rung, which has the guard and the step budget.
+
+That is `possessify.c`'s site 21 in §4.4a (`pss_walk` DECLINES) and
+`revdet.c`'s 14–18, stated once here as the *reason* rather than five times as
+a verdict. Lifting it is a wave-G measurement, not a wave-B+C default, and
+**§14 ASK 6 asks whether Frank wants it lifted at all** — a possessive
+quantifier over a subroutine call is a shape with no known customer and a
+measured hang if it is got wrong.
 
 Note the registry's own `quant` column already claims this: `(?R)`, `(?0)`,
 `(?+1)` and every `(?-N)` row read `quant=yes` while the `(?1)`…`(?9)` rows read
@@ -1609,9 +1636,9 @@ three hold, in which case it SPLICES:
 3. the spliced expansion stays under a **size budget**, checked against the
    same `Cost` machinery that already sizes an artifact.
 
-**SPLICING IS WAVE 3, NOT WAVE 1.** Wave 1 ships the CALL linkage for every
+**SPLICING IS WAVE G, NOT WAVE B+C.** Wave B+C ships the CALL linkage for every
 call site, because it is one path, it is correct for every shape including
-recursion, and it is what the four gating questions are about. Wave 3 replaces
+recursion, and it is what the four gating questions are about. Wave G replaces
 the eligible sites with a splice. That is implement-then-replace, which Frank's
 2026-08-23 rule permits explicitly, and it is **not** a parallel mechanism: the
 splice consumes the same callee contract (§5.4) and the same `W` (§5.3) and
@@ -1786,7 +1813,7 @@ MEASURED (`out/atomicity.txt` T5): **all twelve quantified spellings compile** �
 `^(a)(?1)*$`, `^(a)(?1)+$`, `^(a)(?1)?$`, `^(a)(?1){2}$`, `^(a)(?1)*+$`,
 `^(a)(?1)*?$`, `^(?<n>a)(?&n)*$`, `^(a)\g<1>*$`, `^(a)\g'1'*$`,
 `^(?P<n>a)(?P>n)*$`, `^(a)(?-1)*$`, `^(a\g<0>*b)$`. The nine `no`s are wrong
-and wave B fixes them.
+and wave F fixes them.
 
 **THE D65 `built` COLUMN.** All 26 rows read `unbuilt` today (P4, 0 rows
 `built`). D65 derives `built` from the PORT's `ExtResult` at `WANT_RESULT`
@@ -1814,7 +1841,7 @@ the hybrid's DFA prefilter cannot be built from the call-erased pattern.
 
 `backrefs_design.md` §7.1's precedent is the same shape and its ruling is the
 same: `select_engine.c` forces `EngineFit.prefilter` OFF when
-`pcrec_has_bref`. **Wave 1 does the same for `pcrec_has_call`.**
+`pcrec_has_bref`. **Wave E does the same for `pcrec_has_call`.**
 
 ### 8.3 …and that costs 21×–350×, MEASURED, which is why §8.4 exists
 
@@ -1854,11 +1881,11 @@ and every ratio is ≥ 21×, so noise does not reach the conclusion.
 
 **THE RULING, in two parts:**
 
-**(1) WAVE 1: no prefilter for a call-bearing pattern.** One predicate, the
+**(1) WAVE E: no prefilter for a call-bearing pattern.** One predicate, the
 backrefs precedent, one line in `select_engine.c`. It is correct and it is
 slow, and the number above says exactly how slow, so nobody has to guess later.
 
-**(2) WAVE 3: the SOUND APPROXIMATION, and it is not hard.** `nfa.c`'s
+**(2) WAVE G: the SOUND APPROXIMATION, and it is not hard.** `nfa.c`'s
 `A_CALL` arm:
 
 - **the callee is not in a cycle** → splice the callee's NFA fragment. This is
@@ -1875,7 +1902,7 @@ slow, and the number above says exactly how slow, so nobody has to guess later.
 the match START but **not the window END** (8 violations of 45), and
 `backrefs_design.md` §11.2's planted-window hazard is the same shape. §8.3's
 `Σ*` arm makes a *much* looser superset than lookaround erasure, so the window
-end is at least as exposed. **Wave 3 does not land without re-running
+end is at least as exposed. **Wave G does not land without re-running
 `lookaround_measurements/probes/probe_prefilter_hazard.py`'s H1/H2/H3 against
 the call population**, and §12 P-7 is the prediction.
 
@@ -1956,8 +1983,8 @@ LINKAGE-linked artifact must agree on every cell of the corpus.** Both are
 this compiler, both run, and the comparison is `A == B` over answers rather
 than over bytes — `lookaround_design.md` §6.3's substitution-driver shape,
 which that design calls its *"real cross-lowering assurance"*. It lands with
-wave 3 (a `-fno-splice-calls` switch is the axis), and until then §9.3's rows
-carry the load. §11 wave 3's landing bar states it.
+wave G (a `-fno-splice-calls` switch is the axis), and until then §9.3's rows
+carry the load. §11 wave G's landing bar states it.
 
 ### 9.3 The sabotage rows
 
@@ -1990,7 +2017,8 @@ measurement behind it rather than a worry.
 | **S-SR6e** | §5.3a: `W` includes `SLOT_LOOK_MARK`/`_POS` | `callgraph.c` | `harness recursion lookaround` | drop them from `W` | ARGUED and **NOT LANDABLE UNTIL `[M6.6.2]` DOES**. §12 P-2's first version predicted these were SAFE; that prediction is withdrawn. The row is written now so the obligation is not lost, and `[DD-14]`'s close must either land it or record why not |
 | **S-SR7** | §5.7: `vm_cost` charges `2·\|W\|` trail entries per call | `emit_vm.c` **+ 2nd site** | `harness recursion codegen` | charge `\|W\|` instead of `2·\|W\|` | **no answer changes** until the trail is exhausted, then `PCREC_ERR_FRAMES` on a pattern the artifact can match — S87/S95's exact shape, so the detector is a deep-call cell **and** the codegen count |
 | **S-SR8** | §5.6: the depth capacity FIRES and is its own code | `emit_vm.c` | `harness recursion` | return `RX_R_FRAMES` instead of `RX_R_RECURSE` | the left-recursion cells report the wrong give-up. **Only detectable if the corpus distinguishes the codes**, so §10.2's `.rxt` needs a give-up-code expectation — which does not exist today (`tests/harness/CLAUDE.md`: the driver prints `steps`/`frames`) and §11 wave A adds |
-| **S-SR9** | §2.6: `vm_nullable` answers TRUE for a nullable callee | `emit_vm.c` | `harness recursion` | return `false` from the `A_CALL` arm | **`PCREC_ERR_STEPS` or `_FRAMES`, not a hang** — every VM artifact carries a step budget by default — on `^(?(DEFINE)(?<g>a?))(?&g)*$`. The harness must score the error return as the failure |
+| **S-SR9** | §2.6: `vm_nullable` answers TRUE for a nullable callee | `emit_vm.c` | `harness recursion` | return `false` from the `A_CALL` arm | on `^(?(DEFINE)(?<g>a?))(?&g)*$`, the lost guard makes the loop re-enter at zero width and the step budget ends it: **`PCREC_ERR_STEPS`**, scored through §10.3's `gu` directive. **The row must be compiled onto the BACKTRACKING rung**, which §2.6's ruling guarantees |
+| **S-SR9a** | §2.6: rung admission DECLINES a call-bearing body | `possessify.c` | **`timeout`** recursion | let `pss_walk` possessify a body containing an `A_CALL` | `^(?(DEFINE)(?<g>a?))(?&g)*+$` **HANGS** — `vm_poss_star` emits no empty-iteration guard and fires no work charge (`emit_vm.c:918-922`, S100's own expected result is a TIMEOUT), and `eng_brep_design.md` §2.2's nullable refusal cannot see a callee that lives elsewhere in the tree. **A TIMEOUT row, like S-SR11**, and the reason §2.6 rules rung admission rather than leaving it to the rung predicates |
 | **S-SR10** | §4.3: a CALL TARGET joins the marked set | `atomic.c` | `harness recursion` | drop `A_CALL.target` from `pcrec_bref_mark`'s union | **the `--no-captures` axis only.** `(a)(?1)` under `--no-captures` loses group 1's slots and the call has no body. Needs the gate's fourth axis to exist |
 | **S-SR11** | §4.4: no walker FOLLOWS `.body` where the rule says DECLINE | `atomic.c` | `harness recursion` | make `pcrec_has_atomic`'s `A_CALL` arm descend into `.body` | **THE COMPILER HANGS** on `(a(?1))` — there is no answer to compare, so no answer-comparison row can detect it. **This row is scored by the harness TIMEOUT**, and it is the one sabotage in this module whose detector is "the process did not finish". `tests/mech/`'s timeout suite is the assignment, and the row says so rather than sitting in `harness` where a hang reads as an infrastructure failure |
 | **S-SR11a** | §4.3: a two-hop call chain survives `--no-captures` | `atomic.c` | `harness recursion` | drop `mark[target] = true` from `pcrec_bref_mark`'s `A_CALL` arm | `(a(?3))(b)((c))` under `--no-captures` loses group 3's slots. **Note this is NOT a transitivity row** — §4.3 withdrew that — it is the one-line arm's row, and the two-hop shape is used because it is the cell the withdrawn fixpoint claimed to need |
@@ -1999,14 +2027,14 @@ measurement behind it rather than a worry.
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
 | **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
 | **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
-| **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave 1: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
+| **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave E: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
 
 **Two need the TWO-SITE mechanism** (`tests/mech/CLAUDE.md`'s S108,
 `SAB_FILE2/BEFORE2/AFTER2/COUNT2`): **S-SR7**, because the cost arm and the
 emission must move together or the artifact declares a capacity it does not
 use; and **S-SR13**, which is two sites by construction.
 
-**TWENTY-TWO ROWS** (seventeen, plus §5.3a's five per-family additions, plus §4.4's hang row, with S-SR11 retargeted), and the count is stated because
+**TWENTY-FOUR ROWS** (seventeen, plus §5.3a's five per-family additions, plus §4.4's hang row S-SR11a, plus §5.6's S-SR2a and §2.6's S-SR9a, with S-SR11 retargeted), and the count is stated because
 `lookaround_design.md` §9.3 records its own first version disagreeing with
 itself three ways. **A `recursion` mech ARM must be wired** in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
@@ -2128,6 +2156,11 @@ directive is worth generalising rather than special-casing.
 
 In order, each wave landable and testable on its own.
 
+**ONE NAMING SCHEME, AND IT IS THE LETTERS.** A/A2/B+C/D/E/F/G. R34's LENS2-8
+found this document also using "wave 1" and "wave 3" in five places for what
+§11 calls B+C and G; those are gone. Nothing outside §11 assigns work to a
+wave without naming a letter.
+
 **WAVE A — THE GIVE-UP CODE SPACE, ALONE.** `PCREC_ERR_RECURSE (-5)`,
 `PCREC_ERR_FLOOR` −4 → −5, at §5.6's eight source-of-truth sites plus the two
 design records; the `%s_R_RECURSE` sentinel and its propagation through the
@@ -2146,9 +2179,13 @@ declining or descending, decided and recorded per file in the commit message.
 The four `default:`-carrying switches re-inspected by hand against the landed
 code, since `-Wswitch` will not name them.
 *Landing bar: `make strict` clean; the `-Wswitch` alarm demonstrated (add a
-dummy enumerator, count, revert); the identity gate green on all four axes,
-which at this wave is trivially true and is run anyway to prove the harness
-works before it is needed.*
+dummy enumerator, count, revert); every one of §4.4a's 27 arms decided and
+recorded in the commit message, with the fourteen `default:`-carrying sites
+re-inspected by hand. **NOT the identity gate** — R34's LENS2-8 found A2's
+first bar depending on it, and the gate is wave E's deliverable. What A2 CAN
+assert is the gate's cheap half: every emitted artifact over the corpus is
+byte-identical to the pinned pre-module reference on the DEFAULT axis, run
+here as a plain `diff` rather than through machinery that does not exist yet.*
 
 **WAVE B+C — THE PORTS, THE RESOLVER, THE CALL GRAPH AND THE LINKAGE,
 TOGETHER.** They are one wave for §8.1's reason: D65 flips a row to `built`
@@ -2344,7 +2381,7 @@ cannot: §3.3 measured that PCRE2 compiles them all and this design follows.
   and `^(a|(?1)a)$` proves a static refusal would lose matches.
 - **The DFA.** A call-bearing pattern is `VM_ONLY` structurally. `[ENG-LOOK]`'s
   product construction has no analogue here — the language is not regular.
-- **The prefilter, in wave 1.** §8.3 designs the sound construction and
+- **The prefilter, in waves A–F.** §8.3 designs the sound construction and
   wave G builds it. The 21×–350× number is stated so the deferral is a decision
   rather than an omission.
 - **The `[DD-11]` environment model.** §7 states the interface and designs none
@@ -2427,6 +2464,23 @@ the diagnostic alone.
 *Recommendation: (c).* A hint in a diagnostic is a second place the substitute
 has to stay correct, and the compliance page is where a user with a refusing
 pattern is already sent.
+
+**ASK 6 — should a POSSESSIVE quantifier over a call ever be admitted?** §2.6
+RULES that rung admission declines a call-bearing body, so `(?&g)*+` compiles
+onto the ordinary backtracking rung. The reason is STRUCTURAL and sharp:
+`vm_poss_star` emits **no empty-iteration guard and no work charge**
+(`emit_vm.c:918-922`, whose own sabotage row S100 expects a **TIMEOUT**), and
+it is safe today only because `eng_brep_design.md` §2.2 refuses to possessify a
+nullable body — a verdict computed over the body's own subtree, which a
+callee is not part of. Lifting the decline means teaching §2.2's verdict to
+follow the call graph. Options: (a) never — a possessive quantifier over a
+subroutine call has no known customer; (b) lift it in wave G behind a measured
+nullable-through-the-graph test; (c) lift it only for a callee the graph proves
+NON-nullable, which is the cheap 80%.
+*Recommendation: (a) for `[DD-14]`, with (c) chartered.* The downside of (a) is
+a possessive spelling that silently compiles to a slower rung — which is a
+performance difference, not a wrong answer, and `--emit-ir` shows it. The
+downside of getting it wrong is a hang.
 
 **ASK 5 — is a SINGLE-ORACLE D27 corpus acceptable for this module?** §10.1
 MEASURED that python `re` has no subroutine call of any spelling, so for the
