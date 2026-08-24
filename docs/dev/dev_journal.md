@@ -13335,3 +13335,38 @@ wave G's checkable bar is byte-identity between the factored and the
 hand-inlined artifacts. This is the specimen the design's §8.4 said did
 not exist, and it turns wave G from an optimisation into the thing that
 makes the module worth using for factoring.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 6) — wave B+C DELIVERED (lane/srBC 6f0a35f): subroutine calls compile and match; two change requests before merge
+
+srBC's deliverable (~14:4x): 16 WIP commits on 086624a. Bars: make test
+EXIT=0 (25,216/0, every section incl. test-resource, 667 s at -j10);
+strict clean; san EXIT=0 55 min zero reports (at GENCPU_SAN=150 — its
+finding 1 is the k18 budget, already D45's fourth addendum on main);
+tests/recursion 346/0 incl. the --no-captures axis; run_recursion_diff.sh
+1,632 oracle cells (16 patterns × 24 subjects × every startpos, span +
+every group) 0 disagreements with libpcre2; backrefs/lookaround/atomic/
+named-groups corpora untouched; byte identity 2198/2198 with ctl_bad 0
+over 98 call-bearing controls; anchors 162 sabotages / 172 sites resolve;
+--list-syntax 24 `(?` rows built, 2 `\g` rows unbuilt (wave D); depth
+`^(a(?1)?b)$` matches to n=342 then `frames` (the FB row's number);
+`^(a|(?1)a)$` on a×200 MATCHES at default capacity; mech 26 rows: 19
+DETECTED / 7 UNDETECTED-with-measurement (S150-153, S157, S160, S164 —
+shipped behaviour correct, no observable subject; four rows were DEAD ON
+ARRIVAL and re-pointed: S159 → 106 corpus failures once aimed at
+pcrec_bref_mark). REFUTED/AMENDED: §5.3b axis-C's premise (separate mark
+slots per region under CALL_LINKAGE); S-SR9a aims at the wrong arm
+(the possessive suffix desugars to A_ATOMIC(A_REP) and vm_lifts
+declines via the nullable fixpoint — S156); A2 obligation 1 answered
+(a) bind over the FINAL tree, only altcls is a hazard, S166 + codegen
+rule 3; A2 obligation 2 WITHDRAWN — libpcre2 MEASURED: `\K` is LEXICAL,
+the built check was an over-rejection and was deleted, 7/7 agree;
+§9.3 names three non-existent suites (re-pointed). Finding 2: the
+ubsan/asan/san suite lists are three hand-maintained copies → [TT-9].
+Manager's targeted read of the lowering: matches §5 (RX_CALL pushes a
+resume frame with the fail label as its resume, call_top/call_ret in
+the frame; the region exit restores W from the trailed self-writes,
+re-establishes call_top, `goto *`s the return WITHOUT popping;
+CALL_TOP_NONE → R_INTERNAL). TWO CHANGE REQUESTS sent: cell 1 → corpus
+fix per P-12 (not a known-fail); the 7 rows → a checked `SAB_EXPECT`
+field in the mech format (the general form of the ratchet; the S19
+lesson), exercised in the failing direction. Merge follows.
