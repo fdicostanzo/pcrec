@@ -1419,7 +1419,35 @@ enum {
      * lexical construct is FOUND (by check10's sweep) rather than assumed
      * away. NOT base grammar: base is never refused and never toggleable;
      * these rows are both (`--without=quoting` must refuse `\Q`). */
-    RF_LEXICAL = 1u << 5
+    RF_LEXICAL = 1u << 5,
+
+    /* [M6.6.2 wave F / D71 item 3] AN INDEX ROW: it describes a SPELLING for
+     * the index layer and is NEVER elected by `pcrec_registry_arbitrate`. The
+     * one place that skips it is the arbitration loop itself (registry.c), so
+     * a row carrying this bit cannot reach any doorway's dispatch by any path.
+     *
+     * WHY THE BIT EXISTS AT ALL, because "just do not add such a row" was the
+     * alternative and D71 item 3 is the ruling that rejected it: the dispatch
+     * and the index answer DIFFERENT QUESTIONS ("which row fires" vs "what
+     * does PCRE2's surface look like") and were conflated by row=construct.
+     * The twelve `(*` alpha lookaround spellings are the first population
+     * where the two genuinely part: they are real, distinct PCRE2 spellings a
+     * user writes and the compliance index owes a line for, and NONE of them
+     * is selected by a byte — the `(*` doorway dispatches on a NAME through
+     * mod_verbs.c's VerbName tables (D25/Q1), so an alpha row has no
+     * byte-keyed dispatch identity to keep. R6 stands for every other row.
+     *
+     * `tail` ON SUCH A ROW IS ITS NAME, and that is the literal reading of
+     * the field's own contract ("the bytes that must FOLLOW `sel` for this
+     * row to apply") at a doorway whose selector is REG_SEL_ANY: after `(*`,
+     * the bytes that must follow for `(*pla:a)`'s row to apply really are
+     * `pla`. It is how mod_verbs.c's `pcrec_registry_verb_name_row` finds the
+     * row for a scanned name, and it is NOT read by the lookup path (the
+     * default recogniser never runs for a row arbitration skips).
+     *
+     * registry_check asserts BOTH halves: every RF_INDEX row has a `tail` and
+     * a `family`, and no (kind, sel, text) arbitration anywhere returns one. */
+    RF_INDEX = 1u << 6
 };
 
 #define REG_SEL_ANY (-1)      /* catch-all row; last row for its kind */
@@ -1912,6 +1940,51 @@ struct RegRow {
      * until the classes producers land, which byte-identity asserts. */
     ExtPort aport;   /* atom position */
     ExtPort cport;   /* class position */
+
+    /* [M6.6.2 wave F] D71 ITEM 3's `family` FIELD — THE INDEX LAYER's ONLY
+     * NEW FACT, and it is deliberately a bare string rather than a table.
+     *
+     * WHAT IT HOLDS: the FAMILY's CANONICAL SYNTAX — the spelling the index
+     * prints for the whole group. NULL means "this row is its own family",
+     * which is every row but the twelve alpha spellings today, and the index
+     * renders such a row exactly as it always has.
+     *
+     * WHY THE CANONICAL SYNTAX IS ITSELF THE GROUPING KEY. The alternative
+     * was a family NAME plus a separate `RegFamily` table carrying the
+     * canonical syntax and the resolver rule, and that table would be a
+     * SECOND HOME for a string the rows already hold (D24). Members of a
+     * family are the rows whose `family` compares equal; the family's
+     * canonical syntax IS that key; and the resolver rule — how a member
+     * resolves to the family's construct — is the member row's own `note`,
+     * which every row already carries and which registry_check requires to be
+     * non-empty. So the field adds one fact and stores it once.
+     *
+     * FOR A FAMILY WHOSE CANONICAL SPELLING IS ALSO A MEMBER (this wave's
+     * six: `(?=...)` is both the family key and the syntax of the primary
+     * row), the primary keeps `family == NULL` and the ALIASES point at its
+     * `syntax`. That is not two homes for the same string: the primary owns
+     * the string, and an alias holds a REFERENCE to it that
+     * `tests/registry/registry_check.c` resolves and fails loudly on if it
+     * dangles. src/parse/mod_lookaround.c's `la_kind` resolves the very same
+     * reference to reach the primary's three `u.look` flags, so the alias
+     * cannot disagree with its primary about what it means.
+     *
+     * FOR A FAMILY WITH NO SUCH MEMBER — recursion's `(?1)`..`(?9)`, whose
+     * index line D71 spells `(?N)` and which is no row's own syntax — the key
+     * is simply a family-level spelling and every member carries it,
+     * including the one an unwary reader would call the "first". That is the
+     * shape the next customer joins in: give all ten digit rows
+     * `family = "(?N)"` and `\g<1>`/`\g'1'` theirs, change nothing else, and
+     * the index collapses them with `built` ANDed across the members. Their
+     * dispatch identity — ten byte-keyed rows, R6 — is untouched, which is
+     * what D71 item 3 means by "rows keep their byte-keyed dispatch identity".
+     *
+     * LAST IN THE STRUCT, after the ports, for the reason the roadmap/quant
+     * block gives one field group up: every macro in registry.c initialises
+     * it explicitly, so a macro that forgot it is a -Wextra
+     * missing-field-initializer rather than a silent NULL that reads as a
+     * claim ("this row is its own family") nobody wrote. */
+    const char *family;
 };
 
 /* [M6.4.2 / SR-8] The engines mask a node contributes to the pattern-wide AND.
