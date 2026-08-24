@@ -13381,3 +13381,20 @@ V-E's compilation units, DD-14.G's identity bar which is what makes a
 library subpattern free, DD-14.F's DEFINE row; the email specimen as
 entry #1; D27-blinded corpora per store entry; pcrec-bench rows).
 Charter conversation at [DD-14]'s close.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 7) — WAVE B+C MERGED (67e40b9): SUBROUTINE CALLS COMPILE AND MATCH ON MAIN; waves D and LB open
+
+Merged lane/srBC at 19b3a4c (its WIP 17/18 after the deliverable: my
+D45 commit cherry-picked and its own k18 note dropped; cell 1 flipped
+to `n "ab"` per P-12 and removed from known_fail — which now carries
+dd14_bc_open.rxt with the TWO lookbehind cells, ratchet-guarded). On
+main: smoke 6/6, anchors resolve, strict clean, `^(a(?1)?b)$` emits a
+call artifact. The `SAB_EXPECT` change request (the checked
+expected-UNDETECTED field, general form of the ratchet) is a FOLLOW-ON
+the lane still owes — it was foreground-blocked on a redundant san5
+(its san4 was green on the same code); I stopped san5 by PID to free
+it. Merged-tree battery: make test running now; san after. Waves D
+(lane/srD, sonnet: the `\g` tails and the zero family, S-SR15) and LB
+(lane/srLB, opus: the deferred lookbehind width re-check after
+callgraph build — the two parked cells are its positive signal; the
+`\K` half withdrawn) open CONCURRENTLY from 67e40b9 — disjoint files.
