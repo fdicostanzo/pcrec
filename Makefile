@@ -451,7 +451,9 @@ test-lookaround: all
 # script's marked WAVE E HOOK grows the bearing/free bucket split and this
 # target keeps its name.
 #
-#     make test-lookaround-identity        # the gate, on demand
+#     make test-lookaround-identity        # the gate, on demand — RETIRED at
+#                                          # [DD-14] wave A (0c75c96): refuses
+#                                          # with the reason; see the script
 #     LOOKAROUND_IDENTITY_REF=<sha> make test-lookaround-identity  # moved base
 #     STRICT_ALL=0 ...                     # reserved for wave B+C; today 1
 test-lookaround-identity: all

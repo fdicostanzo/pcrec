@@ -313,6 +313,15 @@ decides whether to perform it — and then run the row through
   is a scan and not a grep because `(?=` in a class is three literal bytes and
   `(?<name>` is a named group. Full entry: the `[M6.6.2]` section below. Opt-in
   as `make test-lookaround-identity`, never part of `make test`.
+  **RETIRED 2026-08-24 ([DD-14] wave A, main 0c75c96):** the ABI event
+  (PCREC_ERR_RECURSE / ERR_FLOOR −5 / PCREC_ERR_INTERNAL) changed every
+  artifact's `#define` block, and this gate's reference is pre-`A_LOOK` by
+  construction (its positive control (a) refuses anything newer), so no
+  valid pin exists past that commit. The script now REFUSES with the
+  explanation when the subject tree carries `PCREC_ERR_INTERNAL`; its last
+  valid run is recorded at [M6.6]'s close (1a8541e). Successor: the
+  [DD-14] four-axis identity gate (subroutines_design.md §9, wave E),
+  pinned at post-wave-A main.
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored

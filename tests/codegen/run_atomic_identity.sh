@@ -90,6 +90,22 @@ pass=0; fail=0
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
+# ---- RETIREMENT GUARD ([DD-14] wave A, 2026-08-24) ------------------------
+# Wave A's ABI event (main 0c75c96: PCREC_ERR_RECURSE, ERR_FLOOR -4 -> -5,
+# PCREC_ERR_INTERNAL below the floor) changed the emitted `#define` block of
+# EVERY artifact, and this gate's reference is a PRE-module commit by
+# construction (its positive control refuses a pin that already carries the
+# module), so no valid pin exists on which a post-0c75c96 subject can be
+# byte-identical. Its job was served and recorded at module `atomic-groups`'s
+# close; from that commit on it would go red on every cell for a reason
+# that is not a regression, which is a check-design failure of its own.
+# Same disposition as run_lookaround_identity.sh: REFUSE, loudly. A
+# historical re-run needs a subject checked out before 0c75c96.
+if grep -q 'PCREC_ERR_INTERNAL' "$ROOT_DIR/src/gen/emit_dfa.c" 2>/dev/null; then
+    bad "RETIRED: the subject tree carries [DD-14] wave A's ABI event (PCREC_ERR_INTERNAL in src/gen/emit_dfa.c), which changed every artifact's #define block; this gate's pre-module reference cannot be moved past it. See run_lookaround_identity.sh's retirement guard; the [DD-14] identity gate (wave E) is the successor."
+    echo; echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+
 # ---- the reference compiler, from the PINNED COMMIT ----------------------
 REFSRC="$WORKDIR/ref"
 mkdir -p "$REFSRC"

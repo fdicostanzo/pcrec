@@ -203,6 +203,25 @@ finish() { echo; echo "checks passed: $pass"; echo "checks failed: $fail"; \
            [ "$fail" -eq 0 ] || exit 1; exit 0; }
 die()    { bad "$1"; finish; }
 
+# ---- RETIREMENT GUARD ([DD-14] wave A, 2026-08-24) ------------------------
+# Wave A's ABI event (main 0c75c96: PCREC_ERR_RECURSE, ERR_FLOOR -4 -> -5,
+# PCREC_ERR_INTERNAL below the floor) changed the emitted `#define` block of
+# EVERY artifact. This gate's reference is a PRE-A_LOOK commit BY
+# CONSTRUCTION (positive control (a) below refuses anything newer), so no
+# valid pin exists on which a post-0c75c96 subject can be byte-identical:
+# from that commit on the gate would go red on every cell for a reason that
+# is not a regression, and a gate that fails for a non-reason is a
+# check-design failure of its own (tests/mech/CLAUDE.md). Its job — D70's
+# refactor and [M6.6.2]'s eight waves changing no lookaround-free artifact —
+# was served and recorded at [M6.6]'s close (1a8541e). The subroutines
+# design's four-axis identity gate (subroutines_design.md §9, [DD-14] wave
+# E) succeeds it, pinned at post-wave-A main. Filtering the #define lines
+# out of the comparison was considered and rejected: "a filtered gate is a
+# check-design failure" is this file's own precedent. So: REFUSE, loudly.
+if grep -q 'PCREC_ERR_INTERNAL' "$ROOT_DIR/src/gen/emit_dfa.c" 2>/dev/null; then
+    die "RETIRED: the subject tree carries [DD-14] wave A's ABI event (PCREC_ERR_INTERNAL in src/gen/emit_dfa.c), which changed every artifact's #define block; this gate's pre-A_LOOK reference cannot be moved past it (positive control (a)). Its last valid run is recorded at [M6.6]'s close (1a8541e); the [DD-14] identity gate (wave E) is its successor. To re-run it historically, check out a subject before 0c75c96."
+fi
+
 # ---- the reference compiler, from the PINNED PRE-REFACTOR COMMIT ----------
 REFSRC="$WORKDIR/ref"
 mkdir -p "$REFSRC"
