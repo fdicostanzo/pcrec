@@ -179,6 +179,17 @@ is a future diagnostic-generation axis, not part of the default
 artifact), so no call site's propagation logic changes either — only the
 set of codes the trap must clear grew by one.
 
+**AMENDED again (same commit, wave A commit 2).** `PCREC_ERR_INTERNAL`
+(-6) is minted BELOW `RX_ERR_FLOOR` — the first real producer of "a
+future abort semantic" this section has been speaking of hypothetically
+since D49. It means the artifact caught its OWN analysis/emission
+disagreeing, never a resource give-up; module `lookaround`'s
+negative-polarity lookbehind end-check (`src/gen/emit_vm.c`'s
+`vm_look_behind`) is its one producer. The trap line is still unchanged
+verbatim, and trapping on `PCREC_ERR_INTERNAL` at a composed call site
+IS the design this section describes — not a defect this module works
+around by choosing a different code.
+
 Two consequences worth stating for whoever writes the first call site. The
 sentence above about "−2 reserved" is the one part of this ruling that did not
 survive: a future native abort needs an encoding below the floor, and how much

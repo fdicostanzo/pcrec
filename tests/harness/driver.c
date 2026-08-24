@@ -38,6 +38,17 @@
  *                        no producer yet (D71 item 1), so no artifact prints
  *                        it today; it is named here anyway so a future
  *                        producer needs no driver change.)
+ *   "internal\n"        ([DD-14] wave A commit 2, D71 item 1) rx_search
+ *                        returned PCREC_ERR_INTERNAL, BELOW the give-up
+ *                        floor and NOT a give-up: the artifact caught its
+ *                        OWN analysis/emission inconsistency (module
+ *                        'lookaround''s negative-polarity lookbehind
+ *                        end-check is the one producer today). Still exits
+ *                        3 like the four codes above -- this driver has no
+ *                        third outcome shape to give it -- but run.sh's
+ *                        `gu` directive (docs/testing.md) refuses to let
+ *                        any corpus block EXPECT "internal": nothing may
+ *                        plan for the artifact catching its own bug.
  * On a malformed escape in argv[1] or a malformed [startpos], prints a
  * message to stderr and exits 2.
  */
@@ -205,13 +216,23 @@ int main(int argc, char **argv) {
          * --emit-main code (src/gen/emit_dfa.c's `pcrec_emit_main` fixed
          * the identical shape at [ENG-BREP counter-K]). A code this
          * fallthrough cannot name still prints its numeric value rather
-         * than guessing, so a FIFTH code (D49's reserved-below-the-floor
-         * space, or a bug that returns something else entirely) is loud
-         * rather than silently mislabelled as one of the four named ones. */
-        const char *word = found == PCREC_ERR_STEPS   ? "steps"
-                          : found == PCREC_ERR_FRAMES  ? "frames"
-                          : found == PCREC_ERR_WORK    ? "work"
-                          : found == PCREC_ERR_RECURSE ? "recurse"
+         * than guessing.
+         *
+         * [DD-14 wave A commit 2] "internal" (PCREC_ERR_INTERNAL, BELOW
+         * the give-up floor) is named too, even though it is NOT a
+         * give-up — it is the artifact's own analysis/emission
+         * inconsistency check firing (module 'lookaround''s
+         * negative-polarity lookbehind end-check is the one producer
+         * today). It still exits 3 like every other negative return this
+         * driver cannot turn into a match/nomatch line, but run.sh's `gu`
+         * directive (docs/testing.md) refuses to let any corpus block
+         * EXPECT it: nothing may plan for the artifact catching its own
+         * bug, that is what sabotage rows are for. */
+        const char *word = found == PCREC_ERR_STEPS    ? "steps"
+                          : found == PCREC_ERR_FRAMES   ? "frames"
+                          : found == PCREC_ERR_WORK     ? "work"
+                          : found == PCREC_ERR_RECURSE  ? "recurse"
+                          : found == PCREC_ERR_INTERNAL ? "internal"
                           : NULL;
         if (word) printf("%s\n", word);
         else printf("giveup %d\n", found);

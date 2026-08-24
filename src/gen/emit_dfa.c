@@ -377,7 +377,9 @@ static void emit_rx_abi_types(StrBuf *sb)
         " * codes PROPAGATE, they are not collapsed to -1, and a caller doing\n"
         " * an exact `== -1` test sees them as distinct values. Values\n"
         " * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort\n"
-        " * semantic; no pcrec-emitted matcher produces one today, and a\n"
+        " * semantic; PCREC_ERR_INTERNAL ([DD-14] wave A commit 2, D71\n"
+        " * item 1) is its first producer -- the artifact's own\n"
+        " * inconsistency check firing, never a resource give-up -- and a\n"
         " * generated call site that invokes an rx_matchfn traps on one.\n"
         " * Self-contained: must accept ctx->ncap == 0, ctx->caps == NULL. */\n"
         "typedef ptrdiff_t rx_matchfn(const rx_ctx *ctx);\n"
@@ -403,6 +405,23 @@ static void emit_rx_abi_types(StrBuf *sb)
         "yet (D71 item 1) */\n"
         "#define PCREC_ERR_FLOOR   (-5)  /* give-ups: [FLOOR,-2]; "
         "below: reserved (D49) */\n"
+        "\n"
+        /* [DD-14 wave A commit 2, D71 item 1] BELOW THE FLOOR: NOT A
+         * GIVE-UP. D49 reserves everything strictly below PCREC_ERR_FLOOR
+         * for "a future abort semantic" -- this is that semantic's first
+         * producer. PCREC_ERR_INTERNAL means the artifact detected its OWN
+         * inconsistency (a width analysis disagreeing with what the
+         * emitter walked, src/gen/emit_vm.c's lookbehind negative-arm
+         * end-check), never a resource give-up. F2's obligation
+         * (docs/design/design_callout_abi.md) is exactly this: a composed
+         * call site invoking an rx_matchfn must enforce
+         * `if (ret < PCREC_ERR_FLOOR) __builtin_trap();`, and trapping on
+         * PCREC_ERR_INTERNAL IS the design, not a gap. A TOP-LEVEL search
+         * entry is not such a call site, so it still PROPAGATES the code
+         * to its own caller rather than trapping -- see the search entry's
+         * collapse in emit_vm.c. */
+        "#define PCREC_ERR_INTERNAL (-6)  /* [DD-14] below PCREC_ERR_FLOOR: "
+        "NOT a give-up, D71 item 1 */\n"
         "\n"
         /* Same D60 move: the caps-array unset sentinel is a pcrec-contract
          * fact, formerly <PREFIX>_UNSET. */

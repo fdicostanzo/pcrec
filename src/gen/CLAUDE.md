@@ -394,7 +394,10 @@ engines in two functions cannot collide on them. The file-scope names are:
   UNIVERSAL MACRO, unprefixed and unconditional on every artifact — the
   give-up code space (`PCREC_ERR_STEPS`/`_FRAMES`/`_WORK`/`_FLOOR`; **[DD-14
   wave A, 2026-08-24, D71 item 1]: `PCREC_ERR_RECURSE` joined and `_FLOOR`
-  moved −4 → −5 — reserved, no producer yet**), the
+  moved −4 → −5 — reserved, no producer yet**), the BELOW-THE-FLOOR
+  `PCREC_ERR_INTERNAL` (**[DD-14] wave A commit 2, same date/ruling — NOT
+  a give-up; module `lookaround`'s negative-polarity lookbehind end-check
+  is its one producer, `src/gen/emit_vm.c`'s `vm_look_behind`**), the
   caps-array unset sentinel (`PCREC_UNSET`), the two engine constants
   (`PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, new — naming `rx_info.engine`'s
   formerly number-only contract), and the nine D46 stamp bit constants
@@ -562,8 +565,12 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     cheap `goto rx_fail` on `(?<=`, where a declined branch is the assertion
     failing, and a HARD `RX_R_*` return on `(?<!`, where a declined branch is
     the assertion SUCCEEDING and a wrong width would be a FALSE MATCH (Frank's
-    ASK 2 ruling; `RX_R_FRAMES` is used and the site records why none of D49's
-    three codes actually means "internal error").
+    ASK 2 ruling; `RX_R_INTERNAL` is used, below the give-up floor —
+    **[DD-14] wave A commit 2, D71 item 1** minted `PCREC_ERR_INTERNAL`
+    for exactly this shape, retiring the earlier `RX_R_FRAMES`-by-
+    ELIMINATION compromise the site used before the code space had room
+    for the honest answer; the site's own header comment carries the one
+    line of that history).
   - **THE FOLLOW IS SCOPED ACROSS THE BODY AND NOT BECAUSE OF THE CUT**
     (§3.2.1, R33 C1-1 — the one silent miscompile in §3). `vm_atomic`'s own
     header attributes its identical save-zero-restore to the cut, and THAT

@@ -295,10 +295,15 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
    RX_ERR_STEPS/RX_ERR_FRAMES/RX_ERR_WORK/RX_ERR_RECURSE sentinel when it
    exhausts its step budget, backtrack-frame capacity, or (RECURSE, [DD-14]
    wave A, reserved with no producer yet, D71 item 1) its recursion depth;
-   a DFA artifact never returns one). The driver
+   a DFA artifact never returns one) — or, [DD-14] wave A commit 2, D71
+   item 1, return the BELOW-THE-FLOOR `RX_ERR_INTERNAL`, which is NOT a
+   give-up: the artifact caught its own analysis/emission inconsistency
+   (module `lookaround`'s negative-polarity lookbehind end-check is the
+   one producer today). The driver
    discriminates this explicitly rather than treating the return as a bool
    (the shape that was wrong — see docs/dev/known_issues.md K21): on a
-   give-up it prints `steps\n`/`frames\n`/`work\n`/`recurse\n` (an
+   give-up or an internal code it prints
+   `steps\n`/`frames\n`/`work\n`/`recurse\n`/`internal\n` (an
    unrecognized code prints `giveup <N>\n`, [DD-14] wave A —
    the earlier version of this line folded every non-STEPS code into
    `"frames"`, mislabelling WORK give-ups) and exits `3`, not `0`, and
