@@ -248,9 +248,15 @@ PY
 # G5), plus 2 in `lookbehind.rxt` (`\K` and `\G`, which python lacks) and 3 in
 # `startpos.rxt`. Every one of those blocks has exactly ONE oracle, and this
 # sweep is it.
+# [M6.6.2 wave E, merged after D] 44 -> 45: `prefilter.rxt` adds ONE pcre2-only
+# answer-bearing block — `((?:a(?*!q)|aq)(?:xy){0,4}q)`, the NON-ATOMIC negative
+# form of §5.5's measured witness, which python cannot compile (no `(?*`). On
+# wave E's own pre-D branch this guard read 15 and FIRED at the wave boundary —
+# the second time it earned itself. 45 re-derived from a run of the MERGED
+# tree by the manager at the merge, not summed on faith.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 44 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 44 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
+if [ "$NPO" -ne 45 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 45 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do

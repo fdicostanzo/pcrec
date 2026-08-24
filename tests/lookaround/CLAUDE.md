@@ -115,6 +115,38 @@ going down is the module landing.
   file of nothing but `perr` passes just as well on a compiler that refuses
   everything, which is precisely the state a half-landed module gate puts the
   compiler in.
+- **prefilter.rxt** — §10.1(1)'s qualifying shapes, and the ONE file in this
+  directory whose cells were chosen by MEASURING A COMPILER rather than by
+  reading the design. Design §5.6 drops the MRL window-end ceiling for any
+  pattern containing a lookaround, and sabotage row S140 deletes that conjunct
+  — so the row can only score DETECTED if the corpus holds a shape whose
+  ceiling is really LIVE and whose match is really lost when it comes back.
+  **§5.5's own first sweep reported 0 qualifying shapes over a space in which 0
+  was the only possible answer**, every tail it used being nullable, so a
+  hand-written population here would have been the same failure one directory
+  over.
+
+  **SO EVERY CLAMPING CELL WAS QUALIFIED AGAINST THE PRE-WAVE-E COMPILER**:
+  compiled by pcrec at `8720029`, its `RX_VM_PRUNE_CEILING` read off the
+  artifact as `"prefilter-window"`, its matcher run on these exact subjects and
+  observed to answer NOMATCH where the oracle matches. Five clamping blocks
+  qualify, including §5.5's measured witness `((?:a(?!q)|aq)(?:xy){0,4}q)` on
+  `"aqq"` BY NAME and the NON-ATOMIC `(?*!` form of it, which is the cell that
+  separates this module's predicate from [M6.4.2]'s — `pcrec_has_atomic` is
+  false for `(?*!`, so an artifact suppressed by the atomic conjunct alone
+  would leave that one cell red.
+
+  **TWO CELLS ARE HERE BECAUSE THEY DO *NOT* QUALIFY.** §5.4's sharp H3
+  violations `a(?!b)|ab` and `(?:a(?=c)|ab)c?` have the hazard SHAPE and stamp
+  `"none"`: no bounded repeat, no clamp site, no ceiling to lose. The shape is
+  NECESSARY AND NOT SUFFICIENT, which is the whole distinction §5.5 draws, and
+  a corpus built from §5.4's table alone could not go red.
+
+  **AND ONE DIRECTION OF §5.6 IS UNOBSERVABLE FROM ANY CORPUS.** Dropping the
+  ceiling for EVERY pattern changes no answer anywhere — it only costs the
+  pruning. The erasure control `((?:a|aq)(?:xy){0,4}q)` records the twin's
+  answers, but the assertion that it KEEPS its ceiling is structural and lives
+  in `tests/codegen/run_codegen_tests.sh` as `[M6.6-LOOKAROUND rule 1c]`.
 - **run_lookaround_diff.sh** — the behavioural instrument, `make
   test-lookaround`, four sections. See its own header; two things about it are
   worth knowing before adding to it.
@@ -146,6 +178,11 @@ going down is the module landing.
   sabotages. It asserts the EXACT number of disagreeing cells (13 of 137 at
   this wave, every one the atomic form saying NOMATCH where the non-atomic
   form matches, never the reverse).
+
+  **§1'S POPULATION GUARD WENT 14 -> 15 AT WAVE E**, and it FIRED to say so —
+  the second time it has earned itself. `prefilter.rxt`'s `(?*!` cell is the
+  added block. Re-derived from the run and changed deliberately, per the rule
+  above.
 
   **IT REUSES `tests/backrefs/bref_oracle.py` AND `bref_batch.c` RATHER THAN
   COPYING THEM.** Design §10.2 asks for `la_oracle.py` "modelled on" those
@@ -180,6 +217,12 @@ entirety.
 
 ## What this directory does NOT hold
 
+- **The proof that the ceiling is DROPPED in the artifact.** `prefilter.rxt`
+  asserts the ANSWERS; that the stamp, the `--emit-ir` description and the two
+  lines that BUILD the ceiling all agree is `[M6.6-LOOKAROUND rule 1]` in
+  `tests/codegen/run_codegen_tests.sh`, which is the same function
+  `[M6.4-ATOMIC rule 1]` calls. R31 E3's finding is why both exist: a check on
+  the stamp alone is GREEN on a half-done edit that leaves the ceiling live.
 - **The byte-identity gate** is `tests/codegen/run_lookaround_identity.sh`,
   opt-in as `make test-lookaround-identity`, on the ruling
   `test-atomic-identity` and `test-backrefs-identity` have.
