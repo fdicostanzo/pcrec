@@ -13570,3 +13570,10 @@ callers who need depth provide the frame buffer; the limit only hits
 unusual patterns; the eventual USER DOCS must state it (the capacity,
 its implied subject size, the musl/small-stack caveat, the `_in` remedy)
 — recorded as a [REL-META] obligation and on the FB row.
+
+PLAN ROW (Frank, ~18:3x): [EMIT-SET] — control of what is emitted into
+the C file (`--emit -search,-rx_info,main`): named emission units with a
+dependency graph, defaults = today's artifact (identity-gated), and the
+value-add units ([V-I] results→struct helper, [M4-SUBST] search/replace,
+rx code management, the [V-H]/[ENG-PGO] diagnostic variants, FB's `_in`
+entries, [LIB] regions) as drop-ins on the same switch. Spine candidate.
