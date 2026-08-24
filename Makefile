@@ -118,7 +118,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
-      test-atomic test-backrefs \
+      test-atomic test-backrefs test-lookaround \
       test-encseam test-resource test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
@@ -388,6 +388,31 @@ test-backrefs: all
 #     BACKREF_IDENTITY_REF=<sha> make test-backrefs-identity   # a moved base
 test-backrefs-identity: all
 	bash tests/codegen/run_backref_identity.sh
+
+# [M6.6.2 wave B+C] module `lookaround`. Its .rxt corpus rides test-corpus like
+# every other module's; this section is the things a .rxt file structurally
+# CANNOT check, and for this module there are two of them.
+#
+# THE FIRST IS AN ORACLE GAP RATHER THAN A KIND OF QUESTION. python3 `re` has
+# no `(?*` at all (design §7, G5), so `nonatomic_ahead.rxt` is `# pcre2-only`
+# IN ITS ENTIRETY and `tests/harness/verify_rxt.py` skips every cell in it —
+# leaving one of the module's two shipped families with exactly one oracle
+# behind it, the one that generated its expectations. §1 of the differential
+# is what closes that: every pcre2-only pattern in the corpus, at every
+# startpos, span AND every group span, against libpcre2.
+#
+# THE SECOND IS THE ATOMICITY DISCRIMINATOR (§2), and it is the only arm in
+# this tree whose population is required to DISAGREE with itself. `(?=` and
+# `(?*` differ in exactly one emitted line, so a compiler that cut both or
+# cut neither answers them IDENTICALLY — and a suite that only checked
+# agreement with libpcre2 per pattern would go green on both sabotages. The
+# arm asserts the EXACT number of disagreeing cells, measured.
+#
+# `run_lookaround_identity.sh` IS NOT HERE. It is `test-lookaround-identity`
+# below, on the ruling `test-atomic-identity` and `test-backrefs-identity`
+# have.
+test-lookaround: all
+	bash tests/lookaround/run_lookaround_diff.sh
 
 # [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
 # and the same ruling as `test-atomic-identity` and `test-backrefs-identity`
@@ -861,6 +886,7 @@ clean:
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
-        test-backrefs test-backrefs-identity test-lookaround-identity \
+        test-backrefs test-backrefs-identity \
+        test-lookaround test-lookaround-identity \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

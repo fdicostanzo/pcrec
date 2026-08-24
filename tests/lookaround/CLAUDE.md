@@ -1,0 +1,120 @@
+# tests/lookaround — module `lookaround` ([M6.6.2])
+
+`(?=X)` `(?!X)` `(?<=X)` `(?<!X)` and the two non-atomic spellings `(?*X)`
+`(?<*X)`. Design: `docs/design/lookaround_design.md`, panel-approved at R33.
+
+**WHAT LANDED AT WAVE B+C IS THE LOOKAHEAD HALF.** The three `(?<` tails are
+recognised by the parse hook and DECLINED at `WANT_RESULT`, which is what keeps
+their registry rows `unbuilt`; wave D lands the back-step and the four
+lookbehind files (`lookbehind.rxt`, `lookbehind_widths.rxt`, `startpos.rxt`,
+`nonatomic_behind.rxt`), wave E `prefilter.rxt`, wave F `alpha_spellings.rxt`.
+`gated.rxt` carries the split's own cells and wave D deletes three of them.
+
+## The files, and every expectation in them is GENERATED
+
+- **gen_corpus.py** — the generator, and it exists FOR THE `# pcre2-only`
+  MARKING rather than for convenience. Every cell is driven through libpcre2
+  10.46 (the committed ctypes binding at
+  `docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`) AND through
+  python3 `re` in the same pass; the expectation is libpcre2's (D26), and a
+  block is marked `# pcre2-only` exactly where python diverged or could not
+  compile it, with the first divergence and the cell count written above the
+  marking. **It never asks pcrec anything** — an expectation derived from the
+  compiler under test is not an expectation.
+
+  **WHY COMPUTED RATHER THAN DECLARED, and this module is the case that
+  proves it.** Design §7 catalogues two expectations a hand-marking would
+  have written in and that MEASUREMENT REFUTES: python compiles all fourteen
+  quantified lookaround forms and agrees on all nine behavioural cells (G8),
+  and the two oracles agree on all 27 capture cells INCLUDING captures in a
+  negative lookahead (G9). Marking either family `# pcre2-only` by hand would
+  have thrown a working oracle away — R32 C3's finding, which is exactly what
+  the backrefs module's generator was built to remove.
+- **lookahead.rxt** — `(?=` and `(?!`: bodies, contexts, degenerate forms.
+  Carries §3.2.1's two witnesses BY NAME (`(?=(a+)b)a+b` on "aab" is (0,3)
+  g1=(0,2); `(?!(a+)b)a+b` on "aab" is NOMATCH), §2.2's atomic discriminator
+  `(?=(a|ab))\1$`, and the CAPTURE-FREE `(?=a)b` cell sabotage row S126
+  needs — capture-free on purpose, because `(a)(?=b)c` keeps the VM whatever
+  the row's `engines` mask says and would mask it.
+- **captures.rxt** — the four polarity/outcome combinations with `g` lines:
+  retention inside a positive assertion, the undo when a positive one fails,
+  the discard inside a negative one, and the trailing-unset control
+  `(?!(a)x)(a)` that proves the answer is READ rather than truncated.
+- **quantified.rxt** — `(?=a)*` and family, including §2.6's five
+  empty-iteration cells. They are here BECAUSE THEY MUST TERMINATE:
+  `vm_nullable` answers true for `A_LOOK`, and if it did not the star would
+  lose its empty-iteration guard. The failure is NOT a hang — every VM
+  artifact carries a step budget, so the lost guard BURNS it and returns
+  `PCREC_ERR_STEPS`, which a span-comparing harness scores as an error rather
+  than as a mismatch.
+- **nonatomic_ahead.rxt** — `(?*` only, and `# pcre2-only` IN ITS ENTIRETY
+  (python has no `(?*` at all, G5) — computed, not declared, ten blocks of
+  ten. Carries §2.2's non-atomic half and §3.2.1's row 3, which is the arm an
+  implementer following "the atomic shape MINUS the cut" is most likely to
+  lose the follow-scoping in.
+- **refused.rxt** — the `perr` cells: §2.7's `\K`-in-lookaround refusal
+  (including the three nested spellings an immediate-children check would
+  miss) and the unterminated forms. **Every block records BOTH oracles'
+  verdicts**, because the agreement here is not agreement: libpcre2 refuses
+  `(?=a\K)x` because `\K` is not allowed in a lookaround, python refuses it
+  because it has no `\K` AT ALL (design §7, G6).
+- **gated.rxt** — the module gate and D65's `built` column, cell by cell:
+  the closed gate, the wrong module, the three lookbehind rows'
+  enabled-but-unbuilt refusal (the split's own measurement), R33 C2-5's
+  masking cell (`(?=a\K)x` WITHOUT `assertions` is refused by the assertions
+  gate and never reaches §2.7's check at all), and the control that no row
+  outside this module moved. **It opens with a block that must MATCH**: a
+  file of nothing but `perr` passes just as well on a compiler that refuses
+  everything, which is precisely the state a half-landed module gate puts the
+  compiler in.
+- **run_lookaround_diff.sh** — the behavioural instrument, `make
+  test-lookaround`, four sections. See its own header; two things about it are
+  worth knowing before adding to it.
+
+  **§2 IS THE ONLY ARM IN THIS TREE WHOSE POPULATION MUST DISAGREE WITH
+  ITSELF.** `(?=` and `(?*` differ in exactly one emitted line, so a compiler
+  that cut BOTH or cut NEITHER answers them identically — and an arm that only
+  checked agreement with libpcre2 per pattern would go green on both
+  sabotages. It asserts the EXACT number of disagreeing cells (13 of 137 at
+  this wave, every one the atomic form saying NOMATCH where the non-atomic
+  form matches, never the reverse).
+
+  **IT REUSES `tests/backrefs/bref_oracle.py` AND `bref_batch.c` RATHER THAN
+  COPYING THEM.** Design §10.2 asks for `la_oracle.py` "modelled on" those
+  two; modelled-on would have been a THIRD copy of one mechanism
+  (`tests/atomic_groups/` already holds the second), and D24 is the standing
+  rule against a second home for one fact. Neither file is backref-specific in
+  behaviour.
+
+## Every block names `lookaround` in its `features` line
+
+R33 V-10, and it applies to this directory AND to every sabotage row's
+detector. `std1` is a FROZEN named set, `{classes, modifiers}`, so it does not
+contain this module: a cell that forgot the feature would pass BY REFUSAL, on
+a correct compiler and on a sabotaged one alike. That is S108's masking shape
+applied to a whole file. Blocks needing `assertions` (the `\K` cells),
+`backrefs` (the discriminator) or `atomic-groups` (`(?=a)*+`) name those too.
+
+## Census at the wave B+C landing
+
+Read it from a run — `python3 tests/lookaround/gen_corpus.py` prints the table
+and `tests/harness/verify_rxt.py tests/lookaround` prints the python-side one —
+rather than from here, for the reason `tests/reject/CLAUDE.md` records about
+hand-copied figures. At the landing it was **78 blocks / 113 answer cells / 15
+`# pcre2-only` / 16 `perr`**, 158 harness cases, and 803 pcre2-only cells
+re-verified against libpcre2 by §1 of the differential.
+
+## What this directory does NOT hold
+
+- **The byte-identity gate** is `tests/codegen/run_lookaround_identity.sh`,
+  opt-in as `make test-lookaround-identity`, on the ruling
+  `test-atomic-identity` and `test-backrefs-identity` have.
+- **The `\K`-refusal's module attribution** and the six rows' closed-gate
+  diagnostics live in `tests/reject/`: a `perr` block asserts only THAT a
+  pattern is rejected, never WHY, and for a module boundary the why is the
+  point.
+- **`(?=(?i))*`**, which libpcre2 accepts and pcrec refuses. It is not a cell
+  here because it is not this module's question: pcrec refuses `((?i))*` and
+  `(?>(?i))*` the same way, and `src/parse/parse.c`'s A_CAP arm records the
+  pre-existing question. Giving the lookaround its own cell would be giving
+  one question two homes.

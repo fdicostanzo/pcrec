@@ -136,10 +136,23 @@ comment and the row's header.
   their `atomic_groups` siblings, because for this module the group spans are
   the sharper detector: the re-entry family contains subjects on which the
   outer span agrees and the group does not.
+
+  **[M6.6.2] `bref_batch.c` HAS A SECOND CONSUMER**, and it is shared rather
+  than copied: `tests/lookaround/run_lookaround_diff.sh` drives it unchanged.
+  Nothing in it is backref-specific — it reads `<subject-file>\t<startpos>`
+  on stdin and prints the span plus every `RX_NCAPS` group pair — and module
+  `lookaround` needs exactly that, group spans included (a capture inside a
+  positive assertion is RETAINED and inside a negative one is DISCARDED, so
+  the group list is that module's discriminator too). A third copy of one
+  mechanism is D24's shape; the file stays here because this is where it was
+  written, and an edit to it now has two callers.
 - **bref_oracle.py** — the libpcre2 side in one process, with the group list
   PADDED to the requested count (libpcre2 truncates trailing unset pairs, so
   without padding the two oracles disagree about a SHAPE rather than an
   answer — and every such block would be marked `# pcre2-only` for no reason).
+  **Shared with `tests/lookaround/` since [M6.6.2]**, for `bref_batch.c`'s
+  reason above: it takes `<key>\t<ngroups>\t<pattern>` and sweeps every
+  startpos over a subject directory, which is generic.
 - **fold_agreement_check.c** — the mechanism that discharges R32 E8. pcrec's
   ASCII fold exists TWICE and cannot be made to exist once (a parse-time class
   widener; match-time arithmetic in the encoding residual), so this walks all

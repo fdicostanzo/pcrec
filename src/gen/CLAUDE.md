@@ -513,21 +513,66 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   does not arise: the VM has no per-byte dispatch at all, so its one indirect
   jump is on the cold path by construction.
 
-  **[M6.6.2 wave A2] FIVE `A_LOOK` ARMS LANDED HERE INERT, AND TWO OF THEM ARE
-  DELIBERATELY INCOMPLETE.** Nothing produces an `A_LOOK` until wave B+C, so
-  `vm_emit`'s arm is a LOUD `ctx_fail` naming the wave rather than a lowering,
-  and that is what makes the other four safe to land unfinished.
-  `vm_count_slots` descends into the body and allocates NONE of the
-  lookaround's own slots (wave B+C owes them, in the same edit as `vm_look` —
-  under-counting there is an out-of-bounds write in EMITTED code), and
-  `vm_cost` charges the body plus one frame and two trail entries against
-  `lookaround_design.md` §3.2/§3.3's DESIGNED shape rather than a landed one.
-  `vm_nullable` answers TRUE (§2.6 — the arm that stops a quantified
-  lookaround burning its step budget) and `vm_rev_caps` declines. NONE of the
-  five reads `u.look.behind`/`.neg`/`.atomic`: §3.1(a) settles one kind rather
-  than four on the strength of those flags having exactly ONE reader
-  (`vm_look`), so an arm here that consulted one would be the second reader
-  that argument denies exists.
+  **[M6.6.2 wave B+C] `vm_look` — THE LOOKAROUND, and it is `vm_atomic`'s
+  shape with two lines added.** Wave A2 landed five inert `A_LOOK` arms, two
+  of them deliberately incomplete, behind a LOUD `ctx_fail` in `vm_emit`;
+  this wave replaced that arm with `vm_look` and completed the other two in
+  the same edit, which is what the `ctx_fail` existed to force.
+
+  - **THE POSITIVE ATOMIC ARM IS `vm_atomic` PLUS A SAVED CURSOR.** Record
+    the resume depth AND `scan_position` before any push; emit the body; on
+    its first success cut back to the mark and put the cursor back. Those
+    two `RX_SET`/restore lines are the entire difference between `(?>ab)c`
+    and `(?=ab)c`.
+  - **THE NEGATIVE ARM NEEDS NO SNAPSHOT MACHINERY AT ALL**, and that is
+    `lookaround_design.md` §3.3's finding rather than a shortcut: `RX_PUSH`
+    already records the cursor and `trail_depth`, and the fail label already
+    restores the first and rewinds to the second. So "on failure, succeed
+    with the cursor and the captures restored" costs ONE PUSH. Its cut is
+    not an optimisation — the mark is taken before the push, so the cut
+    discards the body-failed continuation too; leaving it live lets a failing
+    assertion be resumed later AS IF IT HAD HELD.
+  - **THE NON-ATOMIC `(?*` ARM IS THE ATOMIC SHAPE MINUS THE CUT**, and it
+    allocates no mark slot, which is how a reader tells the two atomicities
+    apart in the emitted C and in `--emit-ir`.
+  - **THE FOLLOW IS SCOPED ACROSS THE BODY AND NOT BECAUSE OF THE CUT**
+    (§3.2.1, R33 C1-1 — the one silent miscompile in §3). `vm_atomic`'s own
+    header attributes its identical save-zero-restore to the cut, and THAT
+    REASON DOES NOT TRANSFER: here it is the OVERLAP — a lookahead's follow
+    starts at the assertion's ENTRY position, so `body_remaining + fmin`
+    double-counts the same bytes. Deleting the cut for `(?*` does not delete
+    the scoping. Measured on the landed build: `(?:(a+)b)` prunes at 1 and
+    `(?:(a+)b)a+b` at 3, while `(?=(a+)b)` and `(?=(a+)b)a+b` BOTH prune at 1.
+    The negative form is where an unscoped body is a FALSE MATCH rather than
+    a missed one; sabotage row S128 is its detector and its anchor has to
+    exceed the two-line idiom, because `vm_atomic` carries the same two lines.
+
+  **TWO NEW SLOT FAMILIES, `SLOT_LOOK_MARK<n>` and `SLOT_LOOK_POS<n>`,
+  ALLOCATED PER SHAPE.** They sit at the TOP of the layout (above the pending
+  block), so no lookaround-free artifact's slot numbering moves — which is
+  what makes the identity gate's FREE bucket a claim rather than a tautology.
+  Which of them a shape takes is read off `vm_look_needs_mark` /
+  `vm_look_needs_pos`, TWO PREDICATES SHARED BY `vm_count_slots` AND
+  `vm_look`, for the reason `vm_marked` and `vm_is_counter` are shared: a
+  rule two sites each re-derive is a rule one of them will eventually derive
+  differently, and here the failure is `vm_slot_lookmark(v, v->nlookmark++)`
+  past `RX_NSLOTS` — an out-of-bounds write in EMITTED code, K27's class. It
+  is at most two slots per lookaround and sometimes one: `(?=` takes both,
+  `(?!` takes only the mark (the pushed frame restores the cursor), `(?*`
+  takes only the cursor. `vm_count_slots` also counts the negative form's ONE
+  extra resume point.
+
+  `vm_cost`'s +1 frame / +2 trail were RE-CHECKED against `vm_look` as landed
+  and stand: exact for the shape that needs most, a safe-direction over-charge
+  for the others (`RX_CUT` adds no trail entry). `vm_nullable` answers TRUE
+  (§2.6 — the arm that stops a quantified lookaround burning its step budget)
+  and `vm_rev_caps` declines. Apart from `vm_look` itself, NO arm in this file
+  reads `u.look.behind`/`.neg`/`.atomic`: §3.1(a) settles one kind rather than
+  four on the strength of those flags having exactly ONE reader, so an arm
+  here that consulted one would be the second reader that argument denies
+  exists. The two slot predicates are `vm_look`'s own helpers and read them
+  on its behalf, which is why they live beside the slot accessors rather than
+  in the walkers.
 
   **`pcrec_has_lookaround` IS CALLED AND ITS ANSWER IS DISCARDED**, beside
   `v.mrl_win`, and the site says so at length. Wave E adds the conjunct; wave
