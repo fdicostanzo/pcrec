@@ -64,8 +64,8 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 - **sabotages/S\*.sh** — one file per sabotage, sourced by the driver. Sets
   `SAB_ID`, `SAB_FILE`, `SAB_SUITES` (space-separated: `codegen` `trie`
   `reject` `harness` `registry` `pc3` `cli` `vmidentity` `vm`
-  `endvaridentity` `assertions` `kresetdiff`, plus the per-lane arms listed
-  below),
+  `endvaridentity` `assertions` `kresetdiff` `lookaround`, plus the per-lane
+  arms listed below),
   `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
@@ -119,6 +119,19 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   optimization-present check and to the trie's own equivalence. It builds a
   reference compiler and sweeps the whole corpus, so it is the most expensive
   arm here — assign it only where the signal really is emitted bytes.
+- `lookaround` → `tests/lookaround/run_lookaround_diff.sh`, module
+  `lookaround`'s behavioural instrument ([M6.6.2] wave B+C). Its own arm, and
+  wired at wave B+C rather than at wave F where the design placed it (R33
+  C2-7), because two of that wave's own rows cannot be scored without it.
+  **What it sees that no other arm can is a DISAGREEMENT**: `(?=` and `(?*`
+  differ in exactly one emitted line, so §2 asserts the EXACT number of cells
+  on which the two spellings must answer differently — a compiler that cut
+  both, or neither, reports agreement where 13 disagreements are required, and
+  an arm that only checked each spelling against libpcre2 would go green on
+  BOTH S122 and S131. §1 re-drives every `# pcre2-only` cell in the corpus
+  against libpcre2, which for `nonatomic_ahead.rxt` is the only oracle those
+  cells have (python has no `(?*` at all). SKIP-is-not-a-pass exercised in the
+  failing direction as `pc3` was.
 - `assertions` → `tests/assertions/run_assertions_tests.sh`, module
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the
