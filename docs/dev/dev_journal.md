@@ -13247,3 +13247,29 @@ D45's fourth addendum (GENCPU_SAN 60→200 s, 51.9 s quiet measured).
 Process lesson, mine: `pgrep -f "<cmd>"` from a shell whose own command
 line contains <cmd> matches ITSELF — kill by the pid from `ps`, never
 from a pattern that the killing shell can match.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 4) — wave B+C nearing its landing: 25,216/0; three parked cells triaged into two plan rows
+
+srBC's WIP trail (11 commits by ~13:0x): ports/resolver → callgraph.c +
+the linkage → tests/recursion 270/0 → registry counts + 24 SR-8
+witnesses → 26 sabotage rows + the mech arm → byte identity 2198/2198 →
+CLAUDE.mds → the argued slot families → the matrix's own verdicts →
+the parked cells. Its final make test: 25,216 corpus cases / 0 failed,
+every section green except test-resource's CPU cap under its own -j12
+(19/0 standalone twice; the new compiler FASTER than the reference on
+that pattern, artifact byte-identical past the header). strict clean.
+san running at checkpoint. Deliverable owed.
+
+THREE CELLS PARKED in tests/known_fail/dd14_bc_open.rxt — manager
+triage: CELL 1 (`^(a?(?1)b)$`, corpus says `gu frames`, pcrec answers
+NOMATCH in O(1)) is a CORPUS FIX, not a known-fail — P-12 rules minw =
+infinity means "no position can match", and a give-up is never an
+oracle fact; the lane's real finding is the NON-UNIFORMITY (siblings
+without a quantifier give up instead) → plan row [DD-14.EMPTY] (root
+minw = infinity → nomatch at the search entry; wave E). CELLS 2-3 (a
+call inside a lookbehind over-rejected as unbounded because la_widths
+runs in the parse hook before .body exists) are CORRECTLY PARKED — a
+real timing gap in the design's §3.4(d), tier-2, never a miscompile →
+plan row [DD-14.LB] (deferred width re-check after callgraph build;
+same timing class as A2's la_has_kreset obligation; wave D or E).
+Standing fact changes: known_fail carries dd14_bc_open.rxt (2 cells).
