@@ -196,16 +196,38 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   | `src/opt/revdet.c` `rd_node` | `revbody`, `possessive` | **every** kind `rd_reverse` copies | union member + **KIND GUARD** |
   | `src/parse/mod_assertions.c` port | `multiline` | all **eight** of the port's rows | shared `u.anch` + **KIND GUARD** |
 
-  **`rd_node` was the live one.** It is the reversal copy constructor for
-  every kind `rd_reverse` handles — A_CLASS, A_EMPTY, the six position
-  predicates, A_CAP, A_REP, A_CAT, A_ALT, plus the function-tail fallthrough —
-  and it unconditionally cleared two A_REP-only fields on all of them. Through
-  `u.rep` that clear overwrites bytes of `u.cls.bits` on a reversed A_CLASS
-  node: it corrupts the reversed body's class bitmap, which is a miscompile,
-  not a cosmetic issue. It is now guarded on `n->k == A_REP`, which is
-  behaviour-preserving because those values are only ever read for A_REP —
-  and the identity gate's positive control is the UNGUARDED build, so the
-  claim is measured rather than argued.
+  **`rd_node` was the live one, and the miscompile is MEASURED.** It is the
+  reversal copy constructor for every kind `rd_reverse` handles — A_CLASS,
+  A_EMPTY, the six position predicates, A_CAP, A_REP, A_CAT, A_ALT, plus the
+  function-tail fallthrough — and it unconditionally cleared two A_REP-only
+  fields on all of them. The arithmetic: the union sits at `+40` and
+  `u.cls.bits` spans `+40..+71`, so through `u.rep` the clear writes
+  `possessive` at `+49` (class bitmap BYTE 9, i.e. bytes `0x48`-`0x4F`, `H`-`O`)
+  and `revbody` at `+56..+63` (bitmap BYTES 16-23, `0x80`-`0xBF`). On a
+  reversed A_CLASS node it therefore ZEROES the body's membership for those
+  ranges.
+
+  What that costs, measured on the unguarded build: the reversed body's class
+  tests compile to an all-zero `rx_class_bitmap[32]`, the backward walk can
+  never take them, and **the LAST ITERATION'S CAPTURES — the thing
+  `u.rep.revbody` exists to recover — come back UNSET**. `((H)|I){3}J` on
+  `"HHHJ"` reports groups `(-1,-1)(-1,-1)` where both this compiler and
+  python3 `re` give `(2,3)(2,3)`; `((I)|J){2}K` on `"IJK"` and
+  `((H)|b){0,4}c` on `"HHc"` are the same shape. **The whole-match span is
+  unchanged in every case**, which is why a span-only driver sees nothing.
+
+  It is now guarded on `n->k == A_REP`, behaviour-preserving because those
+  values are only ever read for A_REP.
+
+  **AND THE CORPUS CANNOT SEE IT** — the finding that came out of using the
+  real hazard as the identity gate's positive control. With the guard removed
+  the gate reports **zero differences on all four axes**: exactly 44 corpus
+  patterns take the reverse-deterministic rung, and every one of them is
+  spelled in lowercase ASCII, so not one has a bit in the clobbered ranges.
+  Read that as a measured gap in the corpus, not as the guard being
+  unnecessary. **A `.rxt` row with a revdet-eligible quantifier spelled in
+  `H`-`O` (with capture expectations, not just a span) would close it** and is
+  recommended to whoever owns the next corpus change.
 
   **The assertions pin was the latent one, and is guarded too** rather than
   merely recorded. It writes `u.anch.multiline = false` for all eight of the

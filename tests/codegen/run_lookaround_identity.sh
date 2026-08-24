@@ -50,13 +50,47 @@
 #       (the module has not landed) and no `u.rep` (the union has not landed).
 #       A mistyped pin that resolved to something recent would otherwise build
 #       a reference that agrees everywhere and report a clean bill of health.
-#   (b) THE GATE IS DEMONSTRATED RED, and this is the recipe that was run.
-#       In `vm_rep`'s mandatory-copies loop (`src/gen/emit_vm.c`, the
-#       `for (int i = 0; i < a->u.rep.rmin; i++) {` inside the POSSESSIVE arm
-#       — the line is not unique in the file, so edit it BY LINE NUMBER, not
-#       with a bare `sed`), swap the one read `a->u.rep.rmin` for
-#       `a->u.rep.rmax`. That is a single-site read swap: a bounded `{m,n}`
-#       then emits `n` mandatory body copies where it owes `m`.
+#   (b) THE GATE IS DEMONSTRATED RED — TWICE, and the two results together are
+#       the finding this control produced. The manager's ruling was to use the
+#       REAL hazard rather than a synthetic edit, on the reasoning that it is
+#       the miscompile the gate exists to catch. Doing so measured something
+#       more useful than a red bar.
+#
+#       CONTROL b1 — THE REAL HAZARD, and it does NOT move this gate.
+#       Remove the `if (n->k == A_REP)` guard from `rd_node` in
+#       `src/opt/revdet.c` (the state a naive D70 port lands in), rebuild, and
+#       run this script. RESULT: **0 differences on all four axes** — the gate
+#       stays green. That is not the guard being unnecessary; it is THIS
+#       POPULATION being blind to it, and the reason is arithmetic. The union
+#       sits at offset +40 and `u.cls.bits` spans +40..+71, so the unguarded
+#       clear writes:
+#           u.rep.possessive @ +49  -> class bitmap BYTE 9  -> bytes 0x48-0x4F
+#           u.rep.revbody    @ +56..+63 -> bitmap BYTES 16-23 -> 0x80-0xBF
+#       i.e. it zeroes the reversed body's membership for `H`-`O` and for the
+#       high half. Exactly 44 corpus patterns take the reverse-deterministic
+#       rung at all, and EVERY ONE of them is spelled in lowercase ASCII, so
+#       not one of them has a bit in the clobbered ranges. The corpus cannot
+#       see this bug; do not read b1's green as reassurance.
+#
+#       THE HAZARD IS REAL, AND IT IS A CAPTURE MISCOMPILE — measured on
+#       constructed witnesses, not argued. Under the unguarded build the
+#       reversed body's class tests compile to an ALL-ZERO
+#       `rx_class_bitmap[32]` (visible by diffing the emitted C), so the
+#       backward walk can never take them, and the LAST ITERATION'S CAPTURES
+#       — which `u.rep.revbody` exists to recover — come back UNSET:
+#           `((H)|I){3}J`   on "HHHJ": groups (2,3)(2,3) -> (-1,-1)(-1,-1)
+#           `((H)|b){0,4}c` on "HHc" : groups (1,2)(1,2) -> (-1,-1)(-1,-1)
+#           `((I)|J){2}K`   on "IJK" : groups (1,2)(0,1) -> (-1,-1)(-1,-1)
+#       The WHOLE-MATCH SPAN IS UNCHANGED in every case, which is why a
+#       span-only driver (including `--emit-main`, which prints only
+#       capture_spans[0]) sees nothing. Compare all `RX_NCAPS` spans.
+#
+#       CONTROL b2 — THE SYNTHETIC EDIT, which is what actually proves this
+#       script can go red. In `vm_rep`'s mandatory-copies loop
+#       (`src/gen/emit_vm.c`, the `for (int i = 0; i < a->u.rep.rmin; i++) {`
+#       in the POSSESSIVE arm — NOT unique in the file, so edit BY LINE
+#       NUMBER, not with a bare `sed`), swap the one read `a->u.rep.rmin` for
+#       `a->u.rep.rmax`:
 #
 #         python3 - <<'EOF'
 #         P="src/gen/emit_vm.c"; L=open(P).read().split("\n")
@@ -69,13 +103,16 @@
 #         make -j12 && bash tests/codegen/run_lookaround_identity.sh   # RED
 #         git checkout src/gen/emit_vm.c && make -j12                  # revert
 #
-#       MEASURED at wave 0 on exactly that edit: differing stdout comparisons
-#       default 39, --engine=vm 43, -fno-prefilter 39, --no-captures 22 —
-#       `checks failed: 4`, one per axis. Representative differing patterns:
-#       `((?:a{0,2}b)+c)`, `(?:aa|a)++b`, `(?:a\K){2,}b`. Note that all four
-#       axes caught it but with DIFFERENT counts, which is the argument for
-#       running four: no single axis sees the whole surface. A gate that has
-#       never been seen red is a gate nobody has checked.
+#       MEASURED: differing stdout comparisons default 39, --engine=vm 43,
+#       -fno-prefilter 39, --no-captures 22 — `checks failed: 4`, one per
+#       axis, on patterns like `((?:a{0,2}b)+c)` and `(?:aa|a)++b`. All four
+#       axes caught it at DIFFERENT counts, which is the argument for running
+#       four: no single axis sees the whole surface.
+#
+#       WHAT b1 AND b2 SAY TOGETHER: this gate is live and does go red (b2),
+#       AND its population has a measured blind spot (b1) — a corpus with no
+#       revdet-eligible pattern outside lowercase ASCII. That gap is a
+#       recommendation for the corpus, not a defect in this script.
 #
 # THE BUCKET SPLIT IS WAVE E'S, NOT THIS WAVE'S. When module `lookaround`
 # actually lands, this script grows a grammar-aware classifier that splits the

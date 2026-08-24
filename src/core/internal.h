@@ -337,14 +337,24 @@ struct Ast {
      * kinds it does not enumerate — MUST GUARD rather than write
      * unconditionally. The reason is measured rather than stylistic: the D70
      * migration survey found exactly two unconditional per-kind writes on
-     * generic paths, `src/opt/revdet.c`'s `rd_node` (which cleared A_REP's
-     * `revbody`/`possessive` on every kind it copies, and through `u.rep`
-     * would overwrite `u.cls.bits` on a reversed A_CLASS node — a real
-     * miscompile) and `src/parse/mod_assertions.c`'s multiline pin (which ran
-     * for all eight of that port's kinds, harmless only because five of them
-     * have no payload YET). Both are now kind-guarded. Before the union both
-     * writes were merely DEAD; after it, the first is a clobber and the
-     * second is a clobber waiting for its payload.
+     * generic paths, and both are now kind-guarded.
+     *
+     *   - `src/opt/revdet.c`'s `rd_node` cleared A_REP's `revbody`/
+     *     `possessive` on EVERY kind it copies. Through `u.rep` that lands on
+     *     `u.cls.bits` — `possessive` at `+49` is bitmap byte 9 (`0x48`-`0x4F`)
+     *     and `revbody` at `+56..+63` is bitmap bytes 16-23 (`0x80`-`0xBF`) —
+     *     so a reversed A_CLASS node loses those bytes. MEASURED on the
+     *     unguarded build: the backward walk's class tests become an all-zero
+     *     bitmap and the LAST ITERATION'S CAPTURES come back UNSET
+     *     (`((H)|I){3}J` on "HHHJ" reports groups unset where both oracles
+     *     give (2,3)(2,3)), with the whole-match span unchanged — which is
+     *     why only a capture-aware check sees it.
+     *   - `src/parse/mod_assertions.c`'s multiline pin ran for all eight of
+     *     that port's kinds, harmless only because five of them have no
+     *     payload YET.
+     *
+     * Before the union both writes were merely DEAD; after it, the first is a
+     * clobber and the second is a clobber waiting for its payload.
      *
      * THE ARENA ZEROES THE WHOLE ALLOCATION, union included, so every "the
      * arena zeroes, so ..." argument in the comments below still holds
