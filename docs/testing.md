@@ -1773,7 +1773,14 @@ The work didn't change; the scheduling did. (The artifact itself is the
 bounded-repeat replication class whose compiler-side SIZE cap is queued
 with [ENG-BREP] counter-K.)
 
-- **CPU budget (primary): 10s plain / 60s sanitizer** (`GENCPU`,
+- **CPU budget (primary): 10s plain / 200s sanitizer** (`GENCPU`,
+  `GENCPU_SAN`; the sanitizer figure was 60s until 2026-08-24, when the
+  [DD-14] wave A battery measured the corpus's worst artifact —
+  `tests/base/k18_cost_gates.rxt:91`, 351 KB of C — at 51.9s user CPU
+  QUIET under `-O1 -fsanitize=address,undefined,leak` (2.2s plain): 1.15x
+  a budget whose plain sibling sits at ~4x quiet, so one concurrent -j12
+  build killed cc1 by SIGXCPU. 200s applies the same ~4x-quiet rule.)
+  (`GENCPU`,
   `GENCPU_SAN`; integer seconds — it is `RLIMIT_CPU`). Load-RESILIENT
   rather than perfectly load-independent: contention inflates
   cycles-per-instruction, measured on the k18_cost_gates artifact at
