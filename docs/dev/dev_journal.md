@@ -13028,3 +13028,40 @@ undetected 0 / anomalies 0 / oracle-skipped 0 — the D69 module-close
 standard over every sabotage the module added (S121-S142 among them);
 identity gate 6/0 on four axes; strict clean. test and san still
 running.
+
+## 2026-08-24 (EDT), thirty-eighth session (part 17) — [M6.6.3] acceptance: NO IMPLEMENTATION DIVERGENCE; [M6.6] CLOSES — module `lookaround` ships
+
+The acceptance run (without the author, on the quiet box after the close
+validation): first pass 1,849 cases / 310 failed / 71 distinct compile
+failures — and the triage's headline is that EVERY failure was a COMPILE
+failure; not one answer mismatch. Three corpus-wrong classes, zero
+pcrec-wrong: (1) every `features` line sat BEFORE its `pattern`, and the
+harness attaches directives to the block already open (docs/testing.md
+specifies after-pattern via "like `flags`") — the author's generator and
+their own checker SHARED the misreading, so 0-failures-at-authoring
+proved internal consistency, not format correctness: the check-design
+lesson (a control sharing a source with what it controls) in its purest
+form yet; visible only at feature-transition boundaries, which is why
+1,539 cases passed anyway. (2) Missing module names (classes for \w,
+assertions for \A/\z, atomic-groups for possessives) — root cause MY
+brief, which named only assertions/backrefs as extras. (3) The
+`(?<=(a|ba))c` family asserted PCRE2's acceptance where §2.5's ruled
+subset refuses a grouped alternation as ONE variable-width branch — the
+exact boundary the design predicted readers would get wrong, and it
+failed in the predicted SAFE direction (a refusal, never a miscompile).
+Fixes applied to a copy, cell preserved until landing; final run
+1,819 / 0 / 0 / 0. Corpus MERGED as tests/lookaround/d27/ (967d795,
+README carries the whole triage); cell and worktree removed. A cwd
+mishap en route (cd into a worktree then removing it poisoned the
+shell's cwd and self-merged the branch; recovered from the root, the
+commit was never at risk) — the earlier lesson generalises: never cd
+into a worktree you are about to remove.
+
+[M6.6.4]'s bars were all green before the acceptance (full matrix
+137/0/0, gate 6/0, strict, test rc=0, san both axes, compliance at F);
+the final landed-tree make test is running. [M6.6] IS COMPLETE: module
+`lookaround` ships — 18 spellings, 3 PCRE2-fact refusals, the
+fixed-per-branch lookbehind, VM-only per the ruled design. M6.0's ruled
+list is now FIVE MODULES DONE (assertions, named-groups, atomic-groups,
+backrefs, lookaround). The gate-bench re-baseline stays queued (not
+cited by this close).
