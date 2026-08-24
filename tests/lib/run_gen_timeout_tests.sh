@@ -83,11 +83,17 @@ c_cf="$(caxis '-O1' '-fsanitize=address' '' '' '' '')"
 c_san="$(caxis '-O1' '' '-fsanitize=undefined' '' '' '')"
 c_env="$(caxis '-O1' '' '' '' 2 '')"
 c_envs="$(caxis '-fsanitize=address' '' '' '' '' 22)"
-if [ "$c_plain" = "10" ] && [ "$c_cf" = "60" ] && [ "$c_san" = "60" ] \
+# [D45 fourth addendum, 2026-08-24] the sanitizer default moved 60 -> 200
+# (k18_cost_gates.rxt:91 measures 51.9 s quiet under san; the plain
+# budget's ~4x-quiet rule applied). This control hard-codes the expected
+# numbers ON PURPOSE — it does not read gen_timeout.sh's default — so a
+# budget edit that is not also a ruling fails here, as this one did the
+# first time (merged-tree make test on 67e40b9).
+if [ "$c_plain" = "10" ] && [ "$c_cf" = "200" ] && [ "$c_san" = "200" ] \
    && [ "$c_env" = "2" ] && [ "$c_envs" = "22" ]; then
-    ok "D45 CPU budget (the PRIMARY bound): 10s plain / 60s sanitizer, GENCPU/GENCPU_SAN overrides — load-resilient (CPU inflation under contention tops out ~2x, measured; wall stretches unboundedly)"
+    ok "D45 CPU budget (the PRIMARY bound): 10s plain / 200s sanitizer (D45 fourth addendum), GENCPU/GENCPU_SAN overrides — load-resilient (CPU inflation under contention tops out ~2x, measured; wall stretches unboundedly)"
 else
-    bad "D45 CPU budget wrong: plain=$c_plain cflags=$c_cf sanflags=$c_san env=$c_env envsan=$c_envs (expected 10/60/60/2/22)"
+    bad "D45 CPU budget wrong: plain=$c_plain cflags=$c_cf sanflags=$c_san env=$c_env envsan=$c_envs (expected 10/200/200/2/22 -- D45 fourth addendum)"
 fi
 if [ "$b_env" = "9" ] && [ "$b_envs" = "99" ]; then
     ok "D45 budgets: GENTIMEOUT / GENTIMEOUT_SAN override, per the ruling's slow-box escape"
