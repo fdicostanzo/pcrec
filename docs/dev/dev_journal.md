@@ -12647,3 +12647,41 @@ from F); (3) D → E/E2 → F per §11. Cron watchdog d1a3801c active.
 Process notes: lanes report only via SendMessage (plain output is
 invisible — three lanes went idle silently before I asked); the
 scratchpad path is a REQUIREMENT in briefs (the /tmp/sr_pf deviation).
+
+## 2026-08-23 (EDT), thirty-eighth session (part 6) — wave 0's battery GREEN (san 48:48); R34 round 2 closed, re-check done, round 3 (final, text-only) dispatched
+
+Wave 0's post-merge battery on main a9739e1: make clean, strict clean,
+lint done (cppcheck/clang absent — the usual SKIPs), `make san` GREEN
+under -fsanitize=address,undefined on both axes, 48:48 wall (21:23:51 →
+22:12:39, two other lanes competing for the box — the 45:50 figure was
+measured idle). Wave 0 is validated on every battery axis.
+
+R34 round 2 (the verifier's 16): the lane fixed all 16 at 85a9bd6 (doc
+2,984 lines, 12 probes, 27 sabotage rows). V-3 became a NEW construct
+family — the `{0}`-defined callee, the classic pre-DEFINE idiom, measured
+matching on 10.46 for plain/recursive/atomic/rung-bearing callees (axis
+Z0): the layout must account for every EMITTED callee region and W is
+computed over the callee region's own slot indices (§4.4c, S-SR19 with an
+asan arm, zerodef.rxt). V-6's fix inverted the inversion correctly: the
+wrapped-target miscompile is the EXIT (end-check + position restore), so
+§6.3 now reads "wave G may share the BODY, never the EXIT". The lane
+repeated V-5's failure class one commit after being told of it (an edit
+script that asserted out before writing, committed as FIXED) and left the
+honest commit message; then, unprompted, corrected its own round-2 report
+— the "countermeasures are in the tree" sentence was false (ad-hoc shell,
+never written) — and drafted `check_selfconsistency.py`, exercising it in
+the failing direction (7/7) and finding two defects of its own, one of
+them the project's check-design lesson reproduced inside the control:
+prose ABOUT an id satisfied the coverage check FOR that id.
+
+The verifier's re-check at 85a9bd6: V-1/V-3/V-4/V-5 VERIFIED by re-run;
+V-2/V-6/V-11 in substance, with residues — §5.3a's rule box and table
+still encoding the withdrawn LEXICAL premise under an appended
+correction; the probe's prose printing the refuted W1 mechanism into the
+archive §3.5 cites; the old uncited "MEASURED, this lane" line left
+standing above the new citation; L9b's step labels hardcoded "10x" for
+10×/5×/4× steps and "faster than quadratic" over-reaching (re-measured
+exponents 2.01/1.94/1.98 = quadratic). Round 3 dispatched: those five
+MED, three LOW, the check script; then a manager grep-check and merge.
+Record docs/dev/reviews/2026-08-23-r34-subroutines-design.md (5d20470).
+waveA still in flight (full mech matrix running at its A2 landing).
