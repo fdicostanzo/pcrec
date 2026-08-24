@@ -273,6 +273,7 @@ print("# produced HERE and the design cites this file.")
 print()
 print("# (a) THE LEGITIMATE DEEP RECURSION: ^(a(?1)?b)$ on a^n b^n needs")
 print("#     nesting n for a 2n-byte subject. What does 10.46 do?")
+import math
 import time as _t
 for _n in (1024, 10000, 100000, 400000):
     _su = "a" * _n + "b" * _n
@@ -288,20 +289,46 @@ print()
 print("# (b) THE RUNAWAY: ^(a|(?1)a)$ on a^n b. PCRE2 answers rc -52 -- but")
 print("#     what does FINDING that cost it? This is the direction in which")
 print("#     a bounded depth is STRICTLY BETTER than 10.46's guard.")
+# The n=100 row SAT AT THE TIMER FLOOR (~0.0002 s) and its ratio against the
+# next row came out 53x, which an earlier revision of the design read as
+# "faster than the subject squared". R34 V-11' traced the over-reach to
+# exactly that row. It is DROPPED from the series and the sequence starts
+# where the clock can resolve it; the label is now computed from n/prev_n
+# rather than hardcoded to "10x", which was false for two of the three
+# archived steps.
 _prev = None
-for _n in (100, 1000, 5000, 20000):
+_prev_n = None
+_exps = []
+for _n in (1000, 4000, 10000, 20000):
     _su = "a" * _n + "b"
     _t0 = _t.time()
     _r = sr.match_limits(r"^(a|(?1)a)$", _su)
     _d = _t.time() - _t0
     _txt = ("rc=%d" % _r[1]) if isinstance(_r, tuple) and _r and _r[0] == "rc" \
         else repr(_r)
-    _ratio = ("  (x%.1f on 10x the subject)" % (_d / _prev)) if _prev else ""
+    _ann = ""
+    if _prev and _prev > 0:
+        _g = _n / _prev_n
+        _f = _d / _prev
+        _e = math.log(_f) / math.log(_g)
+        _exps.append(_e)
+        _ann = "  (x%.1f on %.2gx the subject -> exponent %.2f)" % (_f, _g, _e)
     print("    n=%-7d subject %-8d bytes  %-10s %.4f s%s"
-          % (_n, len(_su), _txt, _d, _ratio))
-    _prev = _d
-print("#     REACHABILITY: the times must GROW faster than the subject, or")
-print("#     the 'quadratic' reading is not supported by these rows.")
+          % (_n, len(_su), _txt, _d, _ann))
+    _prev, _prev_n = _d, _n
+if _exps:
+    _mean = sum(_exps) / len(_exps)
+    print("#     exponents: %s   mean %.2f"
+          % (", ".join("%.2f" % e for e in _exps), _mean))
+    if _mean < 1.6 or _mean > 2.6:
+        print("#     !! the mean exponent is outside [1.6, 2.6] -- the design's")
+        print("#        QUADRATIC reading is not supported by this run")
+    else:
+        print("#     -> QUADRATIC. The design says 'quadratic' and nothing")
+        print("#        stronger; an earlier revision said 'faster than the")
+        print("#        subject squared' on the strength of a timer-floor row.")
+else:
+    print("#     !! VACUOUS: no ratio computed")
 print()
 
 print("=== L10: DOES ERROR 140 EXIST IN 10.46 AT ALL? =======================")

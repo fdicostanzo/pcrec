@@ -6,11 +6,17 @@ rather than transcribed:
   W  THE MISSING CONSTRUCT FAMILY -- a call whose TARGET GROUP is lexically
      inside a LOOKAROUND or an ATOMIC GROUP. The design had calls INSIDE a
      lookaround (§3.4(e)) and never had calls TO a group inside one. The
-     callee runs as its OWN region: forward, consuming, cut-free,
-     back-step-free, whatever its lexical home does. An emitter that reached
-     the callee by jumping INTO its lexical position would inherit the
-     wrapper -- the lookbehind's back-step, the negative lookahead's cut, the
-     atomic group's cut -- and miscompile all three.
+     callee runs as its OWN region and, critically, LEAVES THROUGH ITS OWN
+     EXIT -- not through the wrapper's end-check, verdict or position
+     restore. An emitter that let the callee fall out through the lexical
+     occurrence's continuation miscompiles every W row.
+
+     NOTE ON THE ENTRY, because this file said the opposite: an earlier
+     version claimed the callee would inherit the LOOKBEHIND'S BACK-STEP.
+     R34's V-6 refuted it -- the back-step sits at L_b_i, BEFORE L_body_i, so
+     a jump to the group's own label (inside the assertion's body) lands
+     AFTER it. The entry is fine; the exit is the bug. The reading paragraph
+     printed at the end of axis W states it.
 
   M  §4.4b's FIXPOINT, with the witness C1 built: an indirect recursion in
      which the called group has NO non-recursive branch, yet the pattern
@@ -128,11 +134,28 @@ print("#       nested in a quantified group.")
 cell(r"^(?=(a|ab))..(?1)$", "abab")
 cell(r"^((?=(b))|a)+(?2)$", "ab")
 print()
-print("# THE READING. Every W row matches. A callee reached by JUMPING INTO")
-print("# its lexical position would inherit the wrapper's machinery -- the")
-print("# back-step in W1, the assertion's cut in W2, the atomic cut in W3 --")
-print("# and answer nomatch on each. The design's §5.4 must therefore say")
-print("# that a callee body is emitted as its OWN region.")
+print("# THE READING, AND IT IS THE EXIT -- NOT THE ENTRY. Every W row matches.")
+print("# An earlier version of this paragraph said a callee reached by jumping")
+print("# into its lexical position would inherit the LOOKBEHIND'S BACK-STEP.")
+print("# THAT WAS INVERTED (R34 V-6): lookaround_design.md §3.2-3.4 put the")
+print("# wrapper's machinery at L_entry / L_b_i (BEFORE L_body_i) and at")
+print("# L_ok / L_body_won / L_end_i (AFTER the body), so a jump to the GROUP's")
+print("# own label -- which lives inside the assertion's body -- lands AFTER")
+print("# the back-step. The back-step does not run and the cursor is already")
+print("# the call site's. The ENTRY is fine.")
+print("#")
+print("# What breaks is the EXIT. Falling out of the body reaches:")
+print("#   W1  L_end_i's end-check `pos != slot_values[SLOT_LOOK_POS]` -- a")
+print("#       comparison against the ASSERTION's saved position, meaningless")
+print("#       for a call -- then L_ok's RX_CUT and POSITION RESTORE, which")
+print("#       would throw the callee's consumed bytes away;")
+print("#   W2  the negative assertion's L_body_won: cut, then fail;")
+print("#   W3  the atomic group's exit cut, discarding the retry's choice")
+print("#       points -- nomatch where 10.46 matches;")
+print("#   Z0  nothing to fall out of: no code is emitted at all.")
+print("# So the rule is not \"a wrapped target needs special handling\"; the")
+print("# callee region needs ITS OWN EXIT, which is true of EVERY called")
+print("# group. Design §5.4, §6.3 and S-SR18 are written that way.")
 print()
 
 print("=== AXIS M: §4.4b's fixpoint, and the gloss that loses a match ======")

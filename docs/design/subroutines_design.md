@@ -1673,24 +1673,31 @@ justification is gone deserves to be re-asked rather than spent.
 not rebuilt.
 
 **AND A DEPTH IS NOT A NUMBER A CALLER CAN READ — IT IS A SUBJECT SIZE.**
-R34's LENS1-5 asked for the conversion and it cuts both ways. MEASURED, this
-lane, on the two canonical shapes:
-
-MEASURED, `out/leftrec.txt` **axis L9b** (R34's V-11 found these quoted with
-no probe behind them — the third instance of this lane's own defect class):
+R34's LENS1-5 asked for the conversion and it cuts both ways. MEASURED,
+`out/leftrec.txt` **axis L9b** (R34's V-11 found these quoted with no probe
+behind them — the third instance of this lane's own defect class):
 
 | | pcrec at `RX_CALL_DEPTH = 1024` | libpcre2 10.46 |
 |---|---|---|
 | **the LEGITIMATE deep recursion** — `^(a(?1)?b)$` on `aⁿbⁿ`, which needs nesting `n` for a `2n`-byte subject | gives up at **a ~2 KB subject** | **still matching at 800 KB in a third of a second** (n = 400,000, from the heap) |
-| **the RUNAWAY** — `^(a\|(?1)a)$` on `aⁿb` | gives up in **constant time at any n** | `rc −52` costs **~0.0002 s → ~5 s** as n goes 100 → 20,000, growing **faster than the subject squared** over that range |
+| **the RUNAWAY** — `^(a\|(?1)a)$` on `aⁿb` | gives up in **constant time at any n** | `rc −52` costs **~0.0002 s → seconds** as n goes 100 → 20,000, growing **QUADRATICALLY in the subject** |
 
 **THE SECONDS ARE ONE RUN AND THE SHAPE IS THE CLAIM.** Re-runs of the same
 cells on this box differ by up to 2× (0.24 s and 0.34 s for the 800 KB match;
 2.6 s and 5.6 s for the n = 20,000 give-up), so the design quotes **orders of
-magnitude and growth rates**, not stopwatch readings, and the archived file
-carries whichever run produced it. What does not move between runs is the
-**ratio**: 10×, 5× and 4× increases in subject cost **53×, 26× and 19×** more
-time.
+magnitude and a growth EXPONENT**, not stopwatch readings, and the archived
+file carries whichever run produced it.
+
+**AND THE EXPONENT IS 2, NOT MORE.** An earlier revision said *"faster than the
+subject squared"* on the strength of a 53× step that R34's V-11′ traced to the
+**n = 100 row sitting at the timer floor**. That row is now **dropped from the
+series** and the probe **computes the exponent** from `n/prev_n` instead of
+labelling every step "10×" (which was false for two of three archived steps).
+MEASURED over n = 1,000 → 4,000 → 10,000 → 20,000: exponents **1.95, 2.20,
+2.02, mean 2.06**, against the verifier's independent 2.01, 1.94, 1.98.
+**Quadratic** — and the probe now FAILS ITS OWN GUARD if the mean leaves
+[1.6, 2.6], so the word is defended by the instrument rather than by this
+paragraph.
 
 **The right-hand column is not one verdict.** On the runaway, a **bounded
 depth is strictly better than PCRE2's guard** — pcrec refuses in constant time
@@ -2549,7 +2556,7 @@ is not a party to at all. §14 ASK 5 asks whether that is enough.
 | **`mrl.rxt`** | §4.4b's two fixpoint cells: `^(?(DEFINE)(?<g>(?&h)b)(?<h>x\|(?&g)))(?&g)$` on `"xb"`…`"xbbbb"` must MATCH (the withdrawn gloss loses them), and `^(?(DEFINE)(?<g>a(?&g)b))(?&g)$` must match NOTHING (∞ is right there). **The pair is the specification** — ∞ reachable, and not reached by an approximation |
 | **`slotfamilies.rxt`** | §5.3b's two MEASURED cells — `^(a(?1)?b)\1$` on `"aabbaabb"` (features `recursion,backrefs`) and `^((?>a(?1)?))a$` on `"aa".."aaaaaaaa"` with its `^((?:a(?1)?))a$` control (features `recursion,atomic-groups`) — plus a cell per ARGUED family as `[DD-14]` lands them. **This file is the one that would have caught the design's own error**, and it exists because the lane's first corpus shared the design's alphabet |
 | `quantified.rxt` | §2.6's twelve quantified spellings and the nullable-callee guard |
-| `inlookaround.rxt` | §3.4(d)/(e): a call **in** a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind. **AND §3.5's mirror image**: a call **TO** a group whose lexical home is a lookbehind (W1), a negative lookahead (W2), an atomic group (W3), an atomic group the subject never runs (W4) and a positive lookahead (W5) — each with its wrapper-isolating control and, where the language permits, the inline control. `features recursion,lookaround,atomic-groups` |
+| `inlookaround.rxt` | §3.4(d)/(e): a call **in** a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind. **AND §3.5's mirror image**: a call **TO** a group whose lexical home is a lookbehind (W1), a negative lookahead (W2), an atomic group (W3) or a positive lookahead (W5) — each with its wrapper-isolating control and, where the language permits, the inline control. **NO W4 CELL**: `^q(?>(a\|ab))?z(?1)c$` was withdrawn as a reason (§3.5 — the optional group IS emitted, merely not executed), so a cell for it would pin nothing this file does not already pin. **The shape it was standing in for — a callee with NO lexical emission — is `X{0}`, and it lives in `zerodef.rxt`** (§4.4c), because its failure is a slot-layout out-of-bounds rather than a wrong answer and it needs the `asan` arm that file's rows carry. `features recursion,lookaround,atomic-groups` |
 | `nocaptures.rxt` | §4.3's marked-set cells, one-hop and two-hop, run on the `--no-captures` axis |
 | `d27/` | the blinded corpus, §10.1's brief |
 
@@ -2744,7 +2751,7 @@ AND IT NOW CARRIES ITS NUMBER**: at 1024, `^(a(?1)?b)$` gives up at a **~2 KB**
 subject where 10.46 matches **800 KB** in a fraction of a second (§5.6,
 `out/leftrec.txt` L9b). The first half is the strong one and it carries its
 number too — PCRE2's own `−52` reaches **seconds at a 20 KB subject** and grows
-faster than the subject squared, where a stamped depth costs nothing. **A refutation has to say which of the two shapes it is
+**quadratically** (exponent 2.0, §5.6), where a stamped depth costs nothing. **A refutation has to say which of the two shapes it is
 attacking**, because this design trades one for the other on purpose and §14
 ASK 2 is where the exchange rate is set.
 
@@ -2927,7 +2934,7 @@ shipped path, which is the worse error"*).
 subject where 10.46 matches **800 KB** — a factor of 390. In the other
 direction a bounded depth is **strictly better than 10.46's**: on the runaway
 `^(a|(?1)a)$` pcrec refuses in constant time where PCRE2's own `rc −52` grows
-**faster than the subject squared**, reaching **seconds at a 20 KB subject**. So the number Frank is picking is *"the
+**QUADRATICALLY in the subject**, reaching **seconds at a 20 KB subject**. So the number Frank is picking is *"the
 deepest legitimate nesting a caller may have"*, and its cost is bytes of
 `resume_stack`, not time.
 *Recommendation: (c), with a bring-up value calibrated at implementation the

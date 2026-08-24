@@ -3,13 +3,12 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_wrapped_target.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 0ea8ba4 2026-08-23
-# RUN FROM REPO COMMIT        : 8139cf1 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: 6c4edda 2026-08-23
+# RUN FROM REPO COMMIT        : 71ee7a9 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/subroutines_design.md
 #      M docs/design/subroutines_measurements/out/wrapped_target.txt
 #      M docs/design/subroutines_measurements/probes/probe_wrapped_target.py
-# RUN DATE   : 2026-08-23T21:58:07-04:00
+# RUN DATE   : 2026-08-23T22:15:05-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -79,11 +78,28 @@ sr_oracle.SELFCHECK: none
   ^(?=(a|ab))..(?1)$                     'abab'     ((0, 4), [(0, 1)])            
   ^((?=(b))|a)+(?2)$                     'ab'       ((0, 2), [(1, 1), (1, 2)])    
 
-# THE READING. Every W row matches. A callee reached by JUMPING INTO
-# its lexical position would inherit the wrapper's machinery -- the
-# back-step in W1, the assertion's cut in W2, the atomic cut in W3 --
-# and answer nomatch on each. The design's §5.4 must therefore say
-# that a callee body is emitted as its OWN region.
+# THE READING, AND IT IS THE EXIT -- NOT THE ENTRY. Every W row matches.
+# An earlier version of this paragraph said a callee reached by jumping
+# into its lexical position would inherit the LOOKBEHIND'S BACK-STEP.
+# THAT WAS INVERTED (R34 V-6): lookaround_design.md §3.2-3.4 put the
+# wrapper's machinery at L_entry / L_b_i (BEFORE L_body_i) and at
+# L_ok / L_body_won / L_end_i (AFTER the body), so a jump to the GROUP's
+# own label -- which lives inside the assertion's body -- lands AFTER
+# the back-step. The back-step does not run and the cursor is already
+# the call site's. The ENTRY is fine.
+#
+# What breaks is the EXIT. Falling out of the body reaches:
+#   W1  L_end_i's end-check `pos != slot_values[SLOT_LOOK_POS]` -- a
+#       comparison against the ASSERTION's saved position, meaningless
+#       for a call -- then L_ok's RX_CUT and POSITION RESTORE, which
+#       would throw the callee's consumed bytes away;
+#   W2  the negative assertion's L_body_won: cut, then fail;
+#   W3  the atomic group's exit cut, discarding the retry's choice
+#       points -- nomatch where 10.46 matches;
+#   Z0  nothing to fall out of: no code is emitted at all.
+# So the rule is not "a wrapped target needs special handling"; the
+# callee region needs ITS OWN EXIT, which is true of EVERY called
+# group. Design §5.4, §6.3 and S-SR18 are written that way.
 
 === AXIS M: §4.4b's fixpoint, and the gloss that loses a match ======
 # g's ONLY branch is `(?&h)b`; h's branches are `x` and `(?&g)`.
