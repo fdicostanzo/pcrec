@@ -13221,3 +13221,16 @@ K32 cell ("can we add a loop to the DFA prefilter?") answered and
 recorded in K32: a DFA cannot count without states; the prefilter gets
 a superset count CLAMP, the DFA-as-matcher case gets ROUTED to the VM's
 counter rung above a threshold; counting-set automata parked.
+
+DIRECTION NOTE (Frank, ~10:5x, explicitly NOT a decision — "we can work
+out details later"): the spine is close to complete. The path after it:
+set up pcrec-bench (the sibling comparative-benchmark project,
+/home/duxevents/pcrec-bench, APPROACH.md there) → gather benchmark data
+across regex implementations over a variety of patterns → select the
+outliers where pcrec loses → find GENERAL optimizations (not per-pattern
+special cases — the 2026-08-23 rule) → loop. Of the PCRE2 features not
+yet built, most remaining ones are obscure and should be DEFERRED.
+"Completing the spine" is fuzzy; some outstanding plan rows may be added
+to it — to be worked out with Frank when [DD-14] closes. Manager reading:
+[DD-14] runs to its D69 close as chartered; the queue after it is a
+ruling conversation, not the parked M6.5(f)/M7/M5 rows by default.
