@@ -1341,3 +1341,36 @@ BYTE-IDENTICALLY under the same sabotage, because `pcrec_discharge_atomic`
 splices by rewriting the PARENT's `->l` IN PLACE and the `A_CAP` a callee is
 rooted at keeps its identity. Wave A2 named both passes; only the one that
 REBUILDS the node matters.
+
+## [DD-14] wave D — `run_recursion_identity.sh`, THE SEED, opt-in as `make test-recursion-identity`
+
+Module `recursion`'s byte-identity gate, in `run_atomic_identity.sh`'s exact
+shape (a pinned pre-producer commit via `git archive`, since this module has
+no stage a `-D` knob could sit on — the whole surface is "is there an
+`A_CALL` in the tree", false for every pre-module pattern) but **DEFAULT AXIS
+ONLY today**: design `subroutines_design.md` §9.1/§11 wave E charters the
+full four-axis gate (`--engine=vm`, `-fno-prefilter`, `--no-captures`, plus
+the SPLICE-vs-LINKAGE second control) and this file is the seed that wave
+lands into, not the finished gate. Pinned at `ac4917d` (wave A2's merge —
+the last commit with `A_CALL` the KIND but no producer for either doorway,
+verified by the reference tree's `src/parse/mod_recursion.c` not existing
+rather than by grepping for port names, since wave A2's own `internal.h`
+already MENTIONS `pcrec_rcport_num` in a forward-looking comment and a
+substring search over the whole tree is a false positive on prose). **No
+retirement guard, unlike its three siblings**: their pins predate [DD-14]
+wave A's ABI event (`PCREC_ERR_RECURSE`/`ERR_FLOOR`/`PCREC_ERR_INTERNAL`,
+main `0c75c96`) and cannot be moved past it; `ac4917d` already contains that
+event (`0c75c96` is its own ancestor), so it is baked into both sides of
+every comparison here and cannot be what retires this gate. The classifier
+covers both doorways — `\g<`/`\g'` outside a class, and a `(?` construct
+whose tail is not one of the twelve named non-call shapes (`:` `=` `!` `*`
+lookbehind `<name>` `'name'` `P<` `P=` `>` atomic-group `#` `(` conditional,
+inline-option run) — and FAILS SAFE toward the call bucket on anything else,
+`lookaround_classify.py`'s rule. Landing figures: read them from a run
+(`bash tests/codegen/run_recursion_identity.sh`); the corpus splits roughly
+90% call-free to 10% call-bearing, comfortably above the 700/60 floors, and
+the positive control's own first draft caught its own bug — an early
+classifier version had no `(?>` exclusion and misclassified every atomic
+group as a call, which the reference-refuses-all-calls control refused to
+pass vacuously (153 of 287 "call-bearing" patterns were accepted by a
+pre-recursion compiler, because most of them were plain atomic groups).

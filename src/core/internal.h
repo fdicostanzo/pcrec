@@ -2435,18 +2435,29 @@ ExtResult pcrec_brport_pname(Ctx *cx, const RegRow *rw, ExtWant want,
  *                      relative-zero rules.
  *   pcrec_rcport_name  `(?&name)`, `(?P>name)`.
  *
- * The FOURTH doorway of §4.2's table — `\g<...>` / `\g'...'` — has no port in
- * wave B+C: those two rows carry `NO_PORT` and refuse through ext.c's
- * ENABLED-BUT-UNBUILT epilogue, which is what keeps their D65 `built` column
- * honest until wave D wires them. mod_recursion.c's closing note records why
- * the brief's "one decline branch in pcrec_brport_g" turned out to be
- * unreachable code. */
+ * The FOURTH doorway of §4.2's table — `\g<...>` / `\g'...'` — had no port
+ * through wave B+C: those two rows carried `NO_PORT` and refused through
+ * ext.c's ENABLED-BUT-UNBUILT epilogue, which is what kept their D65 `built`
+ * column honest until wave D. mod_recursion.c's closing note records why the
+ * brief's "one decline branch in pcrec_brport_g" turned out to be unreachable
+ * code, and what wave D wired instead: both rows' `aport` now points at
+ * `pcrec_brport_g` itself (src/parse/mod_backrefs.c), which gained `<`/`'`
+ * arms that call back into `pcrec_call_node`/`pcrec_call_by_name` below. */
 ExtResult pcrec_rcport_num(Ctx *cx, const RegRow *rw, ExtWant want,
                            size_t at, size_t from);
 ExtResult pcrec_rcport_rel(Ctx *cx, const RegRow *rw, ExtWant want,
                            size_t at, size_t from);
 ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,
                             size_t at, size_t from);
+/* [DD-14 wave D] Exported so `pcrec_brport_g`'s `<`/`'` arms (module
+ * `backrefs`, the shared `\g` doorway, P3) build a PEND_CALL through this
+ * file's own root/queue rule and FIRST-DECLARATION name rule instead of a
+ * second copy of either. See mod_recursion.c's closing note. */
+Ast *pcrec_call_node(Ctx *cx, const RegRow *rw, size_t at, bool is_relative,
+                     int number, const char *name, const char *what);
+ExtResult pcrec_call_by_name(Ctx *cx, const RegRow *rw, ExtWant want,
+                             size_t at, const char *body, size_t blen,
+                             size_t end, const char *what);
 
 /* THE END-OF-PARSE PASS (§5.3), called from `pcrec_parse_info` and nowhere
  * else. Two jobs, in this order:

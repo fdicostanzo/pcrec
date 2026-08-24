@@ -17,10 +17,12 @@
  * and `(?R)`, `pcrec_rcport_rel` the relative `(?+N)`/`(?-N)` family, and
  * `pcrec_rcport_name` the two by-name spellings `(?&name)` and `(?P>name)`.
  * The fourth doorway is `\g<...>`/`\g'...'`, which is module `backrefs`'
- * `\g` escape shared with this module by TAIL (P3) — those two rows carry
- * `NO_PORT` at wave B+C and therefore refuse ENABLED-BUT-UNBUILT through
- * ext.c's own epilogue, which is what keeps their D65 `built` column honest
- * until wave D wires them. See the note at the bottom of this file.
+ * `\g` escape shared with this module by TAIL (P3): `src/parse/mod_backrefs.c`'s
+ * `pcrec_brport_g` gained the `<`/`'` arms at wave D, wired as those two rows'
+ * `aport` in the registry, and calls back into this file's
+ * `pcrec_call_node`/`pcrec_call_by_name` so the zero family and the
+ * FIRST-DECLARATION name rule have one definition rather than two. See the
+ * note at the bottom of this file.
  *
  * NOTHING HERE RESOLVES A CALL — with ONE exception that is not a split.
  * Every port records a `PendingRef` (kind `PEND_CALL`) and
@@ -307,24 +309,46 @@ ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,
     }
 }
 
-/* ---- THE `\g<` / `\g'` ROWS ARE NOT THIS FILE'S, AND NOT YET ANYBODY'S ---
+/* ---- WAVE D: THE `\g<` / `\g'` ROWS, WIRED THROUGH `pcrec_brport_g` ------
  *
  * Design §4.2 assigns the two subroutine-call `\g` tails to `pcrec_brport_g`
  * (P3: `\g` is ONE escape doorway shared between two modules and the TAIL
- * decides), and §11's wave B+C brief asks for "ONE decline branch at
- * `WANT_RESULT`" there so those rows stay `unbuilt` until wave D.
- *
- * **NO SUCH BRANCH IS NEEDED AND NONE IS WRITTEN**, and this note is the
- * record of why rather than a silent omission. The two tails are their OWN
- * REGISTRY ROWS (`src/parse/registry.c`, module `recursion`, rank 25) with
- * `aport = NO_PORT`, so `pcrec_brport_g` is NEVER REACHED for `\g<1>` or
- * `\g'1'` — the arbitration elects the tailed row and the base `\g` row's port
- * never sees the text. A row with no atom port reaching post-gate
- * `WANT_RESULT` takes ext.c's ENABLED-BUT-UNBUILT epilogue, which is exactly
- * D65's "gate open, port missing" signal, so the `built` column reads
- * `unbuilt` with no code at all. A decline branch inside `pcrec_brport_g`
- * would be unreachable code satisfying nothing.
- *
- * WAVE D's edit is therefore to WIRE those two rows' `aport` (to
- * `pcrec_brport_g`, per §4.2's one-port ruling, or to a port here), not to
- * delete a decline. */
+ * decides) rather than to a new port here, and that ruling turned out to be
+ * exactly right, though not in the shape §11's wave B+C brief predicted: the
+ * brief asked for "one decline branch at `WANT_RESULT`" in `pcrec_brport_g`,
+ * and wave A2/B+C found there was nothing to decline. The two tails are their
+ * OWN REGISTRY ROWS (`src/parse/registry.c`, module `recursion`, rank 25),
+ * so `pcrec_brport_g` was never REACHED for `\g<1>` or `\g'1'` while their
+ * `aport` read `NO_PORT` — the arbitration elects the tailed row, and a row
+ * with no atom port takes ext.c's ENABLED-BUT-UNBUILT epilogue on its own,
+ * with no code at all. Wave D's edit is therefore the WIRING
+ * (`src/parse/registry.c`: both rows' `aport` now reads
+ * `{PORT_FN, false, 0, NULL, pcrec_brport_g}`), and the two exports below are
+ * what `pcrec_brport_g`'s new `<`/`'` arms (`src/parse/mod_backrefs.c`) call
+ * so THIS file keeps the one definition of "value 0 (absolute, unsigned) is
+ * the root; a relative offset is never the root even at 0" (design §2.4,
+ * §2.4a) rather than growing a second copy across the module boundary. */
+
+/* The ABSOLUTE/RELATIVE-NUMBER half, wrapping `rc_node`'s own root/queue
+ * rule (§2.4a's zero family) for a caller outside this file. `is_relative`
+ * is what keeps `(a)(?-2)`-style honesty: a relative offset that computes to
+ * <= 0 is NEVER the root, even at exactly 0 — it reaches the resolver's
+ * plain `1 <= n <= ncap` check exactly as `pcrec_rcport_rel` already ensures,
+ * where an ABSOLUTE 0 (no sign) is unconditionally the root. */
+Ast *pcrec_call_node(Ctx *cx, const RegRow *rw, size_t at, bool is_relative,
+                     int number, const char *name, const char *what)
+{
+    bool root = !is_relative && !name && number == 0;
+    return rc_node(cx, rw, at, root, number, name, what);
+}
+
+/* The BY-NAME half: a thin export of `rc_name_call` (the gate check, the
+ * name grammar, the FIRST-DECLARATION queue) so `\g<name>`/`\g'name'` share
+ * it with `(?&name)`/`(?P>name)` rather than a second copy of P2's masking
+ * rule and §3.4(c)'s measurement. */
+ExtResult pcrec_call_by_name(Ctx *cx, const RegRow *rw, ExtWant want,
+                             size_t at, const char *body, size_t blen,
+                             size_t end, const char *what)
+{
+    return rc_name_call(cx, rw, want, at, body, blen, end, what);
+}

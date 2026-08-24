@@ -452,6 +452,25 @@ test-lookaround: all
 test-recursion: all
 	bash tests/recursion/run_recursion_diff.sh
 
+# [DD-14] MODULE `recursion`'s LANDING GATE, OPT-IN — the same shape and the
+# same ruling as `test-atomic-identity`/`test-backrefs-identity` above
+# (ASK-4): a claim about a MOMENT, re-answered on demand, not a standing
+# invariant `make test` should pay for on every commit. Its reference is a
+# PINNED PRE-PRODUCER COMMIT built by `git archive`, so a run costs a full
+# second build of the compiler plus a sweep over the whole corpus.
+#
+# TODAY IT IS THE DEFAULT AXIS ONLY, AND SAYS SO IN ITS OWN HEADER: design
+# subroutines_design.md §9.1/§11 wave E charters the full four-axis gate
+# (default, --engine=vm, -fno-prefilter, --no-captures) with its own floors
+# and a second (SPLICE-vs-LINKAGE) control — this target is the SEED that
+# wave E grows to that shape, landed now so the claim has a standing home in
+# the tree rather than living only in a lane's own scratch run.
+#
+#     make test-recursion-identity                        # the gate, on demand
+#     RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # moved base
+test-recursion-identity: all
+	bash tests/codegen/run_recursion_identity.sh
+
 # [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
 # and the same ruling as `test-atomic-identity` and `test-backrefs-identity`
 # above (ASK-4): a claim about a MOMENT, re-answered on demand, not a standing
@@ -931,5 +950,6 @@ clean:
         test-known-fail test-thread test-atomic test-atomic-identity \
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
+        test-recursion test-recursion-identity \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

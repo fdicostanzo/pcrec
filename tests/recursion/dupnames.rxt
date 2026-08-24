@@ -82,18 +82,16 @@ g 1 -1 -1
 g 2 1 2
 n "qyy"
 
-# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
-# WAVE D ORACLE: 'qyx' at startpos 0 -> (0,3) g1=(-1,-1) g2=(1,2)
-# WAVE D ORACLE: 'qyy' at startpos 0 -> nomatch
-# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 25)
 pattern ^(?J)(?:(?<a>x)|q)(?<a>y)\g<a>$
 features recursion,named-groups,modifiers,backrefs
-perr
+m "qyx" 0 3
+g 1 -1 -1
+g 2 1 2
+n "qyy"
 
-# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
-# WAVE D ORACLE: 'qyx' at startpos 0 -> (0,3) g1=(-1,-1) g2=(1,2)
-# WAVE D ORACLE: 'qyy' at startpos 0 -> nomatch
-# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 25)
 pattern ^(?J)(?:(?<a>x)|q)(?<a>y)\g'a'$
 features recursion,named-groups,modifiers,backrefs
-perr
+m "qyx" 0 3
+g 1 -1 -1
+g 2 1 2
+n "qyy"

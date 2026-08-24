@@ -770,7 +770,26 @@ for e in b A Z z G K; do reject "\\$e" "\\$e requires module 'assertions'"; done
 # miscompile D26 tier 1 forbids, and it is born unbuilt naming `recursion`.
 # §11.5 named this move in advance as one of the three pins this module
 # disturbs.
-reject_gated recursion     '\g<1>' "module 'recursion' is enabled but \g is not implemented yet"
+#
+# [DD-14] WAVE D RETIRED THIS ROW, exactly as `atomic-groups`' and
+# `lookaround`'s did before it and for the same reason: `--features recursion
+# '\g<1>'` no longer says "not implemented yet" — `pcrec_brport_g`
+# (src/parse/mod_backrefs.c) gained the `<`/`'` arms, both `\g<` / `\g'` rows'
+# `aport` now points at it, and neither has a tail left to decline, so a pin
+# asserting the enabled-but-unbuilt sentence here would be pinning a lie.
+# `\g<1>` alone (no group declared) now compiles its way to the ordinary
+# error-115-class refusal instead ("refers to capture group 1, but this
+# pattern has 0"), ASSERTED BELOW with the SAME `reject_gated` call (`ngated`
+# unmoved — still one gate-open refusal pinned at this exact spot, just a
+# different sentence) rather than left unpinned, so the retirement is not
+# merely an absence. The count going DOWN in the "unbuilt" sense is the module
+# LANDING, not coverage eroding; the control that says so is
+# tests/recursion/leadingzero.rxt and spellings.rxt, which assert the same
+# spelling compiles and matches. The arm's remaining two modules
+# (`conditionals`, `quoting`, below) are still enough to keep the
+# enabled-but-unbuilt sentence from being read as module-specific rather than
+# general.
+reject_gated recursion '\g<1>' "refers to capture group 1, but this pattern has 0"
 # [M6.6.2] wave B+C moved THE `lookaround` ROW WITHIN ITS OWN MODULE, from
 # `(?=a)` to `(?<=a)`: the lookahead half had landed, so the old pin would have
 # been pinning a lie, while the module's three LOOKBEHIND rows were still

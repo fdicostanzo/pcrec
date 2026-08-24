@@ -285,17 +285,31 @@ static ExtResult br_name_ref(Ctx *cx, const RegRow *rw, ExtWant want, size_t at,
                           at, end, want);
 }
 
-/* ---- `\g` (§2): the BACKREFERENCE half of a doorway that carries two -----
+/* ---- `\g` (§2): BOTH HALVES OF A DOORWAY THAT CARRIES TWO CONSTRUCTS ----
  *
  * `\g<name>` and `\g'name'` are SUBROUTINE CALLS, not backreferences — a
  * subroutine call re-runs the group's PATTERN, so `^(a|b)\g<1>$` matches "ab",
  * while `^(a|b)\g{1}$` and `^(a|b)\g1$` compare the captured TEXT and report
  * no match on the same subject (measured discriminator, §2). The split runs
- * exactly along the DELIMITER, and it is the REGISTRY that enforces it: two
- * `RK_ESC` rows with tails `<` and `'` and module `recursion` outrank this
- * row, so this port is never reached for either spelling. That is the same
- * arbitration `(?P=` / `(?P>` already uses, and the same shape `\N{` / `\N{U+`
- * measured before it. */
+ * exactly along the DELIMITER, and it is the REGISTRY that enforces WHICH ROW
+ * IS ELECTED: two `RK_ESC` rows with tails `<` and `'` and module `recursion`
+ * outrank this row's tail-less fallback, so THIS FUNCTION never sees which
+ * row won until it reads `rw` — it is called for all three shapes now, and
+ * `rw` (module `backrefs` for the base row, module `recursion` for the two
+ * tailed ones) is what tells it which construct it is building. That is the
+ * same arbitration `(?P=` / `(?P>` already uses, and the same shape `\N{` /
+ * `\N{U+` measured before it.
+ *
+ * [DD-14 wave D] THE `<`/`'` ARMS BELOW ARE THE CALL HALF, design §4.2's "NOT
+ * A NEW PORT" ruling discharged. They reuse this file's own `br_decimal` and
+ * `br_relative` for the digit/relative grammar (identical to the `{...}`
+ * arm's, just delimited differently and with no PCRE2 brace-whitespace
+ * trimming — the same asymmetry `pcrec_brport_k`'s `<`/`'`/`{` already has)
+ * and `pcrec_group_name_scan` (core) for a name, and hand the RESULT to
+ * `mod_recursion.c`'s `pcrec_call_node`/`pcrec_call_by_name` rather than to
+ * this file's own `br_node`/`br_name_ref` — a call and a reference share the
+ * grammar and nothing else (design §4.1(b)), so the NODE those two build is
+ * module `recursion`'s, queued as `PEND_CALL`, not `PEND_BREF`. */
 ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
                          size_t at, size_t from)
 {
@@ -353,6 +367,66 @@ ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
             snprintf(what, sizeof what, "\\g{%.*s}", (int)(e - b), p + b);
             return br_name_ref(cx, rw, want, at, p + b, e - b, close + 1,
                                br_strndup(cx, what, strlen(what)));
+        }
+    }
+
+    /* [DD-14 wave D] `\g<...>` and `\g'...'` — the SUBROUTINE CALL half. Only
+     * reached when `rw` is one of the two tailed `recursion` rows (their
+     * `aport` now points here), since the tail-less fallback row this
+     * function otherwise serves can never see a `<` or `'` immediately after
+     * `\g` — the registry's own arbitration already settled that. */
+    if (p[from] == '<' || p[from] == '\'') {
+        const char close = p[from] == '<' ? '>' : '\'';
+        size_t e = from + 1;
+        while (e < n && p[e] != close) e++;
+        if (e >= n)
+            REFUSE(at, "missing closing %c after \\g%c", close, p[from]);
+        size_t b = from + 1;
+        if (b == e)
+            REFUSE(at, "subpattern name or number expected after \\g%c",
+                   p[from]);
+
+        int sign = 0;
+        size_t d = b;
+        if (p[d] == '-') { sign = -1; d++; }
+        else if (p[d] == '+') { sign = 1; d++; }
+
+        if (sign != 0 || isdigit((unsigned char)p[d])) {
+            if (d == e)
+                REFUSE(at, "a number must follow the sign in \\g%c%c",
+                       p[from], close);
+            for (size_t i = d; i < e; i++)
+                if (!isdigit((unsigned char)p[i]))
+                    REFUSE(at, "\\g%c%c takes a number, a relative offset, "
+                               "or a subpattern name, not a mixture",
+                           p[from], close);
+            long v = br_decimal(p, d, e);
+            long num;
+            if (sign == 0) {
+                num = v;
+            } else {
+                /* §2.4a: a RELATIVE offset of zero is error 126 in every
+                 * spelling, `\g<-0>`/`\g'-0'` included — the same grammar
+                 * error `\g{-0}` already refuses above, so this branch stays
+                 * the offset's own refusal rather than the resolver's. */
+                if (v == 0)
+                    REFUSE(at, "a relative reference of zero is not allowed");
+                num = br_relative(cx, sign, v);
+            }
+            char what[32];
+            snprintf(what, sizeof what, "\\g%c%.*s%c", p[from],
+                     (int)(e - b), p + b, close);
+            const char *wh = br_strndup(cx, what, strlen(what));
+            return br_result_node(
+                pcrec_call_node(cx, rw, at, sign != 0, (int)num, NULL, wh),
+                at, e + 1, want);
+        }
+        {
+            char what[32];
+            snprintf(what, sizeof what, "\\g%c%.*s%c", p[from],
+                     (int)(e - b), p + b, close);
+            return pcrec_call_by_name(cx, rw, want, at, p + b, e - b, e + 1,
+                                      br_strndup(cx, what, strlen(what)));
         }
     }
 

@@ -1725,33 +1725,41 @@ static void check_class_ports(void)
      *
      * ALL TWENTY-FOUR BUILD IMMEDIATELY, unlike wave B+C's lookaround six:
      * these ports have no tail left to decline. The two `\g<` / `\g'` rows
-     * are the ones that stay `unbuilt`, and they do it with NO PORT AT ALL
-     * (`NO_PORT`, so ext.c's ENABLED-BUT-UNBUILT epilogue answers for them) —
-     * which is why the SCALAR count above is unmoved at 7 and the atom count
-     * moves by exactly 24 rather than 26. Wave D wires those two.
+     * stayed `unbuilt`, and they did it with NO PORT AT ALL (`NO_PORT`, so
+     * ext.c's ENABLED-BUT-UNBUILT epilogue answered for them) — which is why
+     * the SCALAR count above was unmoved at 7 and the atom count moved by
+     * exactly 24 rather than 26.
      *
-     * CLASS PORTS ARE UNMOVED at 7/10/9 for the third wave running: a
+     * [DD-14] WAVE D: ATOM PORTS 89 -> 91. Both `\g<` / `\g'` rows' `aport`
+     * now points at `pcrec_brport_g` (`src/parse/mod_backrefs.c`, gained the
+     * `<`/`'` arms) rather than `NO_PORT`, so the atom count moves by exactly
+     * the two rows that were the wave B+C gap. The SCALAR count is STILL
+     * unmoved at 7: an atom-position wiring is orthogonal to the base scalar
+     * CLASS port those two rows have carried since [M6.5.2] (the literal
+     * letter `g`), which is what the "unmoved" clause below is about.
+     *
+     * CLASS PORTS ARE UNMOVED at 7/10/9 for the fourth wave running: a
      * subroutine call has no class position, and the two `\g` rows' BASE
      * scalar class ports (the literal letter `g`) were already counted. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 89)
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 91)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (89: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (91: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
             "\\b and \\B since wave B, \\G since wave D, \\K since "
             "wave E, `(?>...)` since [M6.4.2], the thirteen backrefs rows "
             "since [M6.5.2], the EIGHTEEN lookaround rows sharing ONE port "
-            "-- six at [M6.6.2] wave B+C, twelve more at wave F -- and the "
+            "-- six at [M6.6.2] wave B+C, twelve more at wave F -- the "
             "TWENTY-FOUR recursion rows over THREE ports since [DD-14] wave "
-            "B+C, the two \\g< / \\g' rows deliberately NOT among them). A "
-            "deliberate move edits this check IN THE SAME CHANGE; a silent "
-            "one is the defect", scalar, set, fn, aports);
+            "B+C, and the two \\g< / \\g' rows sharing `pcrec_brport_g` since "
+            "[DD-14] wave D). A deliberate move edits this check IN THE SAME "
+            "CHANGE; a silent one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 89 atom "
+        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 91 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
@@ -1759,9 +1767,11 @@ static void check_class_ports(void)
            "[M6.4.2], + the ten digit rows and \\k \\g (?P=n), [M6.5.2] "
            "-- module `backrefs` -- + the EIGHTEEN lookaround rows through "
            "ONE shared port, six at [M6.6.2] wave B+C and the twelve alpha "
-           "spellings at wave F "
-           "-- while the two new \\g< / \\g' rows add "
-           "only their base literal-fallback CLASS port; "
+           "spellings at wave F, + the TWENTY-FOUR recursion rows over "
+           "THREE ports since [DD-14] wave B+C "
+           "-- while the two \\g< / \\g' rows added only their base "
+           "literal-fallback CLASS port at [M6.5.2] and now ALSO share "
+           "`pcrec_brport_g` at [DD-14] wave D; "
            "the four RK_QUANTSUFFIX rows add none, having no "
            "doorway to be called from); scalar and SET "
            "values oracle-tied "
@@ -1930,7 +1940,13 @@ static void check_engine_capability(void)
         { RK_ESC, '8', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)(g)(h)\\8",   "\\8" },
         { RK_ESC, '9', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9", "\\9" },
         /* `\g` with NO tail is the backreference half; the two tailed rows in
-         * this bucket are `recursion`'s and have no producer to witness. */
+         * this bucket are `recursion`'s. [DD-14 wave D] wired `pcrec_brport_g`
+         * onto both, and they BITE for the same structural reason the `(?`
+         * family below does — `\g<1>`/`\g'1'` re-run a group's pattern
+         * dynamically, which is not a regular construct, so `select_engine.c`
+         * refuses them by their own `syntax` and no rewrite discharges it. */
+        { RK_ESC, 'g', "<", "recursion", "(a)\\g<1>", "\\g<1>" },
+        { RK_ESC, 'g', "'", "recursion", "(a)\\g'1'", "\\g'1'" },
         /* [M6.6.2] THE THREE LOOKAHEAD ROWS. A lookaround BITES for a reason
          * that is not the cut's and not `\K`'s: it is a SUB-MATCH whose
          * verdict is kept and whose position is discarded, and a subset state
@@ -2247,19 +2263,25 @@ static void check_engine_capability(void)
      * unlike wave B+C's lookaround six, because these ports have no tail left
      * to decline.
      *
-     * THE TWO ROWS THAT DID NOT MOVE ARE THE INTERESTING HALF. `\g<1>` and
-     * `\g'1'` are module `recursion`'s too, they are inside `qualifying`, and
-     * they are deliberately NOT wired: design §8.1 requires them to stay
-     * `unbuilt` until wave D, because D65 flips `built` from the PORT's answer
-     * and a wave that flipped them while the emitter could not compile the
-     * spelling would ship a compliance index that lies. So `wired` and
-     * `built_wired` move by 24 while `qualifying` holds at 66, and the gap
-     * between `wired` and `qualifying` is now exactly those two plus the four
-     * `RK_QUANTSUFFIX` rows and the rest of the unbuilt population. */
-    if (qualifying != 66 || wired != 60 || built_wired != 60)
+     * AT WAVE B+C, THE TWO ROWS THAT DID NOT MOVE WERE THE INTERESTING HALF.
+     * `\g<1>` and `\g'1'` are module `recursion`'s too, they are inside
+     * `qualifying`, and they were deliberately NOT wired: design §8.1
+     * required them to stay `unbuilt` until wave D, because D65 flips `built`
+     * from the PORT's answer and a wave that flipped them while the emitter
+     * could not compile the spelling would ship a compliance index that lies.
+     * So `wired` and `built_wired` moved by 24 while `qualifying` held at 66.
+     *
+     * [DD-14] WAVE D: `wired` and `built_wired` 60 -> 62, `qualifying`
+     * UNMOVED at 66. `pcrec_brport_g` gained the `<`/`'` arms
+     * (`src/parse/mod_backrefs.c`) and both rows' `aport` now points at it
+     * (`src/parse/registry.c`), so both WIRE and both BUILD on their first
+     * call — no tail left to decline, the same shape wave B+C's other
+     * twenty-four rows already had. The gap between `wired` and `qualifying`
+     * is now only the unbuilt population outside this module. */
+    if (qualifying != 66 || wired != 62 || built_wired != 62)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 66, 60 "
-            "and 60 -- the VM_ONLY population, its producer set or its built "
+            "have a wired producer and %d of THOSE are BUILT, expected 66, 62 "
+            "and 62 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
         bad("engine capability: %d rows are VM_ONLY, wired AND built, but only "
@@ -2568,22 +2590,31 @@ static void check_built_status_defects(void)
      * `recursion` gains a producer at once, because D65 derives `built` from
      * the PORT's answer and this wave wires all three ports together.
      *
-     * THE TWO ROWS THAT DO NOT FLIP ARE THE ASSERTION. `\g<1>` and `\g'1'`
-     * stay `unbuilt` — design §8.1 requires it until wave D, since flipping
-     * them while the emitter cannot compile the spelling would ship a
-     * compliance index that lies — and they stay `unbuilt` with NO CODE AT
-     * ALL: their rows carry `NO_PORT`, so ext.c's ENABLED-BUT-UNBUILT epilogue
-     * answers for them and D65's "gate open, port missing" signal is exactly
-     * what the classifier reads. A decline branch inside `pcrec_brport_g`
-     * would have been unreachable code satisfying nothing, and the brief that
-     * asked for one is corrected at `src/parse/mod_recursion.c`'s closing note.
+     * AT WAVE B+C THE TWO ROWS THAT DID NOT FLIP WERE THE ASSERTION. `\g<1>`
+     * and `\g'1'` stayed `unbuilt` — design §8.1 required it until wave D,
+     * since flipping them while the emitter could not compile the spelling
+     * would have shipped a compliance index that lies — and they stayed
+     * `unbuilt` with NO CODE AT ALL: their rows carried `NO_PORT`, so ext.c's
+     * ENABLED-BUT-UNBUILT epilogue answered for them and D65's "gate open,
+     * port missing" signal was exactly what the classifier read.
+     *
+     * [DD-14] WAVE D: 118 = 94 + 18 + 6 -> 118 = 96 + 16 + 6. THE SAME TWO
+     * ROWS FLIP `unbuilt -> built`, and NO ROW IS ADDED OR REMOVED. Both
+     * rows' `aport` now points at `pcrec_brport_g`
+     * (`src/parse/mod_backrefs.c`, gained the `<`/`'` arms), and it has no
+     * tail left to decline for either — the same "no code at all" shape that
+     * kept them `unbuilt` now flips them the other way with no code at all
+     * either, since D65 is derived from the port's live answer rather than
+     * declared. A decline branch inside `pcrec_brport_g` would have been
+     * unreachable code satisfying nothing, and the brief that asked for one
+     * is corrected at `src/parse/mod_recursion.c`'s closing note.
      *
      * NO ROW OUTSIDE MODULE `recursion` MOVES. `(?(DEFINE)` is `conditionals`'
      * and stays `unbuilt` for the fourth wave running: D71 item 4 gives it to
      * this module as a tailed row, and that is wave F's. */
-    else if (checked != 118 || built != 94 || unbuilt != 18 || na != 6)
+    else if (checked != 118 || built != 96 || unbuilt != 16 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 118 = 94 + 18 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 118 = 96 + 16 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
