@@ -36,8 +36,10 @@ says so rather than claiming a measurement it does not have.
      the close. The inner activation overwrites the outer's pending value, so
      the outer publishes the WRONG START.  Failure direction: LOST MATCH.
 
-  AXIS C -- SLOT_CUT_MARK<n>.  `^((?>a(?1)?))a$`.  One mark slot per LEXICAL
-     atomic group, written at entry, read by `RX_CUT`. The inner activation's
+  AXIS C -- SLOT_CUT_MARK<n>.  `^((?>a(?1)?))a$`.  A mark slot per atomic
+     group PER EMITTED COPY (R34 V-2 corrected the design's "per lexical
+     group"; here the group is unquantified, so it is one instance), written
+     at entry and read by `RX_CUT`. The inner activation's
      mark overwrites the outer's, so the outer's cut becomes a NO-OP and the
      atomic group stops being atomic.  Failure direction: FALSE MATCH -- and
      the false-match set is EXACTLY the non-atomic control's language, which

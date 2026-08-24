@@ -1,0 +1,101 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_slotcount.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: dac56c2 2026-08-23
+# RUN FROM REPO COMMIT        : dac56c2 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/slotcount.txt
+# RUN DATE   : 2026-08-23T21:55:01-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec: /home/duxevents/pcrec/worktrees/dd14design/build/pcrec
+python3: 3.14.4
+
+=== AXIS A: FIVE families are allocated PER EMITTED COPY ============
+# One LEXICAL construct, a quantifier around it, and the slot count
+# GROWS with the repeat count. If the design's 'one slot per lexical
+# construct' premise were true these rows would all be equal.
+  ^((?>a)){1}$                   NSLOTS=6   GROUP=2 CUT_MARK=2                              # ONE lexical atomic group
+  ^((?>a)){2}$                   NSLOTS=7   GROUP=2 CUT_MARK=3                              # ONE lexical atomic group
+  ^((?>a)){3}$                   NSLOTS=8   GROUP=2 CUT_MARK=4                              # ONE lexical atomic group
+  ^((?>a)){5}$                   NSLOTS=10  GROUP=2 CUT_MARK=6                              # ONE lexical atomic group
+  cut marks by repeat count: [2, 3, 4, 6]
+
+  ^(a?){0,1}$                    NSLOTS=5   GROUP=2 SPAN_LOW=1                              # ONE lexical quantified group
+  ^(a?){0,3}$                    NSLOTS=7   GROUP=2 SPAN_LOW=3                              # ONE lexical quantified group
+  ^(a?){0,5}$                    NSLOTS=9   GROUP=2 SPAN_LOW=5                              # ONE lexical quantified group
+  span-lows by repeat count: [1, 3, 5]
+
+# and the EMPTY_GUARD family, whose gloss the design also had wrong:
+  ^(a?){0,5}$                    NSLOTS=9   GROUP=2 SPAN_LOW=5                              # bounded repeat, nullable body -> NO guard
+  ^(a?)*$                        NSLOTS=6   GROUP=2 EMPTY_GUARD=1 SPAN_LOW=1                # UNBOUNDED, nullable body -> the guard's real trigger
+  ^(a?)+$                        NSLOTS=7   GROUP=2 EMPTY_GUARD=1 SPAN_LOW=2                # unbounded +
+  ^((a)|b)*$                     NSLOTS=9   GROUP=4 REVDET=3                                # unbounded, nullable-ish alternation
+
+=== AXIS B: TWO families ARE per lexical node ======================
+  ^((a)){1}$                     NSLOTS=6   GROUP=4                                         # capture groups do NOT replicate
+  ^((a)){3}$                     NSLOTS=6   GROUP=4                                         # capture groups do NOT replicate
+  ^((a)){5}$                     NSLOTS=6   GROUP=4                                         # capture groups do NOT replicate
+  ^((a)){3}\2$                   NSLOTS=7   GROUP=4 PENDING=1                               # a MARKED group: one PENDING slot, not three
+
+=== AXIS C: the `{0}` PRUNE -- a construct inside X{0} gets NOTHING =
+  ^((?>a)){1}b$                  NSLOTS=6   GROUP=2 CUT_MARK=2                              # the same construct at {1}
+  ^((?>a)){0}b$                  NSLOTS=4   GROUP=2                                         # at {0}: NO cut-mark slot at all
+  ^(a?){0,3}b$                   NSLOTS=7   GROUP=2 SPAN_LOW=3                              # at {0,3}
+  ^(a?){0}b$                     NSLOTS=4   GROUP=2                                         # at {0}
+# `vm_count_slots` returns at the `rmin == 0 && rmax == 0` guard and
+# `vm_emit` writes 'X{0}: matches empty, no code'. So a CALLEE defined
+# inside {0} -- a real idiom, measured matching in probe_wrapped_target
+# axis Z0 -- is counted ZERO times while its callee region must still
+# emit the body. That is the out-of-bounds write vm_count_slots' own
+# header names (K27's class).
+
+=== AXIS D: |W| by shape, in TWO populations =======================
+# W(g) = every slot INSTANCE the emitted region for g can write,
+# minus slots 0 and 1. Measured as (NSLOTS - 2) on a pattern that IS
+# the callee body, which is |W| for a call to the whole of it.
+#
+# D1 -- THE CALLEES THIS MODULE'S OWN CORPUS ACTUALLY USES (§10.2).
+# This is the population §5.7 may quote, and NOTHING wider.
+#
+# THE RECURSIVE ONES ARE MEASURED CALL-ERASED, and that is exact
+# rather than approximate: pcrec cannot compile a call today, and a
+# CALL NODE ALLOCATES NO SLOT FAMILY OF ITS OWN (§4.4a site 6) -- the
+# call site's cost is 2|W| TRAIL entries, which are not slots. So the
+# body with `(?N)` replaced by `(?:)` has exactly the callee region's
+# slot demand. The erased spelling is shown beside each row.
+  (a|b)                          NSLOTS=4   GROUP=2                                         # spellings.rxt's discriminator callee
+  (a|ab)                         NSLOTS=4   GROUP=2                                         # atomicity.rxt's isolated callee
+  ([a-z]+)                       NSLOTS=4   GROUP=2                                         # the linkage prototype's body
+  (a(?:)?b)                      NSLOTS=4   GROUP=2                                         # leftrec/captures.rxt's callee, from (a(?1)?b)
+  ((a)(?:)?(b))                  NSLOTS=8   GROUP=6                                         # callproto P1's callee, from ((a)(?1)?(b))
+  (a(?:)?b)\1                    NSLOTS=5   GROUP=2 PENDING=1                               # slotfamilies axis P MARKED, from (a(?1)?b)\1
+  ((?>a(?:)?))                   NSLOTS=5   GROUP=2 CUT_MARK=1                              # slotfamilies axis C ATOMIC, from ((?>a(?1)?))
+  |W| over the CORPUS callees: [2, 2, 2, 2, 6, 3, 3]  -> range 2-6
+
+# D2 -- WIDER shapes, to show the range is a property of the callee
+# and not a constant. NOT quotable as 'the corpus'.
+  ((a)(?:x)?(b))                 NSLOTS=8   GROUP=6                                         # three groups
+  (a?){0,5}                      NSLOTS=9   GROUP=2 SPAN_LOW=5                              # a rung-bearing callee, five span-lows
+  ((a)(b)(c)(d))                 NSLOTS=12  GROUP=10                                        # five groups
+  ((?>a)){5}                     NSLOTS=10  GROUP=2 CUT_MARK=6                              # one lexical atomic group, six cut marks
+  |W| over the WIDER shapes: [6, 7, 10, 8]  -> range 6-10
+# and |W(0)| for `(?R)` is RX_NSLOTS - 2 BY CONSTRUCTION, whatever
+# the pattern is -- the upper bound needs no population at all.
+
+=== REACHABILITY GUARDS ============================================
+  axis A: cut marks grow with the repeat count -- the
+          per-emitted-copy claim is exercised
+  axis A': span-lows likewise
+  axis C: the {0} rows must show FEWER families than their {1}
+          siblings, or the prune was not exercised
+  guards: OK

@@ -3,15 +3,14 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_slotfamilies.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 
-# RUN FROM REPO COMMIT        : e5181e6 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: aee0cfa 2026-08-23
+# RUN FROM REPO COMMIT        : dac56c2 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/subroutines_design.md
-#     ?? docs/design/subroutines_measurements/out/slotfamilies.txt
-#     ?? docs/design/subroutines_measurements/probes/probe_slotfamilies.py
-#     ?? docs/design/subroutines_measurements/prototype/slotproto_cutmark.c
-#     ?? docs/design/subroutines_measurements/prototype/slotproto_pending.c
-# RUN DATE   : 2026-08-23T21:11:47-04:00
+#      M docs/design/subroutines_measurements/out/slotfamilies.txt
+#      M docs/design/subroutines_measurements/probes/probe_slotfamilies.py
+#     ?? docs/design/subroutines_measurements/out/slotcount.txt
+# RUN DATE   : 2026-08-23T21:55:37-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15

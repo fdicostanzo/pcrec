@@ -1229,11 +1229,34 @@ the authoritative census:
 | `SLOT_REVDET<n>_{ENTRY,LOW,HI}` | revdet rung (`v->nrev++`) | at the rung's entry | during the backward walk |
 | `SLOT_COUNTER<n>` | counter-K rung (`v->nctr++`) | at the loop's entry | per iteration |
 
-**Every one of them is written at a lexical construct's ENTRY and read at that
-construct's EXIT, and there is ONE slot per lexical construct.** That is
-exactly the property a recursive call breaks: two activations of the same
-lexical construct are **nested**, not sequential, so the inner activation's
-write is still in the slot when the outer activation reads it.
+**Every one of them is written at a construct's ENTRY and read at that
+construct's EXIT**, which is the property a recursive call breaks: two
+activations of the same construct are **nested**, not sequential, so the inner
+activation's write is still in the slot when the outer activation reads it.
+
+**BUT "ONE SLOT PER LEXICAL CONSTRUCT" IS FALSE, AND AN EARLIER VERSION OF
+THIS SECTION SAID IT** (R34 V-2). Only **GROUP** and **PENDING** are per
+lexical node. The other five are allocated **PER EMITTED COPY**, because
+`vm_count_slots` walks a quantified body `copies` times. MEASURED,
+`out/slotcount.txt` axes A and B:
+
+| pattern | slots |
+|---|---|
+| `^((?>a)){1}$` / `{2}` / `{3}` / `{5}` | **2 / 3 / 4 / 6 cut marks** — ONE lexical atomic group |
+| `^(a?){0,1}$` / `{0,3}` / `{0,5}` | **1 / 3 / 5 span-lows** |
+| `^((a)){1}$` / `{3}` / `{5}` | **4 group slots throughout** — captures do NOT replicate |
+| `^((a)){3}\2$` | **1 pending slot**, not three |
+
+**The conclusion survives and the reason does not.** W still needs every
+family; what it counts is **slot INSTANCES in the emitted region**, not
+lexical constructs — which is what §5.7's formula and §4.4a site (6) both have
+to be written in terms of.
+
+**AND THE EMPTY-GUARD GLOSS WAS WRONG TOO.** MEASURED, same axis:
+`^(a?){0,5}$` allocates **no** empty-guard, while `^(a?)*$` and `^(a?)+$`
+allocate one each. The guard is not "a nullable body" — it is **an UNBOUNDED
+frames-rung quantifier with a nullable body**, which is the shape §2.6's own
+per-rung table is about.
 
 **WHY THE FIRST VERSION BELIEVED OTHERWISE.** It inherited
 `lookaround_design.md` §6.4(2) — *"a call that re-enters the same body from a
@@ -1265,7 +1288,8 @@ value, so the outer publishes the wrong start.
 
 **AXIS C — `SLOT_CUT_MARK<n>`, and the failure is a FALSE MATCH.**
 `^((?>a(?1)?))a$`, which 10.46 does not match at any length. One mark slot per
-LEXICAL atomic group; the inner activation's mark overwrites the outer's, so
+atomic group **per emitted copy** (V-2 — here the group is unquantified, so
+that is one instance); the inner activation's mark overwrites the outer's, so
 the outer's `RX_CUT` — an assignment, `run->resume_depth = slot_values[slot]`
 (`emit_vm.c:5783-5785`) — becomes a **no-op**.
 
@@ -1573,17 +1597,27 @@ sees them all. Three charges are this module's own:
   pattern it can match — S87/S95's exact failure mode — so S-SR7 is a
   two-site row.
 
-  **AND `|W|` IS BIGGER THAN THIS SECTION FIRST PRICED IT.** §5.3a's rule is
-  every slot family, not the captures, so for a callee with `c` capture groups
-  (of which `c_marked` are marked), `q` nullable quantifiers, `r` non-possessive cursor
-  rungs, `m` lexical atomic/possessive cuts, `v` revdet rungs and `k` counter
-  rungs, `|W| = 2c + c_marked + q + r + m + 3v + k` plus the transitive union
-  over the calls it makes. **For the shapes this module's own corpus uses that
-  is 2–8 slots**; for `(?R)` on a large pattern it is the whole slot space
-  minus two, which is the honest upper bound and is exactly `RX_NSLOTS − 2`.
-  The cost is still a compile-time constant and still lands in `vm_cost`, but
-  it is no longer negligible, and §12 P-5's alternative gets cheaper as it
-  grows.
+  **AND `|W|` IS BIGGER THAN THIS SECTION FIRST PRICED IT, AND IS COUNTED
+  DIFFERENTLY (R34 V-2).** §5.3a's rule is every slot family, and five of the
+  seven replicate per EMITTED COPY — so `|W|` is not a count of lexical
+  constructs:
+
+  > `|W(g)| = 2c + c_marked + Q + R + M + 3V + K`, where `c` is the capture
+  > groups in `g`'s emitted region and `c_marked` those a reference names, and
+  > **`Q`, `R`, `M`, `V`, `K` are `vm_count_slots`' own ACCUMULATED counts**
+  > for empty-guard, span-low, cut-mark, revdet and counter slots over that
+  > region — **replication included** — unioned over the calls `g` makes.
+
+  Counting lexically instead under-counts: `^((?>a)){3}$` has one lexical
+  atomic group and **four** cut marks (MEASURED, `out/slotcount.txt` axis A).
+
+  **MEASURED for this module's own corpus callees: `|W|` is 2–6**
+  (`out/slotcount.txt` axis D1, seven shapes, the recursive ones measured
+  call-erased — exact, because a call node allocates no slot family of its
+  own). Wider shapes reach 6–10 (axis D2). For `(?R)` it is `RX_NSLOTS − 2`
+  **by construction**, which needs no population at all. The cost is still a
+  compile-time constant and still lands in `vm_cost`, but it is no longer
+  negligible, and §12 P-5's alternative gets cheaper as it grows.
 - **The recursion itself is `Cost.unbounded`**, so the artifact stamps a
   ceiling rather than silently capping (P12).
 
