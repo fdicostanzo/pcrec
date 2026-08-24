@@ -1664,14 +1664,22 @@ AG='--features atomic-groups'
 agcuts() { grep -c '^ *RX_CUT(' "$1"; }          # spelling 1: the macro call
 agrv()   { grep -cE '^ *run->resume_depth = rx_rv[0-9]+_frame_mark;' "$1"; }  # spelling 2
 
-# --- rule 1: THE CEILING, on TWO SOURCES, scoped to nclamp > 0 --------------
+# --- rule 1: THE CEILING, on ITS FOUR READERS, scoped to nclamp > 0 --------
 #
-# The prefilter is the capture-erased DFA and therefore answers for the UNCUT
-# language, so its span END is not a bound on a CUT match's end — 122 refuting
-# cells, and 114 cells of live silent match loss measured on the emitted
-# prefilter. RULE H3 switches the MRL ceiling off on a cut-bearing artifact.
+# The prefilter is the capture-erased DFA. For a CUT-bearing pattern it
+# therefore answers for the UNCUT language (src/ir/nfa.c lowers an atomic body
+# transparently), and for a LOOKAROUND-bearing pattern it answers for the
+# lookaround-ERASED language (nfa.c's A_LOOK arm is an epsilon). Both times the
+# window's span END stops being a bound on the real match's end, and both times
+# `v.mrl_win` in src/gen/emit_vm.c switches the MRL ceiling off.
 #
-# TWO SOURCES, AND THAT IS R31 E3's WHOLE FINDING. The design's first form
+# ONE CHECK, TWO MODULES, and that is deliberate: lookaround_design.md §5.6(3)
+# says this module "extends the same assertion rather than adding a parallel
+# one". The predicate differs by one conjunct; the thing being asserted — that
+# every reader of `v.mrl_win` agrees with every other — does not. So the
+# assertion is a FUNCTION and each module supplies a fixture.
+#
+# FOUR READERS, AND THE FOUR-NESS IS R31 E3's FINDING. The design's first form
 # asserted on the STAMP alone, and the stamp is read from `v.mrl_win` while the
 # lines that BUILD the ceiling were gated on `prefn` and `v.nclamp > 0` and
 # never on that flag. MEASURED on this tree by making exactly that half-done
@@ -1682,51 +1690,90 @@ agrv()   { grep -cE '^ *run->resume_depth = rx_rv[0-9]+_frame_mark;' "$1"; }  # 
 #     as shipped     : stamp "subject-end"   window[0][1] assignments left: 0
 #
 # 1(b) is GREEN on the bug. A check that agrees with the bug is worse than no
-# check, so both are asserted.
+# check, so the two BUILDERS are asserted too (1(a)) — and so is `--emit-ir`'s
+# PRUNING description (1(d)), the FOURTH reader, which lookaround_design.md
+# §9.3 S-LA13 names and which no check covered before wave E.
 #
 # SCOPED TO `nclamp > 0`, which is R31 C5: `RX_VM_PRUNE_CEILING` is
 # THREE-valued, and with `nclamp == 0` an artifact stamps "none", declares no
 # `window_end` local and has no ceiling to get wrong. Over the design's own 46
 # R3a patterns the histogram is {prefilter-window 42, none 4}, so an unscoped
-# rule would be RED on four CORRECT artifacts. The fixture below is chosen
+# rule would be RED on four CORRECT artifacts. Each fixture below is chosen
 # BECAUSE it clamps, and the check asserts that it does before asserting
 # anything else — a fixture that stopped clamping would make this rule vacuous
 # rather than failing.
-if "$PCREC" $AG -p rx -o "$WORKDIR/ag_ceil.c" -- 'x*(?>a|ab)c|abcd' >/dev/null 2>&1; then
-    ag_stamp="$(sed -n 's/.*RX_VM_PRUNE_CEILING "\(.*\)"/\1/p' "$WORKDIR/ag_ceil.c")"
-    ag_win=$(grep -c 'window_end = (size_t)window\[0\]\[1\]' "$WORKDIR/ag_ceil.c")
-    if [ "$ag_stamp" = "none" ]; then
-        bad "[M6.4-ATOMIC rule 1]: the fixture 'x*(?>a|ab)c|abcd' stamps \"none\" (nclamp == 0), so it has no ceiling to get wrong and this rule is measuring NOTHING. Pick a clamping fixture — C5 measured the R3a family at {prefilter-window 42, none 4} and this rule is only meaningful on the first population"
-    elif [ "$ag_win" -ne 0 ]; then
-        bad "[M6.4-ATOMIC rule 1(a)]: the cut-bearing artifact still assigns window_end from the prefilter's window END ($ag_win sites). The prefilter answers for the UNCUT language, so that number is not a bound on this match's end — '(?>a|ab)c|abcd' on \"abcd\" is (0,4) and its uncut twin is (0,3), and a ceiling of 3 prunes the real match away silently"
-    elif [ "$ag_stamp" != "subject-end" ]; then
-        bad "[M6.4-ATOMIC rule 1(b)]: the cut-bearing artifact's RX_VM_PRUNE_CEILING reads \"$ag_stamp\", expected \"subject-end\". The stamp must describe the code beside it; E3's defect was exactly the two disagreeing"
-    else
-        ok "[M6.4-ATOMIC rule 1] (§4.4 H3): a cut-bearing CLAMPING artifact drops the prefilter's window END as its MRL ceiling — asserted on BOTH sources (no window[0][1] assignment AND the stamp reads \"subject-end\"), because a half-done edit satisfies either one alone"
-    fi
-else
-    bad "[M6.4-ATOMIC rule 1]: pcrec failed to compile the fixture 'x*(?>a|ab)c|abcd'"
-fi
 
-# --- rule 1c: an ATOMIC-FREE artifact keeps its ceiling ---------------------
-# The other direction, and without it rule 1 would be green on an emitter that
-# had switched the ceiling off for EVERY pattern — losing D51 ruling 1's whole
-# optimisation on the entire corpus while changing no answer.
-# The twin CAPTURES, because a capture-free pattern with no cut compiles to a
-# pure DFA and has no VM ceiling to keep. `(x)*` is the same quantifier the
-# cut fixture above carries, with a group around it so `forces_captures`
-# selects the VM and the hybrid's prefilter is live.
-if "$PCREC" -p rx -o "$WORKDIR/ag_noceil.c" -- '(x)*(?:a|ab)c|abcd' >/dev/null 2>&1; then
-    ag_stamp2="$(sed -n 's/.*RX_VM_PRUNE_CEILING "\(.*\)"/\1/p' "$WORKDIR/ag_noceil.c")"
-    ag_win2=$(grep -c 'window_end = (size_t)window\[0\]\[1\]' "$WORKDIR/ag_noceil.c")
-    if [ "$ag_stamp2" = "prefilter-window" ] && [ "$ag_win2" -ge 1 ]; then
-        ok "[M6.4-ATOMIC rule 1c]: the ATOMIC-FREE twin '(x)*(?:a|ab)c|abcd' KEEPS its prefilter-window ceiling ($ag_win2 assignment sites, stamp \"prefilter-window\") — H3 is scoped to cut-bearing artifacts, not applied to everything"
-    else
-        bad "[M6.4-ATOMIC rule 1c]: the atomic-free twin stamps \"$ag_stamp2\" with $ag_win2 window[0][1] assignments, expected \"prefilter-window\" and at least 1. H3 must not cost the ceiling on patterns that have no cut"
+ceil_win_sites() { grep -c 'window_end = (size_t)window\[0\]\[1\]' "$1"; }
+ceil_stamp()     { sed -n 's/.*RX_VM_PRUNE_CEILING "\(.*\)"/\1/p' "$1"; }
+# The --emit-ir description's prefilter-window form, verbatim from emit_vm.c.
+ceil_ir_win()    { grep -c 'ceiling: min(subject_length, prefilter window end)' "$1"; }
+
+# ceil_drop <tag> <features> <fixture> <hazard sentence>
+#   the DROP direction: a clamping artifact whose pattern carries the
+#   suppressing construct must have NO ceiling, on all four readers.
+ceil_drop() {
+    local tag="$1" feats="$2" pat="$3" haz="$4"
+    local c="$WORKDIR/ceil_drop_$tag.c" ir="$WORKDIR/ceil_drop_$tag.ir"
+    if ! "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
+        bad "[$tag rule 1]: pcrec failed to compile the fixture '$pat'"
+        return
     fi
-else
-    bad "[M6.4-ATOMIC rule 1c]: pcrec failed to compile the atomic-free fixture"
-fi
+    "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
+    local stamp win irwin
+    stamp="$(ceil_stamp "$c")"; win=$(ceil_win_sites "$c"); irwin=$(ceil_ir_win "$ir")
+    if [ "$stamp" = "none" ]; then
+        bad "[$tag rule 1]: the fixture '$pat' stamps \"none\" (nclamp == 0), so it has no ceiling to get wrong and this rule is measuring NOTHING. Pick a clamping fixture — C5 measured the R3a family at {prefilter-window 42, none 4} and this rule is only meaningful on the first population"
+    elif [ "$win" -ne 0 ]; then
+        bad "[$tag rule 1(a)]: '$pat' still assigns window_end from the prefilter's window END ($win sites). $haz"
+    elif [ "$stamp" != "subject-end" ]; then
+        bad "[$tag rule 1(b)]: '$pat's RX_VM_PRUNE_CEILING reads \"$stamp\", expected \"subject-end\". The stamp must describe the code beside it; E3's defect was exactly the two disagreeing"
+    elif [ "$irwin" -ne 0 ]; then
+        bad "[$tag rule 1(d)]: '$pat's --emit-ir PRUNING description still reads \"min(subject_length, prefilter window end)\" while the emitted code carries no such ceiling. That description is the FOURTH reader of v.mrl_win (S-LA13), and a listing that disagrees with the artifact is how E3's defect was missed the first time"
+    else
+        ok "[$tag rule 1]: a CLAMPING artifact carrying the construct drops the prefilter's window END as its MRL ceiling — asserted on ALL FOUR readers of v.mrl_win (0 window[0][1] assignments in the two BUILDERS, the stamp reads \"subject-end\", and --emit-ir's description agrees), because a half-done edit satisfies any one alone"
+    fi
+}
+
+# ceil_keep <tag> <features> <fixture>
+#   the OTHER direction, and without it ceil_drop would be green on an emitter
+#   that had switched the ceiling off for EVERY pattern — losing D51 ruling 1's
+#   whole optimisation on the entire corpus while changing no answer.
+ceil_keep() {
+    local tag="$1" feats="$2" pat="$3"
+    local c="$WORKDIR/ceil_keep_$tag.c" ir="$WORKDIR/ceil_keep_$tag.ir"
+    if ! "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
+        bad "[$tag rule 1c]: pcrec failed to compile the free fixture '$pat'"
+        return
+    fi
+    "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
+    local stamp win irwin
+    stamp="$(ceil_stamp "$c")"; win=$(ceil_win_sites "$c"); irwin=$(ceil_ir_win "$ir")
+    if [ "$stamp" = "prefilter-window" ] && [ "$win" -ge 1 ] && [ "$irwin" -ge 1 ]; then
+        ok "[$tag rule 1c]: the CONSTRUCT-FREE twin '$pat' KEEPS its prefilter-window ceiling ($win assignment sites, stamp \"prefilter-window\", --emit-ir agrees) — the suppression is scoped to artifacts that carry the construct, not applied to everything"
+    else
+        bad "[$tag rule 1c]: the construct-free twin '$pat' stamps \"$stamp\" with $win window[0][1] assignments and $irwin prefilter-window listing lines, expected \"prefilter-window\", >= 1 and >= 1. The suppression must not cost the ceiling on patterns that do not carry the construct"
+    fi
+}
+
+# [M6.4.2] the ATOMIC pair. atomic_groups_design.md §4.4 H3.
+ceil_drop 'M6.4-ATOMIC' "$AG" 'x*(?>a|ab)c|abcd' \
+    "The prefilter answers for the UNCUT language, so that number is not a bound on this match's end — '(?>a|ab)c|abcd' on \"abcd\" is (0,4) and its uncut twin is (0,3), and a ceiling of 3 prunes the real match away silently"
+# The twin CAPTURES, because a capture-free pattern with no cut compiles to a
+# pure DFA and has no VM ceiling to keep. `(x)*` is the same quantifier the cut
+# fixture carries, with a group around it so `forces_captures` selects the VM
+# and the hybrid's prefilter is live.
+ceil_keep 'M6.4-ATOMIC' '' '(x)*(?:a|ab)c|abcd'
+
+# [M6.6.2 wave E] the LOOKAROUND pair. lookaround_design.md §5.6.
+# THE FIXTURE IS §5.5's MEASURED WITNESS, not an invention: it is one of the 16
+# shapes the design's sweep found carrying a LIVE "prefilter-window" ceiling AND
+# a window end strictly below the true match's end, and before wave E landed the
+# predicate this exact artifact answered NOMATCH on all three of its subjects.
+# Its erasure is the twin below, which is the pattern the prefilter actually
+# compiles — so the two fixtures are the two halves of one measurement.
+ceil_drop 'M6.6-LOOKAROUND' '--features lookaround' '((?:a(?!q)|aq)(?:xy){0,4}q)' \
+    "The prefilter answers for the lookaround-ERASED language (nfa.c's A_LOOK arm is an epsilon), so that number is not a bound on this match's end — '((?:a(?!q)|aq)(?:xy){0,4}q)' on \"aqq\" is (0,3) while the erasure '((?:a|aq)(?:xy){0,4}q)' anchored there ends at 2, and a ceiling of 2 prunes the real match away silently (tests/lookaround/prefilter.rxt is the corpus half of this)"
+ceil_keep 'M6.6-LOOKAROUND' '' '((?:a|aq)(?:xy){0,4}q)'
 
 # --- rule 2: -fno-possessify STILL EMITS A WRITTEN CUT ----------------------
 #

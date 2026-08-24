@@ -346,6 +346,112 @@ GATED = [
       "module `named-groups` with its own producer."),
 ]
 
+# ===========================================================================
+#  prefilter.rxt — §10.1(1)'s qualifying shapes ([M6.6.2] wave E)
+# ===========================================================================
+#
+# WHY THIS FILE IS NOT ORDINARY BREADTH. Design §5.6 drops the MRL
+# window-end CEILING for any pattern containing a lookaround, because the
+# prefilter is built from the lookaround-ERASED pattern (src/ir/nfa.c's
+# A_LOOK arm is an epsilon) and the erasure's window END is not an upper
+# bound on the real match's end. Sabotage row S140 deletes that conjunct.
+# A row can only score DETECTED if the corpus holds a shape that (a) really
+# raises a clamp site, so the ceiling is LIVE, and (b) really loses its match
+# when the ceiling comes back — §5.5 measured 16 of 30 swept shapes doing
+# both, and §5.5's own first version reported 0 qualifying over a space in
+# which 0 was the only possible answer.
+#
+# SO EVERY CELL HERE WAS QUALIFIED AGAINST THE PRE-WAVE-E COMPILER, not
+# reasoned into the file. Each of the five clamping blocks below was compiled
+# by pcrec at 8720029 (the commit before the predicate landed), its
+# RX_VM_PRUNE_CEILING read off the artifact as "prefilter-window", and its
+# matcher run on these exact subjects: the marked subjects answered NOMATCH
+# where the oracle matches. That is the row's population, measured.
+#
+# AND THE TWO NON-CLAMPING SHAPES ARE HERE ON PURPOSE. §5.4's sharp H3
+# violations `a(?!b)|ab` and `(?:a(?=c)|ab)c?` have the hazard SHAPE — a
+# lookaround inside an alternation whose erasure lets an earlier branch win —
+# and both stamp "none", because neither raises a clamp site. The hazard
+# shape is NECESSARY and NOT SUFFICIENT, which is the distinction §5.5 exists
+# to draw, and a reader who took §5.4's table as the population would have
+# built a corpus that cannot go red.
+PREFILTER = [
+ cell("((?:a(?!q)|aq)(?:xy){0,4}q)", LA,
+      [("aqq", 0), ("aqxyq", 0), ("aaqq", 0), ("axyq", 0), ("aq", 0),
+       ("q", 0), ("aqxyxyq", 0)],
+      "THE MEASURED WITNESS, BY NAME (design §5.5, §10.1(1)). Its erasure "
+      "is `((?:a|aq)(?:xy){0,4}q)`, whose emitted prefilter answers (0,2) on "
+      "\"aqq\" while the truth is (0,3): the earlier-preferred branch `a` "
+      "survives the erasure and ends the pattern two bytes early, so a "
+      "ceiling of 2 prunes the real match away. MEASURED at 8720029: "
+      "\"aqq\", \"aqxyq\", \"aaqq\" and \"aqxyxyq\" all answered NOMATCH "
+      "on an artifact stamping \"prefilter-window\". \"aq\" and \"q\" are "
+      "the NEGATIVE half — a row that only deleted matches would still have "
+      "to keep those two nomatches, and \"axyq\" was already right before "
+      "the predicate landed."),
+ cell("(?:a(?!q)|aq)(?:xy){0,4}q", LA,
+      [("aqq", 0), ("aqxyq", 0), ("aaqq", 0), ("axyq", 0)],
+      "THE WITNESS WITHOUT ITS OUTER CAPTURE. The ceiling is a property of "
+      "the MRL analysis and the prefilter, not of capture delivery, and a "
+      "predicate that had somehow keyed on `forces_captures` would keep this "
+      "cell green. MEASURED at 8720029: NOMATCH on all three matching "
+      "subjects."),
+ cell("((?:a(?!q)|aq)(?:xy){0,2}q)", LA,
+      [("aqq", 0), ("aqxyq", 0), ("aaqq", 0)],
+      "A DIFFERENT BOUND on the same shape, so the clamp constant the "
+      "emitter computes is a different number. MEASURED at 8720029: "
+      "NOMATCH on all three."),
+ cell("(?:a(?!q)|aq)x{0,3}q", LA,
+      [("aqq", 0), ("axq", 0), ("aaqq", 0), ("aq", 0), ("axxxq", 0)],
+      "A SINGLE-BYTE repeat body rather than a two-byte one, and a subject "
+      "(\"axxxq\") that exercises the repeat at its bound. MEASURED at "
+      "8720029: \"aqq\" and \"aaqq\" answered NOMATCH; \"axq\" and "
+      "\"axxxq\" were already right, which is what makes them worth "
+      "keeping — the row must not be scored on cells it never touched."),
+ cell("y*((?:a(?!q)|aq)(?:xy){0,4}q)", LA,
+      [("yaqq", 0), ("aqq", 0), ("yyaqxyq", 0)],
+      "AN UNBOUNDED PREFIX before the hazard, so the search does not start "
+      "at the match start and the RETRY recompute — the second of the two "
+      "ceiling builders — is the line that runs. A predicate read at the "
+      "search ENTRY alone would leave this cell red. MEASURED at 8720029: "
+      "NOMATCH on all three."),
+ cell("((?:a(?*!q)|aq)(?:xy){0,4}q)", LA,
+      [("aqq", 0), ("aqxyq", 0), ("aaqq", 0)],
+      "THE NON-ATOMIC NEGATIVE LOOKAHEAD carrying the same shape, and it is "
+      "here because it separates this module's predicate from [M6.4.2]'s. "
+      "`pcrec_has_atomic` is FALSE for `(?*!` — there is no cut — so if the "
+      "conjunct that suppresses this artifact's ceiling were the atomic one "
+      "rather than the lookaround one, this cell alone would stay red. "
+      "MEASURED at 8720029: NOMATCH on all three."),
+ cell("((?:a|aq)(?:xy){0,4}q)", LA,
+      [("aqq", 0), ("aqxyq", 0), ("aaqq", 0)],
+      "THE ERASURE ITSELF, as a CONTROL. This is the pattern the prefilter "
+      "actually compiles for the witness above, it is lookaround-FREE, and "
+      "it KEEPS its \"prefilter-window\" ceiling — which is why its answers "
+      "are (0,2)/(0,2)/(1,3) and not the witness's. Its `features` line "
+      "still names `lookaround` for the file's own R33 V-10 rule; the "
+      "pattern does not use the module. NOTE WHAT THIS CELL CANNOT DO: "
+      "dropping the ceiling for EVERY pattern changes no answer anywhere, "
+      "so the other direction of §5.6 is unobservable from a corpus and is "
+      "asserted structurally instead, by [M6.6-LOOKAROUND rule 1c] in "
+      "tests/codegen/run_codegen_tests.sh."),
+ cell("a(?!b)|ab", LA,
+      [("ab", 0), ("ac", 0), ("b", 0), ("aab", 0)],
+      "§5.4's FIRST SHARP VIOLATION, by name, and it stamps \"none\". The "
+      "hazard shape is a lookaround inside an alternation positioned so that "
+      "erasing it lets an earlier-preferred branch succeed to the end — but "
+      "with no bounded repeat there is no clamp site, so there was never a "
+      "ceiling to lose. NECESSARY, NOT SUFFICIENT: this cell is green at "
+      "8720029 too, and a corpus built from §5.4's table alone could not "
+      "have gone red."),
+ cell("(?:a(?=c)|ab)c?", LA,
+      [("abc", 0), ("ac", 0), ("ab", 0), ("xabc", 0)],
+      "§5.4's THIRD SHARP VIOLATION, the POSITIVE-lookahead form of the same "
+      "shape, and it also stamps \"none\". Kept for the same reason as the "
+      "cell above, and because the two polarities failing the same way is "
+      "what makes §5.6's predicate flat rather than shape-conditioned."),
+]
+
 FILES = [
  ("lookahead.rxt", LOOKAHEAD,
   "`(?=` and `(?!`: bodies, contexts, degenerate forms (design §10.2)"),
@@ -360,10 +466,13 @@ FILES = [
   "unterminated forms"),
  ("gated.rxt", GATED,
   "the module gate and D65's `built` column, cell by cell"),
+ ("prefilter.rxt", PREFILTER,
+  "[M6.6.2] wave E -- \u00a75.6's ceiling ruling and \u00a710.1(1)'s "
+  "qualifying shapes, each one qualified against the PRE-wave-E compiler"),
 ]
 
 HEADER = """\
-# tests/lookaround/%s -- module `lookaround` ([M6.6.2] wave B+C): %s
+# tests/lookaround/%s -- module `lookaround` ([M6.6.2]): %s
 #
 # GENERATED BY tests/lookaround/gen_corpus.py, and that is a property rather
 # than a convenience. Every expectation below was produced by driving the cell

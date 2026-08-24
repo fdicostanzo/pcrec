@@ -231,9 +231,15 @@ PY
 # from a run and change it deliberately; never relax it to a floor** — a floor
 # would let the population SHRINK, and the cells this section exists for are
 # exactly the ones no other check in the tree can see.
+#
+# 14 -> 15 AT [M6.6.2] WAVE E, AND THE GUARD FIRED AGAIN, which is the second
+# time it has earned itself. `prefilter.rxt` adds ONE pcre2-only answer-bearing
+# block — `((?:a(?*!q)|aq)(?:xy){0,4}q)`, the NON-ATOMIC negative form of §5.5's
+# measured witness, which python cannot compile because it has no `(?*` at all.
+# Re-derived from the run, not adjusted to make the run pass.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 14 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 14 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
+if [ "$NPO" -ne 15 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 15 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do
