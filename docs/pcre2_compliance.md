@@ -132,7 +132,7 @@ Of PCRE2's syntax surface:
   now maps to the frozen named set `std1` = {`classes`, `modifiers`}, so a
   bare `pcrec` compiles their constructs with no flag needed. `--features
   none` is the only invocation that still refuses them, with the module name.
-- Five further modules have shipped `OK-GATED` since — built and
+- Six further modules have shipped `OK-GATED` since — built and
   oracle-verified, but compiled ONLY under an explicit `--features` naming
   them, and refused by name under the bare default: `assertions` (`\b \B \G`
   and `\K`, [M6.2], complete 2026-08-19), `named-groups` ([M6.3],
@@ -149,7 +149,21 @@ Of PCRE2's syntax surface:
   — the wrong module, promised for a year of sessions by a `(*` doorway whose
   ONE row answered for every name in both of PCRE2's verb tables — and gave
   each of them an index row of its own, folded into its primary's family line
-  (D71 item 3). **`backrefs` moved THREE survey
+  (D71 item 3). **`recursion` is the SIXTH** (subroutine calls and recursion
+  in every spelling, plus `(?(DEFINE)` — [DD-14], 2026-08-24): its survey row
+  reads `OK-LIMITED` and names TWO limits, a CAPABILITY one (VM engine only —
+  `--engine=dfa` refuses by name, and the language a call generates is
+  genuinely not regular) and a RESOURCE one (every call is a resume frame that
+  outlives its return, so depth is bounded by the artifact's frame capacity
+  and a runaway gives up cleanly). **That row read `REJECTED` from the day
+  waves B+C and D landed until wave F's compliance refresh caught it** — the
+  same class of staleness the `\b \B \G` row above records, found by the
+  ritual rather than by a reader. Wave F also added NINE index rows for
+  spellings the compiler ALREADY handled and no surface named — the
+  multi-digit calls `(?10)`/`(?-10)`, the `(?+N)` siblings, `\g<0>`/`\g'0'`
+  and the leading-zero absolutes — and collapsed the module's 26 one-line
+  entries into NINE family lines (D71 item 3's index layer, second customer).
+  **`backrefs` moved THREE survey
   rows and fourteen index rows in one landing**: `\0dd, \ddd as an ATOM` and the bundled backreference row in
   their own sections, and `(?J) dup names` in Option setting — whose owning
   module moved from `named-groups` to `backrefs` with it (ASK-1), the fourth
@@ -1285,6 +1299,37 @@ builds") named a mechanism the module did NOT use: the lowering is a
 back-step to a known offset followed by a FORWARD body match and an
 end-check, not a reverse machine — see the design's §3.5 for why.
 
+**A BODY CARRYING A SUBROUTINE CALL IS MEASURED AFTER THE CALL GRAPH
+EXISTS** ([DD-14.LB], `src/opt/postresolve.c`). A call's width is not
+knowable at the parse hook — "how wide is `(?1)`" is a question about a
+group that may not have been seen yet, and about a graph that does not
+exist until every call is resolved — so the parse hook RECORDS the
+lookbehind's offset and the width rule is re-asked at that offset once
+`pcrec_callgraph_build` has run. The fixed-per-branch subset itself is
+UNCHANGED by this; what changes is when it can be evaluated.
+
+The two outcomes, MEASURED on 10.46 and on this tree (2026-08-24):
+
+    (a)(?<=(?1))b           COMPILES both sides — an ACYCLIC callee of
+                            fixed width composes, and so does calling it
+                            twice: `(a)(?<=(?1)(?1))b` is width 2.
+    (a(?1)?b)(?<=(?1))c     REFUSED both sides, at the SAME OFFSET (9).
+                            A RECURSIVE callee is unbounded, so the body
+                            is unbounded. libpcre2 answers error 125,
+                            "length of lookbehind assertion is not
+                            limited" — the same code and the same
+                            sentence it gives the call-free `(?<=a*)x`.
+                            pcrec answers its own capability wording
+                            naming unboundedness.
+
+    (a|bc)(?<=(?1))d        REFUSED HERE and accepted there — the
+                            PRE-EXISTING fixed-per-branch limit above,
+                            reached through a call rather than by
+                            writing the alternation out. Nothing about
+                            it is new; it is listed so the reader can
+                            see the call does not change which rule
+                            applies, only when it is asked.
+
 **`base:lookaround-verb-spellings`** (2026-08-24)
 
 **THE TWELVE `(*` ALPHA SPELLINGS ARE MODULE `lookaround`, AND SAYING
@@ -1475,7 +1520,7 @@ This annotation is keyed to `\1` and covers the bundled prose row
 
 | syntax | status | becomes |
 |---|---|---|
-| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` … | `REJECTED` | `PLANNED-HARD` |
+| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` `\g<0>` `\g'0'`, the multi-digit and leading-zero spellings `(?10)` `(?01)` `(?00)` `(?+2)` `(?-10)` — CAPABILITY: VM engine only (`--engine=dfa` refuses by name), and RESOURCE: every call is a resume frame that outlives its return, so call depth is bounded by the artifact's frame capacity and a runaway gives up cleanly with `PCREC_ERR_FRAMES` (measured: the RFC 5322 specimen's factored spelling gives up ~2 K iterations in at the 2048-frame default) | `OK-LIMITED` | `PLANNED` |
 | `(?R(grouplist))` and capture-retaining forms | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: subroutine-recursion -->
@@ -1485,13 +1530,53 @@ This annotation is keyed to `\1` and covers the bundled prose row
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`(?R)`**
+**`(?R)`** (2026-08-24)
 
-Modules `recursion` / `backrefs`. Recursion makes the pattern language
+**SHIPS since [DD-14]** (design docs/design/subroutines_design.md,
+R34-approved). This annotation is keyed to `(?R)` and covers the bundled
+prose row for every call spelling.
+
+**THE PRE-LANDING NOTE WAS RIGHT ABOUT THE OBSTACLE AND WRONG ABOUT THE
+CONCLUSION.** It read: "Recursion makes the pattern language
 context-free, which is outside both a DFA and a plain Pike VM; it needs a
-recursive/backtracking matcher. Unsupported by PCRE2's DFA matcher too.
-This annotation is keyed to `(?R)` and covers the bundled prose row
-`(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` ….
+recursive/backtracking matcher." The premise holds and is MEASURED —
+`^(a(?1)?b)$` is a^n b^n, matching at n = 400,000 — which is exactly why
+the `engines` column on every call row reads `vm` and why `--engine=dfa`
+refuses each of them BY NAME rather than silently downgrading. What the
+note got wrong is that pcrec's VM is not a plain Pike VM: it is a
+backtracking machine with a resume stack, so a call lowers to a saved
+return site and a shared callee region and needs no new engine.
+
+**TWO LIMITS, AND THE SURVEY ROW NAMES BOTH KINDS.** The CAPABILITY one
+is the engine restriction above. The RESOURCE one is that a call's
+resume frame OUTLIVES ITS RETURN (design §5.1/§5.3), so recursion and
+call-driven iteration are both bounded by the artifact's frame capacity;
+past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one.
+MEASURED at a real size rather than in principle: the RFC 5322 email
+specimen's call-factored spelling gives up about 2 K iterations into a
+2000-deep subject at the 2048-frame stamped default
+(docs/design/subroutines_measurements/email_specimen/README.md). D71
+item 2 makes that buffer caller-provided and wave G's splice removes the
+per-call frame for eligible callees, so the limit is `PLANNED` away
+rather than permanent — which is what the `becomes` column says.
+
+**THE LEADING-ZERO RULE IS THE SHARP EDGE OF THIS FAMILY**, and it is
+why the index shows spellings a reader might take for redundant. The
+WHOLE DIGIT RUN after `(?` — or inside the angle-bracket and quoted `\g`
+spellings — is read as decimal, so `(?0)` and `(?00)` are the ROOT while
+`(?01)` is GROUP 1. MEASURED on the ANCHORED discriminator, since the
+unanchored form answers the same either way: `^(a(?01)?b)$` on "aabb" is
+(0,4) and `^(a(?0)?b)$` is NOMATCH. A port written from "`(?0)` is a
+synonym for `(?R)`" compiles `(?01)` as the root and miscompiles it.
+
+**AND THAT RULE IS WHY [DD-14] WAVE F ADDED NINE INDEX ROWS.** The
+multi-digit calls `(?10)`/`(?-10)`, the `(?+N)` siblings, `\g<0>`/
+`\g'0'` and the leading-zero absolutes are all spellings this compiler
+ALREADY handled correctly — the ports read the digit run, they never
+read the row's selector as a number — and none of them appeared on any
+surface pcrec publishes. They are index rows (D71 item 3): they never
+dispatch, they carry the byte their spelling really enters at, and each
+is folded into its primary's family line above.
 
 **`base:recursion-grouplist`**
 
@@ -1505,7 +1590,7 @@ This annotation is keyed to `(?R)` and covers the bundled prose row
 |---|---|---|
 | `(?(n)...)` `(?(<name>)...)` `(?(name)...)` | `REJECTED` | `PLANNED-HARD` |
 | `(?(R)` `(?(Rn)` `(?(R&name)` | `REJECTED` | — |
-| `(?(DEFINE)...)` | `REJECTED` | — |
+| `(?(DEFINE)...)` — module `recursion`, NOT `conditionals` (D71 item 4); filed in this section because that is where PCRE2's own syntax summary puts it | `OK-GATED` | — |
 | `(?(assert)...)` | `REJECTED` | — |
 | `(?(VERSION>=n.m)...)` | `OUT-OF-SCOPE` | — |
 
@@ -1525,35 +1610,61 @@ explicitly unsupported by `pcre2_dfa_match` for the same reason.
 
 recursion-dependent.
 
-**`base:conditional-define`** (2026-08-24)
+**`(?(DEFINE)(?<w>a))`** (2026-08-24)
 
-Only useful with subroutine calls — and it JOINS MODULE `recursion`
-rather than `conditionals` when it lands (D71 item 4, Frank 2026-08-23):
-it is a tailed row on the `(?(` doorway, lowered as the `{0}`-callee
-shape (no code at the lexical position, a callee region for calls). One
-row, zero new mechanism; the rest of `(?(` stays `conditionals`'.
+**SHIPS since [DD-14] wave F, AND IT IS MODULE `recursion`'S** rather
+than `conditionals`' (D71 item 4, Frank 2026-08-23, overruling the
+subroutines design's own §2.5 "RULED: no DEFINE"). It is a TAILED row on
+the `(?(` doorway — tail `DEFINE)`, rank 25 — and EVERY OTHER condition
+at that doorway is still `conditionals`' and still refused. Enabling
+`recursion` does not unlock `(?(1)`, `(?(R)` or `(?(<name>)`; the cell
+that pins that is in `tests/recursion/refused.rxt`.
 
-**INTERIM, THE TWO EXACT SUBSTITUTES** (D71 item 4's interim clause), and
-both are VERIFIED EQUIVALENT to `(?(DEFINE)(?<w>X))` against libpcre2
-10.46 rather than offered on the strength of the shape — every startpos
-over a five-subject set, span for span, for both:
+**THE TAIL INCLUDES THE CLOSING PARENTHESIS**, which is not tidiness:
+MEASURED on 10.46, `(?(define)...)` and `(?(DEF)...)` are read as NAME
+conditions ("reference to non-existent subpattern"), so a tail of
+`DEFINE` alone would have claimed `(?(DEFINED)` — a `conditionals`
+construct — for this module.
 
-    (?:(?<w>X)){0}      a zero-count wrapper: the group is DECLARED and
-                        its body is never entered, which is exactly what
-                        DEFINE means. `(?(DEFINE)(?<w>ab))(?&w)c` and
-                        `(?:(?<w>ab)){0}(?&w)c` answer identically.
-    ^(?!)(?<w>X)|BODY   an unreachable FIRST BRANCH: `(?!)` fails
-                        unconditionally, so the branch declares `w` and
-                        can never match, and BODY is the real pattern.
-                        Identical to the DEFINE form on the same cells.
+**ONE ROW, ZERO NEW MECHANISM.** `(?(DEFINE)BODY)` is a conditional
+group whose condition is never true, so BODY never runs where it is
+written and exists only to be called — which is exactly what
+`(?:BODY){0}` means, and the `{0}` layout rule the R34 verifier forced
+already IS DEFINE's semantics (design §4.4c). The port produces the
+node `(?:BODY){0}` produces, an `A_REP` with rmin == rmax == 0 over the
+body, so `callgraph.c`, `vm_count_slots` and `emit_vm.c` gained not one
+line. That claim is CHECKED rather than asserted: codegen rule 4
+compiles both spellings and requires the artifacts to be identical byte
+for byte once the pattern text and offsets are normalised away, with the
+`{1}` spelling as its positive control.
 
-Neither is a workaround for a MISSING feature so much as a spelling of
-the same one — which is why the row for `(?(DEFINE)` is a single row when
-it lands. Both substitutes are constructs pcrec's parser accepts today
-(the first needs modules `named-groups` and `recursion`, the second
-`lookaround` and `named-groups`); what neither can do before module
-`recursion` builds is be USEFUL, since the reference that reads the
-declared group is a subroutine call.
+**THE ONE REFUSAL IS PCRE2'S OWN RULE**: a DEFINE's own top level may
+carry only one branch. `(?(DEFINE)a|b)` is "DEFINE subpattern contains
+more than one branch" at offset 3 — the byte after `(?(`, MEASURED in
+three positions — and pcrec blames the same byte with the same sentence.
+An alternation INSIDE the defined group (`(?(DEFINE)(?<w>a|b))`) is
+fine; the rule is about the DEFINE's top level.
+
+**WHAT IS NOT REFUSED, measured rather than assumed**: an empty body
+(`(?(DEFINE))`), a body that defines no group at all
+(`(?(DEFINE)abc)`), and a QUANTIFIED DEFINE (`(?(DEFINE)(?<w>a))*`) all
+COMPILE on 10.46, so all three compile here.
+
+**IT IS THE ONE ROW IN MODULE `recursion` THAT IS NOT `VM_ONLY`**, and
+the index above shows it as `dfa|vm`. Every other row in the module is
+VM_ONLY structurally — `^(a(?1)?b)$` generates a^n b^n, which is not
+regular — but a DEFINE is not a call: it is a zero-width definition, and
+a pattern containing one is exactly as regular as the pattern without
+it. MEASURED on the shipped compiler: `--engine=dfa --no-captures
+'(?:(?<g>a)){0}b'` produces a pure DFA artifact. What forces the VM in
+every real use of a DEFINE is the CALL that reads it, which carries its
+own row and its own stamp.
+
+**THE INTERIM "TWO EXACT SUBSTITUTES" NOTE IS RETIRED** with this wave.
+It documented `(?:(?<w>X)){0}` and `^(?!)(?<w>X)|BODY` as stand-ins while
+the row did not exist. The first of them is not a substitute any more —
+it is the SAME PROGRAM, which is what codegen rule 4 measures — and the
+second remains a legal spelling nobody now needs.
 
 **`base:conditional-assert`**
 
@@ -1934,7 +2045,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 118 rows from one declarative table (D24), rendered as 106 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 128 rows from one declarative table (D24), rendered as 90 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -1962,8 +2073,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 118 rows 
 | after `\` | `\K` | `REJECTED` | `built` | planned | `assertions` | vm | reset the reported start of the match |
 | after `\` | `\k<name>` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by name: \k<n> \k'n' \k{n} — literal 'k' inside a class |
 | after `\` | `\g{-1}` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference by number or relative position: \g1 \g{-1} \g{name} — literal 'g' inside a class |
-| after `\` | `\g<1>` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) |
-| after `\` | `\g'1'` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference |
+| after `\` | `\g<1>` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group by number or name: \g<1> \g<name> — NOT a backreference (it re-runs the group's pattern) — also spelled `\g<0>`, `\g<01>` |
+| after `\` | `\g'1'` | `REJECTED` | `built` | planned | `recursion` | vm | subroutine call into a group, quoted spelling: \g'1' \g'name' — NOT a backreference — also spelled `\g'0'`, `\g'01'` |
 | after `\` | `\p{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character with the given Unicode property |
 | after `\` | `\P{L}` | `REJECTED` | `unbuilt` | planned | `unicode-props` | dfa|vm | a character without the given Unicode property |
 | after `\` | `\Q` | `REJECTED` | `unbuilt` | planned | `quoting` | dfa|vm | begin literal quoting, until \E |
@@ -2001,29 +2112,13 @@ Every non-base construct pcrec knows, as the parser itself sees it — 118 rows 
 | after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |
 | after `(?` | `(?(1)a\|b)` | `REJECTED` | `unbuilt` | planned | `conditionals` | vm | conditional group (?(condition)yes\|no) |
+| after `(?` | `(?(DEFINE)(?<w>a))` | `REJECTED` | `built` | planned | `recursion` | dfa|vm | define-only group: the body never runs where it is written and exists to be called -- the same thing (?:BODY){0} means |
 | after `(?` | `(?&name)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into the named group |
 | after `(?` | `(?R)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse the whole pattern |
-| after `(?` | `(?0)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1 |
-| after `(?` | `(?1)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 1 |
-| after `(?` | `(?2)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 2 |
-| after `(?` | `(?3)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 3 |
-| after `(?` | `(?4)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 4 |
-| after `(?` | `(?5)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 5 |
-| after `(?` | `(?6)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 6 |
-| after `(?` | `(?7)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 7 |
-| after `(?` | `(?8)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 8 |
-| after `(?` | `(?9)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 9 |
-| after `(?` | `(?+1)(a)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT |
-| after `(?` | `(a)(?-01)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, leading zero |
-| after `(?` | `(a)(?-1)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call to the group 1 to the LEFT |
-| after `(?` | `(a)(a)(?-2)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 2 to the left |
-| after `(?` | `(a)(a)(a)(?-3)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 3 to the left |
-| after `(?` | `(a)(a)(a)(a)(?-4)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 4 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(?-5)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 5 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(?-6)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 6 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(?-7)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 7 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 8 to the left |
-| after `(?` | `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call, 9 to the left |
+| after `(?` | `(?0)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1 — also spelled `(?00)` |
+| after `(?` | `(?1)` | `REJECTED` | `built` | planned | `recursion` | vm | recurse into capture group 1 — also spelled `(?2)`, `(?3)`, `(?4)`, `(?5)`, `(?6)`, `(?7)`, `(?8)`, `(?9)`, `(?10)`, `(?01)` |
+| after `(?` | `(?+1)(a)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call to the Nth group to the RIGHT — also spelled `(?+2)(a)(b)` |
+| after `(?` | `(a)(?-1)` | `REJECTED` | `built` | planned | `recursion` | vm | relative subroutine call to the group 1 to the LEFT — also spelled `(a)(?-01)`, `(a)(a)(?-2)`, `(a)(a)(a)(?-3)`, `(a)(a)(a)(a)(?-4)`, `(a)(a)(a)(a)(a)(?-5)`, `(a)(a)(a)(a)(a)(a)(?-6)`, `(a)(a)(a)(a)(a)(a)(a)(?-7)`, `(a)(a)(a)(a)(a)(a)(a)(a)(?-8)`, `(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)`, `(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)` |
 | after `(?` | `(?[[a]])` | `REJECTED` | `unbuilt` | planned | `extended-classes` | dfa|vm | extended character class with set operations: (?[[a]&&[b]]) (?[[a]-[b]]) |
 | after `(?` | `(?)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | empty option setting |
 | after `(?` | `(?-i)` | `REJECTED` | `built` | planned | `modifiers` | dfa|vm | unset options: (?-i) (?-im:...) |

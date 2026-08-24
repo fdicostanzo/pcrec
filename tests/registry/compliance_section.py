@@ -108,7 +108,14 @@ BASE_KEYS = frozenset([
     "base:braced-whitespace-scope", "base:capturing-group-limit",
     "base:class-brackets-basic", "base:class-escape-fallbacks",
     "base:class-quoting-e", "base:class-set-ops-uts18",
-    "base:conditional-assert", "base:conditional-define",
+    "base:conditional-assert",
+    # "base:conditional-define" RETIRED at [DD-14] wave F: `(?(DEFINE)` is
+    # a real registry row now (module `recursion`, D71 item 4), so its
+    # annotation is keyed to that row's own `syntax` and checked against a
+    # live dump instead of against this allowlist. Left as a comment rather
+    # than deleted so a reader who greps for the old key finds out where it
+    # went; the entry itself must go, or a base key nothing uses would sit
+    # here forever certifying a construct that no longer needs one.
     "base:conditional-name-disambiguation",
     "base:conditional-recursion-test", "base:conditional-version",
     "base:dot", "base:double-quantifier", "base:escapes-control-letters",
