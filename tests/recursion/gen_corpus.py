@@ -1587,6 +1587,58 @@ SLOTFAMILIES = [
 # quantified.rxt -- SS2.6: a call is an ordinary repeatable item
 # ===========================================================================
 QUANTIFIED = [
+    # [DD-14 wave E] S157's ANSWER-LEVEL WITNESS, and finding it is what
+    # closed the row. Wave B+C landed S157 as expected-UNDETECTED with a
+    # measurement: `(?&g)*+`, the shape SS9.3 predicted the hang on, does not
+    # go through possessify at all (parse.c desugars the possessive SUFFIX to
+    # A_ATOMIC(A_REP) and `vm_lifts` declines on the nullable fixpoint, which
+    # is S156's arm), so the row's own sabotage had no observable subject and
+    # the corpus scored 0fail with BOTH possessify arms removed.
+    #
+    # THE PATH THE SEARCH HAD MISSED IS THE OTHER DIRECTION. possessify.c
+    # governs the AUTOMATIC possessification of a NON-possessive quantifier,
+    # and the quantifier it wrongly possessifies under the sabotage is not the
+    # one over the call at all -- it is the `a?` INSIDE THE CALLEE, made to
+    # look prefix-free by a call whose first set has been emptied. MEASURED
+    # on the sabotaged build: `^(a?)(?1)+a$` stamps RX_VM_STRATS 0x3 (the
+    # POSSESSIVE bit joins BACKTRACKING, 0x2 on the shipped build) and answers
+    # NOMATCH on "a", where the shipped build and libpcre2 both match (0,1) --
+    # `(a?)` must give its `a` back so the trailing literal can have it, and a
+    # possessified `a?` cannot.
+    ("AUTOMATIC POSSESSIFICATION MUST NOT REACH ACROSS A CALL (D71 item 6, "
+     "design SS4.4a site 21, sabotage row S157). These are ORDINARY greedy "
+     "quantifiers -- no `+` suffix anywhere -- and the question is whether "
+     "the optimiser turns the callee's own `a?` possessive on the strength "
+     "of what it thinks follows the CALL. It must not: a call's first set is "
+     "widened to every byte and the position automaton declines outright, "
+     "precisely so that the callee is never narrowed on account of a call "
+     "site. THE BACKTRACK IS THE TEST -- each cell needs `(a?)` to GIVE ITS "
+     "`a` BACK so the trailing literal can have it, which a possessified "
+     "`a?+` cannot do.", [
+        B(r"^(a?)(?1)+a$", [('m', "a"), ('m', "aa"), ('m', "aaa"),
+                            ('n', "b")], RC, groups=1,
+          note="THE ROW'S DETECTOR. On \"a\": `(a?)` takes the `a`, the "
+               "`(?1)+` matches empty, the trailing `a` has nothing left "
+               "and the match must BACK UP into group 1. MEASURED under "
+               "sabotage S157: nomatch."),
+        B(r"^(a?)(?1){2}a$", [('m', "a"), ('m', "aaa"), ('n', "b")],
+          RC, groups=1,
+          note="THE SAME BACKTRACK THROUGH A COUNTED QUANTIFIER rather "
+               "than `+`, so a fix that only taught `+` about calls is not "
+               "enough. MEASURED under sabotage S157: nomatch on \"a\"."),
+        B(r"^(a?)(?1)*$", [('m', ""), ('m', "a"), ('m', "aaa"), ('n', "b")],
+          RC, groups=1,
+          note="THE STAMP-ONLY CELL, kept because it is the SHARPEST "
+               "STATEMENT of what the sabotage does and the WEAKEST "
+               "statement of what a corpus can see: S157 flips this "
+               "artifact from RX_VM_STRATS 0x2 to 0x3 and EVERY ANSWER "
+               "STAYS THE SAME. Possessifying `a?` here is harmless "
+               "because nothing after the call needs the `a` back. A row "
+               "resting on this cell alone would have stayed UNDETECTED, "
+               "which is exactly the trap wave B+C's measurement fell "
+               "into; the two cells above are what a trailing literal "
+               "adds."),
+    ]),
     # [DD-14 wave B+C, code lane] S157's OWN WITNESS, and it is here rather
     # than in atomicity.rxt because its point is the RUNG rather than the
     # atomicity: `(?&g)*+` over a NULLABLE callee is the one shape design
