@@ -253,6 +253,18 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   | `altcls.c` `altcls_branch_peel` | requires the branch's FIRST flattened atom to be a single-byte `A_CLASS`; a leading call DECLINES. A call later in the branch is carried through `altcls_rebuild_cat` **by pointer**, never copied. | no |
   | `altcls.c` `altcls_cat_flatten` | a pure spine flattener with no kind assumption; a non-`A_CAT` node is a length-1 spine of itself. | no |
 
+  **[DD-14 wave B+C] THE ONE DEFERRED RE-READ, DISCHARGED.** The table's only
+  open item was `vm_lifts` once `vm_nullable` became the graph fixpoint. It was
+  re-read, and the answer INVERTED from "declines for an uninteresting reason"
+  to "declines for the load-bearing one": `vm_nullable`'s `A_CALL` arm is now
+  `return !a->u.call.nonnullable`, so `(?>(?&g)*)` for a NON-nullable `g` is
+  lifted (correctly — the star can no longer spin) and for a nullable `g` is
+  not. That is not a cosmetic change of reason. It is the ONLY gate standing
+  between `(?&g)*+` and a possessified region, so mech row **S157** aims at
+  `vm_nullable`'s arm and not at `possessify.c`: souring the arm to a constant
+  `false` is what a wrong callee-nullability answer would do, and the corpus
+  cell that catches it is a nullable callee under a possessive star.
+
   **AND THE INSPECTION FOUND SOMETHING THE SWITCH CENSUS COULD NOT — A PASS
   ORDERING HAZARD FOR `u.call.body`, WHICH THE DESIGN DOES NOT ADDRESS.**
   `.body` is filled by the end-of-parse resolution pass (`pcrec_bref_resolve`,
