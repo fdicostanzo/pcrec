@@ -267,6 +267,371 @@ NONATOMIC = [
 ]
 
 # ===========================================================================
+#  lookbehind.rxt — `(?<=` and `(?<!`: fixed bodies, SAME-length alternatives
+#  (design §10.2; wave D). EQUAL widths only: python `re` requires every
+#  lookbehind alternative to have the SAME length (G10 — the divergence is
+#  about DIFFERING widths, not about alternation at all), so this file stays
+#  python-verifiable and `lookbehind_widths.rxt` next door carries the cells
+#  that are not. Computed, still — a hand marking is what R32 C3 caught.
+# ===========================================================================
+LOOKBEHIND = [
+ cell("(?<=a)b", LA, [("ab", 0), ("b", 0), ("xb", 0), ("a", 0), ("aab", 0)],
+      "THE SHAPE ITSELF, and the second subject is design §3.4's B5 by name: "
+      "`(?<=a)b` on \"b\" is NOMATCH because the START-OF-SUBJECT GUARD "
+      "(`scan_position < k`) fires before the back-step is ever called. Its "
+      "negative twin below answers (0,1) on the same subject, which is what "
+      "makes the guard's ANSWER observable rather than just its existence."),
+ cell("(?<=abc)x", LA, [("abcx", 0), ("bcx", 0), ("x", 0), ("abcxy", 0)],
+      "A MULTI-CHARACTER fixed body. \"bcx\" is B5's second cell: two "
+      "characters precede the `x` and the branch needs three."),
+ cell("(?<=[ab][cd])x", LA, [("acx", 0), ("bdx", 0), ("aax", 0), ("cx", 0)],
+      "CLASSES behind the cursor. Width 2, fixed, and the body is emitted by "
+      "`vm_emit` unchanged -- a class test inside a lookbehind is the same "
+      "one-line class test it is anywhere else (§3.5(3))."),
+ cell("(?<=a{3})x", LA, [("aaax", 0), ("aax", 0), ("aaaax", 0)],
+      "AN EXACT COUNT IS FIXED WIDTH, and it is the cell §3.4's follow ruling "
+      "turns on: `a{3}` is lowered as an `A_REP` that takes a cursor rung "
+      "with an MRL clamp whose literal MOVES with the follow, so a lookbehind "
+      "whose body was left unscoped would get a different bound here. F3 "
+      "measured exactly this pair."),
+ cell("(?<=(?:ab){2})x", LA, [("ababx", 0), ("abx", 0), ("ababab", 0)],
+      "...and the SHARPER half of that pair (R33's verifier's own cell): an "
+      "exact count over a GROUP is fixed width too, and a reader is likelier "
+      "to think a group is not a rung than to think `a{3}` is not."),
+ cell("(?<=ab|cd)x", LA, [("abx", 0), ("cdx", 0), ("aex", 0), ("bx", 0),
+                          ("x", 0)],
+      "TWO BRANCHES OF THE SAME WIDTH -- the alternation cell python "
+      "ACCEPTS (G10). Each branch gets its own back-step and its own retry "
+      "frame; branch 1 failing retreats into branch 2 through the ordinary "
+      "fail label."),
+ cell("(?<=ab|cd|ef)x", LA, [("abx", 0), ("cdx", 0), ("efx", 0), ("ghx", 0)],
+      "THREE same-width branches, so the chain is longer than the two-branch "
+      "shape a reader would generalise from: the LAST branch pushes no retry "
+      "frame at all, and only a third branch shows that the middle one does."),
+ cell("(?<!a)b", LA, [("ab", 0), ("b", 0), ("xb", 0), ("bb", 0)],
+      "THE NEGATIVE FORM, and \"b\" is B5's discriminating subject: (0,1) "
+      "here where the positive form is NOMATCH. This is also the polarity on "
+      "which a wrong width would be a FALSE MATCH rather than a decline, "
+      "which is why §3.4's end-check returns HARD on this arm (ASK 2)."),
+ cell("(?<!ab|cd)x", LA, [("abx", 0), ("cdx", 0), ("aex", 0), ("x", 0)],
+      "The negative form with same-width branches: the assertion holds only "
+      "when EVERY branch fails, which is what running out of branches means "
+      "-- ordinary failure into the pushed `L_neg_ok` frame (§3.3)."),
+ cell("(?<=)x", LA, [("x", 0), ("ax", 0), ("y", 0)],
+      "§2.6's DEGENERATE BODY, behind. An empty body always succeeds, so the "
+      "positive form is a NO-OP -- and it needs no special case: the body is "
+      "an A_EMPTY of width 0, ONE branch, and the back-step steps back zero "
+      "characters."),
+ cell("(?<!)x", LA, [("x", 0), ("ax", 0)],
+      "...and the negative form with an empty body is `(*FAIL)`."),
+ cell("a(?<=a)b", LA, [("ab", 0), ("ac", 0), ("xab", 0)],
+      "A lookbehind in the MIDDLE, where the entry position is not the "
+      "attempt position -- the back-step is relative to the CURSOR, and the "
+      "end-check is what proves the body landed back on it."),
+ cell("(?<=(a)(b))c", LA, [("abc", 0), ("axc", 0)],
+      "CAPTURES INSIDE A LOOKBEHIND, retained on success exactly as a "
+      "lookahead's are (§3.5(1) measures this cell: g1=(0,1) g2=(1,2)). It "
+      "is also the first reason the body cannot be a reverse DFA: the "
+      "reverse pass is over the CAPTURE-ERASED pattern (D31) and none of "
+      "this survives erasure."),
+ cell("(?<=(aa)|(ab))c", LA, [("aac", 0), ("abc", 0), ("bac", 0)],
+      "BRANCH ORDER AT EQUAL WIDTHS, which is the half of §2.4 level 1 that "
+      "python can also verify: written order decides, and WHICH branch "
+      "committed is observable in the groups. The differing-width half is in "
+      "lookbehind_widths.rxt and is `# pcre2-only`."),
+ cell("(?<=a)", LA, [("a", 0), ("ba", 0), ("b", 0), ("", 0)],
+      "A lookbehind as the WHOLE pattern: a zero-width match AFTER an `a`, "
+      "so the reported span is empty and its position is the assertion's."),
+ cell("(?<=a(?=b))ab", LA, [("ab", 0), ("ac", 0), ("xab", 0)],
+      "A NESTED LOOKAHEAD INSIDE A LOOKBEHIND, and it is width 1 -- a nested "
+      "lookaround contributes 0 to both `minw` and `maxw` (§3.1(d)), so the "
+      "branch stays FIXED and ships. It is also §3.2.1's uniform-scoping "
+      "case: the inner assertion's cursor runs AHEAD of the entry position, "
+      "so the lookbehind's own follow arithmetic does not hold inside it and "
+      "the scoping has to be unconditional."),
+ cell("(?<=(?<=a)b)c", LA, [("abc", 0), ("xbc", 0), ("bc", 0)],
+      "A LOOKBEHIND INSIDE A LOOKBEHIND -- two position slots live at once, "
+      "and the outer end-check must compare against the OUTER entry."),
+ cell("(?<=a(?!b))x", LA, [("ax", 0), ("abx", 0), ("x", 0)],
+      "A nested NEGATIVE lookahead inside a lookbehind: still width 1."),
+ cell("(?<=a)b|(?<=bc)d", LA, [("abd", 0), ("bcd", 0), ("ab", 0), ("xcd", 0)],
+      "One lookbehind per ALTERNATION BRANCH, so the two allocate different "
+      "slots and neither's end-check may read the other's."),
+ cell("((?<=a)b)+", LA, [("ab", 0), ("abb", 0), ("b", 0), ("abab", 0)],
+      "A lookbehind inside a CAPTURE inside a QUANTIFIER: the assertion is "
+      "re-entered per iteration and its slots are re-set on every entry."),
+ cell("(?<=a)*b", LA, [("ab", 0), ("b", 0)],
+      "A QUANTIFIED lookbehind, so the EMPTY-ITERATION guard is exercised "
+      "behind as well as ahead: `vm_nullable` answers true for A_LOOK "
+      "whatever its direction, and if it did not this cell would burn the "
+      "step budget rather than hang (S127)."),
+ cell("(?>(?<=a)b)", LA + ",atomic-groups", [("ab", 0), ("b", 0)],
+      "A lookbehind inside an ATOMIC GROUP: two cut marks live at once, and "
+      "the outer cut must not discard frames the inner one still owns."),
+ cell("(?<=(?>ab))c", LA + ",atomic-groups", [("abc", 0), ("bc", 0)],
+      "...and the other nesting order, an atomic group inside a lookbehind. "
+      "Fixed width 2, because the cut removes MATCHES and never BYTES."),
+ cell("(?<=a)(?<=ab)c", LA, [("abc", 0), ("xbc", 0), ("bc", 0)],
+      "TWO LOOKBEHINDS IN SEQUENCE at the same position, of DIFFERENT depths "
+      "-- design §2.3's B4 composite (`PCRE2_INFO_MAXLOOKBEHIND` is the MAX, "
+      "not the sum). Independent slots, independent end-checks."),
+ cell("(?<=ab)(?<=b)c", LA, [("abc", 0), ("bc", 0)],
+      "...and the same pair written deepest-first."),
+ cell("(?<=\\w)x", LA + ",classes", [("ax", 0), ("x", 0), (".x", 0), ("9x", 0)],
+      "THE ASSERTION FAMILY's OWN BODY. `\\b` expands to "
+      "`(?:(?<!\\w)(?=\\w)|(?<=\\w)(?!\\w))` and this is half of it -- one "
+      "class, fixed width 1. §2.5's rule is exactly big enough for the whole "
+      "family and that is MEASURED rather than arranged (§6.1)."),
+ cell("(?<!\\w)x", LA + ",classes", [("ax", 0), ("x", 0), (".x", 0)],
+      "...and the other half."),
+ cell("(?<=\\n)x", LA, [("\nx", 0), ("x", 0), ("ax", 0)],
+      "The third body the family uses, and the one `(?m)^`'s expansion "
+      "needs."),
+ cell("(?<=[^a])b", LA, [("xb", 0), ("ab", 0), ("b", 0)],
+      "A NEGATED class behind the cursor."),
+ cell("(?<=a{2})b", LA, [("aab", 0), ("ab", 0), ("aaab", 0)],
+      "An exact count of 2, the smallest body where the guard and the "
+      "back-step disagree about how much they each rule out."),
+ cell("(?<!a{2})b", LA, [("aab", 0), ("ab", 0), ("b", 0)],
+      "...negated, where a wrong width would be a FALSE MATCH."),
+ cell(r"(?<=a)\Kb", "assertions," + LA, [("ab", 0), ("b", 0)],
+      "§2.7's FOUR COMPILING CELLS, the lookbehind member. The refusal is "
+      "about `\\K` INSIDE the assertion; once it has closed, `\\K` is the "
+      "ordinary construct module `assertions` already ships. A check that "
+      "latched on \"a lookaround was seen\" would wrongly refuse this."),
+ cell(r"(?<=\Ga)b", "assertions," + LA, [("ab", 0), ("xab", 0)],
+      "`\\G` INSIDE A LOOKBEHIND means what it means outside one -- an "
+      "absolute position test against `startpos` -- and needs nothing from "
+      "this module (§3.8). The startpos axis for it is in startpos.rxt."),
+]
+
+# ===========================================================================
+#  lookbehind_widths.rxt — DIFFERENT-length branches (design §10.2; G1's
+#  cells). `# pcre2-only` by construction: python `re` refuses every pattern
+#  here with "look-behind requires fixed-width pattern", and the divergence is
+#  about DIFFERING widths rather than about alternation (G10). Computed, not
+#  declared -- the marking is what this generator exists for.
+# ===========================================================================
+LOOKBEHIND_WIDTHS = [
+ cell("(?<=a|bc)x", LA, [("ax", 0), ("bcx", 0), ("cx", 0), ("x", 0),
+                         ("zbcx", 0), ("abcx", 0)],
+      "THE HEADLINE CELL of §2.5: TWO top-level branches, each FIXED, of "
+      "widths 1 and 2 -- legal in PCRE2, an ERROR in python (G1), and pcrec "
+      "SHIPS it. \"cx\" is design §3.4's B5 cell that shows the branches are "
+      "INDEPENDENT: neither `a` nor `bc` precedes the `x`, so the assertion "
+      "fails through both. Its near-twin `(?<=(a|bc))x` -- ONE branch of "
+      "width 1..2 -- is REFUSED and is in refused.rxt; the difference "
+      "between those two lines is exactly the level-1/level-2 split §2.4 "
+      "measured, and it is the thing in this module most likely to be read "
+      "as a defect."),
+ cell("(?<=a|bc|def)x", LA, [("ax", 0), ("bcx", 0), ("defx", 0), ("efx", 0),
+                             ("x", 0)],
+      "THREE branches of three DIFFERENT widths, so the chain is not the "
+      "two-branch shape a reader generalises from and the middle branch's "
+      "retry frame is load-bearing."),
+ cell("(?<!a|bc)x", LA, [("ax", 0), ("bcx", 0), ("cx", 0), ("x", 0)],
+      "The rule is POLARITY-BLIND (§2.3's own row). And this is the arm "
+      "where a wrong per-branch width is a FALSE MATCH rather than a "
+      "decline, which is why the end-check returns HARD here -- sabotage row "
+      "S136 carries this spelling for exactly that reason."),
+ cell("(?<=(a)|(aa))c", LA, [("aac", 0), ("ac", 0), ("c", 0)],
+      "§2.4 LEVEL 1, MEASURED, AND IT IS THE SHARPEST CELL IN THE MODULE: "
+      "top-level branches are tried in WRITTEN ORDER, so on \"aac\" branch 1 "
+      "wins and g1=(1,2) -- the SHORTER match, written first. Compare the "
+      "next cell, which is the same two branches the other way round and "
+      "answers with the LONGER one. An implementation that ordered branches "
+      "by width would get exactly one of these two right."),
+ cell("(?<=(aa)|(a))c", LA, [("aac", 0), ("ac", 0)],
+      "...the same two branches reversed: branch 1 wins again, g1=(0,2), the "
+      "LONGER match. Written order, not length."),
+ cell("(?<=(a)|(aa)|(aaa))c", LA, [("aaac", 0), ("aac", 0)],
+      "Three widths, shortest written first."),
+ cell("(?<=(aaa)|(aa)|(a))c", LA, [("aaac", 0), ("ac", 0)],
+      "...and longest written first. Both answer through branch 1."),
+ cell("(?<=x|abc)y", LA, [("xy", 0), ("abcy", 0), ("y", 0), ("bcy", 0)],
+      "Widths 1 and 3, so the guard rules out the long branch on subjects "
+      "where the short one is still viable."),
+ cell("(?<=ab|c)x", LA, [("abx", 0), ("cx", 0), ("bx", 0), ("x", 0)],
+      "The long branch written FIRST, which is the order that makes the "
+      "guard fire on branch 1 and fall through to branch 2 rather than "
+      "reaching the back-step."),
+ cell("(?<=a|bc)*x", LA, [("ax", 0), ("bcx", 0), ("x", 0)],
+      "A QUANTIFIED differing-width lookbehind: the empty-iteration guard "
+      "and the per-branch retry frames at the same time."),
+ cell("a(?<=a|xbc)b", LA, [("ab", 0), ("xbcb", 0)],
+      "Mid-pattern, so the entry position is not the attempt position and "
+      "the two branches step back from a CURSOR rather than from 0."),
+ cell("(?<=|a)x", LA, [("x", 0), ("ax", 0), ("bx", 0)],
+      "A ZERO-WIDTH BRANCH BESIDE A CONSUMING ONE, and it is here because it "
+      "FOUND A DEFECT. Width 0 is a legal fixed width, so §2.5 admits this "
+      "body -- and the emitted start-of-subject guard for it was "
+      "`scan_position < 0`, an always-false comparison on a `size_t` that "
+      "gcc REFUSES under the harness's `-Wall -Wextra -Werror` generated "
+      "build (`-Wtype-limits`). The guard is now emitted only for k > 0, "
+      "which is the condition being unsatisfiable rather than an exception "
+      "for one body shape. Branch 1 is width 0 and always succeeds, so the "
+      "assertion is a no-op and the second branch is never reached."),
+ cell("(?<=a|)x", LA, [("x", 0), ("ax", 0)],
+      "...and the zero-width branch written SECOND, which is the order that "
+      "makes it the LAST branch -- the arm that emits `goto rx_fail` rather "
+      "than a jump to the next branch, and therefore a different guard site "
+      "from the cell above."),
+ cell("(?<!a|)x", LA, [("x", 0), ("ax", 0)],
+      "...and the negative form, where a zero-width branch that always "
+      "succeeds makes the whole assertion `(*FAIL)`."),
+]
+
+# ===========================================================================
+#  startpos.rxt — `ms`/`ns` cells over a lookbehind (design §10.2, §3.8)
+#
+#  THE AXIS A STARTPOS-BLIND CORPUS WOULD MISS ENTIRELY. A lookbehind READS
+#  SUBJECT BYTES BEFORE `startpos`, which is a CONTRACT question rather than a
+#  syntax one, and both oracles agree on it. Sabotage row S135 clamps the
+#  emitted guard to `scan_position - startpos < k` and its prediction is that
+#  the `ms` cells here go red while every startpos-0 cell in the tree stays
+#  green -- so a corpus without this file could not falsify it.
+# ===========================================================================
+STARTPOS = [
+ cell("(?<=a)b", LA, [("ab", 1), ("ab", 0), ("aab", 2), ("aab", 1),
+                      ("b", 0), ("xb", 1)],
+      "§3.8's MEASURED CELL, BY NAME: `(?<=a)b` on \"ab\" AT STARTPOS 1 "
+      "MATCHES (1,2). The assertion is evaluated against the REAL SUBJECT, "
+      "not against the search window -- the VM's `subject` pointer is the "
+      "whole subject and `scan_position` is an ABSOLUTE offset, so the "
+      "back-step reaches before `startpos` with no extra plumbing. The "
+      "startpos-0 cells beside it are the control that says this file is "
+      "about the window and not about the pattern."),
+ cell("(?<!a)b", LA, [("ab", 1), ("ab", 0), ("b", 0), ("xb", 1)],
+      "...and the NEGATIVE half of the same measurement, which is the one "
+      "that makes the fact unambiguous: at startpos 1 on \"ab\" this does "
+      "NOT match. A clamped guard would make the `a` invisible and the "
+      "negative assertion would HOLD -- a FALSE MATCH at exactly the "
+      "position the positive cell above reports a real one."),
+ cell("(?<=abc)x", LA, [("abcx", 3), ("abcx", 0), ("bcx", 1), ("bcx", 0)],
+      "A THREE-character back-step reaching three bytes before the window "
+      "start, and the shorter subject where it runs off the START OF THE "
+      "SUBJECT instead -- the guard's real job, which is not the same "
+      "question as the window's."),
+ cell("(?<=ab)c", LA, [("abc", 2), ("abc", 0), ("abc", 1)],
+      "The back-step landing EXACTLY on offset 0, the boundary case between "
+      "the guard rejecting and the body running."),
+ cell("(?<=ab|cd)x", LA, [("abx", 2), ("cdx", 2), ("abx", 0), ("cdcdx", 3)],
+      "Multi-branch under a startpos, so EVERY branch's back-step is "
+      "absolute rather than only the first one's."),
+ cell("(?<=a|bc)x", LA, [("ax", 1), ("bcx", 2), ("bcx", 1), ("abcx", 2)],
+      "DIFFERING widths under a startpos: the two branches reach different "
+      "distances behind the same window start, which is the cell a clamp "
+      "that happened to be right for width 1 would still fail."),
+ cell(r"(?<=\Ga)b", "assertions," + LA, [("ab", 1), ("ab", 0), ("xab", 1),
+                                         ("xab", 2)],
+      "`\\G` INSIDE the lookbehind, which is the OTHER absolute-position "
+      "reading in the same construct: `\\G` tests against `startpos` while "
+      "the back-step ignores it, so this cell is where the two would be "
+      "confused if either were wrong (§3.8)."),
+ cell("a(?<=a)b", LA, [("aab", 1), ("ab", 0), ("aab", 0)],
+      "A mid-pattern lookbehind under a startpos: the entry position is "
+      "neither 0 nor `startpos`."),
+ cell("(?<=(a)|(bc))x", LA, [("ax", 1), ("bcx", 2), ("abcx", 1)],
+      "Captures inside a differing-width lookbehind reached from a window "
+      "start -- the group spans are ABSOLUTE offsets too, and a clamped "
+      "back-step would report them shifted rather than merely miss."),
+]
+
+# ===========================================================================
+#  nonatomic_behind.rxt — `(?<*` (design §10.2, §3.6; wave D's half of the
+#  `nonatomic.rxt` split R33 C2-9 made). `# pcre2-only`: python has no `(?<*`
+#  at all (G5), and the two `(?<=` control cells here are differing-width
+#  bodies python also refuses (G1). Computed, still.
+# ===========================================================================
+NONATOMIC_BEHIND = [
+ cell(r"(?<*(a)|(ba))c\2", LA + ",backrefs", [("bacba", 0), ("bac", 0)],
+      "§3.6's MEASURED WITNESS, BY NAME, and it is the ONE cell that goes "
+      "red if the per-branch retry frames are cut. On \"bacba\" it is (2,5) "
+      "with g1 UNSET and g2=(0,2): the assertion first succeeds through "
+      "branch 1, the follow `\\2` fails because g2 is unset, and the failure "
+      "RETREATS INTO BRANCH 2 -- re-running the back-step with THAT branch's "
+      "own `k` and undoing branch 1's captures through the ordinary trail "
+      "rewind. In the atomic form those frames are discarded by the cut; "
+      "here they are LOAD-BEARING."),
+ cell(r"(?<=(a)|(ba))c\2", LA + ",backrefs", [("bacba", 0), ("bac", 0)],
+      "...AND ITS ATOMIC CONTROL, which is the half that makes the pair a "
+      "measurement rather than an assertion: the same body one character "
+      "different in the spelling is NOMATCH on the same subject, because "
+      "`(?<=` keeps branch 1 and never reconsiders. Sabotage row S131 emits "
+      "the cut on both and this pair collapses; S122 emits it on neither and "
+      "it collapses the other way."),
+ cell(r"(?<*(ba)|(a))c\2", LA + ",backrefs", [("baca", 0), ("bacba", 0)],
+      "§3.6's F4 fourth row: the branch order reversed, so the retry goes "
+      "from the LONGER branch to the shorter one."),
+ cell(r"(?<*(a)|(ba))c", LA + ",backrefs", [("bac", 0), ("bacba", 0)],
+      "F4's third row -- NO FOLLOW to force a retry, so the non-atomic form "
+      "answers exactly as the atomic one would. It is the control that says "
+      "the previous cells measure RE-ENTRY and not merely `(?<*`."),
+ cell("(?<*a)b", LA, [("ab", 0), ("b", 0), ("xb", 0)],
+      "The plain shape: the same answer as `(?<=a)b`, which is the CONTROL "
+      "that the two spellings differ only where a retry is possible."),
+ cell("(?<*ab)c", LA, [("abc", 0), ("bc", 0)],
+      "A multi-character non-atomic body."),
+ cell("(?<*a|bc)x", LA, [("ax", 0), ("bcx", 0), ("cx", 0), ("abcx", 0)],
+      "DIFFERING widths, non-atomic: the branch frames stay live AND the "
+      "widths differ, which is the combination §3.6's drawing exists for. "
+      "NO MARK SLOT is allocated here at all -- that is how a reader tells "
+      "the two families apart in the emitted C and in `--emit-ir`."),
+ cell("(?<*a)*b", LA, [("ab", 0), ("b", 0)],
+      "QUANTIFIED non-atomic behind, so the empty-iteration guard is "
+      "exercised on the arm that allocates no mark."),
+ cell("(?<=(?<*a)b)c", LA, [("abc", 0), ("bc", 0)],
+      "A non-atomic lookbehind nested inside an ATOMIC one: the outer cut "
+      "discards the inner body's live choice points, which is correct and is "
+      "what makes `(?<=` atomic in the first place."),
+ cell("(?<*(?<=a)b)c", LA, [("abc", 0), ("bc", 0)],
+      "...and the other nesting order."),
+ cell("(?<*(a))a", LA, [("aa", 0), ("a", 0)],
+      "Captures inside a non-atomic lookbehind are retained exactly as the "
+      "atomic form's are -- the retention is the TRAIL's, not the cut's."),
+]
+
+# ===========================================================================
+#  workbudget.rxt — §3.7's LONG-SUBJECT LEADING multi-branch lookbehind
+#  (R33 C1-6), so the `n·Σk_i` work-charge shape is MEASURED rather than
+#  reasoned about. Every branch is width 2, so python verifies it (G10).
+# ===========================================================================
+_WB_LONG_NOMATCH = "z" * 1000
+_WB_LONG_MATCH   = "z" * 997 + "abx"
+
+WORKBUDGET = [
+ cell("(?<=ab|cd|ef|gh)x", LA,
+      [(_WB_LONG_NOMATCH, 0), (_WB_LONG_MATCH, 0), ("abx", 0), ("x", 0),
+       ("ghx", 0)],
+      "§3.7's CHARGE SHAPE, MEASURED. A LEADING multi-branch lookbehind is "
+      "charged `RX_CHARGE_WORK(k_i)` once per branch TRIED per candidate "
+      "start, and `rx_search`'s bump-along walks every position -- so one "
+      "search over an n-byte subject charges up to `n · Σk_i`, here 8 per "
+      "position. The first subject is 1000 bytes with NO match, so every "
+      "position is tried and every branch is charged; the second is the same "
+      "length with the match at the very end, so the same walk happens and "
+      "then succeeds. Against `VM_DEFAULT_WORK_BUDGET = 1000000000` four "
+      "branches summing to 20 reach the budget at a ~50 MB subject, which is "
+      "`PCREC_ERR_WORK` where PCRE2 matches; this file measures the SHAPE at "
+      "a size a corpus can carry, and the short cells beside it are the "
+      "control that the answer does not depend on the length."),
+ cell("(?<=ab|cd|ef|gh)x|q", LA,
+      [(_WB_LONG_NOMATCH, 0), ("q" + "z" * 500, 0)],
+      "THE SAME LEADING LOOKBEHIND WITH AN ESCAPE HATCH, which is the cell "
+      "that separates \"the walk is charged\" from \"the walk happens at "
+      "all\": the second subject matches at offset 0 through the OTHER "
+      "branch, so almost none of the charge is incurred, while the first "
+      "still pays for every position."),
+ cell("(?<!ab|cd|ef|gh)x", LA,
+      [(_WB_LONG_NOMATCH, 0), (_WB_LONG_MATCH, 0)],
+      "The NEGATIVE form of the same shape: every branch is still tried at "
+      "every position -- running out of branches is how the assertion HOLDS "
+      "-- so the negative arm pays the full `n · Σk_i` on the subject where "
+      "the positive one pays it too, and MATCHES where the positive one does "
+      "not."),
+]
+
+# ===========================================================================
 #  refused.rxt — the `perr` cells this wave owns
 # ===========================================================================
 REFUSED = [
@@ -291,6 +656,92 @@ REFUSED = [
  cell(r"(?=a(?:\K))x", "assertions," + LA, None, None, perr=True),
  cell(r"(?=(?:(?=\K)))x", "assertions," + LA, None, None, perr=True),
  cell(r"(?=\Ka)x", "assertions," + LA, None, None, perr=True),
+ # ---- [WAVE D] §2.5's VARIABLE-WIDTH REFUSALS ----------------------------
+ # A CAPABILITY LIMIT, and worded as one. The construct is REAL and the module
+ # is ENABLED, so this is not "requires module 'lookaround'" -- what is missing
+ # is the longest-first step-back loop §2.5 charters and this module does not
+ # build. Every cell below is a `perr` for pcrec; libpcre2's own verdict is
+ # recorded per block by the generator and it DIFFERS across the family, which
+ # is the point: on the unbounded bodies pcrec AGREES with PCRE2 (err 125), and
+ # on the bounded ones PCRE2 COMPILES what pcrec refuses.
+ cell("(?<=(a|bc))x", LA, None,
+      "THE CELL §2.5 EXISTS TO DISTINGUISH, and its near-twin `(?<=a|bc)x` "
+      "SHIPS (lookbehind_widths.rxt). This is ONE top-level branch of width "
+      "1..2; that is TWO branches of fixed widths 1 and 2. The difference is "
+      "exactly §2.4's level-1/level-2 split: within ONE branch PCRE2 tries "
+      "the step-back LENGTH longest-first, over a range whose ends come from "
+      "the new `pcrec_maxw` analysis, and that loop runs in the OPPOSITE "
+      "direction to every other ordered choice the emitter makes. §2.5 gives "
+      "three reasons to charter it rather than ship it in the same wave as "
+      "the analysis. THIS ASYMMETRY IS THE MOST LIKELY THING IN THIS MODULE "
+      "TO BE CALLED A DEFECT and §12 P-3 says how to refute it.",
+      perr=True),
+ cell("(?<=a{2,3})x", LA, None,
+      "A BOUNDED VARIABLE body: PCRE2 compiles it (capped by the compile "
+      "context's `max_varlookbehind`, whose default bisects to 255), python "
+      "refuses it, pcrec refuses it. G2's cell.", perr=True),
+ cell("(?<=a?)x", LA, None, "Width 0..1 -- the smallest variable body there "
+      "is, and still variable.", perr=True),
+ cell("(?<=a{0,3})x", LA, None, None, perr=True),
+ cell("(?<=a*)x", LA, None,
+      "AND HERE pcrec AGREES WITH PCRE2, which is err 125 \"length of "
+      "lookbehind assertion is not limited\". The refusals in this family are "
+      "not one verdict: an unbounded body is refused by BOTH, a bounded one "
+      "only by pcrec, and a block that did not record which would let a "
+      "reader take agreement for confirmation.", perr=True),
+ cell("(?<=a+)x", LA, None, None, perr=True),
+ cell("(?<=a{2,})x", LA, None, None, perr=True),
+ cell("(?<=a*?)x", LA, None, None, perr=True),
+ cell("(?<=a*+)x", LA + ",atomic-groups", None,
+      "The POSSESSIVE spelling of the same unbounded body: the rule is blind "
+      "to the quantifier's strategy, because `pcrec_maxw` is.", perr=True),
+ cell("(?<=(?>a*))x", LA + ",atomic-groups", None,
+      "...and the ATOMIC-GROUP spelling. The cut removes MATCHES, never "
+      "BYTES, so the width is unchanged and still unbounded.", perr=True),
+ cell("(?<=(?:a|bc)d)x", LA, None,
+      "ONE branch whose own INTERIOR alternation makes it variable (2..3). "
+      "A `|`-counting scanner would read this as two branches and accept it, "
+      "which is why the branch split comes from `AltInfo.nbr` -- the count "
+      "the LOOP THAT DROVE THE PARSE produced -- and never from the text.",
+      perr=True),
+ cell("(?<=((a|bc)d))x", LA, None, None, perr=True),
+ cell("(?<!a*)x", LA, None,
+      "THE RULE IS POLARITY-BLIND (§2.3's own row): the same body behind a "
+      "negative assertion is refused for the same reason.", perr=True),
+ cell("(?<*a*)x", LA, None,
+      "...and ATOMICITY-BLIND.", perr=True),
+ cell("(?<!(a|bc))x", LA, None, None, perr=True),
+ cell("(?<*(a|bc))x", LA, None, None, perr=True),
+ cell(r"(a)(?<=\1)x", LA + ",backrefs", None,
+      "A BACKREFERENCE INSIDE A LOOKBEHIND, and pcrec's refusal here is "
+      "CONSERVATIVE rather than forced: PCRE2 accepts it (maxlb 1) because "
+      "the referenced group is fixed-width, and so could pcrec -- but a "
+      "backreference's width is decided at MATCH time by which alternative "
+      "the referenced group took, so `pcrec_maxw` answers "
+      "PCREC_W_UNBOUNDED for A_BREF and this refusal follows. §11's "
+      "follow-on row carries the refinement.", perr=True),
+ cell(r"(a|bc)(?<=\1)x", LA + ",backrefs", None,
+      "...and the case that is NOT conservative: a backreference to a "
+      "VARIABLE-width group. PCRE2 compiles it (maxlb 2), python refuses it, "
+      "and no fixed-width analysis can accept it. G3.", perr=True),
+ cell(r"(?=(?<=a*)b)x", LA, None,
+      "THE INNER RULE APPLIES THROUGH THE OUTER: a variable-width lookbehind "
+      "nested inside a lookAHEAD is still refused, by both oracles and by "
+      "pcrec. The lookahead has no width rule of its own -- that is exactly "
+      "why the assertion family's `\\Z` expansion `(?=\\n?\\z)` ships -- so "
+      "this cell fixes that the refusal belongs to the LOOKBEHIND and is not "
+      "a property of the enclosing construct.", perr=True),
+ cell(r"(?<=\n?\z)x", "assertions," + LA, None,
+      "§2.5's DISCRIMINATING ROW, and it is the one that stops \"the rule is "
+      "exactly big enough for the assertion family\" from being a "
+      "coincidence. `\\Z` IS `(?=\\n?\\z)` -- a lookAHEAD, where there is no "
+      "width rule at all -- and every one of the nine [DD-11]/D66 expansions "
+      "compiles under §2.5. THE SAME BODY ONE DIRECTION OVER is width 0..1 "
+      "and is refused, which is this cell. §12 P-12 is how to refute the "
+      "coincidence.", perr=True),
+ cell(r"(?<=\w?)x", LA + ",classes", None,
+      "...and the same shape with a class, so the refusal is about the "
+      "OPTIONALITY and not about `\\n` or `\\z`.", perr=True),
  cell("(?=a", LA, None,
       "THE UNTERMINATED FORMS. The port owns its own closing-`)` "
       "diagnostic, exactly as mod_atomic_groups.c\'s does -- "
@@ -299,6 +750,12 @@ REFUSED = [
       perr=True),
  cell("(?!a", LA, None, None, perr=True),
  cell("(?*a", LA, None, None, perr=True),
+ cell("(?<=a", LA, None,
+      "...and the three LOOKBEHIND spellings of the same thing, which wave D "
+      "added because until it landed they were declined at the doorway and "
+      "never reached the body parse that owns this diagnostic.", perr=True),
+ cell("(?<!a", LA, None, None, perr=True),
+ cell("(?<*a", LA, None, None, perr=True),
 ]
 
 # ===========================================================================
@@ -319,20 +776,37 @@ GATED = [
  cell("(?=a)b", "backrefs", None,
       "The WRONG module enabled buys nothing: the gate is per-row, not "
       "per-pattern.", perr=True),
- cell("(?<=a)b", LA, None,
-      "D65's SPLIT, AND THIS IS THE CELL THAT MEASURES IT. Module "
-      "`lookaround` is ENABLED and `(?<=...)` still refuses -- with the "
-      "enabled-but-unbuilt wording, not \"requires module\", because "
-      "telling a caller to enable something they have already enabled is an "
-      "actionable-sounding lie. The refusal comes from "
-      "`pcrec_laport_group`'s own tail check (the port ACCEPTS `=` `!` `*` "
-      "and DECLINES the three `<` tails at WANT_RESULT), which is exactly "
-      "what `--list-syntax` reads as `unbuilt`. WAVE D DELETES THIS BLOCK "
-      "and moves the cell to lookbehind.rxt.", perr=True),
- cell("(?<!a)b", LA, None, "The same for the negative lookbehind.", perr=True),
- cell("(?<*a)b", LA, None,
-      "...and for the non-atomic lookbehind, the row SR-9's 256-tail sweep "
-      "had to split out of the named-group path.", perr=True),
+ # [WAVE D] D65's SPLIT RETIRED HERE, and the three blocks that measured it
+ # went with it. At wave B+C module `lookaround` was ENABLED and `(?<=...)`
+ # still refused, with the enabled-but-unbuilt wording rather than "requires
+ # module" -- the port ACCEPTED `=` `!` `*` and DECLINED the three `<` tails at
+ # WANT_RESULT, which is exactly what `--list-syntax` read as `unbuilt`. Wave D
+ # landed the back-step, deleted the decline, and all six rows read `built`, so
+ # those three blocks would now be pinning a LIE. They are replaced by the
+ # closed-gate cell below and by lookbehind.rxt, which asserts the same three
+ # spellings COMPILE AND MATCH -- the count here going DOWN is the module
+ # landing, and that file is the control that says so.
+ cell("(?<=a)b", "", None,
+      "THE GATE, CLOSED, ON A LOOKBEHIND. With no module enabled the doorway "
+      "answers \"(?<=...) requires module 'lookaround'\" -- and this "
+      "spelling needs its own cell rather than inheriting the `(?=a)b` one "
+      "above, because `(?<` is THREE constructs and a name, split by tail at "
+      "SR-9, so a doorway change could move the lookbehinds while leaving "
+      "the lookahead row exactly where it was.", perr=True),
+ cell("(?<*a)b", "", None,
+      "...and the non-atomic lookbehind, the row SR-9's 256-tail sweep had "
+      "to split out of the named-group path -- the tail most likely to be "
+      "lost, since `*` is the one that is not a comparison operator.",
+      perr=True),
+ cell("(?<=(a|bc))x", LA, None,
+      "AND THE ONE ENABLED-AND-BUILT REFUSAL THIS MODULE STILL OWES A GATE "
+      "CELL: §2.5's variable-width limit is NOT the gate and NOT the "
+      "`unbuilt` column -- module `lookaround` is enabled, the row is "
+      "`built`, and the construct is real. It is the CAPABILITY tier, and "
+      "the wording says so instead of telling a caller to enable something "
+      "they already have. refused.rxt carries the family; this block is here "
+      "so the three tiers sit in one file where a reader can see they are "
+      "three different sentences.", perr=True),
  cell(r"(?=a\K)x", LA, None,
       "R33 C2-5's MASKING SHAPE, PINNED. Without `assertions` this cell is "
       "refused by the ASSERTIONS gate and never reaches §2.7's check at "
@@ -355,6 +829,16 @@ FILES = [
   "`(?=a)*` and family, including §2.6's empty-iteration cells"),
  ("nonatomic_ahead.rxt", NONATOMIC,
   "`(?*` only -- the wave B+C half of the `nonatomic.rxt` split (R33 C2-9)"),
+ ("lookbehind.rxt", LOOKBEHIND,
+  "`(?<=` and `(?<!`: fixed bodies, SAME-length alternatives (design §10.2)"),
+ ("lookbehind_widths.rxt", LOOKBEHIND_WIDTHS,
+  "DIFFERENT-length branches -- G1's cells, and §2.4's preference order"),
+ ("startpos.rxt", STARTPOS,
+  "`ms`/`ns` cells over a lookbehind -- §3.8's reads-before-startpos contract"),
+ ("nonatomic_behind.rxt", NONATOMIC_BEHIND,
+  "`(?<*`, carrying §3.6's measured witness `(?<*(a)|(ba))c\\2` by name"),
+ ("workbudget.rxt", WORKBUDGET,
+  "§3.7's long-subject LEADING multi-branch lookbehind (R33 C1-6)"),
  ("refused.rxt", REFUSED,
   "the `perr` cells this wave owns -- §2.7's `\\K` refusal and the "
   "unterminated forms"),
@@ -363,7 +847,7 @@ FILES = [
 ]
 
 HEADER = """\
-# tests/lookaround/%s -- module `lookaround` ([M6.6.2] wave B+C): %s
+# tests/lookaround/%s -- module `lookaround` ([M6.6.2]): %s
 #
 # GENERATED BY tests/lookaround/gen_corpus.py, and that is a property rather
 # than a convenience. Every expectation below was produced by driving the cell

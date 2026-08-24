@@ -113,13 +113,22 @@ fi
 SUBJDIR="$WORKDIR/subjects"
 mkdir -p "$SUBJDIR"
 i=0
+# [M6.6.2 wave D] SEVEN SUBJECTS ADDED FOR THE LOOKBEHIND, and they are added
+# rather than assumed: §1's population tripled at this wave and the sweep is
+# only as sharp as the subjects it runs over. A differing-width lookbehind
+# needs a subject where ONE branch fits and the other does not (`ax`, `bcx`,
+# `cx`), §2.4's preference-order cells need `aac`/`ac`/`c` to tell branch 1
+# from branch 2 by its captures, and §3.6's F4 fourth row is measured on
+# `baca` specifically. Adding them re-derived §2's disagreement count in the
+# same change, which is why that number moved too.
 for s in "" "a" "b" "x" "ab" "ba" "aa" "bb" "abc" "abd" "aab" "aba" "abab" \
-         "aaab" "xabc" "aabb" "bacba" "aaaab" "aaaac"; do
+         "aaab" "xabc" "aabb" "bacba" "aaaab" "aaaac" \
+         "c" "ac" "aac" "ax" "cx" "bcx" "baca"; do
     printf '%s' "$s" > "$SUBJDIR/$(printf 's%02d' "$i")"
     i=$((i + 1))
 done
 NSUBJ=$i
-[ "$NSUBJ" -eq 19 ] || die "the subject set is $NSUBJ files, not the 19 this script's population guards are computed against"
+[ "$NSUBJ" -eq 26 ] || die "the subject set is $NSUBJ files, not the 26 this script's population guards are computed against"
 ok "subject set: $NSUBJ subjects, shared by every section below"
 
 # ---- one artifact, many cells: compile + run a pattern over the sweep ----
@@ -231,9 +240,17 @@ PY
 # from a run and change it deliberately; never relax it to a floor** — a floor
 # would let the population SHRINK, and the cells this section exists for are
 # exactly the ones no other check in the tree can see.
+#
+# [M6.6.2 wave D] 14 -> 44, and it is the biggest single move this guard will
+# ever see: the wave added `lookbehind_widths.rxt` (14 blocks, EVERY one
+# `# pcre2-only` because python refuses differing-width lookbehind alternatives
+# outright — G1) and `nonatomic_behind.rxt` (11, python has no `(?<*` at all —
+# G5), plus 2 in `lookbehind.rxt` (`\K` and `\G`, which python lacks) and 3 in
+# `startpos.rxt`. Every one of those blocks has exactly ONE oracle, and this
+# sweep is it.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 14 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 14 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
+if [ "$NPO" -ne 44 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 44 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do
@@ -264,13 +281,21 @@ else nb=0; fi
 if [ "$na" -gt 0 ] && [ "$na" -eq "$nb" ]; then
     ndis=$(paste "$d2a" "$d2b" | awk -F'\t' '$1 != $2' | wc -l)
     # EXACT, not a floor, and MEASURED against libpcre2 rather than guessed:
-    # 13 cells of the 137 disagree, and every one is the atomic form saying
+    # 13 cells of the sweep disagree, and every one is the atomic form saying
     # NOMATCH where the non-atomic form matches — never the other way round,
     # which is the DIRECTION the discriminator has to have. They are the
     # (subject, startpos) pairs on which the body has a SECOND success that
     # `\1$` can use: "ab"@0, "aab"@0-1, "abab"@0-2, "aaab"@0-2, "aaaab"@0-3.
     # A compiler that cut BOTH spellings (S131) or NEITHER (S122) answers the
     # two identically and scores 0 here.
+    #
+    # [M6.6.2 wave D] THE SUBJECT SET GREW 19 -> 26 AND THIS NUMBER DID NOT
+    # MOVE, which is worth recording rather than passing over: none of the
+    # seven added subjects gives `(a|ab)` a SECOND success that `\1$` can use,
+    # so the disagreeing set is unchanged while the per-pattern cell count
+    # went 73 -> 97. The guard held across a population change, which is the
+    # only kind of evidence an exact literal can give that it is measuring
+    # what it names.
     if [ "$ndis" -eq 13 ]; then
         ok "§2 the atomicity discriminator: both forms agree with libpcre2 over $na cells each, and they DISAGREE WITH EACH OTHER on exactly $ndis — the cut is emitted for \`(?=\` and not for \`(?*\`, which is the whole difference between the two families (§2.2)"
     else

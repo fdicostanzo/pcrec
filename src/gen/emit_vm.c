@@ -4848,10 +4848,23 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
                last ? " (the LAST branch: no retry frame)" : ""));
 
         /* The start-of-subject guard. ABSOLUTE, never relative to startpos —
-         * see this function's header, note 1, and sabotage row S135. */
+         * see this function's header, note 1, and sabotage row S135.
+         *
+         * NOT EMITTED FOR A ZERO-WIDTH BRANCH, and that is the CONDITION
+         * being unsatisfiable rather than an exception carved out for one
+         * body shape: "fewer than 0 characters precede the cursor" is false
+         * for every cursor, and `scan_position` is a `size_t`, so the emitted
+         * test would be `scan_position < 0` — which gcc proves false under
+         * `-Wextra` (`-Wtype-limits`) and the harness's `-Werror` generated
+         * build then REFUSES. Found by `(?<=)x` and `(?<!)x`, §2.6's
+         * degenerate bodies, which are legal in both oracles and ship. The
+         * back-step call and its sentinel check are still emitted at width 0,
+         * because D58's rule is about WHERE the arithmetic lives and not
+         * about whether this particular constant makes it a no-op. */
         if (last) {
-            sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
-                      k, v->p);
+            if (k > 0)
+                sb_printf(b, "    if (scan_position < %d) goto %s_fail;\n",
+                          k, v->p);
             /* A NOTE AND NOT AN `assert`, and the reason is the listing's
               * own convention rather than taste: `VE_ASSERT` renders
               * "-> L<a>" and `a` is the label taken when the assertion HOLDS
@@ -4859,15 +4872,25 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
               * leave by `rx_fail`, which is not a label id, so an ASSERT event
               * here would print a confident `-> L0` naming a label the code
               * never jumps to. */
-            vm_ev(v, VE_NOTE, 0, 0, vm_rolef(v,
+            vm_ev(v, VE_NOTE, 0, 0, k > 0 ? vm_rolef(v,
                   "lookbehind: fewer than %d characters precede the cursor, "
-                  "and this is the last branch -- the assertion fails here", k));
+                  "and this is the last branch -- the assertion fails here", k)
+                  : "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                    "guard is emitted -- the condition it would test is false "
+                    "for every cursor");
         } else {
-            sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
-                      k, v->p, bl[i + 1]);
-            vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
-                  "lookbehind: fewer than %d characters precede the cursor, "
-                  "so try the next branch", k));
+            if (k > 0) {
+                sb_printf(b, "    if (scan_position < %d) goto %s_L%d;\n",
+                          k, v->p, bl[i + 1]);
+                vm_ev(v, VE_ASSERT, bl[i + 1], 0, vm_rolef(v,
+                      "lookbehind: fewer than %d characters precede the "
+                      "cursor, so try the next branch", k));
+            } else {
+                vm_ev(v, VE_NOTE, 0, 0,
+                      "lookbehind: a ZERO-WIDTH branch, so no start-of-subject "
+                      "guard is emitted -- the condition it would test is "
+                      "false for every cursor");
+            }
             vm_push(v, bl[i + 1],
                     "lookbehind: the NEXT-BRANCH continuation -- this branch's "
                     "body failing retreats into the branch written after it");

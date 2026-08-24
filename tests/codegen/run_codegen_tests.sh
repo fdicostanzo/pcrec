@@ -915,6 +915,16 @@ fi
 # [M6.5.2] THE CHECK CHANGES SHAPE, because the seam gained its SECOND and
 # THIRD entries and they are not like the first.
 #
+# [M6.6.2 wave D] THE FOURTH ENTRY, `<prefix>_back_step`, NEEDED NO CHANGE TO
+# THE MECHANISM AT ALL — only fixture rows and a second exact-count guard,
+# which is lookaround_design.md §4.4's own prediction and §12 P-1's falsifiable
+# form of it. A lookbehind steps back `k` CHARACTERS, which is the one step in
+# §3.4's shape whose answer depends on the encoding; inlining it as
+# `scan_position - k` changes NO ANSWER under the byte backend and is silently
+# wrong under any other, so the fixture-declared per-site count below is the
+# only instrument that can see it (sabotage row S133, S109's shape one
+# construct over).
+#
 # `<prefix>_next_pos` has no business anywhere inside the matcher:
 # unanchoredness is the automaton's own self-loop, so there is no external
 # advance for an engine to route through. A BACKREFERENCE COMPARE has no
@@ -1074,6 +1084,7 @@ resid_total=0
 resid_bad=0
 resid_files=0
 resid_brefdecl=0
+resid_backdecl=0
 while IFS=$'\t' read -r nm pat extra decl; do
     [ -n "$nm" ] || continue
     [ "$extra" = "-" ] && extra=""
@@ -1089,12 +1100,15 @@ while IFS=$'\t' read -r nm pat extra decl; do
     # of `<suffix>:<expected engine-body call count>` pairs.
     want_set=""
     nbref=0
+    nback=0
     for pair in $(printf '%s' "$decl" | tr ',' ' '); do
         want_set="$want_set rx_${pair%%:*}"
         case "${pair%%:*}" in bref_match|bref_match_caseless) nbref=$((nbref + 1)) ;; esac
+        case "${pair%%:*}" in back_step) nback=$((nback + 1)) ;; esac
     done
     want_set="$(printf '%s\n' $want_set | sort -u | tr '\n' ' ')"
     [ "$nbref" -gt 0 ] && resid_brefdecl=$((resid_brefdecl + 1))
+    [ "$nback" -gt 0 ] && resid_backdecl=$((resid_backdecl + 1))
 
     for f in "$WORKDIR/$nm.h" "$WORKDIR/${nm}_sc.c"; do
         [ -f "$f" ] || continue
@@ -1146,6 +1160,13 @@ residbref1	(a|b)\1	--features backrefs	next_pos:0,bref_match:1
 residbref3	(a)(b)\2\1\2	--features backrefs	next_pos:0,bref_match:3
 residbrefci	(?i:(a))(?i:\1)	--features backrefs,modifiers	next_pos:0,bref_match_caseless:1
 residbrefboth	(a)\1(?i:\1)	--features backrefs,modifiers	next_pos:0,bref_match:1,bref_match_caseless:1
+residlb1	(?<=ab)c	--features lookaround	next_pos:0,back_step:1
+residlb2	(?<=a|bc)x	--features lookaround	next_pos:0,back_step:2
+residlb3	(?<=a|bc|def)x	--features lookaround	next_pos:0,back_step:3
+residlbneg	(?<!ab|cd)x	--features lookaround	next_pos:0,back_step:2
+residlbna	(?<*a|bc)x	--features lookaround	next_pos:0,back_step:2
+residlbtwo	(?<=ab)(?<=b)c	--features lookaround	next_pos:0,back_step:2
+residlbbref	(a)(?<=a)\1	--features backrefs,lookaround	next_pos:0,bref_match:1,back_step:1
 EOF
 # THE SCOPED NON-VACUITY GUARD, EXACT AND NOT A FLOOR (R32 C2(b), and the
 # final re-check's wording item 1). The GLOBAL guard below cannot serve here:
@@ -1158,13 +1179,35 @@ EOF
 # declaration — which is the population-shrinking failure the guard exists to
 # catch, arriving through the guard itself. EXACT is this file's own
 # convention (check_class_ports, check_class_syntax_reach).
-if [ "$resid_brefdecl" -ne 4 ]; then
-    bad "[M5-SEAM/D58]: $resid_brefdecl fixtures declare a backreference residual entry, expected EXACTLY 4 — the population this check's second entry pair is asserted over moved. Deleting a fixture row must go RED here, which is the whole reason this guard is not the global one below"
+if [ "$resid_brefdecl" -ne 5 ]; then
+    bad "[M5-SEAM/D58]: $resid_brefdecl fixtures declare a backreference residual entry, expected EXACTLY 5 — the population this check's second entry pair is asserted over moved. Deleting a fixture row must go RED here, which is the whole reason this guard is not the global one below"
+fi
+# [M6.6.2 wave D] THE SAME GUARD FOR THE FOURTH ENTRY, WITH ITS OWN LITERAL,
+# and it is a SECOND guard rather than a wider first one — lookaround_design.md
+# §4.4(3) states the number here rather than leaving it to be discovered,
+# because R32 C5 found "the built column gains this module's rows for free"
+# asserted by nothing and a guard whose literal nobody wrote down is the same
+# shape. Two reasons not to fold lookbehind fixtures into the bref count: the
+# counts measure DIFFERENT THINGS, and R32's own argument against a floor
+# applies WITHIN a family rather than across families.
+#
+# SEVEN, and every one of them is a hand-written integer beside a pattern.
+# R32 C2(a)'s ruling applies here with a sharper edge than it had for
+# backrefs: deriving `back_step:<n>` by counting `|` in the body would be A
+# SECOND IMPLEMENTATION OF §2.5's BRANCH-SPLITTING RULE, and it would get
+# `(?<=(a|bc))x` (REFUSED, one branch) and `(?<=a|bc)x` (two branches) exactly
+# backwards — which are the two cells §2.5 exists to distinguish. The fixture
+# set is chosen so the number is not always the same fact: `residlbtwo` is TWO
+# one-branch lookbehinds and declares 2, so a reader cannot conclude that the
+# column counts lookbehinds OR that it counts `|`s. It counts CALL SITES, one
+# per top-level branch per lookbehind, which is what §3.4 emits.
+if [ "$resid_backdecl" -ne 7 ]; then
+    bad "[M5-SEAM/D58]: $resid_backdecl fixtures declare a lookbehind back-step residual entry, expected EXACTLY 7 — the population this check's FOURTH entry is asserted over moved. S133 inlines the back-step as 'scan_position - k' and drops the mask OR, which changes NO ANSWER under the byte backend, so this fixture-declared per-site count is its only possible detector and a shrinking population would take the detector with it"
 fi
 if [ "$resid_files" -eq 0 ] || [ "$resid_total" -eq 0 ]; then
     bad "[M5-SEAM/DD-12(7)]: NO residual entry was found in any emitted artifact — this check has no population and cannot certify anything. Either the residual embed (src/gen/enc/) stopped emitting, or its 'ENCODING RESIDUAL entry' marker moved and this check's extractor went blind"
 elif [ "$resid_bad" -eq 0 ]; then
-    ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a backreference compare; comment stripping is token-level and runs before the body tracking)"
+    ok "[M5-SEAM/DD-12(7)+D58]: $resid_total declared residual entr(y|ies) across $resid_files emitted surfaces, each called EXACTLY as its fixture declares ($resid_brefdecl fixtures declare a backreference compare, $resid_backdecl a lookbehind back-step, each population guarded by its own EXACT literal; comment stripping is token-level and runs before the body tracking)"
 fi
 
 # ---- [M6.5-DUPNAMES] THE REFLECTION TABLE'S ORDER, READ OFF THE ARTIFACT ---
