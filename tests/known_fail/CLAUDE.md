@@ -42,3 +42,47 @@ Removing one: when the ratchet flags a file, MOVE it into the matching
 understanding, because its scope may be accidental too.
 
 Maintenance: update this file when the directory's contents or contract change.
+
+## `dd14_bc_open.rxt` — [DD-14] wave B+C's three OPEN cells (2026-08-24)
+
+Three cells, each because a **RULING is owed** rather than a bug is open —
+`u9_atomic.rxt`'s shape, and for the reason this directory's own header gives:
+excluded from `make test` so the suite stays honest, RUN by the ratchet so a
+cell that starts passing FIRES. Their former positions in
+`tests/recursion/`'s generated corpus carry comment stanzas pointing here,
+written by `gen_corpus.py`'s `parked=` argument so the two cannot drift.
+
+**CELL 1 — a left recursion whose language is EMPTY: give up, or answer?**
+`^(a?(?1)b)$` is `X = a? X b`, which has no base case, so no subject can
+match. libpcre2 answers `rc -52` (its own nested-recursion guard); pcrec
+answers NOMATCH, in constant time; the corpus expects `gu frames`. **Both are
+refusals of the same subject**, and design §5.9 scores exactly that pair
+"agreed in kind". pcrec answers at all because §4.4b's `minw` Kleene fixpoint
+gives the callee INFINITY and §12 P-12 RULES the MRL prune read that as "no
+position can match".
+
+**AND THE CLASS ANSWERS TWO WAYS, which is what needs ruling.** The two
+SIBLING cells in `leftrec.rxt` — `^((?1)a)$` and the indirect two-node cycle —
+are the same empty-language class and DO give up, because neither carries a
+quantifier for an MRL bound to hang on. So which answer a left recursion gets
+depends on whether the pattern happens to contain a quantifier, and that is
+not a fact about recursion.
+
+**CELLS 2 and 3 — a call inside a LOOKBEHIND, over-rejected.** pcrec refuses
+both where 10.46 accepts and matches: a tier-2 OVER-REJECTION, never a
+miscompile. **The cause is TIMING, not the width analysis.** `pcrec_maxw`'s
+`A_CALL` arm answers `PCREC_W_UNBOUNDED`, which §3.4(d) makes EXACT for a
+recursive callee (10.46 refuses that itself, err 125) and a sound
+over-estimate for every other — and tightening it for an ACYCLIC callee needs
+the call graph, while `la_widths` (src/parse/mod_lookaround.c) runs INSIDE THE
+PARSE HOOK, where it must, because that is the only place with a pattern
+OFFSET to refuse at. The graph does not exist until every call is resolved at
+end of parse and every rewriting pass has run. **So no `A_CALL` arm of
+`pcrec_maxw` can make these compile**; design §3.4(d) says the width analysis
+descends into the callee and does not say when it runs.
+
+**The fix a ruling would order** is a DEFERRED WIDTH RE-CHECK: the parse hook
+records the lookbehind (and its offset) instead of refusing when its body
+carries a call, and a pass after `pcrec_callgraph_build` recomputes the widths
+and refuses then. That is a change to a landed module's core plus a new
+`u.look` field for the diagnostic's offset, which wave B+C did not take on.
