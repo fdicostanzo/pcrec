@@ -12973,3 +12973,27 @@ pair is now K31, a watch item with a third-instance investigation
 protocol (capture /tmp, dmesg, and the whole suite log BEFORE any
 re-run). D+E's battery obligations are fully discharged: gate 6/0,
 strict clean, test rc=0, targeted mech 8×(0/0), san green.
+
+## 2026-08-24 (EDT), thirty-eighth session (part 15) — wave F MERGED (7307741): THE LOOKAROUND MODULE'S BUILD IS COMPLETE
+
+All eight build waves are on main: 0 (D70 union), A+A2 (maxw + arms),
+B+C (port + vm_look lookahead), D (seam + lookbehind), E (the prefilter
+predicate), E2 (the substitution driver), F (alpha spellings + the
+D71.3 family field + K30 + compliance). Wave F's craft matched the run:
+the alias mechanism gives an alias NO flags of its own to be wrong
+about (la_kind resolves to the primary; the assignment measured against
+10.46, 84 templates / 0 divergences); the family field is the canonical
+syntax itself (one string, one home — D24 twice over, and §8.2's
+VerbName-pair recommendation was superseded for exactly that reason);
+RF_INDEX's arbitrate skip sits BEFORE the catch-all arm because after
+it the last alpha row would steal the `(*` doorway. Two more
+check-refutation lessons for the pile: registry_check SEGFAULTED on the
+first alpha row (a "fixed messages, used verbatim" comment whose
+specification silently expired) and the lane's own reject-table claim
+was REFUTED by a control build — the FORM row's message comes from the
+VerbName table, not the elected row, so the pin moved to the ANSWER
+level where the ordering actually bites. K30 closed with figures equal
+at both widths. D65: 118 rows / 70 built, zero out-of-module movement.
+Gate: 202 bearing, free unchanged (+26 = exactly the new corpus).
+[M6.6.2] is COMPLETE-PENDING-CLOSE; next [M6.6.3] (the blinded corpus,
+brief ready) and [M6.6.4] (full matrix + battery + gate + archive).
