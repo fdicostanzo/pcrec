@@ -13536,3 +13536,31 @@ tests/resource's 45 s CPU cap under load 12 (waves E and F building) —
 the K31-addendum shape, fourth time today, same pattern; solo re-run +
 san chained behind it (scratchpad/retest_resource_LB.log,
 san_LBmerged.log).
+
+## 2026-08-24 (EDT), thirty-ninth session (part 11) — [DD-14.FB] SPEC DELIVERED (lane/srFB cdea67c): the API shape, a corrected depth table, a LIVE DEFECT (K33), and an ASK for Frank
+
+srFB (opus, docs only, ~18:0x-18:2x): docs/design/frame_buffer_design.md
+(751 lines) + match_api.md §10 (+331). RECOMMENDED SHAPE: three `_in`
+entries taking a per-artifact `<prefix>_buffers` descriptor {frames,
+nframes, trail, ntrail} — counts not bytes, opaque not typed (a frame is
+24 B call-free / 40 B call-bearing, MEASURED); NULL = the un-suffixed
+entry; delegation `_in` → un-suffixed (C cannot declare a local
+conditionally, so the reverse would put 128 KB on the caller's frame);
+the three existing entries unchanged byte-for-byte; sizing surface = 5
+macros + 4 rx_info fields (abi 2→3), emitted unconditionally. SETTLED BY
+MEASUREMENT: the TRAIL must be caller-provided too — 2.000 resume frames
+and 8.982 trail entries per nesting level, so at 2048/3072 the trail
+binds and raising frames alone changes nothing (n=342 either way).
+DEPTH TABLE corrected: the shipped default gives up at n=342 (684-byte
+subject), not the design's "~2 KB at 1024 frames" (that was the
+prototype's RX_CALL_DEPTH); the gap to libpcre2's 800 KB is 1,169×, not
+390×; a 2×64 MB MAP_NORESERVE reservation matches 800 KB in 0.056 s
+touching 88 MB. Run-struct frame 131,296 B → 224 B with `_in` (586×).
+K33 FILED: call-bearing artifacts SIGSEGV on musl-default 128 KB thread
+stacks (B+C's 24→40 B frame crossed the ceiling). ASK-1 to Frank: the
+stamped default — (a) keep 2048/3072 (recommended by the lane), (b)
+raise per ASK 2 (512 KB, 4× further over musl), (c) lower to 512/2304
+to fit 128 KB (n=256). Implementation checklist 11 items + 3 cells + 6
+rows; a `frames-buffer=N` .rxt directive proposed for the harness gap;
+`--backtrack-frames` over-provisions resume ~4.5× vs trail (filed, not
+fixed). Merge after the running san.

@@ -2622,3 +2622,33 @@ is the endgame cell (libpcre2 refuses it outright, error 120).
 
 **Milestone.** None scheduled; parked for Frank's ruling. Found while
 explaining a load-induced compile timeout on exactly this cell.
+
+## K33 — OPEN (2026-08-24, thirty-ninth session; found by the [DD-14.FB] spec lane) — a call-bearing VM artifact's default entries SIGSEGV on a musl-default 128 KB thread stack: the run struct is 131,144 B on the C stack
+
+**Symptom.** MEASURED: `rx_search`/`rx_match`/`rx_match_caps` of a
+call-bearing VM artifact, called from a thread with musl's default 128 KB
+stack, segfault on a 2-byte subject. `docs/spec/match_api.md` §5.3's
+concurrency contract ("any number of threads may call the same
+artifact's entry points concurrently") is FALSE today for that artifact
+class on that platform; §5.3 now carries a measured shipped-behaviour
+paragraph saying so.
+
+**Cause.** `gcc -fstack-usage`: `rx_search`'s frame is 131,296 B for a
+call-bearing artifact (the run struct: 2048 resume frames × 40 B + 3072
+trail entries + slots = 131,144 B), 98,512 B for the unbounded call-free
+one (just UNDER 128 KB). The two per-frame call fields wave B+C added
+(`call_top`, `call_ret`) took a resume frame 24 → 40 B; 2048 × 16 =
+32,768 B is exactly what crosses the ceiling. Arrived with [DD-14] wave
+B+C (67e40b9). glibc's 8 MB default thread stack is unaffected.
+
+**Remedy shape.** The [DD-14.FB] design (docs/design/frame_buffer_design.md,
+match_api.md §10 once merged): caller-provided buffers via the `_in`
+entries (224 B frame, measured) fix it for callers who use them; the
+DEFAULT path's home stays the C stack (a static fails TS-1/§5.3; a
+thread-local fails reentrancy; allocation is forbidden), so the default
+path is fixed only by the stamped-default ruling (ASK-1 in that design:
+keep 2048/3072 / raise / lower to fit 128 KB) or by the caller compiling
+with `--backtrack-frames`. Until ruled: a musl-default-thread caller of a
+call-bearing artifact MUST compile with a smaller capacity or use `_in`.
+
+**Milestone.** [DD-14.FB] code half (after wave G); the ruling is Frank's.
