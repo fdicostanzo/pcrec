@@ -144,6 +144,36 @@ libpcre2 itself rather than trusting that claim.
   language permits, the inline control). **NO W4 cell** — design §3.5
   withdrew it (the optional group IS emitted, merely not executed); the
   shape it stood in for is `X{0}`, which lives in `zerodef.rxt`.
+  **[DD-14.LB] grew it from 3 blocks to 21**, when the deferred width
+  re-check landed: the seven-cell call-bearing family (a bare call, a call
+  with literals around it, a two-hop acyclic chain, an alternation OF calls at
+  the body's own top level entered through both branches, the NEGATIVE
+  polarity, a call inside a nested lookahead), the three mixed
+  call-free/call-branch cells, §2.4's BRANCH-ORDER pair, and four `perr`
+  blocks (the ruled 1..2 capability limit, self-recursion, mutual recursion,
+  and an acyclic callee that REACHES a cycle).
+- **`run_lookbehind_call_sweep.py`** — [DD-14.LB], ON-DEMAND, not part of
+  `make test`. The NET beside `inlookaround.rxt`'s aimed questions: 908
+  generated patterns (11 callee width-classes x 14 lookbehind body templates x
+  both polarities) x 22 subjects, every cell asked of libpcre2 and of a real
+  compiled artifact. It exists because the corpus above inherits its author's
+  alphabet — D27's own finding — and a product space does not.
+
+  **ITS VERDICT IS A CLASSIFICATION, NOT A PASS COUNT**, and that is the part
+  worth reading before running it. A pattern libpcre2 compiles and pcrec
+  REFUSES is not a failure: PCRE2 10.43+ ships variable-length lookbehinds and
+  `lookaround_design.md` §2.5 charters that loop rather than shipping it. What
+  the sweep checks is that every such refusal is the §2.5 WIDTH refusal — never
+  a crash, an internal error, a give-up, or a diagnostic naming the wrong
+  module (`bad_refusal`, which must be 0). The opposite direction,
+  `pcrec_only` — pcrec compiling what libpcre2 refuses — must be 0 too, and it
+  is the one that would mean the width rule had gone soft.
+
+  MEASURED at [DD-14.LB]: 9,240 cells compiled by both, **9,240 agree, 0
+  disagree**; 220 pcrec-refuses with **bad_refusal 0** (all 220 carry the one
+  §2.5 sentence, and every refused callee is variable-width — `a?`, `a|bc`,
+  `a*`, or a body built from one); 268 both-refuse; 0 pcrec-only; 0 build
+  failures; 0 give-ups.
 - **`nocaptures.rxt`** — design §4.3's marked-set cells (one-hop, two-hop),
   written on the ORDINARY (captures-on) axis. **Does not and cannot today
   assert the `--no-captures` axis itself** — see "What could not be
