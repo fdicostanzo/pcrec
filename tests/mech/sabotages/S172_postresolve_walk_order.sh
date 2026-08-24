@@ -34,7 +34,7 @@ SAB_ID="S172-postresolve-walk-order"
 SAB_FILE="src/opt/postresolve.c"
 SAB_SUITES="reject"
 SAB_DESC="the post-resolution pass collects deferred checks in walk order instead of ascending pattern offset, so a pattern with two offending lookbehinds is blamed on the LAST one rather than the first"
-SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the TWO both-refusable rows among tests/reject/'s five [DD-14.LB] gated rows report offset 45 where 33 is pinned (and where libpcre2 10.46 also answers 33); the other three are unmoved, and every .rxt cell still passes because a perr block cannot see an offset."
+SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the TWO both-refusable rows among tests/reject/'s five [DD-14.LB] gated rows report offset 45 where 33 is pinned (and where libpcre2 10.46 also answers 33); the other three are unmoved, and every .rxt cell still passes because a perr block cannot see an offset. MEASURED at [DD-14.LB]: reject:2fail/575pass, DETECTED -- exactly the two both-refusable rows."
 SAB_COUNT=1
 SAB_BEFORE='    int i = p->n++;
     while (i > 0 && p->at[i - 1]->u.look.at > n->u.look.at) {

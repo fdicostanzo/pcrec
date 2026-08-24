@@ -30,7 +30,7 @@ SAB_FILE="src/parse/mod_lookaround.c"
 SAB_SUITES="harness"
 SAB_HARNESS_TARGET="tests/recursion/inlookaround.rxt"
 SAB_DESC="the deferred width re-check computes each branch width through the call graph and then accepts the lookbehind whatever it measured, so a recursive callee inside a lookbehind COMPILES instead of being refused"
-SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the four perr blocks in tests/recursion/inlookaround.rxt fail -- three of them (recursive callee, mutual recursion, acyclic callee that reaches a cycle) now COMPILE where libpcre2 answers err 125, and the fourth (the ruled 1..2 capability limit) compiles too. The seven match blocks still pass, since their widths were resolvable anyway. MEASURED at [DD-14.LB]: harness corpus:4fail/33pass, DETECTED -- exactly the four perr blocks, and no match cell moved."
+SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the four perr blocks in tests/recursion/inlookaround.rxt fail -- three of them (recursive callee, mutual recursion, acyclic callee that reaches a cycle) now COMPILE where libpcre2 answers err 125, and the fourth (the ruled 1..2 capability limit) compiles too. The seven match blocks still pass, since their widths were resolvable anyway. MEASURED at [DD-14.LB], FINAL corpus: harness corpus:4fail/46pass, DETECTED -- exactly the four perr blocks, and NO match cell moved, which is the half that makes this row S169's complement rather than its duplicate."
 SAB_COUNT=1
 SAB_BEFORE='    if (!la_widths(cx, a->l, nbr, w, &lo, &hi)) {
         char buf[LA_MSG_MAX];
