@@ -1322,10 +1322,27 @@ reject '(*accept)'   "(*alpha_assertion) not recognized (pattern offset 0)"
 # is why it is not in the block of moves below it. `(*pla)` is a REAL name in
 # a form PCRE2 does not accept, and a FORM MISMATCH IS DECIDED BEFORE MODULE
 # ATTRIBUTION — in pcrec as in PCRE2 — so wave F giving the name `pla` a
-# module of its own must not reach this line at all. mod_verbs.c's name→row
-# lookup is placed AFTER the form check for exactly this reason; move it one
-# statement earlier and this row goes red while `(*pla:a)`'s stays green,
-# which is the pair that makes the ordering measurable rather than asserted.
+# module of its own must not change what a caller is told here.
+#
+# **AND THIS ROW CANNOT SEE THE ORDERING THAT MAKES THAT TRUE**, which is
+# worth saying at the row rather than leaving as a comfortable assumption.
+# The first draft of this comment claimed that moving mod_verbs.c's name→row
+# lookup one statement earlier would turn this row red; BUILT AND MEASURED, it
+# does not. The form refusal's TEXT comes from the VerbName TABLE
+# (`t->unknown_msg`), not from the elected row, so it is byte-identical with
+# the lookup on either side of the form check — and a message-only pin is
+# structurally blind to the difference.
+#
+# WHAT THE ORDERING ACTUALLY PROTECTS IS THE ANSWER LEVEL, measured on a
+# control build with the lookup moved: `--features lookaround --probe-ask
+# result -- '(*pla)'` answers at `verdict` on the shipped compiler and at
+# `result` on the control. `answered_at == WANT_RESULT` is the externally
+# visible "gate was OPEN and the port had nothing to say" signal (D33, and
+# what D65 classifies `built` on), so the control makes a FORM ERROR — a thing
+# PCRE2 decides before any module question — report itself as an answer given
+# with module `lookaround`'s gate open. That is the same misattribution wave F
+# exists to remove, one level down. tests/cli/'s case10 pins it, because
+# `--probe-ask` is the channel that can see it and this table is not.
 reject '(*pla)'      "(*alpha_assertion) not recognized (pattern offset 0)"
 reject '(*SCRIPT_RUN:a)' "(*VERB) not recognized or malformed"
 # Real names in a form PCRE2 does not accept. Each of these is a DIFFERENT rule
