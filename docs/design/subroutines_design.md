@@ -77,7 +77,7 @@ three-way choice is SPLICE / HYBRID / CALL, and **PROTOTYPE-measured** they cost
 **298.6 / 87.6 / 80.1 emitted bytes per call site** (least-squares over
 k = 0…16), with **CALL the SMALLEST at every k and SPLICE the FASTEST** —
 which is the trade §6.3 rules on and §6.4 turns into the measured NO for a
-lookaround body (at one call site CALL is 197 bytes smaller and 10–12%
+lookaround body (at one call site CALL is 197 bytes smaller and 9–14%
 slower). That last number is also the answer to charter addition
 (ii): a lookaround body has exactly one use site by construction, so **no
 lookaround body should compile as a call**, and the premise of charter addition
@@ -651,7 +651,8 @@ measured on an artifact for `(a\Kb)+c`, where the `\K` sites are
 start. So a return that restored "every slot the callee wrote" — the tempting
 one-line implementation, a trail rewind to the call's mark — would **undo the
 `\K`** and answer (0,4) where PCRE2 answers (3,4). §5.3's restore is over a
-**capture-slot set that excludes slots 0 and 1 by construction**, and S-SR6 is
+**slot write set that excludes slots 0 and 1 by construction** (§5.3a), and
+S-SR6 is
 its detector. This is the second design the measurements killed.
 
 #### (c) `(?J)` duplicate names: a CALL and a REFERENCE resolve DIFFERENTLY
@@ -827,7 +828,10 @@ after it):
                               end-of-parse pass (§4.2). SHARED, never owned */
         CallLink link;     /* SPLICE or LINKAGE -- §6.2, decided by
                               src/opt/callgraph.c, never by the parser */
-        int   nsave;       /* |W|, the callee's transitive capture write set */
+        int   nsave;       /* |W|: the callee region's SLOT WRITE SET -- every
+                              family, not the captures (§5.3a), counted per
+                              EMITTED INSTANCE (§5.7), over the CALLEE
+                              REGION's own slot indices (§4.4c) */
         const int *save;   /* W: the SLOT indices to save and restore, ascending
                               -- §5.3. Arena-allocated. EXCLUDES slots 0 and 1
                               BY CONSTRUCTION (§3.4(b) measured why) */
@@ -1122,9 +1126,18 @@ if wave A has landed"* rather than treating the pair as symmetric — a call's
 `maxw` is `∞` for any recursive callee anyway (§3.4(d) measured PCRE2 refusing
 exactly that inside a lookbehind, error 125).
 
-**ONE MECHANISM, FOUR CONSUMERS.** `callgraph.c` computes the SCC condensation
-once and answers: `W` (§5.3), `vm_nullable` (§2.6), `minw` (here), and the
-splice-eligibility test (§6.3). A fifth would be wave G's `nfa.c` arm.
+**ONE MECHANISM, AND THIS IS THE ONLY LIST OF ITS CONSUMERS.** `callgraph.c`
+computes the SCC condensation once and answers **five** questions:
+
+1. **`W`** — the slot write set per callee region (§5.3a);
+2. **which groups get an emitted callee region**, which the slot LAYOUT needs
+   (§4.4c) and which is the one `{0}` would otherwise hide;
+3. **`vm_nullable`** for a call (§2.6);
+4. **`minw`** (§4.4b);
+5. **splice eligibility** — is the target in a cycle (§6.3).
+
+A sixth arrives with wave G's `nfa.c` arm (§8.3). §4.3's marking is **not** on
+this list: it needs no graph at all.
 
 ---
 
@@ -1410,8 +1423,8 @@ plus the five argued families' shapes, and §9.3 adds a sabotage row per family.
 #### 5.3c THE MACHINERY, unchanged by the correction
 
 W is derived **once**, in `src/opt/callgraph.c`, from the same SCC pass §4.3's
-transitive mark and §4.4's `minw` fixpoint use — one mechanism, four
-consumers. The per-node slot demand is **not** re-derived there: `emit_vm.c`
+marking arm and §4.4b's `minw` fixpoint use — one mechanism, whose
+consumers §4.4b lists. The per-node slot demand is **not** re-derived there: `emit_vm.c`
 already has `vm_count_slots`, the pre-pass that counts every family for the
 layout, and W is that walk restricted to a subtree and unioned over the call
 graph. **A second slot census would be a second thing to disagree with the
@@ -1612,10 +1625,21 @@ not rebuilt.
 R34's LENS1-5 asked for the conversion and it cuts both ways. MEASURED, this
 lane, on the two canonical shapes:
 
+MEASURED, `out/leftrec.txt` **axis L9b** (R34's V-11 found these quoted with
+no probe behind them — the third instance of this lane's own defect class):
+
 | | pcrec at `RX_CALL_DEPTH = 1024` | libpcre2 10.46 |
 |---|---|---|
-| **the LEGITIMATE deep recursion** — `^(a(?1)?b)$` on `aⁿbⁿ`, which needs nesting `n` for a `2n`-byte subject | gives up at **a ~2 KB subject** | **matches an 800 KB subject in 0.24 s** (n = 400,000, from the heap) |
-| **the RUNAWAY** — `^(a\|(?1)a)$` on `aⁿb` | gives up in **~0 s at any n** (the prototype's whole run is 0.13 s, process startup included) | `rc −52` costs **0.0001 s / 0.0073 s / 0.17 s / 2.58 s** at n = 100 / 1,000 / 5,000 / 20,000 — **quadratic in the subject** |
+| **the LEGITIMATE deep recursion** — `^(a(?1)?b)$` on `aⁿbⁿ`, which needs nesting `n` for a `2n`-byte subject | gives up at **a ~2 KB subject** | **still matching at 800 KB in a third of a second** (n = 400,000, from the heap) |
+| **the RUNAWAY** — `^(a\|(?1)a)$` on `aⁿb` | gives up in **constant time at any n** | `rc −52` costs **~0.0002 s → ~5 s** as n goes 100 → 20,000, growing **faster than the subject squared** over that range |
+
+**THE SECONDS ARE ONE RUN AND THE SHAPE IS THE CLAIM.** Re-runs of the same
+cells on this box differ by up to 2× (0.24 s and 0.34 s for the 800 KB match;
+2.6 s and 5.6 s for the n = 20,000 give-up), so the design quotes **orders of
+magnitude and growth rates**, not stopwatch readings, and the archived file
+carries whichever run produced it. What does not move between runs is the
+**ratio**: 10×, 5× and 4× increases in subject cost **53×, 26× and 19×** more
+time.
 
 **The right-hand column is not one verdict.** On the runaway, a **bounded
 depth is strictly better than PCRE2's guard** — pcrec refuses in constant time
@@ -1889,23 +1913,36 @@ optimiser's layout, not a property of the linkage**, so the absolute
 intercepts are not comparable between variants and every ruling below rests on
 the slope.
 
-**TIME**, best of three, 2,000,000 reps, two corpora:
+**TIME**, best of three, 2,000,000 reps, two corpora — **pasted from
+`out/linkage.txt`** rather than retyped, because R34's V-7 found the previous
+table matching no archived run:
 
-| k | MIXED: SPLICE / HYBRID / CALL | LEXICAL-ONLY: SPLICE / HYBRID / CALL |
-|---|---|---|
-| 1 | 0.57 / 0.58 / 0.64 | 1.04 / 1.08 / 1.15 |
-| 2 | 0.81 / 0.87 / 1.40 | 1.10 / 1.13 / 1.16 |
-| 4 | 1.17 / 1.40 / 1.37 | 1.04 / 1.08 / 1.15 |
-| 8 | 1.52 / 1.86 / 1.92 | 1.03 / 1.10 / 1.14 |
+```
+  --- mixed corpus ---
+  k        splice       hybrid       call
+  1       0.64        0.68        0.73
+  2       0.92        0.99        0.97
+  4       1.02        1.19        1.31
+  8       1.43        1.73        2.01
+  --- lex corpus ---
+  k        splice       hybrid       call
+  1       0.99        1.02        1.08
+  2       0.99        1.02        1.06
+  4       1.00        1.04        1.06
+  8       0.96        1.01        1.04
+```
 
 The **LEXICAL-ONLY** corpus is the one HYBRID's whole claim rests on — subjects
-that die before the first call site. HYBRID tracks SPLICE within ~5% and beats
-CALL by ~5–10% on every row; the residual gap between HYBRID and SPLICE on a
-path that is literally the same code is layout and i-cache, and is reported
-rather than smoothed. The MIXED column's `k = 2` CALL cell (1.40 against 0.87)
-is out of line with its neighbours and is **noise this probe did not
-eliminate**: best-of-three did not remove it, and it is left visible rather
-than dropped.
+that die before the first call site. HYBRID tracks SPLICE within **1–3%** and
+beats CALL by **~2–6%** on every row. The residual gap between HYBRID and
+SPLICE on a path that is literally the same code is layout and i-cache, and is
+reported rather than smoothed.
+
+**AND THE SECONDS MOVE BETWEEN RUNS.** An earlier revision of this section
+carried a different table and explained a `k = 2` outlier in it; neither the
+number nor the outlier survives re-archiving, and both are gone. What survives
+re-archiving is the **ORDER** — SPLICE ≤ HYBRID ≤ CALL on every one of the
+eight rows, in both corpora — and that is what §6.3 and §6.4 rule on.
 
 ### 6.3 THE RULING
 
@@ -1963,9 +2000,11 @@ get two sub-programs."* So `k = 1` always, and §6.2 measured `k = 1`:
 
 - SPLICE **1001 bytes**, HYBRID **1090**, CALL **804** (and per-site slopes
   298.6 / 87.6 / 80.1);
-- SPLICE **0.57 s** mixed and **1.04 s** lexical, CALL **0.64** and **1.15**.
+- SPLICE **0.64 s** mixed and **0.99 s** lexical, CALL **0.73** and **1.08**
+  (`out/linkage.txt`).
 
-CALL is 197 bytes smaller and 10–12% slower. **A call to a body with one caller
+CALL is **197 bytes smaller and 9–14% slower** (14% on the mixed corpus, 9% on
+the lexical one). **A call to a body with one caller
 buys a size saving that is smaller than the module's own scaffolding and costs
 time on the only path that exists.** There is no reuse to amortise, because
 there is no second caller.
@@ -2026,7 +2065,7 @@ contract rather than the construct:**
 | the budget primitives | D42.6, `emit_vm.c:6051` | §5.7: nothing new to count |
 | `Cost.unbounded` and the stamped ceiling | `emit_vm.c:1331-1348`, P12 | §5.6 |
 | the `PendingRef` + end-of-parse resolver | `[M6.5.2]`, P11 | §4.2: **one field**, two rules |
-| `pcrec_bref_mark`'s marked set | `[M6.5.2]`, P10 | §4.3: calls join it, transitively |
+| `pcrec_bref_mark`'s marked set | `[M6.5.2]`, P10 | §4.3: `mark[target] = true`, one arm, **no fixpoint** — the whole-tree walk reaches a nested call by itself |
 | the shared `\g` port | P3 | §4.2: two tails, one port |
 | the identity-gate shape and the four axes | `[M6.6.2]` ASK 4 ruling | §9.1 |
 | the verification template (a differential driver + a sabotage matrix arm) | `backrefs_design.md` §4, `lookaround_design.md` §9 | §9, §10 |
@@ -2110,7 +2149,7 @@ and it would need its own arm in all ten files of §4.4.
 
 ## 8. Engine selection and the prefilter
 
-### 8.1 Every row is `VM_ONLY`, and three row families are MISSING
+### 8.1 Every row is `VM_ONLY`, and FOUR row families are MISSING
 
 The language a call generates is **not regular** — `^(a(?1)?b)$` is `aⁿbⁿ`,
 MEASURED matching at n = 400,000 (`out/leftrec.txt` L9). So `VM_ONLY` is
@@ -2148,8 +2187,9 @@ B+C), and the split within it is the port's own tail check: at B+C
 tails at `WANT_RESULT`** until wave D wires them, so the count moves in two
 honest steps.
 
-**THE TALLY IS A DELIVERABLE**: 26 rows today → **26 + the three missing
-families** after wave F. The exact number is wave F's to state in its commit,
+**THE TALLY IS A DELIVERABLE**: **26 rows today** (hand-counted and
+independently confirmed by R34: 1 + 1 + 1 + 1 + 9 + 1 + 1 + 9 + 1 + 1) → **26 +
+the FOUR missing families** after wave F. The exact number is wave F's to state in its commit,
 because the multi-digit families are a design choice about row GRANULARITY
 (§14 ASK 3) and not a count this document can fix.
 
@@ -2533,7 +2573,7 @@ from the PORT's answer and never runs the emitter, so a port-only wave ships a
 compliance index that says `built` for constructs that cannot compile.
 Deliverables: `src/parse/mod_recursion.c` with `pcrec_rcport_num` /
 `_rel` / `_name`; `PendingRef.kind` and the resolver's two rules (§4.2);
-`src/opt/callgraph.c` — the graph, its SCCs, the transitive mark (§4.3) and the
+`src/opt/callgraph.c` — the graph, its SCCs, §4.3's one-line marking arm and the
 `W` fixpoint (§5.3); `pcrec_has_call`; the frame's **three** new fields
 (`call_ret`, `call_top`, `call_mark`), `RX_CALL`, `RX_RETURN`, the fail
 label's **two** lines, the save/restore emission, the depth
@@ -2564,7 +2604,7 @@ its floors and its positive control.
 axes with `ctl_bad == 0`; S-SR17 DETECTED; the `--engine=dfa` refusal for a
 call-bearing pattern pinned.*
 
-**WAVE F — THE REGISTRY.** §8.1's three missing row families (subject to
+**WAVE F — THE REGISTRY.** §8.1's **four** missing row families (subject to
 ASK 3's granularity ruling), the `quant` column fix on nine rows, the D65
 `built` tally, SR-8 witnesses for every new row, a `recursion` mech arm in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
@@ -2633,10 +2673,10 @@ capacity does **not** catch (it would have to be a recursion that neither
 terminates nor deepens), or a pattern that needs more depth than the stamped
 value and that a user would reasonably write. **THE SECOND HALF IS THE WEAK ONE
 AND IT NOW CARRIES ITS NUMBER**: at 1024, `^(a(?1)?b)$` gives up at a **~2 KB**
-subject where 10.46 matches **800 KB in 0.24 s** (§5.6, MEASURED). The first
-half is the strong one and it carries its number too — PCRE2's own `−52` costs
-**2.58 s at a 20 KB subject** and grows quadratically, where a stamped depth
-costs nothing. **A refutation has to say which of the two shapes it is
+subject where 10.46 matches **800 KB** in a fraction of a second (§5.6,
+`out/leftrec.txt` L9b). The first half is the strong one and it carries its
+number too — PCRE2's own `−52` reaches **seconds at a 20 KB subject** and grows
+faster than the subject squared, where a stamped depth costs nothing. **A refutation has to say which of the two shapes it is
 attacking**, because this design trades one for the other on purpose and §14
 ASK 2 is where the exchange rate is set.
 
@@ -2666,7 +2706,7 @@ the walk against it before the module closes.**P-6 (the lookaround body must not
 argument, and it is measured.* **Refute** by finding a lookaround shape with
 more than one use site — which `lookaround_design.md` §6.4(3) says cannot
 happen because `vm_label()` allocates per emission — or by showing the emitted
-size difference matters more than the 10–12% time difference at `k = 1`.
+size difference matters more than the 9–14% time difference at `k = 1`.
 
 **P-7 (the wave-G prefilter is sound).** *Splicing a non-recursive callee's NFA
 fragment is exact and `Σ*` for a recursive one is a superset, so the prefilter
@@ -2813,11 +2853,11 @@ redundant, which is ASK 1's answer arriving from the other side;
 work-budget reasoning (*"too low refuses ordinary large-subject matches on the
 shipped path, which is the worse error"*).
 **AND THE CHOICE IS A SUBJECT SIZE, NOT A DEPTH** (R34 LENS1-5). MEASURED
-(§5.6): at 1024, `^(a(?1)?b)$` gives up at a **~2 KB** subject where 10.46
-matches **800 KB** — a factor of 390. In the other direction a bounded depth is
-**strictly better than 10.46's**: on the runaway `^(a|(?1)a)$` pcrec refuses in
-constant time where PCRE2's own `rc −52` costs 0.0001 / 0.0073 / 0.17 / **2.58
-seconds** at n = 100 / 1k / 5k / 20k. So the number Frank is picking is *"the
+(§5.6, `out/leftrec.txt` L9b): at 1024, `^(a(?1)?b)$` gives up at a **~2 KB**
+subject where 10.46 matches **800 KB** — a factor of 390. In the other
+direction a bounded depth is **strictly better than 10.46's**: on the runaway
+`^(a|(?1)a)$` pcrec refuses in constant time where PCRE2's own `rc −52` grows
+**faster than the subject squared**, reaching **seconds at a 20 KB subject**. So the number Frank is picking is *"the
 deepest legitimate nesting a caller may have"*, and its cost is bytes of
 `resume_stack`, not time.
 *Recommendation: (c), with a bring-up value calibrated at implementation the
@@ -2826,8 +2866,8 @@ subject sizes stated in the release note beside the stamp — a ceiling a caller
 cannot convert into a subject size is a number nobody can act on.*
 
 **ASK 3 — how granular are the registry rows for multi-digit calls?** §8.1
-MEASURED three missing families: `(?10)`+, `(?-10)`+, `(?+2)`…`(?+9)`, and
-`\g<0>`/`\g'0'`. The registry is keyed on the character after `(?`, so
+MEASURED **four** missing families: `(?10)`+/`(?-10)`+, `(?+2)`…`(?+9)`,
+`\g<0>`/`\g'0'`, and §2.4a's **leading-zero absolutes**. The registry is keyed on the character after `(?`, so
 `(?1)`…`(?9)` are nine rows and the two-digit forms have none — while
 `(?-1)`…`(?-9)` are nine rows and `(?+1)` is one, an asymmetry nobody chose.
 Options: (a) add the eight missing `(?+N)` rows and one row each for the

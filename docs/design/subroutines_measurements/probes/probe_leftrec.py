@@ -265,6 +265,45 @@ for hl in [1, 8, 64, 1024]:
           if isinstance(r, tuple) and r and r[0] == "rc" else repr(r)))
 print()
 
+print("=== L9b: THE CAPACITY AS A USER-FACING SUBJECT SIZE, TIMED ==========")
+print("# §5.6 and §14 ASK 2 quote these numbers. R34's V-11 found them")
+print("# marked MEASURED with no probe and no archive behind them -- the")
+print("# third instance of this lane's own defect class -- so they are")
+print("# produced HERE and the design cites this file.")
+print()
+print("# (a) THE LEGITIMATE DEEP RECURSION: ^(a(?1)?b)$ on a^n b^n needs")
+print("#     nesting n for a 2n-byte subject. What does 10.46 do?")
+import time as _t
+for _n in (1024, 10000, 100000, 400000):
+    _su = "a" * _n + "b" * _n
+    _t0 = _t.time()
+    _r = sr.match_limits(r"^(a(?1)?b)$", _su)
+    _d = _t.time() - _t0
+    _ok = isinstance(_r, tuple) and _r and _r[0] == (0, 2 * _n)
+    print("    n=%-7d subject %-8d bytes  %-8s %.4f s"
+          % (_n, len(_su), "MATCH" if _ok else repr(_r), _d))
+print("#     so a depth capacity of N refuses at roughly a 2N-byte subject,")
+print("#     where 10.46 is still answering at 800 KB.")
+print()
+print("# (b) THE RUNAWAY: ^(a|(?1)a)$ on a^n b. PCRE2 answers rc -52 -- but")
+print("#     what does FINDING that cost it? This is the direction in which")
+print("#     a bounded depth is STRICTLY BETTER than 10.46's guard.")
+_prev = None
+for _n in (100, 1000, 5000, 20000):
+    _su = "a" * _n + "b"
+    _t0 = _t.time()
+    _r = sr.match_limits(r"^(a|(?1)a)$", _su)
+    _d = _t.time() - _t0
+    _txt = ("rc=%d" % _r[1]) if isinstance(_r, tuple) and _r and _r[0] == "rc" \
+        else repr(_r)
+    _ratio = ("  (x%.1f on 10x the subject)" % (_d / _prev)) if _prev else ""
+    print("    n=%-7d subject %-8d bytes  %-10s %.4f s%s"
+          % (_n, len(_su), _txt, _d, _ratio))
+    _prev = _d
+print("#     REACHABILITY: the times must GROW faster than the subject, or")
+print("#     the 'quadratic' reading is not supported by these rows.")
+print()
+
 print("=== L10: DOES ERROR 140 EXIST IN 10.46 AT ALL? =======================")
 print("# The charter says left recursion is 'refused at compile time (the")
 print("# err 140 / could-loop-indefinitely family)'. L1-L3 above found NO")

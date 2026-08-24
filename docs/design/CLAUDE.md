@@ -1172,7 +1172,8 @@ append-only or historical records.
   offset 0 and MATCHES, so a same-position guard would be a miscompile.
   Consequences: **a call IS a resume frame** (§5.2 derives the clobber bug that
   kills the plan row's separate call-stack array); the capture restore is over
-  a compile-time capture-slot set stored **in the trail itself** by a trailed
+  a compile-time **slot write set** — every family, per emitted instance —
+  stored **in the trail itself** by a trailed
   self-write, EXCLUDING slots 0 and 1 because **`\K` is measured NOT to be
   restored** and pcrec spells `\K` as a write to `RX_SLOT_WHOLE_START`; the
   emitted function gains a **SECOND indirect jump**, amending
@@ -1180,17 +1181,17 @@ append-only or historical records.
   "once-emitted-with-two-linkages" **collapses** when written out, leaving
   SPLICE / HYBRID / CALL, PROTOTYPE-measured at **298.6 / 87.6 / 80.1** emitted
   bytes per call site (least-squares over k = 0…16), with **CALL smallest at
-  every k and SPLICE fastest** — which at one call site (197 bytes, 10–12%) is
+  every k and SPLICE fastest** — which at one call site (197 bytes, 9–14%) is
   the measured NO to "should a lookaround body compile as a call", a lookaround
   body being `k = 1` by construction. Engine selection is `VM_ONLY`
-  structurally; the prefilter is dropped in wave 1 because erasing a call is
-  **not** a superset, and that costs a MEASURED **21×–350×**, which is why the
+  structurally; the prefilter is dropped in wave E because erasing a call is
+  **not** a superset, and that costs a MEASURED **21×–350×** on the non-recursive half of the population, which is why the
   sound construction (splice the non-recursive callee's NFA fragment, `Σ*` for
-  a recursive one) is designed and scheduled rather than waved at. Five ASKs
+  a recursive one) is designed and scheduled rather than waved at. Six ASKs
   for Frank, the first of which re-opens the plan row's own reserved give-up
   code now that its premise (a separate call stack) is gone. Measurements:
   `subroutines_measurements/`.
-- `subroutines_measurements/` — the [DD-14] lane's TEN probes, its oracle
+- `subroutines_measurements/` — the [DD-14] lane's TWELVE probes, its oracle
   helper, its archiver and FOUR prototypes (two of them the R34 C2 panel's own,
   ADOPTED UNCHANGED); see its own CLAUDE.md. **No
   instrument reads a subroutine call through pcrec, because pcrec cannot

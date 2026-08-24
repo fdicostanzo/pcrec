@@ -4,10 +4,11 @@
 # PROBE      : docs/design/subroutines_measurements/probes/probe_leftrec.py
 # ARGS       : (none)
 # PROBE LAST CHANGED AT COMMIT: 7795726 2026-08-23
-# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+# RUN FROM REPO COMMIT        : fb970a2 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/subroutines_measurements/out/
-# RUN DATE   : 2026-08-23T20:13:37-04:00
+#      M docs/design/subroutines_measurements/out/leftrec.txt
+#      M docs/design/subroutines_measurements/probes/probe_leftrec.py
+# RUN DATE   : 2026-08-23T22:00:54-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -167,6 +168,31 @@ sr_oracle.SELFCHECK: none
   heap_limit=8     KiB -> rc=-63 heap limit exceeded
   heap_limit=64    KiB -> rc=-63 heap limit exceeded
   heap_limit=1024  KiB -> rc=-63 heap limit exceeded
+
+=== L9b: THE CAPACITY AS A USER-FACING SUBJECT SIZE, TIMED ==========
+# §5.6 and §14 ASK 2 quote these numbers. R34's V-11 found them
+# marked MEASURED with no probe and no archive behind them -- the
+# third instance of this lane's own defect class -- so they are
+# produced HERE and the design cites this file.
+
+# (a) THE LEGITIMATE DEEP RECURSION: ^(a(?1)?b)$ on a^n b^n needs
+#     nesting n for a 2n-byte subject. What does 10.46 do?
+    n=1024    subject 2048     bytes  MATCH    0.0002 s
+    n=10000   subject 20000    bytes  MATCH    0.0053 s
+    n=100000  subject 200000   bytes  MATCH    0.0704 s
+    n=400000  subject 800000   bytes  MATCH    0.3016 s
+#     so a depth capacity of N refuses at roughly a 2N-byte subject,
+#     where 10.46 is still answering at 800 KB.
+
+# (b) THE RUNAWAY: ^(a|(?1)a)$ on a^n b. PCRE2 answers rc -52 -- but
+#     what does FINDING that cost it? This is the direction in which
+#     a bounded depth is STRICTLY BETTER than 10.46's guard.
+    n=100     subject 101      bytes  rc=-52     0.0001 s
+    n=1000    subject 1001     bytes  rc=-52     0.0077 s  (x51.6 on 10x the subject)
+    n=5000    subject 5001     bytes  rc=-52     0.2003 s  (x25.9 on 10x the subject)
+    n=20000   subject 20001    bytes  rc=-52     3.6850 s  (x18.4 on 10x the subject)
+#     REACHABILITY: the times must GROW faster than the subject, or
+#     the 'quadratic' reading is not supported by these rows.
 
 === L10: DOES ERROR 140 EXIST IN 10.46 AT ALL? =======================
 # The charter says left recursion is 'refused at compile time (the
