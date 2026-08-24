@@ -35,7 +35,7 @@
 # visible.
 SAB_ID="S157-possessify-across-call"
 SAB_FILE="src/opt/possessify.c"
-SAB_SUITES="timeout recursion"
+SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="gk_build stops declining an A_CALL, so the unique-iteration walk models a call as a zero-width epsilon and a possessive quantifier over a call-bearing body is admitted onto vm_poss_star -- which emits NO empty-iteration guard and NO work charge, so the emitted matcher HANGS"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR9a, and D71 item 6): a TIMEOUT row like S-SR11, not an answer comparison. ^(?:(?<g>a?)){0}(?&g)*+\$ hangs -- vm_poss_star emits no empty-iteration guard and fires no work charge (emit_vm.c's own comment, whose sabotage row S100 also expects a TIMEOUT), and eng_brep_design 2.2's nullable refusal CANNOT SEE a callee that lives elsewhere in the tree. MEASURED on the landed build before the sabotage: that pattern compiles with RX_VM_STRATS 0x2 (BACKTRACKING only, no POSSESSIVE bit) and answers (0,3) on \"aaa\"."

@@ -23,7 +23,7 @@
 # fallthrough, and this row is what asserts that ordering still holds.
 SAB_ID="S160-revdet-reverses-call"
 SAB_FILE="src/opt/revdet.c"
-SAB_SUITES="harness recursion rungselect"
+SAB_SUITES="harness recursion rungdiff"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="rd_shape stops declining an A_CALL, so a call-bearing quantifier body is admitted to the reverse-deterministic rung and the reversal walk reaches a node it has no rule for"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR12): vm_rev_emit's default: fires -- \"internal error: bad AST node in the backward walk\" -- a HARD COMPILE ERROR, which is the RIGHT failure. The row asserts the wall is REACHED, not that an answer changed. Design 4.4a records that (7)'s default: is now reachable in a NEW WAY because a call can carry a whole SUBTREE into the backward walk rather than a single node, and that sites (14)-(18) declining is what keeps it a diagnostic rather than a miscompile."

@@ -31,7 +31,7 @@
 # shipped path rather than on a flag.
 SAB_ID="S159-has-atomic-follows-body"
 SAB_FILE="src/opt/atomic.c"
-SAB_SUITES="timeout recursion"
+SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="pcrec_has_atomic's A_CALL arm DESCENDS into u.call.body, so a whole-tree predicate follows the AST's back edge and the COMPILER does not terminate on (a(?1)) -- there is no answer to compare, so no answer-comparison row can see it"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR11): THE COMPILER HANGS on (a(?1)). There is no answer to compare, so this row is scored by the harness TIMEOUT and it is the one sabotage in this module whose detector is 'the process did not finish'. NOTE the anchor: pcrec_has_atomic's arm is the FIRST \`case A_CALL:\\n            return false;\` in atomic.c, and the count is 1 because the six other whole-tree predicates in that file each phrase their decline differently."

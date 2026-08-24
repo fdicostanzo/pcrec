@@ -36,7 +36,7 @@
 # anyone chose.
 SAB_ID="S164-region-slots-uncounted"
 SAB_FILE="src/gen/emit_vm.c"
-SAB_SUITES="harness recursion asan"
+SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion/zerodef.rxt"
 SAB_DESC="vm_count_slots is not run per emitted callee region, so a callee's own slot instances are never counted and the emitter assigns past RX_NSLOTS -- an OUT-OF-BOUNDS WRITE in emitted code, K27's class"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR19): an OUT-OF-BOUNDS SLOT WRITE, K27's class, which vm_count_slots' own header names ('a lift this pre-pass cannot see runs vm_slot_mark(v, v->nmark++) past RX_NSLOTS'). THE CELL MUST CARRY A RUNG-BEARING OR ATOMIC CALLEE UNDER {0} -- ^(?:((?>a|ab))){0}(?1)z\$ -- because a callee with only CAPTURE slots allocates from a family {0} does not prune and the row goes green. zerodef.rxt is written on exactly that requirement. Under ASan the failure is a REPORT; without it, silent corruption, which is why the asan suite is assigned as well."

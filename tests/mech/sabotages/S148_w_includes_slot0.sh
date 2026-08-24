@@ -21,10 +21,21 @@
 # So the exclusion is a pair of INDICES rather than a family, and this row is
 # what makes that pair load-bearing rather than decorative.
 #
-# THE SABOTAGE IS TWO CHARACTERS and touches nothing else: the builder's two
-# `k = 2` starts become `k = 0`. Every family stays in `W`, every offset stays
-# compile-time, the capacity is unchanged -- only the pair that carries the
-# reported start joins the set.
+# **THE FIRST VERSION OF THIS SABOTAGE WAS A NO-OP AND THE MATRIX SAID SO.**
+# It changed the materialisation loop's two `k = 2` starts to `k = 0` -- and
+# scored UNDETECTED at corpus 0fail/20pass, because **nothing ever SETS
+# `w[0]`**: the capture half of the builder starts at group 1 and no other
+# family's base reaches below `2*(ngroups+1)`. The `k = 2` bound is an
+# ASSERTION written as a filter, exactly as its own comment in `emit_vm.c`
+# says, and an assertion that is already true cannot be sabotaged by removing
+# it. The finding is about the ROW, and it is the same shape as this project's
+# recorded `\K`-sabotage lesson: *prove your instrument is live before
+# trusting a negative result*.
+#
+# THE CORRECTED SABOTAGE MAKES A BUILDER ADD SLOT 0 and then lets it through
+# the filter, which is what "let `W` include slot 0" has to mean. Everything
+# else is untouched: every family stays in `W`, every offset stays
+# compile-time, the capacity is unchanged.
 SAB_ID="S148-w-includes-slot0"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
@@ -37,7 +48,7 @@ SAB_BEFORE='            int n = 0;
             int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);
             int q = 0;
             for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;'
-SAB_AFTER='            /* SABOTAGE S148: slots 0 and 1 become members */
+SAB_AFTER='            w[0] = true;   /* SABOTAGE S148: slot 0 joins W */
             int n = 0;
             for (int k = 0; k < nstate; k++) if (w[k]) n++;
             int *lst = arena_alloc(&cx->arena, (size_t)(n ? n : 1) * sizeof *lst);

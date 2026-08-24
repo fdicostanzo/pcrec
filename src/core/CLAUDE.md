@@ -177,6 +177,61 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   `sizeof(Ast)` is unchanged: the member is 32 bytes on LP64, which is
   `u.cls.bits`'s own 32.
 
+  **[DD-14 wave B+C] `u.call` GAINED TWO MORE FIELDS, AND THEIR POLARITY IS
+  THE WHOLE OF THE DESIGN.** `minw` and `nonnullable` are the two derived
+  facts a bare `const Ast *` walker cannot compute, cached ON THE NODE — and
+  the placement is forced rather than chosen. `pcrec_minw` (src/opt/mrl.c) and
+  `vm_nullable` (src/gen/emit_vm.c) have no `Ctx` parameter, so "read
+  callgraph.c's memo" has exactly two spellings: change every call site's
+  signature, or put the memo in a FILE-STATIC — and a file-static is a mutable
+  global, which [TS-1]/[TS-3] test against directly. The node is the one place
+  both walkers already have in hand and that is private to one compile.
+
+  **EVERY ONE IS WRITTEN SO THE ARENA'S ZERO IS THE SOUND ANSWER**, because a
+  walker may legitimately run BEFORE the fixpoint does (`pcrec_minw` is called
+  from `src/opt/possessify.c`, inside `pcrec_select_engine`, before the graph
+  exists). `minw` 0 is `pcrec_minw`'s own SAFE direction (an under-estimate
+  prunes less and can never delete a live position). `nonnullable` is
+  INVERTED for exactly this reason and that inversion is the field's whole
+  content: `vm_nullable` answering true is what EMITS the empty-iteration
+  guard, so a zero reading "nullable" keeps the guard and costs a redundant
+  test, while the other polarity's zero would DROP it and hang the matcher on
+  `(?&g)*` with a nullable callee.
+
+  **`maxw` IS DELIBERATELY ABSENT**, and the asymmetry is the point:
+  `pcrec_maxw`'s safe direction is the opposite one, so a zero would be its
+  SILENT MISCOMPILE. Its arm already answers `PCREC_W_UNBOUNDED`
+  unconditionally, which is EXACT for a recursive callee and a sound
+  over-estimate otherwise. Tightening it for an acyclic callee would need a
+  writer that runs before the PARSE-TIME lookbehind width rule, which the call
+  graph cannot be — see `src/opt/CLAUDE.md`'s `mrl.c` entry.
+
+  **`save`/`nsave` ARE FILLED BY THE EMITTER, NOT BY `callgraph.c`**, which is
+  a deviation from design §4.1(d)'s letter and not from its principle. §4.1(d)
+  says they are a fixpoint over the call graph and the PARSER does not have
+  the graph, which is why they are not parse-resolved state; what it did not
+  anticipate is that they are SLOT INDICES, assigned by `vm_count_slots`' own
+  walk over the emitter's rung decisions and existing nowhere else. Predicting
+  them outside `emit_vm.c` would be the second slot census `src/gen/CLAUDE.md`
+  names as the standing hazard for this family. `pcrec_emit_vm` therefore
+  takes `Ast *root` rather than `const Ast *` — a dropped qualifier is
+  preferred to a cast at the write site, because a cast is a claim a reader
+  has to check.
+
+  **`Ctx` GAINED ONE FIELD**, `callgraph`, opaque and arena-owned, NULL for a
+  call-free pattern. **WHERE THE PASS RUNS IS LOAD-BEARING**: it is the only
+  writer of `u.call.body`, and two passes above it REBUILD nodes rather than
+  mutating them, so a `.body` captured at end of parse can name a subtree that
+  is no longer in the tree.
+
+  **`PendingRef` GAINED ONE FIELD**, `PendKind` — one list, one pass, two
+  rules, differing in the NAME arm alone (a call takes the FIRST DECLARATION
+  statically; a reference takes the whole run and picks the first SET member
+  at match time). **The ZERO case is not a third difference**: `(?R)`/`(?0)`/
+  `(?00)` target the AST ROOT, which always exists, so the port answers them
+  itself and queues NOTHING — which is what keeps `(a)(?-2)`, a relative
+  offset computing to zero, an error-115 rather than a silent `(?R)`.
+
 ### [DD-14 wave A2] The EIGHT SWITCH-LESS WALKERS, inspected
 
   `subroutines_design.md` §4.4a's census is `switch`-shaped, which is exactly
@@ -217,12 +272,25 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   The consequence is not academic: under `CALL_LINKAGE` the callee REGION is
   emitted from `.body` while the lexical occurrence is emitted from the new
   node — two different programs for one group — and §4.4c computes `W` and the
-  region's slot INDICES over whichever one it was handed. **WAVE B+C OWES ONE
+  region's slot INDICES over whichever one it was handed. **WAVE B+C OWED ONE
   OF THREE ANSWERS**: resolve `.body` AFTER the rewriting passes, have every
   rewriting pass update it, or exempt callee subtrees from rewriting. Note
   `possessify` and `revdet` are NOT in this list — they annotate fields on the
-  SAME nodes, so `.body` sees their results. Nothing is reachable in wave A2
-  (no producer), which is why this is recorded rather than fixed here.
+  SAME nodes, so `.body` sees their results.
+
+  **[DD-14 wave B+C] TOOK THE FIRST, AND MEASURING IT NARROWED THE FINDING TO
+  ONE OF THE TWO PASSES.** `src/opt/callgraph.c` binds `.body` over the FINAL
+  tree, after `pcrec_select_engine` and before emission. With the bind moved
+  above `pcrec_altcls`, `((?:a|b))(?1)` emits TWO DIFFERENT PROGRAMS FOR ONE
+  GROUP — a merged class test lexically, the un-merged alternation with its own
+  `RX_PUSH` in the region — and `RX_RESUME_FRAMES` moves 2 -> 3. **The ANSWERS
+  do not change**, because altcls is answer-preserving in both directions, so
+  the detector is `[DD-14-RECURSION rule 3]` in tests/codegen rather than a
+  corpus cell. **And `((?>a)b)(?1)` compiles BYTE-IDENTICALLY under the same
+  sabotage**: `pcrec_discharge_atomic` splices by rewriting the PARENT's `->l`
+  IN PLACE, so the `A_CAP` a callee is rooted at keeps its identity and sees
+  the discharge. Only the pass that REBUILDS the node is a hazard, which is a
+  narrowing of what wave A2 could see. Sabotage row S166.
 
 ### The D70 ownership survey
 
