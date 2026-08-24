@@ -248,7 +248,52 @@ typedef enum {
      * (design §7.2, measured). That is why a backref-bearing pattern gets NO
      * prefilter — `EngineFit.prefilter` is forced false — rather than a
      * filtered one. */
-    A_BREF
+    A_BREF,
+    /* [M6.6.2] `(?=X)` `(?!X)` `(?<=X)` `(?<!X)` and their non-atomic
+     * spellings `(?*X)` `(?<*X)` `(*napla:X)` `(*naplb:X)` — A LOOKAROUND:
+     * run the body as a SUB-MATCH, keep the VERDICT and throw the POSITION
+     * away (docs/design/lookaround_design.md §3.1).
+     *
+     * ONE KIND AND NOT FOUR (or eight), design §3.1(a). The measured argument
+     * for a kind over a flag is `assertions_design.md`'s — a new AKind
+     * enumerator raises a build diagnostic where a struct field raises none —
+     * and that argument says AT LEAST one kind, not four. Four would put three
+     * of them at the mercy of a `case` written for the first, which is the
+     * failure the alarm exists to prevent, one level in. So: one kind, and
+     * D62's own principle governs the rest — node KINDS encode structure, node
+     * FIELDS encode parse-resolved state. The measured budget for THIS
+     * enumerator was taken before it was added: 23 `-Wswitch` sites in 10
+     * files ([M6.6.2] wave A's dummy-enumerator run, which counted 24 with
+     * `pcrec_maxw`'s own new arm included).
+     *
+     * `l` is the body; `r` is unused. The payload is `u.look` below, and D62
+     * control 3's obligation comes WITH those fields: an analysis that
+     * pattern-matches `case A_LOOK:` and does not read `.neg` reproduces
+     * possessify.c's pre-D62 bug and no compiler diagnostic will say so.
+     * Design §9.3 makes that three sabotage rows rather than a comment.
+     *
+     * ITS MINIMUM AND MAXIMUM WIDTH ARE BOTH 0, and 0 BECAUSE IT WAS CHECKED
+     * rather than because it was inherited (design §3.1(d)). A LOOKAHEAD
+     * inspects bytes ahead of the cursor and consumes none; a LOOKBEHIND's
+     * bytes are BEHIND the cursor, and `pcrec_minw`/`pcrec_maxw` count bytes
+     * still to be CONSUMED. `vm_nullable` must answer TRUE for the same fact,
+     * or a quantified lookaround loses its empty-iteration guard — and design
+     * §2.6 measured that quantified lookaround SHIPS (all fourteen forms
+     * compile in both oracles, and the empty-iteration cells terminate).
+     *
+     * VM-ONLY, per the six registry rows that produce it, and the
+     * `engines`/`reg` stamp below is how that reaches
+     * `src/opt/select_engine.c`. A DFA cannot implement it today: `src/ir/nfa.c`
+     * lowers it to an EPSILON, i.e. the prefilter is built from the
+     * lookaround-ERASED pattern, which is a sound SUPERSET (design §5.3:
+     * L(P) is a subset of L(erase(P)) at every position) — sound for the
+     * prefilter's rejection and its span START, and NOT for its span END,
+     * which is why the MRL window ceiling is dropped on a lookaround-bearing
+     * artifact exactly as it is on a cut-bearing one (design §5.6). The
+     * general DFA construction is CHARTERED as `[ENG-LOOK]`, not built, and
+     * design §5.7 records Frank's ruling that NO one-character fold ships
+     * anywhere in the meantime. */
+    A_LOOK
 } AKind;
 
 typedef struct Ast Ast;
@@ -507,6 +552,65 @@ struct Ast {
              * and by sabotage row S106. */
             bool        caseless;
         } bref;
+
+        /* [M6.6.2] A_LOOK: the lookaround payload — THREE FLAGS AND A WIDTH
+         * TABLE, i.e. FIVE parse-resolved fields (design §3.1(a')). Every one
+         * of them is D62 state: resolved by the parse hook at the position
+         * that knows, never re-derived downstream.
+         *
+         * D70 IS WHY THIS IS A UNION MEMBER AND NOT FIVE MORE TOP-LEVEL
+         * FIELDS, and design §3.1's own sketch (which wrote them as
+         * `look_behind`, `look_neg`, ...) is superseded in SPELLING and not in
+         * content. In particular `int look_widths[]` was sketched as a
+         * FLEXIBLE ARRAY MEMBER and is an arena `const int *` here: a flexible
+         * array cannot live in a union, cannot be preceded by another member,
+         * and would make `sizeof(Ast)` a lie for the zeroing arena that
+         * allocates every node at one fixed size. */
+        struct {
+            /* DIRECTION — false = lookahead, true = lookbehind.
+             * WRITTEN by the parse hook (src/parse/mod_lookaround.c, wave
+             * B+C for the three `(?=`-side tails, wave D for the three `<`
+             * tails). READ by `vm_look` (src/gen/emit_vm.c) and by nothing
+             * else — the whole one-reader argument §3.1(a) rests on. Sabotage
+             * row S-LA15 ignores it and emits the lookahead shape for a
+             * lookbehind. */
+            bool        behind;
+            /* POLARITY — true = the body must FAIL for the assertion to hold.
+             * WRITTEN by the parse hook, READ by `vm_look`. Sabotage row
+             * S-LA14 ignores it, and every negative cell goes red. This is the
+             * field D62 control 3 names: `case A_LOOK:` without `.neg` is
+             * possessify.c's pre-D62 bug in a new construct. */
+            bool        neg;
+            /* ATOMICITY — true for `(?=` `(?!` `(?<=` `(?<!`, false for
+             * `(?*` `(?<*` `(*napla:` `(*naplb:`. It is the whole difference
+             * between the two families (design §2.2): the atomic forms commit
+             * to the body's FIRST success, the non-atomic ones can be
+             * re-entered. WRITTEN by the parse hook, READ by `vm_look`, which
+             * emits the shape MINUS the cut when it is false (§3.6).
+             * Sabotage row S-LA16 ignores it and always emits the cut. */
+            bool        atomic;
+            /* THE WIDTH TABLE — the fixed width of each TOP-LEVEL branch of
+             * the body, in branch order, for a LOOKBEHIND; NULL for a
+             * lookahead. Arena-allocated (see the D70 note above).
+             *
+             * COMPUTED AT PARSE TIME AND STORED, design §3.1(c), for the
+             * reason `Ast.u.bref.caseless` is: the REFUSAL in §2.5 has to
+             * happen in the module's parse hook — a body pcrec will not
+             * compile must be rejected with a pattern OFFSET, not discovered
+             * by the emitter — and once the hook has computed the widths,
+             * recomputing them downstream is a second derivation that can
+             * disagree with the first. `pcrec_maxw`/`pcrec_minw` (src/opt/mrl.c)
+             * are what the hook computes them WITH: a branch qualifies exactly
+             * when `minw == maxw`, which is also why an under-estimating
+             * `pcrec_maxw` is a silent miscompile rather than a lost
+             * optimisation. WRITTEN by the parse hook (wave D), READ by §3.4's
+             * emitted back-step. Sabotage row S-LA11. */
+            const int  *widths;
+            /* how many entries `widths` holds — the body's top-level branch
+             * count, which is `AltInfo.nbr` (PARSE-1) for the body parse.
+             * WRITTEN and READ with `widths`; the two are one fact. */
+            int         nbranch;
+        } look;
     } u;
 };
 
