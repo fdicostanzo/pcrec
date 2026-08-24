@@ -5449,3 +5449,33 @@ name in the [ABI-NS] lists; pre-v1.
 **Revisit when:** a second producer of `_R_INTERNAL`
 appears (then the code's doc gains a list of its producers, and a
 sabotage row asserts each).
+
+## D73 — the stamped resume/trail default for call-bearing patterns STAYS at 2048/3072; depth is the caller-provided buffer's job; the musl-128 KB limit is a documented user-facing fact (Frank, 2026-08-24)
+
+**Context.** D71 item 2 carried ASK 2's ruling "a LARGER stamped default
+for call-bearing patterns". The [DD-14.FB] spec lane MEASURED the cost
+that ruling did not have a number for: the run struct lives on the C
+stack of the un-suffixed entries (131,144 B call-bearing at 2048/3072 —
+`rx_search`'s frame 131,296 B by `-fstack-usage`), which already
+SIGSEGVs a musl-default 128 KB thread (K33); the trail binds before the
+frames (2.0 frames vs 9.0 trail entries per nesting level of
+`^(a(?1)?b)$`), so the shipped default gives up at n = 342 (a 684-byte
+subject) and raising frames alone changes nothing; and the real depth
+remedy is the caller-provided buffer (`_in` entries: 224 B frame; a 64 MB
+MAP_NORESERVE reservation matches 800 KB in 0.056 s).
+
+**Decision (Frank).** KEEP the default at 2048/3072 — option (a). D71
+item 2's "larger" is superseded by this ruling. The path around the
+limit for callers who need depth or a small thread stack is the
+caller-provided frame buffer; the limit only bites unusual patterns
+(recursive calls at depth). **The eventual USER DOCS must state it**:
+the default capacity, the subject-size it implies for recursive
+patterns, the musl/small-stack caveat, and the `_in` entries as the
+remedy — a release-note and reference-page obligation, not a footnote.
+
+**Why.** (b) doubles the C-stack cost TS-4 objects to; (c) lowers depth
+for every glibc caller to serve a platform that has the opt-in anyway.
+
+**Revisit when:** [DD-14.FB]'s code half lands (K33's status then); the
+user docs are written ([REL-META]); a measured population of recursive
+patterns says the default is wrong in practice.

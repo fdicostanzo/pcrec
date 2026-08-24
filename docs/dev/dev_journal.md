@@ -13564,3 +13564,9 @@ to fit 128 KB (n=256). Implementation checklist 11 items + 3 cells + 6
 rows; a `frames-buffer=N` .rxt directive proposed for the harness gap;
 `--backtrack-frames` over-provisions resume ~4.5× vs trail (filed, not
 fixed). Merge after the running san.
+
+RULING (Frank, ~18:3x) = D73: KEEP the 2048/3072 default (option (a));
+callers who need depth provide the frame buffer; the limit only hits
+unusual patterns; the eventual USER DOCS must state it (the capacity,
+its implied subject size, the musl/small-stack caveat, the `_in` remedy)
+— recorded as a [REL-META] obligation and on the FB row.
