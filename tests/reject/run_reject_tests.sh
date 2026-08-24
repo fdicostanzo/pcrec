@@ -1578,6 +1578,57 @@ reject_gated atomic-groups 'a*++' "multiple quantifiers on the same item (patter
 reject_gated atomic-groups 'a*?+' "multiple quantifiers on the same item (pattern offset 3)"
 
 echo
+echo "== [DD-14.LB] the DEFERRED lookbehind width re-check: WHICH construct is blamed =="
+# THE ONLY PLACE THIS CONTRACT CAN BE TESTED. A `.rxt` `perr` block asserts a
+# nonzero exit and nothing else (docs/testing.md), so the corpus can say THAT
+# these refuse and cannot say WHERE — and `where` is the whole content of what
+# [DD-14.LB] changed. Module `lookaround`'s §2.5 width rule for a body carrying
+# a subroutine call is no longer decided in the parse hook (the callee is not
+# bound there, and a FORWARD call's target is not even parsed): the hook
+# RECORDS the assertion's offset in `Ast.u.look.at` and `pcrec_postresolve`
+# (src/opt/postresolve.c) re-asks the rule once `pcrec_callgraph_build` has run.
+# An offset is exactly what such a move can silently lose.
+#
+# THE FIRST THREE ROWS ARE THE ORDER CONTRACT, and they are a TRIPLE because no
+# pair of them pins it. `pcrec_postresolve` visits recorded constructs in
+# ASCENDING PATTERN OFFSET rather than in walk order, and walk order is not
+# close to it — a flat concatenation is LEFT-NESTED, so a spine walk reaches
+# the RIGHTMOST element first and an unsorted pass blames the LAST offending
+# lookbehind in the pattern.
+#
+#   row 1  both lookbehinds refusable, first calls the first-declared callee
+#   row 2  both refusable, first calls the SECOND-declared callee — so an
+#          implementation ordering by callee declaration, by `A_CAP` number, or
+#          by call-graph target index answers 45 here and 33 in row 1
+#   row 3  ONLY THE SECOND is refusable — the row that stops "always blame the
+#          first lookbehind" from passing rows 1 and 2 for the wrong reason
+#
+# ALL THREE OFFSETS ARE LIBPCRE2 10.46's OWN, measured through the committed
+# ctypes binding: 33, 33 and 45, err 125 each. That is agreement on the tier-2
+# fact D26 puts the OFFSET convention in, not merely internal consistency.
+LBF=recursion,lookaround,named-groups
+reject_gated "$LBF" '^(?:(?<g>a+)){0}(?:(?<h>b+)){0}ab(?<=(?&g))ab(?<=(?&h))$' "(this one is unbounded) (pattern offset 33)"
+reject_gated "$LBF" '^(?:(?<g>a+)){0}(?:(?<h>b+)){0}ab(?<=(?&h))ab(?<=(?&g))$' "(this one is unbounded) (pattern offset 33)"
+reject_gated "$LBF" '^(?:(?<h>ab)){0}(?:(?<g>a+)){0}ab(?<=(?&h))ab(?<=(?&g))$' "(this one is unbounded) (pattern offset 45)"
+# A RECURSIVE callee has no bounded width — libpcre2 refuses it too (err 125),
+# AT OFFSET 26, which is the offset pcrec now names from a pass that runs long
+# after the parse hook that used to name it.
+reject_gated "$LBF" '^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$' "(this one is unbounded) (pattern offset 26)"
+# AND THE ROW WHOSE SENTENCE IS THE EVIDENCE. This cell was PARKED in
+# tests/known_fail/ by [DD-14] wave B+C as a tier-2 over-rejection caused by
+# TIMING. It is not: its lookbehind body is ONE top-level branch of width 1..2,
+# because the alternation lives inside the CALLEE — `(?<=(a|bc))x` reached
+# through a call, which `lookaround_design.md` §2.5 charters the longest-first
+# step-back loop for and does not ship. Closing the timing gap left the refusal
+# standing and changed the SENTENCE from "this one is unbounded" (a claim about
+# the call graph, and false) to "this one can match 1..2 characters" (a claim
+# about the shipped subset, and true), at the same offset. **The wording is
+# pinned here precisely because it is what told the two questions apart** — a
+# regression to "unbounded" would be a true refusal for a false reason, which
+# no exit code and no `perr` block can see.
+reject_gated "$LBF" '^(?:(?<g>a|ab)){0}ab(?<=(?&g))$' "(this one can match 1..2 characters) (pattern offset 20)"
+
+echo
 echo "== base-grammar MISCOMPILES, fixed 2026-08-10 (K5, K6) =="
 # The only rows in this file with no registry row behind them, and the reason
 # they are here rather than only in the corpus is worth stating: a `.rxt` `perr`
@@ -2177,8 +2228,15 @@ fi
 # still refuses is a reference to a name the pattern never declares (the
 # error-115 class). Rejections and controls are unmoved: every construct this
 # module built already refused at the CLOSED gate and still does.
-if [ "$nrej" -ne 282 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 73 ]; then
-    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 282 / 99 / 0 / 73 ([M6.5.2] moved rejections 279 -> 282 and gated 65 -> 73. The three new rejections are the module's own std1-BOUNDARY proof -- (a)\\1, \\k<n> and (a)\\g{-1} refused by the BARE default naming backrefs, the shape (?J)a already carried. The seven new gated rows are backrefs_design.md S10's partial-enable MATRIX, which needs THREE modules to state and which a .rxt block cannot express because which module a diagnostic PROMISES is the tier-2 fact under D26; one of its cells CORRECTS the design (under std1 `(?<n>a)\\k<n>` names named-groups, not backrefs, because pcrec reports the LEFTMOST construct it cannot handle and the DECLARATION comes first). Before those, gated 65 -> 66: the enabled-but-unbuilt pin MOVED backrefs -> recursion (\\g<1>, a row that module added born unbuilt) rather than retiring, net zero, and one NEW gated row asserts that with backrefs+named-groups+modifiers a duplicate NAME is legal while a reference to an undeclared one is still the error-115 class. Before that, [M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
+#
+# [DD-14.LB] (2026-08-24) gated 73 -> 78, rejections and controls unmoved. The
+# five rows are the deferred lookbehind width re-check's OFFSET contract; the
+# echo below carries the argument. Note also that this echo's BACKTICKS were
+# live command substitution inside a double-quoted string — the guard's own
+# message lost several fragments to it and printed "command not found" every
+# time it fired — and are single quotes now.
+if [ "$nrej" -ne 282 ] || [ "$naccept" -ne 99 ] || [ "$nwrong" -ne 0 ] || [ "$ngated" -ne 78 ]; then
+    echo "reject: COVERAGE CHANGED — $nrej rejections / $naccept controls / $nwrong known-wrong / $ngated gated, expected 282 / 99 / 0 / 78 ([DD-14.LB] moved gated 73 -> 78 and rejections not at all. The five new gated rows are the DEFERRED lookbehind width re-check's OFFSET contract, and they are in this file rather than in tests/recursion/inlookaround.rxt because a '.rxt' 'perr' asserts a nonzero exit and nothing else -- while WHERE the refusal points is the whole content of what that wave changed, module 'lookaround''s SS2.5 rule having moved out of the parse hook and into 'pcrec_postresolve'. Three of them pin the ORDER ('pcrec_postresolve' visits recorded constructs in ASCENDING PATTERN OFFSET, not walk order, which for a left-nested A_CAT spine would blame the LAST offending lookbehind); the triple is irreducible, since row 3 is what stops 'always blame the first lookbehind' passing rows 1 and 2 for the wrong reason, and all three offsets are libpcre2 10.46's own. The fifth pins a WORDING, which this file normally leaves to D26 tier 3 and which earns a pin here for one reason: that sentence is what proved wave B+C's parked cell 2 was a SS2.5 capability limit rather than the timing bug it was filed as, so a regression to 'unbounded' would be a true refusal for a false reason and no exit code could see it. Before those, [M6.5.2] moved rejections 279 -> 282 and gated 65 -> 73. The three new rejections are the module's own std1-BOUNDARY proof -- (a)\\1, \\k<n> and (a)\\g{-1} refused by the BARE default naming backrefs, the shape (?J)a already carried. The seven new gated rows are backrefs_design.md S10's partial-enable MATRIX, which needs THREE modules to state and which a .rxt block cannot express because which module a diagnostic PROMISES is the tier-2 fact under D26; one of its cells CORRECTS the design (under std1 '(?<n>a)\\k<n>' names named-groups, not backrefs, because pcrec reports the LEFTMOST construct it cannot handle and the DECLARATION comes first). Before those, gated 65 -> 66: the enabled-but-unbuilt pin MOVED backrefs -> recursion (\\g<1>, a row that module added born unbuilt) rather than retiring, net zero, and one NEW gated row asserts that with backrefs+named-groups+modifiers a duplicate NAME is legal while a reference to an undeclared one is still the error-115 class. Before that, [M6.4.2] moved both: +5 rejections (the brace-form module-off row a{1,2}+, which had none; the a*?+ / a*?+b lazy-then-possessive pair and their a** base-grammar control, design 6.3; and a*++, whose message CHANGES when the module is enabled) and +1 net gated (the atomic-groups enabled-but-unbuilt row RETIRED -- (?>a) compiles now -- while a*++ and a*?+ gained gate-OPEN pins, which is where a*++'s changed message lives). Before that, [M6.2] wave A added 7: the four enabled-but-unbuilt escape rows \\b/\\B/\\G/\\K, the two (?m) spellings under an ENABLED assertions module, and the assertions-OFF twin that is their failing direction; [M6.2] wave B took 2 back — \\b and \\B COMPILE now; [M6.2] wave C took 2 more — the two (?m) spellings COMPILE now, their enabled-but-unbuilt rows retired, and one duplicate module-OFF row was merged into the pair beside them; [M6.2] wave D took 1 more — \\G COMPILES now, leaving \\K as the sole enabled-but-unbuilt row in the tree. [M6.2] wave E took that one back and then added FOUR, +3 net: module 'assertions' has no unbuilt construct left, and \\K's row was the tree's ONLY hand-written pin on ext.c's enabled-but-unbuilt arm — an arm whose real population is every module with rows and no producer (backrefs, lookaround, atomic-groups, quoting, all MEASURED live by that wave), so the pin is RE-HOMED there across three modules and BOTH positions rather than lost. The count going DOWN is the wave landing rather than coverage eroding, and the control that says so is tests/assertions/run_assertions_tests.sh's compile assertions)." >&2
     echo "reject: if that was deliberate, update the expected counts in this file's summary block; if not, coverage was removed" >&2
     exit 1
 fi
