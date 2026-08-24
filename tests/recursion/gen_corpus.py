@@ -888,6 +888,90 @@ KRESET = [
         B(r"^(a(?1)?\Kb)$", [('m', "aabb")], RCK, groups=1,
           note="`\\K` inside a body that ALSO recurses."),
     ]),
+    # [DD-14 wave B+C, code lane] WAVE A2's SECOND OBLIGATION, DISCHARGED BY
+    # MEASUREMENT rather than by a refusal.
+    ("`\\K` REACHED THROUGH A CALL, INSIDE A LOOKAROUND -- ACCEPTED, and "
+     "the measurement is what settles it. `mod_lookaround.c`'s SS2.7 check "
+     "runs in the PARSE HOOK (the only place with an offset to refuse at) "
+     "and cannot see through a call, because `u.call.body` is filled at end "
+     "of parse and a FORWARD call's target is not parsed yet. Wave A2 left "
+     "three answers: re-check after resolution, refuse the combination, or "
+     "MEASURE what 10.46 does. **PCRE2's RULE IS LEXICAL**: `(?=(a\\Kb))x` "
+     "is error 199 and every cell below COMPILES -- so the first two answers "
+     "would have refused patterns 10.46 accepts. pcrec reproduces all of "
+     "them, for design SS3.4(b)'s own structural reason (W excludes slots 0 "
+     "and 1, so the `\\K` survives the RETURN; `vm_look` restores the CURSOR "
+     "from SLOT_LOOK_POS rather than slot 0, so it survives the ASSERTION).", [
+        B(r"(?=(?1))(a\Kb)", [('m', "ab"), ('m', "xab"), ('m', "abab")],
+          RCK + ",lookaround", groups=1,
+          note="the positive lookahead. The `\\K` is crossed inside the "
+               "assertion THROUGH THE CALL and again lexically."),
+        B(r"(?=(?1))(a\Kb)c", [('m', "abc")], RCK + ",lookaround", groups=1,
+          note="with a follow, so the assertion is not the last thing that "
+               "runs."),
+        B(r"x(?=(?1))(a\Kb)", [('m', "xab")], RCK + ",lookaround", groups=1,
+          note="with a prefix, so the reported start is not 0 either way."),
+        B(r"(?!(?1))(a\Kb)c", [('n', "abc"), ('n', "zbc")],
+          RCK + ",lookaround", groups=1,
+          note="the NEGATIVE polarity, where an unsound prune or a leaked "
+               "`\\K` would be a FALSE MATCH rather than a missed one."),
+        B(r"^(?:((?:a)\Kb)){0}(?=(?1))ab$", [('m', "ab")],
+          RCK + ",lookaround", groups=1,
+          note="**THE ISOLATING CELL**: the `\\K` is reachable ONLY through "
+               "the call inside the lookahead, so it is the one cell where "
+               "the assertion's own crossing is observable on its own. Every "
+               "other row above has a LEXICAL `\\K` that would give the same "
+               "answer by itself."),
+    ]),
+]
+
+# ===========================================================================
+# rebind.rxt -- wave A2's PASS-ORDERING FINDING (commit 513de65)
+# ===========================================================================
+# `u.call.body` is a CACHE of "which subtree is that group's, in the tree the
+# emitter will walk", and two passes REBUILD nodes rather than mutating them.
+# The cells below are the two witnesses wave A2 named. Neither can go red on a
+# WRONG ANSWER -- both rewrites are answer-preserving in both directions --
+# which is exactly why the real detector is [DD-14-RECURSION rule 3] in
+# tests/codegen and these cells pin the LANGUAGE half beside it: a compiler
+# that emitted the callee region from a stale subtree would still have to get
+# these right, and one that emitted it from NO subtree would not.
+REBIND = [
+    ("THE ALTCLS WITNESS. `pcrec_altcls` allocates a NEW `A_CAP` over the "
+     "merged class (`altcls_walk`'s arm does `*r = *a; r->l = body;`), so a "
+     "`.body` captured at end of parse names a node that is no longer in the "
+     "tree. MEASURED: with the bind moved above that pass the artifact emits "
+     "TWO DIFFERENT PROGRAMS FOR ONE GROUP -- a merged class test lexically, "
+     "the un-merged two-branch alternation with its own RX_PUSH in the "
+     "region -- and RX_RESUME_FRAMES moves 2 -> 3 with it.", [
+        B(r"^((?:a|b))(?1)$", [('m', "ab"), ('m', "aa"), ('m', "bb"),
+                               ('m', "ba"), ('n', "a"), ('n', "abc")],
+          RC, groups=1,
+          note="the alternation the pass merges is the CALLEE's own body."),
+        B(r"^((?:foo|fob))(?1)x$", [('m', "foofoox"), ('m', "foofobx"),
+                                    ('n', "foox")], RC, groups=1,
+          note="STAGE 2 as well as stage 1: a shared literal prefix is "
+               "FACTORED, which rebuilds the spine rather than merging a "
+               "class."),
+    ]),
+    ("THE DISCHARGE WITNESS, AND IT IS MEASURED NOT TO BE A HAZARD -- which "
+     "is why it is here rather than assumed. `pcrec_discharge_atomic` "
+     "splices an `A_ATOMIC` out by rewriting the PARENT's `->l` IN PLACE, so "
+     "the `A_CAP` a callee is rooted at KEEPS ITS IDENTITY and sees the "
+     "discharge. MEASURED: `((?>a)b)(?1)` compiles BYTE-IDENTICALLY with the "
+     "bind moved above every rewriting pass. Wave A2 named both passes; only "
+     "the one that REBUILDS the node matters.", [
+        B(r"^((?>a)b)(?1)$", [('m', "abab"), ('n', "aba"), ('n', "ab")],
+          RCA, groups=1,
+          note="the atomic callee. Its cut is a no-op here, which is what "
+               "makes the free discharge fire at all."),
+        B(r"^((?>a|ab))z(?1)c$", [('m', "azabc"), ('n', "azac")],
+          RCA, groups=1,
+          note="the atomic callee whose cut BITES, so the discharge does "
+               "NOT fire and the region carries the cut in both compilers. "
+               "The pair is what separates 'the discharge is invisible' from "
+               "'nothing is being discharged'."),
+    ]),
 ]
 
 # ===========================================================================
@@ -1283,6 +1367,11 @@ def main():
          "SS3.4(d)/(e) (a call INSIDE a lookaround) and SS3.5's mirror "
          "image (a call TO a group whose lexical home is one)",
          INLOOKAROUND),
+        ("rebind.rxt",
+         "wave A2's PASS-ORDERING FINDING: `u.call.body` is bound over the "
+         "FINAL tree, so the callee region and the lexical occurrence are "
+         "one program",
+         REBIND),
         ("nocaptures.rxt",
          "SS4.3: a call target joins the marked set -- one-hop and "
          "two-hop, ordinary-axis pins (the --no-captures axis itself is a "

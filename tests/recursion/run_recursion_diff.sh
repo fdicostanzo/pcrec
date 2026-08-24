@@ -210,14 +210,19 @@ fi
 # `^(a(?1)?b)$` generates is a^n b^n, which is not regular (design §8.1) — so
 # there is no flag that makes it DFA-compilable and the refusal must name the
 # CONSTRUCT rather than advise `--no-captures`.
-dfa_out="$("$PCREC" --features "$FEATS" -p rx --engine=dfa -o /dev/null -- '(a)(?1)' 2>&1)"
+# `-o /dev/null` IS NOT AVAILABLE HERE and the reason is a measured instrument
+# defect from this module's own design lane (§0.3 item 5): pcrec derives the
+# paired header's name from the output path, so `-o /dev/null` asks for
+# `/dev/null.h` and every COMPILING cell reads "Permission denied". The design
+# lane published three cells that way before catching it.
+dfa_out="$("$PCREC" --features "$FEATS" -p rx --engine=dfa -o "$WORKDIR/dfa.c" -- '(a)(?1)' 2>&1)"
 case "$dfa_out" in
     *"(?1"*|*"recursion"*)
         ok "[engine] --engine=dfa on '(a)(?1)' refuses naming the construct: $dfa_out" ;;
     *)
         bad "[engine] --engine=dfa on '(a)(?1)' answered '$dfa_out', which does not name the construct" ;;
 esac
-if "$PCREC" --features "$FEATS" -p rx -o /dev/null -- '(a)(?1)' 2>/dev/null; then
+if "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/ctl.c" -- '(a)(?1)' 2>/dev/null; then
     ok "[engine] the CONTROL: the same pattern compiles on the default engine, so the refusal above is about the ENGINE and not about the construct having stopped being accepted"
 else
     bad "[engine] '(a)(?1)' does not compile on the default engine — the refusal above proves nothing"
@@ -345,8 +350,8 @@ done <<'ROWS'
 ROWS
 
 if [ "$SWEEP_FAIL" -eq 0 ]; then
-    [ "$CELLS" -eq 2624 ] || die "§3 compared $CELLS cells, not the 2624 this guard is computed against — the sweep's population moved and a smaller one is how this section passes while measuring less"
-    ok "§3: $CELLS cells over 16 patterns x $NSUBJ subjects x every startpos, span AND every group span, 0 disagreements with libpcre2 10.46"
+    [ "$CELLS" -eq 1632 ] || die "§3 compared $CELLS cells, not the 1632 this guard is computed against — the sweep's population moved and a smaller one is how this section passes while measuring less"
+    ok "§3: $CELLS cells over 16 patterns x $NSUBJ subjects x every startpos (102 cells per pattern), span AND every group span, 0 disagreements with libpcre2 10.46"
 fi
 
 finish

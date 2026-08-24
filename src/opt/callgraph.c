@@ -92,7 +92,6 @@ struct CallGraph {
     int         *target;      /* ascending, may begin with 0 */
     const Ast  **body;        /* body[i] is target[i]'s region root */
     unsigned char *reach;     /* reach[i*ntarget + j]: region i can reach j */
-    bool         *has_kreset; /* region i contains a `\K`, through calls */
 };
 
 /* ---- the whole-tree collection walks ------------------------------------
@@ -173,12 +172,10 @@ static void cg_roots(void *ud, const Ast *a)
     if (g > 0 && g <= r->ncap && !r->root[g]) r->root[g] = a;
 }
 
-/* Pass 3, per region: which targets does THIS subtree call, and does it
- * contain a `\K` lexically. One walk answers both. */
+/* Pass 3, per region: which targets does THIS subtree call. */
 typedef struct {
     const struct CallGraph *cg;
     unsigned char *row;
-    bool kreset;
 } CgEdges;
 
 static int cg_index(const struct CallGraph *cg, int t)
@@ -190,7 +187,6 @@ static int cg_index(const struct CallGraph *cg, int t)
 static void cg_edges(void *ud, const Ast *a)
 {
     CgEdges *e = ud;
-    if (a->k == A_KRESET) { e->kreset = true; return; }
     if (a->k != A_CALL) return;
     int i = cg_index(e->cg, a->u.call.target);
     if (i >= 0) e->row[i] = 1;
@@ -240,56 +236,49 @@ static void cg_minw_publish(void *ud, const Ast *a)
     ((Ast *)a)->u.call.minw = i >= 0 ? m->val[i] : 0;
 }
 
-/* ---- the `\K`-through-a-call check (wave A2's second obligation) --------- */
-
-typedef struct { const struct CallGraph *cg; bool hit; } CgKr;
-
-static void cg_kreset_reach(void *ud, const Ast *a)
-{
-    CgKr *k = ud;
-    if (a->k == A_KRESET) { k->hit = true; return; }
-    if (a->k != A_CALL) return;
-    int i = cg_index(k->cg, a->u.call.target);
-    if (i >= 0 && k->cg->has_kreset[i]) k->hit = true;
-}
-
-typedef struct { Ctx *cx; const struct CallGraph *cg; } CgLook;
-
-static void cg_look_check(void *ud, const Ast *a)
-{
-    CgLook *l = ud;
-    if (a->k != A_LOOK) return;
-    CgKr k = { l->cg, false };
-    cg_walk(a->l, cg_kreset_reach, &k);
-    if (!k.hit) return;
-    /* §2.7's refusal, raised HERE because it cannot be raised where it belongs.
-     *
-     * `mod_lookaround.c`'s `la_has_kreset` runs INSIDE THE PARSE HOOK — it has
-     * to, because that is the only place with a pattern OFFSET — and at that
-     * instant `u.call.body` is NULL and a FORWARD call's target has not been
-     * parsed at all. The question "does the callee hold a `\K`" is not merely
-     * forbidden there by the back-edge rule, it is UNANSWERABLE there. That
-     * arm's own comment (added by wave A2) demanded one of three answers from
-     * this wave: re-run the check after resolution over the call graph, refuse
-     * a call inside a lookaround body outright, or measure what 10.46 does.
-     *
-     * THIS IS THE FIRST, and it is the only one that does not refuse a legal
-     * pattern: `(?=(?1))` where group 1 holds NO `\K` is ordinary and must
-     * compile (design §3.4(e) measured a call inside a lookahead behaving as
-     * the construct it is wrapped in).
-     *
-     * THE OFFSET IS 0 AND THAT IS A REPORTED LIMITATION, not a placeholder.
-     * No `Ast` node carries a source position, and by the time the graph
-     * exists neither the assertion nor the `\K` has one to give — the parse
-     * hook's version names the ASSERTION's offset for the same reason one step
-     * earlier. D26 puts pcrec's own offsets in tier 2 against pcrec's own
-     * convention, and "offset 0" is the honest reading of "this pattern",
-     * which is the scope of the fact. The WORDING names the route so a user
-     * can find it, which is the part that helps. */
-    ctx_fail(l->cx, 0,
-             "\\K is not allowed inside a lookaround, and this one reaches a "
-             "\\K through a subroutine call");
-}
+/* ---- WAVE A2's SECOND OBLIGATION, DISCHARGED BY MEASUREMENT --------------
+ *
+ * `mod_lookaround.c`'s `la_has_kreset` cannot see through a call: it runs
+ * inside the PARSE HOOK, where it must, because that is the only place with a
+ * pattern OFFSET to refuse at — and at that instant `u.call.body` is NULL and
+ * a FORWARD call's target has not been parsed at all. Wave A2 recorded the
+ * gap at the site and left this wave THREE answers: re-run the check after
+ * resolution over the graph, refuse a call inside a lookaround body outright,
+ * or MEASURE what 10.46 does with the combination.
+ *
+ * **THE THIRD ONE IS THE ANSWER, AND THE FIRST TWO ARE OVER-REJECTIONS.**
+ * MEASURED on libpcre2 10.46 through the committed ctypes binding:
+ *
+ *     (?=(a\Kb))x                    REFUSED, error 199 — `\K` LEXICALLY
+ *                                    inside the assertion, which is §2.7's
+ *                                    rule and is unchanged
+ *     (?=(?1))(a\Kb)      on "ab"    (1,2) g1=(0,2)   ACCEPTED
+ *     (?=(?1))(a\Kb)      on "xab"   (2,3) g1=(1,3)
+ *     (?=(?1))(a\Kb)c     on "abc"   (1,3) g1=(0,2)
+ *     x(?=(?1))(a\Kb)     on "xab"   (2,3) g1=(1,3)
+ *     (?!(?1))(a\Kb)c     on "abc"   NOMATCH
+ *     ^(?:((?:a)\Kb)){0}(?=(?1))ab$  on "ab" (1,2)  — the ISOLATING cell,
+ *                                    where the `\K` is reachable ONLY through
+ *                                    the call inside the lookahead
+ *
+ * PCRE2's rule is LEXICAL. A `\K` reached THROUGH A CALL is not refused, and
+ * an implementation that refused it would decline patterns 10.46 compiles.
+ *
+ * AND pcrec ALREADY REPRODUCES ALL SEVEN, which is what turns "do not refuse"
+ * from a decision into a measurement: this lane built the check, measured the
+ * oracle, then deleted the check and re-measured pcrec — 7 of 7 agreeing,
+ * the isolating cell included. The reason is STRUCTURAL rather than lucky and
+ * it is design §3.4(b)'s own: `W` excludes slots 0 and 1 BY CONSTRUCTION, so
+ * a `\K` inside a callee survives the RETURN, and `vm_look`'s positive arm
+ * restores the CURSOR from `SLOT_LOOK_POS` rather than slot 0, so it survives
+ * the ASSERTION too. `\K` is a PATH FACT at both boundaries, which is exactly
+ * what 10.46 measures it to be.
+ *
+ * SO THERE IS NO CHECK HERE, and this comment is what stands in its place —
+ * because "no rule" is a CLAIM, and design §3.4(e2) makes the same point
+ * about `\G`/`\A`/`\z` composing with a call: the absence of a rule is
+ * something a panel should be able to check. The cells are in
+ * `tests/recursion/kreset.rxt`. */
 
 /* ------------------------------------------------------------------------- */
 
@@ -345,12 +334,9 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
     const size_t nn = (size_t)n;
     cg->reach = arena_alloc(&cx->arena, nn * nn);
     memset(cg->reach, 0, nn * nn);
-    cg->has_kreset = arena_alloc(&cx->arena, nn * sizeof *cg->has_kreset);
-    memset(cg->has_kreset, 0, nn * sizeof *cg->has_kreset);
     for (int i = 0; i < n; i++) {
-        CgEdges e = { cg, cg->reach + (size_t)i * nn, false };
+        CgEdges e = { cg, cg->reach + (size_t)i * nn };
         cg_walk(cg->body[i], cg_edges, &e);
-        cg->has_kreset[i] = e.kreset;
     }
     for (int k = 0; k < n; k++)
         for (int i = 0; i < n; i++)
@@ -358,13 +344,6 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                 for (int j = 0; j < n; j++)
                     if (cg->reach[(size_t)k * nn + (size_t)j])
                         cg->reach[(size_t)i * nn + (size_t)j] = 1;
-    /* `\K` reachability rides the same closure: a region reaches a `\K` if it
-     * holds one lexically or reaches a region that does. */
-    for (int i = 0; i < n; i++)
-        for (int j = 0; j < n; j++)
-            if (cg->reach[(size_t)i * nn + (size_t)j] && cg->has_kreset[j])
-                cg->has_kreset[i] = true;
-
     cx->callgraph = cg;
 
     /* ---- THE `minw` FIXPOINT (design §4.4b) -----------------------------
@@ -417,9 +396,6 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
         }
         cg_walk(root, cg_minw_publish, &m);
     }
-
-    /* ---- §2.7's `\K` REFUSAL, RE-ASKED THROUGH THE GRAPH ---------------- */
-    { CgLook l = { cx, cg }; cg_walk(root, cg_look_check, &l); }
 }
 
 int pcrec_callgraph_ntargets(const struct CallGraph *cg)

@@ -52,3 +52,41 @@ pattern ^(a(?1)?\Kb)$
 features recursion,assertions
 m "aabb" 3 4
 g 1 0 4
+
+# ====================================================================
+# `\K` REACHED THROUGH A CALL, INSIDE A LOOKAROUND -- ACCEPTED, and the measurement is what settles it. `mod_lookaround.c`'s SS2.7 check runs in the PARSE HOOK (the only place with an offset to refuse at) and cannot see through a call, because `u.call.body` is filled at end of parse and a FORWARD call's target is not parsed yet. Wave A2 left three answers: re-check after resolution, refuse the combination, or MEASURE what 10.46 does. **PCRE2's RULE IS LEXICAL**: `(?=(a\Kb))x` is error 199 and every cell below COMPILES -- so the first two answers would have refused patterns 10.46 accepts. pcrec reproduces all of them, for design SS3.4(b)'s own structural reason (W excludes slots 0 and 1, so the `\K` survives the RETURN; `vm_look` restores the CURSOR from SLOT_LOOK_POS rather than slot 0, so it survives the ASSERTION).
+# ====================================================================
+
+# the positive lookahead. The `\K` is crossed inside the assertion THROUGH THE CALL and again lexically.
+pattern (?=(?1))(a\Kb)
+features recursion,assertions,lookaround
+m "ab" 1 2
+g 1 0 2
+m "xab" 2 3
+g 1 1 3
+m "abab" 1 2
+g 1 0 2
+
+# with a follow, so the assertion is not the last thing that runs.
+pattern (?=(?1))(a\Kb)c
+features recursion,assertions,lookaround
+m "abc" 1 3
+g 1 0 2
+
+# with a prefix, so the reported start is not 0 either way.
+pattern x(?=(?1))(a\Kb)
+features recursion,assertions,lookaround
+m "xab" 2 3
+g 1 1 3
+
+# the NEGATIVE polarity, where an unsound prune or a leaked `\K` would be a FALSE MATCH rather than a missed one.
+pattern (?!(?1))(a\Kb)c
+features recursion,assertions,lookaround
+n "abc"
+n "zbc"
+
+# **THE ISOLATING CELL**: the `\K` is reachable ONLY through the call inside the lookahead, so it is the one cell where the assertion's own crossing is observable on its own. Every other row above has a LEXICAL `\K` that would give the same answer by itself.
+pattern ^(?:((?:a)\Kb)){0}(?=(?1))ab$
+features recursion,assertions,lookaround
+m "ab" 1 2
+g 1 -1 -1

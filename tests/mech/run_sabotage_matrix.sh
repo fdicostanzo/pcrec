@@ -109,6 +109,13 @@
 #   altdiff  altcls                    — added 2026-08-17 ([OPT-ALTCLS] alternation->class normalization)
 #   atomicdiff  atomicidentity         — added 2026-08-22 ([M6.4.2] module atomic-groups)
 #   brefdiff  dupnamesdiff  brefidentity — added 2026-08-22 ([M6.5.2] module backrefs)
+#   recursion — added 2026-08-24 ([DD-14] wave B+C); like `lookaround` below
+#     it is wired at the wave that builds it rather than at the module's
+#     close, because two of that wave's rows are unscoreable without it: S158
+#     lives on the `--no-captures` axis, for which NO `.rxt` directive exists
+#     anywhere in this tree, and S154's halved trail charge changes no answer
+#     until a capacity is crossed, which a fixed-length corpus cell cannot
+#     reach on purpose.
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
@@ -603,6 +610,48 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/lookaround.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/lookaround.log" | grep -oE '[0-9]+')"
                 suite_bits+=("laround:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            recursion)
+                # [DD-14] wave B+C: module `recursion`'s behavioural
+                # instrument, `tests/recursion/run_recursion_diff.sh`, and it
+                # is wired at THIS wave rather than at the module's close for
+                # the reason the `lookaround` arm above was: two of this wave's
+                # own rows cannot be scored without it.
+                #
+                # S158 (`pcrec_bref_mark` stops marking `u.call.target`) is
+                # observable ONLY on the `--no-captures` axis, and **there is
+                # no `.rxt` directive for that flag anywhere in this tree** —
+                # the corpus is structurally blind to it, which the corpus's
+                # own CLAUDE.md records as an owed gap. This arm's §1 compiles
+                # under the flag and reads the ARTIFACT (the slot legend) as
+                # well as the answer, because the answer alone can be right by
+                # accident on a subject the callee's own text happens to match.
+                #
+                # S154 (a halved `2*|W|` trail charge) changes NO ANSWER until
+                # the trail is exhausted, and a corpus cell has to pick a
+                # subject LENGTH in advance. §2 BISECTS for the artifact's own
+                # ceiling instead and asserts that one step past it the answer
+                # is a TYPED GIVE-UP rather than a wrong `nomatch` — a property
+                # that holds at whatever the ceiling is.
+                #
+                # SKIP-IS-NOT-A-PASS, AND THIS ARM SKIPS ONLY PARTLY, which is
+                # a different shape from `laexpand`'s and is why the scrape
+                # below does not need `laexpand`'s SKIP-banner special case.
+                # §3 (the libpcre2 subject sweep) needs the oracle; §1, §2 and
+                # §4 do not and RUN regardless, so on a box with no libpcre2
+                # the script still prints a real `checks passed:` count and a
+                # real `checks failed:` — never `0/0`, which is the reading
+                # that would let a row be called UNDETECTED by an arm that
+                # never ran. Validated by pointing the oracle import at a
+                # nonexistent module: the cell reads `recdiff:0fail/Npass` with
+                # N > 0 and the SKIP line names §3 by number.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/recursion/run_recursion_diff.sh" \
+                    > "$work/recursion.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/recursion.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/recursion.log" | grep -oE '[0-9]+')"
+                suite_bits+=("recdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
