@@ -1234,6 +1234,59 @@ append-only or historical records.
   a prototype differential whose group-count column disagreed with the C side's,
   announcing SIX false disagreements with libpcre2 for a construct that agrees
   perfectly.
+- `frame_buffer_design.md` — **PROPOSED, NOT PANELED; nothing in it is
+  built** ([DD-14.FB], 2026-08-24): the design record behind
+  `../spec/match_api.md` §10, D71 item 2's CALLER-PROVIDED FRAME BUFFER.
+  Its three load-bearing results are all measurements, and two of them
+  answer questions the ruling left open rather than restating it.
+  **(1) THE TRAIL MUST BE CALLER-PROVIDED TOO, and a frames-only feature
+  would be INERT.** The ruling names the `resume_stack` array only; sweeping
+  the two capacities INDEPENDENTLY on `^(a(?1)?b)$` measures **2.000 resume
+  frames and 8.982 trail entries per nesting level** — so at the stamped
+  2048/3072 the TRAIL binds, the artifact gives up at n = 342 with two
+  thirds of its resume stack unreachable, and raising the resume capacity to
+  200,000 with the trail left alone measures **the same n = 342**. A caller
+  handed a gigabyte of frames under a frames-only version would see no
+  change at all. **(2) THE C-STACK COST, which is the number the ruling is
+  about**: `gcc -fstack-usage` puts `rx_search` at **131,296 bytes** on a
+  call-bearing artifact against the prototype `rx_search_in`'s **224** —
+  586× — and a 128 KB `pthread_attr_setstacksize` thread (musl's default)
+  **SIGSEGVs** on a 2-byte subject through the shipped entry while the
+  prototype matches an 800 KB one on the same thread. **(3) THE mmap
+  WORKED EXAMPLE IS RUN, not computed**: 2 × 64 MB `MAP_NORESERVE` costs
+  1.7 MB of RSS untouched and reaches libpcre2's own measured 800 KB depth
+  in 0.056 s touching 88 MB, with the ceiling landing where the trail
+  arithmetic predicts (between n = 466,000 and 470,000). It also PRICES the
+  one objection that could sink the design — the push site reading a
+  capacity FIELD rather than an immediate — at **no difference this
+  instrument can resolve** (~10%), and says so in those words rather than
+  claiming it free. Recommends the buffer-DESCRIPTOR shape over a
+  caller-allocated run-state object (which cannot deliver the feature: the
+  run state's size is fixed by the capacity macros, so allocating a bigger
+  one buys nothing) and over a per-artifact setter (TS-1 rejects a mutable
+  static; a thread-local passes the concurrency test and fails the
+  REENTRANCY one). **The delegation direction is the design's one
+  non-obvious mechanism**: `_in` with a NULL descriptor calls the
+  un-suffixed entry, never the reverse, because C cannot declare a local
+  conditionally and the obvious wrapper direction would put the 128 KB of
+  default storage on the frame of the caller who supplied their own.
+  Carries **ONE ASK for Frank (ASK-1, §7.4)**: whether the stamped default
+  for call-bearing patterns should be RAISED as ASK 2 originally directed,
+  with all three options measured — the measurements point the other way,
+  since raising it worsens the [TS-4] cost the same ruling cites, and the
+  step budget's 500M / work budget's 10⁹ calibration method does not
+  transfer to a resource paid for in C stack rather than time.
+  Also carries **FINDING-1, which is independent of whether the design
+  lands**: the 128 KB SIGSEGV above makes `../spec/match_api.md` §5.3's
+  concurrency CONTRACT false today for call-bearing artifacts, and it
+  arrived with [DD-14] waves B+C (the two per-frame call fields took a
+  frame from 24 to 40 bytes; 2048 × 16 is exactly what crosses 128 KB).
+  §11 is the implementation lane's checklist — eleven items, the seven
+  capacity-reading sites enumerated by file:line, three cells (one of which
+  needs a harness route that does not exist: `budget frames=` sizes the
+  ARTIFACT, not the call, so a `frames-buffer=` directive is proposed) and
+  six sabotage rows. §12 lists four falsifiable predictions. A D6
+  adversarial panel has not seen it.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes

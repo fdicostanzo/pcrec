@@ -126,6 +126,38 @@ spec and a design doc disagree, the spec is what the tool promises.
   byte-identical to the artifact's emission (`lib/CLAUDE.md` carries the
   detail).
 
+  **[DD-14.FB], 2026-08-24 — the fifth revision, and the first that states
+  a contract BEFORE it exists** (D71 item 2, the caller-provided frame
+  buffer). Every earlier revision recorded what shipped; this one adds
+  **§10, marked "SPECIFIED, NOT YET BUILT" in its own first line**, because
+  D71 item 2 rules the buffer's shape "decided at docs/spec/match_api.md
+  under D40" and the three existing entries' compatibility story is a fact
+  about this document's contract. **The marking is the point, and an
+  editor of this file must keep it**: this document's authority is that
+  every claim was checked against the shipped surface, so a forward-looking
+  section is only safe while it says loudly that it is one — §1-§9 are what
+  pcrec promises today, §3/§4/§5.3/§6 carry one-line forward pointers that
+  each name the pending status, and nothing in §1-§9 changed in substance.
+  When the implementation lands, §10's status block comes off and its
+  content merges into §3/§5/§6 where it belongs; that merge is the
+  revision, not a re-write. Specified: three `_in` entries taking a
+  per-artifact `<prefix>_buffers` descriptor (deliberately NOT one of §1's
+  fixed-literal `rx_*` types — a frame's SIZE differs per artifact, so a
+  literal spelling would advertise an interchangeability that does not
+  exist), `buf == NULL` DEFINED as a call to the un-suffixed entry,
+  `PCREC_ERR_FRAMES` unchanged and retry defined, a sizing surface with
+  `abi` 2 → 3, and §5.3 extended by exactly one conjunct (own buffers per
+  concurrent call). The design record — alternatives, costs, and the
+  ASK — is `docs/design/frame_buffer_design.md`.
+  **One shipped-behaviour note rides this revision and is NOT
+  forward-looking**: §5.3 gains a MEASURED paragraph saying the concurrency
+  promise is collectable only on a large-enough thread stack.
+  `<prefix>_search`'s stack frame is 131,296 bytes on a call-bearing
+  artifact whose frame requirement is not statically bounded, which does
+  not fit a musl-default 128 KB thread and faults on a 2-byte subject. That
+  is a live gap between §5.3's contract and the shipped artifact, filed as
+  the design note's FINDING-1.
+
 - `table_contract.md` — the ruled contract for every command that outputs
   a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table
   surface, which adopts it at birth): `#` comments, a header row naming
