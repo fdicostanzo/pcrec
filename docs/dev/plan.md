@@ -1221,6 +1221,16 @@ spine, not before):
   so the insertion machinery and recursion should be DESIGNED TOGETHER,
   with compile-time splicing remaining an optimization for the
   non-recursive case
+  - [DD-14.A] STATE:started (2026-08-24 ~09:4x, thirty-ninth session, lane/srA, sonnet) — WAVE A, the give-up code space alone: PCREC_ERR_RECURSE (-5), ERR_FLOOR −4→−5 at design §5.6 sites 1-8, the `_R_RECURSE` sentinel + search-entry propagation, the driver naming every code, the `gu <code>` harness directive (§10.3) exercised in the failing direction; PLUS (manager ruling under stated assumption, D72) PCREC_ERR_INTERNAL (-6) BELOW the floor and the lookbehind end-check's hard return re-pointed to it. No producer, no counter (D71.1), no frame fields (5a/5b are B+C's).
+  - [DD-14.A2] STATE:started (2026-08-24 ~09:4x, lane/srA2, opus) — WAVE A2: `A_CALL` + the `u.call` D70 payload + `CallLink`; the 27 arms of §4.4a (GRAPH sites as loud placeholders until callgraph.c); `pcrec_has_call` external, unwired; the D70 survey's `u.call` answers; the eight switch-less walkers inspected; byte-identity of every corpus artifact vs main as a plain diff. Merges after A, rebased.
+  - [DD-14.BC] STATE:not-started — WAVE B+C: ports, resolver, callgraph.c (SCCs, W fixpoint, minw), RX_CALL/RX_RETURN, save/restore, the fourteen corpora, 23 sabotage rows (§11). Opens when A and A2 are merged and the battery is green.
+  - [DD-14.D] STATE:not-started — WAVE D: the `\g` tails and the zero family (§11).
+  - [DD-14.E] STATE:not-started — WAVE E: engine selection, prefilter predicate, the four-axis identity gate; D71.6 rung admission declines call-bearing bodies.
+  - [DD-14.F] STATE:not-started — WAVE F: registry families (D71.3), the `(?(DEFINE)` row (D71.4), compliance refresh.
+  - [DD-14.G] STATE:not-started — WAVE G: the splice linkage, nfa.c's approximation, prefilter restored, `A == B` control.
+  - [DD-14.FB] STATE:not-started — D71.2 the CALLER-PROVIDED FRAME BUFFER: API shape at docs/spec/match_api.md under D40, versioning per [DD-3]; a spec lane first, then the emitter change (byte-identical default artifacts).
+  - [DD-14.D27] STATE:not-started — the blinded corpus with the PERL ARM (D71.5), M6.6.3's cell shape; the SPLICE-vs-LINKAGE self-oracle rides wave G.
+  - [DD-14.CLOSE] STATE:not-started — D69-tier close: full sabotage matrix, battery, gate, compliance refresh, archive.
 - [DD-3] STATE:not-started — generated-API versioning/compat policy for vendored consumers (before M3) (R1 A-10)
 - [DD-5] STATE:not-started — --std-c portable emitter fallback (switch-based) (R1 R-5)
 - [DD-10] STATE:not-started — remaining unbounded C-stack recursion in the compiler (R3 critic, critic-perf): trie_build now has an explicit 256-frame/68 KB budget, but compile_ast and clo_visit's t1 edge are still bounded only by pattern structure. A 400-nested-branch-point alternation needs ~192 KB — fine on an 8 MB main thread, not on a musl 128 KB one, and pcrec is a library. Convert clo_visit to an explicit worklist and give compile_ast a stated budget, then the NFA cap can be derived from memory alone

@@ -5398,3 +5398,41 @@ row=construct. (4) Subroutines without DEFINE is half a feature; the
 (then the group is designed, not the flag); the match-API spec fixes
 the buffer's entry-point shape; the family field's first customer (wave
 F) measures the index change.
+
+## D72 — `PCREC_ERR_INTERNAL (-6)` is minted BELOW the floor in [DD-14]'s ABI event, and the lookbehind end-check returns it (manager ruling under stated assumption, 2026-08-24; Frank to confirm or revert)
+
+**Context.** D71.1 charters a one-time pre-v1 renumber: `PCREC_ERR_RECURSE
+(-5)`, `PCREC_ERR_FLOOR` −4 → −5. Independently, [M6.6.2] wave D's
+lookbehind end-check (a42cd0e finding (b)) needed a hard return out of the
+matcher on its negative arm — a FALSE-MATCH guard, not a resource give-up —
+and, with no code meaning "internal error" and a renumber it did not own
+pending, chose `RX_R_FRAMES` BY ELIMINATION with a comment asking for this
+ruling "at DD-14 clearance". Clearance came without it; the session runs
+autonomously.
+
+**Decision.** In the same ABI event, `#define PCREC_ERR_INTERNAL (-6)`,
+strictly BELOW `PCREC_ERR_FLOOR`, with a per-prefix `_R_INTERNAL` sentinel
+propagated through the search entry like the give-ups. Its meaning: the
+artifact detected an inconsistency between its own analyses (here: the
+width table and the emitter) — NOT a give-up; nothing a caller can raise a
+bound against. The lookbehind negative arm returns it and its elimination
+comment is retired. The harness driver prints `internal` and exits 3;
+`run.sh` keeps that a HARD failure even under the new `gu` directive — no
+`.rxt` cell may EXPECT an internal error (sabotage rows are where an
+artifact's self-detection is exercised).
+
+**Why.** (1) The renumber is chartered as ONE event; minting later would be
+a second. (2) D49 reserved "strictly below the floor" for an abort
+semantic and F2's caller obligation `if (ret < PCREC_ERR_FLOOR)
+__builtin_trap();` is exactly the treatment an internal error deserves —
+placing it INSIDE `[FLOOR, -2]` would let a caller's "raise a bound and
+retry" logic loop on a miscompile. (3) The lookbehind site's own comment
+says the code it returns today is a diagnostic lie chosen for lack of a
+truthful one.
+
+**Cost of reversal.** One `#define`, one sentinel, one return site, one
+name in the [ABI-NS] lists; pre-v1.
+
+**Revisit when:** Frank rules; or a second producer of `_R_INTERNAL`
+appears (then the code's doc gains a list of its producers, and a
+sabotage row asserts each).
