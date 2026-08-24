@@ -92,6 +92,21 @@ Verified correct by re-run: LENS2-1's axes and census, LENS1-1's six cells,
 LENS1-2, P-12, LENS1-4, LENS1-6, the goto* relation 9/9, LENS3-2's -O table
 and slopes exactly, LENS2-7, the 27 sites, 26 rows, 23 citations.
 
+## Round 2 re-check (verifier, at 85a9bd6; report scratchpad/r34/verifier_recheck.md)
+
+V-1, V-3, V-4, V-5 VERIFIED by re-run/grep. V-2 and V-6 verified in substance
+with residues; V-11 archived with residues. ROUND 3 dispatched (all ACCEPT):
+
+| id | sev | claim | disposition |
+|---|---|---|---|
+| V-2′ | MED | §5.3a's rule box + family table still encode the withdrawn LEXICAL premise; the correction is an appended paragraph | ACCEPT — rewrite box and column |
+| V-6′(a) | MED | `probe_wrapped_target.py:131-133` still prints the refuted back-step mechanism into the archive §3.5 cites | ACCEPT — rewrite, re-archive |
+| V-6′(b) | MED | §10.2 still mandates a W4 cell; Z0/zerodef.rxt relation unstated | ACCEPT |
+| V-11′(a) | MED | old uncited "MEASURED, this lane" sentence left standing above the new citation | ACCEPT — delete |
+| V-11′(b) | MED | L9b annotations hardcode "10x" for 10×/5×/4× steps; "faster than the subject squared" over-reaches — re-measured exponents 2.01/1.94/1.98 = QUADRATIC; n=100 row at the timer floor | ACCEPT — compute from n/prev_n; drop/lengthen n=100; "quadratic" |
+| (LOW) | — | §4.4c's sequencing reason for sites 11/27 (operative fact: no `{0,0}` prune); §4.4b's paraphrase typeset as a quotation; §4.1(c) `pcrec_maxw` without the P13 caveat | ACCEPT |
+| (process) | — | `probes/check_selfconsistency.sh` (archive freshness + per-id coverage), failing loudly | lane's own item, lands here |
+
 ## The reports (condensed by the manager from the critics' in-message deliveries)
 
 ### c1_report.md
@@ -161,3 +176,13 @@ V-15 LOW — §5.7 "2-8 slots for the corpus's shapes" unsourced; is 2-6 on the 
 V-16 LOW — §12 P-5/P-6 run together; §9.3 lists S-SR18 before S-SR17; §14 orders ASKs 1,2,3,4,6,5.
 VERIFIED CORRECT (re-run/re-derived): LENS2-1 both axes (13/0, 10/0) and the seven-family census (nstate = 2(ngroups+1)+nguard+nlow+nmark+3nrev+nctr+npend; |W(0)| = RX_NSLOTS−2 right); LENS1-1's six cells + controls; LENS1-2's witness + ∞ control; P-12 asserted; LENS1-4's 13+3+4 rows and the (?0) registry row; LENS1-6; LENS2-5/P-9/S-SR13 9/9; LENS3-2's -O table and slopes EXACT; LENS2-7's two functions + eight ERR_FLOOR sites; LENS2-9's 27 sites; LENS2-10; LENS2-2's rule for the three named predicates; LENS3-1/3-5; 26 rows; 23 emit_vm.c citations.
 Own ledger: 5 (ran pcrec without --features all — empty vs zero; worked from d1580a8 until git log on out/ showed 0ea8ba4; V-7 first read as "wrong" until the third data point; accepted §3.5's back-step claim for an hour until reading lookaround_design §3.4's real label layout; nearly filed {0} as theoretical).
+# R34 VERIFIER re-check at 85a9bd6 — received 2026-08-23 ~22:1x. 4 HIGHs VERIFIED (V-1, V-3, V-4, V-5), 2 verified in substance with residues (V-2, V-6), V-11 archived with residues. 4 new MED + 4 LOW.
+V-1 VERIFIED (all four sites; probe re-run 11/2→13/0, 4/6→10/0; no "five" survives).
+V-2 VERIFIED in §5.7 (formula over vm_count_slots' accumulated counts; probe_slotcount.py re-run: cut marks [2,3,4,6], span-lows [1,3,5], guard none/one/one, groups flat 4, PENDING 1, axis C {1}→2/{0}→0, D1 [2,2,2,2,6,3,3] = 2–6; matches the verifier's independent round-1 measurements). V-2′ MED: §5.3a's RULE BOX still says "every slot allocated to a construct LEXICALLY INSIDE g's body" and the family table's "allocated per" column still reads LEXICAL atomic group / cursor rung / … / "quantifier with a nullable body" — the correction is an appended paragraph under a standing refuted rule. FIX: rewrite the box ("slot INSTANCES in the emitted region") and the column (per emitted copy for the five replicating families; guard = unbounded frames-rung with nullable body).
+V-3 VERIFIED (§4.4c; site (6) GRAPH with the OOB consequence in the row; axis Z0's seven cells re-run on 10.46 incl. recursive/atomic/rung-bearing {0} callees; S-SR19 with the atomic {0} cell + asan arm; zerodef.rxt in B+C's bar; dis_walk atomic.c:216 and br_strip_caps mod_backrefs.c:508 re-checked — descend A_REP unconditionally). LOW: §4.4c's reason for sites 11/27 ("run before slot assignment") is not the operative fact (no {0,0} prune) — a sequencing property a future reorder could break.
+V-4 VERIFIED (six sites + §5.1's stray; full-doc grep clean).
+V-5 VERIFIED (§11 B+C now reads minw's arm + maxw ONLY IF lookaround wave A has landed; P13 re-confirmed). LOW×2: §4.4b typesets a paraphrase of §11 as a quotation; §4.1(c):858 lists pcrec_maxw with no P13 caveat.
+V-6 VERIFIED in the doc (§3.5 names the inversion; the family is on the EXIT; W4 withdrawn → Z0; S-SR18 "an EXIT row, not an ENTRY row"; §6.3 "may share the BODY, never the EXIT" — stronger than asked). V-6′(a) MED: probes/probe_wrapped_target.py:131-133 still prints the REFUTED mechanism ("would inherit … the back-step in W1") into out/wrapped_target.txt, the file §3.5 cites. FIX: rewrite the probe's reading paragraph around the exit, re-archive. V-6′(b) MED: §10.2's inlookaround.rxt row still mandates a W4 cell and does not relate Z0 to zerodef.rxt.
+V-11 archived (axis L9b, cited by §5.6/P-3/ASK 2; honest variance note). V-11′(a) MED: §5.6 keeps the old uncited "MEASURED, this lane" sentence immediately above the new "MEASURED, out/leftrec.txt axis L9b" — two attributions for one table. V-11′(b) MED: probe_leftrec.py:299 hardcodes "(x%.1f on 10x the subject)" for every step while the n sequence steps 10×/5×/4× — two of three archived annotations false; and "faster than the subject squared" over-reaches: archive exponents 1.72/2.03/2.12 (n=100 at the timer floor), verifier re-measure 2.01/1.94/1.98 — QUADRATIC. FIX: annotation from n/prev_n; drop/lengthen the n=100 row; "quadratic" in §5.6 and P-3.
+Also confirmed fixed: V-8 (one five-consumer list), V-9, V-12 (all 23 rows spelled; inlookaround.rxt moved to B+C with reason), V-13 (TWELVE probes, six ASKs), V-14 (switch-only scope + eight walkers), V-16 (27 rows counted).
+Ledger: 3 (independent re-derivation before reading probe_slotcount.py; nearly filed "quadratic refuted" from the archive's noisy first row; checked dis_walk/br_strip_caps in source).
