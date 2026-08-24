@@ -996,6 +996,11 @@ append-only or historical records.
   `probes/simvm.py` — the R32 critic's own simulator, ADOPTED rather than
   rewritten so the lane cannot soften the instrument that refuted it — and
   `probes/probe_publish_discipline.py` make that comparison mechanical.
+- `la_d27_extract.md` — the [M6.6.3] blinded author's extract of
+  lookaround_design.md §2 + §7 + §10.1 (the construct table, the goal-facts
+  list, the population), cut by the manager at build completion so the D27
+  cell can allow it without allowing the design's implementation sections.
+  Regenerate only by re-cutting; never edit independently of its source.
 - `lookaround_design.md` — **PROPOSED, PANELED (R33) AND REVISED**
   ([M6.6.1], 2026-08-23; panel
   `../dev/reviews/2026-08-23-r33-lookaround-design.md`). **Read the PANEL
