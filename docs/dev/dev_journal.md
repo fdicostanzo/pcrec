@@ -13370,3 +13370,14 @@ CALL_TOP_NONE → R_INTERNAL). TWO CHANGE REQUESTS sent: cell 1 → corpus
 fix per P-12 (not a known-fail); the 7 rows → a checked `SAB_EXPECT`
 field in the mech format (the general form of the ratchet; the S19
 lesson), exercised in the failing direction. Merge follows.
+
+RULING (Frank, ~15:0x): "part of the spine should be the expansion of the
+rxt type file so that we can specify multiple rx and have them reference
+each other through subroutine calls" — and beyond tests: a user-includable
+LIBRARY of subpatterns, and a pcrec-shipped LIBRARY STORE of tested
+subpatterns (email, IP, quoted string, HTML pieces…). Filed as plan row
+[LIB] (spine component; relations to DD-11's definitions architecture,
+V-E's compilation units, DD-14.G's identity bar which is what makes a
+library subpattern free, DD-14.F's DEFINE row; the email specimen as
+entry #1; D27-blinded corpora per store entry; pcrec-bench rows).
+Charter conversation at [DD-14]'s close.
