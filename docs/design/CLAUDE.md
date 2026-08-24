@@ -1152,6 +1152,70 @@ append-only or historical records.
   sixth defect's lesson rather than by a panel, which is the argument for
   writing a reachability guard into every sweep rather than into the one that
   has already failed.
+- `subroutines_design.md` — **PROPOSED, NOT YET PANELED** ([DD-14]'s design
+  gate, 2026-08-23; module `recursion` — subroutine calls `(?1)` `(?+1)`
+  `(?-1)` `(?&name)` `(?P>name)` `\g<1>` `\g<name>` `\g'1'` `(?R)` `(?0)`, and
+  two spellings the charter's list did not have, **`\g<0>` and `\g'0'`**).
+  Its spine is that a call is **the same pattern text run again with the
+  capture state put back on the way out**, and four measurements force the
+  lowering. **The callee WRITES the capture slots and the RETURN restores
+  them** — seen live through `pcre2_set_callout` reading the ovector INSIDE
+  the call, because the after-the-fact state cannot tell "restored" from
+  "never written". **The callee INHERITS the caller's captures** (a `\1`
+  inside a called body sees the caller's group). **The call is BACKTRACKABLE
+  on 10.46** (atomic before 10.30), measured on a body reachable only by the
+  call with four atomic controls refusing — so the return cannot be an
+  `RX_CUT`. And **PCRE2 10.46 refuses NO left recursion at compile time**:
+  error 140 is *"invalid escape sequence in (\*VERB) name"*, every
+  left-recursive shape compiles, and the match-time `rc -52`'s obvious reading
+  is **refuted** — `^(a|(?1)a)$` performs 199 nested recursions all entered at
+  offset 0 and MATCHES, so a same-position guard would be a miscompile.
+  Consequences: **a call IS a resume frame** (§5.2 derives the clobber bug that
+  kills the plan row's separate call-stack array); the capture restore is over
+  a compile-time capture-slot set stored **in the trail itself** by a trailed
+  self-write, EXCLUDING slots 0 and 1 because **`\K` is measured NOT to be
+  restored** and pcrec spells `\K` as a write to `RX_SLOT_WHOLE_START`; the
+  emitted function gains a **SECOND indirect jump**, amending
+  `emit_vm.c:9-12`'s stated one-`goto *` invariant. The charter's
+  "once-emitted-with-two-linkages" **collapses** when written out, leaving
+  SPLICE / HYBRID / CALL, PROTOTYPE-measured at ~300 / ~80 / ~80 emitted bytes
+  per call site with SPLICE smaller AND faster at one site — which is also the
+  measured NO to "should a lookaround body compile as a call" (a lookaround
+  body is `k = 1` by construction). Engine selection is `VM_ONLY`
+  structurally; the prefilter is dropped in wave 1 because erasing a call is
+  **not** a superset, and that costs a MEASURED **21×–350×**, which is why the
+  sound construction (splice the non-recursive callee's NFA fragment, `Σ*` for
+  a recursive one) is designed and scheduled rather than waved at. Five ASKs
+  for Frank, the first of which re-opens the plan row's own reserved give-up
+  code now that its premise (a separate call stack) is gone. Measurements:
+  `subroutines_measurements/`.
+- `subroutines_measurements/` — the [DD-14] lane's EIGHT probes, its oracle
+  helper, its archiver and a linkage PROTOTYPE; see its own CLAUDE.md. **No
+  instrument reads a subroutine call through pcrec, because pcrec cannot
+  compile one** — every in-pcrec arm measures a separate axis (the refusals
+  and the 26 registry rows, the give-up code space and every site the
+  `ERR_FLOOR` move touches, the emitted primitives quoted from `src/`, and —
+  for the prefilter — the INLINED EQUIVALENTS of call-bearing patterns,
+  verified equivalent 420 cells / 0 disagreements before any timing). Borrows
+  `../lookaround_measurements/probes/la_oracle.py` → `br_oracle.py` →
+  `pcre2_ctypes.py` — **three levels, no second binding**. It adds one
+  instrument new to this project: **`callout_trace()`**, a
+  `pcre2_set_callout` callback reading the LIVE ovector inside a called body,
+  which is the only way to separate "the callee never wrote the slots" from
+  "the callee wrote them and the return restored them" — two hypotheses with
+  the same after-the-fact table and completely different emitted code. Its
+  `out/CLAUDE.md` carries **NINE instrument defects the lane found by running
+  its own probes**, and **the first one would have gone into the design**: a
+  retry-cost axis whose subject picked the callee's LAST alternative, so no
+  call was ever re-entered after a failing follow — it reported LINEAR costs
+  and an "atomic control" HIGHER than the backtrackable one, which reads as
+  *"the atomic linkage costs more"*. The others: a depth bisection reporting a
+  default limit it never reached; a probe that DIED at row 40 of 80 because
+  the oracle's `search()` raises on `rc -52`; a callout cell that fired no
+  callout; `-o /dev/null` making every COMPILING cell read "Permission denied";
+  a vacuous match-limit self-check; `--emit-main`'s argv-fed subject silently
+  capped at `MAX_ARG_STRLEN`; a flag check that grepped documentation instead
+  of invoking the flag; and a `\g<` census counting in-class escapes as calls.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes
