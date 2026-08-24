@@ -1111,3 +1111,495 @@ a **streaming** constraint, not a within-call one. A call stack of label
 addresses is now the second thing in the emitter that would have to be
 re-expressed if `[M3.0]`/`[OS-3]` ever suspends a match across a `feed()`.
 §13 records it as out of scope and cross-notes `[M3.0]`.
+
+---
+
+## 6. The addressable body: two linkages, one contract (charter additions (i)–(iv))
+
+### 6.1 "Once-emitted-with-two-linkages" collapses when it is written out
+
+The charter names the alternative to a call as *"the lexical occurrence falls
+through to a shared body whose exit dispatches on 'was I called?'"*. Writing
+that exit out shows it is not a third design: **"was I called?" is a
+per-ACTIVATION question**, the body can be entered from the fall-through and
+from a call in the same match, and the only per-activation channel is the call
+record itself. So the fall-through path must leave a record too — and a record
+saying "return to my own continuation" **is** the call linkage.
+
+The genuine three-way choice is therefore:
+
+| | copies of the body | lexical path pays | called path pays |
+|---|---|---|---|
+| **SPLICE** | one per occurrence, `k+1` | nothing | nothing |
+| **HYBRID** | 2 (the lexical one, plus one shared) | nothing | the linkage |
+| **CALL** | 1 | the linkage | the linkage |
+
+and HYBRID is what "two linkages" means once it is made to work. This is what
+`prototype/gen_linkage.py` generates, and its header records the collapse so
+the next reader does not re-derive it.
+
+### 6.2 The three linkages, PROTOTYPE-measured
+
+Three hand-written matchers in the emitter's own idiom (computed goto, the
+resume array, the trail, `RX_SET`/`RX_PUSH` spelled as `emit_vm.c:5763-5786`
+spells them), for one family — `^([a-z]+)` then `k` repetitions of
+`.<the same body>` then `$`, i.e. one LEXICAL occurrence and `k` call sites.
+Built with the same `gcc -O2 -std=gnu11`. `out/linkage.txt`.
+
+**CONTROL FIRST: the three agree on 13 subjects × 4 call-counts = 52 cells.**
+Three matchers that disagree are not three linkages for one pattern, and the
+probe refuses to print a number until they agree.
+
+**SIZE**, bytes of `rx_match_anchored` from `nm -S`:
+
+| k | SPLICE | HYBRID | CALL |
+|---|---|---|---|
+| 0 | 779 | 779 | 708 |
+| **1** | **1001** | 1090 | 804 |
+| 2 | 1384 | 1191 | 884 |
+| 4 | 1976 | 1350 | 1044 |
+| 8 | 3179 | 1706 | 1356 |
+| 16 | **5543** | **2320** | **1992** |
+
+**~300 bytes per call site for SPLICE, ~80 for the other two.** The `k = 0`
+baseline row is the reachability control: with no call site SPLICE and HYBRID
+are literally the same code (779 = 779), so the axis is measuring the linkage
+and not the generator's scaffolding.
+
+**TIME**, best of three, 2,000,000 reps, two corpora:
+
+| k | MIXED: SPLICE / HYBRID / CALL | LEXICAL-ONLY: SPLICE / HYBRID / CALL |
+|---|---|---|
+| 1 | 0.57 / 0.58 / 0.64 | 1.04 / 1.08 / 1.15 |
+| 2 | 0.81 / 0.87 / 1.40 | 1.10 / 1.13 / 1.16 |
+| 4 | 1.17 / 1.40 / 1.37 | 1.04 / 1.08 / 1.15 |
+| 8 | 1.52 / 1.86 / 1.92 | 1.03 / 1.10 / 1.14 |
+
+The **LEXICAL-ONLY** corpus is the one HYBRID's whole claim rests on — subjects
+that die before the first call site. HYBRID tracks SPLICE within ~5% and beats
+CALL by ~5–10% on every row; the residual gap between HYBRID and SPLICE on a
+path that is literally the same code is layout and i-cache, and is reported
+rather than smoothed. The MIXED column's `k = 2` CALL cell (1.40 against 0.87)
+is out of line with its neighbours and is **noise this probe did not
+eliminate**: best-of-three did not remove it, and it is left visible rather
+than dropped.
+
+### 6.3 THE RULING
+
+**The LEXICAL occurrence of a called group is emitted EXACTLY AS IT IS TODAY.**
+Not "spliced" as a new thing — *unchanged*. That is the HYBRID row, and it buys
+three things beyond the ~5% on the lexical path: the existing group emission
+needs no edit; a call-free pattern is byte-identical by construction (§9.1);
+and the module's diff does not touch the code path that every other pattern in
+the corpus goes through.
+
+**A CALL SITE takes the CALL linkage into one shared copy — EXCEPT** where all
+three hold, in which case it SPLICES:
+
+1. the callee is **not** in a cycle of the call graph (not recursive, directly
+   or mutually), **and**
+2. the callee's target is statically resolved — which it always is (§4.2), so
+   this condition is free and is listed to make the shape explicit for
+   `[DD-11]`, and
+3. the spliced expansion stays under a **size budget**, checked against the
+   same `Cost` machinery that already sizes an artifact.
+
+**SPLICING IS WAVE 3, NOT WAVE 1.** Wave 1 ships the CALL linkage for every
+call site, because it is one path, it is correct for every shape including
+recursion, and it is what the four gating questions are about. Wave 3 replaces
+the eligible sites with a splice. That is implement-then-replace, which Frank's
+2026-08-23 rule permits explicitly, and it is **not** a parallel mechanism: the
+splice consumes the same callee contract (§5.4) and the same `W` (§5.3) and
+differs only in how control reaches the body.
+
+**AND SPLICING IS WHERE THE PREFILTER COMES BACK.** §8.3.
+
+### 6.4 Should any LOOKAROUND body compile as a call? (charter addition (ii))
+
+**NO, and the reason is the `k = 1` row.**
+
+A lookaround body has **exactly one use site by construction** —
+`lookaround_design.md` §6.4(3): *"`vm_label()` allocates per emission, and the
+slot families are indexed per node, so two lookarounds over the same body text
+get two sub-programs."* So `k = 1` always, and §6.2 measured `k = 1`:
+
+- SPLICE **1001 bytes**, HYBRID **1090**, CALL **804**;
+- SPLICE **0.57 s** mixed and **1.04 s** lexical, CALL **0.64** and **1.15**.
+
+CALL is 197 bytes smaller and 10–12% slower. **A call to a body with one caller
+buys a size saving that is smaller than the module's own scaffolding and costs
+time on the only path that exists.** There is no reuse to amortise, because
+there is no second caller.
+
+**AND THE SECOND REASON IS THE CONTRACT.** §5.4's follow scoping is required
+for a shared body because the follow is UNKNOWN; `lookaround_design.md`
+§3.2.1's is required because the follow OVERLAPS. Both zero `fmin`/`fdyn`, so a
+lookaround body already satisfies the callee contract **without** being a call.
+Turning it into one would change the linkage and nothing else.
+
+**RULED: no lookaround body compiles as a call, and §6.5's premise stands.**
+
+### 6.5 The premise survives: `vm_look`'s splice IS the inliner (charter (iii))
+
+Charter addition (iii) states it as a premise; §6.2 and §6.4 are what makes it
+a finding.
+
+> `[M6.6.2]`'s `vm_look` emits a **self-contained body region** with a scoped
+> follow, one entry and one clean exit. §5.4 is that same contract, written
+> from the caller's side. A statically-resolved, non-recursive, single-
+> continuation call **splices through exactly that mechanism**; a recursive or
+> shared body takes the call linkage. **One callee contract, two linkages.**
+
+**THREE CONSUMERS, and they are the whole justification for building the
+contract rather than the construct:**
+
+| consumer | linkage | why |
+|---|---|---|
+| `[M6.6.2]` lookaround | SPLICE, always | `k = 1` by construction (§6.4) |
+| `[DD-14]` calls | both (§6.3) | recursion forces the linkage; §8.3 wants the splice |
+| `[M6.5]` follow-up (f), `A_BREF` → call under the singleton predicate | SPLICE where the predicate holds | a backreference to a group that can only have matched one way is a call to it — and it is `k = 1` per reference |
+
+### 6.6 The reuse inventory, and the genuinely new list (charter (iv))
+
+**REUSED FROM `[M6.6.2]` / `[M6.4]` / `[M6.5]`, unchanged:**
+
+| mechanism | where it comes from | what this module does with it |
+|---|---|---|
+| the self-contained sub-program contract | `lookaround_design.md` §6.4 | §5.4 restates it from the caller's side; **no code** |
+| the follow scoping (`fmin`/`fdyn` saved, zeroed, restored on **every** return path) | `lookaround_design.md` §3.2.1, `vm_atomic` `emit_vm.c:4244-4247/4285-4286` | same rule, different reason (unknown follow, not overlapping follow). §5.4 |
+| the one-frame trail idiom — a pushed frame restores the cursor and rewinds the trail for free | P8, `lookaround_design.md` §3.3 | §5.1's call frame IS that idiom with a return label |
+| `RX_CUT` / `vm_cut` | `[ENG-BREP]`, `[M6.4.2]` | **NOT USED.** §3.2 MEASURED the call is backtrackable. Recorded because the plan row offers it |
+| the budget primitives | D42.6, `emit_vm.c:6051` | §5.7: nothing new to count |
+| `Cost.unbounded` and the stamped ceiling | `emit_vm.c:1331-1348`, P12 | §5.6 |
+| the `PendingRef` + end-of-parse resolver | `[M6.5.2]`, P11 | §4.2: **one field**, two rules |
+| `pcrec_bref_mark`'s marked set | `[M6.5.2]`, P10 | §4.3: calls join it, transitively |
+| the shared `\g` port | P3 | §4.2: two tails, one port |
+| the identity-gate shape and the four axes | `[M6.6.2]` ASK 4 ruling | §9.1 |
+| the verification template (a differential driver + a sabotage matrix arm) | `backrefs_design.md` §4, `lookaround_design.md` §9 | §9, §10 |
+
+**GENUINELY NEW, AND ALL OF IT ON THE CALLER SIDE:**
+
+| new thing | §  | why it could not be reused |
+|---|---|---|
+| the call record (return label + `call_top`), and the fail label's one added line | §5.1, §5.5 | nothing in the tree returns to a value-carried label |
+| the second `goto *`, and the emitter invariant it amends | §5.8 | the file states one-indirect-jump as a decision |
+| the per-level capture save/restore over a compile-time `W` | §5.3 | no construct today restores capture state on an exit |
+| `W`, the call graph, and its fixpoint | §5.3, §4.3 | pcrec has no call graph |
+| the depth capacity and `PCREC_ERR_RECURSE`, with the `ERR_FLOOR` move | §5.6 | the give-up space is frozen contract |
+| left recursion: **the absence** of a check, and the measurement that says so | §3.3 | the charter asked for the opposite |
+| the prefilter answer | §8 | erasure is not a superset |
+
+**THE FOUR GATING QUESTIONS ALL LIVE IN THE RIGHT-HAND TABLE**, which is
+charter addition (iv)'s claim, and it survives — with one correction: the
+charter puts *"per-level captures"* on the new side, and it is; but it also
+implies the **callee** side is fully paid for, and §5.4's follow-scoping row is
+paid for only because `[M6.6.2]` lands first. If the two modules had been
+sequenced the other way this module would have had to derive it, and
+`lookaround_design.md` §3.2.1 records that its own first draft got it wrong.
+
+---
+
+## 7. The convergence with `[DD-11]`
+
+`[DD-11]`'s row RULED the order: `[M6.6]` → `[DD-14]`'s call primitive →
+`[DD-11]`'s definition substitutions **implemented on that primitive** → D66's
+optimizer. Frank's words on 2026-08-23: *"I don't want parallel mechanisms if
+we can avoid it."*
+
+**WHAT `[DD-11]` GETS, AND IT NEEDS NO SECOND MECHANISM:**
+
+1. **An insertion IS a non-recursive call** to the inserted body's entry label
+   — `A_CALL` with `link = SPLICE` and a `body` that points at a template
+   subtree rather than at an `A_CAP`. §4.1's `body` field is a `const Ast *`
+   for exactly this reason: it is **not** typed as a group.
+2. **Compile-time splicing is the optimization of the statically-resolved
+   case**, which is §6.3's rule verbatim. A definition insertion is always
+   statically resolved, so it always splices — and `[DD-11]` gets §6.2's
+   measured size and time for free.
+3. **The callee contract (§5.4) is the interface.** A template body must
+   satisfy it: one entry, one success exit, scoped follow, trailed writes,
+   frames left live. Every replacement `[DD-11]`'s table proposes
+   (`\Z ≡ (?=\n?\z)`, `(?m)^ ≡ \A|(?<=\n)(?!\z)`, `\b ≡ …`) is a lookaround or
+   an anchor, and `lookaround_design.md` §6.4 already certifies those.
+4. **HYGIENE IS ALREADY RULED AND THIS DESIGN OBEYS IT.** `[DD-11]`(d):
+   *"groups inside an insert are locally referenceable BY NUMBER only … and
+   globally referenceable BY NAME."* §4.2's resolver is where that law is
+   enforced, and the shape it needs is a **scope** on the number rule, not a
+   new pass — a `PEND_CALL`/`PEND_BREF` record already carries the offset that
+   says which insert it came from.
+
+**WHAT `[DD-11]` STILL HAS TO BUILD, and this design deliberately does NOT:**
+
+- **The environment model.** The journal's 2026-08-23 discussion RULED the
+  resolution rule (propagate/capture-at-build, never walk-up) and the two entry
+  kinds (replacement bindings and parameter bindings). None of it is designed
+  here. The **interface** this module offers is exactly one function:
+
+  > given a resolved template `const Ast *body`, an `A_CALL` node with
+  > `link = SPLICE`, `target` unused, and `save`/`nsave` computed by
+  > `src/opt/callgraph.c`, emits the body at the site with the callee contract
+  > held.
+
+- **The typed definitions table**, its parse-once discipline, and the
+  three-way self-check the journal describes. Test infrastructure and a
+  producer, neither of which is a call.
+- **The composition RECOGNIZER** that gets the folded fast paths back. §8.3's
+  approximation is this module's version of the same problem and is a
+  precedent, not a solution.
+
+**THE ONE THING THIS DESIGN ASKS `[DD-11]` NOT TO DO** is give a definition
+insertion its own node kind. `A_CALL` with a `body` pointer is the same node;
+a second kind would be the parallel mechanism the ordering exists to prevent,
+and it would need its own arm in all ten files of §4.4.
+
+---
+
+## 8. Engine selection and the prefilter
+
+### 8.1 Every row is `VM_ONLY`, and three row families are MISSING
+
+The language a call generates is **not regular** — `^(a(?1)?b)$` is `aⁿbⁿ`,
+MEASURED matching at n = 400,000 (`out/leftrec.txt` L9). So `VM_ONLY` is
+structural, it joins the `forces_*` family, and `--engine=dfa` refuses. All 26
+existing rows already read `engines=vm` (P4), so **no row's engine mask
+changes** and SR-8's generic post-discharge consultation (D67) does the work
+with no new predicate — `lookaround_design.md` §5.1's finding, one module over.
+
+**THREE ROW FAMILIES ARE MISSING FROM THE REGISTRY AND THIS MODULE OWNS THEM**
+(MEASURED, `out/premises.txt` axis B against `out/spellings.txt` A7a):
+
+| missing | measured legal on 10.46 | why it is missing |
+|---|---|---|
+| `(?10)`, `(?12)`, … and `(?-10)`, … | yes — `(a)×10(?10)` matches `"a"×11` | the rows are keyed on the **character** after `(?`, so `(?1)`…`(?9)` are nine rows and multi-digit runs have no row of their own |
+| `(?+2)` … `(?+9)` | yes — `^(?+2)(a)(b)$` matches `"bab"` | `(?+1)` has a row and its eight siblings do not, while `(?-1)`…`(?-9)` all do |
+| **`\g<0>`, `\g'0'`** | yes — `(a\g<0>?b)` matches `"aabb"` | §2.4: two whole-pattern spellings nobody listed |
+
+**AND ONE COLUMN IS WRONG.** The `quant` column reads `no` on the nine
+`(?1)`…`(?9)` rows and `yes` on `(?R)`, `(?0)`, `(?+1)` and every `(?-N)`.
+MEASURED (`out/atomicity.txt` T5): **all twelve quantified spellings compile** —
+`^(a)(?1)*$`, `^(a)(?1)+$`, `^(a)(?1)?$`, `^(a)(?1){2}$`, `^(a)(?1)*+$`,
+`^(a)(?1)*?$`, `^(?<n>a)(?&n)*$`, `^(a)\g<1>*$`, `^(a)\g'1'*$`,
+`^(?P<n>a)(?P>n)*$`, `^(a)(?-1)*$`, `^(a\g<0>*b)$`. The nine `no`s are wrong
+and wave B fixes them.
+
+**THE D65 `built` COLUMN.** All 26 rows read `unbuilt` today (P4, 0 rows
+`built`). D65 derives `built` from the PORT's `ExtResult` at `WANT_RESULT`
+and **never runs the emitter** (`syntax_dump.c:544-575`) — which is the trap
+`lookaround_design.md` §11 C2-2 found: a wave that wires the port flips every
+row to `built` while the emitter still `ctx_fail`s, shipping a compliance index
+that lies. **So the parse hook and the lowering land in ONE wave** (§11 wave
+B+C), and the split within it is the port's own tail check: at B+C
+`pcrec_rcport_*` recognises the numeric and name tails and **declines the `\g`
+tails at `WANT_RESULT`** until wave D wires them, so the count moves in two
+honest steps.
+
+**THE TALLY IS A DELIVERABLE**: 26 rows today → **26 + the three missing
+families** after wave F. The exact number is wave F's to state in its commit,
+because the multi-digit families are a design choice about row GRANULARITY
+(§14 ASK 3) and not a count this document can fix.
+
+### 8.2 The prefilter: erasure is NOT a superset
+
+`lookaround_design.md` §5.3 could argue that dropping a lookaround yields a
+superset. **That argument does not transfer**, and the counterexample is one
+line: `a(?1)b` with group 1 = `x` matches `"axb"`; erasing the call gives `ab`,
+which does not. Erasure gives a **different** language, not a bigger one, so
+the hybrid's DFA prefilter cannot be built from the call-erased pattern.
+
+`backrefs_design.md` §7.1's precedent is the same shape and its ruling is the
+same: `select_engine.c` forces `EngineFit.prefilter` OFF when
+`pcrec_has_bref`. **Wave 1 does the same for `pcrec_has_call`.**
+
+### 8.3 …and that costs 21×–350×, MEASURED, which is why §8.4 exists
+
+pcrec cannot compile a call today, so the cost was measured on the **inlined
+equivalents**, which it can. `out/prefilter.txt`.
+
+**EQUIVALENCE FIRST**: 15 hand-written (call, inlined) pairs across the three
+idioms, each verified against libpcre2 over 28 subjects — **420 cells, 0
+disagreements** — before any timing. A pair that disagreed would have been
+disqualified, not fixed.
+
+**THE STRUCTURAL SURPRISE**: 8 of the 15 inlined patterns compile to pcrec's
+**pure DFA** artifact, because dropping the DEFINE wrapper leaves no capturing
+group — no `RX_ENGINE`, no prefilter question, and `-fno-prefilter` on them is
+byte-identically a no-op (verified by diff, not assumed). The prefilter
+question is live only on the 7 rows that keep a group, which is the realistic
+shape (a callee **is** a capturing group).
+
+**THE COST**, best/median/max of three, 1 MB subject with sparse candidate
+starts, default arm vs `-fno-prefilter`, answers verified equal on every cell:
+
+| row | inlined pattern | default | `-fno-prefilter` | ratio |
+|---|---|---|---|---|
+| R09 | `(cat)xcat` | 28.9 µs | 7.21 ms | **249×** |
+| R10 | `(cat)xcatycat` | 33.0 µs | 7.31 ms | **221×** |
+| R11 | `([a-z]+)#[a-z]+` | 349 µs | 7.38 ms | **21×** |
+| R12 | `(cat\|dog)!(?:cat\|dog)` | 350 µs | 8.32 ms | **24×** |
+| R13 | `(?<w>cat)midcat` | 26.7 µs | 7.20 ms | **269×** |
+| R14 | `(?<w>cat)midcat-cat` | 27.6 µs | 7.21 ms | **262×** |
+| R15 | `(?<w>[a-z]+)#[a-z]+` | 349 µs | 7.36 ms | **21×** |
+
+**INDEPENDENTLY SPOT-CHECKED** by this lane with a different driver on R11's
+inlined pattern: 0.0096 s vs 0.1621 s over 20 passes of a 1 MB subject —
+**16.9×**, the same order. The relative noise on the sub-100 µs default-arm
+rows is large (up to 176% on one row, reported per row rather than smoothed),
+and every ratio is ≥ 21×, so noise does not reach the conclusion.
+
+**THE RULING, in two parts:**
+
+**(1) WAVE 1: no prefilter for a call-bearing pattern.** One predicate, the
+backrefs precedent, one line in `select_engine.c`. It is correct and it is
+slow, and the number above says exactly how slow, so nobody has to guess later.
+
+**(2) WAVE 3: the SOUND APPROXIMATION, and it is not hard.** `nfa.c`'s
+`A_CALL` arm:
+
+- **the callee is not in a cycle** → splice the callee's NFA fragment. This is
+  **EXACT**, not an approximation, and it is the same decision §6.3 makes for
+  the emitted code — one rule, two consumers.
+- **the callee is in a cycle** → emit `Σ*`. A recursion's language is a subset
+  of `Σ*`, so the result is a **superset**, which is all a prefilter needs.
+- **the spliced NFA exceeds a size budget** → `Σ*` for the remaining calls.
+  Still a superset, so the budget is a performance knob and never a soundness
+  one.
+
+**THE HAZARD THAT MUST BE CHECKED AND IS NOT CHECKED HERE.**
+`lookaround_design.md` §5.4 found that a superset preserves the REJECTION and
+the match START but **not the window END** (8 violations of 45), and
+`backrefs_design.md` §11.2's planted-window hazard is the same shape. §8.3's
+`Σ*` arm makes a *much* looser superset than lookaround erasure, so the window
+end is at least as exposed. **Wave 3 does not land without re-running
+`lookaround_measurements/probes/probe_prefilter_hazard.py`'s H1/H2/H3 against
+the call population**, and §12 P-7 is the prediction.
+
+### 8.4 The population: there is none, and that is the finding
+
+MEASURED, `out/population.txt`. Over `tests/**/*.rxt`'s **2,161 `pattern`
+lines in 121 files**:
+
+| construct | occurrences |
+|---|---|
+| **CALL, all ten spellings** | **6** — four `\g<1>` and two `\g'1'`, **every one of them in a `perr` block** testing that the spelling correctly refuses |
+| BACKREF (scale reference) | 226 |
+| LOOKAROUND (scale reference) | 1 — `[M6.6.2]` has not landed |
+
+So **no in-tree pattern uses a subroutine call**, because they all refuse. The
+census machinery is shown to work by the 226. §10.1 is the population this
+module must therefore CREATE, and §9.2's positive control is what makes the
+zero useful: every call pattern must refuse under the pinned pre-module binary.
+
+The census's own instrument defect is §0.3 item 9 — a naive `\g<` scan counts
+`tests/backrefs/octal_class.rxt`'s `^[\g<1>]$`, where the class doorway makes
+those four literal escapes, as a call.
+
+---
+
+## 9. The identity gate and the sabotage rows
+
+### 9.1 The gate
+
+Modelled on `tests/codegen/run_backref_identity.sh` and on
+`lookaround_design.md` §9.1, whose shape this design adopts rather than
+reinvents.
+
+**FOUR AXES**, mirroring the `[M6.6.2]` ASK 4 ruling because the reasoning
+transfers exactly:
+
+| axis | why this module needs it |
+|---|---|
+| `default` | the standard first |
+| `--engine=vm` | the standard second |
+| **`-fno-prefilter`** | §8.2 forces the prefilter OFF for call-bearing patterns. That is a touch on `select_engine.c`, which every pattern goes through, so the axis that pins the prefilter constant is the one that localises a wrong predicate |
+| **`--no-captures`** | §4.3 edits `pcrec_bref_mark`'s union, which is `--no-captures`' own machinery (P10). This is the **backrefs-precedent axis** and here it is not ceremonial: a mark-set edit that over-marks makes `--no-captures` keep slots it used to delete, and only this axis sees it |
+
+**THE REFERENCE** is a `git archive` of `src lib cli` at a pinned pre-module
+SHA, asserted to contain **no `A_CALL` anywhere in `src/`**, built with
+`gcc -O0 -std=gnu11 -Wall -Wextra`. Not a `-D` knob: a knob-gated comparison
+is blind under a sabotage, because call-free patterns exercise no gated path
+at all (`run_backref_identity.sh` measured that blindness at 1175/1175).
+
+**BYTE-IDENTICAL** is defined over the stdout of
+`pcrec --features all -p rx <axis> -o - -- '<pattern>'` past exactly the three
+D37 feature-stamp lines, with the strip asserted to have removed exactly three.
+
+**THE POPULATION** is every `pattern` line from every `.rxt` under `tests/`,
+split call-bearing vs call-free by a classifier that **fails safe toward the
+call bucket** — and which must mask character classes, because
+`tests/backrefs/octal_class.rxt`'s `^[\g<1>]$` is not a call (§0.3 item 9, the
+census's own defect, and the classifier inherits it).
+
+### 9.2 The positive control, which is the half that can fail
+
+*"No subroutine call exists today, so this module changes nothing for the
+existing population"* is trivially true and therefore worth nothing. The
+control that can go red: **the pre-module reference must REFUSE every
+call-bearing pattern** (`ctl_bad == 0 && ctl_ok == nb`), which proves the
+reference is a different compiler rather than a rebuild of the same tree.
+
+**AND THIS MODULE'S CONTROL POPULATION HAS TO BE BUILT FROM NOTHING.** §8.4
+MEASURED **6** call spellings in the whole corpus and all six are `perr` rows.
+So the floors are stated against the corpus §10.1 creates: **≥ 700 call-free
+patterns** (the existing corpus supplies them) and **≥ 60 call-bearing**,
+which is a `[DD-14]` deliverable rather than an inherited one.
+
+**THE SECOND CONTROL, and this module HAS one where lookaround did not.**
+§6.3's splice/linkage split gives a genuine in-tree equivalence: **for every
+non-recursive call-bearing pattern, the SPLICE-linked artifact and the
+LINKAGE-linked artifact must agree on every cell of the corpus.** Both are
+this compiler, both run, and the comparison is `A == B` over answers rather
+than over bytes — `lookaround_design.md` §6.3's substitution-driver shape,
+which that design calls its *"real cross-lowering assurance"*. It lands with
+wave 3 (a `-fno-splice-calls` switch is the axis), and until then §9.3's rows
+carry the load. §11 wave 3's landing bar states it.
+
+### 9.3 The sabotage rows
+
+One row per claim, in `tests/mech/sabotages/`, following S105's shape
+(`SAB_ID SAB_FILE SAB_SUITES SAB_DESC SAB_BEFORE SAB_AFTER SAB_COUNT`), anchors
+copied from `git show HEAD:<path>` because the matrix builds from
+`git archive HEAD`. Numbering starts at the highest existing id + 1, **taken at
+implementation, not guessed here**, so the ids below are `S-SR1..` placeholders.
+
+**EVERY DETECTOR CELL DECLARES ITS FEATURES — ALL OF THEM.** `std1` is a frozen
+named set `{classes, modifiers}`, so a cell needs `features recursion`, and P2
+MEASURED that a `(?&name)` cell needs `named-groups` **as well** or the
+declaration is refused before the call is reached and the row goes green by
+refusal. That is S108's masking shape, and this module's version of it has a
+measurement behind it rather than a worry.
+
+| id | the CLAIM it defends | file | `SAB_SUITES` | the sabotage | prediction |
+|---|---|---|---|---|---|
+| **S-SR1** | §5.3: the return RESTORES `W` | `emit_vm.c` | `harness recursion` | delete the restore loop from `RX_RETURN`'s emission | `(a\|b)(?1)` on `"ab"` reports g1=(1,2) where PCRE2 says (0,1). **The detector body must contain a group the callee WRITES** — a callee with no capture inside it leaves `W` empty and the row goes green on a broken compiler |
+| **S-SR2** | §5.1/§5.5: the fail label restores `call_top` | `emit_vm.c` | `harness recursion` | delete the one added line | §5.5's drawn cell goes red — every callee with more than one alternative — **while a single-path callee stays green**, which is the pair that names the failure |
+| **S-SR3** | §5.1: the call frame is NOT popped by the return | `emit_vm.c` | `harness recursion` | make `RX_RETURN` decrement `resume_depth` | the backtrack-into-a-returned-call corpus goes red; `^(?(DEFINE)(?<g>a\|ab))(?&g)c$` on `"abc"` answers nomatch where 10.46 answers (0,3) |
+| **S-SR4** | §3.2: the return does NOT cut | `emit_vm.c` | `harness recursion` | add `RX_CUT` at the return | the same cell, and **the four atomic controls of §3.2 stay green**, which is what distinguishes this row from S-SR3 |
+| **S-SR5** | §3.1: the callee INHERITS the caller's captures | `emit_vm.c` | `harness recursion` | zero `W`'s slots at the call site instead of parking them | `^(a)(b\1)(?2)$` on `"ababa"` goes from (0,5) to nomatch |
+| **S-SR6** | §3.4(b): `W` EXCLUDES slots 0 and 1, so a `\K` in a callee survives | `callgraph.c` | `harness recursion` | let `W` include slot 0 | `^(a\Kb)(?1)$` on `"abab"` answers (0,4) where 10.46 answers (3,4). **This is the row for the design the measurements killed**, and its cell needs `features assertions,recursion` |
+| **S-SR7** | §5.7: `vm_cost` charges `2·\|W\|` trail entries per call | `emit_vm.c` **+ 2nd site** | `harness recursion codegen` | charge `\|W\|` instead of `2·\|W\|` | **no answer changes** until the trail is exhausted, then `PCREC_ERR_FRAMES` on a pattern the artifact can match — S87/S95's exact shape, so the detector is a deep-call cell **and** the codegen count |
+| **S-SR8** | §5.6: the depth capacity FIRES and is its own code | `emit_vm.c` | `harness recursion` | return `RX_R_FRAMES` instead of `RX_R_RECURSE` | the left-recursion cells report the wrong give-up. **Only detectable if the corpus distinguishes the codes**, so §10.2's `.rxt` needs a give-up-code expectation — which does not exist today (`tests/harness/CLAUDE.md`: the driver prints `steps`/`frames`) and §11 wave A adds |
+| **S-SR9** | §2.6: `vm_nullable` answers TRUE for a nullable callee | `emit_vm.c` | `harness recursion` | return `false` from the `A_CALL` arm | **`PCREC_ERR_STEPS` or `_FRAMES`, not a hang** — every VM artifact carries a step budget by default — on `^(?(DEFINE)(?<g>a?))(?&g)*$`. The harness must score the error return as the failure |
+| **S-SR10** | §4.3: a CALL TARGET joins the marked set | `atomic.c` | `harness recursion` | drop `A_CALL.target` from `pcrec_bref_mark`'s union | **the `--no-captures` axis only.** `(a)(?1)` under `--no-captures` loses group 1's slots and the call has no body. Needs the gate's fourth axis to exist |
+| **S-SR11** | §4.3: the mark is TRANSITIVE | `callgraph.c` | `harness recursion` | mark only the direct target | `(a(?3))(b)((c))` under `--no-captures` — a two-hop chain — goes red while a one-hop cell stays green |
+| **S-SR12** | §4.4: `revdet.c`'s `A_CALL` arm DECLINES | `revdet.c` | `harness recursion` | descend instead of declining | `vm_rev_emit`'s `default:` fires: *"internal error: bad AST node in the backward walk"*. **A hard compile error, which is the right failure** — the row asserts it is reached, not that an answer changed |
+| **S-SR13** | §5.8: exactly TWO indirect jumps in a call-bearing artifact, ONE in a call-free one | `emit_vm.c` **+ 2nd site** | `codegen` | make the return a `switch` over a return-site id | **no answer changes.** The codegen count is the only detector — S109's shape, and the row that stops a third `goto *` arriving unremarked |
+| **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
+| **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
+| **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
+| **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave 1: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
+
+**Two need the TWO-SITE mechanism** (`tests/mech/CLAUDE.md`'s S108,
+`SAB_FILE2/BEFORE2/AFTER2/COUNT2`): **S-SR7**, because the cost arm and the
+emission must move together or the artifact declares a capacity it does not
+use; and **S-SR13**, which is two sites by construction.
+
+**SEVENTEEN ROWS**, and the count is stated because
+`lookaround_design.md` §9.3 records its own first version disagreeing with
+itself three ways. **A `recursion` mech ARM must be wired** in
+`run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
+direction, as `pc3` was — without it S-SR14's `(?J)` cells and S-SR6's `\K`
+cells sit outside the matrix and score UNDETECTED.
+
+**ANCHOR DRIFT IS AN ANOMALY, NOT A FAILURE.** Every anchor above is
+re-derived against the code as landed, never against this document's sketch —
+the seven drifted anchors tranche A had to re-home are the precedent.
