@@ -1303,9 +1303,28 @@ REALWORLD_IDS = [0, 1, 4, 11, 12, 21, 23, 32, 34, 36, 40, 43, 46, 49]
 
 
 def _realworld_subjects():
+    """THE SUBJECT FILES ARE REGENERATED, NOT COMMITTED, and that is the
+    specimen directory's own choice rather than this generator's: its README
+    calls the 85 subjects "regenerable by `gen_subjects.py`" and the srEmail
+    lane deliberately left 372 KB of derived binaries out of the repo. This
+    generator honours that instead of reversing it in a lane that does not
+    own the directory -- it runs the specimen's own generator when the files
+    are absent.
+
+    THE INTEGRITY CHECK IS `manifest.tsv`, WHICH *IS* COMMITTED.
+    `gen_subjects.py` rewrites it on every run, so a subject set that
+    regenerated DIFFERENTLY shows up as a tracked diff in a file this
+    generator did not touch -- a louder signal than any assertion here could
+    be, and one that survives the .rxt being regenerated on a different
+    machine."""
+    subs = os.path.join(_ES, "subjects")
+    if not all(os.path.exists(os.path.join(subs, "%03d.bin" % i))
+               for i in REALWORLD_IDS):
+        subprocess.run([sys.executable, os.path.join(_ES, "gen_subjects.py")],
+                       check=True, stdout=subprocess.DEVNULL)
     out = []
     for i in REALWORLD_IDS:
-        with open(os.path.join(_ES, "subjects", "%03d.bin" % i), "rb") as fh:
+        with open(os.path.join(subs, "%03d.bin" % i), "rb") as fh:
             out.append(fh.read().decode("latin-1"))
     return out
 
