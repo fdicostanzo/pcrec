@@ -22,7 +22,9 @@ spec and a design doc disagree, the spec is what the tool promises.
   requirements restated as contract prose, with the R22 cross-iteration-
   retention/empty-final-iteration-overwrite rules folded in as first-class
   text, not an addendum), the D49 give-up code space
-  (`RX_ERR_STEPS`/`_FRAMES`/`_WORK`, the `RX_ERR_FLOOR` partition), the
+  (`RX_ERR_STEPS`/`_FRAMES`/`_WORK`/`_RECURSE` since [DD-14] wave A, the
+  `RX_ERR_FLOOR` partition) and the below-the-floor `RX_ERR_INTERNAL`
+  (NOT a give-up, [DD-14] wave A commit 2), the
   `rx_info` reflection structure and its D46 compile-time observability
   macro mirror, the compile-entry NUL-termination contract (with an
   independently measured libpcre2 10.46 comparison — `PCRE2_ZERO_TERMINATED`

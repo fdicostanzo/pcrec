@@ -177,6 +177,31 @@ lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
   *now*; `gp` is PENDING-VM: the slot may be beyond what today's DFA-only
   artifacts deliver. See "Capture-group expectations" below for the full
   design and the population-accounting rule.
+- `gu <code> "<subject>"` — **[DD-14 wave A, 2026-08-24]** asserts that
+  searching `<subject>` from byte offset 0 GIVES UP with the typed code
+  `<code>`, one of `steps`/`frames`/`work`/`recurse` (`recurse` is
+  `PCREC_ERR_RECURSE`, reserved with no producer yet, D71 item 1, so no
+  block can pass with it today — the directive still accepts the word so
+  a future producer needs no harness change). `internal` is REFUSED at
+  parse time, by name, with its own diagnostic: `PCREC_ERR_INTERNAL` is
+  the artifact catching its own analysis/emission bug, never a planned
+  outcome a corpus block gets to EXPECT — that is what `tests/mech`'s
+  sabotage rows are for (S136 exercises this exact code). Scored against
+  the driver's exit `3` plus its printed word (see "The driver protocol",
+  point 5, below) instead of the default HARD failure every other case
+  kind gets on exit 3 — see below (`engine`, `budget`) for the two
+  directives that let a block actually REACH a give-up.
+- `engine vm` — block-scoped, like `flags`/`features`: forces
+  `--engine=vm` for the current block's compile. Only `vm` is defined.
+- `budget steps=<n>` / `budget frames=<n>` — block-scoped: passes
+  `--step-budget=<n>` / `--backtrack-frames=<n>` respectively. Either,
+  neither, or both may appear in one block (two separate `budget` lines).
+  These, together with `engine vm`, are the minimal route — mirroring
+  `tests/vm/run_vm_tests.sh`'s own `build()` calls, which drive the same
+  two bounds through the identical pcrec flags via a separate C driver —
+  that lets a `.rxt` block reach a give-up at all; before [DD-14] wave A
+  nothing in the directive vocabulary could select `--engine=vm` or a
+  tiny budget (see "The driver protocol", point 5, below).
 
 `m`/`n` are exactly `ms`/`ns` with `<P>` fixed at 0; see "startpos support"
 below for the `rx_search` contract these exercise.
@@ -249,7 +274,11 @@ For each pattern block, `run.sh`:
    pair (see "Capture-group expectations" below); trailing pairs are simply
    not looked at by this check. It is still strict, not a substring match:
    `match` vs `nomatch`, a short/malformed line, or a wrong whole-match pair
-   all fail loudly.
+   all fail loudly. **[DD-14 wave A, 2026-08-24]**: for a `gu <code>` case,
+   the same driver invocation must instead exit `3` with stdout exactly
+   `<code>` — the ONE case kind that WANTS the exit every other kind
+   treats as an unconditional hard failure ("The `.rxt` format" above and
+   "The driver protocol", point 5, below have the full shape).
 
 Failures are printed as `file:line: expected ... got ...` along with the
 pattern under test, so a failure can be traced straight back to the
@@ -292,17 +321,33 @@ it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
    `2+2*slot` after the leading `match` token.
 5. **[K21-class fix, 2026-08-15]**: `rx_search`'s return is actually
    three-valued, not boolean — a VM artifact can also GIVE UP (a negative
-   RX_ERR_STEPS/RX_ERR_FRAMES sentinel when it exhausts its step budget or
-   backtrack-frame capacity; a DFA artifact never returns one). The driver
+   RX_ERR_STEPS/RX_ERR_FRAMES/RX_ERR_WORK/RX_ERR_RECURSE sentinel when it
+   exhausts its step budget, backtrack-frame capacity, or (RECURSE, [DD-14]
+   wave A, reserved with no producer yet, D71 item 1) its recursion depth;
+   a DFA artifact never returns one) — or, [DD-14] wave A commit 2, D71
+   item 1, return the BELOW-THE-FLOOR `RX_ERR_INTERNAL`, which is NOT a
+   give-up: the artifact caught its own analysis/emission inconsistency
+   (module `lookaround`'s negative-polarity lookbehind end-check is the
+   one producer today). The driver
    discriminates this explicitly rather than treating the return as a bool
    (the shape that was wrong — see docs/dev/known_issues.md K21): on a
-   give-up it prints `steps\n` or `frames\n` and exits `3`, not `0`, and
+   give-up or an internal code it prints
+   `steps\n`/`frames\n`/`work\n`/`recurse\n`/`internal\n` (an
+   unrecognized code prints `giveup <N>\n`, [DD-14] wave A —
+   the earlier version of this line folded every non-STEPS code into
+   `"frames"`, mislabelling WORK give-ups) and exits `3`, not `0`, and
    `run.sh`'s per-case loop treats exit `3` as its own HARD harness-level
-   failure — alongside the existing timeout (`124`) and crash (`>=126`)
-   branches, never compared against a `match`/`nomatch` expectation. Dormant
-   over the base .rxt corpus today: nothing in the `flags`/`features`
-   directive vocabulary can select `--engine=vm` or a tiny `--step-budget`/
-   `--backtrack-frames`, so no case currently reaches this path.
+   failure by default — alongside the existing timeout (`124`) and crash
+   (`>=126`) branches, never compared against a `match`/`nomatch`
+   expectation — UNLESS the case is a `gu <code>` directive (above), which
+   scores exit 3 against its expected word instead. **[DD-14] wave A,
+   2026-08-24**: before this wave nothing in the `flags`/`features`
+   directive vocabulary could select `--engine=vm` or a tiny
+   `--step-budget`/`--backtrack-frames`, so no `.rxt` case could reach this
+   path at all — the `engine`/`budget` directives (above) are the minimal
+   route that changed that, and `tests/harness/giveup.rxt` is the
+   permanent positive cell exercising both a `steps` and a `frames`
+   give-up through it.
 
 A usage note that follows from [M4.6a]'s calibration sweep (2026-08-17):
 `--engine=vm` is a DIAGNOSTIC mode — it disables the DFA prefilter so the

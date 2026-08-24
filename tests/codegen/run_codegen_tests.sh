@@ -845,7 +845,13 @@ if [ -f "$WORKDIR/abi_rx.c" ]; then
     # abi_rx.c is a captures-on 'a(b|c)+d' build (the fixture the ABI-block
     # loop above already produced), which selects the VM — the engine that
     # used to emit the per-prefix D46 bit constants this check also covers.
-    new_names="PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_RUNG_FRAMES_BOUNDED PCREC_VM_RUNG_FRAMES_UNBOUNDED PCREC_VM_RUNG_REVDET PCREC_VM_RUNG_COUNTER PCREC_VM_STRAT_POSSESSIVE PCREC_VM_STRAT_BACKTRACKING PCREC_VM_PRUNE_CLAMPED PCREC_VM_PRUNE_UNCLAMPED"
+    new_names="PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_RECURSE PCREC_ERR_FLOOR PCREC_ERR_INTERNAL PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_RUNG_FRAMES_BOUNDED PCREC_VM_RUNG_FRAMES_UNBOUNDED PCREC_VM_RUNG_REVDET PCREC_VM_RUNG_COUNTER PCREC_VM_STRAT_POSSESSIVE PCREC_VM_STRAT_BACKTRACKING PCREC_VM_PRUNE_CLAMPED PCREC_VM_PRUNE_UNCLAMPED"
+    # [DD-14 wave A, D71 item 1]: PCREC_ERR_RECURSE joins the universal
+    # give-up code space (reserved, no producer this wave) and the count
+    # below moves 16 -> 17. [DD-14 wave A commit 2]: PCREC_ERR_INTERNAL
+    # (below the floor, NOT a give-up, but the SAME shared unprefixed
+    # block for the SAME "one contract fact, one spelling" reason) joins
+    # too, 17 -> 18.
     new_missing=""
     for n in $new_names; do
         c="$(grep -cE "^#define $n\\b" "$WORKDIR/abi_rx.c")"
@@ -854,7 +860,7 @@ if [ -f "$WORKDIR/abi_rx.c" ]; then
     if [ -n "$new_missing" ]; then
         bad "[ABI-NS]: universal constant(s) not emitted exactly once in a VM artifact:$new_missing"
     else
-        ok "[ABI-NS]: all 16 universal constants (give-up codes, UNSET, ENGINE_DFA/VM, nine D46 stamp bits) are emitted exactly once in a VM artifact"
+        ok "[ABI-NS]: all 18 universal constants (give-up codes incl. PCREC_ERR_RECURSE, the below-floor PCREC_ERR_INTERNAL, UNSET, ENGINE_DFA/VM, nine D46 stamp bits) are emitted exactly once in a VM artifact"
     fi
 
     old_names="RX_ERR_STEPS RX_ERR_FRAMES RX_ERR_WORK RX_ERR_FLOOR RX_UNSET RX_VM_RUNG_CURSOR RX_VM_RUNG_FRAMES_BOUNDED RX_VM_RUNG_FRAMES_UNBOUNDED RX_VM_RUNG_REVDET RX_VM_RUNG_COUNTER RX_VM_STRAT_POSSESSIVE RX_VM_STRAT_BACKTRACKING RX_VM_PRUNE_CLAMPED RX_VM_PRUNE_UNCLAMPED"
@@ -880,7 +886,7 @@ fi
 # engine cannot produce the value).
 if "$PCREC" -p rx --no-captures -o - -- 'a(b|c)+d' > "$WORKDIR/abins_dfa.c" 2>/dev/null; then
     dfa_missing=""
-    for n in PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_STRAT_POSSESSIVE PCREC_VM_PRUNE_CLAMPED; do
+    for n in PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_RECURSE PCREC_ERR_FLOOR PCREC_ERR_INTERNAL PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_STRAT_POSSESSIVE PCREC_VM_PRUNE_CLAMPED; do
         c="$(grep -cE "^#define $n\\b" "$WORKDIR/abins_dfa.c")"
         [ "$c" -eq 1 ] || dfa_missing="$dfa_missing $n(x$c)"
     done

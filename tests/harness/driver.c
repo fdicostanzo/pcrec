@@ -23,12 +23,32 @@
  *                        capture-expectation line picks its slot's pair out
  *                        of these fields by position; see docs/testing.md)
  *   "nomatch\n"         (rx_search found no match) — exits 0
- *   "steps\n" / "frames\n"
- *                       ([K21-class fix, 2026-08-15] rx_search found neither:
- *                        it GAVE UP, VM-artifact budget exhaustion, and
- *                        exits 3, not 0 — see the discrimination at the call
- *                        site below for why this is its own outcome, never
- *                        folded into "match" or "nomatch")
+ *   "steps\n" / "frames\n" / "work\n" / "recurse\n"
+ *                       ([K21-class fix, 2026-08-15; [DD-14] wave A,
+ *                        2026-08-24, named the fourth code] rx_search found
+ *                        neither: it GAVE UP, VM-artifact budget exhaustion,
+ *                        and exits 3, not 0 — see the discrimination at the
+ *                        call site below for why this is its own outcome,
+ *                        never folded into "match" or "nomatch". Each typed
+ *                        give-up code prints its own word — a code this
+ *                        driver cannot name is mislabelled evidence, which
+ *                        is exactly what a two-way `steps`-or-else compare
+ *                        did to every non-STEPS code before this fix.
+ *                        `recurse` (`PCREC_ERR_RECURSE`) is reserved with
+ *                        no producer yet (D71 item 1), so no artifact prints
+ *                        it today; it is named here anyway so a future
+ *                        producer needs no driver change.)
+ *   "internal\n"        ([DD-14] wave A commit 2, D71 item 1) rx_search
+ *                        returned PCREC_ERR_INTERNAL, BELOW the give-up
+ *                        floor and NOT a give-up: the artifact caught its
+ *                        OWN analysis/emission inconsistency (module
+ *                        'lookaround''s negative-polarity lookbehind
+ *                        end-check is the one producer today). Still exits
+ *                        3 like the four codes above -- this driver has no
+ *                        third outcome shape to give it -- but run.sh's
+ *                        `gu` directive (docs/testing.md) refuses to let
+ *                        any corpus block EXPECT "internal": nothing may
+ *                        plan for the artifact catching its own bug.
  * On a malformed escape in argv[1] or a malformed [startpos], prints a
  * message to stderr and exits 2.
  */
@@ -186,7 +206,36 @@ int main(int argc, char **argv) {
     } else if (found == 0) {
         printf("nomatch\n");
     } else {
-        printf("%s\n", found == PCREC_ERR_STEPS ? "steps" : "frames");
+        /* [DD-14 wave A, 2026-08-24] EVERY typed give-up code gets its own
+         * word — the pre-fix line named exactly two of the (now four)
+         * codes and folded every other one into "frames", which is
+         * mislabelled evidence: a WORK give-up printed as a frame-capacity
+         * failure would send a reader chasing the wrong bound, precisely
+         * DD-2's "different failures, different diagnoses" complaint,
+         * reached from inside this driver rather than from generated
+         * --emit-main code (src/gen/emit_dfa.c's `pcrec_emit_main` fixed
+         * the identical shape at [ENG-BREP counter-K]). A code this
+         * fallthrough cannot name still prints its numeric value rather
+         * than guessing.
+         *
+         * [DD-14 wave A commit 2] "internal" (PCREC_ERR_INTERNAL, BELOW
+         * the give-up floor) is named too, even though it is NOT a
+         * give-up — it is the artifact's own analysis/emission
+         * inconsistency check firing (module 'lookaround''s
+         * negative-polarity lookbehind end-check is the one producer
+         * today). It still exits 3 like every other negative return this
+         * driver cannot turn into a match/nomatch line, but run.sh's `gu`
+         * directive (docs/testing.md) refuses to let any corpus block
+         * EXPECT it: nothing may plan for the artifact catching its own
+         * bug, that is what sabotage rows are for. */
+        const char *word = found == PCREC_ERR_STEPS    ? "steps"
+                          : found == PCREC_ERR_FRAMES   ? "frames"
+                          : found == PCREC_ERR_WORK     ? "work"
+                          : found == PCREC_ERR_RECURSE  ? "recurse"
+                          : found == PCREC_ERR_INTERNAL ? "internal"
+                          : NULL;
+        if (word) printf("%s\n", word);
+        else printf("giveup %d\n", found);
         free(buf);
         return 3;
     }

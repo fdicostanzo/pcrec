@@ -4756,26 +4756,24 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
  *    arm the end-check would BE the miscompile it exists to prevent. So the
  *    negative arm returns HARD out of the matcher instead.
  *
- *    WHICH `RX_R_*`, AND THE HONEST ANSWER IS THAT NONE OF THE THREE MEANS
- *    "INTERNAL ERROR". D49 gives the artifact exactly three give-up codes —
- *    `RX_R_STEPS`, `RX_R_FRAMES`, `RX_R_WORK`, all inside [PCREC_ERR_FLOOR,
- *    -2] — and reserves everything strictly below the floor for a future
- *    abort semantic. Adding a fourth is an ABI renumber, and [DD-14]'s ASK 1
- *    has already ruled one in for `PCREC_ERR_RECURSE` (FLOOR -4 -> -5), so
- *    minting a code here would collide with a ruling this lane does not own.
- *    `RX_R_FRAMES` is used, and it is chosen by ELIMINATION rather than by
- *    fit: `RX_R_WORK` is the code THIS MODULE's own budget shape produces
- *    legitimately (§3.7 — a leading multi-branch lookbehind charges n·Σk_i
- *    and reaches the work budget on a ~50 MB subject, which is what
- *    `tests/lookaround/workbudget.rxt` exists to measure), and `RX_R_STEPS`
- *    is what a lookaround that lost its `vm_nullable` arm produces (sabotage
- *    row S127's own prediction). `RX_R_FRAMES` is the one of the three least
- *    entangled with this module's measured failure modes, so seeing it from a
- *    lookbehind-bearing pattern is the strongest available signal that the
- *    width analysis and the emitter disagree. The SAFETY property the ruling
- *    asked for holds whichever code is chosen — a hard return out of the
- *    matcher is not a false match — and the choice of code is a diagnostic
- *    question flagged for a ruling, not a correctness one.
+ *    WHICH `RX_R_*` — [DD-14] WAVE A COMMIT 2 (D71 item 1) MINTS THE CODE
+ *    THIS SITE NEEDS, RATHER THAN ELIMINATING AMONG ONES THAT DON'T FIT.
+ *    Before this commit D49 gave the artifact exactly three give-up codes —
+ *    `RX_R_STEPS`, `RX_R_FRAMES`, `RX_R_WORK` — and none of the three MEANS
+ *    "internal error"; this site used `RX_R_FRAMES` by ELIMINATION (the one
+ *    least entangled with this module's own measured failure modes — S127's
+ *    `RX_R_STEPS` prediction, §3.7's `RX_R_WORK` prediction), a compromise
+ *    kept only until the code space had room for the honest answer. D49
+ *    reserves everything strictly below `PCREC_ERR_FLOOR` for "a future
+ *    abort semantic", and THIS IS EXACTLY THAT SEMANTIC: not a give-up (no
+ *    resource was exhausted) but the artifact catching its own analysis
+ *    disagreeing with its own emission — `pcrec_maxw` said one width, the
+ *    emitter walked another. `RX_R_INTERNAL` (`PCREC_ERR_INTERNAL`, -6, BELOW
+ *    the floor) is minted for exactly this shape. A composed call site
+ *    honouring F2's `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` traps on
+ *    it — that IS the design, not a gap this site works around. The SAFETY
+ *    property the ASK 2 ruling asked for is unchanged: a hard return out of
+ *    the matcher is not a false match, whichever code carries it.
  *
  * THE BRANCH NODES ARE WALKED HERE AND THE WIDTHS ARE NOT RE-DERIVED. §3.1(c)
  * stores `u.look.widths` precisely so this function does not recompute them;
@@ -4947,12 +4945,17 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
             char sl[64];
             vm_slot_expr(v, pslot, sl, sizeof sl);
             if (neg) {
+                /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
+                 * see this function's header comment, note 3, "WHICH
+                 * RX_R_*". Below PCREC_ERR_FLOOR: not a give-up, the
+                 * artifact's own inconsistency check firing. */
                 sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
-                             "return %s_R_FRAMES;\n", sl, v->up);
+                             "return %s_R_INTERNAL;\n", sl, v->up);
                 vm_ev(v, VE_NOTE, 0, 0,
                       "lookbehind end-check FAILED on the negative arm -- a "
-                      "hard return rather than a decline, because a decline "
-                      "here is a false match");
+                      "hard return (RX_R_INTERNAL, below the give-up floor) "
+                      "rather than a decline, because a decline here is a "
+                      "false match");
             } else {
                 sb_printf(b, "    if (scan_position != (size_t)slot_values[%s]) "
                              "goto %s_fail;\n", sl, v->p);
@@ -6524,9 +6527,23 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * collapses it to -1 per D38.4's frozen return space, and only
      * <prefix>_search — which D38 says nothing about — has room for the
      * honest code), so they get their own PER-PREFIX names. */
-    sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
-    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
-    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)\n\n", v.up);
+    sb_printf(c, "#define %s_R_STEPS   ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
+    sb_printf(c, "#define %s_R_FRAMES  ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
+    sb_printf(c, "#define %s_R_WORK    ((ptrdiff_t)PCREC_ERR_WORK)\n", v.up);
+    /* [DD-14 wave A] %s_R_RECURSE joins its three siblings, sentinel only:
+     * D71 item 1 reserves the CODE now and defers the recursion-depth
+     * COUNTER to a future [V-H] diagnostic axis, so no arm in this file
+     * returns %s_R_RECURSE yet -- it exists so the search entry's collapse
+     * (below) and every consumer of the sentinel family already agree on
+     * its name before module 'recursion' supplies a producer. */
+    sb_printf(c, "#define %s_R_RECURSE ((ptrdiff_t)PCREC_ERR_RECURSE)\n", v.up);
+    /* [DD-14 wave A commit 2] %s_R_INTERNAL is NOT a give-up sentinel --
+     * it names the below-the-floor abort code (PCREC_ERR_INTERNAL) through
+     * the identical private-sentinel/public-code seam, because the seam's
+     * reason (§4.4's three layers) is about WHERE a typed negative value
+     * has room to travel, not about which side of the floor it lands on.
+     * `vm_look_behind`'s negative-arm end-check is its one producer today. */
+    sb_printf(c, "#define %s_R_INTERNAL ((ptrdiff_t)PCREC_ERR_INTERNAL)\n\n", v.up);
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
      *
@@ -7111,9 +7128,25 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    for (;;) {\n"
         "        ctx.pos = attempt_position;\n"
         "        result = %s_match_anchored(&ctx, &run%s%s);\n"
-        "        if (result == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
-        "        if (result == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
-        "        if (result == %s_R_WORK)   return PCREC_ERR_WORK;\n"
+        "        if (result == %s_R_STEPS)   return PCREC_ERR_STEPS;\n"
+        "        if (result == %s_R_FRAMES)  return PCREC_ERR_FRAMES;\n"
+        "        if (result == %s_R_WORK)    return PCREC_ERR_WORK;\n"
+        /* [DD-14 wave A] the fourth PROPAGATION line, D49's whole point:
+         * a give-up must reach the caller with its own code, never fold
+         * into a plain no-match. No arm returns %s_R_RECURSE yet (D71
+         * item 1 -- no producer this wave), so this line is dead code on
+         * every artifact today and stays that way until module
+         * 'recursion' lands one; it is added HERE, with its siblings,
+         * rather than later, so the collapse is never missing a code the
+         * ABI already reserves. */
+        "        if (result == %s_R_RECURSE) return PCREC_ERR_RECURSE;\n"
+        /* [DD-14 wave A commit 2] R_INTERNAL PROPAGATES too, exactly like
+         * a give-up -- the search entry is a TOP-LEVEL entry, not a
+         * composed call site, so F2's trap obligation does not apply
+         * here; it applies to whichever future call site invokes this
+         * artifact's rx_matchfn AS a callout. `vm_look_behind`'s
+         * negative-arm end-check is the one live producer today. */
+        "        if (result == %s_R_INTERNAL) return PCREC_ERR_INTERNAL;\n"
         "        if (result >= 0) break;\n"
         "        %s_reset_for_next_attempt(&run);\n"
         "        if (attempt_position >= subject_length) return 0;\n"
@@ -7132,7 +7165,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
          * `start` here would make `\G` an unconditional truth and turn
          * `\Gfoo` into `foo`. */
         v.ngst > 0 ? ", search_from" : "",
-        v.up, v.up, v.up, v.p, retry_win, v.p);
+        v.up, v.up, v.up, v.up, v.up, v.p, retry_win, v.p);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -7178,7 +7211,8 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         " * D49: THE GIVE-UP CODES ARE CARRIED HERE, not collapsed to -1. The\n"
         " * return space is >= 0 matched length, -1 no match, and a distinct\n"
         " * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up\n"
-        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK). Anything BELOW the floor\n"
+        " * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK, PCREC_ERR_RECURSE\n"
+        " * -- [DD-14]: reserved, no producer yet, D71 item 1). Anything BELOW the floor\n"
         " * stays reserved for the future abort semantic and is what a callout\n"
         " * call site traps on.\n"
         " *\n"
@@ -7199,9 +7233,12 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
         "    %s_run_state_init(&run);\n"
         "    result = %s_match_anchored(ctx, &run%s%s);\n"
         "    /* No translation and no clamp: the impl's return space IS this\n"
-        "     * contract's -- >= 0, -1, or one of the three R_ sentinels, which\n"
-        "     * are the ERR_ codes. A defensive floor test here would be dead\n"
-        "     * code pretending to be a safeguard. */\n"
+        "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
+        "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
+        "     * below-the-floor PCREC_ERR_INTERNAL -- this entry propagates\n"
+        "     * it exactly like a give-up, for the same top-level-entry\n"
+        "     * reason <prefix>_search does). A defensive floor test here\n"
+        "     * would be dead code pretending to be a safeguard. */\n"
         "    return result;\n"
         "}\n\n",
         g.matchfn, v.p, v.p, v.p,

@@ -218,7 +218,8 @@ record_case_group_fail() {
 
 # Compile and run the current pattern block (globals cur_file, cur_pattern,
 # cur_pattern_line, cur_is_perr) against its accumulated cases (parallel
-# arrays case_kind/case_line/case_subject/case_start/case_end/case_gspec).
+# arrays case_kind/case_line/case_subject/case_start/case_end/case_gspec/
+# case_gucode -- the last holding a "gu" case's expected give-up word).
 flush_block() {
     block_counter=$((block_counter + 1))
     local bdir="$WORKDIR/b$block_counter"
@@ -252,6 +253,15 @@ flush_block() {
         fi
         pflags+=(--features "$cur_features")
     fi
+
+    # [DD-14 wave A commit 3] the `engine`/`budget` directives -- the
+    # minimal route to a corpus case that can reach `--engine=vm` with a
+    # tiny budget, so `gu` has something to assert against without
+    # inventing a new construct. Same "per-block, validated at parse time"
+    # shape as flags/features above.
+    [ -n "$cur_engine" ] && pflags+=(--engine="$cur_engine")
+    [ -n "$cur_stepbudget" ] && pflags+=(--step-budget="$cur_stepbudget")
+    [ -n "$cur_framebudget" ] && pflags+=(--backtrack-frames="$cur_framebudget")
 
     local pcrec_err
     # The budget is AXIS-AWARE (R23 V1): pcrec's own invocation used to carry a
@@ -365,6 +375,30 @@ flush_block() {
                 "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
             record_case_group_fail "$cur_file" "$i" "test binary crashed"
             continue
+        elif [ "$kind" = "gu" ]; then
+            # [DD-14 wave A commit 3, §10.3] the ONE case kind that WANTS
+            # exit 3: this directive asserts the search GAVE UP with a
+            # specific typed code, so — unlike every other kind, which
+            # treats exit 3 as an unconditional HARD failure two arms below
+            # — a "gu" case scores exit 3 against its expected word instead
+            # of failing on sight. A non-3 exit (0, 1, timeout, crash — the
+            # latter two already handled above) means the search did NOT
+            # give up when the block said it must, which is exactly the
+            # FAILING-direction property the landing bar requires: a
+            # `gu frames` block on a pattern that MATCHES fails HERE, not
+            # silently passes as a match.
+            local want="${case_gucode[$i]}"
+            if [ $trc -eq 3 ] && [ "$out" = "$want" ]; then
+                [ "$VERBOSE" = "1" ] && echo "PASS $cur_file:$line: gu $want '$cur_pattern' subject=\"$subj\" startpos=$pos"
+                record_pass
+            elif [ $trc -eq 3 ]; then
+                record_fail "$cur_file" "$line" \
+                    "expected 'gu $want' but the search gave up with '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            else
+                record_fail "$cur_file" "$line" \
+                    "expected 'gu $want' (a give-up) but the search did not give up — got '$out' (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+            fi
+            continue
         elif [ $trc -eq 3 ]; then
             # [K21-class fix, 2026-08-15] driver.c's own give-up exit (see its
             # header comment): rx_search returned a negative VM budget-give-up
@@ -372,11 +406,11 @@ flush_block() {
             # failure, same shape as the timeout/crash branches above and for
             # the same reason — the give-up path must never be compared
             # against a `match`/`nomatch` expectation and silently score as
-            # whichever one it happens not to equal. This is dormant for the
-            # base .rxt corpus today: nothing in the `flags`/`features`
-            # directive vocabulary can select `--engine=vm` or a tiny
-            # `--step-budget`/`--backtrack-frames`, so no case reaches it
-            # currently, and none is added here — see docs/testing.md.
+            # whichever one it happens not to equal. Reached for every case
+            # kind EXCEPT "gu" (handled above) — that includes a give-up on
+            # an ordinary m/n/ms/ns case, still a hard failure, never a
+            # silent pass. [DD-14 wave A] the `engine`/`budget` directives
+            # below are what let a corpus case reach this path at all.
             record_fail "$cur_file" "$line" \
                 "test binary GAVE UP ($out — VM budget exhausted) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
             record_case_group_fail "$cur_file" "$i" "test binary gave up ($out)"
@@ -476,6 +510,9 @@ for file in "${files[@]}"; do
     cur_is_perr=0
     cur_flags=""
     cur_features=""
+    cur_engine=""
+    cur_stepbudget=""
+    cur_framebudget=""
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
     have_block=0
     blocks_in_file=0
@@ -494,7 +531,10 @@ for file in "${files[@]}"; do
             cur_is_perr=0
             cur_flags=""
             cur_features=""
-            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=()
+            cur_engine=""
+            cur_stepbudget=""
+            cur_framebudget=""
+            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
             # per-block compile options. Only `i` (case-insensitive, OS-1) is
@@ -521,6 +561,40 @@ for file in "${files[@]}"; do
             else
                 cur_features="$feat_list"
             fi
+        elif [[ "$line" =~ ^engine[[:space:]]+vm[[:space:]]*$ ]]; then
+            # [DD-14 wave A commit 3] the minimal ROUTE §10.3 asks for: a
+            # block-scoped directive letting a case reach --engine=vm, the
+            # same shape as `flags`/`features` (per-block, does not carry to
+            # the next block, unknown value is a hard error). Only "vm" is
+            # defined -- there is no `--engine=dfa` cell this wave needs.
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'engine' line before any pattern block"
+            else
+                cur_engine="vm"
+            fi
+        elif [[ "$line" =~ ^engine[[:space:]] ]]; then
+            record_fail "$file" "$lineno" \
+                "unknown 'engine' value (only 'vm' is defined)"
+        elif [[ "$line" =~ ^budget[[:space:]]+steps=([0-9]+)[[:space:]]*$ ]]; then
+            # [DD-14 wave A commit 3] the minimal BUDGET knob §10.3 asks
+            # for, mirroring tests/vm/run_vm_tests.sh's own `--step-budget=N`
+            # / `--backtrack-frames=N` cells (that file's `build()` calls the
+            # SAME two pcrec flags this line and the next route into pflags)
+            # -- this is the .rxt corpus's first way to reach either one.
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'budget' line before any pattern block"
+            else
+                cur_stepbudget="${BASH_REMATCH[1]}"
+            fi
+        elif [[ "$line" =~ ^budget[[:space:]]+frames=([0-9]+)[[:space:]]*$ ]]; then
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'budget' line before any pattern block"
+            else
+                cur_framebudget="${BASH_REMATCH[1]}"
+            fi
+        elif [[ "$line" =~ ^budget[[:space:]] ]]; then
+            record_fail "$file" "$lineno" \
+                "unknown 'budget' spec (only 'steps=<n>' and 'frames=<n>' are defined)"
         elif [[ "$line" =~ ^perr[[:space:]]*$ ]]; then
             cur_is_perr=1
         elif [[ "$line" =~ ^m[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
@@ -531,6 +605,7 @@ for file in "${files[@]}"; do
             case_end+=("${BASH_REMATCH[3]}")
             case_startpos+=("0")
             case_gspec+=("")
+            case_gucode+=("")
         elif [[ "$line" =~ ^n[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
@@ -539,6 +614,7 @@ for file in "${files[@]}"; do
             case_end+=("")
             case_startpos+=("0")
             case_gspec+=("")
+            case_gucode+=("")
         elif [[ "$line" =~ ^ms[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
             case_kind+=("m")
             case_line+=("$lineno")
@@ -547,6 +623,7 @@ for file in "${files[@]}"; do
             case_start+=("${BASH_REMATCH[3]}")
             case_end+=("${BASH_REMATCH[4]}")
             case_gspec+=("")
+            case_gucode+=("")
         elif [[ "$line" =~ ^ns[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
@@ -555,6 +632,35 @@ for file in "${files[@]}"; do
             case_start+=("")
             case_end+=("")
             case_gspec+=("")
+            case_gucode+=("")
+        elif [[ "$line" =~ ^gu[[:space:]]+internal([[:space:]]|$) ]]; then
+            # [DD-14 wave A commit 3] refused BY NAME, not by falling through
+            # to the unparseable-line catch-all below: nothing may EXPECT an
+            # internal error. PCREC_ERR_INTERNAL is the artifact catching its
+            # OWN analysis/emission bug, never a planned outcome a corpus
+            # block gets to rely on -- that is what tests/mech's sabotage
+            # rows are for (S136 exercises this exact code today). A clear,
+            # named refusal here is the same discipline `flags`'s unknown-
+            # letter check already applies two elif arms up.
+            record_fail "$file" "$lineno" \
+                "'gu internal' is refused: PCREC_ERR_INTERNAL is the artifact catching its own inconsistency, never a planned outcome a .rxt block may EXPECT (docs/testing.md's 'gu' directive; see tests/mech/sabotages/S136 for how this code IS exercised)"
+        elif [[ "$line" =~ ^gu[[:space:]]+(steps|frames|work|recurse)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
+            # [DD-14 wave A commit 3, §10.3] asserts the search GAVE UP with
+            # this TYPED code, scored against driver.c's exit 3 + printed
+            # word instead of the default HARD failure that branch below
+            # gives every other case kind. Same shape as m/n: one directive
+            # line naming a subject, startpos fixed at 0 (no `gus` variant --
+            # nothing in this wave's landing bar needs one, and D42.3's own
+            # "getting the partition wrong costs a renumber, not more" spirit
+            # says add the knob when a real cell needs it, not speculatively).
+            case_kind+=("gu")
+            case_line+=("$lineno")
+            case_subject+=("${BASH_REMATCH[2]}")
+            case_start+=("")
+            case_end+=("")
+            case_startpos+=("0")
+            case_gspec+=("")
+            case_gucode+=("${BASH_REMATCH[1]}")
         elif [[ "$line" =~ ^(gp|g)[[:space:]]+([0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]*$ ]]; then
             # [M4.5a] capture-group expectation attached to the MOST RECENT
             # m/ms case in this block. 'g' = LIVE (must be checkable now: a
