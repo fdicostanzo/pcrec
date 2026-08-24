@@ -12886,3 +12886,32 @@ single-row run — the matrix builds from git archive HEAD but reads row
 definitions from the working tree (S134's first run scored UNDETECTED on
 exactly this). waveE still in flight (its own full matrix 132/1/0 — the
 1 is S130, expected on its D-less branch).
+
+## 2026-08-24 (EDT), thirty-eighth session (part 13) — wave E MERGED (6cf861c): the ceiling bug was LIVE; the gate catches a 37-byte prose regression
+
+lane/waveE 23930d1 merged. The §5.6 predicate landed and THE BUG IT
+EXISTS FOR WAS LIVE ON MAIN: the measured witness lost its matches
+until this wave (NOMATCH → (0,3) on "aqq"). Every clamping cell in
+prefilter.rxt was QUALIFIED against a pre-wave-E compiler (5 of 10
+candidates read RX_VM_PRUNE_CEILING and demonstrably clamp), including
+the non-atomic `(?*!` cell that separates this predicate from
+[M6.4.2]'s. Codegen rule 1 is now one function (ceil_drop/ceil_keep)
+asserting FOUR readers for both modules; S141 sabotages both ceiling
+BUILDERS while leaving the stamp honest and only rule 1(a) goes red —
+the disjointness proof. Two lane self-catches worth the record: the
+identity gate flagged 54 differing lookaround-FREE artifacts on two
+axes — a 37-byte generated-C COMMENT the lane had widened; reverted,
+with the wording wart recorded rather than a second why-flag minted
+(two sources that can disagree is the defect this predicate exists to
+avoid). And its first fix broke S88's landed anchor (the S88/S141
+shared SAB_BEFORE) — caught by the tripwire, resolved by moving the
+note, not re-homing a landed row. The `lookaround` mech arm is
+measured BLIND to S140 (its 19 shared subjects contain no `q`); the
+assignment stays with the measurement recorded so nobody reads it as
+coverage. Merge: three predicted conflicts resolved by the manager;
+the NPO guard combined both waves' histories and was RE-DERIVED on the
+merged tree (44+1=45, green 5/0). One unexplained one-off on the lane:
+a run_vm_identity refusal mismatch under concurrent load, clean on
+re-run — reported, not diagnosed. Post-D+E battery (gate, strict,
+test, targeted mech, san) running on main. Six of eight waves merged;
+E2 in flight; F next.
