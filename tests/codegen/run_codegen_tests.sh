@@ -1013,8 +1013,17 @@ residual_names() {
 # `rx_bref_match_caseless`, so a substring rule would count every caseless call
 # as a case-sensitive one and both fixtures would pass with the emitter wired
 # backwards.
+# [M6.6.2 wave D] AN OPTIONAL THIRD ARGUMENT, `$3`, NAMES THE FUNCTION WHOSE
+# OWN BODY IS SKIPPED, defaulting to `$2`. The default IS the rule as written —
+# an entry is not "called from an engine body" inside its own definition — and
+# the argument exists because the fourth entry has a companion TOKEN that is
+# not a function name: `<prefix>_BACK_STEP_NONE` is the sentinel, and the one
+# body that legitimately mentions it besides the call sites is
+# `<prefix>_back_step`'s own `return k > pos ? ... : pos - k;`. Passing the
+# defining function keeps ONE exclusion rule rather than adding a second, and
+# keeps the declared count equal to the call count instead of `count + 1`.
 calls_in_bodies() {
-    awk -v want="$2" '
+    awk -v want="$2" -v skipfn="${3:-$2}" '
         # ---- token-level comment/literal stripping, state carried across
         # records (a /* ... */ region spans lines) ----
         function strip(s,   out, i, n, c2, c1, d) {
@@ -1071,7 +1080,7 @@ calls_in_bodies() {
                 inbody = 1; head = ""; next
             }
             if (line ~ /^\}/) { inbody = 0; fname = ""; next }
-            if (inbody && fname != want && fname != "main") {
+            if (inbody && fname != skipfn && fname != "main") {
                 k = ntok(line, want)
                 if (k > 0) { total += k; hits = hits FILENAME ":" FNR ": " line "\n" }
             }
@@ -1141,6 +1150,32 @@ while IFS=$'\t' read -r nm pat extra decl; do
             else
                 bad "[M5-SEAM/D58] '$rn' is called $got time(s) from engine bodies in the '$pat' artifact, where this fixture declares $wantn — either the compare stopped routing through the seam (D58 scope item 3: encoding-sensitive byte arithmetic in shared emitter code is what the seam exists to prevent, and it changes no answer under the byte backend) or a call site appeared that the test did not write"
             fi
+        done
+    done
+    # (3) [M6.6.2 wave D] THE SENTINEL IS CHECKED AT EVERY CALL SITE.
+    # lookaround_design.md §4.2(3): under the byte backend the caller's
+    # `scan_position < k` guard is EXACT, so `<prefix>_BACK_STEP_NONE` can
+    # never come back and the comparison is dead code that changes NO ANSWER.
+    # Under UTF-8 `k` characters is at least `k` bytes, so the guard still
+    # soundly rejects but stops being exact, and the sentinel is what makes
+    # the shape correct — which is why deleting the comparison is a row FOR
+    # THE BACKEND THAT DOES NOT EXIST YET (S134) and why nothing behavioural
+    # can see it. The count is the SAME declared integer as the call count,
+    # because §3.4 emits exactly one sentinel check per back-step call; a
+    # separate literal would be a second place to get the same fact wrong.
+    #
+    # `calls_in_bodies` is reused unchanged and that is the point: the
+    # `#define <prefix>_BACK_STEP_NONE` sits at FILE SCOPE, so the body
+    # tracking excludes it without a rule of its own, and the token rule keeps
+    # `<prefix>_BACK_STEP_NONE` from being confused with `<prefix>_back_step`.
+    for pair in $(printf '%s' "$decl" | tr ',' ' '); do
+        [ "${pair%%:*}" = "back_step" ] || continue
+        wantn="${pair##*:}"
+        for af in "$WORKDIR/$nm.c" "$WORKDIR/${nm}_sc.c"; do
+            got="$(calls_in_bodies "$af" "rx_BACK_STEP_NONE" "rx_back_step" | head -1)"
+            [ "$got" = "$wantn" ] && continue
+            resid_bad=$((resid_bad + 1))
+            bad "[M5-SEAM/D58] the '$pat' artifact compares against 'rx_BACK_STEP_NONE' $got time(s) from engine bodies, where this fixture declares $wantn back-step call site(s) — every back-step call owes a sentinel check (lookaround_design.md §4.2(3)). Deleting the check changes NO ANSWER under the byte backend, where the caller's own guard is exact, so this is the only instrument that can see it"
         done
     done
     # TAB-separated: name, pattern, extra pcrec args ('-' for none), and the

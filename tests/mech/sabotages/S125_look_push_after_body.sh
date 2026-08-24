@@ -26,23 +26,24 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
 SAB_DESC="vm_look emits the negative form's body-failed RX_PUSH after the body instead of before it, so the frame that carries the entry cursor and trail mark is never reached and a negative assertion can never hold"
-SAB_DOC_FIGURE="PREDICTED: every negative cell goes red — the assertion never succeeds — while every positive and non-atomic cell stays green. Canonical figure owed from run_sabotage_matrix.sh S125."
+SAB_DOC_FIGURE="PREDICTED: every negative cell goes red, AHEAD AND BEHIND since wave D — the assertion never succeeds — while every positive and non-atomic cell stays green. Canonical figure owed from run_sabotage_matrix.sh S125."
 SAB_COUNT=1
+# ANCHOR RE-HOMED AT WAVE D, not rewritten: `vm_look` gained the lookbehind's
+# branch chain, so the body emission is no longer a bare `vm_emit` call — it is
+# an `if (behind)` whose two arms both end at `okl`. Site 2 therefore anchors
+# on the `okl` label emission that follows BOTH arms, which is where "after the
+# body" now is for a lookahead AND for a lookbehind; the row's intent is
+# unchanged and is now exercised on six spellings instead of three.
 SAB_BEFORE='    if (neg)
         vm_push(v, negokl, "negative lookaround: the BODY-FAILED continuation "
-                           "-- reaching it means the assertion HOLDS");
-    vm_goto(v, bodyl);'
-SAB_AFTER='    /* SABOTAGE S125: the push moved AFTER the body emission below */
-    vm_goto(v, bodyl);'
+                           "-- reaching it means the assertion HOLDS");'
+SAB_AFTER='    /* SABOTAGE S125: the push moved AFTER the body emission below */'
 SAB_FILE2="src/gen/emit_vm.c"
 SAB_COUNT2=1
-SAB_BEFORE2='    vm_emit(v, bodyl, a->l, okl);
-
-    if (neg) {'
-SAB_AFTER2='    vm_emit(v, bodyl, a->l, okl);
-
-    if (neg)
+SAB_BEFORE2='    if (neg) {
+        vm_lbl(v, okl, "negative lookaround: the body SUCCEEDED, so the "'
+SAB_AFTER2='    if (neg)
         vm_push(v, negokl, "negative lookaround: the BODY-FAILED continuation "
                            "-- reaching it means the assertion HOLDS");
-
-    if (neg) {'
+    if (neg) {
+        vm_lbl(v, okl, "negative lookaround: the body SUCCEEDED, so the "'

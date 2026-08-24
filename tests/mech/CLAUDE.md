@@ -132,6 +132,12 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   against libpcre2, which for `nonatomic_ahead.rxt` is the only oracle those
   cells have (python has no `(?*` at all). SKIP-is-not-a-pass exercised in the
   failing direction as `pc3` was.
+  **WAVE D TRIPLED ITS §1 POPULATION, 14 -> 44 answer-bearing blocks / 4,268
+  cells**, because `lookbehind_widths.rxt` and `nonatomic_behind.rxt` are
+  `# pcre2-only` in their ENTIRETY (python refuses differing-width lookbehind
+  alternatives outright, and has no `(?<*` at all). §2's exact disagreement
+  count stayed 13 across a subject-set growth of 19 -> 26, which is the only
+  kind of evidence an exact literal can give that it measures what it names.
 - `assertions` → `tests/assertions/run_assertions_tests.sh`, module
   `assertions`' structural checks (the libpcre2 re-verification of its
   corpus, the built-constructs control, and the D47.5 exemption read off the

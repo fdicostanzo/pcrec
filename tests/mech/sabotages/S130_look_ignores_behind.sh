@@ -1,33 +1,43 @@
-# S130 ([M6.6.2] wave B+C, design §9.3 S-LA15) — `.behind` IS READ.
+# S130 ([M6.6.2] wave D, design §9.3 S-LA15) — `.behind` IS READ.
 #
-# **THIS ROW IS EXPECTED TO SCORE `UNDETECTED` UNTIL WAVE D LANDS, AND THAT IS
-# A PROPERTY OF THE WAVE RATHER THAN OF THE ROW.** It is written out now (R33
-# C2-8 required all three flag rows written rather than promised), and the
-# report for wave B+C states the deferral, so a matrix reader does not take it
-# for a finding.
+# **RE-HOMED AT WAVE D, AND IT IS NOW LIVE.** The row was written out at wave
+# B+C (R33 C2-8 required all three flag rows written rather than promised) and
+# scored UNDETECTED there BY CONSTRUCTION: what `.behind` SELECTS is §3.4's
+# back-step and end-check, and neither existed — `pcrec_laport_group` declined
+# the three `(?<` tails at `WANT_RESULT`, so no `A_LOOK` with `behind == true`
+# could be built at all, and `vm_look`'s only read of the flag was a LOUD
+# `ctx_fail` whose deletion was unobservable because nothing could reach it. A
+# sabotage of an unreachable guard is not a detector, and wave B+C's report
+# said so rather than letting a matrix reader take it for a finding.
 #
-# WHY IT CANNOT BE LIVE YET. What `.behind` SELECTS is §3.4's back-step and
-# end-check, and neither exists: `pcrec_laport_group` declines the three `(?<`
-# tails at `WANT_RESULT`, so no `A_LOOK` with `behind == true` can be built at
-# all, and `vm_look`'s only read of the flag today is the LOUD `ctx_fail` this
-# row deletes — whose deletion is unobservable precisely because nothing can
-# reach it. A sabotage of an unreachable guard is not a detector.
+# WAVE D LANDED THE BACK-STEP AND THE ANCHOR MOVED WITH IT, exactly as that
+# header said it must: `SAB_BEFORE` is now the emission that BRANCHES on
+# `.behind`, and the sabotage emits the LOOKAHEAD shape for both directions —
+# body forward from the cursor, no back-step, no end-check. That is precisely
+# the silent miscompile the retired `ctx_fail` existed to make impossible while
+# the wave was half-landed.
 #
-# WAVE D OWES THIS ROW A RE-HOMED ANCHOR, not a new row: when the back-step
-# lands, `SAB_BEFORE` must move onto the emission that BRANCHES on `.behind`
-# (the back-step and the end-check), and the detector becomes
-# `lookbehind.rxt` and `startpos.rxt` — every `(?<=`/`(?<!` cell goes red,
-# which is design §9.3's stated prediction. Until then the anchor sits on the
-# guard so that the row EXISTS, drifts loudly if `vm_look` is rewritten, and
-# is impossible to forget.
+# THE ARTIFACT STILL COMPILES AND STILL ANSWERS, which is what makes this a
+# detector rather than an anomaly: `behind` is still read by the entry label's
+# role text, the slots are still allocated, and `vm_count_slots`' extra
+# per-branch pushes become an over-count (safe). A lookbehind simply becomes a
+# LOOKAHEAD, so `(?<=a)b` matches "ab" at 0 where the truth is (1,2).
 SAB_ID="S130-look-ignores-behind"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness lookaround"
 SAB_HARNESS_TARGET="tests/lookaround"
-SAB_DESC="vm_look stops reading Ast.u.look.behind, so a LOOKBEHIND would be emitted with the lookAHEAD shape — no back-step, no end-check. DEFERRED: unobservable until wave D lands the lookbehind, because the parse hook declines the three (?< tails and nothing can build such a node"
-SAB_DOC_FIGURE="EXPECTED UNDETECTED AT WAVE B+C, by construction — see this row's header. At wave D the anchor is re-homed onto the back-step/end-check emission and the prediction becomes: every (?<= and (?<! cell in lookbehind.rxt and startpos.rxt goes red."
+SAB_DESC="vm_look stops reading Ast.u.look.behind, so a LOOKBEHIND is emitted with the lookAHEAD shape — the body runs FORWARD from the cursor with no back-step and no end-check, and the assertion inspects the bytes after the cursor instead of the ones before it"
+SAB_DOC_FIGURE="PREDICTED: every (?<= , (?<! and (?<* cell goes red — lookbehind.rxt, lookbehind_widths.rxt, startpos.rxt and nonatomic_behind.rxt all RED, workbudget.rxt RED — while every lookAHEAD cell (lookahead.rxt, captures.rxt, quantified.rxt, nonatomic_ahead.rxt) stays GREEN. Canonical figure owed from run_sabotage_matrix.sh S130."
 SAB_COUNT=1
-SAB_BEFORE='    if (a->u.look.behind)
-        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look "
-                           "before wave D — the back-step is not built");'
-SAB_AFTER='    /* SABOTAGE S130: .behind is not read at all */'
+SAB_BEFORE='    if (behind) {
+        vm_look_behind(v, a, okl, mslot, pslot);
+    } else {
+        const int bodyl = vm_label(v);
+        vm_goto(v, bodyl);
+        vm_emit(v, bodyl, a->l, okl);
+    }'
+SAB_AFTER='    {   /* SABOTAGE S130: .behind is not read — the lookAHEAD shape for both */
+        const int bodyl = vm_label(v);
+        vm_goto(v, bodyl);
+        vm_emit(v, bodyl, a->l, okl);
+    }'
