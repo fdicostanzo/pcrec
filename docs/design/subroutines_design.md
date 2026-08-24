@@ -988,6 +988,23 @@ MEASURED by census (`switch` on a node kind, per function, at `eacac76`):
 **emit_vm.c 8, atomic.c 5, revdet.c 5, possessify.c 3, and six files with one
 each = 27.** Fourteen carry a `default:`, so `-Wswitch` will not name them.
 
+**THE CENSUS IS SWITCH-ONLY, AND THAT IS A SCOPE, NOT A COMPLETENESS CLAIM**
+(R34 V-14). `-Wswitch` fires on `switch` statements, so a `switch`-shaped
+census is exactly the set wave A2's alarm covers — and exactly the set it
+covers, no more. The residual, which **no diagnostic will name**:
+
+- **72 further `->k ==` dispatch points** — comparisons rather than switches;
+- **eight AST walkers with no kind switch at all**: `vm_lifts`, `bare`,
+  `vm_alt`, `trie_key`, `ast_bare`, `altcls_walk_alt`, `altcls_branch_peel`,
+  `altcls_cat_flatten`.
+
+None is in wave A2's bar, because the bar is *"the alarm fired and every arm
+was decided"* and the alarm cannot reach them. **They are wave B+C's**, by
+hand, at the point the producer exists — and the reason they are listed here
+rather than discovered later is §4.4's own rule: a walker that treats a call as
+a transparent atom is the failure mode, and a walker with no switch is the one
+place the compiler will not ask.
+
 | # | site | kind | the `A_CALL` arm |
 |---|---|---|---|
 | 1 | `emit_vm.c:857` `vm_nullable` | **GRAPH** | nullable iff the callee is — SCC fixpoint, memoised, cycle bottom = `false` then iterate up (§2.6) |
@@ -1534,13 +1551,30 @@ conclude what it does. The one difference is the *reason* for the follow
 scoping, and §6.4 says why that matters.
 
 **THE ONE THING A SHARED BODY MAY NOT DO IS DEPEND ON ITS CALLER'S
-COMPILE-TIME CONTEXT.** `lookaround_design.md` §6.4's lookbehind-branch
-hand-off is the worked example: a branch's width `k` is used three times at the
-back-step, and a shared body cannot carry it, so **the width belongs to the
-CALL SITE** and the site jumps to `L_body_i` past the back-step. That design
-recorded recommendation (a); **this design ratifies it**, and §3.4(d)'s
-measurement is the second reason — PCRE2 computes a call's width through the
-callee, so a call inside a lookbehind is a width question at the site.
+COMPILE-TIME CONTEXT**, and `lookaround_design.md` §6.4's lookbehind-branch
+hand-off is the worked example that **this design DECLINES** (R34 V-10).
+
+That design asked whether a call targeting a lookbehind BRANCH should have the
+width `k` travel with the call, and recommended **(a)**: *the call site emits
+its own guard, back-step and charge, and jumps to `L_body_i`* — the branch's
+forward body, past the back-step. An earlier revision of this section
+**ratified** it. **That was wrong three ways**, and each is one of this
+document's own rulings:
+
+- §6.4 RULES that **no lookaround body compiles as a call** (`k = 1`,
+  measured), so there is no call to a lookbehind branch to arrange for;
+- §6.3 emits the **callee region separately** from the lexical occurrence, so
+  a call never jumps into the assertion's own label layout at all;
+- §3.5/V-6 established that the hazard is the **EXIT**, not the entry — and
+  (a) is an entry-side arrangement, so it addresses the wrong end.
+
+**RULED: `lookaround_design.md` §6.4's recommendation (a) is MOOT under this
+design, and the hand-off is DECLINED.** `[M6.6.2]` should not build the
+`L_b_i`/`L_body_i` label split *for this module's benefit*; if it wants that
+split for its own reasons it is welcome to it. **`lookaround_design.md`'s
+P-13** — *"the prediction that the split is enough"* — should be re-pointed at
+that design's own use of the labels, because `[DD-14]` is no longer its
+customer.
 
 ### 5.5 The backtrack out of a returned call, drawn
 
@@ -2397,21 +2431,22 @@ measurement behind it rather than a worry.
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
 | **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
 | **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
+| **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave E: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
 | **S-SR18** | §3.5/§5.4/§6.3: the callee region has **ITS OWN EXIT** — a call never falls out through the lexical occurrence's continuation | `emit_vm.c` | `harness recursion lookaround atomic-groups` | make the callee region END by falling through to the wrapped lexical occurrence's exit instead of `RX_RETURN` | **`^(?>(a\|ab))z(?1)c$` on `"azabc"` goes from (0,5) to nomatch** — the atomic exit's `RX_CUT` discards the choice points the retry needs. **The row carries all three wrappers** (W1's lookbehind end-check-and-restore, W2's negative-assertion cut, W3's atomic cut), because they are three different exits and an emitter can get one right and the others wrong. **It is an EXIT row, not an ENTRY row** — R34 V-6 found the first version sabotaging the back-step, which a call never reaches. `features recursion,lookaround,atomic-groups` |
 | **S-SR19** | §4.4a(6): the layout counts each EMITTED CALLEE REGION, including one defined inside `X{0}` | `emit_vm.c` | `harness recursion atomic-groups` | count the callee's slots lexically (i.e. leave `vm_count_slots`' `{0,0}` prune in the path) | **an OUT-OF-BOUNDS SLOT WRITE**, K27's class, which `vm_count_slots`' own header names. The detector must be a `{0}` cell with a **rung-bearing or atomic** callee — `^(?:((?>a\|ab))){0}(?1)z$` — because a callee with only capture slots allocates from a family that `{0}` does *not* prune and the row goes green. Under ASan the failure is a report; without it, silent corruption, so this row is `asan`-suite as well |
-| **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave E: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
 
 **Two need the TWO-SITE mechanism** (`tests/mech/CLAUDE.md`'s S108,
 `SAB_FILE2/BEFORE2/AFTER2/COUNT2`): **S-SR7**, because the cost arm and the
 emission must move together or the artifact declares a capacity it does not
 use; and **S-SR13**, which is two sites by construction.
 
-**TWENTY-SIX ROWS**, hand-counted from the table above: the original
-seventeen, plus §5.3a's five per-family additions (S-SR6a…e), plus S-SR2a
-(§5.6's `call_depth` codegen row), S-SR9a (§2.6's possessive-rung TIMEOUT),
-S-SR11a (§4.3's marking arm) and S-SR18 (§3.5's wrapped target), with
-**S-SR11 RETARGETED** from the withdrawn transitivity claim to §4.4's
-compiler hang. The count is stated because
+**TWENTY-SEVEN ROWS**, hand-counted from the table above (S-SR1–S-SR19 with
+the lettered additions S-SR2a, 6a–6e, 9a, 11a): the original seventeen, plus
+§5.3a's five per-family rows, S-SR2a (§5.6's `call_depth` codegen row), S-SR9a
+(§2.6's possessive-rung TIMEOUT), S-SR11a (§4.3's marking arm), S-SR18 (§3.5's
+wrapped-target EXIT) and S-SR19 (§4.4c's out-of-bounds slot write), with
+**S-SR11 RETARGETED** from the withdrawn transitivity claim to §4.4's compiler
+hang. The count is stated because
 `lookaround_design.md` §9.3 records its own first version disagreeing with
 itself three ways. **A `recursion` mech ARM must be wired** in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
@@ -2584,34 +2619,50 @@ has landed** — P13: it does not exist today, so the two are NOT symmetric
 and this wave must not assume they are.
 **The `\g` tails are DECLINED at `WANT_RESULT`** so their rows stay `unbuilt`
 until wave D — one branch in `pcrec_brport_g`, not a throwaway path.
-*Landing bar: `spellings.rxt`, `relative.rxt`, `whole.rxt` (the `(?R)`/`(?0)`
-half), `captures.rxt`, `atomicity.rxt`, `leftrec.rxt`, `quantified.rxt`,
-`nocaptures.rxt` green; `--list-syntax` shows the `(?` rows `built` and the two
-`\g` rows still `unbuilt`; S-SR1..S-SR6, S-SR8..S-SR12, S-SR14, S-SR16
-DETECTED.*
+*Landing bar: **`refused.rxt`** and **`gated.rxt`** (the module-attribution and
+D65 two-diagnostic cells — this is the wave that flips the `built` column, so
+it is the wave that must not flip it wrongly, and P2's `(?&n)`-refuses-for-
+`named-groups`-first cell lives here), `spellings.rxt`, `relative.rxt`,
+`whole.rxt` (the `(?R)`/`(?0)` half), `captures.rxt`, `atomicity.rxt`, `leftrec.rxt`, `quantified.rxt`,
+`nocaptures.rxt`, **`slotfamilies.rxt`** (§5.3's two measured families — the
+wave that builds `W` is the wave that must defend it), **`mrl.rxt`** (§4.4b's
+fixpoint pair), **`zerodef.rxt`** (§4.4c's `{0}` callees) and
+**`inlookaround.rxt`** (§3.5's wrapped-target cells — **moved here from wave E**,
+because §6.3 puts the split in this wave and a corpus gated a wave later would
+not have covered it) green; `--list-syntax` shows the `(?` rows `built` and the
+two `\g` rows still `unbuilt`; **each of S-SR1, S-SR2, S-SR3, S-SR4, S-SR5,
+S-SR6, S-SR6a, S-SR6b, S-SR6c, S-SR6d, S-SR6e, S-SR7, S-SR8, S-SR9, S-SR9a,
+S-SR10, S-SR11, S-SR11a, S-SR12, S-SR14, S-SR16, S-SR18, S-SR19** DETECTED
+— **written out rather than as `S-SR1..S-SR6` ranges, because the range
+notation hid S-SR7 and S-SR9 from this document's own coverage audit**; the eight switch-less walkers of §4.4a inspected by hand
+and the verdicts recorded.*
 
 **WAVE D — THE `\g` TAILS AND THE ZERO FAMILY.** `pcrec_brport_g`'s `<` and
 `'` arms produce `PEND_CALL`; `\g<0>`/`\g'0'` resolve to the root; the decline
 deleted.
-*Landing bar: `spellings.rxt`'s `\g` cells and `whole.rxt`'s zero cells green;
-all existing rows `built`; S-SR15 DETECTED; **the `backrefs` corpus asserted
+*Landing bar: `spellings.rxt`'s `\g` cells, `whole.rxt`'s zero cells and
+**`leadingzero.rxt`** (§2.4a — this is the wave that wires the `\g` and `(?0…)`
+doorways, so it is the wave that must not miscompile `(?01)`) green; all
+existing rows `built`; S-SR15 DETECTED; **the `backrefs` corpus asserted
 UNCHANGED**, because this wave edits a port `backrefs` owns.*
 
 **WAVE E — ENGINE SELECTION, THE PREFILTER PREDICATE, AND THE GATE.** §8.2's
 one line in `select_engine.c`; SR-8's stamps; the four-axis identity gate with
 its floors and its positive control.
-*Landing bar: `inlookaround.rxt` green; the identity gate green on all four
-axes with `ctl_bad == 0`; S-SR17 DETECTED; the `--engine=dfa` refusal for a
-call-bearing pattern pinned.*
+*Landing bar: the identity gate green on all four axes with `ctl_bad == 0`;
+**S-SR17** DETECTED; the `--engine=dfa` refusal for a call-bearing pattern
+pinned. (`inlookaround.rxt` moved to B+C — V-12.)*
 
 **WAVE F — THE REGISTRY.** §8.1's **four** missing row families (subject to
 ASK 3's granularity ruling), the `quant` column fix on nine rows, the D65
 `built` tally, SR-8 witnesses for every new row, a `recursion` mech arm in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
 direction, the compliance page refreshed via the `compliance-refresh` skill.
-*Landing bar: `--list-syntax`'s row count stated in the commit message; the
-SR-8 capability check green with a witness for every new row; `dupnames.rxt`
-and `kreset.rxt` green; S-SR13 DETECTED.*
+*Landing bar: `--list-syntax`'s row count stated in the commit message and
+reconciled against §8.1's tally; the SR-8 capability check green with a witness
+for every new row; `dupnames.rxt` and `kreset.rxt` green; **S-SR2a** and
+**S-SR13** DETECTED (both codegen rows, and this is the wave with the codegen
+surface).*
 
 **WAVE G — THE SPLICE LINKAGE.** §6.3's eligibility rule driven from
 `callgraph.c`'s SCCs and a size budget; `nfa.c`'s `A_CALL` arm (§8.3) and the
@@ -2702,7 +2753,9 @@ lookup. **Refute** — in either direction — with a prototype in
 `|W|` against the per-path write count. **It is not run here, and this is the
 strongest open alternative in the document**: §11 wave B+C should build the
 static form (it is the simpler one to get right) and §11 wave G should measure
-the walk against it before the module closes.**P-6 (the lookaround body must not be a call).** *`k = 1` is the whole
+the walk against it before the module closes.
+
+**P-6 (the lookaround body must not be a call).** *`k = 1` is the whole
 argument, and it is measured.* **Refute** by finding a lookaround shape with
 more than one use site — which `lookaround_design.md` §6.4(3) says cannot
 happen because `vm_label()` allocates per emission — or by showing the emitted
@@ -2897,6 +2950,22 @@ the diagnostic alone.
 has to stay correct, and the compliance page is where a user with a refusing
 pattern is already sent.
 
+**ASK 5 — is a SINGLE-ORACLE D27 corpus acceptable for this module?** §10.1
+MEASURED that python `re` has no subroutine call of any spelling, so for the
+first time the blinded author has one oracle instead of two. The project's own
+check-design lesson is about controls sharing a source with what they control;
+here the shared source is **libpcre2**, which D26 makes the source of truth, so
+it is the design rather than the defect — but the author's oracle and the
+implementer's oracle are now the same document. Mitigations designed in: the
+author still cannot see `src/`, and §9.2's second control compares two of
+pcrec's OWN lowerings (SPLICE vs LINKAGE) against each other, which libpcre2 is
+not a party to.
+*Recommendation: PROCEED, with the SPLICE-vs-LINKAGE control promoted from
+"nice" to a wave-G landing bar (§11 does that), and with the D27 brief saying
+explicitly that python's refusal is an ABSENCE and not a divergence to record —
+because an author told "compare both oracles" will otherwise record nine
+divergences that are one fact.*
+
 **ASK 6 — should a POSSESSIVE quantifier over a call ever be admitted?** §2.6
 RULES that rung admission declines a call-bearing body, so `(?&g)*+` compiles
 onto the ordinary backtracking rung. The reason is STRUCTURAL and sharp:
@@ -2913,19 +2982,3 @@ NON-nullable, which is the cheap 80%.
 a possessive spelling that silently compiles to a slower rung — which is a
 performance difference, not a wrong answer, and `--emit-ir` shows it. The
 downside of getting it wrong is a hang.
-
-**ASK 5 — is a SINGLE-ORACLE D27 corpus acceptable for this module?** §10.1
-MEASURED that python `re` has no subroutine call of any spelling, so for the
-first time the blinded author has one oracle instead of two. The project's own
-check-design lesson is about controls sharing a source with what they control;
-here the shared source is **libpcre2**, which D26 makes the source of truth, so
-it is the design rather than the defect — but the author's oracle and the
-implementer's oracle are now the same document. Mitigations designed in: the
-author still cannot see `src/`, and §9.2's second control compares two of
-pcrec's OWN lowerings (SPLICE vs LINKAGE) against each other, which libpcre2 is
-not a party to.
-*Recommendation: PROCEED, with the SPLICE-vs-LINKAGE control promoted from
-"nice" to a wave-G landing bar (§11 does that), and with the D27 brief saying
-explicitly that python's refusal is an ABSENCE and not a divergence to record —
-because an author told "compare both oracles" will otherwise record nine
-divergences that are one fact.*
