@@ -2602,6 +2602,20 @@ gate's byte-identity control applies below the threshold. Candidate
 home: [ENG-THIN]/[ENG-CLAMP]'s neighbourhood; ruling needed on the
 threshold and on whether the clamp is a stamp the artifact reports.
 
+**Fix shape, second half (Frank's question 2026-08-24 ~11:0x, "can we
+add a loop to the DFA prefilter?").** A DFA cannot count without states;
+a "loop" is a counter register, i.e. a counting automaton — which pcrec
+already has in the VM's counter rung (the reason the VM-only compile is
+0.00 s). Two roles, two answers: (a) as a PREFILTER the clamp above is
+the whole fix (superset, no semantic change, a compile/selectivity trade
+stamped on the artifact); (b) as the MATCHER (capture-free
+`--engine=dfa`, `a{4000}b`) exactness forbids a clamp, so engine
+selection should ROUTE counts above a threshold to the VM's counter rung
+— the same routing closes K25's Moore-minimization chain. Counting-set
+automata (Turoňová/Holík et al., PLDI 2020) noted as the parked
+[ENG-*]-class alternative, not proposed. Rulings needed: the two
+thresholds; whether the clamp is stamped.
+
 **Guards today.** `tests/resource`'s compile-CPU cap (45 s) and D45's
 harness compile bound catch the runaway; `tests/counterk/counterk.rxt:1807`
 is the endgame cell (libpcre2 refuses it outright, error 120).
