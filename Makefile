@@ -720,6 +720,7 @@ ubsan:
 	         tests/atomic_groups/run_atomic_diff.sh \
 	         tests/backrefs/run_backref_diff.sh \
 	         tests/backrefs/run_dupnames_diff.sh \
+	         tests/recursion/run_recursion_diff.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
