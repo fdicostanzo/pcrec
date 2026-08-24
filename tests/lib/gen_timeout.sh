@@ -46,7 +46,14 @@ fi
 # but under `make -j12` contention its WALL time crossed the then-5 s budget
 # and flaked a battery — the work didn't change, the scheduling did. So:
 #
-#   - gen_cpu_secs: CPU-time budget, 10 s plain / 60 s sanitizer
+#   - gen_cpu_secs: CPU-time budget, 10 s plain / 200 s sanitizer
+#     ([DD-14] wave A battery, 2026-08-24: the sanitizer default was 60 s
+#     and the worst artifact in the corpus — tests/base/k18_cost_gates.rxt
+#     :91, 351 KB of emitted C — MEASURED 51.9 s user CPU QUIET under
+#     -O1 -fsanitize=address,undefined,leak (2.2 s plain), i.e. 1.15x the
+#     budget where the plain budget sits at ~4x quiet; one concurrent
+#     -j12 build pushed it over. 200 s restores the plain rule's margin:
+#     ~4x quiet, ~2x the worst real-contended inflation.)
 #     (GENCPU/GENCPU_SAN) — the PRIMARY bound. CPU is load-RESILIENT, not
 #     perfectly load-independent: contention inflates cycles-per-
 #     instruction, MEASURED on the k18_cost_gates artifact at 2.53 s CPU
@@ -98,7 +105,7 @@ gen_timeout_secs() {
 # one generated-code compile or one matcher execution, on the current axis.
 gen_cpu_secs() {
     case " ${GENCFLAGS:-} ${CFLAGS:-} ${TSANFLAGS:-} ${SANFLAGS:-} " in
-        *-fsanitize=*) printf '%s\n' "${GENCPU_SAN:-60}" ;;
+        *-fsanitize=*) printf '%s\n' "${GENCPU_SAN:-200}" ;;
         *)             printf '%s\n' "${GENCPU:-10}" ;;
     esac
 }
@@ -305,7 +312,7 @@ gen_cc() {
   Reproduce:  $*
   If the artifact legitimately needs more, raise the budget with the
   measurement recorded in docs/testing.md -- GENCPU (plain, now ${GENCPU:-10}s)
-  or GENCPU_SAN (sanitizer axes, now ${GENCPU_SAN:-60}s).
+  or GENCPU_SAN (sanitizer axes, now ${GENCPU_SAN:-200}s).
   Compiler output was:
 $GEN_CC_LOG"
         [ "$rc" -ne 0 ] || rc=1

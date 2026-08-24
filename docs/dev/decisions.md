@@ -3989,6 +3989,19 @@ scripts/test_watchdog.sh. Same revisit-when as the parent ruling: a
 LEGITIMATE run measured needing more raises the default WITH the
 measurement recorded.
 
+**D45 fourth addendum (manager, 2026-08-24, thirty-ninth session):
+`GENCPU_SAN` 60s → 200s, by the addendum's own procedure.** The [DD-14]
+wave A merged-tree `make san` killed cc1 (SIGXCPU) on
+`tests/base/k18_cost_gates.rxt:91`'s artifact while a sibling lane ran a
+-j12 build. MEASURED solo on a quiet box: 51.9s user CPU under
+`-O1 -fsanitize=address,undefined,leak` for 351 KB of emitted C (2.2s
+plain) — 1.15x the 60s budget, where the plain budget is ~4x its worst
+quiet compile. The artifact is byte-identical to the pre-[DD-14] one
+apart from the `#define` block, so this is not a regression but a budget
+that never had the third addendum's margin on the sanitizer axis. 200s
+= ~4x quiet, ~2x the worst real-contended inflation, the same rule as
+GENCPU's 10s. Recorded in tests/lib/gen_timeout.sh and docs/testing.md.
+
 ## D46 — every strategy-selection point is OBSERVABLE and FORCEABLE (Frank, 2026-08-15, twenty-first session)
 
 Ruled during the [ENG-BREP] discussion, generalizing R21 E-6's
