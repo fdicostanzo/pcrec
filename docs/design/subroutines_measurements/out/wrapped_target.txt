@@ -3,13 +3,14 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_wrapped_target.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 
-# RUN FROM REPO COMMIT        : 076b4a2 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: a2a5219 2026-08-23
+# RUN FROM REPO COMMIT        : d1580a8 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/subroutines_design.md
-#     ?? docs/design/subroutines_measurements/out/wrapped_target.txt
-#     ?? docs/design/subroutines_measurements/probes/probe_wrapped_target.py
-# RUN DATE   : 2026-08-23T21:28:30-04:00
+#      M docs/design/subroutines_measurements/out/wrapped_target.txt
+#      M docs/design/subroutines_measurements/probes/probe_linkage.sh
+#      M docs/design/subroutines_measurements/probes/probe_wrapped_target.py
+# RUN DATE   : 2026-08-23T21:37:02-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -79,11 +80,25 @@ sr_oracle.SELFCHECK: none
 # turns every row above into nomatch.
 
 # CONTROL -- a recursion that genuinely IS the empty language, where
-# infinity is the RIGHT answer (§12 P-12):
+# infinity is the RIGHT answer (§12 P-12). TWO spellings, because P-12
+# quotes the DIRECT one and the design's first draft measured only the
+# DEFINE one -- a prediction whose own cell was not in any probe.
+#   (a) the DEFINE spelling:
   ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        'ab'       None                          
   ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        'aabb'     None                          
   ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        ''         None                          
   ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        'aaabbb'   None                          
+#   (b) THE DIRECT SPELLING P-12 QUOTES. It must COMPILE (a legal
+#       pattern PCRE2 accepts) and match NOTHING:
+  ^(a(?1)b)$                             compile: OK (no error)
+  ^(a(?1)b)$                             ''         None                            # P-12: must be nomatch
+  ^(a(?1)b)$                             'ab'       None                            # P-12: must be nomatch
+  ^(a(?1)b)$                             'aabb'     None                            # P-12: must be nomatch
+  ^(a(?1)b)$                             'aabbb'    None                            # P-12: must be nomatch
+  ^(a(?1)b)$                             'aaaaaaaabbbbbbbb' None                            # P-12: must be nomatch
+  ^(a(?1)b)$                             'aab'      None                            # P-12: must be nomatch
+  ^(a(?1)b)$                             'abb'      None                            # P-12: must be nomatch
+  P-12 holds over 7 subjects: compiles, matches nothing, and the least fixpoint's INFINITY is the correct answer
 
 === AXIS Z: LEADING-ZERO absolute calls, both doorways =============
 # The discriminator is the ANCHORED form: `(?R)` re-runs the anchors

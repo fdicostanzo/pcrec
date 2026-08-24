@@ -3,14 +3,15 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_linkage.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 7795726 2026-08-23
-# RUN FROM REPO COMMIT        : 52abcc7 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: 6c50429 2026-08-23
+# RUN FROM REPO COMMIT        : d1580a8 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
-#      M docs/design/CLAUDE.md
 #      M docs/design/subroutines_design.md
 #      M docs/design/subroutines_measurements/out/linkage.txt
+#      M docs/design/subroutines_measurements/out/wrapped_target.txt
 #      M docs/design/subroutines_measurements/probes/probe_linkage.sh
-# RUN DATE   : 2026-08-23T21:17:56-04:00
+#      M docs/design/subroutines_measurements/probes/probe_wrapped_target.py
+# RUN DATE   : 2026-08-23T21:37:02-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -60,6 +61,27 @@ flags: -O2 -std=gnu11
 # k=0 numbers are therefore not comparable BETWEEN variants; the SLOPE
 # is what this axis measures, and it is computed below.
 
+=== THE goto* RELATION (§5.8, S-SR13, P-9) ===========================
+# The design asserts: goto* count == 1 (the fail label) + one per
+# emitted SHARED CALLEE BODY. The first version said 'exactly two',
+# which R34 LENS2-5 refuted in both directions. This axis is the
+# archived witness for the ONE-CALLEE half; probe_premises.sh axis F
+# is the archived witness for the CALL-FREE half (a real pcrec
+# artifact, 1 goto*).
+  variant  k          goto*          shared bodies    predicted
+  splice   0          1              0                1  OK
+  splice   1          1              0                1  OK
+  splice   4          1              0                1  OK
+  hybrid   0          1              0                1  OK
+  hybrid   1          2              1                2  OK
+  hybrid   4          2              1                2  OK
+  call     0          2              1                2  OK
+  call     1          2              1                2  OK
+  call     4          2              1                2  OK
+# SPLICE emits no shared body at any k, so it stays at 1 -- which is
+# also what a wave-G fully-spliced artifact looks like, the case a
+# hard-coded 'two' would have fired on.
+
 === THE SLOPE: bytes per call site, -O2, least-squares over k ========
   splice    298.6 bytes per call site   (points: 0:779 1:1001 2:1384 3:1704 4:1976 6:2584 8:3179 12:4339 16:5543)
   hybrid     87.6 bytes per call site   (points: 0:779 1:1090 2:1191 3:1266 4:1350 6:1526 8:1706 12:1992 16:2320)
@@ -72,16 +94,16 @@ flags: -O2 -std=gnu11
 # body copy buys nothing.
   --- mixed corpus ---
   k        splice       hybrid       call        
-  1       0.57        0.58        0.65        
-  2       0.81        0.88        0.92        
-  4       0.97        1.15        1.19        
-  8       1.38        1.64        1.76        
+  1       0.64        0.68        0.73        
+  2       0.92        0.99        0.97        
+  4       1.02        1.19        1.31        
+  8       1.43        1.73        2.01        
   --- lex corpus ---
   k        splice       hybrid       call        
-  1       0.95        0.99        1.03        
-  2       0.96        0.98        1.02        
-  4       0.94        0.98        1.00        
-  8       0.93        0.97        1.01        
+  1       0.99        1.02        1.08        
+  2       0.99        1.02        1.06        
+  4       1.00        1.04        1.06        
+  8       0.96        1.01        1.04        
 # NOTE both corpora include subjects that do NOT match, so the
 # bump-along loop and the fail label are exercised, not only the happy
 # path.

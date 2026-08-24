@@ -120,9 +120,29 @@ print("# no branch to minimise over in g, gives INFINITY, and the MRL prune")
 print("# turns every row above into nomatch.")
 print()
 print("# CONTROL -- a recursion that genuinely IS the empty language, where")
-print("# infinity is the RIGHT answer (§12 P-12):")
+print("# infinity is the RIGHT answer (§12 P-12). TWO spellings, because P-12")
+print("# quotes the DIRECT one and the design's first draft measured only the")
+print("# DEFINE one -- a prediction whose own cell was not in any probe.")
+print("#   (a) the DEFINE spelling:")
 for subj in ["ab", "aabb", "", "aaabbb"]:
     cell(r"^(?(DEFINE)(?<g>a(?&g)b))(?&g)$", subj)
+print("#   (b) THE DIRECT SPELLING P-12 QUOTES. It must COMPILE (a legal")
+print("#       pattern PCRE2 accepts) and match NOTHING:")
+_ce = sr.compile_err(r"^(a(?1)b)$")
+print("  %-38s compile: %s"
+      % (r"^(a(?1)b)$", "OK (no error)" if _ce is None
+         else "ERR %d %s" % (_ce[0], _ce[2])))
+if _ce is not None:
+    print("  !! P-12 SAYS THIS COMPILES AND IT DOES NOT -- the prediction is "
+          "refuted, not confirmed")
+_p12 = []
+for subj in ["", "ab", "aabb", "aabbb", "a" * 8 + "b" * 8, "aab", "abb"]:
+    _p12.append(cell(r"^(a(?1)b)$", subj, "P-12: must be nomatch"))
+if any(t.startswith("(") for t in _p12):
+    print("  !! P-12 REFUTED: a subject matched")
+else:
+    print("  P-12 holds over %d subjects: compiles, matches nothing, and the "
+          "least fixpoint's INFINITY is the correct answer" % len(_p12))
 print()
 
 print("=== AXIS Z: LEADING-ZERO absolute calls, both doorways =============")

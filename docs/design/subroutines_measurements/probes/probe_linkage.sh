@@ -107,6 +107,33 @@ echo "# k=0 numbers are therefore not comparable BETWEEN variants; the SLOPE"
 echo "# is what this axis measures, and it is computed below."
 echo
 
+echo "=== THE goto* RELATION (§5.8, S-SR13, P-9) ==========================="
+echo "# The design asserts: goto* count == 1 (the fail label) + one per"
+echo "# emitted SHARED CALLEE BODY. The first version said 'exactly two',"
+echo "# which R34 LENS2-5 refuted in both directions. This axis is the"
+echo "# archived witness for the ONE-CALLEE half; probe_premises.sh axis F"
+echo "# is the archived witness for the CALL-FREE half (a real pcrec"
+echo "# artifact, 1 goto*)."
+printf '  %-8s %-10s %-14s %-16s %s\n' variant k 'goto*' 'shared bodies' predicted
+for v in splice hybrid call; do
+  for k in 0 1 4; do
+    python3 "$GEN" "$v" "$k" > "$TMP/g.c"
+    # `|| true` on BOTH: grep -c exits 1 when the count is ZERO, and this
+    # script runs under `set -e`, so the SPLICE rows (0 shared bodies) killed
+    # the whole axis silently -- the header printed and the table did not.
+    g=$(grep -c 'goto \*' "$TMP/g.c" || true)
+    # a shared callee body is one that ends in the RX_RETURN idiom
+    b=$(grep -c 'run->call_stack\[--run->call_depth\]' "$TMP/g.c" || true)
+    want=$((1 + b))
+    if [ "$g" = "$want" ]; then mark="OK"; else mark="!! MISMATCH"; fi
+    printf '  %-8s %-10s %-14s %-16s %s  %s\n' "$v" "$k" "$g" "$b" "$want" "$mark"
+  done
+done
+echo "# SPLICE emits no shared body at any k, so it stays at 1 -- which is"
+echo "# also what a wave-G fully-spliced artifact looks like, the case a"
+echo "# hard-coded 'two' would have fired on."
+echo
+
 echo "=== THE SLOPE: bytes per call site, -O2, least-squares over k ========"
 for v in splice hybrid call; do
   pts=""

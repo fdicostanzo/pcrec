@@ -1605,10 +1605,19 @@ ending in one `RX_RETURN`, so:
 
 > **`goto *` count = 1 (the fail label) + one per emitted SHARED CALLEE BODY.**
 >
-> A call-free artifact is **1** (MEASURED, P9). A pattern calling one group is
-> **2**. A pattern calling three distinct groups is **4** — however many call
-> SITES there are, because the sites share the body. And after wave G splices
-> every eligible site, a non-recursive call-bearing artifact is back to **1**.
+> A call-free artifact is **1** (MEASURED, P9, on a real pcrec artifact). A
+> pattern calling one group is **2**. A pattern calling three distinct groups
+> is **4** — however many call SITES there are, because the sites share the
+> body. And after wave G splices every eligible site, a non-recursive
+> call-bearing artifact is back to **1**.
+
+MEASURED for the linkage half, `out/linkage.txt` **"the `goto *` relation"**,
+which counts `goto *` and shared callee bodies in all three prototype variants
+at k = 0, 1, 4 and checks `goto* == 1 + bodies` on each: **9 rows, 9 OK**. The
+rows that matter are the ones a hard-coded "two" would have fired on —
+**SPLICE is 1 at every k** (no shared body, which is also what a wave-G
+artifact looks like) and **HYBRID at k = 0 is 1** (no call site, so no shared
+body is emitted).
 
 The amendment to `emit_vm.c:9-12` is the honest form of the property it
 actually cares about: the indirect jumps are **off the hot path** — one per
@@ -2234,7 +2243,7 @@ measurement behind it rather than a worry.
 | **S-SR11** | §4.4: no walker FOLLOWS `.body` where the rule says DECLINE | `atomic.c` | `harness recursion` | make `pcrec_has_atomic`'s `A_CALL` arm descend into `.body` | **THE COMPILER HANGS** on `(a(?1))` — there is no answer to compare, so no answer-comparison row can detect it. **This row is scored by the harness TIMEOUT**, and it is the one sabotage in this module whose detector is "the process did not finish". `tests/mech/`'s timeout suite is the assignment, and the row says so rather than sitting in `harness` where a hang reads as an infrastructure failure |
 | **S-SR11a** | §4.3: a two-hop call chain survives `--no-captures` | `atomic.c` | `harness recursion` | drop `mark[target] = true` from `pcrec_bref_mark`'s `A_CALL` arm | `(a(?3))(b)((c))` under `--no-captures` loses group 3's slots. **Note this is NOT a transitivity row** — §4.3 withdrew that — it is the one-line arm's row, and the two-hop shape is used because it is the cell the withdrawn fixpoint claimed to need |
 | **S-SR12** | §4.4: `revdet.c`'s `A_CALL` arm DECLINES | `revdet.c` | `harness recursion` | descend instead of declining | `vm_rev_emit`'s `default:` fires: *"internal error: bad AST node in the backward walk"*. **A hard compile error, which is the right failure** — the row asserts it is reached, not that an answer changed |
-| **S-SR13** | §5.8: `goto *` count == 1 + the number of emitted SHARED CALLEE BODIES | `emit_vm.c` **+ 2nd site** | `codegen` | make the return a `switch` over a return-site id | **no answer changes.** The codegen count is the only detector — S109's shape. **It asserts the RELATION and not a constant (R34 LENS2-5)**, so it holds for a one-callee artifact (2), a three-callee artifact (4), a call-free one (1) and a wave-G fully-spliced one (1), where a hard-coded "two" would fire on three of the four |
+| **S-SR13** | §5.8: `goto *` count == 1 + the number of emitted SHARED CALLEE BODIES | `emit_vm.c` **+ 2nd site** | `codegen` | make the return a `switch` over a return-site id | **no answer changes.** The codegen count is the only detector — S109's shape. **It asserts the RELATION and not a constant (R34 LENS2-5)**, so it holds for a one-callee artifact (2), a three-callee artifact (4), a call-free one (1) and a wave-G fully-spliced one (1), where a hard-coded "two" would fire on three of the four. The relation is MEASURED over 9 prototype configurations in `out/linkage.txt` |
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
 | **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
 | **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
@@ -2602,10 +2611,12 @@ wave A owns the rest.
 
 **P-12 (the empty-language callee).** *A callee whose least `minw` solution is
 ∞ matches nothing, that is a LEGAL compile, and pcrec's MRL prune reads it as
-"no position can match".* MEASURED, this lane, against libpcre2 10.46:
+"no position can match".* MEASURED, `out/wrapped_target.txt` **axis M(b)**:
 `^(a(?1)b)$` **compiles** (`pcre2_compile` returns a code, no error) and
-answers **nomatch on every subject tried** — `""`, `"ab"`, `"aabb"`,
-`"aabbb"`, `"aⁿbⁿ"` at n = 8, `"aab"`, `"abb"`. **Refute** by exhibiting a
+answers **nomatch on all seven subjects** — `""`, `"ab"`, `"aabb"`, `"aabbb"`,
+`"aⁿbⁿ"` at n = 8, `"aab"`, `"abb"`. **The probe asserts the prediction rather
+than printing it**: it prints `!! P-12 REFUTED` if any subject matches or if
+the pattern fails to compile. **Refute** by exhibiting a
 subject it matches, which would mean the fixpoint's bottom is wrong; or by
 showing pcrec must REFUSE such a pattern at compile time, which would be a
 divergence from 10.46 and needs a D26 argument rather than a convenience one.
