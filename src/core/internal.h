@@ -2480,6 +2480,13 @@ PcrecBuiltStatus pcrec_construct_built_status(const RegRow *r);
 /* `--list-verbs`: the Q1 name tables, which are not RegRows and so cannot
  * appear in the TSV above. Caller frees. */
 char *pcrec_syntax_verbs(void);
+/* [M6.6.2 wave F] `--list-families`: D71 item 3's INDEX LAYER — one line per
+ * family (the rows sharing a key; a row's key is its `family` if set and its
+ * own `syntax` otherwise), with `built` ANDed over the members. A SECOND dump
+ * for `--list-verbs`' reason: `--list-syntax` is per-ROW and its consumers
+ * depend on that (the reject table probes every row's own `syntax`), so the
+ * grouping gets its own view rather than collapsing theirs. Caller frees. */
+char *pcrec_syntax_families(void);
 /* NULL when no construct matches the query. */
 /* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
  * no doorway AND no row looks like it — the CLI turns that into exit 1 with
