@@ -13398,3 +13398,16 @@ it. Merged-tree battery: make test running now; san after. Waves D
 (lane/srLB, opus: the deferred lookbehind width re-check after
 callgraph build — the two parked cells are its positive signal; the
 `\K` half withdrawn) open CONCURRENTLY from 67e40b9 — disjoint files.
+
+ADDENDUM (part 7, ~15:4x): the merged-tree make test caught a defect of
+MINE — test-gentimeout's D45 control hard-codes the expected budgets
+(10/60/60/2/22) INDEPENDENTLY of gen_timeout.sh's defaults, so my
+GENCPU_SAN 60→200 edit (780e3a9, validated with strict/smoke only)
+failed it. The check-design lesson in its GOOD direction: a control that
+does not share a source with what it controls caught an un-ruled edit.
+Expectation moved to the ruling (10/200/200/2/22), comment added saying
+the hard-coding is deliberate; test-gentimeout solo rc=0 (06c7ee2). The
+merged-tree make test continues; the B+C lane's san5 died at 15:26 with
+`make: wait: No child processes` (18 stages green, no reports) when my
+-j12 started — not proven causal; the san on the merged tree is mine,
+after this make test, alone.
