@@ -325,6 +325,23 @@ typedef struct {
                            * `(?:a|bc){3}+` runs one iteration where it must run
                            * three. */
     int       nctr_total;
+    /* [M6.6.2] THE LOOKAROUND's TWO SLOT FAMILIES (design §3.3's per-shape
+     * table, §3.7's budget). They sit at the TOP of the layout, ABOVE the
+     * pending block, so every base below them is unmoved and a
+     * lookaround-FREE artifact's slot numbering is byte-identical to what it
+     * always was — which is the property tests/codegen/run_lookaround_
+     * identity.sh's FREE bucket asserts.
+     *
+     * TWO FAMILIES AND NOT ONE, and it is not bookkeeping: which of them a
+     * given lookaround allocates is READ OFF ITS FLAGS (`vm_look_needs_mark`
+     * / `vm_look_needs_pos` below), so "no mark slot was allocated" is how a
+     * reader tells a NON-ATOMIC form from an atomic one in the emitted C and
+     * in `--emit-ir` (§3.6). It is at most two per lookaround and sometimes
+     * one — never a flat two. */
+    int       nlookmark;        /* SLOT_LOOK_MARK<n> assigned so far */
+    int       nlookmark_total;
+    int       nlookpos;         /* SLOT_LOOK_POS<n> assigned so far */
+    int       nlookpos_total;
     /* [M6.5.2] PUBLISH-AT-CLOSE's bookkeeping, and it is a PRE-COMPUTED MAP
      * rather than a running counter, unlike every slot family above it.
      *
@@ -684,13 +701,30 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
      * publish-at-close readable in the artifact. The search is over `pend_of`,
      * the same map the emitter writes through, so a name here cannot describe
      * a slot the emitter uses for something else. */
-    {
-        int off = slot - (base_ctr + v->nctr_total);
+    int base_pend     = base_ctr  + v->nctr_total;
+    int base_lookmark = base_pend + v->npend_total;
+    int base_lookpos  = base_lookmark + v->nlookmark_total;
+    if (slot < base_lookmark) {
+        int off = slot - base_pend;
         for (int g = 1; g <= v->ngroups; g++)
             if (v->pend_of && v->pend_of[g] == off) {
                 snprintf(buf, bufsz, "SLOT_GROUP%d_PENDING", g);
                 return true;
             }
+        return false;
+    }
+    /* [M6.6.2] the lookaround's two families, at the TOP of the layout. The
+     * bound above is what keeps the pending search from claiming them: before
+     * this module every slot past the counters WAS a pending slot, and an
+     * unbounded search would have named a LOOK slot "not accounted for" and
+     * silently fallen back to the bare number. */
+    if (slot < base_lookpos) {
+        snprintf(buf, bufsz, "SLOT_LOOK_MARK%d", slot - base_lookmark);
+        return true;
+    }
+    if (slot < base_lookpos + v->nlookpos_total) {
+        snprintf(buf, bufsz, "SLOT_LOOK_POS%d", slot - base_lookpos);
+        return true;
     }
     return false;
 }
@@ -752,6 +786,72 @@ static int vm_slot_pend(Vm *v, int group)
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
          + v->nmark_total + 3 * v->nrev_total + v->nctr_total
          + v->pend_of[group];
+}
+
+/* [M6.6.2] THE SEVENTH AND EIGHTH SLOT CLASSES: a lookaround's CUT MARK (the
+ * resume-stack depth at the assertion's entry, what `RX_CUT` truncates back
+ * to) and its SAVED CURSOR (the position `L_ok` puts `scan_position` back to).
+ *
+ * They sit ABOVE the pending block, so every base below is unmoved: a pattern
+ * with no lookaround gets exactly the slot numbering it got before this
+ * module, which is what makes the identity gate's FREE bucket a real claim
+ * rather than a tautology.
+ *
+ * TWO SEPARATE FAMILIES rather than a two-slot stride, because the shapes do
+ * not all take both — §3.3's table:
+ *
+ *   (?=X)  positive lookahead    mark YES  pos YES
+ *   (?!X)  negative lookahead    mark YES  pos NO   (P7: the pushed frame
+ *                                                    restores the cursor)
+ *   (?*X)  non-atomic lookahead  mark NO   pos YES  (nothing is cut)
+ *   (?<=X) positive lookbehind   mark YES  pos YES  (wave D)
+ *   (?<!X) negative lookbehind   mark YES  pos YES  (the end-check still
+ *                                                    compares against entry)
+ *   (?<*X) non-atomic lookbehind mark NO   pos YES  (wave D)
+ *
+ * A stride of two would allocate slots no shape writes, and §3.6's "no mark
+ * slot is allocated for a non-atomic form" would stop being observable. */
+static int vm_slot_lookmark(Vm *v, int i)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
+         + v->nmark_total + 3 * v->nrev_total + v->nctr_total
+         + v->npend_total + i;
+}
+static int vm_slot_lookpos(Vm *v, int i)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
+         + v->nmark_total + 3 * v->nrev_total + v->nctr_total
+         + v->npend_total + v->nlookmark_total + i;
+}
+
+/* [M6.6.2] WHICH SLOTS THIS LOOKAROUND TAKES — the table above as two
+ * predicates, and they are predicates for the reason `vm_marked` and
+ * `vm_is_counter` are: `vm_count_slots` and `vm_look` MUST agree exactly, and
+ * a rule each of them re-derives is a rule one of them will eventually derive
+ * differently. Under-counting here is not a missed optimisation — it is
+ * `vm_slot_lookmark(v, v->nlookmark++)` past `RX_NSLOTS`, an out-of-bounds
+ * write in EMITTED code, K27's class. */
+static bool vm_look_needs_mark(const Ast *a)
+{
+    /* Something is CUT exactly when the assertion commits: the atomic forms
+     * commit to the body's first success, and EVERY negative form commits on
+     * body success (§3.3's `L_body_won` cut is not an optimisation — without
+     * it a failing assertion leaves a live choice point that later resumes at
+     * `L_neg_ok` and proceeds AS IF the assertion had held). There is no
+     * non-atomic negative spelling in PCRE2 at all (§2.1: `(*nanla:` is err
+     * 195), so `neg` implies a cut with no third case to consider. */
+    return a->u.look.atomic || a->u.look.neg;
+}
+static bool vm_look_needs_pos(const Ast *a)
+{
+    /* The cursor has to be RESTORED from a slot unless something else already
+     * restores it. For a negative LOOKAHEAD nothing does the restoring but the
+     * fail label's own pop of the `L_neg_ok` frame, which records
+     * `scan_position` at push time — P7, §3.3's finding, and the reason that
+     * form needs no snapshot machinery. A negative LOOKBEHIND still needs the
+     * slot even though the restore is free, because §3.4's END-CHECK compares
+     * the body's finishing position against the ENTRY position (wave D). */
+    return !a->u.look.neg || a->u.look.behind;
 }
 
 /* Is group `g` MARKED — does some backreference in this pattern name it? ONE
@@ -1838,11 +1938,19 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
      * alone, so there is no second reader to drift and no D62 control 3
      * obligation lands on this file.
      *
-     * WAVE B+C MUST RE-CHECK THE TWO CONSTANTS against `vm_look` as landed —
-     * this arm is written against §3.2's designed shape, and nothing produces
-     * an A_LOOK yet, so no artifact can currently disagree with it. An
-     * over-charge costs a lower stamped `subject_ceiling` and nothing else; an
-     * under-charge is the K27-class failure named above. */
+     * RE-CHECKED AT WAVE B+C AGAINST `vm_look` AS LANDED, and both constants
+     * stand as the safe-direction UNION they were written to be:
+     *
+     *   frames +1  EXACT for the negative form (its one `L_neg_ok` push) and
+     *              an OVER-charge of one for the positive and non-atomic
+     *              forms, which push nothing of their own.
+     *   trail  +2  EXACT for the positive ATOMIC form (both slot writes are
+     *              `vm_set`, i.e. trailed) and an over-charge of one for the
+     *              negative form (mark only) and for the non-atomic one
+     *              (cursor only). `RX_CUT` adds no trail entry.
+     *
+     * An over-charge costs a lower stamped `subject_ceiling` and nothing else;
+     * an under-charge is the K27-class failure named above. */
     case A_LOOK:
         c = vm_cost(v, a->l, false);
         c.frames += 1;
@@ -1908,29 +2016,30 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
     case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         return;
     case A_CAP: vm_count_slots(v, a->l, repl, false); return;
-    /* [M6.6.2] DESCENDS INTO THE BODY AND ALLOCATES NOTHING OF ITS OWN — a
-     * DELIBERATELY INCOMPLETE arm, and this comment is the handover.
+    /* [M6.6.2 wave B+C] THE LOOKAROUND'S OWN SLOTS, AND ITS OWN RESUME POINT,
+     * counted here — the arm wave A2 landed deliberately incomplete and this
+     * wave completes, in the same edit as `vm_look`.
      *
-     * Descending is required and is not the open question: the body's own
-     * groups, marks and resume points are emitted (wave B+C's `vm_look` emits
-     * the body through `vm_emit`) and must be counted, or two live loops share
-     * one slot. `false` is passed for `under_atomic` because a lookaround's
-     * cut, when it has one, is the ASSERTION's and not a lift of a quantifier
-     * beneath it — the same reading `vm_atomic`'s unlifted branch takes.
+     * The three lines below mirror `vm_look` site for site and read the SAME
+     * two predicates it does, which is the whole reason those predicates
+     * exist: an under-count is `vm_slot_lookmark(v, v->nlookmark++)` past
+     * `RX_NSLOTS`, an out-of-bounds write in EMITTED code (K27's class), and
+     * a missed `npush` lets an artifact past the resume-point cap.
      *
-     * WHAT IS MISSING IS THE LOOKAROUND'S OWN SLOTS. Design §3.2 gives it a
-     * saved cursor and §3.6's non-atomic arms a second family; those are wave
-     * B+C's to add, HERE, in the same edit that writes `vm_look`. This
-     * function's header states the consequence of getting that wrong and it is
-     * not a missed optimisation: `vm_slot_mark(v, v->nmark++)` past
-     * `RX_NSLOTS` is an out-of-bounds write in EMITTED code, K27's class.
-     *
-     * IT IS SAFE TO LAND INCOMPLETE ONLY BECAUSE NOTHING PRODUCES AN A_LOOK IN
-     * THIS WAVE and `vm_emit`'s own arm is a hard `ctx_fail`, so no artifact
-     * can be built from a tree this walk under-counted. Wave B+C removing that
-     * ctx_fail without extending this arm is the exact edit this comment
-     * exists to stop. */
-    case A_LOOK: vm_count_slots(v, a->l, repl, false); return;
+     * `false` is passed for `under_atomic`: a lookaround's cut, when it has
+     * one, is the ASSERTION's and not a lift of a quantifier beneath it — the
+     * same reading `vm_atomic`'s unlifted branch takes. Descending is
+     * required either way, because the body's own groups, marks and resume
+     * points are emitted through `vm_emit`. */
+    case A_LOOK:
+        if (vm_look_needs_mark(a)) v->nlookmark++;
+        if (vm_look_needs_pos(a))  v->nlookpos++;
+        /* The negative form's ONE extra frame: the "body failed" continuation
+         * pushed BEFORE the body (§3.3). The positive and non-atomic forms
+         * push nothing of their own. */
+        if (a->u.look.neg) v->npush++;
+        vm_count_slots(v, a->l, repl, false);
+        return;
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
      * allocates it, and counting one here as well would make `RX_NSLOTS` one
      * too large on every possessive spelling. An UNLIFTED one allocates
@@ -4402,6 +4511,232 @@ static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
     v->fdyn = sd;
 }
 
+/* ---- [M6.6.2] THE LOOKAROUND ---------------------------------------------
+ *
+ * `(?=X)` `(?!X)` `(?*X)` — and, when wave D lands the back-step seam entry,
+ * `(?<=X)` `(?<!X)` `(?<*X)`. Design: docs/design/lookaround_design.md §3.
+ *
+ * A lookaround is A SUB-MATCH WHOSE RESULT IS A VERDICT AND WHOSE POSITION IS
+ * DISCARDED, and every line below follows from that one sentence. It is not a
+ * new kind of matching — the body is the same AST this function already walks,
+ * emitted by `vm_emit` with ordinary frames — so unlike a backreference it
+ * needs no new operation. What it needs is A CUT AND A POSITION RESTORE.
+ *
+ *   POSITIVE ATOMIC (§3.2) — `vm_atomic`'s shape plus a saved cursor:
+ *
+ *     L_entry:  RX_SET(SLOT_LOOK_MARKk, run->resume_depth)   // BEFORE any push
+ *               RX_SET(SLOT_LOOK_POSk,  scan_position)       // trailed, like the mark
+ *               goto L_body
+ *     L_body:   <X>                              -> L_ok
+ *     L_ok:     RX_CHARGE_WORK(depth - mark);  RX_CUT(SLOT_LOOK_MARKk)
+ *               scan_position = (size_t)slot_values[SLOT_LOOK_POSk];
+ *               goto L_next
+ *
+ *   THE TWO `RX_SET`/restore LINES ARE THE ENTIRE DIFFERENCE between `(?>ab)c`
+ *   and `(?=ab)c`, which is the strongest form §3's central claim can take.
+ *
+ *   NEGATIVE (§3.3) — the same, with ONE FRAME PUSHED FIRST AND NO SNAPSHOT
+ *   MACHINERY AT ALL, which is the finding that makes this function short:
+ *
+ *     L_entry:  RX_SET(SLOT_LOOK_MARKk, run->resume_depth)
+ *               RX_PUSH(&&L_neg_ok, scan_position)      // "the body failed"
+ *               goto L_body
+ *     L_body:   <X>                              -> L_body_won
+ *     L_body_won:   RX_CHARGE_WORK(...); RX_CUT(SLOT_LOOK_MARKk); goto rx_fail
+ *     L_neg_ok: goto L_next
+ *
+ *   `RX_PUSH` records the cursor AND `trail_depth`, and the fail label
+ *   restores the first and rewinds to the second before jumping (:6061-6073,
+ *   emitted verbatim into every VM artifact). So arriving at `L_neg_ok` means
+ *   the cursor is already back and every capture the body wrote is already
+ *   undone — no position slot, no capture snapshot. MEASURED that this is the
+ *   right semantics: `(?!(a)x)ab` on "ab" is (0,2) with g1 UNSET, and
+ *   `(?!(a)x)(a)` on "ab" is (0,1) with g1 unset and g2=(0,1) (the second cell
+ *   proves the answer is READ rather than truncated by libpcre2's
+ *   trailing-unset rule).
+ *
+ *   THE `L_body_won` CUT IS NOT AN OPTIMISATION. It discards the body's frames
+ *   AND the `L_neg_ok` frame, because the mark was taken before the push. If
+ *   it did not, the failing assertion would leave a live choice point that
+ *   later resumes at `L_neg_ok` and lets the whole pattern proceed AS IF THE
+ *   NEGATIVE ASSERTION HAD HELD — the exact wrong answer. Sabotage row S124.
+ *
+ *   NON-ATOMIC (§3.6) — the atomic shape MINUS the cut, and nothing else:
+ *
+ *     L_entry:  RX_SET(SLOT_LOOK_POSk, scan_position)   // no mark: nothing is cut
+ *               goto L_body
+ *     L_body:   <X>                              -> L_ok
+ *     L_ok:     scan_position = (size_t)slot_values[SLOT_LOOK_POSk];
+ *               goto L_next
+ *
+ *   It is correct without further machinery for a reason worth stating: when
+ *   the follow fails, a frame inside the body resumes, the body reaches a
+ *   SECOND success, and control arrives at `L_ok` AGAIN — where the slot is
+ *   re-read and the cursor restored again. The slot survives that round trip
+ *   because `vm_set` wrote it (trailed) BEFORE any body frame was pushed, so
+ *   every body frame's `trail_mark` is above the slot's trail entry and no
+ *   rewind to a body frame can undo it; a rewind to a frame BELOW the
+ *   assertion does undo it, which is exactly when it should be. MEASURED, on
+ *   "abab": `(?*(a|ab))\1$` is (2,4) where `(?=(a|ab))\1$` is NOMATCH.
+ *
+ * THREE PROPERTIES OF THE SHAPE, each with the line that makes it true — they
+ * are `vm_atomic`'s three, restated because a reader must not have to go and
+ * check that they still hold:
+ *
+ *  1. THE MARK'S `RX_SET` PRECEDES EVERY `RX_PUSH`, the negative form's own
+ *     included. It also makes the mark TRAILED, which is what makes NESTING
+ *     and RE-ENTRY work: an outer backtrack restores the slot and this entry
+ *     label re-sets it on every entry, so `(?=a|b)*c` marks independently per
+ *     iteration. The same is true of the POS slot and it has to be —
+ *     `(?=(?=a)b)c` has two live position slots at once.
+ *  2. `RX_CUT` IS AN ASSIGNMENT, NOT A `min()`. Correct while
+ *     `resume_depth >= mark` at every cut site, which holds because control
+ *     cannot reach the cut after a pop below the entry frame — such a pop
+ *     jumps to a resume label OUTSIDE the assertion — and nested marks are
+ *     monotone by construction.
+ *  3. NOTHING REWINDS THE TRAIL, AND THAT IS THE SEMANTICS. Captures written
+ *     inside a POSITIVE lookaround are RETAINED on success and UNDONE on an
+ *     outer failure. MEASURED both ways: `(?=(a))a` on "a" is (0,1) with
+ *     g1=(0,1); `(?:(?=(a))x|(a))` on "ab" is (0,1) with g1 UNSET and
+ *     g2=(0,1). Only RETENTION discriminates — a cut that wrongly rewound the
+ *     trail gets the UNDO half right by accident.
+ *
+ * THE FOLLOW IS SCOPED ACROSS THE BODY, AND NOT BECAUSE OF THE CUT (§3.2.1,
+ * R33 C1-1). This is the one silent miscompile in §3 and the attribution is
+ * the part that matters. `vm_atomic`'s own header attributes its identical
+ * save-zero-restore to the CUT — "the group matches X's own first success, so
+ * the choice must be made without peeking at the follow" — and THAT REASON
+ * DOES NOT TRANSFER. Here the reason is the OVERLAP: a lookahead's follow
+ * starts at the assertion's ENTRY position, so the body's bytes and the
+ * follow's bytes are THE SAME BYTES and `body_remaining + fmin` DOUBLE-COUNTS
+ * them. That argument is untouched by deleting the cut, which is why the
+ * NON-ATOMIC arm below scopes just as hard as the atomic one.
+ *
+ * WHAT AN UNSCOPED BODY WOULD ANSWER, measured against both oracles:
+ *
+ *   (?=(a+)b)a+b  on "aab"  truth (0,3) g1=(0,2)  unscoped: body bound 1+2=3
+ *                                                 -> MISSED MATCH
+ *   (?!(a+)b)a+b  on "aab"  truth NOMATCH         unscoped: the body is pruned
+ *                                                 to fail, so the NEGATIVE
+ *                                                 assertion SUCCEEDS
+ *                                                 -> FALSE MATCH
+ *
+ * The negative row is the dangerous one: an unsound prune inside a negative
+ * assertion turns "the body could not be shown to match" into "the assertion
+ * holds". Sabotage row S128 is its detector, and that row's anchor has to
+ * include this function's own text — `v->fmin = 0; v->fdyn = NULL;` is the
+ * SAME TWO LINES `vm_atomic` carries.
+ *
+ * RESTORED ON EVERY RETURN PATH, not at one label (R33 V-8): this function has
+ * a single exit today and the restore sits on it, and wave D's per-branch
+ * lookbehind loop must keep that property rather than attach the restore to a
+ * label some path skips.
+ *
+ * `vm_cut` IS REUSED UNCHANGED, on the argument `atomic_groups_design.md` §3.1
+ * established and this construct consumes rather than re-proves: the
+ * no-trail-rewind invariant rests on FRAME ARITHMETIC, not on possessify's
+ * §2.2 verdict. A lookahead's cut discards frames that are NOT dead, exactly
+ * as an atomic group's does — which is the semantics, and is what §2.2's
+ * atomicity discriminator measures. */
+static void vm_look(Vm *v, int entry, const Ast *a, int next)
+{
+    StrBuf *b = v->b;
+
+    /* §3.2.1 — SAVE, ZERO, and (at the single exit below) RESTORE. */
+    const char *sd = v->fdyn;
+    long long   sf = v->fmin;
+    v->fmin = 0;
+    v->fdyn = NULL;
+
+    /* WAVE D's territory, refused LOUDLY rather than mis-emitted. Nothing can
+     * reach it today — `pcrec_laport_group` declines the three `<` tails at
+     * WANT_RESULT, which is what keeps their registry rows `unbuilt` — so this
+     * is the same shape wave A2's `ctx_fail` had: a half-landed wave D that
+     * deleted the port's decline without landing the back-step would emit the
+     * LOOKAHEAD shape for a lookbehind, which is precisely sabotage row S126's
+     * miscompile, silently. */
+    if (a->u.look.behind)
+        ctx_fail(v->cx, 0, "internal error: a LOOKBEHIND reached vm_look "
+                           "before wave D — the back-step is not built");
+
+    const bool neg    = a->u.look.neg;
+    const bool atomic = a->u.look.atomic;
+
+    /* The two families, allocated per shape off the shared predicates. -1 is
+     * "this shape does not take one", and every use below is guarded. */
+    const int mslot = vm_look_needs_mark(a) ? vm_slot_lookmark(v, v->nlookmark++) : -1;
+    const int pslot = vm_look_needs_pos(a)  ? vm_slot_lookpos(v,  v->nlookpos++)  : -1;
+
+    const int bodyl = vm_label(v), okl = vm_label(v);
+    const int negokl = neg ? vm_label(v) : -1;
+
+    /* THE ENTRY LABEL'S ROLE IS THE LISTING'S RECORD OF THE THREE FLAGS
+     * (design §11's wave-A2 amendment: `--emit-ir` renders the VEvent stream,
+     * so a lookaround's listing is whatever this function records). One call
+     * writes the emitted C comment and the VE_LABEL event, so the two cannot
+     * drift about what this construct is. */
+    vm_lbl(v, entry,
+           neg    ? (a->u.look.behind ? "negative lookbehind: record the resume-stack depth to cut back to (BEFORE any push), then push the body-failed continuation"
+                                      : "negative lookahead: record the resume-stack depth to cut back to (BEFORE any push), then push the body-failed continuation")
+           : atomic ? (a->u.look.behind ? "positive lookbehind (atomic): record the resume-stack depth to cut back to, and the cursor to come back to"
+                                        : "positive lookahead (atomic): record the resume-stack depth to cut back to, and the cursor to come back to")
+                    : (a->u.look.behind ? "positive lookbehind (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated"
+                                        : "positive lookahead (NON-ATOMIC): record the cursor to come back to; nothing is cut, so no mark slot is allocated"));
+
+    if (mslot >= 0)
+        vm_set(v, mslot, "(ptrdiff_t)run->resume_depth",
+               "lookaround cut mark (resume-stack depth at the assertion's entry)");
+    if (pslot >= 0)
+        vm_set(v, pslot, "(ptrdiff_t)scan_position",
+               "lookaround: the cursor to restore -- the assertion consumes nothing");
+    if (neg)
+        vm_push(v, negokl, "negative lookaround: the BODY-FAILED continuation "
+                           "-- reaching it means the assertion HOLDS");
+    vm_goto(v, bodyl);
+
+    /* The body's follow-min is ZERO, not the assertion's — see this function's
+     * header. Emitted through `vm_emit` like any other subtree, which is why
+     * §3.7's budget needs nothing new to count its work. */
+    vm_emit(v, bodyl, a->l, okl);
+
+    if (neg) {
+        vm_lbl(v, okl, "negative lookaround: the body SUCCEEDED, so the "
+                       "ASSERTION FAILS -- cut away the body's frames AND the "
+                       "body-failed continuation, then fail");
+        vm_cut(v, mslot, "cut: the assertion has failed; the body-failed "
+                         "continuation must not survive to be resumed later");
+        vm_fail(v);
+
+        vm_lbl(v, negokl, "negative lookaround: the body is EXHAUSTED, so the "
+                          "assertion HOLDS -- the fail label's pop of this "
+                          "frame has already restored the cursor and rewound "
+                          "every capture the body wrote");
+        vm_goto(v, next);
+    } else {
+        vm_lbl(v, okl, atomic
+               ? "positive lookaround: the body's FIRST success -- cut, "
+                 "restore the cursor, and never reconsider"
+               : "positive lookaround (NON-ATOMIC): a body success -- restore "
+                 "the cursor, leaving the body's choice points LIVE so a "
+                 "later failure can re-enter and reach a DIFFERENT success");
+        if (atomic)
+            vm_cut(v, mslot, "cut: the assertion is committed; every choice "
+                             "point the body created is discarded, dead or not");
+        {
+            char sl[64];
+            vm_slot_expr(v, pslot, sl, sizeof sl);
+            sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);
+            vm_ev(v, VE_NOTE, 0, 0,
+                  "lookaround: the position is DISCARDED -- the cursor goes "
+                  "back to the assertion's entry");
+        }
+        vm_goto(v, next);
+    }
+
+    v->fmin = sf;
+    v->fdyn = sd;
+}
+
 static void vm_emit(Vm *v, int entry, const Ast *a, int next)
 {
     StrBuf *b = v->b;
@@ -4873,24 +5208,16 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     case A_ATOMIC:
         vm_atomic(v, entry, a, next);
         return;
-    /* [M6.6.2 wave A2] A LOUD ARM, NOT A SILENT ACCEPT, and it is the reason
-     * every other A_LOOK arm in this wave is allowed to be inert.
-     *
-     * Nothing produces an A_LOOK until wave B+C wires `pcrec_laport_group`
-     * (src/parse/mod_lookaround.c), so this is unreachable today. It is
-     * written as a hard compile error rather than left to the tail
-     * `ctx_fail` below because the tail's message names no construct: a
-     * half-landed wave B+C — a parse hook that builds the node before the
-     * lowering exists — would report "bad AST node in VM emitter" and send the
-     * next reader hunting for tree corruption.
-     *
-     * WAVE B+C REPLACES THIS LINE WITH `vm_look(v, entry, a, next);` and owes,
-     * in the SAME edit, `vm_count_slots`' A_LOOK arm (see its own note) and a
-     * re-check of `vm_cost`'s two constants. Those three are one change; this
-     * arm is what makes taking only one of them impossible. */
+    /* [M6.6.2 wave B+C] THE LOOKAROUND — `vm_look` above, which is `vm_atomic`
+     * plus a saved cursor for the positive form, one pushed frame for the
+     * negative one, and the atomic shape minus the cut for `(?*`. Wave A2's
+     * loud `ctx_fail` stood here; the three edits it made inseparable all
+     * landed together — this arm, `vm_count_slots`' own (which now allocates
+     * both slot families and the negative form's frame), and the re-check of
+     * `vm_cost`'s two constants recorded at that arm. */
     case A_LOOK:
-        ctx_fail(v->cx, 0, "internal error: A_LOOK reached the emitter before "
-                           "wave B+C — the lookaround lowering is not built");
+        vm_look(v, entry, a, next);
+        return;
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
 }
@@ -5153,6 +5480,20 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
         sb_printf(o, "  %-12d %-22s %s\n", vm_slot_rev(v, i, 2),
                   "revdet ceiling", "maximal boundary reached: the lazy extension's cap");
     }
+    /* [M6.6.2] the lookaround's two families. They are listed SEPARATELY and
+     * their counts can differ, which is the point: `nlookmark < nlookpos` says
+     * this artifact contains a NON-ATOMIC form, and that is how a reader tells
+     * the two atomicities apart in the listing (design §3.6). */
+    for (int i = 0; i < v->nlookmark; i++)
+        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_lookmark(v, i),
+                  "lookaround cut mark",
+                  "resume-stack depth at the assertion's entry -- the atomic "
+                  "and negative forms commit ([M6.6.2])");
+    for (int i = 0; i < v->nlookpos; i++)
+        sb_printf(o, "  %-12d %-22s %s\n", vm_slot_lookpos(v, i),
+                  "lookaround cursor",
+                  "the entry position the assertion restores: a lookaround "
+                  "keeps the VERDICT and discards the POSITION");
 
     /* ---- RUNGS -----------------------------------------------------------
      * [D46] the PER-QUANTIFIER detail the header's "; rungs" summary line
@@ -5520,12 +5861,20 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
     const int nmark_total = v.nmark;
     const int nctr_total  = v.nctr;    /* [ENG-BREP] counter loops, 1 slot each */
     const int nrev_total  = v.nrev;    /* [ENG-BREP] revdet loops, 3 slots each */
+    /* [M6.6.2] the lookaround's two families — at most two per assertion and
+     * sometimes one, decided per shape by `vm_look_needs_mark`/`_pos`, which
+     * `vm_count_slots` and `vm_look` both read so they cannot disagree. */
+    const int nlookmark_total = v.nlookmark;
+    const int nlookpos_total  = v.nlookpos;
     v.nguard_total = nguard_total;
     v.nlow_total   = nlow_total;
     v.nmark_total  = nmark_total;
     v.nrev_total   = nrev_total;
     v.nctr_total   = nctr_total;
+    v.nlookmark_total = nlookmark_total;
+    v.nlookpos_total  = nlookpos_total;
     v.nguard = v.nlow = v.nmark = v.nrev = v.nctr = 0;
+    v.nlookmark = v.nlookpos = 0;
     /* [M6.5.2] `2 * (ngroups + 1)`, not `2 * ncaps`: the capture-pair region
      * is sized by the SLOT LAYOUT, which under `--no-captures` can hold marked
      * groups the artifact reports none of. The two are equal on every
@@ -5534,7 +5883,7 @@ void pcrec_emit_vm(Ctx *cx, const Ast *root)
      * `vm_slot_pend` — so every base below it is unmoved as well. */
     const int nstate = 2 * (v.ngroups + 1) + nguard_total + nlow_total
                      + nmark_total + 3 * nrev_total + nctr_total
-                     + v.npend_total;
+                     + v.npend_total + nlookmark_total + nlookpos_total;
 
     /* §2.5's two capacities. */
     Cost cost = vm_cost(&v, root, false);
