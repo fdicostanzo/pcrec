@@ -13465,3 +13465,11 @@ make test + my san put load at 34 again; ruled the full matrix is the
 CLOSE's job and stopped it; the san on main is in its rungdiff stage;
 merges wait for san to end (editing a tree under a running suite is how
 runs die).
+
+ADDENDUM (part 8, ~16:4x): `make san` on the B+C-merged main: rc=0 in 58
+min, zero sanitizer reports, both axes ("suite green under
+-fsanitize=address,undefined"), the known-fail ratchet reading "still
+failing: 1, now passing: 0" (the two lookbehind cells, LB deletes the
+file). THE B+C-MERGED TREE'S BATTERY IS GREEN: test 25,217/0, strict,
+san. Merges of D and LB are now unblocked (both dry-run conflict-free in
+either order); D waits only for its identity-script addition.
