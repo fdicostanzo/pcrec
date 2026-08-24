@@ -13417,3 +13417,18 @@ ADDENDUM (part 7, ~15:5x): merged-tree make test on 67e40b9: corpus
 above). strict clean. `make san` on the merged tree running alone
 (scratchpad/san_BCmerged.log); lanes srD/srLB are in their editing
 phase, srBC-expect's worktree exists.
+
+ADDENDUM (part 7, ~16:0x): B+C's follow-on MERGED — `SAB_EXPECT`
+(lane/srBC-expect b6311f4): an expected verdict per sabotage row that the
+matrix CHECKS — headline `unexpected: N`, a mismatch in EITHER direction
+exits 1 ("NOW DETECTED — re-measure and flip the expectation" for an
+expired expected-UNDETECTED, the ratchet's "now passing" shape),
+INCONCLUSIVE/ANOMALY satisfy neither expectation (an absent measurement
+never meets a stated one), a typo'd value is FATAL rather than a silent
+default. The 7 B+C rows annotated; 26 rows at PROCS=4: unexpected 0.
+STANDING FACT: the mech headline is now "unexpected: 0", not
+"undetected: 0" — an expected-UNDETECTED row is a CONTRACT with a named
+closing witness (its SAB_DOC_FIGURE), never a parking space. The
+general rule, from tests/mech/CLAUDE.md: an expectation a human
+maintains in prose is a claim; an expectation the runner checks is a
+contract. Lane srBC is DONE (three deliverables); worktrees removed.
