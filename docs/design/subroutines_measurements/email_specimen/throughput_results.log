@@ -1,0 +1,18 @@
+=== tput_main_orig / a_valid_addrs ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/a_valid_addrs.bin bytes=1048576 matches=40330 giveup=0 reps=[0.023320 0.016822 0.013390 0.011708 0.010092] median=0.013390
+=== tput_main_orig / b_no_at ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/b_no_at.bin bytes=1048576 matches=0 giveup=0 reps=[0.012425 0.007912 0.006022 0.004856 0.006500] median=0.006500
+=== tput_main_orig / c_long_atom_run ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/c_long_atom_run.bin bytes=1048576 matches=0 giveup=0 reps=[0.004343 0.003723 0.003830 0.004250 0.004037] median=0.004037
+=== tput_bc_orig / a_valid_addrs ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/a_valid_addrs.bin bytes=1048576 matches=40330 giveup=0 reps=[0.014628 0.021953 0.014866 0.016957 0.008383] median=0.014866
+=== tput_bc_orig / b_no_at ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/b_no_at.bin bytes=1048576 matches=0 giveup=0 reps=[0.006853 0.005742 0.004656 0.008577 0.007537] median=0.006853
+=== tput_bc_orig / c_long_atom_run ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/c_long_atom_run.bin bytes=1048576 matches=0 giveup=0 reps=[0.007425 0.003928 0.005740 0.008344 0.010881] median=0.007425
+=== tput_bc_factored / a_valid_addrs ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/a_valid_addrs.bin bytes=1048576 matches=40330 giveup=0 reps=[0.064529 0.053848 0.059021 0.031708 0.038653] median=0.053848
+=== tput_bc_factored / b_no_at ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/b_no_at.bin bytes=1048576 matches=0 giveup=0 reps=[0.221323 0.209574 0.154983 0.144048 0.147363] median=0.154983
+=== tput_bc_factored / c_long_atom_run ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/c_long_atom_run.bin bytes=1048576 matches=0 giveup=-2 reps=[9.329691 8.361559 6.152527 6.007225 5.867782] median=6.152527

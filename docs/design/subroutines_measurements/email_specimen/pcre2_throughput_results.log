@@ -1,0 +1,6 @@
+=== orig.rx / a_valid_addrs ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/a_valid_addrs.bin bytes=1048576 matches=40330 reps=[0.030322 0.032324 0.035271 0.030441 0.029978] median=0.030441
+=== orig.rx / b_no_at ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/b_no_at.bin bytes=1048576 matches=0 reps=[0.000056 0.000025 0.000025 0.000025 0.000025] median=0.000025
+=== orig.rx / c_long_atom_run ===
+subject=/tmp/claude-1001/-home-duxevents-pcrec/57edc75c-76aa-4052-bcd0-9f13379119a3/scratchpad/email/throughput/c_long_atom_run.bin bytes=1048576 matches=0 reps=[0.000050 0.000018 0.000018 0.000018 0.000018] median=0.000018

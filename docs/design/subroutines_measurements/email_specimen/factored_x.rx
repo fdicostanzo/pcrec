@@ -1,0 +1,31 @@
+(?x)
+(?:                        # ATOM definition (dot-atom text run)
+  (?<atom>[a-z0-9!#$%&'*+/=?^_`{|}~-]+)
+){0}
+(?:                        # QCHAR definition (one quoted-string char)
+  (?<qchar>
+      [\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]
+    | \\[\x01-\x09\x0b\x0c\x0e-\x7f]
+  )
+){0}
+(?:                        # LABEL definition (one DNS label)
+  (?<label>[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)
+){0}
+(?:                        # OCTET definition (one IPv4 octet)
+  (?<octet>25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)
+){0}
+(?:                                  # local part
+    (?&atom)(?:\.(?&atom))*         #   dot-atom form
+  | "(?:(?&qchar))*"                #   quoted-string form
+)
+@
+(?:                                                    # domain
+    (?:(?&label)\.)+(?&label)                          #   dotted DNS name
+  | \[                                                 #   address literal
+      (?:(?&octet)\.){3}
+      (?:
+          (?&octet)
+        | [a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+
+      )
+    \]
+)

@@ -1,0 +1,32 @@
+====================================================================================================
+ORACLE SELF-CONSISTENCY: orig.rx vs factored.rx (libpcre2 only)
+====================================================================================================
+OK: 85/85 subjects -- orig.rx and factored.rx agree under libpcre2 on every subject.
+
+====================================================================================================
+DISAGREEMENT TABLE (pcrec vs its own oracle column)
+====================================================================================================
+artifact       id     description                                                  oracle                         pcrec                         
+BC/factored    058    pathological: 2000-deep dotted local part a.a.a...           ('match', 0, 4011)             ('giveup', 'giveup -3', 3)    
+BC/factored    059    pathological: 5KB quoted string of qchars                    ('match', 0, 5134)             ('giveup', 'giveup -3', 3)    
+BC/factored    061    pathological: long domain, many labels                       ('match', 0, 2008)             ('giveup', 'giveup -3', 3)    
+BC/factored    063    pathological: 5KB quoted string with trailing unescaped qu   ('match', 2561, 5135)          ('giveup', 'giveup -3', 3)    
+BC/factored    064    pathological: alternating escaped chars in quoted string,    ('match', 0, 4110)             ('giveup', 'giveup -3', 3)    
+
+RECURSION-MODULE FINDINGS (BC/factored vs libpcre2 disagreements): 5
+  [058] pathological: 2000-deep dotted local part a.a.a...           oracle(factored)=('match', 0, 4011) pcrec(BC/factored)=('giveup', 'giveup -3', 3)
+  [059] pathological: 5KB quoted string of qchars                    oracle(factored)=('match', 0, 5134) pcrec(BC/factored)=('giveup', 'giveup -3', 3)
+  [061] pathological: long domain, many labels                       oracle(factored)=('match', 0, 2008) pcrec(BC/factored)=('giveup', 'giveup -3', 3)
+  [063] pathological: 5KB quoted string with trailing unescaped quote mid-string oracle(factored)=('match', 2561, 5135) pcrec(BC/factored)=('giveup', 'giveup -3', 3)
+  [064] pathological: alternating escaped chars in quoted string, 4KB oracle(factored)=('match', 0, 4110) pcrec(BC/factored)=('giveup', 'giveup -3', 3)
+
+====================================================================================================
+CROSS-ARTIFACT CHECK (informational): MAIN/orig vs BC/orig vs BC/factored
+====================================================================================================
+  [058] pathological: 2000-deep dotted local part a.a.a...           MAIN/orig=('match', 0, 4011) BC/orig=('match', 0, 4011) BC/factored=('giveup', 'giveup -3', 3)
+  [059] pathological: 5KB quoted string of qchars                    MAIN/orig=('match', 0, 5134) BC/orig=('match', 0, 5134) BC/factored=('giveup', 'giveup -3', 3)
+  [061] pathological: long domain, many labels                       MAIN/orig=('match', 0, 2008) BC/orig=('match', 0, 2008) BC/factored=('giveup', 'giveup -3', 3)
+  [063] pathological: 5KB quoted string with trailing unescaped qu   MAIN/orig=('match', 2561, 5135) BC/orig=('match', 2561, 5135) BC/factored=('giveup', 'giveup -3', 3)
+  [064] pathological: alternating escaped chars in quoted string,    MAIN/orig=('match', 0, 4110) BC/orig=('match', 0, 4110) BC/factored=('giveup', 'giveup -3', 3)
+
+total subjects: 85
