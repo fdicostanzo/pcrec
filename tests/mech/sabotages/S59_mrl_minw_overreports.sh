@@ -15,7 +15,7 @@
 # walks every length up to 24 rather than a handful of chosen ones.
 #
 # THE UNBOUNDED ARM IS WHY THE EXPRESSION IS WRITTEN WITH A CONDITIONAL rather
-# than as a bare `a->rmax`: `rmax == -1` means unbounded, and a bare
+# than as a bare `a->u.rep.rmax`: `rmax == -1` means unbounded, and a bare
 # substitution would multiply by -1 and land the saturating helper on 0, which
 # is the SAFE direction and would leave `X*`-shaped follows undetected. The
 # sabotage keeps `rmin` where there is no maximum so that what it tests is the
@@ -26,5 +26,5 @@ SAB_SUITES="mrldiff harness"
 SAB_DESC="pcrec_minw uses a bounded repeat's MAXIMUM count instead of its minimum, making minrest an upper bound: the clamp then cuts positions a real match needed and the matcher answers nomatch"
 SAB_DOC_FIGURE="docs/design/k23_impl/k23_design.md §4.2 failure mode 1"
 SAB_COUNT=1
-SAB_BEFORE='            return mrl_sat_add(acc, mrl_sat_mul(a->rmin, pcrec_minw(a->l)));'
-SAB_AFTER='            return mrl_sat_add(acc, mrl_sat_mul(a->rmax >= 0 ? a->rmax : a->rmin, pcrec_minw(a->l)));  /* SABOTAGE S59 */'
+SAB_BEFORE='            return mrl_sat_add(acc, mrl_sat_mul(a->u.rep.rmin, pcrec_minw(a->l)));'
+SAB_AFTER='            return mrl_sat_add(acc, mrl_sat_mul(a->u.rep.rmax >= 0 ? a->u.rep.rmax : a->u.rep.rmin, pcrec_minw(a->l)));  /* SABOTAGE S59 */'

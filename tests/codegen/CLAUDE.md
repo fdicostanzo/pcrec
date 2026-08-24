@@ -871,6 +871,70 @@ Result at landing: default 1501/0, vm 1502/0, nocaptures 1501/0 identical, with
 the positive control at 124/124 backref-bearing patterns REFUSED by the
 pre-module compiler.
 
+## [M6.6.2 wave 0] `run_lookaround_identity.sh` — module `lookaround`'s gate, running in PURE-REFACTOR mode
+
+**The THIRD gate here whose reference is a PINNED COMMIT**, and the one where
+the pin is not merely preferable but the only possibility. `LOOKAROUND_
+IDENTITY_REF` defaults to `eacac76`, [M6.6.2]'s branch point — the last tree
+whose `struct Ast` carries the per-kind fields at top level, before D70's
+tagged union. A `-D` knob could not build this reference even in principle: a
+refactor has no gated region, and no knob can make one build use `n->rmin` and
+the other `n->u.rep.rmin` without BEING the refactor.
+
+**WHAT IT ASSERTS TODAY IS STRONGER THAN WHAT IT WILL ASSERT AT LANDING.**
+Wave 0 is D70's refactor — ~250 mechanical access-site renames, zero behaviour
+change, no new kind, no module — so the claim is not "a lookaround-FREE
+pattern is unmoved" but that EVERY pattern in the population is unmoved. That
+is `STRICT_ALL=1` (the default, and the only mode until the manager flips it at
+waves B+C): for every pattern on every axis, subject and reference must agree
+on EXIT STATUS, on the FULL RAW STDOUT, and on STDERR (the refusal text).
+
+**NO STAMP STRIP, and that is the rule rather than an omission.**
+`run_backref_identity.sh` is entitled to filter D37's three feature-stamp lines
+because a MODULE legitimately moves them. Wave 0 changes no module and no
+feature, so the stamp must be identical too — and a run whose only differences
+ARE the stamp is a FINDING for the manager, never a normaliser to add here.
+
+**FOUR AXES** (ASK-4): `default`, `--engine=vm`, `-fno-prefilter`,
+`--no-captures`. The default alone is blind to most of `src/gen/emit_vm.c`,
+where 174 of the wave's 249 renamed sites live — under it most corpus patterns
+route to the DFA and never reach the VM emitter at all.
+
+**THE POPULATION INCLUDES THE REJECT TABLE.** Every `pattern` line from every
+`.rxt` under `tests/` (known_fail included), PLUS every pattern
+`tests/reject/run_reject_tests.sh` exercises, parsed out with `shlex` so shell
+quoting is read rather than guessed at (an unparseable row is skipped and
+COUNTED, never mangled into a different pattern). The reject half is not
+padding: those patterns are the only population that exercises the stderr
+comparison at all, so without them a refactor that moved a diagnostic would go
+unseen. Floor 1400, asserted.
+
+**THE SWEEP IS PYTHON, AND THAT IS A CORRECTNESS CHOICE.** Its two predecessors
+compare with `a="$(gen_a ...)"`, and command substitution STRIPS TRAILING
+NEWLINES — so a difference confined to trailing bytes is invisible to them. At
+a pure refactor that blind spot is not acceptable, so this sweep captures
+stdout, stderr and exit status as bytes and compares them exactly.
+
+**THE POSITIVE CONTROL IS IN TWO PARTS**, because "0 differences" between a
+tree and itself is worth nothing. (a) The reference is ASSERTED pre-refactor:
+it must contain neither `A_LOOK` nor `u.rep.`, so a mistyped pin that resolved
+to something recent fails loudly instead of reporting a clean bill of health.
+(b) The gate is DEMONSTRATED RED — the recipe is in the script header (swap
+`a->u.rep.rmin` for `a->u.rep.rmax` at one `vm_rep` site in
+`src/gen/emit_vm.c`, rebuild, run, revert). A gate nobody has seen red is a
+gate nobody has checked.
+
+**The bucket split is WAVE E's, not this wave's**, and the script carries a
+marked `WAVE E HOOK` where it goes. It is deliberately not built now: at wave 0
+the strict claim covers the whole population, and a differing-but-expected
+bucket introduced early is exactly what would quietly absorb the first real
+difference.
+
+**On demand, via `make test-lookaround-identity`** — not in `make test`, on the
+ruling `test-atomic-identity` and `test-backrefs-identity` have and for the
+same reason: the reference is a second full build of the compiler, and the
+answer cannot change unless someone edits code at or before the pin.
+
 ## Conventions
 
 Every check must be validated against a deliberate sabotage: disable the

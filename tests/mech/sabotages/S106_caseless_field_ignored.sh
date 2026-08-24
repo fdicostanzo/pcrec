@@ -23,6 +23,6 @@ SAB_DESC="The A_BREF emission ignores Ast.caseless and always calls the case-SEN
 SAB_DOC_FIGURE="PREDICTED: the corpus RED on caseless.rxt; codegen RED (the residbrefci fixture declares bref_match_caseless and the artifact would carry bref_match). Canonical figure owed from run_sabotage_matrix.sh S106."
 SAB_COUNT=1
 SAB_BEFORE='        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
-                 a->caseless ? "_caseless" : "");'
+                 a->u.bref.caseless ? "_caseless" : "");'
 SAB_AFTER='        snprintf(fn, sizeof fn, "%s_bref_match%s", v->p,
                  0 ? "_caseless" : "");   /* SABOTAGE S106 */'

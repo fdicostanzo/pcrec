@@ -389,6 +389,34 @@ test-backrefs: all
 test-backrefs-identity: all
 	bash tests/codegen/run_backref_identity.sh
 
+# [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
+# and the same ruling as `test-atomic-identity` and `test-backrefs-identity`
+# above (ASK-4): a claim about a MOMENT, re-answered on demand, not a standing
+# invariant `make test` should pay for on every commit.
+#
+# WHY IT IS ON-DEMAND, in this gate's own terms. Its reference is a PINNED
+# PRE-REFACTOR COMMIT built by `git archive`, so a run costs a full second
+# build of the compiler plus four sweeps over the whole ~1400-pattern
+# population against BOTH binaries. The answer cannot change unless someone
+# edits code at or before the pin, which is not what `make test` is for; and
+# the standing invariants this wave needs — the corpus, the reject table, the
+# registry and codegen checks, the anchor tripwire — already ride `make test`.
+#
+# WHAT IT ASSERTS TODAY is the PURE-REFACTOR claim, which is strictly stronger
+# than the one it will assert when module `lookaround` lands: not "a
+# lookaround-free pattern is unmoved" but that EVERY pattern is unmoved on all
+# four axes — exit status, raw stdout with NO feature-stamp strip, and the
+# refusal text on stderr. D70's tagged union renamed ~250 access sites and is
+# entitled to move exactly zero emitted bytes. When the module lands, the
+# script's marked WAVE E HOOK grows the bearing/free bucket split and this
+# target keeps its name.
+#
+#     make test-lookaround-identity        # the gate, on demand
+#     LOOKAROUND_IDENTITY_REF=<sha> make test-lookaround-identity  # moved base
+#     STRICT_ALL=0 ...                     # reserved for wave B+C; today 1
+test-lookaround-identity: all
+	bash tests/codegen/run_lookaround_identity.sh
+
 # [M6.2] module `assertions`. Its .rxt corpus rides test-corpus like every
 # other module's; this section is the three things a .rxt file structurally
 # cannot check, PLUS the wave's byte-identity gate.
@@ -833,6 +861,6 @@ clean:
         test-gentimeout test-codegen test-vm test-possessify test-rungselect \
         test-counterk test-mrl test-prefilter test-altcls test-assertions \
         test-known-fail test-thread test-atomic test-atomic-identity \
-        test-backrefs test-backrefs-identity \
+        test-backrefs test-backrefs-identity test-lookaround-identity \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

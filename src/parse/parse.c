@@ -267,8 +267,8 @@ static void cls_casefold(uint8_t *b)
 static Ast *char_node(Ctx *cx, unsigned c)
 {
     Ast *a = node(cx, A_CLASS);
-    cls_set(a->cls, c & 0xff);
-    if (cx->mods->caseless) cls_casefold(a->cls);
+    cls_set(a->u.cls.bits, c & 0xff);
+    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
     return a;
 }
 
@@ -290,10 +290,10 @@ Ast *pcrec_ast_class_from_bits(Ctx *cx, const unsigned char bits[32],
                                bool negate)
 {
     Ast *a = node(cx, A_CLASS);
-    memcpy(a->cls, bits, 32);
-    if (cx->mods->caseless) cls_casefold(a->cls);
+    memcpy(a->u.cls.bits, bits, 32);
+    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
     if (negate)
-        for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
+        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
     return a;
 }
 
@@ -520,7 +520,7 @@ static Ast *p_class(Ctx *cx)
              * module classes is enabled, so a set followed by a range dash
              * refuses HERE with the same offset the refusal path uses. */
             if (r.what == EXT_MEMBERS) {
-                for (int i = 0; i < 32; i++) a->cls[i] |= r.node->cls[i];
+                for (int i = 0; i < 32; i++) a->u.cls.bits[i] |= r.node->u.cls.bits[i];
                 cx->pos = r.end;
                 cls_skip(cx);   /* xx: [[:alpha:]\t-\tz] still hits the 150 */
                 if (peekc(cx) == '-' && cls_peek_past_dash(cx) != ']' &&
@@ -604,7 +604,7 @@ static Ast *p_class(Ctx *cx)
                          "invalid range in character class"); /* step 4 */
             if (lo > hi)
                 ctx_fail(cx, dashpos, "range out of order in character class");
-            for (int i = lo; i <= hi; i++) cls_set(a->cls, (unsigned)i);
+            for (int i = lo; i <= hi; i++) cls_set(a->u.cls.bits, (unsigned)i);
         } else {
             /* Not a range endpoint: a deferred REFUSAL fires exactly as it
              * always did — `[\d]` keeps its module promise while classes is
@@ -613,17 +613,17 @@ static Ast *p_class(Ctx *cx)
             if (loclaim.what == EXT_REFUSAL)
                 pcrec_ext_finish(cx, &loclaim);
             if (loclaim.what == EXT_MEMBERS)
-                for (int i = 0; i < 32; i++) a->cls[i] |= loclaim.node->cls[i];
+                for (int i = 0; i < 32; i++) a->u.cls.bits[i] |= loclaim.node->u.cls.bits[i];
             else
-                cls_set(a->cls, (unsigned)lo);
+                cls_set(a->u.cls.bits, (unsigned)lo);
         }
     }
 
     /* fold BEFORE negating — see cls_casefold's comment; the other order is
      * silently wrong and downstream cannot detect it */
-    if (cx->mods->caseless) cls_casefold(a->cls);
+    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
     if (neg)
-        for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
+        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
     return a;
 }
 
@@ -799,7 +799,7 @@ static Ast *p_group_body(Ctx *cx, size_t apos)
     if (capno) {
         Ast *cap = node(cx, A_CAP);
         cap->l = body;
-        cap->capno = capno;
+        cap->u.cap.no = capno;
         /* PROPAGATED, not defaulted: `not_repeatable` is a property of what
          * the group RETURNS to p_rep, and p_rep tests the returned node's own
          * flag. Leaving the wrapper at the arena's zero would make `((?i))*`
@@ -825,16 +825,16 @@ static Ast *p_atom(Ctx *cx)
     case '[': return p_class(cx);
     case '.': {
         Ast *a = node(cx, A_CLASS);
-        for (int i = 0; i < 32; i++) a->cls[i] = 0xff;
+        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = 0xff;
         /* NEWLINE_LF, oracle-anchored (DD-11). Under `(?s)` the clear is
          * skipped and `.` is the full 256-set — measured census 255 vs 256,
          * probe_mod05.c (MOD-0.5c). */
         if (!cx->mods->dotall)
-            a->cls['\n' >> 3] &= (uint8_t)~(1u << ('\n' & 7));
+            a->u.cls.bits['\n' >> 3] &= (uint8_t)~(1u << ('\n' & 7));
         return a;
     }
     /* [M6.2 wave A] MULTILINE IS RESOLVED HERE, at the assertion itself, and
-     * nowhere else (D62; assertions_design.md §8.2). `r->greedy =
+     * nowhere else (D62; assertions_design.md §8.2). `r->u.rep.greedy =
      * !cx->mods->ungreedy` one function down is the same shape from the same
      * scoped-option machinery; this is that pattern applied to the modifier
      * that had been leaking a POST-PARSE read into src/opt/possessify.c.
@@ -842,9 +842,9 @@ static Ast *p_atom(Ctx *cx)
      * still refused — which is exactly what makes the refactor provably
      * behaviour-preserving at the moment it lands, and impossible to prove
      * later. */
-    case '^': { Ast *a = node(cx, A_BOL); a->multiline = cx->mods->multiline;
+    case '^': { Ast *a = node(cx, A_BOL); a->u.anch.multiline = cx->mods->multiline;
                 return a; }
-    case '$': { Ast *a = node(cx, A_EOL); a->multiline = cx->mods->multiline;
+    case '$': { Ast *a = node(cx, A_EOL); a->u.anch.multiline = cx->mods->multiline;
                 return a; }
     case '\\': return esc_atom(cx);
     case '*': case '+': case '?':
@@ -1050,14 +1050,14 @@ have:
 
         Ast *r = node(cx, A_REP);
         r->l = a;
-        r->rmin = rmin;
-        r->rmax = rmax;
+        r->u.rep.rmin = rmin;
+        r->u.rep.rmax = rmax;
         /* `(?U)` inverts the DEFAULT greed and a trailing `?` then inverts
          * whichever default is in force — measured both directions
          * (probe_mod05.c: `(?U)a+` lazy [0,1), `(?U)a+?` greedy [0,3)). */
-        r->greedy = !cx->mods->ungreedy;
+        r->u.rep.greedy = !cx->mods->ungreedy;
         xskip(cx);   /* the lazy marker binds across skips too: (?x)a + ? */
-        if (peekc(cx) == '?')      { r->greedy = cx->mods->ungreedy; cx->pos++; }
+        if (peekc(cx) == '?')      { r->u.rep.greedy = cx->mods->ungreedy; cx->pos++; }
         else if (peekc(cx) == '+') {
             /* [M6.4.2] THE POSSESSIVE SUFFIX, and it is a DESUGARING rather
              * than a flag: `X q+` is `(?>X q)`, which is PCRE2's own
@@ -1069,9 +1069,9 @@ have:
              * iteration and could not have refuted the claim; this comment
              * names the corrected one deliberately.
              *
-             * IT DOES NOT WRITE `r->possessive`. That field is possessify's
+             * IT DOES NOT WRITE `r->u.rep.possessive`. That field is possessify's
              * OPTIMISATION mark, deniable by `-fno-possessify` and CLEARED by
-             * revdet's copy constructor (`src/opt/revdet.c:179`), so storing a
+             * revdet's copy constructor (`src/opt/revdet.c:226`), so storing a
              * LANGUAGE FEATURE there would make an optimisation flag a
              * miscompiler and let a copy delete the feature. Sabotage rows S92
              * and S93. Design §3.2 RULE 2.

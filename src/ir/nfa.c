@@ -478,7 +478,7 @@ static bool trie_key(NB *b, const Ast *a, TItem *out)
 
     uint8_t *seq = arena_alloc(&b->cx->arena, (size_t)nsp * 32);
     for (int k = 0; k < nsp; k++) {
-        const uint8_t *src = leaf[b->rev ? (nsp - 1 - k) : k]->cls;
+        const uint8_t *src = leaf[b->rev ? (nsp - 1 - k) : k]->u.cls.bits;
         memcpy(seq + (size_t)k * 32, src, 32);
     }
     out->seq = seq;
@@ -492,7 +492,7 @@ static Frag compile_ast(NB *b, const Ast *a)
     switch (a->k) {
     case A_CLASS: {
         Frag f = frag_single(b, N_CLASS);
-        memcpy(b->nfa->st[f.start].cls, a->cls, 32);
+        memcpy(b->nfa->st[f.start].cls, a->u.cls.bits, 32);
         return f;
     }
     case A_EMPTY: return frag_single(b, N_EPS);
@@ -503,8 +503,8 @@ static Frag compile_ast(NB *b, const Ast *a)
      * of this line there is no multiline flag to forget to read — which is
      * the compile-time alarm D62's control 3 accepts the loss of on the AST,
      * bought back on the IR where node kinds are the vocabulary. */
-    case A_BOL:   return frag_single(b, a->multiline ? N_BOT_M : N_BOT);
-    case A_EOL:   return frag_single(b, a->multiline ? N_EOL_M : N_EOL);
+    case A_BOL:   return frag_single(b, a->u.anch.multiline ? N_BOT_M : N_BOT);
+    case A_EOL:   return frag_single(b, a->u.anch.multiline ? N_EOL_M : N_EOL);
     /* [M6.2 wave A] `\z`. Reversal is identity, exactly as N_BOT/N_EOL's is:
      * an assertion about an absolute subject position is the same assertion
      * whichever direction the machine walks — the reverse machine simply
@@ -620,7 +620,7 @@ static Frag compile_ast(NB *b, const Ast *a)
         return nf == 1 ? fr[0] : chain_alts(b, fr, nf);
     }
     case A_REP: {
-        int rmin = a->rmin, rmax = a->rmax;
+        int rmin = a->u.rep.rmin, rmax = a->u.rep.rmax;
         if (rmin == 0 && rmax == 0) return frag_single(b, N_EPS);
 
         Frag f = { -1, {0} };
@@ -629,7 +629,7 @@ static Frag compile_ast(NB *b, const Ast *a)
             f = (f.start < 0) ? c : frag_cat2(b, f, c);
         }
         if (rmax < 0) {
-            Frag s = frag_star(b, a->l, a->greedy);
+            Frag s = frag_star(b, a->l, a->u.rep.greedy);
             f = (f.start < 0) ? s : frag_cat2(b, f, s);
         } else {
             /* X{m,n} tail is NESTED — (X(X(X)?)?)? — NOT chained optionals.
@@ -671,7 +671,7 @@ static Frag compile_ast(NB *b, const Ast *a)
                  * site that had not adopted it. */
                 Frag w = { s, cat.out };
                 cat.out = (Patch){0};
-                if (a->greedy) {
+                if (a->u.rep.greedy) {
                     nfa->st[s].t1 = cat.start;
                     patch_push(b, &w.out, s * 2 + 1);
                 } else {

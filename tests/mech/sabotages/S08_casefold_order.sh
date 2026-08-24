@@ -15,11 +15,11 @@ SAB_COUNT=1
 # `cx->mods->FIELD`. Anchor text updated to match; the sabotage's intent
 # (move the fold call from before the negation loop to after it) is
 # unchanged.
-SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(a->cls);
+SAB_BEFORE="    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
     if (neg)
-        for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
+        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
     return a;"
 SAB_AFTER="    if (neg)
-        for (int i = 0; i < 32; i++) a->cls[i] = (uint8_t)~a->cls[i];
-    if (cx->mods->caseless) cls_casefold(a->cls);
+        for (int i = 0; i < 32; i++) a->u.cls.bits[i] = (uint8_t)~a->u.cls.bits[i];
+    if (cx->mods->caseless) cls_casefold(a->u.cls.bits);
     return a;"

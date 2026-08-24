@@ -98,7 +98,7 @@ static Ast *br_node(Ctx *cx, const RegRow *rw, size_t at, int number,
                     const char *name, const char *what)
 {
     Ast *a = pcrec_ast_node(cx, A_BREF);
-    a->caseless = cx->mods->caseless;
+    a->u.bref.caseless = cx->mods->caseless;
     pcrec_ast_stamp(cx, a, rw, at);
 
     PendingRef *pr = arena_alloc(&cx->arena, sizeof *pr);
@@ -502,7 +502,7 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
             return a;
         case A_CAP:
             a->l = br_strip_caps(a->l, keep, nkeep);
-            if (a->capno > 0 && a->capno < nkeep && keep[a->capno]) return a;
+            if (a->u.cap.no > 0 && a->u.cap.no < nkeep && keep[a->u.cap.no]) return a;
             a = a->l;
             continue;
         case A_REP: case A_ATOMIC:
@@ -551,16 +551,16 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
             if (pr->number >= 1 && (unsigned long)pr->number <= cx->ncap) {
                 int *v = arena_alloc(&cx->arena, sizeof *v);
                 v[0] = pr->number;
-                pr->node->refs  = v;
-                pr->node->nrefs = 1;
+                pr->node->u.bref.refs  = v;
+                pr->node->u.bref.nrefs = 1;
                 continue;
             }
         } else {
             int *v = NULL, nv = 0;
             br_name_run(cx, pr->name, &v, &nv);
             if (nv > 0) {
-                pr->node->refs  = v;
-                pr->node->nrefs = nv;
+                pr->node->u.bref.refs  = v;
+                pr->node->u.bref.nrefs = nv;
                 continue;
             }
         }

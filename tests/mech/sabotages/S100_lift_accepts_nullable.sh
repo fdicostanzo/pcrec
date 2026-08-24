@@ -6,7 +6,7 @@
 #
 #     "NO EMPTY-ITERATION GUARD IS NEEDED ... §3.3's guard exists to stop a
 #      NULLABLE body iterating forever; §2.2's rule refuses to possessify a
-#      nullable body at all ... So `a->possessive` on an unbounded repeat
+#      nullable body at all ... So `a->u.rep.possessive` on an unbounded repeat
 #      implies `!vm_nullable(a->l)`."
 #
 # A USER-WRITTEN POSSESSIVE DELETES THAT ANTECEDENT. `(?:a*)*+`, `(?:a?)*+b`,

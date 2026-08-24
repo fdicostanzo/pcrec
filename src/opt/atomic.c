@@ -341,8 +341,8 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
     for (;;) {
         switch (a->k) {
         case A_BREF:
-            for (int i = 0; i < a->nrefs; i++)
-                if (a->refs[i] > 0 && a->refs[i] < nmark) mark[a->refs[i]] = true;
+            for (int i = 0; i < a->u.bref.nrefs; i++)
+                if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;
             return;
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:

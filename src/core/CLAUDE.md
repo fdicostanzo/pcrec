@@ -131,6 +131,129 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   moved above RegRow at MOD-0.3b when ports embedded it) with the ExtPort
   producing-port types, and module-level declarations.
 
+  **[M6.6.2 wave 0, D70] `struct Ast` IS A TAGGED UNION.** The per-kind fields
+  live in `union { ... } u`, keyed by the existing `AKind k`:
+  `n->u.cls.bits`, `n->u.rep.{rmin,rmax,greedy,possessive,revbody}`,
+  `n->u.cap.no`, `n->u.anch.multiline`, `n->u.bref.{refs,nrefs,caseless}`.
+  `k`, `l`, `r`, `not_repeatable` and `reg` stay COMMON. The rule D70 makes
+  operative: **no module may add a new top-level per-kind field** — a new kind
+  adds a union MEMBER, and a field joins the common block only when a survey
+  MEASURES it cross-kind. The union buys reading and containment, NOT
+  checking: C does not police member access, so D62's discipline (parse-
+  resolved state, per-field comments, per-field sabotage rows) is unchanged.
+
+### The D70 ownership survey
+
+  Every read and write of every non-`k`/`l`/`r` field of `struct Ast` across
+  `src/`, `cli/`, `lib/` and `tests/**/*.c`, classified by the kind(s) the
+  site is reasoning about. Recorded here because D70's "Revisit when" clause
+  depends on the measurement existing. `Ast` turned out to be confined to 20
+  files, all under `src/` — `cli/`, `lib/` and the test C drivers never touch
+  it, so the whole migration surface was 231 lines / 249 occurrences.
+
+  | field | kind(s) the sites reason about | Ast sites | disposition |
+  |---|---|---|---|
+  | `cls[32]` | A_CLASS | 25 | `u.cls.bits` |
+  | `rmin` | A_REP | 61 | `u.rep.rmin` |
+  | `rmax` | A_REP | 54 | `u.rep.rmax` |
+  | `greedy` | A_REP | 28 | `u.rep.greedy` |
+  | `possessive` | A_REP | 14 | `u.rep.possessive` |
+  | `revbody` | A_REP | 5 | `u.rep.revbody` |
+  | `capno` | A_CAP | 21 | `u.cap.no` |
+  | `multiline` | **A_BOL + A_EOL** (closed family) | 8 | `u.anch.multiline` |
+  | `refs` | A_BREF | 5 | `u.bref.refs` |
+  | `nrefs` | A_BREF | 6 | `u.bref.nrefs` |
+  | `caseless` | A_BREF | 4 | `u.bref.caseless` |
+  | `not_repeatable` | **CROSS-KIND** | 5 | stays COMMON |
+  | `reg` | **CROSS-KIND** | 5 | stays COMMON |
+
+  - **`multiline` is a FAMILY, not one kind.** A_BOL and A_EOL share the
+    meaning and the reads (`src/ir/nfa.c` `compile_ast`, `src/gen/emit_vm.c`
+    `vm_emit`, `src/opt/possessify.c` `first_of`), so they share ONE payload
+    named for the family rather than getting a member each.
+  - **`not_repeatable` is genuinely cross-kind**, which the survey had to
+    answer rather than assume. It is WRITTEN on A_EMPTY (a bare option run,
+    `mod_modifiers.c`), PROPAGATED onto A_CAP and A_ATOMIC from their bodies
+    (`parse.c`, `mod_named_groups.c`, `mod_atomic_groups.c` — and the `body`
+    it reads is an atom of ANY kind), and READ off an atom of any kind by
+    `parse.c`'s quantifier check. No union member could hold it.
+  - **`reg` is cross-kind by construction** (D67): `pcrec_ast_stamp` writes it
+    for any producer's node and `pcrec_ast_engines()` reads it for any node,
+    regardless of `k`. It was expected to be common and the survey confirms it.
+
+### The THIRD disposition shape: a generic helper sanitising a per-kind field
+
+  The survey went looking for two dispositions — per-kind (a union member) and
+  cross-kind (a common field) — and measured a THIRD, which is where both of
+  this refactor's hazards live. A field can be per-kind in every READ and
+  still be WRITTEN unconditionally by a generic copy or sanitise helper that
+  runs for kinds it never enumerates. Before the union such a write is merely
+  DEAD; after it, it is a write through the wrong union member onto whatever
+  payload the node actually owns.
+
+  | site | field(s) | kinds it ran for | disposition |
+  |---|---|---|---|
+  | `src/opt/revdet.c` `rd_node` | `revbody`, `possessive` | **every** kind `rd_reverse` copies | union member + **KIND GUARD** |
+  | `src/parse/mod_assertions.c` port | `multiline` | all **eight** of the port's rows | shared `u.anch` + **KIND GUARD** |
+
+  **`rd_node` was the live one, and the miscompile is MEASURED.** It is the
+  reversal copy constructor for every kind `rd_reverse` handles — A_CLASS,
+  A_EMPTY, the six position predicates, A_CAP, A_REP, A_CAT, A_ALT, plus the
+  function-tail fallthrough — and it unconditionally cleared two A_REP-only
+  fields on all of them. The arithmetic: the union sits at `+40` and
+  `u.cls.bits` spans `+40..+71`, so through `u.rep` the clear writes
+  `possessive` at `+49` (class bitmap BYTE 9, i.e. bytes `0x48`-`0x4F`, `H`-`O`)
+  and `revbody` at `+56..+63` (bitmap BYTES 16-23, `0x80`-`0xBF`). On a
+  reversed A_CLASS node it therefore ZEROES the body's membership for those
+  ranges.
+
+  What that costs, measured on the unguarded build: the reversed body's class
+  tests compile to an all-zero `rx_class_bitmap[32]`, the backward walk can
+  never take them, and **the LAST ITERATION'S CAPTURES — the thing
+  `u.rep.revbody` exists to recover — come back UNSET**. `((H)|I){3}J` on
+  `"HHHJ"` reports groups `(-1,-1)(-1,-1)` where both this compiler and
+  python3 `re` give `(2,3)(2,3)`; `((I)|J){2}K` on `"IJK"` and
+  `((H)|b){0,4}c` on `"HHc"` are the same shape. **The whole-match span is
+  unchanged in every case**, which is why a span-only driver sees nothing.
+
+  It is now guarded on `n->k == A_REP`, behaviour-preserving because those
+  values are only ever read for A_REP.
+
+  **THE CORPUS COULD NOT SEE IT, AND THAT GAP IS NOW CLOSED** — the finding
+  that came out of using the real hazard as the identity gate's positive
+  control. With the guard removed the gate first reported **zero differences on
+  all four axes**: exactly 44 corpus patterns took the reverse-deterministic
+  rung and every one was spelled in lowercase ASCII, so not one had a bit in
+  either clobbered range. The population could not express the bug.
+
+  `tests/rungselect/revdet_highbytes.rxt` closes it: 7 patterns / 127 cases
+  with class bits in BOTH ranges (`H`-`O` for bitmap byte 9;
+  `\x80`-`\x8f` and `\xb0`-`\xb2` for bytes 16-23), every one verified to take
+  the rung via the `RX_VM_RUNGS` / `PCREC_VM_RUNG_REVDET` (0x8) stamp, every
+  expectation agreed by python3 `re` AND libpcre2. **Its `g` capture lines are
+  the detector** — the match span is unchanged under the bug, so an `m`-only
+  file would pass and certify nothing. Measured: 61 of its 127 cases fail
+  under the unguarded build, 0 under the guarded one; the identity gate now
+  goes red at 7 differing on default/vm/noprefilter (`--no-captures` reports 0
+  and correctly so — under that flag the `A_CAP` nodes are never born, so the
+  corrupted reconstruction is not emitted). Mech row **S121** is the permanent
+  detector.
+
+  **The assertions pin was the latent one, and is guarded too** rather than
+  merely recorded. It writes `u.anch.multiline = false` for all eight of the
+  port's rows, i.e. also on A_END, A_WORDB, A_NWORDB, A_GSTART and A_KRESET.
+  Today those five kinds have no payload, so it aliases nothing — but the day
+  any of them gains one it becomes a silent clobber, and nobody will re-read
+  that line then. The deliberate, forward-looking comment is kept verbatim
+  above the guard.
+
+  **THE RULE THIS YIELDS**, stated at the union in `internal.h` and repeated
+  here because it is the thing a future author needs: a writer may touch
+  `u.<payload>` only under a kind check that owns it, and a generic copy or
+  sanitise helper MUST guard rather than write unconditionally. Those two are
+  the only such sites in the tree today; the shape to grep for is a helper
+  that takes a node of unconstrained kind and assigns a per-kind field.
+
   **`A_CAP` and D31 ([M4.5b]).** D31 ruled the group erasure STAYS, on a
   MEASURED compile-time cost; engine_m4.md §11.3 records that the VM
   nonetheless needs SOME node to know where to emit a capture write. Both
@@ -163,12 +286,12 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   read of this field is scope-blind; the cure resolves multiline at PARSE time
   onto the node (assertions_design.md §8, D47.5 addendum).
 
-  **[M6.2 wave A] `A_END`, `Ast.multiline`, `NKind.N_END`, `DState.endvar`,
+  **[M6.2 wave A] `A_END`, `Ast.u.anch.multiline`, `NKind.N_END`, `DState.endvar`,
   and `Ctx.mods` becoming an OPAQUE POINTER.** Four type changes and one
   structural enforcement, all from `docs/design/assertions_design.md` §3.3 and
   §8, ruled by D62:
 
-  - **`A_END` is a KIND and `Ast.multiline` is a FIELD**, which is D62's
+  - **`A_END` is a KIND and `Ast.u.anch.multiline` is a FIELD**, which is D62's
     principle applied twice in opposite directions in one change: node KINDS
     encode STRUCTURE, node FIELDS encode PARSE-RESOLVED MODIFIER STATE. `\z`
     is structure — no option turns `\Z` into it, and their position sets
@@ -177,8 +300,8 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
     rule then makes every analysis that must decide about it a COMPILE ERROR
     (measured: exactly two sites had not already been handled deliberately).
     Multiline-ness of a `$` is modifier state, so it is a field, where
-    `r->greedy` (from `(?U)`) already lives.
-  - **`Ast.multiline` carries D62's control 3 as a comment obligation**, and
+    `r->u.rep.greedy` (from `(?U)`) already lives.
+  - **`Ast.u.anch.multiline` carries D62's control 3 as a comment obligation**, and
     it is load-bearing rather than decorative: the residual D62 accepts is
     that a FUTURE analysis pattern-matching `case A_EOL:` without reading the
     field silently reproduces the bug the field exists to fix, and no
@@ -283,7 +406,7 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
     and atomicity changes the LANGUAGE (`(?>a*)a` matches nothing where `a*a`
     matches), changes the BACKTRACKING, and brackets a body. Two further
     supports, both measured: `src/opt/revdet.c`'s `rd_node` CLEARS
-    `Ast.possessive` on the copy the emitter walks, so a field would be
+    `Ast.u.rep.possessive` on the copy the emitter walks, so a field would be
     silently deleted on a revdet-approved body; and adding an `AKind` raises
     `-Wswitch` at every pass that must decide about it while adding a FIELD
     raises none.

@@ -4,7 +4,7 @@
  * THE CLAIM. For a precisely characterisable class of quantifiers, no retreat
  * into the loop can ever produce a match the PREFERRED path does not. For
  * those the emitter owes zero resume frames and no giveback: the loop is a
- * forward scan. This pass finds them and marks them (`Ast.possessive`);
+ * forward scan. This pass finds them and marks them (`Ast.u.rep.possessive`);
  * src/gen/emit_vm.c is what acts on the mark.
  *
  * THE RULE (§2.2, as REPAIRED by the R24 panel — read the history below before
@@ -69,7 +69,7 @@
  * match the day the `m` letter is accepted (§8.1.1 measures them as cells:
  * correct answer (0,1), possessified answer NO MATCH). The cure is
  * structural rather than a bigger read: multiline is resolved AT PARSE TIME
- * onto the node (`Ast.multiline`), this analysis reads the node it is
+ * onto the node (`Ast.u.anch.multiline`), this analysis reads the node it is
  * already holding, and `ParseMods` is now an incomplete type outside
  * src/parse/ so no later pass can repeat the mistake (§8.6). `\z` needs no
  * gate at all — see the A_END arm.
@@ -165,7 +165,7 @@ static First first_of(const Ast *a)
     switch (a->k) {
     case A_CLASS: {
         First r;
-        memcpy(r.f, a->cls, 32);
+        memcpy(r.f, a->u.cls.bits, 32);
         r.nullable = false;
         return r;
     }
@@ -232,7 +232,7 @@ static First first_of(const Ast *a)
          * further left; all bytes once `(?m)` makes it true before every
          * newline.
          *
-         * `a->multiline` and NOT `cx->mods`. This arm used to consult a bool
+         * `a->u.anch.multiline` and NOT `cx->mods`. This arm used to consult a bool
          * captured once for the whole pass, from the parser's END-OF-PATTERN
          * option state, and `(?m)` is SCOPED: `(?m:a{0,4}$)` and
          * `(?m)a{0,4}$(?-m)` each read false there while their `$` is
@@ -244,7 +244,7 @@ static First first_of(const Ast *a)
          * at the `$` itself, and this analysis reads the node it is already
          * holding — which is also why no threading of scoped state through
          * `pss_walk` was needed (§8.5). */
-        if (a->multiline) {
+        if (a->u.anch.multiline) {
             First r;
             bs_all(r.f);
             r.nullable = false;
@@ -359,7 +359,7 @@ static First first_of(const Ast *a)
     }
     case A_REP: {
         First r = first_of(a->l);
-        r.nullable = r.nullable || a->rmin == 0;
+        r.nullable = r.nullable || a->u.rep.rmin == 0;
         return r;
     }
     }
@@ -465,7 +465,7 @@ static GkParts gk_build(Gk *g, const Ast *a)
 
     switch (a->k) {
     case A_CLASS: {
-        int p = gk_newpos(g, a->cls);
+        int p = gk_newpos(g, a->u.cls.bits);
         if (p < 0) return gk_parts_empty(true);
         GkParts r = gk_parts_empty(false);
         cls_set(r.first, (unsigned)p);
@@ -561,8 +561,8 @@ static GkParts gk_build(Gk *g, const Ast *a)
         GkParts r = gk_build(g, a->l);
         /* The loop's own back edge exists exactly when two iterations can run
          * consecutively. `X{0,1}` and `X{0}` have no back edge. */
-        if (a->rmax < 0 || a->rmax > 1) gk_link(g, r.last, r.first);
-        r.nullable = r.nullable || a->rmin == 0;
+        if (a->u.rep.rmax < 0 || a->u.rep.rmax > 1) gk_link(g, r.last, r.first);
+        r.nullable = r.nullable || a->u.rep.rmin == 0;
         return r;
     }
     }
@@ -648,7 +648,7 @@ typedef struct {
     int   seen;        /* A_REP nodes walked */
     int   possessive;  /* A_REP nodes possessive AFTER this call */
     /* [M6.4.2] THE SURVEY CHANNEL. When `fn` is non-NULL this walk does NOT
-     * write `Ast.possessive` at all — it reports every positive verdict
+     * write `Ast.u.rep.possessive` at all — it reports every positive verdict
      * through the callback instead. `pcrec_poss_survey` is the entry; the free
      * discharge (src/opt/atomic.c) is the caller. Same walk, same FOLLOW, same
      * conjuncts: a second implementation of §2.2 is the one thing this file
@@ -677,8 +677,8 @@ static bool pss_verdict(Pss *P, const Ast *a, const uint8_t *follow,
     const char *uwhy = NULL;
     bool uniq     = body_admits_unique_iteration(P->g, a->l, &uwhy);
     bool disjoint = !bs_intersects(body.f, eff);
-    bool exact    = a->rmax >= 0 && a->rmin == a->rmax;
-    bool lazy     = !a->greedy;
+    bool exact    = a->u.rep.rmax >= 0 && a->u.rep.rmin == a->u.rep.rmax;
+    bool lazy     = !a->u.rep.greedy;
     bool base_ok  = uniq && !body.nullable;
 
     /* §2.2's ladder, in the order the arms are stated. The EXACT-COUNT arm is
@@ -717,11 +717,11 @@ static void pss_rep(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
          * The census counters below are still maintained so a survey cannot
          * silently corrupt `cx->poss_*`; `pcrec_poss_survey` restores them. */
         if (verdict && survey_this) P->fn(P->user, a);
-    } else if (verdict && !a->possessive) {
-        a->possessive = true;
+    } else if (verdict && !a->u.rep.possessive) {
+        a->u.rep.possessive = true;
         P->marked++;
     }
-    if (a->possessive) P->possessive++;
+    if (a->u.rep.possessive) P->possessive++;
 
     /* Descend into the body. Its own quantifiers see this loop's follow AND
      * this loop's FIRST as part of theirs. */
@@ -836,7 +836,7 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
              * where there is one exit and the preferences coincide) would be
              * safe and is declined anyway — declining is always safe, and a
              * second condition here would need its own evidence. */
-            if (P->fn && body->greedy &&
+            if (P->fn && body->u.rep.greedy &&
                 pss_verdict(P, body, follow, may_end, encl))
                 P->fn(P->user, a);
             pss_rep(P, body, none, true, encl, false);

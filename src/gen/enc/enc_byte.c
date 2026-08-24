@@ -66,7 +66,7 @@ static const char defs_byte[] =
  * away — "the generated code has no flag, no branch and no tolower()" — and
  * D23 MEASURED the alternative (a runtime fold indirection) costing 26% on a
  * pattern containing no letters at all. The emitter picks the entry at emit
- * time from `Ast.caseless`, so the caseless artifact pays for the fold and the
+ * time from `Ast.u.bref.caseless`, so the caseless artifact pays for the fold and the
  * case-sensitive one pays nothing.
  *
  * THE RETURN IS A LENGTH, AND THE SIGN CARRIES A SECOND FACT. Under this

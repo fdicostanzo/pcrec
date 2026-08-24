@@ -19,5 +19,5 @@ SAB_HARNESS_TARGET="tests/atomic_groups/possessive.rxt"
 SAB_DESC="vm_cuts() reads Ast.possessive alone instead of 'possessive OR under an atomic lift', so -fno-possessify -- which denies possessify's REWRITE -- also deletes the cut of a possessive the USER WROTE. The artifact then answers the UNCUT language under a flag whose contract is that it changes no answer: '(?:a|ab)*+c' on \"abc\" gives (0,3) instead of NO MATCH"
 SAB_DOC_FIGURE="PREDICTED: RED ONLY under the flag -- atomicdiff's -fno-possessify arm RED with its DEFAULT and --engine=vm arms GREEN, and codegen rule 2 RED. That asymmetry IS the row. Canonical figure owed from run_sabotage_matrix.sh S92."
 SAB_COUNT=1
-SAB_BEFORE='    return a->possessive || under_atomic;'
-SAB_AFTER='    (void)under_atomic; return a->possessive;   /* SABOTAGE S92 */'
+SAB_BEFORE='    return a->u.rep.possessive || under_atomic;'
+SAB_AFTER='    (void)under_atomic; return a->u.rep.possessive;   /* SABOTAGE S92 */'

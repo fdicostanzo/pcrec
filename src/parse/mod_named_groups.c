@@ -255,7 +255,7 @@ ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
         if (capno) {
             Ast *cap = pcrec_ast_node(cx, A_CAP);
             cap->l = body;
-            cap->capno = capno;
+            cap->u.cap.no = capno;
             cap->not_repeatable = body->not_repeatable;
             body = cap;
         }

@@ -23,8 +23,8 @@ SAB_HARNESS_TARGET="tests/backrefs/dupnames.rxt"
 SAB_DESC="pcrec_bref_mark marks only the FIRST member of each A_BREF's refs array, so a duplicated name's later members keep write-on-traverse. The resolution chain reads them at match time, and R32 E1 returns through an unmarked one: (?J)^(?:(?<a>q))?(?:(?<a>a|b\\k<a>))+$ on \"aba\" resolves to group 2, which is precisely the member this sabotage leaves unpublished"
 SAB_DOC_FIGURE="PREDICTED: dupnamesdiff RED; the corpus RED on dupnames.rxt's re-entry block. Canonical figure owed from run_sabotage_matrix.sh S104."
 SAB_COUNT=1
-SAB_BEFORE='            for (int i = 0; i < a->nrefs; i++)
-                if (a->refs[i] > 0 && a->refs[i] < nmark) mark[a->refs[i]] = true;'
+SAB_BEFORE='            for (int i = 0; i < a->u.bref.nrefs; i++)
+                if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;'
 SAB_AFTER='            /* SABOTAGE S104: only the first member of the run */
-            for (int i = 0; i < 1 && i < a->nrefs; i++)
-                if (a->refs[i] > 0 && a->refs[i] < nmark) mark[a->refs[i]] = true;'
+            for (int i = 0; i < 1 && i < a->u.bref.nrefs; i++)
+                if (a->u.bref.refs[i] > 0 && a->u.bref.refs[i] < nmark) mark[a->u.bref.refs[i]] = true;'

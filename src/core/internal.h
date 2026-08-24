@@ -113,7 +113,7 @@ typedef enum {
      * rule of its own. `[\G]` is error 107, so the row keeps
      * RF_CLASS_INVALID.
      *
-     * `Ast.multiline` is meaningless here and is never read: `\G` is an
+     * `Ast.u.anch.multiline` is meaningless here and is never read: `\G` is an
      * absolute position test like `\A`/`\z`, unaffected by every option. */
     A_GSTART,
     /* [M6.2 wave E] `\K` — RESET THE REPORTED START of the match to here
@@ -145,7 +145,7 @@ typedef enum {
      * joins `pcrec_is_bare_anchor` rather than earning a rule of its own.
      * `[\K]` is error 107, so the registry row keeps RF_CLASS_INVALID.
      *
-     * `Ast.multiline` is meaningless here and is never read. */
+     * `Ast.u.anch.multiline` is meaningless here and is never read. */
     A_KRESET,
     /* [M4.5b] capturing group `(l)`, group number in `capno`.
      *
@@ -179,7 +179,7 @@ typedef enum {
      * would have been retried are discarded), and it BRACKETS a body. Two
      * further supports, both measured by the design lane:
      *
-     *   - `src/opt/revdet.c:179`'s `rd_node` CLEARS `Ast.possessive` on the
+     *   - `src/opt/revdet.c:226`'s `rd_node` CLEARS `Ast.u.rep.possessive` on the
      *     reversed copy the emitter walks, so a module that stored its
      *     semantics in that field would have them silently deleted on a
      *     revdet-approved body (design §6.5). A kind survives the copy.
@@ -196,7 +196,7 @@ typedef enum {
      * invariant `vm_cut` relies on is INDEPENDENT of the §2.2 proof that
      * licenses today's cuts (design §3.1, CUT-INV).
      *
-     * `l` is the body; `r` is unused. `Ast.possessive` is NEVER written for
+     * `l` is the body; `r` is unused. `Ast.u.rep.possessive` is NEVER written for
      * this construct (design §3.2 RULE 2): that field keeps its meaning as
      * possessify's deniable optimisation mark, so `-fno-possessify` cannot
      * become a miscompiler and a copy constructor cannot delete a language
@@ -253,58 +253,15 @@ typedef enum {
 
 typedef struct Ast Ast;
 struct Ast {
+    /* ---- COMMON FIELDS ----------------------------------------------------
+     *
+     * [D70] Everything here is read or written for structurally UNRELATED
+     * kinds, measured by the migration survey (src/core/CLAUDE.md, "The D70
+     * ownership survey"). A field belongs here only because the survey put it
+     * here; the default home for anything per-kind is the union below. */
     AKind    k;
-    uint8_t  cls[32];       /* A_CLASS: 256-bit membership bitmap */
     Ast     *l, *r;
-    int      rmin, rmax;
-    int      capno;         /* A_CAP: 1-based capturing group number */
-    bool     greedy;
-    /* [M6.2 wave A] MULTILINE, resolved AT PARSE TIME (A_BOL / A_EOL only).
-     * D62: node fields encode parse-resolved modifier state, exactly as
-     * `greedy` above encodes `(?U)`'s — set from the scoped `(?m)` state in
-     * force AT THE `^`/`$` ITSELF, never re-derived downstream.
-     *
-     * ANY ANALYSIS THAT EXEMPTS OR SPECIAL-CASES `$` (or `^`) MUST CONSULT
-     * THIS FIELD. That sentence is D62's control 3 and it is load-bearing,
-     * not decoration: src/opt/possessify.c exempts `$` from the follow-set
-     * widening on an upward-closure argument that COLLAPSES PER LINE under
-     * `(?m)`, and before this field existed that analysis read the parser's
-     * END-OF-PATTERN option state — so `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)`
-     * would each have exempted a multiline `$` and lost a match
-     * (assertions_design.md §8.1.1, two measured miscompile cells). A new
-     * analysis that pattern-matches `case A_EOL:` and does not read
-     * `.multiline` reproduces exactly that bug, and no compiler diagnostic
-     * will tell you: that residual is D62's accepted cost, and this comment
-     * is the thing that covers it.
-     *
-     * [M6.2 wave C] THE FIELD IS LIVE, and D62 control 3's obligation was
-     * DISCHARGED BY INSPECTION over every AST-walking analysis, with the
-     * verdict recorded here rather than in five places nobody re-reads. §8.3
-     * names four sites as the residual the flag spelling cannot cover — the
-     * `Ast.k` switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and
-     * `src/opt/revdet.c` x1 — and the inspection is that NONE of them needs
-     * the flag, for one reason with three shapes:
-     *
-     *   - `vm_det_seq` (emit_vm.c) DECLINES on the kind: a `$` of either
-     *     spelling is zero-width, so "scan ahead by stride" is wrong for
-     *     both, and its `default: return 0` is right without reading a field.
-     *   - `vm_cap_offsets` and `vm_rev_emit` (emit_vm.c) are UNREACHABLE for
-     *     either spelling: both run only on bodies `vm_det_seq` and
-     *     `src/opt/revdet.c`'s `rd_shape` already approved, and `rd_shape`
-     *     declines every `A_BOL`/`A_EOL`.
-     *   - `pcrec_revdet_first` (revdet.c) WIDENS to all bytes, the sound
-     *     direction, which makes the disjointness test fail and the
-     *     quantifier keep its machinery.
-     *
-     * THE PATTERN WORTH CARRYING FORWARD: an analysis is at risk exactly when
-     * it treats `$` as TRANSPARENT — reasoning about WHERE it is true and
-     * concluding it may be skipped over. Every one of these four treats it as
-     * OPAQUE (decline, widen, or unreachable), and opacity is multiline-blind
-     * by construction. `src/opt/possessify.c` was the one transparent
-     * consumer in the tree and is the one this field exists for.
-     *
-     * The arena zeroes, so a node nothing set is non-multiline. */
-    bool     multiline;
+
     /* NOT A REPEATABLE ITEM (R20/SPEC-1). PCRE2 error 109's other half: a
      * quantifier after this node is an error rather than a repetition of it.
      * It cannot be derived from `k`, which is the whole reason it is a field
@@ -318,43 +275,15 @@ struct Ast {
      * `a\Q\E*` and `a(?#c)*`, letting the quantifier reach back to the `a`.
      * A bare option run does not: `a(?i)*` is err 109 at the quantifier.
      * That measured boundary is what this flag marks, and both sides of it
-     * are pinned in tests/reject/. */
+     * are pinned in tests/reject/.
+     *
+     * [D70] CROSS-KIND, so it stays common. It is WRITTEN on A_EMPTY (a bare
+     * option run, src/parse/mod_modifiers.c) and PROPAGATED onto A_CAP and
+     * A_ATOMIC from their bodies (src/parse/parse.c, mod_named_groups.c,
+     * mod_atomic_groups.c), and it is READ off an atom of ANY kind by
+     * src/parse/parse.c's quantifier check. No union member could hold it. */
     bool     not_repeatable;
-    /* [ENG-BREP] POSSESSIFIED (A_REP only). Set by src/opt/possessify.c when
-     * the eng_brep_design.md §2.2 rule proves that no retreat into this loop
-     * can ever produce a match the PREFERRED path does not, so the emitter
-     * owes it no resume frames and no giveback.
-     *
-     * IT IS AN ANNOTATION, NOT A SPELLING. `a{2,4}` and a possessified
-     * `a{2,4}` match the same strings by construction — that is the whole
-     * claim — so every consumer other than src/gen/emit_vm.c ignores this
-     * field, exactly as they ignore A_CAP. In particular src/ir/nfa.c lowers
-     * A_REP by replication regardless (§2.8), which is why the prefilter DFA
-     * is unchanged and why possessification is a run-time and emitted-size
-     * win rather than a compiler-time one.
-     *
-     * The arena zeroes, so a node nothing analysed keeps its machinery — the
-     * sound default, and the reason `-fno-possessify` is byte-identity-safe:
-     * denying the pass leaves every node in the state it was born in. */
-    bool     possessive;
-    /* [ENG-BREP] REVERSE-DETERMINISTIC (A_REP only). Set by src/opt/revdet.c to
-     * the body's REVERSED AST when engine_m4.md §2.5's rung applies, and left
-     * NULL otherwise — so this one field is BOTH the verdict and the artifact
-     * the emitter needs, and the three sites that must agree about the rung
-     * (vm_cost_rep, vm_count_slots, vm_rep) read one field instead of each
-     * re-deciding. Ast.possessive's precedent, one rung down.
-     *
-     * The reversed body is what the emitted backward walk matches: it recovers
-     * the previous iteration boundary for a retreat and, per §3.4's corrected
-     * derivation, the LAST iteration's captures. Reversal is A_CAT children
-     * swapped, recursively; every other node kind reverses to itself.
-     *
-     * Same annotation-not-a-spelling rule as `possessive`: it changes the
-     * emitted machinery and never what the quantifier matches, so every
-     * consumer other than src/gen/emit_vm.c ignores it. The arena zeroes, so a
-     * node nothing analysed keeps its machinery, which is what makes
-     * `-fno-revdet` byte-identity-safe. */
-    const Ast *revbody;
+
     /* [M6.4.2 / SR-8, D67] THE PRODUCING ROW — the registry row whose port
      * built this node, or NULL for every node the BASE grammar built.
      *
@@ -382,46 +311,203 @@ struct Ast {
      * free discharge (src/opt/atomic.c) is deletion-shaped and satisfies this
      * trivially; `[ENG-CUT]` inherits the rule. Sabotage row S97. */
     const RegRow *reg;
-    /* [M6.5.2] A_BREF ONLY — the CANDIDATE GROUP NUMBERS, ascending, and how
-     * many. Filled by the END-OF-PARSE resolution pass (design §5.3), which is
-     * the one site that knows both the whole-pattern group count and every
-     * declaration of a duplicated name.
+
+    /* ---- [D70] THE PER-KIND PAYLOAD UNION ---------------------------------
      *
-     * A SET EVEN WHEN IT HAS ONE ELEMENT, deliberately. A reference to a
-     * DUPLICATED name (`(?J)`, design §8) resolves at MATCH time against a run
-     * of groups whose numbers are not contiguous — `(?J)(?<a>x)(q)(?<a>y)`
-     * gives the name `a` the numbers 1 and 3 — so the emitted shape is an
-     * else-if chain over the run in ascending number, taking the first member
-     * that is SET. Carrying the set uniformly means `nrefs == 1` is the SAME
-     * emitted code path with the chain length at one, rather than a second,
-     * rarer, less-tested path.
+     * D70 (Frank, 2026-08-23): the per-kind fields — existing AND new — live
+     * in a TAGGED UNION of per-kind payload structs, keyed by `k` above.
+     * `n->u.rep.rmin` carries its ownership in its name, and the accretion of
+     * one more top-level field per new module stops here.
      *
-     * `Ast.capno` is NOT reused for this: on an `A_CAP` it means "this node IS
-     * group k", a different fact, and overloading it would make two facts
-     * compete for one field. */
-    const int *refs;
-    int        nrefs;
-    /* [M6.5.2] A_BREF ONLY — is the compare CASELESS? D62's principle again:
-     * node FIELDS encode PARSE-RESOLVED MODIFIER STATE, set from the scoped
-     * `(?i)` state in force AT THE BACKREFERENCE, never re-derived downstream.
+     * THE RULE, and it is the decision's operative clause: NO MODULE MAY ADD A
+     * NEW TOP-LEVEL PER-KIND FIELD. A new kind adds a union MEMBER. A field
+     * joins the common block above only when a survey MEASURES it cross-kind,
+     * and the survey is recorded (src/core/CLAUDE.md) so the next author
+     * inherits the measurement rather than repeating the guess.
      *
-     * MEASURED (backrefs_design.md §4, axis B): the caselessness is the option
-     * in force at the REFERENCE, not at the group. `^(a)(?i:\1)$` matches
-     * "aA"; `^(?i:(a))\1$` does not; `^((?i)a)\1$` does not.
+     * IT IS NOT A CHECKING MECHANISM. C does not police union member access:
+     * reading `u.rep.rmin` on an A_CLASS node compiles, and hands you class
+     * bitmap bytes. The union buys READING and CONTAINMENT, not enforcement,
+     * so D62's discipline governs exactly as before — parse-resolved state,
+     * per-field comments, per-field sabotage rows.
      *
-     * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.multiline`'s sibling
-     * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
-     * because the operand is subject text not known until the match runs. So
-     * this field selects WHICH residual seam entry the emitter calls
-     * (`$_bref_match` or `$_bref_match_caseless`) — two entries chosen at emit
-     * time, never one entry with a runtime flag, which is D18/D23's rule that
-     * an option compiles away.
+     * THE DISCIPLINE THE UNION ADDS, and it is the one rule a writer must
+     * carry: A WRITER MAY TOUCH `u.<payload>` ONLY UNDER A KIND CHECK THAT
+     * OWNS IT, and a GENERIC COPY OR SANITISE HELPER — one that runs for
+     * kinds it does not enumerate — MUST GUARD rather than write
+     * unconditionally. The reason is measured rather than stylistic: the D70
+     * migration survey found exactly two unconditional per-kind writes on
+     * generic paths, and both are now kind-guarded.
      *
-     * ANY ANALYSIS THAT PATTERN-MATCHES `case A_BREF:` AND DOES NOT READ THIS
-     * FIELD reproduces src/opt/possessify.c's pre-D62 bug, and no compiler
-     * diagnostic will say so — D62 control 3's accepted residual, covered here
-     * and by sabotage row S106. */
-    bool       caseless;
+     *   - `src/opt/revdet.c`'s `rd_node` cleared A_REP's `revbody`/
+     *     `possessive` on EVERY kind it copies. Through `u.rep` that lands on
+     *     `u.cls.bits` — `possessive` at `+49` is bitmap byte 9 (`0x48`-`0x4F`)
+     *     and `revbody` at `+56..+63` is bitmap bytes 16-23 (`0x80`-`0xBF`) —
+     *     so a reversed A_CLASS node loses those bytes. MEASURED on the
+     *     unguarded build: the backward walk's class tests become an all-zero
+     *     bitmap and the LAST ITERATION'S CAPTURES come back UNSET
+     *     (`((H)|I){3}J` on "HHHJ" reports groups unset where both oracles
+     *     give (2,3)(2,3)), with the whole-match span unchanged — which is
+     *     why only a capture-aware check sees it.
+     *   - `src/parse/mod_assertions.c`'s multiline pin ran for all eight of
+     *     that port's kinds, harmless only because five of them have no
+     *     payload YET.
+     *
+     * Before the union both writes were merely DEAD; after it, the first is a
+     * clobber and the second is a clobber waiting for its payload.
+     *
+     * THE ARENA ZEROES THE WHOLE ALLOCATION, union included, so every "the
+     * arena zeroes, so ..." argument in the comments below still holds
+     * verbatim: a node nothing wrote reads as all-zero through whichever
+     * member its kind selects. */
+    union {
+        /* A_CLASS: 256-bit membership bitmap. `cls_set`/`cls_has` below take
+         * the array, so they are unchanged by D70. */
+        struct { uint8_t bits[32]; } cls;
+
+        /* A_REP: `l{rmin,rmax}`, rmax == -1 for unbounded. */
+        struct {
+            int         rmin, rmax;
+            bool        greedy;
+            /* [ENG-BREP] POSSESSIFIED (A_REP only). Set by src/opt/possessify.c when
+             * the eng_brep_design.md §2.2 rule proves that no retreat into this loop
+             * can ever produce a match the PREFERRED path does not, so the emitter
+             * owes it no resume frames and no giveback.
+             *
+             * IT IS AN ANNOTATION, NOT A SPELLING. `a{2,4}` and a possessified
+             * `a{2,4}` match the same strings by construction — that is the whole
+             * claim — so every consumer other than src/gen/emit_vm.c ignores this
+             * field, exactly as they ignore A_CAP. In particular src/ir/nfa.c lowers
+             * A_REP by replication regardless (§2.8), which is why the prefilter DFA
+             * is unchanged and why possessification is a run-time and emitted-size
+             * win rather than a compiler-time one.
+             *
+             * The arena zeroes, so a node nothing analysed keeps its machinery — the
+             * sound default, and the reason `-fno-possessify` is byte-identity-safe:
+             * denying the pass leaves every node in the state it was born in. */
+            bool        possessive;
+            /* [ENG-BREP] REVERSE-DETERMINISTIC (A_REP only). Set by src/opt/revdet.c to
+             * the body's REVERSED AST when engine_m4.md §2.5's rung applies, and left
+             * NULL otherwise — so this one field is BOTH the verdict and the artifact
+             * the emitter needs, and the three sites that must agree about the rung
+             * (vm_cost_rep, vm_count_slots, vm_rep) read one field instead of each
+             * re-deciding. Ast.u.rep.possessive's precedent, one rung down.
+             *
+             * The reversed body is what the emitted backward walk matches: it recovers
+             * the previous iteration boundary for a retreat and, per §3.4's corrected
+             * derivation, the LAST iteration's captures. Reversal is A_CAT children
+             * swapped, recursively; every other node kind reverses to itself.
+             *
+             * Same annotation-not-a-spelling rule as `possessive`: it changes the
+             * emitted machinery and never what the quantifier matches, so every
+             * consumer other than src/gen/emit_vm.c ignores it. The arena zeroes, so a
+             * node nothing analysed keeps its machinery, which is what makes
+             * `-fno-revdet` byte-identity-safe. */
+            const Ast  *revbody;
+        } rep;
+
+        /* A_CAP: 1-based capturing group number. */
+        struct { int no; } cap;
+
+        /* A_BOL and A_EOL — a CLOSED FAMILY sharing one meaning, so they share
+         * one payload rather than getting a member each (D70's family rule).
+         * src/parse/mod_assertions.c also pins this member false on A_END,
+         * A_WORDB, A_NWORDB, A_GSTART and A_KRESET; those kinds have no payload
+         * of their own, so that write aliases nothing and is read back
+         * nowhere — see the survey in src/core/CLAUDE.md. */
+        struct {
+            /* [M6.2 wave A] MULTILINE, resolved AT PARSE TIME (A_BOL / A_EOL only).
+             * D62: node fields encode parse-resolved modifier state, exactly as
+             * `greedy` above encodes `(?U)`'s — set from the scoped `(?m)` state in
+             * force AT THE `^`/`$` ITSELF, never re-derived downstream.
+             *
+             * ANY ANALYSIS THAT EXEMPTS OR SPECIAL-CASES `$` (or `^`) MUST CONSULT
+             * THIS FIELD. That sentence is D62's control 3 and it is load-bearing,
+             * not decoration: src/opt/possessify.c exempts `$` from the follow-set
+             * widening on an upward-closure argument that COLLAPSES PER LINE under
+             * `(?m)`, and before this field existed that analysis read the parser's
+             * END-OF-PATTERN option state — so `(?m:a{0,4}$)` and `(?m)a{0,4}$(?-m)`
+             * would each have exempted a multiline `$` and lost a match
+             * (assertions_design.md §8.1.1, two measured miscompile cells). A new
+             * analysis that pattern-matches `case A_EOL:` and does not read
+             * `.multiline` reproduces exactly that bug, and no compiler diagnostic
+             * will tell you: that residual is D62's accepted cost, and this comment
+             * is the thing that covers it.
+             *
+             * [M6.2 wave C] THE FIELD IS LIVE, and D62 control 3's obligation was
+             * DISCHARGED BY INSPECTION over every AST-walking analysis, with the
+             * verdict recorded here rather than in five places nobody re-reads. §8.3
+             * names four sites as the residual the flag spelling cannot cover — the
+             * `Ast.k` switches carrying a `default:` arm, `src/gen/emit_vm.c` x3 and
+             * `src/opt/revdet.c` x1 — and the inspection is that NONE of them needs
+             * the flag, for one reason with three shapes:
+             *
+             *   - `vm_det_seq` (emit_vm.c) DECLINES on the kind: a `$` of either
+             *     spelling is zero-width, so "scan ahead by stride" is wrong for
+             *     both, and its `default: return 0` is right without reading a field.
+             *   - `vm_cap_offsets` and `vm_rev_emit` (emit_vm.c) are UNREACHABLE for
+             *     either spelling: both run only on bodies `vm_det_seq` and
+             *     `src/opt/revdet.c`'s `rd_shape` already approved, and `rd_shape`
+             *     declines every `A_BOL`/`A_EOL`.
+             *   - `pcrec_revdet_first` (revdet.c) WIDENS to all bytes, the sound
+             *     direction, which makes the disjointness test fail and the
+             *     quantifier keep its machinery.
+             *
+             * THE PATTERN WORTH CARRYING FORWARD: an analysis is at risk exactly when
+             * it treats `$` as TRANSPARENT — reasoning about WHERE it is true and
+             * concluding it may be skipped over. Every one of these four treats it as
+             * OPAQUE (decline, widen, or unreachable), and opacity is multiline-blind
+             * by construction. `src/opt/possessify.c` was the one transparent
+             * consumer in the tree and is the one this field exists for.
+             *
+             * The arena zeroes, so a node nothing set is non-multiline. */
+            bool multiline;
+        } anch;
+
+        /* A_BREF: the backreference payload. */
+        struct {
+            /* [M6.5.2] A_BREF ONLY — the CANDIDATE GROUP NUMBERS, ascending, and how
+             * many. Filled by the END-OF-PARSE resolution pass (design §5.3), which is
+             * the one site that knows both the whole-pattern group count and every
+             * declaration of a duplicated name.
+             *
+             * A SET EVEN WHEN IT HAS ONE ELEMENT, deliberately. A reference to a
+             * DUPLICATED name (`(?J)`, design §8) resolves at MATCH time against a run
+             * of groups whose numbers are not contiguous — `(?J)(?<a>x)(q)(?<a>y)`
+             * gives the name `a` the numbers 1 and 3 — so the emitted shape is an
+             * else-if chain over the run in ascending number, taking the first member
+             * that is SET. Carrying the set uniformly means `nrefs == 1` is the SAME
+             * emitted code path with the chain length at one, rather than a second,
+             * rarer, less-tested path.
+             *
+             * `Ast.u.cap.no` is NOT reused for this: on an `A_CAP` it means "this node IS
+             * group k", a different fact, and overloading it would make two facts
+             * compete for one field. */
+            const int  *refs;
+            int         nrefs;
+            /* [M6.5.2] A_BREF ONLY — is the compare CASELESS? D62's principle again:
+             * node FIELDS encode PARSE-RESOLVED MODIFIER STATE, set from the scoped
+             * `(?i)` state in force AT THE BACKREFERENCE, never re-derived downstream.
+             *
+             * MEASURED (backrefs_design.md §4, axis B): the caselessness is the option
+             * in force at the REFERENCE, not at the group. `^(a)(?i:\1)$` matches
+             * "aA"; `^(?i:(a))\1$` does not; `^((?i)a)\1$` does not.
+             *
+             * IT CANNOT FOLD AWAY AT PARSE TIME the way `Ast.u.anch.multiline`'s sibling
+             * `cx->mods->caseless` does for a class (D23): there is no bitmap to widen,
+             * because the operand is subject text not known until the match runs. So
+             * this field selects WHICH residual seam entry the emitter calls
+             * (`$_bref_match` or `$_bref_match_caseless`) — two entries chosen at emit
+             * time, never one entry with a runtime flag, which is D18/D23's rule that
+             * an option compiles away.
+             *
+             * ANY ANALYSIS THAT PATTERN-MATCHES `case A_BREF:` AND DOES NOT READ THIS
+             * FIELD reproduces src/opt/possessify.c's pre-D62 bug, and no compiler
+             * diagnostic will say so — D62 control 3's accepted residual, covered here
+             * and by sabotage row S106. */
+            bool        caseless;
+        } bref;
+    } u;
 };
 
 static inline void cls_set(uint8_t *b, unsigned c)      { b[c >> 3] |= (uint8_t)(1u << (c & 7)); }
@@ -2251,7 +2337,7 @@ void pcrec_select_engine(Ctx *cx, Ast *root);        /* src/opt/select_engine.c 
 /* The §2.2 rule as a pass: mark every A_REP for which no retreat into the loop
  * can produce a match the preferred path does not. A REWRITE, not an analysis
  * that returns a verdict (§2.8) — it does not observe that the loop needs no
- * frames, it MAKES the quantifier one that needs none, by setting Ast.possessive
+ * frames, it MAKES the quantifier one that needs none, by setting Ast.u.rep.possessive
  * for src/gen/emit_vm.c to act on.
  *
  * Returns the number of quantifiers it newly marked, which is what makes it
@@ -2284,7 +2370,7 @@ bool  pcrec_uniq_iteration(void *scratch, const Ast *body, const char **why);
  * It runs THE SAME WALK `pcrec_possessify` runs — same FOLLOW accumulation,
  * same enclosing-loop term, same four conjuncts, the same lines of code — and
  * calls `fn(user, rep)` once for every `A_REP` whose verdict is POSITIVE,
- * WITHOUT writing `Ast.possessive`. A second implementation of §2.2 is the one
+ * WITHOUT writing `Ast.u.rep.possessive`. A second implementation of §2.2 is the one
  * thing this file must never grow (every conjunct in it is a measured
  * refutation of a simpler rule somebody believed), so the discharge asks
  * possessify rather than re-deriving anything.
@@ -2350,7 +2436,7 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row);  /* src/opt/atomic.c
 /* ---- [ENG-BREP] the reverse-deterministic rung (engine_m4.md §2.5) ---- */
 
 /* Mark every A_REP whose consumed run decomposes into iterations UNIQUELY and
- * RECOVERABLY FROM THE RIGHT, by setting Ast.revbody to the body's reversed
+ * RECOVERABLY FROM THE RIGHT, by setting Ast.u.rep.revbody to the body's reversed
  * AST. The emitter then owes it ONE body copy instead of `rmax` of them.
  *
  * Not monotone in possessify's sense and not a fixpoint: the verdict depends
