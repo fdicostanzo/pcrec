@@ -1788,6 +1788,32 @@ with [ENG-BREP] counter-K.)
   crash/timeout/CPU diagnoses separate. One shared knob pair for compiles
   AND matcher runs (watchdog `-c`, exit 123, `verdict=cpukill`); split it
   only with a measurement.
+- **[DD-14 wave B+C, 2026-08-24] MEASURED: `GENCPU_SAN`'s 60s no longer
+  clears the `k18_cost_gates.rxt` family, and the wave that measured it is
+  not the cause.** `make san` died in its FIRST stage on
+  `((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}`. On a QUIET
+  box, `cc -O1 -fsanitize=address,undefined,leak` on that artifact costs:
+
+  | pattern | reference compiler (`ac4917d`) | wave B+C | plain axis |
+  |---|---|---|---|
+  | `…{0,4}…` | 13.02s CPU | 13.09s | — |
+  | `…{0,6}…` | 27.00s CPU | 26.89s | — |
+  | `…{0,8}…` | **52.04s CPU** | **51.46s** | 2.08s |
+
+  The two compilers' artifacts are byte-identical (only the `#include` of the
+  companion header differs, which is the `-o` name), so the cost is a property
+  of the SHIPPED artifact, not of the wave — and the wave's is 0.6s cheaper,
+  i.e. noise. 52.04s is **87% of the 60s budget with zero contention**, against
+  the ~2x CPU inflation this very section measures for "a real `make -j12` gcc
+  mix". The budget is under-calibrated for this artifact, and the family is
+  written to SCALE (`{0,4}`/`{0,6}`/`{0,8}`, each ~2x the last), so the next
+  member would not fit at any budget. **The default is deliberately NOT raised
+  here**: it is one knob for every module and the choice between raising it,
+  capping the replication the artifact comes from ([ENG-BREP] counter-K, which
+  this section already names as the artifact's origin), and marking the family
+  san-exempt is a calibration call, not a lane's. `GENCPU_SAN=150 make san`
+  clears it today.
+
 - **Wall backstop: 60s plain / 180s sanitizer** (`GENTIMEOUT`,
   `GENTIMEOUT_SAN`). CPU cannot see a process stuck WITHOUT working
   (blocked, deadlocked — burns no CPU), so wall stays, loose: it must sit
