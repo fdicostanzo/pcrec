@@ -413,6 +413,14 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   asserting live that `--engine=dfa` on `a\Kb` refuses by the construct's own
   name. A second construct arriving there is when SR-8 has earned its axis.
 
+  **[M6.6.2] `A_LOOK` ANSWERS `false` TO THAT PREDICATE, AND THE REFLEX ANSWER
+  IS THE WRONG ONE** — which is the best available demonstration that the rule
+  it encodes is PCRE2's GRAMMAR and not "is this zero-width". A lookaround IS
+  zero-width, and `true` would refuse `(?=a)*`; `lookaround_design.md` §2.6
+  measured all fourteen quantified forms compiling in BOTH oracles. It is
+  `A_ATOMIC`'s answer for `A_ATOMIC`'s reason: a bracketing construct with a
+  body of its own is not a BARE assertion standing alone.
+
   **THE BARE-ANCHOR RULE IS NOW ONE FUNCTION, AND WAVE D FOUND OUT WHY IT HAD
   TO BE.** `pcrec_is_bare_anchor` / `pcrec_wrap_bare_anchor` (parse.c, declared
   in core/internal.h) are the single home for the node-kind set that drives two

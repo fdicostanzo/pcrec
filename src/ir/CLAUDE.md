@@ -195,6 +195,24 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   the construct changes no language; a backreference changes it, so there is
   no honest epsilon.
 
+  **[M6.6.2] `A_LOOK` IS A THIRD ANSWER, AND IT IS NEITHER OF THOSE TWO.**
+  `compile_ast` lowers a lookaround to `N_EPS`, body and all — and unlike
+  `\K`'s epsilon that is NOT exact. Erasing a lookaround throws away a filter,
+  so the machine built here recognises a strict SUPERSET of the pattern's
+  language. That is the design (`lookaround_design.md` §5.2/§5.3) and it rests
+  on a one-line proof: a lookaround consumes nothing, so every position where P
+  matches is a position where erase(P) matches, i.e. L(P) is a subset of
+  L(erase(P)) EVERYWHERE. A superset prefilter is sound for REJECTION and for
+  the span START and NOT for the span END — the identical hazard an atomic
+  group has, measured for that construct at 114 cells of silent match loss —
+  which is why `pcrec_has_lookaround` exists to switch the MRL window ceiling
+  off (§5.6). So the three arms are three different claims: `\K` erases
+  EXACTLY, a backreference cannot be erased at all, and a lookaround erases to
+  a SOUND SUPERSET whose looseness is paid for elsewhere. The general DFA
+  construction — product construction with each body's recognizer — is
+  chartered as `[ENG-LOOK]` and §5.7 records Frank's ruling that no
+  one-character fold ships in the meantime.
+
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

@@ -125,8 +125,12 @@ above, and found nothing.
   constraint on maxw in this tree that does not come from pcrec — the spans
   are python-`re`- and libpcre2-verified — and it is the direction that
   miscompiles, since an under-estimated maxw makes a variable-width
-  lookbehind branch look fixed. Three sabotages (`zero`, `unbounded`, `swap`)
-  are required to make it fail. Measured at wave A: 122 files, 2168 blocks,
+  lookbehind branch look fixed. `PCREC_MAXW_SABOTAGE={zero,unbounded,swap}`
+  corrupts what the check reads — `zero` and `unbounded` are the two
+  degenerate implementations that pass one inequality each, `swap` returns
+  `minw` — and `run_mrl_tests.sh` §8 requires all three to make it FAIL, on
+  `tests/parse/branch_count_check.c`'s rule that an unsabotaged green check is
+  worth nothing. Measured at wave A: 122 files, 2168 blocks,
   1914 patterns parsed, 254 refused, 12,637 nodes swept (9,583 with a bounded
   maxw), 8,901 oracle spans, 0 violations.
 
