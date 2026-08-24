@@ -410,8 +410,12 @@ def dump():
     # primaries' family lines, so this count is of ROWS and the index's own
     # line count is smaller; both numbers are asserted, separately, because
     # they answer different questions.
-    if len(rows) != 118:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 118. "
+    # 118 -> 128 at [DD-14] wave F: module `recursion`'s nine RF_INDEX rows
+    # (design §8.1's four missing spelling families) plus the `(?(DEFINE)` row
+    # (D71 item 4). Nine of the ten are spellings the compiler ALREADY handled
+    # and no surface named; the tenth is a new construct.
+    if len(rows) != 128:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 128. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

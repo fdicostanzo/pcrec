@@ -156,44 +156,69 @@ static int pcrec_try_pos(const char *pat, char *msg, size_t msgsz, size_t *pos)
  * rows, and the three that need no wrapper would silently get one — which the
  * "a wrapper that is not NECESSARY is an error" check would then report against
  * the wrong row. */
-typedef struct { RegKind kind; int sel; const char *tail; const char *probe; const char *why; } Wrapper;
+/* [DD-14 wave F] `rowsyntax` JOINS THE KEY, and it joins for the reason
+ * `tail` joined at SR-9: module `recursion`'s nine INDEX rows share a
+ * (kind, sel, tail) with the PRIMARY row their spelling dispatches on -- that
+ * is what an index row IS (D71 item 3) -- so `(?10)` was silently handed
+ * `(?1)`'s wrapper `(a)(?1)`, which does not contain `(?10)` and would have
+ * been testing a different construct. When `rowsyntax` is set the wrapper
+ * matches ONLY the row whose `syntax` is exactly that string, and it is tried
+ * FIRST; when it is NULL the (kind, sel, tail) key applies unchanged, which is
+ * every wrapper that existed before this wave. */
+typedef struct { RegKind kind; int sel; const char *tail; const char *rowsyntax; const char *probe; const char *why; } Wrapper;
 
 static const Wrapper WRAPPERS[] = {
-{RK_ESC, 'k', NULL, "(?<name>a)\\k<name>", "a backreference by name needs the name declared"},
-{RK_ESC, 'g', NULL, "(a)\\g{-1}",          "a relative backreference needs a group to its left"},
-{RK_ESC, '1', NULL, "(a)\\1",                       "PCRE2 error 115 without the group"},
-{RK_ESC, '2', NULL, "(a)(a)\\2",                    "PCRE2 error 115 without the groups"},
-{RK_ESC, '3', NULL, "(a)(a)(a)\\3",                 "PCRE2 error 115 without the groups"},
-{RK_ESC, '4', NULL, "(a)(a)(a)(a)\\4",              "PCRE2 error 115 without the groups"},
-{RK_ESC, '5', NULL, "(a)(a)(a)(a)(a)\\5",           "PCRE2 error 115 without the groups"},
-{RK_ESC, '6', NULL, "(a)(a)(a)(a)(a)(a)\\6",        "PCRE2 error 115 without the groups"},
-{RK_ESC, '7', NULL, "(a)(a)(a)(a)(a)(a)(a)\\7",     "PCRE2 error 115 without the groups"},
-{RK_ESC, '8', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)\\8",  "PCRE2 error 115 without the groups"},
-{RK_ESC, '9', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(a)\\9","PCRE2 error 115 without the groups"},
-{RK_GROUP, '(', NULL, "(a)(?(1)a|b)",        "a conditional on group 1 needs group 1"},
-{RK_GROUP, '&', NULL, "(?<name>a)(?&name)",  "recursion by name needs the name declared"},
-{RK_GROUP, '1', NULL, "(a)(?1)",                       "recursion into a group needs the group"},
-{RK_GROUP, '2', NULL, "(a)(a)(?2)",                    "recursion into a group needs the group"},
-{RK_GROUP, '3', NULL, "(a)(a)(a)(?3)",                 "recursion into a group needs the group"},
-{RK_GROUP, '4', NULL, "(a)(a)(a)(a)(?4)",              "recursion into a group needs the group"},
-{RK_GROUP, '5', NULL, "(a)(a)(a)(a)(a)(?5)",           "recursion into a group needs the group"},
-{RK_GROUP, '6', NULL, "(a)(a)(a)(a)(a)(a)(?6)",        "recursion into a group needs the group"},
-{RK_GROUP, '7', NULL, "(a)(a)(a)(a)(a)(a)(a)(?7)",     "recursion into a group needs the group"},
-{RK_GROUP, '8', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(?8)",  "recursion into a group needs the group"},
-{RK_GROUP, '9', NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?9)","recursion into a group needs the group"},
+{RK_ESC, 'k', NULL, NULL, "(?<name>a)\\k<name>", "a backreference by name needs the name declared"},
+{RK_ESC, 'g', NULL, NULL, "(a)\\g{-1}",          "a relative backreference needs a group to its left"},
+{RK_ESC, '1', NULL, NULL, "(a)\\1",                       "PCRE2 error 115 without the group"},
+{RK_ESC, '2', NULL, NULL, "(a)(a)\\2",                    "PCRE2 error 115 without the groups"},
+{RK_ESC, '3', NULL, NULL, "(a)(a)(a)\\3",                 "PCRE2 error 115 without the groups"},
+{RK_ESC, '4', NULL, NULL, "(a)(a)(a)(a)\\4",              "PCRE2 error 115 without the groups"},
+{RK_ESC, '5', NULL, NULL, "(a)(a)(a)(a)(a)\\5",           "PCRE2 error 115 without the groups"},
+{RK_ESC, '6', NULL, NULL, "(a)(a)(a)(a)(a)(a)\\6",        "PCRE2 error 115 without the groups"},
+{RK_ESC, '7', NULL, NULL, "(a)(a)(a)(a)(a)(a)(a)\\7",     "PCRE2 error 115 without the groups"},
+{RK_ESC, '8', NULL, NULL, "(a)(a)(a)(a)(a)(a)(a)(a)\\8",  "PCRE2 error 115 without the groups"},
+{RK_ESC, '9', NULL, NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(a)\\9","PCRE2 error 115 without the groups"},
+{RK_GROUP, '(', NULL, NULL, "(a)(?(1)a|b)",        "a conditional on group 1 needs group 1"},
+{RK_GROUP, '&', NULL, NULL, "(?<name>a)(?&name)",  "recursion by name needs the name declared"},
+{RK_GROUP, '1', NULL, NULL, "(a)(?1)",                       "recursion into a group needs the group"},
+{RK_GROUP, '2', NULL, NULL, "(a)(a)(?2)",                    "recursion into a group needs the group"},
+{RK_GROUP, '3', NULL, NULL, "(a)(a)(a)(?3)",                 "recursion into a group needs the group"},
+{RK_GROUP, '4', NULL, NULL, "(a)(a)(a)(a)(?4)",              "recursion into a group needs the group"},
+{RK_GROUP, '5', NULL, NULL, "(a)(a)(a)(a)(a)(?5)",           "recursion into a group needs the group"},
+{RK_GROUP, '6', NULL, NULL, "(a)(a)(a)(a)(a)(a)(?6)",        "recursion into a group needs the group"},
+{RK_GROUP, '7', NULL, NULL, "(a)(a)(a)(a)(a)(a)(a)(?7)",     "recursion into a group needs the group"},
+{RK_GROUP, '8', NULL, NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(?8)",  "recursion into a group needs the group"},
+{RK_GROUP, '9', NULL, NULL, "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?9)","recursion into a group needs the group"},
 /* SR-9's two tailed rows. Their `syntax` has to put the construct LEFTMOST for
  * pcrec (which reports the leftmost construct it cannot handle), so the group
  * declaration libpcre2 needs cannot live there — it lives here, which is what
  * this table is for. */
-{RK_GROUP, 'P', "=", "(?<n>a)(?P=n)", "a python-style backreference needs the name declared"},
-{RK_GROUP, 'P', ">", "(?<n>a)(?P>n)", "a python-style subroutine call needs the name declared"},
+{RK_GROUP, 'P', "=", NULL, "(?<n>a)(?P=n)", "a python-style backreference needs the name declared"},
+{RK_GROUP, 'P', ">", NULL, "(?<n>a)(?P>n)", "a python-style subroutine call needs the name declared"},
 /* [M6.5.2] the two rows that split the `\g` doorway's SECOND construct out.
  * Same shape and same reason as the `(?P=` / `(?P>` pair above: the row's
  * `syntax` has to put the construct LEFTMOST for pcrec, so the group
  * declaration libpcre2 demands lives here. Note these wrap a SUBROUTINE CALL,
  * not a backreference — which is the whole point of the two rows existing. */
-{RK_ESC, 'g', "<",  "(a)\\g<1>", "a subroutine call by number needs the group"},
-{RK_ESC, 'g', "'",  "(a)\\g'1'", "a subroutine call by number needs the group"},
+{RK_ESC, 'g', "<",  NULL, "(a)\\g<1>", "a subroutine call by number needs the group"},
+{RK_ESC, 'g', "'",  NULL, "(a)\\g'1'", "a subroutine call by number needs the group"},
+/* [DD-14 wave F] THE INDEX ROWS' OWN CONTEXTS -- FOUR of the nine; the other
+ * five (`(?00)`, `(?+2)(a)(b)`, `(a)x10(?-10)`, `\\g<0>`, `\\g'0'`) compile
+ * as written -- a WHOLE-PATTERN call needs no group to exist -- and
+ * therefore MUST NOT have one (the "a wrapper that is not NECESSARY is an
+ * error" rule below). Keyed by `rowsyntax` because these rows share their
+ * primary's (kind, sel, tail) by construction. Every probe is the row's own
+ * spelling in the smallest context libpcre2 accepts, and libpcre2's demand is
+ * the same one it makes of the primaries: the group has to exist. */
+{RK_ESC, 'g', NULL, "\\g<01>", "(a)\\g<01>",
+ "a leading-zero subroutine call by number needs the group"},
+{RK_ESC, 'g', NULL, "\\g'01'", "(a)\\g'01'",
+ "a leading-zero subroutine call by number needs the group"},
+{RK_GROUP, '1', NULL, "(?10)", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?10)",
+ "a multi-digit subroutine call needs ten groups"},
+{RK_GROUP, '0', NULL, "(?01)", "(a)(?01)",
+ "a leading-zero subroutine call names GROUP 1, which has to exist"},
 };
 
 /* Substitute `syntax` out of `probe` for an escape libpcre2 always rejects, and
@@ -215,9 +240,29 @@ static int wrapper_is_load_bearing(const char *probe, const char *syntax)
     return pcre2_try(mutated, head + 2 + taillen, NULL, 0) != 0;
 }
 
-static const Wrapper *wrapper_for(RegKind k, int sel, const char *tail)
+static const Wrapper *wrapper_for(const RegRow *r)
 {
+    RegKind k = r->kind;
+    int sel = r->sel;
+    const char *tail = r->tail, *syntax = r->syntax;
+
+    /* THE SYNTAX-KEYED PASS FIRST: an index row and its primary share the
+     * (kind, sel, tail) key, so the more specific match has to win or the
+     * index row silently inherits a probe that names a different construct. */
     for (size_t i = 0; i < sizeof WRAPPERS / sizeof WRAPPERS[0]; i++) {
+        if (!WRAPPERS[i].rowsyntax || !syntax) continue;
+        if (strcmp(WRAPPERS[i].rowsyntax, syntax) == 0) return &WRAPPERS[i];
+    }
+    /* AND AN INDEX ROW INHERITS NOTHING. It shares its primary's key BY
+     * CONSTRUCTION (that is what RF_INDEX means, D71 item 3), so the key-based
+     * pass below would hand `\g<0>` the module-`backrefs` `\g` row's wrapper
+     * `(a)\g{-1}` — a probe that does not contain `\g<0>` and is testing a
+     * different construct entirely. An index row gets a wrapper only by being
+     * NAMED above, and if it needs none it is tested as written like any other
+     * row. */
+    if ((r->flags & RF_INDEX) != 0) return NULL;
+    for (size_t i = 0; i < sizeof WRAPPERS / sizeof WRAPPERS[0]; i++) {
+        if (WRAPPERS[i].rowsyntax) continue;
         if (WRAPPERS[i].kind != k || WRAPPERS[i].sel != sel) continue;
         bool same_tail = (!WRAPPERS[i].tail && !tail) ||
                          (WRAPPERS[i].tail && tail && strcmp(WRAPPERS[i].tail, tail) == 0);
@@ -253,7 +298,7 @@ static void check_rows(void)
         const RegRow *rows = pcrec_registry((RegKind)k, &n);
         for (size_t i = 0; i < n; i++) {
             const RegRow *r = &rows[i];
-            const Wrapper *w = wrapper_for(r->kind, r->sel, r->tail);
+            const Wrapper *w = wrapper_for(r);
             const char *probe = w ? w->probe : r->syntax;
             char label[256], msg[256];
 

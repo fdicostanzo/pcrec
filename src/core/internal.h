@@ -2533,6 +2533,16 @@ ExtResult pcrec_rcport_num(Ctx *cx, const RegRow *rw, ExtWant want,
                            size_t at, size_t from);
 ExtResult pcrec_rcport_rel(Ctx *cx, const RegRow *rw, ExtWant want,
                            size_t at, size_t from);
+/*   pcrec_rcport_define  `(?(DEFINE)...)` — D71 item 4. NOT a call: it is the
+ *                        DEFINITION half, lowered as the `{0}`-callee shape
+ *                        (an `A_REP` with rmin == rmax == 0 over the body,
+ *                        the node `(?:BODY){0}` already produces), so no
+ *                        pass below the parser gained a line for it. Its row
+ *                        is tailed `DEFINE)` on the `(?(` doorway and is the
+ *                        one row in this module that is NOT VM_ONLY — see
+ *                        the port's own header for the measurement. */
+ExtResult pcrec_rcport_define(Ctx *cx, const RegRow *rw, ExtWant want,
+                              size_t at, size_t from);
 ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,
                             size_t at, size_t from);
 /* [DD-14 wave D] Exported so `pcrec_brport_g`'s `<`/`'` arms (module

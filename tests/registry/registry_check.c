@@ -567,8 +567,13 @@ static void check_wellformed(void)
      * `\g<0>` the `\g<` row, which is why the behaviour was already right
      * and only the INVENTORY was missing. R6 stands: no row's dispatch
      * identity changed and no artifact byte moved. */
-    if (total != 127) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 127. If you added or "
+    /* 127 -> 128 at [DD-14] WAVE F, part 2: `(?(DEFINE)(?<w>a))`, module
+     * `recursion`, tailed `DEFINE)` off the `(?(` doorway (D71 item 4). It is
+     * the module's 36th row and the ONLY one that is not VM_ONLY — a DEFINE
+     * defines, it does not call, and it lowers to the `{0}` shape that
+     * compiles on both engines. */
+    if (total != 128) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 128. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -726,12 +731,19 @@ static void check_row_ranks(void)
      * carry rank 25 (the tailed tier), and both beat the base `\g` row's rank
      * 0 — which is exactly what the split needs, since that base row is the
      * bucket's fallback and would otherwise claim a construct it must not. */
-    if (tailed != 20)
-        bad("row ranks: %d tailed rows, 20 expected — the tailed population "
+    /* [DD-14 wave F] 20 -> 21: the `(?(DEFINE)` row, tail `DEFINE)`, rank 25.
+     * The tail is what keeps the split honest at a byte that carries TWO
+     * modules' constructs — it must beat the tail-less `(?(` row (rank 0,
+     * module `conditionals`), which is the same arrangement the `\g` bucket
+     * uses and the same reason it uses it. The NINE index rows this wave also
+     * added are NOT tailed and do not appear here: an index row is never
+     * elected, so it has no rank to lose a race with. */
+    if (tailed != 21)
+        bad("row ranks: %d tailed rows, 21 expected — the tailed population "
             "moved; re-derive it from the table (do NOT just edit this number)",
         tailed);
     else if (badrows == 0)
-        ok("row ranks: all 20 tailed rows sit above the fallback tier");
+        ok("row ranks: all 21 tailed rows sit above the fallback tier");
 }
 
 /* The generated probe space for one bucket: every row's tail, every proper
@@ -1776,12 +1788,12 @@ static void check_class_ports(void)
      * CLASS PORTS ARE UNMOVED at 7/10/9 for the fourth wave running: a
      * subroutine call has no class position, and the two `\g` rows' BASE
      * scalar class ports (the literal letter `g`) were already counted. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 91)
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 92)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (91: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (92: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
@@ -1790,11 +1802,12 @@ static void check_class_ports(void)
             "since [M6.5.2], the EIGHTEEN lookaround rows sharing ONE port "
             "-- six at [M6.6.2] wave B+C, twelve more at wave F -- the "
             "TWENTY-FOUR recursion rows over THREE ports since [DD-14] wave "
-            "B+C, and the two \\g< / \\g' rows sharing `pcrec_brport_g` since "
-            "[DD-14] wave D). A deliberate move edits this check IN THE SAME "
+            "B+C, the two \\g< / \\g' rows sharing `pcrec_brport_g` since "
+            "[DD-14] wave D, and the `(?(DEFINE)` row's own port since "
+            "[DD-14] wave F). A deliberate move edits this check IN THE SAME "
             "CHANGE; a silent one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 91 atom "
+        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 92 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
@@ -1803,7 +1816,8 @@ static void check_class_ports(void)
            "-- module `backrefs` -- + the EIGHTEEN lookaround rows through "
            "ONE shared port, six at [M6.6.2] wave B+C and the twelve alpha "
            "spellings at wave F, + the TWENTY-FOUR recursion rows over "
-           "THREE ports since [DD-14] wave B+C "
+           "THREE ports since [DD-14] wave B+C, + the `(?(DEFINE)` row's "
+           "own port at [DD-14] wave F "
            "-- while the two \\g< / \\g' rows added only their base "
            "literal-fallback CLASS port at [M6.5.2] and now ALSO share "
            "`pcrec_brport_g` at [DD-14] wave D; "
@@ -2364,6 +2378,157 @@ static void check_engine_capability(void)
  * still be correct and only the ENGINE would change. Sabotage row S91 is the
  * other direction (the discharge firing unconditionally), which the corpus
  * catches. */
+/* ---- [DD-14 wave F / D71 item 3] SR-8 PER RESOLVER-DISTINGUISHED SHAPE ----
+ *
+ * `check_engine_capability` above demands a witness PER WIRED ROW, and it is
+ * right to: the stamp is what carries VM_ONLY into `select_engine.c` and each
+ * wired row is a separate `Ast.reg` value. An RF_INDEX row has no producer, so
+ * that loop skips it — correctly, since there is no stamp of its own to test.
+ *
+ * BUT D71 ITEM 3 MAKES A SECOND, DIFFERENT DEMAND, and it is the one this
+ * wave's rows exist for: "SR-8 witnesses are required per RESOLVER-
+ * DISTINGUISHED SHAPE (`(?1)` `(?01)` `(?10)` `(?00)`), not per digit". Those
+ * four shapes are ONE row's worth of dispatch and FOUR different answers from
+ * the port that reads the digit run, which is precisely the population a
+ * per-row loop cannot see: `(?01)` and `(?00)` enter the SAME `(?0)` row and
+ * mean GROUP 1 and THE ROOT respectively (design §2.4a's anchored
+ * discriminator). A check keyed on rows would witness that byte once.
+ *
+ * THE EXPECTED NAME IS DERIVED, NOT WRITTEN, and that is the point of the
+ * design. The hand-written half is only the WITNESS PATTERN — a compilable
+ * context for a spelling that names groups. What the refusal must SAY is
+ * asked of `pcrec_registry_arbitrate`, the same engine the doorway calls:
+ * whichever row that elects for the spelling is the row `select_engine.c`
+ * stamps, so its `syntax` is the text `why` must carry. A row whose index
+ * `family` disagreed with where its spelling actually dispatches would be
+ * invisible to a hand-written name and is caught here — which is exactly the
+ * `(?01)` case, whose family is `(?1)` (it means group 1) while its dispatch
+ * is `(?0)`'s (it enters on the zero byte). Both facts are true, they are
+ * DIFFERENT facts, and D71 item 3's whole content is that the table had been
+ * conflating them.
+ *
+ * BOTH DIRECTIONS, `eng_refuses_by_name`'s own rule: the witness must be
+ * REFUSED by name under --engine=dfa AND must COMPILE on the default engine,
+ * so a compiler that stopped accepting these spellings altogether goes RED
+ * rather than green.
+ *
+ * THREE OF THE NINE ARE CAPTURE-FREE (`a(?00)?b`, `a\g<0>?b`, `a\g'0'?b`) and
+ * that is the sharp form: a capture-bearing pattern is VM-forced by the
+ * generic capture rule whatever the stamp says, so those three are the ones
+ * that would not be refused AT ALL if the stamp vanished. The other six name
+ * groups by construction and cannot be capture-free. */
+static void check_index_shape_witnesses(void)
+{
+    /* The hand-written half: a COMPILABLE context per index-row spelling.
+     * Keyed on the row's own `syntax` so a row added without a witness is a
+     * named failure rather than a silently smaller pass. */
+    static const struct { const char *syntax; const char *witness; } SHAPE[] = {
+        { "(?10)",  "(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?10)" },
+        { "(?01)",  "(a)(?01)" },
+        { "(?00)",  "a(?00)?b" },
+        { "(?+2)(a)(b)", "(?+2)(a)(b)" },
+        { "(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)",
+          "(a)(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-10)" },
+        { "\\g<0>",  "a\\g<0>?b" },
+        { "\\g<01>", "(a)\\g<01>" },
+        { "\\g'0'",  "a\\g'0'?b" },
+        { "\\g'01'", "(a)\\g'01'" },
+    };
+
+    int seen = 0, checked = 0, bads = 0, capfree = 0;
+    char msg[320];
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        if (!rows) continue;
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (!(r->flags & RF_INDEX)) continue;
+            if (!r->module || strcmp(r->module, "recursion") != 0) continue;
+            seen++;
+
+            const char *wit = NULL;
+            for (size_t w = 0; w < sizeof SHAPE / sizeof SHAPE[0]; w++)
+                if (strcmp(SHAPE[w].syntax, r->syntax) == 0)
+                    { wit = SHAPE[w].witness; break; }
+            if (!wit) {
+                bad("index shape witness: row '%s' (module 'recursion') has no "
+                    "witness here. D71 item 3 owes SR-8 a witness per "
+                    "resolver-distinguished shape; add a compilable context "
+                    "for this spelling", r->syntax);
+                bads++;
+                continue;
+            }
+
+            /* THE DERIVED NAME. Find the row's OWN doorway inside its syntax —
+             * the LAST occurrence, since the relative spellings carry their
+             * capture-group context in front of the construct — then ask the
+             * arbitration engine which row that text elects. */
+            char needle[4];
+            if (r->kind == RK_GROUP) { needle[0]='('; needle[1]='?';
+                                       needle[2]=(char)r->sel; needle[3]=0; }
+            else                     { needle[0]='\\'; needle[1]=(char)r->sel;
+                                       needle[2]=0; }
+            const char *doorway = NULL;
+            for (const char *q = r->syntax; (q = strstr(q, needle)) != NULL; q++)
+                doorway = q;
+            if (!doorway) {
+                bad("index shape witness: row '%s' does not contain its own "
+                    "doorway text \"%s\", so the dispatching row cannot be "
+                    "derived", r->syntax, needle);
+                bads++;
+                continue;
+            }
+            const char *at = doorway + strlen(needle);
+            bool amb = false;
+            const RegRow *disp = pcrec_registry_arbitrate((RegKind)r->kind,
+                                                          r->sel, at,
+                                                          strlen(at), &amb);
+            if (!disp || amb || (disp->flags & RF_INDEX)) {
+                bad("index shape witness: '%s' arbitrates to %s -- an index "
+                    "row's spelling must elect a REAL dispatching row (never "
+                    "itself, never ambiguously), or there is no producer for "
+                    "it and `built` is a lie", r->syntax,
+                    amb ? "AMBIGUOUS" : disp ? "an index row" : "nothing");
+                bads++;
+                continue;
+            }
+
+            if (!strchr(wit, '('))              capfree++;
+            else if (!strstr(wit, "(a)") && !strstr(wit, "(b)")) capfree++;
+
+            checked++;
+            if (!eng_refuses_by_name("recursion,named-groups", wit,
+                                     disp->syntax, msg, sizeof msg)) {
+                bad("index shape witness: '%s' (dispatches on '%s'): %s",
+                    r->syntax, disp->syntax, msg);
+                bads++;
+            }
+        }
+    }
+
+    /* EXACT, this file's convention: the nine spellings design §8.1's four
+     * missing families are made of. A deliberate move edits this number in
+     * the same change. */
+    if (seen != 9)
+        bad("index shape witness POPULATION MOVED: %d RF_INDEX rows in module "
+            "`recursion`, expected 9 -- the four families design §8.1 named "
+            "changed shape. Counted from the ROWS, not from the passes, so a "
+            "witness that fails does not also report a moved population",
+            seen);
+    else if (bads == 0) {
+        char label[288];
+        snprintf(label, sizeof label,
+                 "index shape witnesses: all %d of module `recursion`'s "
+                 "resolver-distinguished spellings compile on the default "
+                 "engine and are refused under --engine=dfa BY THE NAME THE "
+                 "ARBITRATION ENGINE DERIVES for them (D71 item 3), %d of "
+                 "them capture-free", checked, capfree);
+        ok(label);
+    }
+}
+
 static void check_free_discharge(void)
 {
     static const char *const DISCHARGES[] = {
@@ -2667,9 +2832,11 @@ static void check_built_status_defects(void)
      * the PRIMARY row and really does produce. That is the honest reading and
      * the reason this wave could not have shipped a lying column: a spelling
      * whose primary did not compile would read `unbuilt` here. */
-    else if (checked != 127 || built != 105 || unbuilt != 16 || na != 6)
+    /* 127 = 105 + 16 + 6 -> 128 = 106 + 16 + 6: the DEFINE row, built on
+     * the day it lands like every other row whose port really produces. */
+    else if (checked != 128 || built != 106 || unbuilt != 16 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 127 = 105 + 16 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 128 = 106 + 16 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -2864,9 +3031,10 @@ static void check_families(void)
      * rows are now NINE index lines. Six new multi-member families —
      * `(?1)` (11), `(a)(?-1)` (11), `\g<1>` (3), `\g'1'` (3), `(?0)` (2),
      * `(?+1)(a)` (2) — which is 32 members joining the alpha spellings' 18. */
-    if (families != 89 || multi != 12 || members_in_multi != 50)
+    /* 89 -> 90: the DEFINE row is a family of one (D71 item 4's "ONE row"). */
+    if (families != 90 || multi != 12 || members_in_multi != 50)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 89 / 12 / 50. The index "
+            "member, %d members in those -- expected 90 / 12 / 50. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {
@@ -3052,6 +3220,7 @@ int main(void)
 
     printf("\n== [M6.4.2/D67] SR-8 is BUILT: engine-capability refusal, per row ==\n");
     check_engine_capability();
+    check_index_shape_witnesses();
     check_free_discharge();
 
     printf("\n== MOD-0.2 arbitration (recogniser + rank) ==\n");

@@ -824,6 +824,38 @@ GROUP('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),
+/* [DD-14 wave F] `(?(DEFINE)...)` IS MODULE `recursion`'s, TAILED OFF THE
+ * `(?(` DOORWAY (D71 item 4, Frank 2026-08-23, overruling design §2.5's "no
+ * DEFINE"). The rest of `(?(` stays `conditionals`': one byte, two
+ * constructs, told apart by a literal tail, which is the `(?P<`/`(?P=`/`(?P>`
+ * shape this table already ships three times.
+ *
+ * THE TAIL IS `DEFINE)` AND INCLUDES THE PARENTHESIS, MEASURED: on 10.46
+ * `(?(define)(?<w>a))` and `(?(DEF)(?<w>a))` are both "reference to
+ * non-existent subpattern" — lowercase and prefixes are read as NAME
+ * conditions — so a tail of `DEFINE` alone would claim `(?(DEFINED)` for this
+ * module, which is a name condition and `conditionals`'.
+ *
+ * LONGHAND RATHER THAN `GROUP_RC_T`, FOR ONE FIELD: `ANY_ENGINE`. Every other
+ * row in this module is VM_ONLY and structurally so — a subroutine call
+ * generates a non-regular language. A DEFINE generates NOTHING at its lexical
+ * position: it is `(?:BODY){0}`, which MEASURABLY compiles to a pure DFA
+ * (`--engine=dfa --no-captures '(?:(?<g>a)){0}b'` on the shipped binary), so
+ * VM_ONLY here would refuse what the DFA engine handles and would refuse it
+ * asymmetrically against the `{0}` spelling of the same construct. What
+ * forces the VM in any real use is the CALL that reads the definition, and
+ * that carries its own row and its own stamp. The macro is not extended for
+ * this: a macro exists to make the FIXED fields unmissable, and a variant
+ * differing in an engine mask is exactly the row that must be read in full.
+ *
+ * `QF_YES`, MEASURED: `(?(DEFINE)(?<w>a))*` compiles on 10.46 (a zero-width
+ * construct is still a quantifier target). */
+{RK_GROUP, '(', "DEFINE)", "(?(DEFINE)(?<w>a))", M_recursion, FLAV_PCRE2,
+ ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0,
+ "define-only group: the body never runs where it is written and exists to be "
+ "called -- the same thing (?:BODY){0} means",
+ ROADMAP_PLANNED, QF_YES, NULL, 25, NULL,
+ {PORT_FN, false, 0, NULL, pcrec_rcport_define}, NO_PORT, NULL},
 GROUP_RC('&',  "(?&name)", "recurse into the named group", QF_YES, pcrec_rcport_name, NULL),
 GROUP_RC('R',  "(?R)", "recurse the whole pattern", QF_YES, pcrec_rcport_num, NULL),
 /* [DD-14] THE DESCRIPTION IS QUALIFIED, and §2.4a is why the unqualified
