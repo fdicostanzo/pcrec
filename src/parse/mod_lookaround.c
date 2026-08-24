@@ -331,8 +331,11 @@ static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
  * `REFUSE(at, "%s", buf)` here and `ctx_fail(cx, at, "%s", buf)` there render
  * the same string at the same offset through the same formatter. `buf` is 256
  * bytes for `ExtResult.msg`'s reason, which is the buffer the hook's text used
- * to be formatted straight into; the longest sentence below is under half of
- * it.
+ * to be formatted straight into. It cannot truncate: the longest arm is 148
+ * bytes of template and 166 with both widths at their widest
+ * (`PCREC_W_UNBOUNDED` is `1 << 40`, 13 digits) — and a width that large is
+ * refused by the arm ABOVE it anyway, so 166 is a ceiling no live path
+ * reaches.
  *
  * THE ORDER OF THE THREE ARMS IS PART OF THE RULE, not of either caller.
  * UNBOUNDED IS TESTED FIRST because `PCREC_W_UNBOUNDED` is itself above
