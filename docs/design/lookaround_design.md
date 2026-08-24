@@ -945,7 +945,13 @@ level 1):
               RX_PUSH(&&L_b2, scan_position)                 // try branch 2 on failure
               RX_CHARGE_WORK(k_1)                            // the back-step's own work
               scan_position = $_back_step(subject, subject_length, scan_position, k_1);
-              if (scan_position == $_BACK_STEP_NONE) goto L_b2;   // (R33 C1-4)
+              if (scan_position == $_BACK_STEP_NONE) goto rx_fail; // AMENDED at wave D
+              // (R33 C1-4; the first sketch said `goto L_b2` and was WRONG TWICE:
+              // scan_position is already clobbered with (size_t)-1, and the retry
+              // frame pushed above stays LIVE to re-run this branch. `goto rx_fail`
+              // pops that very frame — restoring cursor and trail — and lands on
+              // L_b2, which is what the push was for. Dead code under the byte
+              // backend either way; live under UTF-8. lane/waveD, merged e10bad4.)
               goto L_body1
     L_body1:  <B_1>                          -> L_end1
     L_end1:   if (scan_position != (size_t)slot_values[SLOT_LOOK_POSk]) goto rx_fail;

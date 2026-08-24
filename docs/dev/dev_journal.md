@@ -12856,3 +12856,33 @@ commit builds; waveE inspects its uncommitted delta deliberately).
 Meanwhile the post-B+C battery on main b6338f6 completed GREEN: strict
 clean, make test rc=0, `make san` green both axes (battery DONE 01:26).
 Waves 0/A/A2/B+C are all battery-validated.
+
+## 2026-08-24 (EDT), thirty-eighth session (part 12) — wave D MERGED (e10bad4): the lookbehind lands; the design's own sketch had a two-fold bug
+
+lane/waveD a42cd0e merged. The seam's third residual entry landed with
+ZERO interface change — §4.3's P-1 prediction tested and held; D58's
+revisit clause honoured by having nothing to record. The lookbehind:
+widths from the A_ALT left spine filled from the END (the spine yields
+branches backwards; count asserted against AltInfo.nbr, disagreement is
+ctx_fail not a pattern error); per-branch back-step chain with the
+end-check on BOTH arms; the negative arm returns HARD on a width
+mismatch (RX_R_FRAMES by elimination — RX_R_WORK is what the module's
+own n·Σk_i charge produces legitimately and RX_R_STEPS is S127's
+prediction; the dedicated internal-error code waits for D71.1's one ABI
+renumber, noted on the [DD-14] row). THE LANE REFUSED THE DESIGN'S OWN
+SKETCH, correctly: §3.4's `if (pos == $_BACK_STEP_NONE) goto L_b(i+1)`
+is wrong twice — the cursor is already clobbered with (size_t)-1 and the
+retry frame stays live; `goto rx_fail` pops exactly that frame and lands
+on the next branch. Amended in the design at merge. Dead code under the
+byte backend either way; live under UTF-8 — found by reading, which is
+what the row S134 (sentinel detector, added this wave because it did not
+exist) now guards. Also: width 0 is legal and the emitted `size_t < 0`
+guard tripped the harness's own -Wtype-limits — gated on k > 0, three
+mixed-empty-branch cells added. Numbers: corpus 22,936/0; gate 168/2,049
+control exact; full mech 134/0/0; [M5-SEAM] N=7 (residlbtwo proves the
+column counts CALL SITES); diff §1 4,268 cells/0; 5,800-cell pre-corpus
+oracle sweep. Mech lesson: a row's detector must be COMMITTED before a
+single-row run — the matrix builds from git archive HEAD but reads row
+definitions from the working tree (S134's first run scored UNDETECTED on
+exactly this). waveE still in flight (its own full matrix 132/1/0 — the
+1 is S130, expected on its D-less branch).
