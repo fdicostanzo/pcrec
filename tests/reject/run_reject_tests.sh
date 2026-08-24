@@ -1318,6 +1318,14 @@ reject '(*accept)'   "(*alpha_assertion) not recognized (pattern offset 0)"
 # message: pla IS a known lower-table name, just not in BARE form (its
 # forms are ARG|EMPTYARG|GROUPARG) — this is the lower-table representative
 # of the form-mismatch REFUSE, `(*CR:x)` below is the upper-table one.
+# ...AND THIS ROW IS ASSERTED UNCHANGED BY [M6.6.2] WAVE F (R33 C2-6), which
+# is why it is not in the block of moves below it. `(*pla)` is a REAL name in
+# a form PCRE2 does not accept, and a FORM MISMATCH IS DECIDED BEFORE MODULE
+# ATTRIBUTION — in pcrec as in PCRE2 — so wave F giving the name `pla` a
+# module of its own must not reach this line at all. mod_verbs.c's name→row
+# lookup is placed AFTER the form check for exactly this reason; move it one
+# statement earlier and this row goes red while `(*pla:a)`'s stays green,
+# which is the pair that makes the ordering measurable rather than asserted.
 reject '(*pla)'      "(*alpha_assertion) not recognized (pattern offset 0)"
 reject '(*SCRIPT_RUN:a)' "(*VERB) not recognized or malformed"
 # Real names in a form PCRE2 does not accept. Each of these is a DIFFERENT rule
@@ -1380,10 +1388,33 @@ reject "(*$lname129)" "subpattern name is too long (maximum 128 code units) (pat
 
 for v in '(*ACCEPT)' '(*FAIL)' '(*F)' '(*ACCEPT:)' '(*CR)' '(*LF)' '(*CRLF)' \
          '(*ANYCRLF)' '(*UTF)' '(*UCP)' '(*NUL)' '(*BSR_UNICODE)' '(*NOTEMPTY)' \
-         '(*script_run:a)' '(*sr:a)' '(*atomic:a)' '(*pla:a)' \
-         '(*naplb:a)' '(*negative_lookbehind:a)' \
+         '(*script_run:a)' '(*sr:a)' '(*atomic:a)' \
          '(*atomic:)'; do
     reject "$v" "requires module 'verbs'"
+done
+# [M6.6.2] WAVE F MOVED THREE ROWS OUT OF THE LOOP ABOVE, and the move IS the
+# defect being fixed rather than bookkeeping around it. `(*pla:a)`,
+# `(*naplb:a)` and `(*negative_lookbehind:a)` sat in that loop asserting
+# "requires module 'verbs'" — the WRONG MODULE, which is the one fact the
+# diagnostic exists to carry. Design §8.2 measured the cause at P3: the `(*`
+# doorway was ONE row whose module answered for every name in both VerbName
+# tables, so an alpha lookaround assertion was promised a module that will
+# never implement it while the module that WILL was never named.
+#
+# They keep their identity as hand-written rows here rather than being left to
+# the dump-driven loop further down, for this file's standing reason: the
+# iteration reads the same registry the parser renders from and therefore
+# cannot see a WRONG module name, while these lines are a SECOND, HUMAN source
+# for it. That is precisely the property that was missing when the answer was
+# wrong — the dump loop agreed with the parser, in unison, that `(*pla:a)`
+# required module `verbs`, because the row it read said so.
+#
+# ONE FROM EACH SHAPE, deliberately: a SHORT name (`(*pla:`), a NON-ATOMIC one
+# (`(*naplb:`) and a LONG spelling (`(*negative_lookbehind:`) — the three axes
+# on which a name-to-row resolution can go wrong independently. The other nine
+# are covered by the dump-driven loop and by PC-3.
+for v in '(*pla:a)' '(*naplb:a)' '(*negative_lookbehind:a)'; do
+    reject "$v" "requires module 'lookaround'"
 done
 # Pulled out of the loop above (MOD-0.4d) to carry its own OFFSET
 # expectation: the terminal "requires module 'verbs'" REFUSE is `at` too,
@@ -1777,7 +1808,37 @@ row_reject() { # like reject(), but counted separately so the floors stay honest
 
 "$PCREC" --list-syntax > "$WORKDIR/syntax.tsv" 2>"$WORKDIR/syntax.err"
 if [ ! -s "$WORKDIR/syntax.tsv" ]; then
-    bad "--list-syntax produced no dump ($(cat "$WORKDIR/syntax.err")) — every check below would pass vacuously"
+    # K30 (found 2026-08-23 by [TT-8]'s PROCS sweep; fixed at [M6.6.2] wave F,
+    # the next change to touch this table). THE VACUITY GUARD IS REPORTED
+    # ONCE, not once per shard.
+    #
+    # THE DEFECT: this `bad` sat outside any shard gate, so under sabotage
+    # S18-tsv-empty (pcrec_syntax_tsv returns "" early) EVERY shard child
+    # reported it and the top-level dispatcher reported it again — the row's
+    # measured figure was shards + 1, i.e. `reject:5fail` at the old leaked
+    # width, `4fail` at PROCS=4 and `3fail` at PROCS=6. That made [TT-2]'s
+    # "same Summary counts at any PROCS" claim false for this section, and a
+    # mech figure that moves with the harness's own parallelism is a figure
+    # nobody can read.
+    #
+    # THE FIX IS THE GUARD, NOT THE DUMP. K30's entry offered two remedies and
+    # only one of them is available: "run the dump once" is not, because every
+    # shard child runs its OWN slice of the `row_reject` loop below and needs
+    # its own `probe.tsv` to do it — a shard that skipped the dump would skip
+    # its rows, and the global coverage assertion would then correctly report
+    # that the table was not covered. So the dump stays per-shard (it is one
+    # `--list-syntax` call) and the REPORT is confined to the one process that
+    # owns the global view, using this file's existing idiom for exactly that
+    # (`[ -z "${REJECT_SHARD_TOTAL:-}" ]` — the same gate the BADROW report and
+    # the coverage-count assertion below already use, which is a plain PROCS=1
+    # run or the top-level dispatcher after aggregation, never a child).
+    #
+    # DETECTION IS UNCHANGED, which is the property that mattered: S18 still
+    # fails this section, once, at every width — the figure becomes CONSTANT
+    # rather than smaller. Verified at PROCS=4 and PROCS=6 in the same change.
+    if [ -z "${REJECT_SHARD_TOTAL:-}" ]; then
+        bad "--list-syntax produced no dump ($(cat "$WORKDIR/syntax.err")) — every check below would pass vacuously"
+    fi
 else
     # Field extraction goes through awk, NOT `IFS=$'\t' read -r a b c...`.
     # Tab is IFS *whitespace*, so bash collapses runs of it and strips leading
@@ -1864,7 +1925,20 @@ else
         # same terms the quantifier-suffix rows did. Nothing RETIRED from this
         # count: every row module `backrefs` built was already in it and still
         # refuses at the CLOSED gate, which is what this loop measures.
-        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 105 ]; then
+        # 105 -> 117 at [M6.6.2] WAVE F: the twelve `(*` alpha lookaround
+        # spellings (Frank's ASK 3 ruling). They join this iteration on the
+        # same terms every other row does — their `expect` is "requires module
+        # 'lookaround'" and that really is a substring of what running their
+        # own `syntax` prints at the closed gate, since module `lookaround` is
+        # not in std1. Three of them ALSO have hand-written rows above (one
+        # short, one non-atomic, one long spelling), which is the layering
+        # this section's own header describes: iteration guarantees coverage,
+        # the hand-written table guarantees the module NAME is one a human
+        # wrote down independently. Nothing RETIRED: the three rows that moved
+        # in this wave moved WITHIN the hand-written table, out of the `verbs`
+        # loop and into a `lookaround` one, and both loops still probe at the
+        # closed gate.
+        if [ "$niter" -eq "$nexpected" ] && [ "$niter" -eq 117 ]; then
             ok "iterated every non-base row in the dump ($niter)"
         else
             bad "iterated $niter rows, dump has $nexpected non-base rows (floor 60) — the iteration is not covering the table"
