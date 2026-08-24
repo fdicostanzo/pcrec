@@ -13473,3 +13473,21 @@ failing: 1, now passing: 0" (the two lookbehind cells, LB deletes the
 file). THE B+C-MERGED TREE'S BATTERY IS GREEN: test 25,217/0, strict,
 san. Merges of D and LB are now unblocked (both dry-run conflict-free in
 either order); D waits only for its identity-script addition.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 9) — WAVE D MERGED (3a08eae); wave E opens; LB at its final test
+
+Wave D merged after review: smoke 6/6, anchors resolve, strict clean,
+`(a)\g<1>` compiles on main. Its identity-gate SEED
+(tests/codegen/run_recursion_identity.sh, default axis, pin ac4917d)
+measured 2568 patterns / 130 call-bearing / 2198 identical / 0 differing
+/ ctl_bad 0 — and its positive control caught the lane's first
+classifier draft treating every `(?>` as a call (153/287 "call-bearing"
+patterns accepted by the pre-recursion reference): the control that can
+go red, going red. srLB is in its final make test after I stopped its
+full matrix by PID (the full matrix is the close's). WAVE E opened from
+3a08eae (opus, brief_srE.md): the prefilter predicate + S-SR17, the
+FOUR-axis identity gate with floors grown from the seed, D71.6's rung
+decline made explicit (S157's fate), [DD-14.EMPTY] (measure root minw on
+the three siblings first, then the one-site nomatch), run_recursion_diff
+on both axes. Briefs for F and G are drafted (brief_srF.md,
+brief_srG.md); G's bar is the specimen's byte-identity.
