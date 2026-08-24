@@ -67,7 +67,7 @@ them a false match, while agreeing on the other 47** (§5.9). (1) plus the measu
 return** (§3.4) says the restore is over a **compile-time set of slots** —
 **every slot family, not the captures**, a correction R34's C2 panel forced
 with two executed prototypes after this design's first version cost a LOST
-MATCH on publish-at-close and FIVE FALSE MATCHES on a cut mark (§5.3) — never
+MATCHES on publish-at-close and SIX FALSE MATCHES on a cut mark (§5.3) — never
 a trail rewind, and the entry values are stored **in the trail itself** by
 a trailed self-write at the call site — no new storage anywhere (§5.3). The
 **addressable-body** question (charter addition (i)) collapses once written
@@ -112,7 +112,7 @@ their repo commit by `probes/archive.sh` from a committed tree.
 | `probes/probe_linkage.sh` + `prototype/gen_linkage.py` | PROTOTYPE | §6: three hand-written matchers in the emitter's own idiom, differing only in linkage; a 52-cell agreement control first, then emitted-size by call count and run time on two corpora (mixed, and lexical-only — the corpus HYBRID's whole claim rests on) |
 | `probes/probe_wrapped_target.py` | MEASURED | §3.5/§4.4b/§2.4/§3.4: R34 C1's four findings re-measured — a call whose TARGET is inside a lookaround or atomic group (five shapes, each with a wrapper-isolating control); the indirect-recursion witness that refutes the withdrawn `minw` gloss; the LEADING-ZERO call family on both doorways, with the ANCHORED discriminator the first draft lacked; `\G`/startpos/`\A`/`\z` in a callee; and the `(?J)` rule across all four call spellings |
 | `probes/probe_slotfamilies.py` + `prototype/slotproto_pending.c` + `slotproto_cutmark.c` | PROTOTYPE + MEASURED | §5.3b: **the restore set, refuted twice.** Two prototypes ADOPTED UNCHANGED from R34's C2 panel and rebuilt from source by this lane, each compiled two ways differing in ONE slot: captures-only W loses matches on `SLOT_GROUP<n>_PENDING` (11/2) and produces FALSE MATCHES on `SLOT_CUT_MARK<n>` (4/6) whose language is exactly the non-atomic control's; the general rule is 13/0 and 10/0 |
-| `probes/probe_callproto.py` + `prototype/callproto.c` | PROTOTYPE + MEASURED | §5.9: **§5's whole lowering, built and run against libpcre2** — the frame that carries the return label, the non-popping return, the fail label's one added line, the `\|W\|` trailed save/restore — on four patterns each of which is a design claim; compiled TWICE, the second with `-DBROKEN_ARRAY` for §5.2's rejected design, so the bug is REPRODUCED rather than argued |
+| `probes/probe_callproto.py` + `prototype/callproto.c` | PROTOTYPE + MEASURED | §5.9: **§5's whole lowering, built and run against libpcre2** — the frame that carries the return label (three new fields), the non-popping return, the fail label's two added lines, the `\|W\|` trailed save/restore — on four patterns each of which is a design claim; compiled TWICE, the second with `-DBROKEN_ARRAY` for §5.2's rejected design, so the bug is REPRODUCED rather than argued |
 | `probes/probe_prefilter.py` | MEASURED, libpcre2 + in-pcrec | §8: what a DFA prefilter is worth on call-**shaped** patterns, measured on their INLINED equivalents (which pcrec compiles today), each pair verified equivalent **420 cells / 0 disagreements** before any timing |
 | `probes/probe_population.py` | MEASURED, PURE TEXT | §10: the census — **6** call spellings in `tests/**/*.rxt`'s 2,161 pattern lines, every one of them a `perr` row testing a refusal, against **226** backreferences |
 
@@ -194,7 +194,7 @@ Each was checked against **this worktree's build** and against `src/` at
 | P5 | **`(?(DEFINE)...)` is module `conditionals`, which has exactly ONE row and no producer** | MEASURED, axis B: `(?(DEFINE)(?<x>a))(?&x)` answers *"module 'conditionals' is enabled but `(?(...)` is not implemented yet"*, and `--list-syntax` shows one `conditionals` row, `(?(1)a\|b)`. This module unlocks none of it — §2.5 |
 | P6 | The give-up code space is `PCREC_ERR_STEPS (-2)`, `_FRAMES (-3)`, `_WORK (-4)`, `_FLOOR (-4)` | MEASURED, axis C, quoted from `emit_dfa.c:391-394` and from a real artifact. **The `ERR_FLOOR` move −4 → −5 touches EIGHT source-of-truth sites and four archived samples**, all enumerated in §5.6 from this axis's own grep |
 | P7 | `RX_SET` is `RX_TRAIL` followed by the write, and **`RX_TRAIL` records the OLD value unconditionally** | STRUCTURAL, `emit_vm.c:5763-5771`, quoted in full. There is no same-value elision, which is what makes §5.3's **trailed self-write** a legal way to park an entry value on the trail |
-| P8 | The fail label restores `scan_position` from the popped frame AND rewinds the trail to that frame's mark | STRUCTURAL, `emit_vm.c:6063-6072`. §5.1 adds exactly one line to it and §5.5 is why |
+| P8 | The fail label restores `scan_position` from the popped frame AND rewinds the trail to that frame's mark | STRUCTURAL, `emit_vm.c:6063-6072`. §5.1 adds exactly **two** lines to it (`call_top` and `call_mark`) and §5.5 is why |
 | P9 | **A label address is already a VALUE in emitted code, and there is exactly ONE indirect jump** | STRUCTURAL + MEASURED, axis F: the emitter has two `&&%s_L%d` sites (`emit_vm.c:2029` traced, `:2032` untraced), both inside `RX_PUSH`; one `goto *` (`:6072`); and a real artifact for `(a\|ab)(c\|cd)x` contains 2 label addresses, 1 `goto *`, 16 labels. **`emit_vm.c:14-18` states the one-indirect-jump property as a design decision** and says label addresses are function-local, *"which is fine WITHIN a call — APPROACH §6's A-4/A-5 'a `&&label` does not survive a return' is a STREAMING constraint, not a within-call one."* §5.2 adds the second indirect jump and amends that comment |
 | P10 | A group that **nothing references** loses its slots under `--no-captures`; a referenced one keeps them | MEASURED, axis E: `(a)\1` under `--features all --no-captures` mentions `RX_SLOT_GROUP1` **9** times; `(a)b` mentions it **0** times. So a CALL TARGET must join the marked set or the group it calls is deleted out from under it — §4.3 |
 | P11 | The `[M6.5]` end-of-parse resolution machinery exists and is reusable: four ports, a `PendingRef` list, `pcrec_bref_resolve`, `pcrec_bref_mark`, `pcrec_has_bref` | STRUCTURAL, axis E, `internal.h:1843-1904`, with `PendingRef`'s own comment quoted. `PendingRef` already carries `number`, `name`, `at` and `what`, which is exactly a call's resolution input — §4.2 |
@@ -1228,7 +1228,7 @@ attribution to the return is ARGUED (§12 P-10).
    the frame array's own growth and a nested activation's `call_top` chain is a
    linked list through frames that already exist.
 3. **Nothing about this is conditional on the pattern being recursive.** The
-   same three lines serve `(a)(?1)`, `(?R)`, and `[DD-11]`'s inserted-body
+   same machinery serves `(a)(?1)`, `(?R)`, and `[DD-11]`'s inserted-body
    call. One mechanism.
 
 ### 5.2 Why the separate call-stack array is WRONG, derived
@@ -1345,7 +1345,8 @@ the C2 critic's own, ADOPTED unchanged for the reason `docs/design/CLAUDE.md`
 records about `simvm.py`: a lane that rewrites the instrument that refuted it
 cannot be trusted not to soften it.
 
-**AXIS P — `SLOT_GROUP<n>_PENDING`, and the failure is a LOST MATCH.**
+**AXIS P — `SLOT_GROUP<n>_PENDING`, and the failure is a LOST MATCH (two of
+them).**
 `^(a(?1)?b)\1$`. The backreference MARKS group 1, so it lowers
 publish-at-close: the open position goes to the pending slot and the pair is
 published at the close. The inner activation overwrites the outer's pending
@@ -1745,7 +1746,7 @@ Everything above is executable, so this lane executed it.
 `prototype/callproto.c` implements §5 by hand in the emitter's own idiom — the
 frame carrying `call_ret`/`call_top`/`call_mark`, `RX_CALL` pushing a frame
 whose `resume_label` is `rx_fail`, `RX_RETURN` **not** popping, the fail
-label's one added line, and §5.3's `|W|` trailed self-writes and restores read
+label's two added lines, and §5.3's `|W|` trailed self-writes and restores read
 back at `trail_mark + j` — for four patterns, each of which is a claim in this
 document:
 
@@ -2028,7 +2029,7 @@ contract rather than the construct:**
 
 | new thing | §  | why it could not be reused |
 |---|---|---|
-| the call record (return label + `call_top`), and the fail label's one added line | §5.1, §5.5 | nothing in the tree returns to a value-carried label |
+| the call record (three frame fields: `call_ret`, `call_top`, `call_mark`), and the fail label's two added lines | §5.1, §5.5 | nothing in the tree returns to a value-carried label |
 | the second `goto *`, and the emitter invariant it amends | §5.8 | the file states one-indirect-jump as a decision |
 | the per-level capture save/restore over a compile-time `W` | §5.3 | no construct today restores capture state on an exit |
 | `W`, the call graph, and its fixpoint | §5.3, §4.3 | pcrec has no call graph |
@@ -2527,8 +2528,9 @@ compliance index that says `built` for constructs that cannot compile.
 Deliverables: `src/parse/mod_recursion.c` with `pcrec_rcport_num` /
 `_rel` / `_name`; `PendingRef.kind` and the resolver's two rules (§4.2);
 `src/opt/callgraph.c` — the graph, its SCCs, the transitive mark (§4.3) and the
-`W` fixpoint (§5.3); `pcrec_has_call`; the frame's two new fields, `RX_CALL`,
-`RX_RETURN`, the fail label's one line, the save/restore emission, the depth
+`W` fixpoint (§5.3); `pcrec_has_call`; the frame's **three** new fields
+(`call_ret`, `call_top`, `call_mark`), `RX_CALL`, `RX_RETURN`, the fail
+label's **two** lines, the save/restore emission, the depth
 capacity and `RX_CALL_DEPTH`'s stamp; `vm_cost`'s arm; `vm_nullable`'s
 fixpoint arm; `pcrec_minw`/`pcrec_maxw`'s arms.
 **The `\g` tails are DECLINED at `WANT_RESULT`** so their rows stay `unbuilt`
@@ -2601,8 +2603,8 @@ TWICE AND IS THE MOST INSTRUCTIVE ROW IN THIS DOCUMENT.** The first version
 restored the captures reachable from `g`'s body; §5.9's prototype showed `g`'s
 OWN slots were missing (`g1 = (1,4)` for libpcre2's `(0,4)`). The second
 version restored the capture slots; **R34's C2 panel showed six more families
-were missing**, with `SLOT_GROUP<n>_PENDING` costing a LOST MATCH and
-`SLOT_CUT_MARK<n>` costing FIVE FALSE MATCHES whose language is exactly the
+were missing**, with `SLOT_GROUP<n>_PENDING` costing **two LOST MATCHES** and
+`SLOT_CUT_MARK<n>` costing **six FALSE MATCHES** whose language is exactly the
 non-atomic control's (§5.3b). Both refutations came from EXECUTION, not from
 reading. **Refute the third version** by exhibiting a slot outside `{0, 1}`
 whose value must NOT be restored by a return — `\K`'s is the only one this
