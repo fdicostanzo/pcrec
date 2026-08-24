@@ -13124,3 +13124,41 @@ the floor (answer: it is not a give-up — no bound a caller could raise
 cures an analysis/emission disagreement, and F2's trap obligation is the
 right treatment) and CONFIRMED D72. The assumption is now a ruling; the
 headline in decisions.md updated in place.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 2) — WAVE A MERGED (0c75c96); K32 found; the pkill incident; one-suite-at-a-time rule
+
+WAVE A MERGED at 0c75c96 (~10:2x) after diff review: the emitted block
+carries `PCREC_ERR_RECURSE (-5)`, `PCREC_ERR_FLOOR (-5)`,
+`PCREC_ERR_INTERNAL (-6)`; sentinels `_R_RECURSE`/`_R_INTERNAL`
+propagate through both entries; the lookbehind end-check returns
+`_R_INTERNAL` with its elimination comment retired; the driver names
+every code (`work`, `recurse`, `internal`, `giveup <N>` fallback); run.sh
+scores `gu <code> "subject"` against exit 3 and REFUSES `gu internal` by
+name; block-scoped `engine vm` / `budget steps=|frames=` directives are
+the route; `tests/harness/giveup.rxt` is the positive corpus (steps at
+budget 50, frames at 4). Post-merge on main: smoke 6/6, anchors 137/142
+resolve, hand-built artifact verified. The lane's own bars: strict clean;
+make test 8/8 groups except two LOAD artifacts (below); D69 rows 56/71
+RC=0 at merge time with 0 real failures and 6 rows re-running because
+srA2's `pkill -f run_sabotage_matrix.sh` (meant for its own loop) killed
+them — the lane reported its own incident within minutes; PID-only from
+here. The lane went idle twice mid-run without delivering (the standing
+lesson: idle ≠ done; the worktree and logs are the truth).
+
+LOAD: three lanes' suites + two mech sweeps drove the 12-core box to load
+31; both lanes' `make test` lost `tests/resource`'s 45 s CPU-cap check
+and one lost `((a)|ab){4000}c` to the compile timeout. Solo re-runs
+clean; A/B control shows main's binary blows the cap under the same load.
+RULE ADOPTED: one heavy suite on the box at a time; lanes run targeted
+rows; the manager runs the battery on the merged tree (K31 addendum).
+
+K32 (Frank's question "is it inlining 4000 steps?"): no — the VM lowers
+`{4000}` as a counter rung (K=8), but the DFA PREFILTER's NFA replicates
+the bounded repeat (nfa.c:655-675) and determinization is quadratic:
+4.8 s / 112 MB / 404 KB by default vs 0.00 s / 2 MB / 25 KB with
+`--no-prefilter`. Fix shape recorded (a superset count clamp in the
+prefilter only); ruling parked.
+
+D72 CONFIRMED by Frank (~10:2x) after the "why below the floor" exchange.
+srA2 at 4822297 awaits merge (strict green, identity 2657/0, mech re-run
+in flight); srCorpus accepted at 704a3af, parked for the B+C base.

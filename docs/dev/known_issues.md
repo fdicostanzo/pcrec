@@ -2564,3 +2564,47 @@ it lands here.
 
 **Milestone.** None scheduled; watch item. Revisit if a third instance
 appears or when [TT-5]'s chain work next touches suite concurrency.
+**ADDENDUM 2026-08-24 (thirty-ninth session).** Two more load-shaped
+one-offs, this time EXPLAINED and not counted as a third K31 instance:
+with three lanes' suites plus two mech sweeps on 12 cores (load average
+31), `tests/resource`'s 45 s compile-CPU-cap check failed on
+`[a-z]{0,30000}` / `(a|b){0,30000}` in two lanes' `make test`, and one
+lane lost `((a)|ab){4000}c` to the harness compile timeout (exit 124, 29
+cascaded cases). Both were clean solo; the A/B control (main's reference
+binary ALSO blows the cap under that load, 53 s vs 49 s) pins it on the
+box. Both patterns are the K32 shape. Manager rule adopted: ONE heavy
+suite (make test / san / mech) on the box at a time; lanes run targeted
+rows, the manager runs the battery on the merged tree.
+
+## K32 — OPEN (2026-08-24, thirty-ninth session) — the DFA PREFILTER's NFA replicates bounded repeats, so `X{n}` compiles in O(n²) time and O(n) artifact even when the VM lowers it as a constant-size counter rung
+
+**Symptom.** `((a)|ab){4000}c` compiles in 4.8 s / 112 MB RSS / 404 KB
+artifact by default and in 0.00 s / 2 MB / 25 KB under `--no-prefilter`
+or `--engine=vm`. MEASURED n = 500/1000/2000/4000 → 0.05/0.21/0.90/4.02 s
+(~4× per doubling: quadratic); the artifact grows linearly and every
+growing line is a DFA table row. The VM body is constant: `// counter
+rung, {4000,4000}, K=8` — counter-K already made the MATCHER
+replication-free. The cost is entirely the prefilter's construction.
+
+**Cause.** `src/ir/nfa.c:655-675` Thompson-replicates a bounded repeat
+(`for (i = rmin; i < rmax; i++)` copies of the body) for the DFA side;
+subset construction over an O(n)-state NFA whose DFA states are O(n)
+position sets is O(n²), and the resulting O(n)-state DFA is emitted as
+tables. For this shape the prefilter buys nothing — every candidate is
+re-scanned by the VM anyway.
+
+**Fix shape (unruled).** A count CLAMP in the prefilter ONLY: `X{n}` ⊆
+`X{k}X*` for any k ≤ n is a SUPERSET, so thinning the prefilter's count
+to a small k (or dropping the prefilter above a threshold, as `backrefs`
+and the coming `recursion` module already do by predicate) is sound and
+bounds construction to O(k²). Match semantics untouched; the identity
+gate's byte-identity control applies below the threshold. Candidate
+home: [ENG-THIN]/[ENG-CLAMP]'s neighbourhood; ruling needed on the
+threshold and on whether the clamp is a stamp the artifact reports.
+
+**Guards today.** `tests/resource`'s compile-CPU cap (45 s) and D45's
+harness compile bound catch the runaway; `tests/counterk/counterk.rxt:1807`
+is the endgame cell (libpcre2 refuses it outright, error 120).
+
+**Milestone.** None scheduled; parked for Frank's ruling. Found while
+explaining a load-induced compile timeout on exactly this cell.
