@@ -112,6 +112,25 @@ re-quoted this pass, verbatim from a fresh `-p rx` build of `'a(b|c)+d'`
 (both a `--no-captures` DFA artifact and a captures-default VM one) —
 docs/dev/decisions.md D60 and its addendum.
 
+**[DD-14.FB] revision (2026-08-24, D71 item 2) — the first revision that
+states a contract BEFORE it exists, and the marking matters.** Every
+revision before this one recorded what shipped. This one adds **§10, the
+caller-provided frame buffer**, which is SPECIFIED AND NOT YET BUILT: no
+artifact pcrec emits today exports a `<prefix>_search_in` entry, and §10
+says so in its own first line. It is here rather than in the design note
+alone because D71 item 2 rules the shape "decided at docs/spec/match_api.md
+under D40", and because the three existing entries' compatibility story is
+a fact about THIS document's contract. **A reader who wants only what
+pcrec promises TODAY should read §1-§9 and stop.** §3, §4, §5.3 and §6
+each carry a one-line forward pointer to §10 where §10 changes what they
+say, and each pointer names the pending status; nothing in §1-§9 was
+otherwise altered by this pass. The design record, with the alternatives
+and their measured costs, is `docs/design/frame_buffer_design.md`
+(informational, per docs/spec/CLAUDE.md's charter). Measured for this pass
+and quoted in §10: the run-struct and per-entry stack sizes, the
+depth-vs-capacity table, and the `MAP_NORESERVE` worked example, all
+against artifacts emitted by the build at this commit.
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -337,6 +356,13 @@ Every generated artifact exports, unconditionally, five `<prefix>`-scoped
 symbols: the four below, plus the encoding residual `<prefix>_next_pos`
 that §3.1.1 specifies (a fifth entry since [M5-SEAM], and the one place an
 artifact's byte-vs-character distinction lives).
+
+**Forward pointer, [DD-14.FB] (2026-08-24, D71 item 2): three more entries
+are SPECIFIED and NOT YET BUILT** — `<prefix>_search_in`,
+`<prefix>_match_in` and `<prefix>_match_caps_in`, which take a
+caller-provided frame buffer. **Five is what an artifact exports today**;
+§10 states the pending contract, including the promise that the three
+entries below are unchanged for a caller that never calls an `_in` entry.
 
 ### 3.1 `<prefix>_search` — the search-loop entry
 
@@ -897,6 +923,16 @@ here for whichever future work (callouts, composition) first emits one.
 `PCREC_ERR_INTERNAL` now gives that future trap a real value it would
 actually fire on — trapping on it there IS the design, not a gap.
 
+**`PCREC_ERR_FRAMES` names a RESOURCE, not an array and not an owner.**
+Two distinct capacities can exhaust and both report this one code: the
+resume stack (`<PREFIX>_RESUME_FRAMES`) and its sibling undo trail
+(`<PREFIX>_TRAIL_FRAMES`). Which one ran out is not reported, and a caller
+must not assume it was the one whose macro is named "frames" — MEASURED on
+`^(a(?1)?b)$`, the artifact gives up with the trail full and TWO THIRDS of
+its resume stack still unused (`docs/design/frame_buffer_design.md` §4). The same
+code, with the same meaning, covers a caller-supplied buffer once
+[DD-14.FB] lands (§10.3).
+
 **Today's `1`/`0` contract for `<prefix>_search` is unchanged** — this
 reservation adds give-up outcomes, it does not renumber match/no-match.
 It does mean the return is not two-valued, so `if (<prefix>_search(...))`
@@ -1019,6 +1055,23 @@ observation about today's output.** It is what makes a generated matcher
 usable from a thread pool at all, and an engine that wanted a mutable
 scratch buffer would have to change this document first.
 
+**One thing this section promises that a THREAD-STACK-SIZED caller cannot
+currently collect, stated because a reader will otherwise discover it as a
+crash.** "Any number of threads may call the same artifact's entry points"
+says nothing about how much STACK each such call needs, and for one
+artifact class the answer is large: an artifact whose frame requirement is
+not statically bounded declares its whole run state as a local of the entry
+it was called through. MEASURED on a `-p rx --features all` build of
+`^(a(?1)?b)$` — `<prefix>_search`'s stack frame is **131,296 bytes**, which
+does not fit a musl-default 128 KB thread stack, and calling it from such a
+thread faults on any subject, a 2-byte one included. A statically-bounded
+pattern pays nothing (`a(b|c)+d`'s run state is 128 bytes) and a
+glibc-default 8 MB main thread is unaffected. The remedy is §10's
+`_in` entries, whose own frame MEASURES **224 bytes**; until they exist, a
+caller on a small thread stack must either size the thread for the artifact
+or compile with a smaller `--backtrack-frames`.
+`docs/design/frame_buffer_design.md` §3 carries the measurements.
+
 It is also GUARDED rather than asserted, by two shipped checks that run
 in `make test`:
 
@@ -1098,6 +1151,7 @@ spelling (`ENGM_DFA`/`ENGM_VM`), never an emitted symbol. D60's addendum
 ruled this the same class of pcrec-contract fact as the give-up code
 space (§4) and `PCREC_UNSET` (§5): a universal, artifact-independent
 value with no emitted name, which its membership rule closes. `PCREC_ENGINE_DFA`
+
 (1) and `PCREC_ENGINE_VM` (2) are now real `#define`s in the shared
 `PCREC_RX_ABI_H` block (§2), pinned to the numbers the field already
 stamped — this NAMES the existing contract, it does not renumber it. The
@@ -1204,7 +1258,8 @@ against them:
 - **`rx_info.abi` is `2` on every artifact today, and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
-  what a bump means.
+  what a bump means. ([DD-14.FB] SPECIFIED, not yet built: §10.4 adds four
+  fields to this struct and moves `abi` to `3`.)
 
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
@@ -1683,3 +1738,279 @@ conserved and accounted, never silent drift. At a future v1 declaration,
 this document (or its direct successor) becomes the compatibility-bound
 enumeration; until then, "frozen" here means "the M4 working baseline",
 not "permanent".
+
+---
+
+## 10. The caller-provided frame buffer — **[DD-14.FB] SPECIFIED, NOT YET BUILT**
+
+> **STATUS.** Nothing in this section exists in any artifact pcrec emits
+> today. No `<prefix>_search_in` symbol is exported, no
+> `<prefix>_buffers` type is declared, and `rx_info` still carries the
+> fifteen fields §6 lists. This section states the contract the
+> [DD-14.FB] implementation lane must deliver, so that the shape is
+> settled in the document D71 item 2 names ("shape decided at
+> docs/spec/match_api.md under D40") before the emitter changes. **Every
+> other section of this document describes shipped behaviour; this one
+> does not.** The design record — the alternatives, why each was rejected,
+> and the measurements behind every number quoted here — is
+> `docs/design/frame_buffer_design.md`, informational per
+> docs/spec/CLAUDE.md's charter.
+
+### 10.1 What the ruling is for
+
+A generated matcher never allocates (§5.2), so the two arrays a
+backtracking match needs — the resume stack and its undo trail — are
+sized at compile time and live in the entry point's own stack frame. That
+makes the artifact's depth ceiling a compile-time constant, which is the
+right default and the wrong limit: **no fixed number is right for a
+data-dependent depth, and the caller is the one who knows.** D71 item 2
+rules that a caller may supply the storage instead, keeping pcrec's
+never-allocates property while lifting the ceiling as far as the caller
+is willing to reserve.
+
+Two measured facts frame what this buys, and the release note states both:
+
+- **The depth ceiling is small, and it is a SUBJECT SIZE, not a number.**
+  MEASURED on a default `-p rx --features all` build of `^(a(?1)?b)$` (a
+  pattern whose recursion depth grows with the subject): it matches up to
+  a **684-byte** subject and returns `PCREC_ERR_FRAMES` at a 686-byte one.
+  libpcre2 10.46 matches 800 KB of the same shape — that half is not
+  measured here but cited from `docs/design/subroutines_design.md` §5.6.
+- **The refusal is CONSTANT-TIME, which is the half PCRE2 does not have.**
+  MEASURED on the same build, the left-recursive runaway `^(a|(?1)a)$`
+  over aⁿb returns `PCREC_ERR_FRAMES` in **0.0006 s at every n from 100 to
+  100,000** — flat across a 1,000× range. libpcre2 pays a cost growing as
+  the square of the subject there (2.6–5.6 s at n = 20,000, cited from the
+  same section, which measures the exponent at 2.04). Refusing a legitimate
+  deep match is the price of refusing a runaway in constant time; §10.6 is
+  how a caller who wants the depth buys it back.
+
+### 10.2 The three new entries, and the descriptor
+
+```c
+typedef struct {
+    void   *frames;    /* storage for resume frames */
+    size_t  nframes;   /* CAPACITY IN FRAMES — not bytes */
+    void   *trail;     /* storage for trail entries */
+    size_t  ntrail;    /* capacity in ENTRIES — not bytes */
+} <prefix>_buffers;
+
+int       <prefix>_search_in    (const unsigned char *s, size_t n, size_t startpos,
+                                 ptrdiff_t (*caps)[2], const <prefix>_buffers *buf);
+ptrdiff_t <prefix>_match_in     (const rx_ctx *ctx, const <prefix>_buffers *buf);
+ptrdiff_t <prefix>_match_caps_in(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2],
+                                 const <prefix>_buffers *buf);
+```
+
+Each `_in` entry is its un-suffixed sibling in every respect —
+same anchoring promise, same return space, same `caps`/`caps_out`
+discipline, same give-up codes — plus one argument naming where the
+working storage lives. §3.1, §3.2, §3.3, §4 and §5 apply to them
+unchanged and are not restated here.
+
+**Three properties of the descriptor are contract, not convenience:**
+
+- **`<prefix>_buffers` is PER-ARTIFACT, scoped by `--prefix`** — it is
+  *not* one of §1's fixed-literal `rx_*` ABI types, and the difference is
+  deliberate rather than an oversight. Those six types are literal so that
+  differently-prefixed matchers compose; a buffer is the opposite case,
+  because a resume frame's SIZE differs between artifacts (MEASURED: 24
+  bytes on a call-free artifact, 40 on a call-bearing one). A fixed-literal
+  spelling would advertise an interchangeability that does not exist.
+- **The counts are CAPACITIES, not byte sizes.** `nframes` is how many
+  frames the storage holds, `ntrail` how many trail entries. §10.4 is how a
+  caller converts bytes to counts.
+- **`frames` and `trail` are two separate regions and BOTH are required**
+  when `buf` is non-NULL. Supplying one and not the other is not
+  expressible: the trail is not an implementation detail of the frames, and
+  MEASURED on `^(a(?1)?b)$`, the trail is the array that binds first at the
+  stamped defaults — a caller who could raise only `nframes` would see no
+  change at all (`docs/design/frame_buffer_design.md` §4).
+
+### 10.3 `buf == NULL`, and what a give-up means
+
+**`buf == NULL` is defined to be exactly a call to the un-suffixed entry
+with the same other arguments.** Not "similar to", not "equivalent in
+observable behaviour" — the same call, and an artifact is free to
+implement it as one. This is the whole compatibility story for a caller
+that wants one call site and a runtime choice.
+
+**A give-up means "the buffer in use ran out", and the code does not say
+whose buffer it was.** `PCREC_ERR_FRAMES` is returned for a caller-supplied
+buffer exactly as for the stamped default, and §4's rule that the code
+names a RESOURCE rather than an array or an owner holds here too. **The
+count that WOULD have sufficed is NOT reported.** That is deliberate and
+matches D71 item 1's treatment of the recursion counter: the number is a
+diagnostic fact, the default artifact does not carry the machinery to
+produce it, and "rebuild with the diagnostic axis" is the documented story.
+
+**A give-up is RETRYABLE, and this is a promise a caller can build on.**
+Calling the same entry again, same subject, same `startpos`, with a larger
+buffer, is defined: the matcher holds no state between calls (§5.3), the
+caller's `caps` array is untouched on every negative return (§3.3, §5), and
+the buffers are pure scratch. So "give up, double the buffer, retry" is a
+correct algorithm and the obvious one to write.
+
+**The buffer's contents after any call are UNSPECIFIED.** A caller must not
+read them and need not re-initialise them before the next call. Nothing in
+the buffer is meaningful to anyone but the matcher, and nothing survives
+the call that produced it.
+
+**Alignment.** Both regions must be suitably aligned for the artifact's own
+frame and trail types; `<PREFIX>_BUFFER_ALIGN` (§10.4) states the
+requirement. Storage from `malloc`, `mmap`, or a declaration of any
+ordinary object type satisfies it on every target pcrec supports; the macro
+exists for the caller doing pointer arithmetic inside a larger arena.
+
+### 10.4 Sizing a buffer: the reflection surface
+
+The frame and trail layouts are private to the artifact — this document
+does not publish them, and a caller must not assume them. What it publishes
+instead is the arithmetic. Five macros in the emitted header:
+
+```c
+#define <PREFIX>_RESUME_FRAMES      2048  /* the stamped DEFAULT capacity */
+#define <PREFIX>_TRAIL_FRAMES       3072
+#define <PREFIX>_RESUME_FRAME_SIZE    40  /* bytes per frame, THIS artifact */
+#define <PREFIX>_TRAIL_FRAME_SIZE     16
+#define <PREFIX>_BUFFER_ALIGN          8
+```
+
+(the two capacity macros exist today but live in the generated `.c`; this
+revision moves them into the `.h`, where a caller can read them), and four
+of the same facts as fields on `rx_info`, for a consumer with no C header —
+an FFI or `dlopen` binding, which is exactly the consumer most likely to
+want a large reservation:
+
+```c
+    int64_t  resume_frames;      /* the stamped default capacity */
+    int64_t  trail_frames;
+    int32_t  resume_frame_size;  /* bytes per frame / per trail entry */
+    int32_t  trail_frame_size;
+```
+
+**`rx_info.abi` moves `2` → `3`** with this addition (§6's own rule:
+"layout version; bump-on-change"). `resume_frames` duplicates the existing
+`frame_capacity` field's information for the bounded case and is not
+redundant with it: `frame_capacity` reports `-1` for "no bound at all" on a
+DFA artifact and answers a different question (§6's sentinel-asymmetry
+note).
+
+**On a DFA artifact the whole surface is present and inert**, which is §4's
+"reserved but unreachable" shape applied again and is what lets a caller
+write one call site against both engines. The three `_in` entries, the
+`<prefix>_buffers` type and all five macros are emitted on EVERY artifact;
+the four sizing macros and the four `rx_info` fields read `0`, because that
+engine has no resume stack to size; and an `_in` entry on such an artifact
+accepts a descriptor and ignores it, answering exactly as its un-suffixed
+sibling does. This is a deliberate departure from §6.3's rule that the
+per-artifact budget/capacity macros are VM-artifacts-only: those macros
+report what an artifact DID, where these five are what a caller needs in
+order to CALL it, and a consumer whose code stops compiling when the same
+pattern selects the other engine is the failure §6.3 warns about.
+
+### 10.5 Concurrency and reentrancy: §5.3, extended by exactly one clause
+
+§5.3's rule — "any number of threads may call the same artifact's entry
+points concurrently, provided each call has its own `caps`/`caps_out`
+buffer" — gains one conjunct and nothing else:
+
+> **…and its own frame and trail buffers.** Two concurrent calls sharing
+> one `<prefix>_buffers` region is a data race in the CALLER's code,
+> exactly as a shared `caps` array is, and the matcher does not serialize
+> it. The same applies to one thread re-entering a matcher from a callout:
+> the inner call needs its own storage.
+
+**There is deliberately no way to set a buffer once, per artifact or per
+thread**, and this is the reason: any such mechanism is either mutable
+state in the emitted file — which §5.3 forbids and which the TS-1 check
+would reject — or a thread-local, which survives the concurrency test and
+fails the reentrancy one. The buffer travels with the call because that is
+the only place it can travel and keep §5.3 true.
+
+### 10.6 A worked example: an mmap'd, lazily-committed reservation
+
+This is what D71 item 2 means by "PCRE2-depth recursion with pcrec still
+never allocating". The caller reserves address space it does not commit,
+and the operating system materialises only the pages the match actually
+touches.
+
+```c
+#include <sys/mman.h>
+#include "matcher.h"                  /* the generated header */
+
+size_t bytes = (size_t)64 << 20;      /* 64 MB of address space, per region */
+void  *f = mmap(NULL, bytes, PROT_READ|PROT_WRITE,
+                MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
+void  *t = mmap(NULL, bytes, PROT_READ|PROT_WRITE,
+                MAP_PRIVATE|MAP_ANONYMOUS|MAP_NORESERVE, -1, 0);
+
+rx_buffers buf = { f, bytes / RX_RESUME_FRAME_SIZE,
+                   t, bytes / RX_TRAIL_FRAME_SIZE };
+
+int r = rx_search_in(subject, n, 0, caps, &buf);   /* pcrec allocates nothing */
+```
+
+**MEASURED on `^(a(?1)?b)$` with exactly those two reservations** (the
+arithmetic is `RX_RESUME_FRAME_SIZE == 40` and `RX_TRAIL_FRAME_SIZE == 16`,
+so 1,677,721 frames and 4,194,304 trail entries):
+
+| subject | result | time | process RSS after |
+|---|---|---|---|
+| 684 B | match | 0.0001 s | 2.0 MB |
+| 200 KB | match | 0.0135 s | 24 MB |
+| **800 KB** | **match** | **0.056 s** | **88 MB** |
+| 932 KB | match | 0.065 s | 102 MB |
+| 940 KB | `PCREC_ERR_FRAMES` | 0.069 s | 103 MB |
+
+with the same artifact returning `PCREC_ERR_FRAMES` on every one of those
+subjects through `rx_search`. Three things a caller should take from it:
+**128 MB reserved costs 1.7 MB of resident memory until touched**; the
+800 KB row is the depth libpcre2 10.46 was measured reaching from its
+heap, so the ruling's goal is met with room to spare; and **the ceiling is
+predictable from the emitted numbers** — the trail binds, at
+`ntrail / (trail entries per level)`, which for this pattern is 4,194,304 /
+8.98 ≈ 467,000 levels, and the measured boundary sits between 466,000 and
+470,000.
+
+**The buffer does not have to be `mmap`'d.** Any storage works — a heap
+allocation, a static array in the caller's own translation unit, an arena
+slice. `MAP_NORESERVE` is the example because it is the one that makes a
+generous ceiling nearly free, and because it is the shape D71 item 2 names.
+
+### 10.7 The freestanding and embedded profile
+
+A caller with no `mmap` has two routes and needs neither `mmap` nor a heap:
+
+- **Pass `NULL`** and get the stamped default — exactly today's behaviour,
+  unchanged, with the artifact's own storage on the stack.
+- **Point the descriptor at the caller's own static storage.** This does
+  not violate §5.3's no-mutable-state rule, and the distinction is worth
+  stating because it looks like it should: that rule binds what pcrec
+  EMITS. Storage the embedder declares in its own translation unit is the
+  embedder's, and the embedder is the party who knows whether its matcher
+  calls are concurrent. A single-context embedded caller puts the buffer
+  in `.bss`, keeps its stack small, and pays nothing.
+
+### 10.8 What does NOT change
+
+Stated explicitly because it is the compatibility promise, and because the
+implementation lane owes a check that asserts each line:
+
+- **`<prefix>_search`, `<prefix>_match` and `<prefix>_match_caps` keep
+  their exact signatures, return spaces, anchoring promises and
+  `caps`/`caps_out` disciplines.** A consumer that never calls an `_in`
+  entry needs no source change, and its call sites are binary-compatible.
+- **`<prefix>_next_pos` is untouched**, as is the find-all protocol of §3.1
+  that goes through it.
+- **The give-up code space of §4 gains no member.** `PCREC_ERR_FRAMES`
+  covers the caller-buffer case; nothing new is minted.
+- **No allocation is added anywhere** (§5.2 stands, and §5.2's scoping to
+  the match path is unchanged: the compile path's `pcrec_output` lifecycle
+  is §8's and is unaffected).
+- **The pre-v1 posture of §9 governs the two things that DO break** —
+  `rx_info`'s layout (§10.4, `abi` 2 → 3) and the emitted run-struct text,
+  which was never contractual. Per D40 regime 1 these are unconstrained in
+  substance and governed only in form: one announced-boundary commit,
+  populations conserved and accounted. [DD-3], which would otherwise supply
+  the versioning-event policy, has no policy yet (plan.md, `STATE:not-started`).
