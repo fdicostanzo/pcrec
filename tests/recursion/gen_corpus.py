@@ -201,7 +201,29 @@ class B:
 
 
 class GU:
-    """A give-up block (design SS10.3's `gu <code> "<subject>"` directive --
+    """A block whose EXPECTATION IS PCREC'S OWN, with libpcre2 recorded only
+    as a cross-check. Two spellings, one property:
+
+      * `code` is a give-up code ("frames"/"steps"/"work"/"recurse") -- renders
+        design SS10.3's `gu <code> "<subject>"` directive.
+      * `code is None` -- pcrec answers an ordinary NOMATCH, RULED by the
+        design rather than read off the oracle; renders `n "<subject>"`.
+
+    **THE None SPELLING EXISTS BECAUSE A RULED NOMATCH IS NOT AN ORACLE FACT
+    EITHER.** `render_m_cells` resolves every `B` cell against libpcre2 and
+    hard-exits ("use GU instead") when libpcre2 answers a give-up rc, which is
+    correct: an rc -52 is not a nomatch and must never be silently written as
+    one. But a pattern whose language is provably EMPTY has a nomatch that
+    follows from a RULING (SS12 P-12: minw = infinity is a legal compile the
+    MRL prune reads as "no position can match"), and libpcre2 spending its own
+    guard to discover the same refusal does not make pcrec's constant-time
+    answer wrong. Those cells belong here, next to the give-ups, for exactly
+    the reason give-ups are here -- **the expectation is a property of pcrec's
+    artifact and the design that rules it, and the oracle is a cross-check on
+    the SHAPE, not the source of the answer**. Writing such a cell as a `B`
+    would claim oracle backing it does not have; writing it as `gu frames`
+    would pin a give-up pcrec does not perform. (design SS10.3's `gu <code>
+    "<subject>"` directive --
     MEASURED against the landed wave A grammar, worktrees/srA's
     tests/harness/run.sh: `^gu[[:space:]]+(steps|frames|work|recurse)
     [[:space:]]+\"(.*)\"[[:space:]]*$`, no startpos variant. `gu` REQUIRES a
@@ -217,8 +239,20 @@ class GU:
     line -- one field, one meaning, the PERR `gate_features` lesson applied
     before it could recur here too."""
 
+    CODES = ('frames', 'steps', 'work', 'recurse')
+
     def __init__(self, pat, subj, code, features, note, oracle_note=True,
-                 parked=None):
+                 parked=None, ruling=None):
+        if code is not None and code not in self.CODES:
+            raise SystemExit('gen_corpus: GU code %r is not one of %r (None '
+                             'means a RULED nomatch)' % (code, self.CODES))
+        if (code is None) != (ruling is not None):
+            raise SystemExit('gen_corpus: GU(%r): a RULED nomatch (code=None) '
+                             'REQUIRES `ruling` naming the design section that '
+                             'rules it, and a give-up must not carry one -- '
+                             'the citation is what separates a ruled answer '
+                             'from an unexplained disagreement' % pat)
+        self.ruling = ruling
         self.parked = parked      # see B.__init__'s own `parked`
         self.pat = pat
         self.subj = subj
@@ -319,7 +353,7 @@ def render(block, census):
         return lines
 
     if isinstance(block, GU):
-        census['gu'] += 1
+        census['ruled' if block.code is None else 'gu'] += 1
         if block.note:
             lines.append('# ' + block.note)
         if block.oracle_note:
@@ -339,6 +373,10 @@ def render(block, census):
         lines.append('pattern ' + block.pat)
         if block.features:
             lines.append('features ' + block.features)
+        if block.code is None:
+            lines.append('# RULED, NOT ORACLE-READ: %s' % block.ruling)
+            lines.append('n %s' % esc(block.subj))
+            return lines
         lines.append('gu %s %s' % (block.code, esc(block.subj)))
         if block.code == 'frames':
             lines.append('# D71.1 (docs/dev/decisions.md): the DEFAULT '
@@ -406,7 +444,7 @@ def render(block, census):
 
 
 def write(fname, header, sections):
-    census = {'cells': 0, 'blocks': 0, 'perr': 0, 'gu': 0}
+    census = {'cells': 0, 'blocks': 0, 'perr': 0, 'gu': 0, 'ruled': 0}
     out = [header.rstrip('\n'), '']
     for title, blocks in sections:
         out.append('# ' + '=' * 68)
@@ -419,8 +457,9 @@ def write(fname, header, sections):
     path = os.path.join(HERE, fname)
     with open(path, 'w') as f:
         f.write('\n'.join(out).rstrip('\n') + '\n')
-    print('%-20s %4d blocks  %4d m/n cells  %2d perr  %2d gu'
-          % (fname, census['blocks'], census['cells'], census['perr'], census['gu']))
+    print('%-20s %4d blocks  %4d m/n cells  %2d perr  %2d gu  %2d ruled'
+          % (fname, census['blocks'], census['cells'], census['perr'],
+             census['gu'], census['ruled']))
     return census
 
 
@@ -795,26 +834,40 @@ LEFTREC = [
                 "\"ab\" -- design SS3.3's own L2 measurement (`out/"
                 "leftrec.txt`) uses this exact subject for the DEFINE form "
                 "of the same cycle, cross-checked here via the {0} idiom."),
-        GU(r"^(a?(?1)b)$", "ab", "frames", RC,
-           parked="tests/known_fail/dd14_bc_open.rxt, cell 1. pcrec answers "
-                  "NOMATCH here, not a give-up, and BOTH are refusals of the "
-                  "same subject. Design SS4.4b's minw fixpoint gives this "
-                  "callee minw = INFINITY (its language IS empty: X = a? X b "
-                  "has no base case), and SS12 P-12 RULES that the MRL prune "
-                  "then reads it as 'no position can match' -- which is what "
-                  "the `a?` quantifier's own bound does, in constant time, "
-                  "where 10.46 spends its rc -52 finding out. The two "
-                  "SIBLING cells in this section still give up, because they "
-                  "carry no quantifier for a bound to hang on, so the class "
-                  "answers two ways depending on a shape that is not about "
-                  "recursion. WHICH ANSWER THIS CELL SHOULD PIN IS A RULING "
-                  "NOBODY HAS MADE.",
+        GU(r"^(a?(?1)b)$", "ab", None, RC,
+           ruling="design SS4.4b + SS12 P-12. This callee's language is EMPTY "
+                  "(X = a? X b has no base case), so SS4.4b's minw Kleene "
+                  "fixpoint gives it minw = INFINITY, and P-12 RULES that "
+                  "infinity is REACHABLE, is a LEGAL COMPILE, and is read by "
+                  "the MRL prune as 'no position can match'. The `a?` "
+                  "quantifier is where that bound is emitted, so pcrec "
+                  "answers NOMATCH in CONSTANT TIME. libpcre2 10.46 spends "
+                  "its own nested-recursion guard (rc -52) to reach the same "
+                  "refusal; SS5.9 scores the pair 'agreed in kind' and SS5.6 "
+                  "records that on a runaway a BOUNDED answer is strictly "
+                  "better than 10.46's, whose rc -52 grows QUADRATICALLY in "
+                  "the subject and reaches seconds at 20 KB. The nomatch is "
+                  "therefore the RULED answer, not a disagreement -- and a "
+                  "give-up is pcrec's own artifact behaviour, never an oracle "
+                  "fact, which is why the earlier `gu frames` expectation "
+                  "here was simply wrong.",
            note="NULLABLE PREFIX: an optional literal precedes the call, "
                 "but the call itself is still unconditional -- "
                 "design SS3.3/L3's own point is that 'is the call the "
                 "FIRST item' misses this shape. SUBJECT CHOICE: \"ab\" -- "
                 "design SS3.3's own L3 measurement uses this exact "
-                "subject for the identical pattern."),
+                "subject for the identical pattern. "
+                "**AND NOTE WHAT THIS CELL DOES NOT SHARE WITH ITS TWO "
+                "SIBLINGS ABOVE.** All three have an EMPTY language, but "
+                "only this one answers in constant time: the MRL bound has "
+                "to be EMITTED somewhere, and the `a?` quantifier is the "
+                "only place in the three that carries one. The siblings "
+                "give up instead -- so today the class answers two ways "
+                "depending on whether the pattern happens to hold a "
+                "quantifier, a shape that has nothing to do with recursion. "
+                "That non-uniformity is a REPORTED FOLLOW-UP (root-level "
+                "minw = infinity answered at the search entry, before any "
+                "frame is pushed), NOT something wave B+C implemented."),
     ]),
     ("THE CELL THAT MUST MATCH (design SS3.3, L5b): 199 nested "
      "recursions, every one entered at offset 0 -- refusing this would be "
@@ -1263,9 +1316,9 @@ INLOOKAROUND = [
      "own lookbehind subset is fixed-PER-BRANCH, so this composes without "
      "new machinery: a recursive callee has no bounded width and refuses.", [
         B(r"^(?:(?<g>ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
-          parked=LBWIDTH % "cell 2", note="fixed width 2."),
+          parked=LBWIDTH % "cell 1", note="fixed width 2."),
         B(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
-          parked=LBWIDTH % "cell 3",
+          parked=LBWIDTH % "cell 2",
           note="widths 1 and 2, the fixed-PER-BRANCH form pcrec ships "
                "(lookaround_design.md SS2.5)."),
         PERR(r"^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$", 'pcre2',
@@ -1371,7 +1424,7 @@ HDR_EXTRA_REFUSED = """
 
 
 def main():
-    tot = {'cells': 0, 'blocks': 0, 'perr': 0, 'gu': 0}
+    tot = {'cells': 0, 'blocks': 0, 'perr': 0, 'gu': 0, 'ruled': 0}
     files = [
         ("refused.rxt",
          "the `conditionals` refusals `(?(DEFINE)`/`(?(R)`/`(?(1)` this "
@@ -1455,8 +1508,8 @@ def main():
         for k in tot:
             tot[k] += c[k]
     print("-" * 72)
-    print("TOTAL %d blocks, %d m/n cells, %d perr, %d gu"
-          % (tot['blocks'], tot['cells'], tot['perr'], tot['gu']))
+    print("TOTAL %d blocks, %d m/n cells, %d perr, %d gu, %d ruled"
+          % (tot['blocks'], tot['cells'], tot['perr'], tot['gu'], tot['ruled']))
 
 
 if __name__ == "__main__":

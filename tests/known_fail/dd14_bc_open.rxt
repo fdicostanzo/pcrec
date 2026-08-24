@@ -1,18 +1,18 @@
-# tests/known_fail/dd14_bc_open.rxt -- [DD-14] wave B+C's THREE OPEN CELLS
+# tests/known_fail/dd14_bc_open.rxt -- [DD-14] wave B+C's TWO OPEN CELLS
 #
 # THIS DIRECTORY IS EXCLUDED FROM `make test` AND RUN BY THE RATCHET, which
-# fails if a cell here starts PASSING. That is the point: every cell below
-# records what libpcre2 10.46 says, pcrec currently says something else, and
-# NOBODY HAS RULED which answer pcrec should ship. If a later wave changes any
-# of them, this file fires and the ruling gets made deliberately.
+# fails if a cell here starts PASSING. That is the point: both cells below
+# record what libpcre2 10.46 says, pcrec currently says something else, and
+# NOBODY HAS RULED which answer pcrec should ship. If a later wave changes
+# either, this file fires and the ruling gets made deliberately.
 #
 # It is `u9_atomic.rxt`'s shape, and that file's own header states the
 # principle: "the cells stay, they stay loud, and if pcrec is ever changed to
-# reproduce it this file FIRES". These three are the opposite polarity from
-# U9's — there pcrec disagrees with libpcre2 and pcrec is believed right; here
-# pcrec disagrees with the CORPUS and the disagreement is a consequence of
-# rulings the design already made, which is why it needs a decision rather
-# than a fix.
+# reproduce it this file FIRES". These two are the opposite polarity from
+# U9's -- there pcrec disagrees with libpcre2 and pcrec is believed right;
+# here pcrec OVER-REJECTS what libpcre2 accepts and matches, and the refusal
+# is a consequence of WHEN a pass runs rather than of any ruling, which is why
+# it needs a charter rather than a patch.
 #
 # Every expectation below is copied from `tests/recursion/`'s generated
 # corpus, i.e. from libpcre2 10.46 through
@@ -20,41 +20,21 @@
 # carries a comment stanza at each cell's former position pointing here;
 # `tests/recursion/gen_corpus.py`'s `parked=` argument is what writes it, so
 # the two cannot drift.
+#
+# A THIRD CELL WAS HERE AND WAS WRONG TO BE (removed 2026-08-24, manager
+# review). `^(a?(?1)b)$` -- a left recursion whose language is empty -- was
+# parked as an unruled disagreement because pcrec answers NOMATCH where the
+# corpus expected `gu frames`. **The corpus was wrong, not pcrec**: design
+# SS12 P-12 RULES that minw = infinity is a legal compile the MRL prune reads
+# as "no position can match", so the constant-time nomatch IS the ruled
+# answer, and a give-up is pcrec's own artifact behaviour, never an oracle
+# fact to be pinned from libpcre2's rc -52. The cell is now live in
+# `tests/recursion/leftrec.rxt` as a RULED nomatch carrying its citation.
+# The lesson generalises: **this file is for pcrec disagreeing with a RULING,
+# not for pcrec disagreeing with an EXPECTATION nobody checked against one.**
 
 # ====================================================================
-# CELL 1 -- A LEFT RECURSION WHOSE LANGUAGE IS EMPTY: give up, or answer?
-# ====================================================================
-#
-# `^(a?(?1)b)$` is `X = a? X b`, which has NO BASE CASE, so its language is
-# empty and no subject can match. libpcre2 answers `rc -52` (its own
-# nested-recursion guard). pcrec answers NOMATCH, in constant time, and the
-# corpus expects `gu frames`.
-#
-# BOTH ARE REFUSALS OF THE SAME SUBJECT, and pcrec's is arguably the better
-# one: design §5.9 scores exactly this pair "agreed in kind", and §5.6 records
-# that on a runaway a bounded answer is STRICTLY BETTER than 10.46's, whose
-# own `rc -52` grows QUADRATICALLY in the subject and reaches seconds at 20 KB.
-#
-# WHY pcrec ANSWERS AT ALL: design §4.4b's `minw` Kleene fixpoint gives this
-# callee `minw = infinity`, and §12 P-12 RULES that infinity is REACHABLE, is a
-# LEGAL COMPILE, and is read by the MRL prune as "no position can match". The
-# `a?` quantifier is where that bound is emitted.
-#
-# AND THE CLASS ANSWERS TWO WAYS, which is the part worth ruling on. The two
-# SIBLING cells in `leftrec.rxt` -- `^((?1)a)$` and the indirect two-node cycle
-# -- are the same empty-language class and DO give up, because neither carries
-# a quantifier for an MRL bound to hang on. So which answer a left recursion
-# gets depends on whether the pattern happens to contain a quantifier, and
-# that is not a fact about recursion.
-#
-# libpcre2 10.46 on this cell: pcre2_match error -52 (nested recursion at the
-# same subject position). pcrec today: nomatch, 0 steps.
-pattern ^(a?(?1)b)$
-features recursion
-gu frames "ab"
-
-# ====================================================================
-# CELLS 2 and 3 -- A CALL INSIDE A LOOKBEHIND, over-rejected
+# CELLS 1 and 2 -- A CALL INSIDE A LOOKBEHIND, over-rejected
 # ====================================================================
 #
 # pcrec REFUSES both ("variable-length lookbehind is not implemented: every

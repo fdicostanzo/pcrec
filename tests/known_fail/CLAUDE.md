@@ -43,32 +43,34 @@ understanding, because its scope may be accidental too.
 
 Maintenance: update this file when the directory's contents or contract change.
 
-## `dd14_bc_open.rxt` — [DD-14] wave B+C's three OPEN cells (2026-08-24)
+## `dd14_bc_open.rxt` — [DD-14] wave B+C's TWO OPEN cells (2026-08-24)
 
-Three cells, each because a **RULING is owed** rather than a bug is open —
+Two cells, both because a **CHARTER is owed** rather than a bug is open —
 `u9_atomic.rxt`'s shape, and for the reason this directory's own header gives:
 excluded from `make test` so the suite stays honest, RUN by the ratchet so a
 cell that starts passing FIRES. Their former positions in
 `tests/recursion/`'s generated corpus carry comment stanzas pointing here,
 written by `gen_corpus.py`'s `parked=` argument so the two cannot drift.
 
-**CELL 1 — a left recursion whose language is EMPTY: give up, or answer?**
-`^(a?(?1)b)$` is `X = a? X b`, which has no base case, so no subject can
-match. libpcre2 answers `rc -52` (its own nested-recursion guard); pcrec
-answers NOMATCH, in constant time; the corpus expects `gu frames`. **Both are
-refusals of the same subject**, and design §5.9 scores exactly that pair
-"agreed in kind". pcrec answers at all because §4.4b's `minw` Kleene fixpoint
-gives the callee INFINITY and §12 P-12 RULES the MRL prune read that as "no
-position can match".
+**A THIRD CELL WAS HERE AND WAS WRONG TO BE** (removed 2026-08-24 on manager
+review). `^(a?(?1)b)$` — a left recursion whose language is empty — was parked
+as an unruled disagreement because pcrec answers NOMATCH where the generated
+corpus expected `gu frames`. **The corpus was wrong, not pcrec.** Design §12
+P-12 RULES that `minw = infinity` is a legal compile the MRL prune reads as
+"no position can match", so the constant-time nomatch IS the ruled answer, and
+§5.9 scores it "agreed in kind" with libpcre2's `rc -52`. The generalisable
+error was in the EXPECTATION's provenance: **a give-up is pcrec's own artifact
+behaviour, never an oracle fact**, so `gu frames` could not have been read off
+libpcre2 and was never checked against the ruling that governs it. The cell is
+now live in `tests/recursion/leftrec.rxt`, rendered by a generalisation of
+`gen_corpus.py`'s `GU` block — `code=None` plus a required `ruling=` citation
+— which writes `n "ab"` and records libpcre2's `rc -52` as a shape cross-check.
 
-**AND THE CLASS ANSWERS TWO WAYS, which is what needs ruling.** The two
-SIBLING cells in `leftrec.rxt` — `^((?1)a)$` and the indirect two-node cycle —
-are the same empty-language class and DO give up, because neither carries a
-quantifier for an MRL bound to hang on. So which answer a left recursion gets
-depends on whether the pattern happens to contain a quantifier, and that is
-not a fact about recursion.
+**THE RULE THIS DIRECTORY SHOULD BE READ BY, restated:** park a cell when
+pcrec disagrees with a RULING. Do not park one when pcrec disagrees with an
+EXPECTATION nobody checked against a ruling — that is a corpus fix.
 
-**CELLS 2 and 3 — a call inside a LOOKBEHIND, over-rejected.** pcrec refuses
+**CELLS 1 and 2 — a call inside a LOOKBEHIND, over-rejected.** pcrec refuses
 both where 10.46 accepts and matches: a tier-2 OVER-REJECTION, never a
 miscompile. **The cause is TIMING, not the width analysis.** `pcrec_maxw`'s
 `A_CALL` arm answers `PCREC_W_UNBOUNDED`, which §3.4(d) makes EXACT for a
