@@ -3,11 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_premises.sh
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: bf236f2 2026-08-23
-# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: 55e3383 2026-08-23
+# RUN FROM REPO COMMIT        : 55e3383 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/subroutines_measurements/out/
-# RUN DATE   : 2026-08-23T20:13:36-04:00
+#      M docs/design/subroutines_measurements/out/premises.txt
+# RUN DATE   : 2026-08-23T20:43:07-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -17,7 +17,7 @@
 # file. Re-run the probe to re-measure.
 # ============================================================
 
-pcrec binary: build/pcrec (1689bd7)
+pcrec binary: build/pcrec (55e3383)
 
 === AXIS A: every subroutine-call spelling's refusal on HEAD =========
 # columns: exit-status | pattern | diagnostic
@@ -134,6 +134,9 @@ sel=(   syntax=(?(1)a|b)              built=unbuilt
   ./docs/design/subroutines_measurements/probes/probe_premises.sh:94:grep -rn 'PCREC_ERR_FLOOR\|RX_ERR_FLOOR' --include='*.c' --include='*.h' --include='*.sh' \
   ./docs/design/design_callout_abi.md:159:D49 partitions the `< −1` space: `[RX_ERR_FLOOR, −2]` are TYPED GIVE-UP codes
   ./docs/design/design_callout_abi.md:164:    if (ret < RX_ERR_FLOOR) __builtin_trap();
+  ./docs/design/subroutines_design.md:1116:| 1 | `src/gen/emit_dfa.c:391-394` | the emitted `#define` block: `PCREC_ERR_RECURSE (-5)` added, `PCREC_ERR_FLOOR` becomes `(-5)` |
+  ./docs/design/subroutines_design.md:1122:| 7 | `docs/spec/match_api.md:171, 209, 213, 222, 822, 850` | the authoritative contract, including the `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` obligation |
+  ./docs/design/subroutines_design.md:1858:`PCREC_ERR_FLOOR` −4 → −5, at §5.6's eight source-of-truth sites plus the two
   ./tests/codegen/run_codegen_tests.sh:848:    new_names="PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_RUNG_FRAMES_BOUNDED PCREC_VM_RUNG_FRAMES_UNBOUNDED PCREC_VM_RUNG_REVDET PCREC_VM_RUNG_COUNTER PCREC_VM_STRAT_POSSESSIVE PCREC_VM_STRAT_BACKTRACKING PCREC_VM_PRUNE_CLAMPED PCREC_VM_PRUNE_UNCLAMPED"
   ./tests/codegen/run_codegen_tests.sh:860:    old_names="RX_ERR_STEPS RX_ERR_FRAMES RX_ERR_WORK RX_ERR_FLOOR RX_UNSET RX_VM_RUNG_CURSOR RX_VM_RUNG_FRAMES_BOUNDED RX_VM_RUNG_FRAMES_UNBOUNDED RX_VM_RUNG_REVDET RX_VM_RUNG_COUNTER RX_VM_STRAT_POSSESSIVE RX_VM_STRAT_BACKTRACKING RX_VM_PRUNE_CLAMPED RX_VM_PRUNE_UNCLAMPED"
   ./tests/codegen/run_codegen_tests.sh:883:    for n in PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_STRAT_POSSESSIVE PCREC_VM_PRUNE_CLAMPED; do
