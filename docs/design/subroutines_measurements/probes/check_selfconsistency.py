@@ -32,6 +32,28 @@ as the findings the file exists for:
       reproduced inside the control written to enforce it. Check 2 now reads
       only the COMMA-SEPARATED DETECTED LIST, never the surrounding prose.
 
+EXERCISED IN THE FAILING DIRECTION BEFORE IT WAS LANDED -- SEVEN SABOTAGES,
+7/7 FAILING CORRECTLY, clean tree passing. That is this project's own standard
+(SKIP-is-not-a-pass, exercised in the failing direction, `tests/mech/`), and a
+check that has only ever been seen to PASS is indistinguishable from a check
+that cannot fail:
+
+  1. a probe touched so it is newer than its archive        -> check 1 fails
+  2. an archive deleted outright                            -> check 1 fails
+  3. S-SR7 removed from every landing bar                   -> check 2 fails
+  4. S-SR9 removed from every landing bar                   -> check 2 fails
+  5. a corpus file removed from every landing bar           -> check 3 fails
+  6. the §9.3 id extractor broken (no rows found)           -> check 2 fails
+  7. the §11 DETECTED extractor broken (no lists found)     -> check 2 fails
+
+Sabotages 3 and 4 are the ones that matter: they are the two ids a
+`S-SR1..S-SR6` RANGE once hid from this document's own coverage audit, and
+sabotage 3 is what the first version of this file PASSED. Re-verified after
+§9.3 absorbed the narration that used to sit in the wave B+C bar -- with that
+prose gone the check no longer has anything to be fooled by, and it still
+fails 3 and 4, so the DETECTED-list-only extractor is doing the work rather
+than the prose's absence.
+
 Read-only. Resolves paths from its own location.
 """
 import os
