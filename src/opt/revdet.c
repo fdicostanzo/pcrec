@@ -115,6 +115,7 @@ static void rd_shape(Shape *S, const Ast *a)
          * Declining here is what makes that unreachable rather than
          * unlikely: rd_reverse and rd_alt_disjoint below both run only on a
          * body this scan approved. */
+        case A_KRESET:
         /* [M6.6.2] DECLINES, and this is the arm the other three in this file
          * rest on: it is what makes them unreachable rather than merely
          * unlikely.
@@ -132,7 +133,6 @@ static void rd_shape(Shape *S, const Ast *a)
          * one-body-copy lowering, which is always available and always safe:
          * the denied build replicates, and replication is the ground truth. */
         case A_LOOK:
-        case A_KRESET:
             S->ok = false;
             return;
         /* [M6.4.2] DECLINE, and it is an EXPLICIT arm rather than a
@@ -298,8 +298,18 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
      * the bottom of this function would have COPIED the node — through
      * `rd_node`, whose D70 kind guard means the copy would have kept a valid
      * `u.look` and therefore looked entirely plausible. That is the silent
-     * outcome this arm replaces with a loud one. */
+     * outcome this arm replaces with a loud one.
+     *
+     * IT GETS ITS OWN `ctx_fail` RATHER THAN JOINING `A_BREF`'s, and the
+     * reason is the one this file already applies to `\K` and `A_BREF`
+     * separately: an internal error that names the WRONG CONSTRUCT sends the
+     * next reader hunting in the wrong file. A shared arm here would have
+     * reported "a backreference reached ..." for a lookaround. */
     case A_LOOK:
+        ctx_fail(cx, 0, "internal error: a lookaround reached the "
+                        "reverse-deterministic body reversal, which its shape "
+                        "scan must decline");
+
     case A_BREF:
         ctx_fail(cx, 0, "internal error: a backreference reached the "
                         "reverse-deterministic body reversal, which its shape "
@@ -470,6 +480,7 @@ static bool rd_alt_disjoint(const Ast *a)
          * the forward cut. Unreachable (rd_shape rejects the body long
          * before), and written out rather than left to the switch's tail
          * because this file's two fallthroughs disagree about what is safe. */
+        case A_ATOMIC:
         /* [M6.6.2] DECLINES, A_ATOMIC's arm for A_ATOMIC's reason: `false` is
          * the sound direction here in the way `true` is not. A decline keeps
          * the quantifier's machinery, which is always correct; an approval
@@ -478,7 +489,6 @@ static bool rd_alt_disjoint(const Ast *a)
          * and written out rather than left to a fallthrough because this
          * file's two fallthroughs disagree about what is safe. */
         case A_LOOK:
-        case A_ATOMIC:
             return false;
         case A_CAP: case A_REP:
             a = a->l;

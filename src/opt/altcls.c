@@ -410,6 +410,7 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * same distance from the branch's start. Neither stage can move a `\K`
      * across a byte, which is the only rewrite that would change the reported
      * start. */
+    case A_KRESET:
     /* [M6.6.2] A LEAF TO BOTH STAGES, `A_BREF`'s arm for `A_BREF`'s reason
      * and one more of its own.
      *
@@ -427,7 +428,6 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * SHAPE — the one class of edit a byte-identity gate is built to notice.
      * Declining costs an optimisation on a body that does not exist yet. */
     case A_LOOK:
-    case A_KRESET:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);

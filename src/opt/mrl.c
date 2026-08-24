@@ -144,6 +144,7 @@ long long pcrec_minw(const Ast *a)
          * NFA (src/ir/nfa.c), so `pcrec_minw` of a pattern with one is the
          * same number as `pcrec_minw` of the pattern without it, which is
          * what makes the prune bound this file computes indifferent to it. */
+        case A_KRESET:
         /* [M6.6.2] A LOOKAROUND CONTRIBUTES 0, AND IT IS 0 BECAUSE IT WAS
          * CHECKED — not because this file's header inherited it (design
          * §3.1(d)). The header's original sentence ("Lookaround,
@@ -165,7 +166,6 @@ long long pcrec_minw(const Ast *a)
          * the same reason: whatever the body needs, the OUTER match does not
          * consume it. */
         case A_LOOK:
-        case A_KRESET:
             return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));
