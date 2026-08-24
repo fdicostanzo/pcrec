@@ -8,7 +8,7 @@ the manager's scratchpad `brief_r34_critic.md` (reproduced in spirit by the
 lens descriptions below). Critics read-only, never ran `make`; every
 contested claim measured on BOTH sides against libpcre2 10.46 via the
 lane's own `sr_oracle.py` and against `prototype/callproto.c` rebuilt from
-source. ROUND 1 STATUS: findings dispatched to the design lane 2026-08-23
+source. FINAL STATUS: CLOSED — three rounds (panel 22, verifier 16, re-check 5), 0 outstanding; design MERGED a59bbb5 at lane 5b35429 (3,016 lines). Round 3 closed at 5b35429 with check_selfconsistency.py landed (3 checks, 7/7 failing-direction exercise, two of its own defects found by that exercise — prose ABOUT an id satisfying the check FOR the id); the lane's fourth self-caught instance of the uncited-number class (08d4f4b quoted exponents from an unarchived run; 5b35429 corrected to the archive's 1.80/2.21/2.12) is on record, with the gap named: the check verifies archive FRESHNESS, not that a prose number appears IN the archive. Manager grep-check before merge: every refuted phrase 0 in doc/probes/index except historical/explanatory mentions. ROUND 1 STATUS: findings dispatched to the design lane 2026-08-23
 ~21:2x; dispositions below are the manager's triage, the FIXED column is
 filled in from the lane's round-1 report (076b4a2, 14 FIXED, 0 disputed; round 1b (C1) complete at d1580a8: 6 FIXED, 0 disputed — 20/20 fixed, 26 sabotage rows, doc 2,764 lines; VERIFIER round launched ~21:4x). The lane's own additions during the round: ASK 6 (lift of the possessive-rung decline for call-bearing bodies: never / wave-G measured / non-nullable-only), §4.3's transitive marking withdrawn, sabotage table now 25 rows.
 

@@ -12685,3 +12685,38 @@ exponents 2.01/1.94/1.98 = quadratic). Round 3 dispatched: those five
 MED, three LOW, the check script; then a manager grep-check and merge.
 Record docs/dev/reviews/2026-08-23-r34-subroutines-design.md (5d20470).
 waveA still in flight (full mech matrix running at its A2 landing).
+
+## 2026-08-23 (EDT), thirty-eighth session (part 7) — [DD-14] subroutines DESIGN MERGED (a59bbb5); R34 closed at three rounds, 0 outstanding
+
+Round 3 landed at 5b35429 (doc 3,016 lines): the §5.3a rule box and
+table now say EMITTED COPY for the five replicating families; the probe
+prose no longer prints the refuted W1 mechanism into its archive; the
+L9b axis computes exponents from n/prev_n, dropped its timer-floor row,
+reports 1.80/2.21/2.12 (mean 2.04) and FAILS ITS OWN GUARD if the mean
+leaves [1.6, 2.6] — "quadratic" is defended by the instrument; the
+sweep found two more sites saying a nullable callee "has one guard slot"
+(a BOUNDED repeat allocates none — S-SR6c's cell must use an unbounded
+quantifier or it goes green on a broken compiler). check_selfconsistency
+.py landed (archive freshness; every S-SR id in a §11 bar's DETECTED
+list; every .rxt in a bar) — exercised in the failing direction 7/7,
+which found two defects in the check itself, one being the project's
+check-design lesson inside the control: prose ABOUT an id satisfied the
+check FOR that id, fixed by reading only the run preceding DETECTED. And
+the lane's fourth self-caught instance of the class: 08d4f4b quoted
+exponents from an unarchived run; 5b35429 corrected; the gap named —
+freshness ≠ "the prose number is in the archive".
+
+Manager grep-check: every refuted phrase 0 in doc/probes/index, five
+residual hits all historical/explanatory or another design's entries;
+check script PASSED; scope docs/design-only across 36 lane commits.
+MERGED a59bbb5. R34 totals: 22 + 16 + 5 findings, 0 disputed, 0
+outstanding, one construct family (wrapped targets) and one
+construct-family-plus-layout-rule (`{0}`-defined callees) added by the
+panel, one plan-row premise (separate call stack) refuted by the lane,
+and the verifier catching false statements inside HIGH fixes for the
+third panel running. SIX ASKs to Frank on the [DD-14] row; implementation
+NOT cleared, sequenced after [M6.6]. Owed: lookaround_design.md P-13
+re-point (V-10). LESSON for briefs: the lane's honest self-corrections
+(four) were more valuable than any single finding — the R32/R33/R34
+class is "the sentence that ought to be true", and only a grep or a
+second instrument catches it.
