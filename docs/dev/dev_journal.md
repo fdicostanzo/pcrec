@@ -12782,3 +12782,31 @@ subject sizes in the release note) and ASK 3 ((d) — NOT the design's (b):
 the byte-keyed dispatch rows stand as R6 ruled; a `family` field serves
 the INDEX layer and lands at wave F with the alpha aliases as its first
 customer; the dogfood idea noted under SR-10 as a check, never dispatch).
+
+## 2026-08-23 (EDT), thirty-eighth session (part 9) — all six [DD-14] ASKs RULED (D71); Frank's two deeper questions
+
+Frank ruled the six ASKs between 23:1x and 23:5x, and twice pushed past
+the 1-depth answer. ASK 1: not keep-or-drop but SPLIT — the code and
+floor move now (ABI), the counter as a [V-H] diagnostic generation axis
+emitted only for call-bearing patterns. ASK 2: (b), then his question
+"could the user provide a stack?" — yes: the frame buffer becomes
+caller-provided (pointer + capacity, stamped default when absent), which
+resolves the depth ceiling instead of tuning it and takes the array off
+the C stack (TS-4). ASK 3: my (b) "collapse to (?N)" would have
+contradicted R6's measured ruling that dispatch is one literal byte with
+literal tails — Frank's "are you finding a 1-depth solution?" was right;
+the code shows every 'missing' spelling already reachable and the defect
+in the INDEX layer → a `family` field, landing at wave F; his dogfood
+idea (syntax column as a pcrec-compiled pattern) declined for dispatch,
+noted under SR-10 as a check. ASK 4: DEFINE is semantically a subroutine
+construct, in `conditionals` only by doorway → joins `recursion` as a
+tailed row lowered as the `{0}`-callee shape (V-3's layout rule IS
+DEFINE); the substitute `^(?!)(?<w>X)|BODY` documented meanwhile. ASK 5:
+proceed + a Perl arm (5.40.1 measured present). ASK 6: (a) now, (c)
+chartered. D71 records 1-6. [DD-14] implementation stays sequenced after
+[M6.6], not cleared. waveBC still in flight (WIP 6/6 committed; corpus,
+registry, strict green in its logs; gate/mech pending).
+
+LESSON (Frank's, twice tonight): before recommending a surface change,
+read the layer under it — the registry's own header had already ruled
+the question with measurements, and the design doc did not know.

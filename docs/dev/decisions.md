@@ -5331,3 +5331,70 @@ build a flexible-array member).
 **Revisit when:** a field's ownership is contested by a second kind (then
 it becomes common with a comment, not a union pun), or a future
 allocation-model change makes the arena pointer in a payload wrong.
+
+## D71 — the [DD-14] subroutine-call rulings: a diagnostic generation axis for the recursion counter, a caller-provided frame buffer, registry FAMILIES for the index layer (Frank, 2026-08-23)
+
+**Context.** The subroutines design (docs/design/subroutines_design.md,
+R34-approved and merged a59bbb5/77fa209) put six ASKs to Frank. Three of
+the rulings shape mechanisms other modules will reuse, so they are
+recorded here rather than only on the plan row.
+
+**Decisions.**
+1. **`PCREC_ERR_RECURSE` is reserved and `ERR_FLOOR` moves −4 → −5 NOW**
+   (an ABI fact, a one-time pre-v1 renumber across the eight
+   source-of-truth sites), but the recursion-depth COUNTER is NOT in the
+   default artifact: it is a DIAGNOSTIC GENERATION AXIS in [V-H]'s
+   namespace — `--trace`'s shape, a separate emitted variant the artifact
+   stamps, never a runtime flag — and even under that axis it is emitted
+   only when the post-discharge tree contains a call. A call-free
+   pattern's artifact is byte-identical across the axis (the identity
+   gate asserts it). The default artifact's give-up for a deep call is
+   `PCREC_ERR_FRAMES`; "rebuild with the diagnostic axis to learn which
+   bound" is the documented story.
+2. **The resume-frame buffer becomes CALLER-PROVIDED** (pointer +
+   capacity in the run struct instead of the inline
+   `resume_stack[<PREFIX>_RESUME_FRAMES]` array; NULL → the stamped
+   default, unchanged behaviour). A caller may hand over an mmap'd,
+   lazily-committed reservation and get PCRE2-depth recursion with pcrec
+   still never allocating; the stamped default (larger for call-bearing
+   patterns per ASK 2, both implied subject sizes in the release note) is
+   a DEFAULT, not the limit. Takes the frame array off the C stack
+   ([TS-4]/DD-10's musl concern). A deliberate pre-v1 API addition — new
+   entry point or run-state object, shape decided at
+   docs/spec/match_api.md under D40, versioning per [DD-3].
+3. **Registry rows keep their byte-keyed dispatch identity (R6 stands);
+   the INDEX layer gains a `family` field.** `--list-syntax` and the
+   compliance page print one line per family with a canonical syntax
+   (`(?N)`) and the resolver rule; D65 `built` derives per member (a
+   family reads built only if every member does); SR-8 witnesses are
+   required per RESOLVER-DISTINGUISHED shape (`(?1)` `(?01)` `(?10)`
+   `(?00)`), not per digit. Lands at [M6.6.2] wave F, whose twelve
+   alpha-spelling alias rows are its first customer. Frank's
+   "dogfood" idea — the syntax column as a pattern pcrec compiles — is
+   noted under [SR-10]/[DD-13] as a future CHECK on the table, never its
+   dispatch.
+4. **`(?(DEFINE)...)` joins module `recursion`** as a tailed row on the
+   `(?(` doorway, lowered as the `{0}`-callee shape (no code at the
+   lexical position, a callee region for calls) — one row, zero new
+   mechanism; the rest of `(?(` stays `conditionals`'. Interim: the
+   compliance page documents the two exact substitutes.
+5. **The D27 corpus for this module gains a PERL ARM** (perl 5.40.1 on
+   the box): the construct family's origin and the one oracle predating
+   PCRE2's atomicity change; plus the SPLICE-vs-LINKAGE self-oracle as a
+   wave-G bar.
+6. **Rung admission declines every call-bearing body now**; the
+   non-nullable-only lift through the call-graph fixpoint is chartered,
+   a measured general lift is not.
+
+**Why.** (1) D18/D23: an option compiles away; a give-up whose type names
+its cause is worth having but not worth paying for in every artifact.
+(2) No fixed number is right for a data-dependent depth; the caller is.
+(3) The dispatch and the index answer different questions ("which row
+fires" vs "what does PCRE2's surface look like") and were conflated by
+row=construct. (4) Subroutines without DEFINE is half a feature; the
+`{0}` layout rule the R34 verifier forced already IS DEFINE's semantics.
+
+**Revisit when:** a second diagnostic axis wants the [V-H] namespace
+(then the group is designed, not the flag); the match-API spec fixes
+the buffer's entry-point shape; the family field's first customer (wave
+F) measures the index change.
