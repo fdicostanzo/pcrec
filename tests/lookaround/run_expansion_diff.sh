@@ -131,6 +131,36 @@ esac
 PFILT="$POLICY"; [ "$PFILT" = "none" ] && PFILT="NONE"
 
 # =========================================================================
+# THE WITNESS PRINTER, and it is a FUNCTION because it has to be called from
+# TWO places: the worker (where it runs only when a cell disagrees) and §1d
+# (where it runs on every green run, over a fixture built to disagree).
+#
+# IT IS A FUNCTION FOR A REASON THIS LANE LEARNED TWICE IN ONE DAY. A witness
+# printer only ever executes when something ELSE has already failed, so on a
+# green tree it is dead code that looks like coverage — and it was WRONG twice
+# before §1d existed: first it passed the patterns through `awk -v`, which
+# ESCAPE-PROCESSES its assignments and printed `\G` as `G` (caught by the
+# "workers wrote to stderr" guard, on sabotage row S130); then the `ENVIRON`
+# fix put the assignment on the `paste` that FEEDS the pipeline instead of on
+# the `awk` that reads it, and every witness printed `A[]=`. A misquoted
+# witness is worse than no witness: it sends the triage after a pattern that
+# was never compiled. §1d is what makes this path measured rather than hoped.
+#
+# $1 cells  $2 A's answers  $3 B's answers  $4 C's answers
+# $5 policy $6 block id     $7 generated id $8 expanded pat  $9 folded pat
+emit_witnesses() {
+    paste "$1" "$2" "$3" "$4" \
+        | GPAT="$8" ORIGPAT="${9}" \
+          awk -F'\t' -v pol="$5" -v bid="$6" -v gid="$7" '
+            BEGIN { gp = ENVIRON["GPAT"]; orig = ENVIRON["ORIGPAT"]; n = 0 }
+            $3 != $4 || $3 != $5 {
+              if (n++ < 3)
+                printf "W\t%s\t%s\t%s\tsubject %s startpos %s\tA[%s]=%s\tB[%s]=%s\tC=%s\n",
+                       pol, bid, gid, $1, $2, gp, $3, orig, $4, $5
+            }'
+}
+
+# =========================================================================
 # THE PER-BLOCK WORKER, re-invoked through this same file (the shape
 # tests/harness/run.sh and tests/reject/run_reject_tests.sh already use).
 # Prints one TSV record per generated pattern to stdout; the parent
@@ -287,25 +317,12 @@ if [ -n "${EXPAND_WORKER:-}" ]; then
             "$bid" "$gid" "$pol" "$ident" "$haslook" "$ncells" \
             "$abd" "$acd" "$gpat"
         if [ "$abd" != "0" ] || [ "$acd" != "0" ]; then
-            # A DISAGREEING CELL IS A FINDING ABOUT THE COMPILER, not about
-            # the expectation. The minimal witness is printed here so the
-            # triage does not need the temp tree.
-            # THE TWO PATTERNS TRAVEL IN THE ENVIRONMENT, NOT IN `-v`.
-            # awk processes escape sequences in a `-v` assignment, so
-            # `-v gp="$gpat"` turns `\G` into `G` and `\w` into `w` — it
-            # prints a DIFFERENT PATTERN from the one that failed, and
-            # warns on stderr while doing it. Found by this script's own
-            # "the workers wrote to stderr" guard, on sabotage row S130.
-            # `ENVIRON` is not escape-processed.
-            GPAT="$gpat" ORIGPAT="$pat" \
-            paste "$bdir/cells" "$d/a.out" "$d/b.out" "$d/oracle/$gid" \
-                | awk -F'\t' -v bid="$bid" -v gid="$gid" -v pol="$pol" '
-                  BEGIN { gp = ENVIRON["GPAT"]; orig = ENVIRON["ORIGPAT"]; n = 0 }
-                  $3 != $4 || $3 != $5 {
-                    if (n++ < 3)
-                      printf "W\t%s\t%s\t%s\tsubject %s startpos %s\tA[%s]=%s\tB[%s]=%s\tC=%s\n",
-                             pol, bid, gid, $1, $2, gp, $3, orig, $4, $5
-                  }'
+            # A DISAGREEING CELL IS A FINDING ABOUT THE COMPILER, and the
+            # minimal witness is printed here so the triage does not need
+            # the temp tree. The printer itself is `emit_witnesses` above,
+            # shared with §1d's positive control.
+            emit_witnesses "$bdir/cells" "$d/a.out" "$d/b.out" \
+                "$d/oracle/$gid" "$pol" "$bid" "$gid" "$gpat" "$pat"
         fi
     done < "$bdir/gen.tsv"
     exit 0
@@ -537,6 +554,38 @@ if [ "$mg_bad" -eq 0 ] && [ "$mg_ok" -eq 5 ]; then
     ok "§1b the module guard: all $mg_ok expansion shapes are REFUSED without module \`lookaround\` and accepted with it. Arm A is the lookaround path and not the assertions path wearing different text"
 else
     bad "§1b the module guard: $mg_bad of 5 expansion shapes did not behave as \`lookaround\`-gated"
+fi
+
+# ---- §1d THE WITNESS PRINTER'S POSITIVE CONTROL -------------------------
+# The one path in this file that CANNOT be exercised by a green run, because
+# it only executes when a cell disagrees. That is the dead-branch-reading-as-
+# coverage shape, and this driver produced TWO defects in that branch on the
+# day it was written (see `emit_witnesses` above), both invisible until a
+# SABOTAGED tree made a cell fail. So the branch is driven here, on every run,
+# over a three-cell fixture built to disagree on exactly one cell — and the
+# assertion is on the PATTERN TEXT, because misquoting it was the actual
+# failure both times.
+WD="$WORKDIR/witness"
+mkdir -p "$WD"
+printf '%s\t%d\n' "$WD/s0" 0 "$WD/s0" 1 "$WD/s1" 0 > "$WD/cells"
+printf 'match 0 1\nnomatch\nmatch 0 2\n' > "$WD/a"
+printf 'match 0 1\nnomatch\nmatch 1 2\n' > "$WD/b"
+printf 'match 0 1\nnomatch\nmatch 1 2\n' > "$WD/c"
+WPAT='a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))\Gz'
+emit_witnesses "$WD/cells" "$WD/a" "$WD/b" "$WD/c" P1 bTEST bTEST.P1 \
+    "$WPAT" 'a\b\Gz' > "$WD/out" 2>"$WD/err"
+w_bad=0
+[ "$(grep -c . "$WD/out")" -eq 1 ] || {
+    bad "§1d the witness printer emitted $(grep -c . "$WD/out") lines for a fixture with exactly ONE disagreeing cell"; w_bad=1; }
+grep -qF -- "A[$WPAT]=match 0 2" "$WD/out" || {
+    bad "§1d the witness printer did NOT reproduce the expanded pattern VERBATIM — a witness that misquotes the pattern sends the triage after a pattern that was never compiled. It printed: $(cat "$WD/out")"; w_bad=1; }
+grep -qF -- 'B[a\b\Gz]=match 1 2' "$WD/out" || {
+    bad "§1d the witness printer did not reproduce the FOLDED pattern verbatim"; w_bad=1; }
+grep -qF -- 'C=match 1 2' "$WD/out" || {
+    bad "§1d the witness printer did not report the oracle's answer"; w_bad=1; }
+[ -s "$WD/err" ] && { bad "§1d the witness printer wrote to stderr: $(head -1 "$WD/err")"; w_bad=1; }
+if [ "$w_bad" -eq 0 ]; then
+    ok "§1d the witness printer's positive control: one disagreeing cell of three produces exactly one witness, carrying BOTH patterns byte for byte — backslashes intact. This is the only path in the file a green run cannot otherwise reach, and it was WRONG TWICE before this control existed (\`awk -v\` escape-processing, then an env prefix on the wrong pipeline stage)"
 fi
 
 # =========================================================================
