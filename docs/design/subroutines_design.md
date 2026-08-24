@@ -56,8 +56,9 @@ call record must survive it too** — and once that is true, the "explicit call
 stack of label addresses" the plan row sketches turns out not to need an array
 at all: **a call is a resume frame**, in the array pcrec already has, with a
 return label in it (§5.1), because a separate array's entries get clobbered by
-a second call made after the first returns and that is a real bug, derived and
-shown in §5.2. (1) plus the measurement that **`\K` is NOT restored by a
+a second call made after the first returns and that is a real bug — **derived
+in §5.2 and then BUILT: the rejected design gets 3 of 50 cells wrong, one of
+them a false match, while agreeing on the other 47** (§5.9). (1) plus the measurement that **`\K` is NOT restored by a
 return** (§3.4) says the restore is over a **compile-time capture-slot set**,
 never a trail rewind, and the entry values are stored **in the trail itself** by
 a trailed self-write at the call site — no new storage anywhere (§5.3). The
@@ -70,7 +71,12 @@ at one site** (§6). That last number is also the answer to charter addition
 (ii): a lookaround body has exactly one use site by construction, so **no
 lookaround body should compile as a call**, and the premise of charter addition
 (iii) survives — `vm_look`'s disciplined splice **is** the inliner, one callee
-contract with two linkages (§6.4). Engine selection is `VM_ONLY` structurally
+contract with two linkages (§6.4). **§5 was not left as prose** — the whole
+lowering is hand-built in the emitter's idiom and run against libpcre2 on four
+patterns at **45 cells agreeing, 4 agreed-in-kind (both engines refused), 0
+disagreeing**, and that run is what found this design's own capture restore set
+incomplete (§5.9), which is the argument for executing a design section that
+can be executed. Engine selection is `VM_ONLY` structurally
 and the prefilter is the one place this design costs a real number: erasing a
 call is **not** a superset, so wave 1 drops the prefilter for call-bearing
 patterns as `backrefs` does — and that is **MEASURED at 21×–350×** on the
