@@ -2382,6 +2382,21 @@ bool pcrec_has_bref(const Ast *a);
  * zeroes it. src/opt/atomic.c. */
 void pcrec_bref_mark(const Ast *a, bool *mark, int nmark);
 
+/* [DD-14] Does this tree carry a SUBROUTINE CALL? `pcrec_has_bref`'s sibling,
+ * in the same file and for the same reason (subroutines_design.md §4.3).
+ *
+ * IT DOES NOT FOLLOW `Ast.u.call.body` — design §4.4's rule for every
+ * whole-tree predicate: the callee is visited at its own lexical position
+ * anyway, and following the back edge would not terminate on `(a(?1))`.
+ *
+ * NO CALL SITE IN THIS WAVE. Its consumer is wave E's one line in
+ * src/opt/select_engine.c, which forces `EngineFit.prefilter` OFF for a
+ * call-bearing pattern (design §8.2: erasure is NOT a superset here, and §8.3
+ * measured 21x-350x for the alternative). Declared and defined now because
+ * wave A2 is the wave that owns the tree predicates; wired when there is a
+ * producer that can make it answer anything but false. */
+bool pcrec_has_call(const Ast *a);
+
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
  * split between "malformed shape" and "well-formed, unrecognised name" —

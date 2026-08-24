@@ -428,6 +428,25 @@ static Ast *altcls_walk(Ctx *cx, Ast *a)
      * SHAPE — the one class of edit a byte-identity gate is built to notice.
      * Declining costs an optimisation on a body that does not exist yet. */
     case A_LOOK:
+    /* [DD-14] A LEAF TO BOTH STAGES, `A_BREF`'s arm for `A_BREF`'s reason.
+     *
+     * Stage 1 merges an alternation run of single-BYTE branches into one
+     * class. A call is not a byte: it consumes whatever its callee consumes,
+     * a quantity that is not even bounded for a recursive callee, so
+     * `(a|(?1))` must not become a class. Stage 2 factors a shared literal
+     * PREFIX and needs a compile-time first byte; a call's is the callee's,
+     * which is not reachable from this node.
+     *
+     * THE CALLEE IS NOT WALKED FROM HERE, and for this pass that is not
+     * merely the cautious choice — it is required. This walk REBUILDS nodes
+     * (`altcls_rebuild_cat`, and the `A_REP` arm below allocates a fresh node
+     * when the body changes), so reaching the callee through `u.call.body`
+     * would rewrite a subtree that ANOTHER part of the tree still points at,
+     * and the two would disagree about which nodes are shared. The callee's
+     * own alternations are normalised when this same walk reaches the callee
+     * at its LEXICAL position, which is the one place its rebuilt node can be
+     * stored back. */
+    case A_CALL:
         return a;
     case A_CAT:
         return altcls_walk_cat(cx, a);

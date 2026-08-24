@@ -147,6 +147,32 @@ bool pcrec_is_bare_anchor(const Ast *a)
      * what stops accepting it from hanging. The two are one decision read by
      * two passes. */
     case A_LOOK:
+    /* [DD-14] NOT A BARE ANCHOR, and design §2.6 MEASURED the cells that make
+     * `false` the answer rather than the reflex.
+     *
+     * A call is an ORDINARY REPEATABLE ATOM: `(?&g){2}`, `(?&g)+`, `(?&g)*`
+     * are ordinary repeats on 10.46, `^(a?)(?1)*$` on "aaa" is (0,3), and a
+     * NULLABLE callee under `*` (`(?(DEFINE)(?<g>a?))(?&g)*` on "aaa") and an
+     * EMPTY one (`(?(DEFINE)(?<g>))(?&g)*` on "") both TERMINATE. So every
+     * call spelling is quantifiable and a bare call as a group's whole body
+     * must be WRAPPED — `pcrec_wrap_bare_anchor` below is the other half —
+     * exactly as `(a)` is.
+     *
+     * IT IS `A_BREF`'s ANSWER FOR `A_BREF`'s REASON: the construct CONSUMES
+     * TEXT, which is the property every member of the `true` list lacks. A
+     * lookaround needed the longer argument above because it really is
+     * zero-width and the reflex answer is the wrong one; a call is not
+     * zero-width at all (except when its callee happens to be), so the reflex
+     * and the measurement agree here.
+     *
+     * `false` is what lets `try_quant` accept the quantifier, and
+     * `vm_nullable`'s `A_CALL` arm — the SCC fixpoint, §2.6 — is what stops
+     * accepting it from hanging on a nullable callee. The two are one
+     * decision read by two passes, `A_LOOK`'s pairing exactly. Note design
+     * §2.6's further RULING that a call-bearing body is declined by every
+     * RUNG (possessive included, where there is no empty-iteration guard at
+     * all): that is `pss_walk`'s and `rd_shape`'s arms, not this one. */
+    case A_CALL:
         return false;
     }
     return false;

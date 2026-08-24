@@ -472,6 +472,28 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `A_ATOMIC`'s answer for `A_ATOMIC`'s reason: a bracketing construct with a
   body of its own is not a BARE assertion standing alone.
 
+  **[DD-14] `A_CALL` ANSWERS `false` TOO, and here the reflex and the
+  measurement AGREE** — which is worth recording precisely because `A_LOOK`'s
+  do not. A call CONSUMES TEXT (whatever its callee consumes), so it is an
+  ordinary repeatable atom by the same property `A_BREF` has, and
+  `subroutines_design.md` §2.6 measured the cells: `(?&g){2}` / `(?&g)+` /
+  `(?&g)*` are ordinary repeats on 10.46, `^(a?)(?1)*$` on "aaa" is (0,3),
+  and both a NULLABLE and an EMPTY callee under `*` TERMINATE. So a bare call
+  as a group's whole body is WRAPPED, not refused, and `vm_nullable`'s own
+  `A_CALL` arm is what stops accepting the quantifier from hanging — the same
+  two-passes-one-decision pairing `A_LOOK` has.
+
+  **[DD-14] `mod_lookaround.c`'s `la_has_kreset` GAINED AN `A_CALL` ARM WITH
+  AN OBLIGATION ATTACHED.** It answers `false`, and it cannot answer anything
+  else: the predicate runs INSIDE the lookaround parse hook, to raise §2.7's
+  refusal with a pattern offset, while `u.call.body` is filled by the
+  END-OF-PARSE resolution pass — so at the instant it runs `.body` is NULL and
+  a forward call's target has not been parsed at all. The question "does the
+  callee hold a `\K`" is UNANSWERABLE there, not merely forbidden by the
+  back-edge rule. Wave B+C must re-run the check after resolution (over the
+  call graph), refuse a call inside a lookaround body, or MEASURE what 10.46
+  does with the combination. The arm says so at the site.
+
   **THE BARE-ANCHOR RULE IS NOW ONE FUNCTION, AND WAVE D FOUND OUT WHY IT HAD
   TO BE.** `pcrec_is_bare_anchor` / `pcrec_wrap_bare_anchor` (parse.c, declared
   in core/internal.h) are the single home for the node-kind set that drives two

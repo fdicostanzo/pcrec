@@ -213,6 +213,23 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   chartered as `[ENG-LOOK]` and §5.7 records Frank's ruling that no
   one-character fold ships in the meantime.
 
+  **[DD-14] `A_CALL` IS A FOURTH ANSWER, AND IT IS `A_BREF`'s WITH A REASON
+  THAT WILL EXPIRE.** `compile_ast` falls to the loud `ctx_fail` for a
+  subroutine call, exactly as it does for a backreference — but NOT because a
+  call is as hopeless. A call to a NON-RECURSIVE callee has an exact finite
+  lowering (splice the callee's machine in); a call in a CYCLE does not, since
+  that is a context-free language and this is a finite automaton, and
+  `subroutines_design.md` §8.2 measured that the two available approximations
+  are the two `A_BREF`'s arm already refuses — erasure to epsilon is a SUBSET
+  (it deletes real matches, D26's one outright-refused failure class) and a
+  depth-bounded unrolling is neither subset nor superset. Nothing builds the
+  machine: every `recursion` row is VM_ONLY and wave E forces
+  `EngineFit.prefilter` off, so `src/core/compile.c`'s build condition is
+  false. **WAVE G IS WHERE THIS ARM CHANGES** and it is the one site in the
+  module where following the call graph is the POINT rather than a hang:
+  §8.3's approximation, restored only for SPLICEABLE (acyclic) calls, against
+  the 21x-350x prefilter loss §8.3 measured.
+
   Closure visit marks are generation-stamped rather than memset per call (D10). PCRE's empty-iteration rule lives in the closure walk: an ε re-arrival at a loop entry means the iteration consumed nothing, so the closure follows the loop's EXIT edge at that priority position, and it is **not** a one-shot (K17, 2026-08-14). **The closure is PATH-SENSITIVE as of K18's fix (2026-08-15): the memo is keyed on (state, OPEN-LOOP CONTEXT) and the redirect fires on "this loop is OPEN on my path", not on "this state has been seen somewhere in this closure" — the two are the same predicate only when a closure's walk is a single path, and it is a DFS over a branching ε graph.** A context is an interned IMMUTABLE chain (ctx 0 = the empty open-loop stack; every other ctx is (parent, loop entry)), which is the open-loop stack's only representation — carrying it costs one int, and the design's hardest prototype bug (a frame restoring the stack's depth but not its entries, silently losing redirects) is not expressible in it. Three things to know before editing `clo_walk`: the ctx-0 FAST PATH (the pre-K18 per-state stamp array) carries nearly all traffic and removing it costs 7x on a real pattern for byte-identical work; the walk has **no recursion at all** — a split pushes its deferred branch onto an explicit LIFO, because keying on the context makes a recursive descent Θ(d²) deep (31,377 frames at the parser's 250-paren cap, an asan stack overflow at depth 210); and both of the design's invariants ship as live `DFA_INVARIANT` aborts, neither covering the other. Read `docs/design/k18_memo_design.md` §2a/§3 and known_issues.md K17+K18 together before touching this function; the guards are `tests/base/k18_*.rxt`
 
 ## Conventions

@@ -1007,6 +1007,44 @@ static bool vm_nullable(const Ast *a)
          * on the body at all. A lookaround whose body consumes bytes still
          * consumes none itself. */
         case A_LOOK: return true;
+        /* [DD-14] TRUE, AND IT IS A DELIBERATELY INCOMPLETE PLACEHOLDER — the
+         * SOUND bottom of this predicate, not its answer. Read the whole
+         * comment before touching it.
+         *
+         * THE TRUE ANSWER IS "nullable iff the callee is" (design §2.6/§4.4a
+         * site 1), and it is a FIXPOINT over the SCC-condensed call graph,
+         * memoised, with cycle bottom `false` iterated upward. THIS
+         * SIGNATURE CANNOT EXPRESS IT: `vm_nullable` is a bare `const Ast *`
+         * walker with no context and no visited set, so following
+         * `u.call.body` would recurse for ever on `(a(?1))` and HANG THE
+         * COMPILER (design §4.4). The fixpoint is `src/opt/callgraph.c`'s
+         * (wave B+C) and this arm will read its memo.
+         *
+         * WHY `true` AND NOT THE FIXPOINT'S OWN BOTTOM. The cycle bottom
+         * `false` is correct INSIDE the iteration, where a later round can
+         * raise it; standing alone as a placeholder it is the UNSOUND
+         * direction — `false` denies the empty-iteration guard to a
+         * quantifier above a NULLABLE callee, and design §2.6 measured that
+         * `(?(DEFINE)(?<g>a?))(?&g)*` on "aaa" is (0,3) and
+         * `(?(DEFINE)(?<g>))(?&g)*` on "" is (0,0), i.e. both TERMINATE on
+         * 10.46 only because something bounds the empty iteration. `true`
+         * keeps the guard, which costs a slot and a test on a call that never
+         * needed one and can never lose a match. `A_BREF`'s arm above takes
+         * the same direction for the same reason.
+         *
+         * IT IS UNREACHABLE IN THIS WAVE — nothing produces an `A_CALL` — and
+         * `vm_emit`'s own arm is a hard `ctx_fail`, which is what makes
+         * landing it incomplete safe rather than merely quiet. Wave B+C
+         * replaces it in the same edit that builds the graph.
+         *
+         * DESIGN §2.6's FURTHER RULING RIDES ON THIS ARM and is NOT
+         * discharged by it: the POSSESSIVE rung (`vm_poss_star`) emits no
+         * empty-iteration guard and fires no work charge at all, so a
+         * nullable callee routed there loops at zero consumption for ever.
+         * What keeps that unreachable is the RUNG DECLINES, in
+         * `src/opt/possessify.c`'s `pss_walk` and `src/opt/revdet.c`'s
+         * `rd_shape` — not this answer. */
+        case A_CALL: return true;
         case A_CAP:   a = a->l; continue;
         /* [M6.4.2] TRANSPARENT: the cut removes MATCHES, never BYTES, so
          * `(?>X)` can match empty exactly when `X` can. `(?>)` is legal and
@@ -1277,7 +1315,20 @@ static int vm_det_seq(const Ast *a, const uint8_t **out, int cap)
          * by stride" is wrong for it exactly as it is for `$`, and declining
          * on the kind is the right answer without reading a field. This is
          * also the site that GATES the next one — `vm_cap_offsets` runs only
-         * on a body this function approved. */
+         * on a body this function approved.
+         *
+         * [DD-14] RE-INSPECTED BY HAND FOR `A_CALL`, one of design §4.4a's
+         * four `default:`-carrying sites (its site 2), and SOUND WITH NO ARM
+         * ADDED — recorded here because `-Wswitch` will not name this switch.
+         * A call is not a STRIDE: its width is the callee's, unbounded for a
+         * recursive one, and not a compile-time fact at all without the call
+         * graph. `return 0` IS the decline and it is the answer a correct arm
+         * would have written, so an explicit `case A_CALL:` here would be a
+         * restatement rather than a decision. The decline is also what keeps
+         * this function's own gate honest for the next two sites: a
+         * call-bearing body is never `vm_det_seq`-approved, which is what
+         * makes `vm_cap_offsets`' and the cursor rung's declines
+         * unreachable rather than merely correct. */
         return 0;
     }
 }
@@ -1319,7 +1370,16 @@ static int vm_cap_offsets(const Ast *a, int base, CapOff *out, int *n, int cap)
          * `default:`-carrying sites. SOUND, and GATED by the row above: `-1`
          * IS the decline, and this runs only on a body `vm_det_seq` already
          * approved — which it cannot be with a lookaround in it, since that
-         * function declines on the kind. Both halves hold independently. */
+         * function declines on the kind. Both halves hold independently.
+         *
+         * [DD-14] RE-INSPECTED BY HAND FOR `A_CALL` (design §4.4a site 3) and
+         * SOUND WITH NO ARM ADDED, both halves again and independently: `-1`
+         * IS the decline the design's table asks for, and a call-bearing body
+         * cannot be `vm_det_seq`-approved because that function declines on
+         * the kind one site up. Note this walk computes byte OFFSETS relative
+         * to the iteration start — a quantity a call does not have, since its
+         * width is the callee's — so declining is the only answer available
+         * as well as the right one. */
         return -1;   /* unreachable for a vm_det_seq-approved body */
     }
 }
@@ -1431,6 +1491,14 @@ static void vm_rev_caps(const Ast *a, int *out, int *n, int cap)
          * because there is no reversed spelling of "compare against what group
          * k captured". */
         case A_BREF:
+        /* [DD-14] DECLINES, joining `A_BREF` and `A_ATOMIC`: it carries no
+         * capture NUMBER of its own, and it is UNREACHABLE for their reason —
+         * `rd_shape` (src/opt/revdet.c) declines every body holding a call.
+         * RETURNING rather than reaching the callee is what keeps this dense
+         * index a faithful mirror of what `rd_shape` counted: a group number
+         * this walk found through `u.call.body` but `rd_shape` never saw would
+         * shift every later entry and address the wrong recovery local. */
+        case A_CALL:
         /* [M6.4.2] UNREACHABLE, and it declines rather than descending. This
          * runs only on a revdet-APPROVED body, and `rd_shape` (src/opt/revdet.c)
          * declines every body containing an `A_ATOMIC` — an atomic group is not
@@ -1975,6 +2043,35 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
         c.frames += 1 + a->u.look.nbranch;
         c.trail  += 2;
         return c;
+    /* [DD-14] A LOUD REFUSAL, not a number — this is a GRAPH site (design
+     * §4.4a site 5) and the graph is wave B+C's.
+     *
+     * THE TRUE COST is the callee's, `Cost.unbounded` on a cycle, PLUS this
+     * site's own `2 * |W|` of trail: one save and one restore per slot in the
+     * callee region's write set (§5.7). Both halves need
+     * `src/opt/callgraph.c` — the first is a memoised walk over the SCC
+     * condensation, the second reads `u.call.nsave`, which that same pass
+     * fills. Neither is derivable here: following `u.call.body` from this
+     * function would recurse for ever on a recursive callee, and `nsave` is 0
+     * on every node until the pass runs.
+     *
+     * WHY LOUD RATHER THAN A SAFE BOTTOM. This function HAS a `Ctx`
+     * (`v->cx`), which `vm_nullable` and `pcrec_minw` do not, so it can say
+     * what is wrong instead of guessing in the safe direction. And there is
+     * no cheap safe bottom to guess: the safe direction here is
+     * OVER-charging, whose top is `unbounded`, and stamping every
+     * call-bearing artifact `unbounded` would silently disable the honest
+     * `subject_ceiling` D44.1 exists to publish. An under-charge is worse
+     * still — `trail_frames` sized short on the deepest path, answering
+     * PCREC_ERR_FRAMES on a subject the pattern matches, which is exactly
+     * `S87_kreset_trail_uncharged.sh`'s class.
+     *
+     * UNREACHABLE IN THIS WAVE: nothing produces an `A_CALL`, and `vm_emit`'s
+     * arm is the same hard failure — this arm and that one are what make
+     * taking only part of wave B+C impossible. */
+    case A_CALL:
+        ctx_fail(v->cx, 0, "internal error: A_CALL reached vm_cost before "
+                           "wave B+C's call graph");
     }
     return c;
 }
@@ -2067,6 +2164,54 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
         if (a->u.look.nbranch > 1) v->npush += a->u.look.nbranch - 1;
         vm_count_slots(v, a->l, repl, false);
         return;
+    /* [DD-14] A LOUD REFUSAL, and design §4.4c is emphatic that this site is
+     * the one whose FIRST answer was wrong: "the first version said LEXICAL
+     * ONLY and it was WRONG — the consequence is an out-of-bounds slot
+     * write", K27's class and this function's own header warning.
+     *
+     * THE RULE §4.4c LANDS ON: the layout must account for EVERY EMITTED
+     * REGION — each lexical occurrence as today, PLUS one for each emitted
+     * callee region — and `W` is computed over the CALLEE REGION's own slot
+     * indices. Three separate facts make a lexical count wrong, and each was
+     * measured:
+     *
+     *   1. `X{0}` EMITS NOTHING AND COUNTS NOTHING (this function returns at
+     *      its `rmin == 0 && rmax == 0` guard), AND A CALLEE CAN LIVE THERE —
+     *      the classic pre-DEFINE idiom. Measured on 10.46:
+     *      `^(?:(?<g>a|ab)){0}(?&g)c$` on "abc" is (0,3), and the atomic and
+     *      rung-bearing variants match too. So the region the emitter must
+     *      produce for the call has slot instances NOTHING COUNTED. Measured
+     *      in-pcrec: `^((?>a)){1}b$` allocates 2 cut marks, `^((?>a)){0}b$`
+     *      allocates none.
+     *   2. The `CALL_LINKAGE` shape emits the callee region SEPARATELY
+     *      (§6.3), so it needs its OWN instances. "Double-counting" is the
+     *      CORRECT count here, not a bug to avoid.
+     *   3. `u.call.save` lists SLOT INDICES, and the lexical copy's and the
+     *      callee region's differ. A restore written against the wrong
+     *      indices is §5.3b's axis-C miscompile by a second route.
+     *
+     * SO THIS ARM CANNOT BE WRITTEN WITHOUT `src/opt/callgraph.c`, which
+     * knows which groups get an emitted region — and §4.4c adds that this
+     * function gains a PARAMETER for "count this subtree as a region even if
+     * a `{0,0}` ancestor would prune it". Both are wave B+C's, in the same
+     * edit as `vm_emit`'s arm.
+     *
+     * LOUD BECAUSE THERE IS A `Ctx` AND NO SAFE BOTTOM. Under-counting is an
+     * out-of-bounds write in EMITTED code; over-counting by a guess would
+     * make `RX_NSLOTS` wrong in the other direction on every artifact.
+     * S-SR19 is the detector, and §4.4c records that its cell must carry a
+     * RUNG-BEARING or ATOMIC callee — a callee with only capture slots
+     * allocates from a family `{0}` does not prune, and the row would go
+     * green for the wrong reason.
+     *
+     * AND EVERY OTHER `LEXICAL ONLY` VERDICT IN THIS WAVE WAS RE-CHECKED
+     * AGAINST THAT PRUNE (§4.4c): `dis_walk` (src/opt/atomic.c) and
+     * `br_strip_caps` (src/parse/mod_backrefs.c) descend `A_REP`
+     * UNCONDITIONALLY — no `{0,0}` guard at all — and the three whole-tree
+     * predicates have no prune either, so THIS was the only site affected. */
+    case A_CALL:
+        ctx_fail(v->cx, 0, "internal error: A_CALL reached vm_count_slots "
+                           "before wave B+C's call graph");
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
      * allocates it, and counting one here as well would make `RX_NSLOTS` one
      * too large on every possessive spelling. An UNLIFTED one allocates
@@ -3381,7 +3526,19 @@ static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
          * the reversed body contains one — a thing that has no meaning (design
          * §3.5 lowers even a lookbehind with a FORWARD body). It is now
          * doubly unreachable: `rd_shape` declines the body, and `rd_reverse`
-         * raises its own named error before this walk is ever emitted. */
+         * raises its own named error before this walk is ever emitted.
+         *
+         * [DD-14] RE-INSPECTED BY HAND FOR `A_CALL` (design §4.4a site 7),
+         * SOUND AND LOUD WITH NO ARM ADDED — and §4.4a records that this
+         * default is REACHABLE IN A NEW WAY for this construct: a call can
+         * carry a WHOLE SUBTREE into the backward walk rather than a single
+         * node, because `u.call.body` names one. What keeps that a diagnostic
+         * rather than a miscompile is the FIVE DECLINES in src/opt/revdet.c
+         * (sites 14-18) — `rd_shape` refuses the body, so no reversed program
+         * containing a call is ever built, and `rd_reverse` raises its own
+         * named `A_CALL` error if one somehow is. The hard `ctx_fail` below is
+         * the third layer, and a silent accept here would emit a backward walk
+         * that simply skipped the call. */
         break;
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in the backward walk");
@@ -5545,6 +5702,25 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
     case A_LOOK:
         vm_look(v, entry, a, next);
         return;
+    /* [DD-14] THE PRODUCER SITE, AND IT IS A HARD FAILURE UNTIL WAVE B+C.
+     *
+     * The call linkage is design §5: `RX_CALL` writes the return label into
+     * the RESUME FRAME (§5.1 — the frame IS the call record; §5.2 derives and
+     * §5.9's prototype REPRODUCES the clobber bug a separate `call_stack[]`
+     * array has, three of fifty cells wrong, one a FALSE MATCH), the
+     * activation-private save/restore of `u.call.save` rides the trail
+     * (§5.3), `RX_RETURN` and the fail label's two lines close it, and
+     * `CALL_SPLICE` (wave G) inlines the callee instead.
+     *
+     * IT IS NAMED RATHER THAN LEFT TO THE TAIL's generic "bad AST node in VM
+     * emitter", which would send the next reader hunting for tree corruption
+     * after a half-landed wave B+C. THIS ARM IS WHAT MAKES THE THREE COUPLED
+     * EDITS INSEPARABLE: this one, `vm_count_slots`' region accounting
+     * (§4.4c) and `vm_cost`'s graph-fed charge. Any two of them without the
+     * third fail here, loudly, instead of emitting an artifact. */
+    case A_CALL:
+        ctx_fail(v->cx, 0, "internal error: A_CALL reached the VM emitter "
+                           "before wave B+C's call linkage");
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
 }

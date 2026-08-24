@@ -10,7 +10,9 @@
  *                         the rows that reach no doorway)
  *   pcrec_discharge_atomic delete every cut that is PROVABLY a no-op
  *
- * plus the two [M6.5.2] backreference walks below, and — since [M6.6.2] —
+ * plus the two [M6.5.2] backreference walks below, [DD-14]'s
+ * `pcrec_has_call` at the end of the file (module `recursion`, placed here on
+ * the same argument), and — since [M6.6.2] —
  * `pcrec_has_lookaround`, which is placed HERE and not in a lookaround file
  * because it is `pcrec_has_atomic`'s twin in every respect that matters: same
  * shape, same post-discharge reading, same single consumer (`Vm.mrl_win`), and
@@ -23,12 +25,15 @@
  * off it, whose depth the parser's group-nesting cap bounds. A
  * 20,000-character pattern segfaulted pcrec once already for want of this.
  *
- * NONE OF THE THREE SWITCHES CARRIES A `default:` — mrl.c:18-24's rule. A node
- * kind added after this file is written must be a COMPILE ERROR at each of
- * them, because "can this construct contain a cut", "can it carry a producer's
- * stamp" and "is it transparent to the discharge" are three questions only the
- * author of the new kind can answer, and inheriting the wrong answer is silent
- * in all three cases. */
+ * NONE OF THE SEVEN SWITCHES IN THIS FILE CARRIES A `default:` — mrl.c:18-24's
+ * rule. A node kind added after this file is written must be a COMPILE ERROR
+ * at each of them, because "can this construct contain a cut", "can it carry a
+ * producer's stamp" and "is it transparent to the discharge" are questions
+ * only the author of the new kind can answer, and inheriting the wrong answer
+ * is silent in every case. [DD-14] adds one more that the alarm cannot state
+ * on its own: every one of these walks is a WHOLE-TREE walk, so none of them
+ * may follow `Ast.u.call.body` — the AST's first back edge — and each
+ * `A_CALL` arm below says why declining it is not merely safe but exact. */
 
 #include <string.h>
 
@@ -64,6 +69,23 @@ bool pcrec_has_atomic(const Ast *a)
         case A_CAP: case A_REP:
             a = a->l;
             continue;
+        /* [DD-14] DECLINES, and the decline is the WHOLE-TREE RULE (design
+         * §4.4), not a shrug. A call has no children: `l` and `r` are unused
+         * and the callee hangs off `u.call.body`, which is a BACK EDGE. This
+         * predicate walks the whole tree, so it ALREADY VISITS the callee at
+         * the callee's own lexical position — `(?>a)` inside group 1 is found
+         * when the walk reaches group 1, whether or not `(?1)` is followed —
+         * which makes following `.body` redundant. And it is worse than
+         * redundant: on `((?>a)(?1))` this bare `const Ast *` walker has no
+         * visited set, so it would recurse for ever and HANG THE COMPILER, in
+         * a predicate asked of EVERY pattern. No answer-comparison test can
+         * detect a non-terminating compile, because there is no answer.
+         *
+         * The `A_CALL` NODE ITSELF is not a cut and cannot be one, so `false`
+         * is what the node contributes. Sabotage row S-SR18 is the row that
+         * makes the descent a detected failure rather than a comment. */
+        case A_CALL:
+            return false;
         case A_CAT:
             while (a->k == A_CAT) {
                 if (pcrec_has_atomic(a->r)) return true;
@@ -118,6 +140,15 @@ bool pcrec_has_lookaround(const Ast *a)
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
+        /* [DD-14] DECLINES, `pcrec_has_atomic`'s whole-tree argument verbatim
+         * (design §4.4): a lookaround inside the callee is found at the
+         * callee's lexical position, and following `.body` would hang the
+         * compiler on `((?=a)(?1))`. NOT IN §4.4a's TABLE — this site did not
+         * exist when the design censused the tree at eacac76; it is
+         * `lookaround` wave A2's own addition and it takes the same verdict as
+         * its twin one function up. */
+        case A_CALL:
+            return false;
         case A_CAT:
             while (a->k == A_CAT) {
                 if (pcrec_has_lookaround(a->r)) return true;
@@ -178,6 +209,16 @@ bool pcrec_ast_stamped_by(const Ast *a, const RegRow *row)
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
+        /* [DD-14] DECLINES — and here the decline costs NOTHING AT ALL, which
+         * is worth saying because this walk descends generically everywhere
+         * else. The `a->reg == row` test at the TOP of the loop has already
+         * answered for the `A_CALL` node itself, which is the node this row's
+         * producer (the `recursion` ports) actually built; every node in the
+         * callee carries its OWN stamp and is visited at the callee's own
+         * lexical position by this same whole-tree walk. Following `.body`
+         * would find nothing new and would hang on `(a(?1))` (design §4.4). */
+        case A_CALL:
+            return false;
         case A_CAT:
             while (a->k == A_CAT) {
                 if (pcrec_ast_stamped_by(a->r, row)) return true;
@@ -315,6 +356,26 @@ static Ast *dis_walk(DischargeSet *d, Ast *a)
     case A_CAP: case A_REP:
         a->l = dis_walk(d, a->l);
         return a;
+    /* [DD-14] LEXICAL ONLY (design §4.4a site 11): the node is visited AS
+     * ITSELF and `u.call.body` is never followed. This is a tree REWRITE, so
+     * the reason is sharper than the predicates' one above — following the
+     * back edge would DISCHARGE THE CALLEE TWICE, once at its lexical
+     * position and once through every call that names it, and `dis_walk`
+     * rewrites A_CAT/A_ALT spines IN PLACE. On a recursive callee it would
+     * not terminate at all.
+     *
+     * There is nothing to descend INTO: an `A_CALL` has no `l` and no `r`.
+     * Returning the node unchanged is the complete arm, and it is correct
+     * because a call is not an `A_ATOMIC` and contains none — the cuts that
+     * live in the callee are discharged when the walk reaches the callee.
+     *
+     * RE-CHECKED AGAINST THE `{0,0}` PRUNE (design §4.4c): this walk descends
+     * `A_REP` UNCONDITIONALLY — it has no `rmin == 0 && rmax == 0` guard at
+     * all — so a callee defined inside `(?:...){0}`, which §4.4c measured is
+     * a real idiom, is still reached and still discharged. That is a property
+     * of the code, not of pass ORDER. */
+    case A_CALL:
+        return a;
     case A_CAT: case A_ALT: {
         /* The left-nested spine, walked iteratively — it is as long as the
          * pattern, and D10/DD-10/R1 R-2 (and K20, three times) say a walk that
@@ -410,6 +471,21 @@ bool pcrec_has_bref(const Ast *a)
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
+        /* [DD-14] DECLINES, the whole-tree rule again (design §4.4). A
+         * backreference inside the callee is found at the callee's lexical
+         * position — `(a(b)\2)(?1)` carries its `\2` in group 1's own
+         * subtree — so following `.body` would add nothing and would hang on
+         * `((b)\2(?1))`. The `A_CALL` node itself compares no subject text to
+         * subject text: it RE-RUNS a pattern, which is §2.1's whole
+         * discriminator between this construct and `A_BREF`.
+         *
+         * §7.1's consequence still reaches a call-bearing pattern, by a
+         * DIFFERENT route: design §8.2 measured that the capture-erased
+         * prefilter approximation is not a sound superset for a call either,
+         * so wave E forces `EngineFit.prefilter` false through
+         * `src/opt/select_engine.c`, not through this predicate. */
+        case A_CALL:
+            return false;
         case A_CAT:
             while (a->k == A_CAT) {
                 if (pcrec_has_bref(a->r)) return true;
@@ -461,6 +537,35 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
+        /* [DD-14] MARKS `u.call.target` AND DESCENDS NOWHERE (design §4.3).
+         * THE ONE ARM IN THIS FILE THAT IS NOT A DECLINE, and it is the arm
+         * §4.3 measured the need for: `--no-captures` deletes the `A_CAP`
+         * wrapper of every group nothing references (P10, 9 mentions vs 0),
+         * and A CALL NAMES A GROUP EXACTLY AS A REFERENCE DOES — so without
+         * this line `(a)(?1)` under `--no-captures` loses group 1 and the
+         * call has no body at all.
+         *
+         * THE MARK IS NOT TRANSITIVE AND NEEDS NO FIXPOINT, which is the
+         * cheaper half of §4.4's back-edge finding: if group 1's body calls
+         * group 3, that call is an `A_CALL` NODE IN THE TREE, so this
+         * whole-tree walk reaches it at its own lexical position and marks 3
+         * directly. §4.3's first version made the marking transitive over the
+         * call graph and that clause is WITHDRAWN.
+         *
+         * `target == 0` MARKS NOTHING — the root is not an `A_CAP` and is
+         * never deleted (§2.4) — and the `> 0` half of the guard is what says
+         * so. The `< nmark` half is `A_BREF`'s own convention one arm up,
+         * kept for the same measured reason: wave B+C's resolver refuses
+         * every call to a group that does not exist (the error-115 class,
+         * §4.2), so an out-of-range target cannot arrive here — and if one
+         * ever could, writing past the array is the failure this guard makes
+         * impossible instead of unlikely. There is no `Ctx` in this
+         * signature to fail loudly through; the guard is the file's
+         * established answer to that. */
+        case A_CALL:
+            if (a->u.call.target > 0 && a->u.call.target < nmark)
+                mark[a->u.call.target] = true;
+            return;
         case A_CAT:
             while (a->k == A_CAT) {
                 pcrec_bref_mark(a->r, mark, nmark);
@@ -475,5 +580,65 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
             continue;
         }
         return;
+    }
+}
+
+/* ---- [DD-14] does this tree carry a SUBROUTINE CALL? ---------------------
+ *
+ * `pcrec_has_bref`'s sibling, placed here for this file's standing reason
+ * (design §4.3, and `lookaround_design.md` §11 wave A2 put
+ * `pcrec_has_lookaround` here on the same argument): the tree predicates live
+ * together, in switches with NO `default:`, so a node kind added later is a
+ * compile error at each of them rather than a silent inheritance. These six
+ * make seven.
+ *
+ * ASKED OF THE POST-DISCHARGE TREE, exactly as its three neighbours are.
+ * Nothing discharges an `A_CALL` today and nothing is planned to — but the
+ * SPLICE linkage (design §6.3, wave G) is a rewrite that REPLACES a call with
+ * a copy of its callee, and if it ever runs before this predicate's consumer,
+ * asking the tree rather than a parse-time counter is what makes "a spliced
+ * pattern has no call left in it" a true answer instead of a stale one.
+ *
+ * IT DECLINES `u.call.body` LIKE EVERY OTHER WHOLE-TREE PREDICATE HERE
+ * (design §4.4) — and the decline is FREE for this one in a way it is not for
+ * the others: the arm it needs is `return true`, so it stops at the first
+ * call and never has anywhere to descend to.
+ *
+ * NO CALL SITE YET. Wave E wires it (§8.2's prefilter forcing, in
+ * `src/opt/select_engine.c`), which is the wave with a producer and therefore
+ * the first wave in which it can answer anything but false. It is EXTERNAL
+ * rather than static for exactly that reason: an unused static is a
+ * `-Wunused-function` error under `make strict`, and adding a fake call site
+ * to silence it would pre-satisfy the sabotage row that owns the real one. */
+bool pcrec_has_call(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CALL:
+            return true;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        /* no subtree at all — `l` and `r` are unused on a backreference. */
+        case A_BREF:
+            return false;
+        case A_LOOK:
+        case A_CAP: case A_REP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (pcrec_has_call(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (pcrec_has_call(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        /* No default arm — this file's header rule. */
+        return false;
     }
 }

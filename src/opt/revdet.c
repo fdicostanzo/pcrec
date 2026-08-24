@@ -135,6 +135,26 @@ static void rd_shape(Shape *S, const Ast *a)
         case A_LOOK:
             S->ok = false;
             return;
+        /* [DD-14] DECLINES, and like the four arms around it this one is what
+         * makes the OTHER three in this file unreachable rather than merely
+         * unlikely (design §4.4a sites 14-18).
+         *
+         * A call is not a revdet-able shape, and the reason is not the
+         * lookaround's. This rung recovers an iteration boundary by matching a
+         * REVERSED copy of the body from the right; a call's meaning is "run
+         * the callee's program, then come back", and the callee is not part of
+         * this subtree — it is reached through `u.call.body`, a BACK EDGE that
+         * this scan must not follow (design §4.4) and that on a recursive
+         * callee names a program with no bounded reversed spelling at all. A
+         * `(?1)` in a quantifier body is a hole the boundary lattice cannot
+         * see through.
+         *
+         * DECLINING IS ALWAYS AVAILABLE AND ALWAYS SAFE — this file's own
+         * invariant. The denied build replicates, and replication is the
+         * ground truth. Sabotage row S-SR16's site. */
+        case A_CALL:
+            S->ok = false;
+            return;
         /* [M6.4.2] DECLINE, and it is an EXPLICIT arm rather than a
          * fallthrough on purpose — see rd_reverse below, where the same
          * omission is a miscompile rather than a missed optimisation.
@@ -315,6 +335,27 @@ static Ast *rd_reverse(Ctx *cx, const Ast *a)
                         "reverse-deterministic body reversal, which its shape "
                         "scan must decline");
 
+    /* [DD-14] THE SAME LOUD REFUSAL, and it gets its OWN `ctx_fail` for the
+     * reason this file already applies to `\K`, `A_BREF` and `A_LOOK`
+     * separately: an internal error that names the WRONG CONSTRUCT sends the
+     * next reader hunting in the wrong file.
+     *
+     * A "reversed A_CALL" is a construct that exists nowhere in this
+     * compiler, and the tail fallthrough is what makes the arm necessary
+     * rather than decorative: `rd_node` copies the node and NULLs `l` and
+     * `r`, which on an `A_CALL` changes nothing visible at all — `l` and `r`
+     * are already unused — so the copy would carry a perfectly valid
+     * `u.call` payload and a target the reversed program would then RUN
+     * FORWARDS inside a backward walk. That is the most plausible-looking
+     * wrong tree in the file.
+     *
+     * Unreachable: `rd_shape` declines every body carrying a call (above),
+     * and this runs only on a body `rd_shape` approved. */
+    case A_CALL:
+        ctx_fail(cx, 0, "internal error: a subroutine call reached the "
+                        "reverse-deterministic body reversal, which its shape "
+                        "scan must decline");
+
     /* [M6.4.2] SAME TREATMENT AS `\K`, AND THE FALLTHROUGH IT REPLACES IS THE
      * MOST DANGEROUS ONE THIS MODULE HAD TO CLOSE.
      *
@@ -425,6 +466,26 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
             memcpy(out, acc, 32);
             return;
         }
+        /* [DD-14] WIDENS TO ALL BYTES, and it is an EXPLICIT arm rather than
+         * a fallthrough into the `default:` below so that the widening is a
+         * DECISION on the record (design §4.4a site 16). The value is the same
+         * one the default computes; what differs is that a reader of this
+         * switch can see that a call was considered.
+         *
+         * WHY WIDENING IS THE SOUND DIRECTION HERE: this set feeds
+         * `rd_alt_disjoint`, and an over-wide FIRST set makes the
+         * disjointness test FAIL, which makes the quantifier keep its
+         * machinery — always correct. The exact answer (the callee's own
+         * FIRST set) needs the call graph and is not worth having: the
+         * `A_CALL` arm in `rd_shape` above means no body carrying a call ever
+         * reaches this function.
+         *
+         * IT DOES NOT FOLLOW `u.call.body`, which matters more here than at a
+         * decline: this function RECURSES on `A_ALT` branches with no visited
+         * set, so a `.body` descent would be design §4.4's hang. */
+        case A_CALL:
+            memset(out, 0xff, 32);
+            return;
         default:
             /* Unreachable on a shape-scanned body; widening to ALL BYTES is
              * the sound direction, because it makes the disjointness test
@@ -445,7 +506,20 @@ void pcrec_revdet_first(const Ast *a, uint8_t *out)
              * own header calls the body reaching it "NON-NULLABLE and
              * assertion-free", which a lookaround is not — that description is
              * a statement of what the shape scan guarantees, so the decline
-             * arm is what keeps it true, not this default. */
+             * arm is what keeps it true, not this default.
+             *
+             * [DD-14] RE-INSPECTED BY HAND FOR `A_CALL` (design §4.4a site
+             * 16) and SOUND — and unlike the other three `default:` sites
+             * this one DID get an explicit arm, immediately above, computing
+             * the same value. The arm is there because §4.4a asks for the
+             * widening to be a DECISION on the record rather than a
+             * fallthrough, not because the default was wrong: widening is
+             * opaque to what a call runs, so it cannot be wrong about it, and
+             * `rd_shape`'s own `A_CALL` decline means no body carrying one
+             * reaches this function at all. The header's "NON-NULLABLE and
+             * assertion-free" description of its input is a statement of what
+             * the shape scan guarantees; a call is neither, and the decline
+             * arm is again what keeps the description true. */
             memset(out, 0xff, 32);
             return;
         }
@@ -472,6 +546,15 @@ static bool rd_alt_disjoint(const Ast *a)
          * the body first. */
         case A_BREF:
         case A_KRESET:
+            return false;
+        /* [DD-14] DECLINES with them, same sound direction and same reason:
+         * `false` keeps the quantifier's machinery, which is always correct,
+         * where an approval would hand the emitter a rung whose backward walk
+         * cannot reproduce a call at all. Unreachable — `rd_shape` declines
+         * every body carrying one. `true` here is the only answer that could
+         * be WRONG, and it is the one an accidental fallthrough would have
+         * produced if this arm shared the leaf row above. */
+        case A_CALL:
             return false;
         /* [M6.4.2] DECLINE, `\K`'s arm for `\K`'s reason: `false` is the sound
          * direction here in the way `true` is not — a decline keeps the
@@ -588,6 +671,19 @@ static void rd_walk(Rd *R, Ast *a, bool in_rep)
      * red; the arm is written as a decline so that change is a deliberate one
      * with a measurement behind it. */
     case A_LOOK:
+        return;
+    /* [DD-14] DOES NOT DESCEND — and unlike `A_LOOK` above, THIS decline is
+     * not a choice, because there is nowhere to descend TO. An `A_CALL` has
+     * no `l` and no `r`; the callee hangs off `u.call.body`, a back edge that
+     * design §4.4 forbids a walk like this one from following. This walk
+     * hunts for `A_REP` nodes to offer the rung to, and every `A_REP` in the
+     * callee is offered the rung when this same walk reaches the callee at
+     * its own lexical position — so following the edge would offer each one
+     * the rung TWICE (and never terminate on a recursive callee) for no gain.
+     *
+     * The verdict ABOUT a call is `rd_shape`'s, one level down, and it is a
+     * decline: a quantifier whose body CONTAINS a call gets no rung. */
+    case A_CALL:
         return;
     case A_CAP:
     /* [M6.4.2] TRANSPARENT, and NOT the same question the three arms above

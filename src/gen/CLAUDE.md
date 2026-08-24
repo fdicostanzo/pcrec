@@ -532,6 +532,21 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     not an optimisation — the mark is taken before the push, so the cut
     discards the body-failed continuation too; leaving it live lets a failing
     assertion be resumed later AS IF IT HAD HELD.
+  **[DD-14 wave A2] FIVE INERT `A_CALL` ARMS, THREE OF THEM LOUD FAILURES.**
+  Nothing produces an `A_CALL` in that wave, so `vm_emit`, `vm_cost` and
+  `vm_count_slots` all `ctx_fail` by name rather than guessing — and the three
+  are deliberately coupled: `vm_count_slots` must account for EVERY EMITTED
+  REGION (each lexical occurrence PLUS one per emitted callee region,
+  `subroutines_design.md` §4.4c, whose first version said LEXICAL ONLY and was
+  measured WRONG — an out-of-bounds slot write, K27's class, because `X{0}`
+  emits and counts nothing and a callee is a real idiom there), `vm_cost` must
+  charge the callee's cost plus this site's own `2*|W|` of trail, and both
+  need `src/opt/callgraph.c`'s SCC fixpoint, which is wave B+C's. The two
+  arms that DO answer are `vm_nullable` (`true`, the sound bottom that keeps
+  the empty-iteration guard; the real answer is the graph's fixpoint with
+  cycle bottom `false`) and `vm_rev_caps` (decline, unreachable behind
+  `rd_shape`).
+
   - **THE NON-ATOMIC `(?*` ARM IS THE ATOMIC SHAPE MINUS THE CUT**, and it
     allocates no mark slot, which is how a reader tells the two atomicities
     apart in the emitted C and in `--emit-ir`.

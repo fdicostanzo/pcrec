@@ -153,6 +153,30 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   checking: C does not police member access, so D62's discipline (parse-
   resolved state, per-field comments, per-field sabotage rows) is unchanged.
 
+  **[DD-14 wave A2] THE SECOND MEMBER ADDED UNDER THE RULE IS `u.call`**
+  (`A_CALL`: `target`, `body`, `link`, `nsave`, `save`, plus a new `CallLink`
+  enum beside `AKind`), and it is the first member holding a POINTER INTO THE
+  SAME TREE. `u.call.body` is the resolved callee subtree — **SHARED, never
+  owned** — which makes it the AST's first `Ast*` -> `Ast*` back edge and puts
+  a second obligation on every generic helper beside D70's own:
+
+  | generic helper | what it does with `u.call` | why |
+  |---|---|---|
+  | `src/opt/revdet.c` `rd_node` (the reversal copy constructor) | **never reached with one.** Its `*n = *src` shallow-copies the union, so an `A_CALL` copy would keep a valid `u.call` and a `body` pointer into the FORWARD tree — the most plausible-looking wrong node in the file. `rd_reverse`'s own `case A_CALL:` `ctx_fail` stops it before the tail fallthrough, and `rd_shape`'s decline stops `rd_reverse` being called at all. Its `n->k == A_REP` guard already keeps the `revbody`/`possessive` clear off `u.call`. | a shallow copy is right for every kind it DOES copy; a call is not one of them |
+  | `src/opt/altcls.c` `altcls_walk`'s `*r = *a` (A_REP and A_CAP only) | **never runs on an `A_CALL`**: both copies are under an explicit kind arm that owns `u.rep`/`u.cap`, and the new `case A_CALL: return a;` returns the node itself. A copier that FOLLOWED `.body` would duplicate the callee and give one call site a private copy of a subtree the rest of the tree shares. | D70's kind-check rule, already satisfied |
+  | `src/parse/mod_assertions.c`'s multiline pin | **cannot reach it** — guarded `k == A_BOL \|\| k == A_EOL`, and that port produces no `A_CALL`. | the guard the D70 migration added |
+  | `src/opt/atomic.c` `dis_walk`, `src/parse/mod_backrefs.c` `br_strip_caps` (the two tree REWRITES) | **visit the node as itself and never follow `.body`.** Following it would discharge / strip the callee once per call that names it, rewriting `a->l` on nodes another part of the tree points at, and would not terminate on a recursive callee. | design §4.4 |
+  | `--emit-ir`'s listing | **no `AKind` arm exists to write.** The listing renders the `VEvent` stream the emitter records (`emit_vm.c` switches on `VEvent.k`), so a call's listing content is whatever wave B+C's `RX_CALL`/`RX_RETURN` emission records as events — the same finding `u.look` reached. | measured, not assumed |
+
+  **THE RULE THE MEMBER ADDS**, beside D70's own: a generic helper must not
+  merely GUARD `u.call` — it must not FOLLOW `.body`. A whole-tree walk
+  already visits the callee at the callee's own lexical position, so following
+  the edge is redundant, and on `(a(?1))` it is a non-terminating compile in a
+  predicate asked of every pattern. A genuinely subtree-relative analysis goes
+  through `src/opt/callgraph.c`'s memoised SCC fixpoint (wave B+C).
+  `sizeof(Ast)` is unchanged: the member is 32 bytes on LP64, which is
+  `u.cls.bits`'s own 32.
+
 ### The D70 ownership survey
 
   Every read and write of every non-`k`/`l`/`r` field of `struct Ast` across

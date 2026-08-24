@@ -499,6 +499,27 @@ static Ast *br_strip_caps(Ast *a, const bool *keep, int nkeep)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
         case A_BREF:
+        /* [DD-14] LEXICAL ONLY (design §4.4a site 27): the node is visited AS
+         * ITSELF and `u.call.body` is never followed. There is nothing to
+         * descend into — an `A_CALL` has no `l` and no `r` — and following the
+         * back edge would be worse than useless in a tree REWRITE: it would
+         * strip the callee's wrappers a second time through every call that
+         * names it, rewriting `a->l` on nodes another part of the tree still
+         * points at, and would not terminate on a recursive callee.
+         *
+         * THE CALL IS ALREADY ACCOUNTED FOR, one pass earlier and in the
+         * other direction. `pcrec_bref_mark` (src/opt/atomic.c) marks
+         * `u.call.target` before this runs, so a group a call names is in
+         * `keep[]` and its `A_CAP` survives — which is design §4.3's whole
+         * point: without that mark `(a)(?1)` under `--no-captures` would lose
+         * group 1 HERE and the call would have no body.
+         *
+         * RE-CHECKED AGAINST THE `{0,0}` PRUNE (design §4.4c): this walk
+         * descends `A_REP` unconditionally — it has no `rmin == 0 &&
+         * rmax == 0` guard — so a callee declared inside `(?:...){0}`, the
+         * classic pre-DEFINE idiom, keeps its wrapper too. That is a property
+         * of the code rather than of pass ORDER. */
+        case A_CALL:
             return a;
         case A_CAP:
             a->l = br_strip_caps(a->l, keep, nkeep);
