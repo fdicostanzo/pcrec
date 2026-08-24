@@ -1,50 +1,60 @@
 # S159 ([DD-14] wave B+C, design SS9.3 S-SR11) -- NO WHOLE-TREE PREDICATE
 # FOLLOWS `.body`, AND THE FAILURE IS A NON-TERMINATING COMPILE.
 #
-# A TIMEOUT ROW, and the reason it must be one is the sharpest thing in
-# design SS4.4. `Ast.u.call.body` is the AST's FIRST `Ast*` -> `Ast*` BACK
-# EDGE. Every walker in `src/` was written for a TREE: `pcrec_minw`,
-# `pcrec_has_atomic` and `pcrec_has_bref` are bare `const Ast *` walkers with
-# NO context parameter, NO memo and NO visited set -- a tree-wide grep for
-# `visited|memoi|acyclic|cycle` finds one unrelated hit. This design's FIRST
-# VERSION told three of them to "descend into `.body`".
+# A HANG ROW, and the reason it must be one is the sharpest thing in design
+# SS4.4. `Ast.u.call.body` is the AST's FIRST `Ast*` -> `Ast*` BACK EDGE. Every
+# walker in `src/` was written for a TREE: `pcrec_minw`, `pcrec_has_atomic` and
+# `pcrec_has_bref` are bare `const Ast *` walkers with NO context parameter, NO
+# memo and NO visited set -- a tree-wide grep for `visited|memoi|acyclic|cycle`
+# finds one unrelated hit. This design's FIRST VERSION told three of them to
+# "descend into `.body`".
 #
 # ON `(a(?1))` THAT HANGS THE COMPILER, in predicates asked of EVERY PATTERN,
 # and **no answer-comparison test can detect it because there is no answer**.
-# That is why the row sits in the `timeout` suite rather than in `harness`,
-# where a hang reads as an infrastructure failure rather than as a finding.
+# What scores it is `tests/harness/run.sh`, which runs the `pcrec` invocation
+# itself under `TIMEOUT_BIN` (budget from `tests/lib/gen_timeout.sh`, D45) and
+# treats a non-zero exit -- timeout included -- as a FAILURE naming the case.
+# The design asks for "`tests/mech/`'s timeout suite"; there is no such arm,
+# and `harness` is where a hang is already scored.
 #
-# THE RULE THAT REPLACED THE FIRST VERSION is one sentence and it makes the
-# descent REDUNDANT as well as fatal: every callee is ALSO A LEXICAL NODE OF
-# THE SAME TREE -- `target` names an `A_CAP` that SS4.3 keeps alive, and
-# `target == 0` is the root -- so a whole-tree predicate already visits the
-# callee at the callee's own lexical position. Following the edge asks the same
-# question a second time and never stops asking.
+# **THE ARM SABOTAGED IS `pcrec_bref_mark`'s, NOT `pcrec_has_atomic`'s, AND
+# THE MOVE IS A FINDING.** The design names `pcrec_has_atomic` and this lane
+# wrote that row first -- it scored UNDETECTED at corpus 0fail/346pass. The
+# reason is a C short-circuit: `Vm.mrl_win` is
 #
-# WHERE A SUBTREE-RELATIVE ANSWER GENUINELY IS THE CALLEE'S, it goes through
-# `src/opt/callgraph.c`'s memoised fixpoint over the graph instead --
-# `pcrec_minw`, `vm_nullable` and `W` are the three, and each reads a value
-# CACHED ON THE NODE rather than walking to it.
+#     job->fit.prefilter && !pcrec_has_atomic(root) && !pcrec_has_lookaround(root)
 #
-# THE ARM SABOTAGED is `pcrec_has_atomic`'s, which is asked of every pattern at
-# emission (it is one of `Vm.mrl_win`'s two conjuncts), so the hang is on the
-# shipped path rather than on a flag.
-SAB_ID="S159-has-atomic-follows-body"
+# and `fit.prefilter` is FALSE for every call-bearing pattern (SS8.2's own
+# predicate, landed in this wave), so **`pcrec_has_atomic` is never CALLED on a
+# tree that contains a call**. The predicate the design picked is unreachable
+# for this construct's whole population.
+#
+# `pcrec_bref_mark` is the one whole-tree walk that IS asked of a call-bearing
+# tree AFTER `.body` is bound: `pcrec_emit_vm` runs it unconditionally to build
+# the marked set. It is also the walk whose `A_CALL` arm is the ONE in
+# `src/opt/atomic.c` that does not simply decline -- it marks the target and
+# descends no further -- which makes "and no descent" the exact thing this row
+# defends.
+#
+# THE RULE THAT REPLACED THE DESIGN'S FIRST VERSION is one sentence and it
+# makes the descent REDUNDANT as well as fatal: every callee is ALSO A LEXICAL
+# NODE OF THE SAME TREE, so a whole-tree predicate already visits it at its own
+# lexical position. Where a subtree-relative answer genuinely IS the callee's,
+# it goes through `src/opt/callgraph.c`'s memoised fixpoint and is read from a
+# value CACHED ON THE NODE.
+SAB_ID="S159-mark-follows-body"
 SAB_FILE="src/opt/atomic.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
-SAB_DESC="pcrec_has_atomic's A_CALL arm DESCENDS into u.call.body, so a whole-tree predicate follows the AST's back edge and the COMPILER does not terminate on (a(?1)) -- there is no answer to compare, so no answer-comparison row can see it"
-SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR11): THE COMPILER HANGS on (a(?1)). There is no answer to compare, so this row is scored by the harness TIMEOUT and it is the one sabotage in this module whose detector is 'the process did not finish'. NOTE the anchor: pcrec_has_atomic's arm is the FIRST \`case A_CALL:\\n            return false;\` in atomic.c, and the count is 1 because the six other whole-tree predicates in that file each phrase their decline differently."
+SAB_DESC="pcrec_bref_mark's A_CALL arm DESCENDS into u.call.body after marking, so a whole-tree walk follows the AST's back edge and the COMPILER does not terminate on a recursive callee -- there is no answer to compare, so no answer-comparison row can see it"
+SAB_DOC_FIGURE="PREDICTED: the compiler HANGS and tests/harness/run.sh scores the timeout as a failure on every recursive cell. RE-POINTED FROM pcrec_has_atomic, which the design names and which is UNREACHABLE for this population: Vm.mrl_win short-circuits on fit.prefilter, which SS8.2's predicate makes false for every call-bearing pattern -- measured UNDETECTED at corpus 0fail/346pass before the move."
 SAB_COUNT=1
 SAB_BEFORE='        case A_CALL:
-            return false;
-        case A_CAT:
-            while (a->k == A_CAT) {
-                if (pcrec_has_atomic(a->r)) return true;'
+            if (a->u.call.target > 0 && a->u.call.target < nmark)
+                mark[a->u.call.target] = true;
+            return;'
 SAB_AFTER='        case A_CALL:   /* SABOTAGE S159: follow the back edge */
-            if (!a->u.call.body) return false;
-            a = a->u.call.body;
-            continue;
-        case A_CAT:
-            while (a->k == A_CAT) {
-                if (pcrec_has_atomic(a->r)) return true;'
+            if (a->u.call.target > 0 && a->u.call.target < nmark)
+                mark[a->u.call.target] = true;
+            if (a->u.call.body) { a = a->u.call.body; continue; }
+            return;'

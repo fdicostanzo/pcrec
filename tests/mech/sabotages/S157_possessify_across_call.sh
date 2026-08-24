@@ -19,14 +19,21 @@
 # now, on every rung, and the non-nullable-only lift through the call-graph
 # fixpoint is chartered rather than built.
 #
-# THE ARM SABOTAGED IS `gk_build`'s, and it is the one that DECIDES rather than
-# the one that describes. `first_of`'s `A_CALL` arm widens to all bytes and
-# `pss_walk`'s declines to descend; either alone would still leave the other
-# two to refuse. `gk_build` sets `g->ok = false`, which is the verdict the
-# unique-iteration test reads, and its own comment says why an epsilon would be
-# a LIE where it is merely conservative for a lookaround: a lookaround really
-# does consume nothing, while a call consumes whatever its callee consumes, so
-# modelling it as an epsilon makes a body look PREFIX-FREE that is not.
+# **THE DECLINE IS A CONJUNCTION AND THIS ROW SABOTAGES BOTH HALVES, WHICH IS
+# A CORRECTION TO ITS OWN FIRST VERSION.** That version removed only
+# `gk_build`'s `g->ok = false` and scored UNDETECTED at corpus 0fail/346pass,
+# because `first_of`'s `A_CALL` arm STILL widens to every byte and is nullable
+# -- so the DISJOINTNESS arm of SS2.2's verdict refuses independently and the
+# quantifier is not possessified anyway. Removing one of two independent
+# refusals proves nothing about either.
+#
+# So the row now moves BOTH: `first_of` answers an EMPTY, non-nullable first
+# set (which lets disjointness hold vacuously) and `gk_build` answers an
+# epsilon (which lets the unique-iteration test pass). Each arm's own comment
+# says why its shipped answer is not merely conservative but TRUE -- a
+# lookaround really does consume nothing, while a call consumes whatever its
+# callee consumes, so modelling a call as an epsilon makes a body look
+# PREFIX-FREE that is not.
 #
 # MEASURED ON THE LANDED BUILD, before the sabotage, so the row's own premise
 # is checked rather than assumed: `^(?:(?<g>a?)){0}(?&g)*+$` compiles and
@@ -37,11 +44,25 @@ SAB_ID="S157-possessify-across-call"
 SAB_FILE="src/opt/possessify.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion"
-SAB_DESC="gk_build stops declining an A_CALL, so the unique-iteration walk models a call as a zero-width epsilon and a possessive quantifier over a call-bearing body is admitted onto vm_poss_star -- which emits NO empty-iteration guard and NO work charge, so the emitted matcher HANGS"
-SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR9a, and D71 item 6): a TIMEOUT row like S-SR11, not an answer comparison. ^(?:(?<g>a?)){0}(?&g)*+\$ hangs -- vm_poss_star emits no empty-iteration guard and fires no work charge (emit_vm.c's own comment, whose sabotage row S100 also expects a TIMEOUT), and eng_brep_design 2.2's nullable refusal CANNOT SEE a callee that lives elsewhere in the tree. MEASURED on the landed build before the sabotage: that pattern compiles with RX_VM_STRATS 0x2 (BACKTRACKING only, no POSSESSIVE bit) and answers (0,3) on \"aaa\"."
+SAB_DESC="BOTH arms that decline a call are removed -- first_of stops widening to every byte and gk_build stops refusing -- so a possessive quantifier over a call-bearing body is admitted onto vm_poss_star, which emits NO empty-iteration guard and NO work charge, and the emitted matcher HANGS"
+SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR9a, D71 item 6): ^(?:(?<g>a?)){0}(?&g)*+\$ HANGS -- emit_vm.c's own comment says vm_poss_star 'PUSHES AND CUTS AT ZERO CONSUMPTION FOREVER, and no work charge fires to stop it', and eng_brep_design 2.2's nullable refusal CANNOT SEE a callee that lives elsewhere in the tree. Scored by tests/harness/run.sh's own run budget. MEASURED on the landed build BEFORE the sabotage: that pattern compiles with RX_VM_STRATS 0x2 -- BACKTRACKING only, no POSSESSIVE bit -- and answers (0,3) on \"aaa\". || MEASURED UNDETECTED at corpus 0fail/346pass EVEN WITH BOTH POSSESSIFY ARMS REMOVED, and the finding is which arm actually stands between the corpus and the hang. \`(?&g)*+\` does NOT go through possessify at all: parse.c desugars the possessive SUFFIX to A_ATOMIC(A_REP(...)) and \`vm_lifts\` routes the cut into the possessive rung -- and \`vm_lifts\` DECLINES on \`vm_nullable(r->l)\`, which for a call is the GRAPH FIXPOINT (S156's arm). So for the user-written spelling the protection is vm_lifts + vm_nullable, not D71 item 6's rung decline; possessify's decline governs the AUTOMATIC possessification of a non-possessive quantifier, whose hang shape this corpus does not contain. The witness cell ^(?:(?<g>a?)){0}(?&g)*+\\$ landed anyway and is MEASURED on the shipped build to take the BACKTRACKING rung (RX_VM_STRATS 0x2, no POSSESSIVE bit)."
 SAB_COUNT=1
-SAB_BEFORE='    case A_CALL:
+SAB_BEFORE='    case A_CALL: {
+        First r;
+        memset(r.f, 0xff, 32);
+        r.nullable = true;
+        return r;
+    }'
+SAB_AFTER='    case A_CALL: {   /* SABOTAGE S157: a call has an EMPTY first set */
+        First r;
+        memset(r.f, 0, 32);
+        r.nullable = false;
+        return r;
+    }'
+SAB_FILE2="src/opt/possessify.c"
+SAB_COUNT2=1
+SAB_BEFORE2='    case A_CALL:
         g->ok = false;
         return gk_parts_empty(true);'
-SAB_AFTER='    case A_CALL:   /* SABOTAGE S157: a call is modelled as an epsilon */
+SAB_AFTER2='    case A_CALL:   /* SABOTAGE S157 (second site): modelled as an epsilon */
         return gk_parts_empty(true);'

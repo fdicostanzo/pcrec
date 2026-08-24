@@ -38,6 +38,8 @@ SAB_COUNT=1
 SAB_BEFORE='        case A_CALL:
             if (a->u.call.target > 0 && a->u.call.target < nmark)
                 mark[a->u.call.target] = true;
-            return;'
+            return;
+        case A_CAT:'
 SAB_AFTER='        case A_CALL:   /* SABOTAGE S158: the target is not marked */
-            return;'
+            return;
+        case A_CAT:'
