@@ -1092,7 +1092,12 @@ spine, not before):
   encoding variants) become scope-resolved DEFINITIONS: a construct
   searches up the tree for a rebinding (a flag like `(?m)` = a local
   rebinding of `$`/`^`'s definition in its subtree), falling back to the
-  default — the replacement value is an inserted rx (`\Z`≡`(?=\n?\z)`,
+  default [SUPERSEDED 2026-08-23, RULED by Frank (journal, thirty-seventh
+  session part 4; found stale by R34 C3): resolution is PROPAGATE /
+  CAPTURE-AT-BUILD, NEVER WALK-UP — the binding point is a sibling event,
+  not an ancestor, and injected subtrees must be position-independent; the
+  "searches up the tree" phrasing here describes the SCOPE a binding
+  covers, not the lookup mechanism] — the replacement value is an inserted rx (`\Z`≡`(?=\n?\z)`,
   `(?m)$`≡`(?=\n)|\z`, `(?m)^`≡`\A|(?<=\n)(?!\z)` — note the `(?!\z)`
   term IS the U11b carve-out, `\b`≡`(?<=\w)(?!\w)|(?<!\w)(?=\w)` with
   `\w` itself a definition). Value per Frank: shrinks the core rx set
