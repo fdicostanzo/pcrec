@@ -93,7 +93,7 @@ their repo commit by `probes/archive.sh` from a committed tree.
 |---|---|---|
 | `probes/sr_oracle.py` | not a probe, the ORACLE HELPER | borrows `../lookaround_measurements/probes/la_oracle.py` → `br_oracle.py` → `pcre2_ctypes.py` (three levels, no copy) and adds the three things this lane needs: `match_limits()` returning the **RAW** `pcre2_match` rc so a give-up is a CELL and not a traceback; `callout_trace()`, a `pcre2_set_callout` callback reading the **live ovector inside a call**; and `depth_of()`, a depth-limit bisector. Behavioural `SELFCHECK` on all three |
 | `probes/probe_premises.sh` | MEASURED + STRUCTURAL, in-pcrec | §1: every spelling's refusal on HEAD under both feature sets, the 26 registry rows and their `built` column, the shared `\g` doorway, the give-up code space and **every site the `ERR_FLOOR` move touches**, `RX_TRAIL`/`RX_SET`/`RX_PUSH`/`RX_CUT` and the fail label quoted from `src/`, the `[M6.5]` resolution machinery, and the label-address/`goto *` census |
-| `probes/probe_spellings.py` | MEASURED, both oracles | §2: the ten call spellings and the nine reference spellings separated by **one cell**; the relative and forward forms; `(?R)`/`(?0)`/`\g<0>`; two-digit group numbers; the `(?(DEFINE))` idiom and a DEFINE-less equivalent swept over 11 subjects; python's verdict on the whole vocabulary |
+| `probes/probe_spellings.py` | MEASURED, both oracles | §2: **ten call spellings and nine reference spellings separated by ONE cell** (`(a|b)X` on `"ab"`); the relative and forward forms; `(?R)`/`(?0)`/`\g<0>`; two-digit group numbers; the `(?(DEFINE))` idiom and a DEFINE-less equivalent swept over 11 subjects; python's verdict on the whole vocabulary |
 | `probes/probe_captures.py` | MEASURED, libpcre2 + CALLOUTS | §3.1/§3.4: the capture state after return, **during** the call, at depth > 1, after a failed call; inheritance; `\K`; `(?J)` duplicate names and the call/reference resolution split |
 | `probes/probe_atomicity.py` | MEASURED | §3.2: the naive cell that decides nothing and the isolated cell that decides it; four atomic controls; quantified calls and the empty-body guard; calls inside lookaround/atomic/lookbehind; the retry COST against an inlined control |
 | `probes/probe_leftrec.py` | MEASURED | §3.3: direct, indirect and nullable-prefix left recursion; the two guards; **the decisive sweep that refutes the same-position reading**; `(?R)` under a quantifier; a call inside a lookbehind; depth requirement vs subject; and the error-140 sweep that shows the charter's premise is not about recursion at all |
@@ -237,8 +237,11 @@ MEASURED on libpcre2 10.46 and python 3.14 `re`, `out/spellings.txt` A1/A2/A7.
 | `\k<n>`, `\k'n'`, `\k{n}`, `(?P=n)`, `\g{n}` | reference | `(?P=n)` only | reference | already ships | module `backrefs` |
 | `(?(DEFINE)…)` | a never-executed container | ERR | **conditional** | **REFUSES** — module `conditionals` | one row, `unbuilt` |
 
-**TEN CALL SPELLINGS SHIP AND NOTHING IN THIS MODULE REFUSES A CONSTRUCT
-PCRE2 HAS**, which is unusual for a pcrec module and is worth saying plainly:
+**EVERY SPELLING SHIPS — the charter's TEN plus the TWO it did not have — AND
+NOTHING IN THIS MODULE REFUSES A CONSTRUCT PCRE2 HAS**. (The count of
+*spellings* is a matter of how finely `(?N)`/`(?±N)`/`\g<…>` are enumerated;
+what is not a matter of counting is that **the whole table's `pcrec` column
+reads SHIPS**.) which is unusual for a pcrec module and is worth saying plainly:
 there is no `recursion` analogue of lookaround's variable-length lookbehind.
 The refusals this module leaves standing are `conditionals`' (`(?(DEFINE)`,
 `(?(R)`, `(?(1)`) and they are that module's, not this one's — §13.
@@ -1617,7 +1620,7 @@ lines in 121 files**:
 
 | construct | occurrences |
 |---|---|
-| **CALL, all ten spellings** | **6** — four `\g<1>` and two `\g'1'`, **every one of them in a `perr` block** testing that the spelling correctly refuses |
+| **CALL, every spelling** | **6** — four `\g<1>` and two `\g'1'`, **every one of them in a `perr` block** testing that the spelling correctly refuses |
 | BACKREF (scale reference) | 226 |
 | LOOKAROUND (scale reference) | 1 — `[M6.6.2]` has not landed |
 
@@ -1776,7 +1779,7 @@ all nine call spellings plus both zero spellings:
    `(?P>n)`. An author who checks *"does python agree"* on a cell containing
    `\1` is checking `backrefs`, not this module. §2.1's one-cell discriminator
    (`(a|b)X` on `"ab"`) is the tool, and the author should be given it.
-3. **The constructs, and that all ten spellings SHIP.** No refusal list to
+3. **The constructs, and that EVERY spelling SHIPS.** No refusal list to
    test against, unlike every previous module — the refusals in this territory
    belong to `conditionals` (`(?(DEFINE)`) and are not this module's.
 4. **`(?R)` re-runs the whole pattern INCLUDING the anchors** (§2.4), which is
@@ -1803,7 +1806,7 @@ is not a party to at all. §14 ASK 5 asks whether that is enough.
 |---|---|
 | `refused.rxt` | the `conditionals` refusals this module does NOT unlock: `(?(DEFINE)`, `(?(R)`, `(?(1)` — each with its module name, D26 tier 2 |
 | `gated.rxt` | the two D65 diagnostics: `requires module 'recursion'` under `std1`, `enabled but … not implemented yet` under a partial set; **and P2's cell**, `(?&n)` refusing for `named-groups` first |
-| `spellings.rxt` | the ten call spellings, each with §2.1's `(a\|b)X` on `"ab"` discriminator beside the same pattern on `"aa"` |
+| `spellings.rxt` | every call spelling, each with §2.1's `(a\|b)X` on `"ab"` discriminator beside the same pattern on `"aa"` |
 | `relative.rxt` | `(?±N)` and `\g<±N>` at four distances, forward and backward, with the leading-zero and relative-zero cells |
 | `whole.rxt` | `(?R)`/`(?0)`/`\g<0>`/`\g'0'`, and **the anchor cells** — `^(a(?R)?b)$` on `"aabb"` is nomatch and `^(a(?1)?b)$` is (0,4) |
 | `captures.rxt` | §3.1's cells: after return, at depth 3, after a failed call, and the INHERITANCE cell `^(a)(b\1)(?2)$` on `"ababa"` with its `"abab"` control |

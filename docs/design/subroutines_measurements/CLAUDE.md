@@ -49,7 +49,7 @@ different emitted code. §3.1 is decided by two callout firings.
   move touches**, the VM primitives quoted by line, the `[M6.5]` resolution
   machinery a call re-uses, the label-address/`goto *` census, and the
   capacity stamps.
-- `probes/probe_spellings.py` — §2. The ten call spellings and the nine
+- `probes/probe_spellings.py` — §2. Ten call spellings and nine
   reference spellings separated by ONE cell (`(a|b)X` on `"ab"`); the relative
   and forward forms; `(?R)`/`(?0)`/`\g<0>`; two-digit group numbers; the
   `(?(DEFINE))` idiom against a DEFINE-less substitute over 11 subjects;
