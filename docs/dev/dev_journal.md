@@ -13298,3 +13298,16 @@ namespace — the second diagnostic axis D71 says triggers designing the
 group). Also answered today: the VM's prefilter IS the DFA engine
 emitted `static` by the same `pcrec_emit_dfa_engine` (one copy, two
 callers) — DFA scan optimizations reach both artifacts.
+
+SPECIMEN (Frank, ~14:2x): the widely-copied "RFC 5322" email pattern
+(426 bytes; validity unimportant) — long, used, and textually repeats
+four sub-languages (atom class ×2, quoted-string char, DNS label ×2,
+IPv4 octet ×2): the first REAL member of the population subroutines_
+design.md §8.4 found empty — calls as FACTORING, not recursion. Compiles
+on main in 0.00 s to 43,656 bytes. Measurement lane srEmail (sonnet,
+scratchpad/brief_email.md, writes no repo files): the `{0}`-idiom
+factored rewrite on the B+C build vs the original on main/B+C vs
+libpcre2 over ≥60 subjects + three 1 MB throughput subjects — the
+BC/orig-vs-BC/factored gap on the no-`@` subject is the measurement of
+what wave G's splice must recover. Candidate for tests/recursion/
+realworld.rxt and for pcrec-bench.
