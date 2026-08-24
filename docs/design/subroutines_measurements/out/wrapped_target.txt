@@ -3,14 +3,13 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_wrapped_target.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: a2a5219 2026-08-23
-# RUN FROM REPO COMMIT        : d1580a8 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: 0ea8ba4 2026-08-23
+# RUN FROM REPO COMMIT        : 8139cf1 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
 #      M docs/design/subroutines_design.md
 #      M docs/design/subroutines_measurements/out/wrapped_target.txt
-#      M docs/design/subroutines_measurements/probes/probe_linkage.sh
 #      M docs/design/subroutines_measurements/probes/probe_wrapped_target.py
-# RUN DATE   : 2026-08-23T21:37:02-04:00
+# RUN DATE   : 2026-08-23T21:58:07-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -48,9 +47,32 @@ sr_oracle.SELFCHECK: none
   ^(?>(a|ab))z(?:a|ab)c$                 'azabc'    ((0, 5), [(0, 1)])              # control: inline, atomic kept
   ^(?:a|ab)z(?:a|ab)c$                   'azabc'    ((0, 5), [])                    # control: no wrapper at all
 
-# W4 -- the atomic target is never RUN lexically (an optional group
-#       the subject skips), so the only execution is the call's.
-  ^q(?>(a|ab))?z(?1)c$                   'qzabc'    ((0, 5), [None])                # the wrapper never ran
+# W4 -- WITHDRAWN AS A REASON (R34 V-6). `^q(?>(a|ab))?z(?1)c$` was
+#       offered as "the wrapper never ran lexically". It is a real
+#       match but a NON-REASON: the optional group IS EMITTED, merely
+#       not executed on that subject, so there is code to reach. The
+#       shape with NO LEXICAL EMISSION is `X{0}` -- axis Z0 below.
+  ^q(?>(a|ab))?z(?1)c$                   'qzabc'    ((0, 5), [None])                # matches, but proves nothing new
+
+=== AXIS Z0: A CALLEE DEFINED INSIDE `X{0}` =========================
+# The classic pre-DEFINE idiom: a group that exists ONLY to be called,
+# parked under a {0} repeat so it never runs lexically. pcrec emits
+# NO CODE and allocates NO SLOTS for X{0} (probe_slotcount.py axis C),
+# so the callee region has no slot instances counted for it -- the
+# out-of-bounds write vm_count_slots' own header names (K27's class).
+# These are the cells that make that a REAL construct family and not a
+# hypothetical.
+  ^(?:(?<g>a|ab)){0}(?&g)c$              'abc'      ((0, 3), [None])                # and the callee RETRIES into ab
+  ^(?:(?<g>a|ab)){0}(?&g)c$              'ac'       ((0, 2), [None])                # control: first alternative suffices
+  ^(x)?(?:(a(?2)?b)){0}(?2)$             'aabb'     ((0, 4), [None, None])          # a RECURSIVE callee in {0}
+  ^(x)?(?:(a(?2)?b)){0}(?2)$             'ab'       ((0, 2), [None, None])          # control: depth 1
+  ^(?:((?>a|ab))){0}(?1)z$               'az'       ((0, 2), [None])                # an ATOMIC callee in {0}
+  ^(?:((?>a|ab))){0}(?1)z$               'abz'      None                            # and the atomicity travels WITH the callee: nomatch, because the (?> is INSIDE the group and is part of the body, unlike axis W3 where it WRAPS the group
+  ^(?:(a?)){0}(?1)*b$                    'b'        ((0, 1), [None])                # a rung-bearing callee in {0}
+  ^(?:((a)(?1)?(b))){0}(?1)$             'aabb'     ((0, 4), [None, None, None])    # three groups, recursive, in {0}
+# CONTROLS -- the same callees WITHOUT the {0} wrapper:
+  ^(?:(?<g>a|ab))?(?&g)c$                'abc'      ((0, 3), [None])                # optional instead of {0}
+  ^(?(DEFINE)(?<g>a|ab))(?&g)c$          'abc'      ((0, 3), [None])                # DEFINE instead of {0}
 
 # W5 -- target inside a POSITIVE LOOKAHEAD, and inside a lookahead
 #       nested in a quantified group.

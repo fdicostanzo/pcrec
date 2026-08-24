@@ -253,6 +253,7 @@ MEASURED on libpcre2 10.46 and python 3.14 `re`, `out/spellings.txt` A1/A2/A7.
 | `\1`, `\g1`, `\g{1}`, `\g{-1}` | reference | `\1` only | reference | already ships | module `backrefs` |
 | `\k<n>`, `\k'n'`, `\k{n}`, `(?P=n)`, `\g{n}` | reference | `(?P=n)` only | reference | already ships | module `backrefs` |
 | `(?(DEFINE)…)` | a never-executed container | ERR | **conditional** | **REFUSES** — module `conditionals` | one row, `unbuilt` |
+| **`(?:(…)){0}` — a callee parked under `{0}`** | a never-executed **definition** | ERR | the pre-DEFINE idiom | **SHIPS** (it is a repeat and a group, both already shipped) — but see §4.4c | no row needed |
 
 **EVERY SPELLING SHIPS — the charter's TEN plus the TWO it did not have — AND
 NOTHING IN THIS MODULE REFUSES A CONSTRUCT PCRE2 HAS**. (The count of
@@ -374,7 +375,12 @@ Three DEFINE-less spellings of the same intent, against the DEFINE form over
 | `^(?:(?<w>X))?BODY$` | **9 / 11** | the optional group RUNS, so it eats input and leaves a capture: on `"foo-bar"` the DEFINE form gives g1 **unset** and this gives g1 **(0,2)** |
 | `^(?<w>X)?+BODY$` | **fails outright** | the possessive optional consumes and will not give back |
 
-**RULED: no DEFINE, and the cost is one line of documentation.** The
+**RULED: no DEFINE, and the cost is one line of documentation.** There are in
+fact **two** substitutes: the `(?!)`-guarded branch below, and **`(?:X){0}`**,
+the classic pre-DEFINE spelling, MEASURED working on 10.46 for plain,
+recursive, atomic and rung-bearing callees (§4.4c). The `{0}` one is the shape
+users' existing patterns are most likely to carry, and §4.4c is why it needs a
+sabotage row rather than only a corpus cell. The
 `(?!)`-guarded-branch spelling is an exact substitute on every measured cell,
 it needs only `lookaround` (which lands first) and `named-groups`, and it is
 what this module's own corpus uses wherever a call-only body is wanted (§10.2).
@@ -748,13 +754,15 @@ written inline:
 
 | # | pattern | subject | 10.46 | what the callee had to do |
 |---|---|---|---|---|
-| W1 | `^ab(?<=(ab))(?1)$` | `"abab"` | **(0,4)** g1=(0,2) | run **FORWARD and CONSUME** at offset 2, though its lexical home **steps backward** first |
+| W1 | `^ab(?<=(ab))(?1)$` | `"abab"` | **(0,4)** g1=(0,2) | leave through **its own exit**, not through the lookbehind's end-check-cut-and-restore |
 | | `^ab(?<=(ab))(?1)$` | `"ab"` | nomatch | control: the call must consume |
 | W2 | `^(?!(z\|zy))x(?1)c$` | `"xzyc"` | **(0,4)** | **RETRY into `zy`**, inside a region whose lexical home is CUT on the assertion's own success |
 | | `^(?!(z\|zy))x(?1)c$` | `"xzc"` | (0,3) | control: the first alternative suffices |
 | W3 | `^(?>(a\|ab))z(?1)c$` | `"azabc"` | **(0,5)** g1=(0,1) | **GIVE BACK** `a` and take `ab`, though its lexical home is ATOMIC |
 | | `^(?>(a\|ab))z(?:a\|ab)c$` | `"azabc"` | (0,5) | control: inline, atomic wrapper kept |
-| W4 | `^q(?>(a\|ab))?z(?1)c$` | `"qzabc"` | **(0,5)** | the wrapper **never ran lexically** — the call is the group's only execution |
+| **Z0** | `^(?:(?<g>a\|ab)){0}(?&g)c$` | `"abc"` | **(0,3)** | the callee is defined inside **`X{0}`** — pcrec emits **no code and allocates no slots** for it (§4.4a(6)) |
+| | `^(x)?(?:(a(?2)?b)){0}(?2)$` | `"aabb"` | (0,4) | …and it can be **recursive** |
+| | `^(?:((?>a\|ab))){0}(?1)z$` | `"az"` / `"abz"` | (0,2) / nomatch | …and atomic — and here the atomicity **travels WITH the callee**, because `(?>` is INSIDE the group, unlike W3 where it wraps it |
 | W5 | `^(?=(a\|ab))..(?1)$` | `"abab"` | (0,4) | positive lookahead |
 | | `^((?=(b))\|a)+(?2)$` | `"ab"` | (0,2) | a lookahead nested in a quantified group |
 
@@ -763,19 +771,31 @@ forward, consuming, cut-free, back-step-free — **whatever its lexical wrapper
 does**. The wrapper is a property of the *lexical occurrence*, not of the
 group, and a call reaches the group, not the occurrence.
 
-**AND THIS KILLS THE OBVIOUS EMITTER.** "Emit the body once at its lexical
-position and jump to it" inherits the wrapper on every W row:
+**AND THIS KILLS THE OBVIOUS EMITTER — THROUGH THE EXIT, NOT THE ENTRY.**
+An earlier version of this section said a jump into the group's body would
+inherit the lookbehind's **back-step**. **That was inverted** (R34 V-6):
+`lookaround_design.md` §3.2–§3.4 put the wrapper's machinery at `L_entry` and
+in `L_b_i` (*before* `L_body_i`) and at `L_ok`/`L_body_won`/`L_end_i`
+(*after* the body) — so a jump to the **group's own** entry label, which lives
+*inside* `<B_i>`, lands **after** the back-step. The back-step does not run,
+and the cursor is already the call site's. The entry is fine.
 
-- **W1** the jump lands *after* `vm_look`'s back-step, so the callee would run
-  at the stepped-back position instead of at the call site's cursor;
-- **W2** the callee's frames sit inside the negative assertion's cut region, so
-  the assertion's `RX_CUT` on the body's first success discards exactly the
-  choice points the retry needs — **nomatch where 10.46 matches**;
-- **W3** the atomic group's cut does the same at the group's exit;
-- **W4** there is no lexical execution at all to jump into.
+**The EXIT is where it breaks**, and that is a sharper and more general claim:
 
-§5.4 states the contract, §6.3 makes the consequence a **rule rather than an
-optimisation**, and S-SR18 is the detector.
+- **W1** falling out of the body reaches `L_end_i`'s end-check
+  `pos != slot_values[SLOT_LOOK_POS]` — a comparison against the **assertion's**
+  saved position, meaningless for a call — and then `L_ok`'s `RX_CUT` and
+  **position restore**, which would throw the callee's consumed bytes away;
+- **W2** the same exit for a negative assertion is `L_body_won`'s cut-then-fail;
+- **W3** the atomic group's exit cuts the callee's choice points — the ones the
+  retry needs — **nomatch where 10.46 matches**;
+- **Z0** there is no lexical emission at all to fall out of.
+
+So the rule is not *"a wrapped target needs special handling"*; it is
+**§6.1's collapse argument, which applies to every called group**: the exit
+must be per-ACTIVATION (fall through to the follow, or `RX_RETURN`), and a
+shared body's exit cannot be the lexical occurrence's. §5.4 states it, §6.3
+draws the consequence, and S-SR18 sabotages **the exit**.
 
 ---
 
@@ -966,7 +986,7 @@ each = 27.** Fourteen carry a `default:`, so `-Wswitch` will not name them.
 | 3 | `:1151` `vm_cap_offsets` | **DECLINE** | `return -1`; gated by (2)'s approval |
 | 4 | `:1273` `vm_rev_caps` | **DECLINE** | the backward walk; (7) is why |
 | 5 | `:1618` `vm_cost` | **GRAPH** | the callee's cost, `Cost.unbounded` on a cycle; plus the site's own `2·\|W\|` trail (§5.7) |
-| 6 | `:1804` `vm_count_slots` | **LEXICAL ONLY** | the call SITE allocates no slot family of its own; the callee's slots are counted at the callee's lexical position. Following `.body` would DOUBLE-COUNT the layout |
+| 6 | `:1804` `vm_count_slots` | **GRAPH** (§4.4c) | **the first version said LEXICAL ONLY and it was WRONG — the consequence is an out-of-bounds slot write.** The call SITE allocates no slot family of its own, but the **emitted callee REGION** does, and it is not the lexical occurrence. §4.4c |
 | 7 | `:3018` `vm_rev_emit` | **DECLINE** | its `default:` is a hard `ctx_fail`, *"bad AST node in the backward walk"* — loud and correct, and (11)–(15) must stop the tree reaching it |
 | 8 | `:4294` `vm_emit` | **PRODUCER** | §5 |
 | 9 | `atomic.c:40` `pcrec_has_atomic` | **DECLINE** | whole-tree predicate — the callee's `A_ATOMIC` is found at its lexical position |
@@ -995,6 +1015,56 @@ and one addition: **(7)'s `default:` is now REACHABLE in a new way**, because a
 call can carry a whole subtree into the backward walk rather than a single
 node, so (14)–(18) declining is what keeps it a diagnostic rather than a
 miscompile.
+
+#### 4.4c THE SLOT LAYOUT MUST COUNT EACH EMITTED CALLEE REGION
+
+**THE FAILURE MODE IS AN OUT-OF-BOUNDS WRITE IN EMITTED CODE**, K27's class,
+and `vm_count_slots`' own header (`emit_vm.c:1795-1797`) names it: *"a lift
+this pre-pass cannot see runs `vm_slot_mark(v, v->nmark++)` past
+`RX_NSLOTS`."* Three things make a lexical count wrong (R34 V-3):
+
+**(1) `X{0}` EMITS NOTHING AND COUNTS NOTHING, AND A CALLEE CAN LIVE THERE.**
+`vm_count_slots` returns at its `rmin == 0 && rmax == 0` guard and `vm_emit`
+writes *"X{0}: matches empty, no code"*. MEASURED in-pcrec
+(`out/slotcount.txt` axis C): `^((?>a)){1}b$` allocates **2 cut marks** and
+`^((?>a)){0}b$` allocates **none**. And a callee defined inside `{0}` is a
+**real idiom** — the classic pre-DEFINE spelling — MEASURED matching on 10.46
+(`out/wrapped_target.txt` axis Z0):
+
+| pattern | subject | 10.46 |
+|---|---|---|
+| `^(?:(?<g>a\|ab)){0}(?&g)c$` | `"abc"` | **(0,3)** |
+| `^(x)?(?:(a(?2)?b)){0}(?2)$` | `"aabb"` | **(0,4)** — a RECURSIVE callee in `{0}` |
+| `^(?:((?>a\|ab))){0}(?1)z$` | `"az"` | **(0,2)** — an ATOMIC callee in `{0}` |
+| `^(?:(a?)){0}(?1)*b$` | `"b"` | **(0,1)** — a RUNG-BEARING callee in `{0}` |
+
+So the region the emitter must produce for the call has slot instances that
+**nothing counted**.
+
+**(2) HYBRID EMITS THE CALLEE REGION SEPARATELY (§6.3), SO IT NEEDS ITS OWN
+INSTANCES.** Counting the subtree once is one body short. "Double-counting" is
+the *correct* count, not a bug to avoid.
+
+**(3) `A_CALL.save` LISTS SLOT INDICES, AND THE TWO REGIONS' INDICES DIFFER.**
+W derived from the lexical occurrence names the lexical copy's slots; the
+callee region's are different numbers. A restore written against the wrong
+indices is §5.3b's axis-C miscompile arriving by a second route.
+
+> **THE RULE: the layout accounts for EVERY EMITTED REGION — each lexical
+> occurrence as today, PLUS one for each emitted callee region — and `W(g)` is
+> computed over the CALLEE REGION's own indices.** `callgraph.c` knows which
+> groups get a region, so it is the same pass again; `vm_count_slots` gains a
+> parameter for "count this subtree as a region even if a `{0,0}` ancestor
+> would prune it".
+
+**AND EVERY OTHER `LEXICAL ONLY` VERDICT WAS RE-CHECKED AGAINST THE `{0,0}`
+PRUNE.** Sites (11) `dis_walk` and (27) `br_strip_caps` are tree REWRITES that
+run before slot assignment and do not consult it, so the prune does not reach
+them and their verdicts stand. The three whole-tree predicates (9), (12), (13)
+have no prune at all — confirmed by R34's verifier — so **site (6) was the
+only one.** S-SR19 is the detector, and its cell must carry a **rung-bearing or
+atomic** callee: a callee with only capture slots allocates from a family
+`{0}` does not prune, and the row would go green.
 
 #### 4.4b `pcrec_minw` FOR A RECURSIVE CALLEE
 
@@ -1428,9 +1498,9 @@ atomic group; **the CALLEE inherits none of it**. Precisely:
 
 | the callee gets | never |
 |---|---|
-| the **call site's** cursor | the wrapper's back-step |
+| the **call site's** cursor | — (the entry is not the problem: a jump to the group's own label lands *after* a lookbehind's back-step, §3.5) |
 | **live** choice points on return (§3.2) | the wrapper's `RX_CUT` |
-| a forward, consuming execution | the wrapper's end-check, polarity or verdict discipline |
+| **its own exit** — fall-through or `RX_RETURN` | the wrapper's **end-check, verdict or position-restore** |
 
 **So the emitted body for a call is NOT the lexical occurrence's code**, and
 §6.3's split stops being an optimisation. This is the one clause of the
@@ -1850,21 +1920,20 @@ three hold, in which case it SPLICES:
 3. the spliced expansion stays under a **size budget**, checked against the
    same `Cost` machinery that already sizes an artifact.
 
-**AND FOR A WRAPPED TARGET THE SPLIT IS MANDATORY, NOT AN OPTIMISATION
-(§3.5).** When the target group's lexical home is a **lookaround or an atomic
-group**, the lexical occurrence and the callee region are **different code**
-and both must be emitted:
+**AND THE SPLIT IS ABOUT THE EXIT, WHICH IS WHY IT IS ALREADY MANDATORY FOR
+EVERY CALLED GROUP.** §6.1's collapse argument says the exit needs a
+per-ACTIVATION answer, so a shared body cannot leave through the lexical
+occurrence's continuation. That is HYBRID, and it is not a new rule.
 
-> the LEXICAL occurrence keeps its wrapper (the back-step, the cut, the
-> end-check) because that is what the pattern says at that position; the
-> CALLEE region is emitted **separately**, cut-free and back-step-free, and
-> every call — including the first — reaches *it*.
-
-An emitter that treated the split as an optimisation and "fell back" to
-jumping into the lexical occurrence would answer **nomatch on all five of
-§3.5's W rows**. So §6.3's HYBRID is not merely the measured winner here; for
-this family it is the only correct shape, and §11 wave B+C owns it rather than
-wave G.
+**What §3.5's wrapped-target family adds is not a second rule but a
+CONSEQUENCE FOR WAVE G**: the two regions can be **byte-identical code** and
+differ only in how they end, so a splice that "reuses the lexical label" — the
+obvious size optimisation, and the one a later reader will propose — is
+**wrong for a wrapped target and wrong for an unwrapped one**. The lexical copy
+inside a lookbehind keeps its back-step and end-check (they belong to the
+enclosing `A_LOOK`, not to the group); the callee copy is the same body with a
+different exit. **Wave G may share the BODY; it may never share the EXIT.**
+S-SR18 sabotages exactly that.
 
 **SPLICING IS WAVE G, NOT WAVE B+C.** Wave B+C ships the CALL linkage for every
 call site, because it is one path, it is correct for every shape including
@@ -2281,7 +2350,8 @@ measurement behind it rather than a worry.
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
 | **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
 | **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
-| **S-SR18** | §3.5/§5.4: the callee region is emitted SEPARATELY from a wrapped lexical occurrence | `emit_vm.c` | `harness recursion lookaround atomic-groups` | make a call to a group whose lexical home is an atomic group jump INTO the lexical occurrence | **`^(?>(a\|ab))z(?1)c$` on `"azabc"` goes from (0,5) to nomatch** — the atomic group's `RX_CUT` discards the choice points the callee's retry needs. **The row carries all three wrappers** (lookbehind W1, negative lookahead W2, atomic W3), because an emitter can get one right and the others wrong: they are three different pieces of the wrapper's machinery. Its cells need `features recursion,lookaround,atomic-groups` |
+| **S-SR18** | §3.5/§5.4/§6.3: the callee region has **ITS OWN EXIT** — a call never falls out through the lexical occurrence's continuation | `emit_vm.c` | `harness recursion lookaround atomic-groups` | make the callee region END by falling through to the wrapped lexical occurrence's exit instead of `RX_RETURN` | **`^(?>(a\|ab))z(?1)c$` on `"azabc"` goes from (0,5) to nomatch** — the atomic exit's `RX_CUT` discards the choice points the retry needs. **The row carries all three wrappers** (W1's lookbehind end-check-and-restore, W2's negative-assertion cut, W3's atomic cut), because they are three different exits and an emitter can get one right and the others wrong. **It is an EXIT row, not an ENTRY row** — R34 V-6 found the first version sabotaging the back-step, which a call never reaches. `features recursion,lookaround,atomic-groups` |
+| **S-SR19** | §4.4a(6): the layout counts each EMITTED CALLEE REGION, including one defined inside `X{0}` | `emit_vm.c` | `harness recursion atomic-groups` | count the callee's slots lexically (i.e. leave `vm_count_slots`' `{0,0}` prune in the path) | **an OUT-OF-BOUNDS SLOT WRITE**, K27's class, which `vm_count_slots`' own header names. The detector must be a `{0}` cell with a **rung-bearing or atomic** callee — `^(?:((?>a\|ab))){0}(?1)z$` — because a callee with only capture slots allocates from a family that `{0}` does *not* prune and the row goes green. Under ASan the failure is a report; without it, silent corruption, so this row is `asan`-suite as well |
 | **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave E: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
 
 **Two need the TWO-SITE mechanism** (`tests/mech/CLAUDE.md`'s S108,
@@ -2375,6 +2445,7 @@ is not a party to at all. §14 ASK 5 asks whether that is enough.
 | `leftrec.rxt` | the give-up cells: direct, indirect, and nullable-prefix left recursion, each expecting `PCREC_ERR_RECURSE`; **and the `^(a\|(?1)a)$` on `"a"×200` cell that must MATCH** (§3.3) |
 | `dupnames.rxt` | §3.4(c)'s call/reference split, including the unset-first-declaration discriminator |
 | `kreset.rxt` | §3.4(b)'s three `\K` cells, `features assertions,recursion` |
+| **`zerodef.rxt`** | §4.4c's `X{0}` callee family: a plain, a recursive, an atomic and a rung-bearing callee parked under `{0}`, each with its non-`{0}` control. **The atomic and rung-bearing cells are the load-bearing ones** — a `{0}` callee with only capture slots allocates from a family `{0}` does not prune, so it passes on a broken layout |
 | **`leadingzero.rxt`** | §2.4a's pair on the ANCHORED discriminator: `^(a(?01)?b)$` on `"aabb"` must be (0,4) and `^(a(?00)?b)$` must be nomatch, with the `\g<01>`/`\g<00>`/`\g'01'`/`\g'00'` siblings and the four relative-zero error cells. **The unanchored form is not usable here** — both answers are (0,4) — and the file says so, because that is the cell shape this lane's own first draft used |
 | **`mrl.rxt`** | §4.4b's two fixpoint cells: `^(?(DEFINE)(?<g>(?&h)b)(?<h>x\|(?&g)))(?&g)$` on `"xb"`…`"xbbbb"` must MATCH (the withdrawn gloss loses them), and `^(?(DEFINE)(?<g>a(?&g)b))(?&g)$` must match NOTHING (∞ is right there). **The pair is the specification** — ∞ reachable, and not reached by an approximation |
 | **`slotfamilies.rxt`** | §5.3b's two MEASURED cells — `^(a(?1)?b)\1$` on `"aabbaabb"` (features `recursion,backrefs`) and `^((?>a(?1)?))a$` on `"aa".."aaaaaaaa"` with its `^((?:a(?1)?))a$` control (features `recursion,atomic-groups`) — plus a cell per ARGUED family as `[DD-14]` lands them. **This file is the one that would have caught the design's own error**, and it exists because the lane's first corpus shared the design's alphabet |
