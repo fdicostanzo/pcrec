@@ -99,9 +99,9 @@ grep -n '_R_STEPS\|_R_FRAMES\|_R_WORK' src/gen/emit_vm.c | sed 's/^/  /'
 echo "# --- the artifact-side collapse in the search entry ---"
 sed -n '6244,6256p' src/gen/emit_vm.c | sed 's/^/  /'
 echo "# --- what an artifact actually contains today (a VM-routed pattern) ---"
-/usr/bin/gnutimeout 30 "$PCREC" -p rx --engine=vm -o /tmp/dd14_premise_art.c '(a)(b|c)+d' 2>&1 || true
-grep -n 'PCREC_ERR_\|RX_R_' /tmp/dd14_premise_art.c | sed 's/^/  /'
-rm -f /tmp/dd14_premise_art.c
+/usr/bin/gnutimeout 30 "$PCREC" -p rx --engine=vm -o "$TMPC" '(a)(b|c)+d' 2>&1 || true
+grep -n 'PCREC_ERR_\|RX_R_' "$TMPC" | sed 's/^/  /'
+rm -f "$TMPC" "${TMPC%.c}.h"
 echo
 
 echo "=== AXIS D: the VM primitives, quoted from src/gen/emit_vm.c ========="
