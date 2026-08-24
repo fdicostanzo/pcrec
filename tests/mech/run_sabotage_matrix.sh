@@ -109,6 +109,9 @@
 #   altdiff  altcls                    — added 2026-08-17 ([OPT-ALTCLS] alternation->class normalization)
 #   atomicdiff  atomicidentity         — added 2026-08-22 ([M6.4.2] module atomic-groups)
 #   brefdiff  dupnamesdiff  brefidentity — added 2026-08-22 ([M6.5.2] module backrefs)
+#   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
+#     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
+#     S122's cut) cannot be scored without its DISAGREEMENT assertion
 #
 # THE THREE NEWEST WORDS WERE REGISTERED FIRST, DELIBERATELY, which is the
 # lesson R31 C11 left one module earlier: this vocabulary is CLOSED, so a
@@ -555,6 +558,41 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/brefidentity.log" | grep -oE '[0-9]+')"
                 suite_bits+=("brefidentity:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            lookaround)
+                # [M6.6.2 wave B+C] module `lookaround`'s behavioural
+                # instrument, and it is wired HERE rather than at wave F where
+                # the design first placed it (R33 C2-7) because two of this
+                # wave's own rows cannot be scored without it.
+                #
+                # S131 (`.atomic` ignored) is observable ONLY through
+                # `nonatomic_ahead.rxt`'s cells, and this arm's §2 sees it in
+                # a way no corpus file can: it asserts the EXACT NUMBER of
+                # cells on which `(?=` and `(?*` DISAGREE, so a compiler that
+                # cut both spellings — or neither — reports agreement where 13
+                # disagreements are required. An arm that only checked each
+                # spelling against libpcre2 would go green on both S122 and
+                # S131, which is the shape this whole directory exists to
+                # find. §1 additionally re-drives every `# pcre2-only` cell in
+                # the corpus against libpcre2, which is the only oracle those
+                # cells have (python has no `(?*` at all).
+                #
+                # SKIP-IS-NOT-A-PASS is exercised in the failing direction, as
+                # `pc3` was: the script prints `SKIP:` lines and `checks
+                # passed: 0 / checks failed: 0` when libpcre2 is absent, so
+                # the scrape below reports `0fail/0pass` and `any_fail` stays
+                # clear — a skipped arm contributes no evidence rather than
+                # false evidence. Validated by pointing the oracle import at a
+                # nonexistent module: the row's cell reads
+                # `laround:0fail/0pass` and the verdict is carried by whatever
+                # else ran, never by this.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/lookaround/run_lookaround_diff.sh" \
+                    > "$work/lookaround.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/lookaround.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/lookaround.log" | grep -oE '[0-9]+')"
+                suite_bits+=("laround:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

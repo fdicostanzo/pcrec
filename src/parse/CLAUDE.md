@@ -443,6 +443,56 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `not_repeatable` is deliberately NOT part of the predicate: it is a
   per-NODE flag a bare option run sets (R20/SPEC-1), and it must not be
   wrapped — `(?:(?i))*` is error 109 where `(^)*` is not.
+- **mod_lookaround.c** — module `lookaround` ([M6.6.2] wave B+C): ONE group
+  port, `pcrec_laport_group`, for ALL SIX registry rows — `(?=...)` `(?!...)`
+  `(?*...)` and the three `(?<` tails `=` `!` `*`. Design:
+  docs/design/lookaround_design.md, panel-approved R33.
+
+  **ONE PORT AND NOT SIX**, because the six constructs differ ONLY in the
+  three `Ast.u.look` flags the port sets, and a second port function would be
+  a SECOND PLACE the `(?<`-tail split is decided. The dispatch is a single
+  table keyed on the row's own `sel`/`tail` — the same two fields
+  `pcrec_registry_arbitrate` matched to elect the row — so the port cannot
+  elect a different construct than the registry did.
+
+  **THE WAVE B+C SPLIT IS THAT TABLE'S `built` COLUMN, AND IT IS A TAIL CHECK
+  RATHER THAN A THROWAWAY REFUSAL PATH.** D65 derives a row's `built` status
+  from the PORT's `ExtResult` at `WANT_RESULT` (syntax_dump.c) and never runs
+  the emitter, so the column flips for exactly the rows whose tail this port
+  ACCEPTS. At wave B+C it recognises the three LOOKAHEAD tails and DECLINES
+  the three `<` tails with the enabled-but-unbuilt refusal, so `--list-syntax`
+  reads `built` for three rows and `unbuilt` for three — MEASURED on the
+  landing, and no row outside module `lookaround` moved. **Wave D deletes the
+  three `false` rows** when the back-step seam entry lands; nothing else in
+  the file changes for the lookbehind, because `u.look.behind` is already set
+  from the same table.
+
+  The decline is an `EXT_REFUSAL` and not an `EXT_NOT_MINE` because the `(?`
+  doorway CANNOT decline (its catch-all is REJECTED, so `EXT_NOT_MINE` from it
+  is a registry defect the wall reports). A refusal answered AT `WANT_RESULT`
+  is D33's "gate open, port missing" signal, which is the one D65 reads.
+
+  **IT ALSO OWNS §2.7's `\K` CHECK, WHICH IS NEEDED RATHER THAN FREE.** `\K`
+  is module `assertions` and already ships, so without a check `(?=a\K)b`
+  would compile today's `\K` inside tomorrow's lookaround and quietly move
+  the reported match start. libpcre2 10.46 refuses it in all four polarities
+  (err 199) and Frank ruled the refusal PERMANENT on 2026-08-23 — the
+  `PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK` bit that would restore the old semantics
+  is not adopted and is not to be proposed. `la_has_kreset` is a RECURSIVE
+  walk through nested groups AND nested lookarounds and stops AT the
+  assertion's `)` (R33 C1-7): `(?=(a\K))x`, `(?=a(?:\K))x` and
+  `(?=(?:(?=\K)))x` all refuse, while `(?=a)\Kb`, `a(?=b)\Kc` and `a\Kb`
+  all compile. Both directions are `tests/lookaround/refused.rxt`'s, and the
+  offset is the ASSERTION's rather than the `\K`'s because `Ast` carries no
+  position of any kind.
+
+  `not_repeatable` is PROPAGATED from the body, as A_CAP's and A_ATOMIC's is.
+  Note what that does and does not decide: `(?=a)*` and the other thirteen
+  quantified forms compile (`pcrec_is_bare_anchor` answers FALSE for A_LOOK,
+  which is what lets them), while `(?=(?i))*` — which libpcre2 ACCEPTS,
+  measured at this wave — is refused exactly as pcrec already refuses
+  `((?i))*` and `(?>(?i))*`. That is ONE pre-existing question about a bare
+  option run, not a new one this construct gets its own answer to.
 - **mod_atomic_groups.c** — module `atomic-groups` ([M6.4.2]): the `(?>...)`
   group port (`pcrec_agport_atomic`, wired through ext.c's GENERAL
   producer-invocation path, mod_named_groups.c's precedent), and

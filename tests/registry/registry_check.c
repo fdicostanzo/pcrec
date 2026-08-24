@@ -1596,29 +1596,43 @@ static void check_class_ports(void)
      * owns PCRE2's octal disambiguation and is the only one here that can
      * produce a CHARACTER rather than a reference), plus `\k`, `\g` and
      * `(?P=n)`. The two new `recursion` rows add NONE — they are born unbuilt,
-     * which is the whole point of splitting them out. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 47)
+     * which is the whole point of splitting them out.
+     *
+     * [M6.6.2] wave B+C: ATOM PORTS 47 -> 53, and it is SIX rows sharing ONE
+     * FUNCTION — module `lookaround`'s `pcrec_laport_group`, wired on all six
+     * of `(?=...)` `(?!...)` `(?*a)` `(?<=...)` `(?<!...)` `(?<*a)`. This
+     * count is of PORTS and not of built constructs, so all six move it even
+     * though only three of them BUILD at this wave: the port's tail check
+     * declines the three `(?<` tails at `WANT_RESULT` until wave D, which is
+     * what keeps their `built` column reading `unbuilt`. The two facts are
+     * counted separately on purpose, and `check_engine_capability` below is
+     * where the OTHER one lives. Class ports are unmoved at 7/10/9: a
+     * lookaround has no class position at all. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 53)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (47: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (53: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
             "\\b and \\B since wave B, \\G since wave D, \\K since "
-            "wave E, `(?>...)` since [M6.4.2], and the thirteen backrefs rows "
-            "since [M6.5.2]). A "
+            "wave E, `(?>...)` since [M6.4.2], the thirteen backrefs rows "
+            "since [M6.5.2], and the SIX lookaround rows sharing ONE port "
+            "since [M6.6.2] wave B+C). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 47 atom "
+        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 53 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
            "-- module `assertions` is now COMPLETE -- + `(?>...)`, "
            "[M6.4.2], + the ten digit rows and \\k \\g (?P=n), [M6.5.2] "
-           "-- module `backrefs` -- while the two new \\g< / \\g' rows add "
+           "-- module `backrefs` -- + the six lookaround rows through ONE "
+           "shared port, [M6.6.2] wave B+C, three of which do not BUILD yet "
+           "-- while the two new \\g< / \\g' rows add "
            "only their base literal-fallback CLASS port; "
            "the four RK_QUANTSUFFIX rows add none, having no "
            "doorway to be called from); scalar and SET "
@@ -1789,12 +1803,38 @@ static void check_engine_capability(void)
         { RK_ESC, '9', NULL, "backrefs", "(a)(b)(c)(d)(e)(f)(g)(h)(i)\\9", "\\9" },
         /* `\g` with NO tail is the backreference half; the two tailed rows in
          * this bucket are `recursion`'s and have no producer to witness. */
+        /* [M6.6.2] THE THREE LOOKAHEAD ROWS. A lookaround BITES for a reason
+         * that is not the cut's and not `\K`'s: it is a SUB-MATCH whose
+         * verdict is kept and whose position is discarded, and a subset state
+         * is a SET of positions with no way to run one and come back. Nothing
+         * rewrites it away — `src/ir/nfa.c` lowers an `A_LOOK` to an EPSILON,
+         * which is SOUND AS A PREFILTER and a MISCOMPILE AS A MACHINE, and
+         * SR-8's stamp is the only thing that keeps those two readings apart
+         * (lookaround_design.md §5.2).
+         *
+         * EVERY WITNESS IS CAPTURE-FREE, and that is required rather than
+         * tidy: a capture-bearing pattern is VM-forced by the pre-existing
+         * generic capture rule whatever this row's `engines` mask says, so
+         * `(a)(?=b)c` would go green on a compiler whose stamp was gone. It
+         * is the same masking `run_backref_diff.sh` had to design around one
+         * module earlier, in the other direction. Sabotage row S126 flips the
+         * `(?=...)` row's mask and `(?=a)b` is what sees it.
+         *
+         * THE THREE LOOKBEHIND ROWS HAVE NO WITNESS AND MUST NOT: their port
+         * DECLINES at `WANT_RESULT` until wave D, so there is no artifact to
+         * refuse and no default-engine compile to assert. The `built` gate
+         * below is what excuses them, and it un-excuses them automatically the
+         * day wave D deletes the decline — which is the property a hand
+         * allowlist here would not have had. */
+        { RK_GROUP, '=', NULL, "lookaround", "(?=a)b",   "(?=...)" },
+        { RK_GROUP, '!', NULL, "lookaround", "(?!a)b",   "(?!...)" },
+        { RK_GROUP, '*', NULL, "lookaround", "(?*a)b",   "(?*a)" },
         { RK_ESC,   'g', NULL, "backrefs",              "(a)\\g{-1}",       "\\g{-1}" },
         { RK_ESC,   'k', NULL, "backrefs,named-groups", "(?<n>a)\\k<n>",    "\\k<name>" },
         { RK_GROUP, 'P', "=",  "backrefs,named-groups", "(?<n>a)(?P=n)",    "(?P=n)" },
     };
 
-    int qualifying = 0, wired = 0, checked = 0, bads = 0;
+    int qualifying = 0, wired = 0, built_wired = 0, checked = 0, bads = 0;
     char msg[320];
 
     if (pcrec_enabled_mask() != 0) {
@@ -1823,6 +1863,32 @@ static void check_engine_capability(void)
                              || r->kind == RK_QUANTSUFFIX;
             if (!has_producer) continue;
             wired++;
+
+            /* [M6.6.2] A WIRED PORT IS NOT THE SAME FACT AS A BUILT
+             * CONSTRUCT, and until this wave nothing in the tree could tell
+             * them apart because no module had ever wired ONE port for
+             * constructs it lands in TWO waves. Module `lookaround` does:
+             * `pcrec_laport_group` serves all six rows and DECLINES the three
+             * `(?<` tails at `WANT_RESULT` until wave D lands the back-step
+             * (lookaround_design.md §8.3). A declining producer produces
+             * nothing, so there is no artifact for `--engine=dfa` to refuse
+             * and no default-engine compile to assert alongside it — a witness
+             * for such a row could not be written, and demanding one would
+             * make this check fire on a tree that is behaving exactly as
+             * designed.
+             *
+             * SO THE WITNESS REQUIREMENT IS GATED ON D65's `built` COLUMN,
+             * which is the tree's one authoritative answer to "does this
+             * construct compile" and is DERIVED per row at call time rather
+             * than declared (src/parse/syntax_dump.c). It is not a weakening:
+             * the row is still walked and still counted, the gate is the same
+             * derivation `--list-syntax` prints, and the day wave D deletes
+             * the port's decline these three rows start demanding witnesses
+             * again WITH NO EDIT HERE. A hand allowlist would not have had
+             * that property, which is exactly the difference this file's own
+             * header draws between iteration and a hand list. */
+            if (pcrec_construct_built_status(r) != PCREC_BUILT_YES) continue;
+            built_wired++;
 
             const char *bites = NULL, *name = NULL, *feats = NULL;
             for (size_t w = 0; w < sizeof WITNESS / sizeof WITNESS[0]; w++) {
@@ -1873,20 +1939,43 @@ static void check_engine_capability(void)
      * design, is what turned SR-8 from "a third named exception" into D67's
      * generic build.
      *
+     * 18 -> 24 WIRED at [M6.6.2] wave B+C, of which 21 are BUILT. All six
+     * added rows are module `lookaround`'s and all six share ONE port, so
+     * `wired` moves by six while `built_wired` moves by three — the first time
+     * this file has been able to tell those two facts apart, and the reason
+     * the third number exists. `qualifying` does NOT move: the six rows were
+     * already VM_ONLY and already RS_MODULE; this wave gave them a producer,
+     * not a classification.
+     *
+     * THE THIRD NUMBER IS WHAT KEEPS THE GATE HONEST. `built_wired` is the
+     * count that must equal `checked`, so a `built` gate that quietly excused
+     * a row it should have checked shows up as a MISSING WITNESS rather than
+     * as a smaller pass. Wave D moves 21 -> 24 and adds the three lookbehind
+     * witnesses in the same change.
+     *
      * A deliberate move edits these numbers in the same change; a silent one
      * is the defect. */
-    if (qualifying != 54 || wired != 18)
-        bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA and %d of "
-            "them have a wired producer, expected 54 and 18 -- the VM_ONLY "
-            "population or its producer set moved", qualifying, wired);
+    if (qualifying != 54 || wired != 24 || built_wired != 21)
+        bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
+            "have a wired producer and %d of THOSE are BUILT, expected 54, 24 "
+            "and 21 -- the VM_ONLY population, its producer set or its built "
+            "set moved", qualifying, wired, built_wired);
+    else if (checked != built_wired)
+        bad("engine capability: %d rows are VM_ONLY, wired AND built, but only "
+            "%d were checked against a witness -- the difference is rows the "
+            "`built` gate excused that it should not have", built_wired,
+            checked);
     else if (bads == 0) {
-        char label[288];
+        char label[352];
         snprintf(label, sizeof label,
-                 "engine capability: all %d wired VM_ONLY producers refuse "
-                 "--engine=dfa BY NAME on a witness whose cut bites, and every "
-                 "witness compiles on the default engine (of %d VM_ONLY rows; "
-                 "SR-8 is BUILT, so the [M4.7a] tripwire and its \\K exception "
-                 "are RETIRED -- D67)", checked, qualifying);
+                 "engine capability: all %d wired-AND-BUILT VM_ONLY producers "
+                 "refuse --engine=dfa BY NAME on a witness whose cut bites, "
+                 "and every witness compiles on the default engine (of %d "
+                 "wired and %d VM_ONLY rows; the %d wired-but-UNBUILT rows are "
+                 "module `lookaround`'s three lookbehinds, whose shared port "
+                 "declines until wave D; SR-8 is BUILT, so the [M4.7a] "
+                 "tripwire and its \\K exception are RETIRED -- D67)",
+                 checked, qualifying, wired, wired - built_wired);
         ok(label);
     }
 
@@ -2135,9 +2224,20 @@ static void check_built_status_defects(void)
      * eventual verdict. The `\g` row is where that stopped being theoretical:
      * while its relative resolution refused AT THE PORT it read `unbuilt`, and
      * the fix was to give "does this number name a group" ONE home. */
-    else if (checked != 106 || built != 52 || unbuilt != 48 || na != 6)
+    /* [M6.6.2] wave B+C: 52 + 48 -> 55 + 45, and the SHAPE is what design §8.3
+     * committed to in advance rather than the number. THREE rows move
+     * `unbuilt -> built` — `(?=...)`, `(?!...)` and `(?*a)` — ZERO move the
+     * other way, the total is unchanged at 106, and NO ROW OUTSIDE MODULE
+     * `lookaround` MOVES. In particular the three lookbehind rows STAY
+     * `unbuilt`: the module's one shared port declines their tails at
+     * `WANT_RESULT`, which is precisely what D65 derives the column from, and
+     * "all six at once" would have been a property of a port with no tail
+     * check rather than of D65. The `(?(` conditional-group row stays unbuilt
+     * too (R33 C1-9) — a reader must not take these three as unlocking
+     * assertion-conditions. Wave D moves 55 + 45 -> 58 + 42. */
+    else if (checked != 106 || built != 55 || unbuilt != 45 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 106 = 52 + 48 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 106 = 55 + 45 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "

@@ -1852,8 +1852,8 @@ Every non-base construct pcrec knows, as the parser itself sees it — 106 rows 
 | after `\` | `\8` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
 | after `\` | `\9` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
-| after `(?` | `(?=...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | positive lookahead |
-| after `(?` | `(?!...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | negative lookahead |
+| after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead |
+| after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead |
 | after `(?` | `(?<=...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | positive lookbehind |
 | after `(?` | `(?<!...)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | negative lookbehind |
 | after `(?` | `(?<*a)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
@@ -1864,7 +1864,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 106 rows 
 | after `(?` | `(?P>n)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | python-style subroutine call into a named group |
 | after `(?` | `(?PX)` | `AGREES-REJECT` | — | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
 | after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
-| after `(?` | `(?*a)` | `REJECTED` | `unbuilt` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
+| after `(?` | `(?*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
 | after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
 | after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |

@@ -241,6 +241,22 @@
  * was a tier-2 misattribution under D26. */
 #define GROUP_T(sel, tl, syn, mod, eng, note, q) \
     {RK_GROUP, (sel), (tl), (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 25, NULL, NO_PORT, NO_PORT}
+/* [M6.6.2] as GROUP / GROUP_T, but with module `lookaround`'s ONE port wired
+ * into the `aport` slot. Six rows, one port function, because the six
+ * constructs differ only in the three `Ast.u.look` flags `pcrec_laport_group`
+ * reads off this row's own `sel`/`tail` (design §8.1) — a second port would be
+ * a second place the `(?<`-tail split is decided.
+ *
+ * A MACRO AND NOT SIX LONGHAND ROWS, and the distinction this file's header
+ * draws is the one that licenses it: what must not hide inside a macro is a
+ * row that MEANS REJECTED. These mean the opposite — every field below is
+ * fixed for all six constructs (module, flavour, VM_ONLY, RS_MODULE,
+ * ROADMAP_PLANNED, QF_YES, the port) and only the spelling and the note vary,
+ * so six copies would be six chances to wire five of them. */
+#define GROUP_LA(sel, syn, note) \
+    {RK_GROUP, (sel), NULL, (syn), M_lookaround, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, QF_YES, NULL, 0, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, NO_PORT}
+#define GROUP_LA_T(sel, tl, syn, note) \
+    {RK_GROUP, (sel), (tl), (syn), M_lookaround, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, QF_YES, NULL, 25, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, NO_PORT}
 /* PCRE2 rejects it, and the byte that decides is the one AFTER the selector.
  * Takes `ce`: its one caller is an RK_ESC row, which is class-reachable.
  * Rank 25 = the tailed tier (MOD-0.2; see RegRow.rank) — its caller is the
@@ -577,8 +593,8 @@ static const RegRow group_rows[] = {
  RS_BASE, RD_NONE, NULL, NULL, 0,
  "non-capturing group", ROADMAP_NONE, QF_YES, NULL, 0, NULL, NO_PORT, NO_PORT},
 
-GROUP('=',  "(?=...)",       lookaround,       VM_ONLY, "positive lookahead", QF_YES),
-GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead", QF_YES),
+GROUP_LA('=',  "(?=...)",       "positive lookahead"),
+GROUP_LA('!',  "(?!...)",       "negative lookahead"),
 
 /* `<` IS THREE CONSTRUCTS AND A NAME, split by tail at SR-9 (Q2). It used to
  * carry the compound module "lookaround/named-groups", which is a true sentence
@@ -596,10 +612,10 @@ GROUP('!',  "(?!...)",       lookaround,       VM_ONLY, "negative lookahead", QF
  * names lookaround", which was true only because that selector named lookaround
  * for everything, including named groups. Splitting the row is what turned that
  * into a fact needing its own line. */
-GROUP_T('<', "=", "(?<=...)", lookaround,   VM_ONLY, "positive lookbehind", QF_YES),
-GROUP_T('<', "!", "(?<!...)", lookaround,   VM_ONLY, "negative lookbehind", QF_YES),
-GROUP_T('<', "*", "(?<*a)",   lookaround,   VM_ONLY,
-      "non-atomic positive lookbehind — the (? spelling of (*naplb:...)", QF_YES),
+GROUP_LA_T('<', "=", "(?<=...)", "positive lookbehind"),
+GROUP_LA_T('<', "!", "(?<!...)", "negative lookbehind"),
+GROUP_LA_T('<', "*", "(?<*a)",
+      "non-atomic positive lookbehind — the (? spelling of (*naplb:...)"),
 /* [M6.3] Longhand rather than the GROUP macro, for the one field the macro
  * cannot express: a wired PORT_FN. `engines` is ANY_ENGINE, not VM_ONLY —
  * a deliberate RECLASSIFICATION (docs/dev/decisions.md's [M6.3] entry, and
@@ -704,8 +720,8 @@ REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
  *
  * `(?<*...)` is the lookbehind of the same family and needs no row: it enters
  * through the `<` selector, which already names lookaround. */
-GROUP('*',  "(?*a)",         lookaround,       VM_ONLY,
-      "non-atomic positive lookahead — the (? spelling of (*napla:...)", QF_YES),
+GROUP_LA('*',  "(?*a)",
+      "non-atomic positive lookahead — the (? spelling of (*napla:...)"),
 GROUP_LEXICAL('#',  "(?#...)",       comments,     ANY_ENGINE, "comment, discarded up to the next ')'"),
 /* [M4-CALLOUTS] step 1 (D36, 2026-08-12; flipped 2026-08-14): was
  * GROUP_NEVER — K14's OUT-OF-SCOPE ruling on 2026-08-11. Frank re-scoped it

@@ -319,6 +319,35 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   pcrec, and `fold_agreement_check.c` ties the two spellings of pcrec's ASCII
   fold over all 65,536 ordered byte pairs. The module's byte-identity gate is
   `codegen/run_backref_identity.sh`, opt-in as `make test-backrefs-identity`.
+- **`lookaround/`** — module `lookaround` ([M6.6.2]): `(?=X)` `(?!X)` `(?*X)`
+  and, from wave D, the three lookbehind spellings. **Six `.rxt` files at wave
+  B+C and they are GENERATED** — `gen_corpus.py` drove every cell through
+  libpcre2 10.46 before it was written and python3 `re` over the same cells in
+  the same pass, so the `# pcre2-only` markings are COMPUTED rather than
+  declared. This module is the case that makes computing them worth the
+  generator: design §7 catalogues TWO expectations a hand-marking would have
+  written in and that measurement REFUTES — python compiles all fourteen
+  QUANTIFIED lookaround forms (G8) and agrees on all 27 CAPTURE cells
+  including captures in a negative lookahead (G9) — so a hand marking would
+  have thrown a working oracle away in both, which is R32 C3's finding twice
+  over. What python genuinely cannot do is `(?*`: it has no such construct at
+  all (G5), so `nonatomic_ahead.rxt` is `# pcre2-only` IN ITS ENTIRETY and
+  `verify_rxt.py` skips every cell in it.
+
+  **`run_lookaround_diff.sh`** (`make test-lookaround`) is what closes that
+  hole and two others. §1 re-drives every pcre2-only pattern through libpcre2
+  at every startpos on span AND every group span — without it one of the two
+  families this module ships would have exactly one oracle behind it, the one
+  that generated its expectations. **§2 is the only arm in this tree whose
+  population is required to DISAGREE WITH ITSELF**: `(?=` and `(?*` differ in
+  exactly one emitted line, so a compiler that cut both or cut neither answers
+  them identically and an agreement-only arm would go green on both
+  sabotages; the exact disagreement count is asserted. §3 sweeps design
+  §3.2.1's follow-scoping in BOTH polarities, because on the negative form an
+  unscoped body is a FALSE MATCH rather than a missed one. It REUSES
+  `backrefs/bref_oracle.py` and `bref_batch.c` rather than making a third copy
+  of one mechanism. The byte-identity gate is `codegen/run_lookaround_
+  identity.sh`, opt-in as `make test-lookaround-identity`.
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is

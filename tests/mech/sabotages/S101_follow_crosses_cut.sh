@@ -37,6 +37,25 @@ SAB_SUITES="atomicdiff harness codegen"
 SAB_HARNESS_TARGET="tests/atomic_groups/possessive.rxt"
 SAB_DESC="vm_atomic emits the atomic body with the caller's follow-min still in force, so the possessive rungs' MRL bound counts bytes the follow needs and ends the loop early. '(?:aa|a)++ab' on \"aaab\" then matches (0,4) where PCRE2 and python both give NO MATCH -- the UNCUT language out of a possessive quantifier. THE DEFECT THIS UNDOES SHIPPED: live in main from 69f3b93 to [M6.4.4]"
 SAB_DOC_FIGURE="PREDICTED: atomicdiff RED on the cut2 family (30 patterns, all five rungs) and on its non-vacuity floor; harness RED on possessive.rxt's section 10 witnesses; codegen RED on the follow-barrier rule. Canonical figure owed from run_sabotage_matrix.sh S101."
+# ANCHOR RE-HOMED 2026-08-23 ([M6.6.2] wave B+C), and the re-homing is itself
+# the finding R33 V-7 predicted — arriving at THIS row rather than at the new
+# one it warned about. The anchor was the single line `    v->fmin = 0;`. That
+# was unique while `vm_atomic` was the only function scoping its body's follow;
+# `vm_look` now carries the SAME TWO LINES (`lookaround_design.md` §3.2.1: the
+# scoping is a property of the OVERLAP and not of the cut, so the lookaround
+# needs it for a different reason and spells it identically), the anchor
+# matched TWICE, and `replace.py` refused on the count — loudly, which is what
+# it is for. The anchor now includes `vm_atomic`'s own signature, so
+# `SAB_COUNT=1` is honest rather than lucky, and S132 — the lookaround's own
+# scoping row — is anchored the same way for the same reason.
 SAB_COUNT=1
-SAB_BEFORE='    v->fmin = 0;'
-SAB_AFTER='    v->fmin = sf;   /* SABOTAGE S101 */'
+SAB_BEFORE='static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+{
+    const char *sd = v->fdyn;
+    long long   sf = v->fmin;
+    v->fmin = 0;'
+SAB_AFTER='static void vm_atomic(Vm *v, int entry, const Ast *a, int next)
+{
+    const char *sd = v->fdyn;
+    long long   sf = v->fmin;
+    v->fmin = sf;   /* SABOTAGE S101 */'
