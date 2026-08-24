@@ -13285,3 +13285,16 @@ times with the A/B control showing the reference binary also blows the
 cap under load. Design §4.4a's "fourteen carry a default:" corrected to
 FOUR (b11a55b). Worktrees srA/srA2/srCorpus removed; 83 orphaned empty
 mech scratch dirs cleared from /tmp (34% now). srBC's san4 running.
+
+DIRECTION NOTE (Frank, ~14:0x, not a decision): a PROFILE ATTACHMENT for
+compiled patterns — where the matcher spends its time by section
+(prefilter etc.) and in smaller increments, over a variety of scenarios,
+to guide optimization priority in the bench loop; trace is for debugging,
+the profile is for optimization. Recorded as a cross-note on [ENG-PGO]
+(whose `--profile` emission mode is the same artifact; second customer)
+with the manager's design starting points (cycle deltas at the emitter's
+section boundaries; computed-goto labels as fine increments; [V-H]
+namespace — the second diagnostic axis D71 says triggers designing the
+group). Also answered today: the VM's prefilter IS the DFA engine
+emitted `static` by the same `pcrec_emit_dfa_engine` (one copy, two
+callers) — DFA scan optimizations reach both artifacts.
