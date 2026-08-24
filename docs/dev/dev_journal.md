@@ -13209,3 +13209,15 @@ resolver + callgraph.c + RX_CALL/RX_RETURN + the two A2 obligations +
 archive ac4917d. The merged-tree make test is running on main
 (scratchpad/maketest_A2merged.log); san follows when it ends (one heavy
 suite at a time).
+
+ADDENDUM (part 3, ~10:5x): the merged A+A2 tree's make test: rc=2 with
+corpus 24,870 passed / 0 failed (24,868 + giveup.rxt's two `gu` cells)
+and every section green EXCEPT test-resource's 45 s CPU-cap check, which
+failed under load 17 (srBC building its reference compiler + srA2's mech
+alongside -j12) and passed SOLO 19/19 — the K31-addendum shape, third
+time today, same two patterns, always clean solo. strict clean. `make
+san` running (scratchpad/san_A2merged.log). Frank's follow-up on the
+K32 cell ("can we add a loop to the DFA prefilter?") answered and
+recorded in K32: a DFA cannot count without states; the prefilter gets
+a superset count CLAMP, the DFA-as-matcher case gets ROUTED to the VM's
+counter rung above a threshold; counting-set automata parked.
