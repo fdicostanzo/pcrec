@@ -1283,3 +1283,61 @@ prefilter's span) and **S86** (the write untrailed). Their symptoms in rule 1
 are DISJOINT, which is why they are two rows rather than one edit with two
 halves; measured, S85 fails 198 corpus cases and S86 exactly 6 — the two undo
 families and nothing else.
+
+## [DD-14] wave B+C — the SUBROUTINE CALL's three structural rules
+
+Module `recursion`'s corpus is 306 oracle-verified cases and its behavioural
+instrument is `tests/recursion/run_recursion_diff.sh`. **Three of the module's
+claims are invisible to both**, and each is here for its own reason.
+
+**RULE 1 — `goto *` count == 1 + the number of emitted SHARED CALLEE BODIES**
+(design §5.8). `src/gen/emit_vm.c`'s opening comment states, as a design
+decision, that there is "exactly ONE indirect jump in the whole function". A
+call's return is a SECOND, and §5.8 amends the invariant to a RELATION rather
+than a constant — a CONSTANT is wrong in both directions, which R34's LENS2-5
+measured: a call-free artifact is 1, one callee is 2, THREE DISTINCT callees
+are 4 however many call SITES there are (the sites share the body), and a
+wave-G fully-spliced artifact is back to 1. The five fixtures cover exactly
+that spread, and the shipped emitter answers 1 / 2 / 2 / 4 / 2.
+
+**AND THE RULE IS ONLY STATEABLE BECAUSE THE `goto *` IS WRITTEN INLINE.** The
+design sketches the return as an `RX_RETURN` MACRO, which puts one `goto *` in
+the definition and NONE at the uses — making the artifact's count `1 +
+(has_calls ? 1 : 0)` and the relation unexpressible. Emitting per region is a
+deliberate deviation recorded at `vm_region`, and sabotage S168 is the row: it
+routes the return through a macro, changes NO ANSWER, and fires on exactly
+ONE of this rule's four call-bearing fixtures — the three-distinct-callee one.
+A rule written as a constant would have passed that sabotage three times out
+of four.
+
+**RULE 2 — a call-FREE artifact carries none of this module's machinery**
+(design §9.1). The resume frame gains two fields, `RX_PUSH` a line, the fail
+label a line, both resets a line each, and `RX_CALL` appears — all gated on
+ONE flag, so the byte-identity claim is STRUCTURAL rather than something a
+sweep discovers. Checked in BOTH directions in one run: the four names must be
+ABSENT from a call-free VM artifact and PRESENT in a call-bearing one, so a
+check that had stopped looking at anything cannot pass. (The corpus-wide
+measurement was taken separately against a `git archive` of the pre-module
+compiler: 2,198 of 2,198 identical, with the positive control at
+`ctl_bad = 0`.)
+
+**RULE 3 — the callee region and the lexical occurrence come from the SAME
+NODE** (wave A2's pass-ordering finding, commit 513de65; sabotage S166).
+`u.call.body` is a CACHE of "which subtree is that group's, in the tree the
+emitter will walk", and `src/opt/altcls.c` REBUILDS nodes rather than mutating
+them. **MEASURED** by moving `pcrec_callgraph_build` above that pass and
+diffing artifacts: `((?:a|b))(?1)` then emits a merged class test lexically and
+the un-merged two-branch alternation WITH ITS OWN `RX_PUSH` in the region —
+two different programs for one group — and `RX_RESUME_FRAMES` moves 2 → 3.
+**The ANSWERS do not change**, because altcls is answer-preserving in both
+directions, which is exactly why this is a structural rule and not a corpus
+cell. The fixture asserts both halves — that the merge HAPPENED
+(`RX_ALTCLS_MERGES >= 1`, so the shape can still express the hazard) and that
+NEITHER program needs a resume push.
+
+**AND THE DISCHARGE WITNESS IS MEASURED NOT TO BE A HAZARD**, which is why
+rule 3 has one fixture rather than two: `((?>a)b)(?1)` compiles
+BYTE-IDENTICALLY under the same sabotage, because `pcrec_discharge_atomic`
+splices by rewriting the PARENT's `->l` IN PLACE and the `A_CAP` a callee is
+rooted at keeps its identity. Wave A2 named both passes; only the one that
+REBUILDS the node matters.

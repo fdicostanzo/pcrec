@@ -72,7 +72,22 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   truth. The module landing is the event U9's own entry names as making it
   reachable, so the ratchet is the honest holding place for a ruling nobody has
   made yet: the cells stay, they stay loud, and if pcrec is ever changed to
-  reproduce U9 this file FIRES
+  reproduce U9 this file FIRES.
+
+  **[DD-14] wave B+C ADDED `dd14_bc_open.rxt`, THREE CELLS IN THE SAME
+  HOLDING-PLACE SHAPE** — each a RULING nobody has made rather than a bug
+  somebody found. `^(a?(?1)b)$` answers NOMATCH rather than giving up, because
+  design §4.4b's `minw` Kleene fixpoint gives the callee INFINITY (its
+  language IS empty: `X = a? X b` has no base case) and §12 P-12 RULES the MRL
+  prune read that as "no position can match" — while its two SIBLINGS in
+  `leftrec.rxt` still give up, because neither carries a quantifier for a bound
+  to hang on, so the class answers two ways on a shape that is not about
+  recursion. And TWO calls inside a LOOKBEHIND are OVER-REJECTED (a tier-2
+  refusal, never a miscompile), because `la_widths` runs in the PARSE HOOK —
+  where it must, to refuse with a pattern offset — and the call graph does not
+  exist until every call is resolved at end of parse, so **no `A_CALL` arm of
+  `pcrec_maxw` can make them compile**; the fix a ruling would order is a
+  DEFERRED WIDTH RE-CHECK
 - **vm/** — the [M4.5b] backtracking VM engine's own tests: the two bounds
   (step budget, frame capacity) each driven to ITS OWN limit and required to
   produce its own code, the honest artifact stamps (frame_capacity,

@@ -399,6 +399,25 @@ easy to scan.
    red until the component lands.
 3. Once the component is implemented, replace or extend those `perr`
    blocks with real `pattern` / `m` / `n` cases.
+
+**[DD-14] A GENERATED CORPUS CAN DO STEP 2 WITHOUT LOSING THE ORACLE, and
+`tests/recursion/gen_corpus.py` is the worked example.** Its `wave='D'`
+argument renders a block as a `perr` — pinning the refusal that must exist
+today — while DRIVING THE ORACLE ANYWAY and writing the answer into the block
+as a `# WAVE D ORACLE:` comment beside each cell. So step 3 is "delete one
+keyword argument and re-run the generator", and the `m`/`n`/`g` lines that
+come back are the ones libpcre2 gives THEN rather than a transcription of what
+it gave now. The marker carries its own liveness check: a block marked for a
+wave that has LANDED fails the same guard `PERR` carries, so it cannot outlive
+the wave it names.
+
+**AND A CELL WHOSE ANSWER IS DISPUTED IS NOT A `perr` CASE.** The same
+generator's `parked=` argument moves a block out of the live corpus into
+`tests/known_fail/`, leaving a comment stanza at its former position saying
+where it went and why. The two are deliberately different renderings: `wave=`
+pins a REFUSAL that must exist, `parked=` pins an ANSWER that pcrec currently
+disagrees with — which `known_fail`'s ratchet then keeps LOUD (it fails if a
+parked cell starts passing) instead of silently green.
 4. Run `bash tests/harness/run.sh tests/<component>` to iterate on just that
    directory while developing it.
 

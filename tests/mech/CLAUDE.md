@@ -74,6 +74,26 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   documentation claimed, purely for humans diffing a re-run against the docs —
   the matrix itself does not read it.
 
+## THREE SUITE NAMES THE `[DD-14]` DESIGN ASSUMED, AND NONE OF THEM EXISTS
+
+`subroutines_design.md` §9.3 assigns three of its rows to suites this
+directory does not have: S-SR9a and S-SR11 are described as **"a TIMEOUT
+row"** with *"`tests/mech/`'s timeout suite is the assignment"*, S-SR19 is
+*"`asan`-suite as well"*, and one row named `rungselect` (the test
+DIRECTORY's name) where the arm is `rungdiff`. The `*)` arm scores an
+unrecognised word as `UNKNOWN-SUITE` rather than silently ignoring it, which
+is how all three were caught on their first run.
+
+**THE HANG ROWS ARE `harness` ROWS, and that is not a demotion.**
+`tests/harness/run.sh` runs BOTH the `pcrec` invocation and the compiled
+matcher under `TIMEOUT_BIN` (with the budget from `tests/lib/gen_timeout.sh`,
+D45), and a non-zero exit — timeout included — is scored a FAILURE naming the
+case. So a compiler that does not terminate on `(a(?1))`, or a matcher that
+pushes and cuts at zero consumption for ever, is a red harness case rather
+than an infrastructure event. What the design wanted from a "timeout suite" is
+what `harness` already does; what it does NOT have is a way to say *"this row
+is EXPECTED to time out"*, and neither would a separate arm.
+
 ## What "suites" means here
 
 - `codegen` → `tests/codegen/run_codegen_tests.sh` (OS-0b/OS-1/TS-1/skip
@@ -149,6 +169,26 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   therefore unreachable here. **When a row's detector is a specific subject,
   the `.rxt` file is the detector and this arm is not** — assign both, but do
   not read the assignment as coverage.
+- `recursion` → `tests/recursion/run_recursion_diff.sh` ([DD-14] wave B+C),
+  and it is wired at the wave that BUILDS it rather than at the module's
+  close, because two of that wave's own rows are unscoreable without it.
+  **S158 lives on the `--no-captures` AXIS, for which no `.rxt` directive
+  exists anywhere in this tree** — the corpus is structurally blind to it,
+  which the corpus's own CLAUDE.md records as an owed gap — so §1 compiles
+  under the flag and reads the ARTIFACT's slot legend as well as the answer.
+  **S154's halved trail charge changes NO ANSWER until a capacity is
+  crossed**, and a corpus cell has to pick a subject LENGTH in advance; §2
+  BISECTS for the artifact's own ceiling instead and asserts that one step
+  past it the answer is a TYPED GIVE-UP rather than a wrong `nomatch`, which
+  holds at whatever the ceiling is.
+
+  **IT SKIPS ONLY PARTLY, WHICH IS A DIFFERENT SHAPE FROM `laexpand`'s.** Only
+  §3 (the libpcre2 subject sweep) needs the oracle; §§1, 2 and 4 RUN
+  regardless, so on a box with no libpcre2 the script still prints a real
+  non-zero `checks passed:` — never `0fail/0pass`, which is the reading that
+  would let a row be called UNDETECTED by an arm that never ran. That is why
+  this arm needs no SKIP-banner special case of its own.
+
 - `laexpand` → `tests/lookaround/run_expansion_diff.sh`, the SUBSTITUTION
   DRIVER ([M6.6.2] wave E2, design §6.3). **A different KIND of net from
   `lookaround` above, and the difference is what decides which rows it is
