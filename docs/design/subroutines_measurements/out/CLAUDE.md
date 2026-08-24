@@ -35,10 +35,11 @@ reads anything here; re-run the probe to re-measure.
 | `linkage.txt` | `probe_linkage.sh` | §6.2, PROTOTYPE |
 | `prefilter.txt` | `probe_prefilter.py` | §8.3 |
 | `population.txt` | `probe_population.py` | §8.4 |
+| `callproto.txt` | `probe_callproto.py` | §5.9, PROTOTYPE — and §5.2's rejected design, refuted by construction |
 
 ## THE INSTRUMENT DEFECTS THIS LANE FOUND BY RUNNING ITS OWN PROBES
 
-Nine, plus one the compiler caught. Each is recorded with the number it would
+Ten, plus one the compiler caught. Each is recorded with the number it would
 have reported, because a defect list that says only "fixed" teaches nothing.
 The design's §0.3 carries the same list for the panel; this is the working
 record.
@@ -89,12 +90,20 @@ record.
    one-byte escapes — as a subroutine call. Masked with a character-class pass
    that respects escapes and the leading `]` rule.
 
+10. **`probe_callproto` reported SIX false disagreements with libpcre2.** Its
+   pattern table said the two `(?(DEFINE)…)` patterns had **0** capture groups
+   while the C side printed **1**, so every matching cell compared
+   `"match 0 3 -1 -1"` against `"match 0 3"` and the probe announced that §5's
+   lowering does not reproduce 10.46. Same shape as the lookaround lane's
+   "two oracles compared across a report-shape difference", and the reason
+   `la_oracle.ngroups()` exists.
+
 **And one the compiler caught rather than the probe**: `gen_linkage.py` at
 `k = 0` emitted a `goto` to an undefined label. Listed because `k = 0` is the
 prototype's own BASELINE control row, and a baseline that does not build is a
 baseline nobody checks.
 
-**The shape all nine share** is the one `pcrec-check-design-lessons` records:
+**The shape all ten share** is the one `pcrec-check-design-lessons` records:
 an instrument that reports confidently about a space it never entered. The
 remedy in every case was a guard that PRINTS its own reachability — which is
 why every probe here ends with one and says VACUOUS out loud.

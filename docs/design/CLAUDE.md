@@ -1189,8 +1189,8 @@ append-only or historical records.
   for Frank, the first of which re-opens the plan row's own reserved give-up
   code now that its premise (a separate call stack) is gone. Measurements:
   `subroutines_measurements/`.
-- `subroutines_measurements/` — the [DD-14] lane's EIGHT probes, its oracle
-  helper, its archiver and a linkage PROTOTYPE; see its own CLAUDE.md. **No
+- `subroutines_measurements/` — the [DD-14] lane's NINE probes, its oracle
+  helper, its archiver and TWO prototypes; see its own CLAUDE.md. **No
   instrument reads a subroutine call through pcrec, because pcrec cannot
   compile one** — every in-pcrec arm measures a separate axis (the refusals
   and the 26 registry rows, the give-up code space and every site the
@@ -1203,8 +1203,15 @@ append-only or historical records.
   `pcre2_set_callout` callback reading the LIVE ovector inside a called body,
   which is the only way to separate "the callee never wrote the slots" from
   "the callee wrote them and the return restored them" — two hypotheses with
-  the same after-the-fact table and completely different emitted code. Its
-  `out/CLAUDE.md` carries **NINE instrument defects the lane found by running
+  the same after-the-fact table and completely different emitted code. **And it BUILT §5's mechanism and ran it**
+  (`prototype/callproto.c` + `probes/probe_callproto.py`): the frame that
+  carries the return label, the non-popping return, the fail label's one added
+  line and the `|W|` trailed save/restore, compiled twice — the second time as
+  the plan row's REJECTED separate `call_stack[]` — giving **45 cells agreeing
+  with libpcre2, 4 agreed-in-kind, 0 disagreements, and the broken build wrong
+  on 3 of 50 including a FALSE MATCH**. That run is what found the design's
+  capture restore set incomplete. Its
+  `out/CLAUDE.md` carries **TEN instrument defects the lane found by running
   its own probes**, and **the first one would have gone into the design**: a
   retry-cost axis whose subject picked the callee's LAST alternative, so no
   call was ever re-entered after a failing follow — it reported LINEAR costs
@@ -1215,7 +1222,10 @@ append-only or historical records.
   callout; `-o /dev/null` making every COMPILING cell read "Permission denied";
   a vacuous match-limit self-check; `--emit-main`'s argv-fed subject silently
   capped at `MAX_ARG_STRLEN`; a flag check that grepped documentation instead
-  of invoking the flag; and a `\g<` census counting in-class escapes as calls.
+  of invoking the flag; a `\g<` census counting in-class escapes as calls; and
+  a prototype differential whose group-count column disagreed with the C side's,
+  announcing SIX false disagreements with libpcre2 for a construct that agrees
+  perfectly.
 - `m6read_samples/` — **APPROVED (Frank, 2026-08-21) and now the STYLE OF
   RECORD; the emitter conversion is BUILT against it** ([M6-READ] sample
   stage): the ONE sample commented artifact the row owes

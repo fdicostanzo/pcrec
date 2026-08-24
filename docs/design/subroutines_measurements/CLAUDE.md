@@ -74,6 +74,19 @@ different emitted code. §3.1 is decided by two callout firings.
   agreement control first and refuses to print a number until the three agree,
   then measures `rx_match_anchored`'s size from `nm -S` and times two corpora.
   **Nothing in `src/` was changed to produce these numbers.**
+- `probes/probe_callproto.py` + `prototype/callproto.c` — §5.9, PROTOTYPE.
+  **§5's whole lowering, built by hand in the emitter's idiom and run against
+  libpcre2**: the frame that carries the return label, the non-popping return,
+  the fail label's one added line, and the `|W|` trailed save/restore, for four
+  patterns each of which is a design claim. Compiled TWICE — the second with
+  `-DBROKEN_ARRAY`, which is §5.2's REJECTED design (a separate `call_stack[]`
+  indexed by depth, popped at the return) — so the bug that kills it is
+  REPRODUCED rather than argued. **45 agree with libpcre2, 4 agreed-in-kind
+  (both refused), 0 disagree; the broken build gets 3 of 50 wrong including a
+  FALSE MATCH and agrees on the other 47**, which is what localises the failure
+  to the clobber sequence. It is also where the design's `W` definition was
+  found to be wrong — `g`'s OWN slots must be restored, and without them a
+  correct match reports a wrong span.
 - `probes/probe_prefilter.py` — §8.3. What a DFA prefilter is worth on
   call-SHAPED patterns, measured on their INLINED equivalents: 15 hand-written
   pairs, each verified equivalent against libpcre2 over 28 subjects (420 cells,
@@ -91,6 +104,9 @@ different emitted code. §3.1 is decided by two callout firings.
 
 Every PCRE2 behaviour claim is PROBED, never recalled, and every sweep carries
 a REACHABILITY guard that prints and says VACUOUS when it fails. That rule
-earned its place here: **nine instrument defects** were found by running these
+earned its place here: **ten instrument defects** were found by running these
 probes, each producing a confident wrong number or silently exercising nothing.
-`out/CLAUDE.md` lists them. Two changed a design conclusion.
+`out/CLAUDE.md` lists them. Two changed a design conclusion — and a third thing
+did, which is not a defect at all: **building §5's mechanism and running it**
+(`prototype/callproto.c`) found the design's capture restore set incomplete.
+A design section that can be executed should be.

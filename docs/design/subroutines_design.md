@@ -92,6 +92,7 @@ their repo commit by `probes/archive.sh` from a committed tree.
 | `probes/probe_atomicity.py` | MEASURED | §3.2: the naive cell that decides nothing and the isolated cell that decides it; four atomic controls; quantified calls and the empty-body guard; calls inside lookaround/atomic/lookbehind; the retry COST against an inlined control |
 | `probes/probe_leftrec.py` | MEASURED | §3.3: direct, indirect and nullable-prefix left recursion; the two guards; **the decisive sweep that refutes the same-position reading**; `(?R)` under a quantifier; a call inside a lookbehind; depth requirement vs subject; and the error-140 sweep that shows the charter's premise is not about recursion at all |
 | `probes/probe_linkage.sh` + `prototype/gen_linkage.py` | PROTOTYPE | §6: three hand-written matchers in the emitter's own idiom, differing only in linkage; a 52-cell agreement control first, then emitted-size by call count and run time on two corpora (mixed, and lexical-only — the corpus HYBRID's whole claim rests on) |
+| `probes/probe_callproto.py` + `prototype/callproto.c` | PROTOTYPE + MEASURED | §5.9: **§5's whole lowering, built and run against libpcre2** — the frame that carries the return label, the non-popping return, the fail label's one added line, the `\|W\|` trailed save/restore — on four patterns each of which is a design claim; compiled TWICE, the second with `-DBROKEN_ARRAY` for §5.2's rejected design, so the bug is REPRODUCED rather than argued |
 | `probes/probe_prefilter.py` | MEASURED, libpcre2 + in-pcrec | §8: what a DFA prefilter is worth on call-**shaped** patterns, measured on their INLINED equivalents (which pcrec compiles today), each pair verified equivalent **420 cells / 0 disagreements** before any timing |
 | `probes/probe_population.py` | MEASURED, PURE TEXT | §10: the census — **6** call spellings in `tests/**/*.rxt`'s 2,161 pattern lines, every one of them a `perr` row testing a refusal, against **226** backreferences |
 
@@ -100,7 +101,7 @@ through three lanes, with this lane's module stamp scoped at creation (R32
 D1/C14 found the backrefs archiver stamping the wrong module in all eight of
 its files).
 
-**NINE INSTRUMENT DEFECTS this lane found by running its own probes**, each of
+**TEN INSTRUMENT DEFECTS this lane found by running its own probes**, each of
 which produced a confident wrong number or silently measured nothing rather
 than erroring:
 
@@ -143,6 +144,13 @@ than erroring:
    `\g<` scan counts `tests/backrefs/octal_class.rxt`'s `^[\g<1>]$` — where the
    class doorway makes those four literal one-byte escapes — as a subroutine
    call. Masked with a character-class pass.
+10. **`probe_callproto` reported SIX false disagreements with libpcre2.** Its
+   pattern table said the two `(?(DEFINE)…)` patterns had **0** capture groups
+   while the C side printed **1**, so every matching cell compared
+   `"match 0 3 -1 -1"` against `"match 0 3"` and the probe announced that
+   §5's lowering does not reproduce 10.46. It is the same
+   two-oracles-compared-across-a-report-shape-difference defect the lookaround
+   lane logged, and the reason `la_oracle.ngroups()` exists at all.
 
 **And one that the compiler caught rather than the probe**: `gen_linkage.py` at
 `k = 0` emitted a `goto` to a label it did not define. It is listed because the
@@ -779,14 +787,23 @@ not**, and §5.2 is the derivation.
 The shape:
 
 ```
-    L_site:   RX_SET(SLOT_SAVE_w0, slot_values[SLOT_SAVE_w0])   // §5.3: |W| trailed
-              ...                                                //  SELF-writes
-              RX_CALL(&&L_ret, scan_position)      // a resume frame with a return label
+    L_site:   RX_CALL(&&L_ret, scan_position)   // a resume frame with a return label
+              RX_SET(W[0], slot_values[W[0]])   // §5.3: |W| trailed SELF-writes,
+              ...                               //  parking the caller's values on
+              RX_SET(W[n-1], slot_values[W[n-1]])  // the trail at fixed offsets
               goto L_entry_g
     L_entry_g:  <the callee's body>                -> L_exit_g
     L_exit_g: RX_RETURN                            // restore W, then goto* the frame's ret
     L_ret:    <the continuation>
 ```
+
+**THE SAVES COME AFTER THE PUSH, and the order is load-bearing**: the call
+frame's `trail_mark` is then exactly the index of the FIRST save, so the return
+reads `W[j]`'s parked value at `trail[trail_mark + j]` with `j` a compile-time
+constant. Saving first would work too and would put the block at
+`trail_mark − |W| + j`; this order is chosen because the offset is simpler to
+read in the emitted C and because a rewind that abandons the call then
+discards the saves along with the frame that owned them.
 
 and `RX_CALL` / `RX_RETURN` are `RX_PUSH` with one more field and one more
 line:
@@ -841,9 +858,9 @@ exactly the extra one per call §3.2's cost table MEASURED in PCRE2 (ratio →
 
 **THREE PROPERTIES, each with the line that makes it true.**
 
-1. **The trailed self-writes precede the `RX_CALL`,** so the call frame's
-   `trail_mark` is above them and abandoning the call rewinds them — the saves
-   disappear with the call that made them.
+1. **The trailed self-writes follow the `RX_CALL`,** so the call frame's
+   `trail_mark` is the index of the first of them (§5.3) and popping the call
+   frame discards them with the activation that owned them.
 2. **`call_top` is a resume-stack INDEX, not a depth,** so it is stable under
    the frame array's own growth and a nested activation's `call_top` chain is a
    linked list through frames that already exist.
@@ -892,21 +909,38 @@ the trail to the call frame's mark*, is a **miscompile**: it would undo the
 
 So the restore is over a **compile-time set W of CAPTURE slots**:
 
-> **W(g)** = the slot indices of every capturing group lexically inside
-> group `g`'s body, ∪ W(h) for every group `h` that `g`'s body calls —
-> the least fixpoint over the call graph. `W(0)` is every capture slot.
-> **Slots 0 and 1 are never members**, because `RX_SLOT_WHOLE_START` is
-> `\K`'s and `RX_SLOT_WHOLE_END` is written at accept.
+> **W(g)** = **`g`'s OWN two slots**, ∪ the slot indices of every capturing
+> group lexically inside `g`'s body, ∪ W(h) for every group `h` that `g`'s
+> body calls — the least fixpoint over the call graph. `W(0)` is every
+> capture slot. **Slots 0 and 1 are never members**, because
+> `RX_SLOT_WHOLE_START` is `\K`'s and `RX_SLOT_WHOLE_END` is written at
+> accept.
+
+**`g`'s OWN SLOTS ARE IN `W(g)`, and this design's first draft left them
+out.** MEASURED, `out/captures.txt` C3: `^((a)(?1)?(b))$` on `"aabb"` answers
+g1 = **(0,4)**. Group 1's START is written at entry, so the recursive call
+overwrites it with 1 — and the outer level's answer is 0. Without `g`'s own
+slots in `W` the emitted matcher reports **g1 = (1,4)**, a wrong span on a
+correct match, which no `m`/`n` expectation would catch and only a `g` line
+would. §5.9's prototype is where the omission was found, by building the
+mechanism and running it.
 
 and the entry values are stored **in the trail**, with no new array:
 
-- **At the call site, before `RX_CALL`:** for each `s ∈ W`, emit
-  `RX_SET(s, slot_values[s])` — a **trailed self-write**. P7 STRUCTURAL: `RX_SET`
-  is `RX_TRAIL` then the write, and `RX_TRAIL` records the old value
+- **At the call site, immediately after `RX_CALL`:** for each `s ∈ W`, emit
+  `RX_SET(s, slot_values[s])` — a **trailed self-write**. P7 STRUCTURAL:
+  `RX_SET` is `RX_TRAIL` then the write, and `RX_TRAIL` records the old value
   **unconditionally**, with no same-value elision. So the entry value is now
   parked at a known trail offset and the slot is unchanged.
 - **At the return, before the `goto *`:** for each `j` in `0…|W|−1`, emit
-  `RX_SET(W[j], run->trail[run->resume_stack[run->call_top].trail_mark − |W| + j].saved_value)`.
+  `RX_SET(W[j], run->trail[run->resume_stack[run->call_top].trail_mark + j].saved_value)`.
+
+  and `trail_mark + j` is exact because §5.1 pushes the frame first: the
+  frame's mark IS the index of the first save. **The saves cannot be rewound
+  while the activation is live** — every frame the callee pushes has a
+  `trail_mark` at or above `trail_mark + |W|`, so no rewind that keeps the
+  call alive can reach them, and a rewind that does reach them has popped the
+  call frame itself.
 
 Four properties:
 
@@ -1111,6 +1145,74 @@ a **streaming** constraint, not a within-call one. A call stack of label
 addresses is now the second thing in the emitter that would have to be
 re-expressed if `[M3.0]`/`[OS-3]` ever suspends a match across a `feed()`.
 §13 records it as out of scope and cross-notes `[M3.0]`.
+
+### 5.9 THE MECHANISM WAS BUILT AND RUN — PROTOTYPE
+
+Everything above is executable, so this lane executed it.
+`prototype/callproto.c` implements §5 by hand in the emitter's own idiom — the
+frame carrying `call_ret`/`call_top`/`call_mark`, `RX_CALL` pushing a frame
+whose `resume_label` is `rx_fail`, `RX_RETURN` **not** popping, the fail
+label's one added line, and §5.3's `|W|` trailed self-writes and restores read
+back at `trail_mark + j` — for four patterns, each of which is a claim in this
+document:
+
+| | pattern | the claim it executes |
+|---|---|---|
+| **P1** | `^((a)(?1)?(b))$` | §3.1's per-level capture save/restore, at depth 1..3, with the lexical occurrence SPLICED and the call site taking the LINKAGE — §6.3's ruling, built |
+| **P2** | `^(?(DEFINE)(?<g>a\|ab))(?&g)c$` | §3.2's atomicity discriminator and §5.5's drawn cell: the follow fails after the callee's first success and must retreat INTO the returned call |
+| **P3** | `^(a\|(?1)a)$` | §3.3's cell: `n−1` nested recursions ALL ENTERED AT OFFSET 0, which must MATCH |
+| **P4** | `^(?(DEFINE)(?<g>x\|xy))(?&g)(?&g)y$` | §5.2's CLOBBER SEQUENCE |
+
+and it is compiled **twice**: as designed, and with `-DBROKEN_ARRAY`, which
+replaces the frame-carried return label with the plan row's separate
+`call_stack[]` indexed by call depth and popped at the return. The two builds
+differ in **one thing only** — where the return label lives and when it is
+popped.
+
+**THE RESULT** (`out/callproto.txt`, 50 cells):
+
+| comparison | |
+|---|---|
+| prototype vs libpcre2 10.46 | **45 agree, 4 agreed-in-kind, 0 DISAGREE, 1 excluded** |
+| designed vs `-DBROKEN_ARRAY` | **47 agree, 3 DISAGREE** |
+
+- The **4 agreed-in-kind** cells are P3's non-terminating subjects, where
+  libpcre2 answers `rc −52` and the prototype answers `PCREC_ERR_RECURSE` at
+  its stamped depth. §3.3's ruling, working: both refuse, neither lies. The
+  probe prints both codes rather than scoring them as a match.
+- **P3 matches `"a"×1023` and `"a"×1024`** — 1023 nested same-position
+  recursions — and gives up at `"a"×2000` with `RX_CALL_DEPTH` at 1024.
+  §3.3's 199-deep measurement is reproduced by construction, and §5.6's
+  capacity is the thing that ends it.
+
+**AND §5.2's BUG IS NOW MEASURED RATHER THAN DERIVED.** The three cells the
+broken build gets wrong are all P4's, and one of them is a **FALSE MATCH**:
+
+| subject | designed | `-DBROKEN_ARRAY` | libpcre2 |
+|---|---|---|---|
+| `"xyxy"` | match (0,4) | **nomatch** | match (0,4) |
+| `"xyy"` | nomatch | **match (0,3)** | nomatch |
+| `"xyxyy"` | match (0,5) | **nomatch** | match (0,5) |
+
+**and it agrees on the other 47**, which is what localises the failure to the
+clobber sequence rather than to a second difference between the builds.
+
+**ONE CELL IS EXCLUDED AND IT IS A FINDING RATHER THAN AN EXCUSE.**
+`^(a|(?1)a)$` on `""`: libpcre2 answers **nomatch**, the prototype answers
+`recurse`. libpcre2's own **start optimization** rejects a subject shorter
+than the pattern's minimum length **before the recursion is entered**; the
+prototype has no minimum-length prune. **pcrec DOES** — `pcrec_minw`, and
+§4.4 gives `A_CALL` a least-fixpoint arm whose answer here is 1 — so the
+shipped compiler agrees with libpcre2 where this prototype cannot. The cell is
+listed by name in the probe rather than dropped, because a differential that
+quietly excludes its own failures is not a differential; and it is the second
+place this document's `minw` arm earns itself.
+
+**WHAT THE PROTOTYPE DOES NOT COVER**, stated so it is not read as more than
+it is: no prefilter, no MRL prune, no possessification, no revdet, no budget
+counters other than the two capacities, and four patterns rather than a
+corpus. It executes the **linkage and the capture discipline**, which are the
+parts §5 invents, and nothing else.
 
 ---
 
@@ -1799,16 +1901,24 @@ Each is a claim this design would rather have attacked than believed.
 
 **P-1 (the frame IS the call record).** *A separate `call_stack[]` array cannot
 be made correct more cheaply than putting the return label in the resume
-frame.* §5.2 derives the clobber bug in three events. **Refute** by exhibiting a
-separate-array design that survives the sequence *call A → A returns → call B →
-B fails → backtrack into A's callee → A returns again* without a second undo
-log or a per-frame high-water mark. The sharpest attack is that ordinary frames
-already pay 4 bytes for `call_top`, so the array version's memory saving is
-smaller than it looks — which would make this a wash rather than a win, and the
-row should then be re-argued on simplicity alone.
+frame.* §5.2 derives the clobber bug in three events and **§5.9 REPRODUCES it**
+— the `-DBROKEN_ARRAY` build gets three of fifty cells wrong, one of them a
+FALSE MATCH, and agrees on the other 47. **Refute** by exhibiting a
+separate-array design that survives *call A → A returns → call B → B fails →
+backtrack into A's callee → A returns again* without a second undo log or a
+per-frame high-water mark; `prototype/callproto.c` is where such a design would
+be built and run against the same 50 cells. The sharpest surviving attack is
+on the MEMORY claim rather than the correctness one: ordinary frames already
+pay for `call_top` and `call_mark`, so the array version's saving is smaller
+than it looks, and if a corrected array design existed the row would have to be
+re-argued on simplicity alone.
 
-**P-2 (the restore set).** *`W` — the transitive capture-slot write set,
-excluding slots 0 and 1 — is exactly the right restore set.* **Refute** by
+**P-2 (the restore set).** *`W` — `g`'s own slots plus the transitive
+capture-slot write set, excluding slots 0 and 1 — is exactly the right restore
+set.* **This design's first draft got it wrong** (it omitted `g`'s own slots)
+and §5.9's prototype is what found it, by reporting `g1 = (1,4)` where libpcre2
+says `(0,4)` — a wrong span on a correct match, which only a `g` expectation
+line catches. **Refute** by
 exhibiting a non-capture slot whose value must be restored by a return, or a
 capture slot whose value must NOT be. `\K` is the second kind and §3.4(b)
 measured it; the candidates for the first kind are the counter slots

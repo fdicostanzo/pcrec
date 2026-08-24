@@ -3,11 +3,11 @@
 # ------------------------------------------------------------
 # PROBE      : docs/design/subroutines_measurements/probes/probe_atomicity.py
 # ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 9cbf31c 2026-08-23
-# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+# PROBE LAST CHANGED AT COMMIT: 1642502 2026-08-23
+# RUN FROM REPO COMMIT        : 58cd141 (lane/dd14design)
 #   working tree at run time  : DIRTY — see below
-#     ?? docs/design/subroutines_measurements/out/
-# RUN DATE   : 2026-08-23T20:13:37-04:00
+#      M docs/design/subroutines_measurements/out/atomicity.txt
+# RUN DATE   : 2026-08-23T20:32:15-04:00
 # python3    : 3.14.4
 # libpcre2   : 10.46 2025-08-27
 # gcc        : 15
@@ -74,6 +74,21 @@ sr_oracle.SELFCHECK: none
   ^(?(DEFINE)(?<g>(?&g)?))(?&g)$               ''           MATCH-TIME rc=-52 nested recursion at the same subject position  # a callee that recurses at the same position, no quantifier
   ^(a(?R)?b)*$                                 'abab'       ((0, 4), [(2, 4)])            # (?R) under a quantifier, with a base case
   ^(a(?R)*b)$                                  'ab'         ((0, 2), [(0, 2)])            # a recursive call under a * inside the body
+# THE REGISTRY'S `quant` COLUMN CLAIM: the (?1)..(?9) rows read
+# quant=no while (?R)/(?0)/(?+1)/(?-N) read quant=yes. Is any of the
+# ten call spellings NOT quantifiable?
+  ^(a)(?1)*$                                   'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)(?-1)*$                                  'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(?<n>a)(?&n)*$                              'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)\g<1>*$                                  'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)\g'1'*$                                  'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(?P<n>a)(?P>n)*$                            'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)(?1){2}$                                 'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)(?1)+$                                   'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)(?1)?$                                   'aaa'        None                          # quantified call
+  ^(a)(?1)*+$                                  'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a)(?1)*?$                                  'aaa'        ((0, 3), [(0, 1)])            # quantified call
+  ^(a\g<0>*b)$                                 'aaa'        None                          # quantified call
 
 === T6: a call INSIDE an atomic group, a lookaround, a lookbehind ====
   ^(?(DEFINE)(?<g>a|ab))(?=(?&g)c)abc$         'abc'        ((0, 3), [None])              # the call lives inside a positive lookahead

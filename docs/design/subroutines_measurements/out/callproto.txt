@@ -1,0 +1,99 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_callproto.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : 58cd141 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/subroutines_design.md
+#      M docs/design/subroutines_measurements/out/atomicity.txt
+#     ?? docs/design/subroutines_measurements/out/callproto.txt
+#     ?? docs/design/subroutines_measurements/probes/probe_callproto.py
+#     ?? docs/design/subroutines_measurements/prototype/callproto.c
+# RUN DATE   : 2026-08-23T20:38:18-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+prototype source: /home/duxevents/pcrec/worktrees/dd14design/docs/design/subroutines_measurements/prototype/callproto.c
+
+=== the two builds, and the differential against libpcre2 ============
+--- P1  ^((a)(?1)?(b))$
+  'ab'             proto=match 0 2 0 2 0 1 1 2      broken=match 0 2 0 2 0 1 1 2      pcre2=match 0 2 0 2 0 1 1 2     
+  'aabb'           proto=match 0 4 0 4 0 1 3 4      broken=match 0 4 0 4 0 1 3 4      pcre2=match 0 4 0 4 0 1 3 4     
+  'aaabbb'         proto=match 0 6 0 6 0 1 5 6      broken=match 0 6 0 6 0 1 5 6      pcre2=match 0 6 0 6 0 1 5 6     
+  'aaaabbbb'       proto=match 0 8 0 8 0 1 7 8      broken=match 0 8 0 8 0 1 7 8      pcre2=match 0 8 0 8 0 1 7 8     
+  'aab'            proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'abb'            proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  ''               proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'a'              proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'b'              proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'abab'           proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'ba'             proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'aabbb'          proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'aaabb'          proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'aabab'          proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+
+--- P2  ^(?(DEFINE)(?<g>a|ab))(?&g)c$
+  'abc'            proto=match 0 3 -1 -1            broken=match 0 3 -1 -1            pcre2=match 0 3 -1 -1           
+  'ac'             proto=match 0 2 -1 -1            broken=match 0 2 -1 -1            pcre2=match 0 2 -1 -1           
+  'abbc'           proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  ''               proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'a'              proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'ab'             proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'abcc'           proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'c'              proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'aabc'           proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'bc'             proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+
+--- P3  ^(a|(?1)a)$
+  'a'              proto=match 0 1 0 1              broken=match 0 1 0 1              pcre2=match 0 1 0 1             
+  'aa'             proto=match 0 2 0 2              broken=match 0 2 0 2              pcre2=match 0 2 0 2             
+  'aaa'            proto=match 0 3 0 3              broken=match 0 3 0 3              pcre2=match 0 3 0 3             
+  'aaaa'           proto=match 0 4 0 4              broken=match 0 4 0 4              pcre2=match 0 4 0 4             
+  'aaaaa'          proto=match 0 5 0 5              broken=match 0 5 0 5              pcre2=match 0 5 0 5             
+  'aaaaaaaaaa'     proto=match 0 10 0 10            broken=match 0 10 0 10            pcre2=match 0 10 0 10           
+  'aaaaaaaa...(50)' proto=match 0 50 0 50            broken=match 0 50 0 50            pcre2=match 0 50 0 50           
+  'aaaaaaaa...(200)' proto=match 0 200 0 200          broken=match 0 200 0 200          pcre2=match 0 200 0 200         
+  ''               proto=recurse                    broken=recurse                    pcre2=nomatch                      (MINLEN cell: the prototype has no minimum-length prune; see MINLEN_CELLS)
+  'b'              proto=recurse                    broken=recurse                    pcre2=giveup(rc=-52)               (both refused: recurse / giveup(rc=-52))
+  'ab'             proto=recurse                    broken=recurse                    pcre2=giveup(rc=-52)               (both refused: recurse / giveup(rc=-52))
+  'ba'             proto=recurse                    broken=recurse                    pcre2=giveup(rc=-52)               (both refused: recurse / giveup(rc=-52))
+  'aab'            proto=recurse                    broken=recurse                    pcre2=giveup(rc=-52)               (both refused: recurse / giveup(rc=-52))
+  'aaaaaaaa...(1023)' proto=match 0 1023 0 1023        broken=match 0 1023 0 1023        pcre2=match 0 1023 0 1023       
+  'aaaaaaaa...(1024)' proto=match 0 1024 0 1024        broken=match 0 1024 0 1024        pcre2=match 0 1024 0 1024       
+
+--- P4  ^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$
+  'xxyy'           proto=match 0 4 -1 -1            broken=match 0 4 -1 -1            pcre2=match 0 4 -1 -1           
+  'xyxy'           proto=match 0 4 -1 -1            broken=nomatch                    pcre2=match 0 4 -1 -1           
+  'xxy'            proto=match 0 3 -1 -1            broken=match 0 3 -1 -1            pcre2=match 0 3 -1 -1           
+  'xyy'            proto=nomatch                    broken=match 0 3 -1 -1            pcre2=nomatch                   
+  'xy'             proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'y'              proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  ''               proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'xyxyy'          proto=match 0 5 -1 -1            broken=nomatch                    pcre2=match 0 5 -1 -1           
+  'xxxy'           proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'xyyy'           proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+  'xyxyxy'         proto=nomatch                    broken=nomatch                    pcre2=nomatch                   
+
+=== TOTALS ==========================================================
+  prototype vs libpcre2 : 45 agree, 4 agreed-in-kind (both refused), 0 DISAGREE, 1 excluded as MINLEN cells
+  designed vs BROKEN_ARRAY: 47 agree, 3 DISAGREE
+     ^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$ on 'xyxy': designed='match 0 4 -1 -1' broken='nomatch'
+     ^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$ on 'xyy': designed='nomatch' broken='match 0 3 -1 -1'
+     ^(?(DEFINE)(?<g>x|xy))(?&g)(?&g)y$ on 'xyxyy': designed='match 0 5 -1 -1' broken='nomatch'
+
+=== REACHABILITY GUARDS =============================================
+  guard (a): the broken build DISAGREES on 3 cell(s) -- §5.2's bug is reproduced, not argued
+  guard (a'): and AGREES on 47 cell(s), so the difference is localised
+  guard (b): every pattern produced at least two distinct outcomes
+  the prototype agrees with libpcre2 on every cell it answered
