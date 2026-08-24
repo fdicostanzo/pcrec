@@ -47,6 +47,35 @@ the BROKEN_ARRAY 47/3 reproduced by BOTH C1 and C2 from source), the eight
 ERR_FLOOR sites, the ten-file census, six sabotage detectors, P-3's first
 half (16 shapes, no counterexample), the DEFINE substitute (147 cells / 0).
 
+
+## Round 2 — the VERIFIER's pass (against 0ea8ba4; report scratchpad/r34/verifier_report.md, condensed below)
+
+The R32/R33 pattern held a third time: 16 findings, 6 HIGH, every HIGH
+inside a round-1 fix. Triage (all ACCEPT unless noted):
+
+| id | sev | claim | disposition |
+|---|---|---|---|
+| V-1 | HIGH | "FIVE false matches" in §0.2/P-2; measurement is six | ACCEPT |
+| V-2 | HIGH | "one slot per lexical construct" is false — five families are per EMITTED COPY; `\|W\|` formula under-counts under replication; `q`'s gloss wrong | ACCEPT — counts from `vm_count_slots` over the subtree |
+| V-3 | HIGH | `vm_count_slots` LEXICAL-ONLY is wrong: a `{0}`-defined callee (pre-DEFINE idiom, matching on 10.46) is counted ZERO times → out-of-bounds slot write; the shared callee copy needs its own slots; W must be over the EMITTED region's indices | ACCEPT — a new design obligation, not a wording fix; sabotage row with the `{0}` cell |
+| V-4 | HIGH | LENS2-3 marked fixed; six places still carry old counts incl. §11 | ACCEPT |
+| V-5 | HIGH | §4.4b asserts a §11 edit never made (minw/maxw symmetry) | ACCEPT |
+| V-6 | HIGH | §3.5's W1 diagnosis inverted (the jump lands AFTER the back-step; the miscompile is the EXIT/end-check/position-restore); W4 a non-reason; the mandatory-split clause is about the exit | ACCEPT — restructure §3.5/§5.4/§6.3; S-SR18 re-aimed |
+| V-7 | MED | §6.2's TIME table in no artifact; the 1.40 outlier paragraph explains nothing; magnitudes unsourced (direction holds) | ACCEPT |
+| V-8 | MED | transitivity withdrawal unpropagated (§5.3c, §6.6, §11, the `nsave` comment) | ACCEPT |
+| V-9 | MED | three vs four missing row families | ACCEPT |
+| V-10 | MED | §5.4 ratifies lookaround §6.4(a), which contradicts the design's own contract and §6.4 ruling | ACCEPT — declare moot, decline the hand-off, re-point lookaround P-13 |
+| V-11 | MED | LENS1-5's numbers MEASURED with no probe/archive (verifier measured them TRUE) | ACCEPT — probe + archive |
+| V-12 | MED | R34's new corpus files and nine rows gated by no wave; inlookaround.rxt gated in E while the split is B+C | ACCEPT |
+| V-13 | MED | docs/design/CLAUDE.md index stale on four counts | ACCEPT |
+| V-14 | LOW | 27-site census is switch-only; eight switch-less walkers + 72 `->k ==` sites named | ACCEPT — state the residual |
+| V-15 | LOW | "2–8 slots" is 2–6 | ACCEPT |
+| V-16 | LOW | ordering/formatting | ACCEPT |
+
+Verified correct by re-run: LENS2-1's axes and census, LENS1-1's six cells,
+LENS1-2, P-12, LENS1-4, LENS1-6, the goto* relation 9/9, LENS3-2's -O table
+and slopes exactly, LENS2-7, the 27 sites, 26 rows, 23 citations.
+
 ## The reports (condensed by the manager from the critics' in-message deliveries)
 
 ### c1_report.md
@@ -97,3 +126,22 @@ Surprising MEASURED results: no compile-time left-recursion refusal in 10.46 (er
 Ten instrument defects in the lane's ledger (§0.3, out/CLAUDE.md).
 ASKs: 1 keep PCREC_ERR_RECURSE (rec KEEP); 2 RX_CALL_DEPTH default (rec (c) large, stamped); 3 registry row granularity (rec (b) collapse to (?N)/(?+N)/(?-N)); 4 DEFINE refusal hint (rec (c) compliance page); 5 single-oracle D27 corpus (rec PROCEED with SPLICE-vs-LINKAGE control as wave-G bar).
 Unsettled: exact -52 predicate (needs PCRE2 source); 2.0x cost attribution (ARGUED); P-2 non-capture slots (awaits M6.6.2); wave G prefilter window-end hazard (landing bar); post-wave-F row count (depends on ASK 3).
+# R34 VERIFIER (opus, read-only) — against 0ea8ba4; received 2026-08-23 ~21:5x. 16 findings, 6 HIGH. Scratch scratchpad/r34/verify/.
+V-1 HIGH — §0.2 and §12 P-2 say FIVE false matches on the cut mark; the measurement (re-run) is 4 agree / 6 DISAGREE; §5.3b's table and the lane's own report say 6. FIX five→six (and "a lost match" is two).
+V-2 HIGH — §5.3a's premise "ONE slot per lexical construct" is FALSE: only group and PENDING slots are per lexical node; cut-mark/span-low/guard/rev/ctr are allocated PER EMITTED COPY (vm_count_slots walks the body `copies` times; v->nmark++ etc. at :2431,:3143,:3777,:3782,:3908,:4089,:4261). MEASURED: ^((?>a)){3}$ → 4 cut marks (RX_NSLOTS 8); ^(a?){0,5}$ → 5 span-lows and 0 empty-guards (nguard only in the frames-rung arm for rmax<0, :1971). §5.7's |W| = 2c + c_marked + q + r + m + 3v + k under-counts under replication (3 vs 6; 4 vs 7) and q's gloss is wrong. Conclusion survives; principle and number do not. FIX: per-emitted-instance counts Q,R,M,V,K from vm_count_slots over the subtree; q = "unbounded frames-rung quantifier with a nullable body".
+V-3 HIGH — §4.4a site (6) vm_count_slots = LEXICAL ONLY is WRONG, consequence = out-of-bounds slot write (K27's class, emit_vm.c:1795-1797). (1) vm_count_slots returns at :1852 for {0,0} and vm_emit emits nothing for X{0} (:3980), so a callee defined inside {0} — the classic pre-DEFINE idiom, MEASURED on 10.46: ^(?:(?<g>a|ab)){0}(?&g)c$ on "abc" → (0,3); ^(x)?(?:(a(?2)?b)){0}(?2)$ on "aabb" → (0,4) — is counted ZERO times (pcrec today: ^((?>a)){0}b$ → RX_NSLOTS 4, no cut-mark slot). (2) HYBRID emits the callee region SEPARATELY, so the second copy needs its OWN slots — "double-count" is the correct count. Also A_CALL.save lists slot INDICES and the shared copy's indices differ from the lexical occurrence's → W derived lexically names the wrong slots (axis-C miscompile again). Rule otherwise CONFIRMED for pcrec_has_atomic/has_bref/bref_mark (no {0,0} prune); vm_cost prunes but is GRAPH. FIX: site (6) GRAPH-or-explicit — layout accounts for each EMITTED callee region once plus every lexical occurrence; W over the emitted region's indices; sabotage row with the {0} cell (rung-bearing callee).
+V-4 HIGH — LENS2-3 "FIXED" but five places still carry old counts (:115 §0.3, :197 P8, :1644 §5.9, :1928 §6.6, :2425-2426 §11 B+C "two new fields … one line") and §5.1:1161 itself says "three lines". FIX: three fields / two lines everywhere; §11 matters most.
+V-5 HIGH — §4.4b claims §11 B+C reads "minw's arm, and maxw's if wave A has landed"; §11:2428 still reads "pcrec_minw/pcrec_maxw's arms" (symmetric, unchanged); §3.4(d):700 says maxw "gains one A_CALL arm here". The fix asserts an edit never made. FIX: make the edit or drop the claim.
+V-6 HIGH — §3.5's W1 diagnosis INVERTED: the wrapper's machinery sits at L_entry (before L_body) and at L_ok/L_body_won/L_end_i (after <X>), so a jump to the group's body lands AFTER the back-step → the back-step does NOT run → cursor = call site's, the opposite of §3.5. The real W1 miscompile is the EXIT: L_end's `pos != slot[LOOK_POS]` end-check and L_ok's RX_CUT + position restore. W2/W3 correct. W4 (^q(?>(a|ab))?z(?1)c$) is a non-reason: the optional group IS emitted, merely not executed; the shape with no lexical emission is {0} (V-3's). Consequence for the brief's (c): lexical occurrence and callee CAN share one body region (byte-identical code); what forces two copies is the EXIT (fall-through to the wrapper's end-check/cut vs RX_RETURN) — §6.1's collapse argument, applying to EVERY called group; "MANDATORY for a wrapped target" adds no operative rule beyond HYBRID; it correctly rules out a wave-G splice that reuses the lexical label. Lexical copy inside a lookbehind keeps its back-step/end-check (on the enclosing A_LOOK); callee copy = same body, different exit. FIX: rewrite W1 around the end-check/position-restore; drop or re-shape W4 ({0}); §5.4's contract row = "never the wrapper's end-check, verdict or position-restore"; restate §6.3's mandatory-split clause as about the exit so S-SR18 sabotages the right thing.
+V-7 MED — §6.2's TIME table is in neither out/linkage.txt (re-archived 21:37) nor the verifier's re-run; the "k=2 CALL 1.40 outlier" paragraph explains a number that exists nowhere; "HYBRID beats CALL by ~5-10%" is 2.6%/3.5% on its own table; "10-12% slower" is 14%/9% (archive) / 15%/8% (re-run). Direction holds; magnitudes unsourced. SIZE/-O table/slopes/goto* all reproduce EXACTLY. FIX: paste the archived table; delete the outlier paragraph; ~2-6%; widen 10-12%.
+V-8 MED — transitivity withdrawal did not propagate: :1312 §5.3c, :1910 §6.6, :2415 §11 still say "transitive mark"; two different "four consumers" lists; §4.1:805 `int nsave; /* |W|, the callee's transitive capture write set */` = the refuted wording. FIX: strike; one list; "slot write set".
+V-9 MED — §8.1 heading "three row families" vs body "FOUR"; "three" survives at :2041 tally, :2452 §11 F, :2713 §13 (registry: 26 rows confirmed; a (a)(?-01) row exists, so the fourth family is the absolutes). FIX: four everywhere; re-derive the tally.
+V-10 MED — §5.4 "ratifies" lookaround_design §6.4 recommendation (a) (call site emits its own guard/back-step/charge and jumps into the LEXICAL body label) — contradicts §5.4's own table, §6.3 (callee region emitted separately) and §6.4's ruling (no lookaround body compiles as a call). FIX: declare (a) moot under §6.4 and record the hand-off as declined (re-point lookaround P-13), or reconcile.
+V-11 MED — §5.6's LENS1-5 numbers (2 KB / 800 KB in 0.24 s; 0.0001/0.0073/0.17/2.58 s) marked MEASURED with NO probe and NO archive (only leftrec.txt:163 has the n=400,000 fact, no timing). Verifier measured them TRUE (0.238 s; 0.0001/0.0080/0.1571/2.5516). Third instance of the self-audit's defect class. FIX: probe + archive, or downgrade.
+V-12 MED — slotfamilies.rxt, mrl.rxt, leadingzero.rxt in §10.2 but in NO §11 landing bar; S-SR6a-e, S-SR2a, S-SR9a, S-SR11a, S-SR18 in no bar; §6.3 puts the wrapped-target split in B+C while inlookaround.rxt is gated in E. Row count 26 confirmed. FIX: name files and rows in the bars; move inlookaround.rxt to B+C (or the split to E).
+V-13 MED — docs/design/CLAUDE.md index entry stale: "capture-slot set", "wave 1", "TEN probes" (eleven), "Five ASKs" (six). FIX: four edits.
+V-14 LOW — the 27-site census is switch-only (confirmed exactly; all 27 line numbers resolve; §4.4a uses bare basenames); 72 further `->k ==` dispatch points and eight switch-less AST walkers (vm_lifts, bare, vm_alt, trie_key, ast_bare, altcls_walk_alt, altcls_branch_peel, altcls_cat_flatten) outside A2's bar. FIX: say switch-only; name the residual.
+V-15 LOW — §5.7 "2-8 slots for the corpus's shapes" unsourced; is 2-6 on the corpus as written.
+V-16 LOW — §12 P-5/P-6 run together; §9.3 lists S-SR18 before S-SR17; §14 orders ASKs 1,2,3,4,6,5.
+VERIFIED CORRECT (re-run/re-derived): LENS2-1 both axes (13/0, 10/0) and the seven-family census (nstate = 2(ngroups+1)+nguard+nlow+nmark+3nrev+nctr+npend; |W(0)| = RX_NSLOTS−2 right); LENS1-1's six cells + controls; LENS1-2's witness + ∞ control; P-12 asserted; LENS1-4's 13+3+4 rows and the (?0) registry row; LENS1-6; LENS2-5/P-9/S-SR13 9/9; LENS3-2's -O table and slopes EXACT; LENS2-7's two functions + eight ERR_FLOOR sites; LENS2-9's 27 sites; LENS2-10; LENS2-2's rule for the three named predicates; LENS3-1/3-5; 26 rows; 23 emit_vm.c citations.
+Own ledger: 5 (ran pcrec without --features all — empty vs zero; worked from d1580a8 until git log on out/ showed 0ea8ba4; V-7 first read as "wrong" until the third data point; accepted §3.5's back-step claim for an hour until reading lookaround_design §3.4's real label layout; nearly filed {0} as theoretical).
