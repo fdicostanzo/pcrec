@@ -68,11 +68,50 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   per-lane arms listed below),
   `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
-  `SAB_COUNT` (default 1) and `SAB_HARNESS_TARGET` (an .rxt file or dir to
-  scope the `harness` suite to, instead of the whole corpus). Each file also
+  `SAB_COUNT` (default 1), `SAB_HARNESS_TARGET` (an .rxt file or dir to
+  scope the `harness` suite to, instead of the whole corpus), and
+  `SAB_EXPECT` (see below). Each file also
   carries `SAB_DOC_FIGURE`, a comment-and-string record of what the source
   documentation claimed, purely for humans diffing a re-run against the docs —
   the matrix itself does not read it.
+
+## `SAB_EXPECT` — THE EXPECTATION, CHECKED ([DD-14] wave B+C)
+
+`SAB_EXPECT` is `DETECTED` (the default when absent) or `UNDETECTED`. The
+driver scores every row against it, the headline reads **`unexpected: N`**,
+and **a mismatch in either direction exits non-zero.**
+
+**WHY IT EXISTS.** This directory already learned this lesson and wrote it
+down at S19 — *"a claim with an expiry date, and nothing was checking it"* —
+after a documented expected-UNDETECTED row had quietly BECOME detected and
+nobody noticed for weeks. The prose remedy ("a hand-maintained expected-
+UNDETECTED is precisely the staleness this directory records") did not
+survive contact with the next wave that needed one: [DD-14] wave B+C shipped
+SEVEN rows whose expectation lived only in a paragraph. This field is that
+paragraph made executable, and the rule generalises past those seven —
+**an expectation a human maintains in prose is a claim; an expectation the
+runner checks is a contract.**
+
+The two mismatch directions are BOTH findings and both fail the run:
+
+| stated | measured | meaning |
+|---|---|---|
+| `DETECTED` | UNDETECTED | a guard regressed, or the row's population was never adequate. The original finding, unchanged. |
+| `UNDETECTED` | DETECTED | **`NOW DETECTED`** — the claim EXPIRED: a later wave grew the population that closes the row. Re-measure, then flip the field. |
+
+That second row is deliberately the `known_fail` ratchet's *"now passing"*
+shape: the correct response is a deliberate re-measurement, **never deleting
+the row and never leaving the stale expectation standing**. An
+expected-UNDETECTED row is therefore not a parking space for a dead sabotage
+— it is a claim with a named witness that would close it, recorded in that
+row's `SAB_DOC_FIGURE`.
+
+**`INCONCLUSIVE` and `ANOMALY` are scored against NEITHER expectation.** They
+are the ABSENCE of a measurement, and an absent measurement must never satisfy
+a stated one — the same reason a skipped oracle arm is not a pass. A typo'd
+value (`UNDETECED`) is a hard `FATAL` rather than a silent fall back to the
+default, because falling back would turn a checked claim into an unchecked one
+and reintroduce exactly the failure this field was added to fix.
 
 ## THREE SUITE NAMES THE `[DD-14]` DESIGN ASSUMED, AND NONE OF THEM EXISTS
 

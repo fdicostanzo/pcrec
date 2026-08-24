@@ -43,6 +43,13 @@
 SAB_ID="S151-w-drops-emptyguard"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="W drops the SLOT_EMPTY_GUARD<n> family, so two ACTIVATIONS of one unbounded frames-rung quantifier share its empty-iteration guard and the outer loop's guard reads the inner's position"
 SAB_DOC_FIGURE="ARGUED, not measured (design 5.3b). PREDICTED: an admitted empty iteration (PCREC_ERR_STEPS) or a refused legal one. THE CELL MUST USE AN UNBOUNDED QUANTIFIER -- MEASURED, a bounded repeat allocates NO guard at all (^(a?){0,5}\$ allocates none while ^(a?)*\$ and ^(a?)+\$ allocate one each), so a {0,5} cell would go green on a broken compiler. quantified.rxt's nullable-callee-under-* cells are the population. If this row scores UNDETECTED the design's own instruction applies: replace the prediction with a measured cell or DROP the row. || MEASURED UNDETECTED: corpus 0fail/346pass, recdiff 0fail/7pass, AFTER the wave added a cell that ALLOCATES the family -- ^(?:(?<g>(?:a?)*b(?&g)?)){0}(?&g)\\$, whose artifact legend names RX_SLOT_EMPTY_GUARD0 and which is re-entered at two depths. So the row is not undetected for want of a population: the family is allocated, the callee recurses, and the answers do not move. The design's own instruction applies and is now due -- 'the row's PREDICTION is stated as a prediction, and [DD-14] implementation must replace it with the measured cell or DROP the row'. The wave replaced the population and could not produce the measurement; the row is kept, loud, with this figure attached."

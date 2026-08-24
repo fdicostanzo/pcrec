@@ -260,6 +260,12 @@ run_one() {
         SAB_COUNT=1
         SAB_HARNESS_TARGET=""
         SAB_DOC_FIGURE=""
+        # [DD-14 wave B+C] THE EXPECTATION, CHECKED. Absent means DETECTED --
+        # the overwhelmingly common case, and the one a new row should have to
+        # do nothing to get. A row that sets UNDETECTED is claiming its
+        # sabotage is real and its population cannot see it yet; see this
+        # directory's CLAUDE.md, "SAB_EXPECT".
+        SAB_EXPECT=""
         # [M6.5.2-FIX] THE OPTIONAL SECOND SITE. Reset here with the rest, so
         # a two-site row cannot leak its extra site into the next row's
         # subshell -- the same reason SAB_COUNT is reset rather than defaulted.
@@ -275,6 +281,15 @@ run_one() {
                 exit 2
             fi
         done
+        # A TYPO MUST NOT READ AS "DETECTED". `SAB_EXPECT=UNDETECED` silently
+        # falling back to the default would turn a checked claim back into an
+        # unchecked one -- which is the exact failure this field exists to fix.
+        case "${SAB_EXPECT:-DETECTED}" in
+            DETECTED|UNDETECTED) ;;
+            *)  echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT must be" \
+                     "DETECTED or UNDETECTED (got '$SAB_EXPECT')" >&2
+                exit 2 ;;
+        esac
 
         work="$MECH_SCRATCH/$SAB_ID"
         rm -rf "$work"
@@ -1054,6 +1069,38 @@ run_one() {
         elif [ "$any_fail" -eq 0 ]; then
             verdict="**UNDETECTED -- ZERO CHECKS FAILED**"
         fi
+        # ---- SCORE THE VERDICT AGAINST THE ROW'S EXPECTATION ----
+        # [DD-14 wave B+C] S19's lesson applied as a MECHANISM. The finding is
+        # no longer "this row was caught by nothing" -- which is only a finding
+        # when nobody expected it -- but "this row did not do what its
+        # definition SAYS it does". The two directions are both findings and
+        # both fail the run:
+        #
+        #   expect DETECTED, got UNDETECTED -- a guard regressed, or the row's
+        #       population was never adequate. The original finding, unchanged.
+        #   expect UNDETECTED, got DETECTED -- the row's claim has EXPIRED: a
+        #       later wave grew the population that closes it. The expectation
+        #       is now a lie and must be re-measured and flipped. This is the
+        #       known_fail ratchet's "now passing" shape, and it is why an
+        #       expected-UNDETECTED row is not a place to park a dead sabotage.
+        #
+        # INCONCLUSIVE and ANOMALY are scored against NEITHER: they are the
+        # absence of a measurement, and an absent measurement must never
+        # satisfy an expectation (the same reason a SKIP is not a PASS above).
+        expect="${SAB_EXPECT:-DETECTED}"
+        case "$verdict" in
+            DETECTED)              actual="DETECTED"   ;;
+            \*\*UNDETECTED*)        actual="UNDETECTED" ;;
+            *)                     actual="OTHER"      ;;
+        esac
+        if [ "$actual" = "UNDETECTED" ] && [ "$expect" = "UNDETECTED" ]; then
+            verdict="UNDETECTED (EXPECTED -- see this row's SAB_DOC_FIGURE for what would close it)"
+        elif [ "$actual" = "DETECTED" ] && [ "$expect" = "UNDETECTED" ]; then
+            verdict="NOW DETECTED -- re-measure and flip the expectation ***UNEXPECTED***"
+        elif [ "$actual" = "UNDETECTED" ] && [ "$expect" = "DETECTED" ]; then
+            verdict="$verdict ***UNEXPECTED***"
+        fi
+
         # The suffix NAMES the arms that skipped rather than assuming `pc3`:
         # with one skipped arm it renders exactly as it always did.
         [ "$any_ran" -gt 0 ] && [ "$any_skip" -eq 1 ] && \
@@ -1118,6 +1165,7 @@ echo "== detection matrix =="
 } | column -t -s "$(printf '\t')"
 
 echo
+unexpected="$(grep -c 'UNEXPECTED' "$results_file.rows" || true)"
 undetected="$(grep -c 'UNDETECTED' "$results_file.rows" || true)"
 anomalies="$(grep -c 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" || true)"
 oracle_skipped="$(grep -c 'SKIPPED-no-oracle' "$results_file.rows" || true)"
@@ -1139,10 +1187,13 @@ if [ "$total" -ne "${#sab_files[@]}" ]; then
     exit 2
 fi
 
-if [ "${undetected:-0}" -gt 0 ]; then
-    echo "*** $undetected of $total sabotage(s) were caught by ZERO checks in their assigned suites. ***"
+if [ "${unexpected:-0}" -gt 0 ]; then
+    echo "*** $unexpected of $total sabotage(s) did NOT match the expectation their definition states. ***"
     echo "*** That is not a bug in this script -- it is the finding it exists to surface. ***"
-    grep 'UNDETECTED' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
+    echo "*** A row reading 'NOW DETECTED' has an EXPIRED claim: some later wave grew the      ***"
+    echo "*** population that closes it. Re-MEASURE it, then flip its SAB_EXPECT -- do not     ***"
+    echo "*** simply delete the row, and do not leave the stale expectation standing.          ***"
+    grep 'UNEXPECTED' "$results_file.rows" | cut -f1,6 | sed 's/^/    - /'
 fi
 if [ "${anomalies:-0}" -gt 0 ]; then
     echo "*** $anomalies sabotage(s) hit an ANOMALY (anchor drift, build failure, or archive failure) and were NOT measured. ***"
@@ -1185,6 +1236,13 @@ fi
 # same root as the no-`pgrep -f` rule above, which is that a command line is
 # not an identity.
 echo
-echo "== mech run COMPLETE: $total rows (undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
+echo "== mech run COMPLETE: $total rows (unexpected: ${unexpected:-0}, undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
+
+# A MISMATCHED EXPECTATION FAILS THE RUN. Before this field the script exited
+# 0 with the finding printed, because an UNDETECTED row was a fact to read
+# rather than a contract to enforce; now that every row STATES its outcome,
+# a row that disagrees with its own definition is a broken contract and the
+# caller must see it in the exit status, not only in the log.
+[ "${unexpected:-0}" -gt 0 ] && exit 1
 
 exit 0

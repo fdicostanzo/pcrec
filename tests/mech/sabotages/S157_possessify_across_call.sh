@@ -43,6 +43,13 @@
 SAB_ID="S157-possessify-across-call"
 SAB_FILE="src/opt/possessify.c"
 SAB_SUITES="harness recursion"
+# [DD-14 wave B+C] EXPECTED UNDETECTED, and the expectation is CHECKED.
+# The sabotage is real and verified applied; this corpus cannot see it
+# yet. SAB_DOC_FIGURE above records the measurement and names exactly
+# what would have to exist for this row to close. If the matrix ever
+# reports NOW DETECTED here, some wave built that witness: re-measure,
+# then flip this to DETECTED -- do not delete the row.
+SAB_EXPECT=UNDETECTED
 SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="BOTH arms that decline a call are removed -- first_of stops widening to every byte and gk_build stops refusing -- so a possessive quantifier over a call-bearing body is admitted onto vm_poss_star, which emits NO empty-iteration guard and NO work charge, and the emitted matcher HANGS"
 SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR9a, D71 item 6): ^(?:(?<g>a?)){0}(?&g)*+\$ HANGS -- emit_vm.c's own comment says vm_poss_star 'PUSHES AND CUTS AT ZERO CONSUMPTION FOREVER, and no work charge fires to stop it', and eng_brep_design 2.2's nullable refusal CANNOT SEE a callee that lives elsewhere in the tree. Scored by tests/harness/run.sh's own run budget. MEASURED on the landed build BEFORE the sabotage: that pattern compiles with RX_VM_STRATS 0x2 -- BACKTRACKING only, no POSSESSIVE bit -- and answers (0,3) on \"aaa\". || MEASURED UNDETECTED at corpus 0fail/346pass EVEN WITH BOTH POSSESSIFY ARMS REMOVED, and the finding is which arm actually stands between the corpus and the hang. \`(?&g)*+\` does NOT go through possessify at all: parse.c desugars the possessive SUFFIX to A_ATOMIC(A_REP(...)) and \`vm_lifts\` routes the cut into the possessive rung -- and \`vm_lifts\` DECLINES on \`vm_nullable(r->l)\`, which for a call is the GRAPH FIXPOINT (S156's arm). So for the user-written spelling the protection is vm_lifts + vm_nullable, not D71 item 6's rung decline; possessify's decline governs the AUTOMATIC possessification of a non-possessive quantifier, whose hang shape this corpus does not contain. The witness cell ^(?:(?<g>a?)){0}(?&g)*+\\$ landed anyway and is MEASURED on the shipped build to take the BACKTRACKING rung (RX_VM_STRATS 0x2, no POSSESSIVE bit)."
