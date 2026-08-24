@@ -13411,3 +13411,9 @@ merged-tree make test continues; the B+C lane's san5 died at 15:26 with
 `make: wait: No child processes` (18 stages green, no reports) when my
 -j12 started — not proven causal; the san on the merged tree is mine,
 after this make test, alone.
+
+ADDENDUM (part 7, ~15:5x): merged-tree make test on 67e40b9: corpus
+25,217 / 0, every section green except the gen-timeout control (fixed
+above). strict clean. `make san` on the merged tree running alone
+(scratchpad/san_BCmerged.log); lanes srD/srLB are in their editing
+phase, srBC-expect's worktree exists.
