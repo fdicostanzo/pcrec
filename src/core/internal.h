@@ -1120,8 +1120,37 @@ typedef struct NamedGroup {
  * boundary — octal 010, not a reference to group 10.
  *
  * Arena-owned and threaded like `NamedGroup`; `name` is an arena copy. */
+/* [DD-14 wave B+C] WHICH RULE THE RESOLVER APPLIES (subroutines_design.md
+ * §4.2). ONE LIST AND ONE PASS, not a second list beside it: the pass's whole
+ * justification is that it is the ONE site that knows both the final group
+ * count and every declaration of a duplicated name, and that is as true of a
+ * subroutine call as of a backreference.
+ *
+ * THE TWO RULES DIFFER IN THE NAME ARM AND NOWHERE ELSE:
+ *
+ *   PEND_BREF  by number: that group. by NAME: the whole RUN of groups with
+ *              that name, ascending — the emitted chain picks the first SET
+ *              member at MATCH time (§8.3 of backrefs_design.md).
+ *   PEND_CALL  by number: that group, one number. by NAME: the FIRST
+ *              DECLARATION with that name, STATICALLY, whether or not it is
+ *              set, and a call never retries into the later members —
+ *              MEASURED on 10.46 across all four by-name call spellings
+ *              (subroutines_design.md §3.4(c)): under DUPNAMES,
+ *              `^(?:(?<a>x)|q)(?<a>y)(?&a)$` matches "qyx" and refuses "qyy",
+ *              while the `\k<a>` REFERENCE does the opposite.
+ *
+ * THE ZERO CASE IS NOT A THIRD DIFFERENCE. `(?R)`/`(?0)`/`(?00)` target the
+ * AST ROOT, which always exists, so the port answers them itself and queues
+ * NOTHING — see `src/parse/mod_recursion.c`'s header. A number that reaches
+ * this list is therefore out of range at 0 for BOTH kinds, which is what keeps
+ * `(a)(?-2)` (a relative offset computing to zero) an error-115 rather than a
+ * silent `(?R)`. */
+typedef enum { PEND_BREF, PEND_CALL } PendKind;
+
 typedef struct PendingRef {
-    Ast                *node;    /* the A_BREF whose `refs` this fills in */
+    Ast                *node;    /* the A_BREF whose `refs` this fills in, or
+                                  * the A_CALL whose `target`/`body` it does */
+    PendKind            kind;
     /* An absolute group number, read only when `name` is NULL. It may be ZERO
      * OR NEGATIVE: `\g{-1}` at a count of zero computes 0, and whether a
      * number names a group is the ONE question this list defers. Splitting
@@ -2333,6 +2362,31 @@ ExtResult pcrec_brport_k(Ctx *cx, const RegRow *rw, ExtWant want,
                          size_t at, size_t from);
 ExtResult pcrec_brport_pname(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from);
+
+/* [DD-14 wave B+C] src/parse/mod_recursion.c — module `recursion`, the three
+ * SUBROUTINE-CALL ports at the `(?` doorway. Design:
+ * docs/design/subroutines_design.md §4.2's port table.
+ *
+ *   pcrec_rcport_num   `(?1)`..`(?9)` and their multi-digit continuations,
+ *                      `(?0)`, `(?R)` — and §2.4a's LEADING-ZERO rule, which
+ *                      is why this port re-reads the whole digit run from the
+ *                      selector byte instead of trusting `rw->sel`.
+ *   pcrec_rcport_rel   `(?+N)`, `(?-N)`, with the leading-zero and
+ *                      relative-zero rules.
+ *   pcrec_rcport_name  `(?&name)`, `(?P>name)`.
+ *
+ * The FOURTH doorway of §4.2's table — `\g<...>` / `\g'...'` — has no port in
+ * wave B+C: those two rows carry `NO_PORT` and refuse through ext.c's
+ * ENABLED-BUT-UNBUILT epilogue, which is what keeps their D65 `built` column
+ * honest until wave D wires them. mod_recursion.c's closing note records why
+ * the brief's "one decline branch in pcrec_brport_g" turned out to be
+ * unreachable code. */
+ExtResult pcrec_rcport_num(Ctx *cx, const RegRow *rw, ExtWant want,
+                           size_t at, size_t from);
+ExtResult pcrec_rcport_rel(Ctx *cx, const RegRow *rw, ExtWant want,
+                           size_t at, size_t from);
+ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,
+                            size_t at, size_t from);
 
 /* THE END-OF-PARSE PASS (§5.3), called from `pcrec_parse_info` and nowhere
  * else. Two jobs, in this order:
