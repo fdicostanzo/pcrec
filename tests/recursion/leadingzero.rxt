@@ -73,32 +73,47 @@ n "aabb"
 # THE `\g` DOORWAY TAKES THE SAME RULE.
 # ====================================================================
 
+# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
+# WAVE D ORACLE: 'aabb' at startpos 0 -> (0,4) g1=(0,4)
+# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
 pattern ^(a\g<1>?b)$
 features recursion
-m "aabb" 0 4
-g 1 0 4
+perr
 
+# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
+# WAVE D ORACLE: 'aabb' at startpos 0 -> (0,4) g1=(0,4)
+# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
 pattern ^(a\g<01>?b)$
 features recursion
-m "aabb" 0 4
-g 1 0 4
+perr
 
+# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
+# WAVE D ORACLE: 'aabb' at startpos 0 -> (0,4) g1=(0,4)
+# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
 pattern ^(a\g'01'?b)$
 features recursion
-m "aabb" 0 4
-g 1 0 4
+perr
 
+# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
+# WAVE D ORACLE: 'aabb' at startpos 0 -> nomatch
+# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
 pattern ^(a\g<0>?b)$
 features recursion
-n "aabb"
+perr
 
+# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
+# WAVE D ORACLE: 'aabb' at startpos 0 -> nomatch
+# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
 pattern ^(a\g<00>?b)$
 features recursion
-n "aabb"
+perr
 
+# EXPECTED-UNSUPPORTED, WAVE D (APPROACH.md SS7, docs/testing.md step 2). The construct is REAL and this cell is oracle-verified below; pcrec cannot compile it until wave D wires the port, so the block pins the REFUSAL and carries the answer. Wave D deletes the `wave=` argument in gen_corpus.py and re-runs it.
+# WAVE D ORACLE: 'aabb' at startpos 0 -> nomatch
+# MEASURED, this build: pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
 pattern ^(a\g'00'?b)$
 features recursion
-n "aabb"
+perr
 
 # ====================================================================
 # THE RELATIVE FORMS TAKE A LEADING ZERO TOO (design SS2.4a) -- already exercised in relative.rxt; cross-referenced here rather than duplicated, EXCEPT the one cell that pairs relative leading-zero against the SAME anchored discriminator this file is about.

@@ -52,27 +52,29 @@ features backrefs
 perr
 
 # ====================================================================
-# THE GATE, ENABLED BUT NOT YET IMPLEMENTED (`--features recursion`, no producer). D65's second diagnostic.
+# THE GATE, ENABLED AND NOW BUILT (`--features recursion`). [DD-14] wave B+C wired the ports, so D65's `built` column flips for the `(?` rows and the enabled-but-unbuilt diagnostic these cells used to pin no longer exists for them.
 # ====================================================================
 
-# numeric call, enabled -- 'enabled but ... not implemented yet', never the closed-gate wording; a reader must be able to tell 'nobody asked for this' from 'somebody asked and it isn't built'.
-# MEASURED, build/pcrec off main under --features recursion: pcrec: module 'recursion' is enabled but (?1...) is not implemented yet (pattern offset 3)
-pattern (a)(?1)
+# numeric call, enabled and BUILT -- SS2.1's own call-vs-reference discriminator, used here as the gate's positive control: a compiler that merely stopped REFUSING would answer nomatch on "ab".
+pattern ^(a|b)(?1)$
 features recursion
-perr
+m "ab" 0 2
+g 1 0 1
+n "ac"
 
-# by-name call, enabled -- same wording family, verified separately because the by-name doorway is a DIFFERENT registry row from the numeric one.
-# MEASURED, build/pcrec off main under --features recursion: pcrec: module 'recursion' is enabled but (?&...) is not implemented yet (pattern offset 0)
-pattern (?&n)(?<n>a)
-features recursion
-perr
+# by-name call, enabled and BUILT -- verified separately because the by-name doorway is a DIFFERENT registry row from the numeric one, and it needs `named-groups` for the DECLARATION (P2).
+pattern ^(?<n>a|b)(?&n)$
+features recursion,named-groups
+m "ab" 0 2
+g 1 0 1
+n "ac"
 
 # ====================================================================
 # P2's CELL (design SS9.3): `(?&n)` should refuse for `named-groups` FIRST once the call itself parses, not for `recursion`.
 # ====================================================================
 
-# **NOT OBSERVABLE IN ITS TRUE FORM TODAY.** MEASURED: with `recursion` enabled and `named-groups` NOT enabled, this pattern refuses today naming 'recursion' (module `recursion` has no producer at all yet, so the parser never gets far enough to ask about `named-groups`). Once [DD-14] wave B+C lands the `(?&` PARSE, the design's claim is that this SAME cell must then refuse naming 'named-groups' instead -- because the declaration `(?<n>a)` is what needs that module, and a call can reach it lexically before the resolver ever runs. This row passes VACUOUSLY today (nonzero exit, wrong reason) -- S108's masking shape, named by the design itself. THE CODE LANE MUST RE-CHECK THIS CELL'S MESSAGE ONCE WAVE B+C LANDS, not just its exit code.
-# MEASURED, build/pcrec off main under --features recursion: pcrec: module 'recursion' is enabled but (?&...) is not implemented yet (pattern offset 0)
+# **NOT OBSERVABLE IN ITS TRUE FORM TODAY.** MEASURED: with `recursion` enabled and `named-groups` NOT enabled, this pattern refuses today naming 'recursion' (module `recursion` has no producer at all yet, so the parser never gets far enough to ask about `named-groups`). Once [DD-14] wave B+C lands the `(?&` PARSE, the design's claim is that this SAME cell must then refuse naming 'named-groups' instead -- because the declaration `(?<n>a)` is what needs that module, and a call can reach it lexically before the resolver ever runs. This row passes VACUOUSLY today (nonzero exit, wrong reason) -- S108's masking shape, named by the design itself. THE CODE LANE MUST RE-CHECK THIS CELL'S MESSAGE ONCE WAVE B+C LANDS, not just its exit code. **DISCHARGED, [DD-14] wave B+C**: MEASURED on the landed binary, `--features recursion -- '(?&n)(?<n>a)'` now answers `(?&n) names a capture group, which requires module 'named-groups'` -- the design's prediction, from the port's own gate check, which sits BEFORE the name grammar for `br_name_ref`'s reason (without that module there is no such thing as a group NAME). The row is no longer vacuous.
+# MEASURED, build/pcrec off main under --features recursion: pcrec: (?&n) names a capture group, which requires module 'named-groups' (pattern offset 0)
 pattern (?&n)(?<n>a)
 features recursion
 perr

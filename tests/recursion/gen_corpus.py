@@ -148,12 +148,56 @@ class B:
     shows up as a visibly wrong .rxt line rather than a silently accepted
     typo."""
 
-    def __init__(self, pat, cells, features, groups=0, note=None):
+    def __init__(self, pat, cells, features, groups=0, note=None, wave=None,
+                 parked=None):
         self.pat = pat
         self.cells = cells
         self.features = features
         self.groups = groups
         self.note = note
+        # [DD-14 wave B+C, code lane] `wave` NAMES THE WAVE THAT WILL MAKE THIS
+        # BLOCK COMPILE, and until then the block is rendered as a `perr` with
+        # its ORACLE ANSWER CARRIED IN A COMMENT.
+        #
+        # THIS IS APPROACH.md SS7's `expected-unsupported` POLICY, not a
+        # weakening of the corpus (docs/testing.md, "adding a per-component
+        # directory", step 2: "pin the compile error via `perr` ... this keeps
+        # the suite green at every milestone rather than red until the
+        # component lands", step 3: "once the component is implemented,
+        # replace or extend those `perr` blocks with real cases").
+        #
+        # IT COSTS NOTHING AND IS RECOVERED MECHANICALLY. The oracle is still
+        # driven for every cell on every run — the answer is written into the
+        # block as `# WAVE <w>: libpcre2 says ...` — so wave D's edit is to
+        # delete one keyword argument and re-run this generator, and the
+        # `m`/`n`/`g` lines that come back are the ones libpcre2 gives THEN,
+        # not a transcription of what it gave now. A block whose refusal STOPS
+        # EXISTING fails the same guard `PERR` carries, so the marker cannot
+        # outlive the wave it names.
+        #
+        # WHY THE `\g` FAMILY IS THE ONLY USER TODAY: design SS8.1 requires
+        # the two `\g` registry rows to stay `unbuilt` until wave D wires
+        # their port, because D65 flips `built` from the PORT's answer and a
+        # wave that flipped them while the emitter could not compile the
+        # spelling would ship a compliance index that lies. Wave B+C's own
+        # landing bar pins that state.
+        self.wave = wave
+        # [DD-14 wave B+C, code lane] `parked` MOVES THE BLOCK OUT OF THE LIVE
+        # CORPUS AND INTO tests/known_fail/, leaving a comment stanza here that
+        # says where it went and why.
+        #
+        # It is the mechanism this project already uses for a cell where a
+        # RULING IS OWED rather than a bug is open (tests/known_fail/'s own
+        # CLAUDE.md, on U9: "the cells stay, they stay loud, and if pcrec is
+        # ever changed to reproduce it this file FIRES"). known_fail is
+        # excluded from `make test` and RUN by the ratchet, so a parked cell
+        # that starts passing is a loud failure rather than a silent one.
+        #
+        # It is NOT for a construct that has not landed — that is `wave` above,
+        # and the two are deliberately different renderings: `wave` pins a
+        # REFUSAL that must exist, `parked` pins an ANSWER that pcrec currently
+        # disagrees with.
+        self.parked = parked
 
 
 class GU:
@@ -173,7 +217,9 @@ class GU:
     line -- one field, one meaning, the PERR `gate_features` lesson applied
     before it could recur here too."""
 
-    def __init__(self, pat, subj, code, features, note, oracle_note=True):
+    def __init__(self, pat, subj, code, features, note, oracle_note=True,
+                 parked=None):
+        self.parked = parked      # see B.__init__'s own `parked`
         self.pat = pat
         self.subj = subj
         self.code = code
@@ -242,6 +288,10 @@ def render_m_cells(pat, cells, groups, lines, census):
 
 def render(block, census):
     lines = []
+    if getattr(block, 'parked', None):
+        return ['# ' + ln for ln in
+                ('PARKED IN tests/known_fail/ -- NOT A CELL IN THIS FILE.\n'
+                 'pattern: %s\n%s' % (block.pat, block.parked)).split('\n')]
     if isinstance(block, PERR):
         census['perr'] += 1
         if block.note:
@@ -301,6 +351,50 @@ def render(block, census):
         return lines
 
     # ordinary B block
+    if block.wave:
+        # The expected-unsupported rendering — see B.__init__'s `wave`.
+        census['perr'] += 1
+        if block.note:
+            lines.append('# ' + block.note)
+        lines.append('# EXPECTED-UNSUPPORTED, WAVE %s (APPROACH.md SS7, '
+                     'docs/testing.md step 2). The construct is REAL and this '
+                     'cell is oracle-verified below; pcrec cannot compile it '
+                     'until wave %s wires the port, so the block pins the '
+                     'REFUSAL and carries the answer. Wave %s deletes the '
+                     '`wave=` argument in gen_corpus.py and re-runs it.'
+                     % (block.wave, block.wave, block.wave))
+        for c in block.cells:
+            tag, subj = c[0], c[1]
+            sp = c[2] if len(c) > 2 else 0
+            a = pcre2_answer(block.pat, subj, sp)
+            if a[0] == 'ERR':
+                raise SystemExit("gen_corpus: %r refuses to compile in "
+                                 "libpcre2: %s" % (block.pat, a[1]))
+            if a[0] == 'n':
+                lines.append('# WAVE %s ORACLE: %r at startpos %d -> nomatch'
+                             % (block.wave, subj, sp))
+            elif a[0] == 'm':
+                lines.append('# WAVE %s ORACLE: %r at startpos %d -> (%d,%d)%s'
+                             % (block.wave, subj, sp, a[1], a[2],
+                                ''.join(' g%d=%s' % (g, '(unset)' if gv is None
+                                                     else '(%d,%d)' % gv)
+                                        for g, gv in
+                                        enumerate(pad(a[3], block.groups), 1))))
+            else:
+                lines.append('# WAVE %s ORACLE: %r at startpos %d -> %s'
+                             % (block.wave, subj, sp, a[1]))
+        bad, msg = pcrec_refuses(block.pat, block.features)
+        if not bad:
+            raise SystemExit('gen_corpus: %r is marked wave=%s but '
+                             'build/pcrec COMPILES it -- the wave has landed '
+                             'and the marker must go' % (block.pat, block.wave))
+        lines.append('# MEASURED, this build: %s' % msg)
+        lines.append('pattern ' + block.pat)
+        if block.features:
+            lines.append('features ' + block.features)
+        lines.append('perr')
+        return lines
+
     census['blocks'] += 1
     if block.note:
         lines.append('# ' + block.note)
@@ -374,7 +468,18 @@ RCB = "recursion,backrefs"
 RCA = "recursion,atomic-groups"
 RCL = "recursion,lookaround"
 RCLA = "recursion,lookaround,atomic-groups"
-RCNM = "recursion,named-groups,modifiers"
+# [DD-14 wave B+C, code lane] `backrefs` JOINED, and it is a CORRECTION to a
+# feature line rather than to an expectation. `(?J)` is dispatched by module
+# `modifiers`' option-run port and its LETTER is module `backrefs`' — the
+# [M6.5] split the compliance page records (DECLARING a duplicate name is
+# `named-groups`; the letter and RESOLVING a reference to one are `backrefs`)
+# — so without it every DUPNAMES cell refused with "inline option 'J'
+# (dupnames) requires module 'backrefs'" and the whole file was red for a
+# reason that is not about subroutine calls. Design SS9.3 lists S-SR14's cell
+# as needing `features named-groups,recursion` and `(?J)`, and did not follow
+# the letter to its own module; this line is that follow-through. No m/n/g
+# expectation moved.
+RCNM = "recursion,named-groups,modifiers,backrefs"
 RCK = "recursion,assertions"
 
 
@@ -424,17 +529,34 @@ GATED = [
                   "per-row, not per-pattern. `backrefs` alone does not "
                   "unlock a call."),
     ]),
-    ("THE GATE, ENABLED BUT NOT YET IMPLEMENTED (`--features recursion`, no "
-     "producer). D65's second diagnostic.", [
-        PERR(r"(a)(?1)", 'pcrec', features=RC,
-             note="numeric call, enabled -- 'enabled but ... not "
-                  "implemented yet', never the closed-gate wording; a "
-                  "reader must be able to tell 'nobody asked for this' from "
-                  "'somebody asked and it isn't built'."),
-        PERR(r"(?&n)(?<n>a)", 'pcrec', features=RC,
-             note="by-name call, enabled -- same wording family, "
-                  "verified separately because the by-name doorway is a "
-                  "DIFFERENT registry row from the numeric one."),
+    # [DD-14 wave B+C, code lane] THE ENABLED-BUT-UNBUILT SECTION IS GONE, AND
+    # ITS DISAPPEARANCE IS THIS WAVE'S OWN DELIVERABLE rather than a corpus
+    # defect. D65 derives a row's `built` column from the PORT's answer at
+    # WANT_RESULT and never runs the emitter, so the wave that WIRES the port
+    # is the wave that flips the column — and the numeric cell that pinned
+    # "module 'recursion' is enabled but (?1...) is not implemented yet" pins a
+    # diagnostic that must stop existing on the same commit. This generator's
+    # own guard is what said so, unprompted, on the first run against the new
+    # binary: "'(a)(?1)' marked kind=pcrec but build/pcrec COMPILES it -- the
+    # refusal this cell pins does not exist".
+    #
+    # THE POSITIVE HALF REPLACES IT, and it is the stronger check: the same two
+    # spellings must now COMPILE with the module enabled. A section that merely
+    # deleted the refusals would leave the flip unasserted from either side.
+    ("THE GATE, ENABLED AND NOW BUILT (`--features recursion`). [DD-14] wave "
+     "B+C wired the ports, so D65's `built` column flips for the `(?` rows and "
+     "the enabled-but-unbuilt diagnostic these cells used to pin no longer "
+     "exists for them.", [
+        B(r"^(a|b)(?1)$", [('m', "ab"), ('n', "ac")], RC, groups=1,
+          note="numeric call, enabled and BUILT -- SS2.1's own "
+               "call-vs-reference discriminator, used here as the gate's "
+               "positive control: a compiler that merely stopped REFUSING "
+               "would answer nomatch on \"ab\"."),
+        B(r"^(?<n>a|b)(?&n)$", [('m', "ab"), ('n', "ac")], RCN, groups=1,
+          note="by-name call, enabled and BUILT -- verified separately "
+               "because the by-name doorway is a DIFFERENT registry row from "
+               "the numeric one, and it needs `named-groups` for the "
+               "DECLARATION (P2)."),
     ]),
     ("P2's CELL (design SS9.3): `(?&n)` should refuse for `named-groups` "
      "FIRST once the call itself parses, not for `recursion`.", [
@@ -452,7 +574,15 @@ GATED = [
                   "row passes VACUOUSLY today (nonzero exit, wrong reason) "
                   "-- S108's masking shape, named by the design itself. "
                   "THE CODE LANE MUST RE-CHECK THIS CELL'S MESSAGE ONCE "
-                  "WAVE B+C LANDS, not just its exit code."),
+                  "WAVE B+C LANDS, not just its exit code. "
+                  "**DISCHARGED, [DD-14] wave B+C**: MEASURED on the landed "
+                  "binary, `--features recursion -- '(?&n)(?<n>a)'` now "
+                  "answers `(?&n) names a capture group, which requires "
+                  "module 'named-groups'` -- the design's prediction, from "
+                  "the port's own gate check, which sits BEFORE the name "
+                  "grammar for `br_name_ref`'s reason (without that module "
+                  "there is no such thing as a group NAME). The row is no "
+                  "longer vacuous."),
     ]),
     ("THE POSITIVE CONTROL: module `recursion` ON, must MATCH (design SS9.2 "
      "-- 'no subroutine call exists today, so this changes nothing' is "
@@ -489,10 +619,10 @@ SPELLINGS = [
         B(r"(a|b)(?-1)", [('m', "ab")], RC, groups=1, note="`(?-N)`"),
         B(r"(?<g>a|b)(?&g)", [('m', "ab")], RCN, groups=1, note="`(?&name)`"),
         B(r"(?<g>a|b)(?P>g)", [('m', "ab")], RCN, groups=1, note="`(?P>name)`"),
-        B(r"(a|b)\g<1>", [('m', "ab")], RC, groups=1, note="`\\g<N>`"),
-        B(r"(a|b)\g'1'", [('m', "ab")], RC, groups=1, note="`\\g'N'`"),
-        B(r"(?<g>a|b)\g<g>", [('m', "ab")], RCN, groups=1, note="`\\g<name>`"),
-        B(r"(?<g>a|b)\g'g'", [('m', "ab")], RCN, groups=1, note="`\\g'name'`"),
+        B(r"(a|b)\g<1>", [('m', "ab")], RC, groups=1, note="`\\g<N>`", wave='D'),
+        B(r"(a|b)\g'1'", [('m', "ab")], RC, groups=1, note="`\\g'N'`", wave='D'),
+        B(r"(?<g>a|b)\g<g>", [('m', "ab")], RCN, groups=1, note="`\\g<name>`", wave='D'),
+        B(r"(?<g>a|b)\g'g'", [('m', "ab")], RCN, groups=1, note="`\\g'name'`", wave='D'),
     ]),
     ("THE `\\g` DOORWAY'S OTHER CONSTRUCT IS `backrefs`'S, NOT THIS "
      "MODULE'S -- the split runs exactly along the delimiter (`<`/`'` here "
@@ -526,13 +656,13 @@ RELATIVE = [
     ]),
     ("LEADING ZEROS ON A RELATIVE VALUE (design SS2.4a) -- accepted, same "
      "target as without the zero.", [
-        B(r"^(a)(b)\g<-01>$", [('m', "abb")], RC, groups=2),
+        B(r"^(a)(b)\g<-01>$", [('m', "abb")], RC, groups=2, wave='D'),
         B(r"^(a)(b)(?-01)$", [('m', "abb")], RC, groups=2),
-        B(r"^(a)(b)\g<-02>$", [('m', "aba")], RC, groups=2),
+        B(r"^(a)(b)\g<-02>$", [('m', "aba")], RC, groups=2, wave='D'),
     ]),
     ("`\\g<+-N>` OBEYS THE SAME RELATIVE RULE the `(?` doorway does.", [
-        B(r"^\g<+1>(a)$", [('m', "aa")], RC, groups=1),
-        B(r"^(a)(b)\g<-1>$", [('m', "abb")], RC, groups=2),
+        B(r"^\g<+1>(a)$", [('m', "aa")], RC, groups=1, wave='D'),
+        B(r"^(a)(b)\g<-1>$", [('m', "abb")], RC, groups=2, wave='D'),
     ]),
     ("A RELATIVE VALUE OF ZERO IS ALWAYS ERROR 126 (design SS2.4a) -- in "
      "every spelling, leading zero or not.", [
@@ -558,8 +688,8 @@ WHOLE = [
         B(r"^(a(?0)?b)$", [('n', "aabb")], RC, groups=1, note="`(?0)` is `(?R)`."),
         B(r"^(a\g<0>?b)$", [('n', "aabb")], RC, groups=1,
           note="`\\g<0>` -- a spelling the charter's list did not have "
-               "(design SS2.4) -- is `(?R)` too."),
-        B(r"^(a\g'0'?b)$", [('n', "aabb")], RC, groups=1, note="and so is `\\g'0'`."),
+               "(design SS2.4) -- is `(?R)` too.", wave='D'),
+        B(r"^(a\g'0'?b)$", [('n', "aabb")], RC, groups=1, note="and so is `\\g'0'`.", wave='D'),
         B(r"(a(?R)?b)", [('m', "aabb")], RC, groups=1,
           note="UNANCHORED: with the anchors gone, `(?R)` reaches depth 2."),
     ]),
@@ -666,6 +796,19 @@ LEFTREC = [
                 "leftrec.txt`) uses this exact subject for the DEFINE form "
                 "of the same cycle, cross-checked here via the {0} idiom."),
         GU(r"^(a?(?1)b)$", "ab", "frames", RC,
+           parked="tests/known_fail/dd14_bc_open.rxt, cell 1. pcrec answers "
+                  "NOMATCH here, not a give-up, and BOTH are refusals of the "
+                  "same subject. Design SS4.4b's minw fixpoint gives this "
+                  "callee minw = INFINITY (its language IS empty: X = a? X b "
+                  "has no base case), and SS12 P-12 RULES that the MRL prune "
+                  "then reads it as 'no position can match' -- which is what "
+                  "the `a?` quantifier's own bound does, in constant time, "
+                  "where 10.46 spends its rc -52 finding out. The two "
+                  "SIBLING cells in this section still give up, because they "
+                  "carry no quantifier for a bound to hang on, so the class "
+                  "answers two ways depending on a shape that is not about "
+                  "recursion. WHICH ANSWER THIS CELL SHOULD PIN IS A RULING "
+                  "NOBODY HAS MADE.",
            note="NULLABLE PREFIX: an optional literal precedes the call, "
                 "but the call itself is still unconditional -- "
                 "design SS3.3/L3's own point is that 'is the call the "
@@ -722,9 +865,9 @@ DUPNAMES = [
         B(r"^(?J)(?:(?<a>x)|q)(?<a>y)(?P>a)$", [('m', "qyx"), ('n', "qyy")],
           RCNM, groups=2),
         B(r"^(?J)(?:(?<a>x)|q)(?<a>y)\g<a>$", [('m', "qyx"), ('n', "qyy")],
-          RCNM, groups=2),
+          RCNM, groups=2, wave='D'),
         B(r"^(?J)(?:(?<a>x)|q)(?<a>y)\g'a'$", [('m', "qyx"), ('n', "qyy")],
-          RCNM, groups=2),
+          RCNM, groups=2, wave='D'),
     ]),
 ]
 
@@ -815,12 +958,12 @@ LEADINGZERO = [
                "SS2.4a's own miscompile warning)."),
     ]),
     ("THE `\\g` DOORWAY TAKES THE SAME RULE.", [
-        B(r"^(a\g<1>?b)$", [('m', "aabb")], RC, groups=1),
-        B(r"^(a\g<01>?b)$", [('m', "aabb")], RC, groups=1),
-        B(r"^(a\g'01'?b)$", [('m', "aabb")], RC, groups=1),
-        B(r"^(a\g<0>?b)$", [('n', "aabb")], RC, groups=1),
-        B(r"^(a\g<00>?b)$", [('n', "aabb")], RC, groups=1),
-        B(r"^(a\g'00'?b)$", [('n', "aabb")], RC, groups=1),
+        B(r"^(a\g<1>?b)$", [('m', "aabb")], RC, groups=1, wave='D'),
+        B(r"^(a\g<01>?b)$", [('m', "aabb")], RC, groups=1, wave='D'),
+        B(r"^(a\g'01'?b)$", [('m', "aabb")], RC, groups=1, wave='D'),
+        B(r"^(a\g<0>?b)$", [('n', "aabb")], RC, groups=1, wave='D'),
+        B(r"^(a\g<00>?b)$", [('n', "aabb")], RC, groups=1, wave='D'),
+        B(r"^(a\g'00'?b)$", [('n', "aabb")], RC, groups=1, wave='D'),
     ]),
     ("THE RELATIVE FORMS TAKE A LEADING ZERO TOO (design SS2.4a) -- "
      "already exercised in relative.rxt; cross-referenced here rather "
@@ -906,12 +1049,12 @@ QUANTIFIED = [
           note="`(?&name){n}`"),
         B(r"^(?<g>a)(?P>g){2}b$", [('m', "aaab")], RCN, groups=1,
           note="`(?P>name){n}`"),
-        B(r"^(a)\g<1>{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g<N>{n}`"),
-        B(r"^(a)\g'1'{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g'N'{n}`"),
+        B(r"^(a)\g<1>{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g<N>{n}`", wave='D'),
+        B(r"^(a)\g'1'{2}b$", [('m', "aaab")], RC, groups=1, note="`\\g'N'{n}`", wave='D'),
         B(r"^(?<g>a)\g<g>{2}b$", [('m', "aaab")], RCN, groups=1,
-          note="`\\g<name>{n}`"),
+          note="`\\g<name>{n}`", wave='D'),
         B(r"^(?<g>a)\g'g'{2}b$", [('m', "aaab")], RCN, groups=1,
-          note="`\\g'name'{n}`"),
+          note="`\\g'name'{n}`", wave='D'),
         B(r"(a(?R)*b)", [('m', "aabb")], RC, groups=1, note="`(?R)*`"),
     ]),
     ("THE EMPTY-BODY GUARD (design SS2.6): a NULLABLE or EMPTY callee "
@@ -940,13 +1083,34 @@ QUANTIFIED = [
 # ===========================================================================
 # inlookaround.rxt -- SS3.4(d)/(e) and SS3.5's mirror image
 # ===========================================================================
+# [DD-14 wave B+C, code lane] THE TWO CELLS BELOW ARE PARKED, AND THE REASON
+# IS A TIMING GAP THE DESIGN DOES NOT ADDRESS rather than a wrong answer.
+LBWIDTH = (
+    "tests/known_fail/dd14_bc_open.rxt, %s. pcrec REFUSES this "
+    "(\"variable-length lookbehind is not implemented ... this one is "
+    "unbounded\") where 10.46 accepts it -- a tier-2 OVER-rejection, never a "
+    "miscompile. `pcrec_maxw`'s A_CALL arm answers PCREC_W_UNBOUNDED, which "
+    "design SS3.4(d) says is EXACT for a recursive callee and a sound "
+    "over-estimate for any other; tightening it for an ACYCLIC callee needs "
+    "the call graph, and the LOOKBEHIND WIDTH RULE (`la_widths`, "
+    "src/parse/mod_lookaround.c) runs INSIDE THE PARSE HOOK -- where it must, "
+    "to raise its refusal with a pattern offset -- while the graph does not "
+    "exist until every call is resolved at end of parse and every rewriting "
+    "pass has run. So no A_CALL arm of `pcrec_maxw` can make this compile: "
+    "the width is decided before the callee is known. THE FIX IS A DEFERRED "
+    "WIDTH RE-CHECK (the parse hook records the lookbehind instead of "
+    "refusing when its body carries a call; a post-graph pass recomputes and "
+    "refuses), which is a change to a landed module's core and a diagnostic "
+    "offset this wave did not take on.")
+
 INLOOKAROUND = [
     ("A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d) -- pcrec's "
      "own lookbehind subset is fixed-PER-BRANCH, so this composes without "
      "new machinery: a recursive callee has no bounded width and refuses.", [
         B(r"^(?:(?<g>ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
-          note="fixed width 2."),
+          parked=LBWIDTH % "cell 2", note="fixed width 2."),
         B(r"^(?:(?<g>a|ab)){0}ab(?<=(?&g))$", [('m', "ab")], RCLA + ",named-groups", groups=0,
+          parked=LBWIDTH % "cell 3",
           note="widths 1 and 2, the fixed-PER-BRANCH form pcrec ships "
                "(lookaround_design.md SS2.5)."),
         PERR(r"^(?:(?<g>a(?&g)?b)){0}aabb(?<=(?&g))$", 'pcre2',

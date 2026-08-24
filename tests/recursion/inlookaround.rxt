@@ -35,15 +35,13 @@
 # A CALL INSIDE A LOOKBEHIND NEEDS A WIDTH (design SS3.4d) -- pcrec's own lookbehind subset is fixed-PER-BRANCH, so this composes without new machinery: a recursive callee has no bounded width and refuses.
 # ====================================================================
 
-# fixed width 2.
-pattern ^(?:(?<g>ab)){0}ab(?<=(?&g))$
-features recursion,lookaround,atomic-groups,named-groups
-m "ab" 0 2
+# PARKED IN tests/known_fail/ -- NOT A CELL IN THIS FILE.
+# pattern: ^(?:(?<g>ab)){0}ab(?<=(?&g))$
+# tests/known_fail/dd14_bc_open.rxt, cell 2. pcrec REFUSES this ("variable-length lookbehind is not implemented ... this one is unbounded") where 10.46 accepts it -- a tier-2 OVER-rejection, never a miscompile. `pcrec_maxw`'s A_CALL arm answers PCREC_W_UNBOUNDED, which design SS3.4(d) says is EXACT for a recursive callee and a sound over-estimate for any other; tightening it for an ACYCLIC callee needs the call graph, and the LOOKBEHIND WIDTH RULE (`la_widths`, src/parse/mod_lookaround.c) runs INSIDE THE PARSE HOOK -- where it must, to raise its refusal with a pattern offset -- while the graph does not exist until every call is resolved at end of parse and every rewriting pass has run. So no A_CALL arm of `pcrec_maxw` can make this compile: the width is decided before the callee is known. THE FIX IS A DEFERRED WIDTH RE-CHECK (the parse hook records the lookbehind instead of refusing when its body carries a call; a post-graph pass recomputes and refuses), which is a change to a landed module's core and a diagnostic offset this wave did not take on.
 
-# widths 1 and 2, the fixed-PER-BRANCH form pcrec ships (lookaround_design.md SS2.5).
-pattern ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
-features recursion,lookaround,atomic-groups,named-groups
-m "ab" 0 2
+# PARKED IN tests/known_fail/ -- NOT A CELL IN THIS FILE.
+# pattern: ^(?:(?<g>a|ab)){0}ab(?<=(?&g))$
+# tests/known_fail/dd14_bc_open.rxt, cell 3. pcrec REFUSES this ("variable-length lookbehind is not implemented ... this one is unbounded") where 10.46 accepts it -- a tier-2 OVER-rejection, never a miscompile. `pcrec_maxw`'s A_CALL arm answers PCREC_W_UNBOUNDED, which design SS3.4(d) says is EXACT for a recursive callee and a sound over-estimate for any other; tightening it for an ACYCLIC callee needs the call graph, and the LOOKBEHIND WIDTH RULE (`la_widths`, src/parse/mod_lookaround.c) runs INSIDE THE PARSE HOOK -- where it must, to raise its refusal with a pattern offset -- while the graph does not exist until every call is resolved at end of parse and every rewriting pass has run. So no A_CALL arm of `pcrec_maxw` can make this compile: the width is decided before the callee is known. THE FIX IS A DEFERRED WIDTH RE-CHECK (the parse hook records the lookbehind instead of refusing when its body carries a call; a post-graph pass recomputes and refuses), which is a change to a landed module's core and a diagnostic offset this wave did not take on.
 
 # a RECURSIVE callee inside a lookbehind has no bounded width -- libpcre2 itself refuses this (err 125), which is the same answer pcrec's fixed-per-branch rule must give once `pcrec_maxw`'s A_CALL arm exists (design SS3.4d: infinity for any callee in a cycle).
 # libpcre2 ALSO refuses to compile this: pcre2_compile failed at offset 26: length of lookbehind assertion is not limited
