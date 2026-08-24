@@ -1,0 +1,254 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_population.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 1689bd7 2026-08-23
+# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/
+# RUN DATE   : 2026-08-23T20:15:26-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+python3: 3.14.4
+repo root: /home/duxevents/pcrec/worktrees/dd14design
+
+=== TIER A: tests/**/*.rxt (121 files) ================================
+scanned 2161 `pattern` lines across 121 .rxt files
+
+--- CALL (total occurrences: 6) ---
+  (?N) absolute            occurrences=0    patterns=0   
+  (?-N)/(?+N) relative     occurrences=0    patterns=0   
+  (?&name)                 occurrences=0    patterns=0   
+  (?P>name)                occurrences=0    patterns=0   
+  (?R)                     occurrences=0    patterns=0   
+  (?0)                     occurrences=0    patterns=0   
+  \g<...> call             occurrences=4    patterns=4   
+      tests/backrefs/d27/gating.rxt:58  pattern (a|b)\g<1>
+      tests/backrefs/d27/gating.rxt:71  pattern (a|b)\g<1>
+      tests/backrefs/d27/spellings.rxt:131  pattern (a|b)\g<1>
+      tests/backrefs/spellings.rxt:277  pattern ^(a|b)\g<1>$
+  \g'...' call             occurrences=2    patterns=2   
+      tests/backrefs/d27/spellings.rxt:136  pattern (a|b)\g'1'
+      tests/backrefs/spellings.rxt:282  pattern ^(a|b)\g'1'$
+
+--- BACKREF (total occurrences: 226) ---
+  \N bare numeric          occurrences=148  patterns=141 
+      tests/backrefs/caseless.rxt:29  pattern ^(a)(?i:\1)$
+      tests/backrefs/caseless.rxt:38  pattern ^(?i:(a))\1$
+      tests/backrefs/caseless.rxt:50  pattern ^((?i)a)\1$
+      tests/backrefs/caseless.rxt:60  pattern ^(?i)(a)(?-i)\1$
+      tests/backrefs/caseless.rxt:71  pattern ^(\xdf)\1$
+      tests/backrefs/caseless.rxt:77  pattern ^(ss)\1$
+      tests/backrefs/caseless.rxt:83  pattern ^(a)\1$
+      tests/backrefs/caseless.rxt:95  pattern ^(\w+)\1$
+      ... and 133 more
+  \g{...} braced           occurrences=26   patterns=25  
+      tests/backrefs/d27/dupnames.rxt:164  pattern (?J)^(?<a>x)(?<a>y)\g{a}$
+      tests/backrefs/d27/spellings.rxt:19  pattern ^(a|b)\g{1}$
+      tests/backrefs/d27/spellings.rxt:46  pattern ^(a)(b)\g{-1}$
+      tests/backrefs/d27/spellings.rxt:52  pattern ^(a)(b)\g{-2}$
+      tests/backrefs/d27/spellings.rxt:58  pattern \g{+1}(a)
+      tests/backrefs/d27/spellings.rxt:95  pattern (?<n>a)\g{n}
+      tests/backrefs/d27/syntax_errors.rxt:21  pattern \g{0}
+      tests/backrefs/d27/syntax_errors.rxt:55  pattern \g{-2}(a)
+      ... and 17 more
+  \gN bare (no delim)      occurrences=8    patterns=8   
+      tests/backrefs/d27/spellings.rxt:28  pattern ^(a)(b)\g2$
+      tests/backrefs/d27/spellings.rxt:36  pattern ^(a)(b)\g-1$
+      tests/backrefs/octal.rxt:186  pattern ^\g10$
+      tests/backrefs/spellings.rxt:30  pattern ^(a)\g1$
+      tests/backrefs/spellings.rxt:38  pattern ^(a)(b)\g2$
+      tests/backrefs/spellings.rxt:90  pattern ^(a)\g-1$
+      tests/backrefs/spellings.rxt:99  pattern ^(a)\g+1(b)$
+      tests/backrefs/spellings.rxt:131  pattern ^(a)\g0$
+  \k<...>                  occurrences=25   patterns=25  
+      tests/backrefs/d27/dupnames.rxt:39  pattern (?J)^(?<a>x)(?<a>y)\k<a>$
+      tests/backrefs/d27/dupnames.rxt:50  pattern (?J)^(?:(?<a>x)|(?<a>y))\k<a>$
+      tests/backrefs/d27/dupnames.rxt:59  pattern (?J)^(?<a>x?)(?<a>y)\k<a>$
+      tests/backrefs/d27/dupnames.rxt:70  pattern (?J)^(?<a>x)(?<a>y)(?<a>z)\k<a>$
+      tests/backrefs/d27/dupnames.rxt:104  pattern (?J)^(?:(?<a>q))?(?:(?<a>a|b\k<a>))+$
+      tests/backrefs/d27/gating.rxt:76  pattern (?<n>a)\k<n>
+      tests/backrefs/d27/gating.rxt:82  pattern (?<n>a)\k<n>
+      tests/backrefs/d27/gating.rxt:112  pattern (?J)^(?<a>x)(?<a>y)\k<a>$
+      ... and 17 more
+  \k'...'                  occurrences=4    patterns=4   
+      tests/backrefs/d27/dupnames.rxt:143  pattern (?J)^(?<a>x)(?<a>y)\k'a'$
+      tests/backrefs/d27/spellings.rxt:73  pattern (?<n>a)\k'n'
+      tests/backrefs/dupnames.rxt:194  pattern (?J)^(?:(?<a>x)|(?<a>y))\k'a'$
+      tests/backrefs/spellings.rxt:174  pattern ^(?<n>a)\k'n'$
+  \k{...}                  occurrences=7    patterns=7   
+      tests/backrefs/d27/dupnames.rxt:149  pattern (?J)^(?<a>x)(?<a>y)\k{a}$
+      tests/backrefs/d27/spellings.rxt:79  pattern (?<n>a)\k{n}
+      tests/backrefs/d27/syntax_errors.rxt:34  pattern \k{1}
+      tests/backrefs/dupnames.rxt:202  pattern (?J)^(?:(?<a>x)|(?<a>y))\k{a}$
+      tests/backrefs/spellings.rxt:182  pattern ^(?<n>a)\k{n}$
+      tests/backrefs/spellings.rxt:190  pattern ^(?<n>a)\k{ n }$
+      tests/backrefs/spellings.rxt:212  pattern ^(a)\k{1}$
+  (?P=name)                occurrences=8    patterns=8   
+      tests/backrefs/d27/dupnames.rxt:158  pattern (?J)^(?<a>x)(?<a>y)(?P=a)$
+      tests/backrefs/d27/gating.rxt:89  pattern (?P<n>a)(?P=n)
+      tests/backrefs/d27/spellings.rxt:86  pattern (?P<n>a)(?P=n)
+      tests/backrefs/dupnames.rxt:210  pattern (?J)^(?:(?<a>x)|(?<a>y))(?P=a)$
+      tests/backrefs/gated.rxt:52  pattern ^(?<n>a)(?P=n)$
+      tests/backrefs/spellings.rxt:241  pattern ^(?P<n>a)(?P=n)$
+      tests/backrefs/spellings.rxt:250  pattern ^(?<n>a)(?P=n)$
+      tests/backrefs/spellings.rxt:262  pattern ^(?<n>a)(?P=q)$
+
+--- LOOKAROUND (total occurrences: 1) ---
+  (?= lookahead            occurrences=0    patterns=0   
+  (?! neg lookahead        occurrences=0    patterns=0   
+  (?<= lookbehind          occurrences=1    patterns=1   
+      tests/assertions/d27/syntax_errors.rxt:170  pattern (?<=a\Kb)c
+  (?<! neg lookbehind      occurrences=0    patterns=0   
+
+TIER A CALL TOTAL: 6 occurrence(s) across 6 distinct pattern line(s) -- see tests/backrefs/spellings.rxt's `perr` rows: a call spelling that MUST refuse is exactly the case a `perr` block tests, so a nonzero count here does not mean pcrec compiles calls.
+TIER A BACKREF TOTAL (scale reference): 226 occurrences
+TIER A LOOKAROUND TOTAL (scale reference): 1 occurrences
+
+=== TIER B: broader raw sweep, 69 files (context, NOT population) ====
+files scanned:
+    docs/design/assertions_measurements/probes/probe_d475_scope.py
+    docs/design/assertions_measurements/probes/probe_ncls_refine.py
+    docs/design/assertions_measurements/probes/probe_startpos_context.py
+    docs/design/assertions_measurements/probes/probe_wordctx_budget.py
+    docs/design/assertions_measurements/probes/probe_wordctx_states.py
+    docs/design/assertions_measurements/probes/probe_z_oracle.py
+    docs/design/atomic_groups_measurements/probes/probe_atomic_semantics.py
+    docs/design/atomic_groups_measurements/probes/probe_cut_trail.py
+    docs/design/atomic_groups_measurements/probes/probe_free_discharge.py
+    docs/design/atomic_groups_measurements/probes/probe_lift_preference.py
+    docs/design/atomic_groups_measurements/probes/probe_possessify_under_cut.py
+    docs/design/atomic_groups_measurements/probes/probe_puc_targeted.py
+    docs/design/atomic_groups_measurements/probes/probe_uncut_superset.py
+    docs/design/backrefs_measurements/probes/br_oracle.py
+    docs/design/backrefs_measurements/probes/probe_br_semantics.py
+    docs/design/backrefs_measurements/probes/probe_caseless_fold.py
+    docs/design/backrefs_measurements/probes/probe_dupnames.py
+    docs/design/backrefs_measurements/probes/probe_erasure_hazard.py
+    docs/design/backrefs_measurements/probes/probe_expand_cost.py
+    docs/design/backrefs_measurements/probes/probe_octal_rule.py
+    docs/design/backrefs_measurements/probes/probe_publish_discipline.py
+    docs/design/backrefs_measurements/probes/probe_spellings.py
+    docs/design/backrefs_measurements/probes/simvm.py
+    docs/design/counterk_impl/probes/clamp_arith.py
+    docs/design/eng_brep_measurements/probes/census_rungs.py
+    docs/design/eng_brep_measurements/probes/pcre2_ctypes.py
+    docs/design/eng_brep_measurements/probes/probe_corpus_diff_pcre2.py
+    docs/design/eng_brep_measurements/probes/probe_dollar_multiline_pcre2.py
+    docs/design/eng_brep_measurements/probes/probe_possess.py
+    docs/design/eng_brep_measurements/probes/probe_possess_corpus.py
+    docs/design/eng_brep_measurements/probes/probe_possess_nested.py
+    docs/design/eng_brep_measurements/probes/probe_possess_pcre2.py
+    docs/design/eng_brep_measurements/probes/probe_rungs.py
+    docs/design/eng_brep_measurements/probes/regen_body.py
+    docs/design/k23_impl/probes/diff3.py
+    docs/design/k23_impl/probes/gen_cases.py
+    docs/design/k23_impl/probes/memo_proto.py
+    docs/design/k23_impl/probes/model.py
+    docs/design/k23_impl/probes/prune_proto.py
+    docs/design/lookaround_measurements/probes/la_oracle.py
+    docs/design/lookaround_measurements/probes/probe_captures.py
+    docs/design/lookaround_measurements/probes/probe_d66_subset.py
+    docs/design/lookaround_measurements/probes/probe_englook_sizing.py
+    docs/design/lookaround_measurements/probes/probe_expansions.py
+    docs/design/lookaround_measurements/probes/probe_follow_scoping.py
+    docs/design/lookaround_measurements/probes/probe_lookbehind_length.py
+    docs/design/lookaround_measurements/probes/probe_prefilter_hazard.py
+    docs/design/lookaround_measurements/probes/probe_spellings.py
+    docs/design/lookaround_measurements/probes/probe_substitution_population.py
+    docs/design/m46a_impl/probes/budget_calibration.py
+    docs/design/m46e_impl/probes/hybrid_min.py
+    docs/design/m46e_impl/probes/trie_switch.py
+    docs/design/mrl_impl/probes/dfadiff.py
+    docs/design/mrl_impl/probes/mrl.py
+    docs/design/subroutines_measurements/probes/probe_atomicity.py
+    docs/design/subroutines_measurements/probes/probe_captures.py
+    docs/design/subroutines_measurements/probes/probe_leftrec.py
+    docs/design/subroutines_measurements/probes/probe_spellings.py
+    docs/design/subroutines_measurements/probes/sr_oracle.py
+    docs/measurements/probe_altcls_pcre2norm.txt
+    docs/measurements/probe_quant.txt
+    docs/measurements/probe_subst.txt
+    docs/measurements/probe_uprops.txt
+    tests/registry/pc4_check.c
+    tests/registry/pc4_driver.c
+    tests/registry/pc4_subjects.h
+    tests/registry/pcre2_check.c
+    tests/registry/registry_check.c
+    tests/reject/run_reject_tests.sh
+
+--- CALL (raw text occurrences: 410) ---
+  (?N) absolute            occurrences=124
+  (?-N)/(?+N) relative     occurrences=29
+  (?&name)                 occurrences=125
+  (?P>name)                occurrences=5
+  (?R)                     occurrences=48
+  (?0)                     occurrences=8
+  \g<...> call             occurrences=47
+  \g'...' call             occurrences=24
+
+--- BACKREF (raw text occurrences: 477) ---
+  \N bare numeric          occurrences=341
+  \g{...} braced           occurrences=48
+  \gN bare (no delim)      occurrences=12
+  \k<...>                  occurrences=43
+  \k'...'                  occurrences=8
+  \k{...}                  occurrences=7
+  (?P=name)                occurrences=18
+
+--- LOOKAROUND (raw text occurrences: 476) ---
+  (?= lookahead            occurrences=155
+  (?! neg lookahead        occurrences=75
+  (?<= lookbehind          occurrences=200
+  (?<! neg lookbehind      occurrences=46
+
+--- per-file totals (files with >=1 hit in ANY bucket) ---
+  docs/design/subroutines_measurements/probes/probe_spellings.py         call=129  backref=19   lookaround=4   
+  docs/design/subroutines_measurements/probes/probe_leftrec.py           call=106  backref=0    lookaround=19  
+  docs/design/lookaround_measurements/probes/probe_lookbehind_length.py  call=0    backref=3    lookaround=100 
+  docs/design/lookaround_measurements/probes/probe_spellings.py          call=0    backref=11   lookaround=92  
+  docs/design/backrefs_measurements/probes/probe_octal_rule.py           call=0    backref=91   lookaround=0   
+  docs/design/backrefs_measurements/probes/probe_spellings.py            call=15   backref=54   lookaround=0   
+  docs/design/subroutines_measurements/probes/probe_captures.py          call=52   backref=15   lookaround=0   
+  docs/design/subroutines_measurements/probes/probe_atomicity.py         call=52   backref=0    lookaround=10  
+  tests/registry/registry_check.c                                        call=18   backref=39   lookaround=0   
+  docs/design/backrefs_measurements/probes/probe_erasure_hazard.py       call=0    backref=53   lookaround=3   
+  docs/design/lookaround_measurements/probes/probe_captures.py           call=0    backref=0    lookaround=54  
+  docs/design/backrefs_measurements/probes/probe_br_semantics.py         call=0    backref=50   lookaround=0   
+  tests/reject/run_reject_tests.sh                                       call=10   backref=28   lookaround=8   
+  docs/design/lookaround_measurements/probes/probe_expansions.py         call=0    backref=0    lookaround=43  
+  docs/design/lookaround_measurements/probes/probe_d66_subset.py         call=0    backref=0    lookaround=39  
+  docs/design/lookaround_measurements/probes/probe_prefilter_hazard.py   call=0    backref=1    lookaround=35  
+  docs/design/backrefs_measurements/probes/probe_publish_discipline.py   call=0    backref=32   lookaround=0   
+  tests/registry/pcre2_check.c                                           call=14   backref=15   lookaround=2   
+  docs/design/backrefs_measurements/probes/probe_dupnames.py             call=0    backref=29   lookaround=0   
+  docs/design/lookaround_measurements/probes/probe_follow_scoping.py     call=0    backref=6    lookaround=22  
+  docs/design/lookaround_measurements/probes/la_oracle.py                call=0    backref=0    lookaround=18  
+  docs/design/backrefs_measurements/probes/probe_caseless_fold.py        call=0    backref=15   lookaround=0   
+  docs/design/lookaround_measurements/probes/probe_englook_sizing.py     call=0    backref=0    lookaround=14  
+  docs/design/subroutines_measurements/probes/sr_oracle.py               call=12   backref=0    lookaround=0   
+  docs/design/backrefs_measurements/probes/probe_expand_cost.py          call=0    backref=11   lookaround=0   
+  docs/design/lookaround_measurements/probes/probe_substitution_population.py call=0    backref=0    lookaround=8   
+  docs/measurements/probe_quant.txt                                      call=2    backref=2    lookaround=0   
+  docs/design/backrefs_measurements/probes/br_oracle.py                  call=0    backref=3    lookaround=0   
+  docs/design/assertions_measurements/probes/probe_z_oracle.py           call=0    backref=0    lookaround=2   
+  docs/measurements/probe_subst.txt                                      call=0    backref=0    lookaround=2   
+  docs/design/atomic_groups_measurements/probes/probe_cut_trail.py       call=0    backref=0    lookaround=1   
+
+=== SUMMARY =========================================================
+Tier A (authoritative, tests/**/*.rxt `pattern` lines, 121 files, 2161 pattern lines):
+  CALL total       : 6
+  BACKREF total     : 226
+  LOOKAROUND total  : 1
+Tier B (context only, raw text sweep, 69 files):
+  CALL total        : 410
+  BACKREF total     : 477
+  LOOKAROUND total  : 476

@@ -1,0 +1,151 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_captures.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 9cbf31c 2026-08-23
+# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/
+# RUN DATE   : 2026-08-23T20:13:36-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+
+=== C1: the capture state AFTER a call returns =======================
+  (a|b)(?1)                              'ab'           ((0, 2), [(0, 1)])                  # the call matched 'b'; what is g1?
+  (a|b)(?1)                              'ba'           ((0, 2), [(0, 1)])                  # and the other way round
+  ^(?<x>a|b)(?&x)$                       'ab'           ((0, 2), [(0, 1)])                  # by name, same question
+  ^(a)((?1))$                            'aa'           ((0, 2), [(0, 1), (1, 2)])          # the call inside another group: g2 is the WRAPPER
+  ^(a)(?:(?1))$                          'aa'           ((0, 2), [(0, 1)])                  # non-capturing wrapper
+  ^((a)|(b))(?1)$                        'ab'           ((0, 2), [(0, 1), (0, 1), None])    # the call took the OTHER branch: are g2/g3 the caller's?
+  ^((a)|(b))(?1)$                        'ba'           ((0, 2), [(0, 1), None, (0, 1)])    # mirror
+
+# and the same six, asking whether the answer is 'the caller's value'
+# or 'unset' -- a call whose body captured and whose capture was
+# DISCARDED rather than restored looks different only here:
+  ^(?:(?<x>a)|q)?(?&x)$                  'a'            ((0, 1), [None])                    # group x never ran lexically; the call ran it. Set or unset?
+  ^(?(DEFINE)(?<x>a))(?&x)$              'a'            ((0, 1), [None])                    # the DEFINE form: x can ONLY be reached through the call
+  ^(?(DEFINE)(?<x>(a)(b)))(?&x)$         'ab'           ((0, 2), [None, None, None])        # and its inner groups
+
+=== C2: the capture state DURING the call, by callout ================
+# `(?C1)` sits INSIDE the called body, so it fires once per LEVEL.
+  ^(a(?C1))(?1)$                         'aa'         -> ((0, 2), [(0, 1)])
+      # C1 fires at the lexical run AND inside the call. If the two firings show DIFFERENT g1, the callee is writing the slots (H-RESTORE); if the second shows the caller's value untouched, H-NEVER
+      C1  at pos 1   capture_top=1  caps=[None]
+      C1  at pos 2   capture_top=2  caps=[(0, 1)]
+  ^((a)(?C1))(?1)$                       'aa'         -> ((0, 2), [(0, 1), (0, 1)])
+      # same, with an inner group to watch
+      C1  at pos 1   capture_top=3  caps=[None, (0, 1)]
+      C1  at pos 2   capture_top=3  caps=[(0, 1), (1, 2)]
+  ^(?(DEFINE)((a)(?C1)))(?1)$            'a'          -> ((0, 1), [None, None])
+      # a body reachable ONLY by call: every firing is inside a call. (?1) not (?2): the FIRST version called the inner group, which does not contain the callout, and the cell fired nothing -- a probe that silently exercises nothing
+      C1  at pos 1   capture_top=3  caps=[None, (0, 1)]
+
+=== C3: DEPTH > 1 -- three levels, each level's own view ==============
+  ^(a(?1)?b(?C1))$                       'aabb'       -> ((0, 4), [(0, 4)])
+      # C1 fires once per level as each level's body completes
+      C1  at pos 3   capture_top=1  caps=[None]
+      C1  at pos 4   capture_top=1  caps=[None]
+  ^((a)(?1)?(b)(?C1))$                   'aabb'       -> ((0, 4), [(0, 4), (0, 1), (3, 4)])
+      # with two inner groups; watch g2/g3 per level
+      C1  at pos 3   capture_top=4  caps=[None, (1, 2), (2, 3)]
+      C1  at pos 4   capture_top=4  caps=[None, (0, 1), (3, 4)]
+  ^((a)(?1)?(b))$                        'aabb'         ((0, 4), [(0, 4), (0, 1), (3, 4)])  # and the AFTER-the-fact answer
+  ^((a)(?1)?(b))$                        'aaabbb'       ((0, 6), [(0, 6), (0, 1), (5, 6)])  # three levels
+  ^\((\w(?1)?\w)\)$                      '(abcd)'       ((0, 6), [(1, 5)])                  # the classic balanced form
+
+# THE DEPTH-ORDER QUESTION: after a recursion unwinds, whose values
+# survive -- the OUTERMOST level's or the innermost's?
+  ^((a)(?1)?b)$                          'aabb'         ((0, 4), [(0, 4), (0, 1)])          # g2 at depth 2 is (1,2); after unwind?
+  ^((a)(?1)?b)$                          'aaabbb'       ((0, 6), [(0, 6), (0, 1)])          # depth 3
+
+=== C4: after a FAILED call ==========================================
+  ^(?:(a)(?1)x|(a)y)$                    'aay'          None                                # the call ran and then the follow failed
+  ^(?:((a)(b))(?1)x|q(?1))$              'qab'          ((0, 3), [None, None, None])        # the first branch's call wrote g1..g3 and died; the second branch's call ran the same body
+  ^(?:(a)(?1)x)?(a)y$                    'ay'           ((0, 2), [None, (0, 1)])            # the whole attempt was abandoned
+  ^(?:((a)(?C1))(?1)x|(?1)y)$            'ay'         -> ((0, 2), [None, None])
+      # watch the slots across a failed call and a second call
+      C1  at pos 1   capture_top=3  caps=[None, (0, 1)]
+      C1  at pos 1   capture_top=3  caps=[None, (0, 1)]
+
+=== C5: INHERITANCE -- what does the callee see of the CALLER? =======
+# The callee body contains a BACKREFERENCE to a group set OUTSIDE it.
+# If a call gets a fresh (all-unset) capture environment, the
+# reference is unset and, by PCRE2's default, FAILS. If it inherits,
+# it matches. One cell, two designs.
+  ^(a)(b\1)(?2)$                         'ababa'        ((0, 5), [(0, 1), (1, 3)])          # group 2's body is `b\1`; the call re-runs it. \1 = 'a' if inherited
+  ^(a)(b\1)(?2)$                         'abab'         None                                # control: if \1 were UNSET-and-empty the subject would be shorter
+  ^(x)(?(DEFINE)(?<g>y\1))(?&g)$         'xyx'          ((0, 3), [(0, 1), None])            # a DEFINE body referencing an outer group
+  ^(x)(?(DEFINE)(?<g>y\1))(?&g)$         'xy'           None                                # control: the same without the referenced text
+# and with PCRE2_MATCH_UNSET_BACKREF, where an unset reference matches
+# the empty string -- so the two designs become distinguishable by
+# LENGTH rather than by match/no-match:
+  ^(a)(b\1)(?2)$                         'ababa'        ((0, 5), [(0, 1), (1, 3)])          # inherited
+  ^(a)(b\1)(?2)$                         'abab'         None                                # would match if the call reset \1
+
+# THE SAME QUESTION AT DEPTH: a recursive body referencing its own
+# group. At depth 2 the group's value is the DEPTH-2 one if writes
+# happen, the depth-1 one if they do not.
+  ^((a|b)(?1)?\2)$                       'abba'         ((0, 4), [(0, 4), (0, 1)])          # self-referential recursion
+  ^((a|b)(?1)?\2)$                       'abab'         None                                # the other pairing
+  ^((a|b)(?C1)(?1)?\2)$                  'abba'       -> ((0, 4), [(0, 4), (0, 1)])
+      # watch g2 per level
+      C1  at pos 1   capture_top=3  caps=[None, (0, 1)]
+      C1  at pos 2   capture_top=3  caps=[None, (1, 2)]
+      C1  at pos 3   capture_top=3  caps=[None, (2, 3)]
+      C1  at pos 4   capture_top=3  caps=[None, (3, 4)]
+
+=== C6: the CALLED GROUP'S OWN capture while it is being called ======
+  ^(a(?C1))(?1)$                         'aa'         -> ((0, 2), [(0, 1)])
+      # at the second firing, is g1 (0,1) [inherited], unset [reset], or (1,2) [being written by the callee]?
+      C1  at pos 1   capture_top=1  caps=[None]
+      C1  at pos 2   capture_top=2  caps=[(0, 1)]
+  ^(?(DEFINE)(?<g>a(?C1)))(?&g)(?&g)$    'aa'         -> ((0, 2), [None])
+      # two calls to the same body; the second sees the first's leavings?
+      C1  at pos 1   capture_top=1  caps=[None]
+      C1  at pos 2   capture_top=1  caps=[None]
+
+=== C7: \K and the reported start ===================================
+  ^(a\Kb)(?1)$                           'abab'         ((3, 4), [(0, 2)])                  # \K inside a called group
+  ^(?(DEFINE)(?<g>a\Kb))(?&g)$           'ab'           ((1, 2), [None])                    # \K reached only by a call
+  ^(a)\K(?1)$                            'aa'           ((1, 2), [(0, 1)])                  # \K outside, call after
+  ^(a(?1)?\Kb)$                          'aabb'         ((3, 4), [(0, 4)])                  # \K in a recursive body
+
+=== C8: (?J) duplicate names and a call BY NAME ======================
+  ^(?<a>x)(q)(?<a>y)$                    'xqy'          ((0, 3), [(0, 1), (1, 2), (2, 3)])  # the dupname declaration itself
+  ^(?<a>x)(q)(?<a>y)(?&a)$               'xqyx'         ((0, 4), [(0, 1), (1, 2), (2, 3)])  # a call to a DUPLICATED name: which group does it run?
+  ^(?<a>x)(q)(?<a>y)(?&a)$               'xqyy'         None                                # or is it the LAST declaration?
+  ^(?<a>x|z)(q)(?<a>y)(?&a)$             'xqyz'         ((0, 4), [(0, 1), (1, 2), (2, 3)])  # the first declaration's alternation, to be sure it RAN it
+  ^(?<a>x)(q)(?<a>y)\g<a>$               'xqyx'         ((0, 4), [(0, 1), (1, 2), (2, 3)])  # \g<name> to a duplicated name
+  ^(?<a>x)(q)(?<a>y)\k<a>$               'xqyx'         ((0, 4), [(0, 1), (1, 2), (2, 3)])  # the BACKREFERENCE to the same duplicated name, for contrast
+  ^(?<a>x)(q)(?<a>y)\k<a>$               'xqyy'         None                                # the BACKREFERENCE to the same duplicated name, for contrast
+
+# THE DISCRIMINATOR the rows above cannot give: make the FIRST
+# declaration UNSET. A call that runs 'the first DECLARATION' and a
+# reference that reads 'the first SET member' now disagree.
+  ^(?:(?<a>x)|q)(?<a>y)(?&a)$            'qyx'          ((0, 3), [None, (1, 2)])            # CALL to a dupname whose first declaration did not run
+  ^(?:(?<a>x)|q)(?<a>y)(?&a)$            'qyy'          None                                # CALL to a dupname whose first declaration did not run
+  ^(?:(?<a>x)|q)(?<a>y)(?&a)$            'qy'           None                                # CALL to a dupname whose first declaration did not run
+  ^(?:(?<a>x)|q)(?<a>y)\k<a>$            'qyx'          None                                # REFERENCE, same shape
+  ^(?:(?<a>x)|q)(?<a>y)\k<a>$            'qyy'          ((0, 3), [None, (1, 2)])            # REFERENCE, same shape
+
+# and does a CALL to a duplicated name RETRY into the later members
+# of the run on backtracking, the way the reference chain does?
+  ^(?<a>x)(q)(?<a>y)(?&a)z$              'xqyxz'        ((0, 5), [(0, 1), (1, 2), (2, 3)])  # if the call retried the second declaration, 'xqyyz' matches
+  ^(?<a>x)(q)(?<a>y)(?&a)z$              'xqyyz'        None                                # if the call retried the second declaration, 'xqyyz' matches
+  ^(?<a>x)(q)(?<a>y)(?&a)$               'xqyx'         ((0, 4), [(0, 1), (1, 2), (2, 3)])  # no follow to force a retry
+  ^(?<a>x)(q)(?<a>y)(?&a)$               'xqyy'         None                                # no follow to force a retry
+
+=== REACHABILITY GUARD ==============================================
+outcomes populated: ['match', 'nomatch', 'traced']
+every callout cell fired at least one callout

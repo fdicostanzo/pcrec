@@ -1,0 +1,387 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_premises.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 55e3383 2026-08-23
+# RUN FROM REPO COMMIT        : 55e3383 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/subroutines_measurements/out/premises.txt
+# RUN DATE   : 2026-08-23T20:43:07-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+pcrec binary: build/pcrec (55e3383)
+
+=== AXIS A: every subroutine-call spelling's refusal on HEAD =========
+# columns: exit-status | pattern | diagnostic
+# --- default feature set (std1) ---
+exit=1 | (a)(?1)                            | pcrec: (?1...) requires module 'recursion' (pattern offset 3)
+exit=1 | (?<n>a)(?&n)                       | pcrec: (?<...) requires module 'named-groups' (pattern offset 0)
+exit=1 | (a(?R)?b)                          | pcrec: (?R...) requires module 'recursion' (pattern offset 2)
+exit=1 | (a)\g<1>                           | pcrec: \g requires module 'recursion' (pattern offset 3)
+# --- --features all (module 'recursion' ENABLED but unbuilt: D65's
+#     enabled-but-not-implemented diagnostic, a DIFFERENT sentence) ---
+exit=1 | (a)(?1)                            | pcrec: module 'recursion' is enabled but (?1...) is not implemented yet (pattern offset 3)
+exit=1 | (a)(?2)(b)                         | pcrec: module 'recursion' is enabled but (?2...) is not implemented yet (pattern offset 3)
+exit=1 | (a)(?9)                            | pcrec: module 'recursion' is enabled but (?9...) is not implemented yet (pattern offset 3)
+exit=1 | (?+1)(a)                           | pcrec: module 'recursion' is enabled but (?+...) is not implemented yet (pattern offset 0)
+exit=1 | (a)(?+1)(b)                        | pcrec: module 'recursion' is enabled but (?+...) is not implemented yet (pattern offset 3)
+exit=1 | (a)(?-1)                           | pcrec: module 'recursion' is enabled but (?-...) is not implemented yet (pattern offset 3)
+exit=1 | (a)(a)(?-2)                        | pcrec: module 'recursion' is enabled but (?-...) is not implemented yet (pattern offset 6)
+exit=1 | (a)(?-01)                          | pcrec: module 'recursion' is enabled but (?-...) is not implemented yet (pattern offset 3)
+exit=1 | (?<n>a)(?&n)                       | pcrec: module 'recursion' is enabled but (?&...) is not implemented yet (pattern offset 7)
+exit=1 | (?P<n>a)(?P>n)                     | pcrec: module 'recursion' is enabled but (?P...) is not implemented yet (pattern offset 8)
+exit=1 | (a)\g<1>                           | pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
+exit=1 | (?<n>a)\g<n>                       | pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 7)
+exit=1 | (a)\g'1'                           | pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
+exit=1 | (?<n>a)\g'n'                       | pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 7)
+exit=1 | (a)\g<-1>                          | pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
+exit=1 | (a)\g<+1>(b)                       | pcrec: module 'recursion' is enabled but \g is not implemented yet (pattern offset 3)
+exit=1 | (a(?R)?b)                          | pcrec: module 'recursion' is enabled but (?R...) is not implemented yet (pattern offset 2)
+exit=1 | (a)(?0)                            | pcrec: module 'recursion' is enabled but (?0...) is not implemented yet (pattern offset 3)
+exit=1 | (?(DEFINE)(?<x>a))(?&x)            | pcrec: module 'conditionals' is enabled but (?(...) is not implemented yet (pattern offset 0)
+exit=0 | (a)\g{1}                           | COMPILES (no refusal)
+exit=0 | (a)\1                              | COMPILES (no refusal)
+exit=0 | (a)\g1                             | COMPILES (no refusal)
+
+# --- the \g DOORWAY IS SHARED between two modules: which rows claim it? ---
+syntax=\g{-1}     module=backrefs     built=built
+syntax=\g<1>      module=recursion    built=unbuilt
+syntax=\g'1'      module=recursion    built=unbuilt
+
+=== AXIS B: the registry rows for module 'recursion' today ===========
+# from --list-syntax; columns per the dump's own header
+kind=esc   sel=g  syntax=\g<1>                              engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=esc   sel=g  syntax=\g'1'                              engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=P  syntax=(?P>n)                             engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=&  syntax=(?&name)                           engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=R  syntax=(?R)                               engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=0  syntax=(?0)                               engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=1  syntax=(?1)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=2  syntax=(?2)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=3  syntax=(?3)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=4  syntax=(?4)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=5  syntax=(?5)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=6  syntax=(?6)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=7  syntax=(?7)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=8  syntax=(?8)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=9  syntax=(?9)                               engines=vm   status=module  roadmap=planned  quant=no   built=unbuilt
+kind=group sel=+  syntax=(?+1)(a)                           engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(?-01)                          engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(?-1)                           engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(?-2)                        engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(?-3)                     engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(a)(?-4)                  engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(a)(a)(?-5)               engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(a)(a)(a)(?-6)            engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(a)(a)(a)(a)(?-7)         engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(a)(a)(a)(a)(a)(?-8)      engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+kind=group sel=-  syntax=(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)   engines=vm   status=module  roadmap=planned  quant=yes  built=unbuilt
+# row count for module 'recursion':
+26
+# any 'recursion' row reading built (expect NONE before implementation):
+0
+# the DISTINCT selector characters the recursion rows claim at the (? doorway:
+& + 0 1 2 3 4 5 6 7 8 9 P R 
+# for contrast, the rows the CONDITIONALS module owns (DEFINE lives there):
+sel=(   syntax=(?(1)a|b)              built=unbuilt
+# conditionals row count:
+1
+
+=== AXIS C: the give-up code space, and every site the FLOOR MOVE touches ===
+# --- as the DFA emitter spells the block into every artifact ---
+          "#define PCREC_ERR_STEPS  (-2)\n"
+          "#define PCREC_ERR_FRAMES (-3)\n"
+          "#define PCREC_ERR_WORK   (-4)\n"
+          "#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
+          "below: reserved (D49) */\n"
+          "\n"
+# --- grep: PCREC_ERR_FLOOR, whole tree, excluding docs/dev ---
+  ./docs/spec/CLAUDE.md:25:  (`RX_ERR_STEPS`/`_FRAMES`/`_WORK`, the `RX_ERR_FLOOR` partition), the
+  ./docs/spec/match_api.md:171:   `PCREC_ERR_FLOOR` (§4), the caps-array unset sentinel `PCREC_UNSET`
+  ./docs/spec/match_api.md:209: * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
+  ./docs/spec/match_api.md:213: * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
+  ./docs/spec/match_api.md:222:#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+  ./docs/spec/match_api.md:822:#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+  ./docs/spec/match_api.md:850:enforce `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` — this binds
+  ./docs/design/match_api_m4.md:303:/* RX_ERR_FLOOR  the give-up block's floor. Codes in [RX_ERR_FLOOR, -2] are
+  ./docs/design/match_api_m4.md:464: * give-up code in [RX_ERR_FLOOR, -2] (D49, superseding D42.3's collapse).
+  ./docs/design/match_api_m4.md:510:  splits: `[RX_ERR_FLOOR, -2]` are typed give-up codes that a matcher DOES
+  ./docs/design/match_api_m4.md:516:      if (ret < RX_ERR_FLOOR) __builtin_trap();
+  ./docs/design/counterk_impl/counterk_design.md:1811:D44.5 called final); `RX_ERR_WORK`/`RX_ERR_FLOOR` beside their two siblings;
+  ./docs/design/m6read_samples/vm_before.c:394: * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up
+  ./docs/design/m6read_samples/vm_after.h:23: * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
+  ./docs/design/m6read_samples/vm_after.h:27: * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
+  ./docs/design/m6read_samples/vm_after.h:36:#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+  ./docs/design/m6read_samples/vm_after.c:653: * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up
+  ./docs/design/m6read_samples/dfa_after.h:23: * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
+  ./docs/design/m6read_samples/dfa_after.h:27: * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
+  ./docs/design/m6read_samples/dfa_after.h:36:#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+  ./docs/design/m6read_samples/vm_before.h:23: * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
+  ./docs/design/m6read_samples/vm_before.h:27: * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
+  ./docs/design/m6read_samples/vm_before.h:36:#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+  ./docs/design/m6read_samples/dfa_before.h:23: * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the
+  ./docs/design/m6read_samples/dfa_before.h:27: * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort
+  ./docs/design/m6read_samples/dfa_before.h:36:#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; below: reserved (D49) */
+  ./docs/design/subroutines_measurements/probes/probe_premises.sh:93:echo "# --- grep: PCREC_ERR_FLOOR, whole tree, excluding docs/dev ---"
+  ./docs/design/subroutines_measurements/probes/probe_premises.sh:94:grep -rn 'PCREC_ERR_FLOOR\|RX_ERR_FLOOR' --include='*.c' --include='*.h' --include='*.sh' \
+  ./docs/design/design_callout_abi.md:159:D49 partitions the `< −1` space: `[RX_ERR_FLOOR, −2]` are TYPED GIVE-UP codes
+  ./docs/design/design_callout_abi.md:164:    if (ret < RX_ERR_FLOOR) __builtin_trap();
+  ./docs/design/subroutines_design.md:1116:| 1 | `src/gen/emit_dfa.c:391-394` | the emitted `#define` block: `PCREC_ERR_RECURSE (-5)` added, `PCREC_ERR_FLOOR` becomes `(-5)` |
+  ./docs/design/subroutines_design.md:1122:| 7 | `docs/spec/match_api.md:171, 209, 213, 222, 822, 850` | the authoritative contract, including the `if (ret < PCREC_ERR_FLOOR) __builtin_trap();` obligation |
+  ./docs/design/subroutines_design.md:1858:`PCREC_ERR_FLOOR` −4 → −5, at §5.6's eight source-of-truth sites plus the two
+  ./tests/codegen/run_codegen_tests.sh:848:    new_names="PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_RUNG_FRAMES_BOUNDED PCREC_VM_RUNG_FRAMES_UNBOUNDED PCREC_VM_RUNG_REVDET PCREC_VM_RUNG_COUNTER PCREC_VM_STRAT_POSSESSIVE PCREC_VM_STRAT_BACKTRACKING PCREC_VM_PRUNE_CLAMPED PCREC_VM_PRUNE_UNCLAMPED"
+  ./tests/codegen/run_codegen_tests.sh:860:    old_names="RX_ERR_STEPS RX_ERR_FRAMES RX_ERR_WORK RX_ERR_FLOOR RX_UNSET RX_VM_RUNG_CURSOR RX_VM_RUNG_FRAMES_BOUNDED RX_VM_RUNG_FRAMES_UNBOUNDED RX_VM_RUNG_REVDET RX_VM_RUNG_COUNTER RX_VM_STRAT_POSSESSIVE RX_VM_STRAT_BACKTRACKING RX_VM_PRUNE_CLAMPED RX_VM_PRUNE_UNCLAMPED"
+  ./tests/codegen/run_codegen_tests.sh:883:    for n in PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_FLOOR PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_STRAT_POSSESSIVE PCREC_VM_PRUNE_CLAMPED; do
+  ./src/gen/emit_vm.c:6314:        " * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up\n"
+  ./src/gen/emit_dfa.c:193: *                      RX_ERR_WORK/RX_ERR_FLOOR moved OUT of this function
+  ./src/gen/emit_dfa.c:375:        " * typed give-up code in [PCREC_ERR_FLOOR, -2] -- one per way the\n"
+  ./src/gen/emit_dfa.c:379:        " * strictly BELOW PCREC_ERR_FLOOR stay RESERVED for a future abort\n"
+  ./src/gen/emit_dfa.c:394:        "#define PCREC_ERR_FLOOR  (-4)  /* give-ups: [FLOOR,-2]; "
+  ./lib/CLAUDE.md:153:inside [`PCREC_ERR_FLOOR`, −2], D49 — unprefixed since [ABI-NS], D60),
+# --- grep: the R_* internal sentinels the VM emitter defines ---
+  5680:    sb_printf(c, "#define %s_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)\n", v.up);
+  5681:    sb_printf(c, "#define %s_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)\n", v.up);
+  5682:    sb_printf(c, "#define %s_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)\n\n", v.up);
+  5708:            "            if (run->work_left < 0) return %s_R_WORK;               \\\n"
+  5765:            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+  5774:            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+  5794:            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+  5805:            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+  6051:        sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
+  6248:        "        if (result == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
+  6249:        "        if (result == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
+  6250:        "        if (result == %s_R_WORK)   return PCREC_ERR_WORK;\n"
+# --- the artifact-side collapse in the search entry ---
+          "    ctx.caps = NULL; ctx.user = NULL;\n"
+          "    for (;;) {\n"
+          "        ctx.pos = attempt_position;\n"
+          "        result = %s_match_anchored(&ctx, &run%s%s);\n"
+          "        if (result == %s_R_STEPS)  return PCREC_ERR_STEPS;\n"
+          "        if (result == %s_R_FRAMES) return PCREC_ERR_FRAMES;\n"
+          "        if (result == %s_R_WORK)   return PCREC_ERR_WORK;\n"
+          "        if (result >= 0) break;\n"
+          "        %s_reset_for_next_attempt(&run);\n"
+          "        if (attempt_position >= subject_length) return 0;\n"
+          "        attempt_position++;\n"
+          "%s"
+          "    }\n"
+# --- what an artifact actually contains today (a VM-routed pattern) ---
+  89:#define RX_R_STEPS  ((ptrdiff_t)PCREC_ERR_STEPS)
+  90:#define RX_R_FRAMES ((ptrdiff_t)PCREC_ERR_FRAMES)
+  91:#define RX_R_WORK   ((ptrdiff_t)PCREC_ERR_WORK)
+  100:            if (run->work_left < 0) return RX_R_WORK;               \
+  118:        if (run->trail_depth >= RX_TRAIL_FRAMES) return RX_R_FRAMES;    \
+  127:        if (run->resume_depth >= RX_RESUME_FRAMES) return RX_R_FRAMES;       \
+  219:    if (--run->steps_left < 0) return RX_R_STEPS;
+  268:        if (result == RX_R_STEPS)  return PCREC_ERR_STEPS;
+  269:        if (result == RX_R_FRAMES) return PCREC_ERR_FRAMES;
+  270:        if (result == RX_R_WORK)   return PCREC_ERR_WORK;
+  284: * code in [PCREC_ERR_FLOOR, -2] for each way the engine can give up
+  285: * (PCREC_ERR_STEPS, PCREC_ERR_FRAMES, PCREC_ERR_WORK). Anything BELOW the floor
+
+=== AXIS D: the VM primitives, quoted from src/gen/emit_vm.c =========
+# --- RX_TRAIL / RX_SET / RX_PUSH / RX_CUT, the untraced forms ---
+      }
+  
+      if (!v.tracing) {
+          sb_printf(c,
+              "#define %s_TRAIL(slot_) do {                                  \\\n"
+              "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+              "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
+              "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
+              "        run->trail_depth++;                                             \\\n"
+              "    } while (0)\n"
+              "#define %s_SET(slot_, v_) do {                                \\\n"
+              "        %s_TRAIL(slot_); slot_values[(slot_)] = (v_);                 \\\n"
+              "    } while (0)\n"
+              "#define %s_PUSH(lbl_, p_) do {                                \\\n"
+              "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+              "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
+              "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
+              "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
+              "        run->resume_depth++;                                             \\\n"
+              "    } while (0)\n"
+              /* [ENG-BREP] the possessive CUT. No trail rewind, deliberately —
+               * see vm_cut()'s comment: the frames are dead, the capture writes
+               * they would have rewound are not. */
+              "#define %s_CUT(slot_) do {                                   \\\n"
+              "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
+              "    } while (0)\n\n",
+              v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up);
+      } else {
+          /* The traced forms. Same mechanism, same order of operations, one
+           * fprintf each — deliberately NOT a separate implementation: a traced
+           * run that took a different path from the untraced one would be a
+# --- the fail label: the ONLY backtracker and the ONLY indirect jump ---
+          "\n%s_fail: __attribute__((unused));\n"
+          "    /* THE ONLY BACKTRACKER AND THE ONLY INDIRECT JUMP.\n"
+          "     * A step is one backtrack resumption (4.2), counted at exactly\n"
+          "     * this place — so forward progress is FREE (a linear match over\n"
+          "     * 100 MB costs zero steps), the steps_left is subject-length-\n"
+          "     * independent, and the counter measures precisely the thing it is\n"
+          "     * meant to bound. D22: DD-2 is ROBUSTNESS, not a security\n"
+          "     * boundary, and it must not be traded against execution speed. */\n"
+          "%s%s"
+          "    if (run->resume_depth == 0) return -1;\n",
+          v.p, accept_tr, v.p, fail_tr, exhaust_tr);
+      if (has_budget)
+          sb_printf(c, "    if (--run->steps_left < 0) return %s_R_STEPS;\n", v.up);
+      {
+          char pop_tr[352];
+          pop_tr[0] = 0;
+          if (v.tracing)
+              snprintf(pop_tr, sizeof pop_tr,
+                       "        fprintf(stderr, \"[%s] pop   #%%u resume L%%d at"
+                       " scan_position %%zu (rewind trail %%u -> %%u)\\n\",\n"
+                       "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
+                       " run->resume_stack[frame_index].trail_mark);\n", v.p);
+          sb_printf(c,
+              "    {\n"
+              "        const unsigned frame_index = --run->resume_depth;\n"
+              "        scan_position = run->resume_stack[frame_index].resume_position;\n"
+              "%s", pop_tr);
+      }
+      sb_puts(c,
+          "        while (run->trail_depth > run->resume_stack[frame_index].trail_mark) {\n"
+          "            run->trail_depth--;\n"
+          "            slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value;\n"
+          "        }\n"
+          "        goto *run->resume_stack[frame_index].resume_label;\n"
+          "    }\n"
+          "}\n\n");
+  
+# --- vm_cut(), the interface §5 reuses unchanged ---
+      v->nwork++;
+      vm_ev(v, VE_NOTE, 0, 0, role);
+  }
+  
+  static void vm_work(Vm *v, const char *countexpr, const char *role)
+  {
+      vm_work_at(v, "    ", countexpr, role);
+  }
+  
+  static void vm_cut(Vm *v, int slot, const char *role)
+  {
+      /* BEFORE the cut, necessarily: RX_CUT overwrites `run->resume_depth` with the mark,
+       * so after it runs the count this charge needs no longer exists. */
+      {
+          char cnt[192];
+          snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - slot_values[%d]", slot);
+          vm_work(v, cnt, "work charge: frames discarded by this cut");
+      }
+      sb_printf(v->b, "    %s_CUT(%d);\n", v->up, slot);
+      vm_ev(v, VE_CUT, slot, 0, role);
+  }
+  
+  /* [D46] the SIXTH primitive: writes no C (the rung was already selected by
+   * the C written around this call), but records the SAME "one call, one
+   * truth" way every other primitive does — sets the artifact-wide summary
+   * bit AND appends the per-quantifier VE_RUNG event in one place, so the
+# --- the run-state struct: what a call level would have to save ---
+          " *   *_depth       how many entries of each are currently live\n"
+          " */\n"
+          "typedef struct {\n"
+          "    ptrdiff_t slot_values[%s_NSLOTS];\n"
+          "    struct { const void *resume_label; size_t resume_position;\n"
+          "             unsigned trail_mark;%s } resume_stack[%s_RESUME_FRAMES];\n"
+          "    struct { unsigned slot_index; ptrdiff_t saved_value; }\n"
+          "             trail[%s_TRAIL_FRAMES];\n"
+          "    unsigned resume_depth, trail_depth;\n",
+          v.up, v.tracing ? " int id;" : "", v.up, v.up);
+      if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
+      if (work_budget != PCREC_WORK_BUDGET_NONE)
+          sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
+      sb_printf(c, "} %s_run_state;\n\n", v.p);
+
+=== AXIS E: the [M6.5] reference-resolution machinery a CALL reuses ===
+# --- the four backref PORTS and the end-of-parse pass ---
+  894:     * how many. Resolved in one pass by `pcrec_bref_resolve` at the end of
+  1843: * FOUR PORTS, ONE NODE KIND. `pcrec_brport_digit` is the ten digit rows'
+  1849:ExtResult pcrec_brport_digit(Ctx *cx, const RegRow *rw, ExtWant want,
+  1851:ExtResult pcrec_brport_g(Ctx *cx, const RegRow *rw, ExtWant want,
+  1853:ExtResult pcrec_brport_k(Ctx *cx, const RegRow *rw, ExtWant want,
+  1855:ExtResult pcrec_brport_pname(Ctx *cx, const RegRow *rw, ExtWant want,
+  1881:Ast *pcrec_bref_resolve(Ctx *cx, Ast *root);
+  1891:bool pcrec_has_bref(const Ast *a);
+  1904:void pcrec_bref_mark(const Ast *a, bool *mark, int nmark);
+# --- PendingRef: the record a port leaves behind ---
+  typedef struct PendingRef {
+      Ast                *node;    /* the A_BREF whose `refs` this fills in */
+      /* An absolute group number, read only when `name` is NULL. It may be ZERO
+       * OR NEGATIVE: `\g{-1}` at a count of zero computes 0, and whether a
+       * number names a group is the ONE question this list defers. Splitting
+       * that check between the port and the resolver would be the second home
+       * §5.3 exists to prevent — and it was a real defect, not a hypothetical:
+       * it made the `\g` row's own `syntax` refuse at the port, so D65's
+       * built-status column called a construct this module BUILDS `unbuilt`. */
+      int                 number;
+      const char         *name;    /* NULL selects `number`; else resolve this */
+      size_t              at;      /* pattern offset the diagnostic points at */
+      const char         *what;    /* the spelling, for that diagnostic */
+      struct PendingRef  *next;
+  } PendingRef;
+  
+  struct Ctx {
+      Arena                arena;
+      const char          *pat;
+      size_t               patlen;
+      size_t               pos;      /* parser cursor */
+      int                  depth;    /* parser group-nesting depth (bounded) */
+      /* SCOPED PARSE STATE (PARSE-1; widened to a struct at MOD-0.5c, the
+       * D31-note's "expect a struct, not more bools"). Seeded at parse entry
+       * and saved/restored around every BODY-CARRYING group, because that is
+       * where PCRE2 restores it: measured 17/17 against libpcre2 10.46,
+       * `(?i)` set anywhere inside a group stays in force to the end of THAT
+# --- the --no-captures A_CAP deletion a CALL TARGET must survive ---
+  490: * ever called on a `--no-captures` build — see `pcrec_bref_resolve`. Returns
+  539:     * below never ran and every `--no-captures` artifact with a group kept the
+  580:    /* §6.3's `--no-captures` RULING. The flag drops the group slots a CALLER
+  584:     * which restores the tree a `--no-captures` parse has always produced.
+  587:     * tree is what a `--no-captures` parse has always produced — which is the
+#   MEASURED: does a group survive --no-captures when only a BACKREF names it?
+    slots for group 1 with a backref, --no-captures: 9
+    slots for group 1 with NO reference,  --no-captures: 0
+# --- named-group declarations: where a name maps to a number ---
+  1799:ExtResult pcrec_ngport_declare(Ctx *cx, const RegRow *rw, ExtWant want,
+
+=== AXIS F: computed goto -- is a label address already a VALUE? =====
+# --- every emitted && (label address) site in the VM emitter ---
+  16: *      fine WITHIN a call — APPROACH §6's A-4/A-5 "&&label does not survive a
+  2029:        sb_printf(v->b, "    %s_PUSH(%d, &&%s_L%d, %s);\n",
+  2032:        sb_printf(v->b, "    %s_PUSH(&&%s_L%d, %s);\n",
+# --- every INDIRECT jump the emitter can emit ---
+  10: * function — the `goto *` at the fail label, which fires once per backtrack
+  6072:        "        goto *run->resume_stack[frame_index].resume_label;\n"
+# --- in a real artifact: how many label addresses, how many goto* ---
+  label-address (&&) occurrences: 2
+  indirect jumps (goto *)       : 1
+  emitted label definitions     : 16
+  the RX_PUSH call sites, verbatim:
+    162:    RX_PUSH(&&rx_L8, scan_position);
+    186:    RX_PUSH(&&rx_L15, scan_position);
+
+=== AXIS G: does anything in the tree already bound a CALL DEPTH? ====
+  57: *   `(?(R)`  is a recursion condition or a NAMED-GROUP condition depending on
+  96: * it SUPPORTS lookaround, atomic groups and recursion — all marked VM_ONLY
+  104: * state and re-enter itself, which is exactly why recursion is possible in it.
+  151:#define M_recursion      FEAT_RECURSION,     "recursion"
+  462: * `<` and `'` tails get their own rows below, module `recursion`, born
+# --- the frame/trail capacities an artifact stamps ---
+  47:#define RX_VM_PRUNE_CEILING "subject-end"
+  48:#define RX_NSLOTS 11
+  67:#define RX_RESUME_FRAMES 2048
+  68:#define RX_TRAIL_FRAMES 3072
+  69:#define RX_STEP_BUDGET 500000000LL
+  70:#define RX_WORK_BUDGET 1000000000LL
+  # and the same for a shape whose depth GROWS with the subject:
+  47:#define RX_VM_PRUNE_CEILING "subject-end"
+  63:#define RX_RESUME_FRAMES 2048
+  64:#define RX_TRAIL_FRAMES 3072

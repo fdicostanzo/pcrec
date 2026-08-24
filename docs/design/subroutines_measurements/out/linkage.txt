@@ -1,0 +1,109 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_linkage.sh
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 6c50429 2026-08-23
+# RUN FROM REPO COMMIT        : d1580a8 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/subroutines_design.md
+#      M docs/design/subroutines_measurements/out/linkage.txt
+#      M docs/design/subroutines_measurements/out/wrapped_target.txt
+#      M docs/design/subroutines_measurements/probes/probe_linkage.sh
+#      M docs/design/subroutines_measurements/probes/probe_wrapped_target.py
+# RUN DATE   : 2026-08-23T21:37:02-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+cc: gcc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+flags: -O2 -std=gnu11
+
+=== CONTROL: do the three linkages agree, cell by cell? ==============
+  all three linkages agree on 13 subjects x 4 call-counts (52 cells)
+
+=== SIZE: bytes of rx_match_anchored, by call-count ==================
+  k        splice     hybrid     call      
+  0       779       779       708       
+  1       1001      1090      804       
+  2       1384      1191      884       
+  3       1704      1266      964       
+  4       1976      1350      1044      
+  6       2584      1526      1196      
+  8       3179      1706      1356      
+  12      4339      1992      1696      
+  16      5543      2320      1992      
+# THE k=0 ROW IS THE CONTROL, and it controls ONE thing: SPLICE and
+# HYBRID are literally the same code with no call site, so they MUST be
+# equal. CALL at k=0 is a DIFFERENT PROGRAM -- it routes the lexical
+# occurrence through the linkage -- so it is not part of that control,
+# and R34 LENS3-2 was right that its 708 was unexplained. Explained
+# below.
+
+=== SIZE, k=0, ACROSS OPTIMISATION LEVELS (LENS3-2) ==================
+# CALL's k=0 source is strictly BIGGER than SPLICE's: 8 labels vs 6,
+# TWO goto* vs one, one RX_CALL vs none. If its -O2 size is SMALLER,
+# that is a code-layout effect and not a property of the linkage. The
+# way to tell is to ask more than one optimiser.
+  opt    splice     hybrid     call      
+  -O0   1368      1368      1523      
+  -O1   727       727       760       
+  -O2   779       779       708       
+  -Os   538       538       628       
+# SPLICE == HYBRID at EVERY level, which is the control doing its job.
+# CALL is LARGER at -O0, -O1 and -Os and smaller only at -O2, so the
+# -O2 k=0 gap is an ARTIFACT of one optimiser's layout. The absolute
+# k=0 numbers are therefore not comparable BETWEEN variants; the SLOPE
+# is what this axis measures, and it is computed below.
+
+=== THE goto* RELATION (§5.8, S-SR13, P-9) ===========================
+# The design asserts: goto* count == 1 (the fail label) + one per
+# emitted SHARED CALLEE BODY. The first version said 'exactly two',
+# which R34 LENS2-5 refuted in both directions. This axis is the
+# archived witness for the ONE-CALLEE half; probe_premises.sh axis F
+# is the archived witness for the CALL-FREE half (a real pcrec
+# artifact, 1 goto*).
+  variant  k          goto*          shared bodies    predicted
+  splice   0          1              0                1  OK
+  splice   1          1              0                1  OK
+  splice   4          1              0                1  OK
+  hybrid   0          1              0                1  OK
+  hybrid   1          2              1                2  OK
+  hybrid   4          2              1                2  OK
+  call     0          2              1                2  OK
+  call     1          2              1                2  OK
+  call     4          2              1                2  OK
+# SPLICE emits no shared body at any k, so it stays at 1 -- which is
+# also what a wave-G fully-spliced artifact looks like, the case a
+# hard-coded 'two' would have fired on.
+
+=== THE SLOPE: bytes per call site, -O2, least-squares over k ========
+  splice    298.6 bytes per call site   (points: 0:779 1:1001 2:1384 3:1704 4:1976 6:2584 8:3179 12:4339 16:5543)
+  hybrid     87.6 bytes per call site   (points: 0:779 1:1090 2:1191 3:1266 4:1350 6:1526 8:1706 12:1992 16:2320)
+  call       80.1 bytes per call site   (points: 0:708 1:804 2:884 3:964 4:1044 6:1196 8:1356 12:1696 16:1992)
+
+=== TIME: best of three, 2000000 reps ================================
+# TWO corpora. The MIXED one exercises every occurrence; the LEXICAL
+# one dies before the first call site and is the corpus HYBRID's whole
+# claim rests on -- it must track SPLICE and beat CALL, or the extra
+# body copy buys nothing.
+  --- mixed corpus ---
+  k        splice       hybrid       call        
+  1       0.64        0.68        0.73        
+  2       0.92        0.99        0.97        
+  4       1.02        1.19        1.31        
+  8       1.43        1.73        2.01        
+  --- lex corpus ---
+  k        splice       hybrid       call        
+  1       0.99        1.02        1.08        
+  2       0.99        1.02        1.06        
+  4       1.00        1.04        1.06        
+  8       0.96        1.01        1.04        
+# NOTE both corpora include subjects that do NOT match, so the
+# bump-along loop and the fail label are exercised, not only the happy
+# path.

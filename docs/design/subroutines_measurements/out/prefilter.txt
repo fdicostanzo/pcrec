@@ -1,0 +1,109 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_prefilter.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 1689bd7 2026-08-23
+# RUN FROM REPO COMMIT        : 1689bd7 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#     ?? docs/design/subroutines_measurements/out/
+# RUN DATE   : 2026-08-23T20:15:22-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+pcrec   : /home/duxevents/pcrec/worktrees/dd14design/build/pcrec
+tmp     : /tmp/sr_pf
+
+flag-spelling self-check: -fno-prefilter ACCEPTED (behaviourally confirmed, not just grepped from --help text, which does not list per-optimization -fno-* flags at all) and --emit-main is documented in --help (--emit-main itself is NOT used for the timed artifacts -- see the ARGV FINDING in this file's docstring).
+
+=== STAGE 1: EQUIVALENCE VERIFICATION (libpcre2 call vs libpcre2 inlined, per row) ==================================================
+  R01  cells=28  disagreements=0    verified-equivalent
+  R02  cells=28  disagreements=0    verified-equivalent
+  R03  cells=28  disagreements=0    verified-equivalent
+  R04  cells=28  disagreements=0    verified-equivalent
+  R05  cells=28  disagreements=0    verified-equivalent
+  R06  cells=28  disagreements=0    verified-equivalent
+  R07  cells=28  disagreements=0    verified-equivalent
+  R08  cells=28  disagreements=0    verified-equivalent
+  R09  cells=28  disagreements=0    verified-equivalent
+  R10  cells=28  disagreements=0    verified-equivalent
+  R11  cells=28  disagreements=0    verified-equivalent
+  R12  cells=28  disagreements=0    verified-equivalent
+  R13  cells=28  disagreements=0    verified-equivalent
+  R14  cells=28  disagreements=0    verified-equivalent
+  R15  cells=28  disagreements=0    verified-equivalent
+
+qualified rows: 15 / 15
+
+=== STAGE 2: COMPILE + STAMPS (default arm; -fno-prefilter arm only when the default arm reaches the VM) =================================
+  R01  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R02  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R03  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R04  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R05  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R06  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R07  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R08  DFA  no RX_ENGINE/RX_VM_PREFILTER macros -- -fno-prefilter arm byte-identical (verified)
+  R09  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=none
+  R10  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=none
+  R11  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=prefilter-window
+  R12  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=none
+  R13  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=none
+  R14  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=none
+  R15  VM   engine=vm prefilter(def)=hybrid prefilter(np)=none prune_ceiling(def)=prefilter-window
+
+=== STAGE 3: BUILD + TIME (VM-reaching rows only; the DFA-only rows have no prefilter to time -- see STAGE 2) =============================
+  R09  match   subj=1000007B def(best/med/max ns)=28901/28950/49690 np(best/med/max ns)=7208234/7476296/9887664 ratio(np/def)=249.41 answers-agree=True (match vs match)
+  R09  nomatch subj=1000000B def(best/med/max ns)=20730/23000/28400 np(best/med/max ns)=7249094/7256974/7274604 ratio(np/def)=349.69 answers-agree=True (nomatch vs nomatch)
+  R10  match   subj=1000011B def(best/med/max ns)=33020/57740/77371 np(best/med/max ns)=7305095/7322815/7379915 ratio(np/def)=221.23 answers-agree=True (match vs match)
+  R10  nomatch subj=1000000B def(best/med/max ns)=36180/46711/49380 np(best/med/max ns)=7237244/7252784/7280294 ratio(np/def)=200.03 answers-agree=True (nomatch vs nomatch)
+  R11  match   subj=1000005B def(best/med/max ns)=348792/356643/357983 np(best/med/max ns)=7375275/7482156/7549666 ratio(np/def)=21.15 answers-agree=True (match vs match)
+  R11  nomatch subj=1000000B def(best/med/max ns)=348453/349492/367703 np(best/med/max ns)=7611987/8346482/10135855 ratio(np/def)=21.85 answers-agree=True (nomatch vs nomatch)
+  R12  match   subj=1000007B def(best/med/max ns)=349862/350122/356572 np(best/med/max ns)=8318003/8347012/8355032 ratio(np/def)=23.78 answers-agree=True (match vs match)
+  R12  nomatch subj=1000000B def(best/med/max ns)=364313/371362/596324 np(best/med/max ns)=8241971/8313293/8334442 ratio(np/def)=22.62 answers-agree=True (nomatch vs nomatch)
+  R13  match   subj=1000009B def(best/med/max ns)=26740/27450/29280 np(best/med/max ns)=7201814/7234704/7288204 ratio(np/def)=269.33 answers-agree=True (match vs match)
+  R13  nomatch subj=1000000B def(best/med/max ns)=26850/46891/74230 np(best/med/max ns)=7203904/7257204/7348715 ratio(np/def)=268.30 answers-agree=True (nomatch vs nomatch)
+  R14  match   subj=1000013B def(best/med/max ns)=27550/29381/39810 np(best/med/max ns)=7205564/7206554/7450066 ratio(np/def)=261.54 answers-agree=True (match vs match)
+  R14  nomatch subj=1000000B def(best/med/max ns)=22340/25030/29270 np(best/med/max ns)=7202574/7232344/7305105 ratio(np/def)=322.41 answers-agree=True (nomatch vs nomatch)
+  R15  match   subj=1000005B def(best/med/max ns)=348933/359793/362053 np(best/med/max ns)=7357495/7441065/7449655 ratio(np/def)=21.09 answers-agree=True (match vs match)
+  R15  nomatch subj=1000000B def(best/med/max ns)=348553/349103/364873 np(best/med/max ns)=7385705/7428206/7456616 ratio(np/def)=21.19 answers-agree=True (nomatch vs nomatch)
+
+=== STAGE 4: DFA-only baseline (no prefilter distinction; reference only, NOT part of the ratio question) =================================
+  R01  subj=1000005B dfa(best/med/max ns)=29440/31231/58860  answer=match
+  R02  subj=1000006B dfa(best/med/max ns)=28070/30540/34141  answer=match
+  R03  subj=1000005B dfa(best/med/max ns)=29710/32550/40680  answer=match
+  R04  subj=1000005B dfa(best/med/max ns)=27140/42460/53611  answer=match
+  R05  subj=1000009B dfa(best/med/max ns)=25271/29960/33321  answer=match
+  R06  subj=1000013B dfa(best/med/max ns)=29310/34990/36530  answer=match
+  R07  subj=1000005B dfa(best/med/max ns)=348703/362523/847527  answer=match
+  R08  subj=1000013B dfa(best/med/max ns)=24810/34871/56191  answer=match
+
+=== STAGE 5: REACHABILITY GUARDS ======================================
+  guard 1 (>=1 default-arm RX_VM_PREFILTER == 'hybrid'): PASS
+  guard 2 (default and -fno-prefilter arms agree on every timed subject): PASS
+  guard 3 (noise spread, same binary x3): max spread across all default-arm rows = 176.5% (per-row list follows)
+     R09  match   spread=71.9%
+     R09  nomatch spread=37.0%
+     R10  match   spread=134.3%
+     R10  nomatch spread=36.5%
+     R11  match   spread=2.6%
+     R11  nomatch spread=5.5%
+     R12  match   spread=1.9%
+     R12  nomatch spread=63.7%
+     R13  match   spread=9.5%
+     R13  nomatch spread=176.5%
+     R14  match   spread=44.5%
+     R14  nomatch spread=31.0%
+     R15  match   spread=3.8%
+     R15  nomatch spread=4.7%
+
+OVERALL: guards satisfied; the ratio table in STAGE 3 is a real measurement of what the DFA prefilter buys on this population.
