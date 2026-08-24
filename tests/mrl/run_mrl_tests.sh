@@ -458,8 +458,19 @@ else
     # than with this script (section 7's rule).
     find "$ROOT_DIR/tests" -name '*.rxt' -print0 | sort -z > "$WORKDIR/rxt.list"
     if xargs -0 -a "$WORKDIR/rxt.list" "$MAXWBIN" > "$WORKDIR/maxw.out" 2>&1; then
-        ok "maxw: maxw >= minw at every node, and every oracle span within maxw"
-        sed -n 's/^  /    maxw: /p' "$WORKDIR/maxw.out"
+        # ONE INVOCATION, ASSERTED. `xargs` SPLITS when the argument list
+        # outgrows ARG_MAX, and a split run would print two summaries and
+        # apply the non-vacuity floors to two partial populations — each of
+        # which could pass while neither saw the whole corpus. Today the list
+        # is ~5 KB against a 2 MB limit; this line is what makes the day it
+        # is not a loud failure instead of a quietly weaker check.
+        nrun="$(grep -c '^=== \[M6' "$WORKDIR/maxw.out")"
+        if [ "$nrun" = "1" ]; then
+            ok "maxw: maxw >= minw at every node, and every oracle span within maxw"
+            sed -n 's/^  /    maxw: /p' "$WORKDIR/maxw.out"
+        else
+            bad "maxw: xargs SPLIT the corpus into $nrun invocations — the floors saw partial populations"
+        fi
     else
         bad "maxw: the sweep FAILED"
         sed -n '1,25p' "$WORKDIR/maxw.out" >&2
