@@ -44,7 +44,12 @@ the caller's capture environment: a backreference inside a called body sees the
 caller's groups (§3.1). (3) The call is **BACKTRACKABLE** on 10.46 — PCRE2 was
 atomic here before 10.30 and is not now — measured on a body reachable *only*
 by the call, with four atomic controls refusing (§3.2); so the return cannot be
-an `RX_CUT` and the callee's choice points must stay live across it. (4) There
+an `RX_CUT` and the callee's choice points must stay live across it. (3b) The
+call reaches **the GROUP, not the group's lexical occurrence**: a target whose
+lexical home is a lookbehind, a negative lookahead or an atomic group is still
+run **forward, consuming, cut-free and back-step-free** — five measured shapes
+an emit-once-and-jump-into-the-occurrence emitter miscompiles, which is what
+makes §6.3's split a rule rather than an optimisation (§3.5). (4) There
 is **no compile-time left-recursion refusal in 10.46 at all**: error 140 is
 *"invalid escape sequence in (*VERB) name"*, every left-recursive shape
 compiles, and the guard is a match-time `rc -52` whose obvious reading is
