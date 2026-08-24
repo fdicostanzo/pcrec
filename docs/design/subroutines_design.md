@@ -855,7 +855,9 @@ two things and would invite an emitter to write the else-if chain
 
 **(c) `body` IS RESOLVED ONCE AND STORED.** Same rule as `A_BREF.refs` and
 `Ast.multiline` (D62): resolved at the position that knows, never re-derived.
-The emitter, `vm_nullable`, `pcrec_maxw` and the call-graph pass all need it,
+The emitter, `vm_nullable`, the call-graph pass and — **once
+`lookaround_design.md` §11 wave A builds it, since P13 measured it does not
+exist today** — `pcrec_maxw` all need it,
 and four independent derivations of "which subtree does this call run" is four
 chances to disagree.
 
@@ -1084,9 +1086,14 @@ indices is §5.3b's axis-C miscompile arriving by a second route.
 > would prune it".
 
 **AND EVERY OTHER `LEXICAL ONLY` VERDICT WAS RE-CHECKED AGAINST THE `{0,0}`
-PRUNE.** Sites (11) `dis_walk` and (27) `br_strip_caps` are tree REWRITES that
-run before slot assignment and do not consult it, so the prune does not reach
-them and their verdicts stand. The three whole-tree predicates (9), (12), (13)
+PRUNE.** Sites (11) `dis_walk` (`atomic.c:216`) and (27) `br_strip_caps`
+(`mod_backrefs.c:508`) **descend `A_REP` unconditionally — they have no
+`{0,0}` prune at all**, which is the same reason the three whole-tree
+predicates (9), (12), (13) are safe. **That is the operative fact, and an
+earlier revision gave a weaker one** — *"they run before slot assignment"* — a
+statement about SEQUENCING that a future reorder could falsify without
+touching either walker. The absence of the prune is a property of the code
+itself. The three whole-tree predicates (9), (12), (13)
 have no prune at all — confirmed by R34's verifier — so **site (6) was the
 only one.** S-SR19 is the detector, and its cell must carry a **rung-bearing or
 atomic** callee: a callee with only capture slots allocates from a family
@@ -1138,8 +1145,8 @@ two cells together are the specification**: ∞ must be reachable and must not b
 reached by an approximation. `mrl.rxt`'s `"xb"` cell is the first.
 
 **AND `pcrec_maxw` DOES NOT EXIST YET** (P13): `lookaround_design.md` §11
-wave A builds it. §11's wave B+C therefore reads *"`minw`'s arm, and `maxw`'s
-if wave A has landed"* rather than treating the pair as symmetric — a call's
+wave A builds it. §11's wave B+C therefore makes `maxw`'s arm **conditional on
+that wave having landed**, rather than treating the pair as symmetric — a call's
 `maxw` is `∞` for any recursive callee anyway (§3.4(d) measured PCRE2 refusing
 exactly that inside a lookbehind, error 125).
 
@@ -1693,8 +1700,9 @@ subject squared"* on the strength of a 53× step that R34's V-11′ traced to th
 **n = 100 row sitting at the timer floor**. That row is now **dropped from the
 series** and the probe **computes the exponent** from `n/prev_n` instead of
 labelling every step "10×" (which was false for two of three archived steps).
-MEASURED over n = 1,000 → 4,000 → 10,000 → 20,000: exponents **1.95, 2.20,
-2.02, mean 2.06**, against the verifier's independent 2.01, 1.94, 1.98.
+MEASURED over n = 1,000 → 4,000 → 10,000 → 20,000: exponents **1.80, 2.21,
+2.12, mean 2.04** (`out/leftrec.txt` L9b, the archived run), against the
+verifier's independent 2.01, 1.94, 1.98.
 **Quadratic** — and the probe now FAILS ITS OWN GUARD if the mean leaves
 [1.6, 2.6], so the word is defended by the instrument rather than by this
 paragraph.

@@ -108,6 +108,21 @@ different emitted code. §3.1 is decided by two callout firings.
   `tests/**/*.rxt`'s 2,161 `pattern` lines, with a character-class masking pass
   so `tests/backrefs/octal_class.rxt`'s `^[\g<1>]$` is not counted as a call.
 - `probes/archive.sh` — **the ONLY writer of `out/`.**
+- `probes/check_selfconsistency.py` — **the catcher for R34's V-7/V-12 class**,
+  and the one instrument here that reads the DESIGN rather than libpcre2.
+  Three checks, all exiting NONZERO on any miss (never print-and-continue):
+  (1) **archive freshness** — every `probe_X.{py,sh}` has an `out/X.txt` that
+  is not older than it, which is what a table citing a number from a probe a
+  later edit changed looks like (V-7) and what a number with no archive at all
+  looks like (V-11); (2) **sabotage-row coverage** — every `S-SR` id in §9.3's
+  table appears in some §11 landing bar's DETECTED list; (3) **corpus-file
+  coverage** — every `*.rxt` in §10.2 appears in some §11 bar (V-12).
+  **Exercised on seven sabotages, 7/7 failing correctly**, and it had TWO
+  defects of its own that only that exercise found — both in its header, and
+  the second is this project's check-design lesson reproduced inside the
+  check: an earlier version asked whether an id appeared ANYWHERE in §11 and
+  PASSED a sabotage deleting S-SR7 from every bar, because §11 also contains
+  a sentence ABOUT S-SR7. Prose about an id satisfied the check for that id.
 - `prototype/gen_linkage.py` — the §6 generator. Its header records that the
   charter's "once-emitted-with-two-linkages" COLLAPSES when written out, and
   why, so the next reader does not re-derive it.
