@@ -881,6 +881,68 @@ ATOMICITY = [
 ]
 
 # ===========================================================================
+# prefilter.rxt -- SS8.2: erasing a call is a DIFFERENT language, so the
+# hybrid's DFA prefilter is OFF for a call-bearing pattern
+# ===========================================================================
+PREFILTER = [
+    ("THE COUNTEREXAMPLE, AND IT IS THE DESIGN'S OWN (SS8.2). `a(?1)b` with "
+     "group 1 = `x` matches \"axb\"; ERASE the call and `ab` is left, which "
+     "does not match \"axb\" at all. So a prefilter built from the "
+     "call-ERASED pattern is not a loose superset of the true language -- it "
+     "is a DIFFERENT language, and its rejection would be a FALSE NEGATIVE, "
+     "the one thing a prefilter may never produce. `select_engine.c` "
+     "therefore forces `fit.prefilter` OFF whenever `pcrec_has_call(root)`, "
+     "and `-fprefilter` REFUSES rather than overriding (SS9.3 S-SR17 / "
+     "sabotage row S165). **THESE CELLS ARE UNANCHORED ON PURPOSE**: the "
+     "prefilter exists to find a candidate START, so an anchored pattern "
+     "would never ask it anything and the cell would go green under the "
+     "sabotage it exists to catch.", [
+        B(r"(?:(x)){0}a(?1)b", [('m', "axb"), ('n', "ab"),
+                                ('m', "zzzzaxbzzzz"), ('n', "zzzzabzzzz")],
+          RC, groups=1,
+          note="THE PAIR IS THE TEST, not either cell alone. \"axb\" MUST "
+               "match (the erased machine skips it -- the false negative) "
+               "and \"ab\" MUST NOT (the erased machine accepts it). A "
+               "prefilter built from `ab` answers both backwards. The two "
+               "LONG subjects are the same pair with SPARSE candidate "
+               "starts, which is the shape SS8.3 measured the prefilter to "
+               "be worth 21x-350x on -- so they are also the cells that "
+               "would notice a wave-G approximation that got the window "
+               "END wrong (SS8.3's stated hazard, lookaround_design SS5.4's "
+               "8-of-45 window-end violations)."),
+        B(r"(?:(x)){0}a\g<1>b", [('m', "axb"), ('n', "ab")], RC, groups=1,
+          note="THE SAME COUNTEREXAMPLE THROUGH THE OTHER DOORWAY. "
+               "`pcrec_has_call` is an AST predicate, not a syntax scan, so "
+               "the `\\g<1>` spelling must reach the identical verdict -- "
+               "and a predicate wired to only one of the two ports would "
+               "pass the block above and fail this one."),
+        B(r"(?:(?<w>x)){0}a(?&w)b", [('m', "axb"), ('n', "ab")], RCN,
+          groups=1,
+          note="AND THROUGH THE BY-NAME DOORWAY, for the same reason."),
+    ]),
+    ("THE CONTRAST: an ordinary NON-recursive callee is still a call, and "
+     "still gets no prefilter. SS8.3's wave-G splice would make THIS half of "
+     "the population prefilterable again (an acyclic callee's NFA fragment "
+     "splices EXACTLY, no approximation), which is why the acyclic case is "
+     "pinned separately from the recursive one -- a wave-G regression that "
+     "spliced wrongly lands here first.", [
+        B(r"(cat)xcat", [('m', "cat"), ('n', "dogxcat"),
+                         ('m', "zzcatxcatzz")], "", groups=1,
+          note="THE INLINED EQUIVALENT (SS8.3 row R09), call-FREE and "
+               "therefore prefilterABLE today -- the control that says the "
+               "cells below differ from it by the CALL and by nothing "
+               "else."),
+        B(r"(cat)x(?1)", [('m', "catxcat"), ('n', "catxdog"),
+                          ('m', "zzcatxcatzz")], RC, groups=1,
+          note="THE CALL FORM of the row above. Same language, no prefilter "
+               "-- and SS8.3 MEASURED the difference at 249x on a 1 MB "
+               "subject with sparse candidate starts. The cost is real, is "
+               "stated, and is wave G's to recover; the answers here must "
+               "not move when it is."),
+    ]),
+]
+
+# ===========================================================================
 # leftrec.rxt -- SS3.3: no compile-time refusal; the depth capacity gives up
 # ===========================================================================
 LEFTREC = [
@@ -1937,6 +1999,11 @@ def main():
          "spellings -- hand-inlined, `{0}`-factored and `(?(DEFINE)`-factored "
          "-- over fourteen of its own manifest's subjects",
          _realworld()),
+        ("prefilter.rxt",
+         "SS8.2: erasing a call is a DIFFERENT language, so the hybrid's "
+         "DFA prefilter is OFF for every call-bearing pattern (SS9.3 "
+         "S-SR17, sabotage row S165)",
+         PREFILTER),
         ("nocaptures.rxt",
          "SS4.3: a call target joins the marked set -- one-hop and "
          "two-hop, ordinary-axis pins (the --no-captures axis itself is a "
