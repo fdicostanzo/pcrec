@@ -966,6 +966,17 @@ lookaround-free pattern filed as bearing is one the reference COMPILES.
 Measured at the wave B+C landing: 85 bearing / 2048 free, floors 60 and 700,
 control 85/85, and 0 differences on all four axes.
 
+**AND THE CLASSIFIER'S OTHER DIRECTION WAS MEASURED TOO, WHICH THE CONTROL
+CANNOT DO.** Control (c) catches OVER-classification (a free pattern filed as
+bearing is one the reference compiles). UNDER-classification — a
+lookaround-bearing pattern quietly admitted to the identity population — has no
+such backstop, so it was measured directly: `STRICT_ALL=1` on the wave B+C tree
+reports **332 differing comparisons over the four axes, 83 distinct patterns,
+and ZERO of them in the FREE bucket**. Every pattern whose emitted bytes moved
+is one the classifier calls bearing. Re-run that pair (`STRICT_ALL=1 KEEP=1`,
+then classify the `DIFFERS` lines) after any change to the classifier or to the
+population; it is the only evidence that the split is not hiding a difference.
+
 **On demand, via `make test-lookaround-identity`** — not in `make test`, on the
 ruling `test-atomic-identity` and `test-backrefs-identity` have and for the
 same reason: the reference is a second full build of the compiler, and the
