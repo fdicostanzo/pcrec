@@ -2100,6 +2100,120 @@ else
     bad "[M6.4-ATOMIC rule 5c]: $ag_slotbad of $ag_slots artifacts have a pre-pass/emitter slot disagreement (floor 30 artifacts)"
 fi
 
+# ===========================================================================
+# [DD-14 RECURSION] THE SUBROUTINE CALL: the two claims no .rxt cell can make
+# ===========================================================================
+#
+# RULE 1 (design §5.8, sabotage row S166) -- THE `goto *` RELATION.
+#
+# `src/gen/emit_vm.c`'s own opening comment states, as a design decision, that
+# there is "exactly ONE indirect jump in the whole function -- the `goto *` at
+# the fail label, which fires once per backtrack and never per byte". `RX_RETURN`
+# is a SECOND, and design §5.8 amends the invariant to a RELATION rather than a
+# constant:
+#
+#     `goto *` count == 1 (the fail label) + one per emitted SHARED CALLEE BODY
+#
+# A CONSTANT WOULD BE WRONG IN BOTH DIRECTIONS and R34's LENS2-5 measured it:
+# a call-free artifact is 1, a pattern calling ONE group is 2, a pattern
+# calling THREE DISTINCT groups is 4 however many call SITES there are (the
+# sites share the body), and a wave-G fully-spliced artifact is back to 1. A
+# hard-coded "two" fires on three of those four.
+#
+# THE RELATION IS ASSERTIBLE ONLY BECAUSE THE `goto *` IS WRITTEN INLINE. The
+# design's §5.1 sketches `RX_RETURN` as a MACRO, which would put one `goto *`
+# in the definition and none at the uses -- making the artifact's count
+# `1 + (has_calls ? 1 : 0)` and this rule unstateable. Emitting it per region
+# is a deliberate deviation recorded at `vm_region`, and this check is what it
+# buys.
+for dd14_row in \
+    '1|(a)b' \
+    '2|(a)(?1)' \
+    '2|(a)(?1)(?1)(?1)' \
+    '4|(a)(b)(c)(?1)(?2)(?3)' \
+    '2|a(?R)?b' ; do
+    dd14_want="${dd14_row%%|*}"
+    dd14_pat="${dd14_row#*|}"
+    if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
+        dd14_got=$(grep -c 'goto \*' "$WORKDIR/dd14.c")
+        if [ "$dd14_got" -ne "$dd14_want" ]; then
+            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want (1 for the fail label plus one per DISTINCT called group). A count that is too HIGH means a region was emitted per call SITE instead of per group; too LOW means a region's return was folded into something shared, which §6.3 forbids -- the body may be shared, the EXIT may never be"
+        else
+            ok "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits exactly $dd14_want 'goto *' -- 1 + the number of emitted shared callee bodies"
+        fi
+    else
+        bad "[DD-14-RECURSION rule 1]: pcrec failed to compile the fixture '$dd14_pat'"
+    fi
+done
+
+# RULE 2 (design §9.1, sabotage rows S143..S165 collectively) -- A CALL-FREE
+# ARTIFACT CARRIES NONE OF THIS MODULE'S MACHINERY.
+#
+# The resume frame gains TWO FIELDS, `RX_PUSH` gains a line, the fail label
+# gains a line, both reset functions gain a line, and `RX_CALL` appears -- all
+# of it gated on ONE flag (`Vm.has_calls`, i.e. `cx->callgraph != NULL`). That
+# is what makes §9.1's byte-identity claim STRUCTURAL rather than something an
+# identity sweep has to discover, and it is checked here in the cheap
+# direction: the four names must be ABSENT from a call-free VM artifact and
+# PRESENT in a call-bearing one, in the same run, so a check that had stopped
+# looking at anything cannot pass.
+if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_free.c" -- '(a)(b)+c' >/dev/null 2>&1 \
+   && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_call.c" -- '(a)(?1)' >/dev/null 2>&1; then
+    dd14_leak=0
+    for dd14_tok in 'call_top' 'call_ret' 'RX_CALL' 'CALL_TOP_NONE'; do
+        if grep -q "$dd14_tok" "$WORKDIR/dd14_free.c"; then
+            dd14_leak=$((dd14_leak + 1))
+            bad "[DD-14-RECURSION rule 2] (§9.1): the CALL-FREE artifact '(a)(b)+c' mentions '$dd14_tok'. Every byte this module adds is gated on ONE flag so a call-free pattern's emitted C is what it always was; a leak here is a byte-identity failure the corpus cannot see, because no answer changes"
+        fi
+        if ! grep -q "$dd14_tok" "$WORKDIR/dd14_call.c"; then
+            dd14_leak=$((dd14_leak + 1))
+            bad "[DD-14-RECURSION rule 2]: the CALL-BEARING artifact '(a)(?1)' does NOT mention '$dd14_tok' -- the absence check above would then be vacuous, which is this directory's own recurring failure shape"
+        fi
+    done
+    [ "$dd14_leak" -eq 0 ] && ok "[DD-14-RECURSION rule 2] (§9.1): a call-FREE VM artifact carries none of call_top / call_ret / RX_CALL / CALL_TOP_NONE, and a call-BEARING one carries all four -- both directions in one run"
+else
+    bad "[DD-14-RECURSION rule 2]: pcrec failed to compile one of the two fixtures"
+fi
+
+# RULE 3 (wave A2's PASS-ORDERING FINDING, sabotage row S166) -- THE CALLEE
+# REGION AND THE LEXICAL OCCURRENCE ARE EMITTED FROM THE SAME NODE.
+#
+# `Ast.u.call.body` is a CACHE of "which subtree is that group's, IN THE TREE
+# THE EMITTER WILL WALK", and `src/opt/altcls.c` REBUILDS nodes rather than
+# mutating them -- its `A_CAP` arm does `*r = *a; r->l = body;`, allocating a
+# fresh node over the merged class. A `.body` captured at END OF PARSE, where
+# design §4.2 and wave A2's `PendingRef` comment both put it, therefore names a
+# subtree that is NO LONGER IN THE TREE.
+#
+# MEASURED ON THIS TREE, by moving `pcrec_callgraph_build` above
+# `pcrec_altcls` and diffing the artifacts: on `((?:a|b))(?1)` the LEXICAL
+# occurrence emits a merged class test (`(unsigned)(subject[p] - 97) <= 1u`)
+# while the CALLEE REGION emits the un-merged two-branch alternation with its
+# own `RX_PUSH` and two extra labels -- **two different programs for one
+# group** -- and `RX_RESUME_FRAMES` moves 2 -> 3 with it. The ANSWERS are
+# unchanged, because `altcls` is answer-preserving in both directions, which is
+# exactly why no corpus cell can see this and it needs a structural rule.
+#
+# THE DISCHARGE WITNESS IS NOT A HAZARD, and measuring that is what stops this
+# rule being over-stated: `((?>a)b)(?1)` compiles BYTE-IDENTICALLY under the
+# same sabotage, because `pcrec_discharge_atomic` splices by rewriting the
+# parent's `->l` IN PLACE, so the `A_CAP` this module binds to keeps its
+# identity and sees the discharge. Wave A2 named both passes; only one of them
+# rebuilds the node a callee is rooted at.
+if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_rb.c" -- '((?:a|b))(?1)' >/dev/null 2>&1; then
+    dd14_merges=$(grep -m1 '^#define RX_ALTCLS_MERGES' "$WORKDIR/dd14_rb.c" | awk '{print $3}')
+    dd14_push=$(grep -c 'RX_PUSH(' "$WORKDIR/dd14_rb.c")
+    if [ "${dd14_merges:-0}" -lt 1 ]; then
+        bad "[DD-14-RECURSION rule 3]: '((?:a|b))(?1)' stamps RX_ALTCLS_MERGES ${dd14_merges:-?} -- altcls no longer merges this alternation, so the fixture cannot express the hazard and this rule is measuring nothing"
+    elif [ "$dd14_push" -ne 1 ]; then
+        bad "[DD-14-RECURSION rule 3]: '((?:a|b))(?1)' emits $dd14_push RX_PUSH( sites, expected 1 (the macro definition alone). altcls merged the only alternation, so NEITHER the lexical occurrence NOR the callee region should need a resume frame -- an extra push means the region was emitted from a STALE u.call.body naming the pre-altcls subtree, i.e. two different programs for one group"
+    else
+        ok "[DD-14-RECURSION rule 3] (wave A2's pass-ordering finding): '((?:a|b))(?1)' merges its alternation AND emits no resume push in either program -- the callee region and the lexical occurrence come from the same node"
+    fi
+else
+    bad "[DD-14-RECURSION rule 3]: pcrec failed to compile the fixture '((?:a|b))(?1)'"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"

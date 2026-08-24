@@ -805,6 +805,60 @@ struct Ast {
              * emission and charged by `vm_cost` as `2*nsave` of trail. */
             int         nsave;
             const int  *save;
+            /* [DD-14 wave B+C] THE THREE DERIVED FACTS A BARE `const Ast *`
+             * WALKER CANNOT COMPUTE, cached ON THE NODE rather than in a memo
+             * the walker would need a context to reach.
+             *
+             * WHY ON THE NODE. `pcrec_minw` (src/opt/mrl.c) and `vm_nullable`
+             * (src/gen/emit_vm.c) are bare `const Ast *` walkers with no `Ctx`
+             * parameter, so "read callgraph.c's memo" has exactly two
+             * spellings: change every call site's signature, or put the memo
+             * in a FILE-STATIC — and a file-static is a mutable global, which
+             * [TS-1]/[TS-3] test against directly (two threads compiling
+             * different patterns at once). The node is the one place both
+             * walkers already have in hand and that is private to one compile.
+             *
+             * EVERY ONE IS WRITTEN SO THE ARENA'S ZERO IS THE SOUND ANSWER,
+             * because a walker may legitimately run BEFORE the fixpoint does
+             * (`pcrec_minw` is called from src/opt/possessify.c, which runs
+             * inside `pcrec_select_engine`, before the graph exists):
+             *
+             *   `minw`        0 — the least width this callee can consume.
+             *                 Zero is `pcrec_minw`'s own SAFE direction (an
+             *                 under-estimate prunes less and can never delete
+             *                 a live position), so an un-run fixpoint costs
+             *                 pruning and never a match.
+             *   `nonnullable` false — i.e. "assume NULLABLE". The polarity is
+             *                 INVERTED for exactly this reason, and it is the
+             *                 whole content of the field's name: `vm_nullable`
+             *                 answering true is what EMITS the empty-iteration
+             *                 guard, so `false` keeps the guard and a wrong
+             *                 answer costs a redundant guard, while the other
+             *                 polarity's zero would DROP the guard and hang
+             *                 the emitted matcher on `(?&g)*` with a nullable
+             *                 callee (§2.6).
+             *   `nsave`/`save` 0/NULL — restore nothing, which is a
+             *                 miscompile, and is why they are NOT arena-zero
+             *                 safe and why `pcrec_emit_vm` fills them for
+             *                 every node before it emits a byte.
+             *
+             * `maxw` IS DELIBERATELY ABSENT. `pcrec_maxw`'s safe direction is
+             * the opposite one, so a zero would be its silent miscompile — and
+             * its arm already answers `PCREC_W_UNBOUNDED` unconditionally,
+             * which is the exact answer for a recursive callee (§3.4(d):
+             * libpcre2 refuses that inside a lookbehind, error 125) and a
+             * sound over-estimate for every other. Tightening it for an
+             * ACYCLIC callee is an optimisation with no customer; it would
+             * need its own field, initialised by a writer that runs before
+             * the parse-time lookbehind width rule, which the call graph
+             * cannot (the graph does not exist until every call is resolved).
+             *
+             * WRITTEN by `src/opt/callgraph.c`'s fixpoint (`minw`) and by
+             * `src/gen/emit_vm.c` (`nonnullable`, whose recurrence is
+             * `vm_nullable` and lives there; `save`/`nsave`, whose SLOT
+             * INDICES are the emitter's own layout and exist nowhere else). */
+            long long   minw;
+            bool        nonnullable;
         } call;
     } u;
 };
@@ -1120,8 +1174,37 @@ typedef struct NamedGroup {
  * boundary — octal 010, not a reference to group 10.
  *
  * Arena-owned and threaded like `NamedGroup`; `name` is an arena copy. */
+/* [DD-14 wave B+C] WHICH RULE THE RESOLVER APPLIES (subroutines_design.md
+ * §4.2). ONE LIST AND ONE PASS, not a second list beside it: the pass's whole
+ * justification is that it is the ONE site that knows both the final group
+ * count and every declaration of a duplicated name, and that is as true of a
+ * subroutine call as of a backreference.
+ *
+ * THE TWO RULES DIFFER IN THE NAME ARM AND NOWHERE ELSE:
+ *
+ *   PEND_BREF  by number: that group. by NAME: the whole RUN of groups with
+ *              that name, ascending — the emitted chain picks the first SET
+ *              member at MATCH time (§8.3 of backrefs_design.md).
+ *   PEND_CALL  by number: that group, one number. by NAME: the FIRST
+ *              DECLARATION with that name, STATICALLY, whether or not it is
+ *              set, and a call never retries into the later members —
+ *              MEASURED on 10.46 across all four by-name call spellings
+ *              (subroutines_design.md §3.4(c)): under DUPNAMES,
+ *              `^(?:(?<a>x)|q)(?<a>y)(?&a)$` matches "qyx" and refuses "qyy",
+ *              while the `\k<a>` REFERENCE does the opposite.
+ *
+ * THE ZERO CASE IS NOT A THIRD DIFFERENCE. `(?R)`/`(?0)`/`(?00)` target the
+ * AST ROOT, which always exists, so the port answers them itself and queues
+ * NOTHING — see `src/parse/mod_recursion.c`'s header. A number that reaches
+ * this list is therefore out of range at 0 for BOTH kinds, which is what keeps
+ * `(a)(?-2)` (a relative offset computing to zero) an error-115 rather than a
+ * silent `(?R)`. */
+typedef enum { PEND_BREF, PEND_CALL } PendKind;
+
 typedef struct PendingRef {
-    Ast                *node;    /* the A_BREF whose `refs` this fills in */
+    Ast                *node;    /* the A_BREF whose `refs` this fills in, or
+                                  * the A_CALL whose `target`/`body` it does */
+    PendKind            kind;
     /* An absolute group number, read only when `name` is NULL. It may be ZERO
      * OR NEGATIVE: `\g{-1}` at a count of zero computes 0, and whether a
      * number names a group is the ONE question this list defers. Splitting
@@ -1257,6 +1340,12 @@ struct Ctx {
      * bounded — see PCREC_MAX_SUBSET_ELEMS in limits.h for the growth law and
      * the number. Charged in src/ir/dfa.c's intern(). */
     long long            subset_elems;
+    /* [DD-14 wave B+C] THE CALL GRAPH, or NULL for a call-free pattern.
+     * Built by `pcrec_callgraph_build` (src/opt/callgraph.c) AFTER every
+     * rewriting pass and before emission — see that function's declaration for
+     * why the position is load-bearing rather than convenient. Arena-owned and
+     * opaque: its readers are the emitter and nothing else. */
+    struct CallGraph    *callgraph;
     /* [M6.3] module `named-groups`: every DECLARED (name, group-number)
      * pair, threaded as an arena-allocated singly linked list in
      * declaration (opening-paren) order — `named_groups` is the head,
@@ -2334,6 +2423,31 @@ ExtResult pcrec_brport_k(Ctx *cx, const RegRow *rw, ExtWant want,
 ExtResult pcrec_brport_pname(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from);
 
+/* [DD-14 wave B+C] src/parse/mod_recursion.c — module `recursion`, the three
+ * SUBROUTINE-CALL ports at the `(?` doorway. Design:
+ * docs/design/subroutines_design.md §4.2's port table.
+ *
+ *   pcrec_rcport_num   `(?1)`..`(?9)` and their multi-digit continuations,
+ *                      `(?0)`, `(?R)` — and §2.4a's LEADING-ZERO rule, which
+ *                      is why this port re-reads the whole digit run from the
+ *                      selector byte instead of trusting `rw->sel`.
+ *   pcrec_rcport_rel   `(?+N)`, `(?-N)`, with the leading-zero and
+ *                      relative-zero rules.
+ *   pcrec_rcport_name  `(?&name)`, `(?P>name)`.
+ *
+ * The FOURTH doorway of §4.2's table — `\g<...>` / `\g'...'` — has no port in
+ * wave B+C: those two rows carry `NO_PORT` and refuse through ext.c's
+ * ENABLED-BUT-UNBUILT epilogue, which is what keeps their D65 `built` column
+ * honest until wave D wires them. mod_recursion.c's closing note records why
+ * the brief's "one decline branch in pcrec_brport_g" turned out to be
+ * unreachable code. */
+ExtResult pcrec_rcport_num(Ctx *cx, const RegRow *rw, ExtWant want,
+                           size_t at, size_t from);
+ExtResult pcrec_rcport_rel(Ctx *cx, const RegRow *rw, ExtWant want,
+                           size_t at, size_t from);
+ExtResult pcrec_rcport_name(Ctx *cx, const RegRow *rw, ExtWant want,
+                            size_t at, size_t from);
+
 /* THE END-OF-PARSE PASS (§5.3), called from `pcrec_parse_info` and nowhere
  * else. Two jobs, in this order:
  *
@@ -2396,6 +2510,46 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark);
  * wave A2 is the wave that owns the tree predicates; wired when there is a
  * producer that can make it answer anything but false. */
 bool pcrec_has_call(const Ast *a);
+
+/* [DD-14 wave B+C] THE CALL GRAPH (src/opt/callgraph.c). Opaque and
+ * arena-owned; `cx->callgraph` is NULL for a call-free pattern, which is what
+ * keeps such a pattern's compile byte-identical to what it was before this
+ * module.
+ *
+ * WHERE IT RUNS IS LOAD-BEARING, NOT CONVENIENT. It must run AFTER every pass
+ * that REBUILDS a node — `pcrec_altcls` (which allocates a fresh `A_CAP` over
+ * a merged class) and `pcrec_discharge_atomic` (which splices an `A_ATOMIC`
+ * out) — because it is the only writer of `Ast.u.call.body`, and a `.body`
+ * captured before those passes names a subtree that is no longer in the tree.
+ * Under `CALL_LINKAGE` that would emit the callee REGION from the stale
+ * subtree and the LEXICAL occurrence from the new one: two programs for one
+ * group, with §4.4c's slot indices and §5.3's `W` computed over whichever was
+ * handed over. Wave A2 found the hazard (commit 513de65); the file's own
+ * header carries the full argument and the two witnesses. It must equally run
+ * BEFORE emission, since the emitter reads `.body`, `link` and `minw`.
+ *
+ * IT DOES FOUR THINGS: binds `.body` for every call from the FINAL tree; sets
+ * `link = CALL_LINKAGE` on every node (§6.3 — the arena's `CALL_SPLICE` is
+ * the wrong default in the unsound direction, a spliced recursive call being
+ * an infinite emitter); runs §4.4b's `minw` Kleene fixpoint; and re-asks
+ * module `lookaround`'s §2.7 `\K` refusal THROUGH the graph, which its own
+ * parse hook structurally cannot (`.body` is NULL there and a forward call's
+ * target is not yet parsed). */
+void pcrec_callgraph_build(Ctx *cx, Ast *root);
+
+/* The graph's readers, for `src/gen/emit_vm.c`, which owns the two fixpoints
+ * whose RECURRENCE lives in the emitter — `vm_nullable`'s (a `static` there,
+ * and a second copy would be a second answer to "can this match empty") and
+ * `W`'s (a set of SLOT INDICES, which exist nowhere but the emitter's own
+ * layout). Targets are ASCENDING and `0` means THE ROOT. */
+int         pcrec_callgraph_ntargets(const struct CallGraph *cg);
+int         pcrec_callgraph_target(const struct CallGraph *cg, int i);
+const Ast  *pcrec_callgraph_body(const struct CallGraph *cg, int i);
+int         pcrec_callgraph_index(const struct CallGraph *cg, int target);
+/* Can region `i` reach region `j` through any chain of calls? TRANSITIVE, so
+ * `reaches(i, i)` is exactly "target i is in a cycle" — §6.3's splice
+ * eligibility question (wave G) and §4.4b's cycle test in one relation. */
+bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
@@ -2981,7 +3135,15 @@ long long pcrec_maxw(const Ast *a);                  /* src/opt/mrl.c */
 /* engine_m4.md §2: the backtracking VM as emitted specialized C. Emits the
  * whole artifact (prologue, ABI types, the DFA prefilter pair when the fit
  * says so, the VM itself, and the four entry points). */
-void pcrec_emit_vm(Ctx *cx, const Ast *root);        /* src/gen/emit_vm.c */
+/* [DD-14 wave B+C] `root` LOST ITS `const`, and the reason is one field.
+ * `Ast.u.call.nonnullable` is the graph fixpoint whose RECURRENCE
+ * (`vm_nullable`) is `static` to the emitter — see src/opt/callgraph.c's
+ * header for why the two fixpoints split across two files — so the emitter is
+ * the pass that WRITES it, and `save`/`nsave` are written there too because
+ * their values are SLOT INDICES that exist nowhere else. Dropping the
+ * qualifier is preferred to casting it away at the write site: a cast is a
+ * claim a reader has to check, and the tree is this compile's own arena. */
+void pcrec_emit_vm(Ctx *cx, Ast *root);              /* src/gen/emit_vm.c */
 
 /* src/gen/emit_dfa.c, exported for emit_vm.c: the shared artifact-prologue
  * and entry-point emitters. `pcrec_emit_dfa_engine` emits ONE engine function

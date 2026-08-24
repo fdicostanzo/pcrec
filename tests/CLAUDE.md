@@ -72,7 +72,22 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   truth. The module landing is the event U9's own entry names as making it
   reachable, so the ratchet is the honest holding place for a ruling nobody has
   made yet: the cells stay, they stay loud, and if pcrec is ever changed to
-  reproduce U9 this file FIRES
+  reproduce U9 this file FIRES.
+
+  **[DD-14] wave B+C ADDED `dd14_bc_open.rxt`, THREE CELLS IN THE SAME
+  HOLDING-PLACE SHAPE** — each a RULING nobody has made rather than a bug
+  somebody found. `^(a?(?1)b)$` answers NOMATCH rather than giving up, because
+  design §4.4b's `minw` Kleene fixpoint gives the callee INFINITY (its
+  language IS empty: `X = a? X b` has no base case) and §12 P-12 RULES the MRL
+  prune read that as "no position can match" — while its two SIBLINGS in
+  `leftrec.rxt` still give up, because neither carries a quantifier for a bound
+  to hang on, so the class answers two ways on a shape that is not about
+  recursion. And TWO calls inside a LOOKBEHIND are OVER-REJECTED (a tier-2
+  refusal, never a miscompile), because `la_widths` runs in the PARSE HOOK —
+  where it must, to refuse with a pattern offset — and the call graph does not
+  exist until every call is resolved at end of parse, so **no `A_CALL` arm of
+  `pcrec_maxw` can make them compile**; the fix a ruling would order is a
+  DEFERRED WIDTH RE-CHECK
 - **vm/** — the [M4.5b] backtracking VM engine's own tests: the two bounds
   (step budget, frame capacity) each driven to ITS OWN limit and required to
   produce its own code, the honest artifact stamps (frame_capacity,
@@ -368,6 +383,60 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   tautology; a `--policy=none` control arm and a cell-fidelity guard against
   the corpus's own expectations are the other two anti-tautology rows. Measured
   at the wave: 29,063 three-way comparisons, 0 disagreements.
+- **`recursion/`** — module `recursion` ([DD-14] wave B+C): subroutine calls
+  `(?N)` `(?±N)` `(?&name)` `(?P>name)` `(?R)` `(?0)`, and — from wave D —
+  `\g<N>`/`\g<name>`/`\g<±N>` `\g'N'`/`\g'name'` `\g<0>` `\g'0'`. Eighteen
+  `.rxt` files, **GENERATED**: `gen_corpus.py` drives every cell (including
+  every `g` line) through libpcre2 10.46 via
+  `docs/design/subroutines_measurements/probes/sr_oracle.py` before writing
+  it, and **there is no python arm at all** — design §10.1 MEASURED that
+  python3 `re` has no subroutine-call construct whatsoever, which is an
+  ABSENCE and not a divergence. `\1` and `(?P=n)` DO compile in python and are
+  `backrefs`' REFERENCE construct, a trap the design names by name and
+  `spellings.rxt` opens with §2.1's one-cell discriminator against.
+
+  **THE `\g` FAMILY IS EXPECTED-UNSUPPORTED AND MARKED RATHER THAN RED.**
+  Design §8.1 keeps the two `\g` registry rows `unbuilt` until wave D, since
+  D65 flips `built` from the PORT and never runs the emitter, so the 22 blocks
+  carrying `\g<` or `\g'` render as `perr` under `gen_corpus.py`'s `wave='D'`
+  marker with **the oracle's answer carried in a `# WAVE D ORACLE:` comment**
+  — `APPROACH.md` §7's policy as `docs/testing.md` states it, and wave D's
+  edit is to delete one keyword argument and re-run.
+
+  `(?(DEFINE)...)` never appears: it stays module `conditionals`' doorway
+  until D71 item 4's registry row lands (wave F), and every callee-only body
+  uses the oracle-verified `{0}`-callee idiom instead. The wave A `gu <code>
+  "<subject>"` directive carries the give-up cells.
+
+  **`run_recursion_diff.sh`** (`make test-recursion`) is the behavioural
+  instrument, and each of its four sections exists because a `.rxt` cell
+  structurally cannot make its claim. §1 is the `--no-captures` AXIS — **no
+  `.rxt` directive for that flag exists anywhere in this tree**, and design
+  §4.3's whole claim lives there (a call names a group exactly as a reference
+  does, so `pcrec_bref_mark` must mark the target or the flag deletes the
+  callee out from under the call); it asserts the slots survive in the emitted
+  C AND the answer is right AND `RX_NCAPS` is 1, because the answer alone can
+  be right by accident. §2 BISECTS for the artifact's own depth ceiling rather
+  than pinning one — MEASURED at n = 342 for `^(a(?1)?b)$` over aⁿbⁿ, a
+  684-byte subject, giving up with a TYPED code at 343 — which is the number
+  §14 ASK 2 is about and the failure direction an under-charged `2·|W|` of
+  trail produces. §3 sweeps 16 measured-claim patterns × 24 subjects × EVERY
+  startpos on span AND every group span (1,632 cells, 0 disagreements): the
+  GROUP axis is where §5.3's restore set is observable at all, and STARTPOS is
+  where `reset_for_next_attempt`'s `call_top` line is. §4 is the
+  `--engine=dfa` refusal with its control. It REUSES `backrefs`'
+  `bref_oracle.py` and `bref_batch.c` rather than making a third copy.
+
+  **THREE CELLS ARE PARKED IN `known_fail/dd14_bc_open.rxt`**, each because a
+  RULING is owed rather than a bug is open: `^(a?(?1)b)$` answers NOMATCH
+  rather than giving up (design §4.4b's `minw` fixpoint gives the callee
+  infinity — its language IS empty — and §12 P-12 RULES the MRL prune read
+  that as "no position can match", while its two siblings still give up
+  because neither carries a quantifier for a bound to hang on), and two calls
+  inside a LOOKBEHIND are OVER-REJECTED because `la_widths` runs in the PARSE
+  HOOK and the call graph does not exist until end of parse. See its own
+  CLAUDE.md for the full file list, the `gu frames`-vs-`recurse` note (D71.1),
+  and the reconciled harness-run state.
 - **`encseam/`** — [M5-SEAM] (D58) the ENCODING SEAM's behavioural suite,
   and the first in the tree to run a find-all LOOP (wave D's
   `assertions/run_gstart_diff.sh` is the second, and its driver is

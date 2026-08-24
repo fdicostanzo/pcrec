@@ -44,6 +44,85 @@ construction (src/ir) and emission (src/gen).
   not), and the recursion-discipline reasoning are all in the file's own
   header. Tests: tests/altcls/. Sabotage: tests/mech/sabotages/ (S66/S67).
 
+- **callgraph.c** — [DD-14] wave B+C: THE CALL GRAPH. Which groups are
+  called, what each callee region can reach, and the two things no walker in
+  this tree can answer for itself.
+
+  **IT EXISTS BECAUSE `Ast.u.call.body` IS THE AST'S FIRST BACK EDGE.** Every
+  walker in `src/` was written for a TREE — `pcrec_minw`, `pcrec_has_atomic`
+  and `pcrec_has_bref` are bare `const Ast *` descents with no context, no
+  memo and no visited set — so a question whose answer for a call genuinely
+  IS the callee's ("how wide is this?", "can it match empty?") is not
+  expressible at the walker at all. A WHOLE-TREE PREDICATE needs none of this
+  and MUST NOT follow the edge: it already visits the callee at the callee's
+  own lexical position, so following it is redundant AND non-terminating
+  (`(a(?1))` hangs the COMPILER, in predicates asked of every pattern).
+
+  **THE PASS ORDER IS THE DESIGN AND IT IS WAVE A2's FINDING**, not the
+  design document's — `subroutines_design.md` does not address it anywhere.
+  `.body` is a CACHE of "which subtree is that group's, IN THE TREE THE
+  EMITTER WILL WALK", and two passes above this one REBUILD nodes rather
+  than mutating them: `pcrec_altcls` allocates a fresh `A_CAP` over a merged
+  class (`*r = *a; r->l = body;`), and `pcrec_discharge_atomic` splices an
+  `A_ATOMIC` out. A `.body` captured at END OF PARSE — where design §4.2 and
+  wave A2's `PendingRef` comment both put it — therefore names a subtree that
+  is no longer in the tree, and under `CALL_LINKAGE` the callee REGION is
+  emitted from the stale one while the LEXICAL occurrence comes from the new
+  one. **So this pass runs after `pcrec_select_engine` and before emission,
+  and it is the only writer of `.body` anywhere.**
+
+  **MEASURED, AND THE MEASUREMENT NARROWED THE CLAIM.** With the bind moved
+  above `pcrec_altcls`, `((?:a|b))(?1)` emits TWO DIFFERENT PROGRAMS FOR ONE
+  GROUP — a merged class test lexically, the un-merged two-branch alternation
+  with its own `RX_PUSH` in the region — and `RX_RESUME_FRAMES` moves 2 -> 3
+  with it. **The ANSWERS do not change**, because `altcls` is answer-preserving
+  in both directions, which is exactly why no corpus cell can see this and the
+  detector is `[DD-14-RECURSION rule 3]` in `tests/codegen`. **And the
+  DISCHARGE witness is NOT a hazard**: `((?>a)b)(?1)` compiles BYTE-IDENTICALLY
+  under the same sabotage, because the discharge splices by rewriting the
+  PARENT's `->l` in place and the `A_CAP` a callee is rooted at keeps its
+  identity. Wave A2 named both passes; only the one that REBUILDS the node
+  matters. Sabotage row S166.
+
+  **IT COMPUTES `minw` AND NOT `nullable` OR `W`, WHICH IS A DEVIATION FROM
+  §4.4b's "one mechanism"** and is the wave's largest amendment to the design.
+  Both exceptions are the same reason — the RECURRENCE lives in the emitter
+  and cannot be moved. `vm_nullable` is `static` to `src/gen/emit_vm.c` and is
+  the emitter's own definition of the property the empty-iteration guard is
+  emitted on; a copy here would be a second answer for the two to disagree
+  about, which is the failure mode `vm_marked`, `vm_cuts` and
+  `vm_cursor_fits` are each ONE predicate to avoid. And `W` is a set of SLOT
+  INDICES, which are assigned by `vm_count_slots`' walk over the emitter's own
+  rung decisions and exist nowhere else. What this file owns is the GRAPH both
+  fixpoints iterate over, exported so the emitter does not re-derive "which
+  groups are called and what does each reach".
+
+  **THE MEMO LIVES ON THE NODE, NOT IN THIS FILE.** `u.call.minw` and
+  `u.call.nonnullable` are cached on the `A_CALL` because the walkers that
+  READ them have no `Ctx` to reach a memo through, and the only other spelling
+  is a file-static — a mutable global, which [TS-3]'s concurrent-compile test
+  exists to forbid. Every one is written so **the arena's zero is the SOUND
+  answer**, since `pcrec_minw` is legitimately called from `possessify.c`
+  before this pass runs: `minw` 0 under-estimates (its safe direction), and
+  `nonnullable` is INVERTED so a zero reads NULLABLE, the direction that EMITS
+  the guard.
+
+  **AND IT RE-ASKED MODULE `lookaround`'s §2.7 `\K` REFUSAL THROUGH THE
+  GRAPH, THEN DELETED THE CHECK.** `la_has_kreset` runs in the PARSE HOOK,
+  where it must (the only place with a pattern OFFSET), and at that instant
+  `.body` is NULL and a forward call's target is unparsed — so wave A2 left
+  three answers: re-check after resolution, refuse the combination, or MEASURE
+  what 10.46 does. This lane built the first, then measured: **PCRE2's rule is
+  LEXICAL.** `(?=(a\Kb))x` is error 199 and `(?=(?1))(a\Kb)` COMPILES and
+  matches (1,2) on "ab", so the first two answers are OVER-REJECTIONS. The
+  check was deleted and pcrec re-measured: **7 of 7 cells agree with libpcre2,
+  including the isolating `^(?:((?:a)\Kb)){0}(?=(?1))ab$`** where the `\K` is
+  reachable only through the call inside the lookahead. Structural reason:
+  design §5.3a excludes slots 0 and 1 from `W` so the `\K` survives the
+  RETURN, and `vm_look` restores the CURSOR from `SLOT_LOOK_POS` rather than
+  slot 0 so it survives the ASSERTION. The file's own `\K` note carries the
+  measurement; cells in `tests/recursion/kreset.rxt`.
+
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass
@@ -69,6 +148,29 @@ construction (src/ir) and emission (src/gen).
   `engine_m4.md` §6.1's hybrid needs cannot be had either way. That line is
   also what makes `src/ir/nfa.c`'s missing `A_BREF` arm unreachable rather than
   lucky: nothing builds a machine for a language a backreference is not in.
+
+  **[DD-14] AND A CALL-BEARING PATTERN GETS NO PREFILTER EITHER — WAVE E's
+  LINE, LANDED IN WAVE B+C.** Erasing a call is not a superset, it is a
+  DIFFERENT language, and the counterexample is one line (§8.2): `a(?1)b` with
+  group 1 = `x` matches "axb"; erase the call and `ab` is left, which does
+  not. So the prefilter's REJECTION would be a false negative — the one thing
+  a prefilter may never be — which is unlike `lookaround`'s erasure (a
+  one-line superset proof) and exactly like `backrefs`' above.
+
+  **IT COULD NOT WAIT FOR WAVE E, and that is measured rather than argued.**
+  `src/ir/nfa.c`'s `compile_ast` has an `A_CALL` arm that `ctx_fail`s by name,
+  annotated "unreachable: VM_ONLY, no prefilter" — and "unreachable" was true
+  only while nothing PRODUCED an `A_CALL`. MEASURED on the wave's own branch
+  before the predicate existed: `(a)(?1)`, `(?R)` and `(?<n>a)(?&n)` each
+  answered `pcrec: internal error: bad AST node`, because a capture-bearing
+  pattern routes to the VM, the VM asks for its prefilter, and the prefilter
+  build walks a node it refuses. The choice was not "ship the optimisation
+  early" but "ship a compiler that cannot compile the module's own corpus".
+  S165 is the row, and its own header records that the SILENT-SKIP prediction
+  §9.3 makes becomes reachable only at wave G, which builds §8.3's sound
+  approximation and makes an erased machine constructible at all. The cost is
+  measured and stated: 21x-350x on the sparse-candidate shape a prefilter
+  exists for, over the non-recursive half of the population.
 
   **[M6.4.2/D67] SR-8 IS BUILT HERE, AND `forces_kreset` RETIRED INTO IT.**
   `\K` was the first VM_ONLY producer and got a bespoke analysis at [M6.2]
@@ -213,13 +315,14 @@ construction (src/ir) and emission (src/gen).
   node in the tree, so the whole-tree walk reaches it wherever it sits.
 
   **`pcrec_has_call`** ([DD-14], `subroutines_design.md` §4.3) is
-  `pcrec_has_bref`'s sibling. **AT WAVE A2 IT IS PLACED AND NOT WIRED**: its
-  consumer is wave E's one line in `select_engine.c`, which forces
-  `EngineFit.prefilter` OFF for a call-bearing pattern (§8.2 — erasure is not
-  a sound superset here either). Nothing produces an `A_CALL` before wave B+C,
-  so a call site now could not be exercised. It is EXTERNAL rather than static
-  for exactly that reason: an unused static is a `make strict` error, and a
-  fake call site to silence it would pre-satisfy the row that owns the real one.
+  `pcrec_has_bref`'s sibling, and **AT WAVE B+C IT IS WIRED**. Its consumer is
+  the `fit.prefilter` line in `select_engine.c`, which design §11 schedules for
+  wave E and which landed here because without it `src/ir/nfa.c`'s `A_CALL`
+  arm is REACHABLE: every capture-bearing call pattern answered "internal
+  error: bad AST node", measured on the wave's own branch. Wave A2 placed the
+  predicate and deliberately left the call site absent, on the ground that a
+  fake one would pre-satisfy the row that owns the real one; the real one now
+  exists and S165 is that row.
 
   **`pcrec_has_lookaround`** ([M6.6.2], `lookaround_design.md` §5.6) is
   `pcrec_has_atomic`'s TWIN and is placed beside it because the two are read in
@@ -534,8 +637,33 @@ construction (src/ir) and emission (src/gen).
   `mrl_sat_add` and, at `mrl_sat_mul(UNBOUNDED, 0)`, correctly collapses to 0
   for an unbounded repeat of a zero-width body.
 
-  **NOTHING CALLS `pcrec_maxw` YET** (wave B+C's parse hook is its first
-  caller), so its only instrument is `tests/mrl/maxw_check.c` — see that
+  **[DD-14 wave B+C] `pcrec_minw`'s `A_CALL` ARM READS A VALUE OFF THE NODE**
+  (`u.call.minw`), filled by `src/opt/callgraph.c`'s Kleene fixpoint from
+  INFINITY DOWNWARD over the call graph. It is on the NODE rather than in a
+  memo because this function's signature has no `Ctx` to reach one through and
+  the only alternative is a file-static, i.e. a mutable global [TS-3] forbids.
+  `minw == PCREC_MINW_MAX` means THE CALLEE MATCHES NOTHING, which is a LEGAL
+  compile (`^(a(?1)b)$` compiles on 10.46 and matches nothing at any length) —
+  read through this arm it makes the enclosing pattern's `minw` infinite, and
+  the MRL prune reads that as "no position can match", so pcrec answers NOMATCH
+  in constant time where 10.46 spends its own guard finding out. The pair that
+  pins both directions is `tests/recursion/mrl.rxt`: infinity must be
+  REACHABLE and must not be reached by an APPROXIMATION.
+
+  **AND `pcrec_maxw`'s ARM NEEDED NO CHANGE, WHICH IS THE ASYMMETRY THIS FILE
+  EXISTS TO STATE.** It answers `PCREC_W_UNBOUNDED` unconditionally — EXACT
+  for a recursive callee (design §3.4(d) measured libpcre2 refusing exactly
+  that inside a lookbehind, error 125) and a sound OVER-estimate for every
+  other, which is this function's safe direction. Tightening it for an ACYCLIC
+  callee is an optimisation with a cost the wave did not pay: **its consumer,
+  the lookbehind fixed-width rule, runs in the PARSE HOOK** — where it must, to
+  refuse with a pattern offset — and the call graph does not exist until every
+  call is resolved. So no `A_CALL` arm of `maxw` can make a call inside a
+  lookbehind compile; the fix is a DEFERRED WIDTH RE-CHECK, and the two cells
+  it would turn green are parked in `tests/known_fail/dd14_bc_open.rxt`.
+
+  **`pcrec_maxw`'s ONLY CALLER IS module `lookaround`'s width rule**, so its
+  own instrument is still `tests/mrl/maxw_check.c` — see that
   directory's CLAUDE.md for why the three existing instruments structurally
   cannot see it.
 

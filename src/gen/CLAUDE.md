@@ -371,6 +371,144 @@ Gates: `tests/codegen/run_codegen_tests.sh`'s `[M6.2-KRESET]` block
 `tests/assertions/run_kreset_diff.sh`. No identity gate, by the argument
 above.
 
+## **[DD-14 wave B+C] THE SUBROUTINE CALL: a call IS a resume frame, and the callee region has its OWN exit**
+
+`(?1)` runs another group's pattern here and **puts the capture state back on
+the way out**. Four measurements force the lowering and the whole of this
+section is their consequence; `docs/design/subroutines_design.md` §5 is the
+derivation, and §5.9 BUILT and RAN it before any of this was written.
+
+**A CALL IS A RESUME FRAME (§5.1), and §5.2 is a DERIVATION rather than a
+preference.** The obvious implementation — `const void *call_stack[N]` indexed
+by call depth and POPPED at the return — has a bug that needs three events to
+appear: A returns, its continuation calls B (overwriting A's return label), B
+fails, the backtracker resumes inside A's callee, and A's second return lands
+in B's continuation. The frame's depth mark restores the DEPTH and cannot
+restore the CONTENTS. §5.9 built both: the array build is wrong on 3 of 50
+cells, one of them a FALSE MATCH, and agrees on the other 47 — which is what
+localises the failure to the clobber sequence. So the return label lives in
+the frame, which is the structure whose contents the backtracker already
+restores by construction.
+
+**THE FRAME GAINS TWO FIELDS, NOT THREE (D71.1).** §5.1 has `call_ret`,
+`call_top` and `call_mark`, and a two-line fail label. D71 item 1 keeps
+`PCREC_ERR_RECURSE` as a reserved ABI fact and moves the recursion-depth
+COUNTER to a [V-H] diagnostic generation axis, so calls consume ORDINARY
+FRAMES and a deep one answers `PCREC_ERR_FRAMES`. Two fields, ONE line.
+
+**`call_top` IS ON EVERY FRAME AND THAT IS THE HALF A READER WILL THINK
+REDUNDANT.** `RX_PUSH` stores it because the fail label restores it for EVERY
+frame — and the frame a retreat pops after the innermost call frame is an
+ORDINARY one pushed INSIDE the enclosing activation. **REPRODUCED before the
+line was written**: without it, `^(a(?1)?b)$` on "aaabbb" loses the match and
+the traced artifact shows group 1 coming back (2,5) where it must be (1,5),
+one level off at every depth. `"aabb"` (depth 2) stays green, which is the
+pair that names the failure. Sabotage S144.
+
+**A CALL FRAME'S `resume_label` IS THE FAIL LABEL ITSELF**, which is not a
+placeholder: when the frames inside a call are exhausted the call has no
+alternatives, so popping it must continue failing — and the fail label then
+needs NO knowledge of frame kinds and no branch.
+
+**THE RETURN DOES NOT POP AND DOES NOT CUT.** §3.2 MEASURED the call
+BACKTRACKABLE on 10.46 (it was atomic before 10.30), on a body reachable ONLY
+by the call, with four atomic controls refusing. S145 and S146 are the two
+rows, and they are two because a compiler that CUT gets the discriminator
+wrong while still getting all four controls RIGHT.
+
+**`W`: THE ACTIVATION-PRIVATE SAVE/RESTORE, AND THE TRAIL IS THE STORAGE.**
+At the call site each slot in `W` gets a TRAILED SELF-WRITE — `RX_SET(s,
+slot_values[s])`, which parks the value and leaves the slot alone, because
+`RX_TRAIL` records the old value UNCONDITIONALLY with no same-value elision.
+**The saves come AFTER the push and the order is load-bearing**: the call
+frame's `trail_mark` is then exactly the index of the first save, so the
+return reads `W[j]` at `trail[trail_mark + j]` with `j` a compile-time
+constant. The restore is itself TRAILED, so backtracking INTO a returned call
+re-establishes the callee's own values — which §3.2 requires.
+
+**`W` IS EVERY SLOT FAMILY, NOT THE CAPTURES, AND THAT ANSWER IS MEASURED
+WRONG RATHER THAN MERELY INCOMPLETE.** The capture-only set loses
+`SLOT_GROUP<n>_PENDING` (a LOST MATCH: `^(a(?1)?b)\1$` on "aabbaabb" answers
+nomatch where 10.46 answers (0,8), 11/2) and `SLOT_CUT_MARK<n>` (SIX FALSE
+MATCHES whose language is EXACTLY the non-atomic control's — the atomic group
+stopped being atomic, 4/6). Every family is written at a construct's ENTRY and
+read at its EXIT, and two ACTIVATIONS of one construct are NESTED rather than
+sequential. **Slots 0 and 1 are NEVER members**: `\K` writes slot 0 and §3.4(b)
+MEASURED that a `\K` in a callee is NOT restored by a return. Rows S148-S153,
+one per family.
+
+**`W` IS BUILT HERE AND NOT IN `callgraph.c`, AND SO IS THE NULLABILITY
+FIXPOINT** — a deviation from §4.4b's "one mechanism, and this is the only
+list of its consumers". Both for the same reason: `W` is a set of SLOT
+INDICES, which are assigned by `vm_count_slots`' own walk over this emitter's
+rung decisions and exist nowhere else, and `vm_nullable` is `static` here and
+is the emitter's own definition of the property the empty-iteration guard is
+emitted on. `callgraph.c` owns the GRAPH both iterate over. The set is
+assembled from the COUNTER RANGES each region's own `vm_count_slots` pass
+consumed — five of the seven families replicate PER EMITTED COPY
+(`^((?>a)){3}$` has ONE lexical atomic group and FOUR cut marks), so a walk
+over NODES would count the wrong thing.
+
+**THE LAYOUT COUNTS EVERY EMITTED REGION (§4.4c), AND THE SITE'S FIRST ANSWER
+WAS WRONG.** `vm_count_slots` runs ONCE PER REGION in ascending target order
+after the main-body walk, and `vm_emit` emits them in the same order, so the
+running counters and the pre-pass agree site for site. A LEXICAL-only count is
+an OUT-OF-BOUNDS SLOT WRITE, K27's class, and the reason is that **`X{0}`
+emits nothing and counts nothing while a callee parked there is a REAL
+IDIOM** — the classic pre-DEFINE spelling, measured matching on 10.46 for
+plain, recursive, atomic and rung-bearing callees. The arm in
+`vm_count_slots` is therefore EMPTY and §4.4c's proposed parameter is not
+needed: the region walk starts AT the callee's own `A_CAP`, so no `{0,0}`
+ancestor is on its path. Row S164, whose cell must carry a rung-bearing or
+atomic callee — one with only capture slots allocates from a family `{0}`
+does not prune and goes green.
+
+**THE CALLEE REGION HAS ITS OWN EXIT, AND §3.5 MAKES THAT A RULE.** A call
+reaches the GROUP, not the group's LEXICAL OCCURRENCE, and the wrapper belongs
+to the occurrence: measured, a callee whose lexical home is a lookbehind must
+leave through its own exit rather than the assertion's end-check-cut-and-
+restore, one whose home is a negative lookahead must RETRY inside a region
+that is cut on the assertion's success, and one whose home is atomic must GIVE
+BACK. **It is an EXIT rule and not an entry rule** — a jump to the group's own
+label lands AFTER a lookbehind's back-step, so the entry is fine. Row S163.
+
+**THE FOLLOW IS SCOPED TO ZERO ACROSS THE REGION, FOR A THIRD REASON.**
+`vm_atomic` scopes because of the CUT, `vm_look` because the follow OVERLAPS
+the body, and a callee because the follow is **UNKNOWN**: a shared body has
+many callers with different follows, and a rung bound baked from one caller's
+follow is wrong for every other. Only the third reason survives wave G's
+splice, which is why it is stated separately. Row S162, whose detector must be
+a TWO-CALL-SITE cell — with one call site the baked bound is that site's own
+and the artifact is correct.
+
+**THE SECOND INDIRECT JUMP, AND THE `goto *` IS WRITTEN OUT INLINE.**
+§5.8 amends this file's own one-indirect-jump decision to a RELATION —
+`goto *` count == 1 (the fail label) + one per emitted SHARED CALLEE BODY —
+and a CONSTANT would be wrong in both directions (three distinct callees give
+four; a wave-G splice gives one). The design sketches `RX_RETURN` as a MACRO,
+which would put one `goto *` in the definition and NONE at the uses, making
+the relation unstateable. Emitting per region is a deliberate deviation and
+`[DD-14-RECURSION rule 1]` in tests/codegen is what it buys — CONFIRMED on the
+shipped emitter at 1 / 2 / 2 / 4 for call-free, one callee, three SITES to one
+group, and three distinct groups. Row S168.
+
+**EVERY BYTE OF THIS IS GATED ON ONE FLAG.** `Vm.has_calls` (i.e.
+`cx->callgraph != NULL`) gates the frame's two fields, `RX_PUSH`'s extra line,
+`RX_CALL`, the fail label's line and both reset functions — so §9.1's
+byte-identity claim is STRUCTURAL rather than something a sweep discovers.
+MEASURED anyway: 2,198 of 2,198 call-free corpus patterns byte-identical to a
+`git archive` of the pre-module compiler, with the positive control
+(the reference REFUSES all 98 call-bearing patterns) at `ctl_bad = 0`.
+`[DD-14-RECURSION rule 2]` asserts the four names absent from a call-free
+artifact and PRESENT in a call-bearing one, in the same run.
+
+**AND `<prefix>_run_state_init` / `_reset_for_next_attempt` BOTH SET
+`call_top = CALL_TOP_NONE`** (§5.6 sites 5a/5b). The first is not an
+`ERR_FLOOR` site but a MISSING INITIALISER — R34's LENS2-7 found the design's
+own prototype setting the sentinel by hand in `main()`, which is the kind of
+scaffolding a prototype hides behind. The second is the per-START-POSITION
+reset: a bump-along must not inherit the previous attempt's activation.
+
 ## The multi-engine naming surface (OS-0b)
 
 One output file may eventually carry several engines, one per point of the

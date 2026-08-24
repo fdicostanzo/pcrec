@@ -79,6 +79,23 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   resolves a scanned name through. D71 item 3; `check_index_rows` in
   tests/registry/registry_check.c asserts both halves against the ENGINE's
   own dispatch rather than by re-reading the flag.
+  **[DD-14 wave B+C] AND THE FIRST ROWS WHOSE PORT IS CHOSEN BY FAMILY.**
+  Module `recursion`'s twenty-four `(?` rows carry one of THREE ports
+  (`GROUP_RC`/`GROUP_RC_T`, mirroring `GROUP_LA`/`GROUP_LA_T`'s shape), and
+  the split is by CONSTRUCT FAMILY rather than by convenience: absolute
+  numeric plus `(?R)`, relative, and by-name. The `(?0)` row's description
+  moved in the same change and the move is load-bearing rather than
+  editorial — it used to read *"recurse the whole pattern (synonym for
+  (?R))"* unqualified, and §2.4a MEASURED that a port written from that
+  sentence MISCOMPILES `(?01)` as the root where 10.46 makes it group 1.
+  `(?0...)` is a one-character prefix of two different targets, which is the
+  second time this table has had to tell a doorway keyed on one byte to read
+  the whole run (the first is `(?10)`).
+
+  The two `\g<` / `\g'` rows stay `NO_PORT` and therefore `unbuilt` until
+  wave D — design §8.1's requirement, since D65 flips `built` from the PORT's
+  answer and never runs the emitter.
+
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
   mod_verbs.c at MOD-0.4 — see its own entry below; declared in internal.h
@@ -684,6 +701,74 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   pattern with no reference that is ALL of them, which is what makes the
   emitted C identical to what it always was. `tests/codegen/run_backref_identity.sh`
   is where that stops being an argument.
+
+- **mod_recursion.c** — module `recursion` ([DD-14] wave B+C): THREE atom
+  ports at the `(?` doorway, and one construct family whose whole design
+  turns on a single measured cell. Design:
+  docs/design/subroutines_design.md, panel-approved at R34.
+
+  **WHAT SEPARATES THIS MODULE FROM `backrefs` IS ONE CELL**, and every
+  consequence follows from it: `(a|b)\1` on "ab" is NOMATCH and `(a|b)(?1)`
+  on "ab" is (0,2). A backreference wants the same TEXT; a call re-RUNS the
+  group's pattern. So the two share a resolution PASS and share nothing else
+  — `A_BREF.u.bref.refs` is a SET resolved at MATCH time over a duplicated
+  name's run, `A_CALL.u.call.target` is ONE NUMBER resolved at PARSE time to
+  the FIRST DECLARATION (measured, §3.4(c), in all four by-name spellings).
+
+  **THREE PORTS AND NOT ONE, because three FAMILIES.** `pcrec_rcport_num`
+  serves `(?N)` and `(?R)`, `_rel` the relative `(?+N)`/`(?-N)` family, and
+  `_name` the two by-name spellings. The family is what a reader of the
+  registry needs to see at the row, which is also why `registry.c` gained two
+  macros (`GROUP_RC`/`GROUP_RC_T`) rather than one taking a function pointer.
+
+  **THE LEADING-ZERO RULE IS THIS FILE'S SHARPEST TRAP** (§2.4a, R34 LENS1-4).
+  The registry keys the `(?` doorway on THE CHARACTER AFTER `(?`, and it has a
+  row whose selector is `0`. A port wired to that row's old DESCRIPTION —
+  *"synonym for `(?R)`"* — compiles `(?01)` as THE ROOT, and `^(a(?01)?b)$` on
+  "aabb" then answers NOMATCH where 10.46 answers (0,4). So every numeric port
+  here **re-reads the WHOLE DIGIT RUN from the selector byte** and the row
+  dispatched is used only to say which family the construct belongs to; the
+  `(?0)` row's description is qualified in the same change, where a reader
+  meets it. The discriminator has to be the ANCHORED form — unanchored, both
+  readings answer (0,4).
+
+  **THE ROOT NEVER REACHES THE RESOLVER, AND THAT REMOVED A FIELD THE DESIGN
+  NEEDED.** `(?R)`, `(?0)` and `(?00)` target the AST ROOT, which always
+  exists — no group count, no name table, no declaration — so there is
+  nothing to defer and the port answers them itself, queueing NO
+  `PendingRef`. That leaves the resolver's numeric rule EXACTLY `A_BREF`'s
+  (`1 <= n <= ncap`, else error-115-class), and the two kinds then differ in
+  the NAME arm alone. Without it a relative offset computing to zero —
+  `(a)(?-2)` gives `1 - 2 + 1 == 0` — would compile as `(?R)`, which is why
+  §4.2's table needs a way to tell an absolute zero from a relative one and
+  this shape needs none.
+
+  **NOTHING HERE RESOLVES A CALL OTHERWISE.** Every other spelling records a
+  `PendingRef` with `kind = PEND_CALL` and `pcrec_bref_resolve` settles it at
+  end of parse — which is what makes a FORWARD call legal BY CONSTRUCTION
+  (`^(?+1)(a|b)$` on "ab" MATCHES, where a forward REFERENCE can only ever
+  read an unset group) and what gives the numeric, relative and by-name
+  spellings ONE definition of "group k exists".
+
+  **THE `\g<` / `\g'` ROWS HAVE NO PORT HERE AND NEED NO DECLINE BRANCH.**
+  Design §4.2 and the wave brief both ask `pcrec_brport_g` for "one decline
+  branch at `WANT_RESULT`" so those rows stay `unbuilt` until wave D. **No
+  such branch exists and none is needed**: the two tails are their OWN
+  registry rows (module `recursion`, rank 25) carrying `NO_PORT`, so
+  `pcrec_brport_g` is NEVER REACHED for them — the arbitration elects the
+  tailed row and the base `\g` row's port never sees the text. A row with no
+  atom port reaching post-gate `WANT_RESULT` takes ext.c's ENABLED-BUT-UNBUILT
+  epilogue, which is exactly D65's "gate open, port missing" signal, so the
+  column reads `unbuilt` with NO CODE AT ALL. A decline branch would have been
+  unreachable code satisfying nothing. Wave D's edit is to WIRE those rows,
+  not to delete a decline.
+
+  **AND IT EXTENDS `mod_backrefs.c`'s RESOLVER RATHER THAN COPYING IT.**
+  `PendingRef` gains ONE FIELD (`PendKind`), the list is one list walked once,
+  and the pass's whole justification — it is the ONE site that knows both the
+  final group count and every declaration of a duplicated name — is as true of
+  a call as of a reference. The call arm is two lines there and this file
+  holds the ports.
 
 - **parse_mods.h** — the SCOPED INLINE-OPTION STATE's definition, and the
   header NOTHING outside this directory includes ([M6.2] wave A; D62;

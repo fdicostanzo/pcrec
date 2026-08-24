@@ -202,18 +202,30 @@ static bool la_has_kreset(const Ast *a)
          * question "does the callee contain a `\K`" is not merely forbidden
          * here by §4.4's back-edge rule, it is UNANSWERABLE here.
          *
-         * WAVE B+C OWES A DECISION, and this comment is the record of it
-         * rather than a silent inheritance. `(?=(?1))` where group 1 holds a
-         * `\K` reaches, through a call, exactly the configuration §2.7
-         * refuses when it is written out — and design §3.4(b) MEASURED that
-         * `\K` is not restored by a return, which is what shapes §5.3's
-         * exclusion of slots 0 and 1. The wave with the producer must either
-         * re-run this check after resolution (over the call graph, memoised,
-         * NOT down `.body` from here), or refuse a call inside a lookaround
-         * body, or MEASURE that 10.46 accepts the combination and say what it
-         * does. `false` here is inert in this wave — nothing produces an
-         * `A_CALL` — and it must not survive into the wave that does without
-         * one of those three answers behind it. */
+         * **WAVE B+C DISCHARGED IT WITH THE THIRD ANSWER, AND `false` IS
+         * THEREFORE THE PERMANENTLY CORRECT ONE.** This comment used to say
+         * the wave with the producer must either re-run the check after
+         * resolution over the call graph, refuse a call inside a lookaround
+         * body, or MEASURE what 10.46 does. It measured, and **PCRE2's RULE
+         * IS LEXICAL**: `(?=(a\Kb))x` is error 199, and `(?=(?1))(a\Kb)` —
+         * where the `\K` is reached THROUGH A CALL — COMPILES and matches
+         * (1,2) on "ab". The first two answers would have refused patterns
+         * 10.46 accepts.
+         *
+         * AND pcrec ALREADY REPRODUCES IT, which is what makes "answer
+         * `false` and stop" a measurement rather than a shrug: the lane built
+         * the post-graph check, measured the oracle, deleted the check and
+         * re-measured — 7 of 7 cells agreeing, INCLUDING the isolating
+         * `^(?:((?:a)\Kb)){0}(?=(?1))ab$`, where the `\K` is reachable ONLY
+         * through the call inside the lookahead. The reason is structural:
+         * design §5.3a excludes slots 0 and 1 from `W` BY CONSTRUCTION so a
+         * `\K` survives the RETURN, and `vm_look` restores the CURSOR from
+         * `SLOT_LOOK_POS` rather than slot 0 so it survives the ASSERTION.
+         * `\K` is a PATH FACT at both boundaries.
+         *
+         * The measurement and the cells are recorded at
+         * `src/opt/callgraph.c`'s own `\K` note and in
+         * `tests/recursion/kreset.rxt`. */
         case A_CALL:
             return false;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:

@@ -1710,24 +1710,48 @@ static void check_class_ports(void)
      * alias resolves through `family` to a primary whose tail the port has
      * accepted since wave D. Class ports are unmoved at 7/10/9 for the same
      * reason as before, one spelling further out: `[(*pla:a)]` is a class of
-     * ordinary members and there is no construct there to port. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 65)
+     * ordinary members and there is no construct there to port.
+     *
+     * [DD-14] WAVE B+C: ATOM PORTS 65 -> 89, and it is TWENTY-FOUR rows over
+     * THREE functions rather than one — module `recursion`'s
+     * `pcrec_rcport_num` (the eleven absolute rows `(?0)`..`(?9)` and
+     * `(?R)`), `_rel` (`(?+1)` and the ten `(?-N)` tails) and `_name`
+     * (`(?&name)` and `(?P>n)`). Three and not one because the three serve
+     * three FAMILIES and the family is what a reader of the table needs to
+     * see at the row; the `(?0)` row in particular carries a description
+     * saying the whole DIGIT RUN is read, because `(?0...)` is a
+     * one-character prefix of two different targets and a port written from
+     * the old unqualified "synonym for (?R)" MISCOMPILES `(?01)`.
+     *
+     * ALL TWENTY-FOUR BUILD IMMEDIATELY, unlike wave B+C's lookaround six:
+     * these ports have no tail left to decline. The two `\g<` / `\g'` rows
+     * are the ones that stay `unbuilt`, and they do it with NO PORT AT ALL
+     * (`NO_PORT`, so ext.c's ENABLED-BUT-UNBUILT epilogue answers for them) —
+     * which is why the SCALAR count above is unmoved at 7 and the atom count
+     * moves by exactly 24 rather than 26. Wave D wires those two.
+     *
+     * CLASS PORTS ARE UNMOVED at 7/10/9 for the third wave running: a
+     * subroutine call has no class position, and the two `\g` rows' BASE
+     * scalar class ports (the literal letter `g`) were already counted. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 89)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (65: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (89: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
             "\\b and \\B since wave B, \\G since wave D, \\K since "
             "wave E, `(?>...)` since [M6.4.2], the thirteen backrefs rows "
-            "since [M6.5.2], and the EIGHTEEN lookaround rows sharing ONE port "
-            "-- six at [M6.6.2] wave B+C, twelve more at wave F). A "
+            "since [M6.5.2], the EIGHTEEN lookaround rows sharing ONE port "
+            "-- six at [M6.6.2] wave B+C, twelve more at wave F -- and the "
+            "TWENTY-FOUR recursion rows over THREE ports since [DD-14] wave "
+            "B+C, the two \\g< / \\g' rows deliberately NOT among them). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 65 atom "
+        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 89 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
@@ -2001,6 +2025,77 @@ static void check_engine_capability(void)
         { RK_VERB, REG_SEL_ANY, "non_atomic_positive_lookbehind", "lookaround",
           "(*non_atomic_positive_lookbehind:a)b",
           "(*non_atomic_positive_lookbehind:a)" },
+        /* [DD-14] WAVE B+C: MODULE `recursion`'s TWENTY-FOUR WIRED ROWS, one
+         * witness each, and per-member for the reason the twelve alpha rows
+         * above are per-member: the stamp is what carries VM_ONLY into
+         * `select_engine.c` and each row is a separate `Ast.reg` value.
+         *
+         * EVERY ONE BITES, AND THE ARGUMENT IS THE SHARPEST IN THIS TABLE.
+         * A subroutine call is VM_ONLY STRUCTURALLY rather than by a design
+         * choice: the language `^(a(?1)?b)$` generates is a^n b^n, MEASURED
+         * matching at n = 400,000, which is not regular — so unlike the atomic
+         * group, whose VM_ONLY is too strong for a possessive the free
+         * discharge proves dead, there is no rewrite that could discharge this
+         * one and no flag that makes it DFA-compilable. The refusal must
+         * therefore name the CONSTRUCT and never advise `--no-captures`, which
+         * is D44.6/§9.2 item 2's rule and what `EngineAnalysis.node_derived`
+         * exists to keep true.
+         *
+         * TWO OF THEM ARE CAPTURE-FREE AND THE OTHER TWENTY-TWO CANNOT BE,
+         * which is a departure from every witness above and is a property of
+         * the CONSTRUCT rather than a weakening of the check. `(?R)` and
+         * `(?0)` call the WHOLE PATTERN, so `a(?R)?b` has no capturing group
+         * at all and is VM-forced by NOTHING BUT THE STAMP — the sharp form.
+         * Every other spelling names a GROUP, so a witness for `(?1)` must
+         * contain one by construction.
+         *
+         * THE TWENTY-TWO STILL FIRE, and the reason is worth stating because
+         * the comment on the `(?` witnesses above says capture-freedom is
+         * "required": what that paragraph is really about is the MESSAGE. A
+         * capture-bearing pattern is VM-forced by the generic capture rule too,
+         * but the two forcings produce DIFFERENT TEXT — the captures arm says
+         * "pass --no-captures" and names no construct — so a compiler whose
+         * stamp was gone fails `strstr(perr.msg, name)` and this check goes
+         * RED rather than green. The capture-free pair above is what makes
+         * that argument checkable rather than merely stated: if the stamp
+         * vanished, those two would not be refused at all.
+         *
+         * `name` IS THE ROW'S OWN `syntax`, verbatim, because that is what
+         * `select_engine.c` puts in `why` — which for the relative family
+         * means the witness and the name are the same string (`(a)(?-1)`), and
+         * for `(?N)` means the witness must supply N groups. */
+        { RK_GROUP, 'R', NULL, "recursion", "a(?R)?b",      "(?R)" },
+        { RK_GROUP, '0', NULL, "recursion", "a(?0)?b",      "(?0)" },
+        { RK_GROUP, '1', NULL, "recursion", "(a)(?1)",      "(?1)" },
+        { RK_GROUP, '2', NULL, "recursion", "(a)(b)(?2)",   "(?2)" },
+        { RK_GROUP, '3', NULL, "recursion", "(a)(b)(c)(?3)", "(?3)" },
+        { RK_GROUP, '4', NULL, "recursion", "(a)(b)(c)(d)(?4)", "(?4)" },
+        { RK_GROUP, '5', NULL, "recursion", "(a)(b)(c)(d)(e)(?5)", "(?5)" },
+        { RK_GROUP, '6', NULL, "recursion", "(a)(b)(c)(d)(e)(f)(?6)", "(?6)" },
+        { RK_GROUP, '7', NULL, "recursion", "(a)(b)(c)(d)(e)(f)(g)(?7)", "(?7)" },
+        { RK_GROUP, '8', NULL, "recursion", "(a)(b)(c)(d)(e)(f)(g)(h)(?8)", "(?8)" },
+        { RK_GROUP, '9', NULL, "recursion", "(a)(b)(c)(d)(e)(f)(g)(h)(i)(?9)", "(?9)" },
+        { RK_GROUP, '+', NULL, "recursion", "(?+1)(a)",     "(?+1)(a)" },
+        { RK_GROUP, '-', "0",  "recursion", "(a)(?-01)",    "(a)(?-01)" },
+        { RK_GROUP, '-', "1",  "recursion", "(a)(?-1)",     "(a)(?-1)" },
+        { RK_GROUP, '-', "2",  "recursion", "(a)(a)(?-2)",  "(a)(a)(?-2)" },
+        { RK_GROUP, '-', "3",  "recursion", "(a)(a)(a)(?-3)", "(a)(a)(a)(?-3)" },
+        { RK_GROUP, '-', "4",  "recursion", "(a)(a)(a)(a)(?-4)",
+          "(a)(a)(a)(a)(?-4)" },
+        { RK_GROUP, '-', "5",  "recursion", "(a)(a)(a)(a)(a)(?-5)",
+          "(a)(a)(a)(a)(a)(?-5)" },
+        { RK_GROUP, '-', "6",  "recursion", "(a)(a)(a)(a)(a)(a)(?-6)",
+          "(a)(a)(a)(a)(a)(a)(?-6)" },
+        { RK_GROUP, '-', "7",  "recursion", "(a)(a)(a)(a)(a)(a)(a)(?-7)",
+          "(a)(a)(a)(a)(a)(a)(a)(?-7)" },
+        { RK_GROUP, '-', "8",  "recursion", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)",
+          "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)" },
+        { RK_GROUP, '-', "9",  "recursion", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)",
+          "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)" },
+        { RK_GROUP, '&', NULL, "recursion,named-groups", "(?<n>a)(?&n)",
+          "(?&name)" },
+        { RK_GROUP, 'P', ">",  "recursion,named-groups", "(?<n>a)(?P>n)",
+          "(?P>n)" },
         { RK_ESC,   'g', NULL, "backrefs",              "(a)\\g{-1}",       "\\g{-1}" },
         { RK_ESC,   'k', NULL, "backrefs,named-groups", "(?<n>a)\\k<n>",    "\\k<name>" },
         { RK_GROUP, 'P', "=",  "backrefs,named-groups", "(?<n>a)(?P=n)",    "(?P=n)" },
@@ -2143,10 +2238,28 @@ static void check_engine_capability(void)
      * first call (built). `built_wired == wired` still holds, which is the
      * state the third number was split out to be able to assert — there is
      * nothing left for the `built` gate to excuse in this module. */
-    if (qualifying != 66 || wired != 36 || built_wired != 36)
+    /* [DD-14] WAVE B+C: `wired` and `built_wired` 36 -> 60, `qualifying`
+     * UNMOVED at 66 — and the three moving differently is the whole reason the
+     * third number was split out. The twenty-four `(?` recursion rows were
+     * ALREADY VM_ONLY and already RS_MODULE (P4 measured all 26 that way
+     * before any of this module existed), so this wave gave them a PRODUCER
+     * and not a classification. All twenty-four BUILD on their first call,
+     * unlike wave B+C's lookaround six, because these ports have no tail left
+     * to decline.
+     *
+     * THE TWO ROWS THAT DID NOT MOVE ARE THE INTERESTING HALF. `\g<1>` and
+     * `\g'1'` are module `recursion`'s too, they are inside `qualifying`, and
+     * they are deliberately NOT wired: design §8.1 requires them to stay
+     * `unbuilt` until wave D, because D65 flips `built` from the PORT's answer
+     * and a wave that flipped them while the emitter could not compile the
+     * spelling would ship a compliance index that lies. So `wired` and
+     * `built_wired` move by 24 while `qualifying` holds at 66, and the gap
+     * between `wired` and `qualifying` is now exactly those two plus the four
+     * `RK_QUANTSUFFIX` rows and the rest of the unbuilt population. */
+    if (qualifying != 66 || wired != 60 || built_wired != 60)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 66, 36 "
-            "and 36 -- the VM_ONLY population, its producer set or its built "
+            "have a wired producer and %d of THOSE are BUILT, expected 66, 60 "
+            "and 60 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
         bad("engine capability: %d rows are VM_ONLY, wired AND built, but only "
@@ -2445,10 +2558,32 @@ static void check_built_status_defects(void)
      * does not move, and NO ROW OUTSIDE MODULE `lookaround` MOVES — the `(?(`
      * conditional-group row is `unbuilt` for the third wave running, and an
      * alpha SPELLING of an assertion unlocks assertion-conditions no more
-     * than the `(?` spelling did. */
-    else if (checked != 118 || built != 70 || unbuilt != 42 || na != 6)
+     * than the `(?` spelling did.
+     *
+     * [DD-14] WAVE B+C: 118 = 70 + 42 + 6 -> 118 = 94 + 18 + 6. TWENTY-FOUR
+     * ROWS FLIP `unbuilt -> built` and NO ROW IS ADDED OR REMOVED, which is a
+     * shape this column has not seen before: every previous wave either added
+     * rows born `built` (wave F's twelve alpha spellings) or flipped a handful
+     * (wave D's three lookbehinds). Here the whole `(?` half of module
+     * `recursion` gains a producer at once, because D65 derives `built` from
+     * the PORT's answer and this wave wires all three ports together.
+     *
+     * THE TWO ROWS THAT DO NOT FLIP ARE THE ASSERTION. `\g<1>` and `\g'1'`
+     * stay `unbuilt` — design §8.1 requires it until wave D, since flipping
+     * them while the emitter cannot compile the spelling would ship a
+     * compliance index that lies — and they stay `unbuilt` with NO CODE AT
+     * ALL: their rows carry `NO_PORT`, so ext.c's ENABLED-BUT-UNBUILT epilogue
+     * answers for them and D65's "gate open, port missing" signal is exactly
+     * what the classifier reads. A decline branch inside `pcrec_brport_g`
+     * would have been unreachable code satisfying nothing, and the brief that
+     * asked for one is corrected at `src/parse/mod_recursion.c`'s closing note.
+     *
+     * NO ROW OUTSIDE MODULE `recursion` MOVES. `(?(DEFINE)` is `conditionals`'
+     * and stays `unbuilt` for the fourth wave running: D71 item 4 gives it to
+     * this module as a tailed row, and that is wave F's. */
+    else if (checked != 118 || built != 94 || unbuilt != 18 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 118 = 70 + 42 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 118 = 94 + 18 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "

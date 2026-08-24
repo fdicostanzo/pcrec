@@ -167,45 +167,41 @@ long long pcrec_minw(const Ast *a)
          * consume it. */
         case A_LOOK:
             return acc;
-        /* [DD-14] A SUBROUTINE CALL CONTRIBUTES 0 — AND THIS ARM IS A
-         * DELIBERATELY INCOMPLETE PLACEHOLDER, which is the only arm in this
-         * file that has ever been allowed to say so. Read the whole comment
-         * before touching it.
+        /* [DD-14 wave B+C] A SUBROUTINE CALL CONTRIBUTES ITS CALLEE'S OWN
+         * MINIMUM, READ OFF THE NODE — the one arm in this file whose answer
+         * is not derivable from the subtree in front of it.
          *
-         * THE TRUE ANSWER IS `minw(target)`, and it is a FIXPOINT rather than
-         * a recursion (subroutines_design.md §4.4b): Kleene iteration from
-         * infinity downward over the SCC-condensed call graph, memoised, with
-         * `minw(g) == infinity` meaning THE CALLEE MATCHES NOTHING — a legal
-         * compile, since `^(a(?1)b)$` compiles on 10.46 and matches nothing.
-         * THIS FUNCTION'S SIGNATURE CANNOT EXPRESS THAT. It is a bare
-         * `const Ast *` walker with no context, no memo and no visited set, so
-         * `a = a->u.call.body; continue;` would recurse for ever on `(a(?1))`
-         * and HANG THE COMPILER (design §4.4). The fixpoint therefore lives in
-         * `src/opt/callgraph.c` (wave B+C) and this arm will READ its memo.
+         * IT IS A FIXPOINT AND NOT A RECURSION (subroutines_design.md §4.4b):
+         * Kleene iteration from INFINITY DOWNWARD over the call graph, run
+         * once by `pcrec_callgraph_build` (src/opt/callgraph.c) and cached in
+         * `u.call.minw`. THIS FUNCTION'S SIGNATURE CANNOT EXPRESS THAT and
+         * that is why the value is on the node rather than in a memo: a bare
+         * `const Ast *` walker with no context, no memo and no visited set
+         * would recurse for ever on `(a(?1))` if it followed `.body`, and the
+         * only other way to reach a memo from here is a file-static, i.e. a
+         * mutable global that [TS-3]'s concurrent-compile test exists to
+         * forbid. See `u.call.minw`'s own comment in core/internal.h.
          *
-         * 0 IS THE SOUND PLACEHOLDER AND `ctx_fail` IS NOT AVAILABLE. This
-         * file's safe direction is UNDER-estimating (the header's own rule: a
+         * `minw == PCREC_MINW_MAX` MEANS THE CALLEE MATCHES NOTHING, and that
+         * is a LEGAL COMPILE rather than an error: `^(a(?1)b)$` compiles on
+         * 10.46 and matches nothing at any length (design §12 P-12, measured
+         * on seven subjects). Read through this arm it makes the enclosing
+         * pattern's `minw` infinite too, which the MRL prune reads as "no
+         * position can match" — so pcrec answers NOMATCH in constant time
+         * where 10.46 spends its own guard finding out. The pair that pins
+         * both directions is `tests/recursion/mrl.rxt`: infinity must be
+         * REACHABLE and must not be reached by an APPROXIMATION (the
+         * withdrawn "minimum over the non-recursive branches" gloss answers
+         * infinity for `^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$`, which
+         * MATCHES "xb", and would lose every row of it).
+         *
+         * THE ARENA'S ZERO IS THE SOUND VALUE, which is what makes reading an
+         * un-run fixpoint safe: this file's direction is UNDER-estimating (a
          * bound below the truth prunes less and can never delete a live
-         * position), and 0 is the bottom of that direction — so an artifact
-         * built through this arm prunes nothing on account of the call and
-         * loses no match. There is no `Ctx` in this signature to fail loudly
-         * through, which is why this site takes the sound bottom where
-         * `vm_emit`'s arm takes a hard error.
-         *
-         * IT IS UNREACHABLE IN THIS WAVE: nothing produces an `A_CALL` until
-         * wave B+C, and wave B+C is the wave that replaces this arm in the
-         * same edit that builds `callgraph.c`. Design §4.4b's `mrl.rxt` pair
-         * is its control — `^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$` on
-         * "xb" must MATCH (the withdrawn "minimum over non-recursive
-         * branches" gloss gives infinity and loses it), and
-         * `^(?(DEFINE)(?<g>a(?&g)b))(?&g)$` must match NOTHING (infinity is
-         * the correct fixpoint there). The two cells together say that
-         * infinity must be reachable and must not be reached by an
-         * approximation, which is exactly what 0 here is not allowed to
-         * survive as. */
+         * position), and `pcrec_minw` is legitimately called from
+         * `src/opt/possessify.c` before the graph exists. */
         case A_CALL:
-            /* WAVE B+C: read callgraph.c's minw fixpoint for u.call.target. */
-            return acc;
+            return mrl_sat_add(acc, a->u.call.minw);
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));
             a = a->l;

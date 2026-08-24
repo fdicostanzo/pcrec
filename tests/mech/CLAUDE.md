@@ -74,6 +74,26 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   documentation claimed, purely for humans diffing a re-run against the docs —
   the matrix itself does not read it.
 
+## THREE SUITE NAMES THE `[DD-14]` DESIGN ASSUMED, AND NONE OF THEM EXISTS
+
+`subroutines_design.md` §9.3 assigns three of its rows to suites this
+directory does not have: S-SR9a and S-SR11 are described as **"a TIMEOUT
+row"** with *"`tests/mech/`'s timeout suite is the assignment"*, S-SR19 is
+*"`asan`-suite as well"*, and one row named `rungselect` (the test
+DIRECTORY's name) where the arm is `rungdiff`. The `*)` arm scores an
+unrecognised word as `UNKNOWN-SUITE` rather than silently ignoring it, which
+is how all three were caught on their first run.
+
+**THE HANG ROWS ARE `harness` ROWS, and that is not a demotion.**
+`tests/harness/run.sh` runs BOTH the `pcrec` invocation and the compiled
+matcher under `TIMEOUT_BIN` (with the budget from `tests/lib/gen_timeout.sh`,
+D45), and a non-zero exit — timeout included — is scored a FAILURE naming the
+case. So a compiler that does not terminate on `(a(?1))`, or a matcher that
+pushes and cuts at zero consumption for ever, is a red harness case rather
+than an infrastructure event. What the design wanted from a "timeout suite" is
+what `harness` already does; what it does NOT have is a way to say *"this row
+is EXPECTED to time out"*, and neither would a separate arm.
+
 ## What "suites" means here
 
 - `codegen` → `tests/codegen/run_codegen_tests.sh` (OS-0b/OS-1/TS-1/skip
@@ -149,6 +169,26 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   therefore unreachable here. **When a row's detector is a specific subject,
   the `.rxt` file is the detector and this arm is not** — assign both, but do
   not read the assignment as coverage.
+- `recursion` → `tests/recursion/run_recursion_diff.sh` ([DD-14] wave B+C),
+  and it is wired at the wave that BUILDS it rather than at the module's
+  close, because two of that wave's own rows are unscoreable without it.
+  **S158 lives on the `--no-captures` AXIS, for which no `.rxt` directive
+  exists anywhere in this tree** — the corpus is structurally blind to it,
+  which the corpus's own CLAUDE.md records as an owed gap — so §1 compiles
+  under the flag and reads the ARTIFACT's slot legend as well as the answer.
+  **S154's halved trail charge changes NO ANSWER until a capacity is
+  crossed**, and a corpus cell has to pick a subject LENGTH in advance; §2
+  BISECTS for the artifact's own ceiling instead and asserts that one step
+  past it the answer is a TYPED GIVE-UP rather than a wrong `nomatch`, which
+  holds at whatever the ceiling is.
+
+  **IT SKIPS ONLY PARTLY, WHICH IS A DIFFERENT SHAPE FROM `laexpand`'s.** Only
+  §3 (the libpcre2 subject sweep) needs the oracle; §§1, 2 and 4 RUN
+  regardless, so on a box with no libpcre2 the script still prints a real
+  non-zero `checks passed:` — never `0fail/0pass`, which is the reading that
+  would let a row be called UNDETECTED by an arm that never ran. That is why
+  this arm needs no SKIP-banner special case of its own.
+
 - `laexpand` → `tests/lookaround/run_expansion_diff.sh`, the SUBSTITUTION
   DRIVER ([M6.6.2] wave E2, design §6.3). **A different KIND of net from
   `lookaround` above, and the difference is what decides which rows it is
@@ -1454,3 +1494,72 @@ were produced side by side from the same real log (2026-08-24):
 
 `laexpand` is the second arm here that can decline, so the verdict suffix now
 NAMES the arms that skipped rather than assuming `pc3`.
+
+## [DD-14 wave B+C] S143-S166 + S168, and the SEVEN ROWS THAT CERTIFY NOTHING
+
+The wave that makes subroutine calls compile and match added 26 rows (S143-S166,
+S168; S102 was RE-HOMED, see below). Final verdicts, all measured at the wave's
+close on the branch's own tree:
+
+| verdict | rows |
+|---|---|
+| **DETECTED (19)** | S102, S143, S144, S145, S146, S147, S148, S149, S154, S155, S156, S158, S159, S161, S162, S163, S165, S166, S168 |
+| **UNDETECTED (7)** | S150, S151, S152, S153, S157, S160, S164 |
+
+**AN UNDETECTED ROW HERE IS NOT A REGRESSED GUARD.** This directory's standing
+reading of `UNDETECTED` — "a guard regressed and is the thing to go fix" — is
+right for a row whose population is known adequate. All seven of these are the
+OTHER case: the sabotage was verified applied, the shipped behaviour is correct,
+and the corpus contains no subject on which the removed thing is OBSERVABLE.
+Each row carries its measurement and what is owed in its own `SAB_DOC_FIGURE`,
+and each stays in the matrix so a later wave's cell can flip it. In one line each:
+
+- **S150** (`W` drops the cut-mark family) — design §5.3b's axis-C was measured
+  on a PROTOTYPE with ONE emitted copy of the atomic group. Under CALL_LINKAGE
+  the lexical occurrence and the callee region are separate code with separate
+  mark slots, so the clobber needs two REGION activations and an outer cut whose
+  truncation matters — and the mis-read depth is LARGER, which discards fewer
+  frames rather than resurrecting a match. The premise moved, not the guard.
+- **S151 / S152** (`W` drops the empty-guard / span-counter families) — the wave
+  ADDED cells that allocate both families in a recursive callee re-entered at two
+  depths (the artifact legends name `RX_SLOT_EMPTY_GUARD0` and
+  `RX_SLOT_SPAN_LOW0`), and the answers still do not move. So they are not
+  undetected for want of a population. §9.3 told the implementation wave to
+  "replace [the prediction] with the measured cell or DROP the row"; the wave
+  replaced the population, could not produce the measurement, and kept the rows.
+- **S153** (`W` drops the lookaround families) — the family §5.3b could not
+  measure at all, because [M6.6.2] had not landed. Now measured on a lookahead
+  inside a recursive callee live at two depths: no answer moves. P-12 P-2's
+  withdrawal stands on the general argument, and the shipped `W` includes them.
+- **S157** (possessify stops declining a call) — **the row's own target was
+  wrong and the finding is which arm actually protects the corpus.** `(?&g)*+`
+  never reaches `possessify.c`: parse.c desugars the possessive SUFFIX to
+  `A_ATOMIC(A_REP(...))` and `vm_lifts` routes the cut, declining on
+  `vm_nullable(r->l)` — the call-graph fixpoint, which is **S156's** arm and IS
+  detected. possessify's decline governs AUTOMATIC possessification only, whose
+  hang shape this corpus does not contain.
+- **S160** (revdet stops declining a call) — `rd_shape` is one of FIVE
+  independent declines (`rd_reverse`'s own `ctx_fail`, `rd_alt_disjoint`,
+  `vm_revdet_fits`), and no corpus quantifier body carrying a call is otherwise
+  revdet-eligible: the rung wants a unique-iteration body, which a call's
+  all-bytes FIRST set denies.
+- **S164** (region slots uncounted) — the sabotage does not produce the
+  out-of-bounds write the row predicts on this population; it produces a SLOT
+  COLLISION (`RX_NSLOTS` 6 -> 5, a resume depth and a publish position sharing
+  cell 4), and no cell reads both on one answer-changing path. The `asan` suite
+  §9.3 assigns DOES NOT EXIST as a mech arm, so the memory-safety half was never
+  scored either.
+
+**FOUR ROWS WERE DEAD ON ARRIVAL AND THE MATRIX IS WHY WE KNOW.** S147 cleared
+the complement of `W` instead of `W` (which is exactly what the callee writes,
+so it changed nothing); S148's `k=2` bound is an assertion nothing sets, so the
+row had to SEED it; S162 read `v->fmin`, which is already 0 at `vm_region`, so
+it needed a two-site static to capture a real caller's follow; S159 aimed at
+`pcrec_has_atomic`, which `mrl_win` short-circuits out of reach — re-pointed at
+`pcrec_bref_mark` it went from UNDETECTED to 106 corpus failures. All four are
+the same class: **a sabotage that removes something already unreachable proves
+nothing about the guard it names**, and only running it says which one you wrote.
+
+**S102 WAS RE-HOMED.** Its anchor sat in `select_engine.c` on a line this wave
+rewrote (`fit.prefilter` now also refuses a call-bearing pattern). It is the
+backref twin of the new **S165**, and both are DETECTED.

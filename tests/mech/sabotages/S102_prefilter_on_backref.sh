@@ -27,5 +27,19 @@ SAB_HARNESS_TARGET="tests/backrefs"
 SAB_DESC="EngineFit.prefilter is no longer forced false for a backref-bearing pattern, so the capture-erased DFA pair is built and hands the VM a window computed for a DIFFERENT language. The failure is a WRONG SPAN on the subjects where the erasure's leftmost match differs from the true one -- and on every other subject the answers are identical, which is why only run_backref_diff.sh's span-divergence section can see it"
 SAB_DOC_FIGURE="PREDICTED: brefdiff RED in §8 (the span-divergence section). Canonical figure owed from run_sabotage_matrix.sh S102."
 SAB_COUNT=1
-SAB_BEFORE='        fit.prefilter = has_bref ? false'
-SAB_AFTER='        fit.prefilter = false ? false   /* SABOTAGE S102 */'
+# [DD-14] wave B+C RE-HOMED THIS ANCHOR, and the re-home is what the anchor
+# tripwire is for. `fit.prefilter`'s guard gained a SECOND disjunct that day —
+# module `recursion`'s, for the same reason and with the same failure mode
+# (erasing a call is not a superset either; `a(?1)b` with group 1 = `x`
+# matches "axb" and the erasure `ab` does not) — so the line this row anchored
+# on stopped existing. `scripts/m6read_check_sab_anchors.py` reported it as
+# STALE, which is exactly the "sabotage row that certifies nothing" case it
+# was written to catch, and the fix is a re-home rather than a rewrite: the
+# CLAIM is unchanged and only the text it sits in moved.
+#
+# THE SABOTAGE STILL TARGETS THE BACKREF DISJUNCT ALONE. `has_call` keeps its
+# own row (S165), so a matrix run tells the two apart: this one leaves a
+# call-bearing pattern's prefilter correctly off and turns a BACKREF-bearing
+# one's on, which is S102's own population and no wider.
+SAB_BEFORE='        fit.prefilter = (has_bref || has_call) ? false'
+SAB_AFTER='        fit.prefilter = (false || has_call) ? false   /* SABOTAGE S102 */'

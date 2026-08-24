@@ -118,7 +118,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
-      test-atomic test-backrefs test-lookaround \
+      test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
@@ -429,6 +429,29 @@ test-lookaround: all
 	bash tests/lookaround/run_lookaround_diff.sh
 	bash tests/lookaround/run_expansion_diff.sh
 
+# [DD-14] wave B+C: module `recursion`. Its `.rxt` corpus rides `test-corpus`
+# like every other module's; THIS target is the behavioural instrument, and it
+# exists because three of the module's claims are not expressible as `.rxt`
+# cells at all:
+#
+#   the `--no-captures` AXIS      no `.rxt` directive for that flag exists
+#                                 ANYWHERE in this tree, and design §4.3's
+#                                 whole claim lives on it (a call target must
+#                                 join the marked set or the flag deletes the
+#                                 callee out from under the call)
+#   the DEPTH CAPACITY            a `gu` cell can say THAT a pattern gives up;
+#                                 nothing can measure WHERE the artifact's
+#                                 honest ceiling is, and §14 ASK 2 is about
+#                                 that number
+#   the STARTPOS and GROUP axes   where §5.3's restore set and
+#                                 `reset_for_next_attempt`'s `call_top` line
+#                                 are observable at all
+#
+# It reuses `tests/backrefs/`'s oracle and batch driver rather than making a
+# third copy, which is `tests/lookaround/`'s own decision one module over.
+test-recursion: all
+	bash tests/recursion/run_recursion_diff.sh
+
 # [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
 # and the same ruling as `test-atomic-identity` and `test-backrefs-identity`
 # above (ASK-4): a claim about a MOMENT, re-answered on demand, not a standing
@@ -697,6 +720,7 @@ ubsan:
 	         tests/atomic_groups/run_atomic_diff.sh \
 	         tests/backrefs/run_backref_diff.sh \
 	         tests/backrefs/run_dupnames_diff.sh \
+	         tests/recursion/run_recursion_diff.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- ubsan: $$s --"; \
@@ -750,6 +774,7 @@ asan:
 	         tests/atomic_groups/run_atomic_diff.sh \
 	         tests/backrefs/run_backref_diff.sh \
 	         tests/backrefs/run_dupnames_diff.sh \
+	         tests/recursion/run_recursion_diff.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- asan: $$s --"; \
@@ -832,6 +857,7 @@ san:
 	         tests/atomic_groups/run_atomic_diff.sh \
 	         tests/backrefs/run_backref_diff.sh \
 	         tests/backrefs/run_dupnames_diff.sh \
+	         tests/recursion/run_recursion_diff.sh \
 	         tests/lib/run_gen_timeout_tests.sh \
 	         tests/known_fail/run_known_fail.sh; do \
 	    echo "-- san: $$s --"; \

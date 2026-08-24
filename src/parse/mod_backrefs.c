@@ -103,6 +103,14 @@ static Ast *br_node(Ctx *cx, const RegRow *rw, size_t at, int number,
 
     PendingRef *pr = arena_alloc(&cx->arena, sizeof *pr);
     pr->node   = a;
+    /* [DD-14 wave B+C] WHICH RULE, spelled at every producer rather than left
+     * to the arena's zero. `PEND_BREF` IS the zero, so this line is provably
+     * redundant today — and it is written because a producer that relies on a
+     * zero to mean its own kind is one enum reordering away from meaning the
+     * other one, and the other one resolves a duplicated name DIFFERENTLY
+     * (statically, to the first declaration) rather than merely differently
+     * spelled. */
+    pr->kind   = PEND_BREF;
     pr->number = number;
     pr->name   = name;   /* NULL: resolve `number` */
     pr->at     = at;
@@ -575,8 +583,45 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
      * reference should name the first one a reader would reach. */
     const PendingRef *worst = NULL;
     for (PendingRef *pr = cx->pending_refs; pr; pr = pr->next) {
+        /* [DD-14 wave B+C] THE CALL RULE, and it is TWO LINES because the
+         * numeric arm is the SAME question (§4.2's table): "does `number` name
+         * a group" has one definition in this pass and both kinds read it.
+         * Only the NAME arm differs — the FIRST DECLARATION, statically, where
+         * a reference takes the whole run (MEASURED, §3.4(c); `PendKind`'s own
+         * comment in core/internal.h carries the two discriminating cells).
+         *
+         * `u.call.body` IS NOT FILLED HERE and that is deliberate rather than
+         * an omission this pass could have discharged. `.body` is a pointer
+         * INTO THE TREE, and two later passes REBUILD nodes rather than
+         * mutating them — `pcrec_altcls` allocates a fresh `A_CAP` over a
+         * merged class, `pcrec_discharge_atomic` splices an `A_ATOMIC` out —
+         * so a pointer captured here can name a subtree that is no longer in
+         * the tree by the time the emitter walks it, and under `CALL_LINKAGE`
+         * the callee REGION would then be emitted from the STALE subtree while
+         * the lexical occurrence came from the new one: two programs for one
+         * group, with `W` and §4.4c's slot indices computed over whichever was
+         * handed over. Wave A2 found it (commit 513de65). The answer is
+         * `pcrec_callgraph_build` (src/opt/callgraph.c), a late BIND step over
+         * the FINAL tree driven from `target` — the durable fact — with
+         * `.body` as its cache. */
+        if (pr->kind == PEND_CALL && pr->name) {
+            int first = 0;
+            for (const NamedGroup *gp = cx->named_groups; gp; gp = gp->next)
+                if (strcmp(gp->name, pr->name) == 0)
+                    if (first == 0 || gp->number < first) first = gp->number;
+            if (first > 0) {
+                pr->node->u.call.target = first;
+                continue;
+            }
+            if (!worst || pr->at < worst->at) worst = pr;
+            continue;
+        }
         if (!pr->name) {
             if (pr->number >= 1 && (unsigned long)pr->number <= cx->ncap) {
+                if (pr->kind == PEND_CALL) {
+                    pr->node->u.call.target = pr->number;
+                    continue;
+                }
                 int *v = arena_alloc(&cx->arena, sizeof *v);
                 v[0] = pr->number;
                 pr->node->u.bref.refs  = v;
@@ -595,6 +640,17 @@ Ast *pcrec_bref_resolve(Ctx *cx, Ast *root)
         if (!worst || pr->at < worst->at) worst = pr;
     }
     if (worst) {
+        /* [DD-14 wave B+C] A RELATIVE OFFSET CAN COUNT BACK PAST GROUP 1, and
+         * the general sentence below would then say "refers to capture group
+         * 0" — which this module reads as out of range and module `recursion`
+         * reads as THE WHOLE PATTERN (`(?0)` is `(?R)`). Two constructs, one
+         * number, opposite meanings, so the number is not what a reader should
+         * be shown here. `(a)(?-2)` and `(a)\g{-2}` both take this arm; the
+         * value never reaches the general sentence. */
+        if (!worst->name && worst->number < 1)
+            ctx_fail(cx, worst->at,
+                     "%s counts back past the first capture group; this "
+                     "pattern has %u", worst->what, cx->ncap);
         if (!worst->name)
             ctx_fail(cx, worst->at,
                      "%s refers to capture group %d, but this pattern has %u",

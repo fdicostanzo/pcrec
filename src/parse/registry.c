@@ -257,6 +257,24 @@
     {RK_GROUP, (sel), NULL, (syn), M_lookaround, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, QF_YES, NULL, 0, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, NO_PORT, NULL}
 #define GROUP_LA_T(sel, tl, syn, note) \
     {RK_GROUP, (sel), (tl), (syn), M_lookaround, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, QF_YES, NULL, 25, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, NO_PORT, NULL}
+/* [DD-14 wave B+C] as GROUP / GROUP_T, but with one of module `recursion`'s
+ * THREE ports wired into `aport`. A macro per port rather than one taking the
+ * function, because the three serve three FAMILIES and the family is what a
+ * reader of this table needs to see at the row: `RC_NUM` is the absolute
+ * numeric family and `(?R)` (design §2.4a's leading-zero rule lives inside the
+ * port, which re-reads the whole digit run), `RC_REL` the relative one, and
+ * `RC_NAME` the two by-name spellings.
+ *
+ * THE `quant` COLUMN IS LEFT EXACTLY AS IT WAS, including the nine `QF_NO`
+ * values design §8.1 MEASURED WRONG (`^(a)(?1)*$` compiles on 10.46, as do all
+ * twelve quantified spellings). Fixing it is wave F's row — it is a
+ * documentation fact with no parser consumer (`quant` is read only by
+ * `--list-syntax` and by tests/reject) — and moving it here would put a wave-F
+ * deliverable inside a wave-B+C diff. */
+#define GROUP_RC(sel, syn, note, q, port) \
+    {RK_GROUP, (sel), NULL, (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, {PORT_FN, false, 0, NULL, (port)}, NO_PORT, NULL}
+#define GROUP_RC_T(sel, tl, syn, note, q, port) \
+    {RK_GROUP, (sel), (tl), (syn), M_recursion, FLAV_PCRE2, VM_ONLY, RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 25, NULL, {PORT_FN, false, 0, NULL, (port)}, NO_PORT, NULL}
 /* PCRE2 rejects it, and the byte that decides is the one AFTER the selector.
  * Takes `ce`: its one caller is an RK_ESC row, which is class-reachable.
  * Rank 25 = the tailed tier (MOD-0.2; see RegRow.rank) — its caller is the
@@ -675,7 +693,7 @@ GROUP_LA_T('<', "*", "(?<*a)",
  "python-style backreference to a named group",
  ROADMAP_PLANNED, QF_NO, NULL, 25, NULL,
  {PORT_FN, false, 0, NULL, pcrec_brport_pname}, NO_PORT, NULL},
-GROUP_T('P', ">", "(?P>n)",      recursion,    VM_ONLY, "python-style subroutine call into a named group", QF_NO),
+GROUP_RC_T('P', ">", "(?P>n)", "python-style subroutine call into a named group", QF_NO, pcrec_rcport_name),
 REJECTED(RK_GROUP, 'P', "(?PX)", "unrecognized character after (?P",
          "only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141", QF_NO),
 /* VM_ONLY is design intent with a recorded split (docs/dev/plan.md, backrefs/
@@ -733,18 +751,27 @@ GROUP('C',  "(?C1)",   callouts,         VM_ONLY, "callout to user code: (?C) (?
 GROUP('|',  "(?|...)",       branch_reset,     VM_ONLY,
       "branch reset group: alternatives reuse the same capture numbers", QF_YES),
 GROUP('(',  "(?(1)a|b)",     conditionals,     VM_ONLY, "conditional group (?(condition)yes|no)", QF_NO),
-GROUP('&',  "(?&name)",      recursion,        VM_ONLY, "recurse into the named group", QF_NO),
-GROUP('R',  "(?R)",          recursion,        VM_ONLY, "recurse the whole pattern", QF_YES),
-GROUP('0',  "(?0)",          recursion,        VM_ONLY, "recurse the whole pattern (synonym for (?R))", QF_YES),
-GROUP('1',  "(?1)",          recursion,        VM_ONLY, "recurse into capture group 1", QF_NO),
-GROUP('2',  "(?2)",          recursion,        VM_ONLY, "recurse into capture group 2", QF_NO),
-GROUP('3',  "(?3)",          recursion,        VM_ONLY, "recurse into capture group 3", QF_NO),
-GROUP('4',  "(?4)",          recursion,        VM_ONLY, "recurse into capture group 4", QF_NO),
-GROUP('5',  "(?5)",          recursion,        VM_ONLY, "recurse into capture group 5", QF_NO),
-GROUP('6',  "(?6)",          recursion,        VM_ONLY, "recurse into capture group 6", QF_NO),
-GROUP('7',  "(?7)",          recursion,        VM_ONLY, "recurse into capture group 7", QF_NO),
-GROUP('8',  "(?8)",          recursion,        VM_ONLY, "recurse into capture group 8", QF_NO),
-GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture group 9", QF_NO),
+GROUP_RC('&',  "(?&name)", "recurse into the named group", QF_NO, pcrec_rcport_name),
+GROUP_RC('R',  "(?R)", "recurse the whole pattern", QF_YES, pcrec_rcport_num),
+/* [DD-14] THE DESCRIPTION IS QUALIFIED, and §2.4a is why the unqualified
+ * version is a trap rather than a wording preference: `(?0...)` is a
+ * ONE-CHARACTER PREFIX OF TWO DIFFERENT TARGETS. `(?0)` and `(?00)` are the
+ * root; `(?01)` is GROUP 1, MEASURED on the anchored discriminator
+ * (`^(a(?01)?b)$` on "aabb" is (0,4) where `^(a(?0)?b)$` is nomatch). A port
+ * written from "synonym for (?R)" compiles `(?01)` as the root and
+ * MISCOMPILES it. `pcrec_rcport_num` re-reads the whole digit run for
+ * exactly that reason, and this row says so where a reader of the table
+ * will meet it. */
+GROUP_RC('0',  "(?0)", "recurse the whole pattern -- the whole DIGIT RUN is read as decimal, so (?0) and (?00) are the root while (?01) is group 1", QF_YES, pcrec_rcport_num),
+GROUP_RC('1',  "(?1)", "recurse into capture group 1", QF_NO, pcrec_rcport_num),
+GROUP_RC('2',  "(?2)", "recurse into capture group 2", QF_NO, pcrec_rcport_num),
+GROUP_RC('3',  "(?3)", "recurse into capture group 3", QF_NO, pcrec_rcport_num),
+GROUP_RC('4',  "(?4)", "recurse into capture group 4", QF_NO, pcrec_rcport_num),
+GROUP_RC('5',  "(?5)", "recurse into capture group 5", QF_NO, pcrec_rcport_num),
+GROUP_RC('6',  "(?6)", "recurse into capture group 6", QF_NO, pcrec_rcport_num),
+GROUP_RC('7',  "(?7)", "recurse into capture group 7", QF_NO, pcrec_rcport_num),
+GROUP_RC('8',  "(?8)", "recurse into capture group 8", QF_NO, pcrec_rcport_num),
+GROUP_RC('9',  "(?9)", "recurse into capture group 9", QF_NO, pcrec_rcport_num),
 /* THE RELATIVE SUBROUTINE CALLS. `(?+N)` calls the Nth group to the RIGHT and
  * `(?-N)` the Nth to the LEFT — the relative spellings of `(?1)`..`(?9)` above,
  * which this table has always called `recursion`. Both used to fall to the
@@ -762,18 +789,18 @@ GROUP('9',  "(?9)",          recursion,        VM_ONLY, "recurse into capture gr
  * one "digit" tail is the deliberate choice recorded on RegRow.tail: this table
  * already spells that family out twice, and a literal tail cannot be
  * misinterpreted by a future reader. */
-GROUP('+',  "(?+1)(a)",      recursion,        VM_ONLY,
-      "relative subroutine call to the Nth group to the RIGHT", QF_YES),
-GROUP_T('-', "0", "(a)(?-01)",         recursion, VM_ONLY, "relative subroutine call, leading zero", QF_YES),
-GROUP_T('-', "1", "(a)(?-1)",          recursion, VM_ONLY, "relative subroutine call to the group 1 to the LEFT", QF_YES),
-GROUP_T('-', "2", "(a)(a)(?-2)",       recursion, VM_ONLY, "relative subroutine call, 2 to the left", QF_YES),
-GROUP_T('-', "3", "(a)(a)(a)(?-3)",    recursion, VM_ONLY, "relative subroutine call, 3 to the left", QF_YES),
-GROUP_T('-', "4", "(a)(a)(a)(a)(?-4)", recursion, VM_ONLY, "relative subroutine call, 4 to the left", QF_YES),
-GROUP_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", recursion, VM_ONLY, "relative subroutine call, 5 to the left", QF_YES),
-GROUP_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", recursion, VM_ONLY, "relative subroutine call, 6 to the left", QF_YES),
-GROUP_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", recursion, VM_ONLY, "relative subroutine call, 7 to the left", QF_YES),
-GROUP_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", recursion, VM_ONLY, "relative subroutine call, 8 to the left", QF_YES),
-GROUP_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", recursion, VM_ONLY, "relative subroutine call, 9 to the left", QF_YES),
+GROUP_RC('+',  "(?+1)(a)",
+      "relative subroutine call to the Nth group to the RIGHT", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "0", "(a)(?-01)", "relative subroutine call, leading zero", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "1", "(a)(?-1)", "relative subroutine call to the group 1 to the LEFT", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "2", "(a)(a)(?-2)", "relative subroutine call, 2 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "3", "(a)(a)(a)(?-3)", "relative subroutine call, 3 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "4", "(a)(a)(a)(a)(?-4)", "relative subroutine call, 4 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "5", "(a)(a)(a)(a)(a)(?-5)", "relative subroutine call, 5 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "6", "(a)(a)(a)(a)(a)(a)(?-6)", "relative subroutine call, 6 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "7", "(a)(a)(a)(a)(a)(a)(a)(?-7)", "relative subroutine call, 7 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "8", "(a)(a)(a)(a)(a)(a)(a)(a)(?-8)", "relative subroutine call, 8 to the left", QF_YES, pcrec_rcport_rel),
+GROUP_RC_T('-', "9", "(a)(a)(a)(a)(a)(a)(a)(a)(a)(?-9)", "relative subroutine call, 9 to the left", QF_YES, pcrec_rcport_rel),
 
 /* THE EXTENDED CHARACTER CLASS, R8/C4-7's third misattribution. `(?[...])` is a
  * character class with set operations (`[a]&&[b]`, `[a]-[b]`), not an option
