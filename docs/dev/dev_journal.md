@@ -13008,3 +13008,16 @@ lib/pcrec.h and a prebuilt build/. Author spawned (sonnet, the brd27
 precedent). Meanwhile the [M6.6.4]-tier close validation runs on main
 5ae833f: FULL matrix → gate → strict → test → san
 (scratchpad/close_m662.log).
+
+ADDENDUM (part 16, ~08:0x): [M6.6.3]'s blinded corpus DELIVERED — 7
+files, 457 blocks, 1,466 cases + 32 perr, 2,408 oracle-checked
+assertions, 0 checker failures; the author's own checker is a
+from-scratch .rxt parser failing-direction-tested against four planted
+corruptions before its real run; the G1-G10 divergence table reproduced
+from the corpus's own cells; G7 (\Z vs \z) AVOIDED by construction and
+FLAGGED rather than silently omitted. The author disclosed no injected
+files. Corpus HELD in the cell for the acceptance run, which per D27
+runs WITHOUT the author — and deliberately AFTER the close validation
+finishes rather than concurrently (K31's lesson: the two one-offs both
+struck under stacked batteries). Author released; cell kept until
+triage completes.
