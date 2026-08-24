@@ -92,9 +92,17 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   second time this table has had to tell a doorway keyed on one byte to read
   the whole run (the first is `(?10)`).
 
-  The two `\g<` / `\g'` rows stay `NO_PORT` and therefore `unbuilt` until
-  wave D — design §8.1's requirement, since D65 flips `built` from the PORT's
-  answer and never runs the emitter.
+  **[DD-14] WAVE D WIRED THE TWO `\g<` / `\g'` ROWS.** Design §8.1 required
+  them to stay `NO_PORT` / `unbuilt` until this wave, since D65 flips `built`
+  from the PORT's answer and never runs the emitter. Both rows' `aport` now
+  reads `{PORT_FN, false, 0, NULL, pcrec_brport_g}` — the SAME function
+  module `backrefs`' base `\g` row already used, per design §4.2's "NOT A NEW
+  PORT" ruling (P3: `\g` is one escape doorway shared between two modules,
+  and the port already discriminates the tail). `pcrec_brport_g`'s `<`/`'`
+  arms (`src/parse/mod_backrefs.c`) call back into `pcrec_call_node` /
+  `pcrec_call_by_name` (`src/parse/mod_recursion.c`) so the zero family
+  (§2.4/§2.4a) and the FIRST-DECLARATION name rule (§3.4(c)) each keep one
+  definition rather than growing a second copy across the module boundary.
 
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
@@ -655,8 +663,22 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `pcrec_brport_digit` owns the ten digit rows and PCRE2's octal
   disambiguation, which makes it the only producer in this directory that can
   return something that is not its module's construct: rules 1 and 3 make `\0`
-  and a re-read multi-digit run ORDINARY CHARACTERS. `pcrec_brport_g`,
-  `pcrec_brport_k` and `pcrec_brport_pname` are pure reference producers.
+  and a re-read multi-digit run ORDINARY CHARACTERS. `pcrec_brport_k` and
+  `pcrec_brport_pname` are pure reference producers.
+
+  **`pcrec_brport_g` IS NOT A PURE REFERENCE PRODUCER SINCE [DD-14] WAVE D**,
+  and it is the one place two MODULES meet rather than a fifth port: its `{`
+  and bare-digit/name arms still build `A_BREF` (a REFERENCE — `\g{1}`,
+  `\g1`), but its `<`/`'` arms (wired at wave D, when both tailed `\g<`/`\g'`
+  registry rows' `aport` started pointing here too) build `A_CALL` (a CALL —
+  `\g<1>`, `\g'1'`) through `src/parse/mod_recursion.c`'s exported
+  `pcrec_call_node`/`pcrec_call_by_name` rather than this file's own
+  `br_node`/`br_name_ref`. Design §2's one-cell discriminator
+  (`(a|b)\g{1}` nomatch vs `(a|b)\g<1>` match on "ab") is what the split runs
+  along, and it is arbitration — not this function — that decides which row
+  reached it: the two tailed rows outrank the tail-less fallback, so `rw`
+  (module `backrefs` or module `recursion`) is what tells the function which
+  construct it is building.
 
   **THE OCTAL RULE IS FOUR ORDERED QUESTIONS**, and stating it in that order is
   what makes rule 3' fall out instead of being a special case: does the run
@@ -702,8 +724,9 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   emitted C identical to what it always was. `tests/codegen/run_backref_identity.sh`
   is where that stops being an argument.
 
-- **mod_recursion.c** — module `recursion` ([DD-14] wave B+C): THREE atom
-  ports at the `(?` doorway, and one construct family whose whole design
+- **mod_recursion.c** — module `recursion` ([DD-14] wave B+C, `\g` doorway
+  wired at wave D): THREE atom ports at the `(?` doorway plus two exported
+  helpers `mod_backrefs.c` calls, and one construct family whose whole design
   turns on a single measured cell. Design:
   docs/design/subroutines_design.md, panel-approved at R34.
 
@@ -750,18 +773,32 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   read an unset group) and what gives the numeric, relative and by-name
   spellings ONE definition of "group k exists".
 
-  **THE `\g<` / `\g'` ROWS HAVE NO PORT HERE AND NEED NO DECLINE BRANCH.**
-  Design §4.2 and the wave brief both ask `pcrec_brport_g` for "one decline
-  branch at `WANT_RESULT`" so those rows stay `unbuilt` until wave D. **No
-  such branch exists and none is needed**: the two tails are their OWN
-  registry rows (module `recursion`, rank 25) carrying `NO_PORT`, so
-  `pcrec_brport_g` is NEVER REACHED for them — the arbitration elects the
-  tailed row and the base `\g` row's port never sees the text. A row with no
-  atom port reaching post-gate `WANT_RESULT` takes ext.c's ENABLED-BUT-UNBUILT
-  epilogue, which is exactly D65's "gate open, port missing" signal, so the
-  column reads `unbuilt` with NO CODE AT ALL. A decline branch would have been
-  unreachable code satisfying nothing. Wave D's edit is to WIRE those rows,
-  not to delete a decline.
+  **THE `\g<` / `\g'` ROWS HAD NO PORT HERE AND NEEDED NO DECLINE BRANCH,
+  WHICH IS WHAT WAVE D'S WIRING TURNED OUT TO BE.** Design §4.2 and the wave
+  B+C brief both asked `pcrec_brport_g` for "one decline branch at
+  `WANT_RESULT`" so those rows stayed `unbuilt` until wave D. **No such branch
+  ever existed and none was needed**: the two tails are their OWN registry
+  rows (module `recursion`, rank 25), so `pcrec_brport_g` was NEVER REACHED
+  for them while their `aport` read `NO_PORT` — arbitration elected the
+  tailed row and the base `\g` row's port never saw the text. A row with no
+  atom port reaching post-gate `WANT_RESULT` took ext.c's ENABLED-BUT-UNBUILT
+  epilogue, exactly D65's "gate open, port missing" signal, with NO CODE AT
+  ALL. **Wave D's edit was to WIRE those rows** (`src/parse/registry.c`: both
+  `aport`s now read `{PORT_FN, false, 0, NULL, pcrec_brport_g}`), reusing the
+  SAME function rather than adding a second one — design §4.2's own "NOT A
+  NEW PORT" ruling — and `pcrec_brport_g`'s new `<`/`'` arms
+  (`src/parse/mod_backrefs.c`) call the two exports below.
+
+  **`pcrec_call_node` AND `pcrec_call_by_name` ARE THE WAVE D EXPORTS.** The
+  first wraps `rc_node`'s own root/queue rule behind an `is_relative` flag —
+  an ABSOLUTE zero (no sign, no name) is the ROOT exactly as `(?0)`/`(?00)`
+  are, while a RELATIVE offset is NEVER the root even when it computes to
+  `<= 0`, which is what keeps `\g<-2>`-shaped cells honest the same way
+  `(a)(?-2)` already was (§2.4's own argument, one call site over). The
+  second is a thin export of `rc_name_call` (the FEAT_NAMED_GROUPS gate, the
+  name grammar, the FIRST-DECLARATION queue) so `\g<name>`/`\g'name'` share
+  §3.4(c)'s rule with `(?&name)`/`(?P>name)` rather than growing a second
+  copy of it in `mod_backrefs.c`.
 
   **AND IT EXTENDS `mod_backrefs.c`'s RESOLVER RATHER THAN COPYING IT.**
   `PendingRef` gains ONE FIELD (`PendKind`), the list is one list walked once,
