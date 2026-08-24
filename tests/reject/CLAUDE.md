@@ -54,9 +54,13 @@ nothing checked that, and the gap was not hypothetical — see below.
 
   **THE FIGURES IN THIS PARAGRAPH ARE THE ONES ITS OWN WAVE MEASURED and have
   been overtaken repeatedly — re-run the script rather than reading them.**
-  Current, measured 2026-08-22 at [M6.5.2]: **282 hand-written rejections, 105
-  reached by iterating `--list-syntax`, 99 accept-controls, 73 gated pins, 0
-  known-wrong, 560 checks passing.** The exact counts live in the script's own
+  Current, measured 2026-08-24 at [DD-14.LB]: **282 hand-written rejections,
+  105 reached by iterating `--list-syntax`, 99 accept-controls, 78 gated pins,
+  0 known-wrong, 577 checks passing** (was 73 gated / 560 checks at [M6.5.2];
+  the five new gated rows are the DEFERRED lookbehind width re-check's OFFSET
+  contract — see the script's own section, and note that this is one of the
+  rare places the table pins a WORDING, for a reason stated there). The exact
+  counts live in the script's own
   summary block, which is what actually fails; this file's copies are a
   reader's orientation and this sentence is the standing warning that they are
   a copy.
