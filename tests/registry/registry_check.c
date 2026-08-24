@@ -315,8 +315,21 @@ static void check_wellformed(void)
                  * the scan reached first. The design doc calls this "stronger
                  * than today" and it is: the old check could not have caught two
                  * identical `(?P<` rows, because neither existed to collide. */
+                /* [DD-14 wave F] AN INDEX ROW CANNOT COLLIDE, because it
+                 * is never elected: `pcrec_registry_arbitrate` skips
+                 * RF_INDEX before any arm runs (D71 item 3), so two rows
+                 * sharing a (sel, tail) is only a defect when BOTH can be
+                 * answered with. Module `recursion`'s index rows record the
+                 * byte their spelling really enters at — `(?10)` at the `1`
+                 * bucket, `\g<0>` at `\g` — which is the honest value and
+                 * deliberately the same byte their primary claims. Skipping
+                 * them here is the flag's contract, not an exemption:
+                 * check_index_rows asserts the non-election against the
+                 * ENGINE, over every (kind x selector x text). */
+                if ((r->flags & RF_INDEX) != 0) continue;
                 for (size_t j = 0; j < i; j++) {
                     if (rows[j].sel != r->sel) continue;
+                    if ((rows[j].flags & RF_INDEX) != 0) continue;
                     bool same_tail = (!rows[j].tail && !r->tail) ||
                                      (rows[j].tail && r->tail &&
                                       strcmp(rows[j].tail, r->tail) == 0);
@@ -544,8 +557,18 @@ static void check_wellformed(void)
      * `(*` doorway and produce there, they are simply found by NAME rather
      * than elected by a byte. `check_index_rows` below is what asserts that
      * distinction rather than leaving it to this number. */
-    if (total != 118) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 118. If you added or "
+    /* 118 -> 127 at [DD-14] WAVE F: module `recursion`'s NINE MISSING
+     * SPELLINGS (design §8.1's four families, MEASURED legal on 10.46 and
+     * MEASURED already compiling correctly here before this wave: `(?10)`,
+     * `(?01)`, `(?00)`, `(?+2)(a)(b)`, `(a)x10(?-10)`, `\g<0>`, `\g<01>`,
+     * `\g'0'`, `\g'01'`). They are the first BYTE-KEYED RF_INDEX rows: unlike
+     * the twelve alpha spellings above they DO have a dispatching byte, and
+     * it belongs to their primary — `(?10)` enters the `(?1)` row and
+     * `\g<0>` the `\g<` row, which is why the behaviour was already right
+     * and only the INVENTORY was missing. R6 stands: no row's dispatch
+     * identity changed and no artifact byte moved. */
+    if (total != 127) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 127. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -1028,6 +1051,18 @@ static void check_table_to_parser(void)
         esc_atom_msg(r, want, sizeof want);
         snprintf(label, sizeof label, "esc %s: atom diagnostic matches the row", r->syntax);
         expect_msg(label, r->syntax, want);
+
+        /* [DD-14 wave F] THE ATOM HALF ABOVE APPLIES TO AN INDEX ROW AND
+         * THE CLASS HALF BELOW DOES NOT, and the asymmetry is the flag's
+         * meaning rather than a convenience. `\g<0>` at the closed gate
+         * really does answer "\g requires module 'recursion'" — the atom
+         * assertion is about the SPELLING and holds — while every question
+         * below is about which row DISPATCHES at class position, and an
+         * RF_INDEX row dispatches nowhere (D71 item 3). Its in-class
+         * behaviour is its primary's, asserted on the primary's own row;
+         * its `class_expect` value is still measured and still re-derived
+         * independently by tests/probes/probe_class_expect.c. */
+        if ((r->flags & RF_INDEX) != 0) continue;
 
         snprintf(pat, sizeof pat, "[%s]", r->syntax);
         if (r->cport.base && r->cport.kind != PORT_NONE) {
@@ -2278,9 +2313,19 @@ static void check_engine_capability(void)
      * call — no tail left to decline, the same shape wave B+C's other
      * twenty-four rows already had. The gap between `wired` and `qualifying`
      * is now only the unbuilt population outside this module. */
-    if (qualifying != 66 || wired != 62 || built_wired != 62)
+    /* [DD-14] WAVE F: `qualifying` 66 -> 75, `wired` and `built_wired`
+     * UNMOVED at 62 — and this is the FIRST wave where qualifying moves alone.
+     * The nine new rows are RS_MODULE and VM_ONLY (they are subroutine-call
+     * spellings, so the structural argument is their primaries' verbatim), and
+     * they have NO PORT: an RF_INDEX row is never elected, so it can have no
+     * producer of its own and this check must not demand a witness for one.
+     * The witness for what those spellings actually do is their PRIMARY's,
+     * which is already in the table above, plus `check_index_shape_witnesses`
+     * below — D71 item 3's per-RESOLVER-DISTINGUISHED-SHAPE requirement,
+     * which is a different demand from this loop's per-wired-row one. */
+    if (qualifying != 75 || wired != 62 || built_wired != 62)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 66, 62 "
+            "have a wired producer and %d of THOSE are BUILT, expected 75, 62 "
             "and 62 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
@@ -2374,6 +2419,10 @@ static void check_class_syntax_reach(void)
 
     for (size_t i = 0; i < n; i++) {
         const RegRow *r = &rows[i];
+        /* [DD-14 wave F] "which row does this text elect at class position"
+         * is a dispatch question, and an RF_INDEX row is never elected
+         * anywhere (D71 item 3) — it would fail this check by definition. */
+        if ((r->flags & RF_INDEX) != 0) continue;
         if (r->cport.base) continue;
         if (r->status != RS_MODULE) continue;
         bool has_tail = r->tail != NULL;
@@ -2612,9 +2661,15 @@ static void check_built_status_defects(void)
      * NO ROW OUTSIDE MODULE `recursion` MOVES. `(?(DEFINE)` is `conditionals`'
      * and stays `unbuilt` for the fourth wave running: D71 item 4 gives it to
      * this module as a tailed row, and that is wave F's. */
-    else if (checked != 118 || built != 96 || unbuilt != 16 || na != 6)
+    /* [DD-14] WAVE F: 118 = 96 + 16 + 6 -> 127 = 105 + 16 + 6. All nine new
+     * rows are `built` ON THE DAY THEY LAND and derived rather than declared
+     * — D65 drives each row's own `syntax` through the doorway, which elects
+     * the PRIMARY row and really does produce. That is the honest reading and
+     * the reason this wave could not have shipped a lying column: a spelling
+     * whose primary did not compile would read `unbuilt` here. */
+    else if (checked != 127 || built != 105 || unbuilt != 16 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 118 = 96 + 16 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 127 = 105 + 16 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -2803,9 +2858,15 @@ static void check_families(void)
      * `(*` alpha spellings collapse into their six primaries' families, so
      * SIX families have three members each and every other row is a family of
      * one. A deliberate move edits these numbers in the same change. */
-    if (families != 106 || multi != 6 || members_in_multi != 18)
+    /* 106/6/18 -> 89/12/50 at [DD-14] WAVE F, and the FAMILY count going
+     * DOWN while the ROW count goes UP is the whole point of the layer:
+     * module `recursion`'s 26 rows were 26 one-member families and its 35
+     * rows are now NINE index lines. Six new multi-member families —
+     * `(?1)` (11), `(a)(?-1)` (11), `\g<1>` (3), `\g'1'` (3), `(?0)` (2),
+     * `(?+1)(a)` (2) — which is 32 members joining the alpha spellings' 18. */
+    if (families != 89 || multi != 12 || members_in_multi != 50)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 106 / 6 / 18. The index "
+            "member, %d members in those -- expected 89 / 12 / 50. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {
@@ -2855,18 +2916,58 @@ static void check_index_rows(void)
                     "row nothing can ever reach", r->syntax);
                 bads++;
             }
-            if (!r->tail || !*r->tail) {
-                bad("index row '%s': RF_INDEX with no `tail` -- the tail is the "
-                    "NAME mod_verbs.c's pcrec_registry_verb_name_row matches, "
-                    "so without it the doorway can never resolve to this row",
-                    r->syntax);
-                bads++;
-            }
-            if (r->tail && pcrec_registry_verb_name_row(r->tail, strlen(r->tail))
-                           != r) {
-                bad("index row '%s': its own name '%s' resolves to a DIFFERENT "
-                    "row (or none) -- two rows share a name, or the lookup and "
-                    "the table disagree", r->syntax, r->tail ? r->tail : "");
+            /* [DD-14 wave F] `tail` IS THE NAME ON A VERB INDEX ROW AND
+             * ONLY THERE, and the split is the one D71 item 3 draws between
+             * the two reasons a row can be index-only.
+             *
+             * The twelve `(*` alpha spellings have NO byte-keyed dispatch
+             * identity to keep: their doorway decides by NAME, so `tail`
+             * carries that name and mod_verbs.c's
+             * `pcrec_registry_verb_name_row` really does resolve it back to
+             * the row. Requiring both halves is what makes those rows
+             * reachable at all.
+             *
+             * Module `recursion`'s nine index rows are the OTHER shape. Their
+             * spellings DO have a byte-keyed identity — `(?10)` is elected by
+             * the `1` bucket and `\g<0>` by `\g` — and it belongs to the
+             * PRIMARY row, which is exactly why these rows must not dispatch
+             * and exactly why R6 stands for them. There is no name to
+             * resolve; the row's identity is its `syntax` and its membership
+             * is its `family`. Demanding a verb name here would have forced
+             * nine fabricated names into the verb tables, which is a second
+             * home for a fact (D24) and would have made
+             * `pcrec_registry_verb_name_row` answer for constructs that are
+             * not verbs.
+             *
+             * WHAT IS ASSERTED FOR BOTH, and it is the flag's whole contract:
+             * a `family` (above) and NON-ELECTION (the sweep below). */
+            if (r->kind == RK_VERB) {
+                if (!r->tail || !*r->tail) {
+                    bad("index row '%s': RK_VERB with RF_INDEX and no `tail` -- "
+                        "the tail is the NAME mod_verbs.c's "
+                        "pcrec_registry_verb_name_row matches, so without it "
+                        "the doorway can never resolve to this row", r->syntax);
+                    bads++;
+                }
+                if (r->tail &&
+                    pcrec_registry_verb_name_row(r->tail, strlen(r->tail)) != r) {
+                    bad("index row '%s': its own name '%s' resolves to a "
+                        "DIFFERENT row (or none) -- two rows share a name, or "
+                        "the lookup and the table disagree",
+                        r->syntax, r->tail ? r->tail : "");
+                    bads++;
+                }
+            } else if (r->sel == REG_SEL_ANY) {
+                /* The failing direction for a BYTE-KEYED index row: it must
+                 * record the byte its spelling really enters at, or the row
+                 * is a claim about a doorway nobody can find. REG_SEL_ANY is
+                 * the verb shape and means "no byte selects me", which for a
+                 * `(?` or `\` spelling is false. */
+                bad("index row '%s': REG_SEL_ANY on a %s index row -- a "
+                    "byte-keyed spelling must record the selector its own "
+                    "doorway dispatches on (its primary's), so the row says "
+                    "where it enters even though it is never elected there",
+                    r->syntax, kind_name(r->kind));
                 bads++;
             }
         }
@@ -2917,9 +3018,15 @@ swept:
         }
     }
 
-    if (nindex != 12)
-        bad("INDEX-ROW POPULATION MOVED: %d rows carry RF_INDEX, expected 12 "
-            "(the twelve (* alpha lookaround spellings). If deliberate, update "
+    /* 12 -> 21 at [DD-14] WAVE F: module `recursion`'s NINE missing
+     * spellings (design §8.1's four families — the multi-digit absolute and
+     * relative calls, the eight `(?+N)` siblings, `\g<0>`/`\g'0'`, and the
+     * leading-zero absolutes). They are the FIRST byte-keyed index rows and
+     * the reason the verb-name assertions above are now RK_VERB's alone. */
+    if (nindex != 21)
+        bad("INDEX-ROW POPULATION MOVED: %d rows carry RF_INDEX, expected 21 "
+            "(the twelve (* alpha lookaround spellings and module "
+            "`recursion`'s nine missing spellings). If deliberate, update "
             "this number in the same commit", nindex);
     else if (bads == 0) {
         char label[288];
