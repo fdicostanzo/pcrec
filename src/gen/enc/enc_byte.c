@@ -177,10 +177,71 @@ static const char defs_bref_ci[] =
 "    return (ptrdiff_t)need;\n"
 "}\n";
 
+/* ---- entry 4: the LOOKBEHIND BACK-STEP ([M6.6.2] wave D, D58 scope item 3;
+ * lookaround_design.md §4)
+ *
+ * A lookbehind runs its body FORWARD from a position `k` characters before
+ * the assertion's entry (§3.4/§3.5: pcrec's reverse machine is a DFA over the
+ * capture-erased pattern and cannot carry a body with captures, backrefs or
+ * nested lookaround in it). "`k` characters before" is the ONE step in that
+ * shape whose answer depends on the encoding, so it is the one that lives
+ * here. The [M6.6] plan row states the rule in its own text: *a seam entry,
+ * never raw `pos - k` byte arithmetic in shared emitter code* — which is
+ * correct today and silently wrong under a UTF-8 backend. Sabotage row S133
+ * inlines it, and the fixture-declared per-site count in tests/codegen's
+ * [M5-SEAM] check is its ONLY possible detector, because inlining changes no
+ * answer under THIS backend.
+ *
+ * THE RETURN PROTOCOL DIVERGES FROM ENTRY 2's, DELIBERATELY. `$_bref_match`
+ * returns a signed length whose sign carries a second fact — the compared
+ * prefix, which the caller charges. A back-step's failure carries no second
+ * fact: "fewer than k characters precede pos" is one bit, and the WORK the
+ * entry did is `k`, which the CALLER ALREADY KNOWS AT COMPILE TIME and
+ * charges with a literal (§3.7). A sentinel is therefore the honest encoding,
+ * and `(size_t)-1` cannot collide with a legal position, because a legal
+ * position is <= n and a subject of SIZE_MAX bytes is not representable.
+ *
+ * WHY `s` AND `n` ARE PARAMETERS when this backend ignores both and the entry
+ * reads only below `pos`: a UTF-8 backend walking back over continuation
+ * bytes must reject a MALFORMED sequence, which is a failure mode the byte
+ * backend cannot have and needs the subject's bounds to detect. Adding a
+ * parameter later is an ABI break the seam exists to avoid. The
+ * unused-parameter cast is `$_next_pos`'s own, for `$_next_pos`'s own reason.
+ *
+ * ENGINE-CALLABLE, like the two compares and unlike `next_pos`: a back-step
+ * has no automaton representation whatsoever, so forbidding the call from an
+ * engine body would forbid the construct. */
+static const char decls_back_step[] =
+"/* $_back_step -- the ENCODING RESIDUAL entry for a LOOKBEHIND BACK-STEP\n"
+" * (pcrec DD-12/D58).\n"
+" *\n"
+" * Returns the position exactly `k` CHARACTERS before `pos`, or\n"
+" * $_BACK_STEP_NONE when fewer than k characters precede pos.\n"
+" *\n"
+" * Reads s only at offsets in [0, pos), so the (s == NULL, n == 0) subject\n"
+" * $_search accepts is legal here too.\n"
+" *\n"
+" * THIS artifact was compiled for the `byte` encoding, where one byte is one\n"
+" * character, so the answer is pos - k and the subject is never read. An\n"
+" * artifact compiled for another encoding exports this same entry with that\n"
+" * encoding's body and no engine code changes. */\n"
+"size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k);\n"
+"#define $_BACK_STEP_NONE ((size_t)-1)\n";
+
+static const char defs_back_step[] =
+"/* byte encoding: one byte is one character, so k characters before pos is\n"
+" * pos - k and the subject is never read. */\n"
+"size_t $_back_step(const unsigned char *s, size_t n, size_t pos, size_t k)\n"
+"{\n"
+"    (void)s; (void)n;\n"
+"    return k > pos ? $_BACK_STEP_NONE : pos - k;\n"
+"}\n";
+
 static const PcrecEncEntry entries_byte[] = {
     { PCREC_ENCE_NEXT_POS,      false, decls_byte,    defs_byte    },
     { PCREC_ENCE_BREF,          true,  decls_bref,    defs_bref    },
     { PCREC_ENCE_BREF_CASELESS, true,  decls_bref_ci, defs_bref_ci },
+    { PCREC_ENCE_BACK_STEP,     true,  decls_back_step, defs_back_step },
     { 0, false, NULL, NULL }
 };
 

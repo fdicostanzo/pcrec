@@ -21,25 +21,42 @@
  * `sel`/`tail` — the same two fields the registry arbitrated on to get here —
  * so the port cannot disagree with the row that elected it.
  *
- * THE WAVE B+C SPLIT, AND IT IS A TAIL CHECK RATHER THAN A REFUSAL PATH
- * (design §8.3, R33 V-3). D65 derives a row's `built` column from the PORT's
- * `ExtResult` at `WANT_RESULT` (src/parse/syntax_dump.c) and never runs the
- * emitter, so the column flips for exactly the rows whose tail this function
- * ACCEPTS. At this wave the three LOOKAHEAD tails (`=`, `!`, `*` at the `(?`
- * doorway) are recognised and the three `<` tails are DECLINED with the
- * enabled-but-unbuilt diagnostic — so `--list-syntax` reads `built` for
- * `(?=...)`, `(?!...)`, `(?*a)` and `unbuilt` for the three lookbehind rows,
- * which is the honest answer while `vm_look` has no back-step. **WAVE D
- * DELETES `la_kind`'s three `false` rows** (and the `LA_UNBUILT` arm with
- * them) when src/gen/enc's `PCREC_ENCE_BACK_STEP` lands; nothing else in this
- * file changes for the lookbehind, because `Ast.u.look.behind` is already set
- * from the table.
+ * THE WAVE B+C SPLIT IS GONE, AND WAVE D IS WHAT SPENT IT (design §8.3, R33
+ * V-3). D65 derives a row's `built` column from the PORT's `ExtResult` at
+ * `WANT_RESULT` (src/parse/syntax_dump.c) and never runs the emitter, so the
+ * column flips for exactly the rows whose tail this function ACCEPTS. Wave
+ * B+C recognised the three LOOKAHEAD tails (`=`, `!`, `*` at the `(?`
+ * doorway) and DECLINED the three `<` tails with the enabled-but-unbuilt
+ * diagnostic — the honest answer while `vm_look` had no back-step. Wave D
+ * landed `PCREC_ENCE_BACK_STEP` (src/gen/enc/enc_byte.c) and §3.4's emitted
+ * shape, so THE DECLINE AND ITS `built` COLUMN ARE DELETED: all six rows read
+ * `built`, and the table below has no `built` field left to disagree about.
+ * Nothing else in this file changed for the lookbehind, because
+ * `Ast.u.look.behind` was always set from the table — what wave D added here
+ * is §2.5's WIDTH RULE, and nothing else.
  *
- * WHY THE DECLINE IS AN `EXT_REFUSAL` AND NOT AN `EXT_NOT_MINE`: the `(?`
- * doorway CANNOT decline (internal.h's ExtResult comment — its catch-all is
- * REJECTED, so `EXT_NOT_MINE` from it is a registry defect the wall reports).
- * A refusal answered AT `WANT_RESULT` is exactly D33's "gate open, port
- * missing" signal, which is the one `pcrec_construct_built_status` reads.
+ * §2.5's WIDTH RULE, WHICH IS THIS FILE's THIRD AND LAST CHECK. A lookbehind
+ * body's every TOP-LEVEL BRANCH must have a FIXED width: `pcrec_minw(branch)
+ * == pcrec_maxw(branch)`, both finite. Widths may DIFFER between branches —
+ * `(?<=a|bc)x` ships and is a python `re` ERROR (design §7 G1) — and a body
+ * with any variable-width branch is refused HERE, with a pattern offset,
+ * rather than discovered by the emitter.
+ *
+ * WHY TOP-LEVEL BRANCHES AND NOT THE WHOLE BODY, because the asymmetry is the
+ * single most likely thing in this module to be read as a defect: §2.4
+ * MEASURED that PCRE2 tries a lookbehind's top-level branches in WRITTEN
+ * order and, WITHIN one branch, tries the step-back LENGTH longest-first. A
+ * branch of one fixed width has one length, so the loop that would order them
+ * has one iteration and written order is the whole answer. That is why
+ * `(?<=a|bc)x` (two branches, widths 1 and 2) ships and `(?<=(a|bc))x` (ONE
+ * branch of width 1..2) is refused: the second needs the longest-first loop
+ * this module does not build. §2.5's three reasons for chartering that loop
+ * rather than shipping it are in the design.
+ *
+ * WHY THE DECLINE WAS AN `EXT_REFUSAL` AND NOT AN `EXT_NOT_MINE`, kept
+ * because §2.5's refusal is answered the same way: the `(?` doorway CANNOT
+ * decline (internal.h's ExtResult comment — its catch-all is REJECTED, so
+ * `EXT_NOT_MINE` from it is a registry defect the wall reports).
  *
  * `\K` IS REFUSED INSIDE A LOOKAROUND (§2.7), PERMANENTLY. libpcre2 10.46
  * refuses it in all four polarities with err 199, whose own text names
@@ -57,13 +74,13 @@
  * what a check latching on "a lookaround was seen" would wrongly break. Both
  * sets are `tests/lookaround/refused.rxt`'s and sabotage row S128's.
  *
- * WHAT THIS FILE DELIBERATELY DOES NOT DO. It writes `widths = NULL` and
- * `nbranch = 0`: the width TABLE is the LOOKBEHIND's (§2.5, §3.1(c)) and wave
- * D computes it here with `pcrec_minw`/`pcrec_maxw` over the body's top-level
- * branches. A LOOKAHEAD has no width rule at all — any body is legal, measured
- * in both oracles — so NULL is the answer and not a placeholder.
+ * A LOOKAHEAD STILL WRITES `widths = NULL` AND `nbranch = 0`, and that is the
+ * ANSWER rather than a placeholder: a lookahead has no width rule at all —
+ * any body is legal, measured in both oracles — so there is nothing to
+ * tabulate. The two fields are one fact and are written together.
  */
 
+#include <limits.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -75,32 +92,34 @@
  * `pcrec_registry_arbitrate` already matched to elect the row, so this table
  * cannot elect a different construct than the registry did.
  *
- * `built` is the WAVE B+C SPLIT and nothing else: a row with `built == false`
- * is declined at `WANT_RESULT`, which is what D65 reads as `unbuilt`. */
+ * THE `built` COLUMN IS GONE AT WAVE D. It existed for exactly one wave and
+ * carried exactly one fact — that `vm_look` had no back-step yet — and with
+ * `PCREC_ENCE_BACK_STEP` landed there is nothing left for it to say. All six
+ * rows are built, so D65 reads `built` for all six. */
 typedef struct {
     int         sel;
     const char *tail;       /* NULL for a tail-less row */
     bool        behind;
     bool        neg;
     bool        atomic;
-    bool        built;      /* wave B+C: false for the three `<` tails */
-    const char *shown;      /* the construct, for the unbuilt diagnostic */
 } LaRow;
 
 static const LaRow la_rows[] = {
-    /* sel  tail  behind  neg   atomic  built  shown        */
-    { '=',  NULL, false, false, true,  true,  "(?=...)"  },
-    { '!',  NULL, false, true,  true,  true,  "(?!...)"  },
+    /* sel  tail  behind  neg   atomic */
+    { '=',  NULL, false, false, true  },
+    { '!',  NULL, false, true,  true  },
     /* `(?*X)` is PCRE2's NON-ATOMIC positive lookahead — the `(?` spelling of
      * `(*napla:...)`, proven behaviourally rather than by its name (§2.2, on
      * "abab"): `(?*(a|ab))\1$` is (2,4) where `(?=(a|ab))\1$` is NOMATCH. */
-    { '*',  NULL, false, false, false, true,  "(?*...)"  },
-    /* THE THREE `<` TAILS — recognised, DECLINED at this wave. `(?<` is three
-     * constructs and a name, split by tail at SR-9; every other tail byte is
-     * the named-group row and never reaches this port. */
-    { '<',  "=",  true,  false, true,  false, "(?<=...)" },
-    { '<',  "!",  true,  true,  true,  false, "(?<!...)" },
-    { '<',  "*",  true,  false, false, false, "(?<*...)" },
+    { '*',  NULL, false, false, false },
+    /* THE THREE `<` TAILS. `(?<` is three constructs and a name, split by tail
+     * at SR-9; every other tail byte is the named-group row and never reaches
+     * this port. Wave D built them: what distinguishes them here is still one
+     * bool, because the direction changes the LOWERING (§3.4) and not the
+     * parse — plus §2.5's width rule, which `la_widths` below enforces. */
+    { '<',  "=",  true,  false, true  },
+    { '<',  "!",  true,  true,  true  },
+    { '<',  "*",  true,  false, false },
 };
 
 static const LaRow *la_kind(const RegRow *rw)
@@ -154,6 +173,78 @@ static bool la_has_kreset(const Ast *a)
     }
 }
 
+/* §2.5's WIDTH RULE, as a table. Fills `out[0..nbr-1]` with each TOP-LEVEL
+ * branch's fixed width IN WRITTEN ORDER and returns true; on the first branch
+ * that is NOT fixed-width, writes that branch's `minw`/`maxw` through `bad_lo`
+ * / `bad_hi` and returns false.
+ *
+ * WRITTEN ORDER IS THE WHOLE POINT AND IT IS THE REVERSE OF THE WALK (§2.4
+ * level 1). `p_alt_info` builds a flat alternation LEFT-NESTED — `a|b|c` is
+ * `A_ALT(A_ALT(a, b), c)` — so descending the `->l` spine yields the branches
+ * BACKWARDS through `->r`, with the FIRST branch left over as the innermost
+ * `->l`. This function therefore fills `out` from the END, which is what makes
+ * `out[0]` the branch PCRE2 tries first. Get this backwards and `(?<=(a)|(aa))c`
+ * on "aac" reports the wrong group — the exact cell §2.4 measured.
+ *
+ * IT IS NOT A SECOND BRANCH-SPLITTING RULE. `nbr` comes from `AltInfo`
+ * (PARSE-1), computed by the LOOP THAT DROVE THE PARSE, and this walk asserts
+ * it rather than re-deriving it: an A_ALT spine of `nbr` branches has exactly
+ * `nbr - 1` A_ALT nodes, so a disagreement is an internal error and not a
+ * pattern error. That is D24's rule — a `|`-counting scanner here would be a
+ * second implementation of a rule the parser already applied, and it would get
+ * `(?<=(a|bc))x` and `(?<=a|bc)x` exactly backwards, which are the two cells
+ * §2.5 exists to distinguish.
+ *
+ * FIXED MEANS `minw == maxw`, BOTH FINITE, and it is `pcrec_maxw` that makes
+ * this analysis new (src/opt/mrl.c, wave A). `pcrec_minw` may UNDER-estimate
+ * for free and `pcrec_maxw` may OVER-estimate for free; the direction that is
+ * NOT free is an under-estimating `maxw`, which would let a variable-width
+ * branch through as fixed. That is a silent miscompile rather than a lost
+ * optimisation — and on a NEGATIVE lookbehind it is a FALSE MATCH — which is
+ * why §3.4's end-check is emitted on both polarities and why sabotage row
+ * S136 accepts a `minw != maxw` branch on purpose.
+ *
+ * A NESTED LOOKAROUND INSIDE A BRANCH CONTRIBUTES 0 AT BOTH ENDS (§3.1(d),
+ * wave A's arms), so `(?<=a(?=b))x` stays fixed width 1 — it is not a special
+ * case here, it is what both analyses already answer for A_LOOK. */
+static bool la_widths(Ctx *cx, const Ast *body, int nbr, int *out,
+                      long long *bad_lo, long long *bad_hi)
+{
+    int i = nbr;
+    const Ast *a = body;
+
+    for (; a->k == A_ALT; a = a->l) {
+        /* A SPINE LONGER THAN `nbr - 1` IS AN INTERNAL ERROR, NOT A PATTERN
+         * ERROR, so it aborts the compile by name rather than being folded
+         * into §2.5's capability refusal — a caller told "your lookbehind is
+         * variable-length" about a compiler bug has been told something
+         * false. `ctx_fail` is the same channel `vm_look`'s own impossible
+         * arms use. */
+        if (i <= 1)
+            ctx_fail(cx, 0, "internal error: a lookbehind body's alternation "
+                            "spine is longer than its reported branch count");
+        i--;
+        long long lo = pcrec_minw(a->r), hi = pcrec_maxw(a->r);
+        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
+            *bad_lo = lo; *bad_hi = hi;
+            return false;
+        }
+        out[i] = (int)hi;
+    }
+    if (i != 1)
+        ctx_fail(cx, 0, "internal error: a lookbehind body's alternation spine "
+                        "is shorter than its reported branch count");
+    {
+        long long lo = pcrec_minw(a), hi = pcrec_maxw(a);
+        if (lo != hi || hi >= PCREC_W_UNBOUNDED || hi > INT_MAX) {
+            *bad_lo = lo; *bad_hi = hi;
+            return false;
+        }
+        out[0] = (int)hi;
+    }
+    return true;
+}
+
 ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
                              size_t at, size_t from)
 {
@@ -165,24 +256,17 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
      * demotes a disabled module's ask to WANT_VERDICT, which ext.c answers
      * with the module refusal before any port runs. `want` is still READ, by
      * the REFUSE macro below, which stamps it as `answered_at`. */
-    /* `UNBUILT` below reads the dispatching row from a variable named `r`,
-     * exactly as `REFUSE` reads the gated ask level from one named `want` —
-     * internal.h states that convention at both macros. */
+    /* `r` NAMES THE DISPATCHING ROW, which is the convention internal.h's
+     * refusal macros state (`UNBUILT` read it; wave D deleted that call and
+     * the name is kept because `la_kind` reads the same row the registry
+     * arbitrated on to get here). */
     const RegRow *r = rw;
     const LaRow *k = la_kind(r);
     if (!k) BAD_ROW(at, "a module 'lookaround' row");
 
-    /* THE WAVE B+C SPLIT (§8.3). Declined BEFORE the body is parsed: a
-     * construct with no lowering owes its diagnostic at its own offset, not
-     * after a sub-parse that might raise a different one first.
-     *
-     * IT RENDERS THROUGH ext.c's OWN MACRO rather than a hand-written copy of
-     * the sentence (the macro moved to internal.h at this wave for exactly
-     * this call): `PCREC_UNBUILT_MARKER` is the substring D65's classifier
-     * keys on, so a second spelling of it here would be a second home for the
-     * fact that decides a row's `built` column. */
-    if (!k->built)
-        UNBUILT(at, "%s", k->shown);
+    /* NO `built` CHECK HERE ANY MORE — wave D deleted it with the column it
+     * fed (see this file's header). All six rows are built, so every one of
+     * them reaches the body parse below. */
 
     /* A body-carrying group, so the SCOPED inline-option state is saved and
      * restored around the body exactly as `p_group_body`'s plain-`(` tail and
@@ -228,13 +312,54 @@ ExtResult pcrec_laport_group(Ctx *cx, const RegRow *rw, ExtWant want,
     a->u.look.behind = k->behind;
     a->u.look.neg    = k->neg;
     a->u.look.atomic = k->atomic;
-    /* THE WIDTH TABLE IS THE LOOKBEHIND's (§2.5/§3.1(c)) — wave D fills it
-     * from `pcrec_minw`/`pcrec_maxw` over the body's `info.nbr` top-level
-     * branches. A LOOKAHEAD has no width rule, so NULL is the ANSWER and not a
-     * placeholder, and `nbranch` is 0 with it because the two are one fact. */
-    a->u.look.widths  = NULL;
-    a->u.look.nbranch = 0;
-    (void)info;
+
+    /* THE WIDTH TABLE (§2.5/§3.1(c)), and it is the LOOKBEHIND's alone. A
+     * LOOKAHEAD has no width rule — any body is legal, measured in both
+     * oracles — so NULL/0 is the ANSWER there and not a placeholder; the two
+     * fields are written together because they are one fact.
+     *
+     * REFUSED AT THE ASSERTION's OWN OFFSET, and `at` rather than the
+     * offending branch's start for the reason §2.7's `\K` refusal gives:
+     * `Ast` carries no position of any kind (PARSE-1's note), so the position
+     * this port can honestly name is the construct it is refusing. D26 puts
+     * the OFFSET convention in tier 2 and the WORDING in tier 3.
+     *
+     * IT IS A CAPABILITY LIMIT AND IS WORDED AS ONE, NOT AS "requires module
+     * 'lookaround'": the module is enabled and the construct is real — PCRE2
+     * compiles every body refused here — so what is missing is the
+     * longest-first step-back loop §2.5 charters and this module does not
+     * build. Saying "enable the module" to a caller who already has would be
+     * an actionable-sounding lie, which is D33's own distinction. */
+    if (!k->behind) {
+        a->u.look.widths  = NULL;
+        a->u.look.nbranch = 0;
+    } else {
+        long long lo = 0, hi = 0;
+        int *w = arena_alloc(&cx->arena, (size_t)info.nbr * sizeof *w);
+        if (!la_widths(cx, body, info.nbr, w, &lo, &hi)) {
+            /* UNBOUNDED IS TESTED FIRST because `PCREC_W_UNBOUNDED` is
+             * itself above `INT_MAX`, so the other order reports every `a*`
+             * body as "too long" — which is a different and wrong claim.
+             * Here pcrec AGREES WITH PCRE2, whose own answer is err 125
+             * "length of lookbehind assertion is not limited" (§2.5). */
+            if (hi >= PCREC_W_UNBOUNDED)
+                REFUSE(at, "variable-length lookbehind is not implemented: "
+                           "every alternative of a lookbehind must have a "
+                           "fixed length (this one is unbounded)");
+            /* A FIXED width too large to store. Only reachable through a
+             * nested exact-count tower; the emitter's own node cap would
+             * refuse it a step later, and refusing here keeps `widths` an
+             * `int` table rather than making the whole analysis 64-bit for a
+             * pattern nothing can compile. */
+            if (hi > INT_MAX)
+                REFUSE(at, "this lookbehind is too long");
+            REFUSE(at, "variable-length lookbehind is not implemented: every "
+                       "alternative of a lookbehind must have a fixed length "
+                       "(this one can match %lld..%lld characters)", lo, hi);
+        }
+        a->u.look.widths  = w;
+        a->u.look.nbranch = info.nbr;
+    }
 
     /* PROPAGATED, not defaulted — A_CAP's rule and A_ATOMIC's, for their
      * reason: `not_repeatable` is a property of what this construct RETURNS to

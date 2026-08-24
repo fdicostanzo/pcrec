@@ -47,6 +47,16 @@ exactly why a structural check is the only instrument that can see it.
   two more string fields — simpler, and it does not generalise: lookbehind's
   back-step ([M6.6]) is the next residual entry D58 already names.
 
+  **THAT PREDICTION WAS TESTED AT [M6.6.2] WAVE D AND IT HELD, WHICH IS THE
+  FINDING** (lookaround_design.md §4.3, prediction P-1). The back-step landed
+  as ONE enumerator (`PCREC_ENCE_BACK_STEP`), ONE `entries_byte[]` row, and
+  one `|=` in the emitter's `A_LOOK` arm. **No field was added to
+  `PcrecEncEntry`, no signature changed, `pcrec_enc_ready` was untouched, both
+  emit functions were untouched, and the third-encoding recipe below is
+  unchanged.** D58's revisit clause — *"any interface change it forces gets
+  recorded against this entry"* — is honoured here by having nothing to
+  record, and this paragraph is that record.
+
   `pcrec_enc_ready` moved with it (from `decls != NULL` to "has a non-empty
   entries array"), which R32 E11 found: the readiness predicate is a THIRD
   site the change touches, not the two emit functions alone, and the
@@ -82,7 +92,7 @@ exactly why a structural check is the only instrument that can see it.
   of its own any more.
 - **enc_byte.c** — the `PCREC_ENC_BYTE` backend, and the only one built.
   One byte is one character, so every residual entry is the identity shape or
-  close to it. THREE entries today, each with its contract comment emitted
+  close to it. FOUR entries today, each with its contract comment emitted
   into the artifact alongside its declaration — the contract lives with the
   backend so a future backend cannot land a residual declaration nobody wrote
   a contract for:
@@ -94,6 +104,20 @@ exactly why a structural check is the only instrument that can see it.
     ONE WITH A FLAG**: D18/D23's rule is that an option compiles away, and D23
     MEASURED the alternative (a runtime fold indirection) costing 26% on a
     pattern containing no letters at all.
+  - `<prefix>_back_step` ([M6.6.2] wave D) — the position exactly `k`
+    CHARACTERS before `pos`, or `<prefix>_BACK_STEP_NONE` when fewer than `k`
+    characters precede it. **A SENTINEL RATHER THAN A SIGNED LENGTH**, and the
+    divergence from the compare's protocol one bullet up is deliberate: a
+    back-step's failure carries no second fact, and the WORK it did is `k`,
+    which the caller already knows AT COMPILE TIME and charges with a literal
+    (lookaround_design.md §3.7). `(size_t)-1` cannot collide with a legal
+    position, because a legal position is <= n and a SIZE_MAX-byte subject is
+    not representable. `s` and `n` are parameters this backend ignores because
+    a UTF-8 backend walking back over continuation bytes must reject a
+    MALFORMED sequence — a failure mode the byte backend cannot have — and
+    adding a parameter later is the ABI break the seam exists to avoid.
+    ENGINE-CALLABLE, for the compares' reason: a back-step has no automaton
+    representation, so forbidding the call would forbid the construct.
 
   **THE RETURN IS A LENGTH, AND THE SIGN CARRIES A SECOND FACT**, and both
   halves are designed for the backend that does not exist yet. Under this
