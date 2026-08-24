@@ -928,8 +928,8 @@ Two distinct capacities can exhaust and both report this one code: the
 resume stack (`<PREFIX>_RESUME_FRAMES`) and its sibling undo trail
 (`<PREFIX>_TRAIL_FRAMES`). Which one ran out is not reported, and a caller
 must not assume it was the one whose macro is named "frames" — MEASURED on
-`^(a(?1)?b)$`, the artifact gives up with the trail full and a third of its
-resume stack unused (`docs/design/frame_buffer_design.md` §4). The same
+`^(a(?1)?b)$`, the artifact gives up with the trail full and TWO THIRDS of
+its resume stack still unused (`docs/design/frame_buffer_design.md` §4). The same
 code, with the same meaning, covers a caller-supplied buffer once
 [DD-14.FB] lands (§10.3).
 
