@@ -157,12 +157,21 @@ class B:
 
 
 class GU:
-    """A give-up block (design SS10.3's `gu <code>` directive). Not oracle-
-    checked against a libpcre2 MATCH -- pcrec's give-up is its own artifact
+    """A give-up block (design SS10.3's `gu <code> "<subject>"` directive --
+    MEASURED against the landed wave A grammar, worktrees/srA's
+    tests/harness/run.sh: `^gu[[:space:]]+(steps|frames|work|recurse)
+    [[:space:]]+\"(.*)\"[[:space:]]*$`, no startpos variant. `gu` REQUIRES a
+    subject; a bare `gu <code>` with no subject is a hard parse error under
+    that grammar -- an earlier draft of this generator omitted it entirely,
+    caught by the manager's review before merge). Not oracle-checked
+    against a libpcre2 MATCH -- pcrec's give-up is its own artifact
     property (the depth capacity, D71.1), not something libpcre2 has an
     equivalent code for. `oracle_note` records what libpcre2 itself does on
     the same cell (almost always its OWN give-up, rc -52) as a cross-check
-    that the shape is genuinely non-terminating and not merely slow."""
+    that the shape is genuinely non-terminating and not merely slow, and
+    the same `subj` field is now ALSO what gets written into the directive
+    line -- one field, one meaning, the PERR `gate_features` lesson applied
+    before it could recur here too."""
 
     def __init__(self, pat, subj, code, features, note, oracle_note=True):
         self.pat = pat
@@ -280,7 +289,7 @@ def render(block, census):
         lines.append('pattern ' + block.pat)
         if block.features:
             lines.append('features ' + block.features)
-        lines.append('gu ' + block.code)
+        lines.append('gu %s %s' % (block.code, esc(block.subj)))
         if block.code == 'frames':
             lines.append('# D71.1 (docs/dev/decisions.md): the DEFAULT '
                          'artifact reports a deep/runaway call as '
@@ -646,15 +655,23 @@ LEFTREC = [
      "generation axis, unbuilt here.", [
         GU(r"^((?1)a)$", "a", "frames", RC,
            note="DIRECT: group 1's body is `(?1)a` with no alternative -- "
-                "the call is unconditional, so no subject terminates it."),
+                "the call is unconditional, so no subject terminates it. "
+                "SUBJECT CHOICE: the shortest legal one, \"a\" -- the "
+                "runaway is reachable at ANY length, so there is nothing "
+                "to gain from a longer one."),
         GU(r"^(?:(?<p>(?&q)a)){0}(?:(?<q>(?&p)b)){0}(?&p)$", "ab", "frames", RCN,
            note="INDIRECT: p calls q calls p, a two-node cycle with no "
-                "non-recursive branch on either side."),
+                "non-recursive branch on either side. SUBJECT CHOICE: "
+                "\"ab\" -- design SS3.3's own L2 measurement (`out/"
+                "leftrec.txt`) uses this exact subject for the DEFINE form "
+                "of the same cycle, cross-checked here via the {0} idiom."),
         GU(r"^(a?(?1)b)$", "ab", "frames", RC,
            note="NULLABLE PREFIX: an optional literal precedes the call, "
                 "but the call itself is still unconditional -- "
                 "design SS3.3/L3's own point is that 'is the call the "
-                "FIRST item' misses this shape."),
+                "FIRST item' misses this shape. SUBJECT CHOICE: \"ab\" -- "
+                "design SS3.3's own L3 measurement uses this exact "
+                "subject for the identical pattern."),
     ]),
     ("THE CELL THAT MUST MATCH (design SS3.3, L5b): 199 nested "
      "recursions, every one entered at offset 0 -- refusing this would be "
@@ -912,7 +929,11 @@ QUANTIFIED = [
         GU(r"^(?R)*$", "", "frames", RC,
            note="`(?R)*` at the top level re-runs the WHOLE PATTERN "
                 "(anchors included) on every iteration, with no base "
-                "case -- design SS2.6's own L6 row."),
+                "case -- design SS2.6's own L6 row, which uses the empty "
+                "subject for this exact pattern. SUBJECT CHOICE: \"\" -- "
+                "the runaway needs no input at all, since `(?R)` re-enters "
+                "at the same position on every iteration regardless of "
+                "what is left to consume."),
     ]),
 ]
 

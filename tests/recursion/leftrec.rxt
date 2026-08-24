@@ -35,25 +35,25 @@
 # THE GIVE-UP CELLS: direct, indirect and nullable-prefix left recursion, each with no non-recursive branch reachable on the given subject (design SS3.3/SS5.6/SS9.3 S-SR8). `gu frames` per D71.1 -- the default artifact's give-up for a deep/runaway call is PCREC_ERR_FRAMES; PCREC_ERR_RECURSE only exists under the diagnostic generation axis, unbuilt here.
 # ====================================================================
 
-# DIRECT: group 1's body is `(?1)a` with no alternative -- the call is unconditional, so no subject terminates it.
+# DIRECT: group 1's body is `(?1)a` with no alternative -- the call is unconditional, so no subject terminates it. SUBJECT CHOICE: the shortest legal one, "a" -- the runaway is reachable at ANY length, so there is nothing to gain from a longer one.
 # libpcre2 10.46 on the SAME cell: pcre2_match error -52: nested recursion at the same subject position (its own guard, not pcrec's -- cross-checked for shape only)
 pattern ^((?1)a)$
 features recursion
-gu frames
+gu frames "a"
 # D71.1 (docs/dev/decisions.md): the DEFAULT artifact reports a deep/runaway call as PCREC_ERR_FRAMES -- the depth counter (PCREC_ERR_RECURSE) is a diagnostic-generation-axis-only build, never the default one. If Frank revisits D71.1, the diagnostic-axis expectation for THIS cell is: gu recurse
 
-# INDIRECT: p calls q calls p, a two-node cycle with no non-recursive branch on either side.
+# INDIRECT: p calls q calls p, a two-node cycle with no non-recursive branch on either side. SUBJECT CHOICE: "ab" -- design SS3.3's own L2 measurement (`out/leftrec.txt`) uses this exact subject for the DEFINE form of the same cycle, cross-checked here via the {0} idiom.
 # libpcre2 10.46 on the SAME cell: pcre2_match error -52: nested recursion at the same subject position (its own guard, not pcrec's -- cross-checked for shape only)
 pattern ^(?:(?<p>(?&q)a)){0}(?:(?<q>(?&p)b)){0}(?&p)$
 features recursion,named-groups
-gu frames
+gu frames "ab"
 # D71.1 (docs/dev/decisions.md): the DEFAULT artifact reports a deep/runaway call as PCREC_ERR_FRAMES -- the depth counter (PCREC_ERR_RECURSE) is a diagnostic-generation-axis-only build, never the default one. If Frank revisits D71.1, the diagnostic-axis expectation for THIS cell is: gu recurse
 
-# NULLABLE PREFIX: an optional literal precedes the call, but the call itself is still unconditional -- design SS3.3/L3's own point is that 'is the call the FIRST item' misses this shape.
+# NULLABLE PREFIX: an optional literal precedes the call, but the call itself is still unconditional -- design SS3.3/L3's own point is that 'is the call the FIRST item' misses this shape. SUBJECT CHOICE: "ab" -- design SS3.3's own L3 measurement uses this exact subject for the identical pattern.
 # libpcre2 10.46 on the SAME cell: pcre2_match error -52: nested recursion at the same subject position (its own guard, not pcrec's -- cross-checked for shape only)
 pattern ^(a?(?1)b)$
 features recursion
-gu frames
+gu frames "ab"
 # D71.1 (docs/dev/decisions.md): the DEFAULT artifact reports a deep/runaway call as PCREC_ERR_FRAMES -- the depth counter (PCREC_ERR_RECURSE) is a diagnostic-generation-axis-only build, never the default one. If Frank revisits D71.1, the diagnostic-axis expectation for THIS cell is: gu recurse
 
 # ====================================================================

@@ -133,9 +133,9 @@ g 1 0 1
 # `(?R)` UNDER A QUANTIFIER, UNCONDITIONAL -- a give-up, not a termination (design SS2.6, L6): no non-recursive branch exists, so the empty-iteration guard alone cannot save it.
 # ====================================================================
 
-# `(?R)*` at the top level re-runs the WHOLE PATTERN (anchors included) on every iteration, with no base case -- design SS2.6's own L6 row.
+# `(?R)*` at the top level re-runs the WHOLE PATTERN (anchors included) on every iteration, with no base case -- design SS2.6's own L6 row, which uses the empty subject for this exact pattern. SUBJECT CHOICE: "" -- the runaway needs no input at all, since `(?R)` re-enters at the same position on every iteration regardless of what is left to consume.
 # libpcre2 10.46 on the SAME cell: pcre2_match error -52: nested recursion at the same subject position (its own guard, not pcrec's -- cross-checked for shape only)
 pattern ^(?R)*$
 features recursion
-gu frames
+gu frames ""
 # D71.1 (docs/dev/decisions.md): the DEFAULT artifact reports a deep/runaway call as PCREC_ERR_FRAMES -- the depth counter (PCREC_ERR_RECURSE) is a diagnostic-generation-axis-only build, never the default one. If Frank revisits D71.1, the diagnostic-axis expectation for THIS cell is: gu recurse
