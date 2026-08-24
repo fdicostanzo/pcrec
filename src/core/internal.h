@@ -293,8 +293,97 @@ typedef enum {
      * general DFA construction is CHARTERED as `[ENG-LOOK]`, not built, and
      * design §5.7 records Frank's ruling that NO one-character fold ships
      * anywhere in the meantime. */
-    A_LOOK
+    A_LOOK,
+    /* [DD-14] `(?1)` `(?+2)` `(?-1)` `(?0)` `(?R)` `(?&name)` `(?P>name)`
+     * `\g<1>` `\g'1'` `\g<name>` — A SUBROUTINE CALL: run another group's
+     * pattern here, and put the capture state back on the way out
+     * (docs/design/subroutines_design.md §4.1).
+     *
+     * ONE KIND FOR ALL TEN SPELLINGS (design §4.1(a)). The spelling is not a
+     * semantic difference: §2.1's discriminator — does the construct RE-RUN
+     * the group's pattern, or compare against the TEXT it captured — is the
+     * same for all ten, §2.3's relative forms compute to an absolute number
+     * inside the port, and §2.4's zero family is just `target == 0`.
+     * `Ast.reg` (above) already carries the producing `RegRow` for the
+     * diagnostics and for D65, so the spelling is recoverable without a
+     * field of its own.
+     *
+     * IT IS NOT A_BREF, AND THE FIELD THAT WOULD HAVE BEEN SHARED IS THE
+     * TELL. `A_BREF.u.bref.refs[]` is a SET because a *reference* to a
+     * duplicated name resolves at MATCH time to the first member that is
+     * set; a CALL to a duplicated name runs the FIRST DECLARATION,
+     * statically, and never retries into the run (design §3.4(c),
+     * MEASURED on 10.46). Reusing `refs[]` here would make one field mean
+     * two things and would invite an emitter to write the else-if chain
+     * `backrefs_design.md` §8.3 designed for the other construct.
+     *
+     * `l` AND `r` ARE BOTH UNUSED. The callee is NOT a child: it is
+     * `u.call.body`, a pointer to a subtree that lives at its own lexical
+     * position elsewhere in the same tree. THAT MAKES IT THE AST'S FIRST
+     * `Ast*` -> `Ast*` BACK EDGE, and design §4.4 states the rule every
+     * walker in this compiler now lives under:
+     *
+     *     A WHOLE-TREE PREDICATE MUST NOT FOLLOW `.body`.
+     *
+     * It already visits the callee at the callee's own lexical position, so
+     * following the edge is REDUNDANT as well as NON-TERMINATING — on
+     * `(a(?1))` a bare `const Ast *` walker with no visited set recurses for
+     * ever and HANGS THE COMPILER, which no answer-comparison test can
+     * detect because there is no answer. A SUBTREE-RELATIVE analysis, one
+     * whose answer for a call genuinely is the callee's, goes through
+     * `src/opt/callgraph.c`'s memoised SCC fixpoint instead (§4.4a).
+     *
+     * ITS MINIMUM WIDTH IS THE CALLEE'S, and that is a FIXPOINT, not a
+     * recursion: design §4.4b's Kleene iteration from infinity downward over
+     * the SCC condensation, with `minw == infinity` meaning "this callee
+     * matches nothing", which is a LEGAL compile (`^(a(?1)b)$` compiles on
+     * 10.46 and matches nothing). `vm_nullable` is the same shape with cycle
+     * bottom `false` (§2.6), and both live in `callgraph.c` because a bare
+     * `const Ast *` signature cannot express a fixpoint.
+     *
+     * A CALL TARGET MUST JOIN THE MARKED SET (design §4.3): a call names a
+     * group exactly as a reference does, so `pcrec_bref_mark` marks
+     * `u.call.target` or `--no-captures` deletes group 1's `A_CAP` out from
+     * under `(a)(?1)`. The mark is NOT transitive and needs no fixpoint —
+     * a call from inside group 1 to group 3 is an `A_CALL` NODE IN THE TREE,
+     * so the whole-tree walk reaches it wherever it sits.
+     *
+     * VM-ONLY (design §8.1). A DFA cannot implement it: a subroutine call is
+     * not a regular construct once it is recursive, and `src/ir/nfa.c`'s
+     * capture-erased approximation is NOT even a sound superset here
+     * (§8.2), which is why a call-bearing pattern gets NO prefilter rather
+     * than a filtered one — wave E's one line in `src/opt/select_engine.c`.
+     * Wave G revisits `nfa.c` with §8.3's bounded approximation.
+     *
+     * D62 CONTROL 3'S OBLIGATION COMES WITH THE PAYLOAD (`u.call` below):
+     * an analysis that pattern-matches `case A_CALL:` and does not read
+     * `.body` treats a call as an OPAQUE ZERO-WIDTH ATOM — which is SOUND
+     * for a decline and WRONG for a descent. Design §9.3 makes that three
+     * sabotage rows rather than a comment. */
+    A_CALL
 } AKind;
+
+/* [DD-14] HOW AN `A_CALL`'s CALLEE REACHES THE ARTIFACT (design §6.2/§6.3).
+ * DECIDED BY `src/opt/callgraph.c` FROM THE SCC CONDENSATION, never by the
+ * parser: the parser does not have the graph, and "is the target in a cycle"
+ * is the eligibility question.
+ *
+ * The two are NOT two spellings of one lowering — design §6.1 measured that
+ * "emit the body once with two linkages" collapses when it is written out —
+ * so a pattern may carry both, node by node, and §9.2's SPLICE-vs-LINKAGE
+ * `A == B` control over the whole corpus is what holds them to one language. */
+typedef enum {
+    /* INLINE THE CALLEE'S SUBTREE AT THE CALL SITE. Only legal when the
+     * target is NOT in a cycle with this call (a spliced recursive call is
+     * an infinite emitter) and the size budget allows it. Wave G. */
+    CALL_SPLICE,
+    /* EMIT THE CALLEE ONCE AS AN ADDRESSABLE REGION AND JUMP TO IT, with the
+     * return label in the RESUME FRAME (§5.1: the frame IS the call record —
+     * §5.2 derives, and §5.9's prototype REPRODUCES, the clobber bug a
+     * separate `call_stack[]` array has). The default and the only linkage
+     * that can express recursion. Wave B+C. */
+    CALL_LINKAGE
+} CallLink;
 
 typedef struct Ast Ast;
 struct Ast {
@@ -611,6 +700,112 @@ struct Ast {
              * WRITTEN and READ with `widths`; the two are one fact. */
             int         nbranch;
         } look;
+
+        /* [DD-14] A_CALL: the subroutine-call payload — ONE RESOLVED TARGET,
+         * ONE SHARED BODY, ONE LINKAGE AND ONE SLOT WRITE SET (design §4.1).
+         * The first two are D62 parse-resolved state; the last three are
+         * DERIVED ANALYSIS, and design §4.1(d) is explicit that the split is
+         * deliberate — `save`/`nsave`/`link` are a fixpoint over the call
+         * graph and the parser does not have the graph, so they belong where
+         * possessify's and mrl's results belong, not in the parse hook.
+         *
+         * NOTHING PRODUCES AN `A_CALL` YET. Wave A2 lands the kind and the
+         * walker arms with NO producer; the parse hook, the resolver and
+         * `src/opt/callgraph.c` are wave B+C's. Every field below therefore
+         * names the wave that will first WRITE it, and the arena zeroes, so a
+         * node nothing wrote reads `target == 0`, `body == NULL`,
+         * `link == CALL_SPLICE`, `nsave == 0`, `save == NULL`. */
+        struct {
+            /* THE GROUP NUMBER TO RUN. `0` IS NOT "unset": it is THE ROOT —
+             * `(?R)`, `(?0)`, `\g<0>`, `\g'0'` — and design §2.4 MEASURED
+             * that the root INCLUDES THE ANCHORS (`^(a(?R)?b)$` on "aabb"
+             * matches, `\A`/`\z` inside a callee re-assert at the same
+             * absolute positions, §3.4(e2)), so this is deliberately a
+             * NUMBER and not a pointer to an `A_CAP`.
+             *
+             * AN INT AND NOT A SET, and that is the field that distinguishes
+             * this construct from `A_BREF` (design §4.1(b)): §3.4(c) MEASURED
+             * that a call by NAME to a `(?J)` duplicated name runs the FIRST
+             * DECLARATION, statically, and does not retry into the run, while
+             * a REFERENCE to the same name resolves at match time against the
+             * whole run. One number, resolved once.
+             *
+             * WRITTEN by the end-of-parse resolution pass (wave B+C's
+             * `PEND_CALL` rule in `pcrec_bref_resolve`, design §4.2) — the one
+             * site that knows both the final group count and every
+             * declaration of a duplicated name. The four ports
+             * (`pcrec_rcport_num`/`_rel`/`_name` in `src/parse/mod_recursion.c`
+             * and `pcrec_brport_g`'s `<`/`'` arms, wave D) only record a
+             * `PendingRef`; relatives are already absolute by then, and
+             * `(?+0)`/`(?-0)` are the port's own error 126.
+             * READ by `pcrec_bref_mark` (`src/opt/atomic.c`, §4.3 — the ONE
+             * reader that exists in this wave), by `src/opt/callgraph.c` and
+             * by `vm_emit`'s `RX_CALL` site. */
+            int         target;
+            /* THE RESOLVED CALLEE SUBTREE. SHARED, NEVER OWNED — it is the
+             * same `Ast *` that hangs at the callee's own lexical position
+             * in this tree, so it is NEVER deep-copied and NEVER freed
+             * through this pointer, and a generic copy helper that FOLLOWS
+             * it duplicates the callee (src/core/CLAUDE.md's D70 survey
+             * records what each one does).
+             *
+             * THIS POINTER IS THE AST'S FIRST BACK EDGE and design §4.4's
+             * rule governs every reader: A WHOLE-TREE PREDICATE MUST NOT
+             * FOLLOW IT — it would recurse for ever on `(a(?1))` and hang the
+             * compiler, and it is redundant anyway because the callee is
+             * visited at its own lexical position. A SUBTREE-RELATIVE
+             * analysis goes through `src/opt/callgraph.c`'s memoised SCC
+             * fixpoint. The arms in this wave are where that rule was applied
+             * site by site.
+             *
+             * RESOLVED ONCE AND STORED, `A_BREF.u.bref.refs`'s rule
+             * (§4.1(c)): four independent derivations of "which subtree does
+             * this call run" would be four chances to disagree.
+             * WRITTEN by the same end-of-parse pass as `target` (wave B+C).
+             * READ by `callgraph.c`, `vm_nullable`, `vm_cost`,
+             * `vm_count_slots`, `vm_emit` and — ONLY once
+             * `lookaround_design.md` §11 wave A has built it, P13 measured it
+             * has not — `pcrec_maxw`. */
+            const Ast  *body;
+            /* HOW THE CALLEE REACHES THE ARTIFACT — `CALL_SPLICE` (inline the
+             * subtree here) or `CALL_LINKAGE` (jump to one emitted region and
+             * return). WRITTEN by `src/opt/callgraph.c` from the SCC
+             * condensation and a size budget (design §6.3), NEVER by the
+             * parser, which does not have the graph. READ by `vm_emit`, and
+             * by `src/ir/nfa.c` in wave G (a SPLICEABLE call has an exact
+             * finite lowering; a recursive one does not, §8.3).
+             * The arena zeroes to `CALL_SPLICE`, which is the WRONG default
+             * in the unsound direction for a recursive callee — so wave B+C
+             * sets this for EVERY node before the emitter runs, and wave G's
+             * eligibility rule is what may downgrade it. */
+            CallLink    link;
+            /* |W| — HOW MANY SLOTS THE RETURN RESTORES, and `save` is the
+             * ascending list of their INDICES. W is the CALLEE REGION's SLOT
+             * WRITE SET: EVERY slot family any node in the callee's
+             * transitive body can write, NOT just the captures. Design
+             * §5.3a's rule, and it is the row this design has had REFUTED
+             * TWICE — the capture-only version lost `SLOT_GROUP<n>_PENDING`
+             * (two LOST MATCHES) and `SLOT_CUT_MARK<n>` (six FALSE MATCHES,
+             * §5.3b) — so "the captures" is the answer that is measured
+             * WRONG, not merely incomplete.
+             *
+             * SLOTS 0 AND 1 ARE EXCLUDED BY CONSTRUCTION: §3.4(b) MEASURED
+             * that `\K` is NOT restored by a return, so the pair of indices
+             * that carry it must survive the restore.
+             *
+             * THE INDICES ARE THE CALLEE REGION'S OWN (design §4.4c). W
+             * derived from the LEXICAL occurrence names the LEXICAL copy's
+             * slots, and under `CALL_LINKAGE` the emitted callee region's are
+             * different numbers — a restore written against the wrong indices
+             * is §5.3b's axis-C miscompile arriving by a second route.
+             * Counted PER EMITTED INSTANCE (§5.7).
+             *
+             * WRITTEN by `src/opt/callgraph.c`'s `W` fixpoint (wave B+C).
+             * Arena-allocated, ascending. READ by `vm_emit`'s save/restore
+             * emission and charged by `vm_cost` as `2*nsave` of trail. */
+            int         nsave;
+            const int  *save;
+        } call;
     } u;
 };
 
@@ -2186,6 +2381,21 @@ bool pcrec_has_bref(const Ast *a);
  * two writes it always did. `mark` has `ncap + 1` entries and the caller
  * zeroes it. src/opt/atomic.c. */
 void pcrec_bref_mark(const Ast *a, bool *mark, int nmark);
+
+/* [DD-14] Does this tree carry a SUBROUTINE CALL? `pcrec_has_bref`'s sibling,
+ * in the same file and for the same reason (subroutines_design.md §4.3).
+ *
+ * IT DOES NOT FOLLOW `Ast.u.call.body` — design §4.4's rule for every
+ * whole-tree predicate: the callee is visited at its own lexical position
+ * anyway, and following the back edge would not terminate on `(a(?1))`.
+ *
+ * NO CALL SITE IN THIS WAVE. Its consumer is wave E's one line in
+ * src/opt/select_engine.c, which forces `EngineFit.prefilter` OFF for a
+ * call-bearing pattern (design §8.2: erasure is NOT a superset here, and §8.3
+ * measured 21x-350x for the alternative). Declared and defined now because
+ * wave A2 is the wave that owns the tree predicates; wired when there is a
+ * producer that can make it answer anything but false. */
+bool pcrec_has_call(const Ast *a);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset

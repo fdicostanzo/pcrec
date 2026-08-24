@@ -153,6 +153,77 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   checking: C does not police member access, so D62's discipline (parse-
   resolved state, per-field comments, per-field sabotage rows) is unchanged.
 
+  **[DD-14 wave A2] THE SECOND MEMBER ADDED UNDER THE RULE IS `u.call`**
+  (`A_CALL`: `target`, `body`, `link`, `nsave`, `save`, plus a new `CallLink`
+  enum beside `AKind`), and it is the first member holding a POINTER INTO THE
+  SAME TREE. `u.call.body` is the resolved callee subtree — **SHARED, never
+  owned** — which makes it the AST's first `Ast*` -> `Ast*` back edge and puts
+  a second obligation on every generic helper beside D70's own:
+
+  | generic helper | what it does with `u.call` | why |
+  |---|---|---|
+  | `src/opt/revdet.c` `rd_node` (the reversal copy constructor) | **never reached with one.** Its `*n = *src` shallow-copies the union, so an `A_CALL` copy would keep a valid `u.call` and a `body` pointer into the FORWARD tree — the most plausible-looking wrong node in the file. `rd_reverse`'s own `case A_CALL:` `ctx_fail` stops it before the tail fallthrough, and `rd_shape`'s decline stops `rd_reverse` being called at all. Its `n->k == A_REP` guard already keeps the `revbody`/`possessive` clear off `u.call`. | a shallow copy is right for every kind it DOES copy; a call is not one of them |
+  | `src/opt/altcls.c` `altcls_walk`'s `*r = *a` (A_REP and A_CAP only) | **never runs on an `A_CALL`**: both copies are under an explicit kind arm that owns `u.rep`/`u.cap`, and the new `case A_CALL: return a;` returns the node itself. A copier that FOLLOWED `.body` would duplicate the callee and give one call site a private copy of a subtree the rest of the tree shares. | D70's kind-check rule, already satisfied |
+  | `src/parse/mod_assertions.c`'s multiline pin | **cannot reach it** — guarded `k == A_BOL \|\| k == A_EOL`, and that port produces no `A_CALL`. | the guard the D70 migration added |
+  | `src/opt/atomic.c` `dis_walk`, `src/parse/mod_backrefs.c` `br_strip_caps` (the two tree REWRITES) | **visit the node as itself and never follow `.body`.** Following it would discharge / strip the callee once per call that names it, rewriting `a->l` on nodes another part of the tree points at, and would not terminate on a recursive callee. | design §4.4 |
+  | `--emit-ir`'s listing | **no `AKind` arm exists to write.** The listing renders the `VEvent` stream the emitter records (`emit_vm.c` switches on `VEvent.k`), so a call's listing content is whatever wave B+C's `RX_CALL`/`RX_RETURN` emission records as events — the same finding `u.look` reached. | measured, not assumed |
+
+  **THE RULE THE MEMBER ADDS**, beside D70's own: a generic helper must not
+  merely GUARD `u.call` — it must not FOLLOW `.body`. A whole-tree walk
+  already visits the callee at the callee's own lexical position, so following
+  the edge is redundant, and on `(a(?1))` it is a non-terminating compile in a
+  predicate asked of every pattern. A genuinely subtree-relative analysis goes
+  through `src/opt/callgraph.c`'s memoised SCC fixpoint (wave B+C).
+  `sizeof(Ast)` is unchanged: the member is 32 bytes on LP64, which is
+  `u.cls.bits`'s own 32.
+
+### [DD-14 wave A2] The EIGHT SWITCH-LESS WALKERS, inspected
+
+  `subroutines_design.md` §4.4a's census is `switch`-shaped, which is exactly
+  the set `-Wswitch` covers **and exactly the set it covers, no more**. The
+  residual it names is 72 further `->k ==` dispatch points and **eight AST
+  walkers with no kind switch at all**. The design assigns their arms to wave
+  B+C; wave A2 was the wave with the tree open, so each was READ and its
+  behaviour on an `A_CALL` recorded. **NONE needs a guard, and none can be
+  reached in wave A2 anyway (no producer).**
+
+  | walker | what it does with an `A_CALL` today | guard needed? |
+  |---|---|---|
+  | `emit_vm.c` `vm_lifts` | its argument is an `A_ATOMIC`; `r->k != A_REP` DECLINES the lift for a call body. If the body is `A_REP((?1))` it declines again through `vm_nullable(r->l)`, which answers `true`. | no — but B+C must re-read it once `vm_nullable` becomes the graph fixpoint, because the lift of `(?>(?1)*)` then depends on the CALLEE's nullability |
+  | `emit_vm.c` `bare` | `while (k == A_CAP)` — stops AT the call and returns it. A call is not transparent to anything. | no |
+  | `emit_vm.c` `vm_alt` | flattens the `A_ALT` spine and hands each branch to `vm_emit`. A call branch reaches `vm_emit`'s arm — `ctx_fail` today, `vm_call` in B+C. Generic in the branch kind. | no |
+  | `nfa.c` `trie_key` | requires every spine leaf to be `A_CLASS`; an `A_CALL` leaf makes it return false (INELIGIBLE). Dead for a call-bearing pattern anyway once wave E forces the prefilter off. | no |
+  | `nfa.c` `ast_bare` | `while (k == A_CAP)` — stops at the call, `bare`'s answer. | no |
+  | `altcls.c` `altcls_walk_alt` | flattens `A_ALT`, calls `altcls_walk` per branch (which now has an explicit `case A_CALL: return a;`), then merges only RUNS of `A_CLASS` branches — a call breaks the run. | no |
+  | `altcls.c` `altcls_branch_peel` | requires the branch's FIRST flattened atom to be a single-byte `A_CLASS`; a leading call DECLINES. A call later in the branch is carried through `altcls_rebuild_cat` **by pointer**, never copied. | no |
+  | `altcls.c` `altcls_cat_flatten` | a pure spine flattener with no kind assumption; a non-`A_CAT` node is a length-1 spine of itself. | no |
+
+  **AND THE INSPECTION FOUND SOMETHING THE SWITCH CENSUS COULD NOT — A PASS
+  ORDERING HAZARD FOR `u.call.body`, WHICH THE DESIGN DOES NOT ADDRESS.**
+  `.body` is filled by the end-of-parse resolution pass (`pcrec_bref_resolve`,
+  called at the END of `pcrec_parse`, parse.c). **Two later passes REBUILD
+  nodes rather than mutating them**, so a pointer captured at resolution can
+  be left naming a subtree that is no longer in the tree:
+
+  - `pcrec_altcls` (`src/core/compile.c`, immediately after parse) allocates
+    NEW nodes: `altcls_walk`'s `A_REP`/`A_CAP` arms do `*r = *a; r->l = body;`,
+    and stages 1 and 2 rebuild spines and merge branches into a fresh
+    `A_CLASS`. On `((?:a|b))(?1)` the tree's group 1 becomes a NEW `A_CAP`
+    over `[ab]` while `.body` still names the OLD one over the alternation.
+  - `pcrec_discharge_atomic` (via `pcrec_select_engine`) SPLICES an `A_ATOMIC`
+    out, so a callee whose root was that node is reached through `.body` with
+    the cut still in it.
+
+  The consequence is not academic: under `CALL_LINKAGE` the callee REGION is
+  emitted from `.body` while the lexical occurrence is emitted from the new
+  node — two different programs for one group — and §4.4c computes `W` and the
+  region's slot INDICES over whichever one it was handed. **WAVE B+C OWES ONE
+  OF THREE ANSWERS**: resolve `.body` AFTER the rewriting passes, have every
+  rewriting pass update it, or exempt callee subtrees from rewriting. Note
+  `possessify` and `revdet` are NOT in this list — they annotate fields on the
+  SAME nodes, so `.body` sees their results. Nothing is reachable in wave A2
+  (no producer), which is why this is recorded rather than fixed here.
+
 ### The D70 ownership survey
 
   Every read and write of every non-`k`/`l`/`r` field of `struct Ast` across

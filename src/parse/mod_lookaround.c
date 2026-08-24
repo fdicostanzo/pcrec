@@ -185,6 +185,37 @@ static bool la_has_kreset(const Ast *a)
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
         case A_WORDB: case A_NWORDB: case A_GSTART: case A_BREF:
             return false;
+        /* [DD-14] ANSWERS `false`, AND THE ARM CARRIES AN OBLIGATION FOR THE
+         * WAVE THAT BUILDS THE PRODUCER. Read it before touching this line.
+         *
+         * NOT IN subroutines_design.md §4.4a's TABLE: this site did not exist
+         * when that census was taken at eacac76 — it is `lookaround`'s own,
+         * added after — so its verdict is decided here rather than inherited.
+         *
+         * WHY IT CANNOT ANSWER ANYTHING ELSE TODAY. This predicate runs
+         * INSIDE THE PARSE HOOK, at the moment the lookaround body is parsed,
+         * to raise §2.7's refusal with a pattern OFFSET. A call's
+         * `u.call.body` is filled by the END-OF-PARSE resolution pass
+         * (subroutines_design.md §4.2) — later — and a FORWARD call names a
+         * group that has not been parsed yet at all. So at the instant this
+         * walk runs, `.body` is NULL and there is no callee to inspect: the
+         * question "does the callee contain a `\K`" is not merely forbidden
+         * here by §4.4's back-edge rule, it is UNANSWERABLE here.
+         *
+         * WAVE B+C OWES A DECISION, and this comment is the record of it
+         * rather than a silent inheritance. `(?=(?1))` where group 1 holds a
+         * `\K` reaches, through a call, exactly the configuration §2.7
+         * refuses when it is written out — and design §3.4(b) MEASURED that
+         * `\K` is not restored by a return, which is what shapes §5.3's
+         * exclusion of slots 0 and 1. The wave with the producer must either
+         * re-run this check after resolution (over the call graph, memoised,
+         * NOT down `.body` from here), or refuse a call inside a lookaround
+         * body, or MEASURE that 10.46 accepts the combination and say what it
+         * does. `false` here is inert in this wave — nothing produces an
+         * `A_CALL` — and it must not survive into the wave that does without
+         * one of those three answers behind it. */
+        case A_CALL:
+            return false;
         case A_CAP: case A_REP: case A_ATOMIC: case A_LOOK:
             a = a->l;
             continue;

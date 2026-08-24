@@ -167,6 +167,45 @@ long long pcrec_minw(const Ast *a)
          * consume it. */
         case A_LOOK:
             return acc;
+        /* [DD-14] A SUBROUTINE CALL CONTRIBUTES 0 — AND THIS ARM IS A
+         * DELIBERATELY INCOMPLETE PLACEHOLDER, which is the only arm in this
+         * file that has ever been allowed to say so. Read the whole comment
+         * before touching it.
+         *
+         * THE TRUE ANSWER IS `minw(target)`, and it is a FIXPOINT rather than
+         * a recursion (subroutines_design.md §4.4b): Kleene iteration from
+         * infinity downward over the SCC-condensed call graph, memoised, with
+         * `minw(g) == infinity` meaning THE CALLEE MATCHES NOTHING — a legal
+         * compile, since `^(a(?1)b)$` compiles on 10.46 and matches nothing.
+         * THIS FUNCTION'S SIGNATURE CANNOT EXPRESS THAT. It is a bare
+         * `const Ast *` walker with no context, no memo and no visited set, so
+         * `a = a->u.call.body; continue;` would recurse for ever on `(a(?1))`
+         * and HANG THE COMPILER (design §4.4). The fixpoint therefore lives in
+         * `src/opt/callgraph.c` (wave B+C) and this arm will READ its memo.
+         *
+         * 0 IS THE SOUND PLACEHOLDER AND `ctx_fail` IS NOT AVAILABLE. This
+         * file's safe direction is UNDER-estimating (the header's own rule: a
+         * bound below the truth prunes less and can never delete a live
+         * position), and 0 is the bottom of that direction — so an artifact
+         * built through this arm prunes nothing on account of the call and
+         * loses no match. There is no `Ctx` in this signature to fail loudly
+         * through, which is why this site takes the sound bottom where
+         * `vm_emit`'s arm takes a hard error.
+         *
+         * IT IS UNREACHABLE IN THIS WAVE: nothing produces an `A_CALL` until
+         * wave B+C, and wave B+C is the wave that replaces this arm in the
+         * same edit that builds `callgraph.c`. Design §4.4b's `mrl.rxt` pair
+         * is its control — `^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$` on
+         * "xb" must MATCH (the withdrawn "minimum over non-recursive
+         * branches" gloss gives infinity and loses it), and
+         * `^(?(DEFINE)(?<g>a(?&g)b))(?&g)$` must match NOTHING (infinity is
+         * the correct fixpoint there). The two cells together say that
+         * infinity must be reachable and must not be reached by an
+         * approximation, which is exactly what 0 here is not allowed to
+         * survive as. */
+        case A_CALL:
+            /* WAVE B+C: read callgraph.c's minw fixpoint for u.call.target. */
+            return acc;
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_minw(a->r));
             a = a->l;
@@ -276,6 +315,32 @@ long long pcrec_maxw(const Ast *a)
         case A_BREF:
             /* UNBOUNDED — see the header. This is the one arm where minw's
              * "and it is EXACT" argument does not carry over to maxw. */
+            return mrl_sat_add(acc, PCREC_W_UNBOUNDED);
+        /* [DD-14] UNBOUNDED, and unlike `pcrec_minw`'s arm this one is SOUND
+         * AS IT STANDS rather than a placeholder — the asymmetry is the whole
+         * point of this file having two headers.
+         *
+         * This function's safe direction is OVER-estimating, and unbounded is
+         * the top of it. A recursive callee's maximum width genuinely IS
+         * unbounded, and design §3.4(d) measured that libpcre2 refuses exactly
+         * that inside a lookbehind (error 125) — so the consequence of this
+         * arm, "a lookbehind branch containing a call is never fixed-width",
+         * is the answer the oracle gives, not a limitation. `A_BREF`'s arm one
+         * up reaches the same place by the same reasoning.
+         *
+         * WHAT WAVE B+C MAY TIGHTEN, and only as an optimisation: for an
+         * ACYCLIC callee `callgraph.c` can supply an exact finite maximum, and
+         * a fixed-width lookbehind branch containing a non-recursive call
+         * would then compile. Tightening this arm is safe only THROUGH that
+         * memo — deriving it here by following `u.call.body` is design §4.4's
+         * hang, and an under-estimate is this file's silent miscompile.
+         *
+         * P13 IS DISCHARGED FOR THE SWITCH. Design §4.4b made this arm
+         * conditional on `lookaround_design.md` §11 wave A having landed,
+         * because `pcrec_maxw` did not exist when the design was written. It
+         * exists on this HEAD, so the pair is symmetric HERE — and it is still
+         * not symmetric in the fixpoint, which is wave B+C's. */
+        case A_CALL:
             return mrl_sat_add(acc, PCREC_W_UNBOUNDED);
         case A_CAT:
             acc = mrl_sat_add(acc, pcrec_maxw(a->r));

@@ -194,6 +194,26 @@ static const RegRow *first_dfa_excluding(const Ast *a)
         case A_CAP: case A_REP: case A_ATOMIC:
             a = a->l;
             continue;
+        /* [DD-14] A LEAF, `A_BREF`'s arm exactly: its OWN stamp is what
+         * excludes the DFA and the test at the top of this loop has already
+         * read it. Every `recursion` row is VM_ONLY (design §8.1), the ports
+         * stamp every `A_CALL` they build, and this generic walk finds the
+         * first one — so `analyses[]` gains no line for this module either.
+         *
+         * NO DESCENT, and here that is exact rather than conservative. The
+         * callee is a subtree of THIS tree at its own lexical position, so any
+         * VM-only construct inside it is found by this same walk without the
+         * back edge — which is the whole content of design §4.4's rule, and
+         * following the edge would hang this predicate on `(a(?1))`, a
+         * predicate asked of every pattern.
+         *
+         * WHAT THIS SITE DOES NOT DO is force the prefilter off. That is a
+         * SEPARATE fact (design §8.2: the call-erased approximation is not a
+         * sound superset, and §8.3 measured 21x-350x for the alternative), it
+         * is `pcrec_has_call`'s consumer, and it is wave E's one line — not
+         * this arm's. */
+        case A_CALL:
+            return NULL;
         case A_CAT:
             while (a->k == A_CAT) {
                 const RegRow *r = first_dfa_excluding(a->r);

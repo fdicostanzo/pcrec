@@ -219,6 +219,40 @@ static First first_of(const Ast *a)
         r.nullable = true;
         return r;
     }
+    /* [DD-14] A SUBROUTINE CALL WIDENS TO EVERY BYTE AND IS NULLABLE — the
+     * same maximally conservative answer `A_BREF` and `A_LOOK` get, and
+     * design §4.4a site 19 is explicit that the EXACT answer here (the
+     * callee's own FIRST set) is a wave-G OPTIMISATION and not a correctness
+     * need.
+     *
+     * WIDENING IS THE SOUND HALF. This analysis is unsound when it
+     * UNDER-states what a construct admits: a FIRST set that is too small
+     * makes two sets look disjoint, possessifies a quantifier whose retreat is
+     * the only route to the match, and deletes it silently. A call runs
+     * another group's whole pattern, so its first byte is that group's — a
+     * fact this node cannot reach without the call graph, and one that does
+     * not exist at all for a left-recursive callee.
+     *
+     * NULLABLE IS THE CONSERVATIVE HALF HERE, not the literal truth, and the
+     * two differ for this kind in a way they do not for `A_LOOK`. A call
+     * consumes exactly what its callee consumes, which may well be positive;
+     * claiming nullable makes the enclosing concatenation's FIRST set include
+     * whatever FOLLOWS the call as well, which widens further in the same safe
+     * direction. `vm_nullable`'s own arm is the SCC fixpoint (§2.6) and is a
+     * different question asked for a different consumer — the empty-iteration
+     * guard — so the two are allowed to disagree, and this comment is the
+     * record that the disagreement is deliberate.
+     *
+     * IT DOES NOT READ `u.call.body`: 0xff-plus-nullable already dominates
+     * anything the callee could contribute, and following the back edge in a
+     * function that recurses on `A_CAT`/`A_ALT` with no visited set is design
+     * §4.4's hang. */
+    case A_CALL: {
+        First r;
+        memset(r.f, 0xff, 32);
+        r.nullable = true;
+        return r;
+    }
     case A_EMPTY:
     /* [M6.2 wave E] `\K` takes A_EMPTY's arm, and it is the ONE arm in this
      * switch that needs no closure argument at all.
@@ -531,6 +565,24 @@ static GkParts gk_build(Gk *g, const Ast *a)
     case A_LOOK:
         g->ok = false;
         return gk_parts_empty(true);
+    /* [DD-14] DECLINE THE WHOLE CONSTRUCTION, `A_BREF`'s arm for `A_BREF`'s
+     * reason and then some. This builds a POSITION AUTOMATON over the body's
+     * byte-consuming positions to decide (U1) one-unambiguity and (U2)
+     * prefix-freeness; a call has no position of its own — it stands for a
+     * whole sub-automaton that lives somewhere else in the tree and may be its
+     * own ancestor. Neither question is expressible over it.
+     *
+     * The epsilon arm below would be a LIE here in a way it is not even for a
+     * lookaround: a lookaround really does consume nothing, while a call
+     * consumes whatever its callee consumes, so modelling it as an epsilon
+     * would make a body look prefix-free that is not.
+     *
+     * Declining is always available and always safe (the caller reads
+     * `g->ok`), and it costs only the possessification of a quantifier whose
+     * body holds a call. */
+    case A_CALL:
+        g->ok = false;
+        return gk_parts_empty(true);
     case A_EMPTY:
     case A_BOL:
     case A_EOL:
@@ -833,6 +885,38 @@ static void pss_walk(Pss *P, Ast *a, const uint8_t *follow, bool may_end,
      * differently: FIRST widens (a lookaround is opaque, so nothing near it is
      * possessified either) and the position automaton declines outright. */
     case A_LOOK:
+        return;
+
+    /* [DD-14] MUST NOT POSSESSIFY ACROSS A CALL BOUNDARY (design §4.4a site
+     * 21), and for this kind the arm is a LEAF as well as a decline — there
+     * is nothing to enter: an `A_CALL` has no `l` and no `r`, and the callee
+     * hangs off `u.call.body`, the back edge §4.4 forbids this walk from
+     * following.
+     *
+     * DECLINING TO FOLLOW IT IS NOT MERELY THE CHEAP OPTION. This walk THREADS
+     * FOLLOW, and a callee's follow is not a property of the callee at all: it
+     * is whatever follows the CALL SITE, and a group called from three places
+     * has three different follows. Possessifying an `A_REP` inside the callee
+     * against one call site's follow would delete matches at the other two —
+     * the §2.2 verdict is only as good as the follow it was computed with, and
+     * this is a construct where one subtree has many. The `A_REP` nodes in the
+     * callee still get their verdict, computed at the callee's own LEXICAL
+     * position where the enclosing follow is the real one; they simply do not
+     * get a second, wronger one through here.
+     *
+     * CONSEQUENCE WORTH RECORDING: possessify cannot narrow a callee on
+     * account of a call, structurally, exactly as it cannot narrow a
+     * lookaround body. `first_of` and `gk_build` above are the OTHER two
+     * questions and answer differently — FIRST widens to all bytes, the
+     * position automaton declines outright.
+     *
+     * SABOTAGE ROW S-SR9a IS THIS ARM'S, and its suite is `timeout` rather
+     * than an answer comparison: letting this walk possessify a call-bearing
+     * body routes `^(?(DEFINE)(?<g>a?))(?&g)*+$` onto `vm_poss_star`, which
+     * emits NO empty-iteration guard and fires no work charge, so the
+     * artifact HANGS. Design §2.6's RULED rung decline is what this arm and
+     * `rd_shape`'s implement between them. */
+    case A_CALL:
         return;
 
     case A_CAP:

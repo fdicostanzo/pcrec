@@ -782,6 +782,31 @@ static Frag compile_ast(NB *b, const Ast *a)
      * facts stopped being true, which is exactly when a loud internal error
      * is worth more than a machine that answers for a different language. */
     case A_BREF:
+    /* [DD-14] NO MACHINE, AND IT FALLS INTO THE ERROR BELOW WITH `A_BREF` —
+     * deliberately, and NOT because a call is as hopeless as a backreference.
+     *
+     * A call to a NON-RECURSIVE callee has an exact finite lowering: splice
+     * the callee's machine in. A call in a CYCLE does not — that is a
+     * context-free language and this is a finite automaton — and design §8.2
+     * measured that the two available approximations are the same two
+     * `A_BREF`'s arm refuses: erasing the call to epsilon is a SUBSET (it
+     * deletes real matches, the failure class D26 refuses outright), and
+     * bounding the recursion at a fixed depth is neither a subset nor a
+     * superset of the true language.
+     *
+     * SO NOTHING BUILDS THIS MACHINE, enforced upstream exactly as it is for
+     * a backreference: every `recursion` row is VM_ONLY so the pattern is
+     * VM-forced by its stamps, and wave E forces `EngineFit.prefilter` OFF
+     * for a call-bearing pattern, which makes `src/core/compile.c`'s build
+     * condition (`chosen == ENGM_DFA || fit.prefilter`) false. Reaching this
+     * line means one of those two facts stopped being true.
+     *
+     * WAVE G IS WHERE THIS ARM CHANGES, and it is the ONE site in the whole
+     * module where following the call graph is the POINT rather than a hang:
+     * design §8.3's bounded approximation, restored only for SPLICEABLE
+     * (acyclic, `CALL_SPLICE`) calls, where the exact lowering exists and the
+     * 21x-350x prefilter loss is what pays for it. */
+    case A_CALL:
         break;
     }
     ctx_fail(b->cx, 0, "internal error: bad AST node");

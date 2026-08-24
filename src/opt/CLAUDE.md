@@ -190,13 +190,36 @@ construction (src/ir) and emission (src/gen).
 
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
-  plus [M6.5.2]'s two BACKREFERENCE tree predicates and [M6.6.2]'s
-  `pcrec_has_lookaround`, which live here for this file's own stated reason:
-  SIX switches over `AKind` with NO `default:` arm, so a node kind added later
+  plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s
+  `pcrec_has_lookaround` and [DD-14]'s `pcrec_has_call`, which live here for
+  this file's own stated reason:
+  SEVEN switches over `AKind` with NO `default:` arm, so a node kind added later
   is a compile error at each of them rather than a silent inheritance. That is
-  six of the tree's twenty-FIVE such sites in one file — its densest
+  seven of the tree's twenty-SEVEN such sites in one file — its densest
   concentration of the alarm, and the reason each new whole-tree predicate
   keeps landing here rather than beside its own module.
+
+  **[DD-14] EVERY WALK IN THIS FILE IS A WHOLE-TREE WALK, AND THAT NOW HAS A
+  SECOND CONSEQUENCE.** `Ast.u.call.body` is the AST's first `Ast*` -> `Ast*`
+  back edge, and `subroutines_design.md` §4.4's rule is that a whole-tree
+  predicate MUST NOT follow it: the callee is visited at its own lexical
+  position anyway, and following the edge is a non-terminating compile on
+  `(a(?1))` — in predicates asked of every pattern. Six of the seven switches
+  therefore DECLINE `A_CALL` outright. The seventh is `pcrec_bref_mark`, whose
+  arm is `mark[u.call.target] = true` and no descent (§4.3): a call names a
+  group exactly as a reference does, so without it `--no-captures` deletes
+  group 1's `A_CAP` out from under `(a)(?1)`. The mark is NOT transitive and
+  needs no fixpoint — a call from inside group 1 to group 3 is an `A_CALL`
+  node in the tree, so the whole-tree walk reaches it wherever it sits.
+
+  **`pcrec_has_call`** ([DD-14], `subroutines_design.md` §4.3) is
+  `pcrec_has_bref`'s sibling. **AT WAVE A2 IT IS PLACED AND NOT WIRED**: its
+  consumer is wave E's one line in `select_engine.c`, which forces
+  `EngineFit.prefilter` OFF for a call-bearing pattern (§8.2 — erasure is not
+  a sound superset here either). Nothing produces an `A_CALL` before wave B+C,
+  so a call site now could not be exercised. It is EXTERNAL rather than static
+  for exactly that reason: an unused static is a `make strict` error, and a
+  fake call site to silence it would pre-satisfy the row that owns the real one.
 
   **`pcrec_has_lookaround`** ([M6.6.2], `lookaround_design.md` §5.6) is
   `pcrec_has_atomic`'s TWIN and is placed beside it because the two are read in
