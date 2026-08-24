@@ -1424,6 +1424,43 @@ INLOOKAROUND = [
                "than a lost one (lookaround_design.md SS3.4, sabotage row "
                "S-LA11), so a `maxw` memo that under-estimated a callee "
                "would show up here and nowhere else."),
+        B(r"^(?:(?<h>bc)){0}xbc(?<=a|b|(?&h))$",
+          [('m', "xbc")], RCLA + ",named-groups", groups=0,
+          note="MIXED BRANCHES: two call-FREE branches of width 1 and one "
+               "CALL branch of width 2, in one body. The deferral is decided "
+               "per-LOOKBEHIND (`pcrec_has_call(body)`), not per-branch, so "
+               "this whole table is computed at the late timing -- including "
+               "the two branches the parse hook could have answered."),
+        B(r"^(?:(?<h>bc)){0}xa(?<=a|b|(?&h))$", [('m', "xa")],
+          RCLA + ",named-groups", groups=0,
+          note="the same body entered through a CALL-FREE branch, which is "
+               "the half a deferral that mislaid the non-call branches would "
+               "lose."),
+        B(r"^(?:(?<h>bc)){0}xz(?<=a|b|(?&h))$", [('n', "xz")],
+          RCLA + ",named-groups", groups=0,
+          note="and its negative control -- no branch matches."),
+        B(r"^(?:(?<g>a)){0}(?:(?<h>aa)){0}aa(?<=((?&g))|((?&h)))$",
+          [('m', "aa")], RCLA + ",named-groups", groups=4,
+          note="SS2.4's BRANCH-ORDER CELL, REACHED THROUGH CALLS, and the "
+               "`g` lines are the whole assertion: PCRE2 tries a lookbehind's "
+               "top-level branches in WRITTEN order, so the width-1 branch "
+               "wins and group 3 -- the capture WRAPPING the call, not one "
+               "inside the callee -- reports (1,2). The deferred re-check "
+               "fills `u.look.widths` from the END of the left-nested spine "
+               "exactly as the parse hook does; get that backwards and this "
+               "cell reports (0,2) on a still-correct span. NOTE WHY THE "
+               "CAPTURE IS OUTSIDE THE CALLEE: a group written INSIDE one is "
+               "restored by the RETURN (design SS3.1), so "
+               "`(?<=(?&g)|(?&h))` with the captures in `g` and `h` reports "
+               "NOTHING and cannot see the order at all -- measured on 10.46 "
+               "before this cell was written."),
+        B(r"^(?:(?<h>aa)){0}(?:(?<g>a)){0}aa(?<=((?&h))|((?&g)))$",
+          [('m', "aa")], RCLA + ",named-groups", groups=4,
+          note="THE SAME TWO BRANCHES IN THE OTHER WRITTEN ORDER, which is "
+               "what makes the pair a discriminator rather than a single "
+               "observation: here the width-2 branch is first and group 3 "
+               "reports (0,2). One cell alone is satisfied by 'longest "
+               "first', by 'shortest first', and by written order."),
         B(r"^(?:(?<g>b)){0}ab(?<=a(?=(?&g))b)$", [('m', "ab")],
           RCLA + ",named-groups", groups=0,
           note="THE CALL IS INSIDE A NESTED LOOKAHEAD INSIDE THE LOOKBEHIND, "
