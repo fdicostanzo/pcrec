@@ -56,34 +56,49 @@
 #       the miscompile the gate exists to catch. Doing so measured something
 #       more useful than a red bar.
 #
-#       CONTROL b1 — THE REAL HAZARD, and it does NOT move this gate.
-#       Remove the `if (n->k == A_REP)` guard from `rd_node` in
-#       `src/opt/revdet.c` (the state a naive D70 port lands in), rebuild, and
-#       run this script. RESULT: **0 differences on all four axes** — the gate
-#       stays green. That is not the guard being unnecessary; it is THIS
-#       POPULATION being blind to it, and the reason is arithmetic. The union
-#       sits at offset +40 and `u.cls.bits` spans +40..+71, so the unguarded
-#       clear writes:
-#           u.rep.possessive @ +49  -> class bitmap BYTE 9  -> bytes 0x48-0x4F
-#           u.rep.revbody    @ +56..+63 -> bitmap BYTES 16-23 -> 0x80-0xBF
-#       i.e. it zeroes the reversed body's membership for `H`-`O` and for the
-#       high half. Exactly 44 corpus patterns take the reverse-deterministic
-#       rung at all, and EVERY ONE of them is spelled in lowercase ASCII, so
-#       not one of them has a bit in the clobbered ranges. The corpus cannot
-#       see this bug; do not read b1's green as reassurance.
+#       CONTROL b1 — THE REAL HAZARD. Remove the `if (n->k == A_REP)` guard
+#       from `rd_node` in `src/opt/revdet.c` (the state a naive D70 port lands
+#       in), rebuild, and run this script. IT MUST GO RED:
+#           default 7, --engine=vm 7, -fno-prefilter 7 differing stdout
+#           comparisons; `checks failed: 3`.
+#       The differing patterns are exactly the cells written for it —
+#       `((H)|I){3}J`, `((H)|b){0,4}c`, `((I)|J){2}K`,
+#       `(([\x80-\x8f])|b){0,4}c` and their three siblings in
+#       `tests/rungselect/revdet_highbytes.rxt`.
 #
-#       THE HAZARD IS REAL, AND IT IS A CAPTURE MISCOMPILE — measured on
-#       constructed witnesses, not argued. Under the unguarded build the
+#       `--no-captures` reports 0 and that is CORRECT, not a gap: under that
+#       flag the `A_CAP` nodes are never born, so the revdet capture
+#       reconstruction this bug corrupts is not emitted at all. It is the one
+#       axis structurally blind to this hazard, which is the same reason
+#       tests/rungselect/CLAUDE.md requires every pattern there to be
+#       capture-bearing.
+#
+#       THIS CONTROL DID NOT ALWAYS GO RED, and the history is why the cells
+#       exist — keep it. When the guard was first written this gate reported
+#       ZERO differences on all four axes with the guard removed. The arithmetic
+#       is why. The union sits at offset +40 and `u.cls.bits` spans +40..+71, so
+#       the unguarded clear writes:
+#           u.rep.possessive @ +49      -> class bitmap BYTE 9  -> 0x48-0x4F
+#           u.rep.revbody    @ +56..+63 -> bitmap BYTES 16-23   -> 0x80-0xBF
+#       i.e. it zeroes the reversed body's membership for `H`-`O` and the
+#       0x80-0xBF range. At that moment exactly 44 corpus patterns took the
+#       reverse-deterministic rung and EVERY ONE was spelled in lowercase
+#       ASCII, so not one had a bit in either range: the population could not
+#       express the bug. `tests/rungselect/revdet_highbytes.rxt` was written to
+#       close that, with cells in BOTH ranges and `g` capture lines.
+#
+#       WHAT THE BUG ACTUALLY COSTS, measured: under the unguarded build the
 #       reversed body's class tests compile to an ALL-ZERO
-#       `rx_class_bitmap[32]` (visible by diffing the emitted C), so the
-#       backward walk can never take them, and the LAST ITERATION'S CAPTURES
-#       — which `u.rep.revbody` exists to recover — come back UNSET:
+#       `rx_class_bitmap[32]` (visible by diffing the emitted C), the backward
+#       walk can never take them, and the LAST ITERATION'S CAPTURES — which
+#       `u.rep.revbody` exists to recover — come back UNSET:
 #           `((H)|I){3}J`   on "HHHJ": groups (2,3)(2,3) -> (-1,-1)(-1,-1)
 #           `((H)|b){0,4}c` on "HHc" : groups (1,2)(1,2) -> (-1,-1)(-1,-1)
 #           `((I)|J){2}K`   on "IJK" : groups (1,2)(0,1) -> (-1,-1)(-1,-1)
-#       The WHOLE-MATCH SPAN IS UNCHANGED in every case, which is why a
+#       THE WHOLE-MATCH SPAN IS UNCHANGED in every case, which is why a
 #       span-only driver (including `--emit-main`, which prints only
-#       capture_spans[0]) sees nothing. Compare all `RX_NCAPS` spans.
+#       capture_spans[0]) sees nothing. Compare all `RX_NCAPS` spans. Mech row
+#       S121 is the permanent detector; it scores corpus 61fail/66pass.
 #
 #       CONTROL b2 — THE SYNTHETIC EDIT, which is what actually proves this
 #       script can go red. In `vm_rep`'s mandatory-copies loop
@@ -109,10 +124,11 @@
 #       axes caught it at DIFFERENT counts, which is the argument for running
 #       four: no single axis sees the whole surface.
 #
-#       WHAT b1 AND b2 SAY TOGETHER: this gate is live and does go red (b2),
-#       AND its population has a measured blind spot (b1) — a corpus with no
-#       revdet-eligible pattern outside lowercase ASCII. That gap is a
-#       recommendation for the corpus, not a defect in this script.
+#       WHAT b1 AND b2 SAY TOGETHER: the gate goes red on a REAL miscompile
+#       (b1) and on a synthetic emitter edit (b2), on three and four axes
+#       respectively. b1's history is the standing warning: a green gate is a
+#       statement about THIS POPULATION, and a population can be blind to a
+#       real bug in a way that is invisible until someone constructs the cell.
 #
 # THE BUCKET SPLIT IS WAVE E'S, NOT THIS WAVE'S. When module `lookaround`
 # actually lands, this script grows a grammar-aware classifier that splits the

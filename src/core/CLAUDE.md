@@ -219,15 +219,25 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   It is now guarded on `n->k == A_REP`, behaviour-preserving because those
   values are only ever read for A_REP.
 
-  **AND THE CORPUS CANNOT SEE IT** — the finding that came out of using the
-  real hazard as the identity gate's positive control. With the guard removed
-  the gate reports **zero differences on all four axes**: exactly 44 corpus
-  patterns take the reverse-deterministic rung, and every one of them is
-  spelled in lowercase ASCII, so not one has a bit in the clobbered ranges.
-  Read that as a measured gap in the corpus, not as the guard being
-  unnecessary. **A `.rxt` row with a revdet-eligible quantifier spelled in
-  `H`-`O` (with capture expectations, not just a span) would close it** and is
-  recommended to whoever owns the next corpus change.
+  **THE CORPUS COULD NOT SEE IT, AND THAT GAP IS NOW CLOSED** — the finding
+  that came out of using the real hazard as the identity gate's positive
+  control. With the guard removed the gate first reported **zero differences on
+  all four axes**: exactly 44 corpus patterns took the reverse-deterministic
+  rung and every one was spelled in lowercase ASCII, so not one had a bit in
+  either clobbered range. The population could not express the bug.
+
+  `tests/rungselect/revdet_highbytes.rxt` closes it: 7 patterns / 127 cases
+  with class bits in BOTH ranges (`H`-`O` for bitmap byte 9;
+  `\x80`-`\x8f` and `\xb0`-`\xb2` for bytes 16-23), every one verified to take
+  the rung via the `RX_VM_RUNGS` / `PCREC_VM_RUNG_REVDET` (0x8) stamp, every
+  expectation agreed by python3 `re` AND libpcre2. **Its `g` capture lines are
+  the detector** — the match span is unchanged under the bug, so an `m`-only
+  file would pass and certify nothing. Measured: 61 of its 127 cases fail
+  under the unguarded build, 0 under the guarded one; the identity gate now
+  goes red at 7 differing on default/vm/noprefilter (`--no-captures` reports 0
+  and correctly so — under that flag the `A_CAP` nodes are never born, so the
+  corrupted reconstruction is not emitted). Mech row **S121** is the permanent
+  detector.
 
   **The assertions pin was the latent one, and is guarded too** rather than
   merely recorded. It writes `u.anch.multiline = false` for all eight of the
