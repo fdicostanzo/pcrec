@@ -36,6 +36,7 @@ reads anything here; re-run the probe to re-measure.
 | `prefilter.txt` | `probe_prefilter.py` | §8.3 |
 | `population.txt` | `probe_population.py` | §8.4 |
 | `callproto.txt` | `probe_callproto.py` | §5.9, PROTOTYPE — and §5.2's rejected design, refuted by construction |
+| `slotfamilies.txt` | `probe_slotfamilies.py` | §5.3b, PROTOTYPE — R34 C2's refutation of the capture-slots-only restore set, rebuilt from source and re-run by this lane |
 
 ## THE INSTRUMENT DEFECTS THIS LANE FOUND BY RUNNING ITS OWN PROBES
 

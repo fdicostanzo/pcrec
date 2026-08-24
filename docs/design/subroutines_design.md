@@ -2034,7 +2034,11 @@ measurement behind it rather than a worry.
 emission must move together or the artifact declares a capacity it does not
 use; and **S-SR13**, which is two sites by construction.
 
-**TWENTY-FOUR ROWS** (seventeen, plus §5.3a's five per-family additions, plus §4.4's hang row S-SR11a, plus §5.6's S-SR2a and §2.6's S-SR9a, with S-SR11 retargeted), and the count is stated because
+**TWENTY-FIVE ROWS**, hand-counted from the table above: the original
+seventeen, plus §5.3a's five per-family additions (S-SR6a…e), plus S-SR2a
+(§5.6's `call_depth` codegen row), S-SR9a (§2.6's possessive-rung TIMEOUT)
+and S-SR11a (§4.3's marking arm), with **S-SR11 RETARGETED** from the
+withdrawn transitivity claim to §4.4's compiler hang. The count is stated because
 `lookaround_design.md` §9.3 records its own first version disagreeing with
 itself three ways. **A `recursion` mech ARM must be wired** in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
@@ -2361,6 +2365,19 @@ in `docs/testing.md` that can — the vocabulary is `perr`/`m`/`n`/`ms`/`ns`/`g`
 run-time outcome. If a `--step-budget`-style flag could make a left-recursive
 pattern refuse at COMPILE time the directive would be unnecessary, and it
 cannot: §3.3 measured that PCRE2 compiles them all and this design follows.
+
+**P-12 (the empty-language callee).** *A callee whose least `minw` solution is
+∞ matches nothing, that is a LEGAL compile, and pcrec's MRL prune reads it as
+"no position can match".* MEASURED, this lane, against libpcre2 10.46:
+`^(a(?1)b)$` **compiles** (`pcre2_compile` returns a code, no error) and
+answers **nomatch on every subject tried** — `""`, `"ab"`, `"aabb"`,
+`"aabbb"`, `"aⁿbⁿ"` at n = 8, `"aab"`, `"abb"`. **Refute** by exhibiting a
+subject it matches, which would mean the fixpoint's bottom is wrong; or by
+showing pcrec must REFUSE such a pattern at compile time, which would be a
+divergence from 10.46 and needs a D26 argument rather than a convenience one.
+The row exists because §4.4b's Kleene iteration has ∞ as a reachable fixpoint,
+and a design that treated it as an internal error would refuse a pattern PCRE2
+accepts.
 
 ---
 

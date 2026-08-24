@@ -74,6 +74,18 @@ different emitted code. §3.1 is decided by two callout firings.
   agreement control first and refuses to print a number until the three agree,
   then measures `rx_match_anchored`'s size from `nm -S` and times two corpora.
   **Nothing in `src/` was changed to produce these numbers.**
+- `probes/probe_slotfamilies.py` + `prototype/slotproto_pending.c` +
+  `prototype/slotproto_cutmark.c` — §5.3b, PROTOTYPE. **The two prototypes are
+  the R34 C2 panel's own and are ADOPTED UNCHANGED**, for the reason
+  `docs/design/CLAUDE.md` records about `simvm.py` one lane over: a lane that
+  rewrites the instrument which refuted it cannot be trusted not to soften it.
+  Only their header block is this lane's. The probe REBUILDS both from source
+  and re-runs the comparison, which is how the refutation was confirmed before
+  §5.3 was touched. Each prototype is compiled two ways differing in ONE slot:
+  captures-only `W` **loses matches** on `SLOT_GROUP<n>_PENDING` (11 agree / 2
+  disagree) and produces **FALSE MATCHES** on `SLOT_CUT_MARK<n>` (4 / 6) whose
+  language is exactly the non-atomic control's; the general rule is 13/0 and
+  10/0. It ends by stating **why this lane's own corpus could not see it**.
 - `probes/probe_callproto.py` + `prototype/callproto.c` — §5.9, PROTOTYPE.
   **§5's whole lowering, built by hand in the emitter's idiom and run against
   libpcre2**: the frame that carries the return label, the non-popping return,
@@ -106,7 +118,10 @@ Every PCRE2 behaviour claim is PROBED, never recalled, and every sweep carries
 a REACHABILITY guard that prints and says VACUOUS when it fails. That rule
 earned its place here: **ten instrument defects** were found by running these
 probes, each producing a confident wrong number or silently exercising nothing.
-`out/CLAUDE.md` lists them. Two changed a design conclusion — and a third thing
-did, which is not a defect at all: **building §5's mechanism and running it**
-(`prototype/callproto.c`) found the design's capture restore set incomplete.
-A design section that can be executed should be.
+`out/CLAUDE.md` lists them. Two changed a design conclusion — and **twice more,
+EXECUTION changed one**: building §5's mechanism (`prototype/callproto.c`)
+found the restore set missing `g`'s own slots, and R34's C2 panel, building it
+again with a second lexical construct in play
+(`prototype/slotproto_*.c`), found the whole capture-slots-only RULE wrong. A
+design section that can be executed should be — and by someone who did not
+write it.

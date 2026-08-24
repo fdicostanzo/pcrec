@@ -1190,8 +1190,9 @@ append-only or historical records.
   for Frank, the first of which re-opens the plan row's own reserved give-up
   code now that its premise (a separate call stack) is gone. Measurements:
   `subroutines_measurements/`.
-- `subroutines_measurements/` — the [DD-14] lane's NINE probes, its oracle
-  helper, its archiver and TWO prototypes; see its own CLAUDE.md. **No
+- `subroutines_measurements/` — the [DD-14] lane's TEN probes, its oracle
+  helper, its archiver and FOUR prototypes (two of them the R34 C2 panel's own,
+  ADOPTED UNCHANGED); see its own CLAUDE.md. **No
   instrument reads a subroutine call through pcrec, because pcrec cannot
   compile one** — every in-pcrec arm measures a separate axis (the refusals
   and the 26 registry rows, the give-up code space and every site the
