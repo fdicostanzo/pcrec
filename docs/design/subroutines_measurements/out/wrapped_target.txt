@@ -1,0 +1,144 @@
+# ============================================================
+# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
+# ------------------------------------------------------------
+# PROBE      : docs/design/subroutines_measurements/probes/probe_wrapped_target.py
+# ARGS       : (none)
+# PROBE LAST CHANGED AT COMMIT: 
+# RUN FROM REPO COMMIT        : 076b4a2 (lane/dd14design)
+#   working tree at run time  : DIRTY — see below
+#      M docs/design/subroutines_design.md
+#     ?? docs/design/subroutines_measurements/out/wrapped_target.txt
+#     ?? docs/design/subroutines_measurements/probes/probe_wrapped_target.py
+# RUN DATE   : 2026-08-23T21:28:30-04:00
+# python3    : 3.14.4
+# libpcre2   : 10.46 2025-08-27
+# gcc        : 15
+# host       : Linux 7.0.0-29-generic
+# ------------------------------------------------------------
+# Evidence for the [DD-14] panel, never an oracle: no check reads this
+# file. Re-run the probe to re-measure.
+# ============================================================
+
+libpcre2: 10.46 2025-08-27
+python3 : 3.14.4
+sr_oracle.SELFCHECK: none
+
+=== AXIS W: the call's TARGET is inside a LOOKAROUND / ATOMIC group ===
+# Each group of rows is: the WRAPPED-TARGET cell, a control where the
+# callee's FIRST alternative suffices, and where possible the same
+# language written INLINE.
+
+# W1 -- target inside a LOOKBEHIND. The callee runs FORWARD and
+#       CONSUMES, though its lexical home steps BACKWARD first.
+  ^ab(?<=(ab))(?1)$                      'abab'     ((0, 4), [(0, 2)])              # the call consumes 'ab' at offset 2
+  ^ab(?<=(ab))(?1)$                      'ab'       None                            # control: the call must consume something
+  ^ab(?<=(ab))ab$                        'abab'     ((0, 4), [(0, 2)])              # control: the same language, inline
+
+# W2 -- target inside a NEGATIVE LOOKAHEAD. The callee must RETRY into
+#       its second alternative, inside a region whose lexical home is
+#       cut on the assertion's own success.
+  ^(?!(z|zy))x(?1)c$                     'xzyc'     ((0, 4), [None])                # the callee retried into 'zy'
+  ^(?!(z|zy))x(?1)c$                     'xzc'      ((0, 3), [None])                # control: the first alternative suffices
+  ^(?!(z|zy))x(?:z|zy)c$                 'xzyc'     ((0, 4), [None])                # control: inline
+
+# W3 -- target inside an ATOMIC group. The callee must GIVE BACK.
+  ^(?>(a|ab))z(?1)c$                     'azabc'    ((0, 5), [(0, 1)])              # the callee gave back 'a' and took 'ab'
+  ^(?>(a|ab))z(?1)c$                     'azac'     ((0, 4), [(0, 1)])              # control: the first alternative suffices
+  ^(?>(a|ab))z(?:a|ab)c$                 'azabc'    ((0, 5), [(0, 1)])              # control: inline, atomic kept
+  ^(?:a|ab)z(?:a|ab)c$                   'azabc'    ((0, 5), [])                    # control: no wrapper at all
+
+# W4 -- the atomic target is never RUN lexically (an optional group
+#       the subject skips), so the only execution is the call's.
+  ^q(?>(a|ab))?z(?1)c$                   'qzabc'    ((0, 5), [None])                # the wrapper never ran
+
+# W5 -- target inside a POSITIVE LOOKAHEAD, and inside a lookahead
+#       nested in a quantified group.
+  ^(?=(a|ab))..(?1)$                     'abab'     ((0, 4), [(0, 1)])            
+  ^((?=(b))|a)+(?2)$                     'ab'       ((0, 2), [(1, 1), (1, 2)])    
+
+# THE READING. Every W row matches. A callee reached by JUMPING INTO
+# its lexical position would inherit the wrapper's machinery -- the
+# back-step in W1, the assertion's cut in W2, the atomic cut in W3 --
+# and answer nomatch on each. The design's §5.4 must therefore say
+# that a callee body is emitted as its OWN region.
+
+=== AXIS M: §4.4b's fixpoint, and the gloss that loses a match ======
+# g's ONLY branch is `(?&h)b`; h's branches are `x` and `(?&g)`.
+# So g has NO non-recursive branch -- and the pattern matches.
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'xb'       ((0, 2), [None, None])        
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'xbb'      ((0, 3), [None, None])        
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'xbbb'     ((0, 4), [None, None])        
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'xbbbb'    ((0, 5), [None, None])        
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'b'        rc=-52 nested recursion at the same subject position
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'x'        rc=-52 nested recursion at the same subject position
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ ''         rc=-52 nested recursion at the same subject position
+  ^(?(DEFINE)(?<g>(?&h)b)(?<h>x|(?&g)))(?&g)$ 'yb'       rc=-52 nested recursion at the same subject position
+# the least fixpoint: minw(h) = 1 (the `x` branch), minw(g) = 2.
+# the WITHDRAWN gloss 'minimum over the non-recursive branches' has
+# no branch to minimise over in g, gives INFINITY, and the MRL prune
+# turns every row above into nomatch.
+
+# CONTROL -- a recursion that genuinely IS the empty language, where
+# infinity is the RIGHT answer (§12 P-12):
+  ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        'ab'       None                          
+  ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        'aabb'     None                          
+  ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        ''         None                          
+  ^(?(DEFINE)(?<g>a(?&g)b))(?&g)$        'aaabbb'   None                          
+
+=== AXIS Z: LEADING-ZERO absolute calls, both doorways =============
+# The discriminator is the ANCHORED form: `(?R)` re-runs the anchors
+# (§2.4) so it answers nomatch on 'aabb', while a call to GROUP 1
+# answers (0,4). The UNANCHORED form cannot tell them apart and this
+# probe's first draft used it.
+  ^(a(?1)?b)$                            'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a(?01)?b)$                           'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a(?001)?b)$                          'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a(?0001)?b)$                         'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a(?R)?b)$                            'aabb'     None                            # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a(?0)?b)$                            'aabb'     None                            # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a(?00)?b)$                           'aabb'     None                            # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a\g<1>?b)$                           'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a\g<01>?b)$                          'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a\g<0>?b)$                           'aabb'     None                            # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a\g<00>?b)$                          'aabb'     None                            # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a\g'01'?b)$                          'aabb'     ((0, 4), [(0, 4)])              # GROUP 1 if (0,4); the ROOT if nomatch
+  ^(a\g'00'?b)$                          'aabb'     None                            # GROUP 1 if (0,4); the ROOT if nomatch
+
+# and the RELATIVE forms take a leading zero too, while a relative
+# value of ZERO stays error 126 in every spelling:
+  ^(a)(b)\g<-01>$                        'abb'      ((0, 3), [(0, 1), (1, 2)])    
+  ^(a)(b)(?-01)$                         'abb'      ((0, 3), [(0, 1), (1, 2)])    
+  ^(a)(b)\g<-02>$                        'aba'      ((0, 3), [(0, 1), (1, 2)])    
+  (a)(?-00)                              'aa'       ERR 126 a relative value of zero is not allowed  # relative zero
+  (a)(?+00)                              'aa'       ERR 126 a relative value of zero is not allowed  # relative zero
+  (a)(?-0)                               'aa'       ERR 126 a relative value of zero is not allowed  # relative zero
+  (a)\g<-0>                              'aa'       ERR 126 a relative value of zero is not allowed  # relative zero
+
+# THE RULE: parse the whole digit run as DECIMAL; the value 0 is the
+# ROOT; a RELATIVE value of 0 is error 126. Uniform across (? and \g.
+
+=== AXIS G: \G, a non-zero startpos, and \A / \z inside a callee ===
+  (?(DEFINE)(?<g>\Ga))(?&g)              'xa'       None                            # \G is an absolute test against startpos
+  (?(DEFINE)(?<g>\Ga))(?&g)              'xa'       ((1, 2), [None])                # \G is an absolute test against startpos
+  (?(DEFINE)(?<g>\Aa))x?(?&g)            'xa'       None                            # \A means the SUBJECT's start
+  (?(DEFINE)(?<g>\Aa))(?&g)              'a'        ((0, 1), [None])                # control
+  (?(DEFINE)(?<g>a\z))x(?&g)             'xa'       ((0, 2), [None])                # \z means the SUBJECT's end
+  (?(DEFINE)(?<g>a\z))x(?&g)b            'xab'      None                            # control
+# All four compose with no rule of this module's own: a call changes
+# neither the subject nor startpos, so the absolute assertions mean
+# inside a callee exactly what they mean outside one.
+
+=== AXIS J: is the (?J) call rule uniform across ALL FOUR spellings? =
+# §3.4(c) measured it for (?&name) only. The other three:
+  ^(?:(?<a>x)|q)(?<a>y)(?&a)$            'qyx'      ((0, 3), [None, (1, 2)])        # FIRST DECLARATION if it matches
+  ^(?:(?<a>x)|q)(?<a>y)(?&a)$            'qyy'      None                            # first SET member if it matches
+  ^(?:(?<a>x)|q)(?<a>y)(?P>a)$           'qyx'      ((0, 3), [None, (1, 2)])        # FIRST DECLARATION if it matches
+  ^(?:(?<a>x)|q)(?<a>y)(?P>a)$           'qyy'      None                            # first SET member if it matches
+  ^(?:(?<a>x)|q)(?<a>y)\g<a>$            'qyx'      ((0, 3), [None, (1, 2)])        # FIRST DECLARATION if it matches
+  ^(?:(?<a>x)|q)(?<a>y)\g<a>$            'qyy'      None                            # first SET member if it matches
+  ^(?:(?<a>x)|q)(?<a>y)\g'a'$            'qyx'      ((0, 3), [None, (1, 2)])        # FIRST DECLARATION if it matches
+  ^(?:(?<a>x)|q)(?<a>y)\g'a'$            'qyy'      None                            # first SET member if it matches
+
+=== REACHABILITY GUARDS =============================================
+outcomes populated: ['giveup', 'match', 'nomatch', 'refuse']
+matches, no-matches, compile refusals and match-time give-ups all occur: these axes separate four answers, not one

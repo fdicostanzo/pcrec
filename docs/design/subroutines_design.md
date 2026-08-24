@@ -105,6 +105,7 @@ their repo commit by `probes/archive.sh` from a committed tree.
 | `probes/probe_atomicity.py` | MEASURED | §3.2: the naive cell that decides nothing and the isolated cell that decides it; four atomic controls; quantified calls and the empty-body guard; calls inside lookaround/atomic/lookbehind; the retry COST against an inlined control |
 | `probes/probe_leftrec.py` | MEASURED | §3.3: direct, indirect and nullable-prefix left recursion; the two guards; **the decisive sweep that refutes the same-position reading**; `(?R)` under a quantifier; a call inside a lookbehind; depth requirement vs subject; and the error-140 sweep that shows the charter's premise is not about recursion at all |
 | `probes/probe_linkage.sh` + `prototype/gen_linkage.py` | PROTOTYPE | §6: three hand-written matchers in the emitter's own idiom, differing only in linkage; a 52-cell agreement control first, then emitted-size by call count and run time on two corpora (mixed, and lexical-only — the corpus HYBRID's whole claim rests on) |
+| `probes/probe_wrapped_target.py` | MEASURED | §3.5/§4.4b/§2.4/§3.4: R34 C1's four findings re-measured — a call whose TARGET is inside a lookaround or atomic group (five shapes, each with a wrapper-isolating control); the indirect-recursion witness that refutes the withdrawn `minw` gloss; the LEADING-ZERO call family on both doorways, with the ANCHORED discriminator the first draft lacked; `\G`/startpos/`\A`/`\z` in a callee; and the `(?J)` rule across all four call spellings |
 | `probes/probe_slotfamilies.py` + `prototype/slotproto_pending.c` + `slotproto_cutmark.c` | PROTOTYPE + MEASURED | §5.3b: **the restore set, refuted twice.** Two prototypes ADOPTED UNCHANGED from R34's C2 panel and rebuilt from source by this lane, each compiled two ways differing in ONE slot: captures-only W loses matches on `SLOT_GROUP<n>_PENDING` (11/2) and produces FALSE MATCHES on `SLOT_CUT_MARK<n>` (4/6) whose language is exactly the non-atomic control's; the general rule is 13/0 and 10/0 |
 | `probes/probe_callproto.py` + `prototype/callproto.c` | PROTOTYPE + MEASURED | §5.9: **§5's whole lowering, built and run against libpcre2** — the frame that carries the return label, the non-popping return, the fail label's one added line, the `\|W\|` trailed save/restore — on four patterns each of which is a design claim; compiled TWICE, the second with `-DBROKEN_ARRAY` for §5.2's rejected design, so the bug is REPRODUCED rather than argued |
 | `probes/probe_prefilter.py` | MEASURED, libpcre2 + in-pcrec | §8: what a DFA prefilter is worth on call-**shaped** patterns, measured on their INLINED equivalents (which pcrec compiles today), each pair verified equivalent **420 cells / 0 disagreements** before any timing |
@@ -658,6 +659,49 @@ MEASURED, L6: `^(?R)*$`, `^(?R)?$`, `^(?R){0,2}$` all give `rc −52`;
 `^a(?R)*b$` on `"ab"` matches; `(a(?R)*b)` on `"aabb"` matches. There is no
 special rule — `(?R)` is a repeatable item like any call, and its interaction
 with `^`/`$` is §2.4's, not the quantifier's.
+
+### 3.5 THE CALL'S TARGET MAY LIVE INSIDE A LOOKAROUND OR AN ATOMIC GROUP
+
+**A CONSTRUCT FAMILY THIS DESIGN DID NOT HAVE.** §3.4(e) covers a call
+**inside** a lookaround. R34's C1 panel raised the mirror image — a call
+**TO A GROUP WHOSE LEXICAL HOME IS** a lookaround or an atomic group — and it
+is the sharpest finding of the round, because the obvious emitter miscompiles
+every cell of it.
+
+MEASURED, `out/wrapped_target.txt` axis W, each row with a control that
+isolates the wrapper and, where the language permits, the same language
+written inline:
+
+| # | pattern | subject | 10.46 | what the callee had to do |
+|---|---|---|---|---|
+| W1 | `^ab(?<=(ab))(?1)$` | `"abab"` | **(0,4)** g1=(0,2) | run **FORWARD and CONSUME** at offset 2, though its lexical home **steps backward** first |
+| | `^ab(?<=(ab))(?1)$` | `"ab"` | nomatch | control: the call must consume |
+| W2 | `^(?!(z\|zy))x(?1)c$` | `"xzyc"` | **(0,4)** | **RETRY into `zy`**, inside a region whose lexical home is CUT on the assertion's own success |
+| | `^(?!(z\|zy))x(?1)c$` | `"xzc"` | (0,3) | control: the first alternative suffices |
+| W3 | `^(?>(a\|ab))z(?1)c$` | `"azabc"` | **(0,5)** g1=(0,1) | **GIVE BACK** `a` and take `ab`, though its lexical home is ATOMIC |
+| | `^(?>(a\|ab))z(?:a\|ab)c$` | `"azabc"` | (0,5) | control: inline, atomic wrapper kept |
+| W4 | `^q(?>(a\|ab))?z(?1)c$` | `"qzabc"` | **(0,5)** | the wrapper **never ran lexically** — the call is the group's only execution |
+| W5 | `^(?=(a\|ab))..(?1)$` | `"abab"` | (0,4) | positive lookahead |
+| | `^((?=(b))\|a)+(?2)$` | `"ab"` | (0,2) | a lookahead nested in a quantified group |
+
+**THE RULE THE ROWS FORCE.** A callee body executes as **its own region** —
+forward, consuming, cut-free, back-step-free — **whatever its lexical wrapper
+does**. The wrapper is a property of the *lexical occurrence*, not of the
+group, and a call reaches the group, not the occurrence.
+
+**AND THIS KILLS THE OBVIOUS EMITTER.** "Emit the body once at its lexical
+position and jump to it" inherits the wrapper on every W row:
+
+- **W1** the jump lands *after* `vm_look`'s back-step, so the callee would run
+  at the stepped-back position instead of at the call site's cursor;
+- **W2** the callee's frames sit inside the negative assertion's cut region, so
+  the assertion's `RX_CUT` on the body's first success discards exactly the
+  choice points the retry needs — **nomatch where 10.46 matches**;
+- **W3** the atomic group's cut does the same at the group's exit;
+- **W4** there is no lexical execution at all to jump into.
+
+§5.4 states the contract, §6.3 makes the consequence a **rule rather than an
+optimisation**, and S-SR18 is the detector.
 
 ---
 
@@ -1259,6 +1303,22 @@ so that `[DD-11]` and `[M6.5]`'s follow-up (f) can be held to it.
 
 **AND THE BODY HAS EXACTLY ONE ENTRY** — nothing jumps into its middle.
 
+**THE BODY IS ITS OWN REGION, INDEPENDENT OF ITS LEXICAL WRAPPER (§3.5).** A
+group's lexical occurrence may sit inside a lookbehind, a lookahead or an
+atomic group; **the CALLEE inherits none of it**. Precisely:
+
+| the callee gets | never |
+|---|---|
+| the **call site's** cursor | the wrapper's back-step |
+| **live** choice points on return (§3.2) | the wrapper's `RX_CUT` |
+| a forward, consuming execution | the wrapper's end-check, polarity or verdict discipline |
+
+**So the emitted body for a call is NOT the lexical occurrence's code**, and
+§6.3's split stops being an optimisation. This is the one clause of the
+contract that `lookaround_design.md` §6.4 could not have anticipated: that
+design's bodies have exactly one use site, so "the region" and "the lexical
+occurrence" were the same thing and the distinction never arose.
+
 **THIS IS THE SAME CONTRACT `lookaround_design.md` §6.4 STATES,** point for
 point, which is charter addition (iii)'s premise and the reason §6.4 can
 conclude what it does. The one difference is the *reason* for the follow
@@ -1636,6 +1696,22 @@ three hold, in which case it SPLICES:
 3. the spliced expansion stays under a **size budget**, checked against the
    same `Cost` machinery that already sizes an artifact.
 
+**AND FOR A WRAPPED TARGET THE SPLIT IS MANDATORY, NOT AN OPTIMISATION
+(§3.5).** When the target group's lexical home is a **lookaround or an atomic
+group**, the lexical occurrence and the callee region are **different code**
+and both must be emitted:
+
+> the LEXICAL occurrence keeps its wrapper (the back-step, the cut, the
+> end-check) because that is what the pattern says at that position; the
+> CALLEE region is emitted **separately**, cut-free and back-step-free, and
+> every call — including the first — reaches *it*.
+
+An emitter that treated the split as an optimisation and "fell back" to
+jumping into the lexical occurrence would answer **nomatch on all five of
+§3.5's W rows**. So §6.3's HYBRID is not merely the measured winner here; for
+this family it is the only correct shape, and §11 wave B+C owns it rather than
+wave G.
+
 **SPLICING IS WAVE G, NOT WAVE B+C.** Wave B+C ships the CALL linkage for every
 call site, because it is one path, it is correct for every shape including
 recursion, and it is what the four gating questions are about. Wave G replaces
@@ -1670,7 +1746,22 @@ for a shared body because the follow is UNKNOWN; `lookaround_design.md`
 lookaround body already satisfies the callee contract **without** being a call.
 Turning it into one would change the linkage and nothing else.
 
-**RULED: no lookaround body compiles as a call, and §6.5's premise stands.**
+**AND THE ARGUMENT COVERS THE BODY, NOT A GROUP NESTED IN IT (R34 LENS1-1).**
+`k = 1` is a property of the **lookaround body as a whole**. A capturing group
+**inside** that body which a call targets has **TWO use sites** — the lexical
+one inside the assertion, and the callee region §3.5 requires — so `k = 1`
+says nothing about it and the §6.2 table's `k = 1` column does not apply.
+
+That is not a counter-example to this ruling; it is a different question with
+the same answer arriving by a different route. The nested group's two sites are
+**not two calls sharing a body** — they are one wrapped occurrence and one
+unwrapped region, which §3.5 measured must be different code. So there is
+nothing to share and nothing to amortise: the "second use site" is a second
+*program*, and the HYBRID split emits both because it must, not because two
+sites are cheaper than one copy.
+
+**RULED: no lookaround body compiles as a call; and a group nested inside one
+that IS called gets §3.5's two regions, by §6.3's mandatory split.**
 
 ### 6.5 The premise survives: `vm_look`'s splice IS the inliner (charter (iii))
 
@@ -2027,6 +2118,7 @@ measurement behind it rather than a worry.
 | **S-SR14** | §4.2: a call by name to a DUPLICATED name takes the FIRST DECLARATION | `mod_recursion.c` | `harness recursion registry` | resolve like `A_BREF` (first SET member) | §3.4(c)'s discriminator: `^(?:(?<a>x)\|q)(?<a>y)(?&a)$` on `"qyx"` goes from (0,3) to nomatch. Needs `features named-groups,recursion` and `(?J)` |
 | **S-SR15** | §4.2: `\g<0>` targets the ROOT, anchors included | `mod_backrefs.c` | `harness recursion` | resolve `0` as "group 0 does not exist" | `(a\g<0>?b)` on `"aabb"` refuses instead of matching. **Carries the anchor cell too** (`^(a\g<0>?b)$` on `"aabb"` must stay nomatch), or a resolver that targets the group-1 body passes |
 | **S-SR16** | §5.4: the callee's follow is SCOPED | `emit_vm.c` | `harness recursion` | delete the save-zero-restore from the call emission | **THE ANCHOR MUST EXCEED THE TWO-LINE IDIOM** — `v->fmin = 0; v->fdyn = NULL;` is the same two lines `vm_atomic` carries at `:4246-4247` and `vm_look` will carry, so a two-line `SAB_BEFORE` matches three times and `replace.py` refuses on the count. The prediction: a shared callee gets one caller's prune bound baked in and **the OTHER caller loses matches** — a two-call-site cell, which no single-call-site cell can catch |
+| **S-SR18** | §3.5/§5.4: the callee region is emitted SEPARATELY from a wrapped lexical occurrence | `emit_vm.c` | `harness recursion lookaround atomic-groups` | make a call to a group whose lexical home is an atomic group jump INTO the lexical occurrence | **`^(?>(a\|ab))z(?1)c$` on `"azabc"` goes from (0,5) to nomatch** — the atomic group's `RX_CUT` discards the choice points the callee's retry needs. **The row carries all three wrappers** (lookbehind W1, negative lookahead W2, atomic W3), because an emitter can get one right and the others wrong: they are three different pieces of the wrapper's machinery. Its cells need `features recursion,lookaround,atomic-groups` |
 | **S-SR17** | §8.2: the prefilter is OFF for a call-bearing pattern | `select_engine.c` | `harness recursion` | drop `&& !pcrec_has_call(root)` | wave E: the prefilter is built from a call-erased approximation that is **not a superset**, so a matching subject is skipped. `a(?1)b` with group 1 = `x` on `"axb"` answers nomatch |
 
 **Two need the TWO-SITE mechanism** (`tests/mech/CLAUDE.md`'s S108,
@@ -2034,11 +2126,12 @@ measurement behind it rather than a worry.
 emission must move together or the artifact declares a capacity it does not
 use; and **S-SR13**, which is two sites by construction.
 
-**TWENTY-FIVE ROWS**, hand-counted from the table above: the original
+**TWENTY-SIX ROWS**, hand-counted from the table above: the original
 seventeen, plus §5.3a's five per-family additions (S-SR6a…e), plus S-SR2a
-(§5.6's `call_depth` codegen row), S-SR9a (§2.6's possessive-rung TIMEOUT)
-and S-SR11a (§4.3's marking arm), with **S-SR11 RETARGETED** from the
-withdrawn transitivity claim to §4.4's compiler hang. The count is stated because
+(§5.6's `call_depth` codegen row), S-SR9a (§2.6's possessive-rung TIMEOUT),
+S-SR11a (§4.3's marking arm) and S-SR18 (§3.5's wrapped target), with
+**S-SR11 RETARGETED** from the withdrawn transitivity claim to §4.4's
+compiler hang. The count is stated because
 `lookaround_design.md` §9.3 records its own first version disagreeing with
 itself three ways. **A `recursion` mech ARM must be wired** in
 `run_sabotage_matrix.sh` with SKIP-is-not-a-pass exercised in the failing
@@ -2121,7 +2214,7 @@ is not a party to at all. §14 ASK 5 asks whether that is enough.
 | `kreset.rxt` | §3.4(b)'s three `\K` cells, `features assertions,recursion` |
 | **`slotfamilies.rxt`** | §5.3b's two MEASURED cells — `^(a(?1)?b)\1$` on `"aabbaabb"` (features `recursion,backrefs`) and `^((?>a(?1)?))a$` on `"aa".."aaaaaaaa"` with its `^((?:a(?1)?))a$` control (features `recursion,atomic-groups`) — plus a cell per ARGUED family as `[DD-14]` lands them. **This file is the one that would have caught the design's own error**, and it exists because the lane's first corpus shared the design's alphabet |
 | `quantified.rxt` | §2.6's twelve quantified spellings and the nullable-callee guard |
-| `inlookaround.rxt` | §3.4(d)/(e): a call in a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind |
+| `inlookaround.rxt` | §3.4(d)/(e): a call **in** a lookahead, in an atomic group, and in a fixed-width lookbehind, plus the refusal for a recursive callee in a lookbehind. **AND §3.5's mirror image**: a call **TO** a group whose lexical home is a lookbehind (W1), a negative lookahead (W2), an atomic group (W3), an atomic group the subject never runs (W4) and a positive lookahead (W5) — each with its wrapper-isolating control and, where the language permits, the inline control. `features recursion,lookaround,atomic-groups` |
 | `nocaptures.rxt` | §4.3's marked-set cells, one-hop and two-hop, run on the `--no-captures` axis |
 | `d27/` | the blinded corpus, §10.1's brief |
 
