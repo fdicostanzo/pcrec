@@ -1,0 +1,211 @@
+# refusals.rxt -- [M6.6.3] D27 refusal corpus (perr blocks) plus
+# the \K negative controls that must NOT be refused. Covers sec
+# 2.3/2.5 (variable-width lookbehind bodies, every documented
+# shape), sec 2.5's backreference-width refusal (both fixed- and
+# variable-width referenced groups), sec 2.1's three PCRE2-agreed
+# spelling refusals, and sec 2.7's eleven \K-in-lookaround
+# witnesses plus its four compiles-fine negative controls. Every
+# perr block's EXISTENCE was confirmed against the prebuilt
+# build/pcrec at authoring time (never used to derive a match
+# expectation); checker.py reconfirms independently.
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. single branch, variable width 1..2 (sec 2.5 headline REFUSED cell -- looks like the diffwidth SHIP cell but is a different shape). Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=(a|bc))x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. bounded variable, one branch. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a{2,3})x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. bounded variable (0..1). Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a?)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a*)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a+)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a{2,})x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded, lazy -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a*?)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded, possessive -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a*+)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. unbounded under an atomic group -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=(?>a*))x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. one branch, variable width 2..3. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=(?:a|bc)d)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. same shape, captured. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=((a|bc)d))x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. bounded variable at PCRE2's own DEFAULT cap -- pcre2 ACCEPTS this one (ok under max_varlookbehind=255); pcrec refuses regardless of PCRE2's context-dependent cap, because pcrec never implements the variable form at all (sec 2.5 reason 1-3). Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a{1,255})x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. the inner unbounded rule applies THROUGH the outer lookahead -- pcre2 AGREES (err 125). Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?=(?<=a*)b)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. polarity-blind: negative lookbehind, same unbounded refusal. Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<!a*)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. atomicity-blind: non-atomic lookbehind, same unbounded refusal. Oracle facts (NOT a match expectation, G2): pcre2: err 125 'length of lookbehind assertion is not limited' / python: PatternError: unknown extension ?<* at position 1
+pattern (?<*a*)x
+features lookaround
+perr
+
+# sec 2.3/2.5 variable-width lookbehind, REFUSED by pcrec. adversarial: ONE branch (no alternation) with width 2..3 -- a mis-measurement that summed widths across the whole body without checking bounded-ness would wrongly call this fixed. Oracle facts (NOT a match expectation, G2): pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (?<=a{2}b{0,1})x
+features lookaround
+perr
+
+# sec 2.5 backreference-width refusal. backref to a FIXED-width group -- still refused (conservative, sec 2.5). Oracle facts: pcre2: ok / python: ok
+pattern (a)(?<=\1)x
+features lookaround,backrefs
+perr
+
+# sec 2.5 backreference-width refusal. backref to a VARIABLE-width group (G3). Oracle facts: pcre2: ok / python: PatternError: look-behind requires fixed-width pattern
+pattern (a|bc)(?<=\1)x
+features lookaround,backrefs
+perr
+
+# sec 2.1 spelling refusal (pcrec agrees with pcre2's own refusal here -- this is a construct PCRE2 does not have either). no non-atomic NEGATIVE lookahead form -- pcre2 err 195 too. Oracle facts: pcre2: err 195 '(*alpha_assertion) not recognized' / python: PatternError: nothing to repeat at position 1
+pattern (*nanla:a)b
+features lookaround
+perr
+
+# sec 2.1 spelling refusal (pcrec agrees with pcre2's own refusal here -- this is a construct PCRE2 does not have either). no non-atomic NEGATIVE lookbehind form -- pcre2 err 195 too. Oracle facts: pcre2: err 195 '(*alpha_assertion) not recognized' / python: PatternError: nothing to repeat at position 1
+pattern (*nanlb:a)b
+features lookaround
+perr
+
+# sec 2.1 spelling refusal (pcrec agrees with pcre2's own refusal here -- this is a construct PCRE2 does not have either). the * is read as a QUANTIFIER on the preceding empty lookbehind, not as the non-atomic marker -- pcre2 err 109 too. Oracle facts: pcre2: err 109 'quantifier does not follow a repeatable item' / python: PatternError: nothing to repeat at position 4
+pattern (?<!*a)b
+features lookaround
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 5
+pattern (?=(a\K))x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 7
+pattern (?=a(?:\K))x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 9
+pattern (?=(?:(?=\K)))x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: unknown extension ?* at position 1
+pattern (?*a\K)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: unknown extension ?<* at position 1
+pattern (?<*\Ka)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: nothing to repeat at position 1
+pattern (*pla:a\K)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: nothing to repeat at position 1
+pattern (*nlb:\Ka)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
+pattern (?<=\Ka)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
+pattern (?=a\K)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
+pattern (?!a\K)x
+features lookaround,backrefs,assertions
+perr
+
+# sec 2.7 \K-inside-lookaround refusal (recursive scope -- descends through nested groups/lookarounds, one of the eleven S-LA10 witnesses). G6: pcre2's OWN refusal here (err 199) is a DIFFERENT rule ("\K not allowed in lookarounds") from python's ("bad escape \K", \K does not exist in python at all) -- both refuse but NOT for the same reason as pcrec, and this is deliberately not read as agreement. Oracle facts: pcre2: err 199 '\\K is not allowed in lookarounds (but see PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK)' / python: PatternError: bad escape \K at position 4
+pattern (?<!\Ka)x
+features lookaround,backrefs,assertions
+perr
+
+# pcre2-only
+# sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
+pattern (?=a)\Kb
+features lookaround,assertions
+n "ab"
+n "a"
+n "b"
+n "aab"
+n ""
+
+# pcre2-only
+# sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
+pattern a(?=b)\Kc
+features lookaround,assertions
+n "ab"
+n "a"
+n "b"
+n "aab"
+n ""
+
+# pcre2-only
+# sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
+pattern (?<=a)\Kb
+features lookaround,assertions
+m "ab" 1 2
+n "a"
+n "b"
+m "aab" 2 3
+n ""
+
+# pcre2-only
+# sec 2.7 negative control -- \K outside every lookaround body, must COMPILE (not refused). G6: \K does not exist in python, always pcre2-only.
+pattern a\Kb
+features lookaround,assertions
+m "ab" 1 2
+n "a"
+n "b"
+m "aab" 2 3
+n ""
+

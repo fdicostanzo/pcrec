@@ -1,0 +1,45 @@
+# prefilter.rxt -- [M6.6.3] D27 corpus, sec 10.1 population
+# requirement 1 (S-LA12/sec 5.5's qualifying shape). Without a
+# block like this the prefilter sabotage cannot go red at all.
+# The primary cell is la_d27_extract.md's own measured witness,
+# `((?:a(?!q)|aq)(?:xy){0,4}q)` on "aqq", verbatim.
+
+# sec 10.1 requirement 1 (S-LA12/sec 5.5 prefilter witness): a lookaround inside an alternation with a bounded-repeat, mandatory-tail follow.
+pattern ((?:a(?!q)|aq)(?:xy){0,4}q)
+features lookaround
+m "aqq" 0 3
+g 1 0 3
+n "aq"
+m "aqxyq" 0 5
+g 1 0 5
+m "aqxyxyq" 0 7
+g 1 0 7
+m "aqxyxyxyxyq" 0 11
+g 1 0 11
+m "aaqq" 1 4
+g 1 1 4
+n "aqxyxyxyxyxyq"
+
+# sec 10.1 requirement 1 (S-LA12/sec 5.5 prefilter witness): a lookaround inside an alternation with a bounded-repeat, mandatory-tail follow.
+pattern ((?:a(?!q)|aq)(?:xy){0,4}q)
+features lookaround
+n "q"
+m "aqxyxyxyq" 0 9
+g 1 0 9
+n "aqxyxyxyxyxyxyq"
+n ""
+
+# sec 10.1 requirement 1 (S-LA12/sec 5.5 prefilter witness): a lookaround inside an alternation with a bounded-repeat, mandatory-tail follow.
+pattern ((?:a(?!b)|ab)(?:cd){0,3}b)
+features lookaround
+n "ab"
+m "abb" 0 3
+g 1 0 3
+m "abcdb" 0 5
+g 1 0 5
+m "abcdcdb" 0 7
+g 1 0 7
+n "abcdcdcdcdb"
+n "aab"
+n "abcdcdcdcdcdb"
+

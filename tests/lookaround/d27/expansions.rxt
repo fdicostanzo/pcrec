@@ -1,0 +1,48 @@
+# expansions.rxt -- [M6.6.3] D27 assertion-family expansions,
+# written as ORDINARY lookaround patterns (sec 2.1/sec 7.3). These
+# are the cheapest source of real, non-invented lookaround usage:
+# every one of these RHS expansions is what \b/(?m)^/\Z compile to
+# once the assertions module lands, so this file exercises this
+# module's own machinery under real-world shapes rather than
+# synthetic ones. G7a: these stay PYTHON-VERIFIABLE (asserted
+# above at generation time) -- the width rule that would refuse a
+# variable body never fires because the variable piece always
+# sits in a lookAHEAD, never a lookBEHIND.
+
+# assertion-family expansion: word-boundary (\b)
+pattern a(?:(?<=\w)(?!\w)|(?<!\w)(?=\w))b
+features classes,lookaround
+n "ab"
+n "a b"
+n "aab"
+n "a.b"
+n "..a.b.."
+n " ab "
+
+# assertion-family expansion: multiline-^ ((?m)^)
+pattern (?:\A|(?<=\n)(?!\z))x
+features assertions,lookaround
+m "x" 0 1
+m "\nx" 1 2
+n "ax\n"
+m "a\nx" 2 3
+m "a\nxb" 2 3
+m "\n\nx" 2 3
+
+# assertion-family expansion: end-of-subject-or-final-newline (\Z's lookahead form)
+pattern a(?=\n?\z)
+features assertions,lookaround
+m "a" 0 1
+m "a\n" 0 1
+n "ab"
+n "a\nb"
+n "a\n\n"
+
+# assertion-family expansion: not-word-boundary (\B, negation of \b's own body)
+pattern a(?!(?:(?<=\w)(?!\w)|(?<!\w)(?=\w)))b
+features classes,lookaround
+m "ab" 0 2
+n "a b"
+n "a1b"
+m "aab" 1 3
+
