@@ -117,7 +117,10 @@ different emitted code. §3.1 is decided by two callout firings.
   looks like (V-11); (2) **sabotage-row coverage** — every `S-SR` id in §9.3's
   table appears in some §11 landing bar's DETECTED list; (3) **corpus-file
   coverage** — every `*.rxt` in §10.2 appears in some §11 bar (V-12).
-  **Exercised on seven sabotages, 7/7 failing correctly**, and it had TWO
+  **Exercised in the FAILING DIRECTION before landing — seven sabotages, 7/7
+  failing correctly, clean tree passing** (the list is in its header; sabotages
+  3 and 4 are the two ids a range once hid, and sabotage 3 is the one the
+  file's own first version PASSED). It had TWO
   defects of its own that only that exercise found — both in its header, and
   the second is this project's check-design lesson reproduced inside the
   check: an earlier version asked whether an id appeared ANYWHERE in §11 and

@@ -2485,6 +2485,24 @@ itself three ways. **A `recursion` mech ARM must be wired** in
 direction, as `pc3` was — without it S-SR14's `(?J)` cells and S-SR6's `\K`
 cells sit outside the matrix and score UNDETECTED.
 
+**THE IDS ARE SPELLED OUT INDIVIDUALLY IN §11's LANDING BARS, NEVER AS
+RANGES**, and that is a rule rather than a style note. §11's wave B+C bar once
+read `S-SR1..S-SR6`, and the range **hid S-SR7 and S-SR9 from this document's
+own coverage audit** — both were in no bar at all and the audit reported the
+table fully placed. Two consequences, and the second is why this paragraph
+sits in §9.3 rather than in the bar it is about:
+
+- a **range is not an assignment**: it reads as one to a human and as nothing
+  to a checker, so every bar names each id;
+- **`probes/check_selfconsistency.py` reads only the comma- or "and"-separated
+  run that precedes `DETECTED`**, never the surrounding prose. Its own first
+  version searched all of §11 and **passed a sabotage that deleted S-SR7 from
+  every bar**, because §11 contained a *sentence about* S-SR7 — the narration
+  above, when it lived inside the bar. Prose about an id satisfied the check
+  for that id, which is this project's check-design lesson reproduced inside
+  the control written to enforce it. **A landing bar lists obligations; it
+  does not narrate history**, and history that must be recorded goes here.
+
 **ANCHOR DRIFT IS AN ANOMALY, NOT A FAILURE.** Every anchor above is
 re-derived against the code as landed, never against this document's sketch —
 the seven drifted anchors tranche A had to re-home are the precedent.
@@ -2664,10 +2682,9 @@ because §6.3 puts the split in this wave and a corpus gated a wave later would
 not have covered it) green; `--list-syntax` shows the `(?` rows `built` and the
 two `\g` rows still `unbuilt`; **each of S-SR1, S-SR2, S-SR3, S-SR4, S-SR5,
 S-SR6, S-SR6a, S-SR6b, S-SR6c, S-SR6d, S-SR6e, S-SR7, S-SR8, S-SR9, S-SR9a,
-S-SR10, S-SR11, S-SR11a, S-SR12, S-SR14, S-SR16, S-SR18, S-SR19** DETECTED
-— **written out rather than as `S-SR1..S-SR6` ranges, because the range
-notation hid S-SR7 and S-SR9 from this document's own coverage audit**; the eight switch-less walkers of §4.4a inspected by hand
-and the verdicts recorded.*
+S-SR10, S-SR11, S-SR11a, S-SR12, S-SR14, S-SR16, S-SR18, S-SR19** DETECTED;
+the eight switch-less walkers of §4.4a inspected by hand and the verdicts
+recorded.*
 
 **WAVE D — THE `\g` TAILS AND THE ZERO FAMILY.** `pcrec_brport_g`'s `<` and
 `'` arms produce `PEND_CALL`; `\g<0>`/`\g'0'` resolve to the root; the decline
