@@ -124,6 +124,34 @@ static const LaRow la_rows[] = {
 
 static const LaRow *la_kind(const RegRow *rw)
 {
+    /* [M6.6.2 wave F] AN ALIAS ROW RESOLVES TO ITS PRIMARY FIRST, and this is
+     * THE ONE PLACE an alpha spelling is turned into a construct.
+     *
+     * The twelve `(*` alpha rows (registry.c's `VERB_LA`) carry their
+     * primary's own `syntax` in `family` — D71 item 3's field, whose value IS
+     * the family's canonical spelling. So an alias does not get flags of its
+     * own to be wrong about: it names a ROW, that row's `sel`/`tail` select
+     * the LaRow below, and `la_rows` stays the only table where `behind`,
+     * `neg` and `atomic` are decided. Twelve more LaRow entries would have
+     * been twelve more chances for `(*nla:` to come out positive.
+     *
+     * ONE LEVEL, NOT A CHAIN: a primary has `family == NULL` by construction
+     * (it IS its family's canonical spelling), so the recursive call below
+     * cannot re-enter this branch. A row whose `family` names another ALIAS
+     * — or names nothing at all — falls out as NULL and reaches the caller's
+     * `BAD_ROW`, which is the honest answer for a registry that has been
+     * edited into an inconsistent state. `tests/registry/registry_check.c`
+     * fails such a row long before a user could reach it. */
+    if (rw->family) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(RK_GROUP, &n);
+        for (size_t i = 0; i < n; i++)
+            if (!rows[i].family && rows[i].syntax &&
+                strcmp(rows[i].syntax, rw->family) == 0)
+                return la_kind(&rows[i]);
+        return NULL;
+    }
+
     for (size_t i = 0; i < sizeof la_rows / sizeof la_rows[0]; i++) {
         const LaRow *k = &la_rows[i];
         if (k->sel != rw->sel) continue;

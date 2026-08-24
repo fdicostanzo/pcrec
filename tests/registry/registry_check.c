@@ -241,7 +241,19 @@ static void check_wellformed(void)
                 }
             }
 
-            if (r->sel == REG_SEL_ANY) {
+            /* [M6.6.2 wave F] AN INDEX ROW IS NOT A CATCH-ALL, and the two
+             * are told apart by the flag rather than by the selector.
+             * REG_SEL_ANY on an RF_INDEX row means "no byte selects me",
+             * which is the opposite claim to "every byte selects me":
+             * `pcrec_registry_arbitrate` skips such a row before it reaches
+             * the catch-all arm at all (D71 item 3), so it can neither BE the
+             * kind's catch-all nor displace one. `check_index_rows` asserts
+             * that against the engine's own dispatch; what this arm must do
+             * is stop counting them, or twelve rows that can never be reached
+             * would read as twelve unreachable catch-alls. */
+            if ((r->flags & RF_INDEX) != 0) {
+                /* nothing to check here — see check_index_rows */
+            } else if (r->sel == REG_SEL_ANY) {
                 nany++;
                 if (i != n - 1)
                     bad("%s row %zu (%s): the catch-all row must be LAST — as a "
@@ -429,7 +441,32 @@ static void check_wellformed(void)
                         "module template; this row's diagnostic shape has no "
                         "renderer", kn, r->syntax);
                 break;
+            /* [M6.6.2 wave F] THE `(*` DOORWAY GAINED A MODULE TEMPLATE, for
+             * exactly the rows that need one. It had none while its ONE row
+             * was RD_FIXED and answered "(*...) requires module 'verbs'" for
+             * every name in both tables — the misattribution design §8.2
+             * measured (P3). The twelve alpha lookaround rows are RD_MODULE
+             * and mod_verbs.c renders the template from the row, which is
+             * what puts the RIGHT module in the diagnostic; the doorway's own
+             * row is still RD_FIXED and its sentence is unchanged byte for
+             * byte. So the rule splits by KIND-and-shape rather than
+             * loosening: a verb row is RD_FIXED unless it is an INDEX row,
+             * and an index row must be RD_MODULE (a fixed text there would be
+             * a second home for the sentence the template already renders). */
             case RK_VERB:
+                if ((r->flags & RF_INDEX) != 0) {
+                    if (r->diag != RD_MODULE)
+                        bad("%s (%s): an INDEX row on the (* doorway renders "
+                            "the MODULE template (mod_verbs.c resolves the name "
+                            "to this row and prints its module); RD_FIXED here "
+                            "would be a second home for that sentence",
+                            kn, r->syntax);
+                    break;
+                }
+                if (r->diag != RD_FIXED)
+                    bad("%s (%s): this doorway's own row has no module template "
+                        "— it must carry fixed text", kn, r->syntax);
+                break;
             case RK_CLASSBRACKET:
                 if (r->diag != RD_FIXED)
                     bad("%s (%s): this doorway has no module template — its rows "
@@ -499,8 +536,16 @@ static void check_wellformed(void)
      * captured TEXT (`^(a|b)\g{1}$` does not), MEASURED. Module `backrefs`
      * claims the brace-and-bare-digit half and may not claim the other, so the
      * angle-bracket and quote tails get rows of their own, born unbuilt. */
-    if (total != 106) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 106. If you added or "
+    /* 106 -> 118 at [M6.6.2] WAVE F: the twelve `(*` alpha lookaround
+     * spellings (Frank's ASK 3 ruling, 2026-08-23), module `lookaround`, all
+     * twelve born `built`. They are the first rows in the table that reach no
+     * doorway BY DISPATCH — RF_INDEX, D71 item 3 — which is a different fact
+     * from RK_QUANTSUFFIX's "reaches no doorway at all": these DO reach the
+     * `(*` doorway and produce there, they are simply found by NAME rather
+     * than elected by a byte. `check_index_rows` below is what asserts that
+     * distinction rather than leaving it to this number. */
+    if (total != 118) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 118. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -615,6 +660,21 @@ static void check_row_ranks(void)
         const RegRow *rows = pcrec_registry((RegKind)k, &n);
         for (size_t i = 0; rows && i < n; i++) {
             if (!rows[i].tail) continue;
+            /* [M6.6.2 wave F] AN INDEX ROW's `tail` IS A NAME, NOT A TAIL, and
+             * both rules below are about ARBITRATION — which an index row
+             * never enters (RF_INDEX, D71 item 3). Applying them here would
+             * demand a rank for a row rank cannot reach and would call the
+             * twelve alpha spellings unreachable, when they are reached every
+             * time a caller writes one: mod_verbs.c's
+             * `pcrec_registry_verb_name_row` matches the NAME, which is what
+             * the `(*` doorway has dispatched on since D25/Q1.
+             *
+             * IT IS EXCLUDED HERE RATHER THAN EXCUSED, and the difference is
+             * that the obligation MOVED rather than lapsed:
+             * `check_index_rows` asserts the stronger property in its place —
+             * that each name resolves back to its own row, and that no
+             * arbitration anywhere can elect one. */
+            if (rows[i].flags & RF_INDEX) continue;
             tailed++;
             if (rows[i].rank <= 0) {
                 bad("%s: '%c' tail \"%s\" has rank %d — a tailed row at (or below) "
@@ -1077,13 +1137,44 @@ static void check_table_to_parser(void)
     }
     covered[RK_QUANTSUFFIX] = true;
 
-    /* verbs and class brackets: fixed messages, used verbatim */
+    /* verbs and class brackets: fixed messages, used verbatim — EXCEPT the
+     * `(*` doorway's twelve INDEX rows ([M6.6.2] wave F), which are RD_MODULE
+     * and render the module template from their own row.
+     *
+     * THIS ARM SEGFAULTED ON THEM BEFORE THE BRANCH BELOW EXISTED, which is
+     * worth recording rather than quietly fixing: `r->msg` is NULL on an
+     * RD_MODULE row and this loop passed it straight to `strcmp`. The comment
+     * one line up ("fixed messages, used verbatim") was the whole
+     * specification of that assumption and it stopped being true the moment
+     * a verb name got a module of its own. A NULL-guard would have turned the
+     * crash into a silent skip of twelve rows; the branch turns it into the
+     * assertion those rows actually need.
+     *
+     * The template is spelled out here rather than derived, exactly as the
+     * group arm above spells out its own: this check is the HAND-WRITTEN
+     * second source for what a caller is told, and deriving the sentence from
+     * the code that prints it would make the two agree in unison about a
+     * wrong answer (this file's own header, and tests/reject/'s). */
     for (int k = RK_VERB; k <= RK_CLASSBRACKET; k++) {
         rows = pcrec_registry((RegKind)k, &n);
         for (size_t i = 0; i < n; i++) {
             const RegRow *r = &rows[i];
             snprintf(label, sizeof label, "%s %s: diagnostic matches the row",
                      kind_name((RegKind)k), r->syntax);
+            if (r->diag == RD_MODULE && r->tail) {
+                snprintf(want, sizeof want, "(*%s:...) requires module '%s'",
+                         r->tail, r->module);
+                expect_msg(label, r->syntax, want);
+                continue;
+            }
+            if (!r->msg) {
+                bad("%s %s: RD_%s row with a NULL msg reached the "
+                    "fixed-text arm — a verb/class-bracket row must either "
+                    "carry fixed text or be an RD_MODULE index row with a name",
+                    kind_name((RegKind)k), r->syntax,
+                    r->diag == RD_MODULE ? "MODULE" : "?");
+                continue;
+            }
             expect_msg(label, r->syntax, r->msg);
         }
         covered[k] = true;
@@ -1607,31 +1698,44 @@ static void check_class_ports(void)
      * what keeps their `built` column reading `unbuilt`. The two facts are
      * counted separately on purpose, and `check_engine_capability` below is
      * where the OTHER one lives. Class ports are unmoved at 7/10/9: a
-     * lookaround has no class position at all. */
-    if (scalar != 7 || set != 10 || fn != 9 || aports != 53)
+     * lookaround has no class position at all.
+     *
+     * [M6.6.2] WAVE F: ATOM PORTS 53 -> 65, and it is the SAME function again
+     * — the twelve `(*` alpha spellings' rows carry `pcrec_laport_group` in
+     * their own `aport`, which is what makes the `(*` doorway's producer call
+     * generic ("this NAME's row has a port") instead of a lookaround special
+     * case in mod_verbs.c. So one function is now wired on EIGHTEEN rows, and
+     * all twelve new ones BUILD immediately (unlike wave B+C's six, three of
+     * which did not) because the port has no tail to decline for them: an
+     * alias resolves through `family` to a primary whose tail the port has
+     * accepted since wave D. Class ports are unmoved at 7/10/9 for the same
+     * reason as before, one spelling further out: `[(*pla:a)]` is a class of
+     * ordinary members and there is no construct there to port. */
+    if (scalar != 7 || set != 10 || fn != 9 || aports != 65)
         bad("class ports: populations moved — %d scalar (7: b g k 8 9 and the "
             "two \\g< / \\g' rows), "
             "%d SET class ports (10: the char-types, slice 2), %d FN class "
             "ports (9: posix + the eight octal digits, slice 3), %d atom "
-            "ports (53: the char-types + \\N, the twelve GROUP_OPT rows' "
+            "ports (65: the char-types + \\N, the twelve GROUP_OPT rows' "
             "option-run producer since MOD-0.5c, the three "
             "named-groups declaring rows' producer since [M6.3], the "
             "three assertions rows \\A/\\Z/\\z since [M6.2] wave A, plus "
             "\\b and \\B since wave B, \\G since wave D, \\K since "
             "wave E, `(?>...)` since [M6.4.2], the thirteen backrefs rows "
-            "since [M6.5.2], and the SIX lookaround rows sharing ONE port "
-            "since [M6.6.2] wave B+C). A "
+            "since [M6.5.2], and the EIGHTEEN lookaround rows sharing ONE port "
+            "-- six at [M6.6.2] wave B+C, twelve more at wave F). A "
             "deliberate move edits this check IN THE SAME CHANGE; a silent "
             "one is the defect", scalar, set, fn, aports);
     else if (bads == 0)
-        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 53 atom "
+        ok("class ports: 7 scalar + 10 SET + 9 FN class ports, 65 atom "
            "ports (11 + the 12 option-run rows, MOD-0.5c, + the 3 "
            "named-groups rows, [M6.3], + the 3 assertions rows, [M6.2] "
            "wave A, + \\b and \\B, wave B, + \\G, wave D, + \\K, wave E "
            "-- module `assertions` is now COMPLETE -- + `(?>...)`, "
            "[M6.4.2], + the ten digit rows and \\k \\g (?P=n), [M6.5.2] "
-           "-- module `backrefs` -- + the six lookaround rows through ONE "
-           "shared port, [M6.6.2] wave B+C, three of which do not BUILD yet "
+           "-- module `backrefs` -- + the EIGHTEEN lookaround rows through "
+           "ONE shared port, six at [M6.6.2] wave B+C and the twelve alpha "
+           "spellings at wave F "
            "-- while the two new \\g< / \\g' rows add "
            "only their base literal-fallback CLASS port; "
            "the four RK_QUANTSUFFIX rows add none, having no "
@@ -1839,6 +1943,64 @@ static void check_engine_capability(void)
         { RK_GROUP, '<', "=",  "lookaround", "(?<=a)b",  "(?<=...)" },
         { RK_GROUP, '<', "!",  "lookaround", "(?<!a)b",  "(?<!...)" },
         { RK_GROUP, '<', "*",  "lookaround", "(?<*a)b",  "(?<*a)" },
+        /* [M6.6.2] WAVE F: THE TWELVE ALPHA SPELLINGS, one witness each, and
+         * per-member is the requirement rather than per-family (D71 item 3
+         * spells this out: SR-8 witnesses are owed per MEMBER). The reason is
+         * the one this whole check exists for — the stamp is what carries
+         * VM_ONLY into `select_engine.c`, and each alias row is a SEPARATE
+         * `Ast.reg` value. A family-level witness would assert the primary's
+         * stamp twelve times and prove nothing about the aliases; an alias
+         * whose row lost its `engines` mask, or whose port forgot to stamp
+         * with the row it was dispatched on, would go green.
+         *
+         * `name` IS THE ALIAS's OWN SYNTAX, not its primary's, and that is
+         * the sharp end of this table for this wave: `--engine=dfa
+         * '(*pla:a)b'` must name `(*pla:a)`. It does BECAUSE
+         * `pcrec_laport_group` stamps `rw` — the row the doorway dispatched
+         * on — rather than the primary it resolved the flags from. Those two
+         * are deliberately different objects (mod_lookaround.c's `la_kind`
+         * resolves the FLAGS through `family` and never replaces `rw`), and
+         * these twelve rows are what asserts the difference is real: point
+         * the stamp at the primary and all twelve of these fail by naming the
+         * wrong construct, while every other check in the tree stays green.
+         *
+         * EVERY WITNESS IS CAPTURE-FREE, for the six `(?` witnesses' reason,
+         * which does not weaken with the spelling: a capture-bearing pattern
+         * is VM-forced by the generic capture rule whatever the row's mask
+         * says, so `(a)(*pla:b)c` would go green on a compiler whose stamp
+         * was gone.
+         *
+         * AND EACH ONE BITES, by the SAME argument as its primary's and not a
+         * new one — a lookaround is a sub-match whose verdict is kept and
+         * whose position is discarded, and a subset state is a set of
+         * positions with no way to run one and come back. The alpha spelling
+         * changes the parse and nothing else. */
+        { RK_VERB, REG_SEL_ANY, "pla", "lookaround",
+          "(*pla:a)b", "(*pla:a)" },
+        { RK_VERB, REG_SEL_ANY, "positive_lookahead", "lookaround",
+          "(*positive_lookahead:a)b", "(*positive_lookahead:a)" },
+        { RK_VERB, REG_SEL_ANY, "nla", "lookaround",
+          "(*nla:a)b", "(*nla:a)" },
+        { RK_VERB, REG_SEL_ANY, "negative_lookahead", "lookaround",
+          "(*negative_lookahead:a)b", "(*negative_lookahead:a)" },
+        { RK_VERB, REG_SEL_ANY, "plb", "lookaround",
+          "(*plb:a)b", "(*plb:a)" },
+        { RK_VERB, REG_SEL_ANY, "positive_lookbehind", "lookaround",
+          "(*positive_lookbehind:a)b", "(*positive_lookbehind:a)" },
+        { RK_VERB, REG_SEL_ANY, "nlb", "lookaround",
+          "(*nlb:a)b", "(*nlb:a)" },
+        { RK_VERB, REG_SEL_ANY, "negative_lookbehind", "lookaround",
+          "(*negative_lookbehind:a)b", "(*negative_lookbehind:a)" },
+        { RK_VERB, REG_SEL_ANY, "napla", "lookaround",
+          "(*napla:a)b", "(*napla:a)" },
+        { RK_VERB, REG_SEL_ANY, "non_atomic_positive_lookahead", "lookaround",
+          "(*non_atomic_positive_lookahead:a)b",
+          "(*non_atomic_positive_lookahead:a)" },
+        { RK_VERB, REG_SEL_ANY, "naplb", "lookaround",
+          "(*naplb:a)b", "(*naplb:a)" },
+        { RK_VERB, REG_SEL_ANY, "non_atomic_positive_lookbehind", "lookaround",
+          "(*non_atomic_positive_lookbehind:a)b",
+          "(*non_atomic_positive_lookbehind:a)" },
         { RK_ESC,   'g', NULL, "backrefs",              "(a)\\g{-1}",       "\\g{-1}" },
         { RK_ESC,   'k', NULL, "backrefs,named-groups", "(?<n>a)\\k<n>",    "\\k<name>" },
         { RK_GROUP, 'P', "=",  "backrefs,named-groups", "(?<n>a)(?P=n)",    "(?P=n)" },
@@ -1974,10 +2136,17 @@ static void check_engine_capability(void)
      *
      * A deliberate move edits these numbers in the same change; a silent one
      * is the defect. */
-    if (qualifying != 54 || wired != 24 || built_wired != 24)
+    /* 54 -> 66 QUALIFYING, 24 -> 36 WIRED and 24 -> 36 BUILT at WAVE F, all
+     * three by the same twelve rows and all three for the first time
+     * together: the alpha spellings arrive VM_ONLY (qualifying), with the
+     * shared port already in their `aport` (wired), and producing on their
+     * first call (built). `built_wired == wired` still holds, which is the
+     * state the third number was split out to be able to assert — there is
+     * nothing left for the `built` gate to excuse in this module. */
+    if (qualifying != 66 || wired != 36 || built_wired != 36)
         bad("engine capability: %d RS_MODULE rows exclude ENGM_DFA, %d of them "
-            "have a wired producer and %d of THOSE are BUILT, expected 54, 24 "
-            "and 24 -- the VM_ONLY population, its producer set or its built "
+            "have a wired producer and %d of THOSE are BUILT, expected 66, 36 "
+            "and 36 -- the VM_ONLY population, its producer set or its built "
             "set moved", qualifying, wired, built_wired);
     else if (checked != built_wired)
         bad("engine capability: %d rows are VM_ONLY, wired AND built, but only "
@@ -1985,7 +2154,7 @@ static void check_engine_capability(void)
             "`built` gate excused that it should not have", built_wired,
             checked);
     else if (bads == 0) {
-        char label[352];
+        char label[512];
         snprintf(label, sizeof label,
                  "engine capability: all %d wired-AND-BUILT VM_ONLY producers "
                  "refuse --engine=dfa BY NAME on a witness whose cut bites, "
@@ -2265,10 +2434,21 @@ static void check_built_status_defects(void)
      * `unbuilt`: nothing about a lookbehind unlocks assertion-conditions
      * either. Module `lookaround` now reads `built` on all six of its rows,
      * which is what makes the engine-capability check's `built_wired` meet its
-     * `wired` above. */
-    else if (checked != 106 || built != 58 || unbuilt != 42 || na != 6)
+     * `wired` above.
+     *
+     * [M6.6.2] WAVE F: 58 + 42 -> 70 + 42, and the total MOVES this time —
+     * 106 -> 118 — because the twelve `(*` alpha spellings are twelve NEW
+     * ROWS rather than a status change on existing ones. They are BORN
+     * `built`, which design §8.3 also committed to in advance and which is
+     * derived rather than declared: each row's own `syntax` really does
+     * produce at the `(*` doorway. ZERO rows move `built -> unbuilt`, `na`
+     * does not move, and NO ROW OUTSIDE MODULE `lookaround` MOVES — the `(?(`
+     * conditional-group row is `unbuilt` for the third wave running, and an
+     * alpha SPELLING of an assertion unlocks assertion-conditions no more
+     * than the `(?` spelling did. */
+    else if (checked != 118 || built != 70 || unbuilt != 42 || na != 6)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 106 = 58 + 42 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 118 = 70 + 42 + 6. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -2284,12 +2464,318 @@ static void check_built_status_defects(void)
     }
 }
 
+/* ---- [M6.6.2 wave F / D71 item 3] THE FAMILY LAYER, AND ITS TRIPWIRE ------
+ *
+ * `family` groups rows for the INDEX (`--list-families`, and the generated
+ * construct index in docs/pcre2_compliance.md). A family's members are the
+ * rows sharing a KEY, where a row's key is its `family` if set and its own
+ * `syntax` otherwise. The index prints ONE line per family with `built` ANDed
+ * over the members, so anything the members disagree about is a fact the
+ * index has to pick a winner for — and picking one silently is exactly the
+ * shape D71 item 3 was written against.
+ *
+ * SO THE MEMBERS MUST AGREE, AND DISAGREEMENT MUST FAIL LOUDLY. Four
+ * assertions, each with a failure mode that has a name:
+ *
+ *   (1) a `family` that names NO ROW's syntax and no OTHER family member is a
+ *       DANGLING REFERENCE. src/parse/mod_lookaround.c's `la_kind` resolves
+ *       exactly this reference to reach the primary's three `u.look` flags,
+ *       so a dangle is not a documentation defect: it is an alias with no
+ *       construct, which reaches `BAD_ROW` at a doorway.
+ *   (2) members that disagree on `module`, `engines` or `status` make the
+ *       index's one line a lie whichever member it reads. `--list-families`
+ *       reads the FIRST member and says so; this is what makes that safe.
+ *   (3) a family of ONE that is not its own key — an alias pointing at a
+ *       primary that does not exist as a row — is (1) said a second way, and
+ *       is checked separately because the message a maintainer needs differs.
+ *   (4) a CHAIN: a row whose `family` names a row that ITSELF has a `family`.
+ *       `la_kind` resolves ONE level by design (its own comment says so), so
+ *       a chain silently resolves to nothing. It is refused here rather than
+ *       being made to work, because the index has no way to print a nested
+ *       family and nobody has asked for one.
+ *
+ * THE `built` DISAGREEMENT IS NOT A FAILURE, and this is the one place the
+ * check deliberately does NOT demand agreement: D71 item 3's rule is that a
+ * family reads `built` only if EVERY member does, which is a statement about
+ * how to COMBINE members that differ, not a prohibition on differing. What is
+ * asserted instead is that the combination is what the dump prints — the
+ * SABOTAGE SHAPE this check has (a member flipped `unbuilt` while its family
+ * still reads `built`) is caught by that, and by nothing else in the tree. */
+static const char *fam_key(const RegRow *r)
+{
+    return r->family ? r->family : r->syntax;
+}
+
+static void check_families(void)
+{
+    int families = 0, multi = 0, members_in_multi = 0, bads = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        if (!rows) continue;
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            const char *key = fam_key(r);
+            if (!key) continue;
+
+            /* (4) a chain: this row's family names a row that has one. */
+            if (r->family) {
+                for (int k2 = 0; k2 < RK_COUNT; k2++) {
+                    size_t n2;
+                    const RegRow *r2 = pcrec_registry((RegKind)k2, &n2);
+                    if (!r2) continue;
+                    for (size_t j = 0; j < n2; j++)
+                        if (r2[j].syntax && strcmp(r2[j].syntax, r->family) == 0
+                            && r2[j].family) {
+                            bad("family: '%s' names '%s', which is ITSELF an "
+                                "alias (family '%s'). Families are one level "
+                                "deep -- mod_lookaround.c's la_kind resolves "
+                                "exactly one -- so a chain resolves to nothing",
+                                r->syntax, r->family, r2[j].family);
+                            bads++;
+                        }
+                }
+            }
+
+            /* Emit once per family, at its first member in walk order. */
+            bool first = true;
+            for (int k2 = 0; k2 <= k && first; k2++) {
+                size_t n2;
+                const RegRow *r2 = pcrec_registry((RegKind)k2, &n2);
+                if (!r2) continue;
+                size_t lim = (k2 == k) ? i : n2;
+                for (size_t j = 0; j < lim; j++) {
+                    const char *k3 = fam_key(&r2[j]);
+                    if (k3 && strcmp(k3, key) == 0) { first = false; break; }
+                }
+            }
+            if (!first) continue;
+            families++;
+
+            int nmem = 0, nself = 0, nbuilt = 0, nna = 0;
+            const RegRow *head = NULL;
+            for (int k2 = 0; k2 < RK_COUNT; k2++) {
+                size_t n2;
+                const RegRow *r2 = pcrec_registry((RegKind)k2, &n2);
+                if (!r2) continue;
+                for (size_t j = 0; j < n2; j++) {
+                    const char *k3 = fam_key(&r2[j]);
+                    if (!k3 || strcmp(k3, key) != 0) continue;
+                    if (!head) head = &r2[j];
+                    nmem++;
+                    if (r2[j].syntax && strcmp(r2[j].syntax, key) == 0) nself++;
+                    PcrecBuiltStatus bs = pcrec_construct_built_status(&r2[j]);
+                    if (bs == PCREC_BUILT_YES) nbuilt++;
+                    else if (bs == PCREC_BUILT_NA) nna++;
+
+                    /* (2) the members must agree on everything the index's
+                     * single line states. */
+                    if (nmem > 1) {
+                        if ((head->module == NULL) != (r2[j].module == NULL) ||
+                            (head->module && strcmp(head->module, r2[j].module) != 0))
+                            { bad("family '%s': member '%s' is module '%s' but "
+                                  "member '%s' is module '%s' -- the index prints "
+                                  "ONE module for the family", key, head->syntax,
+                                  head->module ? head->module : "(none)",
+                                  r2[j].syntax,
+                                  r2[j].module ? r2[j].module : "(none)"); bads++; }
+                        if (head->engines != r2[j].engines)
+                            { bad("family '%s': members '%s' and '%s' carry "
+                                  "different `engines` masks (0x%x vs 0x%x) -- the "
+                                  "index prints ONE", key, head->syntax,
+                                  r2[j].syntax, head->engines, r2[j].engines);
+                              bads++; }
+                        if (head->status != r2[j].status)
+                            { bad("family '%s': members '%s' and '%s' carry "
+                                  "different RegStatus -- the index prints ONE",
+                                  key, head->syntax, r2[j].syntax); bads++; }
+                    }
+                }
+            }
+
+            if (nmem > 1) { multi++; members_in_multi += nmem; }
+
+            /* (1)/(3) the key must be SOME member's own syntax. A family of
+             * one whose key is its own syntax is every ordinary row and is
+             * fine; a key naming nothing is a dangling alias. */
+            if (nself == 0) {
+                bad("family '%s': no row's own `syntax` IS the key, so the "
+                    "alias(es) pointing at it name a construct that does not "
+                    "exist. mod_lookaround.c's la_kind resolves this exact "
+                    "reference and would answer BAD_ROW at a doorway",
+                    key);
+                bads++;
+            } else if (nself > 1) {
+                bad("family '%s': %d rows claim that syntax -- the key must "
+                    "name at most one canonical member", key, nself);
+                bads++;
+            }
+
+            /* THE `built` COMBINATION, asserted against the DUMP rather than
+             * recomputed here: this is the sabotage shape (a member flipped
+             * `unbuilt` while the family line still reads `built`), and a
+             * check that only recomputed the AND from the same members would
+             * agree with a broken dump in unison -- this project's signature
+             * check-design failure. `--list-families`' own output is read in
+             * tests/registry/run_registry_tests.sh, which is a different
+             * source from this loop. What is asserted HERE is only the fact
+             * the rule needs to be well-defined: `built` is derivable for
+             * every member of a multi-member family. */
+            if (nmem > 1 && nna != 0 && nna != nmem) {
+                bad("family '%s': %d of %d members have no `built` answer at "
+                    "all (RS_BASE/RS_REJECTED) while the rest do -- the AND "
+                    "rule has nothing to say about such a family",
+                    key, nna, nmem);
+                bads++;
+            }
+            (void)nbuilt;
+        }
+    }
+
+    /* EXACT, this file's convention. 106 families over 118 rows: the twelve
+     * `(*` alpha spellings collapse into their six primaries' families, so
+     * SIX families have three members each and every other row is a family of
+     * one. A deliberate move edits these numbers in the same change. */
+    if (families != 106 || multi != 6 || members_in_multi != 18)
+        bad("family POPULATION MOVED: %d families, %d with more than one "
+            "member, %d members in those -- expected 106 / 6 / 18. The index "
+            "layer's grouping changed; if deliberately, update these numbers "
+            "in the same commit", families, multi, members_in_multi);
+    else if (bads == 0) {
+        char label[224];
+        snprintf(label, sizeof label,
+                 "families: %d families over the table, %d of them multi-member "
+                 "(%d members), every key naming exactly one canonical row, "
+                 "every family agreeing on module/engines/status, no chains",
+                 families, multi, members_in_multi);
+        ok(label);
+    }
+}
+
+/* ---- [M6.6.2 wave F] RF_INDEX: A ROW THAT DESCRIBES BUT NEVER FIRES -------
+ *
+ * The flag's whole contract is that `pcrec_registry_arbitrate` never returns
+ * such a row. That is ONE line in registry.c, and one line is exactly what
+ * gets deleted by a refactor that "tidies" an early `continue`, so it is
+ * asserted here against the ENGINE'S OWN dispatch rather than by re-reading
+ * the flag: every (kind, sel) an index row could plausibly be elected for is
+ * arbitrated, and the answer must never be the index row.
+ *
+ * THE FAILING DIRECTION IS THE ONE THAT MATTERS AND IT IS SPECIFIC. An
+ * RF_INDEX row carries REG_SEL_ANY, and `pcrec_registry_arbitrate`'s
+ * REG_SEL_ANY arm assigns the kind's catch-all UNCONDITIONALLY, last one
+ * wins. So without the skip the LAST alpha row would become the `(*`
+ * doorway's catch-all and every verb in the tree would answer
+ * "requires module 'lookaround'". The sweep below is what sees that. */
+static void check_index_rows(void)
+{
+    int nindex = 0, bads = 0;
+
+    for (int k = 0; k < RK_COUNT; k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry((RegKind)k, &n);
+        if (!rows) continue;
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            if (!(r->flags & RF_INDEX)) continue;
+            nindex++;
+
+            /* Shape: an index row is a SPELLING of something, and it is found
+             * by NAME. Both fields are what make it usable at all. */
+            if (!r->family) {
+                bad("index row '%s': RF_INDEX with no `family` -- an index row "
+                    "exists to be a member of one, and with no family it is a "
+                    "row nothing can ever reach", r->syntax);
+                bads++;
+            }
+            if (!r->tail || !*r->tail) {
+                bad("index row '%s': RF_INDEX with no `tail` -- the tail is the "
+                    "NAME mod_verbs.c's pcrec_registry_verb_name_row matches, "
+                    "so without it the doorway can never resolve to this row",
+                    r->syntax);
+                bads++;
+            }
+            if (r->tail && pcrec_registry_verb_name_row(r->tail, strlen(r->tail))
+                           != r) {
+                bad("index row '%s': its own name '%s' resolves to a DIFFERENT "
+                    "row (or none) -- two rows share a name, or the lookup and "
+                    "the table disagree", r->syntax, r->tail ? r->tail : "");
+                bads++;
+            }
+        }
+    }
+
+    /* THE DISPATCH SWEEP, over every kind and every selector byte plus
+     * REG_SEL_ANY, with and without text: no arbitration may ever elect an
+     * index row. `pcrec_registry_arbitrate` is the ENGINE, called here
+     * exactly as the doorways call it. */
+    int probes = 0;
+    for (int k = 0; k < RK_COUNT; k++) {
+        for (int sel = -1; sel < 256; sel++) {
+            static const char *texts[] = { NULL, "", "pla", "pla:a)",
+                                           "positive_lookahead:a)", "ACCEPT)" };
+            for (size_t t = 0; t < sizeof texts / sizeof texts[0]; t++) {
+                const char *at = texts[t];
+                size_t avail = at ? strlen(at) : 0;
+                const RegRow *e = pcrec_registry_arbitrate((RegKind)k, sel, at,
+                                                           avail, NULL);
+                probes++;
+                if (e && (e->flags & RF_INDEX)) {
+                    bad("dispatch elected an INDEX row: kind %s sel %d text "
+                        "'%s' -> '%s'. RF_INDEX rows must never be elected; "
+                        "the skip in pcrec_registry_arbitrate is gone or was "
+                        "moved AFTER the REG_SEL_ANY arm",
+                        kind_name((RegKind)k), sel, at ? at : "(null)",
+                        e->syntax);
+                    bads++;
+                    goto swept;   /* one report is enough; 257*6 would flood */
+                }
+            }
+        }
+    }
+swept:
+    /* AND THE POSITIVE CONTROL, because a sweep that elected nothing at all
+     * would pass the loop above while proving nothing: the `(*` doorway's own
+     * catch-all must STILL be reachable, and it must be the verbs row. That is
+     * the exact thing a missing skip breaks. */
+    {
+        const RegRow *v = pcrec_registry_find(RK_VERB, REG_SEL_ANY, NULL, 0);
+        if (!v || !v->module || strcmp(v->module, "verbs") != 0) {
+            bad("the (* doorway's catch-all is '%s' (module '%s'), not the "
+                "verbs row -- an index row has stolen it, which is what the "
+                "arbitration skip exists to prevent",
+                v ? v->syntax : "(none)",
+                v && v->module ? v->module : "(none)");
+            bads++;
+        }
+    }
+
+    if (nindex != 12)
+        bad("INDEX-ROW POPULATION MOVED: %d rows carry RF_INDEX, expected 12 "
+            "(the twelve (* alpha lookaround spellings). If deliberate, update "
+            "this number in the same commit", nindex);
+    else if (bads == 0) {
+        char label[288];
+        snprintf(label, sizeof label,
+                 "index rows: %d RF_INDEX rows, each with a family, a name and "
+                 "a name that resolves back to it; %d arbitrations over every "
+                 "kind x selector x 6 texts elected none of them, and the (* "
+                 "doorway's catch-all is still module `verbs`", nindex, probes);
+        ok(label);
+    }
+}
+
 int main(void)
 {
     printf("== registry well-formedness ==\n");
     check_wellformed();
     check_feature_module_bijection();
     check_class_ports();
+
+    printf("\n== [M6.6.2 wave F / D71.3] the INDEX layer: families and RF_INDEX ==\n");
+    check_families();
+    check_index_rows();
 
     printf("\n== [M6.4.2/D67] SR-8 is BUILT: engine-capability refusal, per row ==\n");
     check_engine_capability();

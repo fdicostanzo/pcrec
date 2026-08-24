@@ -63,17 +63,24 @@ rc=${PIPESTATUS[0]}
 # What moves it is `check_table_to_parser`, which prints TWO lines per RK_ESC
 # row — an atom-diagnostic line and a class-position line — and the two new
 # `\g<` / `\g'` rows are RK_ESC. 2 rows x 2 lines = 4.
+# [M6.6.2 wave F] 182 -> 196, and the +14 splits as 12 + 2, MEASURED off a
+# run's PASS lines rather than predicted. The 12 are `check_table_to_parser`'s
+# one line per new RK_VERB row (the twelve `(*` alpha spellings); the 2 are the
+# new `check_families` and `check_index_rows`, D71 item 3's index layer. The
+# twelve SR-8 witnesses added in the same change move this by ZERO, for the
+# reason the [M6.5.2] note above already gives: `check_engine_capability`
+# prints its per-row detail only on a FAILURE.
 regn="$(grep -c '^PASS: ' "$REGOUT" || true)"
-if [ "$regn" -ne 182 ]; then
+if [ "$regn" -ne 196 ]; then
     if grep -q "^checks failed: 0" "$REGOUT"; then
-        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 182." >&2
+        echo "registry: registry_check COVERAGE CHANGED — $regn passing checks, expected 196." >&2
         echo "registry:   if you added or removed checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         rnf="$(sed -n 's/^checks failed: //p' "$REGOUT" | tail -1)"
-        echo "registry: registry_check shows $regn passing checks (182 expected; ${rnf:-?} failed," >&2
+        echo "registry: registry_check shows $regn passing checks (196 expected; ${rnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 182 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 196 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
@@ -92,9 +99,9 @@ arbitration liveness:|R11/M3 via MOD-0.2: an arbitration nothing contests is uno
 no-ambiguity sweep:|R15: after the D32 §9.5 scaffold was deleted, nothing probed the ambiguous flag over a swept space; a same-rank prefix pair would fire only in a user's compile
 class ports: 7 scalar + 10 SET + 9 FN|MOD-0.3b/c/d: the unwired port data's only guard — values oracle-tied and populations pinned; deleting it makes a drifted or silently-populated port invisible until a producer ships it
 class-position reach: 5 tailed/body-carrying rows|MOD-0.6/D33 §9.2, K10's fourth net: the one-byte in-class sweep above cannot express [\N{U+41}]-shaped bodies at all; this is the only check that arbitrates a tailed/body-carrying row's FULL syntax at class position and confirms it reaches itself and promises its own module
-engine capability: all 24 wired-AND-BUILT VM_ONLY producers refuse|[M6.4.2]/D67, REPLACING the [M4.7a] tripwire whose premise SR-8 discharged: the tripwire asserted that no VM_ONLY row had a producer (the fact that made deferring SR-8 safe); this asserts the thing it demanded instead — every VM_ONLY row that HAS a producer refuses --engine=dfa BY NAME, on a HAND-WRITTEN witness whose cut genuinely bites (the row's own syntax cannot serve: 'a*+' correctly COMPILES, because the free discharge deletes a cut it proves dead), and every witness also COMPILES on the default engine so the check cannot go green on a compiler that stopped accepting the construct. The ITERATION is what makes it generic: a module wiring the NEXT VM_ONLY producer with no witness here is a named failure, which is how backrefs' twelve rows ([M6.5.2]) WERE caught -- they landed 2026-08-22, each with a hand-written witness, taking `wired` from 6 to 18. [M6.6.2] wave B+C took `wired` to 24 and split the number in two: module `lookaround` wires ONE port for six rows and BUILDS only three of them at that wave, so the witness requirement is gated on D65's derived `built` column and the label names the 21 wired-AND-BUILT rows. That is a REFINEMENT of the check and not a relaxation of it — a declining producer has no artifact to refuse and no default-engine compile to assert, so a witness for such a row cannot be written; the check additionally asserts that its checked count EQUALS the built-and-wired count, so a gate that excused a row it should have checked is a MISSING WITNESS rather than a smaller pass. [M6.6.2] wave D took it to 24: the port stopped declining the `<` tails when the back-step seam entry landed, the three lookbehind rows became `built`, and they started demanding witnesses WITH NO EDIT TO THE GATE -- which is the property the wave B+C refinement was built to have. `built_wired` now equals `wired`, so there is nothing left in this module for the gate to excuse
+engine capability: all 36 wired-AND-BUILT VM_ONLY producers refuse|[M6.4.2]/D67, REPLACING the [M4.7a] tripwire whose premise SR-8 discharged: the tripwire asserted that no VM_ONLY row had a producer (the fact that made deferring SR-8 safe); this asserts the thing it demanded instead — every VM_ONLY row that HAS a producer refuses --engine=dfa BY NAME, on a HAND-WRITTEN witness whose cut genuinely bites (the row's own syntax cannot serve: 'a*+' correctly COMPILES, because the free discharge deletes a cut it proves dead), and every witness also COMPILES on the default engine so the check cannot go green on a compiler that stopped accepting the construct. The ITERATION is what makes it generic: a module wiring the NEXT VM_ONLY producer with no witness here is a named failure, which is how backrefs' twelve rows ([M6.5.2]) WERE caught -- they landed 2026-08-22, each with a hand-written witness, taking `wired` from 6 to 18. [M6.6.2] wave B+C took `wired` to 24 and split the number in two: module `lookaround` wires ONE port for six rows and BUILDS only three of them at that wave, so the witness requirement is gated on D65's derived `built` column and the label names the 21 wired-AND-BUILT rows. That is a REFINEMENT of the check and not a relaxation of it — a declining producer has no artifact to refuse and no default-engine compile to assert, so a witness for such a row cannot be written; the check additionally asserts that its checked count EQUALS the built-and-wired count, so a gate that excused a row it should have checked is a MISSING WITNESS rather than a smaller pass. [M6.6.2] wave D took it to 24: the port stopped declining the `<` tails when the back-step seam entry landed, the three lookbehind rows became `built`, and they started demanding witnesses WITH NO EDIT TO THE GATE -- which is the property the wave B+C refinement was built to have. `built_wired` now equals `wired`, so there is nothing left in this module for the gate to excuse. [M6.6.2] wave F took it to 36: the twelve `(*` alpha spellings carry the SAME shared port in their own `aport` and produce on their first call, so all three numbers (qualifying, wired, built) moved together for the first time. Their witnesses are PER MEMBER (D71 item 3's rule) and each one asserts the ALIAS's own syntax appears in the --engine=dfa refusal -- which is what pins that `pcrec_laport_group` stamps the row it was DISPATCHED on rather than the primary it resolved its flags from; point the stamp at the primary and exactly these twelve fail while the rest of the tree stays green
 free discharge: all 4 provably-dead cuts compile to a PURE DFA|[M6.4.2]: the OTHER direction of the per-pattern split, and the only thing in the tree that would notice the free discharge silently ceasing to fire — every ANSWER would still be correct and only the ENGINE would change. VM_ONLY is too STRONG for 'a*+b' (whose cut §2.2 proves dead) and ANY_ENGINE too WEAK for '(?>a|ab)c'; this asserts the first half and the engine-capability check above asserts the second, which together are the first evidence the `engines` column has ever had in BOTH directions
-built-status: 106 rows classified with 0 defects|D65 (docs/design/registry_built_status_memo.md, ratified wholesale 2026-08-21): the ONLY guard that pcrec_construct_built_status classifies every RS_MODULE row's own syntax cleanly (built or unbuilt), never landing in the PCREC_BUILT_DEFECT bucket the generated compliance index must never silently render — deleting it removes the one thing that would fail loudly the day a row's own well-formed syntax stops classifying, e.g. a reworded refusal or a doorway change the classifier's res.what/res.answered_at reading no longer matches
+built-status: 118 rows classified with 0 defects|D65 (docs/design/registry_built_status_memo.md, ratified wholesale 2026-08-21): the ONLY guard that pcrec_construct_built_status classifies every RS_MODULE row's own syntax cleanly (built or unbuilt), never landing in the PCREC_BUILT_DEFECT bucket the generated compliance index must never silently render — deleting it removes the one thing that would fail loudly the day a row's own well-formed syntax stops classifying, e.g. a reworded refusal or a doorway change the classifier's res.what/res.answered_at reading no longer matches
 REGMANIFEST
 fi
 # The one NEGATIVE needle, outside the manifest loop because its polarity is
@@ -169,9 +176,17 @@ if ! "$PC3BIN" | tee "$PC3OUT"; then rc=1; fi
 # their own `syntax` puts the construct LEFTMOST for pcrec, so the group
 # declaration libpcre2 demands (`(a)\g<1>`) lives in pcre2_check.c's WRAPPERS
 # table, the same shape the `(?P=` / `(?P>` pair already uses.
+# [M6.6.2 wave F] 169 -> 181: the twelve `(*` alpha lookaround spellings, one
+# PC-3 check each. NONE of them needed a wrapper -- each row's own `syntax` is
+# already a pattern libpcre2 compiles standalone, which is the half of these
+# rows that could not be taken on trust and was MEASURED against libpcre2 10.46
+# before they were written (84 alias-vs-primary templates x 19 subjects, every
+# startpos, span and every group span, 0 divergences). So this +12 is not
+# bookkeeping: it is twelve new rows each now differentially checked against
+# the oracle that decides whether they are real.
 if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
     pc3n="$(grep -c '^PASS: ' "$PC3OUT" || true)"
-    if [ "$pc3n" -ne 169 ]; then
+    if [ "$pc3n" -ne 181 ]; then
         # WORDING SPLIT BY CASE (R9/C1-final2). This guard deliberately sits
         # outside the manifest gate — that is what keeps "one check fails while
         # another is silently deleted" caught — but its message was written for
@@ -180,14 +195,14 @@ if [ -s "$PC3OUT" ] && ! grep -q "^SKIP:" "$PC3OUT"; then
         # knows how many PASS lines a given failure suppresses, so the number
         # carries no information there and must not be read as one.
         if grep -q "^checks failed: 0" "$PC3OUT"; then
-            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 169." >&2
+            echo "registry: PC-3 COVERAGE CHANGED — $pc3n passing checks, expected 181." >&2
             echo "registry:   if you added or removed checks on purpose, update this number" >&2
             echo "registry:   in the same commit; if not, coverage was removed" >&2
         else
             nf="$(sed -n 's/^checks failed: //p' "$PC3OUT" | tail -1)"
-            echo "registry: PC-3 shows $pc3n passing checks (169 expected; ${nf:-?} failed, so a" >&2
+            echo "registry: PC-3 shows $pc3n passing checks (181 expected; ${nf:-?} failed, so a" >&2
             echo "registry:   lower count is expected here). Fix the failures first, then this" >&2
-            echo "registry:   number must return to 169 — if it does not, coverage was removed too" >&2
+            echo "registry:   number must return to 181 — if it does not, coverage was removed too" >&2
         fi
         rc=1
     fi

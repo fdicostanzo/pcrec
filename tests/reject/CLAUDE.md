@@ -346,6 +346,56 @@ exact either way. See docs/testing.md "Internal parallelism and section
 composition ([TT-2])" for the mechanism and the sabotage validation
 (a killed shard hard-fails, never silently passes).
 
+**[M6.6.2 wave F] K30 CLOSED: the `--list-syntax` section's VACUITY GUARD is
+reported ONCE, not once per shard.** It sat outside any shard gate, so under
+sabotage S18-tsv-empty every shard child reported it AND the dispatcher
+reported it again — the row's measured reject figure was shards + 1, moving
+with `PROCS` (4fail at PROCS=4, 3fail at PROCS=6). A mech figure that moves
+with the harness's own parallelism is a figure nobody can compare between
+matrices, and it made [TT-2]'s "same Summary counts at any PROCS" claim false
+for this one section.
+
+**The DUMP still runs per shard and only the REPORT moved**, which is the
+half worth remembering: each child runs its OWN slice of the `row_reject`
+loop and needs its own `probe.tsv` to do it, so K30's other suggested remedy
+("run the dump once") would have made shards skip their rows and the
+section's global coverage assertion would then correctly report the table
+uncovered. The `bad` is gated on `[ -z "${REJECT_SHARD_TOTAL:-}" ]` — the
+same idiom the BADROW report and the coverage-count assertion beside it
+already use. MEASURED after the fix: `reject:1fail/454pass` at BOTH PROCS=4
+and PROCS=6, S18 still DETECTED.
+
+**AND THREE ROWS MOVED MODULE IN THE SAME WAVE.** `(*pla:a)`, `(*naplb:a)`
+and `(*negative_lookbehind:a)` left the `verbs` loop for a `lookaround` one:
+they had been asserting the WRONG MODULE, which is the one fact the
+diagnostic exists to carry. They keep hand-written rows rather than being
+left to the dump-driven loop for this file's standing reason — the iteration
+reads the same registry the parser renders from and so cannot see a wrong
+module NAME, and here it agreed with the parser, in unison, that an alpha
+lookaround assertion required module `verbs`. One SHORT name, one NON-ATOMIC
+and one LONG spelling: the three axes on which a name-to-row resolution can
+go wrong independently. `(*pla)`'s FORM-error row is asserted UNCHANGED
+beside them, with the reason at the row (R33 C2-6).
+
+**[M6.6.2 wave F] K30 CLOSED: the `--list-syntax` section's VACUITY GUARD is
+reported ONCE, not once per shard.** It sat outside any shard gate, so under
+sabotage S18-tsv-empty every shard child reported it AND the dispatcher
+reported it again — the row's measured reject figure was shards + 1, moving
+with `PROCS` (4fail at PROCS=4, 3fail at PROCS=6). A mech figure that moves
+with the harness's own parallelism is a figure nobody can compare between
+matrices, and it made [TT-2]'s "same Summary counts at any PROCS" claim false
+for this one section.
+
+**The DUMP still runs per shard and only the REPORT moved**, which is the
+half worth remembering: each child runs its OWN slice of the `row_reject`
+loop and needs its own `probe.tsv` to do it, so K30's other suggested remedy
+("run the dump once") would have made shards skip their rows and the section's
+global coverage assertion would then correctly report the table uncovered.
+The `bad` is gated on `[ -z "${REJECT_SHARD_TOTAL:-}" ]` — the same idiom the
+BADROW report and the coverage-count assertion beside it already use.
+MEASURED after the fix: `reject:1fail/454pass` at BOTH PROCS=4 and PROCS=6,
+S18 still DETECTED.
+
 ## [M6.2 wave E] the enabled-but-unbuilt pin was RE-HOMED, not retired
 
 `\K` was the last `reject_gated assertions` row and the LAST

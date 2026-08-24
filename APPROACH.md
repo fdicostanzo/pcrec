@@ -142,7 +142,7 @@ clean "feature not compiled in: (?=…) requires module 'lookaround'" error.
 | **captures** | `(...)`, `(?<name>...)`, `$1` refs in CLI replace | VM (or tagged-DFA later) |
 | **classes+** | POSIX classes `[:alpha:]`, `\d \w \s` and negations, class union semantics | DFA |
 | **assertions** | `\b \B \A \z \Z`, multiline `^ $` | DFA-with-context bit |
-| **lookaround** | `(?= (?! (?<= (?<!` | VM |
+| **lookaround** | `(?= (?! (?<= (?<! (?* (?<*` and their twelve `(*` alpha spellings (`(*pla:` … `(*non_atomic_positive_lookbehind:`) — EIGHTEEN spellings of six constructs | VM |
 | **backrefs** | `\1`, `\k<name>` | VM |
 | **modifiers** | `(?i) (?m) (?s) (?x)`, inline and scoped | parse/lower only |
 | **unicode-props** | `\p{L}` etc. (UTF-8 tier) | class-set expansion |

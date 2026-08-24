@@ -132,14 +132,24 @@ Of PCRE2's syntax surface:
   now maps to the frozen named set `std1` = {`classes`, `modifiers`}, so a
   bare `pcrec` compiles their constructs with no flag needed. `--features
   none` is the only invocation that still refuses them, with the module name.
-- Four further modules have shipped `OK-GATED` since — built and
+- Five further modules have shipped `OK-GATED` since — built and
   oracle-verified, but compiled ONLY under an explicit `--features` naming
   them, and refused by name under the bare default: `assertions` (`\b \B \G`
   and `\K`, [M6.2], complete 2026-08-19), `named-groups` ([M6.3],
   2026-08-18), `atomic-groups` (`(?>...)` and the possessive quantifier
-  suffixes, [M6.4.2], 2026-08-22) and `backrefs` (every backreference
+  suffixes, [M6.4.2], 2026-08-22), `backrefs` (every backreference
   spelling, PCRE2's octal disambiguation at the atom position, and
-  `(?J)`/DUPNAMES — [M6.5.2], 2026-08-22). **`backrefs` moved THREE survey
+  `(?J)`/DUPNAMES — [M6.5.2], 2026-08-22) and `lookaround` (SIX constructs
+  in EIGHTEEN spellings — `(?=` `(?!` `(?<=` `(?<!` `(?*` `(?<*` and the
+  twelve `(*` alpha spellings — [M6.6.2], 2026-08-24). **`lookaround` is the
+  first module to move a survey row from `REJECTED` to `OK-LIMITED`**: the
+  lookbehind pair ships fixed-width-PER-BRANCH, which is wider than
+  "fixed-length lookbehind" and narrower than PCRE2, and the row names the
+  limit's kind. It also moved the twelve alpha spellings from module `verbs`
+  — the wrong module, promised for a year of sessions by a `(*` doorway whose
+  ONE row answered for every name in both of PCRE2's verb tables — and gave
+  each of them an index row of its own, folded into its primary's family line
+  (D71 item 3). **`backrefs` moved THREE survey
   rows and fourteen index rows in one landing**: `\0dd, \ddd as an ATOM` and the bundled backreference row in
   their own sections, and `(?J) dup names` in Option setting — whose owning
   module moved from `named-groups` to `backrefs` with it (ASK-1), the fourth
@@ -1209,11 +1219,12 @@ same, scoped to `\R`.
 
 | syntax | status | becomes |
 |---|---|---|
-| `(?=...)` `(?!...)` | `REJECTED` | `PLANNED-HARD` |
-| `(?<=...)` `(?<!...)` | `REJECTED` | `PLANNED-HARD` |
-| `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` verbose spellings | `REJECTED` | — |
-| `[[:<:]]` `[[:>:]]` | `REJECTED` | `PLANNED` |
-| `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` non-atomic lookaround | `REJECTED` | `PLANNED-HARD` |
+| `(?=...)` `(?!...)` | `OK-GATED` | — |
+| `(?<=...)` `(?<!...)` — CAPABILITY limit: every TOP-LEVEL BRANCH of the body must be fixed-width; widths may DIFFER between branches (`(?<=a\|bc)x` compiles, `(?<=(a\|bc))x` is refused with a capability message and a pattern offset) | `OK-LIMITED` | `PLANNED` |
+| `(*pla:)` `(*nla:)` `(*plb:)` `(*nlb:)` `(*positive_lookahead:)` `(*negative_lookahead:)` `(*positive_lookbehind:)` `(*negative_lookbehind:)` verbose spellings — module `lookaround`, NOT `verbs` | `OK-GATED` | — |
+| `[[:<:]]` `[[:>:]]` — a word-boundary assertion, module `assertions`, filed in this section by the original survey | `REJECTED` | `PLANNED` |
+| `(?*...)` `(?<*...)` `(*napla:)` `(*naplb:)` `(*non_atomic_positive_lookahead:)` `(*non_atomic_positive_lookbehind:)` non-atomic lookaround | `OK-GATED` | — |
+| `(*nanla:)` `(*nanlb:)` — there is no non-atomic NEGATIVE form; PCRE2 error 195 | `AGREES-REJECT` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: lookaround -->
 
@@ -1222,21 +1233,107 @@ same, scoped to `\R`.
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
-**`(?=...)`**
+**`(?=...)`** (2026-08-24)
 
-Lookahead is automaton intersection — feasible, not cheap, and it
-multiplies states.
+**SHIPS since [M6.6.2]** (design docs/design/lookaround_design.md,
+panel-approved at R33). The pre-landing note read "lookahead is automaton
+intersection — feasible, not cheap, and it multiplies states", which was
+an analysis of the wrong engine: the module is VM-only (every row carries
+`ENGM_VM` and SR-8 stamps it), and the lowering is the atomic group's
+shape plus a saved cursor, not an intersection. The DFA still sees a
+lookaround — `src/ir/nfa.c` lowers it to an EPSILON — but only as a
+PREFILTER; that erasure is sound as a filter and would be a miscompile as
+a machine, and the VM_ONLY stamp is the only thing between the two
+readings.
 
-**`(?<=...)`**
+**SIX CONSTRUCTS, EIGHTEEN SPELLINGS, and pcrec ships every one PCRE2
+has** — `(?=` `(?!` `(?<=` `(?<!` `(?*` `(?<*` plus the twelve `(*` alpha
+spellings below. The two shapes PCRE2 does NOT have are `(*nanla:` and
+`(*nanlb:` (there is no non-atomic NEGATIVE form; error 195, measured on
+10.46), and pcrec refuses both with PCRE2's own wording.
 
-Fixed-length lookbehind is tractable via the reverse machine D7 already
-builds; variable-length is much harder.
+**`\K` IS REFUSED INSIDE A LOOKAROUND, PERMANENTLY** (measured:
+`(?=a\K)b` is refused at the assertion's own offset; `a(?=b)\Kc` and
+`(?<=a)\Kb` compile). libpcre2 10.46 refuses it in all four polarities
+with error 199, whose text names `PCRE2_EXTRA_ALLOW_LOOKAROUND_BSK`;
+pcrec matches the DEFAULT and does not implement that option — adopting
+any `EXTRA_*` bit is a D38 ruling event, and Frank closed the reopening
+on 2026-08-23. The refusal is recursive through nested groups and nested
+lookarounds and stops at the assertion's own `)`.
 
-**`base:lookaround-verb-spellings`**
+**`(?<=...)`** (2026-08-24)
 
-module `verbs`; same underlying feature.
+**SHIPS since [M6.6.2], FIXED-WIDTH PER BRANCH** — which is a WIDER rule
+than "fixed-length lookbehind" and the difference is measurable, not
+cosmetic. Every TOP-LEVEL BRANCH of the body must have a fixed width;
+widths may DIFFER between branches. So `(?<=a|bc)x` COMPILES (two
+branches, widths 1 and 2 — a pattern python `re` refuses outright), while
+`(?<=(a|bc))x` is REFUSED: one branch of width 1..2. The two differ by a
+pair of parentheses and by whether the longest-first step-back loop
+PCRE2 runs within a branch is needed, which this module does not build.
 
-**`base:posix-word-boundary-classes`**
+The refusal is a CAPABILITY limit and is worded as one, at the
+assertion's own pattern offset — "variable-length lookbehind is not
+implemented: every alternative of a lookbehind must have a fixed length
+(this one can match 1..2 characters)" — never as "requires module
+'lookaround'", which would be an actionable-sounding lie to a caller who
+has already enabled it. An unbounded body (`(?<=a*)x`) gets the same
+refusal naming unboundedness; libpcre2's own answer there is error 125.
+
+The pre-landing note ("tractable via the reverse machine D7 already
+builds") named a mechanism the module did NOT use: the lowering is a
+back-step to a known offset followed by a FORWARD body match and an
+end-check, not a reverse machine — see the design's §3.5 for why.
+
+**`base:lookaround-verb-spellings`** (2026-08-24)
+
+**THE TWELVE `(*` ALPHA SPELLINGS ARE MODULE `lookaround`, AND SAYING
+`verbs` WAS A REAL DEFECT** — this note itself said "module `verbs`; same
+underlying feature" until [M6.6.2] wave F, and so did the compiler.
+`(*pla:` `(*positive_lookahead:` `(*nla:` `(*negative_lookahead:`
+`(*plb:` `(*positive_lookbehind:` `(*nlb:` `(*negative_lookbehind:`
+`(*napla:` `(*non_atomic_positive_lookahead:` `(*naplb:`
+`(*non_atomic_positive_lookbehind:` all answered *"(\*...) requires
+module 'verbs'"* — promising a module that will never implement them,
+while the module that does was never named. The cause: the `(*` doorway
+was ONE registry row whose module answered for every name in both of
+PCRE2's verb-name tables. D26 puts module attribution in tier 2, where
+the standard is exact.
+
+**EACH IS AN ALIAS OF A `(?` PRIMARY, and that is MEASURED rather than
+read off the name** (libpcre2 10.46, 84 templates x 19 subjects, every
+startpos, match span and every group span, 0 divergences): `(*pla:` and
+`(*positive_lookahead:` are `(?=`; `(*nla:`/`(*negative_lookahead:` are
+`(?!`; `(*plb:`/`(*positive_lookbehind:` are `(?<=`;
+`(*nlb:`/`(*negative_lookbehind:` are `(?<!`;
+`(*napla:`/`(*non_atomic_positive_lookahead:` are `(?*`; and
+`(*naplb:`/`(*non_atomic_positive_lookbehind:` are `(?<*`. A spelling
+that merely compiles proves nothing about what it is, which is why the
+corpus separates them by the answers they give rather than by their
+names.
+
+Each has its own registry row and its own line in the index above, folded
+into its primary's family (D71 item 3): the rows keep no byte-keyed
+dispatch identity — the `(*` doorway decides by NAME — but a spelling a
+caller can write is a spelling this page owes a line for, which is the
+whole reason the twelve were added.
+
+`(*atomic:` `(*script_run:` `(*sr:` `(*asr:` `(*atomic_script_run:`
+`(*scs:` `(*scan_substring:` are NOT in this family and correctly still
+name `verbs`.
+
+**`base:posix-word-boundary-classes`** (2026-08-24)
+
+**RECOGNISED, ATTRIBUTED, NOT BUILT — and the survey row above reading
+`REJECTED` is CORRECT.** R33's staleness pass flagged this record as
+reading like a ship claim beside a `REJECTED` row; re-measured today,
+nothing ships: `[[:<:]]def` is refused as *"[[:<:]] is a word-boundary
+assertion and requires module 'assertions'"* at every enabled set
+INCLUDING `--features all`, so the module owns the construct and has no
+producer for it. What MOD-0.3a moved was the ATTRIBUTION, not the
+implementation. (This record also still sits in the LOOKAROUND section
+because that is where the original survey filed it; the construct is
+module `assertions`'.)
 
 Module `assertions` since MOD-0.3a (2026-08-12; the split the earlier
 text assigned to whoever implemented the doorway) — they are NOT
@@ -1252,7 +1349,14 @@ those until R9; it now answers "unknown POSIX class name", and
 `check_posix_positions` in tests/registry/ crosses name against position,
 which is the axis pair neither earlier differential varied.
 
-**`(?*a)`**
+**`(?*a)`** (2026-08-24)
+
+**SHIPS since [M6.6.2], and it is a DIFFERENT CONSTRUCT from `(?=`, not a
+spelling of it** — measured on "abab", which is the cell that fixes it:
+`(?*(a|ab))\1$` matches (2,4) because the body RETRIES and finds "ab",
+where `(?=(a|ab))\1$` is NOMATCH because the atomic form commits to the
+body's first success. `(?<*` is the same difference one direction over.
+The lowering is the atomic shape MINUS the cut.
 
 **This row was RIGHT and the registry was WRONG** until R8/C4-8:
 `(?*...)` had no registry row, so the `(?` catch-all answered "requires
@@ -1421,9 +1525,35 @@ explicitly unsupported by `pcre2_dfa_match` for the same reason.
 
 recursion-dependent.
 
-**`base:conditional-define`**
+**`base:conditional-define`** (2026-08-24)
 
-only useful with subroutine calls.
+Only useful with subroutine calls — and it JOINS MODULE `recursion`
+rather than `conditionals` when it lands (D71 item 4, Frank 2026-08-23):
+it is a tailed row on the `(?(` doorway, lowered as the `{0}`-callee
+shape (no code at the lexical position, a callee region for calls). One
+row, zero new mechanism; the rest of `(?(` stays `conditionals`'.
+
+**INTERIM, THE TWO EXACT SUBSTITUTES** (D71 item 4's interim clause), and
+both are VERIFIED EQUIVALENT to `(?(DEFINE)(?<w>X))` against libpcre2
+10.46 rather than offered on the strength of the shape — every startpos
+over a five-subject set, span for span, for both:
+
+    (?:(?<w>X)){0}      a zero-count wrapper: the group is DECLARED and
+                        its body is never entered, which is exactly what
+                        DEFINE means. `(?(DEFINE)(?<w>ab))(?&w)c` and
+                        `(?:(?<w>ab)){0}(?&w)c` answer identically.
+    ^(?!)(?<w>X)|BODY   an unreachable FIRST BRANCH: `(?!)` fails
+                        unconditionally, so the branch declares `w` and
+                        can never match, and BODY is the real pattern.
+                        Identical to the DEFINE form on the same cells.
+
+Neither is a workaround for a MISSING feature so much as a spelling of
+the same one — which is why the row for `(?(DEFINE)` is a single row when
+it lands. Both substitutes are constructs pcrec's parser accepts today
+(the first needs modules `named-groups` and `recursion`, the second
+`lookaround` and `named-groups`); what neither can do before module
+`recursion` builds is be USEFUL, since the reference that reads the
+declared group is a subroutine call.
 
 **`base:conditional-assert`**
 
@@ -1804,7 +1934,9 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 106 rows from one declarative table (D24). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 118 rows from one declarative table (D24), rendered as 106 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+
+`built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
 | doorway | syntax | status | built | roadmap | module | engines | PCRE2 semantics |
 |---|---|---|---|---|---|---|---|
@@ -1852,11 +1984,11 @@ Every non-base construct pcrec knows, as the parser itself sees it — 106 rows 
 | after `\` | `\8` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
 | after `\` | `\9` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
-| after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead |
-| after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead |
-| after `(?` | `(?<=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookbehind |
-| after `(?` | `(?<!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookbehind |
-| after `(?` | `(?<*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) |
+| after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead — also spelled `(*pla:a)`, `(*positive_lookahead:a)` |
+| after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead — also spelled `(*nla:a)`, `(*negative_lookahead:a)` |
+| after `(?` | `(?<=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookbehind — also spelled `(*plb:a)`, `(*positive_lookbehind:a)` |
+| after `(?` | `(?<!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookbehind — also spelled `(*nlb:a)`, `(*negative_lookbehind:a)` |
+| after `(?` | `(?<*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookbehind — the (? spelling of (*naplb:...) — also spelled `(*naplb:a)`, `(*non_atomic_positive_lookbehind:a)` |
 | after `(?` | `(?<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group (?<name>...) — the lookbehinds take = ! * and have their own rows |
 | after `(?` | `(?'name'...)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | named capture group, Perl-style quoting |
 | after `(?` | `(?P<name>a)` | `REJECTED` | `built` | planned | `named-groups` | dfa|vm | python-style named capture group |
@@ -1864,7 +1996,7 @@ Every non-base construct pcrec knows, as the parser itself sees it — 106 rows 
 | after `(?` | `(?P>n)` | `REJECTED` | `unbuilt` | planned | `recursion` | vm | python-style subroutine call into a named group |
 | after `(?` | `(?PX)` | `AGREES-REJECT` | — | never | — | — | only (?P< (?P= and (?P> exist — every other byte after (?P is PCRE2 error 141 |
 | after `(?` | `(?>...)` | `REJECTED` | `built` | planned | `atomic-groups` | vm | atomic (non-backtracking) group |
-| after `(?` | `(?*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) |
+| after `(?` | `(?*a)` | `REJECTED` | `built` | planned | `lookaround` | vm | non-atomic positive lookahead — the (? spelling of (*napla:...) — also spelled `(*napla:a)`, `(*non_atomic_positive_lookahead:a)` |
 | after `(?` | `(?#...)` | `REJECTED` | `unbuilt` | planned | `comments` | dfa|vm | comment, discarded up to the next ')' |
 | after `(?` | `(?C1)` | `REJECTED` | `unbuilt` | planned | `callouts` | vm | callout to user code: (?C) (?C1) (?C{text}) -- PLANNED (D36): M4-hosted, VM-only; the compiled DFA erases the pattern positions a callout fires at |
 | after `(?` | `(?\|...)` | `REJECTED` | `unbuilt` | planned | `branch-reset` | vm | branch reset group: alternatives reuse the same capture numbers |

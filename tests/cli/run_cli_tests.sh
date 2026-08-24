@@ -606,6 +606,84 @@ case10() {
     "$PCREC" --list-verbs -o - -- 'abc' >/dev/null 2>"$d/ev3.txt"; rc=$?
     assert_eq "case10: --list-verbs with -o and a pattern exits 1" "1" "$rc"
 
+    # --list-families ([M6.6.2] wave F, D71 item 3). A THIRD dump, and it is a
+    # dump rather than a change to --list-syntax for --list-verbs' reason one
+    # level over: --list-syntax is PER-ROW and its consumers depend on that
+    # (tests/reject/ probes every non-base row's own `syntax`), so the INDEX
+    # layer's grouping gets its own view instead of collapsing theirs.
+    out="$("$PCREC" --list-families 2>"$d/ef.txt")"; rc=$?
+    assert_eq "case10: --list-families exits 0" "0" "$rc" "stderr: $(cat "$d/ef.txt")"
+    assert_contains "case10: --list-families emits the column header" "$out" \
+        "#syntax	module	engines	status	built	nmembers	members"
+    nfam="$(printf '%s\n' "$out" | grep -vc '^#')"
+    nsyn="$("$PCREC" --list-syntax | grep -vc '^#')"
+    # THE TWO COUNTS MUST DIFFER, and the direction is the assertion: the
+    # family view is the row view with multi-spelling constructs COLLAPSED, so
+    # it must be SMALLER. Equal counts would mean the grouping had silently
+    # stopped grouping — a view that prints one line per row while claiming to
+    # print one per family is exactly as wrong as one that dropped rows, and
+    # far quieter. A floor alone could not see it.
+    if [ "$nfam" -lt 60 ] || [ "$nfam" -ge "$nsyn" ]; then
+        fail "case10: --list-families printed $nfam lines against --list-syntax's $nsyn rows — a family view must be SMALLER than the row view (floor 60)"
+    else
+        pass "case10: --list-families printed $nfam family lines, collapsing $nsyn rows (floor 60, and strictly fewer than the rows)"
+    fi
+    # A MULTI-MEMBER FAMILY BY NAME, with its spellings. `(?=...)` is the one
+    # this wave created and the one a regression would silently un-group.
+    assert_contains "case10: --list-families groups the alpha spellings under their primary" "$out" \
+        "(?=...)	lookaround	vm	module	built	3	(?=...) (*pla:a) (*positive_lookahead:a)"
+    # Every line has exactly 7 tab-separated fields — the format is an
+    # interface, same rule as the two dumps above.
+    badfields="$(printf '%s\n' "$out" | grep -v '^#' | awk -F'\t' 'NF != 7' | head -3)"
+    if [ -n "$badfields" ]; then
+        fail "case10: --list-families rows without exactly 7 fields" "$badfields"
+    else
+        pass "case10: every --list-families row has exactly 7 tab-separated fields"
+    fi
+    "$PCREC" --list-families --list-syntax >/dev/null 2>"$d/ef2.txt"; rc=$?
+    assert_eq "case10: --list-families with --list-syntax exits 1" "1" "$rc"
+    "$PCREC" --list-families -o - -- 'abc' >/dev/null 2>"$d/ef3.txt"; rc=$?
+    assert_eq "case10: --list-families with -o and a pattern exits 1" "1" "$rc"
+    # No flavour axis, and for a reason of its own rather than by inheritance:
+    # a family is a grouping OF rows, so filtering members would print families
+    # whose membership depends on the filter and whose ANDed `built` would then
+    # mean something different per invocation.
+    "$PCREC" --list-families --flavour pcre2 >/dev/null 2>"$d/ef4.txt"; rc=$?
+    assert_eq "case10: --list-families with --flavour exits 1" "1" "$rc"
+    assert_contains "case10: ...and says where --flavour does apply" \
+        "$(cat "$d/ef4.txt")" "--flavour applies to --list-syntax and --explain only"
+
+    # [M6.6.2 wave F] A FORM ERROR IS THE DOORWAY'S ANSWER, NOT THE NAME'S
+    # MODULE'S — and `--probe-ask` is the only channel that can see it.
+    #
+    # `(*pla)` is a real lower-table name in a form PCRE2 does not accept, and
+    # PCRE2 decides that BEFORE it decides anything about modules. Wave F gave
+    # the name `pla` a registry row of its own (module `lookaround`), and
+    # mod_verbs.c does that lookup AFTER the form check so this stays true.
+    #
+    # THE REJECT TABLE CANNOT PIN IT, which is why the pin is here. That
+    # table's row is message-only, and the form refusal's TEXT comes from the
+    # VerbName table (`t->unknown_msg`) rather than from the elected row — so
+    # it is byte-identical whichever side of the form check the lookup sits
+    # on. MEASURED on a control build with the lookup moved: the message did
+    # not move and this field did, `verdict` -> `result` under
+    # `--features lookaround`. `answered_at == result` is D33's "the gate was
+    # OPEN and the port had nothing to say" signal (and what D65 classifies
+    # `built` on), so the control has a form error reporting itself as an
+    # answer given with the module's gate open: wave F's own misattribution,
+    # one level down.
+    assert_eq "case10: a verb FORM error answers at VERDICT with its name's module DISABLED" \
+        "verdict" "$("$PCREC" --features none --probe-ask result -- '(*pla)' | cut -f3)"
+    assert_eq "case10: ...and STILL at verdict with module lookaround ENABLED — the form check runs before the name's row is looked up" \
+        "verdict" "$("$PCREC" --features lookaround --probe-ask result -- '(*pla)' | cut -f3)"
+    # The CONTRAST that makes the pair a measurement: the same name in a form
+    # PCRE2 DOES accept reaches the name's row, so it answers at `result` with
+    # the module enabled and at `verdict` with it disabled.
+    assert_eq "case10: the same name in an ACCEPTED form answers at VERDICT with the module disabled" \
+        "verdict" "$("$PCREC" --features none --probe-ask result -- '(*pla:a)' | cut -f3)"
+    assert_eq "case10: ...and at RESULT with module lookaround enabled — the second gate really is the NAME's row" \
+        "result" "$("$PCREC" --features lookaround --probe-ask result -- '(*pla:a)' | cut -f3)"
+
     # --count-groups (MOD-0.1, §18.1): the running capture count's external
     # channel — the surface tests/spec_mod0/check02 compares against libpcre2.
     # Expectations oracle-verified: python re agrees on every cell, and a

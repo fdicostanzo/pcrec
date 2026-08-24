@@ -41,6 +41,12 @@ SAB_HARNESS_TARGET="tests/lookaround/lookahead.rxt"
 SAB_DESC="the (?=...) registry row's engines mask is widened from VM_ONLY to ANY_ENGINE, so SR-8 stops forcing the VM for a positive lookahead and the pattern is compiled from nfa.c's epsilon lowering — the lookaround-ERASED language"
 SAB_DOC_FIGURE="PREDICTED: (?=a)b answers (0,1) on \"b\" where the truth is NOMATCH; the registry arm's engine-capability tripwire also fires (a VM_ONLY row with a producer must refuse --engine=dfa by name). Canonical figure owed from run_sabotage_matrix.sh S126."
 SAB_COUNT=1
+# [M6.6.2 wave F] THE `AFTER` ROW GAINED ITS `family` SLOT. `RegRow` grew a
+# `family` field (D71 item 3) and every longhand row initialises it
+# explicitly; NULL is the CORRECT value here -- `(?=...)` IS its family's
+# canonical spelling, and its two alpha aliases point AT it -- so this is the
+# same row it always was, spelled against the current struct rather than
+# relying on a zero default nobody wrote.
 SAB_BEFORE='GROUP_LA('"'"'='"'"',  "(?=...)",       "positive lookahead"),'
 SAB_AFTER='/* SABOTAGE S126: this ROW alone widened to ANY_ENGINE */
-{RK_GROUP, '"'"'='"'"', NULL, "(?=...)", M_lookaround, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0, "positive lookahead", ROADMAP_PLANNED, QF_YES, NULL, 0, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, NO_PORT},'
+{RK_GROUP, '"'"'='"'"', NULL, "(?=...)", M_lookaround, FLAV_PCRE2, ANY_ENGINE, RS_MODULE, RD_MODULE, NULL, NULL, 0, "positive lookahead", ROADMAP_PLANNED, QF_YES, NULL, 0, NULL, {PORT_FN, false, 0, NULL, pcrec_laport_group}, NO_PORT, NULL},'

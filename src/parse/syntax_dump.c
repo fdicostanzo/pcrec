@@ -178,9 +178,17 @@ char *pcrec_syntax_tsv(unsigned flavours)
                  "RS_MODULE rows, '-' where the question does not arise "
                  "(RS_BASE/RS_REJECTED). Orthogonal to `status`/`roadmap`, "
                  "which stay PCRE2/base-grammar facts.\n"
+                 "# `family` (D71 item 3): the CANONICAL SYNTAX of the family "
+                 "this row is a spelling of, empty when the row is its own "
+                 "family. Members of a family are the rows sharing a key, "
+                 "where a row's key is its `family` if it has one and its own "
+                 "`syntax` otherwise; `--list-families` prints one line per "
+                 "family with `built` ANDed across the members. Grouping is "
+                 "an INDEX-layer fact and never dispatch: a row's dispatch "
+                 "identity is unchanged (R6).\n"
                  "#kind\tselector\tsyntax\tmodule\tfeature\tflavours\tengines"
                  "\tstatus\tdiag\tflags\texpect\tnote\troadmap\tquantifiable"
-                 "\tclass_expect\tbuilt\n");
+                 "\tclass_expect\tbuilt\tfamily\n");
 
     for (size_t k = 0; k < NELEMS(all_kinds); k++) {
         size_t n;
@@ -237,6 +245,14 @@ char *pcrec_syntax_tsv(unsigned flavours)
                            : bs == PCREC_BUILT_NO     ? "unbuilt"
                            : bs == PCREC_BUILT_DEFECT ? "defect" : "-");
             }
+            sb_putc(&sb, '\t');
+            /* 17th column ([M6.6.2] wave F, D71 item 3): the family's
+             * canonical syntax, EMPTY — not "-" — for a row that is its own
+             * family, per this dump's own "Empty field = none" rule. APPENDED
+             * for the reason the 13th, 15th and 16th columns were: consumers
+             * key on field index, and [SR-11]'s table contract resolves by
+             * NAME precisely so an appended column costs them nothing. */
+            put_str(&sb, r->family);
             sb_putc(&sb, '\n');
         }
     }
@@ -294,6 +310,117 @@ char *pcrec_syntax_verbs(void)
              * outcome that must not be folded into "no". */
             sb_puts(&sb, v->quant == QV_YES ? "yes"
                        : v->quant == QV_NO  ? "no" : "not-askable");
+            sb_putc(&sb, '\n');
+        }
+    }
+    return sb_take(&sb);
+}
+
+/* ---- `--list-families`: THE INDEX LAYER (D71 item 3) ---------------------
+ *
+ * ONE LINE PER FAMILY, where a family is the set of rows sharing a KEY and a
+ * row's key is its `family` when it has one and its own `syntax` otherwise.
+ * So a row with no `family` and no aliases pointing at it is a family of one
+ * and prints exactly what `--list-syntax` prints for it — which is every row
+ * in the table but eighteen today.
+ *
+ * WHY THIS IS A SECOND DUMP RATHER THAN A CHANGE TO THE FIRST, and it is the
+ * same reason `--list-verbs` is a second dump: `--list-syntax`'s format is
+ * frozen and its consumers are per-ROW. `tests/reject/run_reject_tests.sh`
+ * probes EVERY non-base row with its own `syntax`, and that is exactly what
+ * must keep happening for the twelve alpha spellings — each one is a distinct
+ * thing a caller can write, and a collapsed dump would silently drop twelve
+ * probes. So the row dump stays per-row (with `family` as its 17th column,
+ * the fact) and the INDEX view is here (the grouping, derived).
+ *
+ * `built` IS ANDed ACROSS THE MEMBERS, which is D71 item 3's rule stated
+ * exactly: a family reads `built` only if EVERY member does. The direction
+ * matters — a family whose canonical spelling compiles while one of its
+ * aliases does not is NOT a built family, and saying otherwise is the precise
+ * lie D65's column exists to prevent, one layer up. A family with no member
+ * the question arises for reads `-`.
+ *
+ * WHAT IT DOES NOT DO: derive the canonical syntax from anything. The key IS
+ * the canonical syntax (internal.h's `family` comment on why the grouping key
+ * and the printed spelling are one string), so there is nothing to elect and
+ * no second home for it. `module`/`engines`/`status` are taken from the
+ * family's FIRST member in table order; `tests/registry/registry_check.c`
+ * asserts the members agree on all three, so which one is read cannot matter
+ * — and if that assertion ever fails, it fails there, loudly, rather than
+ * being papered over by a rule here about who wins. */
+char *pcrec_syntax_families(void)
+{
+    StrBuf sb = {0};
+
+    sb_puts(&sb, "# pcrec syntax FAMILIES (D71 item 3): one line per family,\n"
+                 "# where a family is the rows sharing a key and a row's key is\n"
+                 "# its `family` column if set and its own `syntax` otherwise.\n"
+                 "# `built` is ANDed over the members: a family reads built only\n"
+                 "# if EVERY member does. `members` lists every spelling, the\n"
+                 "# canonical one first when it is itself a row.\n"
+                 "# Grouping is an INDEX fact; every row keeps its own dispatch\n"
+                 "# identity and its own line in --list-syntax (R6).\n"
+                 "#syntax\tmodule\tengines\tstatus\tbuilt\tnmembers\tmembers\n");
+
+    for (size_t k = 0; k < NELEMS(all_kinds); k++) {
+        size_t n;
+        const RegRow *rows = pcrec_registry(all_kinds[k], &n);
+        for (size_t i = 0; i < n; i++) {
+            const RegRow *r = &rows[i];
+            const char *key = r->family ? r->family : r->syntax;
+            if (!key) continue;
+
+            /* EMIT ONCE PER FAMILY, at its first member in walk order —
+             * decided by looking BACKWARD over the same walk rather than by
+             * carrying a seen-set, because the walk is the only order this
+             * dump has and a set would need its own ordering rule. */
+            bool first = true;
+            for (size_t k2 = 0; k2 <= k && first; k2++) {
+                size_t n2;
+                const RegRow *r2 = pcrec_registry(all_kinds[k2], &n2);
+                size_t lim = (k2 == k) ? i : n2;
+                for (size_t j = 0; j < lim; j++) {
+                    const char *k3 = r2[j].family ? r2[j].family : r2[j].syntax;
+                    if (k3 && strcmp(k3, key) == 0) { first = false; break; }
+                }
+            }
+            if (!first) continue;
+
+            /* THE MEMBERS, in table order, canonical first when it is a row:
+             * a row whose own `syntax` IS the key sorts ahead of the aliases
+             * by construction, because an alias's `family` names it and the
+             * registry declares the primary before them. */
+            int nmem = 0, nbuilt = 0, nna = 0;
+            StrBuf mem = {0};
+            for (size_t k2 = 0; k2 < NELEMS(all_kinds); k2++) {
+                size_t n2;
+                const RegRow *r2 = pcrec_registry(all_kinds[k2], &n2);
+                for (size_t j = 0; j < n2; j++) {
+                    const char *k3 = r2[j].family ? r2[j].family : r2[j].syntax;
+                    if (!k3 || strcmp(k3, key) != 0) continue;
+                    if (nmem) sb_putc(&mem, ' ');
+                    put_str(&mem, r2[j].syntax);
+                    nmem++;
+                    PcrecBuiltStatus bs = pcrec_construct_built_status(&r2[j]);
+                    if (bs == PCREC_BUILT_YES) nbuilt++;
+                    else if (bs == PCREC_BUILT_NA) nna++;
+                }
+            }
+
+            put_str(&sb, key);                          sb_putc(&sb, '\t');
+            put_str(&sb, r->module);                    sb_putc(&sb, '\t');
+            put_mask(&sb, r->engines, engine_names, NELEMS(engine_names));
+            sb_putc(&sb, '\t');
+            sb_puts(&sb, status_name(r->status));       sb_putc(&sb, '\t');
+            sb_puts(&sb, nna == nmem      ? "-"
+                       : nbuilt == nmem   ? "built" : "unbuilt");
+            sb_putc(&sb, '\t');
+            sb_printf(&sb, "%d", nmem);                 sb_putc(&sb, '\t');
+            {
+                char *m = sb_take(&mem);
+                sb_puts(&sb, m);
+                free(m);
+            }
             sb_putc(&sb, '\n');
         }
     }

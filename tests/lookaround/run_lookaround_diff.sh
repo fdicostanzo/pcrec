@@ -254,9 +254,19 @@ PY
 # wave E's own pre-D branch this guard read 15 and FIRED at the wave boundary —
 # the second time it earned itself. 45 re-derived from a run of the MERGED
 # tree by the manager at the merge, not summed on faith.
+# [M6.6.2 WAVE F] 45 -> 69, and the +24 is `alpha_spellings.rxt` ENTIRE: every
+# one of its answer-bearing blocks is `# pcre2-only`, because python `re` has
+# no `(*` alpha assertion of ANY kind — measured by the generator in the same
+# pass that wrote the expectations, not assumed from the spelling. That makes
+# this sweep the ONLY behavioural oracle behind all twelve new spellings, and
+# it is the sharpest one available: it drives each pattern through libpcre2 at
+# every startpos over the shared subject set and compares the span AND every
+# group span, so an alias resolved to the wrong primary disagrees here on
+# subjects the corpus's own three cases never reach. 69 re-derived from a run,
+# not summed on faith.
 NPO=$(grep -c . "$WORKDIR/po_pats" || true)
-if [ "$NPO" -ne 45 ]; then
-    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 45 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
+if [ "$NPO" -ne 69 ]; then
+    die "§1's population is $NPO pcre2-only answer-bearing blocks, not the 69 this guard is computed against — a cell was added or lost. Re-derive the number from this run and change it DELIBERATELY; do not relax it to a floor"
 fi
 po_cells=0; po_bad=0
 while IFS=$'\t' read -r f pat; do

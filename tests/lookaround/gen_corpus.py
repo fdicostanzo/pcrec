@@ -926,6 +926,154 @@ PREFILTER = [
       "what makes §5.6's predicate flat rather than shape-conditioned."),
 ]
 
+# ===========================================================================
+#  alpha_spellings.rxt — ALL TWELVE `(*` ALPHA SPELLINGS (design §10.2, §2.1;
+#  wave F), plus the `(*napla:` / `(*naplb:` cells the `nonatomic.rxt` split
+#  left owing (R33 C2-9).
+#
+#  WHAT EACH CELL HAS TO PROVE, because "it compiles" proves nothing about
+#  what a construct IS — the discriminator rule this module's §2.1 takes from
+#  `backrefs_design.md` §2 and applies to itself. An alpha spelling resolves
+#  through ONE table to a primary's three `u.look` flags, so the failure this
+#  file exists to catch is a MIS-RESOLUTION: `(*nla:` wired to the positive
+#  primary, `(*plb:` to the lookahead one, `(*napla:` to the atomic one. Each
+#  of those is a compiling, plausible, WRONG matcher.
+#
+#  So every spelling gets the same two-cell shape:
+#
+#    (1) THE POLARITY-AND-DIRECTION CELL, `(*X:a)b` over "ab" / "b" / "xb",
+#        whose four answers are pairwise distinct across the four primaries it
+#        can reach:
+#            (?=a)b   n     n      n        (?*a)b  is IDENTICAL
+#            (?!a)b   1,2   0,1    1,2
+#            (?<=a)b  1,2   n      n        (?<*a)b is IDENTICAL
+#            (?<!a)b  n     0,1    1,2
+#        One cell therefore separates positive from negative AND ahead from
+#        behind, for every spelling, in both directions.
+#
+#    (2) THE ATOMICITY DISCRIMINATOR, which is the axis (1) cannot see — the
+#        two identical columns above are exactly the atomic/non-atomic pairs.
+#        §2.2's `"abab"` witness separates `(?=` from `(?*`, and §3.6's
+#        `"bacba"` witness separates `(?<=` from `(?<*`, so the four spellings
+#        of those two pairs carry them. THE NEGATIVE SPELLINGS GET NO SUCH
+#        CELL AND CANNOT: PCRE2 has no non-atomic negative form at all
+#        (`(*nanla:` / `(*nanlb:` are err 195, measured), so there is no
+#        second construct for them to be confused with on that axis.
+#
+#  AND THE LONG FORMS CARRY THE SAME CELLS AS THE SHORT ONES, which is what
+#  makes six of the twelve rows more than paperwork: a long spelling resolved
+#  to the wrong primary — or to no primary, falling back to the doorway's own
+#  answer — produces different lines here, not a different comment.
+#
+#  `# pcre2-only` on every block, computed as always: python `re` has no `(*`
+#  alpha assertion of any kind.
+# ===========================================================================
+_ALPHA = [
+ # spelling,                        primary spelling, family
+ ("pla",                            "(?=",   "ahead-pos"),
+ ("positive_lookahead",             "(?=",   "ahead-pos"),
+ ("nla",                            "(?!",   "ahead-neg"),
+ ("negative_lookahead",             "(?!",   "ahead-neg"),
+ ("plb",                            "(?<=",  "behind-pos"),
+ ("positive_lookbehind",            "(?<=",  "behind-pos"),
+ ("nlb",                            "(?<!",  "behind-neg"),
+ ("negative_lookbehind",            "(?<!",  "behind-neg"),
+ ("napla",                          "(?*",   "ahead-pos-na"),
+ ("non_atomic_positive_lookahead",  "(?*",   "ahead-pos-na"),
+ ("naplb",                          "(?<*",  "behind-pos-na"),
+ ("non_atomic_positive_lookbehind", "(?<*",  "behind-pos-na"),
+]
+
+ALPHA_SPELLINGS = []
+for _name, _prim, _fam in _ALPHA:
+    _open = "(*%s:" % _name
+    ALPHA_SPELLINGS.append(
+        cell(_open + "a)b", LA, [("ab", 0), ("b", 0), ("xb", 0)],
+             "`%s` -- THE POLARITY-AND-DIRECTION CELL. Its three answers are "
+             "distinct for each of the four primaries this shape can reach, "
+             "so a spelling resolved to the wrong polarity or the wrong "
+             "direction changes them. It is the same cell `%sa)b` carries in "
+             "its own file, which is the point: the two spellings are ONE "
+             "construct (§2.1) and must answer identically."
+             % (_open, _prim)))
+
+# The atomicity discriminators, on the four spellings that HAVE a twin to be
+# confused with. Kept out of the loop above because they are not one cell
+# repeated -- the ahead pair and the behind pair are two different measured
+# witnesses (§2.2 and §3.6), each carried in alpha spelling here.
+for _name in ("pla", "positive_lookahead"):
+    ALPHA_SPELLINGS.append(
+        cell(r"(*%s:(a|ab))\1$" % _name, LA + ",backrefs", [("abab", 0)],
+             "§2.2's ATOMICITY DISCRIMINATOR in alpha spelling: NOMATCH, "
+             "because `%s` is the ATOMIC positive lookahead and commits to "
+             "the body's first success. `(*napla:` and "
+             "`(*non_atomic_positive_lookahead:` below carry the SAME pattern "
+             "and answer (2,4). This pair is the whole atomicity axis for the "
+             "lookahead spellings, and it is the axis the polarity cells "
+             "structurally cannot see." % ("(*%s:" % _name)))
+for _name in ("napla", "non_atomic_positive_lookahead"):
+    ALPHA_SPELLINGS.append(
+        cell(r"(*%s:(a|ab))\1$" % _name, LA + ",backrefs", [("abab", 0)],
+             "...and the NON-ATOMIC half of §2.2's discriminator: (2,4) on "
+             "the same subject, because the body RETRIES and finds \"ab\". "
+             "Wire `%s` to the atomic primary and this cell goes NOMATCH "
+             "while everything else in the module stays green."
+             % ("(*%s:" % _name)))
+for _name in ("plb", "positive_lookbehind"):
+    ALPHA_SPELLINGS.append(
+        cell(r"(*%s:(a)|(ba))c\2" % _name, LA + ",backrefs", [("bacba", 0)],
+             "§3.6's WITNESS, atomic half, in alpha spelling: NOMATCH, "
+             "because `%s` keeps branch 1 and never reconsiders when the "
+             "follow `\\2` fails." % ("(*%s:" % _name)))
+for _name in ("naplb", "non_atomic_positive_lookbehind"):
+    ALPHA_SPELLINGS.append(
+        cell(r"(*%s:(a)|(ba))c\2" % _name, LA + ",backrefs", [("bacba", 0)],
+             "...and §3.6's NON-ATOMIC half: (2,5) with g1 unset and "
+             "g2=(0,2), because the failure RETREATS INTO BRANCH 2 and "
+             "re-runs the back-step with that branch's own width. These are "
+             "the `(*naplb:` cells the `nonatomic.rxt` split left owing "
+             "(R33 C2-9)."))
+
+# The negatives get a SECOND cell of their own instead of an atomicity one,
+# because they have no non-atomic twin to be confused with -- and because
+# `(*X:a)b` above happens to give `(?!` and `(?<!` DIFFERENT answers only via
+# the "b" subject. This cell separates them a second, independent way.
+for _name in ("nla", "negative_lookahead"):
+    ALPHA_SPELLINGS.append(
+        cell("(*%s:a)(?:a|b)" % _name, LA, [("ab", 0), ("ba", 0)],
+             "A SECOND, independent separation of the two negative "
+             "directions: on \"ab\" the LOOKAHEAD form is (1,2) (position 0 "
+             "is followed by `a`, so the assertion fails there) while the "
+             "LOOKBEHIND form is (0,1) (nothing precedes position 0, so it "
+             "holds). Nothing about polarity is being re-measured here -- "
+             "the axis is direction, and it is measured twice because a "
+             "single cell that happens to separate two constructs is one "
+             "editing accident away from not doing so."))
+for _name in ("nlb", "negative_lookbehind"):
+    ALPHA_SPELLINGS.append(
+        cell("(*%s:a)(?:a|b)" % _name, LA, [("ab", 0), ("ba", 0)],
+             "...the LOOKBEHIND half of the same separation: (0,1) on "
+             "\"ab\"."))
+
+# THE CAPABILITY LIMIT REACHES THE ALIAS TOO, and it is a `perr` cell rather
+# than a comment because the alias resolves its width rule through the SAME
+# port: §2.5 refuses a lookbehind branch that is not fixed-width, and an
+# alias that reached some other path would COMPILE this and quietly emit a
+# matcher for a body pcrec has no back-step loop for.
+ALPHA_SPELLINGS.append(
+ cell("(*plb:(a|bc))x", LA, [], "THE WIDTH RULE THROUGH AN ALIAS (§2.5): ONE "
+      "branch of width 1..2, refused with a capability message and a pattern "
+      "offset, exactly as `(?<=(a|bc))x` is. libpcre2 COMPILES it -- the "
+      "refusal is pcrec's capability limit, not a syntax verdict.",
+      perr=True))
+ALPHA_SPELLINGS.append(
+ cell(r"(*positive_lookahead:a\K)b", LA + ",assertions", [],
+      "§2.7's `\\K` REFUSAL THROUGH AN ALIAS, and through the LONG spelling: "
+      "the check is `la_has_kreset` inside the shared port, so an alias that "
+      "did not reach that port would compile today's `\\K` inside tomorrow's "
+      "lookaround and silently move the reported match start.",
+      perr=True))
+
 FILES = [
  ("lookahead.rxt", LOOKAHEAD,
   "`(?=` and `(?!`: bodies, contexts, degenerate forms (design §10.2)"),
@@ -950,6 +1098,9 @@ FILES = [
   "unterminated forms"),
  ("gated.rxt", GATED,
   "the module gate and D65's `built` column, cell by cell"),
+ ("alpha_spellings.rxt", ALPHA_SPELLINGS,
+  "ALL TWELVE `(*` alpha spellings (design \u00a72.1, \u00a710.2) -- wave F, "
+  "plus the `(*napla:`/`(*naplb:` cells the `nonatomic.rxt` split left owing"),
  ("prefilter.rxt", PREFILTER,
   "[M6.6.2] wave E -- \u00a75.6's ceiling ruling and \u00a710.1(1)'s "
   "qualifying shapes, each one qualified against the PRE-wave-E compiler"),
@@ -1165,6 +1316,18 @@ def _count_groups(pat):
         if ch == "(":
             if i + 1 < ln and pat[i + 1] == "?":
                 pass                      # every `(?...` form is non-capturing
+            elif i + 1 < ln and pat[i + 1] == "*":
+                # [M6.6.2 wave F] `(*name:...)` IS NOT A CAPTURE EITHER, and
+                # this arm is here because the wave that added the alpha
+                # spellings measured the omission: `(*nla:a)b` has NO group,
+                # and without this branch every one of the twelve produced a
+                # phantom `g 1 -1 -1` line -- an expectation about a slot the
+                # artifact does not have. MEASURED against libpcre2 rather
+                # than reasoned: an alpha assertion is a lookaround, and PCRE2
+                # gives a lookaround no number (the module's own first
+                # paragraph). The `(*` doorway's OTHER group-argument forms
+                # (`(*atomic:`, `(*script_run:`) are not captures either.
+                pass
             else:
                 n += 1
         i += 1
