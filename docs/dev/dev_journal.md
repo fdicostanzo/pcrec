@@ -13021,3 +13021,10 @@ runs WITHOUT the author — and deliberately AFTER the close validation
 finishes rather than concurrently (K31's lesson: the two one-offs both
 struck under stacked batteries). Author released; cell kept until
 triage completes.
+
+ADDENDUM (part 16, ~08:0x): the close validation's first three stages
+are GREEN on the F-merged tree (1844a1c): FULL matrix 137 rows /
+undetected 0 / anomalies 0 / oracle-skipped 0 — the D69 module-close
+standard over every sabotage the module added (S121-S142 among them);
+identity gate 6/0 on four axes; strict clean. test and san still
+running.
