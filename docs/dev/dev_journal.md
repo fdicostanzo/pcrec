@@ -13432,3 +13432,36 @@ closing witness (its SAB_DOC_FIGURE), never a parking space. The
 general rule, from tests/mech/CLAUDE.md: an expectation a human
 maintains in prose is a claim; an expectation the runner checks is a
 contract. Lane srBC is DONE (three deliverables); worktrees removed.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 8) — WAVE D DELIVERED (lane/srD 01e7abb); [DD-14.LB] interim 2; the scheduling rule enforced
+
+WAVE D (sonnet, ~15:4x-16:3x, 8 WIP commits): the design's "delete the
+decline branch" premise was already stale — B+C had landed the two `\g`
+rows as separate registry rows with NO_PORT, so the real job was wiring
+`aport` on them; `pcrec_brport_g` gained the `<`/`'` arms producing
+A_CALL/PEND_CALL through two exports of mod_recursion.c
+(`pcrec_call_node` with an is_relative flag so a relative zero is never
+the root, `pcrec_call_by_name` sharing the FIRST-DECLARATION rule).
+Bars: tests/recursion 371/0 (+65 = the 22 `\g` blocks), run_recursion_
+diff 7/7, `--list-syntax` both `\g` rows built, S167 (S-SR15) DETECTED,
+backrefs corpus unchanged 662/0 + diffs 11/11 2/2, strict clean, anchors
+163/173, D69 27 rows 23 DETECTED + the 4 B+C expected-UNDETECTED,
+identity 2198/0 with ctl_bad 0 (reconstructed — the B+C script was
+scratch-only; asked to commit it as tests/codegen/run_recursion_
+identity.sh, the wave-E seed), make test corpus 25,241/0 with the one
+red = the gentimeout control (my 06c7ee2 postdates its base), the four
+unscheduled sections run solo green; registry/reject populations moved
+by the predicted ±2, a reject pin re-pointed at `\g<1>`'s new
+legitimate refusal. [DD-14.LB] interim 2: inlookaround.rxt 3→21 blocks
+(50 cases/0), known_fail EMPTY again, S169-171 DETECTED, identity
+2198/2198 + 96/96 call-bearing identical vs 67e40b9 with exactly six
+newly-compiling patterns, and a NEW opt-in instrument `make
+test-recursion-lbsweep` (908 generated patterns × 22 subjects: 9,240
+cells, 9,240 agree; all 220 pcrec refusals are variable-width callees —
+the over-rejection surface is exactly PCRE2 10.43+'s variable-length
+lookbehind feature); the refusal offset for a recursive callee now equals
+libpcre2's err-125 offset. Scheduling: srLB's full 162-row matrix + srD's
+make test + my san put load at 34 again; ruled the full matrix is the
+CLOSE's job and stopped it; the san on main is in its rungdiff stage;
+merges wait for san to end (editing a tree under a running suite is how
+runs die).
