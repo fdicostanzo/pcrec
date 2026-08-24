@@ -12720,3 +12720,36 @@ re-point (V-10). LESSON for briefs: the lane's honest self-corrections
 (four) were more valuable than any single finding — the R32/R33/R34
 class is "the sentence that ought to be true", and only a grep or a
 second instrument catches it.
+
+## 2026-08-23 (EDT), thirty-eighth session (part 8) — waves A+A2 MERGED (1187973); rows_for.sh was broken; wave B+C opened
+
+lane/waveA 549e2e2 merged. The design's arm budget held EXACTLY — 23
+`-Wswitch` sites file for file, +1 for pcrec_maxw = 24, and the R34
+critic's 27 over the same files = 23 + maxw + the four default-carrying
+switches; both numbers right. Three design corrections folded into §11:
+§11's emit_vm.c row named two arms that do not exist (`vm_cuts` is not a
+switch; `--emit-ir` renders VEvents) — the real sites are `vm_rev_caps`
+and `vm_count_slots`; the four default: line numbers were pre-D70; the
+flexible-array width table is unbuildable in a union (landed `const int
+*`, sizeof(Ast) 72 unchanged). `pcrec_maxw`'s sweep is two-sided —
+`maxw >= minw` at every node (defeats `return UNBOUNDED`) AND every
+oracle-verified span ≤ maxw(root) (defeats `return 0`), 12,637 nodes /
+8,901 spans / 0 violations, all three sabotages caught, `\K` excluded
+from the lower bound by reasoning. Every arm's decision is recorded one
+line per site in the commit and at the site; the one CHOICE (rd_walk not
+descending) is marked as such. Cross-milestone obligation: A_CLASS's
+maxw = 1 byte is EXACT only because UTF-8 refuses by name; the two
+identical-looking arms in minw/maxw have opposite obligations.
+
+TOOLING DEFECT: `tests/mech/rows_for.sh`'s documented pipeline never
+worked — it printed `SAB_ID`s (`S58-mrl-minw-…`) and the matrix selects
+on the basename's `S<id>` boundary, so 66/67 invocations FATAL'd. Loud,
+so it wasted runs rather than certifying nothing — but D69's targeted
+tier has never actually run since it was written this morning; every
+"targeted" run so far was a full matrix. Fixed at merge (prints `S58`).
+
+Waves 0/A/A2 have now moved ZERO emitted bytes across 2,056 patterns × 4
+axes twice over — the inert-enumerator claim is measured, not argued.
+Wave B+C opened (lane/waveBC, opus): the port, `vm_look`'s three arms,
+the corpus, ten sabotage rows, the gate's bucket split. Post-merge
+battery running on main.

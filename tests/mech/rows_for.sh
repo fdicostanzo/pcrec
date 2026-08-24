@@ -18,8 +18,11 @@
 # Usage: bash tests/mech/rows_for.sh <path> [<path>...]
 #   One or more paths, typically from `git diff --name-only`, relative to
 #   the repo root (the same form SAB_FILE/SAB_HARNESS_TARGET are written
-#   in). Prints one SAB_ID per matching row, one per line, in
-#   sabotages/-listing order. A path matching NO row prints NOTHING and
+#   in). Prints one row SELECTOR per matching row -- the basename's `S<id>`
+#   prefix (`S58`), the form run_sabotage_matrix.sh takes -- one per
+#   line, in sabotages/-listing order. (Until 2026-08-23 it printed
+#   $SAB_ID, which the matrix FATALs on: the wave-A lane measured 66/67
+#   invocations failing; D69's targeted tier had never actually run.) A path matching NO row prints NOTHING and
 #   exits 0 -- that is success, not failure: it means the tripwire alone
 #   covers the change (D69's docs/test-infra-only tier). A malformed
 #   sabotage definition (missing SAB_ID or SAB_FILE) is a FATAL error,
@@ -90,7 +93,12 @@ for f in "${sab_files[@]}"; do
             for target in "$SAB_FILE" "$SAB_FILE2" "$SAB_HARNESS_TARGET"; do
                 [ -n "$target" ] || continue
                 if path_matches "$changed" "$target"; then
-                    echo "$SAB_ID"
+                    # [M6.6.2 wave A finding] print the FILE's `S<id>` selector, not
+                    # $SAB_ID: run_sabotage_matrix.sh selects on the basename's
+                    # id boundary (`S58_...sh` <- `S58`), and $SAB_ID (`S58-mrl-...`)
+                    # FATALs there -- measured 66/67 invocations failing to
+                    # select before this fix.
+                    basename "$f" | sed 's/_.*$//'
                     exit 0
                 fi
             done
