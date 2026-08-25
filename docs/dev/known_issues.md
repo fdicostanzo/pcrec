@@ -2678,7 +2678,29 @@ inverse also exists: `((?1)?a)` and `((?1)*a)` on "a" — pcrec matches
 (0,1) where libpcre2 returns −52 (pcrec arguably better; no expectation
 writable).
 
-**What is needed.** MEASURE PCRE2's actual loop rule (pcre2_match.c's
+**RULE PINNED (2026-08-24, lane srK34; docs/design/subroutines_measurements/
+out/recurse_loop.txt, 65/65 cells; §3.3 amended).** pcre2_match.c's
+OP_RECURSE returns −52 iff ALL of: inside some active recursion; a
+NEAREST ancestor recursion of the SAME group exists; the subject pointer
+equals that ancestor's caller's pointer (zero cursor progress); PCRE2's
+`last_used_ptr` high-water mark (the furthest byte ANY opcode has
+examined, bumped on backtrack-returns and assertion completions) is ALSO
+unchanged; and PCRE2_DISABLE_RECURSELOOP_CHECK is off. A failed base-case
+alternative that peeks one byte further defers the guard indefinitely —
+which is why 199 same-position recursions can match and why the
+UNANCHORED runaways get a clean nomatch. MEASURED on the built module:
+class 1 (pcrec `frames` where PCRE2 concludes): `(a|(?1)a)b` on
+'a'/'aa'/'b'/'' and `^(a|(?1)a)$` on 'aaaaab' — the D27 corpus's 11
+parked cells; the empty-language roots (`^((?1)a)$`, `^((?R)a)$`) answer
+NOMATCH since wave E's root-minw guard; class 2 (pcrec matches where
+PCRE2 −52s): `((?1)?a)`, `((?1)*a)` on 'a'. RECOMMENDATION (lane, not yet
+ruled): do NOT adopt PCRE2's guard — a faithful copy needs a stored
+subject pointer AND a `last_used_ptr` equivalent threaded through every
+fail-and-return site of the emitted artifact, not an O(1) per-callee
+slot; keep the give-up as pcrec's documented answer (OK-LIMITED's second
+limit kind) and the 11 cells parked under the ratchet.
+
+**What was needed.** MEASURE PCRE2's actual loop rule (pcre2_match.c's
 recursion-loop check: when does a same-position re-entry fail the path,
 when does it return −52, when is it allowed) on a probe matrix, then
 decide whether pcrec adopts the same rule as a general mechanism (it

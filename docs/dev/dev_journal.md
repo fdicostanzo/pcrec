@@ -13801,3 +13801,31 @@ of 2442 call-free patterns — caught on the gate's first run. Next for the
 lane: the VM splice with a per-site slot family (W = the capture half for
 a splice; nesting impossible outside a cycle), the controls, the rows,
 the specimen script, §6.2's re-measurement, the design amendments.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 18) — [DD-14.K34] MEASURED AND MERGED: PCRE2's recursion-loop rule pinned from source
+
+srK34 (sonnet, docs+probes, ~22:2x-22:4x) read pcre2_match.c's OP_RECURSE
+and pinned the rule as FIVE conjuncts — inside an active recursion; a
+NEAREST same-group ancestor; zero cursor progress since that ancestor's
+call; PCRE2's `last_used_ptr` high-water mark (the furthest byte any
+opcode has examined, bumped on backtrack-returns and assertion
+completions) unchanged; the check not disabled — and verified it on a
+65-cell matrix (65/65), with two decisive confirmations (DISABLE_
+RECURSELOOP_CHECK turns a −52 into −53 under a depth limit; a −52 swallows
+a sibling top-level alternative) and one instrument confound found and
+neutralised (START-OPTIMIZE's prescan rejecting five cells before the
+matcher ran). The lookahead conjunct is the whole story: a failed base
+case that peeks one byte further defers the guard forever — why 199
+same-position recursions match and why the UNANCHORED runaways get a
+clean nomatch. Manager correction before merge: the lane ran pcrec
+WITHOUT `--features all`, read the refusal as "module unbuilt", and
+labelled pcrec's side "projected"; the R9 block was rewritten to compile
+with the module enabled and run K34's subjects — measured: the
+empty-language roots answer NOMATCH (wave E), `(a|(?1)a)b`'s runaways
+answer `frames` (class 1, the 11 parked cells), `((?1)?a)` matches where
+PCRE2 −52s (class 2), the anchored −52 cells are agreed-in-kind. The
+lane's recommendation, for Frank: do NOT adopt the guard (a faithful copy
+threads a high-water mark through every fail site of the artifact); keep
+the give-up as the documented answer. Same lesson as srLB's cause-claim
+and sr27's `(?J)`: a measurement lane's pcrec arm must state its feature
+set.
