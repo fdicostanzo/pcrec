@@ -213,3 +213,16 @@ it, so the identity gate's linkage claim is a SUBJECT-AGAINST-ITSELF section
 rather than a fifth reference axis. **Do not "fix" that by adding this bit to
 the mask** — it would falsify the artifact's own record of itself to satisfy a
 check.
+
+## [DD-14.FB] the generated-API comment names three more entries (2026-08-25)
+
+`pcrec.h`'s "Generated searcher contract" block now names
+`<prefix>_search_in` / `<prefix>_match_in` / `<prefix>_match_caps_in`, the
+`<prefix>_buffers` descriptor and the five sizing macros. Nothing in the
+LIBRARY's own surface changed — no new option, no new struct member, no
+signature moved — so this is a documentation edit to a header, not an API
+change to it. The types themselves stay where every other per-artifact type
+does: in the generated `.c`/`.h`, never here, because they are
+PER-ARTIFACT-EMITTED (a resume frame is 24 bytes on a call-free artifact and
+40 on a call-bearing one, MEASURED). The authoritative contract is
+docs/spec/match_api.md §10.
