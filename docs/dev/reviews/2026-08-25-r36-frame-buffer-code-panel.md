@@ -40,4 +40,17 @@ give-up; reuse/interleave clean; ASan+UBSan on exact heap buffers incl.
 directive positional and hard-failing on malformed input; asymmetric
 and downward capacities verified; the codegen block derives nothing
 from the artifact; TS-1 zero-diff; KRESET rule 3 +2/−0; S174 on the tip
-byte-identical to main's. Merge waits on C1 (the gate) and the batch.
+byte-identical to main's. MANAGER MERGE REVIEW (04:5x, lane tip 88a22d1, 47 files +3461/−461 vs
+main): every disposition verified on the branch — the gate is two
+comparisons with the post-FB pin asserted (`RESUME_FRAME_SIZE` must be
+in the pin's emit_dfa.c) and gate2 green 15/0; mrl ruling 2(a) gains
+two assertions; K33 detection SIGSEGV-specific (139); run_frame_buffer's
+`else bad` and RSS bounded [40,000 KB, 131,072 KB] with the magnitude
+argument; tests/possessify + src/core CLAUDE.md +41; spec §10.4 carries
+the "a stamped 0 means no buffers — test before dividing" clause and
+§10.6 the four-larger-rows correction; design §8 inline note, §12 P-3
+REFUTED; S174 byte-identical to main; anchors 0 stale; the DFA header
+emits the clause. Six rows DETECTED through the matrix (unexpected 0
+×6). Final make test #2: 26,814/29 + checks 1,532/1 — the 29 and the 1
+are the K31 pair (K32 cell; 45 s cap), solo-green 1634/0 ×3 and 19/0
+([TT-10] widened). VERDICT: MERGE on the deliverable's arrival.
