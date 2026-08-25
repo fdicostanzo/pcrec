@@ -14058,3 +14058,37 @@ skips the final byte (must evaluate `rx_forward_end_view`); a per-scan
 cost, not selection — candidate fold. Both recorded on [DD-13] as bench
 inputs, not started. Also its control confirms the [OS-4] asymmetry
 (`a|ab` on `ab`). Prediction held: orig's `\z` form stays DFA (+12.4% C).
+
+#### Thirty-ninth session, part 21 — wave G DELIVERED; review in progress (2026-08-25 ~01:2x EDT)
+
+srG's deliverable arrived 01:1x (lane/srG at d87afff, 23 commits on
+85361cd, 43 files +3639/-129). Its `make test`: EXIT 0, 25,746 cases, 0
+failures (mt5.log). Specimen bar 11/11; 85 subjects × four spellings, no
+give-up (B+C had five FRAMES); throughput factored/orig 0.88/1.19/0.88×;
+A==B 15,912 cells 0; gate 11 checks/0; §3 sweep 1,836 cells 0; hazard
+INLINE 280 cells 0 with the ERASE control firing 2/13/14/22; S173-S177
+detected, S178 expected-UNDETECTED, S164 flipped to DETECTED; strict clean.
+Design corrections it recorded: §8.3's nfa.c arm is EXACT not "sound
+approximation"; a splice needs a slot family; §5.3a's W is too big for a
+splice; §8.1's VM-only is structural only in a cycle; §11's
+`-fno-splice-calls` gate axis is unimplementable against a pinned
+pre-module reference (measured both ways) → replaced by self-comparison +
+A==B (ruled); the pass order (engine selection after the call graph) also
+fixed a latent root-discharge drop.
+
+THE MECH LOOP DIED BY HARNESS KILL at row 19 (S122, 00:53): the lane's
+background task status read `killed` — not a per-row timeout (those were
+`timeout 1500` per row and would have advanced the loop). 18 rows complete,
+all `unexpected: 0`; resumed from S122 at ~01:13 (93 rows, ~0.8/min).
+Watchdog caught it at the 18-min mark; the ping produced the deliverable.
+
+REVIEW: manager read of lib/pcrec.h, limits.h, compile.c, Makefile,
+.gitignore, cli/main.c — clean (one new public flag PCREC_NO_SPLICE_CALLS =
+1u<<13; budgets 512/8192; opt-in `make test-specimen`). Two read-only
+critics: critG-checks (sonnet) — merge-with-fixes, no hollow check found;
+three fixes sent to the lane at 01:2x: (a) run_vm_identity.sh's population
+floor (100) predates K35 and would re-admit the 1,660 defect — raise to
+~95% of the fixed population; (b) run_specimen_identity.sh runs gcc and
+matchers with NO D45 timeout wrapping; (c) CLAUDE.md omissions in cli/,
+lib/, src/core/, tests/prefilter/. critG-engine (opus) still reading.
+pcrecdev2's quiet window opens when the rows land.
