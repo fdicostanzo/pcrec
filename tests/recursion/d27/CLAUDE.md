@@ -42,4 +42,60 @@ never the `.rxt` files by hand.
     python3 sr_check.py    # re-verify every expectation against libpcre2
     python3 sr_features.py # no block under-declares a module
 
-All four are idempotent and none of them writes outside this directory.
+All four are idempotent. **`sr_gen.py` is the ONE exception to "writes
+only inside this directory"**, since [K34 landing] 2026-08-24: it also
+(re)writes `tests/known_fail/k34_leftrec_giveup.rxt` — see "K34: cells
+parked" below. The other three tools are unchanged in that respect.
+
+## [K34 landing fix] 2026-08-24 — the CELL's path assumption, corrected
+
+`sr_gen.py`, `sr_check.py`, `sr_perl.py` and `sr_features.py` each computed
+their own repository root as `CELL = os.path.dirname(HERE)` — correct for
+the author's D27 CELL (`scripts/mk_d27_cell.sh`'s flat, allowlist-filtered
+copy, where `d27/` sat one level above a `docs/` sibling), but one
+`dirname` short once landed three levels deep at `tests/recursion/d27/`
+(confirmed: running `sr_gen.py` post-merge raised `FileNotFoundError` on
+`tests/recursion/docs/design/...`). Fixed at the only place each file made
+the assumption (`CELL = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))`),
+not by moving files. Worth knowing if a future D27 author's tooling is
+landed the same way: the CELL's own relative-path arithmetic does not
+survive the move by construction and needs the identical fix.
+
+## K34: eleven cells parked, not written here
+
+`docs/dev/known_issues.md` K34: pcrec `frames` gives up where libpcre2
+10.46 reaches a clean, definite NOMATCH on a runaway left recursion whose
+callee has a non-recursive alternative (`(a|(?1)a)` and its `b`/`c`-tailed
+siblings in `sr_depth.rxt` — NOT the empty-language `((?1)a)`/`(?R)a`
+family, which [DD-14.EMPTY] answers correctly and stays live here). `B()`'s
+`parked=`/`parked_ref` keyword arguments (see `sr_gen.py`'s own docstring)
+move a block's affected CASES — not necessarily the whole block, since a
+K34 pattern's MATCH cells are unaffected — out of the live `.rxt` and into
+`tests/known_fail/k34_leftrec_giveup.rxt`, rendered by `emit_known_fail`
+in the SAME run through the SAME `render_cases` oracle-verifier every live
+cell uses, with a pointer comment left at each cell's former position. One
+generator run produces both outputs from one in-memory case list, so they
+cannot drift apart. Regenerating (`python3 sr_gen.py`) reproduces both
+byte-for-byte (idempotency checked both directions, not just on the live
+`.rxt` files).
+
+## A NEW finding at this same landing, NOT parked (manager disposition owed)
+
+Merging main's wave E ([DD-14.EMPTY]) changed `((?1)a)` and `(?R)a`'s root
+`minw` to the analysis ceiling, so pcrec now answers a clean NOMATCH
+instantly for EVERY subject of those two patterns — including `"aaa"`/
+`"aaaaaa"`, which `sr_depth.rxt`'s `gu frames "aaa"`/`"aaaaaa"` cells (for
+those two patterns only — NOT their `((?1)?a)`/`((?1)*a)` siblings, which
+still give up, unaffected by EMPTY since their language is not empty)
+expect to give up. MEASURED (`sr_oracle.match_limits`): libpcre2 10.46
+still returns `rc -52` on both subjects for both patterns — pcrec's answer
+is CORRECT and matches the design's own P-12 ruling, strictly BETTER than
+libpcre2's give-up, and the `gu` cells are now stale in exactly the sense
+`tests/known_fail/CLAUDE.md`'s `dd14_bc_open.rxt` CELL 3 entry describes
+("a give-up is pcrec's own artifact behaviour, never an oracle fact") and
+wave E's own commit (`7d1fbc6`) fixed for `tests/recursion/leftrec.rxt`'s
+identically-shaped sibling cells. **Not fixed here**: this brief's edit
+authorization covers K34 parking only, not this cell's expectation — held
+for the manager's ruling (the landing lane's final report has the full
+oracle evidence and the precedent commit). `make test`'s d27 section
+carries these 4 as its only failures until that ruling lands.

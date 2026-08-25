@@ -655,6 +655,35 @@ one-line implementation, a trail rewind to the call's mark — would **undo the
 S-SR6 is
 its detector. This is the second design the measurements killed.
 
+##### AMENDMENT, 2026-08-24 ([DD-14.D27]) — a `\K` reached BY A CALL FROM inside a lookaround compiles and fires; the extract predicted the opposite
+
+`docs/design/sr_d27_extract.md` §3.4(b), the extract this section was
+written FOR, carried a prediction never measured against 10.46: "`\K`
+inside a lookaround body is refused (err 199) whether the `\K` is written
+directly in the lookaround or reached by a call FROM inside the lookaround
+into a body containing `\K`." **The [DD-14.D27] blinded author's corpus
+measured this false**, using the ONE existence question D27 permits
+(compile the cell and run it):
+
+| pattern | subject | 10.46 |
+|---|---|---|
+| `^(?:(a\Kb)){0}(?=(?1))ab$` | `"ab"` | **(1,2)** |
+
+Err 199 is about the `\K` TOKEN's own LEXICAL position — `\K` written
+directly inside a lookaround body is refused, full stop. A call reached
+FROM inside a lookaround to a callee whose text lives elsewhere in the
+pattern (here, parked under `{0}`, per §2.5) is not affected: the callee is
+not lexically nested inside the lookaround at all, so err 199's rule never
+applies to it, and the call runs as the ORDINARY call §3.4(e) already
+describes — `\K` inside it moves the reported start and survives the
+return, exactly as this section says, with no lookaround-specific carve-out
+of any kind. **pcrec agrees with 10.46 on the cell above — no defect**; the
+extract's sentence has been corrected in place, citing this table.
+Cross-checked by the corpus's Perl arm
+(`tests/recursion/d27/PERL_DIVERGENCES.md` row 6): perl 5.40.1 diverges
+from libpcre2 on this exact cell (nomatch, not (1,2)) — recorded there as a
+Perl divergence, never as a pcrec expectation (D26).
+
 #### (c) `(?J)` duplicate names: a CALL and a REFERENCE resolve DIFFERENTLY
 
 MEASURED, `out/captures.txt` C8. The rows that separate them make the FIRST
@@ -688,6 +717,11 @@ in the one resolver rather than building a second pending list — one mechanism
 two rules, which is the shape `PendingRef`'s own comment argues for.
 
 #### (d) A call inside a lookbehind needs a WIDTH, and a recursive one has none
+
+*(A different question from `\K` reached through a call, which the
+2026-08-24 [DD-14.D27] amendment to (b) above answers — this section is
+about the WIDTH the lookbehind step-back needs, not about `\K`'s own
+compile-time lexical-nesting rule.)*
 
 MEASURED, `out/leftrec.txt` L7:
 
@@ -774,6 +808,10 @@ construct they are wrapped in, including the atomic wrapper suppressing the
 call's retries (T4). Nothing in this module is special-cased for them, and
 §6.4's callee contract is why: the callee's own follow scoping is the same rule
 `lookaround_design.md` §3.2.1 states, for the same reason one construct over.
+**"Ordinary" now has a `\K` witness too, added by the 2026-08-24 [DD-14.D27]
+amendment above (b): `^(?:(a\Kb)){0}(?=(?1))ab$` on `"ab"` is `(1,2)` — a
+call reached from inside a lookahead runs however the callee's own body
+says to, `\K` included, with no lookaround-specific rule of any kind.**
 
 #### (e2) `\G`, a non-zero startpos, and `\A`/`\z` inside a callee
 

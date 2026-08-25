@@ -293,17 +293,30 @@ PCRE2's *measured behaviour*, verifiable purely from match spans (the
 attached: a corpus author should write cells like the three above and check
 where the match START lands.
 
-**A SEPARATE, LEXICAL rule governs whether `\K` is even ALLOWED inside a
-lookaround, and it does NOT get relaxed by being reached through a call.**
-This is measured PCRE2 behaviour, not an implementation claim: `\K` inside a
-lookaround body is refused (err 199) whether the `\K` is written directly in
-the lookaround or reached by a call FROM inside the lookaround into a body
-containing `\K` — PCRE2's rule is about the LEXICAL nesting of the `\K` at
-compile time, not about what runs at match time. A corpus testing "`\K`
-inside a called body that is itself inside a lookaround" should expect
-whatever PCRE2 itself does when you construct that pattern and hand it to
-libpcre2 10.46 — measure it, do not assume the call "hides" the `\K` from
-the lookaround's rule or "exposes" it in some new way.
+**CORRECTED [DD-14.D27], 2026-08-24 — the paragraph this replaced predicted
+the WRONG rule, and the [DD-14.D27] blinded author's corpus measured the
+opposite (D27's permitted existence question: compile the cell and see).**
+A `\K` LEXICALLY WRITTEN inside a lookaround body is refused (err 199) —
+that half stands. But a call FROM inside a lookaround to a callee
+ELSEWHERE in the pattern whose own body contains `\K` is NOT refused, and
+NOT a special case: the callee is not lexically nested inside the
+lookaround at all (its text sits wherever it is written — parked under
+`{0}`, in a `DEFINE`, or lexically earlier in the pattern), so the err 199
+rule, which is about the `\K` TOKEN's own lexical position, never applies
+to it. The call is an ORDINARY call reached from an ORDINARY lookaround
+(§3.4(e)), and `\K`'s own rule (moves the reported start, survives the
+return — above) fires exactly as it would anywhere else:
+
+| pattern | subject | 10.46 |
+|---|---|---|
+| `^(?:(a\Kb)){0}(?=(?1))ab$` | `"ab"` | **(1,2)** |
+
+pcrec agrees with this measurement (no defect — see
+`tests/recursion/d27/sr_interactions.rxt` and
+`tests/recursion/d27/PERL_DIVERGENCES.md` row 6, where perl 5.40.1
+diverges from libpcre2 on this exact cell and answers nomatch instead).
+**Do not assume the call "hides" the `\K` from the lookaround's rule or
+"exposes" it in some new way** — measure it, as this correction had to.
 
 #### (c) Duplicate names: a CALL and a REFERENCE resolve DIFFERENTLY
 
@@ -450,15 +463,19 @@ diagnostic wording is fixed, and none of it matters for a blinded corpus:
   lowering only ever sees what PCRE2 itself would have accepted as valid
   DEFINE syntax.
 
-**THE DEPTH CEILING (D73, 2026-08-24): the default artifact has a FIXED
-backtracking capacity, and deep recursion exhausts it.** This is not a
-refusal — it is a runtime give-up, and the exact number to design cells
-against: `^(a(?1)?b)$` gives up (returns `PCREC_ERR_FRAMES`, the
-default artifact's code for this — D71 item 1) at **n = 342**, i.e. an
-**684-byte subject** (2×342 characters, since the pattern's body is `a...b`
-around `n` nested calls). Below that depth the pattern MATCHES (per §3.3's
-`^(a|(?1)a)$` cell, which reaches depth 199 and matches — well under the
-ceiling); at or above it, pcrec gives up loudly rather than answering wrong.
+**THE DEPTH CEILING (D73, 2026-08-24; the exact boundary CORRECTED
+[DD-14.D27], 2026-08-24 — the blinded author compiled and ran the cell,
+D27's permitted existence question, and found this sentence off by one):
+the default artifact has a FIXED backtracking capacity, and deep recursion
+exhausts it.** This is not a refusal — it is a runtime give-up, and the
+exact number to design cells against: `^(a(?1)?b)$` still MATCHES at
+**n = 342** (a **684-byte subject**, 2×342 characters, since the pattern's
+body is `a...b` around `n` nested calls) and gives up (returns
+`PCREC_ERR_FRAMES`, the default artifact's code for this — D71 item 1) one
+deeper, at **n = 343** (a **686-byte subject**). Through that depth the
+pattern MATCHES (per §3.3's `^(a|(?1)a)$` cell, which reaches depth 199 and
+matches — well under the ceiling); one deeper, pcrec gives up loudly rather
+than answering wrong.
 **A deep-recursion corpus cell should therefore be written as a `gu frames
 "subject"` directive for a subject ABOVE this ceiling, and as an ordinary `m`
 match expectation for one BELOW it.** The `.rxt` directive vocabulary is
@@ -599,15 +616,16 @@ wrong — each of these is a plausible bug shape, not a hypothetical:
   spellings cannot catch this bug.
 
 **THE DEPTH CEILING, again, because it governs how you write deep cells:**
-the default capacity is fixed (D73) and measured in §5 as n = 342 on
-`^(a(?1)?b)$`; for
-`^(a(?1)?b)$`-shaped patterns the give-up lands at **n = 342** (a 684-byte
-subject). Write cells ABOVE this ceiling as `gu frames "<subject>"` and cells
-BELOW it as ordinary `m` matches. Do not write a match expectation for a
-subject you have not checked is under the ceiling for that specific pattern
-shape — the ceiling is a backtracking capacity, not a subject-byte count,
-so different call-bearing pattern shapes cross it at different subject
-lengths; you MAY compile a cell and run it to learn whether it gives up
+the default capacity is fixed (D73) and measured in §5 as MATCHING through
+n = 342 on `^(a(?1)?b)$`; for `^(a(?1)?b)$`-shaped patterns the give-up
+lands one deeper, at **n = 343** (a 686-byte subject — n = 342, a 684-byte
+subject, still matches). Write cells AT OR ABOVE this ceiling as
+`gu frames "<subject>"` and cells BELOW it as ordinary `m` matches. Do not
+write a match expectation for a subject you have not checked is under the
+ceiling for that specific pattern shape — the ceiling is a backtracking
+capacity, not a subject-byte count, so different call-bearing pattern
+shapes cross it at different subject lengths; you MAY compile a cell and
+run it to learn whether it gives up
 (existence), never to derive a match expectation.
 
 **`ms`/`ns` cells at non-zero startpos are required, not optional** — §3.4(e2)

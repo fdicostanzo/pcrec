@@ -23,7 +23,15 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CELL = os.path.dirname(HERE)
+# [K34 landing fix] `CELL` names the REPO ROOT every `docs/...` join below
+# resolves against. Written as `dirname(HERE)` for the author's D27 CELL
+# (mk_d27_cell.sh's flat, allowlist-filtered copy, where d27/ sat one level
+# above a `docs/` sibling); landed three levels deep as
+# tests/recursion/d27/, one `dirname` short of the real root -- confirmed by
+# running this generator post-merge (FileNotFoundError on
+# tests/recursion/docs/design/...). Fixed at the only place the assumption
+# is made, not by moving files.
+CELL = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 _OR = os.path.join(CELL, "docs", "design", "subroutines_measurements",
                    "probes", "sr_oracle.py")
 _s = importlib.util.spec_from_file_location("sr_oracle", _OR)
@@ -70,12 +78,44 @@ def enc(s):
 # The spec vocabulary.
 # ---------------------------------------------------------------------------
 def B(pat, feats, note, cases=(), perr=None, gu=(), engine=None,
-      budget=(), flags=None, perl_skip=False, guclass="leftrec"):
+      budget=(), flags=None, perl_skip=False, guclass="leftrec",
+      parked=(), parked_ref=None):
     """One .rxt block. `perr` is None | 'both' (PCRE2 refuses too) |
-    'pcrec' (PCRE2 ACCEPTS; pcrec refuses by a stated ruling)."""
+    'pcrec' (PCRE2 ACCEPTS; pcrec refuses by a stated ruling).
+
+    `parked` -- MODELLED ON `tests/recursion/gen_corpus.py`'s `parked=`
+    (that generator's own B/GU classes), extended to work at CASE
+    granularity rather than only whole-block, because a K34 cell here
+    always shares its pattern with cells that still pass (e.g.
+    `(a|(?1)a)b` matches on "ab" and only its NOMATCH cases are K34).
+    `parked` is a list of case tuples in the SAME shape as `cases`
+    (`m(...)`/`n(...)`) -- pcrec currently disagrees with them, by a
+    CONFIRMED defect (`parked_ref` names its known_issues.md entry), and
+    they are RENDERED, not just referenced: `emit_file` writes them into
+    `tests/known_fail/<parked_ref-derived file>.rxt` in THIS SAME RUN,
+    oracle-verified through the identical `render_cases` helper that
+    renders every live cell, and leaves a comment stanza at this block's
+    former position pointing there. One generator run produces both, so
+    the live pointer and the known_fail cell cannot drift apart -- unlike
+    a hand-copied known_fail file, where a later oracle change could
+    silently stop matching what the pointer claims.
+
+    `parked_ref` is REQUIRED when `parked` is non-empty: a short string
+    naming the known_issues.md entry (e.g. "K34") and the known_fail
+    filename cells for this pattern render into, "K34 tests/known_fail/
+    k34_leftrec_giveup.rxt" -- the citation `parked=` cannot pin an
+    unexplained disagreement, GU's own `ruling=` discipline applied here
+    (gen_corpus.py's `GU.__init__` requires the analogous field for the
+    same reason: a park with no citation is a claim nobody can check)."""
+    if bool(parked) != bool(parked_ref):
+        raise SystemExit("sr_gen: B(%r): `parked` REQUIRES `parked_ref` "
+                         "(and vice versa) -- a parked cell without a "
+                         "citation is an unexplained disagreement, not a "
+                         "confirmed deferred bug" % pat)
     return dict(pat=pat, feats=list(feats), note=note, cases=list(cases),
                 perr=perr, gu=list(gu), engine=engine, budget=list(budget),
-                flags=flags, perl_skip=perl_skip, guclass=guclass)
+                flags=flags, perl_skip=perl_skip, guclass=guclass,
+                parked=list(parked), parked_ref=parked_ref)
 
 
 def m(subj, start=0):
@@ -1096,7 +1136,8 @@ F_DEPTH.append(B(
     "(a|(?1)a)", [R],
     "the same shape UNANCHORED, where the leftmost answer is one "
     "character and no depth is needed at all.",
-    [m("aaa"), m("a"), n("bbb")]))
+    [m("aaa"), m("a")],
+    parked=[n("bbb")], parked_ref="K34"))
 
 for lr in ["((?1)a)", "((?1)?a)", "((?1)*a)", "(?R)a"]:
     F_DEPTH.append(B(
@@ -1128,10 +1169,13 @@ for tail in ["b", "c"]:
         "nomatch on the rest -- so there is no give-up to expect and none "
         "is written. The nomatch cases are the load-bearing ones: "
         "concluding NO on a left-recursive shape is harder than "
-        "concluding YES, and only the nomatch cases ask for it."
+        "concluding YES, and only the nomatch cases ask for it. K34: "
+        "pcrec currently GIVES UP (frames) on every nomatch case below "
+        "instead of concluding -- parked, not written here."
         % (tail, tail),
-        [n("a"), n("aa"), n("aaa"), n("b"), n(""),
-         m("a" + tail)]))
+        [m("a" + tail)],
+        parked=[n("a"), n("aa"), n("aaa"), n("b"), n("")],
+        parked_ref="K34"))
 
 for q in ["(?R)*", "(?R)?", "(?R){0,2}"]:
     F_DEPTH.append(B(
@@ -1286,6 +1330,60 @@ def wrap(text, width=72, prefix="# "):
     return lines
 
 
+# [K34 landing] `PARK_FILES` maps a `parked_ref` (a docs/dev/known_issues.md
+# entry id, e.g. "K34") to the tests/known_fail/*.rxt file its cells render
+# into -- a general table rather than special-casing K34 by name in the
+# renderer, so a second `parked_ref` value some future defect needs is one
+# new table row, not new branching. `PARKED` collects every parked case
+# ACROSS every file in ONE generator run (module-level, filled by
+# `emit_file`, drained by `main`'s `emit_known_fail` call at the end) so the
+# live pointer stanza and the known_fail cell are written from the exact
+# same case list and cannot drift apart.
+PARK_FILES = {
+    "K34": "k34_leftrec_giveup.rxt",
+}
+PARKED = {ref: [] for ref in PARK_FILES}
+
+
+def render_cases(pat, cases, ncap, opts, out, counts, errors, ctx):
+    """Render `cases` (the `m(...)`/`n(...)` tuple shape) as .rxt m/n/g
+    lines into `out`, oracle-verifying every one through `sr.search` -- the
+    ONE place this happens, shared by every live block AND by the known_fail
+    renderer below, so a parked cell and a live cell are checked identically
+    and there is no second, drifting copy of this logic. `ctx` is a string
+    naming the block for an error message (a filename, or a park citation)."""
+    for kind, subj, start in cases:
+        r = sr.search(pat, subj, start, opts)
+        got = "n" if r is None else "m"
+        if kind is not None and kind != got:
+            errors.append("%s: INTENT %s but libpcre2 says %s for %r on "
+                          "%r startpos %d" % (ctx, kind, got, pat,
+                                              subj, start))
+            continue
+        if r is None:
+            if start:
+                out.append("ns %d %s" % (start, enc(subj)))
+                counts["ns"] += 1
+            else:
+                out.append("n %s" % enc(subj))
+                counts["n"] += 1
+        else:
+            (s, e), groups = r
+            if start:
+                out.append("ms %d %s %d %d" % (start, enc(subj), s, e))
+                counts["ms"] += 1
+            else:
+                out.append("m %s %d %d" % (enc(subj), s, e))
+                counts["m"] += 1
+            for k in range(1, ncap + 1):
+                gsp = groups[k - 1]
+                if gsp is None:
+                    out.append("g %d -1 -1" % k)
+                else:
+                    out.append("g %d %d %d" % (k, gsp[0], gsp[1]))
+                counts["g"] += 1
+
+
 def emit_file(fname, blurb, blocks, errors):
     out = []
     out.append("# %s" % fname)
@@ -1298,7 +1396,10 @@ def emit_file(fname, blurb, blocks, errors):
                 "probes/sr_oracle.py (D26: PCRE2 is the source of truth). "
                 "Blocks marked `# perl-diverges` are ones where perl 5.40.1 "
                 "answers differently; perl's answer is RECORDED in "
-                "d27/PERL_DIVERGENCES.md and is never the expectation.")
+                "d27/PERL_DIVERGENCES.md and is never the expectation. "
+                "Blocks carrying a `PARKED` stanza had one or more cells "
+                "MOVED to tests/known_fail/ -- a confirmed pcrec defect, "
+                "not a corpus gap; see the stanza's citation.")
     out.append("")
 
     counts = dict(blocks=0, m=0, n=0, ms=0, ns=0, g=0, gu=0, perr=0)
@@ -1355,36 +1456,22 @@ def emit_file(fname, blurb, blocks, errors):
         for bg in b["budget"]:
             out.append("budget %s" % bg)
 
-        for kind, subj, start in b["cases"]:
-            r = sr.search(pat, subj, start, opts)
-            got = "n" if r is None else "m"
-            if kind is not None and kind != got:
-                errors.append("%s: INTENT %s but libpcre2 says %s for %r on "
-                              "%r startpos %d" % (fname, kind, got, pat,
-                                                  subj, start))
-                continue
-            if r is None:
-                if start:
-                    out.append("ns %d %s" % (start, enc(subj)))
-                    counts["ns"] += 1
-                else:
-                    out.append("n %s" % enc(subj))
-                    counts["n"] += 1
-            else:
-                (s, e), groups = r
-                if start:
-                    out.append("ms %d %s %d %d" % (start, enc(subj), s, e))
-                    counts["ms"] += 1
-                else:
-                    out.append("m %s %d %d" % (enc(subj), s, e))
-                    counts["m"] += 1
-                for k in range(1, ncap + 1):
-                    gsp = groups[k - 1]
-                    if gsp is None:
-                        out.append("g %d -1 -1" % k)
-                    else:
-                        out.append("g %d %d %d" % (k, gsp[0], gsp[1]))
-                    counts["g"] += 1
+        render_cases(pat, b["cases"], ncap, opts, out, counts, errors, fname)
+
+        if b["parked"]:
+            pfile = PARK_FILES[b["parked_ref"]]
+            subjs = ", ".join(enc(subj) for _, subj, _ in b["parked"])
+            out += wrap(
+                "PARKED (%s): %d cell(s) for this pattern -- pcrec currently "
+                "GIVES UP where libpcre2 CONCLUDES; a confirmed defect, not "
+                "an unwritten expectation. Moved to tests/known_fail/%s "
+                "(subjects: %s). docs/dev/known_issues.md %s has the "
+                "measurement; tests/known_fail/CLAUDE.md the ratchet."
+                % (b["parked_ref"], len(b["parked"]), pfile, subjs,
+                   b["parked_ref"]))
+            PARKED[b["parked_ref"]].append(
+                dict(pat=pat, feats=b["feats"], cases=b["parked"],
+                     src_fname=fname))
 
         for code, subj in b["gu"]:
             # A gu cell asserts pcrec DECLINES TO ANSWER, which is not a
@@ -1427,6 +1514,86 @@ def emit_file(fname, blurb, blocks, errors):
     return "\n".join(out) + "\n", counts
 
 
+# ---------------------------------------------------------------------------
+# [K34 landing] tests/known_fail/ rendering.
+#
+# `emit_known_fail` renders ONE known_fail/*.rxt file from a `parked_ref`'s
+# PARKED[ref] list -- the same case tuples the live blocks above pointed at,
+# through the SAME `render_cases` oracle-verified renderer every live block
+# uses. One generator run produces the live pointer stanza (in `emit_file`,
+# above) AND this file, from the identical in-memory case list, so the two
+# cannot drift the way a hand-copied known_fail file could (u9_atomic.rxt
+# and the now-closed dd14_bc_open.rxt were both hand-copied from a generated
+# corpus's oracle answers, a step this closes for K34's cells).
+#
+# tests/known_fail/'s own CLAUDE.md contract: "the cells stay, they stay
+# loud, and if pcrec is ever changed to reproduce it this file FIRES" --
+# `tests/known_fail/run_known_fail.sh` is what makes that true, by running
+# every cell here and INVERTING the verdict (still-failing is expected).
+# This file's cells assert libpcre2's answer, i.e. pcrec's CORRECT one, on
+# subjects where pcrec (K34, docs/dev/known_issues.md) currently GIVES UP
+# instead.
+# ---------------------------------------------------------------------------
+K34_HEADER = """# tests/known_fail/k34_leftrec_giveup.rxt -- K34, and pcrec GIVES UP where libpcre2 CONCLUDES.
+#
+# Read docs/dev/known_issues.md K34 first. On a runaway LEFT recursion whose
+# callee has a non-recursive ALTERNATIVE (so the language is NOT empty --
+# [DD-14.EMPTY]'s root-width nomatch does not apply here), libpcre2 10.46
+# sometimes reaches a clean, definite NOMATCH without ever returning its own
+# recursion-loop guard (rc -52): `(a|(?1)a)` on "bbb", `(a|(?1)a)b`/`(a|(?1)a)c`
+# on every subject that is not "a<tail>". pcrec instead exhausts its frame
+# budget and answers PCREC_ERR_FRAMES on every one of these -- not a wrong
+# MATCH (D26 tier: a give-up asserts nothing), but a robustness gap: PCRE2's
+# actual loop rule is subtler than "give up on same-position re-entry", and
+# this project has not characterised it (K34's own text has the measurement
+# matrix: some same-position runaways get rc -52, some a clean nomatch, and a
+# 199-deep same-position recursion with a base case MATCHES).
+#
+# WHY THESE CELLS ARE HERE RATHER THAN IN THE MODULE'S OWN DIRECTORY. This is
+# the opposite polarity from u9_atomic.rxt's: there pcrec DISAGREES with
+# libpcre2 and is believed closer to right; here pcrec DECLINES TO ANSWER
+# where libpcre2 has a definite one, which D26's own tier reads as "not a
+# false answer" but K34 files as a DD-2/D22 robustness gap all the same, with
+# a scheduled home ([DD-14] close triage). The [DD-14.D27] blinded corpus
+# (tests/recursion/d27/sr_depth.rxt) is where these eleven cells were FOUND;
+# `sr_gen.py`'s `parked=`/`parked_ref="K34"` moved them here and left a
+# pointer stanza at each cell's former position, rendered in THE SAME RUN
+# from the SAME oracle-verified case data, so the pointer and this file
+# cannot drift apart.
+#
+# EVERY EXPECTATION BELOW IS libpcre2 10.46's, through
+# docs/design/subroutines_measurements/probes/sr_oracle.py -- NOT what pcrec
+# currently answers. That is the whole point of this directory: the cells
+# stay, they stay loud, and if pcrec is ever changed to reproduce K34's rule
+# this file FIRES rather than the divergence going invisible.
+"""
+
+
+def emit_known_fail(ref, fname, errors):
+    blocks = PARKED[ref]
+    out = [K34_HEADER.rstrip("\n"), ""]
+    counts = dict(blocks=0, m=0, n=0, ms=0, ns=0, g=0)
+    for pb in blocks:
+        pat = pb["pat"]
+        opts = 0
+        cerr = sr.compile_err(pat, opts)
+        if cerr is not None:
+            errors.append("known_fail/%s: libpcre2 REFUSES %r (%s) but a "
+                          "parked block expects cases" % (fname, pat, cerr[2]))
+            continue
+        ncap = sr.ngroups(pat, opts) or 0
+        counts["blocks"] += 1
+        out.append("# parked from %s (K34, docs/dev/known_issues.md)"
+                   % pb["src_fname"])
+        out.append("pattern %s" % pat)
+        if pb["feats"]:
+            out.append("features %s" % ",".join(pb["feats"]))
+        render_cases(pat, pb["cases"], ncap, opts, out, counts, errors,
+                    "known_fail/%s" % fname)
+        out.append("")
+    return "\n".join(out) + "\n", counts
+
+
 def main():
     if sr.SELFCHECK:
         print("ORACLE SELFCHECK FAILED:", sr.SELFCHECK)
@@ -1448,6 +1615,22 @@ def main():
           "gu=%-3d perr=%d"
           % ("TOTAL", total["blocks"], total["m"], total["n"], total["ms"],
              total["ns"], total["g"], total["gu"], total["perr"]))
+
+    # [K34 landing] render every parked_ref's known_fail/*.rxt from the SAME
+    # PARKED case data the live blocks pointed at above -- one run, two
+    # outputs, no drift possible between them.
+    for ref, fname in PARK_FILES.items():
+        if not PARKED[ref]:
+            continue
+        text, kc = emit_known_fail(ref, fname, errors)
+        kfdir = os.path.join(CELL, "tests", "known_fail")
+        with open(os.path.join(kfdir, fname), "w") as fh:
+            fh.write(text)
+        print("  %-22s blocks=%-4d m=%-4d n=%-4d ms=%-3d ns=%-3d g=%-5d "
+              "(tests/known_fail/, ratchet-watched, %s)"
+              % (fname, kc["blocks"], kc["m"], kc["n"], kc["ms"], kc["ns"],
+                 kc["g"], ref))
+
     if errors:
         print("\n%d SPEC ERROR(S) -- nothing above is trustworthy until "
               "these are resolved:" % len(errors))

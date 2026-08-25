@@ -37,7 +37,10 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CELL = os.path.dirname(HERE)
+# [K34 landing fix] see sr_gen.py's identical comment: `CELL` names the repo
+# root, and the cell-authored `dirname(HERE)` is one `dirname` short once
+# landed at tests/recursion/d27/.
+CELL = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 PCREC = os.path.join(CELL, "build", "pcrec")
 
 ALL = ("recursion,named-groups,backrefs,assertions,lookaround,atomic-groups,"

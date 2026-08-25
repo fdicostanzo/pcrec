@@ -8,7 +8,10 @@
 # docs/design/subroutines_measurements/probes/sr_oracle.py (D26: PCRE2
 # is the source of truth). Blocks marked `# perl-diverges` are ones
 # where perl 5.40.1 answers differently; perl's answer is RECORDED in
-# d27/PERL_DIVERGENCES.md and is never the expectation.
+# d27/PERL_DIVERGENCES.md and is never the expectation. Blocks carrying
+# a `PARKED` stanza had one or more cells MOVED to tests/known_fail/ --
+# a confirmed pcrec defect, not a corpus gap; see the stanza's
+# citation.
 
 # extract 3.4(b): \K inside a CALLED body MOVES the reported match
 # start, and the last one executed on the successful path wins. \K is a

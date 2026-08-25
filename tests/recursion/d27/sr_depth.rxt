@@ -8,7 +8,10 @@
 # docs/design/subroutines_measurements/probes/sr_oracle.py (D26: PCRE2
 # is the source of truth). Blocks marked `# perl-diverges` are ones
 # where perl 5.40.1 answers differently; perl's answer is RECORDED in
-# d27/PERL_DIVERGENCES.md and is never the expectation.
+# d27/PERL_DIVERGENCES.md and is never the expectation. Blocks carrying
+# a `PARKED` stanza had one or more cells MOVED to tests/known_fail/ --
+# a confirmed pcrec defect, not a corpus gap; see the stanza's
+# citation.
 
 # extract 5's named ceiling shape, BELOW the ceiling. n=342 is the
 # largest depth that still answers; n=300 is the same fact with margin.
@@ -60,7 +63,11 @@ m "aaa" 0 1
 g 1 0 1
 m "a" 0 1
 g 1 0 1
-n "bbb"
+# PARKED (K34): 1 cell(s) for this pattern -- pcrec currently GIVES UP
+# where libpcre2 CONCLUDES; a confirmed defect, not an unwritten
+# expectation. Moved to tests/known_fail/k34_leftrec_giveup.rxt
+# (subjects: "bbb"). docs/dev/known_issues.md K34 has the measurement;
+# tests/known_fail/CLAUDE.md the ratchet.
 
 # extract 3.3: PCRE2 refuses NO left-recursive shape at compile time,
 # and neither may pcrec -- the guard is entirely at match time. The n
@@ -123,32 +130,34 @@ gu frames "aaaaaa"
 # -- so there is no give-up to expect and none is written. The nomatch
 # cases are the load-bearing ones: concluding NO on a left-recursive
 # shape is harder than concluding YES, and only the nomatch cases ask
-# for it.
+# for it. K34: pcrec currently GIVES UP (frames) on every nomatch case
+# below instead of concluding -- parked, not written here.
 pattern (a|(?1)a)b
 features recursion
-n "a"
-n "aa"
-n "aaa"
-n "b"
-n ""
 m "ab" 0 2
 g 1 0 1
+# PARKED (K34): 5 cell(s) for this pattern -- pcrec currently GIVES UP
+# where libpcre2 CONCLUDES; a confirmed defect, not an unwritten
+# expectation. Moved to tests/known_fail/k34_leftrec_giveup.rxt
+# (subjects: "a", "aa", "aaa", "b", ""). docs/dev/known_issues.md K34
+# has the measurement; tests/known_fail/CLAUDE.md the ratchet.
 
 # a left-recursive callee followed by a literal 'c'. libpcre2 CONCLUDES
 # on every one of these subjects -- match on 'ac' nomatch on the rest
 # -- so there is no give-up to expect and none is written. The nomatch
 # cases are the load-bearing ones: concluding NO on a left-recursive
 # shape is harder than concluding YES, and only the nomatch cases ask
-# for it.
+# for it. K34: pcrec currently GIVES UP (frames) on every nomatch case
+# below instead of concluding -- parked, not written here.
 pattern (a|(?1)a)c
 features recursion
-n "a"
-n "aa"
-n "aaa"
-n "b"
-n ""
 m "ac" 0 2
 g 1 0 1
+# PARKED (K34): 5 cell(s) for this pattern -- pcrec currently GIVES UP
+# where libpcre2 CONCLUDES; a confirmed defect, not an unwritten
+# expectation. Moved to tests/known_fail/k34_leftrec_giveup.rxt
+# (subjects: "a", "aa", "aaa", "b", ""). docs/dev/known_issues.md K34
+# has the measurement; tests/known_fail/CLAUDE.md the ratchet.
 
 # extract 2.6/3.4(f): ^(?R)*$ is a DEPTH-CAPACITY give-up cell, not a
 # match/nomatch guess -- PCRE2 answers rc -52 and pcrec gives up.

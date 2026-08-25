@@ -29,7 +29,10 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CELL = os.path.dirname(HERE)
+# [K34 landing fix] see sr_gen.py's identical comment: `CELL` names the repo
+# root, and the cell-authored `dirname(HERE)` is one `dirname` short once
+# landed at tests/recursion/d27/.
+CELL = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 _s = importlib.util.spec_from_file_location(
     "sr_oracle", os.path.join(CELL, "docs", "design",
                               "subroutines_measurements", "probes",

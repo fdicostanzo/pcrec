@@ -9,7 +9,30 @@ and it does not get to break the build either.
 
 ## Files
 
-- **(EMPTY of `.rxt` as of 2026-08-24, [DD-14.LB])** — the legitimate good
+- **`k34_leftrec_giveup.rxt`** — [K34] (`docs/dev/known_issues.md`), landed
+  2026-08-24 by the [DD-14.D27] corpus's landing lane. Eleven cells, three
+  patterns (`(a|(?1)a)`, `(a|(?1)a)b`, `(a|(?1)a)c`): pcrec `frames`
+  gives-up where libpcre2 10.46 reaches a clean, definite NOMATCH on a
+  runaway left recursion whose callee has a non-recursive alternative (so
+  [DD-14.EMPTY]'s root-width nomatch does not apply — the language is not
+  empty). **The population is NOT empty as of this landing** — the
+  directory's "legitimate good state" note below describes the period
+  2026-08-24 (post-[DD-14.LB]) to this same day (pre-K34-park). Ratchet
+  line at landing: `still failing: 1    now passing: 0` (this file is the
+  1). The `.rxt` is GENERATED, not hand-written — see
+  `tests/recursion/d27/sr_gen.py`'s `parked=`/`parked_ref` mechanism
+  (its own docstring) and `tests/recursion/d27/CLAUDE.md`: it is rendered
+  in the SAME generator run that leaves a pointer stanza at each cell's
+  former position in `tests/recursion/d27/sr_depth.rxt`, from the identical
+  oracle-verified case data, so the pointer and this file cannot drift
+  apart — unlike `u9_atomic.rxt`/the closed `dd14_bc_open.rxt`, both
+  hand-copied from a generated corpus's oracle answers. Closes when K34's
+  loop-rule measurement (`docs/dev/known_issues.md` K34 "What is needed")
+  lands and this directory's ratchet flags it; move the cells to
+  `tests/recursion/leftrec.rxt` or `sr_depth.rxt` per the "Removing one"
+  convention below.
+- **(EMPTY of `.rxt` from 2026-08-24 [DD-14.LB] until the same day's K34
+  park, above)** — the legitimate good
   state this directory's own header describes: no confirmed bug and no owed
   ruling is currently deferred with a repro on file. The ratchet reports
   "nothing to ratchet" and exits 0. The two most recent residents both left by
