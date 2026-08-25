@@ -14375,3 +14375,15 @@ corrections: §10.6 (four larger rows), §5.3/K33 numbers 131,216/144,
 critFB-engine (opus; briefs brief_critFB_engine.md) and critFB-checks
 (sonnet; brief_critFB_checks.md), read-only. The lane's `make test` +
 S179-S184 run detached after its rebase; option (c) ruled.
+
+#### Thirty-ninth session, part 29 addendum — srFBc's make test TERMINATED (2026-08-25 ~03:12 EDT)
+
+srFBc rebased (454c5b0 → c26b348, S174 identical to main, anchors all
+resolve) and launched its `make test` detached (test.pid 3045159). At
+~03:10 the run died: `make: *** [Makefile:136: test-corpus] Terminated`
+(SIGTERM, ~5 min in; load peaked 29.4 during -j12). Not a timeout, not a
+row. THIRD killed lane run tonight (srG's two were harness reaps of
+plain background tasks; this one was setsid'd, so a reap is unlikely —
+cause asked of the lane; a critic's `timeout 900 make -j4` in its own
+scratchpad tree cannot signal another process group). Lane told to
+relaunch ONCE and hold on a second TERM.
