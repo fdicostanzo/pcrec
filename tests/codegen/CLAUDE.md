@@ -1556,3 +1556,30 @@ dead-capture patterns differ from the PRE-MODULE reference (VM-selected then,
 DFA-selected now, so the region exists on one side only) and must NOT differ
 from the post-wave-G FILE PIN, where the elision is on both sides. One list,
 two expectations, each asserted against the comparison it belongs to.
+
+## [TT-11]/D76 (2026-08-25): the two pins have two OWNERS, and the FILE pin's guard is now STRUCTURAL
+
+(A)'s pin is the MODULE's promise (pre-module, never moves; its exception list
+is D75's four dead-capture patterns, above). (B)'s pin is owned by the emitted
+`abi` NUMBER (`rx_info.abi`, stamped by `src/gen/emit_dfa.c`): it IS, by
+definition, the commit that introduced the CURRENT `abi`; within an abi number
+the emitted output is byte-exact whole-file, comments included; ANY change to
+the emitted scaffolding — comments, declarations, layout — is an `abi` bump
+AND a re-pin of (B) to that change's last `src`-touching commit, in the SAME
+change (free pre-v1 under D40; the binding event it should be once pcrec ships
+v1).
+
+The gate used to guard the FILE pin with an ad-hoc
+`grep -q RESUME_FRAME_SIZE "$FILEREFSRC/src/gen/emit_dfa.c"` — a probe that
+encoded [DD-14.FB]'s own boundary by name and would say nothing about the
+NEXT scaffolding change. It now builds an artifact from EACH compiler
+(subject and file-pin) on a call-free pattern (`'a'`), reads each side's
+`.abi = N` stamp with `grep -o '\.abi = [0-9]*'`, and refuses when they
+differ, naming the fix directly: "the emitted scaffolding changed: bump `abi`
+in src/gen/emit_dfa.c and re-pin comparison (B) to this change's last src
+commit, in the same change (D76)". Validated: pointing
+`RECURSION_IDENTITY_FILEPIN` at a pre-FB commit (`ac4917d`, `.abi = 2`
+against the subject's `.abi = 3`) makes the refusal fire with that exact
+message; the default pin (`8fc1e51`, same `.abi = 3` as the subject) passes
+straight through to the sweep. Comparison (A) is untouched by this — it never
+read the probe at all.

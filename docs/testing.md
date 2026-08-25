@@ -1249,6 +1249,21 @@ surface back in the diff and report the failure the re-pin exists to retire.
 `tests/codegen/CLAUDE.md` carries the measurement (200 distinct lines, the
 `rx_match` over-strip, the blank-line residue) behind rejecting a wider filter.
 
+**[TT-11]/D76 (2026-08-25): the two pins have two different OWNERS, and the
+FILE pin's guard is now STRUCTURAL.** (A)'s pin is the MODULE's promise
+(pre-module, never moves). (B)'s pin is owned by the emitted `abi` NUMBER
+(`rx_info.abi`, stamped by `src/gen/emit_dfa.c`): it IS, by definition, the
+commit that introduced the CURRENT `abi`, and any change to emitted
+scaffolding — comments, declarations, layout — is an `abi` bump AND a re-pin
+of (B) to that change's last `src`-touching commit, in the SAME change. The
+gate used to guard the pin with an ad-hoc `grep -q RESUME_FRAME_SIZE` against
+the pin's own `emit_dfa.c` source — a probe that encoded [DD-14.FB]'s own
+boundary by name and would say nothing about the next scaffolding change. It
+now builds an artifact from each compiler on a call-free pattern and requires
+their `.abi = N` stamps to agree, refusing with a message naming the fix
+("bump `abi` in src/gen/emit_dfa.c and re-pin comparison (B) ... in the same
+change (D76)") when they do not.
+
 ## The caller-provided frame buffer's checks ([DD-14.FB], 2026-08-25)
 
 D71 item 2's caller-provided buffer (`docs/spec/match_api.md` §10) is checked

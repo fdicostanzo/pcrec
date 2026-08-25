@@ -2812,7 +2812,10 @@ does not force the capture-recording engine. The structural fact is
 the module — which means it fires on patterns carrying no call at all.
 **Gating it on `pcrec_has_call` would have kept this gate at zero and was
 REJECTED**: it would make a `recursion` special case out of something that is
-not about `recursion` (Frank's 2026-08-23 general-mechanism rule).
+not about `recursion` (Frank's 2026-08-23 general-mechanism rule). [TT-11]
+note: `pcrec_has_live_capture` and its elision are a GENERAL engine-selection
+change living in `src/opt` that landed WITH wave G, not a `recursion`
+feature — D75 is the ruling of record (D75 addendum).
 
 The four are `(a){0}`, `(a){0,0}b`, `(()|$){0}b` and `(()|^){0}[b]`, written
 into the gate's header with their reason and asserted in BOTH DIRECTIONS —
