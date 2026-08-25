@@ -13750,3 +13750,10 @@ for ten lines. Approved en route: a per-splice-site slot family for the
 saved W (nesting impossible outside a cycle, which eligibility excludes);
 the Σ* approximation not built (unreachable — the spliced prefilter is
 exact). Frank may veto.
+
+ADDENDUM (part 16, ~22:0x): the E-merged tree's make test: corpus
+25,463 / 0, every section green except tests/resource's CPU cap under
+srG's build (the SIXTH identical instance today; solo rc 0 as always);
+san chained and running. Filed [TT-10]: the cap check is load-sensitive
+by construction — a ratio against a calibration compile, or an
+INCONCLUSIVE verdict under load, instead of a solo re-run per battery.
