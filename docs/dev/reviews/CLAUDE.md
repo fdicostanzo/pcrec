@@ -413,3 +413,7 @@ Maintenance: add a file per checkpoint and list it here.
   emit_dfa.c comment), four check fixes already landed by the lane. Held:
   the narrowed-W nesting theorem under four constructions, nfa.c exactness
   against a hand-inlined python oracle, elision partial-on-DFA impossible.
+- `2026-08-25-r36-frame-buffer-code-panel.md` — [DD-14.FB] CODE-HALF pre-merge
+  critic panel (lane/srFBc 79873cb → rebased 454c5b0): critFB-engine
+  (opus) + critFB-checks (sonnet), read-only. Skeleton committed before
+  the reports; findings and dispositions filled as they arrive.
