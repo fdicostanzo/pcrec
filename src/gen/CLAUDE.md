@@ -613,10 +613,12 @@ there too (a two-differently-prefixed-headers-in-one-TU build).
 (`<PREFIX>_ALTCLS_MERGES`/`<PREFIX>_ALTCLS_FACTORED`, right beside the STD1
 feature stamp), read straight off `job->altcls_merges`/`job->altcls_factored`
 (`src/opt/altcls.c` increments them at the exact points it acts). Placement is
-the point worth stating: every OTHER D46 stamp in this file
-(`RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES`/`RX_VM_PREFILTER`) lives in
-`emit_vm.c` and is VM-artifacts-only, because possessify/revdet/MRL/prefilter
-are all decided or consumed only on the VM path. ALTCLS is a pure AST rewrite
+the point worth stating: the D46 ACTIVITY stamps
+(`RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES`/`RX_VM_PREFILTER`) live in
+`emit_vm.c` and are VM-artifacts-only, because possessify/revdet/MRL/prefilter
+are all decided or consumed only on the VM path. (**[DD-13], 2026-08-25:**
+`RX_ENGINE` is no longer in that list — it is UNCONDITIONAL now, and the DFA
+has its own two selection stamps. See the section below.) ALTCLS is a pure AST rewrite
 that runs BEFORE either engine is built (`src/core/compile.c`, immediately
 after parse), so a capture-free pattern's DFA-only artifact carries the stamp
 too — the plan row's own point that the DFA tier gets a real
@@ -626,6 +628,84 @@ with no alternation at all stamps. `emit_info_def`'s `strategy_denials` mask
 also gained `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR`, for the same
 reason the D47.3 family and the prefilter force pair are both masked out of
 `rx_info.flags` there: the axis changes no answer, only the emitted shape.
+
+## [DD-13] THE DFA ARTIFACT'S SELECTION STAMPS, and the D46 family's (a)/(b) split ([2026-08-25])
+
+`emit_dfa.c` stamps three macros on every DFA artifact, in the same position
+of the file `emit_vm.c` writes its own — immediately after the shared
+prologue, before the engine body:
+
+    /* Engine: dfa */
+    #define RX_ENGINE        "dfa"
+    #define RX_DFA_SCAN      "unanchored"   /* or "attempt" */
+    #define RX_DFA_PREFILTER "byte-class"   /* five values, below */
+
+**THE RULE THIS AMENDS.** `docs/spec/match_api.md` §6.3 used to make the whole
+D46 macro family VM-only, on the premise that "a DFA artifact has nothing to
+report", and this file's own comment added a §5.4 byte-identity worry. Wave G
+falsified the premise — the DFA's byte-class skip prefilter is the email
+specimen's headline ~23x mechanism — and §6.3's own closing warning ("a
+consumer that `#if`s on `RX_ENGINE` is writing code that does not compile
+against half the artifacts") is an argument FOR the change: a stamp that exists
+on EVERY artifact is the only shape a consumer can `#if` on. §6.3 now splits the
+family into **(a) SELECTION FACTS**, unconditional and present on every
+artifact with an engine-appropriate value, and **(b) CAPACITY/ACTIVITY macros**
+(`_VM_RUNGS`, `_STRATS`, `_PRUNES`, `_CALL_*`, the budgets, the frame/trail
+sizes), which stay VM-only exactly as before because they report what the VM
+DID. `RX_ENGINE_WHY` stays VM-only too, and for a fact-shaped reason rather
+than an engine-shaped one: it names what FORCED the VM, and a DFA artifact was
+not forced — `rx_info.engine_why` is `NULL` there for the same reason.
+
+**ONE EMITTER FOR THE UNCONDITIONAL MACRO.** `pcrec_emit_engine_stamp`
+(`emit_dfa.c`, declared in `src/core/internal.h`) writes `<PREFIX>_ENGINE` for
+BOTH engines; `emit_vm.c` calls it with `"vm"`. Two `sb_printf`s spelling the
+same `#define` would be two chances for it to drift, and drift is exactly what
+an unconditional stamp exists to prevent. The PREFILTER stamps are deliberately
+NOT shared: their value sets are different vocabularies (`RX_VM_PREFILTER` is
+`"hybrid"`/`"none"`; the DFA's five are below), and a shared emitter for two
+vocabularies is only a switch. The VM name is also stamped in pcrec-bench's
+adapter today, so it does not move.
+
+**THE VALUES COME OFF THE SAME DERIVATION THE LOOP DOES.** `RX_DFA_SCAN` reads
+`job->engine`, the field `src/core/compile.c` sets at its `nfa_has_bot` fork.
+`RX_DFA_PREFILTER` reads `unanch_start` (ENG_UNANCH) or `attempt_cand`
+(ENG_ATTEMPT) — **`unanch_start` is new and is the reason the change touched
+more than the stamp block**: ENG_UNANCH's start analysis (the view flags, the
+candidate set, `start_acc`, the empty-engine proof) used to be the first forty
+lines of `emit_unanchored`, and a stamp written before the loop exists needs to
+read it too. This file's rule for that situation is `attempt_cand`'s — ONE
+derivation with TWO readers, never a restatement of the condition at the second
+site — and M2.12's lesson is why ("M2.7 forked a second copy, and the fork is
+exactly how the prefilter and skip loops went missing from the `$` path for a
+whole milestone"). The factoring is byte-neutral, measured: 2,473 of 2,473
+compiled artifacts identical over the 2,758-pattern corpus before any stamp was
+added. It also collapsed `emit_unanchored`'s TWO empty-engine early returns —
+which emitted the same three lines with nothing written between them — into one
+`us.empty`.
+
+**THE FIVE PREFILTER VALUES**, and the `-bounded` pair is `plan.md` [DD-13]
+(b)'s finding made readable rather than a distinction invented here:
+
+| value | mechanism |
+|---|---|
+| `"none"` | no candidate-start filter, or the artifact provably matches nothing |
+| `"memchr"` | ONE candidate byte; a `memchr()` replaces the steps |
+| `"byte-class"` | several; the 256-entry `<prefix>_can_begin_match` bitmap walk |
+| `"memchr-bounded"` | the same under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1`, and WITHOUT the early `return 0` |
+| `"byte-class-bounded"` | the bitmap form under the same bound |
+
+`us.views` is the flag both the stamp and the emitted `fbound` string are built
+from, so the two cannot disagree. MEASURED over the corpus, 2026-08-25:
+`none` 380, `memchr` 327, `byte-class` 176, `memchr-bounded` 61,
+`byte-class-bounded` 51; `unanchored` 815 / `attempt` 180.
+
+**ABI 4** (D76/[TT-11]). The stamps change the emitted SCAFFOLDING, so
+`rx_info.abi` moves `3` -> `4` and `tests/codegen/run_recursion_identity.sh`'s
+comparison (B) is re-pinned in the same change. NO struct offset moved and NO
+emitted program byte moved — that gate's comparison (A) is byte-identical
+against the unchanged `ac4917d` pin, which is the proof the change is
+scaffolding only. The check that holds each stamp to the loop it names is
+`tests/codegen/run_dfa_stamps.sh`.
 
 ## The VM engine joins ([M4.5b])
 

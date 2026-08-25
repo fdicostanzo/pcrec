@@ -102,8 +102,16 @@ PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded"
 # marker is an anchored, exact-substring test on a line the emitter writes
 # verbatim (the strings below are `sb_puts`/`sb_printf` literals in
 # src/gen/emit_dfa.c; each is named in the comment beside it).
-derive() {
+read_artifact() {
+    # ONE PASS, ONE PROCESS. The sweep runs this ~2,800 times, so the derived
+    # facts AND the stamps come out of a single `awk` rather than a `derive`
+    # plus four `sed`/`grep` calls (measured: 3m50s -> 1m10s for the sweep).
+    # The two halves stay VISIBLY SEPARATE inside it — the `d_*` fields are
+    # built only from matcher text, the `s_*`/`n_*` fields only from `#define`
+    # lines — because a single pass is a performance choice and must not
+    # become a shared source (docs/dev/learnings.md §3).
     awk '
+        # ---- (i) DERIVED: the emitted matcher text, and nothing else -------
         /^    goto rx_L0;$/                    { vm = 1 }                       # emit_vm.c: the program entry
         /^    \(void\)subject; \(void\)subject_length; \(void\)search_from; \(void\)capture_spans;$/ \
                                                { mtnothing = 1 }                # emit_dfa.c: the empty engine
@@ -116,6 +124,10 @@ derive() {
         /!rx_can_begin_match\[subject\[scan_position\]\]/ {                     # emit_unanchored: the bitmap arm
                                                  pf_bc = 1
                                                  if ($0 ~ /while \(scan_position \+ 1 < subject_length &&/) bnd = 1 }
+        # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
+        /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
+        /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
+        /^#define RX_DFA_PREFILTER "/ { np++; s_pf   = substr($3, 2, length($3) - 2) }
         END {
             eng = vm ? "vm" : "dfa"
             scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
@@ -124,13 +136,10 @@ derive() {
             else if (pf_at) pf = "memchr"
             else            pf = "none"
             if (vm) { scan = "-"; pf = "-" }
-            print eng, scan, pf
+            print eng, scan, pf, (s_eng == "" ? "-" : s_eng), (s_scan == "" ? "-" : s_scan), \
+                  (s_pf == "" ? "-" : s_pf), ne + 0, ns + 0, np + 0
         }'
 }
-stamp_of() {  # stamp_of <file> <macro-suffix> -> the string value, or "" if absent
-    sed -n "s/^#define RX_$2 \"\\(.*\\)\"\$/\\1/p" "$1"
-}
-count_of() { grep -c "^#define RX_$2 " "$1" || true; }
 
 # ---------------------------------------------------------------------------
 # §1 THE NAMED WITNESSES — one pattern per documented value, expectation
@@ -153,11 +162,11 @@ witness() {
     if ! pcrec_run "$PCREC" --features all -p rx -o - -- "$wpat" > "$art" 2>/dev/null; then
         bad "[witness] '$wpat' does not compile — the row cannot assert anything"; return
     fi
-    set -- $(derive < "$art")
+    set -- $(read_artifact < "$art")
     if [ "$1" != "dfa" ]; then
         bad "[witness] '$wpat' is a $1 artifact, not a DFA one — this row has stopped testing what it names"; return
     fi
-    gs="$(stamp_of "$art" ENGINE)"; ss="$(stamp_of "$art" DFA_SCAN)"; ps="$(stamp_of "$art" DFA_PREFILTER)"
+    gs="$4"; ss="$5"; ps="$6"
     if [ "$gs" = "dfa" ] && [ "$ss" = "$exp_scan" ] && [ "$ps" = "$exp_pf" ]; then
         ok "[witness] '$wpat' stamps RX_ENGINE \"dfa\" / RX_DFA_SCAN \"$exp_scan\" / RX_DFA_PREFILTER \"$exp_pf\""
     else
@@ -177,12 +186,12 @@ witness attempt    none               '^abc'
 # split: a selection fact is unconditional, an engine's own vocabulary is not).
 vmart="$WORKDIR/vm.c"
 if pcrec_run "$PCREC" --features all -p rx -o - -- '(a)\1' > "$vmart" 2>/dev/null; then
-    set -- $(derive < "$vmart")
+    set -- $(read_artifact < "$vmart")
     if [ "$1" != "vm" ]; then
         bad "[vm] '(a)\\1' is a $1 artifact — the VM half of this check has lost its subject"
-    elif [ "$(stamp_of "$vmart" ENGINE)" != "vm" ]; then
+    elif [ "$4" != "vm" ]; then
         bad "[vm] a VM artifact does not stamp RX_ENGINE \"vm\""
-    elif [ "$(count_of "$vmart" DFA_SCAN)" -ne 0 ] || [ "$(count_of "$vmart" DFA_PREFILTER)" -ne 0 ]; then
+    elif [ "$8" -ne 0 ] || [ "$9" -ne 0 ]; then
         bad "[vm] a VM artifact carries a RX_DFA_* macro — those are the DFA's vocabulary (match_api.md §6.3)"
     else
         ok "[vm] a VM artifact stamps RX_ENGINE \"vm\" and carries no RX_DFA_* macro"
@@ -211,60 +220,101 @@ if [ "$npat" -lt 2620 ]; then
 fi
 
 # THE EMPTY-ENGINE BUCKET IS NAMED AND COUNTED, NEVER FILTERED. A pattern the
-# analysis proves can match nothing (`\B\b`, `\d\b\w`) emits a search
-# function whose entire body is `(void)...; return 0;` — no table, no loop, no
-# skip. There is therefore NO EMITTED SCAN SHAPE for `RX_DFA_SCAN` to be
-# checked against, and asserting agreement on those four artifacts would be
-# asserting against a `-`. What IS checkable on them, and is asserted below, is
-# the prefilter: an artifact with no loop cannot carry a prefilter, so its
-# stamp must read "none" — and that is a real red, because the stamp comes from
+# analysis proves can match nothing (`\B\b`, `\d\b\w`) emits a search function
+# whose entire body is `(void)...; return 0;` — no table, no loop, no skip.
+# There is therefore NO EMITTED SCAN SHAPE for `RX_DFA_SCAN` to be checked
+# against, and asserting agreement on those four artifacts would be asserting
+# against a `-`. What IS checkable on them, and is asserted below, is the
+# prefilter: an artifact with no loop cannot carry a prefilter, so its stamp
+# must read "none" — and that is a real red, because the stamp comes from
 # `job->engine`+`unanch_start` while the emptiness comes from the emitted text.
-# The count is printed so a bucket that swallows the population announces
-# itself rather than quietly shrinking what the agreement check covers.
-ndfa=0; nvm=0; nrefused=0; nmiss=0; ndup=0; nscan=0; npf=0; nvalue=0; nleak=0; nempty=0; nemptypf=0
-: > "$WORKDIR/seen_pf"; : > "$WORKDIR/seen_scan"; : > "$WORKDIR/bad"
-art="$WORKDIR/a.c"
+# The bucket's own size is asserted NON-ZERO, so a marker that stopped matching
+# announces itself instead of silently exempting the whole population.
+#
+# SHARDED, because the whole population is ~2,800 compiles and this script runs
+# inside `make test-codegen` — the inner-loop group `make smoke` includes.
+# MEASURED on this box: 3m50s with a `derive` plus four `sed`/`grep` per
+# artifact, 2m03s after collapsing those into one `awk`, ~35s at PROCS=4.
+# The shards are LINE CHUNKS of one pattern file (`split -n l/N`), not an
+# `xargs` over pattern text: a pattern is arbitrary bytes and every quoting
+# scheme for passing it as an argument is a bug waiting to be found by the
+# corpus. Each worker writes VERDICT TOKENS to its own file and the parent
+# tallies them, so no counter is shared across processes.
+NSHARD="${PROCS:-$(nproc)}"
+[ "$NSHARD" -ge 1 ] 2>/dev/null || NSHARD=1
+mkdir -p "$WORKDIR/sh"
+split -n "l/$NSHARD" -d "$WORKDIR/pats" "$WORKDIR/sh/p" 2>/dev/null \
+    || { cp "$WORKDIR/pats" "$WORKDIR/sh/p00"; NSHARD=1; }
+
+cat > "$WORKDIR/worker.sh" <<'WORKER'
+#!/usr/bin/env bash
+# One shard. Reads patterns on stdin, writes verdict tokens to stdout.
+# `pcrec_run` (D45's bounded compiler, [K37]) is sourced HERE rather than
+# inherited, so the worker cannot silently run an unbounded compiler if an
+# export ever stops arriving; `read_artifact` IS inherited (`export -f`),
+# because a second copy of the derivation is the one thing this file's own
+# check-design note forbids.
+set -u
+. "$ROOT_DIR/tests/lib/gen_timeout.sh" >/dev/null 2>&1
+command -v pcrec_run >/dev/null || { echo "BAD: worker could not load pcrec_run"; exit 1; }
+command -v read_artifact >/dev/null || { echo "BAD: worker did not inherit read_artifact"; exit 1; }
+art="$WORKDIR/a.$$.c"
+trap 'rm -f "$art"' EXIT
 while IFS= read -r pat; do
     if ! pcrec_run "$PCREC" --features all -p rx -o - -- "$pat" > "$art" 2>/dev/null; then
-        nrefused=$((nrefused + 1)); continue
+        echo REFUSED; continue
     fi
-    set -- $(derive < "$art"); d_eng="$1"; d_scan="$2"; d_pf="$3"
+    set -- $(read_artifact < "$art")
+    d_eng="$1"; d_scan="$2"; d_pf="$3"
+    s_eng="$4"; s_scan="$5"; s_pf="$6"; ne="$7"; ns="$8"; np="$9"
     if [ "$d_eng" = "vm" ]; then
-        nvm=$((nvm + 1))
-        if [ "$(count_of "$art" DFA_SCAN)" -ne 0 ] || [ "$(count_of "$art" DFA_PREFILTER)" -ne 0 ]; then
-            nleak=$((nleak + 1)); echo "DFA-MACRO ON A VM ARTIFACT: $pat" >> "$WORKDIR/bad"
-        fi
-        if [ "$(stamp_of "$art" ENGINE)" != "vm" ]; then
-            nmiss=$((nmiss + 1)); echo "NO RX_ENGINE \"vm\": $pat" >> "$WORKDIR/bad"
-        fi
+        echo VM
+        [ "$ns" -eq 0 ] && [ "$np" -eq 0 ] || { echo VM_LEAK; echo "BAD: DFA-MACRO ON A VM ARTIFACT: $pat"; }
+        [ "$s_eng" = "vm" ] || { echo MISS; echo "BAD: NO RX_ENGINE \"vm\": $pat"; }
         continue
     fi
-    ndfa=$((ndfa + 1))
-    ne="$(count_of "$art" ENGINE)"; ns="$(count_of "$art" DFA_SCAN)"; np="$(count_of "$art" DFA_PREFILTER)"
+    echo DFA
     if [ "$ne" -ne 1 ] || [ "$ns" -ne 1 ] || [ "$np" -ne 1 ]; then
         # ONE LINE EACH, ASSERTED IN BOTH DIRECTIONS: a missing stamp and a
         # doubled one are different bugs and both are failures here.
         if [ "$ne" -eq 0 ] || [ "$ns" -eq 0 ] || [ "$np" -eq 0 ]; then
-            nmiss=$((nmiss + 1)); echo "MISSING STAMP (engine=$ne scan=$ns prefilter=$np): $pat" >> "$WORKDIR/bad"
+            echo MISS; echo "BAD: MISSING STAMP (engine=$ne scan=$ns prefilter=$np): $pat"
         else
-            ndup=$((ndup + 1)); echo "DUPLICATED STAMP (engine=$ne scan=$ns prefilter=$np): $pat" >> "$WORKDIR/bad"
+            echo DUP;  echo "BAD: DUPLICATED STAMP (engine=$ne scan=$ns prefilter=$np): $pat"
         fi
         continue
     fi
-    s_eng="$(stamp_of "$art" ENGINE)"; s_scan="$(stamp_of "$art" DFA_SCAN)"; s_pf="$(stamp_of "$art" DFA_PREFILTER)"
-    printf '%s\n' "$s_pf"   >> "$WORKDIR/seen_pf"
-    printf '%s\n' "$s_scan" >> "$WORKDIR/seen_scan"
-    case " $SCAN_VALUES " in *" $s_scan "*) ;; *) nvalue=$((nvalue+1)); echo "UNDOCUMENTED RX_DFA_SCAN '$s_scan': $pat" >> "$WORKDIR/bad" ;; esac
-    case " $PF_VALUES "   in *" $s_pf "*)   ;; *) nvalue=$((nvalue+1)); echo "UNDOCUMENTED RX_DFA_PREFILTER '$s_pf': $pat" >> "$WORKDIR/bad" ;; esac
-    [ "$s_eng" = "dfa" ] || { nmiss=$((nmiss+1)); echo "RX_ENGINE '$s_eng' on a DFA artifact: $pat" >> "$WORKDIR/bad"; }
+    echo "PFVAL $s_pf"
+    echo "SCANVAL $s_scan"
+    case " $SCAN_VALUES " in *" $s_scan "*) ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_SCAN '$s_scan': $pat" ;; esac
+    case " $PF_VALUES "   in *" $s_pf "*)   ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_PREFILTER '$s_pf': $pat" ;; esac
+    [ "$s_eng" = "dfa" ] || { echo MISS; echo "BAD: RX_ENGINE '$s_eng' on a DFA artifact: $pat"; }
     if [ "$d_scan" = "empty" ]; then
-        nempty=$((nempty + 1))
-        [ "$s_pf" = "none" ] || { nemptypf=$((nemptypf+1)); echo "PREFILTER '$s_pf' on an artifact with NO LOOP: $pat" >> "$WORKDIR/bad"; }
+        echo EMPTY
+        [ "$s_pf" = "none" ] || { echo EMPTYPF; echo "BAD: PREFILTER '$s_pf' on an artifact with NO LOOP: $pat"; }
         continue
     fi
-    [ "$s_scan" = "$d_scan" ] || { nscan=$((nscan+1)); echo "SCAN: stamp '$s_scan' vs loop '$d_scan': $pat" >> "$WORKDIR/bad"; }
-    [ "$s_pf"   = "$d_pf"   ] || { npf=$((npf+1));     echo "PREFILTER: stamp '$s_pf' vs loop '$d_pf': $pat" >> "$WORKDIR/bad"; }
-done < "$WORKDIR/pats"
+    [ "$s_scan" = "$d_scan" ] || { echo SCANBAD; echo "BAD: SCAN: stamp '$s_scan' vs loop '$d_scan': $pat"; }
+    [ "$s_pf"   = "$d_pf"   ] || { echo PFBAD;   echo "BAD: PREFILTER: stamp '$s_pf' vs loop '$d_pf': $pat"; }
+done
+WORKER
+
+export WORKDIR PCREC SCAN_VALUES PF_VALUES ROOT_DIR
+export -f read_artifact
+for f in "$WORKDIR"/sh/p*; do
+    bash "$WORKDIR/worker.sh" < "$f" > "$f.out" &
+done
+wait
+cat "$WORKDIR"/sh/p*.out > "$WORKDIR/verdicts"
+grep '^BAD: ' "$WORKDIR/verdicts" | sed 's/^BAD: //' > "$WORKDIR/bad"
+
+tok() { grep -cx "$1" "$WORKDIR/verdicts" || true; }
+ndfa=$(tok DFA);      nvm=$(tok VM);        nrefused=$(tok REFUSED)
+nmiss=$(tok MISS);    ndup=$(tok DUP);      nleak=$(tok VM_LEAK)
+nvalue=$(tok VALUE);  nempty=$(tok EMPTY);  nemptypf=$(tok EMPTYPF)
+nscan=$(tok SCANBAD); npf=$(tok PFBAD)
+sed -n 's/^PFVAL //p'   "$WORKDIR/verdicts" > "$WORKDIR/seen_pf"
+sed -n 's/^SCANVAL //p' "$WORKDIR/verdicts" > "$WORKDIR/seen_scan"
 
 echo
 echo "== [DD-13] DFA selection stamps =="

@@ -242,8 +242,19 @@ KEEP="${KEEP:-0}"
 # asserted there and is where those two lines are actually covered.
 #
 # ---------------------------------------------------------------------------
-# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `8fc1e51` (2026-08-25).
+# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `5991d4c` (2026-08-25).
 # ---------------------------------------------------------------------------
+# [DD-13], 2026-08-25 — THE PIN'S FIRST RE-PIN UNDER D76, and it is worth one
+# paragraph because it is the first time the rule below was exercised by a
+# change that was NOT a struct-layout event. `[DD-13]` gave every DFA artifact
+# three D46 selection stamps (`RX_ENGINE`, `RX_DFA_SCAN`,
+# `RX_DFA_PREFILTER` — docs/spec/match_api.md §6.3), which moves NO struct
+# offset and NO emitted program byte: comparison (A) below is byte-identical
+# against the unchanged `ac4917d` pin across all five axes, which is the proof
+# that the change is scaffolding only. It still bumps `abi` 3 -> 4 and re-pins
+# (B) here, because (B) compares WHOLE FILES and three new `#define` lines are
+# a whole-file difference on ~2,000 artifacts. That is D76 working as ruled,
+# not an exception to it. Pin was `8fc1e51` ([DD-14.FB]).
 # REASON, for the record: [DD-14.FB] moved the scaffolding across the
 # `abi` 2 -> 3 boundary; under D40 (pre-v1) the scaffolding is not comparable
 # across such a boundary, and the PROGRAM REGION is. So the whole-file half is
@@ -267,7 +278,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8fc1e51}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-5991d4c}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

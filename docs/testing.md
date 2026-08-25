@@ -613,8 +613,9 @@ The plan row that created this tiering named eight targets by number
 (`test-corpus`, `test-cli`, `test-reject`, `test-registry`, `test-codegen`,
 `test-spec`, `test-thread`, `test-parse`). Reading the Makefile, `make
 test:` actually runs **nine** script invocations, which this table groups
-into eight sections (`test-codegen` wraps two scripts — `run_codegen_tests.sh`
-and `run_trie_identity.sh` — since this file already describes them as one
+into eight sections (`test-codegen` wraps three scripts —
+`run_codegen_tests.sh`, `run_dfa_stamps.sh` ([DD-13], 2026-08-25) and
+`run_trie_identity.sh` — since this file already describes them as one
 "codegen structural checks" concept, and `test:` runs them back to back).
 `test-spec` is the ninth target and the one genuine divergence: it wraps
 `tests/spec_mod0/run_spec_mod0.sh`, which is **not** one of the nine `test:`
@@ -630,7 +631,7 @@ project journal entry.
 | `make test-reject` | `tests/reject/run_reject_tests.sh` | yes |
 | `make test-registry` | `tests/registry/run_registry_tests.sh` (registry_check, compliance_section.py, PC-3, PC-4) | yes |
 | `make test-parse` | `tests/parse/run_parse_tests.sh` | yes |
-| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_trie_identity.sh` | yes |
+| `make test-codegen` | `tests/codegen/run_codegen_tests.sh` + `run_dfa_stamps.sh` + `run_trie_identity.sh` | yes |
 | `make test-vm` | `tests/codegen/run_vm_identity.sh` + `run_ir_listing.sh` + `tests/vm/run_vm_tests.sh` | yes |
 | `make test-possessify` | `tests/possessify/run_possdiff.sh` + `run_possessify_tests.sh` | yes |
 | `make test-rungselect` | `tests/rungselect/run_rungdiff.sh` + `run_rungselect_tests.sh` | yes |
@@ -1104,7 +1105,7 @@ itself.
 > 2026-08-25) BEFORE ACTING ON THIS SECTION.** Everything here about the four
 > axes, the opt-in ruling and the `ac4917d` pin still holds, but the gate now
 > asks TWO questions per axis — (A) the PROGRAM REGION against `ac4917d` and
-> (B) the WHOLE FILE against `8fc1e51` — because the caller-buffer wave's
+> (B) the WHOLE FILE against `5991d4c` — because the caller-buffer wave's
 > announced `abi` 2 → 3 boundary put a change on every artifact's surface. A
 > reader who stops at this section will expect one number per axis and find
 > two.
@@ -1238,8 +1239,17 @@ the pre-module pin `ac4917d` can never be green again. The gate now runs:
   <prefix>_L0;` … `<prefix>_accept:`, unfiltered past D37's three stamp lines,
   so comment sensitivity inside the region is kept. This is the module claim
   the gate exists for.
-- **(B) the WHOLE FILE vs `8fc1e51`** (the wave's last `src`/`lib`/`cli`
-  commit): byte-exact again from that pin forward.
+- **(B) the WHOLE FILE vs `5991d4c`** ([DD-13]'s last `src`/`lib`/`cli`
+  commit; was `8fc1e51`, [DD-14.FB]'s): byte-exact again from that pin
+  forward. **Re-pinned 2026-08-25 by [DD-13]**, which gave every DFA artifact
+  three D46 selection stamps (`RX_ENGINE`, `RX_DFA_SCAN`,
+  `RX_DFA_PREFILTER`) and bumped `rx_info.abi` 3 → 4. That change moved NO
+  struct offset and NO emitted program byte — (A) is byte-identical against
+  the unchanged `ac4917d` pin on all five axes — and it re-pinned (B) anyway,
+  because (B) compares WHOLE FILES and three new `#define` lines are a
+  whole-file difference on ~2,000 artifacts. That is the reading to copy: (A)
+  answers "did behaviour move", (B) answers "did bytes move", and only the
+  second is what `abi` versions.
 
 Both numbers are printed on their own lines. `RECURSION_IDENTITY_REF` and
 `RECURSION_IDENTITY_FILEPIN` move them independently. The gate refuses rather
