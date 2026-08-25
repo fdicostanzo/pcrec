@@ -13643,3 +13643,32 @@ specimen patterns, testing.md, pcrec.h; build/ prebuilt in the delivery
 worktree sr27); the blinded author sr27 (opus) spawned with the Perl-arm
 rules. Three lanes live: srE (landing), sr27 (writing), and the F-merged
 san on main.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 14) — the D27 BLINDED CORPUS DELIVERED (sr27, opus): 200 blocks / 1,002 expectations, a Perl arm, four findings, K34
+
+sr27 delivered under sr27-cell/d27/ (copied into worktrees/sr27 at
+b2a8bb3, UNTRIAGED): 10 files, 200 blocks, 569 cases + 433 `g` lines =
+1,002 expectations, every one libpcre2 10.46's through sr_oracle.py; a
+generator whose INTENT is checked against the oracle (6 cells caught
+that did not test what the author thought); an independent checker; a
+two-arm features check that found a real corpus bug (`(?J)` needs
+`backrefs`, not only `modifiers`) and was sabotage-validated on 7
+planted faults; a PERL ARM — 414 cells run, 403 agree exactly, 71
+spellings perl refuses (no `\g<>` call spelling at all; no leading-zero
+forms — §2.4a is PCRE2-only), the design's predicted atomicity
+divergence MEASURED NEGATIVE, 6 divergence rows over 2 patterns (perl
+dies "Infinite recursion" on `^(a|(?1)a)$`; `\K` through a lookahead
+call). Disclosure honoured (CLAUDE.md + memory index injected, ignored).
+FOUR FINDINGS: (1) `\K` REACHED BY A CALL from inside a lookaround
+compiles and fires on 10.46 (the extract's phrasing was off; pcrec
+agrees — no defect); (2) the ceiling is n=342 MATCHES / 343 gives up
+(B+C's own number; the extract said "gives up at 342"); (3) K34 —
+pcrec `frames` where libpcre2 CONCLUDES nomatch on `(a|(?1)a)b`/"a",
+re-measured by the manager: 10.46 returns −52 for some same-position
+runaways and a clean nomatch for others, a rule this project has not
+characterised — 12 cells written as the finding; (4) pcrec ANSWERS
+where libpcre2 gives up (`((?1)?a)` on "a") — reported, not encoded.
+Every `gu` cell now carries a CLASS (`leftrec` = both engines decline;
+`capacity` = D73's ceiling only) asserted against the oracle. Acceptance
+run by the manager on the E-merged tree; triage corpus-wrong vs
+pcrec-wrong before any edit.

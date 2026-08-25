@@ -2652,3 +2652,39 @@ with `--backtrack-frames`. Until ruled: a musl-default-thread caller of a
 call-bearing artifact MUST compile with a smaller capacity or use `_in`.
 
 **Milestone.** [DD-14.FB] code half (after wave G); the ruling is Frank's.
+
+## K34 — OPEN (2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
+
+**Symptom.** `(a|(?1)a)b` on "a" / "aaa" / "": libpcre2 returns a clean
+NOMATCH (rc PCRE2_ERROR_NOMATCH, not −52); on "ab" both match (0,2) g1
+(0,1). pcrec answers "ab" correctly and returns `PCREC_ERR_FRAMES` on
+every non-matching subject. Same for `(a|(?1)a)c`. Plain `(a|(?1)a)` is
+fine. MEASURED by the blinded author and re-measured by the manager
+through sr_oracle.py: `(a|(?1)a)b`/"a" → None; `^(a|(?1)a)$`/"aaaaa" →
+(0,5); `^(a|(?1)a)$`/"aaaaab" → −52 "nested recursion at the same subject
+position"; `^((?1)a)$`/"a" → −52; `^(a?(?1)b)$`/"ab" → −52. So 10.46
+returns −52 for SOME same-position runaways and a clean nomatch for
+OTHERS, and matches a 199-deep same-position recursion when a base case
+exists (design §3.3). The rule that separates the three is NOT the one
+subroutines_design.md §3.3 refuted (the naive "refuse any same-position
+re-entry") and is not documented in this project.
+
+**Class.** A give-up where the oracle concludes: not a false answer (D26
+tier: what a pattern MATCHES is exact; a give-up says nothing), but a
+DD-2/D22 robustness gap — and a corpus cell that cannot be written
+except as the finding (the D27 corpus's sr_depth.rxt carries 12 `n`/`m`
+cells for this shape that FAIL by design until it is resolved). The
+inverse also exists: `((?1)?a)` and `((?1)*a)` on "a" — pcrec matches
+(0,1) where libpcre2 returns −52 (pcrec arguably better; no expectation
+writable).
+
+**What is needed.** MEASURE PCRE2's actual loop rule (pcre2_match.c's
+recursion-loop check: when does a same-position re-entry fail the path,
+when does it return −52, when is it allowed) on a probe matrix, then
+decide whether pcrec adopts the same rule as a general mechanism (it
+would have to preserve §3.3's 199-deep match and [DD-14.EMPTY]'s
+nomatch for empty-language callees). Until then the twelve cells stay
+red in the D27 corpus's triage as pcrec-wrong-by-capability.
+
+**Milestone.** [DD-14] close triage decides its home (a follow-on row
+under the module, chartered from the measurement).
