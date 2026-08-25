@@ -14277,3 +14277,14 @@ S174 never reached. srG released; worktrees/srG removed, lane/srG kept
 at 13e2c30. The lane's closing note deserves the record: every
 instrument inside the lane was built from the same picture of the world
 as the bug; the population gap (113/37/0) was visible only from outside.
+
+#### Thirty-ninth session, part 27 — the peer's window closed; GO HEAVY to srFBc (2026-08-25 ~03:1x EDT)
+
+pcrecdev2: WINDOW CLOSED at 02:56 (its tail load 1.25) — five cells
+measured on the email sub-bench (pcre2-interp, pcre2-jit, pcrec-auto,
+pcrec-nocaps, pcrec-vm; 5 trials, CPU 11 pinned; its occupancy gate
+refused one cell twice on 1-second transients from the two sessions'
+own activity — its finding, its thresholds). Its report follows as a
+"production sample with a feedback request". GO HEAVY sent to srFBc
+03:1x: rebase first, then `make test` detached (PID file), then S179-S184
+at PROCS=4 detached; tests/resource re-run solo before red (K31).
