@@ -13847,3 +13847,15 @@ reference, pcre2_ctypes.py, the D35 archived-probe discipline, K31/K32/
 [TT-10] as bench-relevant findings) and the rule that anything written
 INTO pcrec goes through this session. Big-run start/stop is announced
 to it both ways.
+
+ADDENDUM (part 18, ~22:3x): sr27land's final make test on the E-merged
+tree: corpus 26,479 / 4 failed — all four the D27 author's `leftrec`-class
+`gu frames` cells on EMPTY-LANGUAGE roots (`((?1)a)`, `(?R)a` on
+"aaa"/"aaaaaa"): pcrec now CONCLUDES nomatch by wave E's root-minw rule
+(P-12) where the author expected a give-up because libpcre2 gives −52.
+Triage: corpus-wrong-by-ruling (the same disposition as B+C's cell 1);
+the lane flips them to RULED `n` cells through the author's generator
+with the P-12 citation; `leftrec` cells whose root HAS a base case stay
+`gu frames` = K34, parked. So the blinded corpus's final tally on the
+shipped tree: 1,031 cells, 0 pcrec-wrong outside K34's eleven, 4
+corpus cells corrected by a ruling that postdates their writing.
