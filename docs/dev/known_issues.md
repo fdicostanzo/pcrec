@@ -2710,3 +2710,44 @@ red in the D27 corpus's triage as pcrec-wrong-by-capability.
 
 **Milestone.** [DD-14] close triage decides its home (a follow-on row
 under the module, chartered from the measurement).
+
+## K35 — OPEN (2026-08-24, found by the [DD-14] wave G lane) — a pattern-population pipeline that sorts in the AMBIENT LOCALE drops punctuation-distinct patterns: `run_vm_identity.sh` has been checking 1,660 of 2,610 corpus patterns
+
+**Symptom.** `tests/codegen/run_vm_identity.sh` builds its population with
+`find tests -name '*.rxt' | grep '^pattern ' | sed … | sort -u`. Under
+`en_US.UTF-8`, `sort` collates at a level that IGNORES PUNCTUATION, so
+`a{0,0}b` and `(a){0,0}b` compare EQUAL and `-u` drops one. MEASURED:
+the same extraction yields 1,660 patterns in the ambient locale and
+2,610 under `LC_ALL=C`. The check's capture-free / capture-bearing
+populations, its byte-identity claim and its `RX_NCAPS => VM` claim were
+stated over 64% of the corpus with nothing saying so. On the full
+population the check is GREEN (675/675 capture-free identical, 325
+capture-bearing, 1,610 refused by both) — nothing hid a failure; what
+hid was a third of the corpus.
+
+**How it surfaced (the reusable part).** Not as a failure: wave G's
+dead-group exception produced a list of FOUR patterns enumerable
+independently of the check, and the check only ever saw three. A check
+whose population comes from a pipeline nobody counts cannot report that
+the pipeline lost a third of it — the controls-sharing-a-source lesson,
+arriving through the shell rather than the compiler.
+`run_lookaround_identity.sh` already carried `LC_ALL=C` with a comment
+saying it is not a formatting preference; the older script predates it.
+
+**Survey (manager, 2026-08-24 ~23:3x; `grep -c sort` vs `grep -c
+LC_ALL=C` over tests/**/run_*.sh):** unguarded — `run_vm_identity.sh`
+(fixed by wave G), `run_object_neutrality.sh` (5 sorts, 0 guarded),
+`run_backref_diff.sh` (3, 0), `run_codegen_tests.sh` (11, 0),
+`run_recursion_identity.sh` (2, 1); and every script reading "sort×3 /
+LC_ALL=C×2" (altdiff, endvar/backref/atomic/gstart/wordctx/mlinectx
+identity, mrldiff, possdiff, rungdiff) has ONE sort to inspect. Not
+every sort is a `-u` over pattern text — the audit decides per site.
+
+**Remedy.** The [DD-14] close's doc/infra sweep: every `sort` over
+pattern text gets `LC_ALL=C` (or a `python3`-side dedup), and every
+population-deriving check STATES its population count against an
+independently derived count (the lookaround gate's floor shape). One
+general fix: export `LC_ALL=C` at the top of tests/lib/run_group.sh and
+the harness so no script can inherit the locale — ruled at the close.
+
+**Milestone.** [DD-14.CLOSE] item 7.

@@ -13965,3 +13965,20 @@ past exactly one `.flags` line) plus §9.2's A == B — ruled correct: a
 flag that records itself must not be hidden to fake comparability. Its
 §1b's first version had three bugs found by running it, each named at
 the site. Final make test + 111 D69 rows are the last two bars.
+
+K35 (srG, ~23:3x): `run_vm_identity.sh` has been checking 1,660 of
+2,610 corpus patterns — its `sort -u` ran in the ambient en_US.UTF-8
+locale, which collates PUNCTUATION AWAY, so `a{0,0}b` and `(a){0,0}b`
+deduplicated to one. Green on the full population (675/675 identical);
+what hid was a third of the corpus, not a failure. It surfaced because
+wave G's four-pattern elision list was enumerable INDEPENDENTLY of the
+check — the check-design lesson through the shell. Manager survey: five
+scripts with unguarded sorts (object_neutrality ×5, backref_diff ×3,
+codegen_tests ×11, recursion_identity ×1) and one unguarded sort in each
+of ten more; the lookaround gate had `LC_ALL=C` with the reason since
+its birth. Filed K35; the close brief gains item 7 (per-site audit with
+before/after counts; `export LC_ALL=C` in run_group.sh and the harness;
+a structural check that names any unguarded sort; population counts
+stated on every population-deriving check). G also gave D42.2's
+"RX_NCAPS > 1 => VM" the dead-group exception on the same NAMED list,
+keeping `RX_NCAPS == ngroups + 1` unconditional.
