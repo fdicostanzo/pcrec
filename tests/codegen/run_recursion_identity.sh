@@ -353,8 +353,8 @@ fi
 # CURRENT `abi` number, so the two compilers' emitted `rx_info.abi` stamps
 # must agree — read off an actual artifact from each, on a call-free
 # pattern, rather than re-derived from source text.
-ABI_SUBJ_ART="$("$PCREC"   --features all -p rx -o - -- 'a' 2>/dev/null)"
-ABI_PIN_ART="$("$FILEREF" --features all -p rx -o - -- 'a' 2>/dev/null)"
+ABI_SUBJ_ART="$(pcrec_run "$PCREC"   --features all -p rx -o - -- 'a' 2>/dev/null)"   # [K37] bounded
+ABI_PIN_ART="$(pcrec_run "$FILEREF" --features all -p rx -o - -- 'a' 2>/dev/null)"   # [K37] bounded
 ABI_SUBJ="$(printf '%s\n' "$ABI_SUBJ_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 ABI_PIN="$(printf '%s\n' "$ABI_PIN_ART" | grep -o '\.abi = [0-9]*' | head -1)"
 if [ -z "$ABI_SUBJ" ] || [ -z "$ABI_PIN" ]; then

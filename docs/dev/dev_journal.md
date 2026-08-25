@@ -15118,3 +15118,58 @@ IN FLIGHT at 13:3x: srReach (WIP 4/n, 19 rows retrofitted), srRun2
 (sweep continuation committed), srLoad ([TT-10] + [TT-11] + CCACHE in
 situ; launched 13:3x). Queue after: [SPEC-1.2] cli.md, [SPEC-1.3]
 tuning.md, then the battery, then [DD-13] stamps.
+
+#### Fortieth session, part 3 — [CHK-1] all five items on main; the K37 check earned its keep twice (2026-08-25 ~15:0x EDT)
+
+MERGES since part 2, in order: [MECH-REACH] 3eb4cc8 (srReach, opus:
+SAB_REACH/_EXPECT, SAB_REACH_POP, SAB_REQUIRE, SAB_EXPECT=UNREACHED with a
+mandatory reason; verdict UNREACHED both directions; a lazily-built clean
+reference tree; VALIDATE_ONLY=1; 21 rows retrofitted, NONE found already
+dead — S70's repair by the close lane is now CHECKED, not remembered;
+22/22 DETECTED solo at one SHA; its own ANOMALY wording once contained
+"UNDETECTED" and the headline's grep -c counted the verdict itself — the
+control-sharing-a-source lesson through prose; `reject_gated` is ONE row,
+S70, since [M6.5.2] — the plural everywhere was stale). K37 + [TT-9]
+ea4504b (srRun→srRun2 after the 403 death: `pcrec_run` two paths measured
+2.5 ms vs 171 ms/call; the predecessor's "38-file mechanical sweep" had a
+blind spot — one-liner function bodies `f() { "$PCREC" … }` — 41 sites in
+24 files re-derived, 9 of them `gen_a()` in identity scripts six of which
+had never sourced gen_timeout.sh; final population 427 sites / 55 scripts;
+run_recursion_diff.sh's gen compiles/runs bounded; S159 solo DETECTED
+1/0/0; [TT-9] one manifest tests/lib/san_scripts.txt — FIVE diff scripts
+were in none of the three lists, not one; K37b recorded: three python
+subprocess.run callers with no timeout). [TT-11] + [TT-10] 36f58da
+(srLoad: the abi-stamp pin check refuses ac4917d '.abi = 2' vs 3, 15/0 on
+8fc1e51; tests/lib/load_guard.sh ratio > 2.0 → INCONCLUSIVE, forced-breach
+demonstrated both directions; a load-guarded K32 compile-cost pin; CCACHE
+for mech MEASURED −11.9% over 10 rows, non-uniform, confounded by a
+quieter second pass — NOT adopted, opt-in stays).
+
+THE K37 CHECK WENT RED ON MAIN, twice, for the right reason: (1) after
+srReach + srRun merged, 22 sites — 21 `SAB_REACH=` probe strings and one
+--help line — because the mech script's witness-probe executor ran
+`bash -c "$SAB_REACH"` UNBOUNDED; fixed at the ONE executor
+(`$TIMEOUT_BIN`, `SAB_REACH_TIMEOUT` default 120) + two reasoned allowlist
+entries, 8d2f914; verified PASS 459 sites / 77 scripts and S27 DETECTED
+with reach:ok through the bound. (2) predicted statically after srLoad's
+merge: the abi probe's two bare compiles (→ pcrec_run) and counterk's K32
+pin whose watchdog wrapper and invocation sat on different LINES (joined;
+`scripts/watchdog` added to the guard regex — it IS a bound). Verified at
+the battery, not now: pcrecdev2's WINDOW is OPEN (14:5x, load1 0.94) and
+nothing heavy runs here until WINDOW CLOSED.
+
+Lane-management lessons this batch: a lane's report can be LOST at the
+idle race even when written (srRun2, srLoad — both re-sent inline on
+request; the harness sometimes refuses subagent report .md writes); a
+worktree cannot see main-tree files committed after its creation (the
+brief now says absolute paths); one lane's artificial-load test (8→24
+spinners, escalated without notice) contaminated another lane's timing
+runs — timings under load were discarded, not rescued; a lane's
+"persistent monitor" does not wake an idle agent — the manager watches
+the artifact itself.
+
+NEXT: WINDOW CLOSED → the batch battery on main (make test with the
+`checks inconclusive` grep, san, the FULL 180-row matrix — the first
+measuring `unreached` on every row — then [MECH-REACH]/[CHK-1] close),
+then [DD-13] stamps (abi 3→4, D76's first real re-pin) and [SPEC-1.2]/
+[SPEC-1.3].

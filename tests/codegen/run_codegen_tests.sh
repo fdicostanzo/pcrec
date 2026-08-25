@@ -2696,7 +2696,7 @@ k37_site_re='(^|[^a-zA-Z_/])(build/pc[r]ec|[$]PCREC|"[$]PCREC")'
 k37_comment_re='^[^:]*:[0-9]+:[[:space:]]*#'
 k37_assign_re='^[^:]*:[0-9]+:[[:space:]]*(local[[:space:]]+|export[[:space:]]+)?PCREC='
 k37_existtest_re='\[[[:space:]]*!?[[:space:]]*-[xf][[:space:]]+"?[$]PCREC"?[[:space:]]*\]'
-k37_guard_re='pcrec_run|TIMEOUT_BIN|gen_run\b|gen_cc\b'
+k37_guard_re='pcrec_run|TIMEOUT_BIN|gen_run\b|gen_cc\b|scripts/watchdog'   # scripts/watchdog IS a bound (wall+RSS+CPU) -- a direct watchdog wrap on the same line counts as guarded ([TT-10]'s K32 pin)
 # ALLOWLIST: every remaining line must match one of these or the check
 # names it. Each entry is a JUDGMENT CALL (not a mechanical exclusion like
 # the three above), so each carries its own reason -- and each must ALSO
