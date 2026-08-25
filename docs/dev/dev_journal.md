@@ -14791,3 +14791,10 @@ diff.sh 8 — it sourced gen_timeout.sh nowhere; run_frame_buffer.sh 3;
 run_specimen_identity.sh 3). S159 re-running solo. No src/ touched;
 anchors 0 stale. K37's SAB_FILE for S159 corrected on main
 (src/opt/atomic.c).
+07:1x: srMech's S155 "no-ASan" verification did not exercise the
+preflight — both per-row lines read `framebuf:1fail/5pass DETECTED`,
+so its `CC=noasan-cc` wrapper (exits 1 on -fsanitize=) never reached
+§2's sanitized build (the arm invokes a compiler variable the wrapper
+did not override, or the matrix does not pass CC through). Sent back:
+find the real path, make the simulated box hit the preflight, expect
+framebuf UNMEASURED + anomalies: 1, re-run once.
