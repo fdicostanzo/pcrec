@@ -440,8 +440,25 @@ for f in "${sab_files[@]}"; do
         break
     fi
 done
+CLEAN_REUSED=0
 if [ "$needs_clean" -eq 1 ]; then
     CLEAN_TREE="$MECH_SCRATCH/_clean/tree"
+    # REUSE, KEYED ON THE SHA, and it exists for how these rows are actually
+    # run: D69's targeted tier is one row PER INVOCATION, so a 21-row sweep
+    # would otherwise pay 21 clean builds for one tree. The key is the commit
+    # this run is measuring plus a usable binary -- a stamp naming a different
+    # SHA, or a tree whose build/pcrec is gone, rebuilds from scratch. Only
+    # reachable when the CALLER supplied MECH_SCRATCH; a mktemp'd root is
+    # fresh by construction and takes the build every time.
+    if [ "$MADE_SCRATCH" != "1" ] \
+       && [ -x "$CLEAN_TREE/build/pcrec" ] \
+       && [ "$(cat "$MECH_SCRATCH/_clean/SHA" 2>/dev/null || true)" = "$SHA" ]; then
+        CLEAN_REUSED=1
+        echo "reach reference: REUSING the clean tree already built at $SHA ($CLEAN_TREE)"
+        echo
+    fi
+fi
+if [ "$needs_clean" -eq 1 ] && [ "$CLEAN_REUSED" -eq 0 ]; then
     rm -rf "$MECH_SCRATCH/_clean"
     mkdir -p "$CLEAN_TREE"
     if ! git -C "$ROOT_DIR" archive HEAD | tar -x -C "$CLEAN_TREE" \
@@ -457,6 +474,10 @@ if [ "$needs_clean" -eq 1 ]; then
         echo "FATAL: the CLEAN reference tree does not build at $SHA (see $MECH_SCRATCH/_clean/build.log)" >&2
         exit 2
     fi
+    # THE STAMP IS WRITTEN ONLY AFTER A SUCCESSFUL BUILD, so a run killed
+    # mid-build leaves no stamp and the next run rebuilds rather than reusing
+    # half a tree.
+    printf '%s\n' "$SHA" > "$MECH_SCRATCH/_clean/SHA"
     echo "reach reference: clean tree built at $SHA ($CLEAN_TREE)"
     echo
 fi
@@ -1762,7 +1783,10 @@ fi
 rm -f "$results_file" "$results_file.rows"
 if [ "$KEEP" != "1" ]; then
     [ -n "${rowdir:-}" ] && rm -rf "$rowdir"
-    [ -n "$CLEAN_TREE" ] && rm -rf "$MECH_SCRATCH/_clean"
+    # KEPT when the caller supplied MECH_SCRATCH -- that is exactly what the
+    # SHA-keyed reuse above reads on the next invocation. A mktemp'd root is
+    # removed with everything else below.
+    [ -n "$CLEAN_TREE" ] && [ "$MADE_SCRATCH" = "1" ] && rm -rf "$MECH_SCRATCH/_clean"
     # remove the scratch root only if this run created it (and it is empty)
     [ "$MADE_SCRATCH" = "1" ] && rmdir "$MECH_SCRATCH" 2>/dev/null
 fi
