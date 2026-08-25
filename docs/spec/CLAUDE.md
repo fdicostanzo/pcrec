@@ -180,6 +180,28 @@ spec and a design doc disagree, the spec is what the tool promises.
   and D73's own prose, not corrected by this pass), and K34/D74's
   documented-divergence framing at spec depth.
 
+- `cli.md` — **[SPEC-1.2], 2026-08-25.** The full `pcrec` command-line
+  reference: compiling a pattern (`-o`/`-o -`, `-p`'s C-identifier prefix
+  grammar, `-e`/`--encoding` — byte-only today, `-i`, `--emit-main`,
+  `--no-captures`, `--engine=`'s do-or-die refusal, the budget/frame flags
+  pointing at `limits.md` for their numbers, `--features`' 17-module
+  roster with each module's shipped status read live off `--list-syntax`'s
+  `built` column, and the `-f`/`-fno-` tuning family pointing at
+  `tuning.md`), the three listing surfaces (`--list-syntax`/
+  `--list-verbs`/`--list-families`, pointing at `table_contract.md` for
+  the column contract itself), diagnostics ([SPEC-1.7] folded in as its
+  own section — the three exit codes verified live and DISTINGUISHED from
+  an `--emit-main` binary's own unrelated 0/1/2/3, the D26 tiers restated
+  caller-side, the offset-pinning convention from D26's tension addendum),
+  and an honest "what the CLI does not do" section (no runtime, no
+  multi-pattern units `[V-E]`, no `--lib` `[LIB]`, `--emit-ir` ships while
+  `--emit-dot` does not — `[DD-8]` confirmed still STATE:not-started,
+  which means `table_contract.md`'s own "TO BE CONSIDERED" note about
+  `--emit-ir` is current, not stale). Every flag verified against
+  `cli/main.c` AND a live `build/pcrec` run at this worktree's branch
+  point (`0e2b23d`); where `--help`'s wording and the code agreed, cited
+  directly rather than restated from memory.
+
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
 three-component annotated-derivation discipline (generated facts +
