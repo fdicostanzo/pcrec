@@ -14351,3 +14351,27 @@ Clock correction: the box reads 03:01 EDT now; the "~03:1x"/"~03:2x"/
 the bench feedback, and the stray-file removal all fell 02:57-03:00).
 srFBc had not yet acted on the rebase or GO at 03:00 (branch 79873cb
 lacks baf9e60; no process) — GO repeated 03:01 with the exact steps.
+
+#### Thirty-ninth session, part 29 — [DD-14.FB] code half DELIVERED; panel spawned (2026-08-25 ~03:0x EDT)
+
+srFBc's deliverable: lane/srFBc at 79873cb (10 WIP commits, 39 files,
++2803/−169; not yet rebased onto main — ordered). §11 items 1-9 with
+file:line; measured bars: rx_search 131,216 B (D73 unchanged),
+rx_search_in 144 B (chain 312), DFA `_in` 8 B, resume frame 24/40 B
+unmoved by the size_t widening (--trace 32/48); framebuffer.rxt 16/0;
+test-stackdepth 3/0+1 pinned; test-frame-buffer 6/0+1 note incl. §2's
+EXACT-FIT driver (2n frames, ⌈8.982n⌉+1 trail at n=340..344: exact
+matches, one frame short gives up, one trail entry short gives up, zero
+ASan findings — all seven capacity sites exact in both directions; the
+check first went red on a correct build from mis-indexed awk fields,
+the allowed direction); NULL spread byte-identical on 12 patterns; six
+rows measured-detected; strict; -Wall -Wextra -Werror at six -O levels;
+-fanalyzer zero; ASan+UBSan+LSan clean; anchors 0 stale; codegen 100/0.
+Artifact diff: 12 .c hunks all surface; program region 0/0/0 and 2
+lines×2 on call-bearing (capacity site #1) → gate re-pin at merge. Spec
+corrections: §10.6 (four larger rows), §5.3/K33 numbers 131,216/144,
+§12 P-3 REFUTED, §5.4's AOT-literal gap resolved by one member list +
+`_Static_assert`s. Panel spawned 03:0x on 79873cb (base 08ddcbd):
+critFB-engine (opus; briefs brief_critFB_engine.md) and critFB-checks
+(sonnet; brief_critFB_checks.md), read-only. The lane's `make test` +
+S179-S184 run detached after its rebase; option (c) ruled.
