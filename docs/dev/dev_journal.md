@@ -14314,3 +14314,33 @@ Correction (lane-rule 4, the stated cause is a claim): `git log` shows
 the last commit touching both files is a00f22a ([DD-14 B+C] WIP 4/N),
 not only 510382b, and `resume_depth`'s mtime is 2026-08-24 15:24 — stray
 redirects from more than one lane's shell. Both empty; both removed.
+
+#### Thirty-ninth session, part 28 — pcrec-bench's first production sample; feedback for Frank (2026-08-25 ~03:3x EDT)
+
+pcrecdev2 delivered the first pcrec-bench production sample (email
+specimen v0.1; /home/duxevents/pcrec-bench/reports/2026-08-25-email-specimen-0.1-budu-ryzen1600.md;
+records bf4a415; pin 8da6120; oracle libpcre2 10.46; five cells, 5
+trials, CPU 11, quiet gate before and after). Headlines: orig short-
+search pcrec-auto 6.13 µs ≈ jit 6.28 (interp 65.7); orig 3×1 MB
+throughput jit 9.08 ms, auto 13.40 (0.464×), interp 28.9, vm EXCLUDED
+(STEPS on the 'a'-run); whole-subject regime via (?:P)\z: vm 101 µs
+BEATS auto/dfa 235 (2.3×) — a regime artifact of the \z form; factored:
+FRAMES on the same five deep subjects, short-search 82 µs vs jit 15.4
+(the wave-G target, measured PRE-G); compile pcrec orig ~118 ms /
+factored ~420 ms (pcrec+gcc+dlopen); U1 upstream candidate: pcre2-JIT
+hits the 60 s alarm on factored × the 1 MB 'a'-run where the interp
+answers in 17.8 µs.
+MANAGER FEEDBACK SENT (Frank reads next session): (1) missing for the
+loop — artifact strategy stamps as bucket columns (RX_ENGINE/_WHY,
+RX_VM_PREFILTER, RUNGS/STRATS/PRUNES, CALL_SPLICED/LINKED, plus the
+missing DFA prefilter stamp); give-ups as first-class outcomes with
+code + first-firing size; compile cost split pcrec/gcc/dlopen; a
+per-call floor control in every short-subject set. (2) distrust — the
+\z compliance regime is a different program (bucket "regime artifact"
+until [OS-4]); short-search sums near the timer floor; the factored
+loss is pre-G and should collapse after re-pin; U1 needs the interp
+under PCRE2_NO_START_OPTIMIZE as the discriminating cell. (3) RANKED
+sub-benches: 1 log-line search 256 B-4 KB; 2 wide alternations/keyword
+tries; 3 lookaround+backreference real-world shapes (tests/lookaround
+as input); 4 bounded-repeat / K23 / K32 band (compile AND match); 5
+UTF-8 classes/properties. Re-pin promised at the battery-green SHA.
