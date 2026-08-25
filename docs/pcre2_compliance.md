@@ -1557,7 +1557,7 @@ MEASURED: `--no-captures --engine=dfa '(a)(?1)'` COMPILES;
 axis on which this column is exactly true. `tests/registry/registry_check.c`'s
 engine-capability check asks its refusal under that flag for this reason.
 
-**`(?R)`** (2026-08-24)
+**`(?R)`** (2026-08-25)
 
 **SHIPS since [DD-14]** (design docs/design/subroutines_design.md,
 R34-approved). This annotation is keyed to `(?R)` and covers the bundled
@@ -1574,8 +1574,11 @@ note got wrong is that pcrec's VM is not a plain Pike VM: it is a
 backtracking machine with a resume stack, so a call lowers to a saved
 return site and a shared callee region and needs no new engine.
 
-**TWO LIMITS, AND THE SURVEY ROW NAMES BOTH KINDS.** The CAPABILITY one
-is the engine restriction above. The RESOURCE one is that a call's
+**THE SURVEY ROW NAMES TWO LIMIT KINDS, BOTH RESOURCE-SHAPED, PLUS A
+CAPABILITY NOTE — and this record takes them in that order.** The
+CAPABILITY note is the engine restriction above, and wave G narrowed it
+to the LINKED form (see the `(?1)` record). The FIRST resource limit is
+that a call's
 resume frame OUTLIVES ITS RETURN (design §5.1/§5.3), so recursion and
 call-driven iteration are both bounded by the artifact's frame capacity;
 past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one.
@@ -1600,8 +1603,7 @@ but the CALLER-PROVIDED BUFFER ([DD-14.FB]'s three `_in` entries: a
 0.056 s). That is why the `becomes` column reads `PLANNED` rather than
 permanent — the path around the limit ships, it is just not the default.
 
-**AND THERE IS A SECOND RESOURCE LIMIT, WHICH IS A DIVERGENCE RATHER
-THAN A CAP: K34.** On some same-position LEFT recursions pcrec answers
+**THE SECOND RESOURCE LIMIT IS A DIVERGENCE RATHER THAN A CAP: K34.** On some same-position LEFT recursions pcrec answers
 `PCREC_ERR_FRAMES` where libpcre2 10.46 CONCLUDES with a clean NOMATCH —
 `(a|(?1)a)b` on "a"/"aa"/"b"/"" and `^(a|(?1)a)$` on "aaaaab" are the
 measured cells. It is not a wrong answer under D26 (a give-up says
