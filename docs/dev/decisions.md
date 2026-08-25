@@ -5699,3 +5699,17 @@ a concrete trigger. M5, M7, M6.5(f), conditionals, branch-reset,
 callouts, the ENG-* rows: not spine; each enters through the loop
 (a bench outlier or the [PC-2] survey names it) or by ruling. Nothing
 else starts unprompted.
+
+**D69 ADDENDUM (2026-08-25, fortieth session, [TT-5]'s close).** D69's
+tiered mech re-run policy was adopted on the premise "no row has yet
+been observed flipping DETECTED→UNDETECTED from a compiler change
+alone". That premise has since FAILED: row S70's four escape witnesses
+were all implemented by later waves (compiler changes elsewhere), the
+witnesses stopped reaching the sabotaged site, and the row certified
+nothing from [M6.5.2] until the 180-row full matrix on 17469b6 scored it
+UNDETECTED — the accepted risk materialized once, silently, for two
+milestones. D69 STANDS (Frank re-affirmed the tiering at [TT-5]'s
+close); the mitigation is [MECH-REACH] — a per-row reach assertion on
+the CLEAN tree makes most of class (2b) derivable in seconds without a
+matrix run — which is why it is first in [CHK-1]. Until it lands, the
+full matrix at every module close is the only detector for this class.
