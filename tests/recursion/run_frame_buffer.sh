@@ -27,7 +27,16 @@
 # same bytes, capture spans included.
 #
 # =========================================================================
-# SECTION 2 — the mmap'd, lazily-committed reservation, RUN
+# SECTION 2 — THE SEVEN CAPACITY SITES, EXACT IN BOTH DIRECTIONS
+# =========================================================================
+# Under AddressSanitizer, on buffers with NO SLACK. See fb_exact_driver.c's
+# header for why the absence of slack is the whole point: a capacity guard
+# that is off by one is invisible on a generously sized buffer in both
+# directions at once — too loose writes into slack the caller happens to own,
+# too tight never fires.
+#
+# =========================================================================
+# SECTION 3 — the mmap'd, lazily-committed reservation, RUN
 # =========================================================================
 # Spec §10.6's worked example, re-measured. See fb_mmap_driver.c's header for
 # what it prints and why it is a C driver rather than a corpus cell.
@@ -122,21 +131,68 @@ elif [ "$s1_ok" -eq 1 ]; then
 fi
 
 # =========================================================================
-# SECTION 2
+# SECTION 2 — exact-fit buffers under ASan
+# =========================================================================
+# ASan is a PREFLIGHT, not an assumption: if this $CC cannot build it the
+# section SKIPS LOUDLY (a NOTE, never a pass), the same shape
+# tests/thread/run_thread_tests.sh uses for TSan. Without the sanitizer the
+# exact arm would still run and still be worth something — the two `one-short`
+# arms are ordinary assertions — but the claim it is here to make, that
+# NOTHING writes past either region, needs the instrument.
+exact_d="$WORKDIR/exact"
+mkdir -p "$exact_d"
+printf 'int main(void){return 0;}\n' > "$exact_d/probe.c"
+exact_san="-fsanitize=address,undefined"
+# shellcheck disable=SC2086
+if ! $CC -O0 $exact_san -o "$exact_d/probe" "$exact_d/probe.c" >/dev/null 2>&1; then
+    info "[DD-14.FB §2] $CC cannot build with $exact_san — the exact-fit section runs WITHOUT the sanitizer, so its 'nothing writes past either region' claim is NOT made this run"
+    exact_san=""
+fi
+if ! "$PCREC" -p rx --features recursion --engine=vm -o "$exact_d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
+    bad "[DD-14.FB §2] could not compile the exact-fit fixture"
+# shellcheck disable=SC2086
+elif ! $CC $GENCFLAGS $exact_san -I"$exact_d" -o "$exact_d/fb" \
+        "$SCRIPT_DIR/fb_exact_driver.c" "$exact_d/gen.c" >"$exact_d/cc.log" 2>&1; then
+    bad "[DD-14.FB §2] could not build fb_exact_driver.c: $(head -5 "$exact_d/cc.log" | tr '\n' ' ')"
+else
+    exact_out="$("$TIMEOUT_BIN" 300 "$exact_d/fb" 2>&1)"; exact_rc=$?
+    echo "$exact_out" | sed 's/^/      /'
+    exact_rows="$(printf '%s\n' "$exact_out" | grep -c '^row ')"
+    # FIELDS: row <n> <nframes> <ntrail> <exact> <frame_short> <trail_short>,
+    # so the three verdicts are $5/$6/$7. Written as $4/$5/$6 first time round,
+    # which made every row read as bad -- caught because the check went RED on
+    # a correct build rather than green on a broken one, which is the direction
+    # a mis-indexed check is allowed to fail in.
+    exact_bad="$(printf '%s\n' "$exact_out" | awk '$1=="row" && !($5==1 && $6==-3 && $7==-3)' | wc -l)"
+    if [ "$exact_rc" -ne 0 ]; then
+        bad "[DD-14.FB §2] the exact-fit driver exited $exact_rc — under $exact_san a non-zero exit is very likely a sanitizer report, which is exactly the finding this section exists for: $(printf '%s' "$exact_out" | tail -5 | tr '\n' ' ')"
+    elif [ "$exact_rows" -lt 5 ]; then
+        bad "[DD-14.FB §2] only $exact_rows exact-fit rows ran (want 5)"
+    elif [ "$exact_bad" -ne 0 ]; then
+        bad "[DD-14.FB §2] $exact_bad exact-fit row(s) did not read 'match, give-up, give-up'. A capacity guard is off by one: an exact-fit buffer that does not match means a guard refuses a match the buffer could hold, and a one-short buffer that DOES match means a guard let a write past the end"
+    elif [ -n "$exact_san" ]; then
+        ok "[DD-14.FB §2] all $exact_rows exact-fit depths MATCH on buffers with no slack at all, and give up one frame or one trail entry short — under $exact_san, so nothing wrote past either region. The seven capacity sites are exact in BOTH directions, which is the off-by-one a generously sized buffer cannot see either way"
+    else
+        ok "[DD-14.FB §2] all $exact_rows exact-fit depths MATCH on buffers with no slack, and give up one frame or one trail entry short (NO sanitizer this run — the over-run half is unmeasured)"
+    fi
+fi
+
+# =========================================================================
+# SECTION 3
 # =========================================================================
 d="$WORKDIR/mmap"
 mkdir -p "$d"
 if ! "$PCREC" -p rx --features recursion --engine=vm -o "$d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
-    bad "[DD-14.FB §10.6] could not compile '^(a(?1)?b)\$' for the reservation example"
+    bad "[DD-14.FB §3/§10.6] could not compile '^(a(?1)?b)\$' for the reservation example"
 # shellcheck disable=SC2086
 elif ! $CC $GENCFLAGS -I"$d" -o "$d/fb" "$SCRIPT_DIR/fb_mmap_driver.c" "$d/gen.c" >"$d/cc.log" 2>&1; then
-    bad "[DD-14.FB §10.6] could not build fb_mmap_driver.c: $(head -5 "$d/cc.log" | tr '\n' ' ')"
+    bad "[DD-14.FB §3/§10.6] could not build fb_mmap_driver.c: $(head -5 "$d/cc.log" | tr '\n' ' ')"
 else
     out="$("$TIMEOUT_BIN" 300 "$d/fb" 342 400000 466000 470000 2>&1)"; rc=$?
     if [ "$rc" -eq 2 ]; then
-        info "[DD-14.FB §10.6] SKIPPED LOUDLY: this machine would not give a 2 x 64 MB MAP_NORESERVE reservation ($out). Nothing about the worked example is claimed by this run"
+        info "[DD-14.FB §3/§10.6] SKIPPED LOUDLY: this machine would not give a 2 x 64 MB MAP_NORESERVE reservation ($out). Nothing about the worked example is claimed by this run"
     elif [ "$rc" -ne 0 ]; then
-        bad "[DD-14.FB §10.6] the reservation driver exited $rc: $out"
+        bad "[DD-14.FB §3/§10.6] the reservation driver exited $rc: $out"
     else
         echo "$out" | sed 's/^/      /'
         res_line="$(printf '%s\n' "$out" | grep '^reserve ')"
@@ -154,17 +210,17 @@ else
         if [ "$r_frames" = "$((r_bytes / fsz))" ] && [ "$r_trail" = "$((r_bytes / tsz))" ]; then
             ok "[DD-14.FB §10.4/§10.6] the caller's own byte->capacity arithmetic off the emitted macros gives $r_frames frames and $r_trail trail entries from $r_bytes bytes per region (frame $fsz B, trail $tsz B)"
         else
-            bad "[DD-14.FB §10.6] the reservation's derived capacities ($r_frames / $r_trail) disagree with $r_bytes / RX_*_FRAME_SIZE ($fsz / $tsz)"
+            bad "[DD-14.FB §3/§10.6] the reservation's derived capacities ($r_frames / $r_trail) disagree with $r_bytes / RX_*_FRAME_SIZE ($fsz / $tsz)"
         fi
 
         # (b) MAP_NORESERVE DOES WHAT THE RULING WANTS IT TO. 128 MB reserved,
         #     a couple of MB resident, until touched.
         if [ "${r_rss:-0}" -gt 0 ] && [ "$r_rss" -lt 8192 ]; then
-            ok "[DD-14.FB §10.6] 2 x 64 MB of MAP_NORESERVE address space costs ${r_rss} KB of resident memory before any match — the caller reserves for the worst case and pays for the actual one"
+            ok "[DD-14.FB §3/§10.6] 2 x 64 MB of MAP_NORESERVE address space costs ${r_rss} KB of resident memory before any match — the caller reserves for the worst case and pays for the actual one"
         elif [ "${r_rss:-0}" -eq 0 ]; then
-            info "[DD-14.FB §10.6] resident-set size unavailable on this machine (/proc/self/statm) — the lazy-commit half of the example is unmeasured here"
+            info "[DD-14.FB §3/§10.6] resident-set size unavailable on this machine (/proc/self/statm) — the lazy-commit half of the example is unmeasured here"
         else
-            bad "[DD-14.FB §10.6] the untouched reservation is already ${r_rss} KB resident — MAP_NORESERVE is not deferring the commit, and the 'nearly free ceiling' claim does not hold on this machine"
+            bad "[DD-14.FB §3/§10.6] the untouched reservation is already ${r_rss} KB resident — MAP_NORESERVE is not deferring the commit, and the 'nearly free ceiling' claim does not hold on this machine"
         fi
 
         # (c) THE 800 KB ROW: the ruling's own target, matched through the
@@ -175,9 +231,9 @@ else
         rss800="$(printf '%s' "$row800" | awk '{print $6}')"
         null800="$(printf '%s' "$row800" | awk '{print $7}')"
         if [ "$r800" = "1" ] && [ "$null800" = "-3" ]; then
-            ok "[DD-14.FB §10.6] an 800,000-byte subject MATCHES through <prefix>_search_in in ${t800}s having touched ${rss800} KB, and the SAME artifact returns PCREC_ERR_FRAMES on it through <prefix>_search — D71 item 2's 'PCRE2-depth recursion with pcrec still never allocating', met"
+            ok "[DD-14.FB §3/§10.6] an 800,000-byte subject MATCHES through <prefix>_search_in in ${t800}s having touched ${rss800} KB, and the SAME artifact returns PCREC_ERR_FRAMES on it through <prefix>_search — D71 item 2's 'PCRE2-depth recursion with pcrec still never allocating', met"
         else
-            bad "[DD-14.FB §10.6] the 800 KB row reads _in=$r800 un-suffixed=$null800 (want 1 and -3): '$row800'"
+            bad "[DD-14.FB §3/§10.6] the 800 KB row reads _in=$r800 un-suffixed=$null800 (want 1 and -3): '$row800'"
         fi
 
         # (d) THE CEILING IS PREDICTABLE, which is the property that lets a
@@ -185,9 +241,9 @@ else
         r466="$(printf '%s\n' "$out" | awk '$1=="row" && $2==466000 {print $4}')"
         r470="$(printf '%s\n' "$out" | awk '$1=="row" && $2==470000 {print $4}')"
         if [ "$r466" = "1" ] && [ "$r470" = "-3" ]; then
-            ok "[DD-14.FB §10.6] the ceiling sits between n=466,000 and n=470,000, which is where ntrail / 8.98 trail entries per level predicts it ($((r_trail / 9)) levels) — a caller CAN size a reservation from the emitted numbers"
+            ok "[DD-14.FB §3/§10.6] the ceiling sits between n=466,000 and n=470,000, which is where ntrail / 8.98 trail entries per level predicts it ($((r_trail / 9)) levels) — a caller CAN size a reservation from the emitted numbers"
         else
-            bad "[DD-14.FB §10.6] the ceiling moved: n=466,000 gives $r466 (want 1) and n=470,000 gives $r470 (want -3). The trail-per-level ratio the spec's sizing advice rests on has changed"
+            bad "[DD-14.FB §3/§10.6] the ceiling moved: n=466,000 gives $r466 (want 1) and n=470,000 gives $r470 (want -3). The trail-per-level ratio the spec's sizing advice rests on has changed"
         fi
 
         # (e) THE ROW THE SPEC OVERSTATES. §10.6 says "with the same artifact

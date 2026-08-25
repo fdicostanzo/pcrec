@@ -1260,6 +1260,17 @@ reservation does not.
   `\K` entry, a backreference, a give-up, the constant-time runaway refusal —
   across both engines. `RXTROUTE=null` is the blunter, broader version of the
   same control and runs over any corpus.
+- **the seven capacity sites, exact in BOTH directions, under
+  AddressSanitizer.** For each nesting depth the driver allocates EXACTLY the
+  capacity design §4's measured per-level ratios say is needed and asserts
+  three things: the exact fit MATCHES (so under ASan nothing wrote past either
+  region), one frame short gives up, one trail entry short gives up. The
+  absence of slack is the point — an off-by-one capacity guard is invisible on
+  a generously sized buffer in BOTH directions at once, because too loose
+  writes into slack the caller happens to own and too tight never fires. ASan
+  is a PREFLIGHT: the section skips loudly to a non-sanitized run, and says so,
+  if `$CC` cannot build with it. This is the design's own S-FB6 ASan cell, and
+  it covers rather more than that row.
 - **spec §10.6's `MAP_NORESERVE` worked example, run.** 2 x 64 MB reserved,
   driven to its ceiling. It is opt-in because it touches ~105 MB of resident
   memory and builds 940 KB subjects; that is a measurement about a

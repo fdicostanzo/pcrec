@@ -99,13 +99,21 @@ re-measuring it.
   because what it measures — lazy commit, resident-set growth, wall time — are
   properties of the RESERVATION, and the `.rxt` format has no business growing
   a vocabulary for them.
-- **`run_frame_buffer.sh`** — **[DD-14.FB]** the two checks the corpus cannot
+- **`fb_exact_driver.c`** — **[DD-14.FB]** the SEVEN CAPACITY SITES measured
+  exact in BOTH directions, on buffers with NO SLACK, under
+  AddressSanitizer. Read its header before widening any capacity in
+  `framebuffer.rxt`: an off-by-one guard is invisible on a generously sized
+  buffer in both directions at once — too loose writes into slack the caller
+  happens to own, too tight never fires — so removing the slack is the whole
+  instrument. MEASURED: the exact fit matches at every depth with zero ASan
+  findings; one frame short and one trail entry short each give up cleanly.
+- **`run_frame_buffer.sh`** — **[DD-14.FB]** the three checks the corpus cannot
   hold, `make test-frame-buffer`, OPT-IN. §1 compares
   `<prefix>_search_in(..., NULL)` against `<prefix>_search` BYTE FOR BYTE over
   a 12-pattern spread chosen to reach every ANSWER KIND (match, no-match,
   capture spans, zero-width loop, `\K`, backreference, give-up, the
-  constant-time runaway refusal), both engines. §2 drives `fb_mmap_driver.c`
-  and asserts §10.6's rows. **Its rows are function calls, not a delimited
+  constant-time runaway refusal), both engines. §2 drives `fb_exact_driver.c` under ASan;
+  §3 drives `fb_mmap_driver.c` and asserts §10.6's rows. **Its rows are function calls, not a delimited
   table**, and the comment saying so is load-bearing: the first version used
   `|` as a field separator and silently truncated three of the twelve patterns.
 - **`refused.rxt`** — the `conditionals` refusals this module does NOT
