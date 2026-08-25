@@ -20,7 +20,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the emitted <prefix>_search_in binds <PREFIX>_RESUME_FRAMES as its resume capacity instead of the caller's buffers->nframes. The pointer is still the caller's, so nothing faults and nothing is emitted differently -- the caller simply cannot raise the ceiling, which is the whole of what D71 item 2 asked for"
-SAB_DOC_FIGURE="PREDICTED: framebuffer.rxt RED on the buffered cell that exceeds the stamped capacity; the NULL and default cells GREEN and codegen GREEN, because the surface is all present and only the number is wrong. Canonical figure owed from run_sabotage_matrix.sh S179."
+SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25, sabotaged emitter vs tests/recursion/framebuffer.rxt): DETECTED, 15pass/1fail. The failing cell is line 61, the 512,400000 one -- and it is the ONLY cell in that file that sees this row. The 1024,8192 cell does NOT: pinning the resume capacity at the stamped 2048 gives that cell MORE frames than it asked for and it still matches. So the detector is the cell added to stop cell 3 being read as 'the trail is the only real capacity', which is a better argument for that cell than the one it was written with. Canonical figure owed from run_sabotage_matrix.sh S179."
 SAB_COUNT=1
 SAB_BEFORE='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"

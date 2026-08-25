@@ -21,7 +21,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="all three emitted <prefix>_*_in entries pass buffers->ntrail as the RESUME capacity and buffers->nframes as the TRAIL capacity. A no-op whenever a caller supplies equal capacities, which is why the corpus cell that detects it uses deliberately unequal ones"
-SAB_DOC_FIGURE="PREDICTED: framebuffer.rxt RED on the 1024,8192 cell (the trail capacity becomes 1024 against 3,081 needed, so a match becomes a give-up); the equal-capacity and NULL cells GREEN. Canonical figure owed from run_sabotage_matrix.sh S180."
+SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 14pass/2fail, in TWO different ways. Line 47 (1024,8192) turns a match into a give-up -- the trail capacity becomes 1024 against 3,081 needed. Line 55 (200000,3072) CRASHES (exit 134, glibc heap abort): the trail region holds 3,072 entries and the transposed capacity says 200,000, so it is written past its end. Both cells use UNEQUAL capacities; an equal pair sees neither. Canonical figure owed from run_sabotage_matrix.sh S180."
 SAB_COUNT=3
 SAB_BEFORE='        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"'

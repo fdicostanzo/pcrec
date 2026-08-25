@@ -57,6 +57,15 @@ gu frames "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 # 4. AND THE FRAMES CAN BIND TOO, which is what stops cell 3 from being read as
 #    "the trail is the only real capacity". 512 frames is below the 686 this
 #    subject needs, with the trail far above binding.
+#
+#    MEASURED AFTERWARDS, AND IT IS A BETTER REASON THAN THE ONE ABOVE: this
+#    is the ONLY cell in this file that detects sabotage row S179 (the `_in`
+#    entry binding the STAMPED capacity instead of the caller's `nframes`).
+#    Cell 2 cannot -- pinning the resume capacity at 2048 hands that cell MORE
+#    frames than the 1024 it asked for, so it still matches -- and cells 1, 3,
+#    5 and 6 do not vary the resume capacity downward at all. A cell written
+#    for symmetry turned out to be the single detector for the most plausible
+#    way to build this feature and have it look finished.
 frames-buffer=512,400000
 gu frames "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 

@@ -28,7 +28,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the emitted <PREFIX>_RESUME_FRAME_SIZE is computed from the TRAIL entry's member list instead of the resume frame's, stamping 16 where the truth is 40. A caller sizing a reservation from the macro would over-count its capacity by 2.5x; the artifact's own _Static_assert turns that into a compile error instead"
-SAB_DOC_FIGURE="PREDICTED: RED at the generated-code COMPILE on every VM artifact -- corpus, codegen and framebuffer alike -- with the _Static_assert message naming RX_RESUME_FRAME_SIZE. Canonical figure owed from run_sabotage_matrix.sh S184."
+SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 0pass/16fail -- the whole file, at the GENERATED-CODE COMPILE, with the _Static_assert naming RX_RESUME_FRAME_SIZE. Not one under-allocated buffer at run time: the artifact refuses to build. Canonical figure owed from run_sabotage_matrix.sh S184."
 SAB_COUNT=1
 SAB_BEFORE='        bufs.resume_frame_size = vm_layout(frame_fields, nframe_fields, &fa);
         bufs.trail_frame_size  = vm_layout(trail_fields, ntrail_fields, &ta);'

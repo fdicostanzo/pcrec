@@ -33,7 +33,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the untraced RX_TRAIL guard compares run->trail_depth against the stamped <PREFIX>_TRAIL_FRAMES instead of run->trail_cap -- one of the seven capacity sites left unconverted. Identical behaviour for every caller at the default capacity; a caller-supplied trail larger than the stamped one is unreachable past the stamped number"
-SAB_DOC_FIGURE="PREDICTED: framebuffer.rxt RED on the 1024,8192 cell (3,081 trail entries needed against a stamped 3,072, so a match becomes a give-up) and framebuffer RED on the mmap ceiling; the default, NULL and 200000,3072 cells GREEN. codegen RED on the [DD-14.FB] no-stale-guard check. Canonical figure owed from run_sabotage_matrix.sh S182."
+SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 15pass/1fail, and the ONE failing cell is exactly the predicted one -- line 47, the 1024,8192 route, where 3,081 trail entries are needed and the stamped 3,072 stops it nine short. Every default-capacity and NULL cell passes, which is the row's point. Canonical figure owed from run_sabotage_matrix.sh S182."
 SAB_COUNT=1
 SAB_BEFORE='            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"

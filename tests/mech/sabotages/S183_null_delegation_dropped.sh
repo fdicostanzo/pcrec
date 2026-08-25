@@ -21,7 +21,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="the emitted <prefix>_search_in drops its NULL-descriptor delegation line, so a NULL descriptor binds a null resume stack at capacity 0 instead of meaning 'use the stamped default'. Spec 10.3 defines the NULL case to BE the un-suffixed call"
-SAB_DOC_FIGURE="PREDICTED: framebuffer.rxt RED on every frames-buffer=null cell; the default and buffered cells GREEN. run_frame_buffer.sh section 1 RED on all twelve spread rows. Canonical figure owed from run_sabotage_matrix.sh S183."
+SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 12pass/4fail -- every frames-buffer=null cell in the file crashes (exit 139), across all THREE patterns including the DFA-selected one, which also shows the null route reaching that engine's inert _in entry. No default or buffered cell is affected. Canonical figure owed from run_sabotage_matrix.sh S183."
 SAB_COUNT=1
 SAB_BEFORE='        "    %s_run_state run;\n"
         "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans);\n"

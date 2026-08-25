@@ -21,7 +21,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer stackdepth codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="<prefix>_run_state_init zeroes run->resume_stack and run->resume_cap after <prefix>_run_state_bind has set them. Every VM match then runs with a NULL resume stack of capacity 0, so the first push gives up -- through the caller's buffers AND through the artifact's own default storage, which the un-suffixed entries bind the same way"
-SAB_DOC_FIGURE="PREDICTED: RED everywhere a VM artifact backtracks -- framebuffer.rxt, the whole corpus, stackdepth arm B. codegen mostly GREEN, since the emitted surface is unchanged. Canonical figure owed from run_sabotage_matrix.sh S181."
+SAB_DOC_FIGURE="PRE-VALIDATED (2026-08-25): DETECTED, 8pass/8fail -- every VM cell in framebuffer.rxt, through both the default and the buffered entries, since the un-suffixed entries bind their own storage the same way. The 8 that pass are the DFA-selected block, whose engine has no run state. Canonical figure owed from run_sabotage_matrix.sh S181."
 SAB_COUNT=1
 SAB_BEFORE='        "    run->resume_depth = 0; run->trail_depth = 0;\n",'
 SAB_AFTER='        "    run->resume_depth = 0; run->trail_depth = 0;\n"
