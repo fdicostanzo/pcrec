@@ -1855,7 +1855,11 @@ unchanged and are not restated here.
   deliberate rather than an oversight. Those six types are literal so that
   differently-prefixed matchers compose; a buffer is the opposite case,
   because a resume frame's SIZE differs between artifacts (MEASURED: 24
-  bytes on a call-free artifact, 40 on a call-bearing one). A fixed-literal
+  bytes on an artifact with no LINKED call, 40 on one with a linked call —
+  `RX_VM_CALL_LINKED > 0`; a call that wave G SPLICED, `RX_VM_CALL_SPLICED`,
+  is inlined and adds nothing to the frame, so the email specimen's factored
+  form under `--engine=vm` stamps 24 with ten spliced calls — read the
+  stamp, never infer it from the pattern text). A fixed-literal
   spelling would advertise an interchangeability that does not exist.
 - **The counts are CAPACITIES, not byte sizes.** `nframes` is how many
   frames the storage holds, `ntrail` how many trail entries. §10.4 is how a

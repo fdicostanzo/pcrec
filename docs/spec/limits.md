@@ -180,8 +180,9 @@ PASS: [TS-4] the cause is stated: the call-bearing entry's frame is
 call-free control's is 98432 B and fits
 ```
 
-**`rx_search`'s frame is 131,216 bytes** on a call-bearing artifact at
-this commit — matching the number already current in
+**`rx_search`'s frame is 131,216 bytes** on a LINKED-call artifact at
+this commit (`RX_VM_CALL_LINKED > 0` — a spliced call does not widen the
+frame; `docs/spec/match_api.md` §10.2) — matching the number already current in
 `docs/spec/match_api.md` (§5.3, §10.1: "131,216 bytes"). That exceeds a
 musl-default **128 KB (131,072-byte)** thread stack by 144 bytes, so the
 default entries SIGSEGV on such a thread even on a subject well inside
