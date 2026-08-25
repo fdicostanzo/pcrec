@@ -27,5 +27,13 @@ SAB_HARNESS_TARGET="tests/captures/basic.rxt"
 SAB_DESC="pcrec_has_live_capture prunes at rmin == 0 as well as rmax == 0, so every group under an OPTIONAL repeat is declared dead. '(a)?b' then has no live capture, engine selection hands it to the DFA, and group 1 comes back permanently UNSET on a match that is otherwise correct -- the elision's unsound direction, where over-reporting liveness would only have cost an engine."
 SAB_DOC_FIGURE="PREDICTED: tests/captures/basic.rxt RED on the group-span lines of every optional-group case, with its m/n spans unchanged; the codegen suite's engine-selection rules RED where a capture-bearing pattern is expected on the VM. The four NAMED elision patterns in run_recursion_identity.sh stay as they are -- this row widens the rule, it does not narrow it -- so that check is NOT the detector and its silence here is the evidence the two are asking different questions. Canonical figure owed from run_sabotage_matrix.sh S174. MEASURED BY HAND at the wave: tests/captures/basic.rxt 43 passed / 2 FAILED."
 SAB_COUNT=1
-SAB_BEFORE='            if (a->u.rep.rmax == 0) return false;'
-SAB_AFTER='            if (a->u.rep.rmax == 0 || a->u.rep.rmin == 0) return false;   /* SABOTAGE S174 */'
+# [DD-14 wave G, RE-ANCHORED 2026-08-25] The prune is spelled
+# `rmin == 0 && rmax == 0` now, matching `vm_count_slots`' guard exactly — one
+# predicate, two passes, and two spellings of one question are two chances to
+# disagree. THE SABOTAGE IS UNCHANGED IN MEANING: it still widens the prune so
+# that an OPTIONAL group is declared dead, and it now does so by DROPPING THE
+# `rmax` CONJUNCT rather than by adding an `rmin` disjunct. `(a)?` has
+# `rmin == 0` and `rmax == 1`, so the sabotaged predicate prunes it and group 1
+# comes back permanently UNSET on a match that is otherwise correct.
+SAB_BEFORE='            if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return false;'
+SAB_AFTER='            if (a->u.rep.rmin == 0) return false;   /* SABOTAGE S174 */'
