@@ -13619,3 +13619,20 @@ san_Fmerged.log). Close-time note for K31: the 45 s cap is a
 CPU-under-contention measurement by construction; a check that is only
 right on a quiet box should say so or measure a ratio against a
 calibration compile — a [TT-family] row at the close.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 13) — the D27 EXTRACT merged (461b361); the blinded corpus opens next
+
+srX (sonnet, ~20:0x-20:2x) produced docs/design/sr_d27_extract.md (665
+lines): the construct table with DEFINE folded in, the measured semantics
+of §3 with the [DD-14.LB] amendment worked in (the single-branch
+mixed-width-through-a-call refusal stated as pcrec-only so no false
+expectation is written), the refusals + D73's ceiling (n=342 on
+`^(a(?1)?b)$`), the oracle rules with the Perl arm (invocation shape
+given; divergences recorded not resolved), the adversarial population,
+the specimen's two patterns inlined verbatim, the withheld list. Manager
+review found the withheld section and three population bullets NAMING
+the withheld mechanisms (call graph, `W`, resume frames/trail, the
+indirect jump, "call-graph slots") — rephrased behaviourally before the
+merge (a blinded reader must not learn the implementation's vocabulary
+from the list of what it may not learn). Next: the cell
+(`scripts/mk_d27_cell.sh sr27 …`) and the blinded author (opus).
