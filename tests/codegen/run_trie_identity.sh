@@ -84,7 +84,7 @@ gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 # compiler quietly built from a different source set than the subject — which
 # is the differential going vacuous, this repo's recorded check-design defect.
 REF="$WORKDIR/pcrec_notrie"
-REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | sort)"
+REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then
     echo "FAIL: found no compiler sources under $ROOT_DIR/src for the reference build" >&2
     exit 1

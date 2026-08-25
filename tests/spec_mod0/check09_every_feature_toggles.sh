@@ -94,11 +94,11 @@ fi
 # rather than a hardcoded `cut -f4` — [SR-11]/table_contract.md), minus the
 # empty ones
 MODCOL="$(table_col_index "$REG" module)" || exit 2
-REG_NAMES=$(grep -v '^#' "$REG" | cut -f"$MODCOL" | grep -v '^$' | sort -u)
+REG_NAMES=$(grep -v '^#' "$REG" | cut -f"$MODCOL" | grep -v '^$' | LC_ALL=C sort -u)
 NREG=$(echo "$REG_NAMES" | grep -c .)
 
 # names check07 reported
-OUT_NAMES=$(grep '^  PERNAME ' "$OUT" | awk '{print $2}' | sort -u)
+OUT_NAMES=$(grep '^  PERNAME ' "$OUT" | awk '{print $2}' | LC_ALL=C sort -u)
 NOUT=$(echo "$OUT_NAMES" | grep -c .)
 
 echo "  POPULATION toggles.registry_module_names      $NREG"
@@ -163,7 +163,7 @@ if [ -z "$STAMP_LINE" ]; then
     echo "        to read"
     FAILS=$((FAILS + 1))
 else
-    STAMP_MODULES=$(echo "$STAMP_LINE" | sed -E 's/.*"([^"]*)".*/\1/' | tr ',' '\n' | sed '/^$/d' | sort -u)
+    STAMP_MODULES=$(echo "$STAMP_LINE" | sed -E 's/.*"([^"]*)".*/\1/' | tr ',' '\n' | sed '/^$/d' | LC_ALL=C sort -u)
     NSTAMP=$(echo "$STAMP_MODULES" | grep -c .)
     echo "  bare-default artifact stamp names: $(echo "$STAMP_MODULES" | tr '\n' ',' | sed 's/,$//')"
     echo "  POPULATION toggles.stamp_modules               $NSTAMP"
@@ -172,7 +172,7 @@ else
         echo "        check membership of (the base tier has no gate to defend)"
         FAILS=$((FAILS + 1))
     fi
-    FLOORED_NAMES=$(grep -E '^gate\.pairs\.[^[:space:]]+[[:space:]]+[0-9]+' "$FLOORS" | sed -E 's/^gate\.pairs\.([^[:space:]]+).*/\1/' | sort -u)
+    FLOORED_NAMES=$(grep -E '^gate\.pairs\.[^[:space:]]+[[:space:]]+[0-9]+' "$FLOORS" | sed -E 's/^gate\.pairs\.([^[:space:]]+).*/\1/' | LC_ALL=C sort -u)
     for n in $STAMP_MODULES; do
         if ! echo "$FLOORED_NAMES" | grep -qx "$n"; then
             echo "  DISAGREE bare-default module '$n' (from pcrec's own"

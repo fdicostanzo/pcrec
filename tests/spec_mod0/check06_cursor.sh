@@ -243,8 +243,8 @@ while IFS=$'\t' read -r kind selector syn _rest; do
 done < <(grep -v '^#' "$REG")
 
 UNROUTED_TRIMMED=$(printf '%s' "$UNROUTED" | grep -c .)
-UNROUTED_LIST=$(printf '%s' "$UNROUTED" | grep . | sort)
-EXPECT_TRIMMED=$(printf '%s\n' "$EXPECT_BASE_ANSWERED" | sort)
+UNROUTED_LIST=$(printf '%s' "$UNROUTED" | grep . | LC_ALL=C sort)
+EXPECT_TRIMMED=$(printf '%s\n' "$EXPECT_BASE_ANSWERED" | LC_ALL=C sort)
 
 echo
 pop_check cursor.doorway_rows "$ROUTED_ROWS"

@@ -243,7 +243,7 @@ fi
 ok "positive control (a): the reference at $REFCOMMIT contains neither A_LOOK nor \`u.rep.\` — it is a genuinely PRE-refactor tree, sharing no sources with the subject"
 
 REF="$WORKDIR/pcrec_prerefactor"
-REF_SRCS="$(find "$REFSRC/src" -name '*.c' | sort)"
+REF_SRCS="$(find "$REFSRC/src" -name '*.c' | LC_ALL=C sort)"
 [ -n "$REF_SRCS" ] || die "found no compiler sources in the archived reference tree"
 # shellcheck disable=SC2086
 if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$REFSRC/lib" -I"$REFSRC/src" $SANFLAGS \

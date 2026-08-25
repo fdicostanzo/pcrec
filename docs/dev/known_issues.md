@@ -2763,12 +2763,34 @@ LC_ALL=C×2" (altdiff, endvar/backref/atomic/gstart/wordctx/mlinectx
 identity, mrldiff, possdiff, rungdiff) has ONE sort to inspect. Not
 every sort is a `-u` over pattern text — the audit decides per site.
 
-**Follow-up (srG, ~23:3x).** The IDENTICAL idiom (`grep -rhs '^pattern '
-tests --include='*.rxt' | sed … | sort -u`, no LC_ALL=C) sits in FOUR
-DIFFERENTIAL SUITES: tests/mrl/run_mrl_tests.sh:394,
-tests/possessify/run_possdiff.sh:241, tests/counterk/run_counterkdiff.sh:293,
-tests/rungselect/run_rungselect_tests.sh:241 — 950 of 2,610 patterns
-(36%) silently dropped from each. AND THE DROPPED SIDE IS THE STRUCTURED
+**Follow-up (srG, ~23:3x) — WRONG ABOUT ALL FOUR SUITES; CORRECTED AT THE
+[DD-14] CLOSE, 2026-08-25 (srClose), BY MEASUREMENT.** It read: "The
+IDENTICAL idiom … sits in FOUR DIFFERENTIAL SUITES:
+tests/mrl/run_mrl_tests.sh:394, tests/possessify/run_possdiff.sh:241,
+tests/counterk/run_counterkdiff.sh:293,
+tests/rungselect/run_rungselect_tests.sh:241 — 950 of 2,610 patterns (36%)
+silently dropped from each." **Each of those four scripts carries a
+top-level `export LC_ALL=C`** — at lines 36, 35, 66 and 34 respectively,
+unshadowed, above every sort site — and `git log -S 'export LC_ALL=C'` puts
+each export in the commit that CREATED its script (6a2f875, 23684e1,
+3b0bf91, b14f369), years of lane-time before this issue was filed. Four
+more scripts are in the same already-guarded state (altdiff, mrldiff,
+rungdiff, possessify_tests), plus altcls_tests, counterk_tests,
+prefilter_tests. So there was no ~57% population growth to harvest in any
+of them and no restored differential to triage. **The follow-up was
+derived by grepping for the IDIOM and not for the GUARD, which is the
+same shape as the defect it was describing: a conclusion drawn from a
+pipeline nobody counted.** The read on the DROPPED SIDE below is still
+right, and the defect is still real and still current — MEASURED on this
+tree 2026-08-25, the corpus extraction gives 1,784 patterns ambient
+against 2,758 under `LC_ALL=C` — it simply did not live where the
+follow-up said. WHERE IT DID LIVE, found by the close's own per-site
+audit: `tests/codegen/run_object_neutrality.sh:75`, the identical idiom
+fully unguarded, measured 1,798 ambient against 2,772 under `LC_ALL=C`,
+so every object-code-neutrality verdict that script had ever printed was
+stated over 65% of the corpus. Fixed at the close, with the measurement in
+the site's comment and a stated, floored population (2,772; floor 2,630)
+in its summary. AND THE DROPPED SIDE IS THE STRUCTURED
 HALF: collation ignores punctuation, so each collision's survivor is the
 spelling WITHOUT it and the parenthesised / quantified / assertion-
 bearing spelling is the one lost (`(((a)|b){0,4})c`, `((?!(a))z)`, …) —
@@ -2780,14 +2802,31 @@ the next author" shape, not a discovery. Each of the four is a one-word
 fix that grows a differential's population by ~57% and may surface real
 cells — each gets ITS OWN commit and its own triage.
 
-**Remedy.** The [DD-14] close's doc/infra sweep: every `sort` over
-pattern text gets `LC_ALL=C` (or a `python3`-side dedup), and every
-population-deriving check STATES its population count against an
-independently derived count (the lookaround gate's floor shape). One
-general fix: export `LC_ALL=C` at the top of tests/lib/run_group.sh and
-the harness so no script can inherit the locale — ruled at the close.
+**Remedy — DONE at the [DD-14] close, 2026-08-25 (srClose).** Three
+layers, because two of them were already there when the defect recurred
+and neither caught it:
+1. **Per site.** 51 `sort` sites across 24 scripts gained an `LC_ALL=C`
+   prefix (tests/backrefs, tests/bench + bench/compare, tests/codegen ×11,
+   tests/harness, tests/known_fail, tests/recursion, tests/spec_mod0 ×3,
+   tests/thread). Populations re-measured per site: only
+   `run_object_neutrality.sh` LOSES ROWS (1,798 → 2,772); the `find … |
+   sort` file lists (177 `.rxt`, 35 `.c`) keep every row but change ORDER
+   between locales, which matters wherever a reference build's file order
+   has to reproduce.
+2. **The general fix (Frank's ruling).** `export LC_ALL=C` at the top of
+   `tests/lib/run_group.sh` and `tests/harness/run.sh`, so nothing
+   underneath them inherits the ambient locale.
+3. **A CHECK, which is the layer that was missing.** `run_codegen_tests.sh`
+   sweeps every `tests/**/run_*.sh` for a `sort` used as a command word and
+   fails naming any site not guarded at its own site or by an export ABOVE
+   it — the position is load-bearing, and the check tests it. Measured
+   2026-08-25: 62 sites across 53 scripts, all guarded; floors of 50/40
+   make a collapsed sweep a FAILURE rather than a pass. Validated in all
+   three directions before landing: green on the tree, RED on an unguarded
+   site, RED on a script whose export was moved BELOW its sorts, and RED on
+   an empty population.
 
-**Milestone.** [DD-14.CLOSE] item 7.
+**Milestone.** [DD-14.CLOSE] item 7 — CLOSED.
 
 ## K36 — OPEN (2026-08-25, found by r36's engine critic; pre-existing) — `rx_L3` restores read the trail before the call-frame bounds guard
 

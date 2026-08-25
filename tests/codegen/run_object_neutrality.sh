@@ -71,8 +71,33 @@ trap cleanup EXIT
 # The population is every `pattern` line in every .rxt under tests/, so it
 # grows with the corpus rather than with this script — run_vm_identity.sh's
 # formulation, and for its reason.
+#
+# [K35, fixed at the [DD-14] close 2026-08-25] `LC_ALL=C` ON THE `sort -u`,
+# AND IT IS NOT A FORMATTING PREFERENCE. Under the ambient `en_US.UTF-8`
+# collation punctuation is IGNORABLE, so `a{0,0}b` and `(a){0,0}b` compare
+# EQUAL and `-u` drops one — and the survivor is the spelling WITHOUT the
+# punctuation, i.e. the STRUCTURED half of every collision is what gets lost.
+# MEASURED on this tree, this exact pipeline, 2026-08-25:
+#     ambient (en_US.UTF-8): 1,798 patterns
+#     LC_ALL=C:              2,772 patterns   (+974, 35% of the corpus)
+# Every neutrality verdict this script printed before the fix was stated over
+# 65% of the corpus with nothing saying so. The count is printed below so a
+# future shrink announces itself instead of being invisible.
 grep -rhE '^pattern ' "$ROOT_DIR/tests" 2>/dev/null | sed 's/^pattern //' \
-    | sort -u > "$WORKDIR/pats.all"
+    | LC_ALL=C sort -u > "$WORKDIR/pats.all"
+
+# THE DERIVED POPULATION, STATED AND FLOORED (K35's remedy: a check whose
+# population comes from a pipeline nobody counts cannot report that the
+# pipeline lost a third of it). 2,772 on this tree, 2026-08-25; the floor is
+# ~95% of that, low enough that ordinary corpus churn does not fire it.
+# IF THIS GOES RED, READ IT AS "the population moved" AND FIND OUT WHY before
+# re-pinning: a corpus that genuinely shrank is a deliberate re-pin, an
+# extraction that silently lost patterns is the bug this floor exists for.
+npat_all="$(wc -l < "$WORKDIR/pats.all")"
+if [ "$npat_all" -lt 2630 ]; then
+    echo "FAIL: object-neutrality: corpus extraction found only $npat_all patterns, below the 2630 floor (~95% of the 2772 this tree measures). K35: an unguarded \`sort -u\` collates punctuation as ignorable and silently drops a third of the corpus (measured here: 1,798 ambient vs 2,772 under LC_ALL=C). Either the corpus shrank (re-pin, deliberately) or the extraction is dropping patterns again" >&2
+    exit 1
+fi
 if [ "$NEUT_N" != "0" ]; then
     # STRATIFIED, not the first N. A bounded run must still span the SHAPE
     # space, and the corpus is sorted, so `head` samples one alphabetical
@@ -106,12 +131,12 @@ emit_and_build() {   # $1=pcrec  $2=outdir  $3=pattern ; same BASENAME both side
     # so on stderr. That is a legitimate shape, not a failure — but it must be
     # SYMMETRIC, so the section list is recorded and compared too, and a
     # .rodata that appears on one side only shows up as a byte difference.
-    { objdump -h "$2/gen.o" | awk '{print $2}' | grep -E '^\.' | sort
+    { objdump -h "$2/gen.o" | awk '{print $2}' | grep -E '^\.' | LC_ALL=C sort
       objdump -s -j .text   "$2/gen.o" 2>/dev/null
       objdump -s -j .rodata "$2/gen.o" 2>/dev/null; } \
         | grep -v 'file format' > "$2/bytes"
-    nm --defined-only -g "$2/gen.o" 2>/dev/null | awk '{print $2, $3}' | sort > "$2/gsyms"
-    nm "$2/gen.o" 2>/dev/null | awk '{print $NF}' | sort > "$2/allsyms"
+    nm --defined-only -g "$2/gen.o" 2>/dev/null | awk '{print $2, $3}' | LC_ALL=C sort > "$2/gsyms"
+    nm "$2/gen.o" 2>/dev/null | awk '{print $NF}' | LC_ALL=C sort > "$2/allsyms"
     return 0
 }
 
@@ -152,6 +177,7 @@ echo "== [M6-READ] object-code neutrality =="
 echo "reference : $REF"
 echo "current   : $CUR"
 echo "flags     : $CC $NEUT_CFLAGS"
+echo "population: $npat_all distinct corpus patterns extracted (floor 2630; LC_ALL=C, K35)"
 echo "patterns  : $npat swept ($refused refused by both, $skipped uncompilable)"
 echo "(a) .text + .rodata byte-identical : $same"
 echo "(c) exported symbols identical     : $((same + textdiff)) of $((same + textdiff + symdiff))"

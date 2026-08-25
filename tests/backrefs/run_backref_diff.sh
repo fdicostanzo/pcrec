@@ -206,7 +206,7 @@ NCELL=$(wc -l < "$WORKDIR/oracle.tsv")
 # The input list the batch drivers read, in the SAME order the oracle wrote:
 # the caller compares positionally, so one list and one order.
 awk -F'\t' -v d="$WORKDIR/subjects" '{ print d "/" $2 "\t" $3 }' \
-    "$WORKDIR/oracle.tsv" | sort -u > /dev/null   # (shape check only)
+    "$WORKDIR/oracle.tsv" | LC_ALL=C sort -u > /dev/null   # (shape check only)
 : > "$WORKDIR/cells.txt"
 python3 - "$WORKDIR/subjects" "$WORKDIR/cells.txt" <<'PY'
 import os, sys

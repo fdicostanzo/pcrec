@@ -58,6 +58,23 @@
 
 set -u
 
+# [K35, ruled by Frank at the [DD-14] close, 2026-08-25] THE GENERAL FIX:
+# NO SCRIPT BELOW THIS ONE INHERITS THE AMBIENT LOCALE. Under `en_US.UTF-8`
+# `sort` collates at a level that treats punctuation as IGNORABLE, so for a
+# corpus of REGEXES `a{0,0}b` and `(a){0,0}b` compare EQUAL and `sort -u`
+# silently drops one — and the survivor is the spelling WITHOUT punctuation,
+# i.e. the STRUCTURED half of every collision is what is lost. MEASURED on
+# this tree 2026-08-25: the corpus pattern extraction yields 1,784 patterns
+# in the ambient locale and 2,758 under LC_ALL=C, a 35% silent shrink.
+# K35's own history is why this is here and not only at each site: the
+# hazard was written down at tests/cli/run_cli_tests.sh:786 and then recurred
+# five times, because a lesson recorded in one file does not reach the next
+# author. Every site is ALSO guarded individually (belt and braces — a script
+# run directly from a Makefile recipe never passes through here), and
+# run_codegen_tests.sh carries a structural check that greps for an
+# unguarded `sort` in any tests/**/run_*.sh and fails naming it.
+export LC_ALL=C
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
@@ -93,12 +110,12 @@ files=()
 if [ $# -eq 0 ]; then
     while IFS= read -r f; do files+=("$f"); done \
         < <(find "$ROOT_DIR/tests" -name '*.rxt' \
-                 -not -path "*/known_fail/*" | sort)
+                 -not -path "*/known_fail/*" | LC_ALL=C sort)
 else
     for arg in "$@"; do
         if [ -d "$arg" ]; then
             while IFS= read -r f; do files+=("$f"); done \
-                < <(find "$arg" -name '*.rxt' | sort)
+                < <(find "$arg" -name '*.rxt' | LC_ALL=C sort)
         else
             files+=("$arg")
         fi
@@ -171,7 +188,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     echo "cases failed: $total_fail"
     if [ ${#fail_files[@]} -gt 0 ]; then
         echo "failures by file:"
-        for line in "${fail_files[@]}"; do echo "  $line"; done | sort
+        for line in "${fail_files[@]}"; do echo "  $line"; done | LC_ALL=C sort
     fi
     echo "pattern-compile failures (distinct): $total_cfail"
     echo "group cases pending-vm: $total_pending"
@@ -820,7 +837,7 @@ if [ ${#file_fail_count[@]} -gt 0 ]; then
     echo "failures by file:"
     for f in "${!file_fail_count[@]}"; do
         echo "  $f: ${file_fail_count[$f]}"
-    done | sort
+    done | LC_ALL=C sort
 fi
 echo "pattern-compile failures (distinct): ${#compile_fail_set[@]}"
 echo "group cases pending-vm: $total_pending"
