@@ -15265,3 +15265,35 @@ paused on suites at my instruction after a lane's `make test-corpus`
 memory rule 9, brief_common.md. pcrecdev2's window OPENED 18:2x for its
 three re-measure cells; lanes resume after WINDOW CLOSED, then the
 [OPT-1]/[OPT-2] measurement lane on the quiet box.
+
+#### Fortieth session, part 6 — tuning.md and rxt_format.md merged; the loop's measurement lane and the stamps lane are out (2026-08-25 ~19:2x EDT)
+
+After the battery: pcrecdev2's 16-min window (18:2x-18:32) re-measured
+its three inconclusive cells, all `measured` now; the bench's I-4 loop
+tools shipped on its master (e9202ba: `quick`, `pcrec-local`, scratch
+tier, reporter v2 with the O-5 columns). MERGED: **[SPEC-1.3]
+docs/spec/tuning.md** 40d9f79 (srTuning: eleven axes, every stamp
+verified by an artifact diff, masked/unmasked split confirmed against
+emit_dfa.c's strategy_denials, five differentials 0 diverged; FOUND
+lib/pcrec.h naming a never-shipped `RX_VM_CALLS` — corrected to the
+SPLICED/LINKED pair at merge); **[SPEC-1.6] docs/spec/rxt_format.md**
+962e2de (srRxt: the format/driver protocol moved out of testing.md with
+a line-range table; four prose-vs-parser drifts — `perr` exits EXACTLY
+1; the driver's exit-4 cross-check was undocumented anywhere; RXTFLAGS
+had no env row; pre-D45 timeout numbers). INCIDENT, mine: the tuning
+merge conflicted in docs/spec/CLAUDE.md (cli.md's and tuning.md's
+entries at the same spot) and my chained `git merge && … ; git add -A &&
+git commit` committed the CONFLICT MARKERS as the merge (40d9f79) —
+resolved c52c9d9, both entries kept; CLAUDE.md's situation index now
+says "merge a lane branch ALONE, read the result". LAUNCHED: srOpt1
+(sonnet, measurement only: reproduce the 2.3× vm-in-vs-vm gap with the
+bench's `quick`, attribute across stack-clash probes / per-call init /
+first-touch faults / frame width with one control each; [OPT-2]'s
+dead-state length-scaling; times only at load1/nproc < 1); srStamp
+(opus, [DD-13]: `RX_ENGINE` + `RX_DFA_PREFILTER` on DFA artifacts, abi
+3→4 with D76's re-pin, and the §6.3 rule amendment — selection facts
+unconditional, capacity macros VM-only — to be recorded as a decision at
+merge); srReg (sonnet, [SPEC-1.5] registry.md). Spec tier so far:
+limits, cli (+diagnostics, modules), tuning, rxt_format; remaining
+[SPEC-1.4] match_api patches (after srStamp — its C2 caveat changes),
+[SPEC-1.5] in flight, [SPEC-1.10] survey debt.
