@@ -620,6 +620,108 @@ Under an explicit `heap_limit` it answers `rc −63` *"heap limit exceeded"*.
 pcrec's is a **fixed emitted array** (P12), which is the honest structural
 difference and the one a stamped ceiling exists to communicate.
 
+##### AMENDMENT, 2026-08-24 ([DD-14.K34]) — the predicate this section said it
+##### could not pin by black-box probing, PINNED by reading the source
+
+The paragraph above (and `out/leftrec.txt` L5b) is explicit that this lane
+**did not pin 10.46's exact predicate by black-box probing**. `known_issues.md`
+K34 is that open question, sharpened by a D27-blinded finding:
+`(a|(?1)a)b` on `"a"`/`"aaa"`/`""` is a **clean `NOMATCH`**, not `rc −52`, and
+`((?1)?a)`/`((?1)*a)` on `"a"` are `rc −52` where a naive depth-capped VM would
+just match — cells the "same-position" heuristic above cannot explain either
+way. `srK34` (`docs/design/subroutines_measurements/probes/probe_recurse_loop.py`,
+archived `out/recurse_loop.txt`) closes it by reading `pcre2_match.c`'s
+`OP_RECURSE` handler (10.46) instead of sweeping harder.
+
+**THE RULE**, cited to `pcre2_match.c`, `case OP_RECURSE` (10.46 release
+tarball): a call to group `number` returns `PCRE2_ERROR_RECURSELOOP` (`rc
+−52`) — a bare `return`, which **aborts the whole match**, not a backtrack —
+only when ALL of:
+
+- **(G)** the call happens while ALREADY inside some active recursion
+  (`Fcurrent_recurse != RECURSE_UNSET`) — the FIRST entry into any group,
+  from outside all recursion, is never checked, regardless of position;
+- **(A)** walking the enclosing "special group" frame chain
+  (`last_group_offset`, which threads through capture/non-capture/
+  cond-assert/recurse frames alike) finds a NEAREST ancestor frame that is
+  itself a recursion of the SAME group — the first one found, not every one,
+  and the search is not limited to the immediate parent;
+- **(P)** the current subject pointer equals that ancestor's OWN caller's
+  subject pointer at the moment it made the same call — zero cursor progress
+  since;
+- **(U)** `mb->last_used_ptr` — PCRE2's own running high-water mark of the
+  furthest subject byte ANY opcode has examined, bumped at every
+  backtrack-return (`RETURN_SWITCH`, i.e. on every single `RRETURN` in the
+  WHOLE engine, success or failure) and at assertion/word-boundary
+  completion, not only literal character compares — is ALSO unchanged since
+  that same moment; and
+- **(D)** the match-time option `PCRE2_DISABLE_RECURSELOOP_CHECK` (`0x00040000`)
+  is not set.
+
+**This is why 199 same-position recursions can match** (the finding above):
+the guard is not "has the position moved", it is "has EITHER the position OR
+merely-having-looked-further moved since the same recursion was last
+entered" — a failed base-case alternative that peeks even one byte past
+where the ancestor's own attempt peeked keeps `(U)` false and defers the
+guard indefinitely, however deep the recursion goes. `probe_recurse_loop.py`
+crosses this against first-item / consuming-prefix / nullable-prefix bodies,
+with and without a base case, anchored and unanchored, all of K34's cited
+spellings (`(?1)` `(?R)` `(?&name)` `\g<n>` `\g'name'` `(?P>name)`), and a
+3-node indirect cycle proving `(A)` is not parent-only — **65 of 65 cells
+agree with the rule as stated**, including two decisive confirmations beyond
+restating it: `PCRE2_DISABLE_RECURSELOOP_CHECK` set on an otherwise-`−52`
+cell measures `rc −53` (DEPTHLIMIT) instead under an explicit small depth
+limit, proof the read targets the actual `&&` term rather than its
+externally observable effect; and `^(a|(?1)a)$|^Y$` on `"Y"` is `rc −52`, not
+the match `^Y$` gives standing alone — the sibling top-level alternative is
+never reached, confirming the abort really is whole-match. **A confound the
+probe found and now documents**: a runaway-recursion cell on a subject that
+is empty or missing a byte the pattern structurally requires anywhere
+(`^((?1)a)$` on `""`; `^(x*(?1)b)$` on `"xx"`) reads as a clean `NOMATCH`
+that looks like a rule counterexample but is a DIFFERENT PCRE2 mechanism —
+the compile-time START-OPTIMIZE pass (minlength / required-byte prescan)
+rejecting before the recursive matcher runs even one level
+(`depth_limit=1` already shows `NOMATCH` there) — confirmed by
+`PCRE2_NO_START_OPTIMIZE` flipping every one of those five cells back to the
+predicted `−52`.
+
+**K34's own cells, now explained rather than merely reproduced.**
+`(a|(?1)a)b` unanchored on `"a"`: branch 1 `a` matches then needs `b`
+(exhausted) and backtracks; branch 2 `(?1)a` recurses — the FIRST recursion,
+`(G)` unarmed, no check — landing at position 0 again; that level's OWN
+branch 1 also matches-then-fails-on-`b`, which is what pushes
+`mb->last_used_ptr` to 1 (the failed trailing-byte check looked one past the
+match); THEN branch 2 recurses a second time — `(G)` now armed, `(P)` holds
+(cursor back at 0) but `(U)` does NOT (`last_used_ptr` is 1, the ancestor's
+own baseline was 0) — so the guard does not fire, and the whole tree
+exhausts through ordinary backtracking to a clean `NOMATCH` instead.
+`((?1)?a)`/`((?1)*a)` on `"a"` are the R1 "first-item, no consuming prefix"
+shape with an optional/starred wrapper that changes nothing about `(P)`/`(U)`
+— greedy always tries WITH the call first, so the guard trips at the second
+entry before the quantifier's WITHOUT arm is ever reached, unconditionally —
+which is exactly why PCRE2 `−52`s there while a design with no same-position
+guard at all just matches (K34's own "pcrec arguably better" reading of that
+inverse cell).
+
+**RULING (unchanged, reaffirmed with the predicate now IN HAND rather than
+withheld): pcrec still does NOT adopt this rule as a general mechanism.**
+Implementing it verbatim would need, per emitted call frame: a stored
+subject-pointer AND a stored `last_used_ptr`-equivalent high-water mark that
+is threaded through the WHOLE artifact (every opcode that can fail-and-return
+would have to update it, not just the ones a naive port would think of — the
+assertion/word-boundary sites in particular, which R1.5's own confound shows
+matter for whether a subject is even reachable) — real emitter machinery, not
+a per-callee O(1) slot the way the refuted "same position" reading would have
+been. §5.6's ruling stands on the OPTIONS this document already weighed
+([DD-14.K34]'s brief restates them as (a) build it, (b) keep the depth-only
+give-up): the residual it costs is bounded (§12 P-3, the band between
+pcrec's stamped depth and PCRE2's memory-bound ceiling) and D26 already
+permits a give-up as a non-answer. What changes with this amendment is only
+that the residual is now a MEASURED, EXPLAINED shape rather than an
+unpinned one — `known_issues.md` K34's twelve red D27 corpus cells stay
+triaged as pcrec-wrong-by-capability, and the follow-on plan row this
+amendment was chartered from can cite a rule instead of an open question.
+
 ### 3.4 The interactions (charter (iv))
 
 #### (a) Backreferences to groups set inside a call
