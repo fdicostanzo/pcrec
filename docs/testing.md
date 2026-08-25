@@ -1249,6 +1249,21 @@ surface back in the diff and report the failure the re-pin exists to retire.
 `tests/codegen/CLAUDE.md` carries the measurement (200 distinct lines, the
 `rx_match` over-strip, the blank-line residue) behind rejecting a wider filter.
 
+**[TT-11]/D76 (2026-08-25): the two pins have two different OWNERS, and the
+FILE pin's guard is now STRUCTURAL.** (A)'s pin is the MODULE's promise
+(pre-module, never moves). (B)'s pin is owned by the emitted `abi` NUMBER
+(`rx_info.abi`, stamped by `src/gen/emit_dfa.c`): it IS, by definition, the
+commit that introduced the CURRENT `abi`, and any change to emitted
+scaffolding — comments, declarations, layout — is an `abi` bump AND a re-pin
+of (B) to that change's last `src`-touching commit, in the SAME change. The
+gate used to guard the pin with an ad-hoc `grep -q RESUME_FRAME_SIZE` against
+the pin's own `emit_dfa.c` source — a probe that encoded [DD-14.FB]'s own
+boundary by name and would say nothing about the next scaffolding change. It
+now builds an artifact from each compiler on a call-free pattern and requires
+their `.abi = N` stamps to agree, refusing with a message naming the fix
+("bump `abi` in src/gen/emit_dfa.c and re-pin comparison (B) ... in the same
+change (D76)") when they do not.
+
 ## The caller-provided frame buffer's checks ([DD-14.FB], 2026-08-25)
 
 D71 item 2's caller-provided buffer (`docs/spec/match_api.md` §10) is checked
@@ -2518,6 +2533,73 @@ report the combined build attributes ambiguously. The chain_profile.md
 estimate (~45-55 min) was confirmed at its low end. Caveat carried from
 K26: LSan is a no-op on this box under every axis (`ptrace_scope=1`), so
 the `leak` component of `san` is inert here exactly as `asan`'s was.
+
+## The load guard ([TT-10], 2026-08-25) — a THIRD outcome for CPU-bounded checks under contention
+
+`tests/lib/load_guard.sh` is D45's CPU-primary budgets' own answer to a
+finding D45 did not anticipate: CPU-TIME ACCOUNTING ITSELF inflates under
+real contention (memory-subsystem thrash, reduced instructions-per-cycle
+under SMT/cache pressure), not merely wall stretching around fixed work.
+`tests/resource`'s 45s compile-CPU cap (`K7_CPU`, already wired through
+`scripts/watchdog -c` — CPU summed across the process tree, not wall) still
+went RED under real load: on a box at load average 31 on 12 cores (ratio
+2.58), the cap failed at a MEASURED 53s of CPU, and the A/B control (the
+box's own reference build) crossed it too, 53s vs 49s (K31 addendum,
+`docs/dev/plan.md` [TT-10] row). `tests/counterk`'s `((a)|ab){4000}c` cell
+(K32) lost 28-29 dependent cases to the shared corpus harness's wall
+backstop the same night. Both cells are green solo every time.
+
+**The guard is not a bigger cap** — D45's budgets (`K7_CPU`, `GENCPU`,
+`GENTIMEOUT`, ...) are unchanged by it and are not the thing to retune here.
+It is a pre-flight reading: `load_guard_tripped` compares the 1-MINUTE load
+average divided by `nproc` against `LOAD_GUARD_RATIO` (default **2.0**).
+Justified from the two numbers above rather than picked: ratio 1.0 is one
+concurrent `-j<nproc>` build, the contention level this project's own
+"CPU inflation tops out near 2x" figure was measured at and which every CPU
+budget already prices into its own headroom (the resource cap carries ~2.9x
+over its 15.4s quiet baseline); ratio 2.58 is the K31 addendum's own
+MEASURED failure point, where that headroom still was not enough. 2.0 sits
+strictly between the two — high enough that this project's own ordinary
+concurrent work never trips it, low enough to fire before the exact
+contention level the addendum measured actually breaking a cap.
+
+**Where it is wired.** `tests/resource/run_resource_tests.sh`'s section-1
+loop and `tests/counterk/run_counterk_tests.sh`'s new K32 compile-cost pin
+(mirroring `tests/resource`'s own shape, since a `.rxt` cell cannot assert
+what a compile COSTS) both source it. When a cell's `scripts/watchdog` call
+returns 123 (CPU exceeded) or 124 (wall exceeded), the guard is checked
+*at that point* — a box that was fine when the loop started and got
+contended by the time this cell ran must not be read as quiet — and only
+those two outcomes are ever reclassified: every other outcome (0, 1, 122,
+134, 137) keeps its full meaning regardless of load, since none of them can
+be produced by CPU-time inflation. A tripped guard reports **INCONCLUSIVE**
+— a THIRD outcome, counted and printed separately from PASS/FAIL, never
+folded into either (an inconclusive run misreported as PASS would validate
+nothing; misreported as FAIL would misattribute box contention to a
+regression).
+
+**Validated (2026-08-25, srLoad lane).** Solo, both suites are unaffected —
+`tests/resource` 19/0/0, `tests/counterk` 24/0/0 (23 pre-existing + the new
+K32 pin), identical to their pre-[TT-10] counts. Under an 8-way artificial
+`yes`-spinner load (backgrounded, killed afterward with `scripts/safekill`;
+1-min-load/nproc ratio never crossed the 2.0 threshold on this box's
+concurrent-lane mix) both suites stayed fully green, 0 INCONCLUSIVE. The
+guard's two directions were confirmed by forcing a CPU-cap breach directly
+(`K7_CPU=0`/`K32_CPU=0`): at a real load ratio of 2.47 (a 24-way spinner
+load) the forced breach was correctly reported INCONCLUSIVE; the identical
+forced breach at a quiet-box ratio of 1.18 correctly reported a real FAIL —
+confirming the guard discriminates by load rather than always passing or
+always failing.
+
+**tests/counterk's K32 pin is independent of the shared corpus harness.**
+`counterk.rxt`'s own `((a)|ab){4000}c` block still rides
+`tests/lib/gen_timeout.sh`'s D45 budget exactly as before — D45's budgets
+are not touched by [TT-10] — and can in principle still lose dependent
+cases to that shared wall backstop under the same load the K31 addendum
+measured; the box-concurrency rule (one heavy suite at a time) is that
+failure's real mitigation. `run_counterk_tests.sh`'s new pin is a SECOND,
+purpose-built, load-guarded instrument for the same compile-cost pathology
+(K32), not a replacement for the .rxt cell's own oracle-verified answers.
 
 ## Compile caching (`CCACHE=1`, [TT-3], 2026-08-21) — MEASURED NO for `make test`
 

@@ -150,6 +150,24 @@ section targets depend on.
   because this file is SOURCED by scripts whose own `$1` is often a short
   word ("check") a collision with an unprefixed command name would
   silently misfire against.
+- **load_guard.sh** — [TT-10] (2026-08-25) a THIRD outcome — INCONCLUSIVE,
+  never PASS, never FAIL — for a check whose budget is a CPU-time cap sized
+  against a quiet box. `tests/resource`'s 45s compile-CPU cap is already
+  CPU-accounted through `scripts/watchdog -c` and still measured going RED
+  under real contention (K31 addendum, docs/dev/plan.md): CPU-time
+  ACCOUNTING itself inflates under contention, not merely wall stretching.
+  `load_guard_ratio` reads the 1-minute load average / `nproc`;
+  `load_guard_tripped` compares it against `LOAD_GUARD_RATIO` (default
+  2.0, justified in the file's own header from this project's measured
+  "~2x CPU inflation" figure and the K31 addendum's own 2.58 failure
+  ratio) and returns true when the box is too contended for a CPU-bounded
+  verdict to mean what it says. Callers own their own THIRD counter
+  (`inc()`, printed and totalled separately from pass/fail) and check the
+  guard only at the point a watchdog CPU/wall kill (123/124) actually
+  fires — every other outcome keeps its full meaning regardless of load.
+  Sourced by `tests/resource/run_resource_tests.sh` and
+  `tests/counterk/run_counterk_tests.sh`; see `docs/testing.md`'s "The
+  load guard" section for the full measurement and the validated numbers.
 - **run_gen_timeout_tests.sh** — its own section in `make test`
   (`test-gentimeout`) — a positive control that the wrapper FIRES, plus a
   coverage assertion that every suite routes through it, because a

@@ -254,6 +254,18 @@ KEEP="${KEEP:-0}"
 #
 # BOTH RESULTS ARE PRINTED WITH THEIR OWN COUNTS so the two claims never blur
 # into one number.
+#
+# [TT-11]/D76, 2026-08-25: THE TWO PINS HAVE TWO DIFFERENT OWNERS. (A)'s pin
+# is the MODULE's promise (pre-module, never moves). (B)'s pin is the emitted
+# `abi` NUMBER's: it IS, by definition, the commit that introduced the
+# CURRENT `abi`, and any change to emitted scaffolding — comments,
+# declarations, layout — is an `abi` bump AND a re-pin of (B) to that
+# change's last src-touching commit, in the SAME change. The gate enforces
+# that structurally below: it builds an artifact from each compiler on a
+# call-free pattern and requires their `rx_info.abi` stamps to agree, rather
+# than re-deriving one wave's boundary by hand (the RESUME_FRAME_SIZE grep
+# this replaced knew only [DD-14.FB]'s own boundary and would say nothing
+# about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
 FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8fc1e51}"
 
@@ -324,14 +336,6 @@ if ! git -C "$ROOT_DIR" archive "$FILEPIN" src lib cli \
     bad "could not git-archive $FILEPIN: $(head -3 "$WORKDIR/filearch.log")"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
-# AND IT MUST BE A POST-FB PIN, asserted rather than assumed — a pin
-# accidentally set before the caller-buffer wave would put every artifact's
-# surface back in the diff and this half would report the very failure the
-# re-pin exists to retire, with no hint of why.
-if ! grep -q 'RESUME_FRAME_SIZE' "$FILEREFSRC/src/gen/emit_dfa.c"; then
-    bad "the whole-file pin $FILEPIN predates [DD-14.FB]'s sizing surface (no RESUME_FRAME_SIZE in its emit_dfa.c) — that is not a post-FB commit, so (B) would be comparing across the very boundary the re-pin exists to move past"
-    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
-fi
 FILEREF="$WORKDIR/pcrec_filepin"
 FILEREF_SRCS="$(find "$FILEREFSRC/src" -name '*.c' | LC_ALL=C sort)"
 # shellcheck disable=SC2086
@@ -339,6 +343,26 @@ if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$FILEREFSRC/lib" -I"$FILEREFSRC/src" $S
         -o "$FILEREF" "$FILEREFSRC"/cli/main.c $FILEREF_SRCS 2>"$WORKDIR/filerefbuild.log"; then
     bad "could not build the file-pin reference compiler from $FILEPIN:"
     head -20 "$WORKDIR/filerefbuild.log" >&2
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+# THE PIN MUST BE A POST-FB PIN, and since [TT-11]/D76 that is asserted
+# STRUCTURALLY rather than by an ad-hoc probe for one wave's boundary
+# (the RESUME_FRAME_SIZE grep this replaced encoded [DD-14.FB] specifically
+# and would say nothing about the NEXT scaffolding change). D76's ruling:
+# the whole-file pin IS, by definition, the commit that introduced the
+# CURRENT `abi` number, so the two compilers' emitted `rx_info.abi` stamps
+# must agree — read off an actual artifact from each, on a call-free
+# pattern, rather than re-derived from source text.
+ABI_SUBJ_ART="$("$PCREC"   --features all -p rx -o - -- 'a' 2>/dev/null)"
+ABI_PIN_ART="$("$FILEREF" --features all -p rx -o - -- 'a' 2>/dev/null)"
+ABI_SUBJ="$(printf '%s\n' "$ABI_SUBJ_ART" | grep -o '\.abi = [0-9]*' | head -1)"
+ABI_PIN="$(printf '%s\n' "$ABI_PIN_ART" | grep -o '\.abi = [0-9]*' | head -1)"
+if [ -z "$ABI_SUBJ" ] || [ -z "$ABI_PIN" ]; then
+    bad "could not read an \`.abi = N\` stamp from one of the two compilers' output on the call-free pattern 'a' — the (B) reference cannot be validated (subject stamp: '${ABI_SUBJ:-<none>}', pin stamp: '${ABI_PIN:-<none>}')"
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+if [ "$ABI_SUBJ" != "$ABI_PIN" ]; then
+    bad "the emitted scaffolding changed: bump \`abi\` in src/gen/emit_dfa.c and re-pin comparison (B) to this change's last src commit, in the same change (D76) — subject stamps '$ABI_SUBJ', pin $FILEPIN stamps '$ABI_PIN'"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 

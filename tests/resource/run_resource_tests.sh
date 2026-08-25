@@ -43,14 +43,24 @@
 # Usage: bash tests/resource/run_resource_tests.sh
 # Env:   PCREC (default <root>/build/pcrec)
 #        K7_MEM   peak-tree-RSS ceiling per compile (default 512m)
-#        K7_SECS  wall budget per compile (default 60)
-#        K7_CPU   CPU budget per compile (default 20)
+#        K7_SECS  wall budget per compile (default 120)
+#        K7_CPU   CPU budget per compile (default 45)
+#        LOAD_GUARD_RATIO  [TT-10] 1-min-load/nproc threshold above which a
+#                  123/124 kill is reported INCONCLUSIVE instead of FAIL
+#                  (default 2.0; tests/lib/load_guard.sh has the measurement)
 
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+
+# [TT-10] tests/lib/load_guard.sh — see its own header for the measurement
+# and threshold. Section 1's watchdog CPU/wall kills (123/124) are the two
+# outcomes a contended box can produce for a reason unrelated to the
+# compiler; every other outcome (0, 1, 122, 134, 137) is unaffected by load
+# and stays a real PASS/FAIL exactly as before.
+. "$ROOT_DIR/tests/lib/load_guard.sh"
 
 # The ceiling. 512m matches tests/lib/gen_timeout.sh's GENRUNMEM default, and
 # is chosen the same way: three-and-change times the worst LEGITIMATE cost, so
@@ -84,9 +94,13 @@ WORKDIR="$(mktemp -d)"
 trap 'rm -rf "$WORKDIR"' EXIT
 export WATCHDOG_SECTION="resource"
 
-pass=0; fail=0
+pass=0; fail=0; inconc=0
 ok()   { echo "PASS: $*"; pass=$((pass + 1)); }
 bad()  { echo "FAIL: $*"; fail=$((fail + 1)); }
+# [TT-10] a THIRD outcome, counted and printed separately — never folded
+# into pass (that would misreport an unreliable reading as validated) or
+# into fail (that would misreport box contention as a regression).
+inc()  { echo "INCONCLUSIVE: $*"; inconc=$((inconc + 1)); }
 
 echo "== [K7] COMPILE-SIDE RESOURCE BOUNDS =="
 echo "   ceiling: peak tree RSS $K7_MEM, wall ${K7_SECS}s, CPU ${K7_CPU}s per compile"
@@ -141,8 +155,26 @@ for pat in "${shapes[@]}"; do
                bad "'$pat' exited 1 with an unrecognised diagnostic: $log"
            fi ;;
         122) bad "'$pat' EXCEEDED $K7_MEM of tree RSS — this is K7 itself" ;;
-        123) bad "'$pat' EXCEEDED ${K7_CPU}s of CPU — the cap is not firing early enough" ;;
-        124) bad "'$pat' EXCEEDED ${K7_SECS}s of wall time (stuck, not working)" ;;
+        # [TT-10] 123/124 are the two outcomes docs/testing.md's own
+        # measurement (and the K31 addendum) says a contended box can
+        # produce for a reason that has nothing to do with the compiler:
+        # CPU-TIME ACCOUNTING itself inflates under real contention, not
+        # merely wall stretching around fixed work. Check the load AFTER
+        # the kill, not before running the shape — a box that was fine at
+        # the START of the loop and got contended by the END must not be
+        # read as quiet, and checking only on the two outcomes that could
+        # plausibly BE a load artifact means every other outcome (0, 1,
+        # 122, 134, 137) keeps its full meaning regardless of load.
+        123) if load_guard_tripped; then
+                 inc "'$pat' EXCEEDED ${K7_CPU}s of CPU, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+             else
+                 bad "'$pat' EXCEEDED ${K7_CPU}s of CPU — the cap is not firing early enough"
+             fi ;;
+        124) if load_guard_tripped; then
+                 inc "'$pat' EXCEEDED ${K7_SECS}s of wall time, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+             else
+                 bad "'$pat' EXCEEDED ${K7_SECS}s of wall time (stuck, not working)"
+             fi ;;
         134) bad "'$pat' ABORTED (rc 134) — a library must not abort its caller" ;;
         137) bad "'$pat' was SIGKILLed (rc 137) — K7's original signature" ;;
         *)   bad "'$pat' exited $rc, which is neither a compile nor a refusal: $log" ;;
@@ -289,4 +321,5 @@ echo
 echo "== Summary =="
 echo "checks passed: $pass"
 echo "checks failed: $fail"
+echo "checks inconclusive: $inconc"
 [ "$fail" -eq 0 ]

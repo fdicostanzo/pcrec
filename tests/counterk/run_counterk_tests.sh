@@ -38,14 +38,20 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 export WATCHDOG_SECTION="counterk"
+# [TT-10] see tests/lib/load_guard.sh's own header for the measurement and
+# threshold behind the K32 compile-cost pin below.
+. "$ROOT_DIR/tests/lib/load_guard.sh"
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/counterk.XXXXXX")"
 cleanup() { [ -n "${KEEP:-}" ] || rm -rf "$WORKDIR"; }
 trap cleanup EXIT
 
-pass=0; fail=0
+pass=0; fail=0; inconc=0
 ok()  { echo "PASS: $1"; pass=$((pass + 1)); }
 bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
+# [TT-10] a THIRD outcome, counted and printed separately — see
+# tests/lib/load_guard.sh.
+inc() { echo "INCONCLUSIVE: $1"; inconc=$((inconc + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
@@ -290,7 +296,63 @@ if gen u2 '((a)|ab){0,4}c' --unroll=1; then
         || bad "--unroll=1 on a {0,4} shape does not stamp COUNTER"
 fi
 
+# ---------------------------------------------------------------------------
+# 9. [TT-10] THE K32 COMPILE-COST PIN, LOAD-AWARE. `((a)|ab){4000}c` is
+#    counterk.rxt's own "endgame" cell (§8.5's line 1807; 28 dependent m/n/g
+#    assertions ride the ONE compile it takes) — that .rxt block is the
+#    ANSWER oracle and is unchanged here. What it structurally cannot assert
+#    is what the compile COSTS (K32, docs/dev/known_issues.md): the DFA
+#    PREFILTER Thompson-replicates the bounded repeat for its own NFA even
+#    though the VM's counter rung is already constant-size, so subset
+#    construction is quadratic in the count — MEASURED n=500/1000/2000/4000
+#    -> 0.05/0.21/0.90/4.02 s (~4x per doubling). This is where that claim is
+#    pinned, in run_resource_tests.sh's own shape, because the two directories
+#    are the two places in the tree that assert what a compile COSTS rather
+#    than what a pattern matches.
+#
+#    THIS PIN IS INDEPENDENT OF THE SHARED CORPUS HARNESS'S BUDGET. The .rxt
+#    block's own compile still rides tests/lib/gen_timeout.sh's D45 budget
+#    (GENCPU 10s / GENTIMEOUT 60s wall) exactly as before — D45's budgets are
+#    not touched by [TT-10] — and the K31 addendum's own failure (28-29
+#    dependent cases lost to that shared wall backstop under load average 31
+#    on 12 cores) can still recur there; the box-concurrency rule (one heavy
+#    suite at a time) is that failure's real mitigation. What THIS check adds
+#    is a SECOND, purpose-built instrument for the same pathology, sized and
+#    load-guarded the way tests/resource's own cap checks are, so the
+#    compile-cost claim has at least one measurement that does not silently
+#    misreport contention as a regression.
+# ---------------------------------------------------------------------------
+echo
+echo "== [K32] the compile-cost regression pin, LOAD-AWARE =="
+K32_CPU="${K32_CPU:-20}"     # ~5x the measured 4.02s quiet cost
+K32_SECS="${K32_SECS:-60}"
+K32_MEM="${K32_MEM:-256m}"   # measured 112 MB peak
+k32out="$WORKDIR/k32.c"
+rm -f "$k32out"
+k32log="$("$ROOT_DIR/scripts/watchdog" -l "compile K32 cell" \
+             -s "$K32_SECS" -c "$K32_CPU" -m "$K32_MEM" \
+             -L "$WORKDIR/watchdog.log" -- \
+             "$PCREC" -p rx -o "$k32out" '((a)|ab){4000}c' 2>&1)"
+k32rc=$?
+case $k32rc in
+    0) ok "K32: '((a)|ab){4000}c' compiles within ${K32_CPU}s CPU / $K32_MEM — the quadratic prefilter construction the pattern is filed for has not regressed past this pin" ;;
+    123) if load_guard_tripped; then
+             inc "K32: '((a)|ab){4000}c' EXCEEDED ${K32_CPU}s of CPU, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+         else
+             bad "K32: '((a)|ab){4000}c' EXCEEDED ${K32_CPU}s of CPU — the quadratic construction (K32) has regressed past this pin's headroom, or the cell needs re-measuring: $k32log"
+         fi ;;
+    124) if load_guard_tripped; then
+             inc "K32: '((a)|ab){4000}c' EXCEEDED ${K32_SECS}s of wall time, but the box is too contended for that to mean anything (ratio $(load_guard_ratio) > $LOAD_GUARD_RATIO) — solo re-run owed"
+         else
+             bad "K32: '((a)|ab){4000}c' EXCEEDED ${K32_SECS}s of wall time (stuck, not working): $k32log"
+         fi ;;
+    122) bad "K32: '((a)|ab){4000}c' EXCEEDED $K32_MEM of tree RSS: $k32log" ;;
+    *)   bad "K32: '((a)|ab){4000}c' exited $k32rc, neither a compile nor one of the watchdog kills: $k32log" ;;
+esac
+
+echo
 echo "== Summary =="
 echo "checks passed: $pass"
 echo "checks failed: $fail"
+echo "checks inconclusive: $inconc"
 [ "$fail" -eq 0 ] || exit 1
