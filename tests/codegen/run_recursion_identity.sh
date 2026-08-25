@@ -497,8 +497,21 @@ sweep() { # sweep <label> <extra pcrec args>
     # that differs without being listed is already `diff` above.
     local nelide
     nelide=$(printf '%s\n' "$ELIDED_PATTERNS" | grep -c .)
+    # AND THE `--no-captures` AXIS EXPECTS **ZERO**, WHICH IS A SHARPER CLAIM
+    # THAN THE OTHER FOUR AND NOT AN EXEMPTION FROM THEM. The elision says a
+    # group NO EMITTED CODE CAN WRITE does not force the capture-recording
+    # engine. Under `--no-captures` the artifact promises NO group at all, so
+    # `forces_captures` returns `DFA | VM` in BOTH compilers for its own
+    # earlier reason and there is nothing left for this rule to decide: the
+    # four patterns must be byte-IDENTICAL there. So the list's real assertion
+    # is a PAIR — the four move on every axis that promises a capture, and
+    # vanish on the one that does not — and a run where they moved on
+    # `--no-captures` too would mean the elision was firing for some reason
+    # OTHER than the one written down. MEASURED at the wave: 4 / 4 / 4 / 0 / 4
+    # over default, vm, noprefilter, nocaptures, nosplice.
+    [ "$label" = "nocaptures" ] && nelide=0
     if [ "$elided" -ne "$nelide" ]; then
-        bad "[$label] the wave-G ELISION list names $nelide patterns and $elided of them differ. Every listed pattern must differ on every axis — a listed pattern that is byte-identical again means the dead-capture elision stopped firing on it, and the list has stopped defending anything:"
+        bad "[$label] the wave-G ELISION list expects $nelide of its patterns to differ on this axis and $elided did. On every axis that PROMISES a capture all four must differ, or the dead-capture elision has stopped firing and the list has stopped defending anything; on --no-captures none may, or it is firing for a reason other than the one written down:"
         printf '%s\n' "$ELIDED_PATTERNS" | sed 's/^/    listed: /' >&2
         grep '^ELIDED' "$WORKDIR/diff.$label" | sed 's/^/    /' >&2
     fi
