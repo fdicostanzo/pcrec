@@ -180,7 +180,6 @@ spec and a design doc disagree, the spec is what the tool promises.
   and D73's own prose, not corrected by this pass), and K34/D74's
   documented-divergence framing at spec depth.
 
-<<<<<<< HEAD
 - `cli.md` — **[SPEC-1.2], 2026-08-25.** The full `pcrec` command-line
   reference: compiling a pattern (`-o`/`-o -`, `-p`'s C-identifier prefix
   grammar, `-e`/`--encoding` — byte-only today, `-i`, `--emit-main`,
@@ -202,7 +201,6 @@ spec and a design doc disagree, the spec is what the tool promises.
   `cli/main.c` AND a live `build/pcrec` run at this worktree's branch
   point (`0e2b23d`); where `--help`'s wording and the code agreed, cited
   directly rather than restated from memory.
-=======
 - `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
   contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),
   one section per axis (all nine `-f`/`-fno-` flags, `--unroll=K`,
@@ -216,7 +214,6 @@ spec and a design doc disagree, the spec is what the tool promises.
   `<PREFIX>_VM_CALLS`; the shipped emitter (`src/gen/emit_vm.c`) actually
   emits two macros, `RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED` — this document
   states the as-built name, `lib/pcrec.h`'s comment is the stale one.
->>>>>>> lane/srTuning
 
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
