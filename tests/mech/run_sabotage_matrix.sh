@@ -613,13 +613,17 @@ run_one() {
             popfile="${poprest%%|*}"
             popre="${poprest#*|}"
             if [ ! -f "$CLEAN_TREE/$popfile" ]; then
-                reach_bits+=("pop:$popfile=NOFILE(want>=$popmin)")
+                reach_bits+=("pop:$popfile:/$popre/=NOFILE(want>=$popmin)")
                 reach_ok=0
                 reach_why="$reach_why; SAB_REACH_POP names $popfile, which does not exist at HEAD"
                 continue
             fi
             popn="$(grep -cE -- "$popre" "$CLEAN_TREE/$popfile" || true)"
-            reach_bits+=("pop:$popfile=$popn(want>=$popmin)")
+            # THE BIT NAMES THE REGEX, not only the file: a row with two
+            # floors on ONE file (S70's two witness rows) would otherwise
+            # print two identical cells and the reader could not tell which
+            # population had moved.
+            reach_bits+=("pop:$popfile:/$popre/=$popn(want>=$popmin)")
             if [ "$popn" -lt "$popmin" ]; then
                 reach_ok=0
                 reach_why="$reach_why; $popfile holds $popn cell(s) matching /$popre/, below the floor of $popmin this row's detector needs"
