@@ -14696,3 +14696,27 @@ gnutimeout would have destroyed all 180 verdicts at 07:02. Filed K37
 (bare compiler calls in harness scripts; S159's row unbounded). Two
 stale /var/tmp mech scratch dirs (my 04:54 false start; a 2026-08-24
 16:39 run) removed — 300 MB, no processes, not evidence.
+
+#### Thirty-ninth session, part 39 — THE FULL MATRIX on the merged tree: 180 rows, unexpected 2 (2026-08-25 ~06:20 EDT)
+
+After S159's row was released (its script killed by PID at 06:19 —
+every arm re-entered the non-terminating compile), the trailer landed
+at 06:20: **180 rows — unexpected: 2, undetected: 8, anomalies: 0,
+oracle-skipped: 0** at 0dca9f7's tree (= 17469b6's code). The eight
+undetected = the six expected (S150-S153, S160, S178) + the TWO
+UNEXPECTED, both DETECTED-expected rows now UNDETECTED with ZERO checks
+failed: (1) S155-depth-capacity-untyped (emit_vm.c: "RX_CALL stops
+testing the resume-frame capacity") — one of srFBc's four re-anchored
+rows; hypothesis: with RX_CALL now reading `run->resume_cap` the
+re-anchored deletion no longer removes the test that the exact-fit
+cells would catch (the critic verified only SAB_BEFORE changed; that
+the MEANING survived was a claim). (2) S70-unbuilt-refusal-removed
+(parse/ext.c: "the enabled-but-unbuilt epilogue is deleted") —
+hypothesis: its witness construct was one [DD-14] built; the
+population moved (the matrix's own "expired claim" case; `(?J)` is the
+remaining permanent enabled-but-unbuilt). Both need MEASUREMENT and
+re-pointing, not deletion — triage lane srMech spawned (opus, light
+builds only; stages 2-4 of the battery run meanwhile). S159's verdict
+on this run is its killed arm (DETECTED by failure) — K37 owns the
+re-measure. `make mech` exits 1 on unexpected>0 (rc recorded in
+mgr_battery.log); stage 2 `make test` started 06:20.
