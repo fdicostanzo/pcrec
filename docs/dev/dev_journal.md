@@ -13765,3 +13765,39 @@ row's "part of the spine" wording (my over-reading of "part of the spine
 should be the expansion of the rxt type file") is corrected to PLANNED
 with the placement open; when [DD-14] is done, a where-things-stand
 conversation decides the road ahead. Nothing starts unprompted.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 17) — wave G interim (lane/srG 561adc2): the specimen bar is met in substance; the dead-group rule is general and moves four call-free patterns VM→DFA
+
+srG's interim (~22:2x): eligibility landed (CALL_SPLICE iff not in a
+cycle AND the expansion — COMPOSED over nested splices, saturating —
+fits PCREC_MAX_SPLICE_NODES 512 with a total budget 8192; per TARGET;
+`-fno-splice-calls` bit 13); ONE pass reorder — pcrec_discharge_atomic
+hoisted from select_engine into compile.c after altcls so the call graph
+runs BEFORE engine selection — which also fixed a latent drop (a
+discharge at the very root was assigned to a local and thrown away);
+nfa.c's A_CALL arm inlines a spliced callee EXACTLY (ast_bare already
+erases A_CAP); the prefilter predicate → pcrec_has_linked_call; the
+DEAD-CAPTURE ELISION as pcrec_has_live_capture ("no emitted code can
+write it" — its only occurrence is under A_REP{0,0} and a call is
+capture-transparent); emit_dfa declares ncaps>1 with every group
+permanently UNSET. THE SPECIMEN, MEASURED: orig.rx, factored.rx and
+factored_x.rx ALL compile to the DFA engine with the byte-class skip
+prefilter; the residue past the stamp is TWO named lines — the capture
+declaration PCRE2 requires (RX_NCAPS 1 vs 5, the unset fill, the name
+table) and RX_ALTCLS_FACTORED 2 vs 1 (a pass-activity count over two
+texts; the minimised DFAs identical) — EVERY BYTE OF THE DFA TABLES AND
+THE SEARCH LOOP IDENTICAL. Fidelity checked directly: `(?(DEFINE)(?<g>a))
+(x)(?&g)` on "xa" → g0 (0,2), g1 UNSET, g2 (0,1), byte for byte
+libpcre2's. THE RULING'S SECOND HALF: the dead-group rule is GENERAL (not
+gated on a call — `(?(DEFINE)…)`, `(?:…){0}` and `(a){0}b` are one
+structural fact, and gating would be a `recursion` special case for a
+non-recursion fact); MEASURED consequence: exactly FOUR call-free corpus
+patterns move VM→DFA with answers/captures unchanged (`(a){0}`,
+`(a){0,0}b`, `(()|$){0}b`, `(()|^){0}[b]`). APPROVED with the gate
+stating the exception as an exact both-directions list plus a semantic
+control on the four. The gate earned its keep en route: an early
+unset-fill leaked into the VM hybrid's internal prefilter and moved 558
+of 2442 call-free patterns — caught on the gate's first run. Next for the
+lane: the VM splice with a per-site slot family (W = the capture half for
+a splice; nesting impossible outside a cycle), the controls, the rows,
+the specimen script, §6.2's re-measurement, the design amendments.
