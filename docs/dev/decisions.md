@@ -5666,3 +5666,36 @@ the loop features. The bench skill carries the protocol (its §0, §1
 step 1a). Incident, same hour: D78's first write landed in the BENCH's
 decisions.md because a `cd` earlier in the compound command persisted
 (reverted, 91e9251) — the situation-index row now says absolute paths.
+
+## D79 — THE FEATURE SPINE IS COMPLETE; the organizing structure from here is the bench LOOP, with a four-item entry queue (Frank, 2026-08-25, fortieth session)
+
+**Context.** Frank's 2026-08-24 direction (memory: post-spine
+direction) deferred "what is the spine" to [DD-14]'s close. Done: base
+syntax, both engines, the optimization pass, the frozen M4 ABI, the
+five ruled M6 modules and `recursion`; every mainstream construct
+compiles, the exotic ones refuse cleanly by module name.
+
+**Decision (Frank: "I agree completely").** The spine is COMPLETE. What
+replaces it is the loop — bench → outliers where pcrec loses → GENERAL
+optimizations → repeat — and its entry queue, in order:
+
+1. [CHK-1], the check-infrastructure batch (D-ruling 5), starts now.
+2. [DD-13]'s DFA stamps (`RX_ENGINE` / `RX_DFA_PREFILTER`; abi 3→4 +
+   gate re-pin, D76) — small; follows [CHK-1] for [TT-11]'s gate.
+3. The bench re-pin (692c2e8) and the first two sub-benches (bench side;
+   the pcrec manager runs cells, D78) → the first outlier list.
+4. General optimization lanes from the outliers, one at a time, each
+   landing with its bench row as the exercising case.
+
+DISPOSITIONS of the candidates: [LIB] part (1) — the multi-pattern
+.rxt with definitions — rides [DD-13]'s format work when chartered;
+[LIB] parts (2)/(3) (the `--lib` include, the shipped store) are a
+PRODUCT milestone after the loop has run, not spine. [EMIT-SET] is
+chartered together with [ENG-PGO]'s profile attachment (D71: a second
+diagnostic axis is the trigger to design the GROUP, not the flag), and
+the profile attachment is chartered by the FIRST OUTLIER whose cause
+the strategy stamps cannot explain — D77's under-measurement rule with
+a concrete trigger. M5, M7, M6.5(f), conditionals, branch-reset,
+callouts, the ENG-* rows: not spine; each enters through the loop
+(a bench outlier or the [PC-2] survey names it) or by ruling. Nothing
+else starts unprompted.
