@@ -71,6 +71,13 @@
  *                        plan for the artifact catching its own bug.
  * On a malformed escape in argv[1] or a malformed [startpos], prints a
  * message to stderr and exits 2.
+ * EXIT 4 ([DD-14.FB]) is its own outcome and belongs to the anchored-entry
+ * CROSS-CHECK below: on any route other than `default` the driver also runs
+ * <prefix>_match_in and <prefix>_match_caps_in against their un-suffixed
+ * siblings on the same ctx, and a disagreement exits 4 with the two values on
+ * stderr. Distinct from 2 (this driver's own usage/input error) and from 3 (a
+ * give-up) so run.sh can name it: see that cross-check's own comment for the
+ * one divergence it permits.
  */
 
 #include <errno.h>
@@ -287,17 +294,98 @@ int main(int argc, char **argv) {
      * harness-level failure (never compared against a `match`/`nomatch`
      * expectation) the same way it already treats a crash or a timeout. */
     ptrdiff_t caps[RX_NCAPS][2];
+    rx_buffers rxb;
+    const rx_buffers *bufp = NULL;
     int found;
+    rxb.frames = frames_mem; rxb.nframes = nframes;
+    rxb.trail  = trail_mem;  rxb.ntrail  = ntrail;
+    if (have_buffers) bufp = &rxb;
     if (!use_in) {
         found = rx_search(buf, len, startpos, caps);
-    } else if (!have_buffers) {
-        found = rx_search_in(buf, len, startpos, caps, NULL);
     } else {
-        rx_buffers rxb;
-        rxb.frames = frames_mem; rxb.nframes = nframes;
-        rxb.trail  = trail_mem;  rxb.ntrail  = ntrail;
-        found = rx_search_in(buf, len, startpos, caps, &rxb);
+        found = rx_search_in(buf, len, startpos, caps, bufp);
     }
+
+    /*
+     * [DD-14.FB] THE OTHER TWO `_in` ENTRIES, CROSS-CHECKED ON EVERY ROUTED
+     * CASE — because without this they had NO behavioural coverage anywhere in
+     * the tree. `<prefix>_search_in` is the entry every cell, every driver and
+     * every measurement drives; `<prefix>_match_in` and
+     * `<prefix>_match_caps_in` were built, declared, structurally checked and
+     * never once RUN. Three entries shipped and one was exercised.
+     *
+     * IT IS A CROSS-CHECK, NOT A SECOND ANSWER, and that distinction is what
+     * makes it free of new expectations. The `.rxt` `m`/`n` vocabulary means a
+     * SEARCH (leftmost-first from `startpos`); the two anchored entries answer
+     * a different question (match AT `ctx->pos`), so routing an `m` line
+     * through them would change what the corpus means. Instead each anchored
+     * entry is compared against ITS OWN un-suffixed sibling on the same ctx,
+     * which is the property §10.2 states — "each `_in` entry is its
+     * un-suffixed sibling in every respect, plus one argument naming where the
+     * working storage lives" — and needs no oracle of its own.
+     *
+     * THE ONE PERMITTED DIVERGENCE IS A GIVE-UP ON EITHER SIDE, and getting
+     * that wrong is how this check introduced itself: the first version
+     * allowed the difference only DOWNWARD (a smaller caller buffer turning a
+     * match into `PCREC_ERR_FRAMES`, which the corpus's `frames-buffer=
+     * 512,400000` cell exists to produce) and it went RED on a correct build,
+     * on the `1024,8192` cell — where the `_in` entry MATCHES a subject its
+     * un-suffixed sibling refuses. That direction is the whole feature.
+     *
+     * So the rule is symmetric in the give-up and strict everywhere else: when
+     * a buffer is supplied, the two answers may differ if EITHER is a give-up,
+     * because the caller's capacity is simply not the stamped one. If NEITHER
+     * is a give-up they must agree exactly — same length, same capture spans —
+     * and a give-up code that differs from its sibling's while both gave up is
+     * a divergence too. On the `null` route NO divergence at all is permitted:
+     * §10.3 defines that call to BE the un-suffixed one, so `have_buffers` is
+     * false and the exemption does not apply.
+     */
+    if (use_in) {
+        rx_ctx ctx;
+        ptrdiff_t caps_plain[RX_NCAPS][2] = {{0}}, caps_in[RX_NCAPS][2] = {{0}};
+        ptrdiff_t m_plain, m_in, c_plain, c_in;
+        int k, bad = 0;
+        ctx.subject = buf; ctx.len = len; ctx.pos = startpos;
+        ctx.ncap = 0; ctx.caps = NULL; ctx.user = NULL;
+
+        m_plain = rx_match(&ctx);
+        m_in    = rx_match_in(&ctx, bufp);
+        c_plain = rx_match_caps(&ctx, caps_plain);
+        c_in    = rx_match_caps_in(&ctx, caps_in, bufp);
+
+        /* Differing is permitted only when a buffer was supplied AND at
+         * least one of the two answers is a give-up (< -1). Either direction:
+         * a smaller buffer refuses what the default matches, a larger one
+         * matches what the default refuses. */
+        if (m_in != m_plain && !(have_buffers && (m_in < -1 || m_plain < -1))) {
+            fprintf(stderr, "driver: rx_match_in disagrees with rx_match"
+                            " (%td vs %td) at startpos %zu -- neither is a give-up,"
+                            " so the caller's capacity cannot explain it\n",
+                    m_in, m_plain, startpos);
+            bad = 1;
+        }
+        if (c_in != c_plain && !(have_buffers && (c_in < -1 || c_plain < -1))) {
+            fprintf(stderr, "driver: rx_match_caps_in disagrees with rx_match_caps"
+                            " (%td vs %td) at startpos %zu -- neither is a give-up,"
+                            " so the caller's capacity cannot explain it\n",
+                    c_in, c_plain, startpos);
+            bad = 1;
+        }
+        if (c_in == c_plain && c_plain >= 0) {
+            for (k = 0; k < RX_NCAPS; k++) {
+                if (caps_in[k][0] != caps_plain[k][0] || caps_in[k][1] != caps_plain[k][1]) {
+                    fprintf(stderr, "driver: rx_match_caps_in slot %d disagrees"
+                                    " (%td,%td) vs (%td,%td)\n", k,
+                            caps_in[k][0], caps_in[k][1],
+                            caps_plain[k][0], caps_plain[k][1]);
+                    bad = 1;
+                }
+            }
+        }
+        if (bad) { free(frames_mem); free(trail_mem); free(buf); return 4; }
+    }
+
     free(frames_mem); free(trail_mem);
     if (found == 1) {
         printf("match");

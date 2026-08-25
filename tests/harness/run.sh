@@ -431,6 +431,22 @@ flush_block() {
                 "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             record_case_group_fail "$cur_file" "$i" "test binary crashed"
             continue
+        elif [ $trc -eq 4 ]; then
+            # [DD-14.FB] driver.c's ANCHORED-ENTRY CROSS-CHECK failed: on a
+            # non-default route the driver also runs <prefix>_match_in and
+            # <prefix>_match_caps_in against their un-suffixed siblings, and
+            # they disagreed by more than the one divergence a smaller caller
+            # buffer is allowed (a give-up, downward only). Its own arm, ahead
+            # of the `gu` branch, so it applies to EVERY case kind -- a `gu`
+            # cell whose anchored entries disagree is as broken as an `m` one,
+            # and folding this into the give-up branch would have let exactly
+            # those cells hide it. The detail is on the driver's stderr, which
+            # run.sh does not capture per case, so the message says where to
+            # look rather than pretending to quote it.
+            record_fail "$cur_file" "$line" \
+                "<prefix>_match_in / <prefix>_match_caps_in DISAGREE with their un-suffixed siblings (driver exit 4; re-run the case by hand to see the two values) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
+            record_case_group_fail "$cur_file" "$i" "anchored _in entries disagree with their siblings"
+            continue
         elif [ "$kind" = "gu" ]; then
             # [DD-14 wave A commit 3, §10.3] the ONE case kind that WANTS
             # exit 3: this directive asserts the search GAVE UP with a

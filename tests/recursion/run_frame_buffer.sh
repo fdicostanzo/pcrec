@@ -16,6 +16,19 @@
 # un-suffixed entry with the same other arguments. Not 'similar to', not
 # 'equivalent in observable behaviour' — the same call."
 #
+# AND SINCE [DD-14.FB]'s CRITIC PASS IT COVERS ALL THREE `_in` ENTRIES, not
+# one. driver.c cross-checks `<prefix>_match_in` and `<prefix>_match_caps_in`
+# against their un-suffixed siblings on every non-default route, so the `null`
+# route below drives all three and demands exact agreement of all three
+# (capture spans included) — on the `null` route no divergence is permitted at
+# all, because §10.3 defines that call to BE the un-suffixed one. Before that
+# cross-check existed, `<prefix>_search_in` was the ONLY `_in` entry any cell,
+# driver or measurement in this tree ever ran: three entries shipped and one
+# was exercised. MEASURED in the failing direction (scratch emitter, never
+# committed): an emitter whose `<prefix>_match_in` ignores its descriptor takes
+# tests/recursion/framebuffer.rxt from 16/0 to 12/4; before the cross-check it
+# took it from 16/0 to 16/0.
+#
 # framebuffer.rxt pins that on ONE pattern at TWO subjects. That is a thin
 # population for a claim of exact identity, and thin in a specific direction:
 # a delegation that special-cased, say, the give-up path, or that dropped the
@@ -127,7 +140,7 @@ spread_row 'backref'          '(a+)\1'              '--features backrefs'     'a
 if [ "$s1_run" -lt "$s1_want" ] || [ "$s1_want" -lt 12 ]; then
     bad "[DD-14.FB §10.3] only $s1_run of $s1_want spread rows ran — a section that silently lost rows is not the spread it claims to be"
 elif [ "$s1_ok" -eq 1 ]; then
-    ok "[DD-14.FB §10.3]: <prefix>_search_in(..., NULL) printed BYTE-IDENTICAL output to <prefix>_search on all $s1_run spread rows — matches, no-matches, capture spans, a zero-width loop, a \\K entry, a backreference, a give-up and a constant-time runaway refusal, across both engines"
+    ok "[DD-14.FB §10.3]: all THREE _in entries agree exactly with their un-suffixed siblings on all $s1_run spread rows — <prefix>_search_in(..., NULL) printed BYTE-IDENTICAL output, and driver.c's cross-check found <prefix>_match_in and <prefix>_match_caps_in (capture spans included) identical to theirs on every row — matches, no-matches, capture spans, a zero-width loop, a \\K entry, a backreference, a give-up and a constant-time runaway refusal, across both engines"
 fi
 
 # =========================================================================
