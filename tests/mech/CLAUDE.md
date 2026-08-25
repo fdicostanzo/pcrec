@@ -1780,3 +1780,43 @@ to have, red on the one it should have had all along.
 **THE UNDETECTED TALLY MOVES BUT DOES NOT SHRINK.** Wave E left six (S150, S151,
 S152, S153, S160, S164). S164 closes; S178 opens with its search recorded. Six
 again, and a different six.
+
+## [DD-14.FB] rows S179-S184, and two new suite words (2026-08-25)
+
+Two words registered BEFORE the rows that need them, per the R31 C11 lesson
+this file already records: **`framebuffer`** runs
+`tests/recursion/run_frame_buffer.sh` and **`stackdepth`** runs
+`tests/thread/run_stackdepth_tests.sh`. Neither folds into `harness`, for the
+reason `vmidentity` gives for not being `codegen`: what they guard — that a
+CALLER-SUPPLIED capacity is the one the matcher uses, and that the working
+storage is off the entry's stack frame — is orthogonal to every answer-checking
+cell in the corpus. `stackdepth`'s script prints a `KNOWN:` line on a green run
+(K33, pinned by D73) and the scrape reads only its `checks passed:`/`checks
+failed:` totals, which exclude it — so a pinned row can neither credit a row
+with detection nor excuse one.
+
+Two of the six rows are worth reading for what they say about the CELLS rather
+than about the code:
+
+- **S180** (each capacity bound to the other's array) is a NO-OP under any cell
+  that supplies EQUAL capacities. The obvious corpus spelling,
+  `frames-buffer=8192`, could never detect it — which is why
+  `tests/recursion/framebuffer.rxt` hands over `1024,8192` for a subject
+  needing 686 frames and 3,081 trail entries.
+- **S184** (`_RESUME_FRAME_SIZE` stamped from the trail entry's layout) does
+  not produce an under-allocated buffer at run time at all. The artifact
+  carries a `_Static_assert` reconciling the stamped literal with the real
+  `sizeof`, so the row's signature is a generated file that DOES NOT COMPILE,
+  naming the macro. The design's §11 table proposed an ASan cell for this row;
+  that would work and is the second line of defence, but the build-time
+  detector fires first and is cheaper.
+
+**Anchor drift this wave, recorded because it is the failure this directory
+exists to make loud.** Splitting the run state moved four rows' anchors —
+S89, S145, S155 and S168, all in `src/gen/emit_vm.c` — and they are re-anchored
+here. Finding them turned up a FIFTH, **S174**, whose anchor in
+`src/opt/atomic.c` had been stale since [DD-14.G]'s blocking fix (99eecd5)
+respelled the guard it names: that row had been applying nothing, and
+certifying nothing, for two commits. Re-anchored, with the history in its own
+header, and NOT re-run since. `scripts/m6read_check_sab_anchors.py` reports
+"all anchors resolve" as of this wave.

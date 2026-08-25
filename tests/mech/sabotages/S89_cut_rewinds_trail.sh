@@ -31,7 +31,7 @@ SAB_DESC="the emitted RX_CUT macro also rewinds the trail to the first discarded
 SAB_DOC_FIGURE="PREDICTED: the RETENTION corpus RED (tests/atomic_groups/atomic_caps.rxt section 1), codegen GREEN -- the cut is still emitted at the same site to the same slot, so no structural check can see it. Canonical figure owed from run_sabotage_matrix.sh S89."
 SAB_COUNT=1
 SAB_BEFORE='            "#define %s_CUT(slot_) do {                                   \\\n"
-            "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
+            "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
 '
 SAB_AFTER='            "#define %s_CUT(slot_) do {                                   \\\n"
             /* SABOTAGE S89: the cut also rewinds the trail */

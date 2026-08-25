@@ -229,3 +229,19 @@ matrix rather than this file quoting counts that would go stale.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
+
+## [DD-14.FB] the frames-rung check reads the capacity macro from the `.h` (2026-08-25)
+
+`RX_RESUME_FRAMES` moved out of the generated `.c` and into the paired header
+with the caller-buffer sizing surface (spec §10.4), because a caller has to
+read it before it can size a buffer for `<prefix>_search_in`. This suite's
+`gen` helper compiles with `-o <name>.c`, i.e. SPLIT output, so the frames-rung
+check now reads the macro from `<name>.c` and `<name>.h` together — the same
+correction this file's `strats` helper already carries for
+`PCREC_VM_STRAT_POSSESSIVE`, and for the same reason.
+
+**It would have gone RED, not vacuous**, and the distinction is worth keeping
+straight because the first version of the fix's comment claimed otherwise: the
+comparison is arithmetic and `[ "" -lt "" ]` is an error, which is false. What
+the wrong read cost was the MESSAGE — a failure reading `( -> )` sends a reader
+to the possessify pass instead of to a macro that changed file.

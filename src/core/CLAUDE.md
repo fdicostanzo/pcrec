@@ -695,3 +695,28 @@ emitter runs — engine selection reads the linkage — and the emitter's `Cost`
 numbers do not exist yet at that point. `PCREC_MAX_VM_NODES` stays the hard
 backstop; these keep ordinary patterns far away from it.
 Maintenance: update this file when files are added/removed or their roles change.
+
+## [DD-14.FB] `BufSurface`, and two emitter signatures (2026-08-25)
+
+`internal.h` gains one type and widens two declarations for the caller-provided
+frame buffer (D71 item 2, `docs/spec/match_api.md` §10):
+
+- **`BufSurface`** — the five facts the sizing surface publishes
+  (`resume_frames`, `trail_frames`, `resume_frame_size`, `trail_frame_size`,
+  `align`). It is a STRUCT rather than five parameters because both consumers
+  take all of them and a positional list of five integers is the shape a later
+  edit silently transposes. `pcrec_bufsurface_inert()` (src/gen/emit_dfa.c) is
+  the DFA artifact's shape, spelled once: four zeros and an alignment of **1**,
+  never 0 — a caller rounding an arena cursor UP to a 0 alignment divides by
+  zero.
+- **`pcrec_emit_prologue`** and **`pcrec_emit_info`** each take a
+  `const BufSurface *`. The VM emitter computes ONE and passes the same struct
+  to both, so the header's macros and `rx_info`'s fields cannot disagree: they
+  are one value read twice, not two computations of one fact. The DFA emitter
+  passes the inert shape.
+
+The two structs the sizes MEASURE (`<prefix>_frame`, `<prefix>_trail_entry`)
+are not declared here and must not be: they are per-artifact emitted text whose
+layout three axes move (`has_linked_calls`, `--trace`, and the target's own
+type sizes), which is why the descriptor is opaque and the sizes are stamped
+and asserted rather than exported. See `src/gen/CLAUDE.md`'s [DD-14.FB] section.

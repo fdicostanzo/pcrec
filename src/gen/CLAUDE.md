@@ -1474,3 +1474,91 @@ every capture-bearing VM artifact in the corpus (558 of 2442 call-free patterns
 moved; the identity gate caught it on its first run).
 
 Maintenance: update this file when files are added/removed or their roles change.
+
+## [DD-14.FB] THE CALLER-PROVIDED FRAME BUFFER: the run state splits, and three entries become six
+
+D71 item 2, spec §10, design `docs/design/frame_buffer_design.md`. The whole
+change is one idea with a lot of consequences: **the run state stops OWNING its
+two arrays and starts POINTING at them.**
+
+**The shape.** `<prefix>_run_state` holds `resume_stack`/`resume_cap` and
+`trail`/`trail_cap`; the stamped-default storage moves into a new
+`<prefix>_run_buffers`, which the three UN-SUFFIXED entries declare as an
+ordinary local and the three new `_in` entries declare not at all. That
+asymmetry is the feature: MEASURED, `rx_search`'s frame stays 131,216 B on a
+call-bearing artifact and `rx_search_in`'s is 144 B, because an entry handed
+the caller's pointers has no arrays to declare and **C has no way to declare a
+local conditionally.**
+
+**The delegation runs `_in` → un-suffixed and NEVER the reverse**, and this is
+the one thing here most likely to be "simplified" into a bug. Making the old
+entry a thin wrapper round `_in(..., NULL)` reads better and is wrong: `_in`
+would then own the default storage and declare it unconditionally, so the
+caller who supplied buffers pays the 128 KB anyway. It changes NO ANSWER, which
+is why the check for it is structural (tests/codegen's `[DD-14.FB]` block reads
+the emitted text) rather than behavioural.
+
+**One implementation, two ways to point it at storage.** The search, match and
+match-caps bodies moved into statics — `<prefix>_search_run`,
+`<prefix>_match_run`, `<prefix>_match_caps_run` — and the six public entries
+are wrappers that bind storage and call them. The alternative, a second copy of
+the loop for the `_in` entries, is the parallel mechanism the house rule
+forbids and is what design §12's P-2 names as the fallback it does not want.
+
+**The SEVEN capacity sites.** Every place that tests a depth against a capacity
+reads `run->resume_cap`/`run->trail_cap`: `vm_region`'s region-exit
+`_R_INTERNAL` guard, the `RX_TRAIL`/`RX_PUSH` pair, their two tracing twins,
+and the two `RX_CALL` variants. They are ENUMERATED rather than described
+because leaving one on the stamped constant is invisible to every caller who
+uses the default — sabotage row S182.
+
+**Counters are `size_t`, not `unsigned`, and it was free.** The descriptor's
+counts are `size_t`, so an `unsigned` depth counter would wrap past the guard
+for a caller reserving more than `UINT_MAX` frames — the very caller this
+feature targets. `trail_mark` and `call_top` widened with them. MEASURED: on
+the default (untraced) axes this lands entirely in what was already padding, so
+the resume frame is still 24 bytes call-free and 40 call-bearing. Only
+`--trace` grows (24 → 32, 40 → 48), because the `int id;` no longer shares a
+padding hole.
+
+**The sizing surface is STAMPED LITERALS, reconciled by the artifact itself.**
+`<PREFIX>_RESUME_FRAME_SIZE` and friends cannot be `sizeof` expressions,
+because §5.4 keeps `<prefix>_frame`/`<prefix>_trail_entry` `.c`-private and the
+header would be naming a type it does not declare. So `vm_frame_fields` /
+`vm_trail_fields` build ONE member list that both EMITS the struct and FEEDS
+`vm_layout`'s size arithmetic — the two cannot drift by construction — and the
+artifact carries a `_Static_assert` per macro comparing the stamped number
+against the real `sizeof`/`_Alignof`. A number computed for the wrong target
+model, or stamped from the wrong struct (sabotage row S184), is then a loud
+compile error in the artifact rather than a silent under-allocation in a
+caller. **If you add a member to the resume frame, add it to the member list;
+that is the whole maintenance rule.**
+
+MEASURED, and it is the check that shows the rule working: `--trace` puts an
+`int id;` on the frame, so a traced artifact stamps **32** (call-free) and
+**48** (call-bearing) where the untraced ones stamp 24 and 40 — the tracing
+member no longer shares a padding hole with the two `size_t` counters. The
+stamp follows because the list that EMITS the traced struct is the list that
+computes the size. A drift THROUGH the list is not even representable: an
+emitter patched to build the list without the tracing axis emits a struct with
+no `id` member, and the artifact fails on the missing member rather than on a
+wrong number. The remaining route — a SECOND computation of the size, blind to
+an axis the struct sees — is what the `_Static_assert` catches, and that was
+validated in the failing direction (a scratch emitter stamping from a
+trace-blind second list stamps 40 and the traced artifact then fails to compile
+naming `RX_RESUME_FRAME_SIZE`). `tests/codegen`'s `[DD-14.FB]` `--trace` check
+pins both numbers and compiles both artifacts.
+
+**The surface is emitted on a DFA artifact too, INERT** (`emit_in_entry_defs`
+and `emit_buffers_surface`, both in emit_dfa.c): the three `_in` entries accept
+a descriptor and ignore it, the four sizing macros read 0 and the alignment
+reads 1 — never 0, because a caller rounding an arena cursor UP to it would
+divide by zero. This is a deliberate departure from §6.3's VM-only rule for
+capacity macros, ruled by spec §10.4: those macros report what an artifact DID,
+these report what a caller needs in order to CALL it, and engine selection is
+not the caller's choice.
+
+**`<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` moved `.c` → `.h`** with the rest of
+the surface, because a caller has to read them before it can size a buffer.
+Two in-tree scripts grepped them out of the `.c` and were fixed to read the
+`.h` too; a third consumer would have gone VACUOUS rather than red.

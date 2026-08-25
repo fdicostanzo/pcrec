@@ -82,6 +82,40 @@ re-measuring it.
 
 ## Files
 
+- **`framebuffer.rxt`** — **[DD-14.FB], 2026-08-25.** The caller-provided
+  buffer's behavioural cells, through run.sh's `frames-buffer=` route
+  (docs/testing.md). 16 cases on three patterns. Read the ASYMMETRIC
+  capacities before editing it: the buffered cell hands over 1024 frames and
+  8192 trail entries for a subject needing 686 and 3,081, which is sufficient
+  as written and INSUFFICIENT IF TRANSPOSED — the obvious `frames-buffer=8192`
+  spelling would be a no-op under sabotage row S180 and could never detect it.
+  Two cells pin design §4's measured finding that the TRAIL binds first
+  (`200000,3072` still gives up) and that the frames can bind too
+  (`512,400000`), so neither can be read as the only real capacity.
+- **`fb_mmap_driver.c`** — **[DD-14.FB]** spec §10.6's `MAP_NORESERVE` worked
+  example, RUN rather than quoted: two 64 MB reservations driven to their
+  ceiling, printing result/time/RSS per subject size with the un-suffixed
+  entry's answer on the same line. A C driver rather than a corpus cell
+  because what it measures — lazy commit, resident-set growth, wall time — are
+  properties of the RESERVATION, and the `.rxt` format has no business growing
+  a vocabulary for them.
+- **`fb_exact_driver.c`** — **[DD-14.FB]** the SEVEN CAPACITY SITES measured
+  exact in BOTH directions, on buffers with NO SLACK, under
+  AddressSanitizer. Read its header before widening any capacity in
+  `framebuffer.rxt`: an off-by-one guard is invisible on a generously sized
+  buffer in both directions at once — too loose writes into slack the caller
+  happens to own, too tight never fires — so removing the slack is the whole
+  instrument. MEASURED: the exact fit matches at every depth with zero ASan
+  findings; one frame short and one trail entry short each give up cleanly.
+- **`run_frame_buffer.sh`** — **[DD-14.FB]** the three checks the corpus cannot
+  hold, `make test-frame-buffer`, OPT-IN. §1 compares
+  `<prefix>_search_in(..., NULL)` against `<prefix>_search` BYTE FOR BYTE over
+  a 12-pattern spread chosen to reach every ANSWER KIND (match, no-match,
+  capture spans, zero-width loop, `\K`, backreference, give-up, the
+  constant-time runaway refusal), both engines. §2 drives `fb_exact_driver.c` under ASan;
+  §3 drives `fb_mmap_driver.c` and asserts §10.6's rows. **Its rows are function calls, not a delimited
+  table**, and the comment saying so is load-bearing: the first version used
+  `|` as a field separator and silently truncated three of the twelve patterns.
 - **`refused.rxt`** — the `conditionals` refusals this module does NOT
   unlock: `(?(R)`, `(?(1)`, each pinned by running today's built
   `build/pcrec`. **Wave F rewrote this file's point.** Its two `(?(DEFINE)`

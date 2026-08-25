@@ -534,6 +534,24 @@ static void emit_rx_abi_types(StrBuf *sb)
         "                                       and is counted separately. */\n"
         "    int64_t       frame_capacity;  /* -1 = unbounded */\n"
         "    int64_t       subject_ceiling; /* 0 = unset/not applicable */\n"
+        /* [DD-14.FB] (D71 item 2, spec §10.4) THE SIZING SURFACE'S FOUR
+         * FACTS, for a consumer that has no C header to read the macros
+         * from -- an FFI, ctypes or dlopen binding, which is exactly the
+         * consumer most likely to want a large reservation and the one
+         * that cannot use <PREFIX>_RESUME_FRAME_SIZE. All four read 0 on a
+         * DFA artifact, which has neither array.
+         *
+         * `resume_frames` IS NOT REDUNDANT WITH `frame_capacity` two lines
+         * up, and the difference is the sentinel: `frame_capacity` answers
+         * "what bound does this artifact enforce", reading -1 for "no bound
+         * at all", where this answers "how many frames does the default
+         * storage hold", reading 0 for "there is no such storage". A
+         * caller sizing a buffer needs the second question. */
+        "    int64_t       resume_frames;   /* stamped DEFAULT capacity, in\n"
+        "                                       frames; 0 = no resume stack */\n"
+        "    int64_t       trail_frames;    /* ditto, in trail entries */\n"
+        "    int32_t       resume_frame_size; /* bytes per resume frame */\n"
+        "    int32_t       trail_frame_size;  /* bytes per trail entry */\n"
         "    const char           *pattern;     /* source pattern text */\n"
         "    size_t                pattern_len; /* companion length (K9-proof) */\n"
         "    const rx_group_entry *groups;       /* sorted, bsearch-able */\n"
@@ -620,6 +638,127 @@ static void emit_ncaps_macros(StrBuf *sb, const char *upper, int ncaps)
     sb_printf(sb, "#define %s_NCAPS %d\n", upper, ncaps);
 }
 
+/* [DD-14.FB] (D71 item 2, spec §10.4) THE CALLER-BUFFER SIZING SURFACE: five
+ * per-prefix macros and the `<prefix>_buffers` descriptor, emitted wherever a
+ * consumer's declarations live (the .h when split, the .c when
+ * self-contained) and on EVERY artifact, both engines.
+ *
+ * TWO OF THE FIVE MACROS ALREADY EXISTED AND MOVE HERE FROM emit_vm.c's .c
+ * body. `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` were `.c`-private, which was
+ * right while they only DOCUMENTED what the artifact does; they are now
+ * arithmetic a caller has to do before it can call `<prefix>_search_in`, so
+ * they have to be where a caller can read them. That move is the emitted-text
+ * change §10.8 announces, and it is the reason this function is called from
+ * the prologue rather than from the VM body: the header is written before the
+ * VM's own text begins.
+ *
+ * THE THREE SIZE/ALIGN MACROS ARE STAMPED LITERALS, NOT `sizeof` EXPRESSIONS,
+ * and that is forced rather than chosen. The two structs they measure are
+ * `.c`-private (design §5.4: exporting the frame layout would pin, as ABI, a
+ * layout three axes already move), so a `sizeof` in the header would name a
+ * type the header does not declare. What keeps a stamped literal honest is
+ * that the artifact CHECKS it: emit_vm.c emits a `_Static_assert` beside the
+ * struct definitions comparing each macro against the real `sizeof`, so a
+ * number computed for the wrong target model -- or stamped from the wrong
+ * struct, sabotage row S-FB6 -- is a loud compile error in the artifact,
+ * never a silent under-allocation in the caller.
+ *
+ * THE DESCRIPTOR IS PER-PREFIX, NOT ONE OF THE FIXED-LITERAL `rx_*` ABI TYPES
+ * (spec §10.2). Those six are literal so that differently-prefixed matchers
+ * COMPOSE; a buffer is the opposite case, because a resume frame's size
+ * differs between artifacts (24 bytes call-free, 40 call-bearing, MEASURED),
+ * and a fixed-literal spelling would advertise an interchangeability that
+ * does not exist. So it lives here, beside `<PREFIX>_NCAPS`, rather than in
+ * the shared PCREC_RX_ABI_H block. */
+static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *prefix,
+                                 const BufSurface *bs)
+{
+    sb_printf(sb,
+        "\n/* [DD-14.FB] The caller-provided working storage (spec \302\24710).\n"
+        " *\n"
+        " *   %s_RESUME_FRAMES / _TRAIL_FRAMES   the capacities this artifact\n"
+        " *       uses when it supplies the storage itself -- a DEFAULT, not a\n"
+        " *       limit. 0 on a DFA artifact, which has neither array.\n"
+        " *   %s_RESUME_FRAME_SIZE / _TRAIL_FRAME_SIZE   bytes per frame and\n"
+        " *       per trail entry FOR THIS ARTIFACT. The layouts themselves are\n"
+        " *       private; this is the arithmetic that replaces them.\n"
+        " *   %s_BUFFER_ALIGN   the alignment both regions require. Storage\n"
+        " *       from any ordinary allocator, mapping or object declaration\n"
+        " *       already satisfies it; the macro is for a caller carving a\n"
+        " *       region out of an arena.\n"
+        " */\n",
+        upper, upper, upper);
+    sb_printf(sb, "#define %s_RESUME_FRAMES %lld\n", upper, bs->resume_frames);
+    sb_printf(sb, "#define %s_TRAIL_FRAMES %lld\n", upper, bs->trail_frames);
+    sb_printf(sb, "#define %s_RESUME_FRAME_SIZE %d\n", upper, bs->resume_frame_size);
+    sb_printf(sb, "#define %s_TRAIL_FRAME_SIZE %d\n", upper, bs->trail_frame_size);
+    sb_printf(sb, "#define %s_BUFFER_ALIGN %d\n\n", upper, bs->align);
+    sb_printf(sb,
+        "/* Where one match attempt's working storage lives. Pass NULL to any\n"
+        " * <prefix>_*_in entry and it is EXACTLY a call to the un-suffixed\n"
+        " * sibling, with this artifact's own stamped default storage on that\n"
+        " * entry's stack frame.\n"
+        " *\n"
+        " * THE COUNTS ARE CAPACITIES, NOT BYTE SIZES: `nframes` is how many\n"
+        " * FRAMES the region holds, `ntrail` how many trail ENTRIES. A caller\n"
+        " * that reserved `bytes` gets `bytes / %s_RESUME_FRAME_SIZE` and\n"
+        " * `bytes / %s_TRAIL_FRAME_SIZE` -- BUT CHECK THE SIZE FIRST: a stamped\n"
+        " * size of 0 means this artifact's engine takes no buffers at all (every\n"
+        " * DFA artifact stamps 0), so dividing by it is a division by zero. Pass\n"
+        " * NULL on such an artifact; the _in entries accept a descriptor and\n"
+        " * ignore it either way. Both regions are required when the\n"
+        " * descriptor is non-NULL, and both are pure scratch: their contents\n"
+        " * after any call are unspecified and no call reads what a previous\n"
+        " * one left. Two concurrent calls must not share one region -- that is\n"
+        " * a race in the caller's code exactly as a shared caps array is. */\n"
+        "typedef struct {\n"
+        "    void   *frames;    /* storage for resume frames */\n"
+        "    size_t  nframes;   /* capacity in FRAMES, not bytes */\n"
+        "    void   *trail;     /* storage for trail entries */\n"
+        "    size_t  ntrail;    /* capacity in ENTRIES, not bytes */\n"
+        "} %s_buffers;\n",
+        upper, upper, prefix);
+}
+
+/* The three `_in` DECLARATIONS. Kept beside the three un-suffixed ones above
+ * (emit_search_decl and friends), which they mirror argument for argument
+ * plus the descriptor -- spec §10.2's "its un-suffixed sibling in every
+ * respect, plus one argument naming where the working storage lives". */
+static void emit_search_in_decl(StrBuf *sb, const char *fn, const char *prefix)
+{
+    sb_printf(sb, "int %s_in(const unsigned char *subject, size_t subject_length, "
+                  "size_t search_from, ptrdiff_t (*capture_spans)[2], "
+                  "const %s_buffers *buffers);\n", fn, prefix);
+}
+
+static void emit_match_in_decl(StrBuf *sb, const char *fn, const char *prefix)
+{
+    sb_printf(sb, "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers);\n",
+              fn, prefix);
+}
+
+static void emit_match_caps_in_decl(StrBuf *sb, const char *fn, const char *prefix)
+{
+    sb_printf(sb, "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2], "
+                  "const %s_buffers *buffers);\n", fn, prefix);
+}
+
+/* The inert shape (spec §10.4): four sizing facts at 0, alignment at 1.
+ *
+ * ALIGNMENT 1 RATHER THAN 0 is the one value §10.4 does not spell, and 0 is
+ * the wrong answer for a reason worth writing down: a caller carving a region
+ * out of an arena rounds its cursor UP to the macro, and rounding up to 0 is
+ * a division by zero. 1 is the alignment every pointer already satisfies,
+ * which is the truthful statement for an artifact with no regions to align. */
+BufSurface pcrec_bufsurface_inert(void)
+{
+    BufSurface bs;
+    bs.resume_frames = 0; bs.trail_frames = 0;
+    bs.resume_frame_size = 0; bs.trail_frame_size = 0;
+    bs.align = 1;
+    return bs;
+}
+
 /* [M4.4] (match_api_m4.md §3): the match-here entry, exported UNCONDITIONALLY
  * on every generated matcher (F1/F2) and RETROFITTED onto the existing DFA
  * search — nothing at [M4.4] requires a second, genuinely-anchored
@@ -703,6 +842,66 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
         fn, upper, searchfn, upper);
 }
 
+/* [DD-14.FB] (D71 item 2, spec §10.4) THE THREE `_in` ENTRIES ON A DFA
+ * ARTIFACT: present, and INERT.
+ *
+ * WHY A DFA ARTIFACT HAS THEM AT ALL. §6.3's rule is that per-artifact
+ * capacity macros are VM-only, because they report what an artifact DID and a
+ * DFA artifact has nothing to report. These entries are the other kind of
+ * fact: they are what a CALLER needs in order to call the artifact, and which
+ * engine a pattern selects is not the caller's choice — `select_engine.c`
+ * makes it, and it can change when the pattern changes or when an
+ * optimisation lands. §6.3's own closing warning names the failure this
+ * avoids: "a consumer that `#if`s on `RX_ENGINE` is writing code that does
+ * not compile against half the artifacts pcrec produces". So the surface is
+ * unconditional and the DEPARTURE is deliberate (spec §10.4 rules it).
+ *
+ * WHY THEY IGNORE THE DESCRIPTOR RATHER THAN REJECTING IT. This engine never
+ * backtracks: it has no resume stack, no trail, and no capacity to exhaust —
+ * which is why it can never return `PCREC_ERR_FRAMES` either. A descriptor
+ * therefore names storage there is nothing to put in, and the honest answer
+ * is the un-suffixed sibling's, unchanged. Refusing a non-NULL descriptor
+ * would make the same call site engine-dependent again, which is the whole
+ * thing this shape exists to prevent.
+ *
+ * THE DELEGATION RUNS `_in` -> UN-SUFFIXED here exactly as it does on a VM
+ * artifact (design §5.2), so the direction is one rule across both engines
+ * rather than a coincidence that holds twice. */
+static void emit_in_entry_defs(StrBuf *c, const char *searchfn, const char *matchfn,
+                               const char *matchcapsfn, const char *prefix)
+{
+    sb_printf(c,
+        "/* [DD-14.FB] The caller-buffer entries. This engine keeps no working\n"
+        " * storage between bytes -- it cannot backtrack, so it has no resume\n"
+        " * stack and no trail to point anywhere -- so each of these is exactly\n"
+        " * its un-suffixed sibling and the descriptor is unused. Emitted\n"
+        " * anyway, on every artifact both engines produce, so one caller call\n"
+        " * site compiles and behaves the same whichever engine the pattern\n"
+        " * happened to select (spec S10.4). */\n"
+        "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+        "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
+        "{\n"
+        "    (void)buffers;\n"
+        "    return %s(subject, subject_length, search_from, capture_spans);\n"
+        "}\n"
+        "\n"
+        "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
+        "{\n"
+        "    (void)buffers;\n"
+        "    return %s(ctx);\n"
+        "}\n"
+        "\n"
+        "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+        "                const %s_buffers *buffers)\n"
+        "{\n"
+        "    (void)buffers;\n"
+        "    return %s(ctx, capture_spans_out);\n"
+        "}\n",
+        searchfn, prefix, searchfn,
+        matchfn, prefix, matchfn,
+        matchcapsfn, prefix, matchcapsfn);
+}
+
 /* [M4.4] (match_api_m4.md §5, D43.1/D44.5): the static reflection structure,
  * one per artifact, `.rodata` only. Every FIELD lands at [M4.4]; several are
  * trivially empty/default until later substeps populate them (groups/nnames
@@ -726,6 +925,10 @@ typedef struct {
     long long   work_budget;     /* -1 = none (the D47 SECOND ADDENDUM bound) */
     long long   frame_capacity;  /* -1 = unbounded */
     long long   subject_ceiling; /* 0 = unset/not applicable */
+    /* [DD-14.FB] the same four facts the header's macros carry, for a
+     * consumer with no header. Never NULL: both emitters pass one, the DFA
+     * path passing `pcrec_bufsurface_inert()`. */
+    const BufSurface *bufs;
 } InfoStamp;
 
 /* [M6.3] the sort key for rx_info.groups: strcmp on the NAME. Chosen to
@@ -832,8 +1035,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * bound). The member is INSERTED beside `step_budget` rather than appended,
      * so every following offset moves — which is precisely what the version
      * member exists to announce, and what the pre-release ABI posture (D47
-     * SECOND ADDENDUM's rider, D49) licenses on a struct D44.5 called final. */
-    sb_puts(c,   "    .abi = 2,\n");
+     * SECOND ADDENDUM's rider, D49) licenses on a struct D44.5 called final.
+     *
+     * [DD-14.FB] abi 2 -> 3: the caller-buffer sizing surface's four fields
+     * (spec §10.4) are INSERTED after `subject_ceiling`, ahead of the three
+     * pointer members, so every following offset moves again — the same
+     * announced pre-v1 boundary D40 regime 1 governs, and the same reason
+     * this member exists. P-4 of the design predicts nothing in-tree reads
+     * the struct positionally; a vendored consumer is D40's problem, not a
+     * silent one. */
+    sb_puts(c,   "    .abi = 3,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -893,6 +1104,10 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
     sb_printf(c, "    .work_budget = %lld,\n", st->work_budget);
     sb_printf(c, "    .frame_capacity = %lld,\n", st->frame_capacity);
     sb_printf(c, "    .subject_ceiling = %lld,\n", st->subject_ceiling);
+    sb_printf(c, "    .resume_frames = %lld,\n", st->bufs->resume_frames);
+    sb_printf(c, "    .trail_frames = %lld,\n", st->bufs->trail_frames);
+    sb_printf(c, "    .resume_frame_size = %d,\n", st->bufs->resume_frame_size);
+    sb_printf(c, "    .trail_frame_size = %d,\n", st->bufs->trail_frame_size);
     sb_puts(c,   "    .pattern = ");
     emit_c_string_literal(c, cx->pat, cx->patlen);
     sb_puts(c,   ",\n");
@@ -946,7 +1161,7 @@ static void emit_residual_defs(Ctx *cx, StrBuf *sb)
 
 static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
                          const char *matchcapsfn, const char *infoname,
-                         const char *upper, int ncaps)
+                         const char *upper, int ncaps, const BufSurface *bs)
 {
     StrBuf *h = &cx->job->hsb;
     const char *p = cx->opt->prefix;
@@ -963,11 +1178,20 @@ static void emit_header(Ctx *cx, const char *fn, const char *matchfn,
     emit_rx_abi_types(h);
     sb_putc(h, '\n');
     emit_ncaps_macros(h, upper, ncaps);
+    emit_buffers_surface(h, upper, cx->opt->prefix, bs);
     sb_putc(h, '\n');
     emit_search_decl(h, fn);
     emit_match_decl(h, matchfn);
     emit_match_caps_decl(h, matchcapsfn);
     emit_info_decl(h, infoname);
+    /* [DD-14.FB] The three `_in` entries join the header UNCONDITIONALLY,
+     * beside the siblings they mirror -- spec §10.4's "the three `_in`
+     * entries, the `<prefix>_buffers` type and all five macros are emitted on
+     * EVERY artifact", so a consumer's code does not stop compiling when the
+     * same pattern selects the other engine. */
+    emit_search_in_decl(h, fn, cx->opt->prefix);
+    emit_match_in_decl(h, matchfn, cx->opt->prefix);
+    emit_match_caps_in_decl(h, matchcapsfn, cx->opt->prefix);
     sb_putc(h, '\n');
     emit_residual_decls(cx, h);
     sb_printf(h, "\n#endif /* PCREC_GEN_%s_H */\n", guard);
@@ -2734,7 +2958,8 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
     sb_puts(c, " * ===================================================================== */\n\n");
 }
 
-void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
+void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
+                         const BufSurface *bs)
 {
     StrBuf *c = &cx->job->csb;
     /* [M6.2 wave C] ENG_ATTEMPT joins the list of bodies that can call
@@ -2750,7 +2975,7 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
 
     if (cx->opt->header_name)
         emit_header(cx, g->searchfn, g->matchfn, g->matchcapsfn, g->infoname,
-                    g->upper, ncaps);
+                    g->upper, ncaps, bs);
 
     emit_pattern_comment(c, cx->pat);
     emit_feature_comment(c);
@@ -2764,11 +2989,15 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
         emit_rx_abi_types(c);
         sb_putc(c, '\n');
         emit_ncaps_macros(c, g->upper, ncaps);
+        emit_buffers_surface(c, g->upper, cx->opt->prefix, bs);
         sb_putc(c, '\n');
         emit_search_decl(c, g->searchfn);
         emit_match_decl(c, g->matchfn);
         emit_match_caps_decl(c, g->matchcapsfn);
         emit_info_decl(c, g->infoname);
+        emit_search_in_decl(c, g->searchfn, cx->opt->prefix);
+        emit_match_in_decl(c, g->matchfn, cx->opt->prefix);
+        emit_match_caps_in_decl(c, g->matchcapsfn, cx->opt->prefix);
         sb_putc(c, '\n');
         emit_residual_decls(cx, c);
     }
@@ -2784,9 +3013,9 @@ void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps)
  * see emit_info_def's own comment. */
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long budget, long long work, long long frames,
-                     long long ceiling)
+                     long long ceiling, const BufSurface *bs)
 {
-    InfoStamp st = { engine, why, budget, work, frames, ceiling };
+    InfoStamp st = { engine, why, budget, work, frames, ceiling, bs };
     emit_info_def(cx, &cx->job->csb, g->infoname, g->upper, &st);
 }
 
@@ -2880,13 +3109,22 @@ void pcrec_emit_dfa(Ctx *cx)
      * its twelve registry rows and SR-8 refuses `--engine=dfa` on it by name —
      * so its mask is the unconditional entry alone. */
     cx->job->enc_mask = PCREC_ENCE_NEXT_POS;
-    pcrec_emit_prologue(cx, &g, dfa_artifact_ncaps(cx));
+    {
+        /* [DD-14.FB] spec §10.4: the surface is emitted on a DFA artifact
+         * too, INERT. This engine has no resume stack and no trail, so the
+         * four sizing facts are 0 and the three `_in` entries below accept a
+         * descriptor and ignore it. */
+        BufSurface bs = pcrec_bufsurface_inert();
+        pcrec_emit_prologue(cx, &g, dfa_artifact_ncaps(cx), &bs);
+    }
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     sb_puts(c, "\n");
     emit_match_def(c, g.matchfn, g.searchfn, g.upper);
     sb_puts(c, "\n");
     emit_match_caps_def(c, g.matchcapsfn, g.searchfn, g.upper);
+    sb_puts(c, "\n");
+    emit_in_entry_defs(c, g.searchfn, g.matchfn, g.matchcapsfn, cx->opt->prefix);
     sb_puts(c, "\n");
     pcrec_emit_residual(cx);
     {
@@ -2895,7 +3133,8 @@ void pcrec_emit_dfa(Ctx *cx)
          * as absent rather than as some notional large number. `work_budget`
          * joins `step_budget` in that reading for exactly the same reason —
          * a bound an engine structurally cannot reach is not a bound of 0. */
-        InfoStamp st = { 1, NULL, -1, -1, -1, 0 };
+        BufSurface bs = pcrec_bufsurface_inert();
+        InfoStamp st = { 1, NULL, -1, -1, -1, 0, &bs };
         emit_info_def(cx, c, g.infoname, g.upper, &st);
     }
 

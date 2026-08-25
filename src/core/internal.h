@@ -3321,14 +3321,39 @@ typedef struct {
 void pcrec_gen_names(Ctx *cx, GenNames *g);
 void pcrec_emit_abi_types(StrBuf *sb);
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
-void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps);
+
+/* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER
+ * SIZING SURFACE, as five facts the emitter that knows the run state's layout
+ * hands to the two places that PUBLISH them -- the artifact's header (five
+ * macros) and `rx_info` (four fields). It is a struct rather than five
+ * parameters because both consumers take all of them and a positional list of
+ * five integers is the shape a later edit silently transposes.
+ *
+ * A DFA ARTIFACT PASSES THE INERT SHAPE and the surface is still emitted:
+ * spec §10.4 rules the whole surface present on every artifact, with the four
+ * SIZING facts reading 0 (that engine has no resume stack to size) and the
+ * alignment reading 1 (every pointer satisfies it) -- a deliberate departure
+ * from §6.3's VM-only rule for capacity macros, because these five are what a
+ * caller needs in order to CALL the artifact and engine selection is not the
+ * caller's choice. `pcrec_bufsurface_inert()` is that shape, spelled once. */
+typedef struct {
+    long long resume_frames;      /* stamped DEFAULT capacity, in frames */
+    long long trail_frames;       /* stamped DEFAULT capacity, in entries */
+    int       resume_frame_size;  /* bytes per resume frame, THIS artifact */
+    int       trail_frame_size;   /* bytes per trail entry, THIS artifact */
+    int       align;              /* bytes; the alignment BOTH regions need */
+} BufSurface;
+BufSurface pcrec_bufsurface_inert(void);
+
+void pcrec_emit_prologue(Ctx *cx, const GenNames *g, int ncaps,
+                         const BufSurface *bs);
 void pcrec_emit_dfa_engine(Ctx *cx, const char *fn, const char *storage);
 /* [M5-SEAM] the per-encoding residual DEFINITIONS (src/gen/enc/); the
  * matching declarations ride pcrec_emit_prologue. */
 void pcrec_emit_residual(Ctx *cx);
 void pcrec_emit_info(Ctx *cx, const GenNames *g, int engine, const char *why,
                      long long budget, long long work, long long frames,
-                     long long ceiling);
+                     long long ceiling, const BufSurface *bs);
 void pcrec_emit_main(Ctx *cx, const GenNames *g);
 
 #endif /* PCREC_INTERNAL_H */

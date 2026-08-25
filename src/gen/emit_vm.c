@@ -5987,12 +5987,12 @@ static void vm_region(Vm *v, int i)
      * `resume_stack[(unsigned)-1]`, which is K27's class in emitted code. */
     sb_printf(v->b,
         "    {\n"
-        "        const unsigned %s_call_frame = run->call_top;\n"
-        "        if (%s_call_frame >= %s_RESUME_FRAMES) return %s_R_INTERNAL;\n"
+        "        const size_t %s_call_frame = run->call_top;\n"
+        "        if (%s_call_frame >= run->resume_cap) return %s_R_INTERNAL;\n"
         "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->up, v->p, v->p);
+        v->p, v->p, v->up, v->p, v->p);
     vm_ev(v, VE_RETURN, v->rgn_lbl[i], 0,
           "return to the caller through the frame's own label");
 }
@@ -7034,6 +7034,120 @@ static long long vm_ceiling(long long cap, long long per)
     return cap / per;
 }
 
+/* [DD-14.FB] (D71 item 2, spec §10.4) THE RESUME FRAME AND TRAIL ENTRY, AS
+ * ONE MEMBER LIST WITH TWO CONSUMERS.
+ *
+ * The caller-buffer surface publishes a BYTE SIZE per frame and per trail
+ * entry, because the descriptor takes CAPACITIES and the caller has to turn
+ * its `mmap` length into one. That size cannot be a `sizeof` in the emitted
+ * header: the two structs are `.c`-private (design §5.4 — exporting the frame
+ * layout would pin, as ABI, a layout that `has_linked_calls` and `--trace`
+ * both move), so the header would be naming a type it does not declare. It is
+ * therefore a STAMPED LITERAL, and a stamped literal computed independently of
+ * the struct text is exactly the two-sources-that-can-disagree defect this
+ * project has recorded three times.
+ *
+ * SO THERE IS ONE SOURCE. `vm_frame_fields`/`vm_trail_fields` build a member
+ * list; `vm_layout` computes the size and alignment from it; the struct is
+ * EMITTED from the same list. A member added to the struct is a member added
+ * to the size by construction, not by remembering.
+ *
+ * AND THE ARTIFACT CHECKS THE RESULT ANYWAY. `vm_layout` applies C's ordinary
+ * layout rule using the sizes and alignments of the compiler that runs pcrec,
+ * which is exact for the overwhelmingly common case (compile the pattern on
+ * the machine that compiles the artifact) and can be wrong for a
+ * cross-compile. So the emitted file carries a `_Static_assert` per macro
+ * comparing it against the real `sizeof`: a mismatch is a loud compile error
+ * naming the fix, never a silent under-allocation in a caller who divided by
+ * the wrong number. That same assertion is what catches sabotage row S-FB6
+ * (`_RESUME_FRAME_SIZE` stamped from the wrong struct) at build time rather
+ * than as an overrun under ASan. */
+typedef struct {
+    const char *decl;   /* the member's emitted text, e.g. "size_t trail_mark;" */
+    size_t      size;
+    size_t      align;
+} VmField;
+
+/* C's struct layout rule, applied to the list: align each member up to its own
+ * alignment, then round the total up to the widest member's. Bit-fields,
+ * over-aligned types and packed attributes would all break this and none of
+ * them appear in either struct — which is a property of the two lists below,
+ * checked by the `_Static_assert` the artifact carries. */
+static int vm_layout(const VmField *f, int n, int *out_align)
+{
+    size_t off = 0, maxa = 1;
+    int i;
+    for (i = 0; i < n; i++) {
+        if (f[i].align > maxa) maxa = f[i].align;
+        off = (off + f[i].align - 1) / f[i].align * f[i].align;
+        off += f[i].size;
+    }
+    off = (off + maxa - 1) / maxa * maxa;
+    if (out_align) *out_align = (int)maxa;
+    return (int)off;
+}
+
+/* THE FRAME'S MEMBERS, IN EMISSION ORDER, and the order is load-bearing twice
+ * over: it is what the size arithmetic above measures, and it is the order the
+ * pre-[DD-14.FB] artifact already had, so a call-free untraced artifact's
+ * frame stays 24 bytes and a call-bearing one stays 40 (MEASURED — the two
+ * counters widening from `unsigned` to `size_t`, §11 item 9, lands entirely in
+ * padding on an LP64 target).
+ *
+ * `trail_mark` AND `call_top` ARE `size_t`, NOT `unsigned`, and that is §11
+ * item 9's answer rather than a style choice. The descriptor's counts are
+ * `size_t`; a caller reserving 4 GB of frames — the very caller this feature
+ * targets — would otherwise have its capacity silently truncated at
+ * `UINT_MAX` and its depth counter wrap past the guard, which is design
+ * §12's P-3 predicting that the first implementation clamps without saying
+ * so. Widening is the alternative to clamping and it costs nothing here:
+ * both fields sit in what was padding. */
+static int vm_frame_fields(bool has_linked_calls, bool tracing, VmField *out)
+{
+    int n = 0;
+    out[n].decl = "const void *resume_label;";
+    out[n].size = sizeof(const void *); out[n].align = _Alignof(const void *); n++;
+    out[n].decl = "size_t resume_position;";
+    out[n].size = sizeof(size_t);       out[n].align = _Alignof(size_t);       n++;
+    out[n].decl = "size_t trail_mark;";
+    out[n].size = sizeof(size_t);       out[n].align = _Alignof(size_t);       n++;
+    if (tracing) {
+        out[n].decl = "int id;";
+        out[n].size = sizeof(int);      out[n].align = _Alignof(int);          n++;
+    }
+    if (has_linked_calls) {
+        out[n].decl = "const void *call_ret;";
+        out[n].size = sizeof(const void *); out[n].align = _Alignof(const void *); n++;
+        out[n].decl = "size_t call_top;";
+        out[n].size = sizeof(size_t);   out[n].align = _Alignof(size_t);       n++;
+    }
+    return n;
+}
+
+/* The trail entry. `slot_index` stays `unsigned` deliberately: it indexes the
+ * SLOT array, whose size is the compile-time `<PREFIX>_NSLOTS`, and has no
+ * relation to any caller-supplied capacity — the argument that widens the two
+ * depth counters says nothing about it. */
+static int vm_trail_fields(VmField *out)
+{
+    int n = 0;
+    out[n].decl = "unsigned slot_index;";
+    out[n].size = sizeof(unsigned);   out[n].align = _Alignof(unsigned);   n++;
+    out[n].decl = "ptrdiff_t saved_value;";
+    out[n].size = sizeof(ptrdiff_t);  out[n].align = _Alignof(ptrdiff_t);  n++;
+    return n;
+}
+
+/* Join a member list into one line of struct body text. */
+static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
+{
+    int i;
+    for (i = 0; i < n; i++) {
+        if (i) sb_puts(sb, " ");
+        sb_puts(sb, f[i].decl);
+    }
+}
+
 void pcrec_emit_vm(Ctx *cx, Ast *root)
 {
     Job *job = cx->job;
@@ -7747,10 +7861,29 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             if (v.rgn_emit[i]) vm_region(&v, i);
     }
 
+    /* [DD-14.FB] The caller-buffer sizing surface, computed HERE — after the
+     * two capacities and after `has_linked_calls`, which are the only three
+     * inputs — and handed to the prologue, which is where the header is
+     * written. The same struct reaches `rx_info` at the bottom of this
+     * function, so the macros and the reflection fields cannot disagree: they
+     * are one value read twice, never two computations of one fact. */
+    VmField frame_fields[8], trail_fields[4];
+    int nframe_fields = vm_frame_fields(v.has_linked_calls, v.tracing, frame_fields);
+    int ntrail_fields = vm_trail_fields(trail_fields);
+    BufSurface bufs;
+    bufs.resume_frames = bt_frames;
+    bufs.trail_frames  = trail_frames;
+    {
+        int fa = 1, ta = 1;
+        bufs.resume_frame_size = vm_layout(frame_fields, nframe_fields, &fa);
+        bufs.trail_frame_size  = vm_layout(trail_fields, ntrail_fields, &ta);
+        bufs.align = fa > ta ? fa : ta;
+    }
+
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
     job->enc_mask = v.enc_mask;
-    pcrec_emit_prologue(cx, &g, ncaps);
+    pcrec_emit_prologue(cx, &g, ncaps, &bufs);
 
     /* §5.5's stamp. RETAINED alongside rx_info (D43.1 makes rx_info the
      * CANONICAL machine-readable record) because the two serve different
@@ -7960,18 +8093,75 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         }
         sb_putc(c, '\n');
     }
-    sb_printf(c, "#define %s_RESUME_FRAMES %lld\n", v.up, bt_frames);
-    sb_printf(c, "#define %s_TRAIL_FRAMES %lld\n", v.up, trail_frames);
+    /* [DD-14.FB] `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` USED TO BE EMITTED
+     * HERE, in the `.c`. They now ride the caller-buffer surface
+     * (`emit_buffers_surface`, src/gen/emit_dfa.c), which the prologue writes
+     * into whichever file a consumer's declarations live in — the `.h` when
+     * split, this `.c` when self-contained. The move is required, not
+     * cosmetic: they are no longer only a record of what this artifact does,
+     * they are arithmetic a caller must do before it can call
+     * `<prefix>_search_in`, and a `.c`-private macro is unreadable to a
+     * caller. Spec §10.4 states the move; §10.8 announces it as one of the
+     * two things that change. */
     if (has_budget)
         sb_printf(c, "#define %s_STEP_BUDGET %lldLL\n", v.up, budget);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_printf(c, "#define %s_WORK_BUDGET %lldLL\n", v.up, work_budget);
     sb_puts(c, "\n");
 
-    /* ---- rx_run_state: the whole mutable working set, §2.2 ------------------
+    /* ---- the two element types, then rx_run_state, §2.2 -------------------
      * All locals — no globals (TS-1: usable FROM threads, all-const tables,
      * no mutable state outside the caller's own frame) and no allocation
-     * (PC-5/D38's COPY_MATCHED_SUBJECT = NEVER precedent). */
+     * (PC-5/D38's COPY_MATCHED_SUBJECT = NEVER precedent).
+     *
+     * [DD-14.FB] THE TWO ARRAYS' ELEMENT TYPES ARE NAMED (§11 item 1) and the
+     * run state holds POINTERS to them (§11 item 2). They stay `.c`-private:
+     * §5.4 settles the descriptor as opaque `void *` rather than typed,
+     * because `has_linked_calls` and `--trace` both move the frame's layout
+     * and exporting it would pin, as ABI, something three axes already
+     * change. What replaces the type safety is the arithmetic the header
+     * publishes — `<PREFIX>_RESUME_FRAME_SIZE` and friends — and the
+     * `_Static_assert`s below, which are what make a stamped size a compile
+     * error when it is wrong rather than an overrun when it is used. */
+    {
+        sb_puts(c,
+            "/* One entry of the resume stack: \"if you get stuck, come back to\n"
+            " * HERE\". PRIVATE TO THIS FILE — the layout differs between\n"
+            " * artifacts (a call-bearing one carries two more members), which is\n"
+            " * why <prefix>_buffers takes void* and a CAPACITY rather than a\n"
+            " * typed pointer. Use <PREFIX>_RESUME_FRAME_SIZE to size storage. */\n"
+            "typedef struct { ");
+        vm_fields_join(c, frame_fields, nframe_fields);
+        sb_printf(c, " } %s_frame;\n", v.p);
+        sb_puts(c,
+            "/* One entry of the undo log: a slot's index and the value it held\n"
+            " * before the write being logged. Same privacy, same reason. */\n"
+            "typedef struct { ");
+        vm_fields_join(c, trail_fields, ntrail_fields);
+        sb_printf(c, " } %s_trail_entry;\n\n", v.p);
+
+        /* THE STAMPED SIZES ARE CHECKED AGAINST THE REAL ONES, HERE, in the
+         * artifact — see vm_layout's comment for why the numbers are stamped
+         * literals at all. This is the one place the two can be compared, and
+         * comparing them is what turns "pcrec was built for a different target
+         * model" and "the emitter stamped the wrong struct" (sabotage row
+         * S-FB6) from a caller-side buffer overrun into a build failure. */
+        sb_printf(c,
+            "_Static_assert(sizeof(%s_frame) == %s_RESUME_FRAME_SIZE,\n"
+            "    \"%s_RESUME_FRAME_SIZE disagrees with sizeof(%s_frame). The size is\"\n"
+            "    \" stamped by pcrec for the compiler that ran it; recompile the pattern\"\n"
+            "    \" with a pcrec built for this target.\");\n"
+            "_Static_assert(sizeof(%s_trail_entry) == %s_TRAIL_FRAME_SIZE,\n"
+            "    \"%s_TRAIL_FRAME_SIZE disagrees with sizeof(%s_trail_entry). Same cause,\"\n"
+            "    \" same fix, as the assertion above.\");\n"
+            "_Static_assert(_Alignof(%s_frame) <= %s_BUFFER_ALIGN\n"
+            "               && _Alignof(%s_trail_entry) <= %s_BUFFER_ALIGN,\n"
+            "    \"%s_BUFFER_ALIGN understates what this artifact's buffers require.\");\n\n",
+            v.p, v.up, v.up, v.p,
+            v.p, v.up, v.up, v.p,
+            v.p, v.up, v.p, v.up, v.up);
+    }
+
     sb_printf(c,
         "/* Everything one match attempt can change, in one struct, so that no\n"
         " * state lives in globals and two attempts can never interfere.\n"
@@ -7982,16 +8172,21 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " *                 frame is \"if you get stuck, come back to HERE\"\n"
         " *   trail         an undo log of slot_values writes, so popping a\n"
         " *                 resume frame restores the groups exactly as they were\n"
+        " *   *_cap         how many entries each of those two POINTS AT. The\n"
+        " *                 storage is the stamped default on its entry's own\n"
+        " *                 stack frame, or the caller's, and this struct is\n"
+        " *                 the same either way -- which is what lets one\n"
+        " *                 matching loop serve both entries.\n"
         " *   *_depth       how many entries of each are currently live\n"
         " */\n"
         "typedef struct {\n"
         "    ptrdiff_t slot_values[%s_NSLOTS];\n"
-        "    struct { const void *resume_label; size_t resume_position;\n"
-        "             unsigned trail_mark;%s%s } resume_stack[%s_RESUME_FRAMES];\n"
-        "    struct { unsigned slot_index; ptrdiff_t saved_value; }\n"
-        "             trail[%s_TRAIL_FRAMES];\n"
-        "    unsigned resume_depth, trail_depth;%s\n",
-        v.up, v.tracing ? " int id;" : "",
+        "    %s_frame       *resume_stack;\n"
+        "    size_t          resume_cap;\n"
+        "    %s_trail_entry *trail;\n"
+        "    size_t          trail_cap;\n"
+        "    size_t resume_depth, trail_depth;%s\n",
+        v.up, v.p, v.p,
         /* [DD-14 wave B+C] THE CALL RECORD IS THE RESUME FRAME (design §5.1),
          * and §5.2 is why it is a DERIVATION rather than a preference. The
          * obvious alternative — `const void *call_stack[N]` indexed by call
@@ -8037,15 +8232,41 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * which is `[DD-14.G]`'s bar reaching the VM path. The eight sites
          * move together; `has_calls` keeps its meaning ("this compile has a
          * call graph") and still gates `W`, the region pre-pass and the
-         * nullability fixpoint. */
-        v.has_linked_calls ? " const void *call_ret; unsigned call_top;" : "",
-        v.up, v.up,
-        v.has_linked_calls ? "\n    unsigned call_top;   /* the CURRENT activation's"
+         * nullability fixpoint.
+         *
+         * [DD-14.FB] `size_t`, not `unsigned`, for the same reason the two
+         * depth counters above are — it is a resume-stack index and the
+         * resume stack's capacity is now a caller-chosen `size_t`. */
+        v.has_linked_calls ? "\n    size_t call_top;   /* the CURRENT activation's"
                       " frame index, or CALL_TOP_NONE */" : "");
     if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_puts(c, "    long long work_left;    /* forward work units remaining */\n");
     sb_printf(c, "} %s_run_state;\n\n", v.p);
+
+    /* [DD-14.FB] (§11 item 2) THE STAMPED DEFAULT STORAGE, now a type of its
+     * own rather than two arrays inside the run state.
+     *
+     * WHY IT IS A SEPARATE STRUCT AND NOT TWO LOCALS. The three un-suffixed
+     * entries each declare one of these and point their run state at it; the
+     * three `_in` entries declare NOTHING and point their run state at the
+     * caller's. That is the whole of design §5.5's "the default lives on the
+     * C stack of the un-suffixed entry, unchanged from today" and of the 586x
+     * frame difference §3 measures — an entry handed a caller's pointers has
+     * no arrays to declare, and C has no way to declare a local
+     * conditionally. Two locals would do as well; one struct says what it is
+     * and gives the three entries one line each instead of two. */
+    sb_printf(c,
+        "/* This artifact's own working storage, at the stamped default\n"
+        " * capacities. Declared by each un-suffixed entry as an ordinary\n"
+        " * local -- which is why those entries have large stack frames on a\n"
+        " * pattern whose depth is unbounded, and why <prefix>_search_in with a\n"
+        " * caller's buffer does not. */\n"
+        "typedef struct {\n"
+        "    %s_frame       frames[%s_RESUME_FRAMES];\n"
+        "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
+        "} %s_run_buffers;\n\n",
+        v.p, v.up, v.p, v.up, v.p);
 
     /* The internal give-up sentinels. They share the search entry's public
      * PCREC_ERR_* values ([ABI-NS]/D60: unprefixed since those are
@@ -8077,7 +8298,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * nothing — the region exit's own guard turns that into
      * `PCREC_ERR_INTERNAL` (D72) rather than K27's class in emitted code. */
     if (v.has_linked_calls)
-        sb_printf(c, "#define %s_CALL_TOP_NONE ((unsigned)-1)\n\n", v.up);
+        sb_printf(c, "#define %s_CALL_TOP_NONE ((size_t)-1)\n\n", v.up);
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
      *
@@ -8160,7 +8381,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     if (!v.tracing) {
         sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
             "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
             "        run->trail_depth++;                                             \\\n"
@@ -8169,7 +8390,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "        %s_TRAIL(slot_); slot_values[(slot_)] = (v_);                 \\\n"
             "    } while (0)\n"
             "#define %s_PUSH(lbl_, p_) do {                                \\\n"
-            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+            "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES;       \\\n"
             "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
             "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
             "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
@@ -8180,9 +8401,9 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * see vm_cut()'s comment: the frames are dead, the capture writes
              * they would have rewound are not. */
             "#define %s_CUT(slot_) do {                                   \\\n"
-            "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
+            "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up,
+            v.up, v.up, v.up, v.up, v.up, v.up,
             v.has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
@@ -8194,7 +8415,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * debugging tool that lies, which is worse than none. */
         sb_printf(c,
             "#define %s_TRAIL(slot_) do {                                  \\\n"
-            "        if (run->trail_depth >= %s_TRAIL_FRAMES) return %s_R_FRAMES;    \\\n"
+            "        if (run->trail_depth >= run->trail_cap) return %s_R_FRAMES;    \\\n"
             "        run->trail[run->trail_depth].slot_index = (unsigned)(slot_);               \\\n"
             "        run->trail[run->trail_depth].saved_value = slot_values[(slot_)];                       \\\n"
             "        run->trail_depth++;                                             \\\n"
@@ -8205,23 +8426,23 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "        %s_TRAIL(slot_); slot_values[(slot_)] = (v_);                 \\\n"
             "    } while (0)\n"
             "#define %s_PUSH(id_, lbl_, p_) do {                           \\\n"
-            "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES;       \\\n"
+            "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES;       \\\n"
             "        run->resume_stack[run->resume_depth].resume_label = (lbl_);                             \\\n"
             "        run->resume_stack[run->resume_depth].resume_position = (p_);                             \\\n"
             "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth;                          \\\n"
             "%s"
             "        run->resume_stack[run->resume_depth].id = (id_);                             \\\n"
-            "        fprintf(stderr, \"[%s] push  #%%u resume L%%d at scan_position %%zu"
-                        " (trail %%u)\\n\",                                 \\\n"
+            "        fprintf(stderr, \"[%s] push  #%%zu resume L%%d at scan_position %%zu"
+                        " (trail %%zu)\\n\",                                 \\\n"
             "                run->resume_depth, (id_), (size_t)(p_), run->trail_depth);         \\\n"
             "        run->resume_depth++;                                             \\\n"
             "    } while (0)\n"
             "#define %s_CUT(slot_) do {                                   \\\n"
-            "        fprintf(stderr, \"[%s] cut   %%u -> %%td frame(subject)\\n\",   \\\n"
+            "        fprintf(stderr, \"[%s] cut   %%zu -> %%td frame(subject)\\n\",   \\\n"
             "                run->resume_depth, slot_values[(slot_)]);                        \\\n"
-            "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
+            "        run->resume_depth = (size_t)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
-            v.up, v.up, v.up, v.up, v.p, v.up, v.up, v.up, v.up,
+            v.up, v.up, v.up, v.p, v.up, v.up, v.up,
             v.has_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
@@ -8259,7 +8480,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                 " * the callee's choice points stay live across it, so a later\n"
                 " * failure can retreat back INTO the call. */\n"
                 "#define %s_CALL(ret_, p_) do {                               \\\n"
-                "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES; \\\n"
+                "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"
                 "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
                 "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
                 "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
@@ -8268,24 +8489,24 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                 "        run->call_top = run->resume_depth;                               \\\n"
                 "        run->resume_depth++;                                             \\\n"
                 "    } while (0)\n\n",
-                v.up, v.up, v.up, v.p);
+                v.up, v.up, v.p);
         else
             sb_printf(c,
                 "#define %s_CALL(ret_, p_) do {                               \\\n"
-                "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES; \\\n"
+                "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"
                 "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
                 "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
                 "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
                 "        run->resume_stack[run->resume_depth].call_top = run->call_top;   \\\n"
                 "        run->resume_stack[run->resume_depth].call_ret = (ret_);          \\\n"
                 "        run->resume_stack[run->resume_depth].id = -1;                    \\\n"
-                "        fprintf(stderr, \"[%s] call  #%%u at scan_position %%zu"
-                            " (trail %%u)\\n\",                              \\\n"
+                "        fprintf(stderr, \"[%s] call  #%%zu at scan_position %%zu"
+                            " (trail %%zu)\\n\",                              \\\n"
                 "                run->resume_depth, (size_t)(p_), run->trail_depth);      \\\n"
                 "        run->call_top = run->resume_depth;                               \\\n"
                 "        run->resume_depth++;                                             \\\n"
                 "    } while (0)\n\n",
-                v.up, v.up, v.up, v.p, v.p);
+                v.up, v.up, v.p, v.p);
     }
 
     /* The per-search reset (§2.4): slot_values is initialised to UNSET ONCE per
@@ -8294,9 +8515,36 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * construction, so the per-attempt reset is O(writes-since-attempt-start)
      * rather than O(NG) — which matters for the VM-only per-start loop, where
      * a naive memset per start position would be O(NG*n). */
+    /* [DD-14.FB] (§11 items 2 and 4) THE ONE PLACE THE STORAGE IS WIRED.
+     * All six entries -- three un-suffixed pointing at their own
+     * `<prefix>_run_buffers` local, three `_in` pointing at the caller's --
+     * go through this, so "which two pointers and which two capacities" is
+     * written once. Six copies of four assignments is exactly the shape
+     * sabotage row S-FB2 (frames capacity passed as the trail capacity)
+     * needs in order to be a one-site typo somebody's eye slides over. */
+    sb_printf(c,
+        "/* Point a run state at its working storage. Called BEFORE\n"
+        " * <prefix>_run_state_init, which must not disturb these four\n"
+        " * fields -- see its comment. */\n"
+        "static void %s_run_state_bind(%s_run_state *run,\n"
+        "                        void *frames, size_t nframes,\n"
+        "                        void *trail, size_t ntrail)\n"
+        "{\n"
+        "    run->resume_stack = (%s_frame *)frames;\n"
+        "    run->resume_cap   = nframes;\n"
+        "    run->trail        = (%s_trail_entry *)trail;\n"
+        "    run->trail_cap    = ntrail;\n"
+        "}\n\n",
+        v.p, v.p, v.p, v.p);
+
     sb_printf(c,
         "/* Start a fresh attempt: every group unset, nothing to undo, both\n"
-        " * budgets full. */\n"
+        " * budgets full. THE FOUR STORAGE FIELDS ARE NOT TOUCHED HERE and\n"
+        " * must never be: <prefix>_run_state_bind has already pointed them at\n"
+        " * the caller's buffers or at this artifact's default, and this\n"
+        " * function runs after it. Re-zeroing them would leave every buffered\n"
+        " * call matching against a NULL stack or a capacity of 0\n"
+        " * ([DD-14.FB] §11 item 4, sabotage row S-FB3). */\n"
         "static void %s_run_state_init(%s_run_state *run)\n"
         "{\n"
         "    int i;\n"
@@ -8330,7 +8578,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     sb_printf(c,
         "/* Roll the run state back to as-if-untouched WITHOUT resetting the\n"
         " * budgets, so retrying at the next starting position cannot buy\n"
-        " * itself a fresh allowance. */\n"
+        " * itself a fresh allowance. The four storage fields are untouched\n"
+        " * here too, for the same reason and one step further along: a\n"
+        " * bump-along to the next start position keeps the caller's buffers\n"
+        " * exactly as it keeps the budgets ([DD-14.FB] §11 item 5). */\n"
         "static void %s_reset_for_next_attempt(%s_run_state *run)\n"
         "{\n"
         "    while (run->trail_depth) { run->trail_depth--; run->slot_values[run->trail[run->trail_depth].slot_index] = run->trail[run->trail_depth].saved_value; }\n"
@@ -8447,7 +8698,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              * and left the declarations, and a revdet artifact stopped
              * compiling; the two-artifact altcls differential caught it. */
             "    size_t %s_rv%d_cursor = 0; unsigned long %s_rv%d_iteration = 0;\n"
-            "    unsigned %s_rv%d_frame_mark = 0; ptrdiff_t %s_rv%d_prev_position = -1;\n"
+            "    size_t %s_rv%d_frame_mark = 0; ptrdiff_t %s_rv%d_prev_position = -1;\n"
             "    int %s_rv%d_groups_seen = 0;\n",
             v.p, i, v.p, i, v.p, i, v.p, i, v.p, i);
     if (nrev_total && v.nrevcaps) {
@@ -8503,7 +8754,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                      "    fprintf(stderr, \"[%s] ACCEPT [%%zu,%%zu)\\n\","
                      " ctx->pos, scan_position);\n", v.p);
         snprintf(fail_tr, sizeof fail_tr,
-                 "    fprintf(stderr, \"[%s] backtrack: %%u frame(subject), trail %%u\\n\","
+                 "    fprintf(stderr, \"[%s] backtrack: %%zu frame(subject), trail %%zu\\n\","
                  " run->resume_depth, run->trail_depth);\n", v.p);
         /* A separate guarded statement rather than a brace around the
          * existing one: that keeps the UNTRACED artifact's bytes identical
@@ -8541,13 +8792,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         pop_tr[0] = 0;
         if (v.tracing)
             snprintf(pop_tr, sizeof pop_tr,
-                     "        fprintf(stderr, \"[%s] pop   #%%u resume L%%d at"
-                     " scan_position %%zu (rewind trail %%u -> %%u)\\n\",\n"
+                     "        fprintf(stderr, \"[%s] pop   #%%zu resume L%%d at"
+                     " scan_position %%zu (rewind trail %%zu -> %%zu)\\n\",\n"
                      "                frame_index, run->resume_stack[frame_index].id, scan_position, run->trail_depth,"
                      " run->resume_stack[frame_index].trail_mark);\n", v.p);
         sb_printf(c,
             "    {\n"
-            "        const unsigned frame_index = --run->resume_depth;\n"
+            "        const size_t frame_index = --run->resume_depth;\n"
             "        scan_position = run->resume_stack[frame_index].resume_position;\n"
             "%s"
             "%s", pop_tr,
@@ -8664,12 +8915,28 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
           : "    capture_spans[0][0] = (ptrdiff_t)match_start;\n",
         v.up);
 
-    /* ---- <prefix>_search (§2.6) ---------------------------------------- */
+    /* ---- <prefix>_search (§2.6) ----------------------------------------
+     *
+     * [DD-14.FB] THE SEARCH LOOP MOVED INTO A STATIC AND THE TWO ENTRIES
+     * BECAME WAYS OF POINTING IT AT STORAGE (design §5.2). There is still
+     * exactly ONE implementation of the search loop, as there is exactly one
+     * implementation of the matching loop underneath it -- what the caller
+     * chooses is where the run state's two arrays live, not which code runs.
+     * The alternative the design's P-2 names, a second copy of the loop for
+     * the `_in` entry, is the parallel mechanism Frank's standing direction
+     * rules out and is not built.
+     *
+     * WHY THE STORAGE IS DECLARED IN THE WRAPPER AND NOT HERE: `<prefix>_search`
+     * declares a `<prefix>_run_buffers` local, `<prefix>_search_in` declares
+     * nothing, and that is the whole of the 586x stack-frame difference §3
+     * measures. C cannot declare a local conditionally, so a single function
+     * that decided at run time would carry the arrays either way. */
     sb_printf(c,
-        "int %s(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "       ptrdiff_t (*capture_spans)[2])\n"
+        "/* The search loop. Called by both entries below with a run state\n"
+        " * already pointed at its working storage. */\n"
+        "static int %s_run(const unsigned char *subject, size_t subject_length,\n"
+        "       size_t search_from, ptrdiff_t (*capture_spans)[2], %s_run_state *run)\n"
         "{\n"
-        "    %s_run_state run;\n"
         "    rx_ctx ctx;\n"
         "    ptrdiff_t result;\n"
         "    size_t attempt_position;\n"
@@ -8835,12 +9102,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     }
 
     sb_printf(c,
-        "    %s_run_state_init(&run);\n"
+        "    %s_run_state_init(run);\n"
         "    ctx.subject = subject; ctx.len = subject_length; ctx.ncap = 0;\n"
         "    ctx.caps = NULL; ctx.user = NULL;\n"
         "    for (;;) {\n"
         "        ctx.pos = attempt_position;\n"
-        "        result = %s_match_anchored(&ctx, &run%s%s);\n"
+        "        result = %s_match_anchored(&ctx, run%s%s);\n"
         "        if (result == %s_R_STEPS)   return PCREC_ERR_STEPS;\n"
         "        if (result == %s_R_FRAMES)  return PCREC_ERR_FRAMES;\n"
         "        if (result == %s_R_WORK)    return PCREC_ERR_WORK;\n"
@@ -8861,12 +9128,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * negative-arm end-check is the one live producer today. */
         "        if (result == %s_R_INTERNAL) return PCREC_ERR_INTERNAL;\n"
         "        if (result >= 0) break;\n"
-        "        %s_reset_for_next_attempt(&run);\n"
+        "        %s_reset_for_next_attempt(run);\n"
         "        if (attempt_position >= subject_length) return 0;\n"
         "        attempt_position++;\n"
         "%s"
         "    }\n"
-        "    if (capture_spans) %s_report_captures(&run, capture_spans, attempt_position, result);\n"
+        "    if (capture_spans) %s_report_captures(run, capture_spans, attempt_position, result);\n"
         "    return 1;\n"
         "}\n\n",
         v.p, v.p, v.nclamp > 0 ? ", window_end" : "",
@@ -8879,6 +9146,49 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * `\Gfoo` into `foo`. */
         v.ngst > 0 ? ", search_from" : "",
         v.up, v.up, v.up, v.up, v.up, v.p, retry_win, v.p);
+
+    /* [DD-14.FB] THE TWO SEARCH ENTRIES (spec §10.2/§10.3).
+     *
+     * THE DELEGATION RUNS `_in` -> UN-SUFFIXED AND NEVER THE REVERSE, and
+     * that direction is the design (§5.2), not an accident of writing order.
+     * The instinct is to make the old entry the thin wrapper
+     * (`<prefix>_search(...) { return <prefix>_search_in(..., NULL); }`), but
+     * then `_search_in` owns the default storage, declares it on its own
+     * frame unconditionally, and the caller who supplied buffers pays the
+     * 128 KB anyway -- C has no way to declare a local conditionally.
+     * Delegating this way gives both callers exactly what they asked for and
+     * costs the NULL caller one tail call. Sabotage row S-FB5 is the
+     * direction being dropped; the NULL-equivalence cells are its detector.
+     *
+     * `buf == NULL` IS DEFINED TO BE THE UN-SUFFIXED CALL, in those words
+     * (spec §10.3) -- not "equivalent in observable behaviour" but the same
+     * call, which is why it is implemented as one. */
+    sb_printf(c,
+        "int %s(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+        "       ptrdiff_t (*capture_spans)[2])\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
+        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
+        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
+        "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
+        "}\n\n"
+        "/* Same search, with the working storage the CALLER supplies. A NULL\n"
+        " * descriptor is exactly the call above; a non-NULL one must name two\n"
+        " * regions, both of them scratch, sized in FRAMES and ENTRIES rather\n"
+        " * than bytes. A give-up still reports PCREC_ERR_FRAMES and does not\n"
+        " * say whose buffer ran out; retrying with a larger one is defined. */\n"
+        "int %s_in(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+        "          ptrdiff_t (*capture_spans)[2], const %s_buffers *buffers)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    if (!buffers) return %s(subject, subject_length, search_from, capture_spans);\n"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        "                            buffers->trail,  buffers->ntrail);\n"
+        "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
+        "}\n\n",
+        g.searchfn, v.p, v.p, v.p, v.up, v.up, g.searchfn,
+        g.searchfn, v.p, v.p, g.searchfn, v.p, g.searchfn);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
     /* [M6.2 wave E, R30 E8] `\K` AND THIS ENTRY: BOTH OF §6.3 RULE 3'S
@@ -8938,13 +9248,12 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * inner give-up read as a plain path failure, so an outer match could\n"
         " * report an ANSWER where a bound had actually blown. A caller that\n"
         " * only asks 'did it match' still writes `result < 0` and is unaffected. */\n"
-        "ptrdiff_t %s(const rx_ctx *ctx)\n"
+        "static ptrdiff_t %s_run(const rx_ctx *ctx, %s_run_state *run)\n"
         "{\n"
-        "    %s_run_state run;\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
-        "    %s_run_state_init(&run);\n"
-        "    result = %s_match_anchored(ctx, &run%s%s);\n"
+        "    %s_run_state_init(run);\n"
+        "    result = %s_match_anchored(ctx, run%s%s);\n"
         "    /* No translation and no clamp: the impl's return space IS this\n"
         "     * contract's -- >= 0, -1, or one of the R_ sentinels, which are\n"
         "     * the ERR_ codes (give-up or, [DD-14] wave A commit 2, the\n"
@@ -8974,25 +9283,71 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         " * reservation only one of them was bound by. capture_spans_out is UNTOUCHED on\n"
         " * every negative return, give-up included: a caller that gave up has\n"
         " * no captures, and A-8's untouched-wins rule does not bend for it. */\n"
-        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
+        "static ptrdiff_t %s_run(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+        "                        %s_run_state *run)\n"
         "{\n"
-        "    %s_run_state run;\n"
         "    ptrdiff_t result;\n"
         "    if (ctx->pos > ctx->len) return -1;\n"
-        "    %s_run_state_init(&run);\n"
-        "    result = %s_match_anchored(ctx, &run%s%s);\n"
+        "    %s_run_state_init(run);\n"
+        "    result = %s_match_anchored(ctx, run%s%s);\n"
         "    if (result < 0) return result;\n"
-        "    if (capture_spans_out) %s_report_captures(&run, capture_spans_out, ctx->pos, result);\n"
+        "    if (capture_spans_out) %s_report_captures(run, capture_spans_out, ctx->pos, result);\n"
         "    return result;\n"
         "}\n\n",
         g.matchcapsfn, v.p, v.p, v.p,
         v.nclamp > 0 ? ", ctx->len" : "",
         v.ngst > 0 ? ", ctx->pos" : "", v.p);
 
+    /* [DD-14.FB] The four wrappers for the two anchored entries -- the same
+     * shape, the same delegation direction and the same one-implementation
+     * rule as the two search entries above. Emitted together rather than
+     * beside their own `_run` bodies so the six entries' storage decisions
+     * read as one block: three declare a `<prefix>_run_buffers`, three
+     * declare nothing. */
+    sb_printf(c,
+        "ptrdiff_t %s(const rx_ctx *ctx)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    %s_run_buffers storage;\n"
+        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
+        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
+        "    return %s_run(ctx, &run);\n"
+        "}\n\n"
+        "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    if (!buffers) return %s(ctx);\n"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        "                            buffers->trail,  buffers->ntrail);\n"
+        "    return %s_run(ctx, &run);\n"
+        "}\n\n"
+        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    %s_run_buffers storage;\n"
+        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
+        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
+        "    return %s_run(ctx, capture_spans_out, &run);\n"
+        "}\n\n"
+        "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
+        "                const %s_buffers *buffers)\n"
+        "{\n"
+        "    %s_run_state run;\n"
+        "    if (!buffers) return %s(ctx, capture_spans_out);\n"
+        "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
+        "                            buffers->trail,  buffers->ntrail);\n"
+        "    return %s_run(ctx, capture_spans_out, &run);\n"
+        "}\n\n",
+        g.matchfn, v.p, v.p, v.p, v.up, v.up, g.matchfn,
+        g.matchfn, v.p, v.p, g.matchfn, v.p, g.matchfn,
+        g.matchcapsfn, v.p, v.p, v.p, v.up, v.up, g.matchcapsfn,
+        g.matchcapsfn, v.p, v.p, g.matchcapsfn, v.p, g.matchcapsfn);
+
     pcrec_emit_residual(cx);
 
     pcrec_emit_info(cx, &g, 2, job->fit.why,
-                    has_budget ? budget : -1, work_budget, bt_frames, ceiling);
+                    has_budget ? budget : -1, work_budget, bt_frames, ceiling,
+                    &bufs);
 
     if (cx->opt->flags & PCREC_EMIT_MAIN)
         pcrec_emit_main(cx, &g);

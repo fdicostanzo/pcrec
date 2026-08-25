@@ -1679,18 +1679,37 @@ fi
 #                from positions. A `caps[0][1] - caps[0][0]` here would be the
 #                post-\K length, and a D38 callout advancing by it would never
 #                move on 'ab\K'.
+#
+# [DD-14.FB] THE ENTRY IS NOW A WRAPPER, AND THIS RULE FOLLOWS THE MECHANISM
+# RATHER THAN THE OLD SHAPE. `<prefix>_match` binds its working storage and
+# calls a static `<prefix>_match_run`, which is what calls
+# `<prefix>_match_anchored`; `<prefix>_match_in` is the same body with the
+# caller's storage. So the thing rule 3 is ABOUT — "this entry reaches the
+# anchored implementation directly, never through <prefix>_search" — now spans
+# two functions, and the extraction spans both. Two assertions are ADDED
+# rather than relaxed while doing it: neither function may call
+# `<prefix>_search`, and the `_in` sibling must reach the same implementation,
+# because an entry that routed only ONE of its two spellings through the
+# search loop would reintroduce the filter for exactly the callers who used
+# that spelling.
 if "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/null 2>&1; then
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.match"
-    if [ ! -s "$WORKDIR/kent.match" ]; then
+    awk '/^static ptrdiff_t rx_match_run\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" >> "$WORKDIR/kent.match"
+    awk '/^ptrdiff_t rx_match_in\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.matchin"
+    if [ ! -s "$WORKDIR/kent.match" ] || [ ! -s "$WORKDIR/kent.matchin" ]; then
         bad "[M6.2-KRESET rule 3]: could not extract rx_match from the 'a\\Kb' artifact"
     elif grep -q 'ctx->pos' "$WORKDIR/kent.match" && grep -q 'caps\[0\]\[0\]' "$WORKDIR/kent.match"; then
         bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match compares caps[0][0] against ctx->pos. That is the DFA artifact's start filter, and under \\K it compares against the POST-\\K start and REJECTS a genuine anchored match — 'a\\Kb' at ctx->pos 0 returns -1 where PCRE2 matches (1,2)"
     elif grep -q 'caps\[0\]\[1\] - caps\[0\]\[0\]' "$WORKDIR/kent.match"; then
         bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match returns caps[0][1] - caps[0][0], the POST-\\K length. A D38 callout uses that return as its ADVANCE, so on 'ab\\K' it would advance by 0 and loop forever"
     elif ! grep -q 'rx_match_anchored(ctx' "$WORKDIR/kent.match"; then
-        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match does not call rx_match_anchored directly. The VM's match-here entry is anchored BY CONSTRUCTION (it starts at ctx->pos and never moves it); routing it through rx_search would reintroduce the filter this rule forbids"
+        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match does not reach rx_match_anchored (directly or through its own rx_match_run). The VM's match-here entry is anchored BY CONSTRUCTION (it starts at ctx->pos and never moves it); routing it through rx_search would reintroduce the filter this rule forbids"
+    elif grep -qE '\brx_search\b' "$WORKDIR/kent.match"; then
+        bad "[M6.2-KRESET rule 3]: 'a\\Kb's rx_match (or its rx_match_run) calls rx_search. That is the DFA artifact's shape imported into the VM's, and it brings the start filter with it"
+    elif ! grep -q 'rx_match_run(ctx' "$WORKDIR/kent.matchin" || grep -qE '\brx_search\b' "$WORKDIR/kent.matchin"; then
+        bad "[M6.2-KRESET rule 3] ([DD-14.FB]): 'a\\Kb's rx_match_in does not reach the same rx_match_run its un-suffixed sibling does, or it routes through rx_search. The two spellings must reach ONE implementation — an entry that filtered on only one of them would be wrong for exactly the callers who used that one"
     else
-        ok "[M6.2-KRESET rule 3] (R30 E8): 'a\\Kb's rx_match calls rx_match_anchored at ctx->pos directly — no start filter to compare against a post-\\K start, and no caps-derived return. Both halves of §6.3 rule 3 hold structurally on the only engine a \\K pattern can reach"
+        ok "[M6.2-KRESET rule 3] (R30 E8, [DD-14.FB]): 'a\\Kb's rx_match and rx_match_in both reach rx_match_anchored at ctx->pos through the one rx_match_run, and neither touches rx_search — no start filter to compare against a post-\\K start, and no caps-derived return. Both halves of §6.3 rule 3 hold structurally on the only engine a \\K pattern can reach"
     fi
 else
     bad "[M6.2-KRESET rule 3]: pcrec failed to compile the fixture 'a\\Kb'"
@@ -2371,6 +2390,188 @@ if "$PCREC" -p rx --features all -o "$WORKDIR/dd14_z.c" -- "$dd14_zero" >/dev/nu
     fi
 else
     bad "[DD-14-RECURSION rule 4]: pcrec failed to compile one of the three fixtures"
+fi
+
+# ---- [DD-14.FB] the caller-provided frame buffer (D71 item 2, spec §10) ----
+#
+# THE STRUCTURAL HALF of this feature's checks. The BEHAVIOURAL half is
+# tests/recursion/framebuffer.rxt (the give-up and the match off one artifact,
+# the trail binding first, the NULL descriptor repeating the un-suffixed
+# entry's answers) and tests/recursion/run_frame_buffer.sh (the NULL-
+# equivalence spread and the mmap worked example, on demand). What lives HERE
+# is everything a corpus cell structurally cannot see.
+#
+# THE FIRST CHECK IS THE COMPATIBILITY PROMISE ITSELF. Spec §10.8 says the
+# three existing entries keep their exact signatures, and adds "stated
+# explicitly because it is the compatibility promise, and because the
+# implementation lane owes a check that asserts each line". A wrapper that
+# quietly changed one of those declarations would break every vendored
+# consumer and pass the whole .rxt corpus, because the corpus calls the
+# entries through a driver it recompiles every time. So the declarations are
+# pinned CHARACTER FOR CHARACTER, on both engines.
+fb_decl_search='int rx_search(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2]);'
+fb_decl_match='ptrdiff_t rx_match(const rx_ctx *ctx);'
+fb_decl_caps='ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]);'
+fb_decl_search_in='int rx_search_in(const unsigned char *subject, size_t subject_length, size_t search_from, ptrdiff_t (*capture_spans)[2], const rx_buffers *buffers);'
+fb_decl_match_in='ptrdiff_t rx_match_in(const rx_ctx *ctx, const rx_buffers *buffers);'
+fb_decl_caps_in='ptrdiff_t rx_match_caps_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2], const rx_buffers *buffers);'
+
+fb_ok=1
+fb_why=""
+# One VM artifact and one DFA artifact, both SPLIT-form so the header is a
+# separate file — which is where a caller reads all of this from.
+if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b)$' >/dev/null 2>&1 &&
+   "$PCREC" -p rx --no-captures -o "$WORKDIR/fb_dfa.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+    for fb_h in "$WORKDIR/fb_vm.h" "$WORKDIR/fb_dfa.h"; do
+        for fb_d in "$fb_decl_search" "$fb_decl_match" "$fb_decl_caps" \
+                    "$fb_decl_search_in" "$fb_decl_match_in" "$fb_decl_caps_in"; do
+            grep -qxF "$fb_d" "$fb_h" || { fb_ok=0; fb_why="$fb_why
+    $(basename "$fb_h"): missing exactly '$fb_d'"; }
+        done
+    done
+    if [ "$fb_ok" -eq 1 ]; then
+        ok "[DD-14.FB] (§10.8/§10.2): all SIX entry declarations are byte-exact in the emitted header, on BOTH engines — the three existing ones unchanged character for character (the compatibility promise), the three _in ones present unconditionally (so a consumer's call site does not stop compiling when the pattern selects the other engine)"
+    else
+        bad "[DD-14.FB]: an entry declaration is not byte-exact:$fb_why"
+    fi
+
+    # THE SIZING SURFACE, on both engines, with the DFA side INERT. The four
+    # sizing macros read 0 there and the alignment reads 1 — 0 would be the
+    # wrong inert value for the alignment, because a caller rounding an arena
+    # cursor UP to it would divide by zero.
+    fb_missing=""
+    for n in RX_RESUME_FRAMES RX_TRAIL_FRAMES RX_RESUME_FRAME_SIZE RX_TRAIL_FRAME_SIZE RX_BUFFER_ALIGN; do
+        for fb_h in "$WORKDIR/fb_vm.h" "$WORKDIR/fb_dfa.h"; do
+            c="$(grep -cE "^#define $n\b" "$fb_h")"
+            [ "$c" -eq 1 ] || fb_missing="$fb_missing $(basename "$fb_h"):$n(x$c)"
+        done
+    done
+    fb_vm_fsz="$(sed -n 's/^#define RX_RESUME_FRAME_SIZE //p' "$WORKDIR/fb_vm.h")"
+    fb_vm_tsz="$(sed -n 's/^#define RX_TRAIL_FRAME_SIZE //p' "$WORKDIR/fb_vm.h")"
+    fb_vm_align="$(sed -n 's/^#define RX_BUFFER_ALIGN //p' "$WORKDIR/fb_vm.h")"
+    fb_dfa_fsz="$(sed -n 's/^#define RX_RESUME_FRAME_SIZE //p' "$WORKDIR/fb_dfa.h")"
+    fb_dfa_cap="$(sed -n 's/^#define RX_RESUME_FRAMES //p' "$WORKDIR/fb_dfa.h")"
+    fb_dfa_align="$(sed -n 's/^#define RX_BUFFER_ALIGN //p' "$WORKDIR/fb_dfa.h")"
+    if [ -n "$fb_missing" ]; then
+        bad "[DD-14.FB] (§10.4): sizing macro(s) not emitted exactly once:$fb_missing"
+    elif [ "${fb_vm_fsz:-0}" -lt 1 ] || [ "${fb_vm_tsz:-0}" -lt 1 ] || [ "${fb_vm_align:-0}" -lt 1 ]; then
+        bad "[DD-14.FB]: a VM artifact stamps a non-positive frame/trail/align size (frame=$fb_vm_fsz trail=$fb_vm_tsz align=$fb_vm_align) — a caller dividing its reservation by that gets a divide-by-zero or a nonsense capacity"
+    elif [ "${fb_dfa_fsz:-x}" != "0" ] || [ "${fb_dfa_cap:-x}" != "0" ]; then
+        bad "[DD-14.FB] (§10.4): a DFA artifact's sizing macros are not INERT (RESUME_FRAMES=$fb_dfa_cap RESUME_FRAME_SIZE=$fb_dfa_fsz) — that engine has no resume stack to size and must say so with 0"
+    elif [ "${fb_dfa_align:-x}" = "0" ]; then
+        bad "[DD-14.FB]: a DFA artifact stamps RX_BUFFER_ALIGN 0 — the inert alignment must be 1 (every pointer satisfies it); 0 makes a caller's round-up arithmetic a division by zero"
+    else
+        ok "[DD-14.FB] (§10.4): the five sizing macros are emitted exactly once on both engines; the VM artifact stamps real sizes (frame=$fb_vm_fsz trail=$fb_vm_tsz align=$fb_vm_align) and the DFA artifact stamps them INERT (0/0/0/0, align 1)"
+    fi
+
+    # THE ARTIFACT CHECKS ITS OWN STAMPED SIZES. The macros are literals
+    # because the two structs are .c-private, so the only thing standing
+    # between "stamped for the wrong struct" (sabotage row S-FB6) and a
+    # caller's under-allocation is this assertion existing.
+    fb_sa="$(grep -c '_Static_assert(sizeof(rx_frame) == RX_RESUME_FRAME_SIZE' "$WORKDIR/fb_vm.c")"
+    fb_sa2="$(grep -c '_Static_assert(sizeof(rx_trail_entry) == RX_TRAIL_FRAME_SIZE' "$WORKDIR/fb_vm.c")"
+    fb_sa3="$(grep -c '_Static_assert(_Alignof(rx_frame) <= RX_BUFFER_ALIGN' "$WORKDIR/fb_vm.c")"
+    if [ "$fb_sa" -eq 1 ] && [ "$fb_sa2" -eq 1 ] && [ "$fb_sa3" -eq 1 ]; then
+        ok "[DD-14.FB]: a VM artifact carries all three _Static_asserts reconciling the stamped sizes/alignment with the real sizeof/_Alignof — a size stamped from the wrong struct (S-FB6) or computed for the wrong target model is a build failure, not a caller-side overrun"
+    else
+        bad "[DD-14.FB]: the stamped-size _Static_asserts are missing from a VM artifact (frame=$fb_sa trail=$fb_sa2 align=$fb_sa3). Without them RX_RESUME_FRAME_SIZE is an unchecked literal and a caller sizes its reservation from it"
+    fi
+
+    # NO CAPACITY SITE STILL READS THE STAMPED CONSTANT. This is sabotage row
+    # S-FB4's structural twin and the reason §11 item 3 enumerates all seven:
+    # a guard left reading the immediate over-runs a larger caller buffer at
+    # exactly the stamped capacity, which every cell using the DEFAULT
+    # capacity passes.
+    fb_stale="$(grep -cE 'resume_depth >= RX_RESUME_FRAMES|trail_depth >= RX_TRAIL_FRAMES|call_frame >= RX_RESUME_FRAMES' "$WORKDIR/fb_vm.c")"
+    fb_live="$(grep -cE 'resume_depth >= run->resume_cap|trail_depth >= run->trail_cap|call_frame >= run->resume_cap' "$WORKDIR/fb_vm.c")"
+    if [ "$fb_stale" -ne 0 ]; then
+        bad "[DD-14.FB] (§11 item 3, S-FB4): $fb_stale capacity guard(s) in a call-bearing VM artifact still compare against the stamped RX_RESUME_FRAMES/RX_TRAIL_FRAMES instead of run->resume_cap/run->trail_cap — a caller buffer larger than the default over-runs at exactly the stamped capacity, and every default-capacity cell passes"
+    elif [ "$fb_live" -lt 4 ]; then
+        bad "[DD-14.FB]: only $fb_live capacity guard(s) read the run state's capacity fields in a call-bearing VM artifact — expected at least 4 (RX_TRAIL, RX_PUSH, RX_CALL and the region-exit guard). Too few means a guard was deleted rather than converted, which this check must not read as success"
+    else
+        ok "[DD-14.FB] (§11 item 3): every capacity guard in a call-bearing VM artifact reads run->resume_cap/run->trail_cap ($fb_live sites) and none compares against the stamped constant"
+    fi
+
+    # THE DELEGATION DIRECTION (design §5.2, sabotage row S-FB5). `_in` with a
+    # NULL descriptor calls the un-suffixed entry; the reverse would make the
+    # `_in` entry own the default storage and declare 128 KB of arrays on its
+    # own frame unconditionally, which is the whole thing this feature exists
+    # to avoid. Checked on the TEXT because the stack cost, not the answers,
+    # is what the wrong direction loses — tests/recursion/framebuffer.rxt's
+    # NULL cells pass under either direction.
+    if grep -q 'if (!buffers) return rx_search(subject, subject_length, search_from, capture_spans);' "$WORKDIR/fb_vm.c" &&
+       ! grep -qE '^\s*return rx_search_in\(subject, subject_length, search_from, capture_spans, NULL\);' "$WORKDIR/fb_vm.c"; then
+        ok "[DD-14.FB] (design §5.2, S-FB5): the delegation runs _in -> un-suffixed on a NULL descriptor, and the un-suffixed entry does NOT route through _in — which is what keeps the default storage off <prefix>_search_in's stack frame"
+    else
+        bad "[DD-14.FB] (S-FB5): the NULL delegation is missing or runs the wrong way in a VM artifact. If rx_search calls rx_search_in(..., NULL), then rx_search_in owns the default arrays and declares them unconditionally — C cannot declare a local conditionally — so the caller who supplied buffers pays the stack cost anyway"
+    fi
+
+    # THE STAMP FOLLOWS THE AXIS THAT MOVES THE STRUCT, and `--trace` is that
+    # axis. The tracing member (`int id;`) is on the resume frame, so a traced
+    # artifact's frame is a DIFFERENT SIZE from an untraced one's -- MEASURED
+    # on this box: 24 -> 32 call-free, 40 -> 48 call-bearing, because the
+    # `int` no longer shares a padding hole with the two size_t counters. A
+    # stamp that read 40 on a traced call-bearing artifact would hand a caller
+    # a capacity 20% larger than its reservation actually holds.
+    #
+    # IT CANNOT DRIFT THROUGH THE MEMBER LIST, which is the point of there
+    # being one: `vm_frame_fields` both EMITS the struct and FEEDS the size
+    # arithmetic, so a list that forgot the tracing axis would emit a struct
+    # with no `id` member and the artifact would fail to compile on the
+    # missing member, not on a wrong number. What this check covers is the
+    # remaining route -- a SECOND computation of the size, blind to an axis
+    # the struct sees -- and the artifact's own `_Static_assert` is what
+    # catches that. VALIDATED IN THE FAILING DIRECTION (2026-08-25, scratch
+    # build, never committed): an emitter patched to stamp the size from a
+    # second, trace-blind member list stamps 40 on the traced call-bearing
+    # artifact and the generated file then fails to compile with
+    # "static assertion failed: RX_RESUME_FRAME_SIZE disagrees with
+    # sizeof(rx_frame)". So the assertion is a live guard here, not decoration.
+    fb_tr_ok=1
+    fb_tr_why=""
+    for fb_tr in "recursion:^(a(?1)?b)\$:48" "none:(a|aa)+b:32"; do
+        fb_tr_feat="${fb_tr%%:*}"; fb_tr_rest="${fb_tr#*:}"
+        fb_tr_pat="${fb_tr_rest%:*}"; fb_tr_want="${fb_tr_rest##*:}"
+        fb_tr_flags=(--engine=vm --trace)
+        [ "$fb_tr_feat" != "none" ] && fb_tr_flags+=(--features "$fb_tr_feat")
+        if ! "$PCREC" -p rx "${fb_tr_flags[@]}" -o "$WORKDIR/fb_tr.c" -- "$fb_tr_pat" >/dev/null 2>&1; then
+            fb_tr_ok=0; fb_tr_why="$fb_tr_why; pcrec failed on --trace '$fb_tr_pat'"; continue
+        fi
+        fb_tr_got="$(sed -n 's/^#define RX_RESUME_FRAME_SIZE //p' "$WORKDIR/fb_tr.h")"
+        [ "$fb_tr_got" = "$fb_tr_want" ] || {
+            fb_tr_ok=0
+            fb_tr_why="$fb_tr_why; --trace '$fb_tr_pat' stamps $fb_tr_got, expected $fb_tr_want"
+        }
+        # AND THE ARTIFACT MUST COMPILE, which is where the _Static_assert
+        # lives. Without this the stamp check above would pass on a build whose
+        # struct and stamp disagree in the other direction.
+        gen_cc "[DD-14.FB] traced artifact" "$CC" -c $GENCFLAGS -I"$WORKDIR" \
+            -o "$WORKDIR/fb_tr.o" "$WORKDIR/fb_tr.c" \
+            || { fb_tr_ok=0; fb_tr_why="$fb_tr_why; the traced '$fb_tr_pat' artifact does not COMPILE (see the _Static_assert)"; }
+    done
+    if [ "$fb_tr_ok" -eq 1 ]; then
+        ok "[DD-14.FB] (--trace axis): a traced artifact stamps RX_RESUME_FRAME_SIZE 48 (call-bearing) and 32 (call-free), NOT the untraced 40/24 — the member list that EMITS the traced struct is the one that stamps it — and both traced artifacts compile, so their _Static_asserts agree with the real sizeof"
+    else
+        bad "[DD-14.FB] (--trace axis): the stamped frame size does not follow the tracing member$fb_tr_why. A caller sizing a reservation from RX_RESUME_FRAME_SIZE on a traced artifact would over-count its capacity"
+    fi
+
+    # rx_info's four new fields and the abi bump, on both engines.
+    fb_abi_vm="$(grep -m1 '^    \.abi = ' "$WORKDIR/fb_vm.c" | tr -dc '0-9')"
+    fb_abi_dfa="$(grep -m1 '^    \.abi = ' "$WORKDIR/fb_dfa.c" | tr -dc '0-9')"
+    fb_fields=1
+    for n in resume_frames trail_frames resume_frame_size trail_frame_size; do
+        grep -qE "^    \.$n = " "$WORKDIR/fb_vm.c" || fb_fields=0
+        grep -qE "^    \.$n = 0,$" "$WORKDIR/fb_dfa.c" || fb_fields=0
+    done
+    if [ "$fb_abi_vm" != "3" ] || [ "$fb_abi_dfa" != "3" ]; then
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected 3 on both — four fields joined the layout and every following offset moved, which is exactly what this member exists to announce"
+    elif [ "$fb_fields" -ne 1 ]; then
+        bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
+    else
+        ok "[DD-14.FB] (§10.4): rx_info carries the four sizing fields with abi 3 on both engines, reading 0 on the DFA artifact — the FFI/dlopen consumer's route to the same facts the macros carry"
+    fi
+else
+    bad "[DD-14.FB]: pcrec failed to compile the VM and DFA fixtures for the caller-buffer surface checks"
 fi
 
 echo

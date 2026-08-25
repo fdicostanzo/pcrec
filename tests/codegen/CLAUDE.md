@@ -1443,3 +1443,99 @@ SUBJECT, so a control that had gone red would mean the two halves of the gate
 were reading each other. Each axis also fired its floor check, which is the
 second, independent reason the run is red. Reverted; `make` and the green
 run above are on the reverted tree.
+
+## [DD-14.FB] the caller-provided frame buffer's structural block (2026-08-25)
+
+Six checks in `run_codegen_tests.sh`, all of them things a `.rxt` cell is
+structurally incapable of seeing.
+
+**The first one is the compatibility promise itself.** Spec §10.8 says the
+three existing entries keep their exact signatures and adds, in its own words,
+that "the implementation lane owes a check that asserts each line". The corpus
+cannot defend that: it recompiles its driver against whatever the header says,
+every run, so a wrapper that quietly changed `<prefix>_search`'s declaration
+would pass every cell and break every vendored consumer. So all six
+declarations are pinned CHARACTER FOR CHARACTER with `grep -qxF`, on a VM
+artifact and a DFA one.
+
+**And one check on the `--trace` axis**, because that axis moves the struct the
+macros measure: a traced artifact must stamp `RX_RESUME_FRAME_SIZE` **48**
+(call-bearing) and **32** (call-free), not the untraced 40 and 24, and both
+traced artifacts must COMPILE — which is where their `_Static_assert`s live. A
+stamp stuck at 40 would hand a caller a capacity 20% larger than its
+reservation holds. Drift through the member list is unrepresentable (the list
+that emits the struct is the list that computes the size, so a trace-blind list
+emits a struct with no `id` member and fails on that); this covers the
+remaining route, a second computation blind to an axis the struct sees, and it
+was validated in the failing direction against a scratch emitter doing exactly
+that.
+
+The other six: the five sizing macros emitted exactly once on both engines
+(real on the VM artifact, INERT on the DFA one — and the alignment specifically
+NOT 0, since a caller rounding an arena cursor up to it would divide by zero);
+the three `_Static_assert`s that reconcile the stamped sizes with the real
+`sizeof`/`_Alignof`, which are sabotage row S184's build-time detector; that NO
+capacity guard compares against a stamped constant and at least four read the
+capacity fields (too FEW is also a failure — that would mean a guard was
+deleted rather than converted, and this check must not read a deletion as
+success); the delegation direction on the emitted TEXT; and `rx_info`'s four
+fields at `abi` 3.
+
+**Why the delegation direction is checked on the text.** Reversing it
+(`<prefix>_search` implemented as `<prefix>_search_in(..., NULL)`) changes NO
+ANSWER — what it costs is the `_in` entry's small stack frame, because it would
+then own the default arrays and C cannot declare a local conditionally. Every
+behavioural cell passes under either direction, so text is the only instrument
+that sees it.
+
+**One existing check moved with this wave.** `[M6.2-KRESET rule 3]` asserted
+that `<prefix>_match` calls `<prefix>_match_anchored` directly; the entry is
+now a wrapper and the call moved one level deeper. The rule's PROPERTY —
+"reaches the anchored implementation, never through `<prefix>_search`" — is
+unchanged, so the check now spans `rx_match` AND `rx_match_run` and GAINED two
+assertions rather than losing one: neither may mention `rx_search`, and
+`rx_match_in` must reach the same `rx_match_run`. An entry that filtered on
+only one of its two spellings would be wrong for exactly the callers who used
+that one.
+
+## [DD-14.FB] the recursion identity gate is now TWO comparisons (2026-08-25)
+
+`run_recursion_identity.sh` used to ask one question — "is a call-free
+pattern's whole artifact byte-identical to the pre-module pin `ac4917d`,
+past D37's three stamp lines?" — and [DD-14.FB] made that question
+unanswerable: the caller-buffer surface is UNCONDITIONAL, so every artifact
+gains ~180 lines and changes ~30, across an announced `abi` 2 → 3 boundary
+that D40 regime 1 governs. The gate now asks two questions instead, and prints
+two numbers so they never blur:
+
+- **(A) the PROGRAM REGION against the UNCHANGED `ac4917d`** — `goto
+  <prefix>_L0;` … `<prefix>_accept:`, with no filtering beyond the three
+  stamps, so a COMMENT change inside the region is still a difference. This is
+  the claim the gate was built for, still measured against the reference it
+  was built against.
+- **(B) the WHOLE FILE against a pin moved forward to `8fc1e51`** — the last
+  commit of the FB wave touching `src`/`lib`/`cli`. Everything after that pin
+  is byte-exact whole-file again, comment changes included.
+
+**WHY NOT A WIDER `stamp_strip`, MEASURED so nobody re-derives it.** Extending
+the filter with named exact lines for the FB surface needs **200 distinct
+lines** (30 old-side, 180 new-side, 69 of them comments). It fails twice: it
+**over-strips** — the filter necessarily contains `ptrdiff_t rx_match(const
+rx_ctx *ctx)` and its `_caps` sibling, whose signature lines moved when the
+bodies became statics, so the gate would stop seeing a change to the two
+declarations spec §10.8 promises are unchanged — and it **still under-covers**,
+leaving 5 (DFA) to 12 (VM) blank-line differences no whole-line pattern removes
+safely. Filtering to green is the failure this project has recorded twice.
+
+**THE TWO FB LINES INSIDE THE REGION ARE A MEASURED ZERO, NOT A FIRING
+EXCEPTION.** The region-exit guard's type and capacity operand are the only FB
+lines that can move inside a program region, and `vm_region` is emitted only
+for a call-BEARING artifact — this sweep's population is the call-FREE bucket.
+So the assertion is that NO artifact in the population carries `RX_VM_CALL_`,
+which is a leak detector for the classifier rather than a licence.
+
+**THE ELISION LIST SPLIT IN TWO, and both halves are checked.** Wave G's four
+dead-capture patterns differ from the PRE-MODULE reference (VM-selected then,
+DFA-selected now, so the region exists on one side only) and must NOT differ
+from the post-wave-G FILE PIN, where the elision is on both sides. One list,
+two expectations, each asserted against the comparison it belongs to.

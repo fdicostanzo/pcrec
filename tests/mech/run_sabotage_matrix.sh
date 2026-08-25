@@ -116,6 +116,20 @@
 #     anywhere in this tree, and S154's halved trail charge changes no answer
 #     until a capacity is crossed, which a fixed-length corpus cell cannot
 #     reach on purpose.
+#   framebuffer  stackdepth        — added 2026-08-25 ([DD-14.FB], D71 item 2);
+#     registered BEFORE the six rows that need them, per the R31 C11 lesson two
+#     paragraphs down. `framebuffer` runs tests/recursion/run_frame_buffer.sh
+#     (the NULL-equivalence spread and the mmap'd reservation) and `stackdepth`
+#     runs tests/thread/run_stackdepth_tests.sh (the 128 KB thread). Neither is
+#     foldable into `harness`, and the reason is the one `vmidentity` gives for
+#     itself: what they guard — that a CALLER-SUPPLIED capacity is the one the
+#     matcher uses, and that the working storage is off the entry's stack frame
+#     — is orthogonal to every answer-checking cell in the corpus, and a
+#     sabotage of one must not be reported as coverage by the other. Note that
+#     `stackdepth`'s script prints a KNOWN: line on a green run (K33, pinned by
+#     D73) and the scrape below reads only its `checks passed:`/`checks failed:`
+#     totals, which exclude it — so a pinned row can never be mistaken for
+#     detection.
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
@@ -667,6 +681,46 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/recursion.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/recursion.log" | grep -oE '[0-9]+')"
                 suite_bits+=("recdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            framebuffer)
+                # [DD-14.FB] tests/recursion/run_frame_buffer.sh — the caller
+                # buffer's two instruments that a corpus cell cannot be: the
+                # NULL descriptor compared BYTE FOR BYTE against the un-suffixed
+                # entry over a 12-pattern spread, and spec §10.6's mmap'd
+                # MAP_NORESERVE reservation driven to its ceiling.
+                #
+                # SKIP-IS-NOT-A-PASS: section 2 declines (NOTE, not a check) on
+                # a machine that will not give it a 2 x 64 MB MAP_NORESERVE
+                # reservation, and section 1 runs regardless — so the script
+                # still prints a real non-zero `checks passed:` and this cell
+                # can never read as 0fail/0pass, which is the reading that would
+                # let a row be called UNDETECTED by an arm that never ran.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/recursion/run_frame_buffer.sh" \
+                    > "$work/framebuffer.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/framebuffer.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/framebuffer.log" | grep -oE '[0-9]+')"
+                suite_bits+=("framebuf:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            stackdepth)
+                # [DD-14.FB]/[TS-4] tests/thread/run_stackdepth_tests.sh — the
+                # emitted matcher on a musl-default 128 KB thread stack. Its own
+                # arm rather than `harness`, for the reason `vmidentity` is not
+                # `codegen`: what it guards is whether one call FITS, which no
+                # answer-checking cell anywhere in the tree asks.
+                #
+                # ITS `KNOWN:` LINE IS NOT SCRAPED, deliberately. Arm A
+                # reproduces K33 and is a PINNED state rather than a pass; the
+                # totals below count only real checks, so a row cannot be
+                # credited with detection by a pin, nor excused by one.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/thread/run_stackdepth_tests.sh" \
+                    > "$work/stackdepth.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/stackdepth.log" | grep -oE '[0-9]+')"
+                suite_bits+=("stackdep:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

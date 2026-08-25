@@ -1,7 +1,7 @@
 /*
  * driver.c — runs a single generated matcher against one subject string.
  *
- * Usage: t <subject> [startpos]
+ * Usage: t <subject> [startpos] [route]
  *   <subject> is the inner text of a .rxt `m`/`n`/`ms`/`ns` line's
  *   double-quoted subject, with surrounding quotes already stripped by
  *   run.sh but its escapes (\" \\ \n \t \r \f \v \xHH) still encoded as
@@ -10,6 +10,26 @@
  *   rx_search's startpos argument; if omitted, startpos defaults to 0
  *   (the `m`/`n` directives always mean startpos 0; `ms`/`ns` pass it
  *   explicitly — see docs/testing.md).
+ *   [route] ([DD-14.FB], run.sh's `frames-buffer=` directive) names WHICH
+ *   ENTRY runs the case, and it is the only thing it changes — the same
+ *   subject, the same startpos, the same printed protocol:
+ *     "default" (or absent)  rx_search
+ *     "null"                 rx_search_in(..., NULL). Spec §10.3 defines
+ *                            this to be EXACTLY the call above, so a corpus
+ *                            run through this route must agree with a
+ *                            default run cell for cell — which is what makes
+ *                            it a control rather than a variant.
+ *     "<frames>,<trail>"     rx_search_in with two malloc'd regions of those
+ *     "<n>"                  CAPACITIES (a single number means both). The
+ *                            two are separate on purpose: the trail binds
+ *                            first at the stamped defaults (design §4's 4.49
+ *                            trail entries per frame), and a route that
+ *                            could only set them equal could not tell a
+ *                            correct build from one that swapped them.
+ *   The buffers are malloc'd, which satisfies RX_BUFFER_ALIGN by definition,
+ *   and freed before this program returns; nothing reads them back. On a DFA
+ *   artifact every route answers identically, because that engine's `_in`
+ *   entries ignore the descriptor (spec §10.4).
  *
  * Prints exactly one line to stdout:
  *   "match %td %td [%td %td ...]\n"
@@ -51,8 +71,16 @@
  *                        plan for the artifact catching its own bug.
  * On a malformed escape in argv[1] or a malformed [startpos], prints a
  * message to stderr and exits 2.
+ * EXIT 4 ([DD-14.FB]) is its own outcome and belongs to the anchored-entry
+ * CROSS-CHECK below: on any route other than `default` the driver also runs
+ * <prefix>_match_in and <prefix>_match_caps_in against their un-suffixed
+ * siblings on the same ctx, and a disagreement exits 4 with the two values on
+ * stderr. Distinct from 2 (this driver's own usage/input error) and from 3 (a
+ * give-up) so run.sh can name it: see that cross-check's own comment for the
+ * one divergence it permits.
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -153,18 +181,88 @@ static int parse_startpos(const char *s, size_t *out) {
     return 0;
 }
 
+/*
+ * Parse a [route] argument into a call plan. Returns 0 on success, -1 on a
+ * malformed route (message already printed to stderr).
+ *
+ * *use_in says whether to call rx_search_in at all; *have_buffers whether to
+ * pass a descriptor rather than NULL. The two are separate because
+ * "rx_search_in with NULL" is a THIRD thing from both other routes and is the
+ * one the delegation's own control needs.
+ */
+static int parse_route(const char *s, int *use_in, int *have_buffers,
+                       size_t *nframes, size_t *ntrail) {
+    const char *comma;
+    char *end;
+    unsigned long long a, b;
+
+    *use_in = 0; *have_buffers = 0; *nframes = 0; *ntrail = 0;
+    if (!s || !*s || strcmp(s, "default") == 0) return 0;
+    if (strcmp(s, "null") == 0) { *use_in = 1; return 0; }
+
+    errno = 0;
+    a = strtoull(s, &end, 10);
+    if (end == s || errno != 0 || (*end != 0 && *end != ',') || a == 0) {
+        fprintf(stderr, "driver: invalid route '%s' (want default|null|<n>|<frames>,<trail>)\n", s);
+        return -1;
+    }
+    comma = end;
+    if (*comma == 0) { b = a; }
+    else {
+        const char *t = comma + 1;
+        errno = 0;
+        b = strtoull(t, &end, 10);
+        if (end == t || errno != 0 || *end != 0 || b == 0) {
+            fprintf(stderr, "driver: invalid route '%s' (trail capacity)\n", s);
+            return -1;
+        }
+    }
+    *use_in = 1; *have_buffers = 1;
+    *nframes = (size_t)a; *ntrail = (size_t)b;
+    return 0;
+}
+
 int main(int argc, char **argv) {
-    if (argc != 2 && argc != 3) {
-        fprintf(stderr, "usage: %s <subject> [startpos]\n", argc > 0 ? argv[0] : "t");
+    if (argc < 2 || argc > 4) {
+        fprintf(stderr, "usage: %s <subject> [startpos] [route]\n", argc > 0 ? argv[0] : "t");
         return 2;
     }
 
     size_t startpos = 0;
-    if (argc == 3 && parse_startpos(argv[2], &startpos) != 0) return 2;
+    if (argc >= 3 && parse_startpos(argv[2], &startpos) != 0) return 2;
+
+    int use_in = 0, have_buffers = 0;
+    size_t nframes = 0, ntrail = 0;
+    if (argc >= 4 && parse_route(argv[3], &use_in, &have_buffers, &nframes, &ntrail) != 0)
+        return 2;
 
     size_t len = 0;
     unsigned char *buf = decode(argv[1], &len);
     if (!buf) return 2;
+
+    /* [DD-14.FB] The caller-supplied regions, when the route asks for them.
+     * Sized in BYTES from the artifact's own RX_*_FRAME_SIZE macros, which is
+     * the arithmetic spec §10.4 publishes them for -- if those macros were
+     * stamped from the wrong struct (sabotage row S-FB6) this is the
+     * allocation that comes out short, and the artifact's own _Static_assert
+     * catches it one step earlier still. On a DFA artifact the sizes are 0
+     * and the route degenerates to a NULL descriptor, which that engine
+     * ignores anyway. */
+    void *frames_mem = NULL, *trail_mem = NULL;
+    if (have_buffers) {
+        if (RX_RESUME_FRAME_SIZE == 0 || RX_TRAIL_FRAME_SIZE == 0) {
+            have_buffers = 0;   /* an inert (DFA) artifact: nothing to size */
+        } else {
+            frames_mem = malloc(nframes * (size_t)RX_RESUME_FRAME_SIZE);
+            trail_mem  = malloc(ntrail  * (size_t)RX_TRAIL_FRAME_SIZE);
+            if (!frames_mem || !trail_mem) {
+                fprintf(stderr, "driver: out of memory for a %zu-frame / %zu-entry buffer\n",
+                        nframes, ntrail);
+                free(frames_mem); free(trail_mem); free(buf);
+                return 2;
+            }
+        }
+    }
 
     /* [K21-class fix, 2026-08-15] `rx_search`'s return is THREE-valued (1
      * match, 0 no-match, a negative give-up sentinel — PCREC_ERR_STEPS/
@@ -196,7 +294,99 @@ int main(int argc, char **argv) {
      * harness-level failure (never compared against a `match`/`nomatch`
      * expectation) the same way it already treats a crash or a timeout. */
     ptrdiff_t caps[RX_NCAPS][2];
-    int found = rx_search(buf, len, startpos, caps);
+    rx_buffers rxb;
+    const rx_buffers *bufp = NULL;
+    int found;
+    rxb.frames = frames_mem; rxb.nframes = nframes;
+    rxb.trail  = trail_mem;  rxb.ntrail  = ntrail;
+    if (have_buffers) bufp = &rxb;
+    if (!use_in) {
+        found = rx_search(buf, len, startpos, caps);
+    } else {
+        found = rx_search_in(buf, len, startpos, caps, bufp);
+    }
+
+    /*
+     * [DD-14.FB] THE OTHER TWO `_in` ENTRIES, CROSS-CHECKED ON EVERY ROUTED
+     * CASE — because without this they had NO behavioural coverage anywhere in
+     * the tree. `<prefix>_search_in` is the entry every cell, every driver and
+     * every measurement drives; `<prefix>_match_in` and
+     * `<prefix>_match_caps_in` were built, declared, structurally checked and
+     * never once RUN. Three entries shipped and one was exercised.
+     *
+     * IT IS A CROSS-CHECK, NOT A SECOND ANSWER, and that distinction is what
+     * makes it free of new expectations. The `.rxt` `m`/`n` vocabulary means a
+     * SEARCH (leftmost-first from `startpos`); the two anchored entries answer
+     * a different question (match AT `ctx->pos`), so routing an `m` line
+     * through them would change what the corpus means. Instead each anchored
+     * entry is compared against ITS OWN un-suffixed sibling on the same ctx,
+     * which is the property §10.2 states — "each `_in` entry is its
+     * un-suffixed sibling in every respect, plus one argument naming where the
+     * working storage lives" — and needs no oracle of its own.
+     *
+     * THE ONE PERMITTED DIVERGENCE IS A GIVE-UP ON EITHER SIDE, and getting
+     * that wrong is how this check introduced itself: the first version
+     * allowed the difference only DOWNWARD (a smaller caller buffer turning a
+     * match into `PCREC_ERR_FRAMES`, which the corpus's `frames-buffer=
+     * 512,400000` cell exists to produce) and it went RED on a correct build,
+     * on the `1024,8192` cell — where the `_in` entry MATCHES a subject its
+     * un-suffixed sibling refuses. That direction is the whole feature.
+     *
+     * So the rule is symmetric in the give-up and strict everywhere else: when
+     * a buffer is supplied, the two answers may differ if EITHER is a give-up,
+     * because the caller's capacity is simply not the stamped one. If NEITHER
+     * is a give-up they must agree exactly — same length, same capture spans —
+     * and a give-up code that differs from its sibling's while both gave up is
+     * a divergence too. On the `null` route NO divergence at all is permitted:
+     * §10.3 defines that call to BE the un-suffixed one, so `have_buffers` is
+     * false and the exemption does not apply.
+     */
+    if (use_in) {
+        rx_ctx ctx;
+        ptrdiff_t caps_plain[RX_NCAPS][2] = {{0}}, caps_in[RX_NCAPS][2] = {{0}};
+        ptrdiff_t m_plain, m_in, c_plain, c_in;
+        int k, bad = 0;
+        ctx.subject = buf; ctx.len = len; ctx.pos = startpos;
+        ctx.ncap = 0; ctx.caps = NULL; ctx.user = NULL;
+
+        m_plain = rx_match(&ctx);
+        m_in    = rx_match_in(&ctx, bufp);
+        c_plain = rx_match_caps(&ctx, caps_plain);
+        c_in    = rx_match_caps_in(&ctx, caps_in, bufp);
+
+        /* Differing is permitted only when a buffer was supplied AND at
+         * least one of the two answers is a give-up (< -1). Either direction:
+         * a smaller buffer refuses what the default matches, a larger one
+         * matches what the default refuses. */
+        if (m_in != m_plain && !(have_buffers && (m_in < -1 || m_plain < -1))) {
+            fprintf(stderr, "driver: rx_match_in disagrees with rx_match"
+                            " (%td vs %td) at startpos %zu -- neither is a give-up,"
+                            " so the caller's capacity cannot explain it\n",
+                    m_in, m_plain, startpos);
+            bad = 1;
+        }
+        if (c_in != c_plain && !(have_buffers && (c_in < -1 || c_plain < -1))) {
+            fprintf(stderr, "driver: rx_match_caps_in disagrees with rx_match_caps"
+                            " (%td vs %td) at startpos %zu -- neither is a give-up,"
+                            " so the caller's capacity cannot explain it\n",
+                    c_in, c_plain, startpos);
+            bad = 1;
+        }
+        if (c_in == c_plain && c_plain >= 0) {
+            for (k = 0; k < RX_NCAPS; k++) {
+                if (caps_in[k][0] != caps_plain[k][0] || caps_in[k][1] != caps_plain[k][1]) {
+                    fprintf(stderr, "driver: rx_match_caps_in slot %d disagrees"
+                                    " (%td,%td) vs (%td,%td)\n", k,
+                            caps_in[k][0], caps_in[k][1],
+                            caps_plain[k][0], caps_plain[k][1]);
+                    bad = 1;
+                }
+            }
+        }
+        if (bad) { free(frames_mem); free(trail_mem); free(buf); return 4; }
+    }
+
+    free(frames_mem); free(trail_mem);
     if (found == 1) {
         printf("match");
         for (int k = 0; k < RX_NCAPS; k++) {

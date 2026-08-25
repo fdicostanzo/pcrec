@@ -36,17 +36,7 @@ SAB_HARNESS_TARGET="tests/recursion/leftrec.rxt"
 SAB_DESC="RX_CALL stops testing the resume-frame capacity, so a runaway recursion runs off the end of the frame array instead of returning a typed give-up -- an out-of-bounds write in emitted code where the artifact owes an honest PCREC_ERR_FRAMES"
 SAB_DOC_FIGURE="REWRITTEN UNDER D71.1, and the rewrite is the point. Design 9.3's S-SR8 assumed a SECOND counter (call_depth against RX_CALL_DEPTH) answering PCREC_ERR_RECURSE, and sabotaged the CODE it returned; D71.1 removed that counter from the default artifact entirely, so the sabotage has nothing to swap. The claim that survives is \"THE DEPTH CAPACITY FIRES, AND THE gu frames CELLS SEE IT\": leftrec.rxt's give-up cells and quantified.rxt's ^(?R)*\$ cell are the population, and each asserts a TYPED give-up rather than a crash."
 SAB_COUNT=1
-SAB_BEFORE='                "        if (run->resume_depth >= %s_RESUME_FRAMES) return %s_R_FRAMES; \\\n"
-                "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
-                "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
-                "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
-                "        run->resume_stack[run->resume_depth].call_top = run->call_top;   \\\n"
-                "        run->resume_stack[run->resume_depth].call_ret = (ret_);          \\\n"
-                "        run->call_top = run->resume_depth;                               \\\n"
-                "        run->resume_depth++;                                             \\\n"
-                "    } while (0)\n\n",
-                v.up, v.up, v.up, v.p);'
-SAB_AFTER='                /* SABOTAGE S155: the capacity test is gone */
+SAB_BEFORE='                "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"
                 "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
                 "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
                 "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
@@ -56,3 +46,13 @@ SAB_AFTER='                /* SABOTAGE S155: the capacity test is gone */
                 "        run->resume_depth++;                                             \\\n"
                 "    } while (0)\n\n",
                 v.up, v.up, v.p);'
+SAB_AFTER='                /* SABOTAGE S155: the capacity test is gone */
+                "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"
+                "        run->resume_stack[run->resume_depth].resume_position = (p_);     \\\n"
+                "        run->resume_stack[run->resume_depth].trail_mark = run->trail_depth; \\\n"
+                "        run->resume_stack[run->resume_depth].call_top = run->call_top;   \\\n"
+                "        run->resume_stack[run->resume_depth].call_ret = (ret_);          \\\n"
+                "        run->call_top = run->resume_depth;                               \\\n"
+                "        run->resume_depth++;                                             \\\n"
+                "    } while (0)\n\n",
+                v.up, v.p);'

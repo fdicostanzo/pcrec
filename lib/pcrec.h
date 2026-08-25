@@ -444,6 +444,24 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * the same space as above), `<prefix>_match_caps`
  * (the anchored capture-DELIVERING sibling: same anchoring and same return
  * space, plus a `caps_out` parameter),
+ * — and, since [DD-14.FB] (2026-08-25, D71 item 2) — the three
+ * CALLER-BUFFER siblings `<prefix>_search_in`, `<prefix>_match_in` and
+ * `<prefix>_match_caps_in`, each its un-suffixed twin plus a final
+ * `const <prefix>_buffers *`. That descriptor carries `{frames, nframes,
+ * trail, ntrail}` — two regions of caller storage and their CAPACITIES,
+ * counted in frames and trail entries rather than bytes — and a NULL
+ * descriptor is DEFINED to be exactly the un-suffixed call. It exists
+ * because a generated matcher never allocates, so the two arrays a
+ * backtracking match needs otherwise live on the entry's own stack frame:
+ * MEASURED, `<prefix>_search`'s frame is 131,216 bytes on a call-bearing
+ * artifact where `<prefix>_search_in`'s is 144. The header also stamps
+ * `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES` (the DEFAULT capacities, not
+ * limits), `<PREFIX>_RESUME_FRAME_SIZE`/`_TRAIL_FRAME_SIZE` and
+ * `<PREFIX>_BUFFER_ALIGN`, which is the arithmetic a caller needs to turn
+ * a reservation into a capacity. All of it is emitted on EVERY artifact,
+ * both engines — present and inert on a DFA artifact, whose `_in` entries
+ * take a descriptor and ignore it — so a call site does not stop compiling
+ * when a pattern selects the other engine. docs/spec/match_api.md §10.
  * `extern const struct rx_info <prefix>_info` (a static
  * reflection structure: option flags, encoding, pattern text, group counts,
  * selected engine, budgets), and — since [M5-SEAM] (D58) —
