@@ -3320,6 +3320,11 @@ typedef struct {
 } GenNames;
 void pcrec_gen_names(Ctx *cx, GenNames *g);
 void pcrec_emit_abi_types(StrBuf *sb);
+/* [DD-13] `<PREFIX>_ENGINE`, the D46 family's UNCONDITIONAL selection fact:
+ * one emitter for both engines so the two can never spell it differently
+ * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
+ * (a)/(b) split). `engine` is "vm" or "dfa". */
+void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine);
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER
