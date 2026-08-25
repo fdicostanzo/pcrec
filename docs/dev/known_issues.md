@@ -2641,17 +2641,37 @@ one (just UNDER 128 KB). The two per-frame call fields wave B+C added
 32,768 B is exactly what crosses the ceiling. Arrived with [DD-14] wave
 B+C (67e40b9). glibc's 8 MB default thread stack is unaffected.
 
-**Remedy shape.** The [DD-14.FB] design (docs/design/frame_buffer_design.md,
-match_api.md §10 once merged): caller-provided buffers via the `_in`
-entries (224 B frame, measured) fix it for callers who use them; the
-DEFAULT path's home stays the C stack (a static fails TS-1/§5.3; a
-thread-local fails reentrancy; allocation is forbidden), so the default
-path is fixed only by the stamped-default ruling (ASK-1 in that design:
-keep 2048/3072 / raise / lower to fit 128 KB) or by the caller compiling
-with `--backtrack-frames`. Until ruled: a musl-default-thread caller of a
-call-bearing artifact MUST compile with a smaller capacity or use `_in`.
+**Remedy — HALF SHIPPED (2026-08-25, [DD-14.FB] code half).** The `_in`
+entries exist: `<prefix>_search_in`/`_match_in`/`_match_caps_in` take a
+`<prefix>_buffers` descriptor and put the two arrays wherever the caller
+says (`docs/spec/match_api.md` §10). MEASURED on the shipped emitter:
+`rx_search_in`'s own frame is **144 B** (312 B for the whole call chain)
+against `rx_search`'s **131,216 B**, and the same 684-byte subject that
+kills the default entry on a 128 KB thread MATCHES through `_search_in`
+on that same thread.
 
-**Milestone.** [DD-14.FB] code half (after wave G); the ruling is Frank's.
+**The DEFAULT path is NOT fixed and will not be**, which is why this entry
+stays OPEN rather than closing. Its storage stays on the C stack because
+every other home is closed (a static fails TS-1/§5.3; a thread-local
+fails reentrancy; allocation is forbidden by construction), so the only
+things that would fix it are a smaller stamped default — **D73 ruled
+KEEP 2048/3072** — or the caller compiling with `--backtrack-frames`. So
+the standing advice is unchanged and now has a supported spelling: a
+caller on a musl-default thread stack, or any small-stack thread, must
+call an `_in` entry with its own storage, or compile the pattern with a
+smaller capacity.
+
+**Pinned, in both directions.** `tests/thread/run_stackdepth_tests.sh`
+(target `make test-stackdepth`, in `make test`) reproduces the crash as a
+`KNOWN:` line every run, asserts the remedy matches on the same thread,
+and carries a CAUSAL control — the unbounded but call-FREE `(a|aa)+b`,
+whose 98,432 B entry fits, on the same driver and subject — so the
+difference between crashing and not is the frame size and nothing else.
+**The script FAILS if the default entry ever stops dying**, because this
+entry would then be describing something that is no longer true.
+
+**Milestone.** Remedy: [DD-14.FB] code half, done. Default path: closed
+only by a future ruling that revisits D73.
 
 ## K34 — OPEN (2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
 

@@ -1443,3 +1443,45 @@ SUBJECT, so a control that had gone red would mean the two halves of the gate
 were reading each other. Each axis also fired its floor check, which is the
 second, independent reason the run is red. Reverted; `make` and the green
 run above are on the reverted tree.
+
+## [DD-14.FB] the caller-provided frame buffer's structural block (2026-08-25)
+
+Six checks in `run_codegen_tests.sh`, all of them things a `.rxt` cell is
+structurally incapable of seeing.
+
+**The first one is the compatibility promise itself.** Spec §10.8 says the
+three existing entries keep their exact signatures and adds, in its own words,
+that "the implementation lane owes a check that asserts each line". The corpus
+cannot defend that: it recompiles its driver against whatever the header says,
+every run, so a wrapper that quietly changed `<prefix>_search`'s declaration
+would pass every cell and break every vendored consumer. So all six
+declarations are pinned CHARACTER FOR CHARACTER with `grep -qxF`, on a VM
+artifact and a DFA one.
+
+The other five: the five sizing macros emitted exactly once on both engines
+(real on the VM artifact, INERT on the DFA one — and the alignment specifically
+NOT 0, since a caller rounding an arena cursor up to it would divide by zero);
+the three `_Static_assert`s that reconcile the stamped sizes with the real
+`sizeof`/`_Alignof`, which are sabotage row S184's build-time detector; that NO
+capacity guard compares against a stamped constant and at least four read the
+capacity fields (too FEW is also a failure — that would mean a guard was
+deleted rather than converted, and this check must not read a deletion as
+success); the delegation direction on the emitted TEXT; and `rx_info`'s four
+fields at `abi` 3.
+
+**Why the delegation direction is checked on the text.** Reversing it
+(`<prefix>_search` implemented as `<prefix>_search_in(..., NULL)`) changes NO
+ANSWER — what it costs is the `_in` entry's small stack frame, because it would
+then own the default arrays and C cannot declare a local conditionally. Every
+behavioural cell passes under either direction, so text is the only instrument
+that sees it.
+
+**One existing check moved with this wave.** `[M6.2-KRESET rule 3]` asserted
+that `<prefix>_match` calls `<prefix>_match_anchored` directly; the entry is
+now a wrapper and the call moved one level deeper. The rule's PROPERTY —
+"reaches the anchored implementation, never through `<prefix>_search`" — is
+unchanged, so the check now spans `rx_match` AND `rx_match_run` and GAINED two
+assertions rather than losing one: neither may mention `rx_search`, and
+`rx_match_in` must reach the same `rx_match_run`. An entry that filtered on
+only one of its two spellings would be wrong for exactly the callers who used
+that one.

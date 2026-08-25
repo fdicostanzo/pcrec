@@ -113,18 +113,26 @@ re-quoted this pass, verbatim from a fresh `-p rx` build of `'a(b|c)+d'`
 docs/dev/decisions.md D60 and its addendum.
 
 **[DD-14.FB] revision (2026-08-24, D71 item 2) — the first revision that
-states a contract BEFORE it exists, and the marking matters.** Every
-revision before this one recorded what shipped. This one adds **§10, the
-caller-provided frame buffer**, which is SPECIFIED AND NOT YET BUILT: no
-artifact pcrec emits today exports a `<prefix>_search_in` entry, and §10
-says so in its own first line. It is here rather than in the design note
-alone because D71 item 2 rules the shape "decided at docs/spec/match_api.md
-under D40", and because the three existing entries' compatibility story is
-a fact about THIS document's contract. **A reader who wants only what
-pcrec promises TODAY should read §1-§9 and stop.** §3, §4, §5.3 and §6
-each carry a one-line forward pointer to §10 where §10 changes what they
-say, and each pointer names the pending status; nothing in §1-§9 was
-otherwise altered by this pass. The design record, with the alternatives
+stated a contract BEFORE it existed, and the marking mattered.** Every
+revision before it recorded what shipped. That one added **§10, the
+caller-provided frame buffer**, as SPECIFIED AND NOT YET BUILT. It was
+here rather than in the design note alone because D71 item 2 rules the
+shape "decided at docs/spec/match_api.md under D40", and because the three
+existing entries' compatibility story is a fact about THIS document's
+contract.
+
+**[DD-14.FB] code half (2026-08-25) — §10 IS NOW BUILT, and this document
+is once again a record of what ships.** Every artifact pcrec emits exports
+`<prefix>_search_in`, `<prefix>_match_in` and `<prefix>_match_caps_in`,
+declares `<prefix>_buffers`, and carries the five sizing macros and
+`rx_info`'s four new fields at `abi` 3 — on BOTH engines, inert on a DFA
+artifact. The forward pointers in §3, §4, §5.3 and §6 have lost their
+"not yet built" wording; nothing else in §1-§9 changed. MEASURED on the
+shipped emitter and re-quoted in §10: `<prefix>_search`'s stack frame is
+131,216 B on a call-bearing artifact where `<prefix>_search_in`'s is 144 B,
+the give-up boundary is unmoved (a 684-byte subject matches, 686 does
+not), and the `MAP_NORESERVE` worked example matches 800 KB in 0.057 s
+touching 90 MB. The design record, with the alternatives
 and their measured costs, is `docs/design/frame_buffer_design.md`
 (informational, per docs/spec/CLAUDE.md's charter). Measured for this pass
 and quoted in §10: the run-struct and per-entry stack sizes, the
@@ -357,12 +365,13 @@ symbols: the four below, plus the encoding residual `<prefix>_next_pos`
 that §3.1.1 specifies (a fifth entry since [M5-SEAM], and the one place an
 artifact's byte-vs-character distinction lives).
 
-**Forward pointer, [DD-14.FB] (2026-08-24, D71 item 2): three more entries
-are SPECIFIED and NOT YET BUILT** — `<prefix>_search_in`,
-`<prefix>_match_in` and `<prefix>_match_caps_in`, which take a
-caller-provided frame buffer. **Five is what an artifact exports today**;
-§10 states the pending contract, including the promise that the three
-entries below are unchanged for a caller that never calls an `_in` entry.
+**[DD-14.FB] (D71 item 2): three more entries ship** —
+`<prefix>_search_in`, `<prefix>_match_in` and `<prefix>_match_caps_in`,
+each its un-suffixed sibling plus one argument naming where the working
+storage lives. **Eight is what an artifact exports today.** §10 is their
+contract, and it includes the promise that the three below are unchanged —
+signature, return space and behaviour — for a caller that never calls an
+`_in` entry.
 
 ### 3.1 `<prefix>_search` — the search-loop entry
 
@@ -930,8 +939,8 @@ resume stack (`<PREFIX>_RESUME_FRAMES`) and its sibling undo trail
 must not assume it was the one whose macro is named "frames" — MEASURED on
 `^(a(?1)?b)$`, the artifact gives up with the trail full and TWO THIRDS of
 its resume stack still unused (`docs/design/frame_buffer_design.md` §4). The same
-code, with the same meaning, covers a caller-supplied buffer once
-[DD-14.FB] lands (§10.3).
+code, with the same meaning, covers a caller-supplied buffer
+([DD-14.FB], §10.3) — and there too it does not say whose buffer it was.
 
 **Today's `1`/`0` contract for `<prefix>_search` is unchanged** — this
 reservation adds give-up outcomes, it does not renumber match/no-match.
@@ -1062,15 +1071,26 @@ says nothing about how much STACK each such call needs, and for one
 artifact class the answer is large: an artifact whose frame requirement is
 not statically bounded declares its whole run state as a local of the entry
 it was called through. MEASURED on a `-p rx --features all` build of
-`^(a(?1)?b)$` — `<prefix>_search`'s stack frame is **131,296 bytes**, which
+`^(a(?1)?b)$` — `<prefix>_search`'s stack frame is **131,216 bytes**, which
 does not fit a musl-default 128 KB thread stack, and calling it from such a
 thread faults on any subject, a 2-byte one included. A statically-bounded
-pattern pays nothing (`a(b|c)+d`'s run state is 128 bytes) and a
-glibc-default 8 MB main thread is unaffected. The remedy is §10's
-`_in` entries, whose own frame MEASURES **224 bytes**; until they exist, a
-caller on a small thread stack must either size the thread for the artifact
-or compile with a smaller `--backtrack-frames`.
-`docs/design/frame_buffer_design.md` §3 carries the measurements.
+pattern pays nothing (`a(b|c)+d`'s entry is 208 bytes) and a glibc-default
+8 MB main thread is unaffected.
+
+**The remedy SHIPS: it is §10's `_in` entries** ([DD-14.FB], D71 item 2),
+whose own frame MEASURES **144 bytes** — 312 including the two statics
+they call through. A caller on a small thread stack supplies its own
+storage and the arrays are not on that stack at all; a caller who cannot
+must still size the thread for the artifact or compile with a smaller
+`--backtrack-frames`. **The default path is unchanged and still does not
+fit**, deliberately: D73 keeps the stamped 2048/3072 on the reasoning that
+the caller buffer is the way around it, so this remains a live limitation
+for a caller who calls the un-suffixed entry from a small-stack thread —
+`docs/dev/known_issues.md` K33. `docs/design/frame_buffer_design.md` §3
+carries the design's measurements and
+`tests/thread/run_stackdepth_tests.sh` reproduces both halves on every
+run: the default entry dying on a 128 KB thread, and `_search_in`
+matching the same subject on the same thread.
 
 It is also GUARDED rather than asserted, by two shipped checks that run
 in `make test`:
@@ -1128,6 +1148,14 @@ struct rx_info {
     int64_t       subject_ceiling; /* 0 = unset/not applicable; else the
                                        stamped honest ceiling for a
                                        residually-unbounded capture body */
+    int64_t       resume_frames;   /* [DD-14.FB] the stamped DEFAULT
+                                       resume capacity, in frames;
+                                       0 = this artifact has no resume
+                                       stack (every DFA artifact) */
+    int64_t       trail_frames;    /* ditto, in trail entries */
+    int32_t       resume_frame_size; /* bytes per resume frame, THIS
+                                       artifact; 0 on a DFA artifact */
+    int32_t       trail_frame_size;  /* bytes per trail entry */
     const char           *pattern;      /* source pattern text, as given
                                             to pcrec_compile() */
     size_t                pattern_len;  /* companion length — see §7 */
@@ -1255,11 +1283,13 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `2` on every artifact today, and is not yet a
+- **`rx_info.abi` is `3` on every artifact today, and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
-  what a bump means. ([DD-14.FB] SPECIFIED, not yet built: §10.4 adds four
-  fields to this struct and moves `abi` to `3`.)
+  what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
+  inserted the four sizing fields after `subject_ceiling` and therefore
+  moved every following offset — which is exactly what this member exists
+  to announce.
 
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
@@ -1741,20 +1771,28 @@ not "permanent".
 
 ---
 
-## 10. The caller-provided frame buffer — **[DD-14.FB] SPECIFIED, NOT YET BUILT**
+## 10. The caller-provided frame buffer — **[DD-14.FB]**
 
-> **STATUS.** Nothing in this section exists in any artifact pcrec emits
-> today. No `<prefix>_search_in` symbol is exported, no
-> `<prefix>_buffers` type is declared, and `rx_info` still carries the
-> fifteen fields §6 lists. This section states the contract the
-> [DD-14.FB] implementation lane must deliver, so that the shape is
-> settled in the document D71 item 2 names ("shape decided at
-> docs/spec/match_api.md under D40") before the emitter changes. **Every
-> other section of this document describes shipped behaviour; this one
-> does not.** The design record — the alternatives, why each was rejected,
-> and the measurements behind every number quoted here — is
-> `docs/design/frame_buffer_design.md`, informational per
-> docs/spec/CLAUDE.md's charter.
+> **STATUS: BUILT (2026-08-25).** Every artifact pcrec emits exports
+> `<prefix>_search_in`, `<prefix>_match_in` and `<prefix>_match_caps_in`,
+> declares the `<prefix>_buffers` descriptor, carries the five sizing
+> macros in its header and the four sizing fields on `rx_info` at `abi`
+> 3 — on both engines, present and inert on a DFA artifact. This section
+> was written one revision earlier as SPECIFIED-NOT-YET-BUILT, because
+> D71 item 2 rules the shape "decided at docs/spec/match_api.md under
+> D40"; every number in it has since been re-measured against the shipped
+> emitter, and the two that moved are noted where they appear. The design
+> record — the alternatives, why each was rejected, and the measurements
+> behind the numbers — is `docs/design/frame_buffer_design.md`,
+> informational per docs/spec/CLAUDE.md's charter.
+>
+> **What checks it.** `tests/recursion/framebuffer.rxt` (behaviour, in
+> `make test`), `tests/codegen/run_codegen_tests.sh`'s `[DD-14.FB]` block
+> (the six entry declarations byte-exact, the sizing surface on both
+> engines, no capacity guard reading a stamped constant, the delegation
+> direction), `tests/thread/run_stackdepth_tests.sh` (the 128 KB thread,
+> in `make test`), and `make test-frame-buffer` on demand (the
+> NULL-equivalence spread and §10.6's reservation, re-measured).
 
 ### 10.1 What the ruling is for
 
@@ -1963,8 +2001,22 @@ so 1,677,721 frames and 4,194,304 trail entries):
 | 932 KB | match | 0.065 s | 102 MB |
 | 940 KB | `PCREC_ERR_FRAMES` | 0.069 s | 103 MB |
 
-with the same artifact returning `PCREC_ERR_FRAMES` on every one of those
-subjects through `rx_search`. Three things a caller should take from it:
+**RE-MEASURED on the shipped emitter (2026-08-25) and the table holds** —
+1,677,721 frames and 4,194,304 trail entries derived from the same two
+reservations, 1.8 MB resident before the first match, the 800 KB row
+matching in 0.057 s having touched 90 MB, and the ceiling still between
+n = 466,000 and n = 470,000. `tests/recursion/run_frame_buffer.sh` is that
+re-measurement, and it asserts each of those rather than printing them.
+
+**CORRECTION, same pass.** The sentence that stood here said the same
+artifact returns `PCREC_ERR_FRAMES` "on every one of those subjects"
+through `rx_search`. That is true of the **four larger rows only**: 684 B
+is exactly the largest subject §10.1 says the un-suffixed entry MATCHES,
+so the first row's control returns `1`, and the two sentences could not
+both be true. MEASURED, and corrected here rather than left standing;
+`docs/design/frame_buffer_design.md` §8 carries the same overstatement and
+is left alone as the historical record. Three things a caller should take
+from it:
 **128 MB reserved costs 1.7 MB of resident memory until touched**; the
 800 KB row is the depth libpcre2 10.46 was measured reaching from its
 heap, so the ruling's goal is met with room to spare; and **the ceiling is

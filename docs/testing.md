@@ -102,6 +102,7 @@ it plugs directly into `make test` / CI.
 | `KEEP`      | unset (0)                  | Set to `1` to keep the harness's temp working directory instead of deleting it on exit (path is printed to stderr) |
 | `VERBOSE`   | unset (0)                  | Set to `1` to print a line for every *passing* case, not just failures |
 | — | — | Per-block `.rxt` directives: `flags i` (caseless) and, since MOD-0.3c, `features <list>` (comma-separated module names passed as `--features`; the spec is validated once per distinct list so a typo is a loud harness failure, never a perr match) |
+| `RXTROUTE`  | unset (`default`)          | ([DD-14.FB]) The INITIAL `frames-buffer=` route for every block in the run, overridden per block by a directive. `RXTROUTE=null` is the useful one: spec §10.3 defines a NULL descriptor to BE the un-suffixed call, so re-running any corpus under it must reproduce that corpus's result cell for cell — the NULL-equivalence control as a corpus-wide axis rather than a handful of hand-written cells. A numeric value is accepted for symmetry but is a blunt instrument (a capacity that suits one block starves another) |
 | `PROCS`     | unset (1)                  | Run N `.rxt` **files** concurrently (each in its own re-invocation with its own temp dir). Summary format and counts are identical to a serial run; the parent hard-fails if any worker vanishes without printing a summary, so a lost worker can never read as a pass. Measured on the project box: full corpus 4m25s serial → 55s at `PROCS=6`. Prefer `TMPDIR=/var/tmp` at higher `PROCS` (`/tmp` is a quota'd tmpfs there) |
 
 Example: testing a debug build with a different compiler and keeping
@@ -207,6 +208,40 @@ lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
   that lets a `.rxt` block reach a give-up at all; before [DD-14] wave A
   nothing in the directive vocabulary could select `--engine=vm` or a
   tiny budget (see "The driver protocol", point 5, below).
+- `frames-buffer=<route>` ([DD-14.FB], 2026-08-25) — **POSITIONAL WITHIN
+  THE BLOCK**, not block-scoped, and that is the one thing to know about
+  it: it names the ENTRY the cases BELOW it are run through, until another
+  `frames-buffer=` line changes it or the block ends. Four routes:
+
+  | route | the case runs through |
+  |---|---|
+  | `default` (also the initial state) | `<prefix>_search` |
+  | `null` | `<prefix>_search_in(..., NULL)` — which spec §10.3 defines to BE the call above, so this is an identity control rather than a variant |
+  | `<n>` | `<prefix>_search_in` with `<n>` resume frames AND `<n>` trail entries |
+  | `<frames>,<trail>` | the same, with the two capacities set separately |
+
+  The driver allocates both regions, sized in bytes from the artifact's own
+  `<PREFIX>_RESUME_FRAME_SIZE`/`_TRAIL_FRAME_SIZE`, and frees them; nothing
+  else about the case changes — same subject, same startpos, same printed
+  protocol, same expectations.
+
+  **It does not overlap `budget frames=<n>` and the two compose.** That one
+  is `--backtrack-frames`, which sizes the ARTIFACT at compile time; this
+  one sizes the CALL. A block may carry both.
+
+  **Prefer unequal capacities when you mean to test a buffer.** MEASURED
+  (`docs/design/frame_buffer_design.md` §4): the trail is consumed ~4.49x
+  faster than the resume stack, so `frames-buffer=8192` provisions the two
+  arrays very differently from each other in practice — and, more sharply,
+  a cell whose two capacities are EQUAL cannot distinguish a correct build
+  from one that passes each capacity to the other array (sabotage row
+  S180). `tests/recursion/framebuffer.rxt` uses `1024,8192` for exactly
+  that reason.
+
+  **On a DFA artifact every route answers identically**, because that
+  engine's `_in` entries take a descriptor and ignore it (spec §10.4) — so
+  a corpus file may carry these lines without knowing which engine its
+  patterns will select.
 
 `m`/`n` are exactly `ms`/`ns` with `<P>` fixed at 0; see "startpos support"
 below for the `rx_search` contract these exercise.
@@ -297,13 +332,18 @@ failed to compile.
 case, that adapts the generated `rx_search` API to a simple CLI:
 
 ```
-t <subject> [startpos]
+t <subject> [startpos] [route]
 ```
 
 `<subject>` is the case's subject text with escapes still encoded as literal
 backslash sequences (exactly as they appear inside the `.rxt` file's
 quotes). `[startpos]` is optional (defaults to `0`) — `run.sh` always passes
-it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). The driver:
+it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). `[route]`
+([DD-14.FB], 2026-08-25) is the `frames-buffer=` route documented above and
+selects WHICH ENTRY answers — `default`/absent, `null`, `<n>` or
+`<frames>,<trail>`; it changes nothing else about the call or about the
+protocol below, which is what makes a route a control rather than a
+variant. The driver:
 
 1. Decodes escapes into a byte buffer, tracking the length explicitly (the
    decoded bytes may include `\0`, so the driver never uses `strlen` on the
@@ -1177,6 +1217,63 @@ and independent reason the run is red. Reverted before the green run above.
 **THE SECOND CONTROL IS NOT HERE AND IS NOT WAVE E'S.** §9.2's SPLICE-vs-LINKAGE
 `A == B` over the corpus needs the `-fno-splice-calls` axis §6.3's linkage rule
 introduces, which is wave G's. §9.3's sabotage rows carry that load until then.
+
+## The caller-provided frame buffer's checks ([DD-14.FB], 2026-08-25)
+
+D71 item 2's caller-provided buffer (`docs/spec/match_api.md` §10) is checked
+in FOUR places, and the split is deliberate: what is a standing property of
+every artifact rides `make test`, and what is a measurement about one
+reservation does not.
+
+**In `make test`:**
+
+- **`tests/recursion/framebuffer.rxt`** — the behaviour, through the
+  `frames-buffer=` directive documented above. 16 cases on three patterns: the
+  give-up boundary through the default entry (n = 342 matches, n = 343 is
+  `PCREC_ERR_FRAMES`), the SAME subject matching through `<prefix>_search_in`
+  with a bigger buffer IN THE SAME BLOCK off ONE compile, the trail binding
+  first (200000,3072 still gives up — design §4's measured finding, pinned),
+  the frames binding too (512,400000), the NULL descriptor repeating the
+  default entry's answers verbatim, and the same routes on a call-free VM
+  artifact and on a DFA-selected one where the surface is inert.
+- **`tests/codegen/run_codegen_tests.sh`'s `[DD-14.FB]` block** — six
+  structural checks a corpus cell cannot make: the six entry declarations
+  byte-exact on both engines (the three existing ones character for character
+  — spec §10.8's compatibility promise, which the corpus cannot defend because
+  it recompiles its driver every run), the five sizing macros real on a VM
+  artifact and inert on a DFA one, the three `_Static_assert`s that reconcile
+  the stamped sizes with the real `sizeof`, that NO capacity guard still
+  compares against a stamped constant, the delegation direction on the emitted
+  TEXT, and `rx_info`'s four fields at `abi` 3.
+- **`make test-stackdepth`** (`tests/thread/run_stackdepth_tests.sh`) — the
+  128 KB thread, [TS-4]'s matcher instance. Deliberately NOT under
+  ThreadSanitizer: TSan changes the stack a call needs, so a stack-fit
+  question asked under it is a question about TSan. It prints a `KNOWN:` line
+  on a green run — K33 is a live defect D73 chose to keep — and FAILS if the
+  default entry ever stops dying. See its own header for the causal control.
+
+**On demand — `make test-frame-buffer`** (`tests/recursion/run_frame_buffer.sh`):
+
+- **the NULL-equivalence spread.** `<prefix>_search_in(..., NULL)` compared
+  BYTE FOR BYTE against `<prefix>_search` over 12 patterns chosen to reach
+  every ANSWER KIND — match, no-match, capture spans, a zero-width loop, a
+  `\K` entry, a backreference, a give-up, the constant-time runaway refusal —
+  across both engines. `RXTROUTE=null` is the blunter, broader version of the
+  same control and runs over any corpus.
+- **spec §10.6's `MAP_NORESERVE` worked example, run.** 2 x 64 MB reserved,
+  driven to its ceiling. It is opt-in because it touches ~105 MB of resident
+  memory and builds 940 KB subjects; that is a measurement about a
+  RESERVATION, and `make test`'s job is the population. It SKIPS LOUDLY (a
+  `NOTE:`, never a pass) on a machine that will not give it the reservation.
+
+**And six sabotage rows, S179-S184** (`tests/mech/sabotages/`), under two
+registered suite words `framebuffer` and `stackdepth`. Two are worth reading
+for what they say about the CELLS: S180 (the two capacities bound to each
+other's array) is a NO-OP under any cell that supplies EQUAL capacities, which
+is why `framebuffer.rxt` uses `1024,8192`; and S184 (`_RESUME_FRAME_SIZE`
+stamped from the wrong struct) does not produce an under-allocated buffer at
+run time at all, because the artifact's own `_Static_assert` turns it into a
+generated file that does not compile.
 
 ## The backrefs behavioural suite ([M6.5.2], 2026-08-22)
 

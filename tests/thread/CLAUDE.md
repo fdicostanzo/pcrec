@@ -52,6 +52,32 @@ section target, `make test-thread`.
   race a given TSan run doesn't happen to schedule into a report, not just
   races TSan reports directly.
 
+- **run_stackdepth_tests.sh** — **[TS-4]/[DD-14.FB], 2026-08-25.** A SEPARATE
+  suite from `run_thread_tests.sh` and NOT under ThreadSanitizer, which is the
+  first thing to understand about it: that suite asks whether concurrent calls
+  RACE, this one asks whether ONE call FITS, and TSan changes the stack a call
+  needs — a stack-fit question asked under it is a question about TSan. Its
+  own target, `make test-stackdepth`, and it rides `make test`. Three arms:
+  the call-bearing artifact's DEFAULT entry dying of SIGSEGV on a 128 KB
+  thread (K33, reported `KNOWN:` and PINNED — the script FAILS if it ever
+  stops dying, because docs/dev/known_issues.md would then be out of date);
+  the SAME artifact, subject and thread MATCHING through `<prefix>_search_in`
+  with heap storage; and a CAUSAL control, the unbounded-but-CALL-FREE
+  `(a|aa)+b`, on the same driver and subject, which must NOT die. Without
+  that third arm "arm A crashed" is consistent with a driver bug or any stack
+  cost at all; with it, the difference between crashing and not is the frame
+  SIZE. The cause is also stated rather than inferred, off `gcc
+  -fstack-usage`: MEASURED 131,216 B against a 131,072 B thread stack (over by
+  144) versus the control's 98,432 B, and the script fails itself if either
+  number stops supporting the arm it explains.
+- **ts4_driver.c** — the [TS-4] driver. Creates one thread with
+  `pthread_attr_setstacksize(&a, 128*1024)` — musl's default — and calls
+  either `<prefix>_search` or `<prefix>_search_in` on a^342 b^342, the largest
+  subject the stamped default supports, so the default arm dies on a subject
+  it would otherwise MATCH and the failure is unambiguously the stack rather
+  than the pattern. The caller buffers are `malloc`'d, which is the point: the
+  buffered arm's storage is NOT on the 128 KB stack.
+
 ## Why these five TS-2 patterns (different emitted engine shapes)
 
 Chosen by reading tests/base/ and tests/bench/ for pattern ideas, per this

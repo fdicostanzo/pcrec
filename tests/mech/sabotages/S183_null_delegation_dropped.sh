@@ -20,7 +20,7 @@ SAB_ID="S183-null-delegation-dropped"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer codegen"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
-SAB_DESC="the emitted <prefix>_search_in drops its `if (!buffers) return <prefix>_search(...)` line, so a NULL descriptor binds a null resume stack at capacity 0 instead of meaning `use the stamped default`. Spec 10.3 defines the NULL case to BE the un-suffixed call"
+SAB_DESC="the emitted <prefix>_search_in drops its NULL-descriptor delegation line, so a NULL descriptor binds a null resume stack at capacity 0 instead of meaning 'use the stamped default'. Spec 10.3 defines the NULL case to BE the un-suffixed call"
 SAB_DOC_FIGURE="PREDICTED: framebuffer.rxt RED on every frames-buffer=null cell; the default and buffered cells GREEN. run_frame_buffer.sh section 1 RED on all twelve spread rows. Canonical figure owed from run_sabotage_matrix.sh S183."
 SAB_COUNT=1
 SAB_BEFORE='        "    %s_run_state run;\n"

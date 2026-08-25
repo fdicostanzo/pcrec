@@ -47,12 +47,12 @@ SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR13): NO ANSWER CHANGES -- the frame st
 SAB_COUNT=1
 SAB_BEFORE='    sb_printf(v->b,
         "    {\n"
-        "        const unsigned %s_call_frame = run->call_top;\n"
-        "        if (%s_call_frame >= %s_RESUME_FRAMES) return %s_R_INTERNAL;\n"
+        "        const size_t %s_call_frame = run->call_top;\n"
+        "        if (%s_call_frame >= run->resume_cap) return %s_R_INTERNAL;\n"
         "        run->call_top = run->resume_stack[%s_call_frame].call_top;\n"
         "        goto *run->resume_stack[%s_call_frame].call_ret;\n"
         "    }\n",
-        v->p, v->p, v->up, v->up, v->p, v->p);'
+        v->p, v->p, v->up, v->p, v->p);'
 SAB_AFTER='    /* SABOTAGE S168: one shared macro instead of one inline return */
     sb_printf(v->b, "    %s_RETURN;\n", v->up);'
 SAB_FILE2="src/gen/emit_vm.c"
