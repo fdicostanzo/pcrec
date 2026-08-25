@@ -83,8 +83,22 @@ find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
     | sed 's/^pattern //' \
     | LC_ALL=C sort -u > "$PATFILE"
 npat=$(wc -l < "$PATFILE")
-if [ "$npat" -lt 100 ]; then
-    bad "corpus extraction found only $npat patterns — the gate has no population"
+# THE FLOOR IS 2,480 AND IT IS SET AGAINST THE DEFECT ABOVE, NOT AGAINST ZERO.
+# It was 100 — a floor that says "the extraction produced SOMETHING", which the
+# K35 locale collation passed for as long as it existed: 1,660 patterns is
+# sixteen times the old floor and two thirds of the corpus. A floor a known
+# failure sails through is not a floor.
+#
+# 2,480 is ~95% of the 2,610 the fixed extraction MEASURES on this tree, which
+# is the number that matters in both directions: high enough that a regression
+# to the collated 1,660 FAILS here rather than passing quietly, and loose enough
+# that ordinary corpus churn (a lane deleting a few `.rxt` blocks) does not fire
+# it. **If this ever goes red, read it as "the population moved" and check WHY
+# before re-pinning** — the two ways to reach it are a corpus that genuinely
+# shrank and an extraction that silently lost patterns again, and only the first
+# is a re-pin.
+if [ "$npat" -lt 2480 ]; then
+    bad "corpus extraction found only $npat patterns, below the 2480 floor (~95% of the 2610 this tree measures). K35: an unguarded \`sort -u\` collates punctuation as ignorable and silently drops a third of the corpus — 1,660 was the measured loss, and the old floor of 100 passed for it. Either the corpus shrank (re-pin, deliberately) or the extraction is dropping patterns again"
     echo "checks passed: $pass"
     echo "checks failed: $fail"
     exit 1
