@@ -14387,3 +14387,20 @@ plain background tasks; this one was setsid'd, so a reap is unlikely —
 cause asked of the lane; a critic's `timeout 900 make -j4` in its own
 scratchpad tree cannot signal another process group). Lane told to
 relaunch ONCE and hold on a second TERM.
+CAUSE FOUND (lane's report, 03:1x): the TERM was srFBc's own. Its first
+launch line backgrounded the whole `cd && S=… && setsid …` list, so the
+foreground `echo $! > $S/test.pid` ran with `$S` unset ("Permission
+denied" on /test.pid) and READ AS A FAILED LAUNCH — it had launched. The
+retry started a second `make -j12 test`; two runs wrote one log for ~20
+s (load 44). The lane killed both by PID, waited for load 5.95, and
+relaunched once cleanly (PID 3182120, gnutimeout 5400). Two rules for
+every future brief: (a) a failed-LOOKING launch may have launched —
+check by /proc cwd before retrying; (b) `setsid cmd & echo $!` records
+the setsid PARENT, which exits at once — scrape the real PID from ps.
+Rebase confirmed: lane on 57b5a95, S174 byte-identical to main (its own
+header block dropped: one account per row), anchors all resolve; the
+three doc obligations in c26b348 (P-3 REFUTED; §10.4 stamped+asserted
+with 24/40/32/48; the --trace stamp check 48/32 in codegen, 101/0, with
+two scratch-emitter failure directions measured: a trace-blind member
+list cannot compile the artifact; a second list stamps 40 and the
+_Static_assert fires).
