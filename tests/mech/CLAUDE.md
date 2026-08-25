@@ -1672,7 +1672,7 @@ left the row UNDETECTED for ever. **What makes the first two work is a
 trailing literal that needs the `a` back** — the backtrack has to be
 load-bearing before a possessification can delete anything.
 
-**MEASURED, D69 tier 3, 2026-08-24 on `lane/srE` at `d0a8e36`**: the 80 rows
+**MEASURED, D69 tier 3, 2026-08-24 on `lane/srE` at `d0a8e36` (the lane's PRE-REBASE head; wave F touched none of these rows' `SAB_FILE`s or harness targets, so the reading carries)**: the 80 rows
 `rows_for.sh` names for this lane's touched paths (`src/gen/emit_vm.c`,
 `tests/recursion`, `tests/codegen`, `tests/prefilter`), run one row per
 invocation at `PROCS=4` — **80/80 with `unexpected: 0`, `anomalies: 0`,
