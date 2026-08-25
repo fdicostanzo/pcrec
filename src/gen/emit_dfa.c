@@ -313,8 +313,19 @@ static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
      * HERE rather than in `rx_match_caps` is what makes it true for a caller
      * that drives `rx_search` directly, which tests/codegen's K27 fixture
      * does. The failure paths below cast `capture_spans` to void; that stays
-     * correct — a redundant cast is not a diagnostic. */
-    if (dfa_artifact_ncaps(cx) > 1) {
+     * correct — a redundant cast is not a diagnostic.
+     *
+     * `fit.chosen == ENGM_DFA` IS LOAD-BEARING AND WAS MEASURED THE HARD WAY.
+     * This emitter has TWO customers: it writes the artifact's own engine, and
+     * it writes the VM hybrid's internal DFA PREFILTER (`pcrec_emit_dfa_engine`
+     * with `static` storage). The prefilter's search function takes the same
+     * `capture_spans` parameter and never reports a group — the VM does that —
+     * so filling there would put this loop into every capture-bearing VM
+     * artifact in the corpus. It did: the first version of this line moved 558
+     * of the identity gate's 2442 call-free patterns, including `(((a)))`,
+     * which has nothing to do with wave G. The gate caught it on its first
+     * run, which is the argument for the gate. */
+    if (cx->job->fit.chosen == ENGM_DFA && dfa_artifact_ncaps(cx) > 1) {
         GenNames gn;
         pcrec_gen_names(cx, &gn);
         sb_printf(c,
