@@ -14092,3 +14092,23 @@ floor (100) predates K35 and would re-admit the 1,660 defect — raise to
 matchers with NO D45 timeout wrapping; (c) CLAUDE.md omissions in cli/,
 lib/, src/core/, tests/prefilter/. critG-engine (opus) still reading.
 pcrecdev2's quiet window opens when the rows land.
+
+#### Thirty-ninth session, part 21 addendum — the engine critic BLOCKS the merge (2026-08-25 ~01:4x EDT)
+
+critG-engine (opus, read-only): **a refusal regression** — a spliced target
+that reaches a LINKED target whose region allocates a per-copy slot
+overflows the splice save block (`spl_nw` sizes the reservation from the
+capture half; `rgn_nw`/`nsave` unions in the linked target's seven
+families; vm_splice allocates from the latter): `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)`
+→ "overflowed (7 of 6 slots)", compiles under `-fno-splice-calls`. This is
+DD-14's own target shape (a helper wrapping a recursive rule). Why no bar
+saw it: 3,025 corpus patterns, 113 SPLICED>0, 37 LINKED>0, ZERO with both —
+the A==B control, the matrix and the specimen are all blind to the
+interaction; the missing thing is a CELL, not an assertion. Three riders
+(false reorder argument at emit_vm.c:7068; `--emit-ir` false diagnostic on
+dead-capture patterns; stale emit_dfa.c comment) and a nit. Everything else
+held under ~400 artifacts on four differential axes. Panel file:
+docs/dev/reviews/2026-08-25-r1-wave-g-panel.md. Sent to srG 01:4x with
+sequencing: sweep keeps running; fix + cells + population assertion; the
+final make test after pcrecdev2's window. srG's three check fixes are in
+(eafec65, 07552a0, 2219dda; the specimen check now 12/0).
