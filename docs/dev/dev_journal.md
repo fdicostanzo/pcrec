@@ -15011,3 +15011,65 @@ Read the summary's figure as "26,560 corpus cases / 0; 1,536 checks /
 0". (2) K35's entry attributed the wrong follow-up to srG; it was the
 manager's survey (srG found the defect) — the entry's closing sentence
 now says so. The lane wrote nothing to main after the merge.
+
+## 2026-08-25 (EDT), fortieth session (part 1) — THE GOING-FORWARD CONVERSATION: nine rulings, D74-D80, the spine is COMPLETE
+
+Woke on 841735c (clean, builds, no worktrees, no cron, nothing in
+flight). Frank asked for the nine owed rulings one at a time with
+explanation; each was explained from the record (K34's entry, the wave
+G and gate-split journal parts, the [OS-4] row, the three check rows,
+bench part 28, the [LIB]/[EMIT-SET]/[ENG-PGO] rows, [M6.0]/[TT-5],
+[REL-META]) and recorded on agreement:
+
+1. K34 → **D74**: not adopting PCRE2's five-conjunct guard; documented
+   divergence. Frank's framing: the runaway is a PATTERN defect
+   (zero-progress left recursion) → **[PAT-LINT]** parked: an optional
+   ahead-of-time analysis that names it (warning, never a refusal).
+2. Dead-capture elision → **D75**, confirmed general ("a straight-up
+   win for the general case rule"); addendum: it is an ENGINE-SELECTION
+   change (src/opt), not a recursion feature — shipping order, not
+   module property.
+3. The gate → **D76**: two pins, two OWNERS — program region = the
+   module's promise (never moves); whole file = the `abi` number's (a
+   scaffolding change IS an abi bump + re-pin in the same change; Frank:
+   "that's what abi versions reflect"). **[TT-11]** makes the pin check
+   read the abi stamp.
+4. ENDANCHORED → **D77**: not now, the `\z` idiom stands, build later
+   under measurement. Frank's general rule saved to memory: no
+   artificial timelines; prefer builds we won't rebuild or roll back.
+5. The check rows → **[CHK-1]**: [MECH-REACH], K37, [TT-10], [TT-9],
+   [TT-11], (d) CCACHE-for-mech measured in situ — before the bench
+   loop. Notes: K37's `pcrec_run` routes through scripts/watchdog;
+   [TT-10] may be watchdog `-c`. Frank's observation that the manager
+   under-uses watchdog, says pkill instead of safekill, and timeout
+   instead of gnutimeout → CLAUDE.md gained a **SITUATION INDEX**
+   ("about to X → read Y", pointers not prose) — Frank's pattern-memory
+   technique for the 10%-of-context problem.
+6. Bench → **D78**: the durable channel (`inbox_from_pcrec.md` /
+   `outbox_to_pcrec.md`, one writer each; live coordination stays
+   interprocess); bench BUILDS, pcrec manager RUNS from a worktree;
+   pinned vs SCRATCH record tiers; `quick`; `pcrec-local`. First inbox
+   written and committed in pcrec-bench (c576c5b: re-pin 692c2e8, the
+   ruled sub-bench order, the DFA stamp blocker, the loop features);
+   the bench skill updated on Frank's instruction (f4e65d3). INCIDENT:
+   D78's first write landed in the BENCH's decisions.md because a `cd`
+   persisted through a compound command — reverted (91e9251); the index
+   row now says absolute paths / `git -C`.
+7. The spine → **D79**: COMPLETE. The loop is the structure; queue:
+   [CHK-1] → [DD-13] DFA stamps (abi 3→4) → re-pin + first two
+   sub-benches → optimization lanes from outliers. [LIB] (2)/(3) a
+   product milestone later; [EMIT-SET] + the profile attachment
+   chartered by the first outlier the stamps can't explain. Frank:
+   "congratulations".
+8. **[M6.0] CLOSED and archived** (the M6 milestone completed the
+   spine); **[TT-5] CLOSED** with the whole-chain before/after (2h26m →
+   ~2h50m wall for +52% rows and +40% corpus — faster per unit, not in
+   wall); D69 addendum: S70 falsified its premise, [MECH-REACH]
+   mitigates. `grep STATE:started` returns NO rows for the first time.
+9. User docs → **D80**: two tiers — `docs/spec/` the dense contract
+   (priority, maintained with every change, consolidation pass NOW:
+   **[SPEC-1]**), `docs/guide/` the human use-case guide (lower
+   priority: **[GUIDE-1]**); D73's obligation re-homed to both.
+
+Commits 90b5356..482037b on main. NEXT (this session): launch [CHK-1]'s
+lanes and [SPEC-1]'s survey lane.
