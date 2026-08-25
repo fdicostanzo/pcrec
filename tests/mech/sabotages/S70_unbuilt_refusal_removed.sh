@@ -30,11 +30,56 @@
 # own copy of the rule, so the two `(?m)` rows over there stay GREEN. That is
 # the honest reading of "a letter's module is not the dispatching row's", and
 # it is why those two rows exist separately.
+# ==========================================================================
+# [srMech, 2026-08-25] THE WITNESS EXPIRED BY BEING IMPLEMENTED, AND THE ROW
+# WENT BLIND. The full matrix scored this row UNDETECTED on a tree where the
+# sabotage APPLIES CORRECTLY and the diagnostic is genuinely lost.
+#
+# THE MEASURED CAUSE, in one sentence with the file:line: after [M6.5.2]
+# retired the `\k` (backrefs) pin, NOT ONE row anywhere in the tree still
+# reached `UNBUILT(at, "\%c", c)` at src/parse/ext.c:326 -- the ESCAPE
+# doorway's out-of-class epilogue, which is the only text this row deletes.
+# The four gate-OPEN escape rows this header names below (`\b \B \G \K`,
+# `reject_gated assertions`) were retired one per wave through [M6.2] B..E as
+# module `assertions` BUILT them; their replacement pins were re-homed, but
+# every survivor reaches a DIFFERENT site:
+#
+#   ext.c:308-320  the IN-CLASS wording, spliced beside the K12 endpoint
+#                  payload and explicitly NOT through the macro
+#                  <- `reject_gated quoting '[\Q]'`
+#   ext.c:509      the GROUP doorway's own UNBUILT call
+#                  <- `reject_gated conditionals '(?(1)a|b)'`
+#   (no site)      `reject_gated recursion '\g<1>'` stopped asserting the
+#                  enabled-but-unbuilt sentence at [DD-14] wave D; it pins the
+#                  error-115-class sentence now
+#
+# So the population had moved OFF the sabotaged site entirely while the
+# arm itself stayed live and large -- the shape tests/reject/'s own re-home
+# paragraph warns about, arriving one module later than it was watching for.
+# THIS IS NOT A DEFECT IN THE RE-HOME: it is the fourth time the pin has had
+# to move, and the third time nobody noticed that the move changed WHICH SITE
+# was covered rather than only which module.
+#
+# THE FIX IS A WITNESS RE-POINT, NOT A SUITE ADDITION. Two rows were added to
+# tests/reject/run_reject_tests.sh at the escape doorway, on two modules with
+# rows and no producer: `reject_gated quoting '\Q'` and
+# `reject_gated misc '\R'`. `\Q` shares its LETTER with the in-class row
+# beside it on purpose -- one module, one letter, two positions, two sentences
+# from two sites -- so this row now discriminates the two sites rather than
+# assuming they move together. Gated count 78 -> 80.
+#
+# WHAT STILL DOES NOT NOTICE is unchanged and is still worth reading: the
+# `.rxt` corpus (a `perr` block asserts only a nonzero exit), the gate-CLOSED
+# rows (the old sentence is correct there and this edit does not touch it),
+# every differential (no answer moves), and `tests/assertions/`'s arm, which
+# asserts the module's BUILT constructs compile and is the control that stops
+# the reject rows passing on an empty module rather than a detector itself.
+# ==========================================================================
 SAB_ID="S70-unbuilt-refusal-removed"
 SAB_FILE="src/parse/ext.c"
 SAB_SUITES="reject assertions"
 SAB_DESC="the escape doorway's enabled-but-unbuilt epilogue is deleted, so an ENABLED module with no producer for a construct answers 'requires module X' — telling the user to enable what they already enabled"
-SAB_DOC_FIGURE="tests/reject/: the four gate-OPEN escape rows (\\b \\B \\G \\K) go red; the gate-CLOSED rows, the two (?m) rows and the whole corpus stay green"
+SAB_DOC_FIGURE="RE-MEASURED 2026-08-25 after the row scored UNDETECTED. SUPERSEDES the wave A figure, which named the four gate-OPEN escape rows \\b \\B \\G \\K: those retired one per wave through [M6.2] B..E as module assertions built them, and after [M6.5.2] retired the \\k (backrefs) pin NO row in the tree reached the escape doorway's out-of-class epilogue at src/parse/ext.c:326 at all. NEW WITNESSES, at that site: reject_gated quoting '\\Q' and reject_gated misc '\\R'. SABOTAGED: FIGURES PENDING. CLEAN: FIGURES PENDING. The gate-CLOSED rows, the two in-class/group-doorway pins and the whole corpus stay green either way -- they reach different sites. tests/assertions/ is the CONTROL half (it asserts the module's built constructs compile, so the reject rows cannot pass on an empty module) and is not expected to move."
 SAB_COUNT=1
 SAB_BEFORE='    if (want == WANT_RESULT) {
         if (r->diag == RD_MODULE_OCTAL)
