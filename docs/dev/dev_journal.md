@@ -14614,3 +14614,7 @@ three suites".
 Run 2 exited 04:39 (3,105 lines; last group 8/8). The lane, idle since,
 resumed 04:47 for a fresh solo `make test-resource` and the deliverable
 (counts as measured, sections named, solo numbers beside them).
+Run 2 totals (manager's read of final_test2.log): cases 26,814 passed /
+29 failed (all the K32 cell), checks 1,532 passed / 1 failed (the 45 s
+cap cell); only test-corpus and test-resource exited non-zero; mrl
+green. Merge review of lane/srFBc started on the branch as it stands.
