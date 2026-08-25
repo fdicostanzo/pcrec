@@ -14550,3 +14550,24 @@ expectation per axis is default 4 / noprefilter 4 / vm 0 / nocaptures 0
 artifacts carry no `#define RX_ENGINE` on this tree (the D46 macro is
 VM-side, like RX_VM_PREFILTER) — a second instance of pcrecdev2's
 DFA-stamp gap, added to [DD-13]'s candidate note.
+
+Correction (04:0x, from the lane's diagnosis): the "syntax error at
+line 965" was NOT a syntax error — `bash -n` is clean and the line is a
+balanced `bad "…"`. The lane EDITED run_recursion_identity.sh WHILE THE
+GATE WAS EXECUTING IT (adding the call-bearing-control sentence I had
+asked for); bash reads a script incrementally by BYTE OFFSET, so ~10
+inserted lines above the interpreter's position made it resume
+mid-line. The run's numbers before the abort are valid. RULE (broader
+than "no edits during make test"): NEVER EDIT A SHELL SCRIPT THAT IS
+CURRENTLY EXECUTING — nearly everything here is bash. Added to the
+box-concurrency memory and the close brief. The `[vm]` FAIL was real
+and right to fire; the lane's per-axis table (default VM→DFA differs 4;
+noprefilter 4; vm VM→VM byte-identical 0 — with the engine held fixed
+wave G's elision moves NO emitted program; nocaptures DFA→DFA 0) writes
+the two zeros with their DIFFERENT reasons rather than as "exempt
+axes". First-run numbers, both halves green on substance: (A) region vs
+ac4917d default 2206/0/4, vm 2211/0/0, noprefilter 2207/0/4, nocaptures
+2210/0/0; (B) whole file vs 8fc1e51 2210/0, 2211/0, 2211/0, 2210/0;
+positive control fired on every axis (the reference refuses all 305
+call-bearing patterns). Re-run in flight (gate2.log, PID 454926, HEAD
+88a22d1).
