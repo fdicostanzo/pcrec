@@ -755,3 +755,8 @@ bool pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j)
 {
     return cg->reach[(size_t)i * (size_t)cg->ntarget + (size_t)j] != 0;
 }
+
+bool pcrec_callgraph_spliced(const struct CallGraph *cg, int i)
+{
+    return cg && cg->splice && cg->splice[i];
+}

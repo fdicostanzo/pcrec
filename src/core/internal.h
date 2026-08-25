@@ -2707,6 +2707,12 @@ int         pcrec_callgraph_index(const struct CallGraph *cg, int target);
  * `reaches(i, i)` is exactly "target i is in a cycle" — §6.3's splice
  * eligibility question (wave G) and §4.4b's cycle test in one relation. */
 bool        pcrec_callgraph_reaches(const struct CallGraph *cg, int i, int j);
+/* [DD-14 wave G] Does every call site naming target `i` SPLICE (design §6.3)?
+ * The per-node answer is `Ast.u.call.link`; this is the same fact addressed by
+ * region index, which is what the emitter needs to decide whether to emit a
+ * SHARED REGION for `i` at all — a target with no linked site has no region,
+ * no entry label, no exit label and no second `goto *`. */
+bool        pcrec_callgraph_spliced(const struct CallGraph *cg, int i);
 
 /* src/parse/mod_uprops.c — module `unicode-props` (MOD-0.6 phase 2). No
  * producer: `\p`/`\P` always REFUSE, but with a REFINED, load-bearing-offset
