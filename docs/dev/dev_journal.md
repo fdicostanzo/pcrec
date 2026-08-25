@@ -14047,3 +14047,14 @@ use the anchored entry; NOT `$` (options=0 `$` matches before a final
 newline). Recorded as [OS-4]'s first customer note in plan.md — the D18
 "earn its axis" test now has a customer, to weigh at the going-forward
 conversation. srG at 00:4x: make test done, mech rows running.
+
+#### Thirty-ninth session, part 20 addendum 3 — two bench-discovered candidates (2026-08-25 ~01:0x EDT)
+
+pcrecdev2, measuring the `(?:P)\z` idiom on 8da6120: (a) DFA artifacts
+carry no prefilter stamp (`RX_VM_PREFILTER` is VM-only) — the specimen's
+headline skip loop is invisible to the bench's metadata; candidate
+`RX_DFA_PREFILTER` in the D46 family. (b) the `\z` form's skip loop never
+skips the final byte (must evaluate `rx_forward_end_view`); a per-scan
+cost, not selection — candidate fold. Both recorded on [DD-13] as bench
+inputs, not started. Also its control confirms the [OS-4] asymmetry
+(`a|ab` on `ab`). Prediction held: orig's `\z` form stays DFA (+12.4% C).
