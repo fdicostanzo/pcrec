@@ -350,6 +350,27 @@ re-measuring it.
   `sr_check.py` gained the matching recognition. See `d27/CLAUDE.md`'s own
   entry for the mechanism.
 
+## [K37, srMech 2026-08-25] every `pcrec` call in this directory is BUDGETED
+
+`run_recursion_diff.sh`, `run_frame_buffer.sh` and `run_specimen_identity.sh`
+invoked the COMPILER bare — fourteen call sites, and `run_recursion_diff.sh`
+did not source `tests/lib/gen_timeout.sh` at all. K37 is what that costs:
+sabotage row S159 (`mark-follows-body`) makes the emitter loop forever on
+`((?1)*a)`, so the mech row that should have read one FAILED ARM instead burned
+49 min 58 s of CPU and had to be killed by PID, taking the whole 180-row
+matrix's evidence with it. **A hang is the one outcome no verdict can be
+derived from**, which is why this is a correctness property of the directory
+and not a convenience. All fourteen now run under `"$TIMEOUT_BIN"
+"$(pcrec_timeout_secs)"` — D45's own knob, 20 s plain / 60 s sanitizer, scaled
+off `-fsanitize=` in the flags — and every one of those sites already routed a
+non-zero exit to `bad`/`die`, so a non-terminating compiler is now DETECTION.
+
+**STILL UNBUDGETED, RECORDED RATHER THAN QUIETLY FIXED:** in
+`run_recursion_diff.sh` the generated-code compiles (`$CC $GENCFLAGS`) and the
+matcher runs (`"$d/t" < "$WORKDIR/cells"`) carry no bound at all, where
+`tests/harness/run.sh` bounds both. That is a wider gap than K37 named and is
+the manager's call.
+
 ## The `gu frames`-vs-`recurse` note (D71.1)
 
 Design §5.6 originally proposed TWO give-up codes: `PCREC_ERR_FRAMES`

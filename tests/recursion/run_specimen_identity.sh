@@ -91,6 +91,11 @@ GENCFLAGS="${GENCFLAGS:--O2 -std=gnu11}"
 # file is the detector for.
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 
+# [K37, srMech 2026-08-25] `pcrec` runs under D45's compile budget here too:
+# this file already wrapped every GENERATED-code run in "$TIMEOUT_BIN" but ran
+# the compiler itself bare, which is the gap K37 names (a sabotaged compiler
+# that does not terminate hangs the matrix instead of failing its arm).
+
 SPEC="$ROOT_DIR/docs/design/subroutines_measurements/email_specimen"
 PROBES="$ROOT_DIR/docs/design/subroutines_measurements/probes"
 FEATS="all"
@@ -154,7 +159,7 @@ for sp in $SPELLINGS; do
     # different includes into an otherwise identical artifact and the bar would
     # fail on the file NAME rather than on the code.
     mkdir -p "$WORKDIR/$sp"
-    if ! "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/$sp/rx.c" \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/$sp/rx.c" \
             -- "$(cat "$SPEC/$sp.rx")" 2>"$WORKDIR/$sp.err"; then
         die "the specimen spelling '$sp' does not compile: $(head -2 "$WORKDIR/$sp.err")"
     fi
@@ -224,7 +229,7 @@ strip_nocaps() {
 
 for sp in $SPELLINGS; do
     mkdir -p "$WORKDIR/nc_$sp"
-    if ! "$PCREC" --features "$FEATS" --no-captures -p rx \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" --no-captures -p rx \
             -o "$WORKDIR/nc_$sp/rx.c" -- "$(cat "$SPEC/$sp.rx")" \
             2>"$WORKDIR/nc_$sp.err"; then
         die "'$sp' does not compile under --no-captures: $(head -2 "$WORKDIR/nc_$sp.err")"
@@ -289,7 +294,7 @@ NSUBJ=$(find "$SUBJ" -name '*.bin' -type f | wc -l)
 [ "$NSUBJ" -eq 85 ] || die "the specimen's subject set is $NSUBJ files, not the 85 manifest.tsv describes — a shrunken population is how this section passes while measuring less"
 
 for sp in $SPELLINGS; do
-    "$PCREC" --features "$FEATS" -p rx --emit-main -o "$WORKDIR/m_$sp.c" \
+    "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --emit-main -o "$WORKDIR/m_$sp.c" \
         -- "$(cat "$SPEC/$sp.rx")" >/dev/null 2>&1 \
         || die "could not build a driver for '$sp'"
     # shellcheck disable=SC2086
