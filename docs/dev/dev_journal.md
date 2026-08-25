@@ -13944,3 +13944,24 @@ LINKED form — stated once in the check and on the compliance page's
 intro). (3) S164 became VACUOUS: its acyclic callee is now spliced, no
 region emitted (ruled: re-point at a CYCLIC callee so the row measures
 its own claim; flip SAB_EXPECT if it detects).
+
+ADDENDUM (part 20, ~23:2x): srG at 36e1e2e (20 commits) discharged all
+eight rulings with numbers: the specimen filter names three exclusions
+(22 of 681 lines) and FAILS on any other hunk, plus an EXACT `--no-
+captures` section whose exclusion list is different, not a superset
+(11/11); A's cell as two run_recursion_diff §3 rows (1,836 cells, 0);
+the elision exception both directions + a semantic control comparing
+the reference's VM and this build's DFA on span AND every group pair (44
+cells, 0); S178 (the root-discharge drop) expected-UNDETECTED with the
+search recorded; S164 re-pointed at a cyclic callee and FLIPPED TO
+DETECTED (RX_NSLOTS 7→5 under sabotage, the named cell losing a match);
+the compliance sentence in both homes (91/91 annotations, 128 rows);
+nfa.c's header corrected in place. THE FIFTH GATE AXIS cannot be an axis
+of the reference sweep — `-fno-splice-calls` is unknown to the pinned
+reference (refuses all 2,196) and, deliberately NOT in strategy_denials
+(it can change the engine), it moves all 2,196 on the subject; so the
+linkage claim is the subject compared AGAINST ITSELF (2,200 identical
+past exactly one `.flags` line) plus §9.2's A == B — ruled correct: a
+flag that records itself must not be hidden to fake comparability. Its
+§1b's first version had three bugs found by running it, each named at
+the site. Final make test + 111 D69 rows are the last two bars.
