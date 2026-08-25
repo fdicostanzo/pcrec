@@ -15073,3 +15073,48 @@ bench part 28, the [LIB]/[EMIT-SET]/[ENG-PGO] rows, [M6.0]/[TT-5],
 
 Commits 90b5356..482037b on main. NEXT (this session): launch [CHK-1]'s
 lanes and [SPEC-1]'s survey lane.
+
+#### Fortieth session, part 2 — the queue starts: [CHK-1] lanes, [SPEC-1] step 1 + [SPEC-1.1] merged (2026-08-25 ~13:3x EDT)
+
+Launched 12:3x: srReach ([MECH-REACH], opus), srRun (K37 + [TT-9],
+sonnet), srSpec ([SPEC-1] survey, sonnet, read-only); watchdog cron
+every 10 min. srSpec delivered ~12:4x: docs/dev/spec_survey.md (54 gap
+rows, 9-file proposed set, 10 lanes, 5 stale findings; two confirmed by
+the manager — the `--step-budget` help's "bring-up placeholder" vs
+D51's 500,000,000 at emit_vm.c:133, and the compliance page's K34
+annotation vs D74). [SPEC-1.1..1.10] rows added; [SPEC-1.9] ruled
+(pcre2_compliance.md spec-tier IN PLACE; flagged to Frank). srLimits
+(sonnet) launched into the freed slot and delivered ~13:1x: **[SPEC-1.1]
+MERGED fab1b62** — docs/spec/limits.md, every number cited and
+RE-MEASURED (684 B matches / 686 B gives up; rx_search frame 131,216 B —
+which exposed an 80-byte figure drift, 131,296, standing in known_issues
+K33 and D73's context: corrected + a D73 correction note, 3dff2a6); the
+help text and pcrec.h sentinel comments now name the D49/D51 defaults;
+the K34 annotation ruled through the annotation store. Checks on main:
+strict, test-cli 283/0, registry pc4 62,872/0, stackdepth pinned.
+
+INCIDENTS: (1) srRun DIED on an API 403 ("unable to verify organization
+membership") at ~12:44 with 38 files uncommitted — it had never made a
+WIP commit despite the brief. The manager committed its state as WIP
+3f461e7 (its `pcrec_run` helper is the ruled two-path shape, MEASURED:
+watchdog ~171 ms/call vs $TIMEOUT_BIN ~2.5 ms — 68×, so watchdog only
+for call-bearing patterns) and relaunched srRun2 to continue; spawns
+work again. (2) srLimits reported the survey "does not exist" — its
+worktree branched at 6c676b2, before the survey's commit b9f7806; my
+brief cited a main-tree file by relative path. brief_common.md gained a
+WORKTREE VISIBILITY paragraph (absolute main-tree paths for read-only
+references). (3) The harness refuses subagent report .md writes in
+some cases; reports come inline instead (recorded in the common brief).
+
+pcrecdev2 (awake ~12:45): acked I-1..I-4 (its 7102f45), created
+outbox_to_pcrec.md; O-2 (the `_in` signatures/macros) answered from an
+artifact emitted by HEAD; its smoke at 692c2e8 independently reproduces
+wave G on the bench (factored → DFA under auto, 170/170, zero give-ups;
+FRAMES only under forced VM), so its roster entry is `pcrec-vm-in`, not
+an inert auto-in — its ruling, agreed. It will ask for a ~45-min window
+after [B8] lands; the merge battery serializes against it.
+
+IN FLIGHT at 13:3x: srReach (WIP 4/n, 19 rows retrofitted), srRun2
+(sweep continuation committed), srLoad ([TT-10] + [TT-11] + CCACHE in
+situ; launched 13:3x). Queue after: [SPEC-1.2] cli.md, [SPEC-1.3]
+tuning.md, then the battery, then [DD-13] stamps.
