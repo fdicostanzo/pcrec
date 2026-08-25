@@ -14945,3 +14945,16 @@ remain gone. A dated CLOSE readout appended to the specimen README.
 dated CLOSE block, the close summary, the deliverable. NOTE: the
 [DD-14.*] archive to plan_completed.md is the MANAGER's at merge (the
 lane's scope forbids plan.md).
+09:1x: while the close's `make san` runs (PID 3335245, zero reports),
+the manager staged the close-merge mechanics: scratchpad/
+mgr_archive_dd14.py (moves the [DD-14] parent + 13 sub-rows to
+plan_completed.md verbatim, refusing while any reads STATE:started),
+the parent row's final STATE text (dd14_parent_state.txt), the
+end-of-session wake.md draft (wake_next_draft.md, rulings 1-9 filled),
+and the checklist's CLOSE MERGE steps. Also done meanwhile: the [M6.6]
+rows archived to plan_completed.md (5ca8075); [M6.0]'s stale "remaining:
+lookaround" corrected (cc876c7) — its five ruled modules are all done;
+whether the umbrella closes is Frank's ruling (recursion shipped outside
+its list); [TT-5] stays started by Frank's charter. srClose 27b5d73:
+item 6 (the specimen README's dated CLOSE readout); its 8(f) bench
+results file is untracked in its tree pending its rebase.
