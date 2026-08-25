@@ -245,7 +245,8 @@ enum {
      * `strategy_denials` MASK (src/gen/emit_dfa.c). That mask is for knobs
      * with no observable effect; this one selects an engine, so `rx_info.flags`
      * records it exactly as it records `PCREC_NO_ATOMIC_DISCHARGE`. What the
-     * emitter DID is reported separately by `<PREFIX>_VM_CALLS`
+     * emitter DID is reported separately by `<PREFIX>_VM_CALL_SPLICED` /
+     * `<PREFIX>_VM_CALL_LINKED` (two counts, not one string — docs/spec/tuning.md §2.9)
      * (src/gen/emit_vm.c) — sites spliced vs sites linked — which is the D46
      * half a denied request is checked against. */
     PCREC_NO_SPLICE_CALLS = 1u << 13
