@@ -14112,3 +14112,24 @@ docs/dev/reviews/2026-08-25-r35-wave-g-panel.md. Sent to srG 01:4x with
 sequencing: sweep keeps running; fix + cells + population assertion; the
 final make test after pcrecdev2's window. srG's three check fixes are in
 (eafec65, 07552a0, 2219dda; the specimen check now 12/0).
+
+#### Thirty-ninth session, part 22 — E1 fixed and re-verified (2026-08-25 ~02:0x EDT)
+
+srG fixed E1 at 99eecd5 (one commit: fix + cells + rule 2b + riders + nit),
+decided from the semantics: a linked region's RX_RETURN restores its W on
+every activation, so the splice save block is the capture half; one set
+`rgn_grp[i]`, count and indices asserted equal at the W build (fires three
+passes earlier than the overflow did, naming the cause). BOTH-linkage
+population 0 → 4 (bothlinkage.rxt, 4 blocks / 22 cells, 22/0 both arms);
+A==B 160 patterns / 16,320 cells 0; tests/recursion 615/0 both arms;
+codegen 94/0; strict clean (caught a -Wshadow). No SAB_BEFORE moved; S173/
+S177 re-verified by hand (S177 now detected via the overflow guard). The
+`--emit-ir` rewrite was first CUT at 256 bytes ("the capture-recording
+eng") — the lane caught its own truncation; 253 bytes now.
+critG-engine re-verified from an archive build (angles: resume-frame
+retreat, quantified site, link→splice→link, PENDING coverage in the
+artifact, assertion-by-sabotage, biased fuzz 220 pairs all both-linkage):
+MERGE. Its own first inline-arm run showed 16 divergences — its generator's
+group-numbering bug, corrected to 0 and reported. Two nits sent to the lane
+(same-source assertion comment; widen bothlinkage.rxt to the three shapes
+only the fuzz covers, raise rule 2b's floor). Sweep at 37+/111, all clean.
