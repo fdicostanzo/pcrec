@@ -180,6 +180,20 @@ spec and a design doc disagree, the spec is what the tool promises.
   and D73's own prose, not corrected by this pass), and K34/D74's
   documented-divergence framing at spec depth.
 
+- `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
+  contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),
+  one section per axis (all nine `-f`/`-fno-` flags, `--unroll=K`,
+  `--engine=`'s tuning-adjacent role) stating what each denies/forces, its
+  default, its emitted stamp (verified by an artifact diff), whether it is
+  ANSWER-IDENTITY-preserving or ENGINE-SELECTING, and the differential that
+  validates it with a measured population count. Also states the DFA-side
+  stamp gap (`[DD-13]`, current limitation, no promised fix) and a
+  `pcrec_options`-field-to-flag mirror table. Found and flagged one drift in
+  the process: `lib/pcrec.h`'s own comment names the splice/linkage stamp
+  `<PREFIX>_VM_CALLS`; the shipped emitter (`src/gen/emit_vm.c`) actually
+  emits two macros, `RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED` — this document
+  states the as-built name, `lib/pcrec.h`'s comment is the stale one.
+
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
 three-component annotated-derivation discipline (generated facts +

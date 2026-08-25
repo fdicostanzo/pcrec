@@ -75,8 +75,10 @@ $ build/pcrec -p rx --engine=vm -fno-possessify --emit-main -o /tmp/b.c '(x)(?:a
 
 (`rx_info.flags` and every other field of the initializer are unchanged
 between the two builds except `frame_capacity`, which grows because a
-backtracking build needs a frame the possessive one does not —
-`docs/spec/match_api.md` §6.3.) **Reason it exists:** possessification is
+backtracking build needs a frame the possessive one does not — verified
+on this same pattern: `.frame_capacity = 3` possessified,
+`.frame_capacity = 4` under `-fno-possessify`; `docs/spec/match_api.md`
+§6.3 records the same effect on its own example.) **Reason it exists:** possessification is
 a rewrite whose entire claim is "changes no answer", and a claim that
 cannot be turned off cannot be differentially tested (D47.3).
 
