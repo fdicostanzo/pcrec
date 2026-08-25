@@ -5479,3 +5479,52 @@ for every glibc caller to serve a platform that has the opt-in anyway.
 **Revisit when:** [DD-14.FB]'s code half lands (K33's status then); the
 user docs are written ([REL-META]); a measured population of recursive
 patterns says the default is wrong in practice.
+
+## D74 — K34 is a DOCUMENTED DIVERGENCE, not a bug: pcrec does not adopt PCRE2's five-conjunct recursion-loop guard; the runaway is a property of the pattern, and an OPTIONAL static analysis that names it is the parked remedy (Frank, 2026-08-25)
+
+**Context.** K34 (found by the [DD-14.D27] blinded author): on a runaway
+LEFT recursion — `(a|(?1)a)b` on `"a"` — libpcre2 10.46 concludes a
+clean NOMATCH where pcrec gives up with `PCREC_ERR_FRAMES`. Lane srK34
+(07e09aa, 65/65 cells pinned from pcre2_match.c) measured the rule
+PCRE2 actually applies: −52 iff inside an active recursion AND a nearest
+ancestor recursion of the same group exists AND the subject pointer is
+that ancestor's caller's pointer AND PCRE2's `last_used_ptr` high-water
+mark (the furthest byte ANY opcode has examined, bumped on backtrack
+returns and assertion completions) is unchanged AND the check is not
+disabled. Conjunct 4 is why a failed base case that peeks one byte
+defers the guard indefinitely, why 199 same-position recursions can
+match (§3.3), and why the unanchored runaways get a nomatch rather than
+−52. The inverse divergence also exists: `((?1)?a)`/`((?1)*a)` on `"a"`
+— pcrec matches (0,1) where PCRE2 returns −52.
+
+**Decision (Frank, 2026-08-25, fortieth session).** DO NOT ADOPT. A
+faithful copy needs a stored subject pointer per active recursion frame
+AND a `last_used_ptr` equivalent threaded through every fail-and-return
+site of the emitted matcher — a new piece of state on the hottest path
+of the whole VM emitter, to reproduce an implementation artefact of one
+engine's backtracker (PCRE2 itself ships a flag to switch it off) — and
+it would buy class 1 (the 11 parked cells) by flipping class 2 from a
+match to a give-up. The give-up STAYS as pcrec's documented answer
+(OK-LIMITED's second limit kind on the compliance page; K34's entry);
+the 11 D27 cells stay parked under the ratchet, visible as
+pcrec-wrong-by-capability. One asymmetry in pcrec's favour: the frames
+give-up is bounded by the caller's frame budget (D73's default, the
+`_in` sizing surface), so the caller has a knob; PCRE2's −52 has none
+but disabling the check.
+
+**Frank's framing, which changes where the remedy lives.** The defect
+is in the PATTERN, not the language: `(a|(?1)a)b` re-enters group 1 at
+the same subject position before consuming anything (left recursion
+with zero progress); the same language written `(a(?1)?)b` or
+`(a|a(?1))b` — or `a+b` — recurses only after consuming, and both
+engines conclude. So the useful thing is to TELL the author ahead of
+time: an OPTIONAL pattern analysis that names such issues. It is a
+WARNING, never a refusal — the pattern is legal and matches on positive
+subjects, and §3.3's deliberate same-position recursion is not a defect.
+PARKED as plan row [PAT-LINT] (the compiler already computes minimum
+widths — wave E's root-minw guard — so "a call edge to group G reachable
+from G's own entry through a zero-minimum-width prefix" is the first
+rule; the row lists what else belongs).
+
+**Revisit when:** the bench loop surfaces a real pattern that hits the
+give-up; [PAT-LINT] is chartered.

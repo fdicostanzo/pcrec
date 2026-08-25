@@ -2673,7 +2673,7 @@ entry would then be describing something that is no longer true.
 **Milestone.** Remedy: [DD-14.FB] code half, done. Default path: closed
 only by a future ruling that revisits D73.
 
-## K34 — OPEN (2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
+## K34 — RULED: DOCUMENTED DIVERGENCE (D74, Frank 2026-08-25; was OPEN 2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
 
 **Symptom.** `(a|(?1)a)b` on "a" / "aaa" / "": libpcre2 returns a clean
 NOMATCH (rc PCRE2_ERROR_NOMATCH, not −52); on "ab" both match (0,2) g1
@@ -2730,6 +2730,14 @@ red in the D27 corpus's triage as pcrec-wrong-by-capability.
 
 **Milestone.** [DD-14] close triage decides its home (a follow-on row
 under the module, chartered from the measurement).
+
+**RULING (D74, Frank, 2026-08-25).** Not adopted; the give-up stays as
+the documented answer, the 11 cells stay parked under the ratchet. The
+runaway is a property of the PATTERN (zero-progress left recursion;
+`(a(?1)?)b` is the same language and concludes) — the remedy is an
+OPTIONAL ahead-of-time analysis that names it, parked as plan row
+[PAT-LINT]. This entry stays as the record of the divergence; it is not
+an open bug.
 
 ## K35 — OPEN (2026-08-24, found by the [DD-14] wave G lane) — a pattern-population pipeline that sorts in the AMBIENT LOCALE drops punctuation-distinct patterns: `run_vm_identity.sh` has been checking 1,660 of 2,610 corpus patterns
 

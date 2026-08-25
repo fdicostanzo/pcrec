@@ -599,6 +599,35 @@ including V-G/V-H (added this session).
 
 - [SAFEKILL] archived to plan_completed.md (completed 2026-08-19, thirty-fourth session — scripts/safekill merged db8ddde, all three phases; scripts/tests/safekill.test 13/13 under make testscripts; row flipped 2026-08-22 at the thirty-sixth session's wake-up, where the omission was found)
 - [EMIT-SET] STATE:not-started — CONTROL OF WHAT IS EMITTED INTO THE C FILE (Frank, 2026-08-24, thirty-ninth session): a caller who only uses `match` does not need `search`; one who never reflects does not need `rx_info`; `main` folds into the same switch — `--emit -search,-rx_info,main` (a comma list of named EMISSION UNITS, `-` removes, bare name adds, defaults = today's artifact). The point beyond trimming: once emission is a SET of named units, VALUE-ADD units become drop-ins on the same switch — the results → static-struct copy helper ([V-I]), the compiled search/replace code ([M4-SUBST]), rx code-management helpers (versioning/identity stamps a consumer can query), the diagnostic variants ([V-H] `--trace`/[ENG-PGO] `--profile` are the same shape: a separate emitted variant selected at generation time), the caller-provided-buffer `_in` entries ([DD-14.FB] — a unit a caller may drop), a [LIB] library's shared regions. Design points at charter: the unit graph (dependencies — `main` needs `search`; `_in` needs the run struct; `rx_info` fields some units reference) resolved at generation with a clean refusal for an inconsistent set (D26 tier 3 wording); the [ABI-NS]/structural codegen checks become per-unit (a unit's presence/absence is a byte-level fact the identity gates assert — the default set byte-identical to today's artifact, the control); `--list-emit` prints the units and their defaults; the CLI/library API surface (`pcrec_options` gains the set; DD-3 versioning). D18's principle applied to the artifact's SURFACE: what is not emitted costs nothing, and a unit nobody asked for is not there to be wrong. Relations: `--emit-main` (today's only switch, becomes the `main` unit), OS-0's named-entry-point discipline, [DD-8] (`--emit-ir`/`--emit-dot` are OUTPUT formats, not units — keep them apart). Not started unprompted; PLANNED, its spine status deliberately open (Frank, 2026-08-24 ~22:0x) — the going-forward conversation at [DD-14]'s close decides.
+- [PAT-LINT] STATE:not-started — OPTIONAL PATTERN ANALYSIS: an ahead-of-time
+  check that names issues in a pattern the engines will accept but that
+  behave badly (Frank, 2026-08-25, fortieth session, from the K34 ruling
+  D74; PARKED — no queue position; details and design TBD). The charter
+  case: ZERO-PROGRESS LEFT RECURSION — `(a|(?1)a)b` re-enters group 1 at
+  the same subject position before consuming, so every non-matching
+  subject is a runaway (pcrec gives up `frames`, PCRE2 concludes only by
+  an implementation artefact, D74); the same language as `(a(?1)?)b` or
+  `a+b`, which recurse after consuming and conclude in both engines.
+  Rule 1: a call edge to group G reachable from G's own entry through a
+  ZERO-MINIMUM-WIDTH prefix (the compiler already computes minimum widths
+  — wave E's root-minw guard — so the analysis is a walk over facts it
+  has). WARNING, NEVER A REFUSAL: the pattern is legal and matches on
+  positive subjects; §3.3's deliberate same-position recursion with a
+  base case is not a defect (the analysis says "may not terminate on
+  non-matching input", not "wrong"). Other candidates for the same
+  surface, each to be measured for a real occurrence before it is built:
+  nested unbounded quantifiers over overlapping languages (the classic
+  `(a+)+b` catastrophic-backtracking shape — relevant only where pcrec
+  picks the VM engine; the DFA is immune, so the analysis must report
+  ENGINE-AWARE, else it warns about a pattern that runs in linear time);
+  empty-language callees (already refused at wave E — a diagnostic tier
+  question whether it moves here); a dead group that never captures
+  (wave G's elision list — informational). SURFACE TBD: a CLI flag
+  (`--analyze` / `-W`) whose output is text, or a library entry; the
+  D38 naming rules apply to any stamped result. Interacts with [V-G]
+  (user-facing regex testing — the natural home if that lands first) and
+  [V-H] (trace modes show the runaway; this names it before running).
+  NOT QUEUED — parks behind the general work per the boonies discipline.
 - [V-I] STATE:not-started — NAMED-RESULTS COPY HELPER (Frank, 2026-08-18,
   thirty-third session; LOW PRIORITY, boonies tier; details and design
   TBD): an emitted per-pattern helper that takes a search's results —
