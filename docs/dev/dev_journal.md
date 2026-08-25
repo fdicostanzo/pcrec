@@ -15232,3 +15232,36 @@ IN FLIGHT 14:5x: the battery on c448437; srTuning ([SPEC-1.3], three
 tallies left; found a stale `RX_VM_CALLS` spelling in lib/pcrec.h);
 srRxt ([SPEC-1.6]). Queue: [OPT-1]+[OPT-2] measurement lane after the
 battery (needs a quiet box); [DD-13] stamps; [SPEC-1.4]/[1.5].
+
+#### Fortieth session, part 5 — [CHK-1] CLOSED: the batch battery is GREEN (2026-08-25 18:2x EDT)
+
+Third launch of the battery (14:57, on 1879bc2) after two catches: (1)
+the pcrec_run-as-function shapes (c448437, part 4); (2) pcrec_run's 20 s
+WALL on heavy compiles under -j12 — counterk's K32-family cells died at
+20 s and four identity sweeps scored two timed-out compiles as "changed
+emitted bytes" — fixed by making the bound CPU-primary (wall 3× the
+budget, watchdog CPU = the budget; the harness's per-case 20 s budget
+UNTOUCHED, [TT-10] residue 2 recorded: a timed-out compile must never
+be scored as a diff). RESULT: `make test` 26,843 cases, 29 failing under
+-j12 = the K32 corpus cell + 28 dependents, re-run SOLO through the
+harness 1,634/0 (the battery script now does this itself); 1,539 checks
+/ 0; 1 INCONCLUSIVE (the [TT-10] guard fired once instead of a false
+FAIL); solo resource 19/0, counterk 24/0; `make san` rc 0, zero
+sanitizer reports, both axes, 33 scripts in 1h41m; FULL MATRIX 180
+rows / unexpected 0 / undetected 6 (the six expected) / UNREACHED 0 /
+anomalies 0 at 44c77fc (docs-only from 1879bc2). [CHK-1] and
+[MECH-REACH] CLOSED. What the day's batch bought: the matrix now proves
+its witnesses reach (42 reach lines), the harness cannot hang on a
+compiler bug (461 sites / 77 scripts bounded, K37 FIXED), the three
+sanitizer targets read one list, the load-sensitive cells report
+INCONCLUSIVE instead of lying, the identity gate's whole-file pin is
+abi-keyed, and ccache is measured (not adopted). Cost: the battery is
+now ~3h20m wall (test ~13 min under -j12 + solo controls, san 1h41m,
+matrix 1h20m) — san grew by the five scripts it had silently skipped.
+
+Box protocol during the battery: both doc lanes (srTuning, srRxt)
+paused on suites at my instruction after a lane's `make test-corpus`
+(PROCS=nproc regardless of -j4) pushed load1 to 54 beside the battery —
+memory rule 9, brief_common.md. pcrecdev2's window OPENED 18:2x for its
+three re-measure cells; lanes resume after WINDOW CLOSED, then the
+[OPT-1]/[OPT-2] measurement lane on the quiet box.
