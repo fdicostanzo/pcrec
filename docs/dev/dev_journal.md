@@ -13906,3 +13906,41 @@ oracle-checked intent did their job), 11 pcrec-wrong-by-capability
 that postdated the writing (P-12 via wave E). Two extract wording errors
 found by measurement and amended. The author's cell and delivery
 worktree are removed. Wave G is the last lane of the build.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 20) — wave G interim 2: THE SPECIMEN BAR IS MET — four spellings, one artifact
+
+srG (~23:1x, ~14 commits, on its last two runs): run_specimen_identity.sh
+8/8 — orig.rx, factored.rx, factored_x.rx and factored_define.rx ALL
+compile to the DFA engine with the byte-class skip prefilter, the same
+artifact past THREE NAMED EXCLUSIONS (the pattern text; the capture
+declaration PCRE2 requires; RX_ALTCLS_FACTORED, a count over different
+texts); every byte of the DFA tables, prefilter and search loop
+identical; 85 subjects agree four ways with NO give-up (B+C had five
+FRAMES); libpcre2 agrees the four are one language (255 cells, 0);
+throughput 1 MB median-of-5: 0.88× / 1.19× / 0.88× of the hand-inlined
+original, against 23× and a STEPS give-up at B+C. CONTROLS: A == B over
+the corpus on both linkages (156 of 170 patterns, 15,912 cells, 0
+disagreements; tests/recursion 593/0 on both arms via a new RXTFLAGS);
+the five-axis identity gate — all 2196+ call-free patterns identical
+and exactly the four named elision patterns moved, asserted as a PAIR
+(they move on every axis that promises a capture and vanish on
+--no-captures); the §8.3 hazard probe — INLINE 280 cells H1/H2/H3 all 0
+with the ERASE control on the same cells 2/13/14/22; §6.2 re-measured on
+the shipped emitter — SPLICE 855 B/site, HYBRID 171 (2.9× and 2.0× the
+prototype), three of §6.2's claims reproduced exactly, the prototype's
+third column has no shipped configuration (§6.3 rules the lexical
+occurrence unchanged = the HYBRID row); five rows S173-S177 DETECTED by
+hand with green control halves. THREE FINDINGS + RULINGS: (1) S175
+SEGFAULTED THE COMPILER — nfa.c's arm follows the back edge and its
+header's nesting-cap claim was wrong for call edges; a splice-depth
+counter added (ruled: stays; the header corrected; a hang measures
+nothing). (2) SR-8's capability check went red on 30 witnesses because
+a spliceable call is genuinely not VM-only after G; the refusal is
+asked under -fno-splice-calls, the axis where the column is exactly true,
+with the MEASURED reason witnesses cannot simply be made recursive —
+(?+N)'s target lies to its right and first_dfa_excluding walks the spine
+right to left (ruled: yes, and the `engines=vm` column's meaning — the
+LINKED form — stated once in the check and on the compliance page's
+intro). (3) S164 became VACUOUS: its acyclic callee is now spliced, no
+region emitted (ruled: re-point at a CYCLIC callee so the row measures
+its own claim; flip SAB_EXPECT if it detects).
