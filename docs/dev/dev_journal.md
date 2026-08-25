@@ -13884,3 +13884,9 @@ mine: a lane at its authorization boundary looks like a stalled lane
 from outside — a brief should say what to do at the boundary (report
 and hold, which it did), and the manager should read the WIP commit
 message before acting.
+
+ADDENDUM (part 18, ~22:5x): the E-merged tree's battery is COMPLETE and
+GREEN — test 25,463/0 (resource 19/19 solo after the sixth load blip),
+strict, san rc=0 in 53 min with zero reports both axes. Every wave on
+main is battery-validated. sr27's landing make test is the one run still
+on the box; wave G is at its sabotage rows and hazard probe.
