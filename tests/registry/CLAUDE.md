@@ -107,7 +107,7 @@ directory asserts that the description and the shipped parser actually agree.
 1. **Well-formedness** — no two rows claim one byte, catch-all rows come last,
    each row's `syntax` example really contains its selector byte, and the
    status/module/feature/engines/diagnostic fields are mutually consistent.
-   Plus an EXACT row count (100 since Q2/SR-9; this file said 68 until
+   Plus an EXACT row count (128 at [DD-14]'s close — the figure is pinned in registry_check.c and moves with every module that adds rows; it was 100 at Q2/SR-9; this file said 68 until
    2026-08-11, which is the drift an exact count is supposed to prevent
    happening to its own documentation) so rows cannot be deleted silently — the
    same "TABLE SHRANK" guard tests/reject/ carries. Note what R8/C4-10 measured
