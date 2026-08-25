@@ -2743,6 +2743,23 @@ LC_ALL=C×2" (altdiff, endvar/backref/atomic/gstart/wordctx/mlinectx
 identity, mrldiff, possdiff, rungdiff) has ONE sort to inspect. Not
 every sort is a `-u` over pattern text — the audit decides per site.
 
+**Follow-up (srG, ~23:3x).** The IDENTICAL idiom (`grep -rhs '^pattern '
+tests --include='*.rxt' | sed … | sort -u`, no LC_ALL=C) sits in FOUR
+DIFFERENTIAL SUITES: tests/mrl/run_mrl_tests.sh:394,
+tests/possessify/run_possdiff.sh:241, tests/counterk/run_counterkdiff.sh:293,
+tests/rungselect/run_rungselect_tests.sh:241 — 950 of 2,610 patterns
+(36%) silently dropped from each. AND THE DROPPED SIDE IS THE STRUCTURED
+HALF: collation ignores punctuation, so each collision's survivor is the
+spelling WITHOUT it and the parenthesised / quantified / assertion-
+bearing spelling is the one lost (`(((a)|b){0,4})c`, `((?!(a))z)`, …) —
+exactly the shapes the possessify / revdet / counter-K / MRL rungs
+exist to exercise. The hazard was ALREADY WRITTEN DOWN ONCE, at
+tests/cli/run_cli_tests.sh:786 (`a?+` and `a++` compare equal), and
+recurred five times: the "a lesson recorded in one file does not reach
+the next author" shape, not a discovery. Each of the four is a one-word
+fix that grows a differential's population by ~57% and may surface real
+cells — each gets ITS OWN commit and its own triage.
+
 **Remedy.** The [DD-14] close's doc/infra sweep: every `sort` over
 pattern text gets `LC_ALL=C` (or a `python3`-side dedup), and every
 population-deriving check STATES its population count against an
