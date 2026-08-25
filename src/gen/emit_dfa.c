@@ -683,9 +683,9 @@ static void emit_buffers_surface(StrBuf *sb, const char *upper, const char *pref
         " *       per trail entry FOR THIS ARTIFACT. The layouts themselves are\n"
         " *       private; this is the arithmetic that replaces them.\n"
         " *   %s_BUFFER_ALIGN   the alignment both regions require. Storage\n"
-        " *       from malloc, mmap or any ordinary object declaration already\n"
-        " *       satisfies it; the macro is for a caller carving a region out\n"
-        " *       of an arena.\n"
+        " *       from any ordinary allocator, mapping or object declaration\n"
+        " *       already satisfies it; the macro is for a caller carving a\n"
+        " *       region out of an arena.\n"
         " */\n",
         upper, upper, upper);
     sb_printf(sb, "#define %s_RESUME_FRAMES %lld\n", upper, bs->resume_frames);

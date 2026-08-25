@@ -172,8 +172,14 @@ fi
 # The rung's own possessified shape is covered in tests/rungselect/.
 if gen fr_on '(x)(?:a|bc){0,4}d' -fno-revdet \
    && gen fr_off '(x)(?:a|bc){0,4}d' -fno-possessify -fno-revdet; then
-    bt_on="$(sed -n 's/^#define RX_RESUME_FRAMES //p' "$WORKDIR/fr_on.c")"
-    bt_off="$(sed -n 's/^#define RX_RESUME_FRAMES //p' "$WORKDIR/fr_off.c")"
+    # [DD-14.FB] READ FROM THE PAIRED `.h`, exactly as the comment above this
+    # function's `strats` helper already explains for PCREC_VM_STRAT_POSSESSIVE:
+    # `gen` compiles with `-o <name>.c`, which is SPLIT output. RX_RESUME_FRAMES
+    # moved into the header with the caller-buffer sizing surface (spec §10.4),
+    # so the `.c` no longer carries it and reading only the `.c` would compare
+    # two empty strings and report a vacuous failure.
+    bt_on="$(cat "$WORKDIR/fr_on.c" "$WORKDIR/fr_on.h" | sed -n 's/^#define RX_RESUME_FRAMES //p')"
+    bt_off="$(cat "$WORKDIR/fr_off.c" "$WORKDIR/fr_off.h" | sed -n 's/^#define RX_RESUME_FRAMES //p')"
     if [ "$(cuts "$WORKDIR/fr_on.c")" -gt 0 ] && [ "$(cuts "$WORKDIR/fr_off.c")" -eq 0 ]; then
         ok "a possessified frames-rung loop emits the CUT, and the denied build does not"
     else

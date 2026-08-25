@@ -202,8 +202,15 @@ for pat in "${PATTERNS[@]}"; do
     # project keeps re-learning, and it bit run_vm_identity.sh first.
     cn="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_NCAPS [0-9]+' | awk '{print $3}')"
     ir_n="$(grep -oE '^; caps +RX_NCAPS [0-9]+' "$d/ir" | grep -oE '[0-9]+' | head -1)"
-    cbt="$(grep -oE '^#define RX_RESUME_FRAMES [0-9]+' "$d/gen.c" | awk '{print $3}')"
-    ctr="$(grep -oE '^#define RX_TRAIL_FRAMES [0-9]+' "$d/gen.c" | awk '{print $3}')"
+    # [DD-14.FB] and the SAME correction now applies to the two capacity
+    # macros, for the same reason one paragraph up: they moved .c -> .h with
+    # the caller-buffer sizing surface (spec §10.4), because a caller has to
+    # read them before it can size a buffer for <prefix>_search_in. Reading
+    # only the .c would have made this comparison vacuous rather than red —
+    # an empty string against a number — which is precisely the shape the
+    # comment above says this project keeps re-learning.
+    cbt="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_RESUME_FRAMES [0-9]+' | awk '{print $3}')"
+    ctr="$(cat "$d/gen.c" "$d/gen.h" | grep -oE '^#define RX_TRAIL_FRAMES [0-9]+' | awk '{print $3}')"
     ir_cap="$(grep -oE '^; capacities +[0-9]+ resume frames, [0-9]+ trail' "$d/ir")"
     ir_bt="$(printf '%s' "$ir_cap" | grep -oE '[0-9]+ resume' | grep -oE '[0-9]+')"
     ir_tr="$(printf '%s' "$ir_cap" | grep -oE '[0-9]+ trail' | grep -oE '[0-9]+')"
