@@ -36,6 +36,25 @@ could see.
      is how this file notices if the new bound ever took the old one's
      customers away.
 
+## [TT-10] the load guard (2026-08-25)
+
+Section 1's cells assert a CPU/wall/RSS ceiling, and two of them
+(`[a-z]{0,30000}`, `(a|b){0,30000}`) were measured going RED under real box
+contention even though `K7_CPU` is already CPU-accounted through
+`scripts/watchdog -c` — CPU-time ACCOUNTING itself inflates under real
+contention, not merely wall stretching around fixed work (K31 addendum,
+`docs/dev/plan.md`). `tests/lib/load_guard.sh` (its own header carries the
+measurement and the threshold justification) is sourced here: a 123 (CPU
+exceeded) or 124 (wall exceeded) outcome is reclassified **INCONCLUSIVE** —
+a third, separately-counted outcome, never PASS, never FAIL — when the
+1-minute load average / `nproc` exceeds `LOAD_GUARD_RATIO` (default 2.0) at
+the moment that specific cell's watchdog kill fires. Every other outcome (0,
+1, 122, 134, 137) is unaffected, since none of them can be produced by CPU
+inflation. D45-style budgets (`K7_CPU`/`K7_MEM`/`K7_SECS`) are unchanged by
+this. Validated solo (19/0/0, unchanged) and under an 8-way `yes`-spinner
+artificial load (green-or-INCONCLUSIVE, never FAIL — see
+`docs/dev/dev_journal.md` for the run's numbers).
+
 ## Why this suite is not on the sanitizer axes
 
 `make ubsan`/`asan`/`lint` do not run it, by design. Section 2 needs

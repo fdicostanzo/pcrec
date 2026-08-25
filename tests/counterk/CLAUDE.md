@@ -72,9 +72,27 @@ family DENY rather than FORCE.
 
 - **`run_counterk_tests.sh`** — the STRUCTURAL checks and §8.5's ACCEPTANCE
   CELLS: the things the differential and the corpus structurally cannot see.
-  23 checks. Selection asserted from the stamp at both sides of the K boundary
+  24 checks (23 + [TT-10]'s K32 pin, below). Selection asserted from the stamp at both sides of the K boundary
   (7 declines, 8 selects — R25 E3's strictness as a row rather than a
   sentence), D47.3's do-or-die, byte-identity below K, and every §8.5 cell.
+
+  **[TT-10], 2026-08-25: it also carries a LOAD-AWARE compile-cost pin for
+  K32** (`docs/dev/known_issues.md` K32 — the DFA prefilter Thompson-
+  replicates a bounded repeat, so `X{n}` compiles in O(n²) even though the
+  VM's counter rung is already constant-size). `counterk.rxt`'s own
+  `((a)|ab){4000}c` block (28 dependent m/n/g assertions off one compile) is
+  the ANSWER oracle and is untouched; this file's own compile of the same
+  pattern, under `scripts/watchdog -c 20 -s 60 -m 256m`, is a SECOND,
+  purpose-built instrument for what that compile COSTS — `tests/resource`'s
+  own shape, since this directory and that one are the two places in the
+  tree asserting a compile's cost rather than a pattern's answer. Sources
+  `tests/lib/load_guard.sh`: a watchdog CPU/wall kill (123/124) is reported
+  **INCONCLUSIVE** rather than FAIL when the 1-min load average / `nproc`
+  exceeds `LOAD_GUARD_RATIO` (default 2.0) at the moment it fires — see that
+  file's header and `docs/testing.md`'s "The load guard" section for the
+  measurement and threshold. This pin is INDEPENDENT of the shared corpus
+  harness's own D45 budget, which the `.rxt` block still rides unchanged —
+  see `docs/testing.md`'s note on why both exist.
 
   **The acceptance cells are CHECKS here rather than numbers in the note**, per
   R24 M-F4: a number that cannot be re-run is not a measurement. Cell 1 asserts
