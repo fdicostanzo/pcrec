@@ -119,7 +119,8 @@ test: test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
-      test-encseam test-resource test-capturediff test-known-fail test-thread
+      test-encseam test-resource test-capturediff test-known-fail test-thread \
+      test-stackdepth
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -621,6 +622,35 @@ test-known-fail: all
 test-thread: all
 	bash tests/thread/run_thread_tests.sh
 
+# [TS-4] / [DD-14.FB] — the EMITTED MATCHER on a musl-default 128 KB thread
+# stack. A SEPARATE target from test-thread above and deliberately NOT under
+# ThreadSanitizer: TSan changes the stack a call needs, so a stack-fit question
+# asked under it is a question about TSan. It runs in about a second and rides
+# `make test`, unlike test-frame-buffer below, because what it checks is a
+# standing property of every artifact this emitter produces rather than a
+# measurement about one reservation.
+#
+# IT PRINTS ONE `KNOWN:` LINE ON A GREEN RUN, and that is not a wart. K33
+# (docs/dev/known_issues.md) is a live defect that D73 chose to keep -- the
+# call-bearing default entry does not fit a 128 KB thread -- so the arm that
+# reproduces it is a PINNED state, and the script FAILS if it ever stops
+# reproducing, because the record would then be out of date.
+test-stackdepth: all
+	bash tests/thread/run_stackdepth_tests.sh
+
+# [DD-14.FB] the caller-provided frame buffer's MEASUREMENTS, OPT-IN -- the
+# same shape and the same reasoning as test-specimen below: section 2 reserves
+# 2 x 64 MB of MAP_NORESERVE address space, drives it to its ceiling and builds
+# 940 KB subjects, touching ~105 MB of resident memory. That is a measurement
+# about a RESERVATION, and `make test`'s job is the population. The feature's
+# standing checks ride `make test` already -- tests/recursion/framebuffer.rxt
+# (behaviour), tests/codegen's [DD-14.FB] block (structure) and test-stackdepth
+# above (the 128 KB thread).
+#
+#     make test-frame-buffer
+test-frame-buffer: all
+	bash tests/recursion/run_frame_buffer.sh
+
 # [M4.7e] GATE-ON: the capture-span differential vs libpcre2 at a FIXED seed
 # (fuzz.py's own default seed/patterns/subjects), wired into `make test`
 # rather than staying manual-only like `make fuzz` -- a fixed seed is exactly
@@ -999,6 +1029,6 @@ clean:
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-recursion-lbsweep \
-        test-specimen \
+        test-specimen test-stackdepth test-frame-buffer \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
