@@ -14593,3 +14593,21 @@ srFBc's six rows via run_sabotage_matrix.sh at PROCS=4, detached
 `unexpected: 0, undetected: 0, anomalies: 0` — the canonical figures the
 SAB_DOC_FIGUREs said were owed. The lane, idle since the run ended,
 resumed 04:27 for its final `make test` alone → deliverable.
+
+#### Thirty-ninth session, part 34 — srFBc's second make test: the same two K31-shaped reds, and a widened finding (2026-08-25 ~04:37 EDT)
+
+final_test2.log (PID 797936, `make -j12 -Otarget test` ALONE on a quiet
+box, load peaking ~31): test-corpus 29 failed = the K32 cell
+`((a)|ab){4000}c` exit-124 + 28 dependents; test-resource 1 failed =
+`[a-z]{0,30000}` over the 45 s CPU cap; test-mrl GREEN (the ruling 2(a)
+fix held); nothing else red. Both are the K31 shape and both are
+proven solo on this tree (counterk 1634/0 — the lane's and the
+manager's on main; resource 19/0). RULED: green modulo K31; one more
+solo `make test-resource` as the freshest control; the deliverable
+must state the counts as measured with the solo numbers beside them.
+WIDENED FINDING for [TT-10]: the K31 addendum recorded these cells
+lying under THREE concurrent suites (load 31-85); tonight ONE `-j12
+-Otarget test` alone, twice, reproduced both — the load-sensitive
+checks are unreliable under the suite's OWN parallelism on this box,
+not only under contention. [TT-10]'s scope is that, not "avoid running
+three suites".
