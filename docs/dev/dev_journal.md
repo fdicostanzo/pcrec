@@ -14310,3 +14310,7 @@ engines, two differently-prefixed artifacts link in one TU. Housekeeping
 the lane spotted and left in scope: `pos` and `resume_depth`, tracked
 EMPTY files at the repo root since 510382b ([M6-READ], stray
 redirects) — removed by the manager on main.
+Correction (lane-rule 4, the stated cause is a claim): `git log` shows
+the last commit touching both files is a00f22a ([DD-14 B+C] WIP 4/N),
+not only 510382b, and `resume_depth`'s mtime is 2026-08-24 15:24 — stray
+redirects from more than one lane's shell. Both empty; both removed.
