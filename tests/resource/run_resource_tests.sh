@@ -60,6 +60,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 # outcomes a contended box can produce for a reason unrelated to the
 # compiler; every other outcome (0, 1, 122, 134, 137) is unaffected by load
 # and stays a real PASS/FAIL exactly as before.
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [TT-6]/[K37] $TIMEOUT_BIN for the exec'd bound below
 . "$ROOT_DIR/tests/lib/load_guard.sh"
 
 # The ceiling. 512m matches tests/lib/gen_timeout.sh's GENRUNMEM default, and
@@ -142,10 +143,7 @@ shapes=(
 for pat in "${shapes[@]}"; do
     out="$WORKDIR/o.c"
     rm -f "$out"
-    log="$("$ROOT_DIR/scripts/watchdog" -l "compile $pat" \
-             -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" \
-             -L "$WORKDIR/watchdog.log" -- \
-             pcrec_run "$PCREC" -p rx -o "$out" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "compile $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
     rc=$?
     case $rc in
         0) ok "'$pat' compiles within the ceiling" ;;
@@ -209,8 +207,7 @@ enomem_case() {
     local out="$WORKDIR/e.c"
     rm -f "$out"
     local log rc
-    log="$( (ulimit -v "$vlim"; exec timeout -s KILL "$K7_SECS" \
-                pcrec_run "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"
+    log="$( (ulimit -v "$vlim"; exec "$TIMEOUT_BIN" -s KILL "$K7_SECS" "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"   # [K37]/[TT-6]: exec'd GNU-timeout bound, one line
     rc=$?
     case $rc in
         0)   bad "under ${vlim}KB, '$pat' compiled — the limit did not bind, so this cell proved nothing. Lower it or pick a hungrier pattern" ;;
@@ -267,9 +264,7 @@ echo "== [K7] the refusal's identity =="
 # name_check <pattern> <expected-substring> <what it proves>
 name_check() {
     local pat="$1" want="$2" why="$3" log rc
-    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" \
-             -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- \
-             pcrec_run "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"
+    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
     rc=$?
     if [ "$rc" -ne 1 ]; then
         bad "'$pat' should be a diagnosed refusal (rc 1), got rc $rc: $log"
@@ -305,9 +300,7 @@ name_check 'a{65535}' 'too complex for the DFA engine' \
 # the fix moves refusals EARLIER for one growth law and must not have taken the
 # other cap's customers away. An exponential subset blowup has a small state-set
 # per state and a huge NUMBER of states, so it is the state cap's own shape.
-log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" \
-         -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- \
-         pcrec_run "$PCREC" -p rx -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"
+log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
 rc=$?
 if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'states'; then
     ok "the state-COUNT cap still fires on its own shape: $(printf '%s' "$log" | head -1)"

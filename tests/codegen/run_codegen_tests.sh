@@ -2696,7 +2696,37 @@ k37_site_re='(^|[^a-zA-Z_/])(build/pc[r]ec|[$]PCREC|"[$]PCREC")'
 k37_comment_re='^[^:]*:[0-9]+:[[:space:]]*#'
 k37_assign_re='^[^:]*:[0-9]+:[[:space:]]*(local[[:space:]]+|export[[:space:]]+)?PCREC='
 k37_existtest_re='\[[[:space:]]*!?[[:space:]]*-[xf][[:space:]]+"?[$]PCREC"?[[:space:]]*\]'
-k37_guard_re='pcrec_run|TIMEOUT_BIN|gen_run\b|gen_cc\b|scripts/watchdog'   # scripts/watchdog IS a bound (wall+RSS+CPU) -- a direct watchdog wrap on the same line counts as guarded ([TT-10]'s K32 pin)
+k37_guard_re='pcrec_run|TIMEOUT_BIN|gen_run\b|gen_cc\b|scripts/watchdog'
+
+# [K37] TWO MORE SHAPES the 2026-08-25 14:11 battery found the first sweep had
+# produced and a per-line guard token waved through: (i) `pcrec_run` used in
+# a script that never SOURCES tests/lib/gen_timeout.sh ("command not found" --
+# tests/reject); (ii) `pcrec_run` as the command on a CONTINUATION line after
+# an exec-style wrapper (`scripts/watchdog ... -- \`, `exec timeout ... \`,
+# tests/resource): the wrapper execs a BINARY and pcrec_run is a bash
+# FUNCTION, so every compile behind it failed ("failed to execute pcrec_run")
+# and test-resource went 0/19. Both are textual facts this check can see.
+k37_fn_bad=""
+# The USE grep ignores comment text (everything after a `#`): this check's own
+# first run flagged tests/reject for a COMMENT that says pcrec_run is not
+# sourced there -- the self-matching-text trap, third instance today.
+for k37_f in $(grep -rlE '^[^#]*\bpcrec_run\b' "$ROOT_DIR/tests" --include='*.sh' | grep -v '/tests/lib/gen_timeout.sh$'); do
+    if ! grep -qE '^[[:space:]]*(\.|source)[[:space:]]+.*gen_timeout\.sh' "$k37_f"; then
+        k37_fn_bad="$k37_fn_bad
+    ${k37_f#$ROOT_DIR/}: calls pcrec_run but never sources tests/lib/gen_timeout.sh (a bash function is not a command until its file is sourced)"
+    fi
+    while IFS= read -r k37_ln; do
+        [ -n "$k37_ln" ] || continue
+        k37_fn_bad="$k37_fn_bad
+    ${k37_f#$ROOT_DIR/}:$k37_ln: pcrec_run on a continuation line after an exec-style wrapper -- the wrapper execs a binary; put the compiler there, on ONE line with the wrapper (watchdog / \$TIMEOUT_BIN IS the bound)"
+    done < <(awk 'prev ~ /\\$/ && $0 ~ /^[[:space:]]*pcrec_run[[:space:]]/ && prev ~ /(watchdog|timeout|setsid|xargs|exec)/ {print NR} {prev=$0}' "$k37_f")
+done
+if [ -n "$k37_fn_bad" ]; then
+    bad "[K37] pcrec_run misuse a per-line guard token cannot see:$k37_fn_bad"
+else
+    ok "[K37] every script that calls pcrec_run sources gen_timeout.sh, and none hands the function to an exec-style wrapper on a continuation line"
+fi
+   # scripts/watchdog IS a bound (wall+RSS+CPU) -- a direct watchdog wrap on the same line counts as guarded ([TT-10]'s K32 pin)
 # ALLOWLIST: every remaining line must match one of these or the check
 # names it. Each entry is a JUDGMENT CALL (not a mechanical exclusion like
 # the three above), so each carries its own reason -- and each must ALSO

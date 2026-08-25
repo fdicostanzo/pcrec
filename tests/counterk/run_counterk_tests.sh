@@ -55,12 +55,12 @@ inc() { echo "INCONCLUSIVE: $1"; inconc=$((inconc + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run --hostile "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 gen_default() {   # like gen but WITHOUT --engine=vm (the shipped routing)
     local out="$1" pat="$2"; shift 2
-    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run --hostile "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -329,9 +329,7 @@ K32_SECS="${K32_SECS:-60}"
 K32_MEM="${K32_MEM:-256m}"   # measured 112 MB peak
 k32out="$WORKDIR/k32.c"
 rm -f "$k32out"
-k32log="$("$ROOT_DIR/scripts/watchdog" -l "compile K32 cell" \
-             -s "$K32_SECS" -c "$K32_CPU" -m "$K32_MEM" \
-             -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$k32out" '((a)|ab){4000}c' 2>&1)"   # [K37]: the bound (watchdog) and the invocation share a LINE so the textual check can see it
+k32log="$("$ROOT_DIR/scripts/watchdog" -l "compile K32 cell" -s "$K32_SECS" -c "$K32_CPU" -m "$K32_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$k32out" '((a)|ab){4000}c' 2>&1)"   # [K37]: the bound (watchdog) and the invocation share ONE line so the textual check can see both
 k32rc=$?
 case $k32rc in
     0) ok "K32: '((a)|ab){4000}c' compiles within ${K32_CPU}s CPU / $K32_MEM — the quadratic prefilter construction the pattern is filed for has not regressed past this pin" ;;
