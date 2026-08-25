@@ -14288,3 +14288,25 @@ own activity — its finding, its thresholds). Its report follows as a
 "production sample with a feedback request". GO HEAVY sent to srFBc
 03:1x: rebase first, then `make test` detached (PID file), then S179-S184
 at PROCS=4 detached; tests/resource re-run solo before red (K31).
+
+#### Thirty-ninth session, part 27 addendum — FB pre-validated its six rows; the symmetry cell is S179's only detector (2026-08-25 ~03:2x EDT)
+
+srFBc (before GO, without the matrix: one recompiled object per row,
+framebuffer.rxt against the sabotaged emitter): all six DETECTED — S179
+15/1, S180 14/2, S181 8/8, S182 15/1, S183 12/4, S184 0/16. THE FINDING
+IS ABOUT THE CELLS: S179 (the `_in` entry binding the STAMPED capacity
+instead of the caller's nframes — the most plausible way to build this
+and have it look finished) is caught by exactly ONE cell, `512,400000`
+— the cell added for symmetry so that `200000,3072` could not be read as
+"the trail is the only real capacity". The buffered 1024/8192 cell
+cannot see it (the stamped 2048 hands it MORE frames than it asked for).
+Recorded in framebuffer.rxt itself. S180 detected twice (a give-up and
+a glibc heap abort, exit 134 — the 3,072-entry trail handed a capacity
+of 200,000); S183 crashes all `null` cells incl. the DFA-selected
+pattern (the null route reaches the DFA's inert `_in`). Canonical
+figures still owed from run_sabotage_matrix.sh. Also verified cheap:
+--trace on both artifact kinds (%u→%zu), `-o -` self-contained on both
+engines, two differently-prefixed artifacts link in one TU. Housekeeping
+the lane spotted and left in scope: `pos` and `resume_depth`, tracked
+EMPTY files at the repo root since 510382b ([M6-READ], stray
+redirects) — removed by the manager on main.
