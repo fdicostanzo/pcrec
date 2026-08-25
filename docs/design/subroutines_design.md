@@ -2445,6 +2445,27 @@ existing rows already read `engines=vm` (P4), so **no row's engine mask
 changes** and SR-8's generic post-discharge consultation (D67) does the work
 with no new predicate — `lookaround_design.md` §5.1's finding, one module over.
 
+**[WAVE G, 2026-08-24] THAT ARGUMENT IS SOUND FOR A RECURSIVE CALLEE AND
+CONSERVATIVE FOR AN ACYCLIC ONE, WHICH PUTS THESE ROWS IN `(?>`'s CASE.** D67's
+rule is that the `engines` column is a per-ROW fact that cannot be made true by
+editing it, and it stays a per-row fact here: `(?1)` in general names a callee
+that MAY be recursive. But `aⁿbⁿ` is a property of the CYCLE, and `(a)(?1)` is
+as regular as `(a)a` — so the per-PATTERN answer differs from the column, which
+is exactly the gap `(?>a|ab)c` against `[^"]*+"` opened for module
+`atomic-groups`. `(?>`'s gap is closed by `pcrec_discharge_atomic` DELETING the
+node before `forces_registry` looks; a call's cannot be, because deleting it
+means copying the callee's `A_CAP` nodes into the tree — §4.4c's "two programs
+for one group" arriving by a third route. So it is closed by the LINKAGE
+instead: `first_dfa_excluding` exempts a `CALL_SPLICE` node, which is a fact a
+PASS computed, read at the same place and for the same reason the discharge's
+is. `tests/registry/registry_check.c`'s capability check asks its `--engine=dfa`
+refusal under `-fno-splice-calls`, the axis on which the column is exactly true
+— with a measured note there for why making the witnesses RECURSIVE instead
+works for twenty of the twenty-two rows and CANNOT work for `(?+N)`: a forward
+relative call's target lies to its right, a cycle through it needs a backward
+call inside it, and `first_dfa_excluding` walks an `A_CAT` spine right to left,
+so it reaches the backward call first every time.
+
 **FOUR ROW FAMILIES ARE MISSING FROM THE REGISTRY AND THIS MODULE OWNS THEM**
 (MEASURED, `out/premises.txt` axis B against `out/spellings.txt` A7a):
 
