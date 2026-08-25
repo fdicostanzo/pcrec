@@ -14656,3 +14656,19 @@ mgr_after_gate.sh (PID 1957587) waits on it and execs mgr_battery.sh —
 mech PROCS=6 → make test → solo test-resource + counterk → make san —
 strictly sequential, logs per stage, trailer BATTERY_DONE. Watchdog
 cron replaced: 90f4cc33 watches the chain; the lane crons are deleted.
+
+#### Thirty-ninth session, part 36 addendum — the manager trips rule 7 (2026-08-25 ~04:54 EDT)
+
+I scraped the gate's and the chain's PIDs 2 s after launch and matched
+the `setsid` PARENTS (their cmdlines still carried the script names);
+both PID files read "dead" within 90 s, and mgr_after_gate.sh — waiting
+on the wrong PID — started the battery's `make mech` at 04:53 while the
+identity gate was still running: two heavy runs, the very thing the
+chain existed to prevent. Caught at 04:54 from /proc by cwd: the gate
+alive (1950846/47/48); the false-start chain (sid 1957642) and its
+`make mech` killed by PID, zero survivors; its scratch dir removed; PID
+files rewritten with the SESSION LEADERS; the chain relaunched (2055033)
+on the real gate PID with a 6 s settle and a session-id match. The gate
+was not disturbed (its log is identity comparisons, not CPU caps). Rule
+7 gains its second half: scrape AFTER the parent exits and match the
+process whose sid == pid.
