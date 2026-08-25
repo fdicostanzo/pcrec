@@ -208,12 +208,21 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * src/opt/altcls.c. */
     root = pcrec_altcls(&cx, root);
 
-    /* [M4.5b] Engine selection is a PASS now (engine_m4.md §5.1), run after
-     * parse and before machine construction. It also owns the §5.6 override's
-     * refusals, which is why it runs before anything expensive: a caller who
-     * asked for a combination pcrec cannot honour gets the diagnostic without
-     * paying for an automaton first. */
-    pcrec_select_engine(&cx, root);
+    /* [M6.4.2] THE FREE DISCHARGE: delete every `A_ATOMIC` whose cut
+     * possessify's §2.2 verdict proves is a no-op (src/opt/atomic.c). It is a
+     * NO-OP for a pattern with no cut, by an early return rather than by the
+     * survey happening to change nothing.
+     *
+     * [DD-14 wave G] IT IS COMPILE.C'S LINE NOW, hoisted out of
+     * `pcrec_select_engine`, and the hoist is what makes the two ordering
+     * constraints below satisfiable at once: the CALL GRAPH must run after
+     * every pass that REBUILDS a node (this is the last one), and ENGINE
+     * SELECTION must run after the CALL GRAPH (§6.3's linkage decides whether
+     * a call is structurally VM-only). It still runs before selection's first
+     * analysis round, which is the only property that pass claimed. It also
+     * now PUBLISHES the rewritten root — inside select_engine the assignment
+     * was to a local, so a discharge at the very root was discarded. */
+    root = pcrec_discharge_atomic(&cx, root);
 
     /* [DD-14 wave B+C] THE CALL GRAPH, and its POSITION IS THE DESIGN rather
      * than a convenience (src/opt/callgraph.c's header, and wave A2's finding
@@ -233,6 +242,26 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * pattern returns from it having allocated one array and walked the tree
      * once — `cx.callgraph` stays NULL and nothing downstream changes. */
     pcrec_callgraph_build(&cx, root);
+
+    /* [M4.5b] Engine selection is a PASS (engine_m4.md §5.1), run after parse
+     * and before machine construction. It also owns the §5.6 override's
+     * refusals, which is why it runs before anything expensive: a caller who
+     * asked for a combination pcrec cannot honour gets the diagnostic without
+     * paying for an automaton first.
+     *
+     * [DD-14 wave G] IT RUNS AFTER THE CALL GRAPH, where it used to run
+     * before. The graph is what decides §6.3's LINKAGE, and the linkage is
+     * what selection has to read: a SPLICED call has an exact finite lowering
+     * (`src/ir/nfa.c` inlines the callee, §8.3), so it is neither structurally
+     * VM-only nor a bar to the prefilter, while a LINKED one is both. Asking
+     * the question before the graph existed is what made wave E's answer
+     * "every call-bearing pattern is VM-only with no prefilter", which §8.3
+     * measured at 21x-350x. A CALL-FREE PATTERN IS UNAFFECTED BY THE MOVE:
+     * `pcrec_callgraph_build` returns at its first scan with `cx.callgraph`
+     * NULL, having written nothing, so selection sees the identical tree it
+     * saw before — which is what keeps the identity gate's call-free
+     * population byte-identical. */
+    pcrec_select_engine(&cx, root);
 
     /* [DD-14.LB] THE POST-RESOLUTION CHECKS, and their position is the whole
      * mechanism: every rule that must refuse AT A PATTERN OFFSET and cannot be

@@ -378,14 +378,27 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
     const char *node_why = NULL;
     size_t node_why_pos = 0;
 
-    /* [M6.4.2] THE FREE DISCHARGE runs ONCE, HERE, before the analysis loop —
-     * NOT as a registered `discharge` hook. src/opt/atomic.c's own header has
-     * the three reasons, one of them measured: the fixpoint below never CALLS a
+    /* [M6.4.2] THE FREE DISCHARGE runs ONCE, before the analysis loop — NOT as
+     * a registered `discharge` hook. src/opt/atomic.c's own header has the
+     * three reasons, one of them measured: the fixpoint below never CALLS a
      * registered hook, so registering would run the analysis 8 times and
      * rewrite nothing. Running it first is what makes the consultation's
      * per-ROW column produce a per-PATTERN answer — `--engine=dfa '[^"]*+"'`
-     * succeeds because the node is GONE by the time `forces_registry` looks. */
-    root = pcrec_discharge_atomic(cx, root);
+     * succeeds because the node is GONE by the time `forces_registry` looks.
+     *
+     * [DD-14 wave G] IT NO LONGER RUNS *HERE*. It is `src/core/compile.c`'s
+     * own line now, immediately after `pcrec_altcls` and before
+     * `pcrec_callgraph_build` — because the graph is the only writer of
+     * `Ast.u.call.body` and must run after every pass that REBUILDS a node
+     * (this one splices an `A_ATOMIC` out), while ENGINE SELECTION now has to
+     * run AFTER the graph, since §6.3's linkage is what decides whether a call
+     * is structurally VM-only. Those two orders are satisfiable together only
+     * with the discharge hoisted out of this pass, and hoisting it also
+     * publishes the rewritten root, which this pass could not do: the
+     * assignment below was to a LOCAL, so a discharge at the very ROOT was
+     * dropped on the floor here and is now kept. Nothing else moves — the
+     * discharge still runs before the first analysis round, which is the only
+     * property the paragraph above claims. */
 
     for (int round = 0; round < SELECT_MAX_ROUNDS; round++) {
         mask = ENGM_DFA | ENGM_VM;

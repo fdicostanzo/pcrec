@@ -92,6 +92,18 @@ struct CallGraph {
     int         *target;      /* ascending, may begin with 0 */
     const Ast  **body;        /* body[i] is target[i]'s region root */
     unsigned char *reach;     /* reach[i*ntarget + j]: region i can reach j */
+    /* [DD-14 wave G] THE EDGE MULTIPLICITY, which `reach` deliberately loses.
+     * `site[i*ntarget + j]` is how many `A_CALL` nodes lie DIRECTLY in region
+     * i's body naming target j — not transitive, not saturated. §6.3's size
+     * budget is about COPIES, and a region that calls one callee four times
+     * costs four expansions where `reach` says only "yes". */
+    int         *site;
+    /* [DD-14 wave G] `splice[i]`: may every call site naming target i be
+     * emitted INLINE (design §6.3)? The decision is PER TARGET rather than
+     * per site, which is a choice and not a forced one — see `cg_eligibility`.
+     * `exp[i]` is the expansion that decision was made on, in AST nodes. */
+    bool        *splice;
+    long long   *exp;
 };
 
 /* ---- the whole-tree collection walks ------------------------------------
@@ -176,6 +188,7 @@ static void cg_roots(void *ud, const Ast *a)
 typedef struct {
     const struct CallGraph *cg;
     unsigned char *row;
+    int           *cnt;
 } CgEdges;
 
 static int cg_index(const struct CallGraph *cg, int t)
@@ -189,7 +202,18 @@ static void cg_edges(void *ud, const Ast *a)
     CgEdges *e = ud;
     if (a->k != A_CALL) return;
     int i = cg_index(e->cg, a->u.call.target);
-    if (i >= 0) e->row[i] = 1;
+    if (i >= 0) { e->row[i] = 1; e->cnt[i]++; }
+}
+
+/* [DD-14 wave G] AST NODES IN A REGION, for §6.3's size budget. Counts what
+ * `cg_walk` visits, which is exactly the subtree the emitter will walk for
+ * this region and STOPS AT `A_CALL` — a nested call's own expansion is added
+ * by `cg_eligibility`'s recurrence, not by this walk, because following
+ * `.body` here is design §4.4's non-terminating descent. */
+static void cg_count(void *ud, const Ast *a)
+{
+    (void)a;
+    ++*(long long *)ud;
 }
 
 /* ---- the bind ----------------------------------------------------------- */
@@ -286,6 +310,228 @@ static void cg_maxw_publish(void *ud, const Ast *a)
     if (i >= 0) { n->u.call.maxw = m->val[i]; n->u.call.maxw_known = true; }
     else        { n->u.call.maxw = PCREC_W_UNBOUNDED;
                   n->u.call.maxw_known = false; }
+}
+
+/* ---- [DD-14 wave G] SPLICE ELIGIBILITY (design §6.3) ---------------------
+ *
+ * §6.3's ruling, as landed: **a call site takes the CALL linkage into one
+ * shared emitted region EXCEPT where the callee is not in a cycle AND the
+ * spliced expansion fits a size budget, in which case it SPLICES** — the
+ * callee's body emitted INLINE at the site, with its OWN exit. The lexical
+ * occurrence of a called group is emitted EXACTLY AS IT IS TODAY either way;
+ * wave G may share the BODY and never the EXIT (§3.5, S-SR18), so nothing
+ * here reuses a lexical label.
+ *
+ * IT IS `implement-then-replace`, NOT A PARALLEL MECHANISM. The spliced site
+ * consumes the SAME callee contract (§5.4) and the SAME `W` (§5.3) as the
+ * linked one and differs only in how control reaches the body — which is what
+ * makes §9.2's `A == B` control (`-fno-splice-calls`) a real differential
+ * rather than two programs that happen to agree.
+ *
+ * ================================================================
+ * CONDITION 1: NOT IN A CYCLE, AND IT IS ONE ARRAY LOOKUP
+ * ================================================================
+ *
+ * `reaches(i, i)` over the transitive closure two functions up. A recursive
+ * callee has no finite inlining, so a spliced one is an infinite emitter —
+ * which is why `Ast.u.call.link`'s arena zero (`CALL_SPLICE`) is the WRONG
+ * default and `cg_bind` sets `CALL_LINKAGE` on every node before this runs.
+ * This function only ever UPGRADES, so a target this test declines cannot
+ * reach the emitter as a splice by any path.
+ *
+ * Condition 2 of §6.3 — "the callee's target is statically resolved" — is
+ * free (§4.2 resolves every call at end of parse or refuses the pattern) and
+ * is not written as code here; it is listed in the design to make the shape
+ * explicit for `[DD-11]`.
+ *
+ * ================================================================
+ * CONDITION 3: THE SIZE BUDGET, AND HOW IT COMPOSES FOR NESTED SPLICES
+ * ================================================================
+ *
+ * The question the design leaves open is what a callee that itself calls a
+ * spliceable callee costs, and the answer has to be the size it will REACH
+ * rather than the size it is written as — otherwise a chain of ten callees
+ * each "small" expands to a product nobody bounded. So:
+ *
+ *     exp(i) = nodes(body[i])
+ *            + SUM over targets j != i of  site[i][j] * (splice(j) ? exp(j) - 1 : 0)
+ *     splice(i) = !reaches(i, i) && exp(i) <= PCREC_MAX_SPLICE_NODES
+ *
+ * `- 1` because the `A_CALL` node the expansion replaces is itself counted in
+ * `nodes(body[i])`. The recurrence is WELL FOUNDED on the acyclic part: every
+ * `j` a spliceable `i` reaches is settled before `i` is, which is what the
+ * evaluation order below establishes, and a cyclic target is settled FIRST at
+ * `exp = LLONG_MAX / 4` with `splice = false` — the same "settle the cycles,
+ * then evaluate the DAG" shape `emit_vm.c`'s region-cost memo uses, and for
+ * the same reason.
+ *
+ * THE SATURATING ADD IS NOT DECORATION. `nodes` is bounded by the pattern
+ * length but `site[i][j]` multiplies, and a ten-deep chain of four-call
+ * bodies reaches 4^10 before any budget test would have fired. The
+ * accumulator saturates at the same ceiling a cyclic target starts at, so
+ * "too big to count" and "cannot be counted" answer the budget test the same
+ * way — which is the direction that DECLINES, and a declined site is correct.
+ *
+ * ================================================================
+ * THE TOTAL, AND WHY IT IS DELIBERATELY THE CRUDER NUMBER
+ * ================================================================
+ *
+ * The per-site budget bounds ONE expansion; nothing in it bounds a pattern
+ * with three hundred sites each expanding to five hundred nodes. So a second
+ * budget bounds the SUM of the added nodes, and eligible targets are dropped
+ * — LARGEST CONTRIBUTION FIRST, ties by DESCENDING TARGET NUMBER so the rule
+ * is deterministic and re-derivable from the artifact — until the total fits.
+ *
+ * IT COUNTS LEXICAL SITES, WHICH IS AN OVER-ESTIMATE WHEN A REGION IS NOT
+ * EMITTED AND AN UNDER-ESTIMATE WHEN ONE IS, and it is stated rather than
+ * fixed. The exact count is "how many copies of this site does the emitter
+ * write", which depends on how many regions are emitted, which depends on
+ * which sites splice — the very question being answered. A fixpoint over that
+ * would be a second sizing mechanism (§4.4's "one mechanism" rule) for a
+ * PERFORMANCE knob whose every outcome is correct, and PCREC_MAX_VM_NODES is
+ * the hard backstop underneath it either way. What the approximation buys is
+ * that the rule can be stated in one sentence and checked from the artifact's
+ * own `<PREFIX>_VM_CALLS` stamp.
+ *
+ * DROPPING A TARGET ONLY EVER SHRINKS THE REAL TOTAL, so the eligibility of a
+ * caller decided against the pre-drop `exp` is CONSERVATIVE — it may decline a
+ * caller that would in fact have fit. That is the safe direction and it is not
+ * re-run to a fixpoint, for the same reason.
+ *
+ * ================================================================
+ * WHY THE DECISION IS PER TARGET AND NOT PER SITE
+ * ================================================================
+ *
+ * A per-SITE rule could splice the first three calls to a big callee and link
+ * the fourth, which is strictly more expressive. It is not taken, because the
+ * artifact would then contain BOTH an inlined copy and a shared region for one
+ * group, and "which linkage did this site take" would stop being answerable
+ * from the pattern — every future reader of `<PREFIX>_VM_CALLS`, every
+ * sabotage row over the splice, and §9.2's `A == B` control all read better
+ * against a rule with one answer per callee. Per-site remains available and
+ * costs nothing structural: `link` is already a per-NODE field. */
+
+static void cg_publish_link(void *ud, const Ast *a)
+{
+    const struct CallGraph *cg = ud;
+    if (a->k != A_CALL) return;
+    int i = cg_index(cg, a->u.call.target);
+    /* ONLY EVER AN UPGRADE. `cg_bind` has already written `CALL_LINKAGE` on
+     * every node, and a target the graph somehow does not carry keeps it —
+     * the sound direction, since a splice of an unknown callee has no body to
+     * inline. */
+    if (i >= 0 && cg->splice[i]) ((Ast *)a)->u.call.link = CALL_SPLICE;
+}
+
+/* The ceiling `exp` saturates at, and the value a cyclic target starts at.
+ * Well below LLONG_MAX so a sum of several of them cannot overflow, and far
+ * above PCREC_MAX_SPLICE_NODES so it is never mistaken for a passing size. */
+#define CG_EXP_INF ((long long)1 << 40)
+
+static long long cg_sat_add(long long a, long long b)
+{
+    if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
+    long long r = a + b;
+    return r >= CG_EXP_INF ? CG_EXP_INF : r;
+}
+
+static long long cg_sat_mul(long long a, long long b)
+{
+    if (a <= 0 || b <= 0) return 0;
+    if (a >= CG_EXP_INF || b >= CG_EXP_INF) return CG_EXP_INF;
+    if (a > CG_EXP_INF / b) return CG_EXP_INF;
+    return a * b;
+}
+
+static void cg_eligibility(Ctx *cx, struct CallGraph *cg, Ast *root)
+{
+    const int n = cg->ntarget;
+    const size_t nn = (size_t)n;
+
+    cg->splice = arena_alloc(&cx->arena, nn * sizeof *cg->splice);
+    cg->exp    = arena_alloc(&cx->arena, nn * sizeof *cg->exp);
+
+    /* THE DENIAL IS TOTAL AND IS TAKEN FIRST (lib/pcrec.h's
+     * PCREC_NO_SPLICE_CALLS): §9.2's control needs the LINKAGE-linked artifact
+     * to be exactly the one wave B+C shipped, so the flag must not leave a
+     * trace anywhere else — not in the budget arithmetic, not in a stamp
+     * computed from it. Returning here is what makes the denied build the
+     * control rather than a fourth variant of it. */
+    for (int i = 0; i < n; i++) { cg->splice[i] = false; cg->exp[i] = CG_EXP_INF; }
+    if (cx->opt->flags & PCREC_NO_SPLICE_CALLS) return;
+
+    /* Nodes per region, and the cycles settled first. */
+    long long *nodes = arena_alloc(&cx->arena, nn * sizeof *nodes);
+    bool *done = arena_alloc(&cx->arena, nn * sizeof *done);
+    for (int i = 0; i < n; i++) {
+        nodes[i] = 0;
+        cg_walk(cg->body[i], cg_count, &nodes[i]);
+        done[i] = pcrec_callgraph_reaches(cg, i, i);   /* cyclic: exp stays INF */
+    }
+
+    /* THE DAG EVALUATION. `nt` rounds suffice because each round settles at
+     * least one more target — every unsettled target either has an unsettled
+     * callee (and some target in that chain has none, the chain being acyclic
+     * once the cycles are already done) or is itself ready. The `!changed`
+     * arm is an ASSERTION rather than a break: reaching it means a target is
+     * waiting on a callee that is waiting on it, which is a cycle the closure
+     * above did not report, and a graph that disagrees with itself must say so
+     * rather than silently leave a target at INF. */
+    for (int round = 0; round <= n; round++) {
+        bool changed = false, all = true;
+        for (int i = 0; i < n; i++) {
+            if (done[i]) continue;
+            bool ready = true;
+            for (int j = 0; j < n; j++)
+                if (j != i && pcrec_callgraph_reaches(cg, i, j) && !done[j])
+                    ready = false;
+            if (!ready) { all = false; continue; }
+            long long e = nodes[i];
+            for (int j = 0; j < n; j++) {
+                if (j == i || !cg->site[(size_t)i * nn + (size_t)j]) continue;
+                if (!cg->splice[j]) continue;
+                e = cg_sat_add(e, cg_sat_mul(cg->site[(size_t)i * nn + (size_t)j],
+                                             cg->exp[j] - 1));
+            }
+            cg->exp[i]    = e;
+            cg->splice[i] = e <= PCREC_MAX_SPLICE_NODES;
+            done[i] = true;
+            changed = true;
+        }
+        if (all) break;
+        if (!changed)
+            ctx_fail(cx, 0, "internal error: the subroutine splice-expansion "
+                            "evaluation did not settle");
+    }
+
+    /* THE TOTAL. Lexical sites over the WHOLE tree — one walk, counted the way
+     * the artifact's own stamp counts them. */
+    int *lex = arena_alloc(&cx->arena, nn * sizeof *lex);
+    for (int i = 0; i < n; i++) lex[i] = 0;
+    { CgEdges e = { cg, arena_alloc(&cx->arena, nn), lex };
+      memset(e.row, 0, nn);
+      cg_walk(root, cg_edges, &e); }
+
+    for (;;) {
+        long long total = 0;
+        for (int i = 0; i < n; i++)
+            if (cg->splice[i])
+                total = cg_sat_add(total, cg_sat_mul(lex[i], cg->exp[i] - 1));
+        if (total <= PCREC_MAX_SPLICE_TOTAL) break;
+        /* Drop the largest contributor; ties by descending target number, so
+         * the rule is a function of the pattern and nothing else. */
+        int worst = -1;
+        long long worstc = -1;
+        for (int i = 0; i < n; i++) {
+            if (!cg->splice[i]) continue;
+            long long c = cg_sat_mul(lex[i], cg->exp[i] - 1);
+            if (c >= worstc) { worstc = c; worst = i; }
+        }
+        if (worst < 0) break;      /* nothing left to drop; unreachable */
+        cg->splice[worst] = false;
+    }
+
+    cg_walk(root, cg_publish_link, cg);
 }
 
 /* ---- WAVE A2's SECOND OBLIGATION, DISCHARGED BY MEASUREMENT --------------
@@ -386,8 +632,13 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
     const size_t nn = (size_t)n;
     cg->reach = arena_alloc(&cx->arena, nn * nn);
     memset(cg->reach, 0, nn * nn);
+    /* [DD-14 wave G] The MULTIPLICITY beside the relation, filled by the same
+     * walk so the two cannot disagree about which sites exist. */
+    cg->site = arena_alloc(&cx->arena, nn * nn * sizeof *cg->site);
+    memset(cg->site, 0, nn * nn * sizeof *cg->site);
     for (int i = 0; i < n; i++) {
-        CgEdges e = { cg, cg->reach + (size_t)i * nn };
+        CgEdges e = { cg, cg->reach + (size_t)i * nn,
+                          cg->site  + (size_t)i * nn };
         cg_walk(cg->body[i], cg_edges, &e);
     }
     for (int k = 0; k < n; k++)
@@ -397,6 +648,16 @@ void pcrec_callgraph_build(Ctx *cx, Ast *root)
                     if (cg->reach[(size_t)k * nn + (size_t)j])
                         cg->reach[(size_t)i * nn + (size_t)j] = 1;
     cx->callgraph = cg;
+
+    /* ---- [DD-14 wave G] THE LINKAGE (design §6.3) ------------------------
+     *
+     * BEFORE the two width fixpoints, and the order is not arbitrary: nothing
+     * below reads `link`, but `src/opt/select_engine.c` does — it is what
+     * separates "this pattern is structurally VM-only" from "this pattern has
+     * an exact finite lowering and may carry a prefilter" (§8.1, §8.3) — and
+     * this pass runs before engine selection precisely so that question has an
+     * answer when it is asked. See `pcrec_callgraph_build`'s declaration. */
+    cg_eligibility(cx, cg, root);
 
     /* ---- THE `minw` FIXPOINT (design §4.4b) -----------------------------
      *

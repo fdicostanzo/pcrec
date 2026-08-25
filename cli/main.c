@@ -199,6 +199,14 @@ int main(int argc, char **argv)
          * differential; see lib/pcrec.h. */
         else if (!no_more_opts && !strcmp(a, "-fno-atomic-discharge"))
             opt.flags |= PCREC_NO_ATOMIC_DISCHARGE;
+        /* [DD-14 wave G] the SPLICE-vs-LINKAGE axis (design §6.3, §9.2).
+         * `-fno-atomic-discharge`'s shape, not `-fno-possessify`'s: denying
+         * the splice leaves a LINKED call, which is structurally VM-only, so
+         * this denial can change which ENGINE a pattern gets and
+         * `--engine=dfa -fno-splice-calls` on a spliceable pattern REFUSES.
+         * See lib/pcrec.h's PCREC_NO_SPLICE_CALLS comment. */
+        else if (!no_more_opts && !strcmp(a, "-fno-splice-calls"))
+            opt.flags |= PCREC_NO_SPLICE_CALLS;
         /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
          * (D51 ruling 1), D46's controllability half for it. Denying it is
          * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever
