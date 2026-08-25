@@ -8,9 +8,12 @@
 # the per-axis positive control, and the classifier's own self-test.
 #
 # THE SECOND CONTROL (§9.2's SPLICE-vs-LINKAGE `A == B` over the corpus) is
-# NOT here and is not wave E's: it needs the `-fno-splice-calls` axis §6.3's
-# linkage rule introduces, which is wave G's. §9.3's sabotage rows carry that
-# load until then, S-SR17 included.
+# NOT here: it compares ANSWERS rather than bytes, so it lives in
+# `tests/recursion/run_recursion_diff.sh` §5, which has the subject grid. What
+# wave G added HERE is the FIFTH AXIS — `-fno-splice-calls` — for the reason
+# every other axis exists: the flag reaches `select_engine.c`, which every
+# pattern goes through, and an axis that pins the linkage constant is the one
+# that localises a wrong eligibility rule.
 #
 # THE CLAIM. A CALL-FREE pattern's emitted C is byte-identical before and
 # after module `recursion`'s two doorways (the `(?` family, wave B+C; the
@@ -77,6 +80,47 @@
 #                    backrefs-precedent axis, and here it is not ceremonial:
 #                    a mark-set edit that OVER-marks makes `--no-captures`
 #                    keep slots it used to delete, and only this axis sees it.
+#   -fno-splice-calls  [DD-14 wave G]. §6.3's eligibility rule sets
+#                    `Ast.u.call.link`, and `select_engine.c` reads it twice —
+#                    for the VM-only verdict and for the prefilter. Both reads
+#                    are on the path EVERY pattern takes, so a rule that
+#                    answered SPLICE for something it should not would move
+#                    bytes on the default axis and move nothing here, and the
+#                    pair of readings names the failure where either alone
+#                    would only report it. It is also the axis that pins the
+#                    ELISION population below: the four patterns move on
+#                    `default` and on `--engine=vm` (where the WHY stamp
+#                    changes) and are asserted on every axis.
+#
+# ============================================================================
+# THE ONE POPULATION WAVE G IS ALLOWED TO MOVE, NAMED HERE AND ASSERTED EXACT
+# ============================================================================
+# THE CLAIM ABOVE — "a call-free pattern's emitted C is byte-identical" — IS NO
+# LONGER TRUE FOR FOUR PATTERNS, and that is a ruling, not a leak.
+#
+# Wave G's DEAD-CAPTURE ELISION (`pcrec_has_live_capture`, src/opt/atomic.c)
+# says a capture group NO EMITTED CODE CAN WRITE does not force the
+# capture-recording engine. The structural fact is `A_REP{0,0}` emitting
+# nothing, and `(?(DEFINE)...)`, `(?:...){0}` and `(a){0}b` are that same fact
+# three times — so the rule is stated over the fact and NOT over the module,
+# which means it fires on patterns carrying no call at all. Those patterns move
+# from the VM to the DFA. Their ANSWERS and their CAPTURES do not move: `(a){0}`
+# on "a" is `rc=1 ncaps=2 g0=(0,0) g1=(-1,-1)` on both compilers, which is what
+# libpcre2 10.46 reports.
+#
+# GATING THE ELISION ON `pcrec_has_call` WOULD HAVE KEPT THIS FILE AT ZERO and
+# was rejected: it would make a `recursion` special case out of a fact that is
+# not about `recursion` (Frank's 2026-08-23 general-mechanism rule).
+#
+# SO THE EXCEPTION IS NAMED, NOT FILTERED, AND IT IS ASSERTED IN BOTH
+# DIRECTIONS — every pattern in the list MUST differ (a stale list is a list
+# that has stopped defending anything) and nothing outside it may. That is the
+# difference between an exception and the check-design failure this project has
+# recorded twice: a filter hides whatever else lands in it.
+ELIDED_PATTERNS='(a){0}
+(a){0,0}b
+(()|$){0}b
+(()|^){0}[b]'
 #
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
@@ -393,7 +437,7 @@ control() { # control <label> <extra pcrec args>
 
 sweep() { # sweep <label> <extra pcrec args>
     local label="$1" args="$2"
-    local same=0 diff=0 refused=0 mism=0 stampbad=0 stampmoved=0
+    local same=0 diff=0 refused=0 mism=0 stampbad=0 stampmoved=0 elided=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -432,12 +476,32 @@ sweep() { # sweep <label> <extra pcrec args>
             # stamp moved" is a claim a reader has to see (header).
             stampmoved=$((stampmoved + 1))
             printf 'STAMP MOVED %s\n' "$pat" >> "$WORKDIR/diff.$label"
+        elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
+            # THE NAMED EXCEPTION (see the header). Counted, not skipped, and
+            # the direction that matters is checked below: every listed pattern
+            # must land HERE on every axis, so a list that has gone stale — the
+            # elision narrowed, or somebody gated it on `has_call` after all —
+            # is a failure and not a quieter sweep.
+            elided=$((elided + 1))
+            printf 'ELIDED (ruled, wave G) %s\n' "$pat" >> "$WORKDIR/diff.$label"
         else
             diff=$((diff + 1))
             printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
         fi
     done < "$WORKDIR/free"
-    echo "recursion-identity[$label]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    echo "recursion-identity[$label]: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    # BOTH DIRECTIONS ON THE NAMED EXCEPTION. `elided` counts the patterns that
+    # differed AND are on the list; `nelide` is the list's own length. Equality
+    # is what says the list is neither stale nor a filter: a listed pattern that
+    # went back to identical (the elision narrowed) fails here, and a pattern
+    # that differs without being listed is already `diff` above.
+    local nelide
+    nelide=$(printf '%s\n' "$ELIDED_PATTERNS" | grep -c .)
+    if [ "$elided" -ne "$nelide" ]; then
+        bad "[$label] the wave-G ELISION list names $nelide patterns and $elided of them differ. Every listed pattern must differ on every axis — a listed pattern that is byte-identical again means the dead-capture elision stopped firing on it, and the list has stopped defending anything:"
+        printf '%s\n' "$ELIDED_PATTERNS" | sed 's/^/    listed: /' >&2
+        grep '^ELIDED' "$WORKDIR/diff.$label" | sed 's/^/    /' >&2
+    fi
     if [ "$stampbad" -ne 0 ]; then
         bad "[$label] the D37 stamp filter matched the wrong number of lines on $stampbad artifacts — it must remove EXACTLY three, so a filter that stopped matching (leaving a difference in) or started over-matching (hiding one) says so"
         head -5 "$WORKDIR/diff.$label" >&2
@@ -458,15 +522,20 @@ sweep() { # sweep <label> <extra pcrec args>
         bad "[$label] only $same patterns compared identical (floor 700) — the sweep is not populated"
     fi
     if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$stampbad" -eq 0 ] \
-       && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ]; then
-        ok "[$label] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches"
+       && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ] \
+       && [ "$elided" -eq "$nelide" ]; then
+        ok "[$label] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches, and exactly the $nelide NAMED wave-G elision patterns moved"
     fi
 }
 
-# THE FOUR AXES (§9.1). Each takes its own positive control first: "refuses"
-# is an answer the axis flags could in principle change, since `--no-captures`
-# and `-fno-prefilter` both reach `select_engine.c` where a refusal lives.
-for axis in "default:" "vm:--engine=vm" "noprefilter:-fno-prefilter" "nocaptures:--no-captures"; do
+# THE FIVE AXES (§9.1, plus wave G's). Each takes its own positive control
+# first: "refuses" is an answer the axis flags could in principle change, since
+# `--no-captures`, `-fno-prefilter` and `-fno-splice-calls` all reach
+# `select_engine.c` where a refusal lives — and the last of them changes which
+# ENGINE a call-bearing pattern gets, which is the sharpest version of that
+# worry rather than a theoretical one.
+for axis in "default:" "vm:--engine=vm" "noprefilter:-fno-prefilter" \
+            "nocaptures:--no-captures" "nosplice:-fno-splice-calls"; do
     label="${axis%%:*}"; flags="${axis#*:}"
     control "$label" "$flags"
     sweep   "$label" "$flags"

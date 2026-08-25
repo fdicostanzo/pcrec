@@ -10,6 +10,16 @@
 #
 # Env vars:
 #   PCREC      path to the pcrec binary   (default: <repo-root>/build/pcrec)
+#   RXTFLAGS   EXTRA pcrec flags appended to every compile in this run, for
+#              running one corpus over a COMPILER AXIS the .rxt format has no
+#              directive for. Empty by default, so a plain run is byte-for-byte
+#              unchanged. [DD-14 wave G] added it for `-fno-splice-calls`
+#              (design §9.2's `A == B` control: the SPLICE-linked and the
+#              LINKAGE-linked artifact must agree on every cell), and it is
+#              deliberately a general knob rather than that one flag — the
+#              deny family already has five members and each of them is a
+#              corpus-wide axis somebody will want to sweep. It is appended
+#              LAST so a directive-supplied flag on the same axis wins.
 #   CC         C compiler                 (default: gcc)
 #   GENCFLAGS  flags for compiling generated code
 #              (default: -O1 -std=gnu11 -Wall -Wextra -Werror)
@@ -46,6 +56,7 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
+RXTFLAGS="${RXTFLAGS:-}"
 KEEP="${KEEP:-0}"
 VERBOSE="${VERBOSE:-0}"
 PROCS="${PROCS:-1}"
@@ -98,7 +109,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     for f in "${files[@]}"; do
         idx=$((idx + 1))
         PROCS=1 PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
-            KEEP="$KEEP" VERBOSE="$VERBOSE" \
+            RXTFLAGS="$RXTFLAGS" KEEP="$KEEP" VERBOSE="$VERBOSE" \
             bash "${BASH_SOURCE[0]}" "$f" \
             > "$pardir/$idx.out" 2> "$pardir/$idx.err" &
         running=$((running + 1))
@@ -262,6 +273,9 @@ flush_block() {
     [ -n "$cur_engine" ] && pflags+=(--engine="$cur_engine")
     [ -n "$cur_stepbudget" ] && pflags+=(--step-budget="$cur_stepbudget")
     [ -n "$cur_framebudget" ] && pflags+=(--backtrack-frames="$cur_framebudget")
+    # LAST, so a directive on the same axis wins — see the env-var block above.
+    # shellcheck disable=SC2206
+    [ -n "$RXTFLAGS" ] && pflags+=($RXTFLAGS)
 
     local pcrec_err
     # The budget is AXIS-AWARE (R23 V1): pcrec's own invocation used to carry a

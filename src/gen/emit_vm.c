@@ -590,6 +590,16 @@ typedef struct {
      * linkage needs only the trail. */
     bool     *rgn_emit;
     bool      has_linked_calls;
+    /* [DD-14 wave G] HOW MANY SPLICES DEEP THIS WALK IS, in the counter and in
+     * the emitter alike. §6.3 condition 1 makes an unbounded chain impossible
+     * — a spliced callee is not in a cycle, so the inlining is a DAG descent
+     * bounded by the number of targets — and this counter is what turns "must
+     * not happen" into a DIAGNOSTIC instead of a hang. An eligibility rule that
+     * ever answered SPLICE for a recursive callee would otherwise recurse for
+     * ever in `vm_count_slots` (which charges nothing and so never reaches
+     * PCREC_MAX_VM_NODES) and take the C stack with it, and a hang is the one
+     * failure a sabotage matrix cannot report. S-SR20 is the row. */
+    int       splice_depth;
     /* |W| for a SPLICED call to target i — the CAPTURE half only (see
      * `vm_splice`). Known BEFORE `vm_count_slots` runs, which is why it is a
      * count and not a slot list: the indices need the family totals the
@@ -2424,7 +2434,13 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
                                "spliced but has no bound body",
                      a->u.call.target);
         v->nsplice += v->spl_nw ? v->spl_nw[idx] : 0;
+        if (++v->splice_depth > v->nregion)
+            ctx_fail(v->cx, 0, "internal error: a spliced subroutine call "
+                               "nested more than %d deep, so the splice "
+                               "eligibility rule admitted a cycle",
+                     v->nregion);
         vm_count_slots(v, a->u.call.body, repl, false);
+        v->splice_depth--;
         return;
     }
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
@@ -5866,7 +5882,12 @@ static void vm_splice(Vm *v, int entry, const Ast *a, int next)
      * exactly ONE follow and it is right here, so the inlined body gets the
      * same minimum-remaining-length pruning the hand-written body would get,
      * which is the whole claim the splice makes. */
+    if (++v->splice_depth > v->nregion)
+        ctx_fail(v->cx, 0, "internal error: a spliced subroutine call nested "
+                           "more than %d deep, so the splice eligibility rule "
+                           "admitted a cycle", v->nregion);
     vm_emit(v, body_lbl, a->u.call.body, done_lbl);
+    v->splice_depth--;
 
     vm_lbl(v, done_lbl, "the spliced callee is complete; restore and continue");
     for (int j = 0; j < a->u.call.nsave; j++) {
