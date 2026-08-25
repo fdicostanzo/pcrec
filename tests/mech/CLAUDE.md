@@ -841,7 +841,7 @@ Then every row whose detector is a diagnostic string:
 | S29 | a `VF_ATSTART` verb AWAY from the start (`a(*UTF)`) | module `verbs` building these names |
 | S31 | the IN-CLASS position, `[\N{U+41}]` | the atom position is green under this sabotage and is not the witness |
 | S32, S33 | BOTH sides of the 48/49 significant-character boundary, plain and caret-prefixed | an off-by-one is invisible from either side alone |
-| S34 | a LOWERCASE known letter in braces (`\p{c}`) | the brace lookup gaining a fold, after which nothing tests the accumulator's |
+| S34 | a LOWERCASE known letter in braces (`\p{c}`) | the brace lookup gaining a fold of its own, after which nothing anywhere tests the accumulator's |
 | S35 | a body carrying an INSIGNIFICANT byte (`\p{ A}`) | a probe with no space/tab/hyphen/underscore cannot see this edit |
 | S70 | `\Q` and `\R` at the escape doorway, PLUS both `reject_gated` rows as floors | the constructs being built, or the pins being retired — two claims, stated separately |
 | S110 | the class port accepting `[\1]`, plus a floor on `octal_class.rxt`'s cells | the corpus file thinning out, S155's failure exactly |
