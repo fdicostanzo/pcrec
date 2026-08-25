@@ -426,15 +426,25 @@ above.
   assertion. (What COULD be checked, and was: the directive's own GRAMMAR —
   see "The `gu frames`-vs-`recurse` note" above.)
 - **`gated.rxt`'s P2 cell** (`(?&n)(?<n>a)` under `--features recursion`
-  alone). Design §9.3 predicts this should refuse naming `named-groups`
-  once the call itself parses (the declaration `(?<n>a)` is what needs that
-  module, reached lexically before the resolver runs). Today, with
-  `recursion` having no producer at all, the doorway never gets that far —
-  it refuses naming `recursion` itself (`... is enabled but (?&...) is not
-  implemented yet`). The `.rxt` `perr` directive only checks a nonzero
-  exit code, so this cell PASSES VACUOUSLY today — exactly the S108 masking
-  shape the design itself names. **The code lane must re-check this cell's
-  message once wave B+C lands the `(?&` parse**, not just its exit code.
+  alone) — **DISCHARGED at [DD-14] wave B+C; RE-MEASURED at the close,
+  2026-08-25.** Design §9.3 predicted this should refuse naming
+  `named-groups` once the call itself parses (the declaration `(?<n>a)` is
+  what needs that module, reached lexically before the resolver runs). It
+  now does: `build/pcrec --features recursion -- '(?&n)(?<n>a)'` answers
+  `pcrec: (?&n) names a capture group, which requires module 'named-groups'
+  (pattern offset 0)` — the port's own gate check, which sits BEFORE the
+  name grammar for `br_name_ref`'s reason. Before the producer existed the
+  doorway never got that far and refused naming `recursion` itself, and the
+  cell passed VACUOUSLY (nonzero exit, wrong reason) — the S108 masking
+  shape the design itself names.
+  **WHAT IS STILL ONLY A COMMENT, stated so nobody reads more into the
+  green than is there**: the `.rxt` `perr` directive asserts a nonzero exit
+  and nothing else, so the SENTENCE above is pinned by the measurement
+  recorded in the cell's own comment, not by an executable check — no
+  `reject_gated` row in the tree asserts it (measured: the string
+  `names a capture group` appears only in `src/parse/mod_backrefs.c:270`
+  and `src/parse/mod_recursion.c:274`). A `reject_gated named-groups`
+  witness at that site is the [MECH-REACH] shape and is not built here.
 - **The `--no-captures` axis for `nocaptures.rxt`.** MEASURED: no `.rxt`
   directive for it exists anywhere in the tree today (`grep -rn
   "no-captures\|nocaps" tests/harness/run.sh docs/testing.md

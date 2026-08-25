@@ -17,6 +17,14 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   never runs `make` in the real repository), run the suites the sabotage's own
   table says are relevant, and print one row of the matrix. Supports running a
   single sabotage by id prefix: `bash tests/mech/run_sabotage_matrix.sh S13`.
+
+  **THE RUNNER ARCHIVES HEAD PER ROW — A SWEEP OVER N COMMITS MEASURES N
+  TREES.** `git archive HEAD` is re-read for EVERY sabotage, not once at the
+  start, so a commit landing mid-run moves the tree under the remaining rows
+  and the matrix's single "tree SHA measured" line then names only the LAST
+  one. The rule for anyone running it: COMMIT BEFORE YOU START AND COMMIT
+  NOTHING DURING THE RUN. (Standing note added at the [DD-14] close,
+  2026-08-25, after a full 180-row matrix ran alongside an active lane.)
   Env: `CC`, `KEEP=1` (keep scratch trees + suite logs instead of deleting
   them), `MECH_SCRATCH` (scratch root), `JOBS`, and `PROCS=N` (2026-08-12) —
   N sabotages concurrently, safe because run_one was already isolated per

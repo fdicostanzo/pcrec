@@ -208,8 +208,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   number the compiler never emits. `src/opt/mrl.c` gained `pcrec_maxw`
   (`pcrec_minw`'s twin with the OPPOSITE sound direction — over-estimating is
   free, under-estimating is the silent miscompile), whose only consumer is the
-  lookaround module's fixed-width rule and does not exist yet, so no corpus, no
-  differential and no structural check can be red because of it. Half of what
+  lookaround module's fixed-width rule. **THAT CONSUMER NOW EXISTS** ([M6.6]
+  shipped it; verified at the [DD-14] close, 2026-08-25:
+  `src/parse/mod_lookaround.c:298/309` calls `pcrec_maxw` beside `pcrec_minw`
+  to decide FIXED, and `src/opt/callgraph.c:722` carries its call-aware
+  fixpoint), so the sentence this paragraph used to end with — "no corpus, no
+  differential and no structural check can be red because of it" — EXPIRED
+  when the rule landed: a wrong `maxw` is now a lookbehind that is accepted or
+  refused wrongly, which the lookaround corpus and its identity gate do see.
+  What remains true is why the check was written: `maxw_check.c` reads the
+  number DIRECTLY, so it can be red for a reason no answer-comparison reaches. Half of what
   it asserts comes from OUTSIDE pcrec: every oracle-verified span in the whole
   `.rxt` corpus must fit inside its pattern's `maxw`.
 - **`prefilter/`** — [M4.6f] the D46 close-out for the PREFILTER axis:
@@ -406,13 +414,20 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `backrefs`' REFERENCE construct, a trap the design names by name and
   `spellings.rxt` opens with §2.1's one-cell discriminator against.
 
-  **THE `\g` FAMILY IS EXPECTED-UNSUPPORTED AND MARKED RATHER THAN RED.**
-  Design §8.1 keeps the two `\g` registry rows `unbuilt` until wave D, since
-  D65 flips `built` from the PORT and never runs the emitter, so the 22 blocks
-  carrying `\g<` or `\g'` render as `perr` under `gen_corpus.py`'s `wave='D'`
-  marker with **the oracle's answer carried in a `# WAVE D ORACLE:` comment**
-  — `APPROACH.md` §7's policy as `docs/testing.md` states it, and wave D's
-  edit is to delete one keyword argument and re-run.
+  **THE `\g` FAMILY WAS EXPECTED-UNSUPPORTED AND MARKED RATHER THAN RED —
+  AND WAVE D LANDED IT (2026-08-24; re-measured at the [DD-14] close,
+  2026-08-25).** Design §8.1 kept the two `\g` registry rows `unbuilt` until
+  wave D, since D65 flips `built` from the PORT and never runs the emitter, so
+  the 22 blocks carrying `\g<` or `\g'` rendered as `perr` under
+  `gen_corpus.py`'s `wave='D'` marker with **the oracle's answer carried in a
+  `# WAVE D ORACLE:` comment** — `APPROACH.md` §7's policy as `docs/testing.md`
+  states it — and wave D's edit was to delete one keyword argument and re-run.
+  MEASURED NOW: `build/pcrec --list-syntax` reads `built` for all six `\g`
+  subroutine rows (`\g<1>`, `\g'1'`, `\g<0>`, `\g<01>`, `\g'0'`, `\g'01'`,
+  module `recursion`, port `pcrec_brport_g`), so the marker is history and the
+  blocks are live match cells. The MECHANISM above is not history and is the
+  part to reuse: it is how the next module's corpus is written before its
+  producer exists.
 
   `(?(DEFINE)...)` never appears: it stays module `conditionals`' doorway
   until D71 item 4's registry row lands (wave F), and every callee-only body

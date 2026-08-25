@@ -25,9 +25,17 @@ which is why it is called out rather than folded into the list:
 `maxw_check.c` (run as `run_mrl_tests.sh` §8) reads a number the compiler
 NEVER EMITS. `src/opt/mrl.c` gained `pcrec_maxw` — `pcrec_minw`'s twin with the
 opposite sound direction — whose only consumer is the lookaround module's
-fixed-width rule, which does not exist yet. So none of the three instruments
-above can be red because of it: there is no bound to emit, no differential arm
-to disagree, and no `.rxt` cell whose answer depends on it. The check links
+fixed-width rule. When this paragraph was written that rule DID NOT EXIST, so
+none of the three instruments above could be red because of it: no bound to
+emit, no differential arm to disagree, no `.rxt` cell whose answer depended on
+it. **[M6.6] LANDED THE CONSUMER AND THAT HALF EXPIRED** (verified at the
+[DD-14] close, 2026-08-25: `src/parse/mod_lookaround.c:298/309` calls
+`pcrec_maxw` beside `pcrec_minw` to decide FIXED; `src/opt/callgraph.c:722`
+carries the call-aware fixpoint) — a wrong `maxw` is now an answer-level
+defect, a lookbehind wrongly accepted or wrongly refused. What did NOT expire
+is the reason the check exists: it reads the number DIRECTLY, so it goes red
+for causes no answer-comparison reaches — an over-estimate that is still SOUND
+(and therefore invisible to every match) but wide enough to be wrong. The check links
 `libpcrec.a`, parses every `pattern` line in `tests/` to an AST and calls the
 two analyses directly.
 
