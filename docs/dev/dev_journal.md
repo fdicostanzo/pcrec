@@ -14541,3 +14541,12 @@ elision expectation PER AXIS from what the region is (default 4; vm 0
 with the reason; noprefilter — measure; nocaptures 0), assert the
 measured value, keep (B)'s must-not-differ, and STOP if an axis
 measures other than derived.
+Control (manager, 03:58, main's binary, `(a){0}b` via rx_info.engine +
+`goto rx_L0` presence): default DFA; -fno-prefilter DFA; --engine=vm VM;
+--no-captures DFA. Pre-module the pattern was VM on default/noprefilter
+(a capture promised) and DFA on nocaptures. So the (A) elision
+expectation per axis is default 4 / noprefilter 4 / vm 0 / nocaptures 0
+— sent to the lane as the control for its measurement. Aside: DFA
+artifacts carry no `#define RX_ENGINE` on this tree (the D46 macro is
+VM-side, like RX_VM_PREFILTER) — a second instance of pcrecdev2's
+DFA-stamp gap, added to [DD-13]'s candidate note.
