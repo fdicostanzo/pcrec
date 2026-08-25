@@ -14903,3 +14903,11 @@ the rebase keep main's paragraph as the correction of record and place
 the lane's "Remedy — DONE" section beneath it. `make test` launched
 detached at 4111649 ~08:10; strict in the same window; san announced
 separately.
+
+#### Thirty-ninth session, part 44 addendum 2 — the close's make test is CLEAN (2026-08-25 08:47 EDT)
+
+srClose's `make -j12 -Otarget test` on its tree (4111649+ce2ca3a: ae9c98c
++ K35's three layers + docs), detached, alone (08:10-08:47, 37 min):
+checks passed: 1536; cases failed: 0; cases passed: 26843; checks failed: 0;  sections skipped 0, ZERO section errors — test-resource
+included, so the K31 pair did not blip this run (load-dependent, as
+[TT-10] says). Item 3 (the gates) running; strict and san follow.
