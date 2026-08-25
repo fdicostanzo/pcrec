@@ -13859,3 +13859,15 @@ with the P-12 citation; `leftrec` cells whose root HAS a base case stay
 `gu frames` = K34, parked. So the blinded corpus's final tally on the
 shipped tree: 1,031 cells, 0 pcrec-wrong outside K34's eleven, 4
 corpus cells corrected by a ruling that postdates their writing.
+
+ADDENDUM (part 18, ~22:5x): sr27land went silent (no process, no
+edit, no commit) for 30+ minutes after its final make test failed on the
+four ruled cells; per the watchdog rule the manager took over the
+landing step on branch sr27 (11f5275): sr_gen.py gains guclass="ruled"
+(empty-language roots render `n` citing P-12/wave E, libpcre2's −52
+recorded as the cross-check), sr_check.py accepts a declining oracle
+only under the RULED comment and only for an n cell (an `m` there is
+still an error); d27 alone 1,020/0; sr_check re-verified 987
+expectations; ratchet "still failing: 1" (K34's 11). The branch's final
+make test runs from the manager's side; merge follows. pcrecdev2
+notified of the run.
