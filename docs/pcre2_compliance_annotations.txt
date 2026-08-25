@@ -1121,12 +1121,45 @@ resume frame OUTLIVES ITS RETURN (design §5.1/§5.3), so recursion and
 call-driven iteration are both bounded by the artifact's frame capacity;
 past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one.
 MEASURED at a real size rather than in principle: the RFC 5322 email
-specimen's call-factored spelling gives up about 2 K iterations into a
+specimen's call-factored spelling gave up about 2 K iterations into a
 2000-deep subject at the 2048-frame stamped default
-(docs/design/subroutines_measurements/email_specimen/README.md). D71
-item 2 makes that buffer caller-provided and wave G's splice removes the
-per-call frame for eligible callees, so the limit is `PLANNED` away
-rather than permanent — which is what the `becomes` column says.
+(docs/design/subroutines_measurements/email_specimen/README.md) — and at
+[DD-14] wave G it gives up on NO subject in that population, because a
+spliced call consumes no resume frame.
+
+**THE CAPACITY IS D73's, AND THE NUMBER THAT BINDS IS THE TRAIL'S**
+(Frank, 2026-08-24, superseding D71 item 2's "a larger stamped default
+for call-bearing patterns"). The default STAYS at 2048 frames / 3072
+trail entries: the run struct lives on the C stack of the un-suffixed
+entries (131,144 B call-bearing), which already SIGSEGVs a musl-default
+128 KB thread (K33), and the trail binds BEFORE the frames — 2.0 frames
+against 9.0 trail entries per nesting level of `^(a(?1)?b)$` — so the
+shipped default gives up at n = 342, a 684-byte subject, and raising
+frames alone would change nothing. The remedy is not a bigger default
+but the CALLER-PROVIDED BUFFER ([DD-14.FB]'s three `_in` entries: a
+224 B frame, a 64 MB `MAP_NORESERVE` reservation matching 800 KB in
+0.056 s). That is why the `becomes` column reads `PLANNED` rather than
+permanent — the path around the limit ships, it is just not the default.
+
+**AND THERE IS A SECOND RESOURCE LIMIT, WHICH IS A DIVERGENCE RATHER
+THAN A CAP: K34.** On some same-position LEFT recursions pcrec answers
+`PCREC_ERR_FRAMES` where libpcre2 10.46 CONCLUDES with a clean NOMATCH —
+`(a|(?1)a)b` on "a"/"aa"/"b"/"" and `^(a|(?1)a)$` on "aaaaab" are the
+measured cells. It is not a wrong answer under D26 (a give-up says
+nothing about the language), and it is not the naive rule the design
+§3.3 refuted: PCRE2's own guard returns error −52 only when a nearest
+same-group ancestor recursion exists AND the subject pointer AND the
+`last_used_ptr` high-water mark are both unchanged, which is why 199
+same-position recursions can still MATCH and why the unanchored runaways
+conclude. Lane srK34 pinned that rule on a 65/65-cell probe matrix
+(docs/design/subroutines_measurements/out/recurse_loop.txt) and
+RECOMMENDED against adopting it — a faithful copy needs a stored subject
+pointer and a `last_used_ptr` equivalent threaded through every
+fail-and-return site of the emitted artifact, not an O(1) per-callee
+slot. The inverse case exists too and no expectation is writable for it:
+`((?1)?a)` and `((?1)*a)` on "a" MATCH here and are −52 there. The
+eleven affected corpus cells are parked under the known-fail ratchet
+until the ruling; K34 is OPEN.
 
 **THE LEADING-ZERO RULE IS THE SHARP EDGE OF THIS FAMILY**, and it is
 why the index shows spellings a reader might take for redundant. The
