@@ -28,15 +28,19 @@ This is D46's "every strategy-selection point is observable and
 forceable" principle (`docs/dev/decisions.md` D46), applied at the tuning
 layer: a compiler optimization that cannot be turned off cannot be
 differentially tested (D47.3, `docs/dev/decisions.md`, ruling 3 — "a
-strategy that cannot be denied cannot be differentially tested"). Each
-flag below exists **because** it has a differential that checks this exact
-claim — compile the same pattern twice, once with the strategy and once
-without, link both into one driver, and sweep subjects comparing span,
-every capture slot, and the failure surface. Nine of the eleven axes in §2
-are members of this family (the deny-only six, the force pair, and the two
-engine-selecting denials); `--unroll=` is the deny family's value
-parameter and `--engine=` is the coarsest-grained member of the same
-observable/forceable principle, one level up (D46's motivating case).
+strategy that cannot be denied cannot be differentially tested"). Nine of
+the eleven axes in §2 are D47.3's family — the deny-only six, the force
+pair (§2.5), and the two engine-selecting denials — and eight of those
+nine exist **because** they have a differential that checks this exact
+claim directly: compile the same pattern twice, once with the strategy and
+once without, link both into one driver, and sweep subjects comparing
+span, every capture slot, and the failure surface. The ninth, §2.5's force
+pair, is the family's one exception — its own correctness already rides
+an existing, already-validated suite (§2.5 states which), so it earns no
+NEW differential of its own even though it is D46's canonical
+motivating case for the observable/forceable principle. `--unroll=` is the
+deny family's value parameter and `--engine=` is the coarsest-grained
+member of the same observable/forceable principle, one level up.
 
 **Who this document is for.** A contributor building or reviewing a
 differential test needs to know, per axis: what it denies/forces, whether
