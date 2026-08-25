@@ -144,7 +144,9 @@ driver). Population, measured this session (`bash tests/counterk/
 run_counterkdiff.sh`):
 
 ```
-COUNTERKDIFF_TALLY
+counterkdiff: 59 patterns agreed, 0 diverged, 0 refused by pcrec
+counterkdiff: 45 of 59 took the COUNTER rung
+counterkdiff: 541899 pattern-subject-startpos cells compared
 ```
 
 ### 2.4 `-fno-length-prune` — `PCREC_NO_LENGTH_PRUNE` (bit 7)
