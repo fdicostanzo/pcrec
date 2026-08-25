@@ -7480,10 +7480,65 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         }
         for (int i = 0; i < nt; i++) {
             bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
+            if (!v.rgn_emit[i]) {
+                /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
+                 * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
+                 * SETS, and the two are NOT the same thing the moment a
+                 * spliceable target REACHES A LINKED ONE.
+                 *
+                 * THE BUG THIS REPLACES, MEASURED: `base[i]` is narrowed to the
+                 * capture half for a spliced `i` (the `continue` above), but
+                 * `base[j]` for a reached LINKED `j` still carries that
+                 * region's seven per-copy family RANGES — so the union handed
+                 * `vm_splice` more slots than `spl_nw` reserved and the block
+                 * overflowed. `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` — a
+                 * non-recursive helper calling a recursive rule, which is this
+                 * module's own target shape — refused with "the splice save
+                 * block overflowed (7 of 6 slots)" while `-fno-splice-calls`
+                 * compiled it. FOUR such patterns were found and NONE of the
+                 * wave's bars could see them: over 3,025 corpus patterns, 113
+                 * artifacts have a SPLICED call and 37 have a LINKED one and
+                 * **ZERO have both**, so `A == B`, the sabotage matrix and the
+                 * specimen were structurally blind to the interaction.
+                 *
+                 * AND THE FIX IS DECIDED FROM THE SEMANTICS, NOT FROM WHICH
+                 * NUMBER IS SMALLER. A spliced site must restore what its
+                 * inlined body writes that is SHARED with the caller and that
+                 * NOTHING ELSE restores. A reached LINKED target's per-copy
+                 * slots are not that: the call to it is an `RX_CALL` into its
+                 * shared region, and **that region's own `RX_RETURN` restores
+                 * every slot in ITS `W`** before control comes back — so by the
+                 * time the spliced body ends they are already back, and
+                 * restoring them again would write a value that is already
+                 * there. What is genuinely shared is the CAPTURE PAIRS and the
+                 * `SLOT_GROUP<n>_PENDING` slots, which are indexed by GROUP
+                 * NUMBER and are therefore the same cells the caller's own
+                 * lexical occurrence writes. That is the capture half, and it
+                 * is exactly what `spl_nw` counts.
+                 *
+                 * ONE MECHANISM, TWO RENDERINGS, AND THE TIMING FORCES THE
+                 * SPLIT (src/gen/CLAUDE.md's standing hazard, and `W`'s own
+                 * header makes the same point about slot indices): `rgn_grp[i]`
+                 * — the transitive group set — is computed ONCE, before the
+                 * layout exists. `spl_nw[i]` is its COUNT, which is all the
+                 * pre-pass can use because slot INDICES do not exist yet;
+                 * `rgn_w[i]` here is its INDICES. The assertion below is what
+                 * makes "one mechanism" checkable rather than claimed. */
+                memset(w, 0, (size_t)nstate * sizeof *w);
+                for (int g = 1; g <= v.ngroups; g++) {
+                    if (!v.rgn_grp[i][g]) continue;
+                    if (2 * g + 1 < nstate) { w[2 * g] = true; w[2 * g + 1] = true; }
+                    if (vm_marked(&v, g)) {
+                        int ps = vm_slot_pend(&v, g);
+                        if (ps >= 0 && ps < nstate) w[ps] = true;
+                    }
+                }
+            } else {
             memcpy(w, base[i], (size_t)nstate * sizeof *w);
             for (int j = 0; j < nt; j++) {
                 if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
                 for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
+            }
             }
             /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
              * Nothing above can put them there — the capture walk starts at
@@ -7497,6 +7552,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
             v.rgn_w[i]  = lst;
             v.rgn_nw[i] = n;
+            /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO.
+             * `spl_nw[i]` sized the `SLOT_SPLICE_SAVE` reservation during the
+             * pre-pass; `rgn_nw[i]` is what `vm_splice` will allocate. They are
+             * two readings of ONE set (`rgn_grp[i]`), so a disagreement means
+             * the set moved between them — and the failure that used to
+             * announce it was an overflow at emission, three passes later, with
+             * nothing pointing at the cause. */
+            if (!v.rgn_emit[i] && v.spl_nw && n != v.spl_nw[i])
+                ctx_fail(cx, 0, "internal error: the spliced callee for group "
+                                "%d reserved %d save slots and needs %d — the "
+                                "pre-pass and the W build disagree about its "
+                                "transitive group set",
+                         pcrec_callgraph_target(v.cg, i), v.spl_nw[i], n);
         }
         vm_publish_saves(&v, root);
 
