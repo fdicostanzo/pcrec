@@ -5613,3 +5613,26 @@ stamped abi must equal the compiler's (replacing the ad-hoc
 that changes emitted scaffolding without bumping `abi` fails (B) and is
 told why. Plan row [TT-11] charters the change. `docs/testing.md` and
 `tests/codegen/CLAUDE.md` state the two owners.
+
+## D77 — no end-anchored generation axis now: the `(?:P)\z` idiom stands; the axis is built later UNDER MEASUREMENT or not at all (Frank, 2026-08-25)
+
+**Context.** pcrec-bench's whole-subject regime (PCRE2
+`ANCHORED|ENDANCHORED`) has no pcrec entry; `_match_caps(...) == n` is
+sufficient-not-necessary (`a|ab` on "ab": leftmost-first prefix [0,1),
+length test NO, PCRE2 ENDANCHORED (0,2)), and the ruled idiom
+`(?:P)\z` + the anchored entry is exact but a separate artifact whose
+DFA skip loop cannot skip the final byte. `ENDANCHORED` is ratified as a
+GENERATION-AXIS disposition (D38, docs/pcre2_options.md); [OS-4] is
+where it would be built — the row whose original charter is that the
+EXISTING anchoring split has never been measured to earn its keep (D18).
+
+**Decision (Frank).** Not now. The idiom IS the pattern language's way
+of saying end-anchored, and options compile away (D18); the axis would
+add one-artifact-for-both-regimes and close the final-byte skip gap —
+and the gap is a FOLD ON THE IDIOM (the skip loop reasoning about `\z`),
+a general optimization for every `\z` user, already a [DD-13] candidate
+for the bench loop. Build the axis later under a measured number if the
+bench shows the cost at rank; otherwise never. The GENERAL RULE, stated
+for the record: **no artificial timelines; when we would be better
+served building something later under measurement, wait and see, and
+focus on builds we will not have to rebuild or roll back.**
