@@ -14208,3 +14208,33 @@ to HOLD and, on "RESUME", relaunch from S156 DETACHED (`setsid nohup`,
 PID file) so the harness cannot reap it. Rows so far: 48 complete, all
 `unexpected: 0`; S174 not yet reached (13e2c30 will be in every archive
 that reaches it). srFBc is light (editing; 636d08c).
+
+#### Thirty-ninth session, part 25 — [DD-14.FB] cells interim; §10.6 ruling (2026-08-25 ~02:3x EDT)
+
+srFBc: all four §11 cells green under the hold. (a) `frames-buffer=`
+harness directive, positional within a block (gu frames and m for one
+subject off one compile); framebuffer.rxt 16/0 with ASYMMETRIC capacities
+1024/8192 (n=343 needs 686 frames / 3,081 trail — the pair fails if
+swapped, which is what makes S-FB2 detectable); two cells pin §4's "which
+capacity binds". (b) tests/thread ts4_driver + run_stackdepth_tests.sh,
+`test-stackdepth` IN make test: K33 encoded KNOWN (fails if the default
+entry ever stops dying), with a CAUSAL control — call-free `(a|aa)+b` on
+the same thread does not die; cause stated off -fstack-usage: 131,216 B vs
+a 131,072 B stack, over by 144. (c) 12-pattern spread `_search_in(NULL)`
+vs un-suffixed byte-identical; `RXTROUTE=null` corpus-wide axis. (d)
+fb_mmap_driver (opt-in `make test-frame-buffer`, ~105 MB): §10.6
+reproduces — 1,677,721 frames / 4,194,304 trail from 2×64 MB; 800 KB
+subject matches in 0.0574 s touching 90,372 KB (spec 0.056 s / 88 MB);
+n=466,000 matches, 470,000 refuses. Codegen [DD-14.FB] block 6 checks
+(file 100/0).
+SPEC FINDING: §10.6's closing sentence ("PCREC_ERR_FRAMES on every one of
+those subjects through rx_search") contradicts §10.1 and measurement (the
+684 B row MATCHES). RULED: correct the spec sentence (as-built contract);
+design §8 gets an inline bracketed measured-note (refutations inline).
+Three existing-suite regressions fixed by the lane: TS-1's naive deny
+list fired on a header comment saying "malloc, mmap" (comment reworded,
+check untouched); KRESET rule 3 now spans rx_match + rx_match_run with
+two more assertions; run_ir_listing/run_possessify grepped
+RX_RESUME_FRAMES out of the .c after it moved to the .h (would have been
+VACUOUS, not red) — both read .c+.h now. Reminded twice: the six sabotage
+rows wait for GO HEAVY.
