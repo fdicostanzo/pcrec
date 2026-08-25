@@ -69,10 +69,19 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # `pattern ` lines from every .rxt under tests/, known_fail included: a
 # deferred DFA bug is still a pattern whose emitted bytes must not move.
 PATFILE="$WORKDIR/patterns"
+# `LC_ALL=C` IS LOAD-BEARING AND ITS ABSENCE WAS A MEASURED DEFECT IN THIS
+# CHECK ([DD-14 wave G], 2026-08-24, found while adding the dead-group
+# exception below). Under the ambient `en_US.UTF-8`, `sort -u` collates at a
+# level that IGNORES PUNCTUATION, so two corpus patterns differing only in
+# punctuation compare EQUAL and `-u` DROPS ONE — `(a){0,0}b` and `a{0,0}b`
+# reduce to the second. **MEASURED: the population was 1,660 of the corpus's
+# 2,610 distinct patterns — this check had been running on 64% of it, and
+# nothing said so.** `tests/codegen/run_recursion_identity.sh` gets this right
+# and is where the spelling was copied from.
 find "$ROOT_DIR/tests" -name '*.rxt' -print0 \
     | xargs -0 grep -h '^pattern ' \
     | sed 's/^pattern //' \
-    | sort -u > "$PATFILE"
+    | LC_ALL=C sort -u > "$PATFILE"
 npat=$(wc -l < "$PATFILE")
 if [ "$npat" -lt 100 ]; then
     bad "corpus extraction found only $npat patterns — the gate has no population"
@@ -84,6 +93,34 @@ fi
 # ---- the three checks, one pass over the corpus --------------------------
 same=0; capfree=0; capbearing=0; skipped=0
 divergent=""; nocapbad=""; ncapsbad=""
+# ============================================================================
+# [DD-14 wave G] THE DEAD-GROUP EXCEPTION TO "RX_NCAPS > 1 => VM"
+# ============================================================================
+# D42.2's rule was `RX_NCAPS > 1` implies the VM, on the argument that a
+# capture-bearing pattern needs the capture-recording engine. Wave G's
+# DEAD-CAPTURE ELISION retires the ARGUMENT and not the rule behind it: a group
+# that NO EMITTED CODE CAN WRITE — its only occurrence under an `A_REP{0,0}`,
+# which emits nothing — cannot force an engine, and PCRE2 still COUNTS it and
+# still reports it UNSET (MEASURED on 10.46: `(?(DEFINE)(?<g>a))(?&g)` has
+# CAPTURECOUNT 1 and answers g1 unset). So the artifact must still PROMISE it,
+# and a DFA artifact can promise a permanently-unset group perfectly well.
+#
+# `RX_NCAPS == ngroups + 1` IS THEREFORE STILL UNCONDITIONAL and is checked
+# separately below; what gains an exception is only "and the engine is the VM".
+#
+# THE EXCEPTION IS NAMED, NOT INFERRED, AND ASSERTED IN BOTH DIRECTIONS. The
+# alternative — asking the compiler whether the pattern has a live capture —
+# would derive the control from the thing it controls, which is this project's
+# recurring check-design failure. So the four corpus instances are written out,
+# every one of them MUST take the exception (a listed pattern that went back to
+# the VM means the elision stopped firing), and any pattern not on the list that
+# promises a group off the VM is a plain failure. The same list, for the same
+# reason, is in `tests/codegen/run_recursion_identity.sh`.
+DEADGROUP_PATTERNS='(a){0}
+(a){0,0}b
+(()|$){0}b
+(()|^){0}[b]'
+deadgroup=0
 capdiv=0; capdivpats=""
 
 while IFS= read -r pat; do
@@ -171,9 +208,18 @@ while IFS= read -r pat; do
         d_ncaps="$(cat "$WORKDIR/def/gen.c" "$WORKDIR/def/gen.h" | grep -oE '^#define RX_NCAPS [0-9]+' | awk '{print $3}')"
         d_eng="$(grep -oE '^\s*\.engine = [0-9]+' "$WORKDIR/def/gen.c" | grep -oE '[0-9]+$')"
         want=$((ngroups + 1))
-        if [ "$d_ncaps" != "$want" ] || [ "$d_eng" != "2" ]; then
+        # `RX_NCAPS == ngroups + 1` IS UNCONDITIONAL AND STAYS SO. What wave G
+        # changed is the SECOND conjunct — see the DEAD-GROUP paragraph above.
+        if [ "$d_ncaps" != "$want" ]; then
             ncapsbad="$ncapsbad
-  $pat (groups=$ngroups RX_NCAPS=$d_ncaps engine=$d_eng)"
+  $pat (groups=$ngroups RX_NCAPS=$d_ncaps engine=$d_eng) -- RX_NCAPS != ngroups+1"
+        elif [ "$d_eng" != "2" ]; then
+            if printf '%s\n' "$DEADGROUP_PATTERNS" | grep -qxF -- "$pat"; then
+                deadgroup=$((deadgroup + 1))
+            else
+                ncapsbad="$ncapsbad
+  $pat (groups=$ngroups RX_NCAPS=$d_ncaps engine=$d_eng) -- promises $ngroups group(s) and is not on the VM"
+            fi
         fi
     fi
 done < "$PATFILE"
@@ -225,7 +271,12 @@ fi
 if [ "$capbearing" -lt 20 ]; then
     bad "[M4.5b] RX_NCAPS>1 => VM: only $capbearing capture-bearing patterns — this check was vacuous before [M4.5b] and must not stay so"
 elif [ -z "$ncapsbad" ]; then
-    ok "[M4.5b] RX_NCAPS>1 => VM holds NON-VACUOUSLY over $capbearing capture-bearing corpus patterns, with RX_NCAPS == ngroups+1"
+    ndead=$(printf '%s\n' "$DEADGROUP_PATTERNS" | grep -c .)
+    if [ "$deadgroup" -ne "$ndead" ]; then
+        bad "[M4.5b / DD-14 wave G] the DEAD-GROUP list names $ndead patterns and $deadgroup of them took the exception. Every listed pattern promises a group and must NOT be on the VM — one that went back to the VM means the dead-capture elision stopped firing on it and the list has stopped defending anything:$(printf '\n  %s' $DEADGROUP_PATTERNS)"
+    else
+        ok "[M4.5b] RX_NCAPS == ngroups+1 holds UNCONDITIONALLY over $capbearing capture-bearing corpus patterns, and 'and therefore the VM' holds for all but the $ndead NAMED dead-group patterns, each of which promises its groups and reports them permanently UNSET on the DFA (wave G's elision, exactly as libpcre2 counts them)"
+    fi
 else
     bad "[M4.5b] RX_NCAPS/engine disagreement:$ncapsbad"
 fi
