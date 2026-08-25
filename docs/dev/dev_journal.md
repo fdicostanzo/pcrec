@@ -14651,3 +14651,8 @@ worktree removed (branch kept at 88a22d1). Close brief __BASE__ =
 17469b6. The lane's two carry-offs are already in the standing rules
 (never edit an executing script; the setsid PID pitfall) and the check-
 design memory (the symmetry cell as sole detector).
+04:53: the split identity gate runs on main detached (PID 1950812);
+mgr_after_gate.sh (PID 1957587) waits on it and execs mgr_battery.sh —
+mech PROCS=6 → make test → solo test-resource + counterk → make san —
+strictly sequential, logs per stage, trailer BATTERY_DONE. Watchdog
+cron replaced: 90f4cc33 watches the chain; the lane crons are deleted.
