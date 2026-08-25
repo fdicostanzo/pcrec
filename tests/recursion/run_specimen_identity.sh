@@ -80,6 +80,17 @@ PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O2 -std=gnu11}"
+# D45: THE SHARED GENERATED-CODE COMPILE AND EXECUTION BUDGET. Every gcc of an
+# emitted artifact goes through `gen_cc` and every run of a compiled matcher
+# through `gen_run` (a watchdog with a CPU cap, a wall cap and an RSS ceiling),
+# so a pathological compile or a runaway matcher is a NAMED FAILURE rather than
+# a hang. **BEING OPT-IN DOES NOT EXEMPT THIS FILE, and its own subject matter
+# is why**: the specimen's recorded history is a `PCREC_ERR_STEPS` give-up after
+# ~6 s and five `PCREC_ERR_FRAMES` give-ups, i.e. exactly the shapes the budget
+# exists to bound — an unwrapped run here would hang on the very regression this
+# file is the detector for.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 SPEC="$ROOT_DIR/docs/design/subroutines_measurements/email_specimen"
 PROBES="$ROOT_DIR/docs/design/subroutines_measurements/probes"
 FEATS="all"
@@ -282,8 +293,9 @@ for sp in $SPELLINGS; do
         -- "$(cat "$SPEC/$sp.rx")" >/dev/null 2>&1 \
         || die "could not build a driver for '$sp'"
     # shellcheck disable=SC2086
-    $CC $GENCFLAGS -o "$WORKDIR/m_$sp" "$WORKDIR/m_$sp.c" 2>"$WORKDIR/m_$sp.cerr" \
-        || die "the '$sp' driver does not compile: $(head -3 "$WORKDIR/m_$sp.cerr")"
+    gen_cc "specimen driver '$sp'" $CC $GENCFLAGS -o "$WORKDIR/m_$sp" \
+        "$WORKDIR/m_$sp.c" 2>"$WORKDIR/m_$sp.cerr" \
+        || die "the '$sp' driver does not compile (or exceeded D45's compile budget): $(head -3 "$WORKDIR/m_$sp.cerr")"
 done
 
 # THE DRIVER TAKES ITS SUBJECT ON argv, WHICH TRUNCATES AT A NUL — and four of
@@ -295,11 +307,36 @@ done
 # section below reads the files directly and so covers the true 85; if this
 # section is ever wanted at full fidelity, the fix is a stdin-reading driver
 # (tests/backrefs/bref_batch.c is one), not a change to the subjects.
+# THE WATCHDOG'S BREACH CODES, AND WHY THIS FUNCTION EXISTS RATHER THAN A BARE
+# `if ! gen_run`. `scripts/watchdog` passes the CHILD'S OWN exit code through
+# verbatim and reserves 122..125 for its own verdicts (122 memory, 123 CPU, 124
+# wall, 125 internal). The `--emit-main` driver exits **1 on NOMATCH** and 3 on a
+# give-up — both of which are ANSWERS this file reads, not failures — so
+# treating any nonzero as a breach is wrong, and MEASURED wrong: the first
+# version of this wrapping reported 148 budget failures on a run where every
+# matcher returned in about 40 ms, because most of the 85 subjects legitimately
+# do not match. Only 122..125 is a breach.
+gen_breached() { # gen_breached <rc>
+    [ "$1" -ge 122 ] && [ "$1" -le 125 ]
+}
+
 run_all() { # run_all <spelling> -> one line per subject
     local sp="$1"
     : > "$WORKDIR/ans.$sp"
     for f in "$SUBJ"/*.bin; do
-        "$WORKDIR/m_$sp" "$(cat "$f")" 2>&1 | head -1 >> "$WORKDIR/ans.$sp"
+        # D45: EVERY run of a generated matcher is watchdogged. A give-up is an
+        # ANSWER here (§2 asserts there are none), but a HANG is not — and this
+        # specimen is the one whose wave-B+C reading was a 6-second STEPS
+        # give-up, so an unbounded loop is the regression, not a hypothetical.
+        gen_run "specimen '$sp' subject $(basename "$f")" \
+            "$WORKDIR/m_$sp" "$(cat "$f")" > "$WORKDIR/one" 2>&1
+        rc=$?
+        if gen_breached "$rc"; then
+            printf 'BUDGET-EXCEEDED %s\n' "$(basename "$f")" >> "$WORKDIR/ans.$sp"
+            bad "[subjects] the '$sp' matcher hit D45's run budget (watchdog rc=$rc) on subject $(basename "$f") — a matcher that does not return is the failure this specimen's own history predicts"
+            continue
+        fi
+        head -1 "$WORKDIR/one" >> "$WORKDIR/ans.$sp"
     done
 }
 for sp in $SPELLINGS; do run_all "$sp"; done
@@ -367,8 +404,28 @@ python3 "$SPEC/gen_throughput_subjects.py" >/dev/null 2>&1 \
     || die "gen_throughput_subjects.py failed"
 TP="$SPEC/throughput"
 
+# D45 AGAIN, AND THE TENSION IS REAL RATHER THAN CEREMONIAL: this function is
+# TIMING, so the watchdog's own cost would land inside the number if it wrapped
+# each of the five repetitions. It does not — the five timed runs are bare, and
+# the whole five-run block is preceded by ONE watchdogged run of the same binary
+# on the same subject, which is what bounds the pathology. A matcher that hangs
+# hangs on the first call; a matcher that returns in 40 ms does not become
+# interesting on the fourth. So the budget is enforced once, the measurement is
+# clean, and neither is traded for the other.
+#
+# THE GUARD RUN IS NOT A WARM-UP AND MUST NOT BE READ AS ONE: its exit status is
+# CHECKED and a breach FAILS the cell by name. (It does incidentally warm the
+# page cache, which is why the medians below are stable.)
 median_ms() { # median_ms <binary> <subject-file>, 5 runs
     local bin="$1" f="$2" i t
+    gen_run "specimen throughput $(basename "$f")" \
+        "$bin" "$(cat "$f")" >/dev/null 2>&1
+    local grc=$?
+    if gen_breached "$grc"; then
+        bad "[throughput] $(basename "$bin") hit D45's run budget (watchdog rc=$grc) on $(basename "$f") before timing began — wave B+C measured PCREC_ERR_STEPS after ~6 s on this exact subject set, so this is the regression this section exists to catch"
+        echo "BUDGET"
+        return
+    fi
     : > "$WORKDIR/times"
     for i in 1 2 3 4 5; do
         t=$( { TIMEFORMAT=%R; time "$bin" "$(cat "$f")" >/dev/null 2>&1; } 2>&1 )
@@ -382,6 +439,10 @@ for f in "$TP"/*.bin; do
     b="$(basename "$f")"
     to="$(median_ms "$WORKDIR/m_orig" "$f")"
     tf="$(median_ms "$WORKDIR/m_factored" "$f")"
+    if [ "$to" = "BUDGET" ] || [ "$tf" = "BUDGET" ]; then
+        TP_FAIL=1
+        continue
+    fi
     # WITHIN NOISE means "the same artifact", and the artifacts ARE the same
     # past §1's three named lines, so anything but a small ratio would mean §1
     # is comparing the wrong files. 1.5x is generous for a wall clock on a
