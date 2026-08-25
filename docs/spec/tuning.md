@@ -273,7 +273,9 @@ shared driver). Population, measured this session (`bash tests/altcls/
 run_altdiff.sh`):
 
 ```
-ALTDIFF_TALLY
+altdiff: 41 patterns agreed, 0 diverged, 0 refused by pcrec
+altdiff: 30 of 41 had at least one ALTCLS merge or factor
+altdiff: 35995 pattern-subject-startpos cells compared
 ```
 
 ### 2.8 `-fno-atomic-discharge` — `PCREC_NO_ATOMIC_DISCHARGE` (bit 12)
