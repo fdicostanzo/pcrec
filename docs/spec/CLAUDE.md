@@ -232,6 +232,25 @@ spec and a design doc disagree, the spec is what the tool promises.
   TT-* notes, the living oracle-exclusion catalog) and gained a header
   note plus a one-paragraph pointer where the moved sections stood.
 
+- `registry.md` — **[SPEC-1.5], 2026-08-25.** The `--list-syntax`/
+  `--list-verbs`/`--list-families` TSV COLUMN CONTRACT: every column
+  by header name and its value set (which are a closed, stable
+  vocabulary versus which are free text), read live off a fresh build.
+  Distinct from `table_contract.md` (the generic wire format every
+  table shares) and from `cli.md` §2 (what each surface answers, in
+  prose) — this document is the data contract itself: 17 columns for
+  `--list-syntax` (128 rows this pass), 6 for `--list-verbs` (50 rows),
+  7 for `--list-families` (90 rows), the `built` (D65) vs.
+  `status`/`roadmap` distinction stated at the detail cli.md's one
+  sentence points past, and the `family` (D71 item 3) grouping rule
+  (AND-over-members `built`, dispatch identity unchanged per row, R6).
+  States what `tests/registry/`'s two batteries pin (self-consistency
+  vs. the independent libpcre2 check, PC-3) and what neither guarantees.
+  Flags one drift found in the process: `tests/registry/CLAUDE.md`'s
+  own prose still cites the row count as "100 since Q2/SR-9"; the live
+  count today is 128 (`registry_check.c`'s own exact-count assertion
+  agrees) — not corrected in that file by this pass.
+
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
 three-component annotated-derivation discipline (generated facts +
