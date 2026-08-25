@@ -13890,3 +13890,19 @@ GREEN — test 25,463/0 (resource 19/19 solo after the sixth load blip),
 strict, san rc=0 in 53 min with zero reports both axes. Every wave on
 main is battery-validated. sr27's landing make test is the one run still
 on the box; wave G is at its sabotage rows and hazard probe.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 19) — [DD-14.D27] MERGED (8da6120): the blinded corpus rides make test; the D27 tally
+
+The blinded `recursion` corpus is on main: 19 files under
+tests/recursion/d27/ (10 .rxt, the generator with its intent check and
+`parked=`/`ruled` forms, the independent checker, the two-arm features
+check, the Perl arm, the driver, PERL_DIVERGENCES.md, CLAUDE.md). Corpus
+with d27 riding: 26,483 / 0 (the run's one red was the seventh
+resource-cap blip under load 41; 19/19 solo on the merged tree). THE D27
+TALLY for this module, against la27's: 1,031 cells on first contact — 0
+corpus-wrong by the author's own alphabet (the features check and the
+oracle-checked intent did their job), 11 pcrec-wrong-by-capability
+(K34, parked with a pinned rule behind them), 4 corrected by a RULING
+that postdated the writing (P-12 via wave E). Two extract wording errors
+found by measurement and amended. The author's cell and delivery
+worktree are removed. Wave G is the last lane of the build.
