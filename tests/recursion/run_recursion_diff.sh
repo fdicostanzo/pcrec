@@ -387,7 +387,26 @@ compare_one() {
 }
 
 # THE POPULATION, and every row is a MEASURED claim of the design rather than
-# a shape somebody liked. It is written here rather than extracted from the
+# a shape somebody liked.
+#
+# **[DD-14 wave G] THE LAST TWO ROWS ARE THE SPLICE'S OWN LOAD-BEARING CASE**,
+# and they are here rather than in the corpus because what they need is the
+# STARTPOS axis this section owns. `vm_splice`'s header derives that two
+# activations of ONE EMITTED splice site cannot NEST (that would put the callee
+# in a cycle, which §6.3 condition 1 excludes) but CAN be SEQUENTIAL — a call
+# under a `+` is one emitted site run many times — and that the trail repairs
+# them with no help from the emitter: activation 1 parks V1, activation 2 parks
+# V2 over it, and a backtrack into activation 1's still-live choice point
+# rewinds past activation 2's park before control re-enters.
+#
+# `(?&g)+` WITH `g = a|ab` IS THAT SHAPE MINIMALLY: every activation leaves a
+# live choice point, the trailing `c` forces retries into earlier ones, and
+# `"abac"`, `"aabc"`, `"aaac"` and `"ababc"` each resolve through a different
+# distribution of the two branches. THE ATOMIC TWIN IS THE SHARPER ONE: the
+# callee's cut mark is a PER-EMITTED-COPY slot, and §5.3b measured SIX FALSE
+# MATCHES from failing to restore that family for a SHARED region — the splice's
+# claim is that a private copy needs no restore, and this row is where a wrong
+# answer to that shows up. It is written here rather than extracted from the
 # corpus because the corpus's own cells are already oracle-generated: what
 # this section adds is the STARTPOS and GROUP axes over the same shapes, which
 # is where the restore set and the per-attempt reset become observable.
@@ -412,11 +431,13 @@ done <<'ROWS'
 §5.3b axis P, the PENDING family|^(a(?1)?b)\1$
 §5.3b axis C, the CUT_MARK family|^((?>a(?1)?))a$
 §5.3b axis C's non-atomic control|^((?:a(?1)?))a$
+§6.3a SEQUENTIAL activations of ONE spliced site|^(?:(?<g>a|ab)){0}(?&g)+c$
+§6.3a the same, with an ATOMIC callee (the per-copy cut mark)|^(?:((?>a|ab))){0}(?1)+c$
 ROWS
 
 if [ "$SWEEP_FAIL" -eq 0 ]; then
-    [ "$CELLS" -eq 1632 ] || die "§3 compared $CELLS cells, not the 1632 this guard is computed against — the sweep's population moved and a smaller one is how this section passes while measuring less"
-    ok "§3: $CELLS cells over 16 patterns x $NSUBJ subjects x every startpos (102 cells per pattern), span AND every group span, 0 disagreements with libpcre2 10.46"
+    [ "$CELLS" -eq 1836 ] || die "§3 compared $CELLS cells, not the 1836 this guard is computed against — the sweep's population moved and a smaller one is how this section passes while measuring less"
+    ok "§3: $CELLS cells over 18 patterns x $NSUBJ subjects x every startpos (102 cells per pattern), span AND every group span, 0 disagreements with libpcre2 10.46"
 fi
 
 # =========================================================================

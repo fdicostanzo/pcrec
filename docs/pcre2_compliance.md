@@ -1530,6 +1530,33 @@ This annotation is keyed to `\1` and covers the bundled prose row
      hand: `make test` fails on drift. Edit the annotation
      store and re-run with --write-annotations. -->
 
+**`(?1)`** (2026-08-24)
+
+**WHAT `vm` IN THE `engines` COLUMN MEANS FOR A CALL ROW, AFTER [DD-14] WAVE
+G.** It is a claim about the LINKED form of the construct, not about every
+pattern that spells it. `engines` is a per-ROW field and a call's true engine
+is a per-PATTERN fact: the language `^(a(?1)?b)$` generates is `aⁿbⁿ`, which is
+not regular and is VM-only for ever — but `(a)(?1)` names an ACYCLIC callee,
+which `src/opt/callgraph.c` SPLICES and `src/ir/nfa.c` lowers EXACTLY, so it is
+as regular as `(a)a` and compiles to whichever engine the hand-inlined pattern
+would. Read the column as: **a call in a CYCLE forces the VM; a spliceable call
+does not, and its pattern gets the engine its inlined equivalent gets.**
+
+This is `(?>`'s situation one construct over (genuinely VM-only for
+`(?>a|ab)c`, genuinely not for `[^"]*+"`), and the column stays conservative
+for the same D67 reason in both cases. Where the two differ is HOW the gap is
+closed: `pcrec_discharge_atomic` DELETES the atomic node before engine
+selection looks, while a call cannot be deleted without copying its callee's
+`A_CAP` nodes into the tree — so a call's gap is closed by the LINKAGE, a fact
+`pcrec_callgraph_build` computes and `first_dfa_excluding` reads.
+
+MEASURED: `--no-captures --engine=dfa '(a)(?1)'` COMPILES;
+`--no-captures --engine=dfa '(a(?1)?b)'` refuses naming `(?1)`; and
+`--no-captures --engine=dfa -fno-splice-calls '(a)(?1)'` refuses naming `(?1)`
+— the third being the flag doing exactly what lib/pcrec.h says it does, and the
+axis on which this column is exactly true. `tests/registry/registry_check.c`'s
+engine-capability check asks its refusal under that flag for this reason.
+
 **`(?R)`** (2026-08-24)
 
 **SHIPS since [DD-14]** (design docs/design/subroutines_design.md,
@@ -1987,6 +2014,19 @@ been BUILT: `status` reads `REJECTED` for `RS_MODULE`, "the base grammar
 does not implement this, and the `module` column names what does" — the same
 reading for `\d`, `(?i)` and `\b` alike, whether or not any of the three
 compiles today.
+
+**AND THE `engines` COLUMN IS A CLAIM ABOUT THE CONSTRUCT, NOT ABOUT EVERY
+PATTERN THAT SPELLS IT** — which matters for exactly two families today and is
+worth one sentence here because a reader will otherwise take `vm` for a verdict
+on their own pattern. For module `recursion`'s call rows, `vm` describes the
+LINKED form: a call whose callee is in a CYCLE forces the VM for ever
+(`^(a(?1)?b)$` generates `aⁿbⁿ`, which is not regular), while an ACYCLIC callee
+is SPLICED — inlined exactly — and its pattern compiles to whichever engine the
+hand-inlined equivalent would, so `--no-captures --engine=dfa '(a)(?1)'`
+succeeds. Module `atomic-groups`' rows read the same way for the same reason
+(`(?>a|ab)c` is VM-only, `[^"]*+"` is not, because the free discharge deletes a
+cut it proves dead). The `(?1)` and `(?>...)` annotations below the survey
+tables carry the full argument and the measurements.
 
 **The `built` column (D65) answers that third question directly, per
 construct** — `built`/`unbuilt`, or `—` where it does not arise

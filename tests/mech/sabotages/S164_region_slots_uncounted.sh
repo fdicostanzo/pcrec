@@ -43,27 +43,46 @@ SAB_SUITES="harness recursion"
 # what would have to exist for this row to close. If the matrix ever
 # reports NOW DETECTED here, some wave built that witness: re-measure,
 # then flip this to DETECTED -- do not delete the row.
-SAB_EXPECT=UNDETECTED
-SAB_HARNESS_TARGET="tests/recursion/zerodef.rxt"
+SAB_EXPECT=DETECTED
+SAB_HARNESS_TARGET="tests/recursion/slotfamilies.rxt"
 SAB_DESC="vm_count_slots is not run per emitted callee region, so a callee's own slot instances are never counted and the emitter assigns past RX_NSLOTS -- an OUT-OF-BOUNDS WRITE in emitted code, K27's class"
-SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR19): an OUT-OF-BOUNDS SLOT WRITE, K27's class, which vm_count_slots' own header names ('a lift this pre-pass cannot see runs vm_slot_mark(v, v->nmark++) past RX_NSLOTS'). THE CELL MUST CARRY A RUNG-BEARING OR ATOMIC CALLEE UNDER {0} -- ^(?:((?>a|ab))){0}(?1)z\$ -- because a callee with only CAPTURE slots allocates from a family {0} does not prune and the row goes green. zerodef.rxt is written on exactly that requirement. Under ASan the failure is a REPORT; without it, silent corruption, which is why the asan suite is assigned as well. || MEASURED UNDETECTED: corpus 0fail/23pass on zerodef.rxt, recdiff 0fail/7pass. The sabotage does NOT produce an out-of-bounds write on this population, it produces a SLOT COLLISION: with the region's cut mark uncounted, \`vm_slot_mark(v, 0)\` and \`vm_slot_pend(v, 1)\` both resolve to slot 4 on ^(?:((?>a|ab))){0}(?1)z\\$ (RX_NSLOTS 6 -> 5), so a resume depth and a publish-at-close position share a cell -- and the two cells this file carries do not read the collided values on a path that changes their answer. The \`asan\` suite the design assigns DOES NOT EXIST as a mech arm, so the memory-safety half was never scored here either. THE SHIPPED LAYOUT IS CORRECT (RX_NSLOTS 6, the region counted); what is owed is a cell whose collided slots are both live on one path."
+SAB_DOC_FIGURE="PREDICTED (design 9.3 S-SR19): an OUT-OF-BOUNDS SLOT WRITE, K27's class, which vm_count_slots' own header names ('a lift this pre-pass cannot see runs vm_slot_mark(v, v->nmark++) past RX_NSLOTS'). THE CELL MUST CARRY A RUNG-BEARING OR ATOMIC CALLEE UNDER {0} -- ^(?:((?>a|ab))){0}(?1)z\$ -- because a callee with only CAPTURE slots allocates from a family {0} does not prune and the row goes green. zerodef.rxt is written on exactly that requirement. Under ASan the failure is a REPORT; without it, silent corruption, which is why the asan suite is assigned as well. || MEASURED UNDETECTED: corpus 0fail/23pass on zerodef.rxt, recdiff 0fail/7pass. The sabotage does NOT produce an out-of-bounds write on this population, it produces a SLOT COLLISION: with the region's cut mark uncounted, \`vm_slot_mark(v, 0)\` and \`vm_slot_pend(v, 1)\` both resolve to slot 4 on ^(?:((?>a|ab))){0}(?1)z\\$ (RX_NSLOTS 6 -> 5), so a resume depth and a publish-at-close position share a cell -- and the two cells this file carries do not read the collided values on a path that changes their answer. The \`asan\` suite the design assigns DOES NOT EXIST as a mech arm, so the memory-safety half was never scored here either. THE SHIPPED LAYOUT IS CORRECT (RX_NSLOTS 6, the region counted); what is owed is a cell whose collided slots are both live on one path. || [DD-14 wave G, 2026-08-24] RE-MEASURED AND FLIPPED TO DETECTED on a CYCLIC callee: see the transcript in this file's header. The 'MEASURED UNDETECTED' paragraph above is the record of the OLD target (an acyclic callee, which wave G splices, so no region is emitted and the sabotage is a no-op there) and is kept as the reason the cell had to move."
 SAB_COUNT=1
 # [DD-14 wave G, 2026-08-24] RE-ANCHORED ON THE TWO LINES THAT DO THE WORK,
 # because the loop around them gained a `rgn_emit[i]` guard and a comment. The
 # smaller anchor is also the better one: it names the region COUNT and nothing
 # about the loop that drives it.
 #
-# **AND WAVE G MOVED THIS ROW'S POPULATION OUT FROM UNDER IT, WHICH IS FLAGGED
-# HERE RATHER THAN QUIETLY REPAIRED.** The cell the SAB_DOC_FIGURE argues for —
-# `^(?:((?>a|ab))){0}(?1)z$` — names an ACYCLIC callee, so §6.3 now SPLICES it,
-# no region is emitted for it, and `rgn_emit[i]` is false: the sabotage is a
-# NO-OP on that pattern rather than an undetected slot collision. The row is
-# still meaningful for a LINKED callee (a recursive rung-bearing or atomic one,
-# e.g. `slotfamilies.rxt`'s `^((?>a(?1)?))a$`), and the SPLICE side of the same
-# claim is defended by S177, which IS detected. SAB_EXPECT and SAB_SUITES are
-# left as they are: this row was already UNDETECTED with an owed cell, and
-# re-pointing somebody else's row at a new target is a ruling rather than a
-# re-anchoring.
+# **AND WAVE G MOVED THIS ROW'S POPULATION OUT FROM UNDER IT — SO THE CELL WAS
+# RE-POINTED AT A CYCLIC CALLEE AND THE ROW FLIPPED TO DETECTED (manager
+# ruling, 2026-08-24).** The old target `zerodef.rxt` argues from
+# `^(?:((?>a|ab))){0}(?1)z$`, which names an ACYCLIC callee: §6.3 now SPLICES
+# it, no region is emitted, `rgn_emit[i]` is false and the sabotage is a NO-OP
+# on that pattern rather than the undetected slot COLLISION the paragraph below
+# measured. **A row whose population has moved out from under it measures
+# nothing, and expected-UNDETECTED is the reading that hides that.**
+#
+# THE FIX IS A CELL WHOSE CALLEE IS IN A CYCLE, because in-a-cycle is exactly
+# what forces the LINKAGE, and the linkage is exactly what emits a REGION for
+# this pass to count. `tests/recursion/slotfamilies.rxt` carries one:
+# `^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$` — `g` calls itself, so a region is
+# emitted, and the region's body carries a LOOKAROUND, whose two slot families
+# are per EMITTED COPY and therefore exist only in the region's own count.
+#
+# **THE TRANSCRIPT OF THE FLIP** (sabotage applied to a `git archive HEAD` tree,
+# both compilers run on the same pattern):
+#
+#     shipped     RX_NSLOTS 7   with RX_SLOT_LOOK_MARK0 = 5, RX_SLOT_LOOK_POS0 = 6
+#     sabotaged   RX_NSLOTS 5   both LOOK slots GONE, and the two `RX_SET`s that
+#                               wrote them gone with them
+#     tests/recursion/slotfamilies.rxt  45 passed / 2 FAILED
+#     the named cell: `^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$` on "aaabbb"
+#                     expected `match 0 6`, got `nomatch`  -- A LOST MATCH
+#     the OLD target, same sabotage:    zerodef.rxt 33 passed / 0 failed
+#
+# The last line is the pair that names the failure: the row is green on the
+# population it used to have and red on the one it should have had all along.
+# The SPLICE side of the same claim is S177, which is detected separately.
 SAB_BEFORE='            if (v.rgn_emit[i])
                 vm_count_slots(&v, pcrec_callgraph_body(v.cg, i), 1, false);'
 SAB_AFTER='            /* SABOTAGE S164: the region'"'"'s own slots are never counted */'

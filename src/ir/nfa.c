@@ -11,7 +11,20 @@
  * R1 hardening: patch lists are arena-owned so ctx_fail cannot leak (R-3b);
  * A_CAT/A_ALT left spines are flattened iteratively so flat concatenations or
  * alternations of any length cannot overflow the C stack (R-2); remaining
- * recursion depth is bounded by the parser's group-nesting cap. */
+ * recursion depth is bounded by the parser's group-nesting cap.
+ *
+ * [DD-14 wave G] **THAT LAST CLAUSE IS NO LONGER TRUE ON ITS OWN, AND THE
+ * CORRECTION IS IN PLACE RATHER THAN IN A FOOTNOTE.** `compile_ast`'s `A_CALL`
+ * arm follows `Ast.u.call.body`, and **A CALL EDGE IS NOT A NESTING EDGE** —
+ * the parser's group cap bounds how deeply groups nest, not how far a chain of
+ * subroutine calls reaches. What bounds this descent is the LINKAGE: only a
+ * `CALL_SPLICE` callee is followed, and `src/opt/callgraph.c` sets that only
+ * for a target that is not in a cycle (design §6.3 condition 1), so the descent
+ * is over a DAG bounded by the number of call targets. `NB.splice_depth`
+ * enforces exactly that bound and fails LOUDLY, because "the eligibility rule
+ * must never say otherwise" is an assumption and a stack overflow is the one
+ * failure a sabotage matrix cannot tell from an infrastructure fault —
+ * MEASURED: sabotage row S175 segfaulted HERE before the counter existed. */
 
 #include <stdlib.h>
 #include <string.h>

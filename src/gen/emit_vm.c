@@ -7044,19 +7044,33 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `pcrec_minw` reads an `A_CALL`'s contribution off `u.call.minw`, which
      * is the Kleene-from-infinity fixpoint `pcrec_callgraph_build` computes
      * and caches on the node (src/opt/mrl.c's `A_CALL` arm, design SS4.4b).
-     * That pass runs at src/core/compile.c AFTER `pcrec_select_engine` and
+     * That pass ran at src/core/compile.c AFTER `pcrec_select_engine` and
      * BEFORE this emitter, so:
      *
-     *   - asked in `select_engine.c`, `pcrec_minw(root)` reads the ARENA'S
-     *     ZERO and answers a FINITE number. MEASURED on all three empty-
+     *   - asked in `select_engine.c`, `pcrec_minw(root)` read the ARENA'S
+     *     ZERO and answered a FINITE number. MEASURED on all three empty-
      *     language cells of tests/recursion/leftrec.rxt + mrl.rxt: 1, 1, 0.
      *     That is sound (this analysis's safe direction is UNDER-estimating)
-     *     but it is USELESS -- it never reaches infinity, so a root check
-     *     placed at engine selection can never fire. The plan row's
+     *     but it was USELESS -- it never reached infinity, so a root check
+     *     placed at engine selection could never fire. The plan row's
      *     "engine selection is where the root predicate lives" is therefore
      *     WRONG ABOUT THE SITE, and this comment is the correction of record.
      *   - asked HERE, the fixpoint is final. The same three cells MEASURE
      *     PCREC_MINW_MAX (1099511627776 = 2^40).
+     *
+     * [DD-14 wave G] **THE PASS ORDER MOVED AND THE CONCLUSION DID NOT**, which
+     * is worth a sentence because the paragraph above is written in terms of
+     * the old order. `pcrec_callgraph_build` now runs BEFORE
+     * `pcrec_select_engine` (src/core/compile.c: engine selection reads §6.3's
+     * LINKAGE), so `pcrec_minw(root)` asked there is no longer the arena's zero
+     * — it is the settled fixpoint. The root check still belongs HERE and not
+     * there, for the reason that outlives the timing: the check is about what
+     * the ARTIFACT enforces at its search entry, and only this emitter writes a
+     * search entry. What DID change is that `pcrec_possessify`, which runs
+     * inside selection and calls `pcrec_minw`, now sees the real width for a
+     * call-bearing pattern where it used to see 0 — a strictly better bound in
+     * `pcrec_minw`'s own safe direction, and one that cannot reach a call-FREE
+     * pattern at all (the graph pass returns at its first scan).
      *
      * WHY THIS EMITTER AND NOT emit_dfa.c TOO. The only construct that can
      * drive a root minw to the ceiling is a call whose callee's language is
@@ -7696,6 +7710,27 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * derived default when neither was passed). */
     sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
               job->fit.prefilter ? "hybrid" : "none");
+    /* [DD-14 wave G] THE LINKAGE, PER ARTIFACT, and it reports what the
+     * emitter DID rather than what it was asked — `RX_VM_RUNGS`/`RX_VM_STRATS`/
+     * `RX_VM_PREFILTER`'s rule, which is the D46 half a denied request
+     * (`-fno-splice-calls`) is checked against.
+     *
+     * TWO NUMBERS AND NOT A STRING, because the interesting question is a
+     * RATIO: how many of this artifact's call sites the eligibility rule was
+     * able to inline. `SPLICED + LINKED` is every site the emitter WROTE, which
+     * is not the pattern's lexical call count — a call under `X{0}` emits no
+     * site at all, and a call inside a shared region is written once per
+     * emitted copy. Counted as they are written (`v.ncall`, `v.nsplicesite`),
+     * which is `nclamp`'s discipline: a check can assert the sites EXIST rather
+     * than trusting that the graph ran.
+     *
+     * EMITTED ONLY ON A CALL-BEARING ARTIFACT, so a call-free pattern's
+     * artifact is byte-identical to what it was — §9.1's claim held by
+     * construction rather than by a filtered diff. */
+    if (v.has_calls) {
+        sb_printf(c, "#define %s_VM_CALL_SPLICED %lld\n", v.up, v.nsplicesite);
+        sb_printf(c, "#define %s_VM_CALL_LINKED %lld\n", v.up, v.ncall);
+    }
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH STAMP, emitted only when the
      * search entry's root check above was emitted -- one condition, read
      * twice, never two conditions that could disagree. It is a NUMBER
