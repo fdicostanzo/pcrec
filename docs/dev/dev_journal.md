@@ -14847,3 +14847,17 @@ first fully-green tree carrying every [DD-14] wave (A..G, LB, EMPTY,
 D27, K34, FB) plus the mech triage. Next: the close lane (brief_srClose
 .md, base ae9c98c), pcrecdev2's re-pin SHA, then the going-forward
 conversation with Frank.
+
+#### Thirty-ninth session, part 44 (opening) — the CLOSE lane starts (2026-08-25 ~07:5x EDT)
+
+srClose (opus, lane/srClose from e7fa4d2, brief_srClose.md, base
+ae9c98c) spawned 07:45; disclosure clean; plan in the brief's item
+order. Two answers given: the FB code half IS in its base (so item 1 is
+the three solo re-runs S155/S70/S159 + the re-derived 180-row headline,
+not a 180-row re-run); pcrecdev2 has closed. SEQUENCING RULED: the
+compiler in its base passed the full battery 05:02-07:36, so the
+battery runs ONCE at the end, after item 7 restores the K35 populations
+(the restored ~57% runs sanitized for the first time — that is the
+hour's value): 1 → 3 → 4 → 5 → 6 → 7 → 8 → battery → deliverable.
+Watchdog 0ed363d9. pcrecdev2 has ae9c98c as its re-pin target (its
+next session; expects factored/short-search to collapse to orig's).
