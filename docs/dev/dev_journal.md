@@ -13687,3 +13687,32 @@ Four of the fifteen (empty-language roots `((?1)a)`, `(?R)a`) are
 cells park in tests/known_fail/k34_leftrec_giveup.rxt (a confirmed pcrec
 defect with a scheduled home — known_fail's original purpose; the
 ratchet fires when K34 closes); the rest of d27/ rides make test.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 15) — WAVE E DELIVERED (lane/srE 78e578f): the EMPTY site corrected by measurement, S157 closed by a deleted match, the four-axis gate; sent back for its rebase
+
+srE (opus, 8 commits) delivered ~20:5x. [DD-14.EMPTY]: instrumented
+`pcrec_minw(root)` twice — at engine selection the three empty-language
+siblings read 1/1/0 (the arena zero: `u.call.minw` is filled by
+pcrec_callgraph_build, which runs AFTER pcrec_select_engine), in the
+emitter 2^40 — so the plan row's site was wrong; the mechanism landed in
+the emitter's search-entry prologue as a width comparison against
+RX_VM_ROOT_MINW (saturation and genuine infinity meet at the ceiling and
+cannot be told apart; an unconditional return would be a miscompile on a
+≥2^40-byte subject), emitted only for roots at the ceiling (four corpus
+patterns, all call-bearing; identity holds). S157 CLOSED AS DETECTED:
+B+C's search for the predicted HANG stopped one step early — under the
+sabotage the wrongly possessified quantifier is the `a?` INSIDE the
+callee (prefix-free by an emptied call first-set) and the consequence is
+a DELETED MATCH (`^(a?)(?1)+a$` on "a": clean (0,1), sabotaged NOMATCH);
+the row flipped via the SAB_EXPECT mechanism, 20/6 now. The prefilter
+predicate was B+C's (S165); E fixed the LISTING (a call-bearing pattern
+under `auto` named a flag the caller had not passed) and added
+prefilter.rxt with §8.2's counterexample through all three doorways,
+UNANCHORED (an anchored cell never asks the prefilter). The four-axis
+gate: 8/0, 2575 patterns, 136 call-bearing / 2439 call-free, ctl 136/136
+on every axis, raw AND stripped compared with `stamp-moved` a failure,
+failing direction demonstrated (one byte → every axis red, the four
+positive controls correctly still green). make test 25,281/0, strict,
+anchors 164/174, 80 rows unexpected 0. NOT YET MERGEABLE: its base
+predates wave F; sent back to rebase (gate script + gen_corpus.py
+conflicts), re-run the gate and one make test, resend.
