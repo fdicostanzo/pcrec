@@ -2633,8 +2633,8 @@ artifact's entry points concurrently") is FALSE today for that artifact
 class on that platform; §5.3 now carries a measured shipped-behaviour
 paragraph saying so.
 
-**Cause.** `gcc -fstack-usage`: `rx_search`'s frame is 131,296 B for a
-call-bearing artifact (the run struct: 2048 resume frames × 40 B + 3072
+**Cause.** `gcc -fstack-usage`: `rx_search`'s frame is 131,216 B for a
+call-bearing artifact (CORRECTED 2026-08-25 by [SPEC-1.1]'s re-measurement via `make test-stackdepth`; the 131,296 B figure first recorded here was the spec lane's pre-code-half number) (the run struct: 2048 resume frames × 40 B + 3072
 trail entries + slots = 131,144 B), 98,512 B for the unbounded call-free
 one (just UNDER 128 KB). The two per-frame call fields wave B+C added
 (`call_top`, `call_ret`) took a resume frame 24 → 40 B; 2048 × 16 =

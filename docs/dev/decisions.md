@@ -5480,6 +5480,9 @@ for every glibc caller to serve a platform that has the opt-in anyway.
 user docs are written ([REL-META]); a measured population of recursive
 patterns says the default is wrong in practice.
 
+
+**Correction (2026-08-25, [SPEC-1.1] re-measurement, docs/spec/limits.md):** the numbers above were the SPEC lane's at ruling time; the shipped code half measures `rx_search`'s frame at 131,216 B and `_search_in`'s at 144 B, and "gives up at n = 342" reads precisely as: n = 342 (a 684-byte subject) MATCHES and n = 343 (686 bytes) is the first give-up. The spec is the contract; this entry is the record.
+
 ## D74 — K34 is a DOCUMENTED DIVERGENCE, not a bug: pcrec does not adopt PCRE2's five-conjunct recursion-loop guard; the runaway is a property of the pattern, and an OPTIONAL static analysis that names it is the parked remedy (Frank, 2026-08-25)
 
 **Context.** K34 (found by the [DD-14.D27] blinded author): on a runaway

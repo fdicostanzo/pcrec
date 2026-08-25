@@ -298,7 +298,7 @@ enum {
  * BRING-UP PLACEHOLDER: D12 rules that budgets come from measured medians and
  * [M4.6] is where the measurement happens. */
 enum {
-    PCREC_STEP_BUDGET_DEFAULT = 0,   /* emit the placeholder default */
+    PCREC_STEP_BUDGET_DEFAULT = 0,   /* emit the compiled-in default (500,000,000, D51; docs/spec/limits.md) */
     PCREC_STEP_BUDGET_NONE    = -1   /* --fno-step-budget: emit no counter */
 };
 
@@ -314,7 +314,7 @@ enum {
  * written, and splitting the gate later is purely additive. `_NONE` exists
  * anyway because it is what that single gate SETS this field to. */
 enum {
-    PCREC_WORK_BUDGET_DEFAULT = 0,   /* emit the placeholder default */
+    PCREC_WORK_BUDGET_DEFAULT = 0,   /* emit the compiled-in default (1,000,000,000, D49; docs/spec/limits.md) */
     PCREC_WORK_BUDGET_NONE    = -1   /* no work counter (rides --fno-step-budget) */
 };
 
