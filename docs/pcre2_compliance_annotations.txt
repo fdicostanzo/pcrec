@@ -1159,9 +1159,12 @@ RECOMMENDED against adopting it — a faithful copy needs a stored subject
 pointer and a `last_used_ptr` equivalent threaded through every
 fail-and-return site of the emitted artifact, not an O(1) per-callee
 slot. The inverse case exists too and no expectation is writable for it:
-`((?1)?a)` and `((?1)*a)` on "a" MATCH here and are −52 there. The
-eleven affected corpus cells are parked under the known-fail ratchet
-until the ruling; K34 is OPEN.
+`((?1)?a)` and `((?1)*a)` on "a" MATCH here and are −52 there. **RULED
+(D74, Frank 2026-08-25): DOCUMENTED DIVERGENCE, not adopted.** The
+give-up stays pcrec's answer for this shape; the eleven affected corpus
+cells stay parked under the known-fail ratchet, visible as
+pcrec-wrong-by-capability rather than pending a fix. K34 is CLOSED as a
+divergence, not a bug.
 
 **THE LEADING-ZERO RULE IS THE SHARP EDGE OF THIS FAMILY**, and it is
 why the index shows spellings a reader might take for redundant. The
