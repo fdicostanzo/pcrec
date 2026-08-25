@@ -4,9 +4,8 @@ Extracted verbatim from `docs/design/subroutines_design.md` (sections 2, 3,
 10.1) plus the post-approval rulings that touch this module
 (`docs/dev/decisions.md` D71 items 1/4/5, D73, and the [DD-14.LB] amendment
 in §3.4(d)) by the manager ahead of the [DD-14] blinded corpus. The blinded
-author sees THIS FILE and never the full design: §§1, 4-9, 11-14 describe the
-implementation, the linkage, the call graph, `W`, the gate and the sabotage
-rows, which D27 denies.
+author sees THIS FILE and never the full design: §§1, 4-9, 11-14 describe
+HOW the compiler implements calls, which D27 denies.
 
 ## 2. The construct table (charter — CONSTRUCTS)
 
@@ -451,10 +450,10 @@ diagnostic wording is fixed, and none of it matters for a blinded corpus:
   lowering only ever sees what PCRE2 itself would have accepted as valid
   DEFINE syntax.
 
-**THE DEPTH CEILING (D73, 2026-08-24): 2048 resume frames / 3072 trail
-entries is the pcrec DEFAULT stamped capacity for a call-bearing pattern.**
-This is not a refusal — it is a runtime give-up, and the exact number to
-design cells against: `^(a(?1)?b)$` gives up (returns `PCREC_ERR_FRAMES`, the
+**THE DEPTH CEILING (D73, 2026-08-24): the default artifact has a FIXED
+backtracking capacity, and deep recursion exhausts it.** This is not a
+refusal — it is a runtime give-up, and the exact number to design cells
+against: `^(a(?1)?b)$` gives up (returns `PCREC_ERR_FRAMES`, the
 default artifact's code for this — D71 item 1) at **n = 342**, i.e. an
 **684-byte subject** (2×342 characters, since the pattern's body is `a...b`
 around `n` nested calls). Below that depth the pattern MATCHES (per §3.3's
@@ -563,7 +562,7 @@ wrong — each of these is a plausible bug shape, not a hypothetical:
 - **A lowering that forgot to restore captures after a call returns** (§3.1)
   — test at DEPTH (nested calls, not just one level) so a bug that only
   shows at depth ≥ 2 is reachable.
-- **A lowering that restored the WRONG SET of slots** — e.g. restored too
+- **A lowering that restored the WRONG SET of groups** — e.g. restored too
   much (undoing `\K`, §3.4(b)) or too little (leaving a stale value from a
   call that should have been fully undone, §3.1's C4 "nothing survives"
   cell).
@@ -584,9 +583,9 @@ wrong — each of these is a plausible bug shape, not a hypothetical:
   test that deep/unbounded recursion behaves as a call, not as however many
   copies got inlined, by using the depth-ceiling cells in §5 and the
   `^(a|(?1)a)$`×200 cell from §3.3).
-- **A lowering that counted call-graph SLOTS LEXICALLY** rather than
-  correctly handling the `{0}`-parked / DEFINE callee shapes of §2.2 and
-  §3.5's Z0 row, where the callee has no lexical emission of its own at all.
+- **A lowering that mishandles a callee that never matches at its own
+  position** — the `{0}`-parked / DEFINE callee shapes of §2.2 and §3.5's
+  Z0 row, where the group is only ever reached through calls.
   Test the Z0 family directly: a plain, a recursive, and an atomic callee
   each parked under `{0}` or DEFINE, each called successfully.
 - **A lowering that resolved `\g<0>` (or `\g'0'`) as "group 0"** rather than
@@ -605,9 +604,10 @@ wrong — each of these is a plausible bug shape, not a hypothetical:
 subject). Write cells ABOVE this ceiling as `gu frames "<subject>"` and cells
 BELOW it as ordinary `m` matches. Do not write a match expectation for a
 subject you have not checked is under the ceiling for that specific pattern
-shape — the ceiling is in resume frames and trail entries, not directly in
-subject bytes, so different call-bearing pattern shapes cross it at
-different subject lengths.
+shape — the ceiling is a backtracking capacity, not a subject-byte count,
+so different call-bearing pattern shapes cross it at different subject
+lengths; you MAY compile a cell and run it to learn whether it gives up
+(existence), never to derive a match expectation.
 
 **`ms`/`ns` cells at non-zero startpos are required, not optional** — §3.4(e2)
 is entirely about the interaction between `\G`/`\A`/`\z` and a non-zero
@@ -654,11 +654,9 @@ factored patterns.
 
 Nothing beyond §§2, 3, 5, and this file's oracle-rules/population sections is
 disclosed. Specifically NOT disclosed, and not to be inferred or guessed at
-by a blinded author: the lowering (how a call is emitted, frames, the second
-indirect jump, the trail mechanics), the linkage between a call site and its
-callee body, the call graph or its construction, anything named `W` (a slot
-write-set analysis internal to the implementation), the identity/consistency
-gate, the sabotage rows, any file name under `src/` or `tests/` (other than
+by a blinded author: HOW a call is compiled and executed (every internal
+mechanism, analysis and data structure), the project's internal test
+instruments and their names, any file name under `src/` or `tests/` (other than
 the two email-specimen `.rx` files named above, which are DATA, not
 implementation), and the wording of any diagnostic (only whether a
 construct is real, which module owns it, and whether pcrec ships or refuses
