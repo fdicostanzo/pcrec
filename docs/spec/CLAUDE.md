@@ -166,5 +166,28 @@ spec and a design doc disagree, the spec is what the tool promises.
   header-equality). Chartered by Frank 2026-08-21 from the D65
   format-consumer breakage; [SR-11] tracks consumer conversion + the
   two checks. `--emit-ir`/`--trace` are explicitly out of scope.
+
+- `limits.md` — **[SPEC-1.1], 2026-08-25.** The resource-bound contract:
+  the give-up code space (pointing at `match_api.md` §4 rather than
+  restating it), the step/work/frame/trail budget numbers each cited to
+  their compiled-in constant and CLI override, the compile-time
+  state-count ceilings pcrec actually promises versus D45's
+  test-harness compile timeout (which it does not), a re-measured worked
+  example (`^(a(?1)?b)$` gives up at n = 343, an 686-byte subject,
+  matching `match_api.md` §10.1 exactly at this commit), K33's stack
+  frame re-measured via `make test-stackdepth` (131,216 B — flagging a
+  stale 131,296 B figure still standing in `docs/dev/known_issues.md`'s
+  and D73's own prose, not corrected by this pass), and K34/D74's
+  documented-divergence framing at spec depth.
+
+**`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
+ruling, 2026-08-25): it meets this tier's bar through its own
+three-component annotated-derivation discipline (generated facts +
+independent PCRE2-side survey + keyed hand-written annotations, held in
+checked tension — `.claude/skills/compliance-refresh/SKILL.md`) rather
+than by moving under `docs/spec/`; it stays at its current path because
+its tooling (`tests/registry/compliance_section.py`, the annotation
+store) is path-keyed.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
