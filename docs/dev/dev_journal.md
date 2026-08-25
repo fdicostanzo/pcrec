@@ -13829,3 +13829,10 @@ threads a high-water mark through every fail site of the artifact); keep
 the give-up as the documented answer. Same lesson as srLB's cause-claim
 and sr27's `(?J)`: a measurement lane's pcrec arm must state its feature
 set.
+
+BOX-SHARING NOTE (Frank, ~22:5x): a second session, "pcrecdev2", now
+shares this machine for exploration (a regex library etc.); this project
+is PRIMARY. Coordination is direct (SendMessage to pcrecdev2): load
+(few cores while lanes run; heavy runs announced), git (no writes to
+this repo's main/branches/worktrees without a manager-cut worktree;
+pcrec-bench is its own per its mandate), /tmp tmpfs, kill-by-PID. Sent.
