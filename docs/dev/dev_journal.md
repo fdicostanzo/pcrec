@@ -13757,3 +13757,11 @@ srG's build (the SIXTH identical instance today; solo rc 0 as always);
 san chained and running. Filed [TT-10]: the cap check is load-sensitive
 by construction — a ratio against a calibration compile, or an
 INCONCLUSIVE verdict under load, instead of a solo re-run per battery.
+
+CORRECTION (Frank, ~22:0x): [LIB], [EMIT-SET] and the profile attachment
+are PLANNED, not ruled onto the spine — "i wanted lib, emit-set, etc
+planned but i don't know that i'd put them on the spine." The [LIB]
+row's "part of the spine" wording (my over-reading of "part of the spine
+should be the expansion of the rxt type file") is corrected to PLANNED
+with the placement open; when [DD-14] is done, a where-things-stand
+conversation decides the road ahead. Nothing starts unprompted.
