@@ -385,8 +385,9 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   at the wave: 29,063 three-way comparisons, 0 disagreements.
 - **`recursion/`** — module `recursion` ([DD-14] wave B+C): subroutine calls
   `(?N)` `(?±N)` `(?&name)` `(?P>name)` `(?R)` `(?0)`, and — from wave D —
-  `\g<N>`/`\g<name>`/`\g<±N>` `\g'N'`/`\g'name'` `\g<0>` `\g'0'`. Nineteen
-  `.rxt` files since wave E added `prefilter.rxt`, **GENERATED**:
+  `\g<N>`/`\g<name>`/`\g<±N>` `\g'N'`/`\g'name'` `\g<0>` `\g'0'`.
+  **Twenty-one `.rxt` files** — wave E added `prefilter.rxt`, wave F added
+  `define.rxt` and `realworld.rxt` — **GENERATED**:
   `gen_corpus.py` drives every cell (including
   every `g` line) through libpcre2 10.46 via
   `docs/design/subroutines_measurements/probes/sr_oracle.py` before writing
