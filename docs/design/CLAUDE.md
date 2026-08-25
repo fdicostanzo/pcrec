@@ -1157,6 +1157,15 @@ append-only or historical records.
   sixth defect's lesson rather than by a panel, which is the argument for
   writing a reachability guard into every sweep rather than into the one that
   has already failed.
+- `sr_d27_extract.md` — the [DD-14] blinded author's extract of
+  `subroutines_design.md` §2 + §3 + §10.1 (the construct table, the measured
+  semantics, the oracle rules and the population) plus the post-approval
+  rulings that touch this module (D71 items 1/4/5, D73, the [DD-14.LB]
+  amendment), cut by the manager ahead of the D27 cell so it can allow this
+  file without allowing the design's implementation sections (§§1, 4-9,
+  11-14: the lowering, the linkage, the call graph, `W`, the gate, the
+  sabotage rows). Regenerate only by re-cutting; never edit independently of
+  its source.
 - `subroutines_design.md` — **PROPOSED, NOT YET PANELED** ([DD-14]'s design
   gate, 2026-08-23; module `recursion` — subroutine calls `(?1)` `(?+1)`
   `(?-1)` `(?&name)` `(?P>name)` `\g<1>` `\g<name>` `\g'1'` `(?R)` `(?0)`, and
