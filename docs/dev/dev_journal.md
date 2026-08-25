@@ -14404,3 +14404,24 @@ with 24/40/32/48; the --trace stamp check 48/32 in codegen, 101/0, with
 two scratch-emitter failure directions measured: a trace-blind member
 list cannot compile the artifact; a second list stamps 40 and the
 _Static_assert fires).
+
+#### Thirty-ninth session, part 30 — r36: both FB critics report merge-with-fixes (2026-08-25 ~03:3x EDT)
+
+critFB-checks (sonnet): ONE BLOCKING — the live identity gate
+(run_recursion_identity.sh) will go red on the unconditional FB surface
+and nothing in the diff says so; RULED: extend `stamp_strip` with named
+patterns + a per-class stripped-line count assertion, no re-pin. Four
+should-fix (match_in/match_caps_in have zero behavioural coverage; any
+signal ≥128 read as K33; a silent-empty branch in run_frame_buffer.sh
+and unbounded RSS prints; two CLAUDE.md omissions) + three nits (an
+overstated "vacuous" comment — the critic tested the old code and it
+already failed loud; pthread preflight; RXTROUTE manual-only).
+critFB-engine (opus, private archive builds of both trees): NO
+MISCOMPILE on ~14 angles; capacity honoured downward; the assertion
+fires on a tampered stamp; -O3 inlines `_run` (144→224 B, still 1000×
+under the default path); ONE contract defect — the DFA artifact's
+emitted sizing comment divides by the stamped 0 (fix: a clause in the
+comment and spec §10.4; the harness driver already guarded it
+privately); one PRE-EXISTING nit filed as K36 (`rx_L3` reads before the
+guard, identical at base). Everything sent to srFBc as one post-make-
+test batch; r36 filled. Its `make test` (PID 3182120) still running.

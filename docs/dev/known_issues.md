@@ -2768,3 +2768,16 @@ general fix: export `LC_ALL=C` at the top of tests/lib/run_group.sh and
 the harness so no script can inherit the locale — ruled at the close.
 
 **Milestone.** [DD-14.CLOSE] item 7.
+
+## K36 — `rx_L3` restores read the trail before the call-frame bounds guard (pre-existing; found by r36's engine critic, 2026-08-25)
+
+In VM artifacts with subroutine calls, the region-exit restore at `rx_L3`
+reads `run->trail[run->resume_stack[run->call_top].trail_mark + 0..2]`
+three lines BEFORE `if (rx_call_frame >= run->resume_cap) return
+RX_R_INTERNAL;`. If `call_top` were ever `RX_CALL_TOP_NONE` ((size_t)-1)
+the guard would report the inconsistency after three wild reads. The
+ordering is IDENTICAL at 08ddcbd (pre-[DD-14.FB]); wave FB only changed
+the guard's operand. Not reachable by any known pattern (the guard is an
+internal-consistency tripwire, never observed firing). Fix: hoist the
+guard above the three reads — costs nothing. Owner: the next emit_vm.c
+change in that region; not a release blocker.
