@@ -1497,3 +1497,45 @@ assertions rather than losing one: neither may mention `rx_search`, and
 `rx_match_in` must reach the same `rx_match_run`. An entry that filtered on
 only one of its two spellings would be wrong for exactly the callers who used
 that one.
+
+## [DD-14.FB] the recursion identity gate is now TWO comparisons (2026-08-25)
+
+`run_recursion_identity.sh` used to ask one question — "is a call-free
+pattern's whole artifact byte-identical to the pre-module pin `ac4917d`,
+past D37's three stamp lines?" — and [DD-14.FB] made that question
+unanswerable: the caller-buffer surface is UNCONDITIONAL, so every artifact
+gains ~180 lines and changes ~30, across an announced `abi` 2 → 3 boundary
+that D40 regime 1 governs. The gate now asks two questions instead, and prints
+two numbers so they never blur:
+
+- **(A) the PROGRAM REGION against the UNCHANGED `ac4917d`** — `goto
+  <prefix>_L0;` … `<prefix>_accept:`, with no filtering beyond the three
+  stamps, so a COMMENT change inside the region is still a difference. This is
+  the claim the gate was built for, still measured against the reference it
+  was built against.
+- **(B) the WHOLE FILE against a pin moved forward to `8fc1e51`** — the last
+  commit of the FB wave touching `src`/`lib`/`cli`. Everything after that pin
+  is byte-exact whole-file again, comment changes included.
+
+**WHY NOT A WIDER `stamp_strip`, MEASURED so nobody re-derives it.** Extending
+the filter with named exact lines for the FB surface needs **200 distinct
+lines** (30 old-side, 180 new-side, 69 of them comments). It fails twice: it
+**over-strips** — the filter necessarily contains `ptrdiff_t rx_match(const
+rx_ctx *ctx)` and its `_caps` sibling, whose signature lines moved when the
+bodies became statics, so the gate would stop seeing a change to the two
+declarations spec §10.8 promises are unchanged — and it **still under-covers**,
+leaving 5 (DFA) to 12 (VM) blank-line differences no whole-line pattern removes
+safely. Filtering to green is the failure this project has recorded twice.
+
+**THE TWO FB LINES INSIDE THE REGION ARE A MEASURED ZERO, NOT A FIRING
+EXCEPTION.** The region-exit guard's type and capacity operand are the only FB
+lines that can move inside a program region, and `vm_region` is emitted only
+for a call-BEARING artifact — this sweep's population is the call-FREE bucket.
+So the assertion is that NO artifact in the population carries `RX_VM_CALL_`,
+which is a leak detector for the classifier rather than a licence.
+
+**THE ELISION LIST SPLIT IN TWO, and both halves are checked.** Wave G's four
+dead-capture patterns differ from the PRE-MODULE reference (VM-selected then,
+DFA-selected now, so the region exists on one side only) and must NOT differ
+from the post-wave-G FILE PIN, where the elision is on both sides. One list,
+two expectations, each asserted against the comparison it belongs to.

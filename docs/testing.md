@@ -1218,6 +1218,28 @@ and independent reason the run is red. Reverted before the green run above.
 `A == B` over the corpus needs the `-fno-splice-calls` axis §6.3's linkage rule
 introduces, which is wave G's. §9.3's sabotage rows carry that load until then.
 
+## The recursion identity gate is two comparisons ([DD-14.FB], 2026-08-25)
+
+`make test-recursion-identity` (opt-in) no longer asks one question. Since the
+caller-buffer wave made the emitted surface change on EVERY artifact — an
+announced `abi` 2 → 3 boundary, D40 regime 1 — a whole-file comparison against
+the pre-module pin `ac4917d` can never be green again. The gate now runs:
+
+- **(A) the PROGRAM REGION vs `ac4917d`** (unchanged reference): `goto
+  <prefix>_L0;` … `<prefix>_accept:`, unfiltered past D37's three stamp lines,
+  so comment sensitivity inside the region is kept. This is the module claim
+  the gate exists for.
+- **(B) the WHOLE FILE vs `8fc1e51`** (the wave's last `src`/`lib`/`cli`
+  commit): byte-exact again from that pin forward.
+
+Both numbers are printed on their own lines. `RECURSION_IDENTITY_REF` and
+`RECURSION_IDENTITY_FILEPIN` move them independently. The gate refuses rather
+than skips when either pin is absent from history, and refuses if the FILE pin
+predates the FB surface — a pin set too early would put every artifact's
+surface back in the diff and report the failure the re-pin exists to retire.
+`tests/codegen/CLAUDE.md` carries the measurement (200 distinct lines, the
+`rx_match` over-strip, the blank-line residue) behind rejecting a wider filter.
+
 ## The caller-provided frame buffer's checks ([DD-14.FB], 2026-08-25)
 
 D71 item 2's caller-provided buffer (`docs/spec/match_api.md` §10) is checked

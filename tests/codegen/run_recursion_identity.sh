@@ -173,7 +173,88 @@ CC="${CC:-gcc}"
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
 
+# ===========================================================================
+# [DD-14.FB] THIS GATE IS NOW **TWO COMPARISONS**, NOT ONE, AND THE SPLIT IS
+# A RULING (manager, 2026-08-25) RATHER THAN A CONVENIENCE.
+# ===========================================================================
+#
+# WHAT FORCED IT. [DD-14.FB] (D71 item 2, the caller-provided frame buffer)
+# is UNCONDITIONAL emitter surgery: every artifact pcrec emits gains five
+# sizing macros, three `_in` entry declarations, two element typedefs, three
+# `_Static_assert`s, a `<prefix>_run_buffers` type, a `<prefix>_run_state_bind`
+# helper and four `rx_info` fields at `abi` 2 -> 3, and its run state's two
+# inline arrays become pointer/capacity pairs. Against a PRE-FB reference,
+# EVERY artifact differs. That is an announced pre-v1 boundary (D40 regime 1),
+# not a regression -- but it means a whole-file comparison against `ac4917d`
+# can never be green again.
+#
+# WHY LINE-LEVEL STRIPPING WAS TRIED AND REJECTED -- MEASURED, so the next
+# reader does not re-derive it. The obvious repair is to widen `stamp_strip`
+# with named exact patterns for the FB surface. Measured across eight
+# call-free patterns spanning this gate's axes: **30 distinct old-side lines
+# and 180 distinct new-side lines, 200 in total** (69 of the added ones are
+# comment lines, 111 code). It fails TWO ways:
+#
+#   1. IT OVER-STRIPS, and one over-strip is the compatibility promise
+#      itself. Built from that diff, the filter necessarily contains
+#      `ptrdiff_t rx_match(const rx_ctx *ctx)` and
+#      `ptrdiff_t rx_match_caps(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])`
+#      -- the two anchored entry signatures moved when their bodies became
+#      statics -- along with ` *` (14 occurrences per artifact), `}`, `{` and
+#      `typedef struct {`. A gate that strips those has stopped seeing a
+#      change to the very declarations `docs/spec/match_api.md` §10.8
+#      promises are unchanged.
+#   2. IT STILL UNDER-COVERS: with all 200 applied, a DFA artifact was still
+#      5 lines apart and a VM artifact 12 -- BLANK lines, position-dependent,
+#      which no whole-line pattern removes without removing every blank line
+#      in the file.
+#
+# That is the "a gate that FILTERS its way to identity" failure this project
+# has recorded twice, so it is not built.
+#
+# ---------------------------------------------------------------------------
+# (A) THE PROGRAM REGION, against the UNCHANGED PRE-MODULE PIN `ac4917d`.
+# ---------------------------------------------------------------------------
+# `goto <prefix>_L0;` .. `<prefix>_accept:` -- the emitted PROGRAM, which is
+# the thing this gate exists for: "module `recursion` changed no call-free
+# pattern's matching code". NO filtering beyond the three D37 stamp lines, so
+# comment sensitivity INSIDE the region is kept in full -- the property that
+# caught [M6.6.2] wave E's 37-byte prose change on 54 artifacts.
+#
+# [DD-14.FB] moves TWO lines inside that region, and they are a NAMED,
+# COUNTED exception: `const unsigned <p>_call_frame` -> `const size_t ...` and
+# `>= <PREFIX>_RESUME_FRAMES` -> `>= run->resume_cap`, the region-exit guard,
+# which is capacity site 1 of the seven §11 item 3 enumerates. **They cannot
+# appear in THIS sweep's population at all**, because `vm_region` is emitted
+# only for a call-BEARING artifact and this loop walks the call-FREE bucket --
+# so the exception's asserted count here is ZERO, and the assertion is that
+# no artifact in the population carries `RX_VM_CALL_`. Stating it as a
+# measured zero rather than omitting it is what makes a future call-bearing
+# pattern leaking into this bucket a failure instead of a silent widening.
+#
+# **AND DO NOT ADD A 4-LINE EXCEPTION HERE LATER.** The call-BEARING bucket has
+# no `ac4917d` reference to compare against AT ALL — those patterns were
+# REFUSED before the module existed — so there is nothing for a region
+# exception to fire against on this axis. That bucket's region control is
+# `tests/recursion/run_recursion_diff.sh`'s `A == B` (the SPLICE-linked and
+# LINKAGE-linked artifacts must agree on every cell), which is already
+# asserted there and is where those two lines are actually covered.
+#
+# ---------------------------------------------------------------------------
+# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `8fc1e51` (2026-08-25).
+# ---------------------------------------------------------------------------
+# REASON, for the record: [DD-14.FB] moved the scaffolding across the
+# `abi` 2 -> 3 boundary; under D40 (pre-v1) the scaffolding is not comparable
+# across such a boundary, and the PROGRAM REGION is. So the whole-file half is
+# re-pinned to the last commit on that wave that touches `src`/`lib`/`cli`,
+# and everything after it is byte-exact whole-file again -- comment changes
+# included. The pre-module reference is NOT discarded: (A) still uses it, on
+# the claim it was built to defend.
+#
+# BOTH RESULTS ARE PRINTED WITH THEIR OWN COUNTS so the two claims never blur
+# into one number.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-8fc1e51}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -227,6 +308,39 @@ if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$REFSRC/lib" -I"$REFSRC/src" $SANFLAGS 
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 
+# ---- the FILE-PIN compiler, from the moved-forward pin --------------------
+# [DD-14.FB] The second reference (see the header's (B)). Same construction as
+# the pre-module one above, same refusal when the pin is absent from history:
+# a gate that cannot build a reference must SAY so rather than skip.
+FILEREFSRC="$WORKDIR/fileref"
+mkdir -p "$FILEREFSRC"
+if ! git -C "$ROOT_DIR" rev-parse --verify --quiet "$FILEPIN^{commit}" >/dev/null; then
+    bad "the whole-file pin $FILEPIN does not resolve in this repository — the (B) reference cannot be built, and a gate that cannot build its reference must SAY so rather than skip"
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+if ! git -C "$ROOT_DIR" archive "$FILEPIN" src lib cli \
+        | tar -x -C "$FILEREFSRC" 2>"$WORKDIR/filearch.log"; then
+    bad "could not git-archive $FILEPIN: $(head -3 "$WORKDIR/filearch.log")"
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+# AND IT MUST BE A POST-FB PIN, asserted rather than assumed — a pin
+# accidentally set before the caller-buffer wave would put every artifact's
+# surface back in the diff and this half would report the very failure the
+# re-pin exists to retire, with no hint of why.
+if ! grep -q 'RESUME_FRAME_SIZE' "$FILEREFSRC/src/gen/emit_dfa.c"; then
+    bad "the whole-file pin $FILEPIN predates [DD-14.FB]'s sizing surface (no RESUME_FRAME_SIZE in its emit_dfa.c) — that is not a post-FB commit, so (B) would be comparing across the very boundary the re-pin exists to move past"
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+FILEREF="$WORKDIR/pcrec_filepin"
+FILEREF_SRCS="$(find "$FILEREFSRC/src" -name '*.c' | sort)"
+# shellcheck disable=SC2086
+if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$FILEREFSRC/lib" -I"$FILEREFSRC/src" $SANFLAGS \
+        -o "$FILEREF" "$FILEREFSRC"/cli/main.c $FILEREF_SRCS 2>"$WORKDIR/filerefbuild.log"; then
+    bad "could not build the file-pin reference compiler from $FILEPIN:"
+    head -20 "$WORKDIR/filerefbuild.log" >&2
+    echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
+fi
+
 # Both builds emit SELF-CONTAINED C to stdout: writing to two different paths
 # would put a different `#include "<name>.h"` line in each and every
 # comparison would "differ" for a reason unrelated to this module.
@@ -245,6 +359,19 @@ stamp_count() {
 gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+# shellcheck disable=SC2086
+gen_c() { "$FILEREF" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+
+# [DD-14.FB] THE PROGRAM REGION: `goto <p>_L0;` through the accept label. An
+# artifact with no VM program (a DFA-selected pattern) yields the EMPTY region,
+# and empty-vs-empty compares equal — which is correct and is why the
+# dead-capture elision's four patterns still show up as differing here: on the
+# pre-module reference they were VM-selected and HAVE a region, and today they
+# are DFA-selected and do not.
+prog_region() { awk '/^    goto rx_L0;$/,/^rx_accept:/'; }
+# The two [DD-14.FB] lines that move INSIDE the region, on a call-BEARING
+# artifact only. Counted, never stripped.
+FB_REGION_LINES='^        const (unsigned|size_t) rx_call_frame = run->call_top;$|^        if \(rx_call_frame >= (RX_RESUME_FRAMES|run->resume_cap)\) return RX_R_INTERNAL;$'
 
 # ---- the corpus ------------------------------------------------------------
 PATFILE="$WORKDIR/patterns"
@@ -439,12 +566,20 @@ control() { # control <label> <extra pcrec args>
 sweep() { # sweep <label> <extra pcrec args>
     local label="$1" args="$2"
     local same=0 diff=0 refused=0 mism=0 stampbad=0 stampmoved=0 elided=0
+    # [DD-14.FB] the SECOND tally: the program region against the unchanged
+    # pre-module pin. Kept in its own variables and printed on its own line so
+    # the two claims never blur into one number.
+    local rsame=0 rdiff=0 relided=0 rcallbearing=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
         local a b na nb sa sb
+        local r ra rb
         a="$(gen_a "$pat" "$args")"
-        b="$(gen_b "$pat" "$args")"
+        # [DD-14.FB] `b` is now the FILE-PIN build (comparison (B)); `r` is the
+        # PRE-MODULE build, used for the program-region comparison (A).
+        b="$(gen_c "$pat" "$args")"
+        r="$(gen_b "$pat" "$args")"
         if [ -z "$a" ] && [ -z "$b" ]; then refused=$((refused + 1)); continue; fi
         if [ -z "$a" ] || [ -z "$b" ]; then
             mism=$((mism + 1))
@@ -462,6 +597,28 @@ sweep() { # sweep <label> <extra pcrec args>
                 "$pat" "$na" "$nb" >> "$WORKDIR/diff.$label"
             continue
         fi
+        # ---- (A) THE PROGRAM REGION, against the PRE-MODULE pin -----------
+        # No filtering beyond the three D37 stamp lines, so a comment change
+        # inside the region is still a difference. The two [DD-14.FB] lines
+        # that CAN move in here belong to `vm_region`, which is emitted only on
+        # a call-BEARING artifact -- this population is the call-FREE bucket,
+        # so the asserted count is ZERO and a non-zero one means a call-bearing
+        # pattern has leaked into the bucket, not that the exception fired.
+        if [ -n "$r" ]; then
+            ra="$(printf '%s\n' "$a" | stamp_strip | prog_region)"
+            rb="$(printf '%s\n' "$r" | stamp_strip | prog_region)"
+            case "$a" in *RX_VM_CALL_*) rcallbearing=$((rcallbearing + 1)) ;; esac
+            if [ "$ra" = "$rb" ]; then
+                rsame=$((rsame + 1))
+            elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
+                relided=$((relided + 1))
+            else
+                rdiff=$((rdiff + 1))
+                printf 'REGION DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
+            fi
+        fi
+
+        # ---- (B) THE WHOLE FILE, against the moved-forward pin -------------
         if [ "$a" = "$b" ]; then
             # Identical RAW, so identical stripped: the strongest reading, and
             # the one every pattern in the tree gives today.
@@ -490,7 +647,8 @@ sweep() { # sweep <label> <extra pcrec args>
             printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
         fi
     done < "$WORKDIR/free"
-    echo "recursion-identity[$label]: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    echo "recursion-identity[$label] (B) whole-file vs $FILEPIN: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    echo "recursion-identity[$label] (A) program-region vs $REFCOMMIT: same=$rsame differing=$rdiff elided=$relided call-bearing-in-population=$rcallbearing"
     # BOTH DIRECTIONS ON THE NAMED EXCEPTION. `elided` counts the patterns that
     # differed AND are on the list; `nelide` is the list's own length. Equality
     # is what says the list is neither stale nor a filter: a listed pattern that
@@ -511,9 +669,27 @@ sweep() { # sweep <label> <extra pcrec args>
     # OTHER than the one written down. MEASURED at the wave: 4 / 4 / 4 / 0 / 4
     # over default, vm, noprefilter, nocaptures, nosplice.
     [ "$label" = "nocaptures" ] && nelide=0
-    if [ "$elided" -ne "$nelide" ]; then
-        bad "[$label] the wave-G ELISION list expects $nelide of its patterns to differ on this axis and $elided did. On every axis that PROMISES a capture all four must differ, or the dead-capture elision has stopped firing and the list has stopped defending anything; on --no-captures none may, or it is firing for a reason other than the one written down:"
+    # [DD-14.FB] THE ELISION LIST NOW BELONGS TO COMPARISON (A). The
+    # dead-capture elision is what moved those four patterns from the VM to the
+    # DFA, so against the PRE-MODULE reference they still differ (there, they
+    # have a program region; here they do not) -- and against the moved-forward
+    # FILE PIN, which is post-wave-G, they must NOT differ at all, because the
+    # elision is on both sides of that comparison. Two different expectations
+    # for one list, each asserted against the comparison it belongs to; folding
+    # them would have meant one of the two going unchecked.
+    if [ "$relided" -ne "$nelide" ]; then
+        bad "[$label] (A) the wave-G ELISION list expects $nelide of its patterns' PROGRAM REGIONS to differ from $REFCOMMIT on this axis and $relided did. On every axis that PROMISES a capture all four must differ (they were VM-selected before the elision and are DFA-selected now, so the region exists on one side only); on --no-captures none may:"
         printf '%s\n' "$ELIDED_PATTERNS" | sed 's/^/    listed: /' >&2
+    fi
+    if [ "$rcallbearing" -ne 0 ]; then
+        bad "[$label] (A) $rcallbearing artifacts in the CALL-FREE population carry RX_VM_CALL_ macros. The two [DD-14.FB] region lines (the region-exit guard's type and capacity operand) are emitted only for a call-BEARING artifact, so this population's asserted count for them is ZERO; a non-zero one means the call-free classifier has leaked, not that the named exception fired"
+    fi
+    if [ "$rdiff" -ne 0 ]; then
+        bad "[$label] (A) $rdiff call-free patterns emit a DIFFERENT PROGRAM REGION than $REFCOMMIT for a reason no ruling has recorded — this is the claim the pre-module pin exists to defend:"
+        grep '^REGION DIFFERS' "$WORKDIR/diff.$label" | head -10 >&2
+    fi
+    if [ "$elided" -ne 0 ]; then
+        bad "[$label] (B) $elided of the wave-G elision patterns differ WHOLE-FILE against $FILEPIN, which is post-wave-G — the elision is on both sides of that comparison, so none of them may differ there:"
         grep '^ELIDED' "$WORKDIR/diff.$label" | sed 's/^/    /' >&2
     fi
     if [ "$stampbad" -ne 0 ]; then
@@ -537,8 +713,10 @@ sweep() { # sweep <label> <extra pcrec args>
     fi
     if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$stampbad" -eq 0 ] \
        && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ] \
-       && [ "$elided" -eq "$nelide" ]; then
-        ok "[$label] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches, and exactly the $nelide NAMED wave-G elision patterns moved"
+       && [ "$elided" -eq 0 ] && [ "$rdiff" -eq 0 ] && [ "$rcallbearing" -eq 0 ] \
+       && [ "$relided" -eq "$nelide" ]; then
+        ok "[$label] (B) WHOLE-FILE byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the pin $FILEPIN — zero differing, zero refusal mismatches, and zero elision movement, which is what a post-wave-G pin must show"
+        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide NAMED wave-G elision patterns moved, and 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception"
     fi
 }
 
