@@ -68,12 +68,14 @@ the flag:
 
 ```
 $ build/pcrec -p rx --engine=vm --emit-main -o /tmp/a.c '(x)(?:a|bc)+d'; grep RX_VM_STRATS /tmp/a.c
-#define RX_VM_STRATS           0x1u  /* POSSESSIVE */
+#define RX_VM_STRATS 0x1u
 $ build/pcrec -p rx --engine=vm -fno-possessify --emit-main -o /tmp/b.c '(x)(?:a|bc)+d'; grep RX_VM_STRATS /tmp/b.c
-#define RX_VM_STRATS           0x2u  /* BACKTRACKING */
+#define RX_VM_STRATS 0x2u
 ```
 
-(`rx_info.flags` and every other field of the initializer are unchanged
+(`0x1u` is `PCREC_VM_STRAT_POSSESSIVE`, `0x2u` is `PCREC_VM_STRAT_BACKTRACKING` — the named bit constants, `lib/pcrec.h`'s
+`PCREC_RX_ABI_H` block; the annotation is this document's, the emitted line carries only the hex value.
+`rx_info.flags` and every other field of the initializer are unchanged
 between the two builds except `frame_capacity`, which grows because a
 backtracking build needs a frame the possessive one does not — verified
 on this same pattern: `.frame_capacity = 3` possessified,
@@ -194,9 +196,9 @@ no answer, only how one is found); what the emitter DID is the
 
 ```
 $ build/pcrec -p rx --emit-main -o /tmp/c.c 'a(b|c)+d'; grep RX_VM_PREFILTER /tmp/c.c
-#define RX_VM_PREFILTER      "hybrid"
+#define RX_VM_PREFILTER "hybrid"
 $ build/pcrec -p rx -fno-prefilter --emit-main -o /tmp/d.c 'a(b|c)+d'; grep RX_VM_PREFILTER /tmp/d.c
-#define RX_VM_PREFILTER      "none"
+#define RX_VM_PREFILTER "none"
 ```
 
 **Reason it exists:** the hybrid prefilter (a capture-erased DFA
@@ -245,7 +247,7 @@ VM-only treatment as §2.6. Both stages stamp `<PREFIX>_ALTCLS_MERGES` /
 
 ```
 $ build/pcrec -p rx --no-captures --emit-main -o /tmp/e.c '[abc]|[def]|xyz'; grep RX_ALTCLS /tmp/e.c
-#define RX_ALTCLS_MERGES   1
+#define RX_ALTCLS_MERGES 1
 #define RX_ALTCLS_FACTORED 0
 ```
 
