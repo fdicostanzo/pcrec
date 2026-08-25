@@ -104,11 +104,11 @@ one_pattern() {
     d="$WORKDIR/p$pass$fail$skipped$$"
     rm -rf "$d"; mkdir -p "$d"
 
-    if ! "$PCREC" -p pa -o "$d/pa.c" -- "$pat" >/dev/null 2>"$d/err_a"; then
+    if ! pcrec_run "$PCREC" -p pa -o "$d/pa.c" -- "$pat" >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0
     fi
-    if ! "$PCREC" -p pb -fno-altcls-merge -fno-altcls-factor -o "$d/pb.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pb -fno-altcls-merge -fno-altcls-factor -o "$d/pb.c" -- "$pat" \
             >/dev/null 2>"$d/err_b"; then
         bad "'$pat': the altcls build compiled and the DENIED one did not"
         return 0
@@ -169,7 +169,7 @@ if [ "${1:-}" = "--corpus" ]; then
         [ -n "$cp" ] || continue
         pd="$WORKDIR/probe"
         rm -rf "$pd"; mkdir -p "$pd"
-        if "$PCREC" -p pp -o "$pd/pp.c" -- "$cp" >/dev/null 2>&1; then
+        if pcrec_run "$PCREC" -p pp -o "$pd/pp.c" -- "$cp" >/dev/null 2>&1; then
             m=$(sed -n 's/^#define PP_ALTCLS_MERGES \([0-9]*\)$/\1/p' "$pd/pp.c")
             f=$(sed -n 's/^#define PP_ALTCLS_FACTORED \([0-9]*\)$/\1/p' "$pd/pp.c")
             if [ "${m:-0}" -gt 0 ] 2>/dev/null || [ "${f:-0}" -gt 0 ] 2>/dev/null; then

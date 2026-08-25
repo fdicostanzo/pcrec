@@ -109,7 +109,7 @@ case1() {
     local d="$WORKDIR/case1"
     mkdir -p "$d"
     local out rc
-    out="$("$PCREC" -o - -- 'abc' 2>"$d/stderr.txt" 1>"$d/gen.c")"
+    out="$(pcrec_run "$PCREC" -o - -- 'abc' 2>"$d/stderr.txt" 1>"$d/gen.c")"
     rc=$?
     assert_eq "case1: -o - exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
     if [ -s "$d/gen.c" ] && ! grep -q '#include "' "$d/gen.c"; then
@@ -161,7 +161,7 @@ case2() {
     local d="$WORKDIR/case2"
     mkdir -p "$d"
     local rc
-    "$PCREC" --emit-main -o - -- 'abc' > "$d/gen.c" 2>"$d/stderr.txt"
+    pcrec_run "$PCREC" --emit-main -o - -- 'abc' > "$d/gen.c" 2>"$d/stderr.txt"
     rc=$?
     assert_eq "case2: --emit-main -o - exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
 
@@ -196,7 +196,7 @@ case3() {
     p61="$(printf 'a%.0s' $(seq 1 61))"
 
     local rc build_log
-    "$PCREC" -p "$p60" --emit-main -o - -- 'a' >"$d/g60.c" 2>"$d/e1.txt"
+    pcrec_run "$PCREC" -p "$p60" --emit-main -o - -- 'a' >"$d/g60.c" 2>"$d/e1.txt"
     rc=$?
     assert_eq "case3: 60-char prefix accepted (pcrec exit 0)" "0" "$rc" "stderr: $(cat "$d/e1.txt")"
     gen_cc "${FUNCNAME[0]}" "$CC" $CFLAGS -o "$d/t60" "$d/g60.c"
@@ -207,19 +207,19 @@ case3() {
         fail "case3: 60-char-prefix generated code compiles" "$build_log"
     fi
 
-    "$PCREC" -p "$p61" -o "$d/g61.c" -- 'a' 2>"$d/e2.txt"
+    pcrec_run "$PCREC" -p "$p61" -o "$d/g61.c" -- 'a' 2>"$d/e2.txt"
     rc=$?
     assert_eq "case3: 61-char prefix rejected exit 1" "1" "$rc"
     assert_contains "case3: 61-char prefix rejection has a diagnostic" \
         "$(cat "$d/e2.txt")" "prefix"
 
-    "$PCREC" -p "1abc" -o "$d/glead.c" -- 'a' 2>"$d/e3.txt"
+    pcrec_run "$PCREC" -p "1abc" -o "$d/glead.c" -- 'a' 2>"$d/e3.txt"
     rc=$?
     assert_eq "case3: leading-digit prefix rejected exit 1" "1" "$rc"
     assert_contains "case3: leading-digit prefix rejection has a diagnostic" \
         "$(cat "$d/e3.txt")" "prefix"
 
-    "$PCREC" -p "" -o "$d/gempty.c" -- 'a' 2>"$d/e4.txt"
+    pcrec_run "$PCREC" -p "" -o "$d/gempty.c" -- 'a' 2>"$d/e4.txt"
     rc=$?
     assert_eq "case3: empty prefix rejected exit 1" "1" "$rc"
     assert_contains "case3: empty prefix rejection has a diagnostic" \
@@ -236,7 +236,7 @@ case4() {
     local sub="$d/subdir"
     mkdir -p "$sub"
     local rc
-    "$PCREC" -o "$sub/gen.c" -- 'abc' 2>"$d/stderr.txt"
+    pcrec_run "$PCREC" -o "$sub/gen.c" -- 'abc' 2>"$d/stderr.txt"
     rc=$?
     assert_eq "case4: -o subdir/gen.c exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
 
@@ -271,7 +271,7 @@ case5() {
     mkdir -p "$d"
     local rc
 
-    "$PCREC" --emit-main -o - -- '-foo' > "$d/gen.c" 2>"$d/stderr.txt"
+    pcrec_run "$PCREC" --emit-main -o - -- '-foo' > "$d/gen.c" 2>"$d/stderr.txt"
     rc=$?
     assert_eq "case5: -- allows a pattern starting with '-' (exit 0)" "0" "$rc" \
         "stderr: $(cat "$d/stderr.txt")"
@@ -287,17 +287,17 @@ case5() {
         fail "case5: '-foo' pattern generated code compiles" "$build_log"
     fi
 
-    "$PCREC" -o 2>"$d/e_o.txt"; rc=$?
+    pcrec_run "$PCREC" -o 2>"$d/e_o.txt"; rc=$?
     assert_eq "case5: missing -o value exits 1" "1" "$rc"
     assert_contains "case5: missing -o value diagnoses 'missing value'" \
         "$(cat "$d/e_o.txt")" "missing value"
 
-    "$PCREC" -p 2>"$d/e_p.txt"; rc=$?
+    pcrec_run "$PCREC" -p 2>"$d/e_p.txt"; rc=$?
     assert_eq "case5: missing -p value exits 1" "1" "$rc"
     assert_contains "case5: missing -p value diagnoses 'missing value'" \
         "$(cat "$d/e_p.txt")" "missing value"
 
-    "$PCREC" -e 2>"$d/e_e.txt"; rc=$?
+    pcrec_run "$PCREC" -e 2>"$d/e_e.txt"; rc=$?
     assert_eq "case5: missing -e value exits 1" "1" "$rc"
     assert_contains "case5: missing -e value diagnoses 'missing value'" \
         "$(cat "$d/e_e.txt")" "missing value"
@@ -312,17 +312,17 @@ case6() {
     mkdir -p "$d"
     local rc
 
-    "$PCREC" -o "$d/x.c" 2>"$d/e_nopat.txt"; rc=$?
+    pcrec_run "$PCREC" -o "$d/x.c" 2>"$d/e_nopat.txt"; rc=$?
     assert_eq "case6: no pattern exits 1" "1" "$rc"
     assert_contains "case6: no pattern gives a diagnostic on stderr" \
         "$(cat "$d/e_nopat.txt")" "pattern"
 
-    "$PCREC" -o "$d/y.c" -- 'a' 'b' 2>"$d/e_twopat.txt"; rc=$?
+    pcrec_run "$PCREC" -o "$d/y.c" -- 'a' 'b' 2>"$d/e_twopat.txt"; rc=$?
     assert_eq "case6: two patterns exits 1" "1" "$rc"
     assert_contains "case6: two patterns gives a diagnostic on stderr" \
         "$(cat "$d/e_twopat.txt")" "one pattern"
 
-    "$PCREC" -z -o "$d/z.c" -- 'a' 2>"$d/e_unk.txt"; rc=$?
+    pcrec_run "$PCREC" -z -o "$d/z.c" -- 'a' 2>"$d/e_unk.txt"; rc=$?
     assert_eq "case6: unknown option exits 1" "1" "$rc"
     assert_contains "case6: unknown option gives a diagnostic on stderr" \
         "$(cat "$d/e_unk.txt")" "unknown option"
@@ -451,7 +451,7 @@ case9() {
     mkdir -p "$d"
     local rc build_log runout
 
-    "$PCREC" -i --emit-main -o - -- 'aBc' > "$d/gen.c" 2>"$d/stderr.txt"
+    pcrec_run "$PCREC" -i --emit-main -o - -- 'aBc' > "$d/gen.c" 2>"$d/stderr.txt"
     rc=$?
     assert_eq "case9: -i exits 0" "0" "$rc" "stderr: $(cat "$d/stderr.txt")"
 
@@ -470,7 +470,7 @@ case9() {
 
     # ...and the same pattern WITHOUT -i must not: a compile option must not
     # leak into builds that did not request it
-    "$PCREC" --emit-main -o - -- 'aBc' > "$d/gens.c" 2>/dev/null
+    pcrec_run "$PCREC" --emit-main -o - -- 'aBc' > "$d/gens.c" 2>/dev/null
     if gen_cc "${FUNCNAME[0]} (gens.c)" "$CC" $CFLAGS -o "$d/ts" "$d/gens.c"; then
         runout="$(gen_run "${FUNCNAME[0]} case-sensitive control" "$d/ts" xxABCxx)"
         assert_eq "case9: without -i, 'aBc' does NOT match 'ABC'" "nomatch" "$runout"
@@ -479,10 +479,10 @@ case9() {
     fi
 
     # -i is listed in --help (an undiscoverable flag is a half-shipped one)
-    assert_contains "case9: --help documents -i" "$("$PCREC" --help)" "-i "
+    assert_contains "case9: --help documents -i" "$(pcrec_run "$PCREC" --help)" "-i "
 
     # a pattern starting with '-' after `--` still parses as a pattern, not a flag
-    "$PCREC" -i -o "$d/dash.c" -- '-i' 2>"$d/e_dash.txt"; rc=$?
+    pcrec_run "$PCREC" -i -o "$d/dash.c" -- '-i' 2>"$d/e_dash.txt"; rc=$?
     assert_eq "case9: -i composes with -- and a '-i'-looking pattern" "0" "$rc" \
         "stderr: $(cat "$d/e_dash.txt")"
 }
@@ -502,7 +502,7 @@ case10() {
     mkdir -p "$d"
     local rc out nrows nbad
 
-    out="$("$PCREC" --list-syntax 2>"$d/e.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --list-syntax 2>"$d/e.txt")"; rc=$?
     assert_eq "case10: --list-syntax exits 0" "0" "$rc" "stderr: $(cat "$d/e.txt")"
     assert_contains "case10: --list-syntax emits the column header" "$out" \
         "#kind	selector	syntax"
@@ -545,26 +545,26 @@ case10() {
     # about argument handling and not about what --explain knows.
 
     # --flavour: exactly one exists, and a typo must not silently dump the lot
-    "$PCREC" --list-syntax --flavour pcre2 >"$d/o4.txt" 2>&1; rc=$?
+    pcrec_run "$PCREC" --list-syntax --flavour pcre2 >"$d/o4.txt" 2>&1; rc=$?
     assert_eq "case10: --flavour pcre2 exits 0" "0" "$rc"
     assert_eq "case10: --flavour pcre2 selects every row" \
         "$nrows" "$(grep -vc '^#' "$d/o4.txt")"
-    "$PCREC" --list-syntax --flavour python-re >"$d/o5.txt" 2>"$d/e5.txt"; rc=$?
+    pcrec_run "$PCREC" --list-syntax --flavour python-re >"$d/o5.txt" 2>"$d/e5.txt"; rc=$?
     assert_eq "case10: an unknown flavour exits 1" "1" "$rc"
     assert_contains "case10: an unknown flavour is named in the error" \
         "$(cat "$d/e5.txt")" "unknown flavour 'python-re'"
 
     # a query compiles nothing, so mixing it with a compile is an error rather
     # than a silently-ignored half of the command line
-    "$PCREC" --list-syntax -o - -- 'abc' >/dev/null 2>"$d/e6.txt"; rc=$?
+    pcrec_run "$PCREC" --list-syntax -o - -- 'abc' >/dev/null 2>"$d/e6.txt"; rc=$?
     assert_eq "case10: --list-syntax with -o and a pattern exits 1" "1" "$rc"
     assert_contains "case10: ...and says which flag conflicts" \
         "$(cat "$d/e6.txt")" "takes no pattern and no -o"
-    "$PCREC" --list-syntax --explain '\v' >/dev/null 2>"$d/e7.txt"; rc=$?
+    pcrec_run "$PCREC" --list-syntax --explain '\v' >/dev/null 2>"$d/e7.txt"; rc=$?
     assert_eq "case10: --list-syntax with --explain exits 1" "1" "$rc"
-    "$PCREC" --flavour pcre2 -o - -- 'abc' >/dev/null 2>"$d/e8.txt"; rc=$?
+    pcrec_run "$PCREC" --flavour pcre2 -o - -- 'abc' >/dev/null 2>"$d/e8.txt"; rc=$?
     assert_eq "case10: --flavour without a query exits 1" "1" "$rc"
-    "$PCREC" --explain >/dev/null 2>"$d/e9.txt"; rc=$?
+    pcrec_run "$PCREC" --explain >/dev/null 2>"$d/e9.txt"; rc=$?
     assert_eq "case10: --explain with no value exits 1" "1" "$rc"
     assert_contains "case10: ...with a missing-value diagnostic" \
         "$(cat "$d/e9.txt")" "missing value for --explain"
@@ -573,7 +573,7 @@ case10() {
     # RegRows and --list-syntax's format is frozen by SR-4's generated doc
     # section. Four columns, and the row count is asserted as a FLOOR with a
     # named row required: a count alone would be satisfied by any fifty rows.
-    out="$("$PCREC" --list-verbs 2>"$d/ev.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --list-verbs 2>"$d/ev.txt")"; rc=$?
     assert_eq "case10: --list-verbs exits 0" "0" "$rc" "stderr: $(cat "$d/ev.txt")"
     assert_contains "case10: --list-verbs emits the column header" "$out" \
         "#table	name	forms	unknown"
@@ -601,9 +601,9 @@ case10() {
     else
         pass "case10: every --list-verbs row has exactly 6 tab-separated fields"
     fi
-    "$PCREC" --list-verbs --list-syntax >/dev/null 2>"$d/ev2.txt"; rc=$?
+    pcrec_run "$PCREC" --list-verbs --list-syntax >/dev/null 2>"$d/ev2.txt"; rc=$?
     assert_eq "case10: --list-verbs with --list-syntax exits 1" "1" "$rc"
-    "$PCREC" --list-verbs -o - -- 'abc' >/dev/null 2>"$d/ev3.txt"; rc=$?
+    pcrec_run "$PCREC" --list-verbs -o - -- 'abc' >/dev/null 2>"$d/ev3.txt"; rc=$?
     assert_eq "case10: --list-verbs with -o and a pattern exits 1" "1" "$rc"
 
     # --list-families ([M6.6.2] wave F, D71 item 3). A THIRD dump, and it is a
@@ -611,12 +611,12 @@ case10() {
     # level over: --list-syntax is PER-ROW and its consumers depend on that
     # (tests/reject/ probes every non-base row's own `syntax`), so the INDEX
     # layer's grouping gets its own view instead of collapsing theirs.
-    out="$("$PCREC" --list-families 2>"$d/ef.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --list-families 2>"$d/ef.txt")"; rc=$?
     assert_eq "case10: --list-families exits 0" "0" "$rc" "stderr: $(cat "$d/ef.txt")"
     assert_contains "case10: --list-families emits the column header" "$out" \
         "#syntax	module	engines	status	built	nmembers	members"
     nfam="$(printf '%s\n' "$out" | grep -vc '^#')"
-    nsyn="$("$PCREC" --list-syntax | grep -vc '^#')"
+    nsyn="$(pcrec_run "$PCREC" --list-syntax | grep -vc '^#')"
     # THE TWO COUNTS MUST DIFFER, and the direction is the assertion: the
     # family view is the row view with multi-spelling constructs COLLAPSED, so
     # it must be SMALLER. Equal counts would mean the grouping had silently
@@ -640,15 +640,15 @@ case10() {
     else
         pass "case10: every --list-families row has exactly 7 tab-separated fields"
     fi
-    "$PCREC" --list-families --list-syntax >/dev/null 2>"$d/ef2.txt"; rc=$?
+    pcrec_run "$PCREC" --list-families --list-syntax >/dev/null 2>"$d/ef2.txt"; rc=$?
     assert_eq "case10: --list-families with --list-syntax exits 1" "1" "$rc"
-    "$PCREC" --list-families -o - -- 'abc' >/dev/null 2>"$d/ef3.txt"; rc=$?
+    pcrec_run "$PCREC" --list-families -o - -- 'abc' >/dev/null 2>"$d/ef3.txt"; rc=$?
     assert_eq "case10: --list-families with -o and a pattern exits 1" "1" "$rc"
     # No flavour axis, and for a reason of its own rather than by inheritance:
     # a family is a grouping OF rows, so filtering members would print families
     # whose membership depends on the filter and whose ANDed `built` would then
     # mean something different per invocation.
-    "$PCREC" --list-families --flavour pcre2 >/dev/null 2>"$d/ef4.txt"; rc=$?
+    pcrec_run "$PCREC" --list-families --flavour pcre2 >/dev/null 2>"$d/ef4.txt"; rc=$?
     assert_eq "case10: --list-families with --flavour exits 1" "1" "$rc"
     assert_contains "case10: ...and says where --flavour does apply" \
         "$(cat "$d/ef4.txt")" "--flavour applies to --list-syntax and --explain only"
@@ -673,40 +673,40 @@ case10() {
     # answer given with the module's gate open: wave F's own misattribution,
     # one level down.
     assert_eq "case10: a verb FORM error answers at VERDICT with its name's module DISABLED" \
-        "verdict" "$("$PCREC" --features none --probe-ask result -- '(*pla)' | cut -f3)"
+        "verdict" "$(pcrec_run "$PCREC" --features none --probe-ask result -- '(*pla)' | cut -f3)"
     assert_eq "case10: ...and STILL at verdict with module lookaround ENABLED — the form check runs before the name's row is looked up" \
-        "verdict" "$("$PCREC" --features lookaround --probe-ask result -- '(*pla)' | cut -f3)"
+        "verdict" "$(pcrec_run "$PCREC" --features lookaround --probe-ask result -- '(*pla)' | cut -f3)"
     # The CONTRAST that makes the pair a measurement: the same name in a form
     # PCRE2 DOES accept reaches the name's row, so it answers at `result` with
     # the module enabled and at `verdict` with it disabled.
     assert_eq "case10: the same name in an ACCEPTED form answers at VERDICT with the module disabled" \
-        "verdict" "$("$PCREC" --features none --probe-ask result -- '(*pla:a)' | cut -f3)"
+        "verdict" "$(pcrec_run "$PCREC" --features none --probe-ask result -- '(*pla:a)' | cut -f3)"
     assert_eq "case10: ...and at RESULT with module lookaround enabled — the second gate really is the NAME's row" \
-        "result" "$("$PCREC" --features lookaround --probe-ask result -- '(*pla:a)' | cut -f3)"
+        "result" "$(pcrec_run "$PCREC" --features lookaround --probe-ask result -- '(*pla:a)' | cut -f3)"
 
     # --count-groups (MOD-0.1, §18.1): the running capture count's external
     # channel — the surface tests/spec_mod0/check02 compares against libpcre2.
     # Expectations oracle-verified: python re agrees on every cell, and a
     # 300-pattern generated sweep at landing found zero disagreements.
-    out="$("$PCREC" --count-groups -- '(a)(b)(c)' 2>"$d/ec1.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --count-groups -- '(a)(b)(c)' 2>"$d/ec1.txt")"; rc=$?
     assert_eq "case10: --count-groups counts sibling groups" "0" "$rc" \
         "stderr: $(cat "$d/ec1.txt")"
     assert_eq "case10: ...and prints 3 for (a)(b)(c)" "3" "$out"
     assert_eq "case10: --count-groups counts nested groups" \
-        "2" "$("$PCREC" --count-groups -- '(a(b))')"
+        "2" "$(pcrec_run "$PCREC" --count-groups -- '(a(b))')"
     assert_eq "case10: --count-groups does not count (?:...)" \
-        "0" "$("$PCREC" --count-groups -- '(?:a)')"
+        "0" "$(pcrec_run "$PCREC" --count-groups -- '(?:a)')"
     assert_eq "case10: --count-groups on a groupless pattern is 0" \
-        "0" "$("$PCREC" --count-groups -- 'a|b')"
+        "0" "$(pcrec_run "$PCREC" --count-groups -- 'a|b')"
     # a refused construct refuses here too, with the compile diagnostic —
     # leftmost refusal, no count for a pattern pcrec does not fully know
-    "$PCREC" --count-groups -- '(?<n>a)' >/dev/null 2>"$d/ec2.txt"; rc=$?
+    pcrec_run "$PCREC" --count-groups -- '(?<n>a)' >/dev/null 2>"$d/ec2.txt"; rc=$?
     assert_eq "case10: --count-groups refuses what pcrec refuses" "1" "$rc"
     assert_contains "case10: ...with the construct's own diagnostic" \
         "$(cat "$d/ec2.txt")" "requires module 'named-groups'"
-    "$PCREC" --count-groups -o - -- 'a' >/dev/null 2>"$d/ec3.txt"; rc=$?
+    pcrec_run "$PCREC" --count-groups -o - -- 'a' >/dev/null 2>"$d/ec3.txt"; rc=$?
     assert_eq "case10: --count-groups with -o exits 1" "1" "$rc"
-    "$PCREC" --count-groups >/dev/null 2>"$d/ec4.txt"; rc=$?
+    pcrec_run "$PCREC" --count-groups >/dev/null 2>"$d/ec4.txt"; rc=$?
     assert_eq "case10: --count-groups without a pattern exits 1" "1" "$rc"
 
     # --probe-ask (MOD-0.1, §18.2): the cursor-rule channel — one doorway call
@@ -716,7 +716,7 @@ case10() {
     # known cell, the field count, the gate demotion being visible, and the
     # in-repo cursor sweep with a FLOORED population (an empty sweep prints
     # the same silence as a passing one, so the count is asserted).
-    out="$("$PCREC" --probe-ask verdict -- '\d' 2>"$d/ep1.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --probe-ask verdict -- '\d' 2>"$d/ep1.txt")"; rc=$?
     assert_eq "case10: --probe-ask verdict runs" "0" "$rc" \
         "stderr: $(cat "$d/ep1.txt")"
     assert_eq "case10: ...and reports the escape doorway cell exactly" \
@@ -732,7 +732,7 @@ case10() {
     # `--features none` to keep exercising "no module enabled" — the bare
     # cell itself is exercised by case14's byte-identity-with-std1 pin.
     assert_eq "case10: --probe-ask result is answered at verdict (the gate)" \
-        "verdict" "$("$PCREC" --features none --probe-ask result -- '\d' | cut -f3)"
+        "verdict" "$(pcrec_run "$PCREC" --features none --probe-ask result -- '\d' | cut -f3)"
     # ...and that day arrived (MOD-0.3c): with module classes ENABLED the
     # same ask reaches `result` and the outcome word is the PRODUCING
     # vocabulary — both cells were false the day before the producers wired
@@ -751,13 +751,13 @@ case10() {
     # doorway still does not move `cx->pos` even when producing.
     assert_eq "case10: --features classes --probe-ask result produces a node" \
         "escape	result	result	2	2	node	0	0	2	" \
-        "$("$PCREC" --features classes --probe-ask result -- '\d')"
+        "$(pcrec_run "$PCREC" --features classes --probe-ask result -- '\d')"
     assert_eq "case10: ...and the posix class produces members, cursor unmoved" \
         "class-bracket	result	result	1	1	members	1	0	10	" \
-        "$("$PCREC" --features classes --probe-ask result -- '[[:alpha:]]')"
+        "$(pcrec_run "$PCREC" --features classes --probe-ask result -- '[[:alpha:]]')"
     # full-text coordinates for a prefixed construct (the ten (?-N) rows)
     assert_eq "case10: --probe-ask reports full-text cursor coordinates" \
-        "4	4" "$("$PCREC" --probe-ask verdict -- '(a)(?-1)' | cut -f4,5)"
+        "4	4" "$(pcrec_run "$PCREC" --probe-ask verdict -- '(a)(?-1)' | cut -f4,5)"
     # THE CURSOR SWEEP: every registry row's syntax, claim and verdict, and
     # the cursor must not move (§18.2's hard rule; WANT_RESULT is the only
     # level allowed to move it — and the producing ports that exist since
@@ -790,7 +790,7 @@ case10() {
     noroute_expect="$(printf '%s\n' '(?:...)' 'a*+' 'a++' 'a?+' 'a{1,2}+' | LC_ALL=C sort | tr '\n' ' ')"
     while IFS= read -r syn; do
         for w in claim verdict; do
-            if line="$("$PCREC" --probe-ask "$w" -- "$syn" 2>/dev/null)"; then
+            if line="$(pcrec_run "$PCREC" --probe-ask "$w" -- "$syn" 2>/dev/null)"; then
                 swept=$((swept + 1))
                 [ "$(printf '%s\n' "$line" | cut -f4)" = \
                   "$(printf '%s\n' "$line" | cut -f5)" ] || {
@@ -816,17 +816,17 @@ case10() {
     assert_eq "case10: ...and each of them was probed at both want levels" \
         "10" "$noroute"
     # channel-cannot-run is exit 1 and distinct from a measured refusal
-    "$PCREC" --probe-ask verdict -- 'abc' >/dev/null 2>"$d/ep2.txt"; rc=$?
+    pcrec_run "$PCREC" --probe-ask verdict -- 'abc' >/dev/null 2>"$d/ep2.txt"; rc=$?
     assert_eq "case10: --probe-ask on non-doorway text exits 1" "1" "$rc"
     assert_contains "case10: ...and explains the (?: exclusion" \
         "$(cat "$d/ep2.txt")" "base grammar answers"
-    "$PCREC" --probe-ask sideways -- '\d' >/dev/null 2>&1; rc=$?
+    pcrec_run "$PCREC" --probe-ask sideways -- '\d' >/dev/null 2>&1; rc=$?
     assert_eq "case10: an unknown want level exits 1" "1" "$rc"
-    "$PCREC" --probe-ask verdict -o - -- '\d' >/dev/null 2>&1; rc=$?
+    pcrec_run "$PCREC" --probe-ask verdict -o - -- '\d' >/dev/null 2>&1; rc=$?
     assert_eq "case10: --probe-ask with -o exits 1" "1" "$rc"
-    "$PCREC" --probe-ask verdict >/dev/null 2>&1; rc=$?
+    pcrec_run "$PCREC" --probe-ask verdict >/dev/null 2>&1; rc=$?
     assert_eq "case10: --probe-ask without a construct exits 1" "1" "$rc"
-    "$PCREC" --probe-ask verdict --list-syntax >/dev/null 2>&1; rc=$?
+    pcrec_run "$PCREC" --probe-ask verdict --list-syntax >/dev/null 2>&1; rc=$?
     assert_eq "case10: --probe-ask with --list-syntax exits 1" "1" "$rc"
 
     # --features (MOD-0.1, slice 9): the enabled set. No module has ports yet,
@@ -835,11 +835,11 @@ case10() {
     # demotes to verdict where it is not — and verdicts must not move at all
     # (check07's subject; one spot pin here).
     assert_eq "case10: --features all opens the gate (answered_at result)" \
-        "result" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f3)"
+        "result" "$(pcrec_run "$PCREC" --features all --probe-ask result -- '\d' | cut -f3)"
     assert_eq "case10: --features is per-module, not a blanket switch" \
-        "verdict" "$("$PCREC" --features backrefs --probe-ask result -- '\d' | cut -f3)"
+        "verdict" "$(pcrec_run "$PCREC" --features backrefs --probe-ask result -- '\d' | cut -f3)"
     assert_eq "case10: an open gate does not move the cursor either" \
-        "2	2" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f4,5)"
+        "2	2" "$(pcrec_run "$PCREC" --features all --probe-ask result -- '\d' | cut -f4,5)"
     # The MOD-0.1-era pin that stood here — "an open gate changes no verdict
     # text" — EXPIRED the day the first producer landed (MOD-0.3c), exactly
     # as its neighbour comment predicted ("the day one is, this cell changes
@@ -849,15 +849,15 @@ case10() {
     # closed gate keeps the refusal text verbatim.
     assert_eq "case10: an open gate now PRODUCES where the closed one refuses" \
         "node	" \
-        "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f6,10)"
+        "$(pcrec_run "$PCREC" --features all --probe-ask result -- '\d' | cut -f6,10)"
     # [STD1b]: `\d`'s own module (`classes`) is open by DEFAULT now, so a
     # bare probe would produce too — `--features none` is what still shows
     # the closed-gate refusal verbatim (bare's own "produces, same as
     # std1" fact is case14's job).
     assert_eq "case10: ...and the closed gate keeps the refusal verbatim" \
         "refusal	\d requires module 'classes'" \
-        "$("$PCREC" --features none --probe-ask result -- '\d' | cut -f6,10)"
-    "$PCREC" --features nosuchmodule --probe-ask result -- '\d' \
+        "$(pcrec_run "$PCREC" --features none --probe-ask result -- '\d' | cut -f6,10)"
+    pcrec_run "$PCREC" --features nosuchmodule --probe-ask result -- '\d' \
         >/dev/null 2>"$d/ef1.txt"; rc=$?
     assert_eq "case10: an unknown module name in --features exits 1" "1" "$rc"
     assert_contains "case10: ...and is refused BY NAME" \
@@ -886,8 +886,8 @@ case10() {
     # claim below is unaffected either way, since a base-tier pattern like
     # 'a(b|c)+d' never engages the gate regardless of which set is named.
     mkdir -p "$d/fa" "$d/fb"
-    "$PCREC" --features none -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
-    "$PCREC" --features all -o "$d/fb/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    pcrec_run "$PCREC" --features none -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    pcrec_run "$PCREC" --features all -o "$d/fb/feat.c" -- 'a(b|c)+d' 2>/dev/null
     if cmp -s <(tail -n +5 "$d/fa/feat.c") <(tail -n +5 "$d/fb/feat.c"); then
         pass "case10: --features all compiles byte-identical MATCHER code (stamp lines 1-4 differ on purpose, D37)"
     else
@@ -902,7 +902,7 @@ case10() {
     fi
 
     # an undiscoverable flag is a half-shipped one (case9's rule, applied here)
-    out="$("$PCREC" --help)"
+    out="$(pcrec_run "$PCREC" --help)"
     assert_contains "case10: --help documents --list-syntax" "$out" "--list-syntax"
     assert_contains "case10: --help documents --list-verbs" "$out" "--list-verbs"
     assert_contains "case10: --help documents --explain" "$out" "--explain"
@@ -911,7 +911,7 @@ case10() {
     assert_contains "case10: --help documents --features" "$out" "--features"
 
     # `--` still ends options: a pattern that looks like a query is a pattern
-    "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?
+    pcrec_run "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?
     assert_eq "case10: -- protects a '--list-syntax'-looking pattern" "0" "$rc" \
         "stderr: $(cat "$d/e10.txt")"
 }
@@ -1002,7 +1002,7 @@ case11() {
     # truncated) run and answers "missing closing ) for group" instead, a
     # different worked example entirely. `--features none` is what still
     # walks through D29's original example step by step.
-    out="$("$PCREC" --features none --explain '(?i-m:' 2>"$d/e1.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features none --explain '(?i-m:' 2>"$d/e1.txt")"; rc=$?
     assert_eq "case11: --explain '(?i-m:' exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e1.txt")"
     assert_field "case11: ...echoes the query" "$out" "@header" "query" "(?i-m:"
@@ -1029,7 +1029,7 @@ case11() {
     # agrees with itself (measured, design note section 0). tests/reject is the
     # primary home of module-name truth (470 pins); these six are the subset
     # R10's C4-1 and C4-1b actually used, plus one row per doorway.
-    out="$("$PCREC" --explain '(?<')"
+    out="$(pcrec_run "$PCREC" --explain '(?<')"
     assert_field "case11: (?<=...) is module lookaround" "$out" "(?<=...)" \
         "module" "lookaround"
     assert_field "case11: (?<name>a) is module named-groups" "$out" "(?<name>a)" \
@@ -1050,7 +1050,7 @@ case11() {
     assert_field "case11: '(?<' truncated elects the bare named-group row" \
         "$out" "@header" "live elected" "(?<name>a)"
 
-    out="$("$PCREC" --explain '\N{U+0041}')"
+    out="$(pcrec_run "$PCREC" --explain '\N{U+0041}')"
     assert_field "case11: \N{U+0041} is module unicode-props" "$out" '\N{U+0041}' \
         "module" "unicode-props"
     assert_field "case11: \N is module classes" "$out" '\N' "module" "classes"
@@ -1070,7 +1070,7 @@ case11() {
     # a module row like any other, promising 'callouts'. The `agree` clause
     # still cannot independently verify attribution (both its sides read the
     # row), so this hand-written pin is still the only net.
-    out="$("$PCREC" --explain '(?C1)')"
+    out="$(pcrec_run "$PCREC" --explain '(?C1)')"
     assert_field "case11: (?C1) carries roadmap planned" "$out" "(?C1)" \
         "roadmap" "planned"
     assert_field "case11: (?C1)'s status promises module callouts" "$out" \
@@ -1084,17 +1084,17 @@ case11() {
         "(?C1)" "agree" "ok"
 
     # --- the class-bracket doorway, and a DECLARED class expectation --------
-    out="$("$PCREC" --explain '[[:alpha:]]')"
+    out="$(pcrec_run "$PCREC" --explain '[[:alpha:]]')"
     assert_field "case11: [[:alpha:]] is module classes" "$out" "[[:alpha:]]" \
         "module" "classes"
     assert_field "case11: ...blamed at pcrec's own offset" "$out" "[[:alpha:]]" \
         "own at" "1"
-    out="$("$PCREC" --explain '\d')"
+    out="$(pcrec_run "$PCREC" --explain '\d')"
     assert_field "case11: \d's class expectation is DECLARED from the row" \
         "$out" '\d' "class" "set 10"
     assert_field "case11: \d carries the PCRE2 semantics note" "$out" '\d' \
         "note" "any decimal digit"
-    out="$("$PCREC" --explain '\v')"
+    out="$(pcrec_run "$PCREC" --explain '\v')"
     assert_field "case11: \v is module classes" "$out" '\v' "module" "classes"
     assert_field "case11: \v's note is the measured PCRE2 semantics" "$out" '\v' \
         "note" \
@@ -1103,7 +1103,7 @@ case11() {
     # --- QUERY CELLS whose live answer differs from the row's declaration ---
     # Five measured cells where that is CORRECT. Pinned as correct so a future
     # reader does not "fix" them into agreement.
-    out="$("$PCREC" --explain '\p{Foo}')"
+    out="$(pcrec_run "$PCREC" --explain '\p{Foo}')"
     assert_field "case11: \p{Foo} gets mod_uprops' refined refusal" "$out" \
         "@header" "live" "\p requires module 'unicode-props'"
     # K16: this offset is PCREC'S OWN behaviour (stability, not oracle
@@ -1113,7 +1113,7 @@ case11() {
     # deliberate rather than silent.
     assert_field "case11: ...at pcrec's own scan-completion offset (K16)" \
         "$out" "@header" "live at" "7"
-    out="$("$PCREC" --explain '(*NOTAVERB)')"
+    out="$(pcrec_run "$PCREC" --explain '(*NOTAVERB)')"
     assert_field "case11: an unknown verb NAME promises no module" "$out" \
         "@header" "live" "(*VERB) not recognized or malformed"
     assert_field "case11: ...even though the one verb ROW declares one" "$out" \
@@ -1122,20 +1122,20 @@ case11() {
         "verb name NOTAVERB" "known" "no"
     assert_field "case11: ...naming the table PCRE2 would have consulted" \
         "$out" "verb name NOTAVERB" "table" "upper"
-    out="$("$PCREC" --explain '(*ACCEPT)')"
+    out="$(pcrec_run "$PCREC" --explain '(*ACCEPT)')"
     assert_field "case11: a known verb name reports its measured forms" "$out" \
         "verb name ACCEPT" "forms" "(*N)|(*N:a)|(*N:)"
     assert_field "case11: ...and where its roadmap came from" "$out" \
         "verb name ACCEPT" "roadmap src" "inherited from the (* row"
-    out="$("$PCREC" --explain '[[:foo:]]')"
+    out="$(pcrec_run "$PCREC" --explain '[[:foo:]]')"
     assert_field "case11: an unknown POSIX name promises no module" "$out" \
         "@header" "live" "unknown POSIX class name"
     assert_field "case11: ...while its row is still module classes" "$out" \
         "[[:alpha:]]" "module" "classes"
-    out="$("$PCREC" --explain '[[:<:]]')"
+    out="$(pcrec_run "$PCREC" --explain '[[:<:]]')"
     assert_field "case11: a whole-class-only name names ANOTHER module" "$out" \
         "@header" "live names" "assertions"
-    out="$("$PCREC" --explain '(?iZ)')"
+    out="$(pcrec_run "$PCREC" --explain '(?iZ)')"
     assert_field "case11: a malformed option RUN promises no module" "$out" \
         "@header" "live" "unrecognized character after (? or (?-"
     # ...and the elected row is still the option row: `elected` is the row the
@@ -1144,7 +1144,7 @@ case11() {
         "@header" "live elected" "(?i)"
 
     # --- the gate axis: --features changes what the doorway DOES ------------
-    out="$("$PCREC" --features classes --explain '\d')"
+    out="$(pcrec_run "$PCREC" --features classes --explain '\d')"
     assert_field "case11: an open gate PRODUCES instead of refusing" "$out" \
         "@header" "live" "produces an AST node"
     assert_field "case11: ...answered at result, the gate observable" "$out" \
@@ -1192,7 +1192,7 @@ case11() {
     # original way. The comment this replaces said the point was "the fix
     # must not become dropping the interesting field" — that principle
     # still holds; what changed is which answer IS the honest one for `J`.
-    out="$("$PCREC" --features modifiers --explain '(?m)' 2>"$d/e3.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features modifiers --explain '(?m)' 2>"$d/e3.txt")"; rc=$?
     assert_eq "case11: an open gate does not make (?m) dissent" "0" "$rc" \
         "stderr: $(cat "$d/e3.txt")"
     assert_field "case11: ...(?m)'s row agrees" "$out" "(?m)" "agree" "ok"
@@ -1206,7 +1206,7 @@ case11() {
     assert_field "case11: ...and the row still declares its own" \
         "$out" "(?m)" "module" "modifiers"
 
-    out="$("$PCREC" --features modifiers --explain '(?J)' 2>"$d/e3.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features modifiers --explain '(?J)' 2>"$d/e3.txt")"; rc=$?
     assert_eq "case11: an open gate does not make (?J) dissent" "0" "$rc" \
         "stderr: $(cat "$d/e3.txt")"
     assert_field "case11: ...(?J)'s row agrees" "$out" "(?J)" "agree" "ok"
@@ -1245,7 +1245,7 @@ case11() {
     # "NULL => no row" held and the converse did not, and the display asserted
     # elections that never happened. Written failing first; the verbatim block
     # is in the slice's commit message.
-    out="$("$PCREC" --explain '(?')"
+    out="$(pcrec_run "$PCREC" --explain '(?')"
     assert_field "case11: '(?' at end of pattern elected NO row" "$out" \
         "@header" "live elected" "none"
     # ...and MOD07-5 falls out of the same fix: `fallback` means "the
@@ -1261,14 +1261,14 @@ case11() {
     # bucket. They are SHOWN and never ELECTED — see the exempt split below.
     assert_eq "case11: ...and the row set is unchanged by the retagging" "50" \
         "$(explain_field "$out" "@header" "rows")"
-    out="$("$PCREC" --explain '[[:alpha]')"
+    out="$(pcrec_run "$PCREC" --explain '[[:alpha]')"
     assert_field "case11: an unclosed delimiter pair DECLINES" "$out" \
         "@header" "live" "declines — no construct at this doorway"
     assert_field "case11: ...having elected no row either" "$out" \
         "@header" "live elected" "none"
 
     # --- the base-grammar row: an honest non-answer, not a fabricated one ---
-    out="$("$PCREC" --explain '(?:')"; rc=$?
+    out="$(pcrec_run "$PCREC" --explain '(?:')"; rc=$?
     assert_eq "case11: --explain '(?:' exits 0" "0" "$rc"
     assert_field "case11: (?: has no doorway call to report" "$out" "@header" \
         "route" \
@@ -1285,7 +1285,7 @@ case11() {
     # `syntax` shares a prefix with it. The branch had ZERO assertions until
     # now — which is how a live, common output shape stayed described as
     # unreachable.
-    out="$("$PCREC" --explain '\q' 2>"$d/e5.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --explain '\q' 2>"$d/e5.txt")"; rc=$?
     assert_eq "case11: a routed query that selects no rows still exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e5.txt")"
     assert_field "case11: ...reporting rows 0" "$out" "@header" "rows" "0"
@@ -1302,7 +1302,7 @@ case11() {
     # this query reported `rows 99`. No attacker involved; it is the
     # operator's own text, so the cure is a visible rendering (`\xHH` for
     # bytes below 0x20 and 0x7f), not a quoting scheme.
-    out="$("$PCREC" --explain "$(printf '\\\nrows           99\n')" 2>/dev/null)"
+    out="$(pcrec_run "$PCREC" --explain "$(printf '\\\nrows           99\n')" 2>/dev/null)"
     assert_field "case11: an injected header line does not become a field" \
         "$out" "@header" "rows" "0"
     # (command substitution strips the trailing newline, so the query is
@@ -1315,12 +1315,12 @@ case11() {
     # only the echo would leave the injection reachable one line down.
     assert_field "case11: ...and in the live answer that embeds the byte" \
         "$out" "@header" "live" 'unknown escape \\x0a'
-    out="$("$PCREC" --explain "$(printf '(?\t)')" 2>/dev/null)"
+    out="$(pcrec_run "$PCREC" --explain "$(printf '(?\t)')" 2>/dev/null)"
     assert_field "case11: a control byte in the SELECTOR echo is escaped" \
         "$out" "@header" "route" "after '(?'  selector '\\x09'"
 
     # --- the unanswerable query keeps its exit 1 and its message ------------
-    "$PCREC" --explain 'a' >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
+    pcrec_run "$PCREC" --explain 'a' >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
     assert_eq "case11: --explain on base syntax exits 1" "1" "$rc"
     assert_contains "case11: ...and says why" "$(cat "$d/e2.txt")" \
         "no construct matches"
@@ -1335,7 +1335,7 @@ case11() {
                    '(?(1)' '(?-1)' '[[:alpha:]]' '[[.a.]]' '[[:foo:]]'
                    '(*ACCEPT)' '(*NOTAVERB)' '\p{Foo}' '(?' '(?:' '\Q')
     for q in "${queries[@]}"; do
-        out="$("$PCREC" --explain "$q" 2>/dev/null)" || continue
+        out="$(pcrec_run "$PCREC" --explain "$q" 2>/dev/null)" || continue
         answered=$((answered + 1))
         while IFS= read -r line; do
             # match on the KEY and trim the value, never on a fixed column:
@@ -1416,7 +1416,7 @@ case11() {
     # and no query on the shipped table may exit 3
     local dissenting=0
     for q in "${queries[@]}"; do
-        "$PCREC" --explain "$q" >/dev/null 2>&1
+        pcrec_run "$PCREC" --explain "$q" >/dev/null 2>&1
         [ $? -eq 3 ] && dissenting=$((dissenting + 1))
     done
     assert_eq "case11: no query dissents on the shipped table (exit 3 count)" \
@@ -1429,7 +1429,7 @@ case11() {
     # is that the surface distinguishes the two failure modes at all: exit 1
     # for an unanswerable query (above) and exit 0 with `dissents 0` for a
     # clean one.
-    out="$("$PCREC" --explain '\v')"
+    out="$(pcrec_run "$PCREC" --explain '\v')"
     assert_field "case11: a clean query reports zero dissents" "$out" \
         "@header" "dissents" "0"
 }
@@ -1479,11 +1479,11 @@ case12() {
     local rc out
 
     # --- the two crashing cells (139 before the fix) ---------------------
-    "$PCREC" --features modifiers --explain '(?i:[)' \
+    pcrec_run "$PCREC" --features modifiers --explain '(?i:[)' \
         >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
     assert_clean_failure \
         "case12: --explain survives a port that ctx_fails" "$rc" "$d/e1.txt"
-    "$PCREC" --features all --probe-ask result -- '(?i:[)' \
+    pcrec_run "$PCREC" --features all --probe-ask result -- '(?i:[)' \
         >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
     assert_clean_failure \
         "case12: --probe-ask survives a port that ctx_fails" "$rc" "$d/e2.txt"
@@ -1512,12 +1512,12 @@ case12() {
     # already exercise (with `--features modifiers`/`all` explicitly) —
     # `--features none` is what still demonstrates the CLOSED-gate case
     # this section is actually about.
-    out="$("$PCREC" --features none --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features none --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
     assert_eq "case12: closed-gate --explain of the same text exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e3.txt")"
     assert_field "case12: ...and answers with the module refusal" "$out" \
         "@header" "live" "(?i...) requires module 'modifiers'"
-    out="$("$PCREC" --features none --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features none --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
     assert_eq "case12: closed-gate --probe-ask of the same text exits 0" "0" "$rc" \
         "stderr: $(cat "$d/e4.txt")"
     assert_eq "case12: ...reporting a refusal, not an error" "refusal" \
@@ -1526,14 +1526,14 @@ case12() {
     # --- the OPEN gate, WELL-FORMED body: production is untouched ---------
     # The positive control for the guard itself: a setjmp that swallowed
     # every open-gate answer would pass both crash pins above.
-    out="$("$PCREC" --features modifiers --explain '(?i:a)' 2>"$d/e5.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features modifiers --explain '(?i:a)' 2>"$d/e5.txt")"; rc=$?
     assert_eq "case12: an open gate still answers a well-formed body" "0" "$rc" \
         "stderr: $(cat "$d/e5.txt")"
     assert_field "case12: ...by PRODUCING" "$out" "@header" "live" \
         "produces an AST node"
     assert_field "case12: ...answered at result" "$out" "@header" \
         "live answered" "result"
-    out="$("$PCREC" --features all --probe-ask result -- '(?i:a)' 2>"$d/e6.txt")"; rc=$?
+    out="$(pcrec_run "$PCREC" --features all --probe-ask result -- '(?i:a)' 2>"$d/e6.txt")"; rc=$?
     assert_eq "case12: --probe-ask likewise" "0" "$rc" \
         "stderr: $(cat "$d/e6.txt")"
     assert_eq "case12: ...reporting the produced node" "node" \
@@ -1566,9 +1566,9 @@ case13() {
     local rc out err
 
     # [M5-SEAM] (D58) `byte` is the encoding's name, in BOTH spellings.
-    "$PCREC" -e byte -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
+    pcrec_run "$PCREC" -e byte -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
     assert_eq "case13: -e byte compiles" "0" "$rc" "stderr: $(cat "$d/e0.txt")"
-    "$PCREC" --encoding=byte -o "$d/ok2.c" 'ab' 2>"$d/e0b.txt"; rc=$?
+    pcrec_run "$PCREC" --encoding=byte -o "$d/ok2.c" 'ab' 2>"$d/e0b.txt"; rc=$?
     assert_eq "case13: --encoding=byte compiles" "0" "$rc" "stderr: $(cat "$d/e0b.txt")"
 
     # ABSENT means byte: the default artifact must be byte-identical to the
@@ -1577,9 +1577,9 @@ case13() {
     # merely two that happen to work. Compared through `-o -` (self-contained),
     # the idiom case9/case10 established for exactly this: two artifacts
     # written to different BASENAMES differ in their emitted #include line.
-    "$PCREC" -o - 'ab' > "$d/def.c" 2>"$d/e0c.txt"; rc=$?
+    pcrec_run "$PCREC" -o - 'ab' > "$d/def.c" 2>"$d/e0c.txt"; rc=$?
     assert_eq "case13: no -e at all compiles" "0" "$rc" "stderr: $(cat "$d/e0c.txt")"
-    "$PCREC" -e byte -o - 'ab' > "$d/expl.c" 2>/dev/null
+    pcrec_run "$PCREC" -e byte -o - 'ab' > "$d/expl.c" 2>/dev/null
     if cmp -s "$d/def.c" "$d/expl.c"; then
         pass "case13: the DEFAULT encoding is byte (default and -e byte artifacts are byte-identical)"
     else
@@ -1597,13 +1597,13 @@ case13() {
     # [M5-SEAM] `ascii` was this encoding's name before D58 and is NOT an
     # alias: one namespace member, one spelling ([SR-10]). The diagnostic
     # offers the menu the registry actually holds.
-    "$PCREC" -e ascii -o "$d/no0.c" 'ab' >"$d/o0.txt" 2>"$d/eold.txt"; rc=$?
+    pcrec_run "$PCREC" -e ascii -o "$d/no0.c" 'ab' >"$d/o0.txt" 2>"$d/eold.txt"; rc=$?
     assert_eq "case13: -e ascii is no longer a known encoding (D58 renamed it 'byte')" "1" "$rc"
     assert_contains "case13: ...and the refusal offers the real menu" \
         "$(cat "$d/eold.txt")" "want byte, utf8"
 
     # -e utf8 is refused, cleanly, with no C written.
-    "$PCREC" -e utf8 -o "$d/no.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+    pcrec_run "$PCREC" -e utf8 -o "$d/no.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
     err="$(cat "$d/e1.txt")"
     assert_eq "case13: -e utf8 is refused" "1" "$rc" "stderr: $err"
     if [ -s "$d/no.c" ]; then
@@ -1627,13 +1627,13 @@ case13() {
     # module namespace really has no 'utf8', so any diagnostic naming one is
     # over-promising. If a future M5 registers the name, this flips and the
     # pin above must be revisited deliberately rather than deleted.
-    out="$("$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
+    out="$(pcrec_run "$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
     assert_eq "case13: --features utf8 is still refused by name" "1" "$rc"
     assert_contains "case13: ...as an unknown module" "$out" "unknown module 'utf8'"
 
     # [M5-SEAM] the LONG spelling refuses identically. Both spellings reach
     # one lookup and one refusal, so they cannot drift into two answers.
-    out="$("$PCREC" --encoding=utf8 -o "$d/no2.c" 'ab' 2>&1)"; rc=$?
+    out="$(pcrec_run "$PCREC" --encoding=utf8 -o "$d/no2.c" 'ab' 2>&1)"; rc=$?
     assert_eq "case13: --encoding=utf8 is refused too" "1" "$rc"
     assert_contains "case13: ...with the same milestone diagnostic" "$out" "milestone M5"
 
@@ -1643,8 +1643,8 @@ case13() {
     # supported by construction" rests on, and it is checkable today with one
     # encoding: nothing about the residual embed may be file- or
     # process-scoped.
-    "$PCREC" -p e1 --encoding=byte -o "$d/e1.c" -- 'a(b|c)+d' >/dev/null 2>&1
-    "$PCREC" -p e2 -e byte -o "$d/e2.c" -- 'x+y' >/dev/null 2>&1
+    pcrec_run "$PCREC" -p e1 --encoding=byte -o "$d/e1.c" -- 'a(b|c)+d' >/dev/null 2>&1
+    pcrec_run "$PCREC" -p e2 -e byte -o "$d/e2.c" -- 'x+y' >/dev/null 2>&1
     cat > "$d/mix.c" <<'MIXEOF'
 #include "e1.h"
 #include "e2.h"
@@ -1698,17 +1698,17 @@ case14() {
     #     std1-vs-explicit-classes,modifiers comparison below still is),
     #     and that the PRE-flip behaviour survives, verbatim, as
     #     `--features none` — the literal old-default spec. -----------
-    "$PCREC" -o "$d/bare.c" -- '\d' >/dev/null 2>"$d/e_bare.txt"; rc=$?
+    pcrec_run "$PCREC" -o "$d/bare.c" -- '\d' >/dev/null 2>"$d/e_bare.txt"; rc=$?
     assert_eq "case14: bare default now accepts \\d ([STD1b]: the flip)" \
         "0" "$rc" "stderr: $(cat "$d/e_bare.txt")"
 
-    "$PCREC" --features none -o "$d/none.c" -- '\d' >/dev/null 2>"$d/e_none.txt"; rc=$?
+    pcrec_run "$PCREC" --features none -o "$d/none.c" -- '\d' >/dev/null 2>"$d/e_none.txt"; rc=$?
     assert_eq "case14: --features none still refuses \\d (the pre-flip bare behaviour, kept explicit)" \
         "1" "$rc"
     assert_contains "case14: ...with the classes-module refusal" \
         "$(cat "$d/e_none.txt")" "requires module 'classes'"
 
-    "$PCREC" --features std1 -o "$d/std1.c" -- '\d' 2>"$d/e_std1.txt"; rc=$?
+    pcrec_run "$PCREC" --features std1 -o "$d/std1.c" -- '\d' 2>"$d/e_std1.txt"; rc=$?
     assert_eq "case14: --features std1 accepts \\d" \
         "0" "$rc" "stderr: $(cat "$d/e_std1.txt")"
 
@@ -1716,8 +1716,8 @@ case14() {
     # different output BASENAMES would otherwise embed two different
     # #include lines and differ for a reason unrelated to the stamp — the
     # same trap run_trie_identity.sh and case9's -i comparison both avoid.
-    "$PCREC" -o - -- '\d' > "$d/bare_stamp.c" 2>/dev/null
-    "$PCREC" --features std1 -o - -- '\d' > "$d/std1_bare.c" 2>/dev/null
+    pcrec_run "$PCREC" -o - -- '\d' > "$d/bare_stamp.c" 2>/dev/null
+    pcrec_run "$PCREC" --features std1 -o - -- '\d' > "$d/std1_bare.c" 2>/dev/null
     if diff -q "$d/bare_stamp.c" "$d/std1_bare.c" >/dev/null; then
         pass "case14: bare invocation == --features std1, byte-for-byte, stamp included (no set-name difference at all — a bare invocation IS std1 now, not merely equivalent to it)"
     else
@@ -1725,7 +1725,7 @@ case14() {
             "$(diff "$d/bare_stamp.c" "$d/std1_bare.c")"
     fi
 
-    "$PCREC" --features classes,modifiers -o - -- '\d' > "$d/expl_bare.c" 2>/dev/null
+    pcrec_run "$PCREC" --features classes,modifiers -o - -- '\d' > "$d/expl_bare.c" 2>/dev/null
     # byte-identical except the stamp's own SET NAME (std1 vs explicit) —
     # everything a matcher's behaviour depends on, including the stamped
     # MODULE LIST, is unchanged.
@@ -1743,7 +1743,7 @@ case14() {
     # --- MATCH BEHAVIOUR, oracle-verified: std1 engages BOTH classes'
     #     (\d) and modifiers' ((?i)) producers in one pattern ------------
     if command -v python3 >/dev/null 2>&1; then
-        "$PCREC" --features std1 --emit-main -o - -- '(?i)cat\d+' \
+        pcrec_run "$PCREC" --features std1 --emit-main -o - -- '(?i)cat\d+' \
             > "$d/m.c" 2>"$d/e_m.txt"
         if gen_cc "${FUNCNAME[0]} (m.c)" "$CC" $CFLAGS -o "$d/m" "$d/m.c"; then
             pass "case14: --features std1 '(?i)cat\\d+' compiles"
@@ -1765,7 +1765,7 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     fi
 
     # --- unknown named-set-shaped spec: a clean, by-name error ----------
-    "$PCREC" --features std2 -o "$d/bad.c" -- 'a' >/dev/null 2>"$d/e_bad.txt"; rc=$?
+    pcrec_run "$PCREC" --features std2 -o "$d/bad.c" -- 'a' >/dev/null 2>"$d/e_bad.txt"; rc=$?
     assert_eq "case14: an unknown named-set name exits 1" "1" "$rc"
     assert_contains "case14: ...refused BY NAME" "$(cat "$d/e_bad.txt")" "'std2'"
     assert_contains "case14: ...and the message names the real vocabulary (std1)" \
@@ -1783,7 +1783,7 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     # what "default" means the year it was built, because it stamps the
     # EXPANDED answer, not the word "default"). `--features none` is what
     # now stamps 'none': the escape hatch, unaffected by the flip.
-    out="$("$PCREC" -o - -- 'a')"
+    out="$(pcrec_run "$PCREC" -o - -- 'a')"
     assert_contains "case14: bare invocation stamps 'std1' ([STD1b]: the new default constant)" \
         "$out" '/* Feature set: std1 (modules: classes,modifiers) */'
     assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
@@ -1791,7 +1791,7 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     assert_contains "case14: ...and the expanded PCREC_FEATURE_MODULES" \
         "$out" '#define PCREC_FEATURE_MODULES "classes,modifiers"'
 
-    out="$("$PCREC" --features none -o - -- 'a')"
+    out="$(pcrec_run "$PCREC" --features none -o - -- 'a')"
     assert_contains "case14: --features none stamps 'none' (the escape hatch, unaffected by the flip)" \
         "$out" '/* Feature set: none (modules: none) */'
     assert_contains "case14: ...and PCREC_FEATURE_SET macro" \
@@ -1799,20 +1799,20 @@ print('match %d %d' % (m.start(), m.end()) if m else 'nomatch')
     assert_contains "case14: ...and an empty PCREC_FEATURE_MODULES" \
         "$out" '#define PCREC_FEATURE_MODULES ""'
 
-    out="$("$PCREC" --features std1 -o - -- 'a')"
+    out="$(pcrec_run "$PCREC" --features std1 -o - -- 'a')"
     assert_contains "case14: --features std1 stamps its own name" \
         "$out" '/* Feature set: std1 (modules: classes,modifiers) */'
     assert_contains "case14: ...and the expanded module list in the macro" \
         "$out" '#define PCREC_FEATURE_MODULES "classes,modifiers"'
 
-    out="$("$PCREC" --features all -o - -- 'a')"
+    out="$(pcrec_run "$PCREC" --features all -o - -- 'a')"
     assert_contains "case14: --features all stamps 'all' plus its own full expansion" \
         "$out" '/* Feature set: all (modules: '
 
     # the paired .c/.h form: the HEADER carries the comment (matching the
     # existing pattern-comment convention) but not the macros, so a .c that
     # #includes its own .h never sees PCREC_FEATURE_SET defined twice.
-    "$PCREC" --features std1 -o "$d/pair.c" -- 'a' >/dev/null 2>"$d/e_pair.txt"
+    pcrec_run "$PCREC" --features std1 -o "$d/pair.c" -- 'a' >/dev/null 2>"$d/e_pair.txt"
     assert_contains "case14: the paired .h also carries the stamp comment" \
         "$(cat "$d/pair.h" 2>/dev/null)" \
         '/* Feature set: std1 (modules: classes,modifiers) */'
@@ -1852,7 +1852,7 @@ case15() {
     # (a) the step budget. `(a*)*b`'s O(n^2) resumption count burns a
     # --step-budget=50 well inside 20 bytes of 'a' with no 'b' to end it.
     local rc build_log build_rc
-    "$PCREC" --emit-main --engine=vm --step-budget=50 -o "$d/steps.c" \
+    pcrec_run "$PCREC" --emit-main --engine=vm --step-budget=50 -o "$d/steps.c" \
         -- '(a*)*b' >/dev/null 2>"$d/steps.err"
     rc=$?
     assert_eq "case15: steps witness compiles pcrec-side" "0" "$rc" \
@@ -1874,7 +1874,7 @@ case15() {
 
     # (b) the frame capacity. `((a)|b)*c` overflows a --backtrack-frames=4
     # array in a handful of choice points.
-    "$PCREC" --emit-main --engine=vm --backtrack-frames=4 -o "$d/frames.c" \
+    pcrec_run "$PCREC" --emit-main --engine=vm --backtrack-frames=4 -o "$d/frames.c" \
         -- '((a)|b)*c' >/dev/null 2>"$d/frames.err"
     rc=$?
     assert_eq "case15: frames witness compiles pcrec-side" "0" "$rc" \
@@ -1896,7 +1896,7 @@ case15() {
     # (c) the non-firing controls: the SAME two patterns under an ample
     # budget/capacity must still match honestly — a give-up path that always
     # fired would trivially "pass" (a) and (b) above without proving anything.
-    "$PCREC" --emit-main --engine=vm --step-budget=1000000 -o "$d/steps_ok.c" \
+    pcrec_run "$PCREC" --emit-main --engine=vm --step-budget=1000000 -o "$d/steps_ok.c" \
         -- '(a*)*b' >/dev/null 2>"$d/steps_ok.err"
     gen_cc "${FUNCNAME[0]}-steps-ok" "$CC" $CFLAGS -o "$d/steps_ok" "$d/steps_ok.c" \
         && out="$(gen_run "${FUNCNAME[0]}-steps-ok" "$d/steps_ok" 'aaaaaaaaaaaaaaaaaaaab')" \
@@ -1904,7 +1904,7 @@ case15() {
             "match 0 21" "$out" \
         || fail "case15 CONTRAST: could not build/run the ample-step-budget control" "$GEN_CC_LOG"
 
-    "$PCREC" --emit-main --engine=vm --backtrack-frames=4096 -o "$d/frames_ok.c" \
+    pcrec_run "$PCREC" --emit-main --engine=vm --backtrack-frames=4096 -o "$d/frames_ok.c" \
         -- '((a)|b)*c' >/dev/null 2>"$d/frames_ok.err"
     gen_cc "${FUNCNAME[0]}-frames-ok" "$CC" $CFLAGS -o "$d/frames_ok" "$d/frames_ok.c" \
         && out="$(gen_run "${FUNCNAME[0]}-frames-ok" "$d/frames_ok" 'aaaaaaaaaaaaaaaaaaaac')" \

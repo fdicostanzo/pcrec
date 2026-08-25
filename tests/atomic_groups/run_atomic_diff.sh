@@ -65,6 +65,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 
@@ -263,7 +264,7 @@ PATSPEC=(
 gen() { # gen <outdir> <pattern> [extra pcrec args]
     local d="$1" pat="$2"; shift 2
     mkdir -p "$d"
-    "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    pcrec_run "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
     $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/atomic_batch.c" "$d/gen.c" \
         2>>"$d/err" || return 1
 }
@@ -516,8 +517,8 @@ while IFS=$'\t' read -r cls pat; do
     # compile to a pure DFA with the discharge on, and to a VM artifact with it
     # off. `RX_ENGINE` is absent from a DFA artifact.
     if [ "$cls" = "dead" ]; then
-        "$PCREC" --features all -p rx --no-captures -o "$d/e_on.c"  -- "$pat" 2>/dev/null
-        "$PCREC" --features all -p rx --no-captures -fno-atomic-discharge \
+        pcrec_run "$PCREC" --features all -p rx --no-captures -o "$d/e_on.c"  -- "$pat" 2>/dev/null
+        pcrec_run "$PCREC" --features all -p rx --no-captures -fno-atomic-discharge \
                  -o "$d/e_off.c" -- "$pat" 2>/dev/null
         if ! grep -q '#define RX_ENGINE' "$d/e_on.c" \
            && grep -q '#define RX_ENGINE' "$d/e_off.c"; then
@@ -543,13 +544,13 @@ while IFS=$'\t' read -r cls pat; do
         #        prune off, the two arms are byte-identical again on every
         #        dead-cut pattern, which is what makes the split honest rather
         #        than a relaxation.
-        "$PCREC" --features all -p rx --engine=vm --no-captures \
+        pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -o - -- "$pat" > "$d/b_on.c" 2>/dev/null
-        "$PCREC" --features all -p rx --engine=vm --no-captures \
+        pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -fno-atomic-discharge -o - -- "$pat" > "$d/b_off.c" 2>/dev/null
-        "$PCREC" --features all -p rx --engine=vm --no-captures \
+        pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -fno-length-prune -o - -- "$pat" > "$d/p_on.c" 2>/dev/null
-        "$PCREC" --features all -p rx --engine=vm --no-captures \
+        pcrec_run "$PCREC" --features all -p rx --engine=vm --no-captures \
                  -fno-length-prune -fno-atomic-discharge \
                  -o - -- "$pat" > "$d/p_off.c" 2>/dev/null
         nd_bytes=$((nd_bytes + 1))
@@ -652,7 +653,7 @@ while IFS=$'\t' read -r cls pat; do
     [ "$cls" = "cut" ] || continue
     d="$WORKDIR/e$ne_pat"; ne_pat=$((ne_pat + 1))
     mkdir -p "$d"
-    "$PCREC" --features all -p rx -o "$d/gen.c" -- "$pat" 2>/dev/null || continue
+    pcrec_run "$PCREC" --features all -p rx -o "$d/gen.c" -- "$pat" 2>/dev/null || continue
     $CC -O2 -I"$d" -o "$d/t" "$SCRIPT_DIR/atomic_entries.c" "$d/gen.c" \
         2>"$d/err" || { bad "§4: could not build the entries driver for '$pat': $(head -2 "$d/err")"; continue; }
     # THE MATCH-HERE ORACLE column for this pattern, computed in the same

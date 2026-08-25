@@ -52,12 +52,12 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]   -- the DEFAULT routing (ships)
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 gen_vm() {   # gen_vm <out> <pattern> [args...]  -- --engine=vm (no prefilter)
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -406,7 +406,7 @@ if gen mixed '(a{2,4}){2,6}b(c{2,4}){2,6}'; then
     else
         bad "a pattern with one bounded and one unbounded quantifier stamped RX_VM_PRUNES 0x${m:-?}, expected 0x3"
     fi
-    if "$PCREC" --engine=vm --emit-ir -- '(a{2,4}){2,6}b(c{2,4}){2,6}' 2>/dev/null \
+    if pcrec_run "$PCREC" --engine=vm --emit-ir -- '(a{2,4}){2,6}b(c{2,4}){2,6}' 2>/dev/null \
         | grep -q '^PRUNING'; then
         ok "--emit-ir carries a PRUNING section (D46's observability half, per quantifier)"
     else
@@ -433,10 +433,10 @@ while IFS= read -r cp; do
     # `#include "<name>.h"` line carries it, so comparing `on.c` against
     # `off.c` would report a difference the pass did not make.
     mkdir -p "$WORKDIR/bi/on" "$WORKDIR/bi/off"
-    if ! "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/on/g.c" -- "$cp" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/on/g.c" -- "$cp" >/dev/null 2>&1; then
         nref=$((nref + 1)); continue
     fi
-    "$PCREC" -p rx --engine=vm -fno-length-prune -o "$WORKDIR/bi/off/g.c" -- "$cp" \
+    pcrec_run "$PCREC" -p rx --engine=vm -fno-length-prune -o "$WORKDIR/bi/off/g.c" -- "$cp" \
         >/dev/null 2>&1 || { nref=$((nref + 1)); continue; }
     if has_clamp "$WORKDIR/bi/off/g.c" || grep -q 'RX_PRUNE_' "$WORKDIR/bi/off/g.c"; then
         nviol=$((nviol + 1))

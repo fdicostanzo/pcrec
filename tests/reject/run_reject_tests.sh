@@ -1926,7 +1926,7 @@ row_reject() { # like reject(), but counted separately so the floors stay honest
     ok "row '$pat' -> $want"
 }
 
-"$PCREC" --list-syntax > "$WORKDIR/syntax.tsv" 2>"$WORKDIR/syntax.err"
+pcrec_run "$PCREC" --list-syntax > "$WORKDIR/syntax.tsv" 2>"$WORKDIR/syntax.err"
 if [ ! -s "$WORKDIR/syntax.tsv" ]; then
     # K30 (found 2026-08-23 by [TT-8]'s PROCS sweep; fixed at [M6.6.2] wave F,
     # the next change to touch this table). THE VACUITY GUARD IS REPORTED

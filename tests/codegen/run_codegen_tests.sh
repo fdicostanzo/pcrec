@@ -72,7 +72,7 @@ body() { # body <file> <entry-name> <out-file>
 gen() { # gen <name> <pattern> [extra pcrec args...] -> <name>.c plus <name>.body
     local name="$1" pat="$2"
     shift 2
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$name.c" -- "$pat" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name.c" -- "$pat" >/dev/null 2>&1 \
         || { bad "$name: pcrec failed to compile pattern '$pat'"; return 1; }
     body "$WORKDIR/$name.c" rx_search "$WORKDIR/$name.body" \
         || { bad "$name: could not extract the rx_search engine body from the generated C"; return 1; }
@@ -150,7 +150,7 @@ fi
 # invisible to the check above — which only ever looks at an artifact where the
 # DFA IS the engine. Same alternation, capturing, so the routing differs and
 # nothing else does.
-if "$PCREC" -p rx -o "$WORKDIR/minimvm.c" -- '(get|post|put|delete|patch)' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/minimvm.c" -- '(get|post|put|delete|patch)' >/dev/null 2>&1; then
     if ! body "$WORKDIR/minimvm.c" rx_prefilter "$WORKDIR/minimvm.body"; then
         bad "minimization/prefilter: could not extract rx_prefilter from the VM artifact"
     else
@@ -297,7 +297,7 @@ fi
 gensc() { # gensc <name> <pattern> [extra pcrec args...] -> <name>.body
     local name="$1" pat="$2"
     shift 2
-    "$PCREC" -p rx "$@" -o - -- "$pat" 2>/dev/null > "$WORKDIR/$name.sc"
+    pcrec_run "$PCREC" -p rx "$@" -o - -- "$pat" 2>/dev/null > "$WORKDIR/$name.sc"
     [ -s "$WORKDIR/$name.sc" ] \
         || { bad "$name: pcrec produced no self-contained output for '$pat'"; return 1; }
     body "$WORKDIR/$name.sc" rx_search "$WORKDIR/$name.body" \
@@ -377,8 +377,8 @@ GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 if ! command -v "$CC" >/dev/null 2>&1; then
     bad "multi-engine: no C compiler ($CC) — this block cannot be skipped silently"
-elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
-  && "$PCREC" -p rx -o - -- '^a|b'  > "$WORKDIR/engb.c"  2>/dev/null \
+elif pcrec_run "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
+  && pcrec_run "$PCREC" -p rx -o - -- '^a|b'  > "$WORKDIR/engb.c"  2>/dev/null \
   && body "$WORKDIR/engb.c" rx_search "$WORKDIR/engb.body"; then
     # rename engine B's entry point; every other symbol in the body is
     # function-local and deliberately left untouched
@@ -470,8 +470,8 @@ fi
 # not a harmless no-op. This check builds that TU for real, with two
 # genuinely different prefixes, and is this file's positive control for the
 # `#ifndef PCREC_RX_ABI_H` fix (D44, ratifying A-2).
-if "$PCREC" -p rx -o "$WORKDIR/dprx.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
-   && "$PCREC" -p qq -o "$WORKDIR/dpqq.c" -- 'x(y|z)+w' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/dprx.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p qq -o "$WORKDIR/dpqq.c" -- 'x(y|z)+w' >/dev/null 2>&1; then
     printf '#include "dprx.h"\n#include "dpqq.h"\nint main(void){return 0;}\n' > "$WORKDIR/dp_main.c"
     if gen_cc "cross-prefix one-TU" "$CC" -c $GENCFLAGS -I"$WORKDIR" -o "$WORKDIR/dp_main.o" "$WORKDIR/dp_main.c"; then
         ok "D44/A-2: two differently-prefixed generated headers compile together in one TU (prefix-independent ABI guard)"
@@ -503,7 +503,7 @@ fi
 # unchecked identity constraint between two independently-edited files is
 # this project's own named failure class (see the pcrec-check-design-lessons
 # memory this lane inherited); this is the check that makes a drift loud.
-if "$PCREC" -p rx -o "$WORKDIR/eng.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/eng.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
     printf '#include "eng.h"\n#include "pcrec.h"\nint main(void){ return (int)PCREC_ENGINE_DFA + (int)PCREC_ENGINE_VM; }\n' \
         > "$WORKDIR/eng_order1.c"
     printf '#include "pcrec.h"\n#include "eng.h"\nint main(void){ return (int)PCREC_ENGINE_DFA + (int)PCREC_ENGINE_VM; }\n' \
@@ -529,7 +529,7 @@ fi
 # it can never say something the compile didn't actually do. Whole-file
 # checks (not `body()` — the stamp is outside any engine function, at the
 # very top).
-if "$PCREC" -p rx --features std1 -o "$WORKDIR/stamp.c" -- 'a' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features std1 -o "$WORKDIR/stamp.c" -- 'a' >/dev/null 2>&1; then
     if grep -qF '/* Feature set: std1 (modules: classes,modifiers) */' "$WORKDIR/stamp.c" \
        && grep -qF '#define PCREC_FEATURE_SET "std1"' "$WORKDIR/stamp.c" \
        && grep -qF '#define PCREC_FEATURE_MODULES "classes,modifiers"' "$WORKDIR/stamp.c"; then
@@ -558,12 +558,12 @@ fi
 # that day: the bare default moved from "none" to the frozen named set
 # `std1` = {classes, modifiers}, so a bare invocation now stamps std1's own
 # expansion). `--features none` is what now stamps "none" explicitly.
-if "$PCREC" -p rx -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: std1 (modules: classes,modifiers) */'; then
+if pcrec_run "$PCREC" -p rx -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: std1 (modules: classes,modifiers) */'; then
     ok "D37: a bare invocation stamps the resolved default ('std1'), not nothing"
 else
     bad "D37: a bare invocation's stamp is missing or wrong"
 fi
-if "$PCREC" -p rx --features none -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: none (modules: none) */'; then
+if pcrec_run "$PCREC" -p rx --features none -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: none (modules: none) */'; then
     ok "D37: --features none stamps 'none' explicitly (the escape hatch, unaffected by [STD1b])"
 else
     bad "D37: --features none's stamp is missing or wrong"
@@ -633,7 +633,7 @@ ts1_bad=0
 ts1_one() { # ts1_one <label> <pattern> [extra pcrec args...]
     local lbl="$1" pat="$2"
     shift 2
-    "$PCREC" -p rx "$@" -o "$WORKDIR/ts1.c" -- "$pat" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/ts1.c" -- "$pat" >/dev/null 2>&1 \
         || { bad "TS-1 [$lbl]: pcrec failed to compile '$pat'"; return; }
     local f
     for f in "$WORKDIR/ts1.c" "$WORKDIR/ts1.h"; do
@@ -668,7 +668,7 @@ fi
 # is 1 on every artifact this DFA-only emitter produces — asserted now, live
 # from this commit, so a future emitter change that breaks either invariant
 # fails here rather than being discovered once the VM exists.
-if "$PCREC" -p rx -o - -- 'a(b|c)+d' > "$WORKDIR/m44info.c" 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx -o - -- 'a(b|c)+d' > "$WORKDIR/m44info.c" 2>/dev/null; then
     if grep -qF '.ncaps = RX_NCAPS,' "$WORKDIR/m44info.c"; then
         ok "[M4.4]: rx_info.ncaps is written as the RX_NCAPS macro itself (structural ncaps == RX_NCAPS)"
     else
@@ -703,7 +703,7 @@ fi
 # embedded-NUL cell itself (the K9 repro proper) cannot be expressed here —
 # argv has no way to carry a NUL through to pcrec — so it lives as a direct
 # library-API C probe in tests/cli/run_cli_tests.sh case16.
-if "$PCREC" -p rx -o - -- 'abc' > "$WORKDIR/patlen1.c" 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx -o - -- 'abc' > "$WORKDIR/patlen1.c" 2>/dev/null; then
     if grep -qF '.pattern_len = 3,' "$WORKDIR/patlen1.c"; then
         ok "[M4.7c]: rx_info.pattern_len is 3 for the 3-byte pattern 'abc'"
     else
@@ -713,7 +713,7 @@ else
     bad "[M4.7c]: pcrec failed to compile 'abc' for the pattern_len structural check"
 fi
 
-if "$PCREC" -p rx -o - -- 'a\nb' > "$WORKDIR/patlen2.c" 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx -o - -- 'a\nb' > "$WORKDIR/patlen2.c" 2>/dev/null; then
     # source spelling is 4 bytes (a, \, n, b); the matcher itself walks 3
     # matched bytes (a, newline, b) — pattern_len must report the SOURCE
     # count, never the matched-byte count, which is the exact distinction
@@ -754,7 +754,7 @@ if ! command -v nm >/dev/null 2>&1; then
     bad "[K24]: nm is unavailable — this check cannot be skipped silently (it is the only guard on the noclone lever; see docs/dev/known_issues.md K24)"
 elif ! command -v "$CC" >/dev/null 2>&1; then
     bad "[K24]: no C compiler ($CC) — this check cannot be skipped silently"
-elif "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|epsilon)' > "$WORKDIR/k24.c" 2>/dev/null; then
+elif pcrec_run "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|epsilon)' > "$WORKDIR/k24.c" 2>/dev/null; then
     # -O2 is the point, and -Werror stays so the attribute cannot be landing
     # only because nobody compiles this artifact strictly.
     K24FLAGS="-O2 -std=gnu11 -Wall -Wextra -Werror"
@@ -800,7 +800,7 @@ abi_md5=""
 abi_ok=1
 abi_files=""
 for pfx in rx foo z_9 verylongprefixname; do
-    if ! "$PCREC" -p "$pfx" -o - -- 'a(b|c)+d' > "$WORKDIR/abi_$pfx.c" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" -p "$pfx" -o - -- 'a(b|c)+d' > "$WORKDIR/abi_$pfx.c" 2>/dev/null; then
         bad "ABI block identity: pcrec failed to compile the fixture under -p $pfx"
         abi_ok=0
         continue
@@ -884,7 +884,7 @@ fi
 # this lane, extended to the two new constants and the D46 bits (D60's own
 # membership rule: names are part of the CONTRACT even where this artifact's
 # engine cannot produce the value).
-if "$PCREC" -p rx --no-captures -o - -- 'a(b|c)+d' > "$WORKDIR/abins_dfa.c" 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx --no-captures -o - -- 'a(b|c)+d' > "$WORKDIR/abins_dfa.c" 2>/dev/null; then
     dfa_missing=""
     for n in PCREC_ERR_STEPS PCREC_ERR_FRAMES PCREC_ERR_WORK PCREC_ERR_RECURSE PCREC_ERR_FLOOR PCREC_ERR_INTERNAL PCREC_UNSET PCREC_ENGINE_DFA PCREC_ENGINE_VM PCREC_VM_RUNG_CURSOR PCREC_VM_STRAT_POSSESSIVE PCREC_VM_PRUNE_CLAMPED; do
         c="$(grep -cE "^#define $n\\b" "$WORKDIR/abins_dfa.c")"
@@ -1106,8 +1106,8 @@ while IFS=$'\t' read -r nm pat extra decl; do
     # BOTH artifact forms: split (.h carries the declaration) and
     # self-contained (the .c carries declaration AND definition).
     # shellcheck disable=SC2086
-    if ! "$PCREC" -p rx $extra -o "$WORKDIR/$nm.c" -- "$pat" >/dev/null 2>&1 \
-       || ! "$PCREC" -p rx $extra -o - -- "$pat" > "$WORKDIR/${nm}_sc.c" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" -p rx $extra -o "$WORKDIR/$nm.c" -- "$pat" >/dev/null 2>&1 \
+       || ! pcrec_run "$PCREC" -p rx $extra -o - -- "$pat" > "$WORKDIR/${nm}_sc.c" 2>/dev/null; then
         bad "[M5-SEAM] residual: pcrec failed to compile the fixture '$pat' ($extra)"
         continue
     fi
@@ -1284,7 +1284,7 @@ fi
 dup_bad=0; dup_files=0; dup_rows=0; dup_dupname=0
 while IFS=$'\t' read -r nm feats pat; do
     [ -n "$nm" ] || continue
-    if ! "$PCREC" -p rx --features "$feats" -o - -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --features "$feats" -o - -- "$pat" \
             > "$WORKDIR/$nm.c" 2>"$WORKDIR/$nm.err"; then
         bad "[M6.5-DUPNAMES] pcrec refused the fixture '$pat': $(head -1 "$WORKDIR/$nm.err")"
         dup_bad=$((dup_bad + 1)); continue
@@ -1342,7 +1342,7 @@ fi
 # corpus never passes s == NULL, so the instrumented axis had nothing to see.
 # The fixture pattern is chosen to take the single-escape-byte memchr arm,
 # which is the arm that held the defect.
-if "$PCREC" -p k27 --no-captures -o - -- 'abc' > "$WORKDIR/k27null.c" 2>/dev/null; then
+if pcrec_run "$PCREC" -p k27 --no-captures -o - -- 'abc' > "$WORKDIR/k27null.c" 2>/dev/null; then
     if ! grep -q 'memchr' "$WORKDIR/k27null.c"; then
         bad "[K27]: the fixture artifact carries no memchr prefilter at all — this check has lost the arm it exists to cover"
     else
@@ -1540,7 +1540,7 @@ fi
 # equivalence class map), so the population is the VM artifact, where `\w` and
 # `\b` both go through the class pool. `(\b\w+\b)` uses both in one pattern,
 # and the pool interns by CONTENT, so agreement means literally one table.
-if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
+if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
         -- '(\b\w+\b)' >/dev/null 2>&1; then
     # The word set is 63 members: [0-9A-Za-z_]. Its first eight bitmap bytes
     # are unmistakable and are what a duplicate would repeat.
@@ -1614,7 +1614,7 @@ fi
 # prefilter's span. Rule 1 below goes red on it.
 
 # --- rule 1: a \K artifact's caps[0][0] comes from the trailed slot --------
-if "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/null 2>&1; then
     # The whole of the emitted caps_out, so both the presence of the \K form
     # and the ABSENCE of the plain one are read from the same text.
     awk '/^static void rx_report_captures\(/,/^}/' "$WORKDIR/kres.c" > "$WORKDIR/kres.capsout"
@@ -1645,7 +1645,7 @@ fi
 # emitter that had rewritten the line into some third shape. The two lines
 # below are what the emitter produced BEFORE this wave, quoted here so the
 # check has a source independent of the emitter it checks.
-if "$PCREC" -p rx --engine=vm -o "$WORKDIR/nok.c" -- '(a)(b)' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/nok.c" -- '(a)(b)' >/dev/null 2>&1; then
     awk '/^static void rx_report_captures\(/,/^}/' "$WORKDIR/nok.c" > "$WORKDIR/nok.capsout"
     if [ ! -s "$WORKDIR/nok.capsout" ]; then
         bad "[M6.2-KRESET rule 1b]: could not extract rx_report_captures from the \\K-free VM artifact"
@@ -1692,7 +1692,7 @@ fi
 # because an entry that routed only ONE of its two spellings through the
 # search loop would reintroduce the filter for exactly the callers who used
 # that spelling.
-if "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/null 2>&1; then
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.match"
     awk '/^static ptrdiff_t rx_match_run\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" >> "$WORKDIR/kent.match"
     awk '/^ptrdiff_t rx_match_in\(const rx_ctx \*ctx/,/^}/' "$WORKDIR/kent.c" > "$WORKDIR/kent.matchin"
@@ -1722,7 +1722,7 @@ fi
 # match-here entry is the shape §6.3 quotes — rx_search plus a start filter
 # plus a caps-derived return — and wave E must not have touched it: the filter
 # and the return are CORRECT there, because no DFA artifact can contain a \K.
-if "$PCREC" -p rx --no-captures -o "$WORKDIR/dent.c" -- 'a(b|c)d' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/dent.c" -- 'a(b|c)d' >/dev/null 2>&1; then
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/dent.c" > "$WORKDIR/dent.match"
     if [ ! -s "$WORKDIR/dent.match" ]; then
         bad "[M6.2-KRESET rule 3b]: could not extract rx_match from the DFA artifact"
@@ -1817,11 +1817,11 @@ ceil_ir_win()    { grep -c 'ceiling: min(subject_length, prefilter window end)' 
 ceil_drop() {
     local tag="$1" feats="$2" pat="$3" haz="$4"
     local c="$WORKDIR/ceil_drop_$tag.c" ir="$WORKDIR/ceil_drop_$tag.ir"
-    if ! "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
         bad "[$tag rule 1]: pcrec failed to compile the fixture '$pat'"
         return
     fi
-    "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
+    pcrec_run "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
     local stamp win irwin
     stamp="$(ceil_stamp "$c")"; win=$(ceil_win_sites "$c"); irwin=$(ceil_ir_win "$ir")
     if [ "$stamp" = "none" ]; then
@@ -1844,11 +1844,11 @@ ceil_drop() {
 ceil_keep() {
     local tag="$1" feats="$2" pat="$3"
     local c="$WORKDIR/ceil_keep_$tag.c" ir="$WORKDIR/ceil_keep_$tag.ir"
-    if ! "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
         bad "[$tag rule 1c]: pcrec failed to compile the free fixture '$pat'"
         return
     fi
-    "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
+    pcrec_run "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
     local stamp win irwin
     stamp="$(ceil_stamp "$c")"; win=$(ceil_win_sites "$c"); irwin=$(ceil_ir_win "$ir")
     if [ "$stamp" = "prefilter-window" ] && [ "$win" -ge 1 ] && [ "$irwin" -ge 1 ]; then
@@ -1891,7 +1891,7 @@ ceil_keep 'M6.6-LOOKAROUND' '' '((?:a|aq)(?:xy){0,4}q)'
 # `run_possessify` did not run to re-mark the quantifier. `(?:a|ab){1,3}+c`'s
 # §2.2 verdict is NEGATIVE — its body's iteration can end in two places — so
 # the discharge declines it and the cut must survive.
-if "$PCREC" $AG -p rx --engine=vm --no-captures -fno-possessify \
+if pcrec_run "$PCREC" $AG -p rx --engine=vm --no-captures -fno-possessify \
         -o "$WORKDIR/ag_np.c" -- '(?:a|ab){1,3}+c' >/dev/null 2>&1; then
     ag_c=$(agcuts "$WORKDIR/ag_np.c"); ag_r=$(agrv "$WORKDIR/ag_np.c")
     if [ $((ag_c + ag_r)) -ge 1 ]; then
@@ -1914,7 +1914,7 @@ fi
 # that every `RX_CUT(k)` is "textually reachable only from labels after it",
 # and this VM dispatches by COMPUTED GOTO, where textual position carries no
 # reachability at all. An unfalsifiable clause is worse than an absent one.
-if "$PCREC" $AG -p rx --engine=vm --no-captures \
+if pcrec_run "$PCREC" $AG -p rx --engine=vm --no-captures \
         -o "$WORKDIR/ag_mark.c" -- '(?>a|ab)c' >/dev/null 2>&1; then
     ag_set=$(grep -n 'RX_SET(RX_SLOT_CUT_MARK' "$WORKDIR/ag_mark.c" | head -1 | cut -d: -f1)
     ag_push=$(grep -n '^ *RX_PUSH' "$WORKDIR/ag_mark.c" | head -1 | cut -d: -f1)
@@ -1943,7 +1943,7 @@ fi
 # MEASURED on this tree, --no-captures:
 #     a*+b        RX_ENGINE defines = 0   RX_SLOT_CUT_MARK = 0
 #     (?>a|ab)c   RX_ENGINE defines = 2   RX_SLOT_CUT_MARK = 2
-if "$PCREC" $AG -p rx --no-captures -o "$WORKDIR/ag_dis.c" -- 'a*+b' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" $AG -p rx --no-captures -o "$WORKDIR/ag_dis.c" -- 'a*+b' >/dev/null 2>&1; then
     ag_slot=$(grep -c 'RX_SLOT_CUT_MARK' "$WORKDIR/ag_dis.c")
     ag_c=$(agcuts "$WORKDIR/ag_dis.c"); ag_r=$(agrv "$WORKDIR/ag_dis.c")
     ag_eng=$(grep -c '#define RX_ENGINE' "$WORKDIR/ag_dis.c")
@@ -1984,7 +1984,7 @@ ag_paths=0; ag_pathbad=0
 ag_path() {  # ag_path <label> <pattern> <expect-rungs-mask> <min-cut> <min-2nd> <max-push>
     local lbl="$1" pat="$2" want="$3" mincut="$4" min2="$5" maxpush="$6"
     local f="$WORKDIR/ag_path.c" rungs c r p
-    if ! "$PCREC" $AG -p rx --engine=vm --no-captures -o "$f" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" $AG -p rx --engine=vm --no-captures -o "$f" -- "$pat" >/dev/null 2>&1; then
         bad "[M6.4-ATOMIC rule 5/$lbl]: pcrec failed to compile '$pat'"
         ag_pathbad=$((ag_pathbad + 1)); return
     fi
@@ -2058,8 +2058,8 @@ ag_eq=0; ag_eqbad=0
 ag_strip() { grep -vE '^( \*     |/\* Generated by pcrec\.|#include "|    \.pattern(_len)? = )' "$1"; }
 while IFS=$'\t' read -r ag_poss ag_grp; do
     [ -n "$ag_poss" ] || continue
-    "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_s.c" -- "$ag_poss" >/dev/null 2>&1 || continue
-    "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_g.c" -- "$ag_grp"  >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_s.c" -- "$ag_poss" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_g.c" -- "$ag_grp"  >/dev/null 2>&1 || continue
     ag_eq=$((ag_eq + 1))
     ag_strip "$WORKDIR/ag_s.c" > "$WORKDIR/ag_s.stripped"
     ag_strip "$WORKDIR/ag_g.c" > "$WORKDIR/ag_g.stripped"
@@ -2097,7 +2097,7 @@ ag_slots=0; ag_slotbad=0
 for agf in '' '-fno-possessify' '-fno-revdet' '-fno-counter'; do
     for agp in '(?>a*)b' '(?>(?:a|bc){2})d' '(?>(?:ab|b){8,})c' '(?>(?:a|bc)*)d' \
                '(?>(?:ab|b){1,3})c' '(?>a|ab)c' '(?>ab)+c' '(?>(?:a*)*)b'; do
-        "$PCREC" $AG -p rx --engine=vm --no-captures $agf -o "$WORKDIR/ag_sl.c" \
+        pcrec_run "$PCREC" $AG -p rx --engine=vm --no-captures $agf -o "$WORKDIR/ag_sl.c" \
             -- "$agp" >/dev/null 2>&1 || continue
         ag_slots=$((ag_slots + 1))
         if grep -qE '^ *RX_SET\([0-9]' "$WORKDIR/ag_sl.c"; then
@@ -2184,7 +2184,7 @@ for dd14_row in \
     '2|(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)' ; do
     dd14_want="${dd14_row%%|*}"
     dd14_pat="${dd14_row#*|}"
-    if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
+    if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
         dd14_got=$(grep -c 'goto \*' "$WORKDIR/dd14.c")
         if [ "$dd14_got" -ne "$dd14_want" ]; then
             bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want (1 for the fail label plus one per DISTINCT *LINKED* called group -- a SPLICED target emits no region and contributes none). A count that is too HIGH means a region was emitted per call SITE instead of per group, or a spliceable target was linked; too LOW means a region's return was folded into something shared, which §6.3 forbids -- the body may be shared, the EXIT may never be"
@@ -2221,9 +2221,9 @@ done
 # passes both of the original checks and emits a frame field, a reset and a
 # `CALL_TOP_NONE` into every spliced artifact -- bytes no answer depends on, and
 # exactly the "the corpus cannot see this" shape this rule exists for.
-if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_free.c" -- '(a)(b)+c' >/dev/null 2>&1 \
-   && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_call.c" -- '(a(?1)?b)' >/dev/null 2>&1 \
-   && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_spl.c" -- '(a)(?1)' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_free.c" -- '(a)(b)+c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_call.c" -- '(a(?1)?b)' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_spl.c" -- '(a)(?1)' >/dev/null 2>&1; then
     dd14_leak=0
     for dd14_tok in 'call_top' 'call_ret' 'RX_CALL' 'CALL_TOP_NONE'; do
         if grep -q "$dd14_tok" "$WORKDIR/dd14_free.c"; then
@@ -2266,7 +2266,7 @@ fi
 dd14_both=0
 while IFS= read -r dd14_bpat; do
     [ -n "$dd14_bpat" ] || continue
-    "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_b.c" -- "$dd14_bpat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_b.c" -- "$dd14_bpat" >/dev/null 2>&1 || continue
     dd14_bs=$(grep -m1 '^#define RX_VM_CALL_SPLICED ' "$WORKDIR/dd14_b.c" | awk '{print $3}')
     dd14_bl=$(grep -m1 '^#define RX_VM_CALL_LINKED ' "$WORKDIR/dd14_b.c" | awk '{print $3}')
     if [ "${dd14_bs:-0}" -gt 0 ] && [ "${dd14_bl:-0}" -gt 0 ]; then
@@ -2316,7 +2316,7 @@ fi
 # parent's `->l` IN PLACE, so the `A_CAP` this module binds to keeps its
 # identity and sees the discharge. Wave A2 named both passes; only one of them
 # rebuilds the node a callee is rooted at.
-if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_rb.c" -- '((?:a|b))(?1)' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_rb.c" -- '((?:a|b))(?1)' >/dev/null 2>&1; then
     dd14_merges=$(grep -m1 '^#define RX_ALTCLS_MERGES' "$WORKDIR/dd14_rb.c" | awk '{print $3}')
     dd14_push=$(grep -c 'RX_PUSH(' "$WORKDIR/dd14_rb.c")
     if [ "${dd14_merges:-0}" -lt 1 ]; then
@@ -2375,9 +2375,9 @@ dd14_norm() {   # $1 = artifact, $2 = the pattern text to erase
 dd14_zero='(?:(a)){0}(?1)b'
 dd14_def='(?(DEFINE)(a))(?1)b'
 dd14_ctl='(?:(a)){1}(?1)b'
-if "$PCREC" -p rx --features all -o "$WORKDIR/dd14_z.c" -- "$dd14_zero" >/dev/null 2>&1 &&
-   "$PCREC" -p rx --features all -o "$WORKDIR/dd14_d.c" -- "$dd14_def"  >/dev/null 2>&1 &&
-   "$PCREC" -p rx --features all -o "$WORKDIR/dd14_c.c" -- "$dd14_ctl"  >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features all -o "$WORKDIR/dd14_z.c" -- "$dd14_zero" >/dev/null 2>&1 &&
+   pcrec_run "$PCREC" -p rx --features all -o "$WORKDIR/dd14_d.c" -- "$dd14_def"  >/dev/null 2>&1 &&
+   pcrec_run "$PCREC" -p rx --features all -o "$WORKDIR/dd14_c.c" -- "$dd14_ctl"  >/dev/null 2>&1; then
     dd14_norm "$WORKDIR/dd14_z.c" "$dd14_zero" > "$WORKDIR/dd14_z.n"
     dd14_norm "$WORKDIR/dd14_d.c" "$dd14_def"  > "$WORKDIR/dd14_d.n"
     dd14_norm "$WORKDIR/dd14_c.c" "$dd14_ctl"  > "$WORKDIR/dd14_c.n"
@@ -2420,8 +2420,8 @@ fb_ok=1
 fb_why=""
 # One VM artifact and one DFA artifact, both SPLIT-form so the header is a
 # separate file — which is where a caller reads all of this from.
-if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b)$' >/dev/null 2>&1 &&
-   "$PCREC" -p rx --no-captures -o "$WORKDIR/fb_dfa.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b)$' >/dev/null 2>&1 &&
+   pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/fb_dfa.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
     for fb_h in "$WORKDIR/fb_vm.h" "$WORKDIR/fb_dfa.h"; do
         for fb_d in "$fb_decl_search" "$fb_decl_match" "$fb_decl_caps" \
                     "$fb_decl_search_in" "$fb_decl_match_in" "$fb_decl_caps_in"; do
@@ -2534,7 +2534,7 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b
         fb_tr_pat="${fb_tr_rest%:*}"; fb_tr_want="${fb_tr_rest##*:}"
         fb_tr_flags=(--engine=vm --trace)
         [ "$fb_tr_feat" != "none" ] && fb_tr_flags+=(--features "$fb_tr_feat")
-        if ! "$PCREC" -p rx "${fb_tr_flags[@]}" -o "$WORKDIR/fb_tr.c" -- "$fb_tr_pat" >/dev/null 2>&1; then
+        if ! pcrec_run "$PCREC" -p rx "${fb_tr_flags[@]}" -o "$WORKDIR/fb_tr.c" -- "$fb_tr_pat" >/dev/null 2>&1; then
             fb_tr_ok=0; fb_tr_why="$fb_tr_why; pcrec failed on --trace '$fb_tr_pat'"; continue
         fi
         fb_tr_got="$(sed -n 's/^#define RX_RESUME_FRAME_SIZE //p' "$WORKDIR/fb_tr.h")"

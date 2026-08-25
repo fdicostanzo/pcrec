@@ -30,6 +30,7 @@ export LC_ALL=C
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 
 WORKDIR="$(mktemp -d "${TMPDIR:-/tmp}/altcls.XXXXXX")"
 cleanup() { [ -n "${KEEP:-}" ] || rm -rf "$WORKDIR"; }
@@ -41,7 +42,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -177,8 +178,8 @@ fi
 # property this check is trying to see.
 # ---------------------------------------------------------------------------
 mkdir -p "$WORKDIR/bi_on" "$WORKDIR/bi_off"
-"$PCREC" -p rx -o "$WORKDIR/bi_on/gen.c" -- 'frank|zred|brad' >/dev/null 2>&1
-"$PCREC" -p rx -o "$WORKDIR/bi_off/gen.c" -fno-altcls-merge -fno-altcls-factor \
+pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi_on/gen.c" -- 'frank|zred|brad' >/dev/null 2>&1
+pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi_off/gen.c" -fno-altcls-merge -fno-altcls-factor \
     -- 'frank|zred|brad' >/dev/null 2>&1
 if diff -q "$WORKDIR/bi_on/gen.c" "$WORKDIR/bi_off/gen.c" >/dev/null 2>&1 && \
    diff -q "$WORKDIR/bi_on/gen.h" "$WORKDIR/bi_off/gen.h" >/dev/null 2>&1; then
@@ -206,8 +207,8 @@ fi
 # `--count-groups` on a factorable pattern must report the SAME count with
 # the pass on and off.
 # ---------------------------------------------------------------------------
-cg_on="$("$PCREC" --count-groups -- 'frank|fred|brad|bobby|janet' 2>/dev/null)"
-cg_off="$("$PCREC" --count-groups -- 'frank|fred|brad|bobby|janet' 2>/dev/null)"
+cg_on="$(pcrec_run "$PCREC" --count-groups -- 'frank|fred|brad|bobby|janet' 2>/dev/null)"
+cg_off="$(pcrec_run "$PCREC" --count-groups -- 'frank|fred|brad|bobby|janet' 2>/dev/null)"
 # --count-groups has no -fno-altcls-* passthrough (it is parse-only and the
 # pass never runs there — see src/core/compile.c's pcrec_count_groups), so
 # the real assertion is against the EMITTED artifact's own RX_NCAPS, which

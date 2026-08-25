@@ -217,12 +217,12 @@ one_pattern() {
     # file's own CPU watchdog -- measuring the default, not the rung. The value
     # below is what this suite was calibrated against, BOTH arms get it, and a
     # divergence in the give-up surface is still reported as a divergence.
-    if ! "$PCREC" -p pa --engine=vm --step-budget=$CKDIFF_STEPS -o "$d/pa.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pa --engine=vm --step-budget=$CKDIFF_STEPS -o "$d/pa.c" -- "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! "$PCREC" -p pb --engine=vm -fno-counter --step-budget=$CKDIFF_STEPS \
+    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-counter --step-budget=$CKDIFF_STEPS \
             -o "$d/pb.c" -- "$pat" \
             >/dev/null 2>"$d/err_b"; then
         # NOT a skip. The denied build IS the ground truth, so a pattern whose
@@ -293,7 +293,7 @@ if [ "${1:-}" = "--corpus" ]; then
         | sort -u > "$WORKDIR/all.txt"
     while IFS= read -r cp; do
         [ -n "$cp" ] || continue
-        r="$("$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+        r="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
              | sed -n 's/^; rungs *\(.*\) -- see.*/\1/p')"
         case "$r" in *counter*) printf '%s\n' "$cp" >> "$derived" ;; esac
     done < "$WORKDIR/all.txt"

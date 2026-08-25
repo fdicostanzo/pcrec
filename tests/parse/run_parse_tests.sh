@@ -28,6 +28,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CC="${CC:-gcc}"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 KEEP="${KEEP:-0}"
 SANFLAGS="${SANFLAGS:-}"
 
@@ -151,8 +152,8 @@ for n in 2 3 4 5; do
                 grouped="$grouped$atom"
             fi
         done
-        a_out="$("$PCREC" -p rx --no-captures -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
-        b_out="$("$PCREC" -p rx --no-captures -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
+        a_out="$(pcrec_run "$PCREC" -p rx --no-captures -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
+        b_out="$(pcrec_run "$PCREC" -p rx --no-captures -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
         if [ -z "$a_out" ] || [ -z "$b_out" ]; then
             # An empty extraction must be a FAILURE, not a match of two empty
             # strings: if the emitted signature ever stops matching
@@ -187,8 +188,8 @@ fi
 # boundary with two items, not discovered as a surprise by whoever ports
 # first". Pinning it here is what makes the --no-captures scoping above a
 # NARROWING of what this check covers rather than a hole in it.
-def_out="$("$PCREC" -p rx -o - -- 'a|(b|c)' 2>/dev/null)"
-nc_out="$("$PCREC" -p rx --no-captures -o - -- 'a|(b|c)' 2>/dev/null)"
+def_out="$(pcrec_run "$PCREC" -p rx -o - -- 'a|(b|c)' 2>/dev/null)"
+nc_out="$(pcrec_run "$PCREC" -p rx --no-captures -o - -- 'a|(b|c)' 2>/dev/null)"
 if [ -z "$def_out" ] || [ -z "$nc_out" ]; then
     bad "ast-identity/default: 'a|(b|c)' would not compile"
 elif printf '%s' "$def_out" | grep -q '^#define RX_NCAPS 2$' \
@@ -240,7 +241,7 @@ echo
 capfail=0
 for n in 249 250 251 252; do
     pat="$(python3 -c "print('('*$n + 'a' + ')'*$n)")"
-    if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
+    if pcrec_run "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
     case "$n:$r" in
         249:ok|250:ok|251:fail|252:fail) ;;
         *) capfail=$((capfail + 1)); echo "  depth cap: n=$n gave $r" >&2 ;;
@@ -249,7 +250,7 @@ done
 # and the same boundary for (?:...), which shares the code path
 for n in 250 251; do
     pat="$(python3 -c "print('(?:'*$n + 'a' + ')'*$n)")"
-    if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
+    if pcrec_run "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
     case "$n:$r" in 250:ok|251:fail) ;; *) capfail=$((capfail+1)); echo "  depth cap (?:): n=$n gave $r" >&2 ;; esac
 done
 if [ "$capfail" -eq 0 ]; then
@@ -270,7 +271,7 @@ fi
 balfail=0
 for lead in 1 5 20; do
     pat="$(python3 -c "print('(a)'*$lead + '('*251 + 'b' + ')'*251)")"
-    if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
+    if pcrec_run "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
         balfail=$((balfail + 1))
         echo "  depth balance: ${lead}x'(a)' then a 251-deep nest was ACCEPTED — a" >&2
         echo "  decrement is leaking, so the cap can be exceeded." >&2
@@ -283,7 +284,7 @@ done
 # probe rather than being caught by the ones above. Max real depth here is 1.
 for many in 300 600; do
     pat="$(python3 -c "print('(a)'*$many)")"
-    if ! "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
         balfail=$((balfail + 1))
         echo "  depth balance: $many SEQUENTIAL groups (real depth 1) were REJECTED —" >&2
         echo "  a decrement is missing, so depth accumulates across siblings." >&2

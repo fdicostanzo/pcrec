@@ -65,6 +65,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 # THE GENERATED-CODE AXIS IS INSTRUMENTABLE, and that is deliberate: this
@@ -225,7 +226,7 @@ build_and_run() {
     local d="$WORKDIR/$key$6"
     mkdir -p "$d"
     # shellcheck disable=SC2086
-    if ! "$PCREC" -p rx --features "$FEATS" $extra -o "$d/gen.c" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" $extra -o "$d/gen.c" \
             -- "$pat" >/dev/null 2>"$d/pc.log"; then
         bad "$key ($extra): pcrec refused '$pat': $(head -1 "$d/pc.log")"
         return 1
@@ -323,7 +324,7 @@ while IFS=$'\t' read -r key ng pat; do
     [ -n "$key" ] || continue
     d="$WORKDIR/$key.nc"
     mkdir -p "$d"
-    if ! "$PCREC" -p rx --features "$FEATS" --no-captures \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" --no-captures \
             -o "$d/gen.c" -- "$pat" >/dev/null 2>"$d/pc.log"; then
         bad "§4 '$pat': pcrec refused it under --no-captures: $(head -1 "$d/pc.log")"
         continue
@@ -365,7 +366,7 @@ while IFS=$'\t' read -r key ng pat; do
     [ -n "$key" ] || continue
     d="$WORKDIR/$key.ent"
     mkdir -p "$d"
-    if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" \
             -- "$pat" >/dev/null 2>"$d/pc.log"; then
         bad "§5 pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi
@@ -474,7 +475,7 @@ fa_cmp=0; fa_bad=0; fa_nonempty=0
 while IFS=$'\t' read -r key ng pat; do
     [ -n "$key" ] || continue
     d="$WORKDIR/$key.fa"; mkdir -p "$d"
-    if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
             >/dev/null 2>"$d/pc.log"; then
         bad "§6 pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi
@@ -513,7 +514,7 @@ fi
 dfa_bad=0
 for cell in '\1:(a)\1' '\g{-1}:(a)\g{-1}'; do
     nm="${cell%%:*}"; pat="${cell#*:}"
-    if out=$("$PCREC" -p rx --features "$FEATS" --engine=dfa -o - -- "$pat" 2>&1 >/dev/null); then
+    if out=$(pcrec_run "$PCREC" -p rx --features "$FEATS" --engine=dfa -o - -- "$pat" 2>&1 >/dev/null); then
         bad "§7 '$pat' COMPILED under --engine=dfa"
         dfa_bad=$((dfa_bad + 1))
     elif ! printf '%s' "$out" | grep -qF -- "$nm" \
@@ -526,7 +527,7 @@ done
 # registry row is VM_ONLY, but `(a)\10` is the OCTAL byte 0x08 — an ordinary
 # character with no VM requirement — so the character node the octal re-read
 # produces is NOT stamped, and this must compile to a pure DFA.
-if ! "$PCREC" -p rx --features "$FEATS" --engine=dfa --no-captures -o - \
+if ! pcrec_run "$PCREC" -p rx --features "$FEATS" --engine=dfa --no-captures -o - \
         -- '(a)\10' > "$WORKDIR/octdfa.c" 2>"$WORKDIR/octdfa.log"; then
     bad "§7 CONTROL: '(a)\\10' is OCTAL and must compile under --engine=dfa: $(head -1 "$WORKDIR/octdfa.log")"
     dfa_bad=$((dfa_bad + 1))
@@ -611,7 +612,7 @@ PY
     # prefilter would move.
     d="$WORKDIR/$key.span"; mkdir -p "$d"
     printf '%s' "$subj" > "$d/subj"
-    if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" \
             -- "$truepat" >/dev/null 2>&1; then
         bad "§8 '$key': pcrec refused '$truepat'"; span_bad=$((span_bad + 1)); continue
     fi
@@ -644,7 +645,7 @@ fi
 # is the mechanism that discharges it — see that file for both sides'
 # independence. Sabotage row S116.
 FOLD="$WORKDIR/fold"; mkdir -p "$FOLD"
-if ! "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" -- '(?i:(.))(?i:\1)' \
+if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" -- '(?i:(.))(?i:\1)' \
         >/dev/null 2>"$FOLD/pc.log"; then
     bad "§9: pcrec refused the caseless-backreference fixture: $(head -1 "$FOLD/pc.log")"
 elif ! grep -q 'rx_bref_match_caseless' "$FOLD/gen.h"; then
@@ -698,7 +699,7 @@ guard_bearing=0; guard_free=0; guard_bad=0; guard_cells=0
 while IFS=$'\t' read -r want pat; do
     [ -n "$want" ] || continue
     guard_cells=$((guard_cells + 1))
-    if ! "$PCREC" -p rx --features "$FEATS" --engine=vm -o "$GD/g.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" --engine=vm -o "$GD/g.c" -- "$pat" \
             >/dev/null 2>"$GD/g.log"; then
         bad "§10: pcrec refused the fixture '$pat': $(head -1 "$GD/g.log")"
         guard_bad=$((guard_bad + 1)); continue

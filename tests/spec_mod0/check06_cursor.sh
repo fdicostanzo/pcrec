@@ -89,6 +89,7 @@ set -u
 ROOT="${1:?usage: check06_cursor.sh <repo-root> <registry.tsv> [pcrec-path]}"
 REG="${2:?usage: check06_cursor.sh <repo-root> <registry.tsv> [pcrec-path]}"
 PCREC="${3:-$ROOT/build/pcrec}"
+. "${ROOT}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 NAME=check06_cursor
 echo "== $NAME =="
 
@@ -140,10 +141,10 @@ if [ "$ROWS" -lt 100 ]; then
 fi
 
 # --- surface detection: probe --help, never assume ----------------------
-HELP="$("$PCREC" --help 2>&1)"
+HELP="$(pcrec_run "$PCREC" --help 2>&1)"
 if ! echo "$HELP" | grep -q -- '--probe-ask'; then
     echo
-    echo "  SURFACE MISSING: --probe-ask does not appear in \`$PCREC --help\`."
+    echo "  SURFACE MISSING: --probe-ask does not appear in \`pcrec_run $PCREC --help\`."
     echo "  consumed how:    this check needs, for a given construct text, a"
     echo "                   channel that (a) invokes the recogniser for it"
     echo "                   with WANT_RESULT set and with it clear, and (b)"
@@ -191,14 +192,14 @@ ROUTED_ROWS=0
 while IFS=$'\t' read -r kind selector syn _rest; do
     [ -z "${syn:-}" ] && continue
 
-    OUT_C=$("$PCREC" --probe-ask claim -- "$syn" 2>&1);   RC_C=$?
+    OUT_C=$(pcrec_run "$PCREC" --probe-ask claim -- "$syn" 2>&1);   RC_C=$?
     if [ "$RC_C" -ne 0 ]; then
         UNROUTED="$UNROUTED$syn
 "
         continue
     fi
-    OUT_V=$("$PCREC" --probe-ask verdict -- "$syn" 2>&1); RC_V=$?
-    OUT_R=$("$PCREC" --probe-ask result -- "$syn" 2>&1);  RC_R=$?
+    OUT_V=$(pcrec_run "$PCREC" --probe-ask verdict -- "$syn" 2>&1); RC_V=$?
+    OUT_R=$(pcrec_run "$PCREC" --probe-ask result -- "$syn" 2>&1);  RC_R=$?
     if [ "$RC_V" -ne 0 ] || [ "$RC_R" -ne 0 ]; then
         echo "  DISAGREE '$syn': routed at want=claim (exit 0) but not at"
         echo "           want=verdict (exit $RC_V) and/or want=result (exit $RC_R)"

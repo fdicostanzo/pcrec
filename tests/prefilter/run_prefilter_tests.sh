@@ -51,7 +51,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...] -- exit code and stderr preserved
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -115,7 +115,7 @@ check_stamp "auto+captures -fno-prefilter (forced off)" no force_off '(a)b' -fno
 # ---------------------------------------------------------------------------
 check_refuse() {   # check_refuse <label> <pattern> [args...]
     local label="$1" pat="$2"; shift 2
-    if "$PCREC" -p rx "$@" -o "$WORKDIR/ref.c" -- "$pat" \
+    if pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/ref.c" -- "$pat" \
             >/dev/null 2>"$WORKDIR/ref.err"; then
         bad "$label: '$pat' ($*) compiled; expected a clean refusal"
     elif grep -q 'prefilter' "$WORKDIR/ref.err"; then
@@ -134,7 +134,7 @@ check_refuse "force-on and force-off together" '(a)b' -fprefilter -fno-prefilter
 # ---------------------------------------------------------------------------
 for combo in "--engine=vm" "" "--engine=dfa --no-captures"; do
     # shellcheck disable=SC2086
-    if "$PCREC" -p rx $combo -fno-prefilter -o "$WORKDIR/nr.c" -- '(a)b' \
+    if pcrec_run "$PCREC" -p rx $combo -fno-prefilter -o "$WORKDIR/nr.c" -- '(a)b' \
             >/dev/null 2>"$WORKDIR/nr.err"; then
         ok "-fno-prefilter never refuses (combo: '${combo:-<auto>}')"
     else
@@ -160,10 +160,10 @@ done
 # output filename, so comparing differently-NAMED outputs would report a
 # difference the flag did not make.
 mkdir -p "$WORKDIR/bi/on_a" "$WORKDIR/bi/on_b" "$WORKDIR/bi/off_a" "$WORKDIR/bi/off_b"
-if "$PCREC" -p rx -o "$WORKDIR/bi/on_a/g.c" -- '(a)b' >/dev/null 2>&1 \
-    && "$PCREC" -p rx -fprefilter -o "$WORKDIR/bi/on_b/g.c" -- '(a)b' >/dev/null 2>&1 \
-    && "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/off_a/g.c" -- '(a)b' >/dev/null 2>&1 \
-    && "$PCREC" -p rx --engine=vm -fno-prefilter -o "$WORKDIR/bi/off_b/g.c" -- '(a)b' >/dev/null 2>&1
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/bi/on_a/g.c" -- '(a)b' >/dev/null 2>&1 \
+    && pcrec_run "$PCREC" -p rx -fprefilter -o "$WORKDIR/bi/on_b/g.c" -- '(a)b' >/dev/null 2>&1 \
+    && pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/off_a/g.c" -- '(a)b' >/dev/null 2>&1 \
+    && pcrec_run "$PCREC" -p rx --engine=vm -fno-prefilter -o "$WORKDIR/bi/off_b/g.c" -- '(a)b' >/dev/null 2>&1
 then
     if cmp -s "$WORKDIR/bi/on_a/g.c" "$WORKDIR/bi/on_b/g.c"; then
         ok "redundant -fprefilter (agreeing with the derived default) leaves no trace"
@@ -216,7 +216,7 @@ fi
 check_ir_line() {   # check_ir_line <label> <needle> <pattern> [args...]
     local label="$1" needle="$2" pat="$3"; shift 3
     local line
-    line="$("$PCREC" --emit-ir "$@" -- "$pat" 2>/dev/null | grep '^; prefilter')"
+    line="$(pcrec_run "$PCREC" --emit-ir "$@" -- "$pat" 2>/dev/null | grep '^; prefilter')"
     case "$line" in
         *"$needle"*) ok "$label: --emit-ir line names '$needle'" ;;
         *) bad "$label: --emit-ir gave '$line', expected it to contain '$needle'" ;;
@@ -290,7 +290,7 @@ fi
 check_listing_reason() {   # check_listing_reason <label> <pattern> <needle> [args...]
     local label="$1" pat="$2" needle="$3"; shift 3
     local line
-    line="$("$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" 2>/dev/null \
+    line="$(pcrec_run "$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" 2>/dev/null \
             | sed -n 's/^; prefilter *//p')"
     if [ -z "$line" ]; then
         bad "$label: '$pat' emitted no '; prefilter' listing line at all"

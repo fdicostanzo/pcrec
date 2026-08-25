@@ -49,12 +49,12 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 
 gen() {   # gen <out> <pattern> [args...]
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 gen_default() {   # like gen but WITHOUT --engine=vm (the shipped routing)
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -146,9 +146,9 @@ mkdir -p "$WORKDIR/ia" "$WORKDIR/ib"
 ident_ok=1; ident_n=0
 for p in '((a)|ab){0,7}c' '((a)|ab){0,3}c' '((a)|ab){7}c' '((a)|ab){2,5}c' \
          '((a)|b){0,6}c' '(a?){0,4}b' '((a)|bc){0,7}d'; do
-    "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- "$p" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- "$p" >/dev/null 2>&1 \
         || { bad "byte-identity: '$p' did not compile"; ident_ok=0; continue; }
-    "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- "$p" >/dev/null 2>&1 \
+    pcrec_run "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- "$p" >/dev/null 2>&1 \
         || { bad "byte-identity: '$p' did not compile denied"; ident_ok=0; continue; }
     ident_n=$((ident_n + 1))
     if ! cmp -s "$WORKDIR/ia/g.c" "$WORKDIR/ib/g.c"; then
@@ -161,8 +161,8 @@ done
 
 # ...and the other side of the boundary, which is what makes the row above a
 # boundary rather than a blanket claim.
-if "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1 \
-   && "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1; then
     cmp -s "$WORKDIR/ia/g.c" "$WORKDIR/ib/g.c" \
         && bad "§8.5 cell 5: at count == K the emissions are IDENTICAL — the loop should run (R25 E3's strictness)" \
         || ok "§8.5 cell 5 boundary: at count == K the emissions DIFFER — byte-identity holds at K > count and nowhere else"
@@ -268,7 +268,7 @@ if gen k '((a)|ab){0,12}c'; then
         && bad "§8.3: a scalar _VM_UNROLL_K macro is emitted; K is per quantifier and a scalar lies on a mixed artifact" \
         || ok "§8.3: no scalar _VM_UNROLL_K macro is emitted (K is reported per quantifier, not per artifact)"
 fi
-if "$PCREC" -p rx --engine=vm --emit-ir -- '((a)|ab){0,12}c' 2>/dev/null \
+if pcrec_run "$PCREC" -p rx --engine=vm --emit-ir -- '((a)|ab){0,12}c' 2>/dev/null \
      | grep -q 'counter'; then
     ok "§8.3: --emit-ir's RUNGS section names the counter rung for a selecting quantifier"
 else
