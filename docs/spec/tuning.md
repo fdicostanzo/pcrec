@@ -118,7 +118,9 @@ guidance that a firing timeout is a finding to investigate rather than a
 reason to blindly extend; re-run at 600s completed):
 
 ```
-RUNGDIFF_TALLY
+rungdiff: 205 patterns agreed, 0 diverged, 0 refused by pcrec
+rungdiff: 106 of 205 took the REVERSE-DETERMINISTIC rung
+rungdiff: 395757 pattern-subject-startpos cells compared
 ```
 
 ### 2.3 `-fno-counter` — `PCREC_NO_COUNTER` (bit 6)
