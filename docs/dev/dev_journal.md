@@ -14827,3 +14827,23 @@ ir_listing 16) — scratchpad/srMech/bare_pcrec_survey.txt; STILL
 UNBUDGETED in run_recursion_diff.sh: the generated-code compiles and the
 matcher runs (harness/run.sh bounds both) — K37 widened. `make san`
 still running (2,349 lines, zero reports at 07:16).
+
+#### Thirty-ninth session, part 43 — THE BATTERY IS GREEN on the merged [DD-14] tree (2026-08-25 07:36 EDT)
+
+mgr_battery.sh, one stage at a time on main (17469b6's compiler; the
+tree grew to ae9c98c by tests/docs during the run): (1) `make mech`
+PROCS=6 05:02-06:20 — 180 rows, unexpected 2 (S155, S70: both
+re-pointed by srMech and merged at ae9c98c; re-run solo by the close
+lane), undetected 8 (= the six expected + those two), anomalies 0; (2)
+`make -j12 -Otarget test` 06:20-06:32 — 26,843 cases / 0 failed,
+1,531 checks / 2 failed (the two 45 s resource-cap cells, the K31/
+[TT-10] pair); (3) solo `make test-resource` 19/0, counterk.rxt
+1,634/0; (4) `make san` 06:34-07:36 (62 min; the sanitized
+run_recursion_diff.sh is the long tail) — "suite green under
+-fsanitize=address,undefined, both axes", zero sanitizer reports (the
+ratchet's "still failing: 1" is k34_leftrec_giveup.rxt by design).
+BATTERY_DONE 07:36, load 1.1. So: main ae9c98c is BATTERY-GREEN — the
+first fully-green tree carrying every [DD-14] wave (A..G, LB, EMPTY,
+D27, K34, FB) plus the mech triage. Next: the close lane (brief_srClose
+.md, base ae9c98c), pcrecdev2's re-pin SHA, then the going-forward
+conversation with Frank.
