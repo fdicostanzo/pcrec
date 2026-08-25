@@ -1226,6 +1226,47 @@ BOTHLINKAGE = [
         B(r"^(?:((?>a)(?1)?b)((?1)c)){0}(?2)$",
           [('m', "abc"), ('n', "ab")], "recursion,atomic-groups", groups=2),
     ]),
+    # THE THREE SHAPES BELOW ARE NOT MORE OF THE FOUR ABOVE. Those four are the
+    # patterns the REGRESSION was found on and they vary one axis (which
+    # per-copy family the linked region allocates). These vary the STRUCTURE of
+    # the interaction itself, which is the axis a report's own witnesses cannot
+    # cover, and every one of them carries a subject whose continuation FAILS
+    # after the callee's first return -- so the cell only passes if a retreat
+    # back INTO the linked callee from inside a spliced body works.
+    ("QUANTIFIED SPLICE SITE over a cyclic linked callee: one emitted splice "
+     "site run MANY times, each activation reaching a shared region.", [
+        B(r"^(?:(a(?1)?b)((?1)c)){0}(?2){1,3}$",
+          [('m', "abc"), ('m', "abcabc"), ('m', "aabbc"), ('m', "abcabcabc"),
+           ('n', "ab"), ('n', "abcab")], "recursion", groups=2,
+          note="`(?2){1,3}` replicates the SPLICE, and each copy's inlined "
+               "body calls the RECURSIVE group 1 through the linkage. "
+               "\"abcab\" is the retreat subject: the second iteration's "
+               "callee returns and the trailing `$` then fails, so the match "
+               "is only decided by backtracking into a linked callee reached "
+               "from inside a spliced body."),
+    ]),
+    ("A LINK -> SPLICE -> LINK CHAIN: a linked callee whose body reaches a "
+     "spliced helper whose body reaches a second linked callee.", [
+        B(r"^(?:(x(?1)?(?2)y)((?3)m)(t(?3)?u)){0}(?1)$",
+          [('m', "xtumy"), ('m', "xxtumytumy"), ('n', "xtutuumy"),
+           ('n', "xy"), ('n', "xtumymy")], "recursion", groups=3,
+          note="group 1 is recursive (LINKED) and calls group 2; group 2 is "
+               "acyclic (SPLICED) and calls group 3, which is recursive "
+               "(LINKED) again. The spliced body therefore sits BETWEEN two "
+               "shared regions, which is where a `W` computed from the wrong "
+               "union would take slots from both of them."),
+    ]),
+    ("A CAPTURE-BEARING linked callee reached through a spliced helper -- the "
+     "capture pairs are the half a splice DOES have to restore.", [
+        B(r"^(?:((a|aa)(?1)?b)((?1)c)){0}(?3)$",
+          [('m', "abc"), ('m', "aabc"), ('m', "aabbc"), ('n', "ab"),
+           ('n', "aababbc")], "recursion", groups=3,
+          note="group 2 `(a|aa)` is a real capture INSIDE the linked callee, "
+               "and it is what `vm_splice`'s narrowed `W` keeps while dropping "
+               "the linked region's per-copy families. \"aabc\" forces the "
+               "alternation's second branch, so the cell fails if the capture "
+               "half is dropped too."),
+    ]),
 ]
 
 # ===========================================================================

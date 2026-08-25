@@ -7567,13 +7567,27 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
             v.rgn_w[i]  = lst;
             v.rgn_nw[i] = n;
-            /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO.
-             * `spl_nw[i]` sized the `SLOT_SPLICE_SAVE` reservation during the
-             * pre-pass; `rgn_nw[i]` is what `vm_splice` will allocate. They are
-             * two readings of ONE set (`rgn_grp[i]`), so a disagreement means
-             * the set moved between them — and the failure that used to
-             * announce it was an overflow at emission, three passes later, with
-             * nothing pointing at the cause. */
+            /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO
+             * — BUT IT IS A SAME-SOURCE CHECK AND MUST NOT BE READ AS ANYTHING
+             * MORE. Both sides count `rgn_grp[i]` through `vm_marked`:
+             * `spl_nw[i]` did it in the pre-pass, this does it again over the
+             * layout. So it catches a set that MOVED between the two readings
+             * — a group added to the transitive closure, a `pend_of` entry that
+             * appeared — and it CANNOT catch a set that is WRONG, because a
+             * wrong set is wrong identically on both sides.
+             *
+             * THAT IS THE DEFENCE RATHER THAN A GAP: the whole point of the fix
+             * this assertion belongs to is that there is ONE set instead of
+             * two, and what makes the set itself right is argued at
+             * `vm_splice`'s header (a splice restores only what is SHARED with
+             * the caller; a reached LINKED target's per-copy slots are restored
+             * by that region's own `RX_RETURN`) and MEASURED by
+             * `tests/recursion/bothlinkage.rxt` against libpcre2 — an
+             * independent oracle, which is where evidence about correctness
+             * comes from. This line's job is narrower and worth having anyway:
+             * before it, a disagreement announced itself as a save-block
+             * overflow at emission, three passes later, with nothing pointing
+             * at the cause. */
             if (!v.rgn_emit[i] && v.spl_nw && n != v.spl_nw[i])
                 ctx_fail(cx, 0, "internal error: the spliced callee for group "
                                 "%d reserved %d save slots and needs %d — the "

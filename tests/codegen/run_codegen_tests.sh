@@ -2254,10 +2254,22 @@ while IFS= read -r dd14_bpat; do
         dd14_both=$((dd14_both + 1))
     fi
 done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/recursion/*.rxt | sed 's/^pattern //' | LC_ALL=C sort -u)
-if [ "$dd14_both" -ge 4 ]; then
+# THE FLOOR IS 7 AND THE SHAPES ARE NAMED, because a bare count cannot say
+# WHICH interaction went missing. `bothlinkage.rxt` covers two axes: the four
+# rows the regression was FOUND on vary which per-copy family the linked region
+# allocates (counter rung, frames rung, lookahead, atomic group — that family is
+# what the overflow was made of), and three more vary the STRUCTURE of the
+# interaction itself, which a report's own witnesses cannot: a QUANTIFIED splice
+# site over a cyclic callee (one emitted site, many activations), a
+# LINK -> SPLICE -> LINK chain (a spliced body sitting BETWEEN two shared
+# regions), and a CAPTURE-BEARING linked callee (the half a splice does have to
+# restore). If this count drops, read WHICH of the seven stopped producing both
+# linkages before re-pinning — the number is a proxy for the coverage, not the
+# coverage.
+if [ "$dd14_both" -ge 7 ]; then
     ok "[DD-14-RECURSION rule 2b] (§6.3): $dd14_both corpus patterns emit an artifact carrying BOTH linkages (RX_VM_CALL_SPLICED > 0 AND RX_VM_CALL_LINKED > 0) -- the interaction the rest of this module's instruments are blind to, and where a refusal regression lived undetected"
 else
-    bad "[DD-14-RECURSION rule 2b] (§6.3): only $dd14_both corpus patterns emit an artifact with BOTH linkages (want at least 4). tests/recursion/bothlinkage.rxt exists to keep this population non-empty; if its cells stopped producing both linkages -- an eligibility rule that changed its mind, a callee that stopped being cyclic -- every instrument this module has goes back to being blind to the interaction, which is how '(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)' came to refuse to compile with nothing noticing"
+    bad "[DD-14-RECURSION rule 2b] (§6.3): only $dd14_both corpus patterns emit an artifact with BOTH linkages (want at least 7 — four per-copy-family rows plus a quantified splice site, a link->splice->link chain and a capture-bearing linked callee). tests/recursion/bothlinkage.rxt exists to keep this population non-empty; if its cells stopped producing both linkages -- an eligibility rule that changed its mind, a callee that stopped being cyclic -- every instrument this module has goes back to being blind to the interaction, which is how '(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)' came to refuse to compile with nothing noticing"
 fi
 
 # RULE 3 (wave A2's PASS-ORDERING FINDING, sabotage row S166) -- THE CALLEE
