@@ -15000,3 +15000,14 @@ first customer, [DD-13]'s bench inputs and candidates; pcrec-bench's
 first production sample with feedback and a ranked sub-bench list;
 [M6.6] and [DD-14] archived. NEXT: the going-forward conversation with
 Frank — wake.md's nine rulings; nothing starts unprompted.
+
+Two corrections from srClose's post-merge read (10:3x), both mine to
+make: (1) the quoted close summary's "1,833 checks" is the count of
+`^PASS` LINES in its log, not the suites' tally — the tally is **1,536
+checks passed / 0 failed** (sum of every `checks passed:` line), and on
+that denominator my ae9c98c run and its closed-tree run are IDENTICAL:
+26,843 = 26,560 harness-corpus + 283 cli-stage cases; 1,536 checks.
+Read the summary's figure as "26,560 corpus cases / 0; 1,536 checks /
+0". (2) K35's entry attributed the wrong follow-up to srG; it was the
+manager's survey (srG found the defect) — the entry's closing sentence
+now says so. The lane wrote nothing to main after the merge.

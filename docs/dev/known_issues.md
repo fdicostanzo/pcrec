@@ -2828,7 +2828,7 @@ and neither caught it:
 
 **Milestone.** [DD-14.CLOSE] item 7 — CLOSED.
 
-(The wrong 2026-08-24 follow-up survey was the manager's; the correction above is the close lane's measurement. Method lesson kept in docs/dev/dev_journal.md and the check-design memory: a grep for the hazard is not a survey of the exposure — check the enclosing scope.)
+(The wrong 2026-08-24 follow-up survey — and the unqualified Survey paragraph above it — was the MANAGER's work, not srG's (srG found the defect; the manager surveyed the exposure and got it wrong); the correction above is the close lane's measurement. Method lesson kept in docs/dev/dev_journal.md and the check-design memory: a grep for the hazard is not a survey of the exposure — check the enclosing scope.)
 
 ## K36 — OPEN (2026-08-25, found by r36's engine critic; pre-existing) — `rx_L3` restores read the trail before the call-frame bounds guard
 
