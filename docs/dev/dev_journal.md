@@ -14798,3 +14798,32 @@ so its `CC=noasan-cc` wrapper (exits 1 on -fsanitize=) never reached
 did not override, or the matrix does not pass CC through). Sent back:
 find the real path, make the simulated box hit the preflight, expect
 framebuf UNMEASURED + anomalies: 1, re-run once.
+
+#### Thirty-ninth session, part 42 — srMech MERGED: S155, S70, K37, S159 (2026-08-25 ~07:16 EDT)
+
+Deliverable at a54e238 (7 commits, tests/docs only) → main **ae9c98c**
+(10 files +427/−28); anchors all resolve; worktree removed. The
+no-ASan question answered by MEASUREMENT: S155 DETECTS without ASan
+too — the one-frame overrun corrupts the heap and glibc aborts the
+exact-fit driver (exit 134, "double free or corruption"), which §2's
+`exact_rc -ne 0` branch already scores as a failure — so the arm never
+reaches the exit-3 path and anomalies read 0. The lane's earlier
+"UNDETECTED on an ASan-less box" was asserted by reasoning and never
+run — its own disclosure. REQUIRE_ASAN stays, on the honest reason: a
+write one element past a heap region is UB, detection-by-abort is a
+property of this allocator on this box, and where the write lands in
+owned slack the row would read UNDETECTED (the false claim the ruling
+forbids); the flag makes an unmeasurable arm an ANOMALY. Verified after
+the correction: clean tree + no-ASan cc + REQUIRE_ASAN=1 → 6/0 and exit
+3 with the UNMEASURED lines; CC=/nonexistent-cc → BUILD-FAILED/ANOMALY
+(env CC does reach the arm). S159 solo after K37: DETECTED —
+corpus 451 fail / 1,239 pass, recdiff 8 / 7; the hangs are now 20 s
+bounded timeouts; most failures are the back-edge walk overflowing the
+stack ("dumped core"). Lane disclosure: it lost one run's SUMMARY by
+editing run_sabotage_matrix.sh while it executed (rule 8, again; the
+arm logs' own totals corroborate the cell). SURVEY: 45 files / 347 bare
+`pcrec` call sites outside tests/recursion/ (top: cli 124, codegen 50,
+ir_listing 16) — scratchpad/srMech/bare_pcrec_survey.txt; STILL
+UNBUDGETED in run_recursion_diff.sh: the generated-code compiles and the
+matcher runs (harness/run.sh bounds both) — K37 widened. `make san`
+still running (2,349 lines, zero reports at 07:16).

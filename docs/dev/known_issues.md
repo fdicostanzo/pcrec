@@ -2820,3 +2820,17 @@ for bare `build/pcrec` calls (the K35 survey's five pipelines are the
 place to start). S159's verdict on this run is whatever the matrix
 recorded after the kill (probably DETECTED via the failed arm) — re-run
 the row solo after the fix to pin its real signature.
+**UPDATE 2026-08-25 ~07:16 (srMech, merged ae9c98c):** the 14 bare
+`pcrec` calls in tests/recursion/ are now under `"$TIMEOUT_BIN"
+"$(pcrec_timeout_secs)"` (run_recursion_diff.sh 8, run_frame_buffer.sh 3,
+run_specimen_identity.sh 3); S159 solo afterwards: DETECTED, corpus 451
+fail / 1,239 pass, recdiff 8 / 7 — the hangs are 20 s bounded timeouts,
+most failures the back-edge walk overflowing the stack. STILL OPEN, two
+halves: (a) run_recursion_diff.sh's generated-code compiles (`$CC
+$GENCFLAGS`) and matcher runs (`"$d/t" < cells`) carry NO bound at all
+where tests/harness/run.sh bounds both; (b) the survey: 45 files / 347
+bare `pcrec` call sites outside tests/recursion/ (tests/cli 124,
+codegen 50, ir_listing 16, …; full line-numbered list was kept at the
+session scratchpad — regenerate with a grep over tests/**/*.sh). Owner:
+the close lane records; a mech/harness lane fixes (one `pcrec_run`
+helper sourced everywhere, not 347 edits).

@@ -1,0 +1,413 @@
+tests/altcls/run_altcls_tests.sh
+     44  "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    180  "$PCREC" -p rx -o "$WORKDIR/bi_on/gen.c" -- 'frank|zred|brad' >/dev/null 2>&1
+    181  "$PCREC" -p rx -o "$WORKDIR/bi_off/gen.c" -fno-altcls-merge -fno-altcls-factor \
+    209  cg_on="$("$PCREC" --count-groups -- 'frank|fred|brad|bobby|janet' 2>/dev/null)"
+    210  cg_off="$("$PCREC" --count-groups -- 'frank|fred|brad|bobby|janet' 2>/dev/null)"
+tests/altcls/run_altdiff.sh
+    107  if ! "$PCREC" -p pa -o "$d/pa.c" -- "$pat" >/dev/null 2>"$d/err_a"; then
+    111  if ! "$PCREC" -p pb -fno-altcls-merge -fno-altcls-factor -o "$d/pb.c" -- "$pat" \
+    172  if "$PCREC" -p pp -o "$pd/pp.c" -- "$cp" >/dev/null 2>&1; then
+tests/assertions/run_assertions_tests.sh
+     83  out="$("$PCREC" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+     85  out="$("$PCREC" --features "$feats" -p rx -o "$WORKDIR/out.c" -- "$pat" 2>&1 >/dev/null)"; rc=$?
+    162  if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+    170  if "$PCREC" --features assertions,modifiers -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+    216  if "$PCREC" --features assertions,named-groups --no-captures -p rx \
+    234  strats() { "$PCREC" --features assertions -p rx -o - -- "$1" 2>/dev/null \
+    302  if err="$("$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$1" 2>&1)"; then
+    332  if "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$p" 2>"$WORKDIR/e.txt"; then
+    362  if ! "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$pat" 2>"$WORKDIR/e.txt"; then
+tests/assertions/run_gstart_diff.sh
+    172  "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+tests/assertions/run_kreset_diff.sh
+    200  "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    500  ref_out="$("$PCREC" --features assertions --engine=dfa -p rx -o "$WORKDIR/ref.c" -- 'a\Kb' 2>&1)"
+    509  elif ! "$PCREC" --features assertions -p rx -o "$WORKDIR/ok.c" -- 'a\Kb' >/dev/null 2>&1; then
+tests/assertions/run_mline_diff.sh
+    151  "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+tests/atomic_groups/run_atomic_diff.sh
+    266  "$PCREC" --features all -p rx "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    519  "$PCREC" --features all -p rx --no-captures -o "$d/e_on.c"  -- "$pat" 2>/dev/null
+    520  "$PCREC" --features all -p rx --no-captures -fno-atomic-discharge \
+    546  "$PCREC" --features all -p rx --engine=vm --no-captures \
+    548  "$PCREC" --features all -p rx --engine=vm --no-captures \
+    550  "$PCREC" --features all -p rx --engine=vm --no-captures \
+    552  "$PCREC" --features all -p rx --engine=vm --no-captures \
+    655  "$PCREC" --features all -p rx -o "$d/gen.c" -- "$pat" 2>/dev/null || continue
+tests/backrefs/run_backref_diff.sh
+    228  if ! "$PCREC" -p rx --features "$FEATS" $extra -o "$d/gen.c" \
+    326  if ! "$PCREC" -p rx --features "$FEATS" --no-captures \
+    368  if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" \
+    477  if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
+    516  if out=$("$PCREC" -p rx --features "$FEATS" --engine=dfa -o - -- "$pat" 2>&1 >/dev/null); then
+    529  if ! "$PCREC" -p rx --features "$FEATS" --engine=dfa --no-captures -o - \
+    614  if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" \
+    647  if ! "$PCREC" -p rx --features "$FEATS" -o "$FOLD/gen.c" -- '(?i:(.))(?i:\1)' \
+    701  if ! "$PCREC" -p rx --features "$FEATS" --engine=vm -o "$GD/g.c" -- "$pat" \
+tests/backrefs/run_dupnames_diff.sh
+    152  if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
+tests/bench/compare/compare.sh
+    123  echo "compare.sh: pcrec binary not found or not executable: $PCREC (build it first, e.g. 'make')" >&2
+tests/bench/run_bench.sh
+    190  echo "run_bench.sh: pcrec binary not found or not executable: $PCREC (build it first, e.g. 'make')" >&2
+    404  ' _ "$PCREC" "$cs_dir" "$cs_log" "${COMPILE_PATTERNS[@]}"
+tests/cli/run_cli_tests.sh
+     52  echo "run_cli_tests.sh: pcrec binary not found or not executable: $PCREC" >&2
+     53  echo "run_cli_tests.sh: build it first (e.g. 'make') or set \$PCREC" >&2
+    112  out="$("$PCREC" -o - -- 'abc' 2>"$d/stderr.txt" 1>"$d/gen.c")"
+    164  "$PCREC" --emit-main -o - -- 'abc' > "$d/gen.c" 2>"$d/stderr.txt"
+    199  "$PCREC" -p "$p60" --emit-main -o - -- 'a' >"$d/g60.c" 2>"$d/e1.txt"
+    210  "$PCREC" -p "$p61" -o "$d/g61.c" -- 'a' 2>"$d/e2.txt"
+    216  "$PCREC" -p "1abc" -o "$d/glead.c" -- 'a' 2>"$d/e3.txt"
+    222  "$PCREC" -p "" -o "$d/gempty.c" -- 'a' 2>"$d/e4.txt"
+    239  "$PCREC" -o "$sub/gen.c" -- 'abc' 2>"$d/stderr.txt"
+    274  "$PCREC" --emit-main -o - -- '-foo' > "$d/gen.c" 2>"$d/stderr.txt"
+    290  "$PCREC" -o 2>"$d/e_o.txt"; rc=$?
+    295  "$PCREC" -p 2>"$d/e_p.txt"; rc=$?
+    300  "$PCREC" -e 2>"$d/e_e.txt"; rc=$?
+    315  "$PCREC" -o "$d/x.c" 2>"$d/e_nopat.txt"; rc=$?
+    320  "$PCREC" -o "$d/y.c" -- 'a' 'b' 2>"$d/e_twopat.txt"; rc=$?
+    325  "$PCREC" -z -o "$d/z.c" -- 'a' 2>"$d/e_unk.txt"; rc=$?
+    454  "$PCREC" -i --emit-main -o - -- 'aBc' > "$d/gen.c" 2>"$d/stderr.txt"
+    473  "$PCREC" --emit-main -o - -- 'aBc' > "$d/gens.c" 2>/dev/null
+    482  assert_contains "case9: --help documents -i" "$("$PCREC" --help)" "-i "
+    485  "$PCREC" -i -o "$d/dash.c" -- '-i' 2>"$d/e_dash.txt"; rc=$?
+    505  out="$("$PCREC" --list-syntax 2>"$d/e.txt")"; rc=$?
+    548  "$PCREC" --list-syntax --flavour pcre2 >"$d/o4.txt" 2>&1; rc=$?
+    552  "$PCREC" --list-syntax --flavour python-re >"$d/o5.txt" 2>"$d/e5.txt"; rc=$?
+    559  "$PCREC" --list-syntax -o - -- 'abc' >/dev/null 2>"$d/e6.txt"; rc=$?
+    563  "$PCREC" --list-syntax --explain '\v' >/dev/null 2>"$d/e7.txt"; rc=$?
+    565  "$PCREC" --flavour pcre2 -o - -- 'abc' >/dev/null 2>"$d/e8.txt"; rc=$?
+    567  "$PCREC" --explain >/dev/null 2>"$d/e9.txt"; rc=$?
+    576  out="$("$PCREC" --list-verbs 2>"$d/ev.txt")"; rc=$?
+    604  "$PCREC" --list-verbs --list-syntax >/dev/null 2>"$d/ev2.txt"; rc=$?
+    606  "$PCREC" --list-verbs -o - -- 'abc' >/dev/null 2>"$d/ev3.txt"; rc=$?
+    614  out="$("$PCREC" --list-families 2>"$d/ef.txt")"; rc=$?
+    619  nsyn="$("$PCREC" --list-syntax | grep -vc '^#')"
+    643  "$PCREC" --list-families --list-syntax >/dev/null 2>"$d/ef2.txt"; rc=$?
+    645  "$PCREC" --list-families -o - -- 'abc' >/dev/null 2>"$d/ef3.txt"; rc=$?
+    651  "$PCREC" --list-families --flavour pcre2 >/dev/null 2>"$d/ef4.txt"; rc=$?
+    676  "verdict" "$("$PCREC" --features none --probe-ask result -- '(*pla)' | cut -f3)"
+    678  "verdict" "$("$PCREC" --features lookaround --probe-ask result -- '(*pla)' | cut -f3)"
+    683  "verdict" "$("$PCREC" --features none --probe-ask result -- '(*pla:a)' | cut -f3)"
+    685  "result" "$("$PCREC" --features lookaround --probe-ask result -- '(*pla:a)' | cut -f3)"
+    691  out="$("$PCREC" --count-groups -- '(a)(b)(c)' 2>"$d/ec1.txt")"; rc=$?
+    696  "2" "$("$PCREC" --count-groups -- '(a(b))')"
+    698  "0" "$("$PCREC" --count-groups -- '(?:a)')"
+    700  "0" "$("$PCREC" --count-groups -- 'a|b')"
+    703  "$PCREC" --count-groups -- '(?<n>a)' >/dev/null 2>"$d/ec2.txt"; rc=$?
+    707  "$PCREC" --count-groups -o - -- 'a' >/dev/null 2>"$d/ec3.txt"; rc=$?
+    709  "$PCREC" --count-groups >/dev/null 2>"$d/ec4.txt"; rc=$?
+    719  out="$("$PCREC" --probe-ask verdict -- '\d' 2>"$d/ep1.txt")"; rc=$?
+    735  "verdict" "$("$PCREC" --features none --probe-ask result -- '\d' | cut -f3)"
+    754  "$("$PCREC" --features classes --probe-ask result -- '\d')"
+    757  "$("$PCREC" --features classes --probe-ask result -- '[[:alpha:]]')"
+    760  "4	4" "$("$PCREC" --probe-ask verdict -- '(a)(?-1)' | cut -f4,5)"
+    793  if line="$("$PCREC" --probe-ask "$w" -- "$syn" 2>/dev/null)"; then
+    819  "$PCREC" --probe-ask verdict -- 'abc' >/dev/null 2>"$d/ep2.txt"; rc=$?
+    823  "$PCREC" --probe-ask sideways -- '\d' >/dev/null 2>&1; rc=$?
+    825  "$PCREC" --probe-ask verdict -o - -- '\d' >/dev/null 2>&1; rc=$?
+    827  "$PCREC" --probe-ask verdict >/dev/null 2>&1; rc=$?
+    829  "$PCREC" --probe-ask verdict --list-syntax >/dev/null 2>&1; rc=$?
+    838  "result" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f3)"
+    840  "verdict" "$("$PCREC" --features backrefs --probe-ask result -- '\d' | cut -f3)"
+    842  "2	2" "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f4,5)"
+    852  "$("$PCREC" --features all --probe-ask result -- '\d' | cut -f6,10)"
+    859  "$("$PCREC" --features none --probe-ask result -- '\d' | cut -f6,10)"
+    860  "$PCREC" --features nosuchmodule --probe-ask result -- '\d' \
+    889  "$PCREC" --features none -o "$d/fa/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    890  "$PCREC" --features all -o "$d/fb/feat.c" -- 'a(b|c)+d' 2>/dev/null
+    905  out="$("$PCREC" --help)"
+    914  "$PCREC" -o "$d/dash.c" -- '--list-syntax' 2>"$d/e10.txt"; rc=$?
+   1005  out="$("$PCREC" --features none --explain '(?i-m:' 2>"$d/e1.txt")"; rc=$?
+   1032  out="$("$PCREC" --explain '(?<')"
+   1053  out="$("$PCREC" --explain '\N{U+0041}')"
+   1073  out="$("$PCREC" --explain '(?C1)')"
+   1087  out="$("$PCREC" --explain '[[:alpha:]]')"
+   1092  out="$("$PCREC" --explain '\d')"
+   1097  out="$("$PCREC" --explain '\v')"
+   1106  out="$("$PCREC" --explain '\p{Foo}')"
+   1116  out="$("$PCREC" --explain '(*NOTAVERB)')"
+   1125  out="$("$PCREC" --explain '(*ACCEPT)')"
+   1130  out="$("$PCREC" --explain '[[:foo:]]')"
+   1135  out="$("$PCREC" --explain '[[:<:]]')"
+   1138  out="$("$PCREC" --explain '(?iZ)')"
+   1147  out="$("$PCREC" --features classes --explain '\d')"
+   1195  out="$("$PCREC" --features modifiers --explain '(?m)' 2>"$d/e3.txt")"; rc=$?
+   1209  out="$("$PCREC" --features modifiers --explain '(?J)' 2>"$d/e3.txt")"; rc=$?
+   1248  out="$("$PCREC" --explain '(?')"
+   1264  out="$("$PCREC" --explain '[[:alpha]')"
+   1271  out="$("$PCREC" --explain '(?:')"; rc=$?
+   1288  out="$("$PCREC" --explain '\q' 2>"$d/e5.txt")"; rc=$?
+   1305  out="$("$PCREC" --explain "$(printf '\\\nrows           99\n')" 2>/dev/null)"
+   1318  out="$("$PCREC" --explain "$(printf '(?\t)')" 2>/dev/null)"
+   1323  "$PCREC" --explain 'a' >"$d/o2.txt" 2>"$d/e2.txt"; rc=$?
+   1338  out="$("$PCREC" --explain "$q" 2>/dev/null)" || continue
+   1419  "$PCREC" --explain "$q" >/dev/null 2>&1
+   1432  out="$("$PCREC" --explain '\v')"
+   1482  "$PCREC" --features modifiers --explain '(?i:[)' \
+   1486  "$PCREC" --features all --probe-ask result -- '(?i:[)' \
+   1515  out="$("$PCREC" --features none --explain '(?i:[)' 2>"$d/e3.txt")"; rc=$?
+   1520  out="$("$PCREC" --features none --probe-ask result -- '(?i:[)' 2>"$d/e4.txt")"; rc=$?
+   1529  out="$("$PCREC" --features modifiers --explain '(?i:a)' 2>"$d/e5.txt")"; rc=$?
+   1536  out="$("$PCREC" --features all --probe-ask result -- '(?i:a)' 2>"$d/e6.txt")"; rc=$?
+   1569  "$PCREC" -e byte -o "$d/ok.c" 'ab' 2>"$d/e0.txt"; rc=$?
+   1571  "$PCREC" --encoding=byte -o "$d/ok2.c" 'ab' 2>"$d/e0b.txt"; rc=$?
+   1580  "$PCREC" -o - 'ab' > "$d/def.c" 2>"$d/e0c.txt"; rc=$?
+   1582  "$PCREC" -e byte -o - 'ab' > "$d/expl.c" 2>/dev/null
+   1600  "$PCREC" -e ascii -o "$d/no0.c" 'ab' >"$d/o0.txt" 2>"$d/eold.txt"; rc=$?
+   1606  "$PCREC" -e utf8 -o "$d/no.c" 'ab' >"$d/o1.txt" 2>"$d/e1.txt"; rc=$?
+   1630  out="$("$PCREC" --features utf8 -o - 'a' 2>&1)"; rc=$?
+   1636  out="$("$PCREC" --encoding=utf8 -o "$d/no2.c" 'ab' 2>&1)"; rc=$?
+   1646  "$PCREC" -p e1 --encoding=byte -o "$d/e1.c" -- 'a(b|c)+d' >/dev/null 2>&1
+   1647  "$PCREC" -p e2 -e byte -o "$d/e2.c" -- 'x+y' >/dev/null 2>&1
+   1701  "$PCREC" -o "$d/bare.c" -- '\d' >/dev/null 2>"$d/e_bare.txt"; rc=$?
+   1705  "$PCREC" --features none -o "$d/none.c" -- '\d' >/dev/null 2>"$d/e_none.txt"; rc=$?
+   1711  "$PCREC" --features std1 -o "$d/std1.c" -- '\d' 2>"$d/e_std1.txt"; rc=$?
+   1719  "$PCREC" -o - -- '\d' > "$d/bare_stamp.c" 2>/dev/null
+   1720  "$PCREC" --features std1 -o - -- '\d' > "$d/std1_bare.c" 2>/dev/null
+   1728  "$PCREC" --features classes,modifiers -o - -- '\d' > "$d/expl_bare.c" 2>/dev/null
+   1746  "$PCREC" --features std1 --emit-main -o - -- '(?i)cat\d+' \
+   1768  "$PCREC" --features std2 -o "$d/bad.c" -- 'a' >/dev/null 2>"$d/e_bad.txt"; rc=$?
+   1786  out="$("$PCREC" -o - -- 'a')"
+   1794  out="$("$PCREC" --features none -o - -- 'a')"
+   1802  out="$("$PCREC" --features std1 -o - -- 'a')"
+   1808  out="$("$PCREC" --features all -o - -- 'a')"
+   1815  "$PCREC" --features std1 -o "$d/pair.c" -- 'a' >/dev/null 2>"$d/e_pair.txt"
+   1855  "$PCREC" --emit-main --engine=vm --step-budget=50 -o "$d/steps.c" \
+   1877  "$PCREC" --emit-main --engine=vm --backtrack-frames=4 -o "$d/frames.c" \
+   1899  "$PCREC" --emit-main --engine=vm --step-budget=1000000 -o "$d/steps_ok.c" \
+   1907  "$PCREC" --emit-main --engine=vm --backtrack-frames=4096 -o "$d/frames_ok.c" \
+tests/codegen/run_atomic_identity.sh
+    146  gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+tests/codegen/run_backref_identity.sh
+    149  gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+tests/codegen/run_codegen_tests.sh
+     75  "$PCREC" -p rx "$@" -o "$WORKDIR/$name.c" -- "$pat" >/dev/null 2>&1 \
+    153  if "$PCREC" -p rx -o "$WORKDIR/minimvm.c" -- '(get|post|put|delete|patch)' >/dev/null 2>&1; then
+    300  "$PCREC" -p rx "$@" -o - -- "$pat" 2>/dev/null > "$WORKDIR/$name.sc"
+    380  elif "$PCREC" -p rx -o - -- '.*=.*' > "$WORKDIR/multi.c" 2>/dev/null \
+    381  && "$PCREC" -p rx -o - -- '^a|b'  > "$WORKDIR/engb.c"  2>/dev/null \
+    473  if "$PCREC" -p rx -o "$WORKDIR/dprx.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
+    474  && "$PCREC" -p qq -o "$WORKDIR/dpqq.c" -- 'x(y|z)+w' >/dev/null 2>&1; then
+    506  if "$PCREC" -p rx -o "$WORKDIR/eng.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+    532  if "$PCREC" -p rx --features std1 -o "$WORKDIR/stamp.c" -- 'a' >/dev/null 2>&1; then
+    561  if "$PCREC" -p rx -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: std1 (modules: classes,modifiers) */'; then
+    566  if "$PCREC" -p rx --features none -o - -- 'a' 2>/dev/null | grep -qF '/* Feature set: none (modules: none) */'; then
+    636  "$PCREC" -p rx "$@" -o "$WORKDIR/ts1.c" -- "$pat" >/dev/null 2>&1 \
+    671  if "$PCREC" -p rx -o - -- 'a(b|c)+d' > "$WORKDIR/m44info.c" 2>/dev/null; then
+    706  if "$PCREC" -p rx -o - -- 'abc' > "$WORKDIR/patlen1.c" 2>/dev/null; then
+    716  if "$PCREC" -p rx -o - -- 'a\nb' > "$WORKDIR/patlen2.c" 2>/dev/null; then
+    757  elif "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|epsilon)' > "$WORKDIR/k24.c" 2>/dev/null; then
+    803  if ! "$PCREC" -p "$pfx" -o - -- 'a(b|c)+d' > "$WORKDIR/abi_$pfx.c" 2>/dev/null; then
+    887  if "$PCREC" -p rx --no-captures -o - -- 'a(b|c)+d' > "$WORKDIR/abins_dfa.c" 2>/dev/null; then
+   1109  if ! "$PCREC" -p rx $extra -o "$WORKDIR/$nm.c" -- "$pat" >/dev/null 2>&1 \
+   1110  || ! "$PCREC" -p rx $extra -o - -- "$pat" > "$WORKDIR/${nm}_sc.c" 2>/dev/null; then
+   1287  if ! "$PCREC" -p rx --features "$feats" -o - -- "$pat" \
+   1345  if "$PCREC" -p k27 --no-captures -o - -- 'abc' > "$WORKDIR/k27null.c" 2>/dev/null; then
+   1543  if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
+   1617  if "$PCREC" -p rx --features assertions -o "$WORKDIR/kres.c" -- 'a\Kb' >/dev/null 2>&1; then
+   1648  if "$PCREC" -p rx --engine=vm -o "$WORKDIR/nok.c" -- '(a)(b)' >/dev/null 2>&1; then
+   1695  if "$PCREC" -p rx --features assertions -o "$WORKDIR/kent.c" -- 'a\Kb' >/dev/null 2>&1; then
+   1725  if "$PCREC" -p rx --no-captures -o "$WORKDIR/dent.c" -- 'a(b|c)d' >/dev/null 2>&1; then
+   1820  if ! "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
+   1824  "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
+   1847  if ! "$PCREC" $feats -p rx -o "$c" -- "$pat" >/dev/null 2>&1; then
+   1851  "$PCREC" $feats -p rx --emit-ir -- "$pat" > "$ir" 2>&1
+   1894  if "$PCREC" $AG -p rx --engine=vm --no-captures -fno-possessify \
+   1917  if "$PCREC" $AG -p rx --engine=vm --no-captures \
+   1946  if "$PCREC" $AG -p rx --no-captures -o "$WORKDIR/ag_dis.c" -- 'a*+b' >/dev/null 2>&1; then
+   1987  if ! "$PCREC" $AG -p rx --engine=vm --no-captures -o "$f" -- "$pat" >/dev/null 2>&1; then
+   2061  "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_s.c" -- "$ag_poss" >/dev/null 2>&1 || continue
+   2062  "$PCREC" $AG -p rx --engine=vm --no-captures -o "$WORKDIR/ag_g.c" -- "$ag_grp"  >/dev/null 2>&1 || continue
+   2100  "$PCREC" $AG -p rx --engine=vm --no-captures $agf -o "$WORKDIR/ag_sl.c" \
+   2187  if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
+   2224  if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_free.c" -- '(a)(b)+c' >/dev/null 2>&1 \
+   2225  && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_call.c" -- '(a(?1)?b)' >/dev/null 2>&1 \
+   2226  && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_spl.c" -- '(a)(?1)' >/dev/null 2>&1; then
+   2269  "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_b.c" -- "$dd14_bpat" >/dev/null 2>&1 || continue
+   2319  if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_rb.c" -- '((?:a|b))(?1)' >/dev/null 2>&1; then
+   2378  if "$PCREC" -p rx --features all -o "$WORKDIR/dd14_z.c" -- "$dd14_zero" >/dev/null 2>&1 &&
+   2379  "$PCREC" -p rx --features all -o "$WORKDIR/dd14_d.c" -- "$dd14_def"  >/dev/null 2>&1 &&
+   2380  "$PCREC" -p rx --features all -o "$WORKDIR/dd14_c.c" -- "$dd14_ctl"  >/dev/null 2>&1; then
+   2423  if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b)$' >/dev/null 2>&1 &&
+   2424  "$PCREC" -p rx --no-captures -o "$WORKDIR/fb_dfa.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+   2537  if ! "$PCREC" -p rx "${fb_tr_flags[@]}" -o "$WORKDIR/fb_tr.c" -- "$fb_tr_pat" >/dev/null 2>&1; then
+tests/codegen/run_endvar_identity.sh
+    110  gen_a() { "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
+tests/codegen/run_gstart_identity.sh
+    108  gen_a() { "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
+tests/codegen/run_ir_listing.sh
+    100  if ! "$PCREC" -p rx -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
+    104  if ! "$PCREC" -p rx --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
+    296  if "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_ok.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+    301  if out="$("$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_no.c" -- '((a)|b){0,65}c' 2>&1)"; then
+    310  if "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_d45.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    324  if "$PCREC" -p rx -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    342  if "$PCREC" -p rx -o "$WORKDIR/wide.c" -- "$wide" >/dev/null 2>&1; then
+    348  if "$PCREC" -p rx -o "$WORKDIR/span.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+    361  if "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1    && "$PCREC" -p myrx --emit-ir -- '(a)b' > "$WORKDIR/pfx/i
+    361  if "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1    && "$PCREC" -p myrx --emit-ir -- '(a)b' > "$WORKDIR/pfx/i
+    382  if out="$("$PCREC" -p rx --emit-ir -- 'abc' 2>&1)"; then
+    389  if "$PCREC" -p rx --emit-ir --engine=vm -- 'abc' >/dev/null 2>&1; then
+    394  if "$PCREC" -p rx --emit-ir -o "$WORKDIR/x.c" -- '(a)' >/dev/null 2>&1; then
+    410  "$PCREC" -p rx --emit-main -o "$d/plain/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
+    411  "$PCREC" -p rx --trace --emit-main -o "$d/traced/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
+    441  if "$PCREC" -p rx --trace -o "$WORKDIR/st.c" -- '(a)b' >/dev/null 2>&1; then
+tests/codegen/run_lookaround_identity.sh
+    379  python3 - "$PCREC" "$REF" "$WORKDIR/sweepfile" "$WORKDIR" "$STRICT_ALL" "$JOBS" <<'PY'
+tests/codegen/run_mlinectx_identity.sh
+    121  gen_a() { "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
+tests/codegen/run_recursion_identity.sh
+    359  gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+    940  eng_a="$("$PCREC" --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+    952  "$PCREC" --features all -p q -o "$d/a/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
+tests/codegen/run_trie_identity.sh
+     70  gen_a() { "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
+    138  oa="$("$PCREC" -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+tests/codegen/run_vm_identity.sh
+    157  if ! "$PCREC" -p rx -o "$WORKDIR/def/gen.c" -- "$pat" >/dev/null 2>"$WORKDIR/def.err"; then
+    158  if "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" -- "$pat" >/dev/null 2>&1; then
+    170  if ! "$PCREC" -p rx --no-captures -o "$WORKDIR/nc/gen.c" -- "$pat" >/dev/null 2>&1; then
+    176  ngroups="$("$PCREC" --count-groups -- "$pat" 2>/dev/null || echo 0)"
+    302  if out="$("$PCREC" -p rx --engine=dfa -o "$WORKDIR/x.c" -- 'a(b|c)+d' 2>&1)"; then
+    310  if "$PCREC" -p rx --engine=dfa --no-captures -o "$WORKDIR/x.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+    319  if "$PCREC" -p rx --engine=vm -o "$WORKDIR/v.c" -- 'a(b|c)+d' >/dev/null 2>&1; then
+    331  if "$PCREC" -p rx -o "$WORKDIR/h.c" -- '(a*)b' >/dev/null 2>&1; then
+tests/codegen/run_wordctx_identity.sh
+    104  gen_a() { "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
+tests/counterk/run_counterk_tests.sh
+     52  "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+     57  "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    149  "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- "$p" >/dev/null 2>&1 \
+    151  "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- "$p" >/dev/null 2>&1 \
+    164  if "$PCREC" -p rx --engine=vm -o "$WORKDIR/ia/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1 \
+    165  && "$PCREC" -p rx --engine=vm -fno-counter -o "$WORKDIR/ib/g.c" -- '((a)|ab){0,8}c' >/dev/null 2>&1; then
+    271  if "$PCREC" -p rx --engine=vm --emit-ir -- '((a)|ab){0,12}c' 2>/dev/null \
+tests/counterk/run_counterkdiff.sh
+    220  if ! "$PCREC" -p pa --engine=vm --step-budget=$CKDIFF_STEPS -o "$d/pa.c" -- "$pat" \
+    225  if ! "$PCREC" -p pb --engine=vm -fno-counter --step-budget=$CKDIFF_STEPS \
+    296  r="$("$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+tests/encseam/run_encseam_tests.sh
+    128  if ! "$PCREC" -p fa $extra -o "$d/fa.c" -- "$pat" >"$d/gen.log" 2>&1; then
+tests/harness/run.sh
+    283  if "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" -- 'a' >/dev/null 2>&1; then
+tests/lib/run_gen_timeout_tests.sh
+    219  if ! "$PCREC" -p rx -fno-revdet -fno-counter -fno-length-prune \
+    286  if ! "$PCREC" -p rx --engine=vm --step-budget=400000000 \
+    359  if "$PCREC" -p rx -o "$WORKDIR/fast/gen.c" -- 'a(b|c)+d' >/dev/null 2>&1 \
+tests/lookaround/run_lookaround_diff.sh
+    141  if ! "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" -- "$pat" \
+tests/mrl/run_mrl_tests.sh
+     55  "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+     60  "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    409  if "$PCREC" --engine=vm --emit-ir -- '(a{2,4}){2,6}b(c{2,4}){2,6}' 2>/dev/null \
+    436  if ! "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/on/g.c" -- "$cp" >/dev/null 2>&1; then
+    439  "$PCREC" -p rx --engine=vm -fno-length-prune -o "$WORKDIR/bi/off/g.c" -- "$cp" \
+tests/mrl/run_mrldiff.sh
+    213  if ! "$PCREC" -p pa $eng --step-budget=$MRLDIFF_STEPS -o "$d/pa.c" -- "$pat" \
+    219  if ! "$PCREC" -p pb $eng -fno-length-prune --step-budget=$MRLDIFF_STEPS \
+    249  if "$PCREC" -p pc --no-captures --step-budget=$MRLDIFF_STEPS \
+    315  "$PCREC" -p pc --engine=vm -o "$WORKDIR/probe.c" -- "$cp" >/dev/null 2>&1 || continue
+tests/parse/run_parse_tests.sh
+    154  a_out="$("$PCREC" -p rx --no-captures -o - -- "$flat" 2>/dev/null | tail -n +2 | rx_search_body)"
+    155  b_out="$("$PCREC" -p rx --no-captures -o - -- "$grouped" 2>/dev/null | tail -n +2 | rx_search_body)"
+    190  def_out="$("$PCREC" -p rx -o - -- 'a|(b|c)' 2>/dev/null)"
+    191  nc_out="$("$PCREC" -p rx --no-captures -o - -- 'a|(b|c)' 2>/dev/null)"
+    243  if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
+    252  if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then r=ok; else r=fail; fi
+    273  if "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
+    286  if ! "$PCREC" -p rx -o "$WORKDIR/depth.c" -- "$pat" >/dev/null 2>&1; then
+tests/possessify/run_possdiff.sh
+    144  if ! "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
+    149  if ! "$PCREC" -p pb --engine=vm -fno-possessify -o "$d/pb.c" -- "$pat" \
+    244  n="$("$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+tests/possessify/run_possessify_tests.sh
+     60  "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    113  nposs="$("$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
+    115  nback="$("$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
+    365  if ! "$PCREC" -p rx --engine=vm -o "$WORKDIR/on/gen.c" -- "$pat" \
+    369  if ! "$PCREC" -p rx --engine=vm -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
+    430  if "$PCREC" -p rx -o "$WORKDIR/m.c" -- '(?m)a{0,4}$' >/dev/null 2>&1; then
+    447  "$PCREC" -p rx -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    448  "$PCREC" -p rx -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    465  "$PCREC" -p rx --no-captures -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    466  "$PCREC" -p rx --no-captures -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
+tests/prefilter/run_prefilter_tests.sh
+     54  "$PCREC" -p rx "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    118  if "$PCREC" -p rx "$@" -o "$WORKDIR/ref.c" -- "$pat" \
+    137  if "$PCREC" -p rx $combo -fno-prefilter -o "$WORKDIR/nr.c" -- '(a)b' \
+    163  if "$PCREC" -p rx -o "$WORKDIR/bi/on_a/g.c" -- '(a)b' >/dev/null 2>&1 \
+    164  && "$PCREC" -p rx -fprefilter -o "$WORKDIR/bi/on_b/g.c" -- '(a)b' >/dev/null 2>&1 \
+    165  && "$PCREC" -p rx --engine=vm -o "$WORKDIR/bi/off_a/g.c" -- '(a)b' >/dev/null 2>&1 \
+    166  && "$PCREC" -p rx --engine=vm -fno-prefilter -o "$WORKDIR/bi/off_b/g.c" -- '(a)b' >/dev/null 2>&1
+    219  line="$("$PCREC" --emit-ir "$@" -- "$pat" 2>/dev/null | grep '^; prefilter')"
+    293  line="$("$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" 2>/dev/null \
+tests/recursion/run_frame_buffer.sh
+    104  if ! "$PCREC" -p rx $flags -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
+    164  if ! "$PCREC" -p rx --features recursion --engine=vm -o "$exact_d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
+    198  if ! "$PCREC" -p rx --features recursion --engine=vm -o "$d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
+tests/recursion/run_recursion_diff.sh
+    121  if ! "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
+    164  if ! "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
+    199  if ! "$PCREC" --features "$FEATS" -p rx --emit-main -o "$d/gen.c" -- "$DEPTH_PAT" \
+    268  dfa_out="$("$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
+    276  if "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
+    282  dfa_out3="$("$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
+    290  if "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/ctl.c" -- '(a)(?1)' 2>/dev/null; then
+    332  if ! "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" -- "$pat" \
+tests/recursion/run_specimen_identity.sh
+    157  if ! "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/$sp/rx.c" \
+    227  if ! "$PCREC" --features "$FEATS" --no-captures -p rx \
+    292  "$PCREC" --features "$FEATS" -p rx --emit-main -o "$WORKDIR/m_$sp.c" \
+tests/registry/run_pc4.sh
+    102  "$PCREC" -p rx -o "$WORKDIR/_tmpl/gen.c" -- 'a' >/dev/null 2>&1 || {
+    117  if ! "$PCREC" --features classes "${fl[@]+"${fl[@]}"}" -p rx \
+tests/registry/run_registry_tests.sh
+    136  echo "FAIL: registry: pcrec binary not found at $PCREC (SR-4 checks skipped)" >&2
+tests/reject/run_reject_tests.sh
+   1896  "$PCREC" --list-syntax > "$WORKDIR/syntax.tsv" 2>"$WORKDIR/syntax.err"
+tests/resource/run_resource_tests.sh
+    134  "$PCREC" -p rx -o "$out" "$pat" 2>&1)"
+    181  "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"
+    240  "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"
+    278  "$PCREC" -p rx -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"
+tests/rungselect/run_rungdiff.sh
+    171  if ! "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
+    176  if ! "$PCREC" -p pb --engine=vm -fno-revdet -o "$d/pb.c" -- "$pat" \
+    246  r="$("$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+tests/rungselect/run_rungselect_tests.sh
+     53  "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    140  ir="$("$PCREC" --engine=vm --emit-ir -- "$mixed" 2>/dev/null)"
+    164  reps="$("$PCREC" --engine=vm --emit-ir -- '((a)|b){0,4000}c' 2>/dev/null \
+    197  "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" 2>/dev/null \
+    202  "$PCREC" --engine=vm --emit-ir "$@" -- "$pat" 2>/dev/null \
+    246  if ! "$PCREC" -p rx --engine=vm -o "$WORKDIR/on/gen.c" -- "$pat" \
+    250  if ! "$PCREC" -p rx --engine=vm -fno-revdet -o "$WORKDIR/off/gen.c" -- "$pat" \
+    294  "$PCREC" -p rx -o "$WORKDIR/on/d.c" -- "$pat" >/dev/null 2>&1 || continue
+    296  "$PCREC" -p rx -fno-revdet -o "$WORKDIR/off/d.c" -- "$pat" >/dev/null 2>&1 || continue
+tests/spec_mod0/check06_cursor.sh
+    143  HELP="$("$PCREC" --help 2>&1)"
+    146  echo "  SURFACE MISSING: --probe-ask does not appear in \`$PCREC --help\`."
+    194  OUT_C=$("$PCREC" --probe-ask claim -- "$syn" 2>&1);   RC_C=$?
+    200  OUT_V=$("$PCREC" --probe-ask verdict -- "$syn" 2>&1); RC_V=$?
+    201  OUT_R=$("$PCREC" --probe-ask result -- "$syn" 2>&1);  RC_R=$?
+tests/spec_mod0/check09_every_feature_toggles.sh
+     89  echo "FAIL[$NAME]: no pcrec binary at $PCREC — assertion 3 needs to run it"
+    159  STAMP_LINE=$("$PCREC" -o - 'a' 2>/dev/null | grep '^#define PCREC_FEATURE_MODULES' | head -1)
+    162  echo "        compile of \`$PCREC -o - 'a'\` — assertion 3 has no stamp"
+tests/spec_mod0/run_spec_mod0.sh
+     75  "$PCREC" --list-syntax > "$REG" 2>/dev/null || { echo "FAIL: --list-syntax"; exit 2; }
+     76  "$PCREC" --list-verbs | grep -v '^#' > "$VERBS" 2>/dev/null || { echo "FAIL: --list-verbs"; exit 2; }
+tests/thread/run_stackdepth_tests.sh
+    103  "$PCREC" -p rx --engine=vm "$@" -o "$d/gen.c" -- "$pat" >/dev/null 2>&1 || return 1
+tests/thread/run_thread_tests.sh
+    149  bad "PCREC binary not found or not executable: $PCREC (run 'make' first, or set PCREC=)"
+tests/vm/run_vm_tests.sh
+     72  "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- "$pat" \
+    378  "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- '(a*)b' >/dev/null 2>&1 || return 1
+    473  if out="$("$PCREC" -p rx --engine=vm -fno-revdet -fno-counter -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
+    482  if "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+    490  if "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+    695  if ir="$("$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' 2>/dev/null)"; then
