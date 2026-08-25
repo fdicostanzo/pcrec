@@ -357,15 +357,11 @@ $ grep RX_VM_CALL /tmp/s2.c
 #define RX_VM_CALL_LINKED 1
 ```
 
-**STALE, flagged rather than silently matched:** `lib/pcrec.h`'s own
-comment (the `PCREC_NO_SPLICE_CALLS` bit, and `<prefix>_search`'s doc
-block) names this stamp `<PREFIX>_VM_CALLS` (singular, one macro); the
-shipped emitter (`src/gen/emit_vm.c`) actually names two macros,
-`RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED`, confirmed by grep against a
-fresh build and by the emitted text above — `RX_VM_CALLS` does not
-appear anywhere in `src/gen/emit_vm.c`. This document states the
-as-built name; `lib/pcrec.h`'s comment is a small drift outside this
-lane's own scope to fix. **Reason the axis exists:** the SPLICE-vs-
+The stamp is TWO counts, `<PREFIX>_VM_CALL_SPLICED` and
+`<PREFIX>_VM_CALL_LINKED` (never a single `<PREFIX>_VM_CALLS`): `SPLICED +
+LINKED` is every call site the emitter wrote, and the interesting question
+is their ratio (`src/gen/emit_vm.c`; `lib/pcrec.h`'s comment on the
+`PCREC_NO_SPLICE_CALLS` bit names the same pair). **Reason the axis exists:** the SPLICE-vs-
 LINKAGE choice reaches `select_engine.c`, which every pattern goes
 through, so an axis that pins the linkage constant localizes a wrong
 eligibility rule.
