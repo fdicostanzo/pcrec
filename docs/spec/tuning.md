@@ -270,10 +270,16 @@ an ENGINE, not a strategy: every other deny-only flag above leaves the
 same artifact kind and changes only the machinery inside it; denying this
 one leaves the `A_ATOMIC` node in the tree, which is DFA-excluding, so a
 pattern that would otherwise compile to a pure DFA compiles to the VM
-instead. **Consequence:** `--engine=dfa -fno-atomic-discharge
-'[^"]*+"'` REFUSES — correct, and the flag doing its job (the same
-do-or-die posture `--engine` itself has). **NOT masked from
-`rx_info.flags`** — the one place this axis differs procedurally from
+instead. **Consequence, verified this session:**
+
+```
+$ build/pcrec -p rx --features atomic-groups --engine=dfa \
+    -fno-atomic-discharge --no-captures -o /tmp/x1.c '[^"]*+"'
+pcrec: possessive quantifier requires the VM engine, which --engine=dfa excludes (pattern offset 5)
+```
+
+REFUSES — correct, and the flag doing its job (the same do-or-die
+posture `--engine` itself has). **NOT masked from `rx_info.flags`** — the one place this axis differs procedurally from
 §2.1-2.7 — because it can genuinely change which engine a pattern gets,
 so two artifacts differing only in this bit are not claimed
 identically-behaving-therefore-indistinguishable the way the masked axes
@@ -304,12 +310,43 @@ inline, its own exit); every other site takes the shared CALL linkage.
 same shape as §2.8's:** a spliced call has an exact finite lowering, so
 `src/ir/nfa.c` can build the machine and `select_engine` need not force
 the VM; denying the splice leaves a LINKED call, which is structurally
-VM-only. **Consequence:** `--engine=dfa -fno-splice-calls
-'(?:(?<g>a)){0}(?&g)'` REFUSES — correct, the discharge's own precedent
-exactly. **NOT masked from `rx_info.flags`**, for the identical reason
-as §2.8 — `rx_info.flags` records it exactly as it records
-`PCREC_NO_ATOMIC_DISCHARGE`. What the emitter did (sites spliced vs.
-linked) is `<PREFIX>_VM_CALLS`. **Reason it exists:** the SPLICE-vs-
+VM-only. **Consequence, verified this session:**
+
+```
+$ build/pcrec -p rx --features named-groups,recursion --engine=dfa \
+    -fno-splice-calls --no-captures -o /tmp/x2.c '(?:(?<g>a)){0}(?&g)'
+pcrec: (?&name) requires the VM engine, which --engine=dfa excludes (pattern offset 14)
+```
+
+REFUSES — correct, the discharge's own precedent exactly. **NOT masked
+from `rx_info.flags`**, for the identical reason as §2.8 — verified: a
+default build of `'(a)(?1)'` carries `.flags = 2ULL` (`PCREC_EMIT_MAIN`
+only); the `-fno-splice-calls` build of the same pattern carries `.flags
+= 8194ULL` (`2 | (1u << 13)`) — the bit is visibly present, unlike every
+masked axis in §2.1-2.7. What the emitter did (sites spliced vs. linked)
+is **`<PREFIX>_VM_CALL_SPLICED`/`<PREFIX>_VM_CALL_LINKED`** (two scalar
+counts), verified on `'(a)(?1)'`:
+
+```
+$ build/pcrec -p rx --features named-groups,recursion --emit-main -o /tmp/s1.c '(a)(?1)'
+$ grep RX_VM_CALL /tmp/s1.c
+#define RX_VM_CALL_SPLICED 1
+#define RX_VM_CALL_LINKED 0
+$ build/pcrec -p rx --features named-groups,recursion -fno-splice-calls --emit-main -o /tmp/s2.c '(a)(?1)'
+$ grep RX_VM_CALL /tmp/s2.c
+#define RX_VM_CALL_SPLICED 0
+#define RX_VM_CALL_LINKED 1
+```
+
+**STALE, flagged rather than silently matched:** `lib/pcrec.h`'s own
+comment (the `PCREC_NO_SPLICE_CALLS` bit, and `<prefix>_search`'s doc
+block) names this stamp `<PREFIX>_VM_CALLS` (singular, one macro); the
+shipped emitter (`src/gen/emit_vm.c`) actually names two macros,
+`RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED`, confirmed by grep against a
+fresh build and by the emitted text above — `RX_VM_CALLS` does not
+appear anywhere in `src/gen/emit_vm.c`. This document states the
+as-built name; `lib/pcrec.h`'s comment is a small drift outside this
+lane's own scope to fix. **Reason the axis exists:** the SPLICE-vs-
 LINKAGE choice reaches `select_engine.c`, which every pattern goes
 through, so an axis that pins the linkage constant localizes a wrong
 eligibility rule.
