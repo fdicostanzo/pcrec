@@ -14344,3 +14344,10 @@ sub-benches: 1 log-line search 256 B-4 KB; 2 wide alternations/keyword
 tries; 3 lookaround+backreference real-world shapes (tests/lookaround
 as input); 4 bounded-repeat / K23 / K32 band (compile AND match); 5
 UTF-8 classes/properties. Re-pin promised at the battery-green SHA.
+
+Clock correction: the box reads 03:01 EDT now; the "~03:1x"/"~03:2x"/
+"~03:3x" stamps on parts 27-28 above are ~20 min early — read them as
+~02:5x-03:0x (WINDOW CLOSED was 02:56 by the peer's clock; GO HEAVY,
+the bench feedback, and the stray-file removal all fell 02:57-03:00).
+srFBc had not yet acted on the rebase or GO at 03:00 (branch 79873cb
+lacks baf9e60; no process) — GO repeated 03:01 with the exact steps.
