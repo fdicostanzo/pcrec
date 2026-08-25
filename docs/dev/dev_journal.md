@@ -14195,3 +14195,16 @@ all three routes; rx_info abi=3, 2048/3072, 40/16. Shape: `static
 <fn>_run` + six wrappers (P-2's one-loop rule). Manager: approved with
 three obligations (P-3 refuted line; §10.4 says stamped+asserted; the
 --trace stamp must read 32/48 — show the cell).
+
+#### Thirty-ninth session, part 24 addendum — the sweep dies a second time; the peer's window taken (2026-08-25 ~02:2x EDT)
+
+02:21 watchdog: srG's sweep at 48/111 unchanged since 02:11, S156 logged
+as running, ZERO processes under the worktree, load 0.42 — the S122 shape
+again (the lane's background task reaped by its harness, not a row
+failure). Decision: use the quiet box for pcrecdev2's measurement window
+NOW rather than at ~04:00 — WINDOW OPEN sent 02:21 (load 0.42/0.64/1.32);
+pcrecdev2 took it 02:22 (five cells, CPU 11 pinned, 20-40 min). srG told
+to HOLD and, on "RESUME", relaunch from S156 DETACHED (`setsid nohup`,
+PID file) so the harness cannot reap it. Rows so far: 48 complete, all
+`unexpected: 0`; S174 not yet reached (13e2c30 will be in every archive
+that reaches it). srFBc is light (editing; 636d08c).
