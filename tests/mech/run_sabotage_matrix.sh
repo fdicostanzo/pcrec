@@ -42,13 +42,18 @@
 #                     `$TREE` its root, `$REACH_TMP` a scratch dir which is
 #                     also the cwd (so a probe that writes an output file
 #                     cannot write into the shared clean tree).
-#   SAB_REACH_EXPECT  the literal substring. Typically the EXACT diagnostic
-#                     the witness produces AT THE SABOTAGED SITE -- that is
-#                     what makes the check about reach rather than about the
-#                     construct being refused somehow, somewhere.
+#   SAB_REACH_EXPECT  ONE REQUIRED LITERAL SUBSTRING PER LINE, all of which
+#                     must appear. Typically the EXACT diagnostic each witness
+#                     produces AT THE SABOTAGED SITE -- that is what makes the
+#                     check about reach rather than about the construct being
+#                     refused somehow, somewhere. Several lines because a
+#                     row's detector is usually several witnesses at one site,
+#                     and asserting one of them leaves the rest free to expire.
 #   SAB_REACH_POP     zero or more `FILE|EREGEX|MIN` lines: the file must hold
 #                     at least MIN lines matching EREGEX at HEAD. The count is
-#                     PRINTED whether it passes or fails.
+#                     PRINTED whether it passes or fails. The regex is
+#                     everything between the FIRST and the LAST `|`, so an
+#                     ERE alternation inside it needs no escaping.
 #   SAB_REQUIRE       space-separated instrument requirements; the vocabulary
 #                     is CLOSED and today holds exactly `asan`.
 #
@@ -304,12 +309,15 @@ A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
     SAB_REACH            a command run on the CLEAN tree BEFORE the sabotage.
                          $PCREC = clean binary, $TREE = clean root,
                          $REACH_TMP = its cwd and scratch dir.
-    SAB_REACH_EXPECT     the literal substring its output must contain --
-                         normally the EXACT diagnostic produced at the
-                         sabotaged site. REQUIRED with SAB_REACH.
+    SAB_REACH_EXPECT     one required literal substring PER LINE; all must
+                         appear in the probe's output. Normally the EXACT
+                         diagnostic each witness produces at the sabotaged
+                         site. REQUIRED with SAB_REACH.
     SAB_REACH_POP        `FILE|EREGEX|MIN` lines (one per line): FILE must
                          hold >= MIN lines matching EREGEX. The count is
-                         printed on pass and on fail.
+                         printed on pass and on fail. The regex is everything
+                         between the first and last `|`, so an ERE
+                         alternation inside it needs no escaping.
     SAB_REQUIRE          instrument requirements, closed vocabulary: `asan`.
                          Unsatisfiable => ANOMALY, never UNDETECTED.
 
@@ -633,12 +641,28 @@ run_one() {
                     bash -c "$SAB_REACH"
             ) > "$work/reach.log" 2>&1
             reach_rc=$?
-            if grep -qF -- "$SAB_REACH_EXPECT" "$work/reach.log"; then
-                reach_bits+=("reach:ok")
+            # ONE REQUIRED SUBSTRING PER LINE, and ALL of them must appear.
+            # A row's detector is often several witnesses at ONE site (S70:
+            # `\Q` and `\R` both reach the escape doorway's epilogue), and
+            # asserting one of them would leave the others free to expire
+            # exactly the way the four this row started with did.
+            reach_want=0
+            reach_missing=0
+            reach_first_missing=""
+            while IFS= read -r wantline; do
+                [ -n "${wantline//[[:space:]]/}" ] || continue
+                reach_want=$((reach_want + 1))
+                if ! grep -qF -- "$wantline" "$work/reach.log"; then
+                    reach_missing=$((reach_missing + 1))
+                    [ -n "$reach_first_missing" ] || reach_first_missing="$wantline"
+                fi
+            done <<< "$SAB_REACH_EXPECT"
+            if [ "$reach_missing" -eq 0 ]; then
+                reach_bits+=("reach:ok($reach_want/$reach_want)")
             else
-                reach_bits+=("reach:MISSING")
+                reach_bits+=("reach:MISSING($reach_missing/$reach_want)")
                 reach_ok=0
-                reach_why="$reach_why; the witness probe exited $reach_rc and its output does not contain SAB_REACH_EXPECT ('$SAB_REACH_EXPECT') -- see $work/reach.log"
+                reach_why="$reach_why; the witness probe exited $reach_rc and $reach_missing of its $reach_want expected strings are absent from its output, the first being '$reach_first_missing' -- see $work/reach.log"
             fi
         fi
 

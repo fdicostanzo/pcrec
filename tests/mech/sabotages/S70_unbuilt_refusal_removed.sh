@@ -80,6 +80,28 @@ SAB_FILE="src/parse/ext.c"
 SAB_SUITES="reject assertions"
 SAB_DESC="the escape doorway's enabled-but-unbuilt epilogue is deleted, so an ENABLED module with no producer for a construct answers 'requires module X' — telling the user to enable what they already enabled"
 SAB_DOC_FIGURE="RE-MEASURED 2026-08-25 after the row scored UNDETECTED. SUPERSEDES the wave A figure, which named the four gate-OPEN escape rows \\b \\B \\G \\K: those retired one per wave through [M6.2] B..E as module assertions built them, and after [M6.5.2] retired the \\k (backrefs) pin NO row in the tree reached the escape doorway's out-of-class epilogue at src/parse/ext.c:326 at all. NEW WITNESSES, at that site: reject_gated quoting '\\Q' and reject_gated misc '\\R'. MEASURED 2026-08-25 through the driver at 47f2648: SABOTAGED reject 2fail/587pass, assertions 0fail/52pass -> DETECTED; CLEAN (control, same commit, no edit) reject 0fail/589pass, assertions 0fail/52pass. Exactly two checks move and 587+2 = 589, so the detection is the two new rows and nothing else. Both fail with the LIE the row exists to catch, verbatim: \"want substring: module 'quoting' is enabled but \\Q is not implemented yet ; got: pcrec: \\Q requires module 'quoting'\" (and the same shape for \\R / misc) -- an ENABLED module being told to enable itself. The gate-CLOSED rows, the two in-class/group-doorway pins and the whole corpus stay green either way -- they reach different sites. tests/assertions/ is the CONTROL half (it asserts the module's built constructs compile, so the reject rows cannot pass on an empty module) and is not expected to move."
+# [MECH-REACH, 2026-08-25] AND NOW THE ROW DECLARES ITS OWN REACH, so the
+# blindness above cannot recur silently. The re-point two paragraphs up fixed
+# THIS row; the fields below fix the CLASS. Both halves of the claim are
+# stated separately because they expire separately:
+#
+#   SAB_REACH proves the SITE still answers -- `\Q` and `\R` at the ESCAPE
+#     doorway, out of class, both produced by the single UNBUILT() call this
+#     row deletes. Both are asserted, not one: asserting one witness is how
+#     the four this row started with expired one at a time without anything
+#     going red.
+#   SAB_REACH_POP proves the WITNESS ROWS are still in the suite that scores
+#     the row. A reach probe alone would stay green if somebody retired the
+#     two `reject_gated` lines, since the compiler would go on producing the
+#     sentence nobody was asking for any more. The regexes deliberately do
+#     NOT match the IN-CLASS row (`'[\Q]'`, ext.c:308-320), which reaches a
+#     DIFFERENT site: the whole point of the re-point was to stop treating
+#     the two positions as one population.
+SAB_REACH='"$PCREC" --features quoting -p rx -o "$REACH_TMP/q.c" -- "\\Q"; "$PCREC" --features misc -p rx -o "$REACH_TMP/r.c" -- "\\R"'
+SAB_REACH_EXPECT="module 'quoting' is enabled but \\Q is not implemented yet
+module 'misc' is enabled but \\R is not implemented yet"
+SAB_REACH_POP="tests/reject/run_reject_tests.sh|^reject_gated +quoting +'.Q'|1
+tests/reject/run_reject_tests.sh|^reject_gated +misc +'.R'|1"
 SAB_COUNT=1
 SAB_BEFORE='    if (want == WANT_RESULT) {
         if (r->diag == RD_MODULE_OCTAL)
