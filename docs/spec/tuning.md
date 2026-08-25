@@ -169,7 +169,12 @@ default is what ships, so both run. Population, measured this session
 (`bash tests/mrl/run_mrldiff.sh`):
 
 ```
-MRLDIFF_TALLY
+mrldiff: 146 pattern-engine pairs agreed, 0 diverged, 0 refused by pcrec
+mrldiff: 138 of 146 carried at least one CLAMPED quantifier
+mrldiff: 202458 pattern-subject-startpos cells compared
+mrldiff: 22 cell(s) excused by the answer-more asymmetry (pinned expectation 22)
+mrldiff: 22 excused cell(s) refereed against the pure DFA engine; 0 pattern-engine pair(s) had no referee available
+mrldiff: rung coverage complete (mask 0x1f): every rung MRL emits a form for was reached
 ```
 
 ### 2.5 `-fno-prefilter` / `-fprefilter` — `PCREC_NO_PREFILTER` (bit 8) / `PCREC_FORCE_PREFILTER` (bit 9)
