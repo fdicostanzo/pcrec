@@ -2130,6 +2130,45 @@ deepest nesting the parser accepts at all. So the plain budget is ~50x the
 worst legitimate case, with the same revisit-when as D45's own: raise it WITH
 the measurement, never silently.
 
+**EVERY OTHER SCRIPT'S OWN INVOCATION WAS STILL BARE, UNTIL K37
+(2026-08-25).** The paragraph above closed the gap for `tests/harness/run.sh`
+alone; `docs/dev/known_issues.md` K37 is the finding that nothing else in the
+tree was covered — `tests/recursion/run_recursion_diff.sh` called `build/pcrec`
+with no bound at all, and sabotage row S159's non-terminating compiler turned
+that into a 50-minute hang that took a `make mech` matrix's evidence down with
+it. `pcrec_run` (`tests/lib/gen_timeout.sh`) is the ONE helper every harness
+script now routes a compiler invocation through — a bash function rather than a
+bare `"$TIMEOUT_BIN"`/`scripts/watchdog` call at each site, because K37's sweep
+touched ~360 call sites across 55+ scripts and a shared function is what let
+that be mechanical rather than error-prone. TWO PATHS, MEASURED rather than
+assumed: `pcrec_run <argv...>` defaults to `"$TIMEOUT_BIN" "$(pcrec_timeout_secs)"
+<argv...>` (the same cheap wall-only wrap the paragraph above already used) and
+routes through `scripts/watchdog` instead — wall + tree-RSS + CPU + a
+`build/watchdog.log` line — only when the pattern (the invocation's last
+argument, pcrec's own `--` convention) is CALL-BEARING (`(?R)`, `(?0)`, `(?N)`,
+`(?±N)`, `(?&name)`, `(?P>name)`, `\g<...>`, `\g'...'` — S159's own construct
+family) or the caller passes `--hostile` explicitly. MEASURED 2026-08-25: 50
+calls each of `scripts/watchdog -s 20 -- true` vs `"$TIMEOUT_BIN" 20 true` — 8.55s
+vs 0.127s, ~171ms/call against ~2.5ms/call, a ~68x multiplier — so routing
+every one of the ~360 sites through watchdog unconditionally would multiply the
+harness's own wall time rather than merely bound it, the identical tradeoff
+`gen_run`'s cheap-shape/watchdog split above already documents for its own
+high-count inner loops. `pcrec_run`'s own comment in `tests/lib/gen_timeout.sh`
+carries the full measurement and the construct list. A structural check
+(`tests/codegen/run_codegen_tests.sh`, "[K37] THE BARE-COMPILER-CALL GUARD IS
+STRUCTURAL") sweeps `tests/**/*.sh` for a compiler token used bare — every
+non-invocation match (a diagnostic echo, an env-var prefix onto a
+self-recursive or python worker invocation, an argument two positions past the
+command word) is a reasoned, non-vacuity-checked allowlist entry, exactly K35's
+own shape one directory over — so a NEW bare call site cannot recur silently
+the way `run_recursion_diff.sh`'s did. **NOT COVERED, and recorded rather than
+silently widened into K37's fix**: `registry/compliance_section.py` and
+`vm/vm_oracle.py` both call the compiler via python's `subprocess.run()` with
+NO `timeout=` at all (`recursion/run_lookbehind_call_sweep.py`'s
+`pcrec_compile()` likewise) — the identical hazard class, one level down, and
+outside a textual sweep over bash source. `tests/fuzz/fuzz.py`, by contrast,
+already carries `PCREC_TIMEOUT` on every one of its own compiler calls.
+
 **EXECUTION is bounded too, since 2026-08-16 (the twenty-fifth session,
 closing the gap tests/vm/CLAUDE.md flagged).** D45 bounded every COMPILE of
 emitted C and nothing bounded its execution, so a merely-slow generated
@@ -2279,6 +2318,46 @@ hanging. Lowering the node cap is a refusal decision for the manager.
   hand-off artifacts / design-measurement probes), so never part of
   `make ubsan`/`make asan` either — SAN-1 rides the STANDING battery, it
   does not grow it.
+
+### The suite list is ONE manifest, not three copies ([TT-9], 2026-08-25)
+
+`ubsan`/`asan`/`san` used to each carry their own hand-written
+`for s in tests/... ; do` list in the Makefile — the SAME list, copy-pasted
+three times, which is exactly how they drifted: wave B+C's first patch
+added `tests/recursion/run_recursion_diff.sh` to `ubsan`'s copy only, and
+`san` (added later by copying `asan`, itself copied from `ubsan` before
+that patch landed) never ran it — nobody's `make san` instrumented that
+script until an unrelated later edit happened to reconcile the copies.
+
+`tests/lib/san_scripts.txt` is now the ONE list all three targets read
+(`SAN_SCRIPTS := $(shell grep -vE '^[[:space:]]*(#|$) ' tests/lib/
+san_scripts.txt)` in the Makefile, `for s in $(SAN_SCRIPTS); do ... done` in
+each target) — a plain manifest file rather than a Makefile-only variable,
+because `tests/codegen/run_codegen_tests.sh`'s "[TT-9] THE SANITIZER SUITE
+LIST IS STRUCTURAL" check needs to read the identical list from bash
+without parsing Makefile syntax (same shape as [SR-11]'s
+`table_contract.md` manifest and `mlscan.py`'s self-contained rule table:
+one file, two readers, never a transcription). That check sweeps every
+`tests/*/run_*_diff.sh` in the tree and requires each to be IN the manifest
+or in a reasoned exclusion — there is no exclusion list today because the
+sweep found none of the tree's 9 `run_*_diff.sh` scripts belongs in one;
+if a future differential script is deliberately NOT a sanitizer-axis
+candidate (no generated-code compile of its own, the way
+`run_atomic_identity.sh`'s TEXT-only comparison above has none), it needs
+a stated reason there, not a silent gap.
+
+**FIVE SCRIPTS WERE MISSING WITH NO STATED REASON, found by enumerating
+every `run_*_diff.sh` and diffing against the three (byte-identical, as of
+this measurement) lists**: `tests/lookaround/run_lookaround_diff.sh` and
+`tests/lookaround/run_expansion_diff.sh` (the ruling's own named example),
+plus `tests/assertions/run_gstart_diff.sh`, `run_kreset_diff.sh` and
+`run_mline_diff.sh`, which the same enumeration surfaced. All five compile
+generated C under `GENCFLAGS`/`$CC` exactly like their already-listed
+sibling scripts, so there was no reason to exclude them — added to the
+manifest rather than recorded as an exception. Verified with `make -n
+ubsan|asan|san` (the sanitizer suites themselves were not run): all three
+targets' `for s in ...` line now expands to the identical 33-script list
+read from the manifest.
 
 ### Battery integration — DECIDED (manager, 2026-08-13, from the quiet numbers)
 

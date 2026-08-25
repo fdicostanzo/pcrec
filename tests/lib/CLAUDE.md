@@ -70,6 +70,40 @@ section targets depend on.
   `timeout_bin.sh`** (above) for `gen_cc`'s own wall wrapper, which now
   invokes `"$TIMEOUT_BIN"` rather than a bare `timeout` — this is
   sabotage S43's anchor line, re-derived in the same change.
+  **[K37] (2026-08-25) IT ALSO OWNS THE COMPILER'S OWN INVOCATION BUDGET,
+  ONE HELPER EVERY SUITE CALLS RATHER THAN EACH RE-WRAPPING ITS OWN CALL
+  SITES**: `pcrec_timeout_secs` (20s plain / 60s sanitizer,
+  `PCRECTIMEOUT`/`PCRECTIMEOUT_SAN` — a different quantity from the
+  generated-code numbers above, calibrated separately: pcrec's own compiles
+  are sub-millisecond to under a second even on the worst corpus case) and
+  `pcrec_run [--hostile] <pcrec-argv...>`, which every harness script now
+  routes a compiler invocation through instead of calling `"$PCREC"`/
+  `build/pcrec` bare. Fixes docs/dev/known_issues.md K37: sabotage row S159
+  made the compiler loop forever on `((?1)*a)`, and
+  `tests/recursion/run_recursion_diff.sh` called the compiler with no bound
+  at all, turning a `make mech` row that should have read one FAILED ARM
+  into a 50-minute hang a human had to kill by PID. TWO PATHS, MEASURED
+  rather than uniform: the default is a bare `"$TIMEOUT_BIN"
+  "$(pcrec_timeout_secs)"` wrap (~2.5ms/call, MEASURED 2026-08-25) —
+  `scripts/watchdog` is used instead (wall + tree-RSS + CPU + a
+  `build/watchdog.log` line) only when the invocation's last argument (the
+  pattern, pcrec's own `--` convention) is CALL-BEARING (`(?R)`, `(?0)`,
+  `(?N)`, `(?±N)`, `(?&name)`, `(?P>name)`, `\g<...>`, `\g'...'` — S159's own
+  construct family) or the caller passes `--hostile` explicitly, because
+  watchdog's own per-call cost is ~171ms/call (MEASURED, ~68x
+  `"$TIMEOUT_BIN"`'s) and routing the ~360 call sites this fix swept through
+  it unconditionally would multiply the harness's wall time rather than
+  merely bound it — see the function's own comment in this file for the
+  full measurement and the construct list. `tests/codegen/
+  run_codegen_tests.sh`'s "[K37] THE BARE-COMPILER-CALL GUARD IS STRUCTURAL"
+  is the standing check: every `tests/**/*.sh` compiler-token site must be
+  guarded (`pcrec_run`/`"$TIMEOUT_BIN"`/`gen_run`/`gen_cc` on the line) or
+  match a reasoned, non-vacuity-checked allowlist entry, so a new bare call
+  site cannot recur silently. **NOT COVERED**: two python callers
+  (`tests/registry/compliance_section.py`, `tests/vm/vm_oracle.py`) invoke
+  the compiler via `subprocess.run()` with no `timeout=` at all — the
+  identical hazard, outside this bash-only mechanism's reach; recorded in
+  K37's own known_issues.md entry, not silently swept into this fix.
 - **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md
   (the RULED contract for tabular `pcrec` command output — `#` comments,
   header-names-columns, append-only, optional `#section NAME` blocks), the
@@ -183,6 +217,20 @@ section targets depend on.
   `python3 tests/lib/mlscan.py` — 27 cases including every trap above and
   the three scoping cells, exit 1 on any failure. A scanner nobody exercises
   is a scanner that drifts.
+- **san_scripts.txt** — [TT-9]'s ONE manifest for `make ubsan`/`make asan`/
+  `make san`'s suite list (a plain path-per-line text file, not a Makefile
+  variable, so `tests/codegen/run_codegen_tests.sh`'s "[TT-9] THE SANITIZER
+  SUITE LIST IS STRUCTURAL" check can read the identical list from bash
+  without parsing Makefile syntax — see its own header for the full note).
+  Fixes the drift the ruling names: wave B+C's first patch added
+  `tests/recursion/run_recursion_diff.sh` to `ubsan`'s own hand-maintained
+  copy and `san` silently never ran it, because there were three copies to
+  keep in sync and nothing that checked they agreed. Also added the five
+  `run_*_diff.sh` scripts the [TT-9] structural check's own sweep found
+  absent from all three lists with no stated reason (the ruling's lookaround
+  example, plus three sibling scripts in `tests/assertions/` the search
+  also surfaced) — all five compile generated C exactly like their already-
+  listed siblings.
 
 ## Conventions
 

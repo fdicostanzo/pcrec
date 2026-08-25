@@ -2639,6 +2639,170 @@ else
     ok "[K35] every \`sort\` command word in tests/**/run_*.sh runs under LC_ALL=C ($k35_sites site(s) across $k35_scripts script(s): guarded at the site or by an export above it). Under the ambient locale this population loses 974 of 2,758 corpus patterns to collation, and the loss is silent"
 fi
 
+# ===========================================================================
+# [K37] THE BARE-COMPILER-CALL GUARD IS STRUCTURAL: no tests/**/*.sh may
+#       invoke the compiler under test without a bound
+# ===========================================================================
+#
+# S159 (docs/dev/known_issues.md K37) is what an unbounded compiler call
+# costs: the sabotaged emitter loops forever on `((?1)*a)`, and
+# tests/recursion/run_recursion_diff.sh called `build/pcrec` bare, so the
+# mech row that should have read one FAILED ARM instead hung the whole
+# 180-row matrix for 50 minutes until a human killed it by PID. The fix is
+# `tests/lib/gen_timeout.sh`'s `pcrec_run` (every script routes its compiler
+# invocations through it, cheap `"$TIMEOUT_BIN"` by default, `scripts/
+# watchdog` when the pattern is call-bearing or the caller passes
+# `--hostile`), but a convention is only as good as the last script that
+# remembered it -- K35's own argument, immediately above, for why this is a
+# check and not a comment.
+#
+# WHAT THIS CANNOT SEE, so nobody reads more into the green than is there:
+# a TEXTUAL sweep over shell source, blind to a call reached through an
+# unexpected variable, and blind to PYTHON -- registry/compliance_section.py
+# and vm/vm_oracle.py both call the compiler via `subprocess.run()` with NO
+# `timeout=` at all (recursion/run_lookbehind_call_sweep.py's `pcrec_compile`
+# likewise), which is the identical S159-class hazard one level down; see
+# docs/dev/known_issues.md K37's own note. It covers the idiom that
+# actually recurred: a bash command word.
+k37_bad=""
+k37_sites=0
+k37_scripts=0
+k37_guarded=0
+k37_allowed=0
+declare -A k37_allow_hits
+declare -A k37_seen
+# The compiler token as a shell WORD -- `build/pcrec`, `$PCREC` or
+# `"$PCREC"` -- anywhere it is not clearly punctuation-adjacent. Loose ON
+# PURPOSE (the same shape the K37 ruling's own regeneration grep uses,
+# docs/dev/known_issues.md K37): it flags more than strict command-position
+# would, and everything past that is resolved by the three structural
+# exclusions plus the ALLOWLIST below rather than by narrowing the site
+# regex until it stops seeing things -- narrowing a check until it is quiet
+# is this project's own recorded failure mode (docs/dev/learnings.md §3).
+# NOTE ON THE BRACKETED `[$]` SPELLING BELOW, before it looks like noise: a
+# literal `\$PCREC` in THIS FILE's own bytes is itself a k37_site_re MATCH --
+# the check's regex definitions would otherwise be reported as bare
+# invocations of themselves, which is the control-shares-a-source trap from
+# the OTHER direction (not "reads its own subject's verdict", but "contains
+# its own subject's TEXT"). `[$]PCREC` means the identical thing to a POSIX
+# ERE engine (a literal `$` then `PCREC`) without the contiguous byte
+# sequence a textual self-scan would catch. Demonstrated: reverting every
+# `[$]` below to `\$` makes this check FAIL against ITSELF (9 sites, all in
+# this block) -- the validation the K37 CLAUDE.md entry records.
+k37_site_re='(^|[^a-zA-Z_/])(build/pc[r]ec|[$]PCREC|"[$]PCREC")'
+# Structural, not judgment: a comment is prose, a `PCREC=...` line assigns
+# the variable rather than invoking it, and `[ -x/-f "$PCREC" ]` tests for
+# the binary's existence.
+k37_comment_re='^[^:]*:[0-9]+:[[:space:]]*#'
+k37_assign_re='^[^:]*:[0-9]+:[[:space:]]*(local[[:space:]]+|export[[:space:]]+)?PCREC='
+k37_existtest_re='\[[[:space:]]*!?[[:space:]]*-[xf][[:space:]]+"?[$]PCREC"?[[:space:]]*\]'
+k37_guard_re='pcrec_run|TIMEOUT_BIN|gen_run\b|gen_cc\b'
+# ALLOWLIST: every remaining line must match one of these or the check
+# names it. Each entry is a JUDGMENT CALL (not a mechanical exclusion like
+# the three above), so each carries its own reason -- and each must ALSO
+# match at least one real line (asserted below), the K35-shape non-vacuity
+# rule worn backwards: an allowlist entry nothing matches is exactly as
+# blind as a control sharing a source with what it controls.
+k37_allow_re=(
+    '^[^:]*:[0-9]+:[[:space:]]*(echo|bad|die)[[:space:]]'
+    'PCREC="[$]PCREC"'
+    '^[^:]*:[0-9]+:[[:space:]]*run_(c|sh)[[:space:]]'
+    '^[^:]*:[0-9]+:[[:space:]]*if[[:space:]]+grep[[:space:]]'
+    '^[^:]*:[0-9]+:[[:space:]]*python3[[:space:]]+-[[:space:]]+"[$]PCREC"'
+    "^[^:]*:[0-9]+:[[:space:]]*'[[:space:]]*_[[:space:]]+\"[$]PCREC\""
+)
+k37_allow_reason=(
+    "a MESSAGE naming the PCREC variable in prose (a missing-binary echo/bad/die diagnostic), never a command word"
+    "an env-var PREFIX (PCREC set to itself) on a command -- a self-recursive \`bash \"\${BASH_SOURCE[0]}\"\` re-invocation (harness/run.sh, reject/run_reject_tests.sh: the receiver is the SAME already-guarded script) or a python3 worker (registry/compliance_section.py, vm/vm_oracle.py, lookaround/run_expansion_diff.sh's xargs worker line) -- not a bash command word invoking the compiler, so out of THIS check's textual reach; the python-side gap is recorded in K37's own known_issues.md entry, not silently swept here"
+    "spec_mod0's run_c/run_sh pass the PCREC variable as an ARGUMENT to a compiled C check or a sub-script, not as the command word invoking the compiler"
+    "run_gen_timeout_tests.sh's grep PATTERN STRING (checks tests/harness/run.sh's source text for the pre-K37 bare-timeout idiom; matches nothing, invokes nothing)"
+    "run_lookaround_identity.sh's python heredoc passes the PCREC variable as sys.argv[1] to an embedded python3 sweep -- that sweep's own subprocess.run() bound is python-side, the same recorded gap as above"
+    "run_bench.sh's COMPILE-SPEED loop: the PCREC variable is a POSITIONAL ARGUMENT to a bash -c heredoc already wrapped in ONE outer \"\$TIMEOUT_BIN\" for the whole loop -- the script's own comment states why per-pattern wrapping was rejected (timeout's fork/exec cost exceeds a base-tier compile)"
+)
+while IFS= read -r k37_hit; do
+    [ -n "$k37_hit" ] || continue
+    k37_sites=$((k37_sites + 1))
+    k37_hitfile="${k37_hit%%:*}"
+    if [ -z "${k37_seen[$k37_hitfile]:-}" ]; then
+        k37_seen[$k37_hitfile]=1
+        k37_scripts=$((k37_scripts + 1))
+    fi
+    if printf '%s\n' "$k37_hit" | grep -qE "$k37_comment_re"; then continue; fi
+    if printf '%s\n' "$k37_hit" | grep -qE "$k37_assign_re"; then continue; fi
+    if printf '%s\n' "$k37_hit" | grep -qE "$k37_existtest_re"; then continue; fi
+    if printf '%s\n' "$k37_hit" | grep -qE "$k37_guard_re"; then
+        k37_guarded=$((k37_guarded + 1)); continue
+    fi
+    k37_i=0
+    k37_matched=0
+    for k37_re in "${k37_allow_re[@]}"; do
+        if printf '%s\n' "$k37_hit" | grep -qE "$k37_re"; then
+            k37_allow_hits[$k37_i]=$(( ${k37_allow_hits[$k37_i]:-0} + 1 ))
+            k37_matched=1
+            break
+        fi
+        k37_i=$((k37_i + 1))
+    done
+    if [ "$k37_matched" -eq 1 ]; then
+        k37_allowed=$((k37_allowed + 1))
+    else
+        k37_bad="$k37_bad
+    $k37_hit"
+    fi
+done < <(cd "$ROOT_DIR" && grep -rnE "$k37_site_re" --include='*.sh' tests)
+
+k37_allow_vacuous=""
+for k37_i in "${!k37_allow_re[@]}"; do
+    if [ "${k37_allow_hits[$k37_i]:-0}" -eq 0 ]; then
+        k37_allow_vacuous="$k37_allow_vacuous
+    allowlist entry $((k37_i + 1)) (\"${k37_allow_reason[$k37_i]}\") matched NOTHING"
+    fi
+done
+
+if [ "$k37_scripts" -lt 40 ] || [ "$k37_sites" -lt 380 ]; then
+    bad "[K37] the bare-compiler-call sweep found $k37_scripts tests/**/*.sh scripts and $k37_sites compiler-token site(s), below its floors of 40 and 380 (measured 2026-08-25: 55 scripts / 427 sites). A population that collapses means the SWEEP broke, not that the tree got clean"
+elif [ -n "$k37_allow_vacuous" ]; then
+    bad "[K37] the allowlist carries an entry nothing matches, which is exactly the check-sharing-a-source trap worn backwards:$k37_allow_vacuous"
+elif [ -n "$k37_bad" ]; then
+    bad "[K37] $(printf '%s' "$k37_bad" | grep -c .) site(s) invoke the compiler with NO bound (no pcrec_run/\$TIMEOUT_BIN/gen_run/gen_cc on the line) and match no allowlist reason -- route each through tests/lib/gen_timeout.sh's pcrec_run, or add a reasoned allowlist entry if it is not really an invocation:$k37_bad"
+else
+    ok "[K37] every compiler invocation in tests/**/*.sh ($k37_sites site(s) across $k37_scripts script(s)) is bounded ($k37_guarded guarded directly) or is a reasoned allowlist exception ($k37_allowed, across ${#k37_allow_re[@]} categories, all non-vacuous) -- an unbounded compiler call cannot recur silently (S159's 50-minute hang, this check's founding case)"
+fi
+
+# ===========================================================================
+# [TT-9] THE SANITIZER SUITE LIST IS STRUCTURAL: every tests/*/run_*_diff.sh
+#        is in tests/lib/san_scripts.txt or in a reasoned exclusion
+# ===========================================================================
+#
+# `make ubsan`/`asan`/`san` used to carry three independently hand-
+# maintained copies of the same suite list -- wave B+C's first patch added
+# tests/recursion/run_recursion_diff.sh to `ubsan`'s copy only, and `san`
+# silently never ran it. tests/lib/san_scripts.txt is now the one list all
+# three read (see its own header); this check is what stops a NEW
+# `run_*_diff.sh` from repeating the drift by simply never being added
+# anywhere -- SKIP-is-not-a-pass applies to a suite list exactly as it does
+# to a test result.
+tt9_pats=0
+tt9_bad=""
+tt9_san_list="$ROOT_DIR/tests/lib/san_scripts.txt"
+[ -f "$tt9_san_list" ] || die "[TT-9] tests/lib/san_scripts.txt is missing -- ubsan/asan/san have no suite list to read"
+while IFS= read -r tt9_f; do
+    tt9_pats=$((tt9_pats + 1))
+    tt9_rel="${tt9_f#$ROOT_DIR/}"
+    if ! grep -qxF "$tt9_rel" "$tt9_san_list"; then
+        tt9_bad="$tt9_bad
+    $tt9_rel"
+    fi
+done < <(find "$ROOT_DIR/tests" -name 'run_*_diff.sh' | LC_ALL=C sort)
+
+if [ "$tt9_pats" -lt 5 ]; then
+    bad "[TT-9] found only $tt9_pats tests/*/run_*_diff.sh script(s), below its floor of 5 (measured 2026-08-25: 9). A population that collapses means the SWEEP broke, not that the tree lost its diff scripts"
+elif [ -n "$tt9_bad" ]; then
+    bad "[TT-9] $(printf '%s' "$tt9_bad" | grep -c .) run_*_diff.sh script(s) are in NEITHER tests/lib/san_scripts.txt NOR a stated exclusion -- add each to the manifest, or record why not (a reason, not a silent gap):$tt9_bad"
+else
+    ok "[TT-9] every tests/*/run_*_diff.sh script ($tt9_pats found) is in tests/lib/san_scripts.txt -- \`make ubsan\`/\`asan\`/\`san\` cannot silently drop one the way \`san\` dropped run_recursion_diff.sh before this manifest existed"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
