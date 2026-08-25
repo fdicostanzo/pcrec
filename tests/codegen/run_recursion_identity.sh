@@ -324,6 +324,7 @@ _SELFTEST = [
     (r"(?(1)a|b)",       False, "an ordinary conditional -- module `conditionals`', not this module's"),
     (r"(?(DEFINE)abc)^x$", True, "[wave F] `(?(DEFINE)` is module recursion's (D71 item 4), so a DEFINE-bearing pattern with NO CALL in it still belongs in the bucket the reference must REFUSE -- the negative lookahead's whole point, and the row that pins it"),
     (r"(?(DEFINE)(?<g>a))(?&g)", True, "[wave F] DEFINE plus a real call: call-bearing twice over, and it must not be rescued into the call-free bucket by the conditional arm"),
+    (r"(?(DEFINE)(?<g>a))b", True, "[wave F] THE SHARP ONE: a DEFINE whose body holds a NAMED GROUP, and nothing outside it. This pattern scans TWO `(?` occurrences -- the DEFINE tail, which the negative lookahead sends to the call bucket, and `(?<g>`, which the named-group arm recognises as NOT a call -- so it is the row that pins the ANY-occurrence rule: one unrecognised tail is enough, and a classifier that took the LAST occurrence's verdict, or that let a recognised inner construct rescue the pattern, files it call-FREE and the gate then demands byte-identity from a pattern this module changed"),
     (r"^[(?(DEFINE)a)]$", False, "a `(?(DEFINE)` INSIDE a class is class members -- the class mask has to reach wave F's arm too, or the newest doorway reintroduces the census's oldest defect"),
     (r"(?~x)",           True,  "FAIL SAFE: an unrecognised `(?` tail is classified call-bearing"),
 ]

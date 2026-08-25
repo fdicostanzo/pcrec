@@ -1402,7 +1402,7 @@ not say it.**
   measured all 26 VM_ONLY before any producer existed), so `render_modules`'
   first-row walk never moved the name. A nonzero value is a FAILURE, not a
   note; wave F adds rows and must say so.
-- **A 22-ROW CLASSIFIER SELF-TEST, run before anything is classified.**
+- **A 23-ROW CLASSIFIER SELF-TEST, run before anything is classified.**
   §0.3 item 9 is the census's own MEASURED instrument defect — a naive
   `\g<` scan counts `tests/backrefs/octal_class.rxt`'s `^[\g<1>]$` as a
   call — and "the classifier masks classes" is a claim about code, not a
@@ -1410,13 +1410,18 @@ not say it.**
   doorways' version of the defect), `a[b]\g<1>` call-bearing (masking must
   not swallow the rest of the pattern), `(?>` as an atomic group (the row
   the first draft got wrong), and `(?~x)` failing safe into the call bucket.
-  **Three of the rows are WAVE F's arm**: D71 item 4 made `(?(DEFINE)` this
+  **Four of the rows are WAVE F's arm**: D71 item 4 made `(?(DEFINE)` this
   module's, so the conditional exclusion grew a `(?!DEFINE)` negative
   lookahead, and the rows pin `(?(DEFINE)abc)^x$` CALL-BEARING (a
   DEFINE-bearing pattern with no call in it is still one this module changed,
-  which is F's own honesty argument), the DEFINE-plus-call form the same, and
-  `^[(?(DEFINE)a)]$` call-FREE — because the class mask has to reach the
-  newest doorway or it reintroduces the census's oldest defect.
+  which is F's own honesty argument), the DEFINE-plus-call form the same,
+  `(?(DEFINE)(?<g>a))b` the same — the SHARP one, because it scans TWO `(?`
+  occurrences, a DEFINE tail that goes to the call bucket and a `(?<g>` that
+  the named-group arm recognises, so it is what pins the ANY-occurrence rule
+  against a classifier that reads the last verdict or lets a recognised inner
+  construct rescue the pattern — and `^[(?(DEFINE)a)]$` call-FREE, because the
+  class mask has to reach the newest doorway or it reintroduces the census's
+  oldest defect.
 
 **EXERCISED IN THE FAILING DIRECTION at wave E**, which is the half a green
 run cannot supply: one byte of an emitted comment (`emit_dfa.c`'s

@@ -1143,7 +1143,7 @@ reference compiler built from the pinned commit `ac4917d`:
 
 `checks passed: 8  checks failed: 0`, rc 0. Corpus 2610 patterns; **168
 call-bearing** (floor 60), **2442 call-free** (floor 700). Classifier self-test
-22/22. POSITIVE CONTROL on all four axes: the reference REFUSES all 168
+23/23. POSITIVE CONTROL on all four axes: the reference REFUSES all 168
 call-bearing patterns, `ctl_bad == 0` and `ctl_ok == 168` on each.
 
 **THE CALL-BEARING POPULATION MOVED 136 → 168 WHEN WAVE F LANDED**, and the
@@ -1153,9 +1153,12 @@ grew a negative lookahead in its conditional arm and every DEFINE-bearing
 pattern — INCLUDING four with no call in them at all — moved out of the bucket
 required to be byte-identical and into the bucket the reference must refuse.
 The gate found those four itself, as refusal mismatches, before the classifier
-was fixed. The self-test carries F's arm as three of its rows, so the fix is
-exercised rather than merely present, and one of them (`^[(?(DEFINE)a)]$`)
-checks that the class mask reaches the newest doorway too.
+was fixed. The self-test carries F's arm as four of its rows, so the fix is
+exercised rather than merely present: `^[(?(DEFINE)a)]$` checks that the class
+mask reaches the newest doorway too, and `(?(DEFINE)(?<g>a))b` is the sharp one
+— two `(?` occurrences, one unrecognised and one recognised — which pins the
+ANY-occurrence rule against a classifier that reads the last verdict or lets a
+recognised inner construct rescue the pattern.
 
 **EXERCISED IN THE FAILING DIRECTION**, which is the half a green run cannot
 supply (measured before the wave-F rebase, on the 2439-pattern call-free
