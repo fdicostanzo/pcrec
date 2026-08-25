@@ -14238,3 +14238,24 @@ two more assertions; run_ir_listing/run_possessify grepped
 RX_RESUME_FRAMES out of the .c after it moved to the .h (would have been
 VACUOUS, not red) — both read .c+.h now. Reminded twice: the six sabotage
 rows wait for GO HEAVY.
+
+#### Thirty-ninth session, part 26 — sequencing decision: one full matrix on the merged tree (2026-08-25 ~02:5x EDT)
+
+srFBc reports everything under the hold done (six WIP commits; strict
+clean; codegen 100/0; ir_listing 80/0; possessify 18/0; framebuffer.rxt
+16/0; stackdepth 3/0+1 pinned; frame-buffer 5/0+1 note; anchors 180 rows /
+191 sites 0 stale in its tree). Expected-artifact diff: 12 .c hunks, all
+surface; the emitted PROGRAM region diffs 0 on call-free/bounded/DFA and
+4 lines on call-bearing (capacity site #1: `unsigned`→`size_t`,
+`RX_RESUME_FRAMES`→`run->resume_cap`) — the only program line the wave
+touches; the four identity-gate pins go red on the file hash, green on
+the program → re-pin at merge. It owes `make test` + its D69 rows.
+DECISION: G's dead sweep (48/111, all clean) does NOT resume and FB runs
+only its six new rows (S179-S184) + `make test`; ONE full `make mech` on
+the merged G+FB main replaces G's 63 remaining rows and FB's 102 re-runs
+(the close needs that matrix on the final tree anyway; the box has
+carried these rows twice tonight already). srG released with its 48-row
+record owed. srFBc told to REBASE onto main now (its S174 re-anchor
+conflicts with baf9e60 — take main's) and to add the design §8 inline
+note per the ruling. GO HEAVY at pcrecdev2's WINDOW CLOSED; heavy runs
+DETACHED (`setsid nohup`, PID file) after two harness reaps tonight.
