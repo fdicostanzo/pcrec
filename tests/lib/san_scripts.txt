@@ -1,0 +1,67 @@
+# tests/lib/san_scripts.txt — [TT-9] THE ONE SUITE LIST for `make ubsan`,
+# `make asan` and `make san`. All three targets read this file rather than
+# carrying their own copy of the `for s in ...; do` list, which is what let
+# them silently disagree before this file existed: wave B+C's first patch
+# added tests/recursion/run_recursion_diff.sh to `ubsan`'s list only, and
+# `san` (added later, copied from `asan`) never ran it — nobody's `make san`
+# ever instrumented that script until the copies happened to be reconciled
+# by a later, unrelated edit. A single manifest makes that class of drift
+# impossible BY CONSTRUCTION: there is only one list to edit and only one
+# list any of the three targets can read.
+#
+# WHY A MANIFEST FILE, not a Makefile variable (docs/testing.md "Sanitizer +
+# lint battery" has the full note). The list needs TWO independent readers —
+# the Makefile's own `for s in $(SAN_SCRIPTS); do ... done` shell loop, and
+# tests/codegen/run_codegen_tests.sh's [TT-9] structural check below, which
+# must read the SAME list from bash without parsing Makefile syntax (the
+# K35 lesson: a control sharing no source with what it controls is the only
+# kind that catches anything). A plain manifest is one `grep -v '^#'` away
+# in either language; a `$(shell ...)`-derived Makefile variable would still
+# need a text file underneath for the bash reader to share, so the file IS
+# the source either way — this format just stops pretending otherwise. Same
+# shape as [SR-11]'s table_contract.md manifest and mlscan.py's self-
+# contained rule table: one file, two readers, never a transcription.
+#
+# One tests/**/*.sh path per line, relative to the repo root. Blank lines
+# and `#`-comment lines are ignored by both readers.
+tests/harness/run.sh
+tests/cli/run_cli_tests.sh
+tests/reject/run_reject_tests.sh
+tests/registry/run_registry_tests.sh
+tests/parse/run_parse_tests.sh
+tests/codegen/run_codegen_tests.sh
+tests/codegen/run_trie_identity.sh
+tests/codegen/run_endvar_identity.sh
+tests/codegen/run_wordctx_identity.sh
+tests/codegen/run_mlinectx_identity.sh
+tests/codegen/run_gstart_identity.sh
+tests/codegen/run_vm_identity.sh
+tests/codegen/run_ir_listing.sh
+tests/vm/run_vm_tests.sh
+tests/encseam/run_encseam_tests.sh
+tests/possessify/run_possdiff.sh
+tests/possessify/run_possessify_tests.sh
+tests/rungselect/run_rungdiff.sh
+tests/rungselect/run_rungselect_tests.sh
+tests/altcls/run_altdiff.sh
+tests/altcls/run_altcls_tests.sh
+tests/assertions/run_assertions_tests.sh
+# [TT-9] the three assertions differentials were absent, same as
+# lookaround's below -- found by this file's own structural check, not
+# named by the ruling that chartered it. All three compile generated C
+# (GENCFLAGS-driven `$CC` calls) exactly like run_assertions_tests.sh
+# beside them, so there was no stated reason for the gap, only an omission.
+tests/assertions/run_gstart_diff.sh
+tests/assertions/run_kreset_diff.sh
+tests/assertions/run_mline_diff.sh
+tests/atomic_groups/run_atomic_diff.sh
+tests/backrefs/run_backref_diff.sh
+tests/backrefs/run_dupnames_diff.sh
+# [TT-9] the module's diff scripts, absent with no stated reason (the
+# ruling's own example). Both compile generated C the same way their
+# sibling suites above do.
+tests/lookaround/run_lookaround_diff.sh
+tests/lookaround/run_expansion_diff.sh
+tests/recursion/run_recursion_diff.sh
+tests/lib/run_gen_timeout_tests.sh
+tests/known_fail/run_known_fail.sh

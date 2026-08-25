@@ -84,11 +84,21 @@ FEATS="recursion,named-groups,backrefs,atomic-groups,assertions,classes,modifier
 # `-fsanitize=` in the flags), and blowing it exits non-zero -- which every
 # call site below already routes to `bad`/`die`. A hanging compiler is
 # therefore a FAILED ARM, which is DETECTION, rather than an infrastructure
-# event. NOTE, recorded rather than fixed here: the generated-code compiles
-# (`$CC $GENCFLAGS`) and the matcher runs (`"$d/t" < cells`) in this file are
-# still unbudgeted; that is a wider gap than K37 named and is reported, not
-# quietly widened into this change.
+# event.
+#
+# [K37, srRun2 2026-08-25] THE OTHER HALF, CLOSED. The note this file used to
+# carry here ("the generated-code compiles and the matcher runs are still
+# unbudgeted") is stale: every `$CC $GENCFLAGS` compile now runs through
+# `gen_cc` (D45's CPU-primary compile budget) and every generated-matcher run
+# (`"$d/t" ...`) through `gen_run` (scripts/watchdog: wall + tree-RSS + CPU +
+# a `build/watchdog.log` line), the same mechanism `tests/harness/run.sh`
+# already used for both. `run_arm` (§3/§5's shared per-pattern driver) makes
+# both calls once per corpus pattern — up to ~170 times in §5's sweep — which
+# is the per-pattern shape `gen_cc`/`gen_run` are meant for, not the
+# high-count inner-loop shape their own headers warn off (thousands of
+# sub-millisecond calls).
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
+export WATCHDOG_SECTION="recursion"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
@@ -160,12 +170,12 @@ nc_case() {
         return
     fi
     # shellcheck disable=SC2086
-    if ! $CC $GENCFLAGS -o "$d/t" "$d/gen.c" 2>"$d/cerr"; then
-        bad "[$label] the --no-captures artifact does not compile: $(head -1 "$d/cerr")"
+    if ! gen_cc "[$label] no-captures" $CC $GENCFLAGS -o "$d/t" "$d/gen.c"; then
+        bad "[$label] the --no-captures artifact does not compile: $(printf '%s' "$GEN_CC_LOG" | head -1)"
         return
     fi
     local got
-    got="$("$d/t" "$subj" 2>&1 | head -1)"
+    got="$(gen_run "[$label] no-captures" "$d/t" "$subj" 2>&1 | head -1)"
     if [ "$got" != "$want" ]; then
         bad "[$label] --no-captures answer is '$got', expected '$want'"
         return
@@ -183,12 +193,12 @@ nc_case() {
         return
     fi
     # shellcheck disable=SC2086
-    if ! $CC $GENCFLAGS -o "$d2/t" "$d2/gen.c" 2>"$d2/cerr"; then
-        bad "[$label] the SPLICED artifact does not compile: $(head -1 "$d2/cerr")"
+    if ! gen_cc "[$label] spliced" $CC $GENCFLAGS -o "$d2/t" "$d2/gen.c"; then
+        bad "[$label] the SPLICED artifact does not compile: $(printf '%s' "$GEN_CC_LOG" | head -1)"
         return
     fi
     local got2
-    got2="$("$d2/t" "$subj" 2>&1 | head -1)"
+    got2="$(gen_run "[$label] spliced" "$d2/t" "$subj" 2>&1 | head -1)"
     if [ "$got2" != "$want" ]; then
         bad "[$label] SPLICE/LINKAGE DISAGREE on '$subj': spliced '$got2', linked '$got'"
         return
@@ -217,10 +227,10 @@ if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx -
     bad "[depth] $DEPTH_PAT does not compile: $(head -1 "$d/err")"
 else
     # shellcheck disable=SC2086
-    if ! $CC $GENCFLAGS -o "$d/t" "$d/gen.c" 2>"$d/cerr"; then
-        bad "[depth] the artifact does not compile: $(head -1 "$d/cerr")"
+    if ! gen_cc "[depth]" $CC $GENCFLAGS -o "$d/t" "$d/gen.c"; then
+        bad "[depth] the artifact does not compile: $(printf '%s' "$GEN_CC_LOG" | head -1)"
     else
-        answer() { "$d/t" "$(python3 -c "print('a'*$1+'b'*$1)")" 2>&1 | head -1; }
+        answer() { gen_run "[depth] n=$1" "$d/t" "$(python3 -c "print('a'*$1+'b'*$1)")" 2>&1 | head -1; }
         # DOUBLING then BISECTION, not a linear walk: the reach is a capacity
         # and capacities are large. The doubling stops at 4096, which is well
         # past any value RX_RESUME_FRAMES can support at 2048 frames — a probe
@@ -352,8 +362,8 @@ run_arm() {
     local ncaps
     ncaps="$(grep -m1 '^#define RX_NCAPS' "$d/gen.h" | awk '{print $3}')"
     # shellcheck disable=SC2086
-    if ! $CC $GENCFLAGS -I"$d" -o "$d/t" "$BATCH" "$d/gen.c" 2>"$d/cerr"; then
-        echo "CC-FAIL"; head -5 "$d/cerr" >&2; return 1
+    if ! gen_cc "run_arm '$pat'" $CC $GENCFLAGS -I"$d" -o "$d/t" "$BATCH" "$d/gen.c"; then
+        echo "CC-FAIL"; printf '%s\n' "$GEN_CC_LOG" | head -5 >&2; return 1
     fi
     : > "$WORKDIR/cells"
     for f in "$SUBJDIR"/*; do
@@ -365,7 +375,7 @@ run_arm() {
             sp=$((sp + 1))
         done
     done
-    "$d/t" < "$WORKDIR/cells" > "$out" || return 1
+    gen_run "run_arm '$pat'" "$d/t" < "$WORKDIR/cells" > "$out" || return 1
     echo $((ncaps - 1))
 }
 
