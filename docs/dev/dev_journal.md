@@ -14618,3 +14618,13 @@ Run 2 totals (manager's read of final_test2.log): cases 26,814 passed /
 29 failed (all the K32 cell), checks 1,532 passed / 1 failed (the 45 s
 cap cell); only test-corpus and test-resource exited non-zero; mrl
 green. Merge review of lane/srFBc started on the branch as it stands.
+
+#### Thirty-ninth session, part 35 — FB merge review complete (2026-08-25 ~04:5x EDT)
+
+Manager's read of lane/srFBc at 88a22d1 (47 files +3461/−461 vs main),
+every r36 disposition verified on the branch (r36's verdict block):
+MERGE on the deliverable's arrival. The lane is running its fresh solo
+`make test-resource` (04:5x). Battery script for merged main written
+(scratchpad/mgr_battery.sh): mech PROCS=6 → make test → solo
+test-resource + counterk → make san, each detached with a real PID,
+strictly one at a time, log per stage.
