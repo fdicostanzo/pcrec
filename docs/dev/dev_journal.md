@@ -13982,3 +13982,13 @@ a structural check that names any unguarded sort; population counts
 stated on every population-deriving check). G also gave D42.2's
 "RX_NCAPS > 1 => VM" the dead-group exception on the same NAMED list,
 keeping `RX_NCAPS == ngroups + 1` unconditional.
+
+BOX-SHARING (cont., ~23:5x): pcrec-bench's requirements note is ADOPTED
+by Frank (pcrec-bench 8c34498, requirements.md v3); Frank ruled the
+bench-set format BLOCKS on [DD-13] with a NARROW scope (today's .rxt
+parsed as-is; per-sub-bench tags in a plain sidecar; no grammar). The
+inputs [DD-13b] must absorb (sub-bench directory model, the OUTCOME
+enum, per-engine VARIANTS with two ruled constraints, a REGIME and an
+OBJECTIVE per sub-bench) are pointed to from [DD-13]'s row (343d49e).
+pcrecdev2 runs one light writing lane (a JSON schema + validator);
+nothing heavy.
