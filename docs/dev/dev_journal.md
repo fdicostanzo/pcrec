@@ -13636,3 +13636,102 @@ indirect jump, "call-graph slots") — rephrased behaviourally before the
 merge (a blinded reader must not learn the implementation's vocabulary
 from the list of what it may not learn). Next: the cell
 (`scripts/mk_d27_cell.sh sr27 …`) and the blinded author (opus).
+
+ADDENDUM (part 13, ~20:3x): the D27 cell `sr27-cell` built from
+scripts/mk_d27_cell.sh (allowlist: the extract, the oracle chain, the two
+specimen patterns, testing.md, pcrec.h; build/ prebuilt in the delivery
+worktree sr27); the blinded author sr27 (opus) spawned with the Perl-arm
+rules. Three lanes live: srE (landing), sr27 (writing), and the F-merged
+san on main.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 14) — the D27 BLINDED CORPUS DELIVERED (sr27, opus): 200 blocks / 1,002 expectations, a Perl arm, four findings, K34
+
+sr27 delivered under sr27-cell/d27/ (copied into worktrees/sr27 at
+b2a8bb3, UNTRIAGED): 10 files, 200 blocks, 569 cases + 433 `g` lines =
+1,002 expectations, every one libpcre2 10.46's through sr_oracle.py; a
+generator whose INTENT is checked against the oracle (6 cells caught
+that did not test what the author thought); an independent checker; a
+two-arm features check that found a real corpus bug (`(?J)` needs
+`backrefs`, not only `modifiers`) and was sabotage-validated on 7
+planted faults; a PERL ARM — 414 cells run, 403 agree exactly, 71
+spellings perl refuses (no `\g<>` call spelling at all; no leading-zero
+forms — §2.4a is PCRE2-only), the design's predicted atomicity
+divergence MEASURED NEGATIVE, 6 divergence rows over 2 patterns (perl
+dies "Infinite recursion" on `^(a|(?1)a)$`; `\K` through a lookahead
+call). Disclosure honoured (CLAUDE.md + memory index injected, ignored).
+FOUR FINDINGS: (1) `\K` REACHED BY A CALL from inside a lookaround
+compiles and fires on 10.46 (the extract's phrasing was off; pcrec
+agrees — no defect); (2) the ceiling is n=342 MATCHES / 343 gives up
+(B+C's own number; the extract said "gives up at 342"); (3) K34 —
+pcrec `frames` where libpcre2 CONCLUDES nomatch on `(a|(?1)a)b`/"a",
+re-measured by the manager: 10.46 returns −52 for some same-position
+runaways and a clean nomatch for others, a rule this project has not
+characterised — 12 cells written as the finding; (4) pcrec ANSWERS
+where libpcre2 gives up (`((?1)?a)` on "a") — reported, not encoded.
+Every `gu` cell now carries a CLASS (`leftrec` = both engines decline;
+`capacity` = D73's ceiling only) asserted against the oracle. Acceptance
+run by the manager on the E-merged tree; triage corpus-wrong vs
+pcrec-wrong before any edit.
+
+ADDENDUM (part 14, ~20:3x): EARLY ACCEPTANCE of the D27 corpus on the
+F-merged tree (pre-E): 1,031 cells, 1,016 PASS, 15 FAIL — ALL 15 in
+sr_depth.rxt and ALL the same class: pcrec `frames` where libpcre2
+concludes NOMATCH on a runaway left recursion (K34): `(a|(?1)a)` on
+"bbb"; `((?1)a)` on "b"/""; `(?R)a` on "b"/""; `(a|(?1)a)b` and
+`(a|(?1)a)c` on "a"/"aa"/"aaa"/"b"/"". TRIAGE: 15 pcrec-wrong-by-
+capability (K34), 0 corpus-wrong — a blinded corpus of 1,031 cells with
+no corpus error on first contact, against the la27 precedent's 365.
+Four of the fifteen (empty-language roots `((?1)a)`, `(?R)a`) are
+[DD-14.EMPTY]'s and flip to nomatch when wave E lands; the eleven
+`(a|(?1)a)`-shaped ones (root minw 1) stay K34. Landing plan: the K34
+cells park in tests/known_fail/k34_leftrec_giveup.rxt (a confirmed pcrec
+defect with a scheduled home — known_fail's original purpose; the
+ratchet fires when K34 closes); the rest of d27/ rides make test.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 15) — WAVE E DELIVERED (lane/srE 78e578f): the EMPTY site corrected by measurement, S157 closed by a deleted match, the four-axis gate; sent back for its rebase
+
+srE (opus, 8 commits) delivered ~20:5x. [DD-14.EMPTY]: instrumented
+`pcrec_minw(root)` twice — at engine selection the three empty-language
+siblings read 1/1/0 (the arena zero: `u.call.minw` is filled by
+pcrec_callgraph_build, which runs AFTER pcrec_select_engine), in the
+emitter 2^40 — so the plan row's site was wrong; the mechanism landed in
+the emitter's search-entry prologue as a width comparison against
+RX_VM_ROOT_MINW (saturation and genuine infinity meet at the ceiling and
+cannot be told apart; an unconditional return would be a miscompile on a
+≥2^40-byte subject), emitted only for roots at the ceiling (four corpus
+patterns, all call-bearing; identity holds). S157 CLOSED AS DETECTED:
+B+C's search for the predicted HANG stopped one step early — under the
+sabotage the wrongly possessified quantifier is the `a?` INSIDE the
+callee (prefix-free by an emptied call first-set) and the consequence is
+a DELETED MATCH (`^(a?)(?1)+a$` on "a": clean (0,1), sabotaged NOMATCH);
+the row flipped via the SAB_EXPECT mechanism, 20/6 now. The prefilter
+predicate was B+C's (S165); E fixed the LISTING (a call-bearing pattern
+under `auto` named a flag the caller had not passed) and added
+prefilter.rxt with §8.2's counterexample through all three doorways,
+UNANCHORED (an anchored cell never asks the prefilter). The four-axis
+gate: 8/0, 2575 patterns, 136 call-bearing / 2439 call-free, ctl 136/136
+on every axis, raw AND stripped compared with `stamp-moved` a failure,
+failing direction demonstrated (one byte → every axis red, the four
+positive controls correctly still green). make test 25,281/0, strict,
+anchors 164/174, 80 rows unexpected 0. NOT YET MERGEABLE: its base
+predates wave F; sent back to rebase (gate script + gen_corpus.py
+conflicts), re-run the gate and one make test, resend.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 16) — WAVE E MERGED (85361cd): the module's build waves A→F are ALL on main; G and the D27 landing open
+
+srE rebased onto post-F main (two conflicts: gen_corpus.py's file list —
+additive; tests/recursion/CLAUDE.md — LB's closure of the parked cells
+superseded E's stale bullet, main won) and re-validated: gate 8/0 on
+2610 patterns (168 call-bearing after F's DEFINE cells moved into the
+must-refuse bucket — the gate working, not drifting; classifier
+self-test grown to 22 with F's arm as the subject), make test 25,463/0
+alone, strict, anchors 168/178; the 80 rows carried from the pre-rebase
+head with the reasoning stamped in tests/mech/CLAUDE.md. Merged at
+85361cd: smoke 6/6, anchors resolve, strict clean, `^((?1)a)$` emits
+RX_VM_ROOT_MINW. EVERY BUILD WAVE OF §11 (A, A2, B+C, D, E, F) PLUS LB
+AND EMPTY IS NOW ON MAIN; the corpus reads 25,463 + the D27 corpus's
+1,031 to come. Battery on the E-merged tree chained (test → resource
+solo → san). Opening: wave G (opus, brief_srG.md — splice +
+dead-capture elision; the bar is the email specimen's byte-identity)
+and the D27 landing (sonnet, brief_sr27land.md — K34 cells parked under
+the ratchet, d27/ rides make test).

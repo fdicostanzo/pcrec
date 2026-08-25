@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 # tests/codegen/run_recursion_identity.sh — [DD-14]'s BYTE-IDENTITY GATE,
-# THE SEED. Design subroutines_design.md §9.1/§11 wave E charters the FULL
-# four-axis gate (default, --engine=vm, -fno-prefilter, --no-captures) with
-# its own floors and its second (SPLICE-vs-LINKAGE) control; that is wave E's
-# deliverable and does not exist yet. This file is the DEFAULT-axis half of
-# it, landed at wave D so the claim has a standing home in the tree rather
-# than living only in a lane's own scratch run — wave E is expected to GROW
-# this file to the other three axes and the second control, not replace it.
+# GROWN TO ITS FOUR AXES at wave E (design subroutines_design.md §9.1, §11
+# wave E). Wave D landed the DEFAULT-axis seed with the note that wave E was
+# expected to GROW this file rather than replace it; this is that growth —
+# the seed's reference, pin, classifier and positive control are unchanged in
+# kind, and what wave E added is the other three axes, the D37 stamp strip,
+# the per-axis positive control, and the classifier's own self-test.
+#
+# THE SECOND CONTROL (§9.2's SPLICE-vs-LINKAGE `A == B` over the corpus) is
+# NOT here and is not wave E's: it needs the `-fno-splice-calls` axis §6.3's
+# linkage rule introduces, which is wave G's. §9.3's sabotage rows carry that
+# load until then, S-SR17 included.
 #
 # THE CLAIM. A CALL-FREE pattern's emitted C is byte-identical before and
 # after module `recursion`'s two doorways (the `(?` family, wave B+C; the
@@ -54,6 +58,48 @@
 # tree — so a run reporting zero differing AND zero refusal mismatches has
 # either lost its call-bearing population or is comparing two builds of the
 # same tree. Both populations are asserted EXACT, from a run.
+#
+# FOUR AXES (§9.1, mirroring the [M6.6.2] ASK 4 ruling because the reasoning
+# transfers exactly):
+#
+#   default          the standard first.
+#   --engine=vm      the standard second.
+#   -fno-prefilter   §8.2 forces the prefilter OFF for a CALL-BEARING pattern,
+#                    and that is a touch on `select_engine.c`, which EVERY
+#                    pattern goes through. The axis that pins the prefilter
+#                    constant is the one that localises a wrong predicate: a
+#                    conjunct that over-fires (forcing the prefilter off for
+#                    call-FREE patterns too) moves bytes on the default axis
+#                    and moves NOTHING here, and the pair of readings names
+#                    the failure where either alone would only report it.
+#   --no-captures    §4.3 edits `pcrec_bref_mark`'s union, which is
+#                    `--no-captures`' own machinery (P10) — the
+#                    backrefs-precedent axis, and here it is not ceremonial:
+#                    a mark-set edit that OVER-marks makes `--no-captures`
+#                    keep slots it used to delete, and only this axis sees it.
+#
+# THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
+# treatment and `tests/cli` case10's precedent before it. THE FILTER IS
+# ASSERTED, NOT TRUSTED: exactly three stamp lines must be removed from each
+# side, so a filter that silently matched nothing (leaving a difference in) or
+# matched too much (hiding a real one) is a named failure rather than a
+# quieter sweep. AND THE STRIP IS NOT A BLIND SPOT HERE: the comparison is
+# made TWICE — raw and stripped — and `stamp-moved` counts the pairs that
+# differ RAW and agree STRIPPED, i.e. exactly the artifacts whose only
+# difference is the stamp. It is 0 today (MEASURED at wave E) because module
+# `recursion`'s registry rows PREDATE the module — P4 measured all 26 as
+# VM_ONLY before any producer existed — so `render_modules`' first-row walk
+# never moved the name, unlike `backrefs`, whose two new `RK_ESC 'g'` rows DID
+# move it and whose gate therefore had to drop the stamp entirely. A wave that
+# legitimately moves the stamp (wave F adds registry rows) will see this
+# number go nonzero and must say so in its commit; it is a FAILURE here rather
+# than a note, because "the stamp moved" is a claim that deserves a reader.
+#
+# THE POSITIVE CONTROL RUNS ON EVERY AXIS, not once. §9.2's control is that
+# the pre-module reference REFUSES every call-bearing pattern, and "refuses"
+# is an answer the axis flags could in principle change — `--no-captures` and
+# `-fno-prefilter` both reach `select_engine.c`, where a refusal lives.
+# Running it once would pin the default axis and assume the other three.
 #
 # THE CLASSIFIER MASKS CHARACTER CLASSES (design §9.1's own rule:
 # `tests/backrefs/octal_class.rxt`'s `^[\g<1>]$` is not a call) and covers
@@ -140,8 +186,21 @@ fi
 # Both builds emit SELF-CONTAINED C to stdout: writing to two different paths
 # would put a different `#include "<name>.h"` line in each and every
 # comparison would "differ" for a reason unrelated to this module.
-gen_a() { "$PCREC" --features all -p rx -o - -- "$1" 2>/dev/null; }
-gen_b() { "$REF"   --features all -p rx -o - -- "$1" 2>/dev/null; }
+#
+# THE D37 STAMP FILTER, and it is ASSERTED rather than trusted — see the
+# header. `stamp_count` must report exactly 3 on BOTH sides of every
+# comparison; `stamp_strip` removes exactly those lines.
+stamp_strip() {
+    grep -vE '^/\* Feature set: |^#define PCREC_FEATURE_SET |^#define PCREC_FEATURE_MODULES '
+}
+stamp_count() {
+    grep -cE '^/\* Feature set: |^#define PCREC_FEATURE_SET |^#define PCREC_FEATURE_MODULES ' \
+        || true
+}
+# shellcheck disable=SC2086
+gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+# shellcheck disable=SC2086
+gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 
 # ---- the corpus ------------------------------------------------------------
 PATFILE="$WORKDIR/patterns"
@@ -230,6 +289,58 @@ def is_call(pat):
             return True
     return False
 
+# ---- THE CLASSIFIER'S OWN SELF-TEST, run before it classifies anything.
+# design §0.3 item 9 is the census's OWN measured instrument defect: a naive
+# `\g<` scan counts tests/backrefs/octal_class.rxt's `^[\g<1>]$`, where the
+# class doorway makes those four bytes literal escapes, as a call. The
+# classifier inherits the defect unless it masks classes, and "it masks
+# classes" is a claim about code that must be exercised rather than read. The
+# `(?&x)`-inside-a-class row is the SECOND doorway's version of the same
+# defect, which the first draft of this list did not have.
+#
+# The FAIL-SAFE rows are here for the opposite reason: they assert that an
+# unrecognised `(?` tail lands in the CALL bucket, so a future spelling this
+# classifier has never seen costs a pattern from the identity population
+# rather than being admitted to it wrongly.
+_SELFTEST = [
+    # (pattern, expected is_call, why)
+    (r"^[\g<1>]$",      False, "class doorway: four literal escapes, NOT a call (design §0.3 item 9, the census's own defect)"),
+    (r"^[(?&x)]$",       False, "a `(?&x)` INSIDE a class is five class members, not a call"),
+    (r"^[\g'1']$",      False, "the quoted backslash-g spelling is literal inside a class too"),
+    (r"a[b]\g<1>",       True,  "a REAL backslash-g call after a class has closed — masking must not swallow the rest of the pattern"),
+    (r"(a)(?1)",         True,  "the numeric call"),
+    (r"(?R)",            True,  "the whole-pattern call: `R` is NOT in the inline-option letter set"),
+    (r"(?<n>a)(?&n)",    True,  "the by-name call"),
+    (r"(?P<n>a)(?P>n)",  True,  "the alpha by-name call"),
+    (r"(a)(?-1)",        True,  "the relative call — `-` followed by a DIGIT is not an option run's unset half"),
+    (r"(a)\g<1>",        True,  "the backslash-g numeric tail"),
+    (r"(?i-x:a)",        False, "an inline option run WITH an unset half is not a call"),
+    (r"(?:a)",           False, "non-capturing"),
+    (r"(?>a)",           False, "atomic group — module atomic-groups' doorway, the one this classifier's first draft got wrong"),
+    (r"(?=a)(?!b)(?<=c)(?<!d)", False, "the four lookaround doorways"),
+    (r"(?<name>a)(?'q'b)", False, "named groups, both spellings"),
+    (r"(?P=n)",          False, "backref by name — module backrefs' doorway"),
+    (r"(?#comment)",     False, "a comment"),
+    (r"(?(1)a|b)",       False, "an ordinary conditional -- module `conditionals`', not this module's"),
+    (r"(?(DEFINE)abc)^x$", True, "[wave F] `(?(DEFINE)` is module recursion's (D71 item 4), so a DEFINE-bearing pattern with NO CALL in it still belongs in the bucket the reference must REFUSE -- the negative lookahead's whole point, and the row that pins it"),
+    (r"(?(DEFINE)(?<g>a))(?&g)", True, "[wave F] DEFINE plus a real call: call-bearing twice over, and it must not be rescued into the call-free bucket by the conditional arm"),
+    (r"^[(?(DEFINE)a)]$", False, "a `(?(DEFINE)` INSIDE a class is class members -- the class mask has to reach wave F's arm too, or the newest doorway reintroduces the census's oldest defect"),
+    (r"(?~x)",           True,  "FAIL SAFE: an unrecognised `(?` tail is classified call-bearing"),
+]
+_bad = []
+for _pat, _want, _why in _SELFTEST:
+    _got = is_call(_pat)
+    if _got != _want:
+        _bad.append("  %-24r classified %s, want %s -- %s"
+                    % (_pat, "CALL" if _got else "call-free",
+                       "CALL" if _want else "call-free", _why))
+if _bad:
+    sys.stderr.write("classifier self-test FAILED on %d of %d rows:\n%s\n"
+                     % (len(_bad), len(_SELFTEST), "\n".join(_bad)))
+    sys.exit(2)
+print("recursion-identity: classifier self-test %d/%d rows"
+      % (len(_SELFTEST), len(_SELFTEST)))
+
 call, free = [], []
 for line in open(src):
     p = line.rstrip("\n")
@@ -253,61 +364,113 @@ if [ "$nc" -lt 60 ]; then
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 
-# ---- THE POSITIVE CONTROL: the reference REFUSES every call-bearing pattern
-ctl_ok=0; ctl_bad=0
-while IFS= read -r pat; do
-    [ -n "$pat" ] || continue
-    if "$REF" --features all -p rx -o - -- "$pat" >/dev/null 2>&1; then
-        ctl_bad=$((ctl_bad + 1))
-        [ "$ctl_bad" -le 5 ] && echo "  CONTROL: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
+# ---- THE POSITIVE CONTROL and THE SWEEP, ONE AXIS AT A TIME ---------------
+#
+# The control and the sweep are ONE function because they are one claim per
+# axis: "on THIS invocation the reference is a different compiler (it refuses
+# every call-bearing pattern) AND the two agree byte for byte on every
+# call-free one". Splitting them would let a run report identity on an axis
+# whose control was never taken.
+control() { # control <label> <extra pcrec args>
+    local label="$1" args="$2"
+    local ctl_ok=0 ctl_bad=0
+    while IFS= read -r pat; do
+        [ -n "$pat" ] || continue
+        # shellcheck disable=SC2086
+        if "$REF" --features all -p rx $args -o - -- "$pat" >/dev/null 2>&1; then
+            ctl_bad=$((ctl_bad + 1))
+            [ "$ctl_bad" -le 5 ] && echo "  CONTROL[$label]: the PRE-MODULE compiler ACCEPTED '$pat'" >&2
+        else
+            ctl_ok=$((ctl_ok + 1))
+        fi
+    done < "$WORKDIR/call"
+    if [ "$ctl_bad" -eq 0 ] && [ "$ctl_ok" -eq "$nc" ]; then
+        ok "[$label] positive control: the pre-module reference REFUSES all $ctl_ok call-bearing patterns — so it really is a different compiler, and a zero-difference result below is a measurement rather than a build compared against itself"
     else
-        ctl_ok=$((ctl_ok + 1))
+        bad "[$label] positive control: the pre-module reference compiled $ctl_bad of $nc call-bearing patterns (ctl_ok=$ctl_ok). Either the pin is wrong or the corpus split is misclassifying — in both cases the identity sweep below is comparing two builds that agree because they are the same"
     fi
-done < "$WORKDIR/call"
-if [ "$ctl_bad" -eq 0 ] && [ "$ctl_ok" -eq "$nc" ]; then
-    ok "positive control: the pre-module reference REFUSES all $ctl_ok call-bearing patterns — so it really is a different compiler, and a zero-difference result below is a measurement rather than a build compared against itself"
-else
-    bad "positive control: the pre-module reference compiled $ctl_bad of $nc call-bearing patterns. Either the pin is wrong or the corpus split is misclassifying — in both cases the identity sweep below is comparing two builds that agree because they are the same"
-fi
+}
 
-# ---- THE SWEEP, default axis only (wave E adds the other three) ----------
-same=0; diff=0; refused=0; mism=0
-: > "$WORKDIR/diff.default"
-while IFS= read -r pat; do
-    [ -n "$pat" ] || continue
-    a="$(gen_a "$pat")"
-    b="$(gen_b "$pat")"
-    if [ -z "$a" ] && [ -z "$b" ]; then refused=$((refused + 1)); continue; fi
-    if [ -z "$a" ] || [ -z "$b" ]; then
-        mism=$((mism + 1))
-        printf 'REFUSAL MISMATCH %s: subject=%s reference=%s\n' "$pat" \
-            "$([ -n "$a" ] && echo compiled || echo refused)" \
-            "$([ -n "$b" ] && echo compiled || echo refused)" \
-            >> "$WORKDIR/diff.default"
-        continue
+sweep() { # sweep <label> <extra pcrec args>
+    local label="$1" args="$2"
+    local same=0 diff=0 refused=0 mism=0 stampbad=0 stampmoved=0
+    : > "$WORKDIR/diff.$label"
+    while IFS= read -r pat; do
+        [ -n "$pat" ] || continue
+        local a b na nb sa sb
+        a="$(gen_a "$pat" "$args")"
+        b="$(gen_b "$pat" "$args")"
+        if [ -z "$a" ] && [ -z "$b" ]; then refused=$((refused + 1)); continue; fi
+        if [ -z "$a" ] || [ -z "$b" ]; then
+            mism=$((mism + 1))
+            printf 'REFUSAL MISMATCH %s: subject=%s reference=%s\n' "$pat" \
+                "$([ -n "$a" ] && echo compiled || echo refused)" \
+                "$([ -n "$b" ] && echo compiled || echo refused)" \
+                >> "$WORKDIR/diff.$label"
+            continue
+        fi
+        na="$(printf '%s\n' "$a" | stamp_count)"
+        nb="$(printf '%s\n' "$b" | stamp_count)"
+        if [ "$na" -ne 3 ] || [ "$nb" -ne 3 ]; then
+            stampbad=$((stampbad + 1))
+            printf 'STAMP FILTER %s: subject %s lines, reference %s lines, want 3 each\n' \
+                "$pat" "$na" "$nb" >> "$WORKDIR/diff.$label"
+            continue
+        fi
+        if [ "$a" = "$b" ]; then
+            # Identical RAW, so identical stripped: the strongest reading, and
+            # the one every pattern in the tree gives today.
+            same=$((same + 1))
+            continue
+        fi
+        sa="$(printf '%s\n' "$a" | stamp_strip)"
+        sb="$(printf '%s\n' "$b" | stamp_strip)"
+        if [ "$sa" = "$sb" ]; then
+            # Differs RAW, agrees STRIPPED: the difference is the D37 stamp and
+            # nothing else. That is the RULED comparison's pass, and it is
+            # counted separately rather than folded into `same`, because "the
+            # stamp moved" is a claim a reader has to see (header).
+            stampmoved=$((stampmoved + 1))
+            printf 'STAMP MOVED %s\n' "$pat" >> "$WORKDIR/diff.$label"
+        else
+            diff=$((diff + 1))
+            printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
+        fi
+    done < "$WORKDIR/free"
+    echo "recursion-identity[$label]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    if [ "$stampbad" -ne 0 ]; then
+        bad "[$label] the D37 stamp filter matched the wrong number of lines on $stampbad artifacts — it must remove EXACTLY three, so a filter that stopped matching (leaving a difference in) or started over-matching (hiding one) says so"
+        head -5 "$WORKDIR/diff.$label" >&2
     fi
-    if [ "$a" = "$b" ]; then
-        same=$((same + 1))
-    else
-        diff=$((diff + 1))
-        printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.default"
+    if [ "$stampmoved" -ne 0 ]; then
+        bad "[$label] $stampmoved call-free patterns differ ONLY in D37's three feature-stamp lines. The RULED comparison (§9.1: byte-identical past the stamp) still passes on them, but module \`recursion\`'s registry rows PREDATE the module, so nothing in this module has any business moving \`render_modules\`' first-row walk — a wave that legitimately moves it (wave F adds rows) must say so in its commit and update this check's header:"
+        head -10 "$WORKDIR/diff.$label" >&2
     fi
-done < "$WORKDIR/free"
-echo "recursion-identity[default]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism"
-if [ "$mism" -ne 0 ]; then
-    bad "[default] $mism call-FREE patterns are accepted by one build and refused by the other. Module recursion must not change what pcrec ACCEPTS on a pattern with no call construct in it:"
-    head -10 "$WORKDIR/diff.default" >&2
-fi
-if [ "$diff" -ne 0 ]; then
-    bad "[default] $diff call-free patterns emit DIFFERENT bytes for a reason no ruling has recorded:"
-    head -20 "$WORKDIR/diff.default" >&2
-fi
-if [ "$same" -lt 700 ]; then
-    bad "[default] only $same patterns compared identical (floor 700) — the sweep is not populated"
-fi
-if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$same" -ge 700 ]; then
-    ok "[default] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches"
-fi
+    if [ "$mism" -ne 0 ]; then
+        bad "[$label] $mism call-FREE patterns are accepted by one build and refused by the other. Module recursion must not change what pcrec ACCEPTS on a pattern with no call construct in it:"
+        head -10 "$WORKDIR/diff.$label" >&2
+    fi
+    if [ "$diff" -ne 0 ]; then
+        bad "[$label] $diff call-free patterns emit DIFFERENT bytes for a reason no ruling has recorded:"
+        head -20 "$WORKDIR/diff.$label" >&2
+    fi
+    if [ "$same" -lt 700 ]; then
+        bad "[$label] only $same patterns compared identical (floor 700) — the sweep is not populated"
+    fi
+    if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$stampbad" -eq 0 ] \
+       && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ]; then
+        ok "[$label] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches"
+    fi
+}
+
+# THE FOUR AXES (§9.1). Each takes its own positive control first: "refuses"
+# is an answer the axis flags could in principle change, since `--no-captures`
+# and `-fno-prefilter` both reach `select_engine.c` where a refusal lives.
+for axis in "default:" "vm:--engine=vm" "noprefilter:-fno-prefilter" "nocaptures:--no-captures"; do
+    label="${axis%%:*}"; flags="${axis#*:}"
+    control "$label" "$flags"
+    sweep   "$label" "$flags"
+done
 
 echo
 echo "checks passed: $pass"

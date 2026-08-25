@@ -881,22 +881,92 @@ ATOMICITY = [
 ]
 
 # ===========================================================================
+# prefilter.rxt -- SS8.2: erasing a call is a DIFFERENT language, so the
+# hybrid's DFA prefilter is OFF for a call-bearing pattern
+# ===========================================================================
+PREFILTER = [
+    ("THE COUNTEREXAMPLE, AND IT IS THE DESIGN'S OWN (SS8.2). `a(?1)b` with "
+     "group 1 = `x` matches \"axb\"; ERASE the call and `ab` is left, which "
+     "does not match \"axb\" at all. So a prefilter built from the "
+     "call-ERASED pattern is not a loose superset of the true language -- it "
+     "is a DIFFERENT language, and its rejection would be a FALSE NEGATIVE, "
+     "the one thing a prefilter may never produce. `select_engine.c` "
+     "therefore forces `fit.prefilter` OFF whenever `pcrec_has_call(root)`, "
+     "and `-fprefilter` REFUSES rather than overriding (SS9.3 S-SR17 / "
+     "sabotage row S165). **THESE CELLS ARE UNANCHORED ON PURPOSE**: the "
+     "prefilter exists to find a candidate START, so an anchored pattern "
+     "would never ask it anything and the cell would go green under the "
+     "sabotage it exists to catch.", [
+        B(r"(?:(x)){0}a(?1)b", [('m', "axb"), ('n', "ab"),
+                                ('m', "zzzzaxbzzzz"), ('n', "zzzzabzzzz")],
+          RC, groups=1,
+          note="THE PAIR IS THE TEST, not either cell alone. \"axb\" MUST "
+               "match (the erased machine skips it -- the false negative) "
+               "and \"ab\" MUST NOT (the erased machine accepts it). A "
+               "prefilter built from `ab` answers both backwards. The two "
+               "LONG subjects are the same pair with SPARSE candidate "
+               "starts, which is the shape SS8.3 measured the prefilter to "
+               "be worth 21x-350x on -- so they are also the cells that "
+               "would notice a wave-G approximation that got the window "
+               "END wrong (SS8.3's stated hazard, lookaround_design SS5.4's "
+               "8-of-45 window-end violations)."),
+        B(r"(?:(x)){0}a\g<1>b", [('m', "axb"), ('n', "ab")], RC, groups=1,
+          note="THE SAME COUNTEREXAMPLE THROUGH THE OTHER DOORWAY. "
+               "`pcrec_has_call` is an AST predicate, not a syntax scan, so "
+               "the `\\g<1>` spelling must reach the identical verdict -- "
+               "and a predicate wired to only one of the two ports would "
+               "pass the block above and fail this one."),
+        B(r"(?:(?<w>x)){0}a(?&w)b", [('m', "axb"), ('n', "ab")], RCN,
+          groups=1,
+          note="AND THROUGH THE BY-NAME DOORWAY, for the same reason."),
+    ]),
+    ("THE CONTRAST: an ordinary NON-recursive callee is still a call, and "
+     "still gets no prefilter. SS8.3's wave-G splice would make THIS half of "
+     "the population prefilterable again (an acyclic callee's NFA fragment "
+     "splices EXACTLY, no approximation), which is why the acyclic case is "
+     "pinned separately from the recursive one -- a wave-G regression that "
+     "spliced wrongly lands here first.", [
+        B(r"(cat)xcat", [('m', "cat"), ('n', "dogxcat"),
+                         ('m', "zzcatxcatzz")], "", groups=1,
+          note="THE INLINED EQUIVALENT (SS8.3 row R09), call-FREE and "
+               "therefore prefilterABLE today -- the control that says the "
+               "cells below differ from it by the CALL and by nothing "
+               "else."),
+        B(r"(cat)x(?1)", [('m', "catxcat"), ('n', "catxdog"),
+                          ('m', "zzcatxcatzz")], RC, groups=1,
+          note="THE CALL FORM of the row above. Same language, no prefilter "
+               "-- and SS8.3 MEASURED the difference at 249x on a 1 MB "
+               "subject with sparse candidate starts. The cost is real, is "
+               "stated, and is wave G's to recover; the answers here must "
+               "not move when it is."),
+    ]),
+]
+
+# ===========================================================================
 # leftrec.rxt -- SS3.3: no compile-time refusal; the depth capacity gives up
 # ===========================================================================
 LEFTREC = [
-    ("THE GIVE-UP CELLS: direct, indirect and nullable-prefix left "
+    ("THE EMPTY-LANGUAGE CELLS: direct, indirect and nullable-prefix left "
      "recursion, each with no non-recursive branch reachable on the given "
-     "subject (design SS3.3/SS5.6/SS9.3 S-SR8). `gu frames` per D71.1 -- "
-     "the default artifact's give-up for a deep/runaway call is "
-     "PCREC_ERR_FRAMES; PCREC_ERR_RECURSE only exists under the diagnostic "
-     "generation axis, unbuilt here.", [
-        GU(r"^((?1)a)$", "a", "frames", RC,
+     "subject (design SS3.3/SS5.6/SS9.3 S-SR8). ALL THREE ARE RULED "
+     "NOMATCH, not give-ups, and that uniformity is [DD-14.EMPTY]'s whole "
+     "content: SS4.4b's fixpoint gives every one of them minw = INFINITY at "
+     "the ROOT, and wave E made the search entry answer NOMATCH on that "
+     "before pushing a frame. At wave B+C the first two read `gu frames` "
+     "and the third read `n`, decided by whether the pattern happened to "
+     "carry a quantifier for the MRL bound to ride on. A `gu frames` cell "
+     "is still the right expectation for a genuinely RUNAWAY shape WITH a "
+     "base case (see quantified.rxt's `^(?R)*$`), where the language is "
+     "not empty and no width bound can rule the subject out.", [
+        GU(r"^((?1)a)$", "a", None, RC,
+           ruling="design SS4.4b + SS12 P-12, landed as [DD-14.EMPTY] in wave E. This cycle has NO BASE CASE, so SS4.4b's Kleene-from-infinity fixpoint over the call graph gives its callee minw = INFINITY, and P-12 RULES that infinity is REACHABLE, is a LEGAL COMPILE, and means the language is EMPTY. Wave E made that ruling UNIFORM: `<prefix>_search` compares the remaining subject against the ROOT's minimum width and answers NOMATCH before a single frame is pushed (the artifact stamps it, `RX_VM_ROOT_MINW`). BEFORE wave E this cell read `gu frames`, and the reason was an ACCIDENT OF SHAPE rather than a fact about recursion: the MRL bound had to be emitted somewhere, its sibling `^(a?(?1)b)$` held a `a?` quantifier to carry one and this cell held no quantifier at all, so one empty language answered in constant time and the other ran until the frame buffer gave up. MEASURED at wave E: `pcrec_minw(root)` is PCREC_MINW_MAX (2^40) on ALL THREE siblings once `pcrec_callgraph_build` has run. libpcre2 10.46 spends its own nested-recursion guard (rc -52) to reach the same refusal; SS5.9 scores the pair 'agreed in kind' and SS5.6 records that on a runaway a BOUNDED answer is strictly better than 10.46's, whose rc -52 grows QUADRATICALLY in the subject. A give-up is pcrec's own artifact behaviour and never an oracle fact, which is why this expectation could move without the oracle moving.",
            note="DIRECT: group 1's body is `(?1)a` with no alternative -- "
                 "the call is unconditional, so no subject terminates it. "
                 "SUBJECT CHOICE: the shortest legal one, \"a\" -- the "
                 "runaway is reachable at ANY length, so there is nothing "
                 "to gain from a longer one."),
-        GU(r"^(?:(?<p>(?&q)a)){0}(?:(?<q>(?&p)b)){0}(?&p)$", "ab", "frames", RCN,
+        GU(r"^(?:(?<p>(?&q)a)){0}(?:(?<q>(?&p)b)){0}(?&p)$", "ab", None, RCN,
+           ruling="design SS4.4b + SS12 P-12, landed as [DD-14.EMPTY] in wave E. This cycle has NO BASE CASE, so SS4.4b's Kleene-from-infinity fixpoint over the call graph gives its callee minw = INFINITY, and P-12 RULES that infinity is REACHABLE, is a LEGAL COMPILE, and means the language is EMPTY. Wave E made that ruling UNIFORM: `<prefix>_search` compares the remaining subject against the ROOT's minimum width and answers NOMATCH before a single frame is pushed (the artifact stamps it, `RX_VM_ROOT_MINW`). BEFORE wave E this cell read `gu frames`, and the reason was an ACCIDENT OF SHAPE rather than a fact about recursion: the MRL bound had to be emitted somewhere, its sibling `^(a?(?1)b)$` held a `a?` quantifier to carry one and this cell held no quantifier at all, so one empty language answered in constant time and the other ran until the frame buffer gave up. MEASURED at wave E: `pcrec_minw(root)` is PCREC_MINW_MAX (2^40) on ALL THREE siblings once `pcrec_callgraph_build` has run. libpcre2 10.46 spends its own nested-recursion guard (rc -52) to reach the same refusal; SS5.9 scores the pair 'agreed in kind' and SS5.6 records that on a runaway a BOUNDED answer is strictly better than 10.46's, whose rc -52 grows QUADRATICALLY in the subject. A give-up is pcrec's own artifact behaviour and never an oracle fact, which is why this expectation could move without the oracle moving.",
            note="INDIRECT: p calls q calls p, a two-node cycle with no "
                 "non-recursive branch on either side. SUBJECT CHOICE: "
                 "\"ab\" -- design SS3.3's own L2 measurement (`out/"
@@ -925,17 +995,20 @@ LEFTREC = [
                 "FIRST item' misses this shape. SUBJECT CHOICE: \"ab\" -- "
                 "design SS3.3's own L3 measurement uses this exact "
                 "subject for the identical pattern. "
-                "**AND NOTE WHAT THIS CELL DOES NOT SHARE WITH ITS TWO "
-                "SIBLINGS ABOVE.** All three have an EMPTY language, but "
-                "only this one answers in constant time: the MRL bound has "
-                "to be EMITTED somewhere, and the `a?` quantifier is the "
-                "only place in the three that carries one. The siblings "
-                "give up instead -- so today the class answers two ways "
-                "depending on whether the pattern happens to hold a "
-                "quantifier, a shape that has nothing to do with recursion. "
-                "That non-uniformity is a REPORTED FOLLOW-UP (root-level "
-                "minw = infinity answered at the search entry, before any "
-                "frame is pushed), NOT something wave B+C implemented."),
+                "**AND WHAT IT NO LONGER FAILS TO SHARE WITH ITS TWO "
+                "SIBLINGS ABOVE.** All three have an EMPTY language. At wave "
+                "B+C only this one answered in constant time, because the "
+                "MRL bound has to be EMITTED somewhere and the `a?` "
+                "quantifier was the only place in the three that carried "
+                "one; the siblings gave up instead, so the class answered "
+                "two ways depending on whether the pattern happened to "
+                "hold a quantifier -- a shape with nothing to do with "
+                "recursion. [DD-14.EMPTY] (wave E) removed that "
+                "non-uniformity at its root: `<prefix>_search` now "
+                "compares the remaining subject against the ROOT's "
+                "minimum width, so all three answer NOMATCH before a "
+                "frame is pushed and this cell is no longer the lucky "
+                "one."),
     ]),
     ("THE CELL THAT MUST MATCH (design SS3.3, L5b): 199 nested "
      "recursions, every one entered at offset 0 -- refusing this would be "
@@ -1514,6 +1587,58 @@ SLOTFAMILIES = [
 # quantified.rxt -- SS2.6: a call is an ordinary repeatable item
 # ===========================================================================
 QUANTIFIED = [
+    # [DD-14 wave E] S157's ANSWER-LEVEL WITNESS, and finding it is what
+    # closed the row. Wave B+C landed S157 as expected-UNDETECTED with a
+    # measurement: `(?&g)*+`, the shape SS9.3 predicted the hang on, does not
+    # go through possessify at all (parse.c desugars the possessive SUFFIX to
+    # A_ATOMIC(A_REP) and `vm_lifts` declines on the nullable fixpoint, which
+    # is S156's arm), so the row's own sabotage had no observable subject and
+    # the corpus scored 0fail with BOTH possessify arms removed.
+    #
+    # THE PATH THE SEARCH HAD MISSED IS THE OTHER DIRECTION. possessify.c
+    # governs the AUTOMATIC possessification of a NON-possessive quantifier,
+    # and the quantifier it wrongly possessifies under the sabotage is not the
+    # one over the call at all -- it is the `a?` INSIDE THE CALLEE, made to
+    # look prefix-free by a call whose first set has been emptied. MEASURED
+    # on the sabotaged build: `^(a?)(?1)+a$` stamps RX_VM_STRATS 0x3 (the
+    # POSSESSIVE bit joins BACKTRACKING, 0x2 on the shipped build) and answers
+    # NOMATCH on "a", where the shipped build and libpcre2 both match (0,1) --
+    # `(a?)` must give its `a` back so the trailing literal can have it, and a
+    # possessified `a?` cannot.
+    ("AUTOMATIC POSSESSIFICATION MUST NOT REACH ACROSS A CALL (D71 item 6, "
+     "design SS4.4a site 21, sabotage row S157). These are ORDINARY greedy "
+     "quantifiers -- no `+` suffix anywhere -- and the question is whether "
+     "the optimiser turns the callee's own `a?` possessive on the strength "
+     "of what it thinks follows the CALL. It must not: a call's first set is "
+     "widened to every byte and the position automaton declines outright, "
+     "precisely so that the callee is never narrowed on account of a call "
+     "site. THE BACKTRACK IS THE TEST -- each cell needs `(a?)` to GIVE ITS "
+     "`a` BACK so the trailing literal can have it, which a possessified "
+     "`a?+` cannot do.", [
+        B(r"^(a?)(?1)+a$", [('m', "a"), ('m', "aa"), ('m', "aaa"),
+                            ('n', "b")], RC, groups=1,
+          note="THE ROW'S DETECTOR. On \"a\": `(a?)` takes the `a`, the "
+               "`(?1)+` matches empty, the trailing `a` has nothing left "
+               "and the match must BACK UP into group 1. MEASURED under "
+               "sabotage S157: nomatch."),
+        B(r"^(a?)(?1){2}a$", [('m', "a"), ('m', "aaa"), ('n', "b")],
+          RC, groups=1,
+          note="THE SAME BACKTRACK THROUGH A COUNTED QUANTIFIER rather "
+               "than `+`, so a fix that only taught `+` about calls is not "
+               "enough. MEASURED under sabotage S157: nomatch on \"a\"."),
+        B(r"^(a?)(?1)*$", [('m', ""), ('m', "a"), ('m', "aaa"), ('n', "b")],
+          RC, groups=1,
+          note="THE STAMP-ONLY CELL, kept because it is the SHARPEST "
+               "STATEMENT of what the sabotage does and the WEAKEST "
+               "statement of what a corpus can see: S157 flips this "
+               "artifact from RX_VM_STRATS 0x2 to 0x3 and EVERY ANSWER "
+               "STAYS THE SAME. Possessifying `a?` here is harmless "
+               "because nothing after the call needs the `a` back. A row "
+               "resting on this cell alone would have stayed UNDETECTED, "
+               "which is exactly the trap wave B+C's measurement fell "
+               "into; the two cells above are what a trailing literal "
+               "adds."),
+    ]),
     # [DD-14 wave B+C, code lane] S157's OWN WITNESS, and it is here rather
     # than in atomicity.rxt because its point is the RUNG rather than the
     # atomicity: `(?&g)*+` over a NULLABLE callee is the one shape design
@@ -1926,6 +2051,11 @@ def main():
          "spellings -- hand-inlined, `{0}`-factored and `(?(DEFINE)`-factored "
          "-- over fourteen of its own manifest's subjects",
          _realworld()),
+        ("prefilter.rxt",
+         "SS8.2: erasing a call is a DIFFERENT language, so the hybrid's "
+         "DFA prefilter is OFF for every call-bearing pattern (SS9.3 "
+         "S-SR17, sabotage row S165)",
+         PREFILTER),
         ("nocaptures.rxt",
          "SS4.3: a call target joins the marked set -- one-hop and "
          "two-hop, ordinary-axis pins (the --no-captures axis itself is a "

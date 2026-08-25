@@ -385,8 +385,10 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   at the wave: 29,063 three-way comparisons, 0 disagreements.
 - **`recursion/`** — module `recursion` ([DD-14] wave B+C): subroutine calls
   `(?N)` `(?±N)` `(?&name)` `(?P>name)` `(?R)` `(?0)`, and — from wave D —
-  `\g<N>`/`\g<name>`/`\g<±N>` `\g'N'`/`\g'name'` `\g<0>` `\g'0'`. Eighteen
-  `.rxt` files, **GENERATED**: `gen_corpus.py` drives every cell (including
+  `\g<N>`/`\g<name>`/`\g<±N>` `\g'N'`/`\g'name'` `\g<0>` `\g'0'`.
+  **Twenty-one `.rxt` files** — wave E added `prefilter.rxt`, wave F added
+  `define.rxt` and `realworld.rxt` — **GENERATED**:
+  `gen_corpus.py` drives every cell (including
   every `g` line) through libpcre2 10.46 via
   `docs/design/subroutines_measurements/probes/sr_oracle.py` before writing
   it, and **there is no python arm at all** — design §10.1 MEASURED that
@@ -406,7 +408,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `(?(DEFINE)...)` never appears: it stays module `conditionals`' doorway
   until D71 item 4's registry row lands (wave F), and every callee-only body
   uses the oracle-verified `{0}`-callee idiom instead. The wave A `gu <code>
-  "<subject>"` directive carries the give-up cells.
+  "<subject>"` directive carries the give-up cells — **ONE of them, after wave
+  E**: `[DD-14.EMPTY]` made an EMPTY-language pattern answer NOMATCH at the
+  search entry (the root's `minw` at the analysis ceiling), so `leftrec.rxt`'s
+  two left-recursion cells became ruled `n`s and `quantified.rxt`'s `^(?R)*$`
+  — a genuine runaway, with a base case and a non-empty language — is the only
+  `gu` left.
 
   **`run_recursion_diff.sh`** (`make test-recursion`) is the behavioural
   instrument, and each of its four sections exists because a `.rxt` cell

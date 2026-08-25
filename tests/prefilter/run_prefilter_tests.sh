@@ -271,6 +271,56 @@ else
     bad "functional sanity: one of the two builds failed to compile"
 fi
 
+# ---------------------------------------------------------------------------
+# [DD-14 wave E] A CALL-BEARING PATTERN HAS NO PREFILTER UNDER ANY INVOCATION,
+# and the LISTING SAYS SO WITHOUT NAMING A FLAG.
+#
+# Design subroutines_design.md SS8.2: erasing a subroutine call is not a loose
+# superset, it is a DIFFERENT language (`a(?1)b` with group 1 = `x` matches
+# "axb"; the erased `ab` does not), so the prefilter's rejection would be a
+# FALSE NEGATIVE. select_engine.c forces fit.prefilter off, exactly as it does
+# for a backreference.
+#
+# THE DIAGNOSTIC IS THE PART THAT NEEDS A CHECK. `fit.prefilter == false` is
+# already covered by the stamp/machinery agreement above; what is easy to get
+# wrong -- and what WAS wrong on this branch before wave E -- is the listing's
+# REASON, which fell through to "NO (--engine=vm)" and named a flag the caller
+# had not passed. Same defect [M6.5.2] fixed for backreferences, same fix.
+# ---------------------------------------------------------------------------
+check_listing_reason() {   # check_listing_reason <label> <pattern> <needle> [args...]
+    local label="$1" pat="$2" needle="$3"; shift 3
+    local line
+    line="$("$PCREC" --features all -p rx --emit-ir "$@" -- "$pat" 2>/dev/null \
+            | sed -n 's/^; prefilter *//p')"
+    if [ -z "$line" ]; then
+        bad "$label: '$pat' emitted no '; prefilter' listing line at all"
+    elif [ "${line#*"$needle"}" != "$line" ]; then
+        ok "$label: listing reads '$line'"
+    else
+        bad "$label: listing reads '$line'; expected it to name '$needle'"
+    fi
+}
+
+# Under `auto` -- the invocation with NO engine flag, which is the one that
+# used to name `--engine=vm`.
+check_listing_reason "call under auto names the CALL, not a flag" \
+    '(?:(x)){0}a(?1)b' 'NO (subroutine call)'
+# And under every flag that could plausibly claim the credit.
+check_listing_reason "call under --engine=vm still names the CALL" \
+    '(?:(x)){0}a(?1)b' 'NO (subroutine call)' --engine=vm
+check_listing_reason "call under -fno-prefilter still names the CALL" \
+    '(?:(x)){0}a(?1)b' 'NO (subroutine call)' -fno-prefilter
+# THE CONTROL: the same pattern with the call ERASED by hand is call-free and
+# keeps its prefilter, so a predicate that answered "call" for everything
+# would fail here rather than pass everywhere.
+check_listing_reason "the call-ERASED control still gets its prefilter" \
+    '(x)ab' 'yes'
+
+# `-fprefilter` REFUSES on a call-bearing pattern rather than overriding, and
+# the diagnostic names the construct (D26 tier 2: the module name and what is
+# real are exact, the wording is not).
+check_refuse "force-on vs a subroutine call" '(?:(x)){0}a(?1)b' --features all -fprefilter
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
