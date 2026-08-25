@@ -2659,6 +2659,49 @@ Modelled on `tests/codegen/run_backref_identity.sh` and on
 `lookaround_design.md` §9.1, whose shape this design adopts rather than
 reinvents.
 
+**[WAVE G, 2026-08-24] THE CLAIM IS AMENDED, AND THE AMENDMENT IS THE POINT OF
+THIS PARAGRAPH.** *"A call-free pattern's emitted C is byte-identical before and
+after module `recursion`'s doorways"* becomes:
+
+> …**except the DEAD-GROUP ELISION, which is general and whose four corpus
+> instances are LISTED.**
+
+Wave G's `pcrec_has_live_capture` says a capture group NO EMITTED CODE CAN WRITE
+does not force the capture-recording engine. The structural fact is
+`A_REP{0,0}` emitting nothing, so the rule is stated over the FACT and not over
+the module — which means it fires on patterns carrying no call at all.
+**Gating it on `pcrec_has_call` would have kept this gate at zero and was
+REJECTED**: it would make a `recursion` special case out of something that is
+not about `recursion` (Frank's 2026-08-23 general-mechanism rule).
+
+The four are `(a){0}`, `(a){0,0}b`, `(()|$){0}b` and `(()|^){0}[b]`, written
+into the gate's header with their reason and asserted in BOTH DIRECTIONS —
+every listed pattern MUST differ, nothing outside the list may — because a
+filter hides whatever else lands in it and a list that has stopped firing has
+stopped defending anything. The assertion is a PAIR, not a constant: the four
+move on every axis that PROMISES a capture and vanish on `--no-captures`, where
+the artifact promises no group and the rule has nothing to decide (MEASURED
+4 / 4 / 4 / 0).
+
+**AND THE ENGINE STAMP IS NOT THE ASSERTION.** A separate section compiles both
+matchers — the pre-module reference's (VM) and this build's (DFA) — and compares
+the whole-match span AND EVERY GROUP PAIR: MEASURED 44 cells, 0 disagreements.
+"The engine changed" would be most damaging if it had also changed a span, and
+a byte comparison cannot see that at all.
+
+**THE FIFTH AXIS IS NOT AN AXIS OF THIS SWEEP, AND THAT IS A PROPERTY OF THE
+REFERENCE.** `-fno-splice-calls` cannot be compared against a PINNED PRE-MODULE
+commit in either direction: handed to the reference it is an unknown flag and
+refuses every pattern (2,196 refusal mismatches); handed to the subject only it
+still moves every artifact, because the flag is deliberately NOT in
+`emit_info_def`'s `strategy_denials` mask — it can change which ENGINE a pattern
+gets, which is `PCREC_NO_ATOMIC_DISCHARGE`'s shape — so `rx_info.flags` differs
+(2,196 differing). A flag that honestly records itself cannot be compared
+against a compiler that does not have it. The linkage claim is therefore a
+SEPARATE section comparing the subject AGAINST ITSELF (2,200 identical past
+exactly one `.flags` line per side), and the half about CALL-BEARING patterns
+lives where it can: §9.2's `A == B`.
+
 **FOUR AXES**, mirroring the `[M6.6.2]` ASK 4 ruling because the reasoning
 transfers exactly:
 
@@ -3029,6 +3072,41 @@ SPLICE-vs-LINKAGE `A == B` control over the whole corpus.
 against the call population with its window-end result stated; the §6.2 size
 and time numbers re-measured on the SHIPPED emitter and compared against the
 PROTOTYPE's, with the discrepancy recorded whichever way it goes.*
+
+**[THE SPECIMEN BAR, AS RULED 2026-08-24.]** Plan row `[DD-14.G]`'s own bar is
+the RFC 5322 email specimen, and the manager's ruling fixes exactly what
+"byte-identical" may exclude, because the alternative — letting the artifact
+declare fewer groups than PCRE2 counts — is a tier-1 divergence bought for ten
+lines of diff:
+
+> `factored.rx`'s artifact (and the `(?(DEFINE)` spelling's) is byte-identical
+> to `orig.rx`'s **modulo (a) the pattern-text stamp and (b) the
+> CAPTURE-DECLARATION block** — `RX_NCAPS`, the permanently-unset fill,
+> `rx_info.ngroups`/`.nnames`/`.groups` and the name table — **as an EXACT,
+> NAMED filter that states the line count it removes and FAILS on any other
+> hunk**; plus **EXACT byte-identity on the `--no-captures` axis**, where
+> neither artifact promises a group and the residue has nothing to excuse.
+
+The ruling rests on a measurement, not a preference: libpcre2 10.46 gives
+`(?(DEFINE)(?<g>a))(?&g)` CAPTURECOUNT 1 with group 1 UNSET, and
+`(?(DEFINE)(?<g>a))(x)(?&g)` CAPTURECOUNT 2 with g1 UNSET and g2 `(0,1)`. The
+dead group is COUNTED, NAMED and REPORTED UNSET, so the elision is from ENGINE
+SELECTION only and `emit_dfa.c` learns to carry N permanently-unset groups —
+**a general mechanism: any DFA-eligible pattern with dead groups gets it**, not
+a `recursion` special case.
+
+*As built:* `tests/recursion/run_specimen_identity.sh`, 8/8. Four spellings, all
+on the DFA engine with the byte-class skip prefilter; the named exclusions
+remove 22 of the reference's 681 lines and every remaining byte of the DFA
+tables, the prefilter and the search loop is identical; 85 subjects agree four
+ways with NO GIVE-UP (wave B+C measured five `PCREC_ERR_FRAMES`); libpcre2
+agrees the four spellings are one language over 255 cells; throughput 0.88x /
+1.19x / 0.88x against wave B+C's 23x and a `PCREC_ERR_STEPS` give-up. A THIRD
+line survives the filter and is named rather than folded into it:
+`RX_ALTCLS_FACTORED`, a count of what `src/opt/altcls.c` did to two different
+TEXTS — that pass runs before the splice so it cannot factor across a call
+boundary, it changes no answer, and the minimised DFAs come out identical
+anyway, which is what everything else being equal proves.
 
 **THE CLOSE** is D69-tier: the FULL sabotage matrix, the battery, the gate, the
 compliance refresh and the archive.
