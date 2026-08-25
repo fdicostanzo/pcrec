@@ -2769,7 +2769,7 @@ the harness so no script can inherit the locale — ruled at the close.
 
 **Milestone.** [DD-14.CLOSE] item 7.
 
-## K36 — `rx_L3` restores read the trail before the call-frame bounds guard (pre-existing; found by r36's engine critic, 2026-08-25)
+## K36 — OPEN (2026-08-25, found by r36's engine critic; pre-existing) — `rx_L3` restores read the trail before the call-frame bounds guard
 
 In VM artifacts with subroutine calls, the region-exit restore at `rx_L3`
 reads `run->trail[run->resume_stack[run->call_top].trail_mark + 0..2]`
