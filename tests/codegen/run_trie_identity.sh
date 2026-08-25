@@ -68,7 +68,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # rule 2's disjoint-run logic down paths the unfolded corpus never reaches, and
 # the identity requirement is exactly as strong there.
 FLAGS=()
-gen_a() { "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 
 # ---- the reference compiler ---------------------------------------------

@@ -357,7 +357,7 @@ stamp_count() {
         || true
 }
 # shellcheck disable=SC2086
-gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086

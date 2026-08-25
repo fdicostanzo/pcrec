@@ -232,7 +232,7 @@ echo "== [M6.2] §8 the \$-follow exemption, in both directions =="
 # (src/gen/CLAUDE.md, the shared PCREC_RX_ABI_H block since [ABI-NS]). The
 # patterns are capture-bearing so they route to the VM, which is the only
 # engine that stamps this.
-strats() { "$PCREC" --features assertions -p rx -o - -- "$1" 2>/dev/null \
+strats() { pcrec_run "$PCREC" --features assertions -p rx -o - -- "$1" 2>/dev/null \
              | sed -n 's/^#define RX_VM_STRATS \(0x[0-9a-f]*\)u$/\1/p' | head -1; }
 
 want_strat() { # want_strat <pattern> <expected> <why>

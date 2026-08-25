@@ -425,7 +425,11 @@ case8() {
         return 0
     fi
     pat="$(python3 -c 'print("|".join(["a"]*9000))')"
-    out="$(bash -c "ulimit -s 512; exec \"$PCREC\" -p rx -o \"$WORKDIR/deep.c\" -- \"$pat\"" 2>&1)"
+    # [K37] Bare invocation, nested in a `bash -c` for the stack-limit ulimit —
+    # pcrec_run's function form cannot reach across that fork, so the bound is
+    # applied the same way gen_cc bounds an arbitrary `bash -c` compile: an
+    # outer "$TIMEOUT_BIN" wall wrapper at pcrec_timeout_secs.
+    out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" bash -c "ulimit -s 512; exec \"$PCREC\" -p rx -o \"$WORKDIR/deep.c\" -- \"$pat\"" 2>&1)"
     rc=$?
     if [ $rc -ge 128 ]; then
         fail "case8: 9000-branch alternation within a 512 KB stack" \
