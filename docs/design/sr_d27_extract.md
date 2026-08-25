@@ -496,10 +496,10 @@ actually produces in the default artifact.
    the short, specific list in §5 above, and they are few.
 4. **`(?R)` re-runs the whole pattern INCLUDING the anchors** (§2.4) — the
    single most counter-intuitive fact here.
-5. **Nothing about the implementation.** Not the linkage, not the call
-   graph, not the internal name `W`, not the depth capacity's storage
-   representation (only its OBSERVABLE number, 342/684 bytes, matters to a
-   corpus author, and that number is given in §5 above).
+5. **Nothing about the implementation.** Not how a call is compiled or
+   executed, not any internal analysis or data structure, not where the
+   depth capacity lives or what number it is stored as — only the measured
+   ceiling in §5 (a subject size on a named pattern).
 
 **THE SINGLE-ORACLE SITUATION IS A REAL WEAKENING — do not read this
 document as claiming otherwise.** Both the corpus and the compiler answer to
@@ -599,7 +599,8 @@ wrong — each of these is a plausible bug shape, not a hypothetical:
   spellings cannot catch this bug.
 
 **THE DEPTH CEILING, again, because it governs how you write deep cells:**
-2048 frames / 3072 trail entries is the default stamped capacity; for
+the default capacity is fixed (D73) and measured in §5 as n = 342 on
+`^(a(?1)?b)$`; for
 `^(a(?1)?b)$`-shaped patterns the give-up lands at **n = 342** (a 684-byte
 subject). Write cells ABOVE this ceiling as `gu frames "<subject>"` and cells
 BELOW it as ordinary `m` matches. Do not write a match expectation for a
