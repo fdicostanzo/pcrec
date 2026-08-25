@@ -1,7 +1,7 @@
 /*
  * driver.c — runs a single generated matcher against one subject string.
  *
- * Usage: t <subject> [startpos]
+ * Usage: t <subject> [startpos] [route]
  *   <subject> is the inner text of a .rxt `m`/`n`/`ms`/`ns` line's
  *   double-quoted subject, with surrounding quotes already stripped by
  *   run.sh but its escapes (\" \\ \n \t \r \f \v \xHH) still encoded as
@@ -10,6 +10,26 @@
  *   rx_search's startpos argument; if omitted, startpos defaults to 0
  *   (the `m`/`n` directives always mean startpos 0; `ms`/`ns` pass it
  *   explicitly — see docs/testing.md).
+ *   [route] ([DD-14.FB], run.sh's `frames-buffer=` directive) names WHICH
+ *   ENTRY runs the case, and it is the only thing it changes — the same
+ *   subject, the same startpos, the same printed protocol:
+ *     "default" (or absent)  rx_search
+ *     "null"                 rx_search_in(..., NULL). Spec §10.3 defines
+ *                            this to be EXACTLY the call above, so a corpus
+ *                            run through this route must agree with a
+ *                            default run cell for cell — which is what makes
+ *                            it a control rather than a variant.
+ *     "<frames>,<trail>"     rx_search_in with two malloc'd regions of those
+ *     "<n>"                  CAPACITIES (a single number means both). The
+ *                            two are separate on purpose: the trail binds
+ *                            first at the stamped defaults (design §4's 4.49
+ *                            trail entries per frame), and a route that
+ *                            could only set them equal could not tell a
+ *                            correct build from one that swapped them.
+ *   The buffers are malloc'd, which satisfies RX_BUFFER_ALIGN by definition,
+ *   and freed before this program returns; nothing reads them back. On a DFA
+ *   artifact every route answers identically, because that engine's `_in`
+ *   entries ignore the descriptor (spec §10.4).
  *
  * Prints exactly one line to stdout:
  *   "match %td %td [%td %td ...]\n"
@@ -53,6 +73,7 @@
  * message to stderr and exits 2.
  */
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -153,18 +174,88 @@ static int parse_startpos(const char *s, size_t *out) {
     return 0;
 }
 
+/*
+ * Parse a [route] argument into a call plan. Returns 0 on success, -1 on a
+ * malformed route (message already printed to stderr).
+ *
+ * *use_in says whether to call rx_search_in at all; *have_buffers whether to
+ * pass a descriptor rather than NULL. The two are separate because
+ * "rx_search_in with NULL" is a THIRD thing from both other routes and is the
+ * one the delegation's own control needs.
+ */
+static int parse_route(const char *s, int *use_in, int *have_buffers,
+                       size_t *nframes, size_t *ntrail) {
+    const char *comma;
+    char *end;
+    unsigned long long a, b;
+
+    *use_in = 0; *have_buffers = 0; *nframes = 0; *ntrail = 0;
+    if (!s || !*s || strcmp(s, "default") == 0) return 0;
+    if (strcmp(s, "null") == 0) { *use_in = 1; return 0; }
+
+    errno = 0;
+    a = strtoull(s, &end, 10);
+    if (end == s || errno != 0 || (*end != 0 && *end != ',') || a == 0) {
+        fprintf(stderr, "driver: invalid route '%s' (want default|null|<n>|<frames>,<trail>)\n", s);
+        return -1;
+    }
+    comma = end;
+    if (*comma == 0) { b = a; }
+    else {
+        const char *t = comma + 1;
+        errno = 0;
+        b = strtoull(t, &end, 10);
+        if (end == t || errno != 0 || *end != 0 || b == 0) {
+            fprintf(stderr, "driver: invalid route '%s' (trail capacity)\n", s);
+            return -1;
+        }
+    }
+    *use_in = 1; *have_buffers = 1;
+    *nframes = (size_t)a; *ntrail = (size_t)b;
+    return 0;
+}
+
 int main(int argc, char **argv) {
-    if (argc != 2 && argc != 3) {
-        fprintf(stderr, "usage: %s <subject> [startpos]\n", argc > 0 ? argv[0] : "t");
+    if (argc < 2 || argc > 4) {
+        fprintf(stderr, "usage: %s <subject> [startpos] [route]\n", argc > 0 ? argv[0] : "t");
         return 2;
     }
 
     size_t startpos = 0;
-    if (argc == 3 && parse_startpos(argv[2], &startpos) != 0) return 2;
+    if (argc >= 3 && parse_startpos(argv[2], &startpos) != 0) return 2;
+
+    int use_in = 0, have_buffers = 0;
+    size_t nframes = 0, ntrail = 0;
+    if (argc >= 4 && parse_route(argv[3], &use_in, &have_buffers, &nframes, &ntrail) != 0)
+        return 2;
 
     size_t len = 0;
     unsigned char *buf = decode(argv[1], &len);
     if (!buf) return 2;
+
+    /* [DD-14.FB] The caller-supplied regions, when the route asks for them.
+     * Sized in BYTES from the artifact's own RX_*_FRAME_SIZE macros, which is
+     * the arithmetic spec §10.4 publishes them for -- if those macros were
+     * stamped from the wrong struct (sabotage row S-FB6) this is the
+     * allocation that comes out short, and the artifact's own _Static_assert
+     * catches it one step earlier still. On a DFA artifact the sizes are 0
+     * and the route degenerates to a NULL descriptor, which that engine
+     * ignores anyway. */
+    void *frames_mem = NULL, *trail_mem = NULL;
+    if (have_buffers) {
+        if (RX_RESUME_FRAME_SIZE == 0 || RX_TRAIL_FRAME_SIZE == 0) {
+            have_buffers = 0;   /* an inert (DFA) artifact: nothing to size */
+        } else {
+            frames_mem = malloc(nframes * (size_t)RX_RESUME_FRAME_SIZE);
+            trail_mem  = malloc(ntrail  * (size_t)RX_TRAIL_FRAME_SIZE);
+            if (!frames_mem || !trail_mem) {
+                fprintf(stderr, "driver: out of memory for a %zu-frame / %zu-entry buffer\n",
+                        nframes, ntrail);
+                free(frames_mem); free(trail_mem); free(buf);
+                return 2;
+            }
+        }
+    }
 
     /* [K21-class fix, 2026-08-15] `rx_search`'s return is THREE-valued (1
      * match, 0 no-match, a negative give-up sentinel — PCREC_ERR_STEPS/
@@ -196,7 +287,18 @@ int main(int argc, char **argv) {
      * harness-level failure (never compared against a `match`/`nomatch`
      * expectation) the same way it already treats a crash or a timeout. */
     ptrdiff_t caps[RX_NCAPS][2];
-    int found = rx_search(buf, len, startpos, caps);
+    int found;
+    if (!use_in) {
+        found = rx_search(buf, len, startpos, caps);
+    } else if (!have_buffers) {
+        found = rx_search_in(buf, len, startpos, caps, NULL);
+    } else {
+        rx_buffers rxb;
+        rxb.frames = frames_mem; rxb.nframes = nframes;
+        rxb.trail  = trail_mem;  rxb.ntrail  = ntrail;
+        found = rx_search_in(buf, len, startpos, caps, &rxb);
+    }
+    free(frames_mem); free(trail_mem);
     if (found == 1) {
         printf("match");
         for (int k = 0; k < RX_NCAPS; k++) {

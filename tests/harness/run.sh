@@ -20,6 +20,19 @@
 #              deny family already has five members and each of them is a
 #              corpus-wide axis somebody will want to sweep. It is appended
 #              LAST so a directive-supplied flag on the same axis wins.
+#   RXTROUTE   ([DD-14.FB]) the INITIAL entry route for every block in this
+#              run, overridden per block by a `frames-buffer=` directive.
+#              Same spelling as that directive: default | null | <n> |
+#              <frames>,<trail>. Empty (the default) means `default`, so a
+#              plain run is byte-for-byte unchanged. `RXTROUTE=null` is the
+#              interesting one: spec §10.3 defines a NULL descriptor to be
+#              EXACTLY the un-suffixed call, so re-running any corpus under it
+#              must reproduce that corpus's results cell for cell across a
+#              whole spread of patterns — [DD-14.FB]'s NULL-equivalence cell,
+#              as a corpus-wide axis rather than a handful of hand-picked
+#              blocks. A numeric RXTROUTE is a blunter instrument (a capacity
+#              that suits one block will starve another) and is offered for
+#              symmetry, not because a sweep wants it.
 #   CC         C compiler                 (default: gcc)
 #   GENCFLAGS  flags for compiling generated code
 #              (default: -O1 -std=gnu11 -Wall -Wextra -Werror)
@@ -57,6 +70,7 @@ CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 RXTFLAGS="${RXTFLAGS:-}"
+RXTROUTE="${RXTROUTE:-}"
 KEEP="${KEEP:-0}"
 VERBOSE="${VERBOSE:-0}"
 PROCS="${PROCS:-1}"
@@ -109,7 +123,8 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     for f in "${files[@]}"; do
         idx=$((idx + 1))
         PROCS=1 PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
-            RXTFLAGS="$RXTFLAGS" KEEP="$KEEP" VERBOSE="$VERBOSE" \
+            RXTFLAGS="$RXTFLAGS" RXTROUTE="$RXTROUTE" \
+            KEEP="$KEEP" VERBOSE="$VERBOSE" \
             bash "${BASH_SOURCE[0]}" "$f" \
             > "$pardir/$idx.out" 2> "$pardir/$idx.err" &
         running=$((running + 1))
@@ -205,6 +220,23 @@ record_fail() {
 
 record_pass() {
     total_pass=$(( total_pass + 1 ))
+}
+
+# [DD-14.FB] valid_route <spec> — the ONE definition of the route grammar,
+# shared by the `frames-buffer=` directive and the RXTROUTE env var so the two
+# cannot drift into accepting different spellings. driver.c parses the same
+# four shapes and is the thing that would reject a fifth; this check is here so
+# a typo'd directive is a LOUD parse-time harness failure rather than a driver
+# exit 2 that some other arm reads as a crash.
+valid_route() {
+    case "$1" in
+        ""|default|null) return 0 ;;
+        *[!0-9,]*) return 1 ;;
+        *,*,*) return 1 ;;
+        *,) return 1 ;;
+        ,*) return 1 ;;
+        *) return 0 ;;
+    esac
 }
 
 # [M4.5a] record_case_group_fail <file> <case-index> <reason> — fails every
@@ -369,7 +401,9 @@ flush_block() {
     for i in "${!case_kind[@]}"; do
         local kind="${case_kind[$i]}" line="${case_line[$i]}" subj="${case_subject[$i]}"
         local pos="${case_startpos[$i]}"
-        local out expect trc
+        local out expect trc rtag=""
+        [ -n "${case_route[$i]:-}" ] && [ "${case_route[$i]}" != "default" ] \
+            && rtag=" via <prefix>_search_in route ${case_route[$i]}"
         # The run budget comes from tests/lib/gen_timeout.sh (gen_run_secs),
         # not a number here — the old hardcoded 10 was the R23-V1 shape
         # again: axis-blind, so sanitizer cells shared the plain budget.
@@ -377,16 +411,24 @@ flush_block() {
         # deliberately: this loop runs thousands of sub-millisecond cells,
         # and watchdog's fixed per-invocation cost belongs on per-pattern
         # and long-run sites, not here. $RUN_SECS is computed once above.
-        out="$("$TIMEOUT_BIN" "$RUN_SECS" "$bdir/t" "$subj" "$pos")"
+        # [DD-14.FB] The third argument is the ENTRY ROUTE (driver.c's own
+        # header comment). It is "" for every case in a corpus that has no
+        # `frames-buffer=` line and no RXTROUTE, and the driver treats an
+        # empty route exactly as "default" — so an unchanged corpus runs the
+        # unchanged call, and the route is visible in every failure message
+        # below because "which entry answered" is the first thing a reader of
+        # one of these failures needs to know.
+        local route="${case_route[$i]:-}"
+        out="$("$TIMEOUT_BIN" "$RUN_SECS" "$bdir/t" "$subj" "$pos" "$route")"
         trc=$?
         if [ $trc -eq 124 ]; then
             record_fail "$cur_file" "$line" \
-                "test binary TIMED OUT (>${RUN_SECS}s, gen_run_secs; raise GENRUNTIMEOUT only with the measurement recorded) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                "test binary TIMED OUT (>${RUN_SECS}s, gen_run_secs; raise GENRUNTIMEOUT only with the measurement recorded) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             record_case_group_fail "$cur_file" "$i" "test binary timed out"
             continue
         elif [ $trc -ge 126 ]; then
             record_fail "$cur_file" "$line" \
-                "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                "test binary crashed (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             record_case_group_fail "$cur_file" "$i" "test binary crashed"
             continue
         elif [ "$kind" = "gu" ]; then
@@ -407,10 +449,10 @@ flush_block() {
                 record_pass
             elif [ $trc -eq 3 ]; then
                 record_fail "$cur_file" "$line" \
-                    "expected 'gu $want' but the search gave up with '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                    "expected 'gu $want' but the search gave up with '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             else
                 record_fail "$cur_file" "$line" \
-                    "expected 'gu $want' (a give-up) but the search did not give up — got '$out' (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                    "expected 'gu $want' (a give-up) but the search did not give up — got '$out' (exit $trc) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             fi
             continue
         elif [ $trc -eq 3 ]; then
@@ -426,7 +468,7 @@ flush_block() {
             # silent pass. [DD-14 wave A] the `engine`/`budget` directives
             # below are what let a corpus case reach this path at all.
             record_fail "$cur_file" "$line" \
-                "test binary GAVE UP ($out — VM budget exhausted) for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                "test binary GAVE UP ($out — VM budget exhausted) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             record_case_group_fail "$cur_file" "$i" "test binary gave up ($out)"
             continue
         fi
@@ -455,7 +497,7 @@ flush_block() {
                 base_ok=1
             else
                 record_fail "$cur_file" "$line" \
-                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             fi
         else
             expect="nomatch"
@@ -465,7 +507,7 @@ flush_block() {
                 base_ok=1
             else
                 record_fail "$cur_file" "$line" \
-                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos"
+                    "expected '$expect' got '$out' for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
             fi
         fi
 
@@ -527,7 +569,9 @@ for file in "${files[@]}"; do
     cur_engine=""
     cur_stepbudget=""
     cur_framebudget=""
+    cur_route="$RXTROUTE"
     case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=()
+    case_route=()
     have_block=0
     blocks_in_file=0
 
@@ -548,7 +592,12 @@ for file in "${files[@]}"; do
             cur_engine=""
             cur_stepbudget=""
             cur_framebudget=""
-            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=()
+            # [DD-14.FB] the route resets with the block, like every other
+            # directive here — and resets to RXTROUTE, not to "default", so
+            # the env axis is a floor a block can raise rather than a setting
+            # the first `pattern` line silently discards.
+            cur_route="$RXTROUTE"
+            case_kind=(); case_line=(); case_subject=(); case_start=(); case_end=(); case_startpos=(); case_gspec=(); case_gucode=(); case_route=()
             have_block=1
         elif [[ "$line" =~ ^flags[[:space:]]+([a-zA-Z]+)[[:space:]]*$ ]]; then
             # per-block compile options. Only `i` (case-insensitive, OS-1) is
@@ -609,6 +658,32 @@ for file in "${files[@]}"; do
         elif [[ "$line" =~ ^budget[[:space:]] ]]; then
             record_fail "$file" "$lineno" \
                 "unknown 'budget' spec (only 'steps=<n>' and 'frames=<n>' are defined)"
+        elif [[ "$line" =~ ^frames-buffer=(.*)$ ]]; then
+            # [DD-14.FB] (D71 item 2, spec §10) THE ENTRY ROUTE, and it is
+            # POSITIONAL WITHIN THE BLOCK rather than block-wide: it applies to
+            # the cases BELOW it until another one changes it. That is what
+            # lets one block hold the pair the design asks for -- the same
+            # pattern and the same subject giving `gu frames` through
+            # `<prefix>_search` and `m` through `<prefix>_search_in` with a
+            # bigger buffer -- with ONE compile of ONE artifact, so the two
+            # cells differ in the entry called and in nothing else. A
+            # block-scoped directive could not express that pair at all, and a
+            # per-case-kind spelling (`mb`, `nb`, `gub`, ...) would multiply
+            # the corpus's case kinds by the number of routes, which is the
+            # parallel-mechanism shape the house rule forbids.
+            #
+            # `budget frames=N` is NOT this and does not overlap it: that flag
+            # sizes the ARTIFACT (it is `--backtrack-frames=N`, a compile-time
+            # capacity), where this sizes the CALL. A block can carry both.
+            route_spec="${BASH_REMATCH[1]}"
+            if [ "$have_block" != "1" ]; then
+                record_fail "$file" "$lineno" "'frames-buffer=' line before any pattern block"
+            elif ! valid_route "$route_spec"; then
+                record_fail "$file" "$lineno" \
+                    "unknown 'frames-buffer=' route '$route_spec' (want default, null, <n>, or <frames>,<trail>)"
+            else
+                cur_route="$route_spec"
+            fi
         elif [[ "$line" =~ ^perr[[:space:]]*$ ]]; then
             cur_is_perr=1
         elif [[ "$line" =~ ^m[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
@@ -620,6 +695,7 @@ for file in "${files[@]}"; do
             case_startpos+=("0")
             case_gspec+=("")
             case_gucode+=("")
+            case_route+=("$cur_route")
         elif [[ "$line" =~ ^n[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
@@ -629,6 +705,7 @@ for file in "${files[@]}"; do
             case_startpos+=("0")
             case_gspec+=("")
             case_gucode+=("")
+            case_route+=("$cur_route")
         elif [[ "$line" =~ ^ms[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]+([0-9]+)[[:space:]]+([0-9]+)[[:space:]]*$ ]]; then
             case_kind+=("m")
             case_line+=("$lineno")
@@ -638,6 +715,7 @@ for file in "${files[@]}"; do
             case_end+=("${BASH_REMATCH[4]}")
             case_gspec+=("")
             case_gucode+=("")
+            case_route+=("$cur_route")
         elif [[ "$line" =~ ^ns[[:space:]]+([0-9]+)[[:space:]]+\"(.*)\"[[:space:]]*$ ]]; then
             case_kind+=("n")
             case_line+=("$lineno")
@@ -647,6 +725,7 @@ for file in "${files[@]}"; do
             case_end+=("")
             case_gspec+=("")
             case_gucode+=("")
+            case_route+=("$cur_route")
         elif [[ "$line" =~ ^gu[[:space:]]+internal([[:space:]]|$) ]]; then
             # [DD-14 wave A commit 3] refused BY NAME, not by falling through
             # to the unparseable-line catch-all below: nothing may EXPECT an
@@ -675,6 +754,7 @@ for file in "${files[@]}"; do
             case_startpos+=("0")
             case_gspec+=("")
             case_gucode+=("${BASH_REMATCH[1]}")
+            case_route+=("$cur_route")
         elif [[ "$line" =~ ^(gp|g)[[:space:]]+([0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]+(-1|[0-9]+)[[:space:]]*$ ]]; then
             # [M4.5a] capture-group expectation attached to the MOST RECENT
             # m/ms case in this block. 'g' = LIVE (must be checkable now: a
