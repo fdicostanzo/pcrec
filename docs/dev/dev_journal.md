@@ -14917,3 +14917,31 @@ A's ABI event (PCREC_ERR_INTERNAL in src/gen/emit_dfa.c) …` with
 `checks failed: 1` — that IS the designed green state (a refusal WITH
 the reason; anything else would be the finding); the split recursion
 gate runs beneath them (10 PASS at 08:53, the 15/0 expected).
+
+#### Thirty-ninth session, part 44 addendum 3 — the close's items 2, 3, 8(f); san launched (2026-08-25 ~09:05 EDT)
+
+srClose: `make test` 08:10-08:47 alone — 26,560 corpus cases / 0
+failed (the manager's 26,843 summed every section's `cases passed`),
+1,833 PASS / 0 FAIL, no section error; the [TT-10] blip did NOT fire;
+the new K35 structural sweep ran inside it (62 sites / 53 scripts).
+`make strict` clean. Gates on the close tree: the split recursion gate
+15/0 with every axis at its pinned numbers (default A 2206/0/4, B
+2210/0; vm 2211/0/0, 2211/0; noprefilter 2207/0/4, 2211/0; nocaptures
+2210/0/0, 2210/0; linkage arm 2210/0; elision cross-check 40 cells;
+positive control on every axis); `make test-recursion` 10/0 incl. §3's
+1,836 cells vs libpcre2 10.46 (0 disagreements) and §5's A==B — 279 of
+322 corpus patterns on BOTH linkages, 28,458 cells, 0 disagreements;
+the three RETIRED gates REFUSE by name. 8(f): tests/bench/compare/
+gate.sh 13/13, weakest case needs a 1.43× uniform regression to fail
+(margins 0.700-0.900), not tuned. TWO SPECIMEN FINDINGS: the specimen
+check is 12/0 (four --no-captures checks added after wave G's readout;
+design §11's and the README's "8/8" is superseded); the strip is 22 of
+712 lines, not 681 (the reference grew with FB's surface while the
+exclusion count did not — the FB surface is identical on both
+spellings); throughput 1.05/1.32/0.81× vs G's 0.88/1.19/0.88× — within
+noise, recorded as not a stable number; B+C's 23× and its STEPS give-up
+remain gone. A dated CLOSE readout appended to the specimen README.
+`make san` launched ~09:05 at ce2ca3a, alone. Owed after: design §11's
+dated CLOSE block, the close summary, the deliverable. NOTE: the
+[DD-14.*] archive to plan_completed.md is the MANAGER's at merge (the
+lane's scope forbids plan.md).
