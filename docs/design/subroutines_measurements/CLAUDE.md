@@ -67,6 +67,61 @@ different emitted code. §3.1 is decided by two callout firings.
   same-position reading of `rc -52`**; `(?R)` under a quantifier; a call inside
   a lookbehind; the depth requirement against the subject; and the error-140
   sweep showing the charter's premise names a different construct entirely.
+  **Says explicitly it did NOT pin 10.46's exact predicate by black-box
+  probing** (`out/leftrec.txt` L5b) — `probe_recurse_loop.py` below is that
+  predicate, found by reading the source `probe_leftrec.py` only sweeps.
+- `probes/probe_recurse_loop.py` — `docs/dev/known_issues.md` K34 / plan row
+  [DD-14.K34]. **Reads `pcre2_match.c`'s `OP_RECURSE` handler itself** (10.46,
+  fetched from the project's GitHub release tarball into the scratch dir per
+  the scope mandate — never into this tree) rather than sweeping harder, and
+  states the rule cited to that source before testing it to falsification.
+  THE RULE: a call to group `number` is flagged `PCRE2_ERROR_RECURSELOOP`
+  (`rc -52`, a bare `return` that aborts the WHOLE match, not a backtrack)
+  only when ALL of — (G) the call happens while ALREADY inside some active
+  recursion (`Fcurrent_recurse != RECURSE_UNSET`; the outermost entry into
+  any group is never checked); (A) walking the enclosing "special group"
+  frame chain (`last_group_offset`) finds the NEAREST ancestor frame that is
+  itself a recursion of the SAME group (not any ancestor — the first one
+  found, and the search can walk past unrelated groups to find it); (P) the
+  current subject pointer equals that ancestor's OWN caller's subject
+  pointer at the moment IT made the same call (zero cursor progress since);
+  (U) `mb->last_used_ptr` — PCRE2's own running high-water mark of the
+  furthest subject byte ANY opcode has examined, bumped at every
+  backtrack-return (`RETURN_SWITCH`) and at assertion/word-boundary
+  completion, not just literal compares — is ALSO unchanged since that same
+  moment; and (D) the match-time option `PCRE2_DISABLE_RECURSELOOP_CHECK`
+  (0x00040000) is not set. Any construct that forces (P) or (U) to advance
+  between successive same-group entries — a mandatory literal before the
+  call, or a base-case alternative whose FAILED attempt merely peeks one
+  byte further than the ancestor's own attempt did — defers or defeats the
+  guard indefinitely, which is what makes design §3.3's 199-deep
+  same-position match possible: the guard is not about position at all, it
+  is about whether progress OR mere lookahead has happened since the last
+  time this exact recursion was entered. **65/65 cells agree with the rule
+  as stated** — first-item/consuming-prefix/nullable-prefix families
+  crossed with base-case presence, anchored and unanchored, all K34-cited
+  spellings ((?1)/(?R)/(?&name)/`\g<n>`/`\g'name'`/(?P>name)), a 3-node
+  indirect cycle proving the search is NOT limited to the immediate parent,
+  and K34's own case-study patterns re-derived from the rule rather than
+  re-discovered. **Two decisive confirmations beyond restating the rule**:
+  R4 shows the `return` (not `RRETURN`) really does swallow a sibling
+  top-level alternative that never touches the recursion at all (`^(a|(?1)a)$|^Y$`
+  on `"Y"` is `rc -52`, not the match `^Y$` would give alone); R5 sets
+  `PCRE2_DISABLE_RECURSELOOP_CHECK` on an otherwise-`-52` cell and, under an
+  explicit small `depth_limit`, gets `rc -53` (DEPTHLIMIT) instead — proof
+  the read targets the actual gating `&&` term in the source, not just its
+  externally observable effect. **One instrument defect found and fixed
+  in-flight, itself now a permanent finding (§R1.5)**: five cells the rule
+  first mispredicted `-52` for all turned out to be intercepted by a
+  DIFFERENT PCRE2 mechanism — the compile-time START-OPTIMIZE pass
+  (minlength / required-byte prescan) rejecting a subject that is empty or
+  missing a byte the pattern structurally requires, BEFORE the recursive
+  matcher ever runs even one level (`depth_limit=1` already shows NOMATCH).
+  `PCRE2_NO_START_OPTIMIZE` (0x00010000, compile-time) flips all five back
+  to the predicted `-52`, confirming the confound rather than the rule was
+  wrong — and is now the sweep's own warning to a corpus author: testing a
+  runaway-recursion cell on too-short or required-byte-missing subjects
+  measures the wrong PCRE2 mechanism.
 - `probes/probe_linkage.sh` + `prototype/gen_linkage.py` — §6, PROTOTYPE. The
   generator writes three hand-written matchers in the EMITTER's own idiom
   (computed goto, the resume array, the trail, `RX_SET`/`RX_PUSH` spelled as
