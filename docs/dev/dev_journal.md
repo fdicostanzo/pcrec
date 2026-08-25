@@ -14007,3 +14007,29 @@ tests/prefilter 24/0. The 111 D69 rows had not run (the chain guards on
 a green make test — correct); re-running. Sixth check in the lane to go
 red for the right reason; five of the six are one fact — the registry's
 `vm` column and the listing's reason describe the LINKED construct.
+
+#### Thirty-ninth session, part 20 addendum — peer coordination with pcrecdev2 (2026-08-24 ~23:5x EDT)
+
+Post-/compact resume. pcrecdev2 (Frank's exploration session, owns
+pcrec-bench) asked two things; answered by SendMessage:
+
+- PIN COMMIT for pcrec-bench's `git archive` build: **8da6120** — measured
+  `git diff --stat 8da6120 main -- src lib cli tests Makefile` EMPTY; every
+  commit since (5d1fa3b..ef40e2d) is docs/plan/journal only, so 8da6120 is
+  main's compiler with the battery that was run on it (test 26,483/0; the
+  last `make san` green was 85361cd, differing only by tests/ and docs/).
+  Wave G's merge is a real re-pin later (it changes src), not within two
+  hours: srG's final `make test` is mid-run (pid 3867770, `timeout 5400`),
+  its 111 D69 rows follow, then review/merge/battery — ~03:00 at the
+  earliest. Its -j4 build was cleared to run now (load 3.5, one heavy
+  suite), preferably before srG's run reaches tests/resource.
+- QUIET WINDOW (~30-45 min, load1 < 1) for its measurement cells: promised
+  for the boundary right after G's merge battery and BEFORE the FB code
+  lane's heavy runs — the FB lane will be briefed to hold its `make test`
+  until pcrecdev2 replies "WINDOW CLOSED". Protocol: I send "WINDOW OPEN"
+  with the load reading; it replies "WINDOW CLOSED".
+
+srG state at 23:58: lane/srG at d87afff (4 min old), `make test` in
+progress (final.log's earlier PIPELINE_DONE at 25,746/0 is the pre-d87afff
+run; the live run logs to mt5.log). No manager background task; watchdog
+cron 4026cd6a live.
