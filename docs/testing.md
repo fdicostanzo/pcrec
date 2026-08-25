@@ -2431,11 +2431,16 @@ regression).
 
 **Validated (2026-08-25, srLoad lane).** Solo, both suites are unaffected —
 `tests/resource` 19/0/0, `tests/counterk` 24/0/0 (23 pre-existing + the new
-K32 pin), identical to their pre-[TT-10] counts. Under an artificial load
-(`gnutimeout 200 bash -c 'for i in 1 2 3 4 5 6 7 8; do yes >/dev/null & done;
-wait'`, backgrounded, killed afterward with `scripts/safekill`) both suites
-stayed green-or-INCONCLUSIVE, never FAIL — see `docs/dev/dev_journal.md` for
-the run's recorded numbers and the load ratio at each point.
+K32 pin), identical to their pre-[TT-10] counts. Under an 8-way artificial
+`yes`-spinner load (backgrounded, killed afterward with `scripts/safekill`;
+1-min-load/nproc ratio never crossed the 2.0 threshold on this box's
+concurrent-lane mix) both suites stayed fully green, 0 INCONCLUSIVE. The
+guard's two directions were confirmed by forcing a CPU-cap breach directly
+(`K7_CPU=0`/`K32_CPU=0`): at a real load ratio of 2.47 (a 24-way spinner
+load) the forced breach was correctly reported INCONCLUSIVE; the identical
+forced breach at a quiet-box ratio of 1.18 correctly reported a real FAIL —
+confirming the guard discriminates by load rather than always passing or
+always failing.
 
 **tests/counterk's K32 pin is independent of the shared corpus harness.**
 `counterk.rxt`'s own `((a)|ab){4000}c` block still rides
