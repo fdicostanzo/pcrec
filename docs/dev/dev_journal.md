@@ -14571,3 +14571,17 @@ ac4917d default 2206/0/4, vm 2211/0/0, noprefilter 2207/0/4, nocaptures
 positive control fired on every axis (the reference refuses all 305
 call-bearing patterns). Re-run in flight (gate2.log, PID 454926, HEAD
 88a22d1).
+
+#### Thirty-ninth session, part 33 — the split identity gate is GREEN (2026-08-25 ~04:17 EDT)
+
+gate2 (run_recursion_identity.sh at 88a22d1, detached, 03:59-04:07):
+**checks passed: 15 / failed: 0**. Per axis: (A) program region vs the
+unchanged ac4917d — default 2206/0/elided 4, vm 2211/0/0 (the engine
+held fixed, wave G's elision moves no emitted program), noprefilter
+2207/0/4, nocaptures 2210/0/0, call-bearing-in-population 0 on all;
+(B) whole file vs 8fc1e51 — 2210/2211/2211/2210 identical, 0 differing,
+refusal-mismatch 0, stamp-filter-bad 0; the positive control (the
+reference refuses all 305 call-bearing patterns) fired on every axis.
+The lane, idle since the run ended (the watchdog's detached-run case),
+resumed 04:17: six rows S179-S184 at PROCS=4 detached → final make test
+alone → deliverable.
