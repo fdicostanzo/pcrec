@@ -487,7 +487,7 @@ including V-G/V-H (added this session).
   any earlier matrix in the journal for a row that flipped verdict
   without its SAB_FILE/target changing; (c) document D69's tiered policy
   in docs/testing.md's mech section and tests/mech/CLAUDE.md.
-- [SPEC-1] STATE:not-started — THE SPEC CONSOLIDATION PASS (Frank,
+- [SPEC-1] STATE:started (2026-08-25 ~12:5x, fortieth session; STEP 1 DONE — lane srSpec's read-only survey, committed as docs/dev/spec_survey.md: 54 gap rows in 7 sections, a 9-file proposed set, 10 ordered lanes, 5 stale findings — two confirmed by the manager: `cli/main.c:58`'s `--step-budget` help still says "bring-up placeholder" though D51 set 500,000,000 (`src/gen/emit_vm.c:133`), and `docs/pcre2_compliance.md`'s K34 annotation still reads OPEN vs D74. MANAGER RULING on [SPEC-1.9]: `docs/pcre2_compliance.md` is DECLARED SPEC-TIER IN PLACE — its three-component refresh discipline meets docs/spec/CLAUDE.md's bar and its tooling is path-keyed; docs/spec/CLAUDE.md lists it by reference (flagged to Frank; reverse if he wants the move). Sub-rows below; [SPEC-1.1] launched first as lane srLimits) — THE SPEC CONSOLIDATION PASS (Frank,
   2026-08-25, fortieth session, D80: "I think that time is now").
   `docs/spec/` is the dense CONTRACT — what we produce, its quirks and
   shortcomings — for the reader who needs to know EXACTLY what to expect
@@ -516,6 +516,16 @@ including V-G/V-H (added this session).
   RULE from birth: any change to a contract updates docs/spec in the
   same change (CLAUDE.md situation index; reviewers check it on every
   merge). Runs concurrently with [CHK-1] — disjoint files.
+- [SPEC-1.1] STATE:started (lane srLimits, 2026-08-25 ~13:0x) — `docs/spec/limits.md`: the give-up/limit contract consolidated — D22's frame, the four codes (pointer to match_api §4), the numbers (step 500,000,000 D51; work ~10⁹ D49; frames/trail 2048/3072 D73 with the 684-byte `^(a(?1)?b)$` example RE-MEASURED; compile budgets D45), K33 + the `_in` remedy (pointer to §10), K34/D74 the documented divergence; plus the two stale fixes: `cli/main.c:58` wording and the K34 compliance annotation through the annotation store + refresh procedure. THE direct discharge of D73/D80.
+- [SPEC-1.2] STATE:not-started — `docs/spec/cli.md`: the full flag reference (survey A1-A14; stubs into tuning/registry/diagnostics). P1; parallel with 1.1.
+- [SPEC-1.3] STATE:not-started — `docs/spec/tuning.md`: the `-f`/`-fno-` family, `--unroll=`, `--engine=` caller-side; byte-identity vs engine-selecting per flag (survey A7/F5). P1; parallel.
+- [SPEC-1.4] STATE:not-started — match_api.md patches (survey: D3 pointer, C2 DFA-stamp-gap caveat, C4 D76 abi paragraph, F6 byte-only encoding lead, F9 whole-subject subsection) with a dated revision-log entry. Careful lane; after 1.1.
+- [SPEC-1.5] STATE:not-started — `docs/spec/registry.md`: the `--list-*` TSV column contract (A8). P2.
+- [SPEC-1.6] STATE:not-started — `docs/spec/rxt_format.md`: extraction of the .rxt format/driver protocol from docs/testing.md ~124-435 (F3); testing.md keeps the DEVDOC rest. P2, mechanical.
+- [SPEC-1.7] STATE:not-started — `diagnostics.md` or a cli.md section: D26 tiers caller-side, the offset-pinning convention (A13). Small.
+- [SPEC-1.8] STATE:not-started — `modules.md` or cli.md's `--features` section: the 17-name map with status, pointing into pcre2_compliance.md (A10/E). Small.
+- [SPEC-1.9] STATE:completed-in-place (manager ruling above: pcre2_compliance.md declared spec-tier in place; docs/spec/CLAUDE.md lists it by reference — lands with 1.1).
+- [SPEC-1.10] STATE:not-started — survey debt: the sabotage-row format (F4, tests/mech/CLAUDE.md); K2's status (known_issues K2 says "fix with module backrefs" — backrefs shipped 08-22, no FIXED marker); table_contract.md's `--emit-ir` note vs [DD-8]; README/APPROACH as the stranger's real first read (→ [GUIDE-1]/[REL-META]).
 - [GUIDE-1] STATE:not-started — THE USER GUIDE, `docs/guide/` (Frank,
   2026-08-25, D80; LOWER PRIORITY, "basically maintained", NO edge-case
   details). A simplified, human-facing guide organized by USE CASE —

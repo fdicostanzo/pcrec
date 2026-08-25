@@ -216,3 +216,4 @@ Append-only where noted; the restart/status-recovery record for the project.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
+- `spec_survey.md` — [SPEC-1] step 1 (2026-08-25, lane srSpec, read-only): the spec-coverage gap table (54 rows), the proposed docs/spec/ file set, the ordered [SPEC-1.n] lanes, and the STALE OR WRONG findings. A survey deliverable like chain_profile.md; superseded row by row as the lanes land.
