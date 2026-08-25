@@ -85,3 +85,22 @@ Maintenance: update this file when the check vocabulary grows (a new
 prefilter form, e.g. islands' own D46 pair per plan row [ENG-ISL], would be
 a DIFFERENT axis and belongs in its own directory the way this one is
 separate from tests/rungselect/ and tests/possessify/, not folded in here).
+
+## [DD-14 wave G] the LINKED-call witness, and the second control
+
+The listing-reason rows moved to a RECURSIVE callee,
+`(?:(?<g>x(?&g)?y)){0}a(?&g)b`, keeping the `{0}`-callee idiom. The old witness
+`(?:(x)){0}a(?1)b` names an ACYCLIC callee whose group is also DEAD, so after
+wave G it reaches the DFA engine and `--emit-ir` refuses it outright — there is
+no `; prefilter` line to read, which is exactly how these went red.
+
+**AND THE OLD WITNESS CAME BACK AS A SECOND CONTROL**, which is the row the
+narrowing needs: under `--engine=vm` a SPLICED call must NOT claim the credit,
+and the listing must name the FLAG. It exists because this section's original
+defect arrived from the other side — the listing named a FLAG the caller had not
+passed — and wave G briefly created its mirror image: `select_engine.c` narrowed
+the prefilter VERDICT to `pcrec_has_linked_call` while `emit_vm.c` still computed
+the REASON from `pcrec_has_call`, so a fully spliced call read
+"NO (subroutine call)" where the honest answer is "NO (--engine=vm)". MEASURED,
+fixed, and this row is what stops it drifting back. The reason text now reads
+"NO (LINKED subroutine call)" and says why a spliced call is not one.

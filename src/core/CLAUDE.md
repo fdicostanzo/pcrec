@@ -658,4 +658,40 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
 
 All dynamic allocations for AST/IR go through arena_alloc() and are freed together. StrBuf accumulates generated code; sb_* functions append. Error paths longjmp to cx.jb. internal.h is NOT installed; it is internal to src/.
 
+
+## [DD-14 wave G] the pass reorder, and three declarations
+
+**`compile.c`: `pcrec_discharge_atomic` IS HOISTED OUT OF
+`pcrec_select_engine`** and is compile.c's own line now, immediately after
+`pcrec_altcls`. ONE MOVE, satisfying two constraints that are otherwise
+incompatible: the CALL GRAPH must run after every pass that REBUILDS a node
+(`src/opt/callgraph.c`'s header argument — `.body` is a cache of "which subtree
+is that group's IN THE TREE THE EMITTER WILL WALK"), and ENGINE SELECTION must
+now run AFTER the call graph, because §6.3's LINKAGE is what decides whether a
+call is structurally VM-only. The order is
+`altcls -> discharge -> callgraph -> select_engine -> postresolve`.
+
+**IT ALSO FIXED A LATENT DROP.** Inside `select_engine` the discharged root was
+assigned to a LOCAL, so a discharge at the very ROOT was thrown away and the
+emitter walked a tree selection had not judged. Sabotage row S178 puts the drop
+back; its expectation is UNDETECTED with the search recorded, because the
+discharge fires exactly where `vm_lifts` LIFTS and a lifted group allocates no
+mark of its own, so the two spellings emit the same program. A CALL-FREE pattern
+is unaffected by the whole move: `pcrec_callgraph_build` returns at its first
+scan having written nothing.
+
+**`internal.h` gains three declarations**: `pcrec_has_linked_call` (the
+narrowing that separates "this pattern is VM-only" from "this pattern has a
+call"), `pcrec_has_live_capture` (the dead-group elision — a group no emitted
+code can WRITE does not force the capture-recording engine), and
+`pcrec_callgraph_spliced` (the per-TARGET linkage, which is what the emitter
+needs to decide whether to emit a shared region at all).
+
+**`limits.h` gains two budgets**: `PCREC_MAX_SPLICE_NODES` (512, per spliced
+site, over the expansion COMPOSED across nested splices) and
+`PCREC_MAX_SPLICE_TOTAL` (8192, the sum of added nodes). Both are counted in AST
+nodes rather than emitted ones, because eligibility must be decided BEFORE the
+emitter runs — engine selection reads the linkage — and the emitter's `Cost`
+numbers do not exist yet at that point. `PCREC_MAX_VM_NODES` stays the hard
+backstop; these keep ordinary patterns far away from it.
 Maintenance: update this file when files are added/removed or their roles change.

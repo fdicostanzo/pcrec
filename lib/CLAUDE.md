@@ -192,3 +192,24 @@ caller needs (do NOT inline the `+ 1` back — that is the single edit that
 makes a byte-compiled caller wrong against another encoding's artifact),
 because a find-all loop is code the caller writes and this header is what
 they read while writing it.
+
+## [DD-14 wave G] `PCREC_NO_SPLICE_CALLS` (bit 13)
+
+Deny the SPLICE linkage at every call site, forcing the CALL linkage everywhere.
+
+**IT IS NOT IN `emit_info_def`'s `strategy_denials` MASK, AND THAT IS THE
+DECISION WORTH KNOWING.** Every other member of that mask is a knob with NO
+OBSERVABLE EFFECT — the mask exists so two artifacts that behave identically do
+not differ in their reflection surface. This flag SELECTS AN ENGINE: a spliced
+call has an exact finite lowering, a linked one does not, so denying the splice
+can turn a DFA artifact into a VM one. `rx_info.flags` therefore RECORDS it, for
+the same reason it records `PCREC_NO_ATOMIC_DISCHARGE` — the one other member of
+the deny family with that property.
+
+**THE CONSEQUENCE IS RULED AND WRITTEN DOWN IN TWO PLACES** (design §9.1,
+`tests/codegen/run_recursion_identity.sh`'s header): a flag that honestly records
+itself cannot be compared byte-for-byte against a compiler that does not have
+it, so the identity gate's linkage claim is a SUBJECT-AGAINST-ITSELF section
+rather than a fifth reference axis. **Do not "fix" that by adding this bit to
+the mask** — it would falsify the artifact's own record of itself to satisfy a
+check.

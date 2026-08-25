@@ -759,6 +759,13 @@ CEOF
             bads=$((bads + 1)); continue
         fi
         while IFS= read -r subj; do
+            # THE LEADING BLANK LINE OF `ELISION_SUBJECTS` IS NOT A SUBJECT.
+            # Without this guard the count read 44 for 4 patterns x 10 subjects,
+            # and a cell count nobody can reproduce from the list above it is a
+            # number a reader has to be told about rather than one they can
+            # check. (The empty subject is a legitimate thing to test; it is
+            # just not what this heredoc's formatting was providing.)
+            [ -n "$subj" ] || continue
             cells=$((cells + 1))
             local ra rb
             ra="$("$d/ta" "$subj")"
@@ -769,10 +776,10 @@ CEOF
             fi
         done <<< "$ELISION_SUBJECTS"
     done <<< "$ELIDED_PATTERNS"
-    if [ "$bads" -eq 0 ] && [ "$cells" -ge 30 ]; then
+    if [ "$bads" -eq 0 ] && [ "$cells" -ge 40 ]; then
         ok "[elision] all $npat NAMED elision patterns: the pre-module reference chose the VM, this build chooses the DFA, and the two matchers agree on the whole-match span AND EVERY GROUP PAIR over $cells cells — the engine moved and the answer did not"
-    elif [ "$cells" -lt 30 ]; then
-        bad "[elision] only $cells cells were compared (want at least 30) — the semantic control is not populated"
+    elif [ "$cells" -lt 40 ]; then
+        bad "[elision] only $cells cells were compared (want at least 40 — 4 named patterns x 10 subjects) — the semantic control is not populated"
     fi
 }
 
