@@ -825,6 +825,41 @@ Both run solo through the driver, not hand-applied:
 Both match the figures those rows' own `SAB_DOC_FIGURE`s state, which is the
 point of running them rather than reasoning about them.
 
+### ALL 21 RETROFITTED ROWS RUN SOLO, PLUS A CONTROL (2026-08-25, `903df2f`)
+
+One invocation per row (D69's targeted shape), `PROCS=4`, one shared
+`MECH_SCRATCH`, **no commit during the run** — so all twenty-two rows name ONE
+tree SHA. **22/22 DETECTED**, and every trailer reads `unexpected: 0,
+undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0`.
+
+The narrow rows are the ones to read, because their reject count EQUALS the
+number of witnesses their `SAB_REACH_EXPECT` asserts — which is the evidence
+that the witness named is the detector and not a neighbour of it:
+
+| row | results |
+|---|---|
+| S34 | `reach:ok(1/1), reject:1fail/588pass` |
+| S35 | `reach:ok(1/1), reject:1fail/588pass` |
+| S32 | `reach:ok(2/2), reject:2fail/587pass` |
+| S33 | `reach:ok(2/2), reject:2fail/587pass` |
+| S172 | `reach:ok(2/2), reject:2fail/587pass` |
+| S27, S29 | `reach:ok(1/1), reject:1fail/588pass` |
+| S30 | `reach:ok(1/1), reject:2fail/587pass` |
+| S28 | `reach:ok(2/2), reject:64fail/525pass` — a table SWAP is broad, which is why the pair had to be asserted rather than the count trusted |
+
+**THE CONTROL IS `S68`, which declares no reach fields at all**: it printed NO
+`reach reference` line (no clean tree was built for it), NO reach bits, and
+read `codegen:3fail/100pass, corpus:0fail/56pass` → DETECTED. A row that
+declares nothing is byte-for-byte the row it was, and pays nothing.
+
+**THE CLEAN TREE WAS BUILT ONCE FOR THE WHOLE SWEEP** — 20 of the 21 reach
+rows reported `REUSING the clean tree already built at 903df2f`, the
+twenty-first being the one that built it. An EARLIER sweep validated the key
+in the other direction by accident: a commit landed mid-run, HEAD moved, and
+the next invocation correctly REBUILT rather than reusing a tree from a
+different commit. That is also this file's own standing rule arriving as a
+measurement — COMMIT BEFORE YOU START AND COMMIT NOTHING DURING THE RUN.
+
 ### THE 21 ROWS RETROFITTED, and what each witness proves
 
 `reject_gated` family first (`grep -l reject_gated tests/mech/sabotages/` names
