@@ -5528,3 +5528,88 @@ rule; the row lists what else belongs).
 
 **Revisit when:** the bench loop surfaces a real pattern that hits the
 give-up; [PAT-LINT] is chartered.
+
+## D75 — DEAD-CAPTURE ELISION is CONFIRMED as ruled at wave G, option (i), and GENERAL: a group no emitted code can write leaves engine selection only; it is still declared and reported UNSET as PCRE2 does (manager ruling 2026-08-24, CONFIRMED by Frank 2026-08-25)
+
+**Context.** `(?(DEFINE)X)` is, by PCRE2's own definition, a group that is
+never executed inline — it lowers to the shape pcrec already had for
+`X{0}`, a group under a zero repetition, and only `(?&name)` calls
+reach it; a call is capture-transparent, so the group's own span can
+never be written. D42.2's `RX_NCAPS > 1 ⇒ VM` sent every DEFINE-style
+pattern to the backtracking VM (the factored email specimen: 23× the
+hand-inlined original and a STEPS give-up) while the inlined form got
+the DFA with the skip prefilter.
+
+**Decision.** `pcrec_has_live_capture`: a group whose only occurrence is
+under a zero repetition is DEAD, and engine selection counts LIVE
+captures only. Option (i) of the three under D26: the dead group stays
+DECLARED (RX_NCAPS, the name table, the group numbering — the exact
+tier) and is reported UNSET, byte for byte libpcre2's answer; only the
+engine choice moves. (ii) "any capture ⇒ VM" fails the specimen bar for
+no semantic gain; (iii) dropping the group from the declaration
+renumbers groups — wrong. The rule is GENERAL — keyed on the structural
+fact, not on whether a call is present — because `(?(DEFINE)…)`,
+`(?:…){0}` and `(a){0}b` are one shape to the compiler and a
+call-presence clause would have been a `recursion` special case for a
+non-recursion fact (memory: general mechanisms, not special cases).
+Measured consequence: exactly four call-free corpus patterns move
+VM→DFA (`(a){0}`, `(a){0,0}b`, `(()|$){0}b`, `(()|^){0}[b]`) with
+spans, captures and ABI unchanged (the gate's semantic control: the
+reference's VM vs this build's DFA on span and every group pair, 44
+cells, 0). Frank's reading on confirmation: a straight-up win for the
+general rule — the optimization working more generally. Where the
+gate's exception list lives: D76.
+
+**D75 ADDENDUM (Frank, 2026-08-25).** The dead-capture rule is a GENERAL
+ENGINE-SELECTION change, not a recursion-module feature — it lives in
+`src/opt/atomic.c` (`pcrec_has_live_capture`) with its only consumer in
+`src/opt/select_engine.c`, no module code, and would be correct in a
+pcrec with no `recursion` module at all. It shipped inside wave G because
+the email specimen exposed it; that is shipping order, and the identity
+gate's four-pattern exception list is the RESIDUE of the shipping order
+(comparison (A) pins a pre-module commit, and no pre-module commit
+contains the general rule), not a property of the module. Owed: the
+prose that describes it moves out of `docs/design/subroutines_design.md`'s
+framing into engine selection's, and the gate's comment says "general
+change landed with wave G" — see D76 and the doc row it charters.
+
+## D76 — the identity gate's TWO PINS have two different owners: the PROGRAM-REGION pin is the module's promise (pre-module, never moves); the WHOLE-FILE pin is the `abi` number's (a scaffolding change IS an abi bump and a re-pin, in the same change) (manager ruling 2026-08-25 ~03:3x, RESHAPED and CONFIRMED by Frank 2026-08-25)
+
+**Context.** [DD-14.FB] moved every emitted file's scaffolding (the run
+struct, the `_in` entries, ~180 lines of declarations and comments)
+across the `abi` 2→3 boundary, so "whole file byte-identical to the
+pre-module reference" became unsatisfiable for every pattern. The lane
+measured line-stripping and it fails both ways (an exact-line filter
+also strips generic lines and the two anchored entry signatures —
+blinding the gate to the §10.8 promise — and position-dependent blank
+lines still differ); code-only comparison was rejected because it
+trades away the comment sensitivity that caught [M6.6.2] wave E's
+37-byte prose move. The manager ruled the SPLIT: (A) the program region
+vs the unchanged pre-module pin `ac4917d`; (B) the whole file vs a pin
+moved to `8fc1e51`, the wave's last src-touching commit. Frank's
+reading: correct, but as stated it PUNTS — future changes are going to,
+and should, change comments and other output; that is what abi versions
+reflect.
+
+**Decision (Frank).** The two comparisons have two OWNERS:
+
+1. **(A) program region vs the pre-module pin** carries the MODULE's
+   promise — adding `recursion` changed no byte of any call-free
+   pattern's matcher — and never moves. Its exception list is D75's
+   four patterns, asserted both directions with the semantic control.
+2. **(B) whole file** is owned by the emitted `abi` number
+   (`rx_info.abi`, stamped by `emit_dfa.c`). The pin IS, by definition,
+   the commit that introduced the current abi number; within an abi
+   number the emitted output is byte-exact whole-file, comments
+   included; ANY change to the emitted scaffolding — comments,
+   declarations, layout — is an abi bump and a re-pin in the same
+   change. Pre-v1 that is free (D40); post-v1 it becomes the binding
+   event it should be, which is exactly the discipline wanted — nobody
+   casually changes emitted output after v1.
+
+**Consequences.** The gate's pin check becomes STRUCTURAL — the pin's
+stamped abi must equal the compiler's (replacing the ad-hoc
+`RESUME_FRAME_SIZE` probe, which encodes one wave's boundary); a lane
+that changes emitted scaffolding without bumping `abi` fails (B) and is
+told why. Plan row [TT-11] charters the change. `docs/testing.md` and
+`tests/codegen/CLAUDE.md` state the two owners.
