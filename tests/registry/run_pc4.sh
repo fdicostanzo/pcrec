@@ -99,7 +99,7 @@ done
 
 # ---- driver.o once, against a throwaway pattern's gen.h -------------------
 mkdir -p "$WORKDIR/_tmpl" "$WORKDIR/results"
-"$PCREC" -p rx -o "$WORKDIR/_tmpl/gen.c" -- 'a' >/dev/null 2>&1 || {
+pcrec_run "$PCREC" -p rx -o "$WORKDIR/_tmpl/gen.c" -- 'a' >/dev/null 2>&1 || {
     echo "FAIL: pc4: template compile failed" >&2; exit 1; }
 if ! "$CC" -O0 -std=gnu11 -I "$WORKDIR/_tmpl" -I "$SCRIPT_DIR" $SANFLAGS \
         -c -o "$WORKDIR/pc4_driver.o" "$SCRIPT_DIR/pc4_driver.c"; then
@@ -114,7 +114,7 @@ one_pattern() {
     mkdir -p "$d"
     local fl=()
     [ "$iflag" = "1" ] && fl+=(-i)
-    if ! "$PCREC" --features classes "${fl[@]+"${fl[@]}"}" -p rx \
+    if ! pcrec_run "$PCREC" --features classes "${fl[@]+"${fl[@]}"}" -p rx \
             -o "$d/gen.c" -- "$pat" > /dev/null 2>&1; then
         echo "REFUSED" > "$WORKDIR/results/$pid"
         return 0

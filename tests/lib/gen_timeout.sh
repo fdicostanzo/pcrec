@@ -138,6 +138,87 @@ pcrec_timeout_secs() {
     esac
 }
 
+# pcrec_run [--hostile] <pcrec-argv...>
+#
+# NO REQUIRED LABEL, unlike gen_run/gen_cc: those instrument a per-CASE
+# generated-code compile/run, where a caller already has a case label in
+# hand. A `pcrec_run` call site is the COMPILER invocation itself, and the
+# sweep this helper exists for (K37) is 300+ MECHANICAL call-site edits
+# across 40+ scripts — inventing a distinct label at each would be exactly
+# the kind of busywork this project's own D24/D45 precedent says a shared
+# helper should absorb, not push onto every caller. The label watchdog logs
+# is derived instead: the calling script's basename plus its own line
+# number (`${BASH_LINENO[0]}`), which is already enough to find the site.
+#
+# K37 (docs/dev/known_issues.md): ONE place every harness script routes a
+# `pcrec` COMPILER invocation through, so a bare, unbounded call to the
+# compiler under test cannot recur (S159: the sabotaged emitter looped
+# forever on `((?1)*a)`, and `run_recursion_diff.sh` called `build/pcrec`
+# with no timeout at all — a hang, not a verdict, until a human killed it
+# by PID).
+#
+# TWO PATHS, MEASURED, not one blanket mechanism. [CHK-1] ruling note (a)
+# said "route through scripts/watchdog, the same mechanism gen_run already
+# uses" — CHECKED here rather than assumed, because gen_run's own header
+# already records that watchdog has a real per-call startup cost high-count
+# inner loops must not pay. MEASURED 2026-08-25 (srRun, this change): 50
+# calls each of `scripts/watchdog -s 20 -L .../wd_bench.log -- true` vs
+# `"$TIMEOUT_BIN" 20 true` — 8.55s vs 0.127s, i.e. ~171ms/call for watchdog
+# against ~2.5ms/call for $TIMEOUT_BIN, a ~68x multiplier and far past the
+# 10%-is-material bar the brief set. Routing every one of the ~361 bare
+# compiler call sites this fix sweeps through watchdog unconditionally would
+# multiply the harness's own wall time rather than merely bound it — the
+# identical tradeoff gen_run's own header already documents for its
+# high-count inner loops, applied here to the OTHER half of the harness's
+# process invocations.
+#
+# So: cheap by default, watchdog only where K37's actual hazard can occur.
+# The hazard is a COMPILER that does not terminate (loops, or — worse for a
+# plain timeout — runaway-allocates instead of looping) on a CALL-BEARING
+# pattern (`(?R)`, `(?0)`, `(?N)`, `(?+N)`, `(?-N)`, `(?&name)`, `(?P>name)`,
+# `\g<...>`, `\g'...'` — the recursion/subroutine-call constructs S159 sits
+# in). Every call site in this tree passes its pattern as the LAST argument
+# (pcrec's own `--` operand convention), so pcrec_run inspects it:
+#
+#   - default: "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$@" — a bare
+#     coreutils wall timeout, at $TIMEOUT_BIN's ~2.5ms/call cost. This alone
+#     discharges K37's headline harm: a hanging compiler is now a bounded,
+#     loud non-zero exit instead of an unbounded hang, on every call site.
+#   - when the last argument matches a call-bearing construct, OR the
+#     caller passes `--hostile` explicitly (a loop that cannot express its
+#     pattern as the last argument, or a caller that already knows its
+#     input is adversarial — a mech row, a sabotage-adjacent script): route
+#     through scripts/watchdog instead, the SAME mechanism gen_run already
+#     uses for generated code — wall + tree-RSS (a runaway-ALLOCATING
+#     compiler slips past a plain timeout; watchdog's -m does not) + CPU +
+#     one section-tagged line in build/watchdog.log.
+#
+# This choice is a MEASURED one, not a guess: if the population of
+# call-bearing sites turns out to need watchdog's overhead paid more often
+# than this heuristic predicts, that is a number to re-measure and record,
+# not a reason to widen the default silently (D45's own revisit-when rule).
+pcrec_run() {
+    local hostile=0
+    if [ "${1:-}" = "--hostile" ]; then hostile=1; shift; fi
+    local what
+    what="$(basename -- "${BASH_SOURCE[1]:-${0:-pcrec_run}}"):${BASH_LINENO[0]:-0}"
+    if [ "$hostile" -eq 0 ] && [ "$#" -gt 0 ]; then
+        local pat="${@: -1}"
+        case "$pat" in
+            *'(?R'*|*'(?&'*|*'(?P>'*|*'\g<'*|*"\\g'"*| \
+            *'(?'[0-9]*|*'(?+'[0-9]*|*'(?-'[0-9]*)
+                hostile=1 ;;
+        esac
+    fi
+    if [ "$hostile" -eq 1 ]; then
+        "$GEN_LIB_ROOT/scripts/watchdog" -l "$what" -S "${WATCHDOG_SECTION:-pcrec_run}" \
+            -s "$(pcrec_timeout_secs)" -c "$(pcrec_timeout_secs)" -m "${PCRECRUNMEM:-512m}" \
+            -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" -- "$@"
+    else
+        "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$@"
+    fi
+}
+
 # _gen_cc_run <compiler> <argv...> — [TT-3] the ccache-cacheability shape fix.
 #
 # WHY THIS EXISTS. ccache cannot cache a combined compile-AND-link invocation

@@ -57,7 +57,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # gen <out> <pattern> [args...]
 gen() {
     local out="$1" pat="$2"; shift 2
-    "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$WORKDIR/$out.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$out.err"
 }
 
@@ -110,9 +110,9 @@ if gen mixed '(x)\d{4}(a|ab){0,3}c'; then
     else
         bad "a deliberately mixed artifact stamped RX_VM_STRATS 0x$strats, not 0x3 -- a scalar would read as one or the other"
     fi
-    nposs="$("$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
+    nposs="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
              | sed -n '/^STRATEGIES/,/^$/p' | grep -c ' possessive ')"
-    nback="$("$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
+    nback="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- '(x)\d{4}(a|ab){0,3}c' 2>/dev/null \
              | sed -n '/^STRATEGIES/,/^$/p' | grep -c ' backtracking ')"
     if [ "$nposs" -ge 1 ] && [ "$nback" -ge 1 ]; then
         ok "--emit-ir's STRATEGIES section names WHICH quantifier took which ($nposs possessive, $nback backtracking)"
@@ -362,11 +362,11 @@ np=0; nposs=0; nident=0; nviol=0; nident_bad=0; nskip=0
 while IFS= read -r pat; do
     [ -n "$pat" ] || continue
     np=$((np + 1))
-    if ! "$PCREC" -p rx --engine=vm -o "$WORKDIR/on/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/on/gen.c" -- "$pat" \
             >/dev/null 2>&1; then
         nskip=$((nskip + 1)); continue
     fi
-    if ! "$PCREC" -p rx --engine=vm -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --engine=vm -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
             >/dev/null 2>&1; then
         bad "'$pat' compiles by default and NOT under -fno-possessify"
         continue
@@ -427,7 +427,7 @@ if gen eol '(x)a{0,4}$' && gen bol '(x)a{0,4}^'; then
         ok "'a{0,4}^' declines: the exemption is about which subject END is pinned, not about zero width"
     fi
 fi
-if "$PCREC" -p rx -o "$WORKDIR/m.c" -- '(?m)a{0,4}$' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/m.c" -- '(?m)a{0,4}$' >/dev/null 2>&1; then
     bad "pcrec now accepts (?m): D47.5's live multiline gate has a population and needs its own test here"
 else
     ok "the multiline gate has no population yet (pcrec refuses (?m)); module 'assertions' inherits D47.5's obligation"
@@ -444,8 +444,8 @@ fi
 mkdir -p "$WORKDIR/on" "$WORKDIR/off"
 ndfa=0; ndfa_bad=0
 for pat in 'a{2,4}c' '\d{4}z' '(?:a|bc){0,4}d' 'a+c' '[ab]{3,3}c'; do
-    "$PCREC" -p rx -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
-    "$PCREC" -p rx -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" >/dev/null 2>&1 || continue
     ndfa=$((ndfa + 1))
     cmp -s "$WORKDIR/on/gen.c" "$WORKDIR/off/gen.c" || ndfa_bad=$((ndfa_bad + 1))
 done
@@ -462,8 +462,8 @@ fi
 # through some path other than the chosen engine, this is where it would show.
 nnc=0; nnc_bad=0
 for pat in '(x)a{2,4}c' '((a)|bc){0,3}d' '(a)\d{4}z' '(x)(?:a|bc)+d'; do
-    "$PCREC" -p rx --no-captures -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
-    "$PCREC" -p rx --no-captures -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/on/gen.c" -- "$pat" >/dev/null 2>&1 || continue
+    pcrec_run "$PCREC" -p rx --no-captures -fno-possessify -o "$WORKDIR/off/gen.c" -- "$pat" \
         >/dev/null 2>&1 || continue
     nnc=$((nnc + 1))
     cmp -s "$WORKDIR/on/gen.c" "$WORKDIR/off/gen.c" || nnc_bad=$((nnc_bad + 1))

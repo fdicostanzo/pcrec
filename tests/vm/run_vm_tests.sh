@@ -69,7 +69,7 @@ build() {
     local name="$1" pat="$2"
     shift 2
     mkdir -p "$WORKDIR/$name"
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- "$pat" \
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- "$pat" \
         >/dev/null 2>"$WORKDIR/$name/err" || return 1
     # shellcheck disable=SC2086
     gen_cc "$name '$pat'" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
@@ -375,7 +375,7 @@ cliff_run() {  # cliff_run <name> [pcrec args...]
     local name="$1"
     shift
     mkdir -p "$WORKDIR/$name"
-    "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- '(a*)b' >/dev/null 2>&1 || return 1
+    pcrec_run "$PCREC" -p rx "$@" -o "$WORKDIR/$name/gen.c" -- '(a*)b' >/dev/null 2>&1 || return 1
     # shellcheck disable=SC2086
     gen_cc "cliff $name" "$CC" $GENCFLAGS -I "$WORKDIR/$name" \
            -o "$WORKDIR/$name/t" "$WORKDIR/cliff/main.c" "$WORKDIR/$name/gen.c" \
@@ -470,7 +470,7 @@ fi
 # shape too, and a cap on replication cannot be tested by a build that does not
 # replicate. The ladder is now fully denied here; there is no rung below
 # replication, so this list is complete unless a new one is added above.
-if out="$("$PCREC" -p rx --engine=vm -fno-revdet -fno-counter -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
+if out="$(pcrec_run "$PCREC" -p rx --engine=vm -fno-revdet -fno-counter -o "$WORKDIR/toobig.c" -- '((a)|b){0,4000}c' 2>&1)"; then
     bad "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's own case still compiles under -fno-revdet -fno-counter"
 elif printf '%s' "$out" | grep -q 'replicate its body 4000 times'; then
     ok "[M4.5c] PCREC_MAX_VM_REPEAT_COPIES: D45's 3.5 MB case is refused before emission, naming the replication count"
@@ -479,7 +479,7 @@ else
 fi
 # ...and D47.1's ENDGAME beside it, because the refusal above read alone says
 # pcrec cannot compile this pattern, which stopped being true.
-if "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
     eg="$(wc -l < "$WORKDIR/endgame.c")"
     [ "$eg" -lt 2000 ] \
         && ok "[ENG-BREP] D45's endgame: the same pattern compiles at the DEFAULT in $eg lines -- the reverse-deterministic rung emits one body copy, so the count stops driving the size" \
@@ -487,7 +487,7 @@ if "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/de
 else
     bad "[ENG-BREP] '((a)|b){0,4000}c' does not compile at the default; D47.1 names this rung's arrival as when D45's refuse-cap endgame lands"
 fi
-if "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/spanok.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
     ok "[M4.5c] ...and a single-path body at the same count still compiles (span-loop rung, no replication)"
 else
     bad "[M4.5c] '(ab){0,4000}c' was refused; it replicates nothing and the cap must not see it"
@@ -692,7 +692,7 @@ if build mix3 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e'; then
     else
         bad "[M4.5e] D46: the four-rung pattern stamped RX_VM_RUNGS=$(rungs_field mix3), expected 0xf (all four rungs)"
     fi
-    if ir="$("$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' 2>/dev/null)"; then
+    if ir="$(pcrec_run "$PCREC" -p rx --emit-ir -- 'a*((a)|b){0,3}c(?:ab|b){0,3}d(?:pq|q)+e' 2>/dev/null)"; then
         ncursor="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +cursor ')"
         nbounded="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +frames-bounded ')"
         nunbounded="$(printf '%s' "$ir" | grep -cE '^  at L[0-9]+ +frames-unbounded ')"

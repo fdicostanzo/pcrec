@@ -168,12 +168,12 @@ one_pattern() {
     # is selected at all) and it turns the DFA prefilter OFF, so the comparison
     # is of the VM's own derivation rather than of a window the DFA handed both
     # sides (R21 E-6).
-    if ! "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pa --engine=vm -o "$d/pa.c" -- "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
-    if ! "$PCREC" -p pb --engine=vm -fno-revdet -o "$d/pb.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pb --engine=vm -fno-revdet -o "$d/pb.c" -- "$pat" \
             >/dev/null 2>"$d/err_b"; then
         # NOT a skip. The denied build IS the ground truth, so a pattern whose
         # ground truth cannot be built is a hole in the instrument, and the most
@@ -243,7 +243,7 @@ if [ "${1:-}" = "--corpus" ]; then
         | sort -u > "$WORKDIR/all.txt"
     while IFS= read -r cp; do
         [ -n "$cp" ] || continue
-        r="$("$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
+        r="$(pcrec_run "$PCREC" --engine=vm --emit-ir -- "$cp" 2>/dev/null \
              | sed -n 's/^; rungs *\(.*\) -- see.*/\1/p')"
         case "$r" in *revdet*) printf '%s\n' "$cp" >> "$derived" ;; esac
     done < "$WORKDIR/all.txt"

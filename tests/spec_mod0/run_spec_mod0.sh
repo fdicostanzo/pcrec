@@ -34,6 +34,7 @@ set -u
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/../.." && pwd)"
 PCREC="${PCREC:-$ROOT/build/pcrec}"
+. "${ROOT}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 : "${TMPDIR:=/var/tmp}"
 export TMPDIR
@@ -72,8 +73,8 @@ fi
 # defined as "all 100 rows".
 REG="$WORK/registry.tsv"
 VERBS="$WORK/verbs.tsv"
-"$PCREC" --list-syntax > "$REG" 2>/dev/null || { echo "FAIL: --list-syntax"; exit 2; }
-"$PCREC" --list-verbs | grep -v '^#' > "$VERBS" 2>/dev/null || { echo "FAIL: --list-verbs"; exit 2; }
+pcrec_run "$PCREC" --list-syntax > "$REG" 2>/dev/null || { echo "FAIL: --list-syntax"; exit 2; }
+pcrec_run "$PCREC" --list-verbs | grep -v '^#' > "$VERBS" 2>/dev/null || { echo "FAIL: --list-verbs"; exit 2; }
 echo "registry: $(grep -vc '^#' "$REG") rows;  verbs: $(wc -l < "$VERBS") names"
 echo
 

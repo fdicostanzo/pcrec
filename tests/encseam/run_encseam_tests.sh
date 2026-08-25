@@ -125,7 +125,7 @@ while IFS=$'\t' read -r cls pat subj || [ -n "${cls:-}" ]; do
         d="$WORKDIR/c${idx}_$arm"
         mkdir -p "$d"
         # shellcheck disable=SC2086
-        if ! "$PCREC" -p fa $extra -o "$d/fa.c" -- "$pat" >"$d/gen.log" 2>&1; then
+        if ! pcrec_run "$PCREC" -p fa $extra -o "$d/fa.c" -- "$pat" >"$d/gen.log" 2>&1; then
             bad "encseam [$arm]: pcrec refused '$pat': $(head -1 "$d/gen.log")"
             continue
         fi

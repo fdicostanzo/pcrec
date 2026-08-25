@@ -37,6 +37,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 N="${TRIE_N:-500}"
 SEED="${TRIE_SEED:-20260809}"
@@ -67,7 +68,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # rule 2's disjoint-run logic down paths the unfolded corpus never reaches, and
 # the identity requirement is exactly as strong there.
 FLAGS=()
-gen_a() { "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 gen_b() { "$REF"   -p rx "${FLAGS[@]+"${FLAGS[@]}"}" -o - -- "$1" 2>/dev/null; }
 
 # ---- the reference compiler ---------------------------------------------
@@ -135,7 +136,7 @@ fi
 # forward NFA for the 4-branch shape: 213 states factored vs 812 unfactored.
 check_control() { # check_control <label> <pattern>
     local lbl="$1" pat="$2" oa ob sa sb
-    oa="$("$PCREC" -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+    oa="$(pcrec_run "$PCREC" -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
     ob="$("$REF"   -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
     case "$oa" in *"DFA engine"*) sa=factored ;; *"NFA exceeds"*) sa=unfactored ;;
                   "") sa=compiled ;; *) sa="other:$oa" ;; esac

@@ -365,11 +365,16 @@ and not a convenience. All fourteen now run under `"$TIMEOUT_BIN"
 off `-fsanitize=` in the flags — and every one of those sites already routed a
 non-zero exit to `bad`/`die`, so a non-terminating compiler is now DETECTION.
 
-**STILL UNBUDGETED, RECORDED RATHER THAN QUIETLY FIXED:** in
-`run_recursion_diff.sh` the generated-code compiles (`$CC $GENCFLAGS`) and the
-matcher runs (`"$d/t" < "$WORKDIR/cells"`) carry no bound at all, where
-`tests/harness/run.sh` bounds both. That is a wider gap than K37 named and is
-the manager's call.
+**CLOSED (srRun2, 2026-08-25):** `run_recursion_diff.sh`'s generated-code
+compiles (`$CC $GENCFLAGS`, 4 sites) and matcher runs (`"$d/t" ...`/
+`"$d2/t" ...`, 3 sites, including the batch driver `run_arm` shares between
+§3's 18-row sweep and §5's ~150-pattern corpus sweep) now route through
+`gen_cc`/`gen_run` — the exact mechanism `tests/harness/run.sh` already used
+for both, and the per-pattern shape those two functions are for (`run_arm`
+pays the fixed watchdog cost once per pattern, not once per cell — its own
+batch driver already reads every subject/startpos cell over one stdin
+stream). `export WATCHDOG_SECTION="recursion"` added beside the
+`gen_timeout.sh` source so its `build/watchdog.log` lines are attributable.
 
 ## The `gu frames`-vs-`recurse` note (D71.1)
 

@@ -97,11 +97,11 @@ PATTERNS=(
 for pat in "${PATTERNS[@]}"; do
     d="$WORKDIR/$(printf '%s' "$pat" | md5sum | cut -c1-8)"
     mkdir -p "$d"
-    if ! "$PCREC" -p rx -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
+    if ! pcrec_run "$PCREC" -p rx -o "$d/gen.c" -- "$pat" >/dev/null 2>&1; then
         bad "ir-listing: pcrec could not compile '$pat'"
         continue
     fi
-    if ! "$PCREC" -p rx --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
+    if ! pcrec_run "$PCREC" -p rx --emit-ir -- "$pat" > "$d/ir" 2>"$d/ir.err"; then
         bad "ir-listing: --emit-ir failed for '$pat': $(head -1 "$d/ir.err")"
         continue
     fi
@@ -293,12 +293,12 @@ fi
 # replicate. Both denials are needed, not either — with only one, the other rung
 # absorbs the shape and every assertion below goes quiet in the direction that
 # reads as PASS for the 64-copy cell and FAIL for the two refusal cells.
-if "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_ok.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_ok.c" -- '((a)|b){0,64}c' >/dev/null 2>&1; then
     ok "[M4.5c] the replication cap ADMITS the largest legal artifact (64 copies, $(stat -c %s "$WORKDIR/cap_ok.c") bytes)"
 else
     bad "[M4.5c] '((a)|b){0,64}c' was refused under -fno-revdet -fno-counter; it is exactly at the cap and must compile"
 fi
-if out="$("$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_no.c" -- '((a)|b){0,65}c' 2>&1)"; then
+if out="$(pcrec_run "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_no.c" -- '((a)|b){0,65}c' 2>&1)"; then
     bad "[M4.5c] '((a)|b){0,65}c' compiled under -fno-revdet -fno-counter; it is one copy over the cap and must be refused"
 elif printf '%s' "$out" | grep -q 'replicate its body 65 times' \
      && printf '%s' "$out" | grep -q 'span loop'; then
@@ -307,7 +307,7 @@ else
     bad "[M4.5c] refused over the cap, but the diagnostic does not name the count and the fix: $out"
 fi
 # the case D45 was ruled over
-if "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_d45.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -fno-revdet -fno-counter -o "$WORKDIR/cap_d45.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
     bad "[M4.5c] '((a)|b){0,4000}c' still compiles under -fno-revdet -fno-counter — this is the 3.5 MB artifact that pegged cc1 for 100+ minutes (D45)"
 else
     ok "[M4.5c] '((a)|b){0,4000}c' — D45's own case — is refused before emitting anything, whenever replication is the strategy"
@@ -321,7 +321,7 @@ fi
 # default, small, and the two facts belong next to each other — a reader who
 # sees only the refusal above would reasonably conclude pcrec still cannot do
 # this.
-if "$PCREC" -p rx -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
     eg_lines="$(wc -l < "$WORKDIR/endgame.c")"
     if [ "$eg_lines" -lt 2000 ]; then
         ok "[ENG-BREP] D45's endgame: the SAME pattern compiles at the default in $eg_lines lines (the reverse-deterministic rung emits one body copy, so the count stops driving the size)"
@@ -339,13 +339,13 @@ fi
 # nothing about it is pathological. The defect is disproportion, not size, and
 # a cap that cannot tell them apart refuses the wrong patterns.
 wide="($(python3 -c "print('|'.join('kw%d' % i for i in range(500)))"))"
-if "$PCREC" -p rx -o "$WORKDIR/wide.c" -- "$wide" >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/wide.c" -- "$wide" >/dev/null 2>&1; then
     ok "[M4.5c] a 500-branch capture-bearing alternation still compiles — the cap targets REPLICATION, not size"
 else
     bad "[M4.5c] a 500-branch capture-bearing alternation was refused; its size is proportionate to the pattern and the cap must not bite it"
 fi
 # a single-path body never replicates, whatever the count (S2.5's cursor rung)
-if "$PCREC" -p rx -o "$WORKDIR/span.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx -o "$WORKDIR/span.c" -- '(ab){0,4000}c' >/dev/null 2>&1; then
     ok "[M4.5c] '(ab){0,4000}c' compiles: a single-path body takes the span-loop rung and replicates nothing"
 else
     bad "[M4.5c] '(ab){0,4000}c' was refused; it has no choice point, so the cap must not see it"
@@ -358,7 +358,7 @@ fi
 # whatever --prefix said, pointing a reader of a `-p myrx` listing at a macro
 # the artifact does not contain. Cheap to check, invisible without it.
 mkdir -p "$WORKDIR/pfx"
-if "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1    && "$PCREC" -p myrx --emit-ir -- '(a)b' > "$WORKDIR/pfx/ir" 2>&1; then
+if pcrec_run "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1    && pcrec_run "$PCREC" -p myrx --emit-ir -- '(a)b' > "$WORKDIR/pfx/ir" 2>&1; then
     if grep -qE '(^|[^A-Z_])RX_' "$WORKDIR/pfx/ir"; then
         bad "[M4.5c] a -p myrx listing still names RX_* macros: $(grep -m1 'RX_' "$WORKDIR/pfx/ir")"
     elif grep -q 'MYRX_NCAPS' "$WORKDIR/pfx/ir"          && grep -q '^#define MYRX_NCAPS' "$WORKDIR/pfx/gen.c" "$WORKDIR/pfx/gen.h"; then
@@ -379,19 +379,19 @@ else
 fi
 
 # ---- the DFA refusal (an as-built decision, so it is pinned) -------------
-if out="$("$PCREC" -p rx --emit-ir -- 'abc' 2>&1)"; then
+if out="$(pcrec_run "$PCREC" -p rx --emit-ir -- 'abc' 2>&1)"; then
     bad "[M4.5c] --emit-ir on a pure-DFA artifact PRINTED a listing; there is no VM program to list"
 elif printf '%s' "$out" | grep -q -- '--engine=vm'; then
     ok "[M4.5c] --emit-ir on a capture-free pattern refuses cleanly and names --engine=vm as the way to see a VM program"
 else
     bad "[M4.5c] --emit-ir refused a capture-free pattern but the message names no way forward: $out"
 fi
-if "$PCREC" -p rx --emit-ir --engine=vm -- 'abc' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --emit-ir --engine=vm -- 'abc' >/dev/null 2>&1; then
     ok "[M4.5c] ...and that named way forward works"
 else
     bad "[M4.5c] --emit-ir --engine=vm was refused too — the diagnostic's advice does not work"
 fi
-if "$PCREC" -p rx --emit-ir -o "$WORKDIR/x.c" -- '(a)' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --emit-ir -o "$WORKDIR/x.c" -- '(a)' >/dev/null 2>&1; then
     bad "[M4.5c] --emit-ir accepted -o; it is a query and emits no C"
 else
     ok "[M4.5c] --emit-ir takes no -o (a query, not a compile)"
@@ -407,8 +407,8 @@ trace_ok=1
 for pat in '(a|ab)(c|bcd)' '((a)|b)+c' '(a*)b'; do
     d="$WORKDIR/tr$(printf '%s' "$pat" | md5sum | cut -c1-6)"
     mkdir -p "$d/plain" "$d/traced"
-    "$PCREC" -p rx --emit-main -o "$d/plain/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
-    "$PCREC" -p rx --trace --emit-main -o "$d/traced/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
+    pcrec_run "$PCREC" -p rx --emit-main -o "$d/plain/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
+    pcrec_run "$PCREC" -p rx --trace --emit-main -o "$d/traced/gen.c" -- "$pat" >/dev/null 2>&1 || { trace_ok=0; break; }
     # shellcheck disable=SC2086
     gen_cc "trace plain '$pat'" "$CC" $GENCFLAGS -I "$d/plain" -o "$d/plain/t" "$d/plain/gen.c" \
         || { trace_ok=0; echo "  trace: plain build failed: $(printf '%s' "$GEN_CC_LOG" | head -3)" >&2; break; }
@@ -438,7 +438,7 @@ done
 
 # A traced artifact must SAY it is traced (the D37 artifact-stamp principle:
 # no artifact is ambiguous about what it was built with).
-if "$PCREC" -p rx --trace -o "$WORKDIR/st.c" -- '(a)b' >/dev/null 2>&1; then
+if pcrec_run "$PCREC" -p rx --trace -o "$WORKDIR/st.c" -- '(a)b' >/dev/null 2>&1; then
     if grep -q '^#define RX_TRACE 1$' "$WORKDIR/st.c" \
        && grep -q 'TRACED ARTIFACT' "$WORKDIR/st.c"; then
         ok "[M4.5c] a traced artifact stamps RX_TRACE and says so in prose (D37: no artifact is ambiguous about what it was built with)"

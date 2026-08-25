@@ -297,7 +297,7 @@ flush_block() {
     # features line must be a loud harness failure, never a quiet pass.
     if [ -n "$cur_features" ]; then
         if [ -z "${features_seen[$cur_features]:-}" ]; then
-            if "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" -- 'a' >/dev/null 2>&1; then
+            if pcrec_run "$PCREC" --features "$cur_features" -p rxfc -o "$bdir/featprobe.c" -- 'a' >/dev/null 2>&1; then
                 features_seen[$cur_features]=ok
             else
                 features_seen[$cur_features]=bad

@@ -75,6 +75,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 
@@ -197,7 +198,7 @@ PATSPEC=(
 gen() { # gen <outdir> <prefix> <pattern> [extra pcrec args]
     local d="$1" pfx="$2" pat="$3"; shift 3
     mkdir -p "$d"
-    "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    pcrec_run "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
     $CC -O2 -I"$d" -c -o "$d/gen.o" "$d/gen.c" 2>>"$d/err" || return 1
 }
 
@@ -497,7 +498,7 @@ fi
 # otherwise full of. And the message must name the CONSTRUCT: the captures
 # branch's `--no-captures` advice would be a lie here, since no flag makes a
 # `\K` pattern DFA-compilable.
-ref_out="$("$PCREC" --features assertions --engine=dfa -p rx -o "$WORKDIR/ref.c" -- 'a\Kb' 2>&1)"
+ref_out="$(pcrec_run "$PCREC" --features assertions --engine=dfa -p rx -o "$WORKDIR/ref.c" -- 'a\Kb' 2>&1)"
 ref_rc=$?
 if [ "$ref_rc" -eq 0 ]; then
     bad "§4 refusal: 'a\\Kb' COMPILED under --engine=dfa. \\K has no DFA path at all (assertions_design.md §6.1), and D44.6's rule is that a request the pattern cannot honour is REFUSED, never silently downgraded"
@@ -506,7 +507,7 @@ elif ! printf '%s' "$ref_out" | grep -q '\\K' \
     bad "§4 refusal: 'a\\Kb' under --engine=dfa was refused but not BY ITS OWN NAME: $ref_out"
 elif [ -e "$WORKDIR/ref.c" ]; then
     bad "§4 refusal: the refusal still wrote an output file"
-elif ! "$PCREC" --features assertions -p rx -o "$WORKDIR/ok.c" -- 'a\Kb' >/dev/null 2>&1; then
+elif ! pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/ok.c" -- 'a\Kb' >/dev/null 2>&1; then
     bad "§4 refusal: 'a\\Kb' does not compile on the DEFAULT engine either, so the refusal above proves nothing about \\K's routing"
 else
     ok "§4 refusal: 'a\\Kb' compiles on the default engine and REFUSES under --engine=dfa naming the construct ($ref_out) — the first population src/opt/select_engine.c's second override branch has ever had, and it ran unchanged from [M4.5b]"

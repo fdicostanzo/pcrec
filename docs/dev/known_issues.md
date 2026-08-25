@@ -2851,7 +2851,7 @@ internal-consistency tripwire, never observed firing). Fix: hoist the
 guard above the three reads — costs nothing. Owner: the next emit_vm.c
 change in that region; not a release blocker.
 
-## K37 — OPEN (2026-08-25, found by the manager's battery on 17469b6) — `run_recursion_diff.sh` runs the COMPILER unbounded, and sabotage row S159 makes it loop forever
+## K37 — FIXED 2026-08-25 (srRun2, [CHK-1]; found by the manager's battery on 17469b6) — `run_recursion_diff.sh` runs the COMPILER unbounded, and sabotage row S159 makes it loop forever
 
 In the full matrix (PROCS=6) row S159 (`mark-follows-body`, src/opt/atomic.c — pcrec_bref_mark's A_CALL arm descending into u.call.body)
 compiled `((?1)*a)` for 49 min 58 s of CPU at 100% before the manager
@@ -2883,3 +2883,62 @@ codegen 50, ir_listing 16, …; full line-numbered list was kept at the
 session scratchpad — regenerate with a grep over tests/**/*.sh). Owner:
 the close lane records; a mech/harness lane fixes (one `pcrec_run`
 helper sourced everywhere, not 347 edits).
+
+**CLOSED 2026-08-25 (srRun2, continuing srRun's died-mid-task WIP; [CHK-1]
+item (a)/(c)).** Both STILL OPEN halves above are done, plus the sweep
+tool's own gap the population regeneration found.
+
+`pcrec_run` (`tests/lib/gen_timeout.sh`) is the ONE helper every script
+now routes a compiler invocation through — cheap `"$TIMEOUT_BIN"
+"$(pcrec_timeout_secs)"` by default (~2.5ms/call, MEASURED), routed
+through `scripts/watchdog` instead (~171ms/call, MEASURED — the wall +
+tree-RSS + CPU + `build/watchdog.log`-line mechanism `gen_run` already
+uses) only when the invocation's own pattern is CALL-BEARING or the
+caller passes `--hostile` — that ~68x multiplier is why watchdog is not
+the unconditional default, exactly the tradeoff `gen_run`'s own header
+already documents for its high-count inner loops.
+
+**The sweep**, regenerated per the ruling's own instruction
+(`grep -nE '(^|[^a-zA-Z_/])(build/pcrec|\$PCREC|"\$PCREC")' tests/**/*.sh`,
+filtered for comments/assignments/existence-tests/already-guarded lines):
+41 remaining bare sites after the manager's 38-file WIP commit landed
+(the mechanical sweep tool, `sweep.py`'s `TOKEN_RE`, required command
+position after `^ | ; & (` or an if/elif/while/`!` keyword — a set that
+does not include `{ `, so every ONE-LINER FUNCTION DEFINITION of the
+shape `gen_a() { "$PCREC" ... }` was invisible to it; that shape recurred
+9 times, 6 of the 8 `tests/codegen/*_identity.sh` scripts having never
+sourced `gen_timeout.sh` at all before this fix). Plus one
+`bash -c "... exec \"$PCREC\" ..."` in `tests/cli/run_cli_tests.sh`
+case8, bounded with the outer-`"$TIMEOUT_BIN"` shape `gen_cc` already
+uses for an arbitrary `bash -c` compile (`pcrec_run`'s function form
+cannot reach across that fork). Final population, all 44 touched files
+`bash -n` clean: **55 scripts / 427 compiler-token sites, 372 guarded
+directly, 31 in a reasoned allowlist (env-var prefixes onto self-
+recursive or python-worker invocations, diagnostic messages, argument
+passes, a grep pattern string), 0 unaccounted for** — asserted going
+forward by `tests/codegen/run_codegen_tests.sh`'s "[K37] THE
+BARE-COMPILER-CALL GUARD IS STRUCTURAL" check (floors 40 scripts / 380
+sites), validated red (a planted bare call named exactly) then green.
+
+`tests/recursion/run_recursion_diff.sh`'s OTHER half — the `$CC
+$GENCFLAGS` compiles and `"$d/t"` matcher runs, 4 and 3 sites — now route
+through `gen_cc`/`gen_run` the same way `tests/harness/run.sh` already
+does; `make test-recursion` afterward: **10 passed / 0 failed**, wall
+4m42s (`§3: 1836 cells`, `§5: 28458 cells`, 0 disagreements either way —
+unchanged from before this fix, confirming the bound changed nothing
+about the answers). S159 solo (`bash tests/mech/run_sabotage_matrix.sh
+S159`) re-run after this fix: see the manager's own re-run for the
+current signature — the compiler invocation itself was already bounded
+by srMech's earlier fix (merged ae9c98c), so this fix's own contribution
+to that row is the downstream compile/run bound, not the hang itself.
+
+**NOT FIXED, a genuinely separate finding this sweep surfaced and did NOT
+silently absorb**: `tests/registry/compliance_section.py` and
+`tests/vm/vm_oracle.py` both call the compiler via python's
+`subprocess.run()` with NO `timeout=` at all
+(`tests/recursion/run_lookbehind_call_sweep.py`'s `pcrec_compile()`
+likewise) — the identical S159-class hazard, one level down, outside a
+textual sweep over bash source and outside this ruling's own stated scope
+(a grep over `tests/**/*.sh`). `tests/fuzz/fuzz.py`'s own compiler calls,
+by contrast, already carry `PCREC_TIMEOUT` throughout. A K37b candidate,
+not created here.

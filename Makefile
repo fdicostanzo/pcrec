@@ -771,6 +771,17 @@ testscripts:
 # docs/testing.md for the full exclusion list and reasoning (bench, mech,
 # fuzz, spec_mod0, probes).
 
+# [TT-9] SAN_SCRIPTS — the ONE list `ubsan`/`asan`/`san` all read, rather
+# than each carrying its own copy of the `for s in ...; do` list (which is
+# exactly how they silently disagreed before: wave B+C's first patch added
+# tests/recursion/run_recursion_diff.sh to `ubsan`'s copy only, and `san`
+# never ran it). See tests/lib/san_scripts.txt for the full note and why a
+# manifest file rather than a Makefile-only list — it also needs to be
+# readable, unparsed, by tests/codegen/run_codegen_tests.sh's [TT-9]
+# structural check, which asserts every `tests/*/run_*_diff.sh` in the tree
+# is either in this file or in an EXCLUSION list with a reason.
+SAN_SCRIPTS := $(shell grep -vE '^[[:space:]]*(\#|$$)' tests/lib/san_scripts.txt)
+
 UBSAN_DIR   := build-ubsan
 UBSAN_CFLAGS := -O1 -g -fsanitize=undefined -fno-sanitize-recover=undefined
 UBSAN_ENV    = PCREC=$(CURDIR)/$(UBSAN_DIR)/pcrec CC=$(CC) \
@@ -793,33 +804,7 @@ ubsan:
 	$(MAKE) BUILD_DIR=$(UBSAN_DIR) CFLAGS="$(UBSAN_CFLAGS)" all
 	@echo "== ubsan: running the suite, both axes instrumented =="
 	@set -e; \
-	for s in tests/harness/run.sh tests/cli/run_cli_tests.sh \
-	         tests/reject/run_reject_tests.sh \
-	         tests/registry/run_registry_tests.sh \
-	         tests/parse/run_parse_tests.sh \
-	         tests/codegen/run_codegen_tests.sh \
-	         tests/codegen/run_trie_identity.sh \
-	         tests/codegen/run_endvar_identity.sh \
-	         tests/codegen/run_wordctx_identity.sh \
-	         tests/codegen/run_mlinectx_identity.sh \
-	         tests/codegen/run_gstart_identity.sh \
-	         tests/codegen/run_vm_identity.sh \
-	         tests/codegen/run_ir_listing.sh \
-	         tests/vm/run_vm_tests.sh \
-	         tests/encseam/run_encseam_tests.sh \
-	         tests/possessify/run_possdiff.sh \
-	         tests/possessify/run_possessify_tests.sh \
-	         tests/rungselect/run_rungdiff.sh \
-	         tests/rungselect/run_rungselect_tests.sh \
-	         tests/altcls/run_altdiff.sh \
-	         tests/altcls/run_altcls_tests.sh \
-	         tests/assertions/run_assertions_tests.sh \
-	         tests/atomic_groups/run_atomic_diff.sh \
-	         tests/backrefs/run_backref_diff.sh \
-	         tests/backrefs/run_dupnames_diff.sh \
-	         tests/recursion/run_recursion_diff.sh \
-	         tests/lib/run_gen_timeout_tests.sh \
-	         tests/known_fail/run_known_fail.sh; do \
+	for s in $(SAN_SCRIPTS); do \
 	    echo "-- ubsan: $$s --"; \
 	    env $(UBSAN_ENV) bash "$$s" || exit 1; \
 	done
@@ -847,33 +832,7 @@ asan:
 	$(MAKE) BUILD_DIR=$(ASAN_DIR) CFLAGS="$(ASAN_CFLAGS)" all
 	@echo "== asan: running the suite, both axes instrumented =="
 	@set -e; \
-	for s in tests/harness/run.sh tests/cli/run_cli_tests.sh \
-	         tests/reject/run_reject_tests.sh \
-	         tests/registry/run_registry_tests.sh \
-	         tests/parse/run_parse_tests.sh \
-	         tests/codegen/run_codegen_tests.sh \
-	         tests/codegen/run_trie_identity.sh \
-	         tests/codegen/run_endvar_identity.sh \
-	         tests/codegen/run_wordctx_identity.sh \
-	         tests/codegen/run_mlinectx_identity.sh \
-	         tests/codegen/run_gstart_identity.sh \
-	         tests/codegen/run_vm_identity.sh \
-	         tests/codegen/run_ir_listing.sh \
-	         tests/vm/run_vm_tests.sh \
-	         tests/encseam/run_encseam_tests.sh \
-	         tests/possessify/run_possdiff.sh \
-	         tests/possessify/run_possessify_tests.sh \
-	         tests/rungselect/run_rungdiff.sh \
-	         tests/rungselect/run_rungselect_tests.sh \
-	         tests/altcls/run_altdiff.sh \
-	         tests/altcls/run_altcls_tests.sh \
-	         tests/assertions/run_assertions_tests.sh \
-	         tests/atomic_groups/run_atomic_diff.sh \
-	         tests/backrefs/run_backref_diff.sh \
-	         tests/backrefs/run_dupnames_diff.sh \
-	         tests/recursion/run_recursion_diff.sh \
-	         tests/lib/run_gen_timeout_tests.sh \
-	         tests/known_fail/run_known_fail.sh; do \
+	for s in $(SAN_SCRIPTS); do \
 	    echo "-- asan: $$s --"; \
 	    env $(ASAN_ENV) bash "$$s" || exit 1; \
 	done
@@ -930,33 +889,7 @@ san:
 	$(MAKE) BUILD_DIR=$(SAN_DIR) CFLAGS="$(SAN_CFLAGS)" all
 	@echo "== san: running the suite, both axes instrumented =="
 	@set -e; \
-	for s in tests/harness/run.sh tests/cli/run_cli_tests.sh \
-	         tests/reject/run_reject_tests.sh \
-	         tests/registry/run_registry_tests.sh \
-	         tests/parse/run_parse_tests.sh \
-	         tests/codegen/run_codegen_tests.sh \
-	         tests/codegen/run_trie_identity.sh \
-	         tests/codegen/run_endvar_identity.sh \
-	         tests/codegen/run_wordctx_identity.sh \
-	         tests/codegen/run_mlinectx_identity.sh \
-	         tests/codegen/run_gstart_identity.sh \
-	         tests/codegen/run_vm_identity.sh \
-	         tests/codegen/run_ir_listing.sh \
-	         tests/vm/run_vm_tests.sh \
-	         tests/encseam/run_encseam_tests.sh \
-	         tests/possessify/run_possdiff.sh \
-	         tests/possessify/run_possessify_tests.sh \
-	         tests/rungselect/run_rungdiff.sh \
-	         tests/rungselect/run_rungselect_tests.sh \
-	         tests/altcls/run_altdiff.sh \
-	         tests/altcls/run_altcls_tests.sh \
-	         tests/assertions/run_assertions_tests.sh \
-	         tests/atomic_groups/run_atomic_diff.sh \
-	         tests/backrefs/run_backref_diff.sh \
-	         tests/backrefs/run_dupnames_diff.sh \
-	         tests/recursion/run_recursion_diff.sh \
-	         tests/lib/run_gen_timeout_tests.sh \
-	         tests/known_fail/run_known_fail.sh; do \
+	for s in $(SAN_SCRIPTS); do \
 	    echo "-- san: $$s --"; \
 	    env $(SAN_ENV) bash "$$s" || exit 1; \
 	done

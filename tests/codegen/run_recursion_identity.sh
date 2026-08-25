@@ -169,6 +169,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 SANFLAGS="${SANFLAGS:-}"
 KEEP="${KEEP:-0}"
@@ -356,7 +357,7 @@ stamp_count() {
         || true
 }
 # shellcheck disable=SC2086
-gen_a() { "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
+gen_a() { pcrec_run "$PCREC" --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
 gen_b() { "$REF"   --features all -p rx $2 -o - -- "$1" 2>/dev/null; }
 # shellcheck disable=SC2086
@@ -937,7 +938,7 @@ CEOF
         [ -n "$pat" ] || continue
         npat=$((npat + 1))
         local eng_a eng_b
-        eng_a="$("$PCREC" --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+        eng_a="$(pcrec_run "$PCREC" --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
         eng_b="$("$REF"   --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
         case "$eng_b" in *PCREC_ENGINE_VM*) ;; *)
             bad "[elision] the pre-module reference does NOT choose the VM for '$pat' ($eng_b), so this pattern is not an instance of the change the list names"
@@ -949,7 +950,7 @@ CEOF
         esac
         local ok_build=1
         rm -rf "$d/a" "$d/b"; mkdir -p "$d/a" "$d/b"
-        "$PCREC" --features all -p q -o "$d/a/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
+        pcrec_run "$PCREC" --features all -p q -o "$d/a/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
         "$REF"   --features all -p q -o "$d/b/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
         if [ "$ok_build" -eq 0 ]; then
             bad "[elision] '$pat' did not compile on both builds"

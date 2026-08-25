@@ -210,13 +210,13 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
     rm -rf "$d"; mkdir -p "$d"
 
     # shellcheck disable=SC2086
-    if ! "$PCREC" -p pa $eng --step-budget=$MRLDIFF_STEPS -o "$d/pa.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p pa $eng --step-budget=$MRLDIFF_STEPS -o "$d/pa.c" -- "$pat" \
             >/dev/null 2>"$d/err_a"; then
         skipped=$((skipped + 1))
         return 0                       # a pattern pcrec refuses is not a cell
     fi
     # shellcheck disable=SC2086
-    if ! "$PCREC" -p pb $eng -fno-length-prune --step-budget=$MRLDIFF_STEPS \
+    if ! pcrec_run "$PCREC" -p pb $eng -fno-length-prune --step-budget=$MRLDIFF_STEPS \
             -o "$d/pb.c" -- "$pat" >/dev/null 2>"$d/err_b"; then
         bad "'$pat' [$eng]: the pruned build compiled and the DENIED (ground-truth) one did not"
         return 0
@@ -246,7 +246,7 @@ one_pattern() {   # one_pattern <pattern> <engine-args...>
     # rather than skipping the pattern, because a missing referee is a smaller
     # loss than a missing cell.
     ref_flag=""
-    if "$PCREC" -p pc --no-captures --step-budget=$MRLDIFF_STEPS \
+    if pcrec_run "$PCREC" -p pc --no-captures --step-budget=$MRLDIFF_STEPS \
             -o "$d/pc.c" -- "$pat" >/dev/null 2>"$d/err_c"; then
         ref_flag="-DDIFF_REFEREE=1"
     else
@@ -312,7 +312,7 @@ if [ "${1:-}" = "--corpus" ]; then
         | sort -u > "$WORKDIR/all.txt"
     while IFS= read -r cp; do
         [ -n "$cp" ] || continue
-        "$PCREC" -p pc --engine=vm -o "$WORKDIR/probe.c" -- "$cp" >/dev/null 2>&1 || continue
+        pcrec_run "$PCREC" -p pc --engine=vm -o "$WORKDIR/probe.c" -- "$cp" >/dev/null 2>&1 || continue
         has_clamp "$WORKDIR/probe.c" PC && printf '%s\n' "$cp" >> "$derived"
     done < "$WORKDIR/all.txt"
     echo "mrldiff: derived $(wc -l < "$derived") clamp-carrying corpus patterns"

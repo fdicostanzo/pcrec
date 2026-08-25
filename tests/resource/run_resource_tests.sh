@@ -131,7 +131,7 @@ for pat in "${shapes[@]}"; do
     log="$("$ROOT_DIR/scripts/watchdog" -l "compile $pat" \
              -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" \
              -L "$WORKDIR/watchdog.log" -- \
-             "$PCREC" -p rx -o "$out" "$pat" 2>&1)"
+             pcrec_run "$PCREC" -p rx -o "$out" "$pat" 2>&1)"
     rc=$?
     case $rc in
         0) ok "'$pat' compiles within the ceiling" ;;
@@ -178,7 +178,7 @@ enomem_case() {
     rm -f "$out"
     local log rc
     log="$( (ulimit -v "$vlim"; exec timeout -s KILL "$K7_SECS" \
-                "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"
+                pcrec_run "$PCREC" -p rx -o "$out" "$pat") 2>&1 )"
     rc=$?
     case $rc in
         0)   bad "under ${vlim}KB, '$pat' compiled — the limit did not bind, so this cell proved nothing. Lower it or pick a hungrier pattern" ;;
@@ -237,7 +237,7 @@ name_check() {
     local pat="$1" want="$2" why="$3" log rc
     log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" \
              -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- \
-             "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"
+             pcrec_run "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"
     rc=$?
     if [ "$rc" -ne 1 ]; then
         bad "'$pat' should be a diagnosed refusal (rc 1), got rc $rc: $log"
@@ -275,7 +275,7 @@ name_check 'a{65535}' 'too complex for the DFA engine' \
 # per state and a huge NUMBER of states, so it is the state cap's own shape.
 log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" \
          -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- \
-         "$PCREC" -p rx -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"
+         pcrec_run "$PCREC" -p rx -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"
 rc=$?
 if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'states'; then
     ok "the state-COUNT cap still fires on its own shape: $(printf '%s' "$log" | head -1)"

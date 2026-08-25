@@ -48,6 +48,7 @@ set -u
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 
@@ -169,7 +170,7 @@ PATSPEC=(
 gen() { # gen <outdir> <prefix> <pattern> [extra pcrec args]
     local d="$1" pfx="$2" pat="$3"; shift 3
     mkdir -p "$d"
-    "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
+    pcrec_run "$PCREC" --features all -p "$pfx" "$@" -o "$d/gen.c" -- "$pat" 2>"$d/err" || return 1
     $CC -O2 -I"$d" -c -o "$d/gen.o" "$d/gen.c" 2>>"$d/err" || return 1
 }
 

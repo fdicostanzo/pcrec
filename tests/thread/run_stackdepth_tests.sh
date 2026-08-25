@@ -100,7 +100,7 @@ build() {
     local name="$1" pat="$2"; shift 2
     local d="$WORKDIR/$name"
     mkdir -p "$d"
-    "$PCREC" -p rx --engine=vm "$@" -o "$d/gen.c" -- "$pat" >/dev/null 2>&1 || return 1
+    pcrec_run "$PCREC" -p rx --engine=vm "$@" -o "$d/gen.c" -- "$pat" >/dev/null 2>&1 || return 1
     # shellcheck disable=SC2086
     (cd "$d" && $CC $GENCFLAGS -fstack-usage -I"$d" -o "$d/ts4" \
         "$SCRIPT_DIR/ts4_driver.c" "$d/gen.c" -lpthread) >/dev/null 2>&1 || return 1

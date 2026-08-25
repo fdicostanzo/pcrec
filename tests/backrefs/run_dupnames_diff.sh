@@ -38,6 +38,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 export ROOT_DIR
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
+. "${ROOT_DIR}/tests/lib/gen_timeout.sh"  # [K37] pcrec_run
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 # See run_backref_diff.sh's own note: the generated-code axis is
@@ -149,7 +150,7 @@ while IFS=$'\t' read -r key ng pat; do
     k="${key#k}"
     [ "$k" -ge 2 ] && run_ge2=$((run_ge2 + 1))
     d="$WORKDIR/$key"; mkdir -p "$d"
-    if ! "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
+    if ! pcrec_run "$PCREC" -p rx --features "$FEATS" -o "$d/gen.c" -- "$pat" \
             >/dev/null 2>"$d/pc.log"; then
         bad "pcrec refused '$pat': $(head -1 "$d/pc.log")"; continue
     fi
