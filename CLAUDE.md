@@ -65,6 +65,7 @@ never expand a row into a paragraph.
 | build something ahead of a measured need | D77 / memory `pcrec-build-under-measurement`: wait, name the measurement that would trigger it |
 | change emitted scaffolding (comments, declarations, layout) | it IS an `abi` bump + identity-gate re-pin in the same change — D76 |
 | brief a lane | the Conventions below + `.claude/skills/pcrec-manager` §3 (scope mandate, worktree/cell, async validation, WIP commits, `gnutimeout` on every uncertain command) |
+| wake up, or rule anything that touches pcrec-bench | read `/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md` (its durable messages to us); WRITE durable rulings/priorities/pins to `.../inbox_from_pcrec.md` there as a single-file `[inbox]` commit — the ONLY file we write in that repo (one writer each way; live coordination stays interprocess; D78). Use absolute paths / `git -C` — a `cd` in a compound command persists to its tail (the manager committed into the wrong repo once) |
 | end or pause a session | rewrite docs/dev/wake.md from scratch (skill §6) |
 
 ## Compatibility standard (D26)

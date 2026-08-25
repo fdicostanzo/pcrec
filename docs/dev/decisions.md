@@ -5636,3 +5636,33 @@ bench shows the cost at rank; otherwise never. The GENERAL RULE, stated
 for the record: **no artificial timelines; when we would be better
 served building something later under measurement, wait and see, and
 focus on builds we will not have to rebuild or roll back.**
+
+## D78 — pcrec ↔ pcrec-bench: DURABLE rulings, priorities and pins travel by two single-writer files in the bench repo; live coordination stays interprocess; the pcrec manager RUNS the bench, the bench session BUILDS it (Frank, 2026-08-25)
+
+**Context.** The post-spine loop is edit → measure. Its priorities and
+pins were being sent by SendMessage to pcrecdev2, which might be down or
+mid-task, and its runs went through `git archive` + build + a whole
+sub-bench (many minutes) for every question.
+
+**Decision (Frank).** (1) `pcrec-bench/docs/dev/inbox_from_pcrec.md` —
+written and committed (single-file, `[inbox]` prefix) ONLY by the pcrec
+manager, and the ONLY file the pcrec manager writes in that repo (the
+skill file edit of 2026-08-25 was Frank's explicit instruction);
+pcrec-bench's session reads it at wake, moves items to its plan.md, and
+appends one `ack:` line per item. `outbox_to_pcrec.md` is the reverse,
+read by the pcrec manager at wake. Numbered items, never deleted. This
+is NOT a ban on interprocess messages — when both sessions are up,
+questions and coordination flow live as before; the files are the
+avenue for what must survive a session boundary. pcrec stays read-only
+from the bench (bench BD2). (2) The bench session's purpose is building
+and expanding the bench; the pcrec manager runs it as needed from a
+bench WORKTREE (not a clone — the store is append-only and must not
+fork). (3) The loop is made fast by three bench features (inbox I-4): a
+SCRATCH record tier that never enters the canonical store; `quick`, one
+cell inline; and a `pcrec-local` testee taking a provided binary +
+flags, scratch-tier by construction. First inbox c576c5b: I-1 re-pin
+692c2e8, I-2 the ruled sub-bench order, I-3 the DFA stamp blocker, I-4
+the loop features. The bench skill carries the protocol (its §0, §1
+step 1a). Incident, same hour: D78's first write landed in the BENCH's
+decisions.md because a `cd` earlier in the compound command persisted
+(reverted, 91e9251) — the situation-index row now says absolute paths.
