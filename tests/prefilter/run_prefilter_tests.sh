@@ -301,25 +301,44 @@ check_listing_reason() {   # check_listing_reason <label> <pattern> <needle> [ar
     fi
 }
 
-# Under `auto` -- the invocation with NO engine flag, which is the one that
-# used to name `--engine=vm`.
-check_listing_reason "call under auto names the CALL, not a flag" \
-    '(?:(x)){0}a(?1)b' 'NO (subroutine call)'
+# [DD-14 wave G] THE WITNESS IS A *RECURSIVE* CALLEE NOW, and the change is the
+# claim narrowing rather than the check weakening. §8.2's argument -- erasing a
+# call gives a DIFFERENT language, not a bigger one -- is an argument about a
+# call with NO FINITE INLINING. Wave G gave the acyclic case one: a SPLICED call
+# is inlined EXACTLY, so it is not a reason for the prefilter to be off, and
+# `select_engine.c` narrowed the verdict to `pcrec_has_linked_call`. The old
+# witness `(?:(x)){0}a(?1)b` names an acyclic callee whose group is also DEAD,
+# so it now reaches the DFA ENGINE and `--emit-ir` refuses it outright -- there
+# is no listing to read. The `{0}`-callee IDIOM is kept and the callee made
+# recursive, which is the minimal edit that restores what the row was about.
+check_listing_reason "LINKED call under auto names the CALL, not a flag" \
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'NO (LINKED subroutine call)'
 # And under every flag that could plausibly claim the credit.
-check_listing_reason "call under --engine=vm still names the CALL" \
-    '(?:(x)){0}a(?1)b' 'NO (subroutine call)' --engine=vm
-check_listing_reason "call under -fno-prefilter still names the CALL" \
-    '(?:(x)){0}a(?1)b' 'NO (subroutine call)' -fno-prefilter
+check_listing_reason "LINKED call under --engine=vm still names the CALL" \
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'NO (LINKED subroutine call)' --engine=vm
+check_listing_reason "LINKED call under -fno-prefilter still names the CALL" \
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' 'NO (LINKED subroutine call)' -fno-prefilter
 # THE CONTROL: the same pattern with the call ERASED by hand is call-free and
 # keeps its prefilter, so a predicate that answered "call" for everything
 # would fail here rather than pass everywhere.
 check_listing_reason "the call-ERASED control still gets its prefilter" \
     '(x)ab' 'yes'
+# [DD-14 wave G] THE SECOND CONTROL, AND IT IS THE ONE THE NARROWING NEEDS.
+# A SPLICED call must NOT claim the credit: under `--engine=vm` the prefilter is
+# off because of the FLAG (R21 E-6) and the listing must say so. Without this
+# row the reason could be computed from `pcrec_has_call` while the verdict is
+# computed from `pcrec_has_linked_call` -- a listing whose REASON and DECISION
+# come from different predicates, which is this section's own original defect
+# arriving from the other side. MEASURED before the narrowing: this invocation
+# read "NO (subroutine call)".
+check_listing_reason "a SPLICED call does NOT claim the credit under --engine=vm" \
+    '(?:(x)){0}a(?1)b' 'NO (--engine=vm)' --engine=vm
 
-# `-fprefilter` REFUSES on a call-bearing pattern rather than overriding, and
+# `-fprefilter` REFUSES on a LINKED-call pattern rather than overriding, and
 # the diagnostic names the construct (D26 tier 2: the module name and what is
 # real are exact, the wording is not).
-check_refuse "force-on vs a subroutine call" '(?:(x)){0}a(?1)b' --features all -fprefilter
+check_refuse "force-on vs a LINKED subroutine call" \
+    '(?:(?<g>x(?&g)?y)){0}a(?&g)b' --features all -fprefilter
 
 echo
 echo "== Summary =="

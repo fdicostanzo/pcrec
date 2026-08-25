@@ -6670,9 +6670,11 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                * hand the VM under ANY invocation -- and `-fprefilter`
                * REFUSES rather than overriding (src/opt/select_engine.c). */
               : st->has_call
-              ? "NO (subroutine call) -- erasing a call is a DIFFERENT"
-                " language, not a superset (S8.2); no flag changes this,"
-                " and -fprefilter refuses"
+              ? "NO (LINKED subroutine call) -- erasing a call is a DIFFERENT"
+                " language, not a superset (S8.2), and a call in a cycle has"
+                " no finite inlining either; no flag changes this, and"
+                " -fprefilter refuses. A SPLICED call is not a reason: its"
+                " callee is inlined EXACTLY (S8.3, S6.3)"
               : (cx->opt->flags & PCREC_NO_PREFILTER)
               ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
               : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
@@ -8922,7 +8924,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * predicate is the one source `select_engine.c` forces the prefilter
          * off from, so the listing reports the SAME fact rather than a
          * second derivation of it. */
-        st.has_call  = pcrec_has_call(root);
+        /* [DD-14 wave G] `pcrec_has_LINKED_call`, matching the verdict this
+         * line EXPLAINS. `src/opt/select_engine.c` narrowed `fit.prefilter`
+         * to the linked form — a SPLICED call has an exact finite lowering,
+         * so it is not a reason for anything to be off — and a listing whose
+         * REASON is computed from a different predicate than the DECISION is
+         * the very defect this arm was added to fix, one wave on: it used to
+         * name a flag the caller had not passed, and left as `has_call` it
+         * would name a CONSTRUCT that is not the cause. MEASURED before the
+         * change: `--engine=vm '(?:(x)){0}a(?1)b'` — a fully SPLICED call —
+         * read "NO (subroutine call)" where the honest answer is
+         * "NO (--engine=vm)". */
+        st.has_call  = pcrec_has_linked_call(root);
         st.root_minw = root_minw;
         st.why = job->fit.why;
         vm_render_listing(&v, &job->irsb, &st);
