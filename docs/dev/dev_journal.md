@@ -14628,3 +14628,26 @@ MERGE on the deliverable's arrival. The lane is running its fresh solo
 (scratchpad/mgr_battery.sh): mech PROCS=6 → make test → solo
 test-resource + counterk → make san, each detached with a real PID,
 strictly one at a time, log per stage.
+
+#### Thirty-ninth session, part 36 — [DD-14.FB] MERGED (2026-08-25 ~04:51 EDT)
+
+srFBc's deliverable (lane/srFBc 88a22d1, 15 commits, 47 files): fresh
+solo `make test-resource` 19/0; final make test 26,814/29 + 1,532/1 with
+the two reds named (the K32 cell + 28 dependents; one 45 s cap cell),
+solo-green four times across two binaries; mrl green under the full
+suite; six rows DETECTED (S179 and S181 leave codegen 101/0 — only the
+behavioural cells see them; S184's corpus 16f/0p is the artifact
+refusing to compile at its own _Static_assert); the split gate 15/0
+with (A) 2206/2211/2207/2210 differing 0, elided 4/0/4/0, and (B)
+2210/2211/2211/2210 differing 0, positive control on every axis.
+MERGED `--no-ff` → main **17469b6** (43 files +3456/−180). Light checks
+on main: build; anchors all resolve; smoke 6/6; strict clean; the three
+retired gates refuse by name; K33 half-shipped + K36 present; pos/
+resume_depth gone; spec §10 BUILT; an emitted DFA header carries the
+"0 means no buffers" clause. The split identity gate is running on
+main (mgr_gate_main.log, PID 1950812); the battery (mgr_battery.sh:
+mech → test → solo resource + counterk → san) follows it. srFBc's
+worktree removed (branch kept at 88a22d1). Close brief __BASE__ =
+17469b6. The lane's two carry-offs are already in the standing rules
+(never edit an executing script; the setsid PID pitfall) and the check-
+design memory (the symmetry cell as sole detector).
