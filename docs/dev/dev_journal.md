@@ -14165,3 +14165,12 @@ cause is a claim; the checker is the fact). Sent to srG 02:05 to re-anchor
 reaches S174 late); the fix is cherry-picked to main on arrival. FB code
 lane `srFBc` spawned 02:2x from 08ddcbd under a BOX HOLD (no heavy suite
 until "GO HEAVY"). [DD-14.G] marked completed (e228404).
+
+S174 re-anchored: lane commit 13e2c30 cherry-picked to main; anchor
+checker on main: 0 stale (174 sabotages / 184 sites). Cause confirmed —
+the E5 nit's re-spelling; the lane's anchor pass predated it. Lesson (the
+lane's own words, in its commit): re-run the tripwire after the last
+SOURCE edit, not after the last edit one was thinking about. The row's
+meaning is unchanged (hand re-verified: sabotaged 43/2 FAILED on
+tests/captures/basic.rxt, control 45/0). If the sweep reached S174 before
+13e2c30 it will report the anomaly; the lane will name it in its count.
