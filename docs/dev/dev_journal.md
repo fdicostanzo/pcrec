@@ -14683,3 +14683,16 @@ started by 05:07; the full matrix is ~180 rows incl. S173-S184; the
 headline must read `unexpected: 0`; S164 must be DETECTED; S150-S153/
 S160 expected-UNDETECTED). Stages 2-4 follow: make test (the K31 pair
 expected to blip; solo resource + counterk right after), make san.
+
+#### Thirty-ninth session, part 38 — the matrix stalls on S159; K37 (2026-08-25 ~06:19 EDT)
+
+All 180 rows started by 06:05; then silence with load 1.2. Diagnosis
+from /proc (workers 454766/454775, TMPDIR=/var/tmp): row S159
+(`mark-follows-body`) was compiling `((?1)*a)` in its sabotaged tree at
+100% CPU for 49:58 inside run_recursion_diff.sh, which calls pcrec
+unbounded. Killed that ONE process by PID (cwd-verified) so the row
+concludes and the matrix proceeds — otherwise `make mech`'s 7200 s
+gnutimeout would have destroyed all 180 verdicts at 07:02. Filed K37
+(bare compiler calls in harness scripts; S159's row unbounded). Two
+stale /var/tmp mech scratch dirs (my 04:54 false start; a 2026-08-24
+16:39 run) removed — 300 MB, no processes, not evidence.

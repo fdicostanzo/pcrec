@@ -2801,3 +2801,22 @@ the guard's operand. Not reachable by any known pattern (the guard is an
 internal-consistency tripwire, never observed firing). Fix: hoist the
 guard above the three reads — costs nothing. Owner: the next emit_vm.c
 change in that region; not a release blocker.
+
+## K37 — OPEN (2026-08-25, found by the manager's battery on 17469b6) — `run_recursion_diff.sh` runs the COMPILER unbounded, and sabotage row S159 makes it loop forever
+
+In the full matrix (PROCS=6) row S159 (`mark-follows-body`, src/gen/emit_vm.c)
+compiled `((?1)*a)` for 49 min 58 s of CPU at 100% before the manager
+killed the process by PID: the sabotaged emitter never terminates on that
+pattern, and `tests/recursion/run_recursion_diff.sh` invokes `pcrec` with
+NO timeout (the D45 wrapper bounds gcc and generated matchers; the
+compiler call itself is bare). Two consequences: (a) a non-terminating
+sabotaged COMPILER is invisible to the row — no verdict, only a hang
+until `make mech`'s own 7200 s gnutimeout would have killed all 180 rows'
+evidence; (b) the same hole exists for a real compiler bug reached by any
+differential script that calls `pcrec` bare. Fix: wrap every harness
+invocation of the compiler in `"$TIMEOUT_BIN"` with a stated budget
+(D45's compile budget is the obvious one), and audit every tests/**/*.sh
+for bare `build/pcrec` calls (the K35 survey's five pipelines are the
+place to start). S159's verdict on this run is whatever the matrix
+recorded after the kill (probably DETECTED via the failed arm) — re-run
+the row solo after the fix to pin its real signature.
