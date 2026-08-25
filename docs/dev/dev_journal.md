@@ -15173,3 +15173,62 @@ NEXT: WINDOW CLOSED → the batch battery on main (make test with the
 measuring `unreached` on every row — then [MECH-REACH]/[CHK-1] close),
 then [DD-13] stamps (abi 3→4, D76's first real re-pin) and [SPEC-1.2]/
 [SPEC-1.3].
+
+#### Fortieth session, part 4 — the battery's catch, the bench re-pin read, the loop's first two outliers (2026-08-25 ~14:5x EDT)
+
+THE BATTERY CAUGHT WHAT THREE LANES' OWN CHECKS HAD PASSED (14:11 on
+0e2b23d): `make test` 26,843 cases / 0 but 4 checks red and solo
+test-resource 0/19 — `setsid: failed to execute pcrec_run`. The K37 sweep
+had placed `pcrec_run` (a bash FUNCTION) as the command handed to
+`scripts/watchdog … -- \` and `exec timeout … \` continuation lines
+(watchdog/setsid exec a BINARY), and into tests/reject, which by design
+does not source gen_timeout.sh. Why nobody saw it: test-resource and
+test-reject were on no lane's landing bar (srRun2's bar was cli/codegen/
+recursion; srLoad ran resource solo on its PRE-sweep branch), and the K37
+structural check counted "pcrec_run on the line" as GUARDED — the
+evidence was exactly wrong for this shape. Battery killed by PID (the
+first safekill hit the setsid parent — the PID-file pitfall, again; the
+session leader from pgrep did it). FIX (c448437), the general way: the
+wrapper IS the bound, so the compiler sits on the wrapper's own line
+(tests/resource ×4, counterk's K32 pin), reject uses `$TIMEOUT_BIN` (its
+design), counterk's K32-family compiles go `pcrec_run --hostile`
+(CPU-bounded — under -j12 the plain 20 s wall bound had killed
+`((a)|ab){4000,}`, "does not compile:" with no message), and the K37
+check gained the two shapes (unsourced use; the function behind an
+exec-style wrapper on a continuation line) with COMMENT-BLIND detection —
+its own first run flagged my comment "pcrec_run is not sourced here", the
+self-matching-text trap for the third time today. Validated red on a
+plant; solo: reject 589/0, resource 19/0, counterk 24/0, codegen 105/0.
+Battery RELAUNCHED 14:34 on c448437. Earlier in the hour: [SPEC-1.2]
+cli.md merged 154d5b9 (srCli, 386 lines, everything live-verified;
+table_contract.md's --emit-ir note confirmed CURRENT); spec wording fix
+35617df for pcrec-bench's O-3 (a 40-byte resume frame is a LINKED-call
+fact; the bench's factored VM artifact stamps SPLICED 10 / LINKED 0 /
+frame 24 — the stamp was right, the doc said "call-bearing").
+
+THE BENCH RE-PIN (pcrecdev2, reports/…repin-692c2e8.md, bench 0cf336c;
+window 13:34-14:10, six cells, three `inconclusive-load` on a ≤10 %-per-
+core gate that trips on git/python noise — suggested load1/nproc):
+(1) wave G's collapse CONFIRMED on the bench: factored/short-search
+84,076 → 6,284 ns = orig's 6,125; pcrec-auto 2.4× FASTER than PCRE2-JIT
+on factored, ties it on orig. (2) factored compliance 100 % under auto
+(was 5 FRAMES give-ups). (3) NEW — **[OPT-1]**: `pcrec-vm-in` beats
+`pcrec-vm` on EVERY regime at the same pin (2.3× on short-search): the
+un-suffixed VM entries pay a per-call cost the `_in` path avoids —
+general (every VM-selected pattern), measurement lane chartered
+(candidates: stack-clash page probes on a 98-131 KB frame, per-call
+init, first-touch faults). (4) From my own O-5 reading — **[OPT-2]**:
+the anchored DFA `\z` form is 3.7× SLOWER than the VM on compliance (85
+subjects, ~2.7 vs ~0.7 µs each) — hypothesis: no dead-state exit in the
+anchored DFA loop; measure before designing. Frank is chartering a
+report INTERPRETER (fact rules, predictions marked confirmed/refuted/
+uncovered); my reading went to pcrecdev2 as O-5's input: three
+chartable rows, the facts that should sit beside numbers (status
+column, form semantics, ratio baseline, per-subject n, give-up code +
+size, a cross-pin Δ column, mechanism stamps), and eight predictions
+(5 confirmed, 2 refuted = the two outliers, 1 uncovered).
+
+IN FLIGHT 14:5x: the battery on c448437; srTuning ([SPEC-1.3], three
+tallies left; found a stale `RX_VM_CALLS` spelling in lib/pcrec.h);
+srRxt ([SPEC-1.6]). Queue: [OPT-1]+[OPT-2] measurement lane after the
+battery (needs a quiet box); [DD-13] stamps; [SPEC-1.4]/[1.5].
