@@ -14727,3 +14727,13 @@ out this run (0 harness failures) — the blip is load-dependent, not
 deterministic, which is [TT-10]'s point. Stage 3's solo pair follows.
 srMech at work on S155 (scratch tree `unb`, a clean framebuffer control
 logged).
+
+#### Thirty-ninth session, part 40 — battery stages 2-3 on main (2026-08-25 ~06:41 EDT)
+
+Stage 2 `make -j12 -Otarget test` (06:20-06:32): cases failed: 0;cases passed: 26843;checks failed: 2;checks passed: 1531; — the only red
+section is test-resource (the two 45 s CPU-cap cells); the K32 corpus
+cell held this run. Stage 3 SOLO on the same tree: `make test-resource`
+19/0; counterk.rxt 1,634/0 — the K31 pair, green solo again, recorded
+beside the full-suite numbers. Stage 4 `make san` started 06:34 (~50
+min). srMech: S70's cause committed (47f2648 — the escape doorway lost
+its last enabled-but-unbuilt witness); S155 in progress.
