@@ -14033,3 +14033,17 @@ srG state at 23:58: lane/srG at d87afff (4 min old), `make test` in
 progress (final.log's earlier PIPELINE_DONE at 25,746/0 is the pre-d87afff
 run; the live run logs to mt5.log). No manager background task; watchdog
 cron 4026cd6a live.
+
+#### Thirty-ninth session, part 20 addendum 2 — pcrecdev2's whole-subject question (2026-08-25 ~00:4x EDT)
+
+pcrecdev2 reports its bench smoke independently reproduces srEmail's
+findings from scratch (330/330 oracle cells agree; the five deep-repetition
+subjects give up `PCREC_ERR_FRAMES`; orig→DFA+prefilter, factored→VM; the
+no-`@` 1 MB subject 3.4 ms vs 88 ms) and asks whether pcrec has a
+whole-subject (`ANCHORED|ENDANCHORED`) mode. Answer: no — `ENDANCHORED` is
+a ratified-but-unbuilt GENERATION-AXIS disposition (D38,
+docs/pcre2_options.md:103; [OS-4]). Idiom given: compile `(?:orig)\z` and
+use the anchored entry; NOT `$` (options=0 `$` matches before a final
+newline). Recorded as [OS-4]'s first customer note in plan.md — the D18
+"earn its axis" test now has a customer, to weigh at the going-forward
+conversation. srG at 00:4x: make test done, mech rows running.
