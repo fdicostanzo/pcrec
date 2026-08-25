@@ -14108,7 +14108,7 @@ interaction; the missing thing is a CELL, not an assertion. Three riders
 (false reorder argument at emit_vm.c:7068; `--emit-ir` false diagnostic on
 dead-capture patterns; stale emit_dfa.c comment) and a nit. Everything else
 held under ~400 artifacts on four differential axes. Panel file:
-docs/dev/reviews/2026-08-25-r1-wave-g-panel.md. Sent to srG 01:4x with
+docs/dev/reviews/2026-08-25-r35-wave-g-panel.md. Sent to srG 01:4x with
 sequencing: sweep keeps running; fix + cells + population assertion; the
 final make test after pcrecdev2's window. srG's three check fixes are in
 (eafec65, 07552a0, 2219dda; the specimen check now 12/0).

@@ -402,3 +402,14 @@ Maintenance: add a file per checkpoint and list it here.
   instance to the controls-share-a-source catalogue (evidence quoted
   from the engine where the claimed branch is unreachable). Fix pass:
   lane/m47g-fix.
+- `2026-08-25-r35-wave-g-panel.md` — [DD-14] WAVE G pre-merge critic panel
+  (lane/srG at 2219dda): critG-engine (opus) + critG-checks (sonnet), both
+  read-only. E1 BLOCKS: a spliced target reaching a LINKED target overflows
+  the splice save block — two computations of |W| (`spl_nw` vs `rgn_nw`)
+  from two mechanisms, and the corpus had ZERO artifacts with both linkages
+  (113 spliced-only, 37 linked-only), so every bar was structurally blind;
+  the lesson is a MISSING CELL, not a missing assertion. Three riders
+  (false pass-reorder argument, a false `--emit-ir` diagnostic, a stale
+  emit_dfa.c comment), four check fixes already landed by the lane. Held:
+  the narrowed-W nesting theorem under four constructions, nfa.c exactness
+  against a hand-inlined python oracle, elision partial-on-DFA impossible.

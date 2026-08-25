@@ -1,4 +1,4 @@
-# 2026-08-25 r1 — [DD-14] wave G read-only critic panel (pre-merge)
+# 2026-08-25 r35 — [DD-14] wave G read-only critic panel (pre-merge)
 
 Subject: lane/srG at 2219dda (26 commits on 85361cd; 43 files). Two
 read-only critics (D6): critG-engine (opus; engine/codegen axis) and
