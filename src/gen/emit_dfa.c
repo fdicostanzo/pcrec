@@ -875,15 +875,23 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
  * ARTIFACT: present, and INERT.
  *
  * WHY A DFA ARTIFACT HAS THEM AT ALL. §6.3's rule is that per-artifact
- * capacity macros are VM-only, because they report what an artifact DID and a
- * DFA artifact has nothing to report. These entries are the other kind of
- * fact: they are what a CALLER needs in order to call the artifact, and which
- * engine a pattern selects is not the caller's choice — `select_engine.c`
- * makes it, and it can change when the pattern changes or when an
- * optimisation lands. §6.3's own closing warning names the failure this
+ * CAPACITY/ACTIVITY macros are VM-only, because they report what an artifact
+ * DID and a DFA artifact has no such activity to report. These entries are
+ * the other kind of fact: they are what a CALLER needs in order to call the
+ * artifact, and which engine a pattern selects is not the caller's choice —
+ * `select_engine.c` makes it, and it can change when the pattern changes or
+ * when an optimisation lands. §6.3 used to close with the warning this
  * avoids: "a consumer that `#if`s on `RX_ENGINE` is writing code that does
  * not compile against half the artifacts pcrec produces". So the surface is
  * unconditional and the DEPARTURE is deliberate (spec §10.4 rules it).
+ *
+ * [DD-13], 2026-08-25: THAT WARNING NO LONGER APPLIES TO `RX_ENGINE` ITSELF,
+ * and this comment is left standing rather than deleted because the warning
+ * is still the ARGUMENT. §6.3 now splits the D46 family into (a) SELECTION
+ * FACTS, unconditional on every artifact — which is what this surface already
+ * was, two years of `_in` entries early — and (b) the capacity/activity
+ * macros, still VM-only. `RX_ENGINE` moved to (a) for exactly the reason
+ * stated above; the warning holds verbatim for every (b) macro.
  *
  * WHY THEY IGNORE THE DESCRIPTOR RATHER THAN REJECTING IT. This engine never
  * backtracks: it has no resume stack, no trail, and no capacity to exhaust —
@@ -1111,8 +1119,15 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * about deny-vs-force spelling, and forcing the hybrid prefilter on or
      * off changes no answer, only how one is found (engine_m4.md §6.1). The
      * axis's own D46 record is `<PREFIX>_VM_PREFILTER` (src/gen/emit_vm.c),
-     * VM-artifacts-only for the same reason RX_ENGINE/RX_VM_STRATS/etc. are:
-     * a DFA artifact has no separate prefilter decision to report.
+     * VM-artifacts-only — but NOT for the reason this comment used to give
+     * ("a DFA artifact has no separate prefilter decision to report", the
+     * same premise §6.3's old VM-only rule rested on). [DD-13] falsified it:
+     * a DFA artifact makes a real candidate-start prefilter decision and
+     * stamps it as `<PREFIX>_DFA_PREFILTER` (`emit_dfa_stamps`, below). The
+     * two stay SEPARATELY NAMED because their VALUE SETS are different
+     * vocabularies — "hybrid"/"none" against five DFA loop shapes — which is
+     * §6.3's (a)/(b) rule: the SELECTION FACT `RX_ENGINE` is unconditional
+     * and shared, an engine's own vocabulary is neither.
      *
      * [OPT-ALTCLS] `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` join the
      * mask too, and for the ORIGINAL deny-family reason rather than the

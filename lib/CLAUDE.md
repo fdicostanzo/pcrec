@@ -119,7 +119,12 @@ changes no answer, only how one is found. What it DOES is recorded in
 string like `RX_ENGINE`/`RX_VM_PRUNE_CEILING`, not a bitmask like
 `RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES`, because the verdict is
 artifact-level rather than per-quantifier and there is nothing to mix.
-Tests: tests/prefilter/.
+**[DD-13], 2026-08-25:** the DFA has its own prefilter axis and its own
+stamp for it (`RX_DFA_PREFILTER`, five values — src/gen/emit_dfa.c), which
+is a DIFFERENT vocabulary rather than this macro widened; `RX_ENGINE` is
+the one D46 macro that is now UNCONDITIONAL on both engines
+(docs/spec/match_api.md §6.3's (a)/(b) split).
+Tests: tests/prefilter/, tests/codegen/run_dfa_stamps.sh.
 
 **[OPT-ALTCLS] (2026-08-17):** `PCREC_NO_ALTCLS_MERGE` (`1u << 10`,
 `-fno-altcls-merge`) and `PCREC_NO_ALTCLS_FACTOR` (`1u << 11`,

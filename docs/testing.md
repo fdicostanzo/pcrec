@@ -826,6 +826,36 @@ runs. The full sweep — the fuzzer's trap-template shapes instantiated with
 capturing groups under every quantifier — is `bash tests/vm/run_vm_tests.sh
 full` and is a checkpoint-scale run, not an inner-loop one.
 
+**[DD-13] (2026-08-25) — `test-codegen` gains a THIRD script, and the section
+re-check this document asks for was done.** `tests/codegen/run_dfa_stamps.sh`
+holds the DFA artifact's three D46 selection stamps (`RX_ENGINE "dfa"`,
+`RX_DFA_SCAN`, `RX_DFA_PREFILTER`; `docs/spec/match_api.md` §6.3) to the LOOP
+THEY NAME — every verdict is derived from the emitted matcher text and
+compared against the macro, so a stamp that drifts from its mechanism is a
+red. It also carries seven NAMED WITNESSES, one per documented value.
+
+It belongs in `test-codegen` rather than beside `run_vm_identity.sh` under
+`test-vm` on the [M4.5c] test: it is compile-only (no `gcc`, no matcher is
+RUN), which is exactly the "codegen structural checks" concept this section
+already is. MEASURED on the project box, 2026-08-25, whole corpus (2,772
+patterns, 995 DFA + 1,488 VM artifacts + 289 refused):
+
+| shape | wall |
+|---|---|
+| `derive` + four `sed`/`grep` per artifact, serial | 3m50s |
+| one `awk` per artifact, serial | 2m03s |
+| the same, sharded at `PROCS=4` | **37.3s** |
+
+Only the third shipped. The sweep shards by LINE CHUNKS of one pattern file
+(`split -n l/N`) rather than by `xargs` over pattern text — a pattern is
+arbitrary bytes and every quoting scheme for passing it as an argument is a
+bug the corpus will find — and each worker writes verdict TOKENS to its own
+file, so no counter crosses a process. `PROCS` selects the shard count
+(default `nproc`); the population and all sixteen verdicts are identical
+serial and sharded, measured both ways. Because `test-codegen` runs its three
+scripts through `tests/lib/run_group.sh`, the section's own wall time is the
+max of the three rather than the sum.
+
 **[M4.5c] (2026-08-15) — `test:` is TWELVE script invocations, and two of them
 moved sections.** `run_ir_listing.sh` is new (DD-8's program listing held to
 the artifact it describes). More interestingly, `run_vm_identity.sh` MOVED
