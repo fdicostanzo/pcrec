@@ -1,22 +1,3 @@
-# ============================================================
-# ARCHIVED PROBE OUTPUT — [DD-14] module `recursion` design lane
-# ------------------------------------------------------------
-# PROBE      : docs/design/subroutines_measurements/probes/probe_recurse_loop.py
-# ARGS       : (none)
-# PROBE LAST CHANGED AT COMMIT: 8b1a200 2026-08-24
-# RUN FROM REPO COMMIT        : 8b1a200 (lane/srK34)
-#   working tree at run time  : DIRTY — see below
-#     ?? docs/design/subroutines_measurements/out/recurse_loop.txt
-# RUN DATE   : 2026-08-24T22:06:30-04:00
-# python3    : 3.14.4
-# libpcre2   : 10.46 2025-08-27
-# gcc        : 15
-# host       : Linux 7.0.0-29-generic
-# ------------------------------------------------------------
-# Evidence for the [DD-14] panel, never an oracle: no check reads this
-# file. Re-run the probe to re-measure.
-# ============================================================
-
 libpcre2: 10.46 2025-08-27
 python3 : 3.14.4
 sr_oracle.SELFCHECK: none
@@ -187,47 +168,51 @@ sr_oracle.SELFCHECK: none
   ((?1)?a)                                   'a'            predict=RC:-52                 got=RC:-52             OK  # K34's inverse-direction cell (pcrec matches, PCRE2 -52): (?1)? is the FIRST-ITEM-no-consuming-prefix shape (R1's 1a family) with an optional wrapper that changes nothing about (P)/(U) -- guard fires at the second entry exactly as 1a predicts, REGARDLESS of the optionality, because the guard trips before the '?' ever gets a chance to try the WITHOUT branch
   ((?1)*a)                                   'a'            predict=RC:-52                 got=RC:-52             OK  # K34's other inverse cell, same reasoning as (?1)? above, quantifier kind (* vs ?) does not matter -- greedy always tries WITH first
 
-=== R9: pcrec's ACTUAL answer today, vs the §3.3-RULED DESIGN's ======
-=== PROJECTED answer -- two different things, kept separate ==========
-# Module `recursion` is ROADMAP_PLANNED (src/parse/registry.c), not
-# built -- pcrec refuses every one of R1-R8's patterns at COMPILE
-# time today ('requires module recursion'), which this section
-# confirms on a representative subset rather than assuming it. That
-# refusal is D26-honest (OK-LIMITED, not a wrong answer) and is NOT
-# the 'PCREC_ERR_FRAMES' behaviour docs/dev/known_issues.md K34
-# describes -- K34's 'pcrec answers ... FRAMES' describes the RULED,
-# UNBUILT design (subroutines_design.md §3.3: 'pcrec builds NO
-# same-position guard ... the DEPTH CAPACITY is the only guard'),
-# not a measurement of running code. This probe does not build a new
-# prototype to turn that projection into a measurement (out of the
-# 'docs/probes only' scope this lane was given) -- it only keeps the
-# two honestly labelled and distinct, which K34's own wording blurs.
+=== R9: pcrec's ACTUAL answer, MEASURED on the built module ==========
+# [manager correction, 2026-08-24 ~22:3x] The lane's first version of this
+# section ran build/pcrec WITHOUT `--features all` and read the resulting
+# 'requires module recursion' refusal as 'the module is unbuilt'. It is
+# built ([DD-14] waves B+C..F on main); the default FEATURE SET simply
+# does not include it. This section compiles each K34 cell with the
+# module enabled, builds the --emit-main driver and runs the K34
+# subjects, so the divergence classes below are MEASURED, not projected.
 
-  pcrec '^((?1)a)$'              -> REFUSED (requires module 'recursion')
-  pcrec '^(a|(?1)a)$'            -> REFUSED (requires module 'recursion')
-  pcrec '^(x(?1)a)$'             -> REFUSED (requires module 'recursion')
-  pcrec '^(x*(?1)b)$'            -> REFUSED (requires module 'recursion')
-  pcrec '(a|(?1)a)b'             -> REFUSED (requires module 'recursion')
-  pcrec '^((?R)a)$'              -> REFUSED (requires module 'recursion')
+  pcrec '^((?1)a)$'        'a'        -> exit=1 nomatch
+  pcrec '^((?1)a)$'        'aa'       -> exit=1 nomatch
+  pcrec '^((?1)a)$'        ''         -> exit=1 nomatch
+  pcrec '^(a|(?1)a)$'      'aaaaa'    -> exit=0 match 0 5
+  pcrec '^(a|(?1)a)$'      'aaaaab'   -> exit=3 frames
+  pcrec '^(a|(?1)a)$'      'aaaaaaaaaa' -> exit=0 match 0 200
+  pcrec '^(x(?1)a)$'       'xa'       -> exit=1 nomatch
+  pcrec '^(x(?1)a)$'       'xxaa'     -> exit=1 nomatch
+  pcrec '^(x*(?1)b)$'      'b'        -> exit=1 nomatch
+  pcrec '^(x*(?1)b)$'      'xb'       -> exit=1 nomatch
+  pcrec '(a|(?1)a)b'       'a'        -> exit=3 frames
+  pcrec '(a|(?1)a)b'       'aa'       -> exit=3 frames
+  pcrec '(a|(?1)a)b'       'ab'       -> exit=0 match 0 2
+  pcrec '(a|(?1)a)b'       'b'        -> exit=3 frames
+  pcrec '(a|(?1)a)b'       ''         -> exit=3 frames
+  pcrec '^((?R)a)$'        'a'        -> exit=1 nomatch
+  pcrec '^((?R)a)$'        ''         -> exit=1 nomatch
+  pcrec '((?1)?a)'         'a'        -> exit=0 match 0 1
+  pcrec '((?1)*a)'         'a'        -> exit=0 match 0 1
 
-  DIVERGENCE CLASSES (§3.3's RULED design vs PCRE2, PROJECTED -- not
-  measured on running code, since module `recursion` has no build):
-  class 1, 'pcrec gives up where PCRE2 concludes cleanly': every R1
-    cell PCRE2 answers -52 on IMMEDIATELY (depth 2) is NOT this class
-    -- a depth-capped VM would also conclude at depth 2, i.e. give up
-    LESS eagerly than PCRE2's O(1) same-position check, not more.
-    The real members are the R1 1b MATCHING family at large n (199+)
-    and any R2/R3 shape whose true recursion depth sits ABOVE pcrec's
-    stamped cap but BELOW where PCRE2 needs real resources (§3.3's
-    own L9: 10.46 still answers at 800 KB / 400,000 deep) -- the band
-    §3.3 already names and sizes as the residual (its own §12 P-3).
-  class 2, 'pcrec matches where PCRE2 -52s' (the INVERSE, K34's other
-    reported gap): R7/R8's `((?1)?a)`/`((?1)*a)` cells -- PCRE2 -52s
-    at depth 2 unconditionally (R1 1a's shape) while a depth-capped,
-    no-same-position-guard VM just tries the recursion and, since it
-    has a base case reachable via the '?'/'*' WITHOUT arm, matches.
-    Per K34's own text this is 'pcrec arguably better; no expectation
-    writable' -- not a corpus-blocking divergence.
+  DIVERGENCE CLASSES, MEASURED (pcrec built with --features all vs
+  libpcre2 10.46's R1-R8 answers above):
+  class 1, 'pcrec GIVES UP where PCRE2 CONCLUDES': the unanchored
+    runaways -- `(a|(?1)a)b` on 'a'/'aa'/'b'/'' and `((?1)a)`-shaped
+    subjects PCRE2 answers NOMATCH for (its (U) lookahead term defers
+    the guard, the branch fails cleanly) -- pcrec exhausts its frame
+    capacity instead: PCREC_ERR_FRAMES. Read the exit/word above.
+  class 2, 'pcrec MATCHES where PCRE2 -52s': `((?1)?a)` / `((?1)*a)` on
+    'a' -- PCRE2 aborts at depth 2 (G,A,P,U all hold), pcrec takes the
+    '?'/'*' WITHOUT arm and matches (0,1). K34: 'arguably better; no
+    expectation writable'.
+  class 3, agreement: the anchored -52 cells -- pcrec's give-up and
+    PCRE2's abort are both refusals of the same subject (design §5.9's
+    'agreed in kind'); `^(a|(?1)a)$` on aaaaa and on a x200 MATCH on
+    both (no same-position guard in pcrec is what makes the 200-deep
+    case free).
 
 === REACHABILITY GUARD ===============================================
 outcome classes seen: ['MATCH', 'NOMATCH', 'RC']

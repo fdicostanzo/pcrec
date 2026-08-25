@@ -562,65 +562,73 @@ cell(r'((?1)*a)', "a", is52,
 
 # ==========================================================================
 print()
-print("=== R9: pcrec's ACTUAL answer today, vs the §3.3-RULED DESIGN's ======")
-print("=== PROJECTED answer -- two different things, kept separate ==========")
-print("# Module `recursion` is ROADMAP_PLANNED (src/parse/registry.c), not")
-print("# built -- pcrec refuses every one of R1-R8's patterns at COMPILE")
-print("# time today ('requires module recursion'), which this section")
-print("# confirms on a representative subset rather than assuming it. That")
-print("# refusal is D26-honest (OK-LIMITED, not a wrong answer) and is NOT")
-print("# the 'PCREC_ERR_FRAMES' behaviour docs/dev/known_issues.md K34")
-print("# describes -- K34's 'pcrec answers ... FRAMES' describes the RULED,")
-print("# UNBUILT design (subroutines_design.md §3.3: 'pcrec builds NO")
-print("# same-position guard ... the DEPTH CAPACITY is the only guard'),")
-print("# not a measurement of running code. This probe does not build a new")
-print("# prototype to turn that projection into a measurement (out of the")
-print("# 'docs/probes only' scope this lane was given) -- it only keeps the")
-print("# two honestly labelled and distinct, which K34's own wording blurs.")
+print("=== R9: pcrec's ACTUAL answer, MEASURED on the built module ==========")
+print("# [manager correction, 2026-08-24 ~22:3x] The lane's first version of this")
+print("# section ran build/pcrec WITHOUT `--features all` and read the resulting")
+print("# 'requires module recursion' refusal as 'the module is unbuilt'. It is")
+print("# built ([DD-14] waves B+C..F on main); the default FEATURE SET simply")
+print("# does not include it. This section compiles each K34 cell with the")
+print("# module enabled, builds the --emit-main driver and runs the K34")
+print("# subjects, so the divergence classes below are MEASURED, not projected.")
 print()
 
-import subprocess  # noqa: E402
+import subprocess, tempfile, shutil  # noqa: E402
 
 PCREC = os.path.normpath(os.path.join(_HERE, "..", "..", "..", "..",
                                        "build", "pcrec"))
-_refusals = 0
-for pat in (r'^((?1)a)$', r'^(a|(?1)a)$', r'^(x(?1)a)$', r'^(x*(?1)b)$',
-            r'(a|(?1)a)b', r'^((?R)a)$'):
-    try:
-        p = subprocess.run([PCREC, "-p", "rx", "--emit-main", "-o",
-                            "/dev/null", pat],
-                           capture_output=True, text=True, timeout=10)
-        refused = "requires module 'recursion'" in (p.stderr + p.stdout)
-        if refused:
-            _refusals += 1
-        print("  pcrec %-24r -> %s" % (
-            pat, "REFUSED (requires module 'recursion')" if refused
-            else "rc=%d stdout=%r stderr=%r"
-                 % (p.returncode, p.stdout[:80], p.stderr[:80])))
-    except FileNotFoundError:
-        print("  pcrec binary not found at", PCREC,
-              "-- build it first (make, in this worktree)")
-        break
+_cells = [
+    (r'^((?1)a)$',     ['a', 'aa', '']),
+    (r'^(a|(?1)a)$',   ['aaaaa', 'aaaaab', 'a'*200]),
+    (r'^(x(?1)a)$',    ['xa', 'xxaa']),
+    (r'^(x*(?1)b)$',   ['b', 'xb']),
+    (r'(a|(?1)a)b',    ['a', 'aa', 'ab', 'b', '']),
+    (r'^((?R)a)$',     ['a', '']),
+    (r'((?1)?a)',      ['a']),
+    (r'((?1)*a)',      ['a']),
+]
+_tmp = tempfile.mkdtemp(prefix="k34probe.")
+_meas = {}
+try:
+    for pat, subjs in _cells:
+        cfile = os.path.join(_tmp, "m.c")
+        p = subprocess.run([PCREC, "-p", "rx", "--features", "all",
+                            "--emit-main", "-o", cfile, "--", pat],
+                           capture_output=True, text=True, timeout=30)
+        if p.returncode != 0:
+            print("  pcrec %-18r -> REFUSED: %s" % (pat, (p.stderr or p.stdout).strip()[:90]))
+            continue
+        exe = os.path.join(_tmp, "m")
+        g = subprocess.run(["gcc", "-O1", "-o", exe, cfile],
+                           capture_output=True, text=True, timeout=120)
+        if g.returncode != 0:
+            print("  pcrec %-18r -> BUILD FAILED: %s" % (pat, g.stderr[:90]))
+            continue
+        for subj in subjs:
+            r = subprocess.run([exe, subj], capture_output=True, text=True,
+                               timeout=60)
+            out = (r.stdout.strip().splitlines() or [''])[0]
+            _meas[(pat, subj)] = (r.returncode, out)
+            print("  pcrec %-18r %-10r -> exit=%d %s" % (pat, subj[:10], r.returncode, out[:60]))
+finally:
+    shutil.rmtree(_tmp, ignore_errors=True)
 
 print()
-print("  DIVERGENCE CLASSES (§3.3's RULED design vs PCRE2, PROJECTED -- not")
-print("  measured on running code, since module `recursion` has no build):")
-print("  class 1, 'pcrec gives up where PCRE2 concludes cleanly': every R1")
-print("    cell PCRE2 answers -52 on IMMEDIATELY (depth 2) is NOT this class")
-print("    -- a depth-capped VM would also conclude at depth 2, i.e. give up")
-print("    LESS eagerly than PCRE2's O(1) same-position check, not more.")
-print("    The real members are the R1 1b MATCHING family at large n (199+)")
-print("    and any R2/R3 shape whose true recursion depth sits ABOVE pcrec's")
-print("    stamped cap but BELOW where PCRE2 needs real resources (§3.3's")
-print("    own L9: 10.46 still answers at 800 KB / 400,000 deep) -- the band")
-print("    §3.3 already names and sizes as the residual (its own §12 P-3).")
-print("  class 2, 'pcrec matches where PCRE2 -52s' (the INVERSE, K34's other")
-print("    reported gap): R7/R8's `((?1)?a)`/`((?1)*a)` cells -- PCRE2 -52s")
-print("    at depth 2 unconditionally (R1 1a's shape) while a depth-capped,")
-print("    no-same-position-guard VM just tries the recursion and, since it")
-print("    has a base case reachable via the '?'/'*' WITHOUT arm, matches.")
-print("    Per K34's own text this is 'pcrec arguably better; no expectation")
-print("    writable' -- not a corpus-blocking divergence.")
+print("  DIVERGENCE CLASSES, MEASURED (pcrec built with --features all vs")
+print("  libpcre2 10.46's R1-R8 answers above):")
+print("  class 1, 'pcrec GIVES UP where PCRE2 CONCLUDES': the unanchored")
+print("    runaways -- `(a|(?1)a)b` on 'a'/'aa'/'b'/'' and `((?1)a)`-shaped")
+print("    subjects PCRE2 answers NOMATCH for (its (U) lookahead term defers")
+print("    the guard, the branch fails cleanly) -- pcrec exhausts its frame")
+print("    capacity instead: PCREC_ERR_FRAMES. Read the exit/word above.")
+print("  class 2, 'pcrec MATCHES where PCRE2 -52s': `((?1)?a)` / `((?1)*a)` on")
+print("    'a' -- PCRE2 aborts at depth 2 (G,A,P,U all hold), pcrec takes the")
+print("    '?'/'*' WITHOUT arm and matches (0,1). K34: 'arguably better; no")
+print("    expectation writable'.")
+print("  class 3, agreement: the anchored -52 cells -- pcrec's give-up and")
+print("    PCRE2's abort are both refusals of the same subject (design §5.9's")
+print("    'agreed in kind'); `^(a|(?1)a)$` on aaaaa and on a x200 MATCH on")
+print("    both (no same-position guard in pcrec is what makes the 200-deep")
+print("    case free).")
 
 
 # ==========================================================================
