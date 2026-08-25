@@ -14737,3 +14737,23 @@ cell held this run. Stage 3 SOLO on the same tree: `make test-resource`
 beside the full-suite numbers. Stage 4 `make san` started 06:34 (~50
 min). srMech: S70's cause committed (47f2648 — the escape doorway lost
 its last enabled-but-unbuilt witness); S155 in progress.
+
+#### Thirty-ninth session, part 40 addendum — S70's measured cause (2026-08-25 ~06:41 EDT)
+
+srMech (47f2648): S70 deletes ONE site — the escape doorway's out-of-
+class enabled-but-unbuilt epilogue `UNBUILT(at, "\\%c", c)` at
+src/parse/ext.c:326 — and after [M6.5.2] retired the `\k` (backrefs)
+pin, NOT ONE row in the tree still reached it; every surviving pin on
+that arm reaches a different site (the four gate-OPEN escape rows `\b
+\B \G \K` the row's header named all gained producers). So the row has
+been certifying nothing since M6.5.2 — two milestones — and only the
+full matrix on the merged tree said so. Re-pinned with two escapes that
+are still enabled-but-unbuilt with no producer (`\Q` under quoting, `\R`
+under misc); SAB_DOC_FIGURE re-measured and marked as superseding the
+wave A figure. No src/ touched. CHECK-DESIGN LESSON: a sabotage row's
+witness can EXPIRE silently when a later wave implements the construct
+it relied on; the matrix's "NOW DETECTED" doctrine covers the other
+direction only. A row should carry a row-level assertion that its
+witness still reaches the sabotaged site (e.g. the clean tree's
+diagnostic text for the witness), so expiry is red at the wave that
+causes it, not at the next full matrix.
