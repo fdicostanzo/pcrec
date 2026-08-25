@@ -13716,3 +13716,22 @@ positive controls correctly still green). make test 25,281/0, strict,
 anchors 164/174, 80 rows unexpected 0. NOT YET MERGEABLE: its base
 predates wave F; sent back to rebase (gate script + gen_corpus.py
 conflicts), re-run the gate and one make test, resend.
+
+## 2026-08-24 (EDT), thirty-ninth session (part 16) — WAVE E MERGED (85361cd): the module's build waves A→F are ALL on main; G and the D27 landing open
+
+srE rebased onto post-F main (two conflicts: gen_corpus.py's file list —
+additive; tests/recursion/CLAUDE.md — LB's closure of the parked cells
+superseded E's stale bullet, main won) and re-validated: gate 8/0 on
+2610 patterns (168 call-bearing after F's DEFINE cells moved into the
+must-refuse bucket — the gate working, not drifting; classifier
+self-test grown to 22 with F's arm as the subject), make test 25,463/0
+alone, strict, anchors 168/178; the 80 rows carried from the pre-rebase
+head with the reasoning stamped in tests/mech/CLAUDE.md. Merged at
+85361cd: smoke 6/6, anchors resolve, strict clean, `^((?1)a)$` emits
+RX_VM_ROOT_MINW. EVERY BUILD WAVE OF §11 (A, A2, B+C, D, E, F) PLUS LB
+AND EMPTY IS NOW ON MAIN; the corpus reads 25,463 + the D27 corpus's
+1,031 to come. Battery on the E-merged tree chained (test → resource
+solo → san). Opening: wave G (opus, brief_srG.md — splice +
+dead-capture elision; the bar is the email specimen's byte-identity)
+and the D27 landing (sonnet, brief_sr27land.md — K34 cells parked under
+the ratchet, d27/ rides make test).
