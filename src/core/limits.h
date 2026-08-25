@@ -360,7 +360,48 @@ enum {
      * measured; the probe confirmed it exactly, so this is not a corrected
      * number, only a verified one. Not a contract pcrec owes — an artifact
      * of libpcre2's own build, MOD-0.6's `mod_uprops.c`. */
-    PCREC_UPROP_NAME_MAX = 48
+    PCREC_UPROP_NAME_MAX = 48,
+
+    /* [DD-14 wave G] THE SPLICE SIZE BUDGET, design §6.3 condition 3.
+     *
+     * A call site whose callee is not in a cycle is emitted INLINE unless the
+     * expansion is too big; these are "too big". Both are counted in AST
+     * NODES over the callee's region, with a spliced NESTED call contributing
+     * its own expansion (`src/opt/callgraph.c`'s `cg_expansion`), so the
+     * number a nested chain is judged on is the size it will actually reach.
+     *
+     * WHY AST NODES AND NOT EMITTED ONES, which is the measurement that would
+     * really bound the artifact. Eligibility has to be decided BEFORE the
+     * emitter runs, because `src/opt/select_engine.c` reads the linkage to
+     * answer "is this pattern VM-only" and "may it carry a prefilter" — a
+     * spliced call has an exact finite lowering and a linked one does not
+     * (§8.1, §8.3). The emitter's own `Cost` and `vm_charge` numbers do not
+     * exist yet at that point, and asking for them would be a second slot
+     * census, so this budget is over the one size that IS available. The
+     * relationship is not linear — a bounded repeat replicates its body — so
+     * PCREC_MAX_VM_NODES remains the hard backstop and this is the knob that
+     * keeps ordinary patterns far away from it.
+     *
+     * WHY A BUDGET AT ALL, given the splice is faster on every row of §6.2's
+     * table: the same table measures SPLICE at 298.6 bytes per call site
+     * against CALL's 80.1, and that slope is per site — `k` sites to one big
+     * callee is `k` copies. The budget is where "faster" stops paying for
+     * "bigger", and it is a PERFORMANCE knob in both directions: a declined
+     * site is still correct, it just takes the linkage, loses the prefilter
+     * and forces the VM.
+     *
+     * THE NUMBERS. 512 nodes is roughly two of the RFC 5322 email specimen's
+     * whole factored patterns, and every callee in that specimen expands to
+     * under 20 (docs/design/subroutines_measurements/email_specimen), so the
+     * realistic factoring population sits two orders of magnitude below the
+     * per-site cap. 8192 total added nodes is 1/16 of PCREC_MAX_VM_NODES,
+     * which leaves the replication factor an order of magnitude of room
+     * before the backstop is the thing that answers. Neither is measured
+     * against a population that exists, because §8.4 measured that population
+     * EMPTY; they are stated here so the next reader tunes a number rather
+     * than rediscovering a rule. */
+    PCREC_MAX_SPLICE_NODES = 512,
+    PCREC_MAX_SPLICE_TOTAL = 8192
 };
 
 #endif /* PCREC_LIMITS_H */

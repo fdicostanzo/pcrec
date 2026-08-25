@@ -2114,6 +2114,22 @@ fi
 #
 #     `goto *` count == 1 (the fail label) + one per emitted SHARED CALLEE BODY
 #
+# **[DD-14 WAVE G] AND A SHARED CALLEE BODY IS EMITTED ONLY FOR A *LINKED*
+# TARGET**, which is the same relation with the wave-G half of §6.3 filled in.
+# A call whose callee is not in a cycle SPLICES — the body is emitted inline at
+# the site, with its own exit reached by a plain `goto`, no frame and no
+# indirect jump — so a target every one of whose sites splices emits NO region
+# and contributes NOTHING to this count. The paragraph below already predicted
+# it ("a wave-G fully-spliced artifact is back to 1"); the fixture expectations
+# are what moved, and they moved for five of the nine rows.
+#
+# THE MIXED ROW IS THE NEW ONE AND IT IS THE SHARP ONE.
+# `(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)` calls TWO DISTINCT groups, one
+# recursive and one acyclic, and MEASURES 2 — the old reading ("one per distinct
+# called GROUP") would require 3. Without it every remaining row has all its
+# calls linked or all of them spliced, and the two readings agree on all of
+# them.
+#
 # A CONSTANT WOULD BE WRONG IN BOTH DIRECTIONS and R34's LENS2-5 measured it:
 # a call-free artifact is 1, a pattern calling ONE group is 2, a pattern
 # calling THREE DISTINCT groups is 4 however many call SITES there are (the
@@ -2137,22 +2153,24 @@ fi
 # buys.
 for dd14_row in \
     '1|(a)b' \
-    '2|(a)(?1)' \
-    '2|(a)(?1)(?1)(?1)' \
-    '4|(a)(b)(c)(?1)(?2)(?3)' \
+    '1|(a)(?1)' \
+    '1|(a)(?1)(?1)(?1)' \
+    '1|(a)(b)(c)(?1)(?2)(?3)' \
     '2|a(?R)?b' \
-    '2|(?(DEFINE)(a))(?1)b' \
-    '4|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
+    '1|(?(DEFINE)(a))(?1)b' \
+    '1|(?(DEFINE)(a)(b)(c))(?1)(?2)(?3)' \
     '1|(?(DEFINE)(a))b' \
-    '2|(?(DEFINE)(?<w>a(?&w)?b))(?&w)' ; do
+    '2|(?(DEFINE)(?<w>a(?&w)?b))(?&w)' \
+    '3|(?(DEFINE)(?<p>a(?&p)?b)(?<q>x(?&q)?y))(?&p)(?&q)' \
+    '2|(?(DEFINE)(?<p>a(?&p)?b)(?<r>z))(?&p)(?&r)' ; do
     dd14_want="${dd14_row%%|*}"
     dd14_pat="${dd14_row#*|}"
     if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14.c" -- "$dd14_pat" >/dev/null 2>&1; then
         dd14_got=$(grep -c 'goto \*' "$WORKDIR/dd14.c")
         if [ "$dd14_got" -ne "$dd14_want" ]; then
-            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want (1 for the fail label plus one per DISTINCT called group). A count that is too HIGH means a region was emitted per call SITE instead of per group; too LOW means a region's return was folded into something shared, which §6.3 forbids -- the body may be shared, the EXIT may never be"
+            bad "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits $dd14_got 'goto *' and the relation requires $dd14_want (1 for the fail label plus one per DISTINCT *LINKED* called group -- a SPLICED target emits no region and contributes none). A count that is too HIGH means a region was emitted per call SITE instead of per group, or a spliceable target was linked; too LOW means a region's return was folded into something shared, which §6.3 forbids -- the body may be shared, the EXIT may never be"
         else
-            ok "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits exactly $dd14_want 'goto *' -- 1 + the number of emitted shared callee bodies"
+            ok "[DD-14-RECURSION rule 1] (§5.8): '$dd14_pat' emits exactly $dd14_want 'goto *' -- 1 + the number of emitted shared callee bodies, which after wave G is one per distinct LINKED target"
         fi
     else
         bad "[DD-14-RECURSION rule 1]: pcrec failed to compile the fixture '$dd14_pat'"
@@ -2164,14 +2182,29 @@ done
 #
 # The resume frame gains TWO FIELDS, `RX_PUSH` gains a line, the fail label
 # gains a line, both reset functions gain a line, and `RX_CALL` appears -- all
-# of it gated on ONE flag (`Vm.has_calls`, i.e. `cx->callgraph != NULL`). That
-# is what makes §9.1's byte-identity claim STRUCTURAL rather than something an
-# identity sweep has to discover, and it is checked here in the cheap
-# direction: the four names must be ABSENT from a call-free VM artifact and
-# PRESENT in a call-bearing one, in the same run, so a check that had stopped
-# looking at anything cannot pass.
+# of it gated on ONE flag. That is what makes §9.1's byte-identity claim
+# STRUCTURAL rather than something an identity sweep has to discover, and it is
+# checked here in the cheap direction: the four names must be ABSENT from a
+# call-free VM artifact and PRESENT in a call-bearing one, in the same run, so a
+# check that had stopped looking at anything cannot pass.
+#
+# **[DD-14 WAVE G] THE FLAG SPLIT, AND THE RULE GAINED A THIRD DIRECTION.**
+# The gate is `Vm.has_linked_calls` now, not `Vm.has_calls`: all six of those
+# emissions are the CALL LINKAGE's machinery, and a pattern all of whose calls
+# SPLICE has no linkage in it at all -- no frame carries a return label because
+# no site pushes one. So the PRESENT witness had to become a call whose callee
+# is IN A CYCLE (`(a(?1)?b)`), and the pattern it replaced, `(a)(?1)`, is now a
+# THIRD fixture asserting the opposite: **a call-BEARING but fully-SPLICED
+# artifact must carry none of the four either.**
+#
+# THAT THIRD DIRECTION IS THE ONE WORTH HAVING. The first two say the machinery
+# is gated on SOMETHING; only the third says what on. A gate left at `has_calls`
+# passes both of the original checks and emits a frame field, a reset and a
+# `CALL_TOP_NONE` into every spliced artifact -- bytes no answer depends on, and
+# exactly the "the corpus cannot see this" shape this rule exists for.
 if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_free.c" -- '(a)(b)+c' >/dev/null 2>&1 \
-   && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_call.c" -- '(a)(?1)' >/dev/null 2>&1; then
+   && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_call.c" -- '(a(?1)?b)' >/dev/null 2>&1 \
+   && "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_spl.c" -- '(a)(?1)' >/dev/null 2>&1; then
     dd14_leak=0
     for dd14_tok in 'call_top' 'call_ret' 'RX_CALL' 'CALL_TOP_NONE'; do
         if grep -q "$dd14_tok" "$WORKDIR/dd14_free.c"; then
@@ -2180,12 +2213,63 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_free.c" -- '(a)(b
         fi
         if ! grep -q "$dd14_tok" "$WORKDIR/dd14_call.c"; then
             dd14_leak=$((dd14_leak + 1))
-            bad "[DD-14-RECURSION rule 2]: the CALL-BEARING artifact '(a)(?1)' does NOT mention '$dd14_tok' -- the absence check above would then be vacuous, which is this directory's own recurring failure shape"
+            bad "[DD-14-RECURSION rule 2]: the LINKED-call artifact '(a(?1)?b)' does NOT mention '$dd14_tok' -- the absence checks around it would then be vacuous, which is this directory's own recurring failure shape"
+        fi
+        if grep -q "$dd14_tok" "$WORKDIR/dd14_spl.c"; then
+            dd14_leak=$((dd14_leak + 1))
+            bad "[DD-14-RECURSION rule 2] (wave G): the call-bearing but FULLY SPLICED artifact '(a)(?1)' mentions '$dd14_tok'. Every one of these four is the CALL LINKAGE's machinery and a spliced site pushes no frame and carries no return label, so the gate must be has_linked_calls and not has_calls -- a gate left at has_calls passes the other two directions and emits these bytes into every spliced artifact"
         fi
     done
-    [ "$dd14_leak" -eq 0 ] && ok "[DD-14-RECURSION rule 2] (§9.1): a call-FREE VM artifact carries none of call_top / call_ret / RX_CALL / CALL_TOP_NONE, and a call-BEARING one carries all four -- both directions in one run"
+    [ "$dd14_leak" -eq 0 ] && ok "[DD-14-RECURSION rule 2] (§9.1, §6.3): call_top / call_ret / RX_CALL / CALL_TOP_NONE are ABSENT from a call-FREE artifact, PRESENT in a LINKED-call one, and ABSENT AGAIN from a call-bearing but fully-SPLICED one -- three directions in one run, and the third is what pins the gate to the LINKAGE rather than to the mere presence of a call"
 else
-    bad "[DD-14-RECURSION rule 2]: pcrec failed to compile one of the two fixtures"
+    bad "[DD-14-RECURSION rule 2]: pcrec failed to compile one of the three fixtures"
+fi
+
+# RULE 2b ([DD-14 wave G]) -- THE BOTH-LINKAGE POPULATION IS NOT ALLOWED TO
+# GO EMPTY.
+#
+# THIS RULE EXISTS BECAUSE ITS ABSENCE HID A REAL REFUSAL REGRESSION. Over the
+# whole corpus, 113 artifacts carried a SPLICED call and 37 carried a LINKED
+# one and **ZERO carried BOTH** -- so every behavioural instrument this module
+# has (§9.2's `A == B`, the sabotage matrix, the specimen) was structurally
+# blind to the INTERACTION, and a spliced site that REACHED a linked target
+# refused to compile at all: two computations of its `|W|` disagreed, and
+# `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` -- a non-recursive helper calling a
+# recursive rule, this module's own advertised use -- answered "the splice save
+# block overflowed (7 of 6 slots)" while `-fno-splice-calls` compiled it.
+#
+# A POPULATION THAT CAN SILENTLY BECOME ZERO IS THE FAILURE, not the bug it
+# happened to hide. `tests/recursion/bothlinkage.rxt` is the corpus answer;
+# this is the assertion that it still ANSWERS -- the property is a fact about
+# the emitted ARTIFACT (`RX_VM_CALL_SPLICED > 0 && RX_VM_CALL_LINKED > 0`), so
+# no `.rxt` cell can state it and no count taken from the pattern text would
+# survive an eligibility rule that changed its mind.
+dd14_both=0
+while IFS= read -r dd14_bpat; do
+    [ -n "$dd14_bpat" ] || continue
+    "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_b.c" -- "$dd14_bpat" >/dev/null 2>&1 || continue
+    dd14_bs=$(grep -m1 '^#define RX_VM_CALL_SPLICED ' "$WORKDIR/dd14_b.c" | awk '{print $3}')
+    dd14_bl=$(grep -m1 '^#define RX_VM_CALL_LINKED ' "$WORKDIR/dd14_b.c" | awk '{print $3}')
+    if [ "${dd14_bs:-0}" -gt 0 ] && [ "${dd14_bl:-0}" -gt 0 ]; then
+        dd14_both=$((dd14_both + 1))
+    fi
+done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/recursion/*.rxt | sed 's/^pattern //' | LC_ALL=C sort -u)
+# THE FLOOR IS 7 AND THE SHAPES ARE NAMED, because a bare count cannot say
+# WHICH interaction went missing. `bothlinkage.rxt` covers two axes: the four
+# rows the regression was FOUND on vary which per-copy family the linked region
+# allocates (counter rung, frames rung, lookahead, atomic group — that family is
+# what the overflow was made of), and three more vary the STRUCTURE of the
+# interaction itself, which a report's own witnesses cannot: a QUANTIFIED splice
+# site over a cyclic callee (one emitted site, many activations), a
+# LINK -> SPLICE -> LINK chain (a spliced body sitting BETWEEN two shared
+# regions), and a CAPTURE-BEARING linked callee (the half a splice does have to
+# restore). If this count drops, read WHICH of the seven stopped producing both
+# linkages before re-pinning — the number is a proxy for the coverage, not the
+# coverage.
+if [ "$dd14_both" -ge 7 ]; then
+    ok "[DD-14-RECURSION rule 2b] (§6.3): $dd14_both corpus patterns emit an artifact carrying BOTH linkages (RX_VM_CALL_SPLICED > 0 AND RX_VM_CALL_LINKED > 0) -- the interaction the rest of this module's instruments are blind to, and where a refusal regression lived undetected"
+else
+    bad "[DD-14-RECURSION rule 2b] (§6.3): only $dd14_both corpus patterns emit an artifact with BOTH linkages (want at least 7 — four per-copy-family rows plus a quantified splice site, a link->splice->link chain and a capture-bearing linked callee). tests/recursion/bothlinkage.rxt exists to keep this population non-empty; if its cells stopped producing both linkages -- an eligibility rule that changed its mind, a callee that stopped being cyclic -- every instrument this module has goes back to being blind to the interaction, which is how '(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)' came to refuse to compile with nothing noticing"
 fi
 
 # RULE 3 (wave A2's PASS-ORDERING FINDING, sabotage row S166) -- THE CALLEE

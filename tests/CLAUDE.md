@@ -434,6 +434,22 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   `--engine=dfa` refusal with its control. It REUSES `backrefs`'
   `bref_oracle.py` and `bref_batch.c` rather than making a third copy.
 
+  **[DD-14 wave G] `run_recursion_diff.sh` GAINS A §5** — design §9.2's SECOND
+  CONTROL, the one this module has and `lookaround` did not: every `pattern`
+  line under `tests/recursion/`, deduplicated, built on BOTH LINKAGES (default
+  and `-fno-splice-calls`) and swept over §3's own subject grid, span AND every
+  group pair (156 of 170 patterns, 15,912 cells, 0 disagreements). §1's
+  slot-survival half moved onto `-fno-splice-calls` (it greps the VM's slot
+  LAYOUT, and the spliced build has no VM) with the default build beside it as a
+  one-cell `A == B`; §4 became three cells (recursion still refuses
+  `--engine=dfa` by name, a SPLICEABLE call COMPILES, and the flag puts it
+  back). **`run_specimen_identity.sh` is new and ON DEMAND**: plan row
+  `[DD-14.G]`'s bar — the RFC 5322 email specimen in four spellings, whose
+  factored artifacts must BE the hand-inlined one past three NAMED exclusions,
+  with the 85 subjects, the libpcre2 self-check and the three 1 MB throughput
+  subjects. The corpus also runs on both linkages through `run.sh`'s new
+  `RXTFLAGS` env var (593/0 on each).
+
   **NO CELL IS PARKED ANY MORE.** Wave B+C parked three in
   `known_fail/dd14_bc_open.rxt`; [DD-14.LB] closed the file. `^(a?(?1)b)$` was
   a corpus bug (a `gu frames` expectation that could not have come from

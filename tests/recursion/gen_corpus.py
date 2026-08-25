@@ -1168,6 +1168,107 @@ REBIND = [
     ]),
 ]
 
+
+# ===========================================================================
+# bothlinkage.rxt -- [DD-14 wave G] BOTH LINKAGES IN ONE ARTIFACT
+# ===========================================================================
+# THE POPULATION THIS MODULE HAD NONE OF, AND THE ABSENCE WAS INVISIBLE.
+# Over the whole corpus, 113 artifacts carry a SPLICED call and 37 carry a
+# LINKED one and **ZERO carried BOTH** -- so `A == B`, the sabotage matrix and
+# the specimen were every one of them structurally blind to the INTERACTION
+# between the two linkages, and a real refusal regression lived there
+# undetected: the two computations of a spliced site's `|W|` disagreed the
+# moment a spliceable target REACHED a linked one, and
+# `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` -- a non-recursive helper calling a
+# recursive rule, which is this module's own advertised use -- refused with
+# "the splice save block overflowed (7 of 6 slots)" while
+# `-fno-splice-calls` compiled it.
+#
+# EVERY CELL HERE HAS `RX_VM_CALL_SPLICED > 0 AND RX_VM_CALL_LINKED > 0`, which
+# is a property of the ARTIFACT rather than of the pattern text, so
+# `tests/codegen/run_codegen_tests.sh` asserts the population SIZE as its own
+# rule: a file whose cells quietly stopped producing both linkages would go
+# green while measuring nothing, which is exactly how the gap arose.
+#
+# THE SHAPE IS ALWAYS THE SAME: an OUTER helper that is not in a cycle (so it
+# splices) whose body calls an INNER rule that calls itself (so the inner takes
+# the linkage and gets an emitted region). The four bodies differ in WHICH
+# per-copy slot family the linked region allocates -- a counter rung, a
+# frames rung over an alternation, a lookahead, an atomic group -- because
+# that family is what the overflow was made of.
+BOTHLINKAGE = [
+    ("A COUNTER-RUNG callee reached through a spliced helper (the shape the "
+     "regression was found on).", [
+        B(r"^(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)$", [('m', "aabc"), ('n', "aaabbc"),
+                                                  ('n', "ab")], "recursion",
+          groups=2,
+          note="group 1 is RECURSIVE and takes the CALL linkage; group 2 is "
+               "acyclic and SPLICES, and its inlined body reaches group 1. "
+               "The bounded repeat `a{2,5}` is what makes group 1's region "
+               "allocate a counter slot, which is the per-copy family the "
+               "spliced site's save block was sized without."),
+    ]),
+    ("A FRAMES-RUNG callee (an alternation under a bounded repeat) reached "
+     "through a spliced helper.", [
+        B(r"^(?:(\((?:[^()]|(?1)){1,9}\))(x(?1)y)){0}(?2)$",
+          [('m', "x(a)y"), ('m', "x((a))y"), ('n', "x()y")], "recursion",
+          groups=2,
+          note="the classic balanced-parens rule as the LINKED callee, with "
+               "a spliced wrapper around it."),
+    ]),
+    ("A LOOKAHEAD-bearing callee reached through a spliced helper -- the two "
+     "SLOT_LOOK_* families are per EMITTED COPY.", [
+        B(r"^(?:(\((?=.)[^()]*(?1)?\))(x(?1)y)){0}(?2)$",
+          [('m', "x(a)y"), ('n', "x()y")], "recursion,lookaround", groups=2),
+    ]),
+    ("An ATOMIC callee reached through a spliced helper -- SLOT_CUT_MARK is "
+     "the family SS5.3b measured SIX FALSE MATCHES on for a shared region.", [
+        B(r"^(?:((?>a)(?1)?b)((?1)c)){0}(?2)$",
+          [('m', "abc"), ('n', "ab")], "recursion,atomic-groups", groups=2),
+    ]),
+    # THE THREE SHAPES BELOW ARE NOT MORE OF THE FOUR ABOVE. Those four are the
+    # patterns the REGRESSION was found on and they vary one axis (which
+    # per-copy family the linked region allocates). These vary the STRUCTURE of
+    # the interaction itself, which is the axis a report's own witnesses cannot
+    # cover, and every one of them carries a subject whose continuation FAILS
+    # after the callee's first return -- so the cell only passes if a retreat
+    # back INTO the linked callee from inside a spliced body works.
+    ("QUANTIFIED SPLICE SITE over a cyclic linked callee: one emitted splice "
+     "site run MANY times, each activation reaching a shared region.", [
+        B(r"^(?:(a(?1)?b)((?1)c)){0}(?2){1,3}$",
+          [('m', "abc"), ('m', "abcabc"), ('m', "aabbc"), ('m', "abcabcabc"),
+           ('n', "ab"), ('n', "abcab")], "recursion", groups=2,
+          note="`(?2){1,3}` replicates the SPLICE, and each copy's inlined "
+               "body calls the RECURSIVE group 1 through the linkage. "
+               "\"abcab\" is the retreat subject: the second iteration's "
+               "callee returns and the trailing `$` then fails, so the match "
+               "is only decided by backtracking into a linked callee reached "
+               "from inside a spliced body."),
+    ]),
+    ("A LINK -> SPLICE -> LINK CHAIN: a linked callee whose body reaches a "
+     "spliced helper whose body reaches a second linked callee.", [
+        B(r"^(?:(x(?1)?(?2)y)((?3)m)(t(?3)?u)){0}(?1)$",
+          [('m', "xtumy"), ('m', "xxtumytumy"), ('n', "xtutuumy"),
+           ('n', "xy"), ('n', "xtumymy")], "recursion", groups=3,
+          note="group 1 is recursive (LINKED) and calls group 2; group 2 is "
+               "acyclic (SPLICED) and calls group 3, which is recursive "
+               "(LINKED) again. The spliced body therefore sits BETWEEN two "
+               "shared regions, which is where a `W` computed from the wrong "
+               "union would take slots from both of them."),
+    ]),
+    ("A CAPTURE-BEARING linked callee reached through a spliced helper -- the "
+     "capture pairs are the half a splice DOES have to restore.", [
+        B(r"^(?:((a|aa)(?1)?b)((?1)c)){0}(?3)$",
+          [('m', "abc"), ('m', "aabc"), ('m', "aabbc"), ('n', "ab"),
+           ('n', "aababbc")], "recursion", groups=3,
+          note="group 2 `(a|aa)` is a real capture INSIDE the linked callee, "
+               "and it is what `vm_splice`'s narrowed `W` keeps while dropping "
+               "the linked region's per-copy families. \"aabc\" forces the "
+               "alternation's second branch, so the cell fails if the capture "
+               "half is dropped too."),
+    ]),
+]
+
 # ===========================================================================
 # zerodef.rxt -- SS4.4c: the slot layout must count each EMITTED region,
 # including a callee parked under X{0} -- {1} is each family's non-{0} twin
@@ -2017,6 +2118,12 @@ def main():
          "including one parked under `X{0}` -- plain/recursive/atomic/"
          "rung-bearing, each against its `{1}` non-{0} twin",
          ZERODEF),
+        ("bothlinkage.rxt",
+         "[DD-14 wave G] SS6.3: BOTH linkages in ONE artifact -- a spliced "
+         "helper whose inlined body reaches a LINKED (recursive) callee. The "
+         "population the corpus had none of, and where a refusal regression "
+         "lived undetected",
+         BOTHLINKAGE),
         ("leadingzero.rxt",
          "SS2.4a: the whole digit run after `(?` or inside `\\g<>` is "
          "decimal; 0 is the root, not 'group 0'",

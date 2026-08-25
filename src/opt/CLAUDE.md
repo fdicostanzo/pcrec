@@ -879,4 +879,50 @@ in-place field mutation cannot express). Still behavior-preserving, still
 corpus-covered, still deny-only + D46-stamped like every pass in this
 directory.
 
+## [DD-14 wave G] The splice linkage, and the two predicates it added
+
+**`callgraph.c` DECIDES THE LINKAGE.** `cg_eligibility` sets
+`Ast.u.call.link = CALL_SPLICE` iff the target is not in a cycle
+(`reaches(i, i)`) AND the spliced expansion fits `PCREC_MAX_SPLICE_NODES`, with
+the expansion COMPOSING over nested splices (`exp(i) = nodes(body[i]) + SUM_j
+site[i][j] * (splice(j) ? exp(j) - 1 : 0)`), evaluated cycles-first then over
+the DAG and saturating so that "too big to count" declines like "cannot be
+counted". A second budget bounds the SUM. The decision is per TARGET, not per
+site, and the function says why that is a choice rather than a necessity.
+`-fno-splice-calls` (`PCREC_NO_SPLICE_CALLS`) returns before any of it, so the
+denied build is EXACTLY the artifact wave B+C shipped — which is what makes it
+design §9.2's control rather than a fourth variant.
+
+**AND THE PASS ORDER MOVED, ONCE.** `pcrec_discharge_atomic` is hoisted out of
+`pcrec_select_engine` into `src/core/compile.c`, right after `pcrec_altcls`.
+That is what makes two constraints satisfiable together: the call graph must run
+AFTER every pass that REBUILDS a node (callgraph.c's own header argument), and
+ENGINE SELECTION must now run AFTER the call graph, because the linkage is what
+selection reads. The hoist also fixed a latent drop — `select_engine` assigned
+the discharged root to a LOCAL, so a discharge at the very root was thrown away.
+
+**`atomic.c` GAINS TWO TREE PREDICATES**, both beside `pcrec_has_call` for this
+file's standing reason:
+
+- `pcrec_has_linked_call` — `pcrec_has_call`'s NARROWING. §8.1's "not regular"
+  and §8.2's "erasure is a different language" are both arguments about a call
+  with NO FINITE INLINING; a spliced call has one and it is exact. Reads
+  `u.call.link`, so it is meaningful only AFTER `pcrec_callgraph_build` — which
+  is why that pass moved ahead of selection.
+- `pcrec_has_live_capture` — the DEAD-CAPTURE ELISION. A group is dead when no
+  emitted code can WRITE it: its only occurrence sits under an `A_REP{0,0}`
+  (which emits nothing) and a call to it is capture-transparent (design §3.1,
+  MEASURED through the live ovector). **NOT a `DEFINE` rule** —
+  `(?(DEFINE)...)`, `(?:...){0}` and `(a){0}b` are one structural situation, and
+  a DEFINE-shaped special case would have been a parallel mechanism for two
+  thirds of its own population. Its polarity is named for the safe answer:
+  over-reporting liveness costs an engine, under-reporting loses a capture.
+
+**`select_engine.c` READS BOTH.** `forces_captures` consults the second (so an
+all-dead pattern is DFA-eligible), the prefilter predicate consults the first,
+and `first_dfa_excluding` exempts a `CALL_SPLICE` node BEFORE the generic SR-8
+row test — which is `(?>`'s per-row-conservative/per-pattern-true gap closed by
+the LINKAGE instead of by a deletion, because deleting a call means copying its
+callee's `A_CAP` nodes into the tree.
+
 Maintenance: update this file when passes are added/removed.

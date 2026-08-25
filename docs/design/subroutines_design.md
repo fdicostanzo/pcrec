@@ -2206,6 +2206,96 @@ number nor the outlier survives re-archiving, and both are gone. What survives
 re-archiving is the **ORDER** — SPLICE ≤ HYBRID ≤ CALL on every one of the
 eight rows, in both corpora — and that is what §6.3 and §6.4 rule on.
 
+### 6.2a THE RE-MEASUREMENT ON THE SHIPPED EMITTER (2026-08-24, wave G)
+
+§11 wave G's landing bar: *"the §6.2 size and time numbers re-measured on the
+SHIPPED emitter and compared against the PROTOTYPE's, with the discrepancy
+recorded whichever way it goes."* Here it is, and it goes both ways.
+
+**THE THIRD COLUMN IS GONE, AND THAT IS THE FIRST FINDING.** The prototype
+measured three variants; the shipped compiler has TWO, because §6.3's ruling
+says the lexical occurrence is emitted UNCHANGED — which IS the HYBRID row.
+There is no shipped configuration corresponding to the prototype's pure CALL
+(every call site routed through the linkage INCLUDING the lexical one), so its
+80.1 bytes/site has nothing to be re-measured against. `-fno-splice-calls` is
+the HYBRID arm, not the CALL arm.
+
+**THE FAMILY** is §6.2's, spelled as a pattern instead of by hand:
+`^([a-z]+)` then `k` repetitions of `.(?1)` then `$` — one LEXICAL occurrence
+and `k` call sites. Built `--engine=vm` (so the engine is constant across the
+sweep), `gcc -O2 -std=gnu11`, size from `nm -S` on `rx_match_anchored`.
+
+**SIZE**, bytes:
+
+| k | SPLICE | HYBRID |
+|---|---|---|
+| 0 | 367 | 367 |
+| 1 | **1384** | 1644 |
+| 2 | 2199 | 1995 |
+| 4 | 3809 | 2276 |
+| 8 | 6953 | 2789 |
+| 16 | **14217** | **3765** |
+
+**THE SLOPE, least squares over k = 0…16:**
+
+| | prototype | SHIPPED | ratio |
+|---|---|---|---|
+| SPLICE | 298.6 | **855.2** | 2.86× |
+| HYBRID | 87.6 | **171.3** | 1.96× |
+| CALL | 80.1 | — | (no shipped configuration) |
+
+**THE DISCREPANCY, STATED RATHER THAN EXPLAINED AWAY: the shipped emitter costs
+roughly 2–3× the prototype per call site on both linkages, and SPLICE's
+multiple is the larger.** The prototype was hand-written in the emitter's
+idiom; the emitter writes a listing event, a slot legend entry, the
+`SLOT_SPLICE_SAVE` park/restore pair per `W` member, and a `vm_charge` per
+node, none of which the prototype had. The number to carry forward is the
+SHIPPED one; the prototype's is not wrong, it is measuring a smaller program.
+
+**WHAT SURVIVES RE-MEASUREMENT IS WHAT §6.2 SAID WOULD SURVIVE**, and three of
+its claims reproduce exactly:
+
+1. **`k = 0` is 367 = 367.** SPLICE and HYBRID are literally the same code with
+   no call site, which is the control §6.2 says that row is for, and it holds
+   on the shipped emitter to the byte.
+2. **SPLICE is SMALLER at `k = 1`** (1384 against 1644), as it was in the
+   prototype (1001 against 1090) — there is nothing to amortise at one site.
+3. **The CROSSOVER is at `k = 2`**, exactly where the prototype put it (2199 >
+   1995 shipped; 1384 > 1191 prototype). The two tables disagree about the
+   magnitude of every entry and agree about the shape.
+
+**TIME**, best of 5, 300,000 in-process repetitions, two corpora — the mixed
+corpus reaches the call sites, the LEXICAL-ONLY one dies before the first:
+
+| k | corpus | SPLICE | HYBRID | S/H |
+|---|---|---|---|---|
+| 1 | mixed | 0.155 | 0.211 | **0.74** |
+| 1 | lex | 0.081 | 0.071 | 1.14 |
+| 2 | mixed | 0.239 | 0.316 | **0.76** |
+| 2 | lex | 0.079 | 0.076 | 1.04 |
+| 4 | mixed | 0.780 | 0.882 | **0.88** |
+| 4 | lex | 0.087 | 0.104 | 0.83 |
+| 8 | mixed | 0.126 | 0.136 | **0.92** |
+| 8 | lex | 0.102 | 0.198 | 0.51 |
+
+**THE ORDER SURVIVES ON THE MIXED CORPUS AND DOES NOT SURVIVE ON THE LEXICAL
+ONE.** §6.2's surviving claim was *"SPLICE ≤ HYBRID ≤ CALL on every one of the
+eight rows, in both corpora"*. Shipped: SPLICE wins all four mixed rows by
+8–26%, and on the lexical corpus it LOSES by 14% at `k = 1` and by 4% at
+`k = 2`. That is not a refutation of anything the ruling rests on — §6.2 itself
+says the lexical path is *"literally the same code"* on the two linkages and
+attributes its residual to *"layout and i-cache"*, at 1–3% there and up to 14%
+here — but it is a real inversion on a real row and it is reported rather than
+smoothed, which is that section's own standing instruction.
+
+**AND THE ONE NUMBER THAT MATTERS MOST IS NOT IN EITHER TABLE.** Neither
+measures what the RFC 5322 specimen measures: for a callee whose captures are
+DEAD, splicing does not make a faster VM artifact, it removes the VM. The
+factored pattern compiles to the same DFA the hand-inlined original does, and
+the throughput ratios there are 0.88× / 1.19× / 0.88× against a wave B+C
+baseline that was 23× and a give-up. `tests/recursion/run_specimen_identity.sh`
+is where that is checked.
+
 ### 6.3 THE RULING
 
 **The LEXICAL occurrence of a called group is emitted EXACTLY AS IT IS TODAY.**
@@ -2250,6 +2340,81 @@ splice consumes the same callee contract (§5.4) and the same `W` (§5.3) and
 differs only in how control reaches the body.
 
 **AND SPLICING IS WHERE THE PREFILTER COMES BACK.** §8.3.
+
+### 6.3a THE RULE AS LANDED (2026-08-24, wave G)
+
+`src/opt/callgraph.c`'s `cg_eligibility`. Condition 2 is free (§4.2 resolves
+every call or refuses the pattern) and is not written as code.
+
+    exp(i)    = nodes(body[i]) + SUM_j site[i][j] * (splice(j) ? exp(j) - 1 : 0)
+    splice(i) = !reaches(i, i) && exp(i) <= PCREC_MAX_SPLICE_NODES
+
+evaluated CYCLES FIRST (settled at a saturating ceiling with `splice = false`)
+then over the DAG, so every `j` a spliceable `i` reaches is settled before `i`
+is. The `-1` is because the `A_CALL` node the expansion replaces is itself
+counted in `nodes(body[i])`. **THE SATURATING ADD IS NOT DECORATION**:
+`site[i][j]` MULTIPLIES, and a ten-deep chain of four-call bodies reaches 4^10
+before any budget test would fire, so the accumulator saturates at the same
+ceiling a cyclic target starts at — "too big to count" and "cannot be counted"
+then DECLINE alike, and a declined site is correct.
+
+A SECOND budget bounds the SUM of added nodes (`PCREC_MAX_SPLICE_TOTAL`),
+dropping eligible targets largest-contribution-first, ties by descending target
+number. It counts LEXICAL sites, which over-estimates when a region is not
+emitted and under-estimates when one is; the approximation and its direction
+are stated at the function rather than fixed, because the exact count depends on
+which sites splice, which is the question being answered, and
+`PCREC_MAX_VM_NODES` is the hard backstop underneath either way.
+
+**THE DECISION IS PER TARGET, NOT PER SITE**, and that is a choice rather than a
+necessity (`link` is already a per-NODE field). A per-site rule is strictly more
+expressive and would put BOTH an inlined copy and a shared region in one
+artifact for one group, which makes "which linkage did this site take"
+unanswerable from the pattern — and every sabotage row over the splice, the
+`<PREFIX>_VM_CALLS` stamp and §9.2's control all read better against a rule with
+one answer per callee.
+
+**THE ORDER OF PASSES MOVED, AND IT IS ONE MOVE.**
+`pcrec_discharge_atomic` is hoisted out of `pcrec_select_engine` into
+`src/core/compile.c`, immediately after `pcrec_altcls`. That is what makes two
+constraints satisfiable at once: the call graph must run AFTER every pass that
+REBUILDS a node (this file's own §4.4 finding), and engine selection must now
+run AFTER the call graph, because the LINKAGE is what decides whether a call is
+structurally VM-only. The hoist also fixed a latent drop — `select_engine`
+assigned the discharged root to a LOCAL, so a discharge at the very root was
+thrown away. A call-free pattern is unaffected: `pcrec_callgraph_build` returns
+at its first scan having written nothing.
+
+**AND THE SPLICE NEEDED ONE THING THIS SECTION DID NOT ANTICIPATE: A SLOT
+FAMILY.** `vm_call` parks the caller's `W` with trailed SELF-writes and the
+region reads them back at `trail[frame.trail_mark + j]` — a compile-time offset
+off the ACTIVATION's own frame. **A splice has no frame, so it has no anchor.**
+So each emitted splice site gets `|W|` slots of its own
+(`SLOT_SPLICE_SAVE<n>`, an eighth family at the TOP of the layout) and the
+park/restore are ordinary trailed writes through them.
+
+**AND ITS `W` IS THE CAPTURE HALF ONLY, WHICH IS A THEOREM ABOUT CONDITION 1
+RATHER THAN AN ECONOMY.** Two activations of ONE EMITTED splice site can nest
+only if the callee can reach the site's own enclosing region — which makes
+callee and region mutually reachable, i.e. the callee is IN A CYCLE, already
+excluded. §5.3b's two measured counterexamples (a lost match from
+`SLOT_GROUP<n>_PENDING`, six false matches from `SLOT_CUT_MARK<n>`) are both
+about NESTED activations of one SHARED copy, so the seven per-copy families —
+which `vm_count_slots` gives FRESH indices to for the inlined copy — need no
+restore. SEQUENTIAL activations do happen and the trail repairs them with no
+help from the emitter, because every slot write goes through `RX_SET` (P7: no
+same-value elision). A splice-DEPTH counter in all three walks
+(`vm_count_slots`, `vm_splice`, `compile_ast`) turns "condition 1 must never be
+violated" into a DIAGNOSTIC; sabotage row S175 SEGFAULTED in `compile_ast`
+before the third of them existed, and a hang is the one failure a sabotage
+matrix cannot report.
+
+**A TARGET WITH NO LINKED SITE GETS NO REGION AT ALL** — no entry label, no
+exit label, no `RX_RETURN`, no second `goto *`, no slot instances — and
+`has_calls` splits, so the eight sites that emit the LINKAGE's machinery (the
+frame's two fields, `RX_PUSH`'s extra line, `RX_CALL`, `CALL_TOP_NONE`, the two
+resets, the fail label's line) are gated on `has_linked_calls`. A fully spliced
+artifact carries none of it.
 
 ### 6.4 Should any LOOKAROUND body compile as a call? (charter addition (ii))
 
@@ -2420,6 +2585,27 @@ existing rows already read `engines=vm` (P4), so **no row's engine mask
 changes** and SR-8's generic post-discharge consultation (D67) does the work
 with no new predicate — `lookaround_design.md` §5.1's finding, one module over.
 
+**[WAVE G, 2026-08-24] THAT ARGUMENT IS SOUND FOR A RECURSIVE CALLEE AND
+CONSERVATIVE FOR AN ACYCLIC ONE, WHICH PUTS THESE ROWS IN `(?>`'s CASE.** D67's
+rule is that the `engines` column is a per-ROW fact that cannot be made true by
+editing it, and it stays a per-row fact here: `(?1)` in general names a callee
+that MAY be recursive. But `aⁿbⁿ` is a property of the CYCLE, and `(a)(?1)` is
+as regular as `(a)a` — so the per-PATTERN answer differs from the column, which
+is exactly the gap `(?>a|ab)c` against `[^"]*+"` opened for module
+`atomic-groups`. `(?>`'s gap is closed by `pcrec_discharge_atomic` DELETING the
+node before `forces_registry` looks; a call's cannot be, because deleting it
+means copying the callee's `A_CAP` nodes into the tree — §4.4c's "two programs
+for one group" arriving by a third route. So it is closed by the LINKAGE
+instead: `first_dfa_excluding` exempts a `CALL_SPLICE` node, which is a fact a
+PASS computed, read at the same place and for the same reason the discharge's
+is. `tests/registry/registry_check.c`'s capability check asks its `--engine=dfa`
+refusal under `-fno-splice-calls`, the axis on which the column is exactly true
+— with a measured note there for why making the witnesses RECURSIVE instead
+works for twenty of the twenty-two rows and CANNOT work for `(?+N)`: a forward
+relative call's target lies to its right, a cycle through it needs a backward
+call inside it, and `first_dfa_excluding` walks an `A_CAT` spine right to left,
+so it reaches the backward call first every time.
+
 **FOUR ROW FAMILIES ARE MISSING FROM THE REGISTRY AND THIS MODULE OWNS THEM**
 (MEASURED, `out/premises.txt` axis B against `out/spellings.txt` A7a):
 
@@ -2529,6 +2715,26 @@ slow, and the number above says exactly how slow, so nobody has to guess later.
   Still a superset, so the budget is a performance knob and never a soundness
   one.
 
+**[WAVE G, AS BUILT, 2026-08-24] THE FIRST ARM SHIPPED AND THE OTHER TWO DID
+NOT — AND THE REASON IS THAT WAVE G MADE THEM UNREACHABLE RATHER THAN
+UNNECESSARY.** `src/ir/nfa.c`'s `A_CALL` arm inlines a `CALL_SPLICE` callee's
+fragment and HARD-FAILS on a linked one. The two `Sigma*` arms were not written,
+because `src/opt/select_engine.c` narrows BOTH consumers to
+`pcrec_has_linked_call`: a pattern with a LINKED call is VM-only AND gets no
+prefilter, so neither the DFA engine's machine nor the hybrid's is ever built
+for one and nothing would consume the superset. Building it anyway would buy a
+prefilter for recursive patterns at the cost of the loosest superset in the
+compiler, on exactly the window-END exposure the paragraph below is about. That
+is a real option and it is left OPEN; what is refused is shipping it without the
+population §8.4 measured empty.
+
+**AND THE FIRST ARM IS EXACT, WHICH THIS SECTION'S OWN BULLET SAYS AND ITS
+HEADING DOES NOT.** The only thing the inlined fragment loses is the CAPTURE,
+and `ast_bare` erases every `A_CAP` in the tree already — so `(?&atom)` and the
+body it names build the IDENTICAL machine, which is what makes the RFC 5322
+specimen's factored artifact the hand-inlined one's, byte for byte past the
+capture declaration.
+
 **THE HAZARD THAT MUST BE CHECKED AND IS NOT CHECKED HERE.**
 `lookaround_design.md` §5.4 found that a superset preserves the REJECTION and
 the match START but **not the window END** (8 violations of 45), and
@@ -2537,6 +2743,31 @@ the match START but **not the window END** (8 violations of 45), and
 end is at least as exposed. **Wave G does not land without re-running
 `lookaround_measurements/probes/probe_prefilter_hazard.py`'s H1/H2/H3 against
 the call population**, and §12 P-7 is the prediction.
+
+**[WAVE G, DONE, 2026-08-24] MEASURED, and the obligation is discharged with a
+CONTROL rather than with a table of zeros.**
+`subroutines_measurements/probes/probe_call_prefilter_hazard.py` transcribes
+H1/H2/H3 — including H3's SHARP form, anchored at the start the TRUE match uses
+— and evaluates them over TWO approximations on the SAME cells: INLINE, which is
+what the shipped `nfa.c` builds, and ERASE, which is §8.2's refuted one.
+**ERASE is the positive control and the run FAILS if it violates nothing**: a
+population that cannot tell a sound approximation from an unsound one reports
+zeros for the other column and means nothing by them (R32's finding against this
+project's own instruments). libpcre2 10.46, 10 hand-written (call, inlined)
+pairs x 28 subjects:
+
+| | cells | H1 | H2 | H3 naive | H3 SHARP |
+|---|---|---|---|---|---|
+| **INLINE** (shipped) | 280 | **0** | **0** | **0** | **0** |
+| ERASE (the control) | 280 | 2 | 13 | 14 | **22** |
+
+EQUIVALENCE FIRST, this section's own rule, before a single hypothesis was
+evaluated: 280 cells, 0 disagreements between each `P` and its hand-written
+`INLINE(P)`. **So the WINDOW END — the property the atomic lane found FALSE for
+its own construct at 114 cells of silent match loss — holds on every cell of the
+spliced prefilter, and the same cells show the alternative losing it 22 times.**
+§12 P-7 is answered in the direction §6.3 needs, and structurally rather than
+luckily: an exact lowering cannot violate a hypothesis about a superset.
 
 ### 8.4 The population: there is none, and that is the finding
 
@@ -2567,6 +2798,53 @@ those four literal escapes, as a call.
 Modelled on `tests/codegen/run_backref_identity.sh` and on
 `lookaround_design.md` §9.1, whose shape this design adopts rather than
 reinvents.
+
+**[WAVE G, 2026-08-24] THE CLAIM IS AMENDED, AND THE AMENDMENT IS THE POINT OF
+THIS PARAGRAPH.** *"A call-free pattern's emitted C is byte-identical before and
+after module `recursion`'s doorways"* becomes:
+
+> …**except the DEAD-GROUP ELISION, which is general and whose four corpus
+> instances are LISTED.**
+
+Wave G's `pcrec_has_live_capture` says a capture group NO EMITTED CODE CAN WRITE
+does not force the capture-recording engine. The structural fact is
+`A_REP{0,0}` emitting nothing, so the rule is stated over the FACT and not over
+the module — which means it fires on patterns carrying no call at all.
+**Gating it on `pcrec_has_call` would have kept this gate at zero and was
+REJECTED**: it would make a `recursion` special case out of something that is
+not about `recursion` (Frank's 2026-08-23 general-mechanism rule).
+
+The four are `(a){0}`, `(a){0,0}b`, `(()|$){0}b` and `(()|^){0}[b]`, written
+into the gate's header with their reason and asserted in BOTH DIRECTIONS —
+every listed pattern MUST differ, nothing outside the list may — because a
+filter hides whatever else lands in it and a list that has stopped firing has
+stopped defending anything. The assertion is a PAIR, not a constant: the four
+move on every axis that PROMISES a capture and vanish on `--no-captures`, where
+the artifact promises no group and the rule has nothing to decide (MEASURED
+4 / 4 / 4 / 0).
+
+**AND THE ENGINE STAMP IS NOT THE ASSERTION.** A separate section compiles both
+matchers — the pre-module reference's (VM) and this build's (DFA) — and compares
+the whole-match span AND EVERY GROUP PAIR: MEASURED 44 cells, 0 disagreements.
+"The engine changed" would be most damaging if it had also changed a span, and
+a byte comparison cannot see that at all.
+
+**THE FIFTH AXIS IS NOT AN AXIS OF THIS SWEEP, AND THAT IS A PROPERTY OF THE
+REFERENCE.** `-fno-splice-calls` cannot be compared against a PINNED PRE-MODULE
+commit in either direction: handed to the reference it is an unknown flag and
+refuses every pattern (2,196 refusal mismatches); handed to the subject only it
+still moves every artifact, because the flag is deliberately NOT in
+`emit_info_def`'s `strategy_denials` mask — it can change which ENGINE a pattern
+gets, which is `PCREC_NO_ATOMIC_DISCHARGE`'s shape — so `rx_info.flags` differs
+(2,196 differing). A flag that honestly records itself cannot be compared
+against a compiler that does not have it. **AND THE OBVIOUS REPAIR IS
+RULED OUT**: putting `PCREC_NO_SPLICE_CALLS` into `strategy_denials` would mask
+the second failure away, but that mask is for knobs with NO OBSERVABLE EFFECT
+and this one SELECTS AN ENGINE — masking it to make a sweep comparable would be
+falsifying the artifact's own record of itself to satisfy a check. The linkage claim is therefore a
+SEPARATE section comparing the subject AGAINST ITSELF (2,200 identical past
+exactly one `.flags` line per side), and the half about CALL-BEARING patterns
+lives where it can: §9.2's `A == B`.
 
 **FOUR AXES**, mirroring the `[M6.6.2]` ASK 4 ruling because the reasoning
 transfers exactly:
@@ -2617,6 +2895,25 @@ than over bytes — `lookaround_design.md` §6.3's substitution-driver shape,
 which that design calls its *"real cross-lowering assurance"*. It lands with
 wave G (a `-fno-splice-calls` switch is the axis), and until then §9.3's rows
 carry the load. §11 wave G's landing bar states it.
+
+**[WAVE G, DONE, 2026-08-24] IT LANDED AS `run_recursion_diff.sh` §5, AND IT
+SWEEPS THE CORPUS RATHER THAN A LIST.** Every `pattern` line under
+`tests/recursion/`, deduplicated, built on BOTH linkages and compared over the
+same 24 subjects x every startpos grid §3 uses — the span AND every `RX_NCAPS`
+group pair. That is the opposite choice from §3's hand-written population and
+is deliberate: §3's rows each defend a MEASURED claim, so writing them down is
+the point, while this section's claim is about a POPULATION and a hand-written
+list is exactly how such a claim goes green covering less than it says.
+**MEASURED: 156 of 170 corpus patterns compiled on both linkages (14 refused on
+both), 15,912 cells, 0 disagreements.** A pattern that compiles on one linkage
+and not the other is a FAILURE here and not a skip.
+
+The `.rxt` corpus carries a second, weaker form of the same control for free:
+`tests/harness/run.sh` gained `RXTFLAGS` (extra pcrec flags for every compile in
+a run), so `tests/recursion` runs 593/0 on BOTH arms against its own
+oracle-verified expectations — which is `A == oracle` and `B == oracle`, and
+therefore implies `A == B` against a third party rather than only against
+itself.
 
 ### 9.3 The sabotage rows
 
@@ -2909,7 +3206,8 @@ for every new row; `dupnames.rxt` and `kreset.rxt` green; **S-SR2a** and
 **S-SR13** DETECTED (both codegen rows, and this is the wave with the codegen
 surface).*
 
-**WAVE G — THE SPLICE LINKAGE.** §6.3's eligibility rule driven from
+**WAVE G — THE SPLICE LINKAGE. [LANDED 2026-08-24; the as-built record is
+§6.2a, §6.3a, §8.3's two amendments and §9.2's.]** §6.3's eligibility rule driven from
 `callgraph.c`'s SCCs and a size budget; `nfa.c`'s `A_CALL` arm (§8.3) and the
 prefilter restored for spliceable patterns; the `-fno-splice-calls` axis; §9.2's
 SPLICE-vs-LINKAGE `A == B` control over the whole corpus.
@@ -2918,6 +3216,41 @@ SPLICE-vs-LINKAGE `A == B` control over the whole corpus.
 against the call population with its window-end result stated; the §6.2 size
 and time numbers re-measured on the SHIPPED emitter and compared against the
 PROTOTYPE's, with the discrepancy recorded whichever way it goes.*
+
+**[THE SPECIMEN BAR, AS RULED 2026-08-24.]** Plan row `[DD-14.G]`'s own bar is
+the RFC 5322 email specimen, and the manager's ruling fixes exactly what
+"byte-identical" may exclude, because the alternative — letting the artifact
+declare fewer groups than PCRE2 counts — is a tier-1 divergence bought for ten
+lines of diff:
+
+> `factored.rx`'s artifact (and the `(?(DEFINE)` spelling's) is byte-identical
+> to `orig.rx`'s **modulo (a) the pattern-text stamp and (b) the
+> CAPTURE-DECLARATION block** — `RX_NCAPS`, the permanently-unset fill,
+> `rx_info.ngroups`/`.nnames`/`.groups` and the name table — **as an EXACT,
+> NAMED filter that states the line count it removes and FAILS on any other
+> hunk**; plus **EXACT byte-identity on the `--no-captures` axis**, where
+> neither artifact promises a group and the residue has nothing to excuse.
+
+The ruling rests on a measurement, not a preference: libpcre2 10.46 gives
+`(?(DEFINE)(?<g>a))(?&g)` CAPTURECOUNT 1 with group 1 UNSET, and
+`(?(DEFINE)(?<g>a))(x)(?&g)` CAPTURECOUNT 2 with g1 UNSET and g2 `(0,1)`. The
+dead group is COUNTED, NAMED and REPORTED UNSET, so the elision is from ENGINE
+SELECTION only and `emit_dfa.c` learns to carry N permanently-unset groups —
+**a general mechanism: any DFA-eligible pattern with dead groups gets it**, not
+a `recursion` special case.
+
+*As built:* `tests/recursion/run_specimen_identity.sh`, 8/8. Four spellings, all
+on the DFA engine with the byte-class skip prefilter; the named exclusions
+remove 22 of the reference's 681 lines and every remaining byte of the DFA
+tables, the prefilter and the search loop is identical; 85 subjects agree four
+ways with NO GIVE-UP (wave B+C measured five `PCREC_ERR_FRAMES`); libpcre2
+agrees the four spellings are one language over 255 cells; throughput 0.88x /
+1.19x / 0.88x against wave B+C's 23x and a `PCREC_ERR_STEPS` give-up. A THIRD
+line survives the filter and is named rather than folded into it:
+`RX_ALTCLS_FACTORED`, a count of what `src/opt/altcls.c` did to two different
+TEXTS — that pass runs before the splice so it cannot factor across a call
+boundary, it changes no answer, and the minimised DFAs come out identical
+anyway, which is what everything else being equal proves.
 
 **THE CLOSE** is D69-tier: the FULL sabotage matrix, the battery, the gate, the
 compliance refresh and the archive.

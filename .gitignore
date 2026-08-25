@@ -31,3 +31,8 @@ build-ccache/
 # integrity check is the COMMITTED manifest.tsv. tests/recursion/gen_corpus.py
 # regenerates them on demand when it needs them for realworld.rxt.
 docs/design/subroutines_measurements/email_specimen/subjects/
+# [DD-14 wave G] and its THROUGHPUT subjects for the same reason, one order of
+# magnitude larger: 3 MB of deterministic filler that
+# `gen_throughput_subjects.py` reproduces and that
+# `tests/recursion/run_specimen_identity.sh` regenerates when it times them.
+docs/design/subroutines_measurements/email_specimen/throughput/

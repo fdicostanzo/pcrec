@@ -50,3 +50,46 @@ slots are dead, engine selection may treat the pattern as
 capture-free, and the DFA engine applies. The checkable bar for wave
 G: `factored.rx`'s artifact is BYTE-IDENTICAL (modulo the pattern
 stamp) to `orig.rx`'s. Recorded on plan row [DD-14.G].
+
+## WAVE G: the conclusion above is now the previous tense (2026-08-24)
+
+Everything above is kept as the wave B+C record. What `[DD-14.G]` changed, and
+the numbers are from `tests/recursion/run_specimen_identity.sh`, which is this
+section as a runnable check (`bash tests/recursion/run_specimen_identity.sh`):
+
+- **All FOUR spellings compile to the DFA engine with the byte-class skip
+  prefilter** — `orig.rx`, `factored.rx`, `factored_x.rx`, and a fourth this
+  wave added, `factored_define.rx` (the `(?(DEFINE)` form, DERIVED from
+  `factored.rx` by script rather than hand-typed, because a third hand copy of
+  400 bytes could disagree about one character class).
+- **The artifacts are the SAME ARTIFACT past three NAMED exclusions.** Every
+  byte of the DFA tables, the prefilter and the search loop is identical. What
+  differs: the PATTERN TEXT (the two patterns genuinely are different text); the
+  CAPTURE DECLARATION (`RX_NCAPS` 1 vs 5, `rx_info.ngroups`/`.nnames`/
+  `.groups`, the 4-row name table and the permanently-unset fill); and
+  `RX_ALTCLS_FACTORED` (2 vs 1 — a count of what `src/opt/altcls.c` did to two
+  different TEXTS; that pass runs before the splice so it cannot factor across
+  a call boundary, and the minimised DFAs come out identical anyway).
+- **THE CAPTURE DECLARATION CANNOT BE REMOVED WITHOUT LYING.** MEASURED on
+  libpcre2 10.46: `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1 and reports
+  group 1 UNSET after a match, and `(?(DEFINE)(?<g>a))(x)(?&g)` reports g1
+  UNSET / g2 SET. The factored pattern NAMES four groups and PCRE2 counts them,
+  so an artifact declaring none would be diverging from the oracle to win a
+  diff. pcrec now reports exactly what 10.46 does, numbering included.
+- **85 subjects, four spellings, NO GIVE-UP** — the five `PCREC_ERR_FRAMES`
+  give-ups on the deep-repetition subjects are gone, because a spliced call
+  consumes no resume frame.
+- **libpcre2 agrees the four spellings are one language**: 255 cells (85
+  subjects x 3 factored spellings against the original), 0 disagreements.
+- **Throughput (1 MB, median of 5), factored against orig: 0.88x / 1.19x /
+  0.88x.** The no-`@` subject was **23x** at wave B+C and the megabyte of `a`
+  was a `PCREC_ERR_STEPS` give-up after ~6 s; both are now the hand-inlined
+  pattern's own numbers, because they are the hand-inlined pattern's own
+  artifact.
+
+**THE TWO CURES, NAMED**: §6.3's SPLICE (the callee is acyclic, so `nfa.c`
+inlines it EXACTLY and `select_engine.c` need not force the VM) and the
+DEAD-CAPTURE ELISION (`pcrec_has_live_capture` — a group no emitted code can
+WRITE does not force the capture-recording engine; the `{0}` definitions'
+groups are exactly that). Neither is a DEFINE special case: the elision is
+stated over `A_REP{0,0}` emitting nothing, which is also what `(a){0}b` is.

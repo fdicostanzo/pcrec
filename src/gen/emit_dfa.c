@@ -274,7 +274,28 @@ static void emit_search_decl(StrBuf *sb, const char *fn)
  * also rides the STATIC prefilter, deliberately — measured neutral on the
  * VM+prefilter case (j), and the prefilter is the same split-eligible
  * shape. */
-static void emit_search_head(StrBuf *c, const char *fn, const char *storage)
+/* [DD-14 wave G] HOW MANY CAPTURE PAIRS THIS ARTIFACT PROMISES, in ONE place
+ * both emitters read (`src/gen/emit_vm.c` had the only copy and now calls
+ * this). `ncaps` is `ngroups + 1` — group 0 is the whole match — or 1 when the
+ * caller asked for no captures.
+ *
+ * IT USED TO BE THE CONSTANT 1 ON THE DFA PATH, and the comment that said so
+ * ("RX_NCAPS > 1 implies the VM — one checkable line") was true only while
+ * every capture-bearing pattern forced the VM. Wave G's DEAD-CAPTURE ELISION
+ * broke that implication in the direction that matters: a group whose only
+ * lexical occurrence sits under a zero-count repeat can never be WRITTEN, so
+ * it cannot force an engine — but PCRE2 still COUNTS it and still reports it
+ * UNSET (MEASURED on 10.46: `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1 and
+ * answers g1 = unset after a match), so the artifact must still promise it.
+ * A DFA artifact with `ncaps > 1` is exactly that pattern: every group above 0
+ * is PERMANENTLY unset, which `emit_search_head` writes once at entry. */
+static int dfa_artifact_ncaps(Ctx *cx)
+{
+    return cx->want_caps ? (int)cx->ncap + 1 : 1;
+}
+
+static void emit_search_head(Ctx *cx, StrBuf *c, const char *fn,
+                             const char *storage)
 {
     sb_puts(c, "/* K24: noclone denies gcc's partial-inlining pass the\n"
                "   .part clone of this function -- the split costs a\n"
@@ -284,6 +305,39 @@ static void emit_search_head(StrBuf *c, const char *fn, const char *storage)
                "__attribute__((noclone))\n");
     sb_printf(c, "%sint %s(const unsigned char *subject, size_t subject_length, "
                  "size_t search_from, ptrdiff_t (*capture_spans)[2])\n{\n", storage, fn);
+    /* [DD-14 wave G] THE DEAD GROUPS, DECLARED AND PERMANENTLY UNSET. Emitted
+     * only when this artifact promises more than the whole match, which on
+     * this engine means every promised group is dead (a live one would have
+     * forced the VM), so the honest value for all of them is the same constant
+     * and it can be written once at entry rather than on each exit. Writing it
+     * HERE rather than in `rx_match_caps` is what makes it true for a caller
+     * that drives `rx_search` directly, which tests/codegen's K27 fixture
+     * does. The failure paths below cast `capture_spans` to void; that stays
+     * correct — a redundant cast is not a diagnostic.
+     *
+     * `fit.chosen == ENGM_DFA` IS LOAD-BEARING AND WAS MEASURED THE HARD WAY.
+     * This emitter has TWO customers: it writes the artifact's own engine, and
+     * it writes the VM hybrid's internal DFA PREFILTER (`pcrec_emit_dfa_engine`
+     * with `static` storage). The prefilter's search function takes the same
+     * `capture_spans` parameter and never reports a group — the VM does that —
+     * so filling there would put this loop into every capture-bearing VM
+     * artifact in the corpus. It did: the first version of this line moved 558
+     * of the identity gate's 2442 call-free patterns, including `(((a)))`,
+     * which has nothing to do with wave G. The gate caught it on its first
+     * run, which is the argument for the gate. */
+    if (cx->job->fit.chosen == ENGM_DFA && dfa_artifact_ncaps(cx) > 1) {
+        GenNames gn;
+        pcrec_gen_names(cx, &gn);
+        sb_printf(c,
+            "    if (capture_spans)\n"
+            "        for (int rx_g = 1; rx_g < %s_NCAPS; rx_g++) {\n"
+            "            /* every group this artifact promises is reached only\n"
+            "               through a subroutine call or sits under a {0}, so no\n"
+            "               match can set it (PCRE2 reports the same) */\n"
+            "            capture_spans[rx_g][0] = PCREC_UNSET;\n"
+            "            capture_spans[rx_g][1] = PCREC_UNSET;\n"
+            "        }\n", gn.upper);
+    }
 }
 
 static void emit_match_decl(StrBuf *sb, const char *fn)
@@ -750,14 +804,22 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
              * mod_named_groups.c numbers a named group unconditionally,
              * the same lexical-fact tier `ngroups` is. Whether that
              * number ALSO addresses a live caps[] slot is the separate,
-             * build-output question `cx->want_caps` answers: a
-             * captures-wanted build with any named group is
-             * UNCONDITIONALLY VM-selected by the pre-existing generic
-             * capture-forcing rule (src/opt/select_engine.c's
-             * forces_captures), so want_caps == true here already implies
-             * this artifact is exactly the "VM-compiled, captures-on"
-             * case §6.2 names as the one where ncaps - 1 == ngroups. See
-             * mod_named_groups.c's header for the full argument. */
+             * build-output question `cx->want_caps` answers.
+             *
+             * [DD-14 wave G] THE VALUE IS UNCHANGED AND THE REASON WAS
+             * WRONG. This comment used to argue that a captures-wanted
+             * build with any named group is UNCONDITIONALLY VM-selected,
+             * so `want_caps == true` implied a VM artifact. The
+             * dead-capture elision retired that implication:
+             * `(?:(?<g>a)){0}(?&g)b` compiles to the DFA (`.engine = 1`)
+             * with `RX_NCAPS 2` and a name table whose entry addresses
+             * slot 1. **THE SLOT NUMBER IS STILL RIGHT**, and now for a
+             * reason that does not mention the engine: `want_caps` says
+             * the caller asked for capture slots, `ncaps` is
+             * `ngroups + 1` on BOTH engines since this wave, and the
+             * group's number IS its slot index in the array the caller
+             * gets — whether any match can set it is a different question
+             * and not this field's. See mod_named_groups.c's header. */
             int slot = cx->want_caps ? sorted[i]->number : -1;
             sb_printf(c, "    { \"%s\", %d, %d, NULL },\n",
                       sorted[i]->name, sorted[i]->number, slot);
@@ -1667,7 +1729,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     bool fseed = dfa_needs_seed(fd);
     bool rseed = dfa_needs_seed(rd);
 
-    emit_search_head(c, fn, storage);
+    emit_search_head(cx, c, fn, storage);
 
     if (fs < 0 || rs < 0) {
         sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
@@ -2103,7 +2165,7 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
-    emit_search_head(c, fn, storage);
+    emit_search_head(cx, c, fn, storage);
 
     if (d->n == 0) {
         /* no live start state: the pattern matches nothing */
@@ -2805,15 +2867,20 @@ void pcrec_emit_dfa(Ctx *cx)
     GenNames g;
     pcrec_gen_names(cx, &g);
 
-    /* RX_NCAPS is 1 on every artifact this emitter produces (D42.2): a
-     * DFA-compiled pattern never promises more than the whole-match slot,
-     * capture-bearing or not. RX_NCAPS > 1 implies the VM — one checkable
-     * line, and tests/codegen checks it. */
+    /* RX_NCAPS WAS 1 ON EVERY ARTIFACT THIS EMITTER PRODUCED (D42.2), on the
+     * argument that a DFA-compiled pattern never promises more than the
+     * whole-match slot. [DD-14 wave G] retires the argument, not the rule
+     * behind it: a capture-bearing pattern still forces the VM, but a group
+     * that no emitted code can WRITE is not capture-bearing in that sense —
+     * PCRE2 counts it and reports it UNSET, and this engine can promise
+     * exactly that. `RX_NCAPS > 1` on a DFA artifact therefore means "every
+     * promised group is permanently unset", which is the line tests/codegen
+     * now checks instead. See `dfa_artifact_ncaps`. */
     /* A DFA artifact can carry no backreference — the construct is VM_ONLY by
      * its twelve registry rows and SR-8 refuses `--engine=dfa` on it by name —
      * so its mask is the unconditional entry alone. */
     cx->job->enc_mask = PCREC_ENCE_NEXT_POS;
-    pcrec_emit_prologue(cx, &g, 1);
+    pcrec_emit_prologue(cx, &g, dfa_artifact_ncaps(cx));
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     sb_puts(c, "\n");

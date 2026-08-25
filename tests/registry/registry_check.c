@@ -1894,6 +1894,47 @@ static bool eng_refuses_by_name(const char *feats, const char *pat,
     }
     pcrec_default_options(&opt);
     opt.engine = PCREC_ENGINE_DFA;
+    /* [DD-14 wave G] `-fno-splice-calls`, AND IT IS A REFINEMENT OF THIS
+     * CHECK'S CLAIM RATHER THAN A HOLE IN IT.
+     *
+     * The claim is "every VM_ONLY row with a producer refuses `--engine=dfa`
+     * BY NAME". Wave G made that claim FALSE AS STATED for module
+     * `recursion`, and the reason is the same one D67 already records for
+     * `(?>`: the `engines` column is a per-ROW fact and the truth is per
+     * PATTERN. `^(a(?1)?b)$` generates a^n b^n and is VM-only for ever; `(a)(?1)`
+     * names an ACYCLIC callee, which `src/opt/callgraph.c` splices and
+     * `src/ir/nfa.c` lowers EXACTLY, so it is as regular as `(a)a` and
+     * compiles on the DFA. `(?>`'s version of this gap is closed by the free
+     * discharge DELETING the node; a call's is closed by the LINKAGE, because
+     * a call cannot be deleted without copying its callee's `A_CAP` nodes into
+     * the tree.
+     *
+     * SO THE REFUSAL IS ASKED ON THE AXIS WHERE THE ROW'S COLUMN IS EXACTLY
+     * TRUE. `-fno-splice-calls` forces the CALL linkage at every site, which
+     * is the artifact wave B+C shipped and the configuration the column
+     * describes. It changes NOTHING for any other row here — no other module's
+     * construct has a linkage — so this is one uniform line rather than a
+     * per-module carve-out, and every witness stays as sharp as it was: a row
+     * whose producer stopped stamping still fails.
+     *
+     * AND IT IS NOT WHERE THE SPLICED BEHAVIOUR GOES UNCHECKED.
+     * `tests/recursion/run_recursion_diff.sh` §4 asserts all three cells — the
+     * RECURSIVE pattern still refuses by name, the SPLICEABLE one COMPILES,
+     * and `-fno-splice-calls` puts the second back to a refusal — which is the
+     * both-directions evidence that the line below is about the LINKAGE and
+     * not about the construct having quietly stopped being VM-only.
+     *
+     * A MEASURED REASON THE WITNESSES WERE NOT SIMPLY MADE RECURSIVE INSTEAD,
+     * which was tried first: it works for twenty of the twenty-two, and it
+     * CANNOT work for `(?+N)`. A forward relative call's target lies to its
+     * RIGHT, a cycle through that target needs a backward call INSIDE it —
+     * therefore also to the right — and `first_dfa_excluding` walks an
+     * `A_CAT` spine RIGHT TO LEFT, so it reaches the backward call first and
+     * the refusal names THAT row every time. Verified on five shapes,
+     * including `(?+1)((?-1)?a)` and `((?+1)?a((?-2)?b))`: every one names
+     * `(a)(?-1)` or `(a)(a)(?-2)`. Two rows that could not be witnessed at all
+     * is a worse outcome than one uniform axis. */
+    opt.flags |= PCREC_NO_SPLICE_CALLS;
     memset(&out, 0, sizeof out);
     memset(&perr, 0, sizeof perr);
     bool okrefuse;

@@ -576,6 +576,39 @@ typedef struct {
                            * that the graph ran. NOT the gate (`has_calls` is),
                            * because a call parked under `X{0}` emits no site
                            * while its region is still emitted. */
+    /* [DD-14 wave G] THE SPLICE. `rgn_emit[i]` is "target i needs a shared
+     * emitted region", which is exactly `!splice`: a target every one of whose
+     * sites is inlined has no region, no entry label, no exit label and no
+     * second `goto *` — which is what keeps `[DD-14.G]`'s specimen bar
+     * reachable and what S-SR13's `goto *` relation counts.
+     *
+     * `nsplice`/`nsplice_total` is an EIGHTH SLOT FAMILY,
+     * `SLOT_SPLICE_SAVE<n>`, |W| slots per EMITTED splice site, holding the
+     * caller's parked values across the inlined body. It sits at the TOP of
+     * the layout so every base below it is unmoved. `vm_splice`'s header has
+     * the whole argument for why a splice needs a slot family where the
+     * linkage needs only the trail. */
+    bool     *rgn_emit;
+    bool      has_linked_calls;
+    /* [DD-14 wave G] HOW MANY SPLICES DEEP THIS WALK IS, in the counter and in
+     * the emitter alike. §6.3 condition 1 makes an unbounded chain impossible
+     * — a spliced callee is not in a cycle, so the inlining is a DAG descent
+     * bounded by the number of targets — and this counter is what turns "must
+     * not happen" into a DIAGNOSTIC instead of a hang. An eligibility rule that
+     * ever answered SPLICE for a recursive callee would otherwise recurse for
+     * ever in `vm_count_slots` (which charges nothing and so never reaches
+     * PCREC_MAX_VM_NODES) and take the C stack with it, and a hang is the one
+     * failure a sabotage matrix cannot report. S-SR20 is the row. */
+    int       splice_depth;
+    /* |W| for a SPLICED call to target i — the CAPTURE half only (see
+     * `vm_splice`). Known BEFORE `vm_count_slots` runs, which is why it is a
+     * count and not a slot list: the indices need the family totals the
+     * counting pass produces, but the SIZE needs only the group set. */
+    const int *spl_nw;
+    bool     **rgn_grp;   /* rgn_grp[i][g]: region i can write group g */
+    int       nsplice;
+    int       nsplice_total;
+    long long nsplicesite;   /* emitted SPLICE sites, counted as written */
     int      *rgn_lbl;    /* region i's ENTRY label id */
     int      *rgn_exit;   /* region i's EXIT label id (where RX_RETURN sits) */
     int     **rgn_w;      /* W(i), ascending slot indices */
@@ -776,6 +809,14 @@ static bool vm_slot_name(Vm *v, int slot, char *buf, size_t bufsz)
         snprintf(buf, bufsz, "SLOT_LOOK_POS%d", slot - base_lookpos);
         return true;
     }
+    /* [DD-14 wave G] the splice family, above the lookaround block for the
+     * same reason that one is above the pending block: every base below it is
+     * unmoved, so a splice-free artifact's numbering is byte-identical. */
+    int base_splice = base_lookpos + v->nlookpos_total;
+    if (slot < base_splice + v->nsplice_total) {
+        snprintf(buf, bufsz, "SLOT_SPLICE_SAVE%d", slot - base_splice);
+        return true;
+    }
     return false;
 }
 
@@ -867,6 +908,14 @@ static int vm_slot_lookmark(Vm *v, int i)
          + v->nmark_total + 3 * v->nrev_total + v->nctr_total
          + v->npend_total + i;
 }
+/* [DD-14 wave G] the EIGHTH family, above everything — see the `Vm` field. */
+static int vm_slot_splice(Vm *v, int i)
+{
+    return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
+         + v->nmark_total + 3 * v->nrev_total + v->nctr_total
+         + v->npend_total + v->nlookmark_total + v->nlookpos_total + i;
+}
+
 static int vm_slot_lookpos(Vm *v, int i)
 {
     return 2 * (v->ngroups + 1) + v->nguard_total + v->nlow_total
@@ -2185,7 +2234,16 @@ static Cost vm_cost(Vm *v, const Ast *a, bool under_atomic)
             return c;
         }
         c = v->rgn_cost[idx];
-        c.frames += 1;
+        /* [DD-14 wave G] A SPLICE COSTS NO FRAME, which is the point. §5.1's
+         * frame is the CALL RECORD — the return label and the activation
+         * chain — and a spliced site has neither: control leaves through a
+         * label the emitter knows at compile time. The specimen's five
+         * PCREC_ERR_FRAMES give-ups (2000-deep `a.a.a`, 5 KB quoted strings,
+         * a 500-label domain) were every `(?&x)` iteration costing a frame
+         * that SURVIVED its return; this line is where that stops being true.
+         * The trail charge stays: the park and the restore are `2 * |W|`
+         * trailed writes on either linkage. */
+        if (a->u.call.link != CALL_SPLICE) c.frames += 1;
         c.trail  += 2LL * a->u.call.nsave;
         if (pcrec_callgraph_reaches(v->cg, idx, idx))
             c.unbounded = c.growable = true;
@@ -2355,9 +2413,36 @@ static void vm_count_slots(Vm *v, const Ast *a, long long repl,
      *
      * `repl` DOES NOT MULTIPLY A REGION. A call under `{0,4000}` replicates
      * the SITE — a push and a goto per copy — and the region is emitted ONCE,
-     * so the region's own count is taken at `repl == 1`. */
-    case A_CALL:
+     * so the region's own count is taken at `repl == 1`.
+     *
+     * [DD-14 wave G] A SPLICED SITE IS THE OTHER CASE ENTIRELY, and it is the
+     * one this arm has to do work for. The callee's body is emitted AT THIS
+     * SITE, so it allocates a full set of per-copy slot instances HERE — and
+     * `repl` DOES multiply it, because a spliced call under a frames-rung
+     * `{0,4000}` replicates the body 4000 times, which is exactly what
+     * `PCREC_MAX_VM_REPEAT_COPIES` and K22's product guard exist to bound.
+     * Plus |W| of this site's own `SLOT_SPLICE_SAVE` block, whose SIZE is
+     * `spl_nw[idx]` — precomputed before this pass for the reason its field
+     * comment gives. Under-counting either half is K27's class in emitted
+     * code, and `vm_splice` re-checks the block bound as it assigns. */
+    case A_CALL: {
+        if (a->u.call.link != CALL_SPLICE) return;
+        const int idx = v->cg
+            ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
+        if (idx < 0 || !a->u.call.body)
+            ctx_fail(v->cx, 0, "internal error: subroutine call to group %d is "
+                               "spliced but has no bound body",
+                     a->u.call.target);
+        v->nsplice += v->spl_nw ? v->spl_nw[idx] : 0;
+        if (++v->splice_depth > v->nregion)
+            ctx_fail(v->cx, 0, "internal error: a spliced subroutine call "
+                               "nested more than %d deep, so the splice "
+                               "eligibility rule admitted a cycle",
+                     v->nregion);
+        vm_count_slots(v, a->u.call.body, repl, false);
+        v->splice_depth--;
         return;
+    }
     /* [M6.4.2] A LIFTED group allocates NO mark of its own — the rung below
      * allocates it, and counting one here as well would make `RX_NSLOTS` one
      * too large on every possessive spelling. An UNLIFTED one allocates
@@ -5435,6 +5520,45 @@ static VmSnap vm_snap(const Vm *v)
     return s;
 }
 
+/* [DD-14 wave G] THE REGION'S GROUP SET, collected BEFORE the slot layout
+ * exists. `vm_w_caps` below answers the same question in SLOT indices, which
+ * need every family total the counting pass produces; a SPLICE has to know the
+ * SIZE of its save block before that pass runs, and the size is a function of
+ * the GROUP SET alone (two slots per group, plus one where the group is
+ * marked). Same walk, same stopping rule, one level earlier.
+ *
+ * STOPS AT `A_CALL` for design §4.4's reason; what a nested call writes
+ * arrives through the transitive union over the graph, which terminates by
+ * construction where following `.body` here would not. */
+static void vm_grp_set(Vm *v, const Ast *a, bool *g)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF: case A_CALL:
+            return;
+        case A_CAP: {
+            int n = a->u.cap.no;
+            if (n > 0 && n <= v->ngroups) g[n] = true;
+            a = a->l;
+            continue;
+        }
+        case A_REP: case A_ATOMIC: case A_LOOK:
+            a = a->l;
+            continue;
+        case A_CAT: case A_ALT: {
+            const AKind k = a->k;
+            const Ast *t = a;
+            for (; t->k == k; t = t->l) vm_grp_set(v, t->r, g);
+            a = t;
+            continue;
+        }
+        }
+        return;
+    }
+}
+
 /* The region's CAPTURE half: every group whose `A_CAP` lies inside it. Walked
  * ITERATIVELY on `A_CAT`/`A_ALT` spines (D10/DD-10/K20) and STOPPING AT AN
  * `A_CALL` — following `.body` would be design §4.4's non-terminating walk,
@@ -5622,6 +5746,168 @@ static void vm_call(Vm *v, int entry, const Ast *a, int next)
     }
     vm_goto(v, v->rgn_lbl[idx]);
     vm_lbl(v, ret, "the call returned; continue here");
+    vm_goto(v, next);
+}
+
+/* [DD-14 wave G] THE SPLICE (design §6.3, §8.3, S-SR18).
+ *
+ * A call site whose callee `src/opt/callgraph.c` proved ACYCLIC and small
+ * enough emits the callee's body INLINE, WITH ITS OWN EXIT:
+ *
+ *     L_site:  RX_SET(SPLICE_SAVE[j], slot_values[W[j]])   ; park, j = 0..|W|
+ *              goto L_body
+ *     L_body:  <the callee's body, emitted here, exiting to L_done>
+ *     L_done:  RX_SET(W[j], slot_values[SPLICE_SAVE[j]])   ; restore
+ *              goto <the continuation>
+ *
+ * NO FRAME, NO RETURN LABEL, NO `call_top`, NO SECOND `goto *` — which is the
+ * whole point: the specimen's deep-repetition subjects gave up with
+ * PCREC_ERR_FRAMES about two thousand iterations in because every `(?&x)`
+ * iteration was a resume frame that SURVIVED its return (§5.1). A splice
+ * consumes no frame at all.
+ *
+ * IT MAY SHARE THE BODY AND NEVER THE EXIT (§6.3, §3.5). Nothing here reuses
+ * the lexical occurrence's label: the body is emitted afresh at this site with
+ * `L_done` as its continuation, so a callee whose lexical home is inside a
+ * lookbehind, an atomic group or a negative assertion leaves through ITS OWN
+ * exit and not through that construct's. S-SR18's twin sabotages exactly this.
+ *
+ * ================================================================
+ * WHY A SPLICE NEEDS A SLOT FAMILY WHERE THE LINKAGE NEEDS ONLY THE TRAIL
+ * ================================================================
+ *
+ * `vm_call` parks the caller's values with TRAILED SELF-WRITES and the region
+ * reads them back at `trail[frame.trail_mark + j]` — a compile-time offset off
+ * the ACTIVATION's own frame. A splice has no frame, so it has no anchor, and
+ * "the trail entry I wrote |W| entries ago" is not addressable. So this site
+ * gets |W| SLOTS of its own and the park/restore are ordinary trailed writes
+ * through them — the same shape as all seven existing slot families, whose
+ * rule is "written at a construct's ENTRY, read at that construct's EXIT".
+ *
+ * AND THAT SHAPE IS SOUND ONLY BECAUSE TWO ACTIVATIONS OF ONE EMITTED SPLICE
+ * SITE CANNOT NEST, which is a THEOREM about §6.3's eligibility rule and not
+ * an assumption:
+ *
+ *   Between this site's park and its restore, control is inside the callee's
+ *   inlined body (or inside what that body calls). For the SAME EMITTED SITE
+ *   to be entered again in that window, control must reach this site's
+ *   position again, which means reaching the region (or the main body) this
+ *   copy lives in. If this copy lives in region R for group r, that requires
+ *   the callee C to reach r — and R contains a call to C, so r reaches C.
+ *   C and r are then mutually reachable: C IS IN A CYCLE, which §6.3
+ *   condition 1 has already excluded. A copy in the MAIN body is reached once
+ *   per attempt and cannot be re-entered at all (a `(?R)` is a call to target
+ *   0, which gets its own emitted region, not a jump back into the main body).
+ *
+ * SEQUENTIAL activations DO happen — a splice under a `*` runs many times —
+ * and the trail repairs them with no help from this code: activation 1 parks
+ * V1, returns; activation 2 parks V2, TRAILED over V1; a backtrack into
+ * activation 1's still-live choice point rewinds to a frame pushed INSIDE
+ * activation 1's body, which is above activation 1's park and below activation
+ * 2's, so the rewind restores V2 -> V1 before control re-enters. Every slot
+ * write in this emitter goes through `RX_SET`, which is `RX_TRAIL` then the
+ * write with NO same-value elision (P7), so this holds for cut marks and
+ * counters exactly as it does for captures.
+ *
+ * ================================================================
+ * WHICH IS WHY `W` IS SMALLER HERE, AND IT IS THE CAPTURE HALF
+ * ================================================================
+ *
+ * §5.3a's `W` for the LINKAGE is every slot the emitted REGION can write,
+ * because the region is ONE copy that many activations share and §5.3b
+ * MEASURED what dropping the non-capture families costs (a lost match from
+ * `SLOT_GROUP<n>_PENDING`, six FALSE MATCHES from `SLOT_CUT_MARK<n>`). Both
+ * measurements are about NESTED activations of one copy. A splice's copy is
+ * private to this site and cannot nest with itself, so its per-copy families
+ * — guards, span lows, cut marks, revdet triples, counters, look marks and
+ * look positions, all of which `vm_count_slots` gives FRESH indices to for
+ * this inlined copy — need no restore at all.
+ *
+ * WHAT DOES need restoring is what the inlined body shares with everything
+ * else: the CAPTURE PAIRS `(2g, 2g+1)` and `SLOT_GROUP<g>_PENDING`, which are
+ * indexed by GROUP NUMBER and are therefore the same slots the caller's own
+ * lexical occurrence writes. Restoring them is §3.1's measured semantics —
+ * "a subroutine call is CAPTURE-TRANSPARENT" — and it is the ONLY thing that
+ * separates a splice from writing the callee's text out by hand.
+ *
+ * SLOTS 0 AND 1 ARE EXCLUDED BY CONSTRUCTION here as they are there: the
+ * capture collection starts at group 1, and §3.4(b) MEASURED that `\K` (which
+ * writes slot 0) is NOT restored by a return. */
+static void vm_splice(Vm *v, int entry, const Ast *a, int next)
+{
+    vm_charge(v);
+    const int idx = v->cg ? pcrec_callgraph_index(v->cg, a->u.call.target) : -1;
+    if (idx < 0 || !a->u.call.body)
+        ctx_fail(v->cx, 0, "internal error: subroutine call to group %d is "
+                           "spliced but has no bound body", a->u.call.target);
+
+    const int base = v->nsplice;
+    v->nsplice += a->u.call.nsave;
+    if (v->nsplice > v->nsplice_total)
+        /* K27's class, and the one this family can produce: the pre-pass and
+         * this walk disagreed about how many sites there are or how big `W`
+         * is, and the next `vm_slot_splice` would name a slot past
+         * `RX_NSLOTS`. LOUD, because the alternative is an out-of-bounds write
+         * in EMITTED code. */
+        ctx_fail(v->cx, 0, "internal error: the splice save block overflowed "
+                           "(%d of %d slots)", v->nsplice, v->nsplice_total);
+
+    const int body_lbl = vm_label(v);
+    const int done_lbl = vm_label(v);
+
+    vm_lbl(v, entry, a->u.call.target == 0
+                     ? "splice the WHOLE PATTERN inline (anchors included)"
+                     : "splice a capture group's pattern inline");
+    for (int j = 0; j < a->u.call.nsave; j++) {
+        char val[160];
+        char nm[48];
+        if (vm_slot_name(v, a->u.call.save[j], nm, sizeof nm))
+            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
+        else
+            snprintf(val, sizeof val, "slot_values[%d]", a->u.call.save[j]);
+        vm_set(v, vm_slot_splice(v, base + j), val,
+               "park this site's caller value (a trailed write into this "
+               "splice's own save slot)");
+    }
+    vm_ev(v, VE_CALL, body_lbl, done_lbl,
+          vm_rolef(v, "splice group %d inline; no frame, no return label",
+                   a->u.call.target));
+    v->nsplicesite++;
+    vm_goto(v, body_lbl);
+
+    /* THE BODY, WITH THIS SITE'S OWN CONTINUATION. The follow is NOT scoped to
+     * zero the way `vm_region`'s is (§5.4): that scoping exists because a
+     * SHARED body's follow is UNKNOWN — many callers, different follows, and a
+     * prune bound baked from one is wrong for the others. A spliced site has
+     * exactly ONE follow and it is right here, so the inlined body gets the
+     * same minimum-remaining-length pruning the hand-written body would get,
+     * which is the whole claim the splice makes. */
+    if (++v->splice_depth > v->nregion)
+        ctx_fail(v->cx, 0, "internal error: a spliced subroutine call nested "
+                           "more than %d deep, so the splice eligibility rule "
+                           "admitted a cycle", v->nregion);
+    vm_emit(v, body_lbl, a->u.call.body, done_lbl);
+    v->splice_depth--;
+
+    vm_lbl(v, done_lbl, "the spliced callee is complete; restore and continue");
+    for (int j = 0; j < a->u.call.nsave; j++) {
+        char val[160];
+        char nm[48];
+        if (vm_slot_name(v, vm_slot_splice(v, base + j), nm, sizeof nm))
+            snprintf(val, sizeof val, "slot_values[%s_%s]", v->up, nm);
+        else
+            snprintf(val, sizeof val, "slot_values[%d]",
+                     vm_slot_splice(v, base + j));
+        /* ITSELF TRAILED, which is why backtracking INTO a completed splice
+         * re-establishes the callee's own values — §3.2 MEASURED the call
+         * BACKTRACKABLE on 10.46 and §3.1's per-level cells show that is the
+         * observable semantics. */
+        vm_set(v, a->u.call.save[j], val,
+               "restore the caller's value, itself TRAILED so a retreat into "
+               "this splice re-establishes the callee's own");
+    }
+    vm_ev(v, VE_RETURN, done_lbl, 0,
+          "the splice's own exit (never the lexical occurrence's)");
     vm_goto(v, next);
 }
 
@@ -6209,7 +6495,13 @@ static void vm_emit(Vm *v, int entry, const Ast *a, int next)
      * (§4.4c) and `vm_cost`'s graph-fed charge. Any two of them without the
      * third fail here, loudly, instead of emitting an artifact. */
     case A_CALL:
-        vm_call(v, entry, a, next);
+        /* [DD-14 wave G] §6.3's two linkages, ONE contract. Both consume the
+         * same `u.call.save`/`nsave` and the same bound `.body`; they differ
+         * only in how control reaches the body — which is what makes
+         * `-fno-splice-calls` a real differential (§9.2's `A == B`) rather
+         * than two programs that happen to agree. */
+        if (a->u.call.link == CALL_SPLICE) vm_splice(v, entry, a, next);
+        else                               vm_call(v, entry, a, next);
         return;
     }
     ctx_fail(v->cx, 0, "internal error: bad AST node in VM emitter");
@@ -6378,9 +6670,11 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                * hand the VM under ANY invocation -- and `-fprefilter`
                * REFUSES rather than overriding (src/opt/select_engine.c). */
               : st->has_call
-              ? "NO (subroutine call) -- erasing a call is a DIFFERENT"
-                " language, not a superset (S8.2); no flag changes this,"
-                " and -fprefilter refuses"
+              ? "NO (LINKED subroutine call) -- erasing a call is a DIFFERENT"
+                " language, not a superset (S8.2), and a call in a cycle has"
+                " no finite inlining either; no flag changes this, and"
+                " -fprefilter refuses. A SPLICED call is not a reason: its"
+                " callee is inlined EXACTLY (S8.3, S6.3)"
               : (cx->opt->flags & PCREC_NO_PREFILTER)
               ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
               : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
@@ -6752,19 +7046,44 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `pcrec_minw` reads an `A_CALL`'s contribution off `u.call.minw`, which
      * is the Kleene-from-infinity fixpoint `pcrec_callgraph_build` computes
      * and caches on the node (src/opt/mrl.c's `A_CALL` arm, design SS4.4b).
-     * That pass runs at src/core/compile.c AFTER `pcrec_select_engine` and
+     * That pass ran at src/core/compile.c AFTER `pcrec_select_engine` and
      * BEFORE this emitter, so:
      *
-     *   - asked in `select_engine.c`, `pcrec_minw(root)` reads the ARENA'S
-     *     ZERO and answers a FINITE number. MEASURED on all three empty-
+     *   - asked in `select_engine.c`, `pcrec_minw(root)` read the ARENA'S
+     *     ZERO and answered a FINITE number. MEASURED on all three empty-
      *     language cells of tests/recursion/leftrec.rxt + mrl.rxt: 1, 1, 0.
      *     That is sound (this analysis's safe direction is UNDER-estimating)
-     *     but it is USELESS -- it never reaches infinity, so a root check
-     *     placed at engine selection can never fire. The plan row's
+     *     but it was USELESS -- it never reached infinity, so a root check
+     *     placed at engine selection could never fire. The plan row's
      *     "engine selection is where the root predicate lives" is therefore
      *     WRONG ABOUT THE SITE, and this comment is the correction of record.
      *   - asked HERE, the fixpoint is final. The same three cells MEASURE
      *     PCREC_MINW_MAX (1099511627776 = 2^40).
+     *
+     * [DD-14 wave G] **THE PASS ORDER MOVED AND THE CONCLUSION DID NOT**, which
+     * is worth a sentence because the paragraph above is written in terms of
+     * the old order. `pcrec_callgraph_build` now runs BEFORE
+     * `pcrec_select_engine` (src/core/compile.c: engine selection reads §6.3's
+     * LINKAGE), so `pcrec_minw(root)` asked there is no longer the arena's zero
+     * — it is the settled fixpoint. The root check still belongs HERE and not
+     * there, for the reason that outlives the timing: the check is about what
+     * the ARTIFACT enforces at its search entry, and only this emitter writes a
+     * search entry.
+     *
+     * **AND THE REASON THE MOVE IS SOUND IS NOT THE ONE THIS COMMENT FIRST
+     * GAVE.** It claimed `pcrec_possessify` calls `pcrec_minw` and so now sees
+     * a better bound; **`src/opt/possessify.c` never calls `pcrec_minw` at
+     * all** (grep is empty), so that sentence was a false premise defending a
+     * true conclusion — deleted rather than patched, because a wrong reason is
+     * worse than none. THE ACTUAL ARGUMENT is an enumeration of who reads the
+     * two memos and when: `u.call.minw`/`maxw` are read by THIS FILE (after
+     * the graph, in both orders) and by `mod_lookaround`'s parse hook (before
+     * the graph, in both orders) — and by nobody in between. Engine selection's
+     * only NEW read is `Ast.u.call.link` (src/opt/select_engine.c's
+     * `first_dfa_excluding` and its prefilter predicate), which is a field the
+     * graph WRITES and selection did not previously consult at all. So the
+     * reorder moves one fact EARLIER for one new reader and changes the timing
+     * of nothing else.
      *
      * WHY THIS EMITTER AND NOT emit_dfa.c TOO. The only construct that can
      * drive a root minw to the ceiling is a call whose callee's language is
@@ -6962,6 +7281,54 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         v.rgn_nw   = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_nw);
         v.rgn_cost = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_cost);
         for (int i = 0; i < nt; i++) { v.rgn_w[i] = NULL; v.rgn_nw[i] = 0; }
+
+        /* [DD-14 wave G] WHICH TARGETS STILL NEED A SHARED REGION, and how big
+         * a SPLICED site's save block is. Both are decided here, before a slot
+         * is counted, because `vm_count_slots` needs the second and the region
+         * pre-pass needs the first.
+         *
+         * A target every one of whose sites splices needs NO region: no entry
+         * label, no exit label, no `RX_RETURN`, no second `goto *` and — the
+         * part that matters for the size claim — none of its slot instances.
+         * §6.3 makes the linkage a per-TARGET decision, so this is one flag
+         * per target and not a survey of sites. */
+        v.rgn_emit = arena_alloc(&cx->arena, (size_t)nt * sizeof *v.rgn_emit);
+        v.has_linked_calls = false;
+        for (int i = 0; i < nt; i++) {
+            v.rgn_emit[i] = !pcrec_callgraph_spliced(v.cg, i);
+            if (v.rgn_emit[i]) v.has_linked_calls = true;
+        }
+
+        /* THE TRANSITIVE GROUP SET PER TARGET, and the union is taken from the
+         * UNMODIFIED sets for `W`'s own reason one function down: `reaches` is
+         * already transitive, so one pass suffices — but only if the
+         * right-hand side reads the ORIGINAL sets. OR-ing in place would make
+         * the answer depend on iteration order. */
+        {
+            const int ng = v.ngroups + 1;
+            bool **base = arena_alloc(&cx->arena, (size_t)nt * sizeof *base);
+            for (int i = 0; i < nt; i++) {
+                base[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **base);
+                memset(base[i], 0, (size_t)ng * sizeof **base);
+                vm_grp_set(&v, pcrec_callgraph_body(v.cg, i), base[i]);
+            }
+            bool **grp = arena_alloc(&cx->arena, (size_t)nt * sizeof *grp);
+            int *snw = arena_alloc(&cx->arena, (size_t)nt * sizeof *snw);
+            for (int i = 0; i < nt; i++) {
+                grp[i] = arena_alloc(&cx->arena, (size_t)ng * sizeof **grp);
+                memcpy(grp[i], base[i], (size_t)ng * sizeof **grp);
+                for (int j = 0; j < nt; j++) {
+                    if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
+                    for (int q = 0; q < ng; q++) if (base[j][q]) grp[i][q] = true;
+                }
+                int n = 0;
+                for (int q = 1; q < ng; q++)
+                    if (grp[i][q]) n += 2 + (vm_marked(&v, q) ? 1 : 0);
+                snw[i] = n;
+            }
+            v.rgn_grp = grp;
+            v.spl_nw  = snw;
+        }
     }
 
     /* Slot counting first: RX_NSLOTS has to be known before the rx_run_state type
@@ -7001,8 +7368,16 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         snap_after  = arena_alloc(&cx->arena,
                                   (size_t)v.nregion * sizeof *snap_after);
         for (int i = 0; i < v.nregion; i++) {
+            /* [DD-14 wave G] A SPLICED TARGET HAS NO REGION, so it counts
+             * nothing here — its body's instances were counted AT EACH SITE by
+             * the main-body walk's `A_CALL` arm, which is where they are
+             * emitted. Counting them here as well would size `RX_NSLOTS` for a
+             * region the emitter never writes. The snapshots still bracket the
+             * (empty) pass so `W`'s range arithmetic below reads zero-width
+             * ranges rather than uninitialised ones. */
             snap_before[i] = vm_snap(&v);
-            vm_count_slots(&v, pcrec_callgraph_body(v.cg, i), 1, false);
+            if (v.rgn_emit[i])
+                vm_count_slots(&v, pcrec_callgraph_body(v.cg, i), 1, false);
             snap_after[i] = vm_snap(&v);
         }
     }
@@ -7034,6 +7409,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `vm_count_slots` and `vm_look` both read so they cannot disagree. */
     const int nlookmark_total = v.nlookmark;
     const int nlookpos_total  = v.nlookpos;
+    /* [DD-14 wave G] the splice save block, one |W| per EMITTED splice site. */
+    const int nsplice_total   = v.nsplice;
     v.nguard_total = nguard_total;
     v.nlow_total   = nlow_total;
     v.nmark_total  = nmark_total;
@@ -7041,8 +7418,10 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     v.nctr_total   = nctr_total;
     v.nlookmark_total = nlookmark_total;
     v.nlookpos_total  = nlookpos_total;
+    v.nsplice_total   = nsplice_total;
     v.nguard = v.nlow = v.nmark = v.nrev = v.nctr = 0;
     v.nlookmark = v.nlookpos = 0;
+    v.nsplice = 0;
     /* [M6.5.2] `2 * (ngroups + 1)`, not `2 * ncaps`: the capture-pair region
      * is sized by the SLOT LAYOUT, which under `--no-captures` can hold marked
      * groups the artifact reports none of. The two are equal on every
@@ -7051,7 +7430,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `vm_slot_pend` — so every base below it is unmoved as well. */
     const int nstate = 2 * (v.ngroups + 1) + nguard_total + nlow_total
                      + nmark_total + 3 * nrev_total + nctr_total
-                     + v.npend_total + nlookmark_total + nlookpos_total;
+                     + v.npend_total + nlookmark_total + nlookpos_total
+                     + nsplice_total;
 
     /* [DD-14 wave B+C] `W` PER REGION, THEN THE REGIONS' OWN COSTS — in that
      * order, because `vm_cost`'s call arm charges `2 * |W|` of trail and
@@ -7077,6 +7457,16 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             base[i] = arena_alloc(&cx->arena, (size_t)nstate * sizeof **base);
             memset(base[i], 0, (size_t)nstate * sizeof **base);
             vm_w_caps(&v, pcrec_callgraph_body(v.cg, i), base[i], nstate);
+            /* [DD-14 wave G] A SPLICED TARGET'S `W` IS THE CAPTURE HALF AND
+             * STOPS HERE. The seven per-copy families below are added from the
+             * REGION pass's counter ranges, and a spliced target had no region
+             * pass — its ranges are empty by construction. That is not merely
+             * an accounting consequence: `vm_splice`'s header derives that a
+             * splice's per-copy slots CANNOT need restoring, because two
+             * activations of one emitted splice site cannot nest, and §5.3b's
+             * two measured counterexamples (the lost match, the six false
+             * matches) are both about nested activations of ONE SHARED COPY. */
+            if (!v.rgn_emit[i]) continue;
             vm_w_range(base[i], nstate,
                        vm_slot_guard(&v, snap_before[i].guard),
                        vm_slot_guard(&v, snap_after[i].guard));
@@ -7101,10 +7491,69 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         }
         for (int i = 0; i < nt; i++) {
             bool *w = arena_alloc(&cx->arena, (size_t)nstate * sizeof *w);
+            if (!v.rgn_emit[i]) {
+                /* [DD-14 wave G, FIX] A SPLICED TARGET'S `W` IS BUILT FROM THE
+                 * TRANSITIVE GROUP SET AND NOT FROM THE UNION OF THE `base`
+                 * SETS, and the two are NOT the same thing the moment a
+                 * spliceable target REACHES A LINKED ONE.
+                 *
+                 * THE BUG THIS REPLACES, MEASURED: `base[i]` is narrowed to the
+                 * capture half for a spliced `i` (the `continue` above), but
+                 * `base[j]` for a reached LINKED `j` still carries that
+                 * region's seven per-copy family RANGES — so the union handed
+                 * `vm_splice` more slots than `spl_nw` reserved and the block
+                 * overflowed. `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` — a
+                 * non-recursive helper calling a recursive rule, which is this
+                 * module's own target shape — refused with "the splice save
+                 * block overflowed (7 of 6 slots)" while `-fno-splice-calls`
+                 * compiled it. FOUR such patterns were found and NONE of the
+                 * wave's bars could see them: over 3,025 corpus patterns, 113
+                 * artifacts have a SPLICED call and 37 have a LINKED one and
+                 * **ZERO have both**, so `A == B`, the sabotage matrix and the
+                 * specimen were structurally blind to the interaction.
+                 *
+                 * AND THE FIX IS DECIDED FROM THE SEMANTICS, NOT FROM WHICH
+                 * NUMBER IS SMALLER. A spliced site must restore what its
+                 * inlined body writes that is SHARED with the caller and that
+                 * NOTHING ELSE restores. A reached LINKED target's per-copy
+                 * slots are not that: the call to it is an `RX_CALL` into its
+                 * shared region, and **that region's own `RX_RETURN` restores
+                 * every slot in ITS `W`** before control comes back — so by the
+                 * time the spliced body ends they are already back, and
+                 * restoring them again would write a value that is already
+                 * there. What is genuinely shared is the CAPTURE PAIRS and the
+                 * `SLOT_GROUP<n>_PENDING` slots, which are indexed by GROUP
+                 * NUMBER and are therefore the same cells the caller's own
+                 * lexical occurrence writes. That is the capture half, and it
+                 * is exactly what `spl_nw` counts.
+                 *
+                 * ONE MECHANISM, TWO RENDERINGS, AND THE TIMING FORCES THE
+                 * SPLIT (src/gen/CLAUDE.md's standing hazard, and `W`'s own
+                 * header makes the same point about slot indices): `rgn_grp[i]`
+                 * — the transitive group set — is computed ONCE, before the
+                 * layout exists. `spl_nw[i]` is its COUNT, which is all the
+                 * pre-pass can use because slot INDICES do not exist yet;
+                 * `rgn_w[i]` here is its INDICES. The assertion below is what
+                 * makes "one mechanism" checkable rather than claimed. */
+                memset(w, 0, (size_t)nstate * sizeof *w);
+                /* `wg`, not `g`: `GenNames g` is in scope here and
+                 * `-Wshadow` is `make strict`'s, which caught it. */
+                for (int wg = 1; wg <= v.ngroups; wg++) {
+                    if (!v.rgn_grp[i][wg]) continue;
+                    if (2 * wg + 1 < nstate) {
+                        w[2 * wg] = true; w[2 * wg + 1] = true;
+                    }
+                    if (vm_marked(&v, wg)) {
+                        int ps = vm_slot_pend(&v, wg);
+                        if (ps >= 0 && ps < nstate) w[ps] = true;
+                    }
+                }
+            } else {
             memcpy(w, base[i], (size_t)nstate * sizeof *w);
             for (int j = 0; j < nt; j++) {
                 if (j == i || !pcrec_callgraph_reaches(v.cg, i, j)) continue;
                 for (int k = 0; k < nstate; k++) if (base[j][k]) w[k] = true;
+            }
             }
             /* SLOTS 0 AND 1 ARE NEVER MEMBERS (§3.4(b)'s `\K` measurement).
              * Nothing above can put them there — the capture walk starts at
@@ -7118,6 +7567,33 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             for (int k = 2; k < nstate; k++) if (w[k]) lst[q++] = k;
             v.rgn_w[i]  = lst;
             v.rgn_nw[i] = n;
+            /* THE TWO RENDERINGS MUST AGREE, AND THIS IS THE LINE THAT SAYS SO
+             * — BUT IT IS A SAME-SOURCE CHECK AND MUST NOT BE READ AS ANYTHING
+             * MORE. Both sides count `rgn_grp[i]` through `vm_marked`:
+             * `spl_nw[i]` did it in the pre-pass, this does it again over the
+             * layout. So it catches a set that MOVED between the two readings
+             * — a group added to the transitive closure, a `pend_of` entry that
+             * appeared — and it CANNOT catch a set that is WRONG, because a
+             * wrong set is wrong identically on both sides.
+             *
+             * THAT IS THE DEFENCE RATHER THAN A GAP: the whole point of the fix
+             * this assertion belongs to is that there is ONE set instead of
+             * two, and what makes the set itself right is argued at
+             * `vm_splice`'s header (a splice restores only what is SHARED with
+             * the caller; a reached LINKED target's per-copy slots are restored
+             * by that region's own `RX_RETURN`) and MEASURED by
+             * `tests/recursion/bothlinkage.rxt` against libpcre2 — an
+             * independent oracle, which is where evidence about correctness
+             * comes from. This line's job is narrower and worth having anyway:
+             * before it, a disagreement announced itself as a save-block
+             * overflow at emission, three passes later, with nothing pointing
+             * at the cause. */
+            if (!v.rgn_emit[i] && v.spl_nw && n != v.spl_nw[i])
+                ctx_fail(cx, 0, "internal error: the spliced callee for group "
+                                "%d reserved %d save slots and needs %d — the "
+                                "pre-pass and the W build disagree about its "
+                                "transitive group set",
+                         pcrec_callgraph_target(v.cg, i), v.spl_nw[i], n);
         }
         vm_publish_saves(&v, root);
 
@@ -7240,6 +7716,11 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * where §6.3 puts them: one shared copy per DISTINCT called group,
          * reached only by `goto`, never fallen into. */
         for (int i = 0; i < v.nregion; i++) {
+            /* [DD-14 wave G] A SPLICED TARGET GETS NO LABELS. Two ids per
+             * region would otherwise be burned on a region nothing jumps to,
+             * and `--emit-ir`'s label-set check compares the listing's labels
+             * against the artifact's. */
+            if (!v.rgn_emit[i]) { v.rgn_lbl[i] = v.rgn_exit[i] = -1; continue; }
             v.rgn_lbl[i]  = vm_label(&v);
             v.rgn_exit[i] = vm_label(&v);
         }
@@ -7262,7 +7743,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * SAME ascending target order the slot pre-pass counted them in, which
          * is what keeps the running slot counters and `vm_count_slots`'
          * totals agreeing site for site. */
-        for (int i = 0; i < v.nregion; i++) vm_region(&v, i);
+        for (int i = 0; i < v.nregion; i++)
+            if (v.rgn_emit[i]) vm_region(&v, i);
     }
 
     /* BEFORE the prologue, which is where the declarations are written, and
@@ -7327,6 +7809,27 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * derived default when neither was passed). */
     sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
               job->fit.prefilter ? "hybrid" : "none");
+    /* [DD-14 wave G] THE LINKAGE, PER ARTIFACT, and it reports what the
+     * emitter DID rather than what it was asked — `RX_VM_RUNGS`/`RX_VM_STRATS`/
+     * `RX_VM_PREFILTER`'s rule, which is the D46 half a denied request
+     * (`-fno-splice-calls`) is checked against.
+     *
+     * TWO NUMBERS AND NOT A STRING, because the interesting question is a
+     * RATIO: how many of this artifact's call sites the eligibility rule was
+     * able to inline. `SPLICED + LINKED` is every site the emitter WROTE, which
+     * is not the pattern's lexical call count — a call under `X{0}` emits no
+     * site at all, and a call inside a shared region is written once per
+     * emitted copy. Counted as they are written (`v.ncall`, `v.nsplicesite`),
+     * which is `nclamp`'s discipline: a check can assert the sites EXIST rather
+     * than trusting that the graph ran.
+     *
+     * EMITTED ONLY ON A CALL-BEARING ARTIFACT, so a call-free pattern's
+     * artifact is byte-identical to what it was — §9.1's claim held by
+     * construction rather than by a filtered diff. */
+    if (v.has_calls) {
+        sb_printf(c, "#define %s_VM_CALL_SPLICED %lld\n", v.up, v.nsplicesite);
+        sb_printf(c, "#define %s_VM_CALL_LINKED %lld\n", v.up, v.ncall);
+    }
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH STAMP, emitted only when the
      * search entry's root check above was emitted -- one condition, read
      * twice, never two conditions that could disagree. It is a NUMBER
@@ -7522,10 +8025,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          *
          * EMITTED ONLY ON A CALL-BEARING ARTIFACT, which is what makes §9.1's
          * byte-identity claim structural: a call-free pattern's `rx_run_state`
-         * is the one it has always had. */
-        v.has_calls ? " const void *call_ret; unsigned call_top;" : "",
+         * is the one it has always had.
+         *
+         * [DD-14 wave G] AND THE GATE IS NOW `has_linked_calls`, NOT
+         * `has_calls`. These three fields, `RX_CALL`, `RX_PUSH`'s extra line,
+         * `CALL_TOP_NONE`, the two resets and the fail label's line are the
+         * CALL LINKAGE's machinery, and a pattern all of whose calls SPLICE
+         * has no linkage in it at all — no frame carries a return label
+         * because no site pushes one. So a fully spliced artifact is
+         * byte-identical to the hand-inlined pattern's in this half too,
+         * which is `[DD-14.G]`'s bar reaching the VM path. The eight sites
+         * move together; `has_calls` keeps its meaning ("this compile has a
+         * call graph") and still gates `W`, the region pre-pass and the
+         * nullability fixpoint. */
+        v.has_linked_calls ? " const void *call_ret; unsigned call_top;" : "",
         v.up, v.up,
-        v.has_calls ? "\n    unsigned call_top;   /* the CURRENT activation's"
+        v.has_linked_calls ? "\n    unsigned call_top;   /* the CURRENT activation's"
                       " frame index, or CALL_TOP_NONE */" : "");
     if (has_budget) sb_puts(c, "    long long steps_left;   /* backtracks remaining */\n");
     if (work_budget != PCREC_WORK_BUDGET_NONE)
@@ -7561,7 +8076,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * frame array on purpose, so a return with no live activation indexes
      * nothing — the region exit's own guard turns that into
      * `PCREC_ERR_INTERNAL` (D72) rather than K27's class in emitted code. */
-    if (v.has_calls)
+    if (v.has_linked_calls)
         sb_printf(c, "#define %s_CALL_TOP_NONE ((unsigned)-1)\n\n", v.up);
 
     /* [ENG-BREP counter-K] THE WORK CHARGE (D47 SECOND ADDENDUM settlement 4).
@@ -7668,7 +8183,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             "        run->resume_depth = (unsigned)slot_values[(slot_)];                      \\\n"
             "    } while (0)\n\n",
             v.up, v.up, v.up, v.up, v.up, v.up, v.up, v.up,
-            v.has_calls ? "        run->resume_stack[run->resume_depth]"
+            v.has_linked_calls ? "        run->resume_stack[run->resume_depth]"
                           ".call_top = run->call_top;                      \\\n"
                         : "",
             v.up);
@@ -7736,7 +8251,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * generation axis, so a deep call exhausts the ordinary frame capacity and
      * answers `PCREC_ERR_FRAMES`. "Rebuild with the diagnostic axis to learn
      * which bound" is the documented story. */
-    if (v.has_calls) {
+    if (v.has_linked_calls) {
         if (!v.tracing)
             sb_printf(c,
                 "/* A subroutine call: a resume frame that also carries the\n"
@@ -7793,7 +8308,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * prototype set the sentinel BY HAND in `main()`, which is exactly the
      * kind of scaffolding a prototype hides behind. Without it the very first
      * return of a search reads `resume_stack[garbage]`. */
-    if (v.has_calls)
+    if (v.has_linked_calls)
         sb_printf(c, "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
     if (has_budget) sb_printf(c, "    run->steps_left = %s_STEP_BUDGET;\n", v.up);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
@@ -7808,7 +8323,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * activation. */
     char reset_call_top[160];
     reset_call_top[0] = 0;
-    if (v.has_calls)
+    if (v.has_linked_calls)
         snprintf(reset_call_top, sizeof reset_call_top,
                  "    run->call_top = %s_CALL_TOP_NONE;\n", v.up);
 
@@ -8065,7 +8580,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
              *
              * EMITTED ONLY ON A CALL-BEARING ARTIFACT — §9.1's byte-identity
              * claim, held by construction rather than by a filtered diff. */
-            v.has_calls
+            v.has_linked_calls
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
               : "");
@@ -8506,7 +9021,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
          * predicate is the one source `select_engine.c` forces the prefilter
          * off from, so the listing reports the SAME fact rather than a
          * second derivation of it. */
-        st.has_call  = pcrec_has_call(root);
+        /* [DD-14 wave G] `pcrec_has_LINKED_call`, matching the verdict this
+         * line EXPLAINS. `src/opt/select_engine.c` narrowed `fit.prefilter`
+         * to the linked form — a SPLICED call has an exact finite lowering,
+         * so it is not a reason for anything to be off — and a listing whose
+         * REASON is computed from a different predicate than the DECISION is
+         * the very defect this arm was added to fix, one wave on: it used to
+         * name a flag the caller had not passed, and left as `has_call` it
+         * would name a CONSTRUCT that is not the cause. MEASURED before the
+         * change: `--engine=vm '(?:(x)){0}a(?1)b'` — a fully SPLICED call —
+         * read "NO (subroutine call)" where the honest answer is
+         * "NO (--engine=vm)". */
+        st.has_call  = pcrec_has_linked_call(root);
         st.root_minw = root_minw;
         st.why = job->fit.why;
         vm_render_listing(&v, &job->irsb, &st);

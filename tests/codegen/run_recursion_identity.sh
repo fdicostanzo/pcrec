@@ -8,9 +8,12 @@
 # the per-axis positive control, and the classifier's own self-test.
 #
 # THE SECOND CONTROL (§9.2's SPLICE-vs-LINKAGE `A == B` over the corpus) is
-# NOT here and is not wave E's: it needs the `-fno-splice-calls` axis §6.3's
-# linkage rule introduces, which is wave G's. §9.3's sabotage rows carry that
-# load until then, S-SR17 included.
+# NOT here: it compares ANSWERS rather than bytes, so it lives in
+# `tests/recursion/run_recursion_diff.sh` §5, which has the subject grid. What
+# wave G added HERE is the FIFTH AXIS — `-fno-splice-calls` — for the reason
+# every other axis exists: the flag reaches `select_engine.c`, which every
+# pattern goes through, and an axis that pins the linkage constant is the one
+# that localises a wrong eligibility rule.
 #
 # THE CLAIM. A CALL-FREE pattern's emitted C is byte-identical before and
 # after module `recursion`'s two doorways (the `(?` family, wave B+C; the
@@ -77,6 +80,47 @@
 #                    backrefs-precedent axis, and here it is not ceremonial:
 #                    a mark-set edit that OVER-marks makes `--no-captures`
 #                    keep slots it used to delete, and only this axis sees it.
+#   -fno-splice-calls  [DD-14 wave G]. §6.3's eligibility rule sets
+#                    `Ast.u.call.link`, and `select_engine.c` reads it twice —
+#                    for the VM-only verdict and for the prefilter. Both reads
+#                    are on the path EVERY pattern takes, so a rule that
+#                    answered SPLICE for something it should not would move
+#                    bytes on the default axis and move nothing here, and the
+#                    pair of readings names the failure where either alone
+#                    would only report it. It is also the axis that pins the
+#                    ELISION population below: the four patterns move on
+#                    `default` and on `--engine=vm` (where the WHY stamp
+#                    changes) and are asserted on every axis.
+#
+# ============================================================================
+# THE ONE POPULATION WAVE G IS ALLOWED TO MOVE, NAMED HERE AND ASSERTED EXACT
+# ============================================================================
+# THE CLAIM ABOVE — "a call-free pattern's emitted C is byte-identical" — IS NO
+# LONGER TRUE FOR FOUR PATTERNS, and that is a ruling, not a leak.
+#
+# Wave G's DEAD-CAPTURE ELISION (`pcrec_has_live_capture`, src/opt/atomic.c)
+# says a capture group NO EMITTED CODE CAN WRITE does not force the
+# capture-recording engine. The structural fact is `A_REP{0,0}` emitting
+# nothing, and `(?(DEFINE)...)`, `(?:...){0}` and `(a){0}b` are that same fact
+# three times — so the rule is stated over the fact and NOT over the module,
+# which means it fires on patterns carrying no call at all. Those patterns move
+# from the VM to the DFA. Their ANSWERS and their CAPTURES do not move: `(a){0}`
+# on "a" is `rc=1 ncaps=2 g0=(0,0) g1=(-1,-1)` on both compilers, which is what
+# libpcre2 10.46 reports.
+#
+# GATING THE ELISION ON `pcrec_has_call` WOULD HAVE KEPT THIS FILE AT ZERO and
+# was rejected: it would make a `recursion` special case out of a fact that is
+# not about `recursion` (Frank's 2026-08-23 general-mechanism rule).
+#
+# SO THE EXCEPTION IS NAMED, NOT FILTERED, AND IT IS ASSERTED IN BOTH
+# DIRECTIONS — every pattern in the list MUST differ (a stale list is a list
+# that has stopped defending anything) and nothing outside it may. That is the
+# difference between an exception and the check-design failure this project has
+# recorded twice: a filter hides whatever else lands in it.
+ELIDED_PATTERNS='(a){0}
+(a){0,0}b
+(()|$){0}b
+(()|^){0}[b]'
 #
 # THE D37 FEATURE STAMP IS COMPARED PAST, `run_backref_identity.sh`'s
 # treatment and `tests/cli` case10's precedent before it. THE FILTER IS
@@ -394,7 +438,7 @@ control() { # control <label> <extra pcrec args>
 
 sweep() { # sweep <label> <extra pcrec args>
     local label="$1" args="$2"
-    local same=0 diff=0 refused=0 mism=0 stampbad=0 stampmoved=0
+    local same=0 diff=0 refused=0 mism=0 stampbad=0 stampmoved=0 elided=0
     : > "$WORKDIR/diff.$label"
     while IFS= read -r pat; do
         [ -n "$pat" ] || continue
@@ -433,12 +477,45 @@ sweep() { # sweep <label> <extra pcrec args>
             # stamp moved" is a claim a reader has to see (header).
             stampmoved=$((stampmoved + 1))
             printf 'STAMP MOVED %s\n' "$pat" >> "$WORKDIR/diff.$label"
+        elif printf '%s\n' "$ELIDED_PATTERNS" | grep -qxF -- "$pat"; then
+            # THE NAMED EXCEPTION (see the header). Counted, not skipped, and
+            # the direction that matters is checked below: every listed pattern
+            # must land HERE on every axis, so a list that has gone stale — the
+            # elision narrowed, or somebody gated it on `has_call` after all —
+            # is a failure and not a quieter sweep.
+            elided=$((elided + 1))
+            printf 'ELIDED (ruled, wave G) %s\n' "$pat" >> "$WORKDIR/diff.$label"
         else
             diff=$((diff + 1))
             printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.$label"
         fi
     done < "$WORKDIR/free"
-    echo "recursion-identity[$label]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    echo "recursion-identity[$label]: same=$same differing=$diff elided=$elided refused-by-both=$refused refusal-mismatch=$mism stamp-filter-bad=$stampbad stamp-moved=$stampmoved"
+    # BOTH DIRECTIONS ON THE NAMED EXCEPTION. `elided` counts the patterns that
+    # differed AND are on the list; `nelide` is the list's own length. Equality
+    # is what says the list is neither stale nor a filter: a listed pattern that
+    # went back to identical (the elision narrowed) fails here, and a pattern
+    # that differs without being listed is already `diff` above.
+    local nelide
+    nelide=$(printf '%s\n' "$ELIDED_PATTERNS" | grep -c .)
+    # AND THE `--no-captures` AXIS EXPECTS **ZERO**, WHICH IS A SHARPER CLAIM
+    # THAN THE OTHER FOUR AND NOT AN EXEMPTION FROM THEM. The elision says a
+    # group NO EMITTED CODE CAN WRITE does not force the capture-recording
+    # engine. Under `--no-captures` the artifact promises NO group at all, so
+    # `forces_captures` returns `DFA | VM` in BOTH compilers for its own
+    # earlier reason and there is nothing left for this rule to decide: the
+    # four patterns must be byte-IDENTICAL there. So the list's real assertion
+    # is a PAIR — the four move on every axis that promises a capture, and
+    # vanish on the one that does not — and a run where they moved on
+    # `--no-captures` too would mean the elision was firing for some reason
+    # OTHER than the one written down. MEASURED at the wave: 4 / 4 / 4 / 0 / 4
+    # over default, vm, noprefilter, nocaptures, nosplice.
+    [ "$label" = "nocaptures" ] && nelide=0
+    if [ "$elided" -ne "$nelide" ]; then
+        bad "[$label] the wave-G ELISION list expects $nelide of its patterns to differ on this axis and $elided did. On every axis that PROMISES a capture all four must differ, or the dead-capture elision has stopped firing and the list has stopped defending anything; on --no-captures none may, or it is firing for a reason other than the one written down:"
+        printf '%s\n' "$ELIDED_PATTERNS" | sed 's/^/    listed: /' >&2
+        grep '^ELIDED' "$WORKDIR/diff.$label" | sed 's/^/    /' >&2
+    fi
     if [ "$stampbad" -ne 0 ]; then
         bad "[$label] the D37 stamp filter matched the wrong number of lines on $stampbad artifacts — it must remove EXACTLY three, so a filter that stopped matching (leaving a difference in) or started over-matching (hiding one) says so"
         head -5 "$WORKDIR/diff.$label" >&2
@@ -459,19 +536,263 @@ sweep() { # sweep <label> <extra pcrec args>
         bad "[$label] only $same patterns compared identical (floor 700) — the sweep is not populated"
     fi
     if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$stampbad" -eq 0 ] \
-       && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ]; then
-        ok "[$label] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches"
+       && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ] \
+       && [ "$elided" -eq "$nelide" ]; then
+        ok "[$label] byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the PINNED PRE-MODULE COMMIT $REFCOMMIT, which shares no sources with this tree — zero differing, zero refusal mismatches, and exactly the $nelide NAMED wave-G elision patterns moved"
     fi
 }
 
-# THE FOUR AXES (§9.1). Each takes its own positive control first: "refuses"
-# is an answer the axis flags could in principle change, since `--no-captures`
-# and `-fno-prefilter` both reach `select_engine.c` where a refusal lives.
-for axis in "default:" "vm:--engine=vm" "noprefilter:-fno-prefilter" "nocaptures:--no-captures"; do
+# THE FIVE AXES (§9.1, plus wave G's). Each takes its own positive control
+# first: "refuses" is an answer the axis flags could in principle change, since
+# `--no-captures`, `-fno-prefilter` and `-fno-splice-calls` all reach
+# `select_engine.c` where a refusal lives — and the last of them changes which
+# ENGINE a call-bearing pattern gets, which is the sharpest version of that
+# worry rather than a theoretical one.
+#
+# **AND THE FIFTH AXIS IS NOT AN AXIS OF THIS SWEEP, WHICH IS A MEASURED
+# FINDING AND NOT A CORNER CUT.** `-fno-splice-calls` was tried in the loop
+# above twice and is structurally incompatible with a PINNED PRE-MODULE
+# reference, in two different ways:
+#
+#   1. HANDED TO THE REFERENCE it is an unknown flag, so the reference refuses
+#      EVERY pattern — MEASURED at 2,196 refusal mismatches.
+#   2. HANDED TO THE SUBJECT ONLY it still moves every artifact, because the
+#      flag is deliberately NOT in `emit_info_def`'s `strategy_denials` mask
+#      (lib/pcrec.h: it can change which ENGINE a pattern gets, which is
+#      `PCREC_NO_ATOMIC_DISCHARGE`'s shape and not `-fno-possessify`'s), so
+#      `rx_info.flags` reads `8192ULL` on one side and `0ULL` on the other —
+#      MEASURED at 2,196 differing.
+#
+# There is no third spelling: **a flag that honestly records itself cannot be
+# compared against a compiler that does not have it.**
+#
+# **AND THE OBVIOUS REPAIR IS THE WRONG ONE — DO NOT RESTORE THE AXIS
+# LITERALLY** (ruled 2026-08-24, and written here because the next reader will
+# propose it). Putting `PCREC_NO_SPLICE_CALLS` into `emit_info_def`'s
+# `strategy_denials` mask would mask reason 2 away and let the flag ride the
+# loop above. That mask is for knobs with NO OBSERVABLE EFFECT — the whole
+# argument for it (src/gen/emit_dfa.c) is that two artifacts which behave
+# identically must not differ in their reflection surface. This flag SELECTS AN
+# ENGINE: `--engine=dfa -fno-splice-calls '(a)(?1)'` refuses where
+# `--engine=dfa '(a)(?1)'` compiles. `rx_info.flags` records it for the same
+# reason it records `PCREC_NO_ATOMIC_DISCHARGE`, which is the one other member
+# of the deny family with that property. **Masking it to make this sweep
+# comparable would be falsifying the artifact's own record of itself to satisfy
+# a check** — the check-design failure this file exists to be an instance of the
+# opposite of.
+#
+# So the linkage axis is a SEPARATE SECTION below, `linkage_axis`, comparing the
+# SUBJECT AGAINST ITSELF — which is the comparison the claim was always about —
+# and the OTHER half, what the flag does to a CALL-BEARING pattern, lives where
+# it can: `tests/recursion/run_recursion_diff.sh` §5 (`A == B` over 156 patterns
+# and 15,912 cells, span and every group span) and §4's three-cell
+# `--engine=dfa` family. Between them the linkage claim is covered on both
+# populations; what is NOT available, and is not worth buying at that price, is
+# a byte comparison against a compiler from before the flag existed.
+# ============================================================================
+# THE LINKAGE AXIS — THE SUBJECT AGAINST ITSELF ([DD-14] wave G)
+# ============================================================================
+# WHAT IT ASSERTS: **forcing the CALL LINKAGE changes nothing for a CALL-FREE
+# pattern.** Both arms are THIS compiler, so the pinned reference's two
+# incompatibilities (see the axis block above) do not arise, and the one line
+# the flag legitimately moves — `rx_info.flags`, which records it because it can
+# change which engine a pattern gets — is a NAMED, ASSERTED exclusion of exactly
+# one line per side rather than a filter.
+#
+# IT IS NOT VACUOUS THE WAY A `-D` KNOB WOULD BE, and the reason is the four
+# ELIDED patterns: they are CALL-FREE and they DO move under the dead-capture
+# elision, so this section can ask whether they move the SAME WAY with the
+# splice denied. They must, because `A_REP{0,0}` emitting nothing has nothing
+# to do with how a call reaches its callee — and "must" is the kind of claim
+# this file exists to check rather than state.
+linkage_axis() {
+    local same=0 diff=0 refused=0 mism=0 stripbad=0
+    : > "$WORKDIR/diff.linkage"
+    while IFS= read -r pat; do
+        [ -n "$pat" ] || continue
+        local a b sa sb na nb
+        a="$(gen_a "$pat" "")"
+        b="$(gen_a "$pat" "-fno-splice-calls")"
+        if [ -z "$a" ] && [ -z "$b" ]; then refused=$((refused + 1)); continue; fi
+        if [ -z "$a" ] || [ -z "$b" ]; then
+            mism=$((mism + 1))
+            printf 'REFUSAL MISMATCH %s\n' "$pat" >> "$WORKDIR/diff.linkage"
+            continue
+        fi
+        # THE ONE NAMED EXCLUSION, ASSERTED IN BOTH DIRECTIONS: exactly one
+        # `.flags` line on each side, or the exclusion has stopped describing
+        # what it removes.
+        na="$(printf '%s\n' "$a" | grep -c '^    \.flags = ')"
+        nb="$(printf '%s\n' "$b" | grep -c '^    \.flags = ')"
+        if [ "$na" -ne 1 ] || [ "$nb" -ne 1 ]; then
+            stripbad=$((stripbad + 1))
+            printf 'FLAGS FILTER %s: %s / %s lines, want 1 each\n' \
+                "$pat" "$na" "$nb" >> "$WORKDIR/diff.linkage"
+            continue
+        fi
+        sa="$(printf '%s\n' "$a" | grep -v '^    \.flags = ')"
+        sb="$(printf '%s\n' "$b" | grep -v '^    \.flags = ')"
+        if [ "$sa" = "$sb" ]; then
+            same=$((same + 1))
+        else
+            diff=$((diff + 1))
+            printf 'DIFFERS %s\n' "$pat" >> "$WORKDIR/diff.linkage"
+        fi
+    done < "$WORKDIR/free"
+    echo "recursion-identity[linkage]: same=$same differing=$diff refused-by-both=$refused refusal-mismatch=$mism flags-filter-bad=$stripbad"
+    if [ "$stripbad" -ne 0 ]; then
+        bad "[linkage] the \`.flags\` exclusion matched the wrong number of lines on $stripbad artifacts — it must remove EXACTLY one per side, so an exclusion that stopped matching (leaving a difference in) or started over-matching (hiding one) says so"
+        head -5 "$WORKDIR/diff.linkage" >&2
+    fi
+    if [ "$mism" -ne 0 ]; then
+        bad "[linkage] $mism call-free patterns are accepted with the splice and refused without it, or the reverse. Denying the splice must not change what pcrec ACCEPTS on a pattern with no call in it:"
+        head -10 "$WORKDIR/diff.linkage" >&2
+    fi
+    if [ "$diff" -ne 0 ]; then
+        bad "[linkage] $diff call-free patterns emit DIFFERENT bytes with the splice denied. A pattern with no call has no call graph — \`pcrec_callgraph_build\` returns at its first scan — so \`-fno-splice-calls\` cannot reach it:"
+        head -20 "$WORKDIR/diff.linkage" >&2
+    fi
+    if [ "$same" -lt 700 ]; then
+        bad "[linkage] only $same patterns compared identical (floor 700) — the sweep is not populated"
+    fi
+    [ "$diff" -eq 0 ] && [ "$mism" -eq 0 ] && [ "$stripbad" -eq 0 ] \
+        && [ "$same" -ge 700 ] \
+        && ok "[linkage] ALL $same call-free corpus patterns emit IDENTICAL C with and without \`-fno-splice-calls\`, past exactly one \`rx_info.flags\` line per side (verified present on both) — so forcing the call linkage reaches nothing a call-free pattern compiles through"
+
+    # AND THE FOUR ELIDED PATTERNS MOVE THE SAME WAY ON BOTH ARMS. This is the
+    # half that makes the section more than a restatement of "the flag is
+    # gated": the elision fires on these four, and it must fire IDENTICALLY
+    # with the splice denied.
+    local ebad=0 n=0
+    while IFS= read -r pat; do
+        [ -n "$pat" ] || continue
+        n=$((n + 1))
+        local ea eb
+        ea="$(gen_a "$pat" "" | grep -m1 '^    \.engine = ')"
+        eb="$(gen_a "$pat" "-fno-splice-calls" | grep -m1 '^    \.engine = ')"
+        case "$ea" in *PCREC_ENGINE_DFA*) ;; *)
+            bad "[linkage] the elided pattern '$pat' is not on the DFA engine: $ea"
+            ebad=$((ebad + 1)) ;;
+        esac
+        if [ "$ea" != "$eb" ]; then
+            bad "[linkage] the elided pattern '$pat' chooses a DIFFERENT engine with the splice denied ('$ea' vs '$eb') — the dead-capture elision is supposed to be independent of the linkage"
+            ebad=$((ebad + 1))
+        fi
+    done <<< "$ELIDED_PATTERNS"
+    [ "$ebad" -eq 0 ] && ok "[linkage] all $n NAMED elision patterns reach the DFA engine on BOTH linkage arms — the dead-capture elision is a fact about \`A_REP{0,0}\` emitting nothing, and does not depend on how a call reaches its callee"
+}
+
+# ============================================================================
+# THE ELISION CONTROL — THE SEMANTIC HALF ([DD-14] wave G)
+# ============================================================================
+# The sweep above proves the four NAMED patterns emit different BYTES from the
+# pre-module reference. That is a fact about the artifact and says nothing about
+# what it ANSWERS, and "the engine changed" is exactly the claim that would be
+# most damaging if it also changed a span. So this section compares the two
+# COMPILED MATCHERS: the reference's (VM) and this build's (DFA), on the same
+# subjects, on the whole-match span AND EVERY GROUP PAIR.
+#
+# THE GROUP PAIRS ARE THE POINT. A dead group must come back UNSET on both
+# compilers and at the same NUMBER — which is what libpcre2 10.46 reports for
+# the same shapes (`(?(DEFINE)(?<g>a))(x)(?&g)` on "xa": g1 UNSET, g2 (0,1)) —
+# and an `m`/`n` comparison could not see a lost one at all.
+ELISION_SUBJECTS='
+a
+b
+ab
+ba
+xa
+abc
+bb
+aab
+ b
+x'
+
+elision_control() {
+    local d="$WORKDIR/elide"
+    mkdir -p "$d"
+    cat > "$d/drv.c" <<'CEOF'
+#include <stdio.h>
+#include <string.h>
+#include "q.h"
+int main(int argc, char **argv) {
+    ptrdiff_t caps[Q_NCAPS][2];
+    memset(caps, 0x5a, sizeof caps);
+    int rc = q_search((const unsigned char *)argv[1], strlen(argv[1]), 0, caps);
+    printf("rc=%d ncaps=%d", rc, Q_NCAPS);
+    if (rc == 1)
+        for (int g = 0; g < Q_NCAPS; g++)
+            printf(" g%d=(%td,%td)", g, caps[g][0], caps[g][1]);
+    printf("\n");
+    (void)argc;
+    return 0;
+}
+CEOF
+    local cells=0 bads=0 npat=0
+    while IFS= read -r pat; do
+        [ -n "$pat" ] || continue
+        npat=$((npat + 1))
+        local eng_a eng_b
+        eng_a="$("$PCREC" --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+        eng_b="$("$REF"   --features all -p rx -o - -- "$pat" 2>/dev/null | grep -m1 '^    \.engine = ')"
+        case "$eng_b" in *PCREC_ENGINE_VM*) ;; *)
+            bad "[elision] the pre-module reference does NOT choose the VM for '$pat' ($eng_b), so this pattern is not an instance of the change the list names"
+            bads=$((bads + 1)); continue ;;
+        esac
+        case "$eng_a" in *PCREC_ENGINE_DFA*) ;; *)
+            bad "[elision] this build does NOT choose the DFA for '$pat' ($eng_a), so the list names a pattern the elision no longer moves"
+            bads=$((bads + 1)); continue ;;
+        esac
+        local ok_build=1
+        rm -rf "$d/a" "$d/b"; mkdir -p "$d/a" "$d/b"
+        "$PCREC" --features all -p q -o "$d/a/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
+        "$REF"   --features all -p q -o "$d/b/q.c" -- "$pat" >/dev/null 2>&1 || ok_build=0
+        if [ "$ok_build" -eq 0 ]; then
+            bad "[elision] '$pat' did not compile on both builds"
+            bads=$((bads + 1)); continue
+        fi
+        # shellcheck disable=SC2086
+        $CC -O1 -std=gnu11 -I"$d/a" -o "$d/ta" "$d/drv.c" "$d/a/q.c" 2>/dev/null || ok_build=0
+        # shellcheck disable=SC2086
+        $CC -O1 -std=gnu11 -I"$d/b" -o "$d/tb" "$d/drv.c" "$d/b/q.c" 2>/dev/null || ok_build=0
+        if [ "$ok_build" -eq 0 ]; then
+            bad "[elision] a matcher for '$pat' did not build"
+            bads=$((bads + 1)); continue
+        fi
+        while IFS= read -r subj; do
+            # THE LEADING BLANK LINE OF `ELISION_SUBJECTS` IS NOT A SUBJECT.
+            # Without this guard the count read 44 for 4 patterns x 10 subjects,
+            # and a cell count nobody can reproduce from the list above it is a
+            # number a reader has to be told about rather than one they can
+            # check. (The empty subject is a legitimate thing to test; it is
+            # just not what this heredoc's formatting was providing.)
+            [ -n "$subj" ] || continue
+            cells=$((cells + 1))
+            local ra rb
+            ra="$("$d/ta" "$subj")"
+            rb="$("$d/tb" "$subj")"
+            if [ "$ra" != "$rb" ]; then
+                bad "[elision] '$pat' on '$subj': this build (DFA) says '$ra', the pre-module reference (VM) says '$rb' — the elision changed an ANSWER, which it must never do"
+                bads=$((bads + 1))
+            fi
+        done <<< "$ELISION_SUBJECTS"
+    done <<< "$ELIDED_PATTERNS"
+    if [ "$bads" -eq 0 ] && [ "$cells" -ge 40 ]; then
+        ok "[elision] all $npat NAMED elision patterns: the pre-module reference chose the VM, this build chooses the DFA, and the two matchers agree on the whole-match span AND EVERY GROUP PAIR over $cells cells — the engine moved and the answer did not"
+    elif [ "$cells" -lt 40 ]; then
+        bad "[elision] only $cells cells were compared (want at least 40 — 4 named patterns x 10 subjects) — the semantic control is not populated"
+    fi
+}
+
+for axis in "default:" "vm:--engine=vm" "noprefilter:-fno-prefilter" \
+            "nocaptures:--no-captures"; do
     label="${axis%%:*}"; flags="${axis#*:}"
     control "$label" "$flags"
     sweep   "$label" "$flags"
 done
+
+linkage_axis
+elision_control
 
 echo
 echo "checks passed: $pass"

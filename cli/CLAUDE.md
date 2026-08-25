@@ -177,3 +177,19 @@ incidental to it:
 also pins that the DEFAULT artifact is byte-identical to the explicitly
 `-e byte` one — a stronger statement than "it compiles", since it says the
 default and the explicit request are the same request.
+
+## [DD-14 wave G] `-fno-splice-calls`
+
+The deny family's sixth member, and it is `-fno-atomic-discharge`'s SHAPE rather
+than `-fno-possessify`'s: denying the splice leaves a call taking the CALL
+LINKAGE, a linked call is structurally VM-only (design §8.1) and carries no
+prefilter (§8.2), so **this denial can change which ENGINE a pattern gets** —
+`--engine=dfa -fno-splice-calls '(a)(?1)'` REFUSES where `--engine=dfa
+--no-captures '(a)(?1)'` compiles. An optimisation flag must not do that, which
+is why it is its own flag and not a clause on another.
+
+WHAT IT IS FOR is design §9.2's second control: the denied build is EXACTLY the
+artifact wave B+C shipped, so `A == B` over the corpus compares two genuinely
+different programs from one compiler rather than two spellings of one. The
+option bit is `PCREC_NO_SPLICE_CALLS` (lib/pcrec.h); this file's only job is the
+argv spelling and the one-line reason beside it.

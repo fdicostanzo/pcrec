@@ -207,3 +207,34 @@ write it.
   (prefilter loss ~23×; a STEPS give-up where the DFA takes 4 ms). Its
   README carries the conclusion that sets wave G's bar (byte-identity
   with the hand-inlined pattern). Scripts regenerate the subjects.
+
+## [DD-14 wave G] additions (2026-08-24)
+
+- `probes/probe_call_prefilter_hazard.py` — design §8.3's HAZARD OBLIGATION
+  ("wave G does not land without re-running
+  `lookaround_measurements/probes/probe_prefilter_hazard.py`'s H1/H2/H3 against
+  the call population"), discharged. It transcribes the three hypotheses,
+  H3's SHARP form included (anchored at the start the TRUE match uses, via
+  `\G(?:PAT)`), and evaluates them over TWO approximations on the SAME cells:
+  **INLINE**, which is what the shipped `src/ir/nfa.c` builds, and **ERASE**,
+  which is §8.2's refuted one. **ERASE IS THE POSITIVE CONTROL AND THE RUN
+  FAILS IF IT VIOLATES NOTHING** — a population that cannot tell a sound
+  approximation from an unsound one reports zeros for the other column and
+  means nothing by them. Equivalence is checked FIRST (§8.3's own rule): each
+  `P` against its hand-written `INLINE(P)`, and a disagreeing pair is
+  DISQUALIFIED rather than fixed. MEASURED, libpcre2 10.46, 10 pairs x 28
+  subjects: equivalence 280 cells 0 disagreements; INLINE H1 0 / H2 0 /
+  H3naive 0 / H3sharp 0; ERASE 2 / 13 / 14 / 22.
+
+- `email_specimen/factored_define.rx` — the `(?(DEFINE)` spelling of
+  `factored.rx`, DERIVED from it by script rather than hand-typed (a third
+  hand copy of 400 bytes could disagree about one character class and the bar
+  would pin the disagreement). `email_specimen/README.md` gains a wave-G
+  section: all four spellings now compile to the DFA engine with the
+  prefilter, the artifacts are the same past three named exclusions, 85
+  subjects agree four ways with no give-up, and throughput is 0.88x / 1.19x /
+  0.88x against the hand-inlined original. `tests/recursion/run_specimen_
+  identity.sh` is that section as a runnable check.
+
+- `email_specimen/throughput/` joins `subjects/` in `.gitignore`: 3 MB of
+  deterministic filler `gen_throughput_subjects.py` reproduces.

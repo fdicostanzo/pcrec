@@ -236,4 +236,33 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
 
 NFA states are indexed in a flat array; split edges are encoded as `state*2 + slot` (slot 0 = preferred branch, 1 = alternate). Epsilon closure respects split order and prunes lower-priority threads on first ACCEPT. Byte equivalence classes are computed first so DFA transition tables are ncls-wide instead of 256-wide.
 
+## [DD-14 wave G] `compile_ast`'s `A_CALL` arm, and the one back edge it follows
+
+`nfa.c`'s `A_CALL` arm INLINES a `CALL_SPLICE` callee's fragment. It is EXACT,
+not design §8.3's "sound approximation": the only thing lost is the CAPTURE, and
+`ast_bare` already erases every `A_CAP` in the tree — so `(?&atom)` and the body
+it names build the IDENTICAL machine, which is what makes the RFC 5322
+specimen's factored artifact the hand-inlined one's.
+
+**IT FOLLOWS `Ast.u.call.body`, WHICH IS THE AST'S ONE BACK EDGE**, and it is
+safe to follow ONLY because a `CALL_SPLICE` callee is not in a cycle (design
+§6.3 condition 1), making the descent a DAG bounded by the call-target count.
+This file's header says "remaining recursion depth is bounded by the parser's
+group-nesting cap"; **wave G is what made that sentence stop being true on its
+own**, because a call edge is not a nesting edge. `NB.splice_depth` is the
+counter that restores it, and it is load-bearing rather than defensive: sabotage
+row S175 (eligibility admits a cycle) SEGFAULTED here, in `compile_ast` and not
+in the emitter, before the counter existed — and a stack overflow is the one
+failure a sabotage matrix cannot tell from an infrastructure fault.
+
+**§8.3's `Sigma*` ARM IS DELIBERATELY NOT BUILT.** `src/opt/select_engine.c`
+narrows both consumers to `pcrec_has_linked_call`, so a pattern with a LINKED
+call gets neither engine's machine and nothing would consume the superset. A
+LINKED call reaching this builder is a hard internal error. The consequence is
+measured rather than argued: the spliced prefilter has NO superset window-end
+exposure at all, and
+`docs/design/subroutines_measurements/probes/probe_call_prefilter_hazard.py`
+reports H1/H2/H3 all zero over 280 cells beside a control column that violates
+22 times on the same cells.
+
 Maintenance: update this file when files are added/removed or their roles change.

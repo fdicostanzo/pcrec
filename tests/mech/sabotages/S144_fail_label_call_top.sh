@@ -47,7 +47,13 @@ SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="The fail label stops restoring \`call_top\` from the popped frame, so after a retreat the CURRENT ACTIVATION is whatever the deepest call left behind -- every return then reads its trail_mark one level too deep and restores the wrong values"
 SAB_DOC_FIGURE="REPRODUCED BEFORE THE LINE WAS WRITTEN, on this lane's own build: ^(a(?1)?b)\$ on \"aaabbb\" answers NOMATCH where it must be (0,4)... (0,6), and the traced artifact shows group 1 coming back (2,5) where it must be (1,5) -- one level off at EVERY depth. \"aabb\" (depth 2) stays green, which is the pair that names the failure."
 SAB_COUNT=1
-SAB_BEFORE='            v.has_calls
+# [DD-14 wave G, 2026-08-24] RE-ANCHORED, and the gate is now
+# `has_linked_calls` rather than `has_calls`: this line emits the CALL
+# LINKAGE's machinery, and a pattern all of whose calls SPLICE has no linkage
+# in it at all. The row is unaffected in substance — its detector
+# `^(a(?1)?b)$` is RECURSIVE, so its call is linked and this line is emitted
+# for it exactly as before.
+SAB_BEFORE='            v.has_linked_calls
               ? "        run->call_top = run->resume_stack[frame_index]"
                 ".call_top;\n"
               : "");'

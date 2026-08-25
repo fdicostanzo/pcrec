@@ -215,7 +215,40 @@ enum {
      * because an OPTIMISATION denial must not decide which engine a pattern
      * gets. Folding the two together would have made `-fno-possessify` do
      * exactly that. */
-    PCREC_NO_ATOMIC_DISCHARGE = 1u << 12
+    PCREC_NO_ATOMIC_DISCHARGE = 1u << 12,
+    /* [DD-14 wave G] `-fno-splice-calls`: DENY the SPLICE LINKAGE for every
+     * subroutine call site (docs/design/subroutines_design.md §6.3, §9.2;
+     * src/opt/callgraph.c's eligibility rule).
+     *
+     * WHAT IT DENIES. A call site whose callee is not in a cycle and whose
+     * expansion fits the size budget is emitted INLINE, with its own exit;
+     * every other site takes the CALL linkage into one shared emitted region.
+     * This flag forces the LINKAGE everywhere, which is exactly the artifact
+     * wave B+C shipped — so the denied build is the ground truth of §9.2's
+     * SECOND CONTROL, the one control this module has that the lookaround
+     * module did not: for every non-recursive call-bearing pattern the
+     * SPLICE-linked and LINKAGE-linked artifacts are two DIFFERENT PROGRAMS
+     * BUILT BY THIS COMPILER that must agree on every answer and every group
+     * span. A rewrite that cannot be denied cannot be differentially tested.
+     *
+     * IT IS `PCREC_NO_ATOMIC_DISCHARGE`'s SHAPE, NOT `-fno-possessify`'s, and
+     * the difference is the same one: this denial CHANGES WHICH ENGINE a
+     * pattern gets. A spliced call has an exact finite lowering, so `nfa.c`
+     * can build the machine and `select_engine` need not force the VM;
+     * denying the splice leaves a LINKED call, which is structurally VM-only
+     * (§8.1) and carries no prefilter (§8.2). So
+     * `--engine=dfa -fno-splice-calls '(?:(?<g>a)){0}(?&g)'` REFUSES, which is
+     * correct and is the flag doing its job — the atomic discharge's own
+     * `--engine=dfa -fno-atomic-discharge '[^"]*+"'` precedent exactly.
+     *
+     * AND FOR THAT REASON IT DOES *NOT* JOIN `emit_info_def`'s
+     * `strategy_denials` MASK (src/gen/emit_dfa.c). That mask is for knobs
+     * with no observable effect; this one selects an engine, so `rx_info.flags`
+     * records it exactly as it records `PCREC_NO_ATOMIC_DISCHARGE`. What the
+     * emitter DID is reported separately by `<PREFIX>_VM_CALLS`
+     * (src/gen/emit_vm.c) — sites spliced vs sites linked — which is the D46
+     * half a denied request is checked against. */
+    PCREC_NO_SPLICE_CALLS = 1u << 13
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

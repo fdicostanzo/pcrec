@@ -499,6 +499,26 @@ test-recursion-identity: all
 test-recursion-lbsweep: all
 	python3 tests/recursion/run_lookbehind_call_sweep.py
 
+# [DD-14 wave G] THE SPECIMEN BAR, OPT-IN — plan row [DD-14.G]'s own checkable
+# claim, and the same ruling as every gate above it (ASK-4): a claim about a
+# MOMENT, re-answered on demand, not a standing invariant `make test` should pay
+# for on every commit. It regenerates 85 subjects and three 1 MB throughput
+# subjects, builds seven matchers and times three of them five times each.
+#
+# WHAT IT ASSERTS is that factoring the RFC 5322 email pattern with subroutine
+# calls now COSTS NOTHING: all four spellings compile to the same DFA artifact
+# the hand-inlined original does, past three NAMED exclusions (the pattern text,
+# the capture declaration PCRE2 requires to differ, and RX_ALTCLS_FACTORED); the
+# 85 subjects agree four ways with no give-up where wave B+C measured five
+# PCREC_ERR_FRAMES; libpcre2 agrees the four spellings are one language; and the
+# three throughput subjects match within noise where wave B+C measured 23x and a
+# PCREC_ERR_STEPS give-up.
+#
+#     make test-specimen                    # the whole bar
+#     SKIP_THROUGHPUT=1 make test-specimen  # everything but the three timings
+test-specimen: all
+	bash tests/recursion/run_specimen_identity.sh
+
 # [M6.6.2 wave 0] MODULE `lookaround`'s LANDING GATE, OPT-IN — the same shape
 # and the same ruling as `test-atomic-identity` and `test-backrefs-identity`
 # above (ASK-4): a claim about a MOMENT, re-answered on demand, not a standing
@@ -979,5 +999,6 @@ clean:
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-recursion-lbsweep \
+        test-specimen \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

@@ -1425,4 +1425,52 @@ Emitted text is ASCII-only, including inside generated comments: the artifact
 is source someone else's toolchain compiles, and this project already
 hex-escapes the pattern comment for the same reason.
 
+## [DD-14 wave G] `vm_splice`, an eighth slot family, and a DFA that declares dead groups
+
+**`emit_vm.c` GAINS `vm_splice`.** A `CALL_SPLICE` site emits the callee's body
+INLINE at the site with its OWN exit label: park `|W|`, `goto` the body, body →
+`L_done`, restore `|W|`, `goto` the continuation. No `RX_CALL`, no return label,
+no `call_top`, no second `goto *`. It may share the BODY and never the EXIT
+(design §3.5/§6.3): nothing reuses the lexical occurrence's label.
+
+**AN EIGHTH SLOT FAMILY, `SLOT_SPLICE_SAVE<n>`**, `|W|` per emitted splice site,
+at the TOP of the layout so every base below it is unmoved. The reason is not
+bookkeeping: `vm_call` parks on the TRAIL and the region reads back at
+`trail[frame.trail_mark + j]`, a compile-time offset off the ACTIVATION's own
+frame — **a splice has no frame, so it has no anchor.**
+
+**AND ITS `W` IS THE CAPTURE HALF ONLY, WHICH IS A THEOREM AND NOT AN ECONOMY.**
+Two activations of ONE EMITTED splice site can nest only if the callee can reach
+the site's own enclosing region, which makes callee and region mutually
+reachable — the callee is then in a CYCLE, already excluded by eligibility.
+§5.3b's two measured counterexamples (a lost match from
+`SLOT_GROUP<n>_PENDING`, six false matches from `SLOT_CUT_MARK<n>`) are both
+about NESTED activations of one SHARED copy, so the seven per-copy families,
+which `vm_count_slots` gives FRESH indices to for the inlined copy, need no
+restore. Sequential activations are repaired by the ordinary trail rewind,
+because every slot write goes through `RX_SET` (P7: no same-value elision).
+
+**A SPLICE-DEPTH COUNTER IN BOTH WALKS.** `vm_count_slots` charges nothing, so
+`PCREC_MAX_VM_NODES` would never fire on an infinite inlining; the counter turns
+"eligibility must never admit a cycle" into a diagnostic. `src/ir/nfa.c` has the
+third one, and sabotage S175 SEGFAULTED there before it existed.
+
+**REGION ELISION AND THE `has_calls` SPLIT.** A target every one of whose sites
+splices gets no region: no labels, no `RX_RETURN`, no slot instances. The eight
+sites that emit the LINKAGE's machinery (the frame's two fields, `RX_PUSH`'s
+extra line, `RX_CALL`, `CALL_TOP_NONE`, the two resets, the fail label's line)
+are gated on `has_linked_calls`, so a fully spliced artifact carries none of it.
+`vm_cost` charges NO FRAME for a splice; the `2 * |W|` trail charge stays.
+
+**`emit_dfa.c`: `RX_NCAPS > 1` NO LONGER IMPLIES THE VM.** D42.2's rule rested
+on "a capture-bearing pattern forces the VM", which the dead-capture elision
+broke in the direction that matters: PCRE2 COUNTS a dead group and reports it
+UNSET (MEASURED, `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1), so the artifact
+must still promise it. `dfa_artifact_ncaps` is the ONE place both emitters read,
+and `emit_search_head` fills groups 1..n with `PCREC_UNSET` once at entry —
+gated on `fit.chosen == ENGM_DFA`, because this emitter also writes the VM
+hybrid's internal DFA PREFILTER and the first version of that fill leaked into
+every capture-bearing VM artifact in the corpus (558 of 2442 call-free patterns
+moved; the identity gate caught it on its first run).
+
 Maintenance: update this file when files are added/removed or their roles change.

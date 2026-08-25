@@ -1689,3 +1689,94 @@ changes what to try. The question a search should ask is not "can I reach the
 failure the row's `SAB_DOC_FIGURE` predicts" but "what does the sabotage
 actually do to an answer" — S157's predicted failure (a hang) was genuinely
 unreachable and its real one (a deleted match) was two cells away.
+
+## [DD-14 wave G] S173-S178, one row RE-POINTED and FLIPPED, and a row that found a real bug
+
+Wave G adds **five** rows, adds a **sixth** whose expectation is UNDETECTED with
+its search recorded, and **re-points and flips** one of wave B+C's.
+
+**S173 — the splice shares the EXIT.** S-SR18's twin for the linkage S-SR18 does
+not cover. `vm_splice` emits the inlined body straight to the CALL SITE's
+continuation, so the `|W|` trailed restores after the exit are never reached and
+the splice becomes capture-OPAQUE where §3.1 MEASURED a call to be
+capture-TRANSPARENT. **Its detector must be a `g` line and this is the row where
+that is not a style note**: the sabotaged matcher answers the same SPAN on almost
+every cell, because a leaked capture moves what group 1 reports and not where the
+match is. MEASURED: `captures.rxt` 20 passed / **2 FAILED**.
+
+**S174 — the elision marks a LIVE group dead.** `pcrec_has_live_capture` prunes
+at `rmin == 0` as well as `rmax == 0`, so every group under an OPTIONAL repeat is
+declared dead, the pattern is handed to an engine that cannot record it, and the
+span comes back UNSET on a match that is otherwise correct. **The polarity is why
+the row exists**: over-reporting liveness costs an engine and never an answer, so
+the failure that matters is the other direction. MEASURED:
+`tests/captures/basic.rxt` 43 passed / **2 FAILED**.
+
+**S175 — eligibility admits a RECURSIVE callee, AND IT FOUND A REAL BUG IN THE
+WAVE IT WAS WRITTEN FOR.** `cg_eligibility` stops settling cyclic targets first,
+so `reaches(i,i)` disqualifies nobody and a recursive callee is marked
+`CALL_SPLICE`. **The first run SEGFAULTED the compiler** — a stack overflow in
+`src/ir/nfa.c`'s `compile_ast`, not in the emitter, because that file's own
+header claimed recursion depth was bounded by the parser's group-nesting cap and
+**a call edge is not a nesting edge**. The wave added a splice-depth counter
+there (the emitter already had two) and corrected the header in place. **A HANG
+IS THE ONE FAILURE THIS MATRIX CANNOT REPORT** — it reads as an infrastructure
+timeout — so a row whose prediction is a hang measures nothing, and closing that
+is what the counter is for. MEASURED after the fix: `(a(?1)?b)` refuses with *"a
+spliced subroutine call nested more than 1 deep… the splice eligibility rule
+admitted a cycle"*, while `(a)(?1)` and `(x)(?1)` still COMPILE — the green half.
+
+**S176 — the prefilter is built for a LINKED call.** S-SR17's twin one wave on:
+wave E's row defends *"no prefilter for a call-bearing pattern"*, wave G narrowed
+that to *"no prefilter for a pattern with a LINKED call"*, and this defends the
+half that survived. MEASURED: `(a(?1)?b)` refuses with *"a LINKED subroutine call
+reached the machine builder"*; `(a)(?1)` and `(x)(?1)` COMPILE. **The green half
+is what separates this row from S-SR17** — wave E's version would have taken the
+whole population red.
+
+**S177 — the slot count misses a spliced site's save block.** K27's class for the
+eighth slot family. MEASURED: `(a)(?1)` and `(x)(?1)` refuse with *"the splice
+save block overflowed (3 of 0 slots)"*; the RECURSIVE `(a(?1)?b)` still COMPILES,
+because its call takes the LINKAGE and allocates no splice block.
+
+**S178 — the discharged root is not published, and it is expected UNDETECTED
+WITH THE SEARCH RECORDED.** `pcrec_discharge_atomic` returns a NEW root when the
+whole tree is the dischargeable group, and for the whole of [M6.4.2] that return
+value was dropped: the call lived inside `pcrec_select_engine`, which assigned it
+to a LOCAL, so selection judged the discharged tree while every later pass walked
+the undischarged one. Wave G's pass hoist fixed it. **The search:** six patterns
+whose ROOT is a dischargeable `A_ATOMIC` — `(?>[^"]*)`, `(?>a*+)`, `(?>(?:ab)*)`,
+`(?>[^x]*)x`, `(?>a|ab)`, `(?>[^"]*+")` — emit BYTE-IDENTICAL artifacts before and
+after, and the reason is structural rather than lucky: the discharge fires
+exactly where `vm_lifts` LIFTS, and a lifted group allocates no mark of its own,
+so deleted-before-the-emitter and lifted-away-by-the-emitter are the same
+program. The row exists because the property it defends — selection and the
+emitter walk ONE tree — has no other check, and a future rewrite with no lift
+equivalent would make the drop real.
+
+**S164 IS RE-POINTED AND FLIPS TO DETECTED**, and the reason it had to move is
+the general lesson of this wave for this directory. Its cell,
+`^(?:((?>a|ab))){0}(?1)z$`, names an ACYCLIC callee — which wave G SPLICES, so no
+region is emitted, `rgn_emit[i]` is false and the sabotage is a **no-op on that
+pattern**. **A row whose population has moved out from under it measures nothing,
+and expected-UNDETECTED is the reading that hides that.** The fix is a cell whose
+callee is IN A CYCLE, because in-a-cycle is what forces the LINKAGE and the
+linkage is what emits a REGION for the pass to count:
+`slotfamilies.rxt`'s `^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$`, whose region body
+carries a LOOKAROUND whose two slot families are per EMITTED COPY. **The
+transcript of the flip:**
+
+| | |
+|---|---|
+| shipped | `RX_NSLOTS 7`, with `RX_SLOT_LOOK_MARK0 = 5`, `RX_SLOT_LOOK_POS0 = 6` |
+| sabotaged | `RX_NSLOTS 5`, both LOOK slots GONE and the two `RX_SET`s with them |
+| `slotfamilies.rxt` | 45 passed / **2 FAILED** |
+| the named cell | `"aaabbb"` expected `match 0 6`, got **`nomatch`** — A LOST MATCH |
+| the OLD target, same sabotage | `zerodef.rxt` 33 passed / **0 failed** |
+
+The last row is the pair that names the failure: green on the population it used
+to have, red on the one it should have had all along.
+
+**THE UNDETECTED TALLY MOVES BUT DOES NOT SHRINK.** Wave E left six (S150, S151,
+S152, S153, S160, S164). S164 closes; S178 opens with its search recorded. Six
+again, and a different six.
