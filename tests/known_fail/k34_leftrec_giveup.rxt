@@ -1,0 +1,56 @@
+# tests/known_fail/k34_leftrec_giveup.rxt -- K34, and pcrec GIVES UP where libpcre2 CONCLUDES.
+#
+# Read docs/dev/known_issues.md K34 first. On a runaway LEFT recursion whose
+# callee has a non-recursive ALTERNATIVE (so the language is NOT empty --
+# [DD-14.EMPTY]'s root-width nomatch does not apply here), libpcre2 10.46
+# sometimes reaches a clean, definite NOMATCH without ever returning its own
+# recursion-loop guard (rc -52): `(a|(?1)a)` on "bbb", `(a|(?1)a)b`/`(a|(?1)a)c`
+# on every subject that is not "a<tail>". pcrec instead exhausts its frame
+# budget and answers PCREC_ERR_FRAMES on every one of these -- not a wrong
+# MATCH (D26 tier: a give-up asserts nothing), but a robustness gap: PCRE2's
+# actual loop rule is subtler than "give up on same-position re-entry", and
+# this project has not characterised it (K34's own text has the measurement
+# matrix: some same-position runaways get rc -52, some a clean nomatch, and a
+# 199-deep same-position recursion with a base case MATCHES).
+#
+# WHY THESE CELLS ARE HERE RATHER THAN IN THE MODULE'S OWN DIRECTORY. This is
+# the opposite polarity from u9_atomic.rxt's: there pcrec DISAGREES with
+# libpcre2 and is believed closer to right; here pcrec DECLINES TO ANSWER
+# where libpcre2 has a definite one, which D26's own tier reads as "not a
+# false answer" but K34 files as a DD-2/D22 robustness gap all the same, with
+# a scheduled home ([DD-14] close triage). The [DD-14.D27] blinded corpus
+# (tests/recursion/d27/sr_depth.rxt) is where these eleven cells were FOUND;
+# `sr_gen.py`'s `parked=`/`parked_ref="K34"` moved them here and left a
+# pointer stanza at each cell's former position, rendered in THE SAME RUN
+# from the SAME oracle-verified case data, so the pointer and this file
+# cannot drift apart.
+#
+# EVERY EXPECTATION BELOW IS libpcre2 10.46's, through
+# docs/design/subroutines_measurements/probes/sr_oracle.py -- NOT what pcrec
+# currently answers. That is the whole point of this directory: the cells
+# stay, they stay loud, and if pcrec is ever changed to reproduce K34's rule
+# this file FIRES rather than the divergence going invisible.
+
+# parked from sr_depth.rxt (K34, docs/dev/known_issues.md)
+pattern (a|(?1)a)
+features recursion
+n "bbb"
+
+# parked from sr_depth.rxt (K34, docs/dev/known_issues.md)
+pattern (a|(?1)a)b
+features recursion
+n "a"
+n "aa"
+n "aaa"
+n "b"
+n ""
+
+# parked from sr_depth.rxt (K34, docs/dev/known_issues.md)
+pattern (a|(?1)a)c
+features recursion
+n "a"
+n "aa"
+n "aaa"
+n "b"
+n ""
+

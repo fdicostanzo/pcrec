@@ -248,8 +248,73 @@ re-measuring it.
   written on the ORDINARY (captures-on) axis. **Does not and cannot today
   assert the `--no-captures` axis itself** — see "What could not be
   oracled" below.
-- **`d27/`** — NOT this lane's; the blinded corpus is a separate,
-  D27-cell-isolated lane (`[DD-14.D27]` in `docs/dev/plan.md`, not started).
+- **`d27/`** — the `[DD-14.D27]` BLINDED corpus, delivered 2026-08-24 (sr27,
+  opus) and LANDED the same day (sr27land, sonnet): 200 blocks, 558 cases
+  (m=276 n=251 ms=8 ns=3) + 20 `gu` + 29 `perr` + 433 `g` = **991
+  oracle-verified expectations**, across ten `.rxt` files (see `d27/
+  CLAUDE.md` for the file-to-extract-section map). **A Perl arm**
+  (`d27/sr_perl.py`/`sr_perl.pl`, D71 item 5): 587 cells offered, 404 ran,
+  393 agreed with libpcre2 exactly, 71 spellings perl refuses at compile
+  time (no `\g<>` call spelling at all; no leading-zero forms — §2.4a is
+  PCRE2-only), 8 patterns perl compiles and then dies "Infinite recursion"
+  on at match time, 4 `gu` cells with no perl counterpart (a pcrec capacity
+  fact), 6 divergence rows over 2 patterns — recorded in
+  `d27/PERL_DIVERGENCES.md`, never written as an expectation (D26). The
+  author's disclosure was honoured (session-root CLAUDE.md + memory index
+  injected, ignored, per D27).
+
+  **ACCEPTANCE, on the F-merged tree (pre-[DD-14.E]):** 1,031 cells, 1,016
+  pass, 15 fail — ALL 15 in `sr_depth.rxt`, ALL one class (K34, below), 0
+  corpus-wrong. **RE-MEASURED on the E-merged tree** (sr27land, after
+  merging `[DD-14.E]`/`[DD-14.EMPTY]`): still 1,016 pass / 15 fail, but the
+  COMPOSITION changed — the four empty-language-root `n "b"`/`n ""` cells
+  (`((?1)a)`, `(?R)a`) now pass (EMPTY's own uniform root-width nomatch), and
+  four of that pattern pair's OWN `gu frames "aaa"`/`"aaaaaa"` cells turned
+  from passing to failing instead (a NEW finding, below) — a wash in count,
+  not in kind. After the K34 park (below), the full `tests/recursion`
+  harness run (module corpus + d27) reads **1,609 pass / 4 fail** — the
+  four new-finding cells, the only ones left.
+
+  **FOUR FINDINGS, all measured by the blinded author, all through D27's
+  one permitted existence question (compile a cell and run it, never to
+  derive a match expectation):**
+  1. **`\K` reached BY A CALL from inside a lookaround compiles and fires
+     on 10.46** (`^(?:(a\Kb)){0}(?=(?1))ab$` on `"ab"` → `(1,2)`) — the
+     extract (`docs/design/sr_d27_extract.md` §3.4(b)) predicted the
+     opposite; **pcrec agrees with 10.46 — no defect**. Extract sentence
+     corrected; `subroutines_design.md` §3.4(b) gains a dated amendment
+     (cites the same cell), §3.4(d)/(e) cross-referenced.
+  2. **The depth ceiling is n = 342 MATCHES / n = 343 GIVES UP** — the
+     extract said "gives up at 342" in two places; both corrected (D73's
+     ruling number is unchanged, only the boundary's exact side).
+  3. **K34** (`docs/dev/known_issues.md`): pcrec `frames` gives up where
+     libpcre2 CONCLUDES a clean nomatch, on a runaway left recursion whose
+     callee has a non-recursive alternative — `(a|(?1)a)` on `"bbb"`;
+     `(a|(?1)a)b`/`(a|(?1)a)c` on `"a"`/`"aa"`/`"aaa"`/`"b"`/`""`. **Eleven
+     cells parked** in `tests/known_fail/k34_leftrec_giveup.rxt` (see
+     `d27/CLAUDE.md`'s own K34 section and `d27/sr_gen.py`'s `parked=`
+     mechanism); 0 corpus-wrong at every stage.
+  4. **The inverse**: `((?1)?a)`/`((?1)*a)` on `"a"` — pcrec ANSWERS (0,1)
+     where libpcre2 returns −52. Reported, not encoded (no expectation is
+     writable against a give-up the oracle side does not share); a
+     paragraph in K34's `known_issues.md` entry is the manager's to write,
+     citing these two cells.
+
+  **A FIFTH, NEW finding, from this SAME landing (merging wave E into the
+  D27 tree), not in the author's four — RULED and corrected:** the two
+  `gu frames "aaa"`/`"aaaaaa"` cells on `((?1)a)` and `(?R)a`
+  (`sr_depth.rxt`) went STALE — [DD-14.EMPTY] makes pcrec answer nomatch
+  INSTANTLY on every subject of these two (empty-language) patterns, so it
+  no longer gives up on "aaa"/"aaaaaa" either, and MEASURED
+  (`sr_oracle.match_limits`) libpcre2 STILL returns rc −52 there. pcrec's
+  answer is CORRECT (P-12's ruling) and strictly better than libpcre2's own
+  give-up — the identical shape wave E's own commit `7d1fbc6` already
+  fixed for this file's sibling `leftrec.rxt` cells. **RULED
+  corpus-wrong-by-ruling (manager, 2026-08-24) and corrected**: `sr_gen.py`
+  gains a third `guclass`, `"ruled"`, rendering these four cells `n
+  "<subj>"` with the P-12/[DD-14.EMPTY] citation instead of `gu frames`;
+  `sr_check.py` gained the matching recognition. See `d27/CLAUDE.md`'s own
+  entry for the mechanism.
 
 ## The `gu frames`-vs-`recurse` note (D71.1)
 
