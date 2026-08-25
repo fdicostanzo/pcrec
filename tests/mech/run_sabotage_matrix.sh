@@ -30,7 +30,49 @@
 #   bash tests/mech/run_sabotage_matrix.sh              # run every sabotage
 #   bash tests/mech/run_sabotage_matrix.sh S13           # run just S13 (id
 #                                                         # prefix match)
+#   bash tests/mech/run_sabotage_matrix.sh --help        # the field list
 #   KEEP=1 bash tests/mech/run_sabotage_matrix.sh        # keep scratch trees
+#
+# [MECH-REACH, 2026-08-25] A ROW WHOSE WITNESS IS A CONSTRUCT DECLARES ITS
+# REACH. Three optional fields, and the verdict they can produce.
+#
+#   SAB_REACH         a command, run on the CLEAN tree BEFORE the sabotage is
+#                     applied, whose stdout+stderr must contain the literal
+#                     SAB_REACH_EXPECT. `$PCREC` is the clean tree's binary,
+#                     `$TREE` its root, `$REACH_TMP` a scratch dir which is
+#                     also the cwd (so a probe that writes an output file
+#                     cannot write into the shared clean tree).
+#   SAB_REACH_EXPECT  the literal substring. Typically the EXACT diagnostic
+#                     the witness produces AT THE SABOTAGED SITE -- that is
+#                     what makes the check about reach rather than about the
+#                     construct being refused somehow, somewhere.
+#   SAB_REACH_POP     zero or more `FILE|EREGEX|MIN` lines: the file must hold
+#                     at least MIN lines matching EREGEX at HEAD. The count is
+#                     PRINTED whether it passes or fails.
+#   SAB_REQUIRE       space-separated instrument requirements; the vocabulary
+#                     is CLOSED and today holds exactly `asan`.
+#
+# A row failing SAB_REACH/SAB_REACH_POP is **UNREACHED**: a THIRD verdict
+# beside DETECTED/UNDETECTED/ANOMALY, counted in the trailer, RED in the
+# headline, and its sabotaged tree is never built. A row may declare
+# `SAB_EXPECT=UNREACHED` with a mandatory `SAB_EXPECT_REASON`, and the
+# reverse direction is checked too (`NOW REACHED`), on the same argument
+# `SAB_EXPECT`'s `NOW DETECTED` rests on.
+#
+# A row declaring SAB_REQUIRE the run cannot satisfy is **ANOMALY**, never
+# UNDETECTED (Frank's ruling 2026-08-25): an absent instrument is the absence
+# of a measurement, and reporting it as "the guards missed it" is a claim
+# about the CODE and a false one.
+#
+# WHY (docs/dev/plan.md [MECH-REACH]; D69 addendum). S70's four escape
+# witnesses were retired ONE PER WAVE as module `assertions` implemented the
+# constructs they probed, and after [M6.5.2] retired the last one not a single
+# row in the tree still reached `UNBUILT(at, "\%c", c)` -- the only text S70
+# deletes. The row went on scoring for two milestones and certified nothing;
+# a full 180-row matrix eventually read UNDETECTED. The "expired claim"
+# doctrine watches only UNDETECTED->DETECTED, so the DETECTED->certifies-
+# nothing direction had no checker at all. S155 is the same shape through a
+# different door: a witness FILE whose relevant population went to zero.
 #
 # Env:
 #   CC              C compiler for the sabotaged trees' own `make all`
@@ -226,6 +268,59 @@ fi
 INNER_PROCS=$(( ncpu / PROCS )); [ "$INNER_PROCS" -ge 1 ] || INNER_PROCS=1
 ONLY="${1:-}"
 
+# `--help` prints the ROW FIELD LIST rather than only the invocation forms,
+# because the thing a reader opens this script for is almost always "what may
+# a sabotage definition set". [MECH-REACH] added three fields and a verdict,
+# and a mechanism nobody can find is a mechanism nobody uses.
+case "$ONLY" in
+-h|--help|help)
+    cat <<'USAGE'
+usage: bash tests/mech/run_sabotage_matrix.sh [S<id>]
+
+  no argument   run every sabotage under tests/mech/sabotages/
+  S<id>         run just that row (matched at the id boundary: S10 selects
+                S10_*.sh and never S100_*.sh)
+
+env: CC, KEEP=1 (keep scratch trees + logs), MECH_SCRATCH, JOBS, PROCS
+
+A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
+
+  REQUIRED
+    SAB_ID SAB_FILE SAB_SUITES SAB_DESC SAB_BEFORE SAB_AFTER
+
+  OPTIONAL
+    SAB_COUNT            occurrences SAB_BEFORE must have (default 1)
+    SAB_FILE2 SAB_BEFORE2 SAB_AFTER2 SAB_COUNT2
+                         a second coordinated site (a one-hunk mutation
+                         cannot falsify a defence-in-depth pair)
+    SAB_HARNESS_TARGET   scope the `harness` arm to one .rxt file or dir
+    SAB_DOC_FIGURE       the row's own record of what it measured
+    SAB_EXPECT           DETECTED (default) | UNDETECTED | UNREACHED --
+                         checked in BOTH directions, a mismatch exits 1
+    SAB_EXPECT_REASON    REQUIRED when SAB_EXPECT=UNREACHED
+
+  [MECH-REACH] THE WITNESS'S REACH -- a row whose detector is a construct
+  declares that the construct still reaches the sabotaged site AT HEAD:
+    SAB_REACH            a command run on the CLEAN tree BEFORE the sabotage.
+                         $PCREC = clean binary, $TREE = clean root,
+                         $REACH_TMP = its cwd and scratch dir.
+    SAB_REACH_EXPECT     the literal substring its output must contain --
+                         normally the EXACT diagnostic produced at the
+                         sabotaged site. REQUIRED with SAB_REACH.
+    SAB_REACH_POP        `FILE|EREGEX|MIN` lines (one per line): FILE must
+                         hold >= MIN lines matching EREGEX. The count is
+                         printed on pass and on fail.
+    SAB_REQUIRE          instrument requirements, closed vocabulary: `asan`.
+                         Unsatisfiable => ANOMALY, never UNDETECTED.
+
+  Failing a reach check is the verdict UNREACHED: the row does NOT build or
+  run its sabotaged tree, the headline counts it, and it is RED unless the
+  row declares SAB_EXPECT=UNREACHED with a reason.
+USAGE
+    exit 0
+    ;;
+esac
+
 MADE_SCRATCH=0
 if [ -z "${MECH_SCRATCH:-}" ]; then
     MECH_SCRATCH="$(mktemp -d "${TMPDIR:-/tmp}/pcrec-mech-sabotage.XXXXXX")"
@@ -283,6 +378,64 @@ if [ "${#sab_files[@]}" -eq 0 ]; then
     exit 2
 fi
 
+# ---- [MECH-REACH] the CLEAN REFERENCE TREE, built at most once per run ----
+#
+# The reach check must ask its question of the tree WITHOUT the sabotage, and
+# it must ask it of the SAME tree the rows measure -- committed HEAD via
+# `git archive`, never the working tree (the [MECH-2] rule, and the reason a
+# dirty working tree gets the banner above rather than a measurement).
+#
+# ONE tree for the whole run, extracted and built before any row forks, then
+# read-only for every row including in PROCS>1 mode. Rows never write into it:
+# a witness probe runs with its cwd in its OWN scratch dir and reaches the tree
+# through `$TREE`/`$PCREC`, so a probe that emits an output file cannot touch
+# it. Cost, measured by this file's own header on a 12-core box: `git archive`
+# 0.04s + `make all -j12` 0.75s, i.e. one build against a matrix that measures
+# in the tens of minutes.
+#
+# NOTE THE ONE ASYMMETRY WITH THE ROWS, deliberately: run_one re-reads `git
+# archive HEAD` per row (see the header's "A SWEEP OVER N COMMITS MEASURES N
+# TREES"), while this is read ONCE at the start. Under the standing rule for
+# this script -- commit before you start, commit nothing during the run --
+# they are the same tree; under a violation of it the reach check reports the
+# tree the run BEGAN on, which is the honest half of a run that is already
+# unsound.
+#
+# LAZY: built only when some SELECTED row actually declares a reach field, so
+# a run of rows that declare none is byte-for-byte the run it was before this
+# mechanism existed.
+CLEAN_TREE=""
+needs_clean=0
+for f in "${sab_files[@]}"; do
+    if ( SAB_REACH=""; SAB_REACH_POP=""
+         # shellcheck disable=SC1090
+         source "$f" >/dev/null 2>&1
+         [ -n "${SAB_REACH}${SAB_REACH_POP//[[:space:]]/}" ] ); then
+        needs_clean=1
+        break
+    fi
+done
+if [ "$needs_clean" -eq 1 ]; then
+    CLEAN_TREE="$MECH_SCRATCH/_clean/tree"
+    rm -rf "$MECH_SCRATCH/_clean"
+    mkdir -p "$CLEAN_TREE"
+    if ! git -C "$ROOT_DIR" archive HEAD | tar -x -C "$CLEAN_TREE" \
+            2>"$MECH_SCRATCH/_clean/archive.log"; then
+        echo "FATAL: could not extract the clean reference tree for the reach checks (see $MECH_SCRATCH/_clean/archive.log)" >&2
+        exit 2
+    fi
+    # A CLEAN TREE THAT DOES NOT BUILD IS A FATAL FOR THE WHOLE RUN, not a
+    # per-row anomaly: every verdict below is stated relative to it, and if
+    # HEAD does not build there is nothing for any row to mean.
+    if ! make -C "$CLEAN_TREE" -j"$ncpu" all CC="$CC" \
+            > "$MECH_SCRATCH/_clean/build.log" 2>&1; then
+        echo "FATAL: the CLEAN reference tree does not build at $SHA (see $MECH_SCRATCH/_clean/build.log)" >&2
+        exit 2
+    fi
+    echo "reach reference: clean tree built at $SHA ($CLEAN_TREE)"
+    echo
+fi
+
 # ---- run one sabotage: fresh tree, verify-apply, build, run suites ----
 
 run_one() {
@@ -305,6 +458,15 @@ run_one() {
         SAB_BEFORE2=""
         SAB_AFTER2=""
         SAB_COUNT2=1
+        # [MECH-REACH 2026-08-25] THE WITNESS'S OWN REACH. See the header
+        # block "SAB_REACH / SAB_REACH_POP / SAB_REQUIRE" for the doctrine;
+        # reset here with the rest so one row's reach claim cannot leak into
+        # the next row's subshell.
+        SAB_REACH=""
+        SAB_REACH_EXPECT=""
+        SAB_REACH_POP=""
+        SAB_REQUIRE=""
+        SAB_EXPECT_REASON=""
         # shellcheck disable=SC1090
         source "$sab_path"
         for v in SAB_ID SAB_FILE SAB_SUITES SAB_DESC SAB_BEFORE SAB_AFTER; do
@@ -317,17 +479,193 @@ run_one() {
         # falling back to the default would turn a checked claim back into an
         # unchecked one -- which is the exact failure this field exists to fix.
         case "${SAB_EXPECT:-DETECTED}" in
-            DETECTED|UNDETECTED) ;;
+            DETECTED|UNDETECTED|UNREACHED) ;;
             *)  echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT must be" \
-                     "DETECTED or UNDETECTED (got '$SAB_EXPECT')" >&2
+                     "DETECTED, UNDETECTED or UNREACHED (got '$SAB_EXPECT')" >&2
                 exit 2 ;;
         esac
+        # ---- [MECH-REACH] THE REACH FIELDS, VALIDATED BEFORE ANYTHING RUNS --
+        # Same rule the suite vocabulary and SAB_EXPECT already hold: a field
+        # that is half-written must be a FATAL, never a silent fall-back,
+        # because falling back turns a checked claim into an unchecked one.
+        if [ -n "$SAB_REACH" ] && [ -z "${SAB_REACH_EXPECT//[[:space:]]/}" ]; then
+            echo "FATAL[$(basename "$sab_path")]: SAB_REACH set with a blank" \
+                 "SAB_REACH_EXPECT -- a reach probe that asserts nothing is" \
+                 "not a reach check (tests/reject's blank-expectation rule)" >&2
+            exit 2
+        fi
+        if [ -z "$SAB_REACH" ] && [ -n "$SAB_REACH_EXPECT" ]; then
+            echo "FATAL[$(basename "$sab_path")]: SAB_REACH_EXPECT set with no" \
+                 "SAB_REACH to produce it" >&2
+            exit 2
+        fi
+        while IFS= read -r popline; do
+            [ -n "${popline//[[:space:]]/}" ] || continue
+            case "$popline" in
+                *"|"*"|"*) ;;
+                *)  echo "FATAL[$(basename "$sab_path")]: SAB_REACH_POP entry" \
+                         "'$popline' is not FILE|EREGEX|MIN" >&2; exit 2 ;;
+            esac
+            popmin="${popline##*|}"
+            case "$popmin" in
+                ''|*[!0-9]*) echo "FATAL[$(basename "$sab_path")]:" \
+                    "SAB_REACH_POP entry '$popline' has a non-numeric MIN" >&2
+                    exit 2 ;;
+            esac
+        done <<< "$SAB_REACH_POP"
+        # THE INSTRUMENT VOCABULARY IS CLOSED, for the reason the SUITE
+        # vocabulary is (R31 C11): a row naming an instrument this driver does
+        # not know would be scored as if it had declared nothing, which is the
+        # silent version of the thing the field exists to make loud.
+        for req in $SAB_REQUIRE; do
+            case "$req" in
+                asan) ;;
+                *)  echo "FATAL[$(basename "$sab_path")]: SAB_REQUIRE names" \
+                         "an unknown instrument '$req' (known: asan)" >&2
+                    exit 2 ;;
+            esac
+        done
+        if [ "${SAB_EXPECT:-DETECTED}" = "UNREACHED" ]; then
+            if [ -z "${SAB_EXPECT_REASON//[[:space:]]/}" ]; then
+                echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT=UNREACHED" \
+                     "requires a non-blank SAB_EXPECT_REASON -- an expected" \
+                     "UNREACHED is a claim, and an unexplained one is the" \
+                     "parking space this field exists to refuse" >&2
+                exit 2
+            fi
+            if [ -z "$SAB_REACH" ] && [ -z "${SAB_REACH_POP//[[:space:]]/}" ]; then
+                echo "FATAL[$(basename "$sab_path")]: SAB_EXPECT=UNREACHED" \
+                     "with no SAB_REACH/SAB_REACH_POP -- nothing in this row" \
+                     "can produce that verdict, so the expectation could" \
+                     "never be checked" >&2
+                exit 2
+            fi
+        fi
 
         work="$MECH_SCRATCH/$SAB_ID"
         rm -rf "$work"
         mkdir -p "$work"
         tree="$work/tree"
         mkdir -p "$tree"
+
+        # ===== [MECH-REACH] BEFORE THE SABOTAGE: DOES THE WITNESS REACH? =====
+        #
+        # Everything in this block runs on the CLEAN tree and BEFORE the
+        # sabotage exists, which is the whole point: a row's detector is a
+        # WITNESS reaching the sabotaged site, and a witness that stopped
+        # reaching it certifies nothing while still scoring `DETECTED` or
+        # `UNDETECTED` as if it had measured something. S70 is the worked
+        # case -- four escape witnesses expired by BEING IMPLEMENTED and the
+        # row went blind from [M6.5.2] until a full matrix scored it
+        # UNDETECTED two milestones later, because the "expired claim"
+        # doctrine only ever watched UNDETECTED->DETECTED.
+        #
+        # A row that fails here does NOT build or run its sabotaged tree: the
+        # verdict is already known and the minutes are not worth spending on a
+        # measurement whose instrument is absent.
+        reach_bits=()
+        reach_ok=1
+        reach_why=""
+
+        # (i) THE INSTRUMENT REQUIREMENT, first, because an unsatisfiable
+        # instrument makes the reach question moot: nothing measurable follows
+        # either way. Frank's ruling 2026-08-25 -- when the run cannot satisfy
+        # a declared instrument the verdict is ANOMALY, never UNDETECTED,
+        # which would be a claim about the CODE and a false one.
+        for req in $SAB_REQUIRE; do
+            case "$req" in
+            asan)
+                printf 'int main(void){return 0;}\n' > "$work/asan_probe.c"
+                if "$CC" -O0 -fsanitize=address,undefined \
+                        -o "$work/asan_probe" "$work/asan_probe.c" \
+                        > "$work/asan_probe.log" 2>&1 \
+                   && "$work/asan_probe" >> "$work/asan_probe.log" 2>&1; then
+                    reach_bits+=("require:asan-ok")
+                else
+                    printf '%s\t%s\t%s\tNOT-RUN (instrument absent)\trequire:asan-UNAVAILABLE\tANOMALY (this row DECLARES SAB_REQUIRE=asan and %s cannot build or run -fsanitize=address,undefined -- an absent instrument is the absence of a measurement, never UNDETECTED; see %s)\n' \
+                        "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$CC" "$work/asan_probe.log"
+                    [ "$KEEP" = "1" ] || rm -rf "$work"
+                    exit 0
+                fi
+                ;;
+            esac
+        done
+
+        # (ii) THE POPULATION FLOOR. "the target file still holds >= N cells
+        # matching REGEX", counted on the CLEAN tree and PRINTED whether it
+        # passes or fails (learnings.md SS3: every population-deriving check
+        # prints its population count). S155's shape: SAB_HARNESS_TARGET
+        # pointed at leftrec.rxt, which had held ZERO `gu` cells since
+        # [DD-14.EMPTY] -- a witness FILE whose relevant population went to
+        # zero, with nothing anywhere saying so.
+        while IFS= read -r popline; do
+            [ -n "${popline//[[:space:]]/}" ] || continue
+            popmin="${popline##*|}"
+            poprest="${popline%|*}"
+            popfile="${poprest%%|*}"
+            popre="${poprest#*|}"
+            if [ ! -f "$CLEAN_TREE/$popfile" ]; then
+                reach_bits+=("pop:$popfile=NOFILE(want>=$popmin)")
+                reach_ok=0
+                reach_why="$reach_why; SAB_REACH_POP names $popfile, which does not exist at HEAD"
+                continue
+            fi
+            popn="$(grep -cE -- "$popre" "$CLEAN_TREE/$popfile" || true)"
+            reach_bits+=("pop:$popfile=$popn(want>=$popmin)")
+            if [ "$popn" -lt "$popmin" ]; then
+                reach_ok=0
+                reach_why="$reach_why; $popfile holds $popn cell(s) matching /$popre/, below the floor of $popmin this row's detector needs"
+            fi
+        done <<< "$SAB_REACH_POP"
+
+        # (iii) THE WITNESS PROBE. Run in a per-row TEMP DIRECTORY with the
+        # clean tree exported as $TREE and its binary as $PCREC, so a probe
+        # that writes an output file (`-o out.c`, the reject rows' own shape)
+        # cannot write into the shared clean tree -- enforcement by
+        # construction rather than by a rule in a comment. stdout AND stderr
+        # are captured: every diagnostic in this compiler goes to stderr.
+        if [ -n "$SAB_REACH" ]; then
+            mkdir -p "$work/reach"
+            (
+                cd "$work/reach" || exit 97
+                TREE="$CLEAN_TREE" PCREC="$CLEAN_TREE/build/pcrec" \
+                REACH_TMP="$work/reach" CC="$CC" \
+                    bash -c "$SAB_REACH"
+            ) > "$work/reach.log" 2>&1
+            reach_rc=$?
+            if grep -qF -- "$SAB_REACH_EXPECT" "$work/reach.log"; then
+                reach_bits+=("reach:ok")
+            else
+                reach_bits+=("reach:MISSING")
+                reach_ok=0
+                reach_why="$reach_why; the witness probe exited $reach_rc and its output does not contain SAB_REACH_EXPECT ('$SAB_REACH_EXPECT') -- see $work/reach.log"
+            fi
+        fi
+
+        # THE SCORING, in both directions, exactly as SAB_EXPECT scores
+        # DETECTED/UNDETECTED: an expectation a human maintains in prose is a
+        # claim, one the runner checks is a contract. A row that DECLARES its
+        # witness dead and is then found to reach is `NOW REACHED` -- the
+        # expiry doctrine pointing the other way.
+        reach_joined="$(IFS=,; echo "${reach_bits[*]}")"
+        if [ "$reach_ok" -eq 0 ]; then
+            if [ "${SAB_EXPECT:-DETECTED}" = "UNREACHED" ]; then
+                rverdict="UNREACHED (EXPECTED -- $SAB_EXPECT_REASON)"
+            else
+                rverdict="UNREACHED -- this row's witness no longer reaches the sabotaged site, so it certifies NOTHING until it is re-pointed${reach_why} ***UNEXPECTED***"
+            fi
+            printf '%s\t%s\t%s\tNOT-RUN (unreached)\t%s\t%s\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$reach_joined" "$rverdict"
+            [ "$KEEP" = "1" ] || rm -rf "$work"
+            exit 0
+        fi
+        if [ "${SAB_EXPECT:-DETECTED}" = "UNREACHED" ]; then
+            printf '%s\t%s\t%s\tNOT-RUN (reach re-measured)\t%s\tNOW REACHED -- the witness this row declares dead is live again; re-measure and flip SAB_EXPECT ***UNEXPECTED***\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$reach_joined"
+            [ "$KEEP" = "1" ] || rm -rf "$work"
+            exit 0
+        fi
+        # ===================== end of the reach block ========================
 
         if ! git -C "$ROOT_DIR" archive HEAD | tar -x -C "$tree" 2>"$work/archive.log"; then
             printf '%s\tFATAL\t%s\tgit archive failed, see %s\tNONE\tANOMALY\n' \
@@ -395,7 +733,14 @@ run_one() {
 
         pcrec="$tree/build/pcrec"
         lib="$tree/build/libpcrec.a"
+        # [MECH-REACH] THE REACH LINE RIDES THE RESULTS CELL. A retrofitted
+        # row prints what its witness proved on EVERY run, not only on the
+        # run where it fails -- a population count nobody reads on the green
+        # runs is how S155's zero went unnoticed for a whole milestone.
         suite_bits=()
+        if [ "${#reach_bits[@]}" -gt 0 ]; then
+            suite_bits=("${reach_bits[@]}")
+        fi
         any_fail=0
         any_ran=0
         any_skip=0      # an assigned suite could not run for want of an ORACLE
@@ -1298,6 +1643,11 @@ unexpected="$(grep -c 'UNEXPECTED' "$results_file.rows" || true)"
 undetected="$(grep -c 'UNDETECTED' "$results_file.rows" || true)"
 anomalies="$(grep -c 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" || true)"
 oracle_skipped="$(grep -c 'SKIPPED-no-oracle' "$results_file.rows" || true)"
+# [MECH-REACH] counted BESIDE undetected/anomalies rather than folded into
+# either: an UNREACHED row is neither "the guards saw it" nor "the guards
+# missed it" -- it is "the witness was not there to look", which is a third
+# thing and the one this mechanism exists to make countable.
+unreached="$(grep -c 'UNREACHED\|NOW REACHED' "$results_file.rows" || true)"
 total="$(wc -l < "$results_file.rows" | tr -d ' ')"
 
 # The denominator guard: `total` above is derived from the rows that ARRIVED,
@@ -1328,6 +1678,15 @@ if [ "${anomalies:-0}" -gt 0 ]; then
     echo "*** $anomalies sabotage(s) hit an ANOMALY (anchor drift, build failure, or archive failure) and were NOT measured. ***"
     grep 'ANOMALY\|APPLY-FAILED\|BUILD-FAILED\|FATAL' "$results_file.rows" | cut -f1 | sed 's/^/    - /'
 fi
+if [ "${unreached:-0}" -gt 0 ]; then
+    echo "*** $unreached row(s) reported UNREACHED: the row's own WITNESS does not reach the      ***"
+    echo "*** sabotaged site on the CLEAN tree, so the row certifies nothing. It was NOT built    ***"
+    echo "*** or run. Re-POINT the witness at a live one (and say so in the row's header) --      ***"
+    echo "*** do not delete the row, and do not read a DETECTED/UNDETECTED verdict off a row      ***"
+    echo "*** whose witness has expired. 'NOW REACHED' is the other direction: a row that         ***"
+    echo "*** DECLARES its witness dead and was found live. Re-measure, then flip SAB_EXPECT.     ***"
+    grep 'UNREACHED\|NOW REACHED' "$results_file.rows" | cut -f1,5,6 | sed 's/^/    - /'
+fi
 if [ "${oracle_skipped:-0}" -gt 0 ]; then
     echo "*** $oracle_skipped row(s) ran with an ORACLE-DEPENDENT arm SKIPPED (pc3 and/or       ***"
     echo "*** laexpand): libpcre2-8-0 is absent, so the EXTERNAL oracle contributed nothing to   ***"
@@ -1339,6 +1698,7 @@ fi
 rm -f "$results_file" "$results_file.rows"
 if [ "$KEEP" != "1" ]; then
     [ -n "${rowdir:-}" ] && rm -rf "$rowdir"
+    [ -n "$CLEAN_TREE" ] && rm -rf "$MECH_SCRATCH/_clean"
     # remove the scratch root only if this run created it (and it is empty)
     [ "$MADE_SCRATCH" = "1" ] && rmdir "$MECH_SCRATCH" 2>/dev/null
 fi
@@ -1365,7 +1725,7 @@ fi
 # same root as the no-`pgrep -f` rule above, which is that a command line is
 # not an identity.
 echo
-echo "== mech run COMPLETE: $total rows (unexpected: ${unexpected:-0}, undetected: ${undetected:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
+echo "== mech run COMPLETE: $total rows (unexpected: ${unexpected:-0}, undetected: ${undetected:-0}, unreached: ${unreached:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
 
 # A MISMATCHED EXPECTATION FAILS THE RUN. Before this field the script exited
 # 0 with the finding printed, because an UNDETECTED row was a fact to read
