@@ -1084,6 +1084,26 @@ others, and a sabotage of one must not be reported as coverage by another.
   `(?m)` rows stay green — which is the honest reading of "a letter's module
   is not the dispatching row's".
 
+  **[srMech, 2026-08-25] THE WITNESS EXPIRED BY BEING IMPLEMENTED, AND THE ROW
+  WAS BLIND FOR TWO MODULES' WORTH OF WAVES.** The paragraph above is the wave
+  A reading and every sentence of it is still true about the CODE; what moved
+  is the POPULATION. The four `reject_gated assertions` rows retired one per
+  wave through [M6.2] B..E as the module BUILT `\b`/`\B`/`\G`/`\K`, the pin
+  was re-homed three times, and at [M6.5.2] the last row that reached the
+  SABOTAGED SITE (`\k`, backrefs) retired too. Every survivor reaches a
+  DIFFERENT site in the same file — the in-class splice (ext.c:308-320) for
+  `[\Q]`, the GROUP doorway (ext.c:509) for `(?(1)a|b)`, and a changed
+  sentence entirely for `recursion`'s `\g<1>` — so the row scored UNDETECTED
+  on the full matrix against a tree that had genuinely lost the diagnostic.
+  Two rows at the escape doorway restore it (`quoting '\Q'`, `misc '\R'`;
+  gated 78 -> 80), and `\Q` shares its letter with the in-class row beside it
+  so the "BOTH POSITIONS" claim is now measured rather than asserted.
+  **THE GENERALISATION, which is not the one wave E wrote down:** when a
+  module's last unbuilt construct lands, move the PIN — and check WHICH SITE
+  the new pin reaches, because "same arm, same module count" is not "same
+  coverage". Measured at 47f2648: sabotaged reject 2fail/587pass, clean
+  0fail/589pass, assertions 0fail/52pass both ways.
+
 ## [M6.2 wave B] S71-S75, and one more arm
 
 Five rows for `\b`/`\B`, running the new `wordctxidentity` arm
@@ -1820,3 +1840,29 @@ respelled the guard it names: that row had been applying nothing, and
 certifying nothing, for two commits. Re-anchored, with the history in its own
 header, and NOT re-run since. `scripts/m6read_check_sab_anchors.py` reports
 "all anchors resolve" as of this wave.
+
+**[srMech, 2026-08-25] AND THE RE-ANCHOR WAS NOT THE WHOLE STORY FOR S155.**
+The anchor was restored correctly — the edit applies and deletes the live
+guard — but the row still scored UNDETECTED, for a reason a re-anchor cannot
+reach: `SAB_HARNESS_TARGET` pointed at `tests/recursion/leftrec.rxt`, which
+has held ZERO `gu` cells since [DD-14.EMPTY] (wave E) turned all three
+give-up cells into constant-time NOMATCH via `RX_VM_ROOT_MINW`. Worse, no
+answer-checking cell ANYWHERE can see that edit: the deleted line is one of
+THREE byte-identical capacity tests emitted from the same function —
+`RX_TRAIL` (emit_vm.c:8384), `RX_PUSH` (:8393), `RX_CALL` (:8483) — all
+returning the same `RX_R_FRAMES`, so at 2.000 frames / 8.982 trail entries per
+nesting level a surviving guard always binds one frame later with the
+IDENTICAL typed answer. The sabotage changes a WRITE, not an ANSWER. The row
+now carries the `framebuffer` arm, whose SS2 exact-fit ASan driver is the one
+instrument in the tree that reads a write (measured at fb9cc51: sabotaged
+`corpus:0fail/16pass,recdiff:0fail/10pass,framebuf:1fail/5pass` -> DETECTED,
+with an ASan heap-buffer-overflow 0 bytes after the 27,160-byte frames
+region; clean `framebuf:0fail/6pass`). **RECORDED BECAUSE IT IS A LIMIT, NOT A
+FIX:** that detection is CONDITIONAL on a working ASan — SS2 skips the
+sanitizer loudly otherwise and the row reads UNDETECTED again on such a box.
+**TWO LESSONS FOR THIS DIRECTORY.** A re-anchor certifies that the EDIT still
+applies; it says nothing about whether the POPULATION still reaches it, and
+those are separate claims that expire separately. And S108's defence-in-depth
+rule ("a ONE-HUNK MUTATION CANNOT FALSIFY A DEFENCE-IN-DEPTH PAIR") applies to
+a TRIO of guards emitted from one function as readily as to two gates in
+different files — the second occurrence of that shape in this tree.
