@@ -990,7 +990,7 @@ be justified on ergonomics or not built.
 
 **[PROPOSED]** substitution needs a template and an expected output string,
 neither of which `.rxt` can express. The extension follows the existing
-directive grammar exactly (`docs/testing.md`, "The `.rxt` format") — a
+directive grammar exactly (`docs/spec/rxt_format.md`, "The `.rxt` format") — a
 block-scoped directive like `flags`/`features`, plus assertion lines that
 parallel `m`/`n`/`perr`:
 
@@ -1072,7 +1072,7 @@ phase-1 test plan:
 4. **Only `$1`..`$n` and `${name}` are actually gated** — on M4 and on
    `named-groups` respectively.
 
-**[PROPOSED]** a `tests/subst/` directory per `docs/testing.md`'s
+**[PROPOSED]** a `tests/subst/` directory per `docs/spec/rxt_format.md`'s
 "Adding a new component test directory", whose pre-M4 content asserts the
 `perr`/`serr` refusals and items 1–3, converting to full cases as captures
 land. That is the ratchet shape the project already uses.

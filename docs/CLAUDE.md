@@ -86,8 +86,11 @@ Process and status documents for pcrec. The architecture itself lives in
   stay individually re-openable. Also carries the D38 naming-scheme
   addenda: the native surface is uniformly `PCREC_*`, `PCRE2_*` is
   compat-only.
-- `testing.md` — .rxt test-file format, harness usage, env vars, oracle
-  exclusions, how to add a per-module test directory, and (added [TT-1])
+- `testing.md` — harness usage, env vars, and process record: measured
+  runtimes, battery composition, sanitizer/lint findings, and the living
+  oracle-exclusion catalog. **The `.rxt` format itself and the driver
+  protocol moved to `spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25) — read
+  that first to add a test or a test directory. Also (added [TT-1])
   "Tiered testing": the measured per-section runtimes behind `make
   test-corpus`/`test-cli`/etc., the touched-path -> sections guidance table,
   `make smoke`'s measured composition and floor check, and the opt-in

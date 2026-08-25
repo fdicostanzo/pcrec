@@ -215,6 +215,23 @@ spec and a design doc disagree, the spec is what the tool promises.
   emits two macros, `RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED` — this document
   states the as-built name; `lib/pcrec.h`'s comment was corrected at 40d9f79.
 
+- `rxt_format.md` — **[SPEC-1.6], 2026-08-25.** The `.rxt` test-corpus
+  format and the harness driver protocol, extracted from `docs/testing.md`
+  (lines ~124-467 there): the full directive grammar (`pattern`/`flags`/
+  `features`/`perr`/`m`/`n`/`ms`/`ns`/`g`/`gp`/`gu`/`engine`/`budget`/
+  `frames-buffer=`), the subject escape table, the oracle-verification
+  requirement (the default python-`re` oracle, the `# pcre2-only`
+  exclusion convention, per-directory oracle overrides), how `run.sh`
+  scores a block, `tests/harness/driver.c`'s CLI/exit-code contract
+  (including the `_in`-entry anchored cross-check's exit `4`, previously
+  undocumented in prose anywhere), the D45 budget policy stated as policy
+  rather than measurement, and how to add a new component test directory.
+  Every claim verified against `tests/harness/run.sh`/`driver.c` at this
+  worktree's branch point (`d39ce94`); `docs/testing.md` keeps the process
+  record (runtimes, battery composition, sanitizer/lint measurements,
+  TT-* notes, the living oracle-exclusion catalog) and gained a header
+  note plus a one-paragraph pointer where the moved sections stood.
+
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
 three-component annotated-derivation discipline (generated facts +

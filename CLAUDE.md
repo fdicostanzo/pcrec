@@ -90,7 +90,9 @@ tier, and PCRE2 is a moving target with no specification.
   every significant work session** (accomplishments, issues, next steps); it is
   the restart/status-recovery record.
 - `docs/dev/decisions.md` — ADR-lite decision log (D1..).
-- `docs/testing.md` — .rxt test format and harness usage.
+- `docs/spec/rxt_format.md` — .rxt test format and driver protocol (the
+  contract). `docs/testing.md` — harness process record (runtimes, battery
+  composition, sanitizer findings).
 - `lib/pcrec.h` — the only public header. `src/` is internal (core/, parse/,
   ir/, opt/, gen/), `cli/` the command-line tool, `tests/` per-module .rxt corpora.
 - `studies/` — adopted exploratory work (reference material, own Makefiles,

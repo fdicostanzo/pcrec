@@ -152,9 +152,11 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   module's name is in a diagnostic.
 - **captures/** — [M4.5a] capture-group expectation corpus: the `g`/`gp`
   `.rxt` line kinds (per-GROUP capture-slot spans, attached to the preceding
-  `m`/`ms` case — see docs/testing.md's "Capture-group expectations" section
-  for the full format, the live-vs-pending-VM population-accounting rule,
-  and the python-oracle tier). `basic.rxt`: 14 `m`/`ms` cases carrying 3
+  `m`/`ms` case — see docs/spec/rxt_format.md's ".rxt format" section for
+  the full syntax, the live-vs-pending-VM population-accounting rule, and
+  the python-oracle tier; docs/testing.md's "Capture-group expectations"
+  keeps the design rationale and the seed-corpus/sabotage-validation
+  record). `basic.rxt`: 14 `m`/`ms` cases carrying 3
   live `g` + 28 pending-VM `gp` group checks, all oracle-verified against
   python `re`. Runs today against [M4.4]'s DFA-only artifacts (`RX_NCAPS` is
   always 1, so every non-slot-0 expectation is pending-VM by construction

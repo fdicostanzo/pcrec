@@ -49,7 +49,8 @@ files inside it (`docs/dev/known_issues.md`-linked regression files like
 
 **R-RXT-1 (line-oriented, flat, block-scoped state):** a `pattern` line
 starts a block; `flags`/`features` apply to that block only and do not carry
-forward (`docs/testing.md` "The `.rxt` format"). Any successor format must
+forward (`docs/spec/rxt_format.md` "The `.rxt` format", moved there
+[SPEC-1.6] after this requirements note was written — same content). Any successor format must
 preserve — or explicitly supersede with a stated migration path — this
 non-carrying-state discipline, because 1,100 existing blocks assume it.
 
