@@ -210,12 +210,24 @@ pcrec_run() {
                 hostile=1 ;;
         esac
     fi
+    # THE BOUND'S SHAPE (2026-08-25, the [CHK-1] battery at c448437): the
+    # budget `pcrec_timeout_secs` (20 s plain / 60 s san, R23 V1, D45) is a
+    # per-CASE wall the harness applies to ~23k calls; pcrec_run's job is to
+    # turn a HANG into a verdict at script level, and a 20 s WALL on a 4 s
+    # compile fails under `make -j12 test` (measured >2x CPU-time inflation,
+    # 3-5x wall: counterk's K32-family cells died at 20 s, and four identity
+    # sweeps scored two timed-out compiles as "changed emitted bytes"). So:
+    # wall = 3x the budget (a hang is still a verdict at 60 s), and on the
+    # watchdog path CPU = the budget itself (load-independent, D45's own
+    # CPU-primary shape: GENCPU 10 s under GENTIMEOUT 60 s). The harness's
+    # per-case budget is NOT changed here -- that is [TT-10]'s open residue.
+    local _secs; _secs="$(pcrec_timeout_secs)"
     if [ "$hostile" -eq 1 ]; then
         "$GEN_LIB_ROOT/scripts/watchdog" -l "$what" -S "${WATCHDOG_SECTION:-pcrec_run}" \
-            -s "$(pcrec_timeout_secs)" -c "$(pcrec_timeout_secs)" -m "${PCRECRUNMEM:-512m}" \
+            -s "$((_secs * 3))" -c "$_secs" -m "${PCRECRUNMEM:-512m}" \
             -L "${WATCHDOG_LOG:-$GEN_LIB_ROOT/build/watchdog.log}" -- "$@"
     else
-        "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$@"
+        "$TIMEOUT_BIN" "$((_secs * 3))" "$@"
     fi
 }
 
