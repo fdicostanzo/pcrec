@@ -13836,3 +13836,14 @@ is PRIMARY. Coordination is direct (SendMessage to pcrecdev2): load
 (few cores while lanes run; heavy runs announced), git (no writes to
 this repo's main/branches/worktrees without a manager-cut worktree;
 pcrec-bench is its own per its mandate), /tmp tmpfs, kill-by-PID. Sent.
+
+BOX-SHARING (cont., ~23:0x): pcrecdev2 accepted the five rules (idle, reads
+only, PID-only kills, scratch in its own scratchpad) and has been
+ASSIGNED /home/duxevents/pcrec-bench by Frank. Sent it every pcrec-bench
+pointer in this repo (D52 + the seeding record, D12/D14/D15, [BENCH-1]/
+[BENCH-CEIL]/[ENG-PGO]'s cross-note, the post-spine direction note,
+tests/bench, the email_specimen harnesses incl. the dlopen libpcre2
+reference, pcre2_ctypes.py, the D35 archived-probe discipline, K31/K32/
+[TT-10] as bench-relevant findings) and the rule that anything written
+INTO pcrec goes through this session. Big-run start/stop is announced
+to it both ways.
