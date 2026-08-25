@@ -79,7 +79,7 @@ cannot drift apart. Regenerating (`python3 sr_gen.py`) reproduces both
 byte-for-byte (idempotency checked both directions, not just on the live
 `.rxt` files).
 
-## A NEW finding at this same landing, NOT parked (manager disposition owed)
+## A NEW finding at this same landing — RULED by the manager, corrected
 
 Merging main's wave E ([DD-14.EMPTY]) changed `((?1)a)` and `(?R)a`'s root
 `minw` to the analysis ceiling, so pcrec now answers a clean NOMATCH
@@ -87,15 +87,32 @@ instantly for EVERY subject of those two patterns — including `"aaa"`/
 `"aaaaaa"`, which `sr_depth.rxt`'s `gu frames "aaa"`/`"aaaaaa"` cells (for
 those two patterns only — NOT their `((?1)?a)`/`((?1)*a)` siblings, which
 still give up, unaffected by EMPTY since their language is not empty)
-expect to give up. MEASURED (`sr_oracle.match_limits`): libpcre2 10.46
+expected to give up. MEASURED (`sr_oracle.match_limits`): libpcre2 10.46
 still returns `rc -52` on both subjects for both patterns — pcrec's answer
 is CORRECT and matches the design's own P-12 ruling, strictly BETTER than
-libpcre2's give-up, and the `gu` cells are now stale in exactly the sense
+libpcre2's give-up, and the `gu` cells were stale in exactly the sense
 `tests/known_fail/CLAUDE.md`'s `dd14_bc_open.rxt` CELL 3 entry describes
-("a give-up is pcrec's own artifact behaviour, never an oracle fact") and
-wave E's own commit (`7d1fbc6`) fixed for `tests/recursion/leftrec.rxt`'s
-identically-shaped sibling cells. **Not fixed here**: this brief's edit
-authorization covers K34 parking only, not this cell's expectation — held
-for the manager's ruling (the landing lane's final report has the full
-oracle evidence and the precedent commit). `make test`'s d27 section
-carries these 4 as its only failures until that ruling lands.
+("a give-up is pcrec's own artifact behaviour, never an oracle fact") — the
+identical shape wave E's own commit (`7d1fbc6`) fixed for
+`tests/recursion/leftrec.rxt`'s sibling cells.
+
+**RULED (manager, 2026-08-24 landing triage): corpus-wrong-by-ruling —
+corrected through the generator.** `B()`'s `guclass` gains a third value,
+`"ruled"` (alongside `"leftrec"`/`"capacity"`), reusing the same `gu=`
+tuples the other two classes read: it renders `n "<subj>"` instead of
+`gu <code> "<subj>"`, citing design §12 P-12 + [DD-14.EMPTY], with
+libpcre2's own rc as a cross-check comment ("agreed in kind, not the
+expectation") rather than the reason — `emit_file`'s render loop refuses
+a `guclass="ruled"` cell whose oracle side does NOT decline, the same
+shape the other two classes' checks take. The `for lr in [...]` spec loop
+split in two: `((?1)a)`/`(?R)a` (empty-language roots, no base case) take
+`guclass="ruled"`; `((?1)?a)`/`((?1)*a)` (a base case exists — finding 4's
+own inverse divergence lives here) keep `guclass="leftrec"`, unaffected.
+`sr_check.py` (the independent re-verifier) gained the matching
+recognition: a `# RULED nomatch …` comment immediately above an `n`/`ns`
+case tells it the oracle's own decline (a raised `Pcre2Error`, not a clean
+answer) is expected there and not a corpus defect — tracked in its own
+`stats["ruled"]` counter rather than folded into ordinary `n`. Regenerated
+(idempotent both directions); `tests/recursion/d27` alone and the full
+`make test` both green with d27 riding — see the landing lane's final
+report for the exact counts.

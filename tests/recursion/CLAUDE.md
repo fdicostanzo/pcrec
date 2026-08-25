@@ -301,17 +301,20 @@ re-measuring it.
      citing these two cells.
 
   **A FIFTH, NEW finding, from this SAME landing (merging wave E into the
-  D27 tree), not in the author's four:** the two `gu frames "aaa"`/
-  `"aaaaaa"` cells on `((?1)a)` and `(?R)a` (`sr_depth.rxt`) are now STALE
-  — [DD-14.EMPTY] makes pcrec answer nomatch INSTANTLY on every subject of
-  these two (empty-language) patterns, so it no longer gives up on "aaa"/
-  "aaaaaa" either, and MEASURED (`sr_oracle.match_limits`) libpcre2 STILL
-  returns rc −52 there. pcrec's answer is CORRECT (P-12's ruling) and
-  strictly better than libpcre2's own give-up — the identical shape wave
-  E's own commit `7d1fbc6` already fixed for this file's sibling
-  `leftrec.rxt` cells. **NOT fixed at this landing** (outside the landing
-  brief's edit authorization); left failing, with the precedent and full
-  oracle evidence in the landing lane's report and in `d27/CLAUDE.md`.
+  D27 tree), not in the author's four — RULED and corrected:** the two
+  `gu frames "aaa"`/`"aaaaaa"` cells on `((?1)a)` and `(?R)a`
+  (`sr_depth.rxt`) went STALE — [DD-14.EMPTY] makes pcrec answer nomatch
+  INSTANTLY on every subject of these two (empty-language) patterns, so it
+  no longer gives up on "aaa"/"aaaaaa" either, and MEASURED
+  (`sr_oracle.match_limits`) libpcre2 STILL returns rc −52 there. pcrec's
+  answer is CORRECT (P-12's ruling) and strictly better than libpcre2's own
+  give-up — the identical shape wave E's own commit `7d1fbc6` already
+  fixed for this file's sibling `leftrec.rxt` cells. **RULED
+  corpus-wrong-by-ruling (manager, 2026-08-24) and corrected**: `sr_gen.py`
+  gains a third `guclass`, `"ruled"`, rendering these four cells `n
+  "<subj>"` with the P-12/[DD-14.EMPTY] citation instead of `gu frames`;
+  `sr_check.py` gained the matching recognition. See `d27/CLAUDE.md`'s own
+  entry for the mechanism.
 
 ## The `gu frames`-vs-`recurse` note (D71.1)
 
