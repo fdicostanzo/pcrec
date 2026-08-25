@@ -13672,3 +13672,18 @@ Every `gu` cell now carries a CLASS (`leftrec` = both engines decline;
 `capacity` = D73's ceiling only) asserted against the oracle. Acceptance
 run by the manager on the E-merged tree; triage corpus-wrong vs
 pcrec-wrong before any edit.
+
+ADDENDUM (part 14, ~20:3x): EARLY ACCEPTANCE of the D27 corpus on the
+F-merged tree (pre-E): 1,031 cells, 1,016 PASS, 15 FAIL — ALL 15 in
+sr_depth.rxt and ALL the same class: pcrec `frames` where libpcre2
+concludes NOMATCH on a runaway left recursion (K34): `(a|(?1)a)` on
+"bbb"; `((?1)a)` on "b"/""; `(?R)a` on "b"/""; `(a|(?1)a)b` and
+`(a|(?1)a)c` on "a"/"aa"/"aaa"/"b"/"". TRIAGE: 15 pcrec-wrong-by-
+capability (K34), 0 corpus-wrong — a blinded corpus of 1,031 cells with
+no corpus error on first contact, against the la27 precedent's 365.
+Four of the fifteen (empty-language roots `((?1)a)`, `(?R)a`) are
+[DD-14.EMPTY]'s and flip to nomatch when wave E lands; the eleven
+`(a|(?1)a)`-shaped ones (root minw 1) stay K34. Landing plan: the K34
+cells park in tests/known_fail/k34_leftrec_giveup.rxt (a confirmed pcrec
+defect with a scheduled home — known_fail's original purpose; the
+ratchet fires when K34 closes); the rest of d27/ rides make test.
