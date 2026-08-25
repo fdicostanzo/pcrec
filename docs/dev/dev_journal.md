@@ -14133,3 +14133,21 @@ MERGE. Its own first inline-arm run showed 16 divergences — its generator's
 group-numbering bug, corrected to 0 and reported. Two nits sent to the lane
 (same-source assertion comment; widen bothlinkage.rxt to the three shapes
 only the fuzz covers, raise rule 2b's floor). Sweep at 37+/111, all clean.
+
+#### Thirty-ninth session, part 23 — WAVE G MERGED (2026-08-25 ~02:1x EDT)
+
+`git merge --no-ff lane/srG` (fbac26a) → main **08ddcbd**, 49 files
++4262/-142. Lane commits after the deliverable: eafec65 (K35 floor 2480),
+07552a0 (D45 wrapping; `gen_breached` keys on watchdog 122..125), 2219dda
+(four CLAUDE.md sections; elision_control 40 = 4×10), 99eecd5 (E1 fix +
+bothlinkage.rxt + rule 2b + riders), fbac26a (same-source assertion named;
+three structural cells: quantified splice site, link→splice→link,
+capture-bearing callee, each with a retreat subject — bothlinkage.rxt 7
+blocks / 26 cells, 61/0 both arms; both-linkage population 7; gate 11/0).
+srG's separate final make test WAIVED — the merge battery runs the same
+suite on the superset tree (one heavy suite at a time). Its 111-row sweep
+continues in the worktree (43/111 at 02:01, all clean; rows measured
+d87afff → 2219dda → 99eecd5+ as the fixes landed; the close lane's full
+matrix re-measures the merged tree). Light checks on main started 02:02.
+Battery order: sweep ends (~04:00) → pcrecdev2's quiet window → make test
+→ make san.
