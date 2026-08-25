@@ -14958,3 +14958,45 @@ whether the umbrella closes is Frank's ruling (recursion shipped outside
 its list); [TT-5] stays started by Frank's charter. srClose 27b5d73:
 item 6 (the specimen README's dated CLOSE readout); its 8(f) bench
 results file is untracked in its tree pending its rebase.
+
+#### Thirty-ninth session, part 45 — [DD-14] `recursion` IS CLOSED at D69 tier (2026-08-25 10:2x EDT)
+
+srClose delivered at 3c4b3e3 (8 commits, 41 files +711/−109, NO src/
+change); merged `--no-ff` → main **692c2e8**; build, anchors (all
+resolve), smoke 6/6 on the merged tree; the [DD-14] parent row and
+[DD-14.CLOSE] marked completed and the WHOLE [DD-14] block (parent +
+13 sub-rows) archived verbatim to plan_completed.md at **bd6861c**
+(K35's entry deduplicated after the merge: the lane's in-place
+correction + its Remedy DONE stand; the manager's appended paragraph
+folded into one sentence). `grep STATE:started` now returns exactly
+[M6.0] (its five ruled modules all done; whether the umbrella closes is
+Frank's ruling — `recursion` shipped outside its list) and [TT-5]
+(Frank's charter) — both by design. Worktree removed (lane/srClose
+kept); watchdog cron deleted; NOTHING IS IN FLIGHT.
+
+THE CLOSE SUMMARY (srClose's paragraph, verbatim):
+
+> **[DD-14] CLOSED (srClose, 2026-08-25, branch lane/srClose at 3c4b3e3).** The D69-tier close is green on every bar and cost no code change. The sabotage matrix reads 180 rows / unexpected 0 / undetected 6 (S150-S153, S160, S178) / anomalies 0 — a composite of the manager's 180-row run at 17469b6 and three solo re-runs at the close tree, where S155 (framebuf 1fail/5pass, control half unmoved), S70 (reject 2fail/587pass) and S159 (corpus 451fail/1239pass, recdiff 8fail/7pass) all DETECT; S159 is scoreable at all only because K37's fix bounded the harness's compiler calls, and [MECH-REACH] — recorded in plan.md the same day, deliberately not built — is why S70 could certify nothing from [M6.5.2] until the matrix caught it. The battery is `make test` 26,560/0 with 1,833 checks, `make strict` clean, and `make san` green on both axes with zero reports in 1h05m. The gates: recursion-identity 15/0 with all four axes on their pinned two-comparison numbers (default 2206/0/4 and 2210/0; vm 2211/0/0 and 2211/0; noprefilter 2207/0/4 and 2211/0; nocaptures 2210/0/0 and 2210/0), test-recursion 10/0 including the A == B control's 28,458 cells at 0 disagreements, the lookbehind-call sweep 9,240/9,240/0, and the specimen 12/0 — not 8/8, which is wave G's superseded number. The compliance page is refreshed the three-component way (128 index rows, 91 annotation keys, 12 modules, all checks green; tension 79/177) and its survey row now names both limit kinds with numbers: D73's 2048/3072 capacity where the trail binds first at n = 342, and K34's runaway give-up where PCRE2 concludes. K35's locale audit closed with three layers — 51 sites guarded, the two general exports Frank ruled, and the structural check that was the missing layer (62 sites / 53 scripts, floors 50/40, validated in three failing directions) — after measurement showed K35's own follow-up was wrong about all four differential suites and right about a fifth script nobody had looked at. OWED: K34's ruling, K36, K37's two remaining halves, [MECH-REACH], [TT-9]'s one-list, [TT-10], S-SR2a (no code to sabotage until [V-H] builds the depth counter), and [DD-14.FB]'s code half if lane/srFBc has not merged.
+
+(Manager's note on the last clause: [DD-14.FB]'s code half IS merged —
+17469b6 — the lane wrote its summary before that answer reached it.)
+Four findings recorded, none a code defect: K35's follow-up (above);
+the specimen's 8/8 → 12/0 and 681 → 712 superseded; the `\g` doorway's
+diagnostic has no executable pin ([MECH-REACH]'s shape, noted in
+tests/recursion/CLAUDE.md); [TT-9] still open (its exclusions verified
+and documented; the three suite lists remain three copies, and
+tests/lookaround/'s diff script is absent from all three with no stated
+reason).
+
+WHAT THIS SESSION SHIPPED (2026-08-24 09:2x → 2026-08-25 10:2x, across
+one /compact): [DD-14] waves A, A2, B+C, D, LB, E+EMPTY, F, the D27
+blinded corpus (1,031 cells), K34 measured, G (the email specimen's
+factored form is ONE DFA artifact with the hand-inlined one), FB (the
+caller-provided frame buffer; the split identity gate), the mech
+triage, and the D69-tier close; two critic panels (r35, r36); decisions
+D72, D73, D45's fourth addendum; K32-K37 filed (K35 corrected); plan
+rows [LIB], [EMIT-SET], [MECH-REACH], [TT-9], [TT-10] widened, [OS-4]'s
+first customer, [DD-13]'s bench inputs and candidates; pcrec-bench's
+first production sample with feedback and a ranked sub-bench list;
+[M6.6] and [DD-14] archived. NEXT: the going-forward conversation with
+Frank — wake.md's nine rulings; nothing starts unprompted.
