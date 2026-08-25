@@ -14425,3 +14425,28 @@ comment and spec §10.4; the harness driver already guarded it
 privately); one PRE-EXISTING nit filed as K36 (`rx_L3` reads before the
 guard, identical at base). Everything sent to srFBc as one post-make-
 test batch; r36 filled. Its `make test` (PID 3182120) still running.
+
+#### Thirty-ninth session, part 30 addendum — srFBc's make test: three reds diagnosed; the gate ruling refined (2026-08-25 ~03:3x EDT)
+
+srFBc's detached `make test` (PID 3182120, load 29-43 under -j12):
+26,531 passed / 29 failed, three sections red. (1) test-corpus: all 29
+are ONE cell, `((a)|ab){4000}c` (counterk.rxt:1807-1836, the K32 cell)
+— compile timeout exit 124 under load, then 28 dependents — the K31-
+addendum shape, decided by a SOLO re-run. (2) test-resource: the two
+30000-repeat CPU-cap cells — same shape, same rule. (3) test-mrl
+ruling 2(a) greps `rx_match_anchored(ctx, &run, ctx->len)` ×2; the
+run-state split moved the call into `<p>_match_run`/`_match_caps_run`
+as `(ctx, run, ctx->len)` — a REAL check-text regression (the KRESET
+rule-3 shape); the lane's fix gains three assertions (two sites; all
+four public anchored entries route to the two statics; no other
+ceiling). GATE RULING REFINED on the lane's objection (deleting CHANGED
+lines from both sides erases a difference — the "gate that filters its
+way to identity" failure recorded twice): run_recursion_identity.sh
+becomes two comparisons — (A) the PROGRAM REGION unfiltered beyond the
+three D37 stamps, with the call-bearing capacity-site change a named,
+counted exception; (B) the remainder with ADDED lines stripped by named
+pattern + per-class count, and CHANGED lines normalized by an explicit
+old→new REWRITE TABLE (each pair counted, printed as the wave's
+declared surface diff) — never deletion. Lane's batch order: mrl fix →
+counterk solo → gate → should-fixes/contract/nits → affected sections
+solo → six rows → final make test → deliverable.
