@@ -487,7 +487,48 @@ including V-G/V-H (added this session).
   any earlier matrix in the journal for a row that flipped verdict
   without its SAB_FILE/target changing; (c) document D69's tiered policy
   in docs/testing.md's mech section and tests/mech/CLAUDE.md.
-- [REL-META] STATE:not-started — USER-DOCS OBLIGATION (Frank, 2026-08-24, D73): the recursion frame/trail default (2048/3072), the subject size it implies for recursive patterns (`^(a(?1)?b)$` gives up at a 684-byte subject), the musl/small-thread-stack caveat (K33) and the caller-provided buffer (`_in` entries) as the remedy must be in the user docs and the release note — not a footnote. META-PLAN ROW for FIRST-RELEASE +
+- [SPEC-1] STATE:not-started — THE SPEC CONSOLIDATION PASS (Frank,
+  2026-08-25, fortieth session, D80: "I think that time is now").
+  `docs/spec/` is the dense CONTRACT — what we produce, its quirks and
+  shortcomings — for the reader who needs to know EXACTLY what to expect
+  (AI and contributor grade). Today it holds match_api.md (2,096 lines,
+  the as-built match-API contract incl. §10 the frame buffer) and
+  table_contract.md. STEP 1 (a read-only sonnet survey lane, no make):
+  inventory every SURFACE pcrec ships against what the spec covers —
+  the CLI (every flag, `--features`, `-f` axes, `--emit-*`, exit codes,
+  diagnostics' D26 tier), the library entry, the emitted artifact's
+  CONTRACT beyond the entries (the D46 stamp family, `rx_info`, the
+  identity/abi rules of D76, what a caller may and may not depend on
+  across abi bumps), the give-up/limit contract (D22/D49; the step,
+  frames, trail, work limits with their numbers — D73's obligation
+  lands HERE with the 684-byte example and K33), the module roster with
+  each module's quirks and divergences (K34/D74's documented
+  divergence; every known_issues K-row that is a shipped behaviour;
+  the compliance page's caveats by construct), encodings/options
+  (docs/pcre2_options.md is a disposition table — is it spec?), and
+  the .rxt format (docs/testing.md owns it today — contributor-facing,
+  so spec-tier). Deliverable: a gap table (surface → where it is
+  stated today → spec home → size) and the proposed file set, for the
+  manager to turn into [SPEC-1.n] rows; NOT the writing. STEP 2..n:
+  one lane per document, each claim verified against the shipped
+  surface (match_api.md's discipline: cite the header, the artifact,
+  the test — never copy from a design doc), D6 critic on each. STANDING
+  RULE from birth: any change to a contract updates docs/spec in the
+  same change (CLAUDE.md situation index; reviewers check it on every
+  merge). Runs concurrently with [CHK-1] — disjoint files.
+- [GUIDE-1] STATE:not-started — THE USER GUIDE, `docs/guide/` (Frank,
+  2026-08-25, D80; LOWER PRIORITY, "basically maintained", NO edge-case
+  details). A simplified, human-facing guide organized by USE CASE —
+  compile a pattern into your program (search / match / captures /
+  named results); the anchored and whole-subject idioms (`(?:P)\z`);
+  choosing engine and options; when the matcher gives up and what to do
+  (the `_in` entries for deep recursion — D73's obligation at guide
+  depth: one paragraph pointing at the spec); embedding the generated
+  file (no runtime dependency, the abi stamp); using the CLI vs the
+  library. References the spec for details, never restates it. Starts
+  after [SPEC-1] has the limits section it would point at; [REL-META]'s
+  README pass then references the guide.
+- [REL-META] STATE:not-started — USER-DOCS OBLIGATION (Frank, 2026-08-24, D73; RE-HOMED 2026-08-25 by D80 — the numbers and mechanism go in [SPEC-1]'s limits section, the use-case paragraph in [GUIDE-1]; this row's README pass references the guide): the recursion frame/trail default (2048/3072), the subject size it implies for recursive patterns (`^(a(?1)?b)$` gives up at a 684-byte subject), the musl/small-thread-stack caveat (K33) and the caller-provided buffer (`_in` entries) as the remedy must be in the user docs and the release note — not a footnote. META-PLAN ROW for FIRST-RELEASE +
   CONTRIBUTION READINESS (Frank, 2026-08-21, thirty-fifth session:
   "we are within a few solid efforts of having a first release"; this
   row's deliverable is the ROW SET, not the work — [SIMD-META]'s

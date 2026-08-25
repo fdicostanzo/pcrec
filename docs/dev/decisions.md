@@ -5713,3 +5713,35 @@ close); the mitigation is [MECH-REACH] — a per-row reach assertion on
 the CLEAN tree makes most of class (2b) derivable in seconds without a
 matrix run — which is why it is first in [CHK-1]. Until it lands, the
 full matrix at every module close is the only detector for this class.
+
+## D80 — TWO documentation tiers with two audiences: `docs/spec/` is the dense CONTRACT (AI/contributor-grade, priority, maintained with every change — its consolidation pass starts NOW); `docs/guide/` is the human use-case GUIDE (lower priority, basically maintained, no edge cases) (Frank, 2026-08-25)
+
+**Context.** D73's user-docs obligation on [REL-META] (the 2048/3072
+default, the 684-byte give-up, K33, the `_in` remedy) had no home:
+`docs/spec/match_api.md` §10 states the contract exactly; README is 48
+lines with no word on limits. The manager proposed waiting for
+[REL-META]'s README pass. Frank's ruling reshapes the question.
+
+**Decision (Frank).** Two "user" doc sections; the difference is the
+CONSUMER — AI vs human.
+
+1. **`docs/spec/` — the "legal", dense contract.** Describes what we
+   are producing and its quirks and shortcomings. Audience: anyone
+   wanting to figure out EXACTLY what to expect, why some obscure edge
+   case is not working, or what they need to do to add value to this
+   project. Maintaining it is a PRIORITY and a burden — every change
+   must review/update it — which is why it was delayed until the
+   surface was stable-ish. **That time is now**: the spine is complete
+   (D79), so the spec consolidation pass is chartered as [SPEC-1] and
+   the rule "a change to a contract updates docs/spec in the same
+   change" is standing (CLAUDE.md situation index).
+2. **`docs/guide/` — the user-friendly guide.** A simplified version
+   for a user wishing to use the product: a guide to the different USE
+   CASES, referencing the spec for details. Lower priority; basically
+   maintained; does NOT need edge-case details. Chartered as [GUIDE-1].
+
+D73's obligation lands in BOTH, at each tier's depth: the spec's
+limits/give-ups section carries the numbers and the mechanism; the
+guide's recursion use case says "deep recursion needs the `_in` entry
+with a buffer; see the spec". [REL-META]'s README pass references the
+guide rather than restating it.
