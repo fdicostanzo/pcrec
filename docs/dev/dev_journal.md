@@ -13636,3 +13636,10 @@ indirect jump, "call-graph slots") — rephrased behaviourally before the
 merge (a blinded reader must not learn the implementation's vocabulary
 from the list of what it may not learn). Next: the cell
 (`scripts/mk_d27_cell.sh sr27 …`) and the blinded author (opus).
+
+ADDENDUM (part 13, ~20:3x): the D27 cell `sr27-cell` built from
+scripts/mk_d27_cell.sh (allowlist: the extract, the oracle chain, the two
+specimen patterns, testing.md, pcrec.h; build/ prebuilt in the delivery
+worktree sr27); the blinded author sr27 (opus) spawned with the Perl-arm
+rules. Three lanes live: srE (landing), sr27 (writing), and the F-merged
+san on main.
