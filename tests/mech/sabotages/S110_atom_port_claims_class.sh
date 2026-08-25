@@ -18,6 +18,17 @@ SAB_SUITES="harness reject registry"
 SAB_HARNESS_TARGET="tests/backrefs/octal_class.rxt"
 SAB_DESC="The digit rows' CLASS port is replaced by the module's atom port, so [\\1] stops being the byte 0x01 and the class position acquires backreference semantics PCRE2 does not have there. Twelve measured base cells move; every atom-position cell is unaffected"
 SAB_DOC_FIGURE="PREDICTED: the corpus RED on octal_class.rxt; registry RED on check_class_ports (the FN class-port population moves). Canonical figure owed from run_sabotage_matrix.sh S110."
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS THE CORPUS FILE THIS ROW IS SCOPED TO, and the floor is
+# the thing that expired under S155 in the row next door: `SAB_HARNESS_TARGET`
+# names `tests/backrefs/octal_class.rxt`, whose answer-bearing cells are the
+# entire detector for a CLASS-position port swap. A file that lost them
+# would leave this row scoring on `reject` and `registry` alone, neither of
+# which can see a class-position semantic change. The count is printed every
+# run, so erosion is visible before it reaches the floor.
+SAB_REACH='"$PCREC" --features backrefs -p rx -o "$REACH_TMP/o0.c" -- "[\\1]" && echo REACH-CLASS-PORT-ACCEPTS'
+SAB_REACH_EXPECT="REACH-CLASS-PORT-ACCEPTS"
+SAB_REACH_POP="tests/backrefs/octal_class.rxt|^(m|n) |20"
 SAB_COUNT=1
 # ANCHOR MOVED at [M6.6.2] wave F (caught by
 # scripts/m6read_check_sab_anchors.py on the same branch, which is what that

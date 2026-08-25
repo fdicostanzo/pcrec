@@ -34,6 +34,18 @@ SAB_FILE="src/parse/registry.c"
 SAB_SUITES="reject registry pc3"
 SAB_DESC="add ESC('j', \"\\\\j\", misc, ...) for a construct PCRE2 does not define; no hand-written pin exists"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 0/0 -- was 'expected UNDETECTED'; RETIRED 2026-08-12, see header (reject 1, registry 1, pc3 1)"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS THE ITERATED ARM, not a construct: this row ADDS a
+# fabricated row, so no probe on the clean tree can produce the sabotage's
+# own diagnostic -- there is nothing there yet to diagnose. What CAN expire
+# is the machinery the detector rides: the dump enumerating rows for
+# tests/reject's iterated loop to drive, and PC-3 asking libpcre2 about
+# each. The reach check asserts the dump still enumerates; the population
+# floor asserts tests/reject still carries its iterated-count assertion,
+# which is what actually goes red when a row appears from nowhere.
+SAB_REACH='"$PCREC" --list-syntax | cut -f1,2,3,4 | tr "\\t" "="'
+SAB_REACH_EXPECT="esc=d=\\d=classes"
+SAB_REACH_POP="tests/reject/run_reject_tests.sh|COVERAGE CHANGED|1"
 SAB_COUNT=1
 SAB_BEFORE="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\"),"
 SAB_AFTER="ESC('o', \"\\\\o{101}\", misc, ANY_ENGINE, \"character with the given octal code\", QF_YES, \"char 0x41\"),

@@ -21,6 +21,13 @@ SAB_FILE="src/parse/parse.c"
 SAB_SUITES="reject registry pc3"
 SAB_DESC="esc_char_value: add case 'd': return 'd'; so \\\\d silently compiles as literal 'd'"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 2 reject checks, 0 corpus, 0 codegen"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS: `\d` must still be REFUSED by the registry rather than
+# compiled. This row adds `case 'd': return 'd';` to `esc_char_value`, so a
+# tree where `\d` no longer reaches a refusal at all is a tree where the
+# row's detector is gone -- the S70 shape, one construct over.
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
+SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
 SAB_BEFORE="    case 'e': return 0x1b;"
 SAB_AFTER="    case 'e': return 0x1b;

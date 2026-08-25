@@ -118,6 +118,40 @@ SAB_SUITES="harness recursion framebuffer"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="RX_CALL stops testing the resume-frame capacity, so a runaway recursion runs off the end of the frame array instead of returning a typed give-up -- an out-of-bounds write in emitted code where the artifact owes an honest PCREC_ERR_FRAMES"
 SAB_DOC_FIGURE="RE-MEASURED 2026-08-25, and the figure is a PAIR because one half of this row detects and the other half deliberately does not. SABOTAGED: the 'framebuffer' arm reads 5pass/1FAIL -- run_frame_buffer.sh S2's exact-fit driver aborts under -fsanitize=address,undefined with heap-buffer-overflow, WRITE of size 8, 0 bytes after the 27160-byte frames region, in rx_match_anchored. CLEAN (control, same commit, no edit): 'framebuffer' reads 6pass/0fail, S2 green under the same sanitizer. THE ANSWER-CHECKING ARMS DO NOT MOVE AND ARE NOT EXPECTED TO: sabotaged 'harness' (framebuffer.rxt) 16cases/0fail and 'recursion' 10checks/0fail, identical to clean, because RX_TRAIL and RX_PUSH keep byte-identical capacity tests returning the same RX_R_FRAMES one frame later. SUPERSEDES the wave B+C figure, which named leftrec.rxt's give-up cells and quantified.rxt's ^(?R)*$ cell as the population: [DD-14.EMPTY] (wave E) turned all three leftrec cells into constant-time NOMATCH via RX_VM_ROOT_MINW, leaving that file with zero 'gu' cells, and quantified.rxt's cell was measured 57cases/0fail under the sabotage. HOW CONDITIONAL, MEASURED 2026-08-25 (an earlier draft of this figure GUESSED and guessed wrong): re-run at 30042cf with a cc wrapper that rejects -fsanitize=, the row STILL reads framebuf:1fail/5pass and DETECTED -- without the sanitizer the one-frame overrun corrupts the heap and glibc aborts the exact-fit driver ('double free or corruption (!prev)', exit 134), which S2's own exact_rc branch already scores as a failure. Both driver runs at 30042cf therefore read identically (unexpected 0, anomalies 0), and env CC was proved live by CC=/nonexistent-cc giving BUILD-FAILED/ANOMALY. Detection-by-abort is a property of THIS allocator, not of the test, so the guard stays: the framebuffer arm runs with REQUIRE_ASAN=1 and a failed preflight exits 3, giving 'framebuf:UNMEASURED-no-asan' and ANOMALY -- never UNDETECTED -- on a box where the overrun lands harmlessly. any_fail outranks that flag, which is why the ASan-less run above is DETECTED rather than ANOMALY."
+# [MECH-REACH, 2026-08-25] THE ROW NOW DECLARES ALL THREE OF ITS PREMISES,
+# because this row is the one that proved a re-anchor and a re-point are
+# separate claims that expire separately -- and its own history is three
+# expiries, not one:
+#
+#   SAB_REQUIRE=asan. Frank's ruling, made executable at the ROW rather than
+#     only inside the arm. Declared here the verdict is settled BEFORE a
+#     sabotaged tree is built: on a box that cannot build
+#     -fsanitize=address,undefined the row reads ANOMALY and costs seconds,
+#     instead of building, running three arms and reaching the same ANOMALY
+#     through run_frame_buffer.sh's REQUIRE_ASAN=1 exit 3. That flag STAYS --
+#     it is the arm's own honesty and covers rows that declare nothing -- but
+#     this field is the general form and it fires first.
+#   SAB_REACH_POP. The `gu frames` cells in the harness target, which is the
+#     exact thing that had gone to ZERO: SAB_HARNESS_TARGET pointed at
+#     leftrec.rxt, whose three give-up cells all became `n` at [DD-14.EMPTY]
+#     when RX_VM_ROOT_MINW landed, and NOTHING anywhere said so. FOUR is the
+#     figure this row's SAB_DOC_FIGURE states, so four is the floor: a corpus
+#     edit that legitimately moves it must move this row in the same change,
+#     which is the whole discipline. The count is printed on every run, green
+#     or red, so drift toward the floor is visible before it crosses it.
+#   SAB_REACH. The SITE, in the ARTIFACT rather than in the source: the row's
+#     detector is SS2's exact-fit driver on `^(a(?1)?b)$`, so the question is
+#     whether THAT pattern's emitted RX_CALL macro still carries the capacity
+#     test this row deletes. The awk range extracts the RX_CALL macro ALONE,
+#     which matters: RX_PUSH and RX_TRAIL emit a BYTE-IDENTICAL capacity line
+#     (emit_vm.c:8384/8393) and a whole-file grep would go on passing after
+#     the call site stopped emitting one at all -- the defence-in-depth trio
+#     that made this row undetectable in the first place, arriving in its own
+#     reach check.
+SAB_REQUIRE="asan"
+SAB_REACH_POP="tests/recursion/framebuffer.rxt|^gu frames |4"
+SAB_REACH='"$PCREC" -p rx --features recursion --engine=vm -o "$REACH_TMP/fb.c" -- "^(a(?1)?b)\$" && awk "/^#define RX_CALL\\(/,/[^\\\\\\\\]\$/" "$REACH_TMP/fb.c"'
+SAB_REACH_EXPECT="if (run->resume_depth >= run->resume_cap) return RX_R_FRAMES;"
 SAB_COUNT=1
 SAB_BEFORE='                "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"
                 "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"

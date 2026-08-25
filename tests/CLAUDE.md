@@ -512,7 +512,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   PASS/FAIL/AWAITING-SURFACE exit vocabulary and the current pass count
 - **mech/** — GENERATES the sabotage-detection matrix ([MECH-1]) rather than
   hand-maintaining "disabling X fails N cases" figures, which have gone
-  stale every time this project tried to keep them by hand. `make mech`
+  stale every time this project tried to keep them by hand. Since
+  [MECH-REACH] (2026-08-25) a row may also declare the REACH of its own
+  witness (`SAB_REACH`/`SAB_REACH_POP`/`SAB_REQUIRE`) and score `UNREACHED`
+  when the construct its detector rests on has been IMPLEMENTED, or its
+  corpus population has gone to zero — the S70/S155 failure, where a row went
+  on scoring for two milestones while certifying nothing. `make mech`
   (not part of `make test`: builds the tree once per sabotage from a
   fresh `git archive HEAD`; the full matrix measures ~50 min at `PROCS=4`,
   2026-08-21, correcting an earlier "~6 minutes" figure that undercounted

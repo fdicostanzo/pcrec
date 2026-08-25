@@ -17,6 +17,13 @@ SAB_FILE="src/parse/mod_uprops.c"
 SAB_SUITES="reject"
 SAB_DESC="pcrec_modport_uprops: the name accumulator stops folding ASCII case"
 SAB_DOC_FIGURE="measured at MOD-0.6 phase 2 landing (post-§8 fix): \\p{c} flips from the GENERIC message (offset 5) to the NOT-RECOGNISED message — the fold-free brace-path lookup is what makes the accumulator's fold observable"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS A LOWERCASE KNOWN LETTER IN BRACES. The brace path's
+# table lookup is deliberately FOLD-FREE, so `\p{c}` reads as KNOWN only
+# while the accumulator folds; the moment it stops, this probe changes its
+# sentence. An uppercase probe would be green under the sabotage.
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\p{c}"'
+SAB_REACH_EXPECT="\\p requires module 'unicode-props' (pattern offset 5)"
 SAB_COUNT=1
 SAB_BEFORE="        name[sig_count++] = (char)((c >= 'a' && c <= 'z') ? c - 'a' + 'A' : c);"
 SAB_AFTER="        name[sig_count++] = (char)c;"

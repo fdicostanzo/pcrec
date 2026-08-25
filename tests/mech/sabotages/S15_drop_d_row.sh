@@ -21,6 +21,14 @@ SAB_FILE="src/parse/registry.c"
 SAB_SUITES="reject registry pc3"
 SAB_DESC="delete the ESC('d', ...) registry row entirely (adapted from the stale esc_modules[] reference)"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md (pre-SR-2 shape): 2 reject checks, 0 corpus cases -- ADAPTED, see report"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS: the ESC('d') row this sabotage DELETES is what makes the
+# bare default answer `\d` with a MODULE NAME. If `\d` ever stops being
+# answered by a registry row -- because module `classes` builds it, the way
+# module `assertions` built `\b` out from under S70 -- this row's reject
+# population moves to a different site and the row certifies nothing.
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
+SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
 SAB_BEFORE="ESC_SET('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0),
 "

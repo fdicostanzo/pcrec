@@ -19,6 +19,14 @@ SAB_SUITES="reject harness registry cli"
 SAB_HARNESS_TARGET="tests/backrefs/gated.rxt"
 SAB_DESC="pcrec_ext_gate stops demoting a RESULT ask for a disabled module, so every registry row with a wired producer compiles with its module OFF -- backrefs' thirteen included. A construct that compiles with --features none is the mandate's own forbidden shape, and no MATCH-semantics test can see it because the answers are right"
 SAB_DOC_FIGURE="PREDICTED: reject RED broadly; the corpus RED on gated.rxt's refusal cells. Canonical figure owed from run_sabotage_matrix.sh S111."
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS A WIRED PRODUCER WITH ITS MODULE OFF, which is the
+# only population `pcrec_ext_gate`'s demotion governs. `(a)\1` under
+# `--features none` must be REFUSED naming `backrefs`; under the sabotage
+# it COMPILES, which is the mandate's own forbidden shape. A construct with
+# no producer would be refused either way and is not a witness.
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "(a)\\1"'
+SAB_REACH_EXPECT="\\1 (backreference/octal) requires module 'backrefs' (pattern offset 3)"
 SAB_COUNT=1
 SAB_BEFORE='    want = pcrec_ext_gate(r, want);
 

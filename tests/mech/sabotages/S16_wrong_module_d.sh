@@ -30,6 +30,14 @@ SAB_FILE="src/parse/registry.c"
 SAB_SUITES="reject registry pc3"
 SAB_DESC="ESC('d', ...) module changed from 'classes' to 'misc' (wrong but plausible)"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 2 hand-written fail, 0 iterated"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS: the diagnostic NAMES THE MODULE, which is the exact field
+# this row corrupts (`classes` -> `misc`). The probe is the same construct
+# S15 uses and deliberately so -- both rows rest on `\d` still reaching the
+# escape doorway as an unbuilt registry row, and when that stops being true
+# BOTH go blind together, which is the fact worth being told once.
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\d"'
+SAB_REACH_EXPECT="\\d requires module 'classes' (pattern offset 0)"
 SAB_COUNT=1
 SAB_BEFORE="ESC_SET('d', \"\\\\d\", classes, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0),"
 SAB_AFTER="ESC_SET('d', \"\\\\d\", misc, ANY_ENGINE, \"any decimal digit\", QF_YES, \"set 10\", pcrec_cls_digit_esc, 0),"

@@ -77,11 +77,16 @@ copied number. Docs should cite this script's output, not a hand-typed count.
   `SAB_DESC`,
   `SAB_BEFORE`, `SAB_AFTER`, and optionally
   `SAB_COUNT` (default 1), `SAB_HARNESS_TARGET` (an .rxt file or dir to
-  scope the `harness` suite to, instead of the whole corpus), and
-  `SAB_EXPECT` (see below). Each file also
+  scope the `harness` suite to, instead of the whole corpus),
+  `SAB_EXPECT` (see below), and the [MECH-REACH] fields
+  `SAB_REACH`/`SAB_REACH_EXPECT`/`SAB_REACH_POP`/`SAB_REQUIRE`/
+  `SAB_EXPECT_REASON` (see below). Each file also
   carries `SAB_DOC_FIGURE`, a comment-and-string record of what the source
   documentation claimed, purely for humans diffing a re-run against the docs —
   the matrix itself does not read it.
+  **`sabotages/CLAUDE.md` is the directory's own field reference and trap
+  list** (added 2026-08-25 with [MECH-REACH]); the normative list is the
+  driver's header, printed by `run_sabotage_matrix.sh --help`.
 
 ## `SAB_EXPECT` — THE EXPECTATION, CHECKED ([DD-14] wave B+C)
 
@@ -112,9 +117,11 @@ wrapper still yields 5pass/1fail, so the full-row run reads DETECTED and
 `CC` reaches the arm at all was proved separately: `CC=/nonexistent-cc` gives
 BUILD-FAILED/ANOMALY.
 
-`SAB_EXPECT` is `DETECTED` (the default when absent) or `UNDETECTED`. The
-driver scores every row against it, the headline reads **`unexpected: N`**,
-and **a mismatch in either direction exits non-zero.**
+`SAB_EXPECT` is `DETECTED` (the default when absent), `UNDETECTED`, or —
+since [MECH-REACH], 2026-08-25 — `UNREACHED` (which additionally REQUIRES a
+non-blank `SAB_EXPECT_REASON`; see that section below). The driver scores every
+row against it, the headline reads **`unexpected: N`**, and **a mismatch in any
+direction exits non-zero.**
 
 **WHY IT EXISTS.** This directory already learned this lesson and wrote it
 down at S19 — *"a claim with an expiry date, and nothing was checking it"* —
@@ -325,9 +332,11 @@ the verdict logic refuses to let it read as evidence:
   arm it renders exactly as it always did, and with both it reads
   `(pc3 laexpand SKIPPED -- no oracle)`;
 - the end-of-run summary lists every skipped row, and the completion trailer
-  counts them: `== mech run COMPLETE: N rows (undetected: U, anomalies: A,
-  oracle-skipped: S) at <SHA> ==` (the field was `pc3-skipped:` before wave E2,
-  when `pc3` was the only arm that could produce it).
+  counts them: `== mech run COMPLETE: N rows (unexpected: X, undetected: U,
+  unreached: R, anomalies: A, oracle-skipped: S) at <SHA> ==` (the field was
+  `pc3-skipped:` before wave E2, when `pc3` was the only arm that could produce
+  it; `unreached:` arrived with [MECH-REACH], 2026-08-25). The grep-able prefix
+  has never changed.
 
 That last field is new in the trailer; the grep-able prefix is unchanged.
 
@@ -726,6 +735,172 @@ longhand row in registry.c initialises it explicitly, so S110's `ESC_DIGIT`
 body now ends `..., NULL}` and S126's longhand AFTER row carries its own
 `NULL` rather than relying on a zero default nobody wrote. Neither sabotage
 changed; only the text each is spelled against.
+
+## [MECH-REACH] A ROW WHOSE WITNESS IS A CONSTRUCT DECLARES ITS REACH (2026-08-25)
+
+**THE DEFECT.** `SAB_EXPECT` made a row's OUTCOME a contract. Nothing made its
+PREMISE one. S70 breaks the escape doorway's enabled-but-unbuilt epilogue and
+its detector was four `reject_gated assertions` rows — which were retired ONE
+PER WAVE through [M6.2] B..E **as module `assertions` implemented the very
+constructs they probed**, and after [M6.5.2] retired the `\k` pin not one row
+anywhere in the tree still reached `UNBUILT(at, "\%c", c)` at all. The row went
+on scoring for two milestones and certified nothing. It was found only when a
+full 180-row matrix eventually read UNDETECTED — and the "expired claim"
+doctrine this file already carries watches `UNDETECTED → DETECTED`, so the
+`DETECTED → certifies-nothing` direction had **no checker at all**.
+
+S155 is the same shape through a different door: `SAB_HARNESS_TARGET` pointed
+at `leftrec.rxt`, which had held ZERO `gu` cells since [DD-14.EMPTY] — a
+witness FILE whose relevant population went to zero, with a re-anchor in
+between that certified the EDIT still applied and said nothing about that.
+
+**THE MECHANISM.** Four optional fields and one new verdict:
+
+| field | asks |
+|---|---|
+| `SAB_REACH` + `SAB_REACH_EXPECT` | does the WITNESS still reach the SITE? A command run on a CLEAN reference tree, before the sabotage; one required literal substring per line, all of which must appear in its stdout+stderr |
+| `SAB_REACH_POP` | is the POPULATION still there? `FILE\|EREGEX\|MIN` — the count is PRINTED on every run, green or red, so erosion is visible before it crosses the floor |
+| `SAB_REQUIRE` | can this RUN perform the measurement at all? Closed vocabulary, `asan` today. Unsatisfiable ⇒ ANOMALY |
+
+A row failing a reach check is **`UNREACHED`**: counted in the trailer beside
+`undetected` and `anomalies`, RED in the headline, and **its sabotaged tree is
+never built** — the verdict is already known and the minutes buy nothing. A row
+may declare `SAB_EXPECT=UNREACHED` with a mandatory `SAB_EXPECT_REASON`, and
+the reverse direction is checked as `NOW REACHED`, on exactly the argument
+`NOW DETECTED` rests on.
+
+**`VALIDATE_ONLY=1` CHECKS EVERY DEFINITION IN SECONDS.** The field checks are
+FATALs raised inside `run_one`, i.e. when a row actually RUNS — a malformed
+`SAB_REACH_POP` on row 140 of a full matrix is a finding that arrives eighty
+minutes in and takes the run with it. `VALIDATE_ONLY=1` sources every selected
+definition, evaluates the SAME checks (an early exit inside `run_one`, never a
+second copy of the rules), prints one `FIELDS OK` line per row and stops. It
+builds nothing and **deliberately does not print the `== mech run COMPLETE`
+trailer** — that line is what a watcher polls to learn a MATRIX finished, and a
+field pass answering it would be a green nobody asked for. It prints
+`== mech FIELD VALIDATION COMPLETE: N definition(s) valid, 0 rows measured ==`
+instead. Measured 2026-08-25: **180 definition(s) valid**. VALIDATED in the
+failing direction with four plants on S34, each removed — a blank
+`SAB_REACH_EXPECT` beside a live `SAB_REACH`, a two-field `SAB_REACH_POP`, a
+`SAB_REQUIRE=tsan`, and a `SAB_EXPECT=UNREACHED` with no reason. Each is a
+named `FATAL[S34_…]` plus the denominator guard, **exit 2**.
+
+**THE CLEAN REFERENCE TREE** is extracted from `git archive HEAD` and built
+ONCE per run, before any row forks, lazily (a run whose selected rows declare
+no reach field builds nothing extra and is byte-for-byte the run it was
+before). Rows never write into it: a probe's cwd is its own `$REACH_TMP` and
+it reaches the tree through `$TREE`/`$PCREC`, so `-o out.c` cannot touch it —
+enforcement by construction rather than by a rule in a comment. A clean tree
+that does not build is a FATAL for the whole run, not a per-row anomaly.
+
+### VALIDATED THREE WAYS, each plant made and removed (2026-08-25)
+
+| plant | row | measured |
+|---|---|---|
+| (a) an EXPIRED witness — a `SAB_REACH_EXPECT` the clean tree cannot produce | S34 | `reach:MISSING(1/1)`, `UNREACHED … ***UNEXPECTED***`, `unexpected: 1, unreached: 1`, **exit 1** |
+| (b) a POPULATION FLOOR above the file's count (20 → 999) | S110 | `pop:tests/backrefs/octal_class.rxt:/^(m\|n) /=29(want>=999)`, `UNREACHED … below the floor of 999 … ***UNEXPECTED***`, **exit 1** |
+| (c) `SAB_REQUIRE=asan` on a run that cannot satisfy it (a `cc` wrapper refusing `-fsanitize=`) | S155 | `require:asan-UNAVAILABLE`, `ANOMALY`, `undetected: 0, anomalies: 1` — never a verdict about the code |
+
+**(c)'s FIRST run found a defect in this mechanism's own wording, and it is
+this tree's oldest shape in a new place.** The ANOMALY sentence said "never
+UNDETECTED" — and the headline's `undetected` counter is a `grep -c UNDETECTED`
+over the ROW TEXT, so the verdict counted ITSELF: `undetected: 1` for a row
+that was never measured at all. A control sharing a source with its subject,
+here the subject being the control's own prose. Reworded, re-run, `undetected:
+0`. The comment above that `printf` records the constraint so the next edit
+does not reintroduce it.
+
+### The canonical readings of the two rows the mechanism was built for
+
+Both run solo through the driver, not hand-applied:
+
+    S70   pop:…/^reject_gated +quoting +'.Q'/=1(want>=1),
+          pop:…/^reject_gated +misc +'.R'/=1(want>=1),
+          reach:ok(2/2), reject:2fail/587pass, asrt:0fail/52pass   DETECTED
+    S155  require:asan-ok,
+          pop:tests/recursion/framebuffer.rxt:/^gu frames /=4(want>=4),
+          reach:ok(1/1), corpus:0fail/16pass, recdiff:0fail/10pass,
+          framebuf:1fail/5pass                                     DETECTED
+
+Both match the figures those rows' own `SAB_DOC_FIGURE`s state, which is the
+point of running them rather than reasoning about them.
+
+### ALL 21 RETROFITTED ROWS RUN SOLO, PLUS A CONTROL (2026-08-25, `903df2f`)
+
+One invocation per row (D69's targeted shape), `PROCS=4`, one shared
+`MECH_SCRATCH`, **no commit during the run** — so all twenty-two rows name ONE
+tree SHA. **22/22 DETECTED**, and every trailer reads `unexpected: 0,
+undetected: 0, unreached: 0, anomalies: 0, oracle-skipped: 0`.
+
+The narrow rows are the ones to read, because their reject count EQUALS the
+number of witnesses their `SAB_REACH_EXPECT` asserts — which is the evidence
+that the witness named is the detector and not a neighbour of it:
+
+| row | results |
+|---|---|
+| S34 | `reach:ok(1/1), reject:1fail/588pass` |
+| S35 | `reach:ok(1/1), reject:1fail/588pass` |
+| S32 | `reach:ok(2/2), reject:2fail/587pass` |
+| S33 | `reach:ok(2/2), reject:2fail/587pass` |
+| S172 | `reach:ok(2/2), reject:2fail/587pass` |
+| S27, S29 | `reach:ok(1/1), reject:1fail/588pass` |
+| S30 | `reach:ok(1/1), reject:2fail/587pass` |
+| S28 | `reach:ok(2/2), reject:64fail/525pass` — a table SWAP is broad, which is why the pair had to be asserted rather than the count trusted |
+
+**THE CONTROL IS `S68`, which declares no reach fields at all**: it printed NO
+`reach reference` line (no clean tree was built for it), NO reach bits, and
+read `codegen:3fail/100pass, corpus:0fail/56pass` → DETECTED. A row that
+declares nothing is byte-for-byte the row it was, and pays nothing.
+
+**THE CLEAN TREE WAS BUILT ONCE FOR THE WHOLE SWEEP** — 20 of the 21 reach
+rows reported `REUSING the clean tree already built at 903df2f`, the
+twenty-first being the one that built it. An EARLIER sweep validated the key
+in the other direction by accident: a commit landed mid-run, HEAD moved, and
+the next invocation correctly REBUILT rather than reusing a tree from a
+different commit. That is also this file's own standing rule arriving as a
+measurement — COMMIT BEFORE YOU START AND COMMIT NOTHING DURING THE RUN.
+
+### THE 21 ROWS RETROFITTED, and what each witness proves
+
+`reject_gated` family first (`grep -l reject_gated tests/mech/sabotages/` names
+exactly ONE file, S70 — the family this directory's prose implies is plural has
+been a single row since [M6.5.2] retired the rest, which is itself the finding).
+Then every row whose detector is a diagnostic string:
+
+| rows | witness | what would expire it |
+|---|---|---|
+| S15, S16, S20 | bare `\d` answered by a registry row naming module `classes` | module `classes` BUILDING `\d` — the S70 event, one construct over. All three go blind together |
+| S17, S18, S19 | `--list-syntax` still enumerating rows (`esc=d=\d=classes`) | the dump losing its rows, which is what S18 sabotages and what S19's iterated arm rides |
+| S27, S30 | an OFFSET in a verb diagnostic (`(pattern offset 1)` / `(pattern offset 0)`) | the sentence surviving while the offset contract does not — which is exactly what these rows sabotage |
+| S28 | a PAIR, `(*FOO)` and `(*foo)`, which must answer DIFFERENTLY | one table's arm going away; a single probe cannot see a swap |
+| S29 | a `VF_ATSTART` verb AWAY from the start (`a(*UTF)`) | module `verbs` building these names |
+| S31 | the IN-CLASS position, `[\N{U+41}]` | the atom position is green under this sabotage and is not the witness |
+| S32, S33 | BOTH sides of the 48/49 significant-character boundary, plain and caret-prefixed | an off-by-one is invisible from either side alone |
+| S34 | a LOWERCASE known letter in braces (`\p{c}`) | the brace lookup gaining a fold of its own, after which nothing anywhere tests the accumulator's |
+| S35 | a body carrying an INSIGNIFICANT byte (`\p{ A}`) | a probe with no space/tab/hyphen/underscore cannot see this edit |
+| S70 | `\Q` and `\R` at the escape doorway, PLUS both `reject_gated` rows as floors | the constructs being built, or the pins being retired — two claims, stated separately |
+| S110 | the class port accepting `[\1]`, plus a floor on `octal_class.rxt`'s cells | the corpus file thinning out, S155's failure exactly |
+| S111 | a WIRED producer with its module OFF (`(a)\1` under `--features none`) | a construct with no producer is refused either way and is not a witness |
+| S119 | a reference to an undeclared group with the module ON (`(a)\2`) | with the module off it is refused by the GATE, at a different site |
+| S155 | the `RX_CALL` macro in the EMITTED artifact, plus four `gu frames` cells, plus `SAB_REQUIRE=asan` | the trio of byte-identical capacity tests is why a whole-file grep would not do: the awk range extracts `RX_CALL` alone |
+| S172 | TWO offending lookbehinds, two of the irreducible order triple (offsets 33 and 45) | a single-lookbehind pattern is refused at the same offset either way |
+
+**NO ROW WAS FOUND ALREADY UNREACHED.** All 21 witnesses were verified live
+against the clean binary before landing (a dry-run harness reproducing the
+driver's reach block, 21/21). S70's own expiry had already been repaired by the
+[DD-14] close lane's re-point; this lane's contribution is that the repair is
+now CHECKED rather than remembered.
+
+### What this does NOT cover, stated so nobody reads more into it
+
+The remaining ~159 rows declare no reach. That is not an oversight and not a
+backlog to burn down mechanically: a reach field is worth writing where the
+detector is a WITNESS that can retire — a construct, a diagnostic, a corpus
+cell. A row whose detector is a byte-identity gate or a differential's whole
+population has no single witness to name, and inventing one would buy a green
+check nobody could read, which is the shape this directory exists to refuse.
+Add the fields with the next row whose witness is nameable, and when a row is
+RE-POINTED, add them in the same change.
 
 ## Conventions
 
