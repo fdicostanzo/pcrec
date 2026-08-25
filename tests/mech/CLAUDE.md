@@ -1672,6 +1672,17 @@ left the row UNDETECTED for ever. **What makes the first two work is a
 trailing literal that needs the `a` back** — the backtrack has to be
 load-bearing before a possessification can delete anything.
 
+**MEASURED, D69 tier 3, 2026-08-24 on `lane/srE` at `d0a8e36`**: the 80 rows
+`rows_for.sh` names for this lane's touched paths (`src/gen/emit_vm.c`,
+`tests/recursion`, `tests/codegen`, `tests/prefilter`), run one row per
+invocation at `PROCS=4` — **80/80 with `unexpected: 0`, `anomalies: 0`,
+`oracle-skipped: 0`**. Six report `undetected: 1`, and they are exactly the
+six the table above still lists: S150, S151, S152, S153, S160, S164. S157 is
+DETECTED in that run. **S169** is DETECTED at `corpus:2fail/5pass` —
+the two-red-one-green signature its own header predicts, arriving from a run
+rather than from reading the row. **S165** is DETECTED at
+`corpus:361fail/50pass, recdiff:18fail/1pass`.
+
 **THE READING FOR OTHER `UNDETECTED` ROWS.** Six remain (S150, S151, S152,
 S153, S160, S164). S157's closure does not make them likelier to close; it
 changes what to try. The question a search should ask is not "can I reach the
