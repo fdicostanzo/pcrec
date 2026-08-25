@@ -285,7 +285,7 @@ ONLY="${1:-}"
 
 # `--help` prints the ROW FIELD LIST rather than only the invocation forms,
 # because the thing a reader opens this script for is almost always "what may
-# a sabotage definition set". [MECH-REACH] added three fields and a verdict,
+# a sabotage definition set". [MECH-REACH] added four fields and a verdict,
 # and a mechanism nobody can find is a mechanism nobody uses.
 case "$ONLY" in
 -h|--help|help)
