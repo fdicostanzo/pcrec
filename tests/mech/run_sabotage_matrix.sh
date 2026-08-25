@@ -130,6 +130,19 @@
 #     D73) and the scrape below reads only its `checks passed:`/`checks failed:`
 #     totals, which exclude it — so a pinned row can never be mistaken for
 #     detection.
+#     **`framebuffer` IS RUN WITH `REQUIRE_ASAN=1`** ([srMech 2026-08-25],
+#     Frank's ruling on S155). Its SS2 is the only instrument in this tree that
+#     reads an out-of-bounds WRITE rather than an ANSWER, and S155 is a row
+#     that changes a write and no answer at all. Without the sanitizer SS2's
+#     two `one-short` arms still run and a build that writes one frame past
+#     the end still answers -3 and still PASSES -- so an ASan-less box would
+#     have scored S155 `UNDETECTED`, which is a claim about the CODE and a
+#     false one. The flag makes the script exit 3 on a failed preflight, this
+#     arm records `framebuf:UNMEASURED-no-asan`, and the verdict block turns
+#     that into an ANOMALY. This is SKIP-IS-NOT-A-PASS applied to an
+#     INSTRUMENT instead of an ORACLE -- the same rule `pc3` has had since
+#     MOD-0.8c: a net that was not in the water caught nothing for a reason
+#     that is not about the fish.
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
@@ -383,6 +396,18 @@ run_one() {
         any_skip=0      # an assigned suite could not run for want of an ORACLE
         skipped_arms=() # ...and WHICH ones, so the verdict can name them
         any_anom=0      # a check binary would not build in the sabotaged tree
+        # [srMech 2026-08-25, Frank's ruling on S155] AN ARM THAT COULD NOT
+        # PERFORM ITS MEASUREMENT, as distinct from one that measured and saw
+        # nothing. `any_skip` above is the ORACLE version of this (libpcre2
+        # absent); this is the INSTRUMENT version, and it exists because
+        # S155's only detector is an ASan build. Where an arm sets this, "zero
+        # checks failed" is the ABSENCE of a result and must never be printed
+        # as `UNDETECTED` -- which would be a claim about the CODE, and a
+        # false one. Set by an arm, read once in the verdict block below;
+        # nothing else in this file sets it today, so no existing row's
+        # verdict moves.
+        any_unmeasured=0
+        unmeasured_arms=()  # ...and WHICH, so the verdict can name them
 
         for suite in $SAB_SUITES; do
             case "$suite" in
@@ -697,13 +722,41 @@ run_one() {
                 # still prints a real non-zero `checks passed:` and this cell
                 # can never read as 0fail/0pass, which is the reading that would
                 # let a row be called UNDETECTED by an arm that never ran.
-                PCREC="$pcrec" CC="$CC" bash "$tree/tests/recursion/run_frame_buffer.sh" \
+                # REQUIRE_ASAN=1 -- [srMech 2026-08-25, Frank's ruling on
+                # S155] SKIP-IS-NOT-A-PASS APPLIED TO AN INSTRUMENT RATHER
+                # THAN AN ORACLE. §2's exact-fit driver is the only thing in
+                # this tree that can see an out-of-bounds WRITE, and S155 is
+                # a row that changes a write and no answer. Without the
+                # sanitizer §2's two `one-short` arms still run and a build
+                # that writes one frame past the end still ANSWERS -3 and
+                # still passes -- so an ASan-less box would score S155
+                # UNDETECTED, which is a claim about the code and a false one.
+                # This flag makes the script exit 3 on a failed preflight;
+                # the row then reads ANOMALY (not measured) instead. The
+                # opt-in `make test-frame-buffer` route passes no such flag
+                # and is unchanged.
+                PCREC="$pcrec" CC="$CC" REQUIRE_ASAN=1 \
+                    bash "$tree/tests/recursion/run_frame_buffer.sh" \
                     > "$work/framebuffer.log" 2>&1
+                fb_rc=$?
                 p="$(grep -m1 '^checks passed:' "$work/framebuffer.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/framebuffer.log" | grep -oE '[0-9]+')"
-                suite_bits+=("framebuf:${f:-ERR}fail/${p:-?}pass")
-                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
-                any_ran=1
+                # THE TOTALS ARE READ FIRST AND THE EXIT STATUS SECOND, on
+                # purpose: a red §1 or §3 is a real catch and must stay one
+                # even on a box with no sanitizer. Only `exit 3` with nothing
+                # failing means "the instrument was missing".
+                if [ "${f:-1}" -gt 0 ] 2>/dev/null; then
+                    suite_bits+=("framebuf:${f:-ERR}fail/${p:-?}pass")
+                    any_fail=1
+                    any_ran=1
+                elif [ "$fb_rc" -eq 3 ]; then
+                    suite_bits+=("framebuf:UNMEASURED-no-asan")
+                    any_unmeasured=1
+                    unmeasured_arms+=("framebuffer")
+                else
+                    suite_bits+=("framebuf:${f:-ERR}fail/${p:-?}pass")
+                    any_ran=1
+                fi
                 ;;
             stackdepth)
                 # [DD-14.FB]/[TS-4] tests/thread/run_stackdepth_tests.sh — the
@@ -1120,6 +1173,16 @@ run_one() {
             verdict="ANOMALY (every assigned check binary failed to build)"
         elif [ "$any_ran" -eq 0 ]; then
             verdict="ANOMALY (no suite ran)"
+        elif [ "$any_fail" -eq 0 ] && [ "$any_unmeasured" -eq 1 ]; then
+            # [srMech 2026-08-25, Frank's ruling on S155] AN INSTRUMENT THE
+            # ROW DEPENDS ON DID NOT RUN, so ZERO CHECKS FAILED is the absence
+            # of a measurement rather than a finding -- exactly the reading
+            # the `any_skip` branch above refuses for a missing ORACLE, and
+            # refused here for a missing SANITIZER. Placed BEFORE the
+            # UNDETECTED branch and AFTER nothing else, so a row whose other
+            # arms DID catch the edit still reads DETECTED: `any_fail`
+            # outranks this, which is why it is the guard on this branch.
+            verdict="ANOMALY (an assigned arm could not perform its measurement: $(IFS=' '; echo "${unmeasured_arms[*]}") -- see its log)"
         elif [ "$any_fail" -eq 0 ]; then
             verdict="**UNDETECTED -- ZERO CHECKS FAILED**"
         fi

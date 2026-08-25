@@ -77,6 +77,25 @@ copied number. Docs should cite this script's output, not a hand-typed count.
 
 ## `SAB_EXPECT` — THE EXPECTATION, CHECKED ([DD-14] wave B+C)
 
+**AN ARM CAN NOW SAY "I COULD NOT MEASURE"** ([srMech 2026-08-25], Frank's
+ruling on S155). `any_skip` has always distinguished a missing ORACLE from a
+green result — a `pc3` that could not find libpcre2 is not a pass. S155 needed
+the same distinction for a missing INSTRUMENT: its only detector is
+`run_frame_buffer.sh` §2's exact-fit driver under AddressSanitizer, because
+the row changes an out-of-bounds WRITE and no ANSWER, and §2's non-sanitized
+fallback still passes on a build that writes one frame past the end. So the
+`framebuffer` arm runs with `REQUIRE_ASAN=1`; a failed preflight exits 3, the
+arm records `framebuf:UNMEASURED-no-asan` and sets `any_unmeasured`, and the
+verdict block prints **ANOMALY** rather than `UNDETECTED`. **`any_fail`
+OUTRANKS IT** — a row another arm DID catch still reads DETECTED — and the
+totals are scraped BEFORE the exit status is consulted, so a red §1 or §3 on
+an ASan-less box is still a red. Nothing else in the file sets the flag, so no
+existing row's verdict moved. VALIDATED IN BOTH DIRECTIONS with a `cc` wrapper
+that rejects `-fsanitize=`: with the flag the script reads `checks passed: 6,
+checks failed: 0` — the exact green that would have been read as UNDETECTED —
+and exits 3; without the flag (the opt-in `make test-frame-buffer` route) the
+same box exits 0 and nothing changed.
+
 `SAB_EXPECT` is `DETECTED` (the default when absent) or `UNDETECTED`. The
 driver scores every row against it, the headline reads **`unexpected: N`**,
 and **a mismatch in either direction exits non-zero.**

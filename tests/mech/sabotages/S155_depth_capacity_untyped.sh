@@ -71,13 +71,28 @@
 # in `rx_match_anchored`, i.e. exactly one resume frame past the end of the
 # caller's array -- SAB_DESC's own sentence, observed.
 #
-# THE COST, RECORDED RATHER THAN HIDDEN: that detector is CONDITIONAL. SS2's
-# ASan build is a PREFLIGHT, and on a box whose `$CC` cannot build with
-# `-fsanitize=address,undefined` the section runs its two `one-short` arms
-# WITHOUT the sanitizer, where the sabotaged build still answers `-3` and still
-# passes. On such a box this row will read UNDETECTED again. That is a fact
-# about the instrument, not a stale claim, and it is written here so the next
-# reader of an UNDETECTED S155 checks the log for SS2's `info` line first.
+# THE COST, AND FRANK'S RULING ON IT (2026-08-25). The detector is
+# CONDITIONAL: SS2's ASan build is a PREFLIGHT, and on a box whose `$CC` cannot
+# build with `-fsanitize=address,undefined` the section runs its two
+# `one-short` arms WITHOUT the sanitizer, where the sabotaged build still
+# answers `-3` and still PASSES. Left alone, this row would then have read
+# `UNDETECTED` on such a box -- **which is a statement about the CODE, and it
+# would be FALSE.** RULED: the row stays expected-DETECTED, and the MATRIX must
+# not be able to print that reading. So `tests/mech/run_sabotage_matrix.sh`'s
+# `framebuffer` arm runs the script with `REQUIRE_ASAN=1`, a failed preflight
+# exits 3, the arm records `framebuf:UNMEASURED-no-asan`, and the verdict block
+# prints **ANOMALY (an assigned arm could not perform its measurement)**. The
+# opt-in `make test-frame-buffer` route passes no flag and is unchanged.
+#
+# THIS IS `SKIP-IS-NOT-A-PASS` APPLIED TO AN INSTRUMENT RATHER THAN AN ORACLE,
+# which is the general form: `pc3`'s missing libpcre2 has been scored this way
+# since MOD-0.8c, and a missing SANITIZER is the same absence for the same
+# reason. `any_fail` OUTRANKS it, so a row another arm did catch still reads
+# DETECTED, and the arm scrapes the `checks failed:` total BEFORE it consults
+# the exit status -- a red SS1 or SS3 on an ASan-less box is still a red.
+# VALIDATED IN THE FAILING DIRECTION with a `cc` wrapper that rejects
+# `-fsanitize=`: `checks passed: 6, checks failed: 0` -- the exact green that
+# would have been read as UNDETECTED -- and exit 3.
 #
 # THE `harness` AND `recursion` ARMS ARE KEPT, RE-POINTED, AND ARE THE CONTROL
 # HALF. `SAB_HARNESS_TARGET` now names `tests/recursion/framebuffer.rxt` -- the
@@ -90,7 +105,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion framebuffer"
 SAB_HARNESS_TARGET="tests/recursion/framebuffer.rxt"
 SAB_DESC="RX_CALL stops testing the resume-frame capacity, so a runaway recursion runs off the end of the frame array instead of returning a typed give-up -- an out-of-bounds write in emitted code where the artifact owes an honest PCREC_ERR_FRAMES"
-SAB_DOC_FIGURE="RE-MEASURED 2026-08-25, and the figure is a PAIR because one half of this row detects and the other half deliberately does not. SABOTAGED: the 'framebuffer' arm reads 5pass/1FAIL -- run_frame_buffer.sh S2's exact-fit driver aborts under -fsanitize=address,undefined with heap-buffer-overflow, WRITE of size 8, 0 bytes after the 27160-byte frames region, in rx_match_anchored. CLEAN (control, same commit, no edit): 'framebuffer' reads 6pass/0fail, S2 green under the same sanitizer. THE ANSWER-CHECKING ARMS DO NOT MOVE AND ARE NOT EXPECTED TO: sabotaged 'harness' (framebuffer.rxt) 16cases/0fail and 'recursion' 10checks/0fail, identical to clean, because RX_TRAIL and RX_PUSH keep byte-identical capacity tests returning the same RX_R_FRAMES one frame later. SUPERSEDES the wave B+C figure, which named leftrec.rxt's give-up cells and quantified.rxt's ^(?R)*$ cell as the population: [DD-14.EMPTY] (wave E) turned all three leftrec cells into constant-time NOMATCH via RX_VM_ROOT_MINW, leaving that file with zero 'gu' cells, and quantified.rxt's cell was measured 57cases/0fail under the sabotage. CONDITIONAL: on a box without a working ASan this row reads UNDETECTED -- check run_frame_buffer.sh S2's 'info' line before treating that as a regressed guard."
+SAB_DOC_FIGURE="RE-MEASURED 2026-08-25, and the figure is a PAIR because one half of this row detects and the other half deliberately does not. SABOTAGED: the 'framebuffer' arm reads 5pass/1FAIL -- run_frame_buffer.sh S2's exact-fit driver aborts under -fsanitize=address,undefined with heap-buffer-overflow, WRITE of size 8, 0 bytes after the 27160-byte frames region, in rx_match_anchored. CLEAN (control, same commit, no edit): 'framebuffer' reads 6pass/0fail, S2 green under the same sanitizer. THE ANSWER-CHECKING ARMS DO NOT MOVE AND ARE NOT EXPECTED TO: sabotaged 'harness' (framebuffer.rxt) 16cases/0fail and 'recursion' 10checks/0fail, identical to clean, because RX_TRAIL and RX_PUSH keep byte-identical capacity tests returning the same RX_R_FRAMES one frame later. SUPERSEDES the wave B+C figure, which named leftrec.rxt's give-up cells and quantified.rxt's ^(?R)*$ cell as the population: [DD-14.EMPTY] (wave E) turned all three leftrec cells into constant-time NOMATCH via RX_VM_ROOT_MINW, leaving that file with zero 'gu' cells, and quantified.rxt's cell was measured 57cases/0fail under the sabotage. CONDITIONAL, AND THE MATRIX NOW SAYS SO RATHER THAN LYING (Frank's ruling, 2026-08-25): the framebuffer arm runs with REQUIRE_ASAN=1, so on a box whose CC cannot build -fsanitize=address,undefined the script exits 3, the cell reads 'framebuf:UNMEASURED-no-asan' and the row is scored ANOMALY -- never UNDETECTED, which would be a false claim about the code. Validated with a cc wrapper that rejects -fsanitize=: 6pass/0fail and exit 3, i.e. the exact green that used to read as a finding."
 SAB_COUNT=1
 SAB_BEFORE='                "        if (run->resume_depth >= run->resume_cap) return %s_R_FRAMES; \\\n"
                 "        run->resume_stack[run->resume_depth].resume_label = &&%s_fail;   \\\n"

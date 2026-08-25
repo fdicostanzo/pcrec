@@ -73,6 +73,33 @@ CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
 GENCFLAGS="${GENCFLAGS:--O2 -std=gnu11 -Wall -Wextra -Werror}"
 
+# REQUIRE_ASAN — [srMech 2026-08-25, Frank's ruling on S155] SECTION 2 IS AN
+# INSTRUMENT, AND A MISSING INSTRUMENT IS NOT A MEASUREMENT.
+#
+# S2 is the only thing in this tree that can see an out-of-bounds WRITE by an
+# emitted matcher, which is the whole of what sabotage row S155 does (the
+# other two capacity guards still return the same typed answer one frame
+# later, so no answer-checking cell moves). Its ASan build is a PREFLIGHT, and
+# the fallback below runs the two `one-short` arms WITHOUT the sanitizer --
+# where a build that writes one frame past the end still answers -3 and still
+# PASSES. On such a box the row would read "ran, caught nothing", which is a
+# statement about the CODE and it would be FALSE.
+#
+# So the caller gets to say that the instrument is REQUIRED. With
+# REQUIRE_ASAN=1 a failed preflight is recorded and this script exits 3 --
+# distinct from 0 (green) and 1 (a check failed) -- and tests/mech's
+# `framebuffer` arm reads that as UNMEASURED, which forces the row to ANOMALY
+# rather than letting it read UNDETECTED.
+#
+# IT DOES NOT SUPPRESS A REAL FAILURE. The script still runs every section and
+# still prints its `checks failed:` total, so a sabotage that section 1 or 3
+# DOES catch is still caught: the matrix scrapes the totals first and only
+# consults the exit status when nothing failed. Default 0 keeps the opt-in
+# `make test-frame-buffer` behaviour exactly as it was -- a NOTE and a green
+# run on a box with no sanitizer.
+REQUIRE_ASAN="${REQUIRE_ASAN:-0}"
+asan_unavailable=0
+
 WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "run_frame_buffer.sh: KEEP=1, temp dir: $WORKDIR" >&2
@@ -165,6 +192,7 @@ exact_san="-fsanitize=address,undefined"
 if ! $CC -O0 $exact_san -o "$exact_d/probe" "$exact_d/probe.c" >/dev/null 2>&1; then
     info "[DD-14.FB §2] $CC cannot build with $exact_san — the exact-fit section runs WITHOUT the sanitizer, so its 'nothing writes past either region' claim is NOT made this run"
     exact_san=""
+    asan_unavailable=1
 fi
 if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -p rx --features recursion --engine=vm -o "$exact_d/gen.c" -- '^(a(?1)?b)$' >/dev/null 2>&1; then
     bad "[DD-14.FB §2] could not compile the exact-fit fixture"
@@ -309,5 +337,14 @@ echo "notes: $note"
 if [ $((pass + fail)) -eq 0 ]; then
     echo "run_frame_buffer.sh: NO CHECKS RAN" >&2; exit 1
 fi
-[ "$fail" -eq 0 ] && exit 0
-exit 1
+[ "$fail" -ne 0 ] && exit 1
+# A REAL FAILURE OUTRANKS A MISSING INSTRUMENT (see REQUIRE_ASAN above): the
+# exit-1 above comes first, so a caller that required the sanitizer and got a
+# genuine red still reads a genuine red.
+if [ "$REQUIRE_ASAN" = "1" ] && [ "$asan_unavailable" = "1" ]; then
+    echo "UNMEASURED: REQUIRE_ASAN=1 and $CC cannot build with -fsanitize=address,undefined." >&2
+    echo "UNMEASURED: section 2 is the only instrument here that can see an out-of-bounds WRITE," >&2
+    echo "UNMEASURED: so 'zero checks failed' this run is the ABSENCE of a measurement, not a result." >&2
+    exit 3
+fi
+exit 0
