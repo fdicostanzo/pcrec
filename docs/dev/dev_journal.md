@@ -14882,3 +14882,24 @@ tests/codegen/run_object_neutrality.sh:75 (1,798 vs 2,772: every
 object-neutrality verdict was over 65% of the corpus). K35 corrected on
 main by the manager; the lane fixes the site + the general export + the
 structural check.
+
+#### Thirty-ninth session, part 44 addendum — the close's item 7 lands (2026-08-25 ~08:1x EDT)
+
+srClose 4111649: K35's remedy in three layers — 51 sort sites across 24
+scripts guarded at the site; `export LC_ALL=C` at the top of
+tests/lib/run_group.sh and tests/harness/run.sh; a structural sweep in
+run_codegen_tests.sh that fails naming any `sort` in tests/**/run_*.sh
+not guarded at its site or by an export ABOVE it (62 sites / 53
+scripts today; floors 50/40 so a collapsed sweep is red) — validated
+red in three directions on a scratch copy (an unguarded site; an export
+moved below its sorts, naming both lines; an empty population). The
+one site that actually lost rows, run_object_neutrality.sh:75, now
+states its population with a 2,630 floor (2,772 measured; opt-in
+two-compiler gate, smoke-run to prove the lines execute). The `find |
+sort` file lists change ORDER between locales, not population —
+recorded as such. The lane also edited K35's entry (within its brief);
+main carries the manager's correction paragraph (cf228ee) — RULED: at
+the rebase keep main's paragraph as the correction of record and place
+the lane's "Remedy — DONE" section beneath it. `make test` launched
+detached at 4111649 ~08:10; strict in the same window; san announced
+separately.
