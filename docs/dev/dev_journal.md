@@ -14515,3 +14515,17 @@ not. The rejected-stripping evidence sits in the gate's comment. The
 remain under the re-pin). Remaining: tests/codegen/CLAUDE.md +
 docs/testing.md on the two comparisons → six rows → final make test →
 deliverable with the gate's two numbers.
+
+#### Thirty-ninth session, part 32 — the split gate's first run: numbers right, script defect (2026-08-25 ~03:5x EDT)
+
+srFBc's rebuilt run_recursion_identity.sh (5332909) ran detached and
+finished 03:49: default (A) program region vs ac4917d same=2206
+differing=0 elided=4 call-bearing-in-population=0; (B) whole file vs
+8fc1e51 same=2210 differing=0 refused-by-both=243 refusal-mismatch=0
+stamp-filter-bad=0; vm / noprefilter / nocaptures likewise PASS (10 PASS
+lines) — then the script DIED at line 965 with a bash syntax error in
+the elision-control `bad` message (an unbalanced quote / the em dash),
+so `make test-recursion-identity` exits 2 before its final tally. The
+lane was idle with the run complete (the watchdog's "detached run
+finished" case): told to fix (`bash -n`), re-run, then docs → six rows
+→ final make test → deliverable.
