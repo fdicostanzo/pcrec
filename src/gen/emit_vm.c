@@ -7068,11 +7068,22 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * — it is the settled fixpoint. The root check still belongs HERE and not
      * there, for the reason that outlives the timing: the check is about what
      * the ARTIFACT enforces at its search entry, and only this emitter writes a
-     * search entry. What DID change is that `pcrec_possessify`, which runs
-     * inside selection and calls `pcrec_minw`, now sees the real width for a
-     * call-bearing pattern where it used to see 0 — a strictly better bound in
-     * `pcrec_minw`'s own safe direction, and one that cannot reach a call-FREE
-     * pattern at all (the graph pass returns at its first scan).
+     * search entry.
+     *
+     * **AND THE REASON THE MOVE IS SOUND IS NOT THE ONE THIS COMMENT FIRST
+     * GAVE.** It claimed `pcrec_possessify` calls `pcrec_minw` and so now sees
+     * a better bound; **`src/opt/possessify.c` never calls `pcrec_minw` at
+     * all** (grep is empty), so that sentence was a false premise defending a
+     * true conclusion — deleted rather than patched, because a wrong reason is
+     * worse than none. THE ACTUAL ARGUMENT is an enumeration of who reads the
+     * two memos and when: `u.call.minw`/`maxw` are read by THIS FILE (after
+     * the graph, in both orders) and by `mod_lookaround`'s parse hook (before
+     * the graph, in both orders) — and by nobody in between. Engine selection's
+     * only NEW read is `Ast.u.call.link` (src/opt/select_engine.c's
+     * `first_dfa_excluding` and its prefilter predicate), which is a field the
+     * graph WRITES and selection did not previously consult at all. So the
+     * reorder moves one fact EARLIER for one new reader and changes the timing
+     * of nothing else.
      *
      * WHY THIS EMITTER AND NOT emit_dfa.c TOO. The only construct that can
      * drive a root minw to the ceiling is a call whose callee's language is
@@ -7525,11 +7536,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
                  * `rgn_w[i]` here is its INDICES. The assertion below is what
                  * makes "one mechanism" checkable rather than claimed. */
                 memset(w, 0, (size_t)nstate * sizeof *w);
-                for (int g = 1; g <= v.ngroups; g++) {
-                    if (!v.rgn_grp[i][g]) continue;
-                    if (2 * g + 1 < nstate) { w[2 * g] = true; w[2 * g + 1] = true; }
-                    if (vm_marked(&v, g)) {
-                        int ps = vm_slot_pend(&v, g);
+                /* `wg`, not `g`: `GenNames g` is in scope here and
+                 * `-Wshadow` is `make strict`'s, which caught it. */
+                for (int wg = 1; wg <= v.ngroups; wg++) {
+                    if (!v.rgn_grp[i][wg]) continue;
+                    if (2 * wg + 1 < nstate) {
+                        w[2 * wg] = true; w[2 * wg + 1] = true;
+                    }
+                    if (vm_marked(&v, wg)) {
+                        int ps = vm_slot_pend(&v, wg);
                         if (ps >= 0 && ps < nstate) w[ps] = true;
                     }
                 }

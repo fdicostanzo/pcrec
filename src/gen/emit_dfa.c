@@ -804,14 +804,22 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
              * mod_named_groups.c numbers a named group unconditionally,
              * the same lexical-fact tier `ngroups` is. Whether that
              * number ALSO addresses a live caps[] slot is the separate,
-             * build-output question `cx->want_caps` answers: a
-             * captures-wanted build with any named group is
-             * UNCONDITIONALLY VM-selected by the pre-existing generic
-             * capture-forcing rule (src/opt/select_engine.c's
-             * forces_captures), so want_caps == true here already implies
-             * this artifact is exactly the "VM-compiled, captures-on"
-             * case §6.2 names as the one where ncaps - 1 == ngroups. See
-             * mod_named_groups.c's header for the full argument. */
+             * build-output question `cx->want_caps` answers.
+             *
+             * [DD-14 wave G] THE VALUE IS UNCHANGED AND THE REASON WAS
+             * WRONG. This comment used to argue that a captures-wanted
+             * build with any named group is UNCONDITIONALLY VM-selected,
+             * so `want_caps == true` implied a VM artifact. The
+             * dead-capture elision retired that implication:
+             * `(?:(?<g>a)){0}(?&g)b` compiles to the DFA (`.engine = 1`)
+             * with `RX_NCAPS 2` and a name table whose entry addresses
+             * slot 1. **THE SLOT NUMBER IS STILL RIGHT**, and now for a
+             * reason that does not mention the engine: `want_caps` says
+             * the caller asked for capture slots, `ncaps` is
+             * `ngroups + 1` on BOTH engines since this wave, and the
+             * group's number IS its slot index in the array the caller
+             * gets — whether any match can set it is a different question
+             * and not this field's. See mod_named_groups.c's header. */
             int slot = cx->want_caps ? sorted[i]->number : -1;
             sb_printf(c, "    { \"%s\", %d, %d, NULL },\n",
                       sorted[i]->name, sorted[i]->number, slot);

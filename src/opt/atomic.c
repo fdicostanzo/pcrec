@@ -682,8 +682,17 @@ bool pcrec_has_live_capture(const Ast *a)
             return false;
         case A_REP:
             /* THE ONE ARM THAT PRUNES. Zero repetitions emit no code, so
-             * nothing below can be written. */
-            if (a->u.rep.rmax == 0) return false;
+             * nothing below can be written.
+             *
+             * SPELLED `rmin == 0 && rmax == 0` TO MATCH `vm_count_slots`'
+             * GUARD EXACTLY (src/gen/emit_vm.c's `A_REP` arm), because these
+             * two are ONE predicate — "does this repeat emit anything" — asked
+             * by two passes, and two spellings of one question are two chances
+             * to disagree. They cannot today (`rmax == 0` implies `rmin == 0`;
+             * the parser refuses `{2,0}`), which is precisely why the
+             * divergence would be silent if a future construct ever produced
+             * the pair some other way. */
+            if (a->u.rep.rmin == 0 && a->u.rep.rmax == 0) return false;
             a = a->l;
             continue;
         case A_LOOK:

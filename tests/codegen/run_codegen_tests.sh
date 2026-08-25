@@ -2225,6 +2225,41 @@ else
     bad "[DD-14-RECURSION rule 2]: pcrec failed to compile one of the three fixtures"
 fi
 
+# RULE 2b ([DD-14 wave G]) -- THE BOTH-LINKAGE POPULATION IS NOT ALLOWED TO
+# GO EMPTY.
+#
+# THIS RULE EXISTS BECAUSE ITS ABSENCE HID A REAL REFUSAL REGRESSION. Over the
+# whole corpus, 113 artifacts carried a SPLICED call and 37 carried a LINKED
+# one and **ZERO carried BOTH** -- so every behavioural instrument this module
+# has (§9.2's `A == B`, the sabotage matrix, the specimen) was structurally
+# blind to the INTERACTION, and a spliced site that REACHED a linked target
+# refused to compile at all: two computations of its `|W|` disagreed, and
+# `(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)` -- a non-recursive helper calling a
+# recursive rule, this module's own advertised use -- answered "the splice save
+# block overflowed (7 of 6 slots)" while `-fno-splice-calls` compiled it.
+#
+# A POPULATION THAT CAN SILENTLY BECOME ZERO IS THE FAILURE, not the bug it
+# happened to hide. `tests/recursion/bothlinkage.rxt` is the corpus answer;
+# this is the assertion that it still ANSWERS -- the property is a fact about
+# the emitted ARTIFACT (`RX_VM_CALL_SPLICED > 0 && RX_VM_CALL_LINKED > 0`), so
+# no `.rxt` cell can state it and no count taken from the pattern text would
+# survive an eligibility rule that changed its mind.
+dd14_both=0
+while IFS= read -r dd14_bpat; do
+    [ -n "$dd14_bpat" ] || continue
+    "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/dd14_b.c" -- "$dd14_bpat" >/dev/null 2>&1 || continue
+    dd14_bs=$(grep -m1 '^#define RX_VM_CALL_SPLICED ' "$WORKDIR/dd14_b.c" | awk '{print $3}')
+    dd14_bl=$(grep -m1 '^#define RX_VM_CALL_LINKED ' "$WORKDIR/dd14_b.c" | awk '{print $3}')
+    if [ "${dd14_bs:-0}" -gt 0 ] && [ "${dd14_bl:-0}" -gt 0 ]; then
+        dd14_both=$((dd14_both + 1))
+    fi
+done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/recursion/*.rxt | sed 's/^pattern //' | LC_ALL=C sort -u)
+if [ "$dd14_both" -ge 4 ]; then
+    ok "[DD-14-RECURSION rule 2b] (§6.3): $dd14_both corpus patterns emit an artifact carrying BOTH linkages (RX_VM_CALL_SPLICED > 0 AND RX_VM_CALL_LINKED > 0) -- the interaction the rest of this module's instruments are blind to, and where a refusal regression lived undetected"
+else
+    bad "[DD-14-RECURSION rule 2b] (§6.3): only $dd14_both corpus patterns emit an artifact with BOTH linkages (want at least 4). tests/recursion/bothlinkage.rxt exists to keep this population non-empty; if its cells stopped producing both linkages -- an eligibility rule that changed its mind, a callee that stopped being cyclic -- every instrument this module has goes back to being blind to the interaction, which is how '(?:(a{2,5}(?1)?b)((?1)c)){0}(?2)' came to refuse to compile with nothing noticing"
+fi
+
 # RULE 3 (wave A2's PASS-ORDERING FINDING, sabotage row S166) -- THE CALLEE
 # REGION AND THE LEXICAL OCCURRENCE ARE EMITTED FROM THE SAME NODE.
 #

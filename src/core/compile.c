@@ -314,11 +314,26 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
      * listing, rather than either inventing a DFA listing this milestone was
      * not asked for or printing an empty one that looks like a bug. AS-BUILT
      * NOTE for the manager: this is a picked answer, not a ruled one. */
+    /* [DD-14 wave G] THE ADVICE WAS BUILT ON THE IMPLICATION THIS WAVE
+     * RETIRED. It read "(it requests no captures). Add a capturing group",
+     * which was true while a capture-bearing pattern was UNCONDITIONALLY
+     * VM-selected — and the dead-capture elision broke exactly that: a pattern
+     * can promise four named groups, as the RFC 5322 specimen's factored
+     * spelling does, and still choose the DFA because no emitted code can
+     * WRITE any of them. So the old text stated a false premise AND gave
+     * advice that does not work (adding another dead group changes nothing),
+     * on a population that is now the whole specimen family. It names the real
+     * cause and an action that works instead. */
     if (cx.want_ir && cx.job->fit.chosen != ENGM_VM)
         ctx_fail(&cx, 0,
-                 "--emit-ir lists a VM program and this pattern compiles to the "
-                 "DFA engine (it requests no captures). Add a capturing group, "
-                 "or pass --engine=vm to see the VM program for this pattern");
+                 /* INSIDE pcrec_error.msg's 256 bytes, this file's own
+                  * standing rule: a diagnostic that names the fix and is then
+                  * TRUNCATED has not named it — the first draft of this
+                  * sentence was cut mid-word at "the capture-recording eng". */
+                 "--emit-ir lists a VM program; this pattern compiles to the "
+                 "DFA engine because every capture slot it promises is "
+                 "permanently UNSET (under a zero-count repeat, or reached "
+                 "only through a call). Pass --engine=vm for the VM program");
 
     if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
     else                               pcrec_emit_dfa(&cx);
