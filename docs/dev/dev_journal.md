@@ -14529,3 +14529,15 @@ so `make test-recursion-identity` exits 2 before its final tally. The
 lane was idle with the run complete (the watchdog's "detached run
 finished" case): told to fix (`bash -n`), re-run, then docs → six rows
 → final make test → deliverable.
+Second finding in the same run: `FAIL: [vm] (A) the wave-G ELISION list
+expects 4 … PROGRAM REGIONS to differ … and 0 did`. NOT a script bug —
+an expectation TRANSPLANTED from the whole-file gate ("on every axis
+that promises a capture all four must differ", true of the engine-
+selection stamps/declarations) into the region comparison, whose object
+is different: under `--engine=vm` both sides emit the same VM program
+for `(a){0}b` (the elision moved SELECTION, not the VM lowering), so 0
+is the correct measured value. Told the lane to re-derive the (A)
+elision expectation PER AXIS from what the region is (default 4; vm 0
+with the reason; noprefilter — measure; nocaptures 0), assert the
+measured value, keep (B)'s must-not-differ, and STOP if an axis
+measures other than derived.
