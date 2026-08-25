@@ -213,7 +213,7 @@ spec and a design doc disagree, the spec is what the tool promises.
   the process: `lib/pcrec.h`'s own comment names the splice/linkage stamp
   `<PREFIX>_VM_CALLS`; the shipped emitter (`src/gen/emit_vm.c`) actually
   emits two macros, `RX_VM_CALL_SPLICED`/`RX_VM_CALL_LINKED` — this document
-  states the as-built name, `lib/pcrec.h`'s comment is the stale one.
+  states the as-built name; `lib/pcrec.h`'s comment was corrected at 40d9f79.
 
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own
