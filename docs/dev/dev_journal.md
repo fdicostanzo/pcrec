@@ -14720,3 +14720,10 @@ builds only; stages 2-4 of the battery run meanwhile). S159's verdict
 on this run is its killed arm (DETECTED by failure) — K37 owns the
 re-measure. `make mech` exits 1 on unexpected>0 (rc recorded in
 mgr_battery.log); stage 2 `make test` started 06:20.
+Battery stage 2 (`make -j12 -Otarget test` on main, 06:20→; load ~38
+peak): interim at 06:31 — only test-resource red (the two 30000-repeat
+45 s CPU-cap cells, the K31 shape); the K32 corpus cell did NOT time
+out this run (0 harness failures) — the blip is load-dependent, not
+deterministic, which is [TT-10]'s point. Stage 3's solo pair follows.
+srMech at work on S155 (scratch tree `unb`, a clean framebuffer control
+logged).
