@@ -1712,6 +1712,76 @@ their own `SAB_FILE`/definition changing**, across this 99-row-common pair
 figures exist, though only m64/m65 have raw logs on disk to diff cell by
 cell — the others are prose summaries only.
 
+### [MECH-REACH] a row whose witness is a construct declares its reach (2026-08-25)
+
+`SAB_EXPECT` (above, and `tests/mech/CLAUDE.md`) made a sabotage row's
+OUTCOME a checked contract. Nothing made its PREMISE one, and the gap is not
+hypothetical: **S70's four witnesses expired BY BEING IMPLEMENTED.** They were
+`reject_gated assertions` rows probing `\b`, `\B`, `\G` and `\K`, retired one
+per wave through [M6.2] as module `assertions` built those constructs; after
+[M6.5.2] retired the last pin on that arm, not one row in the tree still
+reached the site S70 deletes. The row scored for two milestones and certified
+nothing. The expired-claim doctrine watches `UNDETECTED → DETECTED` only, so
+this direction had no checker.
+
+**Four optional fields on a sabotage definition, and a third verdict.**
+
+| field | asks |
+|---|---|
+| `SAB_REACH` + `SAB_REACH_EXPECT` | does the WITNESS still reach the SITE? A command run on a CLEAN reference tree BEFORE the sabotage; one required literal substring per line, all of which must appear in its stdout+stderr. `$PCREC` is the clean binary, `$TREE` its root, `$REACH_TMP` its cwd |
+| `SAB_REACH_POP` | is the POPULATION still there? `FILE\|EREGEX\|MIN` lines. **The count is printed on every run**, green or red |
+| `SAB_REQUIRE` | can this RUN measure at all? Closed vocabulary (`asan`). Unsatisfiable ⇒ ANOMALY |
+| `SAB_EXPECT=UNREACHED` + `SAB_EXPECT_REASON` | a row that DECLARES its witness dead, and is told (`NOW REACHED`) when it comes back |
+
+A failing reach check is the verdict **`UNREACHED`**: RED in the headline,
+counted in the completion trailer beside `undetected` and `anomalies`, and the
+sabotaged tree is **not built or run** — the verdict is already known.
+
+    == mech run COMPLETE: N rows (unexpected: X, undetected: U, unreached: R,
+       anomalies: A, oracle-skipped: S) at <SHA> ==
+
+`bash tests/mech/run_sabotage_matrix.sh --help` prints the full field list.
+`tests/mech/sabotages/CLAUDE.md` carries the conventions and the traps.
+
+**Cost:** one extra `git archive` + `make all` per RUN (not per row), built
+lazily and only when a selected row declares a reach field, against a matrix
+that measures in the tens of minutes. Rows read the clean tree but never write
+to it — a probe's cwd is its own scratch dir, so `-o out.c` cannot land in the
+shared tree.
+
+**Checking definitions without running them:** `VALIDATE_ONLY=1 bash
+tests/mech/run_sabotage_matrix.sh` sources every definition, runs the same
+field validations, and stops — seconds instead of the up-to-eighty-minute wait
+for the row to come round. It prints `== mech FIELD VALIDATION COMPLETE: N
+definition(s) valid, 0 rows measured ==` and deliberately NOT the
+`== mech run COMPLETE` trailer, so a watcher polling for a finished matrix can
+never be answered by a run that measured nothing. Measured 2026-08-25: 180
+valid. Four planted malformed fields each produce a named `FATAL` and exit 2.
+
+**Validated three ways, each plant made and removed** (2026-08-25):
+
+| plant | row | measured |
+|---|---|---|
+| an EXPIRED witness (a `SAB_REACH_EXPECT` no clean tree produces) | S34 | `reach:MISSING(1/1)` → `UNREACHED … ***UNEXPECTED***`, `unreached: 1`, exit 1 |
+| a POPULATION FLOOR above the file's count (20 → 999) | S110 | `pop:tests/backrefs/octal_class.rxt:/^(m\|n) /=29(want>=999)` → `UNREACHED`, exit 1 |
+| `SAB_REQUIRE=asan` under a `cc` wrapper refusing `-fsanitize=` | S155 | `require:asan-UNAVAILABLE` → `ANOMALY`, `undetected: 0, anomalies: 1` |
+
+The third plant's FIRST run found a defect in the mechanism's own prose: the
+ANOMALY sentence contained the word `UNDETECTED`, and the headline's
+`undetected` count is a `grep -c` over the row text — so the verdict counted
+itself and printed `undetected: 1` for a row that was never measured. Reworded
+and re-run at `undetected: 0`. A control sharing a source with its subject,
+this time the subject being the control's own wording.
+
+**Twenty-one rows carry reach fields today** (S15-S20, S27-S35, S70, S110,
+S111, S119, S155, S172): every row whose detector is a diagnostic string, the
+three dump-driven rows, the class-port row, and the two the mechanism was built
+for. All 21 witnesses were verified live against the clean binary before
+landing. The remaining rows declare none, deliberately — a reach field is worth
+writing where the detector is a witness that CAN retire, and a row whose
+detector is a byte-identity gate or a whole differential population has no
+single witness to name.
+
 ## Sanitizer + lint battery (SAN-1, 2026-08-13)
 
 **K26 caveat (2026-08-18): the LEAK tier of this battery is currently a

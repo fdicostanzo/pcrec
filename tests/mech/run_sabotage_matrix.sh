@@ -32,6 +32,8 @@
 #                                                         # prefix match)
 #   bash tests/mech/run_sabotage_matrix.sh --help        # the field list
 #   KEEP=1 bash tests/mech/run_sabotage_matrix.sh        # keep scratch trees
+#   VALIDATE_ONLY=1 bash tests/mech/run_sabotage_matrix.sh  # fields only,
+#                                                         # seconds, no build
 #
 # [MECH-REACH, 2026-08-25] A ROW WHOSE WITNESS IS A CONSTRUCT DECLARES ITS
 # REACH. Three optional fields, and the verdict they can produce.
@@ -255,6 +257,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
+# [MECH-REACH] VALIDATE_ONLY=1 -- source every selected definition, run the
+# FIELD VALIDATIONS, and stop. It exists because those validations are FATALs
+# raised INSIDE run_one, i.e. when a row actually runs: a malformed
+# SAB_REACH_POP on row 140 of a full matrix is a finding that arrives eighty
+# minutes in and takes the run with it. This mode reuses the SAME checks --
+# it is an early exit inside run_one, not a second copy of the rules, which
+# would be a control with its own source. It builds nothing and runs nothing.
+VALIDATE_ONLY="${VALIDATE_ONLY:-0}"
 PROCS="${PROCS:-1}"
 case "$PROCS" in (''|*[!0-9]*) echo "FATAL: PROCS must be a positive integer, got '$PROCS'" >&2; exit 2;; esac
 [ "$PROCS" -ge 1 ] || { echo "FATAL: PROCS must be >= 1, got '$PROCS'" >&2; exit 2; }
@@ -287,6 +297,11 @@ usage: bash tests/mech/run_sabotage_matrix.sh [S<id>]
                 S10_*.sh and never S100_*.sh)
 
 env: CC, KEEP=1 (keep scratch trees + logs), MECH_SCRATCH, JOBS, PROCS
+     VALIDATE_ONLY=1  source every selected definition, run the FIELD
+                      validations, print one 'FIELDS OK' line each and
+                      stop. Builds nothing, runs nothing, measures
+                      nothing -- and deliberately does NOT print the
+                      '== mech run COMPLETE' trailer a watcher polls.
 
 A sabotage definition (tests/mech/sabotages/S<NN>_*.sh) sets:
 
@@ -414,7 +429,9 @@ fi
 # mechanism existed.
 CLEAN_TREE=""
 needs_clean=0
+[ "$VALIDATE_ONLY" = "1" ] && needs_clean=-1
 for f in "${sab_files[@]}"; do
+    [ "$needs_clean" -eq -1 ] && break
     if ( SAB_REACH=""; SAB_REACH_POP=""
          # shellcheck disable=SC1090
          source "$f" >/dev/null 2>&1
@@ -550,6 +567,17 @@ run_one() {
             fi
         fi
 
+        # [MECH-REACH] VALIDATE_ONLY: every FATAL above has now been
+        # evaluated for this definition. Nothing below this line is a field
+        # check, so this is the whole of what the mode can honestly assert --
+        # and it says so in the cell rather than printing a verdict-shaped
+        # word a reader could mistake for a measurement.
+        if [ "$VALIDATE_ONLY" = "1" ]; then
+            printf '%s\t%s\t%s\tNOTHING RUN\tfields-only\tFIELDS OK (definition parses and every field validation passes; NO tree built, NO suite run, NOTHING measured)\n' \
+                "$SAB_ID" "$SAB_FILE" "$SAB_DESC"
+            exit 0
+        fi
+
         work="$MECH_SCRATCH/$SAB_ID"
         rm -rf "$work"
         mkdir -p "$work"
@@ -575,6 +603,14 @@ run_one() {
         reach_ok=1
         reach_why=""
 
+        # NOTE THE WORDING OF THE ANOMALY SENTENCE BELOW: it must not contain
+        # the token `UNDETECTED`. The headline's `undetected` counter is a
+        # `grep -c UNDETECTED` over the ROW TEXT, so a verdict that says "never
+        # UNDETECTED" counts itself as one -- measured on validation (c),
+        # 2026-08-25, which printed `undetected: 1` for a row that was never
+        # measured at all. A checker whose subject is its own text is this
+        # tree's oldest shape, and it found a new place to live.
+        #
         # (i) THE INSTRUMENT REQUIREMENT, first, because an unsatisfiable
         # instrument makes the reach question moot: nothing measurable follows
         # either way. Frank's ruling 2026-08-25 -- when the run cannot satisfy
@@ -590,7 +626,7 @@ run_one() {
                    && "$work/asan_probe" >> "$work/asan_probe.log" 2>&1; then
                     reach_bits+=("require:asan-ok")
                 else
-                    printf '%s\t%s\t%s\tNOT-RUN (instrument absent)\trequire:asan-UNAVAILABLE\tANOMALY (this row DECLARES SAB_REQUIRE=asan and %s cannot build or run -fsanitize=address,undefined -- an absent instrument is the absence of a measurement, never UNDETECTED; see %s)\n' \
+                    printf '%s\t%s\t%s\tNOT-RUN (instrument absent)\trequire:asan-UNAVAILABLE\tANOMALY (this row DECLARES SAB_REQUIRE=asan and %s cannot build or run -fsanitize=address,undefined -- an absent instrument is the absence of a measurement, never a finding about the code; see %s)\n' \
                         "$SAB_ID" "$SAB_FILE" "$SAB_DESC" "$CC" "$work/asan_probe.log"
                     [ "$KEEP" = "1" ] || rm -rf "$work"
                     exit 0
@@ -1753,6 +1789,14 @@ fi
 # same root as the no-`pgrep -f` rule above, which is that a command line is
 # not an identity.
 echo
+if [ "$VALIDATE_ONLY" = "1" ]; then
+    # DELIBERATELY NOT the `mech run COMPLETE` trailer. That line is what a
+    # watcher polls to learn a MATRIX finished, and a field-validation pass
+    # answering it would be a green nobody asked for -- this run measured
+    # nothing and must not be pollable as though it had.
+    echo "== mech FIELD VALIDATION COMPLETE: $total definition(s) valid, 0 rows measured =="
+    exit 0
+fi
 echo "== mech run COMPLETE: $total rows (unexpected: ${unexpected:-0}, undetected: ${undetected:-0}, unreached: ${unreached:-0}, anomalies: ${anomalies:-0}, oracle-skipped: ${oracle_skipped:-0}) at $SHA =="
 
 # A MISMATCHED EXPECTATION FAILS THE RUN. Before this field the script exited
