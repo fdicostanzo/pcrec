@@ -370,6 +370,23 @@ decides whether to perform it — and then run the row through
   through to `pcrec`; it lives as a direct library-API C probe in
   tests/cli/run_cli_tests.sh case16.
 
+  **[K35], 2026-08-25 ([DD-14] close): it also carries the LOCALE GUARD,
+  and that check is not about codegen at all** — it lives here because this
+  is where the tree's structural checks live. It sweeps every
+  `tests/**/run_*.sh` for a `sort` used as a COMMAND WORD and fails naming
+  any site guarded by neither an `LC_ALL=C` prefix nor an `export LC_ALL=C`
+  ABOVE it — the export's POSITION is load-bearing and the check tests it,
+  because an export below a sort guards nothing. It counts SITES and
+  GUARDED sites per LINE, so a line carrying two sorts with one guard is
+  caught rather than passed. Measured 2026-08-25: 62 sites across 53
+  scripts, all guarded; floors of 50 sites / 40 scripts make a COLLAPSED
+  sweep a failure rather than a pass (the population that vanishes is the
+  check that cannot fail). Validated in three failing directions before
+  landing: an unguarded site, a script whose export was moved BELOW its
+  sorts, and an empty population. WHY IT IS A CHECK AND NOT A CONVENTION:
+  the hazard was written down once, at `tests/cli/run_cli_tests.sh:786`,
+  and recurred five times anyway.
+
 ## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
 
 Three checks in `run_codegen_tests.sh` had to move when the VM engine landed,
