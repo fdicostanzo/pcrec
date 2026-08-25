@@ -14482,3 +14482,8 @@ failed the 1024/8192 cell where `_in` MATCHES what its sibling refuses
 — the feature itself); now symmetric on the give-up; measured
 non-vacuous: a descriptor-ignoring `_match_in` takes framebuffer.rxt
 16/0 → 12/4 where before the cross-check it stayed 16/0.
+Control (manager, 03:31-03:35): `tests/counterk/counterk.rxt` SOLO on
+main's binary (wave G, no FB; load 0.3): 1,634 passed / 0 failed, no
+timeout — the K32 cell's exit-124 in srFBc's run was load (K31 shape).
+The lane's own solo number on its tree is the second half of that
+verdict; awaited with the deliverable.
