@@ -99,12 +99,14 @@ def check_file(path, errs, stats):
     block_line = 0
     seen_perr = False
 
+    prev_comment = None        # the comment line immediately above a case
     for lineno, raw in enumerate(open(path), 1):
         line = raw.rstrip("\n")
         where = "%s:%d" % (os.path.basename(path), lineno)
         if not line.strip() or line.lstrip().startswith("#"):
             if line.strip() and not line.startswith("#"):
                 errs.append("%s: a comment must start at column 1" % where)
+            prev_comment = line.strip() if line.strip() else None
             continue
         head, _, rest = line.partition(" ")
 
@@ -161,7 +163,25 @@ def check_file(path, errs, stats):
                 errs.append("%s: case on a pattern libpcre2 refuses: %r"
                             % (where, pat))
                 continue
-            got = sr.search(pat, subj, start, 0)
+            # [manager, 2026-08-24 landing] a `# RULED nomatch …` comment
+            # immediately above an `n` cell means libpcre2 DECLINES (-52)
+            # on this subject and pcrec's nomatch is the RULED answer
+            # (design SS12 P-12, wave E [DD-14.EMPTY]); the oracle's decline
+            # is the recorded cross-check, never the expectation. sr_gen.py
+            # (guclass="ruled") writes the comment; this checker accepts a
+            # declining oracle ONLY under it and only for an n/ns cell.
+            ruled = (prev_comment or "").startswith("# RULED nomatch")
+            prev_comment = None
+            try:
+                got = sr.search(pat, subj, start, 0)
+            except Exception as exc:  # Pcre2Error: the oracle declined
+                if ruled and head in ("n", "ns"):
+                    stats["ruled"] = stats.get("ruled", 0) + 1
+                    continue
+                errs.append("%s: libpcre2 DECLINED (%s) on a cell not marked "
+                            "RULED -- pattern %r subject %r"
+                            % (where, str(exc)[:60], pat, subj))
+                continue
             if head in ("m", "ms"):
                 stats[head] += 1
                 nums = tail.split()

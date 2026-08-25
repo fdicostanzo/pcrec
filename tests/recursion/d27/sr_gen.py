@@ -83,6 +83,17 @@ def B(pat, feats, note, cases=(), perr=None, gu=(), engine=None,
     """One .rxt block. `perr` is None | 'both' (PCRE2 refuses too) |
     'pcrec' (PCRE2 ACCEPTS; pcrec refuses by a stated ruling).
 
+    `guclass` may also be `"ruled"`: a `gu=` entry that WAS oracle-verified
+    as a real give-up (pcrec gives up, libpcre2 declines too -- "agreed in
+    kind") until pcrec's own behaviour changed for the better, so it
+    renders `n "<subj>"` instead of `gu <code> "<subj>"`, citing design
+    SS12 P-12 + [DD-14.EMPTY], with libpcre2's own decline kept as a
+    cross-check comment rather than the reason (see `emit_file`'s render
+    loop). It is a THIRD `guclass` value rather than a separate list,
+    reusing the same `gu=` tuples `guclass="leftrec"` and `"capacity"`
+    already read -- what changes is how the class is asserted, not the
+    spec shape.
+
     `parked` -- MODELLED ON `tests/recursion/gen_corpus.py`'s `parked=`
     (that generator's own B/GU classes), extended to work at CASE
     granularity rather than only whole-block, because a K34 cell here
@@ -1139,7 +1150,7 @@ F_DEPTH.append(B(
     [m("aaa"), m("a")],
     parked=[n("bbb")], parked_ref="K34"))
 
-for lr in ["((?1)a)", "((?1)?a)", "((?1)*a)", "(?R)a"]:
+for lr in ["((?1)?a)", "((?1)*a)"]:
     F_DEPTH.append(B(
         lr, [R],
         "extract 3.3: PCRE2 refuses NO left-recursive shape at compile "
@@ -1152,6 +1163,28 @@ for lr in ["((?1)a)", "((?1)?a)", "((?1)*a)", "(?R)a"]:
         "answering wrong.",
         [n("b"), n("")],
         gu=[("frames", "aaa"), ("frames", "aaaaaa")]))
+
+# [manager, 2026-08-24 landing triage] THE EMPTY-LANGUAGE ROOTS ARE RULED
+# NOMATCH, NOT A GIVE-UP. `((?1)a)` and `(?R)a` have NO base case at the top
+# level: their language is empty, and design SS12 P-12 rules that a root
+# whose minimum width is unbounded "matches nothing" -- wave E emits that as
+# an O(1) nomatch at the search entry ([DD-14.EMPTY]). libpcre2 10.46 answers
+# rc -52 on the same subjects, a refusal of the same subject ("agreed in
+# kind", design SS5.9) -- recorded as the cross-check, never as the
+# expectation. The author wrote these as `gu frames` on the pre-E tree; the
+# ruling postdates the writing, so they are corrected here through the
+# generator, not by hand (guclass="ruled" renders `n` with the citation).
+for lr in ["((?1)a)", "(?R)a"]:
+    F_DEPTH.append(B(
+        lr, [R],
+        "extract 3.3 + design SS12 P-12 (via wave E): an EMPTY-LANGUAGE "
+        "root -- a recursion with no base case at the top level -- is "
+        "RULED to match nothing, answered in O(1) at the search entry. "
+        "The subjects libpcre2 -52s on are the same subjects pcrec "
+        "answers nomatch on: agreed in kind, and pcrec's is the "
+        "conclusive answer.",
+        [n("b"), n("")],
+        gu=[("frames", "aaa"), ("frames", "aaaaaa")], guclass="ruled"))
 
 # THE SHAPE THAT SEPARATES "DECLINES" FROM "CONCLUDES". On (a|(?1)a)b
 # libpcre2 reaches a definite NOMATCH on every subject that does not match,
@@ -1500,6 +1533,20 @@ def emit_file(fname, blurb, blocks, errors):
                               "has a definite answer"
                               % (fname, r if r is None else r[0], pat,
                                  len(subj)))
+                continue
+            if b["guclass"] == "ruled":
+                if not declined:
+                    errors.append("%s: gu cell class 'ruled' but libpcre2 "
+                                  "ANSWERS %r for %r -- 'ruled' is for the "
+                                  "empty-language roots libpcre2 -52s on"
+                                  % (fname, r if r is None else r[0], pat))
+                    continue
+                out.append("# RULED nomatch (design SS12 P-12, wave E "
+                           "[DD-14.EMPTY]): libpcre2 10.46 answers rc %s on "
+                           "this subject -- agreed in kind, not the "
+                           "expectation" % r[1])
+                out.append("n %s" % enc(subj))
+                counts["n"] += 1
                 continue
             if b["guclass"] == "capacity" and declined:
                 errors.append("%s: gu cell class 'capacity' but libpcre2 "

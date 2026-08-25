@@ -76,20 +76,6 @@ g 1 0 1
 # ordinary expectations; the gu cases are subjects on which libpcre2
 # itself declines with rc -52 and the only assertion available is that
 # pcrec declines too rather than answering wrong.
-pattern ((?1)a)
-features recursion
-n "b"
-n ""
-gu frames "aaa"
-gu frames "aaaaaa"
-
-# extract 3.3: PCRE2 refuses NO left-recursive shape at compile time,
-# and neither may pcrec -- the guard is entirely at match time. The n
-# cases are subjects on which libpcre2 reaches a DEFINITE nomatch
-# without ever recursing (there is no 'a' to start on), so they are
-# ordinary expectations; the gu cases are subjects on which libpcre2
-# itself declines with rc -52 and the only assertion available is that
-# pcrec declines too rather than answering wrong.
 pattern ((?1)?a)
 features recursion
 n "b"
@@ -111,19 +97,33 @@ n ""
 gu frames "aaa"
 gu frames "aaaaaa"
 
-# extract 3.3: PCRE2 refuses NO left-recursive shape at compile time,
-# and neither may pcrec -- the guard is entirely at match time. The n
-# cases are subjects on which libpcre2 reaches a DEFINITE nomatch
-# without ever recursing (there is no 'a' to start on), so they are
-# ordinary expectations; the gu cases are subjects on which libpcre2
-# itself declines with rc -52 and the only assertion available is that
-# pcrec declines too rather than answering wrong.
+# extract 3.3 + design SS12 P-12 (via wave E): an EMPTY-LANGUAGE root
+# -- a recursion with no base case at the top level -- is RULED to
+# match nothing, answered in O(1) at the search entry. The subjects
+# libpcre2 -52s on are the same subjects pcrec answers nomatch on:
+# agreed in kind, and pcrec's is the conclusive answer.
+pattern ((?1)a)
+features recursion
+n "b"
+n ""
+# RULED nomatch (design SS12 P-12, wave E [DD-14.EMPTY]): libpcre2 10.46 answers rc -52 on this subject -- agreed in kind, not the expectation
+n "aaa"
+# RULED nomatch (design SS12 P-12, wave E [DD-14.EMPTY]): libpcre2 10.46 answers rc -52 on this subject -- agreed in kind, not the expectation
+n "aaaaaa"
+
+# extract 3.3 + design SS12 P-12 (via wave E): an EMPTY-LANGUAGE root
+# -- a recursion with no base case at the top level -- is RULED to
+# match nothing, answered in O(1) at the search entry. The subjects
+# libpcre2 -52s on are the same subjects pcrec answers nomatch on:
+# agreed in kind, and pcrec's is the conclusive answer.
 pattern (?R)a
 features recursion
 n "b"
 n ""
-gu frames "aaa"
-gu frames "aaaaaa"
+# RULED nomatch (design SS12 P-12, wave E [DD-14.EMPTY]): libpcre2 10.46 answers rc -52 on this subject -- agreed in kind, not the expectation
+n "aaa"
+# RULED nomatch (design SS12 P-12, wave E [DD-14.EMPTY]): libpcre2 10.46 answers rc -52 on this subject -- agreed in kind, not the expectation
+n "aaaaaa"
 
 # a left-recursive callee followed by a literal 'b'. libpcre2 CONCLUDES
 # on every one of these subjects -- match on 'ab' nomatch on the rest
