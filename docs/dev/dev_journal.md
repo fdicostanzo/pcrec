@@ -14259,3 +14259,21 @@ record owed. srFBc told to REBASE onto main now (its S174 re-anchor
 conflicts with baf9e60 — take main's) and to add the design §8 inline
 note per the ruling. GO HEAVY at pcrecdev2's WINDOW CLOSED; heavy runs
 DETACHED (`setsid nohup`, PID file) after two harness reaps tonight.
+
+#### Thirty-ninth session, part 26 addendum — srG's 48-row record; worktree removed (2026-08-25 ~03:0x EDT)
+
+Partial-sweep evidence for wave G (NOT the D69 obligation): 48 of 111
+rows, **unexpected 0 · undetected 4 · anomalies 0 · oracle-skipped 0 ·
+apply-failed 0**. The four undetected are all on wave E's standing
+expected-UNDETECTED list: S150 S151 S152 S153 (my earlier "two" was the
+lane's 44-row reading; corrected). S160/S164 not reached — S164 is the
+row G re-pointed and flipped to DETECTED: if the close's full matrix
+shows it undetected, that is a finding. SEVEN tree bands (each row
+archives HEAD at its start): d87afff ×21, eafec65 ×2, 2219dda ×8,
+1b97fc5 ×4 (the W fix WIP, pre-cells), 99eecd5 ×9, fbac26a ×2,
+13e2c30 ×2 — no verdict moved across the seven trees incl. the three
+carrying the blocking fix. S156 never completed (re-run, not skip);
+S174 never reached. srG released; worktrees/srG removed, lane/srG kept
+at 13e2c30. The lane's closing note deserves the record: every
+instrument inside the lane was built from the same picture of the world
+as the bug; the population gap (113/37/0) was visible only from outside.
