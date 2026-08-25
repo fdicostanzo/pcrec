@@ -387,6 +387,53 @@ decides whether to perform it — and then run the row through
   the hazard was written down once, at `tests/cli/run_cli_tests.sh:786`,
   and recurred five times anyway.
 
+  **[K37]/[TT-9], 2026-08-25 (srRun2, [CHK-1]): two more structural checks
+  live beside K35, same reasoning — neither is about codegen, both are
+  where the tree's structural checks live.**
+
+  **[K37] THE BARE-COMPILER-CALL GUARD.** Sweeps `tests/**/*.sh` for the
+  compiler token (`build/pcrec`, `$PCREC`, `"$PCREC"`) and fails naming any
+  site that is neither structurally excluded (a comment, a `PCREC=`
+  assignment, an `[ -x/-f "$PCREC" ]` existence test), guarded
+  (`pcrec_run`/`"$TIMEOUT_BIN"`/`gen_run`/`gen_cc` on the line), nor a
+  match for one of six reasoned, per-entry-validated ALLOWLIST regexes
+  (a diagnostic message, an env-var prefix onto a self-recursive or
+  python-worker invocation, an argument two positions past the command
+  word, a grep pattern string, a python heredoc argument, a bash -c
+  positional argument). Measured 2026-08-25: 55 scripts / 427 sites (372
+  guarded, 31 allowlisted across the 6 categories, all non-vacuous);
+  floors 40/380. Fixes docs/dev/known_issues.md K37 — see
+  `tests/lib/CLAUDE.md`'s `gen_timeout.sh`/`pcrec_run` entry for the
+  mechanism this check guards.
+
+  **A SELF-REFERENCE TRAP FOUND DURING VALIDATION, worth reading before
+  writing a sixth structural check in this file.** The FIRST version of
+  this check's own source — its regex literals, its allowlist reason
+  prose — contained the literal text `$PCREC` and `build/pcrec`, so the
+  check's own definition lines matched its own site regex and it failed
+  against ITSELF (9 sites, all inside its own block). Not the standing
+  "control shares a source with what it controls" trap (this check reads
+  no verdict pcrec computes) but its textual cousin: a check whose PATTERN
+  TEXT contains its own SEARCH TARGET is scanning itself. Fixed by writing
+  the dollar sign as a bracket expression (`[$]PCREC`, not `\$PCREC`) and
+  one letter of "pcrec" the same way (`pc[r]ec`) — identical regex
+  semantics, no contiguous byte match — and rewording prose to say "the
+  PCREC variable" rather than spell `$PCREC`. Demonstrated: reverting any
+  `[$]` back to `\$` makes the check fail against itself again.
+
+  **[TT-9] THE SANITIZER SUITE LIST.** Every `tests/*/run_*_diff.sh` must
+  be in `tests/lib/san_scripts.txt` (see its own header) or a stated
+  exclusion; today's exclusion set is empty — the enumeration found all 9
+  belong in the manifest, including 5 that were silently absent from
+  `ubsan`/`asan`/`san`'s old hand-copied lists (`tests/lookaround/`'s two
+  and three `tests/assertions/` diff scripts the same search surfaced).
+  Floor 5 (measured 9).
+
+  **BOTH VALIDATED red then green** (a scratch
+  `tests/altcls/zz_k37_validate_tmp.sh` carrying one bare `"$PCREC" --help`
+  call; a scratch `tests/altcls/run_zz_validate_diff.sh` not in the
+  manifest — both created, observed as the sole named failure, deleted).
+
 ## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
 
 Three checks in `run_codegen_tests.sh` had to move when the VM engine landed,
