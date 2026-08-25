@@ -54,7 +54,8 @@
 #              both modes — tests/mech greps it. On this box prefer
 #              TMPDIR=/var/tmp at higher PROCS: /tmp is a quota'd tmpfs.
 #
-# See docs/testing.md for the .rxt format and driver protocol.
+# See docs/spec/rxt_format.md for the .rxt format and driver protocol (the
+# contract, [SPEC-1.6]); docs/testing.md for runtimes, batteries and history.
 
 set -u
 
