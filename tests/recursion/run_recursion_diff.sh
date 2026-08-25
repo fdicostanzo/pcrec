@@ -74,6 +74,22 @@ ORACLE="$ROOT_DIR/tests/backrefs/bref_oracle.py"
 BATCH="$ROOT_DIR/tests/backrefs/bref_batch.c"
 FEATS="recursion,named-groups,backrefs,atomic-groups,assertions,classes,modifiers,lookaround"
 
+# [K37, srMech 2026-08-25] D45'S COMPILE BUDGET, ON EVERY `pcrec` INVOCATION
+# BELOW. This script ran the compiler BARE at every one of its eight call
+# sites. K37 is what that costs: sabotage row S159's compiler does not
+# terminate on `((?1)*a)`, so the mech row that should have read one FAILED
+# ARM instead HUNG the whole matrix, and a hang is the one outcome no verdict
+# can be derived from. `pcrec_timeout_secs` is the same budget every other
+# suite in the tree already uses (20 s plain / 60 s sanitizer, scaled off
+# `-fsanitize=` in the flags), and blowing it exits non-zero -- which every
+# call site below already routes to `bad`/`die`. A hanging compiler is
+# therefore a FAILED ARM, which is DETECTION, rather than an infrastructure
+# event. NOTE, recorded rather than fixed here: the generated-code compiles
+# (`$CC $GENCFLAGS`) and the matcher runs (`"$d/t" < cells`) in this file are
+# still unbudgeted; that is a wider gap than K37 named and is reported, not
+# quietly widened into this change.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 WORKDIR="$(mktemp -d)"
 cleanup() {
     if [ "$KEEP" = "1" ]; then echo "recursion-diff: KEEP=1, temp dir: $WORKDIR" >&2
@@ -118,7 +134,7 @@ nc_case() {
     local label="$1" pat="$2" grp="$3" subj="$4" want="$5"
     local d="$WORKDIR/nc$grp$RANDOM"
     mkdir -p "$d"
-    if ! "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
             -fno-splice-calls -o "$d/gen.c" -- "$pat" 2>"$d/err"; then
         bad "[$label] --no-captures build refused: $(head -1 "$d/err")"
         return
@@ -161,7 +177,7 @@ nc_case() {
     # inlined and no frame at all.
     local d2="$WORKDIR/ncS$grp$RANDOM"
     mkdir -p "$d2"
-    if ! "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --emit-main \
             -o "$d2/gen.c" -- "$pat" 2>"$d2/err"; then
         bad "[$label] the SPLICED --no-captures build refused: $(head -1 "$d2/err")"
         return
@@ -196,7 +212,7 @@ nc_case "no-captures two-hop"  '^(a(?3))(b)((c))$'    3 "acbc" "match 0 4"
 DEPTH_PAT='^(a(?1)?b)$'
 d="$WORKDIR/depth"
 mkdir -p "$d"
-if ! "$PCREC" --features "$FEATS" -p rx --emit-main -o "$d/gen.c" -- "$DEPTH_PAT" \
+if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --emit-main -o "$d/gen.c" -- "$DEPTH_PAT" \
         2>"$d/err"; then
     bad "[depth] $DEPTH_PAT does not compile: $(head -1 "$d/err")"
 else
@@ -265,7 +281,7 @@ fi
 #      construct — the flag doing exactly what lib/pcrec.h says it does, and
 #      the both-directions evidence that cell 2 is the LINKAGE's answer rather
 #      than the construct having quietly stopped being VM-only.
-dfa_out="$("$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
+dfa_out="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
            -o "$WORKDIR/dfa.c" -- '(a(?1)?b)' 2>&1)"
 case "$dfa_out" in
     *"(?1"*|*"recursion"*)
@@ -273,13 +289,13 @@ case "$dfa_out" in
     *)
         bad "[engine] --engine=dfa on '(a(?1)?b)' answered '$dfa_out', which does not name the construct" ;;
 esac
-if "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
+if "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
         -o "$WORKDIR/dfa2.c" -- '(a)(?1)' 2>"$WORKDIR/dfa2.err"; then
     ok "[engine] the SPLICEABLE '(a)(?1)' COMPILES on --engine=dfa: its callee is not in a cycle, so the inlined machine is exact (design §6.3, §8.3)"
 else
     bad "[engine] the spliceable '(a)(?1)' was REFUSED on --engine=dfa: $(head -1 "$WORKDIR/dfa2.err")"
 fi
-dfa_out3="$("$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
+dfa_out3="$("$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx --no-captures --engine=dfa \
             -fno-splice-calls -o "$WORKDIR/dfa3.c" -- '(a)(?1)' 2>&1)"
 case "$dfa_out3" in
     *"(?1"*|*"recursion"*)
@@ -287,7 +303,7 @@ case "$dfa_out3" in
     *)
         bad "[engine] -fno-splice-calls '(a)(?1)' on --engine=dfa answered '$dfa_out3', so the cell above is not evidence about the LINKAGE" ;;
 esac
-if "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/ctl.c" -- '(a)(?1)' 2>/dev/null; then
+if "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx -o "$WORKDIR/ctl.c" -- '(a)(?1)' 2>/dev/null; then
     ok "[engine] the CONTROL: the same pattern compiles on the default engine, so the refusals above are about the ENGINE and not about the construct having stopped being accepted"
 else
     bad "[engine] '(a)(?1)' does not compile on the default engine — the refusals above prove nothing"
@@ -329,7 +345,7 @@ run_arm() {
     local d="$WORKDIR/arm$RANDOM$RANDOM"
     mkdir -p "$d"
     # shellcheck disable=SC2086
-    if ! "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" -- "$pat" \
+    if ! "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" --features "$FEATS" -p rx $extra -o "$d/gen.c" -- "$pat" \
             2>"$d/err"; then
         echo "COMPILE-FAIL"; sed 's/^/    /' "$d/err" >&2; return 1
     fi
