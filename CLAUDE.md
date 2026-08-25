@@ -46,6 +46,27 @@ opt-in flag that rides `make test`'s own generated-code compile pass with
 runtimes, tool survey, exclusions and sabotage validation: docs/testing.md,
 "Sanitizer + lint battery".
 
+## Situation index — when you are about to X, read Y FIRST
+
+Pointers, not prose (Frank, 2026-08-25): the knowledge lives in the
+file; this table is the trigger. Add a row when a lesson is re-learned;
+never expand a row into a paragraph.
+
+| about to… | do / read |
+|---|---|
+| kill any process | `scripts/safekill PID` (kills group + tree, audit line). NEVER `pkill -f`/`pgrep -f` — its header says why (two collateral kills, 2026-08-19) |
+| bound a command's run time | `gnutimeout N cmd`, not `timeout` (this box's `timeout` is uutils: ~105 ms wall PER CALL — docs/testing.md "The `timeout` binary itself"). In test scripts: `tests/lib/timeout_bin.sh` → `"$TIMEOUT_BIN"` |
+| run something that can hang OR runaway-allocate (compiler on a hostile pattern, generated matcher, a battery, a lane's long run) | `scripts/watchdog -s WALL -m RSS_KB -c CPU -S label -- cmd` (wall + tree-RSS + CPU kill, GNU exit codes, one log line). Per-call overhead → not inside per-case loops (the harness's ~23k calls use `$TIMEOUT_BIN`; `gen_run` already wraps the compile/run path). scripts/CLAUDE.md has the flags |
+| poll a lane or background run for liveness | artifacts, never process greps: log tail / completion trailer, WIP-commit age, mtimes — docs/dev/learnings.md §6 |
+| start or queue anything heavy (make test, mech, san, a lane's -j build) | one heavy suite at a time on this box; memory `pcrec-box-concurrency`; the window handshake with pcrec-bench (memory `pcrec-bench-status`) |
+| write or review a CHECK (a gate, a sweep, a sabotage row) | docs/dev/learnings.md §3 + memory `pcrec-check-design-lessons` — controls that share a source with what they control, populations nobody counts (K35), witnesses that stopped reaching their site ([MECH-REACH]) |
+| match a PCRE2 diagnostic's wording | docs/dev/decisions.md D26 — it is probably the wrong tier |
+| add a special case, a parallel mechanism, or a `recursion`-only clause for a general fact | memory `pcrec-general-mechanisms-not-special-cases`; D75 addendum is the worked example |
+| build something ahead of a measured need | D77 / memory `pcrec-build-under-measurement`: wait, name the measurement that would trigger it |
+| change emitted scaffolding (comments, declarations, layout) | it IS an `abi` bump + identity-gate re-pin in the same change — D76 |
+| brief a lane | the Conventions below + `.claude/skills/pcrec-manager` §3 (scope mandate, worktree/cell, async validation, WIP commits, `gnutimeout` on every uncertain command) |
+| end or pause a session | rewrite docs/dev/wake.md from scratch (skill §6) |
+
 ## Compatibility standard (D26)
 
 PCRE2 is the SOURCE OF TRUTH for syntax and semantics, not a build to reproduce

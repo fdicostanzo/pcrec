@@ -430,6 +430,23 @@ including V-G/V-H (added this session).
   faster AND as diagnostic, the battery adopts it and ubsan/asan stay as
   opt-in singles. SAN-1's separate-axes reason is TSan-specific
   (Makefile:577-580) — not a blocker.
+- [CHK-1] STATE:not-started — THE CHECK-INFRASTRUCTURE BATCH (Frank,
+  2026-08-25, fortieth session, ruling 5 of the [DD-14] going-forward
+  conversation): [MECH-REACH], K37, [TT-10], [TT-9], [TT-11] — five
+  one-way improvements to checks, no `src/` change, disjoint files —
+  run as up to three sonnet lanes BEFORE the bench loop starts (every
+  battery until then pays K37's hang risk and [TT-10]'s solo re-runs).
+  Order by what each protects: [MECH-REACH] (the matrix's meaning), K37
+  (the battery hanging on a real bug), then [TT-10]/[TT-9]/[TT-11].
+  BRIEF NOTES from the ruling: (a) K37's `pcrec_run` helper routes the
+  compiler through `scripts/watchdog` (wall + tree-RSS + CPU + log line),
+  not bare coreutils timeout — the same mechanism `gen_run` already uses
+  for the other half of the harness's calls; a compiler that
+  runaway-allocates instead of looping slips past a plain timeout. (b)
+  [TT-10]'s "measure the child's CPU, not wall" is what watchdog's `-c`
+  (cpukill, exit 123) already does — try wiring before building. (c)
+  every brief: `gnutimeout`, never `timeout` (uutils; docs/testing.md
+  "The `timeout` binary itself"); `scripts/safekill PID` to kill.
 - [TT-11] STATE:not-started — THE IDENTITY GATE'S WHOLE-FILE PIN FOLLOWS THE
   `abi` NUMBER (Frank, 2026-08-25, fortieth session; D76). Today
   `tests/codegen/run_recursion_identity.sh` comparison (B) pins `8fc1e51`
