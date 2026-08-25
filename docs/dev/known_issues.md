@@ -2804,7 +2804,7 @@ change in that region; not a release blocker.
 
 ## K37 — OPEN (2026-08-25, found by the manager's battery on 17469b6) — `run_recursion_diff.sh` runs the COMPILER unbounded, and sabotage row S159 makes it loop forever
 
-In the full matrix (PROCS=6) row S159 (`mark-follows-body`, src/gen/emit_vm.c)
+In the full matrix (PROCS=6) row S159 (`mark-follows-body`, src/opt/atomic.c — pcrec_bref_mark's A_CALL arm descending into u.call.body)
 compiled `((?1)*a)` for 49 min 58 s of CPU at 100% before the manager
 killed the process by PID: the sabotaged emitter never terminates on that
 pattern, and `tests/recursion/run_recursion_diff.sh` invokes `pcrec` with

@@ -14757,3 +14757,37 @@ direction only. A row should carry a row-level assertion that its
 witness still reaches the sabotaged site (e.g. the clean tree's
 diagnostic text for the witness), so expiry is red at the wave that
 causes it, not at the next full matrix.
+
+#### Thirty-ninth session, part 41 — srMech interim: S155 and S70 fixed and driver-verified; K37 wrapped (2026-08-25 ~06:5x EDT)
+
+S155's cause is TWO things (fb9cc51): (1) SAB_HARNESS_TARGET pointed
+at leftrec.rxt, which has held ZERO `gu` cells since [DD-14.EMPTY] —
+its give-up cells became `n`, answered by RX_VM_ROOT_MINW before any
+frame is pushed (measured: the sabotaged compiler stamps ROOT_MINW
+2^40 for `^((?1)a)$` and returns 0 without reaching an RX_CALL); (2)
+the deleted line is ONE OF THREE byte-identical capacity tests emitted
+from one function (RX_TRAIL :8384, RX_PUSH :8393, RX_CALL :8483), all
+returning RX_R_FRAMES — at §4's 2.000 frames / 8.982 trail entries per
+level a surviving guard binds one frame later with the IDENTICAL typed
+answer: the sabotage changes a WRITE, not an ANSWER, so no corpus cell
+could ever see it (framebuffer 16/0, quantified 57/0, leftrec 7/0,
+recdiff 10/0 under it). Only run_frame_buffer.sh §2's exact-fit ASan
+driver reads a write: added as the row's `framebuffer` arm → driver
+verdict framebuf 1 fail / 5 pass (ASan: heap-buffer-overflow WRITE of
+size 8, 0 bytes after a 27,160-byte region in rx_match_anchored — the
+SAB_DESC sentence, observed); clean 6/0. RULED: the row stays
+expected-DETECTED, and the matrix arm must turn "ASan unavailable" into
+an ANOMALY, never a silent UNDETECTED (REQUIRE_ASAN-style mode; the
+opt-in target keeps its fallback). S70 (47f2648, a8ad66e): the pin had
+been re-homed three times, each time silently to a DIFFERENT site
+(`[\Q]` → the in-class splice :308-320, `(?(1)a|b)` → the GROUP doorway
+:509, `\g<1>` → stopped asserting at wave D); `(?J)` would not have
+worked either (mod_modifiers.c keeps its own copy of the rule).
+Re-pinned at the escape doorway with `\Q` (quoting) and `\R` (misc):
+reject 2 fail / 587 pass sabotaged, 0/589 clean — exactly two checks
+move, with the lie verbatim. K37 (d58e9d1): D45's pcrec_timeout_secs
+now wraps all 14 bare pcrec calls in tests/recursion/ (run_recursion_
+diff.sh 8 — it sourced gen_timeout.sh nowhere; run_frame_buffer.sh 3;
+run_specimen_identity.sh 3). S159 re-running solo. No src/ touched;
+anchors 0 stale. K37's SAB_FILE for S159 corrected on main
+(src/opt/atomic.c).
