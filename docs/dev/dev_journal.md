@@ -14672,3 +14672,14 @@ on the real gate PID with a 6 s settle and a session-id match. The gate
 was not disturbed (its log is identity comparisons, not CPU caps). Rule
 7 gains its second half: scrape AFTER the parent exits and match the
 process whose sid == pid.
+
+#### Thirty-ninth session, part 37 — the split gate is green on MAIN; the battery runs (2026-08-25 ~05:08 EDT)
+
+`make test-recursion-identity` on merged main (17469b6 tree; PID
+1950846, 04:52-05:01): **checks passed: 15 / failed: 0** — the same
+per-axis numbers as on the lane. The chain fired correctly on the real
+PID: battery start 05:02:10, stage 1 `make mech` PROCS=6 (30 rows
+started by 05:07; the full matrix is ~180 rows incl. S173-S184; the
+headline must read `unexpected: 0`; S164 must be DETECTED; S150-S153/
+S160 expected-UNDETECTED). Stages 2-4 follow: make test (the K31 pair
+expected to blip; solo resource + counterk right after), make san.
