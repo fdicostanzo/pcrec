@@ -13871,3 +13871,16 @@ still an error); d27 alone 1,020/0; sr_check re-verified 987
 expectations; ratchet "still failing: 1" (K34's 11). The branch's final
 make test runs from the manager's side; merge follows. pcrecdev2
 notified of the run.
+
+CORRECTION (part 18, ~23:0x): sr27land was not stalled — it had done
+everything within its authorization at 1302570 (the K34 park through a
+generalised `parked=` in the author's generator, a path bug fixed in all
+four d27 tools, the design/extract amendments for the author's findings
+1/2/4, the three CLAUDE.md updates) and was HOLDING on the four
+empty-language-root cells because editing them was outside its brief;
+its report and my takeover crossed in the mail. Its triage was identical
+to mine. The takeover's edit (11f5275) stands; nothing was lost. Lesson,
+mine: a lane at its authorization boundary looks like a stalled lane
+from outside — a brief should say what to do at the boundary (report
+and hold, which it did), and the manager should read the WIP commit
+message before acting.
