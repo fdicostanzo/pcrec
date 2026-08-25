@@ -14611,3 +14611,6 @@ lying under THREE concurrent suites (load 31-85); tonight ONE `-j12
 checks are unreliable under the suite's OWN parallelism on this box,
 not only under contention. [TT-10]'s scope is that, not "avoid running
 three suites".
+Run 2 exited 04:39 (3,105 lines; last group 8/8). The lane, idle since,
+resumed 04:47 for a fresh solo `make test-resource` and the deliverable
+(counts as measured, sections named, solo numbers beside them).
