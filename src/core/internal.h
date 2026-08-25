@@ -2617,6 +2617,19 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark);
  * wave A2 is the wave that owns the tree predicates; wired when there is a
  * producer that can make it answer anything but false. */
 bool pcrec_has_call(const Ast *a);
+/* [DD-14 wave G] `pcrec_has_call`'s narrowing: is there a call that is still a
+ * JUMP? Reads `u.call.link`, so it is meaningful only AFTER
+ * `pcrec_callgraph_build` — a SPLICED call has an exact finite lowering and is
+ * neither structurally VM-only (§8.1) nor a bar to the prefilter (§8.2/§8.3);
+ * a LINKED one is both. See src/opt/atomic.c for the full argument. */
+bool pcrec_has_linked_call(const Ast *a);
+/* [DD-14 wave G] Can any emitted code WRITE a capture slot? `A_REP{0,0}` emits
+ * nothing and a subroutine call is capture-transparent (design §3.1), so a
+ * group reached only through those can never leave a visible capture — it is
+ * still COUNTED and still reported UNSET, exactly as PCRE2 reports it, but it
+ * does not need the capture-recording engine. src/opt/select_engine.c's
+ * `forces_captures` is the consumer; src/opt/atomic.c has the argument. */
+bool pcrec_has_live_capture(const Ast *a);
 
 /* [DD-14 wave B+C] THE CALL GRAPH (src/opt/callgraph.c). Opaque and
  * arena-owned; `cx->callgraph` is NULL for a call-free pattern, which is what

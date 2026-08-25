@@ -801,12 +801,43 @@ static Frag compile_ast(NB *b, const Ast *a)
      * condition (`chosen == ENGM_DFA || fit.prefilter`) false. Reaching this
      * line means one of those two facts stopped being true.
      *
-     * WAVE G IS WHERE THIS ARM CHANGES, and it is the ONE site in the whole
-     * module where following the call graph is the POINT rather than a hang:
-     * design §8.3's bounded approximation, restored only for SPLICEABLE
-     * (acyclic, `CALL_SPLICE`) calls, where the exact lowering exists and the
-     * 21x-350x prefilter loss is what pays for it. */
+     * WAVE G IS WHERE THIS ARM CHANGED, and it is the ONE site in the whole
+     * module where following the call graph is the POINT rather than a hang.
+     *
+     * A SPLICED CALL INLINES THE CALLEE'S MACHINE, AND IT IS EXACT. Design
+     * §8.3 calls this "the sound approximation" and only the second half of
+     * that phrase is right: for an ACYCLIC callee the inlined fragment IS the
+     * callee's language, with no over-approximation step at all. The only
+     * thing erased is the CAPTURE, and `ast_bare` at the top of this function
+     * erases those from every `A_CAP` in the tree already — which is why
+     * `(?&atom)` and the hand-written body it names build the IDENTICAL
+     * machine, and why §8.3 measured 8 of its 15 inlined equivalents compiling
+     * to pcrec's pure DFA. THE BACK EDGE IS SAFE HERE ONLY BECAUSE OF THE
+     * LINKAGE: `CALL_SPLICE` means `!reaches(i, i)` (design §6.3 condition 1),
+     * so this descent is over a DAG and terminates, bounded a second time by
+     * PCREC_MAX_SPLICE_NODES.
+     *
+     * §8.3's SECOND ARM — `Sigma*` for a callee in a cycle — IS DELIBERATELY
+     * NOT BUILT, and the reason is that wave G made it unreachable rather than
+     * unnecessary. `src/opt/select_engine.c` narrows both consumers to
+     * `pcrec_has_linked_call`: a pattern with a LINKED call is VM-only AND
+     * gets no prefilter, so neither the DFA engine's machine nor the hybrid's
+     * is ever built for one and nothing would consume the superset. Building
+     * it anyway would buy a prefilter for recursive patterns at the cost of
+     * the loosest superset in the compiler, on the window-END exposure
+     * `lookaround_design.md` §5.4 measured (8 violations of 45) and
+     * `backrefs_design.md` §11.2 found again — an exposure this arm, being
+     * exact, does not have at all. That is a real option and it is left OPEN
+     * rather than refused; what is refused is shipping it without the
+     * population §8.4 measured empty. Reaching the `ctx_fail` below with an
+     * `A_CALL` means the narrowing stopped being true, which is exactly what
+     * S-SR17's twin sabotages. */
     case A_CALL:
+        if (a->u.call.link == CALL_SPLICE && a->u.call.body)
+            return compile_ast(b, a->u.call.body);
+        ctx_fail(b->cx, 0,
+                 "internal error: a LINKED subroutine call reached the machine "
+                 "builder; a linked call is VM-only and carries no prefilter");
         break;
     }
     ctx_fail(b->cx, 0, "internal error: bad AST node");

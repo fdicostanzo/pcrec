@@ -623,6 +623,153 @@ void pcrec_bref_mark(const Ast *a, bool *mark, int nmark)
  * rather than static for exactly that reason: an unused static is a
  * `-Wunused-function` error under `make strict`, and adding a fake call site
  * to silence it would pre-satisfy the sabotage row that owns the real one. */
+/* ---- [DD-14 wave G] IS ANY CAPTURE GROUP LIVE? (design §3.1, §8.3) -------
+ *
+ * A capture group is DEAD when NO EMITTED CODE CAN WRITE IT, and this walk
+ * asks exactly that, over one structural fact and no construct's name.
+ *
+ * THE FACT: `X{0}` EMITS NOTHING. The emitter writes "X{0}: matches empty, no
+ * code" and `vm_count_slots` counts nothing for it, so a group whose only
+ * lexical occurrence lies under an `A_REP` with `rmax == 0` has no instruction
+ * anywhere that assigns its slot pair. That is not a heuristic and not a
+ * language claim — it is the emitter's own rule, read back.
+ *
+ * AND A CALL DOES NOT REVIVE IT, which is the half the design had to MEASURE
+ * (§3.1, `out/captures.txt` C2, through a `pcre2_set_callout` reading the LIVE
+ * ovector): the callee WRITES its capture slots and the RETURN puts the
+ * caller's values back. "A subroutine call is CAPTURE-TRANSPARENT — the
+ * capture state after the call is exactly the state before it, whatever the
+ * call did." So a group reached ONLY through calls can never leave a VISIBLE
+ * capture either, and this walk's `A_CALL` arm is a decline for a REASON
+ * rather than for design §4.4's usual one. (§4.4's reason applies as well: the
+ * callee is a subtree of this tree at its own lexical position, so a group
+ * that IS live in the callee is found there.)
+ *
+ * IT IS NOT A `DEFINE` RULE, and that is deliberate. `(?(DEFINE)...)` lowers
+ * to `A_REP{0,0}` (src/parse/mod_recursion.c), the `(?:...){0}` idiom lowers
+ * to the same node, and `(a){0}b` — which names no module at all — is the same
+ * fact a third time. One predicate covers all three because they are one
+ * structural situation; a `DEFINE`-shaped special case would have been a
+ * parallel mechanism for two thirds of its own population.
+ *
+ * WHAT IT IS FOR: `src/opt/select_engine.c`'s `forces_captures`. A pattern
+ * whose every group is dead promises capture pairs that NO MATCH CAN SET, so
+ * it does not need the capture-recording engine — the DFA can promise the same
+ * permanently-unset pairs (see `dfa_artifact_ncaps`). PCRE2 agrees about what
+ * is promised: MEASURED on 10.46, `(?(DEFINE)(?<g>a))(?&g)` has CAPTURECOUNT 1
+ * and answers g1 UNSET, and `(?(DEFINE)(?<g>a))(x)(?&g)` has CAPTURECOUNT 2
+ * with g1 UNSET and g2 SET — so the numbering a user sees does not shift and
+ * the dead entry does not disappear.
+ *
+ * THE POLARITY IS NAMED FOR THE SAFE ANSWER. `true` ("something is live")
+ * keeps the VM, which is what every capture-bearing pattern gets today, so a
+ * walk that over-reports costs an engine and never a wrong span. A walk that
+ * UNDER-reports puts a writable group on an engine that cannot record it,
+ * which is a lost capture — the failure the sabotage row over this function
+ * plants, and the reason the `A_REP` test below is `rmax == 0` exactly and not
+ * "a small maximum". */
+bool pcrec_has_live_capture(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CAP:
+            return true;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF:
+        /* CAPTURE-TRANSPARENT (§3.1), and no descent — see the header. */
+        case A_CALL:
+            return false;
+        case A_REP:
+            /* THE ONE ARM THAT PRUNES. Zero repetitions emit no code, so
+             * nothing below can be written. */
+            if (a->u.rep.rmax == 0) return false;
+            a = a->l;
+            continue;
+        case A_LOOK:
+        /* A LOOKAROUND BODY'S GROUPS ARE LIVE. MEASURED on 10.46:
+         * `(?=(a))a` on "a" answers g1 = (0,1) — an assertion that SUCCEEDS
+         * leaves its captures set — so its body is walked like any other. */
+        case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (pcrec_has_live_capture(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (pcrec_has_live_capture(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        /* No default arm — this file's header rule. */
+        return false;
+    }
+}
+
+/* ---- [DD-14 wave G] does this tree carry a LINKED (non-spliced) call? ----
+ *
+ * `pcrec_has_call`'s NARROWING, and the narrowing is the whole of wave G's
+ * engine story. §8.1 marks every `recursion` registry row VM_ONLY on a
+ * structural argument — `^(a(?1)?b)$` generates a^n b^n, which is not regular
+ * — and §8.2 forces the prefilter off on the argument that erasing a call
+ * gives a DIFFERENT language, not a bigger one. BOTH arguments are about a
+ * call whose callee has no finite inlining. A SPLICED call (design §6.3: the
+ * callee is not in a cycle and the expansion fits the budget) has one, it is
+ * EXACT, and `src/ir/nfa.c`'s `A_CALL` arm builds it — so a pattern all of
+ * whose calls splice is exactly as regular as the pattern with the calls
+ * written out by hand, which is what §8.3 MEASURED when 8 of its 15 inlined
+ * equivalents compiled to pcrec's pure DFA.
+ *
+ * SO THE QUESTION IS NOT "IS THERE A CALL" BUT "IS THERE ONE THAT IS STILL A
+ * JUMP", and this predicate asks that one. It reads `u.call.link`, so it is
+ * only meaningful AFTER `pcrec_callgraph_build` — which is why that pass moved
+ * ahead of `pcrec_select_engine` (see src/core/compile.c). Before the graph
+ * runs, every node still carries the arena's `CALL_SPLICE`, which would be the
+ * UNSOUND answer here; there is no caller in that window and there must not be
+ * one, so this comment is the guard rather than an assertion the signature has
+ * no `Ctx` to raise.
+ *
+ * IT DOES NOT FOLLOW `.body`, design §4.4's rule, and here that is exact
+ * rather than conservative: a call nested inside a callee is an `A_CALL` NODE
+ * in this tree at its own lexical position, so this whole-tree walk reaches it
+ * anyway — and following the edge would hang the predicate on `(a(?1))`. */
+bool pcrec_has_linked_call(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_CALL:
+            return a->u.call.link != CALL_SPLICE;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF:
+            return false;
+        case A_LOOK:
+        case A_CAP: case A_REP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (pcrec_has_linked_call(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (pcrec_has_linked_call(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        /* No default arm — this file's header rule. */
+        return false;
+    }
+}
+
 bool pcrec_has_call(const Ast *a)
 {
     for (;;) {

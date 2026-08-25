@@ -99,8 +99,36 @@ enum { SELECT_MAX_ROUNDS = 8 };
 static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
                                 const char **why)
 {
-    (void)a;
     if (!cx->want_caps || cx->ncap == 0) return ENGM_DFA | ENGM_VM;
+    /* [DD-14 wave G] THE DEAD-CAPTURE ELISION, and it is the one place this
+     * row looks at the TREE.
+     *
+     * The paragraph above says this analysis deliberately does not hunt for
+     * `A_CAP`, because the question is whether the artifact will PROMISE group
+     * offsets. That is still the question and the answer has not changed: the
+     * artifact promises them either way, and `dfa_artifact_ncaps` is what
+     * makes the DFA able to. What this line adds is the second half nobody had
+     * to ask while every promised group was writable — CAN A MATCH EVER SET
+     * ONE? A group whose only occurrence sits under a zero-count repeat has no
+     * emitted instruction that assigns it, and a subroutine call to it is
+     * capture-transparent (§3.1, MEASURED through the live ovector), so the
+     * honest value of every pair it promises is PERMANENTLY UNSET. An engine
+     * that cannot record captures can promise that perfectly well.
+     *
+     * THIS IS THE SPECIMEN'S WHOLE STORY. The RFC 5322 email pattern factored
+     * with `(?&name)` calls has four named definitions under `{0}`, all four
+     * dead; without this line it forces the VM, and with the VM it loses the
+     * prefilter (~23x on a no-`@` megabyte), the rungs (a STEPS give-up where
+     * the DFA answers in 4 ms) and a frame per iteration. With it, and with
+     * every call SPLICED, the pattern compiles to the same DFA the
+     * hand-inlined original does.
+     *
+     * IT IS NOT GATED ON THERE BEING A CALL, and that costs something honest:
+     * `(a){0}b` and `^(?(DEFINE)(?<w>x))a$` carry no call at all and move from
+     * the VM to the DFA too. Gating would have made this a `recursion` special
+     * case for a fact that is not about `recursion`. The identity gate names
+     * the affected call-free patterns rather than filtering them. */
+    if (!pcrec_has_live_capture(a)) return ENGM_DFA | ENGM_VM;
     *why_pos = cx->first_cap_pos;
     *why = "capture group";
     return ENGM_VM;
@@ -164,6 +192,40 @@ static unsigned forces_captures(Ctx *cx, const Ast *a, size_t *why_pos,
 static const RegRow *first_dfa_excluding(const Ast *a)
 {
     for (;;) {
+        /* [DD-14 wave G] THE ONE NODE WHOSE ROW IS CONSERVATIVE AND WHOSE
+         * PATTERN-LEVEL ANSWER IS A PASS COMPUTED FACT, and it is `(?>`'s
+         * situation exactly, resolved by a different move for a structural
+         * reason.
+         *
+         * D67's rule is that the `engines` column is a per-ROW fact that
+         * "cannot be made true by editing it", and §8.1's argument for marking
+         * every `recursion` row VM_ONLY is sound as a per-ROW fact: `(?1)` in
+         * general names a callee that may be recursive, and `^(a(?1)?b)$`
+         * generates a^n b^n, which is not regular. It is NOT the per-PATTERN
+         * answer, and `(?>` is the precedent for that gap — genuinely VM-only
+         * for `(?>a|ab)c`, genuinely not for `[^"]*+"`. `(?>`'s gap is closed
+         * by `pcrec_discharge_atomic` DELETING the node before this walk runs,
+         * so the column stays conservative and the TREE says the answer.
+         *
+         * A CALL CANNOT BE DELETED THE SAME WAY. Deleting it means copying the
+         * callee's subtree into the tree at every site, which duplicates the
+         * callee's `A_CAP` nodes — two occurrences of one group number, which
+         * is `callgraph.c`'s "two programs for one group" hazard arriving by a
+         * third route — and it would do it before the emitter has said whether
+         * it wants the copy. So the gap is closed by the LINKAGE instead: a
+         * `CALL_SPLICE` node is one whose callee `src/opt/callgraph.c` has
+         * PROVED acyclic and small enough to inline, and `src/ir/nfa.c` builds
+         * exactly that inlining. The fact is computed by a pass and read here,
+         * which is the same shape as the discharge; what differs is that the
+         * node survives, because the VM emitter still needs it.
+         *
+         * THE POLARITY IS THE SAFE ONE. Before `pcrec_callgraph_build` runs,
+         * `link` is the arena's `CALL_SPLICE` — the UNSOUND value — so this
+         * line is correct only because that pass now runs FIRST (src/core/
+         * compile.c). A future reader who moves selection back ahead of the
+         * graph gets a DFA artifact for a recursive pattern; the sabotage row
+         * over this line is what says so. */
+        if (a->k == A_CALL && a->u.call.link == CALL_SPLICE) return NULL;
         if (a->reg && !(a->reg->engines & ENGM_DFA)) return a->reg;
         switch (a->k) {
         case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
@@ -603,7 +665,18 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
          * timing). §8.3's sound construction — splice an acyclic callee's NFA
          * fragment, `Sigma*` for a cyclic one — is wave G's, and it is
          * designed and scheduled rather than waved at. */
-        const bool has_call = pcrec_has_call(root);
+        /* [DD-14 wave G] `pcrec_has_call`'s NARROWING. §8.2's argument — the
+         * call-erased pattern is a DIFFERENT language, not a bigger one, so
+         * the hybrid's DFA cannot be built from it — is an argument about a
+         * call with no finite inlining. A SPLICED call has one and it is
+         * EXACT (`src/ir/nfa.c`'s arm inlines the callee's fragment, and
+         * capture erasure is the only thing it loses, as for every other
+         * construct), so a pattern all of whose calls splice gets the same
+         * prefilter the hand-inlined pattern gets — which is what §8.3
+         * measured the previous line's absence costing at 21x-350x. A pattern
+         * with even one LINKED call still gets nothing, because the machine
+         * for that call cannot be built at all. */
+        const bool has_call = pcrec_has_linked_call(root);
         if (force_on && (has_bref || has_call))
             ctx_fail(cx, why_pos,
                      "-fprefilter cannot be honoured for a pattern containing a "
