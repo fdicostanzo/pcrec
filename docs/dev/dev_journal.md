@@ -14151,3 +14151,17 @@ d87afff → 2219dda → 99eecd5+ as the fixes landed; the close lane's full
 matrix re-measures the merged tree). Light checks on main started 02:02.
 Battery order: sweep ends (~04:00) → pcrecdev2's quiet window → make test
 → make san.
+
+#### Thirty-ninth session, part 23 addendum — light checks on 08ddcbd; one stale anchor (2026-08-25 ~02:05 EDT)
+
+build OK; `make smoke` 6/6 sections; `make strict` clean; anchors: **1
+STALE** — S174_elision_marks_live_group_dead.sh's SAB_BEFORE in
+src/opt/atomic.c no longer resolves. Cause (to be confirmed by the
+re-anchor): the E5 nit re-spelled the prune `rmax == 0` → `rmin == 0 &&
+rmax == 0`, after the lane's 174/184 anchor pass — so "no SAB_BEFORE
+moved" was true when measured and false at merge (lane-rule 4: a stated
+cause is a claim; the checker is the fact). Sent to srG 02:05 to re-anchor
++ re-verify by hand in its worktree (its sweep archives HEAD per row and
+reaches S174 late); the fix is cherry-picked to main on arrival. FB code
+lane `srFBc` spawned 02:2x from 08ddcbd under a BOX HOLD (no heavy suite
+until "GO HEAVY"). [DD-14.G] marked completed (e228404).
