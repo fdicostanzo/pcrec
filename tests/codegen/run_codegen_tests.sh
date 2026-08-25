@@ -2710,6 +2710,8 @@ k37_allow_re=(
     '^[^:]*:[0-9]+:[[:space:]]*if[[:space:]]+grep[[:space:]]'
     '^[^:]*:[0-9]+:[[:space:]]*python3[[:space:]]+-[[:space:]]+"[$]PCREC"'
     "^[^:]*:[0-9]+:[[:space:]]*'[[:space:]]*_[[:space:]]+\"[$]PCREC\""
+    '^[^:]*:[0-9]+:SAB_REACH='
+    '[$]PCREC = clean binary'
 )
 k37_allow_reason=(
     "a MESSAGE naming the PCREC variable in prose (a missing-binary echo/bad/die diagnostic), never a command word"
@@ -2717,6 +2719,8 @@ k37_allow_reason=(
     "spec_mod0's run_c/run_sh pass the PCREC variable as an ARGUMENT to a compiled C check or a sub-script, not as the command word invoking the compiler"
     "run_gen_timeout_tests.sh's grep PATTERN STRING (checks tests/harness/run.sh's source text for the pre-K37 bare-timeout idiom; matches nothing, invokes nothing)"
     "run_lookaround_identity.sh's python heredoc passes the PCREC variable as sys.argv[1] to an embedded python3 sweep -- that sweep's own subprocess.run() bound is python-side, the same recorded gap as above"
+    "a sabotage row's SAB_REACH probe DEFINITION (tests/mech/sabotages/*.sh, [MECH-REACH]): a STRING, executed only by run_sabotage_matrix.sh's single witness-probe executor, which is the one place the bound lives (\"\$TIMEOUT_BIN\" \${SAB_REACH_TIMEOUT:-120} around its bash -c) -- bounding 21 strings individually would be 21 copies of one mechanism"
+    "run_sabotage_matrix.sh's --help PROSE describing what \$PCREC means to a probe (\"\$PCREC = clean binary\"), not a command word"
     "run_bench.sh's COMPILE-SPEED loop: the PCREC variable is a POSITIONAL ARGUMENT to a bash -c heredoc already wrapped in ONE outer \"\$TIMEOUT_BIN\" for the whole loop -- the script's own comment states why per-pattern wrapping was rejected (timeout's fork/exec cost exceeds a base-tier compile)"
 )
 while IFS= read -r k37_hit; do

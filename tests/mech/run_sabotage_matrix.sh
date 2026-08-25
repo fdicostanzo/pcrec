@@ -252,6 +252,8 @@
 # check lies.
 
 set -u
+# [TT-6]/K37: the coreutils timeout every bounded call here uses.
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/timeout_bin.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -697,9 +699,16 @@ run_one() {
             mkdir -p "$work/reach"
             (
                 cd "$work/reach" || exit 97
+                # K37: the probe is the ONE executor of every row's SAB_REACH
+                # string, so the bound lives HERE, once, not in 21 row files.
+                # 120 s is generous for one or two clean-tree compiles plus a
+                # filter; a probe that runs out is exit 124 and scores
+                # UNREACHED with "exited 124" in the reason, never a hang
+                # (S159's shape: a compiler that loops on a witness pattern
+                # would otherwise take the whole matrix with it).
                 TREE="$CLEAN_TREE" PCREC="$CLEAN_TREE/build/pcrec" \
                 REACH_TMP="$work/reach" CC="$CC" \
-                    bash -c "$SAB_REACH"
+                    "$TIMEOUT_BIN" "${SAB_REACH_TIMEOUT:-120}" bash -c "$SAB_REACH"
             ) > "$work/reach.log" 2>&1
             reach_rc=$?
             # ONE REQUIRED SUBSTRING PER LINE, and ALL of them must appear.
