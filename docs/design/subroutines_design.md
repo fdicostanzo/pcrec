@@ -2697,7 +2697,11 @@ still moves every artifact, because the flag is deliberately NOT in
 `emit_info_def`'s `strategy_denials` mask — it can change which ENGINE a pattern
 gets, which is `PCREC_NO_ATOMIC_DISCHARGE`'s shape — so `rx_info.flags` differs
 (2,196 differing). A flag that honestly records itself cannot be compared
-against a compiler that does not have it. The linkage claim is therefore a
+against a compiler that does not have it. **AND THE OBVIOUS REPAIR IS
+RULED OUT**: putting `PCREC_NO_SPLICE_CALLS` into `strategy_denials` would mask
+the second failure away, but that mask is for knobs with NO OBSERVABLE EFFECT
+and this one SELECTS AN ENGINE — masking it to make a sweep comparable would be
+falsifying the artifact's own record of itself to satisfy a check. The linkage claim is therefore a
 SEPARATE section comparing the subject AGAINST ITSELF (2,200 identical past
 exactly one `.flags` line per side), and the half about CALL-BEARING patterns
 lives where it can: §9.2's `A == B`.

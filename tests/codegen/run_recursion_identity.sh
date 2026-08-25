@@ -562,13 +562,32 @@ sweep() { # sweep <label> <extra pcrec args>
 #      `rx_info.flags` reads `8192ULL` on one side and `0ULL` on the other —
 #      MEASURED at 2,196 differing.
 #
-# There is no third spelling: a flag that honestly records itself cannot be
-# compared against a compiler that does not have it. So the linkage axis is a
-# SEPARATE SECTION below, `linkage_axis`, comparing the SUBJECT AGAINST ITSELF
-# — which is the comparison the claim was always about — and the OTHER half of
-# the axis, what the flag does to a CALL-BEARING pattern, lives where it can:
-# `tests/recursion/run_recursion_diff.sh` §5 (`A == B` over 156 patterns and
-# 15,912 cells) and §4's three-cell `--engine=dfa` family.
+# There is no third spelling: **a flag that honestly records itself cannot be
+# compared against a compiler that does not have it.**
+#
+# **AND THE OBVIOUS REPAIR IS THE WRONG ONE — DO NOT RESTORE THE AXIS
+# LITERALLY** (ruled 2026-08-24, and written here because the next reader will
+# propose it). Putting `PCREC_NO_SPLICE_CALLS` into `emit_info_def`'s
+# `strategy_denials` mask would mask reason 2 away and let the flag ride the
+# loop above. That mask is for knobs with NO OBSERVABLE EFFECT — the whole
+# argument for it (src/gen/emit_dfa.c) is that two artifacts which behave
+# identically must not differ in their reflection surface. This flag SELECTS AN
+# ENGINE: `--engine=dfa -fno-splice-calls '(a)(?1)'` refuses where
+# `--engine=dfa '(a)(?1)'` compiles. `rx_info.flags` records it for the same
+# reason it records `PCREC_NO_ATOMIC_DISCHARGE`, which is the one other member
+# of the deny family with that property. **Masking it to make this sweep
+# comparable would be falsifying the artifact's own record of itself to satisfy
+# a check** — the check-design failure this file exists to be an instance of the
+# opposite of.
+#
+# So the linkage axis is a SEPARATE SECTION below, `linkage_axis`, comparing the
+# SUBJECT AGAINST ITSELF — which is the comparison the claim was always about —
+# and the OTHER half, what the flag does to a CALL-BEARING pattern, lives where
+# it can: `tests/recursion/run_recursion_diff.sh` §5 (`A == B` over 156 patterns
+# and 15,912 cells, span and every group span) and §4's three-cell
+# `--engine=dfa` family. Between them the linkage claim is covered on both
+# populations; what is NOT available, and is not worth buying at that price, is
+# a byte comparison against a compiler from before the flag existed.
 # ============================================================================
 # THE LINKAGE AXIS — THE SUBJECT AGAINST ITSELF ([DD-14] wave G)
 # ============================================================================
