@@ -29,6 +29,11 @@ only script in that section; the byte-identity gate moved to the opt-in
 `run_dupnames_diff.sh` — see "The backrefs behavioural suite" below; that
 module's byte-identity gate is likewise opt-in as
 `make test-backrefs-identity`),
+`make test-recursion` ([DD-14]: `tests/recursion/run_recursion_diff.sh`, the
+module's behavioural instrument — it carries the `--no-captures` axis the
+`.rxt` format has no directive for, the `--engine=dfa` refusal by name, and
+the depth-capacity probe; that module's byte-identity gate is opt-in as
+`make test-recursion-identity`, see "The recursion landing gate" below),
 `tests/codegen/run_codegen_tests.sh`
 (structural assertions that behaviour-preserving optimizations are actually
 PRESENT in the emitted C — see that directory's CLAUDE.md), and
@@ -1052,6 +1057,123 @@ Corpus 1774 patterns; 124 backref-bearing, 1650 backref-free. POSITIVE CONTROL:
 the reference REFUSES all 124, so a zero-difference result is a measurement
 against a genuinely different compiler rather than a build compared with
 itself.
+
+## The recursion landing gate ([DD-14], 2026-08-24) — OPT-IN, FOUR axes, and its archived result
+
+`tests/codegen/run_recursion_identity.sh` is module `recursion`'s byte-identity
+gate, and the third in the tree whose reference is a PINNED COMMIT rather than
+a `-D` knob. It is NOT part of `make test`. Run it on demand:
+
+    make test-recursion-identity
+    RECURSION_IDENTITY_REF=<sha> make test-recursion-identity   # a moved base
+
+**IT LANDED IN TWO STEPS ON PURPOSE.** Wave D landed the DEFAULT-axis SEED so
+the claim had a standing home in the tree rather than living only in a lane's
+scratch run, with its own header saying wave E was expected to GROW it. Wave E
+grew it: the other three axes, the D37 stamp strip, a per-axis positive
+control, and the classifier's own self-test. Nothing about the reference, the
+pin or the classification rule changed in kind.
+
+**WHY IT IS OPT-IN AND WHY THE REFERENCE IS A COMMIT** — the same ruling
+`test-atomic-identity` and `test-backrefs-identity` carry (ASK-4). NO STAGE OF
+THIS MODULE RUNS ON THE CONTROL POPULATION: a call-free pattern builds no
+`A_CALL`, and the call-graph pass returns immediately when `pcrec_has_call` is
+false. A `-D` knob would gate DEAD CODE and the sweep would report 100%
+identical no matter what was sabotaged — the blindness `tests/mech/CLAUDE.md`
+records, measured at 1175/1175 on one wave.
+
+**THE PIN IS `ac4917d`, AND IT IS NOT A PRE-`[DD-14]` COMMIT.** It is the last
+commit whose `src/` carries the `A_CALL` KIND with no PRODUCER anywhere
+reachable — wave A2's tagged-union member and walker arms, before wave B+C's
+ports and wave D's `\g` wiring. That choice is what lets this gate have NO
+RETIREMENT GUARD where its three siblings need one: those three predate
+`[DD-14]` wave A's ABI event (`PCREC_ERR_RECURSE`, `ERR_FLOOR` −4 → −5,
+`PCREC_ERR_INTERNAL`, main `0c75c96`) and no pin before it can ever again be
+byte-identical to a subject tree that carries it. `ac4917d` is POST that event
+by construction, so the event is baked into both sides of every comparison and
+cannot retire this gate. A future ABI break past `ac4917d` would need its own
+guard.
+
+**FOUR AXES** (design `subroutines_design.md` §9.1, mirroring the `[M6.6.2]`
+ASK 4 ruling): `default`, `--engine=vm`, `-fno-prefilter` and `--no-captures`.
+The third is not ceremonial — §8.2 forces the prefilter OFF for a call-bearing
+pattern, which is a touch on `select_engine.c`, and EVERY pattern goes through
+that file; the axis that pins the prefilter constant is the one that localises
+a predicate that over-fires. The fourth is the backrefs-precedent axis: §4.3
+edits `pcrec_bref_mark`'s union, which is `--no-captures`' own machinery, and a
+mark-set edit that over-marks makes `--no-captures` keep slots it used to
+delete.
+
+**THE POSITIVE CONTROL RUNS ON EVERY AXIS**, not once: §9.2's control is that
+the pre-module reference REFUSES every call-bearing pattern (`ctl_bad == 0 &&
+ctl_ok == nc`), and "refuses" is an answer the axis flags could in principle
+change, since `--no-captures` and `-fno-prefilter` both reach `select_engine.c`
+where a refusal lives. Without it the gate's headline claim — "a call-free
+pattern is unmoved" — is trivially true and worth nothing.
+
+**THE CLASSIFIER MASKS CHARACTER CLASSES AND TESTS ITSELF.** Design §0.3 item 9
+is the census's own MEASURED instrument defect: a naive `\g<` scan counts
+`tests/backrefs/octal_class.rxt`'s `^[\g<1>]$`, where the class doorway makes
+those four bytes literal escapes, as a call. The classifier inherits the defect
+unless it masks classes, so a 19-row self-test runs BEFORE it classifies
+anything — `^[\g<1>]$` and `^[(?&x)]$` are call-free, `a[b]\g<1>` is not, `(?>`
+is an atomic group and not a call (the row this classifier's first draft got
+wrong), and an unrecognised `(?` tail FAILS SAFE toward the call bucket.
+
+**IT COMPARES RAW AND STRIPPED, AND REPORTS THE DIFFERENCE.** The ruled
+comparison (§9.1) is byte-identity past D37's three feature-stamp lines, with
+the filter asserted to remove exactly three from each side. This gate makes
+BOTH comparisons and counts `stamp-moved` — the pairs that differ RAW and agree
+STRIPPED, i.e. whose only difference is the stamp. It is 0 on every axis, and
+unlike `backrefs` it is *expected* to be: module `recursion`'s registry rows
+PREDATE the module (P4 measured all 26 as VM_ONLY before any producer existed),
+so `render_modules`' first-row walk never moved the name, where `backrefs`' two
+new `RK_ESC 'g'` rows DID move it. A nonzero `stamp-moved` is a FAILURE here
+rather than a note; wave F adds registry rows and must say so in its commit.
+
+**THE ARCHIVED RESULT** — measured 2026-08-24 on `lane/srE`, against a
+reference compiler built from the pinned commit `ac4917d`:
+
+| axis | same | differing | refused by both | refusal mismatch | stamp-filter-bad | stamp-moved |
+|---|---|---|---|---|---|---|
+| `default` | 2200 | 0 | 242 | 0 | 0 | 0 |
+| `--engine=vm` | 2201 | 0 | 241 | 0 | 0 | 0 |
+| `-fno-prefilter` | 2201 | 0 | 241 | 0 | 0 | 0 |
+| `--no-captures` | 2200 | 0 | 242 | 0 | 0 | 0 |
+
+`checks passed: 8  checks failed: 0`, rc 0. Corpus 2610 patterns; **168
+call-bearing** (floor 60), **2442 call-free** (floor 700). Classifier self-test
+22/22. POSITIVE CONTROL on all four axes: the reference REFUSES all 168
+call-bearing patterns, `ctl_bad == 0` and `ctl_ok == 168` on each.
+
+**THE CALL-BEARING POPULATION MOVED 136 → 168 WHEN WAVE F LANDED**, and the
+mechanism is worth naming because it is the gate working rather than the gate
+drifting: D71 item 4 made `(?(DEFINE)` module `recursion`'s, so the classifier
+grew a negative lookahead in its conditional arm and every DEFINE-bearing
+pattern — INCLUDING four with no call in them at all — moved out of the bucket
+required to be byte-identical and into the bucket the reference must refuse.
+The gate found those four itself, as refusal mismatches, before the classifier
+was fixed. The self-test carries F's arm as three of its rows, so the fix is
+exercised rather than merely present, and one of them (`^[(?(DEFINE)a)]$`)
+checks that the class mask reaches the newest doorway too.
+
+**EXERCISED IN THE FAILING DIRECTION**, which is the half a green run cannot
+supply (measured before the wave-F rebase, on the 2439-pattern call-free
+population — the plant is in a path every call-free artifact takes, so the
+reading does not depend on which corpus generation it ran against). One byte of
+an emitted comment was changed on a path every call-FREE artifact takes (`emit_dfa.c`'s `"/* Generated by pcrec. Pattern: "` → `",
+Pattern: "`), and the gate was re-run whole: `checks passed: 4  checks failed:
+8`, rc 1, every axis at `same=0` (`default` 2199 differing, `--engine=vm` 2200,
+`-fno-prefilter` 2200, `--no-captures` 2199). The four PASSes are the four
+positive controls, and their staying green is the right shape rather than a
+hole — the control is a claim about the REFERENCE and the planted byte was in
+the SUBJECT, so a control that went red would mean the gate's two halves were
+reading each other. Each axis fired its floor check as well, which is a second
+and independent reason the run is red. Reverted before the green run above.
+
+**THE SECOND CONTROL IS NOT HERE AND IS NOT WAVE E'S.** §9.2's SPLICE-vs-LINKAGE
+`A == B` over the corpus needs the `-fno-splice-calls` axis §6.3's linkage rule
+introduces, which is wave G's. §9.3's sabotage rows carry that load until then.
 
 ## The backrefs behavioural suite ([M6.5.2], 2026-08-22)
 

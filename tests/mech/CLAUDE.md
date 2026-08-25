@@ -1563,6 +1563,14 @@ close on the branch's own tree:
 | **DETECTED (19)** | S102, S143, S144, S145, S146, S147, S148, S149, S154, S155, S156, S158, S159, S161, S162, S163, S165, S166, S168 |
 | **UNDETECTED (7)** | S150, S151, S152, S153, S157, S160, S164 |
 
+**[DD-14 WAVE E] S157 HAS SINCE CLOSED AS DETECTED — 20/6.** See the wave E
+section at the end of this file. The row's own instruction ("if the matrix ever
+reports NOW DETECTED here, some wave built that witness: re-measure, then flip
+this to DETECTED") is what was followed, and the witness is the one the search
+below had ruled out for the wrong reason. The table above is left as the
+wave B+C reading, because the wave E finding is that the READING was
+incomplete, not that the measurement was wrong.
+
 **AN UNDETECTED ROW HERE IS NOT A REGRESSED GUARD.** This directory's standing
 reading of `UNDETECTED` — "a guard regressed and is the thing to go fix" — is
 right for a row whose population is known adequate. All seven of these are the
@@ -1594,7 +1602,11 @@ and each stays in the matrix so a later wave's cell can flip it. In one line eac
   `A_ATOMIC(A_REP(...))` and `vm_lifts` routes the cut, declining on
   `vm_nullable(r->l)` — the call-graph fixpoint, which is **S156's** arm and IS
   detected. possessify's decline governs AUTOMATIC possessification only, whose
-  hang shape this corpus does not contain.
+  hang shape this corpus does not contain. **CLOSED AS DETECTED AT WAVE E** —
+  the last clause is where the reading stopped a step early: the corpus does not
+  contain the hang shape and never will, but the automatic path's failure is a
+  DELETED MATCH rather than a hang, and that shape a corpus can hold. See the
+  wave E section below.
 - **S160** (revdet stops declining a call) — `rd_shape` is one of FIVE
   independent declines (`rd_reverse`'s own `ctx_fail`, `rd_alt_disjoint`,
   `vm_revdet_fits`), and no corpus quantifier body carrying a call is otherwise
@@ -1620,3 +1632,60 @@ nothing about the guard it names**, and only running it says which one you wrote
 **S102 WAS RE-HOMED.** Its anchor sat in `select_engine.c` on a line this wave
 rewrote (`fit.prefilter` now also refuses a call-bearing pattern). It is the
 backref twin of the new **S165**, and both are DETECTED.
+
+## [DD-14 wave E] S169, and S157 closing as DETECTED (20/6)
+
+Wave E adds **one** row and flips **one**.
+
+**S169 — `S169_root_minw_unchecked.sh`, the [DD-14.EMPTY] root check.**
+`src/gen/emit_vm.c` stops emitting the search entry's ROOT minimum-width
+comparison, so an empty-language pattern with no quantifier to carry an MRL
+clamp runs until the resume-frame buffer gives up instead of answering NOMATCH.
+**Its signature is a SPLIT one and that is the row's design**: exactly TWO of
+`leftrec.rxt`'s three empty-language cells go red (the direct `^((?1)a)$` and
+the indirect p/q cycle) and the third (`^(a?(?1)b)$`) stays GREEN, because its
+`a?` emits an MRL clamp and it never depended on this site. **Three red means
+the MRL machinery was cut, not this check** — a distinction no single-cell row
+could make, and the reason the target is the whole file rather than one cell.
+
+**S157 FLIPS TO DETECTED, and the interesting part is why the wave B+C search
+missed the witness.** That search was right that `(?&g)*+` never reaches
+`possessify.c`, and right that `possessify`'s decline governs only the
+AUTOMATIC possessification of an ordinary quantifier. Where it stopped a step
+early was in looking for the HANG. Under the sabotage the quantifier that gets
+wrongly possessified is not the one over the call at all — it is the **`a?`
+inside the callee**, made to look prefix-free by a call whose first set has been
+emptied — and the consequence is a **deleted match**, which is a shape a corpus
+can hold. MEASURED both ways on 2026-08-24 (clean binary vs. both-arms-
+sabotaged, same tree, same flags):
+
+| cell | subject | clean | sabotaged |
+|---|---|---|---|
+| `^(a?)(?1)+a$` | `"a"` | (0,1), group 1 = (0,0) | **NOMATCH** |
+| `^(a?)(?1){2}a$` | `"a"` | (0,1) | **NOMATCH** |
+| `^(a?)(?1)*$` | `"aaa"` | match | match — `RX_VM_STRATS` 0x2 → 0x3, **no answer moves** |
+
+The third row is the general lesson and is kept in `quantified.rxt` for it: the
+sabotage's most VISIBLE effect (a moved strategy stamp) is its least
+OBSERVABLE one, and a witness cell built around the visible effect would have
+left the row UNDETECTED for ever. **What makes the first two work is a
+trailing literal that needs the `a` back** — the backtrack has to be
+load-bearing before a possessification can delete anything.
+
+**MEASURED, D69 tier 3, 2026-08-24 on `lane/srE` at `d0a8e36` (the lane's PRE-REBASE head; wave F touched none of these rows' `SAB_FILE`s or harness targets, so the reading carries)**: the 80 rows
+`rows_for.sh` names for this lane's touched paths (`src/gen/emit_vm.c`,
+`tests/recursion`, `tests/codegen`, `tests/prefilter`), run one row per
+invocation at `PROCS=4` — **80/80 with `unexpected: 0`, `anomalies: 0`,
+`oracle-skipped: 0`**. Six report `undetected: 1`, and they are exactly the
+six the table above still lists: S150, S151, S152, S153, S160, S164. S157 is
+DETECTED in that run. **S169** is DETECTED at `corpus:2fail/5pass` —
+the two-red-one-green signature its own header predicts, arriving from a run
+rather than from reading the row. **S165** is DETECTED at
+`corpus:361fail/50pass, recdiff:18fail/1pass`.
+
+**THE READING FOR OTHER `UNDETECTED` ROWS.** Six remain (S150, S151, S152,
+S153, S160, S164). S157's closure does not make them likelier to close; it
+changes what to try. The question a search should ask is not "can I reach the
+failure the row's `SAB_DOC_FIGURE` predicts" but "what does the sabotage
+actually do to an answer" — S157's predicted failure (a hang) was genuinely
+unreachable and its real one (a deleted match) was two cells away.

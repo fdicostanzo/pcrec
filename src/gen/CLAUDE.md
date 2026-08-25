@@ -1117,6 +1117,63 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
     side effect), since D46's observability extends to the debug listing
     too. Tests: tests/prefilter/.
 
+    **[DD-14 wave E] A FOURTH OFF-ROUTE, AND IT IS TESTED BEFORE THE TWO
+    FLAG ROUTES** for the reason `[M6.5.2]`'s backreference route is: no
+    flag explains it, so naming one is a diagnostic lie. A CALL-BEARING
+    pattern has no prefilter under ANY invocation — erasing a call is not a
+    loose superset but a DIFFERENT language (`subroutines_design.md` §8.2:
+    `a(?1)b` with group 1 = `x` matches `"axb"`, and the erased `ab` does
+    not) — and `-fprefilter` REFUSES rather than overriding. MEASURED on
+    this branch before the arm existed: every call-bearing pattern compiled
+    under `auto` listed `NO (--engine=vm)`, naming a flag the caller had not
+    passed. `VmStamp.has_call` is read from `pcrec_has_call(root)` and NOT
+    from `enc_mask` like its `has_bref` neighbour, because a call leaves no
+    residual encoding entry — the AST predicate is the one source
+    `select_engine.c` forces the prefilter off from, so the listing reports
+    the same fact rather than a second derivation of it.
+    Tests: tests/recursion/prefilter.rxt, sabotage row S165.
+
+  - **[DD-14.EMPTY] THE ROOT MINIMUM-WIDTH CHECK AND ITS STAMP**
+    (`pcrec_emit_vm`; sabotage row S169). When `pcrec_minw(root)` is at the
+    analysis ceiling (`PCREC_MINW_MAX`, 2^40) the emitted `<prefix>_search`
+    gains ONE line before it touches a frame: `if ((unsigned long
+    long)(subject_length - search_from) < <PREFIX>_VM_ROOT_MINW) return 0;`,
+    and the artifact stamps `<PREFIX>_VM_ROOT_MINW` (a NUMBER, because the
+    guard READS it — a stamp the artifact only talks about can drift from
+    what the artifact does) under an SR-8-shaped comment saying "root minw
+    unbounded: matches nothing". `--emit-ir` carries the same fact as a
+    `; root minw` line off the same value.
+
+    **THE READ ORDER IS THE WHOLE MECHANISM.** `pcrec_minw` reads a call's
+    contribution off `u.call.minw`, the fixpoint `pcrec_callgraph_build`
+    caches on the node — and that pass runs AFTER `pcrec_select_engine` and
+    BEFORE this emitter (`src/core/compile.c`). Asked at engine selection
+    the three empty-language cells of `tests/recursion/leftrec.rxt` answer
+    1, 1 and 0 (the arena's zero: sound, since this analysis's safe
+    direction is under-estimating, but useless — it never reaches the
+    ceiling, so a root check there can never fire). Asked here they answer
+    `PCREC_MINW_MAX`. The `[DD-14.EMPTY]` plan row named engine selection as
+    the site and was wrong about it.
+
+    **IT IS A WIDTH COMPARISON AND NOT AN UNCONDITIONAL `return 0`**, and
+    the difference is a correctness one. The ceiling is reached by TWO
+    routes — the call fixpoint's genuine infinity, and `mrl_sat_add`/
+    `mrl_sat_mul` SATURATION on a pattern whose true minimum is merely
+    enormous — and the value cannot distinguish them. The comparison is
+    exactly right on both and needs no distinction; an unconditional return
+    would be a miscompile on the second for a subject of 2^40 bytes, which
+    `size_t` can represent.
+
+    **IT IS EMITTED CONDITIONALLY, AND THE CONDITION IS A BENEFIT GATE
+    RATHER THAN A SEMANTIC ONE.** Emitting it for every artifact is
+    strictly more general and would move bytes on every pattern in the
+    tree, which the four standing byte-identity gates forbid. MEASURED: of
+    the 2,568 distinct `pattern` lines under `tests/` at the time it landed,
+    exactly four reach the ceiling and all four are call-bearing — so no
+    call-free artifact gains a byte, and `emit_dfa.c` needs no arm at all
+    (`A_CALL` is structurally VM_ONLY, so a pattern that can reach the
+    ceiling can only reach this emitter).
+
 - **emit_dfa.c** — both engine emitters (emit_unanchored, emit_attempt), the file-scope/per-engine naming helpers, shared table/label helpers, header/comment/prologue emission. **[STD1] phase A (D37, 2026-08-13)** added the ARTIFACT STAMP: `emit_feature_comment` (a `/* Feature set: NAME (modules: LIST) */` line, in both the .c and, when paired, the .h — mirroring the existing pattern-comment convention) and `emit_feature_macros` (`#define PCREC_FEATURE_SET`/`PCREC_FEATURE_MODULES`, .c ONLY, so a .c that `#include`s its own .h never sees them twice). Both read `pcrec_enabled_set_label`/`pcrec_enabled_set_modules` (src/parse/enabled.c) — the one source for "what does the currently-installed mask mean as names" — rather than recomputing anything here. Emitted unconditionally, including for a bare invocation (which stamps `"none"`, the phase-A default): the point of D37 is that NO artifact is ambiguous about what it was built with, and case10's old `--features all` byte-identity pin (tests/cli/) was updated to compare past these 4 stamp lines rather than the whole file, since the stamp differing IS the fix, not a regression, for a base-tier pattern that never engages the gate at all. **[M4.4] (docs/design/match_api_m4.md, the MATCH-API FREEZE, 2026-08-14)** landed the announced API break mechanically: `emit_span_typedef` is DELETED (`<prefix>_span` retires, D44.2) in favor of `<prefix>_search`'s FINAL `ptrdiff_t (*caps)[2]` fourth-parameter shape; `emit_rx_abi_types` emits the six fixed ABI types once per file under the prefix-independent guard above; `<prefix>_match` and `<prefix>_match_caps` (new, unconditional) are thin wrappers that call through the existing `<prefix>_search` rather than a second, genuinely-anchored automaton — correct by construction, since `<prefix>_search`'s own leftmost-first priority makes "the reported start equals the requested position" exactly equivalent to anchored matching, not an approximation of it; `<prefix>_info` (new, one `.rodata` `struct rx_info` instance per artifact — see the deviation note below) reflects the compiled `pcrec_options.flags`, encoding, pattern text (via a new genuine C-string-literal escaper, `emit_c_string_literal` — NOT `emit_pattern_comment`, which is a comment escaper only, unsafe for a string literal), group counts, and engine choice. **[DEVIATION, REPORTED]**: `struct rx_info` is emitted WITHOUT a bare `typedef` alias, unlike the other five ABI types — `<prefix>_info` under the DEFAULT prefix `"rx"` is the literal identifier `rx_info`, and a bare typedef of that name cannot coexist with a variable of that same name in one C scope (verified directly against gcc: "redeclared as different kind of symbol"). Struct TAGS live in a separate C namespace from ordinary identifiers, so `struct rx_info { ... };` (a tag, no typedef) and a variable named `rx_info` coexist with no conflict; every reference to the type (`emit_info_decl`, `emit_info_def`) spells it `struct rx_info`, never the bare form match_api_m4.md §5's literal C snippet shows. This is the ONE of the six ABI types where the collision is reachable, because "info" is the only per-artifact entry-point suffix that is also, verbatim, a whole fixed ABI type name — flagged for the manager/panel, not silently resolved.
 
   **[ENG-BREP] the STRATEGY-DENIAL mask.** `emit_info_def` masks

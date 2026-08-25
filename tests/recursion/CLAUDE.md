@@ -109,10 +109,20 @@ re-measuring it.
 - **`atomicity.rxt`** — the isolated discriminator (a callee reachable only
   by the call) over three quantifier shapes, the depth-retry cell, and all
   four atomic controls (nomatch).
-- **`leftrec.rxt`** — three give-up cells (direct, indirect, nullable-
-  prefix), each `gu frames` per D71.1 (see "The `gu frames`-vs-`recurse`
-  note" below); the `^(a|(?1)a)$` on `"a"×200` cell that MUST match; and
-  the right-recursion contrast that is NOT a give-up.
+- **`leftrec.rxt`** — three EMPTY-LANGUAGE cells (direct, indirect,
+  nullable-prefix), the `^(a|(?1)a)$` on `"a"×200` cell that MUST match, and
+  the right-recursion contrast. **[DD-14 wave E] ALL THREE EMPTY-LANGUAGE
+  CELLS ARE NOW RULED `n`, NOT `gu frames`.** At wave B+C the first two gave
+  up and the third answered NOMATCH, decided by whether the pattern happened
+  to carry a quantifier for an MRL bound to ride on — a shape with nothing to
+  do with recursion. `[DD-14.EMPTY]` removed the non-uniformity at its root:
+  `<prefix>_search` compares the remaining subject against the ROOT's minimum
+  width and answers NOMATCH before pushing a frame. MEASURED: all three roots
+  report `pcrec_minw` = `PCREC_MINW_MAX` (2^40) once `pcrec_callgraph_build`
+  has run, and exactly four of the corpus's distinct patterns reach that
+  ceiling — these three plus `mrl.rxt`'s infinity control. Sabotage row
+  **S169** cuts the site, and its signature is TWO of the three going red:
+  the nullable-prefix cell keeps its own `a?` clamp and must stay green.
 - **`dupnames.rxt`** — design §3.4(c)'s call/reference split (a call
   resolves a duplicated name STATICALLY to the first declaration; a
   reference resolves it dynamically to the first SET member — see
@@ -171,7 +181,18 @@ re-measuring it.
 - **`quantified.rxt`** — design §2.6's twelve quantified spellings, the
   empty-body guard (a nullable or empty callee under `*` terminates), and
   `^(?R)*$`'s unconditional give-up (`gu frames`) — no non-recursive branch
-  exists, so the empty-iteration guard alone cannot save it.
+  exists, so the empty-iteration guard alone cannot save it. **THE ONE `gu`
+  CELL LEFT IN THE CORPUS** after wave E moved `leftrec.rxt`'s two, and the
+  contrast is the point: `^(?R)*$` is a genuine RUNAWAY with a base case, so
+  its language is not empty and no width bound can rule a subject out.
+  **[DD-14 wave E] also carries S157's answer-level witness**: three cells
+  with ORDINARY greedy quantifiers over a call, whose backtrack is
+  load-bearing (`^(a?)(?1)+a$` and `^(a?)(?1){2}a$` on `"a"` need `(a?)` to
+  give its `a` back for the trailing literal). Under sabotage S157 those two
+  answer NOMATCH; the third, `^(a?)(?1)*$`, moves `RX_VM_STRATS` 0x2 → 0x3
+  with EVERY ANSWER UNCHANGED and is kept as the statement of what a corpus
+  CANNOT see — a row resting on it alone stays UNDETECTED for ever, which is
+  where wave B+C's search stopped.
 - **`inlookaround.rxt`** — design §3.4(d)/(e) (a call INSIDE a lookbehind
   needing a width, refusing on a recursive callee; ordinary inside a
   lookahead/atomic group) and §3.5's mirror image (a call TO a group whose
@@ -210,6 +231,19 @@ re-measuring it.
   §2.5 sentence, and every refused callee is variable-width — `a?`, `a|bc`,
   `a*`, or a body built from one); 268 both-refuse; 0 pcrec-only; 0 build
   failures; 0 give-ups.
+- **`prefilter.rxt`** — **[DD-14 wave E]** design §8.2's own counterexample:
+  `a(?1)b` with group 1 = `x` matches `"axb"`, and the call-ERASED pattern
+  `ab` does not — so the erasure is a DIFFERENT language, not a superset, and
+  `select_engine.c` forces `fit.prefilter` OFF whenever `pcrec_has_call`.
+  The counterexample runs through all three doorways (`(?1)`, `\g<1>`,
+  `(?&w)`), because `pcrec_has_call` is an AST predicate and a wiring that
+  reached only one port would pass one block and fail the others. **THE CELLS
+  ARE UNANCHORED ON PURPOSE**: the prefilter exists to find a candidate
+  START, so an anchored pattern never asks it anything and would go green
+  under the very sabotage (S165) these cells exist to catch. §8.3's R09 pair —
+  the inlined `(cat)xcat` (call-free, prefilterABLE today) beside its call
+  form `(cat)x(?1)` — is the control that says the two differ by the CALL and
+  by nothing else, and is where a wave-G splice regression lands first.
 - **`nocaptures.rxt`** — design §4.3's marked-set cells (one-hop, two-hop),
   written on the ORDINARY (captures-on) axis. **Does not and cannot today
   assert the `--no-captures` axis itself** — see "What could not be
@@ -226,10 +260,16 @@ overrode this**: `PCREC_ERR_RECURSE` is reserved and `ERR_FLOOR` moves
 −4→−5 as an ABI fact, but the `call_depth` COUNTER itself is NOT in the
 default artifact — it is a diagnostic-generation-axis-only build (`--trace`'s
 shape), emitted only when asked for. **The DEFAULT artifact's give-up for a
-deep or runaway call is `PCREC_ERR_FRAMES`.** Every `gu` cell in
-`leftrec.rxt`/`quantified.rxt` is therefore written `gu frames "<subject>"`,
-with a comment recording that the diagnostic-axis variant (once it exists)
-would instead read `gu recurse "<subject>"` on the same cell. If Frank
+deep or runaway call is `PCREC_ERR_FRAMES`.** Every `gu` cell is
+therefore written `gu frames "<subject>"`, with a comment recording that the
+diagnostic-axis variant (once it exists) would instead read
+`gu recurse "<subject>"` on the same cell. **[DD-14 wave E] THERE IS EXACTLY
+ONE SUCH CELL LEFT** — `quantified.rxt`'s `^(?R)*$`. `leftrec.rxt`'s two moved
+to ruled `n` when `[DD-14.EMPTY]` landed, and the difference between the two
+kinds is worth keeping straight: a `gu` cell is right for a genuine RUNAWAY,
+which has a base case and a non-empty language and which no width bound can
+rule a subject out of; a ruled `n` cell is right for an EMPTY language, where
+`minw` reaching the ceiling is a compile-time fact about every subject. If Frank
 revisits D71.1 (it is explicitly marked revisitable — "a second diagnostic
 axis wants the [V-H] namespace"), only that comment needs to flip, not the
 cell's pattern or subject.
@@ -389,6 +429,26 @@ left, by three different doors, and the three doors are the point.**
   is pcrec's own artifact behaviour, never an oracle fact.** The cell is live
   in `leftrec.rxt` as a RULED nomatch, rendered by `gen_corpus.py`'s `GU` block
   with `code=None` plus a required `ruling=` citation.
+
+  **[DD-14 WAVE E] AND THE CLASS IT BELONGED TO IS CLOSED TOO** — the cell was
+  a corpus bug, but the reason its two SIBLINGS disagreed with it was a real
+  gap. `^((?1)a)$` and the indirect p/q cycle have the same empty language and
+  the same infinite root `minw`, and they gave up where this one answered in
+  constant time, because an MRL bound has to be EMITTED somewhere and only this
+  cell's `a?` carried a quantifier for one to ride on. `[DD-14.EMPTY]` removed
+  that at the root: `<prefix>_search` compares the remaining subject against
+  the ROOT's minimum width before pushing a frame, so all three answer alike
+  and both siblings are ruled `n` cells now. It is the general MRL bound
+  applied at the root and not an empty-language special case, which is why it
+  is a WIDTH COMPARISON and not an unconditional `return 0` — `PCREC_MINW_MAX`
+  is reached by SATURATION as well as by the fixpoint's infinity, and the value
+  cannot tell the two apart. **The measurement that moved the SITE**: asked at
+  `pcrec_select_engine`, where the plan row put it, `pcrec_minw(root)` is 1, 1
+  and 0 on the three siblings — the arena's zero, because
+  `pcrec_callgraph_build` has not run yet — so a root check there could never
+  fire. Asked in the emitter it is `PCREC_MINW_MAX` on all three. Sabotage row
+  **S169** cuts the site, and its signature is TWO of the three going red: this
+  cell keeps its own `a?` clamp and must stay green.
 - **Cell 1, `^(?:(?<g>ab)){0}ab(?<=(?&g))$`, was parked correctly and its
   charter was right.** A tier-2 over-rejection caused by TIMING: `la_widths`
   runs in the PARSE HOOK, where it must, because that is the only place with a
