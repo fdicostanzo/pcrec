@@ -13735,3 +13735,18 @@ solo → san). Opening: wave G (opus, brief_srG.md — splice +
 dead-capture elision; the bar is the email specimen's byte-identity)
 and the D27 landing (sonnet, brief_sr27land.md — K34 cells parked under
 the ratchet, d27/ rides make test).
+
+RULING (manager, ~22:1x, on srG's measured ASK): the dead-capture
+elision rule is OPTION (i) — FIDELITY. libpcre2 10.46 keeps a DEFINE'd
+group counted, named and UNSET (`(?(DEFINE)(?<g>a))(x)(?&g)`:
+CAPTURECOUNT 2, g1 UNSET, g2 (0,1)); D26 puts capture output at tier 1;
+so dead groups leave ENGINE SELECTION only and the artifact still
+declares them. The specimen bar is restated: byte-identical modulo the
+pattern stamp AND a named capture-declaration filter (~10 lines out of
+51 KB — every DFA table, the prefilter and the search loop identical),
+plus EXACT identity on `--no-captures`. Option (ii) — exact identity by
+making the groups vanish — rejected: a visible tier-1 divergence bought
+for ten lines. Approved en route: a per-splice-site slot family for the
+saved W (nesting impossible outside a cycle, which eligibility excludes);
+the Σ* approximation not built (unreachable — the spliced prefilter is
+exact). Frank may veto.
