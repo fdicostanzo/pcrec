@@ -14174,3 +14174,24 @@ SOURCE edit, not after the last edit one was thinking about. The row's
 meaning is unchanged (hand re-verified: sabotaged 43/2 FAILED on
 tests/captures/basic.rxt, control 45/0). If the sweep reached S174 before
 13e2c30 it will report the anomaly; the lane will name it in its count.
+
+#### Thirty-ninth session, part 24 — [DD-14.FB] code half: emitter interim (2026-08-25 ~02:2x EDT)
+
+srFBc (opus, lane/srFBc from 08ddcbd) reports §11 items 1-9 at 636d08c
+under the box hold (build clean, artifacts -Werror clean, one .rxt file).
+Findings: (1) item 9 = WIDEN, free — depth counters/trail_mark/call_top to
+size_t land in existing padding: resume frame 24 B call-free / 40 B
+call-bearing unmoved (only --trace grows 24→32 / 40→48); design §12 P-3
+("the first implementation clamps") REFUTED. (2) spec §10.4's stamped
+`RX_RESUME_FRAME_SIZE 40` is host arithmetic in an AOT compiler → the
+emitter stamps from the single member list that emits the struct and the
+artifact `_Static_assert`s every stamped number against sizeof/_Alignof —
+a wrong stamp is a compile error naming the fix; that is also S-FB6's
+detector at build time. (3) -fstack-usage on `^(a(?1)?b)$` VM: rx_search
+131,216 B (was 131,248; D73 "unchanged" holds), the buffered chain
+rx_search_in 144 + _run 112 + match_anchored 56 = 312 B (design prototype
+224); DFA rx_search_in 8 B; a^n b^n boundary at n=342/343 reproduced on
+all three routes; rx_info abi=3, 2048/3072, 40/16. Shape: `static
+<fn>_run` + six wrappers (P-2's one-loop rule). Manager: approved with
+three obligations (P-3 refuted line; §10.4 says stamped+asserted; the
+--trace stamp must read 32/48 — show the cell).
