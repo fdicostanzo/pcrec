@@ -68,10 +68,30 @@ cleanup() {
 }
 trap cleanup EXIT
 
-pass=0; fail=0; known=0
+pass=0; fail=0; known=0; skipped=0
 ok()    { echo "PASS: $*"; pass=$((pass + 1)); }
 bad()   { echo "FAIL: $*"; fail=$((fail + 1)); }
 pin()   { echo "KNOWN: $*"; known=$((known + 1)); }
+note()  { echo "NOTE: $*"; skipped=$((skipped + 1)); }
+
+# PREFLIGHT: this suite needs pthreads, and a box without them should get a
+# LOUD SKIP rather than a hard failure -- the same shape run_thread_tests.sh
+# uses for -fsanitize=thread and run_frame_buffer.sh uses for ASan. A missing
+# toolchain feature is not a defect in the artifact under test, and reporting
+# it as one trains a reader to ignore this suite's reds.
+printf '#include <pthread.h>\nstatic void *f(void *p){return p;}\nint main(void){pthread_t t; pthread_create(&t,0,f,0); pthread_join(t,0); return 0;}\n' \
+    > "$WORKDIR/pthread_probe.c"
+# shellcheck disable=SC2086
+if ! $CC -O0 -o "$WORKDIR/pthread_probe" "$WORKDIR/pthread_probe.c" -lpthread >/dev/null 2>&1; then
+    note "[TS-4] SKIPPED LOUDLY: $CC cannot build a -lpthread program on this box, so the 128 KB-thread arms cannot run. Nothing about K33 or about <prefix>_search_in's stack frame is claimed by this run"
+    echo
+    echo "== Summary =="
+    echo "checks passed: 0"
+    echo "checks failed: 0"
+    echo "known states pinned: 0"
+    echo "sections skipped: $skipped"
+    exit 0
+fi
 
 THREAD_STACK=131072   # must match TS4_STACK_BYTES in ts4_driver.c
 
@@ -133,9 +153,17 @@ else
     fi
 
     # ---- arm A: the K33 regression, PINNED --------------------------------
+    # K33 IS A STACK OVERFLOW, SO THE SIGNAL IS PART OF THE CLAIM. Accepting
+    # death by ANY signal would let this arm stay green on an abort, a bus
+    # error or a kill from outside and still report "K33 confirmed" -- three
+    # different events wearing one verdict, which is the mislabelled-evidence
+    # shape DD-2 exists to prevent. A stack overflow on this platform is
+    # SIGSEGV (11), i.e. exit 139; anything else is named and refused.
     a_out="$("$TIMEOUT_BIN" 60 "$WORKDIR/callbearing/ts4" default 2>&1)"; a_rc=$?
-    if [ "$a_rc" -ge 128 ] && [ "$a_rc" -ne 124 ]; then
-        pin "[TS-4] arm A (K33, EXPECTED): the call-bearing artifact's DEFAULT entry dies (signal exit $a_rc) on a $THREAD_STACK B thread with a 684-byte subject it would otherwise MATCH. This is docs/dev/known_issues.md K33 and D73 keeps the stamped default that causes it; arm B is the remedy. Pinned, not passed"
+    if [ "$a_rc" -eq 139 ]; then
+        pin "[TS-4] arm A (K33, EXPECTED): the call-bearing artifact's DEFAULT entry dies of SIGSEGV (exit 139) on a $THREAD_STACK B thread with a 684-byte subject it would otherwise MATCH. This is docs/dev/known_issues.md K33 and D73 keeps the stamped default that causes it; arm B is the remedy. Pinned, not passed"
+    elif [ "$a_rc" -gt 128 ] && [ "$a_rc" -ne 124 ]; then
+        bad "[TS-4] arm A died of SIG$(kill -l "$((a_rc - 128))" 2>/dev/null || echo "?$((a_rc - 128))") (exit $a_rc), NOT SIGSEGV. K33 is a stack overflow and a stack overflow is SIGSEGV here; a different signal is a different event and must not be reported as K33 reproducing. Output: '$a_out'"
     elif [ "$a_rc" -eq 124 ]; then
         bad "[TS-4] arm A TIMED OUT rather than dying or returning — neither the pinned state nor a fix, and the run says nothing about K33"
     else
@@ -156,6 +184,7 @@ echo "== Summary =="
 echo "checks passed: $pass"
 echo "checks failed: $fail"
 echo "known states pinned: $known"
+echo "sections skipped: $skipped"
 if [ $((pass + fail + known)) -eq 0 ]; then
     echo "run_stackdepth_tests.sh: NO CHECKS RAN" >&2; exit 1
 fi

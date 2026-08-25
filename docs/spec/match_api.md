@@ -1078,8 +1078,10 @@ pattern pays nothing (`a(b|c)+d`'s entry is 208 bytes) and a glibc-default
 8 MB main thread is unaffected.
 
 **The remedy SHIPS: it is §10's `_in` entries** ([DD-14.FB], D71 item 2),
-whose own frame MEASURES **144 bytes** — 312 including the two statics
-they call through. A caller on a small thread stack supplies its own
+whose own frame MEASURES **144 bytes at -O2** — 312 including the two
+statics they call through, and 224 at -O3, where gcc inlines the statics into
+both entries (the 131 KB of default storage still never reaches the `_in`
+entry, which is the property that matters). A caller on a small thread stack supplies its own
 storage and the arrays are not on that stack at all; a caller who cannot
 must still size the thread for the artifact or compile with a smaller
 `--backtrack-frames`. **The default path is unchanged and still does not
@@ -1947,6 +1949,18 @@ want a large reservation:
 redundant with it: `frame_capacity` reports `-1` for "no bound at all" on a
 DFA artifact and answers a different question (§6's sentinel-asymmetry
 note).
+
+**A STAMPED SIZE OF `0` MEANS "THIS ENGINE TAKES NO BUFFERS" — CHECK BEFORE
+YOU DIVIDE.** The byte-to-capacity arithmetic above (`bytes /
+<PREFIX>_RESUME_FRAME_SIZE`) is a division by zero on any artifact whose
+engine has no resume stack, which is every DFA artifact. That is not a defect
+in the `0`: it is `rx_info`'s honest signal, and the alternative — a fake
+non-zero size for storage that is never read — would be worse. But it means
+the one-call-site-against-both-engines property this section promises has one
+obligation on the caller's side: **test the size before dividing by it, and
+pass `NULL` when it is `0`.** Nothing is lost by doing so — an `_in` entry on
+such an artifact accepts a descriptor and ignores it, so `NULL` and a
+correctly-sized buffer are the same call there.
 
 **On a DFA artifact the whole surface is present and inert**, which is §4's
 "reserved but unreachable" shape applied again and is what lets a caller

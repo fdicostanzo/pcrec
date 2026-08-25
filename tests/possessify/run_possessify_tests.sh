@@ -176,8 +176,14 @@ if gen fr_on '(x)(?:a|bc){0,4}d' -fno-revdet \
     # function's `strats` helper already explains for PCREC_VM_STRAT_POSSESSIVE:
     # `gen` compiles with `-o <name>.c`, which is SPLIT output. RX_RESUME_FRAMES
     # moved into the header with the caller-buffer sizing surface (spec §10.4),
-    # so the `.c` no longer carries it and reading only the `.c` would compare
-    # two empty strings and report a vacuous failure.
+    # so the `.c` no longer carries it.
+    #
+    # AND READING ONLY THE `.c` WOULD HAVE GONE RED, NOT VACUOUS -- corrected
+    # after the checks critic measured it, because the first version of this
+    # comment claimed a vacuity. The comparison below is arithmetic, and
+    # `[ "" -lt "" ]` is an error, which is false: the check FAILS. What was
+    # lost was the message, which would have read "( -> )" and pointed a
+    # reader at the possessify pass rather than at a macro that moved file.
     bt_on="$(cat "$WORKDIR/fr_on.c" "$WORKDIR/fr_on.h" | sed -n 's/^#define RX_RESUME_FRAMES //p')"
     bt_off="$(cat "$WORKDIR/fr_off.c" "$WORKDIR/fr_off.h" | sed -n 's/^#define RX_RESUME_FRAMES //p')"
     if [ "$(cuts "$WORKDIR/fr_on.c")" -gt 0 ] && [ "$(cuts "$WORKDIR/fr_off.c")" -eq 0 ]; then

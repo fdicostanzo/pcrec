@@ -230,8 +230,24 @@ else
         t800="$(printf '%s' "$row800" | awk '{print $5}')"
         rss800="$(printf '%s' "$row800" | awk '{print $6}')"
         null800="$(printf '%s' "$row800" | awk '{print $7}')"
-        if [ "$r800" = "1" ] && [ "$null800" = "-3" ]; then
-            ok "[DD-14.FB §3/§10.6] an 800,000-byte subject MATCHES through <prefix>_search_in in ${t800}s having touched ${rss800} KB, and the SAME artifact returns PCREC_ERR_FRAMES on it through <prefix>_search — D71 item 2's 'PCRE2-depth recursion with pcrec still never allocating', met"
+        # THE RSS IS BOUNDED, NOT MERELY PRINTED. §10.6's claim is not only
+        # "it matches" but "it touches about 88 MB of a 128 MB reservation" --
+        # the lazy-commit property is the whole reason MAP_NORESERVE is the
+        # worked example. A printed number nobody compares is not a check: an
+        # artifact that touched the entire reservation, or one whose per-level
+        # cost had doubled, would print a different number and still read
+        # green. The window is deliberately wide (the arithmetic predicts
+        # 400,000 x 2 x 40 + 400,000 x 8.982 x 16 = 89.5 MB, and the design
+        # measured 88.6) because this bounds a MAGNITUDE, not a constant:
+        # anything under 40 MB means the walk is not reaching the depth it
+        # claims, anything over 128 MB means it is outside the reservation.
+        fb_rss_lo=40000
+        fb_rss_hi=131072
+        if [ "$r800" = "1" ] && [ "$null800" = "-3" ] \
+           && [ "${rss800:-0}" -ge "$fb_rss_lo" ] && [ "${rss800:-0}" -le "$fb_rss_hi" ]; then
+            ok "[DD-14.FB §3/§10.6] an 800,000-byte subject MATCHES through <prefix>_search_in in ${t800}s having touched ${rss800} KB (within [$fb_rss_lo, $fb_rss_hi] KB, the lazily-committed share of a 128 MB reservation), and the SAME artifact returns PCREC_ERR_FRAMES on it through <prefix>_search — D71 item 2's 'PCRE2-depth recursion with pcrec still never allocating', met"
+        elif [ "$r800" = "1" ] && [ "$null800" = "-3" ]; then
+            bad "[DD-14.FB §3/§10.6] the 800 KB subject matches and is refused through the un-suffixed entry as it should, but it touched ${rss800:-?} KB, outside [$fb_rss_lo, $fb_rss_hi]. Below the floor the walk is not reaching the depth it claims; above the ceiling it is outside the reservation it was given"
         else
             bad "[DD-14.FB §3/§10.6] the 800 KB row reads _in=$r800 un-suffixed=$null800 (want 1 and -3): '$row800'"
         fi
@@ -257,6 +273,12 @@ else
             info "[DD-14.FB] SPEC FINDING (§10.6 vs §10.1): the 684-byte row's un-suffixed control returns 1 (a MATCH), not PCREC_ERR_FRAMES. §10.6's closing sentence claims the un-suffixed entry refuses 'every one of those subjects', but 684 B is exactly the largest subject §10.1 says it MATCHES. The claim holds for the four LARGER rows and not for the first; the same overstatement is in docs/design/frame_buffer_design.md §8"
         elif [ "$null342" = "-3" ]; then
             bad "[DD-14.FB] the 684-byte subject no longer matches through <prefix>_search. §10.1's measured give-up boundary (matches at 684 B, refuses at 686 B) has moved, and D73's release-note numbers with it"
+        else
+            # NEITHER 1 NOR -3 means the row is MISSING or MALFORMED, and
+            # without this arm that read as silence: the two arms above fired
+            # nothing and the section still summed green. A check whose
+            # evidence went missing must say so, not fall through.
+            bad "[DD-14.FB] no usable n=342 row in the reservation driver's output (got '${null342:-<none>}' for the un-suffixed control). The spec-consistency check above measured NOTHING this run, and a missing row is not a pass"
         fi
     fi
 fi

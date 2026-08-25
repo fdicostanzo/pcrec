@@ -331,10 +331,43 @@ if [ "$(bounds_in "$WORKDIR/ceil_def.c")" -gt 0 ]; then
         bad "ruling 2 (b): the retry does not recompute the window ($nprefilter prefilter call sites) -- a stale window is too SMALL, the unsound direction"
     fi
     # (a) the no-prefilter entries default to the subject end.
-    if [ "$(grep -c 'rx_match_anchored(ctx, &run, ctx->len)' "$WORKDIR/ceil_def.c")" -eq 2 ]; then
-        ok "ruling 2 (a): both match-here entries pass ctx->len -- an entry that runs no prefilter defaults to the subject end"
+    #
+    # [DD-14.FB, 2026-08-25] THE CALL MOVED ONE LEVEL DOWN AND THE CHECK
+    # FOLLOWS THE MECHANISM, gaining reach rather than losing it. The caller-
+    # buffer wave made the two anchored ENTRIES wrappers that bind storage and
+    # call a shared static -- `<prefix>_match_run` and
+    # `<prefix>_match_caps_run` -- so the ceiling argument is passed THERE, and
+    # the spelling is `run` rather than `&run` because the static receives the
+    # pointer. The PROPERTY ruling 2 (a) is about is untouched: an entry that
+    # runs no prefilter defaults its ceiling to the subject end.
+    #
+    # WHAT IS NEW, AND WHY THE COUNT STILL READS 2. There are now FOUR public
+    # anchored entries -- `<prefix>_match`, `<prefix>_match_caps` and their two
+    # `_in` siblings -- served by exactly TWO ceiling sites. That is stronger
+    # than the shape this check was written against, where two entries had two
+    # sites: an `_in` entry CANNOT drift from the sibling it mirrors, because
+    # there is no second place for it to pass a different ceiling. So the count
+    # assertion is kept at 2 and two assertions are ADDED to say what the 2 now
+    # means:
+    #   * all four public anchored entries route through the two statics, so
+    #     none of them reaches the implementation on its own;
+    #   * no anchored entry passes any OTHER ceiling -- the only
+    #     `rx_match_anchored` call sites in the file with a ceiling argument
+    #     are the two that pass `ctx->len` plus the search loop's own
+    #     `window_end`, and nothing else.
+    # Checking only the count would have let an `_in` entry acquire its own
+    # call site with a wrong ceiling and still read as 2.
+    mrl_ceil_sites="$(grep -c 'rx_match_anchored(ctx, run, ctx->len)' "$WORKDIR/ceil_def.c")"
+    mrl_run_calls="$(grep -cE '^ *return rx_(match|match_caps)_run\(ctx' "$WORKDIR/ceil_def.c")"
+    mrl_stray="$(grep -c 'rx_match_anchored(ctx, &run' "$WORKDIR/ceil_def.c")"
+    if [ "$mrl_ceil_sites" -ne 2 ]; then
+        bad "ruling 2 (a): $mrl_ceil_sites match-here ceiling sites pass ctx->len, expected exactly 2 (<prefix>_match_run and <prefix>_match_caps_run). An entry that runs no prefilter must default its ceiling to the subject end"
+    elif [ "$mrl_run_calls" -ne 4 ]; then
+        bad "ruling 2 (a): $mrl_run_calls of the four public anchored entries route through the two ceiling-passing statics, expected 4. An entry with its own call site could pass a different ceiling and this check's count would still read 2"
+    elif [ "$mrl_stray" -ne 0 ]; then
+        bad "ruling 2 (a): $mrl_stray anchored call site(s) still take the run state by address, i.e. an entry is calling the implementation directly instead of through its shared static"
     else
-        bad "ruling 2 (a): the match-here entries do not pass ctx->len as the ceiling"
+        ok "ruling 2 (a): exactly 2 ceiling sites pass ctx->len and all 4 public anchored entries (<prefix>_match, _match_caps and their _in siblings) route through them -- an entry that runs no prefilter defaults to the subject end, and an _in entry cannot drift from the sibling it mirrors because there is no second site for it to differ at"
     fi
 else
     bad "the ceiling pattern emitted no bound at all; checks 4a/4b measured nothing"
