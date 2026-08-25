@@ -208,5 +208,11 @@ Append-only where noted; the restart/status-recovery record for the project.
   lives in this directory but is not committed. Committed docs win on any
   disagreement with it.
 
+- `bare_pcrec_survey.txt` — K37's evidence (2026-08-25, lane srMech): the
+  line-numbered list of every bare (unbudgeted) `pcrec` invocation in
+  tests/**/*.sh outside tests/recursion/ — 45 files / 347 call sites at
+  ae9c98c. Data for the harness lane that lands one `pcrec_run` helper;
+  regenerate by grep when it is consumed, then delete this file.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
