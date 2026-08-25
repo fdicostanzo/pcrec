@@ -28,7 +28,7 @@ SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness recursion"
 SAB_HARNESS_TARGET="tests/recursion/captures.rxt"
 SAB_DESC="vm_splice emits the inlined callee body straight to the CALL SITE's continuation instead of to its own exit label, so the |W| trailed restores that follow the exit are never reached. The splice becomes capture-OPAQUE where design 3.1 MEASURED a call to be capture-TRANSPARENT: the callee's writes to the shared capture pairs survive the return."
-SAB_DOC_FIGURE="PREDICTED: captures.rxt goes RED on its group-span lines while most of its m/n spans stay right -- a leaked capture moves what group 1 reports, not where the match is. run_recursion_diff.sh's SS3 sweep (span AND every group span, 1632 cells) and its SS5 A == B section both go red, and SS5's failure names the SPLICE arm specifically, since the LINKAGE arm still restores. Canonical figure owed from run_sabotage_matrix.sh S173."
+SAB_DOC_FIGURE="PREDICTED: captures.rxt goes RED on its group-span lines while most of its m/n spans stay right -- a leaked capture moves what group 1 reports, not where the match is. run_recursion_diff.sh's SS3 sweep (span AND every group span, 1632 cells) and its SS5 A == B section both go red, and SS5's failure names the SPLICE arm specifically, since the LINKAGE arm still restores. Canonical figure owed from run_sabotage_matrix.sh S173. MEASURED BY HAND at the wave (the sabotage applied to a git-archive tree and the file run through tests/harness/run.sh): tests/recursion/captures.rxt 20 passed / 3 FAILED."
 SAB_COUNT=1
 SAB_BEFORE='    vm_emit(v, body_lbl, a->u.call.body, done_lbl);'
 SAB_AFTER='    vm_emit(v, body_lbl, a->u.call.body, next);   /* SABOTAGE S173 */'
