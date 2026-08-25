@@ -1520,7 +1520,7 @@ This annotation is keyed to `\1` and covers the bundled prose row
 
 | syntax | status | becomes |
 |---|---|---|
-| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` `\g<0>` `\g'0'`, the multi-digit and leading-zero spellings `(?10)` `(?01)` `(?00)` `(?+2)` `(?-10)` — CAPABILITY: VM engine only (`--engine=dfa` refuses by name), and RESOURCE: every call is a resume frame that outlives its return, so call depth is bounded by the artifact's frame capacity and a runaway gives up cleanly with `PCREC_ERR_FRAMES` (measured: the RFC 5322 specimen's factored spelling gives up ~2 K iterations in at the 2048-frame default) | `OK-LIMITED` | `PLANNED` |
+| `(?R)` `(?n)` `(?+n)` `(?-n)` `(?&name)` `(?P>name)` `\g<name>` `\g'n'` `\g<0>` `\g'0'`, the multi-digit and leading-zero spellings `(?10)` `(?01)` `(?00)` `(?+2)` `(?-10)` — TWO LIMIT KINDS, both RESOURCE-shaped, plus one CAPABILITY note. (1) RESOURCE, the stamped capacity (D73): every LINKED call is a resume frame that outlives its return, so call depth is bounded by the artifact's frame/trail capacities — 2048/3072 by default, and the TRAIL binds first (measured 2.0 frames vs 9.0 trail entries per nesting level of `^(a(?1)?b)$`, so the default gives up at n = 342, a 684-byte subject). Past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one, and the remedy is the caller-provided buffer ([DD-14.FB]'s `_in` entries, 64 MB `MAP_NORESERVE` matching 800 KB in 0.056 s) rather than a bigger default. (2) RESOURCE, the runaway give-up where PCRE2 CONCLUDES (K34): on some same-position left recursions — `(a\|(?1)a)b` on `"a"`, `^(a\|(?1)a)$` on `"aaaaab"` — libpcre2 10.46 returns a clean NOMATCH and pcrec returns `PCREC_ERR_FRAMES`. A give-up says nothing about the language, so this is not a wrong answer under D26; it is a documented answer, and K34 carries the measured rule (65/65 cells) with the lane's recommendation not to adopt it. CAPABILITY note: `--engine=dfa` refuses each call row BY NAME, but that describes the LINKED form — a spliceable (acyclic) callee is inlined exactly and its pattern gets whatever engine the hand-inlined pattern gets (wave G; see the `(?1)` annotation below) | `OK-LIMITED` | `PLANNED` |
 | `(?R(grouplist))` and capture-retaining forms | `OUT-OF-SCOPE` | — |
 
 <!-- BEGIN GENERATED ANNOTATIONS: subroutine-recursion -->
@@ -1557,7 +1557,7 @@ MEASURED: `--no-captures --engine=dfa '(a)(?1)'` COMPILES;
 axis on which this column is exactly true. `tests/registry/registry_check.c`'s
 engine-capability check asks its refusal under that flag for this reason.
 
-**`(?R)`** (2026-08-24)
+**`(?R)`** (2026-08-25)
 
 **SHIPS since [DD-14]** (design docs/design/subroutines_design.md,
 R34-approved). This annotation is keyed to `(?R)` and covers the bundled
@@ -1574,18 +1574,53 @@ note got wrong is that pcrec's VM is not a plain Pike VM: it is a
 backtracking machine with a resume stack, so a call lowers to a saved
 return site and a shared callee region and needs no new engine.
 
-**TWO LIMITS, AND THE SURVEY ROW NAMES BOTH KINDS.** The CAPABILITY one
-is the engine restriction above. The RESOURCE one is that a call's
+**THE SURVEY ROW NAMES TWO LIMIT KINDS, BOTH RESOURCE-SHAPED, PLUS A
+CAPABILITY NOTE — and this record takes them in that order.** The
+CAPABILITY note is the engine restriction above, and wave G narrowed it
+to the LINKED form (see the `(?1)` record). The FIRST resource limit is
+that a call's
 resume frame OUTLIVES ITS RETURN (design §5.1/§5.3), so recursion and
 call-driven iteration are both bounded by the artifact's frame capacity;
 past it the answer is a clean `PCREC_ERR_FRAMES`, never a wrong one.
 MEASURED at a real size rather than in principle: the RFC 5322 email
-specimen's call-factored spelling gives up about 2 K iterations into a
+specimen's call-factored spelling gave up about 2 K iterations into a
 2000-deep subject at the 2048-frame stamped default
-(docs/design/subroutines_measurements/email_specimen/README.md). D71
-item 2 makes that buffer caller-provided and wave G's splice removes the
-per-call frame for eligible callees, so the limit is `PLANNED` away
-rather than permanent — which is what the `becomes` column says.
+(docs/design/subroutines_measurements/email_specimen/README.md) — and at
+[DD-14] wave G it gives up on NO subject in that population, because a
+spliced call consumes no resume frame.
+
+**THE CAPACITY IS D73's, AND THE NUMBER THAT BINDS IS THE TRAIL'S**
+(Frank, 2026-08-24, superseding D71 item 2's "a larger stamped default
+for call-bearing patterns"). The default STAYS at 2048 frames / 3072
+trail entries: the run struct lives on the C stack of the un-suffixed
+entries (131,144 B call-bearing), which already SIGSEGVs a musl-default
+128 KB thread (K33), and the trail binds BEFORE the frames — 2.0 frames
+against 9.0 trail entries per nesting level of `^(a(?1)?b)$` — so the
+shipped default gives up at n = 342, a 684-byte subject, and raising
+frames alone would change nothing. The remedy is not a bigger default
+but the CALLER-PROVIDED BUFFER ([DD-14.FB]'s three `_in` entries: a
+224 B frame, a 64 MB `MAP_NORESERVE` reservation matching 800 KB in
+0.056 s). That is why the `becomes` column reads `PLANNED` rather than
+permanent — the path around the limit ships, it is just not the default.
+
+**THE SECOND RESOURCE LIMIT IS A DIVERGENCE RATHER THAN A CAP: K34.** On some same-position LEFT recursions pcrec answers
+`PCREC_ERR_FRAMES` where libpcre2 10.46 CONCLUDES with a clean NOMATCH —
+`(a|(?1)a)b` on "a"/"aa"/"b"/"" and `^(a|(?1)a)$` on "aaaaab" are the
+measured cells. It is not a wrong answer under D26 (a give-up says
+nothing about the language), and it is not the naive rule the design
+§3.3 refuted: PCRE2's own guard returns error −52 only when a nearest
+same-group ancestor recursion exists AND the subject pointer AND the
+`last_used_ptr` high-water mark are both unchanged, which is why 199
+same-position recursions can still MATCH and why the unanchored runaways
+conclude. Lane srK34 pinned that rule on a 65/65-cell probe matrix
+(docs/design/subroutines_measurements/out/recurse_loop.txt) and
+RECOMMENDED against adopting it — a faithful copy needs a stored subject
+pointer and a `last_used_ptr` equivalent threaded through every
+fail-and-return site of the emitted artifact, not an O(1) per-callee
+slot. The inverse case exists too and no expectation is writable for it:
+`((?1)?a)` and `((?1)*a)` on "a" MATCH here and are −52 there. The
+eleven affected corpus cells are parked under the known-fail ratchet
+until the ruling; K34 is OPEN.
 
 **THE LEADING-ZERO RULE IS THE SHARP EDGE OF THIS FAMILY**, and it is
 why the index shows spellings a reader might take for redundant. The

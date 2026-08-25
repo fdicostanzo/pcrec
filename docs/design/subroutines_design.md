@@ -3255,6 +3255,97 @@ anyway, which is what everything else being equal proves.
 **THE CLOSE** is D69-tier: the FULL sabotage matrix, the battery, the gate, the
 compliance refresh and the archive.
 
+**AS CLOSED — 2026-08-25, lane `srClose`, on `ae9c98c`'s code.** Every figure
+below was measured at the close, not carried forward; where a figure in this
+document was superseded it is named rather than silently overwritten.
+
+*The sabotage matrix: 180 rows, unexpected 0, undetected 6, anomalies 0.* It
+is a COMPOSITE of two runs on two trees and is stated as one only here: the
+manager's full 180-row matrix at `17469b6` (unexpected 2, undetected 8,
+anomalies 0) plus three SOLO re-runs at the close tree, which turn the two
+unexpected rows into DETECTED. S155 (the depth capacity) reads
+framebuf 1fail/5pass with its answer-checking control half unmoved at
+corpus 16/0 and recdiff 10/0 — the sabotage changes a WRITE, not an ANSWER;
+S70 (the enabled-but-unbuilt epilogue) reads reject 2fail/587pass against a
+clean 589, so exactly the two re-pointed witnesses move; S159 (the back-edge
+walk) reads corpus 451fail/1239pass, recdiff 8fail/7pass, and is scoreable at
+all only because K37's fix put every harness `pcrec` call under a timeout —
+before it, the row was a 50-minute hang with no verdict. The six
+expected-UNDETECTED rows are S150-S153 and S160 (wave E's W-drop rows) and
+S178 (root discharge, wave G).
+
+*The battery.* `make test` 26,560 corpus cases / 0 failed, 1,833 checks
+passing, no section red. `make strict` clean under `-Werror -Wshadow`.
+`make san` green under
+`-fsanitize=address,undefined,leak` on BOTH axes — the compiler and every
+generated matcher the 28-script suite compiles — 1 h 05 m, ZERO sanitizer
+reports and zero make errors, with the known-fail ratchet reading "still
+failing: 1, now passing: 0" (K34's parked file, which is the state it is
+parked in).
+
+*The gates.* `make test-recursion-identity` is TWO comparisons per axis since
+[DD-14.FB] and reads 15 checks / 0 failures: (A) program region vs `ac4917d`
+and (B) whole file vs `8fc1e51` — default 2206/0 with 4 elided and 2210/0;
+`--engine=vm` 2211/0/0 and 2211/0; `-fno-prefilter` 2207/0/4 and 2211/0;
+`--no-captures` 2210/0/0 and 2210/0; the linkage arm 2210/0. The positive
+control fires on every axis (the pre-module reference REFUSES all 305
+call-bearing patterns), which is what makes the zeros a measurement rather
+than a build compared with itself. `make test-recursion` 10 checks / 0
+failures, including §3's 1,836 cells against libpcre2 10.46 and §9.2's
+`A == B` control: 279 of 322 corpus patterns compiled on BOTH linkages,
+28,458 cells, 0 disagreements. `make test-recursion-lbsweep` sweeps 908 distinct patterns
+and reports **9,240 cells, 9,240 agree, 0 disagree**, with 220 pcrec refusals
+of which 0 are bad refusals, 268 refused by both, 0 `pcrec_only`, 0 compile
+failures and 0 give-ups on either side.
+
+*The specimen, and TWO FIGURES IN THIS SECTION ARE SUPERSEDED.*
+`run_specimen_identity.sh` reads **12 checks / 0 failures**, not the 8/8
+recorded above: it gained four `--no-captures` checks after wave G's readout
+was written, which is the axis where the capture declaration §1 has to EXCUSE
+elsewhere is EQUAL and can be ASSERTED instead. And the named exclusions
+remove **22 of 712 lines**, not of 681 — the reference grew with [DD-14.FB]'s
+caller-buffer surface while the exclusion count did not move, which is the
+point rather than a discrepancy. Throughput on the closed tree is
+1.05x / 1.32x / 0.81x against wave G's 0.88x / 1.19x / 0.88x; both are within
+noise of the hand-inlined original, neither is a regression, and neither is a
+quotable number (medians of five on a shared box). Wave B+C's 23x and its
+`PCREC_ERR_STEPS` give-up remain gone.
+
+*The compliance refresh*, by `.claude/skills/compliance-refresh/SKILL.md`'s
+three-component procedure: `--check` 128 index rows, `--names` 12 modules and
+17 verb names both directions, `--check-annotations` 91 keys across 21 blocks,
+all green; `--tension` 79 registry-only / 177 survey-only, informational. The
+survey row now names TWO limit kinds with their numbers — D73's stamped
+2048/3072 capacity, where the TRAIL binds first (2.0 frames against 9.0 trail
+entries per nesting level of `^(a(?1)?b)$`, so the default gives up at
+n = 342) and the remedy is the caller-provided buffer rather than a bigger
+default; and K34's runaway give-up, where pcrec answers `PCREC_ERR_FRAMES` on
+a left recursion libpcre2 10.46 CONCLUDES. The CAPABILITY note is re-scoped to
+the LINKED form, since wave G's splice gives an acyclic callee whatever engine
+its hand-inlined equivalent gets.
+
+*What is OWED at the close, recorded rather than closed over.* K34 — the
+runaway-give-up divergence: the rule is MEASURED (65/65 cells) and the lane
+RECOMMENDS against adopting PCRE2's guard, but the ruling is Frank's and the
+eleven cells stay parked under the ratchet. K36 — `rx_L3`'s three restores
+read the trail before the call-frame bounds guard; pre-existing, unreachable,
+owed to the next `emit_vm.c` change in that region. K37 — the two remaining
+halves (`run_recursion_diff.sh`'s generated-code compiles and matcher runs
+carry no bound; the 347-site survey). [MECH-REACH] — a sabotage witness must
+prove its REACH: S70 certified nothing from [M6.5.2] until the matrix caught
+it, and S155's witness FILE had held zero relevant cells since [DD-14.EMPTY];
+RECORDED in plan.md at 2026-08-25, deliberately not built here. [TT-9] — the
+three sanitizer suite lists are still three hand-maintained copies, and
+`tests/lookaround/`'s diff script is still in none of them with no stated
+reason; the close verified and documented the two EXCLUSIONS (tests/thread/ by
+directory, which covers `test-stackdepth`; `run_frame_buffer.sh` because it
+builds its own sanitized drivers) but did not build the one list. [TT-10] —
+checks that lie under load. S-SR2a — design §9.3's sabotage row for the fail
+label restoring `call_depth`, which has NO CODE to sabotage while D71.1 keeps
+the recursion-depth counter out of the default artifact; it becomes writable
+the day [V-H]'s diagnostic-generation axis builds the counter. And [DD-14.FB]'s code half,
+if lane/srFBc has not merged by the time this is read.
+
 ---
 
 ## 12. What would refute this — predictions for the panel

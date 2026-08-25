@@ -82,7 +82,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # built from a different source set than the subject is the differential going
 # vacuous.
 REF="$WORKDIR/pcrec_nogstart"
-REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | sort)"
+REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then
     echo "FAIL: found no compiler sources under $ROOT_DIR/src for the reference build" >&2
     exit 1

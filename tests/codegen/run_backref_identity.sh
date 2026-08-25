@@ -102,7 +102,7 @@ if grep -rq 'A_BREF' "$REFSRC/src" 2>/dev/null; then
 fi
 
 REF="$WORKDIR/pcrec_premodule"
-REF_SRCS="$(find "$REFSRC/src" -name '*.c' | sort)"
+REF_SRCS="$(find "$REFSRC/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then
     bad "found no compiler sources in the archived reference tree"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1

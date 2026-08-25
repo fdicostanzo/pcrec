@@ -436,7 +436,7 @@ median_ms() { # median_ms <binary> <subject-file>, 5 runs
         t=$( { TIMEFORMAT=%R; time "$bin" "$(cat "$f")" >/dev/null 2>&1; } 2>&1 )
         echo "$t" >> "$WORKDIR/times"
     done
-    sort -g "$WORKDIR/times" | sed -n '3p'
+    LC_ALL=C sort -g "$WORKDIR/times" | sed -n '3p'
 }
 
 TP_FAIL=0

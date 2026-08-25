@@ -97,14 +97,14 @@ if [ "$EARN" = "1" ]; then
     printf "  %-5s %9s %14s %10s %8s %8s %s\n" "case" "runs" "dates" "cur.margin" "cur.floor" "earned" "status"
     while IFS=$'\t' read -r id metric ref cmargin; do
         case "$id" in ''|\#*) continue ;; esac
-        ndates=$(awk -F'\t' -v c="$id" '$1!~/^#/ && $2==c {print $1}' "$HISTORY" | sort -u | wc -l)
+        ndates=$(awk -F'\t' -v c="$id" '$1!~/^#/ && $2==c {print $1}' "$HISTORY" | LC_ALL=C sort -u | wc -l)
         nrows=$(awk -F'\t' -v c="$id" '$1!~/^#/ && $2==c' "$HISTORY" | wc -l)
         if [ "$ndates" -lt "$EARN_MIN_RUNS" ]; then
             printf "  %-5s %9s %14s %10s %8s %8s %s\n" "$id" "$nrows" "$ndates" "$cmargin" "$ref" "-" "too thin ($ndates/$EARN_MIN_RUNS independent dates)"
             continue
         fi
         vals=$(awk -F'\t' -v c="$id" '$1!~/^#/ && $2==c {print $4}' "$HISTORY")
-        spr=$(printf '%s\n' "$vals" | sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.3f", v[NR]/v[1] }')
+        spr=$(printf '%s\n' "$vals" | LC_ALL=C sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.3f", v[NR]/v[1] }')
         earned=$(awk -v sp="$spr" -v s="$SAFETY" -v lo="$MARGIN_FLOOR" -v hi="$MARGIN_CEIL" \
             'BEGIN{ if (sp=="n/a") {print "n/a"; exit} m=1.0/(sp*s); if (m<lo) m=lo; if (m>hi) m=hi; printf "%.3f", m }')
         printf "  %-5s %9s %14s %10s %8s %8s %s\n" "$id" "$nrows" "$ndates" "$cmargin" "$ref" "$earned" "cross-run spread ${spr}x, earned margin above"

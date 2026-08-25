@@ -165,7 +165,7 @@ CFLAGS_COMMON="-std=gnu11 -Wall -Wextra"
 LIBSRCS=()
 while IFS= read -r f; do
     LIBSRCS+=("$f")
-done < <(find "$ROOT_DIR/src" -name '*.c' | sort)
+done < <(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)
 if [ "${#LIBSRCS[@]}" -eq 0 ]; then
     bad "no compiler sources found under $ROOT_DIR/src -- the TSan library cannot be assembled"
     echo

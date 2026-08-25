@@ -57,10 +57,10 @@ REBASELINE_RUNS="${REBASELINE_RUNS:-6}"
 REBASELINE_MIN_RUNS="${REBASELINE_MIN_RUNS:-5}"
 
 median() {
-    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
+    printf '%s\n' "$@" | LC_ALL=C sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
 }
 spread() {
-    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.3f", v[NR]/v[1] }'
+    printf '%s\n' "$@" | LC_ALL=C sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.3f", v[NR]/v[1] }'
 }
 
 echo "rebaseline.sh: re-baselining case '$CASE' with $REBASELINE_RUNS independent compare.sh runs" >&2

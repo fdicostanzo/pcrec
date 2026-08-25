@@ -93,3 +93,44 @@ DEAD-CAPTURE ELISION (`pcrec_has_live_capture` — a group no emitted code can
 WRITE does not force the capture-recording engine; the `{0}` definitions'
 groups are exactly that). Neither is a DEFINE special case: the elision is
 stated over `A_REP{0,0}` emitting nothing, which is also what `(a){0}b` is.
+
+---
+
+## The [DD-14] CLOSE readout (2026-08-25)
+
+Everything above is wave G's record and none of it is retracted. This block
+is the same script's output on the CLOSED tree (`bash
+tests/recursion/run_specimen_identity.sh`, lane `srClose`, commit `ce2ca3a`),
+recorded because three of wave G's figures have MOVED and a reader comparing
+the two should see why rather than wonder.
+
+**12 checks, 0 failures** — not the 8 wave G recorded. The script gained four
+`--no-captures` checks after wave G's readout was written (one per spelling
+plus the `RX_NCAPS 1` / no-permanently-unset-fill assertion), which is the
+axis where the capture declaration §1 has to EXCUSE elsewhere is EQUAL and can
+therefore be ASSERTED instead of filtered. `docs/design/subroutines_design.md`
+§11's "8/8" is wave G's number and is superseded by this one.
+
+**The named exclusions remove 22 of the reference's 712 lines**, not of 681.
+The line count grew with [DD-14.FB]'s caller-buffer surface (three `_in`
+entries, the `<prefix>_buffers` type and five macros are emitted on EVERY
+artifact); the EXCLUSION count did not move, which is the point — the FB
+surface is identical on both spellings, so it needs no excusing. 51 KB
+compared after the strip.
+
+**Throughput (1 MB, median of 5), factored against orig: 1.05x / 1.32x /
+0.81x** (a_valid_addrs 0.038s → 0.040s, b_no_at 0.031s → 0.041s,
+c_long_atom_run 0.037s → 0.030s). Wave G recorded 0.88x / 1.19x / 0.88x on the
+same three subjects. Both readings are "within noise of the hand-inlined
+original" and the check's verdict is unchanged; neither is a regression, and
+neither should be quoted as a stable number — these are medians of five on a
+shared box, and R3.10 applies to NUMBERS rather than to verdicts. The figure
+that MATTERS is unchanged and is the one wave B+C could not reach: **23x and a
+`PCREC_ERR_STEPS` give-up after ~6 s are gone**, because the factored spelling
+IS the hand-inlined pattern's own artifact.
+
+Unchanged on the closed tree: all four spellings on the DFA engine with the
+byte-class skip prefilter; the three identity checks and their three
+`--no-captures` twins; 85 subjects agreeing four ways with NO give-up; and
+libpcre2 10.46 agreeing over 255 cells that the four spellings are one
+language.

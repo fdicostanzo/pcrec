@@ -1100,6 +1100,15 @@ itself.
 
 ## The recursion landing gate ([DD-14], 2026-08-24) — OPT-IN, FOUR axes, and its archived result
 
+> **READ "The recursion identity gate is two comparisons" (below, [DD-14.FB],
+> 2026-08-25) BEFORE ACTING ON THIS SECTION.** Everything here about the four
+> axes, the opt-in ruling and the `ac4917d` pin still holds, but the gate now
+> asks TWO questions per axis — (A) the PROGRAM REGION against `ac4917d` and
+> (B) the WHOLE FILE against `8fc1e51` — because the caller-buffer wave's
+> announced `abi` 2 → 3 boundary put a change on every artifact's surface. A
+> reader who stops at this section will expect one number per axis and find
+> two.
+
 `tests/codegen/run_recursion_identity.sh` is module `recursion`'s byte-identity
 gate, and the third in the tree whose reference is a PINNED COMMIT rather than
 a `-D` knob. It is NOT part of `make test`. Run it on demand:
@@ -2241,6 +2250,23 @@ hanging. Lowering the node cap is a refusal decision for the manager.
   sanitizers compose cleanly on this toolchain, and concurrency bugs are
   TSan's class, not UBSan/ASan's. The exclusion is structural (the target's
   suite list omits it), not a skip printed at run time.
+
+  **THE EXCLUSION IS BY DIRECTORY, WHICH IS WHY IT COVERS MORE THAN ONE
+  TARGET** (verified against the Makefile at the [DD-14] close, 2026-08-25):
+  neither `ubsan:`, `asan:` nor `san:` names ANY script under `tests/thread/`,
+  so `tests/thread/run_stackdepth_tests.sh` — the [TS-4]/[DD-14.FB] emitted-
+  matcher-on-a-128 KB-stack suite behind `make test-stackdepth` — is excluded
+  by the same structural rule and for the same TSan reason, without needing a
+  line of its own. Read the exclusion as "the directory", not "the one script
+  that existed when this paragraph was written".
+- **`tests/recursion/run_frame_buffer.sh`** (`make test-frame-buffer`) —
+  OPT-IN, and in NO sanitizer suite list (verified 2026-08-25). It is not an
+  omission: the script BUILDS ITS OWN drivers under
+  `-fsanitize=address,undefined` (§2's exact-fit driver is the instrument, and
+  `REQUIRE_ASAN=1` makes a missing sanitizer an ANOMALY rather than a pass —
+  see sabotage row S155), so re-running it inside `make san` would instrument
+  an already-instrumented build to prove nothing new. It rides `make
+  test-frame-buffer` and `make mech`'s `framebuffer` arm instead.
 - **`make bench`, `make mech`, `make fuzz`** — never touched. `bench`'s
   numbers are timing medians that sanitizer overhead would invalidate;
   `mech` already costs ~50 min building the tree once per sabotage at

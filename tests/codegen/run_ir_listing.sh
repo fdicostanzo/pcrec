@@ -107,9 +107,9 @@ for pat in "${PATTERNS[@]}"; do
     fi
 
     # ---- PROGRAM: the label set, both directions, no duplicates ----------
-    grep -oE '^rx_L[0-9]+:' "$d/gen.c" | tr -d ':' | sort > "$d/c.labels"
+    grep -oE '^rx_L[0-9]+:' "$d/gen.c" | tr -d ':' | LC_ALL=C sort > "$d/c.labels"
     grep -oE '^  rx_L[0-9]+|^  L[0-9]+' "$d/ir" | sed 's/^ *//; s/^L/rx_L/' \
-        | sort > "$d/ir.labels"
+        | LC_ALL=C sort > "$d/ir.labels"
     cdup="$(uniq -d < "$d/c.labels" | wc -l)"
     idup="$(uniq -d < "$d/ir.labels" | wc -l)"
     if [ ! -s "$d/c.labels" ]; then
@@ -127,9 +127,9 @@ for pat in "${PATTERNS[@]}"; do
 
     # ---- CHOICE POINTS: count and resume target --------------------------
     grep -oE 'RX_PUSH\(&&rx_L[0-9]+' "$d/gen.c" | grep -oE 'rx_L[0-9]+' \
-        | sort > "$d/c.push"
+        | LC_ALL=C sort > "$d/c.push"
     grep -oE '^  at L[0-9]+ +resume L[0-9]+' "$d/ir" \
-        | grep -oE 'resume L[0-9]+' | sed 's/resume L/rx_L/' | sort > "$d/ir.push"
+        | grep -oE 'resume L[0-9]+' | sed 's/resume L/rx_L/' | LC_ALL=C sort > "$d/ir.push"
     if ! diff -q "$d/c.push" "$d/ir.push" >/dev/null; then
         bad "ir-listing[$pat]: CHOICE POINTS disagree with the emitted RX_PUSH sites: $(diff "$d/c.push" "$d/ir.push" | tr '\n' ' ' | cut -c1-200)"
     else
@@ -179,8 +179,8 @@ for pat in "${PATTERNS[@]}"; do
             *) echo "$op" >> "$d/c.slots.raw" ;;
         esac
     done < "$d/c.slotops"
-    sort -n -u < "$d/c.slots.raw" > "$d/c.slots"
-    grep -oE 'set +slot_values\[[0-9]+\]' "$d/ir" | grep -oE '[0-9]+' | sort -n -u > "$d/ir.slots"
+    LC_ALL=C sort -n -u < "$d/c.slots.raw" > "$d/c.slots"
+    grep -oE 'set +slot_values\[[0-9]+\]' "$d/ir" | grep -oE '[0-9]+' | LC_ALL=C sort -n -u > "$d/ir.slots"
     if [ -n "$unresolved" ]; then
         bad "ir-listing[$pat]: SLOTS — RX_SET operand(s)$unresolved are neither a number nor a #define in the artifact; the extraction would silently drop them"
     elif [ ! -s "$d/c.slots" ]; then
@@ -367,8 +367,8 @@ if "$PCREC" -p myrx -o "$WORKDIR/pfx/gen.c" -- '(a)b' >/dev/null 2>&1    && "$PC
         bad "[M4.5c] a -p myrx listing does not name MYRX_NCAPS, or the artifact does not define it"
     fi
     # the label set must still line up under a different prefix
-    grep -oE '^myrx_L[0-9]+:' "$WORKDIR/pfx/gen.c" | tr -d ':' | sed 's/^myrx_L//' | sort -n > "$WORKDIR/pfx/c.l"
-    grep -oE '^  L[0-9]+' "$WORKDIR/pfx/ir" | sed 's/^ *L//' | sort -n > "$WORKDIR/pfx/i.l"
+    grep -oE '^myrx_L[0-9]+:' "$WORKDIR/pfx/gen.c" | tr -d ':' | sed 's/^myrx_L//' | LC_ALL=C sort -n > "$WORKDIR/pfx/c.l"
+    grep -oE '^  L[0-9]+' "$WORKDIR/pfx/ir" | sed 's/^ *L//' | LC_ALL=C sort -n > "$WORKDIR/pfx/i.l"
     if [ -s "$WORKDIR/pfx/c.l" ] && diff -q "$WORKDIR/pfx/c.l" "$WORKDIR/pfx/i.l" >/dev/null; then
         ok "[M4.5c] ...and its label set matches the artifact's too"
     else

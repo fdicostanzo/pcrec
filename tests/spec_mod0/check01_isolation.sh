@@ -99,11 +99,11 @@ echo "  looking for recogniser/extent TUs matching:  $RECOG_RE"
 
 # --- discover the enabled-set symbol ------------------------------------
 ENABLED_SYMS=$(nm --defined-only "$ARCHIVE" 2>/dev/null \
-               | awk '{print $NF}' | grep -E "$ENABLED_RE" | sort -u)
+               | awk '{print $NF}' | grep -E "$ENABLED_RE" | LC_ALL=C sort -u)
 
 # --- discover the recogniser TUs ----------------------------------------
 RECOG_OBJS=""
-for o in $(find "$OBJDIR" -name '*.o' 2>/dev/null | sort); do
+for o in $(find "$OBJDIR" -name '*.o' 2>/dev/null | LC_ALL=C sort); do
     if nm --defined-only "$o" 2>/dev/null | awk '{print $NF}' \
          | grep -qE "$RECOG_RE"; then
         RECOG_OBJS="$RECOG_OBJS $o"

@@ -1002,7 +1002,7 @@ residual_names() {
             print line
             want = 0
         }
-    ' "$1" | sort -u
+    ' "$1" | LC_ALL=C sort -u
 }
 
 # calls_in_bodies <file> <name> — how many TOKEN occurrences of <name> sit
@@ -1121,7 +1121,7 @@ while IFS=$'\t' read -r nm pat extra decl; do
         case "${pair%%:*}" in bref_match|bref_match_caseless) nbref=$((nbref + 1)) ;; esac
         case "${pair%%:*}" in back_step) nback=$((nback + 1)) ;; esac
     done
-    want_set="$(printf '%s\n' $want_set | sort -u | tr '\n' ' ')"
+    want_set="$(printf '%s\n' $want_set | LC_ALL=C sort -u | tr '\n' ' ')"
     [ "$nbref" -gt 0 ] && resid_brefdecl=$((resid_brefdecl + 1))
     [ "$nback" -gt 0 ] && resid_backdecl=$((resid_backdecl + 1))
 
@@ -1298,7 +1298,7 @@ while IFS=$'\t' read -r nm feats pat; do
         dup_bad=$((dup_bad + 1)); continue
     fi
     dup_files=$((dup_files + 1)); dup_rows=$((dup_rows + n))
-    if [ "$(cut -f1 "$WORKDIR/$nm.rows" | sort | uniq -d | wc -l)" -gt 0 ]; then
+    if [ "$(cut -f1 "$WORKDIR/$nm.rows" | LC_ALL=C sort | uniq -d | wc -l)" -gt 0 ]; then
         dup_dupname=$((dup_dupname + 1))
     fi
     if ! out=$(awk -F'\t' '
@@ -1553,7 +1553,7 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/wordset.c" \
     # asks the same question — is this byte a word character — in three places,
     # so a correct artifact has exactly ONE distinct test.
     ndistinct=$(grep -oE '\(rx_class_bitmap[0-9]+\[\(subject\[[^]]*\]\) >> 3\] >> \(\(subject\[[^]]*\]\) & 7\)\) & 1|\(unsigned\)\(subject\[[^]]*\] - [0-9]+\) <= [0-9]+u|subject\[[^]]*\] == [0-9]+' \
-                "$WORKDIR/wordset.c" | sed 's/subject\[[^]]*\]/B/g' | sort -u | grep -c . || true)
+                "$WORKDIR/wordset.c" | sed 's/subject\[[^]]*\]/B/g' | LC_ALL=C sort -u | grep -c . || true)
     #
     # TWO ASSERTIONS, and the SECOND one took three tries — each earlier draft
     # was measured blind by running sabotage S75 rather than by reasoning:
@@ -2105,7 +2105,7 @@ for agf in '' '-fno-possessify' '-fno-revdet' '-fno-counter'; do
             bad "[M6.4-ATOMIC rule 5c]: '$agp' [$agf] emits an RX_SET to a RAW SLOT NUMBER — vm_slot_name could not resolve it, so the emitter asked for a slot outside every family vm_count_slots counted"
             continue
         fi
-        for ag_n in $(grep -oE '^ *RX_CUT\([0-9]+' "$WORKDIR/ag_sl.c" | grep -oE '[0-9]+' | sort -u); do
+        for ag_n in $(grep -oE '^ *RX_CUT\([0-9]+' "$WORKDIR/ag_sl.c" | grep -oE '[0-9]+' | LC_ALL=C sort -u); do
             grep -qE "^#define RX_SLOT_CUT_MARK[0-9]+ +$ag_n\$" "$WORKDIR/ag_sl.c" || {
                 ag_slotbad=$((ag_slotbad + 1))
                 bad "[M6.4-ATOMIC rule 5c]: '$agp' [$agf] emits RX_CUT($ag_n) where slot $ag_n is NOT a cut mark in the legend — the pre-pass and the emitter disagree about the slot map, so the cut is truncating to whatever another family stored there"
@@ -2572,6 +2572,71 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b
     fi
 else
     bad "[DD-14.FB]: pcrec failed to compile the VM and DFA fixtures for the caller-buffer surface checks"
+fi
+
+# ===========================================================================
+# [K35] THE LOCALE GUARD IS STRUCTURAL: no `sort` in tests/**/run_*.sh
+#       may run under the ambient locale
+# ===========================================================================
+#
+# WHY A CHECK AND NOT A CONVENTION. Under `en_US.UTF-8` `sort` collates at a
+# level that treats punctuation as IGNORABLE, so for a corpus of REGEXES
+# `a{0,0}b` and `(a){0,0}b` compare EQUAL and `sort -u` silently drops one --
+# and the survivor is the spelling WITHOUT punctuation, i.e. the STRUCTURED
+# half of every collision is what is lost. MEASURED on this tree 2026-08-25:
+# the corpus pattern extraction yields 1,784 patterns in the ambient locale
+# and 2,758 under LC_ALL=C.
+#
+# The hazard was WRITTEN DOWN ONCE, at tests/cli/run_cli_tests.sh:786, and
+# then recurred five more times in five different scripts (K35's own survey).
+# That is the "a lesson recorded in one file does not reach the next author"
+# shape, and the only thing that has ever stopped it in this tree is a check.
+# So: every `sort` used as a COMMAND WORD in a tests/**/run_*.sh is either
+# prefixed `LC_ALL=C` at its own site, or lives in a script that exports
+# LC_ALL=C ABOVE it. Anything else is named here and fails.
+#
+# A NOTE ON WHAT THIS CANNOT SEE, so nobody reads more into the green: it is
+# a TEXTUAL check over shell source. A `sort` reached through a variable, a
+# `python3 -c` that sorts internally, or a helper in another directory is
+# invisible to it. It covers the idiom that actually recurred.
+k35_bad=""
+k35_scripts=0
+k35_sites=0
+# A `sort` used as a COMMAND WORD: at line start, or after a pipe / `;` /
+# `&&` / `(` / `$(`, with any number of leading VAR=value env assignments in
+# between. Counting SITES and GUARDED sites separately, per line, is what
+# lets a line carrying two sorts with only one of them guarded be caught --
+# a single "does this line mention LC_ALL=C" test would pass it.
+k35_site_re='(^|[|;&(])[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*sort\b'
+k35_guard_re='LC_ALL=C[[:space:]]+([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*sort\b'
+while IFS= read -r k35_f; do
+    k35_scripts=$((k35_scripts + 1))
+    # The script-level export, and its POSITION: an export BELOW the first
+    # sort guards nothing above it, so the line number is load-bearing.
+    k35_exp=$(grep -n '^[[:space:]]*export LC_ALL=C' "$k35_f" | head -1 | cut -d: -f1)
+    [ -n "$k35_exp" ] || k35_exp=0
+    while IFS= read -r k35_hit; do
+        k35_ln="${k35_hit%%:*}"
+        k35_txt="${k35_hit#*:}"
+        # comment lines are prose, not commands
+        case "$(printf '%s' "$k35_txt" | sed 's/^[[:space:]]*//')" in '#'*) continue ;; esac
+        k35_n=$(printf '%s\n' "$k35_txt" | grep -oE "$k35_site_re" | grep -c . || true)
+        [ "$k35_n" -gt 0 ] || continue
+        k35_sites=$((k35_sites + k35_n))
+        if [ "$k35_exp" -gt 0 ] && [ "$k35_exp" -lt "$k35_ln" ]; then continue; fi
+        k35_g=$(printf '%s\n' "$k35_txt" | grep -oE "$k35_guard_re" | grep -c . || true)
+        [ "$k35_g" -ge "$k35_n" ] && continue
+        k35_bad="$k35_bad
+    ${k35_f#$ROOT_DIR/}:$k35_ln  ($k35_g of $k35_n guarded)"
+    done < <(grep -n '\bsort\b' "$k35_f")
+done < <(find "$ROOT_DIR/tests" -name 'run_*.sh' | LC_ALL=C sort)
+
+if [ "$k35_scripts" -lt 40 ] || [ "$k35_sites" -lt 50 ]; then
+    bad "[K35] the locale-guard sweep found $k35_scripts run_*.sh and $k35_sites sort site(s), below its floors of 40 and 50 (measured 2026-08-25: 53 scripts, 62 sites). A population that collapses means the SWEEP broke, not that the tree got clean, and a check that cannot fail must not report a pass"
+elif [ -n "$k35_bad" ]; then
+    bad "[K35] $(printf '%s' "$k35_bad" | grep -c .) sort site(s) run under the AMBIENT LOCALE, where punctuation is ignorable and \`sort -u\` silently drops the structured half of every collision (measured: 1,784 vs 2,758 patterns). Prefix each with LC_ALL=C, or export it above them:$k35_bad"
+else
+    ok "[K35] every \`sort\` command word in tests/**/run_*.sh runs under LC_ALL=C ($k35_sites site(s) across $k35_scripts script(s): guarded at the site or by an export above it). Under the ambient locale this population loses 974 of 2,758 corpus patterns to collation, and the loss is silent"
 fi
 
 echo

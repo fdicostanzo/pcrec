@@ -684,11 +684,26 @@ from the pre-[M4.5b] commit (260/260 capture-free patterns identical).
   measured WRONG — an out-of-bounds slot write, K27's class, because `X{0}`
   emits and counts nothing and a callee is a real idiom there), `vm_cost` must
   charge the callee's cost plus this site's own `2*|W|` of trail, and both
-  need `src/opt/callgraph.c`'s SCC fixpoint, which is wave B+C's. The two
-  arms that DO answer are `vm_nullable` (`true`, the sound bottom that keeps
-  the empty-iteration guard; the real answer is the graph's fixpoint with
-  cycle bottom `false`) and `vm_rev_caps` (decline, unreachable behind
+  need `src/opt/callgraph.c`'s SCC fixpoint, which was wave B+C's. The two
+  arms that DID answer in A2 are `vm_nullable` (`true`, the sound bottom that
+  keeps the empty-iteration guard; the real answer is the graph's fixpoint
+  with cycle bottom `false`) and `vm_rev_caps` (decline, unreachable behind
   `rd_shape`).
+
+  **ALL FIVE ARMS ANSWER NOW** — the graph landed in wave B+C and this
+  paragraph is the A2 record, not the current state (re-read at the [DD-14]
+  close, 2026-08-25). `vm_cost`'s `A_CALL` reads `v->rgn_cost[idx]` through
+  `pcrec_callgraph_index` (emit_vm.c:2229), with the graph-absent branch kept
+  and written in the OVER-charging direction because a cost analysis that
+  reads an absent table must not under-promise; wave G then made a SPLICE cost
+  no frame, the trail charge staying `2*|W|` on either linkage.
+  `vm_count_slots`'s `A_CALL` (emit_vm.c:2428) counts the site's own
+  `SLOT_SPLICE_SAVE` block from `spl_nw[idx]` and recurses into `u.call.body`
+  for a splice only, under a `splice_depth > nregion` tripwire that would
+  catch an eligibility rule admitting a cycle; a LINKED site adds nothing here
+  because the callee's region is counted once at its own emission. And
+  `vm_nullable` now reads the published fixpoint (`!a->u.call.nonnullable`,
+  :1167) rather than the sound bottom.
 
   - **THE NON-ATOMIC `(?*` ARM IS THE ATOMIC SHAPE MINUS THE CUT**, and it
     allocates no mark slot, which is how a reader tells the two atomicities

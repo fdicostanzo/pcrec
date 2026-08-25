@@ -33,7 +33,7 @@ WARN_ONLY="${KNOWN_FAIL_WARN_ONLY:-0}"
 
 files=()
 while IFS= read -r f; do files+=("$f"); done \
-    < <(find "$SCRIPT_DIR" -name '*.rxt' | sort)
+    < <(find "$SCRIPT_DIR" -name '*.rxt' | LC_ALL=C sort)
 
 echo "== KNOWN-FAIL RATCHET =="
 

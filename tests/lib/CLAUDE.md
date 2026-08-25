@@ -151,6 +151,13 @@ section targets depend on.
   `tests/reject/run_reject_tests.sh`'s own (call-index, not script-index)
   sharding.
 
+  **[K35], 2026-08-25 ([DD-14] close):** it also `export LC_ALL=C` right
+  after `set -u`, so no grouped script inherits the ambient locale — a
+  `sort -u` under `en_US.UTF-8` collates punctuation as ignorable and
+  silently drops a third of a regex corpus (1,784 vs 2,758 patterns,
+  measured). The same export sits in `tests/harness/run.sh`; both are the
+  GENERAL half of K35's fix, with every site guarded individually as well.
+
 - **mlscan.py** — [M6.2] wave C: WHERE IS `(?m)` IN FORCE, decided from the
   pattern TEXT. Three committed checks need that same answer, so it lives
   here once — `tests/codegen/run_mlinectx_identity.sh` (which patterns the

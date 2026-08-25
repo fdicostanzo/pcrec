@@ -250,11 +250,11 @@ fi
 
 # median <values...> -> prints the median (lower of the two for even counts)
 median() {
-    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
+    printf '%s\n' "$@" | LC_ALL=C sort -g | awk '{v[NR]=$0} END{ if (NR==0) print ""; else print v[int((NR+1)/2)] }'
 }
 # spread <values...> -> prints max/min as a ratio, "n/a" if min is 0
 spread() {
-    printf '%s\n' "$@" | sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.2f", v[NR]/v[1] }'
+    printf '%s\n' "$@" | LC_ALL=C sort -g | awk '{v[NR]=$0} END{ if (NR<2 || v[1]+0==0) print "n/a"; else printf "%.2f", v[NR]/v[1] }'
 }
 
 # Environment capture — a number without the machine state behind it is not a

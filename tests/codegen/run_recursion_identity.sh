@@ -295,7 +295,7 @@ if [ -f "$REFSRC/src/parse/mod_recursion.c" ]; then
 fi
 
 REF="$WORKDIR/pcrec_premodule"
-REF_SRCS="$(find "$REFSRC/src" -name '*.c' | sort)"
+REF_SRCS="$(find "$REFSRC/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then
     bad "found no compiler sources in the archived reference tree"
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
@@ -332,7 +332,7 @@ if ! grep -q 'RESUME_FRAME_SIZE' "$FILEREFSRC/src/gen/emit_dfa.c"; then
     echo "checks passed: $pass"; echo "checks failed: $fail"; exit 1
 fi
 FILEREF="$WORKDIR/pcrec_filepin"
-FILEREF_SRCS="$(find "$FILEREFSRC/src" -name '*.c' | sort)"
+FILEREF_SRCS="$(find "$FILEREFSRC/src" -name '*.c' | LC_ALL=C sort)"
 # shellcheck disable=SC2086
 if ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$FILEREFSRC/lib" -I"$FILEREFSRC/src" $SANFLAGS \
         -o "$FILEREF" "$FILEREFSRC"/cli/main.c $FILEREF_SRCS 2>"$WORKDIR/filerefbuild.log"; then
