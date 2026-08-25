@@ -14450,3 +14450,35 @@ old→new REWRITE TABLE (each pair counted, printed as the wave's
 declared surface diff) — never deletion. Lane's batch order: mrl fix →
 counterk solo → gate → should-fixes/contract/nits → affected sections
 solo → six rows → final make test → deliverable.
+
+#### Thirty-ninth session, part 31 — the identity gate SPLITS (option B ruled); the batch lands (2026-08-25 ~03:3x EDT)
+
+srFBc stopped on #6 with the measurement, as instructed: it built
+ac4917d's reference and diffed eight call-free artifacts after the D37
+strip — 30 distinct old-side lines, 180 new (69 comments, 111 code; VM
+artifact 67/223 occurrences, DFA 26/99). Line-level stripping FAILS both
+ways, measured: an exact whole-line filter from that diff contains
+generic lines present in the reference (` *` ×14, `}`, `{`, `typedef
+struct {`) AND the two anchored entry signatures `ptrdiff_t rx_match(…)`
+/ `rx_match_caps(…)` (moved, so "removed") — stripping them blinds the
+gate to the §10.8 promise itself; and with the full filter the DFA
+class still differs by 5 position-dependent blank lines, the VM by 12.
+RULED option (B): SPLIT — (1) the PROGRAM REGION compared against
+ac4917d unfiltered beyond the three stamps (measured green: call-free
+73/0, bounded 28/0, DFA body 0, call-bearing 96/4 = capacity site #1
+as a named counted exception); (2) the WHOLE FILE re-pinned to the
+lane's last src-touching commit with the D40 reason (pre-v1: the
+scaffolding is not comparable across the abi 2→3 boundary; the program
+is), byte-exact going forward, comment changes included; both results
+printed with counts; the rejected-stripping evidence in the gate's
+comment. Option (A) (code-only) rejected: it would trade away the
+comment sensitivity that caught [M6.6.2] wave E's 37-byte prose move.
+The rest of the batch is at 12c4a8c: MRL check follows the mechanism
+(+2 assertions); DFA divide-by-zero clause in the emitted comment and
+§10.4; SIGSEGV-specific K33 detection; the missing else + RSS bound
+[40 MB, 128 MB]; CLAUDE.md, nits. Critic #1's cross-check went RED on a
+correct build first (a rule that let `_match_in` diverge only downward
+failed the 1024/8192 cell where `_in` MATCHES what its sibling refuses
+— the feature itself); now symmetric on the give-up; measured
+non-vacuous: a descriptor-ignoring `_match_in` takes framebuffer.rxt
+16/0 → 12/4 where before the cross-check it stayed 16/0.
