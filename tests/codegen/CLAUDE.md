@@ -1458,7 +1458,19 @@ would pass every cell and break every vendored consumer. So all six
 declarations are pinned CHARACTER FOR CHARACTER with `grep -qxF`, on a VM
 artifact and a DFA one.
 
-The other five: the five sizing macros emitted exactly once on both engines
+**And one check on the `--trace` axis**, because that axis moves the struct the
+macros measure: a traced artifact must stamp `RX_RESUME_FRAME_SIZE` **48**
+(call-bearing) and **32** (call-free), not the untraced 40 and 24, and both
+traced artifacts must COMPILE — which is where their `_Static_assert`s live. A
+stamp stuck at 40 would hand a caller a capacity 20% larger than its
+reservation holds. Drift through the member list is unrepresentable (the list
+that emits the struct is the list that computes the size, so a trace-blind list
+emits a struct with no `id` member and fails on that); this covers the
+remaining route, a second computation blind to an axis the struct sees, and it
+was validated in the failing direction against a scratch emitter doing exactly
+that.
+
+The other six: the five sizing macros emitted exactly once on both engines
 (real on the VM artifact, INERT on the DFA one — and the alignment specifically
 NOT 0, since a caller rounding an arena cursor up to it would divide by zero);
 the three `_Static_assert`s that reconcile the stamped sizes with the real

@@ -531,7 +531,9 @@ RSS before match: 1,704 KB
 | 470,000 | 940 KB | `PCREC_ERR_FRAMES` | 0.0690 s | 105,132 KB |
 
 with the NULL-buffer control on the SAME artifact returning `PCREC_ERR_FRAMES`
-at every one of those n.
+at every one of those n. [measured at build, 2026-08-25: true for the four
+larger rows; the 684 B row matches through the un-suffixed entry — see spec
+§10.6]
 
 Three things this establishes rather than asserts:
 
@@ -720,6 +722,25 @@ way to EXPECT a give-up; a `gu` directive has since landed per D72):
   place a real implementation introduces a silent bug, because a 4 GB
   reservation is a plausible thing for the very caller this feature targets to
   hand over. Predict: the first implementation clamps without documenting it.
+
+  **REFUTED at build (2026-08-25, the code half).** There is no clamp and no
+  documented ceiling, because WIDENING TURNED OUT TO BE FREE. The two depth
+  counters, `trail_mark` and `call_top` all became `size_t`, and MEASURED on
+  the default (untraced) axes the resume frame does not move: **24 bytes
+  call-free and 40 call-bearing, exactly as before.** Both widened fields sat
+  in what was already padding on an LP64 target — a frame of
+  `{const void *, size_t, unsigned}` is 24 bytes and one of
+  `{const void *, size_t, size_t}` is 24 bytes too. The one axis that DOES
+  move is `--trace`, where the frame grows 24 → 32 and 40 → 48 because the
+  tracing `int id;` no longer shares a padding hole with the counters; that is
+  a debug-generation axis, it is stamped correctly (the same member list emits
+  the struct and computes the size), and `tests/codegen`'s `[DD-14.FB]`
+  `--trace` check pins both numbers.
+
+  So the prediction's PREMISE was right — the narrowing is where the silent
+  bug would have been — and its CONCLUSION was wrong about which way an
+  implementer would go, because it assumed widening had a cost worth avoiding.
+  Measuring the cost first is what removed the choice.
 - **P-4.** `rx_info` gaining four fields will break something that reads the
   struct positionally. Predict: nothing in-tree, because nothing reads it
   positionally; a vendored consumer is D40's announced-boundary problem.

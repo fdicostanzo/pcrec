@@ -1534,6 +1534,21 @@ compile error in the artifact rather than a silent under-allocation in a
 caller. **If you add a member to the resume frame, add it to the member list;
 that is the whole maintenance rule.**
 
+MEASURED, and it is the check that shows the rule working: `--trace` puts an
+`int id;` on the frame, so a traced artifact stamps **32** (call-free) and
+**48** (call-bearing) where the untraced ones stamp 24 and 40 — the tracing
+member no longer shares a padding hole with the two `size_t` counters. The
+stamp follows because the list that EMITS the traced struct is the list that
+computes the size. A drift THROUGH the list is not even representable: an
+emitter patched to build the list without the tracing axis emits a struct with
+no `id` member, and the artifact fails on the missing member rather than on a
+wrong number. The remaining route — a SECOND computation of the size, blind to
+an axis the struct sees — is what the `_Static_assert` catches, and that was
+validated in the failing direction (a scratch emitter stamping from a
+trace-blind second list stamps 40 and the traced artifact then fails to compile
+naming `RX_RESUME_FRAME_SIZE`). `tests/codegen`'s `[DD-14.FB]` `--trace` check
+pins both numbers and compiles both artifacts.
+
 **The surface is emitted on a DFA artifact too, INERT** (`emit_in_entry_defs`
 and `emit_buffers_surface`, both in emit_dfa.c): the three `_in` entries accept
 a descriptor and ignore it, the four sizing macros read 0 and the alignment

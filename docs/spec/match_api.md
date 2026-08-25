@@ -1914,9 +1914,23 @@ instead is the arithmetic. Five macros in the emitted header:
 #define <PREFIX>_BUFFER_ALIGN          8
 ```
 
-(the two capacity macros exist today but live in the generated `.c`; this
-revision moves them into the `.h`, where a caller can read them), and four
-of the same facts as fields on `rx_info`, for a consumer with no C header —
+**Those numbers are STAMPED FOR THE TARGET, not constants of pcrec, and a
+reader must not take `40` as one.** A resume frame's size depends on the
+artifact — MEASURED: **24** bytes on a call-free artifact, **40** on a
+call-bearing one, **32** and **48** on the `--trace` versions of the same two —
+and on the target's own type sizes. pcrec computes each number at compile time
+from the SAME member list that emits the struct, so the two cannot drift; and
+because a stamped literal is a number that can be wrong where a `sizeof` cannot
+(the frame and trail types are private to the artifact, so the header has no
+type to apply `sizeof` to), **the artifact ASSERTS each stamped macro against
+the real `sizeof`/`_Alignof` at its own build**. A number computed for a
+different target model is therefore a loud compile error naming the macro, not
+a silent under-allocation in the caller who divided by it. Read the macros;
+never hardcode their values.
+
+(the two capacity macros existed before this revision but lived in the
+generated `.c`; they moved into the `.h`, where a caller can read them), and
+four of the same facts as fields on `rx_info`, for a consumer with no C header —
 an FFI or `dlopen` binding, which is exactly the consumer most likely to
 want a large reservation:
 

@@ -2506,6 +2506,55 @@ if "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- '^(a(?1)?b
         bad "[DD-14.FB] (S-FB5): the NULL delegation is missing or runs the wrong way in a VM artifact. If rx_search calls rx_search_in(..., NULL), then rx_search_in owns the default arrays and declares them unconditionally — C cannot declare a local conditionally — so the caller who supplied buffers pays the stack cost anyway"
     fi
 
+    # THE STAMP FOLLOWS THE AXIS THAT MOVES THE STRUCT, and `--trace` is that
+    # axis. The tracing member (`int id;`) is on the resume frame, so a traced
+    # artifact's frame is a DIFFERENT SIZE from an untraced one's -- MEASURED
+    # on this box: 24 -> 32 call-free, 40 -> 48 call-bearing, because the
+    # `int` no longer shares a padding hole with the two size_t counters. A
+    # stamp that read 40 on a traced call-bearing artifact would hand a caller
+    # a capacity 20% larger than its reservation actually holds.
+    #
+    # IT CANNOT DRIFT THROUGH THE MEMBER LIST, which is the point of there
+    # being one: `vm_frame_fields` both EMITS the struct and FEEDS the size
+    # arithmetic, so a list that forgot the tracing axis would emit a struct
+    # with no `id` member and the artifact would fail to compile on the
+    # missing member, not on a wrong number. What this check covers is the
+    # remaining route -- a SECOND computation of the size, blind to an axis
+    # the struct sees -- and the artifact's own `_Static_assert` is what
+    # catches that. VALIDATED IN THE FAILING DIRECTION (2026-08-25, scratch
+    # build, never committed): an emitter patched to stamp the size from a
+    # second, trace-blind member list stamps 40 on the traced call-bearing
+    # artifact and the generated file then fails to compile with
+    # "static assertion failed: RX_RESUME_FRAME_SIZE disagrees with
+    # sizeof(rx_frame)". So the assertion is a live guard here, not decoration.
+    fb_tr_ok=1
+    fb_tr_why=""
+    for fb_tr in "recursion:^(a(?1)?b)\$:48" "none:(a|aa)+b:32"; do
+        fb_tr_feat="${fb_tr%%:*}"; fb_tr_rest="${fb_tr#*:}"
+        fb_tr_pat="${fb_tr_rest%:*}"; fb_tr_want="${fb_tr_rest##*:}"
+        fb_tr_flags=(--engine=vm --trace)
+        [ "$fb_tr_feat" != "none" ] && fb_tr_flags+=(--features "$fb_tr_feat")
+        if ! "$PCREC" -p rx "${fb_tr_flags[@]}" -o "$WORKDIR/fb_tr.c" -- "$fb_tr_pat" >/dev/null 2>&1; then
+            fb_tr_ok=0; fb_tr_why="$fb_tr_why; pcrec failed on --trace '$fb_tr_pat'"; continue
+        fi
+        fb_tr_got="$(sed -n 's/^#define RX_RESUME_FRAME_SIZE //p' "$WORKDIR/fb_tr.h")"
+        [ "$fb_tr_got" = "$fb_tr_want" ] || {
+            fb_tr_ok=0
+            fb_tr_why="$fb_tr_why; --trace '$fb_tr_pat' stamps $fb_tr_got, expected $fb_tr_want"
+        }
+        # AND THE ARTIFACT MUST COMPILE, which is where the _Static_assert
+        # lives. Without this the stamp check above would pass on a build whose
+        # struct and stamp disagree in the other direction.
+        gen_cc "[DD-14.FB] traced artifact" "$CC" -c $GENCFLAGS -I"$WORKDIR" \
+            -o "$WORKDIR/fb_tr.o" "$WORKDIR/fb_tr.c" \
+            || { fb_tr_ok=0; fb_tr_why="$fb_tr_why; the traced '$fb_tr_pat' artifact does not COMPILE (see the _Static_assert)"; }
+    done
+    if [ "$fb_tr_ok" -eq 1 ]; then
+        ok "[DD-14.FB] (--trace axis): a traced artifact stamps RX_RESUME_FRAME_SIZE 48 (call-bearing) and 32 (call-free), NOT the untraced 40/24 — the member list that EMITS the traced struct is the one that stamps it — and both traced artifacts compile, so their _Static_asserts agree with the real sizeof"
+    else
+        bad "[DD-14.FB] (--trace axis): the stamped frame size does not follow the tracing member$fb_tr_why. A caller sizing a reservation from RX_RESUME_FRAME_SIZE on a traced artifact would over-count its capacity"
+    fi
+
     # rx_info's four new fields and the abi bump, on both engines.
     fb_abi_vm="$(grep -m1 '^    \.abi = ' "$WORKDIR/fb_vm.c" | tr -dc '0-9')"
     fb_abi_dfa="$(grep -m1 '^    \.abi = ' "$WORKDIR/fb_dfa.c" | tr -dc '0-9')"
