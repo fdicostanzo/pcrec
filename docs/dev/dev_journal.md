@@ -14585,3 +14585,11 @@ reference refuses all 305 call-bearing patterns) fired on every axis.
 The lane, idle since the run ended (the watchdog's detached-run case),
 resumed 04:17: six rows S179-S184 at PROCS=4 detached → final make test
 alone → deliverable.
+
+#### Thirty-ninth session, part 33 addendum — S179-S184 through the matrix (2026-08-25 ~04:2x EDT)
+
+srFBc's six rows via run_sabotage_matrix.sh at PROCS=4, detached
+(04:17-04:19): six `== mech run COMPLETE` trailers, every one
+`unexpected: 0, undetected: 0, anomalies: 0` — the canonical figures the
+SAB_DOC_FIGUREs said were owed. The lane, idle since the run ended,
+resumed 04:27 for its final `make test` alone → deliverable.
