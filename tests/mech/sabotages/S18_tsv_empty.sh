@@ -20,6 +20,14 @@ SAB_FILE="src/parse/syntax_dump.c"
 SAB_SUITES="reject registry cli"
 SAB_DESC="pcrec_syntax_tsv(): early 'return strdup(\"\");' before any row is rendered"
 SAB_DOC_FIGURE="tests/reject/CLAUDE.md: 0/0, but the vacuity guard fires"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS THE DUMP BEING NON-EMPTY AND STILL CARRYING ROWS, which
+# is the one thing this row's `return strdup("")` destroys. Asserted as a
+# NAMED ROW rather than as a line count: a dump that still prints its
+# comment header and no rows at all would satisfy a count-shaped check that
+# was not looking at what the rows say.
+SAB_REACH='"$PCREC" --list-syntax | cut -f1,2,3,4 | tr "\\t" "="'
+SAB_REACH_EXPECT="esc=d=\\d=classes"
 SAB_COUNT=1
 SAB_BEFORE="char *pcrec_syntax_tsv(unsigned flavours)
 {

@@ -35,6 +35,18 @@ SAB_FILE="src/opt/postresolve.c"
 SAB_SUITES="reject"
 SAB_DESC="the post-resolution pass collects deferred checks in walk order instead of ascending pattern offset, so a pattern with two offending lookbehinds is blamed on the LAST one rather than the first"
 SAB_DOC_FIGURE="PREDICTED ([DD-14.LB]): the TWO both-refusable rows among tests/reject/'s five [DD-14.LB] gated rows report offset 45 where 33 is pinned (and where libpcre2 10.46 also answers 33); the other three are unmoved, and every .rxt cell still passes because a perr block cannot see an offset. MEASURED at [DD-14.LB]: reject:2fail/575pass, DETECTED -- exactly the two both-refusable rows."
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS A PATTERN WITH TWO OFFENDING LOOKBEHINDS, and one is
+# not enough: the row is about WHICH of them is blamed, so the probe takes
+# two of tests/reject's three irreducible ORDER rows -- one whose first
+# lookbehind calls the first-declared callee and one whose first calls the
+# second-declared, so an ordering by declaration or by call-graph index is
+# excluded as well as walk order. Both offsets (33 and 45) are libpcre2
+# 10.46's own. A single-lookbehind pattern is refused at the same offset
+# either way and sees nothing.
+SAB_REACH='"$PCREC" --features recursion,lookaround,named-groups -p rx -o "$REACH_TMP/o0.c" -- "^(?:(?<g>a+)){0}(?:(?<h>b+)){0}ab(?<=(?&g))ab(?<=(?&h))\$"; "$PCREC" --features recursion,lookaround,named-groups -p rx -o "$REACH_TMP/o1.c" -- "^(?:(?<h>ab)){0}(?:(?<g>a+)){0}ab(?<=(?&h))ab(?<=(?&g))\$"'
+SAB_REACH_EXPECT="(this one is unbounded) (pattern offset 33)
+(this one is unbounded) (pattern offset 45)"
 SAB_COUNT=1
 SAB_BEFORE='    int i = p->n++;
     while (i > 0 && p->at[i - 1]->u.look.at > n->u.look.at) {

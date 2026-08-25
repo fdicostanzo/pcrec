@@ -24,6 +24,16 @@ SAB_SUITES="harness reject brefdiff"
 SAB_HARNESS_TARGET="tests/backrefs"
 SAB_DESC="pcrec_parse_info stops running the end-of-parse resolution pass, so a reference to a group the pattern never declares is accepted silently and every A_BREF is left with an EMPTY refs array. (a)\\2 compiles instead of raising the error-115-class diagnostic, and every backreference stops matching"
 SAB_DOC_FIGURE="PREDICTED: the corpus RED across tests/backrefs; reject RED on the error-115 cells. Canonical figure owed from run_sabotage_matrix.sh S119."
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS A REFERENCE TO A GROUP THAT DOES NOT EXIST, with the
+# module ON: that is the only thing the end-of-parse resolution pass
+# refuses. `(a)\2` must produce the error-115-class sentence; under the
+# sabotage it compiles silently. The probe runs with `--features backrefs`
+# on purpose -- with the module off it is refused by the GATE instead, at a
+# different site, and the row would read green on a tree where the
+# resolution pass had been gone for a milestone.
+SAB_REACH='"$PCREC" --features backrefs -p rx -o "$REACH_TMP/o0.c" -- "(a)\\2"'
+SAB_REACH_EXPECT="\\2 refers to capture group 2, but this pattern has 1 (pattern offset 3)"
 SAB_COUNT=1
 SAB_BEFORE='    return pcrec_bref_resolve(cx, a);'
 SAB_AFTER='    return a;   /* SABOTAGE S119: nothing resolves, nothing refuses */'

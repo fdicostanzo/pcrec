@@ -12,6 +12,14 @@ SAB_FILE="src/parse/mod_uprops.c"
 SAB_SUITES="reject"
 SAB_DESC="pcrec_modport_uprops: space/tab/hyphen/underscore stop being skipped in the body scan"
 SAB_DOC_FIGURE="measured at MOD-0.6 phase 2 landing: \\p{L} and \\p{ L } (a space-padded body, both currently GENERIC/known-name) diverge in accumulated name length; the streaming/padding boundary pins move"
+# [MECH-REACH, 2026-08-25] THIS ROW DECLARES ITS WITNESS'S REACH.
+# THE WITNESS IS A BODY WITH AN INSIGNIFICANT BYTE IN IT. `\p{ A}` is
+# a ONE-significant-character name on the clean tree (the space is skipped)
+# and therefore gets the one-letter-code sentence; with the skip deleted it
+# is a TWO-character name and takes the generic path. A body with no space,
+# tab, hyphen or underscore in it cannot see this edit at all.
+SAB_REACH='"$PCREC" --features none -p rx -o "$REACH_TMP/o0.c" -- "\\p{ A}"'
+SAB_REACH_EXPECT="\\p{...}: not a one-letter Unicode property code pcrec recognises — requires module 'unicode-props' (pattern offset 6)"
 SAB_COUNT=1
 SAB_BEFORE="        if (c == ' ' || c == '\\t' || c == '-' || c == '_')
             continue;   /* insignificant — measured exhaustively for
