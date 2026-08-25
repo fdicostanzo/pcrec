@@ -14487,3 +14487,31 @@ main's binary (wave G, no FB; load 0.3): 1,634 passed / 0 failed, no
 timeout — the K32 cell's exit-124 in srFBc's run was load (K31 shape).
 The lane's own solo number on its tree is the second half of that
 verdict; awaited with the deliverable.
+
+#### Thirty-ninth session, part 31 addendum — the three reds resolved solo; the split gate lands (2026-08-25 ~03:4x EDT)
+
+srFBc, solo on a quiet box: `make test-mrl` 26/0 (the new assertion:
+exactly 2 ceiling sites pass ctx->len and all 4 public anchored entries
+route through them); `make test-resource` 19/0 (K31 shape confirmed);
+`counterk.rxt` on ITS tree 1,634/0 — the same number as the manager's
+control on main's binary: the K32 cell's exit-124 was load, from two
+binaries. THE GATE per ruling (B), running (PID 186788): (A) program
+region vs the UNCHANGED ac4917d, no filtering beyond the three D37
+stamps; the two FB region lines live in `vm_region` (call-bearing only)
+and this sweep walks the call-FREE bucket (this run: corpus 2,758
+patterns, 305 call-bearing, 2,453 call-free), so the assertion is a
+MEASURED ZERO plus a leak detector (any `RX_VM_CALL_` in the population
+= the call-free classifier leaked) — stronger than a count of 2; the
+call-bearing bucket has no pre-module reference at all (those patterns
+refused) and its region control is run_recursion_diff's A==B. (B) the
+whole file re-pinned to 8fc1e51 (the branch's last src/lib/cli commit)
+with the D40 reason; the pin-absent refusal kept and a second refusal
+added: the file pin must be POST-FB (`RESUME_FRAME_SIZE` present in its
+emit_dfa.c), so an accidental pre-wave pin cannot report the failure
+the re-pin retires. The elision list SPLITS: vs ac4917d the four dead-
+capture patterns still differ (VM then, DFA now); vs 8fc1e51 they must
+not. The rejected-stripping evidence sits in the gate's comment. The
+"rewrite table" refinement is superseded (no whole-file differences
+remain under the re-pin). Remaining: tests/codegen/CLAUDE.md +
+docs/testing.md on the two comparisons → six rows → final make test →
+deliverable with the gate's two numbers.
