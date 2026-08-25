@@ -13992,3 +13992,18 @@ enum, per-engine VARIANTS with two ruled constraints, a REGIME and an
 OBJECTIVE per sub-bench) are pointed to from [DD-13]'s row (343d49e).
 pcrecdev2 runs one light writing lane (a JSON schema + validator);
 nothing heavy.
+
+ADDENDUM (part 20, ~23:5x): srG's fourth make test went red on
+test-prefilter — a REAL inconsistency this wave introduced: engine
+selection's prefilter VERDICT had narrowed to `pcrec_has_linked_call`
+while `--emit-ir`'s listing REASON still came from `pcrec_has_call`, so
+a fully spliced call read "NO (subroutine call)" where the honest answer
+was "NO (--engine=vm)" — the exact defect wave E's section exists to
+catch, arriving from the other side. Fixed at d87afff three ways: the
+reason reads "NO (LINKED subroutine call)"; the three witnesses use a
+RECURSIVE callee so they stay linked; the old acyclic witness returns as
+a CONTROL asserting a spliced call must not claim the credit. Solo
+tests/prefilter 24/0. The 111 D69 rows had not run (the chain guards on
+a green make test — correct); re-running. Sixth check in the lane to go
+red for the right reason; five of the six are one fact — the registry's
+`vm` column and the listing's reason describe the LINKED construct.
