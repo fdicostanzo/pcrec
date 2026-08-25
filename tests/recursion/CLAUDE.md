@@ -514,3 +514,54 @@ before assuming the two coincide.**
   corpus was first written) omitted the REQUIRED subject the landed wave A
   grammar takes. Fixed in `gen_corpus.py` (see the `GU` class's own
   docstring) and re-verified against `worktrees/srA`'s real parser above.
+
+## [DD-14 wave G] What this directory gained, and what moved
+
+**`run_recursion_diff.sh` HAS A §5**, and it is design §9.2's SECOND CONTROL —
+the one this module has and `lookaround` did not. Every `pattern` line under
+this directory, deduplicated, built on BOTH LINKAGES (default, and
+`-fno-splice-calls`) and swept over §3's own 24-subject x every-startpos grid,
+comparing the span AND every `RX_NCAPS` group pair. It sweeps the CORPUS rather
+than a list, which is the OPPOSITE choice from §3's and is deliberate: §3's 16
+rows each defend a MEASURED claim, so writing them down IS the point, while
+§5's claim is about a POPULATION and a hand-written list is exactly how such a
+claim goes green while covering less than it says. A pattern that refuses must
+refuse on BOTH arms — a one-sided refusal is a wave-G bug wearing a skip's
+clothes, so it is a FAILURE and not a `continue`. **MEASURED: 156 of 170
+patterns built on both linkages (14 refused on both), 15,912 cells, 0
+disagreements.**
+
+**TWO OF ITS SECTIONS MOVED, AND BOTH MOVES ARE THE CLAIM CHANGING RATHER THAN
+THE CHECK WEAKENING.**
+
+- **§1's SLOT-SURVIVAL half is pinned on `-fno-splice-calls`**, which is the
+  only axis it was ever about. It greps the emitted C for
+  `RX_SLOT_GROUP<n>_START` — a fact about the VM's SLOT LAYOUT — and after wave
+  G `--no-captures '(a)(?1)'` has no live capture and no linked call, so it
+  compiles to the DFA ENGINE, which has no layout at all and where the grep
+  would report a deleted group where there is simply no VM. The flag forces the
+  LINKAGE, which forces the VM, which is where the marked set is observable.
+  The DEFAULT build is run beside it as a one-cell `A == B`, so the ANSWER half
+  is asserted on both engines.
+- **§4 is THREE cells now.** §8.1's `aⁿbⁿ` argument is structural for a
+  RECURSIVE callee and merely conservative for an acyclic one, so: recursion
+  still refuses `--engine=dfa` BY NAME; a SPLICEABLE call COMPILES; and
+  `-fno-splice-calls` puts the second back to a refusal that names the
+  construct. The third is what makes the second evidence about the LINKAGE
+  rather than about the construct having quietly stopped being VM-only.
+
+**THE WHOLE CORPUS RUNS ON BOTH ARMS** through `tests/harness/run.sh`'s new
+`RXTFLAGS` env var: `RXTFLAGS=-fno-splice-calls bash tests/harness/run.sh
+tests/recursion` is 593/0, the same as the default arm. That is `A == oracle`
+and `B == oracle` against this corpus's own libpcre2-generated expectations,
+which is strictly more than `A == B`.
+
+**AND `realworld.rxt`'s EXCLUSION NOTE IS DISCHARGED WITHOUT AN EDIT TO IT.**
+That file's header excludes the deep-repetition subjects 057-064 because five of
+them measured `PCREC_ERR_FRAMES` on the factored spelling at wave B+C, and says
+that number is wave G's and `[FB]`'s to move. `run_specimen_identity.sh` runs
+**all 85 subjects, those eight included**, on all four spellings and asserts NO
+GIVE-UP anywhere — so the claim is discharged by the instrument that owns the
+whole specimen rather than by re-generating a corpus file, which would have
+moved a measurement without re-measuring it (this directory's own rule about
+re-spelling a cell).
