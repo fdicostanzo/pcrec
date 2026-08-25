@@ -669,6 +669,32 @@ sweep() { # sweep <label> <extra pcrec args>
     # OTHER than the one written down. MEASURED at the wave: 4 / 4 / 4 / 0 / 4
     # over default, vm, noprefilter, nocaptures, nosplice.
     [ "$label" = "nocaptures" ] && nelide=0
+    # [DD-14.FB] AND THE REGION EXPECTATION IS NOT THE WHOLE-FILE ONE, on two
+    # of the four axes. MEASURED (2026-08-25), and the rule falls straight out
+    # of what the dead-capture elision DOES: its entire effect is on ENGINE
+    # SELECTION — a group no emitted code can write stops forcing the
+    # capture-recording engine — so a program REGION can only move on an axis
+    # where selection is free to change.
+    #
+    #   default, -fno-prefilter : reference selects the VM (region 8 and 11
+    #                             lines), today selects the DFA (region empty)
+    #                             -> all 4 differ. Expect `nelide`.
+    #   --engine=vm             : the engine is FORCED to the VM on BOTH
+    #                             sides, so the elision has nothing to select
+    #                             and the two programs are byte-identical
+    #                             -> expect 0. This is a STRONGER reading than
+    #                             the whole-file one, not an exemption from
+    #                             it: with the engine held fixed, wave G's
+    #                             elision moves no emitted program at all.
+    #   --no-captures           : neither side promises a group, so both are
+    #                             DFA and both regions are empty -> expect 0,
+    #                             for the reason the line above already gives.
+    #
+    # The two zeros have DIFFERENT reasons and are written down separately;
+    # collapsing them into "some axes are exempt" is how a real regression on
+    # one of them would later be waved through as expected.
+    local nelide_region="$nelide"
+    [ "$label" = "vm" ] && nelide_region=0
     # [DD-14.FB] THE ELISION LIST NOW BELONGS TO COMPARISON (A). The
     # dead-capture elision is what moved those four patterns from the VM to the
     # DFA, so against the PRE-MODULE reference they still differ (there, they
@@ -677,8 +703,8 @@ sweep() { # sweep <label> <extra pcrec args>
     # elision is on both sides of that comparison. Two different expectations
     # for one list, each asserted against the comparison it belongs to; folding
     # them would have meant one of the two going unchecked.
-    if [ "$relided" -ne "$nelide" ]; then
-        bad "[$label] (A) the wave-G ELISION list expects $nelide of its patterns' PROGRAM REGIONS to differ from $REFCOMMIT on this axis and $relided did. On every axis that PROMISES a capture all four must differ (they were VM-selected before the elision and are DFA-selected now, so the region exists on one side only); on --no-captures none may:"
+    if [ "$relided" -ne "$nelide_region" ]; then
+        bad "[$label] (A) the wave-G ELISION list expects $nelide_region of its patterns' PROGRAM REGIONS to differ from $REFCOMMIT on this axis and $relided did. The elision acts on ENGINE SELECTION, so a region moves only where selection is free: on default and -fno-prefilter all four must differ (VM-selected then, DFA-selected now); on --engine=vm none may, because the engine is forced on both sides and the two programs are byte-identical; on --no-captures none may, because neither side promises a group:"
         printf '%s\n' "$ELIDED_PATTERNS" | sed 's/^/    listed: /' >&2
     fi
     if [ "$rcallbearing" -ne 0 ]; then
@@ -714,9 +740,9 @@ sweep() { # sweep <label> <extra pcrec args>
     if [ "$mism" -eq 0 ] && [ "$diff" -eq 0 ] && [ "$stampbad" -eq 0 ] \
        && [ "$stampmoved" -eq 0 ] && [ "$same" -ge 700 ] \
        && [ "$elided" -eq 0 ] && [ "$rdiff" -eq 0 ] && [ "$rcallbearing" -eq 0 ] \
-       && [ "$relided" -eq "$nelide" ]; then
+       && [ "$relided" -eq "$nelide_region" ]; then
         ok "[$label] (B) WHOLE-FILE byte identity: ALL $same call-free corpus patterns emit IDENTICAL C (raw, and therefore also past D37's three stamp lines, each verified present on both sides) against a compiler built from the pin $FILEPIN — zero differing, zero refusal mismatches, and zero elision movement, which is what a post-wave-G pin must show"
-        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide NAMED wave-G elision patterns moved, and 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception"
+        ok "[$label] (A) PROGRAM-REGION identity: $rsame call-free patterns emit an IDENTICAL program region ('goto <p>_L0;' .. '<p>_accept:', unfiltered past the D37 stamps, comment changes included) against the UNCHANGED PRE-MODULE pin $REFCOMMIT — the claim this gate was built for, still measured against the reference it was built against; exactly the $nelide_region NAMED wave-G elision patterns moved (the elision acts on engine selection, so a region moves only where selection is free — 4 on default and -fno-prefilter, 0 on --engine=vm where the engine is forced on both sides, 0 on --no-captures where neither side promises a group), and 0 artifacts in this call-free population carry the call machinery whose two [DD-14.FB] region lines are the counted exception"
     fi
 }
 
