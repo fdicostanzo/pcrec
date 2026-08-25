@@ -1018,7 +1018,7 @@ spine, not before):
   [M5-SEAM] (D58 ordering: seam → M6 → the rest of M5); the lowering
   instances, oracle twin, and both M5-time structural checks named in
   (7)(a) remain M5's
-- [DD-13] STATE:not-started — THE UNIFIED PATTERN-SOURCE / TEST FILE
+- [DD-13] STATE:not-started — INPUTS FROM pcrec-bench (pcrecdev2, 2026-08-24 ~23:5x; Frank ruled the bench-set format BLOCKS on [DD-13], scope NARROW — today's .rxt parsed as-is, per-sub-bench tags in a plain sidecar of R-BENCH fields, no grammar): /home/duxevents/pcrec-bench/docs/design/requirements.md v3 (commit 8c34498) §5 (sub-bench DIRECTORY model + sidecar), §4.4 (per-(pattern,testee) OUTCOME enum), §4.5 (a declared VARIANT per engine — identical results on every subject, the sub-bench's OBJECTIVE preserved: a subroutine sub-bench may not be satisfied by inlining), §3 (per-sub-bench REGIME), a sub-bench-level OBJECTIVE field — for [DD-13b] to absorb when it opens. THE UNIFIED PATTERN-SOURCE / TEST FILE
   FORMAT (Frank, 2026-08-17, twenty-ninth session; name TBD): ONE file
   format, grown from .rxt, serving every consumer that today would need
   its own file kind: (1) the [V-E] MANIFEST — a compilation SOURCE for
