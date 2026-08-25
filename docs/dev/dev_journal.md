@@ -14911,3 +14911,9 @@ srClose's `make -j12 -Otarget test` on its tree (4111649+ce2ca3a: ae9c98c
 checks passed: 1536; cases failed: 0; cases passed: 26843; checks failed: 0;  sections skipped 0, ZERO section errors — test-resource
 included, so the K31 pair did not blip this run (load-dependent, as
 [TT-10] says). Item 3 (the gates) running; strict and san follow.
+Item 3 (gates) on the close's tree, 08:48→: the three retired identity
+gates each print `FAIL: RETIRED: the subject tree carries [DD-14] wave
+A's ABI event (PCREC_ERR_INTERNAL in src/gen/emit_dfa.c) …` with
+`checks failed: 1` — that IS the designed green state (a refusal WITH
+the reason; anything else would be the finding); the split recursion
+gate runs beneath them (10 PASS at 08:53, the 15/0 expected).
