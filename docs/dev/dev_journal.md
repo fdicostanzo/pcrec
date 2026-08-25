@@ -14861,3 +14861,24 @@ battery runs ONCE at the end, after item 7 restores the K35 populations
 hour's value): 1 → 3 → 4 → 5 → 6 → 7 → 8 → battery → deliverable.
 Watchdog 0ed363d9. pcrecdev2 has ae9c98c as its re-pin target (its
 next session; expects factored/short-search to collapse to orig's).
+
+#### Thirty-ninth session, part 44 — the close's item 1 and a correction to K35 (2026-08-25 ~08:0x EDT)
+
+srClose item 1 (three solo re-runs on e7fa4d2, 15m29s, PROCS=1): S155
+DETECTED (framebuf 1/5; corpus 16/0 and recdiff 10/0 as the control
+half — the answer does not move), S70 DETECTED (reject 2/587, exactly
+the two new witnesses; assertions 52/0), S159 DETECTED (451/1239 +
+8/7, scoreable only because of K37's wrapping). RE-DERIVED HEADLINE:
+**180 rows / unexpected 0 / undetected 6 (S150-S153, S160, S178) /
+anomalies 0** — stated as the composite of the manager's 05:02-06:20
+run on 17469b6 and these three on e7fa4d2. Items 4 (compliance refresh:
+--check 128, --names, --check-annotations 91 keys/21 blocks PASS;
+--tension 79/177), 5's measured half (five stale futures fixed by
+measurement incl. gated.rxt's P2 cell DISCHARGED) and 8(a)(b)(d)(e)
+landed (acdd0cb, 3219b56). FINDING: my 2026-08-24 K35 follow-up survey
+was WRONG about all four differential suites — each has had a top-level
+`export LC_ALL=C` since birth; the unguarded site is
+tests/codegen/run_object_neutrality.sh:75 (1,798 vs 2,772: every
+object-neutrality verdict was over 65% of the corpus). K35 corrected on
+main by the manager; the lane fixes the site + the general export + the
+structural check.

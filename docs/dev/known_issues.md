@@ -2789,6 +2789,27 @@ the harness so no script can inherit the locale — ruled at the close.
 
 **Milestone.** [DD-14.CLOSE] item 7.
 
+
+**FOLLOW-UP CORRECTED 2026-08-25 ~08:0x (the close lane srClose, measured;
+the error was the manager's 2026-08-24 survey):** the survey listed sort
+SITES by grep and never checked for an enclosing guard. The four
+differential suites it named — tests/mrl/run_mrl_tests.sh, tests/
+possessify/run_possdiff.sh, tests/counterk/run_counterkdiff.sh, tests/
+rungselect/run_rungselect_tests.sh — each carry a TOP-LEVEL `export
+LC_ALL=C` above every sort site, present since each script was born
+(6a2f875, 23684e1, 3b0bf91, b14f369), so they have ALWAYS run on the full
+population and there is no 57% growth to harvest there; the same holds
+for altdiff, mrldiff, rungdiff, possessify_tests, altcls_tests,
+counterk_tests, prefilter_tests. The defect is real and current on this
+tree (ambient `sort -u` 1,784 vs `LC_ALL=C` 2,758 patterns, delta 974)
+and it LIVES in `tests/codegen/run_object_neutrality.sh:75` — the same
+idiom, fully unguarded: 1,798 vs 2,772, i.e. every object-neutrality
+verdict ever printed was stated over 65% of the corpus. Fixed by the
+close lane (guard + comment at the site), with the general export in
+tests/lib/run_group.sh + tests/harness/run.sh and a structural check
+naming any unguarded sort still to land in the same lane. Lesson for the
+survey method: a grep for the hazard is not a survey of the exposure —
+check the enclosing scope.
 ## K36 — OPEN (2026-08-25, found by r36's engine critic; pre-existing) — `rx_L3` restores read the trail before the call-frame bounds guard
 
 In VM artifacts with subroutine calls, the region-exit restore at `rx_L3`
