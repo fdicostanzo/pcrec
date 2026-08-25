@@ -107,7 +107,16 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   [M4.5b] §5.4 byte-identity gate, and [M4.5c]'s DD-8 program-listing check.
   The last two RUN under `make test-vm` rather than `make test-codegen`, on a
   measured smoke-budget argument recorded in its CLAUDE.md
-- **thread/** — concurrency under ThreadSanitizer (`make test`): [TS-2] N
+- **thread/** — two disjoint questions about threads, in two scripts.
+  **[TS-4]/[DD-14.FB]'s `run_stackdepth_tests.sh`** (`make test-stackdepth`,
+  in `make test`, NO sanitizer) asks whether ONE call FITS: the emitted
+  matcher on a musl-default 128 KB thread stack. It prints a `KNOWN:` line on
+  a green run — the call-bearing default entry does not fit, K33, and D73
+  keeps the stamped capacity that causes it — and FAILS if that ever stops
+  being true. TSan is deliberately absent, because it changes the stack a call
+  needs and a stack-fit question asked under it is a question about TSan. The
+  rest of the directory asks whether concurrent calls RACE, under TSan:
+  [TS-2] N
   threads share one compiled matcher over different subjects across five
   differently-shaped emitted engines, [TS-3] concurrent `pcrec_compile()` on
   different patterns in different threads (library built WITH TSan), both
