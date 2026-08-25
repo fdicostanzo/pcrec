@@ -80,10 +80,16 @@ GENCFLAGS="${GENCFLAGS:--O2 -std=gnu11 -Wall -Wextra -Werror}"
 # emitted matcher, which is the whole of what sabotage row S155 does (the
 # other two capacity guards still return the same typed answer one frame
 # later, so no answer-checking cell moves). Its ASan build is a PREFLIGHT, and
-# the fallback below runs the two `one-short` arms WITHOUT the sanitizer --
-# where a build that writes one frame past the end still answers -3 and still
-# PASSES. On such a box the row would read "ran, caught nothing", which is a
-# statement about the CODE and it would be FALSE.
+# the fallback below runs the two `one-short` arms WITHOUT the sanitizer.
+#
+# MEASURED: on THIS box that fallback still catches it -- the one-frame overrun
+# corrupts the heap and glibc aborts this driver ("double free or corruption
+# (!prev)", exit 134), which the `exact_rc -ne 0` arm below scores as a
+# failure. But a write one element past a heap region is UNDEFINED BEHAVIOUR,
+# so whether anything notices belongs to the ALLOCATOR rather than to the test.
+# On a box where the write lands in slack the allocator owns, the three
+# verdicts read 1/-3/-3, this section PASSES, and the row would read "ran,
+# caught nothing" -- a statement about the CODE, and a FALSE one.
 #
 # So the caller gets to say that the instrument is REQUIRED. With
 # REQUIRE_ASAN=1 a failed preflight is recorded and this script exits 3 --

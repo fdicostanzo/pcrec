@@ -133,16 +133,21 @@
 #     **`framebuffer` IS RUN WITH `REQUIRE_ASAN=1`** ([srMech 2026-08-25],
 #     Frank's ruling on S155). Its SS2 is the only instrument in this tree that
 #     reads an out-of-bounds WRITE rather than an ANSWER, and S155 is a row
-#     that changes a write and no answer at all. Without the sanitizer SS2's
-#     two `one-short` arms still run and a build that writes one frame past
-#     the end still answers -3 and still PASSES -- so an ASan-less box would
-#     have scored S155 `UNDETECTED`, which is a claim about the CODE and a
-#     false one. The flag makes the script exit 3 on a failed preflight, this
+#     that changes a write and no answer at all. On a box where the overrun
+#     lands in slack the allocator owns, SS2's two `one-short` arms read
+#     1/-3/-3 and PASS -- and S155 would score `UNDETECTED`, which is a claim
+#     about the CODE and a false one. The flag makes the script exit 3 on a
+#     failed preflight, this
 #     arm records `framebuf:UNMEASURED-no-asan`, and the verdict block turns
 #     that into an ANOMALY. This is SKIP-IS-NOT-A-PASS applied to an
 #     INSTRUMENT instead of an ORACLE -- the same rule `pc3` has had since
 #     MOD-0.8c: a net that was not in the water caught nothing for a reason
-#     that is not about the fish.
+#     that is not about the fish. MEASURED, because the first version of this
+#     paragraph asserted the opposite and was wrong: on THIS box a sabotaged
+#     S155 build fails SS2 with OR without the sanitizer (the overrun corrupts
+#     the heap and glibc aborts, exit 134). Detection-by-abort is a property of
+#     the ALLOCATOR, not of the test, so the flag stays as the guard for a box
+#     where the write lands in slack and nothing notices.
 #   lookaround — added 2026-08-23 ([M6.6.2] wave B+C, R33 C2-7); the design put
 #     it at wave F, and two of wave B+C's own rows (S131's atomicity flag and
 #     S122's cut) cannot be scored without its DISAGREEMENT assertion
@@ -726,15 +731,22 @@ run_one() {
                 # S155] SKIP-IS-NOT-A-PASS APPLIED TO AN INSTRUMENT RATHER
                 # THAN AN ORACLE. §2's exact-fit driver is the only thing in
                 # this tree that can see an out-of-bounds WRITE, and S155 is
-                # a row that changes a write and no answer. Without the
-                # sanitizer §2's two `one-short` arms still run and a build
-                # that writes one frame past the end still ANSWERS -3 and
-                # still passes -- so an ASan-less box would score S155
-                # UNDETECTED, which is a claim about the code and a false one.
-                # This flag makes the script exit 3 on a failed preflight;
-                # the row then reads ANOMALY (not measured) instead. The
-                # opt-in `make test-frame-buffer` route passes no such flag
-                # and is unchanged.
+                # a row that changes a write and no answer.
+                #
+                # MEASURED, NOT ASSUMED -- and the first version of this
+                # comment assumed and was WRONG. On this box a sabotaged S155
+                # build fails §2 WITHOUT the sanitizer too: the one-frame
+                # overrun corrupts the heap and glibc aborts the driver
+                # ("double free or corruption (!prev)", exit 134), which §2's
+                # own `exact_rc -ne 0` branch scores as a failure. But
+                # detection-by-abort is a property of the ALLOCATOR, not of
+                # the test -- a write one element past a heap region is UB,
+                # and on a box where it lands in slack the three verdicts read
+                # 1/-3/-3 and §2 PASSES. This flag is the guard for exactly
+                # that box: the script exits 3 on a failed preflight and the
+                # row then reads ANOMALY (not measured) rather than
+                # UNDETECTED. The opt-in `make test-frame-buffer` route passes
+                # no such flag and is unchanged.
                 PCREC="$pcrec" CC="$CC" REQUIRE_ASAN=1 \
                     bash "$tree/tests/recursion/run_frame_buffer.sh" \
                     > "$work/framebuffer.log" 2>&1

@@ -82,19 +82,27 @@ ruling on S155). `any_skip` has always distinguished a missing ORACLE from a
 green result — a `pc3` that could not find libpcre2 is not a pass. S155 needed
 the same distinction for a missing INSTRUMENT: its only detector is
 `run_frame_buffer.sh` §2's exact-fit driver under AddressSanitizer, because
-the row changes an out-of-bounds WRITE and no ANSWER, and §2's non-sanitized
-fallback still passes on a build that writes one frame past the end. So the
+the row changes an out-of-bounds WRITE and no ANSWER. **MEASURED, after a
+first draft of this paragraph asserted the opposite:** §2's non-sanitized
+fallback DOES catch S155 on this box — the overrun corrupts the heap and glibc
+aborts the driver (exit 134), which §2 already scores as a failure — but
+detection-by-abort belongs to the ALLOCATOR, not to the test, and on a box
+where the write lands in slack the three verdicts read 1/-3/-3 and §2 passes.
+So the
 `framebuffer` arm runs with `REQUIRE_ASAN=1`; a failed preflight exits 3, the
 arm records `framebuf:UNMEASURED-no-asan` and sets `any_unmeasured`, and the
 verdict block prints **ANOMALY** rather than `UNDETECTED`. **`any_fail`
 OUTRANKS IT** — a row another arm DID catch still reads DETECTED — and the
 totals are scraped BEFORE the exit status is consulted, so a red §1 or §3 on
 an ASan-less box is still a red. Nothing else in the file sets the flag, so no
-existing row's verdict moved. VALIDATED IN BOTH DIRECTIONS with a `cc` wrapper
-that rejects `-fsanitize=`: with the flag the script reads `checks passed: 6,
-checks failed: 0` — the exact green that would have been read as UNDETECTED —
-and exits 3; without the flag (the opt-in `make test-frame-buffer` route) the
-same box exits 0 and nothing changed.
+existing row's verdict moved. VALIDATED with a `cc` wrapper that rejects
+`-fsanitize=`: on a CLEAN tree the script reads `checks passed: 6, checks
+failed: 0` and exits 3 with the flag, 0 without it (the opt-in
+`make test-frame-buffer` route, unchanged); on the SABOTAGED tree the same
+wrapper still yields 5pass/1fail, so the full-row run reads DETECTED and
+`anomalies: 0` — `any_fail` outranking the flag, exactly as intended. That env
+`CC` reaches the arm at all was proved separately: `CC=/nonexistent-cc` gives
+BUILD-FAILED/ANOMALY.
 
 `SAB_EXPECT` is `DETECTED` (the default when absent) or `UNDETECTED`. The
 driver scores every row against it, the headline reads **`unexpected: N`**,
