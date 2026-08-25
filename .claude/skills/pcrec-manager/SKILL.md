@@ -24,8 +24,9 @@ discuss design points, and run everything in between.
 4. Skim anything wake.md's "READ, IN THIS ORDER" section points at (usually
    the latest `docs/dev/reviews/` file).
 5. For architecture/context on demand: `APPROACH.md` (the approved design),
-   `docs/dev/decisions.md` (ADR log D1..), `docs/testing.md` (.rxt format and
-   harness), `docs/design/extension_design.md` (module/port architecture, read its
+   `docs/dev/decisions.md` (ADR log D1..), `docs/spec/rxt_format.md` (.rxt
+   format and driver protocol) and `docs/testing.md` (harness process
+   record), `docs/design/extension_design.md` (module/port architecture, read its
    panel-outcome blocks first), `lib/pcrec.h` (only public header).
 
 Do not start a new milestone unprompted — milestones start with Frank

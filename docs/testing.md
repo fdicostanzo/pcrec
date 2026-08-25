@@ -6,6 +6,14 @@ compiles that matcher with the system C compiler, and runs it against a set
 of subject strings, checking the reported match span (or lack of one)
 against the expectation encoded in the test file.
 
+**This file is process record** (DEVDOC): battery composition, measured
+runtimes, tiered-testing/section-target guidance, the sanitizer and lint
+battery, compile-caching and timeout-binary findings, landing-gate results,
+and the living oracle-exclusion catalog. **The `.rxt` format itself and the
+driver protocol are contract documents and live in
+`docs/spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25, extracted from this
+file) — read that first if you are adding a test or a test directory.
+
 ## Running the tests
 
 ```sh
@@ -103,6 +111,7 @@ it plugs directly into `make test` / CI.
 | `VERBOSE`   | unset (0)                  | Set to `1` to print a line for every *passing* case, not just failures |
 | — | — | Per-block `.rxt` directives: `flags i` (caseless) and, since MOD-0.3c, `features <list>` (comma-separated module names passed as `--features`; the spec is validated once per distinct list so a typo is a loud harness failure, never a perr match) |
 | `RXTROUTE`  | unset (`default`)          | ([DD-14.FB]) The INITIAL `frames-buffer=` route for every block in the run, overridden per block by a directive. `RXTROUTE=null` is the useful one: spec §10.3 defines a NULL descriptor to BE the un-suffixed call, so re-running any corpus under it must reproduce that corpus's result cell for cell — the NULL-equivalence control as a corpus-wide axis rather than a handful of hand-written cells. A numeric value is accepted for symmetry but is a blunt instrument (a capacity that suits one block starves another). **It is MANUAL-ONLY, exactly like `RXTFLAGS`**: nothing in `make test` or in any section target sets it, so every automated run uses the default route and this axis is exercised only when a person asks for it by hand |
+| `RXTFLAGS`  | unset (empty)              | ([DD-14 wave G]) EXTRA `pcrec` flags appended (last, so a directive-supplied flag on the same axis wins) to every compile in the run, for sweeping one corpus over a COMPILER AXIS the `.rxt` format has no directive for (e.g. `-fno-splice-calls`). Empty by default, so a plain run is byte-for-byte unchanged; manual-only like `RXTROUTE` — was previously documented only in `tests/harness/run.sh`'s own header comment (`run.sh:13-22`), not here — gap closed by [SPEC-1.6] |
 | `PROCS`     | unset (1)                  | Run N `.rxt` **files** concurrently (each in its own re-invocation with its own temp dir). Summary format and counts are identical to a serial run; the parent hard-fails if any worker vanishes without printing a summary, so a lost worker can never read as a pass. Measured on the project box: full corpus 4m25s serial → 55s at `PROCS=6`. Prefer `TMPDIR=/var/tmp` at higher `PROCS` (`/tmp` is a quota'd tmpfs there) |
 
 Example: testing a debug build with a different compiler and keeping
@@ -121,356 +130,29 @@ that produces no row is a loud FATAL, never a silently smaller denominator.
 budgets are timing medians (D12/D17) and it gates on load average, so it runs
 alone on a quiet box or its numbers mean nothing.
 
-## The `.rxt` format
+## The `.rxt` test format and driver protocol
 
-A `.rxt` file is a flat, line-oriented list of **pattern blocks**. Each block
-starts with a `pattern` line and is followed by zero or more expectation
-lines (`m`, `n`, or `perr`) that apply to that pattern, until the next
-`pattern` line or end of file.
+**Moved to `docs/spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25): the `.rxt`
+directive grammar (`pattern`/`flags`/`features`/`perr`/`m`/`n`/`ms`/`ns`/
+`g`/`gp`/`gu`/`engine`/`budget`/`frames-buffer=`), the subject escape table,
+oracle-verification requirements (the default python-`re` oracle, the
+`# pcre2-only` exclusion convention, per-directory oracle overrides), how
+`run.sh` evaluates a block, the driver protocol (`tests/harness/driver.c`'s
+CLI, exit codes, the D45 budget policy), and how to add a new component test
+directory all live there now — that document is the contract a contributor
+adding a test needs; this file keeps the process record below (runtimes,
+battery composition, sanitizer/lint measurements, TT-* notes, the specific
+current oracle-exclusion catalog).
 
-- Blank lines and lines starting with `#` are ignored (comments). Comments
-  are WHOLE-LINE ONLY: a `#` after case fields is NOT a comment — it makes
-  the line unparseable, a hard error. (Deliberate: a pattern or subject may
-  legitimately contain `#`, so the parser never guesses where data ends and
-  commentary begins. Found the hard way by the R22 D27 author.)
-- `pattern <regex>` — starts a new block. `<regex>` is everything after the
-  first space on the line, taken verbatim through to the end of the line
-  (no quoting, no escaping — write the pattern exactly as PCRE would see
-  it).
-- `flags <letters>` — compile options for the current block, given after its
-  `pattern` line. Only `i` is defined (case-insensitive, `pcrec -i`; OS-1).
-  A block with no `flags` line compiles with defaults, and the setting does
-  **not** carry to the next block. An unknown letter is a hard error, not a
-  silent no-op: a dropped flag would compile a different automaton and the
-  block's expectations would then be verified against something nobody asked
-  for. `tests/harness/verify_rxt.py` honours the same directive, mapping `i`
-  to `re.IGNORECASE | re.ASCII` — the `re.ASCII` is required, since python's
-  IGNORECASE otherwise folds Unicode and would disagree with pcrec's
-  deliberately ASCII-only fold.
-- `features <list>` — enabled feature modules for the current block
-  (MOD-0.3c): a comma-separated list of module names exactly as
-  `--list-syntax`'s module column spells them, passed to pcrec as
-  `--features <list>`. Block-scoped like `flags`. The harness validates
-  each distinct list once against a trivially-valid pattern, because pcrec
-  refuses an unknown module name with exit 1 and a `perr` block would
-  otherwise read the typo as its expected rejection. `verify_rxt.py`
-  understands the directive as a no-op — python re has no module gate, and
-  gate-only constructs are `# pcre2-only` blocks like any other
-  python-inexpressible pattern.
-- `perr` — asserts that the current pattern **fails to compile** (`pcrec`
-  must exit nonzero). A block using `perr` has no `m`/`n` lines — the
-  pattern text itself is the entire test.
-- `m "<subject>" <start> <end>` — asserts that searching `<subject>` from
-  byte offset 0 finds a match spanning bytes `[<start>, <end>)`.
-- `n "<subject>"` — asserts that searching `<subject>` from byte offset 0
-  finds **no** match.
-- `ms <P> "<subject>" <start> <end>` — asserts that searching `<subject>`
-  with `startpos = <P>` finds a match spanning bytes `[<start>, <end>)`.
-  `<P>` is a non-negative decimal integer, given before the quoted subject.
-- `ns <P> "<subject>"` — asserts that searching `<subject>` with
-  `startpos = <P>` finds **no** match.
-- `g <slot> <start> <end>` / `gp <slot> <start> <end>` — **[M4.5a]** asserts a
-  per-GROUP capture-slot expectation, attached to the most recently preceding
-  `m`/`ms` case in the current block (never `n`/`ns` — a no-match assertion
-  has no captures). `<slot>` is a non-negative decimal integer indexing
-  `caps[]` exactly as the frozen match API does (slot 0 is the whole match,
-  same value as the case's own `<start> <end>`; group *k* occupies slot *k*
-  when every group up to it delivers a slot — match_api_m4.md §2.2 C2/C9).
-  `<start>`/`<end>` are two non-negative decimal integers for a real span, or
-  the literal pair `-1 -1` for `RX_UNSET` (the group didn't participate) —
-  one `-1` without the other is a hard parse error, since `RX_UNSET` is
-  symmetric in both slots (C5). `g` is LIVE: the slot must be checkable
-  *now*; `gp` is PENDING-VM: the slot may be beyond what today's DFA-only
-  artifacts deliver. See "Capture-group expectations" below for the full
-  design and the population-accounting rule.
-- `gu <code> "<subject>"` — **[DD-14 wave A, 2026-08-24]** asserts that
-  searching `<subject>` from byte offset 0 GIVES UP with the typed code
-  `<code>`, one of `steps`/`frames`/`work`/`recurse` (`recurse` is
-  `PCREC_ERR_RECURSE`, reserved with no producer yet, D71 item 1, so no
-  block can pass with it today — the directive still accepts the word so
-  a future producer needs no harness change). `internal` is REFUSED at
-  parse time, by name, with its own diagnostic: `PCREC_ERR_INTERNAL` is
-  the artifact catching its own analysis/emission bug, never a planned
-  outcome a corpus block gets to EXPECT — that is what `tests/mech`'s
-  sabotage rows are for (S136 exercises this exact code). Scored against
-  the driver's exit `3` plus its printed word (see "The driver protocol",
-  point 5, below) instead of the default HARD failure every other case
-  kind gets on exit 3 — see below (`engine`, `budget`) for the two
-  directives that let a block actually REACH a give-up.
-- `engine vm` — block-scoped, like `flags`/`features`: forces
-  `--engine=vm` for the current block's compile. Only `vm` is defined.
-- `budget steps=<n>` / `budget frames=<n>` — block-scoped: passes
-  `--step-budget=<n>` / `--backtrack-frames=<n>` respectively. Either,
-  neither, or both may appear in one block (two separate `budget` lines).
-  These, together with `engine vm`, are the minimal route — mirroring
-  `tests/vm/run_vm_tests.sh`'s own `build()` calls, which drive the same
-  two bounds through the identical pcrec flags via a separate C driver —
-  that lets a `.rxt` block reach a give-up at all; before [DD-14] wave A
-  nothing in the directive vocabulary could select `--engine=vm` or a
-  tiny budget (see "The driver protocol", point 5, below).
-- `frames-buffer=<route>` ([DD-14.FB], 2026-08-25) — **POSITIONAL WITHIN
-  THE BLOCK**, not block-scoped, and that is the one thing to know about
-  it: it names the ENTRY the cases BELOW it are run through, until another
-  `frames-buffer=` line changes it or the block ends. Four routes:
-
-  | route | the case runs through |
-  |---|---|
-  | `default` (also the initial state) | `<prefix>_search` |
-  | `null` | `<prefix>_search_in(..., NULL)` — which spec §10.3 defines to BE the call above, so this is an identity control rather than a variant |
-  | `<n>` | `<prefix>_search_in` with `<n>` resume frames AND `<n>` trail entries |
-  | `<frames>,<trail>` | the same, with the two capacities set separately |
-
-  The driver allocates both regions, sized in bytes from the artifact's own
-  `<PREFIX>_RESUME_FRAME_SIZE`/`_TRAIL_FRAME_SIZE`, and frees them; nothing
-  else about the case changes — same subject, same startpos, same printed
-  protocol, same expectations.
-
-  **It does not overlap `budget frames=<n>` and the two compose.** That one
-  is `--backtrack-frames`, which sizes the ARTIFACT at compile time; this
-  one sizes the CALL. A block may carry both.
-
-  **Prefer unequal capacities when you mean to test a buffer.** MEASURED
-  (`docs/design/frame_buffer_design.md` §4): the trail is consumed ~4.49x
-  faster than the resume stack, so `frames-buffer=8192` provisions the two
-  arrays very differently from each other in practice — and, more sharply,
-  a cell whose two capacities are EQUAL cannot distinguish a correct build
-  from one that passes each capacity to the other array (sabotage row
-  S180). `tests/recursion/framebuffer.rxt` uses `1024,8192` for exactly
-  that reason.
-
-  **On a DFA artifact every route answers identically**, because that
-  engine's `_in` entries take a descriptor and ignore it (spec §10.4) — so
-  a corpus file may carry these lines without knowing which engine its
-  patterns will select.
-
-`m`/`n` are exactly `ms`/`ns` with `<P>` fixed at 0; see "startpos support"
-below for the `rx_search` contract these exercise.
-
-`<subject>` is double-quoted text. Inside the quotes, these escapes are
-recognized (no others are):
-
-| Escape | Meaning |
-|--------|---------|
-| `\"`   | literal `"` |
-| `\\`   | literal `\` |
-| `\n`   | newline |
-| `\t`   | tab |
-| `\r`   | carriage return |
-| `\f`   | form feed |
-| `\v`   | vertical tab |
-| `\xHH` | byte `0xHH` (exactly two hex digits) |
-
-Subjects may contain literal spaces — the quotes, not whitespace, delimit
-the subject.
-
-### Example
-
-```
-# Literal matching and basic quantifiers.
-
-pattern abc
-m "abc" 0 3
-m "xxabcxx" 2 5
-n "ab"
-
-pattern a+
-m "aaa" 0 3
-n "b"
-
-# An invalid pattern: unbalanced group.
-pattern (bad
-perr
-
-pattern colou?r
-m "The color and colour are spelled differently." 4 9
-m "colour" 0 6
-m "byte \x41 then newline\n" 5 6
-```
-
-## How the harness evaluates a block
-
-For each pattern block, `run.sh`:
-
-1. Runs `$PCREC -p rx -o <tmp>/gen.c '<pattern>'`.
-2. If the block is `perr`: passes iff `pcrec` exited nonzero; fails
-   (reporting that compilation unexpectedly succeeded) otherwise.
-3. Otherwise, if `pcrec` failed, every `m`/`n` case in the block is reported
-   as failed, with `pcrec`'s stderr included in the message — and the
-   pattern is counted once toward the "pattern-compile failures" total in
-   the summary, however many cases it had.
-4. Otherwise it compiles the generated matcher against the shared test
-   driver:
-   `$CC $GENCFLAGS -I<tmp> -o <tmp>/t tests/harness/driver.c <tmp>/gen.c`.
-   A failure here is a **harness-level failure** (broken codegen or a
-   driver/compiler mismatch, not a single bad test case) and is reported
-   clearly, separately from ordinary case failures.
-5. For each `m`/`n`/`ms`/`ns` case, runs `<tmp>/t '<subject>' '<P>'` (quotes
-   stripped, escapes still encoded — the driver decodes them; `<P>` is `0`
-   for `m`/`n`). For `n`/`ns`, stdout must be exactly `nomatch`. For `m`/`ms`,
-   stdout must start with `match` followed by the WHOLE-MATCH pair
-   (`<start> <end>`, parsed positionally as fields 2 and 3) — **[M4.5a
-   fix]**: this is a parsed-field comparison, not a whole-line compare,
-   because the driver line also carries every subsequent `RX_NCAPS` group
-   pair (see "Capture-group expectations" below); trailing pairs are simply
-   not looked at by this check. It is still strict, not a substring match:
-   `match` vs `nomatch`, a short/malformed line, or a wrong whole-match pair
-   all fail loudly. **[DD-14 wave A, 2026-08-24]**: for a `gu <code>` case,
-   the same driver invocation must instead exit `3` with stdout exactly
-   `<code>` — the ONE case kind that WANTS the exit every other kind
-   treats as an unconditional hard failure ("The `.rxt` format" above and
-   "The driver protocol", point 5, below have the full shape).
-
-Failures are printed as `file:line: expected ... got ...` along with the
-pattern under test, so a failure can be traced straight back to the
-offending line. The final summary reports total cases passed/failed, a
-per-file breakdown of failures, and the distinct count of patterns that
-failed to compile.
-
-## The driver protocol
-
-`tests/harness/driver.c` is a single small C program, shared by every test
-case, that adapts the generated `rx_search` API to a simple CLI:
-
-```
-t <subject> [startpos] [route]
-```
-
-`<subject>` is the case's subject text with escapes still encoded as literal
-backslash sequences (exactly as they appear inside the `.rxt` file's
-quotes). `[startpos]` is optional (defaults to `0`) — `run.sh` always passes
-it explicitly (`0` for `m`/`n`, `<P>` for `ms`/`ns`). `[route]`
-([DD-14.FB], 2026-08-25) is the `frames-buffer=` route documented above and
-selects WHICH ENTRY answers — `default`/absent, `null`, `<n>` or
-`<frames>,<trail>`; it changes nothing else about the call or about the
-protocol below, which is what makes a route a control rather than a
-variant. The driver:
-
-1. Decodes escapes into a byte buffer, tracking the length explicitly (the
-   decoded bytes may include `\0`, so the driver never uses `strlen` on the
-   result). An invalid escape prints a message to stderr and exits `2`.
-2. Parses `[startpos]`, if given, as a non-negative decimal integer; a
-   malformed value prints a message to stderr and exits `2`.
-3. Calls `rx_search(buf, len, startpos, caps)` ([M4.4], D44.2: `caps` is a
-   `ptrdiff_t (*)[2]`, not the retired `rx_span *m` out-struct), where `caps`
-   is declared `ptrdiff_t caps[RX_NCAPS][2]` — `RX_NCAPS` comes from the
-   pattern's own generated `gen.h`, so the array is always exactly the size
-   the artifact under test actually delivers.
-4. On a match, prints `match` followed by **every** `caps[k][0] caps[k][1]`
-   pair for `k` in `[0, RX_NCAPS)` (`%td` each), then a newline; on no match,
-   prints `nomatch\n`; exits `0` either way. **[M4.5a]**: since `RX_NCAPS` is
-   1 on every artifact before [M4.5]'s VM lands (match_api_m4.md D42.2), this
-   is exactly `match %td %td\n` today — the multi-pair form is a superset
-   that activates automatically once `RX_NCAPS` grows, not a reshape. A `g`/
-   `gp` capture-expectation line (see "Capture-group expectations" below)
-   picks its slot's pair out of this line by position: fields `1+2*slot` and
-   `2+2*slot` after the leading `match` token.
-5. **[K21-class fix, 2026-08-15]**: `rx_search`'s return is actually
-   three-valued, not boolean — a VM artifact can also GIVE UP (a negative
-   RX_ERR_STEPS/RX_ERR_FRAMES/RX_ERR_WORK/RX_ERR_RECURSE sentinel when it
-   exhausts its step budget, backtrack-frame capacity, or (RECURSE, [DD-14]
-   wave A, reserved with no producer yet, D71 item 1) its recursion depth;
-   a DFA artifact never returns one) — or, [DD-14] wave A commit 2, D71
-   item 1, return the BELOW-THE-FLOOR `RX_ERR_INTERNAL`, which is NOT a
-   give-up: the artifact caught its own analysis/emission inconsistency
-   (module `lookaround`'s negative-polarity lookbehind end-check is the
-   one producer today). The driver
-   discriminates this explicitly rather than treating the return as a bool
-   (the shape that was wrong — see docs/dev/known_issues.md K21): on a
-   give-up or an internal code it prints
-   `steps\n`/`frames\n`/`work\n`/`recurse\n`/`internal\n` (an
-   unrecognized code prints `giveup <N>\n`, [DD-14] wave A —
-   the earlier version of this line folded every non-STEPS code into
-   `"frames"`, mislabelling WORK give-ups) and exits `3`, not `0`, and
-   `run.sh`'s per-case loop treats exit `3` as its own HARD harness-level
-   failure by default — alongside the existing timeout (`124`) and crash
-   (`>=126`) branches, never compared against a `match`/`nomatch`
-   expectation — UNLESS the case is a `gu <code>` directive (above), which
-   scores exit 3 against its expected word instead. **[DD-14] wave A,
-   2026-08-24**: before this wave nothing in the `flags`/`features`
-   directive vocabulary could select `--engine=vm` or a tiny
-   `--step-budget`/`--backtrack-frames`, so no `.rxt` case could reach this
-   path at all — the `engine`/`budget` directives (above) are the minimal
-   route that changed that, and `tests/harness/giveup.rxt` is the
-   permanent positive cell exercising both a `steps` and a `frames`
-   give-up through it.
-
-A usage note that follows from [M4.6a]'s calibration sweep (2026-08-17):
-`--engine=vm` is a DIAGNOSTIC mode — it disables the DFA prefilter so the
-two engines are independently comparable (the R21 E-6 ruling), and without
-the prefilter the VM's work on a large subject runs orders of magnitude
-above the default path the budgets were calibrated against. Anyone forcing
-`--engine=vm` over large subjects should pass an explicit `--work-budget`
-sized for that run rather than relying on the default.
-
-The driver includes `"gen.h"`, so it must be compiled with `-I<dir>`
-pointing at the directory containing the pattern's generated `gen.h`. It has
-no dependencies beyond libc.
-
-## Organizing tests by component
-
-Per `APPROACH.md` §7, test files live in one directory per compiler
-component, mirroring the component ladder in `APPROACH.md` §3:
-
-```
-tests/
-├── harness/       run.sh, driver.c (this document describes both)
-├── base/          literals, ., [...] classes, |, quantifiers, ^ $, groups
-├── captures/      (...), (?<name>...), numbered/named capture
-├── classes/       POSIX classes, \d \w \s and negations
-├── assertions/    \b \B \A \z \Z, multiline ^ $
-├── lookaround/    (?= (?! (?<= (?<!
-├── backrefs/      \1, \k<name>
-├── modifiers/     (?i) (?m) (?s) (?x), inline and scoped
-├── unicode/       \p{...} and friends (UTF-8 tier)
-├── advanced/      conditionals, atomic groups, possessive quantifiers, recursion
-└── bench/         throughput + compile-speed budgets (not .rxt — see that
-                   directory's own tooling once it exists)
-```
-
-Each directory holds one or more `*.rxt` files; there's no required naming
-scheme within a directory beyond `*.rxt`, though grouping by sub-feature
-(e.g. `tests/base/quantifiers.rxt`, `tests/base/anchors.rxt`) keeps failures
-easy to scan.
-
-### Adding a new component test directory
-
-1. Create `tests/<component>/` and add one or more `.rxt` files there,
-   following the format above. `run.sh` picks up any `*.rxt` under `tests/`
-   automatically — no registration step needed.
-2. If the component isn't implemented yet (see the milestone ladder in
-   `docs/dev/plan.md`), its tests should assert the clean "module required"
-   compile error via `perr`, per `APPROACH.md` §7's *expected-unsupported*
-   policy — this keeps the suite green at every milestone rather than
-   red until the component lands.
-3. Once the component is implemented, replace or extend those `perr`
-   blocks with real `pattern` / `m` / `n` cases.
-
-**[DD-14] A GENERATED CORPUS CAN DO STEP 2 WITHOUT LOSING THE ORACLE, and
-`tests/recursion/gen_corpus.py` is the worked example.** Its `wave='D'`
-argument renders a block as a `perr` — pinning the refusal that must exist
-today — while DRIVING THE ORACLE ANYWAY and writing the answer into the block
-as a `# WAVE D ORACLE:` comment beside each cell. So step 3 is "delete one
-keyword argument and re-run the generator", and the `m`/`n`/`g` lines that
-come back are the ones libpcre2 gives THEN rather than a transcription of what
-it gave now. The marker carries its own liveness check: a block marked for a
-wave that has LANDED fails the same guard `PERR` carries, so it cannot outlive
-the wave it names.
-
-**AND A CELL WHOSE ANSWER IS DISPUTED IS NOT A `perr` CASE.** The same
-generator's `parked=` argument moves a block out of the live corpus into
-`tests/known_fail/`, leaving a comment stanza at its former position saying
-where it went and why. The two are deliberately different renderings: `wave=`
-pins a REFUSAL that must exist, `parked=` pins an ANSWER that pcrec currently
-disagrees with — which `known_fail`'s ratchet then keeps LOUD (it fails if a
-parked cell starts passing) instead of silently green.
-4. Run `bash tests/harness/run.sh tests/<component>` to iterate on just that
-   directory while developing it.
 
 ## R1 review updates (2026-08-09)
 
-- The python-re verification oracle is committed at `tests/harness/verify_rxt.py`
-  (run: `python3 tests/harness/verify_rxt.py [files-or-dirs]`; default tests/base).
-  Run it whenever corpus files change.
+- The oracle-verification mechanism itself (the default python-`re` oracle,
+  the `# pcre2-only` exclusion convention, per-directory oracle overrides)
+  is now `docs/spec/rxt_format.md`'s "Oracle verification" section
+  ([SPEC-1.6]). What follows here is the LIVING, evolving catalog of
+  currently-known python/PCRE2 divergences behind existing `# pcre2-only`
+  marks — process record, not contract.
 - **Oracle exclusions**: python `re` diverges from real PCRE2 on `\Z`
   (**python's `\Z` IS PCRE2's `\z`**, and python has no single escape for
   PCRE2's `\Z` at all — U11, [M6.2] wave A; the divergence is silent, python
@@ -506,7 +188,13 @@ parked cell starts passing) instead of silently green.
   crash or timeout (>=124) is a failure; unparseable non-comment lines are hard
   errors; a file with zero pattern blocks fails; a run with zero total cases exits
   nonzero; generated code + driver compile with `-Wall -Wextra -Werror` by
-  default; timeouts: pcrec 60 s, compiler 120 s, test binary 10 s per case.
+  default. (The per-case timeout NUMBERS this bullet originally gave — "pcrec
+  60 s, compiler 120 s, test binary 10 s" — were superseded by D45's
+  CPU-primary budget regime below and are STALE as a description of today's
+  numbers; current values live in "D45 — every generated-code compile runs
+  under a budget" and `docs/spec/rxt_format.md`'s "The driver protocol",
+  since they are recalibrated by measurement independent of either format
+  document. Found during [SPEC-1.6]'s parser-vs-prose check.)
 
 ## M2.4 coverage breadth (2026-08-09)
 
@@ -2949,9 +2637,9 @@ assembled from a different source set than the subject.
 
 engine_m4.md §3.6/§3.7 and match_api_m4.md §2 (the C1–C11 caps-array
 contract) needed a test-format and oracle-tier home before [M4.5]'s VM
-emitter lands and starts delivering per-group offsets. This section is that
-home: the `g`/`gp` line syntax (already listed under "The `.rxt` format"
-above), what `run.sh` and `verify_rxt.py` do with it, and the seed corpus at
+emitter lands and starts delivering per-group offsets. This section is the
+design/history record of that landing — the `g`/`gp` line syntax itself now
+lives in `docs/spec/rxt_format.md` ([SPEC-1.6]) — and the seed corpus at
 `tests/captures/basic.rxt`.
 
 ### Design: backward-compatible, artifact-size-agnostic
@@ -2971,69 +2659,25 @@ see below), so the corpus can be authored once, against the pattern's true
 semantics, and grow LIVE automatically as the VM emitter lands, rather than
 being rewritten when it does.
 
-### `g` vs `gp`: live vs pending-VM, and the population-accounting rule
+### `g` vs `gp`, and the python oracle tier: moved
 
-- **`g <slot> <start> <end>`** claims the slot is checkable RIGHT NOW. `run.sh`
-  reads the artifact's actual `RX_NCAPS` out of its generated `gen.h` (the
-  same value the compiled matcher itself was built against, not a guess) and
-  compares it to `<slot>`. If `<slot> >= RX_NCAPS`, that is **a hard FAILURE,
-  never a silent skip** — a corpus author claiming `g` for a slot the
-  artifact cannot deliver is a corpus bug, not a harness gap, and the harness
-  says so by name ("claimed with 'g' (LIVE) but artifact's RX_NCAPS=... does
-  not deliver it — use 'gp'"). This is the population-accounting discipline
-  the brief asked for: an out-of-range capture expectation is counted as a
-  failure, so it cannot vanish from the pass/fail total by accident.
-- **`gp <slot> <start> <end>`** claims the slot MAY be beyond today's
-  artifact. If `<slot> >= RX_NCAPS`, the case is counted in a separate
-  **pending-vm** bucket — not pass, not fail, printed on its own summary
-  line (`group cases pending-vm: N`) so it is never invisible and never
-  silently mixed into either count. This is deliberately NOT shaped like
-  `tests/known_fail/` (a ratchet for a CONFIRMED, deferred BUG): a pending-vm
-  case asserts nothing is wrong — it is a true statement about the pattern
-  that today's DFA-only engine structurally cannot check yet, not a bug
-  anyone is tracking. If `<slot> < RX_NCAPS` (the VM has landed and now
-  covers this slot, or a future engine's ceiling simply grew), a `gp` line
-  **self-activates**: it is checked exactly like `g`, no corpus edit
-  required, and a wrong value fails it like any other live case. Authors are
-  free to leave the `gp` marker in place after that point (it costs nothing)
-  or promote it to `g` for documentation clarity — the harness behaves
-  identically either way once the slot is in range.
-- Both `g` and `gp` require an immediately-attachable `m`/`ms` case earlier
-  in the same block (the most recent one) — a `g`/`gp` line after an `n`/`ns`
-  case, or with no case at all yet, is a hard parse-time failure (a no-match
-  assertion has no captures to check).
-- `RX_UNSET` is spelled `-1 -1`, matching the ABI's own `{-1,-1}` convention
-  exactly (match_api_m4.md §2.1, C5) — a lone `-1` in only one slot is a
-  hard parse error in both `run.sh` and `verify_rxt.py`, since `RX_UNSET` is
-  defined as symmetric.
-- A block-level compile/build failure (pattern rejected, driver failed to
-  build, `RX_NCAPS` unreadable from `gen.h`) fails every attached `g`/`gp`
-  expectation too, `gp` included — "the block never got far enough to check
-  anything" is not a reason to call a pending case's non-result a pass, or
-  to leave it uncounted; extraction failure is FAIL, never a vacuous pass or
-  a silent pending.
-
-### The python `re` oracle tier
-
-`verify_rxt.py` checks every `g`/`gp` line against python `re`'s
-`match.span(<slot>)` on the same subject/startpos as the case's preceding
-`m`/`ms` line, **identically for `g` and `gp`** — pending-ness is a fact
-about what pcrec's CURRENT artifact can deliver (`RX_NCAPS`), which the
-python oracle has no notion of and does not need: it verifies the
-EXPECTATION written in the corpus, independent of whether `run.sh` can check
-it yet. A `<slot>` beyond the pattern's own lexical group count
-(`compiled.groups`) is a hard failure regardless of `g`/`gp` — that is
-always a corpus authoring bug, never a pending-VM situation, since python
-already knows the pattern's true group count without needing any engine to
-run.
+**Moved to `docs/spec/rxt_format.md`** ([SPEC-1.6], 2026-08-25): the
+live-vs-pending-VM distinction, the population-accounting rule (an
+out-of-range `g` is a hard failure, an out-of-range `gp` is counted
+separately and self-activates once `RX_NCAPS` grows to cover it), the
+`RX_UNSET` symmetry rule, and how `verify_rxt.py` checks `g`/`gp`
+identically are all contract statements a `.rxt` author needs — see that
+document's ".rxt format" section (the `g`/`gp` bullet) and "Oracle
+verification".
 
 **The oracle rule governing this tier is the three-way rule from
-engine_m4.md §3.6 (R21 E-ASK-1/D44)**, unchanged by this landing: python and
-libpcre2 are BOTH checked once the libpcre2 differential exists ([M4.7]);
-there is no pre-built exclusion mechanism, and a case where pcrec disagrees
-with both oracles is a bug, never a silent exclusion. This tier is the
-python half of that rule, staged first per D4's discipline — the same
-staging the base tier already used.
+engine_m4.md §3.6 (R21 E-ASK-1/D44)**, unchanged since this landing: python
+and libpcre2 are BOTH checked once the libpcre2 differential exists
+([M4.7]); there is no pre-built exclusion mechanism, and a case where pcrec
+disagrees with both oracles is a bug, never a silent exclusion. This tier
+is the python half of that rule, staged first per D4's discipline — the
+same staging the base tier already used. (Kept here rather than moved: it
+is a design-rationale statement, not a contract clause.)
 
 ### Seed corpus: `tests/captures/basic.rxt`
 
@@ -3053,9 +2697,9 @@ leftmost-first priority — engine_m4.md §3.1), nested groups
 (`(x)(y)?(z)`), and a three-way alternation/repetition mix
 (`(ab|a)(c|bcd)(d*)`).
 
-Directory tree row (already listed under "Organizing tests by component"
-above) needed no change — `captures/` was always the planned home for this
-corpus; this landing is what actually populates it.
+Directory tree row (`docs/spec/rxt_format.md`'s "Organizing tests by
+component") needed no change — `captures/` was always the planned home for
+this corpus; this landing is what actually populates it.
 
 ### Sabotage validation
 
