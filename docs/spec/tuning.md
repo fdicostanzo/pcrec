@@ -379,7 +379,7 @@ this session (`bash tests/recursion/run_recursion_diff.sh`, §5's own
 summary line):
 
 ```
-RECURSION_DIFF_TALLY
+PASS: §5 A == B: 279 of 322 corpus patterns compiled on BOTH linkages (43 refused on both), 28458 cells compared over 24 subjects x every startpos, span AND every group span, 0 disagreements between the SPLICE-linked and the LINKAGE-linked artifact
 ```
 
 ### 2.10 `--unroll=K` — the counter rung's value parameter
