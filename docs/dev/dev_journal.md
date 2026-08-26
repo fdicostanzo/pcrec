@@ -16488,3 +16488,143 @@ named: PCRE2-JIT carried over from the bench (baseline agrees to 0.6 %);
 [OPT-4] × STEP 2 composition. The FULL BATTERY now runs on 3e0b256 (an
 emitter change + abi bump); the bench gets I-11 (abi-7 pin, pending the
 battery's green).
+
+#### Forty-first session — lane srAxes: [CHK-2] pieces 2 and 3, `tests/axes/run_axes.sh` + `tests/codegen/run_form_census.sh` (2026-08-26)
+
+Lane srAxes (sonnet, worktree `worktrees/srAxes`, branch `lane/srAxes`)
+delivered [CHK-2]'s pieces 2 and 3 — the answer-identity sweep and the
+form census — while piece 1 (the registry check) stays with lane srForm,
+waiting on [ENG-FORM]. Full detail is in the plan.md row's own closure
+note; this entry is the narrative.
+
+**Piece 2, `tests/axes/run_axes.sh`.** `tests/harness/run.sh` gained a new
+env-var hook, `RXTDUMP` — one raw-answer line per evaluated case, in the
+same house style `RXTFLAGS`/`RXTROUTE` already established (documented,
+threaded through the `PROCS>1` worker re-invocation, empty by default so a
+plain run is byte-for-byte unchanged). This is the piece that makes
+answer-identity checkable at all: two corpus runs under different compiler
+axes diff by exact per-case ANSWER (`tests/axes/dump_diff.awk`, keyed by
+`<file>:<line>`, the natural unique key since `.rxt` cases are one per
+source line), not by pass/fail COUNT — which the brief itself flagged as
+insufficient, since two runs can agree on totals while disagreeing on
+which specific cases passed.
+
+The axis registry — which bit-flags exist, what CLI spelling each takes —
+is DERIVED live from `lib/pcrec.h`'s `1u << N` constants and
+`cli/main.c`'s flag-parsing loop, never hand-copied, and cross-checked
+against `docs/spec/tuning.md` §2's own `"(bit N)"` mentions: 12 bit-flag
+axes (bits 4-15), matching 12 documented bit headings exactly. The sweep
+covers all 12 plus the coarse `--engine=vm`/`--engine=dfa` axis (§2.11) —
+which rides the identical `RXTFLAGS` mechanism, since it accepts an
+arbitrary extra flag, not only a `-f` spelling. Every axis is a FAILURE on
+any answer mismatch; the one documented DO-OR-DIE member
+(`PCREC_FORCE_PREFILTER`, bit 9 — refuses on a DFA-selected pattern) and
+both engine directions have their refusal populations recorded, not
+failed, per tuning.md's own documented behaviour for each.
+
+The oracle cross-check picks `-fno-premul-table` (bit 15, DFA-side,
+answer-identity) and runs it through PC-4 (`tests/registry/run_pc4.sh`) —
+the one instrument in the tree comparing pcrec's ANSWERS, not merely
+acceptance, against LIVE libpcre2 — via a one-line wrapper script that
+prepends the flag to every `pcrec` invocation (verified live: a `-f` flag
+composes with anything before `--`, in any position). Both plain and
+denied runs are 0-failure against PC-4's own pinned population
+(273 patterns, 232 accepted, 62,872 cells): a bug that broke default AND
+denied identically — invisible to a default-vs-axis comparison alone —
+would still be caught here, because the ground truth is external.
+
+Detect demonstration (docs/dev/learnings.md §3): `premul_val`
+(`src/gen/emit_dfa.c:1521`), the identity function on the un-premultiplied
+table form, was changed to `st + 1` in a scratch copy outside this
+worktree (never `src/`, never committed) — reachable ONLY through the
+denied build. Rebuilt, pointed the sweep's `-fno-premul-table` axis at the
+sabotaged binary against `tests/base/alternation.rxt`: **22 of 26 cases
+MISMATCH**, each named individually with span AND capture divergences.
+Full transcript in the script's own header.
+
+Validated on subsets (registry derivation matching 12/12; agree/lost/
+gained classification on a two-file check; `--engine=dfa`'s 14-of-58
+documented refusal population recorded correctly). **The FULL corpus
+sweep (~13 passes, ~2+ hours) is QUEUED rather than run**, per the box's
+own "one heavy suite at a time" rule — the manager's battery was mid-`make
+san` for this whole session. A detached background launcher
+(`.../scratchpad/srAxes/launch_full_test_axes.sh`, `setsid`+`nohup`+
+`disown`) polls the battery log for `"== BATTERY DONE"` and then runs
+`make test-axes` unattended, logging to
+`.../scratchpad/srAxes/full_test_axes.log` — whoever picks this row back
+up should read that log first rather than re-launching.
+
+**Piece 3, `tests/codegen/run_form_census.sh`.** Compiles every corpus
+pattern twice (default/auto engine, and `--engine=vm` forced where
+accepted — the wider population for VM-only stamps, since auto routes
+only ~54% of the corpus to the VM) and counts artifacts per stamp VALUE
+for every stamp `docs/spec/match_api.md` §6.3 documents, plus the two
+joint distributions §6.3 singles out. K35's rule applied to the STAMP
+VOCABULARY itself: a floor for every value the corpus reaches, a
+required, BUILT, ASSERTED synthetic witness for every value the corpus
+does not — checked by a completeness loop over the documented value sets
+rather than a hand-picked exclusion list, precisely so a gap nobody
+predicted still gets caught.
+
+**Run to completion, green: 2,772 corpus patterns (K35 floor 2,620), 135s
+at PROCS=4 uncontended.** Full population table is in docs/testing.md's
+new section and the plan.md row; headline: 995 DFA / 1,488 VM (1,263
+hybrid) / 289 refused by default selection, with every documented
+`RX_DFA_SCAN`/`RX_DFA_PREFILTER` value comfortably above its floor. TWO
+values measured ZERO corpus population: `"mixed"` (tuning.md's own
+documented likely-first gap) and — the completeness loop's actual find —
+`"indexed"`, undocumented anywhere as a gap, because every DFA-containing
+corpus artifact happens to be small enough that the pre-multiplied form
+always wins by default. Both covered by BUILT, CONFIRMED synthetic
+witnesses: `[01]*1[01]{13}` for "mixed" (the forward machine's 73,728
+entries crossing the 65,535-entry premultiplication bound while the
+reverse machine stays under it), and `(?:[a-z]+)@(?:[a-z]+)` compiled
+with `-fno-premul-table` for "indexed" — the deny flag itself used as the
+direct controllability lever the axis exists to provide, rather than a
+second pattern hunt. A THIRD live finding: `RX_VM_PRUNE_CEILING` has a
+value ("none", 1,047 of 1,488 VM artifacts) that §6.3 does not enumerate
+in a value-set table the way it does for `RX_DFA_PREFILTER` — floored as
+an observed fact and noted rather than either silently absorbed or forced
+into a completeness assertion §6.3 doesn't license.
+
+Detect demonstration: `dfa_table_name` (`src/gen/emit_dfa.c:2288`) was
+changed in a scratch copy to never return `"mixed"` (collapsing it into
+whatever the forward machine chose). Rebuilt, ran the full census against
+the sabotaged binary: FAILS TWICE — the "mixed" witness's own local
+assertion, and independently the completeness loop that checks every
+known value has EITHER a floor OR a confirmed witness — naming the exact
+value and the exact witness pattern both times. Full transcript in the
+script's own header.
+
+**One real bug found and fixed by the census's own first run**: the
+initial synthetic-witness helper crashed under `set -u`
+(`local pat="$1" flags="$2" want="$3" tok="D:RX_DFA_TABLE=$want"` —
+word expansion for a `local` command's arguments happens before any of
+that command's assignments take effect, so `$want` was read unbound).
+Split into two `local` statements; re-verified green.
+
+**Landing bar, both pieces**: `tests/axes/CLAUDE.md` (new directory),
+`tests/codegen/CLAUDE.md` gained a `run_form_census.sh` row,
+`docs/testing.md` gained "Answer-identity sweep + form census" with the
+full measured population table, root `CLAUDE.md`'s Build & test block
+gained a `make test-axes` line, `docs/spec/tuning.md` §2 gained a
+one-sentence pointer naming `make test-axes` as the sweep D80 asks the
+spec to name. Makefile `test-axes` target (opt-in, `all` prerequisite,
+runs `run_axes.sh` then `run_form_census.sh`). `make strict` clean
+throughout. `make test-codegen` found ONE real regression from this
+lane's own work mid-session: the K37 bare-compiler-call static sweep
+correctly flagged the PC-4 oracle wrapper's own emitted `exec "$PCREC"
+...` line as unbounded (true on its face — the wrapper is only ever
+invoked through an already-bounded `pcrec_run` call one level up in
+`run_pc4.sh`, but K37 reads a script's TEXT, not its call graph). Fixed
+by writing `$TIMEOUT_BIN`'s resolved absolute path into the wrapper
+alongside `$PCREC` at heredoc-write time — genuinely safer (defense in
+depth against the wrapper ever being invoked some other way) and now
+K37-visible; `make test-codegen` back to 3/3.
+
+Commits on `lane/srAxes`: ed084d2 (piece 2 WIP — RXTDUMP hook,
+run_axes.sh, dump_diff.awk, detect demo), 772a55f (piece 3 —
+run_form_census.sh, docs, Makefile wiring), 9903b3f (K37 fix). Not
+merged to main; the full `test-axes` battery result and the merge itself
+are owed to whoever picks this row back up once the manager's battery
+clears.
