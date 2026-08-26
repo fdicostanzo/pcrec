@@ -15930,3 +15930,58 @@ is spread over ~15 passes (no hog), -O0 0.10 s / -O1 0.20 / -O2 0.36 vs
 the DFA's 0.06 at -O2 (its 44 KB is mostly const tables the optimizer
 never sees). Not a row (D77): a one-time AOT cost; the one free lever
 would be fewer address-taken labels if some resume points are dead.
+#### Forty-first session — lane srOpt3: [OPT-3] STEP 1 measured — the skip loop is innocent, the transition loop is a dependency chain (2026-08-26)
+
+Attributed the DFA's 1 MB per-byte cost, measurement only (nothing under
+`src/`; every variant is a patched scratch copy of an emitted artifact,
+answer-gated before any time is reported). Record:
+`docs/dev/opt3_dfa_scan_measurement.md` — filed in `docs/dev/` beside
+`tt4_measurement.md`/`chain_profile.md` rather than the briefed
+`docs/dev/reviews/`, whose own CLAUDE.md scopes that directory to D6 critic
+panels. Reproduced the bench in-tree to within 1% on all three subjects
+(t-a 6.183 vs 6.239, t-b 3.280 vs 3.263, t-c 3.263 vs 3.261 ns/byte,
+find-all, `taskset`, median of 5), with the set-grain-vs-JIT ratio landing
+at 1.465x against the report's own 1.467x. `perf` is unavailable on this box
+(`perf_event_paranoid` 4, every event denied; lowering it is out of scope),
+and the effective clock had to be calibrated with a dependent-`add` loop —
+**3.2781 GHz under load against an idle sysfs reading of 1.36-1.55 GHz**, so
+taking the sysfs value would have mis-scaled every cycle figure. The charter
+was HALF right: the transition loop is indeed the whole cost, but its
+premise about the skip loop was too kind to it. An instrumented copy that
+COUNTS both loops shows the skip loop is entered **190,651 times on `t-b`
+and skips ZERO bytes** — not few, zero — because the machine only returns to
+state 0 by *consuming* the byte that killed the match, so the skip test is
+always reached one byte late and can only ever skip the 2nd..nth byte of a
+non-candidate run; a run-length sweep confirms mean skipped = k-1 exactly,
+and real text's runs are length 1. So CONTROL 2 came out inverted and that
+is the useful result: a shufti skip 7.0x faster per skipped byte (0.3505 ->
+0.0501 ns/byte on a no-candidate subject; CONTROL 1 put glibc `memchr` at
+0.0170, 20.6x, incidentally reproducing PCRE2-interp's required-byte figure
+to three digits and confirming [OPT-5] from this side) makes all three bench
+subjects **SLOWER** — +3.9% / +0.4% / +1.5%; the crossover where SIMD skipping starts to pay is measured at ~32-byte non-candidate runs (the vector width), and neither email pattern's inputs come near it. **[OPT-SIMD] does not earn its
+charter through this loop.** The cost is 3.2 ns / 10.7 cycles per table step
+and every subject is that constant times its step count (t-a is 2.000
+steps/byte — forward then reverse — hence 6.19; its "per-match overhead" of
+75.6 ns is not overhead at all, it IS the reverse pass, confirmed by a
+single-search call measuring 158.7 ns for the ~51 bytes it walks, which
+predicts the find-all total to 1.7%, and which moves by the same 1.27x under
+the table change — a fixed cost would not have). The loop is **latency-bound**: 17
+instructions, four dependent loads, and a 7-cycle loop-carried chain of
+`lea,lea,movslq,load` — and running 2 independent streams goes 1.97x faster,
+which is the witness `perf` would have given less directly. The accept
+bookkeeping and the per-byte prefilter test that the charter asked about
+cost **0.05 cycles/byte, i.e. nothing**. Lever, measured on the real
+artifact and identical over 40,469 answer lines across 91 subjects (every
+span and capture, not counts): pre-multiply the transition table by its
+stride so the chain becomes `load,add` — **1.28x on the bench's own three
+subjects, 1.466x -> 1.149x against PCRE2-JIT, and ahead of JIT outright on
+t-c** — gated at generation time on L1 residency, which binds before the
+`short` overflow at `states*stride > 32767` (surveyed over twelve patterns:
+only R1 A-3's `[01]*1[01]{n}` explosion family reaches either bound, and by
+then its table is 2.3x L1D, so the chain is moot there anyway). `t-a`'s remaining
+1.39x is entirely the second pass, recorded with its number (a one-pass
+start-recovery would put it at ~2.5 ns/byte, ahead of JIT) but not proposed
+here. One incidental: `factored` needs `--features all` to compile at all —
+without it pcrec refuses with `requires module 'named-groups'` — which is
+the bench's config and correctly recorded in its `subbench.toml`, but will
+trip anyone reproducing by hand.

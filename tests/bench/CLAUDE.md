@@ -53,6 +53,17 @@ engines — the cross-engine matrix lives in compare/.
   show zero escalations. Numbers as measured: docs/dev/plan.md's `[OPT-1]`
   row. Env: `PCREC`, `CC`, `KEEP=1`, `BENCH_REPO_DIR` (default
   `/home/duxevents/pcrec-bench`).
+- **fdriver.c** — the FIND-ALL timing driver ([OPT-3] STEP 1, 2026-08-26).
+  `bdriver` times ONE `rx_search` over the subject; the comparative bench
+  (pcrec-bench) times its 1 MB subjects in the find-all regime —
+  search, restart at the match end, repeat — and on a subject with 40,330
+  matches those are different cost classes, because the restart pays a
+  REVERSE scan per match. Its restart rule is transcribed from
+  pcrec-bench's own `testees/pcrec/driver.c`, so counts and per-call work
+  match the bench's. Prints `nsperbyte=` beside `mbps=` (the bench's unit)
+  and the match count. Not wired into `run_bench.sh`: it exists for
+  attributing a per-byte cost against a bench row, and adding a case here
+  needs the D15 sabotage argument like any other.
 - **compare/** — cross-engine comparison matrix vs PCRE2 (interp and JIT) and
   python `re`, plus its own ratchet. Slow (tens of minutes); not part of
   `make bench`.
