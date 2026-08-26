@@ -495,7 +495,11 @@ int pcrec_compile(const char *pattern, const pcrec_options *opt,
  * when a pattern selects the other engine. docs/spec/match_api.md §10.
  * `extern const struct rx_info <prefix>_info` (a static
  * reflection structure: option flags, encoding, pattern text, group counts,
- * selected engine, budgets), and — since [M5-SEAM] (D58) —
+ * selected engine, budgets, and — since [DD-13c] — the two SELECTION FACTS
+ * `scan`/`prefilter`, the runtime mirrors of the `<PREFIX>_DFA_SCAN` /
+ * `<PREFIX>_DFA_PREFILTER` macros for a consumer with no header to read them
+ * from; docs/spec/match_api.md §6 states the rule, including what each reads
+ * on a VM artifact that is not a §6.1 hybrid), and — since [M5-SEAM] (D58) —
  * `size_t <prefix>_next_pos(const unsigned char *s, size_t n, size_t pos)`,
  * the ENCODING RESIDUAL: the next CHARACTER boundary strictly after `pos`,
  * every position >= n counting as a boundary. It is the ONE place an

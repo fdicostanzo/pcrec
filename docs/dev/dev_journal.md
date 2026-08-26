@@ -15514,3 +15514,209 @@ invocations stop" waiter counted its OWN command line (the pattern
 text was in it) — the self-match trap in a fourth costume; killed and
 relaunched by hand. Remedy recorded in memory: build such a pattern from
 two shell variables so the literal never appears in any argv.
+## 2026-08-25 — [DD-13c]: r37's two stamp SCOPE gaps closed (lane srStamp2)
+
+The D6 panel on [DD-13] (r37) found no defect in what the stamps SAY; it
+found two things they were silent about, and deferred both to this lane as
+one abi event. Both fixes turn out to be the same rule, which is worth
+stating once because it is the thing to reuse: **the unit that owns a stamp
+is the MECHANISM the stamp names, not the artifact kind that usually carries
+it.**
+
+**(#5) `RX_DFA_SCAN` gains `"empty"`.** A pattern the start analysis proves
+can match nothing emits a search body that is one `return 0` — no table, no
+loop, no skip. Four such patterns are in the corpus (`\B\b`, `\b\B`,
+`\d\b\w`, `a\bb`) and they were stamping `"unanchored"`: the name of the loop
+the emitter WOULD have written. The stamp read `job->engine`, which answers
+"which emitter ran" and not "what did it write", and for every other artifact
+those are the same question. `dfa_engine_is_empty` (src/gen/emit_dfa.c) is
+the derivation, and it covers BOTH engines — `emit_attempt`'s `d->n == 0`
+early exit is factored into it rather than left as a second spelling, so
+`^\B\b` (which was stamping `"attempt"`) is fixed by the same mechanism
+rather than by a second special case. That anchored form is NOT in the
+corpus; only the new witness row tests it.
+
+**(#6) A VM HYBRID stamps the scan it INLINES.** `RX_VM_PREFILTER "hybrid"`
+announced that a DFA scan is inside the artifact and then said nothing about
+it — while that scan is a full ENG_UNANCH/ENG_ATTEMPT body with its own
+tables, its own D11 bound and its own candidate-start filter, emitted by
+literally the same function the DFA-only artifact calls. It is the mechanism
+the email specimen's ~23x comes from, and it shipped in the one artifact kind
+that could not report it; pcrec-bench could not bucket a hybrid row at all.
+1,263 of the corpus's 1,488 VM artifacts are hybrids. They now carry
+`RX_DFA_SCAN`/`RX_DFA_PREFILTER` from `pcrec_emit_dfa_scan_stamps` — one
+emitter, one derivation, THREE readers (the loop, the DFA artifact's stamp,
+the hybrid's stamp). A non-hybrid VM artifact stamps neither, and the
+relation is an IFF that §6.3 states and the check asserts both ways.
+
+Also landed, from the same panel: #7 (§6.3's "scan-avoidance mechanism" ->
+"candidate-start mechanism"; the M2.1 self-loop skip is real scan avoidance
+and is still unstamped, which stays [DD-13]'s next candidate), #8 (the
+`"none"` gloss's third and largest cause — the start state ACCEPTS, so no
+skip is sound: 380 of 995), and #A4 (the sentence 120 lines below the (a)/(b)
+split that contradicted it).
+
+**MEASURED.** `run_dfa_stamps.sh` **26/0** over 2,772 corpus patterns: 995
+DFA artifacts (4 empty-engine), 1,488 VM (1,263 hybrid — 4 of THOSE inlining
+an empty scan — 225 plain), 289 refused. The DFA-only prefilter distribution
+is `none` 380 / `memchr` 327 / `byte-class` 176 / `memchr-bounded` 61 /
+`byte-class-bounded` 51 — **identical to [DD-13]'s recorded figures, which is
+the control that this change moved nothing on the DFA side**; the DFA scan
+line moved 815/180 -> 811/180/4, exactly the four artifacts leaving a value
+that was wrong for them. Hybrids: `memchr` 825 / `none` 264 / `byte-class`
+137 / `memchr-bounded` 20 / `byte-class-bounded` 17; `unanchored` 1,071 /
+`attempt` 188 / `empty` 4. `make strict` clean. `run_vm_identity.sh` 9/0.
+`run_specimen_identity.sh` 11/0 with `SKIP_THROUGHPUT=1` (the twelfth check
+is the three timings, skipped by the box rule while a battery was running).
+
+**abi 5 -> 6** (lane srTier's two-tier entry took 4 -> 5 immediately before; at
+the time part 1 was written this was 4 -> 6 with 5 reserved — PROVISIONAL pending
+the manager's merge-order ruling) and comparison (B) re-pinned `5991d4c` ->
+`272d07c`. The recursion identity gate is **15/0** on the new pin and
+REFUSES on the old with D76's exact message (`subject stamps '.abi = 6', pin
+5991d4c stamps '.abi = 4'`); comparison (A) is byte-identical against the
+unchanged `ac4917d` — 2,207 program regions, exactly the four named wave-G
+elisions — which is the proof that this is scaffolding, the same reading
+[DD-13] established and the second exercise of it.
+
+**THE CHECK-DESIGN LESSON, and it came out of this change's own validation.**
+Plant V1 (the hybrid's stamp call removed) went red on the iff, correctly —
+and left `[agreement]` reading "matches the emitted scan shape on all 2258
+artifacts" while 1,263 of them had been routed past the comparison by the
+missing-stamp `continue`. A TRUE sentence about a population nobody compared,
+inside a check written to `learnings.md` §3. The denominator was arithmetic
+over bucket sizes; it is a count taken at the comparison sites now
+(`SCANCMP`/`PFCMP`), and the shortfall is its own asserted verdict. Same
+family as r37 #2's floor-vs-manifest: **a number a check DERIVES about its own
+coverage is not evidence of that coverage; only a number it COUNTS is.** The
+three reds as run, against a 26/0 clean baseline: hybrid silent 21/5, gate
+dropped 24/2, `"empty"` arm removed 23/3.
+
+**TWO DEFECTS FOUND IN PASSING, both on main.** (1) `docs/spec/tuning.md` §3
+shipped with lane srStamp's editorial wrapper merged into the published spec
+— a truncated `## 3. The DFA-side stamp gap" section / (main tree, currently
+lines ~423-441) with:` header, and a trailing "ALSO, in §2.5 ... if a
+cross-reference is wanted, append:" instruction (d8608ca). Fixed here, since
+this lane rewrote that section anyway. (2) `[DD-13c]` is a TAG COLLISION:
+plan.md already used it for the FORMAT half's D6-panel sub-step, so
+`grep -n "\[DD-13c\]"` returns two rows. Flagged in place, NOT resolved —
+renaming this lane's row would orphan the r37 review and every commit
+message, and renaming the sub-step is the manager's call.
+
+### [DD-13c] part 2 — the RUNTIME MIRRORS, and what the validation taught the check
+
+Frank's D40 addendum (pre-v1 abi changes are deliberate and methodical, not
+avoided) added a second half to this lane after part 1 was green: the two
+selection facts get RUNTIME mirrors in `struct rx_info`, so the consumer least
+able to read a preprocessor macro — a `dlopen`ing harness, an FFI binding, a
+tool walking several `<prefix>_info` symbols in one image — can read them the
+way it already reads `engine` and `engine_why`.
+
+`scan` and `prefilter`, two `const char *`, **appended at the END of the
+struct** so no existing member's offset moves. That makes abi 5 → 6 BOTH kinds
+of event at once — scaffolding (D76) and layout (D40) — and the abi comment now
+names both artifact kinds explicitly, which is r37 A12's lesson applied: that
+finding was that abi 3 → 4's comment argued the bump from the DFA side alone
+while `emit_info_def` is SHARED, leaving a reader unable to tell that every VM
+artifact's bytes had moved too.
+
+**The rule, and the one place it is not obvious.** `scan` is the `_DFA_SCAN`
+value on a DFA artifact and on a VM hybrid, `NULL` on a non-hybrid VM artifact;
+`prefilter` is the DFA vocabulary wherever `scan` is non-NULL and the VM's
+`"none"` where it is not, and is never `NULL`. The consequence worth stating:
+**the string `"hybrid"` never appears in `prefilter`**. It is in the VM's
+vocabulary, but any artifact that would say it reports its inlined scan's
+ACTUAL mechanism instead — strictly more information — and `scan != NULL` is
+how a consumer reads "is this a hybrid", which is the runtime reading
+`RX_VM_PREFILTER` never had. Flagged to the manager rather than picked
+silently.
+
+`pcrec_artifact_has_dfa_scan` is the guard, and it is `src/core/compile.c`'s own
+`fit.chosen == ENGM_DFA || fit.prefilter` spelled once — the condition that
+MAKES `job->dfa`/`job->engine` exist, so it is not a predicate that happens to
+agree with the artifact, it is the reason there is anything to read. The
+hybrid's stamp gate asks it too now.
+
+**MEASURED.** `run_dfa_stamps.sh` **29/0** over 2,772 patterns. Every part-1
+number is unchanged, DFA prefilter still `none` 380 / `memchr` 327 /
+`byte-class` 176 / `memchr-bounded` 61 / `byte-class-bounded` 51. The mirror
+assertion runs on all **2,483** compiled artifacts of both engines. Gate 15/0
+on the new pin `694902e`, correct refusal on the old, (A) byte-identical
+against `ac4917d` on all five axes.
+
+**WHAT THE VALIDATION TAUGHT THE CHECK, twice.** Plant 5 (part 1) showed an
+`[agreement]` verdict reading "on all 2258 artifacts" while 1,263 had been
+routed past the comparison — a true sentence about a population nobody
+compared. Plant 9 (part 2) would have done the same thing in a worse way: with
+the mirror fields not emitted at all, a value-only comparison is VACUOUSLY
+TRUE and goes green on a surface that no longer exists. Both are the same
+lesson and it is now built into the file: **every comparison echoes a token at
+its site, every verdict quotes the COUNTED number, and the count is itself
+asserted against the population that was due.** A number a check derives about
+its own coverage is not evidence of that coverage.
+
+**AND THE SAME CLASS, one level out.** `make test-codegen` — run because a
+change that adds lines to VM artifacts should not be judged by the one check
+that was written for it — found that `run_codegen_tests.sh` pins `rx_info.abi`
+by a hand-spelled literal, and fired 104/1. The literal stays hand-spelled (a
+literal read out of `emit_dfa.c` would agree with the emitter by construction);
+what is worth recording is that **an abi bump has a second site**, and the
+check firing IS the mechanism that finds it.
+
+**THE PRESENCE-AS-DFA SWEEP** (manager's ask, after the battery found a fourth
+absence-as-DFA site in `tests/atomic_groups`): 17 scripts under `tests/` read
+`RX_ENGINE` or `RX_DFA_*`. **All 17 are value-anchored** (`grep '^#define
+RX_ENGINE "vm"$'`, or extract-and-compare) **or comment-only; none is
+presence-based**, and `run_dfa_stamps.sh` is the only reader of `RX_DFA_*` at
+all — so no script infers "DFA" from the presence of a macro this change now
+puts on 1,263 VM artifacts. No fixes were needed outside this lane's own check.
+
+### [DD-13c] part 3 — rebased twice more, and two reds found on main in passing
+
+Two more rebases after part 2, both onto a moving main: **48e0c41** ([OPT-1],
+lane srTier's two-tier entries, abi 5) and then **d0a9ab5** (main's own fixes
+plus K38's docs). Seven conflicts on the first, three on the second, all
+resolved toward main + this lane's hunks. srTier's `[OPT-1]` abi 4 → 5
+paragraph is kept verbatim as this change's predecessor; its `tuning.md` §2.12
+sits ahead of §3/§3.1/§3.2. Every "abi 4 → 6, 5 taken concurrently" site was
+rewritten to **5 → 6** naming `[OPT-1]`, across ten files.
+
+**THE PIN MOVED THREE TIMES INSIDE ONE CHANGE**, which is worth recording
+because the rule invites exactly this mistake: comparison (B) must name the
+change's LAST `src`/`lib`/`cli` commit, and a rebase rewrites every hash in the
+branch. `272d07c` → `694902e` (the rx_info fields made a later src commit) →
+`6147d7c` (rebase onto 48e0c41) → `c940551` (rebase onto d0a9ab5). Main's own
+pin stays `469a432`; `d0a9ab5` owed no re-pin, its `frames_sentinel` change
+leaving the emitted bytes for prefix `rx` identical.
+
+**TWO REDS FOUND ON MAIN, neither this lane's code**, both from `[OPT-1]`'s
+merge and both surfaced by running `run_codegen_tests.sh` for this lane's own
+landing bar rather than only the check written for this change:
+
+1. `rx_info.abi` stamped 5 while the hand-spelled expectation still demanded 4
+   ([DD-14.FB] §10.4). This is the SECOND-SITE lesson stated twice in one
+   session: an abi bump has a site in the emitter AND a site in the check, the
+   literal is hand-spelled on purpose (reading it from `emit_dfa.c` would make
+   the check agree by construction), and the check firing IS the mechanism.
+2. `tests/codegen/run_tiered_entry.sh:248` ran a `sort` under the ambient
+   locale — K35's meta-check, working exactly as designed. That site tallies
+   fixed `mismatch-KIND` tokens rather than deduplicating pattern text, so the
+   collation could not actually have dropped a row; the meta-check is blunt on
+   purpose, so that nobody has to reason about which sort sites matter.
+
+Both were fixed on main by the manager; this lane's own separable fix for (2)
+was dropped as redundant at the rebase.
+
+**FINAL, on a quiet box (load1 0.26), one suite at a time at PROCS=4:**
+`run_dfa_stamps.sh` 29/0 · `run_codegen_tests.sh` 105/0 · recursion identity
+gate 15/0 on pin `c940551`, and the correct refusal on `469a432`
+(`subject stamps '.abi = 6', pin 469a432 stamps '.abi = 5'`) · (A)
+byte-identical vs the unchanged `ac4917d` (2,206/2,211 program regions, exactly
+the four named wave-G elisions) · `run_vm_identity.sh` 9/0 ·
+`run_tiered_entry.sh` 17/0, so the hybrid stamps do not disturb `[OPT-1]`'s
+check · `make strict` clean.
+
+**And the control held through all of it:** the DFA-only prefilter distribution
+is still exactly `none` 380 / `memchr` 327 / `byte-class` 176 /
+`memchr-bounded` 61 / `byte-class-bounded` 51 — unchanged across this lane's
+two halves, srTier's merge, and three rebases.

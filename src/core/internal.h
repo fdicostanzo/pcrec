@@ -3325,6 +3325,22 @@ void pcrec_emit_abi_types(StrBuf *sb);
  * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's
  * (a)/(b) split). `engine` is "vm" or "dfa". */
 void pcrec_emit_engine_stamp(StrBuf *sb, const char *upper, const char *engine);
+/* [DD-13c] `<PREFIX>_DFA_SCAN` + `<PREFIX>_DFA_PREFILTER`, the DFA scan's own
+ * two selection facts, emitted from ONE place for the TWO artifact kinds that
+ * CONTAIN a DFA scan: a DFA artifact, and a VM HYBRID (`fit.prefilter`), whose
+ * inlined `static <prefix>_prefilter` IS this emitter's scan. Values come from
+ * the same `unanch_start`/`attempt_cand` derivations the loop is emitted from
+ * (src/gen/emit_dfa.c's own header on it; docs/spec/match_api.md §6.3's (a)).
+ * MUST NOT be called on a non-hybrid VM artifact: there is no DFA there, and
+ * `job->engine`/`job->dfa` were never set (src/core/compile.c builds the pair
+ * only when `fit.chosen == ENGM_DFA || fit.prefilter`). */
+void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *sb, const char *upper);
+/* [DD-13c] Does this artifact CONTAIN a DFA scan? src/core/compile.c's own
+ * `fit.chosen == ENGM_DFA || fit.prefilter` condition, spelled once: it is what
+ * makes `job->dfa`/`job->engine` exist, so it is the guard every reader of them
+ * outside the DFA emitter must ask. True on a DFA artifact and on a VM HYBRID,
+ * false on a non-hybrid VM artifact. */
+bool pcrec_artifact_has_dfa_scan(Ctx *cx);
 void pcrec_emit_c_string_literal(StrBuf *sb, const char *s, size_t len);
 
 /* [DD-14.FB] (D71 item 2, docs/spec/match_api.md §10.4) THE CALLER-BUFFER

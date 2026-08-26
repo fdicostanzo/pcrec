@@ -1240,8 +1240,58 @@ struct rx_info {
                                             NULL; also carries a prefilter
                                             note on hybrid-eligible
                                             artifacts */
+    const char           *scan;         /* [DD-13c] the DFA scan this
+                                            artifact CONTAINS: "unanchored"
+                                            / "attempt" / "empty", mirroring
+                                            <PREFIX>_DFA_SCAN. NULL when it
+                                            contains none */
+    const char           *prefilter;    /* [DD-13c] this artifact's
+                                            candidate-start mechanism, in
+                                            whichever engine's vocabulary
+                                            applies. Never NULL */
 };
 ```
+
+**[DD-13c], 2026-08-25 (D40 addendum) — `scan` and `prefilter`: THE SELECTION
+FACTS GET RUNTIME MIRRORS.** §6.3's two DFA-scan macros are preprocessor-only,
+and the consumer least able to read a preprocessor macro is exactly the one
+most likely to want these facts: a `dlopen`ing host, an FFI or `ctypes`
+binding, a tool walking several `<prefix>_info` symbols in one linked image.
+Those consumers already read `engine` and `engine_why` here; they can now read
+the scan facts the same way. **The two fields are APPENDED AT THE END of the
+struct**, after the three pointers, so no existing member's offset moves —
+`abi` still bumps (5 → 6), because the struct GREW, but this is a smaller kind
+of event than abi 2's inserted `work_budget` or abi 3's inserted sizing block,
+both of which moved every following offset.
+
+**THE RULE, exactly** (`tests/codegen/run_dfa_stamps.sh` asserts every line of
+it over the whole corpus, on both engines):
+
+| artifact | `scan` | `prefilter` |
+|---|---|---|
+| DFA artifact | `"unanchored"` / `"attempt"` / `"empty"` — the value of `<PREFIX>_DFA_SCAN` | the value of `<PREFIX>_DFA_PREFILTER`: one of the five in §6.3 |
+| VM artifact, HYBRID | the same three values, describing the DFA scan the artifact INLINES | the same five values, describing that inlined scan's own filter |
+| VM artifact, non-hybrid | `NULL` — there is no DFA scan in this artifact | `"none"` — the VM's own vocabulary (`<PREFIX>_VM_PREFILTER`'s value on exactly these artifacts) |
+
+Three consequences a consumer can rely on, and they are the reason the rule is
+worth stating rather than inferring:
+
+1. **`prefilter` is never `NULL`.** Every artifact has an answer to "what
+   candidate-start mechanism do you carry", including "none".
+2. **`scan != NULL` on a VM artifact IS "this is a hybrid".** That is the
+   runtime reading of `<PREFIX>_VM_PREFILTER "hybrid"`, which had no `rx_info`
+   mirror at all before this date.
+3. **The string `"hybrid"` never appears in `prefilter`.** It is in the VM's
+   vocabulary, but an artifact that would say it reports its inlined scan's
+   ACTUAL mechanism instead — strictly more information, and consequence 2 is
+   how the coarser fact is still readable. A consumer that wants the coarse
+   answer tests `scan != NULL`, not `strcmp(prefilter, "hybrid")`.
+
+**ONE DERIVATION, TWO SPELLINGS.** The field and the macro are written from the
+same pair of emitter functions and from nowhere else, so they cannot report
+different answers unless the emitter is wrong about both — which is what makes
+"field == macro" a check of the compiler rather than of arithmetic, and it is
+asserted on every compiled artifact of both engines.
 
 **[ABI-NS], 2026-08-18 (D60 addendum): `engine`'s number-only contract now
 has names.** Until this date, this field's comment read "1 = DFA, 2 = VM.
@@ -1356,7 +1406,8 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `5` on every artifact today ([OPT-1]'s two-tier entries bumped it from 4; [DD-13c] takes it to 6), and is not yet a
+- **`rx_info.abi` is `6` on every artifact today ([DD-13c] bumped it from 5,
+  which was [OPT-1]'s two-tier entries), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
@@ -1371,6 +1422,16 @@ against them:
   which a new `#define` line breaks exactly as a moved offset would. A
   bump is therefore always paired with a re-pin of that comparison to the
   change's last `src`-touching commit, in the same change.
+
+  It moved `4` → `5` at [OPT-1], the two-tier default entries — the first
+  bump at which NO DFA artifact's bytes moved at all, since the tier is
+  emitted only by the VM path. And it moved `5` → `6` at [DD-13c], which is
+  the first bump that is BOTH kinds of event at once: emitted scaffolding
+  (the `"empty"` scan value, and the two `_DFA_*` lines every VM hybrid
+  gained) AND a real struct change — `scan` and `prefilter`, appended at the
+  END so that, unlike [DD-14.FB]'s insertion, **no existing member's offset
+  moves**. It is also the mirror image of [OPT-1]'s: that bump reached VM
+  artifacts only, this one reaches both kinds.
 
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
@@ -1462,7 +1523,38 @@ engine-scoped.**
   prefilter axis keeps ENGINE-SPECIFIC NAMES because its VALUE SETS are
   different vocabularies, not one vocabulary with two readings:
   `<PREFIX>_VM_PREFILTER` is the VM's, `<PREFIX>_DFA_PREFILTER` and
-  `<PREFIX>_DFA_SCAN` are the DFA's.
+  `<PREFIX>_DFA_SCAN` are the DFA scan's.
+
+  **[DD-13c], 2026-08-25 — "UNCONDITIONAL" IS TWO RULES, NOT ONE, AND THIS
+  PARAGRAPH USED TO CONFLATE THEM.** The unit that owns a stamp is the
+  MECHANISM the stamp names, not the artifact kind that usually carries it:
+
+  - `<PREFIX>_ENGINE` is on **every artifact pcrec emits**, full stop.
+  - `<PREFIX>_DFA_SCAN` and `<PREFIX>_DFA_PREFILTER` are on **every artifact
+    that CONTAINS a DFA scan** — which is every DFA artifact AND every VM
+    HYBRID. A hybrid (`<PREFIX>_VM_PREFILTER "hybrid"`) inlines the DFA
+    emitter's own forward+reverse or attempt scan as a `static` function,
+    with its own tables, its own D11 bound and its own candidate-start
+    filter; it is the artifact kind that carries the mechanism this pair
+    exists to report, and until [DD-13c] it was the one kind that could not
+    say so. A NON-hybrid VM artifact contains no DFA scan and carries
+    neither macro. **The rule is an IFF and is checkable as one:** a VM
+    artifact carries the two `_DFA_*` macros if and only if
+    `<PREFIX>_VM_PREFILTER` is `"hybrid"`
+    (`tests/codegen/run_dfa_stamps.sh` asserts it in both directions, with
+    the emitted `static <prefix>_prefilter` body — not either macro — as the
+    independent third term).
+  - The two prefilter macros are **two different selections**, not two
+    spellings of one. `_VM_PREFILTER` says whether the VM runs a
+    capture-erased DFA ahead of its program at all; `_DFA_PREFILTER` says
+    what candidate-start filter that scan itself carries. A hybrid answers
+    both, and the answers are independent.
+
+  All four values come from ONE derivation per engine (`unanch_start`,
+  `attempt_cand` in `src/gen/emit_dfa.c`) read by every site that needs
+  them — the emitted loop, the DFA artifact's stamp, the hybrid's stamp —
+  so a stamp cannot disagree with the loop it describes unless the
+  derivation itself is wrong, in which case the loop is wrong too.
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`, the
@@ -1573,12 +1665,33 @@ specimen's shape:
 #define RX_DFA_PREFILTER "byte-class"   /* see the value set below */
 ```
 
-`RX_DFA_SCAN` names WHICH DFA the artifact is. The two shapes are
-`"unanchored"` (the O(n) forward+reverse table pair, D7) and `"attempt"`
+And on a VM HYBRID — measured on `'a(b|c)+d'`, the block at the top of this
+section, which carries all of these at once:
+
+```c
+#define RX_ENGINE        "vm"           /* the artifact's own engine */
+#define RX_ENGINE_WHY    "capture group at pattern offset 1"
+#define RX_VM_PREFILTER  "hybrid"       /* the VM runs a DFA ahead of its program */
+#define RX_DFA_SCAN      "unanchored"   /* [DD-13c] ...and THIS is that DFA */
+#define RX_DFA_PREFILTER "memchr"       /* ...and this is ITS candidate-start filter */
+```
+
+`RX_DFA_SCAN` names WHICH DFA SCAN the artifact CONTAINS. The three shapes
+are `"unanchored"` (the O(n) forward+reverse table pair, D7), `"attempt"`
 (the per-start-position computed-goto loop a `^`/`\A`-bearing pattern
-takes), they are different loops with different cost curves, and nothing
-else a consumer can read distinguishes them — both stamp `RX_ENGINE
-"dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`.
+takes) and `"empty"`; the first two are different loops with different cost
+curves, and nothing else a consumer can read distinguishes them — both stamp
+`RX_ENGINE "dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`.
+
+**`"empty"` is [DD-13c], 2026-08-25, and it is a THIRD SHAPE rather than a
+special case of the other two.** A pattern the start analysis proves can
+match nothing — `\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored
+spellings — compiles to a search body that is one `return 0`: no table, no
+loop, no skip, on EITHER engine. Those artifacts used to stamp the name of
+the loop the emitter WOULD have written (`"unanchored"`, or `"attempt"` when
+anchored), which is a statement about which emitter ran and not about what it
+wrote. `RX_DFA_PREFILTER` reads `"none"` on all of them, for the reason the
+value set below gives: there is no scan for a filter to be part of.
 
 `RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
 carries, and its five values are the whole set:
@@ -1606,7 +1719,9 @@ when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER` are
-the DFA's own selection facts ([DD-13]'s (a)/(b) split, above). **[ABI-NS],
+the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
+since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
+artifacts AND VM hybrids, the iff stated in (a). **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from
 (`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
 `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —

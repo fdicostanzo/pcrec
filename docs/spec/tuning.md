@@ -492,38 +492,106 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
 - `RX_ENGINE` is **unconditional** — present on every artifact both engines
   produce, `"vm"` or `"dfa"`, from one emitter so the two cannot drift. This
   is what makes `#if`-ing on it safe, which §6.3 used to warn it was not.
-- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward+reverse table pair) or
+- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward+reverse table pair),
   `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern
-  takes). Nothing else a consumer can read distinguishes them: both stamp
-  `RX_ENGINE "dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`. The
-  split itself is plan row `[OS-4]`'s subject.
+  takes) or `"empty"` (`[DD-13c]`: the pattern provably matches nothing, so
+  the body is one `return 0` and there is no loop of either shape in it).
+  Nothing else a consumer can read distinguishes them: all three stamp
+  `RX_ENGINE "dfa"` and all three set `rx_info.engine` to
+  `PCREC_ENGINE_DFA`. The unanchored/attempt split itself is plan row
+  `[OS-4]`'s subject.
 - `RX_DFA_PREFILTER` names the candidate-start mechanism, one of `"none"`,
   `"memchr"`, `"byte-class"`, `"memchr-bounded"`, `"byte-class-bounded"`.
   The `-bounded` pair is `[DD-13]` (b): under a `$`/`\Z`/`\z` view or a word
   context every skip is bounded at `n - 1` and the `memchr` arm loses its
-  early-out, so the same candidate table buys measurably less. Measured over
-  the corpus (2,772 patterns, 995 DFA artifacts): `none` 380, `memchr` 327,
-  `byte-class` 176, `memchr-bounded` 61, `byte-class-bounded` 51;
-  `unanchored` 815 / `attempt` 180.
+  early-out, so the same candidate table buys measurably less. `"none"`'s
+  largest cause is not "no filter was wanted" but **the start state ACCEPTS**
+  — `\bx*`, `a*`, `.*`, `$` — where no skip is sound at all, because a skipped
+  run is a run of positions at which the pattern owes an empty match.
+  MEASURED over the corpus (2,772 patterns, `tests/codegen/run_dfa_stamps.sh`,
+  2026-08-25). **995 DFA artifacts**: `none` 380, `memchr` 327, `byte-class`
+  176, `memchr-bounded` 61, `byte-class-bounded` 51; `unanchored` 811 /
+  `attempt` 180 / `empty` 4. **1,263 VM hybrids** (§3.1): `memchr` 825,
+  `none` 264, `byte-class` 137, `memchr-bounded` 20, `byte-class-bounded` 17;
+  `unanchored` 1,071 / `attempt` 188 / `empty` 4. **Every artifact that
+  contains a DFA scan** (2,258): `memchr` 1,152, `none` 644, `byte-class` 313,
+  `memchr-bounded` 81, `byte-class-bounded` 68; `unanchored` 1,882 / `attempt`
+  368 / `empty` 8. The remaining 225 VM artifacts are non-hybrid and carry
+  neither macro; 289 corpus patterns are refused under `--features all`.
 
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
 forced — `rx_info.engine_why` is `NULL` there for the same reason.
 
+### 3.1 A VM HYBRID carries these too (`[DD-13c]`, 2026-08-25)
+
+The stamps belong to the MECHANISM, not to the artifact kind that usually
+carries it, and the §6.1 hybrid is where those two come apart. A hybrid is a
+VM artifact whose `fit.prefilter` is on: it INLINES the DFA emitter's own
+scan as a `static` function and runs it ahead of the program, tables, D11
+bound and candidate-start filter included. That is the mechanism the email
+specimen's ~23x actually comes from — and until `[DD-13c]` it was the one
+artifact kind that stamped nothing about it, so a bench harness could bucket
+every artifact by scan shape EXCEPT the ones where the scan does the work.
+
+```
+$ build/pcrec -p rx -o - -- 'a(b|c)+d' | grep -E '^#define RX_(ENGINE|VM_PREFILTER|DFA_)'
+#define RX_ENGINE "vm"
+#define RX_ENGINE_WHY "capture group at pattern offset 1"
+#define RX_VM_PREFILTER "hybrid"
+#define RX_DFA_SCAN "unanchored"
+#define RX_DFA_PREFILTER "memchr"
+```
+
+The two prefilter macros are **two different selections**: `_VM_PREFILTER`
+says whether the VM runs a capture-erased DFA ahead of its program at all,
+`_DFA_PREFILTER` says what candidate-start filter that scan itself carries.
+A non-hybrid VM artifact carries neither `_DFA_*` macro — the relation is an
+IFF and `docs/spec/match_api.md` §6.3 (a) states it as one.
+
+### 3.2 …and `rx_info` carries the same two facts at RUN time (`[DD-13c]`)
+
+**For the bench and every other header-less consumer.** The macros above are
+preprocessor-only, so a harness that `dlopen`s an artifact, an FFI binding, or
+a tool walking several `<prefix>_info` symbols in one image could not read
+them at all — it had to parse the emitted C. Since `[DD-13c]` (Frank's D40
+addendum) `struct rx_info` carries two more fields, appended at the END of the
+struct beside `engine` and `engine_why`:
+
+```c
+const char *scan;       /* "unanchored" | "attempt" | "empty", or NULL */
+const char *prefilter;  /* the candidate-start mechanism; never NULL */
+```
+
+They mirror `<PREFIX>_DFA_SCAN` and `<PREFIX>_DFA_PREFILTER` exactly, are
+written from the SAME emitter derivation (never a second computation), and
+`tests/codegen/run_dfa_stamps.sh` asserts field == macro on every compiled
+artifact of both engines. `scan` is `NULL` on a VM artifact that is not a
+hybrid, and **a non-NULL `scan` on a VM artifact IS "this is a hybrid"** — the
+runtime reading of `RX_VM_PREFILTER "hybrid"`, which had no `rx_info` mirror
+before. `prefilter` is never `NULL`: it reads the DFA's vocabulary wherever
+`scan` is non-NULL and the VM's `"none"` where it is not. The full rule, with
+the reason the string `"hybrid"` never appears in the field, is
+`docs/spec/match_api.md` §6.
+
+**A BENCH ROW CAN NOW BE BUCKETED WITHOUT READING THE ARTIFACT'S SOURCE**, on
+either surface, for every artifact kind — which is the gap `[DD-13]`'s row
+opened against and `[DD-13c]` closes for the hybrid.
+
 **This is not a `-f` axis and has no CLI spelling.** It is observability of a
 selection the compiler makes on its own, which is what D46 asks for; there is
 no knob here to deny or force. `tests/codegen/run_dfa_stamps.sh` holds each
 stamp to the loop it names (every verdict derived from the emitted matcher
-text, then compared against the macro). `rx_info.abi` moved `3` -> `4` with
-these stamps (D76: the version of the emitted scaffolding, not of the struct).
+text, then compared against the macro) and asserts the hybrid iff in both
+directions. `rx_info.abi` moved `3` -> `4` with `[DD-13]`'s stamps and
+`5` -> `6` with `[DD-13c]`'s (`[OPT-1]`'s two-tier entry took `4` -> `5` in
+between). [DD-13]'s was a D76 event only — the version of
+the emitted SCAFFOLDING, not of the struct. [DD-13c]'s is both: the same kind
+of scaffolding change PLUS a real (append-only) struct growth, §3.2.
 
-ALSO, in §2.5 (`-fno-prefilter`), the sentence
-
-    what the emitter DID is the `RX_VM_PREFILTER` scalar stamp
-
-is still correct as written; if a cross-reference is wanted, append:
-"(the DFA's own prefilter axis is a different vocabulary and a different
-stamp — `RX_DFA_PREFILTER`, §3)".
+§2.5 (`-fno-prefilter`) governs `RX_VM_PREFILTER`, which is the VM's own
+axis; the DFA scan's candidate-start filter is a different vocabulary and a
+different stamp (`RX_DFA_PREFILTER`, this section).
 
 ## 4. `pcrec_options` mirror
 

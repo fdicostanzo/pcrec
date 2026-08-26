@@ -242,8 +242,27 @@ KEEP="${KEEP:-0}"
 # asserted there and is where those two lines are actually covered.
 #
 # ---------------------------------------------------------------------------
-# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `5991d4c` (2026-08-25).
+# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `c940551` (2026-08-26).
 # ---------------------------------------------------------------------------
+# [DD-13c], 2026-08-25 — THE SECOND RE-PIN UNDER D76, and it is the same shape
+# as the first (which the paragraph below records; keep both, the pair is the
+# precedent). r37's D6 panel on [DD-13] found two SCOPE gaps in the stamps and
+# both move emitted `#define` bytes: the four artifacts whose body is one
+# `return 0` stamp `RX_DFA_SCAN "empty"` instead of naming a loop they do not
+# contain, and every VM HYBRID gains `RX_DFA_SCAN`/`RX_DFA_PREFILTER` for the
+# DFA scan it INLINES (1,263 of the corpus's 1,488 VM artifacts). Comparison
+# [DD-13c] ALSO GREW `struct rx_info` by two fields (`scan`, `prefilter` — the
+# runtime mirrors of those same two facts, Frank's D40 addendum), APPENDED at
+# the END so no existing member's offset moves. So this bump is BOTH kinds of
+# event at once: scaffolding (D76) and layout (D40). (A) is byte-identical
+# against the unchanged `ac4917d` pin either way — every byte this change
+# writes lands in the `#define` block or the `rx_info` initializer, both ABOVE
+# `goto <prefix>_L0;` — which is what still makes it safe. `abi` 5 -> 6 (lane
+# srTier's two-tier entry took 4 -> 5 immediately before) and (B) re-pinned here.
+# Pin was `469a432` ([OPT-1]'s, immediately before this change) and `5991d4c`
+# ([DD-13]'s) before that. Within THIS change it moved twice — the pin must
+# always name the change's LAST src/lib/cli commit, and both the rx_info fields
+# and the rebase onto [OPT-1] made a later one each time.
 # [DD-13], 2026-08-25 — THE PIN'S FIRST RE-PIN UNDER D76, and it is worth one
 # paragraph because it is the first time the rule below was exercised by a
 # change that was NOT a struct-layout event. `[DD-13]` gave every DFA artifact
@@ -291,7 +310,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-469a432}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c940551}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

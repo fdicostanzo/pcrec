@@ -520,7 +520,41 @@ holds the DFA artifact's three D46 selection stamps (`RX_ENGINE "dfa"`,
 `RX_DFA_SCAN`, `RX_DFA_PREFILTER`; `docs/spec/match_api.md` §6.3) to the LOOP
 THEY NAME — every verdict is derived from the emitted matcher text and
 compared against the macro, so a stamp that drifts from its mechanism is a
-red. It also carries seven NAMED WITNESSES, one per documented value.
+red. It also carries NAMED WITNESSES, one per documented value.
+
+**[DD-13c] (2026-08-25) — the same script, widened by the r37 panel's two
+SCOPE findings.** Nothing about the derived-from-the-text design changed; what
+changed is the population and one rule:
+
+- `RX_DFA_SCAN` has a third value, `"empty"` — a pattern that provably matches
+  nothing emits a body that is one `return 0`, on BOTH engines. The script used
+  to EXEMPT those artifacts from the scan comparison (there was no value to
+  compare against); it now asserts `"empty"` on them like any other bucket, and
+  the exact named manifest (the four such patterns the corpus holds) stays.
+- **The VM half became an IFF.** The old rule was "no `RX_DFA_*` macro may
+  appear on a VM artifact". That was wrong about the §6.1 HYBRID, which inlines
+  the DFA emitter's own scan as `static <prefix>_prefilter` and now stamps the
+  two `_DFA_*` lines for it. Both directions are asserted, over the whole
+  corpus and on named witnesses: a VM artifact carries those macros IFF its
+  emitted text contains that inlined body IFF `RX_VM_PREFILTER` is `"hybrid"`.
+  The middle term is matcher TEXT, so neither `#define` is ever checked
+  against the other alone. The hybrid population is held to the SAME two
+  agreement comparisons the DFA artifacts are.
+- **The RUNTIME MIRRORS are checked here too**, because this is the script that
+  already compiles every corpus pattern: `rx_info.scan`/`.prefilter` (the two
+  fields `[DD-13c]` appended to the struct, `docs/spec/match_api.md` §6) must
+  agree with the macros they mirror on EVERY compiled artifact of BOTH engines
+  — 2,483 of them — with `NULL`/`"none"` where the macros are absent. A third
+  source in the same one-pass `awk`, kept as separate from the other two as
+  they are from each other: struct-literal initializer lines, not `#define`s
+  and not matcher text. The line count is asserted as well (exactly one of
+  each), so a mirror that stopped being emitted on one engine cannot leave the
+  comparison vacuous on that half.
+- **Every agreement denominator is COUNTED at its comparison site**, not
+  derived from bucket sizes, and the count is itself asserted against the
+  population that was due. This came out of the change's own validation: a
+  plant that routed 1,263 artifacts past a comparison left the verdict reading
+  "on all 2258 artifacts" — a true sentence about a population nobody compared.
 
 It belongs in `test-codegen` rather than beside `run_vm_identity.sh` under
 `test-vm` on the [M4.5c] test: it is compile-only (no `gcc`, no matcher is
@@ -823,7 +857,7 @@ itself.
 > 2026-08-25) BEFORE ACTING ON THIS SECTION.** Everything here about the four
 > axes, the opt-in ruling and the `ac4917d` pin still holds, but the gate now
 > asks TWO questions per axis — (A) the PROGRAM REGION against `ac4917d` and
-> (B) the WHOLE FILE against `469a432` ([OPT-1]; was `5991d4c`) — because the caller-buffer wave's
+> (B) the WHOLE FILE against `c940551` ([DD-13c]; was `469a432`, [OPT-1]'s) — because the caller-buffer wave's
 > announced `abi` 2 → 3 boundary put a change on every artifact's surface. A
 > reader who stops at this section will expect one number per axis and find
 > two.
@@ -957,9 +991,9 @@ the pre-module pin `ac4917d` can never be green again. The gate now runs:
   <prefix>_L0;` … `<prefix>_accept:`, unfiltered past D37's three stamp lines,
   so comment sensitivity inside the region is kept. This is the module claim
   the gate exists for.
-- **(B) the WHOLE FILE vs `469a432`** ([OPT-1]'s last `src`/`lib`/`cli`
-  commit; was `8fc1e51`, [DD-14.FB]'s): byte-exact again from that pin
-  forward. **Re-pinned 2026-08-25 by [DD-13]**, which gave every DFA artifact
+- **(B) the WHOLE FILE vs `c940551`** ([DD-13c]'s last `src`/`lib`/`cli`
+  commit; was `469a432`, [OPT-1]'s, `5991d4c`, [DD-13]'s, and `8fc1e51`,
+  [DD-14.FB]'s): byte-exact again from that pin forward. **Re-pinned 2026-08-25 by [DD-13]**, which gave every DFA artifact
   three D46 selection stamps (`RX_ENGINE`, `RX_DFA_SCAN`,
   `RX_DFA_PREFILTER`) and bumped `rx_info.abi` 3 → 4. That change moved NO
   struct offset and NO emitted program byte — (A) is byte-identical against
@@ -976,6 +1010,11 @@ predates the FB surface — a pin set too early would put every artifact's
 surface back in the diff and report the failure the re-pin exists to retire.
 `tests/codegen/CLAUDE.md` carries the measurement (200 distinct lines, the
 `rx_match` over-strip, the blank-line residue) behind rejecting a wider filter.
+
+**Re-pinned again 2026-08-25 by `[DD-13c]`** (`abi` 5 -> 6; `[OPT-1]`'s two-tier entry took 4 -> 5 immediately before),
+for the same reason and with the same (A) result: the r37 panel's two scope
+findings move emitted `#define` bytes on the four proven-empty DFA artifacts
+and on every VM hybrid, and move nothing inside the program region.
 
 **[TT-11]/D76 (2026-08-25): the two pins have two different OWNERS, and the
 FILE pin's guard is now STRUCTURAL.** (A)'s pin is the MODULE's promise

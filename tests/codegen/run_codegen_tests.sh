@@ -2576,12 +2576,24 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # [DD-13] added three `#define`s and no struct field, and bumped it. So the
     # pin moves with every such event, and what stays [DD-14.FB]'s own claim is
     # the four FIELDS below, which are asserted separately and did not move.
-    if [ "$fb_abi_vm" != "5" ] || [ "$fb_abi_dfa" != "5" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected 5 on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3) and again by [DD-13]'s DFA selection stamps (3->4)"
+    #
+    # [DD-13c], 2026-08-25: 5 -> 6 ([OPT-1]'s two-tier entry took 4 -> 5
+    # immediately before), for the same D76 reason — r37's two scope findings move
+    # emitted `#define` bytes on the proven-empty DFA artifacts and on every VM
+    # hybrid, and no struct field. **PROVISIONAL, pending the manager's ruling
+    # on merge order**: if srStamp2 merges first this is 5. THE NUMBER IS
+    # SPELLED HERE BY HAND ON PURPOSE — reading it out of `emit_dfa.c` would
+    # make the check agree with the emitter by construction, which is the
+    # control-shares-a-source failure (learnings.md §3). Updating it is part of
+    # the bump, and this check firing is how a bump that forgot a doc gets
+    # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
+    ABI_EXPECT=6
+    if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), and by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else
-        ok "[DD-14.FB] (§10.4): rx_info carries the four sizing fields with abi 4 on both engines, reading 0 on the DFA artifact — the FFI/dlopen consumer's route to the same facts the macros carry"
+        ok "[DD-14.FB] (§10.4): rx_info carries the four sizing fields with abi $ABI_EXPECT on both engines, reading 0 on the DFA artifact — the FFI/dlopen consumer's route to the same facts the macros carry"
     fi
 else
     bad "[DD-14.FB]: pcrec failed to compile the VM and DFA fixtures for the caller-buffer surface checks"

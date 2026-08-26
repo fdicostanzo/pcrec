@@ -667,7 +667,9 @@ vocabularies is only a switch. The VM name is also stamped in pcrec-bench's
 adapter today, so it does not move.
 
 **THE VALUES COME OFF THE SAME DERIVATION THE LOOP DOES.** `RX_DFA_SCAN` reads
-`job->engine`, the field `src/core/compile.c` sets at its `nfa_has_bot` fork.
+`job->engine`, the field `src/core/compile.c` sets at its `nfa_has_bot` fork,
+through `dfa_scan_name` — which asks `dfa_engine_is_empty` FIRST ([DD-13c],
+below).
 `RX_DFA_PREFILTER` reads `unanch_start` (ENG_UNANCH) or `attempt_cand`
 (ENG_ATTEMPT) — **`unanch_start` is new and is the reason the change touched
 more than the stamp block**: ENG_UNANCH's start analysis (the view flags, the
@@ -688,7 +690,7 @@ which emitted the same three lines with nothing written between them — into on
 
 | value | mechanism |
 |---|---|
-| `"none"` | no candidate-start filter, or the artifact provably matches nothing |
+| `"none"` | no candidate-start filter; three causes — every position is a candidate, the artifact provably matches nothing, or (the largest) the START STATE ACCEPTS (`start_acc`), where no skip is sound at all |
 | `"memchr"` | ONE candidate byte; a `memchr()` replaces the steps |
 | `"byte-class"` | several; the 256-entry `<prefix>_can_begin_match` bitmap walk |
 | `"memchr-bounded"` | the same under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1`, and WITHOUT the early `return 0` |
@@ -706,6 +708,87 @@ emitted program byte moved — that gate's comparison (A) is byte-identical
 against the unchanged `ac4917d` pin, which is the proof the change is
 scaffolding only. The check that holds each stamp to the loop it names is
 `tests/codegen/run_dfa_stamps.sh`.
+
+## [DD-13c] THE TWO SCOPE GAPS r37 FOUND, and the rule they corrected ([2026-08-25])
+
+The D6 panel on [DD-13] found no defect in the stamps' VALUES; it found that
+the stamps were silent about two things. Both fixes are about WHICH UNIT OWNS
+A STAMP, and the answer both times is **the mechanism the stamp names, not the
+artifact kind that usually carries it**.
+
+**(#5) `dfa_engine_is_empty` and the third scan value `"empty"`.** A pattern
+proven to match nothing emits a body that is one `return 0` — no table, no
+loop, no skip — and BOTH emitters have that exit (`emit_unanchored` on
+`unanch_start`'s `empty`; `emit_attempt` on `d->n == 0`). Those artifacts used
+to stamp `"unanchored"`/`"attempt"`: the name of the loop the emitter WOULD
+have written. `RX_DFA_SCAN` read `job->engine` alone, which answers "which
+emitter ran" and not "what did it write", and for every other artifact those
+are the same question. `dfa_engine_is_empty` is the derivation and `emit_attempt`
+calls it instead of re-spelling `d->n == 0`, so the ONE-derivation-TWO-readers
+rule holds on this axis too. `RX_DFA_PREFILTER` needed no clause: both
+derivations already answer `"none"` there (`attempt_cand` refuses on
+`d->n == 0`, `unanch_start` returns with `kind == DFA_PF_NONE`), and adding an
+`if` would have been a third statement of one fact.
+
+**(#6) A VM HYBRID STAMPS THE SCAN IT INLINES**, through the new shared
+emitter `pcrec_emit_dfa_scan_stamps` (declared in `src/core/internal.h`). A
+hybrid — `fit.prefilter` on — calls `pcrec_emit_dfa_engine` for a full
+ENG_UNANCH/ENG_ATTEMPT body under the private name `<prefix>_prefilter`:
+tables, D11 bound, candidate-start filter, the lot. It is literally THIS
+emitter's scan, and it is the mechanism the email specimen's ~23x comes from —
+so the artifact kind that SHIPS the mechanism was the one kind that could not
+report it, and pcrec-bench could not bucket a hybrid row at all. It now writes
+the same two lines from the same derivations, ONE derivation and THREE readers
+(the loop, the DFA artifact's stamp, the hybrid's stamp).
+
+**The gate is `fit.prefilter` and nothing else, in both directions.** That flag
+is also what makes `src/core/compile.c` build `job->dfa`/`job->rdfa` and set
+`job->engine` at all, so on a non-hybrid VM artifact the fields these values
+read were never written — which is why `pcrec_emit_dfa_scan_stamps` must not be
+called there, and why the resulting relation is an IFF rather than a
+convention. `docs/spec/match_api.md` §6.3 (a) states it;
+`tests/codegen/run_dfa_stamps.sh` asserts it both ways with the emitted
+`static <prefix>_prefilter` DEFINITION — matcher text, not either macro — as
+the independent third term.
+
+**`RX_VM_PREFILTER` IS STILL VM-ONLY AND IS NOT THE SAME AXIS.** It names a
+decision only the VM path takes (run a capture-erased DFA ahead of the program
+at all); `RX_DFA_PREFILTER` names what candidate-start filter that scan itself
+carries. A hybrid answers both, independently. The comment in `emit_vm.c` that
+used to justify `RX_VM_PREFILTER`'s VM-only scope by calling the DFA's own
+prefilter "an unrelated always-on optimization, not a selection point D46
+governs" was D81's retired rule and is corrected in place.
+
+**(FRANK, D40 ADDENDUM) THE SAME TWO FACTS AS RUNTIME FIELDS.** `struct
+rx_info` gains `scan` and `prefilter`, written by `emit_info_def` from
+`dfa_scan_name`/`dfa_prefilter_name` — the SAME two functions
+`pcrec_emit_dfa_scan_stamps` calls, and their only other callers. One
+derivation, two spellings; a codegen check asserts field == macro on every
+compiled artifact of both engines, which is a check of THIS EMITTER rather
+than of arithmetic precisely because there is no second computation to drift.
+
+The guard is `pcrec_artifact_has_dfa_scan`, which is `src/core/compile.c`'s own
+`fit.chosen == ENGM_DFA || fit.prefilter` spelled once — the condition that
+MAKES `job->dfa`/`job->engine` exist, so it is not a claim about the artifact
+that happens to agree, it is the reason there is anything to read. Both the
+hybrid's stamp gate and the runtime mirror ask it. Where it is false the fields
+read `NULL` and `"none"`; §6 of the spec states the whole rule, including why
+the string `"hybrid"` never appears in `prefilter` (an artifact that would say
+it reports its inlined scan's actual mechanism instead, and `scan != NULL` is
+how a consumer reads "hybrid").
+
+**ABI 5 -> 6, AND THIS ONE IS A LAYOUT EVENT** — unlike [DD-13]'s and [OPT-1]'s, which were
+scaffolding only. Two things move together: the emitted `#define` bytes (the
+proven-empty DFA artifacts' scan value; two new lines on every VM hybrid) and
+the struct itself (two `const char *` members APPENDED AT THE END, so no
+existing offset moves — unlike abi 2's inserted `work_budget` and abi 3's
+inserted sizing block). (A) is still byte-identical and (B) is still re-pinned.
+**BOTH ARTIFACT KINDS ARE AFFECTED and the abi comment says so**, which is r37
+A12's lesson: that finding was that abi 3 -> 4's comment argued the bump from
+the DFA side alone while `emit_info_def` is SHARED, leaving a reader unable to
+tell that every VM artifact's bytes moved too. This is also the MIRROR IMAGE
+of [OPT-1]'s abi 4 -> 5 note ("no DFA artifact's bytes move at this bump"):
+that event was VM-only, this one reaches both kinds.
 
 ## The VM engine joins ([M4.5b])
 
