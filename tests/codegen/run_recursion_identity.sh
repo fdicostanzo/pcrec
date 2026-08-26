@@ -281,8 +281,15 @@ KEEP="${KEEP:-0}"
 # the finding is that the region extractor has stopped bounding what its
 # comment says it bounds — not that the transform touched the VM.
 #
-# `abi` 6 -> 7 and (B) re-pinned here, to `49356e8` — this change's LAST
-# commit touching `src`/`lib`/`cli`. Pin was `c940551` ([DD-13c]'s).
+# `abi` 6 -> 7 and (B) re-pinned here, to `4ff4d41` — this change's LAST
+# commit touching `src`/`lib`/`cli`. Pin was `c940551` ([DD-13c]'s). Within
+# THIS change it moved twice, and the second move is the rule working rather
+# than an accident: the pin first named `49356e8`, and then the MEASUREMENT
+# deleted §7's size budget from `dfa_premul`, which is a `src` commit
+# (`4ff4d41`) that moves emitted bytes on every machine between 16,384 and
+# 65,535 entries. D76's wording anticipates exactly this — "the pin must
+# always name the change's LAST src commit" — and [DD-13c]'s own note records
+# it happening there too.
 #
 # [DD-13], 2026-08-25 — THE PIN'S FIRST RE-PIN UNDER D76, and it is worth one
 # paragraph because it is the first time the rule below was exercised by a
@@ -331,7 +338,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-49356e8}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-4ff4d41}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
