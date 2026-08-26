@@ -45,6 +45,9 @@
 
 #define TS4_STACK_BYTES (128 * 1024)   /* musl's default thread stack size */
 #define TS4_N 342                      /* the stamped default's largest match */
+/* [OPT-1] the shallow arm's depth: the smallest subject the pattern matches at
+ * all, and the one spec §5.3 used to name as still faulting. */
+#define TS4_SHALLOW_N 1
 
 /* The caller-supplied regions, on the HEAP — the point of the buffered arm is
  * that this storage is NOT on the 128 KB stack. Sized in frames/entries from
@@ -85,10 +88,15 @@ int main(int argc, char **argv)
     unsigned char *s;
     size_t n = TS4_N;
 
-    if (argc != 2 || (strcmp(argv[1], "default") != 0 && strcmp(argv[1], "buffered") != 0)) {
-        fprintf(stderr, "usage: %s default|buffered\n", argc > 0 ? argv[0] : "ts4");
+    if (argc != 2 || (strcmp(argv[1], "default") != 0
+                   && strcmp(argv[1], "buffered") != 0
+                   && strcmp(argv[1], "shallow") != 0)) {
+        fprintf(stderr, "usage: %s default|buffered|shallow\n", argc > 0 ? argv[0] : "ts4");
         return 2;
     }
+    /* [OPT-1] the shallow arm differs from `default` in the SUBJECT and in
+     * nothing else: same entry, same thread, same artifact. */
+    if (strcmp(argv[1], "shallow") == 0) n = TS4_SHALLOW_N;
 
     s = malloc(2 * n + 1);
     if (!s) { fprintf(stderr, "ts4: out of memory\n"); return 2; }
