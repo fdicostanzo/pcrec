@@ -15396,3 +15396,65 @@ re-derived, flagged for review). Its suites are cleared (PROCS=4, one
 at a time); timings after the battery. It also caught my paste botch in
 tuning.md §3 (two stray instruction lines from d8608ca) — fixing it in
 its diff.
+
+#### Fortieth session, part 9 — srTier DELIVERED (the two-tier entries, 5.5×); srStamp2 nearly; the overnight merge sequence (2026-08-25 ~21:5x EDT)
+
+**srTier (opus, [OPT-1] STEP 2) delivered 1785a9d** (design note
+docs/design/two_tier_entry.md, 200 lines; abi 4→5, (B) re-pinned to
+469a432, (A) BYTE-IDENTICAL vs ac4917d on all four axes — the FIRST abi
+bump at which no DFA byte moves). HEADLINE, measured three times on a
+quiet box: the email specimen's 16 B subject 259-268 → 46.2-48.8 ns/call
+against `rx_search_in`'s 45.1-47.2 — the default entry now costs what
+`_in` costs; frame 98,512 → 3,168 B; deep path +1.4 % (n=342 matches)
+/ +3.7 % (n=343 gives up). New check run_tiered_entry.sh 11/0 with BOTH
+validation reds measured — the important one: with the fast tier bound
+at the stamped default ("never escalates"), every ANSWER stayed green and
+only the escalation assertions went red — the measured proof that an
+answers-only check would pass on a build without the optimization. K33
+NARROWS: the default entries now MATCH on a 128 KB thread (arm D, a
+2-byte subject) and fault only on escalation (arm A, still pinned);
+§5.3's "faults on any subject" is re-measured false. Frank RULED the
+approach ("an elegant use of the frames error") and named the tier's
+escalation rate over an exemplar file as the profiler's first concrete
+question — srTier notes the `-DRX_TEST_TIER_HOOK` build already counts
+escalations per call, so a driver over an exemplar file gives that
+number WITHOUT building the profiler ([ENG-PGO] note). Its self-reported
+slip (a validation plant committed by `git add -A`, removed in 469a432)
+verified by me: the emitter diff since its implementation commit is
+comment-only (main's r37 A3 edits merged in); the one "plant" grep hit
+is a pre-existing comment in atomic.c. Deliberate deviation accepted:
+the FAST stamps are .c-private VM capacity facts (§6.3 (b)), not §10.4's
+caller surface — no entry takes a fast capacity. D6 critic critTier
+(opus) launched on the design + code (identity across the escalation
+incl. budget handling, `noinline` under -O3/-Os/LTO, the check's
+source-sharing, the K33 sum). Caveat the lane states plainly: the
+recursion specimen's fast tier holds only n ≤ 8 (8.98 trail entries per
+level), so THAT pattern escalates on nearly everything — the profiler
+question is real.
+
+**Frank's rulings this hour:** the two-tier approach; the `rx_info`
+mirrors for the selection facts — with the D40 ADDENDUM: pre-v1 abi
+changes "should be deliberate and methodical but can happen", no
+consumers until release; resetting the abi number at 1.0 is open and
+minor. srStamp2 ([DD-13c], abi 6) got the scope addition (`rx_info.scan`,
+`.prefilter`, appended, one derivation feeding macro and field) after
+reporting green at 536180c (run_dfa_stamps.sh 26/0; 1,263 of 1,488 VM
+artifacts are hybrids and now stamp their inlined scan; the DFA
+distribution unchanged 380/327/176/61/51); it is rebasing onto main and
+adding the fields. Tag collision fixed: the format half's panel
+sub-step is [DD-13b.panel].
+
+**The battery on 32890e2**: test stage 1,555 checks / 1 red (endvar
+identity, 1 of 2,353 "changed bytes" during the load-50 overlap of
+srTier's suites with the -j12 stage — my GO/relaunch overlap; solo
+re-run 2,353/2,353 identical: the [TT-10] residue-2 shape, a timed-out
+compile scored as a diff), 29 corpus cases = the K32 cell, solo
+1,634/0; 1 INCONCLUSIVE; san from 21:10; matrix after. Both lanes'
+suites were held during the test stage thereafter.
+
+**OVERNIGHT SEQUENCE (autonomous; journal at each boundary):** battery
+green → inbox I-5 to pcrec-bench (pin 32890e2; the stamps) → merge
+srTier (abi 5) → battery → merge srStamp2 (abi 6, rebased onto srTier's
+main) → battery → journal + wake. pcrecdev2 closed for the night
+(reporter v3 with all ten column items; a floor pattern in bench/email;
+its next session acks I-5 and asks a ~50-min window).
