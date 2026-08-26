@@ -16628,3 +16628,45 @@ run_form_census.sh, docs, Makefile wiring), 9903b3f (K37 fix). Not
 merged to main; the full `test-axes` battery result and the merge itself
 are owed to whoever picks this row back up once the manager's battery
 clears.
+
+#### Forty-first session, lane srAxes addendum — `make test`'s completion trailer (manager-added mid-session, 2026-08-26)
+
+Third, smaller item added to [CHK-2]'s scope mid-session, from a manager
+finding on main (journal part 7, not rebased into this lane): under
+`make -j12 test`, GNU make's default (non-`-k`) behaviour on a failing
+prerequisite is to print "Waiting for unfinished jobs" and launch NO
+FURTHER top-level targets — `test-premul-table`, last in `test:`'s
+prerequisite list, silently never ran in two batteries, invisible to the
+checks-passed/checks-failed count aggregation.
+
+Fixed in two parts: `test:`'s recipe now invokes `$(MAKE) -k
+TEST_TRAILER_DIR=<dir> $(TEST_SECTIONS)` rather than listing the 26
+sections as prerequisites (jobserver inheritance confirmed empirically —
+four fake 2-second targets complete in ~2s total under the wrapper, not
+~8s, proving `-j` parallelism survives the recursive `$(MAKE)` call), and
+every section target's recipe now touches a marker file as its first
+line before running its real script. `tests/lib/test_trailer.sh` counts
+markers against the caller's own argv (never re-derives the section list
+from the Makefile — one list, two uses), prints `sections ran: N/M`,
+names every missing section, and hard-fails on a zero-argument call
+rather than reading an empty expected list as a vacuous pass.
+
+Validated in a scratch toy Makefile (five fast fake sections, never built
+in this worktree, never committed): reproduced the bug exactly (old
+prerequisite-based shape, `-j2`, an early failing section, a later one
+silently never runs — the manager's own finding, on demand); showed the
+fix recovers it (all five launch, trailer confirms `5/5`, the overall
+failure still surfaces rather than being hidden); and showed the
+trailer's own independent detection power on a genuine "can't run even
+under `-k`" case (a broken shared `all` prerequisite takes every section
+down at once — `0/5`, every one named by name, not merely a shortfall
+count).
+
+`make strict` clean throughout; `make test-codegen` stayed 3/3, its K37
+static sweep's own population moved from 1 site missed (this lane's own
+earlier PC-4 wrapper fix) to a clean count that includes the new
+`test_trailer.sh` and the Makefile's expanded recipe lines with no new
+findings. docs/testing.md gained "`make test`'s completion trailer" with
+the three full transcripts; `tests/lib/CLAUDE.md` gained the
+`test_trailer.sh` entry; `docs/dev/plan.md`'s [CHK-2] row gained a third
+closure paragraph. Commit 6811006 on `lane/srAxes`.
