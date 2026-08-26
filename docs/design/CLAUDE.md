@@ -1405,5 +1405,16 @@ append-only or historical records.
   the CONTENT-vs-FORMAT distinction the first pass needed and did not
   draw. Verified: full `make test` green (corpus 20,775/0, cli 269/0).
 
+- `premultiplied_dfa_table.md` — **[OPT-3] STEP 2**, the design note written
+  BEFORE the code (2026-08-26, lane srPremul): store `next_state * stride` in
+  the DFA transition table so the emitted step is `state = table[state + class]`
+  and the loop-carried chain drops from `lea,lea,movslq,load` to `add,load`.
+  Implements the general fix `../dev/opt3_dfa_scan_measurement.md` (STEP 1)
+  measured at 1.276x on the bench's throughput row, answer-identical. Carries
+  the sentinel choice with its instruction sequence, which loops take the
+  transform and why ENG_ATTEMPT has nothing to take, the per-machine bound and
+  what happens above it, the `<PREFIX>_DFA_TABLE` stamp and the
+  `-fno-premul-table` denial, the identity control, and the failure modes.
+
 Maintenance: update this file when files are added/removed or their roles
 change.
