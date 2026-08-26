@@ -245,7 +245,7 @@ else
     echo "classified: $NDFA dfa, $NONE vm single-tier, $NTIER vm tiered, $NREF refused, $NBAD mismatched"
 
     if [ "$NBAD" -ne 0 ]; then
-        bad "§2: $NBAD artifacts disagree with their own stamps: $(grep '^mismatch-' "$WORKDIR/kinds.txt" | sort | uniq -c | tr '\n' ' ')"
+        bad "§2: $NBAD artifacts disagree with their own stamps: $(grep '^mismatch-' "$WORKDIR/kinds.txt" | LC_ALL=C sort | uniq -c | tr '\n' ' ')"
     else
         ok "§2: on all $NPAT corpus patterns the emitted code and the FAST stamps agree in BOTH directions — every VM artifact carries exactly one of each stamp, no FAST capacity exceeds its default, no DFA artifact carries one, and the tiered code is present exactly where FAST < RESUME ($NTIER tiered, $NONE single-tier)"
     fi
