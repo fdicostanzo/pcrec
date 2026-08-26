@@ -549,14 +549,44 @@ says whether the VM runs a capture-erased DFA ahead of its program at all,
 A non-hybrid VM artifact carries neither `_DFA_*` macro — the relation is an
 IFF and `docs/spec/match_api.md` §6.3 (a) states it as one.
 
+### 3.2 …and `rx_info` carries the same two facts at RUN time (`[DD-13c]`)
+
+**For the bench and every other header-less consumer.** The macros above are
+preprocessor-only, so a harness that `dlopen`s an artifact, an FFI binding, or
+a tool walking several `<prefix>_info` symbols in one image could not read
+them at all — it had to parse the emitted C. Since `[DD-13c]` (Frank's D40
+addendum) `struct rx_info` carries two more fields, appended at the END of the
+struct beside `engine` and `engine_why`:
+
+```c
+const char *scan;       /* "unanchored" | "attempt" | "empty", or NULL */
+const char *prefilter;  /* the candidate-start mechanism; never NULL */
+```
+
+They mirror `<PREFIX>_DFA_SCAN` and `<PREFIX>_DFA_PREFILTER` exactly, are
+written from the SAME emitter derivation (never a second computation), and
+`tests/codegen/run_dfa_stamps.sh` asserts field == macro on every compiled
+artifact of both engines. `scan` is `NULL` on a VM artifact that is not a
+hybrid, and **a non-NULL `scan` on a VM artifact IS "this is a hybrid"** — the
+runtime reading of `RX_VM_PREFILTER "hybrid"`, which had no `rx_info` mirror
+before. `prefilter` is never `NULL`: it reads the DFA's vocabulary wherever
+`scan` is non-NULL and the VM's `"none"` where it is not. The full rule, with
+the reason the string `"hybrid"` never appears in the field, is
+`docs/spec/match_api.md` §6.
+
+**A BENCH ROW CAN NOW BE BUCKETED WITHOUT READING THE ARTIFACT'S SOURCE**, on
+either surface, for every artifact kind — which is the gap `[DD-13]`'s row
+opened against and `[DD-13c]` closes for the hybrid.
+
 **This is not a `-f` axis and has no CLI spelling.** It is observability of a
 selection the compiler makes on its own, which is what D46 asks for; there is
 no knob here to deny or force. `tests/codegen/run_dfa_stamps.sh` holds each
 stamp to the loop it names (every verdict derived from the emitted matcher
 text, then compared against the macro) and asserts the hybrid iff in both
 directions. `rx_info.abi` moved `3` -> `4` with `[DD-13]`'s stamps and
-`4` -> `6` with `[DD-13c]`'s (D76: the version of the emitted
-scaffolding, not of the struct).
+`4` -> `6` with `[DD-13c]`'s. [DD-13]'s was a D76 event only — the version of
+the emitted SCAFFOLDING, not of the struct. [DD-13c]'s is both: the same kind
+of scaffolding change PLUS a real (append-only) struct growth, §3.2.
 
 §2.5 (`-fno-prefilter`) governs `RX_VM_PREFILTER`, which is the VM's own
 axis; the DFA scan's candidate-start filter is a different vocabulary and a

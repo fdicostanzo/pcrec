@@ -540,6 +540,21 @@ changed is the population and one rule:
   The middle term is matcher TEXT, so neither `#define` is ever checked
   against the other alone. The hybrid population is held to the SAME two
   agreement comparisons the DFA artifacts are.
+- **The RUNTIME MIRRORS are checked here too**, because this is the script that
+  already compiles every corpus pattern: `rx_info.scan`/`.prefilter` (the two
+  fields `[DD-13c]` appended to the struct, `docs/spec/match_api.md` §6) must
+  agree with the macros they mirror on EVERY compiled artifact of BOTH engines
+  — 2,483 of them — with `NULL`/`"none"` where the macros are absent. A third
+  source in the same one-pass `awk`, kept as separate from the other two as
+  they are from each other: struct-literal initializer lines, not `#define`s
+  and not matcher text. The line count is asserted as well (exactly one of
+  each), so a mirror that stopped being emitted on one engine cannot leave the
+  comparison vacuous on that half.
+- **Every agreement denominator is COUNTED at its comparison site**, not
+  derived from bucket sizes, and the count is itself asserted against the
+  population that was due. This came out of the change's own validation: a
+  plant that routed 1,263 artifacts past a comparison left the verdict reading
+  "on all 2258 artifacts" — a true sentence about a population nobody compared.
 
 It belongs in `test-codegen` rather than beside `run_vm_identity.sh` under
 `test-vm` on the [M4.5c] test: it is compile-only (no `gcc`, no matcher is

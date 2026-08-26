@@ -12,6 +12,10 @@
 #     #define RX_DFA_PREFILTER "none" | "memchr" | "memchr-bounded"
 #                            | "byte-class" | "byte-class-bounded"
 #
+# ...and, since [DD-13c], the RUNTIME MIRRORS of the last two in the emitted
+# `struct rx_info` (`.scan`, `.prefilter`; docs/spec/match_api.md §6), which
+# this file holds to the macros they mirror on every artifact of both engines.
+#
 # docs/spec/match_api.md §6.3 rules `RX_ENGINE` UNCONDITIONAL — present on every
 # artifact both engines produce, so a consumer may `#if` on it without knowing
 # which engine it got. pcrec-bench buckets its rows by these.
@@ -145,6 +149,23 @@
 #      The printed scan tally reverts to `unanchored=815 attempt=180` with no
 #      `empty` value at all, which is the distribution [DD-13] shipped. The
 #      iff and the manifest stayed GREEN.
+#
+#   8. `emit_info_def`'s `.scan` written from a SECOND spelling (the literal
+#      "unanchored") instead of `dfa_scan_name` — the runtime mirror and the
+#      macro derived independently, which is the one thing the "one derivation,
+#      two spellings" claim forbids:
+#      RED, 28/1 — [mirror] "376 rx_info field(s) disagree with the macro they
+#      mirror". **376 IS EXACTLY 368 `attempt` + 8 `empty`**, i.e. every
+#      artifact whose scan is not the planted constant and nothing else, which
+#      is the red localising to the defect rather than going uniformly red.
+#   9. the mirror fields not emitted at all (`if (0)` on both arms):
+#      RED, 27/2 — [mirror] "2483 artifact(s) are missing an rx_info mirror
+#      field" AND [mirror] "the mirror comparison ran on 0 artifacts but 2483
+#      compiled — 2483 were routed past it". **THE SECOND RED IS THE POINT.**
+#      Without the line-count assertion and the counted denominator, a mirror
+#      that silently stopped being emitted would make the value comparison
+#      VACUOUSLY TRUE and this check would have gone green on an artifact
+#      surface that no longer existed.
 #
 # Recorded as run, from `scratchpad/srStamp2/v_*.log`.
 #
