@@ -322,41 +322,56 @@ decides whether to perform it — and then run the row through
   valid run is recorded at [M6.6]'s close (1a8541e). Successor: the
   [DD-14] four-axis identity gate (subroutines_design.md §9, wave E),
   pinned at post-wave-A main.
-- **run_dfa_stamps.sh** — [DD-13] (2026-08-25) the DFA artifact's three D46
-  SELECTION STAMPS (`RX_ENGINE "dfa"`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`;
+- **run_dfa_stamps.sh** — [DD-13] (2026-08-25), widened by [DD-13c]: the D46
+  SELECTION STAMPS (`RX_ENGINE`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`;
   `docs/spec/match_api.md` §6.3), each held to the LOOP IT NAMES. Runs under
   `make test-codegen` as a third script beside `run_codegen_tests.sh` and
   `run_trie_identity.sh`. Compile-only (no `gcc`), one `awk` per artifact,
   ~70 s over the whole corpus. Two halves:
-  - **Seven NAMED WITNESSES** whose expected value is spelled out in the
+  - **NAMED WITNESSES** whose expected value is spelled out in the
     file — one per documented value, including `(?:...)\z` for the
-    `-bounded` pair. They pin the MECHANISM; the sweep below pins
-    AGREEMENT, and agreement is a property two wrong answers can also have
-    (an emitter that stamped `"none"` everywhere AND emitted no prefilter
-    anywhere would sail through a pure agreement check).
+    `-bounded` pair and `\B\b` / `^\B\b` for `"empty"` on both engines
+    ([DD-13c]; the anchored one is NOT in the corpus, so nothing but that
+    row tests it) — plus three VM rows for the hybrid iff. They pin the
+    MECHANISM; the sweep below pins AGREEMENT, and agreement is a property
+    two wrong answers can also have (an emitter that stamped `"none"`
+    everywhere AND emitted no prefilter anywhere would sail through a pure
+    agreement check).
   - **A CORPUS SWEEP** over every `pattern` line in every `.rxt`
     (2,772 on this tree, floored at 2,620, `LC_ALL=C`, K35), asserting:
-    exactly one of each stamp per DFA artifact, `RX_ENGINE "vm"` and NO
-    `RX_DFA_*` on every VM artifact (§6.3's (a)/(b) split), every value
-    inside the documented set, and stamp-equals-loop on both axes.
+    exactly one of each stamp per DFA artifact, `RX_ENGINE "vm"` on every VM
+    artifact, [DD-13c]'s hybrid IFF in both directions, every value inside
+    the documented set, and stamp-equals-loop on both axes for every
+    artifact that CONTAINS a DFA scan (DFA artifacts and VM hybrids alike).
   - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** Every
     verdict is derived from the EMITTED MATCHER TEXT — the `memchr` call,
     the `can_begin_match` walk, `start_max`, the skip's bound — which
     `emit_unanchored`/`emit_attempt` write, while the macros come from
-    `emit_dfa_stamps`. Different code paths, so a drifting stamp is a red.
-    The engine discriminator is `goto rx_L0;` (the VM's program entry), NOT
-    `RX_ENGINE`: reading the macro to decide which artifact kind to check
-    the macro on is the circularity the file refuses in a comment. Note a
-    VM artifact may ALSO contain a DFA scan loop (§6.1's hybrid inlines one
-    as a `static`), which is why the VM test comes first.
+    `emit_dfa_stamps`/`pcrec_emit_dfa_scan_stamps`. Different code paths, so
+    a drifting stamp is a red. The engine discriminator is `goto rx_L0;`
+    (the VM's program entry), NOT `RX_ENGINE`: reading the macro to decide
+    which artifact kind to check the macro on is the circularity the file
+    refuses in a comment. The HYBRID discriminator is the same kind of
+    thing — the emitted DEFINITION `static int rx_prefilter(const unsigned
+    char *subject, ...`, the line `emit_search_head` writes when emit_vm.c
+    asks emit_dfa.c for a scan under a private name.
+  - **[DD-13c] THE VM HALF IS AN IFF, NOT A PROHIBITION.** The old rule was
+    "no `RX_DFA_*` macro on a VM artifact", and it was wrong about the §6.1
+    hybrid, which inlines a full DFA scan and (since [DD-13c]) stamps the
+    two lines for it. Asserted both ways with both populations printed: a
+    VM artifact carries them IFF its emitted text contains that inlined
+    body IFF `RX_VM_PREFILTER` is `"hybrid"`. The middle term is matcher
+    TEXT, so neither `#define` is ever checked against the other alone, and
+    the check refuses to pass if either side of the iff has no members
+    (an iff with an empty side asserts only one implication).
   - **THE EMPTY-ENGINE BUCKET IS NAMED AND COUNTED, NEVER FILTERED.** Four
     corpus patterns (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`) are proven to
-    match nothing, so their search function is one `return 0` with no loop
-    for a scan shape to be compared against. They are excluded from the
-    SCAN agreement and asserted on the PREFILTER instead (no loop => the
-    stamp must read `"none"`), with the bucket's own size asserted
-    NON-ZERO — a zero would mean the text marker stopped matching and the
-    bucket had silently started exempting everything.
+    match nothing, so their search function is one `return 0` with no loop.
+    The bucket is an EXACT NAMED MANIFEST of those four (r37 #2: a floor of
+    one answers "did it vanish", never "is it the right set"), and since
+    [DD-13c] its members are ASSERTED on the scan axis — `RX_DFA_SCAN
+    "empty"` — rather than exempted from it, plus the prefilter assertion
+    it always had (no loop => the stamp must read `"none"`).
   - **Validation (made to fail on purpose, four ways):** scan value
     inverted → 386 red; the `-bounded` arms dropped → 92 red; the whole
     stamp call removed → the presence checks red on 2,022 artifacts; the
@@ -1760,3 +1775,11 @@ Demonstrated both directions on this change: with the new pin the gate is
 15/0; with `RECURSION_IDENTITY_FILEPIN=8fc1e51` (the old pin, `.abi = 3`
 against the subject's `4`) it REFUSES with the message above before the sweep
 runs.
+
+**[DD-13c], 2026-08-25 — THE SECOND EXERCISE, and the pin is
+DD13C_PIN_PLACEHOLDER now.** r37's two scope findings move emitted `#define`
+bytes (the four proven-empty DFA artifacts' scan value; two new lines on every
+VM hybrid) and move nothing inside the program region, so the reading above is
+copied verbatim: `abi` DD13C_ABI_PLACEHOLDER, (B) re-pinned, (A) byte-identical
+against the unchanged `ac4917d`. Demonstrated both directions again — see the
+[DD-13c] entry in `docs/dev/dev_journal.md` for the measured numbers.

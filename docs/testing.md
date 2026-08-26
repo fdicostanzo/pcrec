@@ -520,7 +520,26 @@ holds the DFA artifact's three D46 selection stamps (`RX_ENGINE "dfa"`,
 `RX_DFA_SCAN`, `RX_DFA_PREFILTER`; `docs/spec/match_api.md` §6.3) to the LOOP
 THEY NAME — every verdict is derived from the emitted matcher text and
 compared against the macro, so a stamp that drifts from its mechanism is a
-red. It also carries seven NAMED WITNESSES, one per documented value.
+red. It also carries NAMED WITNESSES, one per documented value.
+
+**[DD-13c] (2026-08-25) — the same script, widened by the r37 panel's two
+SCOPE findings.** Nothing about the derived-from-the-text design changed; what
+changed is the population and one rule:
+
+- `RX_DFA_SCAN` has a third value, `"empty"` — a pattern that provably matches
+  nothing emits a body that is one `return 0`, on BOTH engines. The script used
+  to EXEMPT those artifacts from the scan comparison (there was no value to
+  compare against); it now asserts `"empty"` on them like any other bucket, and
+  the exact named manifest (the four such patterns the corpus holds) stays.
+- **The VM half became an IFF.** The old rule was "no `RX_DFA_*` macro may
+  appear on a VM artifact". That was wrong about the §6.1 HYBRID, which inlines
+  the DFA emitter's own scan as `static <prefix>_prefilter` and now stamps the
+  two `_DFA_*` lines for it. Both directions are asserted, over the whole
+  corpus and on named witnesses: a VM artifact carries those macros IFF its
+  emitted text contains that inlined body IFF `RX_VM_PREFILTER` is `"hybrid"`.
+  The middle term is matcher TEXT, so neither `#define` is ever checked
+  against the other alone. The hybrid population is held to the SAME two
+  agreement comparisons the DFA artifacts are.
 
 It belongs in `test-codegen` rather than beside `run_vm_identity.sh` under
 `test-vm` on the [M4.5c] test: it is compile-only (no `gcc`, no matcher is
@@ -976,6 +995,11 @@ predates the FB surface — a pin set too early would put every artifact's
 surface back in the diff and report the failure the re-pin exists to retire.
 `tests/codegen/CLAUDE.md` carries the measurement (200 distinct lines, the
 `rx_match` over-strip, the blank-line residue) behind rejecting a wider filter.
+
+**Re-pinned again 2026-08-25 by `[DD-13c]`** (`abi` FILEPIN_ABI_PLACEHOLDER),
+for the same reason and with the same (A) result: the r37 panel's two scope
+findings move emitted `#define` bytes on the four proven-empty DFA artifacts
+and on every VM hybrid, and move nothing inside the program region.
 
 **[TT-11]/D76 (2026-08-25): the two pins have two different OWNERS, and the
 FILE pin's guard is now STRUCTURAL.** (A)'s pin is the MODULE's promise
