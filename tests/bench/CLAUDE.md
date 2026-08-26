@@ -36,6 +36,23 @@ engines — the cross-engine matrix lives in compare/.
   measured median behind each default.
 - **bdriver.c** — driver compiled against the generated matcher; prints
   `bytes= iters= secs= mbps=` and the match span.
+- **tier_escalation.sh** / **tier_escalation_driver.c** — [OPT-1] STEP 3: the
+  TIER-ESCALATION RATE over an exemplar subject file (docs/design/
+  two_tier_entry.md section 7's named follow-up — "how often real calls
+  escalate is a MEASUREMENT nobody has"). Not a pass/fail gate: it builds
+  `orig.rx`/`factored.rx`/`floor.rx` from pcrec-bench's `bench/email`
+  sub-bench (READ-ONLY sibling repo, D52) forced `--engine=vm`, in both the
+  plain (`rx_search`) and whole-subject (`(?:P)\z`, `rx_match_caps`) forms,
+  and counts real `-DRX_TEST_TIER_HOOK` escalations per subject over the 85
+  compliance + 77 search_short + 3 throughput subjects. Prints, per
+  (pattern, form, subject set): escalations/calls and rate, the largest
+  non-escalating and smallest escalating subject sizes, and lists every
+  escalating and give-up subject by id. `floor.rx` (the single-byte literal
+  `@`) rides the same pipeline as a negative control — its stamped default
+  fits the fast tier outright (single-tier by construction), so it must
+  show zero escalations. Numbers as measured: docs/dev/plan.md's `[OPT-1]`
+  row. Env: `PCREC`, `CC`, `KEEP=1`, `PCREC_BENCH_DIR` (default
+  `/home/duxevents/pcrec-bench`).
 - **compare/** — cross-engine comparison matrix vs PCRE2 (interp and JIT) and
   python `re`, plus its own ratchet. Slow (tens of minutes); not part of
   `make bench`.

@@ -55,7 +55,7 @@
 #
 # Usage: bash tests/bench/tier_escalation.sh
 # Env: PCREC (default <root>/build/pcrec), CC (default gcc), KEEP=1,
-#      PCREC_BENCH_DIR (default /home/duxevents/pcrec-bench -- READ-ONLY,
+#      BENCH_REPO_DIR (default /home/duxevents/pcrec-bench -- READ-ONLY,
 #      per this repo's CLAUDE.md mandate; nothing here writes there)
 
 set -u
@@ -67,8 +67,8 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 KEEP="${KEEP:-0}"
-PCREC_BENCH_DIR="${PCREC_BENCH_DIR:-/home/duxevents/pcrec-bench}"
-EMAIL_DIR="$PCREC_BENCH_DIR/bench/email"
+BENCH_REPO_DIR="${BENCH_REPO_DIR:-/home/duxevents/pcrec-bench}"
+EMAIL_DIR="$BENCH_REPO_DIR/bench/email"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
