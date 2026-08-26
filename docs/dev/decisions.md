@@ -5810,3 +5810,50 @@ event gains `rx_info` mirrors for the selection facts (`scan`,
 `prefilter`) rather than a future second event. Resetting the abi
 number to 1 at the 1.0 release was raised and left open — "honestly,
 it's not a big deal" — a release-mechanics item for [REL-META].
+
+## D82 — the emitted artifact's gcc compile time is an ACCEPTABLE TRADEOFF for a layered emitted form (Frank, 2026-08-26 ~15:0x, forty-first session)
+
+**Context.** Two things were on the table at once: [OPT-3] STEP 2's
+pre-multiplied table (a representation change that landed as ~20 new
+branch sites in `emit_unanchored`, the 459-line function every DFA axis
+lands in), and the measured fact that gcc's time on a VM artifact is
+~6× a DFA artifact's for the same size (0.36 s vs 0.06 s at -O2), all
+of it optimizer passes over a 1,059-block CFG. The question was whether
+the emitter should be reorganized so that representation decisions are
+SELECTED (a candidate list of representation objects, first applicable,
+the stamp = the chosen object's name) and the emitted C written ONCE
+against an OPAQUE state token with a per-form accessor block of
+`static inline` functions — leaving gcc to flatten the accessors and
+make the low-level choices (layout, hints, unrolling). That design
+costs gcc work: more inline functions to flatten, and any future
+per-form specialization the emitter delegates to gcc rather than
+pre-computing.
+
+**Ruling.** Increased gcc compile time of the generated artifact is an
+acceptable tradeoff for that layering. The artifact is compiled once,
+ahead of time, by construction (APPROACH.md); its per-call and per-byte
+cost is what the project optimizes (D18), and the emitter's
+readability/extensibility — decisions expressed as selection over
+candidates, not an if/then hierarchy; the loop skeleton emitted once —
+is what keeps the next axes ([OPT-5], [OPT-3] STEP 3, the two-byte
+table) cheap and correct. Compile time remains a MEASURED quantity (the
+bench's compile-cost table, reporter v4's emit-c/gcc/load phases) and a
+regression there is reported, not hidden; it is simply not a veto.
+
+**Bounds.** (1) The runtime cost of the layering must be ZERO: the hot
+loop's instruction sequence after gcc must equal the hand-written form
+(objdump equality + the timing driver are the gate, alongside answer
+identity). If gcc does not flatten an accessor, `always_inline` is the
+first remedy and hand-inlining the last. (2) The abstraction is the
+opaque token — step / dead / accept / index — never "a state index the
+loop scales"; the dependency-chain property lives inside the accessor
+block. (3) Only axes with ≥ 2 real forms get a representation object;
+a one-site boolean stays a boolean (D75 addendum: no framework for its
+own sake). (4) Moving the loop text is an abi bump (D76) exactly once
+for the relayering; after it, representation changes move only the
+accessor block.
+
+**Consequence.** [ENG-FORM] chartered with this shape (plan.md), to run
+after [OPT-3] STEP 2 merges and BEFORE [OPT-5] / STEP 3 so those land
+as accessor-block entries. [CHK-2] (the axis registry check) reads the
+candidate lists as the code-side registry.
