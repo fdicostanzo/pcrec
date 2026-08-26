@@ -255,6 +255,19 @@ KEEP="${KEEP:-0}"
 # (B) here, because (B) compares WHOLE FILES and three new `#define` lines are
 # a whole-file difference on ~2,000 artifacts. That is D76 working as ruled,
 # not an exception to it. Pin was `8fc1e51` ([DD-14.FB]).
+#
+# [OPT-1], 2026-08-25 — THE SECOND SCAFFOLDING-ONLY RE-PIN, and it is worth a
+# line because it is the first at which **no DFA artifact's bytes move at
+# all**. The TWO-TIER DEFAULT ENTRY (docs/design/two_tier_entry.md,
+# docs/spec/match_api.md §10.9) is emitted entirely by `src/gen/emit_vm.c`: a
+# DFA artifact has no resume stack and so no tier, and its only difference is
+# the `.abi` digit itself. On the VM side every artifact gains two
+# `<PREFIX>_FAST_*` `#define`s, and a TIERED one (272 of 2,758 corpus patterns)
+# additionally gains a `<prefix>_fast_buffers` type, the `TIER_NOTE` hook block
+# and three `noinline` `_deep` statics, while its three un-suffixed entries
+# change body. NO struct offset moves and NO emitted PROGRAM byte moves, which
+# comparison (A) below proves against the unchanged `ac4917d` pin. `abi` 4 -> 5
+# and (B) re-pinned here, in the same change. Pin was `5991d4c` ([DD-13]).
 # REASON, for the record: [DD-14.FB] moved the scaffolding across the
 # `abi` 2 -> 3 boundary; under D40 (pre-v1) the scaffolding is not comparable
 # across such a boundary, and the PROGRAM REGION is. So the whole-file half is
@@ -278,7 +291,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-5991d4c}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-469a432}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

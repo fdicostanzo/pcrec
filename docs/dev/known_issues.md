@@ -2623,18 +2623,37 @@ is the endgame cell (libpcre2 refuses it outright, error 120).
 **Milestone.** None scheduled; parked for Frank's ruling. Found while
 explaining a load-induced compile timeout on exactly this cell.
 
-## K33 — OPEN (2026-08-24, thirty-ninth session; found by the [DD-14.FB] spec lane) — a call-bearing VM artifact's default entries SIGSEGV on a musl-default 128 KB thread stack: the run struct is 131,144 B on the C stack
+## K33 — OPEN, NARROWED (2026-08-24, thirty-ninth session; found by the [DD-14.FB] spec lane. NARROWED 2026-08-25 by [OPT-1], fortieth session) — a call-bearing VM artifact's default entries SIGSEGV on a musl-default 128 KB thread stack for a subject deep enough to escalate to the deep tier
 
-**Symptom.** MEASURED: `rx_search`/`rx_match`/`rx_match_caps` of a
-call-bearing VM artifact, called from a thread with musl's default 128 KB
-stack, segfault on a 2-byte subject. `docs/spec/match_api.md` §5.3's
-concurrency contract ("any number of threads may call the same
-artifact's entry points concurrently") is FALSE today for that artifact
-class on that platform; §5.3 now carries a measured shipped-behaviour
-paragraph saying so.
+**NARROWED 2026-08-25 BY [OPT-1], AND THE OLD SYMPTOM SENTENCE IS NOW
+FALSE.** This entry used to say the default entries "segfault on a 2-byte
+subject" — on ANY subject. `[OPT-1]`'s two-tier entry
+(`docs/design/two_tier_entry.md`) moved the stamped default storage off
+`<prefix>_search`'s own frame and onto a `noinline` `<prefix>_search_deep`
+that only a `PCREC_ERR_FRAMES` give-up reaches. Re-MEASURED, `gcc
+-fstack-usage`, same artifact: `rx_search` **3,184 B**, `rx_search_deep`
+**131,216 B**. So on a musl-default 128 KB thread that artifact now
+**matches every subject the fast tier holds** and faults only on one deep
+enough to escalate. `tests/thread/run_stackdepth_tests.sh` arm D pins the
+narrowing behaviourally (the same entry that dies in arm A matches "ab" on
+the same thread); arm A still pins the death.
 
-**Cause.** `gcc -fstack-usage`: `rx_search`'s frame is 131,216 B for a
-call-bearing artifact (CORRECTED 2026-08-25 by [SPEC-1.1]'s re-measurement via `make test-stackdepth`; the 131,296 B figure first recorded here was the spec lane's pre-code-half number) (the run struct: 2048 resume frames × 40 B + 3072
+**It is NARROWED, not closed, and the remedy is unchanged.** Which subjects
+escalate is a property of the pattern and the subject, so a caller cannot
+bound it in advance; `_in` is still the only way to get a guarantee. The
+DEEP path is still 131,216 + 3,184 B and still does not fit.
+
+**Symptom (as narrowed).** MEASURED: `rx_search`/`rx_match`/`rx_match_caps`
+of a call-bearing VM artifact, called from a thread with musl's default
+128 KB stack, segfault on a subject that exhausts the fast tier (the
+684-byte `a^342 b^342`). `docs/spec/match_api.md` §5.3's concurrency
+contract ("any number of threads may call the same artifact's entry points
+concurrently") is FALSE today for that artifact class on that platform for
+such subjects; §5.3 carries the measured shipped-behaviour paragraph and
+its [OPT-1] re-measurement.
+
+**Cause.** `gcc -fstack-usage`: the DEEP PATH is 131,216 B for a
+call-bearing artifact (CORRECTED 2026-08-25 by [SPEC-1.1]'s re-measurement via `make test-stackdepth`; the 131,296 B figure first recorded here was the spec lane's pre-code-half number. [OPT-1], same date: this number is now `rx_search_deep`'s frame, not `rx_search`'s — the entry's own is 3,184 B, and the quantity that decides whether a deep call fits is entry + deep) (the run struct: 2048 resume frames × 40 B + 3072
 trail entries + slots = 131,144 B), 98,512 B for the unbounded call-free
 one (just UNDER 128 KB). The two per-frame call fields wave B+C added
 (`call_top`, `call_ret`) took a resume frame 24 → 40 B; 2048 × 16 =
@@ -2650,28 +2669,31 @@ against `rx_search`'s **131,216 B**, and the same 684-byte subject that
 kills the default entry on a 128 KB thread MATCHES through `_search_in`
 on that same thread.
 
-**The DEFAULT path is NOT fixed and will not be**, which is why this entry
-stays OPEN rather than closing. Its storage stays on the C stack because
-every other home is closed (a static fails TS-1/§5.3; a thread-local
-fails reentrancy; allocation is forbidden by construction), so the only
-things that would fix it are a smaller stamped default — **D73 ruled
-KEEP 2048/3072** — or the caller compiling with `--backtrack-frames`. So
-the standing advice is unchanged and now has a supported spelling: a
-caller on a musl-default thread stack, or any small-stack thread, must
-call an `_in` entry with its own storage, or compile the pattern with a
-smaller capacity.
+**The DEFAULT path's DEEP TIER is NOT fixed and will not be**, which is why
+this entry stays OPEN rather than closing. Its storage stays on the C stack
+because every other home is closed (a static fails TS-1/§5.3; a
+thread-local fails reentrancy; allocation is forbidden by construction), so
+the only things that would fix it are a smaller stamped default — **D73
+ruled KEEP 2048/3072** — or the caller compiling with
+`--backtrack-frames`. [OPT-1] changed WHEN that storage is reached, not how
+big it is or where it lives. So the standing advice is unchanged and now has
+a supported spelling: a caller on a musl-default thread stack, or any
+small-stack thread, must call an `_in` entry with its own storage, or
+compile the pattern with a smaller capacity.
 
 **Pinned, in both directions.** `tests/thread/run_stackdepth_tests.sh`
 (target `make test-stackdepth`, in `make test`) reproduces the crash as a
 `KNOWN:` line every run, asserts the remedy matches on the same thread,
 and carries a CAUSAL control — the unbounded but call-FREE `(a|aa)+b`,
-whose 98,432 B entry fits, on the same driver and subject — so the
+whose 98,432 B deep path fits, on the same driver and subject — so the
 difference between crashing and not is the frame size and nothing else.
-**The script FAILS if the default entry ever stops dying**, because this
-entry would then be describing something that is no longer true.
+**The script FAILS if the default entry ever stops dying** on the DEEP
+subject, because this entry would then be describing something that is no
+longer true. [OPT-1] added arm D, which pins the NARROWING in the same run:
+the same entry matching a 2-byte subject on the same thread.
 
-**Milestone.** Remedy: [DD-14.FB] code half, done. Default path: closed
-only by a future ruling that revisits D73.
+**Milestone.** Remedy: [DD-14.FB] code half, done. Narrowing: [OPT-1],
+done. Deep path: closed only by a future ruling that revisits D73.
 
 ## K34 — RULED: DOCUMENTED DIVERGENCE (D74, Frank 2026-08-25; was OPEN 2026-08-24, found by the [DD-14.D27] blinded author) — pcrec GIVES UP (`frames`) on a runaway left recursion where libpcre2 10.46 CONCLUDES (a clean nomatch); PCRE2's recursion-loop rule is subtler than "same position = error"
 

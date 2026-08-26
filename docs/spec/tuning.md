@@ -29,7 +29,7 @@ forceable" principle (`docs/dev/decisions.md` D46), applied at the tuning
 layer: a compiler optimization that cannot be turned off cannot be
 differentially tested (D47.3, `docs/dev/decisions.md`, ruling 3 — "a
 strategy that cannot be denied cannot be differentially tested"). Nine of
-the eleven axes in §2 are D47.3's family — the deny-only six, the force
+the twelve axes in §2 are D47.3's family — the deny-only seven, the force
 pair (§2.5), and the two engine-selecting denials — and eight of those
 nine exist **because** they have a differential that checks this exact
 claim directly: compile the same pattern twice, once with the strategy and
@@ -52,7 +52,7 @@ evidence. A stranger tuning performance needs the same table read the
 other way: which knobs are safe to flip without re-verifying correctness,
 and which one is a `--engine`-shaped do-or-die request.
 
-## 2. The eleven axes
+## 2. The twelve axes
 
 Each subsection: what it controls, the default, the stamp it leaves in an
 emitted artifact (verified by an emitted-artifact diff, command given),
@@ -420,8 +420,59 @@ sweeps at least the default and `--engine=vm` axes (`tests/atomic_groups/
 run_atomic_diff.sh` §2, `tests/recursion/run_recursion_diff.sh`'s four
 axes) as the engine differential D46 asks for at the module level.
 
-## 3. The DFA-side stamp gap" section
-(main tree, currently lines ~423-441) with:
+### 2.12 `-fno-tiered-entry` — `PCREC_NO_TIERED_ENTRY` (bit 14)
+
+**ANSWER-IDENTITY-preserving**, and the strongest such claim in this
+section: the tier it denies is a pure cost transformation whose two shapes
+are proved to answer identically by construction, not by sampling
+(`docs/spec/match_api.md` §10.9).
+
+**What it controls.** On an artifact whose stamped default storage does not
+fit inside one 4 KB page, `<prefix>_search`/`_match`/`_match_caps` run the
+match on a page-budgeted on-stack buffer and escalate to the stamped default
+— by calling a non-inlined internal function that owns it and re-runs from
+scratch — on `PCREC_ERR_FRAMES` and on nothing else. Denying emits the
+SINGLE-TIER shape those entries had before `[OPT-1]`. Default: the tier is
+ON. Deny-only, `-fno-possessify`'s shape rather than `§2.5`'s force pair:
+there is one entry shape per artifact, so there is nothing to address and
+nothing to force.
+
+**Reason it exists.** gcc's stack-clash protection probes every page of a
+function's frame on every call, so a 98,512-byte storage local cost 233.8
+ns on a subject that matches in a few hundred instructions
+(`docs/design/two_tier_entry.md` §1). The flag is both the bisect lever for
+that optimization and the build an identity gate can compare the old entry
+against — the second control `tests/codegen/run_tiered_entry.sh` §5 uses,
+in the shape `-fno-splice-calls` gives module `recursion`.
+
+**The stamp.** `<PREFIX>_FAST_FRAMES`/`<PREFIX>_FAST_TRAIL` (match_api.md
+§6.3(b)) — VM-only, `.c`-private, on every VM artifact. Under the denial
+they equal `<PREFIX>_RESUME_FRAMES`/`_TRAIL_FRAMES`, which is the same
+reading three answer-preserving degenerate cases produce and is the
+document's only spelling of "this artifact has one tier". **MASKED out of
+`rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`), for the
+mask's own reason: it changes no answer, so two artifacts that behave
+identically must not differ in their reflection surface over it, and what
+the emitter DID is already reported by the stamp.
+
+**The stamp anchors on `RX_FAST_`, not on `RX_(FAST|RESUME|TRAIL)`**: the
+looser pattern also matches the four §10.4 sizing macros and the `RX_TRAIL`
+undo macro, so it prints seven lines rather than two. Re-run and verified at
+this commit:
+
+```
+$ build/pcrec -p rx --engine=vm --features recursion -o - -- '^(a(?1)?b)$' \
+    | grep -E '^#define RX_FAST_'
+#define RX_FAST_FRAMES 47
+#define RX_FAST_TRAIL 71
+$ build/pcrec -p rx --engine=vm --features recursion -fno-tiered-entry -o - \
+    -- '^(a(?1)?b)$' | grep -E '^#define RX_FAST_'
+#define RX_FAST_FRAMES 2048
+#define RX_FAST_TRAIL 3072
+```
+
+(47/71 is this artifact's page-budgeted pair; 2048/3072 is the stamped default,
+and `FAST == RESUME`/`TRAIL` is how a reader tells that the tier is off.)
 
 ## 3. The DFA side's own stamps
 

@@ -1657,3 +1657,90 @@ not the caller's choice.
 the surface, because a caller has to read them before it can size a buffer.
 Two in-tree scripts grepped them out of the `.c` and were fixed to read the
 `.h` too; a third consumer would have gone VACUOUS rather than red.
+
+## [OPT-1] THE TWO-TIER DEFAULT ENTRY: the storage moves off the entry's frame
+
+`docs/design/two_tier_entry.md`, `docs/spec/match_api.md` §10.9, `abi` 4 → 5.
+One idea again: **the stamped default storage stops being a local of the
+function every call enters.**
+
+**The measured cause.** `gcc -fstack-clash-protection` probes every page of a
+frame on EVERY call, and `<prefix>_search`'s `<prefix>_run_buffers` local is 24
+pages on the email specimen. MEASURED ([OPT-1] STEP 1, N=100k, median of 5,
+`taskset`): 233.8 ns/call against 46.3 for `<prefix>_search_in` and 46.2 for
+the same entry under `-fno-stack-clash-protection`. The tax is proportional to
+the STAMPED DEFAULT, so a pattern with a small statically-derived requirement
+pays nothing — which is why the fix is a shape change and not a smaller number
+(D73 keeps 2048/3072).
+
+**The shape.** `vm_emit_default_entry` emits all three un-suffixed entries and
+is the ONE place the storage decision is made. On a TIERED artifact it writes a
+`noinline` `<name>_deep` owning the stamped default, plus an entry that binds a
+page-budgeted `<prefix>_fast_buffers` and calls `_deep` on `PCREC_ERR_FRAMES`
+and nothing else. **`noinline` is load-bearing**: inlined, the 98 KB is back on
+the entry's frame and the change does nothing. MEASURED: `rx_search` 131,216 →
+**3,184 B** call-bearing, 98,432 → **3,184 B** call-free; `_in` unchanged at
+144/128.
+
+**IT IS ONE FUNCTION BECAUSE THE THREE ENTRIES WERE ALREADY THREE NEAR-COPIES.**
+They differ in return type, parameters, the arguments threaded to their `_run`,
+and how the FRAMES give-up is spelled at their layer — `<prefix>_search` sits
+above the search loop and compares `PCREC_ERR_FRAMES`, the two anchored entries
+sit on `match_anchored` and compare `<PREFIX>_R_FRAMES` (§4.4's three layers).
+Adding the tier in place would have made them three near-copies of twelve lines
+with the escalation pasted three times, which is S-FB2's shape.
+
+**ONE TIER IS THE DEGENERATE CASE, NOT A SPECIAL CASE.** `tiered` is false when
+the stamped default already fits the budget (the common case), when
+`NSLOTS * 8` alone exceeds it, when the scaled capacities fall below
+`VM_FAST_TIER_MIN`, or under `-fno-tiered-entry`. All four emit the shape that
+shipped before [OPT-1], BYTE FOR BYTE — which is why the single-tier text is a
+separate literal string rather than the tiered one with a substituted clause.
+MEASURED: `(\w+)\s+\1` and `(?<=foo)bar` differ from the pre-change emitter
+by the two FAST stamps and `.abi` and nothing else. **No DFA artifact's bytes
+move at all**, a first for an `abi` bump.
+
+**THE BUDGET IS A BYTE COUNT, AND IT IS ASSERTED RATHER THAN TRUSTED.**
+`VM_FAST_TIER_BYTES` (3,072) is denominated in the unit gcc charges in — pages
+— and leaves 1 KB of a 4 KB guard page for the run state's scalars, the
+`rx_ctx` and whatever `_run`/`match_anchored` spill when gcc inlines them in.
+The capacities are scaled from the default pair IN ITS OWN RATIO (`vm_cost`
+derives that ratio from the pattern; scaling independently would give up on the
+wrong axis first), computed ONCE beside the `BufSurface` and read by both the
+stamps and the bind — [DD-13]'s `unanch_start` rule, because a capacity the
+artifact BINDS and one it STAMPS that are computed twice can disagree
+invisibly. The arithmetic is a CLAIM about gcc's frame;
+`tests/codegen/run_tiered_entry.sh` §4 and `tests/thread/run_stackdepth_tests.sh`
+both read the real `-fstack-usage` number.
+
+**WHY THE ANSWERS CANNOT MOVE.** The deep run is a bit-for-bit replay of what
+the single-tier entry does, from scratch: same capacities, `run_state_init`
+refills both budgets, `_run` re-runs the prefilter and the same start-position
+loop, one deterministic VM. Nothing carries over because §5.3 leaves nothing
+that could. **Budgets RESET on escalation and must** — carrying the remainder
+would report `STEPS` where a single-tier artifact matches. The fast tier may
+report `FRAMES` where a single-tier run reports `STEPS`; that value is never
+returned, it is the trigger.
+
+**`R_FRAMES` IS EXACTLY "CAPACITY EXHAUSTED", WHICH IS WHY IT IS A SOUND
+TRIGGER.** Four emitted sites produce it, all `depth >= cap`, and TRAIL
+exhaustion reports `FRAMES` too — so the tier escalates on the CODE, never on a
+depth it inspects itself. The fifth site that mentions a capacity is NOT a
+capacity test: `vm_region`'s `call_frame >= run->resume_cap → R_INTERNAL` is
+D72's sentinel test, `CALL_TOP_NONE` is `(size_t)-1`, out of range for every
+capacity, and a live `call_top` is always `< resume_depth <= resume_cap`
+because `RX_CALL`'s own guard runs before it assigns one. It fires on the same
+event under both capacities. **This was the one place the identity claim could
+have failed silently**, so it is checked and not assumed.
+
+**THE STAMPS AND THE HOOK.** `<PREFIX>_FAST_FRAMES`/`_FAST_TRAIL`, VM-only and
+`.c`-private beside the budget macros (§6.3(b) capacity facts, NOT §10.4's
+caller-facing sizing arithmetic — nothing a caller does depends on the tier
+boundary). Emitted on EVERY VM artifact: `FAST == RESUME` **is** "one tier", by
+whichever of the four routes, because a fact readable by a macro's ABSENCE is
+the discriminator [DD-13] had to remove from two checks. The
+`<PREFIX>_TIER_NOTE()` hook is an `extern` FUNCTION under
+`#ifdef <PREFIX>_TEST_TIER_HOOK`, never a counter: a mutable static in an
+artifact is a TS-1 failure and a §5.3 breach, and it binds under `-D` exactly
+as without one. Inert without the `-D`, so what the check reads IS the default
+artifact's text.

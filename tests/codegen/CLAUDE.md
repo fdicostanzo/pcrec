@@ -363,6 +363,71 @@ decides whether to perform it — and then run the row through
     witness table pointed at a VM artifact → red, because each witness
     asserts its artifact IS a DFA one before reading its value.
 
+- **run_tiered_entry.sh** + **tier_driver.c** — [OPT-1] (2026-08-25) the
+  TWO-TIER DEFAULT ENTRY (`docs/design/two_tier_entry.md`,
+  `docs/spec/match_api.md` §10.9). OPT-IN, `make test-tiered-entry`, NOT in
+  `make test`: its §2 compiles the whole corpus and its §3 builds and runs
+  four matchers. The behavioural half rides `make test` already — every
+  existing differential compares answers through the un-suffixed entries, so
+  a tier that changed an answer is red across the suite, not only here.
+  - **THE FAILURE IT IS BUILT AGAINST, named before the code was written:
+    an answers-only check for this change passes on a build where the
+    optimization is ABSENT.** An artifact whose fast tier is secretly bound
+    at the stamped default answers every subject correctly and escalates
+    never. So the boundary is derived THREE ways per subject and the three
+    are compared: the escalation counted at the escalation SITE (under
+    `-DRX_TEST_TIER_HOOK`, which the artifact declares as an `extern`
+    FUNCTION — a mutable static in an artifact is a TS-1 failure and a
+    §5.3 breach, so the counter lives in the driver); the give-up predicted
+    by `<prefix>_search_in` at the FAST capacities, which is the same
+    capacity guard reached through an entry [OPT-1] does not touch; and
+    `gcc -fstack-usage`'s real frame, which is the only one of the three
+    that can tell a working optimization from an absent one.
+  - **THE DEPTHS ARE FOUND, NOT ASSUMED.** The five boundary subjects (1,
+    FAST-1, FAST, FAST+1, DEFAULT) are located by bisecting through
+    `_search_in`, so a change to the frame layout, `VM_FAST_TIER_BYTES` or
+    `vm_cost`'s ratios moves what this file tests. A hardcoded `9` would be
+    green forever and mean nothing after the first re-sizing.
+  - **§2 IS A BICONDITIONAL, checked in both directions**: tiered code
+    present ⇔ `FAST_FRAMES < RESUME_FRAMES`. Population 2,758 corpus
+    patterns (986 dfa, 1,215 vm single-tier, 272 vm tiered, 285 refused),
+    counted and printed, with a separate assertion that the TIERED side is
+    non-empty — a biconditional only ever checked on its trivial side is a
+    vacuous pass. The engine discriminator is `goto rx_L0;`, not a stamp,
+    for run_dfa_stamps.sh's circularity reason.
+  - **THE FLOOR (r38 finding 3a), and it is the arm to read first.**
+    Everything else in this check bounds the fast tier from ABOVE only —
+    `FAST <= RESUME`, the biconditional, §4's frame — so a derivation that
+    SHRINKS leaves all of them green while the tier degrades to
+    escalate-on-everything. The stamp and the bind move together and this
+    file reads both, so it could not see it. Three arms: (A) the tiered
+    corpus population floored at 250 (measured 272) and printed; (B) every
+    tiered artifact must FILL its page budget to within one frame + one
+    trail entry of the integer rounding, read off the artifact — this one
+    is DERIVATION-INDEPENDENT, asserting the property the scaling exists to
+    produce rather than re-implementing the scaling; (C) nothing tiers below
+    `VM_FAST_TIER_MIN`. **Validated by halving the derivation: floor B alone
+    went red on 271 of 271 tiered artifacts at 16 passed / 1 failed, with
+    every answer and span still correct.**
+  - **§6, THE MULTI-GROUP WITNESS (r38 3b).** `((a)|(aa))+b`, `RX_NCAPS=4`,
+    60 consecutive depths, 37 escalating, first at n=24 (a 25-byte subject).
+    `tier_driver.c` `memcmp`s the WHOLE capture array against `_in` at the
+    default descriptor, because §10.9 promises returns AND spans and the
+    specimen's single whole-match group is too weak to carry that — on it
+    "the spans agree" is nearly implied by "the returns agree".
+  - **Validation (made to fail on purpose, MEASURED 2026-08-25, planted in
+    a scratch emitter and removed):**
+    (i) the fast tier bound at the STAMPED DEFAULT ("it never escalates") →
+    §3(b) red on 2 of 6 depths (n=9 and n=342: predicted 1, counted 0) and
+    §4 red on both arms (entry frame 131,248 B) — **while §3(a)'s answers
+    stayed GREEN on all 6 depths and §2 stayed green**, which is the
+    measured proof that neither an answers-only check nor the structural
+    sweep would have caught it.
+    (ii) `FAST_FRAMES`/`FAST_TRAIL` stamped at the default while the tiered
+    code is still emitted → §2 red on **272 artifacts** (every tiered one in
+    the corpus), `mismatch-code-tiers-stamp-says-one`, AND the non-empty
+    -population arm fires too, which is the guard against §2 passing vacuously.
+
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
@@ -1672,8 +1737,17 @@ message; the default pin (`8fc1e51`, same `.abi = 3` as the subject) passes
 straight through to the sweep. Comparison (A) is untouched by this — it never
 read the probe at all.
 
+**[OPT-1], 2026-08-25 — THE SECOND SUCH EXERCISE, and the pin is `469a432`
+now.** The TWO-TIER DEFAULT ENTRY: `abi` 4 -> 5, comparison (A) byte-identical
+against the unchanged `ac4917d`, (B) re-pinned in the same change. What is new
+about it is that **no DFA artifact's bytes move at all** — a first for an `abi`
+bump — because the tier is emitted entirely by `src/gen/emit_vm.c` and a DFA
+artifact has no resume stack to tier. The `abi` number versions the artifact
+FORMAT rather than the VM, so it moves on both kinds regardless, and (B) is
+therefore re-pinned for DFA artifacts too.
+
 **[DD-13], 2026-08-25 — THE RULE'S FIRST EXERCISE BY A NON-LAYOUT CHANGE, and
-the pin is `5991d4c` now.** [DD-13] gave every DFA artifact three D46
+the pin was `5991d4c`.** [DD-13] gave every DFA artifact three D46
 selection stamps. It moves NO struct offset and NO emitted program byte —
 comparison (A) is byte-identical against the unchanged `ac4917d` pin on all
 five axes, which is the PROOF that the change is scaffolding only — and it

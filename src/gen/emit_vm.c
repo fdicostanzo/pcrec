@@ -98,7 +98,37 @@ enum {
      * the pair above left `((a)|ab){0,4000}c` at 1024 frames / ceiling 307,
      * which is how the two-knobs fact was discovered). */
     VM_MAX_AUTO_RESUME_FRAMES    = 2048,
-    VM_MAX_AUTO_TRAIL_FRAMES = 3072
+    VM_MAX_AUTO_TRAIL_FRAMES = 3072,
+    /* [OPT-1] THE FAST TIER'S BYTE BUDGET (docs/design/two_tier_entry.md §3).
+     * A THIRD knob, and it caps neither of the two above: it is how much of
+     * the un-suffixed entry's own STACK FRAME the run state and its two arrays
+     * may occupy, which is a different question from how much capacity the
+     * artifact enforces.
+     *
+     * WHY A BYTE COUNT AND NOT A FRAME COUNT. The cost being avoided is gcc's
+     * stack-clash probe, and gcc probes per PAGE of the frame, so the budget
+     * is denominated in the unit the compiler charges in. A frame count would
+     * mean something different on every artifact (24 B/frame call-free, 40
+     * call-bearing, 32/48 under --trace) and would have to be re-derived every
+     * time the frame layout moved.
+     *
+     * WHY 3072 AND NOT 4096. gcc's default guard size is one 4 KB page
+     * (`--param stack-clash-protection-guard-size=12`), and the two arrays are
+     * not the whole frame: `slot_values[NSLOTS]` (charged against this budget,
+     * since it is on the same frame), the run state's scalars, the `rx_ctx`,
+     * and whatever `<prefix>_run` and `<prefix>_match_anchored` spill when gcc
+     * inlines them into the entry — both are `static`, so it may. 1 KB of
+     * headroom for those. The number is a CLAIM about the frame gcc will
+     * build, and it is ASSERTED against `gcc -fstack-usage` rather than
+     * trusted: tests/codegen/run_tiered_entry.sh check (c) and
+     * tests/thread/run_stackdepth_tests.sh's fast-frame arm both read the real
+     * frame, so a layout change that busts the page goes red here rather than
+     * silently retiring the optimization. */
+    VM_FAST_TIER_BYTES = 3072,
+    /* Below this the fast tier escalates on nearly every subject and two runs
+     * cost more than one, so the artifact is emitted single-tier instead
+     * (two_tier_entry.md §3.1, case 3). */
+    VM_FAST_TIER_MIN = 16
 };
 
 /* §4.6's budget, named rather than spelled inline. RULED 500,000,000 (D51
@@ -7148,6 +7178,103 @@ static void vm_fields_join(StrBuf *sb, const VmField *f, int n)
     }
 }
 
+/* [OPT-1] THE THREE UN-SUFFIXED ENTRIES, from ONE emitter
+ * (docs/design/two_tier_entry.md §2).
+ *
+ * WHY THIS IS A FUNCTION AND NOT THREE MORE FORMAT STRINGS. `<prefix>_search`,
+ * `<prefix>_match` and `<prefix>_match_caps` differ in exactly four things --
+ * return type, parameter list, the arguments they thread through to their
+ * `_run`, and how the FRAMES give-up is spelled at their layer -- and are
+ * otherwise the same six lines. They were already three near-copies before
+ * [OPT-1]; adding the tier to each in place would have made them three
+ * near-copies of TWELVE lines, with the escalation test pasted three times.
+ * That is the parallel-mechanism shape Frank's standing direction rules out,
+ * and it is the shape sabotage row S-FB2 exists for: a per-entry typo in one
+ * of three copies is what nobody's eye catches.
+ *
+ * The `_in` entries are NOT emitted here. They take no storage decision --
+ * that is the whole of what distinguishes them -- so they have nothing this
+ * function decides, and [DD-14.FB]'s delegation direction keeps them thin.
+ *
+ * THE TWO SHAPES:
+ *
+ *   tiered == false   exactly what shipped before [OPT-1]: one entry owning a
+ *                     `<prefix>_run_buffers` at the stamped default. Emitted
+ *                     byte for byte, so a single-tier artifact's entries do
+ *                     not move (§3.1's three degenerate cases and
+ *                     `-fno-tiered-entry` all land here).
+ *   tiered == true    a `noinline` `<name>_deep` static owning that same
+ *                     storage, plus an entry that runs on the page-budgeted
+ *                     `<prefix>_fast_buffers` and calls it on a FRAMES give-up
+ *                     and on nothing else.
+ *
+ * `frames_code` is the give-up's spelling AT THIS ENTRY'S LAYER, and the two
+ * spellings are not interchangeable prose: `<prefix>_search` sits above the
+ * search loop, which has already collapsed the private sentinel to the public
+ * `PCREC_ERR_FRAMES`, while the two anchored entries sit directly on
+ * `<prefix>_match_anchored` and still see `<PREFIX>_R_FRAMES` (§4.4's three
+ * layers). Numerically equal today; the layer seam is the reason each is
+ * spelled where it belongs. */
+static void vm_emit_default_entry(StrBuf *c, const Vm *v, bool tiered,
+                                  const char *ret, const char *name,
+                                  const char *params, const char *storage_tail,
+                                  const char *runargs, const char *deepargs,
+                                  const char *frames_code)
+{
+    if (tiered) {
+        sb_printf(c,
+            "/* [OPT-1] THE DEEP TIER: the stamped default storage, on a frame\n"
+            " * only a FRAMES give-up reaches. `noinline` is load-bearing --\n"
+            " * inlined, these arrays would be back on the entry's own frame and\n"
+            " * gcc would probe every one of their pages on every call, which is\n"
+            " * the whole of what this shape exists to avoid. */\n"
+            "static __attribute__((noinline)) %s %s_deep(%s)\n"
+            "{\n"
+            "    %s_run_state run;\n"
+            "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
+            "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
+            "                            storage.trail,  %s_TRAIL_FRAMES);\n"
+            "    return %s_run(%s);\n"
+            "}\n\n",
+            ret, name, params, v->p, v->p, v->p, v->up, v->up, name, runargs);
+        sb_printf(c,
+            "%s %s(%s)\n"
+            "{\n"
+            "    %s_run_state run;\n"
+            "    %s_fast_buffers fast;   /* [OPT-1] the page-budgeted fast tier */\n"
+            "    %s result;\n"
+            "    %s_run_state_bind(&run, fast.frames, %s_FAST_FRAMES,\n"
+            "                            fast.trail,  %s_FAST_TRAIL);\n"
+            "    result = %s_run(%s);\n"
+            "    /* ESCALATE ON A FRAMES GIVE-UP AND ON NOTHING ELSE. That code\n"
+            "     * means \"a capacity ran out\" and nothing more, so the deep\n"
+            "     * tier re-runs the SAME match from scratch at the stamped\n"
+            "     * default: same capacities, budgets refilled, one\n"
+            "     * deterministic VM. Its answer is therefore the answer this\n"
+            "     * entry gave before the tier existed -- match, no-match or any\n"
+            "     * give-up, FRAMES included. Every other outcome is already\n"
+            "     * that answer and returns here. */\n"
+            "    if (result != %s) return result;\n"
+            "    %s_TIER_NOTE();\n"
+            "    return %s_deep(%s);\n"
+            "}\n\n",
+            ret, name, params, v->p, v->p, ret, v->p, v->up, v->up,
+            name, runargs, frames_code, v->up, name, deepargs);
+    } else {
+        sb_printf(c,
+            "%s %s(%s)\n"
+            "{\n"
+            "    %s_run_state run;\n"
+            "    %s_run_buffers storage;%s\n"
+            "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
+            "                            storage.trail,  %s_TRAIL_FRAMES);\n"
+            "    return %s_run(%s);\n"
+            "}\n\n",
+            ret, name, params, v->p, v->p, storage_tail, v->p, v->up, v->up,
+            name, runargs);
+    }
+}
+
 void pcrec_emit_vm(Ctx *cx, Ast *root)
 {
     Job *job = cx->job;
@@ -7880,6 +8007,60 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         bufs.align = fa > ta ? fa : ta;
     }
 
+    /* [OPT-1] THE FAST TIER'S CAPACITIES, derived HERE because this is where
+     * the three inputs meet: the stamped default pair, the two frame SIZES
+     * just computed, and `nstate` (the slot array, which sits on the same
+     * frame). docs/design/two_tier_entry.md §3.
+     *
+     * ONE DERIVATION, TWO READERS -- the stamps below and the emitted entries
+     * further down read these two variables, never a second computation of
+     * them. That is the [DD-13] lesson (`unanch_start`) applied here: a
+     * capacity the artifact BINDS and a capacity it STAMPS that are computed
+     * twice are two facts that can disagree, and the disagreement is invisible
+     * because both halves look right on their own.
+     *
+     * `tiered` is false in the three cases §3.1 enumerates, and in each the
+     * artifact emits the single-tier shape that shipped before [OPT-1] with
+     * `FAST == RESUME/TRAIL`. That is not a special case beside the general
+     * one: when the two tiers have the same capacity there IS one tier, and
+     * emitting two identical ones would be the parallel mechanism Frank's
+     * standing direction rules out. */
+    long long fast_frames = bt_frames, fast_trail = trail_frames;
+    bool tiered = false;
+    if (!(cx->opt->flags & PCREC_NO_TIERED_ENTRY)) {
+        const long long slots = (long long)(nstate < 1 ? 1 : nstate)
+                              * (long long)sizeof(ptrdiff_t);
+        const long long avail = (long long)VM_FAST_TIER_BYTES - slots;
+        const long long total = bt_frames * bufs.resume_frame_size
+                              + trail_frames * bufs.trail_frame_size;
+        /* `total <= avail` is §3.1 case 1 -- the stamped default ALREADY fits
+         * under a page, which is the common case and the one [OPT-1] STEP 1
+         * measured paying nothing. `avail <= 0` is case 2: the slot array
+         * alone is over the budget, so no arrangement of the arrays helps. */
+        if (avail > 0 && total > avail) {
+            /* Scaled in the SAME RATIO as the default pair. That ratio is
+             * `vm_cost`'s derivation from the pattern, not an arbitrary pick
+             * (2.000 frames and 8.982 trail entries per level on the
+             * `^(a(?1)?b)$` specimen -- frame_buffer_design.md §4), so scaling
+             * the two independently would make the fast tier give up on the
+             * wrong axis first. Integer division rounds DOWN, so the product
+             * is <= `avail` by construction rather than by a check. */
+            const long long ff = bt_frames * avail / total;
+            const long long ft = trail_frames * avail / total;
+            if (ff >= VM_FAST_TIER_MIN && ft >= VM_FAST_TIER_MIN) {
+                fast_frames = ff;
+                fast_trail  = ft;
+                tiered = true;
+            }
+        }
+    }
+    /* The FRAMES give-up as the two ANCHORED entries see it -- the private
+     * sentinel, one layer below the public code `<prefix>_search` compares
+     * against (§4.4). Built once here rather than at each of the two call
+     * sites for the reason vm_emit_default_entry's header gives. */
+    char frames_sentinel[64];
+    snprintf(frames_sentinel, sizeof frames_sentinel, "%s_R_FRAMES", v.up);
+
     /* BEFORE the prologue, which is where the declarations are written, and
      * AFTER the walk, which is where the need was discovered. */
     job->enc_mask = v.enc_mask;
@@ -8108,6 +8289,26 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_printf(c, "#define %s_STEP_BUDGET %lldLL\n", v.up, budget);
     if (work_budget != PCREC_WORK_BUDGET_NONE)
         sb_printf(c, "#define %s_WORK_BUDGET %lldLL\n", v.up, work_budget);
+    /* [OPT-1] THE FAST TIER'S TWO CAPACITY STAMPS (docs/spec/match_api.md
+     * §10.4, docs/design/two_tier_entry.md §6).
+     *
+     * VM-ONLY, and beside the budget macros rather than in the header's
+     * §10.4 block, because they are §6.3(b) CAPACITY facts -- what this
+     * artifact's VM DOES -- and not §10.4's caller-facing sizing arithmetic. A
+     * caller needs `_RESUME_FRAMES` and `_RESUME_FRAME_SIZE` in order to CALL
+     * an `_in` entry; nothing a caller does depends on where the un-suffixed
+     * entry's own tier boundary sits. A DFA artifact has no resume stack and
+     * so no tier, which is why no DFA byte moves at this change.
+     *
+     * THEY ARE EMITTED UNCONDITIONALLY ON A VM ARTIFACT, single-tier ones
+     * included, and that is the point of them: `FAST_FRAMES == RESUME_FRAMES`
+     * IS "this artifact has one tier", by whichever of the four routes --
+     * `-fno-tiered-entry` or §3.1's three degenerate cases. A stamp that
+     * appeared only on tiered artifacts would make the fact readable by a
+     * macro's ABSENCE, which is precisely the discriminator [DD-13] had to go
+     * back and fix in two checks. */
+    sb_printf(c, "#define %s_FAST_FRAMES %lld\n", v.up, fast_frames);
+    sb_printf(c, "#define %s_FAST_TRAIL %lld\n", v.up, fast_trail);
     sb_puts(c, "\n");
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
@@ -8257,17 +8458,76 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * no arrays to declare, and C has no way to declare a local
      * conditionally. Two locals would do as well; one struct says what it is
      * and gives the three entries one line each instead of two. */
+    /* [OPT-1] THE OWNER OF THIS STRUCT MOVED ON A TIERED ARTIFACT, so the
+     * comment does too. On a single-tier artifact the un-suffixed entry still
+     * declares it and the text below is the one that shipped, byte for byte —
+     * which is why the two spellings are separate strings rather than one
+     * string with a substituted clause. */
     sb_printf(c,
-        "/* This artifact's own working storage, at the stamped default\n"
-        " * capacities. Declared by each un-suffixed entry as an ordinary\n"
-        " * local -- which is why those entries have large stack frames on a\n"
-        " * pattern whose depth is unbounded, and why <prefix>_search_in with a\n"
-        " * caller's buffer does not. */\n"
-        "typedef struct {\n"
-        "    %s_frame       frames[%s_RESUME_FRAMES];\n"
-        "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
-        "} %s_run_buffers;\n\n",
+        tiered
+          ? "/* This artifact's own working storage, at the stamped default\n"
+            " * capacities. [OPT-1]: declared by the three <prefix>_*_deep\n"
+            " * statics below, NOT by the entries -- an entry runs on the small\n"
+            " * <prefix>_fast_buffers and escalates here only on a FRAMES\n"
+            " * give-up, so the pages of this struct are probed on the deep\n"
+            " * path and not on every call. */\n"
+            "typedef struct {\n"
+            "    %s_frame       frames[%s_RESUME_FRAMES];\n"
+            "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
+            "} %s_run_buffers;\n\n"
+          : "/* This artifact's own working storage, at the stamped default\n"
+            " * capacities. Declared by each un-suffixed entry as an ordinary\n"
+            " * local -- which is why those entries have large stack frames on a\n"
+            " * pattern whose depth is unbounded, and why <prefix>_search_in with a\n"
+            " * caller's buffer does not. */\n"
+            "typedef struct {\n"
+            "    %s_frame       frames[%s_RESUME_FRAMES];\n"
+            "    %s_trail_entry trail[%s_TRAIL_FRAMES];\n"
+            "} %s_run_buffers;\n\n",
         v.p, v.up, v.p, v.up, v.p);
+
+    /* [OPT-1] THE FAST TIER'S STORAGE AND ITS OBSERVABLE
+     * (docs/design/two_tier_entry.md §2, §6).
+     *
+     * The struct is the same shape as `<prefix>_run_buffers` at the smaller
+     * capacities, so `<prefix>_run_state_bind` binds either without knowing
+     * which — the tiers are two callers of ONE run function, not two matchers.
+     *
+     * THE HOOK IS AN `extern` FUNCTION, NOT A COUNTER, and that is a contract
+     * requirement rather than a taste: a mutable static in an emitted artifact
+     * is a TS-1 failure (D19) and a breach of spec §5.3's "a generated matcher
+     * holds no mutable state of its own", which binds under `-D` exactly as it
+     * binds without one. The artifact declares the symbol and calls it; the
+     * TEST defines and counts it. Without `-D<PREFIX>_TEST_TIER_HOOK` the
+     * macro is `((void)0)` and no symbol is referenced, so the text checked by
+     * tests/codegen/run_tiered_entry.sh IS the default artifact's text — which
+     * is the property a `--trace`-style separate generation axis would have
+     * given up. */
+    if (tiered) {
+        sb_printf(c,
+            "/* The fast tier's storage: the same two arrays at the\n"
+            " * page-budgeted capacities. Sized so that this struct plus the\n"
+            " * run state stays inside one 4 KB guard page, which is what keeps\n"
+            " * gcc's stack-clash probe off the entry's hot path. */\n"
+            "typedef struct {\n"
+            "    %s_frame       frames[%s_FAST_FRAMES];\n"
+            "    %s_trail_entry trail[%s_FAST_TRAIL];\n"
+            "} %s_fast_buffers;\n\n",
+            v.p, v.up, v.p, v.up, v.p);
+        sb_printf(c,
+            "/* A TEST-ONLY observable for the tier boundary. Inert unless the\n"
+            " * artifact is compiled with -D%s_TEST_TIER_HOOK, in which case\n"
+            " * every escalation to the deep tier calls this function, which\n"
+            " * the test program defines. Deliberately NOT a counter: this file\n"
+            " * declares no mutable state of its own on any build. */\n"
+            "#ifdef %s_TEST_TIER_HOOK\n"
+            "extern void %s_tier_escalated(void);\n"
+            "#define %s_TIER_NOTE() %s_tier_escalated()\n"
+            "#else\n"
+            "#define %s_TIER_NOTE() ((void)0)\n"
+            "#endif\n\n",
+            v.up, v.up, v.p, v.up, v.p, v.up);
+    }
 
     /* The internal give-up sentinels. They share the search entry's public
      * PCREC_ERR_* values ([ABI-NS]/D60: unprefixed since those are
@@ -9164,16 +9424,18 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * `buf == NULL` IS DEFINED TO BE THE UN-SUFFIXED CALL, in those words
      * (spec §10.3) -- not "equivalent in observable behaviour" but the same
      * call, which is why it is implemented as one. */
+    /* [OPT-1] The FRAMES spelling here is `PCREC_ERR_FRAMES`, not
+     * `<PREFIX>_R_FRAMES`: this entry sits above `<prefix>_search_run`, which
+     * has already collapsed the private sentinel to the public code (§4.4). */
+    vm_emit_default_entry(c, &v, tiered, "int", g.searchfn,
+        "const unsigned char *subject, size_t subject_length, size_t search_from,\n"
+        "       ptrdiff_t (*capture_spans)[2]",
+        "   /* this artifact's stamped default */",
+        "subject, subject_length, search_from, capture_spans, &run",
+        "subject, subject_length, search_from, capture_spans",
+        "PCREC_ERR_FRAMES");
+
     sb_printf(c,
-        "int %s(const unsigned char *subject, size_t subject_length, size_t search_from,\n"
-        "       ptrdiff_t (*capture_spans)[2])\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    %s_run_buffers storage;   /* this artifact's stamped default */\n"
-        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-        "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
-        "}\n\n"
         "/* Same search, with the working storage the CALLER supplies. A NULL\n"
         " * descriptor is exactly the call above; a non-NULL one must name two\n"
         " * regions, both of them scratch, sized in FRAMES and ENTRIES rather\n"
@@ -9188,7 +9450,6 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
         "}\n\n",
-        g.searchfn, v.p, v.p, v.p, v.up, v.up, g.searchfn,
         g.searchfn, v.p, v.p, g.searchfn, v.p, g.searchfn);
 
     /* ---- <prefix>_match / <prefix>_match_caps (§3, §3.1, §4.4) --------- */
@@ -9303,17 +9564,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * shape, the same delegation direction and the same one-implementation
      * rule as the two search entries above. Emitted together rather than
      * beside their own `_run` bodies so the six entries' storage decisions
-     * read as one block: three declare a `<prefix>_run_buffers`, three
-     * declare nothing. */
+     * read as one block: three make one, three declare nothing.
+     *
+     * [OPT-1] "three declare a `<prefix>_run_buffers`" was the wording, and it
+     * is now true of the DEEP statics rather than of the entries on a tiered
+     * artifact -- which is why the storage decision is made in one place
+     * (`vm_emit_default_entry`) and not restated at each of the three. */
+    /* [OPT-1] `<PREFIX>_R_FRAMES`, not `PCREC_ERR_FRAMES`: these two sit
+     * directly on `<prefix>_match_anchored` and still see the private
+     * sentinel (§4.4's three layers). */
+    vm_emit_default_entry(c, &v, tiered, "ptrdiff_t", g.matchfn,
+        "const rx_ctx *ctx", "", "ctx, &run", "ctx", frames_sentinel);
+
     sb_printf(c,
-        "ptrdiff_t %s(const rx_ctx *ctx)\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    %s_run_buffers storage;\n"
-        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-        "    return %s_run(ctx, &run);\n"
-        "}\n\n"
         "ptrdiff_t %s_in(const rx_ctx *ctx, const %s_buffers *buffers)\n"
         "{\n"
         "    %s_run_state run;\n"
@@ -9321,15 +9584,15 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "    %s_run_state_bind(&run, buffers->frames, buffers->nframes,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(ctx, &run);\n"
-        "}\n\n"
-        "ptrdiff_t %s(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2])\n"
-        "{\n"
-        "    %s_run_state run;\n"
-        "    %s_run_buffers storage;\n"
-        "    %s_run_state_bind(&run, storage.frames, %s_RESUME_FRAMES,\n"
-        "                            storage.trail,  %s_TRAIL_FRAMES);\n"
-        "    return %s_run(ctx, capture_spans_out, &run);\n"
-        "}\n\n"
+        "}\n\n",
+        g.matchfn, v.p, v.p, g.matchfn, v.p, g.matchfn);
+
+    vm_emit_default_entry(c, &v, tiered, "ptrdiff_t", g.matchcapsfn,
+        "const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2]", "",
+        "ctx, capture_spans_out, &run", "ctx, capture_spans_out",
+        frames_sentinel);
+
+    sb_printf(c,
         "ptrdiff_t %s_in(const rx_ctx *ctx, ptrdiff_t (*capture_spans_out)[2],\n"
         "                const %s_buffers *buffers)\n"
         "{\n"
@@ -9339,9 +9602,6 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(ctx, capture_spans_out, &run);\n"
         "}\n\n",
-        g.matchfn, v.p, v.p, v.p, v.up, v.up, g.matchfn,
-        g.matchfn, v.p, v.p, g.matchfn, v.p, g.matchfn,
-        g.matchcapsfn, v.p, v.p, v.p, v.up, v.up, g.matchcapsfn,
         g.matchcapsfn, v.p, v.p, g.matchcapsfn, v.p, g.matchcapsfn);
 
     pcrec_emit_residual(cx);

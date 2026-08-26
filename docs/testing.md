@@ -823,7 +823,7 @@ itself.
 > 2026-08-25) BEFORE ACTING ON THIS SECTION.** Everything here about the four
 > axes, the opt-in ruling and the `ac4917d` pin still holds, but the gate now
 > asks TWO questions per axis — (A) the PROGRAM REGION against `ac4917d` and
-> (B) the WHOLE FILE against `5991d4c` — because the caller-buffer wave's
+> (B) the WHOLE FILE against `469a432` ([OPT-1]; was `5991d4c`) — because the caller-buffer wave's
 > announced `abi` 2 → 3 boundary put a change on every artifact's surface. A
 > reader who stops at this section will expect one number per axis and find
 > two.
@@ -957,7 +957,7 @@ the pre-module pin `ac4917d` can never be green again. The gate now runs:
   <prefix>_L0;` … `<prefix>_accept:`, unfiltered past D37's three stamp lines,
   so comment sensitivity inside the region is kept. This is the module claim
   the gate exists for.
-- **(B) the WHOLE FILE vs `5991d4c`** ([DD-13]'s last `src`/`lib`/`cli`
+- **(B) the WHOLE FILE vs `469a432`** ([OPT-1]'s last `src`/`lib`/`cli`
   commit; was `8fc1e51`, [DD-14.FB]'s): byte-exact again from that pin
   forward. **Re-pinned 2026-08-25 by [DD-13]**, which gave every DFA artifact
   three D46 selection stamps (`RX_ENGINE`, `RX_DFA_SCAN`,

@@ -57,19 +57,31 @@ section target, `make test-thread`.
   first thing to understand about it: that suite asks whether concurrent calls
   RACE, this one asks whether ONE call FITS, and TSan changes the stack a call
   needs — a stack-fit question asked under it is a question about TSan. Its
-  own target, `make test-stackdepth`, and it rides `make test`. Three arms:
-  the call-bearing artifact's DEFAULT entry dying of SIGSEGV on a 128 KB
-  thread (K33, reported `KNOWN:` and PINNED — the script FAILS if it ever
-  stops dying, because docs/dev/known_issues.md would then be out of date);
-  the SAME artifact, subject and thread MATCHING through `<prefix>_search_in`
-  with heap storage; and a CAUSAL control, the unbounded-but-CALL-FREE
-  `(a|aa)+b`, on the same driver and subject, which must NOT die. Without
-  that third arm "arm A crashed" is consistent with a driver bug or any stack
-  cost at all; with it, the difference between crashing and not is the frame
-  SIZE. The cause is also stated rather than inferred, off `gcc
-  -fstack-usage`: MEASURED 131,216 B against a 131,072 B thread stack (over by
-  144) versus the control's 98,432 B, and the script fails itself if either
-  number stops supporting the arm it explains.
+  own target, `make test-stackdepth`, and it rides `make test`. FOUR arms
+  ([OPT-1] added D): the call-bearing artifact's DEFAULT entry dying of
+  SIGSEGV on a 128 KB thread (K33, reported `KNOWN:` and PINNED — the script
+  FAILS if it ever stops dying, because docs/dev/known_issues.md would then be
+  out of date); the SAME artifact, subject and thread MATCHING through
+  `<prefix>_search_in` with heap storage; a CAUSAL control, the
+  unbounded-but-CALL-FREE `(a|aa)+b`, on the same driver and subject, which
+  must NOT die; and **arm D, the same DEFAULT entry that dies in arm A
+  MATCHING a 2-byte subject on the same thread**. Without arm C "arm A
+  crashed" is consistent with a driver bug or any stack cost at all; with it,
+  the difference between crashing and not is the frame SIZE. Without arm D,
+  arm A's scope would be overstated — see below.
+  **[OPT-1], 2026-08-25: THE CAUSE-CHECK FIRED ON THAT CHANGE AND WAS
+  RE-DERIVED, NOT RE-TUNED.** It read `rx_search`'s own frame and failed if it
+  FIT a 128 KB thread; the two-tier entry moved the stamped storage to a
+  `noinline` `rx_search_deep`, so the entry's frame is now 3,184 B and does
+  fit. The quantity that decides whether a DEEP call fits is entry + deep, and
+  `deep_path_frame()` computes exactly that — the GENERAL form, which
+  reproduces the old number on a single-tier artifact (no `_deep` row, so the
+  sum is the entry). MEASURED after the change: deep path 131,216 B against a
+  131,072 B thread stack, versus the control's 98,432 B; entry 3,184 B, which
+  is what arm D rests on. K33 is thereby NARROWED from "any subject, a 2-byte
+  one included" to "a subject deep enough to escalate" — and the narrowing is
+  pinned BEHAVIOURALLY by arm D rather than only by a frame reading, so a tier
+  that is real in `-fstack-usage` and not in practice is still red.
 - **ts4_driver.c** — the [TS-4] driver. Creates one thread with
   `pthread_attr_setstacksize(&a, 128*1024)` — musl's default — and calls
   either `<prefix>_search` or `<prefix>_search_in` on a^342 b^342, the largest
@@ -77,6 +89,12 @@ section target, `make test-thread`.
   it would otherwise MATCH and the failure is unambiguously the stack rather
   than the pattern. The caller buffers are `malloc`'d, which is the point: the
   buffered arm's storage is NOT on the 128 KB stack.
+  **[OPT-1] added a third mode, `shallow`** — the same DEFAULT entry on the
+  same thread with n=1 ("ab"), which is arm D. It differs from `default` in
+  the SUBJECT and in nothing else, which is what makes "K33 is about DEPTH
+  now" a measurement rather than a claim. n=1 is chosen because it is the
+  exact witness spec §5.3 used to name ("faults on any subject, a 2-byte one
+  included").
 
 ## Why these five TS-2 patterns (different emitted engine shapes)
 

@@ -373,6 +373,49 @@ contract, and it includes the promise that the three below are unchanged —
 signature, return space and behaviour — for a caller that never calls an
 `_in` entry.
 
+**[OPT-1], 2026-08-25: THE THREE UN-SUFFIXED ENTRIES HAVE A COST MODEL, and
+it is the one thing about them a caller may now want to know.** On an
+artifact whose stamped default storage does not fit inside one 4 KB page,
+each of them **runs the match on a page-sized buffer and escalates to the
+stamped default only on a `PCREC_ERR_FRAMES` give-up**, by calling a
+non-inlined internal function that owns the full storage and re-runs the
+match from scratch. Everything in this section and in §3.1–§3.3 — the
+signatures, the return spaces, the anchoring, the `caps` disciplines, every
+answer and every capture span — is **unchanged**, and §10.9 is why that is a
+theorem rather than a hope. What changes is the price of a call.
+
+**MEASURED on the RFC 5322 email specimen** (`--engine=vm`, 16-byte matching
+subject, N=100k, median of 5, `taskset`, six repetitions): **213–268 → 45.6–48.8
+ns/call**, against 44.2–47.2 for `<prefix>_search_in`; and that artifact's own
+entry frame, `gcc -fstack-usage`, **98,512 → 3,168 B**. (The `^(a(?1)?b)$`
+recursion specimen is a DIFFERENT artifact with different numbers — 131,216 →
+3,184 B; §5.3 and `limits.md` §5 use that one. Do not pair one specimen's
+timing with another's frame.)
+
+**IT IS A BET, AND IT LOSES ON SOME PATTERNS. THE COST WHEN IT LOSES:**
+
+- **The wasted fast attempt is bounded by the STEP and WORK budgets, not by
+  the frame count.** Sixty frames of DEPTH can absorb an unbounded amount of
+  backtracking, so "the fast tier is small" does not bound the work it does
+  before giving up.
+- **There is a DISCONTINUITY at the boundary, not a ramp.** MEASURED on
+  `((a)|(aa))+b` (tiered vs `-fno-tiered-entry`, N=20k, median of 5): 18.5 vs
+  207.1 ns at n=1 — 11× FASTER — rising to 186.4 vs 365.3 at n=23, then
+  **568.9 vs 372.9 at n=24**, a 3.05× jump across one byte and 1.53× SLOWER
+  than the single-tier entry. Above the boundary it stays 1.24–1.53× slower.
+- **"Deep" can mean a very short subject.** That boundary is a **25-byte**
+  subject (24 `a`s and a `b`). Depth is a property of the backtracking, not of the input length.
+- **An escalating call can do up to twice the STEP budget of real work** —
+  §10.9 resets both budgets for the deep attempt, so the fast attempt's spend
+  is additional. §4 states the consequence for the give-up codes.
+
+**A caller that needs depth on the FAST path uses `_in`.** A caller who knows
+its subjects are deep, or who is on a stack too small for the deep tier (§5.3,
+K33), supplies its own storage through §10's `_in` entries and never meets the
+tier at all. `-fno-tiered-entry` (`docs/spec/tuning.md` §2.12) restores the
+single-tier shape without changing call sites, and is the right answer for a
+workload measured to sit above the boundary.
+
 ### 3.1 `<prefix>_search` — the search-loop entry
 
 ```c
@@ -862,6 +905,19 @@ codes, not about when a give-up happens — which entry gives up on a
 given input is a property of that entry (§3.3's caveat, measured in both
 directions).
 
+**[OPT-1], 2026-08-25: THE STEP AND WORK BUDGETS BOUND ONE ATTEMPT, AND AN
+UN-SUFFIXED ENTRY MAY MAKE TWO.** §10.9's tiered entry re-runs the match on
+the stamped default after a `PCREC_ERR_FRAMES` give-up on its fast tier, with
+both budgets **refilled** — which is what makes the answer identical to a
+single-tier artifact's, and is stated there. The consequence belongs here: a
+single call to `<prefix>_search`/`_match`/`_match_caps` can therefore spend up
+to **twice** the step budget and twice the work budget before it returns. The
+CODES are unaffected (a returned `PCREC_ERR_STEPS` still means the deep
+attempt exhausted a full budget), and the `_in` entries, which have no tier,
+are bounded by one budget as they always were. A caller that needs a hard
+bound on the work ONE call may do uses `_in` or `-fno-tiered-entry`
+(`tuning.md` §2.12).
+
 ```c
 #define PCREC_ERR_STEPS    (-2)
 #define PCREC_ERR_FRAMES   (-3)
@@ -1071,11 +1127,26 @@ says nothing about how much STACK each such call needs, and for one
 artifact class the answer is large: an artifact whose frame requirement is
 not statically bounded declares its whole run state as a local of the entry
 it was called through. MEASURED on a `-p rx --features all` build of
-`^(a(?1)?b)$` — `<prefix>_search`'s stack frame is **131,216 bytes**, which
+`^(a(?1)?b)$` — `<prefix>_search`'s stack frame was **131,216 bytes**, which
 does not fit a musl-default 128 KB thread stack, and calling it from such a
-thread faults on any subject, a 2-byte one included. A statically-bounded
+thread faulted on any subject, a 2-byte one included. A statically-bounded
 pattern pays nothing (`a(b|c)+d`'s entry is 208 bytes) and a glibc-default
 8 MB main thread is unaffected.
+
+**[OPT-1], 2026-08-25: THAT MEASUREMENT NOW READS DIFFERENTLY, and the
+limitation NARROWS rather than closing.** §10.9's tiered entry moves the
+stamped default storage off the entry's own frame and onto a
+non-inlined internal function only a `PCREC_ERR_FRAMES` give-up reaches. Re-MEASURED on the same
+build: `<prefix>_search`'s frame is **3,184 bytes** and the internal
+function's is 131,216. So on a musl-default 128 KB thread that artifact now
+**matches every subject the fast tier holds** — the "faults on any subject,
+a 2-byte one included" sentence is no longer true — and faults only on one
+deep enough to escalate. **The remedy is still `_in`**, and it is still the
+only way to get a guarantee: which subjects escalate is a property of the
+pattern and the subject, not something a caller can bound in advance.
+`docs/dev/known_issues.md` K33 carries the narrowed statement, and
+`tests/thread/run_stackdepth_tests.sh` pins both halves — the small entry
+frame, and the deep tier still dying.
 
 **The remedy SHIPS: it is §10's `_in` entries** ([DD-14.FB], D71 item 2),
 whose own frame MEASURES **144 bytes at -O2** — 312 including the two
@@ -1398,6 +1469,34 @@ engine-scoped.**
   budget macros and the frame/trail sizes. They report what the VM DID —
   per quantifier, per call site, per frame — and a DFA artifact has no
   such activity to report. This is the half the old rule was right about.
+
+**[OPT-1], 2026-08-25: two more (b) macros —
+`<PREFIX>_FAST_FRAMES` and `<PREFIX>_FAST_TRAIL`.** They report the
+capacities the un-suffixed entries' FAST TIER runs on (§3, §10.9), and they
+are on **every VM artifact**, single-tier ones included:
+
+```c
+#define RX_FAST_FRAMES  47   /* tiered: below the stamped default */
+#define RX_FAST_TRAIL   71
+```
+
+**`<PREFIX>_FAST_FRAMES == <PREFIX>_RESUME_FRAMES` IS the statement "this
+artifact has one tier"**, and it is the only spelling of it. Four things
+produce it — the stamped default already fits a page, the slot array alone
+does not, the scaled fast tier would be too small to be worth two runs, or
+`-fno-tiered-entry` — and a consumer that needs to distinguish those reads
+`rx_info.flags` and the pattern, not a missing macro. The macros are never
+absent on a VM artifact, deliberately: a fact readable by a macro's ABSENCE
+is the discriminator [DD-13] had to go back and remove from two checks.
+
+They are **(b) and not §10.4**, and the line is worth drawing because
+§10.4's five macros are the exception that goes on both engines. Those five
+are arithmetic a caller must do **in order to call** an `_in` entry. These
+two are not: no entry takes a fast capacity, no caller sizes anything from
+one, and a DFA artifact has no tier to report. They are `.c`-private like
+the budget macros beside them, so a consumer reading only the header does
+not see them — which is the right answer to "should my code branch on the
+tier boundary?" (it should not).
 
 **On a DFA artifact the mirror is still thinner on the (b) macros: no
 budgets, no `_VM_RUNGS`/`_STRATS`/`_PRUNES` MASK.**
@@ -2175,3 +2274,71 @@ implementation lane owes a check that asserts each line:
   substance and governed only in form: one announced-boundary commit,
   populations conserved and accounted. [DD-3], which would otherwise supply
   the versioning-event policy, has no policy yet (plan.md, `STATE:not-started`).
+
+### 10.9 The tiered default entry, and what a FRAMES escalation restarts — **[OPT-1]**
+
+**The rule.** On an artifact whose stamped default storage does not fit
+inside one 4 KB page, each un-suffixed entry runs the match on a
+page-budgeted buffer of `<PREFIX>_FAST_FRAMES`/`<PREFIX>_FAST_TRAIL` (§6.3)
+and, **on `PCREC_ERR_FRAMES` and on no other outcome**, re-runs the same
+match from scratch on the full stamped default. The second run's result is
+what the caller gets. Every other outcome — a match, a no-match,
+`PCREC_ERR_STEPS`, `_WORK`, `_RECURSE`, `PCREC_ERR_INTERNAL` — is returned
+from the first run directly.
+
+**A FRAMES ESCALATION RESTARTS THE STEP AND WORK BUDGETS.** They are per
+CALL, not per tier, and the second run begins with both full — the same
+state §4's budgets are in at the top of any call. This is not a
+concession; it is what makes the rest of this section true, and the
+alternative (carrying the remainder forward) would be observably wrong: a
+deep run started with a depleted step budget would report `PCREC_ERR_STEPS`
+where a single-tier artifact matches. **Its consequence — one call may spend
+up to twice each budget — is stated in §4**, and the wasted fast attempt is
+bounded by those budgets rather than by the fast frame count, since sixty
+frames of depth can absorb an unbounded amount of backtracking.
+
+**No answer changes, and that is a consequence rather than a hope.** The
+deep run is a bit-for-bit replay of what a single-tier entry does, from
+scratch: the same capacities, both budgets refilled, the same start-position
+loop over the same prefilter, one deterministic engine. Nothing the fast
+attempt did can carry into it, because §5.3 leaves nothing that could — the
+run state is a local of the tier that declared it, there is no allocation,
+no thread-local and no mutable static. So for every artifact, every subject
+and every entry, the value returned and the capture spans written are the
+ones the entry produced before the tier existed.
+
+One behaviour genuinely differs and is not observable: the fast attempt may
+reach `PCREC_ERR_FRAMES` where a single-tier run would have reached
+`PCREC_ERR_STEPS`, having hit its smaller capacity earlier in the same
+trace. That value is never returned — it is the escalation trigger — and
+the replay then reports the `PCREC_ERR_STEPS`.
+
+**What a caller may rely on:**
+
+- Every promise in §3, §3.1–§3.3, §4 and §5 stands unchanged.
+- `PCREC_ERR_FRAMES` from an un-suffixed entry still means what §4 says: the
+  **stamped default** ran out. It never reports the fast tier's exhaustion.
+- The depth an artifact can reach is unchanged (D73 keeps the stamped
+  2048/3072); only the cost of *not* reaching it moved.
+- **A call that DOES escalate is SLOWER than it was** — measured 1.24–1.53×
+  on `((a)|(aa))+b`, with a 3.05× discontinuity across the boundary itself
+  (§3 carries the figures). The tier is a bet that real calls hold on the
+  fast tier; where a workload is measured not to, `_in` or
+  `-fno-tiered-entry` is the answer.
+- The **`_in` entries are untouched** — contract, signature and cost. They
+  never had a tier and do not gain one: the caller owns the storage, so
+  there is nothing to escalate from. `buf == NULL` remains §10.3's "the same
+  call" as the un-suffixed entry, and therefore now gets the tiering.
+
+**What a caller must NOT rely on:** which tier answered. There is no
+supported observable for it — `<PREFIX>_FAST_FRAMES` says where the boundary
+is, not which side a given call landed on. A caller who needs a depth
+guarantee on the fast path, or who is on a stack too small for the deep
+tier, uses `_in` (§10.2); `-fno-tiered-entry` (`tuning.md` §2.12) removes
+the tier for a whole artifact.
+
+**`rx_info.abi` moves `4` → `5`** with this change (§6's bump-on-change
+rule). No struct offset moves — the two new stamps are `#define`s — and no
+DFA artifact's bytes move at all, the first `abi` bump of which that is
+true; the number versions the artifact FORMAT, not the VM, so it moves on
+both engines regardless.

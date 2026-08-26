@@ -656,6 +656,22 @@ test-stackdepth: all
 test-frame-buffer: all
 	bash tests/recursion/run_frame_buffer.sh
 
+# [OPT-1] the TWO-TIER DEFAULT ENTRY, OPT-IN -- the same shape and reasoning as
+# test-frame-buffer above. Its section 2 compiles the WHOLE .rxt corpus (2,758
+# patterns) to classify every artifact's tier shape against its own stamps, and
+# section 3 builds and runs four matchers to walk the tier boundary. That is a
+# few minutes of work about one specimen and one structural biconditional, and
+# `make test`'s job is the population -- which this change already rides: every
+# existing differential compares answers through the un-suffixed entries, so a
+# tier that changed an answer is red across the whole suite, not only here.
+#
+#     make test-tiered-entry
+#
+# PROCS (default 4) shards nothing today -- the sweep is deliberately serial and
+# single-core so it can run beside another suite on this box.
+test-tiered-entry: all
+	bash tests/codegen/run_tiered_entry.sh
+
 # [M4.7e] GATE-ON: the capture-span differential vs libpcre2 at a FIXED seed
 # (fuzz.py's own default seed/patterns/subjects), wired into `make test`
 # rather than staying manual-only like `make fuzz` -- a fixed seed is exactly
@@ -967,6 +983,6 @@ clean:
         test-backrefs test-backrefs-identity \
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-recursion-lbsweep \
-        test-specimen test-stackdepth test-frame-buffer \
+        test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
         test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean
