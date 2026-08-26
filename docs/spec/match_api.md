@@ -1285,13 +1285,21 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `3` on every artifact today, and is not yet a
+- **`rx_info.abi` is `4` on every artifact today, and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
   inserted the four sizing fields after `subject_ceiling` and therefore
   moved every following offset — which is exactly what this member exists
-  to announce.
+  to announce. It moved `3` → `4` at [DD-13] (§6.3), which added the DFA
+  artifact's three selection stamps. **THAT SECOND BUMP MOVED NO STRUCT
+  OFFSET**, and the number still had to move: D76 rules `abi` the version
+  of the EMITTED SCAFFOLDING as a whole, not of `struct rx_info` alone,
+  because the thing it protects is
+  `tests/codegen/run_recursion_identity.sh`'s whole-file comparison (B) —
+  which a new `#define` line breaks exactly as a moved offset would. A
+  bump is therefore always paired with a re-pin of that comparison to the
+  change's last `src`-touching commit, in the same change.
 
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
@@ -1369,8 +1377,28 @@ exactly the count §6.2 works hardest to distinguish from `ncaps`, and
 which is therefore reachable only by reading `<prefix>_info` at run
 time.
 
-**On a DFA artifact the mirror is thinner still, on the SCALAR macros: no
-`<PREFIX>_ENGINE`, no budgets, no `_VM_RUNGS`/`_STRATS`/`_PRUNES` MASK.**
+**[DD-13], 2026-08-25: THE D46 FAMILY SPLITS IN TWO, and only one half is
+engine-scoped.**
+
+- **(a) SELECTION FACTS are UNCONDITIONAL.** Which engine an artifact is,
+  and which scan-avoidance mechanism it took, are present on EVERY
+  artifact pcrec emits, with an engine-appropriate value.
+  `<PREFIX>_ENGINE` is the family's first member and is now stamped on
+  both kinds (`"vm"` / `"dfa"`, from one emitter —
+  `pcrec_emit_engine_stamp`, so the two spellings cannot drift). The
+  prefilter axis keeps ENGINE-SPECIFIC NAMES because its VALUE SETS are
+  different vocabularies, not one vocabulary with two readings:
+  `<PREFIX>_VM_PREFILTER` is the VM's, `<PREFIX>_DFA_PREFILTER` and
+  `<PREFIX>_DFA_SCAN` are the DFA's.
+- **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
+  section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
+  `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`, the
+  budget macros and the frame/trail sizes. They report what the VM DID —
+  per quantifier, per call site, per frame — and a DFA artifact has no
+  such activity to report. This is the half the old rule was right about.
+
+**On a DFA artifact the mirror is still thinner on the (b) macros: no
+budgets, no `_VM_RUNGS`/`_STRATS`/`_PRUNES` MASK.**
 A `--no-captures` build defines `RX_NCAPS` and the two `RX_ALTCLS_*`
 stamps below, plus — **[ABI-NS], 2026-08-18 (D60): unconditionally, on
 every artifact regardless of engine** — the give-up code space, the
@@ -1378,14 +1406,23 @@ unset sentinel, `PCREC_ENGINE_DFA`/`PCREC_ENGINE_VM`, and the nine D46
 stamp bit constants (`PCREC_VM_RUNG_*`/`PCREC_VM_STRAT_*`/
 `PCREC_VM_PRUNE_*`), the same "reserved but unreachable" shape the
 give-up codes already had before this date. What a DFA artifact does NOT
-carry is the per-artifact SUMMARY macros this section is really about:
-`RX_ENGINE` (as a string), `RX_ENGINE_WHY`, the budget macros, and the
-three OR'd MASKS `RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES` — those stay
-VM-artifacts-only, because a DFA artifact has no per-quantifier rung/
-strategy/clamp decision to summarize. A consumer that `#if`s on
-`RX_ENGINE` is writing code that does not compile against half the
-artifacts pcrec produces. (Measured by listing every `#define` in a
-fresh build of each kind.)
+carry is the (b) macros: the budget macros and the three OR'd MASKS
+`RX_VM_RUNGS`/`RX_VM_STRATS`/`RX_VM_PRUNES` — those stay VM-artifacts-only,
+because a DFA artifact has no per-quantifier rung/strategy/clamp decision
+to summarize. `RX_ENGINE_WHY` stays VM-only too, and for a reason that is
+about the FACT rather than about the engine: it names the construct that
+FORCED the VM, and a DFA artifact was not forced — its `rx_info.engine_why`
+is `NULL` for the same reason, so the macro's absence mirrors the struct.
+
+**A consumer MAY now `#if` on `RX_ENGINE`.** This paragraph used to close
+with the opposite warning — "a consumer that `#if`s on `RX_ENGINE` is
+writing code that does not compile against half the artifacts pcrec
+produces" — and [DD-13] answered it rather than restating it: the failure
+that warning describes is caused by a CONDITIONAL stamp, and the only fix
+for it is an UNCONDITIONAL one. The warning still holds, verbatim, for
+every (b) macro: `#if`ing on `RX_VM_RUNGS` or a budget macro is writing
+code that does not compile against a DFA artifact. (Measured by listing
+every `#define` in a fresh build of each kind.)
 
 **The per-artifact SUMMARY macros live in the `.c`, not the `.h`; the
 universal `PCREC_*` constants live in the `.h`.** In the split form the
@@ -1426,11 +1463,48 @@ annotations below are this document's, not emitted text):
 #define RX_VM_PRUNE_CEILING      "prefilter-window"
 ```
 
+And on a DFA artifact — measured on `'(?:[a-z]+)@(?:[a-z]+)'`, the email
+specimen's shape:
+
+```c
+#define RX_ENGINE        "dfa"          /* mirrors rx_info.engine; UNCONDITIONAL */
+#define RX_DFA_SCAN      "unanchored"   /* or "attempt" */
+#define RX_DFA_PREFILTER "byte-class"   /* see the value set below */
+```
+
+`RX_DFA_SCAN` names WHICH DFA the artifact is. The two shapes are
+`"unanchored"` (the O(n) forward+reverse table pair, D7) and `"attempt"`
+(the per-start-position computed-goto loop a `^`/`\A`-bearing pattern
+takes), they are different loops with different cost curves, and nothing
+else a consumer can read distinguishes them — both stamp `RX_ENGINE
+"dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`.
+
+`RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
+carries, and its five values are the whole set:
+
+| value | mechanism |
+|---|---|
+| `"none"` | no candidate-start filter (every position is a candidate, or the artifact provably matches nothing) |
+| `"memchr"` | ONE candidate byte value; a `memchr()` replaces the steps |
+| `"byte-class"` | several; a 256-entry `<prefix>_can_begin_match` bitmap walk |
+| `"memchr-bounded"` | the `memchr` form under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1` and WITHOUT the early `return 0` |
+| `"byte-class-bounded"` | the bitmap form under the same, bounded at `n - 1` |
+
+**The two `-bounded` values are a REAL difference in what the mechanism
+buys, not a spelling.** Under a view, a skip may not pass the position
+whose accept has not been evaluated yet, so every skip stops one byte
+short and the `memchr` arm loses its early-out (`docs/dev/plan.md`
+`[DD-13]` (b) measured the `(?:P)\z` spelling's loop as strictly weaker
+than the plain form's on the same candidate table). A consumer that could
+not tell them apart would attribute that difference to the pattern.
+
 These are scalar macros for a per-artifact-wide verdict
-(`RX_ENGINE`, `RX_VM_PREFILTER`, `RX_VM_PRUNE_CEILING`) or a bitmask
+(`RX_ENGINE`, `RX_VM_PREFILTER`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`,
+`RX_VM_PRUNE_CEILING`) or a bitmask
 when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
-`RX_VM_PRUNES`). Everything above is VM-artifacts-only. **[ABI-NS],
+`RX_VM_PRUNES`). Of the block above, everything but `RX_ENGINE` is
+VM-artifacts-only. **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from
 (`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
 `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —

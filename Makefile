@@ -167,9 +167,14 @@ test-parse: all
 # ~10s, is a differential over a fixed small pattern list, not hundreds of
 # independent checks the way reject's table is) — running the TWO scripts
 # side by side is the whole win here.
+# [DD-13] run_dfa_stamps.sh joins them as a THIRD independent script (own
+# `mktemp -d`, read-only against build/pcrec), for the reason the two above
+# are grouped rather than sharded: it is a corpus-wide compile-only sweep
+# (~2,000 DFA artifacts, no gcc), so it rides the same group parallelism.
 test-codegen: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_codegen_tests.sh' \
+	    'bash tests/codegen/run_dfa_stamps.sh' \
 	    'bash tests/codegen/run_trie_identity.sh'
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the

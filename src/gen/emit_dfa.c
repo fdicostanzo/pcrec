@@ -136,6 +136,35 @@ static void emit_feature_macros(StrBuf *sb)
               pcrec_enabled_set_modules());
 }
 
+/* [DD-13] (D46, and the D76 abi-4 event) THE ENGINE STAMP, EMITTED FROM ONE
+ * PLACE FOR BOTH ENGINES.
+ *
+ * `<PREFIX>_ENGINE` is the D46 family's first SELECTION FACT and since this
+ * change it is UNCONDITIONAL — present on every artifact pcrec emits, with an
+ * engine-appropriate value. It used to be a `sb_printf` inside `emit_vm.c`'s
+ * stamp block and nowhere else, which is precisely the shape that made a DFA
+ * artifact silent about its own engine: the macro belonged to the emitter that
+ * happened to write it rather than to the fact.
+ *
+ * ONE FUNCTION AND NOT TWO CALL SITES SPELLING THE SAME `#define`, because the
+ * whole value of an unconditional stamp is that a consumer may write
+ * `#if RX_ENGINE ...` without knowing which engine it got, and two independent
+ * `sb_printf`s are two chances for the spelling to drift. The VM's call passes
+ * `"vm"` and the DFA's `"dfa"`; those two strings are `rx_info.engine`'s
+ * PCREC_ENGINE_VM/_DFA in words, and match_api.md §6.3 states the mirror.
+ *
+ * WHAT IS *NOT* SHARED, deliberately: `<PREFIX>_ENGINE_WHY`. It names the
+ * construct that FORCED the VM, and a DFA artifact was not forced — its
+ * `rx_info.engine_why` is NULL for the same reason — so the macro's absence
+ * on a DFA artifact mirrors the struct rather than hiding anything. The
+ * per-engine PREFILTER stamps are not shared either: their VALUE SETS are
+ * different (§6.3's (a)/(b) split rules the NAMES engine-specific), and a
+ * shared emitter for two different vocabularies would only be a switch. */
+void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine)
+{
+    sb_printf(c, "#define %s_ENGINE \"%s\"\n", upper, engine);
+}
+
 /* [OPT-ALTCLS] D46's observability half for src/opt/altcls.c, in the SAME
  * PLACEMENT as the feature stamp immediately above and for the SAME reason
  * (STD1's own precedent): the pass runs before either engine is built, so
@@ -846,15 +875,23 @@ static void emit_match_caps_def(StrBuf *c, const char *fn, const char *searchfn,
  * ARTIFACT: present, and INERT.
  *
  * WHY A DFA ARTIFACT HAS THEM AT ALL. §6.3's rule is that per-artifact
- * capacity macros are VM-only, because they report what an artifact DID and a
- * DFA artifact has nothing to report. These entries are the other kind of
- * fact: they are what a CALLER needs in order to call the artifact, and which
- * engine a pattern selects is not the caller's choice — `select_engine.c`
- * makes it, and it can change when the pattern changes or when an
- * optimisation lands. §6.3's own closing warning names the failure this
+ * CAPACITY/ACTIVITY macros are VM-only, because they report what an artifact
+ * DID and a DFA artifact has no such activity to report. These entries are
+ * the other kind of fact: they are what a CALLER needs in order to call the
+ * artifact, and which engine a pattern selects is not the caller's choice —
+ * `select_engine.c` makes it, and it can change when the pattern changes or
+ * when an optimisation lands. §6.3 used to close with the warning this
  * avoids: "a consumer that `#if`s on `RX_ENGINE` is writing code that does
  * not compile against half the artifacts pcrec produces". So the surface is
  * unconditional and the DEPARTURE is deliberate (spec §10.4 rules it).
+ *
+ * [DD-13], 2026-08-25: THAT WARNING NO LONGER APPLIES TO `RX_ENGINE` ITSELF,
+ * and this comment is left standing rather than deleted because the warning
+ * is still the ARGUMENT. §6.3 now splits the D46 family into (a) SELECTION
+ * FACTS, unconditional on every artifact — which is what this surface already
+ * was, two years of `_in` entries early — and (b) the capacity/activity
+ * macros, still VM-only. `RX_ENGINE` moved to (a) for exactly the reason
+ * stated above; the warning holds verbatim for every (b) macro.
  *
  * WHY THEY IGNORE THE DESCRIPTOR RATHER THAN REJECTING IT. This engine never
  * backtracks: it has no resume stack, no trail, and no capacity to exhaust —
@@ -1044,7 +1081,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * this member exists. P-4 of the design predicts nothing in-tree reads
      * the struct positionally; a vendored consumer is D40's problem, not a
      * silent one. */
-    sb_puts(c,   "    .abi = 3,\n");
+    /* [DD-13] abi 3 -> 4 (D76/[TT-11]): the DFA artifact's D46 SELECTION
+     * STAMPS (`<PREFIX>_ENGINE`, `_DFA_SCAN`, `_DFA_PREFILTER`, above) are
+     * three new lines in every DFA artifact's `#define` block. They are pure
+     * SCAFFOLDING — no table, no search-loop byte and no answer moves, which
+     * `run_recursion_identity.sh`'s comparison (A) proves by comparing the
+     * PROGRAM REGION against the unchanged pre-module pin — but D76's rule is
+     * about the emitted scaffolding and not about behaviour: any change to it
+     * is an `abi` bump AND a re-pin of that gate's comparison (B) to this
+     * change's last src-touching commit, in the same change. */
+    sb_puts(c,   "    .abi = 4,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1073,8 +1119,15 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * about deny-vs-force spelling, and forcing the hybrid prefilter on or
      * off changes no answer, only how one is found (engine_m4.md §6.1). The
      * axis's own D46 record is `<PREFIX>_VM_PREFILTER` (src/gen/emit_vm.c),
-     * VM-artifacts-only for the same reason RX_ENGINE/RX_VM_STRATS/etc. are:
-     * a DFA artifact has no separate prefilter decision to report.
+     * VM-artifacts-only — but NOT for the reason this comment used to give
+     * ("a DFA artifact has no separate prefilter decision to report", the
+     * same premise §6.3's old VM-only rule rested on). [DD-13] falsified it:
+     * a DFA artifact makes a real candidate-start prefilter decision and
+     * stamps it as `<PREFIX>_DFA_PREFILTER` (`emit_dfa_stamps`, below). The
+     * two stay SEPARATELY NAMED because their VALUE SETS are different
+     * vocabularies — "hybrid"/"none" against five DFA loop shapes — which is
+     * §6.3's (a)/(b) rule: the SELECTION FACT `RX_ENGINE` is unconditional
+     * and shared, an engine's own vocabulary is neither.
      *
      * [OPT-ALTCLS] `PCREC_NO_ALTCLS_MERGE`/`PCREC_NO_ALTCLS_FACTOR` join the
      * mask too, and for the ORIGINAL deny-family reason rather than the
@@ -1657,6 +1710,157 @@ static bool attempt_cand(const Dfa *d, CandSet *cs)
     return cs->usable && cs->use_memchr;
 }
 
+/* ---- [DD-13] THE UNANCHORED ENGINE'S START ANALYSIS: one derivation -------
+ *
+ * WHY IT IS A FUNCTION NOW. Everything below used to be the first forty lines
+ * of `emit_unanchored`, which was fine while the emitted loop was its only
+ * reader. D46 adds a SECOND reader — the artifact's `<PREFIX>_DFA_PREFILTER`
+ * stamp, written before the engine body exists — and this file's own rule for
+ * that situation is `attempt_cand`'s (immediately above): ONE derivation with
+ * TWO readers, never a restatement of the condition at the second site. M2.12
+ * states the cost of the alternative in this file's header: "M2.7 forked a
+ * second copy, and the fork is exactly how the prefilter and skip loops went
+ * missing from the `$` path for a whole milestone." A stamp that re-derived
+ * `prefilter` would be that fork with a `#define` on the end of it — and a
+ * stamp that disagrees with the loop it describes is worse than no stamp.
+ *
+ * THE FLAGS ARE HERE FOR THE SAME REASON AND NOT FOR TIDINESS: `views` is what
+ * separates `<PREFIX>_DFA_PREFILTER`'s two bound forms (plan.md [DD-13] (b):
+ * the `\z` spelling's skip runs `pos + 1 < n` and cannot early-exit), so the
+ * stamp reads the same flag the emitted `fbound` string is built from.
+ *
+ * NOTHING HERE EMITS. The struct is facts; every `sb_*` call stays in
+ * `emit_unanchored`, so this function is safe to call from the stamp path
+ * (where no engine body is being written) as often as it likes. */
+typedef enum {
+    DFA_PF_NONE = 0,     /* no candidate-start filter at all */
+    DFA_PF_MEMCHR,       /* ONE candidate byte value: a memchr() replaces the steps */
+    DFA_PF_BYTE_CLASS    /* several: the 256-entry can_begin_match bitmap walk */
+} DfaPfKind;
+
+typedef struct {
+    /* the three EOL/END/word-context flags, kept apart on purpose because they
+     * gate different things (each one's own note is at its use site below). */
+    bool eol, endv, viewsel;
+    bool views;          /* the D11 flag: a skip may pass a position whose
+                          * accept was not the one evaluated -> every skip is
+                          * bounded at n-1 and the prefilter loses its early-out */
+    bool empty;          /* nothing can match: the whole body is one `return 0` */
+    DfaPfKind kind;      /* the prefilter the forward scan carries */
+    CandSet   cand;      /* D63's candidate set; meaningful when kind != NONE */
+} UnanchStart;
+
+static void unanch_start(const Dfa *fd, const Dfa *rd, UnanchStart *o)
+{
+    memset(o, 0, sizeof *o);
+    o->kind = DFA_PF_NONE;
+
+    o->eol  = dfa_has_eolvar(fd) || dfa_has_eolvar(rd);
+    /* [M6.2 wave A] `\z`'s third view. `views` is the flag every site that
+     * used to read `eol` now reads: what the D11 bound and the evaluation
+     * ORDER protect is "a state can accept at a position a skip would pass",
+     * and an END view creates exactly that situation at `pos == n`. Both are
+     * false for every pattern the pre-wave corpus contains, so `views == eol`
+     * there and nothing moves. */
+    o->endv = dfa_has_endvar(fd) || dfa_has_endvar(rd);
+    /* Does the emitted text carry the `est`/`erst` POSITION-view indirection
+     * at all? Only `$`/`\Z`/`\z` create it. `\b` does not: its axis is the
+     * byte class, which the transition lookup already indexes by. */
+    o->viewsel = o->eol || o->endv;
+    /* `wctx` — this machine carries a word context at all, so mechanism 4's
+     * start seeding applies (§3.8) and the D11 evaluation ORDER must be the
+     * views one. (Its sibling `facc2`/`racc2` — some state's accept actually
+     * VARIES with the next byte — gates §3.6's class-indexed accept table
+     * instead, and stays with the emitter: a pattern can have the first
+     * without the second.) */
+    bool wctx = fd->clsctx || rd->clsctx;
+    /* `views` is the D11 flag: "a state can accept at a position a skip would
+     * pass, or the position a skip lands on is not the position whose accept
+     * was evaluated". The EOL and END views create that at the last two
+     * positions; a word context creates it everywhere, so it joins. */
+    o->views = o->viewsel || wctx;
+
+    int fs = fd->s0;   /* no asserts -> s0 == s1 */
+    int rs = rd->s0;
+    if (fs < 0 || rs < 0) { o->empty = true; return; }
+
+    /* start-state prefilter analysis: bytes that advance the pattern.
+     *
+     * [M6.2 wave B] `start_acc` is "accepts on ANY class", the OR over the
+     * class views, and §3.6.1 is emphatic about why. The prefilter skips runs
+     * of bytes at which the machine provably stays parked in `fs`; if `fs`
+     * accepts on SOME classes and this read one bit, a pattern like `\bx*`
+     * would keep its `memchr('x')` and jump straight past the empty matches
+     * it owes at every word boundary. MEASURED cell, through the find-all
+     * loop: `\bx*` on `'a x'` is [(0,0), (1,1), (2,3), (3,3)] and a
+     * one-bit `start_acc` reports only (2,3).
+     *
+     * It is also the analysis for the start state's OTHER seeded forms —
+     * `s1u[]` under mechanism 4 — so those are OR'd in too: with
+     * `startpos > 0` the machine begins in one of those, and a prefilter
+     * decision taken from `s0` alone would be a decision about a state the
+     * search may never occupy.
+     *
+     * [M6.2 wave C] THE WIDENING IS BELT-AND-BRACES, NOT LOAD-BEARING, and
+     * that is a correction to the paragraph above — §3.6.1's `\bx*` cell does
+     * NOT lose three of four matches under a one-bit read. The reason is the
+     * argument this file already makes for the `last == (size_t)-1` gate
+     * further down: D3's accept-pruning cuts the unanchored start self-loop
+     * out of every accepting closure, so a class the start state ACCEPTS on
+     * cannot transition back to the start state — it ESCAPES — so the
+     * prefilter's stay set never contains it and the skip never passes an
+     * accepting position.
+     *
+     * MEASURED, [M6.2] wave C: narrowing to `fd->st[fs].up[UPC_PLAIN].accept`
+     * changes 21 corpus artifacts and 0 answers, over 2,247 find-all cells
+     * (21 patterns x 107 subjects). Keep the widening — it is free and it is
+     * the honest reading of "accepts on any class" — but do not cite it as a
+     * premise, and note that it therefore ships NO sabotage row: a check with
+     * no failing direction is exactly what this file's own neighbouring
+     * comment warns about. */
+    bool start_acc = state_acc_any(&fd->st[fs]);
+    bool fseed = dfa_needs_seed(fd);
+    if (fseed) {
+        for (int u = 0; u < UPC_N; u++)
+            start_acc = start_acc || state_acc_any(&fd->st[fd->s1u[u]]);
+    }
+    /* [D63] THE SHARED DERIVATION, this engine's caller. */
+    cand_from_escapes(&o->cand, fd, fs);
+    /* "can neither accept nor ever leave the start state" is only a proof
+     * that nothing matches when the start state has no EOL view. `$` alone is
+     * exactly the counter-example: it never leaves fs and forward_is_accepting[fs] is 0, but
+     * its EOL variant accepts.
+     *
+     * [M6.2 wave B] `!fseed` joins the conjunction: the proof is about the ONE
+     * start state `fs`, and under mechanism 4 a search at `startpos > 0`
+     * begins in a different state whose escapes and accepts this analysis
+     * never looked at. With `fseed` false there is only one start state and
+     * the pre-wave argument is unchanged. */
+    if (o->cand.count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
+        st_emit_endvar(&fd->st[fs]) < 0) { o->empty = true; return; }
+
+    /* The prefilter stays valid under EOL because it is BOUNDED AT n-1: it
+     * only ever skips non-EOL positions at which the machine provably stays
+     * parked in fs.
+     *
+     * The `last == (size_t)-1` gate on the emitted `if` is NOT part of that
+     * argument, and this comment used to present the two as jointly
+     * load-bearing (R3.2 critic). The gate is redundant given D3's priority
+     * pruning: the unanchored start self-loop is the LOWEST-priority thread,
+     * so it is pruned out of every accepting state, an accepting state's
+     * successors can therefore never be `fs`, and `last` is only ever set from
+     * an accepting view — so `st == fs` already implies `last == -1`. Two
+     * independent critics attacked the gate and neither could build a witness:
+     * deleting it produced 0 divergences over 8.0M oracle-checked comparisons
+     * and 0 failures across the whole .rxt corpus.
+     *
+     * Keep the gate — it is free belt-and-braces — but do not cite it as a
+     * premise. Presenting a redundant condition and a load-bearing one as the
+     * same claim is how someone eventually "simplifies away" the wrong half. */
+    if (!start_acc && o->cand.usable)
+        o->kind = o->cand.use_memchr ? DFA_PF_MEMCHR : DFA_PF_BYTE_CLASS;
+}
+
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
 /* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
@@ -1912,36 +2116,21 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     StrBuf *c = &job->csb;
     const char *p = cx->opt->prefix;
 
-    bool eol  = dfa_has_eolvar(fd) || dfa_has_eolvar(rd);
-    /* [M6.2 wave A] `\z`'s third view. `views` is the flag every site below
-     * that used to read `eol` now reads: what the D11 bound and the
-     * evaluation ORDER protect is "a state can accept at a position a skip
-     * would pass", and an END view creates exactly that situation at
-     * `pos == n`. Both are false for every pattern the pre-wave corpus
-     * contains, so `views == eol` there and nothing moves. */
-    bool endv = dfa_has_endvar(fd) || dfa_has_endvar(rd);
-    /* Does the emitted text carry the `est`/`erst` POSITION-view indirection
-     * at all? Only `$`/`\Z`/`\z` create it. `\b` does not: its axis is the
-     * byte class, which the transition lookup already indexes by. */
-    bool viewsel = eol || endv;
+    /* [DD-13] THE START ANALYSIS IS `unanch_start`'s, not this function's:
+     * the view flags, the candidate set and the prefilter verdict are all
+     * read a SECOND time by the artifact's `<PREFIX>_DFA_PREFILTER` stamp,
+     * and that function's header states why they may not be derived twice. */
+    UnanchStart us;
+    unanch_start(fd, rd, &us);
+    bool eol = us.eol, endv = us.endv, viewsel = us.viewsel, views = us.views;
 
-    /* [M6.2 wave B] the two class-axis facts, kept apart on purpose because
-     * they gate different things:
-     *   `wctx`  — this machine carries a word context at all, so mechanism
-     *             4's start seeding applies (§3.8) and the D11 evaluation
-     *             ORDER must be the views one;
-     *   `facc2`/`racc2` — some state's accept actually varies with the next
-     *             byte, so §3.6's class-indexed accept table is needed. A
-     *             pattern can have the first without the second. */
-    bool wctx  = fd->clsctx || rd->clsctx;
+    /* [M6.2 wave B] `facc2`/`racc2` — some state's accept actually varies with
+     * the next byte, so §3.6's class-indexed accept table is needed. Its
+     * sibling `wctx` (the machine carries a word context at all) lives in
+     * `unanch_start` because `views` is built from it; a pattern can have the
+     * first without the second, which is why they are two facts. */
     bool facc2 = dfa_has_clsacc(fd);
     bool racc2 = dfa_has_clsacc(rd);
-
-    /* `views` is the D11 flag: "a state can accept at a position a skip would
-     * pass, or the position a skip lands on is not the position whose accept
-     * was evaluated". The EOL and END views create that at the last two
-     * positions; a word context creates it everywhere, so it joins. */
-    bool views = viewsel || wctx;
 
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
@@ -1955,89 +2144,27 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
 
     emit_search_head(cx, c, fn, storage);
 
-    if (fs < 0 || rs < 0) {
+    /* [DD-13] THE ONE EMPTY-ENGINE EXIT. It used to be two — a dead start
+     * state here, and the "can neither accept nor ever leave `fs`" proof
+     * forty lines down — emitting the SAME three lines with nothing written
+     * between them. `unanch_start` answers both as `empty`, so the stamp path
+     * and the emitter agree by construction on which artifacts have no scan
+     * at all (and therefore no prefilter). Byte-for-byte the same output. */
+    if (us.empty) {
         sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
 
-    /* start-state prefilter analysis: bytes that advance the pattern.
-     *
-     * [M6.2 wave B] `start_acc` is "accepts on ANY class", the OR over the
-     * class views, and §3.6.1 is emphatic about why. The prefilter skips runs
-     * of bytes at which the machine provably stays parked in `fs`; if `fs`
-     * accepts on SOME classes and this read one bit, a pattern like `\bx*`
-     * would keep its `memchr('x')` and jump straight past the empty matches
-     * it owes at every word boundary. MEASURED cell, through the find-all
-     * loop: `\bx*` on `'a x'` is [(0,0), (1,1), (2,3), (3,3)] and a
-     * one-bit `start_acc` reports only (2,3).
-     *
-     * It is also the analysis for the start state's OTHER seeded forms —
-     * `s1u[]` under mechanism 4 — so those are OR'd in too: with
-     * `startpos > 0` the machine begins in one of those, and a prefilter
-     * decision taken from `s0` alone would be a decision about a state the
-     * search may never occupy.
-     *
-     * [M6.2 wave C] THE WIDENING IS BELT-AND-BRACES, NOT LOAD-BEARING, and
-     * that is a correction to the paragraph above — §3.6.1's `\bx*` cell does
-     * NOT lose three of four matches under a one-bit read. The reason is the
-     * argument this file already makes for the `last == (size_t)-1` gate
-     * thirty lines down: D3's accept-pruning cuts the unanchored start
-     * self-loop out of every accepting closure, so a class the start state
-     * ACCEPTS on cannot transition back to the start state — it ESCAPES —
-     * so the prefilter's stay set never contains it and the skip never passes
-     * an accepting position.
-     *
-     * MEASURED, this lane: narrowing to `fd->st[fs].up[UPC_PLAIN].accept`
-     * changes 21 corpus artifacts and 0 answers, over 2,247 find-all cells
-     * (21 patterns x 107 subjects). Keep the widening — it is free and it is
-     * the honest reading of "accepts on any class" — but do not cite it as a
-     * premise, and note that it therefore ships NO sabotage row: a check with
-     * no failing direction is exactly what this file's own neighbouring
-     * comment warns about. */
-    bool start_acc = state_acc_any(&fd->st[fs]);
-    if (fseed) {
-        for (int u = 0; u < UPC_N; u++)
-            start_acc = start_acc || state_acc_any(&fd->st[fd->s1u[u]]);
-    }
-    /* [D63] THE SHARED DERIVATION, this engine's caller. */
-    CandSet fcand;
-    cand_from_escapes(&fcand, fd, fs);
-    /* "can neither accept nor ever leave the start state" is only a proof
-     * that nothing matches when the start state has no EOL view. `$` alone is
-     * exactly the counter-example: it never leaves fs and forward_is_accepting[fs] is 0, but
-     * its EOL variant accepts. */
-    /* [M6.2 wave B] `!fseed` joins the conjunction: the proof below is about
-     * the ONE start state `fs`, and under mechanism 4 a search at
-     * `startpos > 0` begins in a different state whose escapes and accepts
-     * this analysis never looked at. With `fseed` false there is only one
-     * start state and the pre-wave argument is unchanged. */
-    if (fcand.count == 0 && !start_acc && !fseed && fd->st[fs].eolvar < 0 &&
-        st_emit_endvar(&fd->st[fs]) < 0) {
-        sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
-                   "    return 0;\n}\n");
-        return;
-    }
-    /* The prefilter stays valid under EOL because it is BOUNDED AT n-1: it
-     * only ever skips non-EOL positions at which the machine provably stays
-     * parked in fs.
-     *
-     * The `last == (size_t)-1` gate on the emitted `if` is NOT part of that
-     * argument, and this comment used to present the two as jointly
-     * load-bearing (R3.2 critic). The gate is redundant given D3's priority
-     * pruning: the unanchored start self-loop is the LOWEST-priority thread,
-     * so it is pruned out of every accepting state, an accepting state's
-     * successors can therefore never be `fs`, and `last` is only ever set from
-     * an accepting view — so `st == fs` already implies `last == -1`. Two
-     * independent critics attacked the gate and neither could build a witness:
-     * deleting it produced 0 divergences over 8.0M oracle-checked comparisons
-     * and 0 failures across the whole .rxt corpus.
-     *
-     * Keep the gate — it is free belt-and-braces — but do not cite it as a
-     * premise. Presenting a redundant condition and a load-bearing one as the
-     * same claim is how someone eventually "simplifies away" the wrong half. */
-    bool prefilter = !start_acc && fcand.usable;
-    bool use_memchr = prefilter && fcand.use_memchr;
+    /* [DD-13] THE PREFILTER, READ OFF THE SHARED DERIVATION. The forty lines
+     * of start-state analysis that used to sit here are `unanch_start`'s now,
+     * verbatim and with their measurements; what is left is the translation
+     * from its verdict to the two booleans this emitter's loop is written
+     * against. `fcand` is COPIED rather than pointed at so every use site
+     * below reads exactly as it did. */
+    CandSet fcand = us.cand;
+    bool prefilter  = us.kind != DFA_PF_NONE;
+    bool use_memchr = us.kind == DFA_PF_MEMCHR;
 
     int fskip[4], rskip[4];
     int nfskip = pick_skip_states(fd, fs, fskip);
@@ -3090,6 +3217,94 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
         "}\n", g->upper, g->searchfn);
 }
 
+/* [DD-13] (plan.md [DD-13] "BENCH-DISCOVERED CANDIDATES" (a); pcrec-bench
+ * inbox I-3) THE DFA ARTIFACT'S SELECTION FACTS.
+ *
+ * THE GAP THIS CLOSES. D46 rules every selection point observable. A VM
+ * artifact says which engine it is, which prefilter it took and which rungs it
+ * used; a DFA artifact said only `RX_ALTCLS_MERGES`/`_FACTORED` — so its
+ * candidate-start prefilter, which is the email specimen's headline ~23x
+ * mechanism on a megabyte with no `@` in it, was invisible to any consumer
+ * that was not reading the emitted loop. pcrec-bench, the optimization loop's
+ * customer, bucketed every DFA row by `rx_info.engine` alone until this
+ * landed.
+ *
+ * WHY THE OLD RULE SAID NO, AND WHY IT NO LONGER DOES. §6.3 ruled the D46
+ * macros VM-only on the premise that "a DFA artifact has nothing to report"
+ * (emit_vm.c's own comment adds the §5.4 byte-identity worry). The premise is
+ * false since wave G: this engine makes real, artifact-wide decisions — the
+ * scan shape and the prefilter form — and the byte-identity worry is an
+ * argument FOR an unconditional stamp rather than against it, because §6.3's
+ * own closing warning is that "a consumer that `#if`s on `RX_ENGINE` is
+ * writing code that does not compile against half the artifacts". A macro that
+ * exists on EVERY artifact is the only shape that warning can be answered
+ * with. The identity gates pay for it once, as an `abi` bump and a re-pin
+ * (D76/[TT-11]); they do not pay for it again.
+ *
+ * SCALARS, NOT MASKS, and the test is emit_vm.c's: a mask is for an axis
+ * decided PER QUANTIFIER, where a scalar would lie on a mixed artifact. Both
+ * facts below are decided ONCE per artifact — `job->engine` at src/core/
+ * compile.c's `nfa_has_bot` fork, the prefilter at `unanch_start`/
+ * `attempt_cand` — so there is no mixing axis and nothing for a mask to say.
+ *
+ * THE VALUES ARE READ OFF THE SAME DERIVATIONS THE LOOP IS EMITTED FROM,
+ * never a second copy of their conditions: `unanch_start` (ENG_UNANCH) and
+ * `attempt_cand` (ENG_ATTEMPT) are each ONE function with two readers, and
+ * each says so in its own header. That is what makes the stamp checkable
+ * rather than decorative — it cannot disagree with the loop unless the
+ * derivation itself is wrong, in which case the loop is wrong too. */
+static const char *dfa_prefilter_name(Ctx *cx)
+{
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) {
+        /* ENG_ATTEMPT skips whole ATTEMPTS rather than positions inside one
+         * (D63's loop-integration split), so it needs no D11 bound and has no
+         * bounded form: `attempt_cand` is memchr-or-nothing by charter, and
+         * the derivation's own comment says the bitmap instance would be
+         * emitted code no pattern reaches. `<PREFIX>_DFA_SCAN` below is the
+         * other half of the key: it tells a reader WHICH loop this memchr is
+         * in. */
+        CandSet acand;
+        return attempt_cand(&cx->job->dfa, &acand) ? "memchr" : "none";
+    }
+    UnanchStart us;
+    unanch_start(&cx->job->dfa, &cx->job->rdfa, &us);
+    /* THE BOUND IS PART OF THE VALUE, and that is plan.md [DD-13] (b) made
+     * readable rather than a distinction invented here. Under `views` — a
+     * `$`/`\Z`/`\z` view or a word context — every skip is bounded at `n - 1`
+     * and the memchr arm loses its `return 0` early-out, so the SAME
+     * candidate table buys measurably less: the bench measured the `(?:P)\z`
+     * spelling's skip loop as strictly weaker than the plain form's, and a
+     * consumer that could not tell the two apart would attribute the
+     * difference to the pattern. The emitter CAN tell (`us.views` is the same
+     * flag the emitted `fbound` string is built from), so it says so. */
+    switch (us.kind) {
+    case DFA_PF_MEMCHR:     return us.views ? "memchr-bounded"     : "memchr";
+    case DFA_PF_BYTE_CLASS: return us.views ? "byte-class-bounded" : "byte-class";
+    case DFA_PF_NONE:       break;
+    }
+    return "none";
+}
+
+static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
+{
+    sb_puts(c, "/* Engine: dfa */\n");
+    pcrec_emit_engine_stamp(c, upper, "dfa");
+    /* WHICH DFA. The ENG_UNANCH/ENG_ATTEMPT fork is a genuine per-artifact
+     * selection point — [OS-4] calls it "already a cartesian split" and is the
+     * row that will one day measure it — and it is not derivable from anything
+     * else a consumer can read: both shapes stamp `RX_ENGINE "dfa"` and both
+     * set `rx_info.engine` to PCREC_ENGINE_DFA. A bench row that times a
+     * `^`-anchored pattern and one that times an unanchored one are timing two
+     * different loops, and until this line existed the report could not say
+     * which. Read straight off `job->engine`, the field compile.c sets at the
+     * fork, so it cannot disagree with which emitter ran. */
+    sb_printf(c, "#define %s_DFA_SCAN \"%s\"\n", upper,
+              cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored");
+    sb_printf(c, "#define %s_DFA_PREFILTER \"%s\"\n", upper,
+              dfa_prefilter_name(cx));
+    sb_puts(c, "\n");
+}
+
 void pcrec_emit_dfa(Ctx *cx)
 {
     StrBuf *c = &cx->job->csb;
@@ -3117,6 +3332,11 @@ void pcrec_emit_dfa(Ctx *cx)
         BufSurface bs = pcrec_bufsurface_inert();
         pcrec_emit_prologue(cx, &g, dfa_artifact_ncaps(cx), &bs);
     }
+    /* [DD-13] The selection stamps, in the SAME PLACE the VM writes its own —
+     * immediately after the shared prologue and before the engine body — so
+     * the two artifact kinds put their engine line at the same point of the
+     * file and a reader (or a grep) finds it in one place. */
+    emit_dfa_stamps(cx, c, g.upper);
     pcrec_emit_dfa_engine(cx, g.searchfn, "");
 
     sb_puts(c, "\n");

@@ -195,11 +195,20 @@ if [ -z "$def_out" ] || [ -z "$nc_out" ]; then
 elif printf '%s' "$def_out" | grep -q '^#define RX_NCAPS 2$' \
      && printf '%s' "$def_out" | grep -q '^#define RX_ENGINE "vm"$' \
      && printf '%s' "$nc_out" | grep -q '^#define RX_NCAPS 1$' \
-     && ! printf '%s' "$nc_out" | grep -q 'RX_ENGINE'; then
+     && printf '%s' "$nc_out" | grep -q '^#define RX_ENGINE "dfa"$'; then
     ok "ast-identity/default: the SAME grouped spelling emits a capture-tracking VM artifact by default and today's DFA artifact under --no-captures (§9.2 item 3's announced change, pinned)"
 else
     bad "ast-identity/default: 'a|(b|c)' did not produce RX_NCAPS 2 + VM by default and RX_NCAPS 1 + DFA under --no-captures"
 fi
+# [DD-13] THE DFA SIDE IS NOW A POSITIVE ASSERTION, and that is a
+# STRENGTHENING rather than a repair. It used to read `! grep RX_ENGINE` --
+# "a DFA artifact has no engine macro" -- which was true only because
+# src/gen/emit_dfa.c stamped none, so the line was passing on an ABSENCE that
+# would also have been satisfied by an artifact that failed to emit anything
+# at all. `RX_ENGINE` is unconditional since [DD-13] (match_api.md §6.3's
+# (a)/(b) split), so the discriminator is the VALUE, which is what the check
+# was really about. The stamps' own gate is tests/codegen/run_dfa_stamps.sh,
+# which holds each one to the loop it names.
 
 # ---- 3. the depth discipline ----------------------------------------------
 #

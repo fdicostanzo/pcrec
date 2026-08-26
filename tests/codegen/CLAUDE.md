@@ -322,6 +322,47 @@ decides whether to perform it — and then run the row through
   valid run is recorded at [M6.6]'s close (1a8541e). Successor: the
   [DD-14] four-axis identity gate (subroutines_design.md §9, wave E),
   pinned at post-wave-A main.
+- **run_dfa_stamps.sh** — [DD-13] (2026-08-25) the DFA artifact's three D46
+  SELECTION STAMPS (`RX_ENGINE "dfa"`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`;
+  `docs/spec/match_api.md` §6.3), each held to the LOOP IT NAMES. Runs under
+  `make test-codegen` as a third script beside `run_codegen_tests.sh` and
+  `run_trie_identity.sh`. Compile-only (no `gcc`), one `awk` per artifact,
+  ~70 s over the whole corpus. Two halves:
+  - **Seven NAMED WITNESSES** whose expected value is spelled out in the
+    file — one per documented value, including `(?:...)\z` for the
+    `-bounded` pair. They pin the MECHANISM; the sweep below pins
+    AGREEMENT, and agreement is a property two wrong answers can also have
+    (an emitter that stamped `"none"` everywhere AND emitted no prefilter
+    anywhere would sail through a pure agreement check).
+  - **A CORPUS SWEEP** over every `pattern` line in every `.rxt`
+    (2,772 on this tree, floored at 2,620, `LC_ALL=C`, K35), asserting:
+    exactly one of each stamp per DFA artifact, `RX_ENGINE "vm"` and NO
+    `RX_DFA_*` on every VM artifact (§6.3's (a)/(b) split), every value
+    inside the documented set, and stamp-equals-loop on both axes.
+  - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** Every
+    verdict is derived from the EMITTED MATCHER TEXT — the `memchr` call,
+    the `can_begin_match` walk, `start_max`, the skip's bound — which
+    `emit_unanchored`/`emit_attempt` write, while the macros come from
+    `emit_dfa_stamps`. Different code paths, so a drifting stamp is a red.
+    The engine discriminator is `goto rx_L0;` (the VM's program entry), NOT
+    `RX_ENGINE`: reading the macro to decide which artifact kind to check
+    the macro on is the circularity the file refuses in a comment. Note a
+    VM artifact may ALSO contain a DFA scan loop (§6.1's hybrid inlines one
+    as a `static`), which is why the VM test comes first.
+  - **THE EMPTY-ENGINE BUCKET IS NAMED AND COUNTED, NEVER FILTERED.** Four
+    corpus patterns (`\B\b`, `\b\B`, `\d\b\w`, `a\bb`) are proven to
+    match nothing, so their search function is one `return 0` with no loop
+    for a scan shape to be compared against. They are excluded from the
+    SCAN agreement and asserted on the PREFILTER instead (no loop => the
+    stamp must read `"none"`), with the bucket's own size asserted
+    NON-ZERO — a zero would mean the text marker stopped matching and the
+    bucket had silently started exempting everything.
+  - **Validation (made to fail on purpose, four ways):** scan value
+    inverted → 386 red; the `-bounded` arms dropped → 92 red; the whole
+    stamp call removed → the presence checks red on 2,022 artifacts; the
+    witness table pointed at a VM artifact → red, because each witness
+    asserts its artifact IS a DFA one before reading its value.
+
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored
@@ -1630,3 +1671,18 @@ against the subject's `.abi = 3`) makes the refusal fire with that exact
 message; the default pin (`8fc1e51`, same `.abi = 3` as the subject) passes
 straight through to the sweep. Comparison (A) is untouched by this — it never
 read the probe at all.
+
+**[DD-13], 2026-08-25 — THE RULE'S FIRST EXERCISE BY A NON-LAYOUT CHANGE, and
+the pin is `5991d4c` now.** [DD-13] gave every DFA artifact three D46
+selection stamps. It moves NO struct offset and NO emitted program byte —
+comparison (A) is byte-identical against the unchanged `ac4917d` pin on all
+five axes, which is the PROOF that the change is scaffolding only — and it
+still bumps `abi` 3 -> 4 and re-pins (B), because (B) compares WHOLE FILES and
+three new `#define` lines are a whole-file difference on ~2,000 artifacts.
+That is D76 working as ruled rather than an exception to it, and it is the
+reading a future change should copy: (A) says whether BEHAVIOUR moved, (B)
+says whether BYTES moved, and only the second is what `abi` versions.
+Demonstrated both directions on this change: with the new pin the gate is
+15/0; with `RECURSION_IDENTITY_FILEPIN=8fc1e51` (the old pin, `.abi = 3`
+against the subject's `4`) it REFUSES with the message above before the sweep
+runs.
