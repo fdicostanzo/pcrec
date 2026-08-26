@@ -16205,3 +16205,28 @@ in tuning.md's house style for a control row; codegen checks that the
 rule switches on both sides of the bound and DETECT a planted
 non-multiplied table; identity byte-for-byte on every answer; timed runs
 and make test only after the battery's "BATTERY DONE" trailer.
+
+#### Forty-first session, part 5 — the battery on the combined tree is GREEN; srPremul's timed runs unblocked (2026-08-26 15:3x EDT)
+
+Battery on ac3b707 (launched 12:24, DONE 15:34 — 3h10m, slower than
+the 2h20m norm because srPremul's builds shared the box): build OK;
+strict clean; VALIDATE_ONLY 180 valid + all anchors resolve; make test
+checks 1,571/0 (rc 2 = the known K32 `((a)|ab){4000}c` cell + 28
+dependents failing to compile under -j12; solo counterk.rxt 1,634/0;
+one inconclusive cell in the resource suite, solo test-resource 19/0/0);
+make san rc 0, zero sanitizer report lines, both axes; mech matrix 180
+rows, unexpected 0, undetected 6 (S150-S153, S160, S178 — the expected
+six), unreached 0, anomalies 0. So e8a1b6b's two merges ([K38-FIX],
+[SPEC-1.4]) and 30a9296's ([OPT-3] STEP 1) are BATTERY-PROVEN. While it
+ran, Frank and I settled three design questions, all recorded: the
+vm-vs-dfa gcc time (the computed-goto resume dispatch's 73 abnormal
+edges, not the gotos), branch prediction (layout hints ride STEP 2; the
+per-K exit check named with ≤ 1.3 %), speculation (61.5 % same-state
+on t-a; the stay-set scan and the two-byte table named as STEP 3
+candidates; the bench's periodic subjects flagged as a confound, I-10),
+and the emitter's organization → D82 + [ENG-FORM] (decisions as
+selection over representation objects; an opaque-token accessor block
+in the emitted C; gcc time an acceptable tradeoff, runtime cost zero)
++ [CHK-2] (axis registry, make test-axes, form census). srPremul's
+poller sees BATTERY DONE now; its timed reproduction and make test
+follow, then its report, review, merge (abi 7), and a bench pin (I-11).
