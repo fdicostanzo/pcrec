@@ -5748,3 +5748,54 @@ limits/give-ups section carries the numbers and the mechanism; the
 guide's recursion use case says "deep recursion needs the `_in` entry
 with a buffer; see the spec". [REL-META]'s README pass references the
 guide rather than restating it.
+
+## D81 — the D46 stamp family SPLITS: SELECTION FACTS are unconditional on every artifact (`RX_ENGINE`, the prefilter kind, the DFA scan shape); CAPACITY/ACTIVITY macros stay VM-only (manager ruling for lane srStamp 2026-08-25, shipped 78249e6)
+
+**Context.** match_api.md §6.3 ruled the D46 macros VM-only ("a DFA
+artifact has nothing to report") and warned that a consumer `#if`-ing
+on `RX_ENGINE` writes code that fails on half the artifacts. Wave G
+falsified the premise — the DFA has a byte-class skip prefilter, a real
+selection — and pcrec-bench (inbox I-3) could not bucket DFA rows by
+mechanism. The warning was an argument FOR the change: a conditional
+stamp is what makes `#if` unsafe; an unconditional one is the fix.
+
+**Decision.** (a) SELECTION FACTS — which engine, which scan-avoidance
+mechanism — are present on EVERY artifact with an engine-appropriate
+value: `<P>_ENGINE` ("vm"/"dfa", ONE emitter `pcrec_emit_engine_stamp`
+so the spellings cannot drift), `<P>_DFA_SCAN` ("unanchored"/"attempt"
+— the [OS-4] axis, not derivable from anything else a consumer reads),
+`<P>_DFA_PREFILTER` (five values: none, memchr, byte-class,
+memchr-bounded, byte-class-bounded — the `-bounded` pair is [DD-13](b)
+made readable: `(?:orig)\z` stamps byte-class-bounded, `orig`
+byte-class). The prefilter axis keeps ENGINE-SPECIFIC names because the
+value sets are different vocabularies, not one vocabulary with two
+readings. `RX_ENGINE_WHY` stays VM-only: it mirrors a NULL
+`rx_info.engine_why`. (b) CAPACITY/ACTIVITY macros (`_VM_RUNGS`,
+`_STRATS`, `_PRUNES`, `_CALL_*`, `_ROOT_MINW`, budgets, frame/trail
+sizes) stay VM-only exactly as before — they report what the VM DID.
+No `rx_info` field for the scan shape: that is a struct-layout event on
+a struct D44.5 called final; not taken with this change. NEXT stamp
+candidate ([DD-13]): the M2.1 self-loop skip (`pick_skip_states`), a
+per-state activity count — family (b), naming decision owed.
+
+**The general hazard this exposed:** any check that used the ABSENCE
+of a D46 macro as its DFA discriminator was wrong the moment (a)
+landed — two in run_codegen_tests.sh and one in tests/parse; the
+discriminator is the VALUE (`RX_ENGINE "vm"`) or the artifact's own
+shape (`goto rx_L0;`), never the presence of a stamp.
+
+**D76 ADDENDUM — abi 3→4, the first exercise of D76 by a change that is
+NOT a struct-layout event.** No `rx_info` field was added and no offset
+moved; three `#define` lines joined every DFA artifact's scaffolding.
+That is exactly what `abi` versions: the EMITTED SCAFFOLDING, not
+`struct rx_info`. The run demonstrated the division cleanly — comparison
+(A) "did behaviour move": UNCHANGED vs `ac4917d` (2206/2211/2207/2210
+with the four named wave-G elisions); comparison (B) "did bytes move":
+re-pinned to 5991d4c, 2210/2211/2211/2210; the [TT-11] refusal fired on
+the old pin 8fc1e51 ("'.abi = 4' vs '.abi = 3'") before any sweep — its
+first real event. A future scaffolding-only change must expect (A) green
+against its ancient pin AND a (B) re-pin, and must not read (A)'s
+greenness as licence to skip the bump. Sites carrying the number:
+emit_dfa.c (`.abi = 4`), match_api.md §6, run_codegen_tests.sh's
+[DD-14.FB] §10.4 check. The merge was `--no-ff`, so 5991d4c survives as
+the pin.

@@ -420,24 +420,59 @@ sweeps at least the default and `--engine=vm` axes (`tests/atomic_groups/
 run_atomic_diff.sh` §2, `tests/recursion/run_recursion_diff.sh`'s four
 axes) as the engine differential D46 asks for at the module level.
 
-## 3. The DFA-side stamp gap
+## 3. The DFA-side stamp gap" section
+(main tree, currently lines ~423-441) with:
 
-**Current limitation, plan row `[DD-13]`:** a DFA artifact emits no
-`RX_ENGINE`, no `RX_ENGINE_WHY`, and no prefilter-family stamp at all —
-D46's per-artifact observability principle (§6.3, `docs/spec/
-match_api.md`) is VM-only on this axis today. `rx_info.engine` (the
-runtime reflection field, not a compile-time macro) is the only readable
-selection field a DFA artifact carries. Verified by listing a
-`--no-captures` build's `#define`s: only `RX_NCAPS` and the two
-`RX_ALTCLS_*` stamps (§2.6/§2.7) are artifact-summary macros; no
-`RX_ENGINE`-family macro appears. Measured and recorded at
-`docs/dev/plan.md` `[DD-13]`'s "BENCH-DISCOVERED CANDIDATES" note
-(2026-08-25, pcrec-bench's email-specimen run): the byte-class skip loop
-that is the DFA's own headline optimization is invisible to a caller
-reading compile-time macros for the same reason — an `RX_DFA_PREFILTER`-
-style stamp in the D46 family is a candidate there, not built. This
-document states the gap rather than promising the fix; `[DD-13]` is
-where the fix, if built, would land.
+## 3. The DFA side's own stamps
+
+**CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
+it was open.** A DFA artifact now carries three D46 selection stamps, in the
+same position of the file a VM artifact carries its own:
+
+```
+$ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|DFA_)'
+#define RX_ENGINE "dfa"
+#define RX_DFA_SCAN "unanchored"
+#define RX_DFA_PREFILTER "memchr"
+```
+
+`docs/spec/match_api.md` §6.3 is the contract; in short:
+
+- `RX_ENGINE` is **unconditional** — present on every artifact both engines
+  produce, `"vm"` or `"dfa"`, from one emitter so the two cannot drift. This
+  is what makes `#if`-ing on it safe, which §6.3 used to warn it was not.
+- `RX_DFA_SCAN` is `"unanchored"` (the O(n) forward+reverse table pair) or
+  `"attempt"` (the per-start computed-goto loop a `^`/`\A`-bearing pattern
+  takes). Nothing else a consumer can read distinguishes them: both stamp
+  `RX_ENGINE "dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`. The
+  split itself is plan row `[OS-4]`'s subject.
+- `RX_DFA_PREFILTER` names the candidate-start mechanism, one of `"none"`,
+  `"memchr"`, `"byte-class"`, `"memchr-bounded"`, `"byte-class-bounded"`.
+  The `-bounded` pair is `[DD-13]` (b): under a `$`/`\Z`/`\z` view or a word
+  context every skip is bounded at `n - 1` and the `memchr` arm loses its
+  early-out, so the same candidate table buys measurably less. Measured over
+  the corpus (2,772 patterns, 995 DFA artifacts): `none` 380, `memchr` 327,
+  `byte-class` 176, `memchr-bounded` 61, `byte-class-bounded` 51;
+  `unanchored` 815 / `attempt` 180.
+
+`RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
+engine: it names the construct that FORCED the VM, and a DFA artifact was not
+forced — `rx_info.engine_why` is `NULL` there for the same reason.
+
+**This is not a `-f` axis and has no CLI spelling.** It is observability of a
+selection the compiler makes on its own, which is what D46 asks for; there is
+no knob here to deny or force. `tests/codegen/run_dfa_stamps.sh` holds each
+stamp to the loop it names (every verdict derived from the emitted matcher
+text, then compared against the macro). `rx_info.abi` moved `3` -> `4` with
+these stamps (D76: the version of the emitted scaffolding, not of the struct).
+
+ALSO, in §2.5 (`-fno-prefilter`), the sentence
+
+    what the emitter DID is the `RX_VM_PREFILTER` scalar stamp
+
+is still correct as written; if a cross-reference is wanted, append:
+"(the DFA's own prefilter axis is a different vocabulary and a different
+stamp — `RX_DFA_PREFILTER`, §3)".
 
 ## 4. `pcrec_options` mirror
 
