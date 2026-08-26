@@ -339,11 +339,12 @@ VM hybrid — and on no other. Value set:
 a pattern whose forward DFA is above the bound and whose reverse DFA is below it
 gets one of each. Naming it is cheaper than a rule that says it cannot happen.
 
-The value is read off the SAME predicate the emitter branches on — one
-derivation, two readers, this file's standing rule (`unanch_start`,
-`attempt_cand` and `dfa_engine_is_empty` all state it) — so the stamp cannot
-disagree with the loop unless the predicate itself is wrong, in which case the
-loop is wrong too.
+The value is read off the SAME predicate the emitter branches on — ONE
+derivation, THREE readers (the emitted loop, this stamp, and the orientation
+block's "READING THE TABLES" paragraph), this file's standing rule
+(`unanch_start`, `attempt_cand` and `dfa_engine_is_empty` all state it) — so
+the stamp cannot disagree with the loop unless the predicate itself is wrong,
+in which case the loop is wrong too.
 
 **Is a runtime mirror in `rx_info` owed? Decided here: NO, with a named
 trigger.** `docs/spec/match_api.md` §6.3's (a)/(b) split is a rule about
