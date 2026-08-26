@@ -8058,7 +8058,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * sentinel, one layer below the public code `<prefix>_search` compares
      * against (§4.4). Built once here rather than at each of the two call
      * sites for the reason vm_emit_default_entry's header gives. */
-    char frames_sentinel[64];
+    char frames_sentinel[PCREC_MAX_PREFIX_LEN + 32];   /* the 60-char prefix limit + "_R_FRAMES" + NUL: a 64-byte buffer truncated the sentinel NAME for a max-length prefix (gcc -Wformat-truncation caught it in the identity scripts' -O2 reference builds, 2026-08-26) */
     snprintf(frames_sentinel, sizeof frames_sentinel, "%s_R_FRAMES", v.up);
 
     /* BEFORE the prologue, which is where the declarations are written, and

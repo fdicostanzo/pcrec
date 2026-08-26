@@ -2964,3 +2964,32 @@ textual sweep over bash source and outside this ruling's own stated scope
 (a grep over `tests/**/*.sh`). `tests/fuzz/fuzz.py`'s own compiler calls,
 by contrast, already carry `PCREC_TIMEOUT` throughout. A K37b candidate,
 not created here.
+
+## K38 — OPEN (2026-08-26, found by the manager while verifying a srTier buffer fix) — the VM emitter's fixed-size NAME BUFFERS truncate identifiers at long prefixes: an artifact with a 60-character prefix (the documented maximum) does not compile
+
+**Symptom.** `build/pcrec -p p1234…(60 chars) --engine=vm --features all
+-o x.c 'a(b)+c'` emits C in which several `<prefix>_…` identifiers are
+cut short (`…_sp` → `…234`, a class-guard expression loses its `]`), so
+`gcc` fails with "undeclared" / "expected ']'". `cli/main.c`'s
+`valid_prefix` and `src/core/limits.h`'s `PCREC_MAX_PREFIX_LEN = 60`
+accept the prefix; docs/spec/cli.md §1 promises it. The DFA path was not
+checked; a short prefix (`rx`) is byte-identical to before.
+
+**Cause.** src/gen/emit_vm.c builds emitted names into fixed buffers —
+`char nm[48]` (~:864, ~:2695), `entrypos[32]` (~:3085), and until
+2026-08-26 `frames_sentinel[64]` (srTier's, fixed at the same time:
+`PCREC_MAX_PREFIX_LEN + 32`) — via `snprintf`, which truncates silently.
+gcc's `-Wformat-truncation` flagged only the sentinel because the
+others are built through helpers it cannot see through.
+
+**Class.** A miscompile (not a give-up) reachable only through a
+prefix longer than any test uses — every corpus artifact is `rx`. The
+spec's promise is exact (cli.md §1) and false at the boundary.
+
+**Fix (general).** Size every emitted-name buffer from
+`PCREC_MAX_PREFIX_LEN` (one macro for "a prefixed name": limit + the
+longest suffix + NUL), sweep `emit_vm.c`/`emit_dfa.c` for `char
+[a-z_]+\[[0-9]+\]` buffers that receive a prefix, and add a tests/cli
+case that emits AND COMPILES a 60-character-prefix artifact on both
+engines (a spec-first witness: the promise is the test). Sonnet-sized;
+not started.
