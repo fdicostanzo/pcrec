@@ -564,6 +564,27 @@ decides whether to perform it — and then run the row through
   call; a scratch `tests/altcls/run_zz_validate_diff.sh` not in the
   manifest — both created, observed as the sole named failure, deleted).
 
+  **[SABANCHOR], 2026-08-26 (srAnchor): tests/mech/CLAUDE.md's own standing
+  tripwire, `scripts/m6read_check_sab_anchors.py`, now runs HERE as a FAILING
+  check** rather than living as an ad-hoc script someone has to remember to
+  run by hand. srTier's two-tier default entry ([OPT-1]) and the DFA scan
+  stamps ([DD-13c]) moved the emitted text three sabotage rows anchor
+  against — S67 (`src/gen/emit_dfa.c`'s `strategy_denials` mask gained a
+  member after the ALTCLS pair), S179 and S183 (`src/gen/emit_vm.c`'s
+  `_search_in` bind/delegation, whose surrounding format-string arg list
+  shrank) — and a battery script outside this tree caught all three
+  ANOMALY at a run's start; nothing IN this tree would have. The check
+  reads the tripwire's own `sabotages checked: N` line as its population
+  (floor 150, measured 180) and fails on either a stale/unreadable anchor
+  or a collapsed population, so a future refactor that moves an anchor is
+  caught by `make test-codegen` the moment it lands rather than by the next
+  full `make mech` sweep (up to ~50 min) or a battery author's memory.
+  **VALIDATED red then green** in a scratch copy of the tree (`git archive
+  HEAD` extracted outside the repo, never the live `tests/mech/sabotages/`):
+  planting a stale `SAB_BEFORE` on S01 reproduced the check's exact bad
+  branch (`STALE ANCHORS: 1`, exit 1), reverting reproduced the ok branch
+  (`all 180 anchors resolve`, exit 0).
+
 ## [M4.5b] re-baseline: 38 checks, and three narrowings worth reading
 
 Three checks in `run_codegen_tests.sh` had to move when the VM engine landed,

@@ -2862,6 +2862,51 @@ else
     ok "[TT-9] every tests/*/run_*_diff.sh script ($tt9_pats found) is in tests/lib/san_scripts.txt -- \`make ubsan\`/\`asan\`/\`san\` cannot silently drop one the way \`san\` dropped run_recursion_diff.sh before this manifest existed"
 fi
 
+# ===========================================================================
+# [SABANCHOR] THE SABOTAGE ANCHOR TRIPWIRE RUNS AS A FAILING CHECK
+# ===========================================================================
+#
+# tests/mech/CLAUDE.md's own standing tripwire
+# (scripts/m6read_check_sab_anchors.py) has always been ad-hoc: run by hand,
+# gated nowhere in `make test` or `make testscripts`. It caught S67/S179/S183
+# stale ([DD-13c]/[OPT-1]'s emitter refactors moving the text three sabotage
+# rows anchor against) at the start of a manager battery, not at the point
+# the refactor landed -- the battery script that ran it is the manager's own,
+# not anything in this tree, so the same drift on the next emitter change
+# would again wait for a full `make mech` sweep (up to ~50 minutes) or a
+# battery author remembering to run it by hand. This block closes that gap:
+# a stale anchor now fails `make test-codegen` in the same run as the change
+# that caused it.
+#
+# The population is the tripwire's OWN "sabotages checked: N" line, not a
+# second count taken here -- a floor on THAT number is what keeps this check
+# from reading a broken invocation (e.g. a bad ROOT_DIR resolution scanning
+# an empty directory) as "0 stale, PASS". Floor 150 against a measured 180
+# (2026-08-26) leaves room for the number to move without weakening the
+# check's own argument.
+#
+# VALIDATED (2026-08-26, lane srAnchor) in a scratch copy of the tree
+# (`git archive HEAD` extracted to a scratch dir, never the real working
+# tree): planting `SAB_BEFORE="    int nout = 0; XYZZY_PLANTED_STALE_ANCHOR"`
+# over S01's real anchor reproduced this block's exact bad-branch text
+# (`rc=1 pop=180`, `STALE ANCHORS: 1 ... S01_skip_states_off.sh ... ANCHOR
+# NOT FOUND`); reverting reproduced the ok-branch (`rc=0 pop=180`, "all
+# anchors resolve"). Never run against the real tests/mech/sabotages/ --
+# corrupting a live row to prove a check is exactly the failure mode this
+# suite's own convention (docs/dev/learnings.md §3) warns against.
+sab_anchor_out="$(python3 "$ROOT_DIR/scripts/m6read_check_sab_anchors.py" 2>&1)"
+sab_anchor_rc=$?
+sab_anchor_pop="$(printf '%s\n' "$sab_anchor_out" | sed -n 's/^sabotages checked: \([0-9]*\).*/\1/p')"
+if [ -z "$sab_anchor_pop" ] || [ "$sab_anchor_pop" -lt 150 ]; then
+    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py's own row count parsed as '${sab_anchor_pop:-<none>}', below its floor of 150 (measured 2026-08-26: 180) -- a population that collapses means the SWEEP broke, not that the tree lost its sabotage rows:
+$sab_anchor_out"
+elif [ "$sab_anchor_rc" -ne 0 ]; then
+    bad "[SABANCHOR] scripts/m6read_check_sab_anchors.py reports a stale or unreadable anchor among its $sab_anchor_pop sabotage row(s) -- re-derive the anchor from the live source per tests/mech/sabotages/CLAUDE.md's Conventions (never from \`git show HEAD:<path>\` alone once the working tree has moved past HEAD), and never weaken the SAB_COUNT check:
+$sab_anchor_out"
+else
+    ok "[SABANCHOR] scripts/m6read_check_sab_anchors.py: all $sab_anchor_pop sabotage rows' anchors resolve -- a stale anchor (S67/S179/S183's own [DD-13c]/[OPT-1] drift) now fails make test-codegen instead of waiting for a full make mech sweep or a battery author's memory"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
