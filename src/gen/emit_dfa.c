@@ -2604,7 +2604,6 @@ struct DfaDir {
 
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
-    Ctx           *cx;
     const Dfa     *d;
     const char    *p;              /* the artifact prefix */
     const DfaDir  *dir;
@@ -3253,7 +3252,6 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     unsigned flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
-    f->cx      = cx;
     f->d       = d;
     f->p       = cx->opt->prefix;
     f->dir     = dir;
