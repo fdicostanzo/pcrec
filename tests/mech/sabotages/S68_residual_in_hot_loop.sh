@@ -32,7 +32,18 @@ SAB_HARNESS_TARGET="tests/base/caseless.rxt"
 SAB_DESC="the emitted bitmap prefilter's skip loop advances via <prefix>_next_pos instead of scan_position++, so the DFA hot path calls into the encoding residual — DD-12 (7)'s forbidden hot-path/encoding coupling, planted in the shape a developer would actually write it. It changes no match answer under the byte backend (next_pos IS scan_position + 1), so only the codegen structural check can see it"
 SAB_DOC_FIGURE="docs/dev/plan.md [DD-12] (7) 'a codegen-structural check that no hot-loop label calls into the encoding header (allowlist of named residual sites)'; src/gen/enc/enc.h's seam contract; tests/codegen/CLAUDE.md"
 SAB_COUNT=1
-SAB_BEFORE='                sb_printf(c, "            while (%s && !%s_can_begin_match[subject[scan_position]]) scan_position++;\n", fbound, p);'
-SAB_AFTER='                /* SABOTAGE S68: the hot loop advances through the
-                 * encoding residual instead of one byte. */
-                sb_printf(c, "            while (%s && !%s_can_begin_match[subject[scan_position]]) scan_position = %s_next_pos(subject, subject_length, scan_position);\n", fbound, p, p);'
+# RE-ANCHORED 2026-08-26 ([ENG-FORM]): the bitmap prefilter's skip loop is a
+# REPRESENTATION OBJECT's emitter now (`pf_emit_bcls`, axis B's `byte-class`
+# candidate) rather than a branch inside `emit_unanchored`, and the D11 bound
+# is a SECOND object (`pf_emit_bcls_bounded`) rather than the `fbound` string
+# this row used to anchor on. The unbounded form is anchored here because it
+# is the one `tests/base/caseless.rxt`'s artifacts take; the bounded form's
+# own skip line is a distinct string and would need its own row.
+SAB_BEFORE='    sb_printf(c, "%s    while (scan_position < subject_length &&"
+                 " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
+              ind, f->p);'
+SAB_AFTER='    /* SABOTAGE S68: the hot loop advances through the encoding
+     * residual instead of one byte. */
+    sb_printf(c, "%s    while (scan_position < subject_length &&"
+                 " !%s_can_begin_match[subject[scan_position]]) scan_position = %s_next_pos(subject, subject_length, scan_position);\n",
+              ind, f->p, f->p);'

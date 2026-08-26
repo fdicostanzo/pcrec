@@ -31,7 +31,16 @@ SAB_HARNESS_TARGET="tests/assertions/wordb_basic.rxt"   # wordb.rxt split 2026-0
 SAB_DESC="the reverse self-loop skip emits its bare unconditional 'sfound = pp;' under a word context too, so a skip stopping at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1] (assertions_design.md S3.8.3.1's second writer)"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 2] reports an sfound writer not conditioned on an accept read"
 SAB_COUNT=1
-SAB_BEFORE='            if (!views && rd->st[K].up[UPC_PLAIN].accept)
-                sb_puts(c, "                match_start_position = rewind_position;\n");'
-SAB_AFTER='            if (rd->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */
-                sb_puts(c, "                match_start_position = rewind_position;\n");'
+# RE-ANCHORED 2026-08-26 ([ENG-FORM]): the reverse skip is the DIRECTION
+# object's `dir_rev_skip` method now. The guard's two-line body is now
+# CHARACTER-IDENTICAL to the forward object's, so the anchor carries the
+# preceding `while (rewind_position > ...)` line: without it SAB_BEFORE would
+# match twice and the row's SAB_COUNT=1 would fail rather than plant.
+SAB_BEFORE='    sb_printf(c, "%s    while (rewind_position > search_from &&"
+                 " %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
+              ind, f->p, K);
+    if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)'
+SAB_AFTER='    sb_printf(c, "%s    while (rewind_position > search_from &&"
+                 " %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
+              ind, f->p, K);
+    if (f->d->st[K].up[UPC_PLAIN].accept)   /* SABOTAGE S72 */'
