@@ -263,6 +263,27 @@ KEEP="${KEEP:-0}"
 # ([DD-13]'s) before that. Within THIS change it moved twice — the pin must
 # always name the change's LAST src/lib/cli commit, and both the rx_info fields
 # and the rebase onto [OPT-1] made a later one each time.
+# [OPT-3], 2026-08-26 — THE FIRST RE-PIN BY A CHANGE THAT MOVES EMITTED
+# PROGRAM BYTES, and that is the difference worth one paragraph. [DD-13],
+# [OPT-1] and [DD-13c] were all scaffolding (the last one plus a struct
+# append), and each of their notes below says so. The PRE-MULTIPLIED DFA
+# TRANSITION TABLE (docs/design/premultiplied_dfa_table.md) changes the DFA
+# scan's tables, its state variables, its dead test and its transition line on
+# every artifact that CONTAINS such a scan — DFA artifacts and VM HYBRIDS
+# alike, since the hybrid inlines `emit_unanchored`'s own output.
+#
+# COMPARISON (A) IS STILL EXPECTED BYTE-IDENTICAL, and here that is a real
+# check rather than a formality: `prog_region` is `goto <p>_L0;` through
+# `<p>_accept:`, i.e. the VM PROGRAM, and a hybrid's inlined
+# `static <prefix>_prefilter` is emitted ABOVE that `goto` (verified on a
+# current hybrid artifact: `rx_prefilter` at line 250, `goto rx_L0;` at 396).
+# So (A) sees no DFA scan byte at all. If it ever DOES move under this change,
+# the finding is that the region extractor has stopped bounding what its
+# comment says it bounds — not that the transform touched the VM.
+#
+# `abi` 6 -> 7 and (B) re-pinned here, to `49356e8` — this change's LAST
+# commit touching `src`/`lib`/`cli`. Pin was `c940551` ([DD-13c]'s).
+#
 # [DD-13], 2026-08-25 — THE PIN'S FIRST RE-PIN UNDER D76, and it is worth one
 # paragraph because it is the first time the rule below was exercised by a
 # change that was NOT a struct-layout event. `[DD-13]` gave every DFA artifact
@@ -310,7 +331,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-c940551}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-49356e8}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
