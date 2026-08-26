@@ -435,6 +435,7 @@ while IFS= read -r pat; do
         echo "HYSCANVAL $s_scan"
         case " $SCAN_VALUES " in *" $s_scan "*) ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_SCAN '$s_scan' (hybrid): $pat" ;; esac
         case " $PF_VALUES "   in *" $s_pf "*)   ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_PREFILTER '$s_pf' (hybrid): $pat" ;; esac
+        echo SCANCMP; echo PFCMP
         [ "$s_scan" = "$d_scan" ] || { echo SCANBAD; echo "BAD: SCAN (hybrid): stamp '$s_scan' vs inlined loop '$d_scan': $pat"; }
         [ "$s_pf"   = "$d_pf"   ] || { echo PFBAD;   echo "BAD: PREFILTER (hybrid): stamp '$s_pf' vs inlined loop '$d_pf': $pat"; }
         continue
@@ -462,9 +463,11 @@ while IFS= read -r pat; do
         # for this body now -- `"empty"` -- so the comparison below applies to
         # it like any other, and the `continue` is only here because the
         # prefilter half was already asserted one line up.
+        echo SCANCMP
         [ "$s_scan" = "empty" ] || { echo SCANBAD; echo "BAD: SCAN: stamp '$s_scan' on a body that is one \`return 0\` (expected 'empty'): $pat"; }
         continue
     fi
+    echo SCANCMP; echo PFCMP
     [ "$s_scan" = "$d_scan" ] || { echo SCANBAD; echo "BAD: SCAN: stamp '$s_scan' vs loop '$d_scan': $pat"; }
     [ "$s_pf"   = "$d_pf"   ] || { echo PFBAD;   echo "BAD: PREFILTER: stamp '$s_pf' vs loop '$d_pf': $pat"; }
 done
@@ -487,6 +490,16 @@ nscan=$(tok SCANBAD); npf=$(tok PFBAD)
 # [DD-13c] the iff's two populations and its two failure directions.
 nvmhy=$(tok VMHYBRID); nvmpl=$(tok VMPLAIN)
 nvmsilent=$(tok VM_SILENT); nvmpfbad=$(tok VMPFBAD); nvmhyempty=$(tok VMHYEMPTY)
+# [DD-13c] THE AGREEMENT DENOMINATORS ARE COUNTED AT THE COMPARISON SITES, not
+# derived by arithmetic from the bucket sizes. MEASURED REASON, from this
+# change's own validation V1 (the hybrid stamps removed): with the denominator
+# written as `ndfa + nvmhy` the [agreement] line still read "all 2258
+# artifacts" while 1,263 of them had been routed past the comparison by the
+# missing-stamp `continue` — a true statement about a population nobody
+# compared, which is docs/dev/learnings.md §3's failure exactly. A counted
+# denominator collapses instead, and the assertion below makes the collapse a
+# RED rather than a number a reader has to notice.
+nscancmp=$(tok SCANCMP); npfcmp=$(tok PFCMP)
 # [DD-13c] THE TWO ARTIFACT KINDS ARE TALLIED SEPARATELY AND THEN TOGETHER.
 # The DFA-only distribution is the one [DD-13] recorded and the one
 # docs/spec/tuning.md §3 quotes, so folding the 1,200-odd hybrids into it would
@@ -542,10 +555,24 @@ fi
 # the DFA artifacts (empty engine included, which since r37 #5 has a value of
 # its own rather than an exemption) AND the VM hybrids, which are held to the
 # SAME two comparisons against the SAME markers.
-[ "$nscan" -eq 0 ] && ok "[agreement] RX_DFA_SCAN matches the emitted scan shape on all $((ndfa + nvmhy)) artifacts that contain a DFA scan ($ndfa DFA incl. $nempty empty-engine, $nvmhy hybrid)" \
+[ "$nscan" -eq 0 ] && ok "[agreement] RX_DFA_SCAN matches the emitted scan shape on all $nscancmp artifacts it was compared on" \
                    || bad "[agreement] $nscan artifact(s) stamp a scan shape their emitted body does not have"
-[ "$npf"   -eq 0 ] && ok "[agreement] RX_DFA_PREFILTER matches the emitted prefilter on all $((ndfa - nempty + nvmhy)) artifacts it is compared on ($((ndfa - nempty)) DFA artifacts with a loop + all $nvmhy hybrids; the $nempty empty-engine DFA artifacts are asserted \"none\" on the line below instead)" \
+[ "$npf"   -eq 0 ] && ok "[agreement] RX_DFA_PREFILTER matches the emitted prefilter on all $npfcmp artifacts it was compared on" \
                    || bad "[agreement] $npf artifact(s) stamp a prefilter their emitted loop does not have"
+# ...and the COMPARED population is the one that should have been compared.
+# Anything that routes an artifact past a comparison (a missing stamp, a
+# duplicated one, an undocumented value) shows up here as a shortfall rather
+# than as a green claim about a population nobody looked at.
+if [ "$nscancmp" -eq $((ndfa + nvmhy)) ]; then
+    ok "[agreement] the SCAN comparison ran on every artifact that contains a DFA scan: $nscancmp = $ndfa DFA (incl. $nempty empty-engine) + $nvmhy hybrid"
+else
+    bad "[agreement] the SCAN comparison ran on $nscancmp artifacts but $((ndfa + nvmhy)) contain a DFA scan ($ndfa DFA + $nvmhy hybrid) — $(( ndfa + nvmhy - nscancmp )) were routed past it, so the agreement verdict above is a claim about a population that was not compared"
+fi
+if [ "$npfcmp" -eq $((ndfa - nempty + nvmhy)) ]; then
+    ok "[agreement] the PREFILTER comparison ran on every artifact with a loop: $npfcmp = $((ndfa - nempty)) DFA with a loop + $nvmhy hybrid (the $nempty empty-engine DFA artifacts are asserted \"none\" instead, below)"
+else
+    bad "[agreement] the PREFILTER comparison ran on $npfcmp artifacts but $((ndfa - nempty + nvmhy)) were due — $(( ndfa - nempty + nvmhy - npfcmp )) were routed past it"
+fi
 [ "$nemptypf" -eq 0 ] && ok "[agreement] all $nempty empty-engine artifacts (a proven-no-match pattern: body is one \`return 0\`) stamp RX_DFA_PREFILTER \"none\"" \
                       || bad "[agreement] $nemptypf empty-engine artifact(s) stamp a prefilter, on a search function with no loop in it"
 # r37 #2 (critDD13b): a floor of one answers "did the bucket vanish", never
