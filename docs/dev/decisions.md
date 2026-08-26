@@ -5799,3 +5799,14 @@ greenness as licence to skip the bump. Sites carrying the number:
 emit_dfa.c (`.abi = 4`), match_api.md §6, run_codegen_tests.sh's
 [DD-14.FB] §10.4 check. The merge was `--no-ff`, so 5991d4c survives as
 the pin.
+
+**D40 ADDENDUM (Frank, 2026-08-25 ~21:3x, fortieth session).** Sensitivity
+to interface changes is good — but there are NO CONSUMERS until release,
+so pre-v1 abi changes "should be deliberate and methodical but CAN
+happen". The ritual (D76: bump + re-pin in the same change; D80: the
+spec hunk travels with it) is the discipline; avoiding a layout change
+because it is a layout change is not. Applied at once: [DD-13c]'s abi-6
+event gains `rx_info` mirrors for the selection facts (`scan`,
+`prefilter`) rather than a future second event. Resetting the abi
+number to 1 at the 1.0 release was raised and left open — "honestly,
+it's not a big deal" — a release-mechanics item for [REL-META].
