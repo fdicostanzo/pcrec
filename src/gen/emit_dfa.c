@@ -1817,10 +1817,11 @@ static bool dfa_needs_gseed(const Dfa *d)
 
 /* Does THIS machine's table take the pre-multiplied form?
  *
- * ONE DERIVATION, TWO READERS — this file's standing rule (`unanch_start`,
+ * ONE DERIVATION, THREE READERS — this file's standing rule (`unanch_start`,
  * `attempt_cand` and `dfa_engine_is_empty` each state it at length). The
- * emitted loop and `<PREFIX>_DFA_TABLE`'s value both come from here, so the
- * stamp cannot disagree with the loop it describes.
+ * emitted loop, `<PREFIX>_DFA_TABLE`'s value (through `dfa_table_name`) and
+ * the orientation block's "READING THE TABLES" paragraph all come from here,
+ * so none of the three can disagree with the loop it describes.
  *
  * THE SEED PRECONDITION is the third clause and it is not defensive padding.
  * `emit_seed_table`'s cells come from `d->s1u[]`, which can in principle be
