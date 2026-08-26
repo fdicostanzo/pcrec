@@ -259,9 +259,10 @@ KEEP="${KEEP:-0}"
 # writes lands in the `#define` block or the `rx_info` initializer, both ABOVE
 # `goto <prefix>_L0;` — which is what still makes it safe. `abi` 5 -> 6 (lane
 # srTier's two-tier entry took 4 -> 5 immediately before) and (B) re-pinned here.
-# Pin was `5991d4c` ([DD-13]), and `272d07c` earlier in THIS change before the
-# rx_info fields were added — the pin must always name the change's LAST
-# src/lib/cli commit, and adding the fields made a later one.
+# Pin was `469a432` ([OPT-1]'s, immediately before this change) and `5991d4c`
+# ([DD-13]'s) before that. Within THIS change it moved twice — the pin must
+# always name the change's LAST src/lib/cli commit, and both the rx_info fields
+# and the rebase onto [OPT-1] made a later one each time.
 # [DD-13], 2026-08-25 — THE PIN'S FIRST RE-PIN UNDER D76, and it is worth one
 # paragraph because it is the first time the rule below was exercised by a
 # change that was NOT a struct-layout event. `[DD-13]` gave every DFA artifact
@@ -309,7 +310,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-469a432}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6147d7c}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
