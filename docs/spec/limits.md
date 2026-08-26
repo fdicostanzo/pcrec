@@ -180,45 +180,67 @@ two arrays ran out (§2 above, `docs/spec/match_api.md` §4).
 
 ## 5. K33: the default entries and the C stack
 
-**The run struct that backs `<prefix>_search`/`_match`/`_match_caps`
-lives on THEIR OWN C stack frame**, sized by the compiled-in capacities
-of §3.2. Re-measured this session with `gcc -O2 -std=gnu11 -Wall -Wextra
--Werror -fstack-usage` on a fresh `-p rx --engine=vm --features
-recursion` build of `^(a(?1)?b)$` (`make test-stackdepth`, which runs
-this exact build and prints the number every run):
+**The run struct that backs `<prefix>_search`/`_match`/`_match_caps` is
+sized by the compiled-in capacities of §3.2, and WHICH FRAME IT LIVES ON
+CHANGED AT `[OPT-1]` (2026-08-25).** It used to be a local of the entry
+itself. It is now a local of a non-inlined internal function the entry
+calls **only on a `PCREC_ERR_FRAMES` give-up** (`docs/spec/match_api.md`
+§10.9, the two-tier entry); the entry itself runs on a page-sized buffer.
+So there are now TWO numbers, and they answer different questions.
+Re-measured with `gcc -O2 -fstack-usage` on a fresh `-p rx --engine=vm
+--features recursion` build of `^(a(?1)?b)$` (`make test-stackdepth`,
+which runs this exact build and prints both every run):
 
 ```
 $ make test-stackdepth
-PASS: [TS-4] the cause is stated: the call-bearing entry's frame is
-131216 B against a 131072 B thread stack (over by 144 B), while the
-call-free control's is 98432 B and fits
+PASS: [TS-4] the cause is stated: the call-bearing artifact's DEEP PATH is
+134400 B against a 131072 B thread stack (over by 3328 B), while the
+call-free control's is 101616 B and fits
+PASS: [TS-4/OPT-1] the call-bearing entry's OWN frame is 3184 B, inside one
+4096 B page
 ```
 
-**`rx_search`'s frame is 131,216 bytes** on a LINKED-call artifact at
-this commit (`RX_VM_CALL_LINKED > 0` — a spliced call does not widen the
-frame; `docs/spec/match_api.md` §10.2) — matching the number already current in
-`docs/spec/match_api.md` (§5.3, §10.1: "131,216 bytes"). That exceeds a
-musl-default **128 KB (131,072-byte)** thread stack by 144 bytes, so the
-default entries SIGSEGV on such a thread even on a subject well inside
-the 684-byte matching ceiling above — this is `docs/dev/known_issues.md`
-K33, OPEN by design (the storage has no other legal home: a `static`
-fails the concurrency contract, a thread-local fails reentrancy,
-allocation is forbidden by construction). glibc's 8 MB default thread
-stack is unaffected.
+- **The entry's own frame is 3,184 bytes** — under one 4 KB page, which
+  is the point of the tier (gcc's stack-clash protection probes per page
+  of a frame on every call).
+- **The DEEP PATH is 134,400 bytes** — the entry's frame plus the
+  internal function's 131,216, which is what a call that escalates
+  actually needs. That is the quantity K33 is about, and it exceeds a
+  musl-default **128 KB (131,072-byte)** thread stack by 3,328 bytes.
+  (131,216 is the LINKED-call figure — a spliced call does not widen the
+  frame, `docs/spec/match_api.md` §10.2 — and is the number §5.3 and
+  §10.1 carry.)
 
-**Note:** `docs/dev/known_issues.md`'s K33 "Cause" paragraph and D73's
-context paragraph still read 131,296 B — 80 bytes above the number
-re-measured here, and above the number those same documents' own later
-paragraphs use (K33's "Remedy"; `docs/spec/match_api.md`). That is a
-stale figure from before the artifact shrank by 80 bytes, flagged here
-rather than silently matched; fixing `known_issues.md`/`decisions.md`
-is outside this document's own change (see the srLimits report).
+**SO THE DEFAULT ENTRIES NOW FIT A 128 KB THREAD FOR EVERY MATCH THE FAST
+TIER HOLDS, and fault only on a subject deep enough to escalate.** This
+document previously said they "SIGSEGV on such a thread even on a subject
+well inside the 684-byte matching ceiling above", and that sentence is
+now FALSE: `make test-stackdepth`'s arm D matches a 2-byte subject
+through `<prefix>_search` on exactly that thread. `docs/dev/known_issues.md`
+K33 is accordingly **OPEN, NARROWED** rather than open in full — still open
+because which subjects escalate is a property of the pattern and the
+subject, so a caller cannot bound it in advance, and because the deep
+tier's storage still has no other legal home (a `static` fails the
+concurrency contract, a thread-local fails reentrancy, allocation is
+forbidden by construction). `[OPT-1]` changed WHEN that storage is
+reached, not how big it is. glibc's 8 MB default thread stack is
+unaffected either way.
 
-**The remedy is the caller-provided buffer.** `docs/spec/match_api.md`
-§10 states the `_in` entries' contract in full — `<prefix>_search_in`'s
-own frame is 144 bytes (re-measured in the same run above), and the
-same 684-byte subject that kills the default entry on a 128 KB thread
-matches through `_search_in` on that same thread. This document adds no
+**Note:** `docs/dev/known_issues.md`'s K33 "Cause" paragraph read
+131,296 B when this document was written and was CORRECTED to 131,216 by
+`[SPEC-1.1]`; **D73's context paragraph in `docs/dev/decisions.md` still
+reads 131,296 B** — 80 bytes above the number re-measured here and above
+the one that document's own neighbours use. Flagged rather than silently
+matched; fixing `decisions.md` is outside this document's own change.
+
+**The remedy for the deep case is still the caller-provided buffer.**
+`docs/spec/match_api.md` §10 states the `_in` entries' contract in full —
+`<prefix>_search_in`'s own frame is 144 bytes (re-measured in the same run
+above, unchanged by `[OPT-1]`: an entry handed the caller's storage never
+had a tier to gain), and the same 684-byte subject that still kills the
+default entry on a 128 KB thread matches through `_search_in` on that same
+thread. It remains the only way to get a GUARANTEE, as opposed to the
+tier's very good odds. This document adds no
 detail beyond pointing there; the one thing worth restating at THIS
 tier is the shape of the fix — a caller on a small-stack thread (musl's
 128 KB default is the measured, named case) supplies its own frame and
