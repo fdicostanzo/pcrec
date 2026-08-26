@@ -337,6 +337,37 @@ comparing every match span and every capture, not just counts):
 (1.466x -> 1.149x), and overtaking JIT outright on `t-c`.** (The baseline column
 reproduces the report's own set-grain ratio: 1.466x here, 1.467x there.)
 
+> **ANNOTATED 2026-08-26 (lane srPremul, [OPT-3] STEP 2 — house style, in
+> place rather than rewritten): THIS ESTIMATE IS A FLOOR, NOT A CEILING.** The
+> shipped emitter measures **1.794x** on the same three subjects
+> (6.2211 -> 3.5158, 3.2683 -> 1.7994, 3.2825 -> 1.8032 ns/byte; same box,
+> same driver, same regime, `taskset -c 3`, median of 5, >= 1 s per trial,
+> idle box), which puts pcrec **AHEAD** of PCRE2-JIT on all three rather than
+> 1.149x behind — 0.819x of JIT on the set. The INDEXED column above is
+> reproduced within 0.6%, so the difference is in the PREMULTIPLIED arm, not
+> in the measurement.
+>
+> The attribution, which cannot be proved because §8 records the patched
+> artifacts as deliberately not committed: **§5's `v1` appears to have kept
+> the accept table indexed by the UN-multiplied state.** §5's own pair says
+> so — `v1` 7.751 against `v1b` 6.863 puts **0.89 cycles/byte** on accept
+> bookkeeping, where §5 measures the same bookkeeping at **0.05** in the
+> shipped indexed loop. §5's `v1` describes the transition table only;
+> indexing the accept table by the premultiplied value first appears as a
+> separate item in §7's recommendation below, and the shipped form does both.
+> Measured there, `t-c` runs at 5.91 cycles/byte against `v1`'s 7.751 — and
+> 0.84 cycles of accept index plus the ~1 cycle a SIGNED state variable costs
+> (STEP 2 reproduced that one directly: with `int`, `movslq` returns to the
+> chain) accounts for the 1.84.
+>
+> §7's two constraints below both survived, one of them refuted: the RANGE
+> constraint is the shipped bound, and **the L1-residency gate this section
+> recommends was specified, measured and DELETED** — the premultiplied form
+> still wins from 16,384 to 65,535 entries (1.107x / 1.097x / **1.287x** on
+> the corpus's own 40,010-entry machine), because the two chain cycles are
+> removed whatever the load costs. `docs/design/premultiplied_dfa_table.md`
+> §7 and §13 carry both tables.
+
 Two constraints the emitter must respect, both decidable at generation time:
 
 1. **Range.** Entries must hold `next*stride`, so the `short` table overflows

@@ -1498,7 +1498,21 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
  * than a per-byte one. The last row is the corpus's own largest machine, and
  * its 1.287x is the largest gain of the four, which is the opposite of what a
  * cache-eviction story predicts. */
-#define PREMUL_MAX_ENTRIES 65535
+/* DERIVED FROM THE SENTINEL, NOT SPELLED BESIDE IT. The two numbers are the
+ * same and that is not a coincidence: the bound exists ONLY to keep every
+ * emitted cell distinguishable from PREMUL_DEAD, so it IS the sentinel. Two
+ * literals that must be kept in step is this project's most-recorded failure
+ * shape; one `#define` reading the other makes stepping them impossible. (The
+ * check in tests/codegen/run_premul_table.sh spells 65535 as a LITERAL on
+ * purpose — a second source that cannot move with this one is the whole point
+ * of it.)
+ *
+ * It is deliberately one row STRICTER than the arithmetic needs: the largest
+ * emitted cell is `(n - 1) * ncls = ents - ncls`, so cells stay below the
+ * sentinel for any `ents <= PREMUL_DEAD + ncls - 1`. Rounding down to
+ * PREMUL_DEAD costs at most one row of one machine and removes an `ncls` from
+ * the condition a reader has to check. */
+#define PREMUL_MAX_ENTRIES PREMUL_DEAD
 
 /* A state VALUE as the emitted code spells it: the state index, or the index
  * scaled by the stride under [OPT-3]. Every emitted state constant — the start

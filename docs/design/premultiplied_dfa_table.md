@@ -22,9 +22,10 @@ load-bearing sections and are cited by number.
    by that same premultiplied value, so nothing on the chain un-multiplies.
 4. The dead state becomes the reserved value `65535`, tested with a `cmp`
    against the loaded value — a predicted branch, not an input to the next load.
-5. Measured by STEP 1 on a patched copy of the real artifact: **1.276x** on the
-   bench's three throughput subjects, answer-identical over 40,469 answer lines
-   across 91 subjects.
+5. STEP 1 estimated **1.276x** on a patched copy of the artifact. The shipped
+   emitter **MEASURES 1.794x** on the same three subjects, which puts pcrec
+   AHEAD of PCRE2-JIT on all three — §13 has the table, the answer gate and
+   the attribution for why the estimate was a floor rather than a ceiling.
 
 ## 1. The rule
 
@@ -549,7 +550,7 @@ changes could not say so.
 Each of these is a failure mode with a site, not a worry:
 
 - **The sentinel colliding with a real premultiplied value.** `65535` is a legal
-  cell content iff `(n - 1) * ncls >= 65535`, which §7 (i) forbids and §12's
+  cell content iff `(n - 1) * ncls >= 65535`, which §7's bound forbids and §12's
   check asserts. The failure would be a state that reads as dead: a LOST MATCH,
   silent, on exactly the large machines nobody has a small reproducer for.
 - **Unsigned arithmetic on the class add.** `state + class` must not wrap and
@@ -570,8 +571,10 @@ Each of these is a failure mode with a site, not a worry:
   unreachable by construction and the pre-existing `[-1]` question is left
   exactly as it was — it is not this lane's to answer, and it is recorded here
   so the next lane finds it.
-- **The accept table's growth.** `n -> n * ncls` bytes. Bounded by §7 (ii) and
-  included in STEP 1's measured 1.276x.
+- **The accept table's growth.** `n -> n * ncls` bytes, and it is a
+  `.rodata` cost rather than a per-byte one — which is exactly what §7's band
+  measurement establishes, and why the SIZE BUDGET that was supposed to bound
+  it turned out to be the wrong instrument.
   **MEASURED IN EMITTED LINES, 2026-08-26, and it is not nothing on one
   family**: `tests/codegen/run_ir_listing.sh`'s informational [ENG-BREP] row
   reads `{0,400}` **869 -> 962 lines** and `{0,4000}` **1,994 -> 2,762** for
@@ -579,11 +582,15 @@ Each of these is a failure mode with a site, not a worry:
   the machine is large and the accept table triples with it. The check itself
   stays green because what it asserts is COUNT-INDEPENDENCE by comparison with
   the prefilter denied (573 / 573, delta 0), which this change does not touch;
-  the growth is real and is the cost §7 (ii) exists to bound. It is also the
-  clearest statement of what [OPT-4] would buy: shrink that prefilter's DFA
-  and this cost shrinks with it.
-- **A table that fits `unsigned short` but not L1.** Exactly what §7 (ii) is
-  for, and the reason the bound is not the range bound alone.
+  the growth is real, and §7's band table says it is not a SPEED cost even on
+  the largest machine in the corpus. It is the clearest statement of what
+  [OPT-4] would buy: shrink that prefilter's DFA and this shrinks with it.
+- **A table that fits `unsigned short` but not L1.** This was the risk §7's
+  SIZE BUDGET existed for, and §7's band measurement RETIRED it: across
+  16,384-65,535 entries the premultiplied form still wins, by more on the
+  corpus's largest machine than on its smallest. What remains true is that a
+  machine ABOVE 65,535 entries keeps the indexed form, and that a
+  premultiplied-`int` rung for it is unbuilt (D77).
 - **The eol/end view division drifting onto the hot path.** If a future change
   hoists the view select above its `__builtin_expect` guard, or evaluates the
   table read unconditionally, the division lands on the per-byte path. §6's
@@ -659,8 +666,11 @@ the check's header because one of them refuted a sentence of §7's:
   that broke rather than going uniformly red.
 - **PLANT 2 — the sentinel collides.** Raising `PREMUL_MAX_ENTRIES` past the
   range bound is NOT ENOUGH: the RANGE conjunct still refuses, which is the
-  measured demonstration that §7's (i) is not redundant with (ii) even though
-  (ii) is tighter. **Breaking BOTH** produces a 73,728-entry premultiplied
+  measured demonstration that §7's RANGE condition was not redundant with the
+  SIZE BUDGET that then stood beside it, even though the budget was tighter —
+  and, after the budget was deleted on §7's band measurement, the range
+  condition is the ONLY thing standing between the emitter and this defect.
+  **Breaking BOTH (as they stood at the time)** produces a 73,728-entry premultiplied
   table whose cells overflow `unsigned short` (gcc emits 5,460 overflow
   warnings, so the artifact does not build clean) and in which 65535 is a real
   cell. **12 passed / 5 failed**: §1's straddling witness, §2's two
