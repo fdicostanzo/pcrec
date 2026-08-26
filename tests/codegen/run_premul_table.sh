@@ -145,7 +145,14 @@ TABLE_VALUES="premultiplied indexed mixed none"
 # PREMUL_MAX_ENTRIES is the first; a check that read the compiler's own
 # constant could not see it move. If this number and the emitter's disagree,
 # §2/§3 go red and the disagreement is the finding — which is the point.
-PREMUL_MAX_ENTRIES=16384
+#
+# It is the RANGE condition and nothing else: a cell must fit `unsigned short`
+# and be distinguishable from the dead sentinel. A tighter 16,384-entry SIZE
+# BUDGET stood here until 2026-08-26 and was DELETED on a measurement — the
+# pre-multiplied form still wins across the whole L2-resident band (1.097x at
+# 36,864 entries, 1.287x on the corpus's own 40,010-entry reverse machine;
+# design note §13).
+PREMUL_MAX_ENTRIES=65535
 # The RANGE bound is a correctness condition, not a budget: a cell must fit
 # `unsigned short` and be distinguishable from the dead sentinel.
 PREMUL_DEAD=65535
@@ -254,17 +261,17 @@ echo "== [OPT-3] §1 witnesses: the rule switches on BOTH sides =="
 
 # THE WITNESSES ARE CHOSEN FOR THEIR DIMENSIONS, not for their prose. The
 # state-explosion family `[01]*1[01]{k}` is R1 A-3's, and it is the only family
-# in reach of the bound: k=10 is 3,072 states x 3 classes = 9,216 entries
-# (BELOW), k=11 is 6,144 x 3 = 18,432 (ABOVE). The reverse machine of both is
-# tiny, which is why k=11 stamps `"mixed"` and not `"indexed"` — the per-machine
-# rule visible in one artifact.
+# in reach of the bound: k=12 is 12,288 states x 3 classes = 36,864 entries
+# (BELOW the 65,535 range bound), k=13 is 24,576 x 3 = 73,728 (ABOVE). The
+# reverse machine of both is tiny, which is why k=13 stamps `"mixed"` and not
+# `"indexed"` — the per-machine rule visible in one artifact.
 #
 # Format: <pattern>~<expected stamp>~<why>  (`~` because `|` is a pattern byte)
 WITNESSES='
 (?:[a-z]+)@(?:[a-z]+)~premultiplied~an ordinary pattern, far below the bound
 a(b|c)+d~premultiplied~the tree-wide fixture, 4 states x 4 classes
-[01]*1[01]{10}~premultiplied~9,216 entries — the largest corpus-shaped machine BELOW the bound
-[01]*1[01]{11}~mixed~18,432 entries forward (ABOVE) and a small reverse machine (below)
+[01]*1[01]{12}~premultiplied~36,864 entries — inside the range bound, and the size budget this used to fail is gone (measured, §13)
+[01]*1[01]{13}~mixed~73,728 entries forward (ABOVE the range bound) and a small reverse machine (below)
 ^abc~none~ENG_ATTEMPT: states are labels, there is no numeric transition table
 \B\b~none~the empty engine: one `return 0`, no loop of either shape
 '
@@ -301,7 +308,7 @@ echo "== [OPT-3] §2 the BOUND, read off the artifact on both sides =="
 # adjacent members of the state-explosion family, whose entry counts are read
 # out of the emitted declarations rather than computed here.
 bound_bad=0; bound_seen=0
-for k in 9 10 11 12; do
+for k in 11 12 13; do
     f="$WORKDIR/b$k.c"
     pcrec_run "$PCREC" -p rx --features all --no-captures -o "$f" -- "[01]*1[01]{$k}" >/dev/null 2>&1 || continue
     eval "$(read_artifact < "$f")"
@@ -319,7 +326,7 @@ done
 # NON-VACUITY: the family must actually STRADDLE the bound in this run, or
 # this section is asserting a rule nothing exercises.
 straddle_lo=0; straddle_hi=0
-for k in 9 10 11 12; do
+for k in 11 12 13; do
     f="$WORKDIR/b$k.c"; [ -f "$f" ] || continue
     eval "$(read_artifact < "$f")"
     [ "$fent" -gt 0 ] || continue
@@ -415,6 +422,23 @@ else
         bad "[population] the corpus produced premultiplied=$prem and none=$non — at least one of each is needed or the agreement verdict is about one bucket"
     else
         ok "[population] both the premultiplied and the table-free buckets are non-empty ($prem / $non)"
+    fi
+    # WHERE THE ABOVE-BOUND SIDE IS ACTUALLY COVERED, said out loud rather than
+    # left for a reader to assume. Since the bound became the RANGE condition
+    # (65,535) every corpus machine fits inside it, so this sweep's `indexed`
+    # and `mixed` buckets are legitimately EMPTY — and a check whose population
+    # silently lost a value is the shape K35 is about. The above-bound side is
+    # carried by §1's `[01]*1[01]{13}` witness and by §2's family sweep, whose
+    # own straddle guard is what makes that a claim rather than a hope; this
+    # line REQUIRES that guard to have seen an above-bound member.
+    if [ "$((idx + mix))" -eq 0 ]; then
+        if [ "$straddle_hi" = "1" ]; then
+            ok "[population] the corpus is ENTIRELY inside the bound (indexed=0 mixed=0, largest machine 40,010 entries), so the above-bound side is not exercised here — it is carried by §1's [01]*1[01]{13} witness and §2's family sweep, which DID see an above-bound member"
+        else
+            bad "[population] the corpus has no indexed or mixed artifact AND §2 saw no above-bound member either — nothing in this file exercises the above-bound side of the rule"
+        fi
+    else
+        ok "[population] the corpus itself still carries above-bound machines (indexed=$idx mixed=$mix), so §3 exercises both sides of the rule directly"
     fi
     if [ "$drift" -ne 0 ]; then
         bad "[agreement] $drift artifact(s) stamp a table form their emitted tables do not have"

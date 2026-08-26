@@ -1673,6 +1673,34 @@ pre-multiplying alone (8.095 vs 7.751 cycles/byte — unpacking puts an `and`
 back on the chain), and SIMD candidate scanning is slower on all three
 subjects.
 
+**THE BOUND IS THE RANGE CONDITION AND NOTHING ELSE, and the SIZE BUDGET that
+stood beside it was DELETED ON A MEASUREMENT.** The first version gated at
+16,384 entries on the reasoning that above 32 KB of transition table the loop
+is memory-bound, so the chain shortening would be moot while the accept
+table's growth stayed real. Timed against a variant compiler carrying only the
+range bound (so the two differ exactly on `16,384 < n*ncls <= 65,535`), the
+pre-multiplied form still wins across that whole band: **1.107x at 18,432
+entries, 1.097x at 36,864, and 1.287x on the corpus's own largest machine at
+40,010** — the last being a REVERSE table, the biggest of the four and the
+biggest gain, which is the opposite of what a cache-eviction story predicts.
+The two chain cycles are removed whatever the load costs (`12 + 1` against
+`12 + 3`), and the accept table's growth is a `.rodata` cost rather than a
+per-byte one. Every corpus artifact is now inside the bound; the above-bound
+side is exercised by `[01]*1[01]{13}` (73,728), one member past what the
+corpus contains.
+
+**TWO THINGS MEASURED AND NOT BUILT, both named so they are not re-proposed.**
+A `__builtin_expect(..., 0)` LAYOUT HINT on the loop's exits was built three
+ways and is a REGRESSION: hinting the dead exit alone emits BYTE-IDENTICAL
+code (gcc already ranks that edge unlikely), and hinting the prefilter's
+`state == start` guard is precisely what stops gcc using it as the loop's
+back-edge condition — the emitted loop gains a second taken branch per
+iteration and measures **1.26x SLOWER on the bench's three subjects**, worst
+on `t-b` (which enters the skip 190,651 times) and barely at all on `t-c`
+(once). A `size_t` state variable removes two instructions from the loop (no
+zero-extending `mov`; the accept probe indexes the new state directly) and
+measures a WASH (1.004x, inside every spread), so `unsigned` stays.
+
 **`dfa_premul` IS THE RULE AND `dfa_table_name` IS ITS STAMP** —
 one predicate, THREE readers (the emitted loop, `<PREFIX>_DFA_TABLE`, and
 the orientation block's "READING THE TABLES" paragraph), this file's

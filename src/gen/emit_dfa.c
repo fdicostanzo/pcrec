@@ -1473,24 +1473,32 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
  * collide with a real cell BY THE BOUND below, not by convention. */
 #define PREMUL_DEAD 65535
 
-/* THE BOUND, two conjuncts, decided PER MACHINE (a forward and a reverse DFA
- * have different `n` and different `ncls`, and each table's own dimensions are
- * what the rule is about):
+/* THE BOUND, decided PER MACHINE (a forward and a reverse DFA have different
+ * `n` and different `ncls`, and each table's own dimensions are what the rule
+ * is about). ONE conjunct, and it is a CORRECTNESS condition rather than a
+ * budget: every cell must fit `unsigned short` and be distinguishable from
+ * PREMUL_DEAD. `n * ncls <= 65535` gives a largest cell of
+ * `(n - 1) * ncls = n * ncls - ncls < 65535`, so the sentinel cannot collide.
  *
- *   (i)  RANGE, a correctness condition. Every cell must fit `unsigned short`
- *        and be distinguishable from PREMUL_DEAD. `n * ncls <= 65535` gives a
- *        largest cell of `(n - 1) * ncls < 65535`.
- *   (ii) SIZE, a budget. The form triples the per-state table bytes (the
- *        accept table goes from `n` to `n * ncls`), and at PREMUL_MAX_ENTRIES
- *        the transition table alone is 32 KB. Above that the loop is bound by
- *        memory rather than by its dependency chain, so the chain shortening
- *        is moot while the accept table's growth is real — an artifact that
- *        got bigger and no faster.
+ * IT USED TO HAVE A SECOND, TIGHTER CONJUNCT — a 16,384-entry SIZE BUDGET, on
+ * the reasoning that above 32 KB of transition table the loop is bound by
+ * memory rather than by its dependency chain, so the chain shortening would be
+ * moot while the accept table's growth stayed real. **MEASURED 2026-08-26 and
+ * DELETED**: the pre-multiplied form still wins across the whole L2-resident
+ * band, on four witnesses (design note §13) —
  *
- * (ii) is strictly tighter than (i), which is why both are written: (i) is the
- * one the correctness check asserts, and it must not quietly become
- * "whatever (ii) happens to be". */
-#define PREMUL_MAX_ENTRIES 16384
+ *     [01]*1[01]{10}   9,216 entries   3.6029 -> 3.6094 ns/byte  (same form: the control)
+ *     [01]*1[01]{11}  18,432 entries   4.8486 -> 4.3814          1.107x
+ *     [01]*1[01]{12}  36,864 entries   6.8292 -> 6.2255          1.097x
+ *     ((a)|bc){0,4000}d REVERSE, 40,010 entries
+ *                                      3.5408 -> 2.7522          1.287x
+ *
+ * — because the two chain cycles the transform removes are removed whatever
+ * the load costs, and the accept table's growth is a `.rodata` cost rather
+ * than a per-byte one. The last row is the corpus's own largest machine, and
+ * its 1.287x is the largest gain of the four, which is the opposite of what a
+ * cache-eviction story predicts. */
+#define PREMUL_MAX_ENTRIES 65535
 
 /* A state VALUE as the emitted code spells it: the state index, or the index
  * scaled by the stride under [OPT-3]. Every emitted state constant — the start
@@ -1839,8 +1847,7 @@ static bool dfa_premul(Ctx *cx, const Dfa *d)
 {
     if (cx->opt->flags & PCREC_NO_PREMUL_TABLE) return false;
     long ents = (long)d->n * (long)d->ncls;
-    if (ents > PREMUL_MAX_ENTRIES) return false;   /* (ii) */
-    if (ents > 65535) return false;                /* (i), implied by (ii) */
+    if (ents > PREMUL_MAX_ENTRIES) return false;   /* the RANGE condition */
     if (dfa_needs_seed(d))
         for (int cl = 0; cl < d->ncls; cl++)
             if (d->s1u[upc_emit_of_class(d, cl)] < 0) return false;

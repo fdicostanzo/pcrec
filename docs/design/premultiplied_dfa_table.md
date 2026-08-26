@@ -377,46 +377,64 @@ bought a uniformity the artifact pays 18x in cold table bytes for.
 The premultiplied form is chosen PER MACHINE at generation time (the forward
 and reverse DFAs of one artifact are decided separately; they have different
 `n` and different `ncls`, and each table's own dimensions are what the rule is
-about). One predicate, two conjuncts:
+about). ONE conjunct:
 
-**(i) RANGE — a correctness condition.** Every emitted cell must fit
+**RANGE — a correctness condition.** Every emitted cell must fit
 `unsigned short` and be distinguishable from the sentinel: `n * ncls <= 65535`
-gives a largest cell of `(n - 1) * ncls < 65535`. Hard, machine-independent,
-and asserted by the check in §12 rather than assumed.
+gives a largest cell of `(n - 1) * ncls = n * ncls - ncls < 65535`. Hard,
+machine-independent, and asserted by §12's check rather than assumed.
 
-**(ii) SIZE — a budget.** `n * ncls <= 16384`. The premultiplied form triples
-the per-state table bytes (§5) and, at `16,384` entries, the transition table
-alone is 32 KB. Above that the loop is bound by memory rather than by its
-dependency chain, so the chain shortening is moot while the accept table's
-growth is real — an artifact that got bigger and no faster. STEP 1 §7's own
-reading of the state-explosion family reaches the same place from the other
-side ("the honest gate is L1 residency (~16,384 entries), which binds *before*
-`short` overflow does").
+### The SIZE BUDGET this section used to carry, and the measurement that deleted it
 
-`16384` is a MEASURED constant, not a round number, and this note is written
-before the measurement that sets it. What is committed here is the SHAPE — a
-two-conjunct rule with one tunable — and the measurement that fixes the
-tunable: the `[01]*1[01]{k}` family at `k = 10, 11, 12` (9,216 / 18,432 /
-36,864 entries, bracketing 16,384), timed in both forms through
-`tests/bench/fdriver.c`. If the premultiplied form still wins at 36,864 the
-constant moves up to the range bound and (ii) disappears into (i); if it loses
-below 16,384 the constant moves down. **§13 records the number that was
-measured and what moved.**
+The first version of this note had a second, tighter conjunct —
+`n * ncls <= 16384` — on the reasoning that at 16,384 entries the transition
+table alone is 32 KB, so above it the loop would be bound by memory rather
+than by its dependency chain and the chain shortening would be moot while the
+accept table's growth stayed real. STEP 1 §7 reached the same place from the
+other side ("the honest gate is L1 residency (~16,384 entries), which binds
+*before* `short` overflow does"), and the note committed the number as a
+TUNABLE with the measurement that would fix it.
 
-**Above the bound the artifact keeps the indexed form, byte for byte.** Not a
-degraded premultiplied form and not a widening to premultiplied `int` — STEP 1
-§7 is explicit that an unconditional widening doubles the table and this loop is
-only fast while the tables are cache-resident. A premultiplied-`int` third rung
-is NOT built (D77): the measurement that would charter it is a pattern from the
-state-explosion family, above the bound, where premultiplied `int` beats the
-indexed form end to end. This lane measures that point (§13) precisely so the
-rung is not built on a hunch.
+**The measurement says the budget is wrong. It is deleted.** The shipped
+compiler (which refuses the form above 16,384) was timed against `pcrec_M1`,
+the same emitter with only the range bound, so the two differ EXACTLY on the
+band `16,384 < n * ncls <= 65,535`. `taskset -c 3`, median of 5, >= 1 s per
+trial, every row answer-gated between its two arms first:
+
+| witness | entries | shipped | M1 | gain | load1 |
+|---|---|---|---|---|---|
+| `[01]*1[01]{10}` | 9,216 | 3.6029 | 3.6094 | 1.00 — **the control**: both arms emit the same form, so this row must show nothing | 0.60-0.63 |
+| `[01]*1[01]{11}` | 18,432 | 4.8486 | 4.3814 | **1.107x** | 0.66-0.69 |
+| `[01]*1[01]{12}` | 36,864 | 6.8292 | 6.2255 | **1.097x** | 0.71-0.73 |
+| `((a)\|bc){0,4000}d`, its REVERSE machine | 40,010 | 3.5408 | 2.7522 | **1.287x** | 0.78-0.81 |
+
+The reason is the one the chain arithmetic gives: **the two cycles the
+transform removes are removed whatever the load costs.** A load that goes from
+~4 to ~12 cycles turns `12 + 1` against `12 + 3` — a smaller ratio, not a
+loss. And the accept table's growth is a `.rodata` cost rather than a per-byte
+one; it would have to EVICT the transition table to matter, and the fourth row
+is where that story is tested hardest and fails: the corpus's own largest
+machine shows the LARGEST gain of the four, not the smallest.
+
+The fourth row is worth reading twice for a second reason. It is the corpus's
+own biggest table and it is a REVERSE machine (that pattern's forward DFA is
+10 entries), so it is driven by 1 MB of `aaaaaaaaad` — 104,857 matches, so the
+reverse walk is what is timed — and its 104,858 answer lines are identical
+between the two arms.
+
+**Above 65,535 entries the artifact keeps the indexed form, byte for byte.**
+Not a degraded premultiplied form and not a widening to premultiplied `int`. A
+premultiplied-`int` third rung is NOT built (D77); the measurement that would
+charter it is a machine above the range bound where premultiplied `int` beats
+the indexed form end to end, and the band table above is now the reason to
+expect it might — which is exactly why it is a charter and not a hunch.
 
 The corpus's own numbers, so both sides of the rule have witnesses that are not
-invented for the check: over the 1,256 corpus patterns that compile under
-`--features all`, the largest emitted transition table is **40,010 entries** —
-above (ii), below (i) — and the median is far below both. So the rule switches
-in both directions on patterns that already exist.
+invented for the check: the largest emitted transition table in the corpus is
+**40,010 entries**, comfortably inside the bound, so every corpus artifact now
+takes the premultiplied form and the ABOVE-bound side is exercised by
+`[01]*1[01]{13}` (73,728) — R1 A-3's deliberate state-explosion family, one
+member past what the corpus contains.
 
 ## 8. The stamp
 
@@ -664,11 +682,92 @@ per `tests/mech/CLAUDE.md` with the row proved to detect solo afterwards.
 
 ## 13. Measurement
 
-**Filled in after the measurement runs** (the manager's battery owns the box
-until it prints `== BATTERY DONE`; no timed number is taken before then). What
-goes here: `tests/bench/fdriver.c` on `t-a`/`t-b`/`t-c` with `orig.rx`,
-baseline (`-fno-premul-table`) against the default, `taskset -c 3`, median of 5,
->= 1 s per trial, `load1` beside every number; STEP 1's figures to reproduce are
-6.21 / 3.27 / 3.27 -> 4.92 / 2.55 / 2.52 ns/byte, set 1.276x. Plus the
-`[01]*1[01]{k}` bracket that sets §7 (ii)'s constant, and one pattern each side
-of the final bound showing the artifact form differs and the answers do not.
+Box, method and clock are STEP 1 §1's, unchanged: AMD Ryzen 5 1600, effective
+clock 3.2784 GHz under load, `perf` denied. `tests/bench/fdriver.c`, the
+FIND-ALL regime the comparative bench uses, `taskset -c 3`, median of 5,
+iteration counts CALIBRATED per arm so every trial runs >= 1 s (the counts and
+per-trial spreads are on every row of
+`scratchpad/srPremul/meas/table1.log`), `load1` beside every number. The box
+was idle: the manager's battery printed `== BATTERY DONE` at 15:34:02 and
+load1 read 0.16 when the first row was taken.
+
+**Every arm below was answer-gated before any time was reported** — 91
+subjects, 40,470 answer lines, 0 differences against the indexed form and
+against the pre-change compiler (§10).
+
+### The bench's three throughput subjects, `orig`
+
+| subject | indexed | **pre-multiplied** | gain | PCRE2-JIT* | premul vs JIT |
+|---|---|---|---|---|---|
+| `t-a-valid-addrs` | 6.2211 | **3.5158** | **1.769x** | 3.5448 | **0.992x** |
+| `t-b-no-at` | 3.2683 | **1.7994** | **1.816x** | 2.4515 | **0.734x** |
+| `t-c-long-atom-run` | 3.2825 | **1.8032** | **1.820x** | 2.6991 | **0.668x** |
+| **set** | 12.7719 | **7.1184** | **1.794x** | 8.6954 | **0.819x** |
+
+\* The JIT column is STEP 1 §7's figures, **NOT re-measured in this lane**.
+They carry because the INDEXED column reproduces STEP 1's own baseline within
+0.6% (6.2102 / 3.2722 / 3.2650 there against 6.2211 / 3.2683 / 3.2825 here) —
+which is the check on the carry-over, not a courtesy.
+
+**The set gain is 1.794x, where STEP 1 predicted 1.276x — and pcrec now
+measures FASTER than PCRE2-JIT on all three subjects (0.819x on the set,
+i.e. 1.22x ahead) where STEP 1 predicted 1.149x behind.** A result larger than
+the estimate that chartered it is a reason to look harder, not to bank it, so:
+
+**WHY THE SHIPPED FORM BEATS STEP 1's ESTIMATE, attributed and not proven.**
+STEP 1's 1.276x came from a hand-patched scratch copy of the artifact, which
+§8 of that memo records as deliberately NOT COMMITTED — so its exact shape
+cannot be inspected now and this is an attribution. The evidence points at the
+ACCEPT INDEX. STEP 1 §5 measures its `v1` ("transition table PRE-MULTIPLIED by
+the stride") at 7.751 cycles/byte and its `v1b` ("v1 without accept
+bookkeeping") at 6.863 — so accept bookkeeping cost that patch **0.89
+cycles/byte**, against the 0.05 cycles/byte §5 measures for the same
+bookkeeping in the SHIPPED indexed loop. That is the signature of an accept
+table still indexed by the UN-multiplied state: §5's `v1` describes only the
+transition table, and indexing the accept table by the premultiplied value is
+a SEPARATE item that appears first in §7's recommendation. The shipped form
+does both, so its accept probe stays the 0.05-cycle leaf. Measured here, `t-c`
+runs at **5.91 cycles/byte** against `v1`'s 7.751 — a 1.84-cycle difference,
+which 0.84 cycles of accept index plus the ~1 cycle a signed state variable
+costs (§11, and PLANT 3's listing) accounts for.
+
+The reading that matters for the next lane: **STEP 1's 1.276x was a floor set
+by a patch, not a ceiling set by the mechanism.**
+
+### The two variants Frank asked about, and the one this lane asked about
+
+Same table, same runs, same answer gate:
+
+| arm | t-a | t-b | t-c | set | vs pre-multiplied |
+|---|---|---|---|---|---|
+| **pre-multiplied** (shipped) | 3.5158 | 1.7994 | 1.8032 | 7.1184 | — |
+| **H2**, the `__builtin_expect` layout hint (§3a) | 4.6193 | 2.4873 | 1.8800 | 8.9866 | **1.263x SLOWER** |
+| **`size_t` state variable** (§2) | 3.5376 | 1.8195 | 1.7906 | 7.1477 | 1.004x — a WASH |
+| **DEAD = 0**, states renumbered (§3c) | 3.4886 | 1.8101 | 1.7946 | 7.0933 | 0.996x — a WASH |
+
+- **The layout hint is a REGRESSION and is not kept.** 1.31x on `t-a`, 1.38x
+  on `t-b`, 1.04x on `t-c` — and the shape of that spread is the listing's
+  reading confirmed: `t-c` enters the skip once and barely moves, `t-b` enters
+  it 190,651 times and moves most. §3a's objdump said the hint costs a second
+  taken branch per iteration; this is what that costs.
+- **`size_t` is a wash** (+0.6%, +1.1%, -0.7%; every spread is 1.02-1.03), so
+  the two instructions it removes from the loop are two the core was absorbing.
+  `unsigned` stays: a state is not a size, and the emitted declaration is what
+  §12's shape check reads.
+- **DEAD = 0 is a wash** (-0.8%, +0.6%, -0.5%), exactly as predicted. §3's
+  decision therefore rests entirely on the non-speed balance it sets out.
+
+### The bound
+
+§7 carries the four-row band table that deleted the size budget.
+
+### What is NOT measured, and is named rather than left implied
+
+- **PCRE2-JIT was not re-run in this lane.** The carry-over is justified above
+  by the baseline agreeing to 0.6%, and it would take pcrec-bench's own
+  harness to do better.
+- **The emitted-SIZE cost is measured only on the K39 family** (§11): 869 ->
+  962 lines at `{0,400}`, 1,994 -> 2,762 at `{0,4000}`.
+- **No `[OPT-4]` interaction is measured.** That row shrinks the hybrid's
+  inlined prefilter DFA, which would shrink this transform's accept table with
+  it; the two compose but nobody has run them together.

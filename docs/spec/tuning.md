@@ -501,14 +501,24 @@ answer-identical over 40,469 answer lines across 91 subjects
 bisect lever for that optimization and the build the identity comparison
 uses as its control.
 
+**The shipped form measures larger than that estimate**: re-measured on
+the emitter rather than on a patched artifact, `1.794x` on the same three
+subjects, which puts pcrec ahead of PCRE2-JIT on all three
+(`docs/design/premultiplied_dfa_table.md` §13 carries the table, the
+answer gate and the attribution for the difference).
+
 **The bound, and it is not this flag.** The form is REFUSED at generation
-time, per machine, when that machine's `states * classes` exceeds a size
-budget (16,384 entries today — `docs/design/premultiplied_dfa_table.md`
-§7 states the two conjuncts and the measurement that sets the number).
-Above it the transition table alone exceeds 32 KB, the loop is bound by
-memory rather than by its chain, and the pre-multiplied accept table's
-growth would buy nothing. The forward and reverse machines are decided
-separately, which is why `"mixed"` exists.
+time, per machine, when that machine's `states * classes` exceeds
+**65,535** — a CORRECTNESS condition and not a budget: a cell must fit
+`unsigned short` and stay distinguishable from the dead sentinel. The
+forward and reverse machines are decided separately, which is why
+`"mixed"` exists. A tighter 16,384-entry SIZE BUDGET was specified and
+then DELETED on a measurement (`docs/design/premultiplied_dfa_table.md`
+§7): the pre-multiplied form still wins across the whole L2-resident
+band — 1.107x at 18,432 entries, 1.097x at 36,864, and **1.287x on the
+corpus's own largest machine at 40,010** — because the two chain cycles
+the transform removes are removed whatever the load costs, and the accept
+table's growth is a `.rodata` cost rather than a per-byte one.
 
 **The stamp.** `<PREFIX>_DFA_TABLE` (§3), on every artifact that contains
 a DFA scan. **MASKED out of `rx_info.flags`** (`src/gen/emit_dfa.c`'s
@@ -528,12 +538,13 @@ $ build/pcrec -p rx --no-captures -fno-premul-table -o - \
 
 and the generation-time bound switching on its own, on the
 state-explosion family `[01]*1[01]{k}` (the forward machine's entry count
-in brackets):
+in brackets). Every pattern in pcrec's own corpus is inside the bound —
+the largest is 40,010 entries — so the ABOVE-bound side is exercised by
+one member past what the corpus contains:
 
 ```
-k=10  [9,216]   RX_DFA_TABLE "premultiplied"
-k=11  [18,432]  RX_DFA_TABLE "mixed"          (forward indexed, reverse pre-multiplied)
-k=12  [36,864]  RX_DFA_TABLE "mixed"
+k=12  [36,864]  RX_DFA_TABLE "premultiplied"
+k=13  [73,728]  RX_DFA_TABLE "mixed"          (forward indexed, reverse pre-multiplied)
 ```
 
 ## 3. The DFA side's own stamps
