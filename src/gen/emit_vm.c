@@ -8097,19 +8097,19 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [M4.6f] THE PREFILTER STAMP: D46's observability half for
      * select_engine.c's fit.prefilter, in the SAME PLACEMENT as
      * RX_ENGINE/RX_ENGINE_WHY immediately above and for the same reason -- a
-     * per-prefix, preprocessor-visible macro. Its VALUE SET is the VM'''s
-     * ("hybrid"/"none"); the DFA scan'''s own candidate-start decision is a
+     * per-prefix, preprocessor-visible macro. Its VALUE SET is the VM's
+     * ("hybrid"/"none"); the DFA scan's own candidate-start decision is a
      * different vocabulary and stamps as `_DFA_SCAN`/`_DFA_PREFILTER`
      * (emit_dfa.c `emit_dfa_stamps`, [DD-13]/D81) — the earlier claim here
      * that a DFA artifact "has no separate prefilter decision" was the
      * premise [DD-13] retired.
      *
      * [DD-13c] DISCHARGED THE FORWARD REFERENCE THIS COMMENT USED TO CARRY
-     * ("a VM HYBRID'''s inlined DFA scan is [DD-13c]'''s to stamp", r37 A6): it
+     * ("a VM HYBRID's inlined DFA scan is [DD-13c]'s to stamp", r37 A6): it
      * stamps it, on the line below. The two macros are TWO DIFFERENT
      * SELECTIONS and both are now readable on a hybrid — this one says
      * whether the VM runs a capture-erased DFA ahead of its program at all
-     * (select_engine.c'''s `fit.prefilter`), `_DFA_PREFILTER` says what
+     * (select_engine.c's `fit.prefilter`), `_DFA_PREFILTER` says what
      * candidate-start filter that scan itself carries.
      *
      * ARTIFACT-LEVEL, not per-quantifier -- select_engine.c decides

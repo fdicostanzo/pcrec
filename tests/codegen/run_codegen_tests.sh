@@ -2577,8 +2577,8 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # pin moves with every such event, and what stays [DD-14.FB]'s own claim is
     # the four FIELDS below, which are asserted separately and did not move.
     #
-    # [DD-13c], 2026-08-25: 4 -> 6 (5 is lane srTier's two-tier entry, taken
-    # concurrently), for the same D76 reason — r37's two scope findings move
+    # [DD-13c], 2026-08-25: 5 -> 6 ([OPT-1]'s two-tier entry took 4 -> 5
+    # immediately before), for the same D76 reason — r37's two scope findings move
     # emitted `#define` bytes on the proven-empty DFA artifacts and on every VM
     # hybrid, and no struct field. **PROVISIONAL, pending the manager's ruling
     # on merge order**: if srStamp2 merges first this is 5. THE NUMBER IS
@@ -2589,7 +2589,7 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
     ABI_EXPECT=6
     if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), and by [DD-13c]'s empty-scan value + hybrid scan stamps (4->6, 5 being a concurrent lane's)"
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), and by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else

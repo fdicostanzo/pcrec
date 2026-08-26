@@ -1177,7 +1177,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * AND THIS ONE IS A LAYOUT EVENT — not the scaffolding-only kind [DD-13]
      * and [OPT-1] both were. Two things move together:
      *
-     *   SCAFFOLDING (D76/[TT-11]), r37'''s two SCOPE findings. (#5) the
+     *   SCAFFOLDING (D76/[TT-11]), r37's two SCOPE findings. (#5) the
      *   proven-empty DFA artifacts stamp `_DFA_SCAN "empty"` where they used to
      *   claim `"unanchored"`, a loop they do not contain; (#6) every VM HYBRID
      *   artifact gains the two `_DFA_*` lines describing the scan it inlines.
@@ -1187,22 +1187,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      *   `scan` and `prefilter`, the RUNTIME mirrors of those same two facts,
      *   for the consumer that has no header to read the macros from. They are
      *   APPENDED AT THE END of the struct, after the three pointers, so NO
-     *   EXISTING MEMBER'''S OFFSET MOVES — unlike abi 2'''s inserted `work_budget`
-     *   and abi 3'''s inserted sizing block, which moved everything after them.
+     *   EXISTING MEMBER'S OFFSET MOVES — unlike abi 2's inserted `work_budget`
+     *   and abi 3's inserted sizing block, which moved everything after them.
      *
-     * BOTH ARTIFACT KINDS ARE AFFECTED, and saying so is r37 A12'''s lesson: that
-     * finding was that abi 3 -> 4'''s comment justified the bump from the DFA
-     * side alone while `emit_info_def` is SHARED, so every VM artifact'''s bytes
+     * BOTH ARTIFACT KINDS ARE AFFECTED, and saying so is r37 A12's lesson: that
+     * finding was that abi 3 -> 4's comment justified the bump from the DFA
+     * side alone while `emit_info_def` is SHARED, so every VM artifact's bytes
      * moved too and the reader could not tell. Here, explicitly: a DFA artifact
      * gains two struct fields and may change its `_DFA_SCAN` value; a VM
      * artifact gains the same two struct fields, and a HYBRID additionally
-     * gains two `#define` lines. Note this is the MIRROR IMAGE of [OPT-1]'''s
-     * note directly above ("no DFA artifact'''s bytes move at this bump"): its
+     * gains two `#define` lines. Note this is the MIRROR IMAGE of [OPT-1]'s
+     * note directly above ("no DFA artifact's bytes move at this bump"): its
      * event was VM-only, this one reaches both. Comparison (A) is still
      * byte-identical against the unchanged `ac4917d` pin — every byte this
      * change writes lands in the `#define` block or the `rx_info` initializer,
      * both ABOVE `goto <prefix>_L0;` — and comparison (B) is re-pinned. */
-    sb_puts(c,   "    .abi = 6,\n");
     sb_puts(c,   "    .abi = 6,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.

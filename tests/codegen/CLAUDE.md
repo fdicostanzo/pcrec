@@ -1789,6 +1789,6 @@ runs.
 `694902e` now.** r37's two scope findings move emitted `#define`
 bytes (the four proven-empty DFA artifacts' scan value; two new lines on every
 VM hybrid) and move nothing inside the program region, so the reading above is
-copied verbatim: `abi` 4 -> 6 (5 was taken by lane srTier in the same session), (B) re-pinned, (A) byte-identical
+copied verbatim: `abi` 5 -> 6 (lane srTier's two-tier entry took 4 -> 5 immediately before), (B) re-pinned, (A) byte-identical
 against the unchanged `ac4917d`. Demonstrated both directions again — see the
 [DD-13c] entry in `docs/dev/dev_journal.md` for the measured numbers.

@@ -1011,7 +1011,7 @@ surface back in the diff and report the failure the re-pin exists to retire.
 `tests/codegen/CLAUDE.md` carries the measurement (200 distinct lines, the
 `rx_match` over-strip, the blank-line residue) behind rejecting a wider filter.
 
-**Re-pinned again 2026-08-25 by `[DD-13c]`** (`abi` 4 -> 6; 5 was taken by lane srTier in the same session),
+**Re-pinned again 2026-08-25 by `[DD-13c]`** (`abi` 5 -> 6; `[OPT-1]`'s two-tier entry took 4 -> 5 immediately before),
 for the same reason and with the same (A) result: the r37 panel's two scope
 findings move emitted `#define` bytes on the four proven-empty DFA artifacts
 and on every VM hybrid, and move nothing inside the program region.

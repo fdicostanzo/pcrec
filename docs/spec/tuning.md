@@ -584,7 +584,8 @@ no knob here to deny or force. `tests/codegen/run_dfa_stamps.sh` holds each
 stamp to the loop it names (every verdict derived from the emitted matcher
 text, then compared against the macro) and asserts the hybrid iff in both
 directions. `rx_info.abi` moved `3` -> `4` with `[DD-13]`'s stamps and
-`4` -> `6` with `[DD-13c]`'s. [DD-13]'s was a D76 event only — the version of
+`5` -> `6` with `[DD-13c]`'s (`[OPT-1]`'s two-tier entry took `4` -> `5` in
+between). [DD-13]'s was a D76 event only — the version of
 the emitted SCAFFOLDING, not of the struct. [DD-13c]'s is both: the same kind
 of scaffolding change PLUS a real (append-only) struct growth, §3.2.
 

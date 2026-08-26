@@ -15548,7 +15548,8 @@ that was wrong for them. Hybrids: `memchr` 825 / `none` 264 / `byte-class`
 `run_specimen_identity.sh` 11/0 with `SKIP_THROUGHPUT=1` (the twelfth check
 is the three timings, skipped by the box rule while a battery was running).
 
-**abi 4 -> 6** (5 is lane srTier's, taken concurrently — PROVISIONAL pending
+**abi 5 -> 6** (lane srTier's two-tier entry took 4 -> 5 immediately before; at
+the time part 1 was written this was 4 -> 6 with 5 reserved — PROVISIONAL pending
 the manager's merge-order ruling) and comparison (B) re-pinned `5991d4c` ->
 `272d07c`. The recursion identity gate is **15/0** on the new pin and
 REFUSES on the old with D76's exact message (`subject stamps '.abi = 6', pin
@@ -15591,7 +15592,7 @@ tool walking several `<prefix>_info` symbols in one image — can read them the
 way it already reads `engine` and `engine_why`.
 
 `scan` and `prefilter`, two `const char *`, **appended at the END of the
-struct** so no existing member's offset moves. That makes abi 4 → 6 BOTH kinds
+struct** so no existing member's offset moves. That makes abi 5 → 6 BOTH kinds
 of event at once — scaffolding (D76) and layout (D40) — and the abi comment now
 names both artifact kinds explicitly, which is r37 A12's lesson applied: that
 finding was that abi 3 → 4's comment argued the bump from the DFA side alone

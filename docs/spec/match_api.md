@@ -1260,7 +1260,7 @@ binding, a tool walking several `<prefix>_info` symbols in one linked image.
 Those consumers already read `engine` and `engine_why` here; they can now read
 the scan facts the same way. **The two fields are APPENDED AT THE END of the
 struct**, after the three pointers, so no existing member's offset moves —
-`abi` still bumps (4 → 6), because the struct GREW, but this is a smaller kind
+`abi` still bumps (5 → 6), because the struct GREW, but this is a smaller kind
 of event than abi 2's inserted `work_budget` or abi 3's inserted sizing block,
 both of which moved every following offset.
 

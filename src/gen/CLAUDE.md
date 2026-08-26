@@ -777,7 +777,7 @@ the string `"hybrid"` never appears in `prefilter` (an artifact that would say
 it reports its inlined scan's actual mechanism instead, and `scan != NULL` is
 how a consumer reads "hybrid").
 
-**ABI 4 -> 6, AND THIS ONE IS A LAYOUT EVENT** — unlike [DD-13]'s, which was
+**ABI 5 -> 6, AND THIS ONE IS A LAYOUT EVENT** — unlike [DD-13]'s and [OPT-1]'s, which were
 scaffolding only. Two things move together: the emitted `#define` bytes (the
 proven-empty DFA artifacts' scan value; two new lines on every VM hybrid) and
 the struct itself (two `const char *` members APPENDED AT THE END, so no
@@ -786,8 +786,9 @@ inserted sizing block). (A) is still byte-identical and (B) is still re-pinned.
 **BOTH ARTIFACT KINDS ARE AFFECTED and the abi comment says so**, which is r37
 A12's lesson: that finding was that abi 3 -> 4's comment argued the bump from
 the DFA side alone while `emit_info_def` is SHARED, leaving a reader unable to
-tell that every VM artifact's bytes moved too. (5 was taken by lane srTier's
-two-tier entry in the same session.)
+tell that every VM artifact's bytes moved too. This is also the MIRROR IMAGE
+of [OPT-1]'s abi 4 -> 5 note ("no DFA artifact's bytes move at this bump"):
+that event was VM-only, this one reaches both kinds.
 
 ## The VM engine joins ([M4.5b])
 

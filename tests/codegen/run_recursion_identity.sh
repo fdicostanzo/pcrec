@@ -257,8 +257,8 @@ KEEP="${KEEP:-0}"
 # event at once: scaffolding (D76) and layout (D40). (A) is byte-identical
 # against the unchanged `ac4917d` pin either way — every byte this change
 # writes lands in the `#define` block or the `rx_info` initializer, both ABOVE
-# `goto <prefix>_L0;` — which is what still makes it safe. `abi` 4 -> 6 (5 is
-# lane srTier's two-tier entry, merging first) and (B) re-pinned here.
+# `goto <prefix>_L0;` — which is what still makes it safe. `abi` 5 -> 6 (lane
+# srTier's two-tier entry took 4 -> 5 immediately before) and (B) re-pinned here.
 # Pin was `5991d4c` ([DD-13]), and `272d07c` earlier in THIS change before the
 # rx_info fields were added — the pin must always name the change's LAST
 # src/lib/cli commit, and adding the fields made a later one.
