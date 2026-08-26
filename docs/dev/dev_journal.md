@@ -16182,3 +16182,135 @@ string and the group-span write and the group-seen flag collapsed onto
 one name; `nm[48]`/`entrypos[32]`, which the report named, carry no
 prefix and were left alone — found by reproducing, not by trusting the
 filed diagnosis.
+
+#### Forty-first session — lane srPremul: [OPT-3] STEP 2 BUILT — the pre-multiplied DFA transition table, abi 6 -> 7, three plants and an answer gate (2026-08-26 ~13:4x EDT)
+
+STEP 1's lever, built. A DFA transition cell holds `next_state * classes`
+instead of `next_state`, so the emitted step is
+`state = table[state + class]` and the loop's carried dependency chain is
+`add, load` rather than `lea, lea, movslq, load`. The design note
+(`docs/design/premultiplied_dfa_table.md`) went in FIRST, as its own commit,
+and the code was written against it.
+
+**WHAT I DECIDED THAT FRANK'S RULING LEFT OPEN, and each on evidence rather
+than taste.** The SENTINEL is a reserved `65535`, not a self-mapping DEAD row:
+both put the test off the loop-carried chain, so the choice falls to
+everything else, and a reserved value moves ONE number where an extra row
+moves two (its own premultiplied value and every per-state table's row count)
+and needs no proof that DEAD is never used as an index. The RX_INFO MIRROR is
+decided NO with a named trigger: §6.3's (a)/(b) split is a rule about MACROS
+and makes `<PREFIX>_DFA_TABLE` owed, while the two struct mirrors were a
+separate D40-addendum decision at [DD-13c] justified by a header-less
+consumer — and I measured that no such consumer exists yet (pcrec-bench reads
+`rx_info` through `testees/pcrec/shim.c`'s 40 `pb_*` accessors and has none
+for `scan` or `prefilter`, so abi 6's own two fields are still unread). A
+third unread mirror is D77's build-ahead-of-a-measured-need; the trigger is
+in the spec so nobody re-derives it.
+
+**THE ONE PLACE A PRE-MULTIPLIED VALUE IS CONVERTED BACK, and why it is not a
+violation of the rule.** `emit_view_select`'s `$`/`\Z`/`\z` tables keep their
+`states`-entry INDEX and hold pre-multiplied CELLS, so the emitted read is
+`rx_forward_eol_view[forward_state / 18]`. The rule is "nothing ON THE CHAIN
+un-multiplies", and this site is provably off it: the read is the second
+operand of a `&&` whose first operand is
+`__builtin_expect(pos + 1 >= n, 0)`, so C short-circuits it to at most twice
+per search. Indexing those two tables pre-multiplied instead would multiply
+them by the stride — 498 B to 8,964 B EACH on an `orig`-sized machine — and
+the `(?:P)\z` idiom is the comparative bench's own 85 compliance subjects'
+spelling, so that is the common case and not a corner. Verified on a real
+artifact: `(?:foo|foobar)\z` emits `rx_forward_end_view[8]`, not `[48]`.
+
+**ENG_ATTEMPT TOOK NOTHING, AND THAT IS A PROPERTY RATHER THAN AN EXEMPTION.**
+Its states are LABELS and a step is `goto *targets_K[class]`: no state
+variable, no multiply, no address arithmetic to shorten, and its one
+two-dimensional per-state table has `K` as a compile-time constant at each
+label. It stamps `RX_DFA_TABLE "none"` and its emitted text does not move. The
+VM HYBRID, by contrast, took the transform for FREE, because
+`pcrec_emit_dfa_engine` at emit_vm.c's prefilter site is literally
+`emit_unanchored` — one mechanism, both artifact kinds, no clause of its own.
+
+**THE MEASURED DISASSEMBLY REPLACED THE PREDICTED ONE**, and it carried two
+things the prediction did not. `gcc -O2` on the bench's own `orig` pattern:
+17 instructions to 14, the chain's `lea/lea/movslq` becoming `add/mov`. The
+`mov %edx,%edx` is the 32-bit index being zero-extended for the addressing
+mode (a register move, eliminated at rename) — which is why the type of the
+state variable is a MEASUREMENT and not an argument. And the accept probe
+reads the NEW state through `mov %ecx,%edx`, not the index it appears to reuse
+one instruction earlier; worth writing down because the listing reads the
+other way at a glance and "reading the old index" would be a wrong answer on
+most inputs.
+
+**THREE PLANTS, AND ONE OF THEM REFUTED A SENTENCE OF MY OWN DESIGN NOTE.**
+Clean baseline `tests/codegen/run_premul_table.sh` 15/0.
+(1) The table not pre-multiplied while the loop assumes it is: **13/19**, §5
+red on 14,387 of 39,787 cells and §6 on nine subject cells, corpus red at 65
+of 100 cases — with §1/§2/§3 correctly GREEN, since they read DECLARATIONS and
+the plant changed CELLS. (2) The sentinel colliding: raising
+`PREMUL_MAX_ENTRIES` past the range bound is NOT ENOUGH, because the RANGE
+conjunct still refuses — the measured demonstration that (i) is not redundant
+with the tighter (ii), which the note had implied. Breaking BOTH gives a
+73,728-entry pre-multiplied table whose cells overflow `unsigned short` (gcc:
+5,460 overflow warnings) and in which 65535 is a real cell; **12/5**, and §5
+STAYS GREEN — the corpus's largest machine is 40,010 entries, so no corpus
+artifact CAN carry a collided cell, which means the CELL invariant cannot see
+this defect and the BOUND check is what makes a collision unreachable. (3) The
+state variable left `int`: **14/1**, §3's shape arm ALONE on 1,824 machines,
+with `movslq` back on the chain at `0x57` and every answer unchanged — the
+silent performance regression no answer comparison, and no byte-identity gate
+that compares an artifact against itself, can see.
+
+**THE CHECK FOUND FIVE DEFECTS IN ITSELF ON ITS FIRST RUN**, and they are the
+transferable part: a witness table split on `|`, which is a pattern byte; a
+DFA-scan discriminator keyed on "has a table", which called the four
+empty-engine artifacts stamp-without-a-scan — r37 finding #5 read backwards,
+since the [DD-13c] iff is about CONTAINING a scan and a body that is one
+`return 0` contains one; an `awk` field index reading a variable's NAME where
+its TYPE was wanted, which reported 3,744 shape violations on a correct tree;
+a drift count with no names beside it; and a flag row comparing one form with
+itself.
+
+**IDENTITY IS THE CONTROL.** The answer gate (rebuilt in scratch from STEP 1
+§7's description) compares THREE arms pairwise — pre-multiplied,
+`-fno-premul-table`, and the PRE-CHANGE compiler at the branch point 7b5b27b —
+over the bench's 85 compliance subjects (whole-subject `(?:P)\z`), its 3
+throughput subjects (find-all) and 3 synthetic, printing every match's span AND
+every capture slot AND the terminal return: **11 patterns, 1,001 subject
+cells, 122,135 answer lines per arm, ZERO differences**, with `orig` alone
+contributing 40,470 — STEP 1's own population reproduced against a compiler
+rather than a patched artifact. Two of the eleven stamp `"none"` on purpose:
+they are the artifacts the transform must leave untouched, and an arm that
+compared only the changed ones could say nothing about them.
+
+**abi 6 -> 7, all four sites in this change**, and it is the FIRST bump that
+moves emitted PROGRAM bytes rather than scaffolding — [DD-13], [OPT-1] and
+[DD-13c] were all scaffolding. `emit_dfa.c`'s `.abi`, `run_codegen_tests.sh`'s
+`ABI_EXPECT`, `match_api.md` §6's two sentences, and
+`run_recursion_identity.sh`'s (B) pin, re-pinned to `49356e8`. Comparison (A)
+is expected byte-identical and here that is a real check: `prog_region` is
+`goto <p>_L0;` through `<p>_accept:`, and a hybrid's inlined prefilter is
+emitted ABOVE that `goto` (verified: `rx_prefilter` at line 250,
+`goto rx_L0;` at 396).
+
+**TWO SABOTAGE ROWS WERE RE-ANCHORED** (S73, S74 — both `ANCHOR NOT FOUND`
+after the emitter change), each against the LIVE source per
+`tests/mech/sabotages/CLAUDE.md`, each keeping its edit's KIND, with a
+RE-ANCHORED note saying what moved. S74's anchor now spans the whole
+`sb_printf` AND its argument list, because the format and the args have to
+move together. `scripts/m6read_check_sab_anchors.py`: 180 sabotages, 191
+anchor sites, all resolve.
+
+**THE COST, STATED.** The accept table grows from `states` to
+`states * classes` bytes, which is the transform's one real price and is
+inside STEP 1's measured 1.276x. In emitted LINES it is visible on exactly one
+family: `run_ir_listing.sh`'s informational [ENG-BREP] row moves 869 -> 962 at
+`{0,400}` and 1,994 -> 2,762 at `{0,4000}` for `((a)|b){0,N}c`, the VM hybrid
+whose inlined prefilter DFA is K39's. That check stays green because what it
+asserts is count-INDEPENDENCE against the prefilter-denied build (573/573,
+delta 0), untouched here — and the growth is the clearest statement yet of
+what [OPT-4] would buy.
+
+Green on this tree so far: `make strict` clean, `run_codegen_tests.sh` 106/0
+(ABI_EXPECT 7, [SABANCHOR] green), `run_dfa_stamps.sh` green,
+`run_ir_listing.sh` 80/0, `run_vm_tests.sh` 35/0, `run_premul_table.sh` 15/0.
+The TIMED measurement and the full `make test` wait for the manager's battery
+to print its trailer; nothing in this entry is a timed number.
