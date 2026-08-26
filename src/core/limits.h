@@ -37,6 +37,29 @@ enum {
     /* Generated-symbol prefix (`-p`). A C identifier bound, nothing more. */
     PCREC_MAX_PREFIX_LEN = 60,
 
+    /* K38 (2026-08-26): the size EVERY fixed buffer that holds an EMITTED
+     * identifier or C sub-expression built from the `-p` prefix must use.
+     * Before this, each site in src/gen/emit_vm.c (and emit_dfa.c's own
+     * shape) hand-picked a buffer size for its own short suffix on a short
+     * prefix; snprintf does not fail on overflow, it TRUNCATES, so a real
+     * 60-char prefix (the documented maximum, accepted by cli/main.c's
+     * `valid_prefix` and promised by docs/spec/cli.md §1) met a family of
+     * buffers sized for "rx" and produced uncompilable C — a MISCOMPILE, not
+     * a give-up, invisible to every corpus artifact because they all use the
+     * 2-char "rx" prefix. Reproduced and enumerated with a real 60-char
+     * prefix run through gcc (see tests/cli/run_cli_tests.sh case3): the
+     * worst observed content is a slot expression, `<prefix>_<slot-name>` at
+     * up to 60 + 1 + 47 = 108 bytes. This constant is PCREC_MAX_PREFIX_LEN
+     * plus generous headroom over that worst case, plus NUL, so ONE size
+     * answers "how big" at every such site instead of a fresh per-site guess
+     * that reopens K38 the next time a suffix grows (the frames_sentinel fix
+     * earlier the same day made exactly that hand-picked mistake once more,
+     * which is why this is a shared constant now rather than another
+     * PCREC_MAX_PREFIX_LEN + <n> literal). Buffers sized from it only GROW
+     * relative to their old hand-picked sizes, so every artifact this
+     * compiler already emitted for an in-range prefix is byte-identical. */
+    PCREC_MAX_EMIT_NAME_LEN = PCREC_MAX_PREFIX_LEN + 96,
+
     /* M2.8 raised this from 20000. It is a MEMORY backstop (48 B/state, two
      * machines, so ~12.6 MB), not the real ceiling: the DFA caps below are
      * grounded in emitter cost (R1 A-3) and now bind first across the

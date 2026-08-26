@@ -2965,7 +2965,7 @@ textual sweep over bash source and outside this ruling's own stated scope
 by contrast, already carry `PCREC_TIMEOUT` throughout. A K37b candidate,
 not created here.
 
-## K38 — OPEN (2026-08-26, found by the manager while verifying a srTier buffer fix) — the VM emitter's fixed-size NAME BUFFERS truncate identifiers at long prefixes: an artifact with a 60-character prefix (the documented maximum) does not compile
+## K38 — FIXED 2026-08-26 (srK38) — the VM emitter's fixed-size NAME BUFFERS truncate identifiers at long prefixes: an artifact with a 60-character prefix (the documented maximum) does not compile
 
 **Symptom.** `build/pcrec -p p1234…(60 chars) --engine=vm --features all
 -o x.c 'a(b)+c'` emits C in which several `<prefix>_…` identifiers are
@@ -2993,6 +2993,50 @@ longest suffix + NUL), sweep `emit_vm.c`/`emit_dfa.c` for `char
 case that emits AND COMPILES a 60-character-prefix artifact on both
 engines (a spec-first witness: the promise is the test). Sonnet-sized;
 not started.
+
+**FIXED 2026-08-26 (srK38).** `src/core/limits.h` gains
+`PCREC_MAX_EMIT_NAME_LEN = PCREC_MAX_PREFIX_LEN + 96` (one macro for
+every buffer that builds an emitted name/sub-expression from the prefix,
+sized generously over the worst OBSERVED content — a slot expression,
+`<prefix>_<slot-name>`, at up to 108 bytes at the 60-char maximum).
+Reproduced FIRST with a real 60-char prefix run through `gcc -Wall
+-Wextra` (case3's own pattern `'a'` was too small to reach any of it),
+which found the family the symptom above only guessed at: `nm[48]` and
+`entrypos[32]` (named in the original report) turned out NOT to carry
+the prefix and needed no change; the real offenders were `vm_slot_expr`'s
+caller-supplied `sl[64]` (×2, the lookaround/lookbehind restore sites —
+this is the `…_sp` → `…234` truncation the symptom described, though the
+manager's diagnosis of WHICH buffer misattributed it), the possessive/lazy
+span-cursor family (`byte[64]`, `cx[64]` ×2, `cur[64]`, `val[96]` ×2), the
+reverse-deterministic rung's `rv[80]`/`cur[96]`, `byte[80]`
+(`subject[<rv-cursor> - 1]`), and — the sharpest finding — `ga[64]`/
+`gs[64]` (`%s_revdet_group_span`/`%s_revdet_group_seen`) truncating to the
+IDENTICAL wrong string (both share their first 18 suffix bytes), which is
+why the group-span WRITE and the group-seen FLAG collapsed onto one name
+in the emitted C, and why `val[64]` in the separate recovery loop (same
+formula) never showed as a DISTINCT gcc error — its truncated text was
+byte-for-byte `ga`'s, and gcc reports an undeclared identifier once per
+function. `emit_dfa.c`'s one prefix-carrying buffer (`residual[96]`,
+`<prefix>_next_pos`) was never observed truncating (a DFA-engine sweep
+with a 60-char prefix compiled clean) but was widened to the same macro
+for consistency rather than left on its own hand-picked size. Widening
+`rv`/`cur` also moved gcc's OWN `-Wformat-truncation` worst-case estimate
+for two downstream buffers that embed them (`pv[112]`, `cnt[192]` ×2,
+both revdet frame-mark/prev-position sites) past their old sizes — a
+second-order effect of generous sizing, fixed by widening those two
+alongside. Output is BYTE-IDENTICAL for every in-range prefix: swept
+1,784 corpus patterns × {`"rx"`, a 1-char prefix} × {auto, vm} = 7,136
+compiles, reference binary vs fixed binary, 0 differences (stdout/
+stderr/exit code all compared). Witness: tests/cli/run_cli_tests.sh
+case17 (two rich patterns — one exercising every confirmed VM buffer in
+one compile via a lookbehind+lookahead+backreference+possessive+captured-
+span+captured-alternation pattern, one DFA-only — at both the 60-char
+and 1-char prefix boundaries, both engines); verified DETECTING by
+running the harness against a pre-fix binary: the VM/60-char cell goes
+red with exactly this issue's symptom (undeclared `_SL`, `expected ']'`,
+undeclared `_re`/`_rv`) while the DFA and 1-char cells correctly stay
+green. `make test-codegen` and `make test-cli` green afterward
+(287/287 CLI cases, `make strict` clean).
 
 ## K39 — OPEN (2026-08-26, found by the [ENG-BREP] size ceiling going red on the abi-6 tree) — the VM HYBRID's inlined DFA prefilter SCALES WITH A BOUNDED-REPEAT COUNT: `((a)|b){0,4000}c` emits 1,994 lines at the default vs 869 for `{0,400}`, while the VM body itself is count-independent (573 lines at any count with the prefilter off)
 

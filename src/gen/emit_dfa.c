@@ -3253,7 +3253,13 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                    " *     NOT the same answer as \"no match\".\n *\n");
     }
 
-    char residual[96];
+    /* K38: widened from 96 to the shared emitted-name size for consistency
+     * with the emit_vm.c family this constant was introduced for -- content
+     * here (prefix + "_next_pos") tops out at 70 bytes at the 60-char
+     * prefix maximum and was never observed to truncate, but the DFA
+     * emitter's one prefix-carrying fixed buffer should not be sized by a
+     * separate hand guess either. */
+    char residual[PCREC_MAX_EMIT_NAME_LEN];
     snprintf(residual, sizeof residual, "%s_next_pos", cx->opt->prefix);
     sb_printf(c, " * %s does the work. %s and %s are\n"
                  " * anchored entry points, %s is caller-facing encoding\n"

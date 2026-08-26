@@ -2016,6 +2016,78 @@ EOF
     fi
 }
 
+# ---------------------------------------------------------------------------
+# 17. K38 (docs/dev/known_issues.md) — the VM emitter's fixed-size NAME
+#    BUFFERS truncate at a long prefix. case3 above proves a 60-char prefix
+#    is ACCEPTED and its ARTIFACT COMPILES, but only for the pattern 'a' —
+#    far too small to reach the family of buffers that build an emitted name
+#    or sub-expression out of the prefix PLUS a suffix (a slot expression, a
+#    span-cursor test, the reverse-deterministic rung's group-span/group-seen
+#    names). Before the fix, gcc failed on a 60-char-prefix artifact with
+#    undeclared identifiers and "expected ']'" — names truncated mid-suffix
+#    (snprintf does not fail on overflow, it silently cuts the string) — with
+#    every corpus artifact blind to it because they all use the 2-char "rx"
+#    prefix. This case is the spec-first witness (D27's own argument, applied
+#    here without a D27 cell): the promise is cli.md §1's "up to 60
+#    characters", and the test is that promise driven far enough into the
+#    emitter to matter, on BOTH engines and at a 1-char prefix as the other
+#    boundary.
+# ---------------------------------------------------------------------------
+case17() {
+    local d="$WORKDIR/case17"
+    mkdir -p "$d"
+    local p60 p1
+    p60="$(printf 'a%.0s' $(seq 1 60))"
+    p1="z"
+
+    # The VM witness pattern is chosen to reach every buffer the K38 sweep
+    # found truncating, in ONE compile: a fixed-width lookbehind AND a
+    # lookahead (the two lookaround "restore the cursor" slot-expression
+    # sites), a possessive quantifier feeding a backreference, a CAPTURING
+    # bounded span loop (the span-cursor family: the possessive exit test,
+    # the MRL test, the per-capture cursor arithmetic), and a captured
+    # alternation under a bounded repeat (the reverse-deterministic rung's
+    # group-span/group-seen names, on both the forward walk's writes and the
+    # commit-time recovery read).
+    local vm_pattern='(?<=abc)(?=def)(a)(?:b)*+\1(?:(cd)){0,50}(?:(x)|y){0,10}'
+    # The DFA witness carries no captures/lookaround/backref (the DFA engine
+    # supports none of those) and instead exercises emit_dfa.c's one
+    # prefix-carrying fixed buffer: the encoding residual's
+    # `<prefix>_next_pos`, emitted on every artifact regardless of pattern.
+    local dfa_pattern='[a-zA-Z0-9_]{5,60}@[a-z]+\.[a-z]{2,6}'
+
+    local prefix engine pat opts label outc rc build_rc build_log
+    for prefix in "$p60" "$p1"; do
+        for engine in vm dfa; do
+            if [ "$engine" = "vm" ]; then
+                pat="$vm_pattern"
+                opts="--engine=vm --features all"
+            else
+                pat="$dfa_pattern"
+                opts="--engine=dfa --no-captures"
+            fi
+            label="case17: prefix len ${#prefix}, engine=$engine"
+            outc="$d/${engine}_${#prefix}.c"
+            pcrec_run "$PCREC" -p "$prefix" $opts --emit-main -o - -- "$pat" \
+                >"$outc" 2>"$d/${engine}_${#prefix}.err"
+            rc=$?
+            if [ "$rc" -ne 0 ]; then
+                fail "$label: pcrec compiles the pattern" \
+                    "stderr: $(cat "$d/${engine}_${#prefix}.err")"
+                continue
+            fi
+            gen_cc "${FUNCNAME[0]}_${engine}_${#prefix}" \
+                "$CC" $CFLAGS -o "$d/${engine}_${#prefix}_bin" "$outc"
+            build_rc=$?; build_log="$GEN_CC_LOG"
+            if [ "$build_rc" -eq 0 ]; then
+                pass "$label: generated code compiles (K38)"
+            else
+                fail "$label: generated code compiles (K38)" "$build_log"
+            fi
+        done
+    done
+}
+
 case1
 case2
 case3
@@ -2032,6 +2104,7 @@ case13
 case14
 case15
 case16
+case17
 
 echo
 echo "== Summary =="
