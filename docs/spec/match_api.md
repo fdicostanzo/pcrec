@@ -1462,7 +1462,38 @@ engine-scoped.**
   prefilter axis keeps ENGINE-SPECIFIC NAMES because its VALUE SETS are
   different vocabularies, not one vocabulary with two readings:
   `<PREFIX>_VM_PREFILTER` is the VM's, `<PREFIX>_DFA_PREFILTER` and
-  `<PREFIX>_DFA_SCAN` are the DFA's.
+  `<PREFIX>_DFA_SCAN` are the DFA scan's.
+
+  **[DD-13c], 2026-08-25 — "UNCONDITIONAL" IS TWO RULES, NOT ONE, AND THIS
+  PARAGRAPH USED TO CONFLATE THEM.** The unit that owns a stamp is the
+  MECHANISM the stamp names, not the artifact kind that usually carries it:
+
+  - `<PREFIX>_ENGINE` is on **every artifact pcrec emits**, full stop.
+  - `<PREFIX>_DFA_SCAN` and `<PREFIX>_DFA_PREFILTER` are on **every artifact
+    that CONTAINS a DFA scan** — which is every DFA artifact AND every VM
+    HYBRID. A hybrid (`<PREFIX>_VM_PREFILTER "hybrid"`) inlines the DFA
+    emitter's own forward+reverse or attempt scan as a `static` function,
+    with its own tables, its own D11 bound and its own candidate-start
+    filter; it is the artifact kind that carries the mechanism this pair
+    exists to report, and until [DD-13c] it was the one kind that could not
+    say so. A NON-hybrid VM artifact contains no DFA scan and carries
+    neither macro. **The rule is an IFF and is checkable as one:** a VM
+    artifact carries the two `_DFA_*` macros if and only if
+    `<PREFIX>_VM_PREFILTER` is `"hybrid"`
+    (`tests/codegen/run_dfa_stamps.sh` asserts it in both directions, with
+    the emitted `static <prefix>_prefilter` body — not either macro — as the
+    independent third term).
+  - The two prefilter macros are **two different selections**, not two
+    spellings of one. `_VM_PREFILTER` says whether the VM runs a
+    capture-erased DFA ahead of its program at all; `_DFA_PREFILTER` says
+    what candidate-start filter that scan itself carries. A hybrid answers
+    both, and the answers are independent.
+
+  All four values come from ONE derivation per engine (`unanch_start`,
+  `attempt_cand` in `src/gen/emit_dfa.c`) read by every site that needs
+  them — the emitted loop, the DFA artifact's stamp, the hybrid's stamp —
+  so a stamp cannot disagree with the loop it describes unless the
+  derivation itself is wrong, in which case the loop is wrong too.
 - **(b) CAPACITY and ACTIVITY macros stay VM-only**, exactly as this
   section already said: `<PREFIX>_VM_RUNGS`, `_VM_STRATS`, `_VM_PRUNES`,
   `_VM_PRUNE_CEILING`, `_VM_CALL_SPLICED`/`_LINKED`, `_VM_ROOT_MINW`, the
@@ -1573,12 +1604,33 @@ specimen's shape:
 #define RX_DFA_PREFILTER "byte-class"   /* see the value set below */
 ```
 
-`RX_DFA_SCAN` names WHICH DFA the artifact is. The two shapes are
-`"unanchored"` (the O(n) forward+reverse table pair, D7) and `"attempt"`
+And on a VM HYBRID — measured on `'a(b|c)+d'`, the block at the top of this
+section, which carries all of these at once:
+
+```c
+#define RX_ENGINE        "vm"           /* the artifact's own engine */
+#define RX_ENGINE_WHY    "capture group at pattern offset 1"
+#define RX_VM_PREFILTER  "hybrid"       /* the VM runs a DFA ahead of its program */
+#define RX_DFA_SCAN      "unanchored"   /* [DD-13c] ...and THIS is that DFA */
+#define RX_DFA_PREFILTER "memchr"       /* ...and this is ITS candidate-start filter */
+```
+
+`RX_DFA_SCAN` names WHICH DFA SCAN the artifact CONTAINS. The three shapes
+are `"unanchored"` (the O(n) forward+reverse table pair, D7), `"attempt"`
 (the per-start-position computed-goto loop a `^`/`\A`-bearing pattern
-takes), they are different loops with different cost curves, and nothing
-else a consumer can read distinguishes them — both stamp `RX_ENGINE
-"dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`.
+takes) and `"empty"`; the first two are different loops with different cost
+curves, and nothing else a consumer can read distinguishes them — both stamp
+`RX_ENGINE "dfa"` and both set `rx_info.engine` to `PCREC_ENGINE_DFA`.
+
+**`"empty"` is [DD-13c], 2026-08-25, and it is a THIRD SHAPE rather than a
+special case of the other two.** A pattern the start analysis proves can
+match nothing — `\B\b`, `\b\B`, `\d\b\w`, `a\bb`, and their `^`-anchored
+spellings — compiles to a search body that is one `return 0`: no table, no
+loop, no skip, on EITHER engine. Those artifacts used to stamp the name of
+the loop the emitter WOULD have written (`"unanchored"`, or `"attempt"` when
+anchored), which is a statement about which emitter ran and not about what it
+wrote. `RX_DFA_PREFILTER` reads `"none"` on all of them, for the reason the
+value set below gives: there is no scan for a filter to be part of.
 
 `RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
 carries, and its five values are the whole set:
@@ -1606,7 +1658,9 @@ when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER` are
-the DFA's own selection facts ([DD-13]'s (a)/(b) split, above). **[ABI-NS],
+the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
+since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
+artifacts AND VM hybrids, the iff stated in (a). **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from
 (`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
 `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —
