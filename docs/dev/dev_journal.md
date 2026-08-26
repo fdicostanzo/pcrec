@@ -15580,3 +15580,71 @@ plan.md already used it for the FORMAT half's D6-panel sub-step, so
 `grep -n "\[DD-13c\]"` returns two rows. Flagged in place, NOT resolved —
 renaming this lane's row would orphan the r37 review and every commit
 message, and renaming the sub-step is the manager's call.
+
+### [DD-13c] part 2 — the RUNTIME MIRRORS, and what the validation taught the check
+
+Frank's D40 addendum (pre-v1 abi changes are deliberate and methodical, not
+avoided) added a second half to this lane after part 1 was green: the two
+selection facts get RUNTIME mirrors in `struct rx_info`, so the consumer least
+able to read a preprocessor macro — a `dlopen`ing harness, an FFI binding, a
+tool walking several `<prefix>_info` symbols in one image — can read them the
+way it already reads `engine` and `engine_why`.
+
+`scan` and `prefilter`, two `const char *`, **appended at the END of the
+struct** so no existing member's offset moves. That makes abi 4 → 6 BOTH kinds
+of event at once — scaffolding (D76) and layout (D40) — and the abi comment now
+names both artifact kinds explicitly, which is r37 A12's lesson applied: that
+finding was that abi 3 → 4's comment argued the bump from the DFA side alone
+while `emit_info_def` is SHARED, leaving a reader unable to tell that every VM
+artifact's bytes had moved too.
+
+**The rule, and the one place it is not obvious.** `scan` is the `_DFA_SCAN`
+value on a DFA artifact and on a VM hybrid, `NULL` on a non-hybrid VM artifact;
+`prefilter` is the DFA vocabulary wherever `scan` is non-NULL and the VM's
+`"none"` where it is not, and is never `NULL`. The consequence worth stating:
+**the string `"hybrid"` never appears in `prefilter`**. It is in the VM's
+vocabulary, but any artifact that would say it reports its inlined scan's
+ACTUAL mechanism instead — strictly more information — and `scan != NULL` is
+how a consumer reads "is this a hybrid", which is the runtime reading
+`RX_VM_PREFILTER` never had. Flagged to the manager rather than picked
+silently.
+
+`pcrec_artifact_has_dfa_scan` is the guard, and it is `src/core/compile.c`'s own
+`fit.chosen == ENGM_DFA || fit.prefilter` spelled once — the condition that
+MAKES `job->dfa`/`job->engine` exist, so it is not a predicate that happens to
+agree with the artifact, it is the reason there is anything to read. The
+hybrid's stamp gate asks it too now.
+
+**MEASURED.** `run_dfa_stamps.sh` **29/0** over 2,772 patterns. Every part-1
+number is unchanged, DFA prefilter still `none` 380 / `memchr` 327 /
+`byte-class` 176 / `memchr-bounded` 61 / `byte-class-bounded` 51. The mirror
+assertion runs on all **2,483** compiled artifacts of both engines. Gate 15/0
+on the new pin `694902e`, correct refusal on the old, (A) byte-identical
+against `ac4917d` on all five axes.
+
+**WHAT THE VALIDATION TAUGHT THE CHECK, twice.** Plant 5 (part 1) showed an
+`[agreement]` verdict reading "on all 2258 artifacts" while 1,263 had been
+routed past the comparison — a true sentence about a population nobody
+compared. Plant 9 (part 2) would have done the same thing in a worse way: with
+the mirror fields not emitted at all, a value-only comparison is VACUOUSLY
+TRUE and goes green on a surface that no longer exists. Both are the same
+lesson and it is now built into the file: **every comparison echoes a token at
+its site, every verdict quotes the COUNTED number, and the count is itself
+asserted against the population that was due.** A number a check derives about
+its own coverage is not evidence of that coverage.
+
+**AND THE SAME CLASS, one level out.** `make test-codegen` — run because a
+change that adds lines to VM artifacts should not be judged by the one check
+that was written for it — found that `run_codegen_tests.sh` pins `rx_info.abi`
+by a hand-spelled literal, and fired 104/1. The literal stays hand-spelled (a
+literal read out of `emit_dfa.c` would agree with the emitter by construction);
+what is worth recording is that **an abi bump has a second site**, and the
+check firing IS the mechanism that finds it.
+
+**THE PRESENCE-AS-DFA SWEEP** (manager's ask, after the battery found a fourth
+absence-as-DFA site in `tests/atomic_groups`): 17 scripts under `tests/` read
+`RX_ENGINE` or `RX_DFA_*`. **All 17 are value-anchored** (`grep '^#define
+RX_ENGINE "vm"$'`, or extract-and-compare) **or comment-only; none is
+presence-based**, and `run_dfa_stamps.sh` is the only reader of `RX_DFA_*` at
+all — so no script infers "DFA" from the presence of a macro this change now
+puts on 1,263 VM artifacts. No fixes were needed outside this lane's own check.
