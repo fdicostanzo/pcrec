@@ -408,6 +408,25 @@ code: the bench's subjects were chosen by a different project for a different
 purpose, and the `(?:P)\z` spelling exercises exactly the `views`/`endv` shapes
 §6's division lives in.
 
+**MEASURED 2026-08-26 (the gate is `scratchpad/srPremul/ag/`, rebuilt in this
+lane from STEP 1 §7's description; `agdriver.c` prints every match's span AND
+every capture slot AND the terminal return, so a difference in any answer byte
+is a difference):**
+
+| | |
+|---|---|
+| arms | premultiplied / `-fno-premul-table` / the PRE-CHANGE compiler at `7b5b27b`, pairwise |
+| patterns | 11, chosen for the shapes the transform touches — `orig` and its `(?:P)\z` spelling, a capture-bearing one, a `\b` one, a `(?m)^` one (`"none"`), the `"mixed"` witness `[01]*1[01]{11}`, an ENG_ATTEMPT one (`"none"`), a `\z` one |
+| subjects | 91 — the bench's 85 compliance `s-*.bin`, its 3 throughput `t-*.bin`, 3 synthetic (a match-bearing line, the EMPTY subject, 4 KB of random bytes) |
+| regimes | whole-subject for a `\z` pattern on the compliance set, find-all everywhere else — the bench's own two |
+| **result** | **11 patterns, 1,001 subject cells, 122,135 answer lines per arm, ZERO differences** |
+
+`orig` alone contributes **40,470 answer lines**, which is STEP 1 §7's own
+population reproduced against a compiler rather than against a patched
+artifact. The `"none"` rows are included deliberately: they are the artifacts
+the transform must leave UNTOUCHED, and an arm that only compared the ones it
+changes could not say so.
+
 ## 11. What could go wrong
 
 Each of these is a failure mode with a site, not a worry:
