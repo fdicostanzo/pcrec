@@ -15823,3 +15823,40 @@ structural check or an index row. Twenty-two subagent lanes; the
 manager's own incidents (a wrong-repo commit, a committed conflict
 marker, a self-matching waiter, a shell-expanded commit message) are in
 the index too. Nothing is in flight; wake.md is rewritten.
+
+### Forty-first session (2026-08-26, ~11:3x EDT →)
+
+#### Forty-first session, part 1 — the bench's reporter-v4 wave read (I-7); [OPT-5] chartered; three lanes launched (2026-08-26 ~12:0x EDT)
+
+Frank: 89 % subscription usage but the multi-hour batteries do not
+count as tokens, so the open plan items proceed; pcrecdev2 is not
+running; "review the report from the new wave first". The wave =
+bench [B14] reporter v3→v4 (per-subject sub-tables, compile phases,
+artifact bytes, jitter, per-testee legend) + [B15] floor pattern + KB-1
+fixed + KB-2 filed. Read the repin report as it reads at v4; the reading
+is inbox I-7 (bench commit bc4e99b). THE FINDING OF THE WAVE: the
+per-subject throughput table shows pcre2-interp dismissing the two
+failing 1 MB subjects in 17.8 µs (0.017 ns/byte — its required-code-unit
+memchr for `@`) where pcrec's DFA scans them at 3.26 ns/byte (192×) and
+pcre2-JIT at 2.45-2.70 (144× slower than its own interpreter — an
+upstream finding for the bench). pcrec has a candidate-START skip only;
+the email patterns open with a ~70-byte class so it never skips.
+[OPT-5] chartered: STEP 1 measurement, STEP 2 the general REQUIRED-BYTE
+SET (intersection over paths, the first-byte set's dual; search entries;
+find-all memo), build gated on [B11]'s mostly-failing number (D77).
+Second: on 1 MB of `a` every byte is a candidate, so the 3.26 ns/byte
+IS the transition loop (~11 cycles/byte; caps = nocaps) — [OPT-3] STEP 1
+half-answered from the table, and its stated "needs" (per-subject rows,
+bytes beside gcc) are now met → lane launched. Third: the "faster
+×13.45" cross-pin Δ on factored/short-search is an auto-SELECTION flip
+(8da6120's factored rows gave up with a VM-only code and compiled in the
+VM's gcc band) and the legend's `engine=dfa` for the unstamped pin is
+inferred — two [B13] rule facts sent. Fourth: compile cost is all gcc
+(VM 400-540 ms vs DFA 124-140 ms at the same artifact size); the DFA
+whole-subject artifact is +4.2 KB (a second automaton), the VM's
+identical. Seven predictions P1-P7 for the abi-6 re-pin filed for the
+interpreter's ledger. LANES (three, all with worktrees, PROCS=4, async
+validation, WIP commits): srEsc (sonnet) [OPT-1] STEP 3 — the
+escalation counter over exemplar files; srK38 (sonnet) [K38-FIX] then
+[SPEC-1.4]; srOpt3 (opus) [OPT-3] STEP 1 — attribute the 11 cycles/byte
+(skip vs transition loop, the two controls). Stall-watchdog cron set.
