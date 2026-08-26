@@ -1941,20 +1941,28 @@ fi
 # for years), so "no slot" and "no cut" are not each other's proxy.
 #
 # MEASURED on this tree, --no-captures:
-#     a*+b        RX_ENGINE defines = 0   RX_SLOT_CUT_MARK = 0
-#     (?>a|ab)c   RX_ENGINE defines = 2   RX_SLOT_CUT_MARK = 2
+#     a*+b        RX_ENGINE "vm" defines = 0   RX_SLOT_CUT_MARK = 0
+#     (?>a|ab)c   RX_ENGINE "vm" defines = 2   RX_SLOT_CUT_MARK = 2
+#
+# [DD-13], 2026-08-25: THE DISCRIMINATOR IS THE VALUE, NOT THE PRESENCE. This
+# read `grep -c '#define RX_ENGINE'` and inferred "a VM" from a nonzero count,
+# which was sound only while a DFA artifact stamped NOTHING. `RX_ENGINE` is
+# unconditional now (match_api.md §6.3's (a)/(b) split), so a pure DFA artifact
+# has exactly one — and the old form scored that as "still carries a VM". The
+# fix is not a widening: what rule 4 always meant is "this artifact is not the
+# VM", and `RX_ENGINE "vm"` says that directly instead of by proxy.
 if pcrec_run "$PCREC" $AG -p rx --no-captures -o "$WORKDIR/ag_dis.c" -- 'a*+b' >/dev/null 2>&1; then
     ag_slot=$(grep -c 'RX_SLOT_CUT_MARK' "$WORKDIR/ag_dis.c")
     ag_c=$(agcuts "$WORKDIR/ag_dis.c"); ag_r=$(agrv "$WORKDIR/ag_dis.c")
-    ag_eng=$(grep -c '#define RX_ENGINE' "$WORKDIR/ag_dis.c")
+    ag_eng=$(grep -c '^#define RX_ENGINE "vm"$' "$WORKDIR/ag_dis.c")
     if [ "$ag_slot" -ne 0 ]; then
         bad "[M6.4-ATOMIC rule 4]: the DISCHARGED 'a*+b' still allocates a cut-mark slot ($ag_slot references). Its §2.2 verdict is positive, so src/opt/atomic.c must have deleted the A_ATOMIC before emission"
     elif [ $((ag_c + ag_r)) -ne 0 ]; then
         bad "[M6.4-ATOMIC rule 4]: the DISCHARGED 'a*+b' still emits a cut ($ag_c RX_CUT call sites + $ag_r second-spelling)"
     elif [ "$ag_eng" -ne 0 ]; then
-        bad "[M6.4-ATOMIC rule 4]: the DISCHARGED, CAPTURE-FREE 'a*+b' still carries a VM ($ag_eng RX_ENGINE defines). The discharge deletes the node BEFORE SR-8's consultation runs, so nothing forces the VM and the artifact must be a pure DFA — that per-pattern split is the whole payoff, and its absence means the discharge ran too late or not at all"
+        bad "[M6.4-ATOMIC rule 4]: the DISCHARGED, CAPTURE-FREE 'a*+b' still carries a VM ($ag_eng RX_ENGINE \"vm\" defines). The discharge deletes the node BEFORE SR-8's consultation runs, so nothing forces the VM and the artifact must be a pure DFA — that per-pattern split is the whole payoff, and its absence means the discharge ran too late or not at all"
     else
-        ok "[M6.4-ATOMIC rule 4] (§5.3): the DISCHARGED capture-free 'a*+b' emits no cut-mark slot, no cut in EITHER spelling, and no VM at all — a pure DFA artifact. The slot and the cut are asserted separately because K29 shows an artifact can have one without the other"
+        ok "[M6.4-ATOMIC rule 4] (§5.3): the DISCHARGED capture-free 'a*+b' emits no cut-mark slot, no cut in EITHER spelling, and no RX_ENGINE \"vm\" — a pure DFA artifact ([DD-13]: it stamps RX_ENGINE \"dfa\", so the discriminator is the VALUE and not the macro's presence). The slot and the cut are asserted separately because K29 shows an artifact can have one without the other"
     fi
 else
     bad "[M6.4-ATOMIC rule 4]: pcrec failed to compile 'a*+b'"
@@ -2563,12 +2571,17 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
         grep -qE "^    \.$n = " "$WORKDIR/fb_vm.c" || fb_fields=0
         grep -qE "^    \.$n = 0,$" "$WORKDIR/fb_dfa.c" || fb_fields=0
     done
-    if [ "$fb_abi_vm" != "3" ] || [ "$fb_abi_dfa" != "3" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected 3 on both — four fields joined the layout and every following offset moved, which is exactly what this member exists to announce"
+    # [DD-13], 2026-08-25: abi 3 -> 4. The number this check pins is the
+    # EMITTED SCAFFOLDING's version (D76), not this wave's four fields alone —
+    # [DD-13] added three `#define`s and no struct field, and bumped it. So the
+    # pin moves with every such event, and what stays [DD-14.FB]'s own claim is
+    # the four FIELDS below, which are asserted separately and did not move.
+    if [ "$fb_abi_vm" != "4" ] || [ "$fb_abi_dfa" != "4" ]; then
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected 4 on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3) and again by [DD-13]'s DFA selection stamps (3->4)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else
-        ok "[DD-14.FB] (§10.4): rx_info carries the four sizing fields with abi 3 on both engines, reading 0 on the DFA artifact — the FFI/dlopen consumer's route to the same facts the macros carry"
+        ok "[DD-14.FB] (§10.4): rx_info carries the four sizing fields with abi 4 on both engines, reading 0 on the DFA artifact — the FFI/dlopen consumer's route to the same facts the macros carry"
     fi
 else
     bad "[DD-14.FB]: pcrec failed to compile the VM and DFA fixtures for the caller-buffer surface checks"

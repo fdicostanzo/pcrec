@@ -48,15 +48,32 @@
 # rebuilt, run, and reverted:
 #
 #   1. `emit_dfa_stamps`'s `_DFA_SCAN` value inverted (attempt <-> unanchored):
-#      RED, 386 artifacts disagreeing with their own loop shape.
+#      RED, 8 checks failed -- all 7 witnesses, plus [agreement] "991 artifacts
+#      stamp a scan shape their emitted loop does not have" (991 = every DFA
+#      artifact that HAS a loop; the 4 empty-engine ones are exempt from that
+#      axis by construction and stayed green, which is the bucket working).
 #   2. `dfa_prefilter_name`'s bounded arms dropped (`us.views` ignored):
-#      RED, 92 artifacts stamping "memchr"/"byte-class" for a loop bounded at
-#      n-1 -- i.e. exactly plan.md [DD-13] (b)'s distinction going silent.
-#   3. the whole `emit_dfa_stamps` call removed: RED on the presence checks,
-#      2,022 DFA artifacts carrying no `RX_ENGINE` line.
-#   4. the witness table pointed at a VM artifact (`(a)b` in place of `abc`):
-#      RED -- the witness is asserted to be a DFA artifact before its value is
-#      read, so a pattern that changes engine cannot quietly stop testing.
+#      RED, 3 checks failed -- the two `-bounded` witnesses, plus [agreement]
+#      "112 artifacts stamp a prefilter their emitted loop does not have".
+#      **112 is exactly the 61 `memchr-bounded` + 51 `byte-class-bounded` in
+#      the corpus distribution below**, i.e. the red is precisely plan.md
+#      [DD-13] (b)'s distinction going silent and nothing else. Note the SCAN
+#      axis and the empty-engine bucket stayed GREEN through this one: the
+#      check localises the defect to the axis that broke rather than going
+#      uniformly red, which is what makes a failure here readable.
+#   3. the whole `emit_dfa_stamps` call removed: RED, 9 checks failed -- all 7
+#      witnesses, plus [stamps] "995 artifacts are missing a selection stamp"
+#      (995 = every DFA artifact). The VM half stayed green, correctly: the VM
+#      stamps its own `RX_ENGINE` through the shared emitter.
+#   4. the witness table pointed at a VM artifact (`(a)\1` in place of `abc`):
+#      RED with "'(a)\1' is a vm artifact, not a DFA one -- this row has
+#      stopped testing what it names", and the OTHER six witnesses stayed
+#      green. A pattern that changes engine cannot quietly stop testing.
+#
+# THE COUNTS ABOVE ARE MEASURED, and the first draft of this comment had them
+# wrong (386 / 92 / 2,022, written from expectation before the plants were
+# run). They are recorded here as run, from
+# `scratchpad/srStamp/validate.log`.
 #
 # THE POPULATION IS PRINTED AND FLOORED (K35's remedy): a check whose
 # population comes from a pipeline nobody counts cannot report that the
