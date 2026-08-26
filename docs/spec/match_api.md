@@ -1406,7 +1406,8 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `5` on every artifact today ([OPT-1]'s two-tier entries bumped it from 4; [DD-13c] takes it to 6), and is not yet a
+- **`rx_info.abi` is `6` on every artifact today ([DD-13c] bumped it from 5,
+  which was [OPT-1]'s two-tier entries), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
@@ -1421,6 +1422,16 @@ against them:
   which a new `#define` line breaks exactly as a moved offset would. A
   bump is therefore always paired with a re-pin of that comparison to the
   change's last `src`-touching commit, in the same change.
+
+  It moved `4` → `5` at [OPT-1], the two-tier default entries — the first
+  bump at which NO DFA artifact's bytes moved at all, since the tier is
+  emitted only by the VM path. And it moved `5` → `6` at [DD-13c], which is
+  the first bump that is BOTH kinds of event at once: emitted scaffolding
+  (the `"empty"` scan value, and the two `_DFA_*` lines every VM hybrid
+  gained) AND a real struct change — `scan` and `prefilter`, appended at the
+  END so that, unlike [DD-14.FB]'s insertion, **no existing member's offset
+  moves**. It is also the mirror image of [OPT-1]'s: that bump reached VM
+  artifacts only, this one reaches both kinds.
 
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
