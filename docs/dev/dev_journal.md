@@ -15860,3 +15860,45 @@ validation, WIP commits): srEsc (sonnet) [OPT-1] STEP 3 — the
 escalation counter over exemplar files; srK38 (sonnet) [K38-FIX] then
 [SPEC-1.4]; srOpt3 (opus) [OPT-3] STEP 1 — attribute the 11 cycles/byte
 (skip vs transition loop, the two controls). Stall-watchdog cron set.
+
+#### Forty-first session — lane srEsc: [OPT-1] STEP 3, the tier-escalation
+rate over bench/email, MEASURED. New `tests/bench/tier_escalation.sh` +
+`tier_escalation_driver.c` count real `-DRX_TEST_TIER_HOOK` escalations per
+subject (not run_tiered_entry.sh's synthetic depth ladder) over
+pcrec-bench's RFC 5322 `bench/email` sub-bench: `orig.rx`/`factored.rx`
+forced `--engine=vm` (confirmed `auto` selects DFA for both — a DFA
+artifact has no tier, so `auto` would measure nothing) in both the
+whole-subject form (`(?:P)\z`, `rx_match_caps`, the 85 compliance subjects)
+and the search form (`rx_search`, 77 search_short + 3×1MB throughput
+subjects), plus `floor.rx` (`@`) as a negative control (single-tier by
+construction, 0/165 escalations, confirming the driver measures what it
+claims). MEASURED: whole-subject is where escalation actually happens —
+orig 2/85 (s-058, s-061, both still MATCH through the deep tier — the
+stamped 2048/3072 default suffices for the hand-inlined pattern) vs
+factored 6/85 (the same two plus s-059/s-063/s-064, ALL FIVE of which give
+up `PCREC_ERR_FRAMES` with escalated=1 on every one, confirming bench
+inbox prediction P2 exactly — plus s-072, 25 bytes, "quoted string missing
+closing quote", which escalates and still answers nomatch, the SMALLEST
+escalating subject measured, confirming two_tier_entry.md §7's "deep can
+be a very short subject" on a REAL subject rather than the synthetic
+`((a)|(aa))+b` witness). search_short: orig 0/77, factored 1/77 (s-072
+again, still matches there). throughput: 0/3 both patterns —
+`t-c-long-atom-run` gives up on STEPS/WORK before ever reaching FRAMES, so
+it never triggers the mechanism at all. TOTALS: floor 0/165, orig 2/165
+(1.2%), factored 7/165 (4.2%) — the bet holds on this workload, so STEP
+4's static fast/deep predictor is NOT triggered by D77's own rule; the
+five factored give-ups are a separate, already-known problem (undersized
+stamped default for a call-bearing pattern, already fixed by the measured
+`_in` buffer) that STEP 4 would not change. No pcrec-internal exemplar
+subject FILE exists — checked tests/*/gen_corpus.py (synthetic, procedural)
+and tests/bench/run_bench.sh (throughput subjects generated on the fly,
+never stored) — bench/email is the only exemplar measured. Hit one false
+positive along the way: `tests/codegen/run_codegen_tests.sh`'s [K37]
+bare-compiler-invocation sweep flagged `EMAIL_DIR="$PCREC_BENCH_DIR/..."`
+because the unbraced `$PCREC_BENCH_DIR` textually contains `$PCREC` as a
+substring — not an invocation at all, just a directory-path assignment;
+renamed to `BENCH_REPO_DIR` rather than adding a misleading allowlist
+entry. `make strict` clean, `make test-codegen` green after the rename
+(106/0 + 29/0 + 7/0 across the three sub-scripts). docs/dev/plan.md's
+`[OPT-1]` row carries the full measured table; `tests/bench/CLAUDE.md` has
+the new files' row.
