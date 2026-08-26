@@ -15762,3 +15762,32 @@ copy; 106/0). Merged 5808484. The final battery of the night runs on it
 sentinel fix); the battery script now stops itself on a red tripwire.
 On green: bench inbox I-6 (pin, abi 6, `rx_info.scan`/`.prefilter`),
 [DD-13c] closed, [OPT-1] STEP 2 closed, wake.md rewritten for Frank.
+
+#### Fortieth session, part 15 — the final battery: matrix CLEAN on the combined abi-6 tree; one magic ceiling fell and exposed K39 (2026-08-26 07:2x EDT)
+
+The final battery on 557a29b (05:05 → 07:22): the tripwire gate GREEN
+(all 180 anchors resolve — the new [SABANCHOR] check in test-codegen
+too); `make test` 1,570 checks / 1 red; the K32 corpus cell solo
+1,634/0; 1 INCONCLUSIVE; `make san` STOPPED at 13 of 33 scripts on that
+one red (rc 2, zero sanitizer reports — a failing script aborts the
+list); MATRIX 180 rows / unexpected 0 / undetected 6 (the expected six)
+/ UNREACHED 0 / ANOMALIES 0 at e709397 (docs-only past 557a29b) — the
+three re-anchored rows DETECTED in the full run. THE ONE RED: [ENG-BREP]
+in tests/codegen/run_ir_listing.sh (and its twin in tests/vm) asserted
+`lines < 2000` on `((a)|b){0,4000}c`'s default artifact — a magic
+ceiling the day's three abi events reached EXACTLY (1,994 → 2,000: two
+FAST stamps, two rx_info fields, two hybrid stamps). Attributed against
+the pre-merge compiler 32890e2: 869 / 1,994 / refused(NFA cap) for
+{0,400} / {0,4000} / {0,40000} — the count-DEPENDENCE is PRE-EXISTING:
+the hybrid's inlined DFA prefilter carries the bounded repeat (1,125
+lines between 400 and 4,000), while the VM body is count-independent
+(573 lines at any count with the prefilter off). The ceiling had never
+measured the rung's claim; it measured scaffolding with 6 lines of
+slack. Both checks now assert count-independence by COMPARISON
+({0,4000} vs {0,400}, prefilter denied: 573 == 573) and PRINT the auto
+sizes so K39's number stays visible (merged 6e8edfb, ir_listing 80/0,
+test-vm 9/0 80/0 35/0, strict). K39 filed; [OPT-4] chartered (a
+candidate-start DFA needs the first-byte language, not the count —
+build from a bench row, D77). OWED and running (postfinal.sh): the full
+san on 6e8edfb, and rows S36-S39/S44 solo (the vm-suite rows carried the
+pre-existing red in the matrix — DETECTED there, but not attributable).
