@@ -15649,3 +15649,53 @@ RX_ENGINE "vm"$'`, or extract-and-compare) **or comment-only; none is
 presence-based**, and `run_dfa_stamps.sh` is the only reader of `RX_DFA_*` at
 all — so no script infers "DFA" from the presence of a macro this change now
 puts on 1,263 VM artifacts. No fixes were needed outside this lane's own check.
+
+### [DD-13c] part 3 — rebased twice more, and two reds found on main in passing
+
+Two more rebases after part 2, both onto a moving main: **48e0c41** ([OPT-1],
+lane srTier's two-tier entries, abi 5) and then **d0a9ab5** (main's own fixes
+plus K38's docs). Seven conflicts on the first, three on the second, all
+resolved toward main + this lane's hunks. srTier's `[OPT-1]` abi 4 → 5
+paragraph is kept verbatim as this change's predecessor; its `tuning.md` §2.12
+sits ahead of §3/§3.1/§3.2. Every "abi 4 → 6, 5 taken concurrently" site was
+rewritten to **5 → 6** naming `[OPT-1]`, across ten files.
+
+**THE PIN MOVED THREE TIMES INSIDE ONE CHANGE**, which is worth recording
+because the rule invites exactly this mistake: comparison (B) must name the
+change's LAST `src`/`lib`/`cli` commit, and a rebase rewrites every hash in the
+branch. `272d07c` → `694902e` (the rx_info fields made a later src commit) →
+`6147d7c` (rebase onto 48e0c41) → `c940551` (rebase onto d0a9ab5). Main's own
+pin stays `469a432`; `d0a9ab5` owed no re-pin, its `frames_sentinel` change
+leaving the emitted bytes for prefix `rx` identical.
+
+**TWO REDS FOUND ON MAIN, neither this lane's code**, both from `[OPT-1]`'s
+merge and both surfaced by running `run_codegen_tests.sh` for this lane's own
+landing bar rather than only the check written for this change:
+
+1. `rx_info.abi` stamped 5 while the hand-spelled expectation still demanded 4
+   ([DD-14.FB] §10.4). This is the SECOND-SITE lesson stated twice in one
+   session: an abi bump has a site in the emitter AND a site in the check, the
+   literal is hand-spelled on purpose (reading it from `emit_dfa.c` would make
+   the check agree by construction), and the check firing IS the mechanism.
+2. `tests/codegen/run_tiered_entry.sh:248` ran a `sort` under the ambient
+   locale — K35's meta-check, working exactly as designed. That site tallies
+   fixed `mismatch-KIND` tokens rather than deduplicating pattern text, so the
+   collation could not actually have dropped a row; the meta-check is blunt on
+   purpose, so that nobody has to reason about which sort sites matter.
+
+Both were fixed on main by the manager; this lane's own separable fix for (2)
+was dropped as redundant at the rebase.
+
+**FINAL, on a quiet box (load1 0.26), one suite at a time at PROCS=4:**
+`run_dfa_stamps.sh` 29/0 · `run_codegen_tests.sh` 105/0 · recursion identity
+gate 15/0 on pin `c940551`, and the correct refusal on `469a432`
+(`subject stamps '.abi = 6', pin 469a432 stamps '.abi = 5'`) · (A)
+byte-identical vs the unchanged `ac4917d` (2,206/2,211 program regions, exactly
+the four named wave-G elisions) · `run_vm_identity.sh` 9/0 ·
+`run_tiered_entry.sh` 17/0, so the hybrid stamps do not disturb `[OPT-1]`'s
+check · `make strict` clean.
+
+**And the control held through all of it:** the DFA-only prefilter distribution
+is still exactly `none` 380 / `memchr` 327 / `byte-class` 176 /
+`memchr-bounded` 61 / `byte-class-bounded` 51 — unchanged across this lane's
+two halves, srTier's merge, and three rebases.
