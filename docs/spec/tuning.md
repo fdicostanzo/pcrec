@@ -508,7 +508,16 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   largest cause is not "no filter was wanted" but **the start state ACCEPTS**
   — `\bx*`, `a*`, `.*`, `$` — where no skip is sound at all, because a skipped
   run is a run of positions at which the pattern owes an empty match.
-  CORPUS DISTRIBUTION_PLACEHOLDER
+  MEASURED over the corpus (2,772 patterns, `tests/codegen/run_dfa_stamps.sh`,
+  2026-08-25). **995 DFA artifacts**: `none` 380, `memchr` 327, `byte-class`
+  176, `memchr-bounded` 61, `byte-class-bounded` 51; `unanchored` 811 /
+  `attempt` 180 / `empty` 4. **1,263 VM hybrids** (§3.1): `memchr` 825,
+  `none` 264, `byte-class` 137, `memchr-bounded` 20, `byte-class-bounded` 17;
+  `unanchored` 1,071 / `attempt` 188 / `empty` 4. **Every artifact that
+  contains a DFA scan** (2,258): `memchr` 1,152, `none` 644, `byte-class` 313,
+  `memchr-bounded` 81, `byte-class-bounded` 68; `unanchored` 1,882 / `attempt`
+  368 / `empty` 8. The remaining 225 VM artifacts are non-hybrid and carry
+  neither macro; 289 corpus patterns are refused under `--features all`.
 
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
@@ -546,7 +555,7 @@ no knob here to deny or force. `tests/codegen/run_dfa_stamps.sh` holds each
 stamp to the loop it names (every verdict derived from the emitted matcher
 text, then compared against the macro) and asserts the hybrid iff in both
 directions. `rx_info.abi` moved `3` -> `4` with `[DD-13]`'s stamps and
-ABI_BUMP_PLACEHOLDER with `[DD-13c]`'s (D76: the version of the emitted
+`4` -> `6` with `[DD-13c]`'s (D76: the version of the emitted
 scaffolding, not of the struct).
 
 §2.5 (`-fno-prefilter`) governs `RX_VM_PREFILTER`, which is the VM's own

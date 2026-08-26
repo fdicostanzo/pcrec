@@ -110,6 +110,44 @@
 # run). They are recorded here as run, from
 # `scratchpad/srStamp/validate.log`.
 #
+# [DD-13c], 2026-08-25, lane srStamp2 — THREE MORE, one per rule this change
+# added. Each planted in the emitter, rebuilt (`make -j4`), run at `PROCS=4`,
+# and reverted; the clean baseline for all three is **26 passed / 0 failed**.
+#
+#   5. `emit_vm.c`'s `if (job->fit.prefilter) pcrec_emit_dfa_scan_stamps(...)`
+#      REMOVED — r37 #6 restored as a defect, the hybrid silent again:
+#      RED, 21/5 — both hybrid VM witnesses ("carries an inlined DFA scan, but
+#      stamps scan=0 prefilter=0"), [iff] "1263 VM hybrid artifact(s) inline a
+#      DFA scan and stamp nothing about it", AND the two comparison-shortfall
+#      lines ("the SCAN comparison ran on 995 artifacts but 2258 contain a DFA
+#      scan ... 1263 were routed past it"; the same for the prefilter axis).
+#      The DFA half, the empty bucket and its manifest all stayed GREEN.
+#      **THOSE LAST TWO REDS ARE WHY THE DENOMINATORS ARE COUNTED.** On the
+#      first pass this plant scored 21/3: the [agreement] verdicts read "all
+#      2258 artifacts" while 1,263 had been routed past the comparison by the
+#      missing-stamp `continue` — a TRUE sentence about a population nobody
+#      compared, which is docs/dev/learnings.md §3's failure appearing inside a
+#      check written to that lesson. `SCANCMP`/`PFCMP` are counted at the
+#      comparison sites now and the shortfall is asserted.
+#   6. the same call left in but the `fit.prefilter` GATE dropped, so a
+#      NON-hybrid VM artifact carries the macros too (`job->engine` unset =>
+#      it stamps "empty"/"none" about a DFA that does not exist):
+#      RED, 24/2 — the `(a)\1` witness and [iff] "225 VM artifact(s) carry a
+#      RX_DFA_* macro with no DFA scan in the artifact to describe". The
+#      hybrid direction of the iff stayed GREEN, which is the point of
+#      asserting an iff as two verdicts rather than one.
+#   7. `dfa_scan_name`'s `if (dfa_engine_is_empty(cx)) return "empty";`
+#      REMOVED — r37 #5 restored as a defect:
+#      RED, 23/3 — both `empty` witnesses (`\B\b` reverts to "unanchored",
+#      `^\B\b` to "attempt": the two engines' different wrong answers) and
+#      [agreement] "8 artifact(s) stamp a scan shape their emitted body does
+#      not have" — 4 DFA artifacts + the 4 hybrids that inline an empty scan.
+#      The printed scan tally reverts to `unanchored=815 attempt=180` with no
+#      `empty` value at all, which is the distribution [DD-13] shipped. The
+#      iff and the manifest stayed GREEN.
+#
+# Recorded as run, from `scratchpad/srStamp2/v_*.log`.
+#
 # THE POPULATION IS PRINTED AND FLOORED (K35's remedy): a check whose
 # population comes from a pipeline nobody counts cannot report that the
 # pipeline lost a third of it.

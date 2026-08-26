@@ -1777,9 +1777,9 @@ against the subject's `4`) it REFUSES with the message above before the sweep
 runs.
 
 **[DD-13c], 2026-08-25 — THE SECOND EXERCISE, and the pin is
-DD13C_PIN_PLACEHOLDER now.** r37's two scope findings move emitted `#define`
+`272d07c` now.** r37's two scope findings move emitted `#define`
 bytes (the four proven-empty DFA artifacts' scan value; two new lines on every
 VM hybrid) and move nothing inside the program region, so the reading above is
-copied verbatim: `abi` DD13C_ABI_PLACEHOLDER, (B) re-pinned, (A) byte-identical
+copied verbatim: `abi` 4 -> 6 (5 was taken by lane srTier in the same session), (B) re-pinned, (A) byte-identical
 against the unchanged `ac4917d`. Demonstrated both directions again — see the
 [DD-13c] entry in `docs/dev/dev_journal.md` for the measured numbers.
