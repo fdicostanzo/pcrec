@@ -63,8 +63,10 @@
 #      uniformly red, which is what makes a failure here readable.
 #   3. the whole `emit_dfa_stamps` call removed: RED, 9 checks failed -- all 7
 #      witnesses, plus [stamps] "995 artifacts are missing a selection stamp"
-#      (995 = every DFA artifact). The VM half stayed green, correctly: the VM
-#      stamps its own `RX_ENGINE` through the shared emitter.
+#      (995 = every DFA artifact), plus the empty-engine bucket's own
+#      non-vacuity check -- with every stamp absent nothing reaches the bucket
+#      (r37 #5 spelled out the ninth). The VM half stayed green, correctly: the
+#      VM stamps its own `RX_ENGINE` through the shared emitter.
 #   4. the witness table pointed at a VM artifact (`(a)\1` in place of `abc`):
 #      RED with "'(a)\1' is a vm artifact, not a DFA one -- this row has
 #      stopped testing what it names", and the OTHER six witnesses stayed
@@ -225,11 +227,13 @@ fi
 #
 # [K35] `LC_ALL=C` ON THE `sort -u`: under the ambient collation punctuation is
 # IGNORABLE, so `a{0,0}b` and `(a){0,0}b` compare EQUAL and `-u` drops the
-# structured one. Measured on this tree: 1,784 ambient vs 2,758 under LC_ALL=C.
+# structured one. Measured on this tree: 1,784 ambient vs 2,772 under LC_ALL=C
+# (2,758 was written before the count was taken -- r37 #1; the check prints
+# the live number every run, which is the only figure to trust).
 grep -rhE '^pattern ' "$ROOT_DIR/tests" 2>/dev/null | sed 's/^pattern //' \
     | LC_ALL=C sort -u > "$WORKDIR/pats"
 npat="$(wc -l < "$WORKDIR/pats")"
-# THE FLOOR, ~95% of the 2,758 this tree measures (2026-08-25). If this goes
+# THE FLOOR, ~95% of the 2,772 this tree measures (2026-08-25). If this goes
 # red, read it as "the population moved" and find out why before re-pinning.
 if [ "$npat" -lt 2620 ]; then
     bad "dfa-stamps: corpus extraction found only $npat patterns, below the 2620 floor (~95% of the 2758 this tree measures). Either the corpus shrank (re-pin, deliberately) or the extraction is dropping patterns again (K35)"
@@ -307,7 +311,7 @@ while IFS= read -r pat; do
     case " $PF_VALUES "   in *" $s_pf "*)   ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_PREFILTER '$s_pf': $pat" ;; esac
     [ "$s_eng" = "dfa" ] || { echo MISS; echo "BAD: RX_ENGINE '$s_eng' on a DFA artifact: $pat"; }
     if [ "$d_scan" = "empty" ]; then
-        echo EMPTY
+        echo EMPTY; echo "EMPTYPAT $pat"
         [ "$s_pf" = "none" ] || { echo EMPTYPF; echo "BAD: PREFILTER '$s_pf' on an artifact with NO LOOP: $pat"; }
         continue
     fi
@@ -355,6 +359,23 @@ fi
                    || bad "[agreement] $npf artifact(s) stamp a prefilter their emitted loop does not have"
 [ "$nemptypf" -eq 0 ] && ok "[agreement] all $nempty empty-engine artifacts (a proven-no-match pattern: body is one \`return 0\`) stamp RX_DFA_PREFILTER \"none\"" \
                       || bad "[agreement] $nemptypf empty-engine artifact(s) stamp a prefilter, on a search function with no loop in it"
+# r37 #2 (critDD13b): a floor of one answers "did the bucket vanish", never
+# "does it hold exactly the right ones" -- a marker that started matching
+# artifacts WITH a loop would route them past the scan comparison while the
+# floor stayed green. So the bucket is an EXACT, NAMED set: the four
+# provably-empty patterns the corpus carries today. A fifth member is a
+# finding (name it here after reading why), a missing one is a regression.
+EMPTY_MANIFEST='\B\b
+\b\B
+\d\b\w
+a\bb'
+sed -n 's/^EMPTYPAT //p' "$WORKDIR/verdicts" | LC_ALL=C sort -u > "$WORKDIR/empty_seen"
+printf '%s\n' "$EMPTY_MANIFEST" | LC_ALL=C sort -u > "$WORKDIR/empty_want"
+if cmp -s "$WORKDIR/empty_seen" "$WORKDIR/empty_want"; then
+    ok "[agreement] the empty-engine bucket is EXACTLY its named manifest ($(wc -l < "$WORKDIR/empty_want") patterns: $(paste -sd' ' "$WORKDIR/empty_want"))"
+else
+    bad "[agreement] the empty-engine bucket differs from its named manifest -- only: $(LC_ALL=C comm -23 "$WORKDIR/empty_seen" "$WORKDIR/empty_want" | paste -sd' ') ; missing: $(LC_ALL=C comm -13 "$WORKDIR/empty_seen" "$WORKDIR/empty_want" | paste -sd' ') -- a new member is a finding to name here, a lost one a regression; either way the scan comparison's population moved"
+fi
 [ "$nempty" -eq 0 ] && bad "[agreement] the empty-engine bucket is EMPTY — \`\\B\\b\` and its three siblings are in the corpus and must land here; a zero means the text marker stopped matching and the bucket is silently exempting nothing (or, worse, everything)" \
                     || ok "[agreement] the empty-engine bucket holds $nempty artifact(s), asserted non-vacuous"
 [ "$nvalue" -eq 0 ] && ok "[values] every stamped value is one of the documented set (scan: $SCAN_VALUES; prefilter: $PF_VALUES)" \
