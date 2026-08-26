@@ -395,6 +395,26 @@ decides whether to perform it — and then run the row through
     non-empty — a biconditional only ever checked on its trivial side is a
     vacuous pass. The engine discriminator is `goto rx_L0;`, not a stamp,
     for run_dfa_stamps.sh's circularity reason.
+  - **THE FLOOR (r38 finding 3a), and it is the arm to read first.**
+    Everything else in this check bounds the fast tier from ABOVE only —
+    `FAST <= RESUME`, the biconditional, §4's frame — so a derivation that
+    SHRINKS leaves all of them green while the tier degrades to
+    escalate-on-everything. The stamp and the bind move together and this
+    file reads both, so it could not see it. Three arms: (A) the tiered
+    corpus population floored at 250 (measured 272) and printed; (B) every
+    tiered artifact must FILL its page budget to within one frame + one
+    trail entry of the integer rounding, read off the artifact — this one
+    is DERIVATION-INDEPENDENT, asserting the property the scaling exists to
+    produce rather than re-implementing the scaling; (C) nothing tiers below
+    `VM_FAST_TIER_MIN`. **Validated by halving the derivation: floor B alone
+    went red on 271 of 271 tiered artifacts at 16 passed / 1 failed, with
+    every answer and span still correct.**
+  - **§6, THE MULTI-GROUP WITNESS (r38 3b).** `((a)|(aa))+b`, `RX_NCAPS=4`,
+    60 consecutive depths, 37 escalating, first at n=24 (a 25-byte subject).
+    `tier_driver.c` `memcmp`s the WHOLE capture array against `_in` at the
+    default descriptor, because §10.9 promises returns AND spans and the
+    specimen's single whole-match group is too weak to carry that — on it
+    "the spans agree" is nearly implied by "the returns agree".
   - **Validation (made to fail on purpose, MEASURED 2026-08-25, planted in
     a scratch emitter and removed):**
     (i) the fast tier bound at the STAMPED DEFAULT ("it never escalates") →

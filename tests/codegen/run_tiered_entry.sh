@@ -263,6 +263,18 @@ else
     # the contract it checks rather than accepting whatever the emitter says —
     # run_dfa_stamps.sh's documented-value-set precedent. They must be updated
     # DELIBERATELY, in the same change as `src/gen/emit_vm.c`.
+    # VALIDATION (MEASURED 2026-08-26, planted in a scratch emitter and
+    # removed): halve the derivation — `ff = ... / 2`, `ft = ... / 2`, so the
+    # STAMP AND THE BIND MOVE TOGETHER, which is exactly the degradation this
+    # floor exists for and exactly what every other check in this file is blind
+    # to. OBSERVED: `FAIL: §2(floor B): 271 of 271 tiered artifacts have a fast
+    # tier that does NOT fill its budget (first three: ff=23 ft=35 used=1480
+    # avail=3032 ...)` with **checks passed: 16, checks failed: 1** — floor B
+    # alone. §2's biconditional, floors A and C, §3, §4, §5 and §6 all stayed
+    # GREEN, and every answer and span stayed correct. (271 not 272 because one
+    # pattern fell below FAST_MIN under the plant and correctly went
+    # single-tier.) A quarter-size plant instead trips FAST_MIN and drops the
+    # specimen to single-tier, which §1 reports first.
     FAST_BUDGET=3072       # VM_FAST_TIER_BYTES
     FAST_MIN=16            # VM_FAST_TIER_MIN
     TIER_FLOOR=250         # measured 272 at this commit; see below
@@ -285,18 +297,23 @@ else
     #     used  = FAST_FRAMES*RESUME_FRAME_SIZE + FAST_TRAIL*TRAIL_FRAME_SIZE
     #     used <= avail   (the page budget, which §4 also measures for real)
     #     used >= avail - (RESUME_FRAME_SIZE + TRAIL_FRAME_SIZE)   (the floor)
-    UNDER=$(awk -v B="$FAST_BUDGET" '
+    # The message reports a COUNT and three EXAMPLES, not every offender: this
+    # arm goes red on the WHOLE population when the derivation shrinks (272 of
+    # 272, measured), and 272 rows on one line is unreadable. Validated that
+    # way round on purpose — see the plant below.
+    awk -v B="$FAST_BUDGET" '
         $1 == "vm-tiered" {
             ff=$2; ft=$3; fsz=$4; tsz=$5; nsl=$6
             avail = B - nsl*8
             used  = ff*fsz + ft*tsz
             if (used > avail || used < avail - (fsz+tsz))
-                printf "ff=%d ft=%d used=%d avail=%d; ", ff, ft, used, avail
-        }' "$WORKDIR/kinds.txt")
-    if [ -z "$UNDER" ]; then
+                printf "ff=%d ft=%d used=%d avail=%d\n", ff, ft, used, avail
+        }' "$WORKDIR/kinds.txt" > "$WORKDIR/underfilled.txt"
+    NUNDER=$(wc -l < "$WORKDIR/underfilled.txt")
+    if [ "$NUNDER" -eq 0 ]; then
         ok "§2(floor B): all $NTIER tiered artifacts fill their page budget to within one frame + one trail entry of the integer rounding — the fast tier is as large as one $FAST_BUDGET B budget allows, not merely small enough to fit"
     else
-        bad "§2(floor B): tiered artifacts whose fast tier does NOT fill its budget: $UNDER — a fast tier below its budget escalates more often than it needs to and turns the optimization into a pessimisation, while passing every other check in this file"
+        bad "§2(floor B): $NUNDER of $NTIER tiered artifacts have a fast tier that does NOT fill its budget (first three: $(head -3 "$WORKDIR/underfilled.txt" | tr '\n' '; ')) — a fast tier below its budget escalates more often than it needs to and turns the optimization into a pessimisation, while passing every other check in this file"
     fi
 
     # (floor C) AND NOTHING TIERS BELOW THE EMITTER's OWN MINIMUM, read back off
