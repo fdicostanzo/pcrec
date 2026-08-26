@@ -1181,6 +1181,15 @@ spine, not before):
     outputs.
   - [DD-13b.panel] D6 ADVERSARIAL PANEL on the design, then Frank's ruling. (Renamed from [DD-13c] 2026-08-25: that tag now names the STAMP SCOPE follow-up below.)
     NO parser is written before (c) closes.
+    **TAG COLLISION, flagged 2026-08-25 by lane srStamp2 and NOT resolved
+    here — the rename is the manager's call.** `[DD-13c]` now names TWO
+    different things: this sub-step of the FORMAT half's (a)/(b)/(c)
+    sequence, and the top-level row above for r37's two stamp SCOPE gaps
+    (chartered under that name by the r37 review, the lane brief and every
+    commit message in that lane, so renaming THAT one would orphan the
+    trail). A `grep -n "\[DD-13c\]"` returns both. Suggested fix when
+    someone takes it: this sequence becomes (a)/(b)/(c) under an
+    unambiguous parent tag, since it is a sub-step and the other is a row.
   Scheduling: after the scale work ([M4.6]/[M4.7]) per Frank's
   2026-08-17 sequencing; (a) is read-only fact-gathering and safely
   early-schedulable in a session with spare capacity, but does not
