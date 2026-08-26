@@ -439,7 +439,7 @@ else
 
     echo "== [OPT-3] §5 the CELL invariant on every premultiplied table =="
     cellbad=0; celln=0; tabn=0
-    for ent in $(sort -un "$WORKDIR/premul_artifacts" 2>/dev/null); do
+    for ent in $(LC_ALL=C sort -un "$WORKDIR/premul_artifacts" 2>/dev/null); do
         f="$WORKDIR/pm_$ent.c"; [ -f "$f" ] || continue
         for dir in forward reverse; do
             ncls="$(class_count "$f" "$dir")"
