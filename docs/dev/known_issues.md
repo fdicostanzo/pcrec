@@ -2993,3 +2993,33 @@ longest suffix + NUL), sweep `emit_vm.c`/`emit_dfa.c` for `char
 case that emits AND COMPILES a 60-character-prefix artifact on both
 engines (a spec-first witness: the promise is the test). Sonnet-sized;
 not started.
+
+## K39 — OPEN (2026-08-26, found by the [ENG-BREP] size ceiling going red on the abi-6 tree) — the VM HYBRID's inlined DFA prefilter SCALES WITH A BOUNDED-REPEAT COUNT: `((a)|b){0,4000}c` emits 1,994 lines at the default vs 869 for `{0,400}`, while the VM body itself is count-independent (573 lines at any count with the prefilter off)
+
+**Symptom.** MEASURED at 32890e2 (before the day's scaffolding): default
+engine (auto = VM + hybrid prefilter) `{0,400}` 869 lines, `{0,4000}`
+1,994 lines, `{0,40000}` refused (NFA state cap 131,072 — the pattern's
+own NFA, a different limit); `--engine=vm` (prefilter none) 573 lines
+for every count; `-fno-prefilter` likewise. The 1,125-line difference is
+the inlined DFA scan of the prefilter, which is built from a language
+that carries the repeat count.
+
+**Why it matters.** [ENG-BREP]'s claim — the counter rung makes the
+count irrelevant to the emitted size — is true of the VM body and FALSE
+of the default artifact; the two size checks (tests/vm, tests/codegen/
+run_ir_listing.sh) asserted `lines < 2000` and passed by 6 lines of
+slack until [OPT-1]/[DD-13c]'s six scaffolding lines consumed it
+(2026-08-26 battery). Both checks now compare `{0,4000}` against
+`{0,400}` with the prefilter denied (the claim) and PRINT the auto sizes
+(this issue). Cost: compile time + artifact size proportional to the
+count for every hybrid VM artifact with a bounded repeat.
+
+**Fix candidate ([OPT-4], not started).** A candidate-start prefilter
+only needs "can a match BEGIN here" — a count-INDEPENDENT language (the
+pattern's first-byte class / a count-collapsed pattern, e.g. the repeat
+lowered to `{0,1}` or `*` for prefilter purposes). Building the hybrid's
+DFA from that instead of the full pattern would make the artifact
+count-independent again and shrink compile time; the identity gates
+(answers unchanged; a prefilter is answer-identity-preserving by D46's
+rule) are the control. A loop item: charter from a bench row that shows
+the cost, per D77.
