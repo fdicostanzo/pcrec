@@ -242,7 +242,7 @@ KEEP="${KEEP:-0}"
 # asserted there and is where those two lines are actually covered.
 #
 # ---------------------------------------------------------------------------
-# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `694902e` (2026-08-25).
+# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `6147d7c` (2026-08-26).
 # ---------------------------------------------------------------------------
 # [DD-13c], 2026-08-25 — THE SECOND RE-PIN UNDER D76, and it is the same shape
 # as the first (which the paragraph below records; keep both, the pair is the
