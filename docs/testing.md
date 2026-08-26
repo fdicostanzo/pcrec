@@ -2826,3 +2826,157 @@ then reverted (scratch `.rxt` files, never committed):
   the pattern's own group count — both caught, independent of the
   live/pending distinction (the python oracle only cares whether the
   EXPECTATION is correct, never whether pcrec can check it yet)
+
+## Answer-identity sweep + form census ([CHK-2], 2026-08-26)
+
+Two opt-in instruments, `make test-axes` (`tests/axes/run_axes.sh` +
+`tests/codegen/run_form_census.sh`), the same shape as `make strict`/`make
+ubsan`: never part of `make test`, never default, writes nothing outside
+its own temp dir, safe to run alongside anything else. Chartered from a
+gap in the tuning-axis family's own convention (docs/dev/plan.md [CHK-2]):
+every axis gets a stamp, a deny flag, an identity gate and a structural
+check BY CONVENTION, and before this row only 4 of the 13 documented axes
+(`docs/spec/tuning.md` §2) had ANY corpus-wide answer sweep at all.
+
+### The answer-identity sweep (`tests/axes/run_axes.sh`)
+
+Sweeps the WHOLE `.rxt` corpus over every bit-flag axis (12, derived live
+from `lib/pcrec.h`'s `1u << N` constants and `cli/main.c`'s flag-parsing
+loop — never hand-copied, cross-checked against `tuning.md` §2's own
+`(bit N)` headings so a new axis with no doc heading, or vice versa, is
+RED) plus the coarse `--engine=vm`/`--engine=dfa` axis, comparing PER-CASE
+answers (match/nomatch/span/captures/give-up code) against the default
+build — not pass/fail COUNTS, which can agree while the cases that passed
+disagree.
+
+**The mechanism**: `tests/harness/run.sh` gained an `RXTDUMP` env var (this
+row's own addition, documented in that file's header, threaded through the
+`PROCS>1` worker re-invocation the same way `RXTFLAGS`/`RXTROUTE` already
+are) — one line per evaluated case, `<file>\t<line>\t<kind>\t<route>\t
+<trc>\t<out>`, appended regardless of how the harness's own pass/fail logic
+later scores the case. Two dumps (default, one per axis) are compared by
+`tests/axes/dump_diff.awk`, keyed by `<file>:<line>` (unique — one `.rxt`
+case per source line): AGREE, MISMATCH (the axis's answer moved — a
+FAILURE on every axis), LOST (a case ran under default and not under the
+axis — a FAILURE except on the one documented DO-OR-DIE member,
+`PCREC_FORCE_PREFILTER`/bit 9, and on the coarse engine axis, both of which
+tuning.md documents as capable of refusing), GAINED (never documented as
+possible for any axis, always a FAILURE).
+
+**The oracle cross-check**: one DFA-side answer-identity axis
+(`-fno-premul-table`, bit 15) is additionally run through
+`tests/registry/run_pc4.sh` — PC-4, the tree's only LIVE libpcre2
+match-semantics differential — via a one-line wrapper that prepends the
+flag to every `pcrec` invocation. PC-4's own pattern space is capture-free
+(compiles to the pure DFA engine), which is exactly the population
+`-fno-premul-table` touches, and its own pinned population (273 patterns,
+232 accepted, 62,872 cells) is asserted 0-failure under both the plain and
+the denied build — a control whose ground truth is external, so a bug
+that broke default AND denied identically (which a default-vs-axis
+comparison alone cannot see) would still be caught here.
+
+**Detect demonstration** (docs/dev/learnings.md §3): `premul_val`
+(`src/gen/emit_dfa.c:1521`), the identity function on the indexed-table
+form `-fno-premul-table` selects, was changed to `st + 1` in a scratch copy
+outside this worktree (never `src/`, never committed). Rebuilt, pointed
+`run_axes.sh` at the sabotaged binary for the `-fno-premul-table` axis
+alone against `tests/base/alternation.rxt`: **22 of 26 cases MISMATCH**,
+each named individually (span and capture-slot divergences both), e.g.
+line 38: default `match 0 2 0 1`, sabotaged axis `nomatch`. Full transcript
+in `run_axes.sh`'s own header.
+
+**Runtime**: ~13 full `tests/harness/run.sh` passes (12 bit-flag axes + 2
+engine directions, plus the baseline) at roughly `test-corpus`'s own
+per-pass runtime with `PROCS=$(nproc)`. Measured on quick subset runs (see
+`run_axes.sh`'s header for the exact commands); the full-corpus run is the
+delivered `make test-axes` invocation and its measured total is recorded
+at the next battery this row rides.
+
+### The form census (`tests/codegen/run_form_census.sh`)
+
+Compiles every corpus pattern twice — default (auto) engine, and
+`--engine=vm` forced where accepted, the WIDER population for the VM-only
+stamps since auto routes only ~54% of the corpus to the VM — and counts
+artifacts per STAMP VALUE for every stamp `docs/spec/match_api.md` §6.3
+documents (`RX_ENGINE`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`, `RX_DFA_TABLE`,
+`RX_VM_PREFILTER`, the `RX_VM_RUNGS`/`_STRATS`/`_PRUNES` bitmasks read
+per-bit, `RX_VM_PRUNE_CEILING`, `RX_ALTCLS_MERGES`/`_FACTORED`), plus the
+two joint distributions §6.3 singles out. K35's rule applies to the
+vocabulary itself: a FLOOR for every value the corpus reaches (rounded
+down generously) and a REQUIRED, BUILT, ASSERTED synthetic witness for
+every value with zero corpus population — a value neither reaches is RED.
+
+**Measured this session, 2,772 corpus patterns (floor 2,620), clean run,
+135s at `PROCS=4` uncontended (checks passed: 1, re-verified at 120s under PROCS=6 contended by a concurrent battery run):**
+
+Default (auto) engine selection: 995 DFA / 1,488 VM (1,263 hybrid, 225
+plain) / 289 refused.
+
+DFA-containing artifacts (995 DFA + 1,263 hybrids = 2,258): `RX_DFA_SCAN`
+unanchored 1,882 / attempt 368 / empty 8. `RX_DFA_PREFILTER` memchr 1,152 /
+none 644 / byte-class 313 / memchr-bounded 81 / byte-class-bounded 68.
+`RX_DFA_TABLE` premultiplied 1,882 / none 376 (= attempt + empty) —
+**"indexed" and "mixed" both measure ZERO corpus population**: every
+DFA-containing artifact in the corpus is small enough that the
+pre-multiplied form wins by default. "mixed" was tuning.md §2.13's own
+documented likely-first gap; "indexed" was NOT documented anywhere and is
+exactly the kind of gap this census's completeness loop exists to catch
+rather than a hand-picked exclusion list. Both are covered by synthetic
+witnesses (below).
+
+(RX_DFA_SCAN, RX_DFA_PREFILTER, RX_DFA_TABLE) triples: unanchored/memchr/
+premultiplied 1,125; attempt/none/none 341; unanchored/byte-class/
+premultiplied 313; unanchored/none/premultiplied 295; unanchored/
+memchr-bounded/premultiplied 81; unanchored/byte-class-bounded/
+premultiplied 68; attempt/memchr/none 27; empty/none/none 8.
+
+(RX_ENGINE, RX_VM_PREFILTER) pairs: vm,hybrid 1,263; dfa,- 995; vm,none 225.
+
+VM artifacts (default population, 1,488): `RX_VM_PRUNE_CEILING`
+prefilter-window 217 / subject-end 224 / **none 1,047** — a third value
+this census measured live (§6.3 gives `RX_DFA_PREFILTER` a value-set
+table but not this macro; "none" reads as "no MRL clamp applied at all",
+`RX_VM_PRUNES` both bits clear). `RX_VM_RUNGS`/`_STRATS`/`_PRUNES` bit
+populations printed per bit (see a run's own tally for the current
+counts — every bit is set on at least 38 artifacts). `RX_ALTCLS_MERGES`/
+`_FACTORED` (pre-engine-selection, so measured on every compiled default
+artifact): >0 on 86/87 respectively.
+
+The WIDER `--engine=vm`-forced population (2,484 compiled, 288 refused —
+one fewer refusal than the default sweep, an observed fact rather than an
+asserted invariant): `RX_VM_PREFILTER` reads "none" on ALL 2,484 — the
+direct, corpus-wide confirmation that `--engine=vm` disables the DFA
+prefilter (D46/R21 E-6) exactly as documented. `RX_VM_PRUNE_CEILING`
+subject-end 574 / none 1,910 (computed) — the OTHER ceiling arithmetic
+tuning.md's MRL differential note describes, reached here for free by
+forcing the wider population rather than needing a hand-picked cell.
+
+**Synthetic witnesses** (both asserted, both confirmed):
+`RX_DFA_TABLE "mixed"` <- `[01]*1[01]{13}` (forward machine 73,728
+entries, over the 65,535-entry premultiplication bound; reverse machine
+premultiplied — both sides of the bound in one artifact).
+`RX_DFA_TABLE "indexed"` <- `(?:[a-z]+)@(?:[a-z]+)` with
+`-fno-premul-table` (§2.13's own deny flag forces the indexed form
+directly — the corpus-gap witness §2.13 predicts a compiler-axis
+controllability lever should be able to reach).
+
+**Detect demonstration**: `dfa_table_name` (`src/gen/emit_dfa.c:2288`),
+which returns `"mixed"` when the forward and reverse machines disagree,
+was changed in a scratch copy to `return f ? "premultiplied" : "indexed";`
+(collapsing "mixed" into whatever the forward machine chose). Rebuilt, ran
+the full census against the sabotaged binary: the `"mixed"` witness
+pattern (built specifically to produce it) now stamps `"indexed"` instead
+(its FORWARD machine is the one over the 65,535-entry bound, so `f` is
+false in the sabotaged branch), and the census FAILS TWICE — the witness's
+own check, then the completeness loop independently — naming the exact
+value and the exact witness pattern: `"mixed" is a form nobody can reach
+on this tree`, `checks passed: 0`. Full transcript in
+`run_form_census.sh`'s own header.
+
+**Runtime**: 135s at `PROCS=4` uncontended, 120s at `PROCS=6` contended (2,772 patterns × 2 engine
+requests, compile-only, no `gcc`) — well under the 2-minute
+`test-codegen` budget in isolation, but run as part of `make test-axes`
+(alongside the answer-identity sweep) rather than folded into
+`test-codegen`, since the two share the opt-in/heavy-battery placement
+and this keeps `test-codegen` itself at its documented smoke-friendly
+runtime.

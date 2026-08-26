@@ -26,6 +26,10 @@ no dependency on pcrec in the generated code). Design: APPROACH.md.
     make ubsan      # -fsanitize=undefined, compiler AND compilee axes (opt-in)
     make asan       # AddressSanitizer + LeakSanitizer, both axes (opt-in)
     make lint       # static analysis survey (opt-in; gcc -fanalyzer today)
+    make test-axes  # opt-in: every optimization-axis deny/force flag + the
+                    # engine axis, answer-identical to default over the
+                    # whole corpus; the form census's floors/synthetic
+                    # witnesses (see docs/testing.md "Answer-identity sweep")
     build/pcrec -p rx --emit-main -o out.c 'a(b|c)+d'   # try it
 
 Plain GNU make on purpose (docs/dev/decisions.md D2). gcc is the target compiler;

@@ -441,6 +441,40 @@ decides whether to perform it — and then run the row through
     3,744 shape violations on a correct tree; a drift count with no names
     beside it; and a flag row comparing one form with itself.
 
+- **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
+  compiles every `.rxt` corpus pattern twice (default engine, and
+  `--engine=vm` forced where accepted — the wider population for the
+  VM-only stamps) and counts artifacts per STAMP VALUE for every stamp
+  `docs/spec/match_api.md` §6.3 documents plus its two joint
+  distributions, printed beside the verdict (the K39/[OPT-4] style). A
+  DIFFERENT KIND of check from `run_dfa_stamps.sh` and
+  `run_premul_table.sh`, which also count populations as a BY-PRODUCT of a
+  structural stamp-matches-loop check: this script's own claim is "has
+  every value in the spec's own vocabulary been produced by SOMETHING in
+  this tree" — a FLOOR for every value the corpus reaches (K35: rounded
+  down generously) and a REQUIRED, BUILT, ASSERTED synthetic witness for
+  every value with ZERO corpus population, checked by a completeness loop
+  rather than a hand-picked exclusion list. **Measured 2026-08-26: 2,772
+  corpus patterns, 135s at `PROCS=4` uncontended.** Two values — `"mixed"`
+  (tuning.md §2.13's own documented likely gap) AND `"indexed"` (found
+  live by the completeness loop, undocumented anywhere as a gap) — have
+  ZERO corpus population; both covered by synthetic witnesses
+  (`[01]*1[01]{13}` for "mixed", `(?:[a-z]+)@(?:[a-z]+)` with
+  `-fno-premul-table` for "indexed" — the deny flag as a direct
+  controllability lever, not a second pattern search). The census also
+  found a THIRD `RX_VM_PRUNE_CEILING` value live (`"none"`, 1,047 of 1,488
+  VM artifacts), not enumerated as a value-set table in §6.3 the way
+  `RX_DFA_PREFILTER`'s is, floored as an observed fact rather than
+  asserted complete against a documented set. Runs as part of
+  `make test-axes` (opt-in, alongside `tests/axes/run_axes.sh`) rather
+  than `make test-codegen`, despite fitting under its 2-minute budget in
+  isolation — the two share the opt-in/heavy-battery placement.
+  **Detect demonstration** (docs/dev/learnings.md §3): `dfa_table_name`
+  (src/gen/emit_dfa.c:2288) sabotaged in a scratch copy to never return
+  `"mixed"`; the census FAILS TWICE — the witness's own local check and
+  the completeness loop independently — naming the exact value and the
+  exact witness pattern. Full transcript in the script's own header.
+
 - **run_tiered_entry.sh** + **tier_driver.c** — [OPT-1] (2026-08-25) the
   TWO-TIER DEFAULT ENTRY (`docs/design/two_tier_entry.md`,
   `docs/spec/match_api.md` §10.9). OPT-IN, `make test-tiered-entry`, NOT in

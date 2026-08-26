@@ -59,6 +59,13 @@ emitted artifact (verified by an emitted-artifact diff, command given),
 whether it is ANSWER-IDENTITY-preserving or ENGINE-SELECTING, and the
 one-sentence reason the axis exists.
 
+**`make test-axes` ([CHK-2], `tests/axes/run_axes.sh`) is the sweep that
+enforces every axis's answer-identity promise stated below** — the whole
+`.rxt` corpus, per case, under every deny/force flag and the `--engine=`
+axis, compared against the default build (D80: the spec names its own
+enforcement). Opt-in, like the sanitizer battery; see `docs/testing.md`
+"Answer-identity sweep" for runtimes and how to read a failure.
+
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
 
 **Denies** the possessification rewrite (`src/opt/possessify.c`,

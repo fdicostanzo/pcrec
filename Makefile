@@ -959,6 +959,21 @@ lint:
 	fi
 	@echo "lint: done"
 
+# [CHK-2] THE ANSWER-IDENTITY SWEEP + FORM CENSUS: every optimization-axis
+# deny/force flag (docs/spec/tuning.md §2, bits 4-15) plus the coarse
+# `--engine=` axis, swept over the WHOLE `.rxt` corpus and compared per-case
+# against the default build (tests/axes/run_axes.sh); the form census's
+# floors + required synthetic witnesses over the stamp vocabulary
+# (docs/spec/match_api.md §6.3, tests/codegen/run_form_census.sh). OPT-IN,
+# same shape as `make strict`/`make ubsan`: never part of `make test`, never
+# default, writes nothing outside its own temp dir. ~13 full corpus passes —
+# see docs/testing.md "Answer-identity sweep" for the measured runtime and
+# how to read a failure. `AXES=` (run_axes.sh) restricts to a subset for a
+# quick local check.
+test-axes: all
+	bash tests/axes/run_axes.sh
+	PROCS=$${PROCS:-$$(nproc)} bash tests/codegen/run_form_census.sh
+
 # The sabotage detection matrix (MECH-1): applies every encoded sabotage to a
 # pristine `git archive HEAD` copy, builds it there, runs the relevant suites
 # and prints which checks caught it. NOT part of `make test` — it builds the
