@@ -242,7 +242,7 @@ KEEP="${KEEP:-0}"
 # asserted there and is where those two lines are actually covered.
 #
 # ---------------------------------------------------------------------------
-# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `272d07c` (2026-08-25).
+# (B) THE WHOLE FILE, against a pin MOVED FORWARD to `694902e` (2026-08-25).
 # ---------------------------------------------------------------------------
 # [DD-13c], 2026-08-25 — THE SECOND RE-PIN UNDER D76, and it is the same shape
 # as the first (which the paragraph below records; keep both, the pair is the
@@ -251,11 +251,17 @@ KEEP="${KEEP:-0}"
 # `return 0` stamp `RX_DFA_SCAN "empty"` instead of naming a loop they do not
 # contain, and every VM HYBRID gains `RX_DFA_SCAN`/`RX_DFA_PREFILTER` for the
 # DFA scan it INLINES (1,263 of the corpus's 1,488 VM artifacts). Comparison
-# (A) is byte-identical against the unchanged `ac4917d` pin — the change writes
-# stamps only, and every one of them lands in the `#define` block ABOVE
-# `goto <prefix>_L0;` — so this is scaffolding again, and again it bumps `abi`
-# (4 -> 6; 5 is lane srTier's, taken concurrently) and re-pins (B) here.
-# Pin was `5991d4c` ([DD-13]).
+# [DD-13c] ALSO GREW `struct rx_info` by two fields (`scan`, `prefilter` — the
+# runtime mirrors of those same two facts, Frank's D40 addendum), APPENDED at
+# the END so no existing member's offset moves. So this bump is BOTH kinds of
+# event at once: scaffolding (D76) and layout (D40). (A) is byte-identical
+# against the unchanged `ac4917d` pin either way — every byte this change
+# writes lands in the `#define` block or the `rx_info` initializer, both ABOVE
+# `goto <prefix>_L0;` — which is what still makes it safe. `abi` 4 -> 6 (5 is
+# lane srTier's two-tier entry, merging first) and (B) re-pinned here.
+# Pin was `5991d4c` ([DD-13]), and `272d07c` earlier in THIS change before the
+# rx_info fields were added — the pin must always name the change's LAST
+# src/lib/cli commit, and adding the fields made a later one.
 # [DD-13], 2026-08-25 — THE PIN'S FIRST RE-PIN UNDER D76, and it is worth one
 # paragraph because it is the first time the rule below was exercised by a
 # change that was NOT a struct-layout event. `[DD-13]` gave every DFA artifact

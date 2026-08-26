@@ -1786,7 +1786,7 @@ against the subject's `4`) it REFUSES with the message above before the sweep
 runs.
 
 **[DD-13c], 2026-08-25 — THE SECOND EXERCISE, and the pin is
-`272d07c` now.** r37's two scope findings move emitted `#define`
+`694902e` now.** r37's two scope findings move emitted `#define`
 bytes (the four proven-empty DFA artifacts' scan value; two new lines on every
 VM hybrid) and move nothing inside the program region, so the reading above is
 copied verbatim: `abi` 4 -> 6 (5 was taken by lane srTier in the same session), (B) re-pinned, (A) byte-identical
