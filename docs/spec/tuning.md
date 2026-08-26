@@ -52,7 +52,7 @@ evidence. A stranger tuning performance needs the same table read the
 other way: which knobs are safe to flip without re-verifying correctness,
 and which one is a `--engine`-shaped do-or-die request.
 
-## 2. The twelve axes
+## 2. The thirteen axes
 
 Each subsection: what it controls, the default, the stamp it leaves in an
 emitted artifact (verified by an emitted-artifact diff, command given),
@@ -474,6 +474,68 @@ $ build/pcrec -p rx --engine=vm --features recursion -fno-tiered-entry -o - \
 (47/71 is this artifact's page-budgeted pair; 2048/3072 is the stamped default,
 and `FAST == RESUME`/`TRAIL` is how a reader tells that the tier is off.)
 
+### 2.13 `-fno-premul-table` — `PCREC_NO_PREMUL_TABLE` (bit 15)
+
+**ANSWER-IDENTITY-preserving.** The axis changes the ENCODING of a DFA
+state, not the machine: the same states, the same byte classes, the same
+transitions, written down differently.
+
+**What it controls.** A DFA scan's transition table normally holds
+`next_state * classes` rather than `next_state`, so the emitted step is
+`state = table[state + class]` (`unsigned short` cells, `65535` for dead)
+and the loop's carried dependency chain is `add, load` rather than
+`lea, lea, movslq, load`. Denying it emits the INDEXED form — the tables
+and the loop exactly as they shipped before `[OPT-3]`. Default: the
+pre-multiplied form is ON, subject to the generation-time bound below.
+Deny-only, `§2.12`'s shape rather than `§2.5`'s force pair: there is one
+table form per machine and the compiler picks it, so there is nothing to
+address and nothing to force.
+
+**Reason it exists.** `[OPT-3]` STEP 1 measured the DFA scan as
+LATENCY-bound — 10.7 cycles/byte on the comparative bench's throughput
+subjects, of which 7 are that address-arithmetic chain, with two
+independent streams nearly halving the per-byte cost — and the
+pre-multiplied form as **1.276x** on those three subjects,
+answer-identical over 40,469 answer lines across 91 subjects
+(`docs/dev/opt3_dfa_scan_measurement.md` §5, §7). The flag is both the
+bisect lever for that optimization and the build the identity comparison
+uses as its control.
+
+**The bound, and it is not this flag.** The form is REFUSED at generation
+time, per machine, when that machine's `states * classes` exceeds a size
+budget (16,384 entries today — `docs/design/premultiplied_dfa_table.md`
+§7 states the two conjuncts and the measurement that sets the number).
+Above it the transition table alone exceeds 32 KB, the loop is bound by
+memory rather than by its chain, and the pre-multiplied accept table's
+growth would buy nothing. The forward and reverse machines are decided
+separately, which is why `"mixed"` exists.
+
+**The stamp.** `<PREFIX>_DFA_TABLE` (§3), on every artifact that contains
+a DFA scan. **MASKED out of `rx_info.flags`** (`src/gen/emit_dfa.c`'s
+`strategy_denials`), for the mask's own reason: it changes no answer, so
+two artifacts that behave identically must not differ in their reflection
+surface over it, and what the emitter DID is already reported by the
+stamp. Re-run and verified at this commit:
+
+```
+$ build/pcrec -p rx --no-captures -o - -- '(?:[a-z]+)@(?:[a-z]+)' \
+    | grep -E '^#define RX_DFA_TABLE'
+#define RX_DFA_TABLE "premultiplied"
+$ build/pcrec -p rx --no-captures -fno-premul-table -o - \
+    -- '(?:[a-z]+)@(?:[a-z]+)' | grep -E '^#define RX_DFA_TABLE'
+#define RX_DFA_TABLE "indexed"
+```
+
+and the generation-time bound switching on its own, on the
+state-explosion family `[01]*1[01]{k}` (the forward machine's entry count
+in brackets):
+
+```
+k=10  [9,216]   RX_DFA_TABLE "premultiplied"
+k=11  [18,432]  RX_DFA_TABLE "mixed"          (forward indexed, reverse pre-multiplied)
+k=12  [36,864]  RX_DFA_TABLE "mixed"
+```
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -485,6 +547,7 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
 #define RX_ENGINE "dfa"
 #define RX_DFA_SCAN "unanchored"
 #define RX_DFA_PREFILTER "memchr"
+#define RX_DFA_TABLE "premultiplied"
 ```
 
 `docs/spec/match_api.md` §6.3 is the contract; in short:
@@ -519,6 +582,17 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   368 / `empty` 8. The remaining 225 VM artifacts are non-hybrid and carry
   neither macro; 289 corpus patterns are refused under `--features all`.
 
+- `RX_DFA_TABLE` (`[OPT-3]`, 2026-08-26) names the ENCODING of that scan's
+  transition table, one of `"premultiplied"`, `"indexed"`, `"mixed"` or
+  `"none"`. `docs/spec/match_api.md` §6.3 states the value set; §2.13 above
+  is the axis, and `docs/design/premultiplied_dfa_table.md` the design.
+  `"none"` is not a failure: `"attempt"` scans have no numeric transition
+  table at all (their states are labels and a step is a computed `goto`),
+  and neither does `"empty"`. Unlike `RX_DFA_SCAN` and `RX_DFA_PREFILTER`
+  it has **no `rx_info` mirror** — §3.2's mirrors were a separate D40
+  decision for a header-less consumer, no such consumer reads them yet, and
+  match_api.md §6.3 states the trigger that would make this one owed.
+
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
 forced — `rx_info.engine_why` is `NULL` there for the same reason.
@@ -541,6 +615,7 @@ $ build/pcrec -p rx -o - -- 'a(b|c)+d' | grep -E '^#define RX_(ENGINE|VM_PREFILT
 #define RX_VM_PREFILTER "hybrid"
 #define RX_DFA_SCAN "unanchored"
 #define RX_DFA_PREFILTER "memchr"
+#define RX_DFA_TABLE "premultiplied"
 ```
 
 The two prefilter macros are **two different selections**: `_VM_PREFILTER`
@@ -610,6 +685,8 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_ALTCLS_FACTOR` | `-fno-altcls-factor` | §2.7 |
 | `flags` bit `PCREC_NO_ATOMIC_DISCHARGE` | `-fno-atomic-discharge` | §2.8 |
 | `flags` bit `PCREC_NO_SPLICE_CALLS` | `-fno-splice-calls` | §2.9 |
+| `flags` bit `PCREC_NO_TIERED_ENTRY` | `-fno-tiered-entry` | §2.12 |
+| `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
 

@@ -1651,6 +1651,108 @@ hybrid's internal DFA PREFILTER and the first version of that fill leaked into
 every capture-bearing VM artifact in the corpus (558 of 2442 call-free patterns
 moved; the identity gate caught it on its first run).
 
+## [OPT-3] THE PRE-MULTIPLIED DFA TRANSITION TABLE, and the one site that un-multiplies
+
+`docs/design/premultiplied_dfa_table.md`, `docs/spec/tuning.md` §2.13,
+`abi` 6 -> 7. One idea: **a transition cell holds `next_state * classes`
+rather than `next_state`**, so the emitted step is
+`state = table[state + class]` and the loop's carried dependency chain is
+`add, load` instead of `lea, lea, movslq, load`.
+
+**THE MEASURED CAUSE.** `[OPT-3]` STEP 1
+(`docs/dev/opt3_dfa_scan_measurement.md`) attributed the DFA scan's entire
+per-byte cost to that chain: 10.7 cycles/byte on the bench's throughput
+subjects, of which 7 are address arithmetic and a load, with TWO INDEPENDENT
+STREAMS nearly halving the per-byte cost (the witness that says
+latency-bound rather than throughput-bound; `perf` is denied on this box).
+The transform measured **1.276x** on those three subjects and
+answer-identical over 40,469 answer lines across 91 subjects. Two levers
+that lane measured and does NOT recommend are named here so they are not
+re-proposed: FUSING the accept bit into the transition cell is SLOWER than
+pre-multiplying alone (8.095 vs 7.751 cycles/byte — unpacking puts an `and`
+back on the chain), and SIMD candidate scanning is slower on all three
+subjects.
+
+**`dfa_premul` IS THE RULE AND `dfa_table_name` IS ITS STAMP** —
+one predicate, THREE readers (the emitted loop, `<PREFIX>_DFA_TABLE`, and
+the orientation block's "READING THE TABLES" paragraph), this file's
+standing `unanch_start`/`attempt_cand` discipline. It is decided PER
+MACHINE, on that machine's own `n * ncls`, which is why the stamp has a
+`"mixed"` value and why that value has a real witness (`[01]*1[01]{11}`:
+forward 18,432 entries and indexed, reverse small and pre-multiplied).
+
+**THE SEED PRECONDITION IS THE THIRD CLAUSE AND IT IS NOT PADDING.**
+`emit_seed_table`'s cells come from `d->s1u[]`, which can in principle be
+`-1`; that value flows straight into the state variable, where today it
+would index `is_accepting[-1]` and pre-multiplied it would index
+`[65535]` — a far wilder read for the same latent defect. MEASURED over
+the 1,256 corpus patterns that compile under `--features all`: no emitted
+seed table has a negative cell. The transform REFUSES such a machine
+anyway, so the wilder read is unreachable by construction and the
+pre-existing `[-1]` question is left exactly as it was. It is not
+`[OPT-3]`'s to answer, and it is recorded here so the next lane finds it.
+
+**THE ACCEPT TABLE IS INDEXED BY THE PRE-MULTIPLIED VALUE** and therefore
+grows from `n` to `n * ncls` bytes, each row repeating its own bit. That is
+the transform's one real cost and STEP 1's 1.276x already includes it. The
+cells off a multiple of `ncls` carry the row's bit rather than zero, so the
+table is correct under any index in the row — filling with zero would make
+an off-by-one index a LOST MATCH rather than a loud one.
+`emit_acc_cls_table` changes neither size nor contents; only the emitted
+index loses its `* ncls`.
+
+**`emit_view_select` DIVIDES, AND IT IS THE ONLY SITE THAT DOES.** The
+`$`/`\Z`/`\z` view tables keep their `states`-entry INDEX and hold
+pre-multiplied CELLS, so the emitted read is
+`<p>_forward_eol_view[forward_state / <ncls>]`. It is off the loop-carried
+chain and provably so: the read is the second operand of a `&&` whose first
+operand is `__builtin_expect(pos + 1 >= n, 0)`, so C's short-circuit runs it
+at most twice per search. Indexing those two tables pre-multiplied instead
+would multiply them by the stride (498 B -> 8,964 B each on an `orig`-sized
+machine, ~1,100 more emitted lines) for a table a search touches twice —
+and the `(?:P)\z` idiom is the comparative bench's own 85 compliance
+subjects' spelling, so that is the common case rather than a corner. **If a
+future change hoists the view select above its `__builtin_expect` guard, or
+evaluates the table read unconditionally, that division lands on the
+per-byte path.**
+
+**THE DEAD SENTINEL IS A RESERVED VALUE (`PREMUL_DEAD`, 65535), NOT A SIGN
+BIT AND NOT A SELF-MAPPING ROW.** `movzwl` + `cmp` is the same two
+instructions as today's `movswl` + `js` with no `movslq` behind them, and a
+reserved value moves ONE number where an extra DEAD row moves two (its own
+pre-multiplied value, and every per-state table's row count). It cannot
+collide with a real cell BY THE BOUND, not by convention.
+
+**THE STATE VARIABLE IS `unsigned`, AND THAT IS LOAD-BEARING RATHER THAN
+TIDY.** `movzwl` zero-extends into the full 64-bit register and a 32-bit
+`add` keeps it zero-extended, so gcc needs no `movslq` before the next
+addressing mode. Left as `int`, the transform is still CORRECT and buys
+NOTHING — a silent performance regression no answer check can see, which is
+why `tests/codegen/run_premul_table.sh` reads the emitted declaration.
+
+**ENG_ATTEMPT IS UNTOUCHED AND STAMPS `"none"`, AS A PROPERTY RATHER THAN AN
+EXEMPTION.** Its states are LABELS: a step is
+`goto *<p>_targets_K[<p>_byte_class[...]]`, one `ncls`-entry array of code
+addresses per state indexed by class alone. There is no state variable, no
+multiply and no address arithmetic to shorten — the cell is already the
+thing the hardware consumes — and its one two-dimensional per-state table,
+`is_accepting_by_class[K * ncls + cl]`, has `K` as a compile-time constant
+at each label. The transform would be a no-op there.
+
+**THE HYBRID GETS IT FOR FREE AND THAT IS THE WHOLE POINT OF THE SHARED
+EMITTER.** `pcrec_emit_dfa_engine` at `emit_vm.c`'s prefilter site is
+literally `emit_unanchored`, so a VM HYBRID's inlined
+`static <prefix>_prefilter` carries the pre-multiplied form and the
+`<PREFIX>_DFA_TABLE` stamp under [DD-13c]'s iff. `[OPT-4]`/K39 concerns
+that same scan and needs no clause of its own here.
+
+**`abi` 6 -> 7 IS THE FIRST BUMP THAT MOVES EMITTED PROGRAM BYTES.**
+[DD-13], [OPT-1] and [DD-13c] were scaffolding (and, for the last, a struct
+append). Comparison (A) of `run_recursion_identity.sh` is still expected
+byte-identical, and here that is a real check rather than a formality: its
+`prog_region` is `goto <p>_L0;` through `<p>_accept:`, i.e. the VM program,
+and a hybrid's inlined prefilter is emitted ABOVE that `goto`.
+
 Maintenance: update this file when files are added/removed or their roles change.
 
 ## [DD-14.FB] THE CALLER-PROVIDED FRAME BUFFER: the run state splits, and three entries become six
