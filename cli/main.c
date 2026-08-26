@@ -208,6 +208,14 @@ int main(int argc, char **argv)
          * See lib/pcrec.h's PCREC_NO_SPLICE_CALLS comment. */
         else if (!no_more_opts && !strcmp(a, "-fno-splice-calls"))
             opt.flags |= PCREC_NO_SPLICE_CALLS;
+        /* [OPT-1] the TWO-TIER ENTRY axis (docs/design/two_tier_entry.md,
+         * docs/spec/tuning.md §2.12). Back to `-fno-possessify`'s shape: it
+         * changes no answer and is masked out of `rx_info.flags`. Denying it
+         * emits the un-suffixed entries as they shipped before [OPT-1], which
+         * is the bisect lever for the optimization and the build an identity
+         * gate compares the old entry against. See lib/pcrec.h. */
+        else if (!no_more_opts && !strcmp(a, "-fno-tiered-entry"))
+            opt.flags |= PCREC_NO_TIERED_ENTRY;
         /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
          * (D51 ruling 1), D46's controllability half for it. Denying it is
          * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever

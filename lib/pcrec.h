@@ -249,7 +249,37 @@ enum {
      * `<PREFIX>_VM_CALL_LINKED` (two counts, not one string — docs/spec/tuning.md §2.9)
      * (src/gen/emit_vm.c) — sites spliced vs sites linked — which is the D46
      * half a denied request is checked against. */
-    PCREC_NO_SPLICE_CALLS = 1u << 13
+    PCREC_NO_SPLICE_CALLS = 1u << 13,
+    /* [OPT-1] `-fno-tiered-entry`: DENY the TWO-TIER DEFAULT ENTRY
+     * (docs/design/two_tier_entry.md, docs/spec/tuning.md §2.12), D46's
+     * controllability half for the entry-shape axis.
+     *
+     * WHAT IT DENIES. An un-suffixed entry (`<prefix>_search`,
+     * `<prefix>_match`, `<prefix>_match_caps`) normally runs the match on a
+     * SMALL, page-budgeted on-stack buffer and, on `PCREC_ERR_FRAMES` only,
+     * calls a `noinline` static that owns the full stamped default and re-runs
+     * the match from scratch. That exists because gcc's stack-clash protection
+     * probes every page of the entry's frame on EVERY call, which cost 233.8
+     * vs 46.3 ns on a 16-byte subject ([OPT-1] STEP 1). This flag emits the
+     * SINGLE-TIER shape instead — the entries exactly as they shipped before
+     * [OPT-1] — which is both the bisect lever for the optimization and the
+     * build an identity gate can compare the old entry against.
+     *
+     * DENY-ONLY, D47.3's default shape: there is one entry shape per artifact,
+     * so there is nothing to ADDRESS and nothing to force.
+     *
+     * IT JOINS `emit_info_def`'s `strategy_denials` MASK
+     * (src/gen/emit_dfa.c), unlike the two bits above it and for the mask's
+     * own stated reason: the tier changes NO ANSWER — the deep tier is a
+     * bit-for-bit replay of what the single-tier entry does, from scratch
+     * (two_tier_entry.md §4) — so two artifacts that answer identically must
+     * not differ in their reflection surface over it. What the emitter DID is
+     * reported by `<PREFIX>_FAST_FRAMES`/`<PREFIX>_FAST_TRAIL`
+     * (src/gen/emit_vm.c), which equal `_RESUME_FRAMES`/`_TRAIL_FRAMES`
+     * exactly when the artifact has one tier — by this flag or by the three
+     * degenerate cases §3.1 enumerates. That is the D46 half a denied request
+     * is checked against. */
+    PCREC_NO_TIERED_ENTRY = 1u << 14
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

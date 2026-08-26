@@ -1090,7 +1090,24 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * about the emitted scaffolding and not about behaviour: any change to it
      * is an `abi` bump AND a re-pin of that gate's comparison (B) to this
      * change's last src-touching commit, in the same change. */
-    sb_puts(c,   "    .abi = 4,\n");
+    /* [OPT-1] abi 4 -> 5 (D76/[TT-11]): the TWO-TIER DEFAULT ENTRY
+     * (docs/design/two_tier_entry.md). Every VM artifact gains two
+     * `<PREFIX>_FAST_*` capacity stamps, and a TIERED one additionally gains a
+     * `<prefix>_fast_buffers` type, the `<PREFIX>_TIER_NOTE` hook block and
+     * three `noinline` `_deep` statics, while its three un-suffixed entries
+     * change body. Like [DD-13] this moves NO struct offset (the two stamps
+     * are `#define`s; `rx_info`'s layout is untouched) and NO emitted PROGRAM
+     * byte, which `run_recursion_identity.sh`'s comparison (A) proves against
+     * the unchanged pre-module pin. It is still scaffolding, so D76's rule
+     * applies exactly as it did there: bump, and re-pin comparison (B).
+     *
+     * NO DFA ARTIFACT'S BYTES MOVE at this bump, which is a first for the
+     * `abi` member and worth stating rather than leaving to be rediscovered:
+     * the tier is emitted entirely by src/gen/emit_vm.c and a DFA artifact has
+     * no resume stack to tier. The `abi` number is the ARTIFACT FORMAT's
+     * version, not the VM's, so it moves on both kinds anyway — which is why
+     * comparison (B) is re-pinned for DFA artifacts too. */
+    sb_puts(c,   "    .abi = 5,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1141,7 +1158,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                           PCREC_NO_COUNTER |
                                           PCREC_NO_LENGTH_PRUNE |
                                           PCREC_NO_PREFILTER | PCREC_FORCE_PREFILTER |
-                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR;
+                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
+                                          /* [OPT-1] the two-tier entry axis. It
+                                           * changes no answer (the deep tier is
+                                           * a replay of the single-tier run --
+                                           * two_tier_entry.md §4), so it belongs
+                                           * to the mask for the mask's own
+                                           * reason; `<PREFIX>_FAST_FRAMES` is
+                                           * where what the emitter DID is
+                                           * recorded. */
+                                          PCREC_NO_TIERED_ENTRY;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
