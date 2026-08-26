@@ -27,7 +27,9 @@
 #
 # So EVERY verdict below is derived from the EMITTED MATCHER TEXT — the loop,
 # the tables and the `memchr` call — and compared against the stamp. The two
-# come out of different code paths in the emitter (`emit_dfa_stamps` writes the
+# come out of different WRITE SITES in the emitter (both read the ONE
+# `unanch_start` derivation — a defect inside it leaves stamp and loop
+# agreeing; that is the differential suites' job, r37 B3) (`emit_dfa_stamps` writes the
 # macros; `emit_unanchored`/`emit_attempt` write the loop), so a stamp that
 # drifts from the mechanism it names is a RED here. That is the whole claim: a
 # stamp nobody can check against the artifact is decoration, and D46 asks for
@@ -340,6 +342,12 @@ sed -n 's/^SCANVAL //p' "$WORKDIR/verdicts" > "$WORKDIR/seen_scan"
 echo
 echo "== [DD-13] DFA selection stamps =="
 echo "population: $npat distinct corpus patterns extracted (floor 2620; LC_ALL=C, K35)"
+# r37 A9: floor the ARTIFACT population too, and ceiling the refusals — a
+# feature gate or a compiler bound that quietly moved hundreds of patterns
+# into REFUSED would leave every agreement check green with nothing to
+# agree on. Measured 2026-08-25: 995 DFA / 1,488 VM / 289 refused.
+[ "$ndfa" -ge 900 ] || bad "[population] only $ndfa DFA artifacts (floor 900; 995 measured 2026-08-25) — the population moved, find out why before re-pinning"
+[ "$nrefused" -le 400 ] || bad "[population] $nrefused patterns REFUSED (ceiling 400; 289 measured 2026-08-25) — a feature gate or a compiler bound is eating the population"
 echo "artifacts : $ndfa DFA ($nempty of them the empty engine: no loop to compare a scan shape against), $nvm VM, $nrefused refused"
 echo "prefilter values observed: $(LC_ALL=C sort "$WORKDIR/seen_pf" | uniq -c | LC_ALL=C sort -rn | awk '{printf "%s=%s ", $2, $1}')"
 echo "scan values observed     : $(LC_ALL=C sort "$WORKDIR/seen_scan" | uniq -c | LC_ALL=C sort -rn | awk '{printf "%s=%s ", $2, $1}')"

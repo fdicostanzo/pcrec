@@ -7892,14 +7892,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * binary, while these are preprocessor-visible at COMPILE time, which is
      * what a tests/codegen structural check or a build-time `#ifdef` needs.
      *
-     * [AS-BUILT DEVIATION, REPORTED] §5.5 shows this stamp on every artifact;
-     * it is emitted on VM artifacts ONLY. Emitting it on the DFA path too
-     * would put a new line in output that §5.4's byte-identity gate compares,
-     * forcing the gate to FILTER rather than compare whole files — and a
-     * filtered gate is exactly the check-design failure this project has
-     * recorded twice. rx_info.engine already carries the engine on both
-     * artifacts, so nothing is lost but the compile-time visibility, which on
-     * a DFA artifact has no consumer. */
+     * [DD-13], 2026-08-25 (D81): this stamp is UNCONDITIONAL — the DFA path
+     * emits it too, through the same `pcrec_emit_engine_stamp` — and the
+     * byte-identity gate learned to live with it the D76 way: a scaffolding
+     * change is an abi event with a re-pin (abi 3 -> 4), not a filter. The
+     * deviation an earlier version of this comment reported ("VM artifacts
+     * ONLY") is CLOSED, not deviated; read emit_dfa.c's `emit_dfa_stamps` and
+     * match_api.md §6.3's (a)/(b) split before adding a stamp here. */
     sb_printf(c, "/* Engine: vm (forced by: %s) */\n",
               job->fit.why ? job->fit.why : "--engine=vm");
     if (has_budget)
@@ -7917,11 +7916,13 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [M4.6f] THE PREFILTER STAMP: D46's observability half for
      * select_engine.c's fit.prefilter, in the SAME PLACEMENT as
      * RX_ENGINE/RX_ENGINE_WHY immediately above and for the same reason -- a
-     * per-prefix, preprocessor-visible macro, VM-artifacts-only (a DFA
-     * artifact has no separate prefilter DECISION: its own scan-avoidance
-     * memchr/bitmap prefilter, emit_dfa.c's unconditional `prefilter` local,
-     * is an unrelated always-on optimization, not a selection point D46
-     * governs).
+     * per-prefix, preprocessor-visible macro. Its VALUE SET is the VM's
+     * ("hybrid"/"none"); the DFA artifact's own candidate-start decision is a
+     * different vocabulary and stamps as `_DFA_SCAN`/`_DFA_PREFILTER`
+     * (emit_dfa.c `emit_dfa_stamps`, [DD-13]/D81) — the earlier claim here
+     * that a DFA artifact "has no separate prefilter decision" was the
+     * premise [DD-13] retired. A VM HYBRID's inlined DFA scan is [DD-13c]'s
+     * to stamp (r37 A6).
      *
      * ARTIFACT-LEVEL, not per-quantifier -- select_engine.c decides
      * fit.prefilter ONCE per pattern, so this is a SCALAR string like
@@ -7982,7 +7983,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
             v.up, (unsigned long long)root_minw);
     /* [D46] the RUNG STAMP: same PLACEMENT as RX_ENGINE/RX_ENGINE_WHY above
      * (a per-prefix, preprocessor-visible macro family, VM-artifacts-only
-     * for the same §5.4 byte-identity reason the comment above states), but
+     * because it reports what the VM DID — §6.3's family (b), D81), but
      * a SUMMARY BITMASK rather than a scalar -- the rung is selected PER
      * QUANTIFIER BODY (vm_cursor_fits is consulted once per A_REP, at this
      * file's three real call sites), so a pattern with two quantified
