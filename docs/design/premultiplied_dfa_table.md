@@ -135,42 +135,140 @@ probe stays a separate table read, off the chain, where the core absorbs it —
 
 ## 3. The dead-state sentinel
 
-Two candidates were on the table (Frank's ruling left the choice here, "argued
-on the emitted instruction sequence"):
+THREE candidates, and Frank's 2026-08-26 input added the third. The ruling
+asked for the choice to be argued ON THE EMITTED INSTRUCTION SEQUENCE, so each
+is stated as one, measured on the bench's own `orig` pattern (`gcc -O2`,
+`objdump -d`) rather than predicted:
 
-- **(a) a reserved value, `65535`, tested `state == 65535`** — chosen.
-- **(b) a real self-mapping DEAD row appended to the table, tested
-  `state == DEAD_PM`** — rejected.
+- **(a) a reserved value, `65535`, tested `state == 65535`** — CHOSEN.
+- **(b) a self-mapping DEAD row appended at index `n`**, tested against its
+  premultiplied value — rejected.
+- **(c) `DEAD = 0`, with the states renumbered so the START state is 1** (its
+  premultiplied value is `stride`), the dead row self-mapping at index 0 —
+  Frank's input; rejected on the balance below, not on speed.
 
-Both put the test in the same place: a comparison against the value the load
-produced, feeding a branch. Neither is on the loop-carried chain — the next
-iteration's load depends on the loaded value, not on the flag the compare sets,
-so the compare and its (perfectly predicted, not-taken) branch issue in
-parallel with the next address computation. That is the property the ruling
-asked for and both forms have it, so the choice is decided on everything else:
+### The two sequences, side by side
 
-- (b) costs an extra row: the table grows to `(n + 1) * ncls` entries, and the
-  premultiplied DEAD value `n * ncls` must itself stay inside the bound. Two
-  numbers move where one moved before.
-- (b) also needs the accept table (and the eol/end view tables) to have a DEAD
-  row, or a proof that DEAD is never used as an index. The loop's order makes
-  the proof true today — the dead test breaks before the next accept probe —
-  but it is a proof that a future reordering silently invalidates, which is
-  exactly the shape `docs/dev/learnings.md` §3 warns about.
-- (a)'s sentinel is unrepresentable as a real premultiplied value BY THE BOUND,
-  not by convention: §7 requires `n * ncls <= 16384`, so the largest emitted
-  entry is `(n - 1) * ncls < 16384 < 65535`. The sentinel cannot collide, and
-  the check in §12 asserts the inequality rather than trusting it.
+Both were BUILT: (a) is what the emitter ships, (c) is a patched scratch copy
+of the same artifact (`scratchpad/srPremul/meas/mk_dead0.py`, STEP 1's own
+methodology — the transform renumbers every cell and every emitted constant,
+prepends the dead row to the transition and accept tables, and rewrites the
+two tests), **answer-gated at 91 subjects / 40,470 answer lines / 0
+differences before any time was taken**.
 
-Sign is now available for nothing, which is the point: today's `-1` sentinel is
-tested with `js` after a sign-extending `movswl`, and that sign bit is the ONLY
-reason the load must sign-extend. `movzwl` + `cmp` is the same two instructions
-with no `movslq` behind them.
+```
+   (a) DEAD = 65535, start = 0            (c) DEAD = 0, start = stride (18)
+   16 instructions                        16 instructions
+55 add    %ecx,%edx      CHAIN          5d add    %ecx,%edx      CHAIN
+57 mov    %edx,%edx      CHAIN          5f mov    %edx,%edx      CHAIN
+59 movzwl (%rbp,%rdx,2),%ecx CHAIN+LD   61 movzwl (%rbp,%rdx,2),%ecx CHAIN+LD
+5e cmp    $0xffff,%ecx   (6 bytes)      66 test   %ecx,%ecx      (2 bytes)
+64 je     <dead>                        68 je     <dead>
+66 mov    %ecx,%edx                     6a mov    %ecx,%edx
+68 add    $0x1,%rax                     6c add    $0x1,%rax
+6c movzbl (%r12,%rdx,1),%edx  ACCEPT    70 movzbl (%r12,%rdx,1),%edx  ACCEPT
+71 test   %dl,%dl                       75 test   %dl,%dl
+73 cmovne %rax,%r8                      77 cmovne %rax,%r8
+77 test   %ecx,%ecx      (2 bytes)      7b cmp    $0x12,%ecx     (3 bytes)
+79 jne    <top>                         7e jne    <top>
+```
+
+**The two tests SWAP, and nothing else moves.** Same instruction count, same
+loop-carried chain (`add, mov, load`), same two macro-fused compare+branch
+pairs, both off the chain. (a) spends 6 bytes on the dead test and gets the
+start test free; (c) spends 2 on the dead test and 3 on the start test. **Net:
+(c) is 3 bytes smaller per loop.** STEP 1 §5 already priced this class of
+bookkeeping at 0.05 cycles/byte, so no speed difference is expected and §13
+reports the measured one rather than asserting it.
+
+### Why (a) anyway
+
+The choice therefore falls entirely to what the two cost ELSEWHERE, and (c)'s
+3 bytes are paid for in four places:
+
+1. **The start state stops being index 0.** Twelve sites assume it is, and all
+   twelve move together: the emitted start constant (both the seeded and
+   unseeded initializers, forward and reverse — four sites), the prefilter's
+   `state == fs` guard, each self-loop skip's `state == K` guard (forward and
+   reverse), `emit_seed_table`'s cells, `emit_eol_table`'s and
+   `emit_end_table`'s cells, and `emit_state_legend`'s correspondence between
+   a legend row and the constant a reader finds in the loop.
+2. **The view tables' INDEX gains a `- 1`.** §6's one un-multiplying site
+   becomes `rx_forward_eol_view[forward_state / 18 - 1]`, which is the
+   emitted line hardest to read in the whole scan.
+3. **Three tables gain a row.** The transition table, the accept table and the
+   class-indexed accept table all go to `(n + 1) * ncls`, and §7's range bound
+   tightens by one row to match.
+4. **`state == 0` stops being the cheap test.** It is currently the loop's own
+   back-edge condition (`test %ecx,%ecx; jne <top>` above), which is the
+   emitted loop's single hottest branch; (c) makes the back-edge a `cmp` and
+   the cold dead test the `test`.
+
+What (c) buys, and it is real: the cell invariant loses its carve-out. Under
+(a) a cell is "the dead sentinel, or a multiple of the stride inside the
+table"; under (c) it is just "a multiple of the stride inside the table",
+because the dead value IS a real index. §12's check states the (a) form and is
+one clause longer for it.
+
+**Weighing those, (a) stays.** Three bytes and one clause of a check against
+twelve sites, a `- 1` in the emitted view read, a row on three tables and the
+back-edge losing its free test. A reviewer who weighs the carve-out more
+heavily than the twelve sites should reach the opposite answer — the facts
+above are what the disagreement would be about, and (c) is built and
+answer-gated, so adopting it later is a mechanical change rather than a
+re-derivation.
+
+### And why not (b)
+
+(b) needs the extra row like (c) AND keeps the high sentinel's 6-byte compare,
+so it is dominated by both. It also needs the accept and view tables to have a
+DEAD row, or a proof that DEAD is never used as an index — a proof the loop's
+current order makes true and a future reordering would silently invalidate,
+which is exactly the shape `docs/dev/learnings.md` §3 warns about.
+
+Sign is now available for nothing, which is the point of all three: today's
+`-1` sentinel is tested with `js` after a sign-extending `movswl`, and that
+sign bit is the ONLY reason the load must sign-extend. Every candidate above
+replaces it with a zero-extending load and an ordinary compare.
 
 `65535` is emitted as a literal, in the loop line and in the table's block
 comment, the way `-1` is today. It is not a `#define`: the artifact's emitted
 constants are literals with a legend beside them (`emit_state_legend`), and a
 macro would be a second place for the number to live.
+
+## 3a. The loop exits, and the `__builtin_expect` layout hint — MEASURED, NOT KEPT
+
+Frank asked (2026-08-26) whether wrapping the transition loops' two exits — the
+dead-state exit and the start-state exit into the candidate-start skip — in
+`__builtin_expect(..., 0)` would let gcc lay the hot body out as a straight
+fall-through with one backward taken jump and the exits out of line. It is a
+LAYOUT question, not a predictor one (x86 has no usable hint prefix and every
+one of these branches is already perfectly predicted), so it is answered by
+the emitted instruction ORDER. **It was built three ways and is NOT kept.**
+
+| variant | what is hinted | emitted loop |
+|---|---|---|
+| **H0** (shipped) | nothing | 16 instructions, ONE taken branch per iteration (the back-edge `jne <top>`); the skip block already out of line |
+| **H1** | the dead exit only | **byte-identical to H0** — gcc's own heuristic already ranks that edge unlikely, so the hint says nothing it did not already believe |
+| **H2** | the dead exit, the prefilter's `state == start` guard, and each self-loop skip's `state == K` guard | 18 instructions, of which 16 are on the hot path, and **TWO taken branches per iteration** — the hint pulled the prefilter's second conjunct INLINE (`cmp $-1,%rsi; je` jumped over every iteration) and moved the dead test onto the back-edge |
+
+H2's listing is the answer: the hot path is not straighter, it is one taken
+forward branch longer, because hinting the `state == start` guard is what tells
+gcc to stop using it as the loop's back-edge condition — and that guard is
+false 82-99% of the time on the bench's own subjects (STEP 1 §3: the skip is
+entered 190,651 times in 1,048,576 bytes on `t-b`, 80,661 on `t-a`, once on
+`t-c`), which is "unlikely" by a margin gcc was already exploiting better than
+the hint does.
+
+§13 reports H2's measured time beside the others so the listing's reading is
+checked rather than trusted. **The shipped emitter carries no hint**, and
+`unlikely_cond`, written for this experiment, is not in it — a helper whose
+only caller was removed is a second thing to keep in step for nothing.
+
+**Per-K-byte exit-check unrolling is NOT built** (Frank's other idea, D77): it
+is named in `docs/dev/plan.md` with its current number and waits for a subject
+that makes it move. After pre-multiplying, `t-b` and `t-c` are within 1.3% of
+each other, which is the gap that idea would have to beat.
 
 ## 4. Which loops
 
