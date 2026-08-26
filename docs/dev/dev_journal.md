@@ -16488,3 +16488,25 @@ named: PCRE2-JIT carried over from the bench (baseline agrees to 0.6 %);
 [OPT-4] × STEP 2 composition. The FULL BATTERY now runs on 3e0b256 (an
 emitter change + abi bump); the bench gets I-11 (abi-7 pin, pending the
 battery's green).
+
+#### Forty-first session, part 7 — a battery finding: `make -j12 test` SKIPS every target not yet started when one fails, and the count aggregation cannot see the absence (2026-08-26 ~17:1x EDT)
+
+Battery #2's make test (on 7bb6b5c, the abi-7 merge) summed to 1,571
+checks — identical to battery #1's pre-merge 1,571 — while srPremul's
+own run had counted 1,588. The 16-check gap is tests/codegen/
+run_premul_table.sh, which NEVER RAN in either battery: test.log line
+2365 reads `make: *** [Makefile:136: test-corpus] Error 1` then
+`Waiting for unfinished jobs....` — the corpus target fails under -j12
+load (the known K32 counterk cell) and GNU make then launches NO
+further targets; `test-premul-table` is last in the `test:` list and
+was never started. Every other target had already been launched, so
+the batteries' make-test stages were complete bar that one script (a
+target-by-target census of the two logs against the Makefile's list
+says so). Run solo on the merged tree at 17:0x: 16/0. The lesson is
+the counts-without-trailer lesson of part 3a one level up — the
+AGGREGATION had no population count, so an absent script summed to
+nothing and looked like nothing. Fixed in the battery script (`make -k
+-j12`, so a failing target no longer suppresses the rest); the general
+fix goes to lane srAxes ([CHK-2]): a `make test` completion trailer
+that lists the section targets that RAN against the Makefile's list,
+so a make-aborted run is visibly partial.
