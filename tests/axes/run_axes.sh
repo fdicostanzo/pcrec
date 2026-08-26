@@ -364,11 +364,17 @@ if [ "$SKIP_ORACLE" != "1" ]; then
         # a one-line wrapper: -fno-premul-table PREPENDED, so it lands before
         # run_pc4.sh's own -p/-o/--/pattern args regardless of their order —
         # verified live (see this file's header): a `-f` flag composes with
-        # anything before `--` in any position.
+        # anything before `--` in any position. Bounded by "$TIMEOUT_BIN"
+        # ITSELF (D45/[TT-6]) on the emitted line, not merely by the
+        # already-bounded pcrec_run call one level up in run_pc4.sh — K37's
+        # static sweep (tests/codegen/run_codegen_tests.sh) reads THIS FILE's
+        # own text, not the call graph, so the bound has to be visible right
+        # here; $TIMEOUT_BIN is resolved (gen_timeout.sh, sourced above) and
+        # written into the wrapper as a literal absolute path, same as $PCREC.
         WRAP="$WORKDIR/pcrec_premuldeny"
         cat > "$WRAP" <<EOF
 #!/bin/sh
-exec "$PCREC" -fno-premul-table "\$@"
+exec "$TIMEOUT_BIN" "$(pcrec_timeout_secs)" "$PCREC" -fno-premul-table "\$@"
 EOF
         chmod +x "$WRAP"
         DENIEDOUT="$WORKDIR/pc4_denied.out"
