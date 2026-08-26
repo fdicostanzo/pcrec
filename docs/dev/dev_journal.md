@@ -15458,3 +15458,19 @@ srTier (abi 5) → battery → merge srStamp2 (abi 6, rebased onto srTier's
 main) → battery → journal + wake. pcrecdev2 closed for the night
 (reporter v3 with all ten column items; a floor pattern in bench/email;
 its next session acks I-5 and asks a ~50-min window).
+
+#### Fortieth session, part 10 — the [DD-13] battery is GREEN on 32890e2; srTier merges (2026-08-26 00:0x EDT)
+
+Battery on 32890e2 (launched 20:51, done 23:59): `make test` 1,555
+checks / 1 red — endvar identity "1 of 2,353 changed bytes" during the
+load-50 window when srTier's suites overlapped the -j12 stage; solo
+2,353/2,353 identical = the [TT-10] residue-2 shape; 29 corpus cases =
+the K32 cell, solo 1,634/0; 1 INCONCLUSIVE; `make san` rc 0, zero
+reports, both axes, 1h31m; FULL MATRIX 180 rows / unexpected 0 /
+undetected 6 (S150-S153, S160, S178) / UNREACHED 0 / anomalies 0 at
+50346fc (docs-only past 32890e2, verified). The [DD-13] STAMPS half is
+closed; bench inbox I-5 written (pin 32890e2; the stamps its reporter
+waited for; the abi-6 event with `rx_info.scan`/`prefilter` to follow
+tonight so it can plan one adapter change, not two). NEXT, per the
+overnight sequence: merge srTier (36c8234, abi 5, r38's fixes in) →
+battery → srStamp2 rebases (abi 6) → battery.
