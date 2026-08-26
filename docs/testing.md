@@ -1065,6 +1065,22 @@ reservation does not.
   on a green run — K33 is a live defect D73 chose to keep — and FAILS if the
   default entry ever stops dying. See its own header for the causal control.
 
+- **`make test-premul-table`** (`tests/codegen/run_premul_table.sh`) —
+  [OPT-3]'s PRE-MULTIPLIED DFA TRANSITION TABLE
+  (`docs/design/premultiplied_dfa_table.md`). **In `make test`, deliberately
+  NOT in `SMOKE_SECTIONS`**: it sweeps the whole corpus and compiles and runs
+  sixteen matchers, measured **~6 minutes** on this box at 2026-08-26, and
+  `make smoke` includes `test-codegen` and is already at its target. That is
+  the same placement argument `run_endvar_identity.sh` (under
+  `test-assertions`) and `run_ir_listing.sh` (under `test-vm`) already carry.
+  What it guards is invisible to every answer-checking suite in the tree,
+  because the transform is answer-preserving by construction: the state
+  variable left `int` (correct, and the optimization then buys nothing — a
+  SILENT performance regression), the generation-time bound not switching, and
+  a cell that is not premultiplied or a sentinel that collides. Validated in
+  three failing directions; the numbers are in the script's own header and in
+  `tests/codegen/CLAUDE.md`.
+
 **On demand — `make test-frame-buffer`** (`tests/recursion/run_frame_buffer.sh`):
 
 - **the NULL-equivalence spread.** `<prefix>_search_in(..., NULL)` compared

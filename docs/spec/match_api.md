@@ -156,7 +156,9 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is confirmed `6`.
+events but never stated the general rule; `rx_info.abi` is `7`
+([OPT-3], §6.3's `<PREFIX>_DFA_TABLE`; it read `6` when this note was
+written).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1516,8 +1518,8 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `6` on every artifact today ([DD-13c] bumped it from 5,
-  which was [OPT-1]'s two-tier entries), and is not yet a
+- **`rx_info.abi` is `7` on every artifact today ([OPT-3] bumped it from 6,
+  which was [DD-13c]'s empty-scan value plus the two `rx_info` mirrors), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
@@ -1551,10 +1553,12 @@ those events are instances of. **What changes at a bump:** `abi`
 SCAFFOLDING AS A WHOLE — every declaration, comment and macro in the
 artifact, not merely `struct rx_info`'s own layout — so a change to any
 of it, whether or not a struct offset moves, IS an `abi` bump; [DD-13]'s
-`3` → `4` (§6.3's two new stamp lines, no struct offset) and [DD-13c]'s
-own `5` → `6` (both a struct append AND new stamp lines) are the two
-ends of that range, and neither is a smaller event than the other by
-this document's own promise. **What is fixed within one `abi` number:**
+`3` → `4` (§6.3's two new stamp lines, no struct offset), [DD-13c]'s
+own `5` → `6` (both a struct append AND new stamp lines) and [OPT-3]'s
+`6` → `7` (the first that moves emitted PROGRAM bytes — the DFA scan's
+tables and loop lines — with NO struct offset moving at all) span the
+range this rule covers, and not one of them is a smaller event than the
+others by this document's own promise. **What is fixed within one `abi` number:**
 the emitted output is byte-exact WHOLE-FILE for a given pattern, prefix
 and option set — comments included — which is what `abi` exists to let
 a caller detect the boundary of; a caller diffing two artifacts compiled
@@ -1685,6 +1689,32 @@ engine-scoped.**
     what candidate-start filter that scan itself carries. A hybrid answers
     both, and the answers are independent.
 
+  **[OPT-3], 2026-08-26: a THIRD `_DFA_*` macro, `<PREFIX>_DFA_TABLE`**, on
+  exactly the same footing and under exactly the same IFF — every artifact
+  that CONTAINS a DFA scan, which is every DFA artifact and every VM hybrid,
+  and no other. It names the ENCODING of that scan's transition table
+  (`docs/design/premultiplied_dfa_table.md`, `docs/spec/tuning.md` §3):
+
+  | value | meaning |
+  |---|---|
+  | `"premultiplied"` | every numeric transition table in this artifact's DFA scan holds `next_state * classes`, so the emitted step is `state = table[state + class]` |
+  | `"indexed"` | every one holds `next_state`, and the step multiplies (the form pcrec emitted before `[OPT-3]`) |
+  | `"mixed"` | the forward and reverse machines took different forms — the choice is per machine, on that machine's own `states * classes` |
+  | `"none"` | the scan has no numeric transition table at all: `_DFA_SCAN "attempt"` (states are labels, a step is a computed `goto`) or `_DFA_SCAN "empty"` |
+
+  It is a SELECTION FACT and therefore (a), read off the same predicate the
+  emitted loop branches on. **It has no `rx_info` mirror, deliberately** —
+  unlike `scan` and `prefilter`, whose mirrors §3.2 of `tuning.md` records.
+  §6.3's (a)/(b) split is a rule about MACROS and makes the macro owed; the
+  two struct fields were a separate D40-addendum layout decision at [DD-13c],
+  justified by a header-less consumer (`dlopen`, FFI, a tool walking several
+  `<prefix>_info` symbols), and measured 2026-08-26 no such consumer exists
+  yet — the abi-6 fields are still unread. A third unread mirror would be
+  built ahead of a measured need (D77). **The trigger, so it need not be
+  re-derived: the first consumer that reads `rx_info.scan` or
+  `rx_info.prefilter` at run time makes `table` owed too**, and it is an
+  append at the end of the struct at that point, moving no existing offset.
+
   All four values come from ONE derivation per engine (`unanch_start`,
   `attempt_cand` in `src/gen/emit_dfa.c`) read by every site that needs
   them — the emitted loop, the DFA artifact's stamp, the hybrid's stamp —
@@ -1798,6 +1828,7 @@ specimen's shape:
 #define RX_ENGINE        "dfa"          /* mirrors rx_info.engine; UNCONDITIONAL */
 #define RX_DFA_SCAN      "unanchored"   /* or "attempt" */
 #define RX_DFA_PREFILTER "byte-class"   /* see the value set below */
+#define RX_DFA_TABLE     "premultiplied"  /* [OPT-3]; see the value set above */
 ```
 
 And on a VM HYBRID — measured on `'a(b|c)+d'`, the block at the top of this
@@ -1809,6 +1840,7 @@ section, which carries all of these at once:
 #define RX_VM_PREFILTER  "hybrid"       /* the VM runs a DFA ahead of its program */
 #define RX_DFA_SCAN      "unanchored"   /* [DD-13c] ...and THIS is that DFA */
 #define RX_DFA_PREFILTER "memchr"       /* ...and this is ITS candidate-start filter */
+#define RX_DFA_TABLE     "premultiplied"  /* [OPT-3] ...and this is its table's encoding */
 ```
 
 `RX_DFA_SCAN` names WHICH DFA SCAN the artifact CONTAINS. The three shapes
@@ -1853,10 +1885,12 @@ These are scalar macros for a per-artifact-wide verdict
 when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
-VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER` are
+VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
+`RX_DFA_TABLE` are
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
 since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
-artifacts AND VM hybrids, the iff stated in (a). **[ABI-NS],
+artifacts AND VM hybrids, the iff stated in (a). `RX_DFA_TABLE` is
+[OPT-3]'s and joins that iff unchanged. **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from
 (`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
 `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —

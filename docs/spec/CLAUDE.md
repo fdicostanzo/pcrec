@@ -224,12 +224,14 @@ spec and a design doc disagree, the spec is what the tool promises.
   directly rather than restated from memory.
 - `tuning.md` — **[SPEC-1.3], 2026-08-25.** The `-f`/`-fno-` tuning-axis
   contract: what a tuning flag is (a generation-time choice, D18/D46/D47.3),
-  one section per axis (all nine `-f`/`-fno-` flags, `--unroll=K`,
+  one section per axis (every `-f`/`-fno-` flag, `--unroll=K`,
   `--engine=`'s tuning-adjacent role) stating what each denies/forces, its
   default, its emitted stamp (verified by an artifact diff), whether it is
   ANSWER-IDENTITY-preserving or ENGINE-SELECTING, and the differential that
-  validates it with a measured population count. Also states the DFA-side
-  stamp gap (`[DD-13]`, current limitation, no promised fix) and a
+  validates it with a measured population count. Also states the DFA side's
+  own stamps (§3 — the `[DD-13]` gap this document once recorded was closed
+  by `[DD-13]`/`[DD-13c]`, and `[OPT-3]` added `RX_DFA_TABLE` on 2026-08-26
+  with its own axis at §2.13) and a
   `pcrec_options`-field-to-flag mirror table. Found and flagged one drift in
   the process: `lib/pcrec.h`'s own comment names the splice/linkage stamp
   `<PREFIX>_VM_CALLS`; the shipped emitter (`src/gen/emit_vm.c`) actually

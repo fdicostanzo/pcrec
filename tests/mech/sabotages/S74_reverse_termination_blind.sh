@@ -42,8 +42,23 @@ SAB_HARNESS_TARGET="tests/assertions/wordb_basic.rxt"   # wordb.rxt split 2026-0
 SAB_DESC="the reverse walk's termination boundary drops its context-indexed accept and reads the blind scalar one, so a LEADING \\B at search_from > 0 loses its match (assertions_design.md S3.8.3.1); leading-\\b patterns and every trailing-assertion pattern stay green, which is why the sweep is split into arms"
 SAB_DOC_FIGURE="tests/assertions/wordb_basic.rxt: the leading-\\B ms/ns cells at search_from > 0 fail; every \\b cell and every trailing-assertion cell stays green"
 SAB_COUNT=1
-SAB_BEFORE='                     "                if (search_from ? %s_reverse_is_accepting_by_class[%s * %d + "
-                     "%s_reverse_byte_class[subject[search_from - 1]]]\n"
-                     "                             : %s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"'
-SAB_AFTER='                     "                if (%s_reverse_is_accepting[%s]) match_start_position = rewind_position;   /* SABOTAGE S74 */\n"
-                     "                /* dropped context read: %d %s %s%s */\n"'
+# RE-ANCHORED 2026-08-26 ([OPT-3] STEP 2): the boundary's context-indexed
+# accept now takes its INDEX EXPRESSION from `premul_ix` (built into `ixbuf`
+# from a `cls` local) rather than spelling `%s * %d + ...` inline, so the
+# anchor spans the whole `sb_printf` and its argument list — the two must move
+# together or the format and the args disagree. The EDIT is unchanged in kind:
+# the context-indexed read is dropped and the blind scalar one is left, which
+# is the LOST MATCH for a leading \B at search_from > 0 this row exists for.
+SAB_BEFORE='            sb_printf(c, "            if (rewind_position <= search_from) {\n"
+                         "                if (search_from ? %s_reverse_is_accepting_by_class[%s]\n"
+                         "                             : %s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"
+                         "                break;\n"
+                         "            }\n",
+                      p, premul_ix(ixbuf, sizeof ixbuf, rsrc, rd->ncls, rpm, cls),
+                      p, rsrc);'
+SAB_AFTER='            (void)cls;   /* SABOTAGE S74: the context read is dropped */
+            sb_printf(c, "            if (rewind_position <= search_from) {\n"
+                         "                if (%s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"
+                         "                break;\n"
+                         "            }\n",
+                      p, rsrc);'

@@ -387,6 +387,60 @@ decides whether to perform it — and then run the row through
     witness table pointed at a VM artifact → red, because each witness
     asserts its artifact IS a DFA one before reading its value.
 
+- **run_premul_table.sh** — [OPT-3] (2026-08-26) the PRE-MULTIPLIED DFA
+  TRANSITION TABLE (`docs/design/premultiplied_dfa_table.md`,
+  `docs/spec/tuning.md` §2.13), held to the artifact rather than to its stamp.
+  Its OWN section, `make test-premul-table`, part of `make test` and
+  deliberately NOT of `make smoke` — it sweeps the whole corpus AND compiles
+  and runs sixteen matchers (~6 min), which is the same argument
+  `run_endvar_identity.sh` and `run_ir_listing.sh` already carry for running
+  under other sections.
+  - **WHY IT EXISTS.** The transform is ANSWER-PRESERVING BY CONSTRUCTION —
+    it changes the ENCODING of a state, not the machine — so the whole `.rxt`
+    corpus, both oracles and every differential agree whether or not the
+    emitter got it right in the ways that matter. Three failure modes, none
+    of which an answer comparison can reach: the state variable left `int`
+    (gcc reinstates the `movslq` the transform exists to remove; the artifact
+    is CORRECT and the optimization buys nothing); the generation-time bound
+    not switching; and a cell that is not premultiplied, or a sentinel that
+    collides with a real value.
+  - **THE CONTROL DOES NOT SHARE A SOURCE WITH WHAT IT CONTROLS.** Every
+    verdict comes from the EMITTED MATCHER TEXT — table declarations, table
+    cells, the state variable's declaration, the transition line — with the
+    stamp compared against it. The two come out of different write sites
+    (`dfa_table_name` writes the macro; `emit_tr_table`/`emit_acc_table`/
+    `emit_unanchored` write the tables and the loop). **The CLASS COUNT is
+    read from `rx_*_byte_class`, a different table written by a different
+    emitter function**, because §5's whole invariant is "every cell is a
+    multiple of the stride" and taking the stride from the transition table
+    would make it a tautology.
+  - **Six sections**: named witnesses one per documented value; the bound on
+    both sides WITH a non-vacuity assertion that the swept family straddles
+    it; the corpus sweep (the [DD-13c] iff both ways, stamp vs declarations,
+    the bound per machine, the ACCEPT TABLE'S LENGTH as an independent second
+    witness of the form, and the SHAPE); the cell invariant; and the deny
+    flag's answer identity, which EXCLUDES a pattern whose scan carries no
+    numeric table rather than counting it as an equal pair.
+  - **Validated in three failing directions** (each planted, rebuilt, run,
+    reverted; clean baseline 15/0): the table not premultiplied → **13/19**
+    with §5 red on 14,387 of 39,787 cells and §1/§2/§3 correctly GREEN (they
+    read declarations, the plant changed cells); the sentinel colliding →
+    **12/5**, and it took breaking BOTH bound conjuncts, since the range one
+    still refuses on its own — with §5 GREEN, because the corpus's largest
+    machine is 40,010 entries and cannot carry a collided cell, so the BOUND
+    arm is what makes a collision unreachable and the CELL arm cannot see
+    this defect; the state variable left `int` → **14/1**, §3's shape arm
+    ALONE on 1,824 machines, with every answer unchanged.
+  - **The first run of this file found five defects in ITSELF**, and they are
+    worth reading before writing the next check here: a witness table split
+    on `|`, which is a pattern byte; a DFA-scan discriminator keyed on "has a
+    table", which called the four empty-engine artifacts stamp-without-a-scan
+    (r37 finding #5 read backwards — the [DD-13c] iff is about CONTAINING a
+    scan, and a body that is one `return 0` contains one); an `awk` field
+    index reading a variable's NAME where its TYPE was wanted, which reported
+    3,744 shape violations on a correct tree; a drift count with no names
+    beside it; and a flag row comparing one form with itself.
+
 - **run_tiered_entry.sh** + **tier_driver.c** — [OPT-1] (2026-08-25) the
   TWO-TIER DEFAULT ENTRY (`docs/design/two_tier_entry.md`,
   `docs/spec/match_api.md` §10.9). OPT-IN, `make test-tiered-entry`, NOT in
