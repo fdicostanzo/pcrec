@@ -1240,8 +1240,58 @@ struct rx_info {
                                             NULL; also carries a prefilter
                                             note on hybrid-eligible
                                             artifacts */
+    const char           *scan;         /* [DD-13c] the DFA scan this
+                                            artifact CONTAINS: "unanchored"
+                                            / "attempt" / "empty", mirroring
+                                            <PREFIX>_DFA_SCAN. NULL when it
+                                            contains none */
+    const char           *prefilter;    /* [DD-13c] this artifact's
+                                            candidate-start mechanism, in
+                                            whichever engine's vocabulary
+                                            applies. Never NULL */
 };
 ```
+
+**[DD-13c], 2026-08-25 (D40 addendum) — `scan` and `prefilter`: THE SELECTION
+FACTS GET RUNTIME MIRRORS.** §6.3's two DFA-scan macros are preprocessor-only,
+and the consumer least able to read a preprocessor macro is exactly the one
+most likely to want these facts: a `dlopen`ing host, an FFI or `ctypes`
+binding, a tool walking several `<prefix>_info` symbols in one linked image.
+Those consumers already read `engine` and `engine_why` here; they can now read
+the scan facts the same way. **The two fields are APPENDED AT THE END of the
+struct**, after the three pointers, so no existing member's offset moves —
+`abi` still bumps (4 → 6), because the struct GREW, but this is a smaller kind
+of event than abi 2's inserted `work_budget` or abi 3's inserted sizing block,
+both of which moved every following offset.
+
+**THE RULE, exactly** (`tests/codegen/run_dfa_stamps.sh` asserts every line of
+it over the whole corpus, on both engines):
+
+| artifact | `scan` | `prefilter` |
+|---|---|---|
+| DFA artifact | `"unanchored"` / `"attempt"` / `"empty"` — the value of `<PREFIX>_DFA_SCAN` | the value of `<PREFIX>_DFA_PREFILTER`: one of the five in §6.3 |
+| VM artifact, HYBRID | the same three values, describing the DFA scan the artifact INLINES | the same five values, describing that inlined scan's own filter |
+| VM artifact, non-hybrid | `NULL` — there is no DFA scan in this artifact | `"none"` — the VM's own vocabulary (`<PREFIX>_VM_PREFILTER`'s value on exactly these artifacts) |
+
+Three consequences a consumer can rely on, and they are the reason the rule is
+worth stating rather than inferring:
+
+1. **`prefilter` is never `NULL`.** Every artifact has an answer to "what
+   candidate-start mechanism do you carry", including "none".
+2. **`scan != NULL` on a VM artifact IS "this is a hybrid".** That is the
+   runtime reading of `<PREFIX>_VM_PREFILTER "hybrid"`, which had no `rx_info`
+   mirror at all before this date.
+3. **The string `"hybrid"` never appears in `prefilter`.** It is in the VM's
+   vocabulary, but an artifact that would say it reports its inlined scan's
+   ACTUAL mechanism instead — strictly more information, and consequence 2 is
+   how the coarser fact is still readable. A consumer that wants the coarse
+   answer tests `scan != NULL`, not `strcmp(prefilter, "hybrid")`.
+
+**ONE DERIVATION, TWO SPELLINGS.** The field and the macro are written from the
+same pair of emitter functions and from nowhere else, so they cannot report
+different answers unless the emitter is wrong about both — which is what makes
+"field == macro" a check of the compiler rather than of arithmetic, and it is
+asserted on every compiled artifact of both engines.
 
 **[ABI-NS], 2026-08-18 (D60 addendum): `engine`'s number-only contract now
 has names.** Until this date, this field's comment read "1 = DFA, 2 = VM.

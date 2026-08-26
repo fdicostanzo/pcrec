@@ -221,6 +221,17 @@ read_artifact() {
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_PREFILTER "/ { np++; s_pf   = substr($3, 2, length($3) - 2) }
         /^#define RX_VM_PREFILTER "/  { s_vmpf = substr($3, 2, length($3) - 2) }   # [DD-13c] the OTHER side of the iff
+        # ---- (iii) MIRRORED: the rx_info struct literal, and nothing else ---
+        # [DD-13c] A THIRD SOURCE, kept as separate from the other two as they
+        # are from each other. These are emit_info_def initializer lines, not
+        # #defines and not matcher text, so "macro == field" below is a claim
+        # about the emitter rather than about arithmetic. NULL is carried
+        # through as "-" so an absent field and a present-but-NULL one stay
+        # distinguishable (nf* count the LINES).
+        /^    \.scan = /      { nfscan++
+                                f_scan = ($3 == "NULL,") ? "-" : substr($3, 2, length($3) - 3) }
+        /^    \.prefilter = / { nfpf++
+                                f_pf   = ($3 == "NULL,") ? "-" : substr($3, 2, length($3) - 3) }
         END {
             eng = vm ? "vm" : "dfa"
             scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
@@ -247,8 +258,49 @@ read_artifact() {
             if (!dfascan) { scan = "-"; pf = "-" }
             print eng, scan, pf, (s_eng == "" ? "-" : s_eng), (s_scan == "" ? "-" : s_scan), \
                   (s_pf == "" ? "-" : s_pf), ne + 0, ns + 0, np + 0, \
-                  (s_vmpf == "" ? "-" : s_vmpf)
+                  (s_vmpf == "" ? "-" : s_vmpf), \
+                  (f_scan == "" ? "-" : f_scan), (f_pf == "" ? "-" : f_pf), \
+                  nfscan + 0, nfpf + 0
         }'
+}
+
+# ---------------------------------------------------------------------------
+# [DD-13c] THE RUNTIME MIRRORS: `rx_info.scan` / `.prefilter` vs the macros.
+# ---------------------------------------------------------------------------
+# Frank's D40-addendum ruling gave the two selection facts RUNTIME mirrors, for
+# a consumer with no header to read the macros from (dlopen, an FFI binding, a
+# linker walking several `<prefix>_info` symbols). The emitter derives macro and
+# field from ONE pair of functions, so what is worth checking is not the value
+# — the corpus sweep above already holds the MACRO to the emitted loop — but
+# that the two SPELLINGS of it did not come apart:
+#
+#     .scan       == <PREFIX>_DFA_SCAN        when the macro is present
+#     .scan       == NULL                     when it is absent
+#     .prefilter  == <PREFIX>_DFA_PREFILTER   when the macro is present
+#     .prefilter  == "none"                   when it is absent (the VM's own
+#                                             vocabulary: a non-hybrid VM
+#                                             artifact has no candidate-start
+#                                             filter, and RX_VM_PREFILTER reads
+#                                             "none" on exactly those)
+#
+# BOTH FIELDS ARE ON EVERY ARTIFACT, both engines, so the LINE COUNT is checked
+# too (exactly one of each): a mirror that silently stopped being emitted on one
+# engine would otherwise leave the comparison vacuous on that half.
+#
+# Echoes MIRRORCMP per comparison so the verdict quotes a COUNTED population
+# rather than one derived from bucket sizes — the lesson validation 5 below
+# taught this file about its own agreement denominators.
+mirror_check() {
+    _ms="$1"; _mp="$2"; _fs="$3"; _fp="$4"; _nfs="$5"; _nfp="$6"; _what="$7"
+    if [ "$_nfs" -ne 1 ] || [ "$_nfp" -ne 1 ]; then
+        echo MIRRORMISS; echo "BAD: rx_info is missing a mirror field (scan lines=$_nfs prefilter lines=$_nfp): $_what"
+        return
+    fi
+    echo MIRRORCMP
+    _ws="$_ms"; [ "$_ms" = "-" ] && _ws="-"
+    _wp="$_mp"; [ "$_mp" = "-" ] && _wp="none"
+    [ "$_fs" = "$_ws" ] || { echo MIRRORBAD; echo "BAD: rx_info.scan '$_fs' vs macro '$_ms' (expected '$_ws'): $_what"; }
+    [ "$_fp" = "$_wp" ] || { echo MIRRORBAD; echo "BAD: rx_info.prefilter '$_fp' vs macro '$_mp' (expected '$_wp'): $_what"; }
 }
 
 # ---------------------------------------------------------------------------
@@ -430,6 +482,7 @@ set -u
 . "$ROOT_DIR/tests/lib/gen_timeout.sh" >/dev/null 2>&1
 command -v pcrec_run >/dev/null || { echo "BAD: worker could not load pcrec_run"; exit 1; }
 command -v read_artifact >/dev/null || { echo "BAD: worker did not inherit read_artifact"; exit 1; }
+command -v mirror_check >/dev/null || { echo "BAD: worker did not inherit mirror_check"; exit 1; }
 art="$WORKDIR/a.$$.c"
 trap 'rm -f "$art"' EXIT
 while IFS= read -r pat; do
@@ -438,7 +491,12 @@ while IFS= read -r pat; do
     fi
     set -- $(read_artifact < "$art")
     d_eng="$1"; d_scan="$2"; d_pf="$3"
-    s_eng="$4"; s_scan="$5"; s_pf="$6"; ne="$7"; ns="$8"; np="$9"; shift 9; s_vmpf="$1"
+    s_eng="$4"; s_scan="$5"; s_pf="$6"; ne="$7"; ns="$8"; np="$9"; shift 9
+    s_vmpf="$1"; f_scan="$2"; f_pf="$3"; nfscan="$4"; nfpf="$5"
+    # [DD-13c] THE RUNTIME MIRRORS, on EVERY artifact of BOTH engines and
+    # BEFORE the engine fork below, because the claim is not engine-specific:
+    # whatever the macros say (including saying nothing), the struct must agree.
+    mirror_check "$s_scan" "$s_pf" "$f_scan" "$f_pf" "$nfscan" "$nfpf" "$pat"
     if [ "$d_eng" = "vm" ]; then
         echo VM
         [ "$s_eng" = "vm" ] || { echo MISS; echo "BAD: NO RX_ENGINE \"vm\": $pat"; }
@@ -512,7 +570,7 @@ done
 WORKER
 
 export WORKDIR PCREC SCAN_VALUES PF_VALUES ROOT_DIR
-export -f read_artifact
+export -f read_artifact mirror_check
 for f in "$WORKDIR"/sh/p*; do
     bash "$WORKDIR/worker.sh" < "$f" > "$f.out" &
 done
@@ -538,6 +596,7 @@ nvmsilent=$(tok VM_SILENT); nvmpfbad=$(tok VMPFBAD); nvmhyempty=$(tok VMHYEMPTY)
 # denominator collapses instead, and the assertion below makes the collapse a
 # RED rather than a number a reader has to notice.
 nscancmp=$(tok SCANCMP); npfcmp=$(tok PFCMP)
+nmirror=$(tok MIRRORCMP); nmirrorbad=$(tok MIRRORBAD); nmirrormiss=$(tok MIRRORMISS)
 # [DD-13c] THE TWO ARTIFACT KINDS ARE TALLIED SEPARATELY AND THEN TOGETHER.
 # The DFA-only distribution is the one [DD-13] recorded and the one
 # docs/spec/tuning.md §3 quotes, so folding the 1,200-odd hybrids into it would
@@ -632,6 +691,19 @@ else
 fi
 [ "$nempty" -eq 0 ] && bad "[agreement] the empty-engine bucket is EMPTY — \`\\B\\b\` and its three siblings are in the corpus and must land here; a zero means the text marker stopped matching and the bucket is silently exempting nothing (or, worse, everything)" \
                     || ok "[agreement] the empty-engine bucket holds $nempty artifact(s), asserted non-vacuous"
+# [DD-13c] the runtime mirrors, over the WHOLE population of both engines.
+if [ "$nmirrormiss" -eq 0 ]; then
+    ok "[mirror] every one of the $((ndfa + nvm)) artifacts carries exactly one rx_info.scan and one .prefilter field (both engines)"
+else
+    bad "[mirror] $nmirrormiss artifact(s) are missing an rx_info mirror field — the comparison below is vacuous on them"
+fi
+[ "$nmirrorbad" -eq 0 ] && ok "[mirror] rx_info.scan/.prefilter agree with <PREFIX>_DFA_SCAN/_DFA_PREFILTER on all $nmirror artifacts compared (NULL/\"none\" where the macros are absent) — one derivation, two spellings" \
+                        || bad "[mirror] $nmirrorbad rx_info field(s) disagree with the macro they mirror"
+if [ "$nmirror" -eq $((ndfa + nvm)) ]; then
+    ok "[mirror] the mirror comparison ran on every compiled artifact: $nmirror = $ndfa DFA + $nvm VM"
+else
+    bad "[mirror] the mirror comparison ran on $nmirror artifacts but $((ndfa + nvm)) compiled — $(( ndfa + nvm - nmirror )) were routed past it"
+fi
 [ "$nvalue" -eq 0 ] && ok "[values] every stamped value is one of the documented set (scan: $SCAN_VALUES; prefilter: $PF_VALUES)" \
                     || bad "[values] $nvalue stamp(s) carry a value outside the documented set — a new mechanism needs its match_api.md §6.3 hunk and a line in this file"
 
