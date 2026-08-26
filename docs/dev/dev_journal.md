@@ -16156,3 +16156,29 @@ to [DD-13c] (it was [DD-13]); §3.6's optimization pointer → [OS-4]/
 [OPT-2]. Watchdog cron torn down; no worktrees remain. Next: the full
 battery on e8a1b6b (an emitter change and a spec change landed), then
 [OPT-3] STEP 2 on Frank's word.
+
+#### Forty-first session, part 3a — CORRECTION: srK38's make test did NOT complete; the battery's run is the real one (2026-08-26 ~12:3x EDT)
+
+srK38's final report arrived after its merge: its `make -j4 test` ran
+~12 min (1,872 PASS lines, 0 FAIL, through corpus/cli/reject/registry/
+parse/altcls/counterk/mrl/rungselect/backrefs/atomic_groups/lookaround/
+assertions/codegen-identity/recursion) and then STOPPED at 12:15:57 —
+no trailer, no error, process gone: `nohup … & disown` instead of
+`setsid` (memory pcrec-box-concurrency's PID-file pitfall, again). Part
+3 above recorded "make test 1,872/0" as if complete — I read PASS/FAIL
+counts from the log and never asked for the COMPLETION TRAILER. The
+lesson is the [MECH-REACH]/K35 shape in my own reading: a count without
+a "this run finished" witness is a partial. The battery on ac3b707
+(launched 12:24) runs the full make test on the merged tree; its result,
+not the lane's, is the record. The lane's other artifacts stand and are
+stronger than the brief asked: test-cli 287/287 twice, test-codegen
+green, a 7,136-invocation byte-identity sweep (1,784 corpus patterns ×
+2 prefixes × 2 engines, c00a8ac vs fixed: 0 diffs), the witness shown
+red against the pre-fix binary with K38's exact symptoms and green on
+the DFA/1-char cells. The sharpest K38 bug it found was NOT the one the
+report named: `ga`/`gs` (revdet group-span / group-seen names) share
+their first 18 suffix bytes, so at 60 chars both truncated to the SAME
+string and the group-span write and the group-seen flag collapsed onto
+one name; `nm[48]`/`entrypos[32]`, which the report named, carry no
+prefix and were left alone — found by reproducing, not by trusting the
+filed diagnosis.
