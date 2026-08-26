@@ -34,16 +34,34 @@ SAB_HARNESS_TARGET="tests/assertions/wordb_empty_compose.rxt"   # wordb.rxt spli
 SAB_DESC="the forward loop's class-indexed accept is emitted ABOVE its 'scan_position >= subject_length' guard, so the emitted matcher computes forward_byte_class[subject[scan_position]] at scan_position == subject_length -- an out-of-bounds read in generated code (S3.6.2, K27's class) that usually changes no answer"
 SAB_DOC_FIGURE="tests/codegen/run_codegen_tests.sh: [M6.2-WORDB rule 1] reports the guard after the first class-indexed accept"
 SAB_COUNT=1
+# RE-ANCHORED 2026-08-26 ([OPT-3] STEP 2): the class-indexed accept's INDEX
+# EXPRESSION is now built by `premul_ix` into `ax` rather than spelled `%s * %d
+# + ...` inline, so the anchor's second half moved and the sabotage's own
+# replacement reads `ax` too. The EDIT is unchanged in kind — the accept is
+# still hoisted above the `scan_position >= subject_length` guard, and it still
+# reads `forward_byte_class[subject[scan_position]]` inline, which is the
+# out-of-bounds read at scan_position == subject_length this row exists for.
 SAB_BEFORE='        sb_printf(c, "        if (scan_position >= subject_length) {\n"
                      "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
                      "            break;\n"
                      "        }\n", p, fsrc);
-        sb_printf(c, "        {\n"
-                     "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"'
-SAB_AFTER='        sb_printf(c, "        if (%s_forward_is_accepting_by_class[%s * %d + %s_forward_byte_class[subject[scan_position]]]) last_accept_position = scan_position;\n"   /* SABOTAGE S73 */
-                     "        if (scan_position >= subject_length) {\n"
-                     "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
-                     "            break;\n"
-                     "        }\n", p, fsrc, fd->ncls, p, p, fsrc);
-        sb_printf(c, "        {\n"
-                     "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"'
+        {
+            char ax[256];
+            premul_ix(ax, sizeof ax, fsrc, fd->ncls, fpm, "forward_class");
+            sb_printf(c, "        {\n"
+                         "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"'
+SAB_AFTER='        {
+            char axe[256], cle[128];
+            snprintf(cle, sizeof cle, "%s_forward_byte_class[subject[scan_position]]", p);
+            premul_ix(axe, sizeof axe, fsrc, fd->ncls, fpm, cle);
+            sb_printf(c, "        if (%s_forward_is_accepting_by_class[%s]) last_accept_position = scan_position;\n"   /* SABOTAGE S73 */
+                         "        if (scan_position >= subject_length) {\n"
+                         "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
+                         "            break;\n"
+                         "        }\n", p, axe, p, fsrc);
+        }
+        {
+            char ax[256];
+            premul_ix(ax, sizeof ax, fsrc, fd->ncls, fpm, "forward_class");
+            sb_printf(c, "        {\n"
+                         "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"'

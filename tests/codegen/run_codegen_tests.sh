@@ -1425,9 +1425,17 @@ if gen wordb "$WB_PAT" --features all; then
     # read, so it is dropped first -- an exclusion worth spelling out, since
     # forgetting it is a check that fails on its own subject rather than on a
     # defect.
+    # [OPT-3] TWO INDEX SPELLINGS, ONE RULE. The pre-multiplied table form
+    # emits `[forward_state + forward_class]` where the indexed form emits
+    # `[forward_state * <ncls> + forward_class]` (the state already carries
+    # the stride). What this rule is about is UNCHANGED by that — every read
+    # must go through the guarded `forward_class` LOCAL and never through a
+    # subject read spelled inline — so the pattern accepts both spellings and
+    # still refuses anything that computes its own class.
+    F2OK='rx_forward_is_accepting_by_class\[[a-z_]+( \* [0-9]+)? \+ forward_class\]'
     grep 'rx_forward_is_accepting_by_class\[' "$wbb" | grep -v '^ *static const' > "$WORKDIR/f2reads"
     f2lines=$(grep -c . "$WORKDIR/f2reads" || true)
-    f2bad=$(grep -cv 'rx_forward_is_accepting_by_class\[[a-z_]* \* [0-9]* + forward_class\]' "$WORKDIR/f2reads" || true)
+    f2bad=$(grep -cvE "$F2OK" "$WORKDIR/f2reads" || true)
     guard_ln=$(grep -n '^        if (scan_position >= subject_length) {$' "$wbb" | head -1 | cut -d: -f1)
     first_f2=$(grep -n 'rx_forward_is_accepting_by_class\[' "$wbb" | grep -v ':[[:space:]]*static const' \
                | head -1 | cut -d: -f1)
@@ -1437,7 +1445,7 @@ if gen wordb "$WB_PAT" --features all; then
         bad "[M6.2-WORDB rule 1]: '$WB_PAT' emitted no class-indexed accept at all — the fixture no longer exercises §3.6, so this rule has no population"
     elif [ "$f2bad" -ne 0 ]; then
         bad "[M6.2-WORDB rule 1]: $f2bad of $f2lines class-indexed accept reads are not indexed by the 'cl' local; a read that computes its own class is a read this check cannot prove is guarded:"
-        grep -v 'rx_forward_is_accepting_by_class\[[a-z_]* \* [0-9]* + forward_class\]' "$WORKDIR/f2reads" >&2
+        grep -vE "$F2OK" "$WORKDIR/f2reads" >&2
     elif [ -z "$guard_ln" ] || [ -z "$first_f2" ] || [ "$guard_ln" -ge "$first_f2" ]; then
         bad "[M6.2-WORDB rule 1]: the 'if (pos >= n)' guard is at line ${guard_ln:-MISSING} and the first class-indexed accept at line ${first_f2:-MISSING} — the guard must come FIRST, or the emitted loop reads s[pos] at pos == n"
     elif [ "$scalar_in_guard" -lt 1 ]; then
@@ -1474,9 +1482,24 @@ if gen wordb "$WB_PAT" --features all; then
     # here, so a fixture change cannot silently drop the property.
     rskip_k=$(grep -oE 'rx_reverse_stay[0-9]+\[subject\[rewind_position - 1\]\]' "$wbb" | head -1 \
               | grep -oE '[0-9]+' | head -1)
+    # [OPT-3] THE ACCEPT INDEX IS READ OFF THE EMITTED GUARD, not computed
+    # here. `rx_reverse_stay<K>` is named for the STATE INDEX (it matches the
+    # legend), but the loop's own guard compares `reverse_state` against the
+    # value that state has IN THIS ARTIFACT'S ENCODING — the index under the
+    # indexed table form, the index times the class count under the
+    # pre-multiplied one — and that value is exactly the subscript
+    # `rx_reverse_is_accepting[]` is indexed by in the same artifact. Taking it
+    # from the guard keeps this check's own discipline ("both come from the
+    # artifact; neither is typed here") across both table forms, and keeps it
+    # from re-deriving a stride it would then have to keep in step.
+    rskip_ix=$(awk -v k="${rskip_k:-}" '
+        /reverse_state == [0-9]+/ { match($0, /reverse_state == [0-9]+/);
+                                    g = substr($0, RSTART + 17, RLENGTH - 17) }
+        $0 ~ ("rx_reverse_stay" k "\\[subject\\[rewind_position - 1\\]\\]") && g != "" { print g; exit }
+    ' "$wbb")
     rskip_acc=$(sed -n '/static const unsigned char rx_reverse_is_accepting\[/,/};/p' "$wbb" \
                 | tr -d ' \n' | sed 's/.*={//; s/};.*//' \
-                | cut -d, -f$((${rskip_k:-0} + 1)))
+                | cut -d, -f$((${rskip_ix:-0} + 1)))
     # `size_t match_start_position = (size_t)-1;` is the DECLARATION, not a record of a
     # match start, and is excluded by name rather than by pattern-matching
     # around it.
@@ -1497,14 +1520,14 @@ if gen wordb "$WB_PAT" --features all; then
     if [ "$rskips" -lt 1 ]; then
         bad "[M6.2-WORDB rule 2]: '$WB_PAT' emitted no reverse skip loop, so the second, blind match_start_position writer §3.8.3.1 is about cannot be present — this rule would pass vacuously"
     elif [ "${rskip_acc:-0}" != "1" ]; then
-        bad "[M6.2-WORDB rule 2]: '$WB_PAT's reverse skip state $rskip_k does NOT accept (rx_reverse_is_accepting[$rskip_k] = ${rskip_acc:-unread}), so the blind writer is gated off by its OTHER compile-time conjunct and no sabotage of the guard can emit it. This rule would pass vacuously — which is exactly how sabotage S72 first came back UNDETECTED. Pick a fixture whose reverse skip state accepts."
+        bad "[M6.2-WORDB rule 2]: '$WB_PAT's reverse skip state $rskip_k does NOT accept (rx_reverse_is_accepting[${rskip_ix:-?}] = ${rskip_acc:-unread}), so the blind writer is gated off by its OTHER compile-time conjunct and no sabotage of the guard can emit it. This rule would pass vacuously — which is exactly how sabotage S72 first came back UNDETECTED. Pick a fixture whose reverse skip state accepts."
     elif [ "$sf_total" -lt 2 ]; then
         bad "[M6.2-WORDB rule 2]: only $sf_total match_start_position writers in the body; the boundary arm and the interior read are both expected"
     elif [ "$nsf_bad" -ne 0 ]; then
         bad "[M6.2-WORDB rule 2]: $nsf_bad match_start_position writer(s) are not conditioned on an accept read. A bare 'match_start_position = pp;' at pp == startpos records a match start whose leading \\b/\\B was never evaluated against s[startpos-1]:"
         printf '%s\n' "$sf_bad" >&2
     else
-        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total match_start_position writers are conditioned on an accept read, with $rskips reverse skip loop(s) present AND skip state $rskip_k ACCEPTING (rx_reverse_is_accepting[$rskip_k] = 1) — so the second, blind writer really would be emitted here if its guard were removed"
+        ok "[M6.2-WORDB rule 2] (§3.8.3.1): all $sf_total match_start_position writers are conditioned on an accept read, with $rskips reverse skip loop(s) present AND skip state $rskip_k ACCEPTING (rx_reverse_is_accepting[${rskip_ix:-?}] = 1) — so the second, blind writer really would be emitted here if its guard were removed"
     fi
 
     # --- rule 2b: the boundary accept is ATTACHED TO THE BREAK (R30 N9) -----
@@ -1518,7 +1541,12 @@ if gen wordb "$WB_PAT" --features all; then
     # be no accept read after the loop closes.
     b_arm=$(grep -n 'if (rewind_position <= search_from) {' "$wbb" | head -1 | cut -d: -f1)
     b_read=$(grep -n 'rx_reverse_byte_class\[subject\[search_from - 1\]\]' "$wbb" | head -1 | cut -d: -f1)
-    b_dead=$(grep -n 'if (reverse_state < 0) break;' "$wbb" | head -1 | cut -d: -f1)
+    # [OPT-3] TWO DEAD-STATE SPELLINGS. The indexed table form tests the sign
+    # bit (`< 0`); the pre-multiplied form compares against the reserved cell
+    # 65535, because its cells are `unsigned short` and the sign bit is gone.
+    # What rule 2b pins is WHERE the boundary's context read sits relative to
+    # the loop's OTHER exit, which is the same exit either way.
+    b_dead=$(grep -nE 'if \(reverse_state (< 0|== 65535)\) break;' "$wbb" | head -1 | cut -d: -f1)
     if [ -z "$b_arm" ] || [ -z "$b_read" ] || [ -z "$b_dead" ]; then
         bad "[M6.2-WORDB rule 2b]: could not locate the boundary arm (${b_arm:-MISSING}), its context read (${b_read:-MISSING}) or the dead-state exit (${b_dead:-MISSING}) in the emitted reverse loop"
     elif [ "$b_read" -le "$b_arm" ] || [ "$b_read" -ge "$b_dead" ]; then
