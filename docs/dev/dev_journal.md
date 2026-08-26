@@ -15349,3 +15349,50 @@ none changed by the re-measure; one new unpredicted fact: the VM got
 the [DD-13] battery on d8608ca (~3h20m); critDD13a (opus, engine lens)
 + critDD13b (sonnet, checks/docs lens) read-only on 78249e6; srTier.
 Bench inbox I-5 (new pin, stamps) follows the battery.
+
+#### Fortieth session, part 8 — r37 (the DD-13 panel) landed; the battery found the hazard's fourth site; relaunched on 32890e2 (2026-08-25 ~20:5x EDT)
+
+THE PANEL (critDD13a opus / critDD13b sonnet, read-only): both core
+claims SURVIVED — the `unanch_start` factoring emits identical text on
+every path (the two collapsed empty-engine returns: identical
+conditions, zero emission between them), and an INDEPENDENTLY WRITTEN
+derivation over 1,352 patterns (626 DFA / 630 VM / 96 refused) found 0
+stamp/loop disagreements. What it found is SCOPE: the four empty-engine
+artifacts stamp a scan loop they do not contain (A5) and a VM HYBRID's
+inlined DFA scan — the artifact kind that actually carries the
+specimen's mechanism — stamps nothing about its form (A6); both
+chartered as [DD-13c] (lane srStamp2, opus, an abi event to coordinate
+with srTier's 5). Landed 55165a9 from a side worktree (never edit a
+suite the battery is executing): the empty-engine bucket is an EXACT
+NAMED MANIFEST of four, validated red on a planted fifth (B2 — a floor
+of one answers "did it vanish", never "is it the right ones"; the
+day's third instance of that lesson); the DFA population floored and
+refusals ceilinged (A9); the check's own comment cited 2,758 for a
+population it measures as 2,772 — in the comment about miscounted
+populations (A10); emit_vm.c's three comments still asserting the
+retired VM-only rule (A3); match_api.md:1506 contradicting §6.3's own
+split (A4); "candidate-start", not "scan-avoidance", until the
+self-loop skip is stamped (A7); the "none" gloss's largest cause is
+start_acc (A8). Review: docs/dev/reviews/2026-08-25-r37-dd13-stamps.md.
+
+THE BATTERY ON d8608ca found the hazard's FOURTH site in its make-test
+stage: tests/atomic_groups §3 read `RX_ENGINE`'s ABSENCE as "a pure
+DFA" — 10 reds the moment the DFA started stamping; the panel's sweep
+for the shape had covered codegen (×2) and parse, not this suite.
+Killed at san (the matrix would have scored every atomic row anomalous
+on a red clean tree — and my first safekill matched my OWN shell's
+command line and killed it, exit 144: the pattern-in-your-own-argv rule,
+again; the second used the bare PID). Fixed to the VALUE, test-atomic
+8/0 (61,586 cells; 10 dead-cut patterns move DFA↔VM), merged with the
+r37 landing; battery RELAUNCHED 20:51 on 32890e2 (~00:10).
+
+srTier (opus) reported mid-flight: design note + emitter built;
+rx_search's frame 131,216 → 3,184 B on `^(a(?1)?b)$` (98,432 → 3,184 on
+`(a|aa)+b`), `_in` unchanged; identity by hand at 14 depths across both
+tier boundaries; abi 4→5, the first bump where no DFA byte moves; K33
+NARROWS (the default entries now fit a 128 KB thread for every match the
+fast tier holds — the stackdepth check's pinned known state is
+re-derived, flagged for review). Its suites are cleared (PROCS=4, one
+at a time); timings after the battery. It also caught my paste botch in
+tuning.md §3 (two stray instruction lines from d8608ca) — fixing it in
+its diff.

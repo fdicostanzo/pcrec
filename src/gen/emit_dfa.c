@@ -146,6 +146,9 @@ static void emit_feature_macros(StrBuf *sb)
  * artifact silent about its own engine: the macro belonged to the emitter that
  * happened to write it rather than to the fact.
  *
+ * (The stamp lives in the emitted .c, not the .h — a header-only consumer
+ * cannot `#if` on it yet; §6.3 records header emission as an open question.)
+ *
  * ONE FUNCTION AND NOT TWO CALL SITES SPELLING THE SAME `#define`, because the
  * whole value of an unconditional stamp is that a consumer may write
  * `#if RX_ENGINE ...` without knowing which engine it got, and two independent
@@ -1083,6 +1086,9 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * silent one. */
     /* [DD-13] abi 3 -> 4 (D76/[TT-11]): the DFA artifact's D46 SELECTION
      * STAMPS (`<PREFIX>_ENGINE`, `_DFA_SCAN`, `_DFA_PREFILTER`, above) are
+     * three new lines in its scaffolding — and, because `emit_info_def` is
+     * SHARED, this member's own byte moves in every VM artifact too, which is
+     * why the whole-file pin had to move for both kinds (r37 A12). They are
      * three new lines in every DFA artifact's `#define` block. They are pure
      * SCAFFOLDING — no table, no search-loop byte and no answer moves, which
      * `run_recursion_identity.sh`'s comparison (A) proves by comparing the
