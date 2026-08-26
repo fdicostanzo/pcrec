@@ -16182,3 +16182,26 @@ string and the group-span write and the group-seen flag collapsed onto
 one name; `nm[48]`/`entrypos[32]`, which the report named, carry no
 prefix and were left alone — found by reproducing, not by trusting the
 filed diagnosis.
+
+#### Forty-first session, part 4 — [OPT-3] STEP 2 launched on Frank's word (lane srPremul, opus); the battery continues (2026-08-26 ~13:0x EDT)
+
+Frank asked for the PROBLEM behind the solution (answered: the DFA's
+per-byte loop is a loop-carried dependency chain — lea, lea, movslq,
+load = 7 cycles of which only the 4-cycle load is unavoidable; the core
+sits half idle waiting; pre-multiplying moves the 3 cycles of index
+arithmetic to generation time) and then whether the entry can be
+`unsigned short` for 2× the range (yes: the sign bit's only job is the
+dead-state sentinel; a non-sign sentinel costs nothing on the chain; the
+extra band 32-65 K entries is L2-resident on this box so it extends the
+PREMULTIPLIED regime, not the fast one — ~20 % there instead of ~28 %).
+"Agree with solution" → lane srPremul launched with: design note before
+code; `unsigned short` premultiplied while states×stride < 65,535,
+non-sign dead sentinel, current form above (premultiplied `int` only if
+one measurement on the state-explosion family says it pays); every
+table-driven loop the DFA emitter owns, incl. the VM hybrid's inlined
+prefilter DFA; accept table indexed by the premultiplied value; a stamp
+naming the table form (spec hunk); abi 7 at all four sites; a deny flag
+in tuning.md's house style for a control row; codegen checks that the
+rule switches on both sides of the bound and DETECT a planted
+non-multiplied table; identity byte-for-byte on every answer; timed runs
+and make test only after the battery's "BATTERY DONE" trailer.
