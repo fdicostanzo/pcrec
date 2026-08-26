@@ -455,6 +455,16 @@ Each of these is a failure mode with a site, not a worry:
   so the next lane finds it.
 - **The accept table's growth.** `n -> n * ncls` bytes. Bounded by §7 (ii) and
   included in STEP 1's measured 1.276x.
+  **MEASURED IN EMITTED LINES, 2026-08-26, and it is not nothing on one
+  family**: `tests/codegen/run_ir_listing.sh`'s informational [ENG-BREP] row
+  reads `{0,400}` **869 -> 962 lines** and `{0,4000}` **1,994 -> 2,762** for
+  `((a)|b){0,N}c` — the VM hybrid whose inlined prefilter DFA is K39's, where
+  the machine is large and the accept table triples with it. The check itself
+  stays green because what it asserts is COUNT-INDEPENDENCE by comparison with
+  the prefilter denied (573 / 573, delta 0), which this change does not touch;
+  the growth is real and is the cost §7 (ii) exists to bound. It is also the
+  clearest statement of what [OPT-4] would buy: shrink that prefilter's DFA
+  and this cost shrinks with it.
 - **A table that fits `unsigned short` but not L1.** Exactly what §7 (ii) is
   for, and the reason the bound is not the range bound alone.
 - **The eol/end view division drifting onto the hot path.** If a future change
