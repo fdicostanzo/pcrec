@@ -1447,6 +1447,16 @@ from reading the sabotage's own description.
 
     python3 scripts/m6read_check_sab_anchors.py
 
+**[SABANCHOR], 2026-08-26: the tripwire ALSO runs as a `make test-codegen`
+check now** (`tests/codegen/run_codegen_tests.sh`'s "[SABANCHOR]" block),
+not only as a manual command someone has to remember for the tiers above.
+It was still ad-hoc when S67/S179/S183 went stale under [OPT-1]/[DD-13c]'s
+emitter refactors — a manager battery script outside this tree caught them
+at a run's start, not `make test-codegen` — so a stale anchor now fails the
+codegen suite in the same run as the change that caused it, while the
+tiered policy above still governs when a full row re-run (not just the
+tripwire) is owed.
+
 **Finding the rows for a changed path**, tiers 2 and 3 —
 `tests/mech/rows_for.sh` lists the `SAB_ID`s whose `SAB_FILE`,
 `SAB_FILE2` (the [M6.5.2-FIX] second-site field) or `SAB_HARNESS_TARGET`

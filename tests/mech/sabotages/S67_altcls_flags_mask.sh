@@ -35,7 +35,7 @@ SAB_ID="S67-altcls-flags-mask"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="altcls"
 SAB_DESC="PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR dropped from emit_info_def's strategy_denials mask, so -fno-altcls-merge/-fno-altcls-factor leak into the emitted rx_info.flags literal even though the axis changes no match behavior -- two artifacts that answer identically now differ in their reflection surface over a knob with no observable effect"
-SAB_DOC_FIGURE="lib/pcrec.h's PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR comment; src/gen/emit_dfa.c's strategy_denials mask comment"
+SAB_DOC_FIGURE="lib/pcrec.h's PCREC_NO_ALTCLS_MERGE/PCREC_NO_ALTCLS_FACTOR comment; src/gen/emit_dfa.c's strategy_denials mask comment. RE-ANCHORED and VALIDATED 2026-08-26 (lane srAnchor) past srTier's [OPT-1] PCREC_NO_TIERED_ENTRY addition to the same mask: run_sabotage_matrix.sh S67 -- DETECTED, altcls:1fail/14pass (the byte-identity check reading the leaking bit, as tests/mech/CLAUDE.md's own '[OPT-ALTCLS] S66-S67' section predicts)."
 SAB_COUNT=1
 SAB_BEFORE='                                          PCREC_NO_ALTCLS_MERGE | PCREC_NO_ALTCLS_FACTOR |
 '
