@@ -68,25 +68,48 @@
 # VALIDATION (the check was made to fail on purpose before it shipped)
 # =========================================================================
 # Recorded 2026-08-26, lane srPremul. Each plant made in src/gen/emit_dfa.c,
-# rebuilt, this script run, and reverted. The clean baseline is in the
-# journal; the numbers below are as run, from
-# `scratchpad/srPremul/plant_*.log`.
+# rebuilt, this script run, and reverted. **The clean baseline is 15 passed /
+# 0 failed**; the logs are `scratchpad/srPremul/plant{1,2,3}.log`.
 #
-#   PLANT 1 — THE TABLE IS NOT PREMULTIPLIED WHILE THE LOOP ASSUMES IT IS.
+#   PLANT 1 -- THE TABLE IS NOT PREMULTIPLIED WHILE THE LOOP ASSUMES IT IS.
 #     `emit_tr_table`'s premultiplied arm emits `t` where it should emit
 #     `t * d->ncls` (the sentinel and the type left alone), so every emitted
 #     cell is a raw state index and the loop indexes `table[state + class]`
 #     with a state that never carries the stride.
-#     MEASURED: see the journal paragraph for the per-check breakdown.
+#     **MEASURED: 13 passed / 19 failed** -- SS5 red on 14,387 of 39,787 cells
+#     and SS6 red on nine subject cells (`a(b|c)+d` on "abcd" answers nomatch
+#     where the denied build answers 0..4). The ordinary corpus is red too, at
+#     65 of 100 cases over three `.rxt` files.
+#     **SS1, SS2 and SS3 STAY GREEN, and that is the check localising rather
+#     than going uniformly red**: they read the table DECLARATIONS and the
+#     plant changes the CELLS.
 #
-#   PLANT 2 — THE SENTINEL COLLIDES. `PREMUL_MAX_ENTRIES` raised past the
-#     range bound (to 65536), so a machine whose `(n-1) * ncls` reaches 65535
-#     emits a real cell equal to the dead sentinel.
+#   PLANT 2 -- THE SENTINEL COLLIDES. **Raising `PREMUL_MAX_ENTRIES` past the
+#     range bound is NOT ENOUGH** -- the RANGE conjunct still refuses, which
+#     is the measured demonstration that the emitter's (i) is not redundant
+#     with its tighter (ii). Breaking BOTH (budget 100000 AND the
+#     `ents > 65535` clause deleted) makes `[01]*1[01]{13}` emit a
+#     73,728-entry premultiplied table whose cells overflow `unsigned short`
+#     -- gcc reports 5,460 overflow warnings, so the artifact does not even
+#     build clean -- and in which 65535 appears as a real cell.
+#     **MEASURED: 12 passed / 5 failed** -- SS1's straddling witness, SS2's two
+#     above-bound rows AND its non-vacuity guard ("the swept family did not
+#     STRADDLE the bound"), and SS3's bound arm on 4 machines.
+#     **SS5 STAYS GREEN, and the honest reading matters**: the corpus's largest
+#     machine is 40,010 entries, so no corpus artifact CAN carry a collided
+#     cell. The cell invariant cannot see this defect; what makes a collision
+#     unreachable is the BOUND, and the bound arm is what goes red.
 #
-#   PLANT 3 — THE STATE VARIABLE LEFT `int` (the silent regression (i)).
-#
-# The per-plant results and which checks went red are recorded in the journal
-# paragraph and summarised in the header block each plant validated.
+#   PLANT 3 -- THE STATE VARIABLE LEFT `int` (the silent regression (i)).
+#     Confirmed at the instruction level before the check was run: with `int`,
+#     `movslq %edx,%rdx` is back ON the loop-carried chain (at 0x57 of the
+#     emitted `rx_search`, where the `unsigned` form has an eliminable
+#     `mov %edx,%edx`) plus a second `movslq` off it -- and EVERY ANSWER IS
+#     UNCHANGED.
+#     **MEASURED: 14 passed / 1 failed** -- SS3's shape arm alone, on 1,824
+#     machines. Nothing else in this file moves, and nothing else in the tree
+#     can: the artifact is correct, so no corpus case, no differential and no
+#     byte-identity gate that compares an artifact against itself sees it.
 #
 # Usage: bash tests/codegen/run_premul_table.sh
 # Env: PCREC (default <root>/build/pcrec), CC, KEEP=1, PREMUL_CORPUS=0 (skip §3/§5)

@@ -120,7 +120,7 @@ test: test-corpus test-cli test-reject test-registry test-parse \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
-      test-stackdepth
+      test-stackdepth test-premul-table
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -176,6 +176,18 @@ test-codegen: all
 	    'bash tests/codegen/run_codegen_tests.sh' \
 	    'bash tests/codegen/run_dfa_stamps.sh' \
 	    'bash tests/codegen/run_trie_identity.sh'
+
+# [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks
+# (docs/design/premultiplied_dfa_table.md). Its OWN section rather than a
+# fourth script in `test-codegen`'s group above, for the reason
+# `run_endvar_identity.sh` runs under `test-assertions` and
+# `run_ir_listing.sh` under `test-vm`: `make smoke` includes `test-codegen`
+# and is already at its 60s target, and this script sweeps the whole corpus
+# AND compiles-and-runs sixteen matchers (measured ~6 min). It IS part of
+# `make test`, which is where the merge/close standard lives; only the smoke
+# wrapper is spared it.
+test-premul-table: all
+	bash tests/codegen/run_premul_table.sh
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
 # honest artifact stamps, the capture oracle + the §3.7 differential, the

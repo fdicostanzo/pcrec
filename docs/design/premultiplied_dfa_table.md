@@ -467,28 +467,68 @@ inlined `static <prefix>_prefilter` is emitted ABOVE `goto <p>_L0;` — verified
 on a current hybrid artifact (`rx_prefilter` at line 250, `goto rx_L0;` at 396).
 So (A) sees no DFA scan bytes at all and must not move.
 
-The checks this change adds, in `tests/codegen/` (its CLAUDE.md's conventions;
-`docs/dev/learnings.md` §3's rule that a check must be SHOWN to detect):
+The checks this change adds are `tests/codegen/run_premul_table.sh`, its own
+section (`make test-premul-table`, part of `make test` and deliberately NOT of
+`make smoke` — it sweeps the whole corpus and compiles matchers, the same
+reason `run_endvar_identity.sh` runs under `test-assertions`). Six sections,
+and every verdict is derived from the EMITTED MATCHER TEXT with the stamp
+compared against it (`docs/dev/learnings.md` §3: the obvious wrong check reads
+`RX_DFA_TABLE` and asserts it is one of four strings, which measures whether
+the emitter can print):
 
-- **(a) the rule switches on both sides**: a below-bound pattern stamps
-  `RX_DFA_TABLE "premultiplied"` and an above-bound one stamps `"indexed"`,
-  with the entry counts read off the emitted table declarations and compared
-  against the bound — so the check re-derives the numbers from the artifact
-  rather than trusting the stamp.
-- **(b) the range invariant**: on every premultiplied artifact, no cell equals
-  `65535` unless it is the dead sentinel, and `n * ncls` is inside §7 (i).
-- **(c) the shape invariant**: a premultiplied artifact declares
-  `unsigned short` transition tables and an `unsigned` state variable, and its
-  transition line has no `* <stride> +` in it; the denied artifact declares
-  `short` and `int` and does. (This is the check that catches §11's silent
-  `int` regression, which no answer comparison can.)
-- **(d) answer identity under the flag**: the `-fno-premul-table` artifact and
-  the default artifact agree on a subject set, span for span.
-- **(e) a planted-bug detect demonstration**: in a scratch copy, emit a table
-  that is NOT premultiplied while the loop assumes it is (and, separately, a
-  sentinel that collides), and record which check goes red. If nothing in-tree
-  catches it, the check that does is added and validated red on the plant. The
-  result is recorded in the check's own header and in the journal paragraph.
+- **§1 named witnesses, one per documented value**, entry counts read off the
+  emitted declarations — including the two adjacent members of the
+  state-explosion family that STRADDLE the bound, which is what gives
+  `"mixed"` a witness nobody invented for it.
+- **§2 the bound, on both sides**, plus a NON-VACUITY assertion that the swept
+  family really does straddle it. Without that, a bound that moved would leave
+  the section passing on one side.
+- **§3 the corpus sweep**: the [DD-13c] iff both ways, stamp against emitted
+  declarations, the bound on every machine, the ACCEPT TABLE'S LENGTH as an
+  independent second witness of the form (it comes from a different emitter
+  function than the transition table's type), and the SHAPE — `unsigned` state
+  variable, add-only index. **§3's shape arm is the one that catches §11's
+  silent `int` regression**, which no answer comparison and no self-comparing
+  byte-identity gate can see.
+- **§5 the cell invariant** on every premultiplied table: each cell is the
+  dead sentinel or a multiple of the class count, strictly inside the table.
+  The class count is read from `rx_*_byte_class` — a different table from a
+  different emitter function — because taking the stride from the transition
+  table would make the invariant a tautology.
+- **§6 the deny flag**: answer-identical over a subject set, with every pair
+  required to differ in `RX_DFA_TABLE`. A pattern whose scan carries no
+  numeric table is EXCLUDED, not tolerated as an equal pair.
+
+**THE PLANTED-BUG DEMONSTRATIONS** (learnings §3: a check must be SHOWN to
+detect). Three plants, each made in the emitter, rebuilt, run and reverted;
+the clean baseline is 15 passed / 0 failed. Recorded here rather than only in
+the check's header because one of them refuted a sentence of §7's:
+
+- **PLANT 1 — the table is not premultiplied while the loop assumes it is**
+  (`emit_tr_table`'s premultiplied arm emits `t` where it should emit
+  `t * ncls`). **13 passed / 19 failed**: §5 red on 14,387 of 39,787 cells and
+  §6 red on nine subject cells; the ordinary corpus red at 65 of 100 cases on
+  three `.rxt` files. §1, §2 and §3 stay GREEN, correctly — they read
+  DECLARATIONS and the plant changes CELLS, so the red localises to the axis
+  that broke rather than going uniformly red.
+- **PLANT 2 — the sentinel collides.** Raising `PREMUL_MAX_ENTRIES` past the
+  range bound is NOT ENOUGH: the RANGE conjunct still refuses, which is the
+  measured demonstration that §7's (i) is not redundant with (ii) even though
+  (ii) is tighter. **Breaking BOTH** produces a 73,728-entry premultiplied
+  table whose cells overflow `unsigned short` (gcc emits 5,460 overflow
+  warnings, so the artifact does not build clean) and in which 65535 is a real
+  cell. **12 passed / 5 failed**: §1's straddling witness, §2's two
+  above-bound rows AND its non-vacuity guard ("the swept family did not
+  STRADDLE the bound"), and §3's bound arm on 4 machines.
+  **§5 STAYS GREEN, and that is the honest reading**: the corpus's largest
+  machine is 40,010 entries, so no corpus artifact can carry a collided cell —
+  the CELL check cannot see this defect, and what makes a collision
+  unreachable is the BOUND check, not the cell one.
+- **PLANT 3 — the state variable left `int`** (the silent regression §11
+  names). Confirmed at the instruction level first: with `int`, `movslq
+  %edx,%rdx` is back ON the chain at `0x57` and a second `movslq` off it,
+  while every answer is unchanged. §3's shape arm is the detector.
+
 
 The [SABANCHOR] tripwire is run: this change edits the emitted loop lines, which
 is where `tests/mech`'s sabotage anchors live, and a moved anchor is re-anchored
