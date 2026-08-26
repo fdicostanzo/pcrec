@@ -8306,8 +8306,8 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * appeared only on tiered artifacts would make the fact readable by a
      * macro's ABSENCE, which is precisely the discriminator [DD-13] had to go
      * back and fix in two checks. */
-    sb_printf(c, "#define %s_FAST_FRAMES %lld\n", v.up, bt_frames);   /* PLANT */
-    sb_printf(c, "#define %s_FAST_TRAIL %lld\n", v.up, trail_frames);  /* PLANT */
+    sb_printf(c, "#define %s_FAST_FRAMES %lld\n", v.up, fast_frames);
+    sb_printf(c, "#define %s_FAST_TRAIL %lld\n", v.up, fast_trail);
     sb_puts(c, "\n");
 
     /* ---- the two element types, then rx_run_state, §2.2 -------------------
