@@ -139,6 +139,43 @@ and quoted in §10: the run-struct and per-entry stack sizes, the
 depth-vs-capacity table, and the `MAP_NORESERVE` worked example, all
 against artifacts emitted by the build at this commit.
 
+**[SPEC-1.4] revision (2026-08-26, docs/spec/ consolidation pass, D80) —
+five small patches, no shipped behaviour changed.** (1) §4 gains one
+sentence pointing at `docs/spec/limits.md` for the give-up codes' numeric
+trigger defaults, rather than leaving a reader to find them scattered
+across three decision entries — the numbers already live in `limits.md`
+(`[SPEC-1.1]`) and this document was the one place that never pointed
+there. (2) §6.3's DFA-stamp-gap caveat — the survey's C2 — is VERIFIED
+CURRENT, nothing changed: `[DD-13]`/`[DD-13c]` (2026-08-25) already
+discharged the gap ("a consumer MAY now `#if` on `RX_ENGINE`"), re-checked
+against a freshly built DFA artifact and a VM hybrid for this pass
+(`grep RX_ define` on `--no-captures '(?:foo|bar)\z'`: `RX_ENGINE "dfa"`,
+`RX_DFA_SCAN "unanchored"`, `RX_DFA_PREFILTER "byte-class-bounded"`,
+present and correct) and no stale wording of the old caveat survives
+anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
+restating D76 in contract terms: what a bump means, what is fixed within
+one number, and pre-v1's "the stamp is the whole of the announcement"
+posture (D40 regime 1) — the existing prose narrated four individual bump
+events but never stated the general rule; `rx_info.abi` is confirmed `6`.
+(4) §8.2 gains a lead sentence stating plainly, before the field table,
+that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
+own enum comment and `cli/main.c --help`'s wording verbatim, rather than
+requiring a reader to find the fact three paragraphs down. (5) New §3.6,
+"whole-subject / end-anchored matching" (survey's F9): the `(?:P)\z`
+idiom, why it exists (no native end-anchored entry; `$` is the wrong
+anchor — verified live, `(?:foo)$` matches `"foo\n"` at `[0,3)` while
+`(?:foo)\z` on the same subject reports no match), the `a|ab` counter-
+example showing a naive `_match_caps(...) == n` test is
+sufficient-not-necessary (verified live: `a|ab` on `"ab"` reports
+`[0,1)`, while `(?:a|ab)\z` on the same subject reports `[0,2)` via the
+alternative branch the naive test never tries), that the idiom is
+RULED-permanent (D77, plan row `[OS-4]`, 2026-08-25 — not a stopgap
+awaiting a future generation axis), and the whole-subject artifact's own
+DFA stamps (verified live on `--no-captures '(?:foo|bar)\z'` and
+`'(?:foo)\z'`: `RX_DFA_SCAN "unanchored"`, `RX_DFA_PREFILTER
+"byte-class-bounded"`/`"memchr-bounded"` — the `-bounded` forms §6.3
+already documents for a `\z` view).
+
 ---
 
 ## 1. Two namespaces plus one closed, fixed-literal family
@@ -893,9 +930,82 @@ space (§2 quotes it verbatim), and `lib/pcrec.h`'s generated-searcher
 comment, which had the same defect in its own words, now names the
 negative return space too.
 
+### 3.6 Whole-subject / end-anchored matching: the `(?:P)\z` idiom
+
+**There is no native end-anchored entry — no `<prefix>_search`-style
+call that means "match, and require the match to reach the subject's
+own end".** §3.1–§3.3's three entries all answer "does a match exist
+starting here", never "does a match exist covering here to `n`". A
+caller that wants PCRE2's `PCRE2_ANCHORED|PCRE2_ENDANCHORED` regime — a
+match that starts AND ends where asked — gets there by folding the
+requirement into the PATTERN rather than by a fourth entry point:
+compile `(?:P)\z` (the original pattern `P`, wrapped in a non-capturing
+group, followed by `\z`) and call any of §3.1–§3.3 as usual.
+
+**`\z`, not `$`.** `$` admits a trailing newline at the default options
+(`(?m)` off), which is not "the subject's end" — verified live:
+`(?:foo)$` compiled `--no-captures` matches `"foo\n"` at `[0,3)`, while
+`(?:foo)\z` on the identical subject reports no match. `\z` is module
+`assertions`' unconditional end-of-subject assertion (`docs/spec/
+pcre2_compliance.md` and `tests/assertions/`) and admits nothing after
+it; it is the only anchor of the three (`$`, `\Z`, `\z`) with that
+property at default options.
+
+**Why the naive alternative — run the ordinary anchored entry and test
+`length == n` — does not work.** It is SUFFICIENT (a match that happens
+to reach `n` really is end-anchored) but not NECESSARY (a match that
+does not reach `n` does not prove no end-anchored match exists), because
+leftmost-first preference picks the FIRST alternative that matches,
+never the one that reaches farthest. Verified live: `a|ab` compiled
+`--no-captures`, run anchored over `"ab"`, reports `[0,1)` — branch `a`
+wins by leftmost-first preference and the naive test (`1 == 2`?) answers
+NO. But `(?:a|ab)\z` over the same subject `"ab"` reports `[0,2)`: `\z`
+forces backtracking past the `a` branch's failure (position 1 is not the
+subject's end) into the `ab` branch, which does reach it. The naive test
+would have wrongly concluded no end-anchored match exists; the idiom
+does not, because it is the ENGINE doing the searching, not a caller
+re-deriving what the engine already decided.
+
+**This is a ruled-permanent idiom, not a stopgap awaiting a dedicated
+generation axis.** `docs/dev/plan.md` row `[OS-4]` and
+`docs/dev/decisions.md` D77 (2026-08-25): a whole-subject/end-anchored
+generation axis (a single artifact answering both the ordinary and the
+end-anchored question, or an emitted skip loop that can stop one byte
+short for `\z`) is explicitly NOT being built now, on D77's own general
+rule — *"no artificial timelines; when we would be better served
+building something later under measurement, wait and see, and focus on
+builds we will not have to rebuild or roll back."* The two-artifact cost
+(one compile for the ordinary question, a second `(?:P)\z` compile for
+the end-anchored one) and the final-byte DFA skip gap the idiom leaves
+on the table are recorded as a general-optimization candidate should a
+measurement ever justify it (`docs/dev/plan.md` `[DD-13]`) — this is not
+scoped to any one caller, `(?:P)\z` benefits from it identically to
+every other `\z`-bearing pattern.
+
+**What the whole-subject artifact's own DFA stamps say (§6.3), verified
+live.** The `\z` wrapper changes the emitted candidate-start filter, not
+just the trailing assertion: on `(?:foo|bar)\z` (`--no-captures`),
+`RX_DFA_SCAN` reads `"unanchored"` (the idiom does not anchor the
+START, only the end) and `RX_DFA_PREFILTER` reads `"byte-class-bounded"`
+— the bounded form §6.3 already documents for a `$`/`\Z`/`\z` view,
+where a skip may not pass the position whose accept has not yet been
+evaluated. `(?:foo)\z` (a single literal, no alternation) stamps the
+matching single-candidate form, `"memchr-bounded"`. Neither idiom use
+produces `RX_DFA_SCAN "attempt"` by itself — that shape is what a
+LEADING `^`/`\A` selects (§6.3), an orthogonal axis the idiom does not
+touch.
+
 ---
 
 ## 4. The give-up code space (D49)
+
+**This section states the CODES; the numeric TRIGGER DEFAULTS — the step
+and work budgets, the frame/trail capacities — are `docs/spec/limits.md`'s
+own subject and are not restated here.** That document also carries the
+compile-time state-count ceilings (a different "limit"), the two-tier
+entry's cost model in numeric form, and the K33/K34 documented-divergence
+detail; this section stays about which VALUE means what, at every entry,
+uniformly.
 
 `<prefix>_search`, `rx_matchfn` (hence `<prefix>_match` and any callout),
 and `<prefix>_match_caps` all report engine give-up in the same CODE
@@ -1433,6 +1543,31 @@ against them:
   moves**. It is also the mirror image of [OPT-1]'s: that bump reached VM
   artifacts only, this one reaches both kinds.
 
+**What a caller may assume, stated once in caller terms rather than left
+to accumulate from six bump-event paragraphs (D76, D40 regime 1).** The
+paragraph above narrates each bump's OWN cause; this is the general rule
+those events are instances of. **What changes at a bump:** `abi`
+(`rx_info.abi`, mirrored nowhere else) is the version of the emitted
+SCAFFOLDING AS A WHOLE — every declaration, comment and macro in the
+artifact, not merely `struct rx_info`'s own layout — so a change to any
+of it, whether or not a struct offset moves, IS an `abi` bump; [DD-13c]'s
+`3` → `4` (§6.3's two new stamp lines, no struct offset) and [DD-13c]'s
+own `5` → `6` (both a struct append AND new stamp lines) are the two
+ends of that range, and neither is a smaller event than the other by
+this document's own promise. **What is fixed within one `abi` number:**
+the emitted output is byte-exact WHOLE-FILE for a given pattern, prefix
+and option set — comments included — which is what `abi` exists to let
+a caller detect the boundary of; a caller diffing two artifacts compiled
+at the same `abi` and finding them to differ has found a pcrec bug, not
+an expected drift. **What a bump does NOT carry, pre-v1:** no
+compatibility story and no announcement beyond the stamp itself — D40
+regime 1 rules pre-v1 breaks unconstrained in substance, and for an
+`abi` bump specifically the bumped NUMBER already discharges D37's
+announced-boundary requirement; there is no separate deprecation cycle,
+migration note, or advance notice to expect. A caller that wants
+version-negotiation semantics from `abi` is building on a promise this
+document does not make until a future v1 declaration says otherwise (§9).
+
 **`frame_capacity`'s sentinel asymmetry.** The field name appears on
 both sides of the API with different sentinels, and neither side is
 wrong — they answer different questions. On the INPUT side,
@@ -1954,6 +2089,14 @@ cannot behave like a program:
   looking for a future release instead of at a flag they already have.)
 
 ### 8.2 The option and error structures
+
+**`byte` is the only encoding pcrec implements today.** `utf8` is a
+recognised NAME with no backend — refused until milestone M5 — stated
+here first because the fact otherwise sits three paragraphs down, behind
+the field table below: this is `lib/pcrec.h`'s own enum comment
+("not yet implemented (arrives with milestone M5)") and `cli/main.c
+--help`'s own wording ("utf8 ... is refused until milestone M5") said
+once, up front, rather than left for a reader to find in either.
 
 ```c
 typedef struct {
