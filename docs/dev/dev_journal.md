@@ -16118,3 +16118,41 @@ unchanged tree.
 
 Both srK38 tasks closed for this session. Lane idle, awaiting the
 manager's merge.
+
+#### Forty-first session, part 3 — srOpt3 and srK38 MERGED (30a9296, e8a1b6b); all three lanes landed by 12:3x; I-9 sent; the battery on the combined tree next (2026-08-26 ~12:3x EDT)
+
+srOpt3 (opus, [OPT-3] STEP 1) delivered the session's second finding:
+the SIMD hypothesis is REFUTED on the bench's subjects — the candidate-
+start skip loop skips ZERO bytes on t-b/t-c (instrumented: entered
+190,651 times on t-b, never moves — the machine returns to state 0 by
+consuming the byte that killed the match, so the skip can only take the
+2nd..nth byte of a run, and prose's runs are length 1), a 7× faster
+shufti skip makes all three subjects SLOWER, the crossover is ~32-byte
+runs. ALL the cost is the transition loop: 10.7 cycles/byte, a 7-cycle
+loop-carried chain (lea, lea, movslq, load) with ~2× spare issue width;
+accept bookkeeping and the prefilter test cost 0.05 c/byte; t-a's extra
+is exactly the reverse pass. THE FIX, measured before building: pre-
+multiply the transition table by its stride — 1.276× on the set, answer-
+identical over 40,469 spans/captures, pcrec vs JIT 1.466× → 1.149×,
+ahead of JIT on t-c; gate = L1 residency. Memo docs/dev/
+opt3_dfa_scan_measurement.md (measurement memos live in docs/dev/, not
+reviews/ — the lane read the CLAUDE.md and said why); tests/bench/
+fdriver.c (find-all timing, the bench's regime). Merge conflicts: two
+both-appends (journal, tests/bench/CLAUDE.md), resolved keeping both.
+STEP 2 recommended to Frank (opus, engine code, abi 7). I-9 sent with
+P8-P11. srK38 (sonnet) delivered [K38-FIX] — PCREC_MAX_EMIT_NAME_LEN =
+PCREC_MAX_PREFIX_LEN + 96 in src/core/limits.h, the whole emit_vm.c
+family (byte/cx/val/cur/rv/cnt buffers) + emit_dfa.c's residual widened,
+output byte-identical for in-range prefixes (test-codegen 3/3), tests/cli
+case17 compiles a 60-char-prefix artifact on both engines and was shown
+to DETECT against the pre-fix compiler; K38 FIXED in place — and
+[SPEC-1.4]: five match_api.md hunks each verified against a fresh build
+(§4 → limits.md; C2 verified current; §6 caller-facing abi paragraph;
+§8.2 byte-only lead; §3.6 the `(?:P)\z` idiom with the `$` vs `\z` and
+`a|ab` live counter-examples). Its make test 1,872/0 read from the log
+(the lane went idle before reporting — idle ≠ delivered; the artifact
+decided). Two landing nits fixed in the merge: the 3→4 bump attributed
+to [DD-13c] (it was [DD-13]); §3.6's optimization pointer → [OS-4]/
+[OPT-2]. Watchdog cron torn down; no worktrees remain. Next: the full
+battery on e8a1b6b (an emitter change and a spec change landed), then
+[OPT-3] STEP 2 on Frank's word.
