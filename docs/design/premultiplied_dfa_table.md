@@ -71,16 +71,55 @@ Premultiplied:
         if (forward_state == 65535) break;   // dead: no match can continue
 ```
 
-The loop-carried chain, `gcc -O2` on x86-64, is what the change is for
-(STEP 1 §5 disassembled the indexed form on the real artifact):
+The loop-carried chain, `gcc -O2` on x86-64. **MEASURED on the emitted
+artifact for the bench's own `orig` pattern, both forms compiled from the
+shipped emitter** (`gcc -O2 -c`, `objdump -d`, 2026-08-26 — not predicted):
 
-| | indexed | premultiplied |
+```
+   indexed (17-instruction loop)              pre-multiplied (14-instruction loop)
+4d movzbl (%rdi,%rax,1),%edx   LOAD 1     4d movzbl (%rdi,%rax,1),%edx   LOAD 1
+51 movzbl (%rbx,%rdx,1),%edx   LOAD 2     51 movzbl (%rbx,%rdx,1),%edx   LOAD 2
+55 lea    (%rcx,%rcx,8),%ecx   CHAIN      55 add    %ecx,%edx            CHAIN
+58 lea    (%rdx,%rcx,2),%edx   CHAIN      57 mov    %edx,%edx            CHAIN (zero-extend)
+5b movslq %edx,%rdx            CHAIN      59 movzwl 0x0(%rbp,%rdx,2),%ecx CHAIN + LOAD 3
+5e movswl 0x0(%rbp,%rdx,2),%ecx CHAIN+L3  5e cmp    $0xffff,%ecx
+63 test   %ecx,%ecx                       64 je     <exit>
+65 js     <exit>                          66 mov    %ecx,%edx
+67 movslq %ecx,%rdx                       68 add    $0x1,%rax
+6a add    $0x1,%rax                       6c movzbl (%r12,%rdx,1),%edx  LOAD 4
+6e movzbl (%r12,%rdx,1),%edx  LOAD 4      71 test   %dl,%dl
+73 test   %dl,%dl                         73 cmovne %rax,%r8
+75 cmovne %rax,%r8                        77 test   %ecx,%ecx
+79 test   %ecx,%ecx                       79 jne    <top>
+7b jne    <top>
+```
+
+| | indexed | pre-multiplied |
 |---|---|---|
 | scale state by stride | `lea (%rcx,%rcx,8),%ecx` (1) | — |
-| add class | `lea (%rdx,%rcx,2),%edx` (1) | `add %edx,%ecx` (1) |
-| widen to an index | `movslq %edx,%rdx` (1) | — (the `movzwl` below already zero-extends into the full 64-bit register, and the 32-bit `add` keeps it zero-extended — this is why the state variable must be UNSIGNED) |
-| load | `movswl 0x0(%rbp,%rdx,2),%ecx` (4) | `movzwl (%rbp,%rcx,2),%ecx` (4) |
+| add class | `lea (%rdx,%rcx,2),%edx` (1) | `add %ecx,%edx` (1) |
+| widen to an index | `movslq %edx,%rdx` (1) | `mov %edx,%edx` (0-1; a 32-bit register move, eliminated at rename on this core) |
+| load | `movswl 0x0(%rbp,%rdx,2),%ecx` (4) | `movzwl 0x0(%rbp,%rdx,2),%ecx` (4) |
 | **chain** | **7 cycles** | **5 cycles** |
+
+Two things in the measured listing that the prediction did not have, both
+worth keeping:
+
+- **The `mov %edx,%edx` is the 32-bit index being zero-extended for the
+  addressing mode**, and it is there because the state variable is `unsigned`
+  (32-bit) rather than pointer-width. It is a register-to-register move on a
+  core with move elimination, so it is expected to cost nothing — but "expected
+  to cost nothing" is a claim, and §13 measures a `size_t` state variable
+  against the `unsigned` one rather than arguing about it. What the
+  measurement must NOT do is take the `int` form: with a SIGNED state the
+  `movslq` comes straight back and the transform buys nothing (§11).
+- **The accept probe reads the NEW state, not the index** (`mov %ecx,%edx` at
+  `0x66` before `movzbl (%r12,%rdx,1)`). Worth stating because the surrounding
+  instructions make it look otherwise at a glance: gcc rotates the loop so the
+  probe at the top of iteration N+1 is scheduled after the transition of
+  iteration N, and it reuses `%rdx` — which held the OLD index one instruction
+  earlier. Reading `is_accepting[state + class]` there would be a wrong answer
+  on most inputs; the emitted code does not.
 
 STEP 1 §5 measured the two chains end to end on `t-c`: 10.714 vs 7.751
 cycles/byte, a 2.96 cycle/byte difference against the 2 cycles of chain the
