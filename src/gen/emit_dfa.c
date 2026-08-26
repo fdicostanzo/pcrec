@@ -1202,7 +1202,41 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * byte-identical against the unchanged `ac4917d` pin — every byte this
      * change writes lands in the `#define` block or the `rx_info` initializer,
      * both ABOVE `goto <prefix>_L0;` — and comparison (B) is re-pinned. */
-    sb_puts(c,   "    .abi = 6,\n");
+    /* [OPT-3] abi 6 -> 7 (D76/[TT-11]): the PRE-MULTIPLIED DFA TRANSITION
+     * TABLE (docs/design/premultiplied_dfa_table.md), and THIS ONE MOVES
+     * EMITTED PROGRAM BYTES — the first `abi` event that does. [DD-13],
+     * [OPT-1] and [DD-13c] were scaffolding (and a struct append), and each
+     * says so directly above; this one is not, and saying which kind it is, is
+     * r37 A12's lesson.
+     *
+     * WHAT MOVES. On every artifact that CONTAINS a DFA scan and whose
+     * machines are inside the bound — DFA artifacts and VM HYBRIDS alike,
+     * since the hybrid inlines `emit_unanchored`'s own output — the two
+     * transition tables become `unsigned short` holding `next * classes` with
+     * 65535 for dead, the two accepting tables are indexed by that
+     * pre-multiplied value (and grow from `n` to `n * classes` bytes), the
+     * state variables become `unsigned`, the dead test becomes a compare
+     * against 65535, and the transition line loses its `* classes +`. Above
+     * the bound, under `-fno-premul-table`, and on every ENG_ATTEMPT or empty
+     * artifact, the emitted text is UNCHANGED character for character.
+     *
+     * SCAFFOLDING ALSO MOVES, on every artifact that contains a DFA scan: one
+     * new `#define <PREFIX>_DFA_TABLE` line beside the other two `_DFA_*`
+     * stamps, and the orientation block's "READING THE TABLES" paragraph now
+     * describes the form the artifact actually carries.
+     *
+     * NO STRUCT OFFSET MOVES: `rx_info`'s layout is untouched (the design note
+     * §8 decides the runtime mirror question NO, with a named trigger — D77 —
+     * on the measured ground that nothing yet reads abi 6's own `scan` and
+     * `prefilter` fields).
+     *
+     * COMPARISON (A) IS STILL EXPECTED BYTE-IDENTICAL and that is a real check
+     * here rather than a formality: `run_recursion_identity.sh`'s
+     * `prog_region` is `goto <p>_L0;` through `<p>_accept:`, i.e. the VM
+     * program, and a hybrid's inlined `static <prefix>_prefilter` is emitted
+     * ABOVE that `goto`. So (A) sees no DFA scan byte at all. Comparison (B)
+     * compares WHOLE FILES and is re-pinned, in this same change, per D76. */
+    sb_puts(c,   "    .abi = 7,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1262,7 +1296,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * reason; `<PREFIX>_FAST_FRAMES` is
                                            * where what the emitter DID is
                                            * recorded. */
-                                          PCREC_NO_TIERED_ENTRY;
+                                          PCREC_NO_TIERED_ENTRY |
+                                          /* [OPT-3] the DFA table-form axis.
+                                           * It changes the ENCODING of a
+                                           * state, not the machine, so it
+                                           * changes no answer and belongs to
+                                           * the mask for the mask's own
+                                           * reason; `<PREFIX>_DFA_TABLE` is
+                                           * where what the emitter DID is
+                                           * recorded. */
+                                          PCREC_NO_PREMUL_TABLE;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -1410,14 +1453,74 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
     sb_puts(c, "\n    };\n");
 }
 
-static void emit_tr_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+/* ---- [OPT-3] THE PRE-MULTIPLIED TABLE FORM ------------------------------
+ *
+ * docs/design/premultiplied_dfa_table.md is the note; what lives here is the
+ * rule and the two constants it turns on. In the PRE-MULTIPLIED form a
+ * transition cell holds `next_state * ncls` rather than `next_state`, so the
+ * emitted step is `state = table[state + class]` and the loop's carried
+ * dependency chain is `add, load` instead of `lea, lea, movslq, load` —
+ * [OPT-3] STEP 1 (docs/dev/opt3_dfa_scan_measurement.md §5) measured that
+ * chain as the WHOLE of the scan's per-byte cost, and the transform as 1.276x
+ * on the comparative bench's three throughput subjects.
+ *
+ * THE DEAD SENTINEL IS A RESERVED VALUE, not a sign bit and not a self-mapping
+ * DEAD row. The design note §3 argues the choice on the emitted instruction
+ * sequence; the short version is that `movzwl` + `cmp` is the same two
+ * instructions as `movswl` + `js` with no `movslq` behind them, and that a
+ * reserved value moves ONE number where an extra row moves two (its own
+ * premultiplied value, and every per-state table's row count). It cannot
+ * collide with a real cell BY THE BOUND below, not by convention. */
+#define PREMUL_DEAD 65535
+
+/* THE BOUND, two conjuncts, decided PER MACHINE (a forward and a reverse DFA
+ * have different `n` and different `ncls`, and each table's own dimensions are
+ * what the rule is about):
+ *
+ *   (i)  RANGE, a correctness condition. Every cell must fit `unsigned short`
+ *        and be distinguishable from PREMUL_DEAD. `n * ncls <= 65535` gives a
+ *        largest cell of `(n - 1) * ncls < 65535`.
+ *   (ii) SIZE, a budget. The form triples the per-state table bytes (the
+ *        accept table goes from `n` to `n * ncls`), and at PREMUL_MAX_ENTRIES
+ *        the transition table alone is 32 KB. Above that the loop is bound by
+ *        memory rather than by its dependency chain, so the chain shortening
+ *        is moot while the accept table's growth is real — an artifact that
+ *        got bigger and no faster.
+ *
+ * (ii) is strictly tighter than (i), which is why both are written: (i) is the
+ * one the correctness check asserts, and it must not quietly become
+ * "whatever (ii) happens to be". */
+#define PREMUL_MAX_ENTRIES 16384
+
+/* A state VALUE as the emitted code spells it: the state index, or the index
+ * scaled by the stride under [OPT-3]. Every emitted state constant — the start
+ * state, a skip state's guard, a seed cell, a view cell — goes through here,
+ * so there is one place the two spellings differ. */
+static int premul_val(int st, int ncls, bool pm) { return pm ? st * ncls : st; }
+
+/* The emitted INDEX EXPRESSION for a `[state][class]` table read: today's
+ * `st * N + cl`, or [OPT-3]'s `st + cl` when `st` already carries the stride. */
+static const char *premul_ix(char *buf, size_t bufsz, const char *st, int ncls,
+                             bool pm, const char *cl)
 {
-    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n * d->ncls);
+    if (pm) snprintf(buf, bufsz, "%s + %s", st, cl);
+    else    snprintf(buf, bufsz, "%s * %d + %s", st, ncls, cl);
+    return buf;
+}
+
+static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
+                          const Dfa *d, bool pm)
+{
+    sb_printf(c, "    static const %s %s_%s[%d] = {",
+              pm ? "unsigned short" : "short", p, tag, d->n * d->ncls);
     int k = 0;
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
-            sb_printf(c, " %d,", d->st[i].tr[cl]);
+            int t = d->st[i].tr[cl];
+            if (pm) sb_printf(c, " %d,", t < 0 ? PREMUL_DEAD
+                                               : premul_val(t, d->ncls, true));
+            else    sb_printf(c, " %d,", t);
         }
     }
     sb_puts(c, "\n    };\n");
@@ -1515,12 +1618,27 @@ static bool dfa_has_endvar(const Dfa *d)
     return false;
 }
 
-static void emit_eol_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+/* [OPT-3] The view tables are the ONE place a pre-multiplied value is
+ * converted back, and it is deliberate (design note §6): their CELLS are
+ * pre-multiplied, their INDEX stays the state index, and the emitted read
+ * divides. The division is the second operand of a `&&` whose first operand is
+ * `__builtin_expect(pos + 1 >= n, 0)`, so C's short-circuit runs it at most
+ * twice per search and never per byte; indexing these two tables by the
+ * pre-multiplied value instead would multiply them by the stride (498 B ->
+ * 8,964 B each on an `orig`-sized machine, ~1,100 more emitted lines) for a
+ * table a search touches twice. The `(?:P)\z` idiom is the comparative
+ * bench's own 85 compliance subjects' spelling, so that is the common case. */
+static void emit_eol_table(StrBuf *c, const char *p, const char *tag,
+                           const Dfa *d, bool pm)
 {
-    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n);
+    sb_printf(c, "    static const %s %s_%s[%d] = {",
+              pm ? "unsigned short" : "short", p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
         if (i % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", d->st[i].eolvar);
+        int v = d->st[i].eolvar;
+        if (pm) sb_printf(c, " %d,", v < 0 ? PREMUL_DEAD
+                                           : premul_val(v, d->ncls, true));
+        else    sb_printf(c, " %d,", v);
     }
     sb_puts(c, "\n    };\n");
 }
@@ -1528,12 +1646,17 @@ static void emit_eol_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 /* The END-view table. Same shape as the EOL one, DIFFERENT MEANING for -1:
  * here it is "same as the EOL view", so the emitted selector below walks
  * endv -> ev -> self rather than testing one entry. */
-static void emit_end_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+static void emit_end_table(StrBuf *c, const char *p, const char *tag,
+                           const Dfa *d, bool pm)
 {
-    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->n);
+    sb_printf(c, "    static const %s %s_%s[%d] = {",
+              pm ? "unsigned short" : "short", p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
         if (i % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", st_emit_endvar(&d->st[i]));
+        int v = st_emit_endvar(&d->st[i]);
+        if (pm) sb_printf(c, " %d,", v < 0 ? PREMUL_DEAD
+                                           : premul_val(v, d->ncls, true));
+        else    sb_printf(c, " %d,", v);
     }
     sb_puts(c, "\n    };\n");
 }
@@ -1560,35 +1683,52 @@ static void emit_end_table(StrBuf *c, const char *p, const char *tag, const Dfa 
 static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
                              bool has_end, const char *posv, const char *stv,
                              const char *outv, const char *ev,
-                             const char *endv, const char *ind)
+                             const char *endv, const char *ind,
+                             int ncls, bool pm)
 {
-    sb_printf(c, "%sint %s = %s;\n", ind, outv, stv);
+    /* [OPT-3] `sx` is how this function indexes a view table and `live_*` is how
+     * it tests a cell — the ONE site where a pre-multiplied state is converted
+     * back (design note §6, and `emit_eol_table`'s header for why it is here
+     * and not in the table's index). With `pm` false both are the pre-[OPT-3]
+     * strings character for character, which is what keeps `-fno-premul-table`
+     * and every above-bound artifact byte-identical to what shipped. */
+    char sx[128], live_ev[192], live_end[192];
+    if (pm) {
+        snprintf(sx, sizeof sx, "%s / %d", stv, ncls);
+        snprintf(live_ev, sizeof live_ev, "%s_%s[%s] != %d", p, ev, sx, PREMUL_DEAD);
+        snprintf(live_end, sizeof live_end, "%s_%s[%s] != %d", p, endv, sx, PREMUL_DEAD);
+    } else {
+        snprintf(sx, sizeof sx, "%s", stv);
+        snprintf(live_ev, sizeof live_ev, "%s_%s[%s] >= 0", p, ev, sx);
+        snprintf(live_end, sizeof live_end, "%s_%s[%s] >= 0", p, endv, sx);
+    }
+    sb_printf(c, "%s%s %s = %s;\n", ind, pm ? "unsigned" : "int", outv, stv);
     if (!has_end) {
-        sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0) && %s_%s[%s] >= 0 &&\n"
+        sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0) && %s &&\n"
                      "%s    (%s == subject_length || (%s + 1 == subject_length && subject[%s] == '\\n')))\n"
                      "%s    %s = %s_%s[%s];\n",
-                  ind, posv, p, ev, stv,
+                  ind, posv, live_ev,
                   ind, posv, posv, posv,
-                  ind, outv, p, ev, stv);
+                  ind, outv, p, ev, sx);
         return;
     }
     if (!has_eol) {
         /* `\z` with no `$`/`\Z` anywhere: only `pos == n` selects anything. */
-        sb_printf(c, "%sif (__builtin_expect(%s == subject_length, 0) && %s_%s[%s] >= 0)\n"
+        sb_printf(c, "%sif (__builtin_expect(%s == subject_length, 0) && %s)\n"
                      "%s    %s = %s_%s[%s];\n",
-                  ind, posv, p, endv, stv,
-                  ind, outv, p, endv, stv);
+                  ind, posv, live_end,
+                  ind, outv, p, endv, sx);
         return;
     }
     sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0)) {\n", ind, posv);
     sb_printf(c, "%s    if (%s == subject_length) {\n", ind, posv);
-    sb_printf(c, "%s        if (%s_%s[%s] >= 0)      %s = %s_%s[%s];\n",
-              ind, p, endv, stv, outv, p, endv, stv);
-    sb_printf(c, "%s        else if (%s_%s[%s] >= 0) %s = %s_%s[%s];\n",
-              ind, p, ev, stv, outv, p, ev, stv);
-    sb_printf(c, "%s    } else if (subject[%s] == '\\n' && %s_%s[%s] >= 0) {\n",
-              ind, posv, p, ev, stv);
-    sb_printf(c, "%s        %s = %s_%s[%s];\n", ind, outv, p, ev, stv);
+    sb_printf(c, "%s        if (%s)      %s = %s_%s[%s];\n",
+              ind, live_end, outv, p, endv, sx);
+    sb_printf(c, "%s        else if (%s) %s = %s_%s[%s];\n",
+              ind, live_ev, outv, p, ev, sx);
+    sb_printf(c, "%s    } else if (subject[%s] == '\\n' && %s) {\n",
+              ind, posv, live_ev);
+    sb_printf(c, "%s        %s = %s_%s[%s];\n", ind, outv, p, ev, sx);
     sb_printf(c, "%s    }\n%s}\n", ind, ind);
 }
 
@@ -1597,12 +1737,32 @@ static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
  * word character nor a newline). Every state of a machine with no class axis
  * carries that same bit in all three views, so this is also the pre-wave
  * table, byte for byte. */
-static void emit_acc_table(StrBuf *c, const char *p, const char *tag, const Dfa *d)
+/* [OPT-3] Under the pre-multiplied form this table is INDEXED BY THE
+ * PRE-MULTIPLIED VALUE, so that nothing on the loop's carried chain has to
+ * un-multiply. That is `n * ncls` bytes where `n` would do — the transform's
+ * one real cost, and the cost STEP 1's measured 1.276x already includes. The
+ * cells that are not at a multiple of `ncls` are never read; they carry the
+ * ROW'S OWN accept bit rather than zero, so the table is correct under any
+ * index in the row and the loop does not silently depend on the
+ * pre-multiplied value's low bits being zero.
+ *
+ * FUSING THE BIT INTO THE TRANSITION CELL was measured and is WORSE (STEP 1
+ * §5: 8.095 vs 7.751 cycles/byte — unpacking puts an `and` back on the chain).
+ * The probe stays a separate table read, off the chain, where the core absorbs
+ * it: §5 measured the whole accept bookkeeping at 0.05 cycles/byte. */
+static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
+                           const Dfa *d, bool pm)
 {
-    sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag, d->n);
+    int rep_n = pm ? d->ncls : 1;
+    sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag,
+              d->n * rep_n);
+    int k = 0;
     for (int i = 0; i < d->n; i++) {
-        if (i % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", d->st[i].up[UPC_PLAIN].accept ? 1 : 0);
+        int bit = d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
+        for (int r = 0; r < rep_n; r++, k++) {
+            if (k % 16 == 0) sb_puts(c, "\n       ");
+            sb_printf(c, " %d,", bit);
+        }
     }
     sb_puts(c, "\n    };\n");
 }
@@ -1654,6 +1814,38 @@ static bool dfa_needs_gseed(const Dfa *d)
         if (d->s1g[u] != d->s1u[u]) return true;
     return false;
 }
+
+/* Does THIS machine's table take the pre-multiplied form?
+ *
+ * ONE DERIVATION, TWO READERS — this file's standing rule (`unanch_start`,
+ * `attempt_cand` and `dfa_engine_is_empty` each state it at length). The
+ * emitted loop and `<PREFIX>_DFA_TABLE`'s value both come from here, so the
+ * stamp cannot disagree with the loop it describes.
+ *
+ * THE SEED PRECONDITION is the third clause and it is not defensive padding.
+ * `emit_seed_table`'s cells come from `d->s1u[]`, which can in principle be
+ * -1 (a dead interior start state); that value flows straight into the state
+ * variable, where today it would index `is_accepting[-1]` and premultiplied it
+ * would index `[PREMUL_DEAD]` — a far wilder read for the same latent defect.
+ * Measured 2026-08-26 over the 1,256 corpus patterns that compile under
+ * `--features all`: no emitted seed table has a negative cell. Rather than
+ * rest on that sweep, the transform REFUSES a machine that has one, so the
+ * wilder read is unreachable by construction and the pre-existing `[-1]`
+ * question is left exactly as it was — it is not [OPT-3]'s to answer. The loop
+ * mirrors `emit_seed_table`'s own, so the two cannot disagree about which
+ * cells are emitted. */
+static bool dfa_premul(Ctx *cx, const Dfa *d)
+{
+    if (cx->opt->flags & PCREC_NO_PREMUL_TABLE) return false;
+    long ents = (long)d->n * (long)d->ncls;
+    if (ents > PREMUL_MAX_ENTRIES) return false;   /* (ii) */
+    if (ents > 65535) return false;                /* (i), implied by (ii) */
+    if (dfa_needs_seed(d))
+        for (int cl = 0; cl < d->ncls; cl++)
+            if (d->s1u[upc_emit_of_class(d, cl)] < 0) return false;
+    return true;
+}
+
 
 /* Are ALL of a family's interior start states dead? `s1u` answers "can an
  * attempt at `start > startpos` match at all"; `s1g` answers it for
@@ -1727,12 +1919,19 @@ static int upc_of_newline(const Dfa *d)
  * handles with its own branch because the condition differs per machine
  * (`startpos == 0` forward, `end == n` reverse). */
 static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
-                            const Dfa *d, const int fam[UPC_N])
+                            const Dfa *d, const int fam[UPC_N], bool pm)
 {
-    sb_printf(c, "    static const short %s_%s[%d] = {", p, tag, d->ncls);
+    sb_printf(c, "    static const %s %s_%s[%d] = {",
+              pm ? "unsigned short" : "short", p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
         if (cl % 16 == 0) sb_puts(c, "\n       ");
-        sb_printf(c, " %d,", fam[upc_emit_of_class(d, cl)]);
+        int v = fam[upc_emit_of_class(d, cl)];
+        /* [OPT-3] `dfa_premul`'s seed precondition guarantees `v >= 0` here
+         * under `pm`; the branch is not a fallback, it is the assertion
+         * written where a reader of the emitted table will look for it. */
+        if (pm) sb_printf(c, " %d,", v < 0 ? PREMUL_DEAD
+                                           : premul_val(v, d->ncls, true));
+        else    sb_printf(c, " %d,", v);
     }
     sb_puts(c, "\n    };\n");
 }
@@ -2043,6 +2242,39 @@ static bool dfa_engine_is_empty(Ctx *cx)
     return us.empty;
 }
 
+/* [OPT-3] WHICH TABLE FORM this artifact's DFA scan carries
+ * (docs/design/premultiplied_dfa_table.md §8, docs/spec/match_api.md §6.3).
+ *
+ * ONE DERIVATION, THREE READERS — `dfa_premul`, called here, by
+ * `emit_unanchored`'s loop and by the orientation block's "READING THE TABLES"
+ * paragraph. The stamp cannot disagree with the loop it describes unless the
+ * predicate itself is wrong, in which case the loop is wrong too. This is the
+ * same construction `dfa_scan_name` and `dfa_prefilter_name` are built on and
+ * for the same reason (this file's header, M2.12).
+ *
+ * `"mixed"` IS A REAL VALUE, not defensive padding: the bound is decided PER
+ * MACHINE on that machine's own `n * ncls`, so a pattern whose forward DFA is
+ * above it and whose reverse DFA is below it takes one form of each. Naming
+ * that is cheaper than a rule claiming it cannot happen.
+ *
+ * `"none"` IS NOT A FAILURE either. ENG_ATTEMPT's states are LABELS and a step
+ * is `goto *targets_K[class]` — there is no numeric transition table to
+ * pre-multiply, no state variable and no address arithmetic to shorten, so the
+ * transform would be a no-op there (design note §4). The empty engine has no
+ * loop at all. Both answer "none", and `dfa_engine_is_empty` is asked FIRST for
+ * `dfa_scan_name`'s own reason (r37 #5). */
+static const char *dfa_table_name(Ctx *cx)
+{
+    if (dfa_engine_is_empty(cx)) return "none";
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";
+    bool f = dfa_premul(cx, &cx->job->dfa);
+    bool r = dfa_premul(cx, &cx->job->rdfa);
+    if (f && r) return "premultiplied";
+    if (!f && !r) return "indexed";
+    return "mixed";
+}
+
+
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
 /* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
@@ -2314,6 +2546,18 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     bool facc2 = dfa_has_clsacc(fd);
     bool racc2 = dfa_has_clsacc(rd);
 
+    /* [OPT-3] THE TABLE FORM, decided PER MACHINE and read here ONCE. The two
+     * DFAs have different `n` and different `ncls`, so each is decided on its
+     * own dimensions; `<PREFIX>_DFA_TABLE` reads `"mixed"` when they disagree
+     * (docs/spec/match_api.md §6.3). Every emitted state CONSTANT below goes
+     * through `premul_val`, which is the IDENTITY when the flag is false — so
+     * the indexed form's emitted text is the pre-[OPT-3] text character for
+     * character, which is what `-fno-premul-table` and every above-bound
+     * artifact rest on. */
+    bool fpm = dfa_premul(cx, fd);
+    bool rpm = dfa_premul(cx, rd);
+    char ixbuf[256];
+
     int fs = fd->s0;   /* no asserts -> s0 == s1 */
     int rs = rd->s0;
     /* MECHANISM 4 is only EMITTED where it can change an answer. With the two
@@ -2366,18 +2610,31 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_class_legend(c, fd);
     sb_puts(c, "     */\n");
     emit_u8_table(c, p, "forward_byte_class", fd->clsmap, 256);
-    sb_printf(c, "    /* Forward transitions, indexed [state * %d + class]; -1 means\n"
-                 "     * the pattern cannot continue and the scan stops. %d rows of %d.\n"
-                 "     *\n", fd->ncls, fd->n, fd->ncls);
+    if (fpm)
+        sb_printf(c, "    /* Forward transitions, PRE-MULTIPLIED ([OPT-3]): indexed\n"
+                     "     * [state + class], and each cell already holds next_state * %d,\n"
+                     "     * so a step is one add and one load. %d means the pattern\n"
+                     "     * cannot continue and the scan stops. %d rows of %d. The state\n"
+                     "     * numbers in the legend below are ROW numbers; the values this\n"
+                     "     * code carries in forward_state are those times %d.\n"
+                     "     *\n", fd->ncls, PREMUL_DEAD, fd->n, fd->ncls, fd->ncls);
+    else
+        sb_printf(c, "    /* Forward transitions, indexed [state * %d + class]; -1 means\n"
+                     "     * the pattern cannot continue and the scan stops. %d rows of %d.\n"
+                     "     *\n", fd->ncls, fd->n, fd->ncls);
     emit_state_legend(c, fd, false);
     sb_puts(c, "     */\n");
-    emit_tr_table(c, p, "forward_next_state", fd);
-    sb_puts(c, "    /* 1 where a match may end, indexed by forward state. */\n");
-    emit_acc_table(c, p, "forward_is_accepting", fd);
+    emit_tr_table(c, p, "forward_next_state", fd, fpm);
+    sb_puts(c, fpm ? "    /* 1 where a match may end, indexed by the PRE-MULTIPLIED forward\n"
+                     "     * state ([OPT-3]), so the scan's chain never un-multiplies. Each\n"
+                     "     * row repeats one bit; only the cells at a multiple of the class\n"
+                     "     * count are ever read. */\n"
+                   : "    /* 1 where a match may end, indexed by forward state. */\n");
+    emit_acc_table(c, p, "forward_is_accepting", fd, fpm);
     if (facc2) emit_acc_cls_table(c, p, "forward_is_accepting_by_class", fd);
-    if (fseed) emit_seed_table(c, p, "forward_seed_state", fd, fd->s1u);
-    if (eol)  emit_eol_table(c, p, "forward_eol_view", fd);
-    if (endv) emit_end_table(c, p, "forward_end_view", fd);
+    if (fseed) emit_seed_table(c, p, "forward_seed_state", fd, fd->s1u, fpm);
+    if (eol)  emit_eol_table(c, p, "forward_eol_view", fd, fpm);
+    if (endv) emit_end_table(c, p, "forward_end_view", fd, fpm);
     if (prefilter && !use_memchr) {
         sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
                    "     * forward loop uses this to skip over bytes that cannot begin\n"
@@ -2395,19 +2652,28 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     emit_class_legend(c, rd);
     sb_puts(c, "     */\n");
     emit_u8_table(c, p, "reverse_byte_class", rd->clsmap, 256);
-    sb_printf(c, "    /* Reverse transitions, indexed [state * %d + class]; -1 stops\n"
-                 "     * the walk. %d rows of %d.\n"
-                 "     *\n", rd->ncls, rd->n, rd->ncls);
+    if (rpm)
+        sb_printf(c, "    /* Reverse transitions, PRE-MULTIPLIED ([OPT-3]): indexed\n"
+                     "     * [state + class], and each cell already holds next_state * %d.\n"
+                     "     * %d stops the walk. %d rows of %d; the legend's state numbers\n"
+                     "     * are ROW numbers, and reverse_state carries those times %d.\n"
+                     "     *\n", rd->ncls, PREMUL_DEAD, rd->n, rd->ncls, rd->ncls);
+    else
+        sb_printf(c, "    /* Reverse transitions, indexed [state * %d + class]; -1 stops\n"
+                     "     * the walk. %d rows of %d.\n"
+                     "     *\n", rd->ncls, rd->n, rd->ncls);
     emit_state_legend(c, rd, true);
     sb_puts(c, "     */\n");
-    emit_tr_table(c, p, "reverse_next_state", rd);
-    sb_puts(c, "    /* 1 where the backwards walk has consumed a whole match,\n"
-               "     * indexed by reverse state. */\n");
-    emit_acc_table(c, p, "reverse_is_accepting", rd);
+    emit_tr_table(c, p, "reverse_next_state", rd, rpm);
+    sb_puts(c, rpm ? "    /* 1 where the backwards walk has consumed a whole match,\n"
+                     "     * indexed by the PRE-MULTIPLIED reverse state ([OPT-3]). */\n"
+                   : "    /* 1 where the backwards walk has consumed a whole match,\n"
+                     "     * indexed by reverse state. */\n");
+    emit_acc_table(c, p, "reverse_is_accepting", rd, rpm);
     if (racc2) emit_acc_cls_table(c, p, "reverse_is_accepting_by_class", rd);
-    if (rseed) emit_seed_table(c, p, "reverse_seed_state", rd, rd->s1u);
-    if (eol)  emit_eol_table(c, p, "reverse_eol_view", rd);
-    if (endv) emit_end_table(c, p, "reverse_end_view", rd);
+    if (rseed) emit_seed_table(c, p, "reverse_seed_state", rd, rd->s1u, rpm);
+    if (eol)  emit_eol_table(c, p, "reverse_eol_view", rd, rpm);
+    if (endv) emit_end_table(c, p, "reverse_end_view", rd, rpm);
     for (int k = 0; k < nrskip; k++)
         emit_stay_table(c, p, "reverse_stay", rskip[k], rd);
 
@@ -2451,10 +2717,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * first, `startpos <= n`, and `startpos > 0` then implies `n > 0`,
          * hence `s != NULL` under match_api.md §3.1's legal empty subject. */
         sb_puts(c,   "    if (search_from > subject_length) return 0;\n");
-        sb_printf(c, "    int forward_state = search_from ? %s_forward_seed_state[%s_forward_byte_class[subject[search_from - 1]]]"
-                     " : %d;\n", p, p, fs);
+        sb_printf(c, "    %s forward_state = search_from ? %s_forward_seed_state[%s_forward_byte_class[subject[search_from - 1]]]"
+                     " : %d;\n", fpm ? "unsigned" : "int", p, p,
+                  premul_val(fs, fd->ncls, fpm));
     } else {
-        sb_printf(c, "    int forward_state = %d;\n", fs);
+        sb_printf(c, "    %s forward_state = %d;\n", fpm ? "unsigned" : "int",
+                  premul_val(fs, fd->ncls, fpm));
         sb_puts(c,   "    if (search_from > subject_length) return 0;\n");
     }
     sb_puts(c,   "    for (;;) {\n");
@@ -2490,7 +2758,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                 sb_puts(c,   "        // Prefilter: nothing found yet and still at the start, so\n"
                              "        // skip over bytes that cannot begin a match rather than\n"
                              "        // stepping through them. can_begin_match says which can.\n");
-            sb_printf(c, "        if (forward_state == %d && last_accept_position == (size_t)-1) {\n", fs);
+            sb_printf(c, "        if (forward_state == %d && last_accept_position == (size_t)-1) {\n",
+                      premul_val(fs, fd->ncls, fpm));
             if (use_memchr) {
                 if (views) {
                     /* no early `return 0`: the EOL view may still accept at
@@ -2526,7 +2795,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
         }
         for (int k = 0; k < nfskip; k++) {
             int K = fskip[k];
-            sb_printf(c, "        %s (forward_state == %d) {\n", kw, K);
+            sb_printf(c, "        %s (forward_state == %d) {\n", kw,
+                      premul_val(K, fd->ncls, fpm));
             sb_printf(c, "            while (%s && %s_forward_stay%d[subject[scan_position]]) scan_position++;\n", fbound, p, K);
             /* With the accept check ahead of us (non-EOL order) the skipped
              * run's final position would otherwise go unrecorded; under EOL
@@ -2539,7 +2809,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     }
     if (viewsel)
         emit_view_select(c, p, eol, endv, "scan_position", "forward_state", "forward_view_state", "forward_eol_view", "forward_end_view",
-                         "        ");
+                         "        ", fd->ncls, fpm);
     if (views && !facc2)
         sb_printf(c, "        if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n", p, fsrc);
     if (facc2) {
@@ -2561,20 +2831,32 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
                      "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
                      "            break;\n"
                      "        }\n", p, fsrc);
-        sb_printf(c, "        {\n"
-                     "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"
-                     "            if (%s_forward_is_accepting_by_class[%s * %d + forward_class]) last_accept_position = scan_position;\n"
-                     "            forward_state = %s_forward_next_state[%s * %d + forward_class];\n"
-                     "            scan_position++;\n"
-                     "        }\n",
-                  p, p, fsrc, fd->ncls, p, fsrc, fd->ncls);
+        {
+            char ax[256];
+            premul_ix(ax, sizeof ax, fsrc, fd->ncls, fpm, "forward_class");
+            sb_printf(c, "        {\n"
+                         "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"
+                         "            if (%s_forward_is_accepting_by_class[%s]) last_accept_position = scan_position;\n"
+                         "            forward_state = %s_forward_next_state[%s];\n"
+                         "            scan_position++;\n"
+                         "        }\n",
+                      p, p, ax, p, ax);
+        }
     } else {
         sb_puts(c,   "        if (scan_position >= subject_length) break;\n");
-        sb_printf(c, "        forward_state = %s_forward_next_state[%s * %d + %s_forward_byte_class[subject[scan_position++]]];\n",
-                  p, fsrc, fd->ncls, p);
+        {
+            char cls[128];
+            snprintf(cls, sizeof cls, "%s_forward_byte_class[subject[scan_position++]]", p);
+            sb_printf(c, "        forward_state = %s_forward_next_state[%s];\n",
+                      p, premul_ix(ixbuf, sizeof ixbuf, fsrc, fd->ncls, fpm, cls));
+        }
     }
-    sb_puts(c,   "        if (forward_state < 0) break;   // dead: no match can continue\n"
-                 "    }\n"
+    if (fpm)
+        sb_printf(c, "        if (forward_state == %d) break;   // dead: no match can continue\n",
+                  PREMUL_DEAD);
+    else
+        sb_puts(c,   "        if (forward_state < 0) break;   // dead: no match can continue\n");
+    sb_puts(c,   "    }\n"
                  "    if (last_accept_position == (size_t)-1) return 0;\n"
                  "    {\n"
                  "        size_t match_end_position = last_accept_position;\n"
@@ -2592,10 +2874,12 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          *
          * `end == n` is the out-of-subject case — no byte to the right —
          * which is a NON-word context and therefore the pre-wave constant. */
-        sb_printf(c, "        int reverse_state = (match_end_position < subject_length) ? %s_reverse_seed_state[%s_reverse_byte_class[subject[match_end_position]]]"
-                     " : %d;\n", p, p, rs);
+        sb_printf(c, "        %s reverse_state = (match_end_position < subject_length) ? %s_reverse_seed_state[%s_reverse_byte_class[subject[match_end_position]]]"
+                     " : %d;\n", rpm ? "unsigned" : "int", p, p,
+                  premul_val(rs, rd->ncls, rpm));
     } else {
-        sb_printf(c, "        int reverse_state = %d;\n", rs);
+        sb_printf(c, "        %s reverse_state = %d;\n", rpm ? "unsigned" : "int",
+                  premul_val(rs, rd->ncls, rpm));
     }
     sb_puts(c,   "        for (;;) {\n");
     if (!views)
@@ -2608,7 +2892,8 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
             int K = rskip[k];
             /* pp only ever DECREASES, so one entry guard is enough to keep the
              * whole skip below the EOL region */
-            sb_printf(c, "            %s (reverse_state == %d%s) {\n", kw, K,
+            sb_printf(c, "            %s (reverse_state == %d%s) {\n", kw,
+                      premul_val(K, rd->ncls, rpm),
                       views ? " && rewind_position + 1 < subject_length" : "");
             sb_printf(c, "                while (rewind_position > search_from && %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n", p, K);
             if (!views && rd->st[K].up[UPC_PLAIN].accept)
@@ -2619,7 +2904,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     }
     if (viewsel)
         emit_view_select(c, p, eol, endv, "rewind_position", "reverse_state", "reverse_view_state", "reverse_eol_view", "reverse_end_view",
-                         "            ");
+                         "            ", rd->ncls, rpm);
     if (views && !racc2)
         sb_printf(c, "            if (%s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n", p, rsrc);
     if (racc2) {
@@ -2655,27 +2940,42 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
          * scalar accept because no byte exists past `n`; this one needs a
          * CONTEXT-INDEXED accept because the byte exists and is merely
          * outside the window. */
-        sb_printf(c, "            if (rewind_position <= search_from) {\n"
-                     "                if (search_from ? %s_reverse_is_accepting_by_class[%s * %d + "
-                     "%s_reverse_byte_class[subject[search_from - 1]]]\n"
-                     "                             : %s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"
-                     "                break;\n"
-                     "            }\n",
-                  p, rsrc, rd->ncls, p, p, rsrc);
-        sb_printf(c, "            {\n"
-                     "                unsigned reverse_class = %s_reverse_byte_class[subject[rewind_position - 1]];\n"
-                     "                if (%s_reverse_is_accepting_by_class[%s * %d + reverse_class]) match_start_position = rewind_position;\n"
-                     "                reverse_state = %s_reverse_next_state[%s * %d + reverse_class];\n"
-                     "                rewind_position--;\n"
-                     "            }\n",
-                  p, p, rsrc, rd->ncls, p, rsrc, rd->ncls);
+        {
+            char cls[128];
+            snprintf(cls, sizeof cls, "%s_reverse_byte_class[subject[search_from - 1]]", p);
+            sb_printf(c, "            if (rewind_position <= search_from) {\n"
+                         "                if (search_from ? %s_reverse_is_accepting_by_class[%s]\n"
+                         "                             : %s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"
+                         "                break;\n"
+                         "            }\n",
+                      p, premul_ix(ixbuf, sizeof ixbuf, rsrc, rd->ncls, rpm, cls),
+                      p, rsrc);
+        }
+        {
+            char ax[256];
+            premul_ix(ax, sizeof ax, rsrc, rd->ncls, rpm, "reverse_class");
+            sb_printf(c, "            {\n"
+                         "                unsigned reverse_class = %s_reverse_byte_class[subject[rewind_position - 1]];\n"
+                         "                if (%s_reverse_is_accepting_by_class[%s]) match_start_position = rewind_position;\n"
+                         "                reverse_state = %s_reverse_next_state[%s];\n"
+                         "                rewind_position--;\n"
+                         "            }\n",
+                      p, p, ax, p, ax);
+        }
     } else {
         sb_puts(c,   "            if (rewind_position <= search_from) break;\n");
-        sb_printf(c, "            reverse_state = %s_reverse_next_state[%s * %d + %s_reverse_byte_class[subject[--rewind_position]]];\n",
-                  p, rsrc, rd->ncls, p);
+        {
+            char cls[128];
+            snprintf(cls, sizeof cls, "%s_reverse_byte_class[subject[--rewind_position]]", p);
+            sb_printf(c, "            reverse_state = %s_reverse_next_state[%s];\n",
+                      p, premul_ix(ixbuf, sizeof ixbuf, rsrc, rd->ncls, rpm, cls));
+        }
     }
-    sb_puts(c,   "            if (reverse_state < 0) break;\n"
-                 "        }\n"
+    if (rpm)
+        sb_printf(c, "            if (reverse_state == %d) break;\n", PREMUL_DEAD);
+    else
+        sb_puts(c,   "            if (reverse_state < 0) break;\n");
+    sb_puts(c,   "        }\n"
                  "        if (match_start_position == (size_t)-1) return 0;\n"
                  "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n"
                  "        return 1;\n"
@@ -3266,15 +3566,36 @@ static void emit_orientation_block(Ctx *cx, StrBuf *c, const GenNames *g)
                  " * residue, and %s describes what this artifact is. Each is\n"
                  " * documented at its definition.\n",
               g->searchfn, g->matchfn, g->matchcapsfn, residual, g->infoname);
-    if (!vm || prefilter)
+    if (!vm || prefilter) {
+        /* [OPT-3] The paragraph describes the tables this artifact ACTUALLY
+         * carries, read off `dfa_table_name` — the same predicate the loop and
+         * the stamp read, never a fourth opinion. The `"indexed"`/`"none"` arm
+         * is the pre-[OPT-3] text character for character. */
+        const char *form = dfa_table_name(cx);
         sb_puts(c, " *\n"
                    " * READING THE TABLES. Each scanner uses three arrays with the same\n"
                    " * shape: a byte-class table folding all 256 byte values down to the\n"
-                   " * few classes this pattern can tell apart; a transition table, one\n"
-                   " * row per state and one column per class, whose cell is the state to\n"
-                   " * move to or -1 for \"dead, stop\"; and an accepting table marking\n"
-                   " * the states where a match may end. Every table below carries a\n"
-                   " * legend naming its states or classes.\n");
+                   " * few classes this pattern can tell apart; a transition table, one\n");
+        if (!strcmp(form, "premultiplied"))
+            sb_puts(c, " * row per state and one column per class, whose cell is the state\n"
+                       " * to move to ALREADY MULTIPLIED by the column count (so a step is\n"
+                       " * one add and one load) or 65535 for \"dead, stop\"; and an\n"
+                       " * accepting table marking the states where a match may end,\n"
+                       " * indexed by that same multiplied value. Every table below\n"
+                       " * carries a legend naming its states or classes.\n");
+        else if (!strcmp(form, "mixed"))
+            sb_puts(c, " * row per state and one column per class, whose cell is the state\n"
+                       " * to move to or a reserved value for \"dead, stop\"; and an\n"
+                       " * accepting table marking the states where a match may end. The\n"
+                       " * two scanners here use DIFFERENT cell encodings -- each table's\n"
+                       " * own comment below says which, and names its dead cell. Every\n"
+                       " * table below carries a legend naming its states or classes.\n");
+        else
+            sb_puts(c, " * row per state and one column per class, whose cell is the state to\n"
+                       " * move to or -1 for \"dead, stop\"; and an accepting table marking\n"
+                       " * the states where a match may end. Every table below carries a\n"
+                       " * legend naming its states or classes.\n");
+    }
     sb_puts(c, " * ===================================================================== */\n\n");
 }
 
@@ -3532,6 +3853,7 @@ void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
     sb_printf(c, "#define %s_DFA_SCAN \"%s\"\n", upper, dfa_scan_name(cx));
     sb_printf(c, "#define %s_DFA_PREFILTER \"%s\"\n", upper,
               dfa_prefilter_name(cx));
+    sb_printf(c, "#define %s_DFA_TABLE \"%s\"\n", upper, dfa_table_name(cx));
 }
 
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)

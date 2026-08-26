@@ -216,6 +216,14 @@ int main(int argc, char **argv)
          * gate compares the old entry against. See lib/pcrec.h. */
         else if (!no_more_opts && !strcmp(a, "-fno-tiered-entry"))
             opt.flags |= PCREC_NO_TIERED_ENTRY;
+        /* [OPT-3] the DFA TABLE-FORM axis (docs/design/premultiplied_dfa_table.md,
+         * docs/spec/tuning.md §2.13). `-fno-tiered-entry`'s shape again: it
+         * changes no answer and is masked out of `rx_info.flags`. Denying it
+         * emits the DFA scan's tables and loop as they shipped before [OPT-3],
+         * which is the bisect lever for the optimization and the build the
+         * identity comparison uses as its control. See lib/pcrec.h. */
+        else if (!no_more_opts && !strcmp(a, "-fno-premul-table"))
+            opt.flags |= PCREC_NO_PREMUL_TABLE;
         /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
          * (D51 ruling 1), D46's controllability half for it. Denying it is
          * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever

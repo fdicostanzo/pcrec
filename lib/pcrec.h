@@ -279,7 +279,39 @@ enum {
      * exactly when the artifact has one tier — by this flag or by the three
      * degenerate cases §3.1 enumerates. That is the D46 half a denied request
      * is checked against. */
-    PCREC_NO_TIERED_ENTRY = 1u << 14
+    PCREC_NO_TIERED_ENTRY = 1u << 14,
+    /* [OPT-3] `-fno-premul-table`: DENY the PRE-MULTIPLIED DFA TRANSITION
+     * TABLE (docs/design/premultiplied_dfa_table.md, docs/spec/tuning.md
+     * §2.13), D46's controllability half for the DFA scan's table-form axis.
+     *
+     * WHAT IT DENIES. A DFA scan's transition table normally holds
+     * `next_state * classes` rather than `next_state`, so the emitted step is
+     * `state = table[state + class]` and the loop's carried dependency chain is
+     * `add, load` instead of `lea, lea, movslq, load`. [OPT-3] STEP 1 measured
+     * that chain as the WHOLE of the scan's per-byte cost (10.7 cycles/byte,
+     * latency-bound with ~2x spare issue width) and the premultiplied form as
+     * 1.276x on the comparative bench's three throughput subjects. This flag
+     * emits the INDEXED form instead — the tables and the loop exactly as they
+     * shipped before [OPT-3] — which is both the bisect lever for the
+     * optimization and the build an identity gate compares the new one
+     * against.
+     *
+     * DENY-ONLY, `-fno-tiered-entry`'s shape: there is one table form per
+     * machine and a generation-time rule picks it (the form is REFUSED above a
+     * size bound, where the loop is memory-bound and the premultiplied accept
+     * table's growth would buy nothing), so there is nothing to ADDRESS and
+     * nothing to force.
+     *
+     * IT JOINS `emit_info_def`'s `strategy_denials` MASK (src/gen/emit_dfa.c),
+     * for the mask's own reason: the table form changes NO ANSWER — it changes
+     * the ENCODING of a state, not the machine, and the corpus plus the
+     * bench's 91 subjects are compared span for span across both forms — so
+     * two artifacts that answer identically must not differ in their
+     * reflection surface over it. What the emitter DID is reported by
+     * `<PREFIX>_DFA_TABLE`, which reads `"indexed"` under this flag and
+     * `"premultiplied"`, `"mixed"` or `"none"` otherwise. That is the D46 half
+     * a denied request is checked against. */
+    PCREC_NO_PREMUL_TABLE = 1u << 15
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;
