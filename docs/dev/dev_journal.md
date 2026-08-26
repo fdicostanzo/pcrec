@@ -15720,3 +15720,27 @@ check · `make strict` clean.
 is still exactly `none` 380 / `memchr` 327 / `byte-class` 176 /
 `memchr-bounded` 61 / `byte-class-bounded` 51 — unchanged across this lane's
 two halves, srTier's merge, and three rebases.
+
+#### Fortieth session, part 13 — srTier's battery: green with THREE ANOMALIES; srStamp2 MERGED (abi 6); the anchors (2026-08-26 ~05:0x EDT)
+
+srTier's battery on d0a9ab5 (01:12 → 04:32): `make test` 1,558 checks /
+0 (the tier check's arms added three), the K32 corpus cell solo
+1,634/0, 1 INCONCLUSIVE; `make san` green both axes (1h42m); MATRIX 180
+rows / unexpected 0 / undetected 6 (the six expected) / unreached 0 /
+**anomalies 3** — S179 (the `_in` bind), S183 (the NULL-descriptor
+delegation) in emit_vm.c and S67 (the strategy_denials mask) in
+emit_dfa.c: APPLY-FAILED, their SAB_BEFORE text moved under srTier's
+entry-emitter refactor and its new mask member. An ANOMALY is "not
+measured", not a detection failure — but the tripwire at the battery's
+START had printed "ANCHOR NOT FOUND" for all three and my battery
+script only TAILED its output: a check that prints but does not gate,
+[TT-10]-residue's shape in my own tooling. The script now exits on any
+tripwire red. srStamp2 MERGED a895184 (abi 6; the journal's both-appends
+conflict kept; its backticked commit message got shell-expanded and was
+re-set from a file — another quoting trap), build + strict clean.
+Lane srAnchor (sonnet) launched to re-anchor the three rows against the
+merged tree, prove each DETECTS solo, and add the tripwire as a FAILING
+in-tree check if nothing gates on it today; the final battery runs on
+its merge (~3h20m). Cost of the night's two second-site misses and the
+anchors: srTier's battery ran three times (00:02 stopped, 00:12 stopped,
+01:12 → green with anomalies).
