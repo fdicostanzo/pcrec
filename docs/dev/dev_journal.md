@@ -15744,3 +15744,21 @@ in-tree check if nothing gates on it today; the final battery runs on
 its merge (~3h20m). Cost of the night's two second-site misses and the
 anchors: srTier's battery ran three times (00:02 stopped, 00:12 stopped,
 01:12 → green with anomalies).
+
+#### Fortieth session, part 14 — srAnchor MERGED; the FINAL battery of the night launches on the combined tree (2026-08-26 ~05:1x EDT)
+
+srAnchor (sonnet) re-anchored S179 (the `_in` bind's tail, unique at
+count 1), S183 (moved one line down to the delegation line itself —
+`%s_run_state run;` now occurs 6×), and S67 (narrowed to the ALTCLS
+pair's line; srTier appended PCREC_NO_TIERED_ENTRY to the mask); each
+DETECTED solo with its old signature (S179 corpus 1/15 + framebuf 3/3;
+S183 corpus 4/12 + framebuf 10/5 + codegen 1/104; S67 altcls 1/14);
+SAB_DOC_FIGUREs re-validated in place. THE GENERAL FIX: nothing in-tree
+had ever FAILED on a stale anchor — the tripwire was a hand-run script
+cited in prose — so it is now `[SABANCHOR]` in test-codegen (population
+180, floor 150, validated red on a planted stale anchor in a scratch
+copy; 106/0). Merged 5808484. The final battery of the night runs on it
+(the combined abi-6 tree: srTier + srStamp2 + the anchors + K38's
+sentinel fix); the battery script now stops itself on a red tripwire.
+On green: bench inbox I-6 (pin, abi 6, `rx_info.scan`/`.prefilter`),
+[DD-13c] closed, [OPT-1] STEP 2 closed, wake.md rewritten for Frank.
