@@ -8162,7 +8162,7 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * stamp block is one contiguous run of `#define`s in every artifact this
      * compiler emits, and a reader (or a grep) finds the selection facts in one
      * place on both artifact kinds. */
-    if (job->fit.prefilter) pcrec_emit_dfa_scan_stamps(cx, c, v.up);
+    if (pcrec_artifact_has_dfa_scan(cx)) pcrec_emit_dfa_scan_stamps(cx, c, v.up);
     /* [DD-14 wave G] THE LINKAGE, PER ARTIFACT, and it reports what the
      * emitter DID rather than what it was asked — `RX_VM_RUNGS`/`RX_VM_STRATS`/
      * `RX_VM_PREFILTER`'s rule, which is the D46 half a denied request

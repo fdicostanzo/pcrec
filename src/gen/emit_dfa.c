@@ -163,6 +163,35 @@ static void emit_feature_macros(StrBuf *sb)
  * per-engine PREFILTER stamps are not shared either: their VALUE SETS are
  * different (§6.3's (a)/(b) split rules the NAMES engine-specific), and a
  * shared emitter for two different vocabularies would only be a switch. */
+/* [DD-13c] THE DFA SCAN'S TWO FACTS, forward-declared: their definitions sit
+ * beside the derivations they read (`unanch_start`/`attempt_cand`, far below),
+ * and THREE emitters call them from above — the DFA artifact's stamp block, the
+ * VM hybrid's (src/gen/emit_vm.c), and `emit_info_def`'s runtime mirror. Three
+ * readers of ONE derivation is this file's standing rule; a forward declaration
+ * is the cheap way to keep the definition next to what it derives from rather
+ * than hoisting forty lines of start analysis to the top of the file. */
+static const char *dfa_scan_name(Ctx *cx);
+static const char *dfa_prefilter_name(Ctx *cx);
+
+/* [DD-13c] DOES THIS ARTIFACT CONTAIN A DFA SCAN AT ALL?
+ *
+ * THE CONDITION IS src/core/compile.c's, VERBATIM AND ON PURPOSE: that file
+ * builds `job->dfa`/`job->rdfa` and sets `job->engine` under exactly
+ * `fit.chosen == ENGM_DFA || fit.prefilter`, so this predicate is not a claim
+ * about the artifact that happens to agree — it IS the condition that made the
+ * machine exist. Everything downstream depends on that: `dfa_scan_name` and
+ * `dfa_prefilter_name` read fields that were never written when this is false,
+ * so both the hybrid's stamp gate and the runtime mirror ask HERE rather than
+ * spelling a test of their own.
+ *
+ * True on every DFA artifact and on every VM HYBRID; false on a non-hybrid VM
+ * artifact, which carries no DFA and therefore stamps neither macro and mirrors
+ * NULL. docs/spec/match_api.md §6.3 (a) states the iff this implements. */
+bool pcrec_artifact_has_dfa_scan(Ctx *cx)
+{
+    return cx->job->fit.chosen == ENGM_DFA || cx->job->fit.prefilter;
+}
+
 void pcrec_emit_engine_stamp(StrBuf *c, const char *upper, const char *engine)
 {
     sb_printf(c, "#define %s_ENGINE \"%s\"\n", upper, engine);
@@ -588,6 +617,37 @@ static void emit_rx_abi_types(StrBuf *sb)
         "    size_t                pattern_len; /* companion length (K9-proof) */\n"
         "    const rx_group_entry *groups;       /* sorted, bsearch-able */\n"
         "    const char           *engine_why;   /* forcing construct/reason, or NULL */\n"
+        /* [DD-13c] (D40 addendum) THE SELECTION FACTS' RUNTIME MIRRORS, so a
+         * consumer with no header to read the macros from -- dlopen, an FFI
+         * binding, a multi-artifact linker walking several `<prefix>_info`
+         * symbols -- can read them the way it already reads `engine` and
+         * `engine_why`. APPENDED at the END of the struct, after the three
+         * pointers, so no existing member's offset moves; the `abi` bump
+         * announces the growth (see emit_info_def's abi comment).
+         *
+         * STRINGS AND NOT ENUMS, matching `engine_why` rather than `engine`:
+         * the value sets are the macros' value sets, the macros are strings,
+         * and one derivation feeding two spellings of the same fact is the
+         * whole point. A consumer compares with strcmp; the sets are closed
+         * and docs/spec/match_api.md S6.3 lists them. */
+        "    const char           *scan;         /* the DFA scan this artifact\n"
+        "                                           CONTAINS: \"unanchored\" /\n"
+        "                                           \"attempt\" / \"empty\",\n"
+        "                                           mirroring <PREFIX>_DFA_SCAN.\n"
+        "                                           NULL when there is none --\n"
+        "                                           i.e. on a VM artifact that is\n"
+        "                                           not a hybrid. A non-NULL\n"
+        "                                           value on a VM artifact IS\n"
+        "                                           \"this is a hybrid\". */\n"
+        "    const char           *prefilter;    /* this artifact's CANDIDATE-START\n"
+        "                                           mechanism, in whichever\n"
+        "                                           engine's vocabulary applies:\n"
+        "                                           the DFA's five values\n"
+        "                                           (<PREFIX>_DFA_PREFILTER) when\n"
+        "                                           `scan` is non-NULL, and the\n"
+        "                                           VM's \"none\"\n"
+        "                                           (<PREFIX>_VM_PREFILTER) when\n"
+        "                                           it is NULL. Never NULL. */\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -1113,16 +1173,36 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * no resume stack to tier. The `abi` number is the ARTIFACT FORMAT's
      * version, not the VM's, so it moves on both kinds anyway — which is why
      * comparison (B) is re-pinned for DFA artifacts too. */
-    /* [DD-13c] abi 5 -> 6 (D76/[TT-11]), the next event after [OPT-1]'s
-     * immediately above: r37's two SCOPE findings both move emitted bytes.
-     * (#5) the proven-empty DFA artifacts stamp `_DFA_SCAN "empty"` where they
-     * used to claim `"unanchored"`, a loop they do not contain; (#6) every VM
-     * HYBRID artifact gains the two `_DFA_*` lines describing the scan it
-     * inlines. Both are SCAFFOLDING — no table, no search-loop byte and no
-     * answer moves, which `run_recursion_identity.sh`'s comparison (A) proves
-     * against the unchanged pre-module pin — and D76's rule is about the
-     * scaffolding regardless: an `abi` bump AND a re-pin of that gate's
-     * comparison (B), in the same change. */
+    /* [DD-13c] abi 5 -> 6, THE NEXT EVENT AFTER [OPT-1]'s immediately above,
+     * AND THIS ONE IS A LAYOUT EVENT — not the scaffolding-only kind [DD-13]
+     * and [OPT-1] both were. Two things move together:
+     *
+     *   SCAFFOLDING (D76/[TT-11]), r37'''s two SCOPE findings. (#5) the
+     *   proven-empty DFA artifacts stamp `_DFA_SCAN "empty"` where they used to
+     *   claim `"unanchored"`, a loop they do not contain; (#6) every VM HYBRID
+     *   artifact gains the two `_DFA_*` lines describing the scan it inlines.
+     *
+     *   LAYOUT (D40 addendum, Frank 2026-08-25: pre-v1 abi changes are
+     *   deliberate and methodical, not avoided). `struct rx_info` gains
+     *   `scan` and `prefilter`, the RUNTIME mirrors of those same two facts,
+     *   for the consumer that has no header to read the macros from. They are
+     *   APPENDED AT THE END of the struct, after the three pointers, so NO
+     *   EXISTING MEMBER'''S OFFSET MOVES — unlike abi 2'''s inserted `work_budget`
+     *   and abi 3'''s inserted sizing block, which moved everything after them.
+     *
+     * BOTH ARTIFACT KINDS ARE AFFECTED, and saying so is r37 A12'''s lesson: that
+     * finding was that abi 3 -> 4'''s comment justified the bump from the DFA
+     * side alone while `emit_info_def` is SHARED, so every VM artifact'''s bytes
+     * moved too and the reader could not tell. Here, explicitly: a DFA artifact
+     * gains two struct fields and may change its `_DFA_SCAN` value; a VM
+     * artifact gains the same two struct fields, and a HYBRID additionally
+     * gains two `#define` lines. Note this is the MIRROR IMAGE of [OPT-1]'''s
+     * note directly above ("no DFA artifact'''s bytes move at this bump"): its
+     * event was VM-only, this one reaches both. Comparison (A) is still
+     * byte-identical against the unchanged `ac4917d` pin — every byte this
+     * change writes lands in the `#define` block or the `rx_info` initializer,
+     * both ABOVE `goto <prefix>_L0;` — and comparison (B) is re-pinned. */
+    sb_puts(c,   "    .abi = 6,\n");
     sb_puts(c,   "    .abi = 6,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
@@ -1217,6 +1297,32 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         sb_puts(c, ",\n");
     } else {
         sb_puts(c, "    .engine_why = NULL,\n");
+    }
+    /* [DD-13c] THE RUNTIME MIRRORS, FROM THE SAME TWO FUNCTIONS THE MACROS ARE
+     * WRITTEN FROM. `dfa_scan_name`/`dfa_prefilter_name` are called here and in
+     * `pcrec_emit_dfa_scan_stamps` and nowhere else, so `<PREFIX>_DFA_SCAN` and
+     * `rx_info.scan` are one value written twice rather than two computations
+     * of one fact -- which is what makes the codegen assertion that they AGREE
+     * a check of the emitter rather than of arithmetic
+     * (tests/codegen/run_codegen_tests.sh).
+     *
+     * THE GUARD IS THE SHARED PREDICATE, not a local test: on a non-hybrid VM
+     * artifact `job->engine` and `job->dfa` were never written, so calling
+     * either function there would read uninitialised analysis. */
+    if (pcrec_artifact_has_dfa_scan(cx)) {
+        sb_printf(c, "    .scan = \"%s\",\n", dfa_scan_name(cx));
+        sb_printf(c, "    .prefilter = \"%s\",\n", dfa_prefilter_name(cx));
+    } else {
+        /* NULL scan is the runtime spelling of "no DFA in this artifact"; the
+         * prefilter field still answers, in the VM's own vocabulary, which is
+         * `<PREFIX>_VM_PREFILTER`'s value on exactly this artifact -- "none",
+         * because a VM artifact whose `fit.prefilter` were on would have taken
+         * the branch above. That is this field's half of closing
+         * `RX_VM_PREFILTER`'s missing runtime mirror: "hybrid" never appears
+         * HERE because a hybrid reports its inlined scan's actual mechanism
+         * instead, and `scan != NULL` is how a consumer reads "hybrid". */
+        sb_puts(c, "    .scan = NULL,\n");
+        sb_puts(c, "    .prefilter = \"none\",\n");
     }
     sb_puts(c,   "};\n");
 }
