@@ -15297,3 +15297,55 @@ merge); srReg (sonnet, [SPEC-1.5] registry.md). Spec tier so far:
 limits, cli (+diagnostics, modules), tuning, rxt_format; remaining
 [SPEC-1.4] match_api patches (after srStamp — its C2 caveat changes),
 [SPEC-1.5] in flight, [SPEC-1.10] survey debt.
+
+#### Fortieth session, part 7 — [DD-13]'s stamps merged (D81, abi 4); registry.md merged; the loop's outliers measured; the two-tier lane is out (2026-08-25 ~20:3x EDT)
+
+MERGED: **[SPEC-1.5] registry.md** cf551d4 (srReg: 128/50/90 rows
+measured live; the "100 rows" drift in tests/registry/CLAUDE.md fixed at
+merge). **[DD-13] DFA stamps** 78249e6 (srStamp, opus): `RX_ENGINE`
+unconditional through ONE emitter, `RX_DFA_SCAN` unanchored|attempt,
+`RX_DFA_PREFILTER` none|memchr|byte-class|memchr-bounded|byte-class-
+bounded — `(?:orig)\z` stamps byte-class-bounded, [DD-13](b) readable at
+last; ENG_UNANCH's start analysis factored into `unanch_start` (one
+derivation, two readers — the M2.12 fork lesson) with a pre-stamp sweep
+2473/2473 identical and comparison (A) UNCHANGED vs ac4917d; abi 3→4 —
+D76's FIRST NON-LAYOUT EVENT (no field, no offset; three #define lines):
+`abi` versions the emitted scaffolding, not the struct; (B) re-pinned to
+5991d4c and [TT-11]'s refusal fired on 8fc1e51 for real; run_dfa_stamps.sh
+(7 witnesses + corpus agreement 995 DFA / 1488 VM / 289 refused; the
+empty-engine bucket of 4 named and non-vacuous; 37 s sharded) with FOUR
+MEASURED validation reds (991 / 112 / 995 / 1) — the lane caught its own
+header carrying ANTICIPATED counts (386 / 92 / 2,022) written before the
+plants ran and replaced them; two in-tree checks that used a stamp's
+ABSENCE as the DFA discriminator went red and were fixed to the VALUE.
+D81 records the §6.3 split (selection facts unconditional; capacity/
+activity VM-only) + the D76 addendum. The lane's silence for 23 min was
+its own 12-min single-threaded gate run held for srOpt1's quiet; its
+report, when it came, corrected MY "all green" reading of its log (R4
+was 103/2) — the lane read its log, I had grepped it.
+
+MEASURED, no code (srOpt1, sonnet): **[OPT-1]** = gcc STACK-CLASH
+PROTECTION probing the 98,512 B run-struct local (24 pages) on every
+default-entry call: 233.8 → 46.2 ns/call with -fno-stack-clash-
+protection (~99 % of the gap; zeroing/faults/frame width excluded by
+controls); proportional to the STAMPED default — backref/lookbehind
+patterns with 240-272 B frames pay nothing. Manager's fix choice, pending
+Frank's eye: the TWO-TIER entry (page-sized fast buffer; escalate to the
+full D73 default in a noinline deep function only on FRAMES; deterministic
+re-run; no allocation; no hardening opt-out) — lane srTier (opus) launched
+20:2x with a design-note-first brief, abi → 5. **[OPT-2]**: the
+dead-state hypothesis REFUTED on the fail path (both forms ~linear,
+within 10 %); the emitted `rx_match` = unanchored search + `caps[0][0]`
+filter ([ENG-ABS]'s shape); the lead is MATCHING subjects (the `\z`
+form cannot stop at an early accept); fix = a true anchored DFA entry —
+[ENG-ABS] arriving through the loop.
+
+BENCH: pcrecdev2's three re-measure cells `measured` (window 18:2x-
+18:32); its I-4 loop tools shipped (`quick`, `pcrec-local`, scratch
+tier, reporter v2); two Frank-chartered readings of the re-pin report
+sent (O-5 and repin-v2: chartability per row, column gaps, verdicts —
+none changed by the re-measure; one new unpredicted fact: the VM got
+×1.19-1.26 faster between pins, cause unattributed). IN FLIGHT 20:3x:
+the [DD-13] battery on d8608ca (~3h20m); critDD13a (opus, engine lens)
++ critDD13b (sonnet, checks/docs lens) read-only on 78249e6; srTier.
+Bench inbox I-5 (new pin, stamps) follows the battery.
