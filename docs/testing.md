@@ -2980,3 +2980,112 @@ requests, compile-only, no `gcc`) — well under the 2-minute
 `test-codegen`, since the two share the opt-in/heavy-battery placement
 and this keeps `test-codegen` itself at its documented smoke-friendly
 runtime.
+
+## `make test`'s completion trailer (2026-08-26, manager finding, journal part 7)
+
+**The bug**: under `make -j12 test`, GNU make's DEFAULT (non-`-k`) behaviour
+on a failing prerequisite is to print `Waiting for unfinished jobs....` and
+launch NO FURTHER top-level targets. `test:` used to list its 26 sections as
+plain prerequisites ([TT-2], "Section composition" above), so when
+`test-corpus` failed (the known counterk cell under load) upstream of
+`test-premul-table` in scheduling order, `test-premul-table` — LAST in the
+list — silently never ran, in two separate battery runs. The
+checks-passed/checks-failed COUNT AGGREGATION could not see the absence: a
+target that never ran contributes nothing to either side of the sum, which
+reads identically to "ran and found nothing to fail" — K35's shape
+(docs/dev/learnings.md §3, "populations nobody counts"), applied to
+SECTIONS rather than to a corpus.
+
+**The fix, two halves.** (1) `test:`'s recipe now invokes
+`$(MAKE) -k TEST_TRAILER_DIR=<dir> $(TEST_SECTIONS)` instead of listing the
+sections as its own prerequisites — `-k` keeps launching independent
+targets after a failure, and `$(MAKE)` (never a bare `make`) inherits the
+PARENT's jobserver automatically, so `make -j$(nproc) test`'s parallelism
+is unaffected; plain `make test` is unaffected in ORDER (`-k` only changes
+what happens after a failure, never the sequence up to one). (2)
+`tests/lib/test_trailer.sh` verifies (1) actually worked, independent of
+trusting `-k`'s own behaviour: every section target's recipe
+(`Makefile`, all 26 in `TEST_SECTIONS`) touches a marker file
+(`$(TEST_TRAILER_DIR)/<name>.ran`) as the FIRST line of its recipe, before
+running its real test script — the marker means "make launched this
+recipe", regardless of what the recipe's content then did. A section whose
+shared `all` prerequisite fails never touches its marker, correctly: if the
+build itself is broken, no section legitimately ran, and the trailer
+reports that absence too. `test:`'s own exit code still reflects BOTH the
+inner `-k` run's failures and the trailer's own verdict.
+
+**Why this shape** (`-k` + an independent marker-based trailer) rather than
+either alone: `-k` by itself changes SCHEDULING but nothing then confirms
+every section actually reached "launched" — a recipe could still silently
+no-op, or (the corpus-sabotage arm below) a SHARED prerequisite could fail
+in a way that takes down every section at once without naming which. A
+marker-based trailer by itself, with no `-k`, would faithfully report the
+original bug (`N/M` short) but not FIX it — `make test` would still
+silently skip sections on every contended run. Together: `-k` is the fix,
+the trailer is the check that the fix is doing its job, in the same
+control/detector shape every other instrument in this tree uses.
+
+**Validated in a scratch toy Makefile** (five fast fake sections, `sec-a`
+through `sec-e`, `sec-e` playing `test-premul-table`'s "last in the list"
+role; never built inside this worktree, never committed):
+
+1. **The bug, reproduced.** Old prerequisite-based shape, `make -j2
+   old-test`, `sec-a` fails immediately:
+   ```
+   sec-a: FAILING (simulates the known counterk cell under load)
+   make: *** [Makefile:26: sec-a] Error 1
+   make: *** Waiting for unfinished jobs....
+   sec-b: ok
+   old-test rc=2
+   ```
+   `sec-c`, `sec-d`, `sec-e` NEVER RAN — no error, no mention, nothing:
+   exactly the manager's finding, reproduced on demand.
+
+2. **The fix, same sabotage.** New `-k`-wrapped shape, `make -j2 test`:
+   ```
+   sec-a: FAILING (simulates the known counterk cell under load)
+   make[1]: *** [Makefile:26: sec-a] Error 1
+   sec-b: ok
+   sec-c: ok
+   sec-d: ok
+   sec-e: ok (this is test-premul-table's role -- LAST in the list)
+
+   == make test: completion trailer ==
+   sections ran: 5/5
+   trailer: every section in TEST_SECTIONS was launched
+   make: *** [Makefile:15: test] Error 1
+   test rc=2
+   ```
+   All five sections ran (the trailer independently confirms `5/5`), and
+   the overall `test` target still exits non-zero — `sec-a`'s failure is
+   not hidden, only no longer able to silently take a later section with
+   it.
+
+3. **The trailer's OWN detection**, a genuine "section never ran" case that
+   survives even under `-k`: sabotaging the shared `all` prerequisite to
+   fail (`all: @echo '...SABOTAGED...'; false`) makes every section's
+   prerequisite fail, so NONE of them are "remade" — `-k` correctly does
+   not help here, because there is no independent target left to keep
+   going with:
+   ```
+   make[1]: *** [Makefile:8: all] Error 1
+   make[1]: Target 'sec-a' not remade because of errors.
+   make[1]: Target 'sec-b' not remade because of errors.
+   make[1]: Target 'sec-c' not remade because of errors.
+   make[1]: Target 'sec-d' not remade because of errors.
+   make[1]: Target 'sec-e' not remade because of errors.
+
+   == make test: completion trailer ==
+   sections ran: 0/5
+   MISSING — make never launched this section's recipe at all (its
+     own output, if any exists from a stale prior run, is NOT
+     evidence it ran this time):
+     - sec-a
+     - sec-b
+     - sec-c
+     - sec-d
+     - sec-e
+   test rc=2
+   ```
+   Named every section, by name, rather than merely reporting a shortfall
+   count.

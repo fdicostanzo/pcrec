@@ -115,12 +115,61 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # concurrently is safe by the same argument PROCS=N already relies on inside
 # tests/harness/run.sh and (since [TT-2]) tests/reject/run_reject_tests.sh.
 # See docs/testing.md "Section composition" for the measured wall-time.
-test: test-corpus test-cli test-reject test-registry test-parse \
+TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
       test-stackdepth test-premul-table
+
+# [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
+# (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
+# GNU make's DEFAULT (non-`-k`) behaviour on a failing prerequisite is to
+# print "Waiting for unfinished jobs" and launch NO FURTHER top-level
+# targets — `test-premul-table`, LAST in TEST_SECTIONS, silently never ran
+# in two batteries (the known counterk cell failed under load, upstream of
+# it in scheduling order), and the checks-passed/checks-failed COUNT
+# aggregation could not see the absence: a target that never ran
+# contributes nothing to either side of a sum, which reads identically to
+# "ran and found nothing to fail" — K35's shape, applied to SECTIONS
+# instead of to a corpus.
+#
+# THE FIX IS TWO PARTS, and `-k` ALONE is not enough to trust (a recipe can
+# still silently no-op, or its own `all` prerequisite can fail without the
+# outer `-k` noticing which NAMED section that took down):
+#   (1) this recipe invokes `$(MAKE) -k` over TEST_SECTIONS instead of
+#       listing them as `test:`'s own prerequisites, so a failing section no
+#       longer stops make from LAUNCHING the rest. `$(MAKE)` (never a bare
+#       `make`) inherits the PARENT's jobserver automatically, so
+#       `make -j$(nproc) -Otarget test`'s parallelism is UNCHANGED — the
+#       child's targets share the same job pool the parent would have given
+#       them directly. Plain `make test` (no `-j`) is likewise unchanged in
+#       ORDER (`-k` only changes what happens AFTER a failure, never the
+#       sequence up to one).
+#   (2) `tests/lib/test_trailer.sh` VERIFIES (1) worked, independent of
+#       trusting `-k`'s own behaviour: every section target below touches a
+#       marker file (`$(TEST_TRAILER_DIR)/<name>.ran`) as the FIRST line of
+#       its OWN recipe, before running its real test script — so the marker
+#       means "make launched this recipe", regardless of whether the
+#       recipe's content then passed, failed, or crashed. A section whose
+#       shared `all` prerequisite fails never touches its marker (correctly:
+#       if the build itself is broken, no section legitimately "ran"). The
+#       trailer prints `sections ran: N/M` and names every missing one.
+#
+# `-` on the `$(MAKE) -k` line (not `set -e`-style abort) is what lets this
+# recipe's OWN next line — the trailer — run even when a section failed;
+# `rc` accumulates both halves so the overall exit code still reflects a
+# failure either way. Marker dir is a `mktemp -d`, matching every suite's
+# own convention, removed on exit.
+test:
+	@dir="$$(mktemp -d "$${TMPDIR:-/tmp}/pcrec-test-trailer.XXXXXX")"; \
+	rc=0; \
+	$(MAKE) -k TEST_TRAILER_DIR="$$dir" $(TEST_SECTIONS); \
+	[ $$? -eq 0 ] || rc=1; \
+	bash tests/lib/test_trailer.sh "$$dir" $(TEST_SECTIONS); \
+	[ $$? -eq 0 ] || rc=1; \
+	rm -rf "$$dir"; \
+	exit $$rc
 
 # [TT-1] SECTION TARGETS — thin wrappers over the same scripts `test:` above
 # depends on, one target per section, so a developer can spot-check just the
@@ -133,9 +182,11 @@ test: test-corpus test-cli test-reject test-registry test-parse \
 # as a black box the way its own runner already does) so a stale binary never
 # reads as a pass.
 test-corpus: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-corpus.ran"; fi
 	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/harness/run.sh
 
 test-cli: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cli.ran"; fi
 	bash tests/cli/run_cli_tests.sh
 
 # [TT-2] PROCS defaults to nproc here too, same as test-corpus above:
@@ -149,12 +200,15 @@ test-cli: all
 # gets the exact serial run, line order included — nothing about that path
 # changed.
 test-reject: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-reject.ran"; fi
 	PROCS=$${PROCS:-$$(nproc)} bash tests/reject/run_reject_tests.sh
 
 test-registry: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-registry.ran"; fi
 	bash tests/registry/run_registry_tests.sh
 
 test-parse: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-parse.ran"; fi
 	bash tests/parse/run_parse_tests.sh
 
 # Both scripts here are the "codegen structural checks" docs/testing.md
@@ -172,6 +226,7 @@ test-parse: all
 # are grouped rather than sharded: it is a corpus-wide compile-only sweep
 # (~2,000 DFA artifacts, no gcc), so it rides the same group parallelism.
 test-codegen: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-codegen.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_codegen_tests.sh' \
 	    'bash tests/codegen/run_dfa_stamps.sh' \
@@ -187,6 +242,7 @@ test-codegen: all
 # `make test`, which is where the merge/close standard lives; only the smoke
 # wrapper is spared it.
 test-premul-table: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-premul-table.ran"; fi
 	bash tests/codegen/run_premul_table.sh
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
@@ -210,6 +266,7 @@ test-premul-table: all
 # `test:` proper, because a test-infrastructure property nothing else can see
 # is exactly the kind that erodes silently.
 test-gentimeout: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-gentimeout.ran"; fi
 	bash tests/lib/run_gen_timeout_tests.sh
 
 # [TT-2] the three scripts are independent (own mktemp -d workdir each,
@@ -218,6 +275,7 @@ test-gentimeout: all
 # measured 2026-08-15 — so it gets the same tests/lib/run_group.sh treatment
 # test-codegen above does. PROCS=1 keeps the exact old sequential order.
 test-vm: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-vm.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_vm_identity.sh' \
 	    'bash tests/codegen/run_ir_listing.sh' \
@@ -231,6 +289,7 @@ test-vm: all
 # denied (run_possessify_tests.sh). Independent scripts with their own
 # mktemp -d workdirs, so they take run_group.sh's treatment like test-vm.
 test-possessify: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-possessify.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/possessify/run_possdiff.sh' \
 	    'bash tests/possessify/run_possessify_tests.sh'
@@ -243,6 +302,7 @@ test-possessify: all
 # instrument), and that the rung was selected where the artifact's stamp says
 # and nowhere when denied (run_rungselect_tests.sh).
 test-rungselect: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-rungselect.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/rungselect/run_rungdiff.sh' \
 	    'bash tests/rungselect/run_rungselect_tests.sh'
@@ -258,6 +318,7 @@ test-rungselect: all
 # lattice, and R26 E1/E2 measured a differential blessing an unsound clamp over
 # 855 cells because its corpus had neither axis. See the script's header.
 test-counterk: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-counterk.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/counterk/run_counterkdiff.sh' \
 	    'bash tests/counterk/run_counterk_tests.sh'
@@ -280,6 +341,7 @@ test-counterk: all
 # the window form is both the one that ships and the one whose error direction
 # is unsound if it is ever stale.
 test-mrl: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-mrl.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/mrl/run_mrldiff.sh' \
 	    'bash tests/mrl/run_mrl_tests.sh'
@@ -293,6 +355,7 @@ test-mrl: all
 # for, so a single structural script with its own independent controls
 # (tests/prefilter/CLAUDE.md) is the whole of what this row owes.
 test-prefilter: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-prefilter.ran"; fi
 	bash tests/prefilter/run_prefilter_tests.sh
 
 # [OPT-ALTCLS] the pass's two non-.rxt suites, the same shape as
@@ -306,6 +369,7 @@ test-prefilter: all
 # happened where the artifact's stamp says it did and nowhere when denied
 # (run_altcls_tests.sh).
 test-altcls: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-altcls.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/altcls/run_altdiff.sh' \
 	    'bash tests/altcls/run_altcls_tests.sh'
@@ -330,6 +394,7 @@ test-altcls: all
 #
 # `run_atomic_identity.sh` IS NOT HERE. It is `test-atomic-identity` below.
 test-atomic: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-atomic.ran"; fi
 	bash tests/atomic_groups/run_atomic_diff.sh
 
 # [M6.4.4] THE LANDING GATE, OPT-IN — moved out of `make test` on the design's
@@ -378,6 +443,7 @@ test-atomic-identity: all
 # `run_backref_identity.sh` IS NOT HERE. It is `test-backrefs-identity` below,
 # on the ruling ASK-4 gave it and for the reason `test-atomic-identity` has.
 test-backrefs: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-backrefs.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/backrefs/run_backref_diff.sh' \
 	    'bash tests/backrefs/run_dupnames_diff.sh'
@@ -444,6 +510,7 @@ test-backrefs-identity: all
 # here, and it parallelizes internally on PROCS (default nproc). MEASURED on the
 # project box: 40s warm, 1m43s cold, at PROCS=12.
 test-lookaround: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-lookaround.ran"; fi
 	bash tests/lookaround/run_lookaround_diff.sh
 	bash tests/lookaround/run_expansion_diff.sh
 
@@ -468,6 +535,7 @@ test-lookaround: all
 # It reuses `tests/backrefs/`'s oracle and batch driver rather than making a
 # third copy, which is `tests/lookaround/`'s own decision one module over.
 test-recursion: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-recursion.ran"; fi
 	bash tests/recursion/run_recursion_diff.sh
 
 # [DD-14] MODULE `recursion`'s LANDING GATE, OPT-IN — the same shape and the
@@ -599,6 +667,7 @@ test-lookaround-identity: all
 # `<PREFIX>_VM_STRATS` stamp in both directions. See
 # tests/assertions/CLAUDE.md.
 test-assertions: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-assertions.ran"; fi
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/assertions/run_assertions_tests.sh' \
 	    'bash tests/codegen/run_endvar_identity.sh' \
@@ -628,15 +697,19 @@ test-assertions: all
 # at all -- the .rxt corpus checks one search at a time -- and it is where
 # the `<prefix>_next_pos` residual is exercised as a caller would use it.
 test-encseam: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-encseam.ran"; fi
 	bash tests/encseam/run_encseam_tests.sh
 
 test-resource: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-resource.ran"; fi
 	bash tests/resource/run_resource_tests.sh
 
 test-known-fail: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-known-fail.ran"; fi
 	bash tests/known_fail/run_known_fail.sh
 
 test-thread: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-thread.ran"; fi
 	bash tests/thread/run_thread_tests.sh
 
 # [TS-4] / [DD-14.FB] — the EMITTED MATCHER on a musl-default 128 KB thread
@@ -653,6 +726,7 @@ test-thread: all
 # reproduces it is a PINNED state, and the script FAILS if it ever stops
 # reproducing, because the record would then be out of date.
 test-stackdepth: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-stackdepth.ran"; fi
 	bash tests/thread/run_stackdepth_tests.sh
 
 # [DD-14.FB] the caller-provided frame buffer's MEASUREMENTS, OPT-IN -- the
@@ -692,6 +766,7 @@ test-tiered-entry: all
 # checkpoint-run instrument. SKIPS loudly (PC-3's own pattern) if
 # libpcre2-8-0 is absent; see tests/fuzz/run_capturediff_gate.sh's header.
 test-capturediff: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-capturediff.ran"; fi
 	bash tests/fuzz/run_capturediff_gate.sh
 
 # Not one of the nine `test:` lines — tests/spec_mod0/run_spec_mod0.sh is a
