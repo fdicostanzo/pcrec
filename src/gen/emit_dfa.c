@@ -1236,7 +1236,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * program, and a hybrid's inlined `static <prefix>_prefilter` is emitted
      * ABOVE that `goto`. So (A) sees no DFA scan byte at all. Comparison (B)
      * compares WHOLE FILES and is re-pinned, in this same change, per D76. */
-    sb_puts(c,   "    .abi = 7,\n");
+    sb_puts(c,   "    .abi = 8,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *

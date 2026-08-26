@@ -31,7 +31,10 @@ last_accept_position / forward_state / forward_view_state / rewind_position /
 reverse_state / reverse_view_state / match_start_position /
 match_end_position / forward_class`. ENG_ATTEMPT: `cls/acc2/seed/gseed/t<N>`
 -> `byte_class / is_accepting_by_class / seed_state / gstart_seed_state /
-targets_<N>`.
+targets_<N>`. **[ENG-FORM] (2026-08-26)** adds the per-machine TOKEN names,
+which are emitted at file scope rather than inside the search function:
+`<p>_forward_state` / `<p>_reverse_state` (the typedefs) and the accessors
+`<p>_<M>_{step,is_dead,accepts,accepts_class,row,view_live,view_take}`.
 
 WHAT MOVED (emit_vm.c): `rx_work` -> `rx_run_state` with fields
 `slot_values / resume_stack / trail / resume_depth / trail_depth /
@@ -40,6 +43,70 @@ steps_left / work_left`; `rx_match_impl` -> `rx_match_anchored`,
 `rx_report_captures`; `RX_NSTATE` -> `RX_NSLOTS` (it counts SLOTS),
 `RX_BT_FRAMES` -> `RX_RESUME_FRAMES`, `RX_MRL_SHORT`/`RX_MRL_CAP` ->
 `RX_PRUNE_TOO_SHORT`/`RX_PRUNE_CLAMP_SPAN`.
+
+## [ENG-FORM] THE DFA EMITTER'S ORGANIZATION (2026-08-26, D82)
+
+`emit_dfa.c`'s ENG_UNANCH half is **two layers**, and reading it in the wrong
+order will not work. `docs/design/emitter_form.md` is the note.
+
+**LAYER 1 — the form is a VALUE.** For each axis with two or more real emitted
+forms there is a `static const` array of representation objects in PREFERENCE
+order, and a machine's form is the FIRST APPLICABLE entry. Six axes:
+
+| axis | list | objects (preference order) |
+|---|---|---|
+| A table representation | `dfa_reprs` | `premultiplied`, `indexed` |
+| B prefilter (forward) | `dfa_pfs` | `memchr-bounded`, `memchr`, `byte-class-bounded`, `byte-class`, `none` |
+| C view handling | `dfa_views` | `end+eol`, `end`, `eol`, `none` |
+| D start seed | `dfa_seeds` | `seeded`, `constant` |
+| E accept placement | `dfa_accs` | `by-class`, `scalar-viewed`, `scalar-plain` |
+| F scan direction | `dfa_dir_forward` / `dfa_dir_reverse` | — (both always apply; the caller names one) |
+
+Four rules that are not negotiable:
+
+1. **Every list's LAST entry always applies.** `dfa_select` returns NULL
+   otherwise and the emitter writes nothing where a form belonged — a silent
+   miscompile. `cand_always` is that entry's `applies`.
+2. **The chosen object's `c.name` IS the stamp value.** `dfa_table_name`
+   composes the two machines' repr names; `dfa_prefilter_name` returns the
+   prefilter object's name outright. Never re-derive a stamp from a predicate.
+3. **A `-fno-*` deny flag is the object's `c.deny` field**, a FILTER on the
+   list, never a clause inside the chosen object's emitter. `dfa_premul` no
+   longer tests `PCREC_NO_PREMUL_TABLE` for this reason.
+4. **Only axes with >= 2 real forms get a list** (D82 bound 3, D75 addendum).
+   `views`, `viewsel` and `empty` are FACTS the objects read and stay booleans;
+   so do `emit_attempt`'s `anchored`/`a_bot`/`a_gst`/`gseed`/`gtbl`.
+
+**LAYER 2 — the emitted state is an OPAQUE TOKEN.** Each machine gets a
+`typedef` plus up to seven `static inline` accessors, emitted ONCE per machine
+at FILE SCOPE above the search function by `repr->emit_token`:
+`<p>_<M>_step`, `_is_dead`, `_accepts`, `_accepts_class` (axis E `by-class`),
+`_row`, `_view_live`, `_view_take` (axis C != `none`). The loop skeleton
+(`emit_scan_loop`) and the table emission (`emit_machine_tables`) are then
+written ONCE and called TWICE, with the forward and reverse `DfaForm`.
+
+- **The VM hybrid gets the block by construction**: `emit_vm.c` emits its
+  inlined `static <prefix>_prefilter` through `pcrec_emit_dfa_engine`, which is
+  this same call.
+- **`<M>_row` MUST NOT BE HOISTED.** Under the pre-multiplied form it is a
+  DIVISION. Every caller spells it inside the second operand of a `&&` whose
+  first operand is `__builtin_expect(pos + 1 >= n, 0)`, so it runs at most
+  twice per search. A hoisted `unsigned row = <M>_row(s);` changes no answer,
+  passes every identity gate, and puts a divide on the hot path.
+- **A new table representation is ONE new entry in `dfa_reprs` plus one
+  `emit_token` body.** Measured (throwaway `premultiplied-u32`, 2026-08-26):
+  34 lines, zero changes in `emit_scan_loop`, `emit_machine_tables`,
+  `dfa_form_derive` or the stamps.
+- **Emitted state CONSTANTS are scaled at EMIT time** by `repr->cell_of` — the
+  start state, a skip guard, a seed cell. So `<M>_state == 1234` has a
+  form-dependent NUMBER and a form-independent SHAPE; the loop never scales.
+
+**MEASURED SIDE EFFECT, [K24].** With any accessor call in the body, gcc -O2
+no longer partial-inlines `<prefix>_search` at all — the `.part.0` clone the
+`noclone` attribute exists to deny is not offered any more. The attribute
+stays; `tests/codegen/run_codegen_tests.sh`'s K24 control is now the
+DE-SUGARED artifact, because the shipped one can no longer demonstrate the
+pass is live.
 
 **RULE 1: A NAME CAN CARRY A PROPERTY, AND THE RENAME MUST PRESERVE IT.**
 `RX_MRL_*` was a GREPPABLE FAMILY, and tests/mrl asserts an ABSENCE with
