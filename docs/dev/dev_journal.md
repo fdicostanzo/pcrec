@@ -15889,13 +15889,14 @@ is the useful result: a shufti skip 7.0x faster per skipped byte (0.3505 ->
 0.0501 ns/byte on a no-candidate subject; CONTROL 1 put glibc `memchr` at
 0.0170, 20.6x, incidentally reproducing PCRE2-interp's required-byte figure
 to three digits and confirming [OPT-5] from this side) makes all three bench
-subjects **SLOWER** — +4.7% / +1.0% / +1.4%. **[OPT-SIMD] does not earn its
+subjects **SLOWER** — +3.9% / +0.4% / +1.5%; the crossover where SIMD skipping starts to pay is measured at ~32-byte non-candidate runs (the vector width), and neither email pattern's inputs come near it. **[OPT-SIMD] does not earn its
 charter through this loop.** The cost is 3.2 ns / 10.7 cycles per table step
 and every subject is that constant times its step count (t-a is 2.000
 steps/byte — forward then reverse — hence 6.19; its "per-match overhead" of
 75.6 ns is not overhead at all, it IS the reverse pass, confirmed by a
-single-search call measuring 163.1 ns for the ~51 bytes it walks, which
-predicts the find-all total to 1.2%). The loop is **latency-bound**: 17
+single-search call measuring 158.7 ns for the ~51 bytes it walks, which
+predicts the find-all total to 1.7%, and which moves by the same 1.27x under
+the table change — a fixed cost would not have). The loop is **latency-bound**: 17
 instructions, four dependent loads, and a 7-cycle loop-carried chain of
 `lea,lea,movslq,load` — and running 2 independent streams goes 1.97x faster,
 which is the witness `perf` would have given less directly. The accept
@@ -15903,10 +15904,12 @@ bookkeeping and the per-byte prefilter test that the charter asked about
 cost **0.05 cycles/byte, i.e. nothing**. Lever, measured on the real
 artifact and identical over 40,469 answer lines across 91 subjects (every
 span and capture, not counts): pre-multiply the transition table by its
-stride so the chain becomes `load,add` — **1.27x on the bench's own three
-subjects, 1.465x -> 1.151x against PCRE2-JIT, and ahead of JIT outright on
-t-c** — gated at generation time on `states*stride <= 32767` so the `short`
-entry does not overflow and the tables stay L1-resident. `t-a`'s remaining
+stride so the chain becomes `load,add` — **1.28x on the bench's own three
+subjects, 1.466x -> 1.149x against PCRE2-JIT, and ahead of JIT outright on
+t-c** — gated at generation time on L1 residency, which binds before the
+`short` overflow at `states*stride > 32767` (surveyed over twelve patterns:
+only R1 A-3's `[01]*1[01]{n}` explosion family reaches either bound, and by
+then its table is 2.3x L1D, so the chain is moot there anyway). `t-a`'s remaining
 1.39x is entirely the second pass, recorded with its number (a one-pass
 start-recovery would put it at ~2.5 ns/byte, ahead of JIT) but not proposed
 here. One incidental: `factored` needs `--features all` to compile at all —
