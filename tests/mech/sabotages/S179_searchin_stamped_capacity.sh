@@ -15,6 +15,16 @@
 # detector by construction: n = 343 needs 686 frames and 3,081 trail entries,
 # the block hands over 1024 and 8192, and under this row the artifact still
 # stops where it stamped.
+#
+# RE-ANCHORED 2026-08-26 (lane srAnchor): [OPT-1]'"'"'s two-tier default entry
+# (`vm_emit_default_entry`) rewrote the un-suffixed entries this same
+# `sb_printf` call shares a format string with, which shrank the arg list
+# threaded to the bind/return/close tail this row edits (the `_in` entry
+# itself is unchanged in MEANING -- [OPT-1] never touches it). The BEFORE/AFTER
+# text below is re-derived from `git show HEAD:src/gen/emit_vm.c` at the
+# `_search_in` bind site (~line 9488) and is still unique at SAB_COUNT=1: its
+# tail line (`return %s_run(subject, subject_length, ...)`) names arguments no
+# other of the six `_in`/deep/fast bind sites shares.
 SAB_ID="S179-searchin-stamped-capacity"
 SAB_FILE="src/gen/emit_vm.c"
 SAB_SUITES="harness framebuffer codegen"
@@ -26,11 +36,9 @@ SAB_BEFORE='        "    %s_run_state_bind(&run, buffers->frames, buffers->nfram
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
         "}\n\n",
-        g.searchfn, v.p, v.p, v.p, v.up, v.up, g.searchfn,
         g.searchfn, v.p, v.p, g.searchfn, v.p, g.searchfn);'
 SAB_AFTER='        "    %s_run_state_bind(&run, buffers->frames, %s_RESUME_FRAMES,\n"
         "                            buffers->trail,  buffers->ntrail);\n"
         "    return %s_run(subject, subject_length, search_from, capture_spans, &run);\n"
         "}\n\n",
-        g.searchfn, v.p, v.p, v.p, v.up, v.up, g.searchfn,
         g.searchfn, v.p, v.p, g.searchfn, v.p, v.up, g.searchfn);   /* SABOTAGE S179 */'
