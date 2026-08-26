@@ -51,7 +51,7 @@ engines — the cross-engine matrix lives in compare/.
   `@`) rides the same pipeline as a negative control — its stamped default
   fits the fast tier outright (single-tier by construction), so it must
   show zero escalations. Numbers as measured: docs/dev/plan.md's `[OPT-1]`
-  row. Env: `PCREC`, `CC`, `KEEP=1`, `PCREC_BENCH_DIR` (default
+  row. Env: `PCREC`, `CC`, `KEEP=1`, `BENCH_REPO_DIR` (default
   `/home/duxevents/pcrec-bench`).
 - **compare/** — cross-engine comparison matrix vs PCRE2 (interp and JIT) and
   python `re`, plus its own ratchet. Slow (tens of minutes); not part of
