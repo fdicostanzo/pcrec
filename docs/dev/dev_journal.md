@@ -15474,3 +15474,22 @@ waited for; the abi-6 event with `rx_info.scan`/`prefilter` to follow
 tonight so it can plan one adapter change, not two). NEXT, per the
 overnight sequence: merge srTier (36c8234, abi 5, r38's fixes in) →
 battery → srStamp2 rebases (abi 6) → battery.
+
+#### Fortieth session, part 11 — srTier MERGED (48e0c41, abi 5); two misses caught on main; the battery restarts (2026-08-26 00:2x EDT)
+
+srTier merged 48e0c41 (one plan.md conflict, resolved toward main's
+row with the lane's shipped facts folded in; strict clean); its battery
+launched 00:02. Then srStamp2 — rebasing onto it — flagged that MAIN
+WAS RED: srTier bumped `.abi` to 5 but never updated the hand-spelled
+[DD-14.FB] §10.4 expectation in run_codegen_tests.sh (4), nor
+match_api.md §6's "abi is 4" sentence; its suite list had never
+included test-codegen, and my review did not catch the second site
+either. Battery STOPPED (a red clean tree would score the matrix's
+codegen rows as anomalies); fixed on main bf20427; the solo
+test-codegen then found a SECOND miss — an ambient-locale `sort` in the
+new run_tiered_entry.sh, caught by K35's structural check (31926ca).
+Lesson into CLAUDE.md's index: an abi bump has FOUR sites (emitter,
+codegen expectation, spec §6 sentence, gate pin), and every lane runs
+test-codegen before delivering — two lanes missed two of the four in
+one night. Relaunching the battery on 31926ca once test-codegen is
+105/0; srStamp2 rebases onto 31926ca (abi 6) and re-runs its gate.
