@@ -367,41 +367,140 @@ objects.
    so the hybrid gets it by construction. `run_premul_table.sh`'s hybrid arm is
    the standing check that it did.
 
-## 10. Acceptance (D82's four bounds, as checks)
+## 10. Acceptance (D82's four bounds) — MEASURED 2026-08-26
 
-### 10.1 RUNTIME COST ZERO (bound 1)
+### 10.1 RUNTIME COST ZERO (bound 1) — PASS, and slightly better than zero
 
-`gcc -O2 -c` the probe artifact, `objdump -d`, normalise addresses and symbol
-comments away, and require the `rx_search` instruction sequence to be EQUAL to
-the same tree's pre-change sequence — same mnemonics in the same order.
-Probes: `orig` (the bench's email pattern, premultiplied + memchr-free forward
-loop AND the reverse loop), a `memchr`-prefilter artifact, a `views` artifact
-(`(?:P)\z`), plus `-fno-premul-table` and `-fno-prefilter` arms of `orig`.
-Then `tests/bench/fdriver.c` on t-a/t-b/t-c against 3.516 / 1.799 / 1.803
-ns/byte, `taskset -c 3`, median of 5, >= 1 s trials, load1 beside each — AFTER
-the manager's battery is done.
+Method: `gcc -O2 -c` each probe, `objdump -d`, then extract every LOOP in
+`rx_search` (a backward branch and its target) and compare the instruction
+sequence against the same probe built by the pre-change compiler at `7bb6b5c`.
+Registers are compared, addresses and symbol comments are not.
 
-### 10.2 ANSWER IDENTITY (bound 1's other half)
+| probe | loop | before | after | difference |
+|---|---|---|---|---|
+| `orig` (premultiplied, byte-class prefilter) | forward | 16 | **15** | the off-chain `mov %ecx,%edx` that re-copied the state for the accept index is gone: the token lives in a register gcc can index with directly |
+| `orig` | reverse | 14 | **13** | same |
+| `foo[0-9]+bar` (memchr prefilter) | forward | 30 | **29** | same |
+| `foo[0-9]+bar` | reverse | 14 | **13** | same |
+| `(?:orig)\z` (views: `endv`, bounded byte-class) | forward | 18 | **18** | IDENTICAL multiset; one reordering (`mov %rax,%rdx` moved below the `cmp/je`) |
+| `(?:orig)\z` | reverse | 15 | **15** | IDENTICAL |
+| `orig -fno-premul-table` (indexed) | forward | 17 | **15** | `movslq; movswl` becomes `movswq` — **one fewer instruction ON THE LOOP-CARRIED CHAIN** — and the second `movslq` (the accept index) folds away |
+| `orig -fno-premul-table` | reverse | 15 | **13** | same |
+| `orig -fno-prefilter` | forward | 16 | **15** | as `orig` |
 
-Every answer byte-identical over (a) `make test`'s corpus, (b) the bench's 91
-subjects (85 compliance `(?:P)\z` + 3 throughput find-all + 3 synthetic), across
-today's compiler, this lane's compiler, and this lane's compiler under
-`-fno-premul-table` and `-fno-prefilter`.
+**The loop-carried dependency chain is unchanged for the pre-multiplied form**
+(`add, mov, movzwl` before and after) **and one instruction SHORTER for the
+indexed form**: the accessor's `unsigned cl` parameter makes `s * N + cl` an
+unsigned expression, so gcc no longer sign-extends the index. Both index
+spellings are otherwise the same instructions in the same order.
 
-### 10.3 THE LOOP TEXT MOVES ONCE (bound 4)
+**No `always_inline` was needed** — gcc -O2 flattened every accessor on every
+probe, including the block-scope `static const` table passed as a parameter.
+Hand-inlining was not reached.
 
-`abi` 7 -> 8 at all four sites in ONE commit (D76): `src/gen/emit_dfa.c`'s
-`.abi`, `tests/codegen/run_codegen_tests.sh`'s `ABI_EXPECT`,
-`docs/spec/match_api.md` §6's "abi is N" sentence, and
-`tests/codegen/run_recursion_identity.sh`'s `FILEPIN`. `run_premul_table.sh` §4
-reads the accessor block's TYPEDEF and the `step` accessor's body instead of
-hunting the loop's state-variable declaration. Sabotage rows anchored on moved
-lines re-anchored, each proved to DETECT solo. `[SABANCHOR]` clean.
+The timing driver (`tests/bench/fdriver.c` on t-a/t-b/t-c) is the other half of
+this bound and runs only after the box's battery is done; see the lane report.
 
-### 10.4 THE NUMBERS THAT DEFINE THE ROW (bound 4)
+### 10.2 ANSWER IDENTITY (bound 1's other half) — PASS
 
-`emit_unanchored`'s lines / `if (` / max nesting before and after; the count of
-form booleans; and the count of branch sites a NEW table representation would
-touch — demonstrated by adding a throwaway `premul_u32` object in scratch and
-counting the lines it needed. Target: one object + one `emit_token` body, zero
-sites in `emit_scan_loop`, zero sites in the assembly.
+Gate rebuilt from `docs/design/premultiplied_dfa_table.md` §10 in this lane's
+scratch (`ag/`): `agdriver.c` prints every match's span, every capture slot and
+the terminal return, so a difference in any answer byte is a difference.
+
+| | |
+|---|---|
+| patterns | 11 — `orig`, `(?:orig)\z`, a capture-bearing VM hybrid, `\bfoo\w*`, `\Bfoo\w*`, `(?m)^ERROR` (ENG_ATTEMPT + memchr), `[01]*1[01]{11}`, `^[a-z]+@[a-z.]+` (ENG_ATTEMPT, no prefilter), a `\z` one, a `$` one, and `((a)|bc){0,4000}d` (the corpus's largest reverse machine, a VM hybrid) |
+| forms covered | `premultiplied` / `none`; `memchr` / `byte-class` / `byte-class-bounded` / `none`; `unanchored` / `attempt`; DFA and VM-hybrid artifacts |
+| subjects | 91 — the bench's 85 compliance `s-*.bin`, its 3 throughput `t-*.bin`, 3 synthetic (a match-bearing line, the EMPTY subject, 4 KB of random bytes) |
+| arms | 6: {pre-change compiler, this lane's compiler} x {default, `-fno-premul-table`, `-fno-prefilter`} |
+| answers | **81,821 answer lines per arm** |
+
+| comparison | differing answer lines |
+|---|---|
+| pre-change vs lane, default | **0** |
+| pre-change vs lane, `-fno-premul-table` | **0** |
+| pre-change vs lane, `-fno-prefilter` | **0** |
+| lane default vs lane `-fno-premul-table` | **0** |
+| lane default vs lane `-fno-prefilter` | 1 line — and **the pre-change compiler differs on the SAME line by the SAME bytes**, so it is a pre-existing property of the flag, not of this change: `((a)|bc){0,4000}d` on `t-c-long-atom-run.bin` returns `0` with the hybrid's DFA prefilter and `-4` (a work-budget give-up) without it |
+
+Plus `make test`'s corpus and `tests/codegen/run_premul_table.sh`'s own sweep
+(2,248 artifacts with a DFA scan, 1,872 premultiplied / 376 table-free).
+
+### 10.3 THE LOOP TEXT MOVES ONCE (bound 4) — PASS
+
+`abi` 7 → 8 at all four sites, across the two commits the pin's self-reference
+forces (the same shape [OPT-3] used: the pin names the change's last `src`
+commit, which must already carry the new `.abi`):
+
+| # | site |
+|---|---|
+| 1 | `src/gen/emit_dfa.c` — `.abi = 8` |
+| 2 | `tests/codegen/run_codegen_tests.sh` — `ABI_EXPECT=8`, with the bump's cause appended to the failure message |
+| 3 | `docs/spec/match_api.md` — §6's three "abi is N" sentences plus a caller-facing `7 → 8` paragraph |
+| 4 | `tests/codegen/run_recursion_identity.sh` — `FILEPIN` re-pinned |
+
+`tests/codegen/run_premul_table.sh` §4 now reads the accessor block's TYPEDEF
+and the STEP accessor's body instead of the loop's state-variable declaration
+and transition line — which is not a cosmetic follow: the loop is
+form-INDEPENDENT now, so a §4 that kept reading it would be reading a line that
+can no longer tell the two table forms apart. A fourth witness was added there
+and in `[M6.2-WORDB]` rule 1: the emitted body may not subscript a transition
+or accept table at all (§9.2's token-leak failure).
+
+Four sabotage rows re-anchored on the moved source — S68 (the bitmap
+prefilter's skip loop, now axis B's `byte-class` object), S72 (the reverse
+skip's blind writer, now the direction object's method, and its anchor now
+carries a preceding line because the forward and reverse guards became
+character-identical), S73 (the class-indexed accept above its guard, now axis
+E's shared `by_class` tail, so the planting reaches BOTH directions) and S74
+(the reverse termination, now `dir_rev_bound_accept`). `[SABANCHOR]`: all 180
+rows / 191 anchor sites resolve.
+
+**[K24] LOST ITS CONTROL AND THE CONTROL WAS REBUILT.** Measured: with any
+accessor call in `rx_search`'s body, gcc -O2 no longer partial-inlines it —
+`rx_search.part.0` is not produced even with `__attribute__((noclone))`
+stripped, on any of twelve DFA fixtures tried (the pre-change compiler splits
+every one of them). Bisected: reverting ONE accessor family back to a subscript
+does not restore the split; reverting ALL THREE does, with the accessor block
+still in the translation unit. So the control now de-sugars the shipped
+artifact back to the pre-[ENG-FORM] subscript spelling before stripping the
+attribute — it fires (1 clone), the pass is demonstrably live, and the check
+says in its own verdict which arm still guards the lever. This is a FINDING for
+the panel, not a repair the lane should be trusted to have settled: the
+`noclone` attribute is now belt-and-braces on the DFA artifact.
+
+### 10.4 THE NUMBERS THAT DEFINE THE ROW (bound 4) — PASS
+
+`if (` counted as raw text (the plan row's convention); nesting is C brace
+depth with string literals stripped.
+
+| function | lines | `if (` raw | max nesting |
+|---|---|---|---|
+| `emit_unanchored` BEFORE | 459 | 57 | 5 |
+| `emit_unanchored` AFTER | **52** | **4** | **2** |
+| `emit_scan_loop` (new; the ONE loop path) | 35 | 5 | 3 |
+| `emit_machine_tables` (new; the ONE table path) | 56 | 6 | 3 |
+| `dfa_form_derive` (new; the selection) | 29 | **0** | 1 |
+
+**Form booleans in `emit_unanchored`: 14 → 0.** They are 15 named fields of one
+`DfaForm` value, derived once per machine, and the assembly reads none of them.
+
+**Branch sites a NEW table representation touches: measured with a throwaway.**
+A `premultiplied-u32` object was added in scratch (never shipped): **+42 lines,
+0 removed, 2 diff hunks, both inside the object region.** Zero changes in
+`emit_scan_loop`, `emit_machine_tables`, `dfa_form_derive`, the table emitters
+or the stamps; zero instructions in the assembly. The throwaway compiled, took
+the form on `[01]*1[01]{13}`'s above-bound forward machine (`static const
+unsigned rx_forward_next_state[73728]`, add-only step) and answered identically
+to the shipped compiler over 88 answer lines.
+
+`emit_attempt` is UNCHANGED (447 / 47 / 4) and out of this row's scope: its
+states are LABELS, so it shares no axis with the table representation, and its
+per-state body is a candidate list a later row can take.
+
+### 10.5 Spec and docs
+
+`docs/spec/match_api.md` §6 carries the `abi` sentences and the caller-facing
+`7 → 8` paragraph (D80: the contract moves in the same change).
+`src/gen/CLAUDE.md` describes the two layers, the six lists and the four rules.
+This note is the design record and was committed before the code.
