@@ -15493,3 +15493,24 @@ codegen expectation, spec §6 sentence, gate pin), and every lane runs
 test-codegen before delivering — two lanes missed two of the four in
 one night. Relaunching the battery on 31926ca once test-codegen is
 105/0; srStamp2 rebases onto 31926ca (abi 6) and re-runs its gate.
+
+#### Fortieth session, part 12 — srStamp2 GREEN on d0a9ab5; srTier's battery finally running (2026-08-26 01:1x EDT)
+
+srStamp2 rebased twice more (onto 48e0c41, then d0a9ab5) and reported
+GREEN at **5134502** (24 commits; (B) pin c940551; abi 6): stamps 29/0,
+codegen 105/0, gate 15/0 with the refusal on 469a432 naming 6 vs 5, (A)
+byte-identical vs ac4917d, vm-identity 9/0, tiered 17/0, strict. The
+DFA-only prefilter distribution held 380/327/176/61/51 across its two
+halves, srTier's merge and three rebases — a control that survived
+everything. It added the two missing bump entries to match_api.md §6's
+provenance paragraph (4→5 [OPT-1], 5→6 [DD-13c]). Its note for the rule:
+a rebase rewrites every hash, so "(B) names this change's last src
+commit" must be recomputed after each one — the pin moved three times
+inside one change. Kept the rule (a battery BETWEEN merges) rather than
+folding both emitter changes into one run: srTier's battery relaunched
+01:12 on d0a9ab5 (~04:30); srStamp2 merges on its green, then its own.
+The relaunch was late by 25 min: my "wait until srStamp2's compiler
+invocations stop" waiter counted its OWN command line (the pattern
+text was in it) — the self-match trap in a fourth costume; killed and
+relaunched by hand. Remedy recorded in memory: build such a pattern from
+two shell variables so the literal never appears in any argv.
