@@ -341,7 +341,7 @@ KEEP="${KEEP:-0}"
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-f8dbc01}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-5c9a55a}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
