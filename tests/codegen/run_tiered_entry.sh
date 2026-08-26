@@ -163,11 +163,17 @@ fi
 #
 # VALIDATION (MEASURED 2026-08-25, planted in a scratch emitter, then removed):
 #   (i)  stamp FAST unconditionally at the default while still emitting the
-#        tiered code  -> 289 artifacts RED on "code tiers but the stamps say
-#        one tier".
-#   (ii) emit the `_deep` static but keep the entry bound to the default
-#        storage -> §4's frame check RED (below); §2 stays GREEN, which is
-#        exactly why §4 is a separate section and not a footnote here.
+#        tiered code -> **272 artifacts RED** on `mismatch-code-tiers-stamp-
+#        says-one`, i.e. every tiered artifact in the corpus, AND the
+#        non-empty-population arm below fires too ("NOT ONE corpus pattern
+#        compiled to a tiered artifact"), which is the guard against this
+#        section passing vacuously. §4 goes red as well, because the stamps
+#        also SIZE `<prefix>_fast_buffers`.
+#   (ii) bind the STAMPED DEFAULT in the fast tier, leaving the stamps alone
+#        ("it never escalates") -> §2 stays **GREEN** and §3(a)'s answers stay
+#        **GREEN**; only §3(b) (2 of 6 depths) and §4 go red. That is exactly
+#        why §4 is a separate section and not a footnote here, and why §3
+#        counts escalations instead of trusting answers.
 echo
 echo "-- §2: the shape agrees with the stamps, over the corpus --"
 
@@ -263,10 +269,12 @@ fi
 #
 # VALIDATION (MEASURED 2026-08-25, planted then removed): bind the DEFAULT
 # capacity in the fast tier while leaving the stamps alone — "the fast tier
-# never escalates". Predicted and observed: every `esc` reads 0 while `pred`
-# reads 1 from n=9 up, so the escalation rows go RED, while every `ans`
-# stays correct. The n=342 subject FAILS the check and still MATCHES, which is
-# the whole reason this section counts escalations instead of trusting answers.
+# never escalates". OBSERVED: `FAIL: §3(b): 2 of 6 depths escalated when they
+# should not have, or did not when they should: n=9 esc=0 predicted=1; n=342
+# esc=0 predicted=1`. Meanwhile §3(a) passed on all 6 depths — every ANSWER,
+# the n=342 one included, stayed correct. That is the measured proof that an
+# answers-only check for this change goes green on a build where the
+# optimization is absent, which is why this section counts escalations.
 echo
 echo "-- §3: answers and escalations across the boundary --"
 
@@ -376,9 +384,10 @@ fi
 # at which the probes this change exists to avoid are charged.
 #
 # VALIDATION (MEASURED 2026-08-25, planted then removed): bind the DEFAULT
-# capacity in the fast tier — the same plant as §3's. rx_search's frame reads
-# 131,216 B and the `< 4096` arm goes RED, while §2 stays green and every
-# answer stays correct.
+# capacity in the fast tier — the same plant as §3's. OBSERVED: `rx_search`
+# reads **131,248 B** against `rx_search_deep`'s 131,216, so BOTH arms below go
+# RED, while §2 stays green and every answer stays correct. This is the only
+# section that can tell a working optimization from an absent one.
 echo
 echo "-- §4: the entry's stack frame, off gcc -fstack-usage --"
 

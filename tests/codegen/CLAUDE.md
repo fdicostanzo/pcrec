@@ -404,8 +404,9 @@ decides whether to perform it — and then run the row through
     measured proof that neither an answers-only check nor the structural
     sweep would have caught it.
     (ii) `FAST_FRAMES`/`FAST_TRAIL` stamped at the default while the tiered
-    code is still emitted → §2 red (see the file's own §2 comment for the
-    count).
+    code is still emitted → §2 red on **272 artifacts** (every tiered one in
+    the corpus), `mismatch-code-tiers-stamp-says-one`, AND the non-empty
+    -population arm fires too, which is the guard against §2 passing vacuously.
 
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
@@ -1716,8 +1717,17 @@ message; the default pin (`8fc1e51`, same `.abi = 3` as the subject) passes
 straight through to the sweep. Comparison (A) is untouched by this — it never
 read the probe at all.
 
+**[OPT-1], 2026-08-25 — THE SECOND SUCH EXERCISE, and the pin is `469a432`
+now.** The TWO-TIER DEFAULT ENTRY: `abi` 4 -> 5, comparison (A) byte-identical
+against the unchanged `ac4917d`, (B) re-pinned in the same change. What is new
+about it is that **no DFA artifact's bytes move at all** — a first for an `abi`
+bump — because the tier is emitted entirely by `src/gen/emit_vm.c` and a DFA
+artifact has no resume stack to tier. The `abi` number versions the artifact
+FORMAT rather than the VM, so it moves on both kinds regardless, and (B) is
+therefore re-pinned for DFA artifacts too.
+
 **[DD-13], 2026-08-25 — THE RULE'S FIRST EXERCISE BY A NON-LAYOUT CHANGE, and
-the pin is `5991d4c` now.** [DD-13] gave every DFA artifact three D46
+the pin was `5991d4c`.** [DD-13] gave every DFA artifact three D46
 selection stamps. It moves NO struct offset and NO emitted program byte —
 comparison (A) is byte-identical against the unchanged `ac4917d` pin on all
 five axes, which is the PROOF that the change is scaffolding only — and it
