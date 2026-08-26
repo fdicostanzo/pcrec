@@ -15493,3 +15493,90 @@ codegen expectation, spec §6 sentence, gate pin), and every lane runs
 test-codegen before delivering — two lanes missed two of the four in
 one night. Relaunching the battery on 31926ca once test-codegen is
 105/0; srStamp2 rebases onto 31926ca (abi 6) and re-runs its gate.
+## 2026-08-25 — [DD-13c]: r37's two stamp SCOPE gaps closed (lane srStamp2)
+
+The D6 panel on [DD-13] (r37) found no defect in what the stamps SAY; it
+found two things they were silent about, and deferred both to this lane as
+one abi event. Both fixes turn out to be the same rule, which is worth
+stating once because it is the thing to reuse: **the unit that owns a stamp
+is the MECHANISM the stamp names, not the artifact kind that usually carries
+it.**
+
+**(#5) `RX_DFA_SCAN` gains `"empty"`.** A pattern the start analysis proves
+can match nothing emits a search body that is one `return 0` — no table, no
+loop, no skip. Four such patterns are in the corpus (`\B\b`, `\b\B`,
+`\d\b\w`, `a\bb`) and they were stamping `"unanchored"`: the name of the loop
+the emitter WOULD have written. The stamp read `job->engine`, which answers
+"which emitter ran" and not "what did it write", and for every other artifact
+those are the same question. `dfa_engine_is_empty` (src/gen/emit_dfa.c) is
+the derivation, and it covers BOTH engines — `emit_attempt`'s `d->n == 0`
+early exit is factored into it rather than left as a second spelling, so
+`^\B\b` (which was stamping `"attempt"`) is fixed by the same mechanism
+rather than by a second special case. That anchored form is NOT in the
+corpus; only the new witness row tests it.
+
+**(#6) A VM HYBRID stamps the scan it INLINES.** `RX_VM_PREFILTER "hybrid"`
+announced that a DFA scan is inside the artifact and then said nothing about
+it — while that scan is a full ENG_UNANCH/ENG_ATTEMPT body with its own
+tables, its own D11 bound and its own candidate-start filter, emitted by
+literally the same function the DFA-only artifact calls. It is the mechanism
+the email specimen's ~23x comes from, and it shipped in the one artifact kind
+that could not report it; pcrec-bench could not bucket a hybrid row at all.
+1,263 of the corpus's 1,488 VM artifacts are hybrids. They now carry
+`RX_DFA_SCAN`/`RX_DFA_PREFILTER` from `pcrec_emit_dfa_scan_stamps` — one
+emitter, one derivation, THREE readers (the loop, the DFA artifact's stamp,
+the hybrid's stamp). A non-hybrid VM artifact stamps neither, and the
+relation is an IFF that §6.3 states and the check asserts both ways.
+
+Also landed, from the same panel: #7 (§6.3's "scan-avoidance mechanism" ->
+"candidate-start mechanism"; the M2.1 self-loop skip is real scan avoidance
+and is still unstamped, which stays [DD-13]'s next candidate), #8 (the
+`"none"` gloss's third and largest cause — the start state ACCEPTS, so no
+skip is sound: 380 of 995), and #A4 (the sentence 120 lines below the (a)/(b)
+split that contradicted it).
+
+**MEASURED.** `run_dfa_stamps.sh` **26/0** over 2,772 corpus patterns: 995
+DFA artifacts (4 empty-engine), 1,488 VM (1,263 hybrid — 4 of THOSE inlining
+an empty scan — 225 plain), 289 refused. The DFA-only prefilter distribution
+is `none` 380 / `memchr` 327 / `byte-class` 176 / `memchr-bounded` 61 /
+`byte-class-bounded` 51 — **identical to [DD-13]'s recorded figures, which is
+the control that this change moved nothing on the DFA side**; the DFA scan
+line moved 815/180 -> 811/180/4, exactly the four artifacts leaving a value
+that was wrong for them. Hybrids: `memchr` 825 / `none` 264 / `byte-class`
+137 / `memchr-bounded` 20 / `byte-class-bounded` 17; `unanchored` 1,071 /
+`attempt` 188 / `empty` 4. `make strict` clean. `run_vm_identity.sh` 9/0.
+`run_specimen_identity.sh` 11/0 with `SKIP_THROUGHPUT=1` (the twelfth check
+is the three timings, skipped by the box rule while a battery was running).
+
+**abi 4 -> 6** (5 is lane srTier's, taken concurrently — PROVISIONAL pending
+the manager's merge-order ruling) and comparison (B) re-pinned `5991d4c` ->
+`272d07c`. The recursion identity gate is **15/0** on the new pin and
+REFUSES on the old with D76's exact message (`subject stamps '.abi = 6', pin
+5991d4c stamps '.abi = 4'`); comparison (A) is byte-identical against the
+unchanged `ac4917d` — 2,207 program regions, exactly the four named wave-G
+elisions — which is the proof that this is scaffolding, the same reading
+[DD-13] established and the second exercise of it.
+
+**THE CHECK-DESIGN LESSON, and it came out of this change's own validation.**
+Plant V1 (the hybrid's stamp call removed) went red on the iff, correctly —
+and left `[agreement]` reading "matches the emitted scan shape on all 2258
+artifacts" while 1,263 of them had been routed past the comparison by the
+missing-stamp `continue`. A TRUE sentence about a population nobody compared,
+inside a check written to `learnings.md` §3. The denominator was arithmetic
+over bucket sizes; it is a count taken at the comparison sites now
+(`SCANCMP`/`PFCMP`), and the shortfall is its own asserted verdict. Same
+family as r37 #2's floor-vs-manifest: **a number a check DERIVES about its own
+coverage is not evidence of that coverage; only a number it COUNTS is.** The
+three reds as run, against a 26/0 clean baseline: hybrid silent 21/5, gate
+dropped 24/2, `"empty"` arm removed 23/3.
+
+**TWO DEFECTS FOUND IN PASSING, both on main.** (1) `docs/spec/tuning.md` §3
+shipped with lane srStamp's editorial wrapper merged into the published spec
+— a truncated `## 3. The DFA-side stamp gap" section / (main tree, currently
+lines ~423-441) with:` header, and a trailing "ALSO, in §2.5 ... if a
+cross-reference is wanted, append:" instruction (d8608ca). Fixed here, since
+this lane rewrote that section anyway. (2) `[DD-13c]` is a TAG COLLISION:
+plan.md already used it for the FORMAT half's D6-panel sub-step, so
+`grep -n "\[DD-13c\]"` returns two rows. Flagged in place, NOT resolved —
+renaming this lane's row would orphan the r37 review and every commit
+message, and renaming the sub-step is the manager's call.
