@@ -1113,7 +1113,17 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * no resume stack to tier. The `abi` number is the ARTIFACT FORMAT's
      * version, not the VM's, so it moves on both kinds anyway — which is why
      * comparison (B) is re-pinned for DFA artifacts too. */
-    sb_puts(c,   "    .abi = 5,\n");
+    /* [DD-13c] abi 5 -> 6 (D76/[TT-11]), the next event after [OPT-1]'s
+     * immediately above: r37's two SCOPE findings both move emitted bytes.
+     * (#5) the proven-empty DFA artifacts stamp `_DFA_SCAN "empty"` where they
+     * used to claim `"unanchored"`, a loop they do not contain; (#6) every VM
+     * HYBRID artifact gains the two `_DFA_*` lines describing the scan it
+     * inlines. Both are SCAFFOLDING — no table, no search-loop byte and no
+     * answer moves, which `run_recursion_identity.sh`'s comparison (A) proves
+     * against the unchanged pre-module pin — and D76's rule is about the
+     * scaffolding regardless: an `abi` bump AND a re-pin of that gate's
+     * comparison (B), in the same change. */
+    sb_puts(c,   "    .abi = 6,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1893,6 +1903,41 @@ static void unanch_start(const Dfa *fd, const Dfa *rd, UnanchStart *o)
         o->kind = o->cand.use_memchr ? DFA_PF_MEMCHR : DFA_PF_BYTE_CLASS;
 }
 
+/* ---- [DD-13c] IS THIS ARTIFACT'S SEARCH BODY THE EMPTY ENGINE? -----------
+ *
+ * BOTH ENGINES HAVE ONE, and that is why this is a function rather than a
+ * clause inside the stamp. A pattern the analysis proves can match nothing
+ * emits a search body that is one `return 0` — no table, no loop, no skip —
+ * and BOTH emitters below take that exit: `emit_unanchored` on
+ * `unanch_start`'s `empty` (its two causes are that function's), `emit_attempt`
+ * on `d->n == 0` (no live start state at all). Corpus witnesses exist for both
+ * (`\B\b` unanchored; `^\B\b` under ENG_ATTEMPT).
+ *
+ * WHY IT EXISTS AT ALL. r37 finding #5: those artifacts used to stamp
+ * `<PREFIX>_DFA_SCAN "unanchored"` — a loop they do not contain — because the
+ * stamp read `job->engine` alone, which names WHICH EMITTER RAN and not
+ * WHICH BODY IT WROTE. The two are the same question for every other artifact
+ * and a different one here, so the stamp now has a third value (`"empty"`,
+ * docs/spec/match_api.md §6.3) and this is its derivation.
+ *
+ * ONE DERIVATION, TWO READERS, this file's standing rule (`unanch_start` and
+ * `attempt_cand` state it at length): `emit_attempt`'s early exit calls THIS
+ * function rather than re-spelling `d->n == 0`, so the stamp cannot say
+ * "empty" about a body that has a loop in it, nor stay silent about one that
+ * does not. `emit_unanchored` reads the SAME `UnanchStart` it emits from —
+ * one call, both facts — which is the same guarantee spelled the other way.
+ *
+ * NOTHING HERE EMITS, so the stamp path may call it before any body exists.
+ * `unanch_start` is side-effect-free and cheap (no allocation), which is what
+ * makes the twice-per-artifact call unremarkable. */
+static bool dfa_engine_is_empty(Ctx *cx)
+{
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) return cx->job->dfa.n == 0;
+    UnanchStart us;
+    unanch_start(&cx->job->dfa, &cx->job->rdfa, &us);
+    return us.empty;
+}
+
 /* ---- ENG_UNANCH: table-driven forward + reverse (D7) ---- */
 
 /* M2.1 self-loop skip: pick up to 4 states (excluding `exclude`) that stay
@@ -2550,7 +2595,12 @@ static void emit_attempt(Ctx *cx, const char *fn, const char *storage)
 
     emit_search_head(cx, c, fn, storage);
 
-    if (d->n == 0) {
+    /* [DD-13c] THE EMPTY ENGINE, through the SHARED derivation. The condition
+     * used to be `d->n == 0` spelled here; it is `dfa_engine_is_empty`'s now,
+     * because `<PREFIX>_DFA_SCAN "empty"` is read off the same function and a
+     * second copy of the condition is how a stamp and its body drift apart
+     * (this file's header, M2.12). Byte-for-byte the same output. */
+    if (dfa_engine_is_empty(cx)) {
         /* no live start state: the pattern matches nothing */
         sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
@@ -3285,8 +3335,26 @@ void pcrec_emit_main(Ctx *cx, const GenNames *g)
  * each says so in its own header. That is what makes the stamp checkable
  * rather than decorative — it cannot disagree with the loop unless the
  * derivation itself is wrong, in which case the loop is wrong too. */
+/* [DD-13c] WHICH SCAN SHAPE THE EMITTED BODY IS, in the three words §6.3
+ * documents. `"empty"` is FIRST and not a fallback: a body that is one
+ * `return 0` has neither of the other two loops in it, whichever emitter wrote
+ * it, so answering "which emitter ran" before "is there a loop at all" is the
+ * inversion that produced r37 #5. */
+static const char *dfa_scan_name(Ctx *cx)
+{
+    if (dfa_engine_is_empty(cx)) return "empty";
+    return cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored";
+}
+
 static const char *dfa_prefilter_name(Ctx *cx)
 {
+    /* [DD-13c] THE EMPTY ENGINE HAS NO PREFILTER TO NAME, and it does not need
+     * a clause here to say so: `attempt_cand` refuses on `d->n == 0` and
+     * `unanch_start` returns with `kind == DFA_PF_NONE` on `empty`, so both
+     * arms below already answer "none" for exactly the artifacts
+     * `dfa_engine_is_empty` identifies. An `if` here would be a THIRD statement
+     * of that fact, and the check (tests/codegen/run_dfa_stamps.sh) asserts it
+     * from the emitted text instead. */
     if (cx->job->engine == PCREC_ENG_ATTEMPT) {
         /* ENG_ATTEMPT skips whole ATTEMPTS rather than positions inside one
          * (D63's loop-integration split), so it needs no D11 bound and has no
@@ -3317,23 +3385,49 @@ static const char *dfa_prefilter_name(Ctx *cx)
     return "none";
 }
 
+/* [DD-13c] WHICH DFA SCAN THIS ARTIFACT CARRIES — the two lines, emitted from
+ * ONE place for the TWO artifact kinds that contain a DFA scan.
+ *
+ * WHICH DFA. The ENG_UNANCH/ENG_ATTEMPT fork is a genuine per-artifact
+ * selection point — [OS-4] calls it "already a cartesian split" and is the row
+ * that will one day measure it — and it is not derivable from anything else a
+ * consumer can read: both shapes stamp `RX_ENGINE "dfa"` and both set
+ * `rx_info.engine` to PCREC_ENGINE_DFA. A bench row that times a `^`-anchored
+ * pattern and one that times an unanchored one are timing two different loops,
+ * and until this line existed the report could not say which. Read off
+ * `job->engine` (the field compile.c sets at the fork) through
+ * `dfa_scan_name`, so it cannot disagree with which emitter ran, plus
+ * `dfa_engine_is_empty` for the body that has no loop at all (r37 #5).
+ *
+ * WHY A SHARED EMITTER AND NOT TWO CALL SITES, which is `pcrec_emit_engine_stamp`'s
+ * argument one level down and r37 #6's finding one level up. The §6.1 HYBRID —
+ * a VM artifact whose `fit.prefilter` is on — inlines THIS FILE'S scan as
+ * `static <prefix>_prefilter` and carries the whole mechanism: the tables, the
+ * memchr/bitmap candidate-start filter, the D11 bound. Until [DD-13c] it
+ * stamped nothing about any of it, so the artifact kind that actually ships the
+ * specimen's ~23x mechanism was the one kind that could not say so. It now
+ * stamps these same two lines, from the same `unanch_start`/`attempt_cand`
+ * derivations the inlined loop is emitted from — ONE derivation, THREE readers
+ * (the loop, the DFA artifact's stamp, the hybrid's stamp), never a
+ * restatement. A NON-hybrid VM artifact contains no DFA scan and stamps
+ * neither; docs/spec/match_api.md §6.3 states that iff and
+ * tests/codegen/run_dfa_stamps.sh asserts it in both directions.
+ *
+ * `upper` IS A PARAMETER rather than re-derived here because the two callers
+ * already hold it (`GenNames.upper` on the DFA side, `v.up` on the VM side)
+ * and they are the same string — the artifact's prefix, upper-cased, once. */
+void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
+{
+    sb_printf(c, "#define %s_DFA_SCAN \"%s\"\n", upper, dfa_scan_name(cx));
+    sb_printf(c, "#define %s_DFA_PREFILTER \"%s\"\n", upper,
+              dfa_prefilter_name(cx));
+}
+
 static void emit_dfa_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     sb_puts(c, "/* Engine: dfa */\n");
     pcrec_emit_engine_stamp(c, upper, "dfa");
-    /* WHICH DFA. The ENG_UNANCH/ENG_ATTEMPT fork is a genuine per-artifact
-     * selection point — [OS-4] calls it "already a cartesian split" and is the
-     * row that will one day measure it — and it is not derivable from anything
-     * else a consumer can read: both shapes stamp `RX_ENGINE "dfa"` and both
-     * set `rx_info.engine` to PCREC_ENGINE_DFA. A bench row that times a
-     * `^`-anchored pattern and one that times an unanchored one are timing two
-     * different loops, and until this line existed the report could not say
-     * which. Read straight off `job->engine`, the field compile.c sets at the
-     * fork, so it cannot disagree with which emitter ran. */
-    sb_printf(c, "#define %s_DFA_SCAN \"%s\"\n", upper,
-              cx->job->engine == PCREC_ENG_ATTEMPT ? "attempt" : "unanchored");
-    sb_printf(c, "#define %s_DFA_PREFILTER \"%s\"\n", upper,
-              dfa_prefilter_name(cx));
+    pcrec_emit_dfa_scan_stamps(cx, c, upper);
     sb_puts(c, "\n");
 }
 

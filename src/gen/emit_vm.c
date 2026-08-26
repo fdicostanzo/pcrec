@@ -8097,13 +8097,20 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
     /* [M4.6f] THE PREFILTER STAMP: D46's observability half for
      * select_engine.c's fit.prefilter, in the SAME PLACEMENT as
      * RX_ENGINE/RX_ENGINE_WHY immediately above and for the same reason -- a
-     * per-prefix, preprocessor-visible macro. Its VALUE SET is the VM's
-     * ("hybrid"/"none"); the DFA artifact's own candidate-start decision is a
+     * per-prefix, preprocessor-visible macro. Its VALUE SET is the VM'''s
+     * ("hybrid"/"none"); the DFA scan'''s own candidate-start decision is a
      * different vocabulary and stamps as `_DFA_SCAN`/`_DFA_PREFILTER`
      * (emit_dfa.c `emit_dfa_stamps`, [DD-13]/D81) — the earlier claim here
      * that a DFA artifact "has no separate prefilter decision" was the
-     * premise [DD-13] retired. A VM HYBRID's inlined DFA scan is [DD-13c]'s
-     * to stamp (r37 A6).
+     * premise [DD-13] retired.
+     *
+     * [DD-13c] DISCHARGED THE FORWARD REFERENCE THIS COMMENT USED TO CARRY
+     * ("a VM HYBRID'''s inlined DFA scan is [DD-13c]'''s to stamp", r37 A6): it
+     * stamps it, on the line below. The two macros are TWO DIFFERENT
+     * SELECTIONS and both are now readable on a hybrid — this one says
+     * whether the VM runs a capture-erased DFA ahead of its program at all
+     * (select_engine.c'''s `fit.prefilter`), `_DFA_PREFILTER` says what
+     * candidate-start filter that scan itself carries.
      *
      * ARTIFACT-LEVEL, not per-quantifier -- select_engine.c decides
      * fit.prefilter ONCE per pattern, so this is a SCALAR string like
@@ -8124,6 +8131,38 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * derived default when neither was passed). */
     sb_printf(c, "#define %s_VM_PREFILTER \"%s\"\n", v.up,
               job->fit.prefilter ? "hybrid" : "none");
+    /* [DD-13c] (r37 #6) A HYBRID ALSO STAMPS THE SCAN IT INLINES, and this is
+     * the finding stated as code: `RX_VM_PREFILTER "hybrid"` says a DFA scan is
+     * IN this artifact and then says nothing about it, while the scan in
+     * question is a full ENG_UNANCH/ENG_ATTEMPT body with its own tables and
+     * its own memchr/bitmap candidate-start filter — the mechanism the email
+     * specimen's ~23x actually comes from, invisible in exactly the artifact
+     * kind that ships it. pcrec-bench buckets rows by these two macros and
+     * could not bucket a hybrid at all.
+     *
+     * THE SAME TWO LINES THE DFA ARTIFACT WRITES, FROM THE SAME EMITTER
+     * (`pcrec_emit_dfa_scan_stamps`, src/gen/emit_dfa.c) AND THE SAME
+     * DERIVATIONS (`unanch_start`/`attempt_cand`) THE INLINED LOOP BELOW IS
+     * EMITTED FROM. Not a VM-side restatement with a VM-side vocabulary: the
+     * inlined scan IS emit_dfa.c's scan — `pcrec_emit_dfa_engine` at the
+     * prefilter site further down is literally the same function the DFA-only
+     * artifact calls — so a second spelling here could only ever drift from it.
+     *
+     * GATED ON `fit.prefilter` AND NOTHING ELSE, in both directions. That flag
+     * is what makes src/core/compile.c build `job->dfa`/`job->rdfa` and set
+     * `job->engine` at all, so on a non-hybrid VM artifact there is no DFA to
+     * describe and the fields these values are read from were never written.
+     * §6.3 rules the resulting iff — a VM artifact carries `RX_DFA_*` if and
+     * only if `RX_VM_PREFILTER` is `"hybrid"` — and
+     * tests/codegen/run_dfa_stamps.sh asserts it from the emitted TEXT (the
+     * presence of the `static <prefix>_prefilter` body), both ways.
+     *
+     * PLACED HERE, immediately after the macro whose "hybrid" it elaborates,
+     * rather than beside the prefilter emission ~700 lines down: the whole D46
+     * stamp block is one contiguous run of `#define`s in every artifact this
+     * compiler emits, and a reader (or a grep) finds the selection facts in one
+     * place on both artifact kinds. */
+    if (job->fit.prefilter) pcrec_emit_dfa_scan_stamps(cx, c, v.up);
     /* [DD-14 wave G] THE LINKAGE, PER ARTIFACT, and it reports what the
      * emitter DID rather than what it was asked — `RX_VM_RUNGS`/`RX_VM_STRATS`/
      * `RX_VM_PREFILTER`'s rule, which is the D46 half a denied request
