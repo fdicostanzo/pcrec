@@ -515,13 +515,17 @@ while IFS=$'\t' read -r cls pat; do
     # THE ENGINE MOVED, which is what the discharge is FOR. Read off the
     # artifact rather than assumed: a `dead` pattern with no captures must
     # compile to a pure DFA with the discharge on, and to a VM artifact with it
-    # off. `RX_ENGINE` is absent from a DFA artifact.
+    # off. THE DISCRIMINATOR IS THE VALUE, NOT THE PRESENCE ([DD-13]/D81,
+    # 2026-08-25, found by the battery on d8608ca — r37's hazard, fourth
+    # site): `RX_ENGINE` is now stamped on EVERY artifact, "dfa" or "vm";
+    # this check read its ABSENCE as "a DFA" and went red on all ten
+    # spellings the moment the DFA started stamping.
     if [ "$cls" = "dead" ]; then
         pcrec_run "$PCREC" --features all -p rx --no-captures -o "$d/e_on.c"  -- "$pat" 2>/dev/null
         pcrec_run "$PCREC" --features all -p rx --no-captures -fno-atomic-discharge \
                  -o "$d/e_off.c" -- "$pat" 2>/dev/null
-        if ! grep -q '#define RX_ENGINE' "$d/e_on.c" \
-           && grep -q '#define RX_ENGINE' "$d/e_off.c"; then
+        if grep -q '^#define RX_ENGINE "dfa"$' "$d/e_on.c" \
+           && grep -q '^#define RX_ENGINE "vm"$' "$d/e_off.c"; then
             nd_engine=$((nd_engine + 1))
         else
             bad "§3 discharge: '$pat' has a §2.2-dead cut, so --no-captures must give a PURE DFA with the discharge ON and a VM artifact with it OFF; got on=$(grep -c '#define RX_ENGINE' "$d/e_on.c") off=$(grep -c '#define RX_ENGINE' "$d/e_off.c") RX_ENGINE defines"
