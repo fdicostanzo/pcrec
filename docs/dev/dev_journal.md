@@ -16446,3 +16446,45 @@ Numbers, arms, spreads and load1 for every row:
 carries them with the attribution and the four things this lane did NOT
 measure (PCRE2-JIT re-run, the emitted-size cost off the K39 family, any
 [OPT-4] interaction).
+
+#### Forty-first session, part 6 — srPremul MERGED (3e0b256, abi 7): pcrec's DFA is now FASTER than PCRE2-JIT on the bench's throughput row; the battery on the merged tree launches (2026-08-26 ~16:5x EDT)
+
+srPremul (opus) delivered [OPT-3] STEP 2 in ~3h50m wall (much of it
+waiting for the battery, as briefed): 20 WIP commits, design note
+BEFORE code, the emitter with ONE predicate feeding both the form and
+the `RX_DFA_TABLE` stamp, `-fno-premul-table` deny-only, abi 6 → 7 at
+all four sites with the (B) pin moved twice as src commits landed
+(49356e8 → 4ff4d41 → 8272a15), S73/S74 re-anchored and proved solo,
+run_premul_table.sh (§1-6; three planted bugs each caught, recorded in
+the header), spec hunks in the house style. MEASURED on the idle box
+after BATTERY DONE: t-a 6.221 → 3.516, t-b 3.268 → 1.799, t-c 3.283 →
+1.803 ns/byte — set 12.77 → 7.12, **1.794×**, pcrec at 0.819× of
+PCRE2-JIT's set (was 1.466×), ahead on ALL THREE subjects (parity on
+t-a, 1.36× on t-b, 1.50× on t-c). Why 1.79× and not STEP 1's 1.28×:
+attributed to STEP 1's hand patch leaving the accept table indexed by
+the UN-multiplied state (0.89 c/byte of accept bookkeeping vs 0.05
+shipped) — "1.276× was a floor set by a patch, not a ceiling set by the
+mechanism". t-c at 5.91 cycles/byte = the 5-cycle chain model. THE
+BOUND: the size conjunct (ii) DELETED — premultiplied wins in the L2
+band too (k11 1.107×, k12 1.097×, the corpus's 40,010-entry reverse
+machine of `((a)|bc){0,4000}d` 1.287×); the rule is the range bound
+alone, states×stride < 65,535. THE REFUSAL: the `__builtin_expect`
+layout hint measured 1.263× SLOWER on the set (a second taken branch
+per iteration; worst on t-b's 190,651 skip entries) — Frank's question
+answered with a number and the hint NOT shipped. `size_t` state and
+DEAD = 0: washes (±1 %), sentinel (a) kept on its non-speed merits.
+Identity: 91 subjects × 40,470 answer lines × 3 arms, 0 differences;
+the denied build byte-identical to the pre-change compiler's emitted
+text (§9 proven as bytes); lane make test 1,588/0 checks, 26,847/0
+cases (counterk clean even under -j4), strict clean. MERGE: plan row
+conflict (my launch prefix + three STEP 3 addenda vs the lane's BUILT
+text) resolved as the lane's row + my addenda; journal both-append
+kept. ONE SCOPE SLIP: the lane wrote its "part 2" measurement journal
+paragraph into the MAIN tree's journal (a persisted-`cd` path, the
+CLAUDE.md index's own warning) — git refused the merge over the dirty
+file; the text was saved, the file restored, and the paragraph appended
+after the merge (it appears under its own heading above). NOT measured,
+named: PCRE2-JIT carried over from the bench (baseline agrees to 0.6 %);
+[OPT-4] × STEP 2 composition. The FULL BATTERY now runs on 3e0b256 (an
+emitter change + abi bump); the bench gets I-11 (abi-7 pin, pending the
+battery's green).
