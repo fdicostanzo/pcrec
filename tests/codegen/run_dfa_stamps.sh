@@ -431,8 +431,8 @@ while IFS= read -r pat; do
         fi
         # ... and the values agree with the inlined loop, on the same axes and
         # from the same markers the DFA-only artifacts are held to below.
-        echo "PFVAL $s_pf"
-        echo "SCANVAL $s_scan"
+        echo "HYPFVAL $s_pf"
+        echo "HYSCANVAL $s_scan"
         case " $SCAN_VALUES " in *" $s_scan "*) ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_SCAN '$s_scan' (hybrid): $pat" ;; esac
         case " $PF_VALUES "   in *" $s_pf "*)   ;; *) echo VALUE; echo "BAD: UNDOCUMENTED RX_DFA_PREFILTER '$s_pf' (hybrid): $pat" ;; esac
         [ "$s_scan" = "$d_scan" ] || { echo SCANBAD; echo "BAD: SCAN (hybrid): stamp '$s_scan' vs inlined loop '$d_scan': $pat"; }
@@ -487,8 +487,17 @@ nscan=$(tok SCANBAD); npf=$(tok PFBAD)
 # [DD-13c] the iff's two populations and its two failure directions.
 nvmhy=$(tok VMHYBRID); nvmpl=$(tok VMPLAIN)
 nvmsilent=$(tok VM_SILENT); nvmpfbad=$(tok VMPFBAD); nvmhyempty=$(tok VMHYEMPTY)
-sed -n 's/^PFVAL //p'   "$WORKDIR/verdicts" > "$WORKDIR/seen_pf"
-sed -n 's/^SCANVAL //p' "$WORKDIR/verdicts" > "$WORKDIR/seen_scan"
+# [DD-13c] THE TWO ARTIFACT KINDS ARE TALLIED SEPARATELY AND THEN TOGETHER.
+# The DFA-only distribution is the one [DD-13] recorded and the one
+# docs/spec/tuning.md §3 quotes, so folding the 1,200-odd hybrids into it would
+# silently redefine a published figure; the combined line is the honest total
+# for "every artifact that contains a DFA scan". Printing both is also the only
+# way a reader can see that the DFA half did not move when the hybrids joined.
+sed -n 's/^PFVAL //p'     "$WORKDIR/verdicts" > "$WORKDIR/seen_pf"
+sed -n 's/^SCANVAL //p'   "$WORKDIR/verdicts" > "$WORKDIR/seen_scan"
+sed -n 's/^HYPFVAL //p'   "$WORKDIR/verdicts" > "$WORKDIR/seen_hypf"
+sed -n 's/^HYSCANVAL //p' "$WORKDIR/verdicts" > "$WORKDIR/seen_hyscan"
+dist() { LC_ALL=C sort "$1" | uniq -c | LC_ALL=C sort -rn | awk '{printf "%s=%s ", $2, $1}'; }
 
 echo
 echo "== [DD-13] DFA selection stamps =="
@@ -500,8 +509,12 @@ echo "population: $npat distinct corpus patterns extracted (floor 2620; LC_ALL=C
 [ "$ndfa" -ge 900 ] || bad "[population] only $ndfa DFA artifacts (floor 900; 995 measured 2026-08-25) — the population moved, find out why before re-pinning"
 [ "$nrefused" -le 400 ] || bad "[population] $nrefused patterns REFUSED (ceiling 400; 289 measured 2026-08-25) — a feature gate or a compiler bound is eating the population"
 echo "artifacts : $ndfa DFA ($nempty of them the empty engine: body is one \`return 0\`), $nvm VM ($nvmhy of them hybrids that inline a DFA scan, $nvmhyempty of THOSE inlining an empty one; $nvmpl plain), $nrefused refused"
-echo "prefilter values observed: $(LC_ALL=C sort "$WORKDIR/seen_pf" | uniq -c | LC_ALL=C sort -rn | awk '{printf "%s=%s ", $2, $1}')"
-echo "scan values observed     : $(LC_ALL=C sort "$WORKDIR/seen_scan" | uniq -c | LC_ALL=C sort -rn | awk '{printf "%s=%s ", $2, $1}')"
+echo "DFA artifacts     prefilter: $(dist "$WORKDIR/seen_pf")"
+echo "DFA artifacts     scan     : $(dist "$WORKDIR/seen_scan")"
+echo "VM hybrids        prefilter: $(dist "$WORKDIR/seen_hypf")"
+echo "VM hybrids        scan     : $(dist "$WORKDIR/seen_hyscan")"
+echo "every DFA scan    prefilter: $(cat "$WORKDIR/seen_pf" "$WORKDIR/seen_hypf" | dist /dev/stdin)"
+echo "every DFA scan    scan     : $(cat "$WORKDIR/seen_scan" "$WORKDIR/seen_hyscan" | dist /dev/stdin)"
 
 if [ "$ndfa" -eq 0 ] || [ "$nvm" -eq 0 ]; then
     bad "dfa-stamps: the sweep saw $ndfa DFA and $nvm VM artifacts — a bucket with no members asserts nothing"
