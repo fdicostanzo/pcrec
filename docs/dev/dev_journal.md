@@ -15860,3 +15860,59 @@ validation, WIP commits): srEsc (sonnet) [OPT-1] STEP 3 — the
 escalation counter over exemplar files; srK38 (sonnet) [K38-FIX] then
 [SPEC-1.4]; srOpt3 (opus) [OPT-3] STEP 1 — attribute the 11 cycles/byte
 (skip vs transition loop, the two controls). Stall-watchdog cron set.
+
+#### Forty-first session — lane srK38: [K38-FIX] closed — one shared buffer size, found by reproducing rather than trusting the original report (2026-08-26 ~12:3x EDT)
+
+K38 fixed (commit 06c08c9, worktrees/srK38). The known_issues entry named
+`nm[48]` and `entrypos[32]` as (part of) the truncating buffer family;
+reproducing the symptom FIRST, with a real 60-char prefix run through gcc
+on a pattern rich enough to reach the emitter's less-common paths, showed
+neither actually carries the prefix — the diagnosis in the filed issue was
+a guess from the symptom text, not a verified cause. The real family, found
+by building an actual `p1234…`-shaped artifact and reading gcc's own
+"undeclared identifier" / "expected ']'" errors: `vm_slot_expr`'s
+caller-supplied `sl[64]` (the two lookaround/lookbehind cursor-restore
+sites — this IS the `…_sp` → `…234` truncation the symptom described, on a
+different buffer than named), the possessive/lazy span-cursor family
+(`byte[64]`, `cx[64]` x2, `cur[64]`, `val[96]` x2), and the
+reverse-deterministic rung's `rv`/`cur`/`byte[80]`/`ga`/`gs`/`val[64]`. The
+sharpest single finding: `ga[64]` (`%s_revdet_group_span`) and `gs[64]`
+(`%s_revdet_group_seen`) share their first 18 suffix bytes, so at the
+60-char boundary both truncate to the IDENTICAL wrong string — the emitted
+C's group-span WRITE and group-seen FLAG collapse onto one (wrong)
+identifier — and the separate recovery loop's `val[64]` (same
+`revdet_group_span[...]` formula) truncates to that same string too, which
+is why it never showed as a DISTINCT gcc error: gcc reports an undeclared
+identifier once per function, and `ga`'s error already claimed it.
+
+Fix: one macro, `PCREC_MAX_EMIT_NAME_LEN` (`src/core/limits.h`,
+`PCREC_MAX_PREFIX_LEN + 96`), applied to the whole confirmed family in
+`src/gen/emit_vm.c` plus `emit_dfa.c`'s one prefix-carrying buffer
+(`residual[96]`, widened for consistency though never observed
+truncating — a DFA-engine sweep at the 60-char boundary compiled clean
+before and after). Buffers only grow, so output is byte-identical for
+every prefix that fit before: swept 1,784 corpus patterns x {`"rx"`,
+a 1-char prefix} x {`auto`, `vm`} = 7,136 compiles, reference binary vs
+fixed binary, 0 differences on stdout/stderr/exit code. One second-order
+effect: widening `rv`/`cur` moved gcc's OWN `-Wformat-truncation`
+worst-case estimate for two downstream buffers that embed them
+(`pv[112]`, `cnt[192]` x2) past their old sizes under `-Werror` — widened
+those two alongside so `make strict` stayed clean rather than discovering
+it later.
+
+Witness: `tests/cli/run_cli_tests.sh` case17, two patterns (one exercising
+the whole confirmed VM family in a single compile — fixed-width
+lookbehind + lookahead, a possessive quantifier feeding a backreference,
+a capturing bounded span loop, a captured alternation under a bounded
+repeat — one DFA-only, exercising `emit_dfa.c`'s residual) at both the
+60-char and 1-char prefix boundaries, on both engines. **Verified
+DETECTING**, not merely asserted: ran the harness with `PCREC` pointed at
+a binary built from the commit immediately before this fix — the
+`prefix len 60, engine=vm` cell alone goes red with exactly this issue's
+symptom (undeclared `_SL`, `expected ']'` truncated mid `_span_cursor`,
+undeclared `_re`/`_rv`), while the DFA and 1-char-prefix cells correctly
+stay green, so the witness is precise rather than a blanket alarm.
+`make test-codegen` and `make test-cli` (287/287) both green afterward;
+`make strict` clean.
+
+Next: [SPEC-1.4] (docs/spec/match_api.md patches), same lane.
