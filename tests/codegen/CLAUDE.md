@@ -363,6 +363,50 @@ decides whether to perform it — and then run the row through
     witness table pointed at a VM artifact → red, because each witness
     asserts its artifact IS a DFA one before reading its value.
 
+- **run_tiered_entry.sh** + **tier_driver.c** — [OPT-1] (2026-08-25) the
+  TWO-TIER DEFAULT ENTRY (`docs/design/two_tier_entry.md`,
+  `docs/spec/match_api.md` §10.9). OPT-IN, `make test-tiered-entry`, NOT in
+  `make test`: its §2 compiles the whole corpus and its §3 builds and runs
+  four matchers. The behavioural half rides `make test` already — every
+  existing differential compares answers through the un-suffixed entries, so
+  a tier that changed an answer is red across the suite, not only here.
+  - **THE FAILURE IT IS BUILT AGAINST, named before the code was written:
+    an answers-only check for this change passes on a build where the
+    optimization is ABSENT.** An artifact whose fast tier is secretly bound
+    at the stamped default answers every subject correctly and escalates
+    never. So the boundary is derived THREE ways per subject and the three
+    are compared: the escalation counted at the escalation SITE (under
+    `-DRX_TEST_TIER_HOOK`, which the artifact declares as an `extern`
+    FUNCTION — a mutable static in an artifact is a TS-1 failure and a
+    §5.3 breach, so the counter lives in the driver); the give-up predicted
+    by `<prefix>_search_in` at the FAST capacities, which is the same
+    capacity guard reached through an entry [OPT-1] does not touch; and
+    `gcc -fstack-usage`'s real frame, which is the only one of the three
+    that can tell a working optimization from an absent one.
+  - **THE DEPTHS ARE FOUND, NOT ASSUMED.** The five boundary subjects (1,
+    FAST-1, FAST, FAST+1, DEFAULT) are located by bisecting through
+    `_search_in`, so a change to the frame layout, `VM_FAST_TIER_BYTES` or
+    `vm_cost`'s ratios moves what this file tests. A hardcoded `9` would be
+    green forever and mean nothing after the first re-sizing.
+  - **§2 IS A BICONDITIONAL, checked in both directions**: tiered code
+    present ⇔ `FAST_FRAMES < RESUME_FRAMES`. Population 2,758 corpus
+    patterns (986 dfa, 1,215 vm single-tier, 272 vm tiered, 285 refused),
+    counted and printed, with a separate assertion that the TIERED side is
+    non-empty — a biconditional only ever checked on its trivial side is a
+    vacuous pass. The engine discriminator is `goto rx_L0;`, not a stamp,
+    for run_dfa_stamps.sh's circularity reason.
+  - **Validation (made to fail on purpose, MEASURED 2026-08-25, planted in
+    a scratch emitter and removed):**
+    (i) the fast tier bound at the STAMPED DEFAULT ("it never escalates") →
+    §3(b) red on 2 of 6 depths (n=9 and n=342: predicted 1, counted 0) and
+    §4 red on both arms (entry frame 131,248 B) — **while §3(a)'s answers
+    stayed GREEN on all 6 depths and §2 stayed green**, which is the
+    measured proof that neither an answers-only check nor the structural
+    sweep would have caught it.
+    (ii) `FAST_FRAMES`/`FAST_TRAIL` stamped at the default while the tiered
+    code is still emitted → §2 red (see the file's own §2 comment for the
+    count).
+
 - **run_codegen_tests.sh** — greps ONE ENGINE'S BODY (extracted by entry name;
   see below) for each optimization's
   signature (skip tables + skip loop, `start_max = 0` for fully-anchored

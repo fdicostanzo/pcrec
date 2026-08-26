@@ -92,6 +92,20 @@ so the numbers below have somewhere to attach.
   the run struct they size lives on the un-suffixed entries' own C
   stack frame (§4.4 below), and the caller-provided buffer (§4.3) is
   the ruled path around the ceiling, not a bigger default.
+- **[OPT-1], 2026-08-25: the un-suffixed entries reach these capacities in
+  TWO STEPS, and the numbers above are unchanged.** Where the stamped
+  default does not fit inside one 4 KB page, `<prefix>_search`/`_match`/
+  `_match_caps` run first on a small page-budgeted buffer
+  (`<PREFIX>_FAST_FRAMES`/`<PREFIX>_FAST_TRAIL`, `match_api.md` §6.3(b))
+  and escalate to the full stamped default on a `PCREC_ERR_FRAMES` give-up
+  and on nothing else, re-running the match from scratch with both budgets
+  refilled (§10.9). **The depth an artifact can reach, and every answer it
+  gives, are identical** — the ceiling in this section is the deep tier's
+  and is the only one a caller ever observes; a give-up still means the
+  stamped default ran out, never the fast tier. `-fno-tiered-entry`
+  (`tuning.md` §2.12) removes the tier. What changes is cost, not any
+  number here: MEASURED, the email specimen's entry went 233.8 → 46.6
+  ns/call and its stack frame 131,216 → 3,184 B.
 
 ### 3.3 Compile-time budgets: two different things named "limit"
 
