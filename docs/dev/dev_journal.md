@@ -15902,3 +15902,31 @@ entry. `make strict` clean, `make test-codegen` green after the rename
 (106/0 + 29/0 + 7/0 across the three sub-scripts). docs/dev/plan.md's
 `[OPT-1]` row carries the full measured table; `tests/bench/CLAUDE.md` has
 the new files' row.
+
+#### Forty-first session, part 2 — srEsc MERGED (efc2c1d); [OPT-1] CLOSED on Frank's ruling; I-8 sent (2026-08-26 ~11:5x EDT)
+
+srEsc (sonnet) delivered [OPT-1] STEP 3 in ~40 minutes: tests/bench/
+tier_escalation.sh + tier_escalation_driver.c count real
+-DRX_TEST_TIER_HOOK escalations per subject over bench/email (READ-ONLY
+sibling), forced --engine=vm (auto picks the DFA for all three patterns
+— a DFA has no tier), floor.rx as the single-tier negative control
+(0/165). THE BET'S NUMBER: orig 2/85 whole-subject (s-058, s-061; both
+still match on the deep tier), 0/77 short search; factored 6/85 (the
+five FRAMES give-ups escalate and still give up — P3 exact — plus s-072,
+25 B, "quoted string missing closing quote", which escalates on BOTH
+forms: the design doc's "deep can be a very short subject" on a real
+address); 1/77 short search (s-072). t-c gives up on WORK (orig) vs
+STEPS (factored) without escalating — FRAMES never binds there. Landing
+nit fixed on main (bb5493d: the CLAUDE.md row named the env var the
+script had renamed for K37's sweep). I-8 to the bench refines P1/P2
+(orig/compliance 66-72 µs from 80.2; factored/short-search ~1-2 % above
+vm-in). Frank: "agree with recommendations" → [OPT-1] CLOSED; STEP 4
+stays chartered-not-started, reopened only by a population that asks.
+Side question answered for Frank with gcc -ftime-report + SSA dumps
+(scratch only): the VM artifact's 6× gcc time over the DFA's is the
+single computed `goto *` resume dispatch — 99 address-taken labels → 73
+abnormal CFG edges, 1,059 basic blocks vs 94, PHIs 106 vs 18; the cost
+is spread over ~15 passes (no hog), -O0 0.10 s / -O1 0.20 / -O2 0.36 vs
+the DFA's 0.06 at -O2 (its 44 KB is mostly const tables the optimizer
+never sees). Not a row (D77): a one-time AOT cost; the one free lever
+would be fewer address-taken labels if some resume points are dead.
