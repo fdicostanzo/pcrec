@@ -1381,7 +1381,9 @@ time.
 engine-scoped.**
 
 - **(a) SELECTION FACTS are UNCONDITIONAL.** Which engine an artifact is,
-  and which scan-avoidance mechanism it took, are present on EVERY
+  and which CANDIDATE-START mechanism it took (the M2.1 self-loop skip is
+  scan avoidance too and is not yet stamped — [DD-13]'s next candidate),
+  are present on EVERY
   artifact pcrec emits, with an engine-appropriate value.
   `<PREFIX>_ENGINE` is the family's first member and is now stamped on
   both kinds (`"vm"` / `"dfa"`, from one emitter —
@@ -1484,7 +1486,7 @@ carries, and its five values are the whole set:
 
 | value | mechanism |
 |---|---|
-| `"none"` | no candidate-start filter (every position is a candidate, or the artifact provably matches nothing) |
+| `"none"` | no candidate-start filter: the start state ACCEPTS (`start_acc` — no skip is sound; the largest cause, e.g. `a*`, `.*`, `\bx*`), every position is a candidate, or the artifact provably matches nothing |
 | `"memchr"` | ONE candidate byte value; a `memchr()` replaces the steps |
 | `"byte-class"` | several; a 256-entry `<prefix>_can_begin_match` bitmap walk |
 | `"memchr-bounded"` | the `memchr` form under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1` and WITHOUT the early `return 0` |
@@ -1503,8 +1505,9 @@ These are scalar macros for a per-artifact-wide verdict
 `RX_VM_PRUNE_CEILING`) or a bitmask
 when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
-`RX_VM_PRUNES`). Of the block above, everything but `RX_ENGINE` is
-VM-artifacts-only. **[ABI-NS],
+`RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
+VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER` are
+the DFA's own selection facts ([DD-13]'s (a)/(b) split, above). **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from
 (`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
 `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —
