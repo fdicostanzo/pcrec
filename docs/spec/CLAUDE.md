@@ -158,6 +158,27 @@ spec and a design doc disagree, the spec is what the tool promises.
   is a live gap between §5.3's contract and the shipped artifact, filed as
   the design note's FINDING-1.
 
+  **[SPEC-1.4], 2026-08-26 — the docs/spec/ consolidation pass's own patch
+  set (D80), five small additions, no shipped behaviour changed.** §4 now
+  points at `docs/spec/limits.md` for the give-up codes' numeric trigger
+  defaults rather than leaving them unfound; §6.3's DFA-stamp-gap caveat
+  (survey row C2) was re-verified against a fresh DFA/hybrid build and
+  found already discharged by `[DD-13c]` — no wording changed there; §6
+  gained a caller-facing `abi` paragraph stating D76's rule in contract
+  terms (what a bump means, what stays fixed within one number, and that
+  pre-v1 the bump IS the whole of the announcement, D40 regime 1); §8.2
+  now leads with "`byte` is the only encoding implemented today" rather
+  than requiring a reader to find it three paragraphs down; and a new §3.6
+  states the `(?:P)\z` whole-subject/end-anchored idiom (survey row F9) —
+  why `\z` and not `$` (verified live: `(?:foo)$` matches `"foo\n"`,
+  `(?:foo)\z` does not), the `a|ab` counter-example showing a naive
+  `length == n` test is insufficient (verified live: `a|ab` on `"ab"`
+  reports `[0,1)`, `(?:a|ab)\z` on the same subject reports `[0,2)`), its
+  ruled-permanent status (`docs/dev/decisions.md` D77, plan row `[OS-4]`),
+  and the idiom's own DFA stamps (verified live: `RX_DFA_SCAN
+  "unanchored"`, `RX_DFA_PREFILTER "byte-class-bounded"`/
+  `"memchr-bounded"`).
+
 - `table_contract.md` — the ruled contract for every command that outputs
   a DATA TABLE (`--list-syntax`, `--list-verbs`, and any future table
   surface, which adopts it at birth): `#` comments, a header row naming

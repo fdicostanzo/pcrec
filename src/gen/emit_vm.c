@@ -3094,7 +3094,10 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     StrBuf t;
     memset(&t, 0, sizeof t);
     for (int i = 0; i < stride; i++) {
-        char byte[64];
+        /* K38: was char byte[64] -- "subject[" + prefix + "_span_cursor + "
+         * + digits + "]" exceeds 64 at the 60-char prefix maximum, and
+         * truncated mid-suffix ("..._sp"), losing the closing ']'. */
+        char byte[PCREC_MAX_EMIT_NAME_LEN];
         snprintf(byte, sizeof byte, "subject[%s_span_cursor + %d]", v->p, i);
         sb_puts(&t, " && (");
         vm_cls_test(v, &t, ci[i], byte);
@@ -3197,7 +3200,9 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * possessive nor the plain greedy semantics produces. MRL's soundness
          * must not come to depend on possessify's, so it does not. */
         {
-            char cx[64];
+            /* K38: was char cx[64] -- prefix + "_span_cursor" reaches 72
+             * bytes at the 60-char prefix maximum, truncating to "..._sp". */
+            char cx[PCREC_MAX_EMIT_NAME_LEN];
             snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
             vm_mrl_test(v, cx, mrl, -1,
                         "MRL: too few bytes remain after the loop's one exit "
@@ -3207,7 +3212,10 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
             sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= %s + %d) {\n",
                       v->p, entrypos, stride);
             for (int i = 0; i < ncaps; i++) {
-                char val[96];
+                /* K38: widened alongside the family above (was 96); this
+                 * one had margin at 60 chars but shares the source and the
+                 * fix removes the per-site guess. */
+                char val[PCREC_MAX_EMIT_NAME_LEN];
                 snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
                          stride - caps[i].off);
                 vm_set(v, 2 * caps[i].group, val,
@@ -3340,7 +3348,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
          * ever GROWS, so one doomed arrival means every later one is doomed
          * too and the whole remaining ascent is cut by this one comparison. */
         {
-            char cx[64];
+            /* K38: same family as the possessive arm's cx above -- was 64. */
+            char cx[PCREC_MAX_EMIT_NAME_LEN];
             snprintf(cx, sizeof cx, "%s_span_cursor", v->p);
             vm_mrl_test(v, cx, mrl, -1,
                         "MRL: the ascent has passed the last position an "
@@ -3349,7 +3358,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     }
 
     {
-        char cur[64];
+        /* K38: was char cur[64] -- identical overflow to cx above. */
+        char cur[PCREC_MAX_EMIT_NAME_LEN];
         snprintf(cur, sizeof cur, "%s_span_cursor", v->p);
         vm_push_at(v, again, cur, a->u.rep.greedy
                    ? "shorter run is the resume (retreat one stride)"
@@ -3364,7 +3374,8 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "    if ((ptrdiff_t)%s_span_cursor >= slot_values[%d] + %d) {\n",
                   v->p, low, stride);
         for (int i = 0; i < ncaps; i++) {
-            char val[96];
+            /* K38: widened alongside the family above (was 96). */
+            char val[PCREC_MAX_EMIT_NAME_LEN];
             snprintf(val, sizeof val, "(ptrdiff_t)(%s_span_cursor - %d)", v->p,
                      stride - caps[i].off);
             vm_set(v, 2 * caps[i].group, val,
@@ -3661,7 +3672,10 @@ static int vm_rev_index(const Rev *R, int capno)
 static void vm_rev_emit(Vm *v, int entry, const Ast *a, int next, const Rev *R)
 {
     StrBuf *b = v->b;
-    char byte[80];
+    /* K38: was char byte[80] -- "subject[" + R->cur (a prefix + "_rv%d_cursor"
+     * name, up to ~81 bytes at the 60-char prefix maximum) + " - 1]" exceeds
+     * 80, truncating the closing bracket ("expected ']'" on the artifact). */
+    char byte[PCREC_MAX_EMIT_NAME_LEN];
     vm_charge(v);
     snprintf(byte, sizeof byte, "subject[%s - 1]", R->cur);
 
@@ -3830,7 +3844,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * prove an array element is written before it is read, so the array form
      * failed -Wmaybe-uninitialized on four corpus patterns. A scalar carries
      * its own `= 0` at its declaration and the question does not arise. */
-    char rv[80], cur[96], flr[32];
+    /* K38: rv/cur widened from 80/96 to the shared emitted-name size -- both
+     * carried a real margin at today's realistic loop-index widths, but they
+     * feed byte[80] below (fixed separately) and belong to the same family
+     * of prefix-plus-suffix buffers this fix stops hand-sizing one at a
+     * time. flr carries no prefix and is unaffected. */
+    char rv[PCREC_MAX_EMIT_NAME_LEN], cur[PCREC_MAX_EMIT_NAME_LEN], flr[32];
     snprintf(rv,  sizeof rv,  "%s_rv%d", v->p, loop);
     snprintf(cur, sizeof cur, "%s_rv%d_cursor", v->p, loop);
     snprintf(flr, sizeof flr, "(size_t)slot_values[%d]", se);
@@ -3957,7 +3976,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * every frame the body pushed — and it is charged like one, even though it
      * never goes near the RX_CUT macro. */
     {
-        char cnt[192];
+        /* K38: widened (was 192) alongside `rv`'s own widening -- gcc's
+         * -Wformat-truncation now sizes `rv`'s worst case off ITS buffer
+         * capacity (PCREC_MAX_EMIT_NAME_LEN), so this destination has to
+         * cover that worst case plus its own literal text even though rv's
+         * REAL content never approaches it. */
+        char cnt[PCREC_MAX_EMIT_NAME_LEN + 64];
         snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
         vm_work(v, cnt, "work charge: frames discarded by the revdet scan cut");
     }
@@ -3995,7 +4019,14 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
     vm_lbl(v, commitl, "revdet: commit at this boundary");
     if (walk) {
         Rev R;
-        char ga[64], gs[64], ns[64];
+        /* K38: was char ga[64], gs[64], ns[64] -- "%s_revdet_group_span" and
+         * "%s_revdet_group_seen" both reach 78 bytes at the 60-char prefix
+         * maximum and truncated IDENTICALLY, to "..._re" (both names share
+         * their first 18 suffix bytes), which is why the artifact's group-
+         * span write and group-seen flag collapsed onto one wrong
+         * identifier. ns ("%s_rv%d_groups_seen") truncated the same way. */
+        char ga[PCREC_MAX_EMIT_NAME_LEN], gs[PCREC_MAX_EMIT_NAME_LEN],
+             ns[PCREC_MAX_EMIT_NAME_LEN];
         snprintf(ga, sizeof ga, "%s_revdet_group_span", v->p);
         snprintf(gs, sizeof gs, "%s_revdet_group_seen", v->p);
         snprintf(ns, sizeof ns, "%s_rv%d_groups_seen", v->p, loop);
@@ -4038,7 +4069,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
      * instead of accumulating them (the cursor rung's own ordering rule). */
     if (move) {
         if (greedy) {
-            char pv[112];
+            /* K38: widened (was 112) alongside `rv`'s own widening -- see
+             * the cnt[192] site above for why. */
+            char pv[PCREC_MAX_EMIT_NAME_LEN + 32];
             snprintf(pv, sizeof pv, "(size_t)%s_prev_position", rv);
             sb_printf(b, "    if ((ptrdiff_t)scan_position > slot_values[%d] && %s_prev_position >= 0) {\n",
                       sl, rv);
@@ -4054,7 +4087,12 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         }
     }
     for (int j = 0; j < ng; j++) {
-        char val[64];
+        /* K38: was char val[64] -- same "%s_revdet_group_span[...]" formula
+         * as ga above (78+ bytes at the 60-char prefix maximum); this site's
+         * truncated string is textually IDENTICAL to ga's own truncation,
+         * which is why gcc's dedup ("each undeclared identifier is reported
+         * only once") hid it as a distinct error during the repro. */
+        char val[PCREC_MAX_EMIT_NAME_LEN];
         sb_printf(b, "    if (%s_revdet_group_seen[%d]) {\n", v->p, j);
         snprintf(val, sizeof val, "%s_revdet_group_span[%d][0]", v->p, j);
         vm_set(v, 2 * grp[j], val,
@@ -4089,7 +4127,9 @@ static void vm_revdet_rep(Vm *v, int entry, const Ast *a, int next,
         v->nocap--;
         vm_lbl(v, extok, "revdet: the extra iteration matched");
         {
-            char cnt[192];
+            /* K38: widened (was 192), same reason as the scan-cut site
+             * above. */
+            char cnt[PCREC_MAX_EMIT_NAME_LEN + 64];
             snprintf(cnt, sizeof cnt, "(ptrdiff_t)run->resume_depth - (ptrdiff_t)%s_frame_mark", rv);
             vm_work(v, cnt, "work charge: frames discarded by the revdet "
                             "extra-iteration cut");
@@ -5370,7 +5410,11 @@ static void vm_look_behind(Vm *v, const Ast *a, int okl, int mslot, int pslot)
                  "the assertion started -- the only runtime evidence that the "
                  "width analysis and this emission agree");
         {
-            char sl[64];
+            /* K38: sized from PCREC_MAX_EMIT_NAME_LEN, not a hand-picked 64
+             * -- vm_slot_expr's own content can reach prefix + "_" + a
+             * 47-byte slot name (108 bytes at the 60-char prefix maximum),
+             * which 64 silently truncated. */
+            char sl[PCREC_MAX_EMIT_NAME_LEN];
             vm_slot_expr(v, pslot, sl, sizeof sl);
             if (neg) {
                 /* [DD-14 wave A commit 2] RX_R_INTERNAL, not RX_R_FRAMES --
@@ -5481,7 +5525,8 @@ static void vm_look(Vm *v, int entry, const Ast *a, int next)
             vm_cut(v, mslot, "cut: the assertion is committed; every choice "
                              "point the body created is discarded, dead or not");
         {
-            char sl[64];
+            /* K38: see the lookbehind end-check's identical buffer above. */
+            char sl[PCREC_MAX_EMIT_NAME_LEN];
             vm_slot_expr(v, pslot, sl, sizeof sl);
             sb_printf(b, "    scan_position = (size_t)slot_values[%s];\n", sl);
             vm_ev(v, VE_NOTE, 0, 0,
@@ -8058,7 +8103,14 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * sentinel, one layer below the public code `<prefix>_search` compares
      * against (§4.4). Built once here rather than at each of the two call
      * sites for the reason vm_emit_default_entry's header gives. */
-    char frames_sentinel[PCREC_MAX_PREFIX_LEN + 32];   /* the 60-char prefix limit + "_R_FRAMES" + NUL: a 64-byte buffer truncated the sentinel NAME for a max-length prefix (gcc -Wformat-truncation caught it in the identity scripts' -O2 reference builds, 2026-08-26) */
+    /* K38 (2026-08-26): a 64-byte buffer truncated this sentinel NAME for a
+     * max-length prefix (gcc -Wformat-truncation caught it in the identity
+     * scripts' -O2 reference builds). Fixed same-day with a one-off
+     * `PCREC_MAX_PREFIX_LEN + 32`; that hand-picked size is what the later
+     * K38 sweep replaced everywhere, including here, with the shared
+     * PCREC_MAX_EMIT_NAME_LEN -- a second hand-picked constant for the same
+     * problem is exactly the mistake this fix exists to stop repeating. */
+    char frames_sentinel[PCREC_MAX_EMIT_NAME_LEN];
     snprintf(frames_sentinel, sizeof frames_sentinel, "%s_R_FRAMES", v.up);
 
     /* BEFORE the prologue, which is where the declarations are written, and

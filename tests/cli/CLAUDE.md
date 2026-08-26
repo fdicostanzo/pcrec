@@ -282,6 +282,33 @@ Part of `make test` since M2.
   tests/codegen/run_codegen_tests.sh instead, since those cells only need the
   emitted C text, not a library-API probe.
 
+- **case 17 (K38 fix)** — the SPEC-FIRST witness case3 could not be: case3's
+  60-char-prefix cell proves the prefix is ACCEPTED and its artifact
+  COMPILES, but only for the pattern `'a'`, which never reaches the family
+  of fixed buffers in `src/gen/emit_vm.c` that build an emitted name or
+  sub-expression from the prefix PLUS a suffix (a lookaround slot
+  expression, a span-cursor test, the reverse-deterministic rung's
+  group-span/group-seen names). Before the fix `snprintf` truncated those
+  silently and gcc failed on the 60-char artifact with undeclared
+  identifiers and `expected ']'` — every corpus artifact was blind to it,
+  since they all use the 2-char `"rx"` prefix. Two witness patterns, chosen
+  to reach the whole confirmed buffer family (see `src/core/limits.h`'s
+  `PCREC_MAX_EMIT_NAME_LEN` comment for the derivation) in ONE compile
+  each: a VM pattern (`(?<=abc)(?=def)(a)(?:b)*+\1(?:(cd)){0,50}(?:(x)|y){0,10}`
+  — lookbehind AND lookahead slot expressions, a possessive quantifier
+  feeding a backreference, a capturing bounded span loop, a captured
+  alternation under a bounded repeat) and a DFA pattern (an email-shaped
+  class/quantifier pattern with no captures, exercising `emit_dfa.c`'s one
+  prefix-carrying buffer, the encoding residual's `<prefix>_next_pos`).
+  Both run at the 60-char maximum AND at a 1-char prefix, on
+  `--engine=vm`/`--engine=dfa` respectively (four cells total), through
+  `pcrec_run`/`gen_cc` like every other generated-code case in this file.
+  **Verified DETECTING**: run against a binary built before the K38 fix,
+  the `prefix len 60, engine=vm` cell goes red with exactly the truncated-
+  identifier errors K38 describes, while the DFA and 1-char-prefix cells
+  stay green — the fix's binary passes all four. See
+  docs/dev/known_issues.md K38 for the full mechanism and the buffer list.
+
 ## Conventions
 
 Case 8 is a BUDGET, not a functional check: a 9000-duplicate-branch alternation
