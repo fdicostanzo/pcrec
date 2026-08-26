@@ -94,9 +94,17 @@ written ONCE and called TWICE, with the forward and reverse `DfaForm`.
   twice per search. A hoisted `unsigned row = <M>_row(s);` changes no answer,
   passes every identity gate, and puts a divide on the hot path.
 - **A new table representation is ONE new entry in `dfa_reprs` plus one
-  `emit_token` body.** Measured (throwaway `premultiplied-u32`, 2026-08-26):
-  34 lines, zero changes in `emit_scan_loop`, `emit_machine_tables`,
-  `dfa_form_derive` or the stamps.
+  `emit_token` body.** MEASURED with a throwaway `premultiplied-u32` object
+  (scratch, 2026-08-26, never shipped): **+42 lines, 0 removed, 2 diff hunks,
+  both inside the object region** — zero changes in `emit_scan_loop`,
+  `emit_machine_tables`, `dfa_form_derive`, the table emitters or the stamps,
+  and zero instructions in the assembly. The throwaway compiled, took the form
+  on `[01]*1[01]{13}`'s above-bound forward machine (`static const unsigned
+  rx_forward_next_state[73728]`, add-only step) and answered identically to the
+  shipped compiler. Note for whoever lands it for real: `dfa_table_name`
+  composes two object NAMES, so a machine pair of `premultiplied-u32` +
+  `premultiplied` stamps `"mixed"` — correct by the rule, and probably not what
+  a u32 landing wants that stamp to say.
 - **Emitted state CONSTANTS are scaled at EMIT time** by `repr->cell_of` — the
   start state, a skip guard, a seed cell. So `<M>_state == 1234` has a
   form-dependent NUMBER and a form-independent SHAPE; the loop never scales.

@@ -91,14 +91,24 @@ u16 bound), `two_byte` (a 16-bit alphabet). Each is one object plus one
 
 | # | object | applies when | deny flag |
 |---|---|---|---|
-| 1 | `memchr` | `us.kind == DFA_PF_MEMCHR` | — |
-| 2 | `byte_class` | `us.kind == DFA_PF_BYTE_CLASS` | — |
-| 3 | `none` | always | — |
+| 1 | `memchr-bounded` | forward && `kind == MEMCHR` && `views` | — |
+| 2 | `memchr` | forward && `kind == MEMCHR` | — |
+| 3 | `byte-class-bounded` | forward && `kind == BYTE_CLASS` && `views` | — |
+| 4 | `byte-class` | forward && `kind == BYTE_CLASS` | — |
+| 5 | `none` | always | — |
 
-The `-bounded` half of the stamp value is NOT a fourth and fifth object: it is
-the D11 bound (`us.views`), and it is the object's own `stamp()` method that
-composes the two, so `<PREFIX>_DFA_PREFILTER`'s five values still come from one
-place. **The deny column is empty on purpose and it is a FINDING, not an
+**REVISED DURING IMPLEMENTATION (2026-08-26): FIVE objects, not three.** The
+draft above made the `-bounded` half a `stamp()` method over three objects, on
+the reading that the D11 bound is a fact rather than a form. It is a form: the
+bounded skip stops at `n-1` and LOSES the `return 0` early-out, so it is
+different emitted text, not the same text with a different label. Five objects
+makes `<PREFIX>_DFA_PREFILTER`'s five values literally `obj->c.name` — which is
+§0.4's whole claim — and removes the only `stamp()` method the design had.
+
+`forward &&` is a clause in each candidate's `applies` rather than a branch in
+`dfa_form_derive`: the reverse machine walks a range the forward scan already
+proved contains a match, so every real form declines and the list's total
+fallback is what it selects. **The deny column is empty on purpose and it is a FINDING, not an
 omission:** `PCREC_NO_PREFILTER` today gates only the VM hybrid's
 `fit.prefilter` (does a VM artifact get a DFA prefilter at all,
 `src/opt/select_engine.c`), never `emit_unanchored`'s own start-state filter, so
@@ -125,21 +135,35 @@ all" case, which today is an `if (viewsel)` at each of the two call sites.
 | 1 | `seeded` | `dfa_needs_seed(d)` — mechanism 4, the context byte decides the start state |
 | 2 | `constant` | always |
 
-### Axis E — ACCEPT (per machine)
+### Axis E — WHERE THE ACCEPT IS RECORDED (per machine)
 
 | # | object | applies when |
 |---|---|---|
-| 1 | `by_class` | `dfa_has_clsacc(d)` — some state's accept depends on the next byte |
-| 2 | `scalar` | always |
+| 1 | `by-class` | `dfa_has_clsacc(d)` — some state's accept depends on the next byte |
+| 2 | `scalar-viewed` | `views` — the D11 order: record AFTER the view selector |
+| 3 | `scalar-plain` | always — record at the TOP of the loop |
+
+**REVISED DURING IMPLEMENTATION (2026-08-26): THREE objects, not two.** The
+draft had the accept as a two-form axis and left the RECORDING POSITION as two
+`if (views)` sites in the skeleton — which is the same defect one level down.
+The three real forms are exactly the three positions the accept can be
+recorded at, and each object fills exactly one of three `emit_*` slots
+(`emit_top` / `emit_after_view` / `emit_tail`), so the skeleton calls them
+through NULL checks instead of branching on a form. `by-class` implies `views`
+by construction (a next-byte-sensitive accept needs a class context), so the
+ordering of entries 1 and 2 is not a tiebreak between overlapping candidates.
 
 ### Axis F — SCAN DIRECTION (per machine)
 
-| # | object | applies when |
-|---|---|---|
-| 1 | `forward` | the forward machine |
-| 2 | `reverse` | always |
+| # | object |
+|---|---|
+| 1 | `forward` |
+| 2 | `reverse` |
 
-This is the axis that collapses the duplication. It is a *representation* axis
+Not a candidate LIST: the two objects are named directly by `emit_unanchored`,
+one per `dfa_form_derive` call, because "which machine am I emitting" is not a
+question about the machine's dimensions. It is still a representation object in
+every other sense, and it is the axis that collapses the duplication. It is a *representation* axis
 in exactly the same sense as the others: the direction is how the scan spells
 its position, its bound, its recorded answer and its class read, and every one
 of those is a form with two variants. The object carries the position variable,

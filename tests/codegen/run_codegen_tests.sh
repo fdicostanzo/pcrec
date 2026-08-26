@@ -2671,9 +2671,9 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # control-shares-a-source failure (learnings.md §3). Updating it is part of
     # the bump, and this check firing is how a bump that forgot a doc gets
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
-    ABI_EXPECT=7
+    ABI_EXPECT=8
     if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp)"
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else

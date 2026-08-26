@@ -162,6 +162,7 @@ PREMUL_DEAD=65535
 #
 #   scan=<0|1> fpm=<-1|0|1> rpm=<-1|0|1> fent=<N> rent=<N> fcls=<N> rcls=<N>
 #   facc=<N> racc=<N> fvar=<int|unsigned|-> rvar=<...> fix=<mul|add|-> rix=<...>
+#   leak=<N: transition-table subscripts outside the table's own declaration>
 #   stamp=<value|->
 #
 # derived ENTIRELY from the emitted matcher text, except `stamp`, which is the
@@ -183,14 +184,37 @@ read_artifact() {
         # form, from a different emitter function than the one above.
         /^    static const unsigned char rx_forward_is_accepting\[/ { facc = ent($0) }
         /^    static const unsigned char rx_reverse_is_accepting\[/ { racc = ent($0) }
-        # The STATE VARIABLE declarations — the only witness of failure mode (i).
-        /^    (int|unsigned) forward_state = /                     { fvar = $1 }
-        /^        (int|unsigned) reverse_state = /                 { rvar = $1 }
-        # The TRANSITION LINES: does the emitted index still multiply?
-        /forward_state = rx_forward_next_state\[/ {
-            fix = ($0 ~ /\* [0-9]+ \+/) ? "mul" : "add" }
-        /reverse_state = rx_reverse_next_state\[/ {
-            rix = ($0 ~ /\* [0-9]+ \+/) ? "mul" : "add" }
+        # [ENG-FORM] THE STATE TYPE AND ITS INDEX ARITHMETIC BOTH MOVED INTO
+        # THE ACCESSOR BLOCK, and this section follows them there rather than
+        # hunting the loop. The loop is FORM-INDEPENDENT now -- it reads
+        # `<p>_<M>_step(<table>, <token>, <class>)` whatever the the machine
+        # table representation -- so a §4 that kept reading the loop would be
+        # reading a line that can no longer tell the two forms apart, i.e. a
+        # green cell with no discriminating power.
+        #
+        # The two witnesses of failure mode (i) are now:
+        #   the TYPEDEF        `typedef unsigned rx_forward_state;`  vs `int`
+        #   the STEP ACCESSOR  `{ return transitions[s + cl]; }`     vs `s * N + cl`
+        # and they come from the SAME emitted block, which is weaker than the
+        # two independent sites [OPT-3] had -- so the third witness below (the
+        # accept table LENGTH, from a different emitter function) carries
+        # more of the weight, and a fourth is added: the body must not
+        # subscript the transition table at all.
+        /^typedef (int|unsigned) rx_forward_state;$/               { fvar = $2 }
+        /^typedef (int|unsigned) rx_reverse_state;$/               { rvar = $2 }
+        /^static inline rx_forward_state rx_forward_step\(/        { instep = "f" }
+        /^static inline rx_reverse_state rx_reverse_step\(/        { instep = "r" }
+        /^\{ return transitions\[/ {
+            v = ($0 ~ /\* [0-9]+ \+/) ? "mul" : "add"
+            if (instep == "f") fix = v; else if (instep == "r") rix = v
+            instep = "" }
+        # THE TOKEN-LEAK WITNESS (docs/design/emitter_form.md §9.2): outside its
+        # own DECLARATION, a transition table may only be named as an argument
+        # to that machine step accessor. A `rx_forward_next_state[` subscript
+        # anywhere else is the representation escaping the block, which is the
+        # failure that would make every witness above describe a form the loop
+        # no longer takes.
+        /rx_(forward|reverse)_next_state\[/ && $0 !~ /^    static const/ { leak++ }
         # Does this artifact contain a DFA scan at all? The [DD-13c] iff, with
         # the markers run_dfa_stamps.sh uses: matcher text written by
         # emit_dfa.c, never a stamp. The EMPTY engine COUNTS -- its body is one
@@ -208,12 +232,12 @@ read_artifact() {
                                     sub(/"$/, "", s); stamp = s }
         function ent(l,   t) { t = l; sub(/^[^[]*\[/, "", t); sub(/\].*$/, "", t); return t + 0 }
         END {
-            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s stamp=%s\n",
+            printf "scan=%d fpm=%d rpm=%d fent=%d rent=%d facc=%d racc=%d fvar=%s rvar=%s fix=%s rix=%s leak=%d stamp=%s\n",
                    (scan ? 1 : 0),
                    (fent ? fpm : -1), (rent ? rpm : -1),
                    fent + 0, rent + 0, facc + 0, racc + 0,
                    (fvar == "" ? "-" : fvar), (rvar == "" ? "-" : rvar),
-                   (fix == "" ? "-" : fix), (rix == "" ? "-" : rix),
+                   (fix == "" ? "-" : fix), (rix == "" ? "-" : rix), leak + 0,
                    (stamp == "" ? "-" : stamp)
         }
     '
@@ -351,7 +375,7 @@ else
         | sed 's/^pattern //' | LC_ALL=C sort -u > "$PATFILE"
     npat=$(grep -c . "$PATFILE" || true)
 
-    swept=0; cmp_n=0; drift=0; boundviol=0; accviol=0; shapeviol=0
+    swept=0; cmp_n=0; drift=0; boundviol=0; accviol=0; shapeviol=0; leakviol=0
     prem=0; idx=0; mix=0; non=0
     : > "$WORKDIR/premul_artifacts"
     while IFS= read -r pat; do
@@ -401,6 +425,8 @@ else
             [ "$rpm" = "1" ] && { want_var=unsigned; want_ix=add; }
             { [ "$rvar" = "$want_var" ] && [ "$rix" = "$want_ix" ]; } || shapeviol=$((shapeviol + 1))
         }
+        # [ENG-FORM] the token-leak witness, counted per ARTIFACT.
+        [ "${leak:-0}" -ne 0 ] && leakviol=$((leakviol + 1))
         # Keep ONE premultiplied artifact per distinct forward-table size for
         # §5's cell sweep, so that section runs on a real population without
         # re-compiling the corpus.
@@ -455,10 +481,12 @@ else
     else
         ok "[accept] every accept table's LENGTH agrees with its machine's form, derived from a different emitter function than the transition table's type"
     fi
-    if [ "$shapeviol" -ne 0 ]; then
-        bad "[shape] $shapeviol machine(s) declare a state variable or emit a transition index inconsistent with their table form. An 'int' state variable under the premultiplied form is CORRECT and reinstates the movslq the transform exists to remove — a silent performance regression no answer check can see"
+    if [ "$leakviol" -ne 0 ]; then
+        bad "[shape/ENG-FORM] $leakviol artifact(s) subscript a transition table outside its own declaration — the opaque state token is leaking its representation into the emitted loop (docs/design/emitter_form.md §9.2), which is the failure that makes every other witness in this section describe a form the loop no longer takes"
+    elif [ "$shapeviol" -ne 0 ]; then
+        bad "[shape] $shapeviol machine(s) declare a state token or emit a step accessor inconsistent with their table form. An 'int' token under the premultiplied form is CORRECT and reinstates the movslq the transform exists to remove — a silent performance regression no answer check can see"
     else
-        ok "[shape] every premultiplied machine declares 'unsigned' and emits an add-only index; every indexed one declares 'int' and keeps its multiply"
+        ok "[shape] every premultiplied machine's TOKEN typedef is 'unsigned' and its step accessor is add-only; every indexed one's is 'int' and keeps its multiply; and no artifact subscripts a transition table outside its declaration ([ENG-FORM] §9.2)"
     fi
 
     echo "== [OPT-3] §5 the CELL invariant on every premultiplied table =="
