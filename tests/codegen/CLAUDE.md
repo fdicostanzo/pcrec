@@ -355,6 +355,15 @@ decides whether to perform it — and then run the row through
     thing — the emitted DEFINITION `static int rx_prefilter(const unsigned
     char *subject, ...`, the line `emit_search_head` writes when emit_vm.c
     asks emit_dfa.c for a scan under a private name.
+  - **[DD-13c] THE RUNTIME MIRRORS ARE HELD TO THE MACROS HERE**, because
+    this is the script that already compiles the whole corpus:
+    `rx_info.scan`/`.prefilter` must equal `RX_DFA_SCAN`/`RX_DFA_PREFILTER`
+    on every compiled artifact of BOTH engines (2,483), reading
+    `NULL`/`"none"` where the macros are absent. A THIRD source in the same
+    one-pass `awk` — struct-literal initializer lines, neither `#define`s nor
+    matcher text. The LINE COUNT is asserted too (exactly one of each): the
+    validation showed that without it, fields that stopped being emitted made
+    the value comparison vacuously true and the check green.
   - **[DD-13c] THE VM HALF IS AN IFF, NOT A PROHIBITION.** The old rule was
     "no `RX_DFA_*` macro on a VM artifact", and it was wrong about the §6.1
     hybrid, which inlines a full DFA scan and (since [DD-13c]) stamps the

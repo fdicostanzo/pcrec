@@ -759,10 +759,35 @@ used to justify `RX_VM_PREFILTER`'s VM-only scope by calling the DFA's own
 prefilter "an unrelated always-on optimization, not a selection point D46
 governs" was D81's retired rule and is corrected in place.
 
-**ABI 4 -> 6** (D76/[TT-11]), with the same (A)-unchanged/(B)-re-pinned shape
-[DD-13] used: emitted `#define` bytes move on the four proven-empty DFA
-artifacts and on every VM hybrid, and nothing inside the program region does.
-(5 was taken by lane srTier's two-tier entry in the same session.)
+**(FRANK, D40 ADDENDUM) THE SAME TWO FACTS AS RUNTIME FIELDS.** `struct
+rx_info` gains `scan` and `prefilter`, written by `emit_info_def` from
+`dfa_scan_name`/`dfa_prefilter_name` — the SAME two functions
+`pcrec_emit_dfa_scan_stamps` calls, and their only other callers. One
+derivation, two spellings; a codegen check asserts field == macro on every
+compiled artifact of both engines, which is a check of THIS EMITTER rather
+than of arithmetic precisely because there is no second computation to drift.
+
+The guard is `pcrec_artifact_has_dfa_scan`, which is `src/core/compile.c`'s own
+`fit.chosen == ENGM_DFA || fit.prefilter` spelled once — the condition that
+MAKES `job->dfa`/`job->engine` exist, so it is not a claim about the artifact
+that happens to agree, it is the reason there is anything to read. Both the
+hybrid's stamp gate and the runtime mirror ask it. Where it is false the fields
+read `NULL` and `"none"`; §6 of the spec states the whole rule, including why
+the string `"hybrid"` never appears in `prefilter` (an artifact that would say
+it reports its inlined scan's actual mechanism instead, and `scan != NULL` is
+how a consumer reads "hybrid").
+
+**ABI 4 -> 6, AND THIS ONE IS A LAYOUT EVENT** — unlike [DD-13]'s, which was
+scaffolding only. Two things move together: the emitted `#define` bytes (the
+proven-empty DFA artifacts' scan value; two new lines on every VM hybrid) and
+the struct itself (two `const char *` members APPENDED AT THE END, so no
+existing offset moves — unlike abi 2's inserted `work_budget` and abi 3's
+inserted sizing block). (A) is still byte-identical and (B) is still re-pinned.
+**BOTH ARTIFACT KINDS ARE AFFECTED and the abi comment says so**, which is r37
+A12's lesson: that finding was that abi 3 -> 4's comment argued the bump from
+the DFA side alone while `emit_info_def` is SHARED, leaving a reader unable to
+tell that every VM artifact's bytes moved too. (5 was taken by lane srTier's
+two-tier entry in the same session.)
 
 ## The VM engine joins ([M4.5b])
 
