@@ -15791,3 +15791,35 @@ candidate-start DFA needs the first-byte language, not the count —
 build from a bench row, D77). OWED and running (postfinal.sh): the full
 san on 6e8edfb, and rows S36-S39/S44 solo (the vm-suite rows carried the
 pre-existing red in the matrix — DETECTED there, but not attributable).
+
+#### Fortieth session, part 16 — CLOSE: the abi-6 tree is battery-proven; the loop's first shipped optimization is on main (2026-08-26 09:1x EDT)
+
+Post-final on 6e8edfb (07:24 → 09:13): strict clean; the rewritten
+[ENG-BREP] checks green on main (test-vm 9/0 80/0 35/0, test-codegen
+106/0 + stamps 29/0 + trie 7/0); rows S36-S39/S44 solo, each 1 row /
+0/0/0/0 — the vm-suite rows are attributable now; the FULL `make san`
+33/33 scripts, rc 0, zero sanitizer reports, both axes (1h42m). With the
+final battery's matrix (180/0/6/0/0 at e709397) and test stage
+(1,570 checks, the one ceiling red since fixed), main at 6e8edfb is
+PROVEN: [DD-13] stamps (abi 4) → [OPT-1] two-tier entries (abi 5) →
+[DD-13c] scope + rx_info mirrors (abi 6). Bench inbox I-6 sent
+(pcrec-bench b-side commit; pin 6e8edfb; the adapter facts; K39 for the
+interpreter's uncovered bucket). [DD-13c] CLOSED; [OPT-1] STEP 2 CLOSED
+(STEP 3 next).
+
+THE SESSION IN ONE PARAGRAPH (2026-08-25 10:5x → 2026-08-26 09:1x):
+nine rulings (D74-D80) closed the spine and made the loop the
+structure; CLAUDE.md gained the situation index; [CHK-1] (five check
+rows) closed green; six spec documents shipped; [DD-13]'s stamps, the
+two-tier entries and the stamps' scope shipped through three abi events
+with two D6 panels (r37, r38); the bench confirmed wave G (2.4× over
+PCRE2-JIT on the factored email pattern) and its loop tools shipped on
+the other side; three outliers were found and measured ([OPT-1] fixed,
+[OPT-2] narrowed to [ENG-ABS], [OPT-3] chartered with Frank's SIMD
+hypothesis), plus K38/K39/[OPT-4] found by the checks. What it cost:
+four batteries and three restarts, from two abi second-site misses, a
+K35 sort, three drifted anchors, and a magic ceiling — each now a
+structural check or an index row. Twenty-two subagent lanes; the
+manager's own incidents (a wrong-repo commit, a committed conflict
+marker, a self-matching waiter, a shell-expanded commit message) are in
+the index too. Nothing is in flight; wake.md is rewritten.
