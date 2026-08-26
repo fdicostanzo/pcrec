@@ -479,11 +479,20 @@ else
 fi
 # ...and D47.1's ENDGAME beside it, because the refusal above read alone says
 # pcrec cannot compile this pattern, which stopped being true.
-if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
-    eg="$(wc -l < "$WORKDIR/endgame.c")"
-    [ "$eg" -lt 2000 ] \
-        && ok "[ENG-BREP] D45's endgame: the same pattern compiles at the DEFAULT in $eg lines -- the reverse-deterministic rung emits one body copy, so the count stops driving the size" \
-        || bad "[ENG-BREP] '((a)|b){0,4000}c' compiled but emitted $eg lines; the rung must make the count irrelevant to the size"
+# THE ASSERTION IS COUNT-INDEPENDENCE, NOT A CEILING (2026-08-26): this
+# check used to say `lines < 2000`, a magic number the artifact reached
+# exactly on the day three abi events added scaffolding (the tier entries,
+# the selection stamps, two rx_info fields) — a ceiling measures the
+# scaffolding's growth, not the rung's claim. The claim is that the rung
+# emits ONE body copy, so `{0,4000}` and `{0,400}` must be the SAME size
+# (a tolerance of 2 lines covers a wider count literal wrapping a comment).
+if pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx --engine=vm -o "$WORKDIR/endgame_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
+    eg="$(wc -l < "$WORKDIR/endgame.c")"; eg_small="$(wc -l < "$WORKDIR/endgame_small.c")"
+    eg_delta=$(( eg > eg_small ? eg - eg_small : eg_small - eg ))
+    [ "$eg_delta" -le 2 ] \
+        && ok "[ENG-BREP] D45's endgame: {0,4000} compiles at the DEFAULT in $eg lines and {0,400} in $eg_small (delta $eg_delta) -- the reverse-deterministic rung emits one body copy, so the count stops driving the size" \
+        || bad "[ENG-BREP] '((a)|b){0,4000}c' emitted $eg lines vs $eg_small for {0,400} (delta $eg_delta > 2); the rung must make the count irrelevant to the size"
 else
     bad "[ENG-BREP] '((a)|b){0,4000}c' does not compile at the default; D47.1 names this rung's arrival as when D45's refuse-cap endgame lands"
 fi

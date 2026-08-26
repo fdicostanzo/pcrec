@@ -321,12 +321,31 @@ fi
 # default, small, and the two facts belong next to each other — a reader who
 # sees only the refusal above would reasonably conclude pcrec still cannot do
 # this.
-if pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1; then
-    eg_lines="$(wc -l < "$WORKDIR/endgame.c")"
-    if [ "$eg_lines" -lt 2000 ]; then
-        ok "[ENG-BREP] D45's endgame: the SAME pattern compiles at the default in $eg_lines lines (the reverse-deterministic rung emits one body copy, so the count stops driving the size)"
+# THE ASSERTION IS COUNT-INDEPENDENCE, NOT A CEILING (2026-08-26): `lines <
+# 2000` was a magic number the default (auto: VM + inlined hybrid prefilter)
+# artifact reached EXACTLY on the day three abi events added scaffolding
+# (the tier entries, the selection stamps, two rx_info fields) — a ceiling
+# measures the scaffolding's growth, not the rung's claim. The claim is that
+# the rung emits ONE body copy, so `{0,4000}` must be the same size as
+# `{0,400}` (a tolerance of 2 lines for a wider count literal in a comment).
+# …AND the comparison is made with the PREFILTER DENIED (`-fno-prefilter`, an
+# answer-identity-preserving axis), because the DEFAULT artifact's size DOES
+# grow with the count: the hybrid's inlined DFA prefilter carries the bounded
+# repeat (869 → 1,994 lines for {0,400} → {0,4000} at 32890e2, before any of
+# today's scaffolding) — a pre-existing cost the old ceiling hid by slack
+# (K39, [OPT-4]). The auto sizes are PRINTED beside the verdict so the K39
+# number stays visible; the assertion is the rung's own claim.
+eg_auto_big="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 && wc -l < "$WORKDIR/endgame_auto.c" || echo '?')"
+eg_auto_small="$(pcrec_run "$PCREC" -p rx -o "$WORKDIR/endgame_auto_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1 && wc -l < "$WORKDIR/endgame_auto_small.c" || echo '?')"
+echo "  [ENG-BREP] default-engine sizes (informational, K39): {0,400} $eg_auto_small lines, {0,4000} $eg_auto_big lines — the hybrid prefilter's DFA scales with the count"
+if pcrec_run "$PCREC" -p rx -fno-prefilter -o "$WORKDIR/endgame.c" -- '((a)|b){0,4000}c' >/dev/null 2>&1 \
+   && pcrec_run "$PCREC" -p rx -fno-prefilter -o "$WORKDIR/endgame_small.c" -- '((a)|b){0,400}c' >/dev/null 2>&1; then
+    eg_lines="$(wc -l < "$WORKDIR/endgame.c")"; eg_small="$(wc -l < "$WORKDIR/endgame_small.c")"
+    eg_delta=$(( eg_lines > eg_small ? eg_lines - eg_small : eg_small - eg_lines ))
+    if [ "$eg_delta" -le 2 ]; then
+        ok "[ENG-BREP] D45's endgame: {0,4000} compiles (prefilter denied) in $eg_lines lines and {0,400} in $eg_small (delta $eg_delta) — the reverse-deterministic rung emits one body copy, so the count stops driving the size)"
     else
-        bad "[ENG-BREP] '((a)|b){0,4000}c' compiled but emitted $eg_lines lines — the rung is meant to make the count irrelevant to the emitted size"
+        bad "[ENG-BREP] '((a)|b){0,4000}c' emitted $eg_lines lines vs $eg_small for {0,400} (delta $eg_delta > 2) — the rung is meant to make the count irrelevant to the emitted size"
     fi
 else
     bad "[ENG-BREP] '((a)|b){0,4000}c' does not compile at the default; D47.1 names this rung's arrival as when D45's refuse-cap endgame lands"
