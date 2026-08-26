@@ -1561,7 +1561,30 @@ execution speed trades the primary goal (D18) for the secondary one.
   PGO should recover mechanically), D52's pcrec-bench (a hand-C testee
   triple is also natural THERE later; the in-repo arm is the
   fast-iteration instrument).
-- [OPT-1] STATE:started (STEP 1 MEASURED 2026-08-25 ~19:3x, lane srOpt1, no code: REPRODUCED 2.2× on the bench's `quick` (pcrec-vm 29,737 vs vm-in 13,548 ns/call, 77 subjects) and 5.05× on a 16 B fast-matching subject (233.8 vs 46.3 ns/call, N=100k, median of 5, taskset). ATTRIBUTED: (a) gcc STACK-CLASH PROTECTION probing the 98,512 B `rx_run_buffers storage` local (24 pages; `-fstack-usage`: rx_search 98512, rx_search_in 208) — `-fno-stack-clash-protection` alone: 233.8 → 46.2 ns, i.e. ~99 % of the gap; (b) per-call init is 144 B on BOTH paths (excluded by code reading); (c) page faults O(1) per process, a pre-touch control changes nothing (excluded); (d) frame 24 B, SPLICED, no linked call (excluded). GENERALITY: the tax is proportional to the STAMPED default — `(\w+)\s+\1` (2/5 frames, 272 B) and `(?<=foo)bar` (3/3, 240 B) pay NOTHING (0.98×, 0.99×); it hits patterns whose default is large, i.e. the deep-sized ones. STEP 2 — THE FIX, manager's recommendation pending Frank: the TWO-TIER ENTRY — the un-suffixed entries carry a SMALL on-stack buffer (a page or less: e.g. 64 frames / 96 trail = 3,072 B) and, on PCREC_ERR_FRAMES only, call a separate `noinline` deep function that owns the full stamped storage and re-runs the match (the VM is deterministic: byte-identical answers; §5.3's no-allocation/no-thread-local contract kept; the depth ceiling D73 ruled is UNCHANGED; the probing cost moves to the slow path only). Alternatives measured/considered: shrinking the stamped default (trades D73's depth ceiling for speed — not general); `no_stack_clash_protection` per entry (a hardening opt-out on emitted code — a posture decision, Frank's, and the attribute's existence in gcc is unverified). It is an emitter change (scaffolding: abi bump + re-pin per D76; the VM program region unchanged) — one opus lane with a design note and a D6 critic, AFTER srStamp lands (both touch entry emission). Original charter follows) — THE LOOP'S FIRST OUTLIER (pcrec-bench O-4,
+- [OPT-1] STATE:started (STEP 2 BUILT 2026-08-25, lane srTier, branch lane/srTier,
+  awaiting the D6 critic and the manager's merge — the TWO-TIER DEFAULT ENTRY,
+  design docs/design/two_tier_entry.md written before the code. SHIPPED: one
+  emitter for the three un-suffixed entries (`vm_emit_default_entry`), fast
+  capacities derived ONCE beside the BufSurface and read by both the stamps and
+  the bind, `<PREFIX>_FAST_FRAMES`/`_FAST_TRAIL` on every VM artifact
+  (FAST == RESUME **is** "one tier"), `-fno-tiered-entry`/`PCREC_NO_TIERED_ENTRY`
+  (bit 14, in strategy_denials), abi 4 -> 5 with recursion-identity (B)
+  re-pinned to 469a432. MEASURED, gcc -O2 -fstack-usage, rx_search's own frame:
+  `^(a(?1)?b)$` 131,216 -> 3,184 B and `(a|aa)+b` 98,432 -> 3,184 B, the stamped
+  storage now on a `noinline` `_deep` static; `rx_search_in` unchanged at
+  144/128. A SINGLE-TIER artifact moves exactly two lines + `.abi` (measured on
+  `(\w+)\s+\1` and `(?<=foo)bar`), and NO DFA artifact's bytes move at all —
+  a first for an abi bump. Corpus shape: 2,758 patterns = 986 dfa + 1,215 vm
+  single-tier + 272 vm tiered + 285 refused, 0 mismatched. IDENTITY is a
+  theorem, not a sample: the deep run is a bit-for-bit replay of the
+  single-tier entry from scratch (§5.3 leaves no state that could carry over),
+  so the budgets RESET on escalation and carrying them would break it — spec
+  §10.9. New opt-in check `make test-tiered-entry` (11/0), three observables
+  that can disagree, both validation reds MEASURED. K33 NARROWED (not closed)
+  and run_stackdepth_tests.sh's cause-check re-derived from the deep path with
+  a new behavioural arm D. NOT DONE: the end-to-end ns/call before/after on a
+  quiet box, and the D6 critic. STEP 1's record follows.
+  STEP 1 MEASURED 2026-08-25 ~19:3x, lane srOpt1, no code: REPRODUCED 2.2× on the bench's `quick` (pcrec-vm 29,737 vs vm-in 13,548 ns/call, 77 subjects) and 5.05× on a 16 B fast-matching subject (233.8 vs 46.3 ns/call, N=100k, median of 5, taskset). ATTRIBUTED: (a) gcc STACK-CLASH PROTECTION probing the 98,512 B `rx_run_buffers storage` local (24 pages; `-fstack-usage`: rx_search 98512, rx_search_in 208) — `-fno-stack-clash-protection` alone: 233.8 → 46.2 ns, i.e. ~99 % of the gap; (b) per-call init is 144 B on BOTH paths (excluded by code reading); (c) page faults O(1) per process, a pre-touch control changes nothing (excluded); (d) frame 24 B, SPLICED, no linked call (excluded). GENERALITY: the tax is proportional to the STAMPED default — `(\w+)\s+\1` (2/5 frames, 272 B) and `(?<=foo)bar` (3/3, 240 B) pay NOTHING (0.98×, 0.99×); it hits patterns whose default is large, i.e. the deep-sized ones. STEP 2 — THE FIX, manager's recommendation pending Frank: the TWO-TIER ENTRY — the un-suffixed entries carry a SMALL on-stack buffer (a page or less: e.g. 64 frames / 96 trail = 3,072 B) and, on PCREC_ERR_FRAMES only, call a separate `noinline` deep function that owns the full stamped storage and re-runs the match (the VM is deterministic: byte-identical answers; §5.3's no-allocation/no-thread-local contract kept; the depth ceiling D73 ruled is UNCHANGED; the probing cost moves to the slow path only). Alternatives measured/considered: shrinking the stamped default (trades D73's depth ceiling for speed — not general); `no_stack_clash_protection` per entry (a hardening opt-out on emitted code — a posture decision, Frank's, and the attribute's existence in gcc is unverified). It is an emitter change (scaffolding: abi bump + re-pin per D76; the VM program region unchanged) — one opus lane with a design note and a D6 critic, AFTER srStamp lands (both touch entry emission). Original charter follows) — THE LOOP'S FIRST OUTLIER (pcrec-bench O-4,
   2026-08-25 ~14:3x, report reports/2026-08-25-email-specimen-0.1-budu-
   ryzen1600-repin-692c2e8.md, bench 0cf336c): at the SAME pin 692c2e8,
   `pcrec-vm-in` (the `_in` entry with a once-touched 2.75 MiB caller
