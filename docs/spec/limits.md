@@ -104,8 +104,27 @@ so the numbers below have somewhere to attach.
   and is the only one a caller ever observes; a give-up still means the
   stamped default ran out, never the fast tier. `-fno-tiered-entry`
   (`tuning.md` §2.12) removes the tier. What changes is cost, not any
-  number here: MEASURED, the email specimen's entry went 233.8 → 46.6
-  ns/call and its stack frame 131,216 → 3,184 B.
+  number in this section: MEASURED on the RFC 5322 **email** specimen
+  (16-byte matching subject, N=100k, median of 5, `taskset`, six
+  repetitions) its entry went **213–268 → 45.6–48.8 ns/call** and its own
+  stack frame **98,512 → 3,168 B**. (§5's 131,216 → 3,184 B is the
+  `^(a(?1)?b)$` **recursion** specimen — a different artifact. The two
+  specimens are never paired.)
+- **[OPT-1] THE TIER IS A BET, AND WHAT IT COSTS WHEN IT LOSES IS A LIMIT
+  WORTH STATING HERE.** The wasted fast attempt is bounded by the STEP and
+  WORK budgets above, **not** by the fast frame count — sixty frames of
+  depth absorb an unbounded amount of backtracking. So an escalating call
+  can spend up to **twice** §3.1's step budget of real work before it
+  answers, since §10.9 refills both budgets for the deep attempt. And the
+  transition is a CLIFF rather than a ramp: MEASURED on `((a)|(aa))+b`
+  (tiered vs `-fno-tiered-entry`, N=20k, median of 5), 18.5 vs 207.1 ns at
+  n=1 (11× faster) … 186.4 vs 365.3 at n=23 … **568.9 vs 372.9 at n=24**, a
+  3.05× jump across one byte, and 1.24–1.53× slower than the single-tier
+  entry at every depth above it. **That boundary is a 25-byte subject** (24 `a`s and a `b`) —
+  depth is a property of the backtracking, not of the input length. A
+  workload measured to sit above its patterns' boundaries should use `_in`
+  or `-fno-tiered-entry`. How often real workloads escalate is the open
+  measurement `[ENG-PGO]` names.
 
 ### 3.3 Compile-time budgets: two different things named "limit"
 

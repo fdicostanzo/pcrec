@@ -205,6 +205,9 @@ else
             $1 == "#define" && $2 == "RX_FAST_TRAIL"     { nft++; ft = $3 }
             $1 == "#define" && $2 == "RX_RESUME_FRAMES"  { rf = $3 }
             $1 == "#define" && $2 == "RX_TRAIL_FRAMES"   { rt = $3 }
+            $1 == "#define" && $2 == "RX_RESUME_FRAME_SIZE" { fsz = $3 }
+            $1 == "#define" && $2 == "RX_TRAIL_FRAME_SIZE"  { tsz = $3 }
+            $1 == "#define" && $2 == "RX_NSLOTS"            { nsl = $3 }
             END {
                 if (!vm) { print (nff || nft) ? "mismatch-dfa-carries-fast-stamp" : "dfa"; exit }
                 if (nff != 1 || nft != 1) { print "mismatch-vm-missing-fast-stamp"; exit }
@@ -215,7 +218,12 @@ else
                 if (partial)             { print "mismatch-partial-tier-code"; exit }
                 if (code && !stamped)    { print "mismatch-code-tiers-stamp-says-one"; exit }
                 if (!code && stamped)    { print "mismatch-stamp-tiers-code-does-not"; exit }
-                print code ? "vm-tiered" : "vm-one-tier"
+                # The SIZING FACTS ride the kind, so the FLOOR check below reads
+                # them off the artifact rather than re-deriving them (r38 3a).
+                # NO APOSTROPHES IN THIS AWK PROGRAM: it is single-quoted in the
+                # shell, so one would close the quote (it did, once).
+                printf "%s %d %d %d %d %d\n", (code ? "vm-tiered" : "vm-one-tier"),
+                       ff+0, ft+0, fsz+0, tsz+0, nsl+0
             }'
     }
     export -f classify pcrec_run 2>/dev/null || true
@@ -230,8 +238,8 @@ else
     done < "$CORPUS"
 
     NDFA=$(grep -c '^dfa$'         "$WORKDIR/kinds.txt" || true)
-    NONE=$(grep -c '^vm-one-tier$' "$WORKDIR/kinds.txt" || true)
-    NTIER=$(grep -c '^vm-tiered$'  "$WORKDIR/kinds.txt" || true)
+    NONE=$(grep -c '^vm-one-tier ' "$WORKDIR/kinds.txt" || true)
+    NTIER=$(grep -c '^vm-tiered '  "$WORKDIR/kinds.txt" || true)
     NREF=$(grep -c '^refused$'     "$WORKDIR/kinds.txt" || true)
     NBAD=$(grep -c '^mismatch-'    "$WORKDIR/kinds.txt" || true)
     echo "classified: $NDFA dfa, $NONE vm single-tier, $NTIER vm tiered, $NREF refused, $NBAD mismatched"
@@ -241,10 +249,64 @@ else
     else
         ok "§2: on all $NPAT corpus patterns the emitted code and the FAST stamps agree in BOTH directions — every VM artifact carries exactly one of each stamp, no FAST capacity exceeds its default, no DFA artifact carries one, and the tiered code is present exactly where FAST < RESUME ($NTIER tiered, $NONE single-tier)"
     fi
+    # ---- THE FLOOR (r38 finding 3a) --------------------------------------
+    # EVERYTHING ABOVE BOUNDS THE FAST TIER FROM ABOVE ONLY. `FAST <= RESUME`,
+    # the biconditional, the frame check in §4 — every one of them stays GREEN
+    # if the derivation shrinks. A fast tier of 2 frames still tiers, still
+    # stamps honestly, still fits a page, and still answers correctly; it just
+    # escalates on everything and makes the optimization a pessimisation. That
+    # degradation is invisible to every check written so far, because the stamp
+    # and the bind move TOGETHER and this file reads both. So the floor is
+    # asserted three ways, and the middle one is the real defence.
+    #
+    # THE BUDGET CONSTANTS ARE SPELLED HERE, deliberately, so this file states
+    # the contract it checks rather than accepting whatever the emitter says —
+    # run_dfa_stamps.sh's documented-value-set precedent. They must be updated
+    # DELIBERATELY, in the same change as `src/gen/emit_vm.c`.
+    FAST_BUDGET=3072       # VM_FAST_TIER_BYTES
+    FAST_MIN=16            # VM_FAST_TIER_MIN
+    TIER_FLOOR=250         # measured 272 at this commit; see below
     if [ "$NTIER" -eq 0 ]; then
         bad "§2: NOT ONE corpus pattern compiled to a tiered artifact, so the biconditional above was only ever checked on its trivial side — the sweep's population for the interesting case is empty and the PASS above would be vacuous"
+    elif [ "$NTIER" -lt "$TIER_FLOOR" ]; then
+        bad "§2(floor A): only $NTIER of $NPAT corpus patterns tier, below the floor of $TIER_FLOOR (measured 272 when this check was written). Either the corpus lost its deep-sized patterns or the derivation stopped tiering artifacts it used to — a shrinking population is the check that cannot fail, so this is a failure rather than a note"
     else
-        ok "§2: the tiered side of the biconditional has a real population — $NTIER of $NPAT corpus patterns tier"
+        ok "§2(floor A): the tiered side of the biconditional has a real population — $NTIER of $NPAT corpus patterns tier, at or above the floor of $TIER_FLOOR"
+    fi
+
+    # (floor B) THE FAST TIER MUST FILL ITS BUDGET, to within one frame plus one
+    # trail entry of the integer division's rounding. This is the assertion that
+    # catches a shrunken derivation, and it is derivation-INDEPENDENT: it does
+    # not re-implement the scaling, it states the PROPERTY the scaling exists to
+    # produce — "as much capacity as one page can hold". A fast tier at half the
+    # budget passes every other check in this file and fails this one.
+    #
+    #     avail = FAST_BUDGET - NSLOTS*sizeof(ptrdiff_t)
+    #     used  = FAST_FRAMES*RESUME_FRAME_SIZE + FAST_TRAIL*TRAIL_FRAME_SIZE
+    #     used <= avail   (the page budget, which §4 also measures for real)
+    #     used >= avail - (RESUME_FRAME_SIZE + TRAIL_FRAME_SIZE)   (the floor)
+    UNDER=$(awk -v B="$FAST_BUDGET" '
+        $1 == "vm-tiered" {
+            ff=$2; ft=$3; fsz=$4; tsz=$5; nsl=$6
+            avail = B - nsl*8
+            used  = ff*fsz + ft*tsz
+            if (used > avail || used < avail - (fsz+tsz))
+                printf "ff=%d ft=%d used=%d avail=%d; ", ff, ft, used, avail
+        }' "$WORKDIR/kinds.txt")
+    if [ -z "$UNDER" ]; then
+        ok "§2(floor B): all $NTIER tiered artifacts fill their page budget to within one frame + one trail entry of the integer rounding — the fast tier is as large as one $FAST_BUDGET B budget allows, not merely small enough to fit"
+    else
+        bad "§2(floor B): tiered artifacts whose fast tier does NOT fill its budget: $UNDER — a fast tier below its budget escalates more often than it needs to and turns the optimization into a pessimisation, while passing every other check in this file"
+    fi
+
+    # (floor C) AND NOTHING TIERS BELOW THE EMITTER's OWN MINIMUM, read back off
+    # the artifact. `VM_FAST_TIER_MIN` is the emitter's rule that a tier this
+    # small is not worth two runs; this asserts the rule reached the output.
+    TOOSMALL=$(awk -v M="$FAST_MIN" '$1 == "vm-tiered" && ($2 < M || $3 < M) {printf "%d/%d; ", $2, $3}' "$WORKDIR/kinds.txt")
+    if [ -z "$TOOSMALL" ]; then
+        ok "§2(floor C): no tiered artifact carries a fast capacity below VM_FAST_TIER_MIN ($FAST_MIN) — the emitter's own give-up-and-stay-single-tier rule reached the emitted output"
+    else
+        bad "§2(floor C): tiered artifacts below VM_FAST_TIER_MIN ($FAST_MIN): $TOOSMALL — the emitter emitted a tier it should have declined"
     fi
 fi
 
@@ -333,7 +395,7 @@ else
         DEPTHS="1 $((FAST_N - 1)) $FAST_N $((FAST_N + 1)) $DEF_N $((DEF_N + 1))"
         echo "depths: $DEPTHS"
         # shellcheck disable=SC2086
-        "$TIMEOUT_BIN" 300 "$D/tier" $DEPTHS > "$D/rows.txt" 2>"$D/rows.err"
+        "$TIMEOUT_BIN" 300 "$D/tier" anbn $DEPTHS > "$D/rows.txt" 2>"$D/rows.err"
         NROW=$(grep -c '^row ' "$D/rows.txt" || true)
         NWANT=$(printf '%s\n' $DEPTHS | wc -l)
         if [ "$NROW" -ne "$NWANT" ]; then
@@ -359,13 +421,30 @@ else
             else
                 bad "§3(b): $NESC of $NROW depths escalated when they should not have, or did not when they should: $(awk '($5 > 0) != ($6 == 1) {printf "n=%s esc=%s predicted=%s; ", $2, $5, $6}' "$D/rows.txt")"
             fi
-            # (c) THE DEEP TIER RE-RUNS ONCE, not repeatedly. A deep tier that
+            # (c) THE CAPTURE SPANS AGREE, not only the returns (r38 3b).
+            # Design §6 and spec §10.9 promise both, and the spans are the half
+            # a tier bug would land in: the deep tier re-runs from scratch, so
+            # a lost copy-out — or the FAST attempt's untouched array returned
+            # beside the DEEP attempt's return value — is invisible in `ans`.
+            # The population is asserted NON-EMPTY: spans are only defined on a
+            # match (§3.1 leaves `caps` untouched otherwise), so a run whose
+            # depths all gave up would compare nothing and pass vacuously.
+            NSP=$(awk '$7 == "1" || $7 == "0"' "$D/rows.txt" | wc -l)
+            NSPBAD=$(awk '$7 == "0"' "$D/rows.txt" | wc -l)
+            if [ "$NSP" -eq 0 ]; then
+                bad "§3(spans): not one of the $NROW depths matched through BOTH entries, so no capture array was compared and this arm would pass vacuously"
+            elif [ "$NSPBAD" -eq 0 ]; then
+                ok "§3(spans): on all $NSP matching depths the TIERED entry's whole capture array is byte-identical to <prefix>_search_in's at the stamped default (memcmp over RX_NCAPS pairs, not a per-group loop)"
+            else
+                bad "§3(spans): $NSPBAD of $NSP matching depths returned the same value but DIFFERENT capture spans: $(awk '$7 == "0" {printf "n=%s; ", $2}' "$D/rows.txt")"
+            fi
+            # (d) THE DEEP TIER RE-RUNS ONCE, not repeatedly. A deep tier that
             # re-entered itself would still answer correctly.
             NMANY=$(awk '$5 > 1' "$D/rows.txt" | wc -l)
             if [ "$NMANY" -eq 0 ]; then
-                ok "§3(c): no depth escalated more than once — one FRAMES give-up, one replay, and the deep tier does not re-enter the escalation path"
+                ok "§3(d): no depth escalated more than once — one FRAMES give-up, one replay, and the deep tier does not re-enter the escalation path"
             else
-                bad "§3(c): $NMANY depths escalated more than once: $(awk '$5 > 1 {printf "n=%s esc=%s; ", $2, $5}' "$D/rows.txt")"
+                bad "§3(d): $NMANY depths escalated more than once: $(awk '$5 > 1 {printf "n=%s esc=%s; ", $2, $5}' "$D/rows.txt")"
             fi
         fi
     fi
@@ -445,7 +524,7 @@ else
         bad "§5: could not build tier_driver against the denied artifact: $(head -5 "$DD/drv.log")"
     else
         # shellcheck disable=SC2086
-        "$TIMEOUT_BIN" 300 "$DD/tier" $DEPTHS > "$DD/rows.txt" 2>&1
+        "$TIMEOUT_BIN" 300 "$DD/tier" anbn $DEPTHS > "$DD/rows.txt" 2>&1
         # Compare the ANSWER column only: the denied build has no tier, so its
         # escalation column is 0 everywhere BY CONSTRUCTION and comparing it
         # would be comparing the flag against itself.
@@ -460,6 +539,85 @@ else
             ok "§5: the denied build escalated 0 times at every depth, as a build with no deep tier must"
         else
             bad "§5: the -fno-tiered-entry build escalated $NDESC times — it has no deep tier to escalate into, so the flag did not deny what it claims to"
+        fi
+    fi
+fi
+
+# ===========================================================================
+# §6 — THE MULTI-GROUP WITNESS (r38 finding 3b)
+# ===========================================================================
+# The specimen has ONE group and its span is the whole match, so on it "the
+# spans agree" is very nearly implied by "the returns agree" and §3(spans) is
+# far weaker than it looks. `((a)|(aa))+b` has THREE groups, two of them
+# alternation arms whose contents depend on the backtracking path taken — the
+# thing a replay has to reproduce and the thing a not-quite-replay would get
+# wrong while still returning 1.
+#
+# It also has a DIFFERENT subject shape (a^n b, where depth is the ITERATION
+# count, not a nesting depth) and reaches the boundary at a ~24-BYTE subject,
+# which is the fact §7 of the design note now states: "deep" is not a synonym
+# for "large".
+#
+# The whole span of depths is swept, not five points: the boundary is cheap to
+# cross here and a dense sweep is what makes "on every subject" a measurement.
+echo
+echo "-- §6: the multi-group witness, spans over a dense sweep --"
+
+MG='((a)|(aa))+b'
+MGD="$WORKDIR/multigroup"
+mkdir -p "$MGD"
+if ! pcrec_run "$PCREC" -p rx --engine=vm -o "$MGD/gen.c" -- "$MG" >"$MGD/pcrec.log" 2>&1; then
+    bad "§6: could not compile the multi-group witness '$MG': $(head -3 "$MGD/pcrec.log")"
+else
+    MGFF="$(stamp "$MGD/gen.c" RX_FAST_FRAMES)"
+    MGFT="$(stamp "$MGD/gen.c" RX_FAST_TRAIL)"
+    MGRF="$(stamp "$MGD/gen.c" RX_RESUME_FRAMES)"
+    [ -n "$MGRF" ] || MGRF="$(stamp "$MGD/gen.h" RX_RESUME_FRAMES)"
+    MGNC="$(stamp "$MGD/gen.c" RX_NCAPS)"
+    [ -n "$MGNC" ] || MGNC="$(stamp "$MGD/gen.h" RX_NCAPS)"
+    if [ -z "$MGFF" ] || [ "$MGFF" -ge "$MGRF" ]; then
+        bad "§6: the multi-group witness '$MG' is NOT tiered (FAST_FRAMES='$MGFF' against RESUME_FRAMES='$MGRF') — it is chosen because it tiers AND has several groups; if it stopped tiering this section is measuring the wrong shape"
+    elif [ -z "$MGNC" ] || [ "$MGNC" -lt 4 ]; then
+        bad "§6: the multi-group witness reports RX_NCAPS=$MGNC, fewer than the 4 (whole match + 3 groups) this section exists to exercise — a single-group witness cannot carry the span claim, which is the whole reason this section was added"
+    elif ! (cd "$MGD" && $CC -O2 -I"$MGD" -DRX_TEST_TIER_HOOK \
+                -DTIER_FAST_FRAMES="$MGFF" -DTIER_FAST_TRAIL="$MGFT" \
+                -o "$MGD/tier" "$SCRIPT_DIR/tier_driver.c" "$MGD/gen.c") \
+            >"$MGD/drv.log" 2>&1; then
+        bad "§6: could not build tier_driver against the multi-group witness: $(head -5 "$MGD/drv.log")"
+    else
+        MGDEPTHS="$(seq 1 60 | tr '\n' ' ')"
+        # shellcheck disable=SC2086
+        "$TIMEOUT_BIN" 300 "$MGD/tier" anb $MGDEPTHS > "$MGD/rows.txt" 2>"$MGD/rows.err"
+        MGROW=$(grep -c '^row ' "$MGD/rows.txt" || true)
+        if [ "$MGROW" -ne 60 ]; then
+            bad "§6: the multi-group driver produced $MGROW rows for 60 depths ($(head -2 "$MGD/rows.err")) — an incomplete run says nothing about the depths it did not reach"
+        else
+            MGDIFF=$(awk '$3 != $4' "$MGD/rows.txt" | wc -l)
+            MGSP=$(awk '$7 == "1" || $7 == "0"' "$MGD/rows.txt" | wc -l)
+            MGSPBAD=$(awk '$7 == "0"' "$MGD/rows.txt" | wc -l)
+            MGESC=$(awk '($5 > 0) != ($6 == 1)' "$MGD/rows.txt" | wc -l)
+            MGUP=$(awk '$6 == 1' "$MGD/rows.txt" | wc -l)
+            MGFIRST=$(awk '$6 == 1 {print $2; exit}' "$MGD/rows.txt")
+            echo "rows: $MGROW; RX_NCAPS=$MGNC; fast $MGFF/$MGFT; escalating depths: $MGUP (first at n=$MGFIRST, a $((MGFIRST + 1))-byte subject)"
+            if [ "$MGDIFF" -ne 0 ]; then
+                bad "§6(a): $MGDIFF of $MGROW depths answer differently through the tiered entry than through the default-sized _in: $(awk '$3 != $4 {printf "n=%s(%s vs %s); ", $2, $3, $4}' "$MGD/rows.txt")"
+            else
+                ok "§6(a): on all $MGROW depths of the multi-group witness the tiered entry's answer equals <prefix>_search_in's at the stamped default"
+            fi
+            if [ "$MGSP" -eq 0 ]; then
+                bad "§6(b): no depth of the multi-group witness matched through both entries, so no capture array was compared"
+            elif [ "$MGSPBAD" -eq 0 ]; then
+                ok "§6(b): on all $MGSP matching depths the whole $MGNC-pair capture array is byte-identical between the tiered entry and <prefix>_search_in at the stamped default — the span half of the §10.9 promise, on a witness with three groups rather than one"
+            else
+                bad "§6(b): $MGSPBAD of $MGSP matching depths returned the same value but DIFFERENT capture spans: $(awk '$7 == "0" {printf "n=%s; ", $2}' "$MGD/rows.txt")"
+            fi
+            if [ "$MGUP" -eq 0 ]; then
+                bad "§6(c): not one of the 60 depths escalated, so this dense sweep never crossed the boundary and neither (a) nor (b) says anything about the deep tier"
+            elif [ "$MGESC" -eq 0 ]; then
+                ok "§6(c): across 60 consecutive depths the deep tier was entered on exactly the $MGUP at which <prefix>_search_in AT THE FAST CAPACITIES gives up — the boundary is crossed once and in the right place"
+            else
+                bad "§6(c): $MGESC of $MGROW depths escalated against prediction: $(awk '($5 > 0) != ($6 == 1) {printf "n=%s esc=%s pred=%s; ", $2, $5, $6}' "$MGD/rows.txt")"
+            fi
         fi
     fi
 fi

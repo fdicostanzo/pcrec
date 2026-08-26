@@ -381,20 +381,40 @@ stamped default only on a `PCREC_ERR_FRAMES` give-up**, by calling a
 non-inlined internal function that owns the full storage and re-runs the
 match from scratch. Everything in this section and in §3.1–§3.3 — the
 signatures, the return spaces, the anchoring, the `caps` disciplines, every
-answer — is **unchanged**, and §10.9 is why that is a theorem rather than a
-hope. What changes is the price of a call: a subject that does not need
-depth no longer pays for the depth the artifact could have reached.
-MEASURED on the RFC 5322 email specimen, `--engine=vm`, N=100k: **233.8 →
-46.6 ns/call**, against 46.3 for `<prefix>_search_in`; and the entry's own
-stack frame, `gcc -fstack-usage`, **131,216 → 3,184 B**.
+answer and every capture span — is **unchanged**, and §10.9 is why that is a
+theorem rather than a hope. What changes is the price of a call.
 
-**A caller that needs depth on the FAST path uses `_in`.** The escalation
-costs an extra traversal of what the fast tier already did, so a caller who
-knows its subjects are deep, or who is on a stack too small for the deep
-tier (§5.3, K33), supplies its own storage through §10's `_in` entries and
-never meets the tier at all. `-fno-tiered-entry` (`docs/spec/tuning.md`
-§2.12) restores the single-tier shape for a caller who wants the old cost
-profile without changing call sites.
+**MEASURED on the RFC 5322 email specimen** (`--engine=vm`, 16-byte matching
+subject, N=100k, median of 5, `taskset`, six repetitions): **213–268 → 45.6–48.8
+ns/call**, against 44.2–47.2 for `<prefix>_search_in`; and that artifact's own
+entry frame, `gcc -fstack-usage`, **98,512 → 3,168 B**. (The `^(a(?1)?b)$`
+recursion specimen is a DIFFERENT artifact with different numbers — 131,216 →
+3,184 B; §5.3 and `limits.md` §5 use that one. Do not pair one specimen's
+timing with another's frame.)
+
+**IT IS A BET, AND IT LOSES ON SOME PATTERNS. THE COST WHEN IT LOSES:**
+
+- **The wasted fast attempt is bounded by the STEP and WORK budgets, not by
+  the frame count.** Sixty frames of DEPTH can absorb an unbounded amount of
+  backtracking, so "the fast tier is small" does not bound the work it does
+  before giving up.
+- **There is a DISCONTINUITY at the boundary, not a ramp.** MEASURED on
+  `((a)|(aa))+b` (tiered vs `-fno-tiered-entry`, N=20k, median of 5): 18.5 vs
+  207.1 ns at n=1 — 11× FASTER — rising to 186.4 vs 365.3 at n=23, then
+  **568.9 vs 372.9 at n=24**, a 3.05× jump across one byte and 1.53× SLOWER
+  than the single-tier entry. Above the boundary it stays 1.24–1.53× slower.
+- **"Deep" can mean a very short subject.** That boundary is a **25-byte**
+  subject (24 `a`s and a `b`). Depth is a property of the backtracking, not of the input length.
+- **An escalating call can do up to twice the STEP budget of real work** —
+  §10.9 resets both budgets for the deep attempt, so the fast attempt's spend
+  is additional. §4 states the consequence for the give-up codes.
+
+**A caller that needs depth on the FAST path uses `_in`.** A caller who knows
+its subjects are deep, or who is on a stack too small for the deep tier (§5.3,
+K33), supplies its own storage through §10's `_in` entries and never meets the
+tier at all. `-fno-tiered-entry` (`docs/spec/tuning.md` §2.12) restores the
+single-tier shape without changing call sites, and is the right answer for a
+workload measured to sit above the boundary.
 
 ### 3.1 `<prefix>_search` — the search-loop entry
 
@@ -884,6 +904,19 @@ meaning the same thing at every entry. That uniformity is about the
 codes, not about when a give-up happens — which entry gives up on a
 given input is a property of that entry (§3.3's caveat, measured in both
 directions).
+
+**[OPT-1], 2026-08-25: THE STEP AND WORK BUDGETS BOUND ONE ATTEMPT, AND AN
+UN-SUFFIXED ENTRY MAY MAKE TWO.** §10.9's tiered entry re-runs the match on
+the stamped default after a `PCREC_ERR_FRAMES` give-up on its fast tier, with
+both budgets **refilled** — which is what makes the answer identical to a
+single-tier artifact's, and is stated there. The consequence belongs here: a
+single call to `<prefix>_search`/`_match`/`_match_caps` can therefore spend up
+to **twice** the step budget and twice the work budget before it returns. The
+CODES are unaffected (a returned `PCREC_ERR_STEPS` still means the deep
+attempt exhausted a full budget), and the `_in` entries, which have no tier,
+are bounded by one budget as they always were. A caller that needs a hard
+bound on the work ONE call may do uses `_in` or `-fno-tiered-entry`
+(`tuning.md` §2.12).
 
 ```c
 #define PCREC_ERR_STEPS    (-2)
@@ -2259,7 +2292,10 @@ state §4's budgets are in at the top of any call. This is not a
 concession; it is what makes the rest of this section true, and the
 alternative (carrying the remainder forward) would be observably wrong: a
 deep run started with a depleted step budget would report `PCREC_ERR_STEPS`
-where a single-tier artifact matches.
+where a single-tier artifact matches. **Its consequence — one call may spend
+up to twice each budget — is stated in §4**, and the wasted fast attempt is
+bounded by those budgets rather than by the fast frame count, since sixty
+frames of depth can absorb an unbounded amount of backtracking.
 
 **No answer changes, and that is a consequence rather than a hope.** The
 deep run is a bit-for-bit replay of what a single-tier entry does, from
@@ -2284,6 +2320,11 @@ the replay then reports the `PCREC_ERR_STEPS`.
   **stamped default** ran out. It never reports the fast tier's exhaustion.
 - The depth an artifact can reach is unchanged (D73 keeps the stamped
   2048/3072); only the cost of *not* reaching it moved.
+- **A call that DOES escalate is SLOWER than it was** — measured 1.24–1.53×
+  on `((a)|(aa))+b`, with a 3.05× discontinuity across the boundary itself
+  (§3 carries the figures). The tier is a bet that real calls hold on the
+  fast tier; where a workload is measured not to, `_in` or
+  `-fno-tiered-entry` is the answer.
 - The **`_in` entries are untouched** — contract, signature and cost. They
   never had a tier and do not gain one: the caller owns the storage, so
   there is nothing to escalate from. `buf == NULL` remains §10.3's "the same

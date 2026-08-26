@@ -455,16 +455,24 @@ mask's own reason: it changes no answer, so two artifacts that behave
 identically must not differ in their reflection surface over it, and what
 the emitter DID is already reported by the stamp.
 
+**The stamp anchors on `RX_FAST_`, not on `RX_(FAST|RESUME|TRAIL)`**: the
+looser pattern also matches the four §10.4 sizing macros and the `RX_TRAIL`
+undo macro, so it prints seven lines rather than two. Re-run and verified at
+this commit:
+
 ```
 $ build/pcrec -p rx --engine=vm --features recursion -o - -- '^(a(?1)?b)$' \
-    | grep -E '^#define RX_(FAST|RESUME|TRAIL)'
+    | grep -E '^#define RX_FAST_'
 #define RX_FAST_FRAMES 47
 #define RX_FAST_TRAIL 71
 $ build/pcrec -p rx --engine=vm --features recursion -fno-tiered-entry -o - \
-    -- '^(a(?1)?b)$' | grep -E '^#define RX_FAST'
+    -- '^(a(?1)?b)$' | grep -E '^#define RX_FAST_'
 #define RX_FAST_FRAMES 2048
 #define RX_FAST_TRAIL 3072
 ```
+
+(47/71 is this artifact's page-budgeted pair; 2048/3072 is the stamped default,
+and `FAST == RESUME`/`TRAIL` is how a reader tells that the tier is off.)
 
 ## 3. The DFA side's own stamps
 

@@ -93,6 +93,22 @@ the parallel mechanism. `RX_FAST_FRAMES == RX_RESUME_FRAMES` **IS** "this
 artifact has one tier", by whichever of the three routes — `-fno-tiered-entry`
 (§6) included.
 
+**OPEN FOLLOW-UP (r38 note 6), recorded rather than acted on.** Two of the three
+cut-offs are unmeasured guesses:
+
+- **A capture-heavy pattern gets no tier at all.** `NSLOTS·8 >= 3072` is roughly
+  145 slots, i.e. ~72 capture groups, and above that the run state alone fills
+  the page. Such an artifact keeps the old cost profile silently — correct, but
+  the class is not measured and nobody has checked whether a larger budget (two
+  pages? the guard size is a `--param`, not a law) would serve it.
+- **`VM_FAST_TIER_MIN = 16` has no measured win behind it.** It is a plausible
+  "too small to be worth two runs" line, not a number anyone derived. The right
+  instrument is the same one §7 names — the exemplar-file escalation rate — and
+  the right time is when that exists.
+
+Neither is changed now: both would be tuning a constant against no data, which
+is exactly what D77 says not to do.
+
 ## 4. Why the answers are identical
 
 The claim: every return value and every capture span equals today's single-tier
@@ -185,10 +201,56 @@ and stops. **Spec (D80):** `match_api.md` §3, §5.3, §10.4, new §10.9;
 
 ## 7. What this costs and does not fix
 
-A pattern that genuinely needs depth pays MORE — a wasted fast attempt, bounded
-by the fast tier's own capacity (~60 frames plus one prefilter scan), paid only
-by calls already going deep. The depth ceiling is unchanged (D73); this is about
-the cost of NOT going deep. The `_in` entries gain nothing, having lost nothing.
+**This section was WRONG when it was written, and the correction is the most
+important thing on this page.** It said the wasted fast attempt is "bounded by
+the fast tier's own capacity (~60 frames plus one prefilter scan)". It is not.
+**The fast attempt is bounded by the STEP and WORK budgets, not by the frame
+count** — sixty frames of DEPTH can absorb an unbounded amount of backtracking,
+so a small tier does not bound the work done before it gives up. (r38's critic
+found this; the measurement below is the lane's own reproduction.)
+
+**AND THE TRANSITION IS A CLIFF, NOT A RAMP.** MEASURED on `((a)|(aa))+b`,
+tiered vs `-fno-tiered-entry`, N=20k, median of 5, `taskset -c 11`, fast tier
+62/94:
+
+| n | tiered | single-tier | ratio |
+|---|---|---|---|
+| 1 | 18.5 | 207.1 | **0.09×** (11× faster) |
+| 10 | 85.2 | 265.0 | 0.32× |
+| 20 | 163.8 | 363.5 | 0.45× |
+| 23 | 186.4 | 365.3 | 0.51× |
+| **24** | **568.9** | **372.9** | **1.53× SLOWER** |
+| 30 | 606.7 | 396.7 | 1.53× |
+| 64 | 873.3 | 667.1 | 1.31× |
+
+Three things to read off it. **(a)** A **3.05× discontinuity across one byte**
+(186.4 → 568.9 at n=23→24) while the single-tier entry walks smoothly through
+(365.3 → 372.9). **(b)** Everything above the boundary is **1.24–1.53× slower**
+than the entry this replaces — not a little slower, and not amortised away.
+**(c) The boundary is a 25-BYTE SUBJECT** — 24 `a`s and a `b`. "Deep" is not a
+synonym for "large": depth is a property of the backtracking, and a 25-byte
+input reaches it on this pattern. §5.3's mental model of "a deep pattern on a long subject" is wrong for
+this class.
+
+**And an escalating call can do up to 2× the STEP budget of real work**, since
+§4's reset refills both budgets for the deep attempt. Spec §4 states that
+consequence for callers; spec §3 and `limits.md` §3.2 carry the cliff.
+
+**THE BET STAYS.** The patterns the bench measures on realistic subjects hold on
+the fast tier, and that is where the 4.7–5.5× lives. But this page must say what
+the bet costs when it loses, and the honest summary is: *below the boundary,
+several times faster; above it, about 1.4× slower, with a 3× step at the edge.*
+
+**THE FOLLOW-UP IS NAMED AND IS NOT THIS LANE'S.** How often real calls escalate
+is a MEASUREMENT nobody has, and Frank's `[ENG-PGO]` row names it as the
+profiler's first concrete question: the escalation count per call, per pattern,
+per subject class, over an EXEMPLAR SUBJECT FILE. The `-D<PREFIX>_TEST_TIER_HOOK`
+build already counts escalations, so a first cut needs a driver and no profiler.
+Until that number exists, the size of the bet is unquantified — which is a
+statement about the evidence, not a hedge about the direction.
+
+The depth ceiling is unchanged (D73); this is about the cost of NOT going deep.
+The `_in` entries gain nothing, having lost nothing.
 
 **K33 narrows, it does not close.** §5.3 measures `<prefix>_search` at
 131,216 B and says a 128 KB thread faults **on any subject, a 2-byte one
