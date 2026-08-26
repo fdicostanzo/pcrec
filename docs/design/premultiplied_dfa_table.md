@@ -494,11 +494,21 @@ nothing to force.
   denied build is the control the premultiplied build is compared against
   (§10), and it is also the bisect lever for the optimization.
 - Under the denial `emit_unanchored` emits the indexed form **byte for byte as
-  it shipped before [OPT-3]** — this is a requirement on the implementation,
-  not a hope: the emitter's premultiplied branch is written so that the
-  `!premul` arm reproduces today's strings character for character, the way
+  it shipped before [OPT-3]** — a requirement on the implementation, not a
+  hope: the emitter's premultiplied branch is written so that the `!premul`
+  arm reproduces today's strings character for character, the way
   `emit_view_select`'s `!has_end` branch reproduces its pre-[M6.2] text.
-  `run_recursion_identity.sh`'s comparison (A) is what proves it (§10).
+  **MEASURED as BYTES 2026-08-26**, because the answer gate in §10 compares
+  ANSWERS and this is a claim about TEXT: 200 corpus patterns compiled by the
+  PRE-CHANGE compiler (the branch point `7b5b27b`) and by this one under
+  `-fno-premul-table`, **185 compared, 185 IDENTICAL, 0 differing** (15
+  refused by one side). Past exactly two NAMED normalizations, each ASSERTED
+  per artifact so the filter cannot quietly absorb a real difference — the one
+  new `#define <PREFIX>_DFA_TABLE` line removed from the new side (at most 1,
+  and 1 wherever the artifact contains a DFA scan), and `.abi = 7,` rewritten
+  to `.abi = 6,` (exactly 1 on each side, or the artifact is counted as a
+  normalization anomaly rather than a pass). 0 anomalies.
+  `scratchpad/srPremul/deny_bytes.sh`.
 - **MASKED out of `rx_info.flags`** (`emit_info_def`'s `strategy_denials`), for
   the mask's own reason: it changes no answer, so two artifacts that behave
   identically must not differ in their reflection surface over it, and what the
