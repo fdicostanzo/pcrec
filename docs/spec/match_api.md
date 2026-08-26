@@ -1356,7 +1356,7 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `4` on every artifact today, and is not yet a
+- **`rx_info.abi` is `5` on every artifact today ([OPT-1]'s two-tier entries bumped it from 4; [DD-13c] takes it to 6), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which

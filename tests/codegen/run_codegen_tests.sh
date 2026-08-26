@@ -2576,8 +2576,8 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # [DD-13] added three `#define`s and no struct field, and bumped it. So the
     # pin moves with every such event, and what stays [DD-14.FB]'s own claim is
     # the four FIELDS below, which are asserted separately and did not move.
-    if [ "$fb_abi_vm" != "4" ] || [ "$fb_abi_dfa" != "4" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected 4 on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3) and again by [DD-13]'s DFA selection stamps (3->4)"
+    if [ "$fb_abi_vm" != "5" ] || [ "$fb_abi_dfa" != "5" ]; then
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected 5 on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3) and again by [DD-13]'s DFA selection stamps (3->4)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else
