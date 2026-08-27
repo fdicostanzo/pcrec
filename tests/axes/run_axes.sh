@@ -270,23 +270,51 @@ done
 # rounded down generously, so a later change that stops an axis refusing
 # its known population is caught loudly rather than silently reading as
 # "fewer refusals, must be an improvement".
+REFUSAL_DELIM=$'\x01'   # joins multiple documented substrings per axis; an
+                        # axis can have more than one distinct diagnostic
+                        # shape, and a REFUSED case matches if it contains
+                        # ANY of them (never all — they are ALTERNATIVES,
+                        # not conjuncts).
 declare -A REFUSAL_PATTERN=(
     ["-fno-counter"]="would replicate its body"
-    ["-fprefilter"]="-fprefilter requires the VM engine"
-    # --engine=dfa's own do-or-die posture (§2.11): EVERY construct that
-    # forces the VM refuses through src/opt/select_engine.c's shared
-    # phrasing ("%s requires the VM engine, which --engine=dfa excludes",
-    # verified live at select_engine.c:540 — possessive quantifiers, \K,
-    # backreferences, calls, ... all share this one format string, plus
-    # line 693's own -fprefilter-specific wording, both containing this
-    # substring). Deliberately the GENERIC substring, not a per-construct
-    # list: naming one construct would silently exclude the next one a
-    # future module adds under the same refusal.
-    ["--engine=dfa"]="requires the VM engine"
+    # -fprefilter's do-or-die (§2.5) has THREE distinct diagnostic shapes
+    # in src/opt/select_engine.c, verified live (2026-08-26, against the
+    # actual full-corpus REFUSED population — 12,537 of the first shape,
+    # 446+259 of the second, 0 of the third since this sweep never passes
+    # both -fprefilter and -fno-prefilter together): the DFA-selected
+    # pattern refusal ("-fprefilter requires the VM engine"), the
+    # capture-erasure conflict for a pattern containing a backreference OR
+    # a subroutine call ("cannot be honoured for a pattern containing a"
+    # — ONE substring covers both nouns, since the format string is
+    # shared and only the noun varies), and the flag-conflict refusal
+    # ("cannot both be requested", dormant here — this sweep never sets
+    # -fno-prefilter alongside -fprefilter — kept so it is not silently
+    # undocumented the day something does).
+    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested"
+    # --engine=dfa's own do-or-die posture (§2.11) has TWO distinct shapes
+    # in select_engine.c's switch (verified live against the full-corpus
+    # REFUSED population — 3,874 of the first, 5,594 of the second): the
+    # generic VM_ONLY-construct refusal ("%s requires the VM engine, which
+    # --engine=dfa excludes" — possessive quantifiers, \K, backreferences,
+    # calls, ... all share this one format string, so the substring is
+    # deliberately generic rather than a per-construct list, which would
+    # silently exclude the next construct a future module adds under the
+    # same refusal), and the captures-conflict branch D44.6/E-7 documents
+    # by name ("this pattern requires captures (on by default)" — the
+    # SEPARATE branch taken when the pattern's own capture default, not a
+    # VM_ONLY construct, is what forces the VM). A third documented DFA
+    # limit exists in src/ir/dfa.c ("pattern too complex for the DFA
+    # engine", the state-count/subset-construction ceiling) with ZERO
+    # corpus population today — not added as a pattern, since a
+    # zero-population entry cannot be verified live and this axis's own
+    # floor is left unset for the same reason (K35: a floor asserts a
+    # MEASURED population, never a guessed one).
+    ["--engine=dfa"]="requires the VM engine${REFUSAL_DELIM}requires captures (on by default)"
 )
 declare -A REFUSAL_FLOOR=(
     ["-fno-counter"]=180
-    ["-fprefilter"]=10000
+    ["-fprefilter"]=12000
+    ["--engine=dfa"]=8000
 )
 
 # ============================================================================
@@ -416,16 +444,28 @@ run_one_axis() {
     # bit-flag axis except the force-prefilter pair as NEVER refusing
     # under the default engine this sweep uses).
     local refused_documented=0 refused_undocumented=0
-    local pattern="${REFUSAL_PATTERN[$flags]:-}"
+    local pattern_list="${REFUSAL_PATTERN[$flags]:-}"
+    local -a patterns=()
+    if [ -n "$pattern_list" ]; then
+        IFS="$REFUSAL_DELIM" read -ra patterns <<< "$pattern_list"
+    fi
     if [ "$refused" -gt 0 ]; then
         while IFS=$'\t' read -r cls key btrc bout atrc reason; do
             [ "$cls" = "REFUSED" ] || continue
-            if [ -n "$pattern" ] && printf '%s' "$reason" | grep -qF -- "$pattern"; then
+            local matched=0 p
+            for p in "${patterns[@]:-}"; do
+                [ -n "$p" ] || continue
+                if printf '%s' "$reason" | grep -qF -- "$p"; then
+                    matched=1
+                    break
+                fi
+            done
+            if [ "$matched" = "1" ]; then
                 refused_documented=$((refused_documented + 1))
             else
                 refused_undocumented=$((refused_undocumented + 1))
                 if [ "$refused_undocumented" -le 20 ]; then
-                    echo "AXIS FAIL: $label: UNDOCUMENTED refusal at $key: \"$reason\" (does not match this axis's documented limit$([ -z "$pattern" ] && echo " — this axis has NO documented refusal population at all"))" >&2
+                    echo "AXIS FAIL: $label: UNDOCUMENTED refusal at $key: \"$reason\" (does not match any of this axis's documented limits$([ "${#patterns[@]}" -eq 0 ] && echo " — this axis has NO documented refusal population at all"))" >&2
                 fi
             fi
         done < "$rowsfile"
