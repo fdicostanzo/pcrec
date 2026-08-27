@@ -16794,3 +16794,23 @@ resolve, VERIFY zero markers as its own step, then commit — never in
 one chain. Battery #3 launches now on the combined tree (abi 8 +
 test-axes + the trailer); on green the bench gets I-13. Frank at
 95 %: the session closes here; wake.md is current.
+
+#### Forty-first session, part 12 — battery #3 GREEN on 35e1ab1 (abi 8 + test-axes + the trailer): every merge of the day is battery-proven; the verdict line's own bug (2026-08-27 02:4x EDT)
+
+Battery on 35e1ab1 (23:23 → 02:43, 3h20m on an idle box — san alone
+1h42m): build OK; strict clean; 180 valid + anchors resolve; `make -k
+-j12 test` checks 1,587/0 (1,571 + run_premul_table's 16, now COUNTED
+because -k lets the last target run — part 7's fix proven), rc 2 = the
+counterk load cell; solo counterk 1,634/0, solo resource 19/0/0; make
+san rc 0, zero report lines, both axes; mech 180 rows, unexpected 0,
+undetected 6 (S150-S153, S160, S178 — the expected six), unreached 0,
+anomalies 0. So [ENG-FORM] (abi 8), [CHK-2] pieces 2+3 and the make-test
+trailer are BATTERY-PROVEN, as [OPT-3] STEP 2 (abi 7) was by battery
+#2. THE ONE RED IS MINE: the new verdict line printed "RED: test
+checks failed=0 solo red lines=0" with its san/mech fields EMPTY — the
+scratch battery script's verdict assembly, added this afternoon, failed
+on a green run (the exact kind of check the day's lessons are about: a
+verdict that does not read its own inputs); diagnosed and fixed in the
+scratch script (below), the results above read from the stage logs
+directly. I-13 to the bench: pin 35e1ab1 (abi 8), battery-proven. The
+session CLOSES here: no lanes, no worktrees, no cron; wake.md current.
