@@ -203,7 +203,11 @@ fi
 # cost 43% on '[01]*1[01]{8}' (158.4 -> 90.8 MB/s). Both orders are correct;
 # only one is fast, and which one depends on the path.
 if gen ordnoeol '[01]*1[01]{8}'; then
-    acc_line=$(grep -nE 'if \(rx_forward_is_accepting\[forward_state\]\) last_accept_position = scan_position;' "$WORKDIR/ordnoeol.body" | head -1 | cut -d: -f1)
+    # [ENG-FORM] the accept probe is `<p>_forward_accepts(<table>, <token>)`
+    # now -- the state is an OPAQUE TOKEN and the subscript lives in the
+    # accessor block. What this rule pins (the probe's POSITION relative to the
+    # prefilter) is unchanged; only its spelling moved, once.
+    acc_line=$(grep -nE 'if \(rx_forward_accepts\(rx_forward_is_accepting, forward_state\)\) last_accept_position = scan_position;' "$WORKDIR/ordnoeol.body" | head -1 | cut -d: -f1)
     pre_line=$(grep -nE 'const void \*q = memchr' "$WORKDIR/ordnoeol.body" | head -1 | cut -d: -f1)
     if [ -n "${acc_line:-}" ] && [ -n "${pre_line:-}" ] && [ "$acc_line" -lt "$pre_line" ]; then
         ok "M2.12: non-EOL path keeps accept BEFORE scan avoidance (the fast order)"
@@ -237,7 +241,7 @@ if gen eolskip '.*=.*$'; then
     # a skip landing on n-1 must not consume that byte before the EOL view of
     # it has been taken. So the accept evaluation must come AFTER the skips.
     skip_line=$(grep -nE 'while \(scan_position \+ 1 < subject_length && rx_forward_stay[0-9]+' "$WORKDIR/eolskip.body" | tail -1 | cut -d: -f1)
-    acc_line=$(grep -nE 'if \(rx_forward_is_accepting\[forward_view_state\]\) last_accept_position = scan_position;' "$WORKDIR/eolskip.body" | head -1 | cut -d: -f1)
+    acc_line=$(grep -nE 'if \(rx_forward_accepts\(rx_forward_is_accepting, forward_view_state\)\) last_accept_position = scan_position;' "$WORKDIR/eolskip.body" | head -1 | cut -d: -f1)
     if [ -n "${skip_line:-}" ] && [ -n "${acc_line:-}" ] && [ "$acc_line" -gt "$skip_line" ]; then
         ok "M2.12: EOL accept/eolvar evaluation happens after the skip loops"
     else
@@ -758,23 +762,59 @@ elif pcrec_run "$PCREC" -p rx --no-captures -o - -- '(alpha|beta|gamma|delta|eps
     # -O2 is the point, and -Werror stays so the attribute cannot be landing
     # only because nobody compiles this artifact strictly.
     K24FLAGS="-O2 -std=gnu11 -Wall -Wextra -Werror"
-    sed '/__attribute__((noclone))/d' "$WORKDIR/k24.c" > "$WORKDIR/k24_stripped.c"
+    # [ENG-FORM, MEASURED 2026-08-26] THE CONTROL IS THE DE-SUGARED ARTIFACT,
+    # NOT THE ARTIFACT WITH ONE LINE DELETED — and that is a repair forced by a
+    # measurement, not a preference.
+    #
+    # Until [ENG-FORM] the control was `sed '/noclone/d'` over the shipped
+    # artifact, and gcc -O2 duly produced `rx_search.part.0`. After the
+    # relayering it produces NONE: with the DFA scan's state held in an opaque
+    # token, gcc's partial-inlining pass declines to split `rx_search` even
+    # with the attribute gone. Bisected on the K24 fixture: reverting ONE
+    # accessor family (accept / dead / step) back to a subscript does not bring
+    # the split back, reverting ALL THREE does (with the accessor block still
+    # in the TU), so it is the presence of ANY accessor call in the body that
+    # suppresses it — not the block, and not any one accessor.
+    #
+    # A control that cannot fire is the failure this check's own header is
+    # about, so it is REBUILT rather than weakened: the control is the shipped
+    # artifact with the accessor calls mechanically de-sugared back to the
+    # pre-[ENG-FORM] subscript spelling AND the attribute stripped. That is a
+    # function of exactly the shape the K24 regression was measured on, built
+    # from this artifact's own tables, and gcc splits it — so the positive arm
+    # below still runs against a live pass rather than a dormant one.
+    #
+    # The de-sugaring is asserted to be COMPLETE (no accessor call may survive
+    # in the control) so that a future emitter change which outruns this sed
+    # fails HERE, naming the sed, instead of quietly turning the control off.
+    sed -e 's/__attribute__((noclone))//' \
+        -e 's/rx_\(forward\|reverse\)_accepts(\(rx_[a-z_]*\), \([a-z_]*\))/\2[\3]/g' \
+        -e 's/rx_\(forward\|reverse\)_is_dead(\([a-z_]*\))/\2 == 65535/g' \
+        -e 's/rx_forward_step(rx_forward_next_state, \([a-z_]*\), \(.*\));/rx_forward_next_state[\1 + \2];/' \
+        -e 's/rx_reverse_step(rx_reverse_next_state, \([a-z_]*\), \(.*\));/rx_reverse_next_state[\1 + \2];/' \
+        -e 's/rx_\(forward\|reverse\)_state \([a-z_]*_state\) =/unsigned \2 =/' \
+        "$WORKDIR/k24.c" > "$WORKDIR/k24_stripped.c"
+    k24_left=$(body "$WORKDIR/k24_stripped.c" rx_search "$WORKDIR/k24_ctl.body" >/dev/null 2>&1 &&
+               grep -cE 'rx_(forward|reverse)_(step|is_dead|accepts|accepts_class|row|view_live|view_take)\(' \
+                    "$WORKDIR/k24_ctl.body" || echo 999)
 
     if [ "$(grep -c '__attribute__((noclone))' "$WORKDIR/k24.c")" -lt 1 ]; then
         bad "[K24]: emitted artifact carries no __attribute__((noclone)) at all — the K24 lever has been removed from emit_search_head (docs/dev/known_issues.md K24, docs/design/k24bisect_impl/k24_fix_note.md)"
     elif ! gen_cc "K24 noclone subject" "$CC" -c $K24FLAGS -o "$WORKDIR/k24.o" "$WORKDIR/k24.c"; then
         bad "[K24]: the artifact failed to compile at -O2 -Werror: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+    elif [ "${k24_left:-999}" -ne 0 ]; then
+        bad "[K24]: the de-sugaring left ${k24_left} accessor call(s) in the CONTROL's rx_search body (or could not extract it) — the sed above has been outrun by an emitter change, and a control built from a half-de-sugared body proves nothing. Re-derive it from the shipped artifact's current accessor set (docs/design/emitter_form.md §5)"
     elif ! gen_cc "K24 noclone control" "$CC" -c $K24FLAGS -o "$WORKDIR/k24_stripped.o" "$WORKDIR/k24_stripped.c"; then
-        bad "[K24]: the attribute-stripped CONTROL failed to compile at -O2 -Werror: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
+        bad "[K24]: the de-sugared CONTROL failed to compile at -O2 -Werror: $(printf '%s' "$GEN_CC_LOG" | head -3 | tr '\n' ' ')"
     else
         k24_clones="$(nm "$WORKDIR/k24.o" | grep -cE 'rx_search\.(part|constprop|isra)\.[0-9]+' || true)"
         k24_ctl_clones="$(nm "$WORKDIR/k24_stripped.o" | grep -cE 'rx_search\.(part|constprop|isra)\.[0-9]+' || true)"
         if [ "$k24_ctl_clones" -eq 0 ]; then
-            bad "[K24]: the CONTROL did not fire — with __attribute__((noclone)) stripped, $CC at -O2 still emitted no rx_search clone, so this check has NO POPULATION and cannot certify the lever. Do not delete the attribute on the strength of a green run here; find out why the compiler stopped splitting first (docs/design/k24bisect_impl/k24_fix_note.md)"
+            bad "[K24]: the CONTROL did not fire — with the accessor calls de-sugared and __attribute__((noclone)) stripped, $CC at -O2 still emitted no rx_search clone, so this check has NO POPULATION and cannot certify the lever. Do not delete the attribute on the strength of a green run here; find out why the compiler stopped splitting first (docs/design/k24bisect_impl/k24_fix_note.md, docs/design/emitter_form.md §10.1)"
         elif [ "$k24_clones" -ne 0 ]; then
             bad "[K24]: rx_search is SPLIT at -O2 despite the noclone attribute ($(nm "$WORKDIR/k24.o" | grep -oE 'rx_search\.[a-z]+\.[0-9]+' | paste -sd, -)) — the partial-inlining regression is back; case (c)'s D12 floor will follow"
         else
-            ok "[K24]: rx_search stays monolithic at -O2 under noclone, and the attribute-stripped control DOES split ($k24_ctl_clones clone(s)) — the guard is live, not vacuous"
+            ok "[K24]: rx_search stays monolithic at -O2 under noclone, and the de-sugared, attribute-stripped control DOES split ($k24_ctl_clones clone(s)) — the partial-inlining pass is live, so this is not a vacuous green. NOTE ([ENG-FORM]): the SHIPPED artifact is no longer splittable even without the attribute, so the attribute is belt-and-braces on today's DFA artifact and the arm that guards its presence is the emitted-attribute grep above, not this one"
         fi
     fi
 else
@@ -1425,24 +1465,39 @@ if gen wordb "$WB_PAT" --features all; then
     # read, so it is dropped first -- an exclusion worth spelling out, since
     # forgetting it is a check that fails on its own subject rather than on a
     # defect.
-    # [OPT-3] TWO INDEX SPELLINGS, ONE RULE. The pre-multiplied table form
-    # emits `[forward_state + forward_class]` where the indexed form emits
-    # `[forward_state * <ncls> + forward_class]` (the state already carries
-    # the stride). What this rule is about is UNCHANGED by that — every read
-    # must go through the guarded `forward_class` LOCAL and never through a
-    # subject read spelled inline — so the pattern accepts both spellings and
-    # still refuses anything that computes its own class.
-    F2OK='rx_forward_is_accepting_by_class\[[a-z_]+( \* [0-9]+)? \+ forward_class\]'
-    grep 'rx_forward_is_accepting_by_class\[' "$wbb" | grep -v '^ *static const' > "$WORKDIR/f2reads"
+    # [ENG-FORM] ONE SPELLING NOW, WHICH IS THE POINT. [OPT-3] left this rule
+    # accepting two index spellings — `[st + cl]` premultiplied and
+    # `[st * <ncls> + cl]` indexed — because the loop wrote the arithmetic
+    # itself. The arithmetic moved into the machine's accessor block, so every
+    # read in the BODY is `<p>_forward_accepts_class(<table>, <token>, <cl>)`
+    # whatever the table form, and this rule now pins one shape.
+    #
+    # A THIRD ASSERTION COMES FREE and is made below: no raw SUBSCRIPT of the
+    # wide accept table may appear in the body at all. That is the token-leak
+    # check (docs/design/emitter_form.md §9.2) — an emitted `tbl[st + cl]`
+    # outside the accessor block is the representation escaping, and it is
+    # exactly what this grep would otherwise silently tolerate.
+    F2OK='rx_forward_accepts_class\(rx_forward_is_accepting_by_class, [a-z_]+, forward_class\)'
+    grep 'rx_forward_accepts_class(rx_forward_is_accepting_by_class' "$wbb" > "$WORKDIR/f2reads"
     f2lines=$(grep -c . "$WORKDIR/f2reads" || true)
     f2bad=$(grep -cvE "$F2OK" "$WORKDIR/f2reads" || true)
     guard_ln=$(grep -n '^        if (scan_position >= subject_length) {$' "$wbb" | head -1 | cut -d: -f1)
-    first_f2=$(grep -n 'rx_forward_is_accepting_by_class\[' "$wbb" | grep -v ':[[:space:]]*static const' \
+    first_f2=$(grep -n 'rx_forward_accepts_class(rx_forward_is_accepting_by_class' "$wbb" \
                | head -1 | cut -d: -f1)
     scalar_in_guard=$(sed -n "${guard_ln:-0},$((${guard_ln:-0} + 2))p" "$wbb" \
-                      | grep -c 'rx_forward_is_accepting\[' || true)
+                      | grep -c 'rx_forward_accepts(rx_forward_is_accepting,' || true)
+    # [ENG-FORM] the token-leak arm: the BODY may not subscript either accept
+    # table directly. The accessor block is emitted ABOVE the function and is
+    # therefore not in `.body`; the tables' own DECLARATION lines are, and are
+    # excluded by name -- forgetting that exclusion is a check that fails on
+    # its own subject rather than on a defect (rule 1's own note above).
+    f2leak=$(grep -E 'rx_(forward|reverse)_is_accepting(_by_class)?\[' "$wbb" \
+             | grep -cv '^ *static const' || true)
     if [ "$f2lines" -lt 1 ]; then
         bad "[M6.2-WORDB rule 1]: '$WB_PAT' emitted no class-indexed accept at all — the fixture no longer exercises §3.6, so this rule has no population"
+    elif [ "${f2leak:-0}" -ne 0 ]; then
+        bad "[M6.2-WORDB rule 1 / ENG-FORM]: the emitted body subscripts an accept table directly ($f2leak line(s)) instead of going through the machine's accessor — the opaque state token is leaking its representation into the loop (docs/design/emitter_form.md §9.2):"
+        grep -nE 'rx_(forward|reverse)_is_accepting(_by_class)?\[' "$wbb" | grep -v ': *static const' >&2
     elif [ "$f2bad" -ne 0 ]; then
         bad "[M6.2-WORDB rule 1]: $f2bad of $f2lines class-indexed accept reads are not indexed by the 'cl' local; a read that computes its own class is a read this check cannot prove is guarded:"
         grep -vE "$F2OK" "$WORKDIR/f2reads" >&2
@@ -1451,7 +1506,7 @@ if gen wordb "$WB_PAT" --features all; then
     elif [ "$scalar_in_guard" -lt 1 ]; then
         bad "[M6.2-WORDB rule 1]: the 'pos >= n' arm does not read the SCALAR accept table, so the end-of-subject accept is being dropped rather than taken from the view (§3.6.2)"
     else
-        ok "[M6.2-WORDB rule 1] (§3.6.2): all $f2lines class-indexed accept reads go through the guarded 'cl' local, and the 'pos >= n' arm takes the SCALAR accept before any of them — no accept table is indexed at pos == n"
+        ok "[M6.2-WORDB rule 1] (§3.6.2, [ENG-FORM] §9.2): all $f2lines class-indexed accept reads go through the machine's accessor with the guarded 'cl' local, the 'pos >= n' arm takes the SCALAR accept before any of them, and the body subscripts no accept table directly — no accept table is indexed at pos == n and the token does not leak"
     fi
 
     # --- rule 2 (§3.8.3.1): every `match_start_position` writer at the reverse boundary ---
@@ -1541,12 +1596,13 @@ if gen wordb "$WB_PAT" --features all; then
     # be no accept read after the loop closes.
     b_arm=$(grep -n 'if (rewind_position <= search_from) {' "$wbb" | head -1 | cut -d: -f1)
     b_read=$(grep -n 'rx_reverse_byte_class\[subject\[search_from - 1\]\]' "$wbb" | head -1 | cut -d: -f1)
-    # [OPT-3] TWO DEAD-STATE SPELLINGS. The indexed table form tests the sign
-    # bit (`< 0`); the pre-multiplied form compares against the reserved cell
-    # 65535, because its cells are `unsigned short` and the sign bit is gone.
-    # What rule 2b pins is WHERE the boundary's context read sits relative to
-    # the loop's OTHER exit, which is the same exit either way.
-    b_dead=$(grep -nE 'if \(reverse_state (< 0|== 65535)\) break;' "$wbb" | head -1 | cut -d: -f1)
+    # [ENG-FORM] ONE DEAD-STATE SPELLING. [OPT-3] left two — the indexed form
+    # tested the sign bit, the pre-multiplied one compared against the reserved
+    # cell 65535 — and the loop had to spell whichever its machine took. Both
+    # live in `<p>_reverse_is_dead` now, so the loop asks one question. What
+    # rule 2b pins is WHERE the boundary's context read sits relative to the
+    # loop's OTHER exit, which is the same exit either way.
+    b_dead=$(grep -n 'if (rx_reverse_is_dead(reverse_state)) break;' "$wbb" | head -1 | cut -d: -f1)
     if [ -z "$b_arm" ] || [ -z "$b_read" ] || [ -z "$b_dead" ]; then
         bad "[M6.2-WORDB rule 2b]: could not locate the boundary arm (${b_arm:-MISSING}), its context read (${b_read:-MISSING}) or the dead-state exit (${b_dead:-MISSING}) in the emitted reverse loop"
     elif [ "$b_read" -le "$b_arm" ] || [ "$b_read" -ge "$b_dead" ]; then
@@ -2615,9 +2671,9 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # control-shares-a-source failure (learnings.md §3). Updating it is part of
     # the bump, and this check firing is how a bump that forgot a doc gets
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
-    ABI_EXPECT=7
+    ABI_EXPECT=8
     if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp)"
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else

@@ -156,9 +156,9 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `7`
-([OPT-3], §6.3's `<PREFIX>_DFA_TABLE`; it read `6` when this note was
-written).
+events but never stated the general rule; `rx_info.abi` is `8`
+([ENG-FORM], the DFA scan's opaque state token; it read `6` when this note
+was written and `7` after [OPT-3]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1518,8 +1518,8 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `7` on every artifact today ([OPT-3] bumped it from 6,
-  which was [DD-13c]'s empty-scan value plus the two `rx_info` mirrors), and is not yet a
+- **`rx_info.abi` is `8` on every artifact today ([ENG-FORM] bumped it from
+  7, which was [OPT-3]'s pre-multiplied DFA transition table), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
@@ -1545,6 +1545,31 @@ against them:
   moves**. It is also the mirror image of [OPT-1]'s: that bump reached VM
   artifacts only, this one reaches both kinds.
 
+  **`abi` 7 → 8, [ENG-FORM] (2026-08-26, D82): the DFA scan's state becomes
+  an OPAQUE TOKEN with an accessor block, and a caller sees exactly two
+  things change.** (i) Every DFA artifact — and every VM hybrid, whose
+  inlined `<prefix>_prefilter` is the same emitter's output — now carries, at
+  FILE SCOPE immediately above its search function, one block per machine of
+  the form `typedef <int|unsigned> <prefix>_<forward|reverse>_state;`
+  followed by up to seven `static inline` accessors (`_step`, `_is_dead`,
+  `_accepts`, `_accepts_class`, `_row`, `_view_live`, `_view_take`), and the
+  scan loop below is written against them instead of indexing the tables
+  itself. (ii) Several table and loop COMMENTS were unified across the
+  forward/reverse pair. **NOTHING A CALLER CAN CALL, LINK, OR READ AS A
+  VALUE MOVED**: the four entry points, the three `_in` entries, `struct
+  rx_info` and all of its fields, `RX_NCAPS`, the buffer surface, and every
+  `<PREFIX>_*` stamp — `RX_ENGINE`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`,
+  `RX_DFA_TABLE` and their value sets — are unchanged, and
+  `RX_DFA_TABLE`/`RX_DFA_PREFILTER` are now read directly off the emitter's
+  chosen representation object rather than re-derived, so a stamp can no
+  longer disagree with the loop it describes. The accessor names are
+  prefix-derived like every other emitted identifier and are therefore
+  subject to §1's prefix rules; they are NOT part of the frozen ABI block.
+  Measured alongside the bump: the emitted matcher's `-O2` instruction
+  sequence is unchanged on the hot loop's carried dependency chain, and every
+  answer is byte-identical over the corpus and over 81,821 answer lines from
+  the comparative bench's subjects.
+
 **What a caller may assume, stated once in caller terms rather than left
 to accumulate from six bump-event paragraphs (D76, D40 regime 1).** The
 paragraph above narrates each bump's OWN cause; this is the general rule
@@ -1554,9 +1579,11 @@ SCAFFOLDING AS A WHOLE — every declaration, comment and macro in the
 artifact, not merely `struct rx_info`'s own layout — so a change to any
 of it, whether or not a struct offset moves, IS an `abi` bump; [DD-13]'s
 `3` → `4` (§6.3's two new stamp lines, no struct offset), [DD-13c]'s
-own `5` → `6` (both a struct append AND new stamp lines) and [OPT-3]'s
+own `5` → `6` (both a struct append AND new stamp lines), [OPT-3]'s
 `6` → `7` (the first that moves emitted PROGRAM bytes — the DFA scan's
-tables and loop lines — with NO struct offset moving at all) span the
+tables and loop lines — with NO struct offset moving at all) and
+[ENG-FORM]'s `7` → `8` (the largest emitted-text event so far, and still no
+struct offset moved) span the
 range this rule covers, and not one of them is a smaller event than the
 others by this document's own promise. **What is fixed within one `abi` number:**
 the emitted output is byte-exact WHOLE-FILE for a given pattern, prefix

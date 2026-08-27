@@ -41,27 +41,22 @@ SAB_COUNT=1
 # still hoisted above the `scan_position >= subject_length` guard, and it still
 # reads `forward_byte_class[subject[scan_position]]` inline, which is the
 # out-of-bounds read at scan_position == subject_length this row exists for.
-SAB_BEFORE='        sb_printf(c, "        if (scan_position >= subject_length) {\n"
-                     "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
-                     "            break;\n"
-                     "        }\n", p, fsrc);
-        {
-            char ax[256];
-            premul_ix(ax, sizeof ax, fsrc, fd->ncls, fpm, "forward_class");
-            sb_printf(c, "        {\n"
-                         "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"'
-SAB_AFTER='        {
-            char axe[256], cle[128];
-            snprintf(cle, sizeof cle, "%s_forward_byte_class[subject[scan_position]]", p);
-            premul_ix(axe, sizeof axe, fsrc, fd->ncls, fpm, cle);
-            sb_printf(c, "        if (%s_forward_is_accepting_by_class[%s]) last_accept_position = scan_position;\n"   /* SABOTAGE S73 */
-                         "        if (scan_position >= subject_length) {\n"
-                         "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
-                         "            break;\n"
-                         "        }\n", p, axe, p, fsrc);
-        }
-        {
-            char ax[256];
-            premul_ix(ax, sizeof ax, fsrc, fd->ncls, fpm, "forward_class");
-            sb_printf(c, "        {\n"
-                         "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"'
+# RE-ANCHORED 2026-08-26 ([ENG-FORM]): the class-indexed accept and its
+# boundary guard live in axis E's `by_class` object (`acc_emit_tail_by_class`),
+# which is the ONE path both directions take -- so this planting now also
+# reaches the reverse walk, where `f->dir->peek` is `subject[rewind_position-1]`
+# and the same out-of-bounds read happens at `rewind_position == search_from`.
+# The emitted read spells its class INLINE (`<M>_byte_class[<peek>]`) because
+# the guarded `<M>_class` local is declared below the guard this planting jumps
+# over -- which is the defect stated as code.
+SAB_BEFORE='    sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
+    f->dir->emit_bound_accept(c, f);'
+SAB_AFTER='    /* SABOTAGE S73: the class-indexed accept is emitted ABOVE the
+     * boundary guard, so the emitted matcher reads the byte at the
+     * boundary -- out of bounds in generated code (S3.6.2, K27). */
+    sb_printf(c, "%sif (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,"
+                 " %s_%s_byte_class[%s])) %s = %s;\n",
+              ind, p, m, p, m, f->src, p, m, f->dir->peek,
+              f->dir->recv, f->dir->posv);
+    sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
+    f->dir->emit_bound_accept(c, f);'

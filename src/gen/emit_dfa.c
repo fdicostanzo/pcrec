@@ -1236,7 +1236,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * program, and a hybrid's inlined `static <prefix>_prefilter` is emitted
      * ABOVE that `goto`. So (A) sees no DFA scan byte at all. Comparison (B)
      * compares WHOLE FILES and is re-pinned, in this same change, per D76. */
-    sb_puts(c,   "    .abi = 7,\n");
+    sb_puts(c,   "    .abi = 8,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1514,35 +1514,70 @@ static void emit_u8_table(StrBuf *c, const char *p, const char *tag,
  * the condition a reader has to check. */
 #define PREMUL_MAX_ENTRIES PREMUL_DEAD
 
-/* A state VALUE as the emitted code spells it: the state index, or the index
- * scaled by the stride under [OPT-3]. Every emitted state constant — the start
- * state, a skip state's guard, a seed cell, a view cell — goes through here,
- * so there is one place the two spellings differ. */
-static int premul_val(int st, int ncls, bool pm) { return pm ? st * ncls : st; }
+/* ---- [ENG-FORM] THE FORM AS A VALUE ------------------------------------
+ *
+ * docs/design/emitter_form.md is the note, and D82 the ruling. The rule in
+ * one line: for every axis with TWO OR MORE real emitted forms, the emitter
+ * holds an explicit PREFERENCE LIST of representation objects and the
+ * machine's form is the FIRST APPLICABLE one; the chosen object's `name` IS
+ * the stamp value; a `-fno-*` deny flag REMOVES a candidate rather than
+ * being tested inside one. A one-site boolean stays a boolean (D75 addendum).
+ *
+ * THE OBJECTS ARE DEFINED BESIDE `emit_unanchored`, at the bottom of this
+ * file, because that is where their emitters live; only the STRUCTS are here,
+ * where the table emitters below need them. `DfaCand` is the common initial
+ * member of every one of them, which is what lets `dfa_select` walk any of
+ * the six lists with one loop instead of six.
+ *
+ * The facts a candidate's `applies` reads. It is a VALUE and not the Ctx
+ * because selection happens twice per artifact from the body path and twice
+ * more from the stamp path, and the two must not be able to answer
+ * differently: everything an `applies` may look at is in here. */
+typedef struct DfaSel {
+    Ctx        *cx;
+    const Dfa  *d;            /* THIS machine — forward and reverse differ */
+    const void *us;           /* the UnanchStart; opaque until it is declared */
+    bool        forward;
+} DfaSel;
 
-/* The emitted INDEX EXPRESSION for a `[state][class]` table read: today's
- * `st * N + cl`, or [OPT-3]'s `st + cl` when `st` already carries the stride. */
-static const char *premul_ix(char *buf, size_t bufsz, const char *st, int ncls,
-                             bool pm, const char *cl)
-{
-    if (pm) snprintf(buf, bufsz, "%s + %s", st, cl);
-    else    snprintf(buf, bufsz, "%s * %d + %s", st, ncls, cl);
-    return buf;
-}
+typedef struct DfaCand {
+    const char *name;         /* the stamp value, where this axis has a stamp */
+    unsigned    deny;         /* a set bit in cx->opt->flags REMOVES this entry */
+    bool      (*applies)(const DfaSel *s);
+} DfaCand;
+
+typedef struct DfaForm DfaForm;
+
+/* AXIS A — THE TABLE REPRESENTATION, per machine. The one axis whose object
+ * reaches the EMITTED C: `emit_token` writes the artifact's accessor block,
+ * and after that nothing else in this file knows how a state is spelled. */
+typedef struct DfaRepr {
+    DfaCand     c;
+    const char *cell_type;    /* the transition/view/seed table's cell type */
+    bool        acc_wide;     /* the accept table is replicated `ncls`-fold */
+    int         dead_cell;    /* the cell value that means "dead" */
+    int       (*cell_of)(int st, const Dfa *d);  /* a live state, as a cell */
+    void      (*emit_token)(StrBuf *c, const DfaForm *f);
+    void      (*emit_tr_comment)(StrBuf *c, const DfaForm *f);
+    void      (*emit_acc_comment)(StrBuf *c, const DfaForm *f);
+} DfaRepr;
+
+/* Selection is needed by `dfa_table_name` (the stamp path, ~700 lines above
+ * the objects) and by the table emitters immediately below, so the two
+ * entry points are declared here and defined with the objects. */
+static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d);
 
 static void emit_tr_table(StrBuf *c, const char *p, const char *tag,
-                          const Dfa *d, bool pm)
+                          const Dfa *d, const DfaRepr *r)
 {
     sb_printf(c, "    static const %s %s_%s[%d] = {",
-              pm ? "unsigned short" : "short", p, tag, d->n * d->ncls);
+              r->cell_type, p, tag, d->n * d->ncls);
     int k = 0;
     for (int i = 0; i < d->n; i++) {
         for (int cl = 0; cl < d->ncls; cl++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
             int t = d->st[i].tr[cl];
-            if (pm) sb_printf(c, " %d,", t < 0 ? PREMUL_DEAD
-                                               : premul_val(t, d->ncls, true));
-            else    sb_printf(c, " %d,", t);
+            sb_printf(c, " %d,", t < 0 ? r->dead_cell : r->cell_of(t, d));
         }
     }
     sb_puts(c, "\n    };\n");
@@ -1651,16 +1686,13 @@ static bool dfa_has_endvar(const Dfa *d)
  * table a search touches twice. The `(?:P)\z` idiom is the comparative
  * bench's own 85 compliance subjects' spelling, so that is the common case. */
 static void emit_eol_table(StrBuf *c, const char *p, const char *tag,
-                           const Dfa *d, bool pm)
+                           const Dfa *d, const DfaRepr *r)
 {
-    sb_printf(c, "    static const %s %s_%s[%d] = {",
-              pm ? "unsigned short" : "short", p, tag, d->n);
+    sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
         if (i % 16 == 0) sb_puts(c, "\n       ");
         int v = d->st[i].eolvar;
-        if (pm) sb_printf(c, " %d,", v < 0 ? PREMUL_DEAD
-                                           : premul_val(v, d->ncls, true));
-        else    sb_printf(c, " %d,", v);
+        sb_printf(c, " %d,", v < 0 ? r->dead_cell : r->cell_of(v, d));
     }
     sb_puts(c, "\n    };\n");
 }
@@ -1669,90 +1701,17 @@ static void emit_eol_table(StrBuf *c, const char *p, const char *tag,
  * here it is "same as the EOL view", so the emitted selector below walks
  * endv -> ev -> self rather than testing one entry. */
 static void emit_end_table(StrBuf *c, const char *p, const char *tag,
-                           const Dfa *d, bool pm)
+                           const Dfa *d, const DfaRepr *r)
 {
-    sb_printf(c, "    static const %s %s_%s[%d] = {",
-              pm ? "unsigned short" : "short", p, tag, d->n);
+    sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->n);
     for (int i = 0; i < d->n; i++) {
         if (i % 16 == 0) sb_puts(c, "\n       ");
         int v = st_emit_endvar(&d->st[i]);
-        if (pm) sb_printf(c, " %d,", v < 0 ? PREMUL_DEAD
-                                           : premul_val(v, d->ncls, true));
-        else    sb_printf(c, " %d,", v);
+        sb_printf(c, " %d,", v < 0 ? r->dead_cell : r->cell_of(v, d));
     }
     sb_puts(c, "\n    };\n");
 }
 
-/* The VIEW SELECTOR, emitted once per machine (forward and reverse) and the
- * one place the three-way position rule turns into C.
- *
- * `posv` is the position variable (emitted as `scan_position` /
- * `rewind_position`), `stv` the state variable (`forward_state` /
- * `reverse_state`), `outv` the view variable the scan then indexes
- * through (`forward_view_state` / `reverse_view_state`), and
- * `ev`/`endv` the two table tags. THE PARAMETER NAMES HERE ARE THIS
- * FUNCTION'S OWN and did not move; only the emitted names did.
- *
- *   pos == n                      -> the END view   (`\z`, `$`, `\Z` all pass)
- *   pos + 1 == n && s[pos] == \n  -> the EOL view   (`$`/`\Z` only)
- *   otherwise                     -> the state itself
- *
- * WITH NO END VIEW IN THE MACHINE (`has_end` false) this emits the exact text
- * it emitted before [M6.2] wave A, character for character — the byte-identity
- * property is a property of this function, so it is written as one branch that
- * reproduces the old string rather than as a general form that happens to
- * agree. */
-static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
-                             bool has_end, const char *posv, const char *stv,
-                             const char *outv, const char *ev,
-                             const char *endv, const char *ind,
-                             int ncls, bool pm)
-{
-    /* [OPT-3] `sx` is how this function indexes a view table and `live_*` is how
-     * it tests a cell — the ONE site where a pre-multiplied state is converted
-     * back (design note §6, and `emit_eol_table`'s header for why it is here
-     * and not in the table's index). With `pm` false both are the pre-[OPT-3]
-     * strings character for character, which is what keeps `-fno-premul-table`
-     * and every above-bound artifact byte-identical to what shipped. */
-    char sx[128], live_ev[192], live_end[192];
-    if (pm) {
-        snprintf(sx, sizeof sx, "%s / %d", stv, ncls);
-        snprintf(live_ev, sizeof live_ev, "%s_%s[%s] != %d", p, ev, sx, PREMUL_DEAD);
-        snprintf(live_end, sizeof live_end, "%s_%s[%s] != %d", p, endv, sx, PREMUL_DEAD);
-    } else {
-        snprintf(sx, sizeof sx, "%s", stv);
-        snprintf(live_ev, sizeof live_ev, "%s_%s[%s] >= 0", p, ev, sx);
-        snprintf(live_end, sizeof live_end, "%s_%s[%s] >= 0", p, endv, sx);
-    }
-    sb_printf(c, "%s%s %s = %s;\n", ind, pm ? "unsigned" : "int", outv, stv);
-    if (!has_end) {
-        sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0) && %s &&\n"
-                     "%s    (%s == subject_length || (%s + 1 == subject_length && subject[%s] == '\\n')))\n"
-                     "%s    %s = %s_%s[%s];\n",
-                  ind, posv, live_ev,
-                  ind, posv, posv, posv,
-                  ind, outv, p, ev, sx);
-        return;
-    }
-    if (!has_eol) {
-        /* `\z` with no `$`/`\Z` anywhere: only `pos == n` selects anything. */
-        sb_printf(c, "%sif (__builtin_expect(%s == subject_length, 0) && %s)\n"
-                     "%s    %s = %s_%s[%s];\n",
-                  ind, posv, live_end,
-                  ind, outv, p, endv, sx);
-        return;
-    }
-    sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0)) {\n", ind, posv);
-    sb_printf(c, "%s    if (%s == subject_length) {\n", ind, posv);
-    sb_printf(c, "%s        if (%s)      %s = %s_%s[%s];\n",
-              ind, live_end, outv, p, endv, sx);
-    sb_printf(c, "%s        else if (%s) %s = %s_%s[%s];\n",
-              ind, live_ev, outv, p, ev, sx);
-    sb_printf(c, "%s    } else if (subject[%s] == '\\n' && %s) {\n",
-              ind, posv, live_ev);
-    sb_printf(c, "%s        %s = %s_%s[%s];\n", ind, outv, p, ev, sx);
-    sb_printf(c, "%s    }\n%s}\n", ind, ind);
-}
 
 /* The SCALAR accept table — the bit for a position with NO next byte, which
  * §3.6.2 makes the UPC_PLAIN view's own accept (out of subject is neither a
@@ -1773,15 +1732,15 @@ static void emit_view_select(StrBuf *c, const char *p, bool has_eol,
  * The probe stays a separate table read, off the chain, where the core absorbs
  * it: §5 measured the whole accept bookkeeping at 0.05 cycles/byte. */
 static void emit_acc_table(StrBuf *c, const char *p, const char *tag,
-                           const Dfa *d, bool pm)
+                           const Dfa *d, const DfaRepr *r)
 {
-    int rep_n = pm ? d->ncls : 1;
+    int rep_n = r->acc_wide ? d->ncls : 1;
     sb_printf(c, "    static const unsigned char %s_%s[%d] = {", p, tag,
               d->n * rep_n);
     int k = 0;
     for (int i = 0; i < d->n; i++) {
         int bit = d->st[i].up[UPC_PLAIN].accept ? 1 : 0;
-        for (int r = 0; r < rep_n; r++, k++) {
+        for (int rr = 0; rr < rep_n; rr++, k++) {
             if (k % 16 == 0) sb_puts(c, "\n       ");
             sb_printf(c, " %d,", bit);
         }
@@ -1857,9 +1816,15 @@ static bool dfa_needs_gseed(const Dfa *d)
  * question is left exactly as it was — it is not [OPT-3]'s to answer. The loop
  * mirrors `emit_seed_table`'s own, so the two cannot disagree about which
  * cells are emitted. */
+/* [ENG-FORM] `PCREC_NO_PREMUL_TABLE` IS NOT TESTED HERE ANY MORE. The deny
+ * flag is the `deny` field of the pre-multiplied candidate (D82: "the deny
+ * flag = a filter on the candidate list"), so `-fno-premul-table` REMOVES the
+ * form from selection rather than making this predicate lie about the
+ * machine's dimensions. What is left below is only the machine's own
+ * arithmetic, which is what the comment above is about. */
 static bool dfa_premul(Ctx *cx, const Dfa *d)
 {
-    if (cx->opt->flags & PCREC_NO_PREMUL_TABLE) return false;
+    (void)cx;
     long ents = (long)d->n * (long)d->ncls;
     if (ents > PREMUL_MAX_ENTRIES) return false;   /* the RANGE condition */
     if (dfa_needs_seed(d))
@@ -1941,19 +1906,16 @@ static int upc_of_newline(const Dfa *d)
  * handles with its own branch because the condition differs per machine
  * (`startpos == 0` forward, `end == n` reverse). */
 static void emit_seed_table(StrBuf *c, const char *p, const char *tag,
-                            const Dfa *d, const int fam[UPC_N], bool pm)
+                            const Dfa *d, const int fam[UPC_N], const DfaRepr *r)
 {
-    sb_printf(c, "    static const %s %s_%s[%d] = {",
-              pm ? "unsigned short" : "short", p, tag, d->ncls);
+    sb_printf(c, "    static const %s %s_%s[%d] = {", r->cell_type, p, tag, d->ncls);
     for (int cl = 0; cl < d->ncls; cl++) {
         if (cl % 16 == 0) sb_puts(c, "\n       ");
         int v = fam[upc_emit_of_class(d, cl)];
-        /* [OPT-3] `dfa_premul`'s seed precondition guarantees `v >= 0` here
-         * under `pm`; the branch is not a fallback, it is the assertion
+        /* [OPT-3] the pre-multiplied candidate's `applies` guarantees `v >= 0`
+         * under that form; the branch is not a fallback, it is the assertion
          * written where a reader of the emitted table will look for it. */
-        if (pm) sb_printf(c, " %d,", v < 0 ? PREMUL_DEAD
-                                           : premul_val(v, d->ncls, true));
-        else    sb_printf(c, " %d,", v);
+        sb_printf(c, " %d,", v < 0 ? r->dead_cell : r->cell_of(v, d));
     }
     sb_puts(c, "\n    };\n");
 }
@@ -2289,11 +2251,13 @@ static const char *dfa_table_name(Ctx *cx)
 {
     if (dfa_engine_is_empty(cx)) return "none";
     if (cx->job->engine == PCREC_ENG_ATTEMPT) return "none";
-    bool f = dfa_premul(cx, &cx->job->dfa);
-    bool r = dfa_premul(cx, &cx->job->rdfa);
-    if (f && r) return "premultiplied";
-    if (!f && !r) return "indexed";
-    return "mixed";
+    /* [ENG-FORM] THE STAMP IS THE CHOSEN OBJECT'S NAME. It is not a second
+     * reading of the predicate that chose it — it is the same pointer the
+     * loop was emitted through, so "one derivation, three readers" is
+     * structural here rather than a convention this function keeps. */
+    const char *f = dfa_repr_of(cx, &cx->job->dfa)->c.name;
+    const char *r = dfa_repr_of(cx, &cx->job->rdfa)->c.name;
+    return strcmp(f, r) ? "mixed" : f;
 }
 
 
@@ -2369,7 +2333,12 @@ static void emit_stay_table(StrBuf *c, const char *p, const char *tag,
     uint8_t stay[256];
     for (int b = 0; b < 256; b++)
         stay[b] = (uint8_t)(d->st[idx].tr[d->clsmap[b]] == idx);
-    char name[32];
+    /* [K38's rule, [ENG-FORM]] The one fixed buffer this function owns is
+     * sized by the SHARED emitted-name constant, not by a hand guess: `tag`
+     * reaches here from a caller's own `PCREC_MAX_EMIT_NAME_LEN` buffer now,
+     * and 32 was a number that happened to fit the two literals it used to
+     * be handed. */
+    char name[PCREC_MAX_EMIT_NAME_LEN + 16];   /* + the state number */
     snprintf(name, sizeof(name), "%s%d", tag, idx);
     emit_u8_table(c, p, name, stay, 256);
 }
@@ -2545,464 +2514,916 @@ static void emit_state_legend(StrBuf *c, const Dfa *d, bool reverse)
  * used for the transition is never stale. The forward prefilter additionally
  * must NOT keep its `return 0` early-out, since the start state's EOL variant
  * may still accept at n-1 or n. */
+/* =========================================================================
+ * [ENG-FORM] THE REPRESENTATION OBJECTS AND THE ONE SCAN LOOP
+ *
+ * docs/design/emitter_form.md is the note; D82 the ruling. What used to be a
+ * 459-line function carrying ~14 loose form booleans — every one of them a
+ * forward/reverse PAIR — is six candidate lists, one loop skeleton and one
+ * table emitter, each called twice.
+ *
+ * READ `DfaForm` FIRST: it is one machine's whole form, and every emitter
+ * below takes nothing else. The two `DfaForm`s an artifact builds differ in
+ * their DIRECTION object, their machine, and whichever candidates that
+ * machine's own dimensions selected.
+ * ========================================================================= */
+
+typedef struct DfaDir DfaDir;
+
+/* AXIS B — THE PREFILTER, forward only. Five objects and not three: the D11
+ * `-bounded` half of `<PREFIX>_DFA_PREFILTER`'s value is a DIFFERENT EMITTED
+ * LOOP (the skip stops at n-1 and loses its `return 0` early-out), so it is a
+ * different form, and making it one is what turns the stamp into `c.name`. */
+typedef struct DfaPf {
+    DfaCand c;
+    bool    table;                              /* the can_begin_match bitmap */
+    void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
+} DfaPf;
+
+/* AXIS C — VIEW HANDLING. `emit_view_select`'s three branches, plus the
+ * "not called at all" case that used to be an `if (viewsel)` at each of the
+ * two call sites. */
+typedef struct DfaView {
+    DfaCand c;
+    void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
+} DfaView;
+
+/* AXIS D — THE START SEED (mechanism 4). The object owns whether the
+ * initializer reads a context byte; the DIRECTION owns which byte, which
+ * guard, and where the range check goes relative to it. */
+typedef struct DfaSeed {
+    DfaCand c;
+    bool    table;                              /* the <M>_seed_state table */
+    void  (*emit_init)(StrBuf *c, const DfaForm *f);
+} DfaSeed;
+
+/* AXIS E — WHERE THE ACCEPT IS RECORDED, which is one axis with three forms
+ * and not two booleans. `by_class` records inside the step arm (§3.6.2's
+ * composition); `scalar_viewed` records AFTER the view selector, because the
+ * position a skip landed on is not the position whose accept was evaluated
+ * (D11); `scalar_plain` records at the top of the loop, which is measurably
+ * the right order when nothing can move under it (D11's note: hoisting the
+ * prefilter above it costs 43% on `[01]*1[01]{8}`). Exactly one of the three
+ * `emit_*` slots is non-NULL per object, which is why the skeleton calls them
+ * through null checks instead of branching on a form. */
+typedef struct DfaAcc {
+    DfaCand c;
+    bool    wide_table;                         /* the by-class accept table */
+    void  (*emit_top)(StrBuf *c, const DfaForm *f);
+    void  (*emit_after_view)(StrBuf *c, const DfaForm *f);
+    void  (*emit_tail)(StrBuf *c, const DfaForm *f);
+} DfaAcc;
+
+/* AXIS F — THE SCAN DIRECTION, the axis that collapses the duplication. It is
+ * a representation axis in the same sense as the others: a direction is how a
+ * scan spells its position, its bound, the answer it records and the byte it
+ * reads, and every one of those has exactly two emitted forms. */
+struct DfaDir {
+    DfaCand     c;
+    const char *title;        /* "Forward" / "Reverse", for comments */
+    const char *label;        /* "FORWARD" / "REVERSE", for headings */
+    const char *statev;       /* the emitted state variable */
+    const char *viewv;        /* the emitted view-state variable */
+    const char *posv;         /* the emitted position variable */
+    const char *recv;         /* the emitted answer variable */
+    const char *ind;          /* indent of the state declaration */
+    const char *bind;         /* indent of the loop body */
+    bool        reverse;      /* for emit_state_legend */
+    const char *tbl_hdr;      /* the table section's block comment */
+    const char *acc_meaning;  /* what a 1 in the accept table means */
+    const char *range_guard;  /* emitted beside the initializer, or NULL */
+    const char *seed_cond;    /* "a context byte exists" */
+    const char *seed_byte;    /* that byte */
+    const char *at_bound;     /* "there is no byte left to consume" */
+    const char *peek;         /* the byte to consume, WITHOUT consuming it */
+    const char *consume;      /* the byte to consume, consuming it */
+    const char *advance;      /* the statement that consumes it */
+    void      (*emit_skip)(StrBuf *c, const DfaForm *f, int K, const char *kw);
+    void      (*emit_bound_accept)(StrBuf *c, const DfaForm *f);
+};
+
+/* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
+struct DfaForm {
+    const Dfa     *d;
+    const char    *p;              /* the artifact prefix */
+    const DfaDir  *dir;
+    const DfaRepr *repr;
+    const DfaPf   *pf;
+    const DfaView *view;
+    const DfaSeed *seed;
+    const DfaAcc  *acc;
+    bool           views;          /* the D11 bound: a skip may pass a
+                                    * position whose accept was not evaluated */
+    bool           viewsel;        /* the position-view indirection exists */
+    const char    *src;            /* the state the accept and the step read:
+                                    * `statev`, or `viewv` under `viewsel` */
+    int            nskip, skip[4];
+    CandSet        cand;
+};
+
+/* THE SELECTION WALK, written ONCE for all six axes. Every object struct
+ * begins with a `DfaCand`, so the address of the i'th entry of any of the
+ * lists is the address of a `DfaCand` — no punning, just the first member.
+ *
+ * Returning NULL is UNREACHABLE and deliberately not defended against: every
+ * list's last entry's `applies` returns true unconditionally, which is the
+ * property §9.3 of the note names as the failure mode a total fallback
+ * removes. A missing fallback would crash here rather than emit a machine
+ * with a hole in it. */
+static const void *dfa_select(const void *list, size_t n, size_t sz,
+                              const DfaSel *s, unsigned flags)
+{
+    const char *base = (const char *)list;
+    for (size_t i = 0; i < n; i++) {
+        const DfaCand *cand = (const DfaCand *)(const void *)(base + i * sz);
+        if (cand->deny & flags) continue;
+        if (cand->applies(s)) return (const void *)(base + i * sz);
+    }
+    return NULL;
+}
+#define DFA_SELECT(T, list, sel, flags)                                       \
+    ((const T *)dfa_select((list), sizeof(list) / sizeof((list)[0]),          \
+                           sizeof((list)[0]), (sel), (flags)))
+
+static bool cand_always(const DfaSel *s) { (void)s; return true; }
+
+/* ---- AXIS A: the table representations ---------------------------------- */
+
+static bool repr_premul_applies(const DfaSel *s) { return dfa_premul(s->cx, s->d); }
+static int  cell_premul(int st, const Dfa *d) { return st * d->ncls; }
+static int  cell_indexed(int st, const Dfa *d) { (void)d; return st; }
+
+/* LAYER 2 — THE OPAQUE STATE TOKEN. One block per machine per form, emitted
+ * at file scope immediately above the search function, so the VM hybrid's
+ * inlined `static <prefix>_prefilter` gets it BY CONSTRUCTION: that body is
+ * this same emitter call (`pcrec_emit_dfa_engine`), not a second copy.
+ *
+ * AN ACCESSOR TAKES THE TABLE IT READS AS A PARAMETER. The tables stay
+ * function-local `static const` arrays, where they have always been; the
+ * token abstracts the STATE REPRESENTATION and nothing else, and gcc folds a
+ * block-scope array's address through an inline call. That folding is the
+ * whole design (D82 bound 1) and it is MEASURED, not assumed: the objdump of
+ * `<prefix>_search` after this change is instruction-for-instruction the
+ * sequence the hand-written loop produced.
+ *
+ * ONLY THE ACCESSORS THIS MACHINE USES ARE EMITTED — `accepts_class` under
+ * axis E's `by_class`, `row`/`view_live`/`view_take` under a view — so no
+ * artifact carries a dead one. */
+static void token_premul(StrBuf *c, const DfaForm *f)
+{
+    const char *p = f->p, *m = f->dir->c.name;
+    int nc = f->d->ncls;
+    sb_printf(c,
+        "/* ---- THE %s SCAN'S STATE, AS AN OPAQUE TOKEN --------------------\n"
+        " * The scan carries its state in a `%s_%s_state`. Everything that\n"
+        " * depends on how a state is REPRESENTED is in this block: the loop\n"
+        " * only steps the token, asks whether it is dead, probes its accept\n"
+        " * bit and -- at most twice per search -- asks which table ROW it\n"
+        " * names.\n"
+        " *\n"
+        " * THIS IS THE PRE-MULTIPLIED FORM: the token is the state's row\n"
+        " * number times %d, so a step is one add and one load, and %d is the\n"
+        " * reserved value meaning \"dead, stop\".\n"
+        " */\n", f->dir->label, p, m, nc, PREMUL_DEAD);
+    sb_printf(c, "typedef unsigned %s_%s_state;\n", p, m);
+    sb_printf(c, "static inline %s_%s_state %s_%s_step(const unsigned short *transitions, %s_%s_state s, unsigned cl)\n"
+                 "{ return transitions[s + cl]; }\n", p, m, p, m, p, m);
+    sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s == %d; }\n",
+              p, m, p, m, PREMUL_DEAD);
+    sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
+                 "{ return accepting[s]; }\n", p, m, p, m);
+    if (f->acc->wide_table)
+        sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
+                     "{ return accepting[s + cl]; }\n", p, m, p, m);
+    if (f->viewsel) {
+        /* THE ONE UN-MULTIPLY, and the reason it is a function rather than a
+         * hoisted local at the call site: under this form it is a DIVISION.
+         * Its callers spell it inside the second operand of a `&&` whose
+         * first operand is `__builtin_expect(pos + 1 >= n, 0)`, so it runs at
+         * most twice per search and never per byte. A tidier
+         * `unsigned row = <M>_row(s);` above the `if` changes no answer,
+         * passes every identity gate, and puts a divide on the hot path. */
+        sb_printf(c, "static inline unsigned %s_%s_row(%s_%s_state s) { return s / %d; }\n",
+                  p, m, p, m, nc);
+        sb_printf(c, "static inline int %s_%s_view_live(const unsigned short *view, unsigned row)\n"
+                     "{ return view[row] != %d; }\n", p, m, PREMUL_DEAD);
+        sb_printf(c, "static inline %s_%s_state %s_%s_view_take(const unsigned short *view, unsigned row)\n"
+                     "{ return view[row]; }\n", p, m, p, m);
+    }
+    sb_puts(c, "\n");
+}
+
+static void token_indexed(StrBuf *c, const DfaForm *f)
+{
+    const char *p = f->p, *m = f->dir->c.name;
+    int nc = f->d->ncls;
+    sb_printf(c,
+        "/* ---- THE %s SCAN'S STATE, AS AN OPAQUE TOKEN --------------------\n"
+        " * The scan carries its state in a `%s_%s_state`. Everything that\n"
+        " * depends on how a state is REPRESENTED is in this block: the loop\n"
+        " * only steps the token, asks whether it is dead, probes its accept\n"
+        " * bit and -- at most twice per search -- asks which table ROW it\n"
+        " * names.\n"
+        " *\n"
+        " * THIS IS THE INDEXED FORM: the token IS the row number, a step\n"
+        " * scales it by the %d columns, and a negative value means \"dead,\n"
+        " * stop\".\n"
+        " */\n", f->dir->label, p, m, nc);
+    sb_printf(c, "typedef int %s_%s_state;\n", p, m);
+    sb_printf(c, "static inline %s_%s_state %s_%s_step(const short *transitions, %s_%s_state s, unsigned cl)\n"
+                 "{ return transitions[s * %d + cl]; }\n", p, m, p, m, p, m, nc);
+    sb_printf(c, "static inline int %s_%s_is_dead(%s_%s_state s) { return s < 0; }\n",
+              p, m, p, m);
+    sb_printf(c, "static inline int %s_%s_accepts(const unsigned char *accepting, %s_%s_state s)\n"
+                 "{ return accepting[s]; }\n", p, m, p, m);
+    if (f->acc->wide_table)
+        sb_printf(c, "static inline int %s_%s_accepts_class(const unsigned char *accepting, %s_%s_state s, unsigned cl)\n"
+                     "{ return accepting[s * %d + cl]; }\n", p, m, p, m, nc);
+    if (f->viewsel) {
+        sb_printf(c, "static inline unsigned %s_%s_row(%s_%s_state s) { return (unsigned)s; }\n",
+                  p, m, p, m);
+        sb_printf(c, "static inline int %s_%s_view_live(const short *view, unsigned row)\n"
+                     "{ return view[row] >= 0; }\n", p, m);
+        sb_printf(c, "static inline %s_%s_state %s_%s_view_take(const short *view, unsigned row)\n"
+                     "{ return view[row]; }\n", p, m, p, m);
+    }
+    sb_puts(c, "\n");
+}
+
+static void tr_comment_premul(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "    /* %s transitions, PRE-MULTIPLIED: indexed [state + class],\n"
+                 "     * and each cell already holds next_state * %d, so a step is one\n"
+                 "     * add and one load. %d means the walk cannot continue and stops.\n"
+                 "     * %d rows of %d. The state numbers in the legend below are ROW\n"
+                 "     * numbers; the values %s carries are those times %d.\n"
+                 "     *\n",
+              f->dir->title, f->d->ncls, PREMUL_DEAD, f->d->n, f->d->ncls,
+              f->dir->statev, f->d->ncls);
+}
+
+static void tr_comment_indexed(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "    /* %s transitions, indexed [state * %d + class]; -1 means the\n"
+                 "     * walk cannot continue and stops. %d rows of %d.\n"
+                 "     *\n",
+              f->dir->title, f->d->ncls, f->d->n, f->d->ncls);
+}
+
+static void acc_comment_premul(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "    /* 1 where %s, indexed by the PRE-MULTIPLIED\n"
+                 "     * %s state, so the scan's chain never un-multiplies. Each row\n"
+                 "     * repeats one bit; only the cells at a multiple of the class\n"
+                 "     * count are ever read. */\n",
+              f->dir->acc_meaning, f->dir->c.name);
+}
+
+static void acc_comment_indexed(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "    /* 1 where %s, indexed by %s state. */\n",
+              f->dir->acc_meaning, f->dir->c.name);
+}
+
+/* THE CANDIDATE LIST, in PREFERENCE order. A new representation — the u32
+ * form above the u16 bound, a two-byte alphabet — is a new ENTRY here plus
+ * its `emit_token` body, and nothing in `emit_scan_loop` or the assembly
+ * moves. Neither is built: D77, wait for the measurement that asks. */
+static const DfaRepr dfa_reprs[] = {
+    { { "premultiplied", PCREC_NO_PREMUL_TABLE, repr_premul_applies },
+      "unsigned short", true, PREMUL_DEAD, cell_premul,
+      token_premul, tr_comment_premul, acc_comment_premul },
+    { { "indexed", 0, cand_always },
+      "short", false, -1, cell_indexed,
+      token_indexed, tr_comment_indexed, acc_comment_indexed },
+};
+
+static const DfaRepr *dfa_repr_of(Ctx *cx, const Dfa *d)
+{
+    DfaSel s = { cx, d, NULL, true };
+    return DFA_SELECT(DfaRepr, dfa_reprs, &s, cx->opt->flags);
+}
+
+/* ---- AXIS C: the view selector ------------------------------------------ */
+
+static void view_decl(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%s%s_%s_state %s = %s;\n", f->dir->bind, f->p, f->dir->c.name,
+              f->dir->viewv, f->dir->statev);
+}
+
+/* `%s_%s_row(%s)` spelled once, since every view site needs it and none may
+ * hoist it (see `token_premul`'s note). */
+#define VROW(f) (f)->p, (f)->dir->c.name, (f)->dir->statev
+#define VTBL(f) (f)->p, (f)->dir->c.name
+
+static void view_emit_eol_only(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind, *pos = f->dir->posv;
+    view_decl(c, f);
+    sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0) &&\n"
+                 "%s    %s_%s_view_live(%s_%s_eol_view, %s_%s_row(%s)) &&\n"
+                 "%s    (%s == subject_length ||\n"
+                 "%s     (%s + 1 == subject_length && subject[%s] == '\\n')))\n"
+                 "%s    %s = %s_%s_view_take(%s_%s_eol_view, %s_%s_row(%s));\n",
+              ind, pos,
+              ind, VTBL(f), VTBL(f), VROW(f),
+              ind, pos,
+              ind, pos, pos,
+              ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f));
+}
+
+static void view_emit_end_only(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind, *pos = f->dir->posv;
+    view_decl(c, f);
+    /* `\z` with no `$`/`\Z` anywhere: only `pos == n` selects anything. */
+    sb_printf(c, "%sif (__builtin_expect(%s == subject_length, 0) &&\n"
+                 "%s    %s_%s_view_live(%s_%s_end_view, %s_%s_row(%s)))\n"
+                 "%s    %s = %s_%s_view_take(%s_%s_end_view, %s_%s_row(%s));\n",
+              ind, pos,
+              ind, VTBL(f), VTBL(f), VROW(f),
+              ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f));
+}
+
+static void view_emit_end_and_eol(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind, *pos = f->dir->posv;
+    view_decl(c, f);
+    sb_printf(c, "%sif (__builtin_expect(%s + 1 >= subject_length, 0)) {\n", ind, pos);
+    sb_printf(c, "%s    if (%s == subject_length) {\n", ind, pos);
+    sb_printf(c, "%s        if (%s_%s_view_live(%s_%s_end_view, %s_%s_row(%s)))\n"
+                 "%s            %s = %s_%s_view_take(%s_%s_end_view, %s_%s_row(%s));\n"
+                 "%s        else if (%s_%s_view_live(%s_%s_eol_view, %s_%s_row(%s)))\n"
+                 "%s            %s = %s_%s_view_take(%s_%s_eol_view, %s_%s_row(%s));\n",
+              ind, VTBL(f), VTBL(f), VROW(f),
+              ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f),
+              ind, VTBL(f), VTBL(f), VROW(f),
+              ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f));
+    sb_printf(c, "%s    } else if (subject[%s] == '\\n' &&\n"
+                 "%s               %s_%s_view_live(%s_%s_eol_view, %s_%s_row(%s))) {\n",
+              ind, pos,
+              ind, VTBL(f), VTBL(f), VROW(f));
+    sb_printf(c, "%s        %s = %s_%s_view_take(%s_%s_eol_view, %s_%s_row(%s));\n",
+              ind, f->dir->viewv, VTBL(f), VTBL(f), VROW(f));
+    sb_printf(c, "%s    }\n%s}\n", ind, ind);
+}
+
+/* THE THREE-WAY POSITION RULE, once:
+ *
+ *   pos == n                      -> the END view   (`\z`, `$`, `\Z` all pass)
+ *   pos + 1 == n && s[pos] == \n  -> the EOL view   (`$`/`\Z` only)
+ *   otherwise                     -> the state itself
+ *
+ * Which of the four objects a machine takes is which of the two view tables
+ * it actually has; `none` is the artifact with neither, where the scan reads
+ * the state directly and `f->src` is the state variable. */
+static bool view_end_and_eol_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return u->endv && u->eol; }
+static bool view_end_only_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return u->endv && !u->eol; }
+static bool view_eol_only_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return u->eol && !u->endv; }
+
+static const DfaView dfa_views[] = {
+    { { "end+eol", 0, view_end_and_eol_applies }, view_emit_end_and_eol },
+    { { "end",     0, view_end_only_applies    }, view_emit_end_only    },
+    { { "eol",     0, view_eol_only_applies    }, view_emit_eol_only    },
+    { { "none",    0, cand_always              }, NULL                  },
+};
+
+/* ---- AXIS D: the start seed --------------------------------------------- */
+
+static bool seed_applies(const DfaSel *s) { return dfa_needs_seed(s->d); }
+
+static void seed_emit_seeded(StrBuf *c, const DfaForm *f)
+{
+    /* MECHANISM 4's start initialization (§3.8.2/§3.8.3). ONCE PER SEARCH,
+     * off the loop entirely — the emitted hot path is unchanged.
+     *
+     * The context byte is IN THE SUBJECT AND OUTSIDE THE WINDOW the walk
+     * consumes, which is the whole point: a leading `\b` at `startpos` is a
+     * question about the byte before it, and a trailing one at `end` is a
+     * question about `s[end]` — a byte one to the RIGHT of where the reverse
+     * walk begins and never consumed by it. A constant start state encodes
+     * exactly one answer, "the context here is the end of the subject",
+     * which is the assumption a SLICE makes and not the one this API's
+     * contract makes. MEASURED against libpcre2 10.46: 5 of §3.8.1's 10
+     * cells differ, in both directions, so no conservative shortcut exists.
+     *
+     * THE RANGE GUARD MOVES ABOVE THE INITIALIZER on the direction that has
+     * one, and it has to: the constant form could not read the subject, so
+     * `startpos > n` was checked after it; here the initializer dereferences
+     * `s[startpos - 1]`, and on an out-of-range `startpos` that is an
+     * out-of-bounds read in EMITTED code — K27's class. With the guard
+     * first, `startpos <= n`, and `startpos > 0` then implies `n > 0`, hence
+     * `s != NULL` under match_api.md §3.1's legal empty subject. */
+    if (f->dir->range_guard) sb_puts(c, f->dir->range_guard);
+    sb_printf(c, "%s%s_%s_state %s = %s ? %s_%s_seed_state[%s_%s_byte_class[%s]]"
+                 " : %d;\n",
+              f->dir->ind, f->p, f->dir->c.name, f->dir->statev,
+              f->dir->seed_cond, f->p, f->dir->c.name, f->p, f->dir->c.name,
+              f->dir->seed_byte, f->repr->cell_of(f->d->s0, f->d));
+}
+
+static void seed_emit_constant(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%s%s_%s_state %s = %d;\n", f->dir->ind, f->p, f->dir->c.name,
+              f->dir->statev, f->repr->cell_of(f->d->s0, f->d));
+    if (f->dir->range_guard) sb_puts(c, f->dir->range_guard);
+}
+
+static const DfaSeed dfa_seeds[] = {
+    { { "seeded",   0, seed_applies }, true,  seed_emit_seeded   },
+    { { "constant", 0, cand_always  }, false, seed_emit_constant },
+};
+
+/* ---- AXIS E: where the accept is recorded ------------------------------- */
+
+static bool acc_by_class_applies(const DfaSel *s) { return dfa_has_clsacc(s->d); }
+static bool acc_viewed_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return u->views; }
+
+static void acc_emit_probe(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%sif (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
+              f->dir->bind, f->p, f->dir->c.name, f->p, f->dir->c.name,
+              f->src, f->dir->recv, f->dir->posv);
+}
+
+static void acc_emit_tail_scalar(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%sif (%s) break;\n", f->dir->bind, f->dir->at_bound);
+    sb_printf(c, "%s%s = %s_%s_step(%s_%s_next_state, %s, %s_%s_byte_class[%s]);\n",
+              f->dir->bind, f->dir->statev, f->p, f->dir->c.name,
+              f->p, f->dir->c.name, f->src, f->p, f->dir->c.name,
+              f->dir->consume);
+}
+
+static void acc_emit_tail_by_class(StrBuf *c, const DfaForm *f)
+{
+    /* §3.6.2's COMPOSITION RULE. The accept bit is class-indexed at every
+     * position that HAS a next byte and SCALAR at the boundary, where there
+     * is none in that direction: out of the window counts as non-word, which
+     * is a property of the POSITION, and the base accept already is that bit.
+     * Indexing the wide table at the boundary would be asking what the accept
+     * is when the next byte is "whatever byte happens to sit in that
+     * equivalence class", which is meaningless there.
+     *
+     * The guard is also what makes the byte read below unreachable at the
+     * boundary. The class is computed ONCE into `<M>_class` and shared with
+     * the transition — the byte is read once, and the structural check for
+     * this rule has a single named thing to look at rather than an expression
+     * to parse.
+     *
+     * THE BOUNDARY ARM IS ATTACHED TO THE BREAK, NOT PEELED BELOW THE LOOP,
+     * and that placement is the whole of R30 N9. This loop has TWO exits —
+     * this one and the dead-state one — and code placed after the loop would
+     * run on both. On the dead-state exit the walk did not reach the
+     * boundary, so an epilogue would record an answer at a position the walk
+     * never reached (a WRONG ANSWER, worse than a lost match) and would index
+     * the accept table with a dead token (an out-of-bounds read in emitted
+     * code, K27's class). This arm is entered only when the walk IS at the
+     * boundary and the token is live, so both are unreachable by
+     * construction. */
+    const char *ind = f->dir->bind, *m = f->dir->c.name, *p = f->p;
+    sb_printf(c, "%sif (%s) {\n", ind, f->dir->at_bound);
+    f->dir->emit_bound_accept(c, f);
+    sb_printf(c, "%s    break;\n%s}\n", ind, ind);
+    sb_printf(c, "%s{\n", ind);
+    sb_printf(c, "%s    unsigned %s_class = %s_%s_byte_class[%s];\n",
+              ind, m, p, m, f->dir->peek);
+    sb_printf(c, "%s    if (%s_%s_accepts_class(%s_%s_is_accepting_by_class, %s, %s_class))"
+                 " %s = %s;\n",
+              ind, p, m, p, m, f->src, m, f->dir->recv, f->dir->posv);
+    sb_printf(c, "%s    %s = %s_%s_step(%s_%s_next_state, %s, %s_class);\n",
+              ind, f->dir->statev, p, m, p, m, f->src, m);
+    sb_printf(c, "%s    %s;\n", ind, f->dir->advance);
+    sb_printf(c, "%s}\n", ind);
+}
+
+static const DfaAcc dfa_accs[] = {
+    { { "by-class", 0, acc_by_class_applies }, true,
+      NULL, NULL, acc_emit_tail_by_class },
+    { { "scalar-viewed", 0, acc_viewed_applies }, false,
+      NULL, acc_emit_probe, acc_emit_tail_scalar },
+    { { "scalar-plain", 0, cand_always }, false,
+      acc_emit_probe, NULL, acc_emit_tail_scalar },
+};
+
+/* ---- AXIS B: the prefilter ---------------------------------------------- */
+
+static bool pf_memchr_bounded_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR && u->views; }
+static bool pf_memchr_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_MEMCHR; }
+static bool pf_bcls_bounded_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS && u->views; }
+static bool pf_bcls_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return s->forward && u->kind == DFA_PF_BYTE_CLASS; }
+
+/* THE ENTRY CONDITION, shared by all four emitted forms: still parked in the
+ * start state with nothing found.
+ *
+ * The `last == (size_t)-1` half is NOT load-bearing and this comment must not
+ * present it as though it were. D3's priority pruning cuts the unanchored
+ * start self-loop out of every accepting closure, so an accepting state's
+ * successors can never be the start state and `st == s0` already implies
+ * `last == -1`. Two independent critics attacked the gate and neither could
+ * build a witness: deleting it produced 0 divergences over 8.0M
+ * oracle-checked comparisons. Keep it — it is free belt-and-braces — but do
+ * not cite it as a premise. */
+static void pf_open(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%sif (%s == %d && %s == (size_t)-1) {\n",
+              f->dir->bind, f->dir->statev, f->repr->cell_of(f->d->s0, f->d),
+              f->dir->recv);
+}
+
+static void pf_comment_memchr(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
+                 "%s// skip straight to the next byte that could begin a match.\n"
+                 "%s// Only ", f->dir->bind, f->dir->bind, f->dir->bind);
+    legend_byte(c, f->cand.byte);
+    sb_printf(c, " (%d) can, so one memchr() replaces the steps.\n", f->cand.byte);
+}
+
+static void pf_comment_bcls(StrBuf *c, const DfaForm *f)
+{
+    sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
+                 "%s// skip over bytes that cannot begin a match rather than\n"
+                 "%s// stepping through them. can_begin_match says which can.\n",
+              f->dir->bind, f->dir->bind, f->dir->bind);
+}
+
+static void pf_emit_memchr(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pf_comment_memchr(c, f);
+    pf_open(c, f);
+    /* [K27] The `pos >= n` guard is the FIX, and it is not defensive padding:
+     * docs/spec/match_api.md §3.1 makes (s == NULL, n == 0) a LEGAL subject,
+     * and on it this line used to call memchr(NULL, c, 0) — technical UB in
+     * EMITTED code, which a user compiling a generated matcher under their
+     * own -fsanitize=undefined sees pcrec's name on. It changes no answer:
+     * memchr over a zero-length range returns NULL, so the guarded early
+     * `return 0` is exactly the branch the unguarded form reached one line
+     * later. The BOUNDED form below needs no such guard — its own
+     * `pos + 1 < n` bound already implies n > 0, hence s != NULL. */
+    sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
+    sb_printf(c, "%s    const void *q = memchr(subject + scan_position, %d,"
+                 " subject_length - scan_position);\n", ind, f->cand.byte);
+    sb_printf(c, "%s    if (!q) return 0;\n"
+                 "%s    scan_position = (size_t)((const unsigned char *)q - subject);\n",
+              ind, ind);
+    sb_printf(c, "%s}\n", ind);
+}
+
+static void pf_emit_memchr_bounded(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pf_comment_memchr(c, f);
+    pf_open(c, f);
+    /* No early `return 0`: under a view the machine may still accept at n-1
+     * or n, so this falls through to the stepped loop instead. That lost
+     * early-out is exactly what `<PREFIX>_DFA_PREFILTER`'s `-bounded` half
+     * tells a consumer, and it is why this is its own form rather than a
+     * flag inside one. */
+    sb_printf(c, "%s    if (scan_position + 1 < subject_length) {\n", ind);
+    sb_printf(c, "%s        const void *q = memchr(subject + scan_position, %d,"
+                 " subject_length - 1 - scan_position);\n", ind, f->cand.byte);
+    sb_printf(c, "%s        scan_position = q ? (size_t)((const unsigned char *)q - subject)\n"
+                 "%s                          : subject_length - 1;\n", ind, ind);
+    sb_printf(c, "%s    }\n%s}\n", ind, ind);
+}
+
+static void pf_emit_bcls(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pf_comment_bcls(c, f);
+    pf_open(c, f);
+    sb_printf(c, "%s    while (scan_position < subject_length &&"
+                 " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
+              ind, f->p);
+    sb_printf(c, "%s    if (scan_position >= subject_length) return 0;\n", ind);
+    sb_printf(c, "%s}\n", ind);
+}
+
+static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pf_comment_bcls(c, f);
+    pf_open(c, f);
+    /* Every skip stops at n-1 so a state that accepts only under a view is
+     * never skipped past; below n-1 the view is unreachable, which is also
+     * why the view state cannot be stale after a skip (D11). */
+    sb_printf(c, "%s    while (scan_position + 1 < subject_length &&"
+                 " !%s_can_begin_match[subject[scan_position]]) scan_position++;\n",
+              ind, f->p);
+    sb_printf(c, "%s}\n", ind);
+}
+
+static const DfaPf dfa_pfs[] = {
+    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, false, pf_emit_memchr_bounded },
+    { { "memchr",             0, pf_memchr_applies         }, false, pf_emit_memchr         },
+    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, true,  pf_emit_bcls_bounded   },
+    { { "byte-class",         0, pf_bcls_applies           }, true,  pf_emit_bcls           },
+    { { "none",               0, cand_always               }, false, NULL                   },
+};
+
+static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
+{
+    DfaSel s = { cx, &cx->job->dfa, us, true };
+    return DFA_SELECT(DfaPf, dfa_pfs, &s, cx->opt->flags);
+}
+
+/* ---- AXIS F: the two directions ----------------------------------------- */
+
+static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
+{
+    const char *ind = f->dir->bind;
+    sb_printf(c, "%s%s (%s == %d) {\n", ind, kw, f->dir->statev,
+              f->repr->cell_of(K, f->d));
+    sb_printf(c, "%s    while (scan_position %s subject_length &&"
+                 " %s_forward_stay%d[subject[scan_position]]) scan_position++;\n",
+              ind, f->views ? "+ 1 <" : "<", f->p, K);
+    /* With the accept check ahead of us (the non-view order) the skipped
+     * run's final position would otherwise go unrecorded; under a view the
+     * check runs after the skip and already covers it. */
+    if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
+        sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
+    sb_printf(c, "%s}\n", ind);
+}
+
+static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
+{
+    const char *ind = f->dir->bind;
+    /* `pp` only ever DECREASES, so one entry guard is enough to keep the
+     * whole skip below the view region. */
+    sb_printf(c, "%s%s (%s == %d%s) {\n", ind, kw, f->dir->statev,
+              f->repr->cell_of(K, f->d),
+              f->views ? " && rewind_position + 1 < subject_length" : "");
+    sb_printf(c, "%s    while (rewind_position > search_from &&"
+                 " %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
+              ind, f->p, K);
+    if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
+        sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
+    sb_printf(c, "%s}\n", ind);
+}
+
+static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
+{
+    /* `pos == n` is the position with NO next byte, where §3.6.2 makes the
+     * accept SCALAR: out of subject is neither a word character nor a
+     * newline, and the base accept already is that bit. */
+    sb_printf(c, "%s    if (%s_forward_accepts(%s_forward_is_accepting, %s)) %s = %s;\n",
+              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);
+}
+
+static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
+{
+    /* MECHANISM 4's REVERSE TERMINATION (§3.8.3.1) — the site whose absence
+     * is a LOST MATCH. At `pp == startpos` the walk breaks before ever
+     * reading `s[startpos-1]`, so a LEADING `\b`/`\B` at the match start is
+     * otherwise evaluated with no left context. `\b` is safe BY ACCIDENT
+     * there, which is why a leading-`\b` sweep reports clean against a design
+     * that throws matches away; `\B` inverts it — `\Bfoo` on "xfoo" at
+     * startpos 1 is (1,4) in libpcre2 and no-match blind.
+     *
+     * Note the pleasing asymmetry with the forward boundary above: that one
+     * needs a SCALAR accept because no byte exists past `n`; this one needs a
+     * CONTEXT-INDEXED accept because the byte exists and is merely outside
+     * the window. `startpos == 0` is out of subject to the left — non-word —
+     * hence the scalar arm. */
+    sb_printf(c, "%s    if (search_from"
+                 " ? %s_reverse_accepts_class(%s_reverse_is_accepting_by_class, %s,\n"
+                 "%s                          %s_reverse_byte_class[subject[search_from - 1]])\n"
+                 "%s                 : %s_reverse_accepts(%s_reverse_is_accepting, %s))"
+                 " %s = %s;\n",
+              f->dir->bind, f->p, f->p, f->src,
+              f->dir->bind, f->p,
+              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);
+}
+
+static const DfaDir dfa_dir_forward = {
+    { "forward", 0, cand_always },
+    "Forward", "FORWARD", "forward_state", "forward_view_state",
+    "scan_position", "last_accept_position",
+    "    ", "        ", false,
+    "    /* ---- FORWARD TABLES: find where a match ENDS ------------------\n"
+    "     * Byte class of every possible input byte. The pattern can only\n"
+    "     * tell a few kinds of byte apart, so all 256 values fold into a\n"
+    "     * few classes and the transition table needs one column per class\n"
+    "     * rather than 256.\n"
+    "     *\n",
+    "a match may end",
+    "    if (search_from > subject_length) return 0;\n",
+    "search_from", "subject[search_from - 1]",
+    "scan_position >= subject_length",
+    "subject[scan_position]", "subject[scan_position++]", "scan_position++",
+    dir_fwd_skip, dir_fwd_bound_accept,
+};
+
+static const DfaDir dfa_dir_reverse = {
+    { "reverse", 0, cand_always },
+    "Reverse", "REVERSE", "reverse_state", "reverse_view_state",
+    "rewind_position", "match_start_position",
+    "        ", "            ", true,
+    "    /* ---- REVERSE TABLES: find where that match BEGINS -------------\n"
+    "     * The same three-table shape, built from the pattern read right to\n"
+    "     * left and walked backwards from the end the forward scan found.\n"
+    "     * The two machines are independent and need not agree.\n"
+    "     *\n",
+    "the backwards walk has consumed a whole match",
+    NULL,
+    "match_end_position < subject_length", "subject[match_end_position]",
+    "rewind_position <= search_from",
+    "subject[rewind_position - 1]", "subject[--rewind_position]", "rewind_position--",
+    dir_rev_skip, dir_rev_bound_accept,
+};
+
+/* ---- THE DERIVATION: one machine's whole form, selected once ------------ */
+
+static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
+                            const DfaDir *dir, DfaForm *f)
+{
+    DfaSel s = { cx, d, us, !dir->reverse };
+    unsigned flags = cx->opt->flags;
+
+    memset(f, 0, sizeof *f);
+    f->d       = d;
+    f->p       = cx->opt->prefix;
+    f->dir     = dir;
+    f->repr    = DFA_SELECT(DfaRepr, dfa_reprs, &s, flags);
+    f->view    = DFA_SELECT(DfaView, dfa_views, &s, flags);
+    f->seed    = DFA_SELECT(DfaSeed, dfa_seeds, &s, flags);
+    f->acc     = DFA_SELECT(DfaAcc,  dfa_accs,  &s, flags);
+    /* The prefilter is the FORWARD scan's, and that is a clause in each
+     * candidate's `applies` rather than a branch here: the reverse machine
+     * walks a range the forward scan already proved contains a match, so
+     * every real form declines and the list's total fallback `none` — a real
+     * object with a NULL emitter — is what it selects. */
+    f->pf      = DFA_SELECT(DfaPf, dfa_pfs, &s, flags);
+    f->views   = us->views;
+    f->viewsel = us->viewsel;
+    f->src     = us->viewsel ? dir->viewv : dir->statev;
+    f->cand    = us->cand;
+    /* The forward machine never skips out of its own start state — the
+     * prefilter owns that position. */
+    f->nskip   = pick_skip_states(d, dir->reverse ? -1 : d->s0, f->skip);
+}
+
+/* ---- THE TABLES, one path called twice ---------------------------------- */
+
+static void emit_machine_tables(StrBuf *c, const DfaForm *f)
+{
+    const char *p = f->p, *m = f->dir->c.name;
+    char tag[PCREC_MAX_EMIT_NAME_LEN];
+
+    /* [M6-READ] The tables are the artifact's data structures, and each gets
+     * a block comment: what it is, how it is indexed, what a cell means, and
+     * — where the cells are STATES — a legend naming them. */
+    sb_puts(c, f->dir->tbl_hdr);
+    emit_class_legend(c, f->d);
+    sb_puts(c, "     */\n");
+    snprintf(tag, sizeof tag, "%s_byte_class", m);
+    emit_u8_table(c, p, tag, f->d->clsmap, 256);
+
+    f->repr->emit_tr_comment(c, f);
+    emit_state_legend(c, f->d, f->dir->reverse);
+    sb_puts(c, "     */\n");
+    snprintf(tag, sizeof tag, "%s_next_state", m);
+    emit_tr_table(c, p, tag, f->d, f->repr);
+
+    f->repr->emit_acc_comment(c, f);
+    snprintf(tag, sizeof tag, "%s_is_accepting", m);
+    emit_acc_table(c, p, tag, f->d, f->repr);
+
+    if (f->acc->wide_table) {
+        snprintf(tag, sizeof tag, "%s_is_accepting_by_class", m);
+        emit_acc_cls_table(c, p, tag, f->d);
+    }
+    if (f->seed->table) {
+        snprintf(tag, sizeof tag, "%s_seed_state", m);
+        emit_seed_table(c, p, tag, f->d, f->d->s1u, f->repr);
+    }
+    if (f->viewsel) {
+        /* The two view tables exist independently of which SELECTOR the
+         * machine took: `end+eol` needs both, `eol`/`end` one each. The
+         * object's name is the authority on which. */
+        if (strcmp(f->view->c.name, "end")) {
+            snprintf(tag, sizeof tag, "%s_eol_view", m);
+            emit_eol_table(c, p, tag, f->d, f->repr);
+        }
+        if (strcmp(f->view->c.name, "eol")) {
+            snprintf(tag, sizeof tag, "%s_end_view", m);
+            emit_end_table(c, p, tag, f->d, f->repr);
+        }
+    }
+    if (f->pf->table) {
+        sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
+                   "     * forward loop uses this to skip over bytes that cannot begin\n"
+                   "     * one instead of stepping through them; speed only, it never\n"
+                   "     * changes the answer. */\n");
+        cand_emit_table(c, p, "can_begin_match", &f->cand);
+    }
+    snprintf(tag, sizeof tag, "%s_stay", m);
+    for (int k = 0; k < f->nskip; k++)
+        emit_stay_table(c, p, tag, f->skip[k], f->d);
+}
+
+/* ---- THE SCAN LOOP, emitted ONCE and called twice ----------------------- */
+
+static void emit_scan_loop(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->ind;
+
+    f->seed->emit_init(c, f);
+    sb_printf(c, "%sfor (;;) {\n", ind);
+    /* THE EVALUATION ORDER IS AN AXIS, not a tidiness question. Under a view,
+     * scan avoidance must run BEFORE the accept evaluation, so that
+     * evaluation sees the position the loop is really at: a skip bounded at
+     * n-1 can LAND on n-1, and evaluating first would consume that byte
+     * without ever taking its view (53 divergences, D11).
+     *
+     * Without a view the order is a free choice SEMANTICALLY — every position
+     * a skip passes has the same state and so the same accept bit — but NOT a
+     * free choice in speed. Hoisting the prefilter above the accept check
+     * costs 43% on `[01]*1[01]{8}` (158.4 -> 90.8 MB/s, 0 skip states, tight
+     * spreads). That asymmetry is the whole reason axis E has a
+     * `scalar-plain` object distinct from `scalar-viewed`; do not "simplify"
+     * the two into one. */
+    if (f->acc->emit_top) f->acc->emit_top(c, f);
+    if (f->pf->emit) f->pf->emit(c, f);
+    {
+        const char *kw = f->pf->emit ? "else if" : "if";
+        for (int k = 0; k < f->nskip; k++) {
+            f->dir->emit_skip(c, f, f->skip[k], kw);
+            kw = "else if";
+        }
+    }
+    if (f->view->emit) f->view->emit(c, f);
+    if (f->acc->emit_after_view) f->acc->emit_after_view(c, f);
+    f->acc->emit_tail(c, f);
+    sb_printf(c, "%s    if (%s_%s_is_dead(%s)) break;   // dead: no match can continue\n",
+              ind, f->p, f->dir->c.name, f->dir->statev);
+    sb_printf(c, "%s}\n", ind);
+}
+
+/* ---- ENG_UNANCH: the assembly ------------------------------------------- */
+
 static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
 {
     Job *job = cx->job;
-    Dfa *fd = &job->dfa, *rd = &job->rdfa;
     StrBuf *c = &job->csb;
-    const char *p = cx->opt->prefix;
 
     /* [DD-13] THE START ANALYSIS IS `unanch_start`'s, not this function's:
      * the view flags, the candidate set and the prefilter verdict are all
      * read a SECOND time by the artifact's `<PREFIX>_DFA_PREFILTER` stamp,
      * and that function's header states why they may not be derived twice. */
     UnanchStart us;
-    unanch_start(fd, rd, &us);
-    bool eol = us.eol, endv = us.endv, viewsel = us.viewsel, views = us.views;
+    unanch_start(&job->dfa, &job->rdfa, &us);
 
-    /* [M6.2 wave B] `facc2`/`racc2` — some state's accept actually varies with
-     * the next byte, so §3.6's class-indexed accept table is needed. Its
-     * sibling `wctx` (the machine carries a word context at all) lives in
-     * `unanch_start` because `views` is built from it; a pattern can have the
-     * first without the second, which is why they are two facts. */
-    bool facc2 = dfa_has_clsacc(fd);
-    bool racc2 = dfa_has_clsacc(rd);
-
-    /* [OPT-3] THE TABLE FORM, decided PER MACHINE and read here ONCE. The two
-     * DFAs have different `n` and different `ncls`, so each is decided on its
-     * own dimensions; `<PREFIX>_DFA_TABLE` reads `"mixed"` when they disagree
-     * (docs/spec/match_api.md §6.3). Every emitted state CONSTANT below goes
-     * through `premul_val`, which is the IDENTITY when the flag is false — so
-     * the indexed form's emitted text is the pre-[OPT-3] text character for
-     * character, which is what `-fno-premul-table` and every above-bound
-     * artifact rest on. */
-    bool fpm = dfa_premul(cx, fd);
-    bool rpm = dfa_premul(cx, rd);
-    char ixbuf[256];
-
-    int fs = fd->s0;   /* no asserts -> s0 == s1 */
-    int rs = rd->s0;
-    /* MECHANISM 4 is only EMITTED where it can change an answer. With the two
-     * interior start states interned to the same state the seed table would
-     * be a constant column, so the pre-wave constant start is emitted instead
-     * — which is also what keeps every existing artifact's first lines
-     * unmoved. */
-    bool fseed = dfa_needs_seed(fd);
-    bool rseed = dfa_needs_seed(rd);
-
-    emit_search_head(cx, c, fn, storage);
-
-    /* [DD-13] THE ONE EMPTY-ENGINE EXIT. It used to be two — a dead start
-     * state here, and the "can neither accept nor ever leave `fs`" proof
-     * forty lines down — emitting the SAME three lines with nothing written
-     * between them. `unanch_start` answers both as `empty`, so the stamp path
-     * and the emitter agree by construction on which artifacts have no scan
-     * at all (and therefore no prefilter). Byte-for-byte the same output. */
+    /* [DD-13] THE ONE EMPTY-ENGINE EXIT, and it is taken BEFORE any token
+     * block is emitted so an artifact that matches nothing grows nothing. */
     if (us.empty) {
+        emit_search_head(cx, c, fn, storage);
         sb_puts(c, "    (void)subject; (void)subject_length; (void)search_from; (void)capture_spans;\n"
                    "    return 0;\n}\n");
         return;
     }
 
-    /* [DD-13] THE PREFILTER, READ OFF THE SHARED DERIVATION. The forty lines
-     * of start-state analysis that used to sit here are `unanch_start`'s now,
-     * verbatim and with their measurements; what is left is the translation
-     * from its verdict to the two booleans this emitter's loop is written
-     * against. `fcand` is COPIED rather than pointed at so every use site
-     * below reads exactly as it did. */
-    CandSet fcand = us.cand;
-    bool prefilter  = us.kind != DFA_PF_NONE;
-    bool use_memchr = us.kind == DFA_PF_MEMCHR;
+    DfaForm fwd, rev;
+    dfa_form_derive(cx, &job->dfa,  &us, &dfa_dir_forward, &fwd);
+    dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
 
-    int fskip[4], rskip[4];
-    int nfskip = pick_skip_states(fd, fs, fskip);
-    int nrskip = pick_skip_states(rd, -1, rskip);
+    /* LAYER 2, at file scope and above the body: the two accessor blocks. */
+    fwd.repr->emit_token(c, &fwd);
+    rev.repr->emit_token(c, &rev);
 
-    /* [M6-READ] The tables are the artifact's data structures, and each gets
-     * the block comment the plan row's requirement (1) asks for: what it is,
-     * how it is indexed, what a cell means, and -- where the cells are STATES
-     * -- a legend naming them. Requirement (3)'s clarification is why there is
-     * no per-row commentary inside any of them. */
-    sb_puts(c, "    /* ---- FORWARD TABLES: find where a match ENDS ------------------\n"
-               "     * Byte class of every possible input byte. The pattern can only\n"
-               "     * tell a few kinds of byte apart, so all 256 values fold into a\n"
-               "     * few classes and the transition table needs one column per class\n"
-               "     * rather than 256.\n"
-               "     *\n");
-    emit_class_legend(c, fd);
-    sb_puts(c, "     */\n");
-    emit_u8_table(c, p, "forward_byte_class", fd->clsmap, 256);
-    if (fpm)
-        sb_printf(c, "    /* Forward transitions, PRE-MULTIPLIED ([OPT-3]): indexed\n"
-                     "     * [state + class], and each cell already holds next_state * %d,\n"
-                     "     * so a step is one add and one load. %d means the pattern\n"
-                     "     * cannot continue and the scan stops. %d rows of %d. The state\n"
-                     "     * numbers in the legend below are ROW numbers; the values this\n"
-                     "     * code carries in forward_state are those times %d.\n"
-                     "     *\n", fd->ncls, PREMUL_DEAD, fd->n, fd->ncls, fd->ncls);
-    else
-        sb_printf(c, "    /* Forward transitions, indexed [state * %d + class]; -1 means\n"
-                     "     * the pattern cannot continue and the scan stops. %d rows of %d.\n"
-                     "     *\n", fd->ncls, fd->n, fd->ncls);
-    emit_state_legend(c, fd, false);
-    sb_puts(c, "     */\n");
-    emit_tr_table(c, p, "forward_next_state", fd, fpm);
-    sb_puts(c, fpm ? "    /* 1 where a match may end, indexed by the PRE-MULTIPLIED forward\n"
-                     "     * state ([OPT-3]), so the scan's chain never un-multiplies. Each\n"
-                     "     * row repeats one bit; only the cells at a multiple of the class\n"
-                     "     * count are ever read. */\n"
-                   : "    /* 1 where a match may end, indexed by forward state. */\n");
-    emit_acc_table(c, p, "forward_is_accepting", fd, fpm);
-    if (facc2) emit_acc_cls_table(c, p, "forward_is_accepting_by_class", fd);
-    if (fseed) emit_seed_table(c, p, "forward_seed_state", fd, fd->s1u, fpm);
-    if (eol)  emit_eol_table(c, p, "forward_eol_view", fd, fpm);
-    if (endv) emit_end_table(c, p, "forward_end_view", fd, fpm);
-    if (prefilter && !use_memchr) {
-        sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
-                   "     * forward loop uses this to skip over bytes that cannot begin\n"
-                   "     * one instead of stepping through them; speed only, it never\n"
-                   "     * changes the answer. */\n");
-        cand_emit_table(c, p, "can_begin_match", &fcand);
-    }
-    for (int k = 0; k < nfskip; k++)
-        emit_stay_table(c, p, "forward_stay", fskip[k], fd);
-    sb_puts(c, "    /* ---- REVERSE TABLES: find where that match BEGINS -------------\n"
-               "     * The same three-table shape, built from the pattern read right to\n"
-               "     * left and walked backwards from the end the forward scan found.\n"
-               "     * The two machines are independent and need not agree.\n"
-               "     *\n");
-    emit_class_legend(c, rd);
-    sb_puts(c, "     */\n");
-    emit_u8_table(c, p, "reverse_byte_class", rd->clsmap, 256);
-    if (rpm)
-        sb_printf(c, "    /* Reverse transitions, PRE-MULTIPLIED ([OPT-3]): indexed\n"
-                     "     * [state + class], and each cell already holds next_state * %d.\n"
-                     "     * %d stops the walk. %d rows of %d; the legend's state numbers\n"
-                     "     * are ROW numbers, and reverse_state carries those times %d.\n"
-                     "     *\n", rd->ncls, PREMUL_DEAD, rd->n, rd->ncls, rd->ncls);
-    else
-        sb_printf(c, "    /* Reverse transitions, indexed [state * %d + class]; -1 stops\n"
-                     "     * the walk. %d rows of %d.\n"
-                     "     *\n", rd->ncls, rd->n, rd->ncls);
-    emit_state_legend(c, rd, true);
-    sb_puts(c, "     */\n");
-    emit_tr_table(c, p, "reverse_next_state", rd, rpm);
-    sb_puts(c, rpm ? "    /* 1 where the backwards walk has consumed a whole match,\n"
-                     "     * indexed by the PRE-MULTIPLIED reverse state ([OPT-3]). */\n"
-                   : "    /* 1 where the backwards walk has consumed a whole match,\n"
-                     "     * indexed by reverse state. */\n");
-    emit_acc_table(c, p, "reverse_is_accepting", rd, rpm);
-    if (racc2) emit_acc_cls_table(c, p, "reverse_is_accepting_by_class", rd);
-    if (rseed) emit_seed_table(c, p, "reverse_seed_state", rd, rd->s1u, rpm);
-    if (eol)  emit_eol_table(c, p, "reverse_eol_view", rd, rpm);
-    if (endv) emit_end_table(c, p, "reverse_end_view", rd, rpm);
-    for (int k = 0; k < nrskip; k++)
-        emit_stay_table(c, p, "reverse_stay", rskip[k], rd);
+    emit_search_head(cx, c, fn, storage);
+    emit_machine_tables(c, &fwd);
+    emit_machine_tables(c, &rev);
 
-    /* Under EOL the scan reads the accept flag and the transition row through
-     * `est`/`erst` (the EOL view at the last two positions); otherwise those
-     * collapse to `st`/`rst` and gcc sees exactly the pre-M2.7 loop. */
-    const char *fsrc = viewsel ? "forward_view_state" : "forward_state";
-    const char *rsrc = viewsel ? "reverse_view_state" : "reverse_state";
-    /* Every skip must stop at n-1 so a state that accepts only at EOL is
-     * never skipped past; below n-1 the EOL view is unreachable, which is
-     * also why `est` cannot be stale after a skip. */
-    const char *fbound = views ? "scan_position + 1 < subject_length" : "scan_position < subject_length";
-
-    sb_puts(c,   "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
-                 "    // One byte per iteration. The loop keeps the LAST accepting\n"
-                 "    // position rather than stopping at the first, so the longest\n"
-                 "    // match wins.\n"
-                 "    size_t scan_position = search_from;\n"
-                 "    size_t last_accept_position = (size_t)-1;\n");
-    if (fseed) {
-        /* MECHANISM 4, forward initialization (§3.8.2). ONCE PER SEARCH, off
-         * the loop entirely — the emitted hot path is unchanged.
-         *
-         * `s[startpos-1]` is a byte IN THE SUBJECT and OUTSIDE THE SEARCH
-         * WINDOW, which is the whole point: `<prefix>_search` searches
-         * `s[startpos, n)`, and a leading `\b` at `startpos` is a question
-         * about the byte before it. A constant start state encodes exactly
-         * one answer — "the context here is start-of-subject" — which is the
-         * assumption a SLICE makes, not the assumption this API's contract
-         * makes. MEASURED against libpcre2 10.46: 5 of §3.8.1's 10 cells
-         * differ, in both directions, so no conservative shortcut exists.
-         *
-         * `startpos == 0` genuinely IS start-of-subject, where the constant
-         * is right, which is what the ternary's else arm is.
-         *
-         * THE RANGE GUARD MOVES ABOVE THIS LINE, and it has to: the pre-wave
-         * `int st = <const>;` could not read the subject, so `startpos > n`
-         * was checked after it. Here the initializer dereferences
-         * `s[startpos - 1]`, and on an out-of-range `startpos` that is an
-         * out-of-bounds read in EMITTED code — K27's class. With the guard
-         * first, `startpos <= n`, and `startpos > 0` then implies `n > 0`,
-         * hence `s != NULL` under match_api.md §3.1's legal empty subject. */
-        sb_puts(c,   "    if (search_from > subject_length) return 0;\n");
-        sb_printf(c, "    %s forward_state = search_from ? %s_forward_seed_state[%s_forward_byte_class[subject[search_from - 1]]]"
-                     " : %d;\n", fpm ? "unsigned" : "int", p, p,
-                  premul_val(fs, fd->ncls, fpm));
-    } else {
-        sb_printf(c, "    %s forward_state = %d;\n", fpm ? "unsigned" : "int",
-                  premul_val(fs, fd->ncls, fpm));
-        sb_puts(c,   "    if (search_from > subject_length) return 0;\n");
-    }
-    sb_puts(c,   "    for (;;) {\n");
-    /* Under EOL, scan avoidance must run BEFORE the accept/EOL evaluation, so
-     * that evaluation sees the position the loop is really at: a skip bounded
-     * at n-1 can LAND on n-1, and evaluating first would consume that byte
-     * without ever taking its EOL view (53 divergences, see D11).
-     *
-     * Without EOL the order is a free choice semantically — every position a
-     * skip passes has the same state and so the same accept bit — but NOT a
-     * free choice in speed. Hoisting the prefilter above the accept check
-     * costs 43% on `[01]*1[01]{8}` (158.4 -> 90.8 MB/s, 0 skip states, tight
-     * spreads), so the non-EOL path keeps the original order. This asymmetry
-     * is the whole reason the flag exists; do not "simplify" it away. */
-    if (!views)
-        sb_printf(c, "        if (%s_forward_is_accepting[forward_state]) last_accept_position = scan_position;\n", p);
-    {
-        const char *kw = "if";
-        if (prefilter) {
-            /* [M6-READ] The prefilter's own description, emitted HERE because
-             * this is where its form is known -- the orientation block names
-             * the step and defers to this comment rather than re-deriving
-             * `use_memchr` a second time. */
-            if (use_memchr) {
-                sb_puts(c,   "        // Prefilter: nothing found yet and still at the start, so\n"
-                             "        // skip straight to the next byte that could begin a match.\n"
-                             "        // Only ");
-                legend_byte(c, fcand.byte);
-                sb_printf(c, " (%d) can, so one memchr() replaces the steps.\n",
-                          fcand.byte);
-            }
-            else
-                sb_puts(c,   "        // Prefilter: nothing found yet and still at the start, so\n"
-                             "        // skip over bytes that cannot begin a match rather than\n"
-                             "        // stepping through them. can_begin_match says which can.\n");
-            sb_printf(c, "        if (forward_state == %d && last_accept_position == (size_t)-1) {\n",
-                      premul_val(fs, fd->ncls, fpm));
-            if (use_memchr) {
-                if (views) {
-                    /* no early `return 0`: the EOL view may still accept at
-                     * n-1 or n, so fall through to the stepped loop instead */
-                    sb_puts(c,   "            if (scan_position + 1 < subject_length) {\n");
-                    sb_printf(c, "                const void *q = memchr(subject + scan_position, %d, subject_length - 1 - scan_position);\n", fcand.byte);
-                    sb_puts(c,   "                scan_position = q ? (size_t)((const unsigned char *)q - subject) : subject_length - 1;\n"
-                                 "            }\n");
-                } else {
-                    /* [K27] The `pos >= n` guard is the FIX, and it is not
-                     * defensive padding: docs/spec/match_api.md §3.1 makes
-                     * (s == NULL, n == 0) a LEGAL subject, and on it this
-                     * line used to call memchr(NULL, c, 0) — technical UB in
-                     * EMITTED code, which a user compiling a generated
-                     * matcher under their own -fsanitize=undefined sees
-                     * pcrec's name on. It changes no answer: memchr over a
-                     * zero-length range returns NULL, so the guarded early
-                     * `return 0` is exactly the branch the unguarded form
-                     * reached one line later. The EOL arm above needs no
-                     * such guard — its own `pos + 1 < n` bound already
-                     * implies n > 0, hence s != NULL. */
-                    sb_puts(c,   "            if (scan_position >= subject_length) return 0;\n");
-                    sb_printf(c, "            const void *q = memchr(subject + scan_position, %d, subject_length - scan_position);\n", fcand.byte);
-                    sb_puts(c,   "            if (!q) return 0;\n"
-                                 "            scan_position = (size_t)((const unsigned char *)q - subject);\n");
-                }
-            } else {
-                sb_printf(c, "            while (%s && !%s_can_begin_match[subject[scan_position]]) scan_position++;\n", fbound, p);
-                if (!views) sb_puts(c, "            if (scan_position >= subject_length) return 0;\n");
-            }
-            sb_puts(c, "        }\n");
-            kw = "else if";
-        }
-        for (int k = 0; k < nfskip; k++) {
-            int K = fskip[k];
-            sb_printf(c, "        %s (forward_state == %d) {\n", kw,
-                      premul_val(K, fd->ncls, fpm));
-            sb_printf(c, "            while (%s && %s_forward_stay%d[subject[scan_position]]) scan_position++;\n", fbound, p, K);
-            /* With the accept check ahead of us (non-EOL order) the skipped
-             * run's final position would otherwise go unrecorded; under EOL
-             * the check runs after the skip and already covers it. */
-            if (!views && fd->st[K].up[UPC_PLAIN].accept)
-                sb_puts(c, "            last_accept_position = scan_position;\n");
-            sb_puts(c, "        }\n");
-            kw = "else if";
-        }
-    }
-    if (viewsel)
-        emit_view_select(c, p, eol, endv, "scan_position", "forward_state", "forward_view_state", "forward_eol_view", "forward_end_view",
-                         "        ", fd->ncls, fpm);
-    if (views && !facc2)
-        sb_printf(c, "        if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n", p, fsrc);
-    if (facc2) {
-        /* §3.6.2's COMPOSITION RULE, and the `pos == n` arm is the half that
-         * is easy to get wrong. The accept bit is class-indexed at every
-         * position that HAS a next byte and SCALAR at the one that does not:
-         * out-of-subject counts as non-word, which is a property of the
-         * POSITION, and the base accept already is that bit. Indexing the
-         * wide table with some class at `pos == n` would be asking what the
-         * accept is when the next byte is "whatever byte happens to sit in
-         * that equivalence class", which is meaningless there.
-         *
-         * The guard is also what makes `s[pos]` below unreachable at
-         * `pos == n`. The class is computed ONCE into `cl` and shared with
-         * the transition — the byte is read once, and the structural check
-         * for this rule has a single named thing to look at rather than an
-         * expression to parse. */
-        sb_printf(c, "        if (scan_position >= subject_length) {\n"
-                     "            if (%s_forward_is_accepting[%s]) last_accept_position = scan_position;\n"
-                     "            break;\n"
-                     "        }\n", p, fsrc);
-        {
-            char ax[256];
-            premul_ix(ax, sizeof ax, fsrc, fd->ncls, fpm, "forward_class");
-            sb_printf(c, "        {\n"
-                         "            unsigned forward_class = %s_forward_byte_class[subject[scan_position]];\n"
-                         "            if (%s_forward_is_accepting_by_class[%s]) last_accept_position = scan_position;\n"
-                         "            forward_state = %s_forward_next_state[%s];\n"
-                         "            scan_position++;\n"
-                         "        }\n",
-                      p, p, ax, p, ax);
-        }
-    } else {
-        sb_puts(c,   "        if (scan_position >= subject_length) break;\n");
-        {
-            char cls[128];
-            snprintf(cls, sizeof cls, "%s_forward_byte_class[subject[scan_position++]]", p);
-            sb_printf(c, "        forward_state = %s_forward_next_state[%s];\n",
-                      p, premul_ix(ixbuf, sizeof ixbuf, fsrc, fd->ncls, fpm, cls));
-        }
-    }
-    if (fpm)
-        sb_printf(c, "        if (forward_state == %d) break;   // dead: no match can continue\n",
-                  PREMUL_DEAD);
-    else
-        sb_puts(c,   "        if (forward_state < 0) break;   // dead: no match can continue\n");
-    sb_puts(c,   "    }\n"
-                 "    if (last_accept_position == (size_t)-1) return 0;\n"
-                 "    {\n"
-                 "        size_t match_end_position = last_accept_position;\n"
-                 "        size_t match_start_position = (size_t)-1;\n"
-                 "        size_t rewind_position = match_end_position;\n");
-    if (rseed) {
-        /* MECHANISM 4, REVERSE INITIALIZATION (§3.8.3). The reverse walk
-         * starts at `pp = end` and consumes LEFTWARD, so the byte that seeds
-         * a TRAILING `\b`'s context is `s[end]` — one to the RIGHT of where
-         * the walk begins, in the subject, and never consumed by the walk at
-         * all. That site did not exist before this wave, and it cannot be a
-         * compile-time constant the way the forward one nearly was: `end` is
-         * produced by the forward loop, so this read is data-dependent and
-         * has to happen HERE, after it.
-         *
-         * `end == n` is the out-of-subject case — no byte to the right —
-         * which is a NON-word context and therefore the pre-wave constant. */
-        sb_printf(c, "        %s reverse_state = (match_end_position < subject_length) ? %s_reverse_seed_state[%s_reverse_byte_class[subject[match_end_position]]]"
-                     " : %d;\n", rpm ? "unsigned" : "int", p, p,
-                  premul_val(rs, rd->ncls, rpm));
-    } else {
-        sb_printf(c, "        %s reverse_state = %d;\n", rpm ? "unsigned" : "int",
-                  premul_val(rs, rd->ncls, rpm));
-    }
-    sb_puts(c,   "        for (;;) {\n");
-    if (!views)
-        sb_printf(c, "            if (%s_reverse_is_accepting[reverse_state]) match_start_position = rewind_position;\n", p);
-    {   /* same ordering rule as the forward loop, and
-         * `match_start_position` wants the SMALLEST accepting position,
-         * which is where a reverse skip stops */
-        const char *kw = "if";
-        for (int k = 0; k < nrskip; k++) {
-            int K = rskip[k];
-            /* pp only ever DECREASES, so one entry guard is enough to keep the
-             * whole skip below the EOL region */
-            sb_printf(c, "            %s (reverse_state == %d%s) {\n", kw,
-                      premul_val(K, rd->ncls, rpm),
-                      views ? " && rewind_position + 1 < subject_length" : "");
-            sb_printf(c, "                while (rewind_position > search_from && %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n", p, K);
-            if (!views && rd->st[K].up[UPC_PLAIN].accept)
-                sb_puts(c, "                match_start_position = rewind_position;\n");
-            sb_puts(c, "            }\n");
-            kw = "else if";
-        }
-    }
-    if (viewsel)
-        emit_view_select(c, p, eol, endv, "rewind_position", "reverse_state", "reverse_view_state", "reverse_eol_view", "reverse_end_view",
-                         "            ", rd->ncls, rpm);
-    if (views && !racc2)
-        sb_printf(c, "            if (%s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n", p, rsrc);
-    if (racc2) {
-        /* MECHANISM 4, REVERSE TERMINATION (§3.8.3.1) — the site whose
-         * absence is a LOST MATCH, and the site whose PLACEMENT is the whole
-         * of R30 N9.
-         *
-         * At `pp == startpos` the walk breaks before ever reading
-         * `s[startpos-1]`, so a LEADING `\b`/`\B` at the match start is
-         * otherwise evaluated with no left context — the walk silently
-         * assuming start-of-subject. `\b` is safe BY ACCIDENT there (its
-         * blind assumption coincides with the cases the forward pass lets
-         * through), which is exactly why a leading-`\b` sweep reports clean
-         * against a design that throws matches away. `\B` inverts it: `\Bfoo`
-         * on "xfoo" at startpos 1 is (1,4) in libpcre2 and no-match blind.
-         *
-         * ATTACHED TO THE BOUNDARY BREAK, NOT A PEELED EPILOGUE BELOW THE
-         * LOOP. This loop has TWO exits — this one and the dead-state `rst <
-         * 0` below — and code placed after the loop would run on both. On the
-         * dead-state exit `pp > startpos` and `rst < 0`, so an epilogue would
-         * record `match_start_position` at a position the walk never reached (a WRONG
-         * ANSWER, worse than a lost match) and would index the accept table
-         * with a NEGATIVE state (an out-of-bounds read in emitted code,
-         * K27's class). This arm is entered only when `pp <= startpos` and
-         * `rst` is live, so both are unreachable by construction.
-         *
-         * `pp == startpos` happens exactly once and the loop already tests
-         * for it, so this costs one emitted site and ZERO per-byte work.
-         *
-         * `startpos == 0` is out-of-subject to the left — non-word — hence
-         * the SCALAR accept, the mirror of §3.6.2's `pos == n` rule. Note the
-         * pleasing asymmetry: the forward machine's terminal boundary needs a
-         * scalar accept because no byte exists past `n`; this one needs a
-         * CONTEXT-INDEXED accept because the byte exists and is merely
-         * outside the window. */
-        {
-            char cls[128];
-            snprintf(cls, sizeof cls, "%s_reverse_byte_class[subject[search_from - 1]]", p);
-            sb_printf(c, "            if (rewind_position <= search_from) {\n"
-                         "                if (search_from ? %s_reverse_is_accepting_by_class[%s]\n"
-                         "                             : %s_reverse_is_accepting[%s]) match_start_position = rewind_position;\n"
-                         "                break;\n"
-                         "            }\n",
-                      p, premul_ix(ixbuf, sizeof ixbuf, rsrc, rd->ncls, rpm, cls),
-                      p, rsrc);
-        }
-        {
-            char ax[256];
-            premul_ix(ax, sizeof ax, rsrc, rd->ncls, rpm, "reverse_class");
-            sb_printf(c, "            {\n"
-                         "                unsigned reverse_class = %s_reverse_byte_class[subject[rewind_position - 1]];\n"
-                         "                if (%s_reverse_is_accepting_by_class[%s]) match_start_position = rewind_position;\n"
-                         "                reverse_state = %s_reverse_next_state[%s];\n"
-                         "                rewind_position--;\n"
-                         "            }\n",
-                      p, p, ax, p, ax);
-        }
-    } else {
-        sb_puts(c,   "            if (rewind_position <= search_from) break;\n");
-        {
-            char cls[128];
-            snprintf(cls, sizeof cls, "%s_reverse_byte_class[subject[--rewind_position]]", p);
-            sb_printf(c, "            reverse_state = %s_reverse_next_state[%s];\n",
-                      p, premul_ix(ixbuf, sizeof ixbuf, rsrc, rd->ncls, rpm, cls));
-        }
-    }
-    if (rpm)
-        sb_printf(c, "            if (reverse_state == %d) break;\n", PREMUL_DEAD);
-    else
-        sb_puts(c,   "            if (reverse_state < 0) break;\n");
-    sb_puts(c,   "        }\n"
-                 "        if (match_start_position == (size_t)-1) return 0;\n"
-                 "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n"
-                 "        return 1;\n"
-                 "    }\n"
-                 "}\n");
+    sb_puts(c, "    // ---- FORWARD SCAN: where does a match end? ----------------\n"
+               "    // One byte per iteration. The loop keeps the LAST accepting\n"
+               "    // position rather than stopping at the first, so the longest\n"
+               "    // match wins.\n"
+               "    size_t scan_position = search_from;\n"
+               "    size_t last_accept_position = (size_t)-1;\n");
+    emit_scan_loop(c, &fwd);
+    sb_puts(c, "    if (last_accept_position == (size_t)-1) return 0;\n"
+               "    {\n"
+               "        size_t match_end_position = last_accept_position;\n"
+               "        size_t match_start_position = (size_t)-1;\n"
+               "        size_t rewind_position = match_end_position;\n");
+    emit_scan_loop(c, &rev);
+    sb_puts(c, "        if (match_start_position == (size_t)-1) return 0;\n"
+               "        if (capture_spans) { capture_spans[0][0] = (ptrdiff_t)match_start_position; capture_spans[0][1] = (ptrdiff_t)match_end_position; }\n"
+               "        return 1;\n"
+               "    }\n"
+               "}\n");
 }
 
 /* ---- ENG_ATTEMPT: computed-goto per-start attempt loop ---- */
@@ -3831,12 +4252,11 @@ static const char *dfa_prefilter_name(Ctx *cx)
      * consumer that could not tell the two apart would attribute the
      * difference to the pattern. The emitter CAN tell (`us.views` is the same
      * flag the emitted `fbound` string is built from), so it says so. */
-    switch (us.kind) {
-    case DFA_PF_MEMCHR:     return us.views ? "memchr-bounded"     : "memchr";
-    case DFA_PF_BYTE_CLASS: return us.views ? "byte-class-bounded" : "byte-class";
-    case DFA_PF_NONE:       break;
-    }
-    return "none";
+    /* [ENG-FORM] THE STAMP IS THE CHOSEN OBJECT'S NAME, and the five values
+     * are five OBJECTS: the `-bounded` half is a genuinely different emitted
+     * loop, not a suffix this function appends, so it cannot disagree with
+     * the loop the emitter wrote. */
+    return dfa_pf_of(cx, &us)->c.name;
 }
 
 /* [DD-13c] WHICH DFA SCAN THIS ARTIFACT CARRIES — the two lines, emitted from
