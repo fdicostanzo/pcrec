@@ -250,6 +250,29 @@ section targets depend on.
   also surfaced) — all five compile generated C exactly like their already-
   listed siblings.
 
+- **test_trailer.sh** — `make test`'s COMPLETION TRAILER (2026-08-26,
+  manager finding: `make -j12 test` printed "Waiting for unfinished jobs"
+  on an early section's failure and launched NO FURTHER targets —
+  `test-premul-table`, last in the Makefile's `TEST_SECTIONS` list, never
+  ran in two batteries, invisible to the checks-passed/checks-failed COUNT
+  aggregation since an unlaunched target contributes nothing to either
+  side of the sum). Paired with the Makefile's own `test:` recipe, which
+  now invokes `$(MAKE) -k TEST_TRAILER_DIR=<dir> $(TEST_SECTIONS)` (the
+  parent's jobserver is inherited automatically, so `-j` parallelism is
+  unaffected) instead of listing the sections as prerequisites; every
+  section target's recipe touches `<dir>/<name>.ran` as its FIRST line,
+  before running its real script, so the marker means "make launched this
+  recipe" independent of whether the recipe itself then passed. This
+  script counts markers against the section-name list its CALLER passes
+  (never re-derives the list from the Makefile — one list, two uses, not
+  two lists), prints `sections ran: N/M`, and names every missing section;
+  a zero-argument call is a hard failure (an empty expected list would
+  read as a vacuous 0/0 pass). See docs/testing.md "make test completion
+  trailer" for the reproduced bug, the fix's two halves, and the
+  detect-demonstration transcripts (a genuinely-skipped section under the
+  old shape; the trailer's own 0/N detection when a shared prerequisite
+  fails even under the new one).
+
 ## Conventions
 
 A script grouped by `run_group.sh` must isolate itself the same way every

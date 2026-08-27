@@ -2826,3 +2826,311 @@ then reverted (scratch `.rxt` files, never committed):
   the pattern's own group count — both caught, independent of the
   live/pending distinction (the python oracle only cares whether the
   EXPECTATION is correct, never whether pcrec can check it yet)
+
+## Answer-identity sweep + form census ([CHK-2], 2026-08-26)
+
+Two opt-in instruments, `make test-axes` (`tests/axes/run_axes.sh` +
+`tests/codegen/run_form_census.sh`), the same shape as `make strict`/`make
+ubsan`: never part of `make test`, never default, writes nothing outside
+its own temp dir, safe to run alongside anything else. Chartered from a
+gap in the tuning-axis family's own convention (docs/dev/plan.md [CHK-2]):
+every axis gets a stamp, a deny flag, an identity gate and a structural
+check BY CONVENTION, and before this row only 4 of the 13 documented axes
+(`docs/spec/tuning.md` §2) had ANY corpus-wide answer sweep at all.
+
+### The answer-identity sweep (`tests/axes/run_axes.sh`)
+
+Sweeps the WHOLE `.rxt` corpus over every bit-flag axis (12, derived live
+from `lib/pcrec.h`'s `1u << N` constants and `cli/main.c`'s flag-parsing
+loop — never hand-copied, cross-checked against `tuning.md` §2's own
+`(bit N)` headings so a new axis with no doc heading, or vice versa, is
+RED) plus the coarse `--engine=vm`/`--engine=dfa` axis, comparing PER-CASE
+answers (match/nomatch/span/captures/give-up code) against the default
+build — not pass/fail COUNTS, which can agree while the cases that passed
+disagree.
+
+**The mechanism**: `tests/harness/run.sh` gained an `RXTDUMP` env var (this
+row's own addition, documented in that file's header, threaded through the
+`PROCS>1` worker re-invocation the same way `RXTFLAGS`/`RXTROUTE` already
+are) — one line per evaluated case, `<file>\t<line>\t<kind>\t<route>\t
+<trc>\t<out>`, appended regardless of how the harness's own pass/fail logic
+later scores the case, PLUS (since the classification-rule addendum below)
+one line per case whose BLOCK failed to COMPILE, with a sentinel
+`trc=REFUSED` and `<out>` carrying pcrec's own diagnostic text. Two dumps
+(default, one per axis) are compared by `tests/axes/dump_diff.awk`, keyed
+by `<file>:<line>` (unique — one `.rxt` case per source line).
+
+### The classification rule (manager's ruling, 2026-08-26)
+
+The FIRST full-corpus run of `make test-axes` FAILED four axes with **zero
+genuine answer disagreement** — the comparator had only AGREE and
+everything-else, where the axis family's own documented behaviour needs
+several distinct, non-failing shapes. `dump_diff.awk` now classifies every
+BASE key in order: **AGREE** (identical `trc`/`out`); **REFUSED** (the axis
+side is a compile-time refusal — pcrec itself declined the pattern; the
+diagnostic text is carried, not merely the fact of absence); **BUDGET**
+(the two disagree and EITHER side is a give-up, `trc=3`, or a per-case
+timeout, `trc=124` — `tuning.md` §2.5's "identity holds modulo which
+budget binds" extended to the harness's own wall timeout: a budget
+boundary moving under a denied optimization is not an answer
+disagreement); **LOST** (no record at all, not even REFUSED — a
+structural gap, always a failure); **MISMATCH** (a genuine answer
+difference, always a failure); **GAINED** (a key only the axis produced,
+never documented as possible, always a failure).
+
+`run_axes.sh` does the axis-specific half: `REFUSAL_PATTERN` is a per-flag
+substring lookup — verified live against the shipped `ctx_fail` text, never
+guessed — that decides whether a REFUSED case names THIS axis's own
+documented limit (`"would replicate its body"` for `-fno-counter`'s
+replication cap; `"-fprefilter requires the VM engine"` for `-fprefilter`'s
+force-refusal; `"requires the VM engine"`, the shared phrasing every
+`select_engine.c` do-or-die refusal under `--engine=dfa` uses, for the
+coarse engine axis). A match is **REFUSED-DOCUMENTED**: a population,
+floored (K35, `REFUSAL_FLOOR`) so a change that quietly stops the
+mechanism firing is caught, never a failure. **A REFUSED case that does
+NOT match — or whose axis has no `REFUSAL_PATTERN` entry — is PROMOTED to
+a real failure**, printed loudly as undocumented. This is deliberately not
+a blanket per-axis exemption: every bit-flag axis except the force-prefilter
+pair is documented as NEVER refusing under the default engine this sweep
+uses, so an axis with no entry treats any refusal as worth investigating.
+
+**The four axes the first full-corpus run failed, reclassified:**
+
+| axis | shape | reclassified as |
+|---|---|---|
+| `-fno-counter` | 228 LOST, all `tests/counterk/counterk.rxt` (the above-replication-cap patterns, `docs/spec/tuning.md` §2.3: "the cap is what refuses it") | REFUSED-DOCUMENTED |
+| `-fno-length-prune` | 24 MISMATCH, all axis `trc=124` (the K23 ambiguous-decomposition patterns are intractable without pruning) | BUDGET |
+| `-fno-prefilter` | 2 MISMATCH, same `trc=124` shape on the same K23 patterns | BUDGET |
+| `-fprefilter` | 13,242 LOST (the documented force-refusal on every DFA-selected pattern) + 2 MISMATCH in `tests/harness/giveup.rxt` (default gives up steps/frames, the forced prefilter answers nomatch) | REFUSED-DOCUMENTED + BUDGET |
+
+Per-axis output line: `agree=N budget-bound=N refused-documented=N
+(floor F) lost-other=N mismatches=N gained=N` — every bucket printed
+beside the verdict, K35's "populations printed" convention extended from
+the census's stamp vocabulary to the sweep's own case buckets.
+
+**The oracle cross-check**: one DFA-side answer-identity axis
+(`-fno-premul-table`, bit 15) is additionally run through
+`tests/registry/run_pc4.sh` — PC-4, the tree's only LIVE libpcre2
+match-semantics differential — via a one-line wrapper that prepends the
+flag to every `pcrec` invocation. PC-4's own pattern space is capture-free
+(compiles to the pure DFA engine), which is exactly the population
+`-fno-premul-table` touches, and its own pinned population (273 patterns,
+232 accepted, 62,872 cells) is asserted 0-failure under both the plain and
+the denied build — a control whose ground truth is external, so a bug
+that broke default AND denied identically (which a default-vs-axis
+comparison alone cannot see) would still be caught here.
+
+**Detect demonstration** (docs/dev/learnings.md §3): `premul_val`
+(`src/gen/emit_dfa.c:1521`), the identity function on the indexed-table
+form `-fno-premul-table` selects, was changed to `st + 1` in a scratch copy
+outside this worktree (never `src/`, never committed). Rebuilt, pointed
+`run_axes.sh` at the sabotaged binary for the `-fno-premul-table` axis
+alone against `tests/base/alternation.rxt`: **22 of 26 cases MISMATCH**,
+each named individually (span and capture-slot divergences both), e.g.
+line 38: default `match 0 2 0 1`, sabotaged axis `nomatch`. Full transcript
+in `run_axes.sh`'s own header.
+
+**Runtime**: ~13 full `tests/harness/run.sh` passes (12 bit-flag axes + 2
+engine directions, plus the baseline) at roughly `test-corpus`'s own
+per-pass runtime with `PROCS=$(nproc)`. Measured on quick subset runs (see
+`run_axes.sh`'s header for the exact commands); the full-corpus run is the
+delivered `make test-axes` invocation and its measured total is recorded
+at the next battery this row rides.
+
+### The form census (`tests/codegen/run_form_census.sh`)
+
+Compiles every corpus pattern twice — default (auto) engine, and
+`--engine=vm` forced where accepted, the WIDER population for the VM-only
+stamps since auto routes only ~54% of the corpus to the VM — and counts
+artifacts per STAMP VALUE for every stamp `docs/spec/match_api.md` §6.3
+documents (`RX_ENGINE`, `RX_DFA_SCAN`, `RX_DFA_PREFILTER`, `RX_DFA_TABLE`,
+`RX_VM_PREFILTER`, the `RX_VM_RUNGS`/`_STRATS`/`_PRUNES` bitmasks read
+per-bit, `RX_VM_PRUNE_CEILING`, `RX_ALTCLS_MERGES`/`_FACTORED`), plus the
+two joint distributions §6.3 singles out. K35's rule applies to the
+vocabulary itself: a FLOOR for every value the corpus reaches (rounded
+down generously) and a REQUIRED, BUILT, ASSERTED synthetic witness for
+every value with zero corpus population — a value neither reaches is RED.
+
+**Measured this session, 2,772 corpus patterns (floor 2,620), clean run,
+135s at `PROCS=4` uncontended (checks passed: 1, re-verified at 120s under PROCS=6 contended by a concurrent battery run):**
+
+Default (auto) engine selection: 995 DFA / 1,488 VM (1,263 hybrid, 225
+plain) / 289 refused.
+
+DFA-containing artifacts (995 DFA + 1,263 hybrids = 2,258): `RX_DFA_SCAN`
+unanchored 1,882 / attempt 368 / empty 8. `RX_DFA_PREFILTER` memchr 1,152 /
+none 644 / byte-class 313 / memchr-bounded 81 / byte-class-bounded 68.
+`RX_DFA_TABLE` premultiplied 1,882 / none 376 (= attempt + empty) —
+**"indexed" and "mixed" both measure ZERO corpus population**: every
+DFA-containing artifact in the corpus is small enough that the
+pre-multiplied form wins by default. "mixed" was tuning.md §2.13's own
+documented likely-first gap; "indexed" was NOT documented anywhere and is
+exactly the kind of gap this census's completeness loop exists to catch
+rather than a hand-picked exclusion list. Both are covered by synthetic
+witnesses (below).
+
+(RX_DFA_SCAN, RX_DFA_PREFILTER, RX_DFA_TABLE) triples: unanchored/memchr/
+premultiplied 1,125; attempt/none/none 341; unanchored/byte-class/
+premultiplied 313; unanchored/none/premultiplied 295; unanchored/
+memchr-bounded/premultiplied 81; unanchored/byte-class-bounded/
+premultiplied 68; attempt/memchr/none 27; empty/none/none 8.
+
+(RX_ENGINE, RX_VM_PREFILTER) pairs: vm,hybrid 1,263; dfa,- 995; vm,none 225.
+
+VM artifacts (default population, 1,488): `RX_VM_PRUNE_CEILING`
+prefilter-window 217 / subject-end 224 / **none 1,047** — a third value
+this census measured live (§6.3 gives `RX_DFA_PREFILTER` a value-set
+table but not this macro; "none" reads as "no MRL clamp applied at all",
+`RX_VM_PRUNES` both bits clear). `RX_VM_RUNGS`/`_STRATS`/`_PRUNES` bit
+populations printed per bit (see a run's own tally for the current
+counts — every bit is set on at least 38 artifacts). `RX_ALTCLS_MERGES`/
+`_FACTORED` (pre-engine-selection, so measured on every compiled default
+artifact): >0 on 86/87 respectively.
+
+The WIDER `--engine=vm`-forced population (2,484 compiled, 288 refused —
+one fewer refusal than the default sweep, an observed fact rather than an
+asserted invariant): `RX_VM_PREFILTER` reads "none" on ALL 2,484 — the
+direct, corpus-wide confirmation that `--engine=vm` disables the DFA
+prefilter (D46/R21 E-6) exactly as documented. `RX_VM_PRUNE_CEILING`
+subject-end 574 / none 1,910 (computed) — the OTHER ceiling arithmetic
+tuning.md's MRL differential note describes, reached here for free by
+forcing the wider population rather than needing a hand-picked cell.
+
+**Synthetic witnesses** (both asserted, both confirmed):
+`RX_DFA_TABLE "mixed"` <- `[01]*1[01]{13}` (forward machine 73,728
+entries, over the 65,535-entry premultiplication bound; reverse machine
+premultiplied — both sides of the bound in one artifact).
+`RX_DFA_TABLE "indexed"` <- `(?:[a-z]+)@(?:[a-z]+)` with
+`-fno-premul-table` (§2.13's own deny flag forces the indexed form
+directly — the corpus-gap witness §2.13 predicts a compiler-axis
+controllability lever should be able to reach).
+
+**Detect demonstration**: `dfa_table_name` (`src/gen/emit_dfa.c:2288`),
+which returns `"mixed"` when the forward and reverse machines disagree,
+was changed in a scratch copy to `return f ? "premultiplied" : "indexed";`
+(collapsing "mixed" into whatever the forward machine chose). Rebuilt, ran
+the full census against the sabotaged binary: the `"mixed"` witness
+pattern (built specifically to produce it) now stamps `"indexed"` instead
+(its FORWARD machine is the one over the 65,535-entry bound, so `f` is
+false in the sabotaged branch), and the census FAILS TWICE — the witness's
+own check, then the completeness loop independently — naming the exact
+value and the exact witness pattern: `"mixed" is a form nobody can reach
+on this tree`, `checks passed: 0`. Full transcript in
+`run_form_census.sh`'s own header.
+
+**Runtime**: 135s at `PROCS=4` uncontended, 120s at `PROCS=6` contended (2,772 patterns × 2 engine
+requests, compile-only, no `gcc`) — well under the 2-minute
+`test-codegen` budget in isolation, but run as part of `make test-axes`
+(alongside the answer-identity sweep) rather than folded into
+`test-codegen`, since the two share the opt-in/heavy-battery placement
+and this keeps `test-codegen` itself at its documented smoke-friendly
+runtime.
+
+## `make test`'s completion trailer (2026-08-26, manager finding, journal part 7)
+
+**The bug**: under `make -j12 test`, GNU make's DEFAULT (non-`-k`) behaviour
+on a failing prerequisite is to print `Waiting for unfinished jobs....` and
+launch NO FURTHER top-level targets. `test:` used to list its 26 sections as
+plain prerequisites ([TT-2], "Section composition" above), so when
+`test-corpus` failed (the known counterk cell under load) upstream of
+`test-premul-table` in scheduling order, `test-premul-table` — LAST in the
+list — silently never ran, in two separate battery runs. The
+checks-passed/checks-failed COUNT AGGREGATION could not see the absence: a
+target that never ran contributes nothing to either side of the sum, which
+reads identically to "ran and found nothing to fail" — K35's shape
+(docs/dev/learnings.md §3, "populations nobody counts"), applied to
+SECTIONS rather than to a corpus.
+
+**The fix, two halves.** (1) `test:`'s recipe now invokes
+`$(MAKE) -k TEST_TRAILER_DIR=<dir> $(TEST_SECTIONS)` instead of listing the
+sections as its own prerequisites — `-k` keeps launching independent
+targets after a failure, and `$(MAKE)` (never a bare `make`) inherits the
+PARENT's jobserver automatically, so `make -j$(nproc) test`'s parallelism
+is unaffected; plain `make test` is unaffected in ORDER (`-k` only changes
+what happens after a failure, never the sequence up to one). (2)
+`tests/lib/test_trailer.sh` verifies (1) actually worked, independent of
+trusting `-k`'s own behaviour: every section target's recipe
+(`Makefile`, all 26 in `TEST_SECTIONS`) touches a marker file
+(`$(TEST_TRAILER_DIR)/<name>.ran`) as the FIRST line of its recipe, before
+running its real test script — the marker means "make launched this
+recipe", regardless of what the recipe's content then did. A section whose
+shared `all` prerequisite fails never touches its marker, correctly: if the
+build itself is broken, no section legitimately ran, and the trailer
+reports that absence too. `test:`'s own exit code still reflects BOTH the
+inner `-k` run's failures and the trailer's own verdict.
+
+**Why this shape** (`-k` + an independent marker-based trailer) rather than
+either alone: `-k` by itself changes SCHEDULING but nothing then confirms
+every section actually reached "launched" — a recipe could still silently
+no-op, or (the corpus-sabotage arm below) a SHARED prerequisite could fail
+in a way that takes down every section at once without naming which. A
+marker-based trailer by itself, with no `-k`, would faithfully report the
+original bug (`N/M` short) but not FIX it — `make test` would still
+silently skip sections on every contended run. Together: `-k` is the fix,
+the trailer is the check that the fix is doing its job, in the same
+control/detector shape every other instrument in this tree uses.
+
+**Validated in a scratch toy Makefile** (five fast fake sections, `sec-a`
+through `sec-e`, `sec-e` playing `test-premul-table`'s "last in the list"
+role; never built inside this worktree, never committed):
+
+1. **The bug, reproduced.** Old prerequisite-based shape, `make -j2
+   old-test`, `sec-a` fails immediately:
+   ```
+   sec-a: FAILING (simulates the known counterk cell under load)
+   make: *** [Makefile:26: sec-a] Error 1
+   make: *** Waiting for unfinished jobs....
+   sec-b: ok
+   old-test rc=2
+   ```
+   `sec-c`, `sec-d`, `sec-e` NEVER RAN — no error, no mention, nothing:
+   exactly the manager's finding, reproduced on demand.
+
+2. **The fix, same sabotage.** New `-k`-wrapped shape, `make -j2 test`:
+   ```
+   sec-a: FAILING (simulates the known counterk cell under load)
+   make[1]: *** [Makefile:26: sec-a] Error 1
+   sec-b: ok
+   sec-c: ok
+   sec-d: ok
+   sec-e: ok (this is test-premul-table's role -- LAST in the list)
+
+   == make test: completion trailer ==
+   sections ran: 5/5
+   trailer: every section in TEST_SECTIONS was launched
+   make: *** [Makefile:15: test] Error 1
+   test rc=2
+   ```
+   All five sections ran (the trailer independently confirms `5/5`), and
+   the overall `test` target still exits non-zero — `sec-a`'s failure is
+   not hidden, only no longer able to silently take a later section with
+   it.
+
+3. **The trailer's OWN detection**, a genuine "section never ran" case that
+   survives even under `-k`: sabotaging the shared `all` prerequisite to
+   fail (`all: @echo '...SABOTAGED...'; false`) makes every section's
+   prerequisite fail, so NONE of them are "remade" — `-k` correctly does
+   not help here, because there is no independent target left to keep
+   going with:
+   ```
+   make[1]: *** [Makefile:8: all] Error 1
+   make[1]: Target 'sec-a' not remade because of errors.
+   make[1]: Target 'sec-b' not remade because of errors.
+   make[1]: Target 'sec-c' not remade because of errors.
+   make[1]: Target 'sec-d' not remade because of errors.
+   make[1]: Target 'sec-e' not remade because of errors.
+
+   == make test: completion trailer ==
+   sections ran: 0/5
+   MISSING — make never launched this section's recipe at all (its
+     own output, if any exists from a stale prior run, is NOT
+     evidence it ran this time):
+     - sec-a
+     - sec-b
+     - sec-c
+     - sec-d
+     - sec-e
+   test rc=2
+   ```
+   Named every section, by name, rather than merely reporting a shortfall
+   count.

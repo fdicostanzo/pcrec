@@ -53,6 +53,55 @@
 #              must never read as a pass). Summary line format is identical in
 #              both modes — tests/mech greps it. On this box prefer
 #              TMPDIR=/var/tmp at higher PROCS: /tmp is a quota'd tmpfs.
+#   RXTDUMP    ([CHK-2], tests/axes/run_axes.sh) path to a file that
+#              receives ONE LINE PER CASE OUTCOME. Two producers: every case
+#              whose test binary actually ran (every case that reaches the
+#              `out=` assignment below — match/nomatch/gu/timeout/crash all
+#              produce a line), AND — since the manager's 2026-08-26
+#              finding — every case whose BLOCK failed to COMPILE (pcrec
+#              itself refused the pattern), which now produces a line too,
+#              with a sentinel `trc` field of `REFUSED` and `<out>` carrying
+#              pcrec's own diagnostic text (flattened to one line). Without
+#              this second producer, a consumer had NO way to tell "pcrec
+#              refused this pattern, here is why" apart from "this case's
+#              key is silently absent" — indistinguishable from any other
+#              cause of absence, which is exactly what let a documented,
+#              expected refusal population (e.g. -fno-counter's replication
+#              cap) read as an undifferentiated, unexplained LOST count. A
+#              case whose block fails to LINK (gcc/driver build failure)
+#              still produces NO line — that failure is per-CC-invocation,
+#              not per-pattern, and is not this hook's concern. Empty (the
+#              default) means no dump, so a plain run
+#              is byte-for-byte unchanged; this is the "ONE env var in the
+#              house style" tests/axes/CLAUDE.md's brief asked for rather
+#              than a new directive, the same shape RXTFLAGS/RXTROUTE took.
+#              Format, tab-separated: `<file>\t<line>\t<kind>\t<route>\t
+#              <trc>\t<out>` where <out> has its own embedded tabs/newlines
+#              impossible by construction (subjects and driver output are
+#              single .rxt lines with C-style backslash escapes, never raw
+#              control bytes — tests/harness/driver.c's decode()). `<out>`
+#              for a REFUSED line is the one exception (pcrec's own
+#              diagnostic, not driver output) and is flattened for exactly
+#              this reason. The KEY a
+#              consumer diffs two dumps by is `<file>\t<line>`: it is unique
+#              within one run because .rxt cases are one per source line, and
+#              a case that compiled under one RXTFLAGS axis and NOT under
+#              another shows up with the SAME key in both dumps but a
+#              `trc=REFUSED` value on the axis side that failed to compile
+#              (rather than a missing key — the whole point of the REFUSED
+#              producer above), which is exactly the "this axis changed what
+#              refuses to compile, and here is why" signal a pass/fail COUNT
+#              comparison would hide (two
+#              runs can have equal fail counts while disagreeing on which
+#              cases passed). Under PROCS>1 each worker gets its own dump
+#              path (`$RXTDUMP.$idx`, threaded through the same re-invocation
+#              env block RXTFLAGS/RXTROUTE already ride) and the parent cats
+#              them together, in `files[]` order, once every worker has
+#              reported — so `RXTDUMP=x PROCS=4` and `RXTDUMP=x PROCS=1`
+#              produce the same LINE SET (order may differ across files,
+#              never across PROCS values within one file, since one file is
+#              always one worker) — a consumer that diffs by key rather than
+#              by line position is unaffected either way.
 #
 # See docs/spec/rxt_format.md for the .rxt format and driver protocol (the
 # contract, [SPEC-1.6]); docs/testing.md for runtimes, batteries and history.
@@ -89,6 +138,12 @@ GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
 if [ "${LINTGEN:-0}" = "1" ]; then GENCFLAGS="$GENCFLAGS -fanalyzer"; fi
 RXTFLAGS="${RXTFLAGS:-}"
 RXTROUTE="${RXTROUTE:-}"
+RXTDUMP="${RXTDUMP:-}"
+# a stale dump from a previous run must never silently grow — this run's
+# lines are the whole content, so start empty when a path is given (the
+# PROCS>1 branch below writes to per-worker paths instead and cats them
+# here fresh; the serial path below appends to this same truncated file).
+[ -n "$RXTDUMP" ] && : > "$RXTDUMP"
 KEEP="${KEEP:-0}"
 VERBOSE="${VERBOSE:-0}"
 PROCS="${PROCS:-1}"
@@ -140,8 +195,15 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     idx=0
     for f in "${files[@]}"; do
         idx=$((idx + 1))
+        # RXTDUMP: each worker gets its OWN path ($RXTDUMP.$idx) — the
+        # worker's own top-of-script "[ -n "$RXTDUMP" ] && : > "$RXTDUMP""
+        # truncate would otherwise race every other worker on one shared
+        # path. Empty when RXTDUMP itself is empty, so an ordinary parallel
+        # run threads nothing new.
+        w_rxtdump=""
+        [ -n "$RXTDUMP" ] && w_rxtdump="$RXTDUMP.$idx"
         PROCS=1 PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
-            RXTFLAGS="$RXTFLAGS" RXTROUTE="$RXTROUTE" \
+            RXTFLAGS="$RXTFLAGS" RXTROUTE="$RXTROUTE" RXTDUMP="$w_rxtdump" \
             KEEP="$KEEP" VERBOSE="$VERBOSE" \
             bash "${BASH_SOURCE[0]}" "$f" \
             > "$pardir/$idx.out" 2> "$pardir/$idx.err" &
@@ -165,6 +227,15 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         idx=$((idx + 1))
         # replay the worker's failure detail and any harness notes, in order
         cat "$pardir/$idx.err" >&2
+        # RXTDUMP: append this worker's per-file dump into the merged path,
+        # IN files[] ORDER (the same order the .err replay above uses) — so
+        # two runs of the same file list produce the SAME LINE SET regardless
+        # of which worker finished first; a consumer diffing by "file:line"
+        # key is unaffected by any residual within-file order difference.
+        if [ -n "$RXTDUMP" ] && [ -f "$RXTDUMP.$idx" ]; then
+            cat "$RXTDUMP.$idx" >> "$RXTDUMP"
+            rm -f "$RXTDUMP.$idx"
+        fi
         p="$(grep -m1 '^cases passed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
         x="$(grep -m1 '^cases failed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
         c="$(grep -m1 '^pattern-compile failures (distinct):' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
@@ -364,6 +435,26 @@ flush_block() {
             record_fail "$cur_file" "${case_line[$i]}" \
                 "pattern '$cur_pattern' failed to compile: $pcrec_err"
             record_case_group_fail "$cur_file" "$i" "pattern failed to compile"
+            # RXTDUMP ([CHK-2] extension, manager finding 2026-08-26): a
+            # case whose BLOCK failed to compile never reaches the `out=`
+            # line below, so a RXTDUMP consumer used to see nothing at all
+            # for it — no record of WHY the case is missing, only that it
+            # is (an axis-vs-default diff reads this as an undifferentiated
+            # "LOST"). Dump the pcrec diagnostic itself, flattened to one
+            # line (a TSV row, and a multi-line ctx_fail message would
+            # otherwise corrupt the format), with a sentinel `trc` field
+            # (REFUSED, never a real exit code) so a consumer can tell "the
+            # pattern was refused, here is why" apart from "the case ran
+            # and gave up" (trc=3) or "the case ran and disagreed" (trc=0/1
+            # with a different `out`).
+            if [ -n "$RXTDUMP" ]; then
+                local flat_err
+                flat_err="$(printf '%s' "$pcrec_err" | tr '\n\t' '  ')"
+                printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+                    "$cur_file" "${case_line[$i]}" "${case_kind[$i]}" "refused" \
+                    "REFUSED" "$flat_err" \
+                    >> "$RXTDUMP"
+            fi
         done
         return 0
     fi
@@ -439,6 +530,16 @@ flush_block() {
         local route="${case_route[$i]:-}"
         out="$("$TIMEOUT_BIN" "$RUN_SECS" "$bdir/t" "$subj" "$pos" "$route")"
         trc=$?
+        # RXTDUMP (see the header comment): the RAW case identity, dumped
+        # BEFORE any pass/fail interpretation below so it captures every
+        # evaluated case in one uniform shape regardless of which branch
+        # eventually scores it — a diff between two dumps compares ANSWERS,
+        # not the PASS/FAIL verdict the harness derives from them.
+        if [ -n "$RXTDUMP" ]; then
+            printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+                "$cur_file" "$line" "$kind" "${route:-default}" "$trc" "$out" \
+                >> "$RXTDUMP"
+        fi
         if [ $trc -eq 124 ]; then
             record_fail "$cur_file" "$line" \
                 "test binary TIMED OUT (>${RUN_SECS}s, gen_run_secs; raise GENRUNTIMEOUT only with the measurement recorded) for pattern '$cur_pattern' subject \"$subj\" startpos $pos$rtag"
