@@ -16754,3 +16754,43 @@ findings. docs/testing.md gained "`make test`'s completion trailer" with
 the three full transcripts; `tests/lib/CLAUDE.md` gained the
 `test_trailer.sh` entry; `docs/dev/plan.md`'s [CHK-2] row gained a third
 closure paragraph. Commit 6811006 on `lane/srAxes`.
+
+#### Forty-first session, part 11 — srAxes MERGED (b3a5c34): [CHK-2] pieces 2+3 + the make-test trailer; the sweep's verdict; battery #3 on the combined tree launches; the session closes (2026-08-26 ~23:3x EDT)
+
+THE SWEEP'S VERDICT (the first full `make test-axes`, 2,800 s at
+PROCS=4, then the lane's proofs): every optimization axis — the twelve
+deny/force flags and both engine directions — is ANSWER-IDENTICAL to
+the default over the whole corpus (22,005 dumped cases × 13 axes,
+mismatches 0 everywhere) once cells are classified by the rule
+srAxes built today: BUDGET-BOUND when either side gives up or times
+out (trc 3 / 124 — tuning.md §2.5's "identity is modulo which budget
+binds", now extended to the harness's per-case timeout; populations:
+-fno-length-prune 49, --engine=vm 10, -fno-prefilter 2, -fprefilter
+2, all on the K23 ambiguous-decomposition and k18 deep-nesting
+patterns), REFUSED-DOCUMENTED when the compile refusal's own text
+matches the axis's documented limit (RXTDUMP now records the refusal
+diagnostic per case; -fno-counter 228 "would replicate its body";
+-fprefilter 13,242 across three documented shapes incl. the
+backreference/subroutine capture-erasure conflict; --engine=dfa 9,468
+across "requires the VM engine" and "requires captures"), floored
+(K35), no axis blanket-exempted; the oracle cross-check (PC-4 vs live
+libpcre2) 0-failure plain and under -fno-premul-table. The census:
+green, 2,772 corpus patterns; `RX_DFA_TABLE "mixed"` and `"indexed"`
+reachable only by synthetic witness (the corpus's DFAs all
+premultiply by default). The trailer: `make test` now runs its 26
+sections under `$(MAKE) -k` with markers and ends `sections ran:
+N/M`, failing on a shortfall — the general fix for part 7. THE DAY'S
+LANE MECHANICS, for the record: the first full sweep died at startup
+per axis (the runner forwarded its own label/flag args to the harness
+as file names) — a two-file spot check had not exercised the
+full-corpus path; the lane fixed it, then stalled twice (after its
+proof, and on refusal-text coverage) and was pinged back each time.
+MY OWN SLIP: the merge's plan.md hunk held TWO rows and my resolver
+asserted on the first and aborted — and the `;`-chained command went
+on to COMMIT THE MERGE WITH THE MARKERS IN plan.md (the CLAUDE.md
+index's own warning, verbatim); caught on the marker count in the
+same output, resolved per row, amended (b3a5c34). Rule re-learned:
+resolve, VERIFY zero markers as its own step, then commit — never in
+one chain. Battery #3 launches now on the combined tree (abi 8 +
+test-axes + the trailer); on green the bench gets I-13. Frank at
+95 %: the session closes here; wake.md is current.
