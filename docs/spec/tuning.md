@@ -232,6 +232,8 @@ bodies, so the check cannot pass on a stamp that has drifted from the
 actual machinery) — not a pattern-subject-startpos differential, so no
 cell tally applies here.
 
+**Identity is modulo WHICH BUDGET BINDS.** The prefilter changes how much WORK a search does before it answers, never the answer — but a give-up is a bound on work, so on a subject that sits near a budget the two builds can differ by a GIVE-UP CODE where neither is wrong: measured 2026-08-26 ([ENG-FORM]'s answer gate, pre-existing), `((a)|bc){0,4000}d` over 1 MB of `a` is `no match` with the hybrid's DFA prefilter and `PCREC_ERR_WORK` without it. A sweep that compares answers across this axis must classify a give-up on either side as budget-bound (reported, floored), not as a disagreement.
+
 ### 2.6 `-fno-altcls-merge` — `PCREC_NO_ALTCLS_MERGE` (bit 10)
 
 **Denies** stage 1 of the ALTERNATION→CLASS normalization pass

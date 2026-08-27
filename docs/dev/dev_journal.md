@@ -16524,3 +16524,38 @@ pre-multiplied DFA table, abi 7 — is battery-proven; I-12 to the bench
 confirms the I-11 pin. srForm's post-battery chain started its make
 test at 19:52 (then its four mech rows, then timing); srAxes' full
 test-axes sweep runs after that, by my hand.
+
+#### Forty-first session, part 9 — srForm MERGED (abi 8): the DFA emitter relayered — decisions as selection, an opaque state token, the loop skeleton emitted once; zero runtime cost proven by objdump (2026-08-26 ~20:2x EDT)
+
+srForm (opus, [ENG-FORM]) delivered in 8 WIP commits and went idle
+without a prose report; merged on the artifacts. LAYER 1: six candidate
+lists (table representation, prefilter ×5 incl. the -bounded forms,
+view, seed, accept placement, scan DIRECTION), first-applicable objects
+with an always-applicable fallback, the stamps now `obj->name`
+(`dfa_table_name`, `dfa_prefilter_name`), `-fno-premul-table` a
+candidate-list filter; ONE `emit_scan_loop`/`emit_machine_tables` called
+twice (forward, reverse). LAYER 2: the opaque state token — typedef +
+up to seven `static inline` accessors per machine. THE NUMBERS THAT
+DEFINE THE ROW: emit_unanchored 459 lines / 57 ifs / nesting 5 → 52 /
+4 / 2; 14 loose form booleans → 0; a throwaway `unsigned int`
+representation costs +42 lines in 2 hunks and ZERO sites in the
+assembly. D82's BOUNDS AS CHECKS: (1) objdump per loop shape vs the
+pre-change compiler — premultiplied forward/reverse loops ONE
+INSTRUCTION SHORTER (an off-chain register copy gone), memchr-prefilter
+loops the same, the views loops identical; no always_inline needed;
+timing base vs new t-a 3.458 → 3.409, t-b 1.803 → 1.811, t-c 1.800 →
+1.797 ns/byte, within spread; (2) 81,821 answer lines × 6 arms, the only
+difference the PRE-EXISTING `-fno-prefilter` budget line
+(`((a)|bc){0,4000}d` on 1 MB of `a`: no match with the prefilter,
+PCREC_ERR_WORK without — "a different budget binds on a different
+spelling"; tuning.md §2.5 now says identity is modulo which budget
+binds, and srAxes' sweep must classify give-ups as budget-bound); (3)
+abi 7 → 8 at all four sites, (B) re-pinned 5c9a55a, S68/S72/S73/S74
+re-anchored on the accessor form and each detecting solo; [K24]'s
+control rebuilt (after the relayering gcc no longer splits rx_search
+even without noclone, so the control is the de-sugared artifact);
+run_premul_table.sh §4 reads the typedef; [M6.2-WORDB] gains a
+token-leak arm (the body may not subscript an accept table). make test
+1,588/0 on its tree; strict clean. Frank at 95 % of the subscription:
+NO NEW EFFORT — the session lands what is in flight (srAxes after the
+sweep, battery #3 overnight) and closes.
