@@ -54,13 +54,24 @@
 #              both modes — tests/mech greps it. On this box prefer
 #              TMPDIR=/var/tmp at higher PROCS: /tmp is a quota'd tmpfs.
 #   RXTDUMP    ([CHK-2], tests/axes/run_axes.sh) path to a file that
-#              receives ONE LINE PER EVALUATED CASE — every case whose test
-#              binary actually ran, i.e. every case that reaches the `out=`
-#              assignment below, in the SAME format regardless of how the
-#              case is later scored (match/nomatch/gu/timeout/crash all
-#              produce a line; a case whose BLOCK failed to compile or link
-#              produces none, which is itself the signal a consumer wants —
-#              see below). Empty (the default) means no dump, so a plain run
+#              receives ONE LINE PER CASE OUTCOME. Two producers: every case
+#              whose test binary actually ran (every case that reaches the
+#              `out=` assignment below — match/nomatch/gu/timeout/crash all
+#              produce a line), AND — since the manager's 2026-08-26
+#              finding — every case whose BLOCK failed to COMPILE (pcrec
+#              itself refused the pattern), which now produces a line too,
+#              with a sentinel `trc` field of `REFUSED` and `<out>` carrying
+#              pcrec's own diagnostic text (flattened to one line). Without
+#              this second producer, a consumer had NO way to tell "pcrec
+#              refused this pattern, here is why" apart from "this case's
+#              key is silently absent" — indistinguishable from any other
+#              cause of absence, which is exactly what let a documented,
+#              expected refusal population (e.g. -fno-counter's replication
+#              cap) read as an undifferentiated, unexplained LOST count. A
+#              case whose block fails to LINK (gcc/driver build failure)
+#              still produces NO line — that failure is per-CC-invocation,
+#              not per-pattern, and is not this hook's concern. Empty (the
+#              default) means no dump, so a plain run
 #              is byte-for-byte unchanged; this is the "ONE env var in the
 #              house style" tests/axes/CLAUDE.md's brief asked for rather
 #              than a new directive, the same shape RXTFLAGS/RXTROUTE took.
@@ -68,14 +79,19 @@
 #              <trc>\t<out>` where <out> has its own embedded tabs/newlines
 #              impossible by construction (subjects and driver output are
 #              single .rxt lines with C-style backslash escapes, never raw
-#              control bytes — tests/harness/driver.c's decode()). The KEY a
+#              control bytes — tests/harness/driver.c's decode()). `<out>`
+#              for a REFUSED line is the one exception (pcrec's own
+#              diagnostic, not driver output) and is flattened for exactly
+#              this reason. The KEY a
 #              consumer diffs two dumps by is `<file>\t<line>`: it is unique
 #              within one run because .rxt cases are one per source line, and
 #              a case that compiled under one RXTFLAGS axis and NOT under
-#              another shows up as a key present in one dump and absent from
-#              the other — a missing-key diff, not a mismatched-value diff,
-#              which is exactly the "this axis changed what refuses to
-#              compile" signal a pass/fail COUNT comparison would hide (two
+#              another shows up with the SAME key in both dumps but a
+#              `trc=REFUSED` value on the axis side that failed to compile
+#              (rather than a missing key — the whole point of the REFUSED
+#              producer above), which is exactly the "this axis changed what
+#              refuses to compile, and here is why" signal a pass/fail COUNT
+#              comparison would hide (two
 #              runs can have equal fail counts while disagreeing on which
 #              cases passed). Under PROCS>1 each worker gets its own dump
 #              path (`$RXTDUMP.$idx`, threaded through the same re-invocation
@@ -419,6 +435,26 @@ flush_block() {
             record_fail "$cur_file" "${case_line[$i]}" \
                 "pattern '$cur_pattern' failed to compile: $pcrec_err"
             record_case_group_fail "$cur_file" "$i" "pattern failed to compile"
+            # RXTDUMP ([CHK-2] extension, manager finding 2026-08-26): a
+            # case whose BLOCK failed to compile never reaches the `out=`
+            # line below, so a RXTDUMP consumer used to see nothing at all
+            # for it — no record of WHY the case is missing, only that it
+            # is (an axis-vs-default diff reads this as an undifferentiated
+            # "LOST"). Dump the pcrec diagnostic itself, flattened to one
+            # line (a TSV row, and a multi-line ctx_fail message would
+            # otherwise corrupt the format), with a sentinel `trc` field
+            # (REFUSED, never a real exit code) so a consumer can tell "the
+            # pattern was refused, here is why" apart from "the case ran
+            # and gave up" (trc=3) or "the case ran and disagreed" (trc=0/1
+            # with a different `out`).
+            if [ -n "$RXTDUMP" ]; then
+                local flat_err
+                flat_err="$(printf '%s' "$pcrec_err" | tr '\n\t' '  ')"
+                printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+                    "$cur_file" "${case_line[$i]}" "${case_kind[$i]}" "refused" \
+                    "REFUSED" "$flat_err" \
+                    >> "$RXTDUMP"
+            fi
         done
         return 0
     fi

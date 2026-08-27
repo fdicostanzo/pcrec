@@ -249,6 +249,47 @@ for bit in "${!bit_macro[@]}"; do
 done
 
 # ============================================================================
+# THE DOCUMENTED-REFUSAL LOOKUP (manager's classification rule, 2026-08-26,
+# from the first full-corpus sweep's own findings). A REFUSED case (pcrec
+# itself declined to compile the pattern under this axis) is counted as
+# REFUSED-DOCUMENTED — a population, floored (K35), never a failure — ONLY
+# when its diagnostic TEXT contains the axis's own documented limit
+# substring, verified live against the shipped diagnostics below (never
+# hand-guessed): src/gen/emit_vm.c's replication-cap ctx_fail
+# ("would replicate its body") for -fno-counter, and
+# src/opt/select_engine.c's force-prefilter refusal
+# ("-fprefilter requires the VM engine") for -fprefilter. This is
+# DELIBERATELY NOT a blanket per-axis exemption: an axis with NO entry here
+# (every other member of the family) treats ANY REFUSED case as an
+# UNDOCUMENTED refusal — promoted to a real failure — because tuning.md
+# documents every other bit-flag axis as NEVER refusing under the default
+# (auto) engine this sweep uses (only §2.8/§2.9's ENGINE-SELECTING pair can
+# refuse at all, and only when COMBINED with `--engine=dfa`, which this
+# sweep does not do). REFUSAL_FLOOR is the K35 floor for the axes that DO
+# have a pattern — the count THIS SESSION measured on the full corpus,
+# rounded down generously, so a later change that stops an axis refusing
+# its known population is caught loudly rather than silently reading as
+# "fewer refusals, must be an improvement".
+declare -A REFUSAL_PATTERN=(
+    ["-fno-counter"]="would replicate its body"
+    ["-fprefilter"]="-fprefilter requires the VM engine"
+    # --engine=dfa's own do-or-die posture (§2.11): EVERY construct that
+    # forces the VM refuses through src/opt/select_engine.c's shared
+    # phrasing ("%s requires the VM engine, which --engine=dfa excludes",
+    # verified live at select_engine.c:540 — possessive quantifiers, \K,
+    # backreferences, calls, ... all share this one format string, plus
+    # line 693's own -fprefilter-specific wording, both containing this
+    # substring). Deliberately the GENERIC substring, not a per-construct
+    # list: naming one construct would silently exclude the next one a
+    # future module adds under the same refusal.
+    ["--engine=dfa"]="requires the VM engine"
+)
+declare -A REFUSAL_FLOOR=(
+    ["-fno-counter"]=180
+    ["-fprefilter"]=10000
+)
+
+# ============================================================================
 # THE BASELINE
 # ============================================================================
 
@@ -285,6 +326,13 @@ declare -a axis_results=()
 run_one_axis() {
     # run_one_axis <label> <extra-flags-string> <force-population-not-failure>
     local label="$1" flags="$2" lost_is_ok="$3"
+    # $lost_is_ok's original job (blanket-accept a nonzero LOST count for
+    # the one documented do-or-die bit-flag and the coarse engine axis) is
+    # SUPERSEDED by REFUSAL_PATTERN/REFUSAL_FLOOR below (2026-08-26,
+    # manager's classification rule): a REFUSED case is now reclassified
+    # by its own diagnostic TEXT, per axis, never by a blanket per-axis
+    # flag — kept as a parameter (call sites still pass it, harmlessly)
+    # rather than touched, since it is no longer read for the verdict.
     shift 3   # THE BUG (found 2026-08-26, live full-corpus run): without this,
     # "$@" below still refers to THIS FUNCTION's own full positional list
     # (label, flags, lost_is_ok, ...) rather than the trailing file/dir
@@ -316,14 +364,19 @@ run_one_axis() {
         axis_results+=("$label|FAIL|no-dump|$((t1 - t0))s")
         return
     fi
+    local rowsfile="$WORKDIR/rows_$(echo "$label" | tr -c 'A-Za-z0-9' '_').tsv"
+    : > "$rowsfile"
     local diffline
-    diffline="$(awk -v BASEFILE="$BASE_DUMP" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$WORKDIR/diff.err")"
+    diffline="$(awk -v BASEFILE="$BASE_DUMP" -v ROWSFILE="$rowsfile" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$WORKDIR/diff.err")"
     cat "$WORKDIR/diff.err" >&2
     echo "  $diffline"
-    local mismatches lost gained keys_base_n keys_axis_n
+    local mismatches budget refused lost gained agree_n keys_base_n keys_axis_n
     mismatches="$(echo "$diffline" | grep -oE 'mismatches=[0-9]+' | cut -d= -f2)"
+    budget="$(echo "$diffline" | grep -oE 'budget=[0-9]+' | cut -d= -f2)"
+    refused="$(echo "$diffline" | grep -oE 'refused=[0-9]+' | cut -d= -f2)"
     lost="$(echo "$diffline" | grep -oE 'lost=[0-9]+' | cut -d= -f2)"
     gained="$(echo "$diffline" | grep -oE 'gained=[0-9]+' | cut -d= -f2)"
+    agree_n="$(echo "$diffline" | grep -oE 'agree=[0-9]+' | cut -d= -f2)"
     keys_base_n="$(echo "$diffline" | grep -oE 'keys_base=[0-9]+' | cut -d= -f2)"
     keys_axis_n="$(echo "$diffline" | grep -oE 'keys_axis=[0-9]+' | cut -d= -f2)"
     # [manager finding, 2026-08-26, live full-corpus run] A 0-KEY (or
@@ -350,16 +403,62 @@ run_one_axis() {
         [ "$KEEP" = "1" ] || rm -f "$dump"
         return
     fi
+    # THE REFUSED-ROW RECLASSIFICATION (manager's rule, 2026-08-26).
+    # dump_diff.awk cannot know which axis it is comparing — every REFUSED
+    # case lands in one bucket, with the pcrec diagnostic TEXT attached.
+    # This is the axis-specific half: a REFUSED case counts as
+    # REFUSED-DOCUMENTED only when its text contains THIS axis's own
+    # documented-limit substring (REFUSAL_PATTERN, above); anything else is
+    # an UNDOCUMENTED refusal — promoted to a real failure, printed loudly,
+    # and NEVER silently absorbed ("do NOT blanket-exempt an axis" — an
+    # axis with no REFUSAL_PATTERN entry at all promotes every REFUSED case
+    # unconditionally, which is correct: tuning.md documents every
+    # bit-flag axis except the force-prefilter pair as NEVER refusing
+    # under the default engine this sweep uses).
+    local refused_documented=0 refused_undocumented=0
+    local pattern="${REFUSAL_PATTERN[$flags]:-}"
+    if [ "$refused" -gt 0 ]; then
+        while IFS=$'\t' read -r cls key btrc bout atrc reason; do
+            [ "$cls" = "REFUSED" ] || continue
+            if [ -n "$pattern" ] && printf '%s' "$reason" | grep -qF -- "$pattern"; then
+                refused_documented=$((refused_documented + 1))
+            else
+                refused_undocumented=$((refused_undocumented + 1))
+                if [ "$refused_undocumented" -le 20 ]; then
+                    echo "AXIS FAIL: $label: UNDOCUMENTED refusal at $key: \"$reason\" (does not match this axis's documented limit$([ -z "$pattern" ] && echo " — this axis has NO documented refusal population at all"))" >&2
+                fi
+            fi
+        done < "$rowsfile"
+    fi
+    local total_mismatches=$((mismatches + refused_undocumented))
+    # K35 FLOOR: an axis with a documented refusal population must still be
+    # REACHING it — a change that quietly stopped the cap/force refusal
+    # from firing would otherwise read as "0 refused, cleaner!" instead of
+    # "the mechanism this axis exists to test stopped happening". Its own
+    # FAIL condition, kept separate from total_mismatches (a floor breach
+    # is a POLICY failure — the refused population shrank — not a real
+    # per-case answer disagreement, and the two must not be added together
+    # where a reader would misread the count as case-level mismatches).
+    local floor="${REFUSAL_FLOOR[$flags]:-}" floor_breach=0
+    if [ -n "$floor" ] && [ "$refused_documented" -lt "$floor" ]; then
+        echo "AXIS FAIL: $label: refused_documented=$refused_documented is BELOW its K35 floor ($floor) — the documented refusal population shrank; find out why before lowering the floor" >&2
+        floor_breach=1
+    fi
+    echo "  agree=$agree_n budget-bound=$budget refused-documented=$refused_documented (floor $([ -n "$floor" ] && echo "$floor" || echo "none")) lost-other=$lost mismatches=$total_mismatches gained=$gained"
     local verdict="OK"
-    if [ "$mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || { [ "$lost" -gt 0 ] && [ "$lost_is_ok" != "1" ]; }; then
+    if [ "$total_mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || [ "$lost" -gt 0 ] || [ "$floor_breach" -eq 1 ]; then
         verdict="FAIL"
         fail=1
-        echo "AXIS FAIL: $label: $mismatches mismatch(es), $lost lost ($([ "$lost_is_ok" = "1" ] && echo "documented refusal population, not counted against it" || echo "UNEXPECTED — not documented as do-or-die")), $gained gained" >&2
-    elif [ "$lost" -gt 0 ]; then
-        echo "  ($lost case(s) refused under this axis — documented do-or-die population, not a failure)"
+        echo "AXIS FAIL: $label: $total_mismatches mismatch(es) (incl. $refused_undocumented undocumented refusal(s)), $lost lost-other, $gained gained$([ "$floor_breach" -eq 1 ] && echo ", refused-documented floor breached")" >&2
     fi
-    axis_results+=("$label|$verdict|$diffline|$((t1 - t0))s")
-    [ "$KEEP" = "1" ] || rm -f "$dump"
+    if [ "$budget" -gt 0 ]; then
+        echo "  ($budget case(s) budget-bound — a give-up/timeout on one side, not an answer disagreement, never a failure)"
+    fi
+    if [ "$refused_documented" -gt 0 ]; then
+        echo "  ($refused_documented case(s) refused with this axis's own documented limit — a population, not a failure)"
+    fi
+    axis_results+=("$label|$verdict|$diffline refused_doc=$refused_documented refused_undoc=$refused_undocumented|$((t1 - t0))s")
+    [ "$KEEP" = "1" ] || rm -f "$dump" "$rowsfile"
 }
 
 for bit in $(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n); do
