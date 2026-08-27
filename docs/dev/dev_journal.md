@@ -16510,3 +16510,17 @@ nothing and looked like nothing. Fixed in the battery script (`make -k
 fix goes to lane srAxes ([CHK-2]): a `make test` completion trailer
 that lists the section targets that RAN against the Makefile's list,
 so a make-aborted run is visibly partial.
+
+#### Forty-first session, part 8 — battery #2 GREEN on the abi-7 tree (7bb6b5c): [OPT-3] STEP 2 is BATTERY-PROVEN; the I-11 pin is confirmed (2026-08-26 ~20:0x EDT)
+
+Battery on 7bb6b5c (launched 16:38, DONE 19:52 — 3h14m; the two new
+lanes' builds shared the box): build OK; strict clean; 180 valid + all
+anchors resolve; make test checks 1,571/0 (+ run_premul_table.sh 16/0
+run solo — part 7 explains why the battery could not count it), solo
+counterk 1,634/0, solo resource 19/0/0; make san rc 0, zero report
+lines, both axes (95 min); mech 180 rows, unexpected 0, undetected 6
+(S150 S151 S152 S153 S160 S178 — the expected six), unreached 0, anomalies 0. So 3e0b256 — the
+pre-multiplied DFA table, abi 7 — is battery-proven; I-12 to the bench
+confirms the I-11 pin. srForm's post-battery chain started its make
+test at 19:52 (then its four mech rows, then timing); srAxes' full
+test-axes sweep runs after that, by my hand.
