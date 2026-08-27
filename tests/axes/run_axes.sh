@@ -285,6 +285,19 @@ declare -a axis_results=()
 run_one_axis() {
     # run_one_axis <label> <extra-flags-string> <force-population-not-failure>
     local label="$1" flags="$2" lost_is_ok="$3"
+    shift 3   # THE BUG (found 2026-08-26, live full-corpus run): without this,
+    # "$@" below still refers to THIS FUNCTION's own full positional list
+    # (label, flags, lost_is_ok, ...) rather than the trailing file/dir
+    # arguments the caller forwarded — so those three strings got passed to
+    # tests/harness/run.sh as bogus "file" arguments on EVERY axis call. In
+    # the no-args (full-corpus) case this is fatal: run.sh's own `$# -eq 0`
+    # branch (scan the whole tests/ tree) never fires because $# is 3, not
+    # 0, and none of the three strings is a real path, so the corpus never
+    # loads at all -- "22005 lost" was every case in the BASELINE dump
+    # having no counterpart, not a real per-axis effect. It was invisible
+    # in this file's own two-file spot check (real file args among the
+    # three bogus ones still got processed and dominated the small
+    # population) and only showed up on the delivered full-corpus run.
     local dump="$WORKDIR/axis_$(echo "$label" | tr -c 'A-Za-z0-9' '_').tsv"
     echo
     echo "axes: axis $label (RXTFLAGS=\"$flags\")..."
@@ -307,10 +320,36 @@ run_one_axis() {
     diffline="$(awk -v BASEFILE="$BASE_DUMP" -f "$SCRIPT_DIR/dump_diff.awk" "$dump" 2>"$WORKDIR/diff.err")"
     cat "$WORKDIR/diff.err" >&2
     echo "  $diffline"
-    local mismatches lost gained
+    local mismatches lost gained keys_base_n keys_axis_n
     mismatches="$(echo "$diffline" | grep -oE 'mismatches=[0-9]+' | cut -d= -f2)"
     lost="$(echo "$diffline" | grep -oE 'lost=[0-9]+' | cut -d= -f2)"
     gained="$(echo "$diffline" | grep -oE 'gained=[0-9]+' | cut -d= -f2)"
+    keys_base_n="$(echo "$diffline" | grep -oE 'keys_base=[0-9]+' | cut -d= -f2)"
+    keys_axis_n="$(echo "$diffline" | grep -oE 'keys_axis=[0-9]+' | cut -d= -f2)"
+    # [manager finding, 2026-08-26, live full-corpus run] A 0-KEY (or
+    # near-0-key) AXIS RUN IS A HARNESS-LEVEL FAILURE, NEVER MERELY A LARGE
+    # "lost" POPULATION — the run_axes.sh bug that produced exactly this
+    # shape (the run_one_axis "$@" shift bug above) printed nothing but
+    # "22005 lost" lines and an AXIS FAIL summary, with the harness's own
+    # stderr (tests/harness/run.sh's real error text) sitting unread in
+    # $WORKDIR/axis.err the whole time — a check reading NOTHING and
+    # calling it something (docs/dev/learnings.md §3). So: whenever the
+    # axis run produced fewer than HALF of the baseline's own keys, this is
+    # loud and DIFFERENT from the ordinary per-case LOST reporting above —
+    # print the harness's actual stdout/stderr, not just the diff counts.
+    if [ -n "$keys_base_n" ] && [ "$keys_base_n" -gt 0 ] && [ -n "$keys_axis_n" ] && \
+       [ "$keys_axis_n" -lt "$((keys_base_n / 2))" ]; then
+        echo "AXIS FAIL: $label: HARNESS-LEVEL FAILURE — only $keys_axis_n of $keys_base_n baseline keys were produced (a per-case LOST count would UNDER-report this: the harness itself did not run the corpus, not merely an axis population change). tests/harness/run.sh's own stdout/stderr for this axis:" >&2
+        echo "---- $WORKDIR/axis.out ----" >&2
+        cat "$WORKDIR/axis.out" >&2
+        echo "---- $WORKDIR/axis.err ----" >&2
+        cat "$WORKDIR/axis.err" >&2
+        echo "---- end harness output ----" >&2
+        fail=1
+        axis_results+=("$label|FAIL|harness-level:$diffline|$((t1 - t0))s")
+        [ "$KEEP" = "1" ] || rm -f "$dump"
+        return
+    fi
     local verdict="OK"
     if [ "$mismatches" -gt 0 ] || [ "$gained" -gt 0 ] || { [ "$lost" -gt 0 ] && [ "$lost_is_ok" != "1" ]; }; then
         verdict="FAIL"
