@@ -16559,3 +16559,17 @@ token-leak arm (the body may not subscript an accept table). make test
 1,588/0 on its tree; strict clean. Frank at 95 % of the subscription:
 NO NEW EFFORT — the session lands what is in flight (srAxes after the
 sweep, battery #3 overnight) and closes.
+
+#### Forty-first session, part 10 — the first full test-axes sweep FAILED AT STARTUP per axis; handed back to srAxes; no new effort (2026-08-26 ~20:3x EDT)
+
+`make test-axes` on srAxes' worktree (20:10-20:14): the baseline ran
+(26,560 cases, 22,005 dumped, 180 s at PROCS=4) but EVERY axis run
+returned in 0-1 s with keys_axis=0 and 22,005 LOST — the per-axis
+harness invocation dies at startup and the script captured no error
+(a check reading nothing and calling it "22,005 lost"). The two-file
+spot check the lane validated on did not exercise the full-corpus
+path. Not /tmp space (4.3 G free). Handed back: capture stderr so a
+0-key axis run fails loudly, fix, prove one axis on the full corpus,
+rerun the sweep itself overnight, report. Battery #3 (the abi-8 tree)
+runs after srAxes merges. Frank at 95 %: nothing new starts; wake.md
+is written.
