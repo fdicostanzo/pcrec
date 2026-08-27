@@ -2854,14 +2854,59 @@ row's own addition, documented in that file's header, threaded through the
 `PROCS>1` worker re-invocation the same way `RXTFLAGS`/`RXTROUTE` already
 are) — one line per evaluated case, `<file>\t<line>\t<kind>\t<route>\t
 <trc>\t<out>`, appended regardless of how the harness's own pass/fail logic
-later scores the case. Two dumps (default, one per axis) are compared by
-`tests/axes/dump_diff.awk`, keyed by `<file>:<line>` (unique — one `.rxt`
-case per source line): AGREE, MISMATCH (the axis's answer moved — a
-FAILURE on every axis), LOST (a case ran under default and not under the
-axis — a FAILURE except on the one documented DO-OR-DIE member,
-`PCREC_FORCE_PREFILTER`/bit 9, and on the coarse engine axis, both of which
-tuning.md documents as capable of refusing), GAINED (never documented as
-possible for any axis, always a FAILURE).
+later scores the case, PLUS (since the classification-rule addendum below)
+one line per case whose BLOCK failed to COMPILE, with a sentinel
+`trc=REFUSED` and `<out>` carrying pcrec's own diagnostic text. Two dumps
+(default, one per axis) are compared by `tests/axes/dump_diff.awk`, keyed
+by `<file>:<line>` (unique — one `.rxt` case per source line).
+
+### The classification rule (manager's ruling, 2026-08-26)
+
+The FIRST full-corpus run of `make test-axes` FAILED four axes with **zero
+genuine answer disagreement** — the comparator had only AGREE and
+everything-else, where the axis family's own documented behaviour needs
+several distinct, non-failing shapes. `dump_diff.awk` now classifies every
+BASE key in order: **AGREE** (identical `trc`/`out`); **REFUSED** (the axis
+side is a compile-time refusal — pcrec itself declined the pattern; the
+diagnostic text is carried, not merely the fact of absence); **BUDGET**
+(the two disagree and EITHER side is a give-up, `trc=3`, or a per-case
+timeout, `trc=124` — `tuning.md` §2.5's "identity holds modulo which
+budget binds" extended to the harness's own wall timeout: a budget
+boundary moving under a denied optimization is not an answer
+disagreement); **LOST** (no record at all, not even REFUSED — a
+structural gap, always a failure); **MISMATCH** (a genuine answer
+difference, always a failure); **GAINED** (a key only the axis produced,
+never documented as possible, always a failure).
+
+`run_axes.sh` does the axis-specific half: `REFUSAL_PATTERN` is a per-flag
+substring lookup — verified live against the shipped `ctx_fail` text, never
+guessed — that decides whether a REFUSED case names THIS axis's own
+documented limit (`"would replicate its body"` for `-fno-counter`'s
+replication cap; `"-fprefilter requires the VM engine"` for `-fprefilter`'s
+force-refusal; `"requires the VM engine"`, the shared phrasing every
+`select_engine.c` do-or-die refusal under `--engine=dfa` uses, for the
+coarse engine axis). A match is **REFUSED-DOCUMENTED**: a population,
+floored (K35, `REFUSAL_FLOOR`) so a change that quietly stops the
+mechanism firing is caught, never a failure. **A REFUSED case that does
+NOT match — or whose axis has no `REFUSAL_PATTERN` entry — is PROMOTED to
+a real failure**, printed loudly as undocumented. This is deliberately not
+a blanket per-axis exemption: every bit-flag axis except the force-prefilter
+pair is documented as NEVER refusing under the default engine this sweep
+uses, so an axis with no entry treats any refusal as worth investigating.
+
+**The four axes the first full-corpus run failed, reclassified:**
+
+| axis | shape | reclassified as |
+|---|---|---|
+| `-fno-counter` | 228 LOST, all `tests/counterk/counterk.rxt` (the above-replication-cap patterns, `docs/spec/tuning.md` §2.3: "the cap is what refuses it") | REFUSED-DOCUMENTED |
+| `-fno-length-prune` | 24 MISMATCH, all axis `trc=124` (the K23 ambiguous-decomposition patterns are intractable without pruning) | BUDGET |
+| `-fno-prefilter` | 2 MISMATCH, same `trc=124` shape on the same K23 patterns | BUDGET |
+| `-fprefilter` | 13,242 LOST (the documented force-refusal on every DFA-selected pattern) + 2 MISMATCH in `tests/harness/giveup.rxt` (default gives up steps/frames, the forced prefilter answers nomatch) | REFUSED-DOCUMENTED + BUDGET |
+
+Per-axis output line: `agree=N budget-bound=N refused-documented=N
+(floor F) lost-other=N mismatches=N gained=N` — every bucket printed
+beside the verdict, K35's "populations printed" convention extended from
+the census's stamp vocabulary to the sweep's own case buckets.
 
 **The oracle cross-check**: one DFA-side answer-identity axis
 (`-fno-premul-table`, bit 15) is additionally run through

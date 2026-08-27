@@ -64,7 +64,11 @@ enforces every axis's answer-identity promise stated below** — the whole
 `.rxt` corpus, per case, under every deny/force flag and the `--engine=`
 axis, compared against the default build (D80: the spec names its own
 enforcement). Opt-in, like the sanitizer battery; see `docs/testing.md`
-"Answer-identity sweep" for runtimes and how to read a failure.
+"Answer-identity sweep" for runtimes and how to read a failure, and its
+"classification rule" subsection for how a documented refusal (§2.3's
+replication cap, §2.5's force-prefilter refusal) or a budget boundary
+moving (a give-up or per-case timeout on either side) is distinguished
+from a genuine answer disagreement.
 
 ### 2.1 `-fno-possessify` — `PCREC_NO_POSSESSIFY` (bit 4)
 
