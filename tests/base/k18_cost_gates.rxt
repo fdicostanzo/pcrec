@@ -12,19 +12,36 @@
 #
 # WHY THESE TWO FAMILIES, and neither is the obvious one:
 #
-# 1. THE FUZZ-FOUND CONSTANT-FACTOR WITNESS. The `perr` block below is the
-#    pattern the repo's own differential fuzzer produced within 129 draws at
-#    seed 99, and it is the one that caught a 7x constant-factor regression in
-#    the design's first prototype: pcrec and the prototype did BYTE-IDENTICAL
+# 1. THE FUZZ-FOUND CONSTANT-FACTOR WITNESS. The block below is the pattern
+#    the repo's own differential fuzzer produced within 129 draws at seed 99,
+#    and it is the one that caught a 7x constant-factor regression in the
+#    design's first prototype: pcrec and the prototype did BYTE-IDENTICAL
 #    work (332,476 closures, 15,743,238 states visited, maxdepth 1, 2
 #    contexts) and the prototype still took 13.5 s against 0.62 s, all of it
 #    one hash probe replacing one array access 15.7 million times. That is
 #    what the empty-context fast path exists to prevent, and this pattern is
-#    what would notice it going away. It is a `perr` block because every
-#    binary REFUSES it on the DFA state cap (>32,000 states) — the refusal is
-#    the point: the work of building 32,000 states happens first, so the
-#    compile time is real even though no code is emitted. Measured 0.68 s.
-#    The `{8,8}` shrink beside it is the same shape that actually compiles.
+#    what would notice it going away. The `{8,8}` shrink beside it is the
+#    same shape at a size that never nears the cap.
+#
+#    [SEL-1] (2026-08-28) WAS a `perr` block, is not any more. It has a live
+#    capturing group, so `select_engine.c` already routes it to the VM for
+#    the answer (`forces_captures`); what OVERFLOWED the DFA state cap
+#    (>32,000 states) was the capture-erased forward+reverse pair auto builds
+#    as the VM's PREFILTER (S6.1). Before [SEL-1] that overflow was a
+#    refusal — every binary refused this pattern outright — which is exactly
+#    the SPECIAL-CASE-SHAPED old contract [SEL-1] retired: under `auto` the
+#    overflow is now a selection outcome (fall back to no prefilter), so the
+#    pattern COMPILES, at RX_ENGINE "vm" / RX_VM_PREFILTER "none". The
+#    COST-GATE claim this block exists for is UNCHANGED and, if anything,
+#    sharper: the failed 32,000-state prefilter build still has to run to
+#    completion before the fallback is even decided (compile.c's one-shot
+#    retry, src/opt/select_engine.c's `forces_dfa_overflow`), so the same
+#    ~0.68 s of real work is still paid on every compile of this pattern
+#    (measured now: ~0.77 s total, the extra ~0.09 s being the cheap
+#    no-prefilter VM build on the retry) — it is simply no longer thrown
+#    away. Both `m`/`n` cases below are cheap on purpose (this block's job is
+#    the COMPILE budget, not an exhaustive semantic sweep of the shape — the
+#    `{8,8}` sibling and `tests/base/d27_*.rxt` already own that).
 #
 # 2. BOUNDED REPEAT x NULLABLE LOOP, swept in k. `A_REP` lowers `{0,k}` into
 #    nested COPIES of the body, so the NFA grows with k (405 states at k=2,
@@ -39,21 +56,16 @@
 # Every expectation generated from python3 `re` AND libpcre2 10.46, both
 # oracles agreeing on every cell (D44's three-way rule).
 
-# The fuzz-found witness: must be REFUSED cleanly, and must get there fast.
-#
-# `# pcre2-only` is doing something unusual here and the reason has to be
-# written down. Everywhere else in this corpus the directive means "python re
-# reads this pattern differently"; here BOTH oracles accept the pattern
-# happily and it is PCREC that refuses it — on the DFA state cap, which is a
-# RESOURCE refusal with a clean diagnostic (D22's prescription for a
-# legitimate-but-extreme pattern), not a syntax error. verify_rxt.py's `perr`
-# branch asks whether python also fails to compile, which is the wrong
-# question for this block; the directive skips exactly that check while
-# run.sh still asserts the refusal, and the refusal has to happen inside the
-# harness's pcrec budget, which is the gate.
-# pcre2-only
+# The fuzz-found witness: must compile inside the harness's pcrec budget
+# (the DFA-cap-overflow build is real work, paid before the [SEL-1] fallback
+# lands), and its two cases are oracle-verified rather than a bare `accept`
+# — python3 `re` and libpcre2 10.46 agree on both (checked live this
+# session: libpcre2 nomatch on "", match (0,1) on "a" — trivial cells by
+# construction, since the alternative that answers them is the bare literal
+# `a`, nowhere near any construct the two oracles are known to diverge on).
 pattern (1{0,30}?[^]abc][^abc]){28,30}0+|a
-perr
+n ""
+m "a" 0 1
 
 pattern (1{0,30}?[^]abc][^abc]){8,8}0+|a
 n ""

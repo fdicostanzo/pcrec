@@ -340,6 +340,42 @@ check_listing_reason "a SPLICED call does NOT claim the credit under --engine=vm
 check_refuse "force-on vs a LINKED subroutine call" \
     '(?:(?<g>x(?&g)?y)){0}a(?&g)b' --features all -fprefilter
 
+# ---------------------------------------------------------------------------
+# [SEL-1] A FIFTH "off" ROUTE, and the LISTING is what needs its own check --
+# `fit.prefilter == false` is already covered by the stamp/machinery
+# agreement in check 1, same as every other off-route above. What is easy to
+# get wrong -- and what WAS wrong before this row, on this branch, for the
+# identical reason [M6.5.2]/[DD-14 wave E] fixed it for the backreference and
+# call routes -- is that with no arm of its own, this route fell through to
+# "NO (--engine=vm)", naming a flag the caller had not passed. The witness's
+# DFA build overflows PCREC_MAX_DFA_STATES_TABLE (32000 states); under auto
+# the prefilter is DROPPED (plan row [SEL-1], not refused), and the listing
+# must say why in terms of the OVERFLOW, never a flag.
+# ---------------------------------------------------------------------------
+SEL1_OVERFLOW_PAT='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b'
+check_listing_reason "auto-selected prefilter DFA overflow names the cap, not a flag" \
+    "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all
+check_listing_reason "...still names the cap under -fno-prefilter (already the reason, unrelated flag present)" \
+    "$SEL1_OVERFLOW_PAT" 'NO (dfa overflowed: >32000 states)' --features all -fno-prefilter
+# `-fprefilter` is the FORCE form and stays do-or-die: it REFUSES rather than
+# overriding, with today's DFA-cap diagnostic (unchanged by [SEL-1]) -- NOT
+# `check_refuse` above, whose generic `grep -q 'prefilter'` control would
+# accidentally pass on the WRONG refusal here: `-fprefilter` with no
+# `--engine` hits the pattern's auto-selected DFA engine first ("-fprefilter
+# requires the VM engine..."), a real message but not this row's claim.
+# `--engine=vm` forces past that so the DFA-cap refusal is the one reached,
+# and its text does not contain the word "prefilter" at all.
+if pcrec_run "$PCREC" -p rx --features all --engine=vm -fprefilter \
+        -o "$WORKDIR/sel1_refuse.c" -- "$SEL1_OVERFLOW_PAT" \
+        >/dev/null 2>"$WORKDIR/sel1_refuse.err"; then
+    bad "force-on vs a DFA-cap overflow: compiled; expected the force form to stay do-or-die"
+elif grep -q 'pattern too complex for the DFA engine (>32000 states; try --engine=vm)' \
+        "$WORKDIR/sel1_refuse.err"; then
+    ok "force-on vs a DFA-cap overflow: still refuses with today's diagnostic, unchanged by [SEL-1]"
+else
+    bad "force-on vs a DFA-cap overflow: refused, but not with the expected diagnostic: $(cat "$WORKDIR/sel1_refuse.err")"
+fi
+
 echo
 echo "== Summary =="
 echo "checks passed: $pass"
