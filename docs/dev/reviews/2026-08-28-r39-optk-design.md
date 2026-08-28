@@ -69,3 +69,28 @@ Sent to optk as a BLOCKING change request (message 2026-08-28 ~14:0x). The lesso
 learnings.md / the check-design memory: a set derived for one ROLE (skip a parked run)
 reused for another (refuse a start) — the identity gate compared two builds that shared
 the wrong set and agreed; only an ORACLE-verified witness of the exposed shape can see it.
+
+## Dispositions closed by the lane (2026-08-28 ~14:4x)
+
+S1 FIXED on lane/optk 20383b6 (fix) / 46ef929 (note) / 01d0af0 (FILEPIN re-pin): offset 0 is
+ALWAYS role B — the k-set's verify at offset 0 is the walk's own frontier[0], emitted as
+`<p>_ofs_k0`; the scan loop starts at `si = 1` so the two sets cannot meet at the selection
+site; the helper no longer references `can_begin_match`. Witness `\b\.[0-9]{4}Z`: before
+nomatch ×3 / after match (2,8) (1,7) (2,8) = `-fno-offset-skip` = python3 `re`; `.1234Z`
+nomatch throughout. tests/offsetskip §8: 18 oracle-verified cells over the three witness
+patterns (every `m` row a lost match under the defect); run_offset_skip.sh §2c reads the
+emitted line, asserts no `can_begin_match`, requires `subject[cand] == 46`, with a
+CROSS-BUILD vacuity guard (denied build's escape set vs default build's `ofs_k0`: 63 vs 16
+bytes, required to differ); sabotage row S188 restores the defect → DETECTED (offsetskip
+5 fail / 20 pass, corpus 9/89 against 22/0 + 98/0 clean). S-D1 re-run: uuid `0,8*,13` 20 →
+7 ppm (offset 0 now the hex class), stack-frame `0,1*,2` → `0,1*` (3,253 ppm), iso-ts
+unchanged, every decline unchanged incl. both email patterns; the witness class becomes a
+beneficiary (`\b\.[0-9]{4}Z` → `0,5*`, `\b:[0-9]{2}:[0-9]{2}` → `0,3*`). Re-measured after
+the fix (interleaved): stack-frame 10.18×/6.19×, uuid 4.45×/9.58×, iso-ts 6.13×/5.75×.
+C4 is thereby DELIVERED, and the lane recorded the near miss in §7.4: it had measured the
+tighter offset-0 set at 1.08-1.33×, judged it under the 2× bar and declined it — a
+correctness defect framed and answered as a performance trade-off. A1-A3, C1-C3, P1-P3,
+S-D3..D6, S-N1..N3 folded into the note; C_ENTER deliberately NOT retuned to the measurement
+(the error is stated as a band and the miss recorded; selection is governed by the measured
+scan-move rule) — manager concurs. Owed before merge: `make test-axes` under the new axis
+(running), the spec/registry hunks checked by `make test-registry`, the final report.
