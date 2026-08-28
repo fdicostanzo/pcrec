@@ -43,10 +43,23 @@ some size."*
    (`((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,N}(){2,3}){1,2}){2,3}`, worst
    gcc time in the corpus at 6.995 s CPU for N=8) anchor the top of both
    lists.
-5. **The tension curves (§8) confirm the size lever and separate it from
-   the ones that would cost speed.** [PLACEHOLDER — filled in once the
-   tension-curve runs complete; see §8 for the live numbers, corpus
-   outliers and witness together.]
+5. **§8's tension curves find THREE separate levers, not one, each with a
+   different trade.** `--unroll=1` is free (no measured throughput cost)
+   on nested-repeat patterns but nearly useless on single-level large-count
+   ones — the witness (18x smaller, 54x faster to compile, no speed loss
+   on its own short subjects) and the corpus's own nested-repeat outliers
+   (75-79% smaller, 12x faster to compile) are where it pays; `((a)|ab)
+   {4000}c`-shaped patterns barely move (1-3%). `-fno-premul-table` is the
+   well-behaved, already-understood [OPT-3] trade: ~22-25% smaller for a
+   modest, bounded speed cost. **`--engine=vm` is Frank's own "tension that
+   kicks in at some size," measured directly**: dropping the hybrid DFA
+   prefilter shrinks `.o` to 4-9% of default on prefiltered patterns — the
+   single biggest size lever found on any non-witness artifact — at up to
+   a measured 359,000x throughput cost on the failing path (PROVISIONAL,
+   taken at load1 1.6-5.0, re-verification queued), because the prefilter
+   IS the size AND the speed: the same forward+reverse DFA machine that
+   costs the bytes is what lets a non-matching subject be dismissed in
+   O(1) instead of backtracked through in full.
 6. **The census finds no gcc-time or resource risk anywhere in the shipped
    corpus** — every one of 2,488 successful compiles finished with verdict
    `ok` (0 timeouts, 0 CPU-budget kills). The risk this plan row exists to
@@ -468,16 +481,81 @@ corpus's own worst case rather than merely "a bit worse."
 
 ### Does ANY existing knob bring it under D45's budget?
 
-Not measured directly against a real re-compile in this section (§8's
-tension-curve table has the numbers); qualitatively, from `tuning.md`'s own
-text: `-fno-counter` is stated NOT to have a fallback for a pattern already
-using the counter rung above its cap ("there is no `-fno-counter` build to
-compare against, because the cap is what refuses it") — so denying the
-counter rung on THIS pattern is expected to either refuse outright or force
-a different, possibly WORSE rung, not shrink the artifact. `--unroll=1`
-(the counter rung's own K parameter at its minimum) is the more promising
-lever on paper: fewer bytes per body-copy chunk. §8 has the measured
-answer for the witness specifically, alongside the top-5 corpus outliers.
+**Yes — one does, dramatically. Measured** (watched, generous CPU budget,
+self-contained `-o -` form, same commit):
+
+| variant | source bytes | `.o` bytes | gcc CPU |
+|---|---|---|---|
+| default | 2,004,784 | 503,344 | 55.13 s |
+| `--unroll=1` | **116,380** (5.8% of default) | **28,104** (5.6%) | **1.015 s** |
+| `-fno-counter` | 4,126,673 (2.06x default — LARGER) | — (never finished) | **150.10 s CPU, killed exactly at the budget ceiling** (`gcc: internal compiler error: CPU time limit exceeded signal terminated program cc1`) — `-fno-counter` falls back to full literal replication for a pattern already using the counter rung above its per-quantifier comfort zone, exactly `tuning.md` §2.3's own warning, and it is not a smaller fallback here — it is the ORIGINAL D45 pathology (the `bigbounded` case, D45's own founding incident) reproduced live on a fresh pattern, at 15x D45's plain CPU budget and still not done |
+| `-fno-splice-calls` | 2,015,597 (~identical — no subroutine calls in this pattern, axis is a no-op here as expected) | 503,344 (identical to default) | ~55 s (identical to default) |
+| `-fno-premul-table` | N/A — `RX_VM_PREFILTER "none"`, no DFA scan to deny a table form on |
+| `--engine=vm` | 2,015,594 (identical to default) | 503,344 (identical) | 53.90 s (identical) |
+
+**`--unroll=1` is the single largest size lever measured anywhere in this
+census** — a 17.8x reduction in source, 17.9x in `.o`, 54x in gcc CPU time,
+for a pattern whose default form sits at 5.5x D45's plain budget. This is
+the clean, general, already-shipped knob STEP 2's size term should reach
+for FIRST on a counter-rung-dominated artifact — no new mechanism, just a
+different default choice of K past some measured threshold.
+
+**But the SAME knob is nearly a no-op on the corpus's own top-5 outliers**
+(§8's own numbers): `--unroll=1` shrinks `((a)|ab){4000}c` by only 1.2%.
+This is the tension curve's central, non-obvious finding — see §8's own
+discussion of why the same flag has two completely different effects on
+two patterns that both use the counter rung.
+
+### Which cap should have bound this, and why it did not
+
+The manager asked directly: which of [ENG-BREP]'s existing caps —
+`PCREC_MAX_VM_REPEAT_COPIES` (64, `src/core/limits.h:208`) or
+`PCREC_MAX_VM_REPLICATION_PRODUCT` (= `PCREC_MAX_VM_NODES` = 131,072,
+`src/core/limits.h:172,240`) — should have refused or throttled the
+witness, and why it did not. Measured, read-only against `limits.h`
+(no `src/` change):
+
+- **`PCREC_MAX_VM_REPEAT_COPIES` (64) never comes close.** The witness's
+  own bounded quantifiers top out at `{28,30}` — a factor of 30, **47% of
+  the 64-copy cap**. This cap bounds ONE quantifier's own literal-copy
+  count and is specifically about the case a counter/frames rung DOESN'T
+  cover; it was never going to fire on a pattern whose worst single factor
+  is 30.
+- **`PCREC_MAX_VM_REPLICATION_PRODUCT` (131,072) never comes close either.**
+  This is the K22 nesting-PRODUCT guard, checked during the pre-pass against
+  the same bound as `PCREC_MAX_VM_NODES`. The witness's own realized node
+  count — measured directly by counting `rx_LN:` labels (`grep -c
+  '^rx_L[0-9]*: __attribute__((unused));'`), one per node the emitter's own
+  `VE_RUNG`/possessify/revdet event stream marks — is **7,467, or 5.7% of
+  the 131,072-node cap.**
+- **The multiplicative mechanism IS real and IS measured, just nowhere near
+  either cap.** `grep -oE 'optional copy \([0-9]+ remaining\)'` on the
+  witness finds 72 distinct FRAMES-rung optional-copy sites, each with a
+  "remaining" count of 1-5 (14-15 occurrences of each value) — the
+  {5,10} quantifier's own 5 optional iterations, replicated once per
+  outer-loop instantiation. Combined with the manager's own independent
+  count (one specific inner construct, "group 3," emitted 140 times —
+  consistent with 28 (the {28,30} quantifier's MANDATORY count) x 5 (the
+  {5,10} quantifier's MANDATORY count) = 140, the textbook K22 nested-factor
+  product), this is the same mechanism K22's own hazard names — "factors
+  MULTIPLY" — legitimately compiled, well inside both caps, and still
+  2 MB.
+
+**The finding: neither existing cap is a bug that "should have" fired and
+didn't. Both are calibrated to catch RUNAWAY/exponential blowup (the
+depth-40-tower-of-`{0,2}` shape K22 was written against, or a construction
+that would genuinely explode the node count past 131,072) — a completely
+different failure mode from "this pattern is cap-compliant by a wide
+margin and still produces an artifact 3x the size of anything in the
+corpus." STEP 2's size term is not a fix to an existing cap; it is a NEW
+one, needed precisely because 5.7% of the node-count cap already produces
+2 MB, and the corpus's own worst artifact (675,555 B source, §4) sits at
+0.5% of that same cap. A byte- or node-count threshold in the low
+thousands (not anywhere near 131,072) is what would separate the witness
+from the entire measured corpus while leaving every corpus pattern
+untouched — the concrete number is a STEP 2 design call, but the GAP
+between "where the corpus lives" and "where the existing safety caps
+sit" is now measured, not assumed.
 
 ## 7. What this section leaves for STEP 2
 
@@ -502,7 +580,18 @@ built) against this census's population before STEP 2 commits to one:
    folded into their predecessor's fall-through, removing both the label
    line and a `goto` for each. §6 counts 7,467 labels / 7,681 gotos on the
    witness (13.5% + 7.2% = 20.7% of PROGRAM combined) — a population
-   nobody has counted yet for "how many are singly-referenced."
+   nobody has counted yet for "how many are singly-referenced." The
+   label:goto RATIO holds across the corpus's own outliers too (not just
+   the witness), measured directly on the 5 top-`.o` patterns from §4:
+   rxt-00127 80 labels / 81 gotos (1.01), rxt-00143 28/38 (1.36), rxt-00118
+   88/97 (1.10), rxt-00030 1,471/1,525 (1.04), rxt-00029 1,141/1,177
+   (1.03) — every one close to 1:1, consistent with most labels having
+   exactly one incoming `goto` and therefore being fold candidates by this
+   lever's own test, though this census did not build the actual
+   predecessor-count analysis (a ~1:1 ratio is suggestive, not proof: it
+   is also what a chain of labels with one predecessor EACH would produce,
+   which is exactly the shape the lever targets, but a control-flow-graph
+   walk is what STEP 2 needs before committing to it).
 3. **Hoisting the MRL guard's per-copy constant**
    (`RX_PRUNE_TOO_SHORT(scan_position, 59 + (1 * (20 - slot_values[1301])))`,
    inlined once per node at 8.3% of PROGRAM on the witness) — the additive
@@ -518,8 +607,126 @@ exactly where all three levers would apply first.
 
 ## 8. Tension curves
 
-[PLACEHOLDER — being filled in as the tension-curve measurement completes;
-methodology in §1, mechanism analysis in §4/§6.]
+**Status note on the throughput columns.** The size/`.o`/gcc-time columns
+below are final (they do not depend on box load — confirmed independently
+identical across two separate runs of the same variant taken minutes
+apart at different load levels, e.g. witness/`fno-splice-calls` and
+witness/`engine-vm` both landed at exactly 503,344 `.o` bytes). The
+`match_us`/`fail_us` throughput columns were taken at `load1` 1.6-5.0 (5
+of 6 patterns, before a union battery on the box's `main` branch pushed
+`load1` to ~13-14) — NOT the battery, but not a quiet box either. They are
+marked **PROVISIONAL** below and will be re-taken on a quiet box once the
+manager signals the battery is done; where a provisional number already
+shows a >10x effect the direction is trustworthy (a 4-5x load spread does
+not manufacture a 360,000x difference), but exact magnitudes should be
+re-checked. The witness's own `fno-counter`/`fno-splice-calls`/`engine-vm`
+rows have size data only (throughput not yet run for those three,
+independent of the load question — see §1's note on this run crashing on
+an unrelated bug and being restarted size-only for the remainder).
+
+### The witness
+
+| variant | source | `.o` | gcc CPU | match (PROVISIONAL) | fail (PROVISIONAL) |
+|---|---|---|---|---|---|
+| default | 2,004,784 | 503,344 | 55.13 s | 5.80 us | 6.37 us |
+| `--unroll=1` | 116,380 (5.8%) | 28,104 (5.6%) | 1.02 s | 0.13 us | 0.17 us |
+| `-fno-counter` | 4,126,673 (206%, LARGER) | — never finished | **150.10 s, CPU-budget-killed** | not run | not run |
+| `-fno-splice-calls` | 2,015,597 (100.5%) | 503,344 (100%) | 53.53 s | not run | not run |
+| `-fno-premul-table` | N/A — no DFA scan | | | | |
+| `--engine=vm` | 2,015,594 (100.5%) | 503,344 (100%) | 53.90 s | not run | not run |
+
+`--unroll=1` is the whole story for this pattern: an 18x size reduction, a
+54x compile-time reduction, and — on the two short, fast-resolving
+subjects this pattern's own catastrophic-backtracking hazard allows (§1's
+subject-construction note: longer/more elaborate subjects for this pattern
+risk genuine exponential blowup even in pcrec's bounded VM, so the
+subjects here are deliberately short) — a comparable or FASTER per-call
+time (0.13/0.17 us vs 5.80/6.37 us; plausibly instruction-cache locality
+on a 2 MB vs 116 KB body, not yet isolated as such — a hypothesis, not a
+measured mechanism).
+
+### The corpus's top-5 outliers by `.o` size
+
+`.o` bytes as a percentage of that pattern's own default, gcc CPU in ms,
+throughput in microseconds/call (PROVISIONAL, load1 1.6-5.0):
+
+| pattern | variant | `.o` (% of default) | gcc CPU | match us | fail us |
+|---|---|---|---|---|---|
+| `((a)\|ab){4000}c` | default | 202,904 (100%) | 311 | 37.0 | 8.6 |
+| | `--unroll=1` | 200,648 (99%) | 245 | 43.0 | 8.4 |
+| | `-fno-counter` | REFUSED (above the 64-copy cap, no fallback) | | | |
+| | `-fno-splice-calls` | 202,904 (100%) | 317 | 42.5 | 8.1 |
+| | `-fno-premul-table` | 154,920 (76%) | 331 | 49.5 | 11.3 |
+| | `--engine=vm` | **8,944 (4%)** | 183 | 10.2 | **35.6** |
+| `((a)\|bc){0,4000}d` | default | 128,136 (100%) | 236 | 18.9 | 0.10 |
+| | `--unroll=1` | 128,136 (100%) | 218 | 41.4 | 0.10 |
+| | `-fno-counter` | 128,136 (100%) — no-op, this pattern's rung is FRAMES_UNBOUNDED, not COUNTER | 237 | 28.2 | 0.17 |
+| | `-fno-splice-calls` | 128,136 (100%) | 220 | 26.9 | 0.10 |
+| | `-fno-premul-table` | 96,152 (75%) | 223 | 58.5 | 0.13 |
+| | `--engine=vm` | **6,168 (5%)** | 121 | 14.3 | **35,942.6** |
+| `((a)\|ab){0,4000}c` | default | 107,944 (100%) | 301 | 23.6 | 0.10 |
+| | `--unroll=1` | 104,776 (97%) | 202 | 22.7 | 0.10 |
+| | `-fno-counter` | REFUSED (above the 64-copy cap) | | | |
+| | `-fno-splice-calls` | 107,944 (100%) | 290 | 23.3 | 0.13 |
+| | `-fno-premul-table` | 83,960 (78%) | 291 | 28.9 | 0.17 |
+| | `--engine=vm` | **9,992 (9%)** | 230 | 8.3 | **8.3** |
+| nested-repeat, N=8 | default | 103,384 (100%) | 7,900 | 6.1 | 5.9 |
+| | `--unroll=1` | **21,432 (21%)** | **646** | 6.2 | 4.3 |
+| | `-fno-counter` | 103,792 (100%) — under the cap, literal fallback ~same size but 21% faster to compile | 6,236 | 5.5 | 5.7 |
+| | `-fno-splice-calls` | 103,384 (100%) | 8,656 | 6.3 | 4.3 |
+| | `-fno-premul-table` | 103,384 (100%) | 8,550 | 7.7 | 4.1 |
+| | `--engine=vm` | 101,648 (98%) | 7,395 | 7.3 | 8.9 |
+| nested-repeat, N=6 | default | 85,400 (100%) | 3,779 | 12.8 | 7.6 |
+| | `--unroll=1` | **21,432 (25%)** | **596** | 13.7 | 8.4 |
+| | `-fno-counter` | 85,400 (100%) — no-op, no COUNTER bit in this rung | 3,746 | 15.3 | 9.4 |
+| | `-fno-splice-calls` | 85,400 (100%) | 3,843 | 14.1 | 8.3 |
+| | `-fno-premul-table` | 85,400 (100%) | 3,759 | 15.4 | 8.2 |
+| | `--engine=vm` | 83,664 (98%) | 3,767 | 5.4 | 4.2 |
+
+### The tension curve's own finding: three DIFFERENT levers, three DIFFERENT trades
+
+The census set out to measure "the same pattern under four knobs plus the
+engine axis" and found not one lever but three, each with a different
+cost:
+
+1. **`--unroll=1` is free on the nested-repeat family, useless on the
+   `((a)|ab){N}c` family.** 79-75% size reduction and 12x faster gcc, at
+   NO measured throughput cost, on rxt-00030/00029 (whose bounded factor,
+   `{0,8}`/`{0,6}`, is small and NESTED two levels deep — where K1 matters
+   is the multiplicative replication across nesting, and unroll's own
+   per-chunk savings compound down every level). On `((a)|ab){N}c`
+   (`{4000}`/`{0,4000}`/`{0,2047}`, ONE level, large factor) it is a 1-3%
+   effect — noise. **The lever's payoff is a property of the NESTING
+   STRUCTURE, not the raw replication count** — exactly what §6/§7's
+   node-skeleton and span-loop-shape levers would need to generalize
+   correctly rather than assuming "K down = smaller" universally.
+2. **`-fno-premul-table` is the OPT-3-predicted, well-behaved lever**:
+   a consistent ~22-25% size reduction on every pattern that has a DFA
+   scan to deny a table form on, at a measured throughput cost
+   (`docs/design/premultiplied_dfa_table.md`'s own 1.1-1.8x figure,
+   consistent in direction with the modest 10-30% slower match times
+   here) — a real, bounded, well-understood size/speed trade, the one
+   this census expected to find and did.
+3. **`--engine=vm` IS "the size vs performance tension that kicks in at
+   some size," measured directly and dramatically.** On all three
+   `((a)|ab)`-family patterns, dropping to pure VM (no hybrid DFA
+   prefilter) shrinks `.o` to **4-9% of default** — the single largest
+   size lever this census measured on ANY non-witness pattern. The COST is
+   the prefilter's own job: rejecting a non-matching subject fast. On
+   `((a)|bc){0,4000}d`'s failing subject (5,000 bytes, no literal `d`
+   anywhere — the DFA prefilter's `memchr`-class scan dismisses it in
+   O(1); the bare VM has no such shortcut and must backtrack through the
+   whole subject) the fail-path cost goes from **0.10 us to 35,942.6 us —
+   a 359,000x slowdown**, PROVISIONAL but not a number a 5x load spread
+   can manufacture. This is the concrete, measured shape of "size vs
+   performance": the prefilter IS the size (a whole second DFA machine,
+   forward+reverse tables, embedded in the artifact) and it IS the speed
+   (an O(1) or O(subject) reject instead of an O(subject)-with-backtracking
+   one) — the SAME bytes buy both, and a size term that removed the
+   prefilter to save space would be trading away exactly the thing D46's
+   own "prefilter-before-VM is an ORDERING RULE, not a tuning knob"
+   language (`src/gen/CLAUDE.md`) says must never be optional on a
+   pattern the prefilter can answer.
 
 ## 9. What was NOT measured, and why
 
