@@ -78,19 +78,77 @@ GATE_SUBJECTS=15
 # the counter silently disconnected) fails this gate exactly as loudly as
 # a real divergence would, closing the README.md/campaign-log-documented
 # vacuity finding for good rather than just for this one measurement.
+# [SEL-1] (2026-08-28, K40/K41) RE-MEASURED after the DFA-cap-overflow
+# fallback landed: under `--engine=auto` (what compile_with_pcrec() always
+# passes, no `--engine` flag), the 8 patterns this fixed seed used to draw
+# that hit `PCREC_MAX_DFA_STATES_TABLE`/`_GOTO` no longer REFUSE with "too
+# complex for the DFA engine" -- they now compile as VM fallbacks. `state_cap`
+# (fuzz.py's own bucket, only "too complex for the DFA engine" or "NFA
+# exceeds" in pcrec's stderr) drops from 8 to 0 for exactly this reason: the
+# "NFA exceeds" half is UNCHANGED by SEL-1 (that cap has no fallback engine to
+# hand a pattern to, docs/spec/limits.md §3.3), so on this fixed seed's own
+# draw the bucket's population was entirely the DFA-cap half. Those 8
+# patterns move into the ordinary accept/compare pipeline instead: "both
+# accept" 175 -> 183 and "subject pairs compared" 2625 -> 2745 (8 * 15 = 120
+# more pairs) follow arithmetically. "oracle inconclusive" gains a NEW,
+# TIMING-SENSITIVE nonzero floor (measured 2-3 across four runs on this box,
+# never 0) because some of those 8 newly-VM-compiled patterns are complex
+# enough that a fraction of their real subject comparisons hit PCRE2's own
+# match-limit or the oracle's execution timeout -- collateral from patterns
+# that used to never REACH subject comparison at all, not a new divergence
+# class. Re-measured 4 times on this box (byte-identical on every bucket
+# except "oracle inconclusive", which this row's own comment already says is
+# TIMING-SENSITIVE), per this section's own "measured twice on a quiet box"
+# discipline.
+# [SEL-1] (2026-08-28, K41, manager correction): the earlier version of this
+# gate classified K41's witness by grepping GCC'S OWN ERROR TEXT ("CPU time
+# limit exceeded" / "internal compiler error") -- a TIMING-DEPENDENT signal
+# (K41's witness measured 7.8 CPU-s under -O0 against a ~10s cap, a narrow
+# margin that read 0 or 1 run to run depending on box speed/load: red on one
+# box, green on another). K41's actual mechanism is SIZE, not gcc's luck, so
+# fuzz.py itself now classifies "K41 oversize artifact" by the emitted .c's
+# byte size (K41_OVERSIZE_BYTES = 1,000,000, checked BEFORE and
+# INDEPENDENTLY of gcc -- see fuzz.py's own comment above that constant) and
+# prints it as its own bucket, fully deterministic per --seed. gcc's own
+# outcome on an oversize artifact (compiled / over-budget) is read from
+# fuzz.py's summary as INFORMATION ONLY (the "K41 witness" line printed
+# below, never a pass/fail count) -- this gate no longer has any bucket
+# whose pass/fail reading depends on gcc's CPU-time luck. "gcc compile
+# fails" stays a single, ordinary, deterministic bucket again (pinned at 0):
+# it means what it always meant -- a REAL pcrec-emitted-code compile defect
+# -- because the oversize bucket no longer counts against it either way.
+#
+# RE-MEASURED against the SIZE bucket rather than assumed: at this fixed
+# seed's own draw, exactly TWO patterns cross K41_OVERSIZE_BYTES (1,250,766
+# and 2,004,449 bytes), not the one the old gcc-error-text classification
+# happened to catch -- the second one compiles within this box's gcc budget
+# today, so it never showed up as a GCC-FAIL under the old design at all,
+# and would have gone on being silently compared like any ordinary pattern.
+# Pulling BOTH fully out of the accept/compare pipeline (not just recording
+# gcc's outcome for one of them) moves population, arithmetically: "both
+# accept" 183 -> 181 (183 - 2), "subject pairs compared" 2745 -> 2715
+# (2745 - 2*15), and "oracle inconclusive" 3 -> 0 -- the 3 inconclusive
+# hits the old design attributed to the newly-VM-compiled-but-still-compared
+# population turn out to belong entirely to these same two oversize
+# patterns' own subject comparisons, which this design no longer runs
+# through the comparison accounting at all. Verified byte-identical across
+# THREE consecutive solo runs on this box (this file's own "measured twice
+# on a quiet box" discipline, done one better) -- the explicit determinism
+# proof the manager asked the SIZE redesign to produce.
 declare -A EXPECT=(
     ["patterns generated"]=300
     ["module construct patterns"]=75
-    ["both accept"]=175
+    ["both accept"]=181
     ["both reject"]=117
     ["pcrec-only reject"]=0
     ["pcre2-only reject"]=0
     ["PCRE2 size-limit"]=0
-    ["DFA state-cap"]=8
+    ["DFA state-cap"]=0
+    ["K41 oversize artifact"]=2
     ["gcc compile fails"]=0
     ["pcrec compile timeout"]=0
     ["oracle probe timeout"]=0
-    ["subject pairs compared"]=2625
+    ["subject pairs compared"]=2715
     ["oracle inconclusive"]=0
     ["pcrec step-budget exhausted"]=0
     ["pcrec frame-budget exhausted"]=0
@@ -138,12 +196,20 @@ rc="${PIPESTATUS[0]}"
 # gate would otherwise read a bucket as "0" forever once nothing prints it)
 # and equal to its pinned value. Report every SELECTED count, not merely
 # pass/fail, so drift is visible in the same line that names it.
+# K41's witness pattern, read from fuzz.py's own stdout summary block (the
+# "K41-WITNESS pattern=... size=... gcc=..." line -- see fuzz.py's
+# oversize_hits print loop) so the failure message below can NAME it rather
+# than just count it, per the manager's correction.
+k41_witness="$(grep -m1 '^  K41-WITNESS pattern=' "$GATEOUT" | sed 's/^  //')"
+[ -z "$k41_witness" ] && k41_witness="none printed -- see fuzz.py oversize_hits block"
+
 echo
 echo "capturediff-gate: selected counts (expected -> actual)"
 drift=0
 for label in "patterns generated" "module construct patterns" "both accept" "both reject" \
              "pcrec-only reject" "pcre2-only reject" "PCRE2 size-limit" \
-             "DFA state-cap" "gcc compile fails" "pcrec compile timeout" \
+             "DFA state-cap" "K41 oversize artifact" "gcc compile fails" \
+             "pcrec compile timeout" \
              "oracle probe timeout" "subject pairs compared" \
              "oracle inconclusive" "pcrec step-budget exhausted" \
              "pcrec frame-budget exhausted" "known PCRE2 optimizer quirk" \
@@ -166,6 +232,10 @@ for label in "patterns generated" "module construct patterns" "both accept" "bot
         case "$label" in
             "pcrec compile timeout"|"oracle probe timeout")
                 note=" (TIMING-SENSITIVE bucket -- check box load before treating this as a pcrec defect, docs/testing.md's D14 busy-box precedent)" ;;
+            "oracle inconclusive")
+                note=" (TIMING-SENSITIVE -- PCRE2's own match-limit or the oracle's execution timeout on a subject comparison; re-measured at 0 across three consecutive runs since the K41 SIZE redesign pulled the two oversize patterns that used to account for this bucket's whole nonzero population out of the comparison pipeline entirely (see the EXPECT block's own comment) -- check box load before treating a nonzero reading as a pcrec defect)" ;;
+            "K41 oversize artifact")
+                note=" (docs/dev/known_issues.md K41 -- classified by emitted-artifact SIZE, deterministic per --seed, NOT by gcc CPU-time outcome; witness: $k41_witness)" ;;
         esac
         echo "  $label: expected=$expected actual=$actual  DRIFT$note" >&2
         drift=1
@@ -173,6 +243,16 @@ for label in "patterns generated" "module construct patterns" "both accept" "bot
         echo "  $label: $actual"
     fi
 done
+
+# K41's witness, named regardless of pass/fail (not only in a DRIFT message)
+# so a green run still shows which pattern the deterministic size bucket is
+# keyed on this seed -- gcc's own outcome on it (compiled / over-budget on
+# THIS box) is informational only, never a pass/fail signal (see the EXPECT
+# comment above and fuzz.py's K41_OVERSIZE_BYTES comment).
+if [ -n "$k41_witness" ]; then
+    echo "  K41 witness: $k41_witness"
+fi
+
 [ "$drift" -ne 0 ] && rc=1
 
 if [ "$rc" -eq 0 ]; then

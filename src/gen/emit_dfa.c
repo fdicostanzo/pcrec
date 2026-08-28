@@ -3588,6 +3588,71 @@ static const DfaDir dfa_dir_reverse = {
     dir_rev_skip, dir_rev_bound_accept,
 };
 
+/* ---- [CHK-2] `--list-axes`: READ-ONLY ACCESS TO THE SIX LAYER-1 LISTS ---
+ *
+ * `pcrec --list-axes` (src/parse/axes_dump.c) needs the SAME name+deny data
+ * this file's own `dfa_select` walks, rather than a hand-copied restatement
+ * of it (docs/dev/learnings.md §3: "a REFERENCE BUILD assembled by ... a
+ * hand-enumerated list drifts silently from the subject's source set"). A
+ * candidate NEWLY ADDED to one of these arrays — the offset-k skip lane's
+ * own bit-16 candidate among them — therefore appears in the dump with no
+ * edit here: the walk below is generic over `DfaCand`'s common leading
+ * member, exactly as `dfa_select` is.
+ *
+ * `applies` is DELIBERATELY NOT CALLED: evaluating a real candidate's
+ * predicate needs a genuine `DfaSel` (a live `Ctx`/`Dfa`/direction), which a
+ * context-free listing command does not have and must not fabricate — a
+ * fabricated one could silently answer a different question than a real
+ * compile does. `axes_dump.c` carries its own hand-written one-line English
+ * summary of each `applies` clause, cross-checked against this file's own
+ * comments by a human at review time rather than derived, and named as such
+ * in the dump's own header comment and in docs/spec/registry.md. */
+size_t pcrec_dfa_axis_cands(const void *list, size_t n, size_t stride,
+                            PcrecAxisCand *out, size_t cap)
+{
+    const char *base = (const char *)list;
+    size_t k = 0;
+    for (size_t i = 0; i < n && k < cap; i++) {
+        const DfaCand *c = (const DfaCand *)(const void *)(base + i * stride);
+        out[k].name = c->name;
+        out[k].deny = c->deny;
+        k++;
+    }
+    return k;
+}
+
+#define AXIS_LIST(list) \
+    pcrec_dfa_axis_cands((list), sizeof(list) / sizeof((list)[0]), \
+                         sizeof((list)[0]), out, cap)
+
+size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_reprs); }
+size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_pfs); }
+size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_views); }
+size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_seeds); }
+size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_accs); }
+#undef AXIS_LIST
+
+/* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
+ * candidate LIST: the two objects are named directly ... because 'which
+ * machine am I emitting' is not a question about the machine's
+ * dimensions"), so there is no array to walk — both objects are ALWAYS
+ * emitted, once each, per machine. Returned as a fixed pair for the dump's
+ * uniform iteration; `deny` is 0 on both by construction (D82: this axis has
+ * no `-fno-*` knob, and the dump's job is to report that truthfully rather
+ * than invent one). */
+size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap)
+{
+    size_t k = 0;
+    if (k < cap) { out[k].name = dfa_dir_forward.c.name; out[k].deny = dfa_dir_forward.c.deny; k++; }
+    if (k < cap) { out[k].name = dfa_dir_reverse.c.name; out[k].deny = dfa_dir_reverse.c.deny; k++; }
+    return k;
+}
+
 /* ---- THE DERIVATION: one machine's whole form, selected once ------------ */
 
 static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,

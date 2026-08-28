@@ -297,10 +297,22 @@ want_strat '(x)a{0,4}\G' 0x2 "\\G is DOWNWARD-closed like \\A — every retreat 
 echo
 echo "== [M6.2 wave B] the composed state budget refuses, never miscompiles =="
 
+# [SEL-1] (2026-08-28) EXTRA FLAGS, for the same reason
+# tests/resource/run_resource_tests.sh's name_check and
+# tests/codegen/run_trie_identity.sh's check_control both needed them. Under
+# `--engine=auto`, this family's DFA-cap overflow is now a SELECTION OUTCOME
+# (fall back to the VM, docs/spec/tuning.md §2.11) rather than a refusal, so
+# plain auto no longer reaches the states-cap diagnostic this check exists to
+# name. `--engine=dfa` restores it (do-or-die, unaffected by the fallback) and
+# `--no-captures` has to ride with it: both witness patterns carry a live
+# `((a)|ab)` capturing group, so `--engine=dfa` alone hits the earlier,
+# unrelated "requires captures" refusal first (measured) — the identical
+# combination `run_resource_tests.sh`'s state-cap cell and
+# `run_trie_identity.sh`'s controls both needed, for the identical reason.
 refuses_at_cap() { # refuses_at_cap <pattern> <why>
     rm -f "$WORKDIR/out.c" "$WORKDIR/out.h"
     local err
-    if err="$(pcrec_run "$PCREC" --features assertions -p rx -o "$WORKDIR/out.c" -- "$1" 2>&1)"; then
+    if err="$(pcrec_run "$PCREC" --features assertions -p rx --no-captures --engine=dfa -o "$WORKDIR/out.c" -- "$1" 2>&1)"; then
         bad "[budget] '$1' COMPILED — expected the states-cap refusal ($2)"
         return
     fi
@@ -315,15 +327,57 @@ refuses_at_cap() { # refuses_at_cap <pattern> <why>
     esac
 }
 
+# [SEL-1] THE AUTO-SIDE TWIN: plain `auto` (no `--engine=dfa`) on the SAME
+# witness must COMPILE, name the cap in RX_ENGINE_WHY, and do so within the
+# cost bound docs/spec/tuning.md §2.11 states (at most one refused DFA build
+# dearer than asking for --engine=vm directly — the failed build here IS the
+# same construction refuses_at_cap's --engine=dfa probe just measured, so the
+# wall time is the cost bound made concrete rather than a separate claim).
+# `--no-captures` for the identical reason as above: it is what makes
+# RX_ENGINE_WHY read the cap's own text instead of "capture group ..." (both
+# are true reasons the pattern is VM-selected; captures wins first-wins on
+# the SAME artifact that also drops no prefilter needed here, since
+# --no-captures already routes straight to the DFA build rather than through
+# a prefilter attempt).
+auto_fallback_at_cap() { # auto_fallback_at_cap <pattern> <why>
+    rm -f "$WORKDIR/auto.c"
+    local t0 t1 ms out
+    t0=$(date +%s%N)
+    out="$(pcrec_run "$PCREC" --features assertions -p rx --no-captures -o "$WORKDIR/auto.c" -- "$1" 2>&1)"
+    local rc=$?
+    t1=$(date +%s%N)
+    ms=$(( (t1 - t0) / 1000000 ))
+    if [ "$rc" -ne 0 ]; then
+        bad "[budget] [SEL-1] '$1' under plain auto should COMPILE (the fallback), got rc $rc in ${ms}ms: $out"
+        return
+    fi
+    if ! grep -q '^#define RX_ENGINE "vm"$' "$WORKDIR/auto.c"; then
+        bad "[budget] [SEL-1] '$1' compiled under auto but did not stamp RX_ENGINE \"vm\""
+        return
+    fi
+    local why
+    why="$(sed -n 's/^#define RX_ENGINE_WHY "\(.*\)"$/\1/p' "$WORKDIR/auto.c")"
+    case "$why" in
+        "dfa overflowed:"*)
+            ok "[budget] [SEL-1] '$1' under auto falls back instead of refusing in ${ms}ms (the cost bound: at most one refused build dearer than --engine=vm) — RX_ENGINE_WHY \"$why\", $2" ;;
+        *)
+            bad "[budget] [SEL-1] '$1' compiled under auto but RX_ENGINE_WHY (\"$why\") does not name a dfa overflow" ;;
+    esac
+}
+
 # ENG_UNANCH, cap PCREC_MAX_DFA_STATES_TABLE (32,000). The bare form of this
 # family is §3.5.1's own worst-state-count shape.
 refuses_at_cap '\b((a)|ab){20000}c\b' \
+    "ENG_UNANCH past PCREC_MAX_DFA_STATES_TABLE"
+auto_fallback_at_cap '\b((a)|ab){20000}c\b' \
     "ENG_UNANCH past PCREC_MAX_DFA_STATES_TABLE"
 # ENG_ATTEMPT, cap PCREC_MAX_DFA_STATES_GOTO (10,000) — 3.2x TIGHTER, and
 # §3.4.1's disclosure is that the design's whole corpus measurement was taken
 # on the engine `^` patterns do NOT use. A wave that checked only the roomier
 # cap would be repeating that gap.
 refuses_at_cap '^\b((a)|ab){20000}c\b' \
+    "ENG_ATTEMPT past PCREC_MAX_DFA_STATES_GOTO, the 3.2x tighter cap §3.4.1 says the corpus never measured"
+auto_fallback_at_cap '^\b((a)|ab){20000}c\b' \
     "ENG_ATTEMPT past PCREC_MAX_DFA_STATES_GOTO, the 3.2x tighter cap §3.4.1 says the corpus never measured"
 # THE CONTROL, and without it the two rows above would pass on a compiler that
 # refused everything: the same family one order of magnitude smaller must

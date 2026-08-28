@@ -305,4 +305,38 @@ elif ! grep -q "^SKIP: pc4" "$PC4OUT" && \
     echo "registry:   in the same change or not at all" >&2
     rc=1
 fi
+
+# ---- [CHK-2] piece 1(a): the axis registry check ---------------------------
+#
+# The FOURTH TSV surface's own independent-side check: `pcrec --list-axes`
+# read against docs/spec/tuning.md and cli/main.c, two files the dump itself
+# never opens (docs/spec/registry.md §6/§7 states the boundary in full).
+AXESOUT="$WORKDIR/axes_registry.out"
+PCREC="$PCREC" bash "$SCRIPT_DIR/axes_registry_check.sh" 2>&1 | tee "$AXESOUT"
+axesrc=${PIPESTATUS[0]}
+if [ "$axesrc" -ne 0 ]; then
+    rc=1
+fi
+# [manager review, 2026-08-28] 43 -> 53: added DIRECTION 3, the stamp-VALUE
+# half of the charter's direction (a) ("its §6.3 VALUE... every spec value
+# appears in the dump"), which the first two revisions of this check did
+# not cover. +10: 2 checks each (dump->spec, spec->dump) for RX_DFA_TABLE,
+# RX_DFA_PREFILTER, RX_VM_PREFILTER, RX_ENGINE (8), plus 2 for the nine D46
+# bit constants' own pair of checks (RUNG/STRAT/PRUNE, sourced from
+# src/gen/emit_dfa.c's literal #define block rather than lib/pcrec.h —
+# those nine are emitted-artifact text, not in the public header at all).
+axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
+if [ "$axesn" -ne 53 ]; then
+    if grep -q "^checks failed: 0" "$AXESOUT"; then
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 53." >&2
+        echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
+        echo "registry:   in the same commit; if not, coverage was removed" >&2
+    else
+        axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
+        echo "registry: axes_registry_check shows $axesn passing checks (53 expected; ${axesnf:-?} failed," >&2
+        echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
+        echo "registry:   number must return to 53 — if it does not, coverage was removed too" >&2
+    fi
+    rc=1
+fi
 exit $rc

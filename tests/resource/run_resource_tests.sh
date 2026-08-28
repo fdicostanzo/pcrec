@@ -261,10 +261,24 @@ echo
 # ---------------------------------------------------------------------------
 echo "== [K7] the refusal's identity =="
 
-# name_check <pattern> <expected-substring> <what it proves>
+# name_check <pattern> <expected-substring> <what it proves> [extra pcrec flags...]
+#
+# [SEL-1] (2026-08-28) EXTRA FLAGS ARE HOW THIS STAYS A REFUSAL WITNESS. Under
+# `--engine=auto`, a DFA-cap overflow is now a SELECTION OUTCOME (fall back to
+# the VM) rather than a refusal (docs/spec/tuning.md §2.11) -- so plain `auto`
+# on a pattern that used to reach exactly the cap this section names now
+# compiles instead, and this check's own claim (name the refusal's WORDING)
+# has nothing to read. `--engine=dfa` is the FORCE form and stays do-or-die,
+# unconditionally, which is the one property the fallback does not touch --
+# passing it as an extra flag restores the refusal text as the observable
+# while the construction under test (the same DFA build, same caps) is
+# unchanged. See the call sites below for which patterns also need
+# `--no-captures` alongside it (a live capturing group forces the VM at
+# SELECTION time, before this section's construction is ever reached).
 name_check() {
-    local pat="$1" want="$2" why="$3" log rc
-    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/w.c" "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
+    local pat="$1" want="$2" why="$3"; shift 3
+    local log rc
+    log="$("$ROOT_DIR/scripts/watchdog" -l "wording $pat" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx "$@" -o "$WORKDIR/w.c" "$pat" 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
     rc=$?
     if [ "$rc" -ne 1 ]; then
         bad "'$pat' should be a diagnosed refusal (rc 1), got rc $rc: $log"
@@ -289,18 +303,55 @@ name_check() {
 #     state-COUNT cap, which is the pre-existing one, and it must still work.
 #     This is the check that notices if the new bounds took the old one's
 #     customers away.
+# `a{0,65535}` needs no extra flag: it hits PCREC_MAX_NFA_STATES, which has no
+# `--engine=auto` fallback (there is no other engine to hand a pattern to when
+# the NFA itself cannot be built at all -- src/opt/select_engine.c never sees
+# it, since NFA construction runs for every engine choice). `a{65535}` DOES,
+# so both of its checks below force `--engine=dfa` -- see name_check's own
+# comment for why that is do-or-die and unaffected by SEL-1.
 name_check 'a{0,65535}' 'NFA exceeds' \
     "the bounded-OPTIONAL family reaches the NFA size cap"
 name_check 'a{65535}' 'subset construction' \
-    "the EXACT-count family reaches the subset-element bound"
+    "the EXACT-count family reaches the subset-element bound" \
+    --engine=dfa
 name_check 'a{65535}' 'too complex for the DFA engine' \
-    "that bound refuses inside the EXISTING diagnostic family (D26), not a new tier"
+    "that bound refuses inside the EXISTING diagnostic family (D26), not a new tier" \
+    --engine=dfa
+
+# [SEL-1] (2026-08-28) THE AUTO-SIDE TWIN, for this shape as the family's own
+# representative (all three name_check cells above and the state-cap check
+# below are the identical shape one cap over): plain `auto`, no `--engine=dfa`,
+# must COMPILE (the do-or-die refusal `--engine=dfa` still gives is what SEL-1
+# turns into a fallback here) and stamp the fact rather than staying silent
+# about it. `a{65535}` has no capturing group, so `--engine=dfa` alone was
+# already the do-or-die twin of this cell with nothing else to control for.
+out="$WORKDIR/w3.c"
+rm -f "$out"
+log="$("$ROOT_DIR/scripts/watchdog" -l "auto fallback a{65535}" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$out" 'a{65535}' 2>&1)"   # [K37]
+rc=$?
+if [ "$rc" -ne 0 ]; then
+    bad "'a{65535}' under plain auto should COMPILE (SEL-1's fallback), got rc $rc: $log"
+elif ! grep -q '^#define RX_ENGINE "vm"$' "$out"; then
+    bad "'a{65535}' under auto compiled but did not stamp RX_ENGINE \"vm\" (fallback did not fire the way expected)"
+elif ! grep -q '^#define RX_ENGINE_WHY "dfa overflowed: subset construction exceeds' "$out"; then
+    bad "'a{65535}' under auto compiled as VM but RX_ENGINE_WHY does not name the subset-element overflow: $(grep '^#define RX_ENGINE_WHY' "$out")"
+else
+    ok "[SEL-1] 'a{65535}' under auto falls back instead of refusing: RX_ENGINE \"vm\", RX_ENGINE_WHY names the subset-construction overflow"
+fi
 
 # The state-COUNT cap must still be reachable by the shapes it was built for —
 # the fix moves refusals EARLIER for one growth law and must not have taken the
 # other cap's customers away. An exponential subset blowup has a small state-set
 # per state and a huge NUMBER of states, so it is the state cap's own shape.
-log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
+#
+# [SEL-1] `--no-captures --engine=dfa`: this pattern's `(a|b)` groups are
+# capturing groups (default on), so `--engine=dfa` ALONE would refuse on the
+# earlier, unrelated "requires captures" ground before ever reaching the
+# construction under test (measured, first draft of this fix) — exactly
+# run_trie_identity.sh's own finding one section over. `--no-captures` is
+# answer-neutral for what this check reads: D31's A_CAP erasure already makes
+# captures invisible to nfa.c's construction, so the automaton is unchanged.
+log="$("$ROOT_DIR/scripts/watchdog" -l "wording state-cap" -s "$K7_SECS" -c "$K7_CPU" -m "$K7_MEM" -L "$WORKDIR/watchdog.log" -- "$PCREC" -p rx --no-captures --engine=dfa -o "$WORKDIR/w2.c" '(a|b)*a(a|b){20}' 2>&1)"   # [K37]: the wrapper (watchdog) IS the bound and execs a BINARY -- the compiler itself, never a bash function -- on ONE line so the check sees both
 rc=$?
 if [ "$rc" -eq 1 ] && printf '%s' "$log" | grep -q 'states'; then
     ok "the state-COUNT cap still fires on its own shape: $(printf '%s' "$log" | head -1)"

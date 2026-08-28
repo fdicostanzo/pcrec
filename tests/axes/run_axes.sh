@@ -305,7 +305,13 @@ declare -A REFUSAL_PATTERN=(
     # ("cannot both be requested", dormant here — this sweep never sets
     # -fno-prefilter alongside -fprefilter — kept so it is not silently
     # undocumented the day something does).
-    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested"
+    # FOURTH shape since [SEL-1] (2026-08-28): under auto a prefilter DFA
+    # that overflows a cap is DROPPED, but the FORCE form is do-or-die
+    # (§2.5: "-fprefilter itself still REFUSES with today's diagnostic
+    # (§2.11)"), so -fprefilter on such a pattern refuses with the DFA
+    # cap's own text. Population measured on the first sweep after [SEL-1]:
+    # 2 (tests/base/k18_cost_gates.rxt:67-68, the [SEL-1] witness cells).
+    ["-fprefilter"]="-fprefilter requires the VM engine${REFUSAL_DELIM}cannot be honoured for a pattern containing a${REFUSAL_DELIM}cannot both be requested${REFUSAL_DELIM}pattern too complex for the DFA engine"
     # --engine=dfa's own do-or-die posture (§2.11) has TWO distinct shapes
     # in select_engine.c's switch (verified live against the full-corpus
     # REFUSED population — 3,874 of the first, 5,594 of the second): the
