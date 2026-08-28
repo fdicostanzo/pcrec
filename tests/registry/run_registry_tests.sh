@@ -317,6 +317,10 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
+# [manager landing, 2026-08-28 union battery] 53 -> 59: [OPT-K]'s bit 16 joined the
+# dump (six more named checks) and the check's own bound became unbounded; the
+# battery's make test and san both tripped this guard while every sub-script
+# was green — the wrapper's exit is the fact, the sub-scripts' counts are not.
 # [manager review, 2026-08-28] 43 -> 53: added DIRECTION 3, the stamp-VALUE
 # half of the charter's direction (a) ("its §6.3 VALUE... every spec value
 # appears in the dump"), which the first two revisions of this check did
@@ -326,16 +330,16 @@ fi
 # src/gen/emit_dfa.c's literal #define block rather than lib/pcrec.h —
 # those nine are emitted-artifact text, not in the public header at all).
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 53 ]; then
+if [ "$axesn" -ne 59 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 53." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 59." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (53 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (59 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 53 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 59 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
