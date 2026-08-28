@@ -20,8 +20,10 @@ some size."*
    adversarial, found by fuzzing, not by any pattern anyone would write —
    and it sits roughly **3x above the worst thing the shipped corpus
    contains** (675,555 B source / 202,912 B `.o` for `((a)|ab){4000}c`,
-   the corpus's own largest artifact, against the witness's 2,004,778 B /
-   503,344 B). The corpus's outliers are already the SAME MECHANISM as the
+   the corpus's own largest artifact, against the witness's 2,015,594 B
+   source / 503,344 B `.o` — self-contained form, §6 has a note on a
+   mid-lane methodology correction to this source-byte figure). The
+   corpus's outliers are already the SAME MECHANISM as the
    witness (bounded-repeat body replication under the counter rung), just
    milder — so the witness is not a different problem, it is the far tail
    of the one this census measures throughout.
@@ -46,7 +48,7 @@ some size."*
 5. **§8's tension curves find THREE separate levers, not one, each with a
    different trade.** `--unroll=1` is free (no measured throughput cost)
    on nested-repeat patterns but nearly useless on single-level large-count
-   ones — the witness (18x smaller, 54x faster to compile, no speed loss
+   ones — the witness (17x smaller, 54x faster to compile, no speed loss
    on its own short subjects) and the corpus's own nested-repeat outliers
    (75-79% smaller, 12x faster to compile) are where it pays; `((a)|ab)
    {4000}c`-shaped patterns barely move (1-3%). `-fno-premul-table` is the
@@ -347,7 +349,7 @@ compiler computes about the pattern:
 failures across all 2,488** (`attr_sum_ok` column). This is by
 construction (every byte is claimed by exactly one bucket, never zero or
 two), so the check is a bug-catcher, not a hope: it caught two real bugs
-during this lane's own development (an off-by-one in the newline-byte
+during this lane's own development: an off-by-one in the newline-byte
 accounting, and — the more consequential one — a multi-line function-pointer
 typedef that a naive regex mismatched as a body-bearing function
 definition, which then silently folded EVERY nested comment and table
@@ -355,7 +357,7 @@ inside the enclosing "function" into the PROGRAM bucket rather than
 recursing the same comment/table dispatch into it. Both are fixed in the
 committed script (`docs/dev/artifact_size_census/census.py`); the second
 was caught only by cross-checking the witness's attribution against an
-independent measurement — see §8.
+independent measurement — see §6.
 
 ### Aggregate, across the whole corpus (2,488 artifacts, weighted by bytes)
 
@@ -403,11 +405,35 @@ The plan row's witness, the fuzz gate's seed-1 pattern (151 bytes):
 ```
 
 Compiled at this lane's branch point with `-p rx --features all` (default
-auto): **2,004,784 bytes source** (the plan row's own figure, 2,004,778, is
-the split `.h`-header-excluded `.c` file; this census's self-contained
-`-o -` form is 6 bytes larger from the header content being inlined — same
-artifact, confirmed byte-for-byte identical machine code by objdump-diffing
-the two forms' `.text`). Stamps: `RX_ENGINE "vm"`, `RX_ENGINE_WHY "capture
+auto), self-contained `-o -` form — the same form the rest of this census
+uses throughout, for the same reason: **2,015,594 bytes source.**
+
+**A methodology correction made mid-lane, recorded rather than
+smoothed over.** This report's own first pass (and the .o/gcc-time/
+attribution numbers below) initially cited **2,004,784 bytes**, obtained
+by compiling with `-o witness.c` (the SPLIT form) and reading `witness.c`
+ALONE — silently missing the ~11 KB `witness.h` sidecar that
+`#include "witness.h"` pulls in at compile time. The `.o` size (503,344 B)
+and gcc CPU/wall (55.13 s / 55.53 s) were unaffected — `gcc` compiled
+`witness.c` WITH `witness.h` present in the same directory, so the
+compiled OBJECT was always complete and correct — but the SOURCE byte
+count and the byte ATTRIBUTION (which read `witness.c` as a standalone
+text file) undercounted by exactly `witness.h`'s size. Caught by
+computing `--unroll=1`'s ratio a second way and finding it disagreed with
+the tension-curve run's own `-o -`-based default row (2,015,594, §8) by
+11,308 bytes — the ABI-header sidecar's own size, matching exactly. Fixed
+by re-deriving every witness number in this section from a fresh `-o -`
+compile of the identical pattern at the identical commit; the corrected
+attribution moved by under 0.5 percentage point in every bucket (the
+"Attribution" table below carries both the corrected and the
+mis-measured figures for the record). The
+plan row's own headline figure, **2,004,778**, is 6 bytes off this lane's
+OWN mis-measured 2,004,784 — both are "split-`.c`-alone" counts, which is
+worth flagging for whoever wrote the plan row: it is very likely the SAME
+undercount, off by roughly `witness.h`'s own size from the true
+self-contained total.
+
+Stamps: `RX_ENGINE "vm"`, `RX_ENGINE_WHY "capture
 group at pattern offset 18"`, `RX_VM_PREFILTER "none"` (the [SEL-1]
 drop — its auto-selected prefilter's DFA build overflowed `>32000 states`,
 so no hybrid prefilter is attached at all), `RX_VM_RUNGS 0x17` (all five
@@ -422,18 +448,25 @@ different moment, same order of magnitude).
 
 ### Attribution
 
-| section | bytes | share |
-|---|---|---|
-| program | 1,654,924 | **82.5%** |
-| prose | 291,709 | 14.6% |
-| scaffold | 57,227 | 2.9% |
-| tables | 924 | 0.0% |
-| main | 0 | 0.0% |
+Re-derived from the corrected self-contained source (the note above):
+
+| section | bytes | share | (mis-measured split-`.c`-alone figure, for the record) |
+|---|---|---|---|
+| program | 1,657,633 | **82.2%** | 1,654,924 / 82.5% |
+| prose | 296,245 | 14.7% | 291,709 / 14.6% |
+| scaffold | 60,792 | 3.0% | 57,227 / 2.9% |
+| tables | 924 | 0.0% | 924 / 0.0% |
+| main | 0 | 0.0% | 0 / 0.0% |
+
+The correction moves every bucket by well under half a percentage point
+— the missing `witness.h` sidecar is almost entirely `scaffold`-bucket
+ABI declarations (typedefs, `#define`s), which is exactly where its
+share moved (2.9% -> 3.0%). None of this section's other findings change.
 
 **Cross-validated against an independent measurement the manager ran
 separately** (a `gcc -fpreprocessed -dD -E -P` comment-strip pass on the
 same artifact, ~15% comment share) — this census's fixed classifier reads
-14.6%, within a percentage point. Before the classifier's typedef/nested-
+14.7%, within a percentage point. Before the classifier's typedef/nested-
 comment bug (§5) was found and fixed, this same attribution read prose at
 **0.4%** — a 36x understatement, because every one of the thousands of
 per-node `// optional copy (N remaining)` comments living inside the
@@ -459,7 +492,7 @@ each, 40.3% of program; 260,235 B / 7,467 labels = ~34.9 B each, 13.5%;
 7.2%; 113,173 B of class tests, 5.9%; the remainder slot-set/push
 bookkeeping) is consistent with this census's own coarser five-bucket
 split and is the finer-grained decomposition STEP 2's size term would
-price a lever against (§9).
+price a lever against (§7).
 
 ### Which construct's replication produces the bytes
 
@@ -486,15 +519,15 @@ self-contained `-o -` form, same commit):
 
 | variant | source bytes | `.o` bytes | gcc CPU |
 |---|---|---|---|
-| default | 2,004,784 | 503,344 | 55.13 s |
+| default | 2,015,594 | 503,344 | 55.13 s |
 | `--unroll=1` | **116,380** (5.8% of default) | **28,104** (5.6%) | **1.015 s** |
-| `-fno-counter` | 4,126,673 (2.06x default — LARGER) | — (never finished) | **150.10 s CPU, killed exactly at the budget ceiling** (`gcc: internal compiler error: CPU time limit exceeded signal terminated program cc1`) — `-fno-counter` falls back to full literal replication for a pattern already using the counter rung above its per-quantifier comfort zone, exactly `tuning.md` §2.3's own warning, and it is not a smaller fallback here — it is the ORIGINAL D45 pathology (the `bigbounded` case, D45's own founding incident) reproduced live on a fresh pattern, at 15x D45's plain CPU budget and still not done |
+| `-fno-counter` | 4,126,673 (2.05x default — LARGER) | — (never finished) | **150.10 s CPU, killed exactly at the budget ceiling** (`gcc: internal compiler error: CPU time limit exceeded signal terminated program cc1`) — `-fno-counter` falls back to full literal replication for a pattern already using the counter rung above its per-quantifier comfort zone, exactly `tuning.md` §2.3's own warning, and it is not a smaller fallback here — it is the ORIGINAL D45 pathology (the `bigbounded` case, D45's own founding incident) reproduced live on a fresh pattern, at 15x D45's plain CPU budget and still not done |
 | `-fno-splice-calls` | 2,015,597 (~identical — no subroutine calls in this pattern, axis is a no-op here as expected) | 503,344 (identical to default) | ~55 s (identical to default) |
 | `-fno-premul-table` | N/A — `RX_VM_PREFILTER "none"`, no DFA scan to deny a table form on |
 | `--engine=vm` | 2,015,594 (identical to default) | 503,344 (identical) | 53.90 s (identical) |
 
 **`--unroll=1` is the single largest size lever measured anywhere in this
-census** — a 17.8x reduction in source, 17.9x in `.o`, 54x in gcc CPU time,
+census** — a 17.3x reduction in source, 17.9x in `.o`, 54x in gcc CPU time,
 for a pattern whose default form sits at 5.5x D45's plain budget. This is
 the clean, general, already-shipped knob STEP 2's size term should reach
 for FIRST on a counter-rung-dominated artifact — no new mechanism, just a
@@ -549,13 +582,16 @@ different failure mode from "this pattern is cap-compliant by a wide
 margin and still produces an artifact 3x the size of anything in the
 corpus." STEP 2's size term is not a fix to an existing cap; it is a NEW
 one, needed precisely because 5.7% of the node-count cap already produces
-2 MB, and the corpus's own worst artifact (675,555 B source, §4) sits at
-0.5% of that same cap. A byte- or node-count threshold in the low
-thousands (not anywhere near 131,072) is what would separate the witness
-from the entire measured corpus while leaving every corpus pattern
-untouched — the concrete number is a STEP 2 design call, but the GAP
-between "where the corpus lives" and "where the existing safety caps
-sit" is now measured, not assumed.
+2 MB, and the corpus's own largest artifact by node count — `((a)|ab)
+{4000}c` (§4's own top outlier), 80 `rx_LN:` labels — sits at **0.06%**
+of that same 131,072-node cap, two full orders of magnitude below the
+witness's 5.7%. A node-count threshold in the low thousands (not
+anywhere near 131,072, but comfortably above 80) is what would separate
+the witness from the entire measured corpus while leaving every corpus
+pattern untouched — the concrete number is a STEP 2 design call, but the
+GAP between "where the corpus lives" (tens to low hundreds of nodes on
+its own worst outliers) and "where the existing safety caps sit" (tens
+of thousands) is now measured, not assumed.
 
 ## 7. What this section leaves for STEP 2
 
@@ -628,14 +664,14 @@ an unrelated bug and being restarted size-only for the remainder).
 
 | variant | source | `.o` | gcc CPU | match (PROVISIONAL) | fail (PROVISIONAL) |
 |---|---|---|---|---|---|
-| default | 2,004,784 | 503,344 | 55.13 s | 5.80 us | 6.37 us |
+| default | 2,015,594 | 503,344 | 55.13 s | 5.80 us | 6.37 us |
 | `--unroll=1` | 116,380 (5.8%) | 28,104 (5.6%) | 1.02 s | 0.13 us | 0.17 us |
 | `-fno-counter` | 4,126,673 (206%, LARGER) | — never finished | **150.10 s, CPU-budget-killed** | not run | not run |
 | `-fno-splice-calls` | 2,015,597 (100.5%) | 503,344 (100%) | 53.53 s | not run | not run |
 | `-fno-premul-table` | N/A — no DFA scan | | | | |
 | `--engine=vm` | 2,015,594 (100.5%) | 503,344 (100%) | 53.90 s | not run | not run |
 
-`--unroll=1` is the whole story for this pattern: an 18x size reduction, a
+`--unroll=1` is the whole story for this pattern: a 17x size reduction, a
 54x compile-time reduction, and — on the two short, fast-resolving
 subjects this pattern's own catastrophic-backtracking hazard allows (§1's
 subject-construction note: longer/more elaborate subjects for this pattern
@@ -757,6 +793,23 @@ cost:
   "the number a user ships." D45's sanitizer-axis budget (200s CPU) is a
   different quantity for a different population (the test suite's own
   battery) and is out of this census's scope.
+- **Quiet-box throughput for the tension curves.** §8's `match_us`/`fail_us`
+  columns are PROVISIONAL — taken at `load1` 1.6-5.0 (5 of 6 patterns) and
+  not yet run at all for 3 of the witness's own 6 variants, because a
+  union battery on the box's `main` branch held `load1` at ~13-14 for the
+  remainder of this lane's session (the manager's own call, communicated
+  live: size/`.o`/gcc-time numbers don't depend on load and were finished
+  under it; throughput numbers wait for a quiet box). The DIRECTION of
+  every large effect in §8 (`--engine=vm`'s size shrink, its fail-path
+  slowdown, `--unroll=1`'s free win on the nested-repeat family) is
+  measured at a magnitude no plausible load artifact could produce, but
+  the exact numbers are not final.
+- **The node-skeleton lever's actual predecessor-count walk** (§7 item 2):
+  this census measured the label:goto RATIO (close to 1:1 on every
+  outlier checked, §7) as a cheap proxy, not the real control-flow-graph
+  walk ("does this specific label have exactly one incoming edge") STEP 2
+  would need before committing to the fold. The ratio is suggestive, not
+  proof — stated as such in §7's own text.
 
 ## 10. Reproducing this census
 
