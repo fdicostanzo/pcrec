@@ -41,3 +41,31 @@ declined at 0.82-1.25×); what fails is the note's arithmetic hygiene.
 
 Sent to optk as change requests 2026-08-28 ~13:5x (message id 2e57c580).
 critic-sem's findings are appended below when they arrive.
+
+## critic-sem (opus; semantics + answer identity) — VERDICT: the emitter must NOT be written from the note as-is
+
+Evidence: scratchpad/critic-sem/ (t1.c/t1_optk.c, h2.c/h2_optk.c, census_all.py). The k≥1
+walk is CONFIRMED sound (attacked with unequal-width alternation, optional/{0,n}, lazy,
+nested groups, case folding, \b/^/lookaround at and before k, empty-width atoms, dotall,
+negated classes, UTF-8, backrefs, calls, atomic groups, counter replication — held every
+time; erased constructs cannot shift later offsets, closed upstream at nfa.c:816/830;
+the walk reads the same NFA the DFA is built from; `cand = hit − k*` cannot underflow so
+the plan row's "clamp" is unnecessary; overlapping candidates/resume/find-all O(n) all
+confirmed; full-alphabet k=0 unreachable; \G and (?m)^ compile "attempt", never reach the
+reseed). REFUSAL-NEEDED: none.
+
+| # | severity | finding | disposition |
+|---|---|---|---|
+| S1 | **MISCOMPILE** (demonstrated, both engines) | the offset-0 member of the k-set reuses `cand_from_escapes` (bytes that move the machine off `fs` — the SCAN role; §2.1 says "not because a match can begin there") as a VERIFY that refuses a start. On a SEEDED machine (every \b/\B pattern; 3 of the 4 §4.7 beneficiaries) the reseed lands in `s1u[word]`, where a byte that fails \b from fs STARTS a match. Witness `\b\.[0-9]{4}Z` (main c60679b: DFA, byte-class-bounded, can_begin_match = the 63 word bytes, '.' = 0); the rule selects it at 288×; §5.2's form transcribed into the artifact: "ab.1234Z" (2,8) → nomatch, "x.9999Z" (1,7) → nomatch, oracle = baseline; VM hybrid `\b\.([0-9]{4})Z` the same. §5.5 is no net: the forward pass never spawns the thread. Real shapes exposed: `\b:[0-9]{2}:[0-9]{2}`, `\b\.[0-9]{3}Z`, `\b-[0-9]{4}-`. NO EXISTING GATE SEES IT (test-axes compares two builds that agree; corpus lacks the shape). Corpus census: 30 non-\b patterns whose set misses match-start bytes are SAFE (unseeded: δ(s0,b)=s0 everywhere) | ACCEPTED, BLOCKING → optk: split offset 0 by ROLE — scan keeps `us.cand.set`, the verify uses the walk's own frontier[0] (already computed at prefix_k.c:337, overwritten at :317); restate §3.2 over the whole conjunction; §6.1 as a four-step argument naming the state each step is about; oracle-verified .rxt witnesses + a sabotage row that swaps the verify table for can_begin_match |
+| S-D1 | DESIGN | §4.7/§4.3/§4.5 all computed against the wrong offset-0 mass (807,006 ppm is the role-A quantity); uuid's/stack-frame's verify mass drops ~3× under the fix; declines UNDECIDED | ACCEPTED → re-run against the corrected mass |
+| S-D2 | DESIGN | §5.6's stated reason (EOL/END views) does not cover the \b rows — the bounded form is selected by `wctx`; what carries them is `!start_acc`'s s1u OR (emit_dfa.c:2153-2156), the one place that already reasons over every seeded start — and it is the reason that would have caught S1 | ACCEPTED → rewrite §5.6 on it |
+| S-D3 | DESIGN | "greedy is exact" unproven: verify_cost is non-monotone in p (peaks at 0.5); code is fine (decreasing gains) | ACCEPTED → claim a decreasing-gains greedy |
+| S-D4 | DESIGN | the no-`default:` NKind switch alarm is `make strict`'s only (-Werror not default); 12/12 handled today | ACCEPTED → say so or add a structural check |
+| S-D5 | DESIGN | model_cost's integer arithmetic zeroes the C_ENTER term below ~500 ppm — the model is cost-blind among the selective candidates §4.7 advertises | ACCEPTED → scale or state |
+| S-D6 | DESIGN | five stop conditions, not four: an empty S[j] means the pattern cannot match — [OPT-5]'s degenerate case, thrown away | ACCEPTED → list it; exploit or say why not |
+| S-N1..3 | NIT | negative-k scan pointer guard (§10); `ofsk_emit_verify`'s `1` fallback → assert; `_OFFSETS` sibling stamp absent at 891b672 | ACCEPTED (N3 since added; structural check must read the artifact's k-set) |
+
+Sent to optk as a BLOCKING change request (message 2026-08-28 ~14:0x). The lesson for
+learnings.md / the check-design memory: a set derived for one ROLE (skip a parked run)
+reused for another (refuse a start) — the identity gate compared two builds that shared
+the wrong set and agreed; only an ORACLE-verified witness of the exposed shape can see it.
