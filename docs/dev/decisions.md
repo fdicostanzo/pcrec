@@ -5857,3 +5857,50 @@ accessor block.
 after [OPT-3] STEP 2 merges and BEFORE [OPT-5] / STEP 3 so those land
 as accessor-block entries. [CHK-2] (the axis registry check) reads the
 candidate lists as the code-side registry.
+
+## D83 — EXEMPLAR ANALYSIS is done OUTSIDE pcrec, once per file, and delivered as a FINDINGS FILE; file-general and pattern-specific analyses are two separate things (Frank, 2026-08-28, forty-second session, ruled from the bench)
+
+**Context.** The bench's log-line sub-bench ([B11.1], 2026-08-28)
+showed before any timing that a required-byte precheck's value is a
+property of the SUBJECT BYTE DISTRIBUTION, not of the pattern: on
+realistic log text every byte PCRE2's analysis would memchr for is
+structural and present in ~100 % of chunks, so the precheck is pure
+cost there, while on the email set's synthetic subjects (1 MB of `a`,
+prose without `@`) it looked like 192×. The lever that follows is
+exemplar-informed selection ([ENG-PGO]'s hook in [OPT-A]): choose the
+RAREST candidate byte, decide whether a scan is worth emitting at all,
+pick byte-test spellings — all from the statistics of the text the
+artifact will actually run on.
+
+**Decision.** pcrec does NOT manage the examination. An OUTSIDE script
+examines an exemplar file and writes a standard FINDINGS FILE; pcrec
+ACCEPTS that file (a flag naming it) and reads facts from it. Two
+separate analyses, two separate result files, two separate builds:
+
+1. FILE-GENERAL findings — properties of the exemplar alone (byte
+   frequencies, line-length / chunk statistics, and whatever else is
+   pattern-independent). Computed ONCE PER FILE by the outside script;
+   the same exemplar file serves DIFFERENT patterns, so this file
+   must not depend on any pattern. Built first.
+2. PATTERN-SPECIFIC findings — what a particular pattern does on that
+   exemplar (which candidate bytes actually skip, tier-escalation
+   counts, state-visit statistics, the [ENG-PGO] question of whether
+   the fast tier holds the calls). Obtained by a SPECIAL COMPILATION
+   of the pattern that records statistics, run over the exemplar by
+   the outside script, producing its own result file. Built ONLY when
+   there is a specific question to answer (D77), later, if at all.
+
+**Why.** pcrec stays a compiler that consumes facts rather than an
+analysis tool that gathers them; the examination runs once per file
+instead of once per compile; the two analyses have different
+lifetimes (one exemplar, many patterns) and different costs (a
+statistics-recording build exists only on demand), so their result
+files and their builds are kept apart from the start.
+
+**Consequences.** When [ENG-PGO] / the rarest-byte scan opens: the
+findings-file FORMAT is a spec item (docs/spec/, D80) before either
+analysis is written; the outside scripts live in scripts/ (or the
+bench, which already has the exemplar corpora — to be ruled when the
+work starts); `--exemplar FILE` (or whatever the flag is named) takes
+the FINDINGS file, never the raw text. A built-in static frequency
+table is the fallback when no findings file is given.
