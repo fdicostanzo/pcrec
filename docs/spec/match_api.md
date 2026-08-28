@@ -156,9 +156,9 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `8`
-([ENG-FORM], the DFA scan's opaque state token; it read `6` when this note
-was written and `7` after [OPT-3]).
+events but never stated the general rule; `rx_info.abi` is `9`
+([OPT-K], the offset-k candidate-start skip; it read `6` when this note
+was written, `7` after [OPT-3] and `8` after [ENG-FORM]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -1381,7 +1381,7 @@ it over the whole corpus, on both engines):
 
 | artifact | `scan` | `prefilter` |
 |---|---|---|
-| DFA artifact | `"unanchored"` / `"attempt"` / `"empty"` — the value of `<PREFIX>_DFA_SCAN` | the value of `<PREFIX>_DFA_PREFILTER`: one of the five in §6.3 |
+| DFA artifact | `"unanchored"` / `"attempt"` / `"empty"` — the value of `<PREFIX>_DFA_SCAN` | the value of `<PREFIX>_DFA_PREFILTER`: one of the seven in §6.3 |
 | VM artifact, HYBRID | the same three values, describing the DFA scan the artifact INLINES | the same five values, describing that inlined scan's own filter |
 | VM artifact, non-hybrid | `NULL` — there is no DFA scan in this artifact | `"none"` — the VM's own vocabulary (`<PREFIX>_VM_PREFILTER`'s value on exactly these artifacts) |
 
@@ -1518,8 +1518,9 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `8` on every artifact today ([ENG-FORM] bumped it from
-  7, which was [OPT-3]'s pre-multiplied DFA transition table), and is not yet a
+- **`rx_info.abi` is `9` on every artifact today ([OPT-K] bumped it from
+  8, which was [ENG-FORM]'s opaque DFA state token; `7` was [OPT-3]'s
+  pre-multiplied DFA transition table), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
   what a bump means. It moved `2` → `3` at [DD-14.FB] (§10.4), which
@@ -1888,15 +1889,36 @@ wrote. `RX_DFA_PREFILTER` reads `"none"` on all of them, for the reason the
 value set below gives: there is no scan for a filter to be part of.
 
 `RX_DFA_PREFILTER` names the CANDIDATE-START mechanism the artifact
-carries, and its five values are the whole set:
+carries, and its seven values are the whole set:
 
 | value | mechanism |
 |---|---|
 | `"none"` | no candidate-start filter: the start state ACCEPTS (`start_acc` — no skip is sound; the largest cause, e.g. `a*`, `.*`, `\bx*`), every position is a candidate, or the artifact provably matches nothing |
-| `"memchr"` | ONE candidate byte value; a `memchr()` replaces the steps |
-| `"byte-class"` | several; a 256-entry `<prefix>_can_begin_match` bitmap walk |
+| `"memchr"` | ONE candidate byte value AT OFFSET 0; a `memchr()` replaces the steps |
+| `"byte-class"` | several at offset 0; a 256-entry `<prefix>_can_begin_match` bitmap walk |
 | `"memchr-bounded"` | the `memchr` form under a `$`/`\Z`/`\z` view or a word context: bounded at `n - 1` and WITHOUT the early `return 0` |
 | `"byte-class-bounded"` | the bitmap form under the same, bounded at `n - 1` |
+| `"offset-set"` | [OPT-K]: a SET of (offset, byte-set) tests, one scanned for and the rest verified on each candidate — see `RX_DFA_PREFILTER_OFFSETS` below |
+| `"offset-set-bounded"` | the offset-set form under the same view/word context, bounded at `n - 1` |
+
+**`<PREFIX>_DFA_PREFILTER_OFFSETS` ([OPT-K], `abi` 9) is on every
+artifact the four `RX_DFA_*` stamps are on**, and names WHICH offsets the
+filter tests, as a comma-separated ascending list of byte offsets from the
+candidate's own start with `*` marking the one the scan searches for:
+
+```
+#define RX_DFA_PREFILTER_OFFSETS "0,8*,13"   /* the uuid shape */
+#define RX_DFA_PREFILTER_OFFSETS "none"      /* every other value of _PREFILTER */
+```
+
+It reads `"none"` on every artifact whose `_DFA_PREFILTER` is not one of
+the two `offset-set` values, and is non-`"none"` on exactly those two —
+the same iff, stated from the other side. It is a SECOND stamp rather than
+a widening of `_DFA_PREFILTER` because that stamp's value is the emitter's
+chosen FORM (a fixed, countable set of strings) while this one is a fact
+about the individual machine; folding them would make the form's value set
+unbounded. Offset 0 is always a member: it is the test the four older
+values already make.
 
 **The two `-bounded` values are a REAL difference in what the mechanism
 buys, not a spelling.** Under a view, a skip may not pass the position
@@ -1913,7 +1935,7 @@ when the axis is decided per-quantifier and a single scalar would
 misreport a mixed pattern (`RX_VM_RUNGS`, `RX_VM_STRATS`,
 `RX_VM_PRUNES`). Of the VM block above, everything but `RX_ENGINE` is
 VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
-`RX_DFA_TABLE` are
+`RX_DFA_PREFILTER_OFFSETS`/`RX_DFA_TABLE` are
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
 since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
 artifacts AND VM hybrids, the iff stated in (a). `RX_DFA_TABLE` is

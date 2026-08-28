@@ -448,6 +448,31 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
     if (best_scan < 0) return;
     if (best * MATERIAL_NUM >= base * MATERIAL_DEN) return;   /* §4.5 */
 
+    /* THE SCAN MUST MOVE, AND THIS RULE IS MEASURED RATHER THAN MODELLED.
+     * §7.3 of the note carries the six-pattern before/after that forced it:
+     *
+     *   scan MOVED off offset 0     uuid 4.5x  iso-ts 4.8x  stack-frame 7.2x
+     *                               needleXYZW 17.1x
+     *   scan STAYED at offset 0     bignum 0.96-1.02x   [01]*1[01]{8} 0.97x
+     *
+     * The model predicted 13x for `bignum` and the box measured a wash, three
+     * times, inside a +-14% spread. The reason is structural and the model
+     * cannot see it: a VERIFY removes loop ENTRIES, while the SCAN removes
+     * BYTES. With the scan still at offset 0 the artifact walks every byte in
+     * the same loop it already had, and the entries a verify saves are entries
+     * that die in one or two steps on real text — a saving `C_ENTER` prices at
+     * 20 cycles and the box cannot resolve. Move the scan to a rare byte and
+     * the whole subject is crossed at memchr speed instead, which is where
+     * every order of magnitude in the table above lives.
+     *
+     * IT IS ALSO WHAT KEEPS TWO MEASURED TUNING PINS FROM MOVING:
+     * `tests/codegen/run_codegen_tests.sh`'s M2.12 ordering check and its
+     * `needleXYZW` prefilter check both fired on the version without this
+     * rule, and M2.12's own text says the pin exists so the change cannot be
+     * re-landed on plausibility alone. `[01]*1[01]{8}` keeps its `memchr`,
+     * measured. */
+    if (o->k[best_scan].k == 0) return;
+
     /* Publish, offsets ASCENDING — the emitted verify chain reads left to
      * right and a reader of the artifact should see the pattern's own order. */
     int all[PCREC_OFSK_MAX_SET], n = 0;

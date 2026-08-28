@@ -204,7 +204,8 @@ than trusting a table that can go stale.
 A dozen-odd flags (`-fno-possessify`, `-fno-revdet`, `-fno-counter`,
 `--unroll=K`, `-fno-length-prune`, `-fno-prefilter`/`-fprefilter`,
 `-fno-altcls-merge`/`-fno-altcls-factor`, `-fno-atomic-discharge`,
-`-fno-splice-calls`, `-fno-tiered-entry`, `-fno-premul-table`)
+`-fno-splice-calls`, `-fno-tiered-entry`, `-fno-premul-table`,
+`-fno-offset-skip`)
 deliberately do **not** appear in `--help` (D47.3:
 these are testing and tuning axes, not user features — `cli/CLAUDE.md`
 states the reasoning per flag). Each denies one optimization strategy

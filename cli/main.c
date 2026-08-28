@@ -224,6 +224,8 @@ int main(int argc, char **argv)
          * identity comparison uses as its control. See lib/pcrec.h. */
         else if (!no_more_opts && !strcmp(a, "-fno-premul-table"))
             opt.flags |= PCREC_NO_PREMUL_TABLE;
+        else if (!no_more_opts && !strcmp(a, "-fno-offset-skip"))
+            opt.flags |= PCREC_NO_OFFSET_SKIP;
         /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
          * (D51 ruling 1), D46's controllability half for it. Denying it is
          * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever

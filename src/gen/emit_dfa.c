@@ -1156,6 +1156,14 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * about the emitted scaffolding and not about behaviour: any change to it
      * is an `abi` bump AND a re-pin of that gate's comparison (B) to this
      * change's last src-touching commit, in the same change. */
+    /* [OPT-K] abi 8 -> 9 (D76): the OFFSET-k CANDIDATE-START SKIP
+     * (docs/design/offset_k_skip.md). Every DFA artifact gains a
+     * `<PREFIX>_DFA_PREFILTER_OFFSETS` stamp line (`"none"` on most of them),
+     * and an artifact whose forward scan SELECTS the form additionally gains a
+     * file-scope `<prefix>_ofsskip` block, up to three candidate tables and a
+     * changed prefilter body inside the scan. Like [OPT-3] and [ENG-FORM] this
+     * moves emitted PROGRAM bytes and not scaffolding only, and like both it
+     * moves no struct offset. The four sites are the note's §9. */
     /* [OPT-1] abi 4 -> 5 (D76/[TT-11]): the TWO-TIER DEFAULT ENTRY
      * (docs/design/two_tier_entry.md). Every VM artifact gains two
      * `<PREFIX>_FAST_*` capacity stamps, and a TIERED one additionally gains a
@@ -1236,7 +1244,7 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * program, and a hybrid's inlined `static <prefix>_prefilter` is emitted
      * ABOVE that `goto`. So (A) sees no DFA scan byte at all. Comparison (B)
      * compares WHOLE FILES and is re-pinned, in this same change, per D76. */
-    sb_puts(c,   "    .abi = 8,\n");
+    sb_puts(c,   "    .abi = 9,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1305,7 +1313,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * reason; `<PREFIX>_DFA_TABLE` is
                                            * where what the emitter DID is
                                            * recorded. */
-                                          PCREC_NO_PREMUL_TABLE;
+                                          PCREC_NO_PREMUL_TABLE |
+                                          /* [OPT-K] the offset-k skip axis. It
+                                           * refuses only starts the stepped
+                                           * scan would refuse, so it changes
+                                           * no answer and belongs to the mask
+                                           * for the mask's own reason;
+                                           * `<PREFIX>_DFA_PREFILTER` and its
+                                           * `_OFFSETS` sibling are where what
+                                           * the emitter DID is recorded. */
+                                          PCREC_NO_OFFSET_SKIP;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -2557,7 +2574,21 @@ typedef struct DfaDir DfaDir;
  * different form, and making it one is what turns the stamp into `c.name`. */
 typedef struct DfaPf {
     DfaCand c;
-    bool    table;                              /* the can_begin_match bitmap */
+    /* [OPT-K] `bool table` became a METHOD when the offset-k forms landed, and
+     * that is the object owning what it emits rather than the assembly asking
+     * a boolean. The byte-class forms emit `can_begin_match` and nothing else,
+     * exactly as before; the offset-set forms emit that table only when offset
+     * 0's set is genuinely a bitmap, plus one table per multi-byte VERIFY
+     * offset. A boolean cannot express "which of my offsets need a table",
+     * and a second boolean beside it would be the parallel mechanism the
+     * house rule forbids. NULL == this form emits no table. */
+    void  (*emit_tables)(StrBuf *c, const DfaForm *f);
+    /* [OPT-K] LAYER 2, the accessor block, at FILE SCOPE beside the state
+     * token's — the offset-k skip is a loop over the subject and belongs in a
+     * function, not inlined three levels deep in the scan. NULL == no block.
+     * It is emitted from the same place `repr->emit_token` is, so the VM
+     * hybrid's inlined prefilter gets it by construction. */
+    void  (*emit_block)(StrBuf *c, const DfaForm *f);
     void  (*emit)(StrBuf *c, const DfaForm *f); /* NULL == emits nothing */
 } DfaPf;
 
@@ -2640,6 +2671,11 @@ struct DfaForm {
                                     * `statev`, or `viewv` under `viewsel` */
     int            nskip, skip[4];
     CandSet        cand;
+    /* [OPT-K] BY POINTER into the caller's `UnanchStart`, which outlives every
+     * use: the selection carries 24 byte-sets and copying it into a stack
+     * struct twice per artifact would put 13 KB on the emitter's frame for a
+     * value nothing mutates. */
+    const PrefixKSets *ofsk;
 };
 
 /* THE SELECTION WALK, written ONCE for all six axes. Every object struct
@@ -3145,12 +3181,289 @@ static void pf_emit_bcls_bounded(StrBuf *c, const DfaForm *f)
     sb_printf(c, "%s}\n", ind);
 }
 
+/* ---- [OPT-K] THE OFFSET-k FORMS ----------------------------------------
+ *
+ * docs/design/offset_k_skip.md is the note. In one paragraph: the four forms
+ * above filter a candidate start on the byte AT it; these two filter it on a
+ * SET of (offset, byte-set) tests that every match must satisfy, of which the
+ * offset-0 test is one member. The selection lives in src/opt/prefix_k.c and
+ * is carried in `UnanchStart.ofsk`; `nsel == 0` — the answer for every pattern
+ * before [OPT-K] and for most patterns after it — is what makes the four forms
+ * above still the ones selected, byte for byte.
+ *
+ * THESE TWO SIT AT THE HEAD OF THE LIST, so a pattern with a k-set takes them
+ * and one without falls through to exactly what it had. `-fno-offset-skip`
+ * REMOVES them (the `deny` field), which is why the denied build is
+ * byte-identical to the pre-row compiler's output and is therefore a valid
+ * control rather than a fourth variant (D82). */
+
+/* Which member of the selected set the SCAN uses, and which are verifies. */
+static const PrefixK *ofsk_at(const DfaForm *f, int i)
+{
+    return &f->ofsk->k[f->ofsk->sel[i]];
+}
+static const PrefixK *ofsk_scan(const DfaForm *f)
+{
+    return ofsk_at(f, f->ofsk->scan);
+}
+
+static bool pf_ofs_applies_common(const DfaSel *s)
+{
+    const UnanchStart *u = s->us;
+    return s->forward && u->kind != DFA_PF_NONE && u->ofsk.nsel > 0;
+}
+static bool pf_ofs_bounded_applies(const DfaSel *s)
+{ const UnanchStart *u = s->us; return pf_ofs_applies_common(s) && u->views; }
+static bool pf_ofs_applies(const DfaSel *s)
+{ return pf_ofs_applies_common(s); }
+
+/* The emitted name of the table a multi-byte offset probes. Offset 0 reuses
+ * `can_begin_match`, which the artifact may already carry and which is the
+ * SAME derivation (`us.cand`) the byte-class forms walk — one fact, one
+ * table, never a second copy under a new name. */
+static void ofsk_tbl_name(char *buf, size_t n, const DfaForm *f, const PrefixK *k)
+{
+    if (k->k == 0) snprintf(buf, n, "%s_can_begin_match", f->p);
+    else           snprintf(buf, n, "%s_ofs_k%d", f->p, k->k);
+}
+
+/* Does this form's emitted block take `<p>_can_begin_match` as a parameter? */
+static bool ofsk_uses_cbm(const DfaForm *f)
+{
+    for (int i = 0; i < f->ofsk->nsel; i++)
+        if (ofsk_at(f, i)->k == 0 && ofsk_at(f, i)->count > 1) return true;
+    return false;
+}
+
+static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
+{
+    sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
+               "     * forward loop uses this to skip over bytes that cannot begin\n"
+               "     * one instead of stepping through them; speed only, it never\n"
+               "     * changes the answer. */\n");
+    cand_emit_table(c, f->p, "can_begin_match", &f->cand);
+}
+
+static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
+{
+    if (ofsk_uses_cbm(f)) pf_tables_bcls(c, f);
+    for (int i = 0; i < f->ofsk->nsel; i++) {
+        const PrefixK *k = ofsk_at(f, i);
+        char tag[PCREC_MAX_EMIT_NAME_LEN];
+        if (k->k == 0 || k->count <= 1) continue;
+        sb_printf(c, "    /* 1 for each byte a match may carry %d byte%s past its own\n"
+                     "     * start. The candidate filter probes this before entering the\n"
+                     "     * transition loop; speed only, it never changes the answer. */\n",
+                  k->k, k->k == 1 ? "" : "s");
+        snprintf(tag, sizeof tag, "ofs_k%d", k->k);
+        emit_u8_table(c, f->p, tag, k->set, 256);
+    }
+}
+
+/* The `if (...)` a candidate must pass: every SELECTED offset except the one
+ * the scan already proved, in ASCENDING OFFSET order so a reader of the
+ * artifact sees the pattern's own order. A singleton set is a byte compare
+ * rather than a table probe — cheaper, and it puts the byte in the artifact
+ * where a reader can see it. */
+static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
+{
+    bool first = true;
+    for (int i = 0; i < f->ofsk->nsel; i++) {
+        const PrefixK *k = ofsk_at(f, i);
+        if (i == f->ofsk->scan) continue;
+        sb_puts(c, first ? "" : " &&\n            ");
+        first = false;
+        if (k->count == 1) {
+            if (k->k == 0) sb_printf(c, "subject[cand] == %d", k->byte);
+            else           sb_printf(c, "subject[cand + %d] == %d", k->k, k->byte);
+        } else {
+            char tbl[PCREC_MAX_EMIT_NAME_LEN];
+            ofsk_tbl_name(tbl, sizeof tbl, f, k);
+            if (k->k == 0) sb_printf(c, "%s[subject[cand]]", tbl);
+            else           sb_printf(c, "%s[subject[cand + %d]]", tbl, k->k);
+        }
+    }
+    if (first) sb_puts(c, "1");   /* unreachable: offset 0 is always a member
+                                   * and is the scan only in the bitmap form,
+                                   * which still has at least one verify */
+}
+
+/* Names the block's parameters, in the order `ofsk_emit_params` writes them. */
+static void ofsk_emit_params(StrBuf *c, const DfaForm *f, bool decl)
+{
+    if (ofsk_uses_cbm(f) || (ofsk_scan(f)->count > 1))
+        sb_printf(c, ", %s%s_can_begin_match", decl ? "const unsigned char *" : "", f->p);
+    for (int i = 0; i < f->ofsk->nsel; i++) {
+        const PrefixK *k = ofsk_at(f, i);
+        char tbl[PCREC_MAX_EMIT_NAME_LEN];
+        if (k->k == 0 || k->count <= 1) continue;
+        ofsk_tbl_name(tbl, sizeof tbl, f, k);
+        sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "", tbl);
+    }
+}
+
+/* LAYER 2 — the block. One function per artifact, at file scope. */
+static void pf_block_ofs(StrBuf *c, const DfaForm *f)
+{
+    const char *p = f->p;
+    const PrefixK *sc = ofsk_scan(f);
+    int maxk = f->ofsk->maxk;
+
+    sb_printf(c,
+        "/* ---- THE OFFSET-k CANDIDATE-START SKIP ---------------------------\n"
+        " * Every match of this pattern carries a byte from a known set at each\n"
+        " * of these offsets FROM ITS OWN START, so a position that fails any\n"
+        " * one of them cannot begin a match and the transition loop need not\n"
+        " * be entered there (docs/design/offset_k_skip.md):\n"
+        " *\n");
+    for (int i = 0; i < f->ofsk->nsel; i++) {
+        const PrefixK *k = ofsk_at(f, i);
+        sb_printf(c, " *   offset %-2d  ", k->k);
+        if (k->count == 1) { sb_puts(c, "exactly "); legend_byte(c, k->byte);
+                             sb_printf(c, " (%d)", k->byte); }
+        else               sb_printf(c, "one of %d bytes", k->count);
+        if (i == f->ofsk->scan) sb_puts(c, "   <- SCANNED FOR");
+        sb_puts(c, "\n");
+    }
+    sb_printf(c,
+        " *\n"
+        " * The scan is one pass for the offset marked above; the others are\n"
+        " * checked on each candidate before the loop is entered, and a failed\n"
+        " * candidate resumes the scan one position later, so no position is\n"
+        " * examined twice and none is skipped. Returns the first position >=\n"
+        " * `pos` that satisfies every test, or `n` when there is none.\n"
+        " *\n"
+        " * SPEED ONLY: it refuses exactly the starts the stepped scan would\n"
+        " * refuse, so no answer depends on it. Compile with -fno-offset-skip\n"
+        " * to emit the same matcher without it.\n"
+        " */\n");
+
+    sb_printf(c, "static inline size_t %s_ofsskip(const unsigned char *subject, size_t n, size_t pos", p);
+    ofsk_emit_params(c, f, true);
+    sb_puts(c, ")\n{\n");
+    sb_printf(c, "    while (pos + %d < n) {\n", maxk);
+    sb_puts(c,   "        size_t cand;\n");
+    if (sc->count == 1) {
+        /* THE memchr FORM. `pos + maxk < n` above implies `pos + k* < n`, so
+         * the pointer is inside the subject and the length is non-zero --
+         * [K27]'s memchr(NULL, c, 0) hazard closed by the loop guard rather
+         * than by a second test. */
+        if (sc->k == 0)
+            sb_printf(c, "        const void *q = memchr(subject + pos, %d, n - pos);\n", sc->byte);
+        else
+            sb_printf(c, "        const void *q = memchr(subject + pos + %d, %d, n - pos - %d);\n",
+                      sc->k, sc->byte, sc->k);
+        sb_puts(c,   "        if (!q) return n;\n");
+        if (sc->k == 0)
+            sb_puts(c, "        cand = (size_t)((const unsigned char *)q - subject);\n");
+        else
+            sb_printf(c, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", sc->k);
+        sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
+    } else {
+        /* THE BITMAP FORM, and it is only ever reached at offset 0 (a scan
+         * offset past 0 must be a singleton -- the note's S4.4), which is why
+         * `cand` is `pos` and no back-mapping is needed. */
+        sb_printf(c, "        while (pos + %d < n && !%s_can_begin_match[subject[pos]]) pos++;\n",
+                  maxk, p);
+        sb_printf(c, "        if (pos + %d >= n) return n;\n", maxk);
+        sb_puts(c,   "        cand = pos;\n");
+    }
+    sb_puts(c,   "        if (");
+    ofsk_emit_verify(c, f);
+    sb_puts(c,   ") return cand;\n");
+    sb_puts(c,   "        pos = cand + 1;\n"
+                 "    }\n"
+                 "    return n;\n}\n\n");
+}
+
+/* The RESEED, and it is not optional on a machine that has one.
+ *
+ * Today's skip jumps over bytes that leave the machine PARKED in the start
+ * state, so the state after the jump is trivially still that state. This one
+ * jumps over bytes that LEAVE it -- and on a `\b`-bearing machine those bytes
+ * are how the class of the byte to the left is carried (the start state
+ * escapes on every word character for that reason alone; the note's S2.1). So
+ * the landing state is `s1u[upc(s[cand-1])]`, which is exactly what the
+ * search's own initializer computes at `search_from`, through the same table.
+ *
+ * On a machine with no seed there is one start state and no context to carry,
+ * and this emits nothing. */
+static void pf_emit_ofs_reseed(StrBuf *c, const DfaForm *f, const char *ind)
+{
+    if (!dfa_needs_seed(f->d)) return;
+    sb_printf(c, "%s%s = %s ? %s_%s_seed_state[%s_%s_byte_class[subject[%s - 1]]] : %d;\n",
+              ind, f->dir->statev, f->dir->posv,
+              f->p, f->dir->c.name, f->p, f->dir->c.name, f->dir->posv,
+              f->repr->cell_of(f->d->s0, f->d));
+}
+
+static void pf_comment_ofs(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    sb_printf(c, "%s// Prefilter: nothing found yet and still at the start, so\n"
+                 "%s// skip straight to the next position that could begin a\n"
+                 "%s// match. %s_ofsskip tests %d offsets, not just this one.\n",
+              ind, ind, ind, f->p, f->ofsk->nsel);
+}
+
+static void pf_emit_ofs(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pf_comment_ofs(c, f);
+    pf_open(c, f);
+    sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
+              ind, f->p);
+    ofsk_emit_params(c, f, false);
+    sb_puts(c, ");\n");
+    sb_printf(c, "%s    if (cand >= subject_length) return 0;\n", ind);
+    sb_printf(c, "%s    scan_position = cand;\n", ind);
+    {
+        char sub[64];
+        snprintf(sub, sizeof sub, "%s    ", ind);
+        pf_emit_ofs_reseed(c, f, sub);
+    }
+    sb_printf(c, "%s}\n", ind);
+}
+
+static void pf_emit_ofs_bounded(StrBuf *c, const DfaForm *f)
+{
+    const char *ind = f->dir->bind;
+    pf_comment_ofs(c, f);
+    pf_open(c, f);
+    /* No early `return 0`, and the fall-back clamp is the other bounded
+     * forms': under a view the machine may still accept at n-1 or n, so a
+     * failed scan lands at n-1 and the stepped loop takes it from there. */
+    sb_printf(c, "%s    size_t cand = %s_ofsskip(subject, subject_length, scan_position",
+              ind, f->p);
+    ofsk_emit_params(c, f, false);
+    sb_puts(c, ");\n");
+    sb_printf(c, "%s    if (cand < subject_length) {\n", ind);
+    sb_printf(c, "%s        scan_position = cand;\n", ind);
+    {
+        char sub[64];
+        snprintf(sub, sizeof sub, "%s        ", ind);
+        pf_emit_ofs_reseed(c, f, sub);
+    }
+    sb_printf(c, "%s    } else if (scan_position + 1 < subject_length) {\n", ind);
+    sb_printf(c, "%s        scan_position = subject_length - 1;\n", ind);
+    {
+        char sub[64];
+        snprintf(sub, sizeof sub, "%s        ", ind);
+        pf_emit_ofs_reseed(c, f, sub);
+    }
+    sb_printf(c, "%s    }\n%s}\n", ind, ind);
+}
+
 static const DfaPf dfa_pfs[] = {
-    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, false, pf_emit_memchr_bounded },
-    { { "memchr",             0, pf_memchr_applies         }, false, pf_emit_memchr         },
-    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, true,  pf_emit_bcls_bounded   },
-    { { "byte-class",         0, pf_bcls_applies           }, true,  pf_emit_bcls           },
-    { { "none",               0, cand_always               }, false, NULL                   },
+    { { "offset-set-bounded",  PCREC_NO_OFFSET_SKIP, pf_ofs_bounded_applies },
+      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs_bounded    },
+    { { "offset-set",          PCREC_NO_OFFSET_SKIP, pf_ofs_applies         },
+      pf_tables_ofs,  pf_block_ofs, pf_emit_ofs            },
+    { { "memchr-bounded",     0, pf_memchr_bounded_applies }, NULL, NULL, pf_emit_memchr_bounded },
+    { { "memchr",             0, pf_memchr_applies         }, NULL, NULL, pf_emit_memchr         },
+    { { "byte-class-bounded", 0, pf_bcls_bounded_applies   }, pf_tables_bcls, NULL, pf_emit_bcls_bounded   },
+    { { "byte-class",         0, pf_bcls_applies           }, pf_tables_bcls, NULL, pf_emit_bcls           },
+    { { "none",               0, cand_always               }, NULL, NULL, NULL                   },
 };
 
 static const DfaPf *dfa_pf_of(Ctx *cx, const UnanchStart *us)
@@ -3290,6 +3603,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     f->viewsel = us->viewsel;
     f->src     = us->viewsel ? dir->viewv : dir->statev;
     f->cand    = us->cand;
+    f->ofsk    = &us->ofsk;
     /* The forward machine never skips out of its own start state — the
      * prefilter owns that position. */
     f->nskip   = pick_skip_states(d, dir->reverse ? -1 : d->s0, f->skip);
@@ -3342,13 +3656,7 @@ static void emit_machine_tables(StrBuf *c, const DfaForm *f)
             emit_end_table(c, p, tag, f->d, f->repr);
         }
     }
-    if (f->pf->table) {
-        sb_puts(c, "    /* 1 for each byte that could be the FIRST byte of a match. The\n"
-                   "     * forward loop uses this to skip over bytes that cannot begin\n"
-                   "     * one instead of stepping through them; speed only, it never\n"
-                   "     * changes the answer. */\n");
-        cand_emit_table(c, p, "can_begin_match", &f->cand);
-    }
+    if (f->pf->emit_tables) f->pf->emit_tables(c, f);
     snprintf(tag, sizeof tag, "%s_stay", m);
     for (int k = 0; k < f->nskip; k++)
         emit_stay_table(c, p, tag, f->skip[k], f->d);
@@ -3419,9 +3727,13 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
     dfa_form_derive(cx, &job->dfa,  &us, &dfa_dir_forward, &fwd);
     dfa_form_derive(cx, &job->rdfa, &us, &dfa_dir_reverse, &rev);
 
-    /* LAYER 2, at file scope and above the body: the two accessor blocks. */
+    /* LAYER 2, at file scope and above the body: the two accessor blocks,
+     * and — [OPT-K] — the forward prefilter's own block where its form has
+     * one. Same place, same reason: the VM hybrid inlines this emitter's
+     * output, so a block emitted here is a block the hybrid gets. */
     fwd.repr->emit_token(c, &fwd);
     rev.repr->emit_token(c, &rev);
+    if (fwd.pf->emit_block) fwd.pf->emit_block(c, &fwd);
 
     emit_search_head(cx, c, fn, storage);
     emit_machine_tables(c, &fwd);
@@ -4311,11 +4623,42 @@ static const char *dfa_prefilter_name(Ctx *cx)
  * `upper` IS A PARAMETER rather than re-derived here because the two callers
  * already hold it (`GenNames.upper` on the DFA side, `v.up` on the VM side)
  * and they are the same string — the artifact's prefix, upper-cased, once. */
+/* [OPT-K] THE OFFSET-k SET, AS A STAMP — and it is a SECOND stamp rather than
+ * a widening of `<PREFIX>_DFA_PREFILTER` for one reason. [ENG-FORM]'s rule is
+ * that `DFA_PREFILTER`'s value IS the chosen object's `name`, a static string
+ * that cannot disagree with the loop because it is the loop's own selection;
+ * a value computed from THIS MACHINE's k-set is a different kind of fact and
+ * folding it in would put a `stamp()` method back on axis B, which
+ * `emitter_form.md` §3's revision deliberately removed.
+ *
+ * `"none"` on every artifact whose forward scan carries no offset-k skip,
+ * which is every DFA artifact before this row and most after it, so the value
+ * set is countable by the form census. The scan offset is marked `*`. */
+static void dfa_prefilter_offsets(Ctx *cx, StrBuf *out)
+{
+    /* NO EMPTY-ENGINE CLAUSE, for `dfa_prefilter_name`'s reason one function
+     * up: `unanch_start` returns `kind == DFA_PF_NONE` on an empty engine, the
+     * selection is then never asked, and `nsel` is zero — so the arm below
+     * already answers "none" for exactly those artifacts. A clause here would
+     * be a fourth statement of that fact. ENG_ATTEMPT needs its own arm
+     * because `unanch_start` is not the derivation it uses. */
+    if (cx->job->engine == PCREC_ENG_ATTEMPT) { sb_puts(out, "none"); return; }
+    UnanchStart us;
+    unanch_start(cx, &us);
+    if (dfa_pf_of(cx, &us)->emit_block == NULL) { sb_puts(out, "none"); return; }
+    for (int i = 0; i < us.ofsk.nsel; i++)
+        sb_printf(out, "%s%d%s", i ? "," : "", us.ofsk.k[us.ofsk.sel[i]].k,
+                  i == us.ofsk.scan ? "*" : "");
+}
+
 void pcrec_emit_dfa_scan_stamps(Ctx *cx, StrBuf *c, const char *upper)
 {
     sb_printf(c, "#define %s_DFA_SCAN \"%s\"\n", upper, dfa_scan_name(cx));
     sb_printf(c, "#define %s_DFA_PREFILTER \"%s\"\n", upper,
               dfa_prefilter_name(cx));
+    sb_printf(c, "#define %s_DFA_PREFILTER_OFFSETS \"", upper);
+    dfa_prefilter_offsets(cx, c);
+    sb_puts(c, "\"\n");
     sb_printf(c, "#define %s_DFA_TABLE \"%s\"\n", upper, dfa_table_name(cx));
 }
 

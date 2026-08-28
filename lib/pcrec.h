@@ -311,7 +311,41 @@ enum {
      * `<PREFIX>_DFA_TABLE`, which reads `"indexed"` under this flag and
      * `"premultiplied"`, `"mixed"` or `"none"` otherwise. That is the D46 half
      * a denied request is checked against. */
-    PCREC_NO_PREMUL_TABLE = 1u << 15
+    PCREC_NO_PREMUL_TABLE = 1u << 15,
+
+    /* [OPT-K] `-fno-offset-skip` — deny the OFFSET-k candidate-start skip.
+     *
+     * WHAT IT DENIES. A DFA artifact's forward scan filters candidate match
+     * starts on the byte AT the candidate. This axis lets it filter on a SET
+     * of (offset, byte-set) tests every match must satisfy — for
+     * `\d{4}-\d{2}-…` a digit at offset 0 AND a `-` at offset 4 — derived
+     * from the pattern's own prefix and chosen by a cost model over a byte
+     * frequency prior (docs/design/offset_k_skip.md). The selectivity is the
+     * CONJUNCTION: on log text `-` at offset 4 is structural and a digit at
+     * offset 0 is in every line, and neither alone filters anything.
+     *
+     * ANSWER-IDENTITY-preserving, and the argument is one line: the skip
+     * refuses only starts the stepped scan would refuse, because each test is
+     * a NECESSARY condition of a match beginning there. So the denied build is
+     * a valid ground truth, and it is more than that — it emits what the
+     * compiler emitted before this axis existed, to the line, apart from the
+     * one `<PREFIX>_DFA_PREFILTER_OFFSETS` stamp every `abi` 9 artifact
+     * carries. That is what makes it the control the identity gate compares
+     * against rather than a fourth variant.
+     *
+     * DENY-ONLY, `-fno-premul-table`'s shape and not `-fno-prefilter`'s force
+     * pair: the compiler picks one k-set per artifact from its own cost model,
+     * so there is nothing for a caller to ADDRESS and nothing to force. A
+     * caller who wants a different k-set wants a different cost model, which
+     * is D83's findings-file hook and not a flag.
+     *
+     * IT JOINS `emit_info_def`'s `strategy_denials` MASK (src/gen/emit_dfa.c)
+     * for that mask's own reason: it changes no answer, so two artifacts that
+     * behave identically must not differ in their reflection surface over it.
+     * What the emitter DID is reported by `<PREFIX>_DFA_PREFILTER`
+     * (`"offset-set"` / `"offset-set-bounded"`) and by
+     * `<PREFIX>_DFA_PREFILTER_OFFSETS`, which names the chosen offsets. */
+    PCREC_NO_OFFSET_SKIP = 1u << 16
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

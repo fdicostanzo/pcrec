@@ -11,6 +11,7 @@
 #     #define RX_DFA_SCAN      "unanchored" | "attempt" | "empty"
 #     #define RX_DFA_PREFILTER "none" | "memchr" | "memchr-bounded"
 #                            | "byte-class" | "byte-class-bounded"
+#                            | "offset-set" | "offset-set-bounded"   [OPT-K]
 #
 # ...and, since [DD-13c], the RUNTIME MIRRORS of the last two in the emitted
 # `struct rx_info` (`.scan`, `.prefilter`; docs/spec/match_api.md §6), which
@@ -202,7 +203,7 @@ bad() { echo "FAIL: $1" >&2; fail=$((fail + 1)); }
 # these is a failure even if it agrees with the loop: a new mechanism needs a
 # spec hunk (docs/spec/match_api.md §6.3) and a line here, in the same change.
 SCAN_VALUES="unanchored attempt empty"
-PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded"
+PF_VALUES="none memchr memchr-bounded byte-class byte-class-bounded offset-set offset-set-bounded"
 
 # ---------------------------------------------------------------------------
 # The per-artifact derivation: read an artifact on stdin, print
@@ -237,6 +238,17 @@ read_artifact() {
         /!rx_can_begin_match\[subject\[scan_position\]\]/ {                     # emit_unanchored: the bitmap arm
                                                  pf_bc = 1
                                                  if ($0 ~ /while \(scan_position \+ 1 < subject_length &&/) bnd = 1 }
+        # [OPT-K] the offset-k arm. The CALL is the marker, not the body of
+        # the helper: that body is emitted at file scope and its `memchr` and
+        # bitmap lines read `pos` where the four older arms above read
+        # `scan_position`, so no pattern of theirs can fire on it and the two
+        # derivations stay independent by spelling rather than by order.
+        # (NO APOSTROPHES IN THIS BLOCK: it is inside a single-quoted awk
+        # program, and one closes it -- which is how this comment was written
+        # the first time, and bash reported the syntax error 14 lines below.)
+        /size_t cand = rx_ofsskip\(subject, subject_length, scan_position/ {
+                                                 pf_ofs = 1 }
+        /^            if \(cand < subject_length\) \{$/ { ofs_bnd = 1 }         # emit_unanchored: the D11 clamp arm
         # ---- (ii) STAMPED: the `#define` lines, and nothing else -----------
         /^#define RX_ENGINE "/        { ne++; s_eng  = substr($3, 2, length($3) - 2) }
         /^#define RX_DFA_SCAN "/      { ns++; s_scan = substr($3, 2, length($3) - 2) }
@@ -256,7 +268,8 @@ read_artifact() {
         END {
             eng = vm ? "vm" : "dfa"
             scan = attempt ? "attempt" : (unanch ? "unanchored" : (mtnothing ? "empty" : "-"))
-            if (pf_bc)      pf = bnd ? "byte-class-bounded" : "byte-class"
+            if (pf_ofs)     pf = ofs_bnd ? "offset-set-bounded" : "offset-set"
+            else if (pf_bc) pf = bnd ? "byte-class-bounded" : "byte-class"
             else if (pf_mc) pf = bnd ? "memchr-bounded"     : "memchr"
             else if (pf_at) pf = "memchr"
             else            pf = "none"
@@ -356,10 +369,19 @@ witness() {
         bad "[witness] '$wpat' stamps engine '$gs' scan '$ss' prefilter '$ps', expected 'dfa'/'$exp_scan'/'$exp_pf'"
     fi
 }
-witness unanchored memchr             'abc'
-witness unanchored byte-class         '[af]bc|[gz]bc'
-witness unanchored memchr-bounded     'abc$'
-witness unanchored byte-class-bounded '(?:[af]bc|[gz]bc)\z'
+# [OPT-K] RE-ANCHORED, and the reason is the finding rather than a rename: the
+# four patterns these rows used to name (`abc`, `[af]bc|[gz]bc`, `abc$`,
+# `(?:[af]bc|[gz]bc)\z`) all have a SECOND selective offset and now take the
+# offset-set form, measured 1.7x-3.5x faster for it. A witness for the
+# offset-0 forms must therefore be a pattern with NO second offset at all --
+# one byte long -- which is what these four are. They are strictly better
+# witnesses than the old ones: each names its value for a structural reason
+# (a one-byte pattern cannot have an offset 1) instead of by happening to
+# fall on the near side of a cost model.
+witness unanchored memchr             'a'
+witness unanchored byte-class         '[af]'
+witness unanchored memchr-bounded     'a$'
+witness unanchored byte-class-bounded '[af]$'
 witness unanchored none               '.*'
 witness attempt    memchr             '(?m)^ERROR'
 witness attempt    none               '^abc'
@@ -373,6 +395,15 @@ witness attempt    none               '^abc'
 # so nothing but this row tests it.
 witness empty      none               '\B\b'
 witness empty      none               '^\B\b'
+# [OPT-K] THE TWO OFFSET-SET FORMS, and a REQUIRED synthetic witness each: the
+# corpus's own patterns are short and mostly reach the form through `\b`, so
+# the unbounded arm has no natural population at all ([CHK-2] piece 3's rule —
+# a value with zero corpus witnesses gets a synthetic one or it is untested).
+# `\d{4}-\d{2}-\d{2}` is `iso-ts`'s prefix: no view, no word context, so the
+# skip keeps its early-out. `\b[0-9a-f]{8}-[0-9a-f]{4}` is `uuid`'s: the `\b`
+# puts a word context on the machine, so it takes the D11 clamp.
+witness unanchored offset-set         '\d{4}-\d{2}-\d{2}'
+witness unanchored offset-set-bounded '\b[0-9a-f]{8}-[0-9a-f]{4}'
 
 # ---------------------------------------------------------------------------
 # THE VM SIDE, AS AN IFF — [DD-13c], r37 finding #6.

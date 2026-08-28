@@ -28,13 +28,13 @@ This is D46's "every strategy-selection point is observable and
 forceable" principle (`docs/dev/decisions.md` D46), applied at the tuning
 layer: a compiler optimization that cannot be turned off cannot be
 differentially tested (D47.3, `docs/dev/decisions.md`, ruling 3 — "a
-strategy that cannot be denied cannot be differentially tested"). Nine of
-the twelve axes in §2 are D47.3's family — the deny-only seven, the force
-pair (§2.5), and the two engine-selecting denials — and eight of those
-nine exist **because** they have a differential that checks this exact
+strategy that cannot be denied cannot be differentially tested"). Ten of
+the thirteen bit-flag axes in §2 are D47.3's family — the deny-only eight,
+the force pair (§2.5), and the two engine-selecting denials — and nine of
+those ten exist **because** they have a differential that checks this exact
 claim directly: compile the same pattern twice, once with the strategy and
 once without, link both into one driver, and sweep subjects comparing
-span, every capture slot, and the failure surface. The ninth, §2.5's force
+span, every capture slot, and the failure surface. The tenth, §2.5's force
 pair, is the family's one exception — its own correctness already rides
 an existing, already-validated suite (§2.5 states which), so it earns no
 NEW differential of its own even though it is D46's canonical
@@ -52,7 +52,7 @@ evidence. A stranger tuning performance needs the same table read the
 other way: which knobs are safe to flip without re-verifying correctness,
 and which one is a `--engine`-shaped do-or-die request.
 
-## 2. The thirteen axes
+## 2. The fourteen axes
 
 Each subsection: what it controls, the default, the stamp it leaves in an
 emitted artifact (verified by an emitted-artifact diff, command given),
@@ -560,6 +560,80 @@ k=12  [36,864]  RX_DFA_TABLE "premultiplied"
 k=13  [73,728]  RX_DFA_TABLE "mixed"          (forward indexed, reverse pre-multiplied)
 ```
 
+### 2.14 `-fno-offset-skip` — `PCREC_NO_OFFSET_SKIP` (bit 16)
+
+**ANSWER-IDENTITY-preserving.** The axis changes WHERE the forward DFA
+scan starts stepping, not which strings match: every test it adds is a
+NECESSARY condition of a match beginning at that position, so it refuses
+only starts the stepped scan would refuse.
+
+**What it controls.** A DFA artifact's forward scan filters candidate
+match starts on the byte AT the candidate — one `memchr` for a single
+value, a 256-entry bitmap walk for a set (§2.5's neighbourhood, and the
+five older `<PREFIX>_DFA_PREFILTER` values). With this axis ON the
+compiler may instead derive, from the pattern's own prefix, a SET of
+`(offset k, byte-set)` tests every match must satisfy — for
+`\d{4}-\d{2}-…` a digit at offset 0 AND a `-` at offset 4 — scan for the
+rarest member with one `memchr` at its offset, verify the others on each
+candidate, and resume from a failed candidate one position later. Denying
+it emits the offset-0 filter exactly as it shipped before `[OPT-K]`.
+Default: the offset-k form is ON, subject to the selection below.
+Deny-only, `§2.13`'s shape rather than `§2.5`'s force pair: the compiler
+picks one k-set per artifact from its own cost model, so there is nothing
+to address and nothing to force.
+
+**Reason it exists.** `pcrec-bench`'s `loglines@0.1` measured pcrec
+**31.8× / 12.2× / 10.1× behind PCRE2-JIT** on `stack-frame`, `uuid` and
+`iso-ts`, and the cause was one fact all three share: the byte at offset
+0 is in every log line (a digit, a hex digit, a word character), so the
+offset-0 filter passed almost every position to a transition loop
+measured at **10.7 cycles/byte** (`[OPT-3]`). The selectivity of those
+patterns is a CONJUNCTION over offsets, which is what the JIT scans for
+and what this axis derives. It is also the bisect lever for the
+optimization and the build its identity comparison uses as its control.
+
+**The selection, and it is not this flag.** Whether an artifact gets an
+offset-k form is decided at generation time, per artifact, by a cost
+model over a static byte-frequency prior
+(`docs/design/offset_k_skip.md` §4): the form is adopted only when it is
+predicted at least **2×** cheaper than the offset-0 filter, and the
+scan offset must be a single byte value unless it is offset 0. Offset 0
+is always a member of the set. Neither the k-set cap (**4**) nor the
+walk bound (**24** offsets) can refuse a pattern — exceeding either
+declines an optimization — which is why `docs/spec/limits.md` says
+nothing about them.
+
+**The stamps.** `<PREFIX>_DFA_PREFILTER` gains the values
+`"offset-set"` and `"offset-set-bounded"`, and the new sibling
+`<PREFIX>_DFA_PREFILTER_OFFSETS` names the chosen offsets with `*` on
+the scanned one (`docs/spec/match_api.md` §6.3). **MASKED out of
+`rx_info.flags`** (`src/gen/emit_dfa.c`'s `strategy_denials`), for the
+mask's own reason: it changes no answer, so two artifacts that behave
+identically must not differ in their reflection surface over it, and
+what the emitter DID is already reported by the two stamps. Re-run and
+verified at this commit:
+
+```
+$ build/pcrec -p rx --no-captures --features all -o - \
+    -- '\d{4}-\d{2}-\d{2}' | grep -E '^#define RX_DFA_PREFILTER'
+#define RX_DFA_PREFILTER "offset-set"
+#define RX_DFA_PREFILTER_OFFSETS "0,4*"
+$ build/pcrec -p rx --no-captures --features all -fno-offset-skip -o - \
+    -- '\d{4}-\d{2}-\d{2}' | grep -E '^#define RX_DFA_PREFILTER'
+#define RX_DFA_PREFILTER "byte-class"
+#define RX_DFA_PREFILTER_OFFSETS "none"
+```
+
+and the SELECTION declining on a pattern with no selective offset — the
+same command on `\b[0-9a-f]{32}\b` reads `"byte-class-bounded"` /
+`"none"` with the flag ABSENT, which is the axis's own negative control.
+
+**The denied build and the pre-`[OPT-K]` compiler's output differ by
+exactly one line**, the `_DFA_PREFILTER_OFFSETS` stamp every `abi` 9
+artifact carries. That is the whole of the axis's footprint on a pattern
+it declines, and it is what makes the denied build the identity
+comparison's control.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -605,6 +679,14 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   `memchr-bounded` 81, `byte-class-bounded` 68; `unanchored` 1,882 / `attempt`
   368 / `empty` 8. The remaining 225 VM artifacts are non-hybrid and carry
   neither macro; 289 corpus patterns are refused under `--features all`.
+
+- `RX_DFA_PREFILTER_OFFSETS` (`[OPT-K]`, 2026-08-28) names WHICH offsets
+  from the candidate's own start that filter tests, ascending, with `*` on
+  the one the scan searches for (`"0,8*,13"`), or `"none"` on every
+  artifact whose `RX_DFA_PREFILTER` is not one of the two `offset-set`
+  values. `docs/spec/match_api.md` §6.3 states the format; §2.14 above is
+  the axis, and `docs/design/offset_k_skip.md` the design. Like
+  `RX_DFA_TABLE` it has **no `rx_info` mirror**, for that stamp's reason.
 
 - `RX_DFA_TABLE` (`[OPT-3]`, 2026-08-26) names the ENCODING of that scan's
   transition table, one of `"premultiplied"`, `"indexed"`, `"mixed"` or
@@ -711,6 +793,7 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_SPLICE_CALLS` | `-fno-splice-calls` | §2.9 |
 | `flags` bit `PCREC_NO_TIERED_ENTRY` | `-fno-tiered-entry` | §2.12 |
 | `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
+| `flags` bit `PCREC_NO_OFFSET_SKIP` | `-fno-offset-skip` | §2.14 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
 

@@ -406,8 +406,9 @@ Three consequences, and they are the reason this is the shape:
   `stamp()` method, no second derivation.
 - **`-fno-offset-skip` is a `deny` field on two candidates**, which is D82's
   "the deny flag = a filter on the candidate list". Under it the list is exactly
-  today's and the artifact is byte-identical to the pre-row one — which is what
-  makes the flag a valid control rather than a fourth variant.
+  today's and the artifact matches the pre-row one to the line, apart from the
+  single `_DFA_PREFILTER_OFFSETS` stamp every `abi` 9 artifact carries — which
+  is what makes the flag a valid control rather than a fourth variant.
 - **The k = 0 skip BECOMES the |set| = 1, k = 0 case** in the sense the plan row
   asks for: `ofsk.nsel > 0` is false for every pattern where the k-set is
   `{0}` alone, so `memchr`/`byte-class` are literally what that case selects,
@@ -594,8 +595,10 @@ surface — is unchanged on every subject.
 
 ### 6.2 The gate
 
-`-fno-offset-skip` removes the two candidates, and the denied build is
-**byte-identical to the pre-row compiler's output** for every pattern. That
+`-fno-offset-skip` removes the two candidates, and the denied build's output
+**differs from the pre-row compiler's by exactly one line** — the
+`_DFA_PREFILTER_OFFSETS` stamp every `abi` 9 artifact carries — for every
+pattern. That
 makes the axis a member of `make test-axes`'s family with no special handling:
 `tests/axes/run_axes.sh` derives its registry from `lib/pcrec.h`'s `1u << N`
 constants and `cli/main.c`'s flag loop, so bit 16 joins by construction, and the
