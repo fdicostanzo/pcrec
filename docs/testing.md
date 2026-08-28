@@ -2930,8 +2930,8 @@ each named individually (span and capture-slot divergences both), e.g.
 line 38: default `match 0 2 0 1`, sabotaged axis `nomatch`. Full transcript
 in `run_axes.sh`'s own header.
 
-**Runtime**: ~13 full `tests/harness/run.sh` passes (12 bit-flag axes + 2
-engine directions, plus the baseline) at roughly `test-corpus`'s own
+**Runtime**: ~14 full `tests/harness/run.sh` passes (13 bit-flag axes + 2
+engine directions, plus the baseline; [OPT-K] made it 13 from 12) at roughly `test-corpus`'s own
 per-pass runtime with `PROCS=$(nproc)`. Measured on quick subset runs (see
 `run_axes.sh`'s header for the exact commands); the full-corpus run is the
 delivered `make test-axes` invocation and its measured total is recorded

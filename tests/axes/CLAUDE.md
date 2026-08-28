@@ -1,13 +1,25 @@
 # tests/axes — [CHK-2] piece 2: the answer-identity sweep
 
 Sweeps the WHOLE `.rxt` corpus over every optimization-axis deny/force flag
-(`docs/spec/tuning.md` §2, bits 4-15 of `pcrec_options.flags`) plus the
+(`docs/spec/tuning.md` §2, bits 4-31 of `pcrec_options.flags`) plus the
 coarse `--engine=vm`/`--engine=dfa` axis (§2.11), comparing per-case ANSWERS
 (match/nomatch/span/captures/give-up code) against the default build's —
 never pass/fail COUNTS, which can agree while the underlying cases that
 passed disagree. See `run_axes.sh`'s own header for the full design
 rationale, the derived-registry mechanism, and the detect demonstration's
 recorded transcript.
+
+**THE BIT RANGE IS `4..31` AND THE UPPER END IS NOT A FACT ABOUT THE FAMILY.**
+It read `4..15` — the family's extent on the day this was written — and
+[OPT-K]'s bit 16 was therefore DERIVED AWAY SILENTLY: a new axis absent from
+the sweep with no failure, which is the exact "an axis shipped without its
+five things" gap this row exists to close, arriving through this row's own
+instrument. Only the LOW bound does real work (bits below 4 are unrelated
+`1u << N` constants in the same header). The section anchor for the doc
+cross-check does not spell the axis count in English either, for the same
+reason: it read `/^## 2\. The thirteen axes/`, [OPT-K] correctly renamed that
+heading, and the range then matched nothing and the check compared against an
+EMPTY documented column. Anchor on numbers a human does not maintain.
 
 ## Files
 
