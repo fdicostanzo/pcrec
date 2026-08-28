@@ -214,6 +214,12 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 memcpy(overflow_why, cx.dfa_overflow_why, sizeof overflow_why);
                 job_cleanup(&cx);
                 dfa_disabled = true;
+                /* The refused build wrote its diagnostic into `err`; the
+                 * retry is a fresh compile and must start with the same
+                 * clean channel the first attempt had, or a successful
+                 * fallback returns 0 beside a stale "too complex" message
+                 * (manager's landing fix, merge review 2026-08-28). */
+                if (err) { err->msg[0] = 0; err->pos = 0; err->input = PCREC_ERR_INPUT_PATTERN; }
                 continue;
             }
             job_cleanup(&cx);

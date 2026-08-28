@@ -3068,7 +3068,7 @@ count-independent again and shrink compile time; the identity gates
 rule) are the control. A loop item: charter from a bench row that shows
 the cost, per D77.
 
-## K40 — CLOSED 2026-08-28 (lane sel1) — under `--engine=auto`, a DFA build that overflows a cap REFUSES the whole compile instead of falling back to the VM, even when the pattern's own DFA-erasure is only being built as the VM's auto-selected PREFILTER
+## K40 — CLOSED 2026-08-28 (lane sel1) — under `--engine=auto`, a DFA build that overflows a cap REFUSES the whole compile instead of falling back to the VM, even when the pattern's own DFA-erasure is only being built as the VM's auto-selected PREFILTER MERGE-REVIEW LANDING FIX (manager, 2026-08-28, on f75a33f): the retry left the refused build's diagnostic in `err->msg`, so a successful fallback returned 0 beside "pattern too complex…" (library probe: rc=0, msg set); `compile_driver` now clears `err` on the retry path — probe rc=0, msg empty.
 
 **Symptom.** `build/pcrec -p rx --features all --engine=auto -o out.c
 '\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|
