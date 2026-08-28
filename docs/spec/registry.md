@@ -272,12 +272,20 @@ and no pattern/`-o` — a syntax query, `cli.md` §1.
 - **`axes_registry_check.sh`** (`tests/registry/`, [CHK-2] piece 1) is
   §6's own independent-side check: it reads `--list-axes`'s TSV against
   `docs/spec/tuning.md` §2 (every documented `(bit N)` heading has a
-  dumped row at that bit, and vice versa) and `cli/main.c` (every
+  dumped row at that bit, and vice versa), `cli/main.c` (every
   dumped `cli_flag` is a spelling the parser actually accepts and pairs
-  with the dumped `deny_macro`/`force_macro`), in BOTH directions, every
-  discrepancy named by name rather than by count alone
-  (`docs/dev/learnings.md` §3). See `docs/testing.md` "the axis
-  registry check" for its runtime and sabotage validation.
+  with the dumped `deny_macro`/`force_macro`) and `docs/spec/match_api.md`
+  §6.3 (every dumped `stamp_value` is a value that macro's own
+  value-set table or string-literal pair lists there, and vice versa —
+  the STAMP-VALUE half of the charter's own direction (a), added on
+  manager review; the nine D46 bit constants' own value set is read from
+  `src/gen/emit_dfa.c`'s literal `#define` block instead, since they are
+  emitted-artifact text `lib/pcrec.h` never declares), in BOTH
+  directions, every discrepancy named by name rather than by count alone
+  (`docs/dev/learnings.md` §3; two named, cited exceptions to the
+  spec->dump value sweep, stated in the script's own header). See
+  `docs/testing.md` "the axis registry check" for its runtime and
+  sabotage validation (53 checks total).
 
 ## 8. Landing note
 

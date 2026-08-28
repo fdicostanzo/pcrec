@@ -17,10 +17,46 @@
 # support; the reverse — a documented axis the dump stopped reporting — is
 # the more dangerous silent loss and needs its own sweep.
 #
+# DIRECTION 3 (added on manager review, 2026-08-28): the charter's own
+# direction (a) reads "every dumped row has its tuning.md §2.N, its §6.3
+# VALUE and its CLI flag, every spec value appears in the dump" — the first
+# two revisions covered the bit/flag/heading half and skipped the STAMP
+# VALUE half. "§6.3" is `docs/spec/match_api.md` §6.3 ("The compile-time
+# mirror: observability macros") — the D46 stamp family's own home, cited
+# by name throughout `docs/spec/tuning.md` for exactly this reason. Four
+# stamp macros have a CLEAN, closed value-set stated there (a markdown
+# table for `RX_DFA_TABLE`/`RX_DFA_PREFILTER`, an unambiguous pair of
+# string literals in prose/code for `RX_VM_PREFILTER`/`RX_ENGINE`) and are
+# checked both directions with NO exception. The D46 family's NINE named
+# bit constants (`PCREC_VM_RUNG_*`/`_STRAT_*`/`_PRUNE_*`) are NOT declared
+# in `lib/pcrec.h` at all — match_api.md §6.3's own [ABI-NS] paragraph says
+# why: they are EMITTED-ARTIFACT text, in the shared `PCREC_RX_ABI_H` block
+# `src/gen/emit_dfa.c`'s `emit_rx_abi_types` writes literally (grep
+# `#define PCREC_VM_(RUNG|STRAT|PRUNE)_` there) — so THAT file, not
+# lib/pcrec.h, is this direction's source for them. Three of the nine
+# (`_RUNG_CURSOR`/`_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`) are a NAMED,
+# CITED exception to the spec->dump sweep: no `-fno-*` flag denies "use the
+# cursor rung" or a specific frames sub-rung individually (`src/gen/
+# CLAUDE.md`'s `[ENG-BREP]` rung-ladder section — only `-fno-revdet` and
+# `-fno-counter` address a rung of their own), so no axis in this dump can
+# ever carry those three as a candidate's `stamp_value`; the six directly
+# controllable pairs (POSSESSIVE/BACKTRACKING, REVDET, COUNTER, CLAMPED/
+# UNCLAMPED) are checked in full both directions.
+# `RX_DFA_TABLE`'s own spec table also has a real, cited exception:
+# `"mixed"`/`"none"` are ARTIFACT-LEVEL COMPOSITIONS of the forward and
+# reverse machine's own per-machine choice (match_api.md §6.3: "the choice
+# is per machine... 'mixed' the forward and reverse machines took different
+# forms"), never a candidate this dump's per-MACHINE `table` axis could
+# select on its own — so only `"premultiplied"`/`"indexed"` are expected
+# back from the dump, and are.
+#
 # Usage: bash tests/registry/axes_registry_check.sh
 # Env: PCREC (default build/pcrec), TUNING (default docs/spec/tuning.md —
 #   override to point at a doctored copy, e.g. for the sabotage
 #   demonstration below), CLIMAIN (default cli/main.c, same override use),
+#   MATCHAPI (default docs/spec/match_api.md, §6.3's own stamp-value
+#   tables — same override use), EMITDFA (default src/gen/emit_dfa.c, the
+#   nine D46 bit constants' own literal source — same override use),
 #   KEEP=1 to keep the work directory.
 
 set -u
@@ -33,6 +69,8 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
 CLIMAIN="${CLIMAIN:-$ROOT_DIR/cli/main.c}"
+MATCHAPI="${MATCHAPI:-$ROOT_DIR/docs/spec/match_api.md}"
+EMITDFA="${EMITDFA:-$ROOT_DIR/src/gen/emit_dfa.c}"
 KEEP="${KEEP:-0}"
 
 if [ ! -x "$PCREC" ]; then
@@ -45,6 +83,14 @@ if [ ! -f "$TUNING" ]; then
 fi
 if [ ! -f "$CLIMAIN" ]; then
     echo "axes_registry: FATAL: $CLIMAIN not found" >&2
+    exit 1
+fi
+if [ ! -f "$MATCHAPI" ]; then
+    echo "axes_registry: FATAL: $MATCHAPI not found" >&2
+    exit 1
+fi
+if [ ! -f "$EMITDFA" ]; then
+    echo "axes_registry: FATAL: $EMITDFA not found" >&2
     exit 1
 fi
 
@@ -284,6 +330,156 @@ if [ -n "$missing_from_dump2" ]; then
 else
     ok "every PCREC_NO_*/PCREC_FORCE_* bit lib/pcrec.h defines in range 4-15 ($( printf '%s' "$hdr_bits_sorted" | tr '\n' ' ' )) appears in --list-axes' output"
 fi
+
+# ============================================================================
+# DIRECTION 3: STAMP VALUES, both ways (docs/spec/match_api.md §6.3 — see
+# this script's own header for which macros have a closed value set there
+# and the two named/cited exceptions).
+# ============================================================================
+
+# extract_md_table_values FILE ANCHOR — every `"word"` inside a markdown
+# table's rows, where the table is the first one found after the line
+# containing ANCHOR (verbatim substring match, `index()`, no regex
+# metacharacters to escape). Table rows in match_api.md are indented under
+# a bullet (`  | value | meaning |`), so the row test is `^[ \t]*\|`, not
+# `^\|` — the bug this script's own author hit live while writing this
+# direction: an UN-indented anchor match, tested with a naive `^\|`, silently
+# skipped the indented table entirely and fell through to the NEXT `^\|`
+# line in the file (a different macro's table), which is a silent WRONG
+# TABLE read rather than an empty one — caught only by eyeballing the first
+# run's output against the file by hand. Never trust "some column
+# extracted" as proof of "the right column was read" for a markdown table.
+extract_md_table_values() {
+    local file="$1" anchor="$2"
+    awk -v anchor="$anchor" '
+        index($0, anchor) { found=1; n=0; next }
+        found && /^[ \t]*\|/ {
+            n++
+            if (match($0, /`"[a-zA-Z-]+"`/)) print substr($0, RSTART+2, RLENGTH-4)
+            next
+        }
+        found && n>0 { found=0 }
+    ' "$file"
+}
+
+# extract_line_values FILE PATTERN — every distinct lowercase `"word"` on a
+# line matching PATTERN (extended regex). Used for the two macros whose
+# value set is a bare pair of string literals in prose/code rather than a
+# markdown table (`RX_VM_PREFILTER`, `RX_ENGINE`).
+extract_line_values() {
+    local file="$1" pattern="$2"
+    grep -E "$pattern" "$file" | grep -oE '"[a-z]+"' | tr -d '"' | sort -u
+}
+
+# check_value_set MACRO SPEC_VALS DUMP_VALS EXCEPT — both directions for one
+# macro. EXCEPT (space-separated, may be empty) names spec values that are
+# NEVER expected back from the dump (a cited, structural exception — see
+# this script's header), so they are excluded from the spec->dump sweep
+# only, never from the dump->spec one (a value the dump prints that isn't
+# in the exception list must still be a real spec value).
+check_value_set() {
+    local macro="$1" spec_vals="$2" dump_vals="$3" except="$4"
+    local v miss=""
+    for v in $dump_vals; do
+        if ! grep -qxF "$v" <<< "$spec_vals"; then
+            bad "[$macro] dump stamps value '$v' that docs/spec/match_api.md §6.3's own value-set table for $macro does not list"
+            miss=1
+        fi
+    done
+    [ -z "$miss" ] && ok "[$macro] every dumped stamp_value ($( printf '%s' "$dump_vals" | tr '\n' ' ' )) is in match_api.md §6.3's own value-set table"
+
+    miss=""
+    for v in $spec_vals; do
+        grep -qxF "$v" <<< "$except" && continue
+        if ! grep -qxF "$v" <<< "$dump_vals"; then
+            bad "[$macro] match_api.md §6.3 documents value '$v' for $macro that --list-axes names on no row"
+            miss=1
+        fi
+    done
+    local except_disp="no exceptions"
+    [ -n "$except" ] && except_disp="$(printf '%s' "$except" | tr '\n' ',' | sed 's/,$//')"
+    [ -z "$miss" ] && ok "[$macro] every match_api.md §6.3 value for $macro (exceptions: $except_disp) appears in --list-axes' output"
+}
+
+dump_stamp_vals() {
+    local macro="$1"
+    awk -F'\001' -v m="$macro" '$5 == m && $6 != "" {print $6}' <<< "$axes_rows_dump"
+}
+
+# One extra pass over the dump, keyed the same \001 way the main loop reads
+# it, so this direction does not have to re-run `pcrec --list-axes` (the
+# TSV in $TSV is already read once above; re-deriving it here from the same
+# file keeps this direction independent of the main loop's bash variables,
+# which the main loop's own `while` has already consumed).
+axes_rows_dump="$(awk -F'\t' $MAP '!/^#/ {
+    print $axis"\001"$order"\001"$candidate"\001"$kind"\001"$stamp_macro"\001"$stamp_value
+}' "$TSV")"
+
+check_value_set "RX_DFA_TABLE" \
+    "$(extract_md_table_values "$MATCHAPI" "2026-08-26: a THIRD")" \
+    "$(dump_stamp_vals RX_DFA_TABLE)" \
+    "mixed
+none"
+
+check_value_set "RX_DFA_PREFILTER" \
+    "$(extract_md_table_values "$MATCHAPI" "its five values are the whole set")" \
+    "$(dump_stamp_vals RX_DFA_PREFILTER)" \
+    ""
+
+check_value_set "RX_VM_PREFILTER" \
+    "$(extract_line_values "$MATCHAPI" 'RX_VM_PREFILTER')" \
+    "$(dump_stamp_vals RX_VM_PREFILTER)" \
+    ""
+
+check_value_set "RX_ENGINE" \
+    "$(extract_line_values "$MATCHAPI" '\<RX_ENGINE\>')" \
+    "$(dump_stamp_vals RX_ENGINE)" \
+    ""
+
+# The nine D46 bit constants: NOT in lib/pcrec.h (they are emitted-artifact
+# text — match_api.md §6.3's own [ABI-NS] paragraph), so EMITDFA (the
+# literal #define block emit_rx_abi_types writes) is this direction's
+# source, independent of both the dump's hand-typed strings (axes_dump.c's
+# stamp_value literals are NOT stringified from a real symbol the way the
+# deny/force bit values are — this check is what catches THAT drift risk)
+# and of lib/pcrec.h (Direction 1/2 above's source).
+emitdfa_bits="$(grep -oE '#define PCREC_VM_(RUNG|STRAT|PRUNE)_[A-Z_]+ +0x[0-9a-f]+u' "$EMITDFA" \
+    | awk '{print $2}')"
+if [ -z "$emitdfa_bits" ]; then
+    echo "axes_registry: FATAL: derived ZERO PCREC_VM_(RUNG|STRAT|PRUNE)_* constants from $EMITDFA" >&2
+    exit 1
+fi
+
+dumped_bit_const_vals="$(dump_stamp_vals RX_VM_RUNGS
+dump_stamp_vals RX_VM_STRATS
+dump_stamp_vals RX_VM_PRUNES)"
+
+miss=""
+for v in $dumped_bit_const_vals; do
+    if ! grep -qxF "$v" <<< "$emitdfa_bits"; then
+        bad "[D46 bit constants] dump stamps '$v' that $EMITDFA's own emit_rx_abi_types literal block does not define"
+        miss=1
+    fi
+done
+[ -z "$miss" ] && ok "[D46 bit constants] every dumped RUNG/STRAT/PRUNE constant name ($( printf '%s' "$dumped_bit_const_vals" | tr '\n' ' ' )) is defined in $EMITDFA"
+
+# The three ladder members with no individual deny flag — see this script's
+# header for the citation. Named here by their FULL constant name so the
+# exception is unambiguous rather than a bare word a future rename could
+# silently stop matching.
+bit_const_except="PCREC_VM_RUNG_CURSOR
+PCREC_VM_RUNG_FRAMES_BOUNDED
+PCREC_VM_RUNG_FRAMES_UNBOUNDED"
+
+miss=""
+for v in $emitdfa_bits; do
+    grep -qxF "$v" <<< "$bit_const_except" && continue
+    if ! grep -qxF "$v" <<< "$dumped_bit_const_vals"; then
+        bad "[D46 bit constants] $EMITDFA defines '$v' (not in the cited no-individual-flag exception list) that --list-axes names on no row"
+        miss=1
+    fi
+done
+[ -z "$miss" ] && ok "[D46 bit constants] every $EMITDFA-defined RUNG/STRAT/PRUNE constant with its own axis (except the three ladder-fallback rungs named in this script's header) appears in --list-axes' output"
 
 echo
 echo "== Summary =="

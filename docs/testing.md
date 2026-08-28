@@ -2834,30 +2834,78 @@ run_registry_tests.sh` and therefore part of `make test`'s `test-registry`
 section (unlike the two opt-in instruments below, which are `make
 test-axes` only). Reads `pcrec --list-axes`'s TSV — the optimization-axis
 registry's FOURTH surface, `docs/spec/registry.md` §6 — against
-`docs/spec/tuning.md` §2 (every documented `(bit N)` heading) and
-`cli/main.c`'s flag parser, in BOTH directions: every dumped deny/force
-bit checked against `lib/pcrec.h`'s own definition, its CLI spelling
-where it has one, and `tuning.md`'s own documentation of that bit; then
-the reverse sweep, every bit `tuning.md` documents and every
-`PCREC_NO_*`/`PCREC_FORCE_*` bit `lib/pcrec.h` defines in the family's own
-4-15 range confirmed present SOMEWHERE in the dump — catching an axis
-quietly dropped from `--list-axes` rather than only one wrongly added.
-Every discrepancy named by name (`docs/dev/learnings.md` §3), never a bare
-count; the wiring script's own coverage guard additionally floors the
-total PASS count at 40.
+`docs/spec/tuning.md` §2 (every documented `(bit N)` heading),
+`cli/main.c`'s flag parser and `docs/spec/match_api.md` §6.3 (the D46
+stamp family's own home — see DIRECTION 3 below), in BOTH directions:
+every dumped deny/force bit checked against `lib/pcrec.h`'s own
+definition, its CLI spelling where it has one, and `tuning.md`'s own
+documentation of that bit; then the reverse sweep, every bit `tuning.md`
+documents and every `PCREC_NO_*`/`PCREC_FORCE_*` bit `lib/pcrec.h`
+defines in the family's own 4-15 range confirmed present SOMEWHERE in
+the dump — catching an axis quietly dropped from `--list-axes` rather
+than only one wrongly added. Every discrepancy named by name
+(`docs/dev/learnings.md` §3), never a bare count; the wiring script's own
+coverage guard pins the total PASS count exactly (53, `registry_check.c`/
+PC-3's own exact-count-guard shape).
 
-**Runtime**: well under a second (`build/pcrec --list-axes` plus a handful
-of `grep`/`awk` passes over three small text files — no compile, no
-subject sweep).
+**DIRECTION 3 (added 2026-08-28, manager review): the STAMP-VALUE half of
+the charter's direction (a)** — "every dumped row has its tuning.md §2.N,
+its §6.3 VALUE and its CLI flag, every spec value appears in the dump".
+The first revision covered bits/flags/headings and skipped the VALUE
+half; this direction closes it, both ways, for every stamp macro with a
+non-empty dumped value: `RX_DFA_TABLE` and `RX_DFA_PREFILTER` against
+`match_api.md` §6.3's own markdown value-set tables, `RX_VM_PREFILTER`
+and `RX_ENGINE` against its prose/code-block string-literal pairs, and
+the nine D46 bit constants (`PCREC_VM_RUNG_*`/`_STRAT_*`/`_PRUNE_*`)
+against `src/gen/emit_dfa.c`'s own literal `#define` block — NOT
+`lib/pcrec.h`, which does not declare them at all (§6.3's own `[ABI-NS]`
+paragraph: they are emitted-ARTIFACT text). Two NAMED, CITED exceptions
+to the spec->dump sweep, neither a gap: `RX_DFA_TABLE`'s `"mixed"`/
+`"none"` are artifact-level compositions of the forward/reverse
+machine's own per-machine choice, never a value this dump's per-machine
+`table` axis could select on its own; three of the nine bit constants
+(`_RUNG_CURSOR`/`_FRAMES_BOUNDED`/`_FRAMES_UNBOUNDED`) have no individual
+`-fno-*` deny flag at all (only `-fno-revdet`/`-fno-counter` address a
+rung of their own — `src/gen/CLAUDE.md`'s `[ENG-BREP]` rung-ladder
+section), so no axis in this dump can ever carry them.
 
-**Sabotage validation** (2026-08-28, scratchpad only, never committed): a
-scratch copy of `tuning.md` with `-fno-counter`'s `(bit 6)` heading
-deleted, run via `TUNING=<scratch> bash tests/registry/
-axes_registry_check.sh`, fires exactly one named failure —
-`[counter/counter] bit 6 has no '(bit 6)' heading anywhere in
-<scratch>/tuning_sabotaged.md` — with the other 42 checks unaffected
-(43 total on this tree; the count moves with the axis population, per
-the CLAUDE.md coverage-guard note).
+**A real bug caught while WRITING direction 3, not after**: the first
+markdown-table extraction ran clean but silently read the WRONG table —
+`match_api.md`'s tables sit indented two spaces under their bullet point
+(`  | value | meaning |`), and a naive `^\|` row test skips straight past
+them to the next UN-indented `|`-starting line, which happened to be a
+different macro's table entirely. The extraction looked like it worked
+(it printed five plausible-looking values) and was wrong. Caught only by
+eyeballing the output against the file by hand before trusting it; fixed
+by testing `^[ \t]*\|` instead. Recorded because "some column extracted"
+is not evidence "the right column was read", the same lesson the IFS/tab
+bug below teaches from the opposite direction (a loud collapse vs. a
+silent misread).
+
+**Runtime**: well under a second (`build/pcrec --list-axes` plus a
+handful of `grep`/`awk` passes over five small text files — no compile,
+no subject sweep).
+
+**Sabotage validation** (2026-08-28, scratchpad only, never committed),
+one per direction:
+- A scratch copy of `tuning.md` with `-fno-counter`'s `(bit 6)` heading
+  deleted, run via `TUNING=<scratch> bash tests/registry/
+  axes_registry_check.sh`, fires exactly one named failure —
+  `[counter/counter] bit 6 has no '(bit 6)' heading anywhere in
+  <scratch>/tuning_sabotaged.md` — with the other checks unaffected.
+- A scratch copy of `match_api.md` with `RX_DFA_PREFILTER`'s
+  `"memchr-bounded"` table row deleted, run via `MATCHAPI=<scratch> bash
+  tests/registry/axes_registry_check.sh`, fires exactly one named
+  failure — `[RX_DFA_PREFILTER] dump stamps value 'memchr-bounded' that
+  docs/spec/match_api.md §6.3's own value-set table for RX_DFA_PREFILTER
+  does not list`.
+- A scratch copy of `emit_dfa.c` with the `PCREC_VM_RUNG_REVDET`
+  `#define` line deleted, run via `EMITDFA=<scratch> bash
+  tests/registry/axes_registry_check.sh`, fires exactly one named
+  failure — `[D46 bit constants] dump stamps 'PCREC_VM_RUNG_REVDET' that
+  <scratch>'s own emit_rx_abi_types literal block does not define`.
+Each sabotage fires exactly one failure, every other check green (52 of
+53) — no cascade, no false negatives.
 
 **Found while writing it, not before**: bash's `IFS=$'\t' read` collapses
 runs of EMPTY tab-delimited fields — tab is IFS *whitespace* regardless of
