@@ -305,4 +305,25 @@ elif ! grep -q "^SKIP: pc4" "$PC4OUT" && \
     echo "registry:   in the same change or not at all" >&2
     rc=1
 fi
+
+# ---- [CHK-2] piece 1(a): the axis registry check ---------------------------
+#
+# The FOURTH TSV surface's own independent-side check: `pcrec --list-axes`
+# read against docs/spec/tuning.md and cli/main.c, two files the dump itself
+# never opens (docs/spec/registry.md §6/§7 states the boundary in full).
+AXESOUT="$WORKDIR/axes_registry.out"
+PCREC="$PCREC" bash "$SCRIPT_DIR/axes_registry_check.sh" 2>&1 | tee "$AXESOUT"
+axesrc=${PIPESTATUS[0]}
+if [ "$axesrc" -ne 0 ]; then
+    rc=1
+fi
+axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
+if [ "$axesn" -lt 40 ]; then
+    if grep -q "^checks failed: 0" "$AXESOUT"; then
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected at least 40 (40 axis/candidate rows, most with 2-3 checks each)." >&2
+        echo "registry:   if you added or removed axes/checks on purpose, this is expected to move;" >&2
+        echo "registry:   if not, coverage was removed" >&2
+    fi
+    rc=1
+fi
 exit $rc
