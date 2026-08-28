@@ -39,5 +39,13 @@ SAB_HARNESS_TARGET="tests/recursion"
 SAB_DESC="fit.prefilter is left ON for a call-bearing pattern, so the hybrid is built from a call-ERASED DFA -- which is not a superset but a DIFFERENT language, so a matching subject is skipped"
 SAB_DOC_FIGURE="LANDED EARLY AND THE ROW SAYS SO. Design 11 puts this predicate in wave E; it landed in wave B+C because without it src/ir/nfa.c's A_CALL arm is REACHABLE and every capture-bearing call pattern answered 'internal error: bad AST node' -- MEASURED on this branch before the line existed. So the sabotage's own prediction changes with it: on THIS tree the failure is a COMPILE ERROR (nfa.c refuses the node) rather than 8.2's silent skip, because wave G's 8.3 approximation -- the arm that would make the erasure buildable -- does not exist yet. Both are detections; only the second is the one 9.3 predicted."
 SAB_COUNT=1
-SAB_BEFORE='        fit.prefilter = (has_bref || has_call) ? false'
-SAB_AFTER='        fit.prefilter = (has_bref || false) ? false   /* SABOTAGE S165 */'
+# [SEL-1] RE-ANCHORED 2026-08-28 (manager's landing-battery finding): the
+# guard gained a THIRD disjunct, `cx->dfa_disabled` (auto's DFA-cap-overflow
+# fallback drops the prefilter the same silent way has_bref/has_call already
+# do), so the two-disjunct line this row anchored on stopped existing — the
+# same re-home shape S102's own note records one disjunct earlier. Still
+# targets `has_call` ALONE: `has_bref` and `cx->dfa_disabled` are carried
+# through UNCHANGED in `SAB_AFTER`, so this row's population stays exactly
+# "a call-bearing pattern's prefilter turns on", not wider.
+SAB_BEFORE='        fit.prefilter = (has_bref || has_call || cx->dfa_disabled) ? false'
+SAB_AFTER='        fit.prefilter = (has_bref || false || cx->dfa_disabled) ? false   /* SABOTAGE S165 */'
