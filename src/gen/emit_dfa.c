@@ -2078,10 +2078,17 @@ typedef struct {
     bool empty;          /* nothing can match: the whole body is one `return 0` */
     DfaPfKind kind;      /* the prefilter the forward scan carries */
     CandSet   cand;      /* D63's candidate set; meaningful when kind != NONE */
+    /* [OPT-K] THE OFFSET-k SKIP'S SELECTION, derived from the same call and
+     * read by the same two readers. `ofsk.nsel == 0` — the answer for every
+     * pattern before this row and for most patterns after it — means the
+     * forward scan carries exactly the offset-0 filter `kind` names above.
+     * docs/design/offset_k_skip.md. */
+    PrefixKSets ofsk;
 } UnanchStart;
 
-static void unanch_start(const Dfa *fd, const Dfa *rd, UnanchStart *o)
+static void unanch_start(Ctx *cx, UnanchStart *o)
 {
+    const Dfa *fd = &cx->job->dfa, *rd = &cx->job->rdfa;
     memset(o, 0, sizeof *o);
     o->kind = DFA_PF_NONE;
 
@@ -2189,6 +2196,20 @@ static void unanch_start(const Dfa *fd, const Dfa *rd, UnanchStart *o)
      * same claim is how someone eventually "simplifies away" the wrong half. */
     if (!start_acc && o->cand.usable)
         o->kind = o->cand.use_memchr ? DFA_PF_MEMCHR : DFA_PF_BYTE_CLASS;
+
+    /* [OPT-K] THE OFFSET-k SELECTION RIDES THE OFFSET-0 VERDICT and is never
+     * asked independently of it. Everything the skip inherits is proved
+     * above: `!start_acc` is what says the machine cannot accept while parked
+     * (so no position the skip passes can be an empty match), and
+     * `cand.usable` is what says there is a proper subset to filter on at
+     * all. A k-set selected without them would be a second, weaker version of
+     * an argument this function already makes — the fork D63's header
+     * forbids. */
+    if (o->kind != DFA_PF_NONE)
+        pcrec_prefix_ksets(cx, &cx->job->nfa, o->cand.set, &o->ofsk);
+#ifdef OPTK_DEBUG
+    { extern void optk_debug_dump(const PrefixKSets *); optk_debug_dump(&o->ofsk); }
+#endif
 }
 
 /* ---- [DD-13c] IS THIS ARTIFACT'S SEARCH BODY THE EMPTY ENGINE? -----------
@@ -2222,7 +2243,7 @@ static bool dfa_engine_is_empty(Ctx *cx)
 {
     if (cx->job->engine == PCREC_ENG_ATTEMPT) return cx->job->dfa.n == 0;
     UnanchStart us;
-    unanch_start(&cx->job->dfa, &cx->job->rdfa, &us);
+    unanch_start(cx, &us);
     return us.empty;
 }
 
@@ -3383,7 +3404,7 @@ static void emit_unanchored(Ctx *cx, const char *fn, const char *storage)
      * read a SECOND time by the artifact's `<PREFIX>_DFA_PREFILTER` stamp,
      * and that function's header states why they may not be derived twice. */
     UnanchStart us;
-    unanch_start(&job->dfa, &job->rdfa, &us);
+    unanch_start(cx, &us);
 
     /* [DD-13] THE ONE EMPTY-ENGINE EXIT, and it is taken BEFORE any token
      * block is emitted so an artifact that matches nothing grows nothing. */
@@ -4242,7 +4263,7 @@ static const char *dfa_prefilter_name(Ctx *cx)
         return attempt_cand(&cx->job->dfa, &acand) ? "memchr" : "none";
     }
     UnanchStart us;
-    unanch_start(&cx->job->dfa, &cx->job->rdfa, &us);
+    unanch_start(cx, &us);
     /* THE BOUND IS PART OF THE VALUE, and that is plan.md [DD-13] (b) made
      * readable rather than a distinction invented here. Under `views` — a
      * `$`/`\Z`/`\z` view or a word context — every skip is bounded at `n - 1`

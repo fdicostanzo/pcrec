@@ -996,7 +996,62 @@ typedef struct {
     NState *st;
     int     n, cap;
     int     start;
+    /* [OPT-K] THE ANCHORED START — the state a match's OWN first byte is read
+     * from, as opposed to `start`, which for an ENG_UNANCH machine is the
+     * lowest-priority self-loop `nfa_wrap_unanchored` puts in front of it.
+     *
+     * IT IS A FIELD AND NOT A SHAPE TEST. `docs/design/offset_k_skip.md` §3
+     * needs to walk the pattern's own prefix, and the alternative — "the start
+     * is a SPLIT whose t2 is an all-bytes N_CLASS looping back to it" — is a
+     * second statement of `nfa_wrap_unanchored`'s construction that a change
+     * to the wrap would silently invalidate. `pcrec_build_nfa` sets it equal
+     * to `start`, so an UNWRAPPED machine (ENG_ATTEMPT's, and the reverse
+     * machine) answers correctly without anyone having to remember to. */
+    int     anch_start;
 } Nfa;
+
+/* ---- [OPT-K] the offset-k prefix analysis (src/opt/prefix_k.c) ---- */
+
+/* How far past offset 0 the walk looks. It is a WALK bound and not a tuning
+ * knob: past ~two dozen bytes a fixed-width prefix is vanishingly rare and
+ * the frontier has almost always either accepted or fanned out. The k-SET
+ * cap below is the one that bounds emitted work. */
+#define PCREC_PREFIX_K_MAX   24
+
+/* How many (offset, byte-set) tests one skip may carry — the k-set cap. Four
+ * is the note's §4.6: the third and fourth verify are already below the
+ * model's noise on every corpus pattern, and each one is emitted text and a
+ * branch on the candidate path. */
+#define PCREC_OFSK_MAX_SET   4
+
+typedef struct {
+    int      k;          /* the offset, in bytes from the candidate start */
+    uint8_t  set[256];   /* the bytes a match may carry there */
+    int      count;      /* how many */
+    int      byte;       /* the single value when count == 1 */
+    unsigned ppm;        /* the prior's mass on `set`, parts per million */
+} PrefixK;
+
+typedef struct {
+    int      nwalk;                   /* offsets proved: k[0..nwalk-1] */
+    PrefixK  k[PCREC_PREFIX_K_MAX];
+    /* THE SELECTION. `nsel == 0` means "no offset-k skip" — the artifact
+     * keeps exactly the offset-0 filter it had before this row. */
+    int      nsel;
+    int      sel[PCREC_OFSK_MAX_SET]; /* indices into k[], ASCENDING by offset */
+    int      scan;                    /* index into sel[]: the memchr offset */
+    int      maxk;                    /* k[sel[nsel-1]].k */
+    unsigned rate_ppm;                /* predicted candidate rate, selected */
+    unsigned base_ppm;                /* ... and under the offset-0 filter alone */
+} PrefixKSets;
+
+/* `k0` is the offset-0 byte set the DFA derivation already owns
+ * (src/gen/emit_dfa.c's `cand_from_escapes`); this function never re-derives
+ * it. See docs/design/offset_k_skip.md §3. */
+void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
+                        PrefixKSets *o);
+unsigned pcrec_byte_freq_ppm(int b);
+unsigned pcrec_byte_freq_total_ppm(void);
 
 /* ---- DFA (priority subset construction) ---- */
 

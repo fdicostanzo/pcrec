@@ -891,6 +891,8 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse)
     int acc = nst(&b, N_ACCEPT);
     patch_to(&b, &f.out, acc);
     nfa->start = f.start;
+    /* [OPT-K] The anchored start IS the start until a wrap moves the latter. */
+    nfa->anch_start = f.start;
 }
 
 /* Lowest-priority start self-loop: new_start = SPLIT(pattern [preferred],
@@ -907,6 +909,9 @@ void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
     nfa->st[sp].t2 = any;
     nfa->st[any].t1 = sp;
     nfa->start = sp;
+    /* [OPT-K] `anch_start` deliberately does NOT move: it keeps naming the
+     * pattern's own first state, which is what the offset-k prefix walk
+     * (src/opt/prefix_k.c) needs and what `start` stops being here. */
 }
 
 /* `^` in the REVERSE machine would need a position-dependent bot-variant
