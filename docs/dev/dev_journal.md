@@ -16973,3 +16973,52 @@ D45's budget. [SEL-1] exposed an existing VM limitation the refusal
 hid. sel1 re-opened on lane/sel1b with the seven + a K-row + a COUNTED
 fuzz-gate outcome pinned to it (no budget raise, no silent allowlist).
 Worktrees: optk, sel1 (sel1b). Cron 76d80eff → re-created.
+
+#### Forty-third session, part 4 — sel1b MERGED (48b6e30, post-merge proof green); [ART-SIZE] chartered on Frank's concern; the 2 MB artifact attributed (2026-08-28 ~15:0x EDT)
+
+sel1b merged 48b6e30: the seven refusal-assertion tests re-keyed on
+`--no-captures --engine=dfa` with auto-side twins (resource 20/20 —
+a{65535}'s twin compiles with WHY naming the subset-construction
+overflow; assertions 54/54 — both [budget] twins timed 377/124 ms,
+inside the spec's cost bound; run_vm_identity 10/10 — "--no-captures ⇒
+DFA or refusal" became "DFA, or a VM whose WHY names a dfa overflow",
+discriminated by VALUE, fallback population pinned at exactly 1);
+K37's `--list-axes` call wrapped in $TIMEOUT_BIN; K41 filed. THE FUZZ
+GATE, twice: the lane's first shape pinned K41's bucket on gcc's
+over-budget OUTCOME — measured 7.8 CPU-s against a 10-s ulimit, a coin
+flip per box, honestly reported red — sent back; the redesign
+classifies by SIZE (emitted .c > 1,000,000 B, before and independently
+of gcc; gcc's result informational), pinned at EXACTLY 2 because the
+exhaustive classifier found a SECOND oversize pattern (1,250,766 B)
+the gcc-text grep had never seen (it compiles inside the budget
+today); three solo runs byte-identical on every count; the other
+buckets re-pinned to the deterministic numbers (181 / 2,715 / 0). Post-
+merge proof on main: registry 451/0, fuzz gate PASS, resource 20/0.
+FRANK'S RULINGS: (1) fallback-tripped patterns vs the JIT — a bench ask,
+rides I-15; (2) "I'm concerned about the 2 MB VM artifact … it deserves
+an investigation as well as a size vs performance tension that kicks
+in at some size" → [ART-SIZE] chartered and STARTED (census lane
+artsize, sonnet; STEP 2 the tension as a general size term in the
+emitter's selection + a hard emitted-size cap as the last resort).
+THE ARTIFACT, ATTRIBUTED (manager, on the witness): 45,229 lines;
+comments only 15 %; 7,467 VM nodes, 13,085 gotos; 4 class bitmaps
+totalling 924 B, all distinct (Frank's bet on duplicate tables — lost,
+cheaply; the VM shares tables by reference); by line kind of the 1.93
+MB program region: SPAN LOOPS 40 % (1,291 inline loops, ~600 B each —
+every `.{2}`/`0{0,30}` inside the nested `{28,30}`×`{5,10}` copies gets
+its own loop body), label boilerplate 13.5 % (`rx_LN:
+__attribute__((unused));` × 7,467), prune guards 8 % (per-copy MRL
+arithmetic inlined), bare gotos 7 %, the class tests a reader expects a
+node to be 6 %. Frank: ">200 bytes/node seems high" — it is: three
+general levers before replication policy — a shared span-loop helper
+per (class, stride, greediness) shape, a terser node skeleton, hoisting
+the guard's constant — handed to artsize to price. optk: MISCOMPILE-1
+fixed (role split; witness table flipped; S188 DETECTED; §4.7 re-run;
+C_ENTER deliberately not retuned), run_axes.sh's two pins fixed
+(prose-anchored §2 heading; hard-coded bits 4-15 that FILTERED bit 16
+away) and the worse twin found in chk2p1's registry check
+(axes_registry_check.sh:317 `-le 15` — its own headline assertion would
+have passed with the new axis absent); its test-axes sweep is running
+(bit 10 of 14 at 15:02, mismatches 0 so far); it merges main and lands
+the registry-check fix in its merge commit; ONE battery on the union.
+Worktrees: optk, artsize. Cron b00cc122.
