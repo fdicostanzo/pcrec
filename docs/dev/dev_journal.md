@@ -16845,3 +16845,21 @@ its shape (bench writes outbox, pcrec writes inbox) even when one
 manager wears both hats on different days. The pcrec-side queue when
 we return: [CHK-2] piece 1, [OPT-2] STEP 2 measurement, [OPT-D]
 census, then the bench-unlocked [OPT-5]/[OPT-3] STEP 3.
+
+#### Forty-second session, bench half — POINTER (2026-08-28 ~12:2x EDT)
+
+The rest of the day ran as a pcrec-bench session (its journal, third
+session parts 1-6; its outbox O-7 is the deliverable to us). In one
+line each: the bench is pinned at 35e1ab1 (abi 8) and MEASURED (email@
+0.2 six cells; the prediction ledger holds for the DFA, fails on
+artifact size (+30 KB DFA) and P6); I-10's confound is 1.64× on the
+DFA loop (parity with the JIT on real failing prose, 0.74× on the
+periodic subject); sub-bench #2 bench/loglines exists and is measured:
+[OPT-5]'s precheck is ~parity on the search band (the k=0 memchr skip
+already dismisses when the required byte is first), and the real
+outlier is the JIT's prefix pair scan — stack-frame 32×, uuid 12×,
+iso-ts 10× behind — the general "byte at offset k" candidate-start
+skip is asked for as one row; `level-context` did not compile under
+auto (DFA >32000 states, no VM fallback); D83 was written; the .rxt
+target-set note filed. READ THE OUTBOX FIRST next session:
+/home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md O-7.
