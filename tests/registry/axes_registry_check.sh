@@ -65,6 +65,7 @@ export LC_ALL=C   # K35 — see tests/harness/run.sh's own header for why
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/table.sh"
+. "$ROOT_DIR/tests/lib/timeout_bin.sh"   # [K37] resolves TIMEOUT_BIN for this file's own bare compiler call below
 
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 TUNING="${TUNING:-$ROOT_DIR/docs/spec/tuning.md}"
@@ -99,7 +100,7 @@ cleanup() { [ "$KEEP" = "1" ] || rm -rf "$WORKDIR"; }
 trap cleanup EXIT
 
 TSV="$WORKDIR/axes.tsv"
-"$PCREC" --list-axes > "$TSV" || { echo "axes_registry: FATAL: $PCREC --list-axes failed" >&2; exit 1; }
+"$TIMEOUT_BIN" 60 "$PCREC" --list-axes > "$TSV" || { echo "axes_registry: FATAL: $PCREC --list-axes failed" >&2; exit 1; }   # [K37] bounded, tests/reject/run_reject_tests.sh's own --list-syntax precedent
 
 npass=0
 nfail=0

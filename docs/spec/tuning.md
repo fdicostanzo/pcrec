@@ -511,6 +511,28 @@ first-wins rule (§5.5) — the overflow's own effect (drop the prefilter) still
 applies independently, through `Ctx.dfa_disabled` rather than through `why`.
 Witness: `tests/vm/run_vm_tests.sh` §3b.
 
+**A FALLBACK CAN SHIP A VM ARTIFACT THE DFA REFUSAL USED TO SUPPRESS, AND ONLY
+THE VM'S OWN CAPS BOUND IT THEN** (K41, `docs/dev/known_issues.md`, found by
+the manager's landing battery, 2026-08-28). Before this row, a pattern whose
+DFA build overflowed was refused outright — the VM PROGRAM that pattern would
+have emitted was never built, so nothing about the VM emitter's own limits
+mattered for it. Under the fallback, that VM program IS built and shipped, and
+the DFA-side caps this section otherwise governs (state count, table entries,
+K7's subset-element budget) have nothing more to say about it: from that point
+on, the only bounds on the artifact are the VM emitter's OWN caps
+(`src/core/limits.h`) — `PCREC_MAX_VM_NODES` (131,072 emitted-node budget),
+`PCREC_MAX_VM_REPEAT_COPIES` (64, one bounded repeat's own replication
+ceiling) and `PCREC_MAX_VM_REPLICATION_PRODUCT` (nested-repeat products, tied
+to `PCREC_MAX_VM_NODES`'s own value). K41's measured witness is a case those
+caps do not fully cover today: a deeply-nested, wide bounded-repeat pattern
+whose VM artifact compiles fine as pcrec's own output but is large enough
+(2,004,778 bytes) that `gcc -O2 -c` itself hits a CPU-time resource limit —
+52.9 s / 540 MB, `internal compiler error: CPU time limit exceeded`. That is a
+test-harness/toolchain-visible cost (D45's gcc compile-time budget), not a
+pcrec correctness defect, and the fix direction (a VM-side emitted-PROGRAM-SIZE
+cap, refusing before emission the way the DFA-side caps already do) is
+chartered separately rather than built here — see K41's own entry.
+
 ### 2.12 `-fno-tiered-entry` — `PCREC_NO_TIERED_ENTRY` (bit 14)
 
 **ANSWER-IDENTITY-preserving**, and the strongest such claim in this

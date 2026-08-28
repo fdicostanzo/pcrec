@@ -3127,3 +3127,103 @@ green; a targeted `-fsanitize=address,undefined` build of the compiler
 showed no leak/UB on the retry path. The full `make test` battery was not
 run by this lane (box rule: one heavy suite at a time; flagged for the
 manager to run at merge).
+
+## K41 — OPEN (2026-08-28, found by the manager's [SEL-1] landing battery, tests/fuzz/run_capturediff_gate.sh) — a VM artifact for a deeply-nested, wide bounded-repeat pattern can exceed D45's gcc compile-time budget, and [SEL-1] is what UNHID it rather than caused it
+
+**Symptom, identified by the deterministic property (manager correction,
+2026-08-28): SIZE, not gcc's CPU-time outcome on a given box.** The VM
+artifact for a deeply-nested, wide bounded-repeat pattern can emit a `.c`
+file well past 1,000,000 bytes — `tests/fuzz/fuzz.py`'s own
+`K41_OVERSIZE_BYTES` threshold, checked BEFORE and INDEPENDENTLY of
+whether gcc happens to compile it in time on a given box (a fixed
+CPU-second `ulimit` against box speed is timing-sensitive; the emitted
+artifact's byte count is not — deterministic per `--seed`, the property
+this bucket is now classified by, verified byte-identical across three
+consecutive runs of the gate). At the fuzz gate's fixed `--seed 1
+--patterns 300` slice, exactly TWO patterns cross the threshold:
+
+    1{1,}b1{0}1{2,3}?|(c0{1}.)|((\n.*|.{2}|(?:a{2,3}|0{0,30}cc|c{0,3}bc{2,3}){1,}){5,10}.{2,}|[a-c-e]{1,}?|a$b){28,30}[a-z0-9]{28,30}(\n[^abc]{28,30}?){1,}
+
+(2,004,449 bytes at this measurement — close to, not identical to, an
+earlier 2,004,778-byte reading; harmless drift from unrelated emitter
+changes between measurements, not a second finding) and
+
+    (?:(0{28,30}|[\n\t]?(?:c{1}?c{28,30}?a|1{1,}a{0,30}0|c){5,10}?\n){0,3}?b[\x6]|[^abc]b(0{2,}[\]]|(b{0,30}a??|a{0,3}?\n)[-a]|^))a?|a(\n{1,2}b{1,2}|0)??a{0,30}$
+
+(1,250,766 bytes) — the second pattern was invisible to the gate's
+earlier, gcc-error-text-based classification because it happens to
+compile within this box's gcc budget today, so it never produced a
+`GCC-FAIL` line at all; it would have gone on being silently compared
+like any ordinary pattern despite being every bit as oversize as the
+first. This is the concrete case for classifying by size: **gcc's own
+compile outcome is a CONSEQUENCE on a given box, not the defining
+symptom** — the first witness has been observed both ways (see below),
+and the second compiles fine on the landing box but is not thereby "not
+K41". `--engine=auto` compiles the first witness (`RX_ENGINE "vm"`,
+`RX_ENGINE_WHY "capture group at pattern offset 18"`, `RX_VM_PREFILTER
+"none"`); `--engine=vm` produces the byte-identical artifact. Manually
+forcing `gcc -O2 -c` on that artifact (a higher optimization level than
+the fuzz harness's own `-O0` default) reports `gcc: internal compiler
+error: CPU time limit exceeded`, MEASURED: 52.9 s / 540 MB — the
+consequence, on that box at that optimization level, of the artifact's
+size, not an independent fact about the pattern.
+
+**Cause.** The pattern's `{28,30}`-repeated alternation over a nested
+`{5,10}`-repeated body replicates enormously under the VM's bounded-repeat
+lowering (`docs/design/engine_m4.md` §3.3: no counter, no suppression test
+— [ENG-BREP]'s counter rung does not reach every nested shape), and
+nothing in `src/gen/emit_vm.c` bounds the emitted PROGRAM SIZE the way
+`src/core/limits.h`'s DFA-side caps bound state counts. Before [SEL-1] this
+specific pattern's auto-selected PREFILTER's capture-erased DFA overflowed
+`PCREC_MAX_DFA_STATES_TABLE` first and the compile REFUSED — so the VM body
+that gcc chokes on was never emitted at all. [SEL-1] (K40) makes that
+overflow a fallback rather than a refusal, so the VM artifact now ships,
+and IT is what exceeds D45's gcc budget. This is not a defect in [SEL-1]'s
+own mechanism (every answer the VM artifact WOULD produce, if gcc could
+finish, is correct) — it is a pre-existing VM-emission gap the DFA
+refusal happened to mask for this one shape, discovered because the mask
+came off.
+
+**Class.** A TEST-HARNESS-VISIBLE resource limit (D45's gcc compile-time
+budget), not a pcrec correctness defect and not a caller-visible refusal —
+`build/pcrec` itself compiles the pattern in well under a second; the cost
+is entirely in gcc's own back end compiling the emitted C.
+
+**Fix direction, chartered separately (not built here).** A VM-side
+emitted-PROGRAM-SIZE cap in `src/core/limits.h`, refusing before emission
+the way the DFA-side caps already refuse before emission — `PCREC_MAX_VM_
+NODES`/`PCREC_MAX_VM_REPEAT_COPIES`/`PCREC_MAX_VM_REPLICATION_PRODUCT`
+bound the same family already but did not catch this shape; the new
+budget needs its own measurement of where a legitimate pattern's emitted
+size tops out, the same way K7/[M4.7b]'s subset-element budget was sized
+from a measured corpus maximum rather than guessed.
+
+**Interim handling (this lane, `tests/fuzz/run_capturediff_gate.sh`),
+REVISED 2026-08-28 (manager correction).** An earlier version of this
+handling classified the gate's K41 bucket by grepping gcc's own error
+text ("CPU time limit exceeded" / "internal compiler error") — rejected
+as a flaky gate design: a bucket pinned at exactly 1 that reads 0 or 1
+depending on whether gcc crosses its fixed CPU-second `ulimit` by a
+couple of seconds is red on one box and green on another, and trains
+reviewers to ignore it. `tests/fuzz/fuzz.py` now classifies "K41 oversize
+artifact" by the emitted `.c`'s byte SIZE alone (`K41_OVERSIZE_BYTES`,
+checked before and independently of gcc), which is fully deterministic
+per `--seed` — verified byte-identical across three consecutive solo
+runs of the gate. That bucket is pinned to EXACTLY 2 (both witnesses
+above), asserted separately from the ordinary "gcc compile fails" bucket
+(pinned at 0 — a gcc failure OUTSIDE the size-classified bucket stays a
+real FAILURE, never absorbed by this row's allowance). gcc's own outcome
+on each oversize witness (compiled / over-budget) is read from fuzz.py's
+summary as INFORMATION ONLY, printed with the witness pattern named
+(`K41-WITNESS pattern=... size=... gcc=...`) but never a pass/fail
+signal — this design has no bucket left whose correctness depends on
+gcc's CPU-time luck. Pulling both witnesses fully out of the ordinary
+accept/compare pipeline also moved three other pinned counts
+arithmetically (both accept 183->181, subject pairs compared 2745->2715,
+oracle inconclusive 3->0 — see `run_capturediff_gate.sh`'s own EXPECT
+comment for the derivation). A movement of the K41 bucket to 0 means
+neither witness reaches its shape any more (K41 closed, or the
+generator/seed changed — re-derive, do not silently widen); a movement
+above 2 means a NEW pattern is oversize and the gate stays RED naming
+it, with the count, the witness pattern, and this K-row cited in the
+failure message — never a silent allowlist.

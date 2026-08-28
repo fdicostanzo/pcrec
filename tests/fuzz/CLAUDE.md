@@ -179,5 +179,33 @@ bundle under `failures/`; triage by reproducing independently of the
 fuzzer and minimizing before concluding it's a real engine bug (see
 README.md's "Triaging a divergence").
 
+**[SEL-1] (2026-08-28, K40) NARROWED WHAT THE "DFA state-cap" BUCKET CAN
+STILL CATCH.** It counts a pcrec compile stderr containing "too complex for
+the DFA engine" (the two DFA-side caps in `src/core/limits.h`, state count
+and K7's subset-element budget) OR "NFA exceeds" (`PCREC_MAX_NFA_STATES`,
+which has no fallback engine and is UNCHANGED by [SEL-1]). Under
+`--engine=auto` — `compile_with_pcrec()`'s only mode — the first half is now
+a SELECTION OUTCOME rather than a refusal (`docs/spec/tuning.md` §2.11): a
+pattern that used to land in this bucket for that reason now compiles as a
+VM fallback and lands in the ordinary accept/compare pipeline instead. The
+bucket did not stop being meaningful; its population just moved, and moved
+ENTIRELY on this fixed seed's own draw (8 -> 0 at seed 1/patterns 300,
+`run_capturediff_gate.sh`'s own re-pin). **A NEW, related bucket, "K41
+oversize artifact", lives in fuzz.py ITSELF** (revised 2026-08-28, manager
+correction): some of those newly-VM-compiled patterns emit a `.c` file past
+`K41_OVERSIZE_BYTES` (1,000,000 bytes) — `docs/dev/known_issues.md` K41.
+This is classified by the emitted artifact's SIZE, checked before and
+independently of whatever `gcc` does with it, deliberately NOT by grepping
+gcc's own error text (an earlier version did that and was rejected as a
+flaky gate: gcc's CPU-time outcome under D45's fixed budget depends on box
+speed/load, so a bucket keyed on it reads differently box to box, while the
+artifact's byte count is fully deterministic per `--seed`). `gcc`'s own
+outcome on an oversize artifact (compiled / over-budget) is printed for
+information only and never affects the plain "gcc compile fails" bucket,
+which stays meaningful — a real pcrec-emitted-code compile defect — only
+for artifacts under the threshold. See fuzz.py's own comment above
+`K41_OVERSIZE_BYTES` and `run_capturediff_gate.sh`'s EXPECT-block comment
+for the full derivation and the three-run determinism proof.
+
 Maintenance: update this file and README.md when the generator's covered
 feature set, the exclusion list, or the output-bucket classification changes.
