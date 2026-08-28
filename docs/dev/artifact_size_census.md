@@ -83,8 +83,14 @@ some size."*
   `bench/email/patterns/*.rx` and `bench/loglines/patterns/*.rx` (14,
   read-only), for **2,772 total**. Compiled with `build/pcrec -p rx
   --features all -o - -- '<pattern>'` (the self-contained single-file
-  form — byte-identical to the split `.c`+`.h` form's combined bytes,
-  verified on a sample) — auto engine selection, no other flags.
+  form, used consistently for every measurement in this report) — auto
+  engine selection, no other flags. NOT byte-identical to the split
+  `.c`+`.h` form's combined bytes (verified directly on the witness, §6:
+  2,015,594 self-contained vs 2,016,088 combined split-form, a 494-byte
+  difference — header-guard/`#include` boilerplate the two forms spell
+  differently) — an earlier draft of this report claimed byte-identity
+  without having checked it; §6 records the real mid-lane bug that check
+  would have caught sooner.
 - **Refused patterns are counted, not skipped**: 284 of 2,772 (10.2%)
   refuse to compile. Classified by diagnostic: 283 are ordinary `perr`
   negative-test rejections already in the corpus for other reasons
