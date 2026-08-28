@@ -127,6 +127,41 @@ fi
 #   factored   -> "pattern too complex for the DFA engine" (cleared the NFA cap)
 # If either cap in src/core/internal.h moves, these fail loudly, not quietly.
 #
+# [SEL-1] (2026-08-28) BOTH PROBES ARE PINNED TO `--no-captures --engine=dfa`,
+# and that is a re-anchor of the OBSERVABLE, not a widened claim. Before this
+# row, `auto`'s DFA-cap-overflow contract (docs/spec/tuning.md §2.11) turned
+# the shipped build's "pattern too complex for the DFA engine" refusal into a
+# silent VM fallback -- the trie still factors exactly as before (the
+# fallback is `compile_driver`'s own retry AFTER the identical build this
+# control is about already ran and overflowed), but the refusal TEXT this
+# control reads is gone, so `oa` came back "" (`sa=compiled`) instead of
+# `factored` and every one of these three controls failed with
+# `shipped=compiled`. Forcing `--engine=dfa` is deliberately do-or-die
+# (docs/spec/tuning.md §2.11: a forced engine stays refused, unconditionally,
+# which is the one property `auto`'s new fallback does NOT touch) so the
+# refusal text is the observable again, on the SAME artifact the trie
+# factored the SAME way -- this control was never about `auto`'s
+# engine-selection behaviour, only about whether the trie shrinks the NFA
+# enough to clear ITS cap while the DFA it then attempts is still too big for
+# ITS OWN cap, which `--engine=dfa` isolates cleanly.
+#
+# `--no-captures` HAS TO RIDE ALONGSIDE IT, and this is the one narrowing
+# `--engine=dfa` alone does not buy: `ctl_small`'s `^(%s){%d}` wraps its
+# alternation in a CAPTURING group (captures are on by default), so
+# `select_engine.c`'s captures-first override refuses `--engine=dfa` on its
+# OWN, earlier ground ("this pattern requires captures...") before the
+# construction this control is about ever runs -- measured, first draft of
+# this fix: all three controls failed with that exact "other:" text on BOTH
+# sides. `--no-captures` is answer-neutral for what this control reads: D31's
+# erasure already makes `A_CAP` INVISIBLE to `nfa.c`'s trie/NFA construction
+# (`ast_bare`), so the automaton `--no-captures` builds is state-for-state the
+# one the captures-default artifact's PREFILTER attempt already was — this
+# flag changes ONLY which of "the engine" vs. "the prefilter" the identical
+# DFA build was for, never its size. `$REF` gains both flags too, for
+# symmetry and because with `--no-captures` these patterns already select the
+# DFA under plain `auto` (nothing left to force) — but the reader should not
+# have to derive that from first principles at every future re-read.
+#
 # The two small-branch controls are `^`-ANCHORED on purpose. Without `^` the
 # engine also builds a REVERSE machine, and a shared PREFIX barely factors in
 # reverse (the reverse trie factors the branches' shared SUFFIX, which here is
@@ -136,8 +171,8 @@ fi
 # forward NFA for the 4-branch shape: 213 states factored vs 812 unfactored.
 check_control() { # check_control <label> <pattern>
     local lbl="$1" pat="$2" oa ob sa sb
-    oa="$(pcrec_run "$PCREC" -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
-    ob="$("$REF"   -p rx -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+    oa="$(pcrec_run "$PCREC" -p rx --no-captures --engine=dfa -o - -- "$pat" 2>&1 >/dev/null | head -1)"
+    ob="$("$REF"   -p rx --no-captures --engine=dfa -o - -- "$pat" 2>&1 >/dev/null | head -1)"
     case "$oa" in *"DFA engine"*) sa=factored ;; *"NFA exceeds"*) sa=unfactored ;;
                   "") sa=compiled ;; *) sa="other:$oa" ;; esac
     case "$ob" in *"DFA engine"*) sb=factored ;; *"NFA exceeds"*) sb=unfactored ;;

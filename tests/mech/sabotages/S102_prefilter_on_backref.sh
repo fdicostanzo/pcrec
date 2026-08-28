@@ -41,5 +41,14 @@ SAB_COUNT=1
 # own row (S165), so a matrix run tells the two apart: this one leaves a
 # call-bearing pattern's prefilter correctly off and turns a BACKREF-bearing
 # one's on, which is S102's own population and no wider.
-SAB_BEFORE='        fit.prefilter = (has_bref || has_call) ? false'
-SAB_AFTER='        fit.prefilter = (false || has_call) ? false   /* SABOTAGE S102 */'
+#
+# [SEL-1] RE-ANCHORED 2026-08-28 (manager's landing-battery finding): the
+# guard gained a THIRD disjunct, `cx->dfa_disabled` (auto's DFA-cap-overflow
+# fallback drops the prefilter the same silent way has_bref/has_call already
+# do), so the two-disjunct line this row anchored on stopped existing again —
+# the identical re-home shape as the wave B+C note above, one disjunct later.
+# Still targets `has_bref` ALONE: `has_call` and `cx->dfa_disabled` are
+# carried through UNCHANGED in `SAB_AFTER`, so this row's population stays
+# exactly "a backref-bearing pattern's prefilter turns on", not wider.
+SAB_BEFORE='        fit.prefilter = (has_bref || has_call || cx->dfa_disabled) ? false'
+SAB_AFTER='        fit.prefilter = (false || has_call || cx->dfa_disabled) ? false   /* SABOTAGE S102 */'
