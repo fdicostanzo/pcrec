@@ -6697,6 +6697,32 @@ static void vm_strats_describe(unsigned mask, StrBuf *o)
 static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
 {
     Ctx *cx = v->cx;
+    /* [SEL-1] A FIFTH "off" ROUTE, for the identical reason the backreference
+     * and call arms below are tested before the two flag routes: no flag
+     * explains it. `cx->dfa_disabled` means this compile is
+     * `compile_driver`'s one-shot retry after `auto`'s own DFA-cap-overflow
+     * fallback (src/opt/select_engine.c) -- the prefilter this artifact would
+     * otherwise have gotten is DROPPED because its DFA build hit the same cap
+     * `--engine=dfa` refuses on, not because of `-fno-prefilter` or the
+     * `--engine=vm` side effect. Computed into a buffer BEFORE the ternary
+     * below (unlike the static arms) because it has to embed
+     * `cx->dfa_overflow_why`'s own text -- the same cap name `RX_ENGINE_WHY`
+     * carries when the overflow is ALSO why this pattern chose the VM
+     * (`st->why` differs from it when a request-derived reason, e.g. a live
+     * capture, won that race first: this line still has to explain the
+     * PREFILTER specifically, which the overflow decided regardless of which
+     * reason won the ENGINE). Left empty (and unread) unless
+     * `cx->dfa_disabled` fires. */
+    /* +160: the static text around `cx->dfa_overflow_why` is 142 bytes
+     * ("NO (" + ") -- the auto-selected ... (SEL-1)"), measured; +160 is
+     * this file's own K38-precedent margin over that worst case rather
+     * than a tight fit that reopens the next time either string grows. */
+    char sel1_prefilter_reason[PCREC_DFA_OVERFLOW_WHY_LEN + 160];
+    if (cx->dfa_disabled)
+        snprintf(sel1_prefilter_reason, sizeof sel1_prefilter_reason,
+                 "NO (%s) -- the auto-selected prefilter's own DFA build hit"
+                 " the cap --engine=dfa/-fprefilter refuse on; auto drops it"
+                 " instead of refusing (SEL-1)", cx->dfa_overflow_why);
 
     sb_puts(o, "; pcrec VM program listing (DD-8; docs/design/engine_m4.md S10)\n");
     sb_puts(o, ";\n");
@@ -6750,6 +6776,11 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
                 " no finite inlining either; no flag changes this, and"
                 " -fprefilter refuses. A SPLICED call is not a reason: its"
                 " callee is inlined EXACTLY (S8.3, S6.3)"
+              /* [SEL-1] tested here, ahead of the two flag routes, for the
+               * same reason has_bref/has_call are: this is a THIRD thing no
+               * flag explains, and it must not be reported as one. */
+              : cx->dfa_disabled
+              ? sel1_prefilter_reason
               : (cx->opt->flags & PCREC_NO_PREFILTER)
               ? "NO (-fno-prefilter) -- forced off; the VM scans from search_from itself"
               : "NO (--engine=vm) -- the VM scans from search_from itself (R21 E-6)");
