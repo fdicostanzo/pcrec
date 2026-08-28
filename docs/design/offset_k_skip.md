@@ -31,8 +31,8 @@ measurements, and the code is then written against this document. The plan row
 7. It is **answer-identical by construction** — the skip refuses only starts the
    scan would refuse — and the gate is `make test-axes` under
    `-fno-offset-skip` (§6).
-8. Measured selections, before any timing: `uuid` 807,006 → 20 ppm predicted
-   candidate rate, `iso-ts` 74,760 → 372, `stack-frame` 807,006 → 6,037; and
+8. Measured selections: `uuid` 807,006 → 7 ppm predicted candidate rate,
+   `iso-ts` 74,760 → 372, `stack-frame` 807,006 → 3,253; and
    `ipv4`, `hex32-id`, `http-5xx`, `ipv6`, `kv-quoted` and **both email
    patterns** are declined and do not move (§4.7).
 
@@ -100,8 +100,31 @@ that set would be a miscompile: on `\b[0-9]{2}` against `"ab12"` a filter that
 skipped the letters would land at `'1'` in the no-context start state, evaluate
 `\b` as true, and match `"12"`, which PCRE2 does not.
 
-**This is load-bearing for §5.4 and it is why offset 0 keeps its own
-derivation.** The k ≥ 1 analysis below never re-derives offset 0.
+**AND THE CONSEQUENCE THE FIRST DRAFT OF THIS NOTE DID NOT DRAW —
+MISCOMPILE-1.** The paragraph above says what `can_begin_match` IS: the answer
+to *"does this byte move the machine off `fs`"*. It is **not** the answer to
+*"can a match begin here"*, and the two differ on every pattern with a leading
+assertion. Offset 0 therefore has **two roles and needs two sets**:
+
+| role | question | set | used by |
+|---|---|---|---|
+| **A — the SCAN at k = 0** | does this byte move the machine off `fs`? | `us.cand.set`, the escape set | the four pre-[OPT-K] forms |
+| **B — a VERIFY at offset 0** | can a match BEGIN with this byte? | the walk's own `frontier[0]` (§3.1) | the offset-set forms |
+
+Role A's set is exactly right for role A, and §5.4 depends on it. Using it for
+role B **loses matches**: the skip lands past bytes it jumped over, so the
+parked state at the landing may be the seeded `s1u[UPC_WORD]` rather than
+`fs`, and a byte that cannot begin a match from `fs` can begin one from there.
+MEASURED before the fix, on both engines: `\b\.[0-9]{4}Z` has an escape set of
+exactly the 63 word bytes with `.` EXCLUDED, and `.` is the only byte a match
+can begin with — `"ab.1234Z"` answered NOMATCH against a baseline and python3
+`re` of `(2,8)`. §7.8 is the record, `tests/offsetskip` §8 and
+`run_offset_skip.sh` §2c the checks, S188 the sabotage row.
+
+Role B's set is also strictly TIGHTER, so the fix is an improvement as well as
+a correction: `uuid`'s offset-0 verify is the 16-byte hex class rather than 63
+word bytes, `stack-frame`'s is `{a}`. That is panel finding C4 arriving as a
+consequence of a correctness fix rather than as an optimization (§7.7).
 
 ### 2.2 Why the same walk cannot simply be continued past offset 0
 
@@ -171,6 +194,20 @@ assertion (an assertion that HOLDS is a subset of "an assertion passed
 unconditionally"). The thread's next byte is consumed by an `N_CLASS` state of
 that set, whose class is a subset of `S[j]`. ∎
 
+**THE CLAIM IS OVER THE WHOLE CONJUNCTION AND HAS NO EXCEPTION CLAUSE, AND
+THAT MATTERS MORE THAN IT LOOKS.** `j` ranges over EVERY published offset,
+`j = 0` included, and the proof is a statement about the PATTERN and about
+`anch_start`: it never mentions the DFA, the start state, the search position,
+or which context the machine happens to be in. So `S[j]` is a necessary
+condition for a match beginning at `p` **whatever byte precedes `p`** — from
+`fs`, from `s1u[UPC_PLAIN]`, from `s1u[UPC_WORD]`, from `s1u[UPC_NL]` alike.
+
+That universality is exactly what MISCOMPILE-1 lacked. The escape set is a
+fact about ONE state; every member of the conjunction has to be a fact about
+the pattern, or the conjunction is valid only at the positions that state
+describes. The first draft mixed one of each and lost matches. **A new member
+of the k-set is admissible only if its set is derived from this walk.**
+
 Every failure mode of the analysis widens some `S[j]`. A pattern the walk
 cannot model precisely gets a bigger set, the cost model declines it, and the
 artifact keeps the filter it has. **There is no direction in which this
@@ -178,16 +215,26 @@ analysis can refuse a start the scan would have accepted.**
 
 ### 3.3 Where the walk stops
 
-Four stop conditions, in the order they are asked:
+**Five** stop conditions, in the order they are asked (panel finding D-6: the
+draft said four and folded two into one line):
 
 1. **`N_ACCEPT` is in the frontier.** The match may already be over, so
    `s[p+j]` need not exist and no constraint at offset `j` is sound. This is
    the condition that makes `min_length` implicit rather than a second
    analysis: the walk simply stops at the pattern's minimum width.
-2. **The frontier has no consuming state.** Same thing by another route.
-3. **`S[j]` is the whole alphabet.** Every later offset is at least as wide
+2. **The frontier has no consuming state but is not empty.** Nothing can
+   consume a byte and nothing accepts, so the pattern **matches nothing at
+   all** — [OPT-5]'s degenerate case, reached through the front door. **It is
+   deliberately NOT exploited** (D-6): "this pattern matches nothing" is
+   already derived, by `unanch_start`'s own `empty`, and answered by a body
+   that is one `return 0` with no table, no loop and no skip. A second
+   derivation of the same fact in another file is the fork D63's header
+   forbids, and this one would be the weaker of the two — it sees only the
+   prefix, where `unanch_start` sees the machine. The walk simply stops.
+3. **The frontier is empty.** The same, one step earlier.
+4. **`S[j]` is the whole alphabet.** Every later offset is at least as wide
    (the frontier only fans out), so the walk has nothing left to say.
-4. **`j == PCREC_PREFIX_K_MAX` (24).** A walk bound, not a tuning knob: past
+5. **`j == PCREC_PREFIX_K_MAX` (24).** A walk bound, not a tuning knob: past
    two dozen bytes a still-narrow prefix is vanishingly rare on the corpus (the
    largest useful offset any corpus pattern produces is 13, `uuid`'s second
    hyphen).
@@ -340,12 +387,22 @@ For each candidate scan offset:
   This is `attempt_cand`'s scope line in `src/gen/emit_dfa.c` for the same
   reason: shipping an untested emitted loop is worse than shipping none. Offset
   0 keeps both forms, because both already ship.
-- **Verifies are added greedily, most selective first.** Greedy is exact here
-  and not an approximation: each verify multiplies the entry rate by its own
-  mass independently of the others, so the best `n` offsets are the `n` with the
-  lowest mass and no exchange improves a set of that size.
-- **Offset 0 is always in the set** — as the scan, or as a mandatory verify.
-  §5.4 is why.
+- **Verifies are added greedily, most selective first, while the gain is
+  decreasing.** The draft called greedy EXACT and panel finding D-3 refutes
+  that: `verify_cost(p) = C_VERIFY + C_MISPRED·min(p, 1−p)` is NOT monotone in
+  `p` — a verify at `p = 0.9` costs LESS than one at `p = 0.5` — so ordering by
+  mass alone is not an exchange argument, and a cheap high-mass verify could in
+  principle beat a dearer mid-mass one. What is true is the weaker claim the
+  code implements: candidates are considered in increasing mass and each is
+  taken **only while it strictly reduces the modelled cost**, so the result is
+  a decreasing-gains greedy under a cap of 4, not an optimum. Every corpus
+  k-set is 2 or 3 members drawn from at most a couple of dozen offsets, so the
+  difference is not measurable; the CLAIM is narrowed rather than the code
+  changed.
+- **Offset 0 is always in the set, ALWAYS as role B's VERIFY and never as the
+  scan.** §2.1's table is why it is a different set from the scan's; §5.4b is
+  why it is mandatory. The scan loop starts at `si = 1`, so the two sets cannot
+  be confused at the selection site.
 
 ### 4.5 The materiality bar
 
@@ -382,10 +439,10 @@ the largest. **The column below is the MASS ratio and is labelled so; every
 
 | pattern | offset-0 mass | selected k-set (`*` = the scan) | predicted rate | MASS ratio |
 |---|---|---|---|---|
-| `uuid` | 807,006 ppm | `k=0`, **`k=8*`** (`-`), `k=13` (`-`) | 20 ppm | 40,350× |
+| `uuid` | 807,006 ppm | `k=0` (hex), **`k=8*`** (`-`), `k=13` (`-`) | 7 ppm | 115,286× |
 | `iso-ts` | 74,760 ppm | `k=0` (digits), **`k=4*`** (`-`) | 372 ppm | 201× |
-| `stack-frame` | 807,006 ppm | `k=0`, **`k=1*`** (`t`), `k=2` (` `) | 6,037 ppm | 134× |
-| `bignum` | 807,006 ppm | **`k=0*`** (bitmap), `k=1` (digits) | 60,331 ppm | 13× |
+| `stack-frame` | 807,006 ppm | `k=0` (`{a}`), **`k=1*`** (`t`) | 3,253 ppm | 248× |
+| `bignum` | 807,006 ppm | — declined (the scan would not move; §7.4) | — | — |
 | `ipv4` | 74,760 ppm | — declined | — | — |
 | `hex32-id` | 807,006 ppm | — declined | — | — |
 | `http-5xx` | 3,323 ppm | — declined | — | — |
@@ -408,10 +465,19 @@ loop's cost. Adding `-`@7 as a third member costs more (one more branch on every
 candidate) than the 350 ppm of loop entries it removes. The model's arithmetic
 for both options is in `prefix_k.c`'s `model_cost`.
 
-**`bignum` is a new beneficiary the row did not predict**, and it is the
-mechanism generalising rather than a special case: `\b[0-9]{10,19}\b` has the
-useless 63-byte offset-0 set of every `\b`-leading pattern, and one digit probe
-at offset 1 cuts its loop-entry rate 13×.
+**THIS TABLE IS THE POST-MISCOMPILE-1 RE-RUN** (panel item 3). Offset 0 is
+now role B's tighter set, which changes the masses the model works from and
+therefore the verdicts. What moved: `stack-frame` drops its offset-2 verify
+(with `{a}` at offset 0 rather than 63 word bytes, the space at offset 2 no
+longer pays for its branch), and `bignum` — which the draft listed as an
+unpredicted beneficiary at a modelled 13× — is DECLINED, by the measured
+scan-move rule of §7.4 rather than by the prior. Every other row is unchanged,
+including all seven declines and both email patterns.
+
+The witness class MISCOMPILE-1 was found on is now a beneficiary in its own
+right: `\b\.[0-9]{4}Z` selects `0,5*`, `\b:[0-9]{2}:[0-9]{2}` selects `0,3*`,
+`\b-[0-9]{4}-` selects `0,5*` — all three the common real log shapes, and all
+three patterns on which the first draft answered NOMATCH.
 
 ---
 
@@ -572,18 +638,37 @@ never accept, and a thread that can never accept contributes nothing to any
 later answer. It cannot affect D3's priority pruning either — pruning is
 triggered BY an accept, and this thread has none.
 
-### 5.6 Empty matches, views, and the two positions at the end
+### 5.6 Empty matches, and which states the argument is about
 
 The mechanism inherits its whole zero-width argument from `unanch_start`, and
-that is why the k-set is derived **only** when `kind != DFA_PF_NONE`:
-`!start_acc` (which ORs in the seeded start states under `fseed`) is what says
-the machine cannot accept while parked, so no position the skip passes can be an
-empty match. A k-set selected independently of that verdict would be a second,
-weaker version of an argument the function already makes — the fork D63's header
-forbids.
+that is why the k-set is derived **only** when `kind != DFA_PF_NONE`. The
+load-bearing half is `start_acc`, and it is worth quoting what that flag
+actually ORs over (`emit_dfa.c`, `unanch_start`):
 
-An EOL/END view accept applies only at `n-1` and `n`, which the `-bounded`
-form's clamp never passes.
+```c
+bool start_acc = state_acc_any(&fd->st[fs]);
+if (dfa_needs_seed(fd))
+    for (int u = 0; u < UPC_N; u++)
+        start_acc = start_acc || state_acc_any(&fd->st[fd->s1u[u]]);
+```
+
+So `!start_acc` says **no start state accepts — not `fs`, and not any seeded
+`s1u[u]`** — which is exactly the set of states the skip can be parked in or
+can land in. No position the skip passes can be an empty match, from any
+context. A k-set selected independently of that verdict would be a second,
+weaker version of an argument the function already makes.
+
+**THE `-bounded` HALF IS SELECTED BY `wctx` ON THESE PATTERNS, NOT BY A VIEW,
+and the draft's sentence about EOL/END views did not cover them.** `views` is
+`viewsel || wctx`, and for every `\b`-led beneficiary — `uuid`,
+`stack-frame`, the whole MISCOMPILE-1 witness class — it is the WORD CONTEXT
+that sets it, with no `$`/`\Z`/`\z` anywhere. The clamp at `n-1` is inherited
+from D11 unchanged either way and is what the bounded form IS; what is not
+true of these patterns is the draft's justification for it. Stated honestly:
+a view accept applies only at `n-1` and `n`, which the clamp never passes; a
+word-context accept is a per-position fact that `!start_acc` has already
+excluded for every start state; the clamp costs nothing and is kept for D11's
+reason rather than re-derived here.
 
 ### 5.7 Find-all and restart: O(n) per subject, not per restart
 
@@ -617,13 +702,32 @@ so it is bounded by the same sweep.
 
 ## 6. Identity
 
-### 6.1 The argument
+### 6.1 The argument, in four steps, each naming the state it is about
 
-The skip refuses only starts the scan would refuse (§3.2), it lands the machine
-in the state the scan would have been in (§5.4a), it discards only threads that
-can never accept (§5.5), and it never passes a position at which the machine
-could accept (§5.6). So every artifact's answer — span, capture slots, failure
-surface — is unchanged on every subject.
+The draft ran these together in one sentence, which is how MISCOMPILE-1 hid:
+three of the four steps are facts about DIFFERENT states, and a step that
+silently changes which state it is talking about is unsound without looking it.
+
+1. **THE SKIP REFUSES ONLY STARTS THAT CANNOT BEGIN A MATCH.** A fact about
+   the PATTERN and `anch_start` — §3.2, universally quantified over the
+   preceding byte, hence valid at a landing whose context is `fs` or any
+   `s1u[u]`. *(This is the step MISCOMPILE-1 broke, by giving one member of
+   the conjunction a set that was a fact about `fs` alone.)*
+2. **THE MACHINE LANDS IN THE STATE THE STEPPED SCAN WOULD HAVE BEEN IN.** A
+   fact about `s1u[upc(s[cand-1])]` — §5.4a. The skip jumps over the bytes
+   that were carrying the left-hand context, so it re-seeds from `s[cand-1]`
+   through the same table the search's own initializer uses. On a machine with
+   no seed there is one start state and no context to carry.
+3. **THE THREADS THE LANDING DISCARDS CAN NEVER ACCEPT.** A fact about the
+   threads from `[pos, cand)` — §5.5. Any accept of such a thread would BE a
+   match starting in that range, which step 1 excludes; a thread that can never
+   accept contributes to no later answer and cannot trigger D3's priority
+   pruning, which is triggered BY an accept.
+4. **NO POSITION THE SKIP PASSES CAN ACCEPT AT ALL.** A fact about `fs` AND
+   every `s1u[u]` — §5.6's `!start_acc`, which ORs over all of them.
+
+Together: every artifact's answer — span, capture slots, failure surface — is
+unchanged on every subject, from every start position.
 
 ### 6.2 The gate
 
@@ -712,6 +816,24 @@ The three CONTROLS and the two EMAIL patterns are declined by the selection,
 so their artifacts do not move at all and their rows are a measurement of this
 box's noise floor rather than of the change. `ipv4`'s 0.91× is that noise: its
 two artifacts are byte-identical apart from the `#include` line.
+
+**RE-MEASURED AFTER THE MISCOMPILE-1 FIX** (the offset-0 verify is now role
+B's tighter set, and `stack-frame`'s k-set dropped its offset-2 member), same
+method, `load1` 0.4-0.7:
+
+| row | fail | hit |
+|---|---|---|
+| `stack-frame` (`0,1*`) | **10.18×** | **6.19×** |
+| `uuid` (`0,8*,13`) | **4.45×** | **9.58×** |
+| `iso-ts` (`0,4*`) | **6.13×** | **5.75×** |
+
+Match counts equal on every row. The `on` arm's spread widens to ±60-150%
+here for the reason §7.0 gives — those artifacts now run at 0.3-0.8 ns/B, so a
+20-iteration trial is a few milliseconds and measures the box. The medians are
+stable across both batches and the conclusion is unchanged: **4.4×-10.2× on
+the three rows the row exists for.** The tighter offset-0 verify neither
+helped nor hurt outside that noise, which is what §7.7 predicted from its own
+1.08×-1.33× hand measurement.
 
 Short literals, on the same 1 MB of log text: `needleXYZW` **17.06×** (the
 scan moves from `n` at offset 0 to `X` at offset 6), `[af]bc|[gz]bc` 3.45×,
@@ -829,10 +951,20 @@ member.
 **Measured directly, by hand-editing the offset-0 verify of `stack-frame`'s
 artifact from the 63-byte table probe to `subject[cand] == 'a'`: 1.08× on the
 failing subject, 1.33× on the hit subject.** Real, and below this row's own
-§4.5 materiality bar of 2×. So it is NOT built, and the reason is the rule the
-row applies to everything else rather than a judgement made once for it. What
-would trigger it: a bench row where the offset-0 verify is the dominant
-remaining cost, which none of the three exercising rows is after §7.2.
+§4.5 materiality bar of 2×, so the judgement recorded here was to DECLINE it.
+
+**THAT DECISION WAS THEN OVERTAKEN, AND THE ORDER OF EVENTS IS THE POINT.**
+C4's improvement is not an optimization that had to earn a bar — it is the
+CORRECT SET, and the wider one was a miscompile (§2.1, §7.8). The fix delivers
+C4 as a consequence: offset 0 now always carries the walk's own `frontier[0]`,
+which is `{a}` for `stack-frame` and the 16-byte hex class for `uuid`. The
+1.08×–1.33× above is therefore a measurement of a side effect of the fix
+rather than of an optional extra, and it is banked.
+
+The transferable part is the near miss: a correctness defect was sitting
+inside a question that had been framed, and answered, as a performance
+trade-off. Measuring it against a speed bar produced the right number and the
+wrong decision, and no amount of re-measuring would have surfaced the reason.
 
 ---
 
@@ -890,3 +1022,83 @@ the representation exists, the change is one function that seeds the walk from
 the lookbehind's own reversed body and publishes negative `k`. This note's §3
 is written with `anch_start` as *the* seed so that the second seeder is an
 addition and not a rewrite.
+
+### 7.8 MEASURED — MISCOMPILE-1, the one wrong answer this row produced
+
+Found by the D6 semantics critic against commit `bd0dad4`; reproduced running,
+on both engines, before anything was changed.
+
+**The defect.** The offset-0 member of the k-set used `cand_from_escapes`'s
+set — the answer to "does this byte move the machine off `fs`" — as a VERIFY
+that refuses a candidate START. §2.1 states the fact that makes those two
+different questions and the first draft of this note did not draw the
+consequence.
+
+**The witness**, `\b\.[0-9]{4}Z`, compiled `--emit-main` at `-O2`:
+
+| subject | before | after | `-fno-offset-skip` | python3 `re` |
+|---|---|---|---|---|
+| `ab.1234Z` | **nomatch** | match 2 8 | match 2 8 | (2, 8) |
+| `x.9999Z` | **nomatch** | match 1 7 | match 1 7 | (1, 7) |
+| `ab.1234Zq` | **nomatch** | match 2 8 | match 2 8 | (2, 8) |
+| `.1234Z` | nomatch | nomatch | nomatch | None |
+
+The escape set here is exactly the 63 word bytes with `.` EXCLUDED, and `.` is
+the only byte a match can begin with, so the verify refused every real
+candidate. The witness class is `\b` followed by a non-word atom, which is
+three common real log shapes: a fractional second's `.`, a timestamp's `:`, a
+signed offset's `-`.
+
+**Why nothing in the tree saw it.** `make test-axes` compares the denied build
+against the default one and both were wrong together. The `.rxt` corpus held
+no pattern of the shape. The structural checks read a stamp and an arithmetic
+that were both correct — the k-set was the one the note specified, emitted
+faithfully, from a set that was the wrong set.
+
+**What now sees it.** `tests/offsetskip` §8 — 18 oracle-verified cells over the
+three witness patterns, every `m` row a lost match under the defect;
+`run_offset_skip.sh` §2c — the emitted line, plus a CROSS-BUILD vacuity guard
+(the `-fno-offset-skip` build's escape set against the default build's
+`ofs_k0`: 63 bytes against 16, required to differ); and sabotage row **S188**,
+which restores it and MEASURES **offsetskip 5 fail / 20 pass, corpus 9 fail /
+89 pass** against a clean 22/0 + 98/0 baseline.
+
+**The generalisable rule, now in §3.2 and enforced by §6.1's four steps:** every
+member of the k-set conjunction must be a fact about the PATTERN. A set that is
+a fact about one STATE is valid only at the positions that state describes, and
+the skip's whole purpose is to land somewhere else.
+
+## 11. Smaller findings, recorded rather than folded away
+
+- **D-4 — the no-`default:` switch alarm is `make strict`'s alone.** §3.1 leans
+  on `-Wswitch` to force a new `NKind` to be classified in `wclose`, and
+  `-Werror` is deliberately NOT the default build (R5-Q1), so on a plain `make`
+  the alarm is a WARNING a reader may not see. That is the same footing
+  `src/ir/dfa.c`'s and `src/opt/mrl.c`'s switches already stand on, and it is
+  stated here rather than quietly relied on. No structural check is added: one
+  would be a second, weaker copy of what the compiler already computes exactly.
+- **D-5 — `model_cost`'s integer arithmetic zeroes the `C_ENTER` term below
+  ~500 ppm.** Costs are in hundredths of a cycle per byte and the entry term is
+  `scan_ppm × vrate / 1e6 × C_ENTER / 1e6`, so a chain rate under roughly 500
+  ppm truncates to 0. It is a floor, not a bug — at that rate the loop entries
+  genuinely cost less than a hundredth of a cycle per byte and the comparison is
+  decided by the scan and the verifies — but it means the model cannot
+  distinguish two very selective k-sets from each other, which is visible in
+  §4.7 (`uuid` at 7 ppm and 20 ppm model identically). Stated rather than
+  scaled: scaling would add precision the constants do not have.
+- **N-1 — negative `k` would need a scan-pointer guard.** §10's extension to a
+  leading fixed lookbehind publishes offsets below zero, and `memchr(subject +
+  pos + k*, …)` with `k* < 0` needs `pos + k* >= 0` before the pointer is
+  formed. The loop guard would become `pos + maxk < n && pos >= -mink`. Noted
+  for whoever builds it; nothing here emits a negative offset.
+- **N-2 — the empty verify chain is a `ctx_fail`, not a `1`.** Offset 0 is
+  always a member and never the scan, so the chain always has a term; the
+  fallback that stood there emitted `if (1)`, which is a correct matcher with
+  the mechanism silently switched off. The same treatment was given to the
+  now-unreachable bitmap-scan arm, which is deleted rather than left as dead
+  emitted text that reads `can_begin_match`.
+- **N-3 — the `_OFFSETS` sibling stamp** was absent from the analysis-only
+  commit `891b672` and landed with the emitter in `f5a3a3a`. The structural
+  check reads the artifact's own k-set (the emitted helper) and compares it
+  against a literal table, never against the stamp alone — §2 of
+  `run_offset_skip.sh`.
