@@ -363,23 +363,60 @@ def attribute_source(text):
     def consume_braced_block(start, bucket_name):
         """start: index of a line opening a brace-delimited block (a
         function body or main()). Scans line by line to the matching
-        brace-depth-0 close, but carves out any NESTED table literal
-        (a local `static const ... = { ... };`, which this emitter uses for
-        every DFA transition/accept/class table) into the TABLES bucket
-        instead of leaving it inside the enclosing function's bucket —
-        without this carve-out every DFA table would be misattributed as
-        PROGRAM, since the tables are declared local to the scan function
-        rather than at file scope. Returns (end_index_exclusive,
-        {bucket_name: n, 'tables': m})."""
-        out = {bucket_name: 0, "tables": 0}
+        brace-depth-0 close, applying the SAME per-line dispatch as the
+        top-level loop (comment / blank / table-literal detection) rather
+        than dumping every nested line into the enclosing bucket — WITHOUT
+        this, every doc-comment and every one of the thousands of per-node
+        `// optional copy (N remaining)` comments the VM emitter writes
+        inside its single giant search function would be misattributed as
+        PROGRAM instead of PROSE (found by cross-checking a VM witness
+        artifact against an independent `gcc -fpreprocessed -dD -E -P`
+        comment-stripping pass: comments are ~15% of that file, not the
+        <1% this function returned before this fix), and a local DFA table
+        declared inside a scan function would be misattributed as PROGRAM
+        instead of TABLES for the identical reason. Returns
+        (end_index_exclusive, {bucket_name: n, 'tables': t, 'prose': p,
+        'scaffold': s})."""
+        out = {bucket_name: 0, "tables": 0, "prose": 0, "scaffold": 0}
+
+        def bump(bucket, k):
+            out[bucket] = out.get(bucket, 0) + k
+
         j = start
         depth = 0
         seen_open = False
+        in_comment = False
         while j < n:
-            stripped_j = lines[j].strip()
+            raw = lines[j]
+            stripped_j = raw.strip()
+
+            if in_comment:
+                bump("prose", line_len(j))
+                if "*/" in raw:
+                    in_comment = False
+                j += 1
+                continue
+
+            if stripped_j.startswith("/*"):
+                bump("prose", line_len(j))
+                if "*/" not in raw[raw.find("/*") + 2:]:
+                    in_comment = True
+                j += 1
+                continue
+
+            if stripped_j.startswith("//"):
+                bump("prose", line_len(j))
+                j += 1
+                continue
+
+            if stripped_j == "":
+                bump("scaffold", line_len(j))
+                j += 1
+                continue
+
             if TABLE_START_RE.match(stripped_j):
                 j2, tbytes = consume_table(j)
-                out["tables"] += tbytes
+                bump("tables", tbytes)
                 # A table's braces are still real braces for the enclosing
                 # function's depth count.
                 for k in range(j, j2):
@@ -390,10 +427,11 @@ def attribute_source(text):
                 if seen_open and depth <= 0:
                     break
                 continue
-            out[bucket_name] += line_len(j)
-            ended_semi = lines[j].rstrip().endswith(";")
-            depth += lines[j].count("{") - lines[j].count("}")
-            if "{" in lines[j]:
+
+            bump(bucket_name, line_len(j))
+            ended_semi = raw.rstrip().endswith(";")
+            depth += raw.count("{") - raw.count("}")
+            if "{" in raw:
                 seen_open = True
             j += 1
             if seen_open and depth <= 0:
@@ -449,8 +487,8 @@ def attribute_source(text):
 
         if stripped.startswith("int main("):
             j, out = consume_braced_block(i, "main")
-            buckets["main"] += out["main"]
-            buckets["tables"] += out["tables"]
+            for k, v in out.items():
+                buckets[k] += v
             i = j
             continue
 
@@ -460,8 +498,8 @@ def attribute_source(text):
             is_accessor = any(name.endswith(suf) for suf in ACCESSOR_SUFFIXES)
             bucket = "scaffold" if is_accessor else "program"
             j, out = consume_braced_block(i, bucket)
-            buckets[bucket] += out[bucket]
-            buckets["tables"] += out["tables"]
+            for k, v in out.items():
+                buckets[k] += v
             i = j
             continue
 
