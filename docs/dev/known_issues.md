@@ -3067,3 +3067,63 @@ count-independent again and shrink compile time; the identity gates
 (answers unchanged; a prefilter is answer-identity-preserving by D46's
 rule) are the control. A loop item: charter from a bench row that shows
 the cost, per D77.
+
+## K40 — CLOSED 2026-08-28 (lane sel1) — under `--engine=auto`, a DFA build that overflows a cap REFUSES the whole compile instead of falling back to the VM, even when the pattern's own DFA-erasure is only being built as the VM's auto-selected PREFILTER MERGE-REVIEW LANDING FIX (manager, 2026-08-28, on f75a33f): the retry left the refused build's diagnostic in `err->msg`, so a successful fallback returned 0 beside "pattern too complex…" (library probe: rc=0, msg set); `compile_driver` now clears `err` on the retry path — probe rc=0, msg empty.
+
+**Symptom.** `build/pcrec -p rx --features all --engine=auto -o out.c
+'\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|
+unreachable)\b'` refused "pattern too complex for the DFA engine (>32000
+states; try --engine=vm)" in 0.52 s; `--engine=vm` (no prefilter) compiled
+the same pattern in 0.00 s. Reproduced on main c60679b, filed as plan row
+[SEL-1] (bench O-7 item 6, ask iii; Frank ruled 2026-08-28).
+
+**Cause.** `src/opt/select_engine.c` chooses an engine (and, for a VM
+choice under `auto`, derives whether to attach a capture-erased DFA
+prefilter) from the AST ALONE, before any automaton exists — it has no way
+to know a cap will overflow. `src/core/compile.c` then built the DFA pair
+unconditionally whenever `fit.chosen == ENGM_DFA || fit.prefilter`, and
+`src/ir/dfa.c`'s two "pattern too complex" `ctx_fail` sites `longjmp`
+straight to the ONE recovery point in the compiler (`compile_driver`'s
+`setjmp`), aborting the whole compile — including a case where the DFA
+being built was never the chosen ENGINE at all, only an auto-selected
+optimisation (the prefilter) that D46/§4.7 already documents as safe to
+drop (a backreference or a subroutine call already drop it the same way,
+for a different reason).
+
+**Class.** A resource refusal reached through the WRONG mechanism (D22's
+kind of refusal, delivered as if it were a construct the engine cannot
+honour) rather than a miscompile — every answer pcrec DID produce for this
+pattern family was correct; the defect is a compile that should have
+succeeded and did not.
+
+**Fix.** `Ctx` gains `dfa_disabled`/`dfa_overflowed`/`dfa_overflow_why`
+(`src/core/internal.h`; the last two set by the two `dfa.c` sites,
+unconditionally and cheaply, immediately before their existing `ctx_fail`
+— the diagnostic text for `--engine=dfa`/`-fprefilter` is UNCHANGED).
+`compile_driver` (`src/core/compile.c`) becomes a bounded ONE-SHOT RETRY
+loop (`COMPILE_MAX_ATTEMPTS = 2`) around the existing single `setjmp`: on
+an eligible overflow (`cx.dfa_overflowed`, `--engine=auto`, no
+`-fprefilter`) it reruns the whole pipeline once with `dfa_disabled` set.
+`src/opt/select_engine.c` gains one more row in its existing
+`forces_captures`/`forces_registry` fixpoint, `forces_dfa_overflow`
+(excludes `ENGM_DFA` and supplies `RX_ENGINE_WHY`'s text when
+`dfa_disabled`), and the SAME flag folds into the prefilter derivation
+(`has_bref || has_call || cx->dfa_disabled` all silently drop it) — one
+mechanism, not a try/catch at the `ctx_fail` site and not a second
+selector. `src/gen/emit_vm.c`'s `--emit-ir` listing gets its own arm for
+the same reason the backreference/call routes needed one ([M6.5.2]/[DD-14
+wave E]'s precedent): without it, a dropped auto-selected-prefilter's `;
+prefilter` line falsely named `--engine=vm`. Verified: the witness now
+compiles under `auto` (`RX_ENGINE "vm"`, `RX_ENGINE_WHY "dfa overflowed:
+>32000 states..."`, `RX_VM_PREFILTER "none"`); `--engine=dfa` and
+`--engine=vm -fprefilter` still refuse with the unchanged diagnostic;
+`tests/base/k18_cost_gates.rxt`'s fuzz-found witness (a DIFFERENT pattern
+that hits the same cap, with a live capture so the VM was already chosen
+and only its auto-prefilter overflowed) moved from a `perr` block to two
+oracle-verified match cases for the identical reason. `make strict` clean;
+targeted `tests/vm`, `tests/prefilter`, `tests/cli`, `tests/codegen/
+run_dfa_stamps.sh`, and the full `tests/base/` corpus (3,603/3,603) all
+green; a targeted `-fsanitize=address,undefined` build of the compiler
+showed no leak/UB on the retry path. The full `make test` battery was not
+run by this lane (box rule: one heavy suite at a time; flagged for the
+manager to run at merge).

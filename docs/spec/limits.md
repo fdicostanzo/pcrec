@@ -138,6 +138,19 @@ any of them and compilation FAILS cleanly, naming the ceiling
 OOM, or a silent truncation. These are a CONTRACT: pcrec commits to
 rejecting rather than mis-serving an over-large pattern.
 
+**[SEL-1] (2026-08-28) exception, scoped to the THREE DFA-side siblings
+alone** (`PCREC_MAX_DFA_STATES_TABLE`/`_GOTO`, `PCREC_MAX_TABLE_ENTRIES`,
+`PCREC_MAX_SUBSET_ELEMS` — never `PCREC_MAX_NFA_STATES` or
+`PCREC_MAX_VM_NODES`, which have no fallback engine to hand the pattern to).
+Under `--engine=auto`, crossing one of these still FAILS the DFA build
+exactly as described — same diagnostic, same cost — but the COMPILE no
+longer necessarily fails with it: the overflow is a selection outcome (fall
+back to the VM; drop an auto-selected prefilter) rather than a refusal, so a
+pattern that used to be rejected outright on one of these three ceilings may
+now succeed at the VM engine instead. `--engine=dfa` and `-fprefilter` keep
+the contract as stated, unconditionally — see `docs/spec/tuning.md` §2.11
+for the mechanism and the cost bound this exception is held to.
+
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST
 HARNESS policy, not a caller-facing contract: every compile of

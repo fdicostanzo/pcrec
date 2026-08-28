@@ -328,6 +328,41 @@ static unsigned forces_registry(Ctx *cx, const Ast *a, size_t *why_pos,
     return r->engines;
 }
 
+/* ---- [SEL-1] the DFA build's own overflow, consumed as a rung ----
+ *
+ * `auto`'s DFA-cap-overflow contract (plan row [SEL-1], Frank 2026-08-28,
+ * bench O-7 item 6): under `--engine=auto` a DFA build that overflows a cap
+ * (state count, table entries, the K7 element budget — every cap
+ * src/ir/dfa.c's two "pattern too complex" sites cover) is a SELECTION
+ * OUTCOME, not a refusal — the compile falls back to the VM, and an
+ * auto-selected prefilter whose DFA overflows is dropped. `--engine=dfa`
+ * and `-fprefilter` stay do-or-die with today's diagnostic, unchanged.
+ *
+ * THE GENERAL MECHANISM, not a special case: the DFA build reports "over
+ * budget" as a RESULT this fixpoint consumes, the same way `forces_captures`
+ * and `forces_registry` already report theirs — no `try/catch`-shaped clause
+ * at the `ctx_fail` site, no second selector. What makes that possible is
+ * that this row CANNOT fire on the pass that discovers the overflow:
+ * selection runs BEFORE machine construction (`src/core/compile.c`), so the
+ * DFA has not been built yet the first time `pcrec_select_engine` runs on a
+ * given pattern. This row only ever returns non-trivially on
+ * `compile_driver`'s ONE-SHOT RETRY — the whole pipeline run a second time,
+ * after an auto-mode compile's DFA build already overflowed once and set
+ * `cx->dfa_disabled`/`cx->dfa_overflow_why` — which is the only mechanism
+ * this compiler has for "abandon everything below this point": there is
+ * exactly one `setjmp` in it (`compile_driver`'s), so feeding the result
+ * back means running the pass again with one more input bit, not adding a
+ * second recovery point around the DFA build. */
+static unsigned forces_dfa_overflow(Ctx *cx, const Ast *a, size_t *why_pos,
+                                    const char **why)
+{
+    (void)a;
+    if (!cx->dfa_disabled) return ENGM_DFA | ENGM_VM;
+    *why_pos = 0;
+    *why = cx->dfa_overflow_why;
+    return ENGM_VM;
+}
+
 /* ORDER MATTERS ONLY FOR THE DIAGNOSTIC, and it is captures-first on purpose.
  * The pass ANDs every row's mask, so the verdict is order-independent; `why`
  * is taken from the FIRST row that excludes the DFA. A `\K` pattern that also
@@ -341,6 +376,24 @@ static const EngineAnalysis analyses[] = {
      * forcing falls out of its registry rows with no per-module analysis —
      * backrefs' twelve ([M6.5]) are the next customer and need no line here. */
     { "registry", forces_registry, NULL, true  },
+    /* [SEL-1] LAST, deliberately: it is the least fundamental of the three
+     * reasons a pattern can be VM-only, and first-wins order already does the
+     * right thing when it co-occurs with one of the rows above. A pattern
+     * that needs captures AND whose (capture-erased) DFA also overflows as
+     * an auto-selected prefilter reports "capture group ..." as `why` — the
+     * more actionable reason for the ENGINE choice — while this row's own
+     * effect (drop the prefilter) still applies through `cx->dfa_disabled`
+     * in the prefilter derivation below, independently of which row won
+     * `why`. `node_derived` is `false`: it is never actually read, because
+     * `cx->dfa_disabled` can only be true on a retry compile_driver runs
+     * for `--engine=auto` with neither force flag, so the `--engine=dfa`
+     * override branch below (the only reader of `node_derived`) can never
+     * see this row fire. `false` is the safer value if that invariant is
+     * ever broken: it leaves the override's ordinary `why`-based fallback
+     * text in place instead of splicing this row's build-outcome sentence
+     * into the "%s requires the VM engine" template, which reads oddly for
+     * a fact that is not a constructs's name. */
+    { "dfa_overflow", forces_dfa_overflow, NULL, false },
 };
 
 /* ---- the pass ---- */
@@ -694,7 +747,21 @@ void pcrec_select_engine(Ctx *cx, Ast *root)
                      "compiles to the DFA engine, which carries no separate "
                      "prefilter to force (pass --engine=vm, or drop "
                      "-fprefilter)");
-        fit.prefilter = (has_bref || has_call) ? false
+        /* [SEL-1] `cx->dfa_disabled` joins `has_bref`/`has_call` in the
+         * silent-drop clause rather than getting its own branch: on the
+         * retry compile this fires from, the prefilter would be the
+         * IDENTICAL construction that already overflowed once this compile
+         * (same capture-erased forward+reverse NFA, same caps), so building
+         * it again would cost a second refused build — exactly what the
+         * plan row's cost bound (at most one refused build dearer than
+         * `--engine=vm`) forbids. Safe to fold in unconditionally rather
+         * than to gate on `!force_on`: `cx->dfa_disabled` can only be true
+         * on a retry, and `compile_driver` only retries when
+         * `PCREC_FORCE_PREFILTER` was NOT requested (force forms stay
+         * do-or-die and never reach a retry at all), so `force_on` is
+         * always false whenever `dfa_disabled` is true — this clause and
+         * `force_on`'s branch below are therefore never in tension. */
+        fit.prefilter = (has_bref || has_call || cx->dfa_disabled) ? false
                        : force_on ? true
                        : force_off ? false
                        : (fit.chosen == ENGM_VM) &&

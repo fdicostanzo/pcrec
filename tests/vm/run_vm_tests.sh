@@ -569,6 +569,73 @@ if build selnc 'a(b|c)+d' --no-captures; then
         || bad "[M4.5b] §5.3: --no-captures still selected engine=$(info_field selnc engine)"
 fi
 
+# ---- 3b. [SEL-1] `auto`'s DFA-cap-overflow fallback (plan row [SEL-1], -----
+#          Frank 2026-08-28, bench O-7 item 6) --------------------------------
+#
+# Under `--engine=auto`, a DFA build that overflows a cap is a SELECTION
+# OUTCOME, not a refusal: the compile falls back to the VM and an
+# auto-selected prefilter whose DFA overflows is dropped. `--engine=dfa` and
+# `-fprefilter` stay do-or-die with today's diagnostic, unchanged. The
+# witness is the pattern reproduced on main 2026-08-28: its capture-erased
+# forward DFA overflows PCREC_MAX_DFA_STATES_TABLE (32000 states).
+SEL1_PAT='\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|unreachable)\b'
+
+if build sel1auto "$SEL1_PAT" --features all --engine=auto; then
+    [ "$(info_field sel1auto engine)" = "2" ] \
+        && ok "[SEL-1] auto falls back to ENGM_VM when the DFA build overflows a cap" \
+        || bad "[SEL-1] auto stamped engine=$(info_field sel1auto engine), expected 2 (VM)"
+    grep -q '^#define RX_ENGINE "vm"$' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[SEL-1] RX_ENGINE \"vm\" on the fallback artifact" \
+        || bad "[SEL-1] RX_ENGINE is not \"vm\" on the fallback artifact"
+    grep -q '^#define RX_ENGINE_WHY "dfa overflowed: >32000 states' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[SEL-1] RX_ENGINE_WHY names the cap that overflowed (>32000 states)" \
+        || bad "[SEL-1] RX_ENGINE_WHY does not name the overflowed cap: $(grep '^#define RX_ENGINE_WHY' "$WORKDIR/sel1auto/gen.c")"
+    grep -q '^#define RX_VM_PREFILTER "none"$' "$WORKDIR/sel1auto/gen.c" \
+        && ok "[SEL-1] the auto-selected prefilter is DROPPED (RX_VM_PREFILTER \"none\") rather than rebuilding the same overflowing DFA" \
+        || bad "[SEL-1] RX_VM_PREFILTER is not \"none\" on the fallback artifact -- the retry re-attempted the same overflowing DFA as a prefilter"
+else
+    bad "[SEL-1] '--engine=auto' on the witness pattern did not compile (was: $(head -1 "$WORKDIR/sel1auto/err" 2>/dev/null))"
+fi
+
+# The FORCE forms stay do-or-die, UNCHANGED: same diagnostic text as before
+# this row, never a silent fallback.
+sel1_check_refuse() {   # sel1_check_refuse <label> [pcrec args...]
+    local label="$1"; shift
+    if pcrec_run "$PCREC" -p rx "$@" --features all -o "$WORKDIR/sel1_ref.c" \
+            -- "$SEL1_PAT" >/dev/null 2>"$WORKDIR/sel1_ref.err"; then
+        bad "[SEL-1] $label: compiled; expected the force form to stay do-or-die"
+    elif grep -q 'pattern too complex for the DFA engine (>32000 states; try --engine=vm)' \
+            "$WORKDIR/sel1_ref.err"; then
+        ok "[SEL-1] $label: still refuses with today's diagnostic, unchanged"
+    else
+        bad "[SEL-1] $label: refused, but not with the expected diagnostic: $(cat "$WORKDIR/sel1_ref.err")"
+    fi
+}
+sel1_check_refuse "--engine=dfa (force)" --engine=dfa
+sel1_check_refuse "--engine=vm -fprefilter (force)" --engine=vm -fprefilter
+
+# ANSWER IDENTITY: the auto fallback artifact and a plain --engine=vm build
+# of the same pattern must agree -- on a subject that matches and on one that
+# does not -- since the fallback is meant to be indistinguishable in behavior
+# from asking for the VM directly, only reached automatically.
+if build sel1vm "$SEL1_PAT" --features all --engine=vm \
+   && [ -x "$WORKDIR/sel1auto/t" ]; then
+    for sel1_subj in \
+        'a CRIT failure: connection timeout while retrying' \
+        'all systems nominal, nothing to report here'
+    do
+        r_auto="$(gen_run "sel1 auto" "$WORKDIR/sel1auto/t" "$sel1_subj")"
+        r_vm="$(gen_run "sel1 vm" "$WORKDIR/sel1vm/t" "$sel1_subj")"
+        if [ "$r_auto" = "$r_vm" ]; then
+            ok "[SEL-1] identity: auto fallback and --engine=vm agree on '$sel1_subj' ($r_auto)"
+        else
+            bad "[SEL-1] identity: auto fallback gave '$r_auto', --engine=vm gave '$r_vm' on '$sel1_subj'"
+        fi
+    done
+else
+    bad "[SEL-1] identity check: could not build both the auto fallback and the --engine=vm artifact"
+fi
+
 # ---- 4. the oracle sweep + §3.7 differential -----------------------------
 QUICKFLAG=--quick
 [ "$MODE" = "full" ] && QUICKFLAG=

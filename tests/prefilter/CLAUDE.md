@@ -104,3 +104,44 @@ the REASON from `pcrec_has_call`, so a fully spliced call read
 "NO (subroutine call)" where the honest answer is "NO (--engine=vm)". MEASURED,
 fixed, and this row is what stops it drifting back. The reason text now reads
 "NO (LINKED subroutine call)" and says why a spliced call is not one.
+
+## [SEL-1] a FIFTH "off" route: the auto-selected prefilter's own DFA overflow
+
+`auto`'s DFA-cap-overflow contract (plan row [SEL-1], Frank 2026-08-28): a
+DFA build that overflows a cap (state count, table entries, K7's element
+budget) is a SELECTION OUTCOME under `auto`, not a refusal, and when the
+overflowing build was the auto-selected PREFILTER (rather than the engine
+itself), the prefilter is DROPPED — `fit.prefilter` comes out `false`,
+`RX_VM_PREFILTER` stamps `"none"`, exactly as `has_bref`/`has_call` above.
+`--engine=dfa` and `-fprefilter` stay do-or-die with today's diagnostic,
+UNCHANGED (`src/opt/select_engine.c`, `src/core/compile.c`'s retry).
+
+**IT REPEATS THE SAME DEFECT SHAPE the backreference and call routes were
+each fixed for, and it needed the identical fix**: with no arm of its own,
+`vm_render_listing` (src/gen/emit_vm.c) fell through to `"NO (--engine=vm)"`
+for a pattern compiled under plain `auto` — a diagnostic naming a flag the
+caller had not passed. Fixed the same way, tested in the same place (ahead
+of both flag routes, since this is a THIRD thing no flag explains): the
+reason text embeds `cx->dfa_overflow_why`'s own cap name, e.g.
+`"NO (dfa overflowed: >32000 states) -- ..."`, computed into a local buffer
+(`sel1_prefilter_reason`) before the ternary because — unlike the static
+arms — it has to interpolate the runtime cap text.
+
+**THE WITNESS IS THE SAME PATTERN [SEL-1]'s OTHER TESTS USE** (`tests/vm/
+run_vm_tests.sh` §3b, `docs/spec/tuning.md` §2.11/§2.5):
+`\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:timeout|timed out|refused|denied|
+unreachable)\b` under `--features all`, whose capture-erased forward DFA
+overflows `PCREC_MAX_DFA_STATES_TABLE` (32000 states). The force-on control
+uses `--engine=vm -fprefilter` rather than the generic `check_refuse` helper:
+bare `-fprefilter` (no `--engine`) hits a DIFFERENT, earlier refusal on this
+witness ("-fprefilter requires the VM engine...", since the pattern has no
+capture and would otherwise select the DFA outright), which also contains
+the word "prefilter" and would make `check_refuse`'s generic control pass
+for the wrong reason; forcing `--engine=vm` routes past that so the actual
+DFA-cap refusal (whose text does not contain "prefilter" at all) is the one
+reached and checked verbatim.
+
+**NOT YET SABOTAGE-COVERED**, unlike S64/S65 above for the backref/call
+routes' own do-or-die and stamp-mask properties — flagged rather than added
+silently; a future lane should give this arm the same permanent-row
+treatment R28-1 asks for.
