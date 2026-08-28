@@ -2827,6 +2827,63 @@ then reverted (scratch `.rxt` files, never committed):
   live/pending distinction (the python oracle only cares whether the
   EXPECTATION is correct, never whether pcrec can check it yet)
 
+## The axis registry check ([CHK-2] piece 1, 2026-08-28)
+
+`tests/registry/axes_registry_check.sh`, run from `tests/registry/
+run_registry_tests.sh` and therefore part of `make test`'s `test-registry`
+section (unlike the two opt-in instruments below, which are `make
+test-axes` only). Reads `pcrec --list-axes`'s TSV — the optimization-axis
+registry's FOURTH surface, `docs/spec/registry.md` §6 — against
+`docs/spec/tuning.md` §2 (every documented `(bit N)` heading) and
+`cli/main.c`'s flag parser, in BOTH directions: every dumped deny/force
+bit checked against `lib/pcrec.h`'s own definition, its CLI spelling
+where it has one, and `tuning.md`'s own documentation of that bit; then
+the reverse sweep, every bit `tuning.md` documents and every
+`PCREC_NO_*`/`PCREC_FORCE_*` bit `lib/pcrec.h` defines in the family's own
+4-15 range confirmed present SOMEWHERE in the dump — catching an axis
+quietly dropped from `--list-axes` rather than only one wrongly added.
+Every discrepancy named by name (`docs/dev/learnings.md` §3), never a bare
+count; the wiring script's own coverage guard additionally floors the
+total PASS count at 40.
+
+**Runtime**: well under a second (`build/pcrec --list-axes` plus a handful
+of `grep`/`awk` passes over three small text files — no compile, no
+subject sweep).
+
+**Sabotage validation** (2026-08-28, scratchpad only, never committed): a
+scratch copy of `tuning.md` with `-fno-counter`'s `(bit 6)` heading
+deleted, run via `TUNING=<scratch> bash tests/registry/
+axes_registry_check.sh`, fires exactly one named failure —
+`[counter/counter] bit 6 has no '(bit 6)' heading anywhere in
+<scratch>/tuning_sabotaged.md` — with the other 42 checks unaffected
+(43 total on this tree; the count moves with the axis population, per
+the CLAUDE.md coverage-guard note).
+
+**Found while writing it, not before**: bash's `IFS=$'\t' read` collapses
+runs of EMPTY tab-delimited fields — tab is IFS *whitespace* regardless of
+what IFS is set to, so a row with several unset deny/force/stamp columns
+(most rows have at least one) had every field after the first empty one
+shift left, silently reading a later column's value into an earlier
+variable. This is the exact gotcha `tests/lib/table.sh`'s own header
+comment already names from `tests/reject/`'s history ("never on IFS
+whitespace, which is why this is not a bash `read -a` on the raw line");
+the fix separates the row-reconstruction step's fields with `\001`
+(Ctrl-A, not in bash's whitespace class) before the one `read` loop that
+can see an empty field.
+
+**What this dump does NOT prove, and where the independent evidence
+lives** (`docs/spec/registry.md` §6 states this in full): the dump shares
+its source with the emitter for six of its seventeen axes (`src/gen/
+emit_dfa.c`'s own candidate-list arrays), and the eleven predicate axes'
+one-line descriptions are hand-authored prose, never a live evaluation.
+This check reads the dump against two OTHER files it never opens, which
+closes the "control shares a source with what it controls" gap for the
+dump's OWN claims about bits/flags/documentation — it does not and cannot
+prove that a stamp or a flag behaves as its `applies` text says.
+`tests/codegen/run_dfa_stamps.sh` (reads emitted artifacts) and
+`docs/spec/tuning.md` §2's own per-axis differentials (compile twice,
+compare answers) are that independent side.
+
 ## Answer-identity sweep + form census ([CHK-2], 2026-08-26)
 
 Two opt-in instruments, `make test-axes` (`tests/axes/run_axes.sh` +
