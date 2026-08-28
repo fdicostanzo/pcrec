@@ -16863,3 +16863,35 @@ skip is asked for as one row; `level-context` did not compile under
 auto (DFA >32000 states, no VM fallback); D83 was written; the .rxt
 target-set note filed. READ THE OUTBOX FIRST next session:
 /home/duxevents/pcrec-bench/docs/dev/outbox_to_pcrec.md O-7.
+
+### Forty-third session (2026-08-28 ~12:5x EDT →) — back on pcrec with the bench's numbers; [OPT-5] closes on its measurement, [OPT-K] (offset-k skip, pair from the start) and [SEL-1] (auto's overflow contract) chartered; token subscription reset
+
+Woke on c60679b (tree clean, box idle, no lanes/worktrees/cron); read
+the bench's O-7 first as the pointer said. Frank's rulings, all
+"agree": (1) [OPT-K] — the general offset-k candidate-start skip is the
+next engine lane, REPLACING [OPT-5] as the loop's outlier row; his
+question "are you not considering pair selection at this time or
+wait?" — answered NOW: with a single (k, byte-set) the three outliers
+(stack-frame 31.8×, uuid 12.2×, iso-ts 10.1× behind the JIT) have no
+selective position on log text, since `-` at offset 4 or 8 is
+structural (112/112 chunks) — the selectivity IS the conjunction; a
+single-k mechanism followed by a pair mechanism would be the
+parallel-mechanism shape the memory rule forbids, so the design is a
+k-SET from the first line, with today's k=0 skip as the |set|=1 case
+and [OPT-5]'s "absent" as the degenerate outcome; scalar first
+(memchr on the rarest byte at k*, verify the others), SIMD is
+[OPT-SIMD]'s if a gap remains (D77). (2) [SEL-1] — under `auto` a DFA
+cap overflow is a SELECTION OUTCOME: fall back to the VM, drop an
+auto-selected prefilter, stamp the WHY; the force forms stay
+do-or-die. REPRODUCED before ruling: `level-context` with `--features
+all` — auto refuses in 0.52 s, `--engine=vm` compiles in 0.00 s,
+`--engine=vm -fprefilter` refuses too; cause structural
+(select_engine.c → compile.c:284-296 → dfa.c:886 ctx_fail, no path
+back). (3) the small queue beside it: [OPT-2] STEP 2 measurement,
+[CHK-2] piece 1, [OPT-D] census. (4) I-14 to the bench: pin stays;
+docs/guide/ is [GUIDE-1] (owed, not stale); next sub-bench [B11.4]
+recommended. Frank: "token subscription reset, we are good to go.
+Full parallel dev limited by your ability to effectively manage
+them." Plan rows written ([OPT-5] → plan_completed.md; [OPT-K],
+[SEL-1] at its place). Lanes open next: optk (opus, design note
+first, then code), sel1 (sonnet), opt2m (sonnet, measurement).
