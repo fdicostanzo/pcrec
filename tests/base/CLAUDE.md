@@ -82,16 +82,20 @@ Comprehensive test suite for base-tier PCRE features: literals, character classe
   tops out at loop-nesting depth 4. It is also the deliberate GROW-PATH test
   for the three tables the repair adds — 31,627 contexts against initial
   capacities of 64 and 256, so every doubling/rehash path runs, under asan too
-- **k18_cost_gates.rxt** — 6 patterns / 28 cases whose point is COMPILE TIME
+- **k18_cost_gates.rxt** — 6 patterns / 30 cases whose point is COMPILE TIME
   rather than spans, riding the harness's own per-invocation pcrec budget
   (`pcrec_timeout_secs`, which K18's lane made axis-aware for exactly this).
   Two families, neither of them the obvious one: the fuzz-found witness that
   caught a 7x CONSTANT-FACTOR regression in the design's prototype on
-  byte-identical work — a `perr` block, since every binary refuses it on the
-  DFA state cap after doing the work — and bounded-repeat × nullable-loop
-  swept in k, which is why the honest cost variable is the number of open-loop
-  CONTEXTS and not the nesting depth a reader can see (it runs at depth 1 and
-  was 231x on the broken prototype, invisible to any depth-based gate)
+  byte-identical work — its DFA state cap overflow (>32,000 states, the
+  capture-erased prefilter pair `select_engine.c` auto-builds for it) is
+  still real work paid on every compile, but since [SEL-1] (2026-08-28) it is
+  a selection outcome rather than a refusal, so the block carries two cheap
+  oracle-verified `m`/`n` cases instead of a `perr` — and bounded-repeat ×
+  nullable-loop swept in k, which is why the honest cost variable is the
+  number of open-loop CONTEXTS and not the nesting depth a reader can see (it
+  runs at depth 1 and was 231x on the broken prototype, invisible to any
+  depth-based gate)
 - **syntax_errors.rxt** — malformed patterns and diagnostic accuracy, including the K5/K6 brace miscompiles fixed 2026-08-10 (FIX-1). Two halves that must be read together: the `perr` blocks assert the rejections, and the literal-match blocks below them assert what must KEEP compiling (`a{`, `{}`, `{,}`, `a{65536x}`, …) — without those, the obvious over-reach of either fix passes every rejection. The seven K5 blocks carry `# pcre2-only` because python `re` accepts counts up to 4294967294 (U5); `tests/reject/` pins the DIAGNOSTIC for all of them, which `perr` cannot express
 - **possess_lazy_guard.rxt** — the 20 D47.6 lazy-possessification guard cells (docs/dev/decisions.md D47 ruling 6): every quantifier `eng_brep_design.md`'s repaired possessification analysis declines under its lazy non-nullable-remainder conjunct, whose "20 false declines" turned out to be a probe defect, not a real cost — `probe_possess.py`'s subject alphabet omitted the prefix byte `z` these 20 patterns are built from, so it could not reach the subjects (`za{1,3}?` on "zaa", `(?:ab){3,}?` on "abababab", …) where all 20 GENUINELY diverge lazy-vs-possessive. The possessification pass now EXISTS (src/opt/possessify.c, merged 2026-08-16), so these cells are live-fire: 79 cases (span + capture-slot) pin the lazy behavior the shipped pass must preserve by declining, oracle-verified three ways (python3 `re`, libpcre2, pcrec's own build). Extended 2026-08-16 (nested-lazy lane follow-up) with the lazy-`$` family — a bare `$` follow makes the remainder nullable REGARDLESS of `(?m)`, so the lazy conjunct declines it even though the greedy twin possessifies under the D47.5 `$` exemption; discriminating subjects end in `\n` (`$` holds before a final newline, so a wrongly-possessified lazy loop swallows it), plus the greedy control pinning the exemption's own soundness on the same subjects
 

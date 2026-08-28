@@ -245,6 +245,23 @@ cell tally applies here.
 
 **Identity is modulo WHICH BUDGET BINDS.** The prefilter changes how much WORK a search does before it answers, never the answer — but a give-up is a bound on work, so on a subject that sits near a budget the two builds can differ by a GIVE-UP CODE where neither is wrong: measured 2026-08-26 ([ENG-FORM]'s answer gate, pre-existing), `((a)|bc){0,4000}d` over 1 MB of `a` is `no match` with the hybrid's DFA prefilter and `PCREC_ERR_WORK` without it. A sweep that compares answers across this axis must classify a give-up on either side as budget-bound (reported, floored), not as a disagreement.
 
+**[SEL-1] (2026-08-28) A THIRD OFF-ROUTE, AND IT IS BEFORE THE TWO FLAG
+ROUTES FOR THE SAME REASON THE BACKREFERENCE/CALL ROUTES ARE (§4, `-fprefilter`'s force branch above): no flag explains it, so naming one would be a
+diagnostic lie. Under `auto`, with neither `-fprefilter` nor `-fno-prefilter`
+requested, an auto-selected prefilter whose own DFA build OVERFLOWS a cap
+(state count, table entries, K7's element budget — the identical caps
+`--engine=dfa` can hit) is DROPPED rather than refused: `fit.prefilter`
+comes out `false` and the artifact stamps `RX_VM_PREFILTER "none"`, exactly
+as if `-fno-prefilter` had been passed, though `--emit-ir`'s `; prefilter`
+line does not claim that flag's credit (it reads the same `RX_ENGINE_WHY`
+overflow text §2.11 states, not `-fno-prefilter`). `-fprefilter` itself is
+UNCHANGED — forcing the prefilter on a pattern whose DFA cannot be built
+still REFUSES with today's diagnostic (§2.11), because a caller who named
+the flag asked for the machine that overflows. See §2.11 for the mechanism
+(`src/opt/select_engine.c`'s `forces_dfa_overflow`, `Ctx.dfa_disabled`) and
+the cost bound; this entry states the PREFILTER-side half of the same single
+mechanism, not a second one.
+
 ### 2.6 `-fno-altcls-merge` — `PCREC_NO_ALTCLS_MERGE` (bit 10)
 
 **Denies** stage 1 of the ALTERNATION→CLASS normalization pass
@@ -432,6 +449,60 @@ separate differential of its own — every module's own diff suite already
 sweeps at least the default and `--engine=vm` axes (`tests/atomic_groups/
 run_atomic_diff.sh` §2, `tests/recursion/run_recursion_diff.sh`'s four
 axes) as the engine differential D46 asks for at the module level.
+
+**[SEL-1] (2026-08-28) `auto`'s DO-OR-DIE POSTURE HAS ONE EXCEPTION, AND IT
+IS ABOUT A CAP THE PATTERN COULD NOT HAVE ADVERTISED IN ADVANCE.** Every
+other DO-OR-DIE refusal above is decided by an AST-level analysis before any
+automaton is built — the pattern either carries a construct the requested
+engine cannot honour, or it does not. A DFA-cap overflow (state count, table
+entries, the K7 subset-element budget — `src/core/limits.h`, every cap
+`src/ir/dfa.c`'s two "pattern too complex" sites cover) is discovered only by
+attempting the BUILD, and under `auto` — with neither `--engine=dfa` nor
+`-fprefilter` in play — that overflow is a SELECTION OUTCOME rather than a
+refusal: the compile falls back to the VM (`RX_ENGINE "vm"`, `RX_ENGINE_WHY`
+naming the cap, e.g. `"dfa overflowed: >32000 states"`), and if the pattern
+was already VM-selected for another reason and only its auto-selected
+PREFILTER's DFA overflowed, the prefilter is DROPPED (`RX_VM_PREFILTER
+"none"`) rather than refused. `--engine=dfa` and `-fprefilter` are UNCHANGED
+by this — both still refuse with today's diagnostic
+(`"pattern too complex for the DFA engine (>N states; try --engine=vm)"`),
+because a caller who named the engine explicitly asked for the machine that
+cannot be built, and that request stays do-or-die.
+
+**THE COST BOUND**: the fallback compile is at most ONE refused DFA build
+dearer than asking for `--engine=vm` directly. The overflowing build's own
+cost is bounded by the K7 budget (`src/core/limits.h`'s `PCREC_MAX_SUBSET_
+ELEMS` entry: ~0.9 s / ~216 MB at the worst state-cap refusal measured
+there); `src/core/compile.c`'s retry never re-attempts that construction — it
+reruns the pipeline once with the DFA excluded from selection outright
+(`Ctx.dfa_disabled`, consumed by `src/opt/select_engine.c`'s
+`forces_dfa_overflow` row and by the prefilter derivation together, in one
+step), so a pattern that would have needed a prefilter DFA never builds it
+twice. Verified live (the witness `\b(?:ERROR|FATAL|CRIT)\b.{0,200}?\b(?:
+timeout|timed out|refused|denied|unreachable)\b`, `--features all`):
+
+```
+$ time build/pcrec -p rx --features all --engine=auto -o /tmp/a.c "$P"
+real  0m0.52s
+$ grep -E 'RX_ENGINE |RX_ENGINE_WHY|RX_VM_PREFILTER' /tmp/a.c
+#define RX_ENGINE "vm"
+#define RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern offset 0"
+#define RX_VM_PREFILTER "none"
+$ build/pcrec -p rx --features all --engine=dfa -o /tmp/d.c "$P"
+pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm)
+$ build/pcrec -p rx --features all --engine=vm -fprefilter -o /tmp/v.c "$P"
+pcrec: pattern too complex for the DFA engine (>32000 states; try --engine=vm)
+```
+
+`RX_ENGINE_WHY`'s text carries the ordinary `"... at pattern offset N"` suffix
+every `why` goes through (`why_text`, `src/opt/select_engine.c`) even though
+this reason is not tied to one AST node — offset 0 by convention, the same
+position the two `ctx_fail` sites in `src/ir/dfa.c` already report at. If the
+pattern's engine choice is ALSO forced by a real construct (a live capture, a
+`VM_ONLY` registry row), that reason wins `RX_ENGINE_WHY` on the ordinary
+first-wins rule (§5.5) — the overflow's own effect (drop the prefilter) still
+applies independently, through `Ctx.dfa_disabled` rather than through `why`.
+Witness: `tests/vm/run_vm_tests.sh` §3b.
 
 ### 2.12 `-fno-tiered-entry` — `PCREC_NO_TIERED_ENTRY` (bit 14)
 

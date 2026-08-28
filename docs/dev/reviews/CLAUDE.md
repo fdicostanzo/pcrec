@@ -417,3 +417,7 @@ Maintenance: add a file per checkpoint and list it here.
   critic panel (lane/srFBc 79873cb → rebased 454c5b0): critFB-engine
   (opus) + critFB-checks (sonnet), read-only. Skeleton committed before
   the reports; findings and dispositions filled as they arrive.
+- `2026-08-28-r39-optk-design.md` — [OPT-K] DESIGN-NOTE panel (lane/optk
+  d13f5be, before the emitter side): critic-sem (opus) + critic-cost +
+  critic-arch (sonnet), read-only. Skeleton with two lenses' findings
+  and dispositions committed first; the semantics lens appended on arrival.

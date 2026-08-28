@@ -27,7 +27,17 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   interned** — the state caps bound how many states exist, this bounds what
   they COST, and on the exact-repeat family those are different numbers by a
   factor of n. `tab_grow` and the two reallocs here now fail through
-  `ctx_nomem` rather than `abort`. **[M6.2 wave A] A THIRD CLOSURE VIEW**, `end_ok`, for `\z` (N_END): true
+  `ctx_nomem` rather than `abort`. **[SEL-1] (2026-08-28) THE TWO "pattern
+  too complex" `ctx_fail` SITES** (the state-count check in `intern()`, the
+  `PCREC_MAX_SUBSET_ELEMS` check beside it) **ALSO RECORD THE OVERFLOW ON
+  `Ctx`** (`dfa_overflowed`/`dfa_overflow_why`, plain fields, set
+  unconditionally right before the unchanged `ctx_fail` call) — the general
+  mechanism `auto`'s DFA-cap-overflow contract needs (plan row [SEL-1],
+  `src/opt/select_engine.c`'s `forces_dfa_overflow`, `src/core/compile.c`'s
+  retry): the build reports "over budget" as a RESULT a later pass consumes,
+  never a special case at this site itself — the diagnostic text and the
+  `ctx_fail` call are byte-for-byte what they were before this row. **[M6.2
+  wave A] A THIRD CLOSURE VIEW**, `end_ok`, for `\z` (N_END): true
   only at `pos == n`, where `eol_ok` is true at `n` AND before a final
   newline. `make_state` computes three closures and interns up to two
   variants, and the CANONICALIZATION REFERENCE is the one thing to get right —

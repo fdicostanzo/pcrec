@@ -60,6 +60,18 @@ enum {
      * compiler already emitted for an in-range prefix is byte-identical. */
     PCREC_MAX_EMIT_NAME_LEN = PCREC_MAX_PREFIX_LEN + 96,
 
+    /* [SEL-1] (2026-08-28) The fixed size of `Ctx.dfa_overflow_why` — the
+     * DFA-cap-overflow reason `pcrec_select_engine`'s `forces_dfa_overflow`
+     * row reports as `RX_ENGINE_WHY` on an `--engine=auto` compile that
+     * retried after its DFA build overflowed. A plain array on `Ctx`, not an
+     * arena string: it must survive `job_cleanup`'s `arena_free`, since
+     * `compile.c`'s retry decision reads it AFTER the failed attempt's arena
+     * is gone. Sized for the longer of the two "pattern too complex"
+     * ctx_fail sites' own texts (src/ir/dfa.c) — "dfa overflowed: subset
+     * construction exceeds 48000000 state-set elements (K7)" is 76 bytes —
+     * plus headroom, the same margin-over-worst-case shape K38 above uses. */
+    PCREC_DFA_OVERFLOW_WHY_LEN = 96,
+
     /* M2.8 raised this from 20000. It is a MEMORY backstop (48 B/state, two
      * machines, so ~12.6 MB), not the real ceiling: the DFA caps below are
      * grounded in emitter cost (R1 A-3) and now bind first across the

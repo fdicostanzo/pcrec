@@ -1458,6 +1458,41 @@ struct Ctx {
      * bounded — see PCREC_MAX_SUBSET_ELEMS in limits.h for the growth law and
      * the number. Charged in src/ir/dfa.c's intern(). */
     long long            subset_elems;
+    /* [SEL-1] (2026-08-28) `auto`'s DFA-cap-overflow contract (plan row
+     * [SEL-1]): a `--engine=auto` compile whose DFA build overflows a cap
+     * falls back to the VM instead of refusing, and an auto-selected
+     * prefilter whose DFA overflows is dropped. The FORCE forms
+     * (`--engine=dfa`, `-fprefilter`) stay do-or-die, unchanged.
+     *
+     * THE GENERAL MECHANISM: the DFA build reports "over budget" as a
+     * RESULT the selector's existing fixpoint consumes, not as a special
+     * case at the `ctx_fail` site. There is exactly one recovery point in
+     * this compiler (`compile_driver`'s single `setjmp`), so the fallback is
+     * a ONE-SHOT RETRY of the whole pipeline rather than a second recovery
+     * point wrapped around the DFA build — `src/core/compile.c`'s retry
+     * loop is the only place that decides to retry, and
+     * `src/opt/select_engine.c`'s `forces_dfa_overflow` is the only place
+     * that reads these fields.
+     *
+     * `dfa_overflowed` and `dfa_overflow_why` are WRITTEN by the two
+     * "pattern too complex" `ctx_fail` sites in src/ir/dfa.c, immediately
+     * before the `longjmp` — plain fields on `Ctx` rather than arena text,
+     * because the retry decision runs in `compile_driver` AFTER
+     * `job_cleanup`'s `arena_free` has already run on the failed attempt.
+     * `dfa_disabled` is the retry's own INPUT, seeded true only on the
+     * second (and last) pass compile_driver runs after an eligible
+     * overflow: `forces_dfa_overflow` treats it exactly like a VM_ONLY
+     * registry row (excludes ENGM_DFA from the very fixpoint
+     * `forces_captures`/`forces_registry` already drive), and the prefilter
+     * derivation drops the prefilter under it too — a retry's own DFA build
+     * would be the IDENTICAL construction that just overflowed, so
+     * attempting it again would cost a second refused build the plan row's
+     * cost bound (at most one refused build dearer than `--engine=vm`)
+     * forbids. See PCREC_DFA_OVERFLOW_WHY_LEN (limits.h) for the buffer's
+     * sizing. */
+    bool                 dfa_disabled;
+    bool                 dfa_overflowed;
+    char                 dfa_overflow_why[PCREC_DFA_OVERFLOW_WHY_LEN];
     /* [DD-14 wave B+C] THE CALL GRAPH, or NULL for a call-free pattern.
      * Built by `pcrec_callgraph_build` (src/opt/callgraph.c) AFTER every
      * rewriting pass and before emission — see that function's declaration for
