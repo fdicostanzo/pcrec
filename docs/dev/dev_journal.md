@@ -17022,3 +17022,39 @@ have passed with the new axis absent); its test-axes sweep is running
 (bit 10 of 14 at 15:02, mismatches 0 so far); it merges main and lands
 the registry-check fix in its merge commit; ONE battery on the union.
 Worktrees: optk, artsize. Cron b00cc122.
+
+#### Forty-third session, part 5 — [OPT-K] MERGED (7603c4d, abi 9); the union battery: test/solo/mech green, san tripped by a coverage pin my verdict could not see; Frank's keep-warm rule (2026-08-28 ~17:4x EDT)
+
+optk's final report and merge (fast-forward, 7603c4d): the offset-k
+skip with offset 0 in two roles, `-fno-offset-skip` bit 16, abi 9 at
+all four sites, tests/offsetskip 98/98 oracle-verified, run_offset_skip
+22/22 with a cross-build vacuity guard, S185-S188, the sweep's verdict
+for the new axis 22,105/22,105 agree / 0 mismatches; numbers stack-frame
+10.18×/6.19×, uuid 4.45×/9.58×, iso-ts 6.13×/5.75×, controls flat, both
+email patterns untouched, D82 0 differing instructions. Its sweep's one
+red (`-fprefilter` UNDOCUMENTED refusal ×2 at k18_cost_gates.rxt:67-68)
+was [SEL-1] debt — the force form refuses where auto now falls back,
+§2.5 says so, run_axes.sh's REFUSAL_PATTERN table did not (029a697).
+THE UNION BATTERY on 7603c4d (15:41 →): build, strict, anchors, `make
+-k -j12 test` 0 checks failed, solo clean, mech 184 rows / unexpected 0
+/ undetected S150-S153 S160 S178 / anomalies 0 — and `make san` DIED IN
+NINE MINUTES at the registry section's coverage guard ("59 passing
+checks, expected 53": optk's registry-check fix added bit 16's six
+checks and did not move run_registry_tests.sh's pin; optk's "test-
+registry 0 failed" had read the sub-scripts' counts, not the wrapper's
+exit). `make test` had printed the SAME guard line and my battery's
+verdict summed `checks failed:` lines and never saw it — the 41st
+session's own "a verdict that does not read its own inputs", again.
+Fixed twice: the pin 53 → 59 landed on main (7daa1cd, make test-registry
+rc 0 read from the wrapper), and battery_v2.sh's verdict now reads
+guard/FATAL/make-error lines, san's rc, and requires mech's trailer.
+The sweep runs on the union (17:29 →); the san re-run is armed behind
+it (san_after_axes.sh). artsize: census written and committed
+(distributions, outliers, attribution cross-validated against my
+line-kind count — 14.6 % vs ~15 % comments; its own witness figure
+corrected from the split .c alone to the self-contained 2,015,594 B —
+mine, 2,004,778, was the same undercount), parked for the quiet box
+for its throughput rows. FRANK'S RULE, saved as memory
+`pcrec-subagent-cache-warmth`: a context idle > 60 min is re-charged;
+ping held lanes inside the hour, never message done lanes. Cron
+55bbff34 carries it.
