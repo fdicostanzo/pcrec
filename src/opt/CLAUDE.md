@@ -355,6 +355,40 @@ construction (src/ir) and emission (src/gen).
   from `job->fit.prefilter` directly rather than recomputed. Tests:
   tests/prefilter/.
 
+  **[SEL-1] (2026-08-28) `auto`'s DFA-CAP-OVERFLOW CONTRACT IS A FOURTH ROW
+  IN THE FIXPOINT, `forces_dfa_overflow`** — plan row [SEL-1], K40's fix:
+  a DFA build that overflows a cap (state count, table entries, K7's
+  element budget; src/ir/dfa.c's two "pattern too complex" sites) is a
+  SELECTION OUTCOME under `auto`, not a refusal, and the general mechanism
+  is that the build reports "over budget" as a RESULT this file's existing
+  fixpoint consumes, exactly like `forces_captures`/`forces_registry` — no
+  try/catch at the `ctx_fail` site, no second selector. It CANNOT fire on
+  the pass that discovers the overflow (selection runs before the DFA is
+  built), so it only ever returns non-trivially on `src/core/compile.c`'s
+  ONE-SHOT RETRY of the whole pipeline (`Ctx.dfa_disabled`, set only there)
+  — the only mechanism this compiler has for "abandon everything below this
+  point" is its one `setjmp`, so feeding the result back means running the
+  pass again with one more input bit, not adding a second recovery point.
+  `cx->dfa_disabled` ALSO folds into the prefilter derivation just above
+  (`has_bref || has_call || cx->dfa_disabled`, all three silently drop it)
+  in the SAME step that excludes `ENGM_DFA` — a retry's own DFA build would
+  be the identical construction that just overflowed, so the fallback must
+  not attempt it a second time (the plan row's cost bound: at most one
+  refused build dearer than `--engine=vm`). `--engine=dfa` and
+  `-fprefilter` are UNTOUCHED — `compile.c`'s retry never fires under
+  either, so this row never fires under `--engine=dfa`'s override branch
+  either, which is also why `node_derived` is `false` and effectively moot
+  for it. `RX_ENGINE_WHY` carries `cx->dfa_overflow_why`'s text
+  (e.g. `"dfa overflowed: >32000 states"`) when this row is the one that
+  won `why` on the ordinary first-wins rule; when a request-derived reason
+  (captures) wins instead, the prefilter is STILL dropped, through
+  `dfa_disabled` rather than through `why` — the two effects are
+  independent by construction. `src/gen/emit_vm.c`'s `--emit-ir` listing
+  needs its own arm for the identical reason `has_bref`/`has_call` did
+  ([M6.5.2]/[DD-14 wave E]'s precedent: without one, the line falsely
+  claims the `--engine=vm` side effect). Tests: tests/vm/run_vm_tests.sh
+  §3b, tests/prefilter/ (see its own CLAUDE.md's "[SEL-1]" section).
+
 - **atomic.c** — [M6.4.2] module `atomic-groups`' AST-level pass and its two
   walks (docs/design/atomic_groups_design.md §5.3/§5.4, panel-approved R31),
   plus [M6.5.2]'s two BACKREFERENCE tree predicates, [M6.6.2]'s

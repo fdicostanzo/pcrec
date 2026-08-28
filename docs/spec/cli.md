@@ -108,19 +108,35 @@ what recovers the old behaviour.
 
 ### `--engine=E` — `dfa` | `vm` | `auto` (default `auto`)
 
-**Do-or-die**: a request the pattern cannot honour REFUSES, never silently
-downgrades (`cli/main.c:262-272` parses the value; the refusal itself is
-asserted in `src/opt/select_engine.c`, not the CLI). Verified live:
-`--engine=dfa --features recursion -o ... '(a)(?1)'` refuses naming that
-the pattern requires captures and suggesting `--no-captures` or dropping
-`--engine=dfa`. `--engine=vm` additionally disables the DFA prefilter, so
-the VM derives the whole span independently — the property that makes it
-usable as a cross-check against the DFA rather than an echo of it (R21
-E-6). The refusal-plus-control pair is pinned at
+**Do-or-die for `dfa` and `vm`**: a request the pattern cannot honour
+REFUSES, never silently downgrades (`cli/main.c:262-272` parses the value;
+the refusal itself is asserted in `src/opt/select_engine.c`, not the CLI).
+Verified live: `--engine=dfa --features recursion -o ... '(a)(?1)'` refuses
+naming that the pattern requires captures and suggesting `--no-captures` or
+dropping `--engine=dfa`. `--engine=vm` additionally disables the DFA
+prefilter, so the VM derives the whole span independently — the property
+that makes it usable as a cross-check against the DFA rather than an echo
+of it (R21 E-6). The refusal-plus-control pair is pinned at
 `tests/recursion/run_recursion_diff.sh` §4 (`--engine=dfa` on a recursive
 pattern refuses by name; a spliceable call still compiles under it — two
 different reasons a call-bearing pattern can or cannot take `--engine=dfa`,
 both asserted).
+
+**[SEL-1] (2026-08-28) `auto` HAS ONE EXCEPTION TO DO-OR-DIE, AND IT IS
+ABOUT A CAP RATHER THAN A CONSTRUCT.** Every refusal above is decided from
+the pattern's AST, before any automaton exists. A DFA build can additionally
+overflow a compile-time CAP (state count, table entries, the K7 subset-
+element budget — `docs/spec/limits.md`, `docs/spec/tuning.md` §2.11) that no
+AST-level check can see in advance, and under `auto` — with `-fprefilter`
+not also requested — that overflow is a SELECTION OUTCOME: the compile
+falls back to the VM (`RX_ENGINE_WHY` names the cap), and if the overflow
+was in an auto-selected prefilter rather than the chosen engine itself, the
+prefilter is dropped (`docs/spec/tuning.md` §2.5) instead of the whole
+compile refusing. `--engine=dfa` and `-fprefilter` are UNCHANGED — both
+still refuse with the same "pattern too complex for the DFA engine" text as
+before this row, because a caller who named the engine or forced the
+prefilter explicitly asked for the machine that cannot be built. See
+`docs/spec/tuning.md` §2.11 for the mechanism and the cost bound.
 
 ### `--step-budget=N`, `--work-budget=N`, `--fno-step-budget`
 
