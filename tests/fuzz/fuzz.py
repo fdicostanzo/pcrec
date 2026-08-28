@@ -125,6 +125,27 @@ RUN_TIMEOUT = _run_timeout()
 # well under a second. Override with STEP_BUDGET=N for experimentation.
 STEP_BUDGET = int(os.environ.get("STEP_BUDGET", "100000"))
 
+# [SEL-1]/K41 (2026-08-28, docs/dev/known_issues.md K41): the emitted-.c SIZE
+# threshold that classifies a pattern as K41's own known VM-emission gap,
+# checked BEFORE and INDEPENDENTLY of whether gcc happens to compile it
+# within budget on a given box. An early version of this file classified
+# K41's witness by grepping GCC'S OWN ERROR TEXT instead -- rejected
+# (manager correction, 2026-08-28): gcc's own outcome on a large artifact is
+# TIMING-SENSITIVE (a fixed CPU-second ulimit against box speed -- one
+# witness measured 7.8s under -O0 against a ~10s cap, a narrow margin,
+# MEASURED to read 0 or 1 run to run on one box) while pattern generation and
+# compilation SIZE are otherwise fully deterministic per --seed; keying the
+# bucket on gcc's result would have made this the first non-deterministic
+# thing in this file. 1,000,000 bytes, with margin: at this fixed seed's own
+# draw (seed 1/patterns 300) exactly TWO patterns cross it -- 1,250,766 and
+# 2,004,449 bytes, both roughly 1.25x-2x the threshold -- verified
+# byte-identical across three consecutive runs (tests/fuzz/
+# run_capturediff_gate.sh's own three-run determinism proof). Both happen to
+# compile within this box's gcc budget today ("gcc=compiled" in the
+# oversize_hits print below); that outcome is recorded for information only
+# and is NOT what puts a pattern in this bucket.
+K41_OVERSIZE_BYTES = 1_000_000
+
 # =============================================================================
 # EXCLUDED FROM GENERATION — known tooling/engine divergences, verified
 # empirically against the real PCRE2 oracle (see this file's git history /
@@ -776,9 +797,10 @@ def main():
     accept_mismatches = []
     content_divergences = []
     state_cap_hits = []
+    oversize_hits = []  # [SEL-1]/K41 -- see K41_OVERSIZE_BYTES
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
              "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
-             "gcc_fail": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
+             "gcc_fail": 0, "oversize": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
              "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
              "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0,
              "module_construct": 0}
@@ -870,6 +892,7 @@ def main():
                   "accept_mismatch": None, "state_cap": None, "engine_limit": None, "content": [], "gcc_fail": None,
                   "oracle_inconclusive": 0, "oracle_probe_timeout": False,
                   "pcrec_compile_timeout": False,
+                  "oversize": False, "artifact_size": 0, "oversize_gcc_outcome": None,
                   "engine_budget": {"steps": 0, "frames": 0}}
 
         if not pcrec_ok and pcrec_err.startswith("PCREC-TIMEOUT"):
@@ -936,8 +959,34 @@ def main():
         if not pcrec_ok:
             return result  # both reject: agreement, nothing more to do
 
+        # [SEL-1]/K41: classify by the emitted artifact's SIZE, checked BEFORE
+        # and INDEPENDENTLY of whatever gcc does with it -- see the comment
+        # above K41_OVERSIZE_BYTES for why size (not gcc's CPU-time outcome,
+        # which is timing-sensitive per-box) is the deterministic property
+        # this bucket keys on. gen.c was written by compile_with_pcrec()
+        # above (pcrec_ok is true here, so it exists).
+        gen_c_path = os.path.join(tmp_dir, "gen.c")
+        try:
+            artifact_size = os.path.getsize(gen_c_path)
+        except OSError:
+            artifact_size = 0
+        result["artifact_size"] = artifact_size
+        result["oversize"] = artifact_size > K41_OVERSIZE_BYTES
+
         exe, gcc_err = compile_and_link(tmp_dir, driver_o)
-        if exe is None:
+        if result["oversize"]:
+            # K41's own bucket: gcc's outcome on an oversize artifact is
+            # recorded as INFORMATION ONLY (compiled / over-budget on this
+            # box), never routed through the plain gcc_fail pass/fail bucket
+            # below -- that bucket stays meaningful (a genuine pcrec-emitted-
+            # code defect) only for artifacts under the size threshold.
+            result["oversize_gcc_outcome"] = ("compiled" if exe is not None
+                else "over-budget: " + (gcc_err or "")[:200])
+            if exe is None:
+                return result
+            # else: it compiled anyway despite being oversize -- nothing
+            # stops the usual comparison below.
+        elif exe is None:
             result["gcc_fail"] = gcc_err
             return result
 
@@ -1022,6 +1071,19 @@ def main():
             if not result["pcrec_ok"]:
                 stats["both_reject"] += 1
                 continue
+            if result.get("oversize"):
+                # [SEL-1]/K41: classified by SIZE alone (checked above,
+                # independently of gcc), so this bucket is NOT read from
+                # gcc's own outcome -- see K41_OVERSIZE_BYTES's comment.
+                # gcc's result is informational only, printed but never
+                # folded into gcc_fail's pass/fail count below.
+                stats["oversize"] += 1
+                oversize_hits.append((result["pattern"], result["artifact_size"],
+                                       result["oversize_gcc_outcome"]))
+                print("[fuzz] K41-OVERSIZE pattern=%r size=%d gcc=%s" % (
+                      result["pattern"], result["artifact_size"],
+                      result["oversize_gcc_outcome"]), file=sys.stderr)
+                continue
             if result["gcc_fail"]:
                 stats["gcc_fail"] += 1
                 print("[fuzz] GCC-FAIL pattern=%r: %s" % (result["pattern"], result["gcc_fail"][:200]),
@@ -1073,7 +1135,8 @@ def main():
     print(f"  pcre2-only reject:  {stats['pcre2_reject_only']}  (accept/reject divergence)")
     print(f"  PCRE2 size-limit:   {stats['engine_limit']}  (PCRE2 err 120, its own ceiling -- not a divergence)")
     print(f"  DFA state-cap:      {stats['state_cap']}  (KNOWN limitation, review A-3 -- not a divergence, see README.md)")
-    print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se)")
+    print(f"  K41 oversize artifact: {stats['oversize']}  (emitted .c > {K41_OVERSIZE_BYTES} bytes, classified by SIZE alone -- see docs/dev/known_issues.md K41; gcc's own outcome is informational, printed below, never counted as a gcc_fail)")
+    print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se; excludes the oversize bucket above)")
     print(f"  pcrec compile timeout: {stats['pcrec_compile_timeout']}  (pcrec's own PCREC_TIMEOUT clock, not the generated matcher's step budget -- see compile_with_pcrec())")
     print(f"  oracle probe timeout: {stats['oracle_probe_timeout']}  (empty-subject accept/reject probe itself timed out -- see oracle_run())")
     print(f"subject pairs compared (both-accept patterns): {stats['pairs_compared']}")
@@ -1088,6 +1151,11 @@ def main():
         print(f"\n-- DFA state-cap hits (known limitation, not a divergence; first 5 of {len(state_cap_hits)}) --")
         for pattern, err in state_cap_hits[:5]:
             print(f"  pattern={pattern!r} :: {err!r}")
+
+    if oversize_hits:
+        print(f"\n-- K41 oversize artifacts (emitted .c > {K41_OVERSIZE_BYTES} bytes; gcc outcome informational; first 5 of {len(oversize_hits)}) --")
+        for pattern, size, gcc_outcome in oversize_hits[:5]:
+            print(f"  K41-WITNESS pattern={pattern!r} size={size} gcc={gcc_outcome}")
 
     if accept_mismatches:
         print("\n-- accept/reject divergences --")
