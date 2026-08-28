@@ -16814,3 +16814,34 @@ verdict that does not read its own inputs); diagnosed and fixed in the
 scratch script (below), the results above read from the stage logs
 directly. I-13 to the bench: pin 35e1ab1 (abi 8), battery-proven. The
 session CLOSES here: no lanes, no worktrees, no cron; wake.md current.
+
+### Forty-second session (2026-08-28, pcrec half — short; the session moves to pcrec-bench)
+
+Woke on 0cee6e0: battery #3 green, I-13 sent, no lanes/worktrees/cron,
+box idle, bench outbox unchanged since O-6. Two housekeeping items:
+Frank enqueued **[OPT-D]** — no-impact space savings (dedupe
+byte-identical emitted tables, his example the class bitmaps a forward
+and backward DFA both carry); recorded as a not-started row (65f89e3):
+size only, answers/stamps unchanged, zero runtime cost proven the
+[ENG-FORM] way, a SELECTION over the candidate lists not a special
+case, census first (D77), abi bump with its four sites (D76). And the
+two stray tracked files `--help` / `--help.logdir` (a batch-timing
+log written to a literal `--help` path, committed by accident in
+8d2f914; Frank had deleted them in the tree after making a fresh one
+himself) removed in 0c2a778 — probe: of six invocation shapes only
+`pcrec -o --help 'a'` creates such a file (`-o` takes the next argv
+verbatim, as gcc does); not a defect.
+
+**Ruling (Frank):** the two biggest queued wins ([OPT-5] on the [B11]
+sub-bench number; [OPT-3] STEP 3 on I-10's non-periodic subject) are
+gated on pcrec-bench, whose own dev session is not running. Frank:
+"there is no reason you couldn't slip over there and advance that
+cause as needed. Do one repo or the other for focus … spend a session
+getting what you need from bench then next session come back here and
+use it. Be the bench though — use its journal etc." So: THIS session
+continues as a pcrec-bench session run by its own documents (wake,
+journal, plan, skill), one repo per session; the D78 file channel keeps
+its shape (bench writes outbox, pcrec writes inbox) even when one
+manager wears both hats on different days. The pcrec-side queue when
+we return: [CHK-2] piece 1, [OPT-2] STEP 2 measurement, [OPT-D]
+census, then the bench-unlocked [OPT-5]/[OPT-3] STEP 3.
