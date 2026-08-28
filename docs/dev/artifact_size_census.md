@@ -650,10 +650,13 @@ exactly where all three levers would apply first.
 ## 8. Tension curves
 
 **Status note on the throughput columns.** The size/`.o`/gcc-time columns
-below are final (they do not depend on box load — confirmed independently
-identical across two separate runs of the same variant taken minutes
-apart at different load levels, e.g. witness/`fno-splice-calls` and
-witness/`engine-vm` both landed at exactly 503,344 `.o` bytes). The
+below are final (compiler output is deterministic and does not depend on
+box load — indirect confirmation: witness/`fno-splice-calls` and
+witness/`engine-vm`, two DIFFERENT no-op-for-this-pattern variants
+compiled minutes apart at different load levels, both independently
+landed at exactly the same 503,344 `.o` bytes as witness/`default`,
+consistent with all three compiling to identical code rather than a
+load-dependent measurement). The
 `match_us`/`fail_us` throughput columns were taken at `load1` 1.6-5.0 (5
 of 6 patterns, before a union battery on the box's `main` branch pushed
 `load1` to ~13-14) — NOT the battery, but not a quiet box either. They are
