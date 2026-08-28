@@ -276,8 +276,15 @@ floor_check "D:RX_ENGINE=vm"                  1000
 floor_check "D:RX_DFA_SCAN=unanchored"        1400
 floor_check "D:RX_DFA_SCAN=attempt"           250
 floor_check "D:RX_DFA_PREFILTER=none"         500
-floor_check "D:RX_DFA_PREFILTER=memchr"       900
+# [OPT-K] (2026-08-28, abi 9) put two candidates at the HEAD of the prefilter
+# list, so ~75 memchr witnesses and some byte-class ones became offset-set
+# forms: memchr measured 900+ → 825 on the union sweep (floor re-derived,
+# rounded down), offset-set 360, offset-set-bounded 40 (floored on first
+# sight — K35: every value the corpus reaches gets a floor in the same change).
+floor_check "D:RX_DFA_PREFILTER=memchr"       750
 floor_check "D:RX_DFA_PREFILTER=byte-class"   250
+floor_check "D:RX_DFA_PREFILTER=offset-set"   300
+floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
 floor_check "D:RX_DFA_TABLE=premultiplied"    1500
 # Capacity/activity (b) — VM artifacts, DEFAULT population.
 floor_check "D:RX_VM_PREFILTER=hybrid"        900
@@ -355,6 +362,7 @@ declare -A KNOWN_VALUES=(
     ["D:RX_DFA_PREFILTER=none"]=1 ["D:RX_DFA_PREFILTER=memchr"]=1
     ["D:RX_DFA_PREFILTER=byte-class"]=1 ["D:RX_DFA_PREFILTER=memchr-bounded"]=1
     ["D:RX_DFA_PREFILTER=byte-class-bounded"]=1
+    ["D:RX_DFA_PREFILTER=offset-set"]=1 ["D:RX_DFA_PREFILTER=offset-set-bounded"]=1
     ["D:RX_DFA_TABLE=premultiplied"]=1 ["D:RX_DFA_TABLE=indexed"]=1
     ["D:RX_DFA_TABLE=mixed"]=1 ["D:RX_DFA_TABLE=none"]=1
     ["D:RX_VM_PREFILTER=hybrid"]=1 ["D:RX_VM_PREFILTER=none"]=1
