@@ -19,7 +19,7 @@
 #             if (!q) return n;
 #             cand = (size_t)((const unsigned char *)q - subject) - 8;
 #             if (cand + 13 >= n) return n;
-#             if (rx_can_begin_match[subject[cand]] && subject[cand + 13] == 45) return cand;
+#             if (rx_ofs_k0[subject[cand]] && subject[cand + 13] == 45) return cand;
 #             pos = cand + 1;
 #         }
 #         return n;
@@ -245,7 +245,7 @@ witness() { # witness <label> <pattern> <stamp> <offsets> <k*> <byte> <maxk>
 #        label          pattern                                   stamp                offsets    k*  byte maxk
 witness "iso-ts"       '\d{4}-\d{2}-\d{2}'                        offset-set           '0,4*'      4   45   4
 witness "uuid"         '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b'  offset-set-bounded '0,8*,13' 8 45 13
-witness "stack-frame"  '\bat [a-z]'                               offset-set-bounded   '0,1*,2'    1  116   2
+witness "stack-frame"  '\bat [a-z]'                               offset-set-bounded   '0,1*'      1  116   1
 witness "needleXYZW"   'needleXYZW'                               offset-set           '0,6*'      6   88   6
 
 # =========================================================================
@@ -267,6 +267,61 @@ if emit reseed '\b[0-9]{2}-[0-9]{2}'; then
     grep -qE 'rx_forward_seed_state\[' "$WORKDIR/reseed.c" \
         && ok "§2b the seed table the reseed reads is emitted" \
         || bad "§2b the reseed reads rx_forward_seed_state[] but no such table is emitted"
+fi
+
+# =========================================================================
+# §2c MISCOMPILE-1's OWN CHECK: the offset-0 verify is NOT `can_begin_match`
+# =========================================================================
+# `can_begin_match` is the DFA start state's ESCAPE set — "does this byte move
+# the machine off `fs`" — which is the right question for the SCAN that walks
+# it and the WRONG one for a VERIFY that refuses a candidate START. The skip
+# lands past bytes it jumped over, so the parked state there may be a seeded
+# `s1u[UPC_WORD]`, and a byte that cannot begin a match from `fs` can begin one
+# from there.
+#
+# MEASURED before the fix: `\b\.[0-9]{4}Z` has `can_begin_match` = exactly the
+# 63 word bytes with `.` EXCLUDED, and `.` is the only byte a match can start
+# with — "ab.1234Z" answered NOMATCH against a baseline and python3 `re` of
+# (2,8). The corpus rows are in tests/offsetskip §8; this is the emitted line
+# they depend on, and the two are named in each other.
+if emit mc1 '\b\.[0-9]{4}Z'; then
+    blk="$(sed -n '/^static inline size_t rx_ofsskip(/,/^}$/p' "$WORKDIR/mc1.c")"
+    if printf '%s\n' "$blk" | grep -q 'rx_can_begin_match'; then
+        bad "§2c the offset-k skip helper reads rx_can_begin_match — that is the ESCAPE set (does this byte leave the start state), not the CAN-BEGIN-A-MATCH set, and using it as a verify LOSES MATCHES on every pattern with a leading assertion (MISCOMPILE-1: '\b\.[0-9]{4}Z' on \"ab.1234Z\" answered nomatch against a baseline of (2,8))"
+    else
+        ok "§2c the offset-k skip helper does not read can_begin_match (MISCOMPILE-1)"
+    fi
+    # THE SHARPEST FORM THE WITNESS CAN TAKE: the byte the old set EXCLUDED is
+    # the only byte the corrected verify ACCEPTS. `.` is not a word character,
+    # so it is absent from the escape set; it is the pattern's whole offset-0
+    # class, so the corrected verify is `subject[cand] == 46`.
+    if printf '%s\n' "$blk" | grep -qE 'subject\[cand\] == 46'; then
+        ok "§2c ...and requires '.' (46) at offset 0 — the byte the escape set EXCLUDES"
+    else
+        bad "§2c the helper does not test subject[cand] == 46 on '\b\.[0-9]{4}Z'. '.' is the only byte a match can begin with here AND is absent from can_begin_match, so this is the one line that separates the two sets"
+    fi
+fi
+
+# THE VACUITY GUARD, and it needs a SECOND BUILD rather than a second read.
+# The corrected form no longer emits `can_begin_match` at all, so there is
+# nothing in the artifact to compare against — and "the table is not the other
+# table" is worth nothing if the two would have been equal anyway. The
+# `-fno-offset-skip` build of the SAME pattern emits the byte-class form and
+# therefore the escape set, so the two tables come from two builds and two
+# emitter paths. On `uuid` they must DIFFER: 16 hex bytes against 63 word ones.
+if emit v1 '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b' \
+   && emit v2 '\b[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}\b' -fno-offset-skip; then
+    a="$(sed -n '/rx_ofs_k0\[256\]/,/};/p' "$WORKDIR/v1.c" | tr -cd '0-9,')"
+    b="$(sed -n '/rx_can_begin_match\[256\]/,/};/p' "$WORKDIR/v2.c" | tr -cd '0-9,')"
+    na=$(printf '%s' "$a" | tr ',' '\n' | grep -c '^1$')
+    nb=$(printf '%s' "$b" | tr ',' '\n' | grep -c '^1$')
+    if [ -z "$a" ] || [ -z "$b" ]; then
+        bad "§2c could not read both offset-0 tables on the uuid witness (ofs_k0 from the default build, can_begin_match from the -fno-offset-skip one) — the guard cannot say whether the two sets differ"
+    elif [ "$a" = "$b" ]; then
+        bad "§2c the corrected offset-0 verify table is IDENTICAL to the escape set on the uuid witness ($na bytes each) — either the fix has been undone or the witness has stopped distinguishing the two sets, and every row above asserts nothing"
+    else
+        ok "§2c the offset-0 verify ($na bytes) and the escape set ($nb bytes) genuinely differ on the uuid witness — the MISCOMPILE-1 rows are not vacuous"
+    fi
 fi
 
 # =========================================================================

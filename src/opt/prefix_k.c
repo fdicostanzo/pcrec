@@ -207,6 +207,20 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
     }
 }
 
+/* The union of the classes the frontier's consuming states read — i.e. the
+ * bytes a thread from the candidate start may consume next. Returns how many. */
+static int frontier_union(const Walk *w, uint8_t set[256])
+{
+    int count = 0;
+    memset(set, 0, 256);
+    for (int i = 0; i < w->ncur; i++) {
+        const uint8_t *cls = w->nfa->st[w->cur[i]].cls;
+        for (int b = 0; b < 256; b++) if (cls_has(cls, (unsigned)b)) set[b] = 1;
+    }
+    for (int b = 0; b < 256; b++) if (set[b]) count++;
+    return count;
+}
+
 /* ---- THE COST MODEL ------------------------------------------------------
  *
  * Units: HUNDREDTHS OF A CYCLE PER SUBJECT BYTE. The four constants are the
@@ -302,25 +316,58 @@ static unsigned long long model_cost(unsigned scan_cost, unsigned scan_ppm,
 
 /* ---- THE SELECTION -------------------------------------------------------
  *
- * `k0` is the offset-0 set the DFA derivation already owns; `o->k[0]` is
- * seeded from it and never from the walk, so the shipped k=0 filter is
- * BYTE-FOR-BYTE the one that shipped before this row when no further offset
- * is selected. That is the plan row's "the k=0 skip BECOMES the |set|=1, k=0
- * case" stated as code rather than as an intention. */
+ * OFFSET 0 HAS TWO ROLES AND THEY NEED TWO DIFFERENT SETS. Getting this wrong
+ * was [OPT-K]'s one MEASURED MISCOMPILE (MISCOMPILE-1, found by the D6
+ * semantics critic and reproduced running on both engines), and the note's
+ * §2.1 states the fact that makes it a miscompile without, in its first
+ * draft, drawing the consequence:
+ *
+ *   ROLE A — THE SCAN at k = 0, the `memchr`/bitmap-walk form that shipped
+ *     before this row. Its set is `k0`, the DFA start state's ESCAPE set, and
+ *     that is exactly right: the scan skips only while the machine is PARKED
+ *     in `fs`, those bytes provably keep it there, and a `\b` machine's start
+ *     state escapes on every word character because it must REMEMBER the
+ *     left-hand context. `k0` answers "does this byte move the machine off
+ *     `fs`".
+ *
+ *   ROLE B — A VERIFY at offset 0, which is new here and is what an offset-k
+ *     skip does when its scan sits at k* > 0. It REFUSES a candidate start,
+ *     so its set must answer "can a match BEGIN here", and `k0` does not. The
+ *     skip lands at a position whose left neighbour it jumped over, so the
+ *     parked state there may be `s1u[UPC_WORD]` rather than `fs` — and a byte
+ *     that cannot begin a match from `fs` can begin one from there.
+ *     MEASURED: `\b\.[0-9]{4}Z` has `k0` = exactly the 63 word bytes with
+ *     `.` excluded, and `.` is the ONLY byte a match can start with. With
+ *     `k0` as the verify, "ab.1234Z" answered NOMATCH against a baseline and
+ *     python3 `re` of (2,8) — nine lost-match cells over the witness set, on
+ *     both engines. Sabotage row S188 restores it.
+ *
+ * SO ROLE B TAKES THE WALK'S OWN `frontier[0]`, and its soundness is §3.2's
+ * proof unchanged and UNIVERSALLY QUANTIFIED over the preceding byte: a match
+ * beginning anywhere runs a thread from `anch_start`, whose first byte is
+ * consumed by an `N_CLASS` of that closure — a statement about the PATTERN,
+ * true from `fs` and from every `s1u[u]` alike, because the closure passes
+ * every assertion as though it held. **A new member of the k-set is
+ * admissible only if its set comes from this walk**; a set that is a fact
+ * about one STATE is valid only at the positions that state describes, which
+ * is the whole of what went wrong.
+ *
+ * It is also strictly TIGHTER, which is the C4 improvement arriving as a
+ * consequence of a correctness fix: `uuid`'s offset-0 verify goes from 63
+ * bytes to the 16-byte hex class, `stack-frame`'s to `{a}`.
+ *
+ * `k0` still owns the BASELINE (`base_ppm`), because the baseline is what the
+ * artifact costs today and today it filters on `k0`. */
 void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
                         PrefixKSets *o)
 {
     memset(o, 0, sizeof *o);
     o->nsel = 0;
 
-    /* offset 0, from the DFA's own derivation. */
-    memcpy(o->k[0].set, k0, 256);
-    o->k[0].k = 0;
-    o->k[0].count = 0;
-    for (int b = 0; b < 256; b++)
-        if (k0[b]) { o->k[0].count++; o->k[0].byte = b; }
-    o->k[0].ppm = set_ppm(k0);
-    o->nwalk = 1;
+    /* THE BASELINE'S mass is the DFA set's — role A, what ships today. */
+    int k0count = 0;
+    for (int b = 0; b < 256; b++) if (k0[b]) k0count++;
+    o->base_ppm = set_ppm(k0);
 
     if (nfa->n <= 0 || nfa->anch_start < 0 || nfa->anch_start >= nfa->n)
         return;
@@ -335,6 +382,18 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
 
     int seed = nfa->anch_start;
     wclose(&w, &seed, 1);
+
+    /* ROLE B's set, and the walk's own offset 0. `w.accept` here would mean
+     * the pattern matches empty, which `unanch_start` has already excluded
+     * (`start_acc`) before calling us — checked rather than assumed, because
+     * a zero-length match makes every offset test vacuous. */
+    if (w.accept || w.ncur == 0) return;
+    o->k[0].k = 0;
+    o->k[0].count = frontier_union(&w, o->k[0].set);
+    if (o->k[0].count == 0 || o->k[0].count >= 256) return;
+    for (int b = 0; b < 256; b++) if (o->k[0].set[b]) o->k[0].byte = b;
+    o->k[0].ppm = set_ppm(o->k[0].set);
+    o->nwalk = 1;
 
     for (int j = 1; j < PCREC_PREFIX_K_MAX; j++) {
         /* THE STOP CONDITIONS, in the order they must be asked.
@@ -371,26 +430,32 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
 
     /* ---- pick a scan offset and its verifies -------------------------- */
 
-    if (o->k[0].count == 0 || o->k[0].count >= 256) return;  /* nothing to filter on */
+    if (k0count == 0 || k0count >= 256) return;  /* today's filter is not usable */
 
-    unsigned base_scan = o->k[0].count == 1 ? C_MEMCHR : C_BITMAP;
-    unsigned long long base = model_cost(base_scan, o->k[0].ppm, 0, 1000000ull);
-    o->base_ppm = o->k[0].ppm;
-    o->rate_ppm = o->k[0].ppm;
+    /* THE BASELINE IS ROLE A's: the offset-0 filter this artifact ships with. */
+    unsigned base_scan = k0count == 1 ? C_MEMCHR : C_BITMAP;
+    unsigned long long base = model_cost(base_scan, o->base_ppm, 0, 1000000ull);
+    o->rate_ppm = o->base_ppm;
 
     unsigned long long best = base;
     int best_scan = -1, best_sel[PCREC_OFSK_MAX_SET], best_n = 0;
     unsigned long long best_rate = base;
 
-    for (int si = 0; si < o->nwalk; si++) {
-        /* A SCAN OFFSET PAST 0 MUST BE A SINGLETON, and that is a scope line
-         * with `attempt_cand`'s reasoning behind it (src/gen/emit_dfa.c): a
-         * multi-byte set at k > 0 would need a bitmap WALK at that offset —
-         * emitted code no measured pattern reaches, since a set wide enough
-         * to need one is never selective enough to be chosen. Offset 0 keeps
-         * both forms because both already ship. */
-        if (si != 0 && o->k[si].count != 1) continue;
-        unsigned scan_cost = o->k[si].count == 1 ? C_MEMCHR : C_BITMAP;
+    for (int si = 1; si < o->nwalk; si++) {
+        /* THE SCAN STARTS AT si = 1, WHICH IS TWO RULES IN ONE INDEX.
+         *
+         * (a) The scan offset must MOVE off 0 — the measured rule below, and
+         *     the reason there is no `si == 0` arm here to reason about.
+         * (b) A scan offset past 0 must be a SINGLETON, a scope line with
+         *     `attempt_cand`'s reasoning behind it (src/gen/emit_dfa.c): a
+         *     multi-byte set at k > 0 would need a bitmap WALK at that
+         *     offset — emitted code no measured pattern reaches, since a set
+         *     wide enough to need one is never selective enough to be chosen.
+         *
+         * Together they also mean `o->k[0]` is ALWAYS role B here and never
+         * the scan, so the two sets cannot be confused at this site. */
+        if (o->k[si].count != 1) continue;
+        unsigned scan_cost = C_MEMCHR;
 
         /* Greedy over the remaining offsets, most selective first. Greedy is
          * exact here and not an approximation: each verify multiplies the
@@ -398,7 +463,7 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
          * best offsets are the k with the lowest ppm and no exchange can
          * improve a set of that size. */
         int order[PCREC_PREFIX_K_MAX], no = 0;
-        for (int j = 0; j < o->nwalk; j++) if (j != si && !(si != 0 && j == 0)) order[no++] = j;
+        for (int j = 1; j < o->nwalk; j++) if (j != si) order[no++] = j;
         for (int a = 0; a < no; a++)
             for (int b = a + 1; b < no; b++)
                 if (o->k[order[b]].ppm < o->k[order[a]].ppm) {
@@ -419,12 +484,10 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
          * It costs a probe at the SCAN's rate, which on every pattern the
          * selection reaches is under a hundredth of a cycle per byte. */
         int sel[PCREC_OFSK_MAX_SET], n = 0;
-        unsigned long long vrate = 1000000ull, vcost = 0;
-        if (si != 0) {
-            sel[n++] = 0;
-            vrate = o->k[0].ppm;
-            vcost = verify_cost(o->k[0].ppm);
-        }
+        unsigned long long vrate, vcost;
+        sel[n++] = 0;
+        vrate = o->k[0].ppm;
+        vcost = verify_cost(o->k[0].ppm);
         unsigned long long cost = model_cost(scan_cost, o->k[si].ppm, vcost, vrate);
         for (int a = 0; a < no && n < PCREC_OFSK_MAX_SET - 1; a++) {
             unsigned long long nv = vrate * o->k[order[a]].ppm / 1000000ull;
@@ -470,7 +533,10 @@ void pcrec_prefix_ksets(Ctx *cx, const Nfa *nfa, const uint8_t k0[256],
      * `needleXYZW` prefilter check both fired on the version without this
      * rule, and M2.12's own text says the pin exists so the change cannot be
      * re-landed on plausibility alone. `[01]*1[01]{8}` keeps its `memchr`,
-     * measured. */
+     * measured.
+     *
+     * The loop above starts at `si = 1`, so this is UNREACHABLE and is kept as
+     * an assertion of the rule rather than as a second gate. */
     if (o->k[best_scan].k == 0) return;
 
     /* Publish, offsets ASCENDING — the emitted verify chain reads left to

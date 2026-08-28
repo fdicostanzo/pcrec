@@ -2656,6 +2656,12 @@ struct DfaDir {
 
 /* ONE MACHINE'S FORM. Everything an emitter below is allowed to read. */
 struct DfaForm {
+    /* [OPT-K] the Ctx, for `ctx_fail` alone. Two arms of the offset-k skip's
+     * emitter are UNREACHABLE by construction (an empty verify chain; a
+     * non-singleton scan offset), and this file's standing preference is a
+     * loud internal error over a silent fallback that would emit a correct
+     * matcher with the optimization quietly switched off. */
+    Ctx           *cx;
     const Dfa     *d;
     const char    *p;              /* the artifact prefix */
     const DfaDir  *dir;
@@ -3217,22 +3223,20 @@ static bool pf_ofs_bounded_applies(const DfaSel *s)
 static bool pf_ofs_applies(const DfaSel *s)
 { return pf_ofs_applies_common(s); }
 
-/* The emitted name of the table a multi-byte offset probes. Offset 0 reuses
- * `can_begin_match`, which the artifact may already carry and which is the
- * SAME derivation (`us.cand`) the byte-class forms walk — one fact, one
- * table, never a second copy under a new name. */
+/* The emitted name of the table a multi-byte offset probes.
+ *
+ * OFFSET 0 GETS ITS OWN TABLE AND MUST NOT REUSE `can_begin_match`. That was
+ * MISCOMPILE-1: `can_begin_match` is the DFA start state's ESCAPE set — "does
+ * this byte move the machine off `fs`" — which is the right question for the
+ * SCAN that walks it and the wrong one for a VERIFY that refuses a candidate
+ * START. The skip lands past bytes it jumped over, so the parked state there
+ * may be a seeded `s1u[UPC_WORD]`, and a byte that cannot begin a match from
+ * `fs` can begin one from there. `\b\.[0-9]{4}Z` lost three matches to
+ * exactly that. src/opt/prefix_k.c's `pcrec_prefix_ksets` header is the full
+ * account; here the consequence is one table name. */
 static void ofsk_tbl_name(char *buf, size_t n, const DfaForm *f, const PrefixK *k)
 {
-    if (k->k == 0) snprintf(buf, n, "%s_can_begin_match", f->p);
-    else           snprintf(buf, n, "%s_ofs_k%d", f->p, k->k);
-}
-
-/* Does this form's emitted block take `<p>_can_begin_match` as a parameter? */
-static bool ofsk_uses_cbm(const DfaForm *f)
-{
-    for (int i = 0; i < f->ofsk->nsel; i++)
-        if (ofsk_at(f, i)->k == 0 && ofsk_at(f, i)->count > 1) return true;
-    return false;
+    snprintf(buf, n, "%s_ofs_k%d", f->p, k->k);
 }
 
 static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
@@ -3246,15 +3250,19 @@ static void pf_tables_bcls(StrBuf *c, const DfaForm *f)
 
 static void pf_tables_ofs(StrBuf *c, const DfaForm *f)
 {
-    if (ofsk_uses_cbm(f)) pf_tables_bcls(c, f);
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
         char tag[PCREC_MAX_EMIT_NAME_LEN];
-        if (k->k == 0 || k->count <= 1) continue;
-        sb_printf(c, "    /* 1 for each byte a match may carry %d byte%s past its own\n"
-                     "     * start. The candidate filter probes this before entering the\n"
-                     "     * transition loop; speed only, it never changes the answer. */\n",
-                  k->k, k->k == 1 ? "" : "s");
+        if (i == f->ofsk->scan || k->count <= 1) continue;
+        sb_printf(c, "    /* 1 for each byte a match MAY BEGIN WITH %d byte%s before\n"
+                     "     * its own start -- i.e. which bytes may sit at offset %d of a\n"
+                     "     * match. NOT the same question as can_begin_match, which asks\n"
+                     "     * whether a byte moves the machine off its start state; the\n"
+                     "     * two differ on every pattern with a leading assertion, and\n"
+                     "     * confusing them loses matches (MISCOMPILE-1). The candidate\n"
+                     "     * filter probes this before entering the transition loop;\n"
+                     "     * speed only, it never changes the answer. */\n",
+                  k->k, k->k == 1 ? "" : "s", k->k);
         snprintf(tag, sizeof tag, "ofs_k%d", k->k);
         emit_u8_table(c, f->p, tag, k->set, 256);
     }
@@ -3283,20 +3291,22 @@ static void ofsk_emit_verify(StrBuf *c, const DfaForm *f)
             else           sb_printf(c, "%s[subject[cand + %d]]", tbl, k->k);
         }
     }
-    if (first) sb_puts(c, "1");   /* unreachable: offset 0 is always a member
-                                   * and is the scan only in the bitmap form,
-                                   * which still has at least one verify */
+    /* UNREACHABLE, and a `ctx_fail` rather than a `1` fallback (critic nit
+     * N-2): offset 0 is always a member and never the scan, so the chain has
+     * at least one term. A silent `1` would emit a skip that accepts every
+     * candidate — correct, and with the whole mechanism switched off. */
+    if (first)
+        ctx_fail(f->cx, 0, "internal error: an offset-k skip with an empty "
+                               "verify chain (offset 0 is always a verify member)");
 }
 
 /* Names the block's parameters, in the order `ofsk_emit_params` writes them. */
 static void ofsk_emit_params(StrBuf *c, const DfaForm *f, bool decl)
 {
-    if (ofsk_uses_cbm(f) || (ofsk_scan(f)->count > 1))
-        sb_printf(c, ", %s%s_can_begin_match", decl ? "const unsigned char *" : "", f->p);
     for (int i = 0; i < f->ofsk->nsel; i++) {
         const PrefixK *k = ofsk_at(f, i);
         char tbl[PCREC_MAX_EMIT_NAME_LEN];
-        if (k->k == 0 || k->count <= 1) continue;
+        if (i == f->ofsk->scan || k->count <= 1) continue;
         ofsk_tbl_name(tbl, sizeof tbl, f, k);
         sb_printf(c, ", %s%s", decl ? "const unsigned char *" : "", tbl);
     }
@@ -3360,13 +3370,14 @@ static void pf_block_ofs(StrBuf *c, const DfaForm *f)
             sb_printf(c, "        cand = (size_t)((const unsigned char *)q - subject) - %d;\n", sc->k);
         sb_printf(c, "        if (cand + %d >= n) return n;\n", maxk);
     } else {
-        /* THE BITMAP FORM, and it is only ever reached at offset 0 (a scan
-         * offset past 0 must be a singleton -- the note's S4.4), which is why
-         * `cand` is `pos` and no back-mapping is needed. */
-        sb_printf(c, "        while (pos + %d < n && !%s_can_begin_match[subject[pos]]) pos++;\n",
-                  maxk, p);
-        sb_printf(c, "        if (pos + %d >= n) return n;\n", maxk);
-        sb_puts(c,   "        cand = pos;\n");
+        /* UNREACHABLE. The selection requires the scan offset to MOVE off 0
+         * (measured -- the note's S7.4) and a scan offset past 0 to be a
+         * SINGLETON (S4.4), so a non-singleton scan cannot be selected. The
+         * bitmap-scan arm that stood here was written for a k = 0 scan and
+         * read `can_begin_match`, which is the set MISCOMPILE-1 is about; it
+         * is deleted rather than left as dead emitted text. */
+        ctx_fail(f->cx, 0, "internal error: an offset-k skip whose scan "
+                               "offset is not a single byte value");
     }
     sb_puts(c,   "        if (");
     ofsk_emit_verify(c, f);
@@ -3586,6 +3597,7 @@ static void dfa_form_derive(Ctx *cx, const Dfa *d, const UnanchStart *us,
     unsigned flags = cx->opt->flags;
 
     memset(f, 0, sizeof *f);
+    f->cx      = cx;
     f->d       = d;
     f->p       = cx->opt->prefix;
     f->dir     = dir;
