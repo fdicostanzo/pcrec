@@ -147,6 +147,18 @@ assertion node** (`N_BOT`, `N_EOL`, `N_END`, `N_BOT_M`, `N_EOL_M`, `N_WORDB`,
 CONSUMING kind silently treated as an assertion is this file's one unsound
 direction.
 
+**THE SWITCH HAS A SIBLING, AND NOTHING BUT THIS SENTENCE PAIRS THEM** (panel
+finding A3). `src/ir/dfa.c`'s closure walk is the tree's other hand-maintained
+exhaustive `NKind` switch. Both are `default:`-less, so a new kind is a
+`-Wswitch` error at each — which is the guard that matters and is already in
+place under `make strict`. A shared static assertion on an `NKind` COUNT was
+considered and declined: the enum has no count member, adding one is a third
+thing to keep in step, and it would fire on a kind ADDED without catching a
+kind RECLASSIFIED — which is this walk's actual unsound direction and is
+exactly what `-Wswitch` does catch. The pairing is recorded here and in
+`src/opt/CLAUDE.md`; there is no cheaper guard than the one the compiler
+already gives.
+
 ### 3.2 Soundness
 
 **Claim.** If a match begins at subject position `p` and the walk published
@@ -264,7 +276,7 @@ Units are hundredths of a cycle per subject byte.
 | `C_MEMCHR` | 6 (0.055 c/B) | MEASURED, `opt3_dfa_scan_measurement.md` §4 CONTROL 1 (glibc AVX2 memchr) |
 | `C_BITMAP` | 116 (1.16 c/B) | MEASURED, same table, row 1 (the 256-entry `can_begin_match` walk) |
 | `C_VERIFY` | 250 (2.5 c) | one load + one table probe, per CANDIDATE |
-| `C_ENTER` | 2000 (20 c) | [OPT-3]'s measured 10.7 c/B × the ~2 bytes a false start survives |
+| `C_ENTER` | 2000 (20 c) | [OPT-3]'s measured 10.7 c/B × an ASSUMED ~2 bytes a false start survives — see below |
 | `C_MISPRED` | 1500 (15 c) | a mispredicted branch on this box |
 
 ```
@@ -272,6 +284,18 @@ verify_cost(p) = C_VERIFY + C_MISPRED * min(p, 1-p)
 cost(scan, V)  = scan_cost + p_scan * Σ_{v∈V} verify_cost(p_v)
                            + p_scan * Π_{v∈V} p_v * C_ENTER
 ```
+
+**`C_ENTER`'S SECOND FACTOR IS NOT MEASURED AND THE TABLE NO LONGER PRETENDS
+IT IS** (panel finding C3). 10.7 cycles/byte is measured; the "~2 bytes a
+false start survives" is an assumption, and false-start survival was never
+instrumented on the three exercising patterns. The honest band is 1-4 bytes on
+log text (a candidate that fails at the first or second transition is the
+common case for a `\b`-led or digit-led prefix), i.e. `C_ENTER` between 1000
+and 4000. **§7.4 measures the consequence**: the model over-predicts the real
+speedup by 8×-40× on exactly the rows it gets directionally right, and an
+over-stated `C_ENTER` is the leading candidate. It is left at 2000 rather than
+retuned to fit, because retuning a constant to make a prediction match a
+measurement already taken is how a model stops being able to be wrong.
 
 **`C_MISPRED` is not a refinement — it is what separates the outliers from the
 controls.** A verify is a conditional branch on the candidate path, so its cost
@@ -348,7 +372,15 @@ there is nothing for `docs/spec/limits.md` to promise.
 
 On the bench's own patterns, `--features all --no-captures`:
 
-| pattern | offset-0 mass | selected k-set (`*` = the scan) | predicted rate | ratio |
+ONE FORMULA, THREE DIFFERENT NUMBERS — a panel finding (C1) and worth stating
+before the table. "Predicted gain" was quoted three ways in the draft of this
+note: the CANDIDATE-MASS ratio (offset-0 mass ÷ selected rate), the
+`model_cost` ratio (what §4.5's materiality check actually tests), and a
+hand-waved third. They are not the same quantity and the mass ratio is always
+the largest. **The column below is the MASS ratio and is labelled so; every
+"predicted gain" elsewhere in this note is the `model_cost` ratio.**
+
+| pattern | offset-0 mass | selected k-set (`*` = the scan) | predicted rate | MASS ratio |
 |---|---|---|---|---|
 | `uuid` | 807,006 ppm | `k=0`, **`k=8*`** (`-`), `k=13` (`-`) | 20 ppm | 40,350× |
 | `iso-ts` | 74,760 ppm | `k=0` (digits), **`k=4*`** (`-`) | 372 ppm | 201× |
@@ -598,7 +630,17 @@ surface — is unchanged on every subject.
 `-fno-offset-skip` removes the two candidates, and the denied build's output
 **differs from the pre-row compiler's by exactly one line** — the
 `_DFA_PREFILTER_OFFSETS` stamp every `abi` 9 artifact carries — for every
-pattern. That
+pattern. (D81: a selection fact is stamped whether or not it fired, so that
+line is unconditional and the draft's "byte-identical" was simply false.)
+
+**WHAT THE CONTROL THEREFORE PROVES, exactly.** Not byte identity. It proves
+(a) ANSWER IDENTITY — `make test-axes` compares the whole corpus case by case
+across the axis — and (b) ZERO COST WHERE THE FORM IS NOT SELECTED, which is
+D82's bound and is measured as OBJDUMP EQUALITY rather than inferred: §7.3
+compiles four declined patterns with this compiler and with the pre-row one
+and diffs the disassembly, 0 differing instructions on all four, with the
+source differing by exactly the two expected lines (the new stamp and the
+`abi` number). That
 makes the axis a member of `make test-axes`'s family with no special handling:
 `tests/axes/run_axes.sh` derives its registry from `lib/pcrec.h`'s `1u << N`
 constants and `cli/main.c`'s flag loop, so bit 16 joins by construction, and the
@@ -613,6 +655,24 @@ thirteen to fourteen.
 
 ## 7. Measurement
 
+### 7.0 How it was run — the discipline, because the box carries lanes
+
+Panel finding P2. Every number in §7.2-§7.5 was taken with:
+
+- **the two arms' trials INTERLEAVED** (`on, off, on, off, …`, 9 each, medians
+  reported). This was measured NECESSARY, not precautionary: sequential blocks
+  reported **0.75×** on `ipv4`, whose two artifacts are byte-identical apart
+  from their `#include` line. A drift over the run — thermal, scheduling, or
+  another lane starting — lands on whichever arm is running, and interleaving
+  is what makes it land on both.
+- **`load average` read before each batch** and reported with the numbers.
+  This box carries other lanes; a batch taken under load is a batch to retake.
+- **the spread printed beside every median** as `(max-min)/median`. It is
+  large on this box — ±10% to ±30% on the multi-cycle-per-byte rows — which is
+  why a 4× is reported as a result and a 1.02× is reported as a wash.
+- **`tests/bench/fdriver.c`**, the FIND-ALL driver, over the comparative
+  bench's own 1 MB subjects, so the loop and the inputs are the bench's.
+
 ### 7.1 The plan
 
 1. **Bench, `loglines` search band + the 1 MB throughput sweep**: before/after
@@ -625,20 +685,154 @@ thirteen to fourteen.
 4. **Artifact size and gcc time** deltas, on a selected and a declined artifact.
 5. **`make test` and `make test-axes`**, asynchronously.
 
-### 7.2 Measured — filled in at the end of the lane
+### 7.2 MEASURED — the bench rows
 
-*(see §7.3 and the lane's final report)*
+1 MB of the comparative bench's own log text, `fdriver` find-all, 9
+interleaved trials per arm, medians, `-fno-offset-skip` as the "off" arm.
+`load1` 0.30-0.67 across the batches. Match counts EQUAL on every row.
 
-### 7.3 Measured — the model's own corrections
+| row | subject | off (ns/B) | on (ns/B) | speedup | k-set |
+|---|---|---|---|---|---|
+| `stack-frame` | fail | 4.361 | 0.377 | **11.58×** | `0,1*,2` |
+| `stack-frame` | syslog | 4.066 | 0.469 | **8.66×** | |
+| `stack-frame` | hit | 3.977 | 0.553 | **7.19×** | |
+| `iso-ts` | fail | 2.255 | 0.325 | **6.94×** | `0,4*` |
+| `iso-ts` | syslog | 1.453 | 0.217 | **6.71×** | |
+| `iso-ts` | hit | 2.078 | 0.437 | **4.76×** | |
+| `uuid` | syslog | 2.770 | 0.545 | **5.08×** | `0,8*,13` |
+| `uuid` | fail | 3.324 | 0.697 | **4.77×** | |
+| `uuid` | hit | 3.641 | 0.815 | **4.47×** | |
+| `ipv4` | fail/hit | 2.338 / 2.289 | 2.294 / 2.503 | 1.02× / 0.91× | declined |
+| `hex32-id` | fail/hit | 3.427 / 3.618 | 3.380 / 3.602 | 1.01× / 1.00× | declined |
+| `http-5xx` | fail/hit | 0.084 / 0.139 | 0.083 / 0.137 | 1.01× / 1.01× | declined |
+| `ipv6`, `kv-quoted` | fail/hit | — | — | 1.01×–1.11× | declined |
+| **email `orig`/`factored`** | — | — | — | **untouched** | **declined** |
 
-Two claims in the draft of this note were refuted by measurement and are
-recorded here rather than quietly fixed:
+The three CONTROLS and the two EMAIL patterns are declined by the selection,
+so their artifacts do not move at all and their rows are a measurement of this
+box's noise floor rather than of the change. `ipv4`'s 0.91× is that noise: its
+two artifacts are byte-identical apart from the `#include` line.
 
-- **"The model is insensitive to `C_ENTER` over 8–40 cycles."** False; §4.3
-  carries the sweep and the narrowed claim.
-- **"A verify costs a probe."** False for a coin-flip verify; §4.2's
-  `C_MISPRED` term exists because without it the model moves `hex32-id`, a
-  control pcrec is already ahead on.
+Short literals, on the same 1 MB of log text: `needleXYZW` **17.06×** (the
+scan moves from `n` at offset 0 to `X` at offset 6), `[af]bc|[gz]bc` 3.45×,
+`abc` 2.19×, `abc$` 1.68×, `ERROR` 1.46×, `needle` 1.18×. None regresses.
+
+### 7.3 MEASURED — D82's zero cost where the form is NOT selected
+
+Four declined patterns (`\b[0-9a-f]{32}\b`, the `ipv4` shape, `a(b|c)+d`,
+`.*=.*`) compiled with this compiler and with one built from `main`'s own
+sources, both at `-O2`, and disassembled:
+
+- **objdump: 0 differing instructions on all four.**
+- source: exactly **2 differing lines** on all four — the added
+  `#define RX_DFA_PREFILTER_OFFSETS "none"` and `.abi = 8` → `9`. **+40 bytes.**
+
+### 7.4 MEASURED — the model over-predicts, and the scan-move rule
+
+**The cost model ranks correctly and SCALES BADLY, and the row that made that
+undeniable is one the model got the direction wrong on too.**
+
+| row | `model_cost` prediction | measured | |
+|---|---|---|---|
+| `uuid` | 192× | 4.5× | over by 43× |
+| `iso-ts` | 38× | 4.8× | over by 8× |
+| `stack-frame` | 23× | 7.2× | over by 3× |
+| `bignum` | 13× | **0.96×–1.02×** | **wrong direction** |
+| `[01]*1[01]{8}` | 2.5× | **0.97×** | **wrong direction** |
+
+`bignum` was measured three times, on two subjects, inside a ±14% spread. The
+cause is structural and the model cannot see it: **a VERIFY removes loop
+ENTRIES, a SCAN removes BYTES.** With the scan still at offset 0 the artifact
+walks every byte in the same loop it already had, and the entries a verify
+saves are entries that die in one or two steps on real text — a saving
+`C_ENTER` prices at 20 cycles and the box cannot resolve. Move the scan to a
+rare byte and the whole subject is crossed at `memchr` speed instead, which is
+where every order of magnitude in §7.2 lives. The same over-statement of
+`C_ENTER` is the leading explanation of the 3×-43× over-prediction above (§4.2,
+panel finding C3).
+
+**So the selection gained a MEASURED rule beside the modelled one: the scan
+offset must MOVE off 0.** Six patterns, cleanly separated — every scan-moving
+case is 1.18×-17.1×, every scan-preserving case is 0.96×-1.02×. It also leaves
+`run_codegen_tests.sh`'s two measured tuning pins (M2.12's evaluation ORDER and
+`needleXYZW`'s prefilter) describing patterns that do not move, which is what
+M2.12's own text asks of anyone who changes eligibility.
+
+### 7.5 MEASURED — artifact size and gcc time (panel finding P3)
+
+| pattern | off | on | delta | gcc |
+|---|---|---|---|---|
+| declined (any of §7.3's four) | — | — | **+40 B** (one stamp line) | unchanged |
+| `\d{4}-\d{2}-\d{2}` | 19,128 B | 20,553 B | **+1,425 B (+7.4%)** | 0.06 s → 0.07 s |
+| `uuid` (full) | 28,316 B | 30,248 B | **+1,932 B (+6.8%)** | 0.07 s → 0.08 s |
+
+The estimate before the bump was "an accessor block plus up to three 256-byte
+tables"; the measurement is 1.4-1.9 KB, of which the tables are ~0.8-1.6 KB and
+the block ~600 B. `abi` 7 overshot its own +5 KB estimate sixfold, which is why
+this row measured rather than estimated.
+
+### 7.6 MEASURED — the prior's own sensitivity (panel finding C2)
+
+§4.3 swept `C_ENTER` and never swept the PRIOR, which is the input D83 says
+will one day be replaced. So a SECOND prior was built — the measured byte
+frequencies of the comparative bench's four 1 MB `loglines` throughput
+subjects — and substituted for the static table. **It is a sensitivity
+instrument and is NOT what ships**, for §4.1's reason: a table fitted to the
+subjects the optimization is measured on makes every number in §7.2 a
+measurement of itself (learnings.md §3).
+
+The two priors differ by 3×-5× on exactly the load-bearing bytes:
+
+| byte | static | measured | |
+|---|---|---|---|
+| digit `0` | 7,476 | 38,338 | 5.1× |
+| `:` | 6,646 | 36,629 | 5.5× |
+| `-` | 4,984 | 17,960 | 3.6× |
+| `t` | 60,061 | 28,996 | 0.48× |
+| space | 124,561 | 110,124 | 0.88× |
+
+**And the selection barely moves: 6 of 1,352 corpus patterns change their
+k-set** (148 selecting under the static prior, 142 under the measured one),
+every one of them a short upper-case literal that goes from selecting to
+DECLINING — `(ABC)`, `ERROR$`, `(?m)ERROR$`, `\x41\x42`, `\x41\x42\x43`,
+`(a(?i)b)c` — because upper-case letters are commonplace in real log lines and
+rare in the static table's prose-derived assignment. **Nothing that matters
+moves in the other direction**: no declined pattern starts selecting, and the
+three exercising rows and both email patterns keep their exact answers. On the
+bench's own eleven patterns under the measured prior:
+
+| pattern | static prior | measured-loglines prior |
+|---|---|---|
+| `uuid` | `0,8*,13` | `0,8*,13` — identical |
+| `stack-frame` | `0,1*,2` | `0,1*,2` — identical |
+| `iso-ts` | `0,4*` | `0,4*,7` — **gains the second `-`** |
+| `ipv4`, `hex32-id`, `http-5xx`, `ipv6`, `kv-quoted`, `bignum`, `floor` | declined | declined — identical |
+| email `orig`, `factored` | declined | declined — identical |
+
+The one movement is `iso-ts` gaining the `-` at offset 7 — the JIT's own pair —
+because `-` is 3.6× commoner in real log text than the static table believes,
+so the marginal verify starts paying. It is the model doing the right thing
+with a better input, and it is the most concrete argument for D83's
+findings-file hook that this row produced. That is the useful reading of C2 — the prior's error is real and the
+selection is not delicately balanced on it.
+
+### 7.7 MEASURED — the tighter offset-0 verify, declined (panel finding C4)
+
+For a `\b`-led pattern the offset-0 verify uses the DFA's escape set (63
+bytes, 80.7% of log text) where the NFA walk's own `S[0]` is far tighter
+(`{a}` for `stack-frame`, 3.3%). Using the tighter set is SOUND for this
+mechanism specifically — the reseed (§5.4) is what carries the context those
+wider bytes exist to carry, so the wider set is needed by the SCAN and the
+BASELINE and not by the verify — and it is the natural extra `(k, set)`
+member.
+
+**Measured directly, by hand-editing the offset-0 verify of `stack-frame`'s
+artifact from the 63-byte table probe to `subject[cand] == 'a'`: 1.08× on the
+failing subject, 1.33× on the hit subject.** Real, and below this row's own
+§4.5 materiality bar of 2×. So it is NOT built, and the reason is the rule the
+row applies to everything else rather than a judgement made once for it. What
+would trigger it: a bench row where the offset-0 verify is the dominant
+remaining cost, which none of the three exercising rows is after §7.2.
 
 ---
 

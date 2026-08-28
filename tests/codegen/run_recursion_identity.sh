@@ -340,8 +340,21 @@ KEEP="${KEEP:-0}"
 # than re-deriving one wave's boundary by hand (the RESUME_FRAME_SIZE grep
 # this replaced knew only [DD-14.FB]'s own boundary and would say nothing
 # about the next one).
+#
+# [OPT-K], 2026-08-28: `abi` 8 -> 9, (B) re-pinned to `667c615`. The
+# OFFSET-k CANDIDATE-START SKIP (docs/design/offset_k_skip.md) gives every
+# DFA artifact a `<PREFIX>_DFA_PREFILTER_OFFSETS` stamp line and gives an
+# artifact that SELECTS the form a file-scope `<prefix>_ofsskip` block, up to
+# three candidate tables and a changed prefilter body. Like [OPT-3] and
+# [ENG-FORM] it moves emitted PROGRAM bytes and not scaffolding only, so (A)
+# is NOT expected byte-identical for a pattern the form reaches — but this
+# gate's population is the CALL-FREE bucket compared on the PROGRAM REGION,
+# and the skip lives in the prefilter block ABOVE that region, so (A) is
+# unmoved in fact as well as in principle. The pin is the merge that carries
+# both this lane's src and main's [SEL-1], which is this change's last
+# src-touching commit.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-5c9a55a}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-667c615}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {

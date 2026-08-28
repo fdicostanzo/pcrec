@@ -504,6 +504,19 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   generated code. Its NEGATIVE counterpart — no engine body may CALL a
   residual entry — lives in tests/codegen/ instead; see its own CLAUDE.md
   for why the two cannot substitute for each other
+- **offsetskip/** — [OPT-K]'s OFFSET-k candidate-start skip, as ANSWERS. One
+  `.rxt` file, no runner: the mechanism's structural facts live in
+  `tests/codegen/run_offset_skip.sh` and the two files NAME THE SAME PATTERNS
+  on purpose, because the skip is answer-identity-preserving by construction
+  and this corpus would pass just as well on a compiler that had stopped
+  emitting it (sabotage S187 is exactly that, and leaves this directory 80/80
+  green). What it owns is the emitted skip's ARITHMETIC — the `cand = hit - k*`
+  mapping at the subject start, the `cand + maxk >= n` guard at the end,
+  overlapping candidates, restarts, and the RESEED, whose absence is a FALSE
+  MATCH after a word character. Read its CLAUDE.md for the row that had to be
+  added after a plant measured four others unable to detect the resume's
+  off-by-one — a row that EXERCISES a line is not a row that DETECTS a change
+  to it.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

@@ -179,6 +179,15 @@ is EXPECTED to time out"*, and neither would a separate arm.
 
 - `codegen` → `tests/codegen/run_codegen_tests.sh` (OS-0b/OS-1/TS-1/skip
   checks, ~28 structural checks bundled in one script).
+- `offsetskip` → `tests/codegen/run_offset_skip.sh`, [OPT-K]'s offset-k
+  candidate-start skip held to the ARTIFACT. Its own arm rather than
+  `codegen`, for `vmidentity`'s reason: what it guards (the form is SELECTED
+  on the patterns it was measured on and NOT on the ones it was measured not
+  to pay for) is orthogonal to every optimization-present check in
+  `run_codegen_tests.sh`. **A row on this arm may legitimately score
+  `corpus:0fail` while this arm is red** — S187 stops the selection firing and
+  every answer in the tree stays right, which is the failure mode the arm
+  exists for, not a half-detection.
 - `trie` → `tests/codegen/run_trie_identity.sh` (the M2.8 differential check,
   default 500 patterns x 2 sweeps, plus 3 positive controls).
 - `reject` → `tests/reject/run_reject_tests.sh` (the "requires module 'X'"

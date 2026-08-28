@@ -864,6 +864,29 @@ run_one() {
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;
+            offsetskip)
+                # [OPT-K] tests/codegen/run_offset_skip.sh — the offset-k
+                # candidate-start skip held to the ARTIFACT. Its own arm rather
+                # than `codegen`, for `vmidentity`'s reason one directory over:
+                # what it guards (the form is SELECTED on the patterns it was
+                # measured on, and NOT on the ones it was measured not to pay
+                # for) is orthogonal to every optimization-present check in
+                # run_codegen_tests.sh, and a sabotage of one should not be
+                # reported as a sabotage of the other.
+                #
+                # ITS `corpus` ARM IS EXPECTED GREEN ON ONE OF ITS OWN ROWS.
+                # S187 stops the selection firing and every answer in the tree
+                # stays right — that is the failure mode the arm exists for,
+                # so a row scoring `offsetskip:Nfail` with `corpus:0fail` is
+                # this arm working, not a half-detection.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_offset_skip.sh" \
+                    > "$work/offsetskip.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
+                suite_bits+=("offsetskip:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
             trie)
                 PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_trie_identity.sh" \
                     > "$work/trie.log" 2>&1

@@ -230,6 +230,7 @@ test-codegen: all
 	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
 	    'bash tests/codegen/run_codegen_tests.sh' \
 	    'bash tests/codegen/run_dfa_stamps.sh' \
+	    'bash tests/codegen/run_offset_skip.sh' \
 	    'bash tests/codegen/run_trie_identity.sh'
 
 # [OPT-3] the PRE-MULTIPLIED DFA TRANSITION TABLE's own checks

@@ -188,6 +188,62 @@ construction (src/ir) and emission (src/gen).
   but never refuses; DETECTED, 4fail/33pass, the opposite half of the same
   file). Tests: `tests/recursion/inlookaround.rxt`.
 
+- **prefix_k.c** — [OPT-K] THE OFFSET-k PREFIX ANALYSIS: which bytes every
+  match must carry, at which offsets from its own start, and which of those
+  offsets are worth testing before the DFA's transition loop is entered
+  (`docs/design/offset_k_skip.md`). Like `select_engine.c` and `mrl.c` it is
+  an ANALYSIS rather than a transformation — it mutates nothing and returns a
+  `PrefixKSets` the emitter reads.
+
+  **IT WALKS THE NFA, AND THAT IS THE ONE FACT THAT DECIDES EVERYTHING ELSE
+  ABOUT THE FILE.** The candidate-start filter pcrec shipped before this row
+  derives its byte set from the forward DFA's START STATE
+  (`cand_from_escapes`, src/gen/emit_dfa.c): the bytes on which the start
+  state does not stay put. That is exact at offset 0 and USELESS past it,
+  because an ENG_UNANCH DFA state is the merge of the threads from EVERY
+  subject position — four bytes into `\d{4}-`, the state carries threads at 4,
+  3, 2, 1 and 0 digits, so "a byte that does not return the machine to the
+  start state" at offset 4 is `[0-9-]`, not `-` (MEASURED: 11 bytes). The
+  thread whose bytes the analysis wants to constrain is the one from the
+  candidate start ALONE, and the only place it exists on its own is the
+  pattern's own NFA, walked from `Nfa.anch_start` — a FIELD published by
+  `pcrec_build_nfa` and deliberately left alone by `nfa_wrap_unanchored`,
+  rather than a shape test on the wrap's SPLIT. **Offset 0 keeps coming from
+  the DFA derivation that already owns it**, so no fact has two sources, and
+  §2.1 of the note is why that offset-0 set is CORRECT to be as wide as it is
+  (a `\b` machine's start state escapes on every word character because it
+  must REMEMBER the left-hand context, not because a match can begin there).
+
+  **SOUND IN ONE DIRECTION ONLY, and the closure is where that lives.** The
+  walk passes every assertion node as though it held, so a set can only ever
+  be WIDER than the truth, the cost model then declines it, and the artifact
+  keeps the filter it had. There is no direction in which this file can refuse
+  a start the scan would have accepted. Its `NKind` switch has NO `default:`
+  arm for `mrl.c`'s stated reason (R26 V7) and one of its own: a new
+  CONSUMING kind silently treated as an assertion is the file's single unsound
+  direction, so the compiler is made to say so. **That switch is the SECOND
+  hand-maintained exhaustive `NKind` walk in the tree** — `src/ir/dfa.c`'s
+  closure is the first — and the two are paired by nothing but this sentence
+  and `-Wswitch`.
+
+  **THE SELECTION IS A COST MODEL, AND THE MODEL WAS MEASURED WRONG ONCE.**
+  Five constants, four of them measured off this box
+  (`docs/dev/opt3_dfa_scan_measurement.md`), over a static byte-frequency
+  prior that is D83's FALLBACK — the findings-file hook is `pcrec_byte_freq_ppm`
+  and is named, not built (D77). The prior is deliberately NOT derived from
+  the comparative bench's own log text: that would be a control sharing a
+  source with what it controls (learnings.md §3), and every measurement in the
+  note would then be a measurement of a table fitted to its own subjects.
+  What the model got wrong is recorded at the constant it produced: it
+  predicted 13x for `\b[0-9]{10,19}\b` and the box measured 0.96x-1.02x three
+  times, because a VERIFY removes loop ENTRIES while a SCAN removes BYTES.
+  The selection therefore requires the scan offset to MOVE off 0 — a MEASURED
+  rule, stated as such beside the model rather than folded into it.
+
+  Tests: `tests/offsetskip/` (answers), `tests/codegen/run_offset_skip.sh`
+  (the artifact, the population, and the prior's own sum), sabotage rows
+  S185/S186/S187.
+
 - **select_engine.c** — per-pattern ENGINE selection ([M4.5b],
   docs/design/engine_m4.md §5.1). Not a transformation like the pass below:
   it answers which engine compiles this pattern, and it exists as a pass

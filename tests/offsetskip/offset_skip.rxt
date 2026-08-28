@@ -1,0 +1,279 @@
+# tests/offsetskip/offset_skip.rxt — [OPT-K], the OFFSET-k CANDIDATE-START SKIP
+# (docs/design/offset_k_skip.md).
+#
+# WHAT THIS FILE IS FOR, and what it deliberately is not. The mechanism is
+# ANSWER-IDENTITY-preserving by construction, so its own correctness argument
+# is a proof (the note's §3.2: every test is a NECESSARY condition of a match
+# beginning at that position) and its own gate is `make test-axes` under
+# `-fno-offset-skip`, which compares the WHOLE corpus case by case across the
+# axis. This file is neither of those. It is the ARITHMETIC of the emitted
+# skip, exercised where the arithmetic can be wrong:
+#
+#   §1  the worked examples' k-sets fire at all
+#   §2  the hit -> start mapping at the SUBJECT START (`cand = hit - k*`
+#       cannot underflow, and a match at offset 0 must still be found)
+#   §3  the `cand + maxk >= n` guard at the SUBJECT END (a truncated tail
+#       must not be read past, and a match that ends exactly at n must not
+#       be lost)
+#   §4  OVERLAPPING candidates and the resume (`pos = cand + 1`): a failed
+#       candidate must not skip the real one one byte later
+#   §5  RESTARTS (`ms <P>`), which is what a find-all loop is made of
+#   §6  the RESEED — the `\b` cell the note's §2.1 and §5.4 are about, where
+#       losing the word context of `s[cand-1]` is a FALSE MATCH
+#   §7  the NEGATIVE examples: patterns the selection declines, kept here so
+#       that a change which starts selecting them fails a case that names
+#       them rather than moving silently
+#
+# ORACLE: python3 `re` (CLAUDE.md's base tier), via
+# `tests/harness/verify_rxt.py`. Every expectation below was written by
+# running that oracle, not by reading the emitter. No `\Z` appears here, so
+# `tests/assertions/absolute.rxt`'s oracle carve-out does not apply.
+#
+# A NOTE ON WHY THE PATTERNS ARE THE SHAPES THEY ARE. Each §1-§6 block is a
+# pattern the selection ACCEPTS — checked by tests/codegen/run_offset_skip.sh
+# against the artifact, since a case here passes just as well on a pattern
+# that gets no skip at all, and a corpus that silently stopped exercising the
+# mechanism is this project's most-recorded check failure. The two files name
+# the same patterns on purpose.
+
+# ---- §1 the worked examples ------------------------------------------------
+
+# `iso-ts`'s prefix: digits at 0-3, `-` at 4, digits at 5-6, `-` at 7.
+# Selected k-set `0,4*` — the scan is memchr('-') at offset 4.
+pattern \d{4}-\d{2}-\d{2}
+features classes
+m "2026-08-28" 0 10
+m "log line 2026-08-28 ok" 9 19
+n "2026-08-2 ok"
+n "202-08-28"
+n "no digits at all here"
+# a `-` at offset 4 with nothing else right: the scan fires, the verify
+# refuses, and the whole subject must still come back NOMATCH
+n "abcd-ef-gh"
+n "abcd-01-23"
+
+# `uuid`'s head: `-` at 8 and at 13, both scanned/verified, `\b` at the front.
+pattern \b[0-9a-f]{8}-[0-9a-f]{4}
+features classes,assertions
+m "deadbeef-cafe" 0 13
+m "id=deadbeef-cafe;" 3 16
+n "deadbeef-cafx"
+n "deadbee-cafe"
+# the leading `\b`: a word character to the LEFT forbids the match, and this
+# is the cell §6 is about one pattern over
+n "xdeadbeef-cafe"
+
+# `stack-frame`'s head: `a` at 0, `t` at 1, ` ` at 2. The scan is memchr('t')
+# at offset 1, so `cand = hit - 1`.
+pattern \bat [a-z]
+features assertions
+m "at x" 0 4
+m "look at y" 5 9
+n "cat x"
+n "atx"
+n "at  "
+
+# a long literal: the scan moves to the rarest byte the prior knows, `X` at
+# offset 6, and offsets 0..5 and 7..9 are what the verify chain is built from
+pattern needleXYZW
+m "needleXYZW" 0 10
+m "..needleXYZW.." 2 12
+n "needleXYZv"
+n "XYZW"
+
+# ---- §2 the hit -> start mapping at the SUBJECT START -----------------------
+#
+# `cand = hit - k*` with the match at offset 0, so `hit` is exactly `k*` and
+# the subtraction lands on 0. The scan begins at `pos + k*`, which is the
+# first position it may legally look at.
+
+pattern \d{4}-\d{2}-\d{2}
+features classes
+m "2026-08-28 and more" 0 10
+
+pattern needleXYZW
+m "needleXYZW tail" 0 10
+
+# one byte of lead-in, so `cand` is 1 and the underflow guard is exercised
+# from the other side
+pattern needleXYZW
+m ".needleXYZW" 1 11
+
+# ---- §3 the `cand + maxk >= n` guard at the SUBJECT END ---------------------
+#
+# The skip declines any candidate without `maxk + 1` bytes left, which is
+# sound because the walk stopped before the pattern could accept. These cases
+# pin both directions: a truncated tail must be NOMATCH, and a match ending
+# exactly at `n` must still be found.
+
+pattern \d{4}-\d{2}-\d{2}
+features classes
+# ends exactly at n
+m "x 2026-08-28" 2 12
+# `-` present at offset 4 of a candidate whose tail is cut short
+n "2026-08-2"
+n "2026-0"
+n "2026-"
+n "2026"
+n "-"
+n ""
+
+pattern \b[0-9a-f]{8}-[0-9a-f]{4}
+features classes,assertions
+m "zz deadbeef-cafe" 3 16
+n "deadbeef-caf"
+n "deadbeef-"
+n "deadbeef"
+
+# ---- §4 overlapping candidates and the resume ------------------------------
+#
+# `pos = cand + 1` after a failed candidate. A resume of `cand + 1 + k*`
+# instead — the obvious off-by-one, and tests/mech row S185 — would skip a
+# real match closer than `k*` to a failed candidate. The rows immediately
+# below EXERCISE the resume (each has candidates that fail their verify and a
+# match found later), and MEASURABLY DO NOT DETECT that plant; the block after
+# them says why and carries the row that does.
+
+pattern \d{4}-\d{2}-\d{2}
+features classes
+# hyphens at 4 and 5: the first candidate fails, the second is the match
+m "1234-2026-08-28" 5 15
+# a run of hyphens before the real one
+m "----2026-08-28" 4 14
+# two failing candidates then a good one
+m "aaaa-bb-cc 0000-11-22" 11 21
+# the real match's own `-` at offset 4 is ALSO a failing candidate's offset-4
+# byte one position earlier
+m "x2026-08-28" 1 11
+
+pattern needleXYZW
+# a near-miss sharing the scan byte `X` at a nearby offset
+m "needleXYZv needleXYZW" 11 21
+m "XXXXXXneedleXYZW" 6 16
+
+# THE RESUME'S OFF-BY-ONE IS UNREACHABLE ON EVERY PATTERN ABOVE, AND THAT WAS
+# MEASURED RATHER THAN ASSUMED. Planting `pos = cand + 1 + k*` in the emitter
+# leaves this whole file at 75/75 GREEN (tests/mech S185's harness arm, and
+# the VALIDATION RECORD in tests/codegen/run_offset_skip.sh). The reason is
+# structural: the plant loses a match only if a real start `p` lies in
+# `(cand, cand + k*]`, which puts the DECOY's scan byte at match offset
+# `h - p < k*` — so the pattern must ALLOW its own scan byte somewhere before
+# the offset it is scanned at. None of the four above does: `uuid` and
+# `iso-ts` have hex and digits before their `-`, `stack-frame` has `a` before
+# its `t`, `needleXYZW` has `needle` before its `X`.
+#
+# So the file gets a pattern that DOES allow it, and it is the only row here
+# that turns that off-by-one into a wrong answer. `[-a]{3}-b` scans for `-` at
+# offset 3 and permits `-` at offsets 0-2.
+pattern [-a]{3}-b
+# "zaa--b": the `-` at index 3 is a candidate at 0, whose offset-0 byte `z`
+# fails the verify; the real match starts at 1, one position later. Resuming
+# at `cand + 1` finds it; resuming at `cand + 1 + 3` runs off the end.
+m "zaa--b" 1 6
+m "zzaaa-b" 2 7
+m "z-aa-b" 1 6
+n "zaa-b"
+n "zzzz--b"
+
+pattern \bat [a-z]
+features assertions
+# `t` at several offsets, only one of which is a candidate start. The first
+# draft of these two rows expected a match in "tttat x" and "attat q" and the
+# ORACLE REFUSED BOTH: the `a` at offset 3 is preceded by a word character, so
+# `\b` is false there and neither subject matches at all. Corrected to
+# subjects whose decoy `t`s sit before a real boundary — which is the stronger
+# case anyway, since a row that expects NO match cannot tell a skip that
+# overshot from a pattern that simply did not match.
+m "tt at x" 3 7
+m "xat at y" 4 8
+
+# ---- §5 restarts, which is what a find-all loop is made of ------------------
+#
+# `ms <P>` is one search from `startpos = P`, i.e. exactly one iteration of
+# the find-all loop. These walk a subject with three matches the way that
+# loop would, and then ask for one past the last.
+
+pattern \d{4}-\d{2}-\d{2}
+features classes
+m "2026-08-28 2026-08-29 2026-08-30" 0 10
+ms 10 "2026-08-28 2026-08-29 2026-08-30" 11 21
+ms 21 "2026-08-28 2026-08-29 2026-08-30" 22 32
+ns 32 "2026-08-28 2026-08-29 2026-08-30"
+# a restart landing INSIDE what would have been a candidate
+ms 1 "2026-08-28 2026-08-29" 11 21
+ms 5 "2026-08-28 2026-08-29" 11 21
+
+pattern needleXYZW
+m "needleXYZW needleXYZW" 0 10
+ms 10 "needleXYZW needleXYZW" 11 21
+ns 21 "needleXYZW needleXYZW"
+
+# ---- §6 the RESEED --------------------------------------------------------
+#
+# THE CELL THE MECHANISM IS MOST LIKELY TO GET WRONG. `\b`'s truth reads the
+# byte to the LEFT, which pcrec carries in the DFA state's IDENTITY, and the
+# offset-k skip jumps over the very bytes that were carrying it (the note's
+# §2.1). Landing in the no-context start state would evaluate `\b` as TRUE
+# after a word character and MATCH — so every `n` below is a FALSE MATCH if
+# the reseed is dropped, and `tests/mech` has that as a sabotage row.
+
+pattern \b[0-9]{2}-[0-9]{2}
+features classes,assertions
+m "12-34" 0 5
+m " 12-34" 1 6
+m ".12-34" 1 6
+# a word character immediately to the left: NOMATCH, and the skip must not
+# jump the machine past it into a clean start state
+n "a12-34"
+n "z12-34"
+# (the first draft wrote "912-34-56" here and the ORACLE found (4,9) — the
+# `34-56` further along, which the leading `\b` is perfectly happy with. A
+# no-match row has to have no match ANYWHERE in the subject, not just at the
+# position the author was thinking about.)
+n "912-34"
+n "_12-34"
+# ...and the same subject with the barrier removed must still match, so the
+# `n` rows above cannot pass by refusing everything
+m "a 12-34" 2 7
+
+pattern \bat [a-z]
+features assertions
+n "bat x"
+n "_at x"
+n "9at x"
+m "b at x" 2 6
+
+# ---- §7 the NEGATIVE examples: patterns the selection DECLINES --------------
+#
+# These get no offset-k skip — three of them are the bench's own controls and
+# one is its derivation-domain control. They are here so that a change which
+# starts selecting them has to move a case that names them.
+# tests/codegen/run_offset_skip.sh asserts the DECLINE on the artifact; these
+# rows assert that the answers are what they are either way.
+
+# every offset is the same 16-byte hex class: no selective position exists
+pattern \b[0-9a-f]{8}\b
+features classes,assertions
+m "deadbeef" 0 8
+n "deadbee"
+n "deadbeeff"
+
+# unequal-width alternation: the `.` sits at a VARIABLE offset
+pattern (?:[0-9]{1,3}\.){3}[0-9]{1,3}
+features classes
+m "10.0.0.1" 0 8
+m "x 192.168.1.254 y" 2 15
+n "10.0.0"
+
+# a `+`-smeared prefix — the email patterns' shape, the derivation-domain
+# control: `@` is at no fixed offset at all
+pattern [a-z0-9._%+-]+@[a-z0-9.-]+
+features classes
+m "user.name@example.com" 0 21
+m "<a@b.co>" 1 7
+n "no at sign here"
+
+# a one-byte pattern has no offset 1 to select
+pattern :
+m "a:b" 1 2
+n "abc"

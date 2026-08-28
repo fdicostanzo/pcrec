@@ -1416,5 +1416,31 @@ append-only or historical records.
   what happens above it, the `<PREFIX>_DFA_TABLE` stamp and the
   `-fno-premul-table` denial, the identity control, and the failure modes.
 
+- `offset_k_skip.md` — **[OPT-K]**, the design note written BEFORE the emitter
+  (2026-08-28, lane optk), on `premultiplied_dfa_table.md`'s model: the DFA
+  scan's candidate-start filter stops looking only at offset 0 and instead
+  derives, from the pattern's own prefix, a SET of `(offset k, byte-set)`
+  tests every match must satisfy — scanning for the rarest member with one
+  `memchr` AT ITS OFFSET and verifying the rest on each candidate. Answers
+  D66's "does one walk serve the leading fixed lookbehind" (yes; blocked
+  upstream, `src/ir/nfa.c` lowers `A_LOOK` to an epsilon) and carries the
+  `[ENG-FORM]` selection shape, the identity argument, the five [CHK-2]
+  things and the `abi` bump's four sites.
+
+  **Its most useful sections are the ones where it was WRONG.** §2.2 records
+  the obvious generalisation (continue the DFA start-state walk past offset 0)
+  as CORRECT AND USELESS, because an ENG_UNANCH DFA state merges the threads
+  from every subject position — which is why the derivation walks the NFA
+  instead. §4.3 records that the draft's "the model is insensitive to
+  `C_ENTER`" was refuted by its own sweep. §4.2 records that a verify's cost
+  is a probe PLUS a branch misprediction, without which the model recommends
+  moving a control pcrec is already ahead of the JIT on. And §7.4 records the
+  largest one: **the cost model predicted 13× for a pattern the box measured
+  at 0.96×-1.02×**, because a VERIFY removes loop ENTRIES while a SCAN removes
+  BYTES — after which the selection gained a MEASURED rule (the scan offset
+  must move off 0) sitting beside the modelled one rather than folded into it.
+  §7.7 declines a real 1.08×-1.33× improvement against the row's own
+  materiality bar, and says so rather than taking it.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

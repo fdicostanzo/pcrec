@@ -441,6 +441,48 @@ decides whether to perform it — and then run the row through
     3,744 shape violations on a correct tree; a drift count with no names
     beside it; and a flag row comparing one form with itself.
 
+- **run_offset_skip.sh** — [OPT-K] (2026-08-28) the OFFSET-k CANDIDATE-START
+  SKIP (`docs/design/offset_k_skip.md`, `docs/spec/tuning.md` §2.14), held to
+  the artifact rather than to its stamp. Runs under `make test-codegen` as a
+  fourth script in that group; compile-only apart from §1, ~10 s.
+  - **WHY IT EXISTS.** The mechanism is ANSWER-IDENTITY-PRESERVING BY
+    CONSTRUCTION — every test it adds to a candidate start is a NECESSARY
+    condition of a match beginning there — so the whole `.rxt` corpus, both
+    oracles, every differential AND `make test-axes` agree whether or not the
+    emitter ever selects it. Sabotage S187 is that made real: the selection
+    never fires, the tree stays green, and the row's MEASURED 4.5×-17.1×
+    is gone. Five failure modes are enumerated in the file's header; the
+    other four are the form selected where it was measured NOT to pay, the
+    stamp and the arithmetic drifting apart, the byte-frequency prior no
+    longer summing to one (which no artifact shows), and the deny flag
+    leaving a trace.
+  - **THREE SOURCES, NEVER TWO.** The expected k-set for each of the four
+    witnesses is a LITERAL in the file, read from the design note's §4.7, and
+    BOTH the `RX_DFA_PREFILTER_OFFSETS` stamp AND the emitted `rx_ofsskip`
+    helper are compared against it. `dfa_prefilter_offsets` writes the macro,
+    `pf_block_ofs` writes the helper, a human wrote the table — so any two of
+    them drifting is red. §1 asks the SHIPPED ARRAY through the shipped
+    library (`pcrec_byte_freq_total_ppm`) rather than re-summing the source
+    literals, which would be a second transcription agreeing with any typo it
+    shared.
+  - **IT IS PAIRED WITH `tests/offsetskip/offset_skip.rxt` AND BOTH FILES SAY
+    SO.** That corpus owns the emitted skip's ARITHMETIC and would pass on a
+    compiler that had stopped emitting the skip; this file owns the
+    POPULATION. Neither substitutes for the other, and the patterns are the
+    same on purpose.
+  - **Validated in four failing directions** (planted, rebuilt, both
+    instruments run, reverted; clean baseline 19/0 here and 80/0 in the
+    corpus): the resume off by one → **19/4** here and **79/1** there; the
+    reseed deleted → **18/1** and **79/1**, the corpus case a FALSE MATCH; the
+    selection never firing → **14/5** and **80/0 GREEN**, which is the point of
+    the file; the prior no longer summing to 1e6 → **18/1** and **80/0**.
+  - **THE FIRST PLANT MEASURED ZERO IN THE CORPUS AND THAT IS THE LESSON TO
+    CARRY.** The resume off-by-one left `offset_skip.rxt` 75/75 green: its
+    overlapping-candidate rows EXERCISE the resume line and cannot DETECT a
+    change to it, because losing a match needs the pattern to allow its own
+    scan byte BEFORE the offset it is scanned at, and none of the four
+    witnesses can. The corpus gained `[-a]{3}-b` for exactly that.
+
 - **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
   compiles every `.rxt` corpus pattern twice (default engine, and
   `--engine=vm` forced where accepted — the wider population for the
