@@ -28,14 +28,14 @@ This is D46's "every strategy-selection point is observable and
 forceable" principle (`docs/dev/decisions.md` D46), applied at the tuning
 layer: a compiler optimization that cannot be turned off cannot be
 differentially tested (D47.3, `docs/dev/decisions.md`, ruling 3 — "a
-strategy that cannot be denied cannot be differentially tested"). Ten of
-the thirteen bit-flag axes in §2 are D47.3's family — the deny-only eight,
-the force pair (§2.5), and the two engine-selecting denials — and nine of
-those ten exist **because** they have a differential that checks this exact
+strategy that cannot be denied cannot be differentially tested"). **Almost
+every** bit-flag axis in §2 is D47.3's family — the deny-only ones, the force
+pair (§2.5), and the two engine-selecting denials — and all but one of those
+exist **because** they have a differential that checks this exact
 claim directly: compile the same pattern twice, once with the strategy and
 once without, link both into one driver, and sweep subjects comparing
-span, every capture slot, and the failure surface. The tenth, §2.5's force
-pair, is the family's one exception — its own correctness already rides
+span, every capture slot, and the failure surface. The exception is §2.5's
+force pair, the family's only one — its own correctness already rides
 an existing, already-validated suite (§2.5 states which), so it earns no
 NEW differential of its own even though it is D46's canonical
 motivating case for the observable/forceable principle. `--unroll=` is the
@@ -52,7 +52,7 @@ evidence. A stranger tuning performance needs the same table read the
 other way: which knobs are safe to flip without re-verifying correctness,
 and which one is a `--engine`-shaped do-or-die request.
 
-## 2. The fourteen axes
+## 2. The axes
 
 Each subsection: what it controls, the default, the stamp it leaves in an
 emitted artifact (verified by an emitted-artifact diff, command given),
