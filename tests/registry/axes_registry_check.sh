@@ -173,7 +173,12 @@ done < <(awk '
 
 # tuning.md §2's own "(bit N)" headings, restricted to the THIRTEEN-AXES
 # section exactly as run_axes.sh restricts it.
-doc_bits_raw="$(sed -n '/^## 2\. The thirteen axes/,/^## 3\./p' "$TUNING" \
+# THE ANCHOR IS THE SECTION NUMBER, NEVER THE COUNT WORD. It read
+# `/^## 2\. The thirteen axes/`; [OPT-K] added an axis, correctly renamed the
+# heading, and this range then matched NOTHING -- so `doc_bits_raw` came back
+# empty and DIRECTION 2's first arm compared against an empty documented
+# column. tuning.md's heading no longer carries a count at all.
+doc_bits_raw="$(sed -n '/^## 2\./,/^## 3\./p' "$TUNING" \
     | grep -oE '\(bit [0-9]+\)' | grep -oE '[0-9]+')"
 
 # ============================================================================
@@ -293,7 +298,7 @@ fi
 
 # ============================================================================
 # DIRECTION 2: SOURCES -> DUMP. Every bit tuning.md documents, and every bit
-# lib/pcrec.h defines in the deny/force family's own 4..15 range, must
+# lib/pcrec.h defines at or above the deny/force family's low bound of 4, must
 # appear in the dump somewhere (as a deny_bit or a force_bit on some row) —
 # the reverse loss: an axis quietly dropped from the dump.
 # ============================================================================
@@ -312,14 +317,26 @@ else
     ok "every '(bit N)' heading tuning.md's §2 documents ($( printf '%s' "$doc_bits_sorted" | tr '\n' ' ' )) appears in --list-axes' output"
 fi
 
-hdr_bits_45_15=""
+# NO UPPER BOUND. The LOW bound is the one doing real work -- bits below 4
+# are unrelated `1u << N` constants in the same header (PCREC_CASELESS and
+# friends) and must never be swept in -- while the top of the deny/force
+# family moves every time an axis is added. It was `-le 15`, the family's
+# extent on the day this was written, and [OPT-K]'s bit 16 was therefore
+# FILTERED OUT BEFORE THE COMPARISON: `-fno-offset-skip` could have been
+# absent from --list-axes entirely and this arm would have printed `ok`,
+# naming bits 4-15. That is this check's own claim failing at the one thing
+# it exists to assert, silently. `tests/axes/run_axes.sh` had the identical
+# defect and was caught only because its PROSE anchor broke loudly first.
+hdr_bits_family=""
 for macro in "${!HDR_BIT[@]}"; do
     b="${HDR_BIT[$macro]}"
-    if [ "$b" -ge 4 ] 2>/dev/null && [ "$b" -le 15 ] 2>/dev/null; then
-        hdr_bits_45_15="$hdr_bits_45_15 $b"
+    if [ "$b" -ge 4 ] 2>/dev/null; then
+        hdr_bits_family="$hdr_bits_family $b"
     fi
 done
-hdr_bits_sorted="$(printf '%s\n' $hdr_bits_45_15 | sort -n -u)"
+hdr_bits_sorted="$(printf '%s\n' $hdr_bits_family | sort -n -u)"
+hdr_bits_lo="$(printf '%s' "$hdr_bits_sorted" | head -1)"
+hdr_bits_hi="$(printf '%s' "$hdr_bits_sorted" | tail -1)"
 missing_from_dump2=""
 for b in $hdr_bits_sorted; do
     if ! grep -qxF "$b" <<< "$dumped_bits_sorted"; then
@@ -327,9 +344,9 @@ for b in $hdr_bits_sorted; do
     fi
 done
 if [ -n "$missing_from_dump2" ]; then
-    bad "lib/pcrec.h defines PCREC_NO_*/FORCE_* bit(s)$missing_from_dump2 (range 4-15) that --list-axes names on no row (an axis landed in the header with no dump coverage — e.g. a new axis's list not yet reached by src/parse/axes_dump.c's predicate table)"
+    bad "lib/pcrec.h defines PCREC_NO_*/FORCE_* bit(s)$missing_from_dump2 (of bits $hdr_bits_lo-$hdr_bits_hi found in the header) that --list-axes names on no row (an axis landed in the header with no dump coverage — e.g. a new axis's list not yet reached by src/parse/axes_dump.c's predicate table)"
 else
-    ok "every PCREC_NO_*/PCREC_FORCE_* bit lib/pcrec.h defines in range 4-15 ($( printf '%s' "$hdr_bits_sorted" | tr '\n' ' ' )) appears in --list-axes' output"
+    ok "every PCREC_NO_*/PCREC_FORCE_* bit lib/pcrec.h defines at or above bit 4 ($( printf '%s' "$hdr_bits_sorted" | tr '\n' ' ' )) appears in --list-axes' output"
 fi
 
 # ============================================================================
@@ -422,8 +439,16 @@ check_value_set "RX_DFA_TABLE" \
     "mixed
 none"
 
+# THE ANCHOR CARRIES NO COUNT. It read "its five values are the whole set";
+# [OPT-K] added two values and correctly rewrote that sentence to "seven",
+# after which the extractor found NO table and every one of the seven values
+# — the four pre-existing ones included — was reported as undocumented. That
+# is the THIRD count-in-prose pin this one change tripped (run_axes.sh's §2
+# heading anchor and this file's own at line ~175 were the other two), so the
+# rule is worth stating once here: anchor on the part of a sentence a new
+# member does not change.
 check_value_set "RX_DFA_PREFILTER" \
-    "$(extract_md_table_values "$MATCHAPI" "its five values are the whole set")" \
+    "$(extract_md_table_values "$MATCHAPI" "values are the whole set")" \
     "$(dump_stamp_vals RX_DFA_PREFILTER)" \
     ""
 

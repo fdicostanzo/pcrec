@@ -75,6 +75,8 @@ static const AxisDesc AXIS_DESC[] = {
     { "table", "premultiplied", "this machine's states*classes <= 65535 and no emitted seed cell is negative" },
     { "table", "indexed", "always (fallback)" },
 
+    { "prefilter", "offset-set-bounded", "forward scan, an offset-k candidate SET was selected, under a $/\\Z/\\z view or a word-context accept ([OPT-K])" },
+    { "prefilter", "offset-set", "forward scan, an offset-k candidate SET was selected: one memchr at the chosen offset k*, the other offsets verified per candidate ([OPT-K])" },
     { "prefilter", "memchr-bounded", "forward scan, one candidate byte, under a $/\\Z/\\z view or a word-context accept" },
     { "prefilter", "memchr", "forward scan, one candidate byte" },
     { "prefilter", "byte-class-bounded", "forward scan, several candidate bytes, under a $/\\Z/\\z view or a word-context accept" },
@@ -121,14 +123,24 @@ static const char *stamp_macro_of(const char *axis)
     return "";
 }
 
-/* Only axis A's `premultiplied` candidate has a CLI spelling at all — axis
- * B's own missing deny flag is a named FINDING (emitter_form.md §3: "the
- * DFA scan's prefilter axis has NO deny flag and no axis sweep... [CHK-2]'s
- * registry check is where the gap belongs"), not an omission here. */
+/* [OPT-K] AXIS B'S GAP IS NOW PARTLY CLOSED, and the shape of what remains is
+ * worth stating rather than leaving as a shorter comment. `emitter_form.md`
+ * §3 recorded that the DFA scan's prefilter axis had NO deny flag at all —
+ * `PCREC_NO_PREFILTER` gates only the VM hybrid's `fit.prefilter`, never
+ * `emit_unanchored`'s own start-state filter — and named [CHK-2]'s registry
+ * check as where the gap belonged. `-fno-offset-skip` denies the TWO
+ * offset-set candidates, so those two rows now carry a CLI spelling; the four
+ * offset-0 forms (`memchr`, `byte-class`, their `-bounded` twins) still have
+ * none, and that is the residue of the same finding rather than an omission
+ * here. Denying them would mean choosing what a denied build emits instead,
+ * which is a caller-observable change no row has asked for. */
 static const char *cli_flag_of(const char *axis, const char *cand)
 {
     if (!strcmp(axis, "table") && !strcmp(cand, "premultiplied"))
         return "-fno-premul-table";
+    if (!strcmp(axis, "prefilter") &&
+        (!strcmp(cand, "offset-set") || !strcmp(cand, "offset-set-bounded")))
+        return "-fno-offset-skip";
     return "";
 }
 
@@ -154,6 +166,7 @@ static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
     { PCREC_NO_SPLICE_CALLS, "PCREC_NO_SPLICE_CALLS" },
     { PCREC_NO_TIERED_ENTRY, "PCREC_NO_TIERED_ENTRY" },
     { PCREC_NO_PREMUL_TABLE, "PCREC_NO_PREMUL_TABLE" },
+    { PCREC_NO_OFFSET_SKIP, "PCREC_NO_OFFSET_SKIP" },
 };
 #define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
 

@@ -2887,7 +2887,7 @@ handful of `grep`/`awk` passes over five small text files — no compile,
 no subject sweep).
 
 **Sabotage validation** (2026-08-28, scratchpad only, never committed),
-one per direction:
+one per direction — three at the check's landing, a fourth from [OPT-K]:
 - A scratch copy of `tuning.md` with `-fno-counter`'s `(bit 6)` heading
   deleted, run via `TUNING=<scratch> bash tests/registry/
   axes_registry_check.sh`, fires exactly one named failure —
@@ -2906,6 +2906,48 @@ one per direction:
   <scratch>'s own emit_rx_abi_types literal block does not define`.
 Each sabotage fires exactly one failure, every other check green (52 of
 53) — no cascade, no false negatives.
+
+**A FOURTH, ADDED BY [OPT-K] BECAUSE ITS AXIS EXPOSED A BOUND THIS CHECK
+COULD NOT SEE PAST** (2026-08-28, scratchpad only, never committed). The
+header→dump arm filtered the header's bits to `4..15` before comparing —
+the deny/force family's extent on the day it was written — so
+`PCREC_NO_OFFSET_SKIP` at bit 16 was dropped before the comparison and that
+arm could not report it missing. Fixed to `>= 4` with no upper bound (the
+LOW bound is the one doing real work: bits below 4 are unrelated `1u << N`
+constants in the same header), and both verdict strings and the section
+comment now DERIVE the range from the bit set instead of spelling it.
+
+The sabotage is a `--list-axes` whose `offset-skip` rows are removed by a
+wrapper on `$PCREC`, i.e. exactly "an axis landed in the header with no
+dump coverage". Baseline 59 of 59 green, with the ok line naming the bit:
+*"every PCREC_NO_*/PCREC_FORCE_* bit lib/pcrec.h defines at or above bit 4
+(4 5 6 7 8 9 10 11 12 13 14 15 16) appears in --list-axes' output"*.
+
+| bound | result | the header→dump arm |
+|---|---|---|
+| **fixed (`>= 4`)** | 50 pass / **4 fail** | **FIRES, by name**: *"lib/pcrec.h defines PCREC_NO_*/FORCE_* bit(s) **16** (of bits 4-16 found in the header) that --list-axes names on no row"* |
+| pre-fix (`4..15`) | 51 pass / 3 fail | **SILENT** — the arm passes |
+
+**THE HONEST READING, AND IT IS NARROWER THAN "THE CHECK WAS BLIND".** Three
+of the four failures fire under BOTH bounds: the `tuning.md`→dump arm and
+`match_api.md` §6.3's two value-set arms catch this particular sabotage
+anyway. The bound's fix contributes exactly ONE check — and it is the one
+that is supposed to be INDEPENDENT OF THE DOCS. An axis added to
+`lib/pcrec.h` and to the emitter but never written into `tuning.md` §2 or
+§6.3 — the likelier omission, since the doc hunks are what a reviewer asks
+for — would have been caught by nothing at all. The arm exists to be the
+source-side witness, and a source-side witness with a hand-maintained
+ceiling stops being one the first time the ceiling is passed.
+
+**[OPT-K] tripped THREE count-in-prose pins in one change**, which is the
+transferable part: this file's own `"its five values are the whole set"`
+anchor into `match_api.md` §6.3 (the row gained two values, the sentence
+correctly became "seven", and the extractor then found NO table and
+reported all seven values undocumented, the four pre-existing ones
+included); this check's `/^## 2\. The thirteen axes/` anchor into
+`tuning.md`; and `tests/axes/run_axes.sh`'s identical one. All three now
+anchor on the part of a sentence a new member does not change, and
+`tuning.md`'s §2 heading no longer carries a count at all.
 
 **Found while writing it, not before**: bash's `IFS=$'\t' read` collapses
 runs of EMPTY tab-delimited fields — tab is IFS *whitespace* regardless of
