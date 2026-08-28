@@ -70,6 +70,36 @@ Open-decision ledger so far (all [DD-13b] unless noted):
 - OD-3: configuration-section syntax unifying bench testees and build
   variants (point 4).
 - OD-4: interface/reference-only marking, and whether reference-only
-  patterns get a test-only surface (point 5).
+  patterns get a test-only surface (point 5). REFINED 2026-08-28 (below):
+  a defined pattern has REFERENCE / TEST / TARGET users; the format needs
+  a target-set declaration ("of these defined patterns, these are the
+  compilation targets"), an included library defaulting to no targets.
 - OD-5 (inherited from [V-E], Frank's Q2/K4-tier, measured never read):
   PCRE2 (?(DEFINE))/(?&name) desugar vs own reference spelling.
+
+## 2026-08-28 (from the bench session; refines OD-4 — the target-set tension)
+
+Frank: "there is tension in the file format as discussed in that there
+will be patterns referenced which are not built. For instance, a
+complex pattern may be made of smaller patterns; an included library
+file only uses specific patterns — perhaps only as reference. (Note
+the sub patterns may have test references, meaning a test and
+compilation user.) So some way to say 'of these defined patterns,
+include the following as compilation targets'."
+
+Reading, for the requirements note: a DEFINED pattern has up to three
+distinct users, and the format must let a file say which apply —
+(a) REFERENCE user: another pattern composes it (a library's
+sub-patterns; never an artifact of its own); (b) TEST user: a test
+block exercises it directly (a sub-pattern can be tested on its own
+even when it ships only inside a composite — a test consumer AND a
+compilation consumer, since testing it means compiling it, but as a
+test artifact, not a deliverable); (c) TARGET user: it is a
+compilation target of the build — the artifact a caller links. The
+mechanism asked for is a TARGET-SET declaration: "of these defined
+patterns, these are the compilation targets", with the default for an
+included library being NONE of its definitions (reference-only unless
+named). OD-4 is refined accordingly: reference-only marking is one
+end of this; the general form is per-pattern user sets, or a
+file-level target list, and the test surface of a non-target pattern
+is a separate question from its target-ness.
