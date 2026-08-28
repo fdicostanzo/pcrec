@@ -179,5 +179,27 @@ bundle under `failures/`; triage by reproducing independently of the
 fuzzer and minimizing before concluding it's a real engine bug (see
 README.md's "Triaging a divergence").
 
+**[SEL-1] (2026-08-28, K40) NARROWED WHAT THE "DFA state-cap" BUCKET CAN
+STILL CATCH.** It counts a pcrec compile stderr containing "too complex for
+the DFA engine" (the two DFA-side caps in `src/core/limits.h`, state count
+and K7's subset-element budget) OR "NFA exceeds" (`PCREC_MAX_NFA_STATES`,
+which has no fallback engine and is UNCHANGED by [SEL-1]). Under
+`--engine=auto` — `compile_with_pcrec()`'s only mode — the first half is now
+a SELECTION OUTCOME rather than a refusal (`docs/spec/tuning.md` §2.11): a
+pattern that used to land in this bucket for that reason now compiles as a
+VM fallback and lands in the ordinary accept/compare pipeline instead. The
+bucket did not stop being meaningful; its population just moved, and moved
+ENTIRELY on this fixed seed's own draw (8 -> 0 at seed 1/patterns 300,
+`run_capturediff_gate.sh`'s own re-pin). **A NEW, related bucket exists only
+in `run_capturediff_gate.sh`, not in fuzz.py's own summary**: some of those
+newly-VM-compiled patterns are large enough that `gcc` itself (compiling the
+emitted C at fuzz.py's own `-O0` default, under D45's fixed CPU-second
+budget) can hit ITS OWN resource limit — `docs/dev/known_issues.md` K41,
+"CPU time limit exceeded" / "internal compiler error" — which is neither a
+pcrec correctness defect nor the pre-existing "gcc compile fails" class this
+Convention paragraph already excludes from exit status; see the gate
+script's own header comment for the classification and why it lives there
+rather than in fuzz.py.
+
 Maintenance: update this file and README.md when the generator's covered
 feature set, the exclusion list, or the output-bucket classification changes.

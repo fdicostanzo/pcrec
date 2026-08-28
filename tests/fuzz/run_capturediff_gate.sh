@@ -78,20 +78,41 @@ GATE_SUBJECTS=15
 # the counter silently disconnected) fails this gate exactly as loudly as
 # a real divergence would, closing the README.md/campaign-log-documented
 # vacuity finding for good rather than just for this one measurement.
+# [SEL-1] (2026-08-28, K40/K41) RE-MEASURED after the DFA-cap-overflow
+# fallback landed: under `--engine=auto` (what compile_with_pcrec() always
+# passes, no `--engine` flag), the 8 patterns this fixed seed used to draw
+# that hit `PCREC_MAX_DFA_STATES_TABLE`/`_GOTO` no longer REFUSE with "too
+# complex for the DFA engine" -- they now compile as VM fallbacks. `state_cap`
+# (fuzz.py's own bucket, only "too complex for the DFA engine" or "NFA
+# exceeds" in pcrec's stderr) drops from 8 to 0 for exactly this reason: the
+# "NFA exceeds" half is UNCHANGED by SEL-1 (that cap has no fallback engine to
+# hand a pattern to, docs/spec/limits.md §3.3), so on this fixed seed's own
+# draw the bucket's population was entirely the DFA-cap half. Those 8
+# patterns move into the ordinary accept/compare pipeline instead: "both
+# accept" 175 -> 183 and "subject pairs compared" 2625 -> 2745 (8 * 15 = 120
+# more pairs) follow arithmetically. "oracle inconclusive" gains a NEW,
+# TIMING-SENSITIVE nonzero floor (measured 2-3 across four runs on this box,
+# never 0) because some of those 8 newly-VM-compiled patterns are complex
+# enough that a fraction of their real subject comparisons hit PCRE2's own
+# match-limit or the oracle's execution timeout -- collateral from patterns
+# that used to never REACH subject comparison at all, not a new divergence
+# class. Re-measured 4 times on this box (byte-identical on every bucket
+# except "oracle inconclusive", which this row's own comment already says is
+# TIMING-SENSITIVE), per this section's own "measured twice on a quiet box"
+# discipline.
 declare -A EXPECT=(
     ["patterns generated"]=300
     ["module construct patterns"]=75
-    ["both accept"]=175
+    ["both accept"]=183
     ["both reject"]=117
     ["pcrec-only reject"]=0
     ["pcre2-only reject"]=0
     ["PCRE2 size-limit"]=0
-    ["DFA state-cap"]=8
-    ["gcc compile fails"]=0
+    ["DFA state-cap"]=0
     ["pcrec compile timeout"]=0
     ["oracle probe timeout"]=0
-    ["subject pairs compared"]=2625
-    ["oracle inconclusive"]=0
+    ["subject pairs compared"]=2745
+    ["oracle inconclusive"]=3
     ["pcrec step-budget exhausted"]=0
     ["pcrec frame-budget exhausted"]=0
     ["known PCRE2 optimizer quirk"]=0
@@ -143,7 +164,7 @@ echo "capturediff-gate: selected counts (expected -> actual)"
 drift=0
 for label in "patterns generated" "module construct patterns" "both accept" "both reject" \
              "pcrec-only reject" "pcre2-only reject" "PCRE2 size-limit" \
-             "DFA state-cap" "gcc compile fails" "pcrec compile timeout" \
+             "DFA state-cap" "pcrec compile timeout" \
              "oracle probe timeout" "subject pairs compared" \
              "oracle inconclusive" "pcrec step-budget exhausted" \
              "pcrec frame-budget exhausted" "known PCRE2 optimizer quirk" \
@@ -166,6 +187,8 @@ for label in "patterns generated" "module construct patterns" "both accept" "bot
         case "$label" in
             "pcrec compile timeout"|"oracle probe timeout")
                 note=" (TIMING-SENSITIVE bucket -- check box load before treating this as a pcrec defect, docs/testing.md's D14 busy-box precedent)" ;;
+            "oracle inconclusive")
+                note=" (TIMING-SENSITIVE since [SEL-1]/K41 -- PCRE2's own match-limit or the oracle's execution timeout on the newly-VM-compiled complex patterns; measured 2-3 across four runs on the landing box, check load before treating as a pcrec defect)" ;;
         esac
         echo "  $label: expected=$expected actual=$actual  DRIFT$note" >&2
         drift=1
@@ -173,6 +196,56 @@ for label in "patterns generated" "module construct patterns" "both accept" "bot
         echo "  $label: $actual"
     fi
 done
+
+# [SEL-1] (2026-08-28, K41) "gcc compile fails" is no longer a single bucket
+# in this loop, and that is a NARROWING rather than a removal: it splits
+# into GCC-COMPILE-FAIL-OVER-BUDGET (gcc itself hit a resource limit on an
+# oversized generated VM program — "CPU time limit exceeded" or "internal
+# compiler error", K41's own signature, now unhidden because [SEL-1] (K40)
+# turned the DFA-prefilter overflow that used to REFUSE this witness into a
+# fallback that SHIPS the VM artifact gcc then chokes on) and everything
+# else, which stays a genuine pcrec-side compile defect and stays pinned at
+# 0. Folding the over-budget case into the old single bucket would have
+# been the "silent allowlist" this row was explicitly asked not to be: a
+# bare re-pin to 1 could not tell K41's witness apart from a real NEW gcc
+# failure landing beside it. Both counts are read from the SAME `GCC-FAIL`
+# lines fuzz.py already prints (one implementation of "did gcc fail",
+# never a second one) -- only the CLASSIFICATION is new, and it lives here
+# rather than in fuzz.py because this gate is the one caller that needs it
+# (the at-scale campaign, tests/fuzz/campaigns/, reads fuzz.py's own
+# summary directly and is unaffected).
+#
+# THIS BUCKET IS ITSELF TIMING-SENSITIVE, MEASURED RATHER THAN ASSUMED, and
+# that has to be said plainly: fuzz.py compiles generated code at `-O0` by
+# default (GENCFLAGS) under a FIXED CPU-second ulimit (gen_timeout.sh
+# `cpusecs`, D45's own budget, not scaled to box speed), and K41's witness
+# measured at 7.8 CPU-seconds under `-O0` on the landing box against that
+# same ~10s cap -- a narrow margin, not a comfortable one. Four runs on
+# THIS box all read 0 here (the compile finishes inside the budget every
+# time), which is a real, honest measurement and not a sign the check is
+# broken: it means this box is fast/quiet enough today that K41's witness
+# does not cross the line, the same "check box load first" caveat every
+# other TIMING-SENSITIVE bucket in this file already carries. The check
+# still fails loudly on drift either way (manager's ruling: pinned, not a
+# silent allowlist) -- a 0 here is not silently passed, it is reported as a
+# DRIFT with this bucket's own timing note attached, exactly like
+# "oracle inconclusive" below.
+gcc_fail_total="$(grep -c '^\[fuzz\] GCC-FAIL pattern=' "$GATEOUT" || true)"
+gcc_fail_overbudget="$(grep -c '^\[fuzz\] GCC-FAIL pattern=.*\(CPU time limit exceeded\|internal compiler error\)' "$GATEOUT" || true)"
+gcc_fail_other=$((gcc_fail_total - gcc_fail_overbudget))
+if [ "$gcc_fail_other" -ne 0 ]; then
+    echo "  gcc compile fails (other than K41's over-budget class): expected=0 actual=$gcc_fail_other  DRIFT -- a REAL gcc-side compile defect, not K41" >&2
+    drift=1
+else
+    echo "  gcc compile fails (other than K41's over-budget class): 0"
+fi
+if [ "$gcc_fail_overbudget" -ne 1 ]; then
+    echo "  gcc compile fails (K41 over-budget class): expected=1 actual=$gcc_fail_overbudget  DRIFT (TIMING-SENSITIVE -- gcc's own CPU-second ulimit vs. box speed, K41's witness measured 7.8s against a ~10s cap; check box load first) -- docs/dev/known_issues.md K41: 0 can mean a fast/quiet box did not cross the line THIS run (re-run before concluding the witness stopped reaching its shape); >1 means a NEW pattern is hitting the same gcc-resource-limit class (investigate before re-pinning upward)" >&2
+    drift=1
+else
+    echo "  gcc compile fails (K41 over-budget class): 1"
+fi
+
 [ "$drift" -ne 0 ] && rc=1
 
 if [ "$rc" -eq 0 ]; then

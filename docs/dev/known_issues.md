@@ -3127,3 +3127,59 @@ green; a targeted `-fsanitize=address,undefined` build of the compiler
 showed no leak/UB on the retry path. The full `make test` battery was not
 run by this lane (box rule: one heavy suite at a time; flagged for the
 manager to run at merge).
+
+## K41 — OPEN (2026-08-28, found by the manager's [SEL-1] landing battery, tests/fuzz/run_capturediff_gate.sh) — a VM artifact for a deeply-nested, wide bounded-repeat pattern can exceed D45's gcc compile-time budget, and [SEL-1] is what UNHID it rather than caused it
+
+**Symptom.** `gcc -O2 -c` on the VM artifact for
+
+    1{1,}b1{0}1{2,3}?|(c0{1}.)|((\n.*|.{2}|(?:a{2,3}|0{0,30}cc|c{0,3}bc{2,3}){1,}){5,10}.{2,}|[a-c-e]{1,}?|a$b){28,30}[a-z0-9]{28,30}(\n[^abc]{28,30}?){1,}
+
+(the fuzz gate's fixed `--seed 1 --patterns 300` slice, `content:GCC-FAIL`)
+reports `gcc: internal compiler error: CPU time limit exceeded`, MEASURED:
+52.9 s / 540 MB for a 2,004,778-byte generated `.c` file. `--engine=auto`
+compiles it (`RX_ENGINE "vm"`, `RX_ENGINE_WHY "capture group at pattern
+offset 18"`, `RX_VM_PREFILTER "none"`); `--engine=vm` produces the
+byte-identical artifact.
+
+**Cause.** The pattern's `{28,30}`-repeated alternation over a nested
+`{5,10}`-repeated body replicates enormously under the VM's bounded-repeat
+lowering (`docs/design/engine_m4.md` §3.3: no counter, no suppression test
+— [ENG-BREP]'s counter rung does not reach every nested shape), and
+nothing in `src/gen/emit_vm.c` bounds the emitted PROGRAM SIZE the way
+`src/core/limits.h`'s DFA-side caps bound state counts. Before [SEL-1] this
+specific pattern's auto-selected PREFILTER's capture-erased DFA overflowed
+`PCREC_MAX_DFA_STATES_TABLE` first and the compile REFUSED — so the VM body
+that gcc chokes on was never emitted at all. [SEL-1] (K40) makes that
+overflow a fallback rather than a refusal, so the VM artifact now ships,
+and IT is what exceeds D45's gcc budget. This is not a defect in [SEL-1]'s
+own mechanism (every answer the VM artifact WOULD produce, if gcc could
+finish, is correct) — it is a pre-existing VM-emission gap the DFA
+refusal happened to mask for this one shape, discovered because the mask
+came off.
+
+**Class.** A TEST-HARNESS-VISIBLE resource limit (D45's gcc compile-time
+budget), not a pcrec correctness defect and not a caller-visible refusal —
+`build/pcrec` itself compiles the pattern in well under a second; the cost
+is entirely in gcc's own back end compiling the emitted C.
+
+**Fix direction, chartered separately (not built here).** A VM-side
+emitted-PROGRAM-SIZE cap in `src/core/limits.h`, refusing before emission
+the way the DFA-side caps already refuse before emission — `PCREC_MAX_VM_
+NODES`/`PCREC_MAX_VM_REPEAT_COPIES`/`PCREC_MAX_VM_REPLICATION_PRODUCT`
+bound the same family already but did not catch this shape; the new
+budget needs its own measurement of where a legitimate pattern's emitted
+size tops out, the same way K7/[M4.7b]'s subset-element budget was sized
+from a measured corpus maximum rather than guessed.
+
+**Interim handling (this lane, `tests/fuzz/run_capturediff_gate.sh`).**
+`GCC-COMPILE-FAIL-over-budget` (gcc reports "CPU time limit exceeded" or
+"internal compiler error", both signatures of a gcc resource limit rather
+than a real compile error) is now its own COUNTED outcome, pinned to
+EXACTLY 1 (this witness), asserted separately from the "gcc compile
+fails" bucket (still pinned at 0 — a NON-over-budget gcc failure stays a
+FAILURE, not absorbed by this row's allowance). A movement to 0 means the
+witness stopped reaching the shape (K41 closed, or the generator/seed
+changed — re-derive, do not silently widen); a movement above 1 means a
+NEW pattern is hitting the same class and the gate stays RED naming it,
+with the count and this K-row cited in the failure message — never a
+silent allowlist.

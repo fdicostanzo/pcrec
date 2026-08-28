@@ -107,7 +107,7 @@ fi
 
 # ---- the three checks, one pass over the corpus --------------------------
 same=0; capfree=0; capbearing=0; skipped=0
-divergent=""; nocapbad=""; ncapsbad=""
+divergent=""; nocapbad=""; ncapsbad=""; dfafallback=0; dfafallbackpats=""
 # ============================================================================
 # [DD-14 wave G] THE DEAD-GROUP EXCEPTION TO "RX_NCAPS > 1 => VM"
 # ============================================================================
@@ -183,8 +183,39 @@ while IFS= read -r pat; do
     # and compares it against nothing.
     nc_ncaps="$(cat "$WORKDIR/nc/gen.c" "$WORKDIR/nc/gen.h" | grep -oE '^#define RX_NCAPS [0-9]+' | awk '{print $3}')"
     nc_eng="$(grep -oE '^\s*\.engine = [0-9]+' "$WORKDIR/nc/gen.c" | grep -oE '[0-9]+$')"
-    if [ "$nc_ncaps" != "1" ] || [ "$nc_eng" != "1" ] \
-       || grep -q '_match_impl' "$WORKDIR/nc/gen.c"; then
+    # [SEL-1] (2026-08-28) THE PREMISE'S SECOND READING. Before this row,
+    # `--no-captures` produced a DFA artifact or a clean REFUSAL (the
+    # `continue` above) -- never a VM one. Under `--engine=auto`'s DFA-cap-
+    # overflow fallback (docs/spec/tuning.md §2.11) a `--no-captures`
+    # pattern whose DFA build overflows now compiles as a VM artifact
+    # instead of refusing, so "DFA, or refused" has to become "DFA, or a VM
+    # artifact whose RX_ENGINE_WHY names a dfa overflow" -- discriminated by
+    # the WHY VALUE, never by RX_ENGINE's mere presence/absence (a VM
+    # artifact for any OTHER reason under --no-captures would still be the
+    # ORIGINAL premise violation this check exists to catch: --no-captures
+    # is supposed to remove every request-derived reason to choose the VM,
+    # and a DFA-cap overflow is the one build-outcome reason that survives
+    # it). The fallback population is COUNTED and PINNED below (the capdiv
+    # pin's own shape, further up this file) so a drift is red rather than
+    # silently absorbed.
+    if [ "$nc_ncaps" != "1" ]; then
+        nocapbad="$nocapbad
+  $pat (RX_NCAPS=$nc_ncaps engine=$nc_eng) -- RX_NCAPS != 1 under --no-captures"
+    elif [ "$nc_eng" = "1" ] && grep -q '_match_impl' "$WORKDIR/nc/gen.c"; then
+        nocapbad="$nocapbad
+  $pat (RX_NCAPS=$nc_ncaps engine=$nc_eng) -- DFA-engine artifact still carries a VM symbol"
+    elif [ "$nc_eng" = "2" ]; then
+        nc_why="$(sed -n 's/^#define RX_ENGINE_WHY "\(.*\)"$/\1/p' "$WORKDIR/nc/gen.c")"
+        case "$nc_why" in
+            "dfa overflowed:"*)
+                dfafallback=$((dfafallback + 1))
+                dfafallbackpats="$dfafallbackpats
+  $pat ($nc_why)" ;;
+            *)
+                nocapbad="$nocapbad
+  $pat (RX_NCAPS=$nc_ncaps engine=$nc_eng why=\"$nc_why\") -- on the VM under --no-captures for a reason OTHER than a DFA-cap overflow"
+        esac
+    elif [ "$nc_eng" != "1" ]; then
         nocapbad="$nocapbad
   $pat (RX_NCAPS=$nc_ncaps engine=$nc_eng)"
     fi
@@ -278,9 +309,26 @@ else
 fi
 
 if [ -z "$nocapbad" ]; then
-    ok "[M4.5b] --no-captures is a DFA artifact for every corpus pattern (RX_NCAPS 1, engine PCREC_ENGINE_DFA, no VM symbol)"
+    ok "[M4.5b] --no-captures is a DFA artifact for every corpus pattern, or (since [SEL-1]) a VM fallback naming a dfa overflow -- never a VM artifact for any other reason (RX_NCAPS 1, engine PCREC_ENGINE_DFA/no VM symbol, OR the pinned fallback below)"
 else
-    bad "[M4.5b] --no-captures produced a non-DFA artifact:$nocapbad"
+    bad "[M4.5b] --no-captures produced a non-DFA artifact for a reason other than the [SEL-1] fallback:$nocapbad"
+fi
+
+# [SEL-1] (2026-08-28) the fallback population, PINNED the way the
+# cap-divergence population above is: movement in EITHER direction is a
+# deliberate re-pin event, never silently absorbed. Measured on this tree at
+# landing: exactly ONE corpus pattern (tests/base/k18_cost_gates.rxt's
+# fuzz-found cost-gate witness, `(1{0,30}?[^]abc][^abc]){28,30}0+|a`) reaches
+# its DFA build's state cap under --no-captures and falls back. A count of 0
+# means the witness stopped reaching its site (K40's own [MECH-REACH]-shaped
+# hazard -- re-derive rather than silently deleting this arm); upward means a
+# NEW pattern started overflowing (re-pin deliberately, and say which cap).
+if [ "$dfafallback" -eq 1 ]; then
+    ok "[SEL-1] --no-captures DFA-cap-overflow fallback pinned at 1:$dfafallbackpats"
+elif [ "$dfafallback" -eq 0 ]; then
+    bad "[SEL-1] the --no-captures DFA-cap-overflow fallback population went to 0 -- the witness pattern stopped reaching its cap (a limits.h budget moved, or the corpus lost the witness); re-derive, do not delete this arm"
+else
+    bad "[SEL-1] the --no-captures DFA-cap-overflow fallback population MOVED to $dfafallback:$dfafallbackpats -- re-pin deliberately if this is a legitimate new witness, or investigate a regression in the cap or the fallback itself"
 fi
 
 if [ "$capbearing" -lt 20 ]; then
