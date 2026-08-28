@@ -16895,3 +16895,36 @@ Full parallel dev limited by your ability to effectively manage
 them." Plan rows written ([OPT-5] → plan_completed.md; [OPT-K],
 [SEL-1] at its place). Lanes open next: optk (opus, design note
 first, then code), sel1 (sonnet), opt2m (sonnet, measurement).
+
+#### Forty-third session, part 2 — opt2m and sel1 MERGED; the reverse pass is the DFA's 2×; the battery runs on db05020 (2026-08-28 ~13:4x EDT)
+
+opt2m (docs-only, merged 5c2fdf4, plan 58c8af1): [OPT-2] STEP 2's
+hypothesis REFUTED — plain vs `(?:orig)\z` on `rx_match` differs by
+3.7 % (a match-regime subject IS the match, so both scan to the end);
+the 2.13× DFA-vs-VM gap on the compliance set (= the bench's 2.15×) is
+the REVERSE PASS: a timing-only isolation patch that deletes it takes
+matching subjects from 2.077× behind the VM to 1.046× and short valid
+emails to 0.571× (43 % ahead). Lever = [ENG-ABS]'s unwrapped-forward
+match-here entry from `ctx->pos`; its gate is now met (noted on the
+row). My reading correction recorded on the [OPT-2] row: with the
+WRAPPED machine the reverse pass is what rejects an accept belonging
+to a later start — "never needed" holds only unwrapped-from-pos.
+sel1 ([SEL-1], merged f75a33f): under auto a DFA-cap overflow is a
+selection outcome — compile_driver is a bounded (2) retry loop around
+its ONE setjmp with `Ctx.dfa_disabled` as the retry input, consumed by
+a new `forces_dfa_overflow` rung in select_engine.c's existing fixpoint
+and folded into the prefilter derivation; force forms unchanged;
+`RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern offset 0"`;
+tuning.md §2.5/§2.11, cli.md, limits.md §3.3, match_api.md; K40; 11
+new checks across tests/vm §3b + tests/prefilter; k18_cost_gates.rxt's
+perr witness (its auto-prefilter was the overflowing DFA) converted to
+two oracle-verified match cases; survey: `pcrec_build_dfa` has ONE
+call site, no other hard-fail path. MERGE-REVIEW FIX (db05020): the
+retry left the refused build's text in `err->msg`, so a successful
+fallback returned rc 0 beside "pattern too complex…" — proven with a
+library probe both ways, fixed by clearing err on the retry path.
+Battery launched 13:40 on db05020 (script re-pathed from the 41st
+session's scratchpad). optk: design note d13f5be (695 lines) committed
+after a nudge (it had started prefix_k.c first); D6 panel of three
+critics (semantics/opus, cost/sonnet, architecture/sonnet) running
+read-only on it. chk2p1 ([CHK-2] piece 1, `--list-axes`) coding.
