@@ -220,3 +220,24 @@ change.
 - `opt2_anchored_match_measurement.md` — [OPT-2] STEP 2 (2026-08-28, lane opt2m, measurement only, nothing under `src/`): REFUTES the plan row's hypothesis — comparing `rx_match` on `orig`'s plain DFA vs its `(?:orig)\z` DFA over the bench's 85 compliance subjects shows only 3.7% overhead (3.3% on matching subjects), not the 3.7x/2.15x gap it was meant to explain, because a `match`-regime subject IS the match end-to-end so the plain form also scans to the end. Instead, a cost-isolation patch deleting the `\z` artifact's reverse pass cuts the DFA-vs-VM gap on matching subjects from 2.08x behind to 1.05x (parity), and to 0.57x (43% AHEAD) on the 35 ordinary short valid-email subjects — the reverse pass is ~50% of DFA cost on every matching subject, because `rx_match` never needs the match START the reverse pass computes (`ctx->pos` already is it). Recommends `[ENG-ABS]`'s already-chartered unwrapped-forward-DFA anchored entry (not built here) as the lever, now with a second, independent forcing-function measurement behind it.
 - `spec_survey.md` — [SPEC-1] step 1 (2026-08-25, lane srSpec, read-only): the spec-coverage gap table (54 rows), the proposed docs/spec/ file set, the ordered [SPEC-1.n] lanes, and the STALE OR WRONG findings. A survey deliverable like chain_profile.md; superseded row by row as the lanes land.
 - `artifact_size_census.md` — [ART-SIZE] STEP 1 (2026-08-28, lane artsize, measurement only, nothing under `src/`/`tests/`): the census Frank's 2 MB-VM-artifact concern chartered. Over 2,772 corpus+bench patterns (2,488 compiled, 0 gcc timeouts/budget kills anywhere in the shipped corpus — median `.o` 6,760 B, p99 14,364 B), every top-20 outlier by `.o` and by gcc time is the SAME mechanism (a bounded/exact repeat over a >1-branch alternation forced onto the counter/frames rungs); a byte attribution (prose/tables/program/scaffold/main, validated to sum to the file size on all 2,488 artifacts) finds program+tables correlates with `.o` at r=0.99 while comments alone correlate at only r=0.43 — a size term should price program+tables, not source bytes. The 2 MB witness (the fuzz gate's seed-1 pattern) sits 3x above the corpus's own largest artifact and is NOT explained by any existing cap being near its boundary — `PCREC_MAX_VM_REPEAT_COPIES` (64) and `PCREC_MAX_VM_REPLICATION_PRODUCT` (131,072 nodes) sit at 47% and 5.7% respectively, both calibrated against runaway/exponential blowup rather than "cap-compliant and still 2 MB," which is exactly STEP 2's gap. Tension curves on the witness + top-5 corpus outliers find THREE separate levers: `--unroll=1` is free on nested-repeat patterns (75-79% smaller, no measured speed cost) and nearly useless on single-level large-count ones; `-fno-premul-table` is the well-behaved already-expected [OPT-3] trade; `--engine=vm` is the measured shape of "size vs performance" itself — shrinks `.o` to 4-9% of default on prefiltered patterns at up to a measured 359,000x throughput cost on the failing path, because the hybrid DFA prefilter IS the size and the speed at once. `docs/dev/artifact_size_census/census.py` (own CLAUDE.md) reproduces §2-§5.
+- `artifact_size_log.tsv` — [ART-SIZE.1b]'s METRICS LOG, the ratchet lane's
+  own deliverable (Frank's ruling on docs/dev/plan.md's [ART-SIZE.1b] row:
+  the log IS the deliverable, per-pattern movement is a `git diff` a
+  reviewer reads, never a per-pattern gate). Written by
+  `tests/size/run_size_log.sh` at the END of a FULL-CORPUS `test-corpus`
+  run (never by a targeted/partial run — see that script's own header):
+  one row per corpus artifact test-corpus already compiled — pattern id,
+  engine/rungs/prefilter stamps, comment-excluded size, gcc CPU/wall
+  seconds, load1 — stamped with a header naming the commit, date, load at
+  start, and the row count the SAME run produced (so a truncated file is
+  detectable by comparing the two, `tests/size/check_size_tripwire.sh`'s
+  own unpinned-max guard). **DELIBERATELY NOT under `docs/measurements/`**
+  despite matching that directory's stable-filename/diffable shape (D35):
+  `docs/CLAUDE.md`'s own rule for that directory is "no check may read
+  these files" and `check_size_tripwire.sh` DOES read this one every
+  `make test` — a same-run live artifact a check reads is a different
+  thing from an archived report a check trusts as a stale oracle, but
+  keeping it out of that directory avoids the ambiguity by construction.
+  Read with `scripts/size_diff OLD.tsv NEW.tsv` for a summarised movement
+  report rather than a raw two-file diff. See `tests/size/CLAUDE.md` and
+  `docs/testing.md` "The artifact-size log".

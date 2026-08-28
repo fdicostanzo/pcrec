@@ -115,7 +115,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # concurrently is safe by the same argument PROCS=N already relies on inside
 # tests/harness/run.sh and (since [TT-2]) tests/reject/run_reject_tests.sh.
 # See docs/testing.md "Section composition" for the measured wall-time.
-TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
+TEST_SECTIONS := test-corpus test-size test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
@@ -183,7 +183,30 @@ test:
 # reads as a pass.
 test-corpus: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-corpus.ran"; fi
-	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/harness/run.sh
+	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/size/run_size_log.sh
+
+# [ART-SIZE.1b] the artifact-size RATCHET's own section — ZERO recompiles:
+# it reads the log test-corpus's recipe just wrote (docs/dev/
+# artifact_size_log.tsv, via tests/size/run_size_log.sh above, which is
+# now test-corpus's OWN compile pass with `SIZELOG` threaded through, not
+# a second one — "riding the existing test corpus" is the whole charter).
+# Depending on `test-corpus` rather than `all` is a DELIBERATE, NARROW
+# exception to this Makefile's "no suite reads or writes another's
+# output" rule stated above test-codegen: that rule protects suites that
+# run CONCURRENTLY from racing on shared mutable workdirs, and this
+# target does neither — it runs strictly AFTER test-corpus finishes (a
+# real Makefile prerequisite, not a race) and only READS a stable,
+# file-scoped artifact test-corpus produces as a byproduct, the same
+# relationship every section already has with `build/pcrec` from `all`.
+# Under `-k`, a test-corpus failure (a build break, or its own cases
+# failing) means make will not launch this target at all — correct, by
+# the SAME logic `all`'s own failure already stops every section: if the
+# thing this reads was never produced this run, this section legitimately
+# did not run either, and the trailer reports that absence rather than a
+# stale prior file reading as current.
+test-size: test-corpus
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-size.ran"; fi
+	bash tests/size/check_size_tripwire.sh
 
 test-cli: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-cli.ran"; fi

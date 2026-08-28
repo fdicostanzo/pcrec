@@ -69,6 +69,22 @@ pcrec (the Makefile owns that).
   `peak_rss_kb=0`/`cpu=0.00` means the child finished inside one poll
   interval — a fast-run marker, not a measurement.
 
+- **size_diff** — [ART-SIZE.1b]'s post-test examination tool: reports every
+  pattern whose `docs/dev/artifact_size_log.tsv`-shaped row moved between
+  two log files (`scripts/size_diff OLD.tsv NEW.tsv`), by name, with
+  old/new/ratio, sorted by how far the ratio sits from 1.0; then patterns
+  present in only one file (NEW/VANISHED); then totals. SIZE gets no noise
+  tolerance (deterministic given an unchanged emitter and pattern — any
+  byte difference is real); gcc CPU TIME gets both a ratio threshold
+  (`SIZE_DIFF_CPU_RATIO`, default 1.25) AND an absolute floor
+  (`SIZE_DIFF_CPU_ABS`, default 0.05s) before it is reported, because two
+  re-runs of an unchanged tree produce byte-identical sizes but never
+  identical CPU times (scheduler jitter, cache state) — without a
+  tolerance an "empty report" could never happen even for a true no-op.
+  This is the tool docs/dev/plan.md [ART-SIZE.1b]'s ruling names for
+  "post-test examination": the log is the deliverable, per-pattern
+  movement is read here rather than gated.
+
 - **tests/** — self-tests for this directory's scripts, run ON CHANGE via
   `make testscripts` / `make -C scripts test`, never in `make test` (Frank's
   ruling, 2026-08-16, D48 — settling the deferred wiring question). The

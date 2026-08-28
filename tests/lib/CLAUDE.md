@@ -104,6 +104,36 @@ section targets depend on.
   the compiler via `subprocess.run()` with no `timeout=` at all — the
   identical hazard, outside this bash-only mechanism's reach; recorded in
   K37's own known_issues.md entry, not silently swept into this fix.
+- **size_count.sh** — [ART-SIZE.1b]'s ONE implementation of "the census's
+  own definition" of an emitted artifact's SIZE: total source bytes minus
+  `/* */`/`//` comment-line bytes (docs/dev/artifact_size_census.md §5's
+  `prose` bucket). `size_count_bytes FILE...` sums that quantity over any
+  number of files, forcing `LC_ALL=C` internally (MEASURED: under this
+  box's ambient `en_US.UTF-8`, `awk`'s `length()` counts CHARACTERS, not
+  bytes, and a handful of `[DD-14.FB]`-annotation comments contain
+  multi-byte UTF-8 punctuation — this silently undercounted a real
+  artifact's prose bytes by 8 and 1 respectively; forcing the locale inside
+  the function rather than trusting an inherited export fixes it
+  regardless of caller). VERIFIED byte-for-byte against
+  `docs/dev/artifact_size_census/census.py`'s own `attribute_source()`
+  Python classifier on a real split artifact (both a small synthetic
+  pattern's `gen.c`/`gen.h` and the corpus's own largest witness,
+  `((a)|ab){4000}c`) — a FLAT top-to-bottom comment scan agrees with the
+  census's depth-aware, function/table-tracking classifier exactly,
+  because the census's own comment-detection rule is applied verbatim at
+  every nesting depth with no depth-dependent variation (this file's own
+  header has the full argument). `size_count_row FILE_C FILE_H` is the
+  ONE-SUBPROCESS combination `tests/harness/run.sh`'s SIZELOG call site
+  actually uses: the same size scan PLUS the D46 stamp extraction
+  (`RX_ENGINE`/`RX_VM_RUNGS`/`RX_VM_PREFILTER`, same spellings
+  `census.py`'s `extract_stamps()` greps) in ONE `awk` invocation, because
+  the first cut of that call site (2x `awk` + 3x `sed` + 1x `awk` + 1x
+  `cut` + 1x `grep` — 8 spawns per compile) cost 20.4% of `test-corpus`'s
+  own wall time on a 712-artifact sample; consolidated to 1 spawn, MEASURED
+  1.79% (see this function's own header and docs/testing.md "The
+  artifact-size log" for both transcripts). Sourced by
+  `tests/harness/run.sh` only — no other suite needs an artifact's byte
+  count today.
 - **table.sh** — [SR-11]'s ONE implementation of docs/spec/table_contract.md
   (the RULED contract for tabular `pcrec` command output — `#` comments,
   header-names-columns, append-only, optional `#section NAME` blocks), the

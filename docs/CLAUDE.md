@@ -132,7 +132,13 @@ Process and status documents for pcrec. The architecture itself lives in
   total (concurrent sections hide a sleeping worker's wall time), and a
   named finding that two `tests/bench/run_bench.sh` budgets (COMPILE-SPEED,
   GCC-TIME) measured the wrapper's own launch cost inside their number and
-  now read lower and more honestly.
+  now read lower and more honestly. Also (added [ART-SIZE.1b], 2026-08-28)
+  "The artifact-size log": the zero-cost size ratchet riding `test-corpus`'s
+  own compile pass (`SIZELOG` in `tests/harness/run.sh`, `tests/size/`'s
+  wrapper + tripwire), the measured overhead (20.4% naive -> 1.79% after
+  consolidating to one subprocess per compile), the size definition's
+  byte-exact agreement with the `[ART-SIZE]` census's own classifier, the
+  tripwire pins and their headroom reasoning, and the sabotage transcripts.
 - `measurements/` — archived probe OUTPUT reports (D35, 2026-08-12):
   stable-named (`<probe>.txt`, diffable across re-runs) verbatim probe
   output with a source-information header (date, repo commit, libpcre2 and

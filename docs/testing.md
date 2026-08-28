@@ -3281,3 +3281,270 @@ role; never built inside this worktree, never committed):
    ```
    Named every section, by name, rather than merely reporting a shortfall
    count.
+
+## The artifact-size log ([ART-SIZE.1b], 2026-08-28)
+
+Frank's ruling on docs/dev/plan.md's `[ART-SIZE.1b]` row: the zero-cost
+size ratchet rides `test-corpus`'s existing compile pass rather than
+adding one, and the METRICS LOG is the deliverable ("or log metrics and
+examine post-test" — RULED: the log is the deliverable; the only red is a
+corpus-level tripwire; per-pattern movement is a `git diff` a reviewer
+reads, never a gate). This section is the implementation record: the
+recording mechanism, its measured overhead, the log format, the tripwire,
+and the sabotage validation.
+
+### Where it rides
+
+`tests/harness/run.sh`'s existing compile site (the `gen_cc` call that
+compiles `gen.c`+`driver.c` for every corpus block) is wrapped in bash's
+own `time` reserved word rather than re-run: `TIMEFORMAT` is set to a
+fixed, parseable shape and its output goes to a private file (gen_cc's own
+compiler output is captured internally via a command substitution into
+`$GEN_CC_LOG`, so nothing collides on the real stderr `time` writes to —
+verified empirically before wiring this in). When `SIZELOG` is set (same
+per-worker-path/parent-merge shape `RXTDUMP` already has under
+`PROCS>1`), one TSV row is appended per SUCCESSFUL compile: pattern id
+(`file:line`), the D46 engine/rungs/prefilter stamps, comment-excluded
+size, gcc CPU/wall seconds, and `load1`. `SIZELOG` unset (the default)
+means zero rows are computed — a plain run's cost and output are both
+unchanged.
+
+### Measured overhead, and why it needed a second pass
+
+The first cut spawned 8 short-lived processes per compile (2x `awk` for
+the size scan on `gen.c`+`gen.h` separately, 3x `sed` for the three D46
+stamps, 1x `awk` to sum gcc's user+sys CPU time, 1x `cut` to read
+`/proc/loadavg`, 1x `grep` to parse `time`'s own TIMEFORMAT line) and cost
+**20.4%** of `test-corpus`'s own wall time — MEASURED on `tests/base/*.rxt`
+(40 files, 712 successfully-compiled artifacts) at `PROCS=2`:
+
+```
+without SIZELOG: wall=75.648s   (cases passed: 3603, cases failed: 0)
+with    SIZELOG: wall=91.075s   (size-log rows: 712)
+```
+
+Nowhere near "zero cost". Consolidated into `tests/lib/size_count.sh`'s
+`size_count_row` — ONE `awk` invocation that reads `gen.c` and `gen.h`
+together, folding the comment-exclusion size scan and the three D46 stamp
+greps into a single pass (`FNR==1` resets the comment-tracking state per
+file; the stamps are only read from the first file, matched by
+`FILENAME == FC`) — plus pure-bash arithmetic at the call site for
+everything else: `read` sources the `time` output file and
+`/proc/loadavg` directly (no `grep`/`cut`), and the CPU-time sum treats
+`user`/`sys` (both fixed 3-decimal strings from `TIMEFORMAT`'s `%3U`/
+`%3S`) as integer milliseconds by stripping the decimal point (`10#`
+forces base-10 so a value like `"0.089"` -> `"0089"` is never misread as
+invalid octal) and reformats with `printf -v` — zero subprocesses beyond
+the one `awk` call. Re-measured on the identical 712-artifact sample:
+
+```
+without SIZELOG: wall=76.752s   (cases passed: 3603, cases failed: 0)
+with    SIZELOG: wall=78.125s   (size-log rows: 712)
+```
+
+**1.79%** overhead (76.752s -> 78.125s), an ~11x reduction from the naive
+cut. This is the number reported as "the two measured wall times" per the
+lane brief; it is not literally zero (there is no way to read gcc's own
+CPU-time rusage without at least one syscall/utility per compile in a bash
+harness), but it is now dominated by the actual gcc compiles themselves
+rather than by this instrumentation.
+
+### The size definition, and why a flat scan agrees with the census's depth-aware one
+
+`tests/lib/size_count.sh`'s comment-exclusion rule (a line is `prose` if
+it opens a `/* */` block or is a `//` line, tracked as a simple three-state
+scanner: outside / in-block-comment / not) is applied VERBATIM by the
+`[ART-SIZE]` census's own Python classifier
+(`docs/dev/artifact_size_census/census.py`'s `attribute_source()`) at
+BOTH its top level and inside every nested function/table scan — with no
+depth-dependent variation. That means a flat top-to-bottom scan (this
+file's own approach, no brace-depth or function-name tracking needed)
+yields the exact same PROSE byte total the census's five-bucket classifier
+does. VERIFIED, not assumed:
+
+```
+$ python3 -c "... census.attribute_source() on gen.c/gen.h for 'a(b|c)+d' ..."
+gen.c total 34809 prose 15226 nonprose 19583
+gen.h total 11159 prose 4794  nonprose 6365
+
+$ . tests/lib/size_count.sh; size_count_bytes gen.c gen.h
+25948          # == 19583 + 6365, exact agreement
+```
+
+A second, corpus-scale spot check against the same census, on the
+corpus's own largest witness pattern (`((a)|ab){4000}c`, rxt-00127 in the
+census, `tests/counterk/counterk.rxt:1807`), comparing the CENSUS's own
+self-contained (`-o -`) compile form against this file's function:
+
+```
+$ build/pcrec -p rx --features all -o - -- '((a)|ab){4000}c' > witness.c
+$ wc -c witness.c
+675595 witness.c
+$ . tests/lib/size_count.sh; size_count_bytes witness.c
+651412
+$ python3 -c "... census.attribute_source() on witness.c ..."
+total 675595 prose 24183 nonprose 651412      # exact agreement, again
+```
+
+...and against the SPLIT `.c`+`.h` form `tests/harness/run.sh` actually
+compiles (the form the log's own `size_bytes` column measures):
+
+```
+$ build/pcrec -p rx -o normtest.c -- '((a)|ab){4000}c'   # writes normtest.c + normtest.h
+$ wc -c normtest.c normtest.h
+664464 normtest.c
+ 11011 normtest.h
+675475 total
+$ . tests/lib/size_count.sh; size_count_bytes normtest.c normtest.h
+651349
+```
+
+651,349 (split form) vs 651,412 (self-contained form) — a 63-byte
+difference, consistent with the census's own §6 finding that the two
+forms differ only by small ABI-header/`#include` boilerplate spelling
+(their witness measured a 494-byte difference on a much larger artifact).
+The size DEFINITION agrees exactly; the two compile FORMS differ by a
+noise-level amount, as expected.
+
+### The log format
+
+`docs/dev/artifact_size_log.tsv` (`tests/size/run_size_log.sh`'s stable
+output — see `tests/size/CLAUDE.md` for the full column description and
+why it is deliberately NOT under `docs/measurements/`):
+
+```
+# artifact_size_log.tsv (docs/dev/plan.md [ART-SIZE.1b]) commit=<sha> date=<ISO8601 UTC> load1_at_start=<f> rows=<N> harness_args=(full corpus)
+# pattern	engine	rungs	prefilter	size_bytes	gcc_cpu_s	gcc_wall_s	load1
+<file>:<line>	dfa|vm	0x..|	hybrid|none|	<int>	<float>	<float>	<float>
+...
+```
+
+### The tripwire and its pins
+
+`tests/size/check_size_tripwire.sh` (`make test-size`, `test-size:
+test-corpus` — reads the log `test-corpus`'s own recipe just produced, no
+recompile) is the ONE red this row produces: the corpus-level MAX
+`size_bytes` and MAX `gcc_cpu_s` anywhere in the log, each pinned with
+headroom over the `[ART-SIZE]` census's own numbers (675,555 B source /
+6.995 s CPU, docs/dev/artifact_size_census.md §3/§4) — but NOT at those
+raw numbers, because this log measures a different compile shape (`-O1`
+compile+link with `driver.c`, not an isolated `-O2 -c`):
+
+- `MAX_SIZE_BYTES = 700,000` (default; `ARTSIZE_MAX_BYTES` overrides).
+  `size_bytes` is comment-EXCLUDED while the census's 675,555 B ceiling is
+  comment-INCLUDED — comments only ADD bytes, never subtract, so pinning
+  at the census's own raw (larger) ceiling is headroom by construction for
+  the same worst-case pattern, before the round-number margin on top.
+- `MAX_GCC_CPU_S = 8.0s` (default; `ARTSIZE_MAX_CPU_S` overrides). A row
+  can only exist in the log for a compile that SUCCEEDED — D45's own
+  `gen_cpu_secs` (`tests/lib/gen_timeout.sh`) kills any compile at ~10s of
+  CPU before this call site's append ever runs, so `gcc_cpu_s` cannot
+  exceed that ceiling for any logged row at all. 8.0s sits with headroom
+  over the census's own 6.995s worst case while staying comfortably under
+  D45's 10s hard kill.
+- `MIN_ROWS_FLOOR = 1500` (default; `ARTSIZE_MIN_ROWS` overrides) — the
+  UNPINNED-MAX GUARD's population floor, calibrated against the census's
+  own measured 2,488-artifact corpus population with headroom for ordinary
+  corpus growth/shrinkage while catching a truncation-style sabotage by a
+  wide margin.
+
+All three are D45-style revisit-when pins: raise one only with a fresh
+measurement recorded here, never silently. The baseline full-corpus run
+this lane took (see below) confirms these sit comfortably above the real
+population's own worst case.
+
+### Sabotage validation
+
+**(a) A real, compiled blowup, caught BY NAME with a ratio.** The corpus's
+own largest pattern (`((a)|ab){4000}c`, `tests/counterk/counterk.rxt:1807`)
+compiled through the harness with a forced larger unroll chunk
+(`RXTFLAGS=--unroll=48`, a real accepted value — `--unroll=56` and above
+refuse outright at `PCREC_MAX_VM_REPLICATION_PRODUCT`, so 48 is the
+largest accepted blowup on this pattern):
+
+```
+$ RXTFLAGS='--unroll=48' SIZELOG=raw.tsv PROCS=1 bash tests/harness/run.sh blowup.rxt
+size-log rows: 1
+$ cat raw.tsv
+blowup.rxt:1	vm	0x10	hybrid	713076	0.831	0.830	4.97
+```
+
+(default `--unroll` on the same pattern: 664,464 B split-form size,
+i.e. this sabotage is a real +7.3% blowup on the artifact itself.)
+Assembled into a log with the standard header and run through the
+tripwire:
+
+```
+$ ARTSIZE_LOG=sabotage_log.tsv ARTSIZE_MIN_ROWS=1 bash tests/size/check_size_tripwire.sh
+FAIL: check_size_tripwire.sh: SIZE TRIPWIRE — 'blowup.rxt:1' is 713076
+bytes (comment-excluded .c+.h source), 1.019x the 700000-byte pin
+(load1 at measurement: 4.97; log commit 615febe)
+rc=1
+```
+
+Named by pattern, with the ratio, per the brief.
+
+**(b) A truncated log, caught by the unpinned-max guard.** A log whose
+header claims 27 rows, truncated to 10 data rows after assembly:
+
+```
+$ ARTSIZE_LOG=truncated.tsv ARTSIZE_MIN_ROWS=5 bash tests/size/check_size_tripwire.sh
+FAIL: check_size_tripwire.sh: truncated.tsv has 10 data rows but its own
+header claims 27 (written by the SAME run that produced the rows) —
+TRUNCATED after assembly
+rc=1
+```
+
+And independently, a log with zero data rows:
+
+```
+$ echo "# artifact_size_log.tsv ... rows=0" > empty.tsv
+$ ARTSIZE_LOG=empty.tsv bash tests/size/check_size_tripwire.sh
+FAIL: check_size_tripwire.sh: empty.tsv has ZERO data rows — a vacuous
+log must not read as 'no blowup found'
+rc=1
+```
+
+**(c) `scripts/size_diff` on real logs.** Self-diff (identical file
+against itself — the "trivial emitter-irrelevant change" control, since
+nothing at all changed):
+
+```
+$ scripts/size_diff assembled.tsv assembled.tsv
+(no patterns moved past the size/CPU thresholds)
+totals:
+  patterns in OLD only (VANISHED): 0
+  patterns in NEW only (NEW):      0
+  patterns in both, moved:         0 / 27 common
+  total size_bytes: OLD=423980 NEW=423980 (+0.00%)
+```
+
+A log with one planted extra row shows up correctly as NEW, with the
+total delta:
+
+```
+$ scripts/size_diff assembled.tsv assembled_plus_planted.tsv
+pattern	status	old_size	new_size	size_ratio	old_cpu	new_cpu	cpu_ratio
+tests/base/PLANTED.rxt:1	NEW		999999			0.500	
+totals:
+  patterns in OLD only (VANISHED): 0
+  patterns in NEW only (NEW):      1
+  patterns in both, moved:         0 / 27 common
+  total size_bytes: OLD=423980 NEW=1423979 (+235.86%)
+```
+
+The size-definition agreement with the census (the "spot check against
+the census's own numbers" the brief asks for) is the byte-exact witness
+comparison in "The size definition" section above, rather than a
+`size_diff` run — the census's own `census.tsv` is a different schema
+(per-artifact facts, not a size-log row) and the meaningful cross-check is
+the DEFINITION agreeing on the shared witness pattern, which it does
+exactly.
+
+### Baseline
+
+The first committed `docs/dev/artifact_size_log.tsv` is the full-corpus
+row count and the observed corpus-level max size/CPU, taken on the quiet
+box per this lane's own box-rules note; see the file's own header for the
+commit/date/row-count it was taken at, and this section's own git history
+for any pin adjustment made against that first real measurement.

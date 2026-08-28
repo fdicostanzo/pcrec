@@ -541,6 +541,12 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   warm on single-row samples) even though it is a measured NO for
   `make test` — the tree-rebuild-per-sabotage shape is the opposite of
   `make test`'s thousands-of-sub-millisecond-compiles shape.
+- **size/** — [ART-SIZE.1b]'s zero-cost artifact-size metrics log +
+  corpus-level tripwire, riding `test-corpus`'s own compile pass (no
+  `.rxt` corpus of its own — `run_size_log.sh` wraps `tests/harness/
+  run.sh` with `SIZELOG` set; `check_size_tripwire.sh` reads the assembled
+  `docs/dev/artifact_size_log.tsv`, `make test-size`). See its own
+  CLAUDE.md for the log format and the measured per-compile overhead.
 
 ## Conventions
 
