@@ -350,11 +350,17 @@ KEEP="${KEEP:-0}"
 # is NOT expected byte-identical for a pattern the form reaches — but this
 # gate's population is the CALL-FREE bucket compared on the PROGRAM REGION,
 # and the skip lives in the prefilter block ABOVE that region, so (A) is
-# unmoved in fact as well as in principle. The pin is the merge that carries
-# both this lane's src and main's [SEL-1], which is this change's last
-# src-touching commit.
+# unmoved in fact as well as in principle.
+#
+# THE PIN MOVED ONCE INSIDE THIS CHANGE, which is worth recording because D76
+# says "this change's LAST src-touching commit" and a multi-commit change has
+# more than one candidate. It was first set to the merge that carries both this
+# lane's src and main's [SEL-1] (`667c615`); MISCOMPILE-1's fix then moved
+# emitted bytes again (`20383b6`, the offset-0 verify's own table), and within
+# one `abi` number the emitted output must be byte-exact whole-file — so the
+# pin follows the last src commit rather than the first.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-667c615}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-20383b6}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
