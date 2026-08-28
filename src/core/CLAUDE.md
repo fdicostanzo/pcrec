@@ -59,6 +59,30 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   a compile that never happened. `--emit-ir` therefore runs a REAL compile and
   throws the C away — the cost of the guarantee, on a debug tool.
 
+  **[SEL-1] (2026-08-28) `compile_driver` IS A BOUNDED ONE-SHOT RETRY LOOP
+  NOW** (`COMPILE_MAX_ATTEMPTS = 2`, `SELECT_MAX_ROUNDS`'s own
+  from-day-one-bound reasoning), not a single pass — plan row [SEL-1], K40's
+  fix. The ONE `setjmp` in this file is the only recovery point the compiler
+  has, so feeding a DFA build's own "over budget" result back into engine
+  selection (`auto`'s do-or-die exception: the overflow is a selection
+  outcome, not a refusal — `src/opt/select_engine.c`'s `forces_dfa_
+  overflow` entry has the full mechanism) means rerunning the WHOLE pipeline
+  once more with one more input bit set (`Ctx.dfa_disabled`) rather than
+  wrapping the DFA build in a second, LOCAL recovery point — the shape the
+  brief that chartered this row explicitly ruled out ("no try/catch-shaped
+  clause at the ctx_fail site"). The retry is decided in the `setjmp`-catch
+  branch (`cx.dfa_overflowed && defo.engine == PCREC_ENGINE_AUTO &&
+  !(defo.flags & PCREC_FORCE_PREFILTER) && !dfa_disabled`), so `--engine=dfa`
+  and `-fprefilter` never retry and keep today's refusal, unchanged.
+  `dfa_disabled`/`dfa_overflowed`/`dfa_overflow_why` are plain `Ctx` fields
+  (`internal.h`), not arena text, because the retry decision runs AFTER
+  `job_cleanup`'s `arena_free` on the failed attempt — `overflow_why`
+  (a local, outside the loop) is what carries the failed attempt's own
+  diagnosis forward into the next `Ctx`'s seed. `attempt` and `dfa_disabled`
+  are `volatile`: `-Wclobbered` (which `make strict` promotes) flags both
+  without it, since the loop calls `setjmp` fresh each iteration — more than
+  gcc's conservative liveness analysis can see through.
+
 - **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
   R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
   none: exactly the 52 ASCII letters, each with one partner, and no byte
@@ -119,6 +143,11 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   (tests/probes/probe_named_groups.c, swept 1..2000 bytes, exact wall at
   129, PCRE2 error 148), not carried over from PCRE1's older 32-byte
   convention
+  **[SEL-1] adds `PCREC_DFA_OVERFLOW_WHY_LEN`** (96), sizing `Ctx.dfa_
+  overflow_why` (internal.h) — a fixed array rather than an arena string,
+  because it has to survive `job_cleanup`'s `arena_free` on the failed
+  attempt compile.c's retry reads it after. K38-precedent margin over the
+  76-byte worst-case text src/ir/dfa.c's two overflow sites emit.
 - **internal.h** — shared data structures: Arena, StrBuf, Ctx, Nfa, Dfa,
   **[M4.5b]'s `A_CAP` AST node and `EngineFit`**, the
   syntax construct registry types (RegRow and its FEAT_/FLAV_/ENGM_/RS_/RD_

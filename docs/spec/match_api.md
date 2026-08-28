@@ -1799,6 +1799,21 @@ about the FACT rather than about the engine: it names the construct that
 FORCED the VM, and a DFA artifact was not forced — its `rx_info.engine_why`
 is `NULL` for the same reason, so the macro's absence mirrors the struct.
 
+**[SEL-1] (2026-08-28) `RX_ENGINE_WHY` CAN ALSO NAME A BUILD OUTCOME, NOT
+ONLY A CONSTRUCT.** Under `--engine=auto`, a DFA build that overflows a cap
+(state count, table entries, the K7 element budget — `docs/spec/tuning.md`
+§2.11) is a selection outcome rather than a refusal, and the artifact that
+falls back to the VM stamps that outcome the same way every other forcing
+reason is stamped: `RX_ENGINE_WHY "dfa overflowed: >32000 states at pattern
+offset 0"`. The offset is not tied to any one AST node (this reason is a
+property of the whole compile, not of a construct at a position) and reads
+0 by convention, the same position the underlying `ctx_fail` reports at. If
+the pattern's engine choice is ALSO forced by a real construct (a capture
+request, a `VM_ONLY` registry row), that reason wins the stamp on the
+ordinary first-wins rule above — the overflow's own effect on the PREFILTER
+(dropped, `RX_VM_PREFILTER "none"`) still applies independently in that
+case, through a fact `RX_ENGINE_WHY` does not carry.
+
 **A consumer MAY now `#if` on `RX_ENGINE`.** This paragraph used to close
 with the opposite warning — "a consumer that `#if`s on `RX_ENGINE` is
 writing code that does not compile against half the artifacts pcrec

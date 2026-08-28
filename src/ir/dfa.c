@@ -101,6 +101,7 @@
  * ncls-wide instead of 256-wide. All scratch memory is arena-owned so
  * ctx_fail/longjmp cannot leak (R1 R-3a). */
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -882,9 +883,21 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
         i = (i + 1) & (d->tabcap - 1);
     }
 
-    if (d->n >= d->maxstates)
+    if (d->n >= d->maxstates) {
+        /* [SEL-1] Recorded BEFORE the fail, unconditionally — the retry
+         * decision (src/core/compile.c) reads it only under `--engine=auto`
+         * with neither force flag, but computing it always costs nothing
+         * (one snprintf on an already-refusing path) and keeps this site
+         * free of any awareness of WHO is asking, which is what "no
+         * try/catch-shaped clause at the ctx_fail site" means in practice:
+         * the diagnostic below is unchanged, and this is a plain field
+         * write, not a branch on the caller's mode. */
+        cx->dfa_overflowed = true;
+        snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
+                 "dfa overflowed: >%d states", d->maxstates);
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (>%d states; "
                  "try --engine=vm)", d->maxstates);
+    }
     /* Which views need storage of their own, and which alias an earlier one.
      * Computed BEFORE anything is spent so the K7 charge below counts exactly
      * the lists this state will really own. */
@@ -907,11 +920,18 @@ static int intern(Ctx *cx, Dfa *d, const DView *up, int eolvar, int endvar)
      * are one list. */
     for (int u = 0; u < UPC_N; u++)
         if (owner[u] == u) cx->subset_elems += up[u].nlist;
-    if (cx->subset_elems > PCREC_MAX_SUBSET_ELEMS)
+    if (cx->subset_elems > PCREC_MAX_SUBSET_ELEMS) {
+        /* [SEL-1] Same shape as the state-count site above: recorded
+         * unconditionally, read only by an auto-mode retry. */
+        cx->dfa_overflowed = true;
+        snprintf(cx->dfa_overflow_why, sizeof cx->dfa_overflow_why,
+                 "dfa overflowed: subset construction exceeds %lld "
+                 "state-set elements (K7)", (long long)PCREC_MAX_SUBSET_ELEMS);
         ctx_fail(cx, 0, "pattern too complex for the DFA engine (subset "
                  "construction exceeds %lld state-set elements; "
                  "try --engine=vm)",
                  (long long)PCREC_MAX_SUBSET_ELEMS);
+    }
     if (d->n == d->cap) {
         int ncap = d->cap ? d->cap * 2 : 64;
         /* [M4.7b/K7] realloc into a TEMPORARY: on failure d->st still points at
