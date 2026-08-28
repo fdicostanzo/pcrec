@@ -2,7 +2,7 @@
 # tests/axes/run_axes.sh — [CHK-2] piece 2: THE ANSWER-IDENTITY SWEEP.
 #
 # docs/spec/tuning.md §2 documents THIRTEEN axes, and for eleven of the
-# twelve BIT-FLAG members of the deny/force family (bits 4-15 of
+# BIT-FLAG members of the deny/force family (bits 4-31 of
 # pcrec_options.flags) the promise is ANSWER-IDENTITY: the .rxt corpus's
 # match/nomatch/span/capture/give-up answer under the axis must equal the
 # default build's answer, case for case. Before this script only 4 of the
@@ -163,14 +163,23 @@ t_start=$(date +%s)
 # THE REGISTRY — derived from lib/pcrec.h and cli/main.c, never hand-copied.
 # ============================================================================
 
-# bit -> macro name, e.g. bits[4]=PCREC_NO_POSSESSIFY. Scoped to 4..15 (the
-# deny/force family's own range — tuning.md §2's own bound) so a future
-# unrelated `1u << N` in the header (there are several below bit 4, for
-# PCREC_CASELESS etc.) is never swept in by accident.
+# bit -> macro name, e.g. bits[4]=PCREC_NO_POSSESSIFY. Scoped to 4..31.
+#
+# THE LOW BOUND IS THE LOAD-BEARING ONE and the high one is not: bits below 4
+# are unrelated `1u << N` constants in the same header (PCREC_CASELESS and
+# friends) and must never be swept in, while the top of the deny/force family
+# simply moves every time an axis is added. It was written as `4..15` — the
+# family's extent on the day it was written — and [OPT-K]'s bit 16 was
+# therefore DERIVED AWAY SILENTLY: the new axis would have been absent from
+# the sweep with no failure, which is exactly the "an axis shipped without its
+# five things" gap [CHK-2] exists to close, arriving through [CHK-2]'s own
+# instrument. 31 is the width of the `unsigned` the flags live in, so it needs
+# no maintenance; the cross-check below catches a bit that has a constant and
+# no doc heading either way.
 declare -A bit_macro=()
 while IFS=$'\t' read -r macro bit; do
     [ -n "$macro" ] || continue
-    if [ "$bit" -ge 4 ] && [ "$bit" -le 15 ]; then
+    if [ "$bit" -ge 4 ] && [ "$bit" -le 31 ]; then
         bit_macro[$bit]="$macro"
     fi
 done < <(grep -oE 'PCREC_(NO|FORCE)_[A-Z_]+ *= *1u << [0-9]+' "$ROOT_DIR/lib/pcrec.h" \
@@ -224,13 +233,19 @@ done
 
 # ---- cross-check against tuning.md §2's own "(bit N)" headings -----------
 TUNING="$ROOT_DIR/docs/spec/tuning.md"
-doc_bits="$(sed -n '/^## 2\. The thirteen axes/,/^## 3\./p' "$TUNING" \
+# THE SECTION ANCHOR DOES NOT SPELL THE COUNT IN ENGLISH. It read
+# `/^## 2\. The thirteen axes/` and [OPT-K] renamed that heading to "fourteen"
+# — after which the range matched NOTHING, `doc_bits` came back EMPTY, and the
+# comparison below failed with a blank documented column. A heading that
+# carries a number is a heading that moves; anchoring on the section NUMBER
+# is what the cross-check actually means.
+doc_bits="$(sed -n '/^## 2\./,/^## 3\./p' "$TUNING" \
     | grep -oE '\(bit [0-9]+\)' | grep -oE '[0-9]+' | LC_ALL=C sort -n -u)"
 reg_bits="$(printf '%s\n' "${!bit_macro[@]}" | LC_ALL=C sort -n -u)"
 if [ "$doc_bits" != "$reg_bits" ]; then
     echo "run_axes.sh: FATAL: tuning.md §2's documented bits and lib/pcrec.h's derived bits DISAGREE" >&2
     echo "  documented (tuning.md \"(bit N)\" mentions): $(echo "$doc_bits" | tr '\n' ' ')" >&2
-    echo "  derived    (lib/pcrec.h 1u << N, bits 4-15): $(echo "$reg_bits" | tr '\n' ' ')" >&2
+    echo "  derived    (lib/pcrec.h 1u << N, bits 4-31): $(echo "$reg_bits" | tr '\n' ' ')" >&2
     echo "  a bit in one column and not the other means a new axis shipped with no" >&2
     echo "  doc heading, or a heading survived its axis's removal" >&2
     exit 1
