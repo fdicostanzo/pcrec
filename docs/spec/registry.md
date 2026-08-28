@@ -181,7 +181,59 @@ member.
 make one invocation's `built` answer a different question than
 another's, `cli/main.c:517-523`'s own comment).
 
-## 6. What the tests pin, and what they don't
+## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
+
+`build/pcrec --list-axes | grep -vc '^#'` — 40 rows today, 12 columns,
+confirmed live this pass. Where the first three surfaces describe
+SYNTAX pcrec accepts, this one describes the compiler's own TUNING
+machinery: for every axis where `src/gen/emit_dfa.c` or
+`src/opt`/`select_engine.c` chooses among two or more emitted
+strategies for a pattern, one row per (axis, candidate), in the
+emitter's own PREFERENCE order (order 1 is tried first; the last
+candidate of an axis always applies).
+
+    #axis  order  candidate  kind  stamp_macro  stamp_value  deny_macro
+    deny_bit  force_macro  force_bit  cli_flag  applies
+
+| column | value set | stable? |
+|---|---|---|
+| `axis` | 17 values today: `table`, `prefilter`, `view`, `seed`, `accept`, `direction` (the six DFA layer-1 axes, `docs/design/emitter_form.md` §3) plus `possessify`, `revdet`, `counter`, `length-prune`, `vm-prefilter`, `altcls-merge`, `altcls-factor`, `atomic-discharge`, `splice-calls`, `tiered-entry`, `engine` (the eleven VM/engine-selection axes, `docs/spec/tuning.md` §2) | yes, but append-only — a new axis is a new value, never a renumbering |
+| `order` | a positive integer, 1-based, dense per axis (an axis with N candidates uses 1..N) | yes |
+| `candidate` | free text, but always one axis's own stamp vocabulary where a stamp exists (§3's `built`-style closed sets, one per axis) | yes as a vocabulary shape, values are per-axis |
+| `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |
+| `stamp_macro` | the `#define` this candidate is reported through (e.g. `RX_DFA_TABLE`, `RX_VM_STRATS`), or empty when no such macro exists — axes `view`/`seed`/`accept`/`direction` have none (emitter-internal decisions with no observable trace), and a few `predicate` axes stamp an ACTIVITY COUNT rather than a named value (`RX_ALTCLS_MERGES`, `RX_VM_CALL_SPLICED`/`_LINKED`, `RX_FAST_FRAMES`) | yes as a vocabulary shape |
+| `stamp_value` | the value `stamp_macro` takes when this candidate is chosen — empty when `stamp_macro` is empty OR is a count rather than a name (D82: "the chosen object's name IS the stamp value" holds exactly where this column is non-empty) | free text, but always another column's own value when non-empty |
+| `deny_macro` / `deny_bit` | the `PCREC_NO_*` bit (`lib/pcrec.h`) that removes this candidate from the emitter's selection walk, empty when none exists. **Axis `prefilter`'s own missing deny flag is a documented FINDING** (`docs/design/emitter_form.md` §3: the DFA scan's own candidate-start filter has no `-fno-*` knob and no axis sweep), not an omission in this dump | yes |
+| `force_macro` / `force_bit` | the `PCREC_FORCE_*` bit that forces this candidate over auto-selection — populated on exactly one axis today (`vm-prefilter`, `PCREC_FORCE_PREFILTER`, `tuning.md` §2.5's one force pair), empty everywhere else | yes |
+| `cli_flag` | the `-f`/`-fno-`/`--engine=` spelling that reaches `deny_macro`/`force_macro`, empty for a candidate reached only as a fallback (no flag REQUESTS a fallback; it is what remains when nothing else applies) | free text (an existing CLI spelling, `cli.md` §1) |
+| `applies` | a one-line English summary of the candidate's selection condition | free text, hand-authored (see below) |
+
+**BOUNDARY, stated once here because it governs every column above**:
+this dump shares its source with the emitter it describes — for the six
+`kind=list`/`both` axes, `candidate`/`deny_macro`/`deny_bit` are read
+live off the SAME arrays `src/gen/emit_dfa.c`'s own `dfa_select` walks
+(`src/parse/axes_dump.c`'s accessor calls), so a new candidate landing
+in one of those arrays appears here with no edit to the dump. The
+`applies` column, for every row, is HAND-AUTHORED prose (`emitter_form.md`
+§3's own "applies when" column, transcribed by a human, for the
+`kind=list`/`both` rows; `tuning.md` §2's prose for the `kind=predicate`
+rows) — evaluating a real candidate's predicate needs a live pattern a
+context-free listing command does not have, so the text is a
+description, never a live evaluation. **This dump therefore proves what
+the compiler THINKS its own axes are; it is not independent evidence
+that a stamp or a flag behaves as described** — `tests/codegen/
+run_dfa_stamps.sh` (reads emitted artifacts) and `docs/spec/tuning.md`
+§2's own differentials (compile twice, compare answers) are the
+independent side of THAT claim. `tests/registry/`'s axis registry check
+(§7) is the independent side of THIS dump specifically: it reads this
+TSV against `docs/spec/tuning.md` and `cli/main.c`, two files this dump
+never opens.
+
+`--list-axes` takes no `--flavour` (§5's own reason: it answers what
+THIS BUILD thinks its machinery is, never a claim about PCRE2 syntax)
+and no pattern/`-o` — a syntax query, `cli.md` §1.
+
+## 7. What the tests pin, and what they don't
 
 - **`registry_check.c`** (`tests/registry/`) is **pcrec checking
   pcrec** — table-vs-parser self-consistency in both directions, an
@@ -217,8 +269,17 @@ another's, `cli/main.c:517-523`'s own comment).
   so the generator and its own column list cannot silently disagree —
   the [SR-11] GENERATOR AGREEMENT check `docs/spec/table_contract.md`
   names, applied to this specific consumer.
+- **`axes_registry_check.sh`** (`tests/registry/`, [CHK-2] piece 1) is
+  §6's own independent-side check: it reads `--list-axes`'s TSV against
+  `docs/spec/tuning.md` §2 (every documented `(bit N)` heading has a
+  dumped row at that bit, and vice versa) and `cli/main.c` (every
+  dumped `cli_flag` is a spelling the parser actually accepts and pairs
+  with the dumped `deny_macro`/`force_macro`), in BOTH directions, every
+  discrepancy named by name rather than by count alone
+  (`docs/dev/learnings.md` §3). See `docs/testing.md` "the axis
+  registry check" for its runtime and sabotage validation.
 
-## 7. Landing note
+## 8. Landing note
 
 Every column's name and value set above was read from a live
 `build/pcrec` at `962e2de` (`gnutimeout 600 make -j4`, clean); no
@@ -226,3 +287,7 @@ registry data, source, or `tests/lib/table.sh` resolver was touched to
 produce this document. `PROCS=4 make test-registry` ran once this pass:
 green (registry_check 207/0, PC-3 191/0, pc4 clean). `make strict`:
 clean.
+
+§6 (`--list-axes`) and §7's `axes_registry_check.sh` bullet were added
+by [CHK-2] piece 1 (lane `chk2p1`), read from a live `build/pcrec` at
+this lane's own branch point; not re-verified against the commit above.

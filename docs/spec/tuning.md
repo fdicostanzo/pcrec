@@ -11,6 +11,13 @@ Every claim below was checked against `lib/pcrec.h`'s per-bit comments,
 at the commit this document was written; the command that produced each
 re-measurement is recorded so a reader can redo it.
 
+**`pcrec --list-axes` ([CHK-2], `docs/spec/registry.md` §6) is the
+machine-readable view of this same table** — every bit-flag axis below
+plus the six DFA layer-1 axes (table representation, prefilter, view,
+seed, accept, direction) that have no CLI flag at all, one TSV row per
+(axis, candidate). It answers what THIS BUILD thinks its axes are; this
+document remains the promise about what denying/forcing one DOES.
+
 ## 1. What a tuning flag is
 
 A tuning flag is a **generation-time choice** (D18: options are compiled
