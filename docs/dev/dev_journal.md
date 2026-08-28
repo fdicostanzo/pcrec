@@ -16928,3 +16928,48 @@ session's scratchpad). optk: design note d13f5be (695 lines) committed
 after a nudge (it had started prefix_k.c first); D6 panel of three
 critics (semantics/opus, cost/sonnet, architecture/sonnet) running
 read-only on it. chk2p1 ([CHK-2] piece 1, `--list-axes`) coding.
+
+#### Forty-third session, part 3 — chk2p1 merged; the [OPT-K] panel: MISCOMPILE-1; the battery's tripwire and its RED (2026-08-28 ~14:3x EDT)
+
+chk2p1 MERGED 17064f1 ([CHK-2] piece 1: `--list-axes`, 40 rows / 17
+axes, six DFA axes live off emit_dfa.c's candidate arrays, eleven
+VM-side axes as predicate rows; the 53-check axis registry check incl.
+the stamp-VALUE direction against match_api.md §6.3, three sabotage
+transcripts; two silent-wrong-read bugs found in its own tooling —
+`IFS=$'\t' read` collapsing empty fields, a `^\|` row test reading the
+wrong macro's indented table). All three [CHK-2] pieces built.
+THE PANEL ON THE [OPT-K] DESIGN NOTE (r39): arch — fits, a genuine
+[ENG-FORM] selection, one false control claim (byte-identical denied
+build; D81 says stamps are unconditional); cost — no wrong selection on
+any population, but three inconsistent gain figures, an unswept prior
+3-12× off on the load-bearing bytes, an uncited ×2 in C_ENTER, no
+number to measure against; SEMANTICS (opus) — MISCOMPILE-1,
+DEMONSTRATED on both engines: the offset-0 member of the k-set reused
+`can_begin_match` (the SCAN-role set: bytes that leave the start
+state) as a VERIFY that refuses a start; on seeded (`\b`) machines
+the reseeded state is not the start state, so `\b\.[0-9]{4}Z` on
+"ab.1234Z" lost its match at a predicted 288× gain; no gate could see
+it (test-axes compares two builds sharing the set; the corpus lacks
+the shape). Fix: split offset 0 by role, verify from the walk's own
+frontier[0] (already computed, then overwritten) — also ~3× more
+selective. Blocking change request to optk; lesson in the
+check-design memory. optk's own first numbers (1 MB, interleaved):
+uuid 4.5-5.1×, iso-ts 4.8-6.9×, stack-frame 7.2-11.6× vs the model's
+23-192× — a model miss to record, not a pass; bignum 1.0× vs 13×
+(verify-only forms do not pay; the rule now requires the scan to move).
+THE BATTERY: stopped at the anchor tripwire on db05020 (S102/S165
+anchored on the prefilter-derivation line [SEL-1] rewrote) — sel1
+re-anchored, re-keyed run_trie_identity.sh's controls on
+`--no-captures --engine=dfa` (they had gone vacuous: the control
+classified on the refusal text auto no longer emits), S102/S165
+DETECTED; merged d087733; relaunched 14:00; STOPPED RED at 14:20: 7
+checks, ALL the same class — tests asserting the DFA-cap refusal under
+auto (resource ×3, [M4.5b] --no-captures, [budget] ×2) + K37 on
+chk2p1's unbounded `--list-axes` call; and the fuzz gate's seed-1
+pattern now COMPILES under auto (its capture group selects the VM, its
+auto-prefilter DFA used to overflow and refuse; now the prefilter
+drops) into a 2 MB VM artifact gcc needs 52.9 s / 540 MB for — over
+D45's budget. [SEL-1] exposed an existing VM limitation the refusal
+hid. sel1 re-opened on lane/sel1b with the seven + a K-row + a COUNTED
+fuzz-gate outcome pinned to it (no budget raise, no silent allowlist).
+Worktrees: optk, sel1 (sel1b). Cron 76d80eff → re-created.
