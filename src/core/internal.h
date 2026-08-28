@@ -3014,6 +3014,28 @@ char *pcrec_syntax_verbs(void);
  * depend on that (the reject table probes every row's own `syntax`), so the
  * grouping gets its own view rather than collapsing theirs. Caller frees. */
 char *pcrec_syntax_families(void);
+
+/* [CHK-2] `--list-axes` — THE OPTIMIZATION-AXIS REGISTRY'S FOURTH SURFACE
+ * (docs/spec/registry.md). One row per (axis, candidate); `name` is the
+ * candidate's stamp value where it has one, `deny` the `cx->opt->flags` bit
+ * (or 0) that removes it from the emitter's own selection walk. Populated by
+ * walking the SAME `DfaCand`-headed arrays `src/gen/emit_dfa.c`'s
+ * `dfa_select` walks — never a hand-copied restatement of their names and
+ * bits (docs/dev/learnings.md §3) — so a candidate added to one of those six
+ * lists appears in the dump with no edit to the walker. `cap` bounds `out`;
+ * returns the number written (never more than `cap`). */
+typedef struct { const char *name; unsigned deny; } PcrecAxisCand;
+size_t pcrec_dfa_axis_table_cands(PcrecAxisCand *out, size_t cap);      /* axis A */
+size_t pcrec_dfa_axis_prefilter_cands(PcrecAxisCand *out, size_t cap);  /* axis B */
+size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap);       /* axis C */
+size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap);       /* axis D */
+size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis E */
+size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
+/* `src/parse/axes_dump.c` — renders the six DFA layer-1 axes above plus the
+ * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
+ * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
+char *pcrec_axes_tsv(void);
+
 /* NULL when no construct matches the query. */
 /* `--explain QUERY` (SR-3, rewritten at MOD-0.7). NULL when the query reaches
  * no doorway AND no row looks like it — the CLI turns that into exit 1 with

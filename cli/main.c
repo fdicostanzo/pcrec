@@ -75,6 +75,10 @@ static void usage(FILE *f)
           "  --list-verbs      TSV of the (*VERB) names pcrec recognises\n"
           "  --list-families   TSV of the construct FAMILIES (D71): one line\n"
           "                    per family, `built` ANDed over its spellings\n"
+          "  --list-axes       TSV of the optimization-axis registry ([CHK-2]):\n"
+          "                    one line per (axis, candidate), preference order,\n"
+          "                    with its stamp, deny/force flag and one-line\n"
+          "                    description. No --flavour axis\n"
           "  --explain SYNTAX  what pcrec knows about one construct, e.g. '\\\\v'\n"
           "  --flavour NAME    restrict either query to a flavour (only 'pcre2'\n"
           "                    exists today; a second one arrives with SR-7)\n"
@@ -148,6 +152,7 @@ int main(int argc, char **argv)
     const char *explain = NULL, *flavour = NULL;
     int list_verbs = 0;
     int list_families = 0;
+    int list_axes = 0;
     int count_groups = 0;
     int emit_ir = 0;
     const char *probe_want = NULL;
@@ -323,6 +328,7 @@ int main(int argc, char **argv)
         else if (!no_more_opts && !strcmp(a, "--list-syntax")) list_syntax = 1;
         else if (!no_more_opts && !strcmp(a, "--list-verbs"))  list_verbs = 1;
         else if (!no_more_opts && !strcmp(a, "--list-families")) list_families = 1;
+        else if (!no_more_opts && !strcmp(a, "--list-axes"))   list_axes = 1;
         else if (!no_more_opts && !strcmp(a, "--count-groups")) count_groups = 1;
         else if (!no_more_opts && !strcmp(a, "--probe-ask")) {
             if (i + 1 >= argc) {
@@ -408,7 +414,7 @@ int main(int argc, char **argv)
      * not run at all exits nonzero, so the check can tell "measured a
      * refusal" from "measured nothing". */
     if (probe_want) {
-        if (list_syntax || list_verbs || list_families || explain || count_groups) {
+        if (list_syntax || list_verbs || list_families || list_axes || explain || count_groups) {
             fprintf(stderr, "pcrec: --probe-ask is a separate query; use one\n");
             return 1;
         }
@@ -454,7 +460,7 @@ int main(int argc, char **argv)
      * prints, taking no -o and writing no C. A pattern pcrec refuses is
      * refused here with pcrec_compile's exact diagnostic. */
     if (emit_ir) {
-        if (list_syntax || list_verbs || list_families || explain || count_groups) {
+        if (list_syntax || list_verbs || list_families || list_axes || explain || count_groups) {
             fprintf(stderr, "pcrec: --emit-ir is a separate query; use one\n");
             return 1;
         }
@@ -482,7 +488,7 @@ int main(int argc, char **argv)
     }
 
     if (count_groups) {
-        if (list_syntax || list_verbs || list_families || explain) {
+        if (list_syntax || list_verbs || list_families || list_axes || explain) {
             fprintf(stderr, "pcrec: --count-groups is a separate query; use one\n");
             return 1;
         }
@@ -513,17 +519,18 @@ int main(int argc, char **argv)
      * neither a pattern nor -o. They are checked before the pattern/-o
      * requirement and reject a mixed invocation rather than silently ignoring
      * half of it. */
-    if (list_syntax || explain || list_verbs || list_families) {
-        if (list_syntax + list_verbs + list_families + (explain != NULL) > 1) {
-            fprintf(stderr, "pcrec: --list-syntax, --list-verbs, --list-families "
-                            "and --explain are separate queries; use one\n");
+    if (list_syntax || explain || list_verbs || list_families || list_axes) {
+        if (list_syntax + list_verbs + list_families + list_axes + (explain != NULL) > 1) {
+            fprintf(stderr, "pcrec: --list-syntax, --list-verbs, --list-families, "
+                            "--list-axes and --explain are separate queries; use one\n");
             return 1;
         }
         if (pattern || outpath) {
             fprintf(stderr, "pcrec: %s takes no pattern and no -o\n",
                     list_syntax   ? "--list-syntax" :
                     list_verbs    ? "--list-verbs"  :
-                    list_families ? "--list-families" : "--explain");
+                    list_families ? "--list-families" :
+                    list_axes     ? "--list-axes" : "--explain");
             return 1;
         }
         /* --list-verbs has no flavour axis: the verb tables record what libpcre2
@@ -536,8 +543,13 @@ int main(int argc, char **argv)
          * membership silently depends on the filter -- and `built`, which this
          * view ANDs over the members, would then mean something different per
          * invocation. When SR-7 lands, the honest shape is a flavour filter
-         * applied to the members with the family line stating it. */
-        if ((list_verbs || list_families) && flavour) {
+         * applied to the members with the family line stating it.
+         *
+         * [CHK-2] --list-axes has none either, and for --list-verbs'/
+         * --list-families' reason rather than a new one: it reports what THIS
+         * BUILD of pcrec (one flavour's worth of machinery, always) thinks its
+         * own axes are, never a claim about a flavour's syntax. */
+        if ((list_verbs || list_families || list_axes) && flavour) {
             fprintf(stderr, "pcrec: --flavour applies to --list-syntax and "
                             "--explain only\n");
             return 1;
@@ -550,6 +562,12 @@ int main(int argc, char **argv)
         }
         if (list_families) {
             char *v = pcrec_syntax_families();
+            fputs(v, stdout);
+            free(v);
+            return 0;
+        }
+        if (list_axes) {
+            char *v = pcrec_axes_tsv();
             fputs(v, stdout);
             free(v);
             return 0;
