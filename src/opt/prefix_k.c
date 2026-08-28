@@ -213,21 +213,30 @@ static void wclose(Walk *w, const int *seeds, int nseeds)
  * note's §4.2 and every one of them is a MEASURED number off this box, not a
  * guess; re-measuring them is `scripts/`-free work the note describes.
  *
- *   C_MEMCHR   glibc memchr over a miss-heavy range
- *   C_BITMAP   the 256-entry `can_begin_match` walk, one byte at a time
+ *   C_MEMCHR   glibc memchr (AVX2) over a miss-heavy range — MEASURED at
+ *              0.055 cycles/byte, docs/dev/opt3_dfa_scan_measurement.md §4's
+ *              CONTROL 1
+ *   C_BITMAP   the 256-entry `can_begin_match` walk, one byte at a time —
+ *              MEASURED at 1.16 cycles/byte, the same table's first row
  *   C_VERIFY   one extra offset's load + table probe, per CANDIDATE
  *   C_ENTER    the expected cost of entering the transition loop on a
- *              candidate that will not match: [OPT-3]'s ~9.5 cycles/byte
- *              times the ~2 bytes a false start survives
+ *              candidate that will not match: [OPT-3]'s measured 10.7
+ *              cycles/byte times the ~2 bytes a false start survives
  *
- * `C_ENTER` is the one with real spread, and the model is deliberately
- * insensitive to it: it appears only in a ratio against `C_VERIFY`, and every
- * value from 8 to 40 cycles selects the same k-sets on the whole corpus
- * (`docs/design/offset_k_skip.md` §4.3 carries that sweep). */
-#define C_MEMCHR   15u
-#define C_BITMAP  160u
+ * `C_ENTER` IS THE ONE WITH REAL SPREAD, AND THE DRAFT'S CLAIM THAT THE MODEL
+ * IS INSENSITIVE TO IT WAS MEASURED FALSE. Swept over 8/12/20/30/40/60 cycles
+ * across 1,352 corpus patterns (`docs/design/offset_k_skip.md` §4.3): the
+ * three patterns this row exists for select the IDENTICAL k-set at every one
+ * of them, and so do both email patterns, but 11 of 1,352 corpus patterns
+ * change between 12 and 20 cycles and 120 between 8 and 20. The selection is
+ * stable where the gap is 10x-30x and unstable where it is 1.2x-1.6x, which
+ * is the right way round — but it means this constant is MEASURED (10.7
+ * cycles/byte times the ~2 bytes a false start survives) rather than chosen,
+ * and that §7's timing rather than this model is the acceptance. */
+#define C_MEMCHR    6u
+#define C_BITMAP  116u
 #define C_VERIFY  250u
-#define C_ENTER  2000u
+#define C_ENTER 2000u
 
 /* THE FIFTH CONSTANT, AND THE MODEL IS WRONG WITHOUT IT. A verify is a
  * CONDITIONAL BRANCH on the candidate path, so its cost is not `C_VERIFY` but
