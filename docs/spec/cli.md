@@ -235,7 +235,7 @@ force-vs-deny distinction, and the byte-identity/engine-selecting split:
 
 ## 2. Listing surfaces
 
-Three TSV dumps, each a query taking no pattern and no `-o` (mixing either
+Four TSV dumps, each a query taking no pattern and no `-o` (mixing either
 in is refused, `cli/main.c:496-528`). The column CONTRACT itself — `#`
 comments, a header row naming every column, append-only columns, resolve
 by header name never position — is `docs/spec/table_contract.md`,
@@ -277,6 +277,17 @@ rows; measured floor 60 against the row view's own floor, case10). Takes
 no `--flavour`: a family is a grouping OF rows, so filtering members would
 make the family line's own `built` mean something different per
 invocation (`cli/main.c:517-523`'s own comment states the reasoning).
+
+### `--list-axes`
+
+The optimization-axis registry ([CHK-2], `docs/spec/registry.md` §6 — the
+fourth surface): one row per (axis, candidate), in the emitter's own
+preference order, with the candidate's stamp macro/value, its
+`-fno-*`/`-f*` deny/force bit and CLI spelling, and a one-line
+description. Reports what THIS BUILD thinks its own tuning machinery is
+— `registry.md` §6 states the boundary in full and points at the
+independent-side check. Takes no `--flavour` (the same reason
+`--list-families` doesn't: it is not a claim about PCRE2 syntax).
 
 ### `--explain SYNTAX` / `--flavour NAME`
 

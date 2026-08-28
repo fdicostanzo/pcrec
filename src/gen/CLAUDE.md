@@ -131,6 +131,23 @@ itself built fine. Nothing makes that agreement structural; the declaration
 site now carries a comment saying so. **Before touching emitted names, grep
 for BOTH the composed and the direct spelling.**
 
+**[CHK-2] piece 1 (2026-08-28) `emit_dfa.c` GAINS SIX READ-ONLY ACCESSORS
+onto the six layer-1 lists above**, right after `dfa_dir_reverse`'s own
+definition (`pcrec_dfa_axis_table_cands` / `_prefilter_cands` / `_view_cands`
+/ `_seed_cands` / `_accept_cands` / `_direction_cands`, declared in
+`core/internal.h`), so `pcrec --list-axes` (`src/parse/axes_dump.c`) can
+walk the SAME arrays `dfa_select` walks for candidate name + deny bit,
+rather than a hand-copied restatement (docs/dev/learnings.md §3). They read
+`.name`/`.deny` off each list's common `DfaCand` header and never call
+`applies` — a context-free listing command has no real `DfaSel` to evaluate
+it against, and axes_dump.c's own header comment states why a fabricated
+one would be worse than none. Purely additive: no existing line in this
+region moved, and `make test-codegen` is unaffected (3/3, byte-identity
+gates untouched) because nothing here changes emitted text. A candidate
+added to `dfa_reprs`/`dfa_pfs`/`dfa_views`/`dfa_seeds`/`dfa_accs`, or the
+`dfa_dir_forward`/`dfa_dir_reverse` pair, needs NO edit to this block to
+appear in the dump.
+
 THE TWO GATES. `tests/codegen/run_object_neutrality.sh` (two builds, compares
 .text/.rodata bytes and exported symbols) proves sameness; the existing
 two-artifact differentials (tests/altcls, tests/possessify) compile emitted C

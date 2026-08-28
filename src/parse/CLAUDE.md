@@ -891,6 +891,25 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   `cx.mods = (ModState){...}` assignments are gone, and every Ctx that can
   reach a parser or a doorway port (including syntax_dump.c's two query
   surfaces, which can reach module `modifiers`' producing port) calls it.
+- **axes_dump.c** — [CHK-2] piece 1: `pcrec --list-axes`, the optimization-
+  axis registry's FOURTH TSV surface (`docs/spec/registry.md` §6; NOT the
+  syntax registry syntax_dump.c below renders — a different table
+  entirely). One row per (axis, candidate): the six DFA layer-1 axes
+  (table representation, prefilter, view, seed, accept, direction) are
+  walked live off `src/gen/emit_dfa.c`'s own `DfaCand`-headed candidate
+  arrays through six read-only accessors that file exports
+  (`pcrec_dfa_axis_*_cands`, declared in `core/internal.h`) — never a
+  hand-copied restatement of their names/deny bits, so a candidate landed
+  in one of those arrays appears in the dump with no edit here. The
+  eleven VM/engine-selection axes have no candidate-list-as-data anywhere
+  in the tree yet ([ENG-FORM] relayered `emit_dfa.c` only), so those rows
+  are hand-stated from `lib/pcrec.h`'s own enum symbols (via a
+  stringifying `V()` macro, so a bit's numeric position can move with no
+  edit here) and `docs/spec/tuning.md` §2's prose. This file's own header
+  comment states in full what the dump proves (what the compiler THINKS
+  its axes are) and what it does not (independent evidence that a stamp
+  or flag behaves as described — `tests/registry/axes_registry_check.sh`
+  and the emitted-artifact checks are that independent side)
 - **syntax_dump.c** — rendering the registry as text (SR-3) AND, since
   MOD-0.7, querying the live parse front: `--list-syntax`
   (TSV — 12 columns at SR-4, 15 since MOD-0.1 appended `roadmap`,

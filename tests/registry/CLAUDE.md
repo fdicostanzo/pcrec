@@ -14,8 +14,9 @@ directory asserts that the description and the shipped parser actually agree.
   runtime `dlopen` through `../fuzz/pcre2_abi.h`. SKIPS LOUDLY and exits 0 when
   libpcre2-8-0 is absent, so a stranger's clone stays green. See its own
   section below
-- **run_registry_tests.sh** — builds and runs both, plus compliance_section.py
-  and PC-4; part of `make test`. Env: CC, KEEP=1, LIBPCREC (SAN-1: overrides
+- **run_registry_tests.sh** — builds and runs both, plus compliance_section.py,
+  PC-4 and (since [CHK-2] piece 1) axes_registry_check.sh; part of `make test`.
+  Env: CC, KEEP=1, LIBPCREC (SAN-1: overrides
   the `build/libpcrec.a` these two link, default unchanged), SANFLAGS
   (SAN-1: extra flags appended to their builds, default empty) — both used by
   `make ubsan`/`make asan` to point this directory's own checks at the
@@ -85,6 +86,46 @@ directory asserts that the description and the shipped parser actually agree.
   entered the binary (fixed in the same change; the lesson is the fuzz
   battery's one level down: prove the sabotage reached the binary before
   reading its zero)
+- **axes_registry_check.sh** — [CHK-2] piece 1(a): the OPTIMIZATION-AXIS
+  registry's own check, a DIFFERENT registry from the SR-1 syntax table
+  above. Reads `pcrec --list-axes`'s TSV (`src/parse/axes_dump.c`) against
+  `docs/spec/tuning.md` (every documented `(bit N)` heading),
+  `cli/main.c` (the flag parser) and `docs/spec/match_api.md` §6.3 (the
+  D46 stamp family's own home) — three files the dump never opens, so
+  this is the INDEPENDENT side of the dump's own claim
+  (`docs/spec/registry.md` §6/§7 states the boundary this dump does and
+  does not prove). Three directions, every discrepancy named
+  individually: (1) every dumped deny/force bit checked against
+  `lib/pcrec.h`'s own definition and (where it has one) its CLI spelling
+  in `cli/main.c`; (2) both `tuning.md`'s documented bits and
+  `lib/pcrec.h`'s own `1u << N` bits (range 4-15) swept to confirm every
+  one appears SOMEWHERE in the dump — the reverse loss, an axis quietly
+  dropped from `--list-axes`; (3) **[added on manager review, 2026-08-28]**
+  every dumped `stamp_value` checked against `match_api.md` §6.3's own
+  value-set table/string-literal pair for that macro, and every spec
+  value swept back into the dump — the nine D46 bit constants
+  (`PCREC_VM_RUNG_*`/`_STRAT_*`/`_PRUNE_*`) read from `src/gen/
+  emit_dfa.c`'s own literal `#define` block instead of `lib/pcrec.h`,
+  since they are emitted-artifact text the public header never declares;
+  two named, cited exceptions in the script's own header (`RX_DFA_TABLE`'s
+  composed `"mixed"`/`"none"`; the three ladder-fallback rung constants
+  with no individual deny flag). 53 checks total. Run via
+  `run_registry_tests.sh` below (its own coverage-count guard: == 53 PASS
+  lines, exact). **Two bugs found and fixed while writing it**: bash's
+  `IFS=$'\t' read` collapses runs of empty tab-delimited fields — tab is
+  IFS *whitespace* regardless of what IFS is set to — exactly the gotcha
+  `tests/lib/table.sh`'s own header comment already names from
+  `tests/reject/`'s history; the row-reconstruction step separates
+  fields with `\001` (not in bash's whitespace class) before the `read`
+  loop that can see an empty field. And direction 3's markdown-table
+  extraction first silently read the WRONG table — `match_api.md`'s
+  tables are indented two spaces under their bullet, so a naive `^\|`
+  row test skips past them to the next un-indented one — fixed by
+  testing `^[ \t]*\|` instead; caught only by eyeballing the extracted
+  values against the file, not by any test going red. Env: `PCREC`
+  (default `build/pcrec`), `TUNING`/`CLIMAIN`/`MATCHAPI`/`EMITDFA`
+  (override to point at a doctored scratch copy — the sabotage-validation
+  lever; never point these at a file under this repo's own tracked tree)
 
 ## What it asserts
 
