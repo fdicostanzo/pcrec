@@ -3152,7 +3152,8 @@ size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap);       /* axis 
 size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap);       /* axis D */
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis E */
 size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
-/* `src/parse/axes_dump.c` — renders the six DFA layer-1 axes above plus the
+size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
+/* `src/parse/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
 char *pcrec_axes_tsv(void);

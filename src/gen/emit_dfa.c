@@ -661,6 +661,23 @@ static void emit_rx_abi_types(StrBuf *sb)
         "                                           VM's \"none\"\n"
         "                                           (<PREFIX>_VM_PREFILTER) when\n"
         "                                           it is NULL. Never NULL. */\n"
+        /* [ENG-ABS] AXIS G's runtime mirror, appended after `prefilter` on the
+         * same terms and for the same reason (a consumer with no header). It
+         * is a fact about the artifact's `<prefix>_match` ENTRY, which is a
+         * different question from `scan`'s: NULL means "this artifact's
+         * anchored entry is not one this axis describes", which is every VM
+         * artifact INCLUDING a hybrid — a hybrid's `_match` is the VM's own
+         * anchored body, not a filtered search. */
+        "    const char           *match_form;   /* HOW <prefix>_match answers:\n"
+        "                                           \"unwrapped\" (its own\n"
+        "                                           anchored machine, run from\n"
+        "                                           ctx->pos) or \"search-filter\"\n"
+        "                                           (the unanchored search, with\n"
+        "                                           non-ctx->pos starts rejected),\n"
+        "                                           mirroring <PREFIX>_DFA_MATCH.\n"
+        "                                           NULL on every artifact whose\n"
+        "                                           _match this engine did not\n"
+        "                                           write. */\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
@@ -1257,7 +1274,33 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      * program, and a hybrid's inlined `static <prefix>_prefilter` is emitted
      * ABOVE that `goto`. So (A) sees no DFA scan byte at all. Comparison (B)
      * compares WHOLE FILES and is re-pinned, in this same change, per D76. */
-    sb_puts(c,   "    .abi = 9,\n");
+    /* [ENG-ABS] abi 9 -> 10 (D76): the ANCHORED MATCH-HERE FORM
+     * (docs/design/anchored_match_unwrapped.md §6), and like [OPT-3],
+     * [ENG-FORM] and [OPT-K] it MOVES EMITTED PROGRAM BYTES rather than
+     * scaffolding alone. Saying which kind it is, is r37 A12's lesson; saying
+     * it PER ARTIFACT KIND is the rest of it, because `emit_info_def` is
+     * shared and the three kinds move by different amounts:
+     *
+     *  - An ENG_UNANCH DFA artifact that SELECTS the form gains a file-scope
+     *    `<prefix>_anchored_state` accessor block, a third machine's tables
+     *    inside `<prefix>_match`, and rewritten `_match`/`_match_caps` bodies
+     *    (the second now delegates to the first instead of to
+     *    `<prefix>_search`). `<prefix>_search` itself is untouched, byte for
+     *    byte, which is what makes the answer-identity gate a check of this
+     *    row alone.
+     *  - Every OTHER DFA artifact — ENG_ATTEMPT, the empty engine, an
+     *    anchored machine that overflowed a cap, and any build under
+     *    `-fno-anchored-dfa` — keeps both bodies character for character and
+     *    gains one `#define <PREFIX>_DFA_MATCH "search-filter"` line.
+     *  - Every artifact of EITHER engine gains one `rx_info` field
+     *    (`.match_form`, NULL on the VM side, hybrid included).
+     *
+     * COMPARISON (A) of run_recursion_identity.sh (`goto <p>_L0;` through
+     * `<p>_accept:`, the VM PROGRAM) is expected byte-identical: the only byte
+     * this row writes on a VM artifact is that struct field, which is above
+     * the region. Comparison (B) compares whole files and is re-pinned in this
+     * same change, per D76. */
+    sb_puts(c,   "    .abi = 10,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
      *
@@ -1335,7 +1378,16 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
                                            * `<PREFIX>_DFA_PREFILTER` and its
                                            * `_OFFSETS` sibling are where what
                                            * the emitter DID is recorded. */
-                                          PCREC_NO_OFFSET_SKIP;
+                                          PCREC_NO_OFFSET_SKIP |
+                                          /* [ENG-ABS] the anchored match-here
+                                           * axis. It changes no answer (the
+                                           * identity argument is
+                                           * anchored_match_unwrapped.md §3),
+                                           * so it belongs to the mask for the
+                                           * mask's own reason;
+                                           * `<PREFIX>_DFA_MATCH` is where what
+                                           * the emitter DID is recorded. */
+                                          PCREC_NO_ANCHORED_DFA;
         sb_printf(c, "    .flags = %lluULL,\n",
                   (unsigned long long)(cx->opt->flags & ~strategy_denials));
     }
@@ -1396,6 +1448,21 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
         sb_puts(c, "    .scan = NULL,\n");
         sb_puts(c, "    .prefilter = \"none\",\n");
     }
+    /* [ENG-ABS] AXIS G's mirror, from the SAME `dfa_match_name` the macro is
+     * written from — one value written twice, never two computations of one
+     * fact.
+     *
+     * ITS GUARD IS NOT `pcrec_artifact_has_dfa_scan`, and the difference is
+     * the field's meaning. That predicate is "does this artifact CONTAIN a DFA
+     * scan", which is true of a VM HYBRID — but a hybrid's `<prefix>_match` is
+     * the VM's own anchored body, which this axis does not describe. The
+     * question here is "did the DFA emitter write this artifact's `_match`",
+     * i.e. `fit.chosen == ENGM_DFA`, and `emit_info_def` is shared with the VM
+     * emitter, which is why the test is spelled rather than assumed. */
+    if (cx->job->fit.chosen == ENGM_DFA)
+        sb_printf(c, "    .match_form = \"%s\",\n", dfa_match_name(cx));
+    else
+        sb_puts(c, "    .match_form = NULL,\n");
     sb_puts(c,   "};\n");
 }
 
@@ -3763,6 +3830,12 @@ size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_seeds); }
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap)
 { return AXIS_LIST(dfa_accs); }
+/* [ENG-ABS] axis G rides the SAME generic walk — its objects are `DfaCand`-
+ * headed like the other five lists, so `--list-axes` and the registry check
+ * see the new candidates and the new deny bit with no hand-copied
+ * restatement. */
+size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap)
+{ return AXIS_LIST(dfa_matches); }
 #undef AXIS_LIST
 
 /* Axis F is not a candidate LIST (emitter_form.md §3, axis F: "Not a
@@ -3778,6 +3851,14 @@ size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap)
     size_t k = 0;
     if (k < cap) { out[k].name = dfa_dir_forward.c.name; out[k].deny = dfa_dir_forward.c.deny; k++; }
     if (k < cap) { out[k].name = dfa_dir_reverse.c.name; out[k].deny = dfa_dir_reverse.c.deny; k++; }
+    /* [ENG-ABS] the third object. It is NOT "always" the way the other two
+     * are — an artifact carries it only where axis G selected `unwrapped` —
+     * but it is still a named object rather than a list entry, for axis F's
+     * own reason, and the dump's `applies` column says so in prose. `deny` is
+     * 0 here on purpose: the flag that removes this MACHINE is axis G's, on
+     * axis G's candidate, and reporting it twice would let a reader think two
+     * things can be denied independently. */
+    if (k < cap) { out[k].name = dfa_dir_anchored.c.name; out[k].deny = dfa_dir_anchored.c.deny; k++; }
     return k;
 }
 
