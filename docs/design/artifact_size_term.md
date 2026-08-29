@@ -547,6 +547,36 @@ cost:
 **Everything at or below 320 KB of code costs ≤ 71 % of the budget; the next
 measured artifact up costs 669 %.** The band between them is empty.
 
+**Why this is a measured SEPARATION and not a predicted gcc COST — the thing
+the panel asked for and this note could not deliver.** The natural reading of
+D45's consequence 1 is a cap on predicted compile cost. That requires gcc's
+cost to be a function of counts the compiler can produce, and **measured, it is
+not** — the ordering inverts inside this very table:
+
+| | code bytes | gcc CPU |
+|---|---|---|
+| K41 witness 2 | 836,621 | **66.92 s** |
+| K41 witness 1 | 1,718,700 (2.05× more) | **55.13 s** (18 % less) |
+
+Witness 1 has 2× the code and costs 18 % LESS. Witness 2's prefilter is a
+single function carrying a 3,108-way computed-goto CFG, and gcc's dataflow and
+register allocation on that shape cost more than twice the straight-line code
+elsewhere (peak RSS 1.9 GB against witness 1's 540 MB). No additive function of
+`N`, `S`, `E`, `J` — or of bytes — reproduces that, and a curve fitted through
+it would be fitting CFG shape it cannot see. The first version's own
+`gcc_cpu ≈ 0.00054 · N^1.269` had a −43 % residual (§4.6) and that was on the
+EASY, node-decorrelated population.
+
+So the cap is derived the way `PCREC_MAX_VM_REPEAT_COPIES` was (limits.h's own
+measured `((a)|b){0,N}c` curve): **from a measured separation between "every
+artifact anyone has built" and "the artifacts that blow the budget", with the
+cap placed in the empty band between them.** What that buys is a bound, not a
+prediction: it does not claim every admitted artifact is cheap, it claims every
+artifact measured at or below it compiled in ≤ 71 % of the budget, and it names
+the population it cannot speak for — anything with code bytes in
+(320 KB, 837 KB), which is empty today and would be the first thing to measure
+if one appeared.
+
 ### 4.3 The cap, and where it fires
 
 **`PCREC_MAX_VM_EMIT_CODE_BYTES = 500000`**, on the REALIZED code-byte count of
