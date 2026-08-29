@@ -32,6 +32,13 @@
 # `size-model-declined`; both directions are detection and neither is
 # required for the row to score.
 #
+# RE-POINTED 2026-08-29, same day, by the declared-capacity floor (§3.3a):
+# the argmin loop this row plants in gained a `size_term_capacity_holds` term,
+# so the anchor was re-derived FROM THE LIVE SOURCE and the row re-run
+# canonically. The plant itself is unchanged in meaning — a greedy descent
+# still stops at the first improving rung — and the `SAB_COUNT=1` check was
+# not weakened to absorb the drift.
+#
 # THE GREEN ARMS ARE THE POINT OF THE ROW, not a half-detection.
 # `tests/size/size_term.rxt` is expected to pass every cell under this plant
 # — including the block whose header says the answers "must not move ... at
@@ -49,11 +56,13 @@ SAB_REACH_POP="tests/codegen/run_size_term.sh|^NEST8=|1"
 SAB_COUNT=1
 SAB_BEFORE='    int best = 0;
     for (int i = 1; i < n; i++)
-        if (ok[i] && (nodes[i] < nodes[best] ||
-                      (nodes[i] == nodes[best] && k[i] > k[best])))
+        if (ok[i] && size_term_capacity_holds(fc, sc, i) &&
+            (nodes[i] < nodes[best] ||
+             (nodes[i] == nodes[best] && k[i] > k[best])))
             best = i;'
 SAB_AFTER='    int best = 0;
     for (int i = 1; i < n; i++)
-        if (ok[i] && (nodes[i] < nodes[best] ||
-                      (nodes[i] == nodes[best] && k[i] > k[best])))
+        if (ok[i] && size_term_capacity_holds(fc, sc, i) &&
+            (nodes[i] < nodes[best] ||
+             (nodes[i] == nodes[best] && k[i] > k[best])))
             { best = i; break; }   /* SABOTAGE S191 */'

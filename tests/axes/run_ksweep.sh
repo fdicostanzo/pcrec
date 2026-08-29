@@ -140,7 +140,8 @@ for k in $LADDER; do
             [ -r "$ff" ] || continue
             pat="$(awk -v L="$ln" 'NR<=L && /^pattern /{p=substr($0,9)} END{print p}' "$ff")"
             [ -n "$pat" ] || continue
-            "$PCREC" -p rx --features all -o "$WORKDIR/dk.c" -- "$pat" >/dev/null 2>&1 || continue
+            # [K37] bounded, like every other compiler call in this file
+            pcrec_run "$PCREC" -p rx --features all -o "$WORKDIR/dk.c" -- "$pat" >/dev/null 2>&1 || continue
             dk="$(grep -oE '^#define RX_UNROLL_K [0-9]+' "$WORKDIR/dk.c" | awk '{print $3}')"
             [ -n "$dk" ] || continue
             if [ "$dk" -lt 8 ]; then
