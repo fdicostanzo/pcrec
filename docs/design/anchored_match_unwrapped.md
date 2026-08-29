@@ -501,10 +501,14 @@ COST-CONSEQUENCE caveat (the worst case goes away when the form is selected,
 and the caveat must now say WHICH artifacts still have it and how a caller
 reads that off the stamp), §3.3's cross-reference, §6's `abi` sentence, §6's
 `rx_info` field list, §6.3's macro table and its value set, and
-`docs/spec/tuning.md` §2.15. `docs/spec/limits.md` needs no hunk: no new
-cap is introduced — the anchored machine is charged against the two caps
-that already exist, which §5.2 documents as a selection outcome rather than
-a limit.
+`docs/spec/tuning.md` §2.15. `docs/spec/limits.md` DOES get a hunk after all, and the
+reason is worth stating: no new cap is introduced — the anchored machine is
+charged against the ceilings that already exist — but that document's
+`[SEL-1]` paragraph is precisely about what crossing one of those three
+ceilings MEANS, and this row adds a second, narrower answer to it (no
+diagnostic, no fallback engine, just the other form of one entry). The set of
+patterns pcrec accepts is unchanged in either direction, so no ceiling joins
+its list.
 
 ---
 
