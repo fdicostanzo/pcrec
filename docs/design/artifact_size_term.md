@@ -97,7 +97,7 @@ compiled artifacts the shipped `.o` is small (census §3: median 6,760 B, p99
 14,364 B) and gcc's worst case is 6.995 s — 70 % of D45's budget, on one
 deliberate stress pattern. Nothing in the corpus is refused today and nothing
 should be. **Every mechanism in this note must therefore be a measured no-op
-on essentially the whole corpus**, which is what §3.2's threshold and §7.3's
+on essentially the whole corpus**, which is what §3.2's threshold and §6.2's
 zero-cost obligation are for.
 
 ---
@@ -356,7 +356,7 @@ At VM emission, with `K_opt` = `--unroll=`'s value if given, else
   size is the same.
 - **`MATERIALITY = 0.75`** — descend only for a ≥ 25 % predicted saving. This
   is what keeps the term from paying the census's measured "~1–3 % slower on
-  single-level large counts" for a 1–8 % size win.
+  single-level large counts" for a 0–8 % size win.
 
 **What the rule DOES, measured against every corpus pattern above the
 threshold.** The ratio column is `B(K=1)/B(K=8)` from §3.1's actual bytes:
@@ -896,7 +896,7 @@ under bit 17.
    Semantically unrelated, derived independently, named here so no reader
    infers a shared source. 120,000 B sits in the same gap if the collision is
    judged too confusing to keep.
-4. **`a{1,25000}`-shaped artifacts are left alone** (1.12 MB, gcc 0.49 s).
+4. **`a{1,25000}`-shaped artifacts are left alone** (1.10 MB comment-excluded, gcc 0.24 s).
    They are large for a user to ship and cheap for gcc to compile, so neither
    §3 nor §4 touches them: the K rule sees a K-insensitive `N` and the cap is
    not about bytes. If Frank's concern is the SHIPPED SIZE rather than the
