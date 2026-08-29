@@ -1326,13 +1326,19 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      *    moving `"prefilter-window"` -> `"subject-end"` with the MRL clamp it
      *    names. MEASURED at 23 corpus artifacts.
      *
-     * COMPARISON (A) IS NOT EXPECTED BYTE-IDENTICAL ON THOSE 23, and that is
-     * the one thing here a reader must not mistake for a regression: dropping
-     * the `prefilter-window` ceiling changes the VM PROGRAM, which is exactly
-     * what `prog_region` compares. It IS expected byte-identical on every
-     * other artifact, which is the check that says the stamp is scaffolding.
-     * Comparison (B) compares whole files and is re-pinned in this same
-     * change, per D76. */
+     * COMPARISON (A) IS STILL EXPECTED BYTE-IDENTICAL, INCLUDING ON THE
+     * COLLAPSED ARTIFACTS, and the reason is worth stating because the first
+     * draft of this comment predicted the opposite. Dropping the
+     * `prefilter-window` ceiling looks like a program change and is not one:
+     * `v.mrl_win` is read at three sites and all three — the stamp, the
+     * `--emit-ir` line, and the two `window_end = ...` BUILDERS — sit in
+     * `<prefix>_search` and its retry recompute, ABOVE `run_recursion_
+     * identity.sh`'s `prog_region` (`goto <p>_L0;` through `<p>_accept:`).
+     * The per-quantifier clamp reads `window_end` as a PARAMETER, so the
+     * number changes and the emitted program does not. MEASURED on
+     * `((a)|b){0,4000}c`: 116 region lines, byte-identical between the
+     * collapsed build and its `-fno-prefilter-collapse` twin. Comparison (B)
+     * compares whole files and is re-pinned in this same change, per D76. */
     sb_puts(c,   "    .abi = 12,\n");
     /* [ENG-BREP] The STRATEGY-DENIAL bits are masked out of the stamp, and
      * the reason is the same one that makes them safe to ship.
