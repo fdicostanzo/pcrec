@@ -388,15 +388,34 @@ mirror.
 was added at the r41 close (finding S1) rather than designed in — the first
 form charged the optional machine the mandatory machines' budget, which is
 the paragraph after next.** `PCREC_ANCHORED_MAX_STATES` is **4,096**,
-DERIVED: over the whole `.rxt` corpus the anchored machine is min 1 / median
-2 / p99 67 / **max 2,001** states (`a{1,2000}`; next 1,001, 501, 501) across
-825 selecting artifacts, and `tests/resource`'s DFA-routed giant-repeat
-shapes are 20,001 / 25,001 / 30,001. The interval (2,001, 20,001) holds no
-machine this tree builds, and 4,096 sits inside it at **2.05× the corpus
-maximum** and **4.9× below the smallest resource shape**. It is a ceiling on
-STATES and inherits `PCREC_MAX_TABLE_ENTRIES`' narrowing for free, because
-`pcrec_build_dfa` applies that to whatever `maxstates` it is handed — one
-more argument to the existing mechanism rather than a second cap beside it.
+DERIVED — and re-derived once, because the first measurement was over the
+wrong population:
+
+| population | n selecting | median | p99 | max |
+|---|---|---|---|---|
+| corpus, captures-on | 825 | 2 | 67 | **2,001** (`a{1,2000}`) |
+| corpus, `--no-captures` | 1,213 | 3 | 196 | **> 4,096 on three** |
+| `tests/resource`'s DFA-routed shapes | 4 | — | — | 20,001 / 25,001 / 30,001 |
+
+4,096 is **2.05× the captures-on maximum**, above 1,210 of the 1,213
+`--no-captures` selectors, and **4.9× below the smallest resource shape**.
+It is a ceiling on STATES and inherits `PCREC_MAX_TABLE_ENTRIES`' narrowing
+for free, because `pcrec_build_dfa` applies that to whatever `maxstates` it is
+handed — one more argument to the existing mechanism rather than a second cap
+beside it.
+
+**"NO CORPUS ARTIFACT LOSES THE FORM" WAS THIS SECTION'S FIRST CLAIM AND IT
+IS FALSE.** Three do — `((a)|ab){0,4000}c`, `((a)|ab){4000}c`,
+`((a)|bc){0,4000}d`, all `tests/counterk/counterk.rxt`'s 4000-count family,
+and all `--no-captures`-only (captures-on they are VM-selected and build no
+anchored machine at all). The error was measuring ONE compile mode and
+generalising to the tree, and what caught it was
+`tests/anchored/run_anchored_diff.sh`'s compared population moving **1,213 →
+1,210** — a number the check prints on every run — rather than a re-reading of
+the derivation. Excluding those three is what keeps the ceiling low enough to
+be worth having: raising it past them would put it within 1.2× of the resource
+shapes it exists to exclude, and they are torture shapes whose
+`<prefix>_match` no caller optimises for.
 
 Below that ceiling the anchored machine can still exceed the DFA caps — the
 state cap (`PCREC_MAX_DFA_STATES_TABLE`, narrowed by
@@ -455,8 +474,9 @@ the overflow arm was measured at ZERO reachable patterns — the caps are
 shared, the mandatory machines are built first and are at least as large, so
 nothing could reach it and the r41 critic could not drive it read-only.
 `tests/codegen/run_anchored_match.sh` §4a now brackets 4,096 from both sides
-on the ordinary build, and the four resource shapes are the arm's real
-members.
+on the ordinary build AND compiles one of the three in-corpus overflow
+patterns, so the arm has seven real members — four out-of-corpus, three in —
+where it had none.
 
 ### 5.3 What the anchored form's `UnanchStart` is
 

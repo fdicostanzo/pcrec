@@ -455,16 +455,30 @@ enum {
  * log. Both are the SAME fact: the optional machine was charged the mandatory
  * machines' budget.
  *
- * WHERE 4,096 COMES FROM — measured, not chosen. Over the whole `.rxt` corpus
- * (825 artifacts that select the form, 2026-08-29) the anchored machine's
- * state count is min 1 / median 2 / p99 67 / **max 2,001** (`a{1,2000}`; the
- * next three are 1,001, 501, 501). `tests/resource`'s DFA-routed shapes are
- * 20,001, 25,001 and 30,001. So the interval (2,001, 20,001) is EMPTY of any
- * machine this tree builds, and 4,096 sits inside it at **2.05x the corpus's
- * largest** and **4.9x below the smallest resource shape**. No corpus artifact
- * loses the form (the 825 population is unmoved and pinned); the four
- * giant-repeat shapes take the stamped `search-filter` fallback, which is
- * §5.2's arm doing exactly what it was written for.
+ * WHERE 4,096 COMES FROM — measured, not chosen, and RE-derived once when the
+ * first measurement turned out to be over the wrong population.
+ *
+ * Over the corpus compiled CAPTURES-ON (825 artifacts select the form) the
+ * anchored machine is min 1 / median 2 / p99 67 / max 2,001 (`a{1,2000}`).
+ * Over the corpus compiled `--no-captures` — the LARGER population, because a
+ * capture-bearing pattern is VM-selected captures-on and never builds an
+ * anchored machine at all — 1,213 artifacts select it, median 3, p99 196, and
+ * **three exceed 4,096**: `((a)|ab){0,4000}c`, `((a)|ab){4000}c` and
+ * `((a)|bc){0,4000}d`, all of `tests/counterk/counterk.rxt`'s 4000-count
+ * family. `tests/resource`'s DFA-routed shapes are 20,001, 25,001 and 30,001.
+ *
+ * So 4,096 is **2.05x the captures-on maximum**, above 1,210 of the 1,213
+ * `--no-captures` selectors, and **4.9x below the smallest resource shape**.
+ * The three it excludes are 4000-count torture shapes whose `<prefix>_match`
+ * no caller optimises for, and excluding them is what keeps the ceiling low
+ * enough to be worth having — raising it past them would put it within 1.2x
+ * of the resource shapes it exists to exclude.
+ *
+ * **"NO CORPUS ARTIFACT LOSES THE FORM" WAS THE FIRST DERIVATION'S CLAIM AND
+ * IT IS FALSE**; three do. The error was measuring one compile mode and
+ * generalising to the tree, and it was caught by
+ * `tests/anchored/run_anchored_diff.sh`'s compared population moving 1,213 ->
+ * 1,210 rather than by re-reading the derivation.
  *
  * IT IS A CEILING ON STATES, and it inherits `PCREC_MAX_TABLE_ENTRIES`'
  * narrowing for free because `pcrec_build_dfa` applies that to whatever
@@ -483,9 +497,10 @@ enum {
  * IT IS ALSO THE OVERFLOW ARM'S OWN WITNESS SUPPLY. Before this ceiling the
  * arm had ZERO reachable population (the shared caps are hit by the mandatory
  * machines first) and could only be driven by the `-D` override below;
- * `tests/codegen/run_anchored_match.sh` §4 now pins four NAMED shapes that
- * reach it for real, and keeps the override as the control that the arm still
- * behaves under a cap no shape reaches.
+ * `tests/codegen/run_anchored_match.sh` §4a now brackets the ceiling from
+ * both sides and compiles one of the three IN-CORPUS overflow patterns, and
+ * §4b keeps the override as the control that the arm behaves the same way at
+ * a cap no shape reaches.
  *
  * OVERRIDABLE FOR EXACTLY ONE CONSUMER. `run_anchored_match.sh` §4 builds a
  * reference compiler with this lowered to 6 so the arm is exercised on small,

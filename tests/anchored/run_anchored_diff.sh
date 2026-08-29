@@ -222,8 +222,8 @@ echo "cells: $cells (pattern × subject × every position 0..n+1 × 4 anchored e
 # every comparison above trivially equal, and this file would report a large
 # green number while comparing each build against itself.
 [ "$n_ok" -ge 1150 ] \
-    && ok "the compared population is $n_ok patterns (floor 1150; 1213 measured 2026-08-29)" \
-    || bad "only $n_ok corpus patterns selected the unwrapped form and were compared, below the 1150 floor (1213 measured 2026-08-29). Every cell above can be green while this number falls to zero — that is what this pin is for"
+    && ok "the compared population is $n_ok patterns (floor 1150; 1210 measured 2026-08-29 — 1,213 before [ENG-ABS]'s own 4,096 anchored-machine ceiling took three counterk 4000-count shapes into the search-filter form)" \
+    || bad "only $n_ok corpus patterns selected the unwrapped form and were compared, below the 1150 floor (1210 measured 2026-08-29). Every cell above can be green while this number falls to zero — that is what this pin is for"
 
 # =========================================================================
 # §2 THE CAPTURES-ON ARM — the dead-group fill, as ANSWERS (r41 S4)

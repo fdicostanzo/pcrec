@@ -287,15 +287,40 @@ fi
 # since 20,001 > 4,201. A check that pins the number is stronger than one that
 # pins four expensive consequences of it, and it cannot be flaky.
 #
-# THE FOUR SHAPES ARE STILL THE POPULATION, and they are named here because
-# nothing else in the tree counts them: they live in
-# `tests/resource/run_resource_tests.sh`'s bash array, no `.rxt` block holds
-# them, and `SIZELOG` writes no row for them — which is exactly how r41's S1
-# (+46 % compiler CPU) and S2 (an artifact over the size pin) escaped every
-# instrument here. `[a-z]{0,30000}`, `a{0,25000}`, `a{0,20000}`,
-# `(a|b){0,30000}`: 30,001 / 25,001 / 20,001 / 30,001 anchored states, all
-# above the upper bracket below. The design note's §7.2 carries their measured
-# CPU and size both ways.
+# THE POPULATION IS SEVEN, IN TWO GROUPS, and both are named because neither
+# is counted anywhere else.
+#
+#   FOUR OUT-OF-CORPUS, the shapes S1 and S2 are about:
+#   `[a-z]{0,30000}`, `a{0,25000}`, `a{0,20000}`, `(a|b){0,30000}` — 30,001 /
+#   25,001 / 20,001 / 30,001 anchored states. They live in
+#   `tests/resource/run_resource_tests.sh`'s bash array, no `.rxt` block holds
+#   them, and `SIZELOG` writes no row for them, which is exactly how r41's S1
+#   (+46 % compiler CPU) and S2 (an artifact over the size pin) escaped every
+#   instrument in this tree. The design note's §7.2 has their measured CPU and
+#   size both ways. They are 11-25 s compiles and are NOT run here.
+#
+#   THREE IN-CORPUS, under `--no-captures` only:
+#   `((a)|ab){0,4000}c`, `((a)|ab){4000}c`, `((a)|bc){0,4000}d`
+#   (`tests/counterk/counterk.rxt`'s 4000-count family). **These were NOT in
+#   the ceiling's first derivation and finding them corrected it**: that
+#   derivation used the CAPTURES-ON population, where a capture-bearing
+#   pattern is VM-selected and never builds an anchored machine at all, and
+#   its maximum was 2,001. Under `--no-captures` the DFA population is larger
+#   (1,213 patterns select the form, against 825 captures-on) and these three
+#   exceed 4,096. So "no corpus artifact loses the form" — which the first
+#   draft of this comment claimed — is FALSE, and the honest statement is
+#   THREE do, all of them 4000-count torture shapes whose `_match` no caller
+#   optimises for. `run_anchored_diff.sh`'s compared population is the
+#   standing count of the other side (1,213 → 1,210).
+#
+# The FIRST of the three is compiled below as a real in-corpus witness (6.5 s;
+# the other two are 8 s and 13 s and buy nothing the first does not).
+ovf_corpus=0
+if ceil_case '((a)|ab){0,4000}c' search-filter n; then ovf_corpus=1; fi
+[ "$ovf_corpus" -eq 1 ] \
+    && ok "§4a the arm has a real IN-CORPUS witness: '((a)|ab){0,4000}c' takes the stamped fallback in an ordinary --no-captures build, so the overflow path is exercised by a pattern this tree actually holds and not only by a bracket built for it" \
+    || bad "§4a the in-corpus overflow witness '((a)|ab){0,4000}c' no longer reaches the arm — with it gone the arm's only corpus members are its two siblings, and a population that shrinks silently is the r41 S4 shape"
+
 #
 # BOTH SIDES ASSERT `RX_DFA_SCAN "unanchored"`, which is the non-vacuity: a
 # witness that fell to the attempt or empty engine would reach `search-filter`
