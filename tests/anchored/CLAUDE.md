@@ -59,8 +59,8 @@ differential makes for its own denied build, one row over.
   every `.rxt` under `tests/` that compiles under `--no-captures --features
   all` AND selects the form; patterns that do not select it are COUNTED and
   skipped, because comparing a build against itself is this project's
-  most-recorded check-design failure. The selected population is FLOORED (900;
-  1009 measured 2026-08-29) for the reason `run_anchored_match.sh` §5 pins its
+  most-recorded check-design failure. The selected population is FLOORED (1150;
+  1213 measured 2026-08-29) for the reason `run_anchored_match.sh` §5 pins its
   census: a compiler that stopped selecting the form would make every
   comparison trivially equal and this file would report a large green number
   while measuring nothing.
