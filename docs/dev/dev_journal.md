@@ -17090,3 +17090,44 @@ prefilter-less VM artifact already reaches no libc symbol. The census's
 throughput rows (artsize's tension.py) run on the quiet box since
 20:08; sizeratchet's baseline follows; then this session ends with
 wake.md.
+
+#### Forty-third session, part 7 — [ART-SIZE] STEP 1 closed; [ART-SIZE.1b] landed twice; the manager's persisted-cd slip; the trailer catches a prerequisite (2026-08-28 ~22:0x EDT)
+
+artsize2 filled the census's §8 from the quiet-box run (98d0995,
+merged; load1 0.13-1.2): `--unroll=1` is a real WIN on the N=8
+nested-repeat outlier (13.4 → 5.9 µs), `--engine=vm`'s failing-path
+cost 173,580× (was 359,000× loaded), and the micro-scale speed axis
+(2-13 µs subjects) CANNOT separate ±50 % effects — `-fno-premul-table`
+read 20-34 % slower loaded and direction-inconsistent quiet; the SIZE
+findings stand, the speed side is the bench's on real subjects (I-15
+ask c). [ART-SIZE] STEP 1 CLOSED (c886c32). sizeratchet delivered
+[ART-SIZE.1b]: the log at the harness's compile at 1.79 % overhead,
+size_count.sh byte-exact with the census, baseline 2,875 rows (worst
+size 651,344 B counterk.rxt:1807; worst gcc CPU 5.462 s
+k18_cost_gates.rxt:103), size_diff, one tripwire + unpinned guard,
+sabotage transcripts; its own catch: the first baseline's ids were
+absolute worktree paths (fixed f446f1c). MY LANDING RULING: the size
+pin 700,000 sat 7 % over the max — a drift detector; ruled 1,400,000
+(2×: a doubling is the red; drift is size_diff's). MY SABOTAGE FOUND
+A FOOTGUN: passing the doctored log as `$1` was silently ignored and
+the script checked the REAL log and said OK — positional args now
+refused (rc 2); three-arm transcript in testing.md (refused / doctored
+1.071× red by name / real OK). MY SLIP: a `cd $W` persisted across
+commands, so the merge, a plan commit and the make-test launch ran in
+the worktree on lane/sizeratchet, not main (CLAUDE.md's own warning);
+caught when main had not moved; recovered by a real merge (one plan.md
+hunk: [ART-SIZE] kept from main, [ART-SIZE.1b]'s MERGED row
+re-applied from the lane; markers verified as a separate step) —
+4ae7022, then the lane's testing.md consistency fix 639f7b2. THE
+TRAILER'S CATCH: that make test ended `sections ran: 26/27` — the
+lane had declared `test-size: test-corpus`, and under `make -k -j12`
+the corpus goes red on the KNOWN counterk load cell whenever the box
+is loaded, so make did not remake test-size ("not remade because of
+errors"): the tripwire built to catch blowups would never have run in
+a loaded battery — the forty-first session's part-7 lesson one
+section later, and the trailer built from it saw it. Fixed (4f0c634):
+the tripwire runs as the TAIL of test-corpus's own recipe with the
+corpus's exit kept and the tripwire's combined; `make test-size` stays
+standalone post-test; proven solo (corpus 0 failed, size-log rows
+2875, tripwire OK); the FINAL `make -k -j12 test` runs now for the
+26/26 trailer. Worktrees: none. Lanes: none.
