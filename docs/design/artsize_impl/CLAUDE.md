@@ -62,3 +62,17 @@ self-contained and the split `.c`+`.h` form, including on the witness.
   flag (emit only, no gcc). 0 over either cap on all ten axes; `-fno-counter`
   is the only one that moves `N` (1,471 → 1,489) and the axis a future emitter
   change would push over the node cap first.
+- `probes/bench_acceptance.sh` — the ACCEPTANCE SURVEY OVER pcrec-bench's OWN
+  PATTERNS (2026-08-29, the manager's addition to the delivery bar; the note's
+  §4.3a carries the table). The surveys behind §4.3a covered this repository's
+  populations, and the bench is the first CONSUMER that would meet a refusal
+  unannounced: its patterns live in another repo and are compiled under flags
+  the corpus never uses. 18 patterns (`bench/email/patterns/` 3,
+  `bench/loglines/patterns/` 11, plus the four `email_specimen/*.rx` in THIS
+  repo that the bench pins copies of and that neither survey had covered) ×
+  the three flag sets `testees/pcrec/configs.toml` actually pins = 54 emits.
+  MEASURED: 54 accepted, 0 refused, 0 `_UNROLL_K_WHY` other than `default` —
+  no bench pattern reaches even the 120,000-byte code threshold, so the
+  ladder never runs on one and the bench's whole exposure to this row is the
+  four stamp lines. Emit only, no gcc, and READ-ONLY in the bench (CLAUDE.md's
+  scope mandate: one writer each way, and this lane is not its writer).

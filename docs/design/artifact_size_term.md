@@ -978,6 +978,32 @@ mistake — a claim measured over a population chosen rather than one that
 exists — and it is why `docs/dev/learnings.md` §3 now carries the population
 half beside the quantity half.
 
+**pcrec-bench's OWN PATTERNS — surveyed 2026-08-29, and NOTHING MOVES.** The
+survey above covers this repository's populations, and the first CONSUMER that
+would meet a refusal unannounced is the sibling benchmark project, whose
+patterns live in another repository and are compiled under flags the corpus
+never uses. Emitted read-only with
+`docs/design/artsize_impl/probes/bench_acceptance.sh`: 18 patterns — the three
+under `bench/email/patterns/`, the eleven under `bench/loglines/patterns/`, and
+the four `email_specimen/*.rx` in THIS repo that the bench pins copies of and
+that neither survey had covered — against the three flag sets
+`testees/pcrec/configs.toml` actually pins (`--features all`, that plus
+`--no-captures`, that plus `--engine=vm`), for 54 emits.
+
+| result over 54 emits | count |
+|---|---|
+| accepted | **54** |
+| refused by either cap | **0** |
+| `_UNROLL_K_WHY` other than `default` | **0** |
+| largest artifact (`email-specimen/factored_x`, plain auto) | 76,304 B |
+| `level-context` (the `[SEL-1]` VM-fallback artifact, all three flag sets) | 22,905 / 22,905 / 22,829 B |
+
+Not one bench pattern reaches the 120,000-byte CODE threshold, so the ladder
+never runs on any of them and every VM artifact stamps `K=8 / default`; the
+largest is 7.6 % of the total cap. The bench's exposure to this row is
+therefore the four stamp lines and nothing else — which is exactly the +128 B
+per VM artifact and +34 B per DFA artifact the size log's own diff reports.
+
 **The K22 tower's refusal is the most justified one in the row** (18.7 MB of
 emitted code) and it needed a test change rather than an exemption: `tests/vm`'s
 K22 cell is a POSITIVE CONTROL proving the replication-product guard is not
