@@ -39,7 +39,7 @@ population it measures is the whole tree's, discovered by
   per-pattern gate exists anywhere in this directory — Frank's ruling on
   docs/dev/plan.md's [ART-SIZE.1b] row is explicit that per-pattern
   movement is examined post-test (`scripts/size_diff`), never gated.
-  `make test-size` is its own section (`test-size: test-corpus` — see the
+  `make test-size` is the STANDALONE post-test check; in `make test` the tripwire runs as the tail of test-corpus's own recipe (a `test-size: test-corpus` prerequisite was skipped by `make -k` whenever the corpus's load cell went red — see the
   Makefile's own comment on why this is a deliberate, narrow exception to
   "no suite reads another's output": it runs strictly after test-corpus,
   reads a stable file-scoped artifact test-corpus produces as a byproduct,

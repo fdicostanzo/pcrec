@@ -115,7 +115,7 @@ $(BUILD_DIR)/pcrec: cli/main.c $(BUILD_DIR)/libpcrec.a lib/pcrec.h
 # concurrently is safe by the same argument PROCS=N already relies on inside
 # tests/harness/run.sh and (since [TT-2]) tests/reject/run_reject_tests.sh.
 # See docs/testing.md "Section composition" for the measured wall-time.
-TEST_SECTIONS := test-corpus test-size test-cli test-reject test-registry test-parse \
+TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-gentimeout test-codegen test-vm test-possessify test-rungselect \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
@@ -183,29 +183,26 @@ test:
 # reads as a pass.
 test-corpus: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-corpus.ran"; fi
-	TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/size/run_size_log.sh
+	@set +e; TMPDIR=$${TMPDIR:-/var/tmp} PROCS=$${PROCS:-$$(nproc)} bash tests/size/run_size_log.sh; rc=$$?; \
+	bash tests/size/check_size_tripwire.sh; rc2=$$?; \
+	if [ "$$rc" -ne 0 ]; then exit "$$rc"; fi; exit "$$rc2"
 
-# [ART-SIZE.1b] the artifact-size RATCHET's own section — ZERO recompiles:
-# it reads the log test-corpus's recipe just wrote (docs/dev/
-# artifact_size_log.tsv, via tests/size/run_size_log.sh above, which is
-# now test-corpus's OWN compile pass with `SIZELOG` threaded through, not
-# a second one — "riding the existing test corpus" is the whole charter).
-# Depending on `test-corpus` rather than `all` is a DELIBERATE, NARROW
-# exception to this Makefile's "no suite reads or writes another's
-# output" rule stated above test-codegen: that rule protects suites that
-# run CONCURRENTLY from racing on shared mutable workdirs, and this
-# target does neither — it runs strictly AFTER test-corpus finishes (a
-# real Makefile prerequisite, not a race) and only READS a stable,
-# file-scoped artifact test-corpus produces as a byproduct, the same
-# relationship every section already has with `build/pcrec` from `all`.
-# Under `-k`, a test-corpus failure (a build break, or its own cases
-# failing) means make will not launch this target at all — correct, by
-# the SAME logic `all`'s own failure already stops every section: if the
-# thing this reads was never produced this run, this section legitimately
-# did not run either, and the trailer reports that absence rather than a
-# stale prior file reading as current.
-test-size: test-corpus
-	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-size.ran"; fi
+# [ART-SIZE.1b] the artifact-size TRIPWIRE runs as the TAIL OF test-corpus's
+# OWN RECIPE (above), not as a section with a prerequisite. The first shape
+# was `test-size: test-corpus`; the first battery on it (2026-08-28, forty-
+# third session) proved that wrong: under `make -k -j12`, test-corpus goes
+# red on the KNOWN counterk load cell whenever the box is loaded, and make
+# then does not remake a target that depends on it ("Target 'test-size' not
+# remade because of errors") — the tripwire that exists to catch a size
+# blowup would silently never run in exactly the batteries that matter; the
+# trailer's `sections ran: 26/27` was the only thing that saw it (part 7 of
+# the forty-first session, one section later). Running it inside the corpus
+# recipe after run_size_log.sh, with the corpus's own exit status kept and
+# the tripwire's combined in, means it runs whenever the log was written,
+# red corpus or not. `make test-size` below stays as the STANDALONE post-
+# test check of the last log (no prerequisite, no recompile) — Frank's
+# "log metrics and examine post-test".
+test-size:
 	bash tests/size/check_size_tripwire.sh
 
 test-cli: all

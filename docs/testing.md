@@ -3421,7 +3421,7 @@ why it is deliberately NOT under `docs/measurements/`):
 
 ### The tripwire and its pins
 
-`tests/size/check_size_tripwire.sh` (`make test-size`, `test-size:
+`tests/size/check_size_tripwire.sh` (run as the tail of `test-corpus`'s recipe inside `make test`; `make test-size` standalone post-test — the first shape, `test-size:
 test-corpus` — reads the log `test-corpus`'s own recipe just produced, no
 recompile) is the ONE red this row produces: the corpus-level MAX
 `size_bytes` and MAX `gcc_cpu_s` anywhere in the log, each pinned with
