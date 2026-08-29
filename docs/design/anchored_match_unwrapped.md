@@ -643,24 +643,28 @@ delivery number.
 ### 8.1 MEASURED (2026-08-29)
 
 `scripts/size_diff` over the whole corpus, `tests/size/run_size_log.sh` at
-`PROCS=10`, `load1_at_start` 0.90 — 2,875 rows, 0 vanished, 0 new. Units are
+`PROCS=10`, `load1_at_start` 1.34 — 2,875 rows, 0 vanished, 0 new. Units are
 the log's own: comment-excluded `.c`+`.h` SOURCE bytes.
 
-| population | n | delta, min | median | p99 | max | ratio median | ratio max |
+| population | n | delta min | median | p99 | max | ratio median | ratio max |
 |---|---|---|---|---|---|---|---|
-| DFA artifacts | 1,185 | +764 B | **+3,258 B** | +7,396 B | +44,684 B | **1.218×** | 1.457× |
-| VM artifacts | 1,690 | +60 B | +60 B | +60 B | +60 B | 1.002× | 1.006× |
+| DFA artifacts | 1,185 | +111 B | **+2,605 B** | +6,743 B | +44,031 B | **1.175×** | 1.450× |
+| VM artifacts | 1,690 | +63 B | +63 B | +63 B | +63 B | 1.003× | 1.003× |
 
-- The DFA median grows 15,338 → 18,656 B and the largest DFA artifact 97,789
-  → 142,473 B, which is **10× under** the `MAX_SIZE_BYTES = 1,400,000`
-  tripwire. The corpus's worst artifact overall is unchanged in kind — a VM
-  artifact at 652,060 B — and the worst `gcc_cpu_s` is 4.843 s against the
-  8.0 s pin. **The tripwire is not approached from either side.**
-- The DFA delta is a table set, as predicted, and lands where §8 said it would
-  (well under a doubling): the anchored machine really is smaller than the
-  wrapped forward one.
-- The VM delta is the `rx_info` member alone, and it is a CONSTANT 60 B on
-  every VM artifact — see the next paragraph for why it is not 716.
+Corpus total 64,219,443 → 67,362,750 source bytes, **+4.89 %**.
+
+- The DFA median grows 15,338 → 18,003 B and the largest DFA artifact 97,789
+  → 141,820 B — **10× under** the `MAX_SIZE_BYTES = 1,400,000` tripwire. The
+  corpus's worst artifact overall is unchanged in kind (a VM artifact,
+  `tests/counterk/counterk.rxt:1807`, 651,344 → 651,407 B) and the worst
+  `gcc_cpu_s` is 4.943 s against the 8.0 s pin. `check_size_tripwire.sh`
+  reports **OK** on the new log; the tripwire is not approached from either
+  side.
+- The DFA delta is a table set, as §8 predicted, and lands well under a
+  doubling: **the anchored machine really is smaller than the wrapped forward
+  one**, which is the size half of §2's derivation confirming itself.
+- The VM delta is a CONSTANT 63 B on all 1,690 — the `rx_info` member and
+  nothing else. See the next paragraph for why it is not 716.
 
 **A MEASURED SIZE FINDING THIS ROW DID NOT SET OUT TO MAKE.**
 `tests/lib/size_count.sh`'s comment classifier is LINE-BASED: it recognises a
@@ -669,17 +673,21 @@ placed ABOVE a struct member costs zero counted bytes — while the continuation
 lines of a TRAILING multi-line comment do not start a block and are counted as
 CODE. The first draft of `rx_info.match_form` used the trailing shape its two
 neighbours (`scan`, `prefilter`) use, and `size_diff` reported **+716 B on
-every one of the 2,875 artifacts**, +7.82 % on the corpus's total source
-bytes. Moving the comment above the member took the VM delta to **+60 B** and
-the corpus total to +2.6 %. **`scan` and `prefilter` still carry the trailing
-shape and therefore still carry that cost**; changing them moves emitted text
-for two other rows' stamps and is not this row's to do — recorded here rather
-than done.
+every one of the 2,875 artifacts**, +7.82 % on the corpus total. Moving the
+comment above the member took the VM delta to +63 B, the DFA median from
++3,258 B to +2,605 B, and the corpus total from +7.82 % to +4.89 %. **`scan`
+and `prefilter` still carry the trailing shape and therefore still carry that
+cost**; changing them moves emitted text for two other rows' stamps — two more
+`abi` bumps — and is not this row's to do. Recorded here and in
+`tests/size/CLAUDE.md` rather than done.
 
 **OPEN (not built, no measured need — D77).** `adfa->clsmap` is
-byte-identical to `dfa->clsmap` by §2's derivation, so the artifact emits
-256 bytes of duplicate class table — 7.9 % of the measured median DFA delta
-above, 1.4 % of a median DFA artifact. Sharing it is a conditional
+byte-identical to `dfa->clsmap` by §2's derivation, so the artifact emits a
+duplicate 256-entry class table — measured at **1,478 B of emitted source**
+on a representative artifact (the table is printed as decimal cells, not raw
+bytes), i.e. **57 % of the +2,605 B median DFA delta** above and 8.2 % of a
+median DFA artifact. That is a larger share than §8's first estimate assumed,
+and it is the strongest of the three OPEN items for that reason. Sharing it is a conditional
 emitted-text shape, i.e. another axis. Named here with its measurement, not
 built.
 
@@ -756,7 +764,11 @@ a stamp value that is still legitimately reachable.
    population honestly so a bench row can find it.
 2. **The `\z`-view fold** (`opt2m` lever (b), 3-5 %) belongs to `[DD-13]`(b)
    and is not folded in here.
-3. **Class-table sharing** (§8's OPEN) — measured, not built.
+3. **Class-table sharing** (§8.1's OPEN) — measured at **1,478 B, 57 % of the
+   median DFA delta**, which is far more than §8's pre-measurement estimate of
+   "~1.7 % of a median artifact" and makes this the strongest of the three
+   OPEN items. Still not built: it is a conditional emitted-text shape, i.e.
+   another axis with another `abi` bump, and D77 says wait for the need.
 4. **`scan` and `prefilter`'s trailing comments cost every artifact ~700 B**
    of counted source (§8.1's classifier finding). Fixing them is two other
    rows' emitted text and therefore two other `abi` bumps; recorded, not done.
