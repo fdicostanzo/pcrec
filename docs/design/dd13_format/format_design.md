@@ -1276,3 +1276,291 @@ which is an argument for the design's caution, not against it.
 | **OD-4** interface/reference-only marking; a test-only surface | **no marking, no surface** — T-1 |
 | **OD-5** PCRE2 desugar vs own spelling | **PCRE2's `(?&name)`** (Frank's ruling 2). Its two feared consequences are corrected by measurement: subroutine calls are **backtrackable**, not atomic, on 10.46, and the numbering shift is a function of *where the DEFINE block goes* — appended, it **is** D39.2's rule (§2.3, §0.3 D-c) |
 | **OD-6** the data block's spelling and namespace | **inline values, own namespace** (§2.10) |
+
+---
+
+## 6. Worked files, in the final grammar
+
+Every example below parses under §1.3 by the hand-trace beside it, and
+every composed pattern in §6.1 was **compiled by `build/pcrec` and run
+through `tests/harness/driver.c`** — the cells are measured, not
+asserted.
+
+### 6.0 A correction the position paper's §3a needs, and why it matters
+
+**MEASURED: the position paper's §3a does not match.** Its library
+defines `email` as `^(?&local)@(?&domain)$` — *anchored* — and its user
+file writes `pattern From: (?&email)`. Composed:
+
+```
+From: (?&email)(?(DEFINE)(?<email>^(?&local)@(?&domain)$)(?<local>…)(?<domain>…))
+  on "From: a@b.co"  ->  nomatch
+```
+
+**A subroutine call is not a wrapper: `^` and `$` inside a called body
+anchor to the SUBJECT, not to the call site.** Two controls:
+
+```
+x(?&e)(?(DEFINE)(?<e>a$))   on "xa"   -> match 0 2
+x(?&e)y(?(DEFINE)(?<e>a$))  on "xay"  -> nomatch
+```
+
+This is PCRE2's semantics, not a pcrec artefact, and it is the same fact
+`subroutines_design.md` §2.4 records for `(?R)`/`(?0)` ("'the whole
+pattern' INCLUDES the anchors"). **The design consequence is an
+authoring rule for [LIB], not a format mechanism:** a library definition
+is a **piece** and carries no subject anchors; whole-string matching is
+the caller's `^…$`, or better, the artifact's own anchored entry
+`<prefix>_match` (`docs/spec/match_api.md` §3.2), which exists precisely
+so a pattern need not be re-spelled to be matched whole. The format does
+not and cannot check this statically; what it does is make the failure
+loud in the ordinary way — the composing block's own `m` case goes red.
+
+§6.1 is the corrected file.
+
+### 6.1 A library and a user of it ([LIB], U4/U5, W1)
+
+`lib/rfc5322.rxt` — definitions are pieces, no anchors, no targets:
+
+```
+# RFC 5322 address pieces. Definitions only; this file declares no targets.
+# Every definition is a PIECE: no subject anchors (§6.0).
+tag objective=subroutines
+
+pattern [A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[A-Za-z0-9!#$%&'*+/=?^_`{|}~-]+)*
+name local
+m "john.doe" 0 8
+n ".john"
+
+pattern (?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)+[A-Za-z]{2,}
+name domain
+m "example.com" 0 11
+
+pattern (?&local)@(?&domain)
+name email
+m "john.doe@example.com" 0 20
+n "john.doe@"
+```
+
+`mail.rxt`, a user of it:
+
+```
+lib "lib/rfc5322.rxt"
+target mail = from_line
+
+pattern From: (?&email)
+name from_line
+m "From: a@b.co" 0 12
+```
+
+**Hand-trace.** *`lib/rfc5322.rxt`*: head = one `tag`; body = three
+blocks. Blocks 1 and 2 have L = ∅, R = ∅, so EXPAND is the identity and
+they compile exactly as written. Block 3 has L = ∅ and
+R = {`local`, `domain`}; both resolve in this file; closure order is
+first-reference order — `local`, then `domain`; the emitted text is
+`(?&local)@(?&domain)` ++ the DEFINE block. R ≠ ∅ makes the block
+`oracle pcre2` (H4). No `target` line and more than one block, so
+**`pcrec --source lib/rfc5322.rxt` emits nothing** — a library ships
+nothing by itself (Frank §6.4).
+
+*`mail.rxt`*: head = `lib` + `target`; body = one block. `target mail =
+from_line` forward-references a definition in the body — normal, the head
+precedes the body and resolution is a whole-file pass. The block has
+L = ∅, R = {`email`}; `email` is not defined in this file, so it resolves
+in the `lib` chain; its own text is then scanned in *rfc5322's* scope and
+adds `local`, `domain`. Closure order: `email`, `local`, `domain`.
+**The library's own five cases do not run here.** `pcrec --source
+mail.rxt -o mail.c` emits one artifact under prefix `mail`, with
+`rx_info.name == "from_line"`.
+
+**MEASURED — all six cells**, `build/pcrec -p rx --features all` +
+`driver.c`:
+
+| cell | expanded pattern (abbreviated) | subject | result |
+|---|---|---|---|
+| `local` m | `[A-Za-z0-9!#$…]+(?:\.[…]+)*` | `john.doe` | `match 0 8`, `RX_NCAPS 1` |
+| `domain` m | `(?:[A-Za-z0-9](?:…)?\.)+[A-Za-z]{2,}` | `example.com` | `match 0 11`, `RX_NCAPS 1` |
+| `email` m | `(?&local)@(?&domain)(?(DEFINE)…)` | `john.doe@example.com` | `match 0 20`, `RX_NCAPS 3` |
+| `email` n | (same) | `john.doe@` | `nomatch` |
+| `from_line` m | `From: (?&email)(?(DEFINE)(?<email>…)(?<local>…)(?<domain>…))` | `From: a@b.co` | `match 0 12`, `RX_NCAPS 4` |
+| (a user's anchored form) | `^(?&email)$(?(DEFINE)…)` | `a@b.co` | `match 0 6`, `RX_NCAPS 4` |
+
+Note `RX_NCAPS` in the last two: 1 + three definition slots, all unset
+(§2.3). That is the observable cost of composition today, and §2.3 point
+3 states the constraint under which [DD-14.G]'s elision may reduce it.
+
+### 6.2 A bench sub-bench as one file (U7/U8, W2+W3)
+
+The live `bench/loglines/` sub-bench, in the format. Prose stays in
+`NOTES.md`; the generator stays beside its output; the directory stays a
+directory and no tool reads it as a schema.
+
+```
+# bench/loglines/loglines.rxt — the log-line-search sub-bench.
+# Objective, description and the required-literal column: NOTES.md.
+tag id=loglines version=0.1 objective=realworld
+tag short-search-max-bytes=4096
+oracle pcre2
+
+config pcrec
+  pcrec --features all
+config pcre2
+  testee pcre2/10.46
+
+config re2
+  testee re2/2024-07-02
+use pcrec, pcre2, re2
+
+include "gen/cases_search_short.rxt"    # 11 patterns x 112 subjects, generated
+include "gen/cases_throughput.rxt"      # the 16 KB - 1 MB sweep
+```
+
+and a fragment `gen/cases_search_short.rxt`, machine-written — **blocks
+only, no head** (§2.5):
+
+```
+pattern \d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}(?:[.,]\d{1,6})?(?:Z|[+-]\d{2}:?\d{2})?
+name iso_ts
+tag regime=search-short tier=base hazard=none size=medium
+tag convention=perl-leftmost-first role=member
+variant re2 unsupported no per-engine spelling preserves the objective
+m @file:"../subjects/s-000.bin" 234 258
+n @file:"../subjects/s-001.bin"
+m @file:"../subjects/s-002.bin" 0 24
+… 109 more
+
+pattern :
+name floor
+tag regime=search-short role=floor hazard=none size=tiny
+m @file:"../subjects/s-000.bin" 24 25
+… 111 more
+```
+
+**Hand-trace.** The entry file's head carries file-level `tag`s, an
+`oracle`, three `config` blocks (one with a `pcrec` line, two with
+`testee` lines), a `use` naming all three, and two `include`s. The
+fragments carry pattern blocks only; their `@file:` paths are relative
+**to the fragment** (§2.8), hence `../subjects/`. Each block is run as
+three cells (`use` enumerates, §2.6); the `variant … unsupported` line
+makes `re2`'s cell for `iso_ts` a declared, counted non-result rather
+than a wrong answer (bench §4.4). The tally is reported under
+`loglines.rxt` with `entry files: 1  fragments spliced: 2` (§2.11), and
+each failure still prints the fragment's own `file:line`.
+
+**What this replaces**: `subbench.toml` (183 lines),
+`expectations.tsv` (1,364 rows), and eleven `patterns/*.rx` files —
+three file kinds and two grammars become one file kind and one grammar,
+with the case's identity being `file:line` in one file rather than a
+`(pattern, subject, regime)` key joined across two (§4's
+"identity of a case" row).
+
+### 6.3 Two build configurations from one source ([V-E], U6, W1)
+
+```
+config baseline
+  pcrec --no-captures
+config avx2 from baseline
+  pcrec --simd=avx2
+config big from baseline
+  pcrec --max-emit-bytes=4000000
+
+target log_base = level_filter with baseline
+target log_avx2 = level_filter with avx2
+target log_big  = level_filter with big
+
+pattern (?i)error|warn|fatal
+name level_filter
+m "an ERROR here" 3 8
+```
+
+**Hand-trace.** Head: three `config` blocks (`avx2` and `big` each
+inherit `baseline`'s `--no-captures` through `from`, then add their own),
+three `target` lines naming one definition three times. Body: one block.
+`pcrec --source log.rxt` emits **three** `.c` files;
+`--target log_avx2` emits one. All three carry
+`rx_info.name == "level_filter"` and three distinct prefixes (§2.7).
+`big` is the D84 addendum-3 case, and it is exactly the shape
+`docs/spec/limits.md` already tells callers to use. The harness runs the
+block's one case in each of the three targets' configs, and identity
+between them is a free control.
+
+### 6.4 An exemplar-analysis findings file (`freq`, W2)
+
+Written by the analyzer, committed; the exemplar is not (D83, Frank).
+
+```
+# exemplars/loglines.freq.rxt — WRITTEN BY THE ANALYZER. Do not hand-edit.
+freq loglines
+  question which byte is rarest in this exemplar
+  reader OPT-A rarest-byte candidate-scan selection
+  exemplar prod-web-01 nginx access log, 2026-08 (not committed)
+  bytes 4187336614
+  sha256 9f2c0b1e7a4d38c5be6109f7d2a4c83b5e0d7f61a9c2b48e35d7061fa8c3b92d
+  analyzer scripts/exemplar_freq.py 0.1
+  date 2026-08-29
+  row 0    412 0 0 0 0 0 0 0 0 118344 4192011 0 0 91 0 0
+  row 16   0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+  row 32   681240119 3341 24 88190 4412 33 991 62204 41180 41180 8823 6 2201947 774310 2119883 1884420
+  … 13 more rows
+```
+
+and a user of it:
+
+```
+lib <rfc5322>
+include "exemplars/loglines.freq.rxt"
+
+config prod
+  freq loglines
+  pcrec --features all
+
+target email_prod = email with prod
+```
+
+**Hand-trace.** The findings file's head is one data block; its body is
+empty — a legal file with zero pattern blocks, which the grammar admits
+(`body = { pattern-block }`, possibly none) and which is the point: this
+is data, not tests. `question` and `reader` are required, which is
+§2.10's membership rule made structural. The user's file `lib`s a
+library by its **store** spelling (`<rfc5322>` — searched on the library
+path, never relative), `include`s the findings file by its **local**
+spelling, selects the table in a config, and builds one target against
+it. **The same pattern built against a second exemplar is a second
+`target` line, not a second file** — which is what made the
+target-as-declaration shape right.
+
+### 6.5 A today's-`.rxt` file, unchanged (U1, all waves)
+
+Verbatim from `docs/spec/rxt_format.md`'s own example, which is what
+one of the 179 files looks like:
+
+```
+# Literal matching and basic quantifiers.
+
+pattern abc
+m "abc" 0 3
+m "xxabcxx" 2 5
+n "ab"
+
+pattern a+
+m "aaa" 0 3
+n "b"
+
+# An invalid pattern: unbalanced group.
+pattern (bad
+perr
+
+pattern colou?r
+m "The color and colour are spelled differently." 4 9
+m "colour" 0 6
+m "byte \x41 then newline\n" 5 6
+```
+
+**Hand-trace.** Head: **empty** — the file's first non-comment,
+non-blank line is a `pattern` line, which is true of all 179 corpus files
+(MEASURED, §5.1). Body: four blocks. Every block has L = ∅ and R = ∅, so
+EXPAND is the identity and the compiler input is byte-for-byte today's.
+No `target` line and more than one block, so the file builds nothing. The
+`perr` block is evaluated in exactly one cell (§2.6). `\x41` and `\n`
+decode as they do today. **Nothing in this file is new, nothing in it
+means anything different, and nothing in it needed to change.**
