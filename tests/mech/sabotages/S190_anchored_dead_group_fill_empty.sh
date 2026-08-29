@@ -24,7 +24,7 @@
 #     PASS. The loop is still there, still spells `PCREC_UNSET`, still sits
 #     below the early return — only its BOUND moved, and a structural check
 #     that reads emitted TEXT cannot see a bound.
-#   - `tests/anchored/run_anchored_diff.sh` §1 stays green across all 147,986
+#   - `tests/anchored/run_anchored_diff.sh` §1 stays green across all 147,620
 #     of its cells, because §1 compiles BOTH arms `--no-captures` and
 #     `RX_NCAPS` is 1 there — the loop it is checking is EMPTY in the correct
 #     build too.
@@ -39,8 +39,8 @@ SAB_ID="S190-anchored-dead-group-fill-empty"
 SAB_FILE="src/gen/emit_dfa.c"
 SAB_SUITES="anchdiff anchoredmatch harness"
 SAB_HARNESS_TARGET="tests/base/groups.rxt"
-SAB_DESC="the unwrapped <prefix>_match_caps's dead-group fill loop is bounded at 1 instead of RX_NCAPS, so every group slot above 0 is returned to the caller UNWRITTEN — spec §3.3's 'all written on success' broken on a DFA artifact with RX_NCAPS >= 2, while all four of run_anchored_match.sh §3's grep predicates still pass and run_anchored_diff.sh §1's 147,986 --no-captures cells stay green"
-SAB_DOC_FIGURE="PRE-VALIDATED (r41 critic-checks 2026-08-28, re-measured at landing): DETECTED by tests/anchored/run_anchored_diff.sh §2 ALONE. §3's greps 4/4 pass, §1 green on 147,986 cells, tests/base/groups.rxt green — a bound is invisible to every check that reads emitted text, which is why §2 is a RUN"
+SAB_DESC="the unwrapped <prefix>_match_caps's dead-group fill loop is bounded at 1 instead of RX_NCAPS, so every group slot above 0 is returned to the caller UNWRITTEN — spec §3.3's 'all written on success' broken on a DFA artifact with RX_NCAPS >= 2, while all four of run_anchored_match.sh §3's grep predicates still pass and run_anchored_diff.sh §1's 147,620 --no-captures cells stay green"
+SAB_DOC_FIGURE="CANONICAL RUN 2026-08-29 (run_sabotage_matrix.sh S190 at cf05077): anchdiff:9fail/5pass, anchoredmatch:1fail/15pass, corpus:0fail/26pass -- DETECTED. THE DETECTION IS anchdiff §2 ALONE: on the same planted tree §3's four grep predicates all PASS and §1 stays green on 147,620 --no-captures cells, and the single anchoredmatch failure is §4b's reference-build-produced-warnings check firing on gcc's complaint about the plant's own dead loop -- an incidental red, not a detection. §2's signature is 7 of 8 witnesses diverging as default=(-7,-7) vs denied=(-1,-1): the delivered build hands back the driver's poison where the ground truth writes PCREC_UNSET"
 SAB_COUNT=1
 # THE ANCHOR CARRIES THE PRECEDING LINE, and it has to: the SAME fill loop is
 # emitted at TWO sites — `emit_search_head`'s (the search-and-filter form's,
