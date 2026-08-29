@@ -22,6 +22,13 @@ selected per artifact when the exact lowering's NFA exceeds a budget, stamped,
 and deniable. It costs 23 of 2,878 corpus artifacts their exact prefilter, and
 it makes K41 witness 2 compile under the default caps.
 
+**And then it buys one thing back.** Because the collapsed machine is not the
+one that overflowed, [SEL-1]'s DFA-overflow fallback gains a rung BEFORE the
+one that drops the prefilter entirely (§6): `level-context` keeps a prefilter
+it used to lose and runs 2.4-3.4x faster. That is STEP 3's separate second
+commit — the size fix and the speed fix are one mechanism reaching two
+different failures, not two mechanisms.
+
 ## 1. The measured need
 
 **Where the count enters.** `src/core/compile.c:860-875` builds ONE forward +
