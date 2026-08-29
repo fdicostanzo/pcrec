@@ -1490,7 +1490,7 @@ Four controls, in the order they must land:
    moves. And the check **records the excluded population's size** in its
    output, so an exclusion that silently grows to cover the corpus is visible
    as a number rather than as a green run.
-2. **`-fno-size-term` (bit 17)** joins `make test-axes` by construction — it is
+2. **`-fno-size-term` (bit 18)** joins `make test-axes` by construction — it is
    a `PCREC_NO_*` bit and the script's own `grep` finds it.
 3. **Zero cost where not selected (D82), proved as [OPT-K] §7.3 proved it, not
    inferred**: at least four declined patterns spanning both engines, compiled
@@ -1569,8 +1569,8 @@ not `rx_info` fields, for the same reason.)
 
 ### 7.2 The deny flag
 
-`PCREC_NO_SIZE_TERM = 1u << 17` / `-fno-size-term`. **Bit 16 is taken** —
-[OPT-K]'s `PCREC_NO_OFFSET_SKIP`, verified in `lib/pcrec.h`. `docs/spec/
+`PCREC_NO_SIZE_TERM = 1u << 18` / `-fno-size-term`. **Bits 16 and 17 are taken** —
+[OPT-K]'s `PCREC_NO_OFFSET_SKIP` and [ENG-ABS]'s `PCREC_NO_ANCHORED_DFA`. `docs/spec/
 tuning.md` gains a §2.15 in **§2.14**'s deny-only shape (`-fno-offset-skip`,
 bit 16 — the closest precedent, panel finding AR11), and §2's count moves
 from fourteen to fifteen.
@@ -1591,20 +1591,31 @@ list was short by two):
 
 ### 7.3 The registry
 
-`tests/registry/run_registry_tests.sh` pins the axis-registry check count at
-**59** (moved from 53 when [OPT-K]'s bit 16 joined). This row moves it again.
-The note deliberately **does not guess the new number**: it is the count
-`axes_registry_check` produces once the candidates are registered, read from
-the run and pinned in the same change. Site named, value measured — the
-inverse of pinning a number and then making the code agree.
+`tests/registry/run_registry_tests.sh` pins the axis-registry check count. The
+note deliberately did **not** guess the new number, and it was right not to:
+
+| | |
+|---|---|
+| before this row (after [ENG-ABS]) | **64** |
+| estimated when the shape was ruled | 65 |
+| **MEASURED from a run** | **67** |
+
+The two-off gap is the point. The `size-term` axis's two candidate rows carry
+THREE checks between them rather than one each, which no amount of reasoning
+about "two rows" would have produced. Site named, value measured — the inverse
+of pinning a number and then making the code agree — and the reason the pin's
+comment now says to re-derive it at every landing rather than carry it forward.
+
+`--list-axes` after the merge: **71 rows across 42 distinct axes**, two of them
+this row's.
 
 ### 7.4 The five things every axis gets ([CHK-2]'s convention)
 
 | # | thing | this row's |
 |---|---|---|
 | 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (five values), `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES` (§7.1) |
-| 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (bit 17), `docs/spec/tuning.md` §2.15 |
-| 3 | identity gate | `make test-axes` bit 17 by construction, **plus** the K sweep §6.2 owes |
+| 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (**bit 18** — [ENG-ABS] took 17), `docs/spec/tuning.md` §2.15 |
+| 3 | identity gate | `make test-axes` bit 18 by construction, **plus** `make test-ksweep` (§6.2) |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
 | 4 | structural check | `tests/codegen/run_size_term.sh` — reads the ARTIFACT: the emitted body-copy count against the stamped K, `_WHY` against which path ran, and the two effective caps against the flags. **It must handle the NO-COUNTER-RUNG case** (finding S3): where `vm_counter_fits` declines, the copy count is `count` and K is inert, so a check that asserts `ceil(count/K)` unconditionally fails on a correct artifact |
 | 5 | sabotage row | `tests/mech/` — the ladder reduced to a greedy descent (must be caught by the non-monotone subject, §3.1); the materiality bar removed; the cap's comparison inverted |
@@ -1711,7 +1722,7 @@ prediction with a tolerance, so a 5× real gain on a 20× prediction cannot pass
 
 **Answer identity**, before any of the above: §6.2's three controls plus the
 byte-identity-against-explicit-`--unroll` control, and `make test-axes` green
-under bit 17.
+under bit 18.
 
 ---
 
@@ -1778,48 +1789,66 @@ under bit 17.
 
 ---
 
-## 11. What STEP 2's code phase builds, in cost order
+## 11. AS BUILT — every place the code departs from this note, and where
 
-**The largest piece is the plumbing, not the policy** (finding S1). The rule
-itself is a loop; making the emitter runnable more than once into a
-caller-chosen buffer is the work.
+The code phase is complete. This section is the as-built record rather than a
+plan: a reader comparing the shipped compiler against the note approved at
+`e72b57d` should find every difference named here.
 
-1. **The ladder as attempts in `compile_driver` (§2.2b).** Not the trial flag
-   the design first specified: the loop [SEL-1] built already has the shape,
-   so this is a phase machine over the existing `setjmp`, plus carried state
-   in the style `overflow_why` established. It is NOT a new analysis, and
-   deliberately so — a counting pre-pass would have to mirror
-   `vm_counter_fits`' K-dependence (S3), possessification, revdet, splice and
-   the MRL guard, with nothing keeping it in sync.
-1b. **The early abort (§2.2c)**: `StrBuf.abort_over`, checked in `sb_grow`,
-   armed on ladder attempts only.
-1c. **The re-emission identity control (§2.2d)**, which replaced R3's
-   sabotage and is what catches state leaking across attempts.
-2. **The K selection (§3.3)** at that call site: the ladder, `argmin N`, the
-   threshold gate and the materiality bar. Small, once (1) exists.
-3. **The two caps (§4)**: the code-bytes cap on the ladder-chosen emission, the
-   total-bytes cap as an exact post-emission check before the file is written,
-   and §4.4's ladder re-run with the bar bypassed — which is the part a reviewer should
-   read first, because it is what makes "cannot ship past a cap" true.
-4. **The overrides (§4.5)**: two `pcrec_options` fields, two CLI flags,
-   raise-only validation with a below-default value refused as malformed.
-5. **The four stamps (§7.1)** including `_UNROLL_K_WHY`'s five states.
-6. **The deny flag (§7.2)**, bit 17, and the registry re-pin (§7.3).
-7. **The `abi` bump, four sites (§8).**
-8. **The checks (§6.2, §7.4)**: the K sweep with its specified exclusions AND
-   its give-up-code assertion on the excluded cells (R6), the structural check
-   including the no-counter-rung case, the sabotage rows — including R3's
-   `vm_publish_saves` row — R1's witness as a `.rxt` cell, and the
-   byte-identity-against-explicit-`--unroll` control.
-9. **The spec hunks (§7.2's table)**: `tuning.md` §2.15, `cli.md:218-224`,
-   `match_api.md` §6.3 and §6, `limits.md`'s constants, its §7 sentence
-   (finding S7) and its "Handling an oversized artifact" section (§4.6).
-10. **The K41 and fuzz-gate hunks (§4.8)**, re-derived by RUNNING the gate,
-    not widened — including `fuzz.py`'s new `size_cap` bucket on the
-    `state_cap` precedent, without which a size refusal is counted as an
-    accept/reject divergence.
+### 11.1 What shipped, in the order it was built
 
-It does **not** build any of census §7's three levers (§5), per-quantifier K
-(§5.4, [ENG-CLAMP]'s), any prefilter-shrinking change ([OPT-4]/K39's — this
-row prices and refuses, it does not shrink), or any model on the byte axis
-(D84's addendum removed it).
+| # | piece | where |
+|---|---|---|
+| 1 | the ladder as ATTEMPTS in `compile_driver`'s existing retry loop, with carried state in `overflow_why`'s style | `src/core/compile.c` |
+| 1b | the early abort — `StrBuf.abort_over`, checked in `sb_grow`, armed on ladder attempts only | `src/core/internal.h`, `sb.c` |
+| 1c | the re-emission identity control, which replaced R3's sabotage | `compile.c` |
+| 2 | the K selection: threshold, `argmin N`, materiality bar, `size_term_choose` | `compile.c` |
+| 3 | the two caps and their refusals, checked post-emission before anything is written | `compile.c` |
+| 4 | the raise-only overrides, one shared `parse_raise_only` | `cli/main.c` |
+| 5 | the four stamps, `_UNROLL_K_WHY` with SIX values | `emit_vm.c`, `emit_dfa.c` |
+| 6 | the deny flag at **bit 18** and the axis's two registry rows | `lib/pcrec.h`, `axes_dump.c` |
+| 7 | the `abi` bump 10 → 11, four D76 sites | four files |
+| 8 | the checks: `run_size_term.sh` (22), `run_ksweep.sh`, `size_term.rxt` (21 cases) | `tests/` |
+| 9 | the spec hunks: `limits.md` §8 + "Handling an oversized artifact", `tuning.md` §2.15, `cli.md`'s axis list, `match_api.md` §6.3 and §6 | `docs/spec/` |
+| 10 | the fuzz gate's `size_cap` bucket and its re-derived pins; K41 re-scoped | `tests/fuzz/`, `known_issues.md` |
+
+### 11.2 The departures, each with the section that records it
+
+**Six differences from the approved note, none silent:**
+
+1. **The ladder is attempts in the existing retry loop, not a `trial` flag**
+   (§2.2b). The blocker R1 named is real; the mechanism it proposed was not
+   what the code needed, because `compile_driver` already had the shape.
+2. **The size measurement is a post-emission SCAN, not an accumulator**
+   (§4.2) — an accumulator would be a second implementation of a definition
+   `size_count.sh` already owns.
+3. **Both caps apply to BOTH ENGINES** (§4.2), where the note scoped the code
+   cap to VM artifacts — a leftover from when it was a node cap.
+4. **The ladder is gated on the COUNTER RUNG being live** (§3.3). Not in the
+   approved note at all: added because without it the ladder ran on artifacts
+   `K` cannot shrink and blew three CPU ceilings.
+5. **The threshold reads CODE bytes, not total** (§3.3). Same reason one level
+   up, and the same lesson as §4.3b's other two.
+6. **The deny flag is bit 18**, not 17 — [ENG-ABS] took 17 first.
+
+**And two things the note anticipated that the code did NOT need:** R3's
+`vm_publish_saves` sabotage (each attempt re-parses, so the hazard cannot
+arise — §2.2d), and a pre-emission node count (§2.2a).
+
+### 11.3 What is NOT built, and is owed
+
+- **`tests/mech` sabotage rows.** §7.4 item 5 names three (the ladder reduced
+  to a greedy descent; the materiality bar removed; the cap's comparison
+  inverted) and none is written. The first is the one that matters: a greedy
+  descent is ANSWER-IDENTICAL, so no identity gate can see it — only a SIZE
+  assertion on the non-monotone subject can. Until it exists, that property
+  rests on `run_size_term.sh`'s stamp checks rather than on a detection.
+- **The byte-identity-against-explicit-`--unroll` control** (§6.2 control 4).
+  `run_size_term.sh` asserts the stamped `K` matches the artifact, which is
+  weaker than asserting the two builds are byte-identical.
+- **A full `make test-ksweep` over the whole corpus.** Validated on 100 cases;
+  the full sweep is one corpus run per rung and is owed on a quiet box.
+
+None of the three is a correctness gap in the shipped mechanism; all three are
+gaps in what would CATCH a future regression, which is the more durable kind
+and is why they are listed rather than folded into a closing summary.
