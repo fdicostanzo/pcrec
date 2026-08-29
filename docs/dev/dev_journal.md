@@ -17597,3 +17597,47 @@ the caps count the .h in split form). Its own method note: a bare
 ALL SENT to the lane in one round (~08:4x); merge after the fix commit
 and a focused re-check of S1/S2/S3/S6 by critic-sem; then the union
 battery; then I-17 (nothing moves on the bench).
+
+#### Forty-fourth session, part 9 — [ART-SIZE] STEP 2 MERGED (6e37a4c); the union battery launched; both lanes retired (2026-08-29 ~09:1x EDT)
+
+r42's pre-merge round, all by run: critic-checks' C1 (the stale
+FILEPIN — the fourth-site miss recurring one lane later, on the same
+site; confirmed `differing=952` at the old pin, re-pinned to b3cf716,
+0 differing on all four axes; the D76 lesson written where the pin is
+SET) and C2; critic-meas' M1 (the loaded-run size log — REGENERATED
+rather than restored, so the emitter equality between c41225d and HEAD
+is verified, not assumed; the three-value diff unchanged), M2 (a
+constant 6,121 B scaffolding shift under the witness figures — a probe
+now prints them), M5, M6 (the original tower text unrecoverable; the
+table replaced by an archived re-measurement); critic-sem's S1 (the
+`3 × max_emit_bytes` overflow — saturated, §8 cell), S2 (the rescue
+walked K ascending — fixed, §5 pins K=3), S3 (`vmsb` armed: the 6-deep
+tower 62 MB / 0.52 s → 45 MB / 0.22 s — the abort finally bounds the
+EMISSION, not the copy), S5 (both ceilings over the whole corpus via
+one `corpus_patterns()` helper — 400 → 2,772, and the old one-level
+glob had left the 775 nested d27 patterns outside BOTH ceilings), S8;
+and **S6, resolved AGAINST the lane by the critic's re-check**: the
+lane's ratio sweep divided the DELIVERED artifact by K=8's — for a
+declined pattern the same artifact plus a 12-byte-longer stamp, so
+27,318/27,306 = 1.0004 by construction, which manufactured "nothing
+between 0.68 and 1.00"; on the bar's own quantity (the ARGMIN RUNG's
+bytes) the continuum is real — 36 ladder patterns on `--engine=vm`,
+0.5226 → 0.8338, fifteen inside the band, 0.7475 TAKEN / 0.7548 DECLINED
+across the bar — and the verdict is AXIS-DEPENDENT (K-invariant
+prefilter tables pull every default-axis ratio toward 1). The lane
+accepted it as the fourth "which quantity does this act on" instance —
+"the first where the wrong quantity produced a REASSURING answer instead
+of an alarming one" — swapped §9's witnesses (the bar pinned to 0.73 %,
+74 and 76 each fail a cell), stated the axis-dependence, archived its
+probe WITH its residual, and found one more of its own: the "18
+interior optima census" was a `head -150` SAMPLE that also missed every
+nested d27 directory — the census is **159** (147 K=2, 11 K=3, 1 K=4):
+three of the ladder's four interior rungs earn their place, and §11.3
+names the two `head -N` instruments as one error twice. `hsb` armed
+too. MERGED 6e37a4c after discarding main's battery-regenerated size
+log (the standing hazard, on the manager's side this time); plan row +
+r42 close 5038dbe. UNION BATTERY launched 09:13 on 6e37a4c
+(mgr/battery_6e37a4c.log). Both lanes are DONE: engabs (merged
+dfd112b, battery-proven), artsize3 (merged 6e37a4c, battery pending);
+worktrees retire after the battery. I-17 (abi 11 pin; nothing moves on
+the bench) after the verdict.
