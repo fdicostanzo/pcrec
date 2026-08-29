@@ -258,16 +258,21 @@ static void job_cleanup(Ctx *cx)
  * at K=3 — `vm_counter_copies`' mandatory `K + m%K` term is why), so a greedy
  * DESCENT would stop at a local minimum. Evaluating the endpoints cannot.
  *
- * WHY ONLY THE ENDPOINTS, and what would widen this set. Over the 15 sweep
- * subjects of docs/design/artsize_impl/ksweep.tsv, `argmin N` over the full
- * [8,6,4,3,2,1] and over [8,1] alone give an IDENTICAL result on 15 of 15:
- * K=1 wherever the term binds, K=8 wherever it does not. The interior is
- * therefore unexplored rather than excluded, and the NAMED TRIGGER to widen
- * the ladder is a MEASURED pattern whose K=1 artifact is larger than some
- * interior K's. That trigger is free to detect: the K-sweep identity gate
- * already emits the corpus at several K, and it reports an interior optimum
- * if it ever sees one (informational today, this row's re-open signal). */
-static const int SIZE_TERM_LADDER[] = { 1 };
+ * THE INTERIOR RUNGS ARE KEPT, AND THEIR COST IS BOUNDED ELSEWHERE. Over the
+ * 15 sweep subjects of docs/design/artsize_impl/ksweep.tsv the argmin happens
+ * to be an ENDPOINT every time (K=1 where the term binds, K=8 where it does
+ * not), which is an argument for a shorter ladder — but 15 subjects is not a
+ * census, and what made the full ladder expensive was never its length: it was
+ * running at all on artifacts K cannot shrink. The threshold below gates on
+ * CODE bytes, which fixed that at the source, so the interior rungs cost only
+ * the patterns the term can actually help.
+ *
+ * WHETHER THEY EARN IT IS A MEASUREMENT, NOT A BET. The K-sweep identity gate
+ * emits the corpus at several K anyway, so it reports an INTERIOR OPTIMUM if
+ * it ever finds one — a pattern whose K=1 artifact is larger than some
+ * interior K's. Informational today; a measured YES keeps these rungs and a
+ * measured NO is the trigger to drop them. */
+static const int SIZE_TERM_LADDER[] = { 6, 4, 3, 2, 1 };
 enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LADDER[0]) };
 
 /* [SEL-1] one retry for the DFA-overflow fallback, [ART-SIZE] one attempt per

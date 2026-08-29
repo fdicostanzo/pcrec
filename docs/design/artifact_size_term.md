@@ -550,6 +550,16 @@ At VM emission, with `K_opt` = `--unroll=`'s value if given, else
         else:                                             keep K_opt's
 ```
 
+- **The ladder runs only when the COUNTER rung is live**, and that is a
+  structural fact rather than a heuristic: `K` is the counter rung's chunking
+  factor and affects nothing else, so an artifact that never took that rung is
+  byte-identical at every `K`. The emitter already computes the rung mask and
+  already stamps it (`<PREFIX>_VM_RUNGS`); the term reads bit 0x10 of it.
+- **The threshold is on CODE bytes, not on the total**, for the same reason one
+  level up: `K` moves code and cannot move a table by a byte, so gating on
+  total size would run the ladder on artifacts it provably cannot shrink. The
+  corpus's largest artifacts are exactly that shape — `((a)|ab){4000}c` is
+  651,540 bytes of which 32,428 are code.
 - **The ladder is `argmin N`, exact, with no model in it** (§3.1a, finding S4).
   §2.2's dry emission supplies `N` directly; the fitted model is load-bearing
   only for the THRESHOLD above and the MATERIALITY bar below.
@@ -946,6 +956,27 @@ note claimed "0 of 2,487 corpus patterns refused" and stopped there; the three
 shapes above are in `tests/resource`, which that sweep never covered. The same
 gap cost a real regression during the code phase (§3.3's counter-rung gate) —
 a population nobody counted, one more time, and this time it was this lane's.
+
+### 4.3b One lesson, learned three times: WHICH QUANTITY does this act on?
+
+Every wrong answer this row produced came from measuring a quantity ADJACENT
+to the one that mattered, and it happened three times in three different
+places:
+
+| # | the mechanism | the wrong quantity | the right one | how it showed up |
+|---|---|---|---|---|
+| 1 | the **cap** | total bytes, then nodes | **code bytes** | a byte cap refuses `a{1,31000}` (gcc 0.34 s); a node cap admits witness 2 (552 nodes, gcc 66.92 s) |
+| 2 | the **early abort** | comment-excluded bytes | **raw bytes, with a derived factor** | the bound is checked on what a `StrBuf` knows, so the cap's own quantity was not available there |
+| 3 | the **threshold** | total bytes | **code bytes** | the ladder ran on the corpus's largest artifacts, which are table-dominated and cannot shrink — five wasted pipeline runs that blew three CPU ceilings |
+
+The recurring shape is that each mechanism has a quantity it can actually
+ACT ON, and using the one next to it looks right in every summary and fails on
+the population where the two diverge. It is worth stating as a question to ask
+of a new mechanism rather than as three separate corrections:
+**what can this change, and am I measuring that?**
+
+Recorded in `docs/dev/learnings.md` §3 as well, because it is not specific to
+this row.
 
 ### 4.4 Where the caps fire, and the ladder re-run (finding S5)
 

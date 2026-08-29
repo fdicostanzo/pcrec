@@ -96,6 +96,19 @@ distilled forms:
 - Ask of any new guard: not "does this check run" but **"what would have
   to be true for it to fail, and who chose that input"**. Liveness
   arguments are not value arguments.
+- **Of any new MECHANISM (not just a check): what can this actually
+  change, and am I measuring THAT?** [ART-SIZE] got the answer wrong
+  three times in three places before getting it right — the cap was
+  drafted on total bytes and then on nodes before landing on CODE bytes
+  (a byte cap refuses `a{1,31000}`, which gcc compiles in 0.34 s; a node
+  cap admits K41's second witness, 552 nodes and 66.92 s); the early
+  abort had to move from the cap's own quantity to RAW bytes with a
+  derived factor, because raw is what the buffer knows; and the K rule's
+  threshold ran the ladder on the corpus's LARGEST artifacts until it
+  gated on code, because those are table-dominated and `K` cannot shrink
+  a table by a byte. Each wrong quantity sat one step from the right one
+  and read correctly in every summary; each failed only on the
+  population where the two diverge.
 - Which of the branches I just added can no test see? What does this
   code compute that nothing observes? Which suite reads this FIELD of
   the output (offsets were the blind field twice of three)?
