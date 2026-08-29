@@ -5907,3 +5907,46 @@ bench, which already has the exemplar corpora — to be ruled when the
 work starts); `--exemplar FILE` (or whatever the flag is named) takes
 the FINDINGS file, never the raw text. A built-in static frequency
 table is the fallback when no findings file is given.
+
+## D84 — the emitted-size cap is NOT deniable but IS overridable upward; shipped BYTES are a concern in their own right, and UNPREDICTABILITY is the worse half (Frank, 2026-08-28 ~23:1x, forty-fourth session, on r40's Q2/Q4)
+
+**Context.** The [ART-SIZE] STEP 2 design note (docs/design/
+artifact_size_term.md, r40) derived a NODE cap from D45's compile
+budget — a node costs gcc ~5,930× a table entry, so a byte cap that
+refused the 2 MB witness would also refuse `a{1,31000}` (1.38 MB, gcc
+0.34 s) — and asked two questions: whether the cap may be turned off
+(Q2), and whether table-dominated artifacts that are large to ship but
+cheap to compile (K41's second witness: 1.25 MB, 92 % prefilter jump
+tables) are this row's concern (Q4).
+
+**Rulings.**
+1. **Q2 — "agree" with the panel's shape:** the cap is NOT deniable
+   (`-fno-size-term` never reaches it — a safety refusal a flag turns
+   off is not one) but IS OVERRIDABLE UPWARD: `--max-emit-nodes=N` and
+   a matching `pcrec_options` field, raise-only, hard-ceilinged by
+   `PCREC_MAX_VM_NODES`; the effective value is STAMPED as a selection
+   fact (D81). Every other resource limit in pcrec has a per-compile
+   override (limits.md §3); this one's cost falls on the caller's own
+   gcc, and on the [SEL-1] fallback path "change the pattern" is not
+   always available.
+2. **Q4 — "agree": a large byte count makes the artifact UNUSABLE, and
+   the problem being UNPREDICTABLE is worse.** Shipped size is a
+   concern in its own right, not a proxy for compile time. Consequence
+   for the row: the "hard emitted-size cap" of the charter is TWO caps
+   over one model — predicted gcc cost (nodes; D45's obligation) and
+   predicted emitted BYTES (usability) — both refusing, both
+   overridable upward on the same shape (`--max-emit-bytes=N`), both
+   stamped. The MECHANISM that makes witness 2 large — the VM hybrid's
+   inlined prefilter scaling with a bounded-repeat count, K39 — is
+   [OPT-4]'s to shrink; this row's job is that no artifact ships past
+   a stated size without the caller having asked, and that the size a
+   pattern will produce is PREDICTABLE from the pattern (the model,
+   its stamps, the refusal naming predicted vs cap) rather than
+   discovered after a 1.2 MB file appears.
+
+**Revisit-when.** [OPT-4] lands (witness 2 should then pass under the
+default byte cap rather than refuse); or the model's error on the
+prefilter term (r40 F1's refit) proves too wide to cap on — then the
+byte cap binds on the MEASURED emitted size at the end of emission (a
+post-check, exact, refusing before the file is written) and the model
+is advisory.
