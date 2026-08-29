@@ -38,13 +38,15 @@
 #       unwrapped form never calls that function, so the fill has to be in
 #       `_match_caps` or a DFA artifact with `RX_NCAPS > 1` returns whatever
 #       the caller's array held.
-#   §4  the OVERFLOW ARM IS LIVE. Its corpus population is ZERO and that is
-#       measured, not assumed (§5's census) — the caps are shared and the
-#       mandatory machines reach them first. A fallback nobody can reach is a
-#       fallback nobody has tested, so this section builds a reference
-#       compiler with `-DPCREC_ANCHORED_MAX_STATES` lowered and drives real
-#       patterns through the arm: the stamp flips, the ANSWERS do not move,
-#       and no diagnostic appears.
+#   §4  the OVERFLOW ARM IS LIVE, in TWO ways since the r41 close. §4a names
+#       the SHIPPED-CEILING witnesses — four giant-repeat shapes whose
+#       anchored machine exceeds `PCREC_ANCHORED_MAX_STATES` (4,096) and which
+#       therefore take the fallback in an ORDINARY build, pinned BY NAME
+#       because they are `tests/resource`'s bash-array shapes and appear in no
+#       `.rxt` corpus and no size-log row. §4b keeps the lowered-cap reference
+#       compiler as the control that the arm behaves the same way at a cap no
+#       real shape reaches, and on small fast patterns. Before r41's S1 the
+#       arm had ZERO reachable population; that is what the ceiling changed.
 #   §5  the corpus census, with every population PINNED. The vacuity this
 #       row is most exposed to is the form silently ceasing to be selected:
 #       every answer in the tree would stay right, `make test-axes` would stay
@@ -265,42 +267,94 @@ else
 fi
 
 # =========================================================================
-# §4 THE OVERFLOW ARM IS LIVE, AND FALLING BACK CHANGES NO ANSWER
+# §4a THE OVERFLOW ARM'S SHIPPED-CEILING WITNESSES, PINNED BY NAME
 # =========================================================================
-# §5's census measures this arm's real population at ZERO: the caps are shared
-# between the machines, the mandatory pair is built FIRST and is at least as
-# large, so a corpus pattern reaches a cap on the pair before the optional
-# machine can. That is a fallback nobody has tested, so it is tested HERE, with
-# a reference compiler whose anchored cap is lowered to 6 states.
+# `PCREC_ANCHORED_MAX_STATES` is 4,096 — the optional machine's OWN ceiling,
+# derived at the r41 close from the corpus (largest anchored machine 2,001
+# states, `a{1,2000}`) and sitting in the empty interval (2,001, 20,001).
+# These four shapes have 20,001-30,001-state anchored machines and therefore
+# take the fallback IN AN ORDINARY BUILD.
+#
+# THEY ARE PINNED BY NAME BECAUSE NOTHING ELSE COUNTS THEM. They are
+# `tests/resource/run_resource_tests.sh`'s bash-array shapes: no `.rxt` block
+# holds them, so §5's corpus census cannot see them, and `SIZELOG` never
+# writes a row for them, so `[ART-SIZE.1b]`'s tripwire cannot either. That is
+# exactly how r41's S1 and S2 escaped every instrument in the tree — a
+# population nobody counts, which is `docs/dev/learnings.md` §3's own heading.
+#
+# EACH ROW ASSERTS FOUR THINGS: the shape compiles (an overflow is a selection
+# outcome, never a refusal), it stamps `search-filter`, it emits NO anchored
+# table, and — the non-vacuity — its `RX_DFA_SCAN` is `"unanchored"`, so it is
+# in the arm for the OVERFLOW reason and not because it fell to ENG_ATTEMPT or
+# the empty engine. A witness that stopped overflowing would go green on the
+# first three and red on nothing; the fourth is what makes the count mean
+# "reached the overflow arm".
+OVERFLOW_WITNESSES=(
+    '[a-z]{0,30000}'
+    'a{0,25000}'
+    'a{0,20000}'
+    '(a|b){0,30000}'
+)
+ovf_named=0
+for pat in "${OVERFLOW_WITNESSES[@]}"; do
+    f="$WORKDIR/ovf.c"
+    if ! emit "$f" "$pat"; then
+        bad "§4a '$pat' did NOT COMPILE — an optional machine over its ceiling must be a selection outcome, never a refusal"
+        continue
+    fi
+    gs="$(stamp "$f")"; sc="$(grep -m1 '^#define RX_DFA_SCAN "' "$f" | cut -d'"' -f2)"
+    if [ "$gs" != search-filter ]; then
+        bad "§4a '$pat' stamps RX_DFA_MATCH \"$gs\" — its anchored machine is 20,001+ states against a 4,096 ceiling, so it must take the fallback. Either the ceiling moved or the machine shrank; re-derive both before re-pinning"
+        continue
+    fi
+    if [ "$sc" != unanchored ]; then
+        bad "§4a '$pat' is in the fallback with RX_DFA_SCAN \"$sc\", not \"unanchored\" — it reached search-filter for a DIFFERENT reason (the attempt or empty engine), so it is not an OVERFLOW witness and this arm has lost a member"
+        continue
+    fi
+    has_anchored_tbl "$f" \
+        && { bad "§4a '$pat' took the fallback but still emitted an anchored table"; continue; }
+    ovf_named=$((ovf_named + 1))
+done
+[ "$ovf_named" -eq 4 ] \
+    && ok "§4a all 4 NAMED shapes reach the OVERFLOW arm in an ordinary build: compiled, no diagnostic, RX_DFA_MATCH \"search-filter\" with RX_DFA_SCAN \"unanchored\", no anchored table. This population is 4 and is 0 without the ceiling" \
+    || bad "§4a only $ovf_named of 4 named shapes reach the overflow arm — before the ceiling this population was ZERO and the arm was dead code; a drop here restores that"
+
+# =========================================================================
+# §4b THE SAME ARM AT A CAP NO REAL SHAPE REACHES
+# =========================================================================
+# §4a's four witnesses are heavy (20-30 s of compile each is why the ceiling
+# exists at all), so the arm is ALSO driven on small fast patterns through a
+# reference compiler with the ceiling lowered to 6 — which additionally proves
+# the arm is a property of the CEILING rather than of those four shapes.
 #
 # WHAT THIS PROVES, and what it deliberately does not. It proves that when the
 # optional build reports an overflow the compile CONTINUES, the selection sees
 # it, the stamp says so, no diagnostic is produced and the ANSWERS are
-# unchanged. It does not prove that any shipped pattern reaches the arm — §5
-# says outright that none does.
+# unchanged — with the fallen-back artifact byte-compared against the
+# `-fno-anchored-dfa` build's, which is that form by construction.
 REF="$WORKDIR/pcrec_capped"
 REF_SRCS="$(find "$ROOT_DIR/src" -name '*.c' | LC_ALL=C sort)"
 if [ -z "$REF_SRCS" ]; then
-    bad "§4 found no compiler sources under $ROOT_DIR/src for the reference build"
+    bad "§4b found no compiler sources under $ROOT_DIR/src for the reference build"
 elif ! $CC -O0 -std=gnu11 -Wall -Wextra -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
         -DPCREC_ANCHORED_MAX_STATES=6 \
         -o "$REF" "$ROOT_DIR"/cli/main.c $REF_SRCS 2>"$WORKDIR/refbuild.log"; then
-    bad "§4 could not build the -DPCREC_ANCHORED_MAX_STATES=6 reference compiler: $(head -3 "$WORKDIR/refbuild.log")"
+    bad "§4b could not build the -DPCREC_ANCHORED_MAX_STATES=6 reference compiler: $(head -3 "$WORKDIR/refbuild.log")"
 else
-    [ -s "$WORKDIR/refbuild.log" ] && bad "§4 the reference build produced warnings: $(head -3 "$WORKDIR/refbuild.log")"
+    [ -s "$WORKDIR/refbuild.log" ] && bad "§4b the reference build produced warnings: $(head -3 "$WORKDIR/refbuild.log")"
     ovf=0; kept=0; diags=0; answers_moved=0
     # Patterns whose anchored machine needs MORE than 6 states, and one that
     # needs fewer — the second is the control that says the lowered cap did not
     # simply switch the form off for everything.
     for pat in 'foobarbazqux' 'abcdefghij[0-9]+' 'a[bc]d[ef]g[hi]j[kl]m' 'ab'; do
         pcrec_run "$REF" -p rx --no-captures --features all -o "$WORKDIR/r.c" \
-            -- "$pat" > "$WORKDIR/r.err" 2>&1 || { bad "§4 the capped compiler REFUSED '$pat' — an optional machine over a cap must be a selection outcome, never a diagnostic: $(head -2 "$WORKDIR/r.err")"; continue; }
-        [ -s "$WORKDIR/r.err" ] && { bad "§4 the capped compiler printed a diagnostic on '$pat': $(head -2 "$WORKDIR/r.err")"; diags=$((diags + 1)); }
-        emit "$WORKDIR/d.c" "$pat" || { bad "§4 the shipped compiler did not compile '$pat'"; continue; }
+            -- "$pat" > "$WORKDIR/r.err" 2>&1 || { bad "§4b the capped compiler REFUSED '$pat' — an optional machine over a cap must be a selection outcome, never a diagnostic: $(head -2 "$WORKDIR/r.err")"; continue; }
+        [ -s "$WORKDIR/r.err" ] && { bad "§4b the capped compiler printed a diagnostic on '$pat': $(head -2 "$WORKDIR/r.err")"; diags=$((diags + 1)); }
+        emit "$WORKDIR/d.c" "$pat" || { bad "§4b the shipped compiler did not compile '$pat'"; continue; }
         rs="$(stamp "$WORKDIR/r.c")"; ds="$(stamp "$WORKDIR/d.c")"
         if [ "$rs" = search-filter ] && [ "$ds" = unwrapped ]; then
             ovf=$((ovf + 1))
-            has_anchored_tbl "$WORKDIR/r.c" && bad "§4 '$pat' fell back to search-filter but still emitted an anchored table"
+            has_anchored_tbl "$WORKDIR/r.c" && bad "§4b '$pat' fell back to search-filter but still emitted an anchored table"
             # The fallen-back artifact must be the search-and-filter artifact,
             # not a third thing: compare it against the DENIED build, which is
             # that form by construction.
@@ -312,17 +366,17 @@ else
             sed 's/^#include "[^"]*\.h"$/#include "ART.h"/' "$WORKDIR/r.c" > "$WORKDIR/r.norm"
             sed 's/^#include "[^"]*\.h"$/#include "ART.h"/' "$WORKDIR/o.c" > "$WORKDIR/o.norm"
             cmp -s "$WORKDIR/r.norm" "$WORKDIR/o.norm" \
-                || { bad "§4 '$pat' over the cap produced an artifact that differs from the -fno-anchored-dfa build's — the fallback is not the form it claims to be: $(diff "$WORKDIR/o.norm" "$WORKDIR/r.norm" | head -4 | tr '\n' ' ')"; answers_moved=$((answers_moved + 1)); }
+                || { bad "§4b '$pat' over the cap produced an artifact that differs from the -fno-anchored-dfa build's — the fallback is not the form it claims to be: $(diff "$WORKDIR/o.norm" "$WORKDIR/r.norm" | head -4 | tr '\n' ' ')"; answers_moved=$((answers_moved + 1)); }
         elif [ "$rs" = unwrapped ]; then
             kept=$((kept + 1))
         fi
     done
     [ "$ovf" -ge 2 ] && [ "$answers_moved" -eq 0 ] \
-        && ok "§4 $ovf patterns drove the overflow arm under a 6-state cap: no diagnostic, the stamp flipped to search-filter, and the artifact is the -fno-anchored-dfa build's to the byte (modulo the output filename)" \
-        || bad "§4 the overflow arm's rows did not all hold: $ovf patterns reached it under a 6-state cap (expected at least 2) and $answers_moved produced the wrong fallback artifact — either the arm is unreachable or the witnesses' machines shrank; the arm's real population is already zero (§5), so this is the only place it is exercised at all"
+        && ok "§4b $ovf patterns drove the overflow arm under a 6-state cap: no diagnostic, the stamp flipped to search-filter, and the artifact is the -fno-anchored-dfa build's to the byte (modulo the output filename)" \
+        || bad "§4b the overflow arm's rows did not all hold: $ovf patterns reached it under a 6-state cap (expected at least 2) and $answers_moved produced the wrong fallback artifact — either the arm is unreachable or the witnesses' machines shrank; the arm's real population is already zero (§5), so this is the only place it is exercised at all"
     [ "$kept" -ge 1 ] \
-        && ok "§4 the control held: at least one pattern still selects unwrapped under the lowered cap, so the cap narrows rather than disables" \
-        || bad "§4 NO pattern selects unwrapped under the 6-state cap — the reference build has the form switched off wholesale, so the rows above compare a dead axis"
+        && ok "§4b the control held: at least one pattern still selects unwrapped under the lowered cap, so the cap narrows rather than disables" \
+        || bad "§4b NO pattern selects unwrapped under the 6-state cap — the reference build has the form switched off wholesale, so the rows above compare a dead axis"
 fi
 
 # =========================================================================
@@ -413,8 +467,15 @@ WORKER
         || bad "§5 the attempt-engine fallback population is $n_attempt, below the 170 floor — the fallback's largest witness set is disappearing"
     [ "$n_empty" -ge 4 ] && ok "§5 the empty-engine fallback population is $n_empty (floor 4, measured 2026-08-29)" \
         || bad "§5 the empty-engine fallback population is $n_empty, below the floor of 4 — \`\\B\\b\` and its siblings are in the corpus and must land here"
-    [ "$n_ovf" -eq 0 ] && ok "§5 the overflow fallback population is 0, as measured — §4 is what exercises that arm" \
-        || bad "§5 $n_ovf corpus artifacts now reach the OVERFLOW fallback, where the pin says 0 (measured 2026-08-29). That is not necessarily a defect: re-pin it deliberately AND give §4 a real corpus witness instead of the lowered-cap reference build"
+    # THE CORPUS's OVERFLOW POPULATION IS STILL 0 AND THAT IS THE POINT OF THE
+    # CEILING'S VALUE. 4,096 sits above the corpus's largest anchored machine
+    # (2,001 states, `a{1,2000}`) by 2.05x, so NO `.rxt` artifact loses the
+    # form to it — the ceiling's population is §4a's four out-of-corpus shapes
+    # and nothing else. A nonzero count here means a corpus pattern grew past
+    # 4,096 states: re-derive the ceiling against the new maximum rather than
+    # re-pinning this line.
+    [ "$n_ovf" -eq 0 ] && ok "§5 the corpus's overflow fallback population is 0 — the 4,096 ceiling is above the corpus's largest anchored machine (2,001 states) by 2.05x, so no .rxt artifact loses the form to it; §4a's four NAMED out-of-corpus shapes are the arm's real population" \
+        || bad "§5 $n_ovf corpus artifacts now reach the OVERFLOW fallback, where the pin says 0 (measured 2026-08-29 against a corpus maximum of 2,001 anchored states). A corpus pattern has grown past the 4,096 ceiling: re-derive the ceiling from the new maximum, do not simply re-pin this line"
 fi
 
 echo

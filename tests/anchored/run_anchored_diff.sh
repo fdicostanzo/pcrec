@@ -44,6 +44,27 @@
 # §5 pins its census: a compiler that stopped selecting the form would make
 # every comparison here trivially equal and this file would report a large
 # green number while measuring nothing.
+#
+# =========================================================================
+# §2 EXISTS BECAUSE §1 IS BLIND TO THE CAPTURE ARRAY (r41 S4)
+# =========================================================================
+# §1 compiles BOTH arms `--no-captures`, so `RX_NCAPS` is 1 on every one of
+# its cells and `_match_caps`'s DEAD-GROUP FILL loop —
+# `for (rx_g = 1; rx_g < RX_NCAPS; …) = PCREC_UNSET` — is EMPTY. The r41
+# critic planted one token (`rx_g < 1`) and measured the result: all four of
+# `run_anchored_match.sh` §3's `grep` predicates still pass, §1's 147,986
+# cells stay green, and `(?(DEFINE)(?<g>a))(?&g)b` on `"ab"` hands the caller
+# back its own uninitialised slot 1 — spec §3.3 broken with every check in
+# the tree green.
+#
+# The fill is not decoration: under `"search-filter"` those slots come from
+# `emit_search_head`, which writes them at entry to `<prefix>_search`, and
+# the unwrapped form NEVER CALLS that function. §2 is therefore a second
+# population — captures ON, `RX_NCAPS >= 2` — driven through the same driver
+# against the same denied-build ground truth, and its own vacuity is asserted
+# rather than assumed: every witness's `RX_NCAPS` is read off the artifact and
+# required to be >= 2, because a witness whose loop is empty tests nothing.
+# Sabotage row S190 is that one-token plant.
 
 set -u
 
@@ -96,6 +117,9 @@ foo bar
 EOF
 nsubj="$(wc -l < "$WORKDIR/subjects")"
 
+# =========================================================================
+# §1 THE CORPUS SWEEP — captures OFF, the whole selecting population
+# =========================================================================
 # The population. `LC_ALL=C` on the `sort -u` is [K35]'s.
 grep -rhE '^pattern ' "$ROOT_DIR/tests" 2>/dev/null | sed 's/^pattern //' \
     | LC_ALL=C sort -u > "$WORKDIR/pats"
@@ -200,6 +224,77 @@ echo "cells: $cells (pattern × subject × every position 0..n+1 × 4 anchored e
 [ "$n_ok" -ge 1150 ] \
     && ok "the compared population is $n_ok patterns (floor 1150; 1213 measured 2026-08-29)" \
     || bad "only $n_ok corpus patterns selected the unwrapped form and were compared, below the 1150 floor (1213 measured 2026-08-29). Every cell above can be green while this number falls to zero — that is what this pin is for"
+
+# =========================================================================
+# §2 THE CAPTURES-ON ARM — the dead-group fill, as ANSWERS (r41 S4)
+# =========================================================================
+# WITNESSES ARE NAMED HERE, not harvested. A DFA artifact with
+# `RX_NCAPS >= 2` is exactly wave G's dead-capture elision — a group whose
+# only lexical occurrence sits under a `{0}` or is reached only through a
+# subroutine call, so no emitted code can WRITE it and PCRE2 reports it UNSET
+# — and the corpus's own population of that shape is small and incidental.
+# Naming them keeps the arm's membership a decision this file made rather
+# than an accident of what the corpus happens to hold.
+CAPS_WITNESSES=(
+    '(?(DEFINE)(?<g>a))(?&g)b'
+    '(?(DEFINE)(?<g>a))(?&g)(?&g)b'
+    '(a){0}b'
+    'x(a){0}y'
+    'ab(c){0}'
+    '(a){0}(b){0}c'
+    '(?:(a)){0}b'
+    '(a){0}[0-9]+z'
+)
+capsd="$WORKDIR/caps"; mkdir -p "$capsd"
+c_ok=0; c_skip=0; c_bad=0; c_cells=0; c_ncaps_min=99
+for pat in "${CAPS_WITNESSES[@]}"; do
+    # CAPTURES ON — no `--no-captures` — which is the whole point of the arm.
+    if ! pcrec_run "$PCREC" -p on --features all -o "$capsd/on.c" -- "$pat" >/dev/null 2>&1; then
+        bad "§2 witness '$pat' did not compile"; c_bad=$((c_bad + 1)); continue
+    fi
+    if ! grep -q '^#define ON_DFA_MATCH "unwrapped"' "$capsd/on.c"; then
+        bad "§2 witness '$pat' does not select the unwrapped form — it cannot exercise the fill this arm exists for, and a silently skipped witness is how a population goes to zero"
+        c_skip=$((c_skip + 1)); continue
+    fi
+    # THE NON-VACUITY READ, off the ARTIFACT. `RX_NCAPS` is a HEADER macro on
+    # a split output, so it is read from the `.h`; a witness at 1 has an EMPTY
+    # fill loop and would pass this arm no matter what the emitter did.
+    nc="$(grep -m1 '^#define ON_NCAPS ' "$capsd/on.h" 2>/dev/null | awk '{print $3}')"
+    if [ -z "${nc:-}" ] || [ "$nc" -lt 2 ]; then
+        bad "§2 witness '$pat' has ON_NCAPS=${nc:-<unset>}, so its dead-group fill loop is EMPTY and the witness asserts nothing (r41 S4's own failure mode)"
+        c_bad=$((c_bad + 1)); continue
+    fi
+    [ "$nc" -lt "$c_ncaps_min" ] && c_ncaps_min="$nc"
+    if ! pcrec_run "$PCREC" -p off --features all -fno-anchored-dfa \
+            -o "$capsd/off.c" -- "$pat" >/dev/null 2>&1; then
+        bad "§2 the denied build refused witness '$pat' the default build compiled"; c_bad=$((c_bad + 1)); continue
+    fi
+    if ! gen_cc "anchored-diff caps $pat" $CC $GENCFLAGS -I"$capsd" \
+            -o "$capsd/drv" "$ROOT_DIR/tests/anchored/anchdiff_driver.c" \
+            "$capsd/on.c" "$capsd/off.c" > "$capsd/cc.log" 2>&1; then
+        bad "§2 could not build the two-artifact driver for '$pat': $(head -3 "$capsd/cc.log" | tr '\n' ' ')"
+        c_bad=$((c_bad + 1)); continue
+    fi
+    out="$(gen_run "anchdiff caps $pat" "$capsd/drv" < "$WORKDIR/subjects" 2>"$capsd/run.err")"
+    rc=$?
+    case "$rc" in
+        0) c_ok=$((c_ok + 1)); c_cells=$((c_cells + $(printf '%s' "${out#cells }" | awk '{print $1}'))) ;;
+        1) bad "§2 '$pat' DIVERGES between the two forms on the capture array — the delivered slots are not the search-and-filter form's: $(head -3 "$capsd/run.err" | tr '\n' ' ')"
+           c_bad=$((c_bad + 1)) ;;
+        *) bad "§2 '$pat' produced driver exit $rc (neither agreement nor divergence)"; c_bad=$((c_bad + 1)) ;;
+    esac
+done
+
+echo "§2 population: ${#CAPS_WITNESSES[@]} named captures-on witnesses, $c_ok compared, $c_cells cells, smallest ON_NCAPS $c_ncaps_min"
+[ "$c_bad" -eq 0 ] && [ "$c_skip" -eq 0 ] \
+    && ok "§2 the unwrapped form's CAPTURE ARRAY matches the search-and-filter form's on every witness — every span, and every dead group's PCREC_UNSET — over $c_cells cells with RX_NCAPS >= 2 throughout" \
+    || bad "§2 $c_bad witness(es) failed and $c_skip lost their form — the dead-group fill is unverified on the population it exists for"
+# The FLOOR, and it is the arm's own anti-vacuity pin: the whole point of §2
+# is that §1 cannot see this, so an empty §2 restores exactly the hole r41 S4
+# measured.
+[ "$c_ok" -ge 8 ] \
+    && ok "§2 all 8 named witnesses were compared (floor 8) — none silently dropped out of the population" \
+    || bad "§2 only $c_ok of the 8 named witnesses were compared. An arm that quietly loses its population is the hole this section was added to close (r41 S4)"
 
 echo
 echo "checks passed: $pass"

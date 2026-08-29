@@ -439,32 +439,66 @@ enum {
     PCREC_MAX_SPLICE_TOTAL = 8192
 };
 
-/* [ENG-ABS] THE ANCHORED MATCH-HERE MACHINE'S STATE CAP, and it is NOT a new
- * limit: it defaults to `PCREC_MAX_DFA_STATES_TABLE`, the cap every other
- * table machine is built under, so nothing about a shipped build changes and
- * `docs/spec/limits.md` has nothing to gain (a machine over a cap DECLINES an
- * optimization, it never refuses a pattern —
- * docs/design/anchored_match_unwrapped.md §5.2).
+/* [ENG-ABS] THE ANCHORED MATCH-HERE MACHINE'S OWN STATE CEILING, and it is
+ * LOWER than the cap every other table machine is built under
+ * (docs/design/anchored_match_unwrapped.md §5.2, §8.2).
  *
- * IT IS OVERRIDABLE FOR EXACTLY ONE CONSUMER, and the reason is a measured
- * hole rather than a convenience. The overflow arm's population is ZERO over
- * the whole corpus (825 unwrapped / 180 attempt / 4 empty / 0 overflow,
- * measured 2026-08-29): the caps are SHARED, the mandatory machines are built
- * FIRST and are at least as large, so in practice they reach a cap before the
- * optional machine can. A fallback nobody can reach is a fallback nobody has
- * tested — the vacuity this project keeps recording — so
- * `tests/codegen/run_anchored_match.sh` builds a reference compiler with this
- * lowered and drives real patterns through the arm: the stamp must flip to
- * `"search-filter"`, the ANSWERS must not move, and no diagnostic may appear.
- * The same shape and the same single consumer as `-DPCREC_NO_TRIE`,
- * `-DPCREC_NO_ENDVAR` and the other reference-build knobs (src/ir/dfa.c's
- * header states the rule); never defined in a shipped build.
+ * WHY IT IS ITS OWN NUMBER, added at the r41 close (finding S1). The anchored
+ * machine is OPTIONAL — an entry point's form, not an engine's requirement —
+ * so a pattern whose anchored machine would be enormous should DECLINE the
+ * form rather than pay for it, and under `PCREC_MAX_DFA_STATES_TABLE` it did
+ * not: r41 measured **+46 % of pcrec's own COMPILE CPU** on `tests/resource`'s
+ * giant-repeat shapes (`[a-z]{0,30000}` 23.4 s -> 37.5 s), taking that suite's
+ * 45 s `K7_CPU` headroom from 21.6 s to 7.5 s, and pushed one artifact to
+ * 1,984,382 B — over `[ART-SIZE.1b]`'s 1,400,000 B pin, and invisible to the
+ * tripwire because those shapes live in a bash array rather than in the size
+ * log. Both are the SAME fact: the optional machine was charged the mandatory
+ * machines' budget.
+ *
+ * WHERE 4,096 COMES FROM — measured, not chosen. Over the whole `.rxt` corpus
+ * (825 artifacts that select the form, 2026-08-29) the anchored machine's
+ * state count is min 1 / median 2 / p99 67 / **max 2,001** (`a{1,2000}`; the
+ * next three are 1,001, 501, 501). `tests/resource`'s DFA-routed shapes are
+ * 20,001, 25,001 and 30,001. So the interval (2,001, 20,001) is EMPTY of any
+ * machine this tree builds, and 4,096 sits inside it at **2.05x the corpus's
+ * largest** and **4.9x below the smallest resource shape**. No corpus artifact
+ * loses the form (the 825 population is unmoved and pinned); the four
+ * giant-repeat shapes take the stamped `search-filter` fallback, which is
+ * §5.2's arm doing exactly what it was written for.
+ *
+ * IT IS A CEILING ON STATES, and it inherits `PCREC_MAX_TABLE_ENTRIES`'
+ * narrowing for free because `pcrec_build_dfa` applies that to whatever
+ * `maxstates` it is handed — so a wide-alphabet anchored machine is bounded
+ * by ENTRIES exactly as the mandatory pair is, through the same two lines.
+ * That is why this is one more argument to the existing mechanism rather than
+ * a second cap beside it.
+ *
+ * CROSSING IT REFUSES NOTHING. `Dfa.optional` makes the two `intern()` cap
+ * sites RECORD and return instead of `ctx_fail`ing, so the compile continues,
+ * the artifact keeps the search-and-filter form of its anchored entry and
+ * STAMPS that (`<PREFIX>_DFA_MATCH "search-filter"`). The set of patterns
+ * pcrec accepts is unchanged in either direction — `docs/spec/limits.md`
+ * states that as the second, narrower exception on the three DFA ceilings.
+ *
+ * IT IS ALSO THE OVERFLOW ARM'S OWN WITNESS SUPPLY. Before this ceiling the
+ * arm had ZERO reachable population (the shared caps are hit by the mandatory
+ * machines first) and could only be driven by the `-D` override below;
+ * `tests/codegen/run_anchored_match.sh` §4 now pins four NAMED shapes that
+ * reach it for real, and keeps the override as the control that the arm still
+ * behaves under a cap no shape reaches.
+ *
+ * OVERRIDABLE FOR EXACTLY ONE CONSUMER. `run_anchored_match.sh` §4 builds a
+ * reference compiler with this lowered to 6 so the arm is exercised on small,
+ * fast patterns as well as on the four heavy ones — the same shape and the
+ * same single consumer as `-DPCREC_NO_TRIE` and `-DPCREC_NO_ENDVAR`
+ * (`src/ir/dfa.c`'s header states the rule); never overridden in a shipped
+ * build.
  *
  * IT IS AT THE ACTION. The value is read at the one `pcrec_build_dfa` call
  * that builds the optional machine, not at a flag some other edit could
  * cancel — the placement lesson of the [M6.2] repair slice. */
 #ifndef PCREC_ANCHORED_MAX_STATES
-#define PCREC_ANCHORED_MAX_STATES PCREC_MAX_DFA_STATES_TABLE
+#define PCREC_ANCHORED_MAX_STATES 4096
 #endif
 
 #endif /* PCREC_LIMITS_H */
