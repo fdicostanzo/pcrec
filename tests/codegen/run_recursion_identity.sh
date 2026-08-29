@@ -421,15 +421,21 @@ KEEP="${KEEP:-0}"
 # why the pin moved off `2ed6402`), and, on the artifacts over the knee, a
 # smaller inlined prefilter.
 #
-# THE PIN MOVED AGAIN, to `6f8e9d3`, through [OPT-4] STEP 3's SECOND commit
-# (the [SEL-1] rung) and the follow-on that fixed the `--emit-ir` listing's
-# ceiling text. Neither changes the emitted TEXT of any artifact this gate
-# compares — the rung changes WHICH artifacts have a prefilter at all, on
-# patterns whose DFA overflows as the engine, and the listing is not emitted C.
-# The pin follows them anyway because the rule one paragraph down is "this
-# change's last src-touching commit" and not "the last commit that moved a byte
-# here": a pin derived from what a gate happens to notice would need
-# re-deriving every time someone checked whether it had. (No count is given
+# THE PIN MOVED AGAIN, and it is now `82229fc` — [OPT-4]'s `<PREFIX>_ENGINE_SEL`
+# commit, which is the LAST scaffolding change of this row and the one that
+# matters most to (B). Unlike the two before it (the [SEL-1] rung, which moves
+# WHICH artifacts have a prefilter rather than any emitted text this gate
+# compares, and the `--emit-ir` ceiling-text fix, which is not emitted C at
+# all), `_ENGINE_SEL` adds a line to EVERY artifact on BOTH engines, so (B)
+# moves corpus-wide here and (A) still does not — the new line sits in the
+# stamp block, above `prog_region`.
+#
+# THE PIN TRAVELS WITH THE LAST SCAFFOLDING CHANGE, NOT THE FIRST, which is the
+# rule one paragraph down said in other words and is worth saying in these:
+# pinning to the commit that first moved a byte leaves every later commit in
+# the same change comparing against a stale reference. This row moved it four
+# times (2ed6402 -> d4d439e -> fefcea1 -> 6f8e9d3 -> 82229fc) for exactly that
+# reason, and the abi stayed 12 throughout — one bump per CHANGE, several pins. (No count is given
 # here on purpose: how many artifacts collapse is a property of the POPULATION
 # being swept, and this gate's corpus is not the size log's 1,388 hybrids nor
 # `run_prefilter_collapse.sh` §5's 2,772 `pattern` lines. Each check floors its
@@ -442,7 +448,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-6f8e9d3}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-82229fc}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
