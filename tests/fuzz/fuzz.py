@@ -797,9 +797,10 @@ def main():
     accept_mismatches = []
     content_divergences = []
     state_cap_hits = []
+    size_cap_hits = []
     oversize_hits = []  # [SEL-1]/K41 -- see K41_OVERSIZE_BYTES
     stats = {"patterns": 0, "both_accept": 0, "both_reject": 0,
-             "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0,
+             "pcrec_reject_only": 0, "pcre2_reject_only": 0, "state_cap": 0, "size_cap": 0,
              "gcc_fail": 0, "oversize": 0, "pairs_compared": 0, "oracle_inconclusive": 0,
              "pcre2_quirk": 0, "engine_limit": 0, "oracle_probe_timeout": 0,
              "engine_steps": 0, "engine_frames": 0, "pcrec_compile_timeout": 0,
@@ -889,7 +890,7 @@ def main():
         pcre2_probe = oracle_run(oracle_bin, pattern, empty_subject)
 
         result = {"pattern": pattern, "pcrec_ok": pcrec_ok, "pcre2_ok": None,
-                  "accept_mismatch": None, "state_cap": None, "engine_limit": None, "content": [], "gcc_fail": None,
+                  "accept_mismatch": None, "state_cap": None, "size_cap": None, "engine_limit": None, "content": [], "gcc_fail": None,
                   "oracle_inconclusive": 0, "oracle_probe_timeout": False,
                   "pcrec_compile_timeout": False,
                   "oversize": False, "artifact_size": 0, "oversize_gcc_outcome": None,
@@ -943,6 +944,21 @@ def main():
                 # up-to-30 bounded repeats + alternation makes this fire
                 # reasonably often; see README.md).
                 result["state_cap"] = pcrec_err
+            elif "bytes of emitted" in pcrec_err:
+                # [ART-SIZE]/D84: pcrec's own EMITTED-SIZE caps
+                # (PCREC_MAX_VM_EMIT_CODE_BYTES / PCREC_MAX_EMIT_BYTES,
+                # src/core/limits.h). Same shape as state_cap directly above
+                # and for the same reason: a documented ceiling doing its job
+                # is not a semantics divergence, and left in
+                # `pcrec_reject_only` it would masquerade as an actionable
+                # accept/reject finding on every run that generates a big
+                # enough pattern.
+                #
+                # THE SUBSTRING IS THE SIZE CAPS' OWN WORDING, deliberately
+                # NOT "pattern too large": that prefix is shared with the two
+                # older replication caps, which are a DIFFERENT limit. Matching
+                # the narrower text keeps the buckets telling them apart.
+                result["size_cap"] = pcrec_err
             else:
                 result["accept_mismatch"] = ("pcrec REJECTS, pcre2 ACCEPTS", pcrec_err, pcre2_probe)
             return result
@@ -1068,6 +1084,10 @@ def main():
                 stats["state_cap"] += 1
                 state_cap_hits.append((result["pattern"], result["state_cap"]))
                 continue
+            if result["size_cap"]:
+                stats["size_cap"] += 1
+                size_cap_hits.append((result["pattern"], result["size_cap"]))
+                continue
             if not result["pcrec_ok"]:
                 stats["both_reject"] += 1
                 continue
@@ -1135,6 +1155,7 @@ def main():
     print(f"  pcre2-only reject:  {stats['pcre2_reject_only']}  (accept/reject divergence)")
     print(f"  PCRE2 size-limit:   {stats['engine_limit']}  (PCRE2 err 120, its own ceiling -- not a divergence)")
     print(f"  DFA state-cap:      {stats['state_cap']}  (KNOWN limitation, review A-3 -- not a divergence, see README.md)")
+    print(f"  emitted-size cap:   {stats['size_cap']}  ([ART-SIZE]/D84: pcrec's own PCREC_MAX_VM_EMIT_CODE_BYTES / PCREC_MAX_EMIT_BYTES refusing -- a documented ceiling doing its job, NOT a divergence; docs/spec/limits.md section 8)")
     print(f"  K41 oversize artifact: {stats['oversize']}  (emitted .c > {K41_OVERSIZE_BYTES} bytes, classified by SIZE alone -- see docs/dev/known_issues.md K41; gcc's own outcome is informational, printed below, never counted as a gcc_fail)")
     print(f"  gcc compile fails:  {stats['gcc_fail']}  (harness-level, not a pcrec bug per se; excludes the oversize bucket above)")
     print(f"  pcrec compile timeout: {stats['pcrec_compile_timeout']}  (pcrec's own PCREC_TIMEOUT clock, not the generated matcher's step budget -- see compile_with_pcrec())")
