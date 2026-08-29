@@ -716,6 +716,7 @@ built.
 | 6 | `tests/registry` | 64 / 0 (coverage re-pinned 59 → 64) |
 | 7 | `make strict` | clean |
 | 8 | the D81 DIFFERENCE SET, measured | the `-fno-anchored-dfa` build against the PRE-ROW compiler over **2,498 corpus patterns**: **0 byte-identical, 2,498 differing ONLY in the expected lines, 0 other, 0 refusal mismatches** |
+| 9 | `make -k -j12 test` (delivery run) | **sections ran: 27/27**, zero `FAIL` lines anywhere, `test-anchored-match` **14/0 + 5/0** inside it. ONE red: `test-corpus` 26,630 passed / **29 failed**, all of them `tests/counterk/counterk.rxt`'s `((a)|ab){4000}c` at exit 124 — the KNOWN load cell the `[ART-SIZE.1b]` journal already records failing under `-j12`. Re-run SOLO on a quiet box: **1,634 passed / 0 failed** |
 
 **CHECK 8 IS THE ONE THE BRIEF NAMES AND D81 MAKES FALSE IN ITS OBVIOUS
 FORM.** A "byte-identical under the deny flag" claim would be wrong — selection
