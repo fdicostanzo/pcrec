@@ -132,6 +132,11 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 . "$ROOT_DIR/tests/lib/gen_timeout.sh"
 RUN_SECS="$(gen_run_secs)"   # per-cell matcher-run budget; see the run site
 
+# [ART-SIZE.1b] the artifact-size log's comment-stripped byte counter —
+# see that file's own header for why a flat scan agrees with the census's
+# depth-aware classifier byte for byte.
+. "$ROOT_DIR/tests/lib/size_count.sh"
+
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-gcc}"
 GENCFLAGS="${GENCFLAGS:--O1 -std=gnu11 -Wall -Wextra -Werror}"
@@ -144,6 +149,17 @@ RXTDUMP="${RXTDUMP:-}"
 # PROCS>1 branch below writes to per-worker paths instead and cats them
 # here fresh; the serial path below appends to this same truncated file).
 [ -n "$RXTDUMP" ] && : > "$RXTDUMP"
+# [ART-SIZE.1b] SIZELOG — same shape as RXTDUMP immediately above (per-
+# worker path under PROCS>1, parent cats them back together in files[]
+# order once every worker reports): when set, one TSV row is appended per
+# SUCCESSFUL corpus compile at the existing gen_cc call site — riding that
+# compile rather than adding one (docs/dev/plan.md [ART-SIZE.1b]'s "zero
+# cost" charter). Empty (the default) means no rows are ever computed or
+# written, so a plain run pays nothing and is byte-for-byte unchanged; see
+# tests/size/CLAUDE.md for the row format and tests/size/run_size_log.sh
+# for the wrapper that turns a run's rows into the stable, diffable log.
+SIZELOG="${SIZELOG:-}"
+[ -n "$SIZELOG" ] && : > "$SIZELOG"
 KEEP="${KEEP:-0}"
 VERBOSE="${VERBOSE:-0}"
 PROCS="${PROCS:-1}"
@@ -202,8 +218,14 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         # run threads nothing new.
         w_rxtdump=""
         [ -n "$RXTDUMP" ] && w_rxtdump="$RXTDUMP.$idx"
+        # [ART-SIZE.1b] SIZELOG: identical per-worker-path shape to RXTDUMP
+        # just above, for the identical reason (a shared path would race
+        # every worker's own truncate-then-append against its siblings).
+        w_sizelog=""
+        [ -n "$SIZELOG" ] && w_sizelog="$SIZELOG.$idx"
         PROCS=1 PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
             RXTFLAGS="$RXTFLAGS" RXTROUTE="$RXTROUTE" RXTDUMP="$w_rxtdump" \
+            SIZELOG="$w_sizelog" \
             KEEP="$KEEP" VERBOSE="$VERBOSE" \
             bash "${BASH_SOURCE[0]}" "$f" \
             > "$pardir/$idx.out" 2> "$pardir/$idx.err" &
@@ -219,6 +241,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     total_fail=0
     total_cfail=0
     total_pending=0
+    total_sizelog=0
     summaries=0
     fail_files=()
 
@@ -236,10 +259,16 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
             cat "$RXTDUMP.$idx" >> "$RXTDUMP"
             rm -f "$RXTDUMP.$idx"
         fi
+        # [ART-SIZE.1b] SIZELOG: same append-in-files[]-order shape.
+        if [ -n "$SIZELOG" ] && [ -f "$SIZELOG.$idx" ]; then
+            cat "$SIZELOG.$idx" >> "$SIZELOG"
+            rm -f "$SIZELOG.$idx"
+        fi
         p="$(grep -m1 '^cases passed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
         x="$(grep -m1 '^cases failed:' "$pardir/$idx.out" | grep -oE '[0-9]+')"
         c="$(grep -m1 '^pattern-compile failures (distinct):' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         gp="$(grep -m1 '^group cases pending-vm:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
+        sl="$(grep -m1 '^size-log rows:' "$pardir/$idx.out" | grep -oE '[0-9]+$')"
         if [ -z "$p" ] || [ -z "$x" ]; then
             echo "$f: HARNESS FAILURE: worker produced no summary (crashed or was killed) — counting as failed" >&2
             total_fail=$((total_fail + 1))
@@ -251,6 +280,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
         total_fail=$((total_fail + x))
         total_cfail=$((total_cfail + ${c:-0}))
         total_pending=$((total_pending + ${gp:-0}))
+        total_sizelog=$((total_sizelog + ${sl:-0}))
         [ "$x" -gt 0 ] && fail_files+=("$f: $x")
     done
 
@@ -264,6 +294,7 @@ if [ "$PROCS" -gt 1 ] && [ "${#files[@]}" -gt 1 ]; then
     fi
     echo "pattern-compile failures (distinct): $total_cfail"
     echo "group cases pending-vm: $total_pending"
+    [ -n "$SIZELOG" ] && echo "size-log rows: $total_sizelog"
     echo "parallel: $summaries of ${#files[@]} file workers reported (PROCS=$PROCS)"
 
     if [ "$summaries" -ne "${#files[@]}" ]; then
@@ -285,6 +316,9 @@ total_fail=0
 total_pending=0        # [M4.5a] 'gp' (pending-VM) capture-group cases: out of
                         # the artifact's RX_NCAPS range, population-accounted
                         # separately from pass/fail — not skipped silently
+total_sizelog=0         # [ART-SIZE.1b] SIZELOG rows actually written — read
+                        # back by the PROCS>1 aggregation above and by
+                        # tests/size/run_size_log.sh's own header stamp.
 declare -A file_fail_count=()
 declare -A features_seen=()
 compile_fail_set=()   # distinct "file:line" pattern-compile failures
@@ -474,9 +508,73 @@ flush_block() {
     # It was a hardcoded 120 -- generous enough that the bounded-repeat
     # pathology (100+ minutes) would have tripped it, but only after two
     # minutes per case, and nothing else in the tree shared the number.
-    gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+    #
+    # [ART-SIZE.1b] gcc CPU/wall time for THIS EXACT compile, at
+    # (measured, see tests/lib/size_count.sh's size_count_row header)
+    # near-zero extra cost: bash's own `time` reserved word wraps the call
+    # rather than re-running it, with TIMEFORMAT set to a fixed, parseable
+    # one-line shape and its output redirected to a private file so it
+    # cannot collide with gen_cc's own stderr (gen_cc captures the
+    # compiler's stdout+stderr itself, into $GEN_CC_LOG, via an internal
+    # command substitution — nothing escapes to this shell's real fd 2 for
+    # `time` to mix with; verified empirically before wiring this in).
+    # EVERYTHING below `time gen_cc` that computes a row is gated on
+    # SIZELOG being set AND zero subprocesses beyond ONE (`size_count_row`,
+    # which folds the size scan and stamp grep into a single awk call —
+    # see its own header for the 8-spawns-to-1 measurement that made this
+    # gate necessary): the CPU-time sum and the load reading are pure bash
+    # builtins (`read` sourcing a file directly, `printf -v`, and stripping
+    # decimal points to sum two fixed-3-decimal numbers as integer
+    # milliseconds), so a plain run (SIZELOG unset) pays for exactly one
+    # `time` builtin per compile and nothing else this block adds.
+    local _sz_tf
+    _sz_tf="$WORKDIR/.sz_time.$$"
+    {
+        TIMEFORMAT='ARTSIZE_TIME %3R %3U %3S'
+        time gen_cc "$cur_pattern" "$CC" $GENCFLAGS -I"$bdir" -o "$bdir/t" "$SCRIPT_DIR/driver.c" "$bdir/gen.c"
+    } 2> "$_sz_tf"
     build_rc=$?
     build_log="$GEN_CC_LOG"
+    if [ -n "$SIZELOG" ] && [ "$build_rc" -eq 0 ]; then
+        local _sz_tag _sz_wall _sz_user _sz_sys _sz_cpu _sz_cpu_ms _sz_load1 _sz_row
+        read -r _sz_tag _sz_wall _sz_user _sz_sys < "$_sz_tf"
+        # Sum user+sys as integer milliseconds (both are fixed 3-decimal
+        # strings from TIMEFORMAT's %3U/%3S — stripping the '.' turns
+        # "6.995" into "6995" exactly): `10#` forces base-10 so a value
+        # with a leading zero ("0.089" -> "0089") is never misread as
+        # octal (bash's default for a leading-0 numeral, which would
+        # error on an 8 or 9 digit). Falls back to 0 on a missing/short
+        # read (a timed-out or crashed compile never reaches this branch,
+        # since build_rc must be 0, but a malformed TIMEFORMAT line is
+        # cheap to guard against explicitly).
+        local _sz_ums _sz_sms
+        _sz_ums="${_sz_user//./}"; _sz_sms="${_sz_sys//./}"
+        _sz_cpu_ms=$(( 10#${_sz_ums:-0} + 10#${_sz_sms:-0} ))
+        printf -v _sz_cpu '%d.%03d' "$((_sz_cpu_ms / 1000))" "$((_sz_cpu_ms % 1000))"
+        read -r _sz_load1 _ < /proc/loadavg
+        _sz_row="$(size_count_row "$bdir/gen.c" "$bdir/gen.h")"
+        # Pattern id is ROOT-RELATIVE, never absolute: a no-args (full
+        # corpus) run discovers files via `find "$ROOT_DIR/tests" ...`
+        # (absolute paths), while a targeted run's own argv is whatever
+        # the caller typed (often already relative) — without stripping
+        # $ROOT_DIR/ here, the SAME pattern would log under a DIFFERENT
+        # id depending on which invocation shape produced the row, which
+        # breaks scripts/size_diff's whole "compare the same pattern
+        # across two logs" premise the moment a log is regenerated from a
+        # different checkout path (a merge to main, a different worktree
+        # name). `${cur_file#$ROOT_DIR/}` no-ops (leaves cur_file
+        # unchanged) when it does not already start with `$ROOT_DIR/`, so
+        # this is safe for every existing call shape.
+        # $_sz_row already carries FOUR tab-separated fields of its own
+        # (engine, rungs, prefilter, bytes — size_count_row's own header)
+        # as ONE argument here, so this format string has 5 %s for 5
+        # arguments, not 8 — the logical row is 8 TSV columns wide.
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "${cur_file#$ROOT_DIR/}:$cur_pattern_line" "$_sz_row" "$_sz_cpu" "${_sz_wall:-}" "${_sz_load1:-0}" \
+            >> "$SIZELOG"
+        total_sizelog=$((total_sizelog + 1))
+    fi
+    rm -f "$_sz_tf"
     if [ "$build_rc" -ne 0 ]; then
         echo "$cur_file:$cur_pattern_line: HARNESS FAILURE: $CC failed to compile generated code for pattern '$cur_pattern'" >&2
         echo "$build_log" >&2
@@ -943,6 +1041,7 @@ if [ ${#file_fail_count[@]} -gt 0 ]; then
 fi
 echo "pattern-compile failures (distinct): ${#compile_fail_set[@]}"
 echo "group cases pending-vm: $total_pending"
+[ -n "$SIZELOG" ] && echo "size-log rows: $total_sizelog"
 
 if [ $((total_pass + total_fail)) -eq 0 ]; then
     echo "run.sh: NO CASES RUN — corpus missing or fully unparseable" >&2
