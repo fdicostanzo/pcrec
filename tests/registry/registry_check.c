@@ -430,8 +430,15 @@ static void check_wellformed(void)
              * and the catch-all — three rows saying what PCRE2 says, where a
              * module template would be the over-promise Q2 removes. */
             case RK_ESC:
+                /* [DD-11.4b] RD_NONE joined the escape doorway's legal set
+                 * the same way it already sat in RK_GROUP's (below): the six
+                 * new RS_BASE rows (ESC_BASE_D) need no renderer at all,
+                 * because esc_char_value decodes them directly and the
+                 * escape doorway is never reached for these six bytes in
+                 * the first place — the same "no diagnostic to render"
+                 * shape `(?:...)` already has at the `(?` doorway. */
                 if (r->diag != RD_MODULE && r->diag != RD_MODULE_OCTAL &&
-                    r->diag != RD_FIXED)
+                    r->diag != RD_FIXED && r->diag != RD_NONE)
                     bad("%s (%s): the escape doorway renders only the module "
                         "templates and fixed text; this row's diagnostic shape "
                         "has no renderer", kn, r->syntax);
@@ -572,8 +579,18 @@ static void check_wellformed(void)
      * the module's 36th row and the ONLY one that is not VM_ONLY — a DEFINE
      * defines, it does not call, and it lowers to the `{0}` shape that
      * compiles on both engines. */
-    if (total != 128) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 128. If you added or "
+    /* 128 -> 134 at [DD-11.4b]: `\a \e \f \n \r \t`, six new RS_BASE rows
+     * (docs/design/definitions_table.md's architectural note after §1's
+     * table). Each exists PURELY to give `RegRow.definitions` a home for a
+     * construct D24's own base-tier boundary has always excluded from this
+     * table — esc_char_value (parse.c) decodes all six directly, with NO
+     * doorway and NO lookup on the base path, exactly as it did before
+     * these six rows existed (check_table_to_parser's new RS_BASE branch
+     * for RK_ESC, below, is what proves the row's CLAIM of base support
+     * true; it does not and cannot prove the row is ever CONSULTED, because
+     * it isn't). */
+    if (total != 134) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 134. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -1059,6 +1076,22 @@ static void check_table_to_parser(void)
     rows = pcrec_registry(RK_ESC, &n);
     for (size_t i = 0; i < n; i++) {
         const RegRow *r = &rows[i];
+
+        /* [DD-11.4b] RK_ESC's first RS_BASE rows (the six fixed literal
+         * escapes, ESC_BASE_D in registry.c) — RK_GROUP's own precedent for
+         * its one RS_BASE row (below), mirrored: no "requires module"
+         * question arises, so `esc_atom_msg` (which assumes RS_MODULE/
+         * RS_REJECTED) must not run at all. Checked at BOTH positions,
+         * unlike the group row, because these six are ordinary characters
+         * that can occur inside a class too (`(?:...)` cannot). */
+        if (r->status == RS_BASE) {
+            snprintf(label, sizeof label, "esc %s: supported by the base grammar (atom), as the row claims", r->syntax);
+            expect_compiles(label, r->syntax);
+            snprintf(pat, sizeof pat, "[%s]", r->syntax);
+            snprintf(label, sizeof label, "esc %s: supported by the base grammar (class), as the row claims", r->syntax);
+            expect_compiles(label, pat);
+            continue;
+        }
 
         esc_atom_msg(r, want, sizeof want);
         snprintf(label, sizeof label, "esc %s: atom diagnostic matches the row", r->syntax);
@@ -2875,9 +2908,14 @@ static void check_built_status_defects(void)
      * whose primary did not compile would read `unbuilt` here. */
     /* 127 = 105 + 16 + 6 -> 128 = 106 + 16 + 6: the DEFINE row, built on
      * the day it lands like every other row whose port really produces. */
-    else if (checked != 128 || built != 106 || unbuilt != 16 || na != 6)
+    /* 128 = 106 + 16 + 6 -> 134 = 106 + 16 + 12 at [DD-11.4b]: the six new
+     * RS_BASE `\a \e \f \n \r \t` rows join the RS_BASE/RS_REJECTED n/a
+     * bucket -- the question "did this row's own producer land" does not
+     * arise for base-tier syntax, exactly as it never has for `(?:...)`.
+     * `built`/`unbuilt` are untouched: no RS_MODULE row moved. */
+    else if (checked != 134 || built != 106 || unbuilt != 16 || na != 12)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 128 = 106 + 16 + 6. Zero defects does NOT imply "
+            "%d n/a, expected 134 = 106 + 16 + 12. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3073,9 +3111,14 @@ static void check_families(void)
      * `(?1)` (11), `(a)(?-1)` (11), `\g<1>` (3), `\g'1'` (3), `(?0)` (2),
      * `(?+1)(a)` (2) — which is 32 members joining the alpha spellings' 18. */
     /* 89 -> 90: the DEFINE row is a family of one (D71 item 4's "ONE row"). */
-    if (families != 90 || multi != 12 || members_in_multi != 50)
+    /* 90 -> 96 at [DD-11.4b]: the six new RS_BASE `\a \e \f \n \r \t` rows
+     * each carry `family == NULL` (each is its own family, ESC_BASE_D's
+     * shape), so `multi`/`members_in_multi` are untouched -- six new
+     * families of one, same as every other base-tier row this layer has
+     * never grouped. */
+    if (families != 96 || multi != 12 || members_in_multi != 50)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 90 / 12 / 50. The index "
+            "member, %d members in those -- expected 96 / 12 / 50. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {

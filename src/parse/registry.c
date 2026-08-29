@@ -238,6 +238,26 @@
  * class port when it wires in (slice 3). */
 #define ESC_DIGIT_LIT(sel, syn, eng, note, q, ce, lit) \
     {RK_ESC, (sel), NULL, (syn), M_backrefs, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE_OCTAL, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), (ce), 0, NULL, {PORT_FN, false, 0, NULL, pcrec_brport_digit}, {PORT_SCALAR, true, (lit), NULL, NULL}, NULL, NULL}
+/* [DD-11.4b] a BASE-TIER literal escape with a `definitions` entry and
+ * nothing else (docs/design/definitions_table.md's architectural note after
+ * §1's table, [DD-11.4b] in §6's sequence, manager's ruling: one mechanism
+ * rather than a second row-less table). `\a \e \f \n \r \t` decode directly
+ * in `esc_char_value` (src/parse/parse.c) with NO doorway and NO row today
+ * (D24's own base-tier boundary) — this row exists PURELY to give
+ * `RegRow.definitions` a home and to answer `--list-syntax`/
+ * `--list-definitions` truthfully; it is looked up by NEITHER
+ * `pcrec_registry_arbitrate` at parse time (esc_char_value's switch always
+ * answers first for these six bytes, exactly as it did before this row
+ * existed) NOR any other consumer on the compile path — `no new doorway, no
+ * new lookup on the base path` (the substep's own gate) holds by
+ * construction, the same way the sole existing RS_BASE row (`(?:...)`,
+ * group_rows below) never routes through the `(?` doorway's dispatch
+ * either. `class_expect` is `esc_char_value`'s OWN decoded value — the
+ * function is called from both `esc_atom` (atom position) and
+ * `esc_class_value` (class position, parse.c), so the two positions are
+ * identical by construction and the value is not a second measurement. */
+#define ESC_BASE_D(sel, syn, note, ce, def) \
+    {RK_ESC, (sel), NULL, (syn), 0, NULL, FLAV_PCRE2, ANY_ENGINE, RS_BASE, RD_NONE, NULL, NULL, 0, (note), ROADMAP_NONE, QF_YES, (ce), 0, NULL, NO_PORT, NO_PORT, NULL, (def)}
 /* (?X -> "(?X...) requires module 'M'" */
 #define GROUP(sel, syn, mod, eng, note, q) \
     {RK_GROUP, (sel), NULL, (syn), M_##mod, FLAV_PCRE2, (eng), RS_MODULE, RD_MODULE, NULL, NULL, 0, (note), ROADMAP_PLANNED, (q), NULL, 0, NULL, NO_PORT, NO_PORT, NULL, NULL}
@@ -408,6 +428,18 @@ static const RegDef nwordb_def[] = {
     {DEFK_STR, DEF_ALWAYS, "(?:(?<=\\w)(?=\\w)|(?<!\\w)(?!\\w))", NULL},
     {DEFK_END, DEF_ALWAYS, NULL, NULL},
 };
+
+/* [DD-11.4b] the 6 FIXED base-tier literal escapes' definitions — see
+ * ESC_BASE_D's own comment (above the macro) for why these rows exist at
+ * all. Each is DEF_ALWAYS-only (no identity case: none of these six is
+ * itself the string it substitutes, `\x07` etc. is base/core `\x` syntax
+ * a level further down, not a second table entry). */
+static const RegDef a_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x07", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
+static const RegDef e_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x1b", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
+static const RegDef f_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0c", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
+static const RegDef n_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0a", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
+static const RegDef r_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x0d", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
+static const RegDef t_def[] = { {DEFK_STR, DEF_ALWAYS, "\\x09", NULL}, {DEFK_END, DEF_ALWAYS, NULL, NULL} };
 
 static const RegRow esc_rows[] = {
 ESC_SET_D('d', "\\d", classes, ANY_ENGINE, "any decimal digit", QF_YES, "set 10", pcrec_cls_digit_esc, 0, d_def),
@@ -732,6 +764,20 @@ ESC_DIGIT('6', "\\6", VM_ONLY, "backreference to capture group 6 (PCRE2 error 11
 ESC_DIGIT('7', "\\7", VM_ONLY, "backreference to capture group 7 (PCRE2 error 115 if no such group)", QF_NO, "char 0x07"),
 ESC_DIGIT_LIT('8', "\\8", VM_ONLY, "backreference to capture group 8 (PCRE2 error 115 if no such group)", QF_NO, "char 0x38", '8'),
 ESC_DIGIT_LIT('9', "\\9", VM_ONLY, "backreference to capture group 9 (PCRE2 error 115 if no such group)", QF_NO, "char 0x39", '9'),
+
+/* [DD-11.4b] the 9 base-tier literal escapes' first 6 — the FIXED ones
+ * (definitions_table.md's architectural note: "e.g. \a≡\x07, \e≡\x1b",
+ * both verified against libpcre2 10.46, 3/3 subjects). The remaining 3
+ * (bare \x, octal, \0) are PARAMETERIZED BY TEXT AT THE OCCURRENCE — the
+ * hex/octal digits read from the pattern, not a fixed substitution — which
+ * neither DEFK_STR (a fixed string) nor DEFK_BUILDER (an AST-operand
+ * function) expresses; open question sent to main, held pending a ruling. */
+ESC_BASE_D('a', "\\a", "alarm, hex 07", "char 0x07", a_def),
+ESC_BASE_D('e', "\\e", "escape, hex 1B (not backslash-escape, the ASCII ESC character)", "char 0x1b", e_def),
+ESC_BASE_D('f', "\\f", "form feed, hex 0C", "char 0x0c", f_def),
+ESC_BASE_D('n', "\\n", "linefeed, hex 0A", "char 0x0a", n_def),
+ESC_BASE_D('r', "\\r", "carriage return, hex 0D", "char 0x0d", r_def),
+ESC_BASE_D('t', "\\t", "tab, hex 09", "char 0x09", t_def),
 };
 
 /* ---- doorway 2: after '(?' ---------------------------------------------- */

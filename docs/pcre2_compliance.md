@@ -2123,7 +2123,7 @@ a miscompile of the kind D26 tier 1 forbids. The tally moved 104 rows =
 
 ## Registry construct index (generated)
 
-Every non-base construct pcrec knows, as the parser itself sees it — 128 rows from one declarative table (D24), rendered as 90 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
+Every non-base construct pcrec knows, as the parser itself sees it — 134 rows from one declarative table (D24), rendered as 96 lines because a construct with several SPELLINGS gets one line naming them all (D71 item 3). The prose sections above carry the analysis; this is the inventory, and it cannot drift from the compiler because it is printed by it.
 
 `built` on a multi-spelling line is ANDed over its spellings: the line reads `built` only if every one of them does.
 
@@ -2172,6 +2172,12 @@ Every non-base construct pcrec knows, as the parser itself sees it — 128 rows 
 | after `\` | `\7` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 7 (PCRE2 error 115 if no such group) |
 | after `\` | `\8` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 8 (PCRE2 error 115 if no such group) |
 | after `\` | `\9` | `REJECTED` | `built` | planned | `backrefs` | vm | backreference to capture group 9 (PCRE2 error 115 if no such group) |
+| after `\` | `\a` | `OK` | — | — | — | dfa|vm | alarm, hex 07 |
+| after `\` | `\e` | `OK` | — | — | — | dfa|vm | escape, hex 1B (not backslash-escape, the ASCII ESC character) |
+| after `\` | `\f` | `OK` | — | — | — | dfa|vm | form feed, hex 0C |
+| after `\` | `\n` | `OK` | — | — | — | dfa|vm | linefeed, hex 0A |
+| after `\` | `\r` | `OK` | — | — | — | dfa|vm | carriage return, hex 0D |
+| after `\` | `\t` | `OK` | — | — | — | dfa|vm | tab, hex 09 |
 | after `(?` | `(?:...)` | `OK` | — | — | — | dfa|vm | non-capturing group |
 | after `(?` | `(?=...)` | `REJECTED` | `built` | planned | `lookaround` | vm | positive lookahead — also spelled `(*pla:a)`, `(*positive_lookahead:a)` |
 | after `(?` | `(?!...)` | `REJECTED` | `built` | planned | `lookaround` | vm | negative lookahead — also spelled `(*nla:a)`, `(*negative_lookahead:a)` |

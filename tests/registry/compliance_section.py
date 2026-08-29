@@ -421,8 +421,13 @@ def dump():
     # (design §8.1's four missing spelling families) plus the `(?(DEFINE)` row
     # (D71 item 4). Nine of the ten are spellings the compiler ALREADY handled
     # and no surface named; the tenth is a new construct.
-    if len(rows) != 128:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 128. "
+    # 128 -> 134 at [DD-11.4b]: six new RS_BASE rows, `\a \e \f \n \r \t`
+    # (docs/design/definitions_table.md's architectural note after §1's
+    # table) -- base-tier literal escapes that exist purely to give
+    # `RegRow.definitions` a home, D24's own base-tier boundary otherwise
+    # untouched (esc_char_value still decodes all six directly, no doorway).
+    if len(rows) != 134:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 134. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

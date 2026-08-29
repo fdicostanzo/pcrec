@@ -1149,6 +1149,21 @@ Rules when touching it:
   covers itself with no test edit.
 - **`RS_MODULE` with no handler is a complete outcome**, not a stub: the
   construct is named, cleanly rejected and queryable.
+- **[DD-11.4b] `RS_BASE` in `RK_ESC` is a narrow, named exception to "only
+  non-base escapes get a row here"** (D24's own founding boundary, kept for
+  every OTHER base construct — plain characters, bare `\x`, octal still have
+  none): `\a \e \f \n \r \t` (`ESC_BASE_D`) exist PURELY to give
+  `RegRow.definitions` (D85) a home for a construct D24 always excluded.
+  `esc_char_value` (parse.c) still decodes all six directly — no doorway, no
+  lookup, the row is NEVER consulted by the live dispatch (`pcrec_registry_
+  find`/`arbitrate` only run once `esc_char_value` has already declined a
+  byte, and it never declines these six). `registry_check.c`'s
+  `check_table_to_parser` needed a new `RS_BASE` branch for `RK_ESC`
+  (`RK_GROUP`'s `(?:...)` row's own precedent, checked at BOTH atom and
+  class position since these six can occur inside a class too) and its
+  `esc_atom_msg`/diagnostic-shape switch needed `RD_NONE` added to `RK_ESC`'s
+  legal set. Do not add a SEVENTH base-tier construct here casually — read
+  definitions_table.md's architectural note first.
 - **The `engines` column is design intent, not measurement.** Nothing consumes
   it — [M4.7a] deliberately did not build SR-8's lowering-time consultation
   ahead of a producer (zero producers, zero customers); a TRIPWIRE

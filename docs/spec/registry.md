@@ -49,9 +49,9 @@ row:
     diag  flags  expect  note  roadmap  quantifiable  class_expect
     built  family
 
-17 columns, confirmed live this pass. 128 data rows
+17 columns, confirmed live this pass. 134 data rows
 (`build/pcrec --list-syntax | grep -vc '^#'`) — this is the number
-`tests/registry/registry_check.c:575`'s exact-count assertion pins
+`tests/registry/registry_check.c:592`'s exact-count assertion pins
 today; **`tests/registry/CLAUDE.md`'s own prose still says "100 since
 Q2/SR-9"**, which was true when that paragraph was written and has
 since drifted behind six further row-adding modules — flagged here as
@@ -61,7 +61,7 @@ file by this pass.
 | column | value set | stable? |
 |---|---|---|
 | `kind` | `esc` \| `group` \| `verb` \| `class-bracket` \| `quant-suffix` — the five `RegKind` doorways (`src/parse/syntax_dump.c` `kind_name`); the fifth, `quant-suffix`, has no lexical doorway at all (a possessive suffix is recognised inside `p_rep` after the quantifier already parsed) | yes |
-| `selector` | the byte/character after the doorway that selects this row, or `*` for "matches any remaining byte at this doorway" (`REG_SEL_ANY`); 54 distinct values observed (`cut -f2 \| sort -u \| wc -l`) | yes, but not enumerable as a short closed list — read per-row |
+| `selector` | the byte/character after the doorway that selects this row, or `*` for "matches any remaining byte at this doorway" (`REG_SEL_ANY`); 57 distinct values observed (`cut -f2 \| sort -u \| wc -l`) | yes, but not enumerable as a short closed list — read per-row |
 | `syntax` | a pattern that PROBES this construct — `tests/reject/` and `--explain` compile it | free text (but every row's value is itself a valid pcrec probe pattern, guaranteed by `registry_check`'s well-formedness pass) |
 | `module` | one of 17 module names (`assertions`, `atomic-groups`, `backrefs`, `branch-reset`, `callouts`, `classes`, `comments`, `conditionals`, `extended-classes`, `lookaround`, `misc`, `modifiers`, `named-groups`, `quoting`, `recursion`, `unicode-props`, `verbs`), or empty for `status=base`/`rejected` rows with no owning module | yes |
 | `feature` | a hex bitmask (`0x0000`..`0x10000`, 18 distinct values seen) | **not independently named.** `src/parse/syntax_dump.c`'s own header comment states why: `registry.c`'s `M_<module>` macros already pair each bit with a module name, and a second bit->name table here would be a second home for that mapping. Read `module` beside it for the name; `tests/registry/` separately proves the two are a bijection |
@@ -70,7 +70,7 @@ file by this pass.
 | `status` | `base` \| `module` \| `rejected` — `RegStatus`: is this base-tier grammar, gated behind a module, or a construct pcrec refuses outright | yes |
 | `diag` | `none` \| `module` \| `module-octal` \| `fixed` — which diagnostic TEMPLATE this row's refusal uses (`RegDiag`); pairs with `expect` | yes |
 | `flags` | empty \| `class-delim` \| `lexical` (mask; both bits can co-occur) | yes |
-| `expect` | the SUBSTRING pcrec's diagnostic must contain when this row's syntax is refused — a substring of the doorway's template, not the whole message, so the template itself has one home; empty for the 1 row that compiles cleanly at base tier (127 of 128 rows are non-empty, `cut -f11 \| grep -vc '^$'`) | free text |
+| `expect` | the SUBSTRING pcrec's diagnostic must contain when this row's syntax is refused — a substring of the doorway's template, not the whole message, so the template itself has one home; empty for the 7 rows that compile cleanly at base tier (127 of 134 rows are non-empty, `cut -f11 \| grep -vc '^$'`) | free text |
 | `note` | one-line human description | free text |
 | `roadmap` | `-` (the question doesn't arise, base rows) \| `planned` \| `never` — legal pairing with `status`/`diag` enforced by `registry_check` (K14/§17.2): a `never` row must not promise a module in its diagnostic | yes |
 | `quantifiable` | `yes` \| `no` \| `form` \| `lexical` \| `-` — whether `<syntax>*` is grammatically legal after this construct, measured against libpcre2 and re-verified by `tests/spec_mod0/check10` | yes |
@@ -79,9 +79,9 @@ file by this pass.
 | `family` | the canonical `syntax` of the family this row is a spelling of, empty when the row is its own family — **D71 item 3's column; see §5** | free text (but its value, when set, is always another row's own `syntax`) |
 
 Live counts this pass (`build/pcrec --list-syntax \| grep -v '^#' \|
-cut -f16 \| sort \| uniq -c`): `built` 106, `unbuilt` 16, `-` 6, `defect`
-0 — 128 total, matching `registry_check.c:2878`'s own pinned
-`checked/built/unbuilt/na` tuple (128/106/16/6) exactly.
+cut -f16 \| sort \| uniq -c`): `built` 106, `unbuilt` 16, `-` 12, `defect`
+0 — 134 total, matching `registry_check.c:2916`'s own pinned
+`checked/built/unbuilt/na` tuple (134/106/16/12) exactly.
 
 ## 3. `built` vs. `status`/`roadmap` — two different questions
 
@@ -114,7 +114,7 @@ well-formed row), `-` (the question doesn't arise: `status` is `base`
 or `rejected`), and `defect` — not a status a well-formed registry ever
 prints, but a `registry_check.c` DEFECT ASSERTION for a row whose own
 declared `syntax` produces neither a clean answer nor the unbuilt
-refusal shape (measured 0 of 128 rows today).
+refusal shape (measured 0 of 134 rows today).
 
 ## 4. `--list-verbs` — the `(*VERB)` name tables
 
@@ -139,9 +139,9 @@ will parse" is reading the wrong column.
 
 ## 5. `--list-families` — the grouping index (D71 item 3)
 
-`build/pcrec --list-families | grep -vc '^#'` — 90 rows against
-`--list-syntax`'s 128 (38 rows carry a non-empty `family`, collapsing
-into their canonical row: `128 - 38 = 90`, confirmed). 7 columns:
+`build/pcrec --list-families | grep -vc '^#'` — 96 rows against
+`--list-syntax`'s 134 (38 rows carry a non-empty `family`, collapsing
+into their canonical row: `134 - 38 = 96`, confirmed). 7 columns:
 
 | column | value set | stable? |
 |---|---|---|
@@ -173,7 +173,7 @@ Example, read live this pass (`build/pcrec --list-families | grep -v
 `(?1)` through `(?10)` plus the relative-alpha spelling `(?01)` — all
 module `recursion`, engines `vm`, `built`. A second family of 11 groups
 the corresponding negative/relative back-reference spellings. These
-are today's largest families; 78 of the 90 families have exactly one
+are today's largest families; 84 of the 96 families have exactly one
 member.
 
 `--list-families` takes no `--flavour` filter — `cli.md` §2 states why
@@ -237,7 +237,7 @@ and no pattern/`-o` — a syntax query, `cli.md` §1.
 
 - **`registry_check.c`** (`tests/registry/`) is **pcrec checking
   pcrec** — table-vs-parser self-consistency in both directions, an
-  EXACT row count (128, §2), the `roadmap`/`quantifiable`/`class_expect`
+  EXACT row count (134, §2), the `roadmap`/`quantifiable`/`class_expect`
   legal-pairing rules, kind coverage, and the D65/D71 derived-column
   assertions (the `defect` outcome, the family AND-rule). It is the
   suite that catches a row naming the *wrong* module or a malformed

@@ -24,8 +24,13 @@ directory asserts that the description and the shipped parser actually agree.
   standalone (`bash tests/registry/run_definitions_tests.sh`) until
   [DD-11.2]/[DD-11.3] land the standing `--list-definitions`/self-oracle
   surfaces this check is a precursor to; wiring lands with those, once the
-  table's population (POSIX classes, `\c`/`\o`/`\N{U+`, the 9 base-tier
-  literal escapes, `^`/`$`/`(?n)`) stops changing commit to commit.
+  table's population stops changing commit to commit. [DD-11.4b] (below)
+  landed 6 of the 9 base-tier literal escapes (`\a \e \f \n \r \t`); still
+  held on two open design questions sent to main: POSIX class names,
+  `\c`/`\o`/`\N{U+`/bare-`\x`/octal (all parameterized by text at the
+  occurrence — a shape neither `DEFK_STR` nor `DEFK_BUILDER` expresses),
+  and `^`/`$`/the `(?n)`-scoped capturing-group row (each needs an
+  active-vs-identity marking `RegDef` has no field for yet).
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output
