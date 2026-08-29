@@ -1003,9 +1003,19 @@ builds we will not have to rebuild or roll back."* The two-artifact cost
 (one compile for the ordinary question, a second `(?:P)\z` compile for
 the end-anchored one) and the final-byte DFA skip gap the idiom leaves
 on the table are recorded as a general-optimization candidate should a
-measurement ever justify it (`docs/dev/plan.md` `[OS-4]`; the anchored-DFA cost itself is `[OPT-2]`/`[ENG-ABS]`) — this is not
+measurement ever justify it (`docs/dev/plan.md` `[OS-4]`) — this is not
 scoped to any one caller, `(?:P)\z` benefits from it identically to
 every other `\z`-bearing pattern.
+
+**The ANCHORED-DFA cost this sentence used to defer to `[OPT-2]`/`[ENG-ABS]`
+IS BUILT** (2026-08-29): a `\z`-bearing pattern still selects the DFA, and its
+`<prefix>_match` now runs the artifact's own anchored machine from `ctx->pos`
+rather than the unanchored search with a start filter (§3.2's `"unwrapped"`
+form). Measured on this exact idiom over the comparative bench's 85 compliance
+subjects: the matching split goes from 2.074× behind the backtracking VM to
+**1.031×**, and short valid emails from 1.223× behind to **0.482×** — ahead of
+it. Nothing about the idiom itself changed; it is the entry that got cheaper.
+`docs/design/anchored_match_unwrapped.md` §7.1 has the numbers and the method.
 
 **What the whole-subject artifact's own DFA stamps say (§6.3), verified
 live.** The `\z` wrapper changes the emitted candidate-start filter, not
