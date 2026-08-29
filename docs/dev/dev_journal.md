@@ -17153,3 +17153,41 @@ rewritten. The day's yield in one line: a D6 panel found a miscompile
 before an emitter shipped, and the battery found eleven contract tests
 a fallback silently broke — neither visible to the lanes that wrote
 the code.
+
+#### Forty-fourth session, part 1 — wake; Frank's four rulings; [ART-SIZE] STEP 2 and [ENG-ABS]'s second mechanism OPENED, two opus lanes launched (2026-08-28 ~22:3x EDT)
+
+Woke on a clean main (017bf3d; no lanes, no worktrees, no cron; the
+bench outbox ends at O-7, already ruled via I-14 — I-15's three asks
+are with the bench). Frank asked "open decisions?"; the manager listed
+seven (two gates met and waiting on his word, five genuinely unruled)
+and Frank ruled: "Go 1&2. 3 depends on rxt format. 6 ok. 7 yes when we
+are at 1.0". Recorded f6e20da: (1) **[ART-SIZE] STEP 2 OPENED** —
+lane artsize3 (opus, worktree lane/artsize3), PHASE A is the design
+note `docs/design/artifact_size_term.md` only (the counter rung
+choosing K from a size model with nesting depth the trigger, `--unroll=K`
+the override; a hard emitted-size cap with a refusal as the last
+resort; the three census-§7 emitter levers PRICED against the corpus;
+stamps; identity gate as the control); the lane returns for the D6
+panel (r40) before any code — the [OPT-K] shape, because r39 found a
+miscompile in a design. (2) **[ENG-ABS] second mechanism OPENED** —
+lane engabs (opus, worktree lane/engabs): anchored match-here via the
+UNWRAPPED forward DFA from `ctx->pos`, no reverse pass; a short design
+note first (the accept-discipline identity argument in r39's
+name-the-state style; the overflow case is a [SEL-1]-shaped fallback to
+today's search+filter, stamped, never a refusal), then straight into
+code; abi 9→10 at the four D76 sites; `-fno-…` axis bit 17, registry
+59→60; the number to beat is [OPT-2] §(a)'s (at/below VM on matching
+subjects, ~0.57× on short valid emails) plus the failing-probe skim on
+a 1 MB subject. The first mechanism (`^`-absorption) stays gated on
+[BENCH-1]. [OPT-2] closes into this lane. (3) **[LIB] blocks on
+[DD-13b]** — "depends on rxt format"; the spine question is not re-asked
+until the format half lands. (4) [SPEC-1.9]'s in-place ruling
+CONFIRMED. (5) The abi number RESETS TO 1 at 1.0 — D81 addendum, on
+[REL-META]. NOT ruled (still open, not pressed): the sabotage-matrix
+re-run tiering (plan ~397) and the module-swap/row-deletion guard.
+Process: both lanes briefed with the scope mandate, WIP commits,
+gnutimeout/watchdog, async validation, targeted sections only during
+development and ONE full `make test` at delivery (the manager runs the
+union battery at merge; `battery_v2.sh` copied into this session's
+scratchpad `mgr/`); 10-minute stall-watchdog cron a5829291 up; Frank's
+keep-warm rule applies to artsize3 once it is held for the panel.
