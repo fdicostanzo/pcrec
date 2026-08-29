@@ -1628,16 +1628,17 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
 |---|---|
 | `id`, `version` | `tag id=loglines` / `tag version=0.1` (file-level) |
 | `objective_kind` | `tag objective=realworld` (file-level) |
-| `objective`, `description` (prose) | `#` comments and `NOTES.md` — **the two things §4 of the position paper already said are not lines in a pattern file** |
-| `regimes = [...]` | `tag regime=search-short,throughput` (file-level), refined per block (below) |
+| `objective`, `description` (prose) | **`description \|` block scalars** — file-level for the sub-bench, per block for a member (Frank's r44 ruling; §1.2). The first version sent this prose to `NOTES.md`; it is a FIELD, so a summarizing script can read a sub-bench's objective without a second file |
+| `regimes = [...]` | `tag regime=search_short throughput` (file-level; bare labels and pairs both allowed, U1), refined per block (below) |
 | `[[patterns]].name` | `name <ident>` (block-scoped) |
 | `[[patterns]].file` | the `pattern` line itself — the `.rx` file disappears |
 | `.feature_tier` | `features <list>` (a real directive) plus `tag tier=base` for the bench's own vocabulary |
-| `.hazard_class`, `.size_class`, `.convention`, `.tags`, `.role` | `tag hazard=… size=… convention=… role=…` |
-| `[subjects].generator`, `.manifest` | the directory convention — a generator beside its output, exactly as `tests/recursion/gen_corpus.py` already is |
+| `.hazard_class`, `.size_class`, `.convention`, `.role` | `tag hazard=… size=… convention=… role=…` |
+| **`.tags` (the free LIST — up to 6 bare labels per pattern)** | `tag` accepts **bare labels beside pairs on one line**, and repeated `tag` lines accumulate: `tag logs identifier control` then `tag regime=search_short` (r44-consumers U1; the first version's `tag-pair` required an `=` and dropped the list) |
+| `[subjects].generator`, `.manifest`, **`.throughput_generator`, `.throughput_manifest`** | the directory convention — a generator beside its output, exactly as `tests/recursion/gen_corpus.py` already is. All four, not the two the first version listed (r44-consumers U5) |
 | `[subjects].short_search_max_bytes` | `tag short-search-max-bytes=4096` |
 | `[expectations].file` | `include "gen/expectations.rxt"` |
-| `[expectations].default_method` | `oracle pcre2` (file-level) |
+| `[expectations].default_method` | **TWO fields, not one** (r44-consumers U3): `oracle pcre2` names the ENGINE that checks, and `tag method=libpcre2-differential` names the VERIFICATION METHOD. R-BENCH-1's methods include non-oracle ones — "derived-law-plus-induction" is a real, already-used method (the K23 closed form) with no engine behind it — so folding method into the oracle enum would make those unspellable and would put a pcrec-shaped enum where AR-6 requires engine-neutrality. The first version conflated them |
 | `[testees.pcre2].options` | `config pcre2` with `testee pcre2/10.46` + `option k=v` lines |
 | `[testees.pcrec].options` | `config pcrec` with `pcrec --features all` |
 | `patterns[].variant = null` | the **absence** of a `variant` line |
@@ -1645,14 +1646,26 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
 
 **The four bench requirements that needed a decision, decided:**
 
-1. **OUTCOME (§4.4).** `did-not-compile` is `perr`; `gave-up` is `gu`
-   (MEASURED live, 23 uses, §2.11); `matched-as-expected` /
-   `did-not-match-as-expected` / `wrong-span-or-captures` are what
-   `m`/`n`/`g` already score; **`unsupported-by-declaration`** is
-   `variant <testee> unsupported <reason>` — one line kind for both
-   halves of the variant axis, not two. `crashed` / `timed-out` are the
-   harness's own (exit ≥ 124 / ≥ 126, already distinguished by
-   `run.sh`), never expectations.
+1. **OUTCOME (§4.4), all twelve values accounted for** — the first
+   version mapped 5 of 7 per-subject and 3 of 5 per-testee and was
+   silent about the rest (r44-consumers U2). Per subject:
+   `matched-as-expected` / `did-not-match-as-expected` /
+   `wrong-span-or-captures` are what `m`/`n`/`g` already score;
+   `gave-up` is `gu` (MEASURED live, 23 uses, §2.11); `crashed` /
+   `timed-out` are the harness's own (exit ≥ 124 / ≥ 126, already
+   distinguished by `run.sh`) and are never expectations.
+   **`truncated-subject` is NOT REPRESENTABLE in this format, and that is
+   deliberate**: it means the engine consumed fewer bytes than offered,
+   which is a property of an ADAPTER's call, not of a pattern's answer —
+   the bench records `consumed_length` where the API exposes it, and no
+   `.rxt` line kind could produce that number for a foreign engine. It
+   stays **bench-side**, and this note names the gap rather than leaving
+   the reader to find it. Per testee: `did-not-compile` is `perr`;
+   `unsupported-by-declaration` is `variant <testee> unsupported
+   <reason>` — one line kind for both halves of the variant axis;
+   `crashed` / `timed-out` are the harness's; **`compiled` is the
+   ABSENCE of the other four**, a record-side default with nothing for
+   the format to say. Two of twelve are bench-side by nature; ten map.
 2. **VARIANT (§4.5), constraint 1** — "the results must be the same" —
    is **mechanical**: a `variant` is checked against the block's own
    expectations, and a difference invalidates the cell. Nothing new is
@@ -1667,7 +1680,9 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    and there is no case scope (Frank's ruling 4). So a sub-bench writes
    the canonical pattern **once** as a `name`d definition and one block
    per (pattern, regime), each `pattern (?&<name>)` with its own
-   `tag regime=…` and its own subject set. **MEASURED, the wrapper is
+   `tag regime=search_short` (the bench's own spelling, underscored —
+   r44-consumers U4 caught the first version writing `search-short`) and
+   its own subject set. **MEASURED, the wrapper is
    free here**: `expectations.tsv`'s columns are
    `pattern subject regime expected start end nmatches method oracle` —
    **no capture columns at all** — and a subroutine wrapper is
