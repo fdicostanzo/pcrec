@@ -33,7 +33,7 @@ SUBJECTS = [
 
 def main():
     out = open(sys.argv[1], "w")
-    out.write("label\tK\tbytes\tlabels\tgotos\ttables\temit_s\terr\tpattern\n")
+    out.write("label\tK\tbytes\tlabels\tgotos\ttables\ttable_entries\temit_s\terr\tpattern\n")
     for label, pat in SUBJECTS:
         for K in KS:
             text, err, secs = emit(pat, extra=["--unroll=%d" % K], timeout=300)
@@ -41,8 +41,9 @@ def main():
                 out.write("%s\t%d\t\t\t\t\t%.3f\t%s\t%s\n" % (label, K, secs, err, pat))
             else:
                 r = scan(text)
-                out.write("%s\t%d\t%d\t%d\t%d\t%d\t%.3f\t\t%s\n" % (
-                    label, K, r["bytes"], r["labels"], r["gotos"], r["tables"], secs, pat))
+                out.write("%s\t%d\t%d\t%d\t%d\t%d\t%d\t%.3f\t\t%s\n" % (
+                    label, K, r["bytes"], r["labels"], r["gotos"], r["tables"],
+                    r["table_entries"], secs, pat))
             out.flush()
             print("%s K=%d done %.1fs" % (label, K, secs), flush=True)
     out.close()

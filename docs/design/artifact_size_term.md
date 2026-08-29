@@ -43,7 +43,7 @@ tension that kicks in at some size."*
    already computes. Measured, it reproduces the census's own hand-derived
    split with no `nested`-only clause — it SELECTS on all three nested-repeat
    outliers (K=1, 2.7×–4.7× smaller) and DECLINES all four table-dominated
-   ones (K buys 1–8 %), §3.3.
+   ones (K buys 0–8 %), §3.3.
 6. The **threshold** is 131,072 comment-excluded bytes: it sits in the
    corpus's own widest tail gap (1.64×, between 98,596 B and 162,034 B), with
    the nearest pattern 33 % below and 24 % above, and leaves the term a
@@ -129,6 +129,14 @@ implementation agree to the byte — 25,855 / 57,793 / 17,353 / 40,788 /
 final record from `str.split`, which `awk` does not emit); that is recorded
 here rather than silently fixed, because an unverified reimplementation
 agreeing to within 1 byte would have looked like agreement.
+
+**And an independent cross-check at the other end of the range.** Census §6's
+own byte attribution — a different classifier, depth-aware, five buckets —
+puts the witness at program 1,657,633 + scaffold 60,792 + tables 924 =
+**1,719,349 non-prose bytes**. This lane's flat comment-tracker measures the
+same artifact's comment-excluded size at **1,719,349**. Two independently
+written classifiers, agreeing to the byte on the largest artifact either has
+seen.
 
 ### 2.2 The inputs are pre-emission facts, deliberately
 
@@ -277,6 +285,30 @@ Three facts the rule is built on:
    across all nine K values**. That is D82's zero-cost property, measured
    directly on the axis this row moves, before any code is written.
 
+### 3.1a The model's REAL job is ranking, and it does that exactly
+
+§2.4 reports the model's ABSOLUTE error. But the K rule never uses an absolute
+prediction — it compares `B̂(K_a)` against `B̂(K_b)` for the SAME pattern, where
+`E` is nearly constant and the intercept cancels entirely. So the question that
+decides whether the rule works is not "how close is `B̂`" but **"does `argmin_K
+B̂` equal `argmin_K B`"**.
+
+Measured over §3.1's fifteen subjects, model against actual, on the ladder
+`[8,6,4,3,2,1]` with ties to the largest K:
+
+> **The model picks the byte-optimal K on 15 of 15 subjects** — every nested
+> subject at K=1, `altbc4000`/`ab300`/`simple` at K=8, and each of the others
+> where the actual bytes put it. Absolute prediction error at the chosen K over
+> the fourteen VM subjects runs **−6.9 % to +15.9 %**, and the ranking is right
+> anyway, which is the point: a bias that is roughly constant across K for one
+> pattern cannot change an argmin.
+
+(The fifteenth subject, `\d{4}-\d{2}-\d{2}`, is a DFA artifact with `N = 0`;
+K is a no-op on it and it is included only to show the rule leaves it alone.)
+
+This is the validation to attack if a reviewer wants to break the K rule —
+not §2.4's absolute error, which the rule never consumes.
+
 ### 3.2 The threshold
 
 **`PCREC_SIZE_TERM_THRESHOLD = 131072` bytes** (comment-excluded, the §2.1
@@ -285,8 +317,9 @@ quantity). Two independent derivations, both from the corpus:
 - **The gap.** Sorted, the corpus's tail is 98,596 / 162,034 / 221,597 /
   225,862 / 288,314 / 384,611 / 465,818 / 651,412 B. The **widest
   multiplicative gap anywhere in the top 20 is 1.64×, between 98,596 and
-  162,034** — and 131,072 sits inside it, 33 % above the pattern below and
-  24 % below the pattern above. No ordinary emitter or corpus movement flips
+  162,034** — and 131,072 sits inside it: the largest artifact BELOW the
+  threshold is 98,596 B (the threshold is 1.33× it) and the smallest ABOVE is
+  162,034 B (1.24× the threshold). No ordinary emitter or corpus movement flips
   a pattern across it.
 - **The population.** 7 of 2,487 patterns (0.281 %) are above it; the corpus
   median is 23,650 B (5.5× below) and p99 is 44,340 B (3.0× below).
@@ -495,9 +528,11 @@ the witness), so the anchored, lower number is the one to use.
 corpus's worst pattern sits at 1,471 nodes / 7.09 s — 71 % of D45's budget —
 so a cap derived from that budget has only 1.36× node headroom over shipped
 material, which would be uncomfortably tight for a refusal. What buys the
-headroom is not the cap but the **K rule running first**: it takes that same
-pattern to 262 nodes and 0.61 s, dropping the corpus's worst compile from 71 %
-of budget to **11 %** and leaving the cap 4.5× clear of anything shipped. The
+headroom is not the cap but the **K rule running first**: it takes that
+pattern to 262 nodes and 0.61 s, after which the largest node count left
+anywhere in the corpus is nested N=2's **445** (below the threshold, so
+untouched) at **1.09 s**. The corpus's worst compile drops from 71 % of D45's
+budget to **11 %**, and the cap sits **4.5× clear** of anything shipped. The
 cap is only ever the backstop for what K descent cannot reduce.
 
 ### 4.3 Where it fires, and in what order
