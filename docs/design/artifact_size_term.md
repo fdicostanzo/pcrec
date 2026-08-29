@@ -1655,12 +1655,25 @@ sits in the emitted BODY of *every* artifact, DFA included, so the bump alone
 moves every artifact by ≥ 1 byte; and `_MAX_EMIT_BYTES` (§7.1) is stamped on
 both engines. The estimate is therefore:
 
-| artifact | added |
-|---|---|
-| VM | `_UNROLL_K` + `_UNROLL_K_WHY` + `_MAX_EMIT_NODES` + `_MAX_EMIT_BYTES` + the `abi` digit — **≈ 130 B** |
-| DFA | `_MAX_EMIT_BYTES` + the `abi` digit — **≈ 35 B** |
+| artifact | estimated | **MEASURED** |
+|---|---|---|
+| VM | `_UNROLL_K` + `_UNROLL_K_WHY` + `_MAX_EMIT_CODE_BYTES` + `_MAX_EMIT_BYTES` + the `abi` digit — ≈ 130 B | **+128 B**, on 1,689 artifacts |
+| DFA | `_MAX_EMIT_BYTES` + the `abi` digit — ≈ 35 B | **+34 B**, on 1,185 artifacts |
 
-To be measured after and compared here. §6.2 and §9 rows 3 and 5 are written to
+**Measured and compared, as r39 finding P3 requires** (`abi` 7 overshot its own
+estimate sixfold, which is why this row estimated before measuring): 128 against
+130 and 34 against 35. The corpus-wide `size_diff` against `main` resolves into
+exactly THREE values and nothing else —
+
+| movement | patterns | what it is |
+|---|---|---|
+| **−227,281 B** | 1 | the nested N=8 outlier: the size term choosing K=1 |
+| **+128 B** | 1,689 | every VM artifact's four stamps |
+| **+34 B** | 1,185 | every DFA artifact's one stamp |
+
+— with 0 patterns vanished and 3 new (this row's own `.rxt` cells). Total
++0.23 %. A reviewer can check the whole delivery by arithmetic, which is what
+§9 row 5 asks for. §6.2 and §9 rows 3 and 5 are written to
 agree with this rather than with "byte-identical".
 
 ---
