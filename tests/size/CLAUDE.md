@@ -60,7 +60,22 @@ the corpus. `size_bytes` is the SELF-CONTAINED artifact's size (`.c`+`.h`
 combined — the census's own correction, docs/dev/artifact_size_census.md
 §6) with COMMENTS EXCLUDED, per `tests/lib/size_count.sh`'s definition
 (verified byte-exact against the census's own Python classifier — see that
-file's header and docs/testing.md's transcript). `engine`/`rungs`/
+file's header and docs/testing.md's transcript).
+
+**"COMMENTS EXCLUDED" IS LINE-BASED, AND AN EMITTER AUTHOR HAS TO KNOW
+WHICH LINE.** The classifier recognises a line that STARTS a block (`/*`, or
+`//`) and tracks the block to its end. A comment placed ABOVE a declaration
+therefore costs zero counted bytes; the CONTINUATION lines of a comment that
+begins after code on the same line — the `int x;   /* first line` … shape —
+do not start a block and are counted as CODE. MEASURED at [ENG-ABS]
+(2026-08-29): one new `rx_info` member whose comment used the trailing shape
+put **+691 B into every one of the corpus's 2,875 artifacts** and moved the
+corpus total 7.82 %; moving the same comment above the member took the
+per-artifact cost to 38 B. Nothing is wrong with the classifier — a trailing
+comment's continuation lines genuinely are not a block opener — but "the
+emitted comments are free" is true only of the first shape, and the emitted
+`struct rx_info` still carries two members (`scan`, `prefilter`) in the
+second. `engine`/`rungs`/
 `prefilter` are the D46 stamps (`RX_ENGINE`/`RX_VM_RUNGS`/
 `RX_VM_PREFILTER`) read straight off the artifact; empty when the artifact
 has no such stamp (a DFA artifact carries no rungs/prefilter at all).
