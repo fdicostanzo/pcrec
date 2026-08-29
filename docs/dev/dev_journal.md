@@ -17264,3 +17264,74 @@ and the K/override that would pass; stamps; the size log), [OPT-4]
 owns shrinking witness 2's prefilter (K39). engabs: design note
 committed 22:2x, implementing since (emitter, structural check, form
 census, deny-flag diff); no report yet.
+
+#### Forty-fourth session, part 3 — engabs DELIVERED (targets met with room); r41 close panel launched; artsize3's second revision and the cap-set correction; D84 addenda (2026-08-28 ~23:5x EDT)
+
+ENGABS DELIVERED 4a44828 (21 commits; 47 files, +5,965/−3,689; tree
+clean): the unwrapped forward DFA as a third machine emitted for the
+`_match` family, `RX_DFA_MATCH` = unwrapped / search-filter
+unconditional on DFA artifacts with an `rx_info.match_form` mirror,
+`-fno-anchored-dfa` bit 17 (`--list-axes` 45 rows / 18 axes; registry
+59→64), abi 9→10 at all four D76 sites, a structural check with its
+own make section, the form census's axis G floored (unwrapped 780 /
+search-filter 150), an ANSWER-level differential in `tests/anchored/`,
+spec hunks in match_api.md §3.2/§3.3/§3.6/§6/§10 and limits.md, two
+stale "bits 4-15" prose mentions corrected to the derived 4-31, and a
+size-log finding (comment exclusion is LINE-based — a trailing
+multi-line comment's continuation lines count as CODE, +691 B per
+artifact from one rx_info member's comment shape). MEASURED against
+[OPT-2] §(a)'s numbers to beat: matching compliance subjects **1.031×**
+the VM (target ≤ 1.046×, from 2.077×); the 35 short valid emails
+**0.482×** — 2.07× FASTER than the VM (target ≤ 0.571×, from 1.207×);
+non-matching 2.306× → 1.550× (the remainder is the forward scan on
+near-miss emails — [OPT-3]/[OPT-K] territory); the failing 1 MB probe
+**363,305×** cheaper (5.5 µs flat — O(divergence)). Size: DFA
+artifacts +2,605 B median (1.175×), p99 +6,743, max +44,031; VM +63 B
+flat; tripwire 14× clear. Delivery `make -k -j12 test` 27/27 sections,
+the one red = counterk's known load cell, solo 1,634/0. Open: ENG_ATTEMPT
+keeps search-filter (a different mechanism, a clamp on the attempt
+loop); class-table sharing measured at 1,478 B = 57 % of the median
+delta (an abi event of its own, D77-waits); `make test-axes`'s deny arm
+is trivially green because the sweep drives `_search` only — a [CHK-2]
+question. r41 CLOSE PANEL launched ~23:5x: critic-sem (opus — accept
+discipline vs the old form, the VM and libpcre2 with its OWN
+alphabet; assertions at pos > 0 and the §3.8 seeding; empty matches;
+the overflow fallback), critic-checks (sonnet — the four abi sites, D80
+hunks, D81 on every artifact kind, the registry/census counts derived
+vs spelled, remaining hard-coded bit ranges, what the sabotage row
+detects, the size log's provenance), critic-meas (sonnet — reproduce
+§7/§8 with the lane's scripts and an independent harness, five other
+pattern shapes, the eleven-line D81 difference set, `.o` deltas).
+Merge waits on the panel; the union battery follows the merge.
+
+ARTSIZE3 meanwhile: first revision c26a776 answered F1 (instrument
+fixed, verified against size_count.sh byte-exact; model gains prefilter
+states S and jump entries J; the cap moved to CODE bytes at 500,000 as a
+measured SEPARATION — ≤ 320 KB code costs ≤ 71 % of D45, 837 KB costs
+669 %, empty band between; witness 2's "7.8 s" was the fuzz harness's
+-O0, at -O2 it is 66.92 s / 1.9 GB) and F6/S1 (no pre-emission node
+count exists → the K rule RE-EMITS over the ladder into a scratch
+buffer, 2.84 s worst / 0.01 s ordinary / 0.28 % of the corpus). Frank
+clarified the unit — every size is comment-excluded emitted C source,
+`.o` ≈ 17 % — and ruled "then 500k is fine" (D84 addendum 2, f3b3a65);
+"C code measure is fine". Second revision 6808bdd applied all twelve
+S-findings and D84 (both caps overridable upward, the five-value
+`_UNROLL_K_WHY`, limits.md's "Handling an oversized artifact" text,
+S11 re-measured on ten axes: 0 refused, worst N 1,489, worst raw
+675,589) but SWAPPED the D45 half back to a node cap (2,000) beside
+the total-bytes cap (1,000,000) — its own §4.2 shows nodes do not
+separate gcc cost (552 nodes at 66.92 s vs 7,467 at 55.13 s) and
+witness 2 is caught by the total cap only by coincidence. Sent back
+once more: the D45 cap binds on CODE BYTES counted EXACTLY by the
+emitter (bytes written outside table initializers, no fitted
+coefficients in any refusal) at Frank's 500,000; the node cap is
+dropped as subsumed; two exact post-emission caps, both raise-only
+overridable and stamped. critic-sem's focused re-check on the moved
+mechanism (dry emission side-effects, ladder-then-caps ordering, the
+S2 gate spec, the byte definition vs the size log) runs in parallel.
+Process: the lane's S11 sweep collided with engabs's full test at
+load1 49; it killed its own sweep by PID and requeued behind a load
+check — recorded in its §4.6b. Every subagent report this session was
+DROPPED by the final-report channel and recovered by asking the agent
+to SEND it by message (critics cannot write files: "Subagents should
+return findings as text") — budget a message round-trip per agent.
