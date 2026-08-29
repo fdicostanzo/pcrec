@@ -419,7 +419,15 @@ KEEP="${KEEP:-0}"
 # because every VM hybrid gains a `<PREFIX>_VM_PREFILTER_LANG` line, its
 # `<PREFIX>_VM_PREFILTER_LANG_WHY` companion (D81; added at `d4d439e`, which is
 # why the pin moved off `2ed6402`), and, on the artifacts over the knee, a
-# smaller inlined prefilter. (No count is given
+# smaller inlined prefilter.
+#
+# THE PIN MOVED AGAIN, to `fefcea1`, for [OPT-4] STEP 3's SECOND commit — the
+# [SEL-1] rung. That one changes no emitted TEXT for any artifact this gate
+# compares; it changes WHICH artifacts have a prefilter at all, on patterns
+# whose DFA overflows as the engine. The pin follows it because the rule one
+# paragraph down is "this change's last src-touching commit" and not "the last
+# commit that moved a byte here" — a pin derived from what a gate happens to
+# notice would need re-deriving every time someone checked whether it had. (No count is given
 # here on purpose: how many artifacts collapse is a property of the POPULATION
 # being swept, and this gate's corpus is not the size log's 1,388 hybrids nor
 # `run_prefilter_collapse.sh` §5's 2,772 `pattern` lines. Each check floors its
@@ -432,7 +440,7 @@ KEEP="${KEEP:-0}"
 # emitted text, so the pin follows it rather than the commit that introduced
 # the member.
 REFCOMMIT="${RECURSION_IDENTITY_REF:-ac4917d}"
-FILEPIN="${RECURSION_IDENTITY_FILEPIN:-d4d439e}"
+FILEPIN="${RECURSION_IDENTITY_FILEPIN:-fefcea1}"
 
 WORKDIR="$(mktemp -d)"
 cleanup() {
