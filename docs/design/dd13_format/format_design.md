@@ -1,21 +1,21 @@
 # [DD-13b] Design note — the grown `.rxt` format: grammar and semantics
 
-**Status: DESIGN, for the [DD-13b.panel] D6 adversarial panel. NO PARSER IS
-WRITTEN** (plan.md [DD-13]: "NO parser is written before (c) closes").
+**Status: REVISION 2, post-panel and post-ruling. NO PARSER IS WRITTEN**
+(plan.md [DD-13]: "NO parser is written before (c) closes").
 
 This note designs the grammar and semantics of the unified
 pattern-source / test-carrier / bench-set file format, under the rulings
 Frank gave on 2026-08-28 (`usecases_and_outline.md` §5 as amended by §6.1
-through §6.5) and against the requirements [DD-13a] measured
-(`requirements.md`: R-RXT-*, R-VE-*, R-VG-*, R-BENCH-*, R-GEN-*,
-R-SUBST-*, R-COMPAT-1; tensions T-1..T-6; anti-requirements AR-1..AR-7;
-OD-1..OD-6).
+through §6.5) and **2026-08-29 (D87)**, against the requirements
+[DD-13a] measured (`requirements.md`: R-RXT-*, R-VE-*, R-VG-*,
+R-BENCH-*, R-GEN-*, R-SUBST-*, R-COMPAT-1; tensions T-1..T-6;
+anti-requirements AR-1..AR-7; OD-1..OD-6), and revised against the
+**r44 D6 panel** (`docs/dev/reviews/2026-08-29-r44-dd13b-format.md`).
 
 **The rulings are not reopened.** Where this note departs from the
 position paper, it departs from the paper's *own* provisional choices,
 never from a ruling, and says so at the point of departure with the
-measurement that forced it. There are five such departures and they are
-listed in §0.3.
+measurement that forced it (§0.3).
 
 ## 0. How to read this
 
@@ -23,8 +23,11 @@ listed in §0.3.
 
 Every load-bearing claim in this note is one of three kinds, marked:
 
-- **MEASURED** — a command was run in this worktree on 2026-08-29 and its
-  output is quoted. Commands are given so the panel can re-run them
+- **MEASURED** — a command was run in this worktree and its output is
+  quoted. Semantic claims are run on **both oracles** — libpcre2 10.46
+  through `docs/design/eng_brep_measurements/probes/pcre2_ctypes.py`, and
+  `build/pcrec` through `tests/harness/driver.c` — and the note says when
+  they agreed. Commands are given so the panel can re-run them
   (requirements.md §13 item 5 asks exactly this).
 - **CITED** — quoted from a ruling, decision, or spec, with its id.
 - **ARGUED** — reasoning from the above. An argued claim is the panel's
@@ -35,37 +38,42 @@ Every load-bearing claim in this note is one of three kinds, marked:
 
 A `.rxt` file gains a **HEAD** (file-level declarations and `config` /
 data blocks, everything before the first `pattern` line) above the
-**BODY** it already has (pattern blocks, unchanged). Thirteen additions —
-six file-level declarations, two head block kinds and five block-scoped
-lines — live there;
-today's thirteen line kinds and their semantics are untouched, so all
-179 files / 3,265 blocks / 26,691 expectation lines parse and mean
-exactly what they mean now (MEASURED, §1.1). Composition is
-**PCRE2's own `(?&name)`**, and the format's contribution is not a new
-in-pattern syntax but a **definition-injection rule**: the referenced
-definition closure is appended to the pattern text as a
-`(?(DEFINE)…)` block **at the END**, which makes the composed pattern
-plain PCRE2 the oracle can check directly, makes the primary's capture
-numbering stable with the definitions appended at N+1.. — D39.2's
-appended-numbering rule, obtained from PCRE2's own left-to-right
-numbering rather than implemented (MEASURED, §2.3) — and makes a
-name collision between a pattern's own group and a definition
-**impossible by construction** rather than by a rule the format has to
-enforce (§2.4). Build declarations are file-level `target <prefix> =
-<name> [with <config>…]` triples (Frank §6.4); pattern blocks carry no
-build marker at all. Everything a pcrec-bench sidecar carries today
-becomes lines beside the pattern (§4.5, field by field against the live
-`subbench.toml`).
+**BODY** it already has (pattern blocks, unchanged). Sixteen line-kind
+additions live there — seven file-level declarations, two head block
+kinds, seven block-scoped lines — and today's thirteen line kinds and
+their semantics are untouched, so all **179 files / 3,265 blocks /
+26,691 expectation lines** parse and mean exactly what they mean now
+(MEASURED §1.1, independently reproduced by r44-grammar G1).
+**Composition is an AST-level operation inside pcrec** (D87): the
+reference spelling stays PCRE2's `(?&name)`, and what the format
+contributes is a rule for BINDING a definition into a caller's AST —
+group numbers are ASSIGNED rather than positional, a definition's
+numbers are re-based above the caller's `ngroups` (D61's delivered-slot
+region), lexical scope wins in both directions, and injected definitions
+are name-qualified so a caller cannot reach them by accident (§2.3).
+Three small PCRE2-dialect extensions carry what that needs — a numbered
+group, a scope prefix on a call, and a delivering-call declaration —
+each measured to be a spelling PCRE2 refuses, so no legal pattern changes
+meaning (§1.5). A delivering call's scope path IS a struct member path,
+which is how the results-into-a-struct feature falls out rather than
+being designed twice (§2.13, [V-I]). The harness's TEXTUAL expansion
+survives as the **oracle control** on the population where it is valid,
+not as the producer (§2.3.4). Build declarations are file-level
+`target <prefix> = <name> [with <config>…]` triples (Frank §6.4);
+pattern blocks carry no build marker. Everything a pcrec-bench sidecar
+carries today becomes lines beside the pattern (§4.5, field by field
+against the live `subbench.toml`).
 
 ### 0.3 Where this note departs from the position paper
 
 | # | the paper said | this note says | forced by |
 |---|---|---|---|
-| D-a | "A pattern's OWN groups keep priority over libraries" (§2 wave 1) | there is no priority: a name declared by a named group in the pattern text is resolved **lexically and never looked up**, so it is never injected and the two never meet. A name that IS injected and IS also declared lexically cannot arise | MEASURED §2.4 — the composed form is REFUSED by pcrec ("two named subpatterns have the same name"), so "priority" was never available |
+| D-a | "A pattern's OWN groups keep priority over libraries" (§2 wave 1) | **the paper was right, and D87 restores it as a RULE**: a caller's own group overrides an injected definition, a library's internal reference binds to the library's own definition, and injected names are qualified so the two never contend. Revision 1 said the situation "cannot arise"; r44-sem MEASURED that false under `(?J)` | CITED D87 rule 2; MEASURED §2.3.3 M2, both oracles |
 | D-b | `config` is wave 3 (§2) | a **minimal `config`** (pcrec option lines only) is **wave 1**, beside `target … with` | CITED: `docs/spec/limits.md` "Handling an oversized artifact" already tells users to put `--max-emit-bytes=N` "in the pattern-source file's `config` block"; a shipped spec has made the promise. Plus Frank §6.4's own words ("I want to specify the options for them") |
-| D-c | OD-5's premise, inherited from requirements R-VE-8: "subroutine-call semantics are ATOMIC and shift capture numbering" | **BACKTRACKABLE, and capture-transparent**, on 10.46 | CITED, MEASURED by an earlier lane: `subroutines_design.md` §3.2 (four isolated cells + four atomic controls) and §3.1 (a live-ovector callout trace). OD-5's own tag is "measured, never read from docs" — this is that measurement, already taken |
+| D-c | OD-5's premise, inherited from R-VE-8: "subroutine-call semantics are ATOMIC and shift capture numbering" | **BACKTRACKABLE and capture-transparent** on 10.46; and the numbering is an ASSIGNED property (D87 rule 1), not a positional accident | CITED + MEASURED by an earlier lane: `subroutines_design.md` §3.2, §3.1. OD-5's own tag is "measured, never read from docs" |
 | D-d | `include` "splices a file's blocks"; nothing said about a second include of the same file | a second `include` of the same resolved path in one closure is **REFUSED** | ARGUED from learnings §3 / K35: both alternatives (splice twice, silently ignore) change a population nobody counts |
-| D-e | a `config` line `freq <name>` selects a data block (§6.5) | the selector is **`analysis freq <name>`** | ARGUED, a grammar ambiguity: `freq` would then be both a config-body line kind and a head block starter, so `freq x` after a `config` body could not be told from a new data block without a lookahead rule. OD-6 left the data block's naming open, so this is inside the design's mandate |
+| D-e | a `config` line `freq <name>` selects a data block (§6.5) | the selector is **`analysis freq <name>`** (disposing OD-6) | ARGUED, a grammar ambiguity — and r44-grammar G5's independent recognizer run DEMONSTRATED the ambiguity class rather than leaving it asserted |
+| D-f | prose belongs in `#` comments and `NOTES.md` (revision 1's own §7 Q1 recommendation) | **`description` is a machine-readable FIELD**, with a `\|` block scalar for multi-line prose; `#` comments are operational only | CITED, Frank at r44 (15:0x, 15:1x): "we may want to summarize via script what a library or other rxt file has" |
 
 ### 0.4 What this note does not design
 
@@ -76,12 +84,65 @@ becomes lines beside the pattern (§4.5, field by field against the live
   the sentence reads.
 - **[DD-11]'s definition table** — §4.2 states what this format needs
   from it as an interface. D85 rules its shape; the design is [DD-11]'s.
+- **The struct-loading feature itself** — [V-I] (plan.md:737). §2.13
+  states what this row hands it and what it still owns.
 - **The bench record's schema** — the bench owns it (D78). §4.5 states
   what the format must be able to say so the record can key on it.
+- **Iterated capture** — explicitly out of this row (D87 rule 5). §2.13
+  says what it refuses in the meantime and why that is not a policy
+  against it.
+
+### 0.5 Revision record — r44 and D87, finding by finding
+
+The panel (three read-only critics, both oracles on §2) raised **2
+blockers, 2 blocker-leaning, 12 majors** and a set of minors. Frank
+ruled the blockers as **D87**, which supersedes revision 1's §2.3
+(textual EXPAND as the producer), §2.4 ("impossible by construction"),
+§0.3 D-a, and the [DD-14.G] constraint. Where each finding landed:
+
+| finding | landed |
+|---|---|
+| **M1** absolute numeric refs re-target on relocation (BLOCKER) | §2.3.1 rule (i) re-bases them; §2.3.3 measures the fix on both oracles; §6.0 drops them from the piece rule's refusal list |
+| **M2/M7** a caller name colliding with an injected definition (BLOCKER) | §2.3.2 lexical scope + internal qualification; §2.3.3 M2 cells; §2.4 rewritten; §4.1 restated as a mechanism |
+| **M3/M4/M5** D61: `ngroups`/`nnames`, `RX_NCAPS` and [DD-14.G]'s bar | §2.3.1 (D61 cited as the constraint this row inherits), §2.3.5's restated bar, §2.7's last bullet, S9b |
+| **U1** the sidecar's free `tags` LIST was dropped | §1.3 `tag-item`; §4.5's table; §6.2's worked file |
+| **U6** a file both named and included was double-counted | §2.11 rule 2 — counted once, reported "named, absorbed into <entry>" |
+| **M6** the piece rule had 1 of 5 members | §6.0, rewritten as the five-member class with each member's fate |
+| **M8** no visited/cycle rule; a block's own `name` not in L | §2.3.2 steps 3 and 4 |
+| **M9** nothing built a target | §3.2 **H11**, and §1.4 puts it in W1 |
+| **M10** no output-naming rule for N targets | §2.7's invocation table; S11 |
+| **M11** "all 179 files have several blocks" was false | §2.7 — 177, and the two one-block files named |
+| **M12** the [DD-11] interface must accept a builder; origin column | §4.2 items 1 and 3 |
+| **M13** "the ONE place composition ≠ substitution" | §2.3.5 — two places, verbs named as the second |
+| **M14** `features` union made narrowing unspellable | `features only` — §1.3, §2.6 |
+| **M15** caps raise-only made `with c1, c2` order-sensitive | §2.6 — MAX WINS |
+| **M16** no `encoding` row, no block spelling | §1.3, §2.6, §4.4's R-VE-12 |
+| **M17** D61 never cited | §2.3.1, §2.3.5, §2.7, S9b |
+| **U2** OUTCOME enum gaps | §4.5 item 1 — all twelve values, two named bench-side |
+| **U3** method vs oracle-engine | §4.5's table — `oracle` + `tag method=…` |
+| **U4/U5** `search_short`; the throughput generator/manifest | §4.5's table; §6.2 |
+| **U8** R-VE-3 never addressed | §4.4 — explicit D77 deferral with its trigger |
+| **U9** two resolutions conflated | §3.2's note after the H-table — sequential, and H2b is a third independent path |
+| **U10** D-e disposes OD-6 | §0.3 D-e, §5.4 |
+| **U11** D-e's ambiguity asserted, not demonstrated | §5.1 — G5's run cited |
+| **U12** counter-cases to §7's recommendations | §7.2, beside each |
+| **G2** "one of three numbers run.sh prints" | §5.1 — the three-way partition, measured |
+| **G3** `from` unassigned a wave | §1.4 |
+| **G4** the 256 invariant read as grammatical | §6.4 — named as a semantic check, and where |
+| **Frank, description is a FIELD** | §0.3 D-f, §1.2, §1.3, §4.5, §6, §7.0 |
+
+**What SURVIVED the panel unchanged** and is not re-argued below: the
+grammar and INV-COMPAT (G1, G5, G6 — the corpus census reproduced to the
+digit by an independent recognizer, four ambiguity attacks all failed);
+§6.0's own correction and its controls; R-VE-5 for the primary's slots;
+`(?J)` inside a DEFINE block not leaking; used-twice, self- and mutually
+recursive definitions compiling and agreeing on both oracles; the
+143-block reference census; and H4's python-`re` argument.
 
 ---
 
 ## 1. Grammar
+
 
 ### 1.1 The base, restated as a testable invariant
 
