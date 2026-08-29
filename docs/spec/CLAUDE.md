@@ -279,7 +279,7 @@ spec and a design doc disagree, the spec is what the tool promises.
   now stale on TWO counts (this addition, and the pre-existing `--list-
   axes`/[CHK-2] omission this paragraph never picked up either); not
   rewritten wholesale in this pass — see `registry.md` itself for the
-  live figures (§2's 134, §5's 96, §9's 24 and counting).
+  live figures (§2's 135, §5's 97, §9's 43 and counting).
 
 **`docs/pcre2_compliance.md` is SPEC-TIER IN PLACE** ([SPEC-1.9], manager
 ruling, 2026-08-25): it meets this tier's bar through its own

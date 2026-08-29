@@ -426,8 +426,12 @@ def dump():
     # table) -- base-tier literal escapes that exist purely to give
     # `RegRow.definitions` a home, D24's own base-tier boundary otherwise
     # untouched (esc_char_value still decodes all six directly, no doorway).
-    if len(rows) != 134:
-        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 134. "
+    # 134 -> 135 (manager rulings, 2026-08-29): the 7th, bare `\x` (2 hex
+    # digits) -- same RS_BASE shape, a DEFK_TEXTFN definition since the
+    # value varies with the operand. `\x{...}` (braced) stays a parse.c
+    # special case, no row (src/parse/CLAUDE.md's existing ruling).
+    if len(rows) != 135:
+        sys.exit(f"compliance_section: dump has {len(rows)} rows, expected 135. "
                  "If you added or removed a construct deliberately, update this "
                  "number in the same commit; if not, coverage was lost")
     return rows

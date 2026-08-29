@@ -49,9 +49,9 @@ row:
     diag  flags  expect  note  roadmap  quantifiable  class_expect
     built  family
 
-17 columns, confirmed live this pass. 134 data rows
+17 columns, confirmed live this pass. 135 data rows
 (`build/pcrec --list-syntax | grep -vc '^#'`) — this is the number
-`tests/registry/registry_check.c:592`'s exact-count assertion pins
+`tests/registry/registry_check.c:597`'s exact-count assertion pins
 today; **`tests/registry/CLAUDE.md`'s own prose still says "100 since
 Q2/SR-9"**, which was true when that paragraph was written and has
 since drifted behind six further row-adding modules — flagged here as
@@ -70,7 +70,7 @@ file by this pass.
 | `status` | `base` \| `module` \| `rejected` — `RegStatus`: is this base-tier grammar, gated behind a module, or a construct pcrec refuses outright | yes |
 | `diag` | `none` \| `module` \| `module-octal` \| `fixed` — which diagnostic TEMPLATE this row's refusal uses (`RegDiag`); pairs with `expect` | yes |
 | `flags` | empty \| `class-delim` \| `lexical` (mask; both bits can co-occur) | yes |
-| `expect` | the SUBSTRING pcrec's diagnostic must contain when this row's syntax is refused — a substring of the doorway's template, not the whole message, so the template itself has one home; empty for the 7 rows that compile cleanly at base tier (127 of 134 rows are non-empty, `cut -f11 \| grep -vc '^$'`) | free text |
+| `expect` | the SUBSTRING pcrec's diagnostic must contain when this row's syntax is refused — a substring of the doorway's template, not the whole message, so the template itself has one home; empty for the 8 rows that compile cleanly at base tier (127 of 135 rows are non-empty, `cut -f11 \| grep -vc '^$'`) | free text |
 | `note` | one-line human description | free text |
 | `roadmap` | `-` (the question doesn't arise, base rows) \| `planned` \| `never` — legal pairing with `status`/`diag` enforced by `registry_check` (K14/§17.2): a `never` row must not promise a module in its diagnostic | yes |
 | `quantifiable` | `yes` \| `no` \| `form` \| `lexical` \| `-` — whether `<syntax>*` is grammatically legal after this construct, measured against libpcre2 and re-verified by `tests/spec_mod0/check10` | yes |
@@ -80,8 +80,8 @@ file by this pass.
 
 Live counts this pass (`build/pcrec --list-syntax \| grep -v '^#' \|
 cut -f16 \| sort \| uniq -c`): `built` 106, `unbuilt` 16, `-` 12, `defect`
-0 — 134 total, matching `registry_check.c:2916`'s own pinned
-`checked/built/unbuilt/na` tuple (134/106/16/12) exactly.
+0 — 135 total, matching `registry_check.c:2923`'s own pinned
+`checked/built/unbuilt/na` tuple (135/106/16/13) exactly.
 
 ## 3. `built` vs. `status`/`roadmap` — two different questions
 
@@ -114,7 +114,7 @@ well-formed row), `-` (the question doesn't arise: `status` is `base`
 or `rejected`), and `defect` — not a status a well-formed registry ever
 prints, but a `registry_check.c` DEFECT ASSERTION for a row whose own
 declared `syntax` produces neither a clean answer nor the unbuilt
-refusal shape (measured 0 of 134 rows today).
+refusal shape (measured 0 of 135 rows today).
 
 ## 4. `--list-verbs` — the `(*VERB)` name tables
 
@@ -139,9 +139,9 @@ will parse" is reading the wrong column.
 
 ## 5. `--list-families` — the grouping index (D71 item 3)
 
-`build/pcrec --list-families | grep -vc '^#'` — 96 rows against
-`--list-syntax`'s 134 (38 rows carry a non-empty `family`, collapsing
-into their canonical row: `134 - 38 = 96`, confirmed). 7 columns:
+`build/pcrec --list-families | grep -vc '^#'` — 97 rows against
+`--list-syntax`'s 135 (38 rows carry a non-empty `family`, collapsing
+into their canonical row: `135 - 38 = 97`, confirmed). 7 columns:
 
 | column | value set | stable? |
 |---|---|---|
@@ -173,7 +173,7 @@ Example, read live this pass (`build/pcrec --list-families | grep -v
 `(?1)` through `(?10)` plus the relative-alpha spelling `(?01)` — all
 module `recursion`, engines `vm`, `built`. A second family of 11 groups
 the corresponding negative/relative back-reference spellings. These
-are today's largest families; 84 of the 96 families have exactly one
+are today's largest families; 85 of the 97 families have exactly one
 member.
 
 `--list-families` takes no `--flavour` filter — `cli.md` §2 states why
@@ -183,8 +183,10 @@ another's, `cli/main.c:517-523`'s own comment).
 
 ## 6. `--list-axes` — the optimization-axis registry (the FOURTH surface, [CHK-2])
 
-`build/pcrec --list-axes | grep -vc '^#'` — 45 rows today, 12 columns,
-confirmed live this pass. Where the first three surfaces describe
+`build/pcrec --list-axes | grep -vc '^#'` — 47 rows / 19 axes at abi 11
+(this moves with every axis landing — [OPT-4]'s pending merge is the
+next one — so it is stated as a live count rather than a number to
+trust), 12 columns, confirmed live this pass. Where the first three surfaces describe
 SYNTAX pcrec accepts, this one describes the compiler's own TUNING
 machinery: for every axis where `src/gen/emit_dfa.c` or
 `src/opt`/`select_engine.c` chooses among two or more emitted
@@ -197,7 +199,7 @@ candidate of an axis always applies).
 
 | column | value set | stable? |
 |---|---|---|
-| `axis` | 18 values today: `table`, `prefilter`, `view`, `seed`, `accept`, `direction`, `match` (the seven DFA layer-1 axes, `docs/design/emitter_form.md` §3 and, for `match`, `docs/design/anchored_match_unwrapped.md` §5.1) plus `possessify`, `revdet`, `counter`, `length-prune`, `vm-prefilter`, `altcls-merge`, `altcls-factor`, `atomic-discharge`, `splice-calls`, `tiered-entry`, `engine` (the eleven VM/engine-selection axes, `docs/spec/tuning.md` §2) | yes, but append-only — a new axis is a new value, never a renumbering |
+| `axis` | 19 values today: `table`, `prefilter`, `view`, `seed`, `accept`, `direction`, `match` (the seven DFA layer-1 axes, `docs/design/emitter_form.md` §3 and, for `match`, `docs/design/anchored_match_unwrapped.md` §5.1) plus `possessify`, `revdet`, `counter`, `length-prune`, `vm-prefilter`, `altcls-merge`, `altcls-factor`, `atomic-discharge`, `splice-calls`, `tiered-entry`, `size-term`, `engine` (the twelve VM/engine-selection axes, `docs/spec/tuning.md` §2 — `size-term` is [ART-SIZE]'s `--unroll=K` re-selection axis, added after this section was first written) | yes, but append-only — a new axis is a new value, never a renumbering |
 | `order` | a positive integer, 1-based, dense per axis (an axis with N candidates uses 1..N) | yes |
 | `candidate` | free text, but always one axis's own stamp vocabulary where a stamp exists (§3's `built`-style closed sets, one per axis) | yes as a vocabulary shape, values are per-axis |
 | `kind` | `list` (a real candidate-list-of-objects exists in `emit_dfa.c` and this row's `candidate`/`deny_macro` came straight off it) \| `both` (axis `direction` only — not a preference list; both candidates are ALWAYS emitted, once each, per machine) \| `predicate` (no candidate-list-as-data exists yet; hand-stated from `lib/pcrec.h`'s enum symbols and `tuning.md`'s prose) | yes |
@@ -237,7 +239,7 @@ and no pattern/`-o` — a syntax query, `cli.md` §1.
 
 - **`registry_check.c`** (`tests/registry/`) is **pcrec checking
   pcrec** — table-vs-parser self-consistency in both directions, an
-  EXACT row count (134, §2), the `roadmap`/`quantifiable`/`class_expect`
+  EXACT row count (135, §2), the `roadmap`/`quantifiable`/`class_expect`
   legal-pairing rules, kind coverage, and the D65/D71 derived-column
   assertions (the `defect` outcome, the family AND-rule). It is the
   suite that catches a row naming the *wrong* module or a malformed
@@ -302,8 +304,7 @@ this lane's own branch point; not re-verified against the commit above.
 
 ## 9. `--list-definitions` — the replacement/definition table (the FIFTH surface, D85/[DD-11.2])
 
-`build/pcrec --list-definitions | grep -vc '^#'` — 24 rows today (as
-[DD-11.1]/[DD-11.4b] have populated the table so far; this number grows
+`build/pcrec --list-definitions | grep -vc '^#'` — 43 rows today (grows
 as the remaining census items land, see below), 7 columns:
 
     #kind  selector  syntax  order  predicate  definition  applies
@@ -313,8 +314,8 @@ as the remaining census items land, see below), 7 columns:
 | `kind`/`selector`/`syntax` | the SAME three columns §2 prints for the owning row — reused through the SAME rendering helpers (`src/parse/syntax_dump.c`'s `kind_name`/`put_selector`/`put_str`), not a second independent rendering, which is what makes joining the two dumps on these columns safe rather than merely convenient | yes |
 | `order` | a positive integer, 1-based, dense per row (a row with N `definitions` entries uses 1..N) | yes |
 | `predicate` | the option-scope TAG's own name (`DEF_ALWAYS`, `DEF_MULTILINE`, `DEF_NOCAP`, `DEF_UCP`, `DEF_ENCODING_UTF8`, `DEF_NEWLINE_CONV`, `DEF_LIB_NAME_BOUND` — the closed enum `DefTag`, `src/core/internal.h`), never hand-authored prose — the predicate column and a stored callable were two derivations of one fact (r43's ruling), and the tag name is the one that survives | yes, closed vocabulary |
-| `definition` | the core-syntax TEXT for a `DEFK_STR` entry (itself a valid pcrec probe pattern, `syntax`'s own convention), or the literal text `<builder>` for a `DEFK_BUILDER` (operand-taking) entry — never a live evaluation | free text for `DEFK_STR`; `<builder>` is a fixed literal otherwise |
-| `applies` | `active` (this entry substitutes a different construct) or `identity` (restates the row's own primitive form) | yes as a vocabulary shape — **today every printed entry is `active`**; `identity` is a reserved value with no row using it yet (see the open item below) |
+| `definition` | the core-syntax TEXT for a `DEFK_STR` entry (itself a valid pcrec probe pattern, `syntax`'s own convention); a human-readable TEMPLATE for a `DEFK_TEXTFN` entry (e.g. `\cX = byte (X xor 0x40)` — never spliced, never a live evaluation); the row's OWN `syntax` restated for a `DEF_IDENTITY` entry (nothing substitutes); or the literal text `<builder>` for a `DEFK_BUILDER` (AST-operand) entry, which has no pattern text to show | free text for `DEFK_STR`/`DEFK_TEXTFN`; `<builder>` is a fixed literal; `DEF_IDENTITY` echoes `syntax` |
+| `applies` | `active` (this entry substitutes a different construct) or `identity` (restates the row's own primitive form) | yes, closed vocabulary — **read directly from the entry's `DefKind`** (manager ruling: identity is an explicit `DEF_IDENTITY` entry, never inferred from absence); no row uses `identity` yet, pending the `^`/`$`/`(?n)`-scoped capturing-group rows (open item, below) |
 
 **BOUNDARY, stated once here because it governs every column above**:
 this dump shares its source with the resolver it describes.
@@ -328,15 +329,18 @@ are; it is not independent evidence that a definition string parses to
 core-only vocabulary, or that it MATCHES the same strings as the
 construct it stands for.** The first is
 `tests/registry/definitions_check.c`'s structural check (every
-`DEFK_STR` parses and every builder's output passes
-`pcrec_ast_all_core`, `src/parse/definitions.c`'s own exhaustive
-`AKind` switch); the second is [DD-11.3]'s option-matrix self-oracle,
-not yet built — see docs/design/definitions_table.md §3/§6 for both.
-`tests/registry/run_definitions_tests.sh`'s containment grep is a
-third, narrower claim: that the tag evaluator
-(`pcrec_def_tag_applies`) is reached from exactly one call site, so
-`predicate`'s values cannot be second-guessed by a hidden second
-evaluator anywhere in the tree.
+`DEFK_STR`/POSIX definition parses under `--features all`, every
+builder's and `DEFK_TEXTFN`'s output passes `pcrec_ast_all_core`,
+`src/parse/definitions.c`'s own exhaustive `AKind` switch — plus a
+static well-formedness sweep: every non-NULL `definitions` list ends
+in a `DEF_ALWAYS` entry, so `pcrec_def_resolve`'s fallthrough path is
+an `assert`, never a silent NULL); the second is [DD-11.3]'s
+option-matrix self-oracle, not yet built — see docs/design/
+definitions_table.md §3/§6 for both. `tests/registry/
+run_definitions_tests.sh`'s containment grep is a third, narrower
+claim: that the tag evaluator (`pcrec_def_tag_applies`) is reached
+from exactly one call site, so `predicate`'s values cannot be
+second-guessed by a hidden second evaluator anywhere in the tree.
 
 `--list-definitions` takes `--flavour` exactly as `--list-syntax` does
 (r43 K6, reversing the design note's first-pass "no"): it walks the
@@ -345,26 +349,42 @@ print a definition for a construct `--list-syntax --flavour=X` says
 does not exist under that flavour. It takes no pattern/`-o` — a syntax
 query, `cli.md` §1.
 
-**Not yet in this dump, and why**: the census in
-docs/design/definitions_table.md §1 names 28 RegRow-backed replacement
-rows plus 9 row-less base-tier literal escapes; [DD-11.1]/[DD-11.4b]
-have populated the class-escape family, `\b`/`\B`, `\R`, the bare `\N`
-row, the possessive-suffix family, and 6 of the 9 base-tier escapes (24
-entries across 18 rows, per the count above). Held pending two open
-design questions (the lane's own report to the manager): POSIX class
-names / `\c` / `\o` / `\N{U+` / `\Q...\E` / bare-`\x` / octal are all
-PARAMETERIZED BY TEXT AT THE OCCURRENCE, a shape neither `DEFK_STR`
-(fixed string) nor `DEFK_BUILDER` (AST-operand function) expresses; and
-`^`/`$`/the `(?n)`-scoped capturing-group row each need the
-`applies=identity` marking above, which `RegDef` has no field for yet
-(their non-multiline/non-nocap case is genuinely the row's own
-primitive form, not a substitution). Neither is `[DD-11.5]`'s
-wiring-into-real-compilation step, which stays gated on M6.6's exact
-one-byte-fixed-lookbehind lowering per the design note's own §4.
+**Four `DefKind`s reach this dump today**, two more than the design
+note's first pass: `DEFK_STR` (a fixed core-syntax string — the
+class-escape family, `\R`, `\b`/`\B`, the fixed literal escapes, and
+the POSIX named-class row's 14 names, each its own entry since the
+family is a FINITE enumerable set rather than an unbounded operand
+space); `DEFK_BUILDER` (an AST-operand function — the possessive-suffix
+family, `(?n)`); `DEFK_TEXTFN` (manager ruling: the general shape for
+"a binding parameterized by TEXT AT THE OCCURRENCE" — `\cX`, bare `\x`,
+`\o{}`, octal/`\0`, `\N{U+}` — each carries a human-readable TEMPLATE
+for this column plus a function that calls the EXISTING decoder where
+one exists, becomes the first decode site where none does yet, per
+`\R`'s own precedent for an unbuilt construct); and `DEF_IDENTITY`
+(manager ruling: the row's own primitive form, an EXPLICIT entry never
+inferred from an absent one — [DD-13]'s stamp-design lesson applied
+here — landed as infrastructure this pass, not yet used by any row).
 
-**[DD-11.2] this pass**: `build/pcrec --list-definitions` read live at
-`8da2ecb`, `PROCS=4` not yet re-run against the new dump (`run_registry_
-tests.sh`'s guarded chain does not exercise this surface yet — see
-tests/registry/CLAUDE.md's note on `run_definitions_tests.sh`, still
-standalone pending the table's population settling); `make strict`
-clean.
+**Not yet in this dump, and why**: `^`, `$`, and the plain capturing
+group `(...)` each need a `DEF_IDENTITY`-bearing entry (their
+non-multiline/non-nocap case is genuinely the row's own primitive
+form) but have **no `RegRow` at all today** — confirmed by grep, not a
+tag/kind gap: they are base grammar parsed directly in `p_atom`/
+`p_group_body` with no doorway, unlike the literal escapes (which
+route through the real `\` doorway even when answered before reaching
+the registry). Giving them one needs either stretching an existing
+`RegKind`'s doorway semantics or a new no-doorway `RegKind` (precedent:
+`RK_QUANTSUFFIX`, itself "consulted by the DUMP and by parse.c's own
+lookup and by nothing on the base path") — real architecture, open
+with the manager as of this pass. `\x{...}` (braced hex) also has no
+row, deliberately: `src/parse/CLAUDE.md`'s registry section already
+rules it a parse.c special case, and this pass does not reopen that.
+Neither is `[DD-11.5]`'s wiring-into-real-compilation step, which stays
+gated on M6.6's exact one-byte-fixed-lookbehind lowering per the design
+note's own §4.
+
+**This pass**: `build/pcrec --list-definitions` read live at this
+worktree's own HEAD; `bash tests/registry/run_registry_tests.sh` and
+`tests/registry/run_definitions_tests.sh` both green (the latter still
+standalone — see tests/registry/CLAUDE.md's note — pending the table's
+population settling); `make strict` clean.

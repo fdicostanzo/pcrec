@@ -334,12 +334,25 @@ char *pcrec_definitions_tsv(unsigned flavours)
                 put_str(&sb, r->syntax);                sb_putc(&sb, '\t');
                 sb_printf(&sb, "%d", order);            sb_putc(&sb, '\t');
                 sb_puts(&sb, pcrec_def_tag_name(d->tag)); sb_putc(&sb, '\t');
-                if (d->kind == DEFK_STR)
+                /* [DD-11.1]/[DD-11.4b] four DefKinds reach this dump now:
+                 * DEFK_STR (the definition itself), DEFK_TEXTFN (`str` is a
+                 * human-readable TEMPLATE, never a splice-ready string —
+                 * definitions.c's own header on that block), DEFK_BUILDER
+                 * (no text at all — `<builder>`, the operand is an AST the
+                 * dump has no pattern text for), and DEF_IDENTITY (the
+                 * row's OWN `syntax` restated — there is no substitution
+                 * text because there is no substitution). */
+                if (d->kind == DEFK_STR || d->kind == DEFK_TEXTFN)
                     put_str(&sb, d->str);
+                else if (d->kind == DEF_IDENTITY)
+                    put_str(&sb, r->syntax);
                 else
                     sb_puts(&sb, "<builder>");
                 sb_putc(&sb, '\t');
-                sb_puts(&sb, "active");
+                /* `applies` comes FROM THE KIND, never inferred (the
+                 * manager's identity ruling) — DEF_IDENTITY is the only
+                 * kind that restates the row's own primitive form. */
+                sb_puts(&sb, d->kind == DEF_IDENTITY ? "identity" : "active");
                 sb_putc(&sb, '\n');
             }
         }

@@ -20,6 +20,7 @@
  * through to it, reproducing today's byte/LF/no-library behaviour exactly.
  */
 
+#include <assert.h>
 #include <string.h>
 
 #include "core/internal.h"
@@ -58,7 +59,24 @@ const RegDef *pcrec_def_resolve(const Ctx *cx, const RegRow *rw)
         if (pcrec_def_tag_applies(d->tag, cx))
             return d;
     }
-    return NULL; /* a well-formed list ends DEF_ALWAYS and never reaches this */
+    /* UNREACHABLE BY CONSTRUCTION (manager ruling, 2026-08-29, the identity
+     * question): a well-formed `definitions` list always ends in a
+     * DEF_ALWAYS entry — a real definition (the unconditional-replacement
+     * rows: class escapes, \R, \b/\B, possessive, the fixed literal
+     * escapes) or an explicit DEF_IDENTITY entry (^, $, the (?n)-scoped
+     * capturing-group row) — and DEF_ALWAYS always answers true
+     * (pcrec_def_tag_applies, above). Falling off this loop therefore means
+     * the list itself is malformed (missing its DEF_ALWAYS terminal), which
+     * is a defect in registry.c to fix, not a NULL this function should
+     * hand back as if "no definition" were a legitimate answer — NULL as a
+     * signal is exactly the ABSENCE-AS-DISCRIMINATOR hazard [DD-13]'s stamp
+     * design already ruled out (a missing entry must not read the same as
+     * a forgotten one). tests/registry/definitions_check.c's structural
+     * check asserts every non-NULL list's construction directly, so this
+     * assert should never fire outside a sabotage run. */
+    assert(0 && "pcrec_def_resolve: definitions list has no DEF_ALWAYS "
+                "terminal entry (malformed row in registry.c)");
+    return NULL;
 }
 
 /* The tag's OWN name — `--list-definitions` prints this, never hand-authored
@@ -167,4 +185,87 @@ Ast *pcrec_def_build_identity(Ctx *cx, Ast *body)
 {
     (void)cx;
     return body;
+}
+
+/* ---- DEFK_TEXTFN entries (manager ruling, 2026-08-29: the general shape
+ * for "a binding parameterized by text at the occurrence" — internal.h's
+ * own comment before `DefKind` has the full ruling). Each is a pure
+ * function of (operand, len, cx); none scans or moves a cursor. Each
+ * CALLS THE EXISTING DECODER where one exists (bare `\x`'s per-digit value
+ * is `pcrec_hexval`, parse.c's own exported hex-digit decode, the site
+ * `esc_char_value`'s live 'x' case already uses); where none exists yet
+ * (`\c`, `\o{}`, `\N{U+`, all module `misc`/`unicode-props`, UNBUILT
+ * today), this function BECOMES that one site, on `\R`'s own precedent
+ * (definitions_table.md: "the definitions table can carry an unbuilt
+ * row's definition as data before any producer exists") — a future
+ * producer calls the SAME function rather than growing a second
+ * implementation beside it. NULL on a malformed operand (never reached
+ * today: every construct these serve is either unbuilt, so nothing calls
+ * this outside a test, or — bare `\x` — already validates its own digit
+ * count before the definitions layer ever sees the operand). */
+
+/* \cX ≡ X xor 0x40 (registry.c's own row note, ESC('c', ...)). `operand`
+ * is exactly the one byte X. */
+Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx)
+{
+    if (len != 1) return NULL;
+    return pcrec_ast_char(cx, (unsigned)((unsigned char)operand[0] ^ 0x40));
+}
+
+/* bare `\x` (2 hex digits, base tier, esc_char_value's own live rule) and
+ * `\x{...}` (arbitrary-width hex, module unicode-props, UNBUILT — parked
+ * in parse.c as a special case per src/parse/CLAUDE.md's registry section,
+ * not given its own row by this pass; see the lane's report). `operand`
+ * is the hex digit run with no `\x`/`{`/`}` — 1-2 digits for the bare
+ * form. Values above 0xFF are refused (NULL) rather than truncated: a
+ * malformed/out-of-range operand is the caller's defect to fix, not this
+ * function's to paper over silently. */
+Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx)
+{
+    if (len == 0) return NULL;
+    unsigned v = 0;
+    for (size_t i = 0; i < len; i++) {
+        int d = pcrec_hexval((unsigned char)operand[i]);
+        if (d < 0) return NULL;
+        v = v * 16 + (unsigned)d;
+        if (v > 0xFF) return NULL;
+    }
+    return pcrec_ast_char(cx, v);
+}
+
+/* `\o{OOO}` (module misc, UNBUILT) — an arbitrary-length OCTAL run.
+ * PCRE2's own construct; this function is its first decode site (see the
+ * file-header note on this block). Values above 0xFF are refused for the
+ * same reason `pcrec_def_text_hex` refuses them. */
+Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx)
+{
+    if (len == 0) return NULL;
+    unsigned v = 0;
+    for (size_t i = 0; i < len; i++) {
+        unsigned char c = (unsigned char)operand[i];
+        if (c < '0' || c > '7') return NULL;
+        v = v * 8 + (unsigned)(c - '0');
+        if (v > 0xFF) return NULL;
+    }
+    return pcrec_ast_char(cx, v);
+}
+
+/* `\N{U+HHHH}` (module unicode-props, UNBUILT) — a Unicode code point BY
+ * NUMBER. `operand` is the hex digits after `U+`. Today's definition is
+ * the BYTE-encoding reading: a code point in 0..0xFF is that literal
+ * byte; anything wider has no byte-encoding meaning yet (refused, NULL) —
+ * the "sequence under utf8" second row the ruling's own template text
+ * names is the encoding tag's future second row (DEF_ENCODING_UTF8),
+ * not something this function decides. */
+Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx)
+{
+    if (len == 0) return NULL;
+    unsigned v = 0;
+    for (size_t i = 0; i < len; i++) {
+        int d = pcrec_hexval((unsigned char)operand[i]);
+        if (d < 0) return NULL;
+        v = v * 16 + (unsigned)d;
+        if (v > 0xFF) return NULL;
+    }
+    return pcrec_ast_char(cx, v);
 }

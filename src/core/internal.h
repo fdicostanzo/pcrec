@@ -2370,24 +2370,76 @@ typedef enum {
  * `--list-definitions` prints it verbatim. DEFK_BUILDER is an OPERAND-taking
  * construct (the possessive suffix, `(?n)`) whose definition needs the
  * caller's own AST subtree spliced in, which no string convention here
- * expresses without inventing a placeholder syntax nothing else uses. */
-typedef enum { DEFK_END, DEFK_STR, DEFK_BUILDER } DefKind;
+ * expresses without inventing a placeholder syntax nothing else uses.
+ *
+ * DEF_IDENTITY (manager ruling, 2026-08-29, folding the identity question):
+ * the row's own PRIMITIVE form — "already core", no substitution — is an
+ * EXPLICIT entry, never the ABSENCE of one. D85's own text calls the
+ * identity "the last row [that] always applies", which makes it a ROW by
+ * the note's own reading; the alternative (`pcrec_def_resolve` returning
+ * NULL as the identity signal) is ABSENCE-AS-DISCRIMINATOR, the exact
+ * hazard [DD-13]'s stamp design already ruled out (a missing entry reads
+ * identically to a forgotten one). No `str`, no `builder` — there is
+ * nothing to splice, the occurrence's own shipped lowering IS the
+ * definition. `--list-definitions` prints `applies=identity` FROM THIS
+ * KIND, never by inference. Carries `tag == DEF_ALWAYS` (it is always the
+ * unconditional TAIL of its list) so `pcrec_def_resolve`'s ordinary
+ * first-applicable-wins walk needs no special case for it.
+ *
+ * DEFK_TEXTFN (manager ruling, 2026-08-29, folding the operand-
+ * parameterized question): the GENERAL shape for "a binding parameterized
+ * by text at the occurrence" — `\cX`, bare `\x`/`\x{}`, `\o{}`, octal/`\0`,
+ * `\N{U+}` today; [DD-13b]'s [LIB] name-bound rows reuse it later
+ * (parameterized by the name), which is why it is a third KIND and not a
+ * one-off. `str` here is not a splice-ready core-syntax string (there is
+ * no such fixed string when the operand varies) — it is a human-readable
+ * TEMPLATE for `--list-definitions`'s `definition` column (e.g. `\cX ≡
+ * \x{X ^ 0x40}`). `textfn` is the actual definition: given the operand
+ * text at the occurrence, it returns the core AST — and it MUST call the
+ * EXISTING decoder (`esc_char_value` and friends, src/parse/parse.c/
+ * pcrec_esc_char_value_export below) rather than re-implement the
+ * decoding, so there is exactly one decode site regardless of how many
+ * `DefKind`s can reach it. [DD-11.3]'s self-oracle samples `textfn` over a
+ * representative operand set per row (all 256 for `\x`, letters/
+ * punctuation for `\c`, boundary code points for `\N{U+}`, the octal edge
+ * cases) rather than a single string, since no ONE operand could stand for
+ * the row the way a fixed `DEFK_STR` value does. */
+typedef enum { DEFK_END, DEFK_STR, DEFK_BUILDER, DEF_IDENTITY, DEFK_TEXTFN } DefKind;
 
 /* A DEFK_BUILDER's `builder` takes the body the construct would otherwise
  * wrap or number, and returns the CORE-syntax equivalent — e.g. the
  * possessive suffix's `body` is the already-built `A_REP` node and the
  * builder wraps it in `A_ATOMIC`; `(?n)`'s `body` is the group's inner AST
  * and the builder is the IDENTITY (no `A_CAP` wrapper — `(?:X)` never gets
- * one either). [DD-11.5] is what would call these for REAL lowering; today
- * they exist so the structural check (`pcrec_ast_all_core`) can invoke one
- * in isolation and confirm its OUTPUT is core-set vocabulary. */
+ * one either — NOTE this is `pcrec_def_build_identity`, an ordinary
+ * DEFK_BUILDER function operating on a BODY, unrelated to the `DEF_IDENTITY`
+ * KIND above, which marks a whole RegDef entry with no body at all; the
+ * `(?n)`-scoped capturing-group row carries BOTH, in the same list, for
+ * its two different option states). [DD-11.5] is what would call these for
+ * REAL lowering; today they exist so the structural check
+ * (`pcrec_ast_all_core`) can invoke one in isolation and confirm its
+ * OUTPUT is core-set vocabulary. */
 typedef Ast *(*DefBuilderFn)(Ctx *cx, Ast *body);
+
+/* A DEFK_TEXTFN's `textfn` takes the operand TEXT at the occurrence
+ * (`operand`/`len`, NOT NUL-terminated — pattern text never is) and the
+ * live `Ctx` (needed to build an AST node, `pcrec_ast_node`/`pcrec_ast_char`
+ * and friends all take one), and returns the core AST. It is a pure
+ * function of (operand, cx) — no scanning, no cursor movement, since the
+ * occurrence has already been scanned by the time a definition is asked
+ * for (structural-check/self-oracle callers hand it a slice they chose,
+ * never a live parse position). */
+typedef Ast *(*DefTextFn)(const char *operand, size_t len, Ctx *cx);
 
 typedef struct RegDef {
     DefKind      kind;
     DefTag       tag;      /* meaningless when kind == DEFK_END */
-    const char  *str;      /* DEFK_STR only */
+    const char  *str;      /* DEFK_STR: the definition itself.
+                            * DEFK_TEXTFN: a human-readable TEMPLATE for the
+                            * dump, never spliced or parsed. NULL otherwise
+                            * (DEFK_BUILDER, DEF_IDENTITY, DEFK_END). */
     DefBuilderFn builder;  /* DEFK_BUILDER only */
+    DefTextFn    textfn;   /* DEFK_TEXTFN only */
 } RegDef;
 
 /* src/parse/definitions.c */
@@ -2398,6 +2450,13 @@ bool pcrec_ast_is_core(AKind k);
 bool pcrec_ast_all_core(const Ast *a);
 Ast *pcrec_def_build_atomic(Ctx *cx, Ast *body);     /* the possessive family */
 Ast *pcrec_def_build_identity(Ctx *cx, Ast *body);   /* (?n) */
+/* DEFK_TEXTFN implementations — each calls the existing base-tier decoder
+ * rather than re-decoding; src/parse/definitions.c's own header names the
+ * one call site each reaches. */
+Ast *pcrec_def_text_cx(const char *operand, size_t len, Ctx *cx);      /* \cX */
+Ast *pcrec_def_text_hex(const char *operand, size_t len, Ctx *cx);     /* \xHH, \x{HHHH} */
+Ast *pcrec_def_text_octal(const char *operand, size_t len, Ctx *cx);   /* \o{OOO}, \NNN, \0 */
+Ast *pcrec_def_text_unicode(const char *operand, size_t len, Ctx *cx); /* \N{U+HHHH} */
 
 /* Field groups are ordered identity / ownership / selection / outcome / doc.
  * `feature` and `module` are ADJACENT on purpose: they are two halves of one
@@ -3344,6 +3403,7 @@ char *pcrec_probe_ask(const char *want_name, const char *construct,
 
 /* ---- stage entry points ---- */
 
+int pcrec_hexval(int c);   /* src/parse/parse.c — the one hex-digit decode site */
 Ast *pcrec_parse(Ctx *cx);                          /* src/parse/parse.c */
 Ast *pcrec_parse_info(Ctx *cx, AltInfo *info);      /* PARSE-1; info may be NULL */
 /* src/core/compile.c — parse-only: the running capture count's end-of-parse

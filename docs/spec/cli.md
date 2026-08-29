@@ -297,11 +297,13 @@ The replacement/definition table ([DD-11.2], D85, `docs/spec/registry.md`
 `kind`/`selector`/`syntax` matching the owning row's own `--list-syntax`
 line so the two dumps join, `order` (1-based, dense per row), `predicate`
 (the option-scope tag's own name — a closed vocabulary, never
-hand-authored prose), `definition` (the core-syntax substitution text, or
-the literal `<builder>` for an operand-taking entry), and `applies`
-(`active` or `identity` — every row today is `active`; see `registry.md`
-§9 for the two rows still pending a design ruling before they can print
-`identity`). Reports what the table THINKS a construct's substitution is
+hand-authored prose), `definition` (the core-syntax substitution text, a
+human-readable template for an operand-parameterized entry, the row's own
+`syntax` restated for an identity entry, or the literal `<builder>` for an
+AST-operand entry), and `applies` (`active` or `identity`, read directly
+from the entry's kind — no row uses `identity` yet; see `registry.md` §9
+for the rows still pending a `RegRow` of their own before they can carry
+one). Reports what the table THINKS a construct's substitution is
 — `registry.md` §9 states the boundary in full (it is not evidence the
 substitution parses cleanly or matches the same strings, which are
 separate checks). Takes `--flavour`, unlike `--list-verbs`/

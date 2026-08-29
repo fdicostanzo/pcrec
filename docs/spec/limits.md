@@ -393,8 +393,12 @@ limit: a safety refusal a flag turns off is not one. To accept a larger
 artifact, raise the limit — `--max-emit-code-bytes=N` /
 `--max-emit-bytes=N`, raise-only (a value below the default is refused,
 so these can never be used to make a build fail that would have
-succeeded). The effective values are stamped on every artifact as
-`<PREFIX>_MAX_EMIT_CODE_BYTES` and `<PREFIX>_MAX_EMIT_BYTES`.
+succeeded). The effective TOTAL cap is stamped on every artifact as
+`<PREFIX>_MAX_EMIT_BYTES` (it applies to both engines); the CODE cap,
+`<PREFIX>_MAX_EMIT_CODE_BYTES`, is stamped ONLY on a VM artifact — a
+pure-DFA artifact has no counter rung and so no code/table split to
+bound separately (verified live: `tests/codegen/run_size_term.sh`'s own
+"the VM-only size stamps are ABSENT on a DFA artifact" check).
 
 ### Handling an oversized artifact
 

@@ -6,31 +6,45 @@ directory asserts that the description and the shipped parser actually agree.
 
 ## Files
 
-- **definitions_check.c** / **run_definitions_tests.sh** — [DD-11.1]'s two
-  required checks (docs/design/definitions_table.md §3 items 1-2): the
-  STRUCTURAL check (every `RegRow.definitions` entry's output — a parsed
-  DEFK_STR string or a DEFK_BUILDER's return value — is core-only
-  vocabulary, via `pcrec_ast_all_core`/`pcrec_ast_is_core`,
-  src/parse/definitions.c) and the CONTAINMENT check (the tag evaluator
-  `pcrec_def_tag_applies` has exactly one caller in the tree, a shell grep
-  in the `.sh` plus the same fact asserted from inside the built library in
-  the `.c`). Two negative controls (`\Z`/A_EOL, `\B`/A_NWORDB — both real,
-  shipped kinds the full reduction retires, §2) prove the structural
-  predicate actually discriminates rather than passing everything for
-  free; the containment grep's bite was verified live by a plant-rebuild-
-  revert cycle (a synthetic second call site in src/gen/emit_dfa.c, proven
-  to turn the check red, then reverted — not committed).
+- **definitions_check.c** / **run_definitions_tests.sh** — [DD-11.1]'s
+  required checks (docs/design/definitions_table.md §3 items 1-2), now over
+  FOUR `DefKind`s: the STRUCTURAL check (every `DEFK_STR`/POSIX definition
+  parses under `--features all` and every `DEFK_BUILDER`/`DEFK_TEXTFN`
+  output is core-only, via `pcrec_ast_all_core`/`pcrec_ast_is_core`,
+  src/parse/definitions.c — `DEFK_TEXTFN` entries are smoke-tested once per
+  function with a hand-picked well-formed operand, [DD-11.3]'s job being
+  full sampling), a static WELL-FORMEDNESS sweep (every non-NULL
+  `definitions` list ends in a `DEF_ALWAYS` entry — `DEF_IDENTITY`'s own
+  entries are checked to carry no `str`/`builder`/`textfn` data), and the
+  CONTAINMENT check (the tag evaluator `pcrec_def_tag_applies` has exactly
+  one caller in the tree, a shell grep in the `.sh` plus the same fact
+  asserted from inside the built library in the `.c`) plus
+  `table_contract.md` conformance for `--list-definitions`' own TSV
+  ([DD-11.2]'s gate: `table_check_truthfulness` + a direct no-tab/no-
+  newline field check). Two negative controls (`\Z`/A_EOL, `\B`/A_NWORDB —
+  both real, shipped kinds the full reduction retires, §2) prove the
+  structural predicate actually discriminates rather than passing
+  everything for free; the containment grep's bite and the structural
+  check's bite (a planted unclosed `\d` class, `"[0-9"`) were both verified
+  live by plant-rebuild-revert cycles, never committed.
   **NOT YET WIRED into run_registry_tests.sh's guarded chain** — run
   standalone (`bash tests/registry/run_definitions_tests.sh`) until
-  [DD-11.2]/[DD-11.3] land the standing `--list-definitions`/self-oracle
-  surfaces this check is a precursor to; wiring lands with those, once the
-  table's population stops changing commit to commit. [DD-11.4b] (below)
-  landed 6 of the 9 base-tier literal escapes (`\a \e \f \n \r \t`); still
-  held on two open design questions sent to main: POSIX class names,
-  `\c`/`\o`/`\N{U+`/bare-`\x`/octal (all parameterized by text at the
-  occurrence — a shape neither `DEFK_STR` nor `DEFK_BUILDER` expresses),
-  and `^`/`$`/the `(?n)`-scoped capturing-group row (each needs an
-  active-vs-identity marking `RegDef` has no field for yet).
+  [DD-11.3] lands the standing self-oracle this check is a precursor to.
+  Landed so far: the class-escape family, `\b`/`\B`, `\R`, bare `\N`, the
+  possessive-suffix family, 7 of the 9 base-tier literal escapes (`\a \e
+  \f \n \r \t` and bare `\x`, via a new `DEFK_TEXTFN` `RegDef` kind for the
+  operand-parameterized ones), `\c`/`\o{}`/octal `\0`/`\N{U+}` (also
+  `DEFK_TEXTFN`, on their existing rows), and the 14-name POSIX class-name
+  family (`DEFK_STR`, one entry per name — a FINITE set, unlike the
+  `DEFK_TEXTFN` rows' unbounded operand space; byte ranges read directly
+  off `pcrec_cls_px_*`, cls_bits.inc, never guessed). A new `DEF_IDENTITY`
+  `RegDef` kind (the row's own primitive form, an EXPLICIT entry per the
+  manager's ruling — never inferred from an absent one) landed as
+  infrastructure but is not yet used by any row: `^`, `$` and the plain
+  capturing group `(...)` each need one but have **no `RegRow` at all**
+  (confirmed by grep, not a tag/kind gap) — open with the manager as of
+  this pass. Braced `\x{...}` stays a parse.c special case, no row,
+  unaffected by any of this.
 - **registry_check.c** — links `build/libpcrec.a` and includes
   `src/core/internal.h`, so it compares the table with the parser inside one
   process rather than re-deriving either from CLI output

@@ -146,14 +146,39 @@ Base-tier PCRE parser for literals, '.', character classes, quantifiers, alterna
   functions (`pcrec_def_build_atomic`, the possessive-suffix family's
   shared `(?>...)` wrap; `pcrec_def_build_identity`, `(?n)`'s no-op) exist
   for the same reason: today only the structural check invokes them.
+
+  **Two more `DefKind`s landed by manager ruling (2026-08-29), closing the
+  gaps the paragraph above used to name as open.** `DEF_IDENTITY` — the
+  row's own primitive form, an EXPLICIT entry (no `str`, no `builder`, no
+  `textfn`) never inferred from an absent one, per [DD-13]'s own
+  absence-as-discriminator lesson; `pcrec_def_resolve`'s fallthrough
+  (a list with no firing `DEF_ALWAYS` entry) is now an `assert`, not a
+  silent NULL. `DEFK_TEXTFN` — the general shape for "a binding
+  parameterized by TEXT AT THE OCCURRENCE" (`\cX`, bare `\x`, `\o{}`,
+  octal/`\0`, `\N{U+}`): `str` carries a human-readable TEMPLATE for the
+  dump (never spliced), and `textfn(operand, len, cx)` is the actual
+  definition — it calls the EXISTING decoder where one exists
+  (`pcrec_hexval`, parse.c, exported for exactly this — bare `\x`'s
+  per-digit value), or BECOMES the one decode site where none does yet
+  (`\c`/`\o`/`\N{U+}`, all module `misc`/`unicode-props`, UNBUILT — the
+  `\R` precedent: the table may carry an unbuilt row's definition as data).
+  POSIX class names are the one FINITE enumerable family and stayed
+  `DEFK_STR` — 14 entries on the one row, each a byte range read directly
+  off `pcrec_cls_px_*` (cls_bits.inc) via a throwaway scratch dump, never
+  guessed from POSIX folklore.
+
   `RegRow.definitions` itself is populated in registry.c per
   definitions_table.md §1's census — see that file's own row-by-row
   citations for which rows carry which tag/string, and docs/dev/plan.md's
-  [DD-11] row for what remains open (the `applies` active-vs-identity
-  distinction `--list-definitions` will need for `^`/`$`/the `(?n)`-scoped
-  capturing-group row; the parameterized-by-source-text shape `\c`/`\o`/
-  `\N{U+`/POSIX class names and `\Q...\E` need, which the current
-  DEFK_STR/DEFK_BUILDER split does not express).
+  [DD-11] row for what remains open: `^`, `$` and the plain capturing
+  group `(...)` each need a `DEF_IDENTITY`-bearing entry but have **no
+  `RegRow` at all** (confirmed by grep — they are base grammar with no
+  doorway, unlike the literal escapes), and giving them one is real new
+  architecture (a no-doorway `RegKind`, `RK_QUANTSUFFIX`'s own precedent,
+  or stretching an existing kind's doorway semantics) — open with the
+  manager as of this pass, see the lane's own report. `\x{...}` (braced
+  hex) stays a parse.c special case on purpose, no row — see the registry
+  section's own `RS_BASE` entry below.
 
 - **ext.c** — three of the four doorways (SR-2) now: `pcrec_ext_escape`,
   `pcrec_ext_group`, `pcrec_ext_class_bracket` (`pcrec_ext_verb` moved to
@@ -1173,19 +1198,25 @@ Rules when touching it:
   construct is named, cleanly rejected and queryable.
 - **[DD-11.4b] `RS_BASE` in `RK_ESC` is a narrow, named exception to "only
   non-base escapes get a row here"** (D24's own founding boundary, kept for
-  every OTHER base construct — plain characters, bare `\x`, octal still have
-  none): `\a \e \f \n \r \t` (`ESC_BASE_D`) exist PURELY to give
-  `RegRow.definitions` (D85) a home for a construct D24 always excluded.
-  `esc_char_value` (parse.c) still decodes all six directly — no doorway, no
-  lookup, the row is NEVER consulted by the live dispatch (`pcrec_registry_
-  find`/`arbitrate` only run once `esc_char_value` has already declined a
-  byte, and it never declines these six). `registry_check.c`'s
+  every OTHER base construct — plain characters, octal still have none):
+  `\a \e \f \n \r \t` plus, since the manager's `DEFK_TEXTFN` ruling, bare
+  `\x` (`ESC_BASE_D`, 7 rows total) exist PURELY to give `RegRow.definitions`
+  (D85) a home for a construct D24 always excluded. `esc_char_value`
+  (parse.c) still decodes all seven directly — no doorway, no lookup, the
+  row is NEVER consulted by the live dispatch (`pcrec_registry_find`/
+  `arbitrate` only run once `esc_char_value` has already declined a byte,
+  and it never declines these seven). `registry_check.c`'s
   `check_table_to_parser` needed a new `RS_BASE` branch for `RK_ESC`
   (`RK_GROUP`'s `(?:...)` row's own precedent, checked at BOTH atom and
-  class position since these six can occur inside a class too) and its
+  class position since these seven can occur inside a class too) and its
   `esc_atom_msg`/diagnostic-shape switch needed `RD_NONE` added to `RK_ESC`'s
-  legal set. Do not add a SEVENTH base-tier construct here casually — read
-  definitions_table.md's architectural note first.
+  legal set. Braced `\x{...}` stays OUT — it is unicode-props' UNBUILT
+  arbitrary-width form, and giving it a row would be a NEW doorway
+  (`\x{...}`'s own case in `esc_char_value` already refuses by name; see
+  the "Two 'requires module' diagnostics deliberately stay in parse.c"
+  bullet below, unchanged by this ruling). Do not add an EIGHTH base-tier
+  construct here casually — read definitions_table.md's architectural note
+  first.
 - **The `engines` column is design intent, not measurement.** Nothing consumes
   it — [M4.7a] deliberately did not build SR-8's lowering-time consultation
   ahead of a producer (zero producers, zero customers); a TRIPWIRE

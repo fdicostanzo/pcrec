@@ -589,8 +589,13 @@ static void check_wellformed(void)
      * for RK_ESC, below, is what proves the row's CLAIM of base support
      * true; it does not and cannot prove the row is ever CONSULTED, because
      * it isn't). */
-    if (total != 134) {
-        bad("registry ROW COUNT CHANGED: %zu rows, expected 134. If you added or "
+    /* 134 -> 135 (manager rulings, 2026-08-29): the 7th base-tier literal
+     * escape, bare `\x` (2 hex digits) — DD-11.4b's own RS_BASE-in-RK_ESC
+     * shape, now carrying a DEFK_TEXTFN definition since the value varies
+     * with the operand digits. `\x{...}` (braced) stays a parse.c special
+     * case per src/parse/CLAUDE.md's existing ruling — no row. */
+    if (total != 135) {
+        bad("registry ROW COUNT CHANGED: %zu rows, expected 135. If you added or "
             "removed a construct deliberately, update this number in the same "
             "commit; if not, coverage was removed", total);
     } else {
@@ -2913,9 +2918,11 @@ static void check_built_status_defects(void)
      * bucket -- the question "did this row's own producer land" does not
      * arise for base-tier syntax, exactly as it never has for `(?:...)`.
      * `built`/`unbuilt` are untouched: no RS_MODULE row moved. */
-    else if (checked != 134 || built != 106 || unbuilt != 16 || na != 12)
+    /* 134 = 106 + 16 + 12 -> 135 = 106 + 16 + 13: bare `\x`'s RS_BASE row
+     * joins the n/a bucket, same as the other 6 fixed base-tier escapes. */
+    else if (checked != 135 || built != 106 || unbuilt != 16 || na != 13)
         bad("built-status POPULATION MOVED: %d rows = %d built + %d unbuilt + "
-            "%d n/a, expected 134 = 106 + 16 + 12. Zero defects does NOT imply "
+            "%d n/a, expected 135 = 106 + 16 + 13. Zero defects does NOT imply "
             "nothing changed — a construct that silently stopped being built "
             "moves `built` down and `unbuilt` up with the sum unchanged, and "
             "the generated compliance index renders this column. If the move "
@@ -3116,9 +3123,11 @@ static void check_families(void)
      * shape), so `multi`/`members_in_multi` are untouched -- six new
      * families of one, same as every other base-tier row this layer has
      * never grouped. */
-    if (families != 96 || multi != 12 || members_in_multi != 50)
+    /* 96 -> 97: bare `\x`'s new RS_BASE row is another family of one
+     * (family == NULL). */
+    if (families != 97 || multi != 12 || members_in_multi != 50)
         bad("family POPULATION MOVED: %d families, %d with more than one "
-            "member, %d members in those -- expected 96 / 12 / 50. The index "
+            "member, %d members in those -- expected 97 / 12 / 50. The index "
             "layer's grouping changed; if deliberately, update these numbers "
             "in the same commit", families, multi, members_in_multi);
     else if (bads == 0) {

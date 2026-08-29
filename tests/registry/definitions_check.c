@@ -157,12 +157,50 @@ static void check_builder_entry(const char *owner, DefBuilderFn builder)
     release(&cx);
 }
 
+/* One DEFK_TEXTFN entry, exercised with a smoke-test operand chosen for
+ * the row's OWN construct (never a shared generic one — a hex textfn's
+ * operand means nothing to an octal one). Full sampling over a
+ * representative operand SET per row (all 256 for \x, letters/punctuation
+ * for \c, boundary code points for \N{U+}, octal edge cases) is
+ * [DD-11.3]'s self-oracle; this is the structural precursor — does the
+ * function return a core AST for AT LEAST ONE well-formed operand. */
+static void check_textfn_entry(const char *owner, DefTextFn textfn,
+                               const char *operand)
+{
+    Ctx cx; pcrec_options defo;
+    memset(&cx, 0, sizeof cx);
+    pcrec_default_options(&defo);
+    cx.pat = "";   /* pcrec_parse_mods_init needs a valid (empty) pattern */
+    cx.patlen = 0;
+    cx.opt = &defo;
+    cx.job = calloc(1, sizeof(Job));
+    if (!cx.job) { fprintf(stderr, "FAIL: out of memory\n"); exit(2); }
+    cx.arena.cx = &cx;
+    /* char_node (pcrec_ast_char's callee) reads cx->mods->caseless — a NULL
+     * cx->mods (the memset above) segfaults there. This is the same
+     * seeding parse_one/pcrec_compile always does before any AST
+     * constructor runs; a DEFK_TEXTFN's callers (this check today,
+     * [DD-11.3]'s self-oracle next) own the same obligation. */
+    pcrec_parse_mods_init(&cx);
+
+    Ast *out = textfn(operand, strlen(operand), &cx);
+    if (!out) {
+        bad("definitions: %s: textfn('%s') returned NULL", owner, operand);
+    } else if (!pcrec_ast_all_core(out)) {
+        bad("definitions: %s: textfn('%s') output is a NON-CORE construct",
+            owner, operand);
+    } else {
+        ok("definitions: %s: textfn('%s') is core-only", owner, operand);
+    }
+    release(&cx);
+}
+
 /* The structural sweep: every RegKind, every row, every `definitions`
  * entry. RK_COUNT-driven (check_table_to_parser's own precedent in
  * registry_check.c) so a sixth RegKind added later is swept with no edit
  * here — silence on a new kind is exactly the "half-done invisibly" failure
  * shape that precedent was written to close. */
-static int n_rows_with_defs = 0, n_str_entries = 0;
+static int n_rows_with_defs = 0, n_str_entries = 0, n_textfn_entries = 0;
 
 static void sweep_definitions(void)
 {
@@ -177,7 +215,18 @@ static void sweep_definitions(void)
             snprintf(owner, sizeof owner, "%s", r->syntax);
             bool saw_end = false;
             for (const RegDef *d = r->definitions; ; d++) {
-                if (d->kind == DEFK_END) { saw_end = true; break; }
+                if (d->kind == DEFK_END) {
+                    /* [DD-11.1 identity ruling] a well-formed non-NULL list
+                     * always TERMINATES in a DEF_ALWAYS entry (a real
+                     * definition or DEF_IDENTITY) — pcrec_def_resolve
+                     * asserts this at runtime; this check confirms it
+                     * statically over the whole table so the assert can
+                     * never fire outside a sabotage run. `d` here is the
+                     * END sentinel itself, so the entry to inspect is the
+                     * one just before it. */
+                    saw_end = true;
+                    break;
+                }
                 if (d->kind == DEFK_STR) {
                     n_str_entries++;
                     check_str_entry(owner, d->str);
@@ -191,6 +240,28 @@ static void sweep_definitions(void)
                     if (!d->builder)
                         bad("definitions: %s: DEFK_BUILDER entry with a "
                             "NULL builder", owner);
+                } else if (d->kind == DEFK_TEXTFN) {
+                    n_textfn_entries++;
+                    /* textfns are checked once, directly, below (per
+                     * function identity, DEFK_BUILDER's own precedent) —
+                     * this branch only confirms the row's entry is
+                     * well-formed. */
+                    if (!d->textfn)
+                        bad("definitions: %s: DEFK_TEXTFN entry with a "
+                            "NULL textfn", owner);
+                    if (!d->str)
+                        bad("definitions: %s: DEFK_TEXTFN entry with no "
+                            "template text (--list-definitions would print "
+                            "an empty `definition` field)", owner);
+                } else if (d->kind == DEF_IDENTITY) {
+                    if (d->tag != DEF_ALWAYS)
+                        bad("definitions: %s: DEF_IDENTITY entry with "
+                            "tag != DEF_ALWAYS — it would not always fire "
+                            "as the list's terminal entry", owner);
+                    if (d->str || d->builder || d->textfn)
+                        bad("definitions: %s: DEF_IDENTITY entry carries "
+                            "str/builder/textfn data it must not have "
+                            "(nothing to splice)", owner);
                 }
             }
             if (!saw_end)
@@ -203,8 +274,9 @@ static void sweep_definitions(void)
             "— the table is populated but nothing reached this check "
             "(coverage regression)");
     else
-        ok("definitions: swept %d rows / %d DEFK_STR entries with "
-           "`definitions` populated", n_rows_with_defs, n_str_entries);
+        ok("definitions: swept %d rows / %d DEFK_STR + %d DEFK_TEXTFN "
+           "entries with `definitions` populated",
+           n_rows_with_defs, n_str_entries, n_textfn_entries);
 }
 
 /* The two shipped builders, tested directly once each (see the comment in
@@ -215,6 +287,18 @@ static void check_builders_directly(void)
                          pcrec_def_build_atomic);
     check_builder_entry("pcrec_def_build_identity ((?n) family)",
                          pcrec_def_build_identity);
+}
+
+/* The five shipped DEFK_TEXTFN functions, each tested directly once with a
+ * hand-picked WELL-FORMED operand (see check_textfn_entry's own comment:
+ * full sampling is [DD-11.3]'s job). */
+static void check_textfns_directly(void)
+{
+    check_textfn_entry("pcrec_def_text_cx (\\cX)", pcrec_def_text_cx, "X");
+    check_textfn_entry("pcrec_def_text_hex (bare \\x)", pcrec_def_text_hex, "41");
+    check_textfn_entry("pcrec_def_text_octal (\\o{})", pcrec_def_text_octal, "101");
+    check_textfn_entry("pcrec_def_text_octal (\\0)", pcrec_def_text_octal, "0");
+    check_textfn_entry("pcrec_def_text_unicode (\\N{U+})", pcrec_def_text_unicode, "0041");
 }
 
 /* THE CHECK BITES: two negative controls, built directly rather than
@@ -292,6 +376,7 @@ int main(void)
     printf("== [DD-11.1] definitions table: structural check ==\n");
     sweep_definitions();
     check_builders_directly();
+    check_textfns_directly();
     check_predicate_bites();
     check_containment_note();
 
