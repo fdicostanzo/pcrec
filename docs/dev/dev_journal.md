@@ -17693,3 +17693,47 @@ analysis, never the exemplar; a FAMILY of analyses with a membership
 rule — each answers a named selection point's question, value measured
 first). wake.md rewritten. The session ends with a clean tree at the
 close commit; next session runs beside a live bench session.
+
+### 2026-08-29 — Forty-fifth session, part 1 — D86 (three typed lanes); all three lanes opened beside the live bench session (~14:2x-14:5x EDT)
+
+Woke on main 5f281ef (code pin 36d5963, abi 11, battery-proven);
+nothing in flight, nothing owed. pcrecdev2 (the bench session) came up
+at the same time — messaged its plan (I-17's worklist order: adapter
+re-pin to 36d5963, email@0.2 + loglines@0.1 re-measure ≈100 min in a
+window it will announce, then [B11.4]); replied that the box is clear
+and I announce before anything heavy. Its ack: three light lanes up,
+WINDOW OPEN in 1-2 h, O-8 to carry the ledger outcomes.
+
+**D86 (6fc1b05).** Frank: "structure our lane choices on a 3-way
+model" — one FEATURE lane ([DD-13b], UTF), one OPTIMIZATION lane, one
+ADMIN/STRUCTURAL lane as needed ([DD-11]) "if available and nothing
+else is higher priority". Recorded in decisions.md, plan.md's queue
+discipline header, and memory (`pcrec-three-lane-model`). Proposed
+one row per column — [DD-13b] / [OPT-4] / [DD-11] — and Frank: "go
+on all three". [OPT-4] over [OPT-A] because it has the measured need
+(K41 witness 2 refused by the abi-11 caps; D77) and no dependency,
+while [OPT-A]'s frequency prior is D83's findings file, which is
+[DD-13b]'s `freq` block — it slots after the feature lane lands.
+
+**Lanes (worktrees created from 6fc1b05; plan rows → started):**
+- dd13b (opus): docs/design/dd13_format/format_design.md — grammar +
+  semantics under the position paper's rulings; §1-§7 (grammar by
+  wave, include/config/namespace semantics, migration of the 10k-case
+  corpus, the seams to [LIB]/[DD-11]/[ENG-PGO]/[V-E]/bench, the
+  attack-list answers, worked files, open questions). No parser.
+- opt4 (opus): STEP 0 measure + locate where the count reaches the
+  prefilter's language; STEP 1 a short note (count-collapsed start
+  language as a sound over-approximation, one general mechanism, a
+  pass on the erased copy as the natural site, stamp/axis/[SEL-1]/
+  ladder interactions, predictions) that I read before code; STEP 2
+  build under the identity gate, K39 size checks upgraded to assert
+  auto-size count-independence, K41 witness 2 re-acceptance; STEP 3
+  before/after incl. the bench's 18 patterns and a match-time cost
+  check. Full batteries are mine, in a bench-free window.
+- dd11 (sonnet): docs/design/definitions_table.md — the replacement
+  INVENTORY (file:line), the core set, placement A vs B, PCRE2
+  hazards oracle-checked, `--list-definitions`, the [DD-11.n] sequence.
+
+Stall watchdog cron up (10 min). Box rule to every lane: no full
+`make test`/san/mech — one heavy suite at a time, the bench window
+handshake; `gnutimeout`/`scripts/watchdog` on anything unbounded.
