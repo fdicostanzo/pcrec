@@ -498,7 +498,6 @@ enum {
      * shape PCREC_MAX_VM_REPEAT_COPIES above was derived with — not a
      * compile-cost oracle, and the population it cannot speak for is code
      * bytes in (283 KB, 671 KB), empty today. */
-    PCREC_MAX_VM_EMIT_CODE_BYTES = 500000,
 
     /* TOTAL bytes: the whole comment-excluded artifact. Frank's Q4 half
      * (D84 ruling 2) — "a large byte count makes the artifact unusable" — a
@@ -516,7 +515,6 @@ enum {
      * gate admits. It stays BELOW tests/size/check_size_tripwire.sh's
      * 1,400,000 B pin, so the tripwire remains an INDEPENDENT backstop rather
      * than sharing a constant with the thing it checks. */
-    PCREC_MAX_EMIT_BYTES = 1000000,
 
     /* [ART-SIZE] The K SELECTION's trigger: the emitted size above which the
      * size term evaluates the unroll ladder at all. Same unit as the caps.
@@ -531,7 +529,52 @@ enum {
      * PCREC_MAX_VM_REPLICATION_PRODUCT, which is a literal ALIAS of it above.
      * A number that means three unrelated things in two files is how a reader
      * infers a shared derivation that does not exist. */
-    PCREC_SIZE_TERM_THRESHOLD = 120000
 };
+
+/* [ART-SIZE] THE TWO EMITTED-SIZE CAPS AND THE SIZE TERM'S THRESHOLD, as
+ * `#ifndef`-overridable MACROS rather than enum members.
+ *
+ * WHY OVERRIDABLE AT BUILD TIME, when the CLI overrides are raise-only.
+ * `cap-rescue` — the path where the materiality bar declines a K and a cap
+ * takes it anyway — has a NATURAL POPULATION OF ZERO: reaching it needs a
+ * pattern whose byte ratio exceeds the bar while some ladder K drops its CODE
+ * under the cap, and on replication-dominated patterns bytes and code move
+ * together, so a ratio above the bar keeps code above the cap. Five candidate
+ * shapes were probed and none reached it. Because the CLI overrides are
+ * RAISE-ONLY (deliberately: a raise-only flag cannot be used to manufacture a
+ * refusal on someone else's build), the path cannot be forced from outside
+ * either — which would leave a shipped branch no test can drive.
+ *
+ * So the structural check builds a REFERENCE COMPILER with a cap lowered at
+ * pcrec's own compile time and drives the branch through it. That is not a new
+ * surface: it is [ENG-ABS]'s precedent one lane over, whose overflow arm has
+ * the same empty natural population and whose check builds a reference
+ * compiler with `-DPCREC_ANCHORED_MAX_STATES=6`.
+ *
+ * A BUILD-TIME `-D`, NEVER A CLI VALUE. The distinction is the whole point:
+ * lowering a cap has to be something a person does to a compiler they built
+ * for a test, not something a caller can do to a compile, so the raise-only
+ * rule stays true for every user of a shipped pcrec.
+ *
+ * THE ONE NON-DEFAULT CONSUMER of these three macros is
+ * `tests/codegen/run_size_term.sh`. If a second appears, it wants a comment
+ * here saying why.
+ *
+ * MEASURED, so the next reader does not have to re-derive it: with
+ * `-DPCREC_MAX_VM_EMIT_CODE_BYTES=40000`, `((a)|ab){0,2047}c` reaches
+ * `cap-rescue` — its materiality bar declines K=1 (byte ratio 0.922) and the
+ * lowered code cap then takes it anyway. That is the witness the check drives.
+ *
+ * Units, derivations and the failsafe framing: see the block above and
+ * docs/design/artifact_size_term.md §4. */
+#ifndef PCREC_MAX_VM_EMIT_CODE_BYTES
+#define PCREC_MAX_VM_EMIT_CODE_BYTES 500000
+#endif
+#ifndef PCREC_MAX_EMIT_BYTES
+#define PCREC_MAX_EMIT_BYTES 1000000
+#endif
+#ifndef PCREC_SIZE_TERM_THRESHOLD
+#define PCREC_SIZE_TERM_THRESHOLD 120000
+#endif
 
 #endif /* PCREC_LIMITS_H */
