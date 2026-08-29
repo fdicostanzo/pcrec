@@ -389,3 +389,49 @@ a NULL name. Adding the field is an `abi` bump under D76's ritual
 landing, not a separate event. Ruling list item 8 is amended
 accordingly: `target [<prefix>]`; `rx_info.name` = the block's `name`
 (or the prefix when unnamed).
+
+**6.4 Separate the TARGET spec from the PATTERN spec** (Frank: "there is
+a set of lib patterns I want to include in my compiled file but I want
+to specify the options for them; I may want the same pattern under
+different options — simd x86, simd on a different cpu"). Yes — and this
+SUPERSEDES §2 wave 1's block-scoped `target` marker and §6.2/§6.3's
+defaults. A target is its own file-level declaration, a triple:
+
+```
+target <prefix> = <name> [with <config>[,<config>…]]
+```
+
+- `<name>` is any pattern in scope — this file's or a `lib`'d one. So a
+  user file that `lib`s a library and declares targets for three of its
+  patterns, under the user's own configs, ships exactly those three;
+  the library file itself declares no targets and needs no knowledge of
+  the user's options.
+- The same pattern may be named by several targets:
+  `target email_avx2 = email with avx2` /
+  `target email_base = email with baseline` — two artifacts, one
+  pattern, `rx_info.name == "email"` in both (§6.3), prefixes distinct
+  (a duplicate prefix in the include closure is refused).
+- `with` names a `config` (§2 wave 3); absent, the default options.
+  Composition is one rule: target config over block-scoped
+  `flags`/`features` over defaults — the more specific wins.
+- Pattern blocks carry NO target marker at all. A block's `name` is its
+  only identity; whether and how it is built is the target list's
+  business. This is the cleaner cut for U2 (a D27 author never writes
+  build declarations) and for [V-E] (the target list IS the manifest —
+  one line per artifact, all at the top of the file).
+- The harness TESTS every declared target as a cell (pattern's cases ×
+  the target's config), so `use` (§2 wave 3) is only for testing a
+  config nobody ships; it may turn out unnecessary and is the first
+  line kind to drop if so.
+- Compatibility default: a file with no `target` line and exactly one
+  UNNAMED block is `target rx = <that block>` — today's
+  `pcrec 'pattern'`; every other file builds nothing unless it says so.
+  `pcrec --source f.rxt --target <prefix>` selects; no `--target` with
+  several declared builds them all, one `.c` each (§5 item 6).
+
+§3a's user file becomes `lib "lib/rfc5322.rxt"` / `target mail_rx = …`
+over an inline `name`d block; §3c collapses to two `target` lines over
+one config pair. Rulings 3 and 8 in §5 are REPLACED by: **a target is a
+file-level `target <prefix> = <name> [with <config>…]` declaration;
+pattern blocks carry no build marker; the lone-unnamed-block file is
+`target rx` by default.** Item 6's "one `.c` per target" stands.
