@@ -17394,3 +17394,61 @@ anchored table is verbose decimal C that compresses) — both landed in
 the note (2484280). critic-sem (the accept-discipline differential with
 its own alphabet, assertions at pos > 0) still running; merge + union
 battery follow its verdict.
+
+#### Forty-fourth session, part 5 — [ENG-ABS] MERGED (dfd112b) after r41's pre-merge round; union battery launched; [ART-SIZE] code phase: ladder-as-attempts, the code-bytes threshold, the interior optimum found (2026-08-29 ~02:3x EDT)
+
+ENGABS's pre-merge round (2e2ce3f, 33 commits): the optional machine's
+OWN ceiling `PCREC_ANCHORED_MAX_STATES = 4,096` — derived over the
+captures-on corpus (max 2,001) vs the resource shapes (20,001+), then
+RE-DERIVED when the differential's own compared-population count
+(1,213 → 1,210) showed the first derivation's "no corpus artifact
+loses the form" was false under `--no-captures` (three counterk
+4000-count patterns exceed it; kept at 4,096 — raising it puts the
+ceiling within 1.2× of the shapes it exists to exclude); seven named
+fallback members; K7 headroom 20.5 → 7.5 → 19.5 s; `[a-z]{0,30000}`'s
+artifact back to 1.34 MB from 2.0 MB; §4a a BOUNDARY pin
+(`a{1,4000}` keeps / `a{1,4200}` falls back) after two drafts that
+compiled resource shapes reported a TIMEOUT as a REFUSAL under load —
+[TT-10]'s class again; S4's captures-on arm (8 named witnesses,
+RX_NCAPS read off the artifact and required ≥ 2; 976 cells / 0) with
+S190 = critic-sem's one-token plant DETECTED by the run
+(`default=(-7,-7) denied=(-1,-1)` on 7/8 witnesses) while every grep
+stays green; S3/S6 prose. MERGED dfd112b (clean; docs-only divergence),
+plan row + r41 record 517be95; the manager confirmed the three-pattern
+behaviour change. UNION BATTERY launched on 517be95 at ~02:3x
+(battery_v3.sh = v2 re-pathed to this session's scratchpad; log
+mgr/battery_dfd112b.log): build → strict → VALIDATE_ONLY + anchors →
+`make -k -j12 test` → solo resource/counterk/corpus cell → san → mech.
+[ART-SIZE] STEP 2 PHASE B meanwhile: the ladder implemented as
+ATTEMPTS in compile_driver's [SEL-1] retry loop (approved with six
+conditions — condition 2's byte-equality assertion caught a real
+3-byte defect on its first run: the trial stamped `default` where the
+final stamped `size-model`; fixed exactly by subtracting the
+why-string length, no tolerance); the size measurement a POST-EMISSION
+SCAN sharing size_count.sh's definition (its control caught a
+one-line-jump-table blind spot, the same class as F1 and the
+explanation of the critic's discrepant 1,248,680); both caps on both
+engines; `cap-rescue` reachable through a `-D` lowered-cap reference
+compiler (engabs's precedent; TWO constants must move — the threshold
+gates on code bytes); `make test` found five red sections with ONE
+root cause — the ladder ran on the corpus's largest, TABLE-dominated
+artifacts K cannot shrink (`((a)|ab){4000}c`: 651 KB, 32 KB code) —
+fixed by the THRESHOLD reading CODE bytes (the third "which quantity
+does this act on" correction on this row: cap, abort bound, threshold
+— now a learnings.md §3 line); a counter-rung gate (the ladder runs
+only when rung 0x10 is live); a [8,1] ladder was proposed, approved,
+then WITHDRAWN by both sides once the code threshold removed the cost
+— and the K-sweep gate's new "interior optimum" report found THREE
+corpus patterns whose argmin is K=2 on its first run, so the interior
+rungs earn their place by a number (the "15/15 endpoints" claim was a
+hand-picked population — the lane named its own recurring failure
+shape). ACCEPTANCE CHANGES recorded, not hidden: three resource-suite
+shapes (`a{0,25000}`, `[a-z]{0,30000}`, `(a|b){0,30000}`, all > 1 MB,
+table-dominated) now REFUSE on the total cap — the intended D84
+reading — pinned in tests/resource §1b as expected refusals beside
+`--max-emit-bytes` re-acceptance cells (the override's end-to-end
+test); witness 2 compiling → refused; witness 1 1.72 MB → 87 KB.
+[ENG-COUNT] filed UNSCHEDULED on Frank's word (large DFA-side counts:
+edge case, more profitable ways to spend time). artsize3's delivery
+run: EXIT=0; it rebases onto main (abi 10→11, bit 18, registry 64→65)
+on the manager's signal now.
