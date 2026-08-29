@@ -153,6 +153,17 @@ distilled forms:
   on missing input fails in the silent direction; extract, test -n, exit 1
   naming the file and constant, THEN use.
 
+- **A critic's measurement is not the battery's axis** (2026-08-29, [ART-SIZE]
+  STEP 2). r42's critic-sem verified the "arm the emission buffer's early
+  abort" fix by peak RSS (92 → 45 MB) and closed it; the union battery's
+  `make san` then found the same fix leaking 2 × 256 B — the abort's
+  `longjmp` now left the VM emission from inside, past two function-local
+  `StrBuf`s' `sb_free`. Peak RSS measured what the fix was FOR; LeakSanitizer
+  measured what it COST, and only the sanitizer axis sees the second. A
+  panel closes a finding on the property it checked; the battery runs after
+  every merge because the axes it carries are not the ones a critic can
+  build read-only. (Frank: "the san tests did their job.")
+
 ## 4. Testing strategy
 
 - **Behavior-preserving change is the perennial blind spot** — three
