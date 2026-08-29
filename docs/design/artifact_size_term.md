@@ -916,6 +916,37 @@ effect: those artifacts are cheap for gcc and too large to ship, and Frank
 ruled shipped size a concern in its own right. Neither is a corpus pattern, and
 `--max-emit-bytes=N` exists for the caller who wants them anyway.
 
+### 4.3a Every pattern in the tree whose ACCEPTANCE moves
+
+An acceptance change has to be recorded, not discovered. Surveyed over the
+`.rxt` corpus, `tests/resource`'s K7 shape list and the two K41 fuzz witnesses
+— each compiled BEFORE this row (caps raised out of the way, term denied) and
+AFTER:
+
+| pattern | population | before | after |
+|---|---|---|---|
+| all 2,487 compiling corpus patterns | `tests/**/*.rxt` | compile | **compile, unchanged** |
+| `a{0,25000}` | resource K7 | 1,103,367 B | **REFUSED** (total cap) |
+| `[a-z]{0,30000}` | resource K7 | 1,323,371 B | **REFUSED** (total cap) |
+| `(a|b){0,30000}` | resource K7 | 1,333,109 B | **REFUSED** (total cap) |
+| the other 8 K7 shapes | resource K7 | unchanged | unchanged (±7 B, the stamps) |
+| **K41 witness 1** | fuzz gate | 1,719,349 B | **compiles at 87,118 B** — the K rule |
+| **K41 witness 2** | fuzz gate | 1,220,606 B | **REFUSED** (both caps) |
+
+**The three resource shapes are the row's real acceptance cost**, and all three
+are TABLE-dominated — their code is tens of KB, so `--unroll` cannot shrink
+them and only raising the cap or reducing the count will. That is the intended
+reading of D84 ruling 2, and `tests/resource/run_resource_tests.sh` §1b pins
+each of them as an EXPECTED refusal beside a second cell proving
+`--max-emit-bytes=N` re-accepts it — which is also the only end-to-end test of
+the override.
+
+**And the corpus was not the whole population.** The first version of this
+note claimed "0 of 2,487 corpus patterns refused" and stopped there; the three
+shapes above are in `tests/resource`, which that sweep never covered. The same
+gap cost a real regression during the code phase (§3.3's counter-rung gate) —
+a population nobody counted, one more time, and this time it was this lane's.
+
 ### 4.4 Where the caps fire, and the ladder re-run (finding S5)
 
 The first version claimed the design "cannot ship an uncompilable artifact

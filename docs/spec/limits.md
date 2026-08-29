@@ -386,8 +386,19 @@ succeeded). The effective values are stamped on every artifact as
 ### Handling an oversized artifact
 
 pcrec REFUSES rather than emitting past either limit, and nothing is
-written when it refuses. Your options, in the order most callers want
-them:
+written when it refuses.
+
+**This can affect a pattern that compiled before.** These limits landed
+with `abi` 11; a pattern that emitted more than 1,000,000 bytes at
+`abi` <= 10 compiled then and refuses now. Three shapes in pcrec's own
+resource suite are in that class — `a{0,25000}` (1,103,367 bytes),
+`[a-z]{0,30000}` (1,323,371) and `(a|b){0,30000}` (1,333,109) — and all
+three are TABLE-dominated, so `--unroll` will not shrink them: raise the
+cap or reduce the count. That is the deliberate trade (D84: "I'd rather
+it FAIL and document how to handle oversized results"), not an
+unintended narrowing.
+
+Your options, in the order most callers want them:
 
 1. **Raise the limit** — `--max-emit-bytes=N` or
    `--max-emit-code-bytes=N` if the size is acceptable to you. **For a

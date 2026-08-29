@@ -250,13 +250,24 @@ static void job_cleanup(Ctx *cx)
  * their own. Descending, because the term may only make an artifact smaller
  * than the one today's compiler emits.
  *
- * IT IS EVALUATED, NEVER DESCENDED. Both the emitted node count and the byte
- * count are NON-MONOTONE in K — measured, a 6-deep `{17}` tower emits
- * 16,252,391 bytes at K=8 and 35,511,862 at K=6, and K41's first fuzz witness
- * has 3,234 nodes at K=4 against 3,248 at K=3 — so a greedy descent stops at
- * the first local minimum. `vm_counter_copies`' mandatory `K + m%K` term is
- * why. */
-static const int SIZE_TERM_LADDER[] = { 6, 4, 3, 2, 1 };
+ * IT IS EVALUATED, NEVER DESCENDED — and with the ladder at its two ENDPOINTS
+ * that distinction is what the set is chosen for rather than a property it
+ * needs. Both the node count and the byte count are NON-MONOTONE in K
+ * (measured: a 6-deep `{17}` tower emits 16,252,391 bytes at K=8 and
+ * 35,511,862 at K=6; K41's first witness has 3,234 nodes at K=4 against 3,248
+ * at K=3 — `vm_counter_copies`' mandatory `K + m%K` term is why), so a greedy
+ * DESCENT would stop at a local minimum. Evaluating the endpoints cannot.
+ *
+ * WHY ONLY THE ENDPOINTS, and what would widen this set. Over the 15 sweep
+ * subjects of docs/design/artsize_impl/ksweep.tsv, `argmin N` over the full
+ * [8,6,4,3,2,1] and over [8,1] alone give an IDENTICAL result on 15 of 15:
+ * K=1 wherever the term binds, K=8 wherever it does not. The interior is
+ * therefore unexplored rather than excluded, and the NAMED TRIGGER to widen
+ * the ladder is a MEASURED pattern whose K=1 artifact is larger than some
+ * interior K's. That trigger is free to detect: the K-sweep identity gate
+ * already emits the corpus at several K, and it reports an interior optimum
+ * if it ever sees one (informational today, this row's re-open signal). */
+static const int SIZE_TERM_LADDER[] = { 1 };
 enum { SIZE_TERM_LADDER_N = (int)(sizeof SIZE_TERM_LADDER / sizeof SIZE_TERM_LADDER[0]) };
 
 /* [SEL-1] one retry for the DFA-overflow fallback, [ART-SIZE] one attempt per
