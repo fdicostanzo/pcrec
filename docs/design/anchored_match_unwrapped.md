@@ -865,15 +865,17 @@ under the +4.89 % source headline. The 2 sampled artifacts on ENG_ATTEMPT /
 
 | # | instrument | result |
 |---|---|---|
-| 1 | `tests/codegen/run_anchored_match.sh` | **14 passed / 0 failed**. Census over 2,786 corpus patterns: 1,489 vm, 288 refused, **825 unwrapped**, 180 `search-filter`(attempt), 4 `search-filter`(empty), **0 `search-filter`(overflow)** |
-| 2 | `tests/anchored/run_anchored_diff.sh` | **5 passed / 0 failed**. 1,213 patterns × 18 subjects, every position 0..n+1, all four anchored entries + every capture pair + the search control — **147,986 cells, 0 divergences** |
+| 1 | `tests/codegen/run_anchored_match.sh` | **15 passed / 0 failed** (14 before r41's S1 added §4a's ceiling bracket). Captures-on census over 2,786 corpus patterns: 1,489 vm, 288 refused, **825 unwrapped**, 180 `search-filter`(attempt), 4 `search-filter`(empty), **0 `search-filter`(overflow)** |
+| 2 | `tests/anchored/run_anchored_diff.sh` | **7 passed / 0 failed** (5 before r41's S4 added §2). §1: 1,210 patterns × 18 subjects, every position 0..n+1, all four anchored entries + every capture pair + the search control — **147,620 cells, 0 divergences**. §2 (captures-on, `RX_NCAPS >= 2`): 8 named witnesses, **976 cells, 0 divergences** |
+| 2b | S190, the r41 critic's own one-token plant | CANONICAL RUN at `cf05077`: `anchdiff:9fail/5pass, anchoredmatch:1fail/15pass, corpus:0fail/26pass` — **DETECTED by §2 alone**; §3's four greps all pass and §1 stays green on the same tree |
+| 2c | S189, `prune=false` on the third machine | CANONICAL RUN at `312612b`: `anchdiff:2fail/5pass, corpus:0fail/26pass` — **DETECTED**, with `alternation.rxt` (which holds `a|ab` and its `m "ab" 0 1` cell) green at 26/26 |
 | 3 | `tests/codegen/run_recursion_identity.sh` | green; (B) whole-file identity 2,224/2,224 against the re-pinned `14d1feb`, (A) program-region identity against the UNCHANGED pre-module `ac4917d` with exactly the four named wave-G elision patterns moving — i.e. this row writes no VM program byte |
 | 4 | `make test-codegen` | 106 / 31 / 22 / 7 checks, 0 failed, after `[M6.2-KRESET rule 3b]` grew its second arm |
 | 5 | `tests/mech` S189 | pre-validated DETECTED, with `tests/base/alternation.rxt` **26/0** and `run_anchored_match.sh` **14/0** on the same planted tree |
 | 6 | `tests/registry` | 64 / 0 (coverage re-pinned 59 → 64) |
 | 7 | `make strict` | clean |
 | 8 | the D81 DIFFERENCE SET, measured | the `-fno-anchored-dfa` build against the PRE-ROW compiler over **2,498 corpus patterns**: **0 byte-identical, 2,498 differing ONLY in the expected lines, 0 other, 0 refusal mismatches** |
-| 9 | `make -k -j12 test` (delivery run) | **sections ran: 27/27**, zero `FAIL` lines anywhere, `test-anchored-match` **14/0 + 5/0** inside it. ONE red: `test-corpus` 26,630 passed / **29 failed**, all of them `tests/counterk/counterk.rxt`'s `((a)|ab){4000}c` at exit 124 — the KNOWN load cell the `[ART-SIZE.1b]` journal already records failing under `-j12`. Re-run SOLO on a quiet box: **1,634 passed / 0 failed** |
+| 10 | `make -k -j12 test` (delivery run) | **sections ran: 27/27**, zero `FAIL` lines anywhere, `test-anchored-match` **14/0 + 5/0** inside it. ONE red: `test-corpus` 26,630 passed / **29 failed**, all of them `tests/counterk/counterk.rxt`'s `((a)|ab){4000}c` at exit 124 — the KNOWN load cell the `[ART-SIZE.1b]` journal already records failing under `-j12`. Re-run SOLO on a quiet box: **1,634 passed / 0 failed** |
 
 **CHECK 8 IS THE ONE THE BRIEF NAMES AND D81 MAKES FALSE IN ITS OBVIOUS
 FORM.** A "byte-identical under the deny flag" claim would be wrong — selection
