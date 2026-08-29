@@ -206,6 +206,8 @@ static void job_cleanup(Ctx *cx)
         sb_free(&cx->job->hsb);
         sb_free(&cx->job->vmsb);
         sb_free(&cx->job->irsb);
+        sb_free(&cx->job->scr_test);   /* [ART-SIZE] the two scratch buffers, */
+        sb_free(&cx->job->scr_desc);   /* see internal.h's Job.scr_* comment  */
         /* [M4.7b/K7] Strings already TAKEN from the buffers above but not yet
          * published to the caller. They exist for a window of three statements
          * at the end of compile_driver, and now that an allocation failure in

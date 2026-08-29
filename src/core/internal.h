@@ -1294,6 +1294,15 @@ typedef struct {
     /* [M4.5c] the emitted-program LISTING (DD-8, engine_m4.md S10), filled
      * only when Ctx.want_ir is set. Job-owned for vmsb's reason. */
     StrBuf irsb;
+    /* [ART-SIZE] the VM emitter's two SCRATCH buffers, Job-owned for vmsb's
+     * reason and found the same way: r42's S3 fix armed `vmsb`'s early abort,
+     * so a size-term ladder trial now longjmps out from INSIDE the emission —
+     * and the union battery's LeakSanitizer axis caught the two function-local
+     * StrBufs that were live at that moment (the span-loop's inline test text
+     * and a class description in the listing), 2 x 256 B on the R1 witness.
+     * A scratch buffer is RESET (len = 0) at each use and never freed by its
+     * user; `job_cleanup` frees both on every path. */
+    StrBuf scr_test, scr_desc;
     /* [M4.7b/K7] Strings taken out of the three buffers above and not yet
      * handed to the caller — Job-owned for exactly that window, so an
      * allocation failure between two takes frees rather than strands them.

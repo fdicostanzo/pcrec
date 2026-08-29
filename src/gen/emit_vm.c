@@ -3091,19 +3091,23 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
     for (int i = 0; i < stride; i++) ci[i] = vm_cls(v, seq[i]);
 
     /* The body's own inline test, written once and reused by both rungs. */
-    StrBuf t;
-    memset(&t, 0, sizeof t);
+    /* Job-owned SCRATCH, not a local: this text stays live while the loop
+     * below is emitted into `v->b`, and a size-term ladder trial can longjmp
+     * out of any of those appends (r42 S3 armed vmsb's abort; the battery's
+     * LeakSanitizer axis found the local it orphaned). See Job.scr_test. */
+    StrBuf *t = &v->cx->job->scr_test;
+    t->len = 0; if (t->p) t->p[0] = 0;
     for (int i = 0; i < stride; i++) {
         /* K38: was char byte[64] -- "subject[" + prefix + "_span_cursor + "
          * + digits + "]" exceeds 64 at the 60-char prefix maximum, and
          * truncated mid-suffix ("..._sp"), losing the closing ']'. */
         char byte[PCREC_MAX_EMIT_NAME_LEN];
         snprintf(byte, sizeof byte, "subject[%s_span_cursor + %d]", v->p, i);
-        sb_puts(&t, " && (");
-        vm_cls_test(v, &t, ci[i], byte);
-        sb_puts(&t, ")");
+        sb_puts(t, " && (");
+        vm_cls_test(v, t, ci[i], byte);
+        sb_puts(t, ")");
     }
-    const char *test = t.p ? t.p : "";
+    const char *test = t->p ? t->p : "";
 
     char bounds[32];
     if (a->u.rep.rmax < 0) snprintf(bounds, sizeof bounds, "{%d,}", a->u.rep.rmin);
@@ -3231,7 +3235,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         }
         sb_printf(b, "    scan_position = %s_span_cursor;\n", v->p);
         vm_goto(v, next);
-        sb_free(&t);
+        /* `t` is Job-owned scratch: nothing to free here (job_cleanup does). */
         return;
     }
 
@@ -3411,7 +3415,7 @@ static void vm_cursor_rep(Vm *v, int entry, const Ast *a, int next,
         sb_printf(b, "    %s_span_cursor += %d;\n", v->p, stride);
     }
     vm_goto(v, retry);
-    sb_free(&t);
+    /* `t` is Job-owned scratch: nothing to free here (job_cleanup does). */
 }
 
 /* Nested optional chain for a bounded repeat: `X{0,3}` is `(X(X(X)?)?)?`,
@@ -7008,12 +7012,13 @@ static void vm_render_listing(Vm *v, StrBuf *o, const VmStamp *st)
             else         sb_printf(o, "  L%d\n", e->a);
             break;
         case VE_CLASS: {
-            StrBuf d;
-            memset(&d, 0, sizeof d);
-            vm_cls_describe(v, &d, e->a);
-            sb_printf(o, "         consume %-28s -> L%d\n", d.p ? d.p : "?", e->b);
-            (void)0;
-            sb_free(&d);
+            /* Job-owned scratch (see Job.scr_desc): the sb_printf into `o`
+             * below can longjmp on a ladder trial's abort while this text is
+             * live, and a local's buffer would be orphaned. */
+            StrBuf *d = &v->cx->job->scr_desc;
+            d->len = 0; if (d->p) d->p[0] = 0;
+            vm_cls_describe(v, d, e->a);
+            sb_printf(o, "         consume %-28s -> L%d\n", d->p ? d->p : "?", e->b);
             break;
         }
         case VE_ASSERT:

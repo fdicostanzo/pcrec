@@ -174,3 +174,32 @@ run_codegen_tests 106/0, strict clean. Merge: main's battery-regenerated
 size log (a loaded subset) discarded first — the standing hazard, on the
 manager's side this time — then `git merge` alone, clean. Union battery
 launched on 6e37a4c; I-17 after it.
+
+## POST-MERGE: the union battery on 6e37a4c was RED — LeakSanitizer, 2 × 256 B, the R1 witness only (2026-08-29 ~09:4x)
+
+`make test` 27/27 with 0 checks failed and the solo stages green, then
+`make san` rc 2: `LeakSanitizer: 512 byte(s) leaked in 2 allocation(s)`,
+both `realloc` from `sb_grow` (src/core/sb.c:24), on exactly
+`tests/size/size_term.rxt:34/35` — the 6-deep `{41}` R1 witness, the one
+pattern whose ladder trials ABORT. Cause: r42's S3 fix (arming
+`vmsb.abort_over`) made the early abort fire from INSIDE the VM
+emission, and two FUNCTION-LOCAL `StrBuf`s were live at that moment —
+`t`, the span-loop's inline test text (emit_vm.c ~3094, held while the
+loop below is emitted into `vmsb`), and `d`, a class description in the
+listing (~7011, live during an `sb_printf` into the listing buffer).
+The `longjmp` skipped their `sb_free`s. `Job.vmsb`'s own comment had
+stated the rule ("a stack-local StrBuf would leak its heap buffer on
+exactly the path the sanitizer battery checks"); S3 widened the path to
+these two locals. The panel's critic-sem verified S3 by peak RSS, not
+under LSan — the sanitizer axis is the battery's, not a critic's, and
+this is why the battery runs after every merge. FIX (manager, direct —
+landing-bar size): `Job.scr_test` / `Job.scr_desc`, two Job-owned
+scratch buffers reset (len = 0) at each use and freed by `job_cleanup`
+on every path; the three `sb_free(&t)`/`sb_free(&d)` sites removed.
+Verified: the sanitizer axis on `size_term.rxt` 21/0 with no LSan
+report; `make strict` clean; `make test-codegen` (identity gates — no
+emitted byte moves) pending; the union battery re-runs on the fix
+commit. Residual for the record: any OTHER function-local StrBuf
+introduced into the VM emitter's emission path reproduces this; the
+grep `StrBuf [a-z_]*;` / `= { *0 *}` over src/gen/ is the audit
+(today: zero left).

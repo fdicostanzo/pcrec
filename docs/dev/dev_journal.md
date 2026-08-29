@@ -17641,3 +17641,29 @@ r42 close 5038dbe. UNION BATTERY launched 09:13 on 6e37a4c
 dfd112b, battery-proven), artsize3 (merged 6e37a4c, battery pending);
 worktrees retire after the battery. I-17 (abi 11 pin; nothing moves on
 the bench) after the verdict.
+
+#### Forty-fourth session, part 10 — the battery on the [ART-SIZE] merge was RED (LeakSanitizer on the R1 witness); the fix; the battery relaunched (2026-08-29 ~10:0x EDT)
+
+The union battery on 6e37a4c: strict clean, anchors resolve, `make test`
+27/27 with 0 checks failed and the solo stages green (resource 26/0,
+counterk 24/0, corpus cell 1,634/0) — then **`make san` rc 2:
+LeakSanitizer, 512 bytes in 2 allocations, both `realloc` from `sb_grow`,
+on exactly tests/size/size_term.rxt:34/35** — the 6-deep `{41}` R1
+witness, the one pattern whose ladder trials ABORT. The mech run was
+stopped by PID (scripts/safekill on the battery script) to free the
+box. Cause, read from the code: r42's S3 fix armed `vmsb.abort_over`, so
+the early abort now longjmps from INSIDE the VM emission, and two
+FUNCTION-LOCAL `StrBuf`s were live at that moment — `t` (the span-loop's
+inline test text, held while the loop is emitted into vmsb) and `d` (a
+class description in the listing, live during an sb_printf) — their
+`sb_free`s skipped by the longjmp. `Job.vmsb`'s own comment had stated
+the rule; the panel's critic-sem verified S3 by peak RSS, not under
+LSan, which is the sanitizer axis's job and the reason the battery runs
+after every merge. FIX (manager, direct): `Job.scr_test`/`Job.scr_desc`,
+Job-owned scratch buffers reset at each use and freed by `job_cleanup`
+on every path (internal.h, compile.c, emit_vm.c — three `sb_free` sites
+removed, one of them found by the build: the local was shared by both
+rungs' exits). Verified: the sanitizer axis on size_term.rxt 21/0, no
+LSan report; strict clean; test-codegen 5/5 scripts / 0 failed. The
+classifier blocked a combined heredoc-edit-plus-make command once; the
+edits went through the Edit tool. Battery relaunched on the fix commit.
