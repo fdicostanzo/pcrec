@@ -462,20 +462,25 @@ whose gcc compile it takes from **55.13 s to 1.02 s**. On the 99.72 % of the
 corpus below the threshold the cost is zero emissions.
 
 **What the rule does to every pattern above the threshold, and to both
-witnesses.** Realized bytes; `ratio` = bytes(K_best)/bytes(K=8); `code` is
-§4.2's quantity at the selected K:
+witnesses.** `B` is comment-excluded bytes (the threshold's and the bar's
+quantity); `raw` is the emitted byte count (the byte cap's quantity); `N(sel)`
+and `raw(sel)` are at the kept K. The byte ratio is what the materiality bar
+reads.
 
-| pattern | B(K=8) | B(best) | ratio | code(sel) | outcome |
-|---|---|---|---|---|---|
-| `((a)\|ab){4000}c` | 651,412 | 644,055 | 0.989 | 0 | K=8, unchanged |
-| `((a)\|bc){0,4000}d` | 465,818 | 465,818 | 1.000 | 57,439 | K=8, unchanged |
-| `((a)\|ab){0,4000}c` | 384,611 | 376,239 | 0.978 | 57,389 | K=8, unchanged |
-| nested N=8 | 288,314 | 60,902 | **0.211** | 56,623 | **K=1** |
-| nested N=6 | 225,862 | 60,902 | **0.270** | 56,623 | **K=1** |
-| `((a)\|ab){0,2047}c` | 221,597 | 204,367 | 0.922 | 52,794 | K=8, unchanged |
-| nested N=4 | 162,034 | 60,902 | **0.376** | 56,623 | **K=1** |
-| **K41 witness 1** | 1,719,349 | 87,118 | **0.051** | 86,469 | **K=1** — gcc 55.13 s → 1.02 s |
-| **K41 witness 2** | 1,220,606 | 1,114,780 | 0.913 | 836,621 | K declines → **REFUSED by §4's cap** |
+| pattern | B(K=8) | B(best) | byte ratio | N(sel) | raw(sel) | outcome |
+|---|---|---|---|---|---|---|
+| `((a)\|ab){4000}c` | 651,412 | 644,055 | 0.989 | 80 | 675,586 | K=8, unchanged |
+| `((a)\|bc){0,4000}d` | 465,818 | 465,818 | 1.000 | 28 | 486,393 | K=8, unchanged |
+| `((a)\|ab){0,4000}c` | 384,611 | 376,239 | 0.978 | 88 | 409,113 | K=8, unchanged |
+| nested N=8 | 288,314 | 60,902 | **0.211** | 262 | 94,457 | **K=1** |
+| nested N=6 | 225,862 | 60,902 | **0.270** | 262 | 94,457 | **K=1** |
+| `((a)\|ab){0,2047}c` | 221,597 | 204,367 | 0.922 | 165 | 247,576 | K=8, unchanged |
+| nested N=4 | 162,034 | 60,902 | **0.376** | 262 | 94,457 | **K=1** |
+| **K41 witness 1** | 1,719,349 | 87,118 | **0.051** | 313 | 116,371 | **K=1** — gcc 55.13 s → 1.02 s |
+| **K41 witness 2** | 1,220,606 | 1,114,780 | 0.913 | 552 | 1,261,939 | bar declines; §4.4's ladder re-run finds no K under the byte cap (best raw 1,138,681) → **REFUSED** |
+
+Every corpus row clears both caps by a wide margin: the largest `N` is 262 and
+the largest `raw` is 675,586, against a 2,000-node and 1,000,000-byte cap.
 
 Three things this table settles:
 
@@ -792,6 +797,30 @@ diagnostic — nothing to match, no effort spent.
 `limits.md` §7's sentence that compile TIME is not a compiler-side contract is
 a **named spec hunk in this change** (finding S7): the node cap makes it one,
 in the units that predict it.
+
+### 4.6b The zero-refusal claim, re-measured off the default axis (finding S11)
+
+"0 of 2,487 refused" was measured on the DEFAULT axis only, and `N` depends on
+more than `(AST, K)` — critic-sem measured `-fno-length-prune` moving `N` from
+121 to 117 on `((a)|ab){12}c`. A claim about the caps has to hold across every
+axis `make test-axes` sweeps, or the first denied build to exceed a cap turns
+an identity sweep red for a reason nobody predicted.
+
+`artsize_impl/probes/axsweep.py` re-emits the whole corpus under
+`--engine=vm` and each deny flag (emit only, no gcc), recording the maximum
+`N`, the maximum raw byte count, and how many patterns exceed either cap:
+
+<!-- AXSWEEP-TABLE -->
+
+**Method note, recorded rather than smoothed:** this sweep was started, killed
+after two axes and restarted. Another lane's `make mech` took the box to load1
+49 while it ran, and the project's one-heavy-suite-at-a-time rule
+(memory `pcrec-box-concurrency`) applies whether or not the killed run's own
+numbers would have been affected — they would not, since the sweep records
+COUNTS and not times, but a timing-sensitive suite was running and this one was
+adding to it. Killed with `scripts/safekill` by PID, requeued behind a
+`load1 < 8` check, and the two axes measured before the kill reproduce exactly
+in the completed run.
 
 ### 4.7 The [SEL-1] interaction
 
@@ -1118,7 +1147,7 @@ list was short by two):
 | 2 | **`docs/spec/cli.md:218-224`** | the hand-enumerated `-fno-` axis list, which runs through `-fno-offset-skip` and must gain `-fno-size-term` |
 | 3 | **`docs/spec/match_api.md` §6.3** | a per-mechanism bullet for the two macros, on the `_DFA_SCAN`/`_DFA_PREFILTER` precedent at `match_api.md:1659-1720`, scoped VM-artifact-only |
 | 4 | `docs/spec/match_api.md` §6 | the `abi` sentences, 9 → 10 (§8) |
-| 5 | `docs/spec/limits.md` | `PCREC_MAX_VM_EMIT_CODE_BYTES`, its value, and the refusal (§4.4) |
+| 5 | `docs/spec/limits.md` | `PCREC_MAX_VM_EMIT_NODES` and `PCREC_MAX_EMIT_BYTES`, their values, both refusals (§4.6), §7's compile-time sentence (S7), and the new "Handling an oversized artifact" section |
 
 ### 7.3 The registry
 
@@ -1215,7 +1244,7 @@ prediction with a tolerance, so a 5× real gain on a 20× prediction cannot pass
 | 3 | the four declining patterns above the threshold | K unchanged at 8; **`.o` byte-identical**; source differs by exactly the new stamp lines AND the `abi` digit, on VM and DFA alike (§8, finding S8) | exact |
 | 4 | D82 zero cost | ≥ 4 declined patterns, both engines, **objdump 0 differing instructions** vs a `main`-built compiler | exact |
 | 5 | the corpus size log | regenerated on `main`; **exactly the 3 selecting patterns move**, all downward; every other row differs by exactly the per-engine stamp+`abi` constant of §8 | exact |
-| 6 | the caps | 0 of 2,487 corpus patterns refused by EITHER cap, **re-measured across `--engine=vm` and every deny flag** (finding S11, §4.9); corpus max `N` 1,471 vs a 2,000 node cap, max raw bytes 675,586 vs a 1,000,000 byte cap | exact |
+| 6 | the caps | 0 of 2,487 corpus patterns refused by EITHER cap, **re-measured across `--engine=vm` and every deny flag** (finding S11, §4.6b); corpus max `N` 1,471 vs a 2,000 node cap, max raw bytes 675,586 vs a 1,000,000 byte cap | exact |
 | 6d | the overrides | `--max-emit-nodes=N` / `--max-emit-bytes=N` raise-only; a value below the default is refused as a malformed option; both effective values stamped | exact |
 | 6b | **K41's fuzz-gate bucket** | 2 → **0**, re-pinned with the reading in §4.8 and the coupled counts re-derived (witness 1 RE-ENTERS the compare population; witness 2 becomes a refusal) | exact |
 | 6c | the instrument | `measure.py`'s byte column agrees with `size_count.sh` on every pattern it is run against, both artifact forms | exact — the control §2.0 did without |
