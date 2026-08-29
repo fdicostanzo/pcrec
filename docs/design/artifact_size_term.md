@@ -46,16 +46,18 @@ tension that kicks in at some size."*
    `[8,6,4,3,2,1]` and taking **`argmin N`, exact, with no model in it** (§3.3,
    S4). Both `N` and bytes are **non-monotone in K**, so it is evaluated, never
    descended.
-7. It dry-emits because **there is no pre-emission node count**, and a
-   counting pre-pass would be a third party to an agreement the emitter's own
-   header warns about (§2.2a). But dry emission is **not free-standing**: it
-   needs a `trial` flag under which the five size guards RETURN
-   `OVER(which, value)` instead of `longjmp`-ing to the compile's single
-   recovery point (§2.2b, R1), an EARLY ABORT once a trial's buffer passes a
-   cap (§2.2c, R2 — the ladder otherwise writes **55.4 MB** on a worst-rung
-   tower to select a 42,619-byte artifact), and a stated **AST re-publication
-   invariant** (§2.2d, R3). Those three, not the ladder, are the code phase's
-   largest piece.
+7. It re-emits because **there is no pre-emission node count**, and a counting
+   pre-pass would be a third party to an agreement the emitter's own header
+   warns about (§2.2a). **The re-emissions are ATTEMPTS in `compile_driver`'s
+   existing retry loop** — the shape [SEL-1] built a day earlier and the one
+   `internal.h:1469` prescribes — which is why R1 needs no trial flag (a
+   trial's `ctx_fail` is discarded at the one recovery point, the only place
+   that can), R2's arena question dissolves (`job_cleanup` `arena_free`s per
+   attempt) and R3's hazard cannot arise (each attempt re-parses). What remains
+   is the EARLY ABORT (§2.2c — the ladder otherwise writes 55.4 MB on a
+   worst-rung tower to select a 42,619-byte artifact) and the re-emission
+   IDENTITY CONTROL that replaced R3's sabotage (§2.2d). Measured in-process:
+   0.78 s on the worst pattern in the project.
 8. **A cap refuses only if NO K on the ladder is under it** (§4.4, S5), and a
    K taken that way is stamped `cap-rescue` (R5). The materiality bar gates a
    THROUGHPUT preference, so without step 4 a declined bar could strand a
@@ -237,19 +239,41 @@ warns about, with a silently-wrong count feeding a refusal as its failure mode.
 emitter because it **is** the emitter. But dry emission is not free-standing —
 it needs three things the emitter does not have today.
 
-#### 2.2b A trial cannot fail by `longjmp` (R1 — BLOCKER)
+#### 2.2b How a trial fails — SUPERSEDED BY THE IMPLEMENTATION (R1)
 
-The first version wrote "a trial that `ctx_fail`s is discarded, not
-propagated". **That is false, and it would have broken patterns that compile
-today.** `ctx_fail` (`compile.c:14-28`) ends in `longjmp(cx->jb, 1)`, and
-`internal.h:1469-1475` states the rule: there is **ONE recovery point** —
-`compile_driver`'s single `setjmp` — and the only sanctioned fallback is a
-one-shot retry of the whole pipeline ([SEL-1] paid exactly that). A trial's
-failure therefore unwinds **past** the ladder, `arena_free`s, and returns THAT
-TRIAL's diagnostic as the compile's answer.
+**What r40 signed off, and why it is not what shipped.** The design this
+section carried specified a `trial` flag threaded into five size guards so
+they RETURN `OVER(which, value)` instead of `ctx_fail`-ing, because
+`ctx_fail` ends in `longjmp` to the compiler's ONE recovery point
+(`internal.h:1469-1475`) and a trial's failure would otherwise unwind past the
+ladder and become the compile's answer. The BLOCKER that reasoning rests on is
+real and is measured below. The MECHANISM is not what the code needed.
 
-**Measured, in the direction the first version did not guard**
-(`--engine=vm`, this lane, reproducing the critic exactly):
+**What the implementation found.** `compile_driver` **already is** a retry loop
+of exactly the required shape, built a day earlier by [SEL-1] for the same
+reason: `compile.c`'s `for (volatile int attempt = 0; attempt < COMPILE_MAX_
+ATTEMPTS; attempt++)` calls `setjmp` INSIDE the loop, re-entered fresh each
+iteration, carrying state across attempts in `volatile` locals and a survived
+copy (`overflow_why`, copied out precisely because `job_cleanup` has already
+`arena_free`d the dead attempt).
+
+**So the ladder is ATTEMPTS in that loop**, and three things follow:
+
+- **R1 needs no trial flag and no change to any guard.** A ladder attempt's
+  `ctx_fail` — for ANY reason: the node cap, the replication product, a
+  repeat-copies refusal, the scratch abort — lands in the EXISTING recovery
+  point, and the loop's own "should I retry?" decision records that K as out
+  and moves to the next. A trial's refusal is discarded at the only place that
+  CAN discard it. `internal.h:1469`'s own prescription is literally this shape:
+  *"report as a RESULT the existing fixpoint consumes … a ONE-SHOT RETRY of the
+  whole pipeline rather than a second recovery point"*.
+- **R2's arena question dissolves** (§2.2c): `job_cleanup` ends in
+  `arena_free` and runs on every retry path, so trials share nothing.
+- **R3's hazard cannot arise** (§2.2d): each attempt re-parses, so the AST an
+  emitter run annotates is a fresh one.
+
+**The blocker is still real, and it is now a test cell.** Measured,
+`--engine=vm`:
 
 ```
 (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}
@@ -257,96 +281,93 @@ TRIAL's diagnostic as the compile's answer.
     K=6  REFUSES  "pattern too large (VM exceeds 131072 emitted nodes)"
 ```
 
-Under `LADDER = [8,6,4,3,2,1]` a pattern that **compiles today** would refuse
-after the change, citing a limit its own artifact never reached, at a K the
-user never asked for. That is a contract break, not a regression in size.
+A ladder that let a trial's refusal escape would make a pattern that **compiles
+today** refuse, citing a limit its own artifact never reached, at a K the user
+never asked for. §9 row 9 pins it.
 
-**The fix is the shape `internal.h:1469` itself prescribes — a result, never a
-second `setjmp`.** The emitter gains a `trial` flag; while it is set, every
-size guard RETURNS an over-budget result instead of calling `ctx_fail`:
+**The retry composition, in one order.** [SEL-1]'s DFA-overflow retry decides
+the ENGINE and always resolves first — it is a property of the pattern, not of
+K. The ladder then runs, and only on the VM. `--unroll=K` given, the deny flag
+set, a DFA artifact, or a size below the threshold: no ladder attempts at all.
+If no ladder K passes both caps, the FINAL attempt re-emits the DEFAULT so the
+refusal quotes the figures the caller's own options produce, never the last
+rung the ladder happened to try.
 
-| guard | site | trial behaviour |
-|---|---|---|
-| `PCREC_MAX_VM_NODES` | `vm_charge` (`:692-696`) | return `OVER(nodes, N)` |
-| `PCREC_MAX_VM_REPLICATION_PRODUCT` | `:2610` | return `OVER(replication, total)` |
-| `PCREC_MAX_VM_REPEAT_COPIES` | `:7708` | return `OVER(copies, maxcopies)` |
-| the code-bytes cap | the buffer accumulator (§2.2c) | return `OVER(code, bytes)` |
-| the total-bytes cap | the buffer accumulator | return `OVER(total, bytes)` |
+**`COMPILE_MAX_ATTEMPTS` is DERIVED** — `2 + SIZE_TERM_LADDER_N + 1`, from the
+ladder's own definition — so adding a rung cannot silently truncate the search.
 
-`pcrec_emit_vm` returns a small status — `OK` or `OVER(which, value)` —
-instead of `void`. **A trial's refusal is never the compile's answer**: the
-ladder runs only after the default-K emission has already SUCCEEDED, so if
-every trial comes back `OVER`, the answer is the default-K artifact that
-already exists. The K=8-compiles/K=6-refuses pattern above becomes a **test
-cell** (§9 row 9): it must still compile, at K=8, with its artifact unchanged.
-
-#### 2.2c A trial must abort early (R2)
+#### 2.2c The early abort (R2)
 
 **The ladder's cost is bounded by its WORST rung, and K=6 is routinely the
-worst** — `vm_counter_copies`' mandatory `K + m%K` term is non-monotone
-(m = 16 gives 8 copies at K=8 and 10 at K=6). Measured on `{17}` towers,
-`--engine=vm`, raw emitted bytes (this lane, reproducing the critic):
+worst** — `vm_counter_copies`' mandatory `K + m%K` term is non-monotone.
+Measured on `{17}` towers, `--engine=vm`, raw emitted bytes:
 
 | tower | K=8 | **K=6** | K=4 | K=3 | K=2 | K=1 |
 |---|---|---|---|---|---|---|
 | 5-deep | 1,749,937 | **3,135,570** | 346,163 | 345,919 | 109,579 | 41,491 |
 | 6-deep | 16,252,391 | **35,511,862** | 1,647,486 | 1,638,076 | 265,236 | **42,619** |
 
-**On the 6-deep tower the full ladder writes 55.4 MB of scratch to discover
-that the answer is 42,619 bytes** — 1,300× the artifact it selects. A
-post-emission cap protects gcc; it does nothing for pcrec's own time and
-memory, and all trials allocate from one arena that is never freed mid-compile.
+Unbounded, the 6-deep ladder writes 55.4 MB of scratch to discover that the
+answer is 42,619 bytes.
 
-**The fix is the same mechanism as R1, and it is its FIRST guard**: the
-emitter already knows how many bytes it has written, so a trial **aborts the
-moment its scratch buffer passes the cap it is being measured against** and
-returns `OVER`. Measured effect on the 6-deep tower: the four over-cap trials
-stop at 1 MB each instead of running to 16 MB and 35 MB, so the ladder writes
-**≈ 4.3 MB instead of 55.4 MB — 13× less**, and the arena question answers
-itself: **scratch is bounded by `|LADDER| × total-cap` = 6 MB**, whatever the
-pattern. That bound is the reason no per-trial arena reclaim is specified; if
-the code phase finds the bound is not enough, reclaim is the fallback and §11
-budgets it.
+**What shipped:** `StrBuf.abort_over`, checked in `sb_grow` — the ONE place a
+buffer's length grows, so no append path can miss it — armed only on a LADDER
+attempt. The DEFAULT and FINAL attempts leave it zero and always run to
+completion, because their figures are what a refusal quotes.
 
-**Cost, measured — and which population each figure is about.** The first
-version's "2.84 s worst in the project" is true of the CORPUS and false of the
-MECHANISM:
+**The factor is 3 and it is DERIVED, not chosen.** The bound is on RAW bytes
+(what a `StrBuf` knows) while the cap is on comment-excluded bytes, so aborting
+too early would discard a K that would in fact have fitted. Measured over the
+2,487-artifact corpus, prose is at most **47.8 %** of raw emitted bytes (median
+43.7 %), so comment-excluded ≥ 0.52 × raw and **raw > 1.92 × cap already
+implies over-cap**. 3× leaves margin for an emitted form more comment-heavy
+than anything measured: a trial aborted at 3× would need its artifact to be
+two-thirds prose to have been viable.
 
-| population | worst full-ladder cost |
-|---|---|
-| the corpus (7 patterns above the threshold) | 0.06 s |
-| K41 witness 1 — worst in the shipped corpus + fuzz witnesses | **2.84 s** |
-| a worst-rung `{17}` tower, 6-deep — worst constructed | **1.70 s / 55.4 MB** without the abort; **≈ 4.3 MB** with it |
+#### 2.2d Re-emission and the shared AST (R3 — dissolved, and what replaced it)
 
-#### 2.2d Re-emission mutates the shared AST — the invariant (R3)
+R3 found that `pcrec_emit_vm` annotates the AST it is handed
+(`a->u.call.nonnullable` at `:5691`; `a->u.call.save`/`.nsave` at `:5726-5727`,
+pointers into THAT run's arena) and that repeated emission was benign only
+because every publisher happens to precede its readers within a run — a
+property nothing stated and nothing checked.
 
-`pcrec_emit_vm` writes into the AST it is handed: `a->u.call.nonnullable`
-(`:5691`) and `a->u.call.save`/`.nsave` (`:5726-5727`), the latter **pointers
-into THAT run's arena and K-dependent**. It also writes `job->enc_mask`.
+**As attempts, the hazard cannot arise**: every attempt re-parses, so each
+emitter run gets a FRESH AST and there is no previous run's annotation to read.
+The proposed sabotage (moving `vm_publish_saves` after `vm_cost`) would test a
+property the mechanism no longer depends on.
 
-Repeated emission is benign **today** only because every publisher precedes its
-readers within a run — `vm_publish_nonnull` (`:7582`/`:7593`) before
-`vm_count_slots` (`:7655`); `vm_publish_saves` (`:7915`) before `vm_cost`
-(`:2277`) and `vm_splice` (`:5920`) — and `:1181` relies on the arena reading
-FALSE for an unpublished annotation, which is true on run 1 only. **Nothing
-states that property and nothing checks it.**
+**What replaced it is a stronger check, because it tests the conclusion rather
+than one route to it** (the manager's condition 2): the FINAL attempt asserts
+that re-emitting the chosen K reproduces the ladder's recorded figures for that
+K — node count exactly, and bytes exactly once each side's own
+`_UNROLL_K_WHY` string length is subtracted. Any state leaking across attempts,
+by any route, moves one of those numbers.
 
-> **INVARIANT (new, and the code phase asserts it):** every annotation the
-> emitter writes into the shared AST is RE-PUBLISHED by the same run before any
-> reader in that run consumes it. No emitter run may read an annotation left by
-> a previous run.
+**It earned itself on its first run.** Un-adjusted it fired on K41 witness 1
+with a 3-byte delta — exactly `strlen("size-model") − strlen("default")`. A
+ladder trial stamps `"default"` because the decision has not been made yet, and
+the final attempt stamps the verdict, so the trial had been measuring an
+artifact three bytes smaller than the one that ships. The fix is to subtract
+the known term on both sides rather than to add a tolerance: a tolerance would
+have hidden this AND would hide a real leak of the same size.
 
-A **sabotage row** enforces it: moving `vm_publish_saves` after `vm_cost` must
-turn §6.2 control 4 red. Without that row the invariant is a sentence, and a
-sentence is what R3 found missing.
-
-#### 2.2e What this buys
+#### 2.2e What this buys, and what it cost
 
 The selection and both caps consume EXACT counts from an emission that has
 already happened, so the model's 7–25 % tail error (§2.5) reaches neither.
-§11 budgets 2.2b–2.2d as the largest piece of the code phase: the size guards'
-result-returning path, the buffer accumulator, and the invariant's assertion
-are the work, and the ladder itself is a loop.
+
+**Measured IN-PROCESS, with the abort on** (the figures elsewhere in this note
+are separate-process runs — a bound, not a measurement):
+
+| pattern | wall | peak RSS | result |
+|---|---|---|---|
+| an ordinary pattern (the term never runs) | 0.13 s | 9 MB | unchanged |
+| K41 witness 1 (ladder runs, takes K=1) | **0.78 s** | 30 MB | 116,380 B; gcc 55.13 s → ~1 s |
+| the 6-deep `{17}` tower (worst rung) | **0.75 s** | 64 MB | 42,619 B |
+
+The ladder's marginal cost on the worst pattern in the project is about
+**0.65 s** of compiler time, against a gcc compile it takes from 55 s to 1 s.
 
 ### 2.3 The fit
 
@@ -721,12 +742,44 @@ for witness 1.
     code_bytes  =  comment-excluded emitted bytes  OUTSIDE table initializers
 ```
 
-**Exact, not modelled.** The emitter knows when it is inside a
-`static const … = { … }` initializer, so this is one accumulator incremented as
-it writes — the SAME instrument that measures the total (§4.3), differing only
-by which bytes it skips. **No `5.070·E + 11.184·J` coefficients appear in any
-refusal**; an earlier draft derived code bytes from the fitted model, and a
-refusal must not inherit a fit's error.
+**Exact, not modelled.** ONE post-emission scan of the finished buffer yields
+this and the total (§4.3); they differ only by which bytes are skipped. **No
+`5.070·E + 11.184·J` coefficients appear in any refusal** — an earlier draft
+derived code bytes from the fitted model, and a refusal must not inherit a
+fit's error.
+
+**A scan, not an accumulator threaded through the emitter.** An accumulator
+would be a SECOND implementation of a definition `tests/lib/size_count.sh`
+already owns, and the two would drift — exactly what F1 found when this row's
+own instrument disagreed with the artifact it was measuring. The scan reads the
+bytes actually written, so a new table form or comment style cannot escape it
+by forgetting to call something. The shipped implementation is validated
+against `size_count.sh` and this lane's python before it is trusted.
+
+**THE BLIND SPOT THAT CONTROL CAUGHT — the same defect twice.** The first cut
+of the shipped scan required a table declaration to END with `{`, true of the
+DFA's multi-line transition tables and FALSE of the computed-goto jump tables
+the emitter writes on ONE line
+(`static const void *const rx_targets_7[11] = { &&rx_s1, … };`). It counted
+**548,024 bytes of jump table as CODE** on K41's second witness — 1,218,674
+instead of 670,650. Same class as F1: an instrument that cannot see one emitted
+form, caught by diffing against `size_count.sh` and this note's own figures
+before shipping.
+
+**And it explains the r40 discrepancy.** The re-check reported witness 2 at
+**1,248,680** code bytes where this note says 670,650, and the manager closed
+it as "every decision identical under either reading". The cause is now
+concrete: 1,248,680 is within 2.5 % of the buggy 1,218,674 and nowhere near
+670,650, so the critic's instrument almost certainly had **the same one-line
+jump-table blind spot**. The note's definition — all initializers excluded — is
+the definition of record and is what the compiler implements.
+
+**Both caps apply to BOTH ENGINES.** An earlier draft scoped this one to VM
+artifacts, a leftover from when it was a NODE cap: a cap on emitted CODE has no
+reason to care which emitter wrote the code, and a limit that applies to one
+engine only is the special case the standing rule is against. Measured,
+generalising costs nothing — the largest DFA artifact in the corpus carries
+11,655 code bytes against a 500,000 limit.
 
 Two boundary rules, both stated because each could otherwise move a refusal:
 
@@ -1548,8 +1601,9 @@ prediction with a tolerance, so a 5× real gain on a 20× prediction cannot pass
 | 6c | the instrument | `measure.py`'s byte column agrees with `size_count.sh` on every pattern it is run against, both artifact forms | exact — the control §2.0 did without |
 | 8 | **the identity sweep's scope** | the K sweep is green with `budget`/`gu` cells EXCLUDED BY CONSTRUCTION and default budgets in force (§6.2 control 1); a run that includes them and passes means the exclusion was not wired; the excluded population's SIZE is printed, and on those cells the give-up CODE still matches where both K give up (R6) | exact |
 | 9 | **R1's witness — the one the ladder would have broken** | `(?:(?:(?:(?:(?:(?:a\|b){41}){41}){41}){41}){41}){41}` under `--engine=vm` still COMPILES, at K=8, artifact unchanged. Today: K=8 compiles (N=118,098), K=6 refuses "VM exceeds 131072 emitted nodes" | exact — a `.rxt` cell, not a note claim |
-| 10 | **R2's worst-rung cost** | the 6-deep `{17}` tower's full ladder writes **≤ 6 MB** of scratch (the `\|LADDER\| × total-cap` bound), against **55.4 MB** measured without the early abort | measured before and after |
-| 11 | **R3's invariant** | the sabotage that moves `vm_publish_saves` after `vm_cost` turns §6.2 control 4 RED | exact — a red, not a green |
+| 10 | **R2's worst-rung cost** | MEASURED in-process: the 6-deep `{17}` tower compiles in **0.75 s / 64 MB peak RSS** with the abort on, against 55.4 MB of scratch written without it | measured before and after |
+| 11 | **the re-emission identity control** | 0 internal errors over the whole corpus, and it must FIRE when the final attempt's node count or adjusted bytes differ from the ladder's record (§2.2d — it fired for real on its first run) | exact |
+| 12 | **`cap-rescue`** | the sixth `_UNROLL_K_WHY` value must be REACHED by some cell; if no natural pattern reaches it, a test-only cap override is what exercises it (§10 item 6) | a value no test can produce is a value no check guards |
 | 7 | `abi` scaffolding | +55 B/VM artifact (§8's estimate) | measured and compared |
 
 **Answer identity**, before any of the above: §6.2's three controls plus the
@@ -1601,6 +1655,18 @@ under bit 17.
    founding quote is about size, not compile time.** r40 AR9 rules this real
    but outside the row as chartered — a shipped-size instrument would be a new
    row.
+6. **`cap-rescue` is implemented but currently UNREACHABLE, and that is a real
+   gap.** The sixth `_UNROLL_K_WHY` value fires when the materiality bar
+   declines a K and a cap then takes it anyway (§4.4 step 4). Reaching it needs
+   a pattern whose byte ratio exceeds 0.75 while some ladder K brings CODE
+   under 500,000 — and on node-replication patterns bytes and code move
+   together, so a ratio above 0.75 keeps code above the cap. Five candidate
+   shapes were probed and none reached it. **The overrides being RAISE-ONLY
+   means the case cannot be forced by lowering a cap either**, so there is a
+   shipped branch no test can currently drive. A test-only cap override is the
+   proposed fix; it is a decision, not a measurement, because it adds a
+   test-only surface to `limits.h`.
+
 5. **Witness 2's mechanism belongs to [OPT-4]/K39, not here** (§3.3). This row
    PRICES the hybrid prefilter's inlined scan (the model now sees its states
    and jump tables) and REFUSES it past the cap; it does not shrink it. If
@@ -1615,17 +1681,17 @@ under bit 17.
 itself is a loop; making the emitter runnable more than once into a
 caller-chosen buffer is the work.
 
-1. **The trial mechanism (§2.2b–§2.2d) — the biggest item by far, and three
-   pieces, not one.** (a) `pcrec_emit_vm` gains a `trial` flag and returns
-   `OK`/`OVER(which, value)` instead of `void`; the FIVE size guards return a
-   result on that path instead of `ctx_fail`'s `longjmp` — this is a change to
-   the emitter's failure path, the part `internal.h:1469-1475` governs, and it
-   is the blocker R1 found. (b) The buffer accumulator that makes the early
-   abort possible and supplies both caps' exact quantities. (c) The R3
-   invariant's assertion. Only after all three is the ladder a loop.
-   It is NOT a new analysis, and deliberately so — a counting pre-pass would
-   have to mirror `vm_counter_fits`' K-dependence (S3), possessification,
-   revdet, splice and the MRL guard, with nothing keeping it in sync.
+1. **The ladder as attempts in `compile_driver` (§2.2b).** Not the trial flag
+   the design first specified: the loop [SEL-1] built already has the shape,
+   so this is a phase machine over the existing `setjmp`, plus carried state
+   in the style `overflow_why` established. It is NOT a new analysis, and
+   deliberately so — a counting pre-pass would have to mirror
+   `vm_counter_fits`' K-dependence (S3), possessification, revdet, splice and
+   the MRL guard, with nothing keeping it in sync.
+1b. **The early abort (§2.2c)**: `StrBuf.abort_over`, checked in `sb_grow`,
+   armed on ladder attempts only.
+1c. **The re-emission identity control (§2.2d)**, which replaced R3's
+   sabotage and is what catches state leaking across attempts.
 2. **The K selection (§3.3)** at that call site: the ladder, `argmin N`, the
    threshold gate and the materiality bar. Small, once (1) exists.
 3. **The two caps (§4)**: the code-bytes cap on the ladder-chosen emission, the
