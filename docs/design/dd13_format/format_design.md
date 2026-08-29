@@ -1372,11 +1372,20 @@ everywhere.
 
 ### 3.3 What `--list-*` surfaces are affected
 
-- **No existing surface changes.** `--list-syntax`, `--list-axes` and
-  the other registry surfaces describe *constructs and axes*, and this
-  design adds no construct: `(?&name)`, `(?(DEFINE)…)` and the named-group
-  spellings are already registry rows, already `built` (MEASURED,
-  §2.3).
+- **`--list-syntax` GAINS ROWS, and this is a change from the first
+  version.** That version said "this design adds no construct", which was
+  true of textual composition and is false of D87: §1.5's numbered group,
+  scope prefix and delivering call are three new PATTERN constructs, and
+  the registry is where a construct's existence, its owning module and
+  its `built` status are stated (D65). They are DIALECT rows — spellings
+  PCRE2 refuses (measured, §1.5) — which is the same shape
+  `pcre2_compliance.md` already handles for pcrec-only forms. The
+  constructs composition RIDES are unchanged and already `built`:
+  `(?&name)`, `(?(DEFINE)…)` and the named-group spellings (MEASURED,
+  §2.3.3).
+- **`--list-definitions` gains a second reason to exist.** Beyond D85's
+  option-scoped replacements, a user of a library wants to see what
+  `lib <rfc5322>` brought into scope. Same table, same surface (§4.2).
 - **`--list-definitions` is [DD-11]'s fifth registry surface** (D85), and
   the format is one of its two readers, not its author. §4.2 states the
   interface.
@@ -1388,7 +1397,10 @@ everywhere.
   §3): the same resolver the harness runs. It is **named here and not
   specified**, because its consumer ([V-E]'s build integration) is not
   real yet and D77 applies — the trigger is [V-E] opening, not W1
-  landing.
+  landing. Frank's `description` ruling sharpens what it would print: a
+  file's summarizing script reads `description` fields, so the surface is
+  "what this file declares, with each declaration's description", not a
+  bare list of names.
 
 ### 3.4 The spec delta (D80: the contract changes in the same change)
 
@@ -1399,7 +1411,9 @@ The hunks, named so a reviewer can check them off:
 | # | hunk | wave |
 |---|---|---|
 | S1 | "The `.rxt` format" gains **HEAD and BODY**: the head's six declarations, the two head block kinds, and the rule that the head ends at the first `pattern` line | W1 |
-| S2 | A new section, **"Composition"**: EXPAND's six steps, the DEFINE-append rule with the numbering consequence, the four namespaces and the refuse-never-shadow rule, and the statement that a composed block's oracle is necessarily `pcre2` | W1 |
+| S2 | A new section, **"Composition"**: the AST-level model, D87 rule 7's assignment rules (a)-(j), lexical-scope-wins with internal name qualification, the visited-set closure, the five namespaces, and the statement that a composed block's oracle is necessarily `pcre2` | W1 |
+| S2b | `docs/spec/` gains the **pattern-language extensions** (§1.5): the numbered group, the scope prefix, the delivering call — each with the "no legal PCRE2 pattern changes meaning" constraint and the measurement that admits it. These are DIALECT constructs, so `--list-syntax`'s registry gains their rows (§3.3) | W1 |
+| S2c | A **"Delivered results"** section: the inline struct, path = member path, first-set-wins for duplicate names in one path, the two non-deliverable shapes and their refusals, and the one sentence about two call sites being distinct C types needing `__typeof__` (§2.13) | W1 |
 | S3 | "How the harness evaluates a block" gains the **cell** notion and the `perr` one-cell rule; the summary's reported quantities grow (entry files, fragments, cells, resolution failures) | W1 |
 | S4 | The **subject** subsection gains `@file:"path"`, and states the escape asymmetry (quoted subjects decode escapes, file subjects do not) | W2 |
 | S5 | "The driver protocol" gains the `@<path>` argument form and its byte-exactness guarantee | W2 |
@@ -1407,8 +1421,9 @@ The hunks, named so a reviewer can check them off:
 | S7 | The `oracle` line and `# pcre2-only`'s status as its alias | W3 |
 | S8 | `variant` and the declared-`unsupported` outcome | W3 |
 | S9 | `docs/spec/match_api.md` §6: **`rx_info.name`**, and the `abi` bump sentence — one of D76's four sites, all four in the same change | W1 |
+| S9b | `docs/spec/match_api.md` §2/§5: **D61 made concrete by its first producer.** `ngroups`/`nnames` are the PRIMARY's own on a composed artifact; the composition's delivered slots occupy `ngroups+1 ..`; `RX_NCAPS` is an artifact constant a caller sizes from the header and **may move across library versions** while every index in `1..ngroups` holds still (r44-sem M4/M5). Also the difference between `--source` composition and handing a composed TEXT to plain `-p`, which counts every group | W1 |
 | S10 | `docs/spec/limits.md` "Handling an oversized artifact" item 1 already promises the `config` block; when W1 lands, that sentence stops being a forward reference and gains a pointer to S1 | W1 |
-| S11 | `docs/spec/cli.md`: `--source`, `--target <prefix>`, `--lib-path DIR` | W1 |
+| S11 | `docs/spec/cli.md`: `--source`, `--target <prefix>`, `--lib-path DIR`, **`--emit-composed`**, and §2.7's **output-naming rule** (`-o <dir>` per target; `-o <file>` with N > 1 refused) | W1 |
 
 `docs/guide/` is the human tier and points at these; it never restates
 them (D80).
