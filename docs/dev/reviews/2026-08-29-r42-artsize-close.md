@@ -56,3 +56,20 @@ stamped K matches the artifact; critic-sem measures the stronger claim).
 | C5 | HOLDS | `m6read_check_sab_anchors.py`: 189 sabotages / 200 sites, all resolve (S191-S193 included) | none |
 | C6 | HOLDS | known_issues.md K41 "RE-SCOPED, NOT CLOSED" consistent with the shipped fuzz EXPECT array (`run_capturediff_gate.sh:161-179`: oversize 0, emitted-size cap 1, both-accept 182, pairs 2,730, inconclusive 3), derivation shown in-file; the gate itself not re-run by the critic | none |
 | C7 | HOLDS | size log: exactly 3 more rows than main, all traced to `tests/size/size_term.rxt:32,41,55`; tripwire pins byte-identical to main's | none |
+
+## critic-meas — findings and triage
+
+| # | severity | finding | disposition |
+|---|---|---|---|
+| M1 | WRONG-NUMBER (the standing hazard) | the size log at HEAD 967a2f1 is a LOADED-RUN SUBSET: ff327c5's full `make test` regenerated it to 2,877 rows, dropping `counterk.rxt:1807` (the load cell); c41225d's quiet log (2,878) is what the report describes — on HEAD the diff is +128 × 1,688, not 1,689 (byte effect ~0.0002 %) | SENT BACK → restore c41225d's log or regenerate quiet; report/note figures = HEAD's |
+| M2 | NIT | the three witness figures (87,118 / 1,718,425 / 670,650) measure +130-137 B each on the delivered binary (87,251 / 1,718,562 / 670,780) — a stamp/comment grew after the note's measurement | SENT BACK → re-measure at HEAD, state the cause |
+| M3 | HOLDS | witness 1: K=1 `size-model`, 0.62 s wall / 30.4 MB RSS (lane 0.78 s / 30 MB); `-fno-size-term` still REFUSES (code cap, no file written) — caps non-deniable | none |
+| M4 | HOLDS | witness 2 refused by the code cap at every K; total 1,220,606 vs main's 1,220,605 (size_count.sh's own 1-byte rounding) | none |
+| M5 | stale text | §2.2b's R1 illustration "K=8 COMPILES (N=118,098)": under the caps explicit `--unroll=8` is REFUSED by the code cap (53,100,981 B); the default compiles via K=1; `--unroll=6` refuses on nodes as quoted | SENT BACK → rewrite to the shipped behaviour (the longjmp argument stands) |
+| M6 | GAP (reproducibility) | the 6-deep `{17}` worst-rung tower's pattern text is not archived; the critic's reconstruction (24,295 B / 0.48 s / 70 MB) ≠ the note's (42,619 B / 0.75 s / 64 MB) | SENT BACK → archive the exact pattern |
+| M7 | HOLDS | ksweep2 census: 18 interior optima all K=2, excluded 5 / term-caused 0, explained refusals 8, rc 0 — exact | none |
+| M8 | HOLDS (partial) | the synthetic floor witness: subject_ceiling 43 (K=8) → 23 (K=1) exact; the 69-pattern population and the `capacity-declined` reference-build demo not reproducible read-only | none |
+| M9 | HOLDS | bench survey re-run read-only: 54/54 accept, 0 refusals, 0 K moves, largest 76,304 B, level-context 22,905/22,905/22,829 — byte-for-byte (a first-pass awk miscount self-caught) | none |
+| M10 | HOLDS | `--list-axes` 47 rows / 19 axes exact | none |
+| M11 | GAP (critic's) | registry 67 not located read-only — critic-checks C3 reproduced it | closed by C3 |
+| M12 | **HOLDS — the cost story** | 14 below-threshold corpus patterns × 150 compiles, abi 10 vs 11: no detectable delta (~1 ms baseline); the corpus's largest above-threshold pattern: 11.7 → 54.5 ms per compile (+43 ms, = the note's §3.3 in-process table) | none |
