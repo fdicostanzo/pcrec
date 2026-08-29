@@ -444,3 +444,109 @@ and they were entirely box noise: the SAME binary re-timed five times on
 interleaved after/before runs converged to 1.803 against 1.807. Recorded
 because a lane reading three-iteration numbers off a shared box would have
 reported a regression that does not exist.
+
+## 9. [SEL-1.2] — the 0.5 s is the ENGINE-role attempt, and the rung does not touch it
+
+Reported, not chartered (D77), at the manager's ask on the bench's O-8.
+
+`level-context`, median of 7, this box:
+
+| route | compile |
+|---|---|
+| `auto` (default, rung ON) | **515.3 ms** |
+| `auto -fno-prefilter-collapse` (rung OFF = pre-[OPT-4]) | 507.7 ms |
+| `--engine=vm` | **1.4 ms** |
+| `--engine=dfa` (the attempt that overflows) | 518.3 ms, refuses |
+
+**The rung costs 7.6 ms and saves none of the 507.7.** The bench measured the
+same shape (510.7 ms auto against 1.63 ms `--engine=vm`, 313x; here 368x) and
+the fourth row locates it exactly: `--engine=dfa` ALONE costs 518.3 ms, so the
+whole half-second is the ENGINE-role exact DFA build overflowing at >32,000
+states. That happens BEFORE any prefilter decision exists, which is why §6's
+rung — which only changes what the fallback does about the PREFILTER — cannot
+help. The rung's own build is the 7.6 ms.
+
+**THE SHAPE, stated without building it.** The quantity that would predict this
+is the one this row's gate already reads: the exact forward NFA's state count,
+measured before determinization (`level-context`: 462). A knee there for the
+ENGINE role would say "do not attempt the DFA engine when the exact NFA exceeds
+N" — and it is NOT the knee this row installed, for a reason that matters:
+`PCREC_PREFILTER_EXACT_NFA_STATES` selects a SUPERSET language, which is sound
+for a filter and a miscompile for an engine (§2, and `compile.c`'s first
+conjunct). An engine-role knee cannot fall back to a cheaper language; it can
+only DECLINE TO TRY, which is a prediction of overflow from a pre-determinization
+number.
+
+**So it is a predictor, and D77 says measure before building one.** The
+measurement that would justify it is the corpus-wide correlation between exact
+NFA state count and DFA-build overflow — how many patterns above a candidate N
+actually overflow (the cost of a wrong decline is a pattern that would have got
+the DFA engine and now does not, silently slower), and how many below it
+overflow anyway (the cost of a wrong keep is the half-second, paid in full).
+Neither number exists. Not chartered.
+
+## 10. The DEFAULT, measured for Frank's ruling — knee-128 against cap-triggered
+
+The alternative put by the manager: collapse ONLY as an attempt in
+`compile_driver`'s ladder when the exact build is REFUSED by the size caps, with
+the knee reachable under `-fprefilter-collapse`. Measured, not argued.
+
+**(a) HOW MANY OF THE 23 WOULD A CAP-TRIGGERED DEFAULT RESCUE? ZERO.** Every one
+of the 23 compiles under `-fno-prefilter-collapse` at the DEFAULT caps — no
+refusal, and 21 of 23 at `_UNROLL_K_WHY "default"` (the other two at
+`size-model`, unrelated to this axis). The caps never fire on them.
+
+**AND THE REASON IS THE QUANTITY, NOT THE MARGIN.** `emit_size_code` is
+`total - prose - TABLES` (`src/core/compile.c`), so the code cap deliberately
+does not count table initializers — and a table-driven DFA prefilter is almost
+entirely table initializers. Measured through a reference compiler with the cap
+lowered to 1,000 so every artifact quotes its own `emit_code`:
+
+| pattern | exact `emit_code` | collapsed `emit_code` |
+|---|---|---|
+| `((a)\|ab){4000}c` | 32,591 | 32,588 |
+| `((a)\|ab){0,4000}c` | 33,650 | 33,647 |
+| `((a)\|bc){0,4000}d` | 25,984 | 25,981 |
+| `(a{10,20}){10,50}` | 45,470 | 45,135 |
+| largest of the 23 (`(?:…(){2,3}…)`) | 283,370 | 283,372 |
+
+**This row moves the cap's quantity by at most 335 bytes and usually by 3** —
+the `_LANG_WHY` stamp's own length — and on three of them the COLLAPSED artifact
+is 2 bytes LARGER. `((a)|ab){4000}c` drops 615,604 comment-excluded bytes and
+its `emit_code` moves by 3. A cap-triggered default is therefore not a stricter
+version of the knee; on this corpus it is inert.
+
+**K41 witness 2 IS THE EXCEPTION, and it explains itself.** Its `emit_code` goes
+670,940 -> 152,259, so the cap does fire and a cap-triggered default WOULD
+rescue it. The difference is the DFA emission form ([ENG-FORM]): its prefilter
+is 3,108 COMPUTED-GOTO states — emitted as labels, which count as code — where
+the corpus's 23 take the table form, which does not. Same mechanism, two
+quantities, and only one of them is capped.
+
+**(b) THE CORPUS DELTA UNDER A CAP-TRIGGERED DEFAULT: 0 BYTES.** Nothing in the
+corpus refuses, so nothing collapses. Against **-1,874,322** under knee-128.
+K41 witness 2 is rescued under BOTH defaults, so it does not discriminate.
+
+**(c) WHAT IT WOULD COST THE CHECKS**, and the answer is that most of this
+row's evidence moves to a flag:
+
+| site | under knee-128 | under cap-triggered |
+|---|---|---|
+| §1 K39 count-independence, on the DEFAULT artifact | passes, delta 0 lines | **FAILS** — `{0,4000}` no longer collapses; moves to a `-fprefilter-collapse` cell and stops being a statement about what a user gets |
+| §2's five `count-collapsed` witnesses | pass | all become `exact`; move to force-flag cells |
+| §5 census band (measured 20, banded 15..28) | passes | collapsed population becomes **0**; the band must move to the forced population or the census stops measuring the default |
+| §3 H3 ceiling on collapsed artifacts | 20 artifacts | **0 artifacts — VACUOUS**, the K35 shape exactly: a real assertion that silently stops asserting |
+| §4 the macro's iff | unaffected | unaffected |
+| §6 the [SEL-1] rung | passes | unaffected — the rung forces the collapse explicitly |
+| `run_size_term.sh` §5 | passes | unaffected — its witness was moved to an `exact` pattern precisely so this axis cannot reach it |
+| fuzz gate pins | pass | unaffected — witness 2 is rescued either way |
+| `run_recursion_identity.sh` (B) | pinned | needs re-pinning, as any default change does |
+
+**AND THE THING THE TABLE DOES NOT SAY.** Under a cap-triggered default, K39 is
+not fixed at the default: `((a)|b){0,4000}c` goes back to 193,210 code bytes
+against 39,001 for `{0,400}`, count-proportional, and the issue would have to be
+re-opened or re-scoped to "fixed under a flag". What the alternative buys is
+that the match-time costs in §7 — the 840,000x worst case, the 44x on
+`(ab){300}` find-all — stop landing on artifacts that compile fine today. That
+is the whole trade, and it is Frank's to make: **-1,874,322 bytes and K39 closed,
+against no match-time regression on anything that compiles today.**
