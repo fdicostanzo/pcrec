@@ -82,3 +82,34 @@ the fix — a selection outcome, stamped, pinned by name; it also
 resolves S2), S4's captures-on differential arm with the one-token
 plant as its sabotage validation, S3/S6's prose. Then: merge, union
 battery, I-16 to the bench with the abi-10 pin.
+
+## PRE-MERGE ROUND DELIVERED (lane/engabs 2e2ce3f) and MERGED dfd112b (2026-08-29 ~02:2x)
+
+S1/S2: `PCREC_ANCHORED_MAX_STATES = 4,096` — captures-on corpus max 2,001
+(`a{1,2000}`), resource shapes 20,001-30,001; the interval (2,001, 20,001)
+is empty. The FIRST derivation (captures-on only, "no corpus artifact
+loses the form") was FALSE — under `--no-captures` three counterk
+4000-count patterns exceed 4,096 — and was caught by the differential's
+own compared-population count (1,213 → 1,210), which is why it prints
+it. Seven named fallback members (four resource, three counterk); §5's
+overflow pin stays 0 and now reads "nonzero = re-derive the ceiling".
+K7 both ways: `[a-z]{0,30000}` 24.5 s (abi 9) → 37.5 s (no ceiling) →
+23.7 s (with); headroom 20.5 → 7.5 → 19.5 s; artifact 1,336,143 →
+1,995,889 → 1,336,560 B. §4a is a BOUNDARY pin (`a{1,4000}` keeps the
+form / `a{1,4200}` falls back, sub-second, both asserting the scan
+value) after two drafts that compiled resource shapes timed out under
+load and reported a TIMEOUT as a REFUSAL — [TT-10]'s class, fixed by
+not compiling them. S4: run_anchored_diff.sh §2, eight named
+captures-on witnesses with RX_NCAPS read off the artifact and required
+≥ 2, 976 cells / 0; S190 = the critic's plant, DETECTED anchdiff
+9fail/5pass with signature `default=(-7,-7) denied=(-1,-1)` while §3's
+greps pass and 147,620 `--no-captures` cells stay green (the finding
+reproduced by a run); the one anchoredmatch red is gcc warning about
+the plant's dead loop, recorded as not-a-detection. S3/S6 prose landed.
+Checks on the quiet box: test-codegen 106/31/22/7 0 failed,
+test-anchored-match 15/0 + 7/0, registry 64/0, resource 18/0, strict
+clean, anchor tripwire 186/197, size tripwire OK (log unchanged —
+the three counterk overflow patterns are VM captures-on, no row
+moves). Manager confirmed the three-pattern behaviour change at merge.
+Merge dfd112b: clean (docs-only divergence on main), tree clean. Union
+battery follows once the box clears artsize3's delivery run.
