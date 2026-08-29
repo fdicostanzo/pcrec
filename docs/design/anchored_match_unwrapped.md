@@ -609,6 +609,10 @@ match-here costs O(divergence), not O(subject). It is also **2.9× faster than
 the VM's own anchored body** at 15.8 ns, which the row did not promise. The
 two fillers differ by 5× in the `off` column and not at all in the `on` one,
 which is the spec caveat's skim-versus-walk distinction becoming moot.
+(r41 critic-meas, M5: of the flat ~5.5-5.8 ns, an empty-subject call
+measures ~3.6 ns — about 62 % is the harness's call/loop cost and ~38 % the
+pattern's own divergence work; O(1) holds, "flat 5.5 ns" is mostly the
+instrument.)
 
 #### What this closes
 
@@ -690,6 +694,17 @@ median DFA artifact. That is a larger share than §8's first estimate assumed,
 and it is the strongest of the three OPEN items for that reason. Sharing it is a conditional
 emitted-text shape, i.e. another axis. Named here with its measurement, not
 built.
+
+**The `.o` side (r41 critic-meas, M11 — measured after delivery, in the
+row's favour).** On 10 DFA artifacts spanning 9-141 KB of source, compiled
+`-O2 -c` in both forms: the `.o` delta is **1.7-11.0 % of the SOURCE delta**
+(median ~2-5 %) on the 8 that select `unwrapped` — e.g. the largest sampled,
+`c{1,}?(?:$|[\n\t]+?01{1,2}|[^abc]){2,}`, +11,152 B of source and +1,232 B of
+`.o` — against the census's general ~17 % `.o`/source ratio. The anchored
+table is verbose decimal C that compresses in the binary far more than the
+rest of the artifact does, so the shipped-binary cost of this row is well
+under the +4.89 % source headline. The 2 sampled artifacts on ENG_ATTEMPT /
+`empty` scan show zero delta on both sides, as §5.1/§6 say they must.
 
 ---
 
