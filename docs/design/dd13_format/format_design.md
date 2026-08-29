@@ -330,3 +330,231 @@ instruction owes the mechanism. `config`'s wave-3 half (`testee`,
 D77 is honoured at the wave granularity, not the production granularity:
 each wave ships when its named consumer is real, and nothing in W2 or W3
 is built to be ready.
+
+---
+
+## 2. Semantics
+
+### 2.1 Scope: two levels, and exactly one cascading thing
+
+Frank's ruling 4: two scopes only (file-top, block); cascade only inside
+`config … from`; `include` is pure splice. Concretely:
+
+- **File scope** is the head. Its declarations apply to the whole file
+  and to everything spliced into it by `include`.
+- **Block scope** is a pattern block. Block-scoped lines **reset at each
+  `pattern` line** — R-RXT-1, unchanged, and it now covers `name`,
+  `tag`, `oracle` and `variant` too. `frames-buffer=` keeps its
+  positional-within-the-block exception.
+- **There is no section scope and no case scope.** OD-1 asked where
+  options may be declared; the answer is file and block, and `include` +
+  `with` supply what a section scope would have (§2.6).
+- **The one cascade is `config <name> from <a>, <b>`**: `a`'s lines,
+  then `b`'s, then `<name>`'s own; later wins per option. T-4 is resolved
+  by construction — the resetting default and the accumulating cascade
+  are *different constructs*, so neither has to become the other, and no
+  existing file opts into the second (MEASURED: `config` appears 0 times
+  in the corpus).
+
+### 2.2 Names: four namespaces, and one rule for all of them
+
+The format declares four kinds of name. Each is declared by exactly one
+construct and referenced from exactly one kind of site, so a reference is
+never ambiguous about which namespace it is in:
+
+| namespace | declared by | referenced from | shape |
+|---|---|---|---|
+| **definition name** | `name <ident>` in a pattern block | `(?&n)` / `(?P>n)` / `\g<n>` / `\g'n'` inside a pattern; `target … = <n>` | PCRE2 group name |
+| **config name** | `config <ident>` | `with <list>`, `use <list>`, `from <list>` | ident |
+| **data name** | `freq <ident>` (the family, §2.10) | a `config` block's `freq <ident>` line | ident |
+| **target prefix** | `target <ident> = …` | `pcrec --target <ident>`; the emitted C symbols | C identifier |
+
+**One rule governs all four: a duplicate declaration within the
+resolution scope is REFUSED BY NAME, never shadowed.** (Frank's §2 wave 1
+ruling for definitions; extended to the other three because the reasons
+are the same and a parallel mechanism would be exactly what memory
+`pcrec-general-mechanisms-not-special-cases` forbids.) The resolution
+scope is:
+
+- definition names: the file's own blocks, then its `lib`s in declaration
+  order, transitively. Two *different files* defining one name is a
+  refusal; the *same file* reached twice by two paths that resolve to one
+  real path is one contribution, not a duplicate.
+- config, data, target: the **include closure** (§2.5), which is one
+  flat space — an included fragment cannot declare any of them (§2.5), so
+  in practice this is the entry file plus its `lib` chain for definitions
+  and the entry file alone for the other three.
+
+**Two identities, deliberately kept apart** (Frank §6.3): the **prefix**
+is the link-time identity (`<prefix>_search`, unique per translation
+unit); `rx_info.name` is the **runtime identity** — the block's `name`,
+or the prefix when the block is unnamed. They are equal by default and
+differ exactly where they must: one definition built under two configs is
+two artifacts with two prefixes and one `rx_info.name` (§2.7).
+
+### 2.3 Reference resolution and the expansion — the heart of the design
+
+**The format adds no in-pattern syntax** (Frank's ruling 2). What it adds
+is a rule for turning a block plus the file's definitions into **one
+plain PCRE2 pattern**. That pattern is what the oracle checks, what pcrec
+compiles, and what `A == B` splice-vs-linkage controls compare — the
+harness's expansion is the control by construction ([LIB] plan row).
+
+**EXPAND(block B) is defined as:**
+
+1. **L** = the names declared by named groups in B's pattern text
+   (`(?<n>`, `(?'n'`, `(?P<n>`).
+2. **R** = the names referenced by a *by-name* subroutine call in B's
+   pattern text — `(?&n)`, `(?P>n)`, `\g<n>`, `\g'n'` — with **n ∉ L**.
+   *Numeric, relative and whole-pattern call forms* (`(?1)`, `(?-1)`,
+   `(?+1)`, `(?R)`, `(?0)`, `\g<0>`, and their leading-zero spellings)
+   are **never** file references: they are lexical by definition and are
+   left alone.
+3. Each n ∈ R resolves against §2.2's definition scope. Not found → a
+   refusal (§2.11 says how it is scored). Found twice → refused by name.
+4. Close transitively: a resolved definition's own text is scanned the
+   same way, its lexical names are its own, and its unresolved references
+   resolve **in the scope of the file that defines it** (a library's
+   internal references are the library's business — this is what makes a
+   library self-contained).
+5. **Emit `B ++ "(?(DEFINE)" ++ (?<d>…) for each d in closure order ++ ")"`.**
+   Closure order is **first-reference order over a depth-first pre-order
+   traversal**, starting from B's pattern text left to right. This is
+   what makes R-VE-5's requirement hold — "re-ordering an unrelated part
+   of the file must not silently renumber an unrelated pattern's
+   captures" — because the order is derived from *reference positions*,
+   not from file order.
+6. **If R is empty, EXPAND(B) is B's pattern text, byte for byte.**
+
+**MEASURED — why the DEFINE block goes at the END.** Four spellings of
+one composition, compiled by `build/pcrec -p rx --features all` and run
+through `tests/harness/driver.c` (script in the session scratchpad;
+`RX_NCAPS` read from the artifact's own `gen.h`, never assumed):
+
+| # | pattern | subject | `RX_NCAPS` | result |
+|---|---|---|---|---|
+| E | `^(\d+)-([a-z]+)$` (hand-inlined control) | `12-abc` | 3 | `match 0 6  0 2  3 6` |
+| **F** | `^(\d+)-(?&w)$(?(DEFINE)(?<w>[a-z]+))` | `12-abc` | 3 | `match 0 6  0 2  -1 -1` |
+| G | `(?(DEFINE)(?<w>[a-z]+))^(\d+)-(?&w)$` | `12-abc` | 3 | `match 0 6  -1 -1  0 2` |
+| H | `^(\d+)-(?&w)$(?:(?<w>[a-z]+)){0}` | `12-abc` | 3 | `match 0 6  0 2  -1 -1` |
+
+**F is the design. G is why the prefix spelling is wrong**: with the
+DEFINE block in front, the definition takes group 1 and the primary's own
+`(\d+)` **shifts to 2**. Every `g <slot>` line in a file would change
+meaning the day the file gained a definition. With the block appended,
+the primary keeps 1..N and the definitions append at N+1.. — **which is
+exactly D39.2's appended-numbering rule, obtained from PCRE2's own
+left-to-right numbering rather than implemented.** H shows the
+`(?:…){0}` spelling is an exact alternate; F is chosen because
+`(?(DEFINE)…)` is what a reader recognises and because it is
+`recursion`'s own registry row, `built` (MEASURED,
+`build/pcrec --list-syntax`: `group ( (?(DEFINE)(?<w>a)) recursion …
+built`, described there as "the same thing `(?:BODY){0}` means").
+
+**MEASURED — the composed answer is capture-transparent, and that is a
+real difference from inlining.** Same script, a definition whose body
+itself captures:
+
+| # | pattern | subject | `RX_NCAPS` | result |
+|---|---|---|---|---|
+| I | `^(\d+)-(([a-z])+)$` (inlined control) | `12-abc` | 4 | `match 0 6  0 2  3 6  5 6` |
+| J | `^(\d+)-(?&w)$(?(DEFINE)(?<w>([a-z])+))` | `12-abc` | 4 | `match 0 6  0 2  -1 -1  -1 -1` |
+
+The definition's groups exist as slots and read **unset**, because a
+subroutine call is capture-transparent — CITED and MEASURED by an
+earlier lane on libpcre2 10.46 (`subroutines_design.md` §3.1: a
+`pcre2_set_callout` live-ovector trace showing the callee's write and the
+return's restore; "the capture state after the call is exactly the state
+before it, whatever the call did"). **This is the one place composition
+is not the same as textual substitution**, and it is PCRE2's semantics,
+not pcrec's invention: a user who hand-writes the same DEFINE form in
+PCRE2 gets the same answer.
+
+**And a subroutine call is BACKTRACKABLE, not atomic** — CITED,
+`subroutines_design.md` §3.2, four isolated cells against four atomic
+controls on 10.46 ("PCRE2 was atomic here before 10.30"). This
+**retires OD-5's premise as stated in R-VE-8** ("subroutine-call
+semantics are ATOMIC and shift capture numbering"): of the two claimed
+consequences, atomicity is false on the current PCRE2, and the numbering
+shift is an artefact of where the DEFINE block is written — appended, it
+*is* D39.2's rule. OD-5's own instruction was "measured, never read from
+docs"; §0.3 D-c records that the measurement exists and this note is
+built on it.
+
+**So the answer to "when is the format's reference a PCRE2 subroutine
+call, and when is it substitution": it is ALWAYS a PCRE2 subroutine
+call, and never substitution.** The format never rewrites pattern text
+except by appending a DEFINE block. Three consequences worth stating
+because they are what the panel should attack:
+
+1. **Match semantics are preserved because they are PCRE2's.** The
+   expanded text is a legal PCRE2 pattern; the oracle can be handed it
+   unchanged; nothing about pcrec is assumed.
+2. **The cost is PCRE2's too.** A call-linked search does ~2× the
+   backtracks of the same language inlined (CITED, `subroutines_design.md`
+   §3.2 T7, monotone over 1..8 call sites, measured with PCRE2's own
+   `match_limit`). Whether pcrec pays that is a *lowering* question, not
+   a format question: `src/opt/callgraph.c`'s `cg_eligibility` already
+   splices an acyclic callee under a node budget (CITED,
+   `subroutines_design.md` §6.3a), and a splice preserves
+   capture-transparency through its own `SLOT_SPLICE_SAVE` family. The
+   format pins the *answer*; the compiler chooses the *linkage*.
+3. **The expansion is the contract, and dead-capture elision lives below
+   it.** MEASURED, the [DD-14.G] bar is **not met by expansion alone
+   today**: `^[a-z]+@[a-z.]+$` emits 11,262 bytes with `RX_NCAPS 1`,
+   while `^(?&local)@(?&domain)$(?(DEFINE)(?<local>[a-z]+)(?<domain>[a-z.]+))`
+   emits 11,922 bytes with `RX_NCAPS 3` — 40 diff lines apart. That gap
+   is [DD-14.G]/[V-E]'s to close (splice + dead-capture elision), and
+   this note states the constraint it must close it under: **elision may
+   change the emitted code; it may not change `RX_NCAPS` or any slot's
+   value**, because those are the expansion's observable contract and a
+   caller reads them.
+
+### 2.4 Collisions: the format does not need a shadowing rule
+
+**MEASURED.** A definition and a lexical group with the same name, in the
+composed text, is refused by pcrec — in both orders:
+
+```
+$ build/pcrec ... '^(?<w>x)(?&w)$(?(DEFINE)(?<w>[a-z]+))'
+pcrec: two named subpatterns have the same name
+       (write (?J) before this declaration to allow duplicates) (pattern offset 27)
+$ build/pcrec ... '(?(DEFINE)(?<w>[a-z]+))^(?<w>x)(?&w)$'
+   (the same refusal)
+```
+
+So "a pattern's own groups keep priority over libraries" (the position
+paper's §2) was never an available semantics — there is no priority,
+there is a refusal (§0.3 D-a). **The design avoids the situation instead
+of ruling on it**: step 2 of EXPAND excludes names in **L**, so a name
+the pattern declares itself is *never looked up and never injected*, and
+the collision cannot arise.
+
+**MEASURED — this is exactly what the existing corpus needs.** Across all
+179 files, **143 blocks** carry a by-name subroutine reference, and
+**exactly 4** reference a name their own pattern does not declare:
+
+```
+tests/recursion/d27/sr_refusals.rxt:153  ^(?<w>a)(?&nope)$     perr
+tests/recursion/d27/sr_refusals.rxt:158  ^(?<w>a)(?P>nope)$    perr
+tests/recursion/d27/sr_refusals.rxt:163  ^(?<w>a)\g<nope>$     perr
+tests/recursion/d27/sr_refusals.rxt:168  ^(?<w>a)\g'nope'$     perr
+```
+
+All four are `perr` blocks whose whole purpose is the refusal of an
+undefined name, in a file that declares no `name` and no `lib` — so the
+file scope is empty, `nope` stays unresolved, and the refusal is
+preserved. **The other 139 have R = ∅ and expand to themselves, byte for
+byte.** That is not a survey result that might have gone otherwise: a
+block whose by-name reference did not resolve lexically would refuse
+today, and the corpus is green, so R = ∅ is *forced* for every
+non-`perr` block in it.
+
+**The one hazard, and why it is self-detecting.** If
+`sr_refusals.rxt` ever gained `name nope`, those four blocks would
+resolve, compile, and their `perr` assertion would go **red** — loudly,
+at the block that changed meaning. No new check is owed; the existing
+assertion is the check. (This is the K35 shape — a population whose
+meaning depends on something elsewhere in the file — and it is worth
+stating that it landed on the loud side by construction, not by luck: a
+`perr` block's expectation is *falsified* by resolution succeeding.)
