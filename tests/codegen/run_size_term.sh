@@ -23,6 +23,13 @@ ROOT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PCREC="${PCREC:-$ROOT_DIR/build/pcrec}"
 CC="${CC:-cc}"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
+# [K37] every compiler invocation below is BOUNDED. gen_timeout.sh's
+# `pcrec_run` is the project's one wrapper for that, and routing through it is
+# not a formality here: this script compiles deliberately large patterns
+# (a nested-repeat family, a cap-rescue witness) and an unbounded call on one
+# of those is exactly the hang the rule exists to stop.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 pass=0; fail=0
 ok()  { printf 'PASS: %s\n' "$1"; pass=$((pass+1)); }
 bad() { printf 'FAIL: %s\n' "$1"; fail=$((fail+1)); }
@@ -31,7 +38,7 @@ stamp() { grep -oE "^#define RX_$1 .*" "$2" 2>/dev/null | head -1 | sed "s/^#def
 NEST8='((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}'
 
 # --- 1. the stamps exist and are UNCONDITIONAL on every VM artifact (D81) ----
-"$PCREC" -p rx --features all -o "$WORK/plain.c" -- 'a(b|c)+d' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/plain.c" -- 'a(b|c)+d' 2>/dev/null
 for m in UNROLL_K UNROLL_K_WHY MAX_EMIT_CODE_BYTES MAX_EMIT_BYTES; do
     if [ -n "$(stamp "$m" "$WORK/plain.c")" ]; then
         ok "RX_$m is stamped on an ordinary VM artifact (D81: unconditional)"
@@ -44,7 +51,7 @@ done
 why_is() { # pattern, extra-flags, expected
     local out="$WORK/w.c"
     # shellcheck disable=SC2086
-    if ! "$PCREC" -p rx --features all $2 -o "$out" -- "$1" 2>/dev/null; then
+    if ! pcrec_run "$PCREC" -p rx --features all $2 -o "$out" -- "$1" 2>/dev/null; then
         bad "_UNROLL_K_WHY '$3': the compile refused, so the path was never reached"; return
     fi
     local got; got="$(stamp UNROLL_K_WHY "$out" | tr -d '"')"
@@ -60,25 +67,25 @@ why_is "$NEST8"    ''                 size-model
 # Read from the artifact rather than trusted: an explicit --unroll=K must
 # appear as that K, and the size term's own choice must appear as its choice.
 for k in 1 2 4 8; do
-    "$PCREC" -p rx --features all --unroll=$k -o "$WORK/k.c" -- 'a(b|c)+d' 2>/dev/null
+    pcrec_run "$PCREC" -p rx --features all --unroll=$k -o "$WORK/k.c" -- 'a(b|c)+d' 2>/dev/null
     got="$(stamp UNROLL_K "$WORK/k.c")"
     [ "$got" = "$k" ] && ok "--unroll=$k is stamped as $k" \
                       || bad "--unroll=$k stamped as '$got'"
 done
-"$PCREC" -p rx --features all -o "$WORK/n8.c" -- "$NEST8" 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/n8.c" -- "$NEST8" 2>/dev/null
 got="$(stamp UNROLL_K "$WORK/n8.c")"
 [ "$got" = "1" ] && ok "the size term's chosen K (1) is on the artifact" \
                  || bad "the size term chose a K the artifact does not carry: '$got'"
 
 # --- 4. the effective caps follow the flags --------------------------------
-"$PCREC" -p rx --features all -o "$WORK/c1.c" -- 'a(b|c)+d' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/c1.c" -- 'a(b|c)+d' 2>/dev/null
 [ "$(stamp MAX_EMIT_BYTES "$WORK/c1.c")" = "1000000" ] \
     && ok "the default total cap is stamped" || bad "default total cap stamp wrong"
-"$PCREC" -p rx --features all --max-emit-bytes=4000000 -o "$WORK/c2.c" -- 'a(b|c)+d' 2>/dev/null
+pcrec_run "$PCREC" -p rx --features all --max-emit-bytes=4000000 -o "$WORK/c2.c" -- 'a(b|c)+d' 2>/dev/null
 [ "$(stamp MAX_EMIT_BYTES "$WORK/c2.c")" = "4000000" ] \
     && ok "a raised total cap is stamped as the EFFECTIVE value" \
     || bad "a raised cap is not reflected in the stamp"
-if "$PCREC" -p rx --max-emit-bytes=400000 -o "$WORK/c3.c" -- 'a' 2>/dev/null; then
+if pcrec_run "$PCREC" -p rx --max-emit-bytes=400000 -o "$WORK/c3.c" -- 'a' 2>/dev/null; then
     bad "--max-emit-bytes accepted a value BELOW the default; raise-only is what stops these being used to manufacture a refusal"
 else
     ok "--max-emit-bytes is raise-only (a below-default value is refused)"
@@ -106,7 +113,7 @@ if $CC -O1 -std=gnu11 -I"$ROOT_DIR/lib" -I"$ROOT_DIR/src" \
             && ok "_UNROLL_K_WHY 'cap-rescue' reached (the bar declined this K; the lowered cap took it anyway)" \
             || bad "_UNROLL_K_WHY expected 'cap-rescue' under the lowered cap, got '$got'"
         # ANSWER IDENTITY: the rescued artifact must answer as the default build does
-        "$PCREC" -p rx --features all -o "$WORK/d.c" -- "$RESCUE" 2>/dev/null
+        pcrec_run "$PCREC" -p rx --features all -o "$WORK/d.c" -- "$RESCUE" 2>/dev/null
         rk="$(stamp UNROLL_K "$WORK/r.c")"; dk="$(stamp UNROLL_K "$WORK/d.c")"
         if [ "$rk" != "$dk" ]; then
             ok "the rescue chose a different K ($rk) from the default build ($dk) — the arms are not vacuously equal"
@@ -127,10 +134,10 @@ fi
 nat=0
 while IFS= read -r p; do
     [ -n "$p" ] || continue
-    if "$PCREC" -p rx --features all -o "$WORK/nat.c" -- "$p" 2>/dev/null; then
+    if pcrec_run "$PCREC" -p rx --features all -o "$WORK/nat.c" -- "$p" 2>/dev/null; then
         [ "$(stamp UNROLL_K_WHY "$WORK/nat.c" | tr -d '"')" = "cap-rescue" ] && nat=$((nat+1))
     fi
-done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | sort -u | head -400)
+done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | LC_ALL=C sort -u | head -400)
 if [ "$nat" -eq 0 ]; then
     ok "natural cap-rescue population is 0 (the ceiling holds; the branch is reachable only through a lowered-cap build)"
 else

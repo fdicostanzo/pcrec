@@ -525,11 +525,22 @@ k22_tower() { # k22_tower <depth>  -> the pattern on stdout
 }
 # The POSITIVE CONTROL FIRST, because a guard that refuses everything also
 # makes the hang go away. Depth 15 is k22_repro.txt's own "compiles" row.
-if "$TIMEOUT_BIN" 20 "$PCREC" -p rx --engine=vm -o "$WORKDIR/k22ok.c" \
+#
+# [ART-SIZE]/D84 (2026-08-29): THE CODE-BYTES CAP IS LIFTED FOR THIS CELL, and
+# that is not a weakening. This tower emits 18,763,591 bytes of CODE, so under
+# the shipped default it now refuses on PCREC_MAX_VM_EMIT_CODE_BYTES — a
+# THIRD, later, unrelated limit — and a bare invocation could no longer tell
+# "the product guard is over-broad" (the defect this control exists to catch)
+# from "the artifact is 18 MB" (the intended new behaviour). Raising the size
+# cap out of the way restores exactly the question this cell was written to
+# ask. The size cap's own refusal of this shape is deliberate and is recorded
+# as an acceptance change in docs/design/artifact_size_term.md §4.3a.
+if "$TIMEOUT_BIN" 20 "$PCREC" -p rx --engine=vm --max-emit-code-bytes=99999999 \
+        --max-emit-bytes=99999999 -o "$WORKDIR/k22ok.c" \
         -- "$(k22_tower 15)" >/dev/null 2>&1; then
-    ok "[K22] a depth-15 nested-{0,2} tower still compiles -- the product guard refuses only what the node cap was going to refuse anyway"
+    ok "[K22] a depth-15 nested-{0,2} tower still compiles (size caps lifted) -- the product guard refuses only what the node cap was going to refuse anyway"
 else
-    bad "[K22] the depth-15 tower was refused; the guard is wider than PCREC_MAX_VM_NODES, which its soundness argument says it cannot be"
+    bad "[K22] the depth-15 tower was refused even with the emitted-size caps raised; the product guard is wider than PCREC_MAX_VM_NODES, which its soundness argument says it cannot be"
 fi
 rm -f "$WORKDIR/k22.c"
 for k22d in 30 40; do

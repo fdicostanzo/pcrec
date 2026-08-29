@@ -55,6 +55,11 @@ WORKDIR="$(mktemp -d)"
 [ "$KEEP" = "1" ] || trap 'rm -rf "$WORKDIR"' EXIT
 fail=0
 
+# [K37] the interior-optimum report below invokes the compiler per pattern per
+# K; bound each one through gen_timeout.sh's `pcrec_run` rather than calling
+# the binary bare.
+. "$ROOT_DIR/tests/lib/gen_timeout.sh"
+
 echo "ksweep: baseline (default K)..."
 BASE="$WORKDIR/base.tsv"
 env RXTDUMP="$BASE" PCREC="$PCREC" CC="$CC" GENCFLAGS="$GENCFLAGS" \
@@ -118,7 +123,7 @@ while IFS= read -r p; do
     [ -n "$p" ] || continue
     best_k=""; best_n=""
     for k in 1 2 3 4 6 8; do
-        n=$("$PCREC" -p rx --features all --unroll=$k -o - -- "$p" 2>/dev/null | grep -c '^rx_L[0-9]*: __attribute__((unused));')
+        n=$(pcrec_run "$PCREC" -p rx --features all --unroll=$k -o - -- "$p" 2>/dev/null | grep -c '^rx_L[0-9]*: __attribute__((unused));')
         [ "$n" -eq 0 ] && continue
         if [ -z "$best_n" ] || [ "$n" -lt "$best_n" ]; then best_n="$n"; best_k="$k"; fi
     done
@@ -126,7 +131,7 @@ while IFS= read -r p; do
         echo "  INTERIOR OPTIMUM FOUND: pattern $p, K=$best_k ($best_n nodes)"
         inter=$((inter+1))
     fi
-done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | sort -u | head -"${KSWEEP_INTERIOR_N:-150}")
+done < <(grep -h '^pattern ' "$ROOT_DIR"/tests/*/*.rxt 2>/dev/null | sed 's/^pattern //' | LC_ALL=C sort -u | head -"${KSWEEP_INTERIOR_N:-150}")
 if [ "$inter" -eq 0 ]; then
     echo "  none found — every sampled pattern's argmin is an ENDPOINT (K=1 or K=8)."
     echo "  Informational: this is the measurement that would justify dropping the"

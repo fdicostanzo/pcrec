@@ -956,6 +956,7 @@ AFTER:
 | `[a-z]{0,30000}` | resource K7 | 1,323,371 B | **REFUSED** (total cap) |
 | `(a|b){0,30000}` | resource K7 | 1,333,109 B | **REFUSED** (total cap) |
 | the other 8 K7 shapes | resource K7 | unchanged | unchanged (±7 B, the stamps) |
+| the K22 depth-15 `{0,2}` tower | `tests/vm` | compiled | **REFUSED** (code cap; 18,763,591 code bytes) |
 | **K41 witness 1** | fuzz gate | 1,719,349 B | **compiles at 87,118 B** — the K rule |
 | **K41 witness 2** | fuzz gate | 1,220,606 B | **REFUSED** (both caps) |
 
@@ -967,11 +968,22 @@ each of them as an EXPECTED refusal beside a second cell proving
 `--max-emit-bytes=N` re-accepts it — which is also the only end-to-end test of
 the override.
 
-**And the corpus was not the whole population.** The first version of this
-note claimed "0 of 2,487 corpus patterns refused" and stopped there; the three
-shapes above are in `tests/resource`, which that sweep never covered. The same
-gap cost a real regression during the code phase (§3.3's counter-rung gate) —
-a population nobody counted, one more time, and this time it was this lane's.
+**And the corpus was not the whole population — twice over.** The first version
+of this note claimed "0 of 2,487 corpus patterns refused" and stopped there.
+The three K7 shapes are in `tests/resource`, which that sweep never covered;
+the K22 tower is in `tests/vm`, which the *widened* survey still missed, and it
+turned up only when the suite ran. The same gap cost a real regression during
+the code phase (§3.3's counter-rung gate). That is three instances of one
+mistake — a claim measured over a population chosen rather than one that
+exists — and it is why `docs/dev/learnings.md` §3 now carries the population
+half beside the quantity half.
+
+**The K22 tower's refusal is the most justified one in the row** (18.7 MB of
+emitted code) and it needed a test change rather than an exemption: `tests/vm`'s
+K22 cell is a POSITIVE CONTROL proving the replication-product guard is not
+over-broad, and a bare invocation could no longer tell that defect from this
+row's intended behaviour. The cell now raises the size caps out of its way, so
+it asks exactly the question it was written to ask.
 
 ### 4.3b One lesson, learned three times: WHICH QUANTITY does this act on?
 
