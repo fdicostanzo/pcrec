@@ -1553,7 +1553,7 @@ paragraph rather than with the first version's "0 on DFA artifacts".
 | stamp | value | on |
 |---|---|---|
 | `<PREFIX>_UNROLL_K` | the K this artifact was emitted at, an integer | **every VM artifact**, unconditionally |
-| `<PREFIX>_UNROLL_K_WHY` | see the five values below | **every VM artifact**, unconditionally |
+| `<PREFIX>_UNROLL_K_WHY` | see the six values below | **every VM artifact**, unconditionally |
 | `<PREFIX>_MAX_EMIT_CODE_BYTES` | the EFFECTIVE code-bytes cap (default, or the `--max-emit-code-bytes=N` override) | **every VM artifact** |
 | `<PREFIX>_MAX_EMIT_BYTES` | the EFFECTIVE total-bytes cap (default, or the `--max-emit-bytes=N` override) | **every artifact**, both engines — the total cap is engine-independent |
 
@@ -1632,14 +1632,20 @@ about "two rows" would have produced. Site named, value measured — the inverse
 of pinning a number and then making the code agree — and the reason the pin's
 comment now says to re-derive it at every landing rather than carry it forward.
 
-`--list-axes` after the merge: **71 rows across 42 distinct axes**, two of them
-this row's.
+`--list-axes` on the delivered branch: **47 rows across 19 distinct axes**,
+two of them this row's (`size-term` / `size-model` and `size-term` / `default`).
+RE-MEASURED 2026-08-29 at delivery: an earlier draft of this line said "71 rows
+across 42 distinct axes", which was wrong in both figures — a number written
+from memory during a hold rather than read off the binary, in the paragraph
+directly under the one arguing that a registry count must be MEASURED and not
+reasoned about. The correction is recorded rather than quietly applied, because
+the mistake is the section's own subject.
 
 ### 7.4 The five things every axis gets ([CHK-2]'s convention)
 
 | # | thing | this row's |
 |---|---|---|
-| 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (five values), `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES` (§7.1) |
+| 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (**six** values — §7.1 and the driver's own comment list them), `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES` (§7.1) |
 | 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (**bit 18** — [ENG-ABS] took 17), `docs/spec/tuning.md` §2.15 |
 | 3 | identity gate | `make test-axes` bit 18 by construction, **plus** `make test-ksweep` (§6.2) |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
