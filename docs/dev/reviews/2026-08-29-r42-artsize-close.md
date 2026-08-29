@@ -104,3 +104,50 @@ to b3cf716, three axes 0 differing, fourth finishing) / C2 (landed) and
 critic-meas' M1 (the loaded-run size log) / M2 / M5 / M6. critic-sem
 re-checks S1/S2/S3/S6 on the fix commit; then merge → union battery →
 I-17 (nothing moves on the bench).
+
+## critic-sem — FOCUSED RE-CHECK at f504714 (S1/S2/S3/S5/S8 + the S6 disagreement)
+
+CLOSED by run: **S1** the bound saturates at UINT64_MAX above
+UINT64_MAX/3 — `--max-emit-bytes=6148914691236517206` now compiles the
+tower at K=1 like no flag (§8 cell); **S2** the rescue walks K
+descending — through a fresh 30,000-cap reference build
+`((a)|ab){0,2047}c` → K=3 "cap-rescue" 28,909 code bytes, the largest
+fitting (was K=1); §5 pins the value; **S3** `vmsb.abort_over` armed —
+the 6-deep {17} tower 45,392 / 45,312 / 45,436 kB peak, 0.22 s (was
+63,912 kB / 0.53 s; unbounded control 92,364 kB) — the abort bounds
+the EMISSION now; **S5** `corpus_patterns()` = both globs, LC_ALL=C, no
+head: 400 → 2,772, incl. the 775 nested d27 patterns that the old
+one-level glob (1,997) had outside BOTH ceilings and outside the
+critic's own first sweep; **S8** exhaustion writes a named internal
+error, guarded so an earlier message is not overwritten.
+
+**S6 RESOLVED — the continuum is REAL; the lane's sweep measured the
+wrong quantity.** The lane's ratio divided the DELIVERED artifact's
+bytes by K=8's; for a DECLINED pattern the delivered artifact IS the
+K=8 artifact plus a 12-byte-longer stamp (`size-model-declined` vs
+`default`), so every declined row reads 27,318/27,306 = 1.0004 by
+construction — the lane's "1.0003…1.0006, nothing below 1.00". The bar
+compares the ARGMIN RUNG's bytes against K=8's. Re-run on exactly
+`size_term_choose`'s quantity (labels; comment-excluded .c + .h; floor
+applied; argmin over all six rungs with ties to the largest;
+threshold-1000 build; the 2,772 population; both axes): `--engine=vm`
+36 ladder patterns, ratios CONTINUOUS 0.5226 → 0.8338, fifteen inside
+(0.68, 1.00); across the bar **0.7475 TAKEN `((a)|ab){4000}c` /
+0.7548 DECLINED `(?:aa|a){8,12}+b`** (gap 0.0073); default axis 36
+patterns 0.5838 → 0.9887, 26 inside the band, 0.7446 taken / 0.7511
+declined. The instrument PREDICTS the compiler's own stamp on every
+pattern checked, both axes. The verdict is AXIS-DEPENDENT: the
+prefilter tables are K-invariant and add the same constant to
+numerator and denominator on the default axis, pulling every ratio
+toward 1 (`((a)|ab){17}c`, `((a)|ab){0,8}c`: taken on vm, declined on
+default — stamps confirmed); §9's taken arm passes because it passes
+`--engine=vm`. Consequence for §9: its ratio figures are the
+stamp-length ratio and must be replaced; the two witnesses above pin
+75 to within 0.7 % (74 and 76 each fail a cell) — "the corpus has no
+witness either side" is false. The fourth "which quantity does this
+act on" instance on this row. Residual: `hsb.abort_over` unarmed (the
+third buffer; 6,368 B on a 1.2 MB artifact). SENT to the lane as the
+final round (~09:0x): §3.3/§9 corrected, witnesses swapped, the
+axis-dependence stated, the sweep probe fixed and archived, the
+corrected interior census, hsb. Merge on that commit; no further
+panel round.
