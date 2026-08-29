@@ -1,0 +1,65 @@
+# tests/size/size_term.rxt — [ART-SIZE] the size term's own answer cells.
+#
+# Three things are pinned here, and each is a pattern whose ANSWER a bug in
+# the size term would change. Everything structural (the stamps, the caps,
+# cap-rescue) lives in tests/codegen/run_size_term.sh; this file is only for
+# what a MATCH would notice.
+#
+# EVERY EXPECTATION BELOW IS ORACLE-VERIFIED against python3 `re` (the base
+# tier's oracle, CLAUDE.md's rule) — the first draft of the second block was
+# hand-guessed and was wrong on `"b"` (0 0 rather than 0 1 with its groups),
+# which is the whole reason the convention exists.
+#
+# THE FIRST BLOCK IS r40 R1'S WITNESS AND IT IS THE MOST IMPORTANT CELL IN
+# THE ROW. Under `--engine=vm` this pattern compiles at K=8 (118,098 emitted
+# nodes) and REFUSES at K=6 with "VM exceeds 131072 emitted nodes". The size
+# term evaluates a ladder of K values, so if a ladder attempt's refusal were
+# ever allowed to escape — which is exactly what the design's first draft
+# specified, before `ctx_fail` turned out to be a `longjmp` to the compiler's
+# single recovery point — this pattern would REFUSE after the change, citing
+# a limit its own artifact never reaches, at a K the caller never asked for.
+# A cell here that simply MATCHES is the regression test for that: it can only
+# pass if the trial's failure was discarded at the recovery point.
+#
+# `engine vm` is REQUIRED here and is not a convenience. On the default axis
+# this pattern refuses much earlier, at NFA construction ("NFA exceeds 131072
+# states") — a pre-existing limit that has nothing to do with the size term,
+# and a cell that refused for THAT reason would pass whether or not the ladder
+# leaked a trial's failure. Forcing the VM engine skips the NFA build and puts
+# the pattern exactly where the property under test lives. (Found by writing
+# the cell without it and watching it fail for the wrong reason.)
+
+pattern (?:(?:(?:(?:(?:(?:a|b){41}){41}){41}){41}){41}){41}
+engine vm
+n ""
+n "c"
+
+# The nested-repeat family the size term actually SELECTS on (it takes K=1
+# here, 288,314 bytes down to 60,902). Answers must not move: K is the counter
+# rung's chunking factor, so the span and the captures are identical at every
+# K and this block is what says so on a pattern where the term really fires.
+pattern ((?:(?:(?:[^a]{1,2}|[^a]??|.{0,2}?)+){0,8}(){2,3}){1,2}){2,3}
+m "" 0 0
+g 1 0 0
+g 2 0 0
+m "b" 0 1
+g 1 1 1
+g 2 1 1
+m "ab" 0 0
+g 1 0 0
+g 2 0 0
+
+# A counter-rung pattern the term declines (its bar says the saving is not
+# worth the throughput). Same requirement, opposite path: the answers here are
+# produced by the DEFAULT K, and they must equal what every other K gives.
+pattern ((a)|ab){0,12}c
+n ""
+m "c" 0 1
+g 1 -1 -1
+g 2 -1 -1
+m "aac" 0 3
+g 1 1 2
+g 2 1 2
+m "abababc" 0 7
+g 1 4 6
+g 2 -1 -1
