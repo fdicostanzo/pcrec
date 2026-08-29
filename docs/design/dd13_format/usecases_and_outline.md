@@ -461,3 +461,12 @@ table is data the harness never interprets beyond well-formedness; the
 analyzer is the only writer. Open (OD-6): inline values vs an `@file:`
 byte-exact reference for the block's body, and whether `freq` names
 share `config`'s namespace.
+
+The findings file is the COMMITTED artifact; the exemplar is not (Frank:
+proprietary, secret, or too big to keep in a repo). A byte histogram is
+256 counts — small and effectively non-reversible — so the user keeps
+the analysis result and the exemplar stays wherever it lives. The block
+therefore carries PROVENANCE (the exemplar's name as the user chooses to
+give it, size, content hash, analyzer version, date), so the table can be
+re-derived when the exemplar is at hand and reads honestly when it is
+not.

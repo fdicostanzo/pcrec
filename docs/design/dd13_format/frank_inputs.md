@@ -123,3 +123,16 @@ the table through its config, so the same pattern can be built against
 several exemplars' tables (one target line each). OD-6: the data block's
 spelling (inline 256 values vs `@file:` byte-exact reference) and its
 name resolution (same namespace as `config`, or its own).
+
+Same day, refinement: "a user may not wish to include the exemplar file
+directly in their repo (proprietary, secret, too big, etc) so they could
+just keep the analysis results." → The findings .rxt is the COMMITTED
+artifact and the exemplar is not: the table is 256 counts (small,
+effectively non-reversible — a byte histogram of a log file leaks
+almost nothing), so a proprietary or multi-GB exemplar stays wherever it
+lives. Consequence for the block: it carries PROVENANCE fields
+(exemplar name/path as the user wishes to name it, size, a content
+hash, the analyzer's version and date) so a table can be re-derived
+when the exemplar is at hand and reads honestly when it is not — the
+table is data, and data without provenance is the population-nobody-
+counted hazard one file over.
