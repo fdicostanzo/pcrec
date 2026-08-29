@@ -150,9 +150,15 @@ while IFS= read -r pat; do
         scan="$(stamp "$art" RX_DFA_SCAN)"
         pf="$(stamp "$art" RX_DFA_PREFILTER)"
         tbl="$(stamp "$art" RX_DFA_TABLE)"
+        # [ENG-ABS] axis G. Unlike the four above it is NOT on a VM hybrid —
+        # its iff is `RX_ENGINE "dfa"` (spec §6.3), because it describes the
+        # `<prefix>_match` ENTRY rather than a DFA scan — so it deliberately
+        # does not join the TRIPLE below, whose members are all scan facts.
+        mf="$(stamp "$art" RX_DFA_MATCH)"
         [ -n "$scan" ] && echo "D:RX_DFA_SCAN=$scan"
         [ -n "$pf" ] && echo "D:RX_DFA_PREFILTER=$pf"
         [ -n "$tbl" ] && echo "D:RX_DFA_TABLE=$tbl"
+        [ -n "$mf" ] && echo "D:RX_DFA_MATCH=$mf"
         if [ -n "$scan" ] && [ -n "$pf" ] && [ -n "$tbl" ]; then
             echo "D:TRIPLE=$scan,$pf,$tbl"
         fi
@@ -286,6 +292,14 @@ floor_check "D:RX_DFA_PREFILTER=byte-class"   250
 floor_check "D:RX_DFA_PREFILTER=offset-set"   300
 floor_check "D:RX_DFA_PREFILTER=offset-set-bounded" 30
 floor_check "D:RX_DFA_TABLE=premultiplied"    1500
+# [ENG-ABS] (2026-08-29, abi 10) axis G. Measured on this tree: 825
+# `unwrapped` and 184 `search-filter` (180 of them ENG_ATTEMPT, 4 the empty
+# engine) — floored on first sight, K35's rule. The `unwrapped` floor is the
+# one that matters: the form silently ceasing to be selected leaves every
+# answer in the tree right and `make test-axes` green, so a COUNT is the only
+# instrument that sees it.
+floor_check "D:RX_DFA_MATCH=unwrapped"        780
+floor_check "D:RX_DFA_MATCH=search-filter"    150
 # Capacity/activity (b) — VM artifacts, DEFAULT population.
 floor_check "D:RX_VM_PREFILTER=hybrid"        900
 floor_check "D:RX_VM_PREFILTER=none"          150
@@ -366,6 +380,7 @@ declare -A KNOWN_VALUES=(
     ["D:RX_DFA_TABLE=premultiplied"]=1 ["D:RX_DFA_TABLE=indexed"]=1
     ["D:RX_DFA_TABLE=mixed"]=1 ["D:RX_DFA_TABLE=none"]=1
     ["D:RX_VM_PREFILTER=hybrid"]=1 ["D:RX_VM_PREFILTER=none"]=1
+    ["D:RX_DFA_MATCH=unwrapped"]=1 ["D:RX_DFA_MATCH=search-filter"]=1
 )
 for tok in "${!KNOWN_VALUES[@]}"; do
     n="$(count_of x "$tok")"

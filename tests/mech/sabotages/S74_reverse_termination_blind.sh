@@ -49,20 +49,25 @@ SAB_COUNT=1
 # together or the format and the args disagree. The EDIT is unchanged in kind:
 # the context-indexed read is dropped and the blind scalar one is left, which
 # is the LOST MATCH for a leading \B at search_from > 0 this row exists for.
+# RE-ANCHORED 2026-08-29 ([ENG-ABS]): the accept-table NAMES are now derived
+# from `f->dir->c.name` through a local `m` rather than spelled "reverse", for
+# the reason S72's note records — a third direction shares these emitters.
 # RE-ANCHORED 2026-08-26 ([ENG-FORM]): the reverse boundary's context-indexed
 # accept is the DIRECTION object's `dir_rev_bound_accept` method now -- one
 # site, called from axis E's `by_class` tail, rather than a branch inside
 # `emit_unanchored`. The `(void)cls` the old planting needed is gone with the
 # `cls` buffer it silenced.
-SAB_BEFORE='    sb_printf(c, "%s    if (search_from"
-                 " ? %s_reverse_accepts_class(%s_reverse_is_accepting_by_class, %s,\n"
-                 "%s                          %s_reverse_byte_class[subject[search_from - 1]])\n"
-                 "%s                 : %s_reverse_accepts(%s_reverse_is_accepting, %s))"
+SAB_BEFORE='    const char *m = f->dir->c.name;
+    sb_printf(c, "%s    if (search_from"
+                 " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
+                 "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
+                 "%s                 : %s_%s_accepts(%s_%s_is_accepting, %s))"
                  " %s = %s;\n",
-              f->dir->bind, f->p, f->p, f->src,
-              f->dir->bind, f->p,
-              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);'
+              f->dir->bind, f->p, m, f->p, m, f->src,
+              f->dir->bind, f->p, m,
+              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);'
 SAB_AFTER='    /* SABOTAGE S74: the context read is dropped and the boundary takes
      * the blind scalar accept. */
-    sb_printf(c, "%s    if (%s_reverse_accepts(%s_reverse_is_accepting, %s)) %s = %s;\n",
-              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);'
+    const char *m = f->dir->c.name;
+    sb_printf(c, "%s    if (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
+              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);'

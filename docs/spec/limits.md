@@ -151,6 +151,19 @@ now succeed at the VM engine instead. `--engine=dfa` and `-fprefilter` keep
 the contract as stated, unconditionally — see `docs/spec/tuning.md` §2.11
 for the mechanism and the cost bound this exception is held to.
 
+**[ENG-ABS] (2026-08-29) A SECOND, NARROWER EXCEPTION on the same three
+ceilings, and it is not an engine fallback at all.** A DFA artifact carries an
+OPTIONAL third machine — the anchored match-here automaton behind
+`<PREFIX>_DFA_MATCH "unwrapped"` (`docs/spec/tuning.md` §2.15). It is charged
+against the same three ceilings, it is built AFTER the two machines the engine
+needs so it can never take budget from them, and crossing a ceiling there
+produces **no diagnostic and no fallback engine**: the artifact simply keeps
+the search-and-filter form of its anchored entry and stamps that. The set of
+patterns pcrec ACCEPTS is unchanged by this machine in either direction —
+which is why it adds no ceiling of its own to the list above, and why the
+paragraph it follows still describes every way a state-count ceiling can
+refuse a pattern.
+
 **What pcrec does NOT promise is a bound on wall-clock compile TIME**
 for a pattern it accepts. D45 (`docs/dev/decisions.md`) is a TEST
 HARNESS policy, not a caller-facing contract: every compile of

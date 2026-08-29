@@ -263,6 +263,8 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_PREMUL_TABLE;
         else if (!no_more_opts && !strcmp(a, "-fno-offset-skip"))
             opt.flags |= PCREC_NO_OFFSET_SKIP;
+        else if (!no_more_opts && !strcmp(a, "-fno-anchored-dfa"))
+            opt.flags |= PCREC_NO_ANCHORED_DFA;
         /* [ART-SIZE] Denies the K SELECTION only. It does NOT reach either
          * emitted-size cap — those are raise-only via --max-emit-*-bytes
          * (D84 ruling 1): a safety refusal a flag turns off is not one. */

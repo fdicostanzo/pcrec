@@ -734,6 +734,82 @@ artifact carries. That is the whole of the axis's footprint on a pattern
 it declines, and it is what makes the denied build the identity
 comparison's control.
 
+### 2.15 `-fno-anchored-dfa` — `PCREC_NO_ANCHORED_DFA` (bit 17)
+
+**ANSWER-IDENTITY-preserving.** The axis changes which MACHINE
+`<prefix>_match` runs, not which strings match: the form it enables runs
+the pattern's own automaton from `ctx->pos`, which is exactly the
+question the entry promises to answer (`docs/spec/match_api.md` §3.2).
+The argument that the two forms report the same length on every input is
+`docs/design/anchored_match_unwrapped.md` §3.
+
+**What it controls.** A DFA artifact's `<prefix>_match` and
+`<prefix>_match_caps` used to run the artifact's ordinary UNANCHORED
+search and reject any match whose start is not `ctx->pos`. With this axis
+ON the artifact carries a THIRD machine instead — the same subset
+construction over the same NFA, rooted at the pattern's own first state
+rather than at the start-anywhere self-loop — and runs it forward from
+`ctx->pos` with no reverse pass and no candidate skip. Denying it emits
+the search-and-filter bodies exactly as they shipped before `[ENG-ABS]`,
+and builds no third machine at all. Default: the anchored form is ON,
+subject to the selection below. Deny-only, §2.13's shape rather than
+§2.5's force pair: the compiler emits the form wherever the machine fits
+its caps, so there is nothing to address and nothing to force.
+
+**Reason it exists.** `[OPT-2]` STEP 2
+(`docs/dev/opt2_anchored_match_measurement.md`) measured the REVERSE PASS
+at **~50 % of the DFA's cost on every matching subject** of the bench's
+compliance set: deleting it takes matching subjects from **2.077× behind
+the VM to 1.046×** and short valid emails from **1.207× behind to
+0.571×**. Under the search-and-filter form that pass exists only to
+recover a start the caller already gave. The second motivation is
+`[ENG-ABS]`'s original one: a FAILING match-here can skim the remainder
+of a long subject hunting a later match the filter then discards, where
+an anchored body stops at the first divergent byte. It is also the
+bisect lever for the optimization and the build its identity comparison
+uses as its control.
+
+**The selection, and it is not this flag.** Whether an artifact gets the
+anchored form is decided at generation time, per artifact: the engine
+must be the one-pass unanchored DFA (a `^`- or `\G`-bearing pattern is on
+the per-start attempt engine and keeps the old form), the artifact must
+not be the empty engine, and the anchored machine must BUILD inside the
+DFA caps. A machine over a cap DECLINES an optimization — it never
+refuses a pattern, and the mandatory machines are built first so the
+shared subset-element budget cannot be spent on an optional one — which
+is why `docs/spec/limits.md` says nothing about it.
+
+**The stamps.** `<PREFIX>_DFA_MATCH` names the chosen form
+(`"unwrapped"` / `"search-filter"`) and `rx_info.match_form` mirrors it
+(`docs/spec/match_api.md` §6.3). **MASKED out of `rx_info.flags`**
+(`src/gen/emit_dfa.c`'s `strategy_denials`), for the mask's own reason:
+it changes no answer, so two artifacts that behave identically must not
+differ in their reflection surface over it, and what the emitter DID is
+already reported by the stamp. Re-run and verified at this commit:
+
+```
+$ build/pcrec -p rx --no-captures --features all -o - \
+    -- 'foo[0-9]+bar' | grep -E '^#define RX_DFA_MATCH'
+#define RX_DFA_MATCH "unwrapped"
+$ build/pcrec -p rx --no-captures --features all -fno-anchored-dfa -o - \
+    -- 'foo[0-9]+bar' | grep -E '^#define RX_DFA_MATCH'
+#define RX_DFA_MATCH "search-filter"
+```
+
+and the SELECTION declining on a pattern the other engine owns — the
+same command on `^foo` reads `RX_DFA_SCAN "attempt"` and
+`RX_DFA_MATCH "search-filter"` with the flag ABSENT, which is the axis's
+own negative control.
+
+**The denied build and the pre-`[ENG-ABS]` compiler's output differ by
+exactly two lines**, the `_DFA_MATCH` stamp every `abi` 10 DFA artifact
+carries and the `rx_info.match_form` field every `abi` 10 artifact
+carries. That is the whole of the axis's footprint on an artifact it
+declines, and it is what makes the denied build the identity
+comparison's control — a BYTE-IDENTITY claim against the older compiler
+would be false, which is D81 (selection facts are stamped
+unconditionally) rather than an oversight.
+
 ## 3. The DFA side's own stamps
 
 **CLOSED 2026-08-25 by plan row `[DD-13]`; this section stated the gap while
@@ -799,6 +875,19 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   decision for a header-less consumer, no such consumer reads them yet, and
   match_api.md §6.3 states the trigger that would make this one owed.
 
+- `RX_DFA_MATCH` (`[ENG-ABS]`, 2026-08-29) names which of the two forms
+  the artifact's `<prefix>_match` takes — `"unwrapped"` (its own anchored
+  machine, run from `ctx->pos`) or `"search-filter"` (the unanchored
+  search with non-`ctx->pos` starts rejected). §2.15 above is the axis and
+  `docs/design/anchored_match_unwrapped.md` the design. **It DOES have an
+  `rx_info` mirror** (`match_form`), unlike the two stamps above, and the
+  reason is the trigger `match_api.md` §6.3 named: this one is a
+  caller-visible COST property of an entry point the caller calls, not an
+  internal encoding choice — §3.2's worst case belongs to one of its two
+  values and a header-less consumer needs to know which it linked.
+  **It is also the one `RX_DFA_*` stamp a HYBRID does not carry** (§3.1
+  below), because a hybrid's `_match` is the VM's own anchored body.
+
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
 forced — `rx_info.engine_why` is `NULL` there for the same reason.
@@ -821,8 +910,17 @@ $ build/pcrec -p rx -o - -- 'a(b|c)+d' | grep -E '^#define RX_(ENGINE|VM_PREFILT
 #define RX_VM_PREFILTER "hybrid"
 #define RX_DFA_SCAN "unanchored"
 #define RX_DFA_PREFILTER "memchr"
+#define RX_DFA_PREFILTER_OFFSETS "none"
 #define RX_DFA_TABLE "premultiplied"
 ```
+
+**`RX_DFA_MATCH` IS ABSENT ABOVE, AND THAT IS THE ONE `_DFA_*` STAMP A
+HYBRID DOES NOT CARRY** (`[ENG-ABS]`, 2026-08-29). The four stamps in that
+listing describe a DFA SCAN, and a hybrid contains one. `RX_DFA_MATCH`
+describes the artifact's `<prefix>_match` ENTRY, and a hybrid's is the VM's
+own anchored body — a different mechanism with a different value set. Its
+iff is `RX_ENGINE "dfa"`, and `rx_info.match_form` is `NULL` here where
+`rx_info.scan` is not.
 
 The two prefilter macros are **two different selections**: `_VM_PREFILTER`
 says whether the VM runs a capture-erased DFA ahead of its program at all,
@@ -894,6 +992,7 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_TIERED_ENTRY` | `-fno-tiered-entry` | §2.12 |
 | `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
 | `flags` bit `PCREC_NO_OFFSET_SKIP` | `-fno-offset-skip` | §2.14 |
+| `flags` bit `PCREC_NO_ANCHORED_DFA` | `-fno-anchored-dfa` | §2.15 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
 

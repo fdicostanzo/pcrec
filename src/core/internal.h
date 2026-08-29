@@ -1192,6 +1192,25 @@ typedef struct {
     bool     clsctx;
     int      maxstates;/* engine-dependent cap (R1 A-3): table-mode machines
                           afford far more states than computed-goto ones */
+    /* [ENG-ABS] IS THIS MACHINE OPTIONAL, i.e. may the compile continue
+     * without it? False on every machine the ENGINE needs — the forward and
+     * reverse pair, ENG_ATTEMPT's single machine — and true only on the
+     * anchored MATCH-HERE machine, which is a FORM the emitter may or may not
+     * select (docs/design/anchored_match_unwrapped.md §5.2).
+     *
+     * It is read at exactly one place: `intern`'s two "pattern too complex"
+     * sites, where an optional machine RECORDS the overflow and returns
+     * instead of `ctx_fail`ing. That keeps `[SEL-1]`'s own record and both
+     * diagnostics character-for-character unchanged, and it is why a pattern
+     * that compiles today cannot start failing because an optional machine
+     * did not fit. */
+    bool     optional;
+    /* [ENG-ABS] Set by `intern` when an OPTIONAL machine hit a cap. The
+     * machine is then partially built and must not be emitted; the emitter's
+     * axis-G candidate reads this (through `Job.anchored_ok`) and selects the
+     * search-and-filter fallback. Never set on a mandatory machine — that
+     * path still `ctx_fail`s. */
+    bool     overflowed;
     int     *tab;      /* hash table (heap) */
     size_t   tabcap;
 } Dfa;
@@ -1222,6 +1241,18 @@ typedef struct {
     Nfa    rnfa;     /* reversed-pattern NFA (ENG_UNANCH only) */
     Dfa    dfa;      /* forward DFA */
     Dfa    rdfa;     /* reverse DFA, non-pruning (ENG_UNANCH only) */
+    /* [ENG-ABS] THE MATCH-HERE MACHINE (ENG_UNANCH only): the SAME subset
+     * construction over the SAME `nfa`, rooted at `nfa.anch_start` — the
+     * pattern's own first state, which `nfa_wrap_unanchored` deliberately
+     * leaves addressable — so it is the forward machine WITHOUT the
+     * start-anywhere self-loop. `<prefix>_match` runs it from `ctx->pos` and
+     * needs no reverse pass, because the start is the question rather than an
+     * answer. docs/design/anchored_match_unwrapped.md §2/§3. */
+    Dfa    adfa;
+    /* [ENG-ABS] Did that machine BUILD, on an artifact whose `_match` this
+     * emitter writes? The emitter's axis-G `unwrapped` candidate is exactly
+     * this predicate; false selects the search-and-filter fallback. */
+    bool   anchored_ok;
     int    engine;   /* PCREC_ENG_*: which DFA SHAPE (unanch/attempt) */
     EngineFit fit;   /* [M4.5b] which ENGINE (dfa/vm), and why */
     /* [OPT-ALTCLS] D46 stamp source, filled by src/opt/altcls.c BEFORE
@@ -3151,7 +3182,8 @@ size_t pcrec_dfa_axis_view_cands(PcrecAxisCand *out, size_t cap);       /* axis 
 size_t pcrec_dfa_axis_seed_cands(PcrecAxisCand *out, size_t cap);       /* axis D */
 size_t pcrec_dfa_axis_accept_cands(PcrecAxisCand *out, size_t cap);     /* axis E */
 size_t pcrec_dfa_axis_direction_cands(PcrecAxisCand *out, size_t cap);  /* axis F */
-/* `src/parse/axes_dump.c` — renders the six DFA layer-1 axes above plus the
+size_t pcrec_dfa_axis_match_cands(PcrecAxisCand *out, size_t cap);      /* axis G */
+/* `src/parse/axes_dump.c` — renders the seven DFA layer-1 axes above plus the
  * VM/engine-selection axes (bits 4-14, and the coarse `--engine=` axis) as
  * one TSV, `docs/spec/table_contract.md`'s wire format. Caller frees. */
 char *pcrec_axes_tsv(void);
@@ -3213,8 +3245,19 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
 bool nfa_has_asserts(const Nfa *nfa);
 bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
+/* [ENG-ABS] `root` and `optional` are PARAMETERS rather than a second
+ * construction. `root` used to be `nfa->start` implicitly; every call site now
+ * states which start state its machine is rooted at, which is the whole of
+ * what makes the anchored MATCH-HERE machine a parameter of this function and
+ * not a copy of it. `optional` is documented on `Dfa.optional`. */
 void pcrec_build_dfa(Ctx *cx, Nfa *nfa, Dfa *dfa,   /* src/ir/dfa.c */
-                     bool prune, bool reverse, int maxstates);
+                     bool prune, bool reverse, int maxstates,
+                     int root, bool optional);
+
+/* [ENG-ABS] What `intern` returns to an OPTIONAL machine that has overflowed:
+ * the value `DState.tr[]` already carries for "dead", so a partially built
+ * optional machine is well-formed rather than corrupt on the way out. */
+enum { PCREC_DFA_DEAD = -1 };
 void pcrec_minimize_dfa(Ctx *cx, Dfa *dfa);         /* src/opt/minimize.c */
 void pcrec_emit_dfa(Ctx *cx);                       /* src/gen/emit_dfa.c -> job->csb/hsb */
 

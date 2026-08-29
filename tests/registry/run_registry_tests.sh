@@ -317,13 +317,6 @@ axesrc=${PIPESTATUS[0]}
 if [ "$axesrc" -ne 0 ]; then
     rc=1
 fi
-# [ART-SIZE, PROVISIONAL] 59 -> 62: bit 18's `size-term` axis added two
-# candidate rows and their checks. THIS NUMBER IS PROVISIONAL and must be
-# RE-DERIVED at the [ENG-ABS] rebase, not carried forward: that row lands
-# first, takes bit 17 and moves this count itself (59 -> 64 by its own
-# accounting), so the final value is its number plus this row's rows — read
-# from a run, never arithmetic on two guesses.
-#
 # [manager landing, 2026-08-28 union battery] 53 -> 59: [OPT-K]'s bit 16 joined the
 # dump (six more named checks) and the check's own bound became unbounded; the
 # battery's make test and san both tripped this guard while every sub-script
@@ -336,17 +329,22 @@ fi
 # bit constants' own pair of checks (RUNG/STRAT/PRUNE, sourced from
 # src/gen/emit_dfa.c's literal #define block rather than lib/pcrec.h —
 # those nine are emitted-artifact text, not in the public header at all).
+# +5 at [ENG-ABS] (2026-08-29), 59 -> 64: axis G (`match`) contributes two
+# CANDIDATE rows to the per-row sweep (`unwrapped`, `search-filter`), its
+# `PCREC_NO_ANCHORED_DFA` bit 17 joins the two bit-set sweeps as a member
+# rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
+# (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 62 ]; then
+if [ "$axesn" -ne 64 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 62." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 64." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (62 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (64 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 62 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 64 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi

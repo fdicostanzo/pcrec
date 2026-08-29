@@ -194,6 +194,12 @@ static void job_cleanup(Ctx *cx)
         free(cx->job->dfa.tab);
         free(cx->job->rdfa.st);
         free(cx->job->rdfa.tab);
+        /* [ENG-ABS] the optional MATCH-HERE machine, freed on exactly the same
+         * terms — it is heap-held for longjmp cleanup's sake like the two
+         * above, and an OVERFLOWED one still owns whatever it allocated before
+         * it stopped. */
+        free(cx->job->adfa.st);
+        free(cx->job->adfa.tab);
         sb_free(&cx->job->csb);
         sb_free(&cx->job->hsb);
         sb_free(&cx->job->vmsb);
@@ -210,6 +216,70 @@ static void job_cleanup(Ctx *cx)
         cx->job = NULL;
     }
     arena_free(&cx->arena);
+}
+
+/* [ENG-ABS] THE OPTIONAL MATCH-HERE MACHINE (docs/design/anchored_match_
+ * unwrapped.md §2, §5.2).
+ *
+ * A DFA artifact's `<prefix>_match` promises a match at exactly `ctx->pos`.
+ * It used to reach that by running the UNANCHORED search and rejecting any
+ * match whose start is not `ctx->pos` — correct, but it pays a reverse pass
+ * whose only job is to recover a start the caller already gave, and a failing
+ * probe can skim the rest of the subject. This machine is the answer: the SAME
+ * subset construction over the SAME NFA, rooted at `nfa.anch_start` — the
+ * pattern's own first state, which `nfa_wrap_unanchored` deliberately leaves
+ * addressable — so it is the forward machine WITHOUT the start-anywhere
+ * self-loop, and running it from `ctx->pos` needs no reverse pass at all.
+ *
+ * FOUR THINGS ABOUT ITS PLACEMENT, each load-bearing:
+ *
+ * 1. IT IS BUILT LAST. `PCREC_MAX_SUBSET_ELEMS` is a per-COMPILE budget, so an
+ *    optional machine built FIRST could push a MANDATORY one over it and
+ *    refuse a pattern that compiles today. Built last, it cannot.
+ * 2. IT IS OPTIONAL, so `intern`'s two cap sites record and return instead of
+ *    `ctx_fail`ing (src/ir/dfa.c). An overflow here is a SELECTION OUTCOME —
+ *    `<prefix>_match` keeps the search-and-filter form, stamped — never a
+ *    diagnostic.
+ * 3. THE OVERFLOW RECORD IS SAVED AND RESTORED. `Ctx.dfa_overflowed` means
+ *    "the DFA ENGINE cannot compile this pattern", which is FALSE when only
+ *    this machine overflowed; leaving it set would make a later, unrelated
+ *    `ctx_fail` take [SEL-1]'s retry path for the wrong reason. `subset_elems`
+ *    is deliberately NOT restored — the memory really was spent.
+ * 4. THE FLAG IS READ HERE AS WELL AS AT THE EMITTER'S CANDIDATE, and the two
+ *    are not two decisions. The emitter's `deny` field on the `unwrapped`
+ *    candidate is the ONE decision point (D82); this gate only avoids paying
+ *    for a machine that decision has already discarded, and it can only ever
+ *    agree with it, because not building leaves `anchored_ok` false and
+ *    `anchored_ok` false makes that same candidate inapplicable.
+ *
+ * NOT BUILT FOR A VM HYBRID. A hybrid inlines this file's DFA as a PREFILTER;
+ * its `<prefix>_match` is the VM's own anchored body and has never had the
+ * skim this machine removes. `fit.chosen == ENGM_DFA` is the predicate for
+ * "the DFA emitter writes this artifact's `_match`". */
+static void build_anchored_dfa(Ctx *cx)
+{
+    if (cx->job->fit.chosen != ENGM_DFA) return;
+    if (cx->opt->flags & PCREC_NO_ANCHORED_DFA) return;
+
+    bool  saved_overflowed = cx->dfa_overflowed;
+    char  saved_why[sizeof cx->dfa_overflow_why];
+    memcpy(saved_why, cx->dfa_overflow_why, sizeof saved_why);
+
+    /* `PCREC_ANCHORED_MAX_STATES` IS `PCREC_MAX_DFA_STATES_TABLE` in every
+     * shipped build (src/core/limits.h). It exists as a name so ONE consumer —
+     * tests/codegen/run_anchored_match.sh — can lower it and drive the
+     * overflow arm, whose real-world population is zero because the caps are
+     * shared and the mandatory machines reach them first. */
+    pcrec_build_dfa(cx, &cx->job->nfa, &cx->job->adfa, true, false,
+                    PCREC_ANCHORED_MAX_STATES,
+                    cx->job->nfa.anch_start, true);
+
+    cx->dfa_overflowed = saved_overflowed;
+    memcpy(cx->dfa_overflow_why, saved_why, sizeof saved_why);
+
+    if (cx->job->adfa.overflowed) return;   /* stays `anchored_ok == false` */
+    pcrec_minimize_dfa(cx, &cx->job->adfa);
+    cx->job->anchored_ok = true;
 }
 
 /* [M4.5c] ONE driver, two callers. `pcrec_compile` and DD-8's `pcrec_emit_ir`
@@ -697,15 +767,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                 nfa_wrap_unanchored(&cx, &cx.job->nfa);
                 pcrec_build_nfa(&cx, root, &cx.job->rnfa, true);
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
-                                PCREC_MAX_DFA_STATES_TABLE);
+                                PCREC_MAX_DFA_STATES_TABLE,
+                                cx.job->nfa.start, false);
                 pcrec_build_dfa(&cx, &cx.job->rnfa, &cx.job->rdfa, false, true,
-                                PCREC_MAX_DFA_STATES_TABLE);
+                                PCREC_MAX_DFA_STATES_TABLE,
+                                cx.job->rnfa.start, false);
                 pcrec_minimize_dfa(&cx, &cx.job->dfa);
                 pcrec_minimize_dfa(&cx, &cx.job->rdfa);
+                build_anchored_dfa(&cx);
             } else {
                 cx.job->engine = PCREC_ENG_ATTEMPT;
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
-                                PCREC_MAX_DFA_STATES_GOTO);
+                                PCREC_MAX_DFA_STATES_GOTO,
+                                cx.job->nfa.start, false);
                 pcrec_minimize_dfa(&cx, &cx.job->dfa);
             }
         }

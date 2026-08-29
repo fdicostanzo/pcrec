@@ -39,6 +39,23 @@ append-only or historical records.
   §14's V1-V7 failing-direction measurements. ACCEPTED and built 2026-08-12
   — see cli/CLAUDE.md and src/parse/CLAUDE.md's `syntax_dump.c` entry for
   what landed.
+- `anchored_match_unwrapped.md` — [ENG-ABS]'s SECOND MECHANISM, the note of
+  record (lane engabs, 2026-08-29; landed): anchored match-here via the
+  UNWRAPPED forward DFA. Opened on `[OPT-2]` STEP 2's measurement (the reverse
+  pass at ~50 % of the DFA's cost on every matching subject). §2 names the
+  THIRD machine's ROLE and derives it as a PARAMETER of the existing subset
+  construction rooted at `Nfa.anch_start`; **§3 is the ACCEPT-DISCIPLINE
+  IDENTITY ARGUMENT** in four named steps (the wrapped machine's state factors
+  as the anchored machine's followed by later starts; accept-pruning deletes
+  every later start the instant a `ctx->pos` thread accepts; hence the two last
+  accepts coincide; hence the absence of one means no match begins there) plus
+  views, seed, zero-length, the prefilter's unsoundness here, and find-all;
+  §5.2 rules a cap overflow a SELECTION OUTCOME with the three properties that
+  shape has and a `try`/`catch` at the site would not; §6 the `abi` 9→10 four
+  sites; §7 the measurement; §9 the checks and the vacuity trap they are built
+  against. Its §8 and §10 carry three OPEN items measured and deliberately not
+  built (D77): class-table sharing, `ENG_ATTEMPT`'s own match-here form, and
+  `[OPT-2]` lever (b).
 - `design_callout_abi.md` — PROPOSAL (eighteenth session, 2026-08-14):
   the callout-ABI ↔ match-here alignment owed to M4's match-API freeze
   ([M4-CALLOUTS] amendment), incorporating Frank's three same-day

@@ -59,7 +59,34 @@ the corpus. `size_bytes` is the SELF-CONTAINED artifact's size (`.c`+`.h`
 combined — the census's own correction, docs/dev/artifact_size_census.md
 §6) with COMMENTS EXCLUDED, per `tests/lib/size_count.sh`'s definition
 (verified byte-exact against the census's own Python classifier — see that
-file's header and docs/testing.md's transcript). `engine`/`rungs`/
+file's header and docs/testing.md's transcript).
+
+**THE LOG'S POPULATION IS THE `.rxt` CORPUS, AND THE TREE IS BIGGER THAN
+IT.** One row per corpus compile — so a pattern that lives anywhere ELSE gets
+no row, and the tripwire's "worst size" is worst of THIS population, not of
+everything pcrec compiles in this tree. MEASURED at r41 (2026-08-29):
+`tests/resource/run_resource_tests.sh`'s giant-repeat shapes live in a BASH
+ARRAY, and one of them — `[a-z]{0,30000}` — is the largest artifact the tree
+produces at **1,336,143 B**, larger than any of the log's 2,875 rows and
+within 5 % of `MAX_SIZE_BYTES`. An [ENG-ABS] draft briefly took it to
+1,984,382 B, **over the pin**, and the tripwire could not have said so. If a
+change can grow an artifact, ask which artifacts it can grow before reading
+this log's worst row as the tree's worst.
+
+**"COMMENTS EXCLUDED" IS LINE-BASED, AND AN EMITTER AUTHOR HAS TO KNOW
+WHICH LINE.** The classifier recognises a line that STARTS a block (`/*`, or
+`//`) and tracks the block to its end. A comment placed ABOVE a declaration
+therefore costs zero counted bytes; the CONTINUATION lines of a comment that
+begins after code on the same line — the `int x;   /* first line` … shape —
+do not start a block and are counted as CODE. MEASURED at [ENG-ABS]
+(2026-08-29): one new `rx_info` member whose comment used the trailing shape
+put **+691 B into every one of the corpus's 2,875 artifacts** and moved the
+corpus total 7.82 %; moving the same comment above the member took the
+per-artifact cost to 38 B. Nothing is wrong with the classifier — a trailing
+comment's continuation lines genuinely are not a block opener — but "the
+emitted comments are free" is true only of the first shape, and the emitted
+`struct rx_info` still carries two members (`scan`, `prefilter`) in the
+second. `engine`/`rungs`/
 `prefilter` are the D46 stamps (`RX_ENGINE`/`RX_VM_RUNGS`/
 `RX_VM_PREFILTER`) read straight off the artifact; empty when the artifact
 has no such stamp (a DFA artifact carries no rungs/prefilter at all).

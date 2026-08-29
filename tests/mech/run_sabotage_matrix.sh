@@ -165,6 +165,16 @@
 #     anywhere in this tree, and S154's halved trail charge changes no answer
 #     until a capacity is crossed, which a fixed-length corpus cell cannot
 #     reach on purpose.
+#   anchdiff  anchoredmatch          — added 2026-08-29 ([ENG-ABS]); `anchdiff`
+#     runs tests/anchored/run_anchored_diff.sh and `anchoredmatch`
+#     tests/codegen/run_anchored_match.sh. Wired as their OWN arms for
+#     `offsetskip`'s reason, and with a sharper version of it: MEASURED at the
+#     row (S189), an anchored-form defect that changes ANSWERS leaves the
+#     corpus green AND the structural check green, because the corpus drives
+#     `<prefix>_search` and the structural check reads the artifact's shape.
+#     `anchdiff` is the only instrument in the tree that can be red for it, so
+#     folding it into `harness` or `codegen` would report it as a sabotage of
+#     something else — or, worse, as no sabotage at all.
 #   framebuffer  stackdepth        — added 2026-08-25 ([DD-14.FB], D71 item 2);
 #     registered BEFORE the six rows that need them, per the R31 C11 lesson two
 #     paragraphs down. `framebuffer` runs tests/recursion/run_frame_buffer.sh
@@ -884,6 +894,37 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/offsetskip.log" | grep -oE '[0-9]+')"
                 suite_bits+=("offsetskip:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            anchoredmatch)
+                # [ENG-ABS] tests/codegen/run_anchored_match.sh — the anchored
+                # match-here FORM held to the artifact. Its own arm for the
+                # reason `offsetskip` gives one line up.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_anchored_match.sh" \
+                    > "$work/anchoredmatch.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/anchoredmatch.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/anchoredmatch.log" | grep -oE '[0-9]+')"
+                suite_bits+=("anchoredmatch:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            anchdiff)
+                # [ENG-ABS] tests/anchored/run_anchored_diff.sh — the ANSWER
+                # half, and the arm whose absence would make an entire class of
+                # defect invisible. MEASURED at S189: nothing else in this tree
+                # goes red when `<prefix>_match` reports the wrong LENGTH,
+                # because the corpus drives `<prefix>_search` and every
+                # structural check reads the artifact's shape.
+                #
+                # ITS `harness` AND `anchoredmatch` ARMS ARE EXPECTED GREEN ON
+                # ITS OWN ROW. A row scoring `anchdiff:Nfail` with
+                # `corpus:0fail` is this arm working, not a half-detection.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/anchored/run_anchored_diff.sh" \
+                    > "$work/anchdiff.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
+                suite_bits+=("anchdiff:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

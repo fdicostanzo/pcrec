@@ -63,5 +63,9 @@ tests/backrefs/run_dupnames_diff.sh
 tests/lookaround/run_lookaround_diff.sh
 tests/lookaround/run_expansion_diff.sh
 tests/recursion/run_recursion_diff.sh
+# [ENG-ABS] the anchored match-here form's ANSWER-level differential. It
+# compiles and RUNS generated C (two artifacts per pattern in one TU), which
+# is the same reason every diff script above is here.
+tests/anchored/run_anchored_diff.sh
 tests/lib/run_gen_timeout_tests.sh
 tests/known_fail/run_known_fail.sh

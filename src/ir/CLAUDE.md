@@ -22,7 +22,22 @@ Intermediate representation: AST → priority Thompson NFA (nfa.c) → DFA via p
   order) and `nst` is called in the same places, so the NFA is bit-identical —
   verified byte-for-byte on 572 corpus artifacts. `frag_cat2` already used
   this idiom; that loop was the one site that had not. Otherwise: split edge order encodes choice preference (D3). Can compile the pattern REVERSED (concat order flipped) for the D7 reverse machine; nfa_wrap_unanchored() adds the lowest-priority start self-loop for one-pass unanchored search; iterative CAT/ALT spine flattening (R1 R-2). M2.8 adds a priority-preserving prefix TRIE for flat alternations (trie_build/trie_key), with two soundness guards documented in D9 — index-range partitioning around a branch that ends mid-trie, and a pairwise-disjointness test before reordering groups. In reverse mode the per-branch key is reversed, so it factors common SUFFIXES. The whole factoring path has a compile-time off switch, `-DPCREC_NO_TRIE` (TRIE_ENABLED), which exists solely so tests/codegen/run_trie_identity.sh can build a reference compiler and diff emitted C against it — the trie must be output-preserving, and that diff is a far stronger soundness net than subject sampling. It is never defined in a shipped build, and the shipped object's code sections are byte-identical with the switch present
-- **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start); EOL-variant states for `$` (R1 S-C1/S-C2); per-engine state caps grounded in emitter cost (R1 A-3), **plus [M4.7b]'s
+- **dfa.c** — priority subset construction with byte equivalence classes; `prune` on for forward machines (leftmost-first accept-pruning), off for the reverse machine (must keep all threads to find the earliest match start);
+  **[ENG-ABS] (2026-08-29) `pcrec_build_dfa` TAKES ITS ROOT AND ITS
+  OPTIONALITY AS PARAMETERS, and neither is a special case.** `root` used to be
+  `nfa->start` implicitly — the state `nfa_wrap_unanchored` installs. The
+  anchored MATCH-HERE machine
+  (`docs/design/anchored_match_unwrapped.md`) is this SAME construction rooted
+  at `nfa->anch_start` instead, i.e. the pattern's own first state, which the
+  wrap deliberately leaves addressable; every call site now STATES its root, and
+  nothing in this file knows the difference. `optional` is read at exactly one
+  place — `intern`'s two "pattern too complex" sites, where an optional machine
+  RECORDS the overflow on `Dfa.overflowed` and returns `PCREC_DFA_DEAD` instead
+  of `ctx_fail`ing, leaving `[SEL-1]`'s record and both diagnostics
+  character-for-character unchanged. That one line is what makes an optional
+  machine's cap overflow a SELECTION OUTCOME rather than a refusal, and it is
+  why a pattern that compiles today cannot start failing because a machine
+  nothing needs did not fit. The worklist loop returns on `d->overflowed`; EOL-variant states for `$` (R1 S-C1/S-C2); per-engine state caps grounded in emitter cost (R1 A-3), **plus [M4.7b]'s
   `PCREC_MAX_SUBSET_ELEMS` charged in `intern()` as each state's list is
   interned** — the state caps bound how many states exist, this bounds what
   they COST, and on the exact-repeat family those are different numbers by a

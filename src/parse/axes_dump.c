@@ -97,6 +97,10 @@ static const AxisDesc AXIS_DESC[] = {
 
     { "direction", "forward", "always — finds where a match ENDS" },
     { "direction", "reverse", "always — finds where that match BEGINS" },
+    { "direction", "anchored", "always on a DFA artifact that selects the unwrapped match-here form ([ENG-ABS]) — finds where the match beginning at ctx->pos ends" },
+
+    { "match", "unwrapped", "the artifact's own ENG_UNANCH _match, and its anchored machine built inside the DFA caps ([ENG-ABS])" },
+    { "match", "search-filter", "always (fallback) — ENG_ATTEMPT, the empty engine, an anchored machine over a cap, or the deny flag" },
 };
 #define N_AXIS_DESC (sizeof AXIS_DESC / sizeof AXIS_DESC[0])
 
@@ -120,6 +124,10 @@ static const char *stamp_macro_of(const char *axis)
 {
     if (!strcmp(axis, "table")) return "RX_DFA_TABLE";
     if (!strcmp(axis, "prefilter")) return "RX_DFA_PREFILTER";
+    /* [ENG-ABS] axis G HAS a per-artifact stamp, unlike view/seed/accept/
+     * direction — its value is a caller-visible cost property of
+     * `<prefix>_match` (spec §3.2), not an emitter-internal decision. */
+    if (!strcmp(axis, "match")) return "RX_DFA_MATCH";
     return "";
 }
 
@@ -138,6 +146,8 @@ static const char *cli_flag_of(const char *axis, const char *cand)
 {
     if (!strcmp(axis, "table") && !strcmp(cand, "premultiplied"))
         return "-fno-premul-table";
+    if (!strcmp(axis, "match") && !strcmp(cand, "unwrapped"))
+        return "-fno-anchored-dfa";
     if (!strcmp(axis, "prefilter") &&
         (!strcmp(cand, "offset-set") || !strcmp(cand, "offset-set-bounded")))
         return "-fno-offset-skip";
@@ -167,6 +177,7 @@ static const struct { unsigned v; const char *n; } DENY_NAMES[] = {
     { PCREC_NO_TIERED_ENTRY, "PCREC_NO_TIERED_ENTRY" },
     { PCREC_NO_PREMUL_TABLE, "PCREC_NO_PREMUL_TABLE" },
     { PCREC_NO_OFFSET_SKIP, "PCREC_NO_OFFSET_SKIP" },
+    { PCREC_NO_ANCHORED_DFA, "PCREC_NO_ANCHORED_DFA" },
     { PCREC_NO_SIZE_TERM, "PCREC_NO_SIZE_TERM" },
 };
 #define N_DENY_NAMES (sizeof DENY_NAMES / sizeof DENY_NAMES[0])
@@ -440,6 +451,7 @@ char *pcrec_axes_tsv(void)
     emit_dfa_list_axis(&sb, "seed", "list", pcrec_dfa_axis_seed_cands);
     emit_dfa_list_axis(&sb, "accept", "list", pcrec_dfa_axis_accept_cands);
     emit_dfa_list_axis(&sb, "direction", "both", pcrec_dfa_axis_direction_cands);
+    emit_dfa_list_axis(&sb, "match", "list", pcrec_dfa_axis_match_cands);
 
     emit_predicate_axes(&sb);
 

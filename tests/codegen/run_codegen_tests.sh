@@ -1808,22 +1808,46 @@ else
     bad "[M6.2-KRESET rule 3]: pcrec failed to compile the fixture 'a\\Kb'"
 fi
 
-# --- rule 3b: the DFA artifact's entry is UNTOUCHED --------------------------
+# --- rule 3b: the DFA artifact's entry, in whichever of its TWO forms -------
 #
 # The other half of rule 3, and it can only be checked on a \K-FREE pattern
-# because a \K pattern is VM-forced and has no DFA entry at all. The DFA's
-# match-here entry is the shape §6.3 quotes — rx_search plus a start filter
-# plus a caps-derived return — and wave E must not have touched it: the filter
-# and the return are CORRECT there, because no DFA artifact can contain a \K.
+# because a \K pattern is VM-forced and has no DFA entry at all. That
+# unreachability is the whole content of this rule: whatever shape the DFA's
+# match-here entry has, §6.3's \K hazards cannot arise in it.
+#
+# **[ENG-ABS], 2026-08-29: THE DFA ENTRY NOW HAS TWO SHAPES, and this rule had
+# to grow an arm rather than be deleted.** Wave E's version asserted the
+# search-and-filter body VERBATIM — `rx_search` plus a `caps[0][0] != ctx->pos`
+# filter plus a caps-derived return — on the argument that wave E must not have
+# touched it. [ENG-ABS] touches it deliberately: where the artifact carries its
+# own anchored machine (axis G's `unwrapped`), `rx_match` runs that machine from
+# ctx->pos and there is no search, no filter and no caps arithmetic to check.
+#
+# THE ARM IS CHOSEN FROM MATCHER TEXT, never from RX_DFA_MATCH — reading the
+# stamp to decide which body to check would let a wrong stamp select the arm
+# that agrees with it. `rx_search(` inside the body IS the search-and-filter
+# form; its absence is the anchored one, and each arm then asserts the SHAPE
+# that form must have, so neither can pass by being the other.
 if pcrec_run "$PCREC" -p rx --no-captures -o "$WORKDIR/dent.c" -- 'a(b|c)d' >/dev/null 2>&1; then
     awk '/^ptrdiff_t rx_match\(const rx_ctx \*ctx\)/,/^}/' "$WORKDIR/dent.c" > "$WORKDIR/dent.match"
     if [ ! -s "$WORKDIR/dent.match" ]; then
         bad "[M6.2-KRESET rule 3b]: could not extract rx_match from the DFA artifact"
-    elif ! grep -qF '(size_t)capture_spans[0][0] != ctx->pos' "$WORKDIR/dent.match" \
-      || ! grep -qF 'return capture_spans[0][1] - capture_spans[0][0];' "$WORKDIR/dent.match"; then
-        bad "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match no longer carries the start filter and the caps-derived return verbatim. Wave E changed nothing there BY DESIGN — a \\K pattern is VM-forced, so the shape §6.3 quotes as broken-under-\\K is unreachable-with-\\K and correct as it stands"
+    elif grep -qF 'rx_search(' "$WORKDIR/dent.match"; then
+        if ! grep -qF '(size_t)capture_spans[0][0] != ctx->pos' "$WORKDIR/dent.match" \
+          || ! grep -qF 'return capture_spans[0][1] - capture_spans[0][0];' "$WORKDIR/dent.match"; then
+            bad "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match calls rx_search but no longer carries the start filter and the caps-derived return verbatim — that is neither of the two documented forms (spec §3.2). Under search-and-filter the filter and the return are CORRECT, because no DFA artifact can contain a \\K"
+        else
+            ok "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match is the SEARCH-AND-FILTER form and carries its start filter and caps-derived return verbatim — correct there precisely because a \\K pattern can never reach that engine"
+        fi
     else
-        ok "[M6.2-KRESET rule 3b]: the DFA artifact's rx_match still carries its start filter and its caps-derived return, verbatim and untouched by wave E — correct there precisely because a \\K pattern can never reach that engine"
+        if ! grep -qF 'size_t search_from = ctx->pos;' "$WORKDIR/dent.match" \
+          || ! grep -qF 'return (ptrdiff_t)(last_accept_position - search_from);' "$WORKDIR/dent.match"; then
+            bad "[M6.2-KRESET rule 3b] ([ENG-ABS]): the DFA artifact's rx_match calls no rx_search but is not the anchored form either — it must bind search_from from ctx->pos and return the scan's own last accept minus it (docs/design/anchored_match_unwrapped.md §3). A body that is neither documented form is one nothing in this tree describes"
+        elif grep -qF 'capture_spans[0][0]' "$WORKDIR/dent.match"; then
+            bad "[M6.2-KRESET rule 3b] ([ENG-ABS]): the DFA artifact's anchored rx_match still reads capture_spans[0][0]. The anchored form knows its start — it IS ctx->pos — so a caps-derived start there is the search form's shape imported into a body that has no search to derive it from"
+        else
+            ok "[M6.2-KRESET rule 3b] ([ENG-ABS]): the DFA artifact's rx_match is the UNWRAPPED anchored form — it binds search_from from ctx->pos, runs its own machine and returns that scan's last accept, with no rx_search and no caps arithmetic. §6.3's \\K hazards are unreachable here for the same reason they are unreachable in the other form: a \\K pattern is VM-forced"
+        fi
     fi
 else
     bad "[M6.2-KRESET rule 3b]: pcrec failed to compile the DFA fixture 'a(b|c)d'"
@@ -2680,9 +2704,9 @@ if pcrec_run "$PCREC" -p rx --features all --engine=vm -o "$WORKDIR/fb_vm.c" -- 
     # control-shares-a-source failure (learnings.md §3). Updating it is part of
     # the bump, and this check firing is how a bump that forgot a doc gets
     # noticed. It DID fire on [DD-13c]'s first `make test-codegen`.
-    ABI_EXPECT=9
+    ABI_EXPECT=10
     if [ "$fb_abi_vm" != "$ABI_EXPECT" ] || [ "$fb_abi_dfa" != "$ABI_EXPECT" ]; then
-        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed), and by [OPT-K]'s offset-k candidate-start skip (8->9 — a <PREFIX>_DFA_PREFILTER_OFFSETS stamp line on EVERY DFA artifact, plus, on an artifact that selects the form, a file-scope <prefix>_ofsskip block, up to three candidate tables and a changed prefilter body with a reseed in it)"
+        bad "[DD-14.FB] (§10.4): rx_info.abi is $fb_abi_vm (VM) / $fb_abi_dfa (DFA), expected $ABI_EXPECT on both — the emitted scaffolding's version (D76), bumped by [DD-14.FB]'s four sizing fields (2->3), by [DD-13]'s DFA selection stamps (3->4), by [OPT-1]'s two-tier entry (4->5), by [DD-13c]'s empty-scan value + hybrid scan stamps + the two rx_info mirrors (5->6), and by [OPT-3]'s pre-multiplied DFA transition table (6->7 — the FIRST bump that moves emitted PROGRAM bytes and not scaffolding only: the tables, the state variables, the dead test and the transition line, plus the new <PREFIX>_DFA_TABLE stamp), and by [ENG-FORM]'s opaque DFA state token (7->8 — the largest emitted-text event so far: a file-scope block of static inline state accessors per machine, and a scan loop rewritten against them, with no struct offset moved and no stamp VALUE changed), and by [OPT-K]'s offset-k candidate-start skip (8->9 — a <PREFIX>_DFA_PREFILTER_OFFSETS stamp line on EVERY DFA artifact, plus, on an artifact that selects the form, a file-scope <prefix>_ofsskip block, up to three candidate tables and a changed prefilter body with a reseed in it), and by [ENG-ABS]'s anchored match-here form (9->10 — a <PREFIX>_DFA_MATCH stamp line and an rx_info.match_form field on EVERY artifact, plus, on a DFA artifact that selects the form, a file-scope <prefix>_anchored_state accessor block, a THIRD machine's tables inside <prefix>_match, and rewritten _match/_match_caps bodies)"
     elif [ "$fb_fields" -ne 1 ]; then
         bad "[DD-14.FB]: rx_info's four sizing fields are missing, or a DFA artifact does not read them all as 0"
     else

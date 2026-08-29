@@ -17153,3 +17153,302 @@ rewritten. The day's yield in one line: a D6 panel found a miscompile
 before an emitter shipped, and the battery found eleven contract tests
 a fallback silently broke — neither visible to the lanes that wrote
 the code.
+
+#### Forty-fourth session, part 1 — wake; Frank's four rulings; [ART-SIZE] STEP 2 and [ENG-ABS]'s second mechanism OPENED, two opus lanes launched (2026-08-28 ~22:3x EDT)
+
+Woke on a clean main (017bf3d; no lanes, no worktrees, no cron; the
+bench outbox ends at O-7, already ruled via I-14 — I-15's three asks
+are with the bench). Frank asked "open decisions?"; the manager listed
+seven (two gates met and waiting on his word, five genuinely unruled)
+and Frank ruled: "Go 1&2. 3 depends on rxt format. 6 ok. 7 yes when we
+are at 1.0". Recorded f6e20da: (1) **[ART-SIZE] STEP 2 OPENED** —
+lane artsize3 (opus, worktree lane/artsize3), PHASE A is the design
+note `docs/design/artifact_size_term.md` only (the counter rung
+choosing K from a size model with nesting depth the trigger, `--unroll=K`
+the override; a hard emitted-size cap with a refusal as the last
+resort; the three census-§7 emitter levers PRICED against the corpus;
+stamps; identity gate as the control); the lane returns for the D6
+panel (r40) before any code — the [OPT-K] shape, because r39 found a
+miscompile in a design. (2) **[ENG-ABS] second mechanism OPENED** —
+lane engabs (opus, worktree lane/engabs): anchored match-here via the
+UNWRAPPED forward DFA from `ctx->pos`, no reverse pass; a short design
+note first (the accept-discipline identity argument in r39's
+name-the-state style; the overflow case is a [SEL-1]-shaped fallback to
+today's search+filter, stamped, never a refusal), then straight into
+code; abi 9→10 at the four D76 sites; `-fno-…` axis bit 17, registry
+59→60; the number to beat is [OPT-2] §(a)'s (at/below VM on matching
+subjects, ~0.57× on short valid emails) plus the failing-probe skim on
+a 1 MB subject. The first mechanism (`^`-absorption) stays gated on
+[BENCH-1]. [OPT-2] closes into this lane. (3) **[LIB] blocks on
+[DD-13b]** — "depends on rxt format"; the spine question is not re-asked
+until the format half lands. (4) [SPEC-1.9]'s in-place ruling
+CONFIRMED. (5) The abi number RESETS TO 1 at 1.0 — D81 addendum, on
+[REL-META]. NOT ruled (still open, not pressed): the sabotage-matrix
+re-run tiering (plan ~397) and the module-swap/row-deletion guard.
+Process: both lanes briefed with the scope mandate, WIP commits,
+gnutimeout/watchdog, async validation, targeted sections only during
+development and ONE full `make test` at delivery (the manager runs the
+union battery at merge; `battery_v2.sh` copied into this session's
+scratchpad `mgr/`); 10-minute stall-watchdog cron a5829291 up; Frank's
+keep-warm rule applies to artsize3 once it is held for the panel.
+
+#### Forty-fourth session, part 2 — the .rxt position paper; artsize3's note delivered and PANELED (r40: revision required); D84 (2026-08-28 ~23:2x EDT)
+
+THE .rxt FORMAT, on Frank's "use cases, then an outline, how it'd be
+used — I heard of a directory format but I'm not buying it": the
+manager's position paper docs/design/dd13_format/usecases_and_outline.md
+(6ea7f0f, then §6 follow-ups 8df684f / 8a2d242 / 90e2a05). Verdict:
+the flat file stays; ten line kinds in three demand-staged waves
+(`name`/`lib`/`(?&name)` composition; `include`/`@file:`/`mc`/`tag`
+sets; `config`/`variant`/`oracle` application); the DIRECTORY is a
+convention, the bench's sidecar is folded into `tag`/`variant`/`config`
+lines; two scopes only, cascade only inside `config … from`. Frank's
+same-evening refinements, all folded: `""` vs `<>` path spelling
+(local vs library path, the `-I` model); a target needs a NAME — first
+as `target [<prefix>]`, then §6.3 BOTH identities (the C prefix at
+link time, a new `rx_info.name` at runtime; an abi bump riding wave
+1), then §6.4 the cleaner cut: TARGETS ARE THEIR OWN FILE-LEVEL
+DECLARATIONS `target <prefix> = <name> [with <config>…]` — a pattern
+block carries no build marker; the same pattern under several configs
+(simd x86 / another cpu) is several target lines; a `lib`'d library's
+patterns are built under the USER's options; the lone-unnamed-block
+file is `target rx` by default. [LIB] blocks on this row ([DD-13b]).
+
+ARTSIZE3 DELIVERED the STEP 2 note (abb2a1f; 924 lines): a two-term
+size model (VM node count N, table entries E; median 2.4 % over 2,487
+artifacts), a K selection over N on a ladder (the size-vs-K curve is
+NON-MONOTONE), a NODE cap of 2,000 derived from D45 (a node costs gcc
+~5,930× a table entry — the witness at 55 s vs `a{1,31000}` at 0.34 s
+for 1.5× the bytes), all three census levers DECLINED on measurement
+(best 0.99 % median). r40 PANEL (three read-only critics; the reports
+came by MESSAGE — the harness refuses critics' file writes, and the
+final-report channel dropped every one of them, so each was asked to
+re-send; docs/dev/reviews/2026-08-28-r40-artsize-term.md, f4d5bf4):
+INSIDE the corpus every number reproduced to the digit; OUTSIDE it the
+design was wrong three independent ways, all before a line of emitter
+code — **F1** (critic-model, sonnet) the measurement instrument could
+not see the VM hybrid's `static const void *const rx_targets_N[11]`
+computed-goto jump tables nor its `rx_sN:` labels, so K41's SECOND
+fuzz-gate witness (1,214,333 B actual) was predicted at 118,240 B and
+NEITHER mechanism engages on a real, pinned oversize pattern — the
+hybrid form is in 1,262 of 2,487 corpus patterns, the corpus just
+never blows it up (the classifier's own regexes were the population
+nobody counted — check-design lesson, again); **S1** (critic-sem,
+opus) N does NOT exist before emission — `vm_count_slots` counts slots,
+`Vm.nodes` is charged during emission, the pre-pass mutates and can
+fail, and it runs 200 lines after the named site — so §11's code
+phase needs a node-counting pre-pass the note believed was free;
+**S2** K is NOT answer-identical on the give-up surface — measured
+minimum step budget 89→110 and `RX_TRAIL_FRAMES` 62→51 across K=1..8
+on `((a)|ab){12}c` (default-budget answers identical) — a D80
+contract change and a trap for the row's own new K-sweep gate; **S5**
+the materiality bar (bytes) can decline the descent that would have
+put a pattern under the cap (nodes) — the cap must re-run the ladder
+before refusing; **S4** the 15/15 ranking validation cannot fail (E is
+constant in K) — the ladder is argmin N, the model is load-bearing
+only for the threshold and the bar; **S6** the K41 bucket moves 2→1
+(w1 fixed by K=1, w2 declines); plus a ms/µs slip, an omitted residual
+range (−43 %), an un-archived fit script, two D80 hunks (cli.md's axis
+list, match_api §6.3's stamp bullet, limits.md §7's "compile time is
+not a contract"), `.abi` in every artifact's body, a stamp with four
+states behind one value, and the 131,072 threshold colliding with a
+constant that is ALSO aliased as PCREC_MAX_VM_REPLICATION_PRODUCT →
+120,000. Lane sent back with the full bar; holds the code phase.
+FRANK RULED Q2/Q4 → **D84** (07e695d): the cap is not deniable but
+OVERRIDABLE UPWARD (`--max-emit-nodes=N`, raise-only, ceilinged,
+stamped); and "a large byte count makes it unusable — also, the
+problem is unpredictable, which is worse" → shipped BYTES are their
+own concern: a SECOND, byte cap over the same model (`--max-emit-bytes`),
+predictability a stated requirement (refusal names predicted-vs-cap
+and the K/override that would pass; stamps; the size log), [OPT-4]
+owns shrinking witness 2's prefilter (K39). engabs: design note
+committed 22:2x, implementing since (emitter, structural check, form
+census, deny-flag diff); no report yet.
+
+#### Forty-fourth session, part 3 — engabs DELIVERED (targets met with room); r41 close panel launched; artsize3's second revision and the cap-set correction; D84 addenda (2026-08-28 ~23:5x EDT)
+
+ENGABS DELIVERED 4a44828 (21 commits; 47 files, +5,965/−3,689; tree
+clean): the unwrapped forward DFA as a third machine emitted for the
+`_match` family, `RX_DFA_MATCH` = unwrapped / search-filter
+unconditional on DFA artifacts with an `rx_info.match_form` mirror,
+`-fno-anchored-dfa` bit 17 (`--list-axes` 45 rows / 18 axes; registry
+59→64), abi 9→10 at all four D76 sites, a structural check with its
+own make section, the form census's axis G floored (unwrapped 780 /
+search-filter 150), an ANSWER-level differential in `tests/anchored/`,
+spec hunks in match_api.md §3.2/§3.3/§3.6/§6/§10 and limits.md, two
+stale "bits 4-15" prose mentions corrected to the derived 4-31, and a
+size-log finding (comment exclusion is LINE-based — a trailing
+multi-line comment's continuation lines count as CODE, +691 B per
+artifact from one rx_info member's comment shape). MEASURED against
+[OPT-2] §(a)'s numbers to beat: matching compliance subjects **1.031×**
+the VM (target ≤ 1.046×, from 2.077×); the 35 short valid emails
+**0.482×** — 2.07× FASTER than the VM (target ≤ 0.571×, from 1.207×);
+non-matching 2.306× → 1.550× (the remainder is the forward scan on
+near-miss emails — [OPT-3]/[OPT-K] territory); the failing 1 MB probe
+**363,305×** cheaper (5.5 µs flat — O(divergence)). Size: DFA
+artifacts +2,605 B median (1.175×), p99 +6,743, max +44,031; VM +63 B
+flat; tripwire 14× clear. Delivery `make -k -j12 test` 27/27 sections,
+the one red = counterk's known load cell, solo 1,634/0. Open: ENG_ATTEMPT
+keeps search-filter (a different mechanism, a clamp on the attempt
+loop); class-table sharing measured at 1,478 B = 57 % of the median
+delta (an abi event of its own, D77-waits); `make test-axes`'s deny arm
+is trivially green because the sweep drives `_search` only — a [CHK-2]
+question. r41 CLOSE PANEL launched ~23:5x: critic-sem (opus — accept
+discipline vs the old form, the VM and libpcre2 with its OWN
+alphabet; assertions at pos > 0 and the §3.8 seeding; empty matches;
+the overflow fallback), critic-checks (sonnet — the four abi sites, D80
+hunks, D81 on every artifact kind, the registry/census counts derived
+vs spelled, remaining hard-coded bit ranges, what the sabotage row
+detects, the size log's provenance), critic-meas (sonnet — reproduce
+§7/§8 with the lane's scripts and an independent harness, five other
+pattern shapes, the eleven-line D81 difference set, `.o` deltas).
+Merge waits on the panel; the union battery follows the merge.
+
+ARTSIZE3 meanwhile: first revision c26a776 answered F1 (instrument
+fixed, verified against size_count.sh byte-exact; model gains prefilter
+states S and jump entries J; the cap moved to CODE bytes at 500,000 as a
+measured SEPARATION — ≤ 320 KB code costs ≤ 71 % of D45, 837 KB costs
+669 %, empty band between; witness 2's "7.8 s" was the fuzz harness's
+-O0, at -O2 it is 66.92 s / 1.9 GB) and F6/S1 (no pre-emission node
+count exists → the K rule RE-EMITS over the ladder into a scratch
+buffer, 2.84 s worst / 0.01 s ordinary / 0.28 % of the corpus). Frank
+clarified the unit — every size is comment-excluded emitted C source,
+`.o` ≈ 17 % — and ruled "then 500k is fine" (D84 addendum 2, f3b3a65);
+"C code measure is fine". Second revision 6808bdd applied all twelve
+S-findings and D84 (both caps overridable upward, the five-value
+`_UNROLL_K_WHY`, limits.md's "Handling an oversized artifact" text,
+S11 re-measured on ten axes: 0 refused, worst N 1,489, worst raw
+675,589) but SWAPPED the D45 half back to a node cap (2,000) beside
+the total-bytes cap (1,000,000) — its own §4.2 shows nodes do not
+separate gcc cost (552 nodes at 66.92 s vs 7,467 at 55.13 s) and
+witness 2 is caught by the total cap only by coincidence. Sent back
+once more: the D45 cap binds on CODE BYTES counted EXACTLY by the
+emitter (bytes written outside table initializers, no fitted
+coefficients in any refusal) at Frank's 500,000; the node cap is
+dropped as subsumed; two exact post-emission caps, both raise-only
+overridable and stamped. critic-sem's focused re-check on the moved
+mechanism (dry emission side-effects, ladder-then-caps ordering, the
+S2 gate spec, the byte definition vs the size log) runs in parallel.
+Process: the lane's S11 sweep collided with engabs's full test at
+load1 49; it killed its own sweep by PID and requeued behind a load
+check — recorded in its §4.6b. Every subagent report this session was
+DROPPED by the final-report channel and recovered by asking the agent
+to SEND it by message (critics cannot write files: "Subagents should
+return findings as text") — budget a message round-trip per agent.
+
+#### Forty-fourth session, part 4 — r40 CLOSED after three revision passes ([ART-SIZE] STEP 2 code phase OPENED); r41 two of three in, engabs holds for merge; D84 addenda 3 (2026-08-29 ~00:1x EDT)
+
+r40's focused re-check (critic-sem) found the BLOCKER in the moved
+mechanism: `ctx_fail` is a `longjmp` to the compiler's ONE recovery
+point (internal.h:1469 — the rule [SEL-1] paid a full pipeline retry
+to obey a day earlier), so a ladder TRIAL cannot be discarded — measured
+on a 6-deep `{41}` tower under `--engine=vm`: **K=8 compiles
+(N=118,098), K=6 refuses** ("VM exceeds 131072 emitted nodes"); the
+ladder as first written would have turned a pattern that compiles today
+into a refusal at a K nobody asked for. Plus R2 (the ladder's cost is
+its WORST rung — K=6 is routinely worst because `K + m%K` is
+non-monotone; a 6-deep tower emits 35.5 MB at K=6 to select a 42 KB
+artifact), R3 (`pcrec_emit_vm` mutates the shared AST — `.call.save`/
+`.nsave` point into that run's arena — benign only because every
+publisher precedes its readers within a run, a property nothing
+stated), R4 (under the ruled code-bytes quantity `a{1,31000}` is 12 KB
+of code and is ADMITTED by the code cap — refused by the TOTAL cap,
+which is the intended reading of Q4), R5 (`cap-rescue` stamp value),
+R6 (the give-up surface had no gate at all after S2's exclusion).
+S2/S3/S4/S5/S8/S9 closed. The lane's third pass (e72b57d) answered all
+six: §2.2b's TRIAL flag under which the five size guards RETURN
+`OVER(which,value)` — never a second setjmp; a trial's refusal is
+never the compile's answer; the early abort as the first such guard
+(55.4 MB → 4.3 MB scratch, bounded at |LADDER| × total cap); exact code
+bytes with the node cap DROPPED; the AST re-publication invariant +
+sabotage; R1's witness as a .rxt cell; the fuzz gate owes a `size_cap`
+bucket (a "pattern too large:" refusal otherwise lands in the DIVERGENCE
+bucket — and the two already-shipped replication-cap refusals have the
+same gap). One discrepancy recorded, not resolved: the lane's
+code-byte figures (witness 2 670,650) vs the critic's (1,248,680 —
+pointer tables counted as code); identical decisions either way; the
+note's all-initializers-excluded definition is the definition of
+record. FRANK, in this stretch: the caps are "an emergency failsafe,
+not a tuning" — total stays 1,000,000; and "our txt file format could
+set a higher byte limit, right? That would be the place" → yes: a
+`config` block in the grown .rxt carries the raise-only overrides per
+target (D84 addendum 3, 1172c30; paper §2 wave 3, 4cd74c7). r40 CLOSED
+5a5b548: [ART-SIZE] STEP 2 design APPROVED FOR CODE; the code phase
+opened on the same lane with the sequencing: [ENG-ABS] merges first
+(abi 10, bit 17, registry 64); [ART-SIZE] lands on top (abi 11, bit 18,
+registry 65) — VM-side code starts now, shared sites after a rebase on
+the manager's signal; paneled at close (r42).
+
+r41 on engabs: critic-checks — every obligation HOLDS (four abi sites,
+D80 hunks incl. cli.md's list, D81 with the documented entry-vs-scan
+exception, registry 64 and census floors DERIVED, no hard-coded bit
+range left, S189 detected by the ARTIFACT'S ANSWER only); one doc nit
+(C6, landed by the manager d986389); C10's expected size-log conflict
+does not exist (main has not touched the log since 017bf3d). critic-meas
+— every headline reproduced on an independent harness: matching
+**1.036×** (10-trial; a single 5-trial run read 1.062 — the margin is
+inside ±3 % noise, said so in the file), short emails **0.489×**, probe
+ratio 342,548×, size totals EXACT; M5 the flat 5.8 ns is ~62 % harness
+call cost; M11 the `.o` delta is only 2-11 % of the source delta (the
+anchored table is verbose decimal C that compresses) — both landed in
+the note (2484280). critic-sem (the accept-discipline differential with
+its own alphabet, assertions at pos > 0) still running; merge + union
+battery follow its verdict.
+
+#### Forty-fourth session, part 5 — [ENG-ABS] MERGED (dfd112b) after r41's pre-merge round; union battery launched; [ART-SIZE] code phase: ladder-as-attempts, the code-bytes threshold, the interior optimum found (2026-08-29 ~02:3x EDT)
+
+ENGABS's pre-merge round (2e2ce3f, 33 commits): the optional machine's
+OWN ceiling `PCREC_ANCHORED_MAX_STATES = 4,096` — derived over the
+captures-on corpus (max 2,001) vs the resource shapes (20,001+), then
+RE-DERIVED when the differential's own compared-population count
+(1,213 → 1,210) showed the first derivation's "no corpus artifact
+loses the form" was false under `--no-captures` (three counterk
+4000-count patterns exceed it; kept at 4,096 — raising it puts the
+ceiling within 1.2× of the shapes it exists to exclude); seven named
+fallback members; K7 headroom 20.5 → 7.5 → 19.5 s; `[a-z]{0,30000}`'s
+artifact back to 1.34 MB from 2.0 MB; §4a a BOUNDARY pin
+(`a{1,4000}` keeps / `a{1,4200}` falls back) after two drafts that
+compiled resource shapes reported a TIMEOUT as a REFUSAL under load —
+[TT-10]'s class again; S4's captures-on arm (8 named witnesses,
+RX_NCAPS read off the artifact and required ≥ 2; 976 cells / 0) with
+S190 = critic-sem's one-token plant DETECTED by the run
+(`default=(-7,-7) denied=(-1,-1)` on 7/8 witnesses) while every grep
+stays green; S3/S6 prose. MERGED dfd112b (clean; docs-only divergence),
+plan row + r41 record 517be95; the manager confirmed the three-pattern
+behaviour change. UNION BATTERY launched on 517be95 at ~02:3x
+(battery_v3.sh = v2 re-pathed to this session's scratchpad; log
+mgr/battery_dfd112b.log): build → strict → VALIDATE_ONLY + anchors →
+`make -k -j12 test` → solo resource/counterk/corpus cell → san → mech.
+[ART-SIZE] STEP 2 PHASE B meanwhile: the ladder implemented as
+ATTEMPTS in compile_driver's [SEL-1] retry loop (approved with six
+conditions — condition 2's byte-equality assertion caught a real
+3-byte defect on its first run: the trial stamped `default` where the
+final stamped `size-model`; fixed exactly by subtracting the
+why-string length, no tolerance); the size measurement a POST-EMISSION
+SCAN sharing size_count.sh's definition (its control caught a
+one-line-jump-table blind spot, the same class as F1 and the
+explanation of the critic's discrepant 1,248,680); both caps on both
+engines; `cap-rescue` reachable through a `-D` lowered-cap reference
+compiler (engabs's precedent; TWO constants must move — the threshold
+gates on code bytes); `make test` found five red sections with ONE
+root cause — the ladder ran on the corpus's largest, TABLE-dominated
+artifacts K cannot shrink (`((a)|ab){4000}c`: 651 KB, 32 KB code) —
+fixed by the THRESHOLD reading CODE bytes (the third "which quantity
+does this act on" correction on this row: cap, abort bound, threshold
+— now a learnings.md §3 line); a counter-rung gate (the ladder runs
+only when rung 0x10 is live); a [8,1] ladder was proposed, approved,
+then WITHDRAWN by both sides once the code threshold removed the cost
+— and the K-sweep gate's new "interior optimum" report found THREE
+corpus patterns whose argmin is K=2 on its first run, so the interior
+rungs earn their place by a number (the "15/15 endpoints" claim was a
+hand-picked population — the lane named its own recurring failure
+shape). ACCEPTANCE CHANGES recorded, not hidden: three resource-suite
+shapes (`a{0,25000}`, `[a-z]{0,30000}`, `(a|b){0,30000}`, all > 1 MB,
+table-dominated) now REFUSE on the total cap — the intended D84
+reading — pinned in tests/resource §1b as expected refusals beside
+`--max-emit-bytes` re-acceptance cells (the override's end-to-end
+test); witness 2 compiling → refused; witness 1 1.72 MB → 87 KB.
+[ENG-COUNT] filed UNSCHEDULED on Frank's word (large DFA-side counts:
+edge case, more profitable ways to spend time). artsize3's delivery
+run: EXIT=0; it rebases onto main (abi 10→11, bit 18, registry 64→65)
+on the manager's signal now.

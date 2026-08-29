@@ -1081,6 +1081,54 @@ reservation does not.
   three failing directions; the numbers are in the script's own header and in
   `tests/codegen/CLAUDE.md`.
 
+- **`make test-anchored-match`** — [ENG-ABS]'s ANCHORED MATCH-HERE FORM
+  (`docs/design/anchored_match_unwrapped.md`), a `run_group` of TWO scripts
+  that check different things and do not substitute for each other. **In
+  `make test`, deliberately NOT in `SMOKE_SECTIONS`**, `test-premul-table`'s
+  argument: the pair sweeps the whole corpus twice, compiles and RUNS 1,213
+  two-artifact drivers, and builds a second compiler — measured **~7 minutes**
+  at `PROCS=8` on this box, 2026-08-29.
+  - `tests/codegen/run_anchored_match.sh` (14 checks) reads the ARTIFACT: the
+    stamp against the emitted body, the anchored body's freedom from all three
+    candidate-start mechanisms (r39's MISCOMPILE-1 one row over — a set
+    derived for the SCAN role is unsound in a MATCH-HERE), `_match_caps`'s
+    span and dead-group fill, the OVERFLOW arm through a
+    `-DPCREC_ANCHORED_MAX_STATES=6` reference compiler, and the corpus census
+    with every population pinned.
+  - `tests/anchored/run_anchored_diff.sh` (5 checks) is the ANSWER half, and
+    **the measurement that justifies it is the entry to read**: before it,
+    NOTHING in this tree asked what `<prefix>_match` answers.
+    `tests/harness/driver.c` drives `<prefix>_search` and touches the anchored
+    entries only as an `_in`-vs-un-suffixed cross-check (both sides one code
+    path); `make test-axes` compares the corpus's SEARCH answers under each
+    deny flag. Sabotage **S189** is that made real: `prune=false` on the third
+    machine makes `a|ab` at `ctx->pos` 0 over `"ab"` return 2 where it must
+    return 1, and on the planted tree `tests/base/alternation.rxt` — the file
+    that CONTAINS that pattern and that cell — is **26 passed / 0 failed** and
+    `run_anchored_match.sh` is **14 passed / 0 failed**. Landing figures:
+    1,213 corpus patterns × 18 subjects, every position 0..n+1, all four
+    anchored entries plus the search control — **147,620 cells, 0
+    divergences**; plus §2, the captures-on arm added at the r41 close
+    (finding S4), 8 named `RX_NCAPS >= 2` witnesses over **976 cells**,
+    which is the only thing in the tree that can see `_match_caps`'s
+    dead-group fill (sabotage S190).
+  - **THE OVERFLOW ARM'S POPULATION IS ZERO AND THAT IS MEASURED**, not
+    assumed: the DFA caps are shared between the three machines and the
+    MANDATORY pair is built first and is at least as large, so a corpus
+    pattern reaches a cap on the pair before the optional machine can. Census
+    at landing over 2,786 corpus patterns: 1,489 vm, 288 refused, **825
+    unwrapped**, 180 `search-filter`(attempt), 4 `search-filter`(empty), **0
+    `search-filter`(overflow)**. That is why the arm gets a lowered-cap
+    reference build rather than a corpus witness, and why §5's ceiling on it
+    is pinned at 0 — a pattern landing there is a red that says the
+    assumption expired.
+  - **The differential's own first version reported 1,213 FALSE divergences**,
+    from one mis-ordered `gen_run` argument, because it collapsed "the driver
+    exited nonzero" into "the answers disagree". It classifies the exit code
+    now (1 = divergence, 2 = malformed/zero cells, anything else =
+    infrastructure) and asserts the infrastructure count is zero: a check that
+    cannot tell its own breakage from its subject's is not a check.
+
 **On demand — `make test-frame-buffer`** (`tests/recursion/run_frame_buffer.sh`):
 
 - **the NULL-equivalence spread.** `<prefix>_search_in(..., NULL)` compared

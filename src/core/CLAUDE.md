@@ -83,6 +83,24 @@ Home of the compilation pipeline driver and shared utilities: arena allocator fo
   without it, since the loop calls `setjmp` fresh each iteration — more than
   gcc's conservative liveness analysis can see through.
 
+
+  **[ENG-ABS] (2026-08-29) `build_anchored_dfa` — THE OPTIONAL THIRD MACHINE.**
+  A DFA artifact's `<prefix>_match` promises a match at exactly `ctx->pos` and
+  used to reach that by running the UNANCHORED search and rejecting any match
+  whose start is not `ctx->pos`; `[OPT-2]` STEP 2 measured the reverse pass that
+  costs at ~50 % of the DFA's time on every matching subject. This function
+  builds the same subset construction over the same NFA rooted at
+  `nfa.anch_start` — the forward machine WITHOUT the start-anywhere self-loop —
+  and four things about its placement are load-bearing, each stated at the
+  function: it is built LAST (`PCREC_MAX_SUBSET_ELEMS` is a per-COMPILE budget,
+  so an optional machine built first could refuse a pattern that compiles
+  today); it is built OPTIONAL (an overflow is a selection outcome, never a
+  diagnostic); the engine's overflow RECORD is saved and restored around it
+  (`Ctx.dfa_overflowed` means "the DFA engine cannot compile this pattern",
+  which is false when only the optional machine overflowed, and leaving it set
+  would make a later unrelated `ctx_fail` take `[SEL-1]`'s retry path for the
+  wrong reason); and it is skipped for a VM HYBRID, whose `_match` is the VM's
+  own anchored body. `docs/design/anchored_match_unwrapped.md` §2/§5.2.
 - **fold.c** — THE ASCII CASE-FOLD PARTITION AS ONE OBJECT ([M6.5.2], D23,
   R32 E8). `pcrec_ascii_fold[c]` is c's case PARTNER, or c itself when it has
   none: exactly the 52 ASCII letters, each with one partner, and no byte
