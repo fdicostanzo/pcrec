@@ -2110,6 +2110,7 @@ Written by the analyzer, committed; the exemplar is not (D83, Frank).
 ```
 # exemplars/loglines.freq.rxt — WRITTEN BY THE ANALYZER. Do not hand-edit.
 freq loglines
+  description Byte histogram of one month of production nginx access logs.
   question which byte is rarest in this exemplar
   reader OPT-A rarest-byte candidate-scan selection
   exemplar prod-web-01 nginx access log, 2026-08 (not committed)
@@ -2136,17 +2137,27 @@ config prod
 target email_prod = email with prod
 ```
 
-**Hand-trace.** The findings file's head is one data block; its body is
-empty — a legal file with zero pattern blocks, which the grammar admits
+**Hand-trace.** The findings file's head is one data block, its body
+lines indented under it (§1.2); the file's body is empty — a legal file
+with zero pattern blocks, which the grammar admits
 (`body = { pattern-block }`, possibly none) and which is the point: this
 is data, not tests. `question` and `reader` are required, which is
-§2.10's membership rule made structural. The user's file `lib`s a
-library by its **store** spelling (`<rfc5322>` — searched on the library
-path, never relative), `include`s the findings file by its **local**
-spelling, selects the table in a config, and builds one target against
-it. **The same pattern built against a second exemplar is a second
-`target` line, not a second file** — which is what made the
-target-as-declaration shape right.
+§2.10's membership rule made structural; `description` is the field a
+summarizing script reads. The user's file `lib`s a library by its
+**store** spelling (`<rfc5322>` — searched on the library path, never
+relative), `include`s the findings file by its **local** spelling,
+selects the table in a config, and builds one target against it. **The
+same pattern built against a second exemplar is a second `target` line,
+not a second file** — which is what made the target-as-declaration shape
+right.
+
+**The `row` arity is a SEMANTIC check, not a grammatical one**
+(r44-grammar G4). The production admits any `row` of one offset plus one
+or more counts; that 16 rows of 16 counts make exactly 256, that the
+offsets are 0, 16, … 240, and that every count is non-negative are
+checked **when the data block is parsed** (H9), with the refusal naming
+the row. The first version's prose read as if the grammar guaranteed
+it — a grammar cannot count to 256.
 
 ### 6.5 A today's-`.rxt` file, unchanged (U1, all waves)
 
@@ -2176,13 +2187,16 @@ m "byte \x41 then newline\n" 5 6
 ```
 
 **Hand-trace.** Head: **empty** — the file's first non-comment,
-non-blank line is a `pattern` line, which is true of all 179 corpus files
-(MEASURED, §5.1). Body: four blocks. Every block has L = ∅ and R = ∅, so
-EXPAND is the identity and the compiler input is byte-for-byte today's.
-No `target` line and more than one block, so the file builds nothing. The
-`perr` block is evaluated in exactly one cell (§2.6). `\x41` and `\n`
-decode as they do today. **Nothing in this file is new, nothing in it
-means anything different, and nothing in it needed to change.**
+non-blank line is a `pattern` line, true of all 179 corpus files
+(MEASURED §5.1, independently reproduced by r44-grammar G1). Body: four
+blocks. No block declares a group or references a definition, so
+composition binds nothing and the compiler input is byte-for-byte
+today's. No `target` line and more than one block, so the file builds
+nothing. The `perr` block is evaluated in exactly one cell (§2.6).
+`\x41` and `\n` decode as they do today. Every line is unindented, so
+the head/continuation rule (§1.2) never engages. **Nothing in this file
+is new, nothing in it means anything different, and nothing in it needed
+to change.**
 
 ---
 
