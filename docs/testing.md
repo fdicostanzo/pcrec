@@ -3543,9 +3543,24 @@ exactly.
 
 ### Baseline
 
-Taken on the quiet box (load1 0.13-0.20/12 cores) at commit `53588b9`,
-2026-08-29T00:36Z, `bash tests/size/run_size_log.sh` (no arguments — the
-full corpus), `PROCS=12`:
+First taken at commit `53588b9` on the quiet box (load1 0.13-0.20/12
+cores), `bash tests/size/run_size_log.sh` (no arguments — the full
+corpus), `PROCS=12` — and RE-TAKEN at `f446f1c` after that first run
+exposed a real bug this section records rather than smooths over: the
+no-args (full-corpus) invocation discovers files via `find
+"$ROOT_DIR/tests" ...` (absolute paths), so every pattern id in the first
+log read as an absolute, worktree-specific path
+(`/home/duxevents/pcrec/worktrees/sizeratchet/tests/...`) instead of the
+repo-relative `tests/...` a targeted run produces — silently breaking
+`scripts/size_diff`'s premise of comparing "the same pattern" the moment a
+log is regenerated from a different checkout (a merge to `main`, a
+different worktree name). Fixed at the SIZELOG row site
+(`${cur_file#$ROOT_DIR/}`, a no-op when the prefix does not already
+match, so every existing call shape is unaffected) and the corpus
+re-compiled once more to produce the log actually committed. Final run,
+`f446f1c`, load1 5.09 at start (this box, not perfectly idle, but the
+run's own numbers are unaffected — CPU accounting is load-resilient per
+D45, and size is deterministic regardless of load):
 
 ```
 cases passed: 26659
@@ -3554,16 +3569,21 @@ pattern-compile failures (distinct): 0
 group cases pending-vm: 0
 size-log rows: 2875
 parallel: 177 of 177 file workers reported (PROCS=12)
-run_size_log.sh: wrote 2875 rows to docs/dev/artifact_size_log.tsv (commit 53588b9)
+run_size_log.sh: wrote 2875 rows to docs/dev/artifact_size_log.tsv (commit f446f1c)
 ```
 
 `check_size_tripwire.sh` against that log:
 
 ```
-check_size_tripwire.sh: OK — 2875 rows (commit 53588b9), worst size
+check_size_tripwire.sh: OK — 2875 rows (commit f446f1c), worst size
 651344 B ('tests/counterk/counterk.rxt:1807', pin 700000), worst gcc CPU
-5.475s ('tests/base/k18_cost_gates.rxt:103', pin 8.0s)
+5.462s ('tests/base/k18_cost_gates.rxt:103', pin 8.0s)
 ```
+
+(Same population, same worst-size pattern and value, worst-CPU pattern
+unchanged and its value within normal run-to-run CPU jitter of the
+first run's 5.475s — confirming the id fix did not otherwise change
+what the log measures.)
 
 Every pin held on the first real measurement, no adjustment needed:
 
@@ -3586,8 +3606,9 @@ Every pin held on the first real measurement, no adjustment needed:
   this headroom is not "noise margin" the way the CPU pin's is — it only
   moves on a real emitter or corpus change, which is the ratchet's whole
   point.
-- **gcc CPU**: worst 5.475s (`tests/base/k18_cost_gates.rxt:103`) against
-  the 8.0s pin — 68.4% of pin, 31.6% headroom. Notably a DIFFERENT pattern
+- **gcc CPU**: worst 5.462s (`tests/base/k18_cost_gates.rxt:103`, the
+  committed `f446f1c` log's number) against the 8.0s pin — 68.3% of pin,
+  31.7% headroom. Notably a DIFFERENT pattern
   from the census's own worst-CPU pattern (the nested-repeat family at
   6.995s isolated `-O2 -c`) — expected, since this log's compile shape
   (`-O1`, compile+link with `driver.c`) is a different quantity from the
