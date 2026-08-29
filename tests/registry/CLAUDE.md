@@ -98,7 +98,9 @@ directory asserts that the description and the shipped parser actually agree.
   individually: (1) every dumped deny/force bit checked against
   `lib/pcrec.h`'s own definition and (where it has one) its CLI spelling
   in `cli/main.c`; (2) both `tuning.md`'s documented bits and
-  `lib/pcrec.h`'s own `1u << N` bits (range 4-15) swept to confirm every
+  `lib/pcrec.h`'s own `1u << N` bits (range 4-31, DERIVED with no upper
+  bound since optk's 2e2914e — a hard-coded `4-15` here would have filtered
+  bit 16 away before comparing, and bit 17 after it) swept to confirm every
   one appears SOMEWHERE in the dump — the reverse loss, an axis quietly
   dropped from `--list-axes`; (3) **[added on manager review, 2026-08-28]**
   every dumped `stamp_value` checked against `match_api.md` §6.3's own

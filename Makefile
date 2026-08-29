@@ -1069,7 +1069,10 @@ lint:
 	@echo "lint: done"
 
 # [CHK-2] THE ANSWER-IDENTITY SWEEP + FORM CENSUS: every optimization-axis
-# deny/force flag (docs/spec/tuning.md §2, bits 4-15) plus the coarse
+# deny/force flag (docs/spec/tuning.md §2, bits 4-31 — DERIVED from
+# lib/pcrec.h with no upper bound, never a hard-coded range: a `4-15` here
+# filtered [OPT-K]'s bit 16 away before comparing, and would have done the
+# same to [ENG-ABS]'s bit 17) plus the coarse
 # `--engine=` axis, swept over the WHOLE `.rxt` corpus and compared per-case
 # against the default build (tests/axes/run_axes.sh); the form census's
 # floors + required synthetic witnesses over the stamp vocabulary
