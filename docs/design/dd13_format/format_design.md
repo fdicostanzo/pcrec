@@ -783,9 +783,23 @@ composed into the caller `^(\d)-(?&dd)$`, whose own `(\d)` is group 1:
 | `…(?(DEFINE)(?<dd>(\d)\1))` — NAIVE append | **nomatch** | **match (0,4)** | **INVERTED**: `\1` re-targeted into the caller's capture space |
 | `…(?(DEFINE)(?<dd>(\d)\3))` — RE-BASED per rule (i) | match (0,4) | nomatch | **the library's meaning, restored** |
 
-The caller has `ngroups` 1, so `dd` is assigned 2 and `dd`'s own group 1
-is assigned 3; its `\1` re-bases to `\3`. That is rule (i) executed by
-hand, and it produces the piece's own semantics at the composed site.
+The arithmetic, and it is worth being exact about: this cell is written
+in the CONTROL's textual form, where `(?<dd>…)` is itself a capture
+group. The caller's `ngroups` is 1, `dd`'s wrapper takes 2, and `dd`'s
+own group 1 takes 3 — so `\1` re-bases to `\3`. That is rule (i)
+executed by hand, and it produces the piece's own semantics at the
+composed site.
+
+**The composer's base differs from the control's by one per definition,
+and that is a design choice this note makes explicitly.** A definition
+in the AST model is a CALLABLE BODY, not a capture: §2.13's struct has
+no member for the definition itself, a slot for it would never be read,
+and the `(?<name>…)` wrapper exists in the textual form only because
+PCRE2 has no other way to declare a callable body. **RECOMMENDED: the
+composer assigns a definition's own groups the base `ngroups+1` and
+gives the definition itself no slot** — so under the composer `dd`'s
+group 1 becomes 2, not 3. §2.3.4 states what that means for the
+control.
 **Relative forms need no re-basing** — r44-sem verified `(?-1)` and
 `\g{-1}` safe across relocation (rule (g)), because their meaning is
 textual position and relocation preserves the body's internal order.
@@ -847,6 +861,22 @@ Three things follow, and they are the shape of the whole design:
    the control does not run and says so (a counted, named skip, AR-3),
    because a control that quietly disagrees with its subject on a shape
    neither can express is worse than no control (learnings §3).
+
+   **And on the population where it IS valid, the two do not agree slot
+   for slot — they agree up to a KNOWN OFFSET, and the control must
+   compute it rather than assume it.** The control's text carries one
+   extra capture group per definition (the `(?<name>…)` wrapper PCRE2
+   requires to declare a callable body); the composer gives the
+   definition itself no slot (§2.3.3). So a definition's group `k` is
+   the composer's `ngroups + k` and the control's `ngroups + k + j`,
+   where `j` is the number of definitions preceding it in the closure.
+   **This is exactly the shape learnings §3 warns about** — a control
+   that "obviously" compares equal, then quietly stops comparing the
+   thing it names — so the offset is DERIVED from the closure the
+   composer reports, never re-derived by the control from its own text,
+   and a mismatch in the closure SIZE is itself a failure. Slot 0 and
+   the primary's `1..ngroups` are unoffset in both, which is the part a
+   caller indexes and the part D61 protects.
 2. **`--emit-composed` is a serialization, not a mechanism** (D87 rule
    4). It writes the composed pattern with every group's number spelled
    out explicitly (§1.5), and pcrec ACCEPTS what it emits, so the
