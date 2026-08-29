@@ -18,6 +18,31 @@
  * defined by, so this file maps no encoding name of its own (see D58/SR-10). */
 #include "gen/enc/enc.h"
 
+/* [ART-SIZE] Parse a RAISE-ONLY size override. Shared by both caps so the
+ * two cannot drift in what they accept, and so the "below the default is a
+ * malformed option" rule has exactly one implementation. */
+static int parse_raise_only(const char *arg, const char *flag,
+                            unsigned long long floor, uint64_t *slot)
+{
+    char *end = NULL;
+    unsigned long long v = strtoull(arg, &end, 10);
+    if (!end || *end || arg[0] == '-' || v == 0) {
+        fprintf(stderr, "pcrec: %s wants a positive integer (got '%s')\n",
+                flag, arg);
+        return 1;
+    }
+    if (v < floor) {
+        fprintf(stderr, "pcrec: %s is RAISE-ONLY: %llu is below the built-in "
+                        "limit of %llu. These overrides exist to let a caller "
+                        "accept a larger artifact, never to make a build "
+                        "refuse one it would have accepted\n",
+                flag, v, floor);
+        return 1;
+    }
+    *slot = (uint64_t)v;
+    return 0;
+}
+
 static void usage(FILE *f)
 {
     fputs("usage: pcrec [options] -o OUT.c [--] 'PATTERN'\n"
@@ -65,6 +90,13 @@ static void usage(FILE *f)
           "  --fno-step-budget  emit no step counter at all -- and no work\n"
           "                 counter either, one gate for both. Zero cost, and\n"
           "                 honest because the artifact says so\n"
+          "  --max-emit-code-bytes=N, --max-emit-bytes=N\n"
+          "                 RAISE the two emitted-size limits (bytes of\n"
+          "                 emitted C source, comments excluded; the .o is\n"
+          "                 ~17% of that). Raise-only: a value below the\n"
+          "                 built-in limit is refused. Defaults 500,000 code\n"
+          "                 / 1,000,000 total. For a real build put these in\n"
+          "                 the pattern source's config block instead\n"
           "  --backtrack-frames=N  the resume-stack capacity. Default: sized\n"
           "                 exactly where the pattern's depth is statically\n"
           "                 bounded, a stamped default otherwise\n"
@@ -315,6 +347,23 @@ int main(int argc, char **argv)
                 return 1;
             }
             opt.work_budget = v;
+        }
+        /* [ART-SIZE] The two emitted-size caps' RAISE-ONLY overrides (D84
+         * ruling 1). Rejecting a value BELOW the built-in default is the
+         * point, not a convenience: raise-only means these can never be used
+         * to MANUFACTURE a refusal on someone else's build. For a real build
+         * the override belongs in the pattern-source file's `config` block
+         * (D84 addendum 3); this flag is for one-off compiles and the
+         * harness. */
+        else if (!no_more_opts && !strncmp(a, "--max-emit-code-bytes=", 22)) {
+            if (parse_raise_only(a + 22, "--max-emit-code-bytes",
+                                 PCREC_MAX_VM_EMIT_CODE_BYTES,
+                                 &opt.max_emit_code_bytes) != 0) return 1;
+        }
+        else if (!no_more_opts && !strncmp(a, "--max-emit-bytes=", 17)) {
+            if (parse_raise_only(a + 17, "--max-emit-bytes",
+                                 PCREC_MAX_EMIT_BYTES,
+                                 &opt.max_emit_bytes) != 0) return 1;
         }
         else if (!no_more_opts && !strncmp(a, "--backtrack-frames=", 19)) {
             char *end = NULL;
