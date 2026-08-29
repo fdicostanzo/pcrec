@@ -1442,5 +1442,34 @@ append-only or historical records.
   §7.7 declines a real 1.08×-1.33× improvement against the row's own
   materiality bar, and says so rather than taking it.
 
+- `artifact_size_term.md` — **[ART-SIZE] STEP 2**, the design note written
+  BEFORE the emitter (2026-08-28, lane artsize3), on `offset_k_skip.md`'s
+  model: artifact size as a term in the emitter's own candidate selection,
+  plus the emitted-size cap D45's consequence 1 has had open since
+  2026-08-15. Its central finding **refutes the obvious reading of that
+  assignment**: a byte cap is the wrong instrument, because `N` (emitted VM
+  nodes) and `E` (declared table entries) cost gcc ~5,930x different amounts
+  per unit — the 2 MB witness is 96 % program and costs gcc 55.13 s while
+  `a{1,31000}` is 1.38 MB of 92 % tables and costs **0.34 s**, so any byte cap
+  refusing the first refuses the second. So the row splits into a **K
+  selection** and a **node cap**, both over one two-term size model
+  (`B = S(engine) + 173.53*N + 5.064*E`, median 2.35 % error over 2,487
+  corpus artifacts, and *more* accurate at the tail — max 6.91 % above 50 KB —
+  which is the property the rule needs). Carries the K curve the census (§9)
+  named as not-measured, whose finding is that it is **NON-MONOTONE** (so the
+  rule evaluates a ladder rather than descending greedily), and the measured
+  result that the model-driven rule reproduces the census's own hand-derived
+  nested-vs-table split **with no nesting special case**. It also **declines
+  all three of census §7's emitter levers on measurements** (the best is worth
+  a corpus median of 0.99 %) and reports the gap it found by reading
+  `tests/axes/run_axes.sh` rather than trusting a summary of it: `--unroll` is
+  a value axis, not a `PCREC_(NO|FORCE)_*` bit, so **no gate proves any K
+  answer-identical today**. Measurements: `artsize_impl/`.
+- `artsize_impl/` — the [ART-SIZE] STEP 2 lane's probes and archived outputs
+  (the corpus size measurement and its fit, the K curve, the gcc-cost
+  decorrelation run), kept separate from `../dev/artifact_size_census/`
+  (STEP 1's own census script) for the same never-confuse-the-lanes reason
+  `possessify_impl/` and its siblings are separate. See its own CLAUDE.md.
+
 Maintenance: update this file when files are added/removed or their roles
 change.

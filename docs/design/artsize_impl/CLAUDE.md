@@ -25,6 +25,15 @@ produced which number.
 - `corpus_sizes.tsv` — this lane's own run of `measure.py` over 2,771
   distinct corpus patterns (2,487 compiled, 284 refused), 2026-08-28,
   box load1 0.23-1.33. The fit's evidence; the note quotes it throughout.
+- `probes/gccfit.py` — **what actually drives gcc's cost**, measured over a
+  spread chosen to DECORRELATE nodes from table entries (node-heavy subjects
+  hold `E` fixed at 844; table-heavy ones have `N = 0`). This is the
+  measurement the cap's whole derivation rests on, and it is the one that
+  refuted a byte cap: a node costs gcc ~5,930x what a table entry costs.
+  Produces `gccfit.tsv`.
+- `gccfit.tsv` — that run. 26 rows, one gcc trial each; the note's §4.2 fits
+  `gcc_cpu ~ 0.00054 * N^1.269` on it and its §4.1 re-measures four rows
+  best-of-3.
 - `ksweep.tsv` — the K curve. The note's §3 reads the NON-MONOTONICITY
   off this file directly (nested-N8 is 195,443 B at K=3 and 163,386 B at
   K=4), which is why the K rule EVALUATES a ladder rather than descending
