@@ -77,6 +77,48 @@ format). Process is staged — [DD-13a] requirements, [DD-13b] design,
   landed by the dd13afix lane same day; census and ~45/50 sampled
   citations were independently re-verified and held throughout.
 
+- `format_design.md` — **[DD-13b] DESIGN note, REVISION 2 (2026-08-29,
+  dd13b lane): post-panel (r44) and post-ruling (D87).** Grammar +
+  semantics of the grown format, under Frank's 2026-08-28 rulings
+  (`usecases_and_outline.md` §5/§6.1-§6.5) and **D87**. §0.5 is a
+  finding-by-finding disposition table for all of r44
+  (`../../dev/reviews/2026-08-29-r44-dd13b-format.md`: 2 blockers, 2
+  blocker-leaning, 12 majors) — read it first. §1 grammar: a HEAD
+  (seven file-level declarations, `config` and data blocks) above the
+  BODY of pattern blocks; **in the head, indentation means
+  CONTINUATION** (measured free: 0 leading-whitespace lines in 179
+  files), which is what carries Frank's `description` field and its
+  YAML-style `|` block scalar — the one exception to one-line-one-value.
+  §1.5 the three PATTERN-level extensions D87 needs, each with its
+  free-ness measured. §2 semantics, §2.3 rewritten: **composition is an
+  AST-level operation INSIDE pcrec** (D87) over ASSIGNED group numbers,
+  lexical scope wins in both directions, injected definitions are
+  name-qualified, and the harness's textual EXPAND is demoted to the
+  **oracle control** on the population where it is valid. §2.13 the
+  struct view (D87 rules 5/6; consumer is **[V-I]**, plan.md:737). §3
+  migration (H1-H11, S1-S11). §4 the seams. §5 the attack list, six
+  tensions, seven anti-requirements, OD-1..OD-6. §6 five worked files.
+  §7 six questions, one of them new.
+  **MEASURED THIS REVISION, on BOTH oracles (libpcre2 10.46 via ctypes
+  AND pcrec + driver.c; they agreed on every cell):** the naive textual
+  append INVERTS a library piece — `(\d)\1` matches `77`/rejects `75`
+  alone, and composed into `^(\d)-(?&dd)$` rejects `5-77` and matches
+  `5-75` — and **re-basing `\1` to `\3` per D87 rule 7(i) restores the
+  piece's own meaning**; the `(?J)` name collision likewise inverts and
+  **internal name qualification restores it**; and of ten candidate
+  spellings for the three new constructs, nine are refused by PCRE2 today
+  while **`(?<from>&email)` — the leading shape offered for the
+  delivering-call declaration — COMPILES**, matching the literal
+  `&email`, so it is DISQUALIFIED and §1.5 recommends `(?&from=email)` /
+  `(?&=email)` instead. Also re-measured: 177 of 179 files have several
+  blocks and exactly two have one (M11); the 26,691 expectation lines
+  partition 22,125 + 4,182 + 384 (G2). Syntax recommendations (the
+  manager's call per Frank's 14:5x ruling): `(?<3>…)` / `(?<name=3>…)`
+  for numbered groups, `(?&^.name)` for the caller scope, `(?&site=name)`
+  / `(?&=name)` for a delivering call, `--emit-composed` for the
+  serialization. Panel gate satisfied for this round; NO PARSER IS
+  WRITTEN.
+- `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
+
 Maintenance: update this file when files are added/removed or change
 roles.
-- `usecases_and_outline.md` — the manager's position paper for Frank (2026-08-28, forty-fourth session): use cases U1-U11, a ten-line-kind outline in three demand-staged waves, three worked files, the directory-vs-grown-file evaluation (verdict: directory = convention, sidecar dropped), and the six rulings the [DD-13b] design note would build under.
