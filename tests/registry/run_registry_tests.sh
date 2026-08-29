@@ -329,17 +329,22 @@ fi
 # bit constants' own pair of checks (RUNG/STRAT/PRUNE, sourced from
 # src/gen/emit_dfa.c's literal #define block rather than lib/pcrec.h —
 # those nine are emitted-artifact text, not in the public header at all).
+# +5 at [ENG-ABS] (2026-08-29), 59 -> 64: axis G (`match`) contributes two
+# CANDIDATE rows to the per-row sweep (`unwrapped`, `search-filter`), its
+# `PCREC_NO_ANCHORED_DFA` bit 17 joins the two bit-set sweeps as a member
+# rather than as a new check, and `RX_DFA_MATCH` gains its own value-set PAIR
+# (dump->spec, spec->dump) beside the four macros that already had one.
 axesn="$(grep -c '^PASS: ' "$AXESOUT" || true)"
-if [ "$axesn" -ne 59 ]; then
+if [ "$axesn" -ne 64 ]; then
     if grep -q "^checks failed: 0" "$AXESOUT"; then
-        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 59." >&2
+        echo "registry: axes_registry_check COVERAGE CHANGED — $axesn passing checks, expected 64." >&2
         echo "registry:   if you added or removed axes/checks on purpose, update this number" >&2
         echo "registry:   in the same commit; if not, coverage was removed" >&2
     else
         axesnf="$(sed -n 's/^checks failed: //p' "$AXESOUT" | tail -1)"
-        echo "registry: axes_registry_check shows $axesn passing checks (59 expected; ${axesnf:-?} failed," >&2
+        echo "registry: axes_registry_check shows $axesn passing checks (64 expected; ${axesnf:-?} failed," >&2
         echo "registry:   so a lower count is expected here). Fix the failures first; then this" >&2
-        echo "registry:   number must return to 59 — if it does not, coverage was removed too" >&2
+        echo "registry:   number must return to 64 — if it does not, coverage was removed too" >&2
     fi
     rc=1
 fi
