@@ -136,3 +136,22 @@ hash, the analyzer's version and date) so a table can be re-derived
 when the exemplar is at hand and reads honestly when it is not — the
 table is data, and data without provenance is the population-nobody-
 counted hazard one file over.
+
+Same day, brainstorm on the analyzer's scope: "There may be other data
+analysis of value in the general exemplar analyzer. Like distance
+between letters — e.g. for a char z, how many characters before that was
+the previous z, to be used to see if prefilter on z is worth it. I'm just
+illustrating that there may be more than frequency, not saying what. The
+analysis should have value and answer specific questions to be
+included." → The data block is a FAMILY of named analyses, not one
+table, and the RULE for membership is Frank's last sentence: an analysis
+is included only when it answers a SPECIFIC QUESTION a named selection
+point asks, with its value MEASURED first (D77). `freq` answers "which
+byte is rarest" ([OPT-A]/D21's rarest-byte selection); the illustrated
+second, a per-byte INTER-OCCURRENCE DISTANCE distribution (`gap`),
+answers the sharper question a candidate scan asks — "how far does a
+memchr for this byte skip, and how bursty are its occurrences" — which
+frequency cannot (equal means, different shapes; the [OPT-K] §7.4 model
+miss was exactly a per-byte mean standing in for a per-scan reality).
+No analysis is added on plausibility; each block names the question and
+the selection point that reads it.

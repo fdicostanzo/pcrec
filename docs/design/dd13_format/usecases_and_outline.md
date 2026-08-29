@@ -470,3 +470,14 @@ therefore carries PROVENANCE (the exemplar's name as the user chooses to
 give it, size, content hash, analyzer version, date), so the table can be
 re-derived when the exemplar is at hand and reads honestly when it is
 not.
+
+The block is a FAMILY, and membership has a rule (Frank): an analysis is
+included only when it answers a SPECIFIC question a named selection
+point asks, with its value measured first (D77) — never on plausibility.
+`freq` answers "which byte is rarest" (the rarest-byte candidate-scan
+selection, [OPT-A]); the illustrated second, `gap` — a per-byte
+inter-occurrence distance distribution — answers the sharper question a
+`memchr` scan actually asks ("how far does a scan for this byte skip, and
+how bursty are its occurrences"), which frequency alone cannot: equal
+means, different shapes. Each block's header names its question and its
+reader; a block nobody reads is not emitted.
