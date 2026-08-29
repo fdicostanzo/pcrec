@@ -517,6 +517,21 @@ Houses the .rxt test format, test runner, and per-feature test cases. Each featu
   added after a plant measured four others unable to detect the resume's
   off-by-one — a row that EXERCISES a line is not a row that DETECTS a change
   to it.
+- **anchored/** — [ENG-ABS]'s ANCHORED MATCH-HERE form, as ANSWERS: the same
+  pattern compiled with the unwrapped anchored machine and with
+  `-fno-anchored-dfa`, linked into ONE TU under two prefixes and compared on
+  every anchored entry, every capture slot and every position 0..n+1.
+  **The directory exists because MEASUREMENT showed nothing else in this tree
+  asks what `<prefix>_match` ANSWERS**: `tests/harness/driver.c` drives
+  `<prefix>_search` and touches the anchored entries only as an
+  `_in`-vs-un-suffixed cross-check (both sides one code path), and
+  `make test-axes` compares the corpus's SEARCH answers under each deny flag.
+  Sabotage S189 is that made real — `prune=false` on the third machine makes
+  `a|ab` at pos 0 over "ab" return 2 where it must return 1, and on the planted
+  tree `tests/base/alternation.rxt` (which CONTAINS that pattern and that cell)
+  is 26/0 and `tests/codegen/run_anchored_match.sh` is 14/0. Read its CLAUDE.md
+  for why the ground truth is the DENIED build and why the subject grid is
+  written rather than harvested from the corpus's own `m` lines.
 - **probes/** — design-measurement probe sources against libpcre2 (via fuzz/pcre2_abi.h), NOT part of `make test`; the reproducible evidence behind the extension design's Part II/R14/§18 numbers, and the working-code hand-off package for the SPEC-MOD0 (D27) author — see its CLAUDE.md
 - **spec_mod0/** — the ten module-0 invariant checks, written under D27 by an
   author denied `src/`, `docs/`, and the rest of `tests/` (`tests/probes/`

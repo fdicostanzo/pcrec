@@ -275,7 +275,9 @@ test-premul-table: all
 # wrapper is spared it.
 test-anchored-match: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-anchored-match.ran"; fi
-	bash tests/codegen/run_anchored_match.sh
+	GROUP_PROCS=$${PROCS:-$$(nproc)} bash tests/lib/run_group.sh \
+	    'bash tests/codegen/run_anchored_match.sh' \
+	    'bash tests/anchored/run_anchored_diff.sh'
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
 # honest artifact stamps, the capture oracle + the §3.7 differential, the

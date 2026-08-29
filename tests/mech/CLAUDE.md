@@ -188,6 +188,16 @@ is EXPECTED to time out"*, and neither would a separate arm.
   `corpus:0fail` while this arm is red** — S187 stops the selection firing and
   every answer in the tree stays right, which is the failure mode the arm
   exists for, not a half-detection.
+- `anchoredmatch` → `tests/codegen/run_anchored_match.sh`, [ENG-ABS]'s
+  anchored match-here FORM held to the ARTIFACT.
+- `anchdiff` → `tests/anchored/run_anchored_diff.sh`, the same row's ANSWER
+  half. Its own arm, and with a sharper version of `offsetskip`'s reason:
+  MEASURED at S189, an anchored-form defect that changes ANSWERS leaves the
+  corpus GREEN **and** `anchoredmatch` GREEN — the corpus drives
+  `<prefix>_search` and the structural check reads the artifact's shape — so
+  this is the only arm in the tree that can be red for it. **A row on this arm
+  is EXPECTED to score `corpus:0fail` and `anchoredmatch:0fail`**; that is the
+  arm working, not a half-detection.
 - `trie` → `tests/codegen/run_trie_identity.sh` (the M2.8 differential check,
   default 500 patterns x 2 sweeps, plus 3 positive controls).
 - `reject` → `tests/reject/run_reject_tests.sh` (the "requires module 'X'"

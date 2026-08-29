@@ -483,6 +483,42 @@ decides whether to perform it — and then run the row through
     scan byte BEFORE the offset it is scanned at, and none of the four
     witnesses can. The corpus gained `[-a]{3}-b` for exactly that.
 
+- **run_anchored_match.sh** — [ENG-ABS] (2026-08-29) the ANCHORED MATCH-HERE
+  FORM (`docs/design/anchored_match_unwrapped.md`, `docs/spec/tuning.md`
+  §2.15), held to the artifact rather than to its stamp. Its own section,
+  `make test-anchored-match`, part of `make test` and NOT of `make smoke` —
+  `run_premul_table.sh`'s measured argument, plus a second compiler build for
+  its §4.
+  - **WHY IT EXISTS.** The form is ANSWER-IDENTITY-PRESERVING (§3's argument),
+    so the whole `.rxt` corpus, both oracles and `make test-axes` agree whether
+    or not the emitter ever selects it. The ANSWER half is
+    `tests/anchored/run_anchored_diff.sh`; this file owns the POPULATION and
+    the SHAPE, and the two name the same mechanism on purpose.
+  - **§2 IS r39's MISCOMPILE-1 ONE ROW OVER.** A candidate-start prefilter is a
+    set derived for the SCAN role; reusing it in a MATCH-HERE body would skip
+    past `ctx->pos` and report no match where one begins. The section reads the
+    `<prefix>_match` BODY for all three prefilter mechanisms and asserts the
+    artifact's own `<prefix>_search` carries one — so the negative cannot be
+    satisfied by a compiler that emits no prefilters at all.
+  - **§4 EXISTS BECAUSE THE OVERFLOW ARM'S POPULATION IS ZERO**, measured, not
+    assumed: the DFA caps are shared and the mandatory machines reach them
+    first. A fallback nobody can reach is a fallback nobody has tested, so §4
+    builds a reference compiler with `-DPCREC_ANCHORED_MAX_STATES=6` (that
+    knob's ONE consumer, `src/core/limits.h`) and drives real patterns through
+    the arm: no diagnostic, the stamp flips, and the artifact is the
+    `-fno-anchored-dfa` build's to the byte.
+  - **§5's FLOORS ARE THE POINT.** The form silently ceasing to be selected
+    leaves every answer right, `make test-axes` green (with nothing to deny the
+    two builds are one build) and the row's measured gain gone. Census at
+    landing: 2,786 corpus patterns — 1,489 vm, 288 refused, 825 unwrapped, 180
+    search-filter(attempt), 4 search-filter(empty), 0 search-filter(overflow).
+  - **Its own first run found two defects IN ITSELF**, both worth reading: a
+    witness reading `RX_NCAPS` off a SPLIT output, where that macro lives in
+    the `.h` and every grep returned the empty string (the row passed its own
+    guard for the wrong reason); and a byte comparison that differed only in
+    the `#include "<basename>.h"` line — the trap `run_trie_identity.sh`
+    documents at its own `gen_a`/`gen_b`, met a third time.
+
 - **run_form_census.sh** — [CHK-2] piece 3 (2026-08-26) THE FORM CENSUS:
   compiles every `.rxt` corpus pattern twice (default engine, and
   `--engine=vm` forced where accepted — the wider population for the
