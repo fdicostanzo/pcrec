@@ -78,9 +78,13 @@ tension that kicks in at some size."*
    code 283,083 = 1.77× headroom; worst total 651,415 = 1.54×). The **node cap
    an earlier pass proposed is DROPPED** (§4.2a): nodes are subsumed by code
    bytes and miss the CFG-shaped cost — witness 2 is 552 nodes and 66.92 s.
-11. **The caps are NOT deniable but ARE overridable upward** (D84 ruling 1):
-    `--max-emit-code-bytes=N`, `--max-emit-bytes=N`, raise-only, effective values
-    stamped. Predictability is discharged by documentation — `limits.md` gains
+11. **Both caps are EMERGENCY FAILSAFES, not tuned thresholds** (D84 addendum
+    3 — a gap-centred 850,000 was offered for the total cap and not taken:
+    *"more of an emergency failsafe than a tuning"*). They are **NOT deniable
+    but ARE overridable upward** (ruling 1), and **the place a real build
+    raises one is the pattern-source file's `config` block**, per target and
+    beside the pattern — the CLI flags serve the single-pattern case and the
+    harness. Predictability is discharged by documentation: `limits.md` gains
     a "Handling an oversized artifact" section, drafted in §4.6.
 12. **All three of census §7's levers are DECLINED** on measurements (§5; the
     best is worth a corpus median of 0.99 %), and `--unroll` is a VALUE axis so
@@ -829,11 +833,19 @@ Each leg is on the quantity the cap actually reads:
   comments included, so **this cap is the stricter of the two** and an artifact
   it admits is always one `fuzz.py` admits.
 
-**Honest note on the gap's asymmetry:** 1,000,000 sits 1.54× above the corpus
-max but only 1.10× below `a{1,25000}`. 850,000 would be centred (1.30× each
-way). 1,000,000 is proposed for the `fuzz.py` alignment and because it is a
-number a user can hold in their head; a reviewer who prefers the centred value
-loses nothing measured (§10 3b).
+**RULED: 1,000,000 stands, and the framing is the ruling's own** (D84 addendum
+3). This lane offered a gap-centred 850,000 — 1,000,000 sits 1.54× above the
+corpus max but only 1.10× below `a{1,25000}`, so it is not centred — and Frank
+did not take it: *"we can adjust the number but it's really more of an
+emergency failsafe than a tuning."*
+
+**Both caps are EMERGENCY FAILSAFES, not tuned thresholds**, and the note is
+written that way from here on. The consequence is a design one, not a wording
+one: a failsafe is judged by whether it fires on the right SHAPES, not by how
+much headroom it leaves either side, so **a gap-centred value is not a goal**
+and the asymmetry above is not a defect to fix. What a failsafe does owe is
+that nothing legitimate hits it silently — which is §4.6's refusal text and
+handling section, and §4.6b's zero-refusal sweep, not a better number.
 
 **What the two caps refuse today, together:**
 
@@ -907,6 +919,26 @@ They **ARE overridable upward**:
 | `--max-emit-code-bytes=N` | `pcrec_options.max_emit_code_bytes` | RAISE-ONLY |
 | `--max-emit-bytes=N` | `pcrec_options.max_emit_bytes` | RAISE-ONLY |
 
+**Where a real build raises a limit is the PATTERN-SOURCE FILE, not the command
+line** (D84 addendum 3). The grown `.rxt` format's `config` block
+(`dd13_format/usecases_and_outline.md` §2 wave 3) carries pcrec option lines,
+and these two overrides belong there:
+
+```
+config big
+  pcrec --max-emit-bytes=4000000
+use big
+
+pattern <the pattern that needs it>
+```
+
+A `config` raises the cap **for every target built `with` that config, per
+target, declared beside the pattern** — which is the form that survives review,
+gets committed, and is visible to the next reader. **The CLI flags exist for
+the single-pattern case and for the harness**, not as a command-line habit; a
+build that needs a raised cap should say so in the file, not in a shell
+history. (The DD-13 note already carries the reciprocal line.)
+
 Both **effective values are STAMPED** as selection facts (D81, §7.1), so a
 reader of any artifact can see which caps it was built under. A value BELOW the
 default is refused as a malformed option rather than honoured: a lower cap is
@@ -958,7 +990,11 @@ D80 hunk, drafted here so the code phase transcribes rather than invents it.
 >
 > 1. **Raise the limit** — `--max-emit-bytes=N` or `--max-emit-code-bytes=N`
 >    if the size is acceptable to you. Both are raise-only, and the effective
->    values are stamped on the artifact.
+>    values are stamped on the artifact. **For a real build, put the override in
+>    the pattern-source file's `config` block rather than on the command line**:
+>    it then applies per target, beside the pattern, to everything built with
+>    that config, and it is visible to whoever reads the file next. The CLI
+>    flags are for one-off compiles and for the test harness.
 > 2. **Let the size term choose `K`, or force it.** `--unroll=1` emits one body
 >    copy per counter-rung iteration and is the largest size lever for a
 >    replication-dominated pattern — measured 17× on the fuzz gate's own
@@ -1538,15 +1574,15 @@ under bit 17.
    collision was worse than the first version said
    (`PCREC_MAX_VM_REPLICATION_PRODUCT` is a literal alias of
    `PCREC_MAX_VM_NODES`), and the note's own costless fix was taken (§3.2).
-3b. **RULED for the code-bytes cap** (D84 addendum 2: 500,000 stands, ≈ 85 KB
-   of `.o`, a judgement inside the empty band between the corpus's worst
-   283,080 and witness 2's 670,650). The **TOTAL-bytes cap's 1,000,000 is
-   still a judgement, and it is NOT centred**: 1.54× above the corpus max
-   (651,412) but only 1.10× below `a{1,25000}` (1,103,865). 850,000 would be
-   centred (1.30× each way). 1,000,000 is proposed for the `fuzz.py` alignment
-   and because it is a number a user can hold in their head; a reviewer who
-   prefers the centred value loses nothing measured. Flagged rather than
-   presented as derived.
+3b. **BOTH cap values are RULED and the question is CLOSED.** D84 addendum 2:
+   the code-bytes cap is 500,000 (≈ 85 KB `.o`), inside the empty band between
+   the corpus's worst 283,080 and witness 2's 670,650. D84 addendum 3: the
+   total-bytes cap stays at 1,000,000 — this lane's gap-centred 850,000 was
+   offered and **not taken**, because *"it's really more of an emergency
+   failsafe than a tuning"*. Recorded because it settles a whole class of
+   future question: **these are failsafes, so centring one in its gap is not an
+   improvement**, and a proposal to move either needs a SHAPE it fires or fails
+   to fire on, not a better ratio.
 4. **RULED — D84 ruling 2 / Q4.** `a{1,25000}`-shaped artifacts are NO LONGER
    left alone: shipped size is a concern in its own right, so the total-bytes cap
    refuses them (1,103,865 and 1,367,865 bytes) even though gcc compiles them in under
