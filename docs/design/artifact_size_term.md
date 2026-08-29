@@ -2208,11 +2208,19 @@ arise — §2.2d), and a pre-emission node count (§2.2a).
   holds. The check still asserts the stamp rather than the bytes; what changed
   is that the gap is now measured rather than open.
 - ~~**A full `make test-ksweep` over the whole corpus.**~~ **DONE at
-  delivery** (2026-08-29, quiet box, all 22,114 cases per rung). It answered
-  the interior-optimum question with EIGHTEEN patterns rather than the
-  sample's three (§3.3), and it found §3.3a — the declared-capacity finding
-  that changed the mechanism. A gate that only ever ran on a sample would
-  have shipped neither.
+  delivery** (2026-08-29, quiet box, all 22,114 cases per rung), and it found
+  §3.3a — the declared-capacity finding that changed the mechanism. A gate
+  that only ever ran on a sample would not have.
+
+  **Its interior-optimum report was NOT a full-corpus census, though this note
+  said it was.** The answer-identity sweep ran over the whole corpus; the
+  interior REPORT scanned `head -150` of `tests/*/*.rxt`, missing the nested
+  `d27` directories entirely, and reported EIGHTEEN. Corrected at r42 by
+  scanning the real 2,772-pattern population: **159**, and the shape changes
+  with the count — the sample's eighteen were all K=2, the census finds K=3
+  eleven times and K=4 once. Two sampling errors of the same kind in one row
+  (this and §7's `head -400` ceilings, r42 critic-sem S5), both of them in
+  instruments written to check a claim about a population.
 
 None of the three is a correctness gap in the shipped mechanism; all three are
 gaps in what would CATCH a future regression, which is the more durable kind
