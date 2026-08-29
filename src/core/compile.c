@@ -641,6 +641,14 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * what §2.2c claims for it. */
             cx.job->csb.abort_over  = st_bound;
             cx.job->vmsb.abort_over = st_bound;
+            /* THE THIRD BUFFER IN THE SAME STRUCT, armed for the reason S3
+             * exists rather than because it is expected to grow: the header
+             * is ~97 bytes on a typical artifact and a trial has never come
+             * close to the bound through it. "Small today" is exactly the
+             * assumption that left `vmsb` unarmed, and the caps already MEASURE
+             * `hsb` (it is part of the emitted size a caller must compile), so
+             * a buffer the caps count is a buffer the trial's bound covers. */
+            cx.job->hsb.abort_over  = st_bound;
         } else if (st_phase == ST_FINAL) {
             defo.unroll_k = st_final_k;
         }

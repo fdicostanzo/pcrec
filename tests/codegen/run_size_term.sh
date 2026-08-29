@@ -308,34 +308,45 @@ else
     bad "--max-emit-bytes=$HUGE REFUSED a pattern that compiles with no flag — a raise must never make a build fail that would have succeeded (limits.md §8)"
 fi
 
-# --- 9. the MATERIALITY BAR is pinned from BOTH sides -----------------------
+# --- 9. the MATERIALITY BAR is pinned from BOTH sides ----------------------
 # The constant (75) was pinned by nothing (r42 critic-sem S6): at the shipped
 # threshold only two patterns in the whole tree run the ladder, so 60, 80 and
-# 85 all leave `make test` green. These two cells bracket it. They run under
-# §7's threshold-1000 reference compiler, because at the shipped threshold
-# neither witness reaches the ladder at all.
+# 85 all leave `make test` green. These two cells bracket it, and they bracket
+# it TIGHTLY: the witnesses are the two corpus patterns either side of the bar
+# on the bar's OWN quantity, 0.7475 and 0.7548 — 0.73 % apart, so a materiality
+# constant of 74 fails the first cell and 76 fails the second.
 #
-# WHAT THIS BRACKETS, STATED HONESTLY: measured over the whole corpus at
-# threshold 1000, the TAKEN ratios run 0.1715..0.6765 and the DECLINED ones
-# start at 1.0003 — there is no corpus pattern between 0.68 and 1.00, so these
-# cells bracket the bar to (0.6103, 1.0004] and no tighter. A bar of 60 fails
-# the first cell; a bar of 100 fails the second. Pinning 75 to the byte needs a
-# witness either side of 0.75, and the corpus has none.
+# THE QUANTITY IS THE ARGMIN RUNG'S BYTES against the default K's, NOT the
+# delivered artifact's. For a DECLINED pattern the delivered artifact IS the
+# K=8 artifact plus a 12-byte-longer stamp, so a ratio taken from it reads
+# 1.0004 for every declined pattern by construction — which is how an earlier
+# version of this row convinced itself the ratios were cleanly separated.
+# `docs/design/artsize_impl/probes/bar_ratio.sh` measures the right one.
+#
+# `--engine=vm` IS LOAD-BEARING, not tidiness: the DFA hybrid's prefilter
+# tables are K-invariant, so on the default axis they add the same constant to
+# numerator and denominator and pull every ratio toward 1. Both witnesses sit
+# either side of the bar ON THE vm AXIS; on the default axis the whole
+# population shifts up and different patterns straddle it. A ratio without its
+# axis is not a fact about the pattern.
+#
+# They run under §7's threshold-1000 reference compiler, because at the shipped
+# threshold neither witness reaches the ladder at all.
 if [ -x "$REF2" ]; then
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bt.c" -- '((a)|ab){17}c' 2>/dev/null; then
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bt.c" -- '((a)|ab){4000}c' 2>/dev/null; then
         w="$(stamp UNROLL_K_WHY "$WORK/bt.c" | tr -d '"')"
         [ "$w" = "size-model" ] \
-            && ok "the bar TAKES a 0.61-ratio rung ('((a)|ab){17}c' -> size-model) — a materiality bar below ~61 % would decline it" \
-            || bad "the bar declined a 0.61-ratio rung (got '$w'); the materiality constant has moved below what §3.3's own selection table calls material"
+            && ok "the bar TAKES the 0.7475 rung ('((a)|ab){4000}c' -> size-model): a materiality constant of 74 would decline it" \
+            || bad "the bar declined the 0.7475 witness (got '$w') — the materiality constant has risen above 74.75 %, or the ratio this cell was pinned on has moved; re-measure with probes/bar_ratio.sh before touching the constant"
     else
         bad "the bar's TAKEN witness did not compile under the threshold-1000 compiler"
     fi
-    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bd.c" -- '(?:aa|a){8,12}+ab' 2>/dev/null; then
+    if "$REF2" -p rx --features all --engine=vm -o "$WORK/bd.c" -- '(?:aa|a){8,12}+b' 2>/dev/null; then
         w="$(stamp UNROLL_K_WHY "$WORK/bd.c" | tr -d '"')"
         case "$w" in
             size-model-declined|capacity-declined)
-                ok "the bar DECLINES a 1.0004-ratio rung ('(?:aa|a){8,12}+ab' -> $w) — a bar at 100 % or above would take it" ;;
-            *)  bad "the bar took a rung that saves NOTHING (ratio 1.0004, got '$w'): the materiality constant is at or above 100 %, so the term is paying throughput for no bytes" ;;
+                ok "the bar DECLINES the 0.7548 rung ('(?:aa|a){8,12}+b' -> $w): a materiality constant of 76 would take it" ;;
+            *)  bad "the bar took the 0.7548 witness (got '$w') — the materiality constant has fallen below 75.48 %; the two cells here bracket it to 0.73 %, so this is a real move and not noise" ;;
         esac
     else
         bad "the bar's DECLINED witness did not compile under the threshold-1000 compiler"

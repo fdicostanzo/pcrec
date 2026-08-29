@@ -532,35 +532,29 @@ argmin is an endpoint on all 15 subjects — and that was a property of fifteen
 hand-picked subjects, not of the corpus. `tests/axes/run_ksweep.sh`'s
 interior-optimum report found three corpus patterns whose argmin is K=2 on a
 100-case sample, so dropping `[6,4,3,2]` would have cost real patterns their
-best K. **THE FULL-CORPUS CENSUS, run at delivery over all 22,114 cases, names
-EIGHTEEN** — six times the sample, and the sample's three were no fluke of
-which 100 cases it took:
+best K. **THE FULL-CORPUS CENSUS, corrected at r42, names ONE HUNDRED AND
+FIFTY-NINE**, and the correction is the same mistake this section is about.
+The number first reported here was EIGHTEEN, and it came from a report that
+scanned `head -150` of `tests/*/*.rxt` — a 5 % prefix that also missed every
+nested directory, where the `d27` corpora live — while this note described it
+as a full-corpus census. Over the real 2,772-pattern population:
 
-| pattern | argmin | nodes |
-|---|---|---|
-| `((?:(?:b\|)\|a)?)*` | K=2 | 15 |
-| `((?:([^a]{0,2})\|(?:[a-c])??)+)*` | K=2 | 29 |
-| `((?:(a){0,2}b)+c)` | K=2 | 17 |
-| `((?:[ab]{0,2}c)+d)` | K=2 | 17 |
-| `((?:a{0,2}?b)+c)` | K=2 | 17 |
-| `((?:a{0,2}a)+c)` | K=2 | 16 |
-| `((?:a{0,2}b)+c)` | K=2 | 17 |
-| `((?:a\|b*)?)*` | K=2 | 15 |
-| `((?:a\|b*?)?)*` | K=2 | 15 |
-| `((?:b*?\|a)?)*` | K=2 | 15 |
-| `((?:b*\|a)?)*` | K=2 | 15 |
-| `((?<=a)b)+` | K=2 | 21 |
-| `((a)+)+` | K=2 | 15 |
-| `((ab)+c)+` | K=2 | 18 |
-| `((a{1,2}){1,2}){1,2}` | K=2 | 37 |
-| `((a{1,2}){1,2}){1,2}?` | K=2 | 37 |
-| `((a{1,2}?){1,2}){1,2}` | K=2 | 37 |
-| `(?!a)?b` | K=2 | 9 |
+| argmin | patterns |
+|---|---|
+| K=2 | 147 |
+| K=3 | 11 |
+| K=4 | 1 |
+| **total interior** | **159** |
 
-Every one of the eighteen is K=2 — the interior rung nearest the bottom, and
-exactly the one a two-point ladder `[8,1]` would have skipped over. The report
-is the standing census of that question: the sweep emits the corpus at several
-K anyway, so it names any interior argmin every run, for free.
+The sample said every interior optimum was K=2; the census finds K=3 eleven
+times and K=4 once, so the ladder's `[6,4,3,2]` interior earns its place on
+THREE of its four rungs and not on one. A two-point `[8,1]` ladder would have
+cost 159 corpus patterns their best K rather than 18. `KSWEEP_INTERIOR_N` still
+truncates for a quick local run, but it is UNSET by default now, so
+`make test-ksweep` censuses the population instead of a prefix.
+
+The report is the standing census of that question: the sweep emits the corpus
+at several K anyway, so it names any interior argmin every run, for free.
 
 That is the third time this row measured a claim on a population it chose
 rather than one that exists (§4.3b's other two are quantities; this one is a
@@ -735,40 +729,56 @@ Three things this table settles:
    entirely. Witness 2's size is its PREFILTER — 3,108 states and 34,188 jump
    entries against 552 VM nodes — which `K` cannot touch at all (K=1 saves
    8.7 %), so the materiality bar correctly declines it and the cap takes it.
-3. **Separation is still wide**: selecting rows at 0.051–0.376, declining rows
-   at 0.913–1.000, nothing in between — on THESE SUBJECTS.
+3. ~~**Separation is still wide**~~: these hand-picked rows select at
+   0.051–0.376 and decline at 0.913–1.000, which looks like a wide gap and is
+   not one — see the withdrawal immediately below. The rows are a table, not a
+   population.
 
-**RE-MEASURED OVER THE WHOLE CORPUS (r42 critic-sem S6), because "nothing in
-between" is a claim about a POPULATION and the rows above are a hand-picked
-table.** Under a threshold-1000 reference build, over all 2,772 corpus
-patterns (`LC_ALL=C sort -u`, emit only, `--engine=vm`), 39 reach the ladder
-and the ratio sets are:
+**THE SEPARATION CLAIM IS WITHDRAWN (r42 critic-sem S6). There is no gap; the
+ratios are a CONTINUUM, and the bar sits inside it.**
 
-| verdict | ratios |
-|---|---|
-| taken (`size-model`) | 0.1715 … **0.6765** |
-| declined (`size-model-declined`) | **1.0003** … 1.0006 |
+My own first re-measurement said the opposite — taken 0.1715…0.6765, declined
+1.0003…1.0006, "nothing between 0.68 and 1.00" — and it was measuring the
+wrong quantity. It divided the DELIVERED artifact's bytes by the K=8
+artifact's. For a DECLINED pattern the delivered artifact IS the K=8 artifact,
+differing only by a stamp 12 bytes longer (`size-model-declined` against
+`default`), so every declined row read 27,318/27,306 = 1.0004 BY CONSTRUCTION
+and the "gap" was the stamp. **The bar compares the ARGMIN RUNG's bytes — the
+ones it REJECTS when it declines — against the default K's, and that number is
+not on the delivered artifact at all.** This is the FOURTH instance of §4.3b's
+"which quantity does this act on", and the first one where the wrong quantity
+manufactured a reassuring answer rather than an alarming one.
 
-so the separation survives the wider population: no corpus pattern lands
-between 0.68 and 1.00. **The r42 critic measured a continuum with mass at the
-bar (0.740/0.745/0.745 taken against 0.751/0.765/0.768/0.770 declined) and I
-could not reproduce it** — noted here as an open disagreement rather than
-resolved in my own favour. One candidate cause is on the record: that sweep's
-population was built with a bare `sort -u` under this box's `en_US.UTF-8`,
-which the manager measured collapsing 634 of 2,002 patterns (K35 again), so
-the two runs may not be over the same set.
+Measured on the bar's own quantity (nodes = `rx_L<N>:` labels, total =
+comment-excluded, floor applied, argmin over all six rungs with ties to the
+largest K, threshold-1000 build, the full 2,772 population). **The figures
+below are the r42 critic's**, whose instrument predicts the compiler's own
+stamp on every pattern it checked, on both axes. `probes/bar_ratio.sh` is this
+lane's independent re-measurement of the same quantity: it reproduces the
+SHAPE — a continuum, declined patterns at 0.7697 and 0.7803, nothing like the
+1.0004 floor the wrong quantity produced — but not the values (0.1715–0.7803
+over 37 patterns), and it mispredicts the stamp on 2 of 37. Its own header
+records that residual and the two candidate causes. Where two instruments
+disagree, the one that predicts the compiler is the measurement of record:
 
-**What the bar's constant IS pinned to, either way.** The separation above is
-the reason 75 was never a tuned number, but until r42 it was pinned by
-NOTHING — at the shipped threshold only two patterns in the whole tree reach
-the ladder, so 60, 80 or 85 all leave `make test` green. `run_size_term.sh`
-§9 now brackets it from both sides under the threshold-1000 compiler: a
-0.6103 rung must be TAKEN and a 1.0004 rung must be DECLINED. That is a
-bracket of (0.6103, 1.0004] and no tighter, and the check says so in those
-words — pinning 75 to the byte would need a witness either side of 0.75, and
-the corpus has none.
+| axis | ladder patterns | ratio range | inside (0.68, 1.00) | across the bar |
+|---|---|---|---|---|
+| `--engine=vm` | 36 | 0.5226 – 0.8338 | 15 | 0.7475 TAKEN `((a)\|ab){4000}c` / 0.7548 DECLINED `(?:aa\|a){8,12}+b` |
+| default | 36 | 0.5838 – 0.9887 | 26 | 0.7446 TAKEN `((a)\|ab){0,17}c` / 0.7511 DECLINED `((ab)\|b){0,17}b` |
 
-**Witness 2's mechanism is not this row's to fix.** The hybrid prefilter's
+The two rows either side of the bar differ by **0.0073**, so the constant is
+pinned to within 0.7 % by real corpus patterns — "the corpus has no witness
+either side of 0.75", which the previous version of this section asserted, is
+false.
+
+**AND THE VERDICT IS AXIS-DEPENDENT**, which no earlier version of this note
+said. The DFA hybrid's prefilter tables are K-INVARIANT: on the default axis
+they add the same constant to numerator and denominator, pulling every ratio
+toward 1 and moving the whole population up the scale (0.5838–0.9887 against
+`vm`'s 0.5226–0.8338). `((a)|ab){17}c` and `((a)|ab){0,8}c` are TAKEN on `vm`
+and DECLINED on the default axis, stamps confirming both. A ratio quoted
+without its axis is therefore not a fact about the pattern, and §9's cells
+pass `--engine=vm` for that reason rather than for convenience.** The hybrid prefilter's
 inlined scan scaling with a bounded-repeat count is **[OPT-4]/K39**'s
 mechanism; this row can PRICE it (the model now sees it) and REFUSE it (§4),
 but shrinking it belongs to that row. Naming the owner is the point: a size
