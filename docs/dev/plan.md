@@ -36,6 +36,16 @@ is the smell this note exists to stop.
 (Spine order re-ruled 2026-08-13: STD1 → M4 → M5 → M6 → M3 → M7 — see
 "Development order" below.)
 
+## Lane structure (Frank, 2026-08-29 — D86)
+
+Lanes are TYPED, within the 3-concurrent ceiling: one FEATURE lane
+([DD-13b]/[LIB], [DD-12]/[M5] UTF, modules), one OPTIMIZATION lane
+([OPT-*], [ENG-PGO]; from the bench's outliers, measured need first),
+and one ADMINISTRATIVE/STRUCTURAL lane AS NEEDED ([DD-11], [SPEC-1]
+lanes, checks, doc consolidation) when a row is available and nothing
+of higher priority wants the slot. A closed lane's successor comes
+from the same column. Rows still open on Frank's word.
+
 ## Development order (ratified 2026-08-13)
 
 The spine, in this order, one line of rationale each (full session rationale:

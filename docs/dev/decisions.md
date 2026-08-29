@@ -6044,3 +6044,41 @@ entry is its charter's shape. Revisit-when: [DD-11]'s design note
 opens, or [DD-13b]'s wave 1 needs `name` resolution before [DD-11]
 exists (then the table's first rows are library definitions and the
 option-scoped rows follow).
+
+## D86 — lane choices follow a THREE-WAY model: one FEATURE lane, one OPTIMIZATION lane, one ADMINISTRATIVE/STRUCTURAL lane as needed (Frank, 2026-08-29 ~14:2x, forty-fifth session)
+
+**Context.** With the spine complete (D79) and the bench loop running
+beside pcrec (D78), the manager was choosing lanes one row at a time
+from a flat queue ("[DD-13b] next; then [DD-11]; optimization rows from
+the bench's outliers"). Frank ruled a standing structure instead.
+
+**Ruling.** "I'd like to structure our lane choices on a 3-way model.
+One lane is feature advancement like [DD-13b] or UTF; one lane is
+optimizations advancement; and one lane, as needed, but
+administrative/structural advancement like [DD-11] if available and
+nothing else is higher priority." So, within the 3-concurrent-lane
+ceiling (skill §3), the lanes are TYPED, not merely counted:
+
+1. **FEATURE** — what pcrec can express or accept: the .rxt format
+   ([DD-13b] → [LIB]), UTF-8 ([DD-12] → [M5]), feature modules. One at
+   a time.
+2. **OPTIMIZATION** — what the emitted matcher costs: the bench loop's
+   outlier rows ([OPT-4], [OPT-A], [OPT-3] STEP 2+, [ENG-PGO] once its
+   findings file exists). One at a time. Measured need first (D77);
+   general mechanisms only (memory `pcrec-general-mechanisms…`).
+3. **ADMINISTRATIVE / STRUCTURAL** — as needed, not always occupied:
+   registry/definition tables ([DD-11]), spec tiers ([SPEC-1] lanes),
+   checks and harness rows, doc consolidation. It runs when a row is
+   available AND nothing of higher priority wants the third slot (a
+   second feature or optimization row that genuinely partitions, a
+   critic panel, a landing).
+
+**Consequences.** The queue in wake.md is kept as three columns, not
+one list; when a lane closes, its successor is drawn from the SAME
+column (a closed feature lane opens the next feature row, not the next
+optimization row); the box-concurrency rule (one heavy suite at a
+time; the bench window handshake) still serialises the lanes'
+validation — three typed lanes is a planning shape, not three
+batteries at once. Milestones still open on Frank's word (skill §1);
+the model says WHICH KIND of row is proposed for each slot, not that
+the slots fill themselves.
