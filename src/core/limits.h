@@ -439,4 +439,32 @@ enum {
     PCREC_MAX_SPLICE_TOTAL = 8192
 };
 
+/* [ENG-ABS] THE ANCHORED MATCH-HERE MACHINE'S STATE CAP, and it is NOT a new
+ * limit: it defaults to `PCREC_MAX_DFA_STATES_TABLE`, the cap every other
+ * table machine is built under, so nothing about a shipped build changes and
+ * `docs/spec/limits.md` has nothing to gain (a machine over a cap DECLINES an
+ * optimization, it never refuses a pattern —
+ * docs/design/anchored_match_unwrapped.md §5.2).
+ *
+ * IT IS OVERRIDABLE FOR EXACTLY ONE CONSUMER, and the reason is a measured
+ * hole rather than a convenience. The overflow arm's population is ZERO over
+ * the whole corpus (825 unwrapped / 180 attempt / 4 empty / 0 overflow,
+ * measured 2026-08-29): the caps are SHARED, the mandatory machines are built
+ * FIRST and are at least as large, so in practice they reach a cap before the
+ * optional machine can. A fallback nobody can reach is a fallback nobody has
+ * tested — the vacuity this project keeps recording — so
+ * `tests/codegen/run_anchored_match.sh` builds a reference compiler with this
+ * lowered and drives real patterns through the arm: the stamp must flip to
+ * `"search-filter"`, the ANSWERS must not move, and no diagnostic may appear.
+ * The same shape and the same single consumer as `-DPCREC_NO_TRIE`,
+ * `-DPCREC_NO_ENDVAR` and the other reference-build knobs (src/ir/dfa.c's
+ * header states the rule); never defined in a shipped build.
+ *
+ * IT IS AT THE ACTION. The value is read at the one `pcrec_build_dfa` call
+ * that builds the optional machine, not at a flag some other edit could
+ * cancel — the placement lesson of the [M6.2] repair slice. */
+#ifndef PCREC_ANCHORED_MAX_STATES
+#define PCREC_ANCHORED_MAX_STATES PCREC_MAX_DFA_STATES_TABLE
+#endif
+
 #endif /* PCREC_LIMITS_H */

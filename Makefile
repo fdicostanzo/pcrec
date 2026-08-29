@@ -120,7 +120,7 @@ TEST_SECTIONS := test-corpus test-cli test-reject test-registry test-parse \
       test-counterk test-mrl test-prefilter test-altcls test-assertions \
       test-atomic test-backrefs test-lookaround test-recursion \
       test-encseam test-resource test-capturediff test-known-fail test-thread \
-      test-stackdepth test-premul-table
+      test-stackdepth test-premul-table test-anchored-match
 
 # [CHK-2 trailer] `test:` STOPPED being purely prerequisite-based here
 # (2026-08-26, manager finding, journal part 7): under `make -j12 test`,
@@ -265,6 +265,17 @@ test-codegen: all
 test-premul-table: all
 	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-premul-table.ran"; fi
 	bash tests/codegen/run_premul_table.sh
+
+# [ENG-ABS] the ANCHORED MATCH-HERE form's own checks
+# (docs/design/anchored_match_unwrapped.md). Its OWN section rather than a
+# fifth script in `test-codegen`'s group above, on `test-premul-table`'s
+# measured argument: `make smoke` includes `test-codegen` and is already at
+# its 60s target, and this script sweeps the whole corpus AND builds a second
+# compiler for its overflow arm. It IS part of `make test`; only the smoke
+# wrapper is spared it.
+test-anchored-match: all
+	@if [ -n "$(TEST_TRAILER_DIR)" ]; then mkdir -p "$(TEST_TRAILER_DIR)" && touch "$(TEST_TRAILER_DIR)/test-anchored-match.ran"; fi
+	bash tests/codegen/run_anchored_match.sh
 
 # [M4.5b/c] the VM engine's own section: the two bounds as MECHANISM, the
 # honest artifact stamps, the capture oracle + the §3.7 differential, the
@@ -1107,5 +1118,6 @@ clean:
         test-lookaround test-lookaround-identity \
         test-recursion test-recursion-identity test-recursion-lbsweep \
         test-specimen test-stackdepth test-frame-buffer test-tiered-entry \
-        test-spec smoke hooks strict testscripts ubsan asan san lint mech bench \
+        test-spec test-premul-table test-anchored-match \
+        smoke hooks strict testscripts ubsan asan san lint mech bench \
         fuzz clean

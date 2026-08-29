@@ -875,6 +875,19 @@ $ build/pcrec -p rx -o - --no-captures -- 'abc' | grep -E '^#define RX_(ENGINE|D
   decision for a header-less consumer, no such consumer reads them yet, and
   match_api.md §6.3 states the trigger that would make this one owed.
 
+- `RX_DFA_MATCH` (`[ENG-ABS]`, 2026-08-29) names which of the two forms
+  the artifact's `<prefix>_match` takes — `"unwrapped"` (its own anchored
+  machine, run from `ctx->pos`) or `"search-filter"` (the unanchored
+  search with non-`ctx->pos` starts rejected). §2.15 above is the axis and
+  `docs/design/anchored_match_unwrapped.md` the design. **It DOES have an
+  `rx_info` mirror** (`match_form`), unlike the two stamps above, and the
+  reason is the trigger `match_api.md` §6.3 named: this one is a
+  caller-visible COST property of an entry point the caller calls, not an
+  internal encoding choice — §3.2's worst case belongs to one of its two
+  values and a header-less consumer needs to know which it linked.
+  **It is also the one `RX_DFA_*` stamp a HYBRID does not carry** (§3.1
+  below), because a hybrid's `_match` is the VM's own anchored body.
+
 `RX_ENGINE_WHY` is still VM-only, and that is about the FACT rather than the
 engine: it names the construct that FORCED the VM, and a DFA artifact was not
 forced — `rx_info.engine_why` is `NULL` there for the same reason.
@@ -897,8 +910,17 @@ $ build/pcrec -p rx -o - -- 'a(b|c)+d' | grep -E '^#define RX_(ENGINE|VM_PREFILT
 #define RX_VM_PREFILTER "hybrid"
 #define RX_DFA_SCAN "unanchored"
 #define RX_DFA_PREFILTER "memchr"
+#define RX_DFA_PREFILTER_OFFSETS "none"
 #define RX_DFA_TABLE "premultiplied"
 ```
+
+**`RX_DFA_MATCH` IS ABSENT ABOVE, AND THAT IS THE ONE `_DFA_*` STAMP A
+HYBRID DOES NOT CARRY** (`[ENG-ABS]`, 2026-08-29). The four stamps in that
+listing describe a DFA SCAN, and a hybrid contains one. `RX_DFA_MATCH`
+describes the artifact's `<prefix>_match` ENTRY, and a hybrid's is the VM's
+own anchored body — a different mechanism with a different value set. Its
+iff is `RX_ENGINE "dfa"`, and `rx_info.match_form` is `NULL` here where
+`rx_info.scan` is not.
 
 The two prefilter macros are **two different selections**: `_VM_PREFILTER`
 says whether the VM runs a capture-erased DFA ahead of its program at all,
@@ -970,6 +992,7 @@ table only maps field to axis.
 | `flags` bit `PCREC_NO_TIERED_ENTRY` | `-fno-tiered-entry` | §2.12 |
 | `flags` bit `PCREC_NO_PREMUL_TABLE` | `-fno-premul-table` | §2.13 |
 | `flags` bit `PCREC_NO_OFFSET_SKIP` | `-fno-offset-skip` | §2.14 |
+| `flags` bit `PCREC_NO_ANCHORED_DFA` | `-fno-anchored-dfa` | §2.15 |
 | `unroll_k` (`PCREC_UNROLL_K_DEFAULT` = 0) | `--unroll=K` | §2.10 |
 | `engine` (`PCREC_ENGINE_AUTO`/`_DFA`/`_VM`) | `--engine=E` | §2.11 |
 
