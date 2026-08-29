@@ -1516,6 +1516,26 @@ append-only or historical records.
   summary of it: `--unroll` is a VALUE axis, so no gate proves any K
   answer-identical today and [CHK-2] (c) is where that is fixed.
   Measurements: `artsize_impl/`.
+- `prefilter_count_independence.md` — **[OPT-4]**, the design note written
+  BEFORE the emitter (2026-08-29, lane opt4), on `offset_k_skip.md`'s model:
+  K39's fix, the VM hybrid's inlined DFA prefilter no longer scaling with a
+  bounded-repeat count. Its argument is that the prefilter is a FILTER and
+  `src/ir/nfa.c` ALREADY over-approximates twice (`A_ATOMIC` transparent,
+  `A_LOOK` to epsilon), so a count-collapse (`X{m,n}` lowered as
+  `X{min(m,1),}` for the prefilter only) is a third member of an existing
+  family and inherits its written-down H1/H2/H3 invariants — one more conjunct
+  on `emit_vm.c`'s `v.mrl_win`, not a new mechanism. Carries the located cause
+  (`compile.c`'s one NFA pair serving two roles; which of forward/reverse
+  carries the count is SHAPE-dependent, so a one-direction fix would miss half
+  the population), the one-line superset proof that never mentions `n`, the
+  MEASURED budget that decides `exact` vs `count-collapsed` (the whole
+  count-free hybrid population tops out at 20 NFA states, so 128 fires only
+  where the count is the cause: 23 of 2,878 artifacts change), the
+  `RX_VM_PREFILTER_LANG` stamp with its deny/force pair, and — recorded rather
+  than tidied away — the fact that collapsing UNCONDITIONALLY was refused on
+  the measurement (96 of the 244 counted-repeat artifacts would GROW, and all
+  244 would lose `prefilter-window`). §7 states the two costs it buys the size
+  win with, before any of it was built.
 - `artsize_impl/` — the [ART-SIZE] STEP 2 lane's probes and archived outputs
   (the corpus size measurement and its fit, the K curve, the gcc-cost
   decorrelation run), kept separate from `../dev/artifact_size_census/`
