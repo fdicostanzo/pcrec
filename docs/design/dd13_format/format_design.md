@@ -1448,14 +1448,25 @@ is the `<>` spelling's search path — pcrec's shipped store first, then
 each `--lib-path DIR` in declaration order.
 
 **What [LIB] may rely on:** a library file is an ordinary `.rxt`; it
-declares definitions with `name` and carries their own tests as ordinary
-cases; it declares **no targets**, and its tests **do not run** in a file
-that `lib`s it (they run when the library file is itself under test —
-which is what makes the store's "each entry oracle-verified" discipline
-mean something). The library's internal references resolve in the
-library's own scope (§2.3 step 4), so a library is self-contained and a
-user cannot accidentally satisfy a library's reference from their own
-file.
+declares definitions with `name`, carries their own tests as ordinary
+cases, and carries a `description` per definition so a store index can be
+generated rather than written (Frank's r44 ruling — "summarize via script
+what a library has"). It declares **no targets**, and its tests **do not
+run** in a file that `lib`s it (they run when the library file is itself
+under test — which is what makes the store's "each entry oracle-verified"
+discipline mean something).
+
+**A library is self-contained, and after r44 that is a mechanism rather
+than an assertion.** The first version said "a user cannot accidentally
+satisfy a library's reference from their own file"; r44-sem M2 MEASURED
+that FALSE under the textual model — a caller's `(?J)` plus a colliding
+name handed the library's private helper to the caller's group, inverting
+the library's answer. It is true under D87: a library's internal
+references bind in the library's own lexical scope, and the composer
+qualifies injected names internally, so the caller cannot name them at
+all (§2.3.2, §2.3.3 M2). The caller can still reach them deliberately —
+that is what the scope prefix is for — which is the difference between
+"self-contained" and "sealed".
 
 **What [LIB] must decide, not this note:** the store's location and
 versioning ([DD-3]), whether `pcrec_options` gains a definitions input
@@ -1475,19 +1486,26 @@ presence)."
 **What this format needs from [DD-11]** — the interface, stated as this
 side of the seam:
 
-1. **A lookup**: `resolve(name, option-scope) -> definition text in core
-   syntax, or not-found`. That is the whole surface. The format's
-   resolver (§2.3 step 3) calls it; it does not walk the table itself.
+1. **A lookup**: `resolve(name, option-scope) -> a definition, or
+   not-found`. The result must be able to be a **BUILDER** — an AST, or
+   something that produces one — not only text (r44-consumers M12): D87
+   makes composition an AST operation, so a text-only interface would
+   force the composer to re-parse and would put a second parser where
+   learnings §3 says not to. That is the whole surface; the format's
+   resolver (§2.3.2 step 2) calls it and does not walk the table itself.
 2. **Determinism and orderability**: the table's answer for a given
    (name, option scope) must be stable across a compile, and when two
    rows could apply the table's own first-applicable-wins rule decides —
    the format never breaks a tie.
-3. **A duplicate report**: the format must be able to ask whether a name
-   is defined by more than one *file* in its scope, because that is
-   refused by name (§2.2). D85 already frames a library definition as a
-   row with a predicate, so "two libraries define `email`" is two rows
-   with the same key — the table must say so rather than silently
-   ordering them.
+3. **A duplicate report WITH ORIGIN**: the format must be able to ask
+   whether a name is defined by more than one *file* in its scope,
+   because that is refused by name (§2.2) and the refusal must say which
+   two files. D85 frames a library definition as a row with a predicate,
+   so "two libraries define `email`" is two rows with the same key — but
+   a predicate tag carries no file identity (r44-consumers M12), so the
+   **origin is a COLUMN on the [LIB] store entry**, not a parameter of
+   the tag. The table reports both rows and their origins; the format
+   refuses and names them.
 4. **Nothing about the option-scoped rows.** `$` under `(?m)`, D66's
    assertion expansions, the possessive desugaring: the format neither
    sees nor spells those. They are the table's other customers.
@@ -1547,14 +1565,31 @@ the manifest — one line per artifact, all at the top of the file."
   unit-emitting mode can group without any change to the declarations.
 - **R-VE-2 / AR-2** (no dispatch for the statically-known single-pattern
   call) is preserved by §2.7's compatibility default: a one-unnamed-block
-  file with no head is `target rx`, its expansion is the identity
-  (§2.3 step 6), and the compiler input is byte-for-byte today's. **The
-  format cannot add dispatch, because in that case it adds nothing at
-  all.**
-- **R-VE-5 / D39.2** (appended numbering) is not implemented by the
-  format; it *falls out* of appending the DEFINE block (§2.3, MEASURED).
-  That is the strongest form of the requirement being met — there is no
-  second numbering mechanism to keep in agreement with PCRE2's.
+  file with no head has no references to bind, so the AST the compiler
+  gets is the one it gets today and the output is byte-for-byte today's.
+  **The format cannot add dispatch, because in that case it adds nothing
+  at all.**
+- **R-VE-3** (content-addressed shared-data dedup, and at what
+  granularity) — **DEFERRED under D77, explicitly rather than by
+  silence** (r44-consumers U8). The requirement is on the format's
+  INFORMATION CONTENT: the format must expose enough per named pattern
+  for a content hash to be taken at the right granularity. It does — a
+  definition is a named, separately identified AST with its own assigned
+  numbers — but *which* granularity is right is a codegen question with
+  no consumer until multi-pattern units exist. **The trigger is [V-E]
+  opening**, and the interface it will find is §4.4's own list, not a new
+  one.
+- **R-VE-5 / D39.2** (appended numbering) is now **D87 rule 7(i)**, and
+  it is stronger than the first version claimed. That version said the
+  rule "falls out of appending the DEFINE block" — true of PCRE2's
+  positional numbering, and therefore true only of the textual control.
+  Under D87 the composer ASSIGNS: a definition's groups are re-based
+  above the caller's `ngroups`, local order and gaps preserved, the
+  caller's numbers untouched. R-VE-5's actual requirement — "re-ordering
+  an unrelated part of the file must not silently renumber an unrelated
+  pattern's captures" — is met by the assignment being derived from
+  reference structure, and D61 makes it a shipped promise rather than a
+  property of where the block was written.
 - **R-VE-4** (source-level vs link-level composition kept distinct) —
   the format expresses the **source-level** tier only, and expresses it
   as a PCRE2 subroutine call. Link-level composition
@@ -1562,15 +1597,18 @@ the manifest — one line per artifact, all at the top of the file."
   here and must not acquire one that looks the same; §7 Q4 records that
   as the open item it is.
 - **R-VE-6 / D39's labelled references** (`"a:reg1"`, path composition
-  `"c:a"`) — **the format needs no label**, because a definition is
-  referenced by name and appears **once** in the DEFINE block however
-  many times it is called. The label problem is the *inlining* tier's
-  ("the same regex inserted twice"), which this format does not spell.
-  If [V-E] later adds an insert-at-this-point tier, the label lives on
-  *its* construct, not on `(?&name)`.
-- **R-VE-12** (a per-pattern encoding field) is a `config` line — the
-  encoding selector is a pcrec option and `pcrec --encoding=…` inside a
-  config reaches it today with no new grammar.
+  `"c:a"`) — **the format DOES have the label, and D87 named it**: it is
+  the delivering call's site name, and D39's "composed into a path for
+  nested insertions" is §2.13's scope path exactly (`from.local`). A
+  definition still appears **once** in the closure however many times it
+  is called (§2.3.2's dedup); what a second call site adds is a second
+  *delivery*, which is where the label was always needed. The first
+  version said "the format needs no label", which was right about the
+  closure and wrong about delivery.
+- **R-VE-12** (a per-pattern encoding field) is an `encoding` line at
+  block or config scope, more-specific-wins (§2.6) — D58 makes it a
+  per-pattern scalar, so a block must be able to state it (r44-sem M16);
+  the first version had only the `config` spelling.
 - **R-VE-9** (CLI args and a manifest file must not need contradictory
   semantics): they do not — the CLI's single pattern is the
   `target rx` default, and `--target <prefix>` selects from a file.
