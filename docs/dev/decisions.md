@@ -5810,6 +5810,9 @@ event gains `rx_info` mirrors for the selection facts (`scan`,
 `prefilter`) rather than a future second event. Resetting the abi
 number to 1 at the 1.0 release was raised and left open — "honestly,
 it's not a big deal" — a release-mechanics item for [REL-META].
+**ADDENDUM 2026-08-28 (Frank, forty-fourth session): RULED YES — the
+abi number resets to 1 at the 1.0 release ("yes when we are at 1.0").
+Recorded on [REL-META]; nothing changes before then.
 
 ## D82 — the emitted artifact's gcc compile time is an ACCEPTABLE TRADEOFF for a layered emitted form (Frank, 2026-08-26 ~15:0x, forty-first session)
 
