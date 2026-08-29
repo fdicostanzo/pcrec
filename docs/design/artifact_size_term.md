@@ -441,8 +441,11 @@ mechanism the project's standing rule forbids.
    chose; `lib/pcrec.h` documents `unroll_k` as "A TUNING AXIS" and a tuning
    axis a size heuristic can silently overrule is not one.
 2. **Below the threshold.** 99.72 % of the corpus, byte-identical.
-3. **Below the materiality bar** — a small predicted saving is not worth the
-   census's measured (if small) throughput cost on single-level counts.
+3. **Below the materiality bar** — a small saving is not worth the census's
+   measured (if small) throughput cost on single-level counts. Witness 2 is
+   the case that matters: K=1 saves it 8.7 %, and taking that would trade a
+   real (if unresolvable) throughput cost for a pattern the cap refuses
+   anyway.
 4. **Never below K = 1.** K = 1 is one body copy; there is no K = 0.
 5. **`PCREC_NO_SIZE_TERM`** (§7) denies the whole selection.
 
@@ -994,7 +997,7 @@ under bit 17.
    in (0.38, 0.92) gives identical behaviour on today's corpus, so the corpus
    cannot choose within that range. 0.75 is a judgement inside a measured gap,
    not a measured number, and is stated as such.
-2. **The cap is not deniable** (§4.5). `-fno-size-term` denies the K
+2. **The cap is not deniable** (§7.2). `-fno-size-term` denies the K
    selection but not the refusal. This is a ruling — a safety refusal a flag
    turns off is not one — with a real cost: a user who wants a 5-minute gcc
    compile cannot have one, and their only recourse is to change the pattern.
