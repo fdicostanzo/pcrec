@@ -1257,7 +1257,64 @@ typedef struct {
      * that BUILD the ceiling read `mrl_win` itself, so flipping this field
      * cannot leave a stamp disagreeing with a live clamp. */
     bool        prefilter_collapsed;
+
+    /* [OPT-4] WHY THAT LANGUAGE, and the number the decision was made on
+     * (D81's `_WHY` convention; `<PREFIX>_VM_PREFILTER_LANG_WHY`).
+     *
+     * FIVE VALUES, NOT THREE, and the reason is `_UNROLL_K_WHY`'s recorded
+     * one (emit_vm.c): a stamp that collapses reachable states into one is a
+     * hint rather than a fact, and a check cannot tell the collapsed states
+     * apart afterwards. The gate in `src/core/compile.c` has five outcomes and
+     * all five are reachable from the command line. Listed here in the ENUM's
+     * order, which is chosen for the invariant below and is NOT the gate's
+     * precedence order (the gate tests deny, then has-collapsible, then force,
+     * then the budget):
+     *
+     *   PFLW_DENIED   `-fno-prefilter-collapse` kept the exact machine on a
+     *                 pattern that WOULD have collapsed. Reported only where
+     *                 the denial changed what was built: below the knee, or
+     *                 with nothing to collapse, a denied build stamps the same
+     *                 reason as the default one, because
+     *                 `-fno-prefilter-collapse` owes byte-for-byte recovery of
+     *                 today's artifact and a reason that moved on the mere
+     *                 PRESENCE of the flag would break it.
+     *   PFLW_NO_REP   no collapsible `A_REP` exists, so the collapsed lowering
+     *                 IS the exact one and there is nothing to buy. This is
+     *                 the state `-fprefilter-collapse` is HONOURED but vacuous
+     *                 in, which is exactly why it may not share a value with
+     *                 PFLW_FORCED.
+     *   PFLW_UNDER    the measured exact NFA was within
+     *                 `PCREC_PREFILTER_EXACT_NFA_STATES`, so the sharper
+     *                 language was kept.
+     *   PFLW_FORCED   `-fprefilter-collapse` dropped the budget conjunct.
+     *   PFLW_OVER     the measured exact NFA exceeded the budget. The default
+     *                 reason for a collapse.
+     *
+     * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed`, and that
+     * is an INVARIANT a check can assert rather than a coincidence: both are
+     * written at the single gate in `src/core/compile.c`, from the same
+     * conjuncts, in one place.
+     *
+     * `prefilter_nfa_states` is the EXACT forward NFA's state count as
+     * MEASURED (D24 — never predicted from the AST), and it is recorded on
+     * every path including the ones that did not collapse, because "42 <= 128"
+     * is the fact that says the knee was consulted and answered. It is 0 only
+     * where no NFA was built at all, i.e. where no prefilter exists and no
+     * stamp is emitted. */
+    unsigned    prefilter_nfa_states;
+    unsigned char prefilter_lang_why;
 } EngineFit;
+
+/* [OPT-4] `EngineFit.prefilter_lang_why`. Ordered so that the two collapsing
+ * outcomes are the top two: see the invariant stated above. */
+enum {
+    PFLW_DENIED = 0,
+    PFLW_NO_REP = 1,
+    PFLW_UNDER  = 2,
+    /* everything from here collapses */
+    PFLW_FORCED = 3,
+    PFLW_OVER   = 4
+};
 
 typedef struct {
     /* heap-held so longjmp cleanup sees consistent pointers */

@@ -892,11 +892,65 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             const unsigned pfc_flags = cx.opt->flags;
             const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
             const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
+            const bool pfc_rep   = pcrec_has_collapsible_rep(root);
+            const bool pfc_over  =
+                cx.job->nfa.n > PCREC_PREFILTER_EXACT_NFA_STATES;
             bool collapse = cx.job->fit.chosen != ENGM_DFA
                          && !pfc_deny
-                         && pcrec_has_collapsible_rep(root)
-                         && (pfc_force
-                             || cx.job->nfa.n > PCREC_PREFILTER_EXACT_NFA_STATES);
+                         && pfc_rep
+                         && (pfc_force || pfc_over);
+            /* [OPT-4] THE DECISION AND ITS REASON ARE WRITTEN TOGETHER, HERE,
+             * from the SAME four conjuncts (D81; `internal.h`'s `PFLW_*`).
+             * The alternative — letting the emitter re-derive a reason from
+             * the flags — is the drift `EngineFit.prefilter_collapsed`'s own
+             * comment already rules out: a build that ASKED for the collapse
+             * and did not get it must report what was BUILT.
+             *
+             * THE LADDER BRANCHES ON `collapse` FIRST, rather than re-walking
+             * the conjuncts in the gate's order, and that is what makes
+             * `prefilter_lang_why >= PFLW_FORCED` iff `prefilter_collapsed` a
+             * STRUCTURAL invariant instead of a property two expressions have
+             * to keep agreeing on. It also covers the gate's first conjunct
+             * (`chosen != ENGM_DFA`) for free: a DFA artifact takes no VM
+             * prefilter decision, emits no stamp, and lands in the
+             * non-collapsing half rather than in a reason it never reached.
+             *
+             * `PFLW_FORCED` is reported only where the force flag was
+             * NECESSARY. An above-the-knee pattern compiled with
+             * `-fprefilter-collapse` stamps `PFLW_OVER`, because the flag
+             * changed nothing there and the artifact reports what was BUILT
+             * rather than what was asked — the same rule `prefilter_collapsed`
+             * follows on the vacuous-force case.
+             *
+             * `PFLW_DENIED` IS REPORTED ONLY WHERE THE DENIAL CHANGED WHAT
+             * WAS BUILT — that is, where the collapse would have fired but for
+             * the flag. This is not a nicety, it is the same defect [OPT-4]
+             * already fixed once at `emit_dfa.c`'s `strategy_denials` mask:
+             * `-fno-prefilter-collapse` promises to recover today's artifact
+             * BYTE-FOR-BYTE (docs/spec/tuning.md §2.17), and a reason string
+             * that changed length merely because the flag was PASSED would
+             * break that promise on every artifact the flag cannot act on.
+             * MEASURED as a defect before it was a comment: the first version
+             * of this ladder said `denied` unconditionally and moved 13 bytes
+             * on `((a)|b){0,3}c` and 11 on `a(b|c)+d`, caught by
+             * run_prefilter_collapse.sh §2's byte comparison.
+             *
+             * So a denied build below the knee stamps `"exact nfa 21 <= 128"`,
+             * exactly as the default build does, and only a denied build that
+             * was OVER the knee says so. It is the same rule as everywhere
+             * else in this change: the artifact reports what was BUILT, never
+             * what was asked.
+             *
+             * The exact NFA size is recorded on every path — including the
+             * paths that did not consult it — because a stamp that omits the
+             * number where it did not fire cannot be told from one where the
+             * measurement never happened. */
+            cx.job->fit.prefilter_nfa_states = (unsigned)cx.job->nfa.n;
+            cx.job->fit.prefilter_lang_why =
+                  collapse              ? (pfc_over ? PFLW_OVER : PFLW_FORCED)
+                : !pfc_rep              ? PFLW_NO_REP
+                : (pfc_deny && pfc_over) ? PFLW_DENIED
+                                        : PFLW_UNDER;
             if (collapse)
                 pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
             cx.job->fit.prefilter_collapsed = collapse;

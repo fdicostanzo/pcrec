@@ -427,7 +427,11 @@ enum {
      * answer-identity-preserving (D46), which is what makes the deny/force
      * pair a sweepable control rather than a semantic switch, and
      * `<PREFIX>_VM_PREFILTER_LANG` is where the artifact says which language
-     * it was built from. */
+     * it was built from, and `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it says
+     * which of the five reasons produced that value — including the measured
+     * NFA state count the budget was compared against, so a caller deciding
+     * whether to pass either flag can see how close this pattern sits to the
+     * knee without recompiling it. */
     PCREC_NO_PREFILTER_COLLAPSE    = 1u << 19,
     PCREC_FORCE_PREFILTER_COLLAPSE = 1u << 20
 };

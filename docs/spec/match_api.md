@@ -1568,7 +1568,8 @@ against them:
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
 - **`rx_info.abi` is `12` on every artifact today ([OPT-4] bumped it
-  from 11 by adding `<PREFIX>_VM_PREFILTER_LANG` to every VM HYBRID —
+  from 11 by adding `<PREFIX>_VM_PREFILTER_LANG` and its companion
+  `<PREFIX>_VM_PREFILTER_LANG_WHY` to every VM HYBRID —
   §6.3, and to no other artifact kind; `11` was [ART-SIZE]'s four size
   stamps `_UNROLL_K`/`_UNROLL_K_WHY`/`_MAX_EMIT_CODE_BYTES`/
   `_MAX_EMIT_BYTES`, `10` [ENG-ABS]'s anchored match-here form, `9`
@@ -1944,6 +1945,9 @@ annotations below are this document's, not emitted text):
                                                         [OPT-4], emitted only
                                                         where _VM_PREFILTER
                                                         reads "hybrid" */
+#define RX_VM_PREFILTER_LANG_WHY "no counted repeat"  /* [OPT-4]: which of the
+                                                        five reasons produced
+                                                        the value above */
 #define RX_VM_RUNGS           0x1u   /* bitmask: which per-quantifier rungs
                                          this artifact actually uses —
                                          CURSOR/FRAMES_BOUNDED/

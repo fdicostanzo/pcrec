@@ -153,13 +153,48 @@ budget in the plausible range can touch it. **`PCREC_PREFILTER_EXACT_NFA_STATES
 | budget | artifacts over it | of which factor < 2 |
 |---|---|---|
 | 64 | 41 | 0 |
+| 96 | 25 | 0 |
+| 112 | 24 | 0 |
+| 120 | 23 | 0 |
 | **128** | **23** | **0** |
+| 144 | 23 | 0 |
+| 160 | 23 | 0 |
+| 192 | 22 | 0 |
 | 256 | 22 | 0 |
 | 512 | 14 | 0 |
 
-At 128 the reverse DFA of the largest artifact still using the exact language
-is 42 states; the smallest one collapsed is 110. **23 of 2,878 corpus
-artifacts change; 2,855 are byte-identical.**
+**THE VALUE SITS ON A PLATEAU, and that is the reason to trust it rather than
+the number itself.** The over-budget count is FLAT at 23 for every budget in
+**117..160** — a 44-wide interval with 128 near its middle — so the choice is
+not balanced on a threshold that one added corpus pattern would tip. The
+plateau's edges are where they are because the 18 counted-repeat artifacts
+between 64 and 128 all sit at or below 116 (65, 65, 65, 65, 69, 73, 77, 77, 77,
+80, 81, 81, 85, 89, 90, 90, 107, 116) and the next one up is at 161: the gap
+from 116 to 161 IS the plateau. And the `of which factor < 2` column is zero at
+every budget swept, not only at the chosen one, which is the stronger form of
+§4's claim — no budget in the plausible range can touch the population with
+nothing to collapse, so the rule is about counts and not about size.
+
+At 128 the largest exact-language artifact has a 116-state exact NFA and the
+smallest collapsed one has 161. In reverse-DFA terms the largest factor->= 2
+artifact still using the exact language determinizes to 42 states, while the
+collapsed ones run from 1 to 8,002 — the low end being four degenerate
+`(?:…(){2,3}…)` patterns whose NFAs are large and whose DFAs are trivial, for
+which the collapse buys almost nothing in bytes and still costs the pruning
+ceiling. They are inside the 23 and are not special-cased; §7's costs are
+theirs too. **23 of 2,878 corpus artifacts change; 2,855 are byte-identical.**
+
+**THE PIN.** This table is a measurement and would otherwise rot on the next
+corpus change, so the claim it supports is asserted in the suite:
+`tests/codegen/run_prefilter_collapse.sh` §5 prints the census
+(hybrid / collapsed / exact, and the split by TEXTUAL replication factor) and
+asserts (a) zero collapsed artifacts with factor < 2, with its own
+non-vacuity control, and (b) the collapsed population inside a pinned band.
+That check's population is NOT this table's and its number is 20, not 23: this
+table counts rows of `docs/dev/artifact_size_log.tsv` (23 rows, 19 distinct
+patterns), while §5 sweeps every `pattern` line under `tests/` and sees one
+pattern the log has no row for. Both are right; neither number is copied into
+the other's check.
 
 **The measurement is taken, not modelled.** The exact NFA is built first and
 `nfa.n` is read off it — no second size model to drift from `compile_ast`
@@ -194,7 +229,16 @@ and 24,005 NFA states. `-fprefilter-collapse` reaches the literal form.
 
 **The stamp** (D81, one derivation two readers): `RX_VM_PREFILTER_LANG`,
 `"exact"` or `"count-collapsed"`, emitted on VM artifacts beside
-`RX_VM_PREFILTER`. **The deny flag**: `PCREC_NO_PREFILTER_COLLAPSE = 1u << 19`
+`RX_VM_PREFILTER`. **And `RX_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`
+convention, `_UNROLL_K_WHY`'s shape): FIVE values, not the three the axis's two
+outcomes suggest, because `"exact"` is reached three ways a caller would act on
+differently — `"exact nfa N > B"`, `"forced"`, `"exact nfa N <= B"`,
+`"no counted repeat"`, `"denied"`. The count is the MEASUREMENT the decision was
+taken on and `B` is printed from the budget symbol, so the stamp shows how close
+an artifact sits to the knee without a rebuild. Both come off `EngineFit`,
+written once at `compile.c`'s gate; `prefilter_lang_why >= PFLW_FORCED` iff
+`prefilter_collapsed`, structurally (the ladder branches on the decision rather
+than re-walking its conjuncts), so the two lines cannot disagree. **The deny flag**: `PCREC_NO_PREFILTER_COLLAPSE = 1u << 19`
 (18 is [ART-SIZE]'s last), `-fno-prefilter-collapse`, a filter on the candidate
 list that recovers today's artifact byte-for-byte. **The force flag**:
 `PCREC_FORCE_PREFILTER_COLLAPSE = 1u << 20`, `-fprefilter-collapse` — it drops

@@ -99,10 +99,25 @@ enum {
      * which is what makes this a rule about counts rather than about size. The
      * 244 that DO carry one run 19 median and 107 at p90, so 128 sits above
      * both distributions and fires only where the COUNT is what made the
-     * machine big: 23 artifacts at 128, and zero of them factor < 2 (41 at 64,
-     * 22 at 256, 14 at 512 — all likewise zero). At this value the largest
-     * reverse DFA still built from the exact language is 42 states and the
-     * smallest one collapsed is 110.
+     * machine big: 23 artifacts at 128, and zero of them factor < 2.
+     *
+     * IT IS CHOSEN ON A PLATEAU, NOT ON A THRESHOLD, which is the reason to
+     * trust it. Swept at 64/96/112/120/128/144/160/192/256/512 the over-budget
+     * count runs 41/25/24/23/23/23/23/22/22/14 — FLAT at 23 for every value in
+     * 117..160, a 44-wide interval with this one near its middle, so no single
+     * added or removed corpus pattern tips the decision. The factor-< 2 column
+     * is zero at EVERY budget swept, not only at this one. The plateau's edges
+     * are the corpus's own gap: the counted-repeat artifacts between 64 and
+     * 128 all sit at or below 116 exact NFA states and the next one up is at
+     * 161. At this value the largest factor-> = 2 artifact still built from
+     * the exact language determinizes to a 42-state reverse DFA.
+     *
+     * THE NUMBER IS PINNED BY A CHECK, not only by this comment:
+     * tests/codegen/run_prefilter_collapse.sh §5 prints the census and asserts
+     * the two properties above (zero collapsed artifacts of factor < 2, with a
+     * non-vacuity control; and the collapsed population inside a band). Its
+     * population differs from this comment's, so its number is 20 rather than
+     * 23 — see that section's own note before reconciling them.
      *
      * WHY THE EXACT NFA IS BUILT AND MEASURED RATHER THAN PREDICTED FROM THE
      * AST. A predictor would be a second statement of `compile_ast`'s own

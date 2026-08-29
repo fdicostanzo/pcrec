@@ -1318,13 +1318,19 @@ static void emit_info_def(Ctx *cx, StrBuf *c, const char *infoname,
      *    moves here only because `.abi` is emitted by this shared function.
      *  - A VM artifact with NO prefilter (`--engine=vm`, a backreference, a
      *    linked call, [SEL-1]'s drop) likewise gains nothing but the version.
-     *  - A VM HYBRID gains one `#define <PREFIX>_VM_PREFILTER_LANG "exact"`
-     *    line and nothing else — 2,855 of the corpus's 2,878 artifacts.
-     *  - A VM HYBRID ABOVE `PCREC_PREFILTER_EXACT_NFA_STATES` gains that line
-     *    reading `"count-collapsed"`, a SMALLER inlined prefilter (different
-     *    tables, different state counts), and `<PREFIX>_VM_PRUNE_CEILING`
-     *    moving `"prefilter-window"` -> `"subject-end"` with the MRL clamp it
-     *    names. MEASURED at 23 corpus artifacts.
+     *  - A VM HYBRID gains TWO lines and nothing else — `#define
+     *    <PREFIX>_VM_PREFILTER_LANG "exact"` and its companion `#define
+     *    <PREFIX>_VM_PREFILTER_LANG_WHY "..."` (D81's `_WHY`, five values;
+     *    docs/spec/tuning.md §2.17) — on 2,855 of the corpus's 2,878
+     *    artifacts.
+     *  - A VM HYBRID ABOVE `PCREC_PREFILTER_EXACT_NFA_STATES` gains those two
+     *    lines reading `"count-collapsed"` / `"exact nfa N > 128"`, a SMALLER
+     *    inlined prefilter (different tables, different state counts), and
+     *    `<PREFIX>_VM_PRUNE_CEILING` moving `"prefilter-window"` ->
+     *    `"subject-end"` with the MRL clamp it names. MEASURED at 23 rows of
+     *    docs/dev/artifact_size_log.tsv (19 distinct patterns; the
+     *    2,772-pattern sweep in tests/codegen/run_prefilter_collapse.sh §5
+     *    counts 20 — the populations differ and each check floors its own).
      *
      * COMPARISON (A) IS STILL EXPECTED BYTE-IDENTICAL, INCLUDING ON THE
      * COLLAPSED ARTIFACTS, and the reason is worth stating because the first

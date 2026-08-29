@@ -8291,9 +8291,64 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
      * not get it (no collapsible repeat, or the machine was already under the
      * knee) must stamp `"exact"`, because the artifact reports what the
      * emitter DID. */
-    if (job->fit.prefilter)
+    if (job->fit.prefilter) {
         sb_printf(c, "#define %s_VM_PREFILTER_LANG \"%s\"\n", v.up,
                   job->fit.prefilter_collapsed ? "count-collapsed" : "exact");
+        /* [OPT-4] AND WHY (D81's `_WHY` convention, `_UNROLL_K_WHY`'s shape).
+         * The LANG line above says which language was built; without this one
+         * an artifact stamping `"exact"` cannot be told apart into the three
+         * quite different situations that produce it — the knee was consulted
+         * and the machine was small (`"exact nfa 42 <= 128"`), there was
+         * nothing to collapse (`"no counted repeat"`), or the caller denied
+         * the axis (`"denied"`). A user reading a size they did not expect
+         * needs to know which, and so does a check.
+         *
+         * THE NUMBER IS IN THE STRING, and it is the measured exact forward
+         * NFA state count with the budget it was compared against — not a
+         * remark about the budget, the actual comparison, so a reader can see
+         * how close the artifact came to the other side of the knee without
+         * rebuilding it. The budget is printed from
+         * `PCREC_PREFILTER_EXACT_NFA_STATES` rather than spelled `128`, so the
+         * stamp stays true if the number ever moves.
+         *
+         * NO SECOND DERIVATION HERE. Both halves come off `EngineFit`, written
+         * once at `src/core/compile.c`'s gate; this site formats and does not
+         * decide. `prefilter_lang_why >= PFLW_FORCED` iff
+         * `prefilter_collapsed` (internal.h), which is the cross-check
+         * tests/codegen/run_prefilter_collapse.sh §2 asserts on the artifact
+         * rather than on the predicate. */
+        switch (job->fit.prefilter_lang_why) {
+        case PFLW_DENIED:
+            /* The number is carried here too, and this is the path that most
+             * needs it: `PFLW_DENIED` is reached only where the machine WAS
+             * over the knee, so the reader is being told both that the flag
+             * acted and how much it cost. */
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"denied, exact nfa %u > %d\"\n", v.up,
+                      job->fit.prefilter_nfa_states,
+                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+            break;
+        case PFLW_NO_REP:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"no counted repeat\"\n", v.up);
+            break;
+        case PFLW_FORCED:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY \"forced\"\n", v.up);
+            break;
+        case PFLW_OVER:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"exact nfa %u > %d\"\n", v.up,
+                      job->fit.prefilter_nfa_states,
+                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+            break;
+        default:
+            sb_printf(c, "#define %s_VM_PREFILTER_LANG_WHY"
+                         " \"exact nfa %u <= %d\"\n", v.up,
+                      job->fit.prefilter_nfa_states,
+                      (int)PCREC_PREFILTER_EXACT_NFA_STATES);
+            break;
+        }
+    }
     /* [DD-13c] (r37 #6) A HYBRID ALSO STAMPS THE SCAN IT INLINES, and this is
      * the finding stated as code: `RX_VM_PREFILTER "hybrid"` says a DFA scan is
      * IN this artifact and then says nothing about it, while the scan in

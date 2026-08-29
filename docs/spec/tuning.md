@@ -903,6 +903,36 @@ instead. Both cost match time on some subjects and both are recovered by
 `"hybrid"` — an artifact with no prefilter names no language. It reports
 what was BUILT, so a request that changed nothing stamps `"exact"`.
 
+**And `<PREFIX>_VM_PREFILTER_LANG_WHY` beside it** (D81's `_WHY`
+convention), because `"exact"` alone does not say which of three quite
+different situations produced it. FIVE values, emitted on the same
+condition as the line above:
+
+| value | meaning |
+|---|---|
+| `"exact nfa N > B"` | the measured exact forward NFA was `N` states against a budget of `B`, so the collapse fired. The default reason for `"count-collapsed"` |
+| `"forced"` | `-fprefilter-collapse` dropped the budget conjunct, and it was NECESSARY — an above-budget pattern compiled with that flag stamps the `>` form instead, because the flag changed nothing there |
+| `"exact nfa N <= B"` | the knee was consulted and the machine was within it, so the sharper language was kept |
+| `"no counted repeat"` | nothing to collapse: this pattern's collapsed language IS its exact one. The state `-fprefilter-collapse` is honoured but vacuous in |
+| `"denied, exact nfa N > B"` | `-fno-prefilter-collapse` kept the exact machine on a pattern that would have collapsed — so the reader is told both that the flag acted and, in `N`, what it cost |
+
+**`"denied"` appears only where the denial CHANGED what was built.** A denied
+build below the knee, or of a pattern with nothing to collapse, stamps the
+same reason as the default build does — because `-fno-prefilter-collapse`
+recovers today's artifact **byte for byte** (above), and a reason string whose
+length moved on the mere presence of the flag would break that promise on
+every artifact the flag cannot act on. Same rule as the value line above: the
+artifact reports what was BUILT, never what was asked.
+
+The number is the measurement the decision was made on, not a remark
+about the budget, so a reader can see how close an artifact came to the
+other side of the knee without rebuilding it; `B` is printed from
+`PCREC_PREFILTER_EXACT_NFA_STATES` and follows it if it moves. The two
+lines are two readers of one derivation written at
+`src/core/compile.c`'s build gate, and the first three values above are
+exactly the ones that read `"count-collapsed"` / `"exact"` in the line
+above — never independently settable.
+
 **The budget** is `PCREC_PREFILTER_EXACT_NFA_STATES` (`src/core/limits.h`),
 compared against the exact forward machine's NFA state count. It is not a
 tuning knob but the point where two measured populations separate: over the

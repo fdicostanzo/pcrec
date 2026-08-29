@@ -351,7 +351,16 @@ static void emit_predicate_axes(StrBuf *sb)
      * recognises. All three can be answered independently by one artifact.
      * `RX_VM_PREFILTER_LANG` is emitted only where `RX_VM_PREFILTER` reads
      * "hybrid", for the reason the `RX_DFA_*` pair is (there is no language to
-     * name where there is no machine). */
+     * name where there is no machine).
+     *
+     * THE AXIS'S STAMP IS THE LANG MACRO, NOT ITS `_WHY` COMPANION, and the
+     * distinction is this table's own: a row names the macro whose VALUE
+     * SELECTS the candidate. `RX_VM_PREFILTER_LANG_WHY` says which conjunct
+     * decided, which is a different question and one with five answers
+     * against this axis's two, so it would not fit a candidate column. It is
+     * specified in docs/spec/tuning.md §2.17 beside the values below.
+     * (`size-term` above is the other shape — there the `_WHY` macro IS the
+     * selector, because that axis has no separate value stamp.) */
     {
         PredAxis p = { "prefilter-lang", NULL, "RX_VM_PREFILTER_LANG", "", 0, NULL, 0, NULL, NULL, NULL };
         emit_pred_row(sb, &p, 1, "count-collapsed", "count-collapsed",
