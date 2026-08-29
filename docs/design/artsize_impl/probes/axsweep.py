@@ -22,15 +22,16 @@ def main():
     out = open(sys.argv[1], "w")
     out.write("axis\tmaxN\tmaxcode\tmaxcode_pat\tmaxtotal\tmaxtotal_pat\tover_code_cap\tover_total_cap\tcompiled\trefused\n")
     CODECAP, TOTALCAP = 500000, 1000000
-    E_B, J_B = 5.070, 11.184
     for name, flags in AXES:
         st = {"maxN": -1, "maxcode": -1, "maxcodep": "", "maxtotal": -1, "maxtotalp": "", "nc": 0, "bc": 0, "ok": 0, "ref": 0}
         def work(p):
             t, err, _ = emit(p, extra=flags, timeout=300)
             if err: return ("ref", p, 0, 0, 0)
             r = scan(t)
-            code = r["bytes"] - E_B*r["table_entries"] - J_B*r["jump_entries"]
-            return ("ok", p, r["labels"], max(0.0, code), r["bytes"])
+            # [r40 R4] CODE bytes = comment-excluded bytes OUTSIDE table
+            # initializers. Exact, emitter-countable, no coefficients.
+            code = r["bytes"] - r["tables"]
+            return ("ok", p, r["labels"], code, r["bytes"])
         with ThreadPoolExecutor(max_workers=4) as ex:
             for kind, p, N, code, total in ex.map(work, pats):
                 if kind == "ref": st["ref"] += 1; continue
