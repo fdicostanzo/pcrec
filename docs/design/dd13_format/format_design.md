@@ -152,9 +152,17 @@ something a check can fail:
 
 > **INV-COMPAT.** For every `.rxt` file in `tests/`, the grown parser
 > produces exactly the block sequence, directive values and expectation
-> list that today's `tests/harness/run.sh` parser produces, and
+> list that today's `tests/harness/run.sh` parser produces;
 > `tests/harness/verify_rxt.py` re-verifies the same 26,691 expectations
-> to the same answers.
+> to the same answers; **and the composer binds nothing in any of them**,
+> so the pattern text reaching the compiler is byte-identical to today's.
+
+The third clause is new in revision 2 and it is the one D87 makes
+necessary: composition is no longer a text transformation whose identity
+case is visible in the text, so "the composer did nothing" has to be
+asserted rather than read off. It is cheap to assert — the composer
+reports the size of the closure it bound, and for the corpus that number
+must be **0** in all 3,265 blocks.
 
 **How it is tested (three checks, not one, because one would share a
 source with what it controls — learnings §3):**
@@ -169,8 +177,11 @@ source with what it controls — learnings §3):**
    parser must report the same pass/fail/pending counts, the same
    `pattern-compile failures (distinct)`, and the same
    `group cases pending-vm` (three numbers `run.sh` already prints —
-   `tests/harness/run.sh:1030-1051`). This is the check that catches a
-   parse that is faithful but routed differently.
+   `tests/harness/run.sh:1030-1051`). Note those three are a DIFFERENT
+   partition of the population than the 26,691 above: a `perr` block and
+   a live `g` line each record independently (r44-grammar G2, and §5.1
+   gives both partitions). This is the check that catches a parse that is
+   faithful but routed differently.
 3. **Oracle re-run.** `verify_rxt.py` over the corpus must report the
    same verified count and the same skip count. This is the check that
    catches a change in what a subject's bytes decode to.
@@ -1377,9 +1388,9 @@ optional emission unit ([EMIT-SET] names it as one).
 all.** §1.1 states this as INV-COMPAT with three independent checks and
 six sabotage rows; §2.4 shows the only construct that could have
 interacted — the 143 blocks carrying a by-name subroutine reference —
-is untouched, because 139 of them resolve lexically (so R = ∅ and the
-expansion is the identity) and the other four are `perr` blocks in a
-file with no definitions.
+is untouched, because 139 of them resolve **within their own pattern**,
+so composition binds nothing and the compiler input is unchanged, and
+the other four are `perr` blocks in a file with no definitions.
 
 The corpus is **179 files / 3,265 blocks / 26,691 expectation lines**
 (MEASURED 2026-08-29). The [DD-13a] census read 54 / 1,100 / 9,977 on
@@ -1891,7 +1902,7 @@ files parse and never the meaning of the 179.
 
 | | how it is honoured |
 |---|---|
-| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, R = ∅ for every non-`perr` block |
+| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, and no file reference to bind in any non-`perr` block. r44-grammar reproduced all three with its own recognizer (G1, G5, G6) |
 | **AR-2** no dispatch in the common case | a pattern with no file references binds nothing, so the AST is the one the compiler builds today. §2.7's default: one unnamed block, no head → `target rx`, byte-for-byte today's output. The format cannot add dispatch because in that case it adds nothing. **D87 strengthens this**: an UNDECLARED call stays capture-transparent at zero cost (rule 5), so even a composing file pays only for the deliveries it declares |
 | **AR-3** declared inapplicability ≠ failure ≠ silent pass | four separate, counted, printed states: `oracle none <reason>`, `variant … unsupported <reason>`, `gp`'s pending-vm bucket, and the resolution-failure taxonomy — each reported on its own line in the summary (§2.11) |
 | **AR-4** must not make D27 harder | the head is **bounded and above the first `pattern` line**, so a blinded author reading a block looks in exactly one other place; a fragment **may not declare file scope**, so a spliced block's meaning never depends on which file spliced it; and the one genuine cross-block dependency — a name a pattern references — is visible at the top of the file by construction |
