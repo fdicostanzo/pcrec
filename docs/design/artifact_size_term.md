@@ -54,8 +54,9 @@ tension that kicks in at some size."*
    trial's `ctx_fail` is discarded at the one recovery point, the only place
    that can), R2's arena question dissolves (`job_cleanup` `arena_free`s per
    attempt) and R3's hazard cannot arise (each attempt re-parses). What remains
-   is the EARLY ABORT (§2.2c — the ladder otherwise writes 55.4 MB on a
-   worst-rung tower to select a 42,619-byte artifact) and the re-emission
+   is the EARLY ABORT (§2.2c — the ladder's worst rung on a nested tower is
+   MULTIPLES of the answer's size: 3.1 MB to select a 98,916-byte artifact on
+   the archived 5-deep `{17}` tower) and the re-emission
    IDENTITY CONTROL that replaced R3's sabotage (§2.2d). Measured in-process:
    0.78 s on the worst pattern in the project.
 8. **A cap refuses only if NO K on the ladder is under it** (§4.4, S5), and a
@@ -328,15 +329,36 @@ mistake one level up.
 
 **The ladder's cost is bounded by its WORST rung, and K=6 is routinely the
 worst** — `vm_counter_copies`' mandatory `K + m%K` term is non-monotone.
-Measured on `{17}` towers, `--engine=vm`, raw emitted bytes:
+RE-MEASURED AT DELIVERY (r42 M6) on `{17}` towers, `--engine=vm`, caps raised
+out of the way, raw emitted bytes — with the patterns ARCHIVED this time:
+
+```
+5-deep  (?:(?:(?:(?:(?:a|b){17}){17}){17}){17}){17}
+6-deep  (?:(?:(?:(?:(?:(?:a|b){17}){17}){17}){17}){17}){17}
+```
 
 | tower | K=8 | **K=6** | K=4 | K=3 | K=2 | K=1 |
 |---|---|---|---|---|---|---|
-| 5-deep | 1,749,937 | **3,135,570** | 346,163 | 345,919 | 109,579 | 41,491 |
-| 6-deep | 16,252,391 | **35,511,862** | 1,647,486 | 1,638,076 | 265,236 | **42,619** |
+| 5-deep | 1,739,272 | **3,124,905** | 335,498 | 335,254 | 98,914 | 30,826 |
+| 6-deep | REFUSED (nodes) | REFUSED (nodes) | 1,636,812 | 1,627,402 | 254,562 | **31,945** |
 
-Unbounded, the 6-deep ladder writes 55.4 MB of scratch to discover that the
-answer is 42,619 bytes.
+**THE ORIGINAL TABLE'S PATTERN TEXT WAS NEVER ARCHIVED, AND THAT IS THE
+FINDING.** It read 5-deep K=6 = 3,135,570 and 6-deep K=6 = 35,511,862 with a
+K=1 answer of 42,619 bytes. Neither this lane nor the r42 critic could
+reproduce those numbers: every reconstruction of a "6-deep `{17}` tower" gives
+a different size, and the canonical one above REFUSES at K=8 and K=6 on the
+131,072-node limit, so the row that carried the 35.5 MB figure cannot have
+been this shape. The figures are replaced by the archived measurement rather
+than defended. Same root cause as §2.2's re-measured witnesses (r42 M2): a
+number recorded without the command that produced it.
+
+**The structural claim is untouched and the new grid makes it sharper.** K=6
+is still the worst rung by a wide margin — 3,124,905 bytes against K=8's
+1,739,272, so the ladder's SECOND step costs 1.8× its first, which is
+`vm_counter_copies`' non-monotone `K + m%K` term doing exactly what §2.2c says
+it does. Unbounded, the 5-deep ladder writes 5.6 MB of scratch to discover
+that the answer is 30,826 bytes; the 6-deep one refuses twice on the way to
+31,945.
 
 **What shipped:** `StrBuf.abort_over`, checked in `sb_grow` — the ONE place a
 buffer's length grows, so no append path can miss it — armed only on a LADDER
@@ -392,7 +414,7 @@ are separate-process runs — a bound, not a measurement):
 |---|---|---|---|
 | an ordinary pattern (the term never runs) | 0.13 s | 9 MB | unchanged |
 | K41 witness 1 (ladder runs, takes K=1) | **0.78 s** | 30 MB | 116,380 B; gcc 55.13 s → ~1 s |
-| the 6-deep `{17}` tower (worst rung) | **0.75 s** | 64 MB | 42,619 B |
+| the 6-deep `{17}` tower (worst rung) | **0.52 s** | 62 MB | 31,947 B |
 
 The ladder's marginal cost on the worst pattern in the project is about
 **0.65 s** of compiler time, against a gcc compile it takes from 55 s to 1 s.
@@ -1903,7 +1925,7 @@ prediction with a tolerance, so a 5× real gain on a 20× prediction cannot pass
 | 6c | the instrument | `measure.py`'s byte column agrees with `size_count.sh` on every pattern it is run against, both artifact forms | exact — the control §2.0 did without |
 | 8 | **the identity sweep's scope** | the K sweep is green with `budget`/`gu` cells EXCLUDED BY CONSTRUCTION and default budgets in force (§6.2 control 1); a run that includes them and passes means the exclusion was not wired; the excluded population's SIZE is printed, and on those cells the give-up CODE still matches where both K give up (R6) | exact |
 | 9 | **R1's witness — the one the ladder would have broken** | `(?:(?:(?:(?:(?:(?:a\|b){41}){41}){41}){41}){41}){41}` under `--engine=vm` still COMPILES, at K=8, artifact unchanged. Today: K=8 compiles (N=118,098), K=6 refuses "VM exceeds 131072 emitted nodes" | exact — a `.rxt` cell, not a note claim |
-| 10 | **R2's worst-rung cost** | MEASURED in-process: the 6-deep `{17}` tower compiles in **0.75 s / 64 MB peak RSS** with the abort on, against 55.4 MB of scratch written without it | measured before and after |
+| 10 | **R2's worst-rung cost** | RE-MEASURED at delivery on the ARCHIVED tower (§2.2c): the 6-deep `{17}` tower compiles in **0.52 s / 62 MB peak RSS**, best of three, to a 31,947-byte artifact at K=1 — the 62 MB reproduces the original reading's 64 MB, which is what identifies the shape even though the byte figures did not survive | measured, pattern archived |
 | 11 | **the re-emission identity control** | 0 internal errors over the whole corpus, and it must FIRE when the final attempt's node count or adjusted bytes differ from the ladder's record (§2.2d — it fired for real on its first run) | exact |
 | 12 | **`cap-rescue`** | the sixth `_UNROLL_K_WHY` value must be REACHED by some cell; if no natural pattern reaches it, a test-only cap override is what exercises it (§10 item 6) | a value no test can produce is a value no check guards |
 | 7 | `abi` scaffolding | +55 B/VM artifact (§8's estimate) | measured and compared |

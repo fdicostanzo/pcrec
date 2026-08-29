@@ -74,4 +74,19 @@ row "K41 witness 2, term's own K"        $RAISE "$W2"
 row "K41 witness 2, K=8 (term denied)"   -fno-size-term $RAISE "$W2"
 row "nested N=8, term's own K"           "$NEST8"
 row "nested N=8, K=8 (term denied)"      -fno-size-term "$NEST8"
+
+# The §2.2c WORST-RUNG towers, archived here because the originals were not
+# (r42 M6): every reconstruction of the note's "6-deep {17} tower" gave a
+# different size, and these two are what its re-measured table is taken from.
+# The 6-deep one REFUSES at K=8 and K=6 on the 131,072-node limit, which is
+# itself part of the finding — the shape that produced the old 35.5 MB figure
+# cannot have been this one.
+T5='(?:(?:(?:(?:(?:a|b){17}){17}){17}){17}){17}'
+T6='(?:(?:(?:(?:(?:(?:a|b){17}){17}){17}){17}){17}){17}'
+# `--engine=vm` is REQUIRED, not a convenience: on the default axis these
+# towers refuse at NFA construction ("NFA exceeds 131072 states"), a
+# pre-existing limit that has nothing to do with the size term -- the same
+# reason tests/size/size_term.rxt's first block carries `engine vm`.
+row "{17} tower 5-deep, term's own K"     --engine=vm "$T5"
+row "{17} tower 6-deep, term's own K"     --engine=vm "$T6"
 }
