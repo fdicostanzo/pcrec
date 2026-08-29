@@ -464,10 +464,36 @@ put together: the ladder's INTERIOR rungs earn their place, measured.** A
 two-point ladder `[8,1]` was proposed on the strength of the table above —
 argmin is an endpoint on all 15 subjects — and that was a property of fifteen
 hand-picked subjects, not of the corpus. `tests/axes/run_ksweep.sh`'s
-interior-optimum report found **three corpus patterns whose argmin is K=2** on
-its first run (`^(?:(?<g>(?=a)a(?&g)?b)){0}(?&g)$` and two siblings), so
-dropping `[6,4,3,2]` would have cost real patterns their best K. The report is
-now the standing census of that question: the sweep emits the corpus at several
+interior-optimum report found three corpus patterns whose argmin is K=2 on a
+100-case sample, so dropping `[6,4,3,2]` would have cost real patterns their
+best K. **THE FULL-CORPUS CENSUS, run at delivery over all 22,114 cases, names
+EIGHTEEN** — six times the sample, and the sample's three were no fluke of
+which 100 cases it took:
+
+| pattern | argmin | nodes |
+|---|---|---|
+| `((?:(?:b\|)\|a)?)*` | K=2 | 15 |
+| `((?:([^a]{0,2})\|(?:[a-c])??)+)*` | K=2 | 29 |
+| `((?:(a){0,2}b)+c)` | K=2 | 17 |
+| `((?:[ab]{0,2}c)+d)` | K=2 | 17 |
+| `((?:a{0,2}?b)+c)` | K=2 | 17 |
+| `((?:a{0,2}a)+c)` | K=2 | 16 |
+| `((?:a{0,2}b)+c)` | K=2 | 17 |
+| `((?:a\|b*)?)*` | K=2 | 15 |
+| `((?:a\|b*?)?)*` | K=2 | 15 |
+| `((?:b*?\|a)?)*` | K=2 | 15 |
+| `((?:b*\|a)?)*` | K=2 | 15 |
+| `((?<=a)b)+` | K=2 | 21 |
+| `((a)+)+` | K=2 | 15 |
+| `((ab)+c)+` | K=2 | 18 |
+| `((a{1,2}){1,2}){1,2}` | K=2 | 37 |
+| `((a{1,2}){1,2}){1,2}?` | K=2 | 37 |
+| `((a{1,2}?){1,2}){1,2}` | K=2 | 37 |
+| `(?!a)?b` | K=2 | 9 |
+
+Every one of the eighteen is K=2 — the interior rung nearest the bottom, and
+exactly the one a two-point ladder `[8,1]` would have skipped over. The report
+is the standing census of that question: the sweep emits the corpus at several
 K anyway, so it names any interior argmin every run, for free.
 
 That is the third time this row measured a claim on a population it chose
@@ -652,6 +678,72 @@ mechanism; this row can PRICE it (the model now sees it) and REFUSE it (§4),
 but shrinking it belongs to that row. Naming the owner is the point: a size
 term that quietly grew a prefilter optimisation would be exactly the parallel
 mechanism the project's standing rule forbids.
+
+
+### 3.3a The declared-capacity floor: `K` is answer-identical in the LANGUAGE, not in the DEPTH
+
+**Found by the full K-sweep at delivery, and it is the one place this row's
+central premise is too strong.** Everything above rests on `K` being the
+counter rung's chunking factor and nothing else — same language, same span,
+same slots. That is true of what an artifact MATCHES. It is NOT true of how
+DEEP an artifact can go before it gives up: a smaller `K` raises the
+per-iteration frame need, so the same `<PREFIX>_BT_FRAMES` carries a SHORTER
+subject.
+
+The artifact has been saying so all along. `rx_info`'s `.subject_ceiling`
+(D44.1's honest declared bound) moves with `K`:
+
+| pattern | `--unroll=8` | `--unroll=1` |
+|---|---|---|
+| `^(a(?1)?b)$` | 512 | **341** |
+| `((?1)?a)` | 512 | **341** |
+| `(((?:a{0,2}b)+c){0,20}d){0,20}e` | 43 | **23** |
+
+MEASURED consequence: on a 684-byte subject, five cells across
+`tests/recursion/framebuffer.rxt` and `tests/recursion/d27/sr_depth.rxt` MATCH
+at the default `K` and return a FRAMES GIVE-UP under `--unroll=1`, with the
+DEFAULT budgets. That is §2.2's contract change arriving on the default
+surface rather than on an opt-in one.
+
+**THE RULE, in its general form** (and the general form is the point — a
+`recursion`-only clause for a general fact is the shape
+`pcrec-general-mechanisms-not-special-cases` names): a rung whose artifact
+declares LESS capacity than the default `K`'s — on `.frame_capacity` OR on
+`.subject_ceiling` — is not a candidate. Not in the argmin, not in the cap
+rescue. Both sentinels mean "no bound" and compare as +infinity
+(`frame_capacity` −1, `subject_ceiling` 0), so a rung that declares a finite
+bound where the default declared none has LOWERED it and is excluded by the
+same test. When the `K` the term WANTED is exactly the rung the floor removes,
+the term declines and stamps `capacity-declined` — a seventh
+`_UNROLL_K_WHY` value, kept distinct from the materiality bar's
+`size-model-declined` because they are different facts with different
+remedies.
+
+**Why it is a FORWARD GUARD and not a fix for a live defect, stated with the
+measurement rather than argued.** Over all 2,772 corpus patterns, **69 have a
+declared capacity that moves with `K`, and NONE of the 69 has the counter
+rung.** The ladder's own gate therefore already excludes every one of them —
+including the five witnesses above, which are `recursion` shapes with no
+counter rung at all. No shipped answer changes; nothing in the corpus can
+reach the floor today. The floor exists because the mechanism CAN pick a low
+`K` on any counter-rung pattern above the threshold, and a compiler-chosen
+`K` that turns a match into a give-up is an answer change no flag asked for —
+which "refuse and document" (D84 ruling 2) does not cover.
+
+That empty natural population is also why the check is built the way §5's
+cap-rescue check is: `run_size_term.sh` §7 drives a SYNTHETIC witness,
+`(((?:a{0,2}b)+c){0,20}d){0,20}e`, through a reference compiler with the
+threshold lowered — a pattern whose argmin IS the lowering rung (K=1, 36
+nodes) and where EVERY lower rung lowers the ceiling (43 → 23). §7b pins the
+natural population at 0 and says so loudly if an inhabitant appears.
+
+**The caller keeps the ability the term gives up.** An explicit `--unroll=K`
+may still lower the depth: that is the caller's own choice, it is legible in
+the stamped `.subject_ceiling` before a subject is ever run, and
+`docs/spec/limits.md` §8a states both halves — rule 1 for the override, rule 2
+for the term. The K-sweep gate now holds the line: an excluded give-up cell is
+allowed on an explicit `--unroll=`, and FAILS if its pattern is one the term
+itself builds at `K < 8`.
 
 ### 3.4 Where K must NOT descend
 
@@ -1553,11 +1645,12 @@ paragraph rather than with the first version's "0 on DFA artifacts".
 | stamp | value | on |
 |---|---|---|
 | `<PREFIX>_UNROLL_K` | the K this artifact was emitted at, an integer | **every VM artifact**, unconditionally |
-| `<PREFIX>_UNROLL_K_WHY` | see the six values below | **every VM artifact**, unconditionally |
+| `<PREFIX>_UNROLL_K_WHY` | see the seven values below | **every VM artifact**, unconditionally |
 | `<PREFIX>_MAX_EMIT_CODE_BYTES` | the EFFECTIVE code-bytes cap (default, or the `--max-emit-code-bytes=N` override) | **every VM artifact** |
 | `<PREFIX>_MAX_EMIT_BYTES` | the EFFECTIVE total-bytes cap (default, or the `--max-emit-bytes=N` override) | **every artifact**, both engines — the total cap is engine-independent |
 
-**`_UNROLL_K_WHY` has SIX values, not three** (findings S9, R5). The first
+**`_UNROLL_K_WHY` has SEVEN values, not three** (findings S9, R5, and the
+delivery K-sweep's §3.3a). The first
 version's `{default, size-model, option}` hid four reachable states behind
 `"default"`, so a check could not tell "the term never ran" from "it ran and
 declined" — which is exactly the distinction a structural check needs:
@@ -1570,6 +1663,7 @@ declined" — which is exactly the distinction a structural check needs:
 | `size-model` | the ladder ran and its K was TAKEN |
 | `size-model-declined` | the ladder ran, and the materiality bar rejected its K |
 | `cap-rescue` | the bar declined the ladder's K, then §4.4 step 4 took a ladder K anyway to get under a cap (finding R5 — neither of the two above is true of it) |
+| `capacity-declined` | the ladder ran and the K it WANTED would have lowered this artifact's declared capacity (§3.3a) — so that rung was not a candidate, and the default K stands. Distinct from `size-model-declined` on purpose: that one is the bar's verdict about BYTES, this one is the floor's about DEPTH, and the remedies differ |
 
 Unconditional is the point: D81 splits the D46 family so a selection fact is
 stamped **whether or not it fired**, which is what makes the stamp evidence
@@ -1645,7 +1739,7 @@ the mistake is the section's own subject.
 
 | # | thing | this row's |
 |---|---|---|
-| 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (**six** values — §7.1 and the driver's own comment list them), `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES` (§7.1) |
+| 1 | stamp | `_UNROLL_K`, `_UNROLL_K_WHY` (**seven** values — §7.1 and the driver's own comment list them), `_MAX_EMIT_CODE_BYTES`, `_MAX_EMIT_BYTES` (§7.1) |
 | 2 | deny flag | `-fno-size-term` / `PCREC_NO_SIZE_TERM` (**bit 18** — [ENG-ABS] took 17), `docs/spec/tuning.md` §2.15 |
 | 3 | identity gate | `make test-axes` bit 18 by construction, **plus** `make test-ksweep` (§6.2) |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
@@ -1926,8 +2020,12 @@ arise — §2.2d), and a pre-emission node count (§2.2a).
 - **The byte-identity-against-explicit-`--unroll` control** (§6.2 control 4).
   `run_size_term.sh` asserts the stamped `K` matches the artifact, which is
   weaker than asserting the two builds are byte-identical.
-- **A full `make test-ksweep` over the whole corpus.** Validated on 100 cases;
-  the full sweep is one corpus run per rung and is owed on a quiet box.
+- ~~**A full `make test-ksweep` over the whole corpus.**~~ **DONE at
+  delivery** (2026-08-29, quiet box, all 22,114 cases per rung). It answered
+  the interior-optimum question with EIGHTEEN patterns rather than the
+  sample's three (§3.3), and it found §3.3a — the declared-capacity finding
+  that changed the mechanism. A gate that only ever ran on a sample would
+  have shipped neither.
 
 None of the three is a correctness gap in the shipped mechanism; all three are
 gaps in what would CATCH a future regression, which is the more durable kind
