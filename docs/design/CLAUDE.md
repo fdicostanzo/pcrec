@@ -1446,25 +1446,34 @@ append-only or historical records.
   BEFORE the emitter (2026-08-28, lane artsize3), on `offset_k_skip.md`'s
   model: artifact size as a term in the emitter's own candidate selection,
   plus the emitted-size cap D45's consequence 1 has had open since
-  2026-08-15. Its central finding **refutes the obvious reading of that
-  assignment**: a byte cap is the wrong instrument, because `N` (emitted VM
-  nodes) and `E` (declared table entries) cost gcc ~5,930x different amounts
-  per unit — the 2 MB witness is 96 % program and costs gcc 55.13 s while
-  `a{1,31000}` is 1.38 MB of 92 % tables and costs **0.34 s**, so any byte cap
-  refusing the first refuses the second. So the row splits into a **K
-  selection** and a **node cap**, both over one two-term size model
-  (`B = S(engine) + 173.53*N + 5.064*E`, median 2.35 % error over 2,487
-  corpus artifacts, and *more* accurate at the tail — max 6.91 % above 50 KB —
-  which is the property the rule needs). Carries the K curve the census (§9)
-  named as not-measured, whose finding is that it is **NON-MONOTONE** (so the
-  rule evaluates a ladder rather than descending greedily), and the measured
-  result that the model-driven rule reproduces the census's own hand-derived
-  nested-vs-table split **with no nesting special case**. It also **declines
-  all three of census §7's emitter levers on measurements** (the best is worth
-  a corpus median of 0.99 %) and reports the gap it found by reading
-  `tests/axes/run_axes.sh` rather than trusting a summary of it: `--unroll` is
-  a value axis, not a `PCREC_(NO|FORCE)_*` bit, so **no gate proves any K
-  answer-identical today**. Measurements: `artsize_impl/`.
+  2026-08-15. **PANELED R40 (`../dev/reviews/2026-08-28-r40-artsize-term.md`)
+  and REVISED; read the note's §2.0 before any other section.** The panel
+  refuted the first version on a pattern the project had already pinned:
+  `measure.py`'s own regexes could not see the VM hybrid prefilter's
+  computed-goto machinery (`static const void *const rx_targets_N[…]` jump
+  tables, `rx_s<N>:` labels), so K41's SECOND witness read 118,240 B against
+  an actual 1,220,606 B and **neither mechanism engaged on it** — the
+  classifier's own regexes were the population nobody counted, one more
+  instance of `../dev/learnings.md` §3. The revision adds two measured terms
+  (prefilter states `S`, jump entries `J` at 11.08 B/entry, confirmed twice
+  independently) and changes the design: the cap now binds on **CODE bytes**,
+  not total bytes and not nodes, because a node costs gcc ~5,930x a data-table
+  entry and ~620x a jump entry — `a{1,31000}` is 1.37 MB and compiles in
+  0.34 s while K41's witness 2 is 1.22 MB and costs **66.92 s**. The two
+  witnesses are now handled by DIFFERENT mechanisms (witness 1's size is node
+  replication, so K descent takes it 1,719,349 → 87,118 B; witness 2's is its
+  prefilter, which K cannot touch, so the cap refuses it), which **moves K41's
+  pinned fuzz-gate bucket from 2 to 0**. It also records that there is **no
+  pre-emission node count in the compiler** (r40 F6: `vm_count_slots` counts
+  slot categories, `nlabel` is emission-time), and takes that as a constraint
+  rather than building a parallel counting walk — the rule RE-EMITS over the
+  ladder and reads exact counts, which removes the model's 7-25 % tail error
+  from both the selection and the refusal. Still carries the non-monotone K
+  curve, the measured decline of all three of census §7's levers (the best is
+  worth a corpus median of 0.99 %), and the identity gap the lane found by
+  reading the gate: `--unroll` is a VALUE axis, so **no gate proves any K
+  answer-identical today** and [CHK-2] (c) is where that is fixed.
+  Measurements: `artsize_impl/`.
 - `artsize_impl/` — the [ART-SIZE] STEP 2 lane's probes and archived outputs
   (the corpus size measurement and its fit, the K curve, the gcc-cost
   decorrelation run), kept separate from `../dev/artifact_size_census/`

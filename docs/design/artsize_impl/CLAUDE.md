@@ -5,41 +5,55 @@ Lane `artsize3`, 2026-08-28. The measurement material behind
 `../../dev/artifact_size_census/` (STEP 1's own census script) for the
 same never-confuse-the-lanes reason `possessify_impl/` and its siblings
 are separate: STEP 1 measured the POPULATION, this lane measured the
-MODEL and the LEVERS, and a reader must be able to tell which run
-produced which number.
+MODEL, the LEVERS and the gcc COST, and a reader must be able to tell
+which run produced which number.
+
+**READ THIS FIRST if you are about to trust a count from `measure.py`.**
+Its first version matched only `rx_L<N>:` labels and only `\w`-typed
+`static const` arrays, so it could not see the VM hybrid prefilter's
+computed-goto machinery at all — `static const void *const
+rx_targets_N[11]` jump tables and `rx_s<N>:` state labels. On K41's second
+witness that hid 3,108 tables and 3,108 labels and made the size model read
+118,240 B for a 1,220,606 B artifact (r40 finding F1). The classifier's own
+regexes were the population nobody counted. The fix is structural, not a
+widened pattern: it anchors on `= {` and on the emitter's `rx_` prefix
+rather than on a type spelling, and it counts label FAMILIES separately so
+an unrecognised family reports nonzero in an `olabels` column instead of
+vanishing. **The control that catches this class is
+`tests/lib/size_count.sh`** — the shipped, byte-exact definition — run on
+the same artifact; `measure.py` agrees with it to the byte on both the
+self-contained and the split `.c`+`.h` form, including on the witness.
 
 - `probes/measure.py` — emits every distinct corpus pattern once
-  (`-p rx --features all -o -`) and records, per artifact: comment-excluded
-  bytes (`tests/lib/size_count.sh`'s definition, reimplemented and VERIFIED
-  byte-for-byte against the shipped shell implementation on six artifacts —
-  see the note's §2.1), the emitted VM node count (`rx_LN:` labels), the
-  DECLARED table entry count (the sum of every emitted `static const`
-  array's declared length — the PRE-EMISSION `states x ncls` quantity, not
-  the emitted text bytes, which would make the model circular), goto and
-  address-taken-label counts, and the D46 stamps.
+  (`-p rx --features all -o -`) and records per artifact: comment-excluded
+  bytes (`size_count.sh`'s definition), VM nodes `N` (`rx_L`), prefilter DFA
+  states `S` (`rx_s`), any other label family (`olabels`), DATA-table entry
+  count `E` and POINTER-table (jump-table) entry count `J`, plus the D46
+  stamps.
       python3 probes/measure.py --out corpus_sizes.tsv --jobs 4
-- `probes/fit.py` — the least-squares fit and the error distribution the
-  note's §2 reports. Loads `corpus_sizes.tsv`.
-- `probes/ksweep.py` — the K curve STEP 1's census (§9) explicitly did not
-  take: 15 subjects x K in {1,2,3,4,6,8,12,16,32}. Produces `ksweep.tsv`.
-- `corpus_sizes.tsv` — this lane's own run of `measure.py` over 2,771
-  distinct corpus patterns (2,487 compiled, 284 refused), 2026-08-28,
-  box load1 0.23-1.33. The fit's evidence; the note quotes it throughout.
-- `probes/gccfit.py` — **what actually drives gcc's cost**, measured over a
-  spread chosen to DECORRELATE nodes from table entries (node-heavy subjects
-  hold `E` fixed at 844; table-heavy ones have `N = 0`). This is the
-  measurement the cap's whole derivation rests on, and it is the one that
-  refuted a byte cap: a node costs gcc ~5,930x what a table entry costs.
-  Produces `gccfit.tsv`.
-- `gccfit.tsv` — that run. 26 rows, one gcc trial each; the note's §4.2 fits
-  `gcc_cpu ~ 0.00054 * N^1.269` on it and its §4.1 re-measures four rows
-  best-of-3.
-- `ksweep.tsv` — the K curve. The note's §3 reads the NON-MONOTONICITY
-  off this file directly (nested-N8 is 195,443 B at K=3 and 163,386 B at
-  K=4), which is why the K rule EVALUATES a ladder rather than descending
-  greedily.
-
-The three emitter levers of the census's §7 were priced by a
-measurement-only subagent whose numbers are transcribed into the note's
-§5 with their provenance; its scratch classifier is not archived here
-(the note carries the numbers and the classification rules).
+- `probes/fit2.py` — the FOUR-term two-intercept joint fit the note's §2.3
+  reports, and the script that actually produces its coefficients (r40 F5:
+  `fit.py` is single-intercept and cannot).
+- `probes/fit.py` — the original single-intercept helper; still the source of
+  `load`/`ols`/`pct`, which `fit2.py` imports. Not the note's fit.
+- `probes/ksweep.py` — the K curve STEP 1's census (§9) did not take:
+  15 subjects x K in {1,2,3,4,6,8,12,16,32}. Produces `ksweep.tsv`.
+- `probes/gccfit.py` — gcc's cost over a spread chosen to DECORRELATE nodes
+  from data-table entries. Produces `gccfit.tsv`. Its log-log node fit was the
+  first version's node-cap derivation and is NO LONGER used for that (note
+  §4.6): it survives as the evidence for §4.1's per-unit costs.
+- `probes/jfit.py` — the JUMP-table term, measured directly on a decorrelated
+  grid (`^(<literal of length n over k letters>)x`: varying k moves `J` at
+  fixed `N` and `S`). The corpus cannot fit this coefficient — its `J` tops out
+  at 210 entries where K41's second witness carries 34,188. Produces
+  `jfit.tsv`.
+- `corpus_sizes.tsv` — this lane's run over 2,771 distinct corpus patterns
+  (2,487 compiled, 284 refused), 2026-08-28, with the CORRECTED instrument.
+- `ksweep.tsv`, `gccfit.tsv`, `jfit.tsv` — the three probe outputs above.
+- `k41_w1.txt`, `k41_w2.txt` — both K41 witness patterns, verbatim, extracted
+  from `../../dev/known_issues.md` rather than retyped. The model's test cases:
+  witness 1 is node-replication (the K rule fixes it), witness 2 is
+  prefilter-driven (the cap refuses it).
+- `levers/` — the census §7 lever pricing: `classify.py` (the span-loop /
+  node-skeleton / MRL-guard classifier), `run_popc.sh`, and the population B
+  and C results the note's §5 quotes. Archived per r40 F7.
