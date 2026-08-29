@@ -936,3 +936,235 @@ The hunks, named so a reviewer can check them off:
 
 `docs/guide/` is the human tier and points at these; it never restates
 them (D80).
+
+---
+
+## 4. The seams
+
+Each seam is stated as an **interface** — what this format needs from the
+other row, or what the other row may rely on — never as that row's
+implementation.
+
+### 4.1 [LIB] — subpattern libraries
+
+**[LIB] is what W1 exists for**, and it is `STATE:not-started` blocking
+on this note ("depends on rxt format" — the row BLOCKS on [DD-13b]).
+All three of its parts are covered by W1: (1) a file carrying several
+patterns that reference each other is `name` + `(?&name)`; (2) a user
+including a library and calling its subpatterns by name is
+`lib "path"` / `lib <name>` + `(?&name)`; (3) a shipped **library store**
+is the `<>` spelling's search path — pcrec's shipped store first, then
+each `--lib-path DIR` in declaration order.
+
+**What [LIB] may rely on:** a library file is an ordinary `.rxt`; it
+declares definitions with `name` and carries their own tests as ordinary
+cases; it declares **no targets**, and its tests **do not run** in a file
+that `lib`s it (they run when the library file is itself under test —
+which is what makes the store's "each entry oracle-verified" discipline
+mean something). The library's internal references resolve in the
+library's own scope (§2.3 step 4), so a library is self-contained and a
+user cannot accidentally satisfy a library's reference from their own
+file.
+
+**What [LIB] must decide, not this note:** the store's location and
+versioning ([DD-3]), whether `pcrec_options` gains a definitions input
+and what `--lib FILE` means at the library API level, and the store's
+authoring discipline (a D27-blinded author per entry). The format's
+answer to "where do definitions come from" is a file; whether the C API
+accepts them another way is [LIB]'s.
+
+### 4.2 [DD-11] / D85 — the definition table
+
+D85 rules that the replacement model is a **predicate-scanned table** on
+[ENG-FORM]'s shape, and names this format as one of its readers:
+"[DD-13b]'s `name`/`lib` resolution and the [LIB] store read the same
+table (a library definition is a row whose predicate is the library's
+presence)."
+
+**What this format needs from [DD-11]** — the interface, stated as this
+side of the seam:
+
+1. **A lookup**: `resolve(name, option-scope) -> definition text in core
+   syntax, or not-found`. That is the whole surface. The format's
+   resolver (§2.3 step 3) calls it; it does not walk the table itself.
+2. **Determinism and orderability**: the table's answer for a given
+   (name, option scope) must be stable across a compile, and when two
+   rows could apply the table's own first-applicable-wins rule decides —
+   the format never breaks a tie.
+3. **A duplicate report**: the format must be able to ask whether a name
+   is defined by more than one *file* in its scope, because that is
+   refused by name (§2.2). D85 already frames a library definition as a
+   row with a predicate, so "two libraries define `email`" is two rows
+   with the same key — the table must say so rather than silently
+   ordering them.
+4. **Nothing about the option-scoped rows.** `$` under `(?m)`, D66's
+   assertion expansions, the possessive desugaring: the format neither
+   sees nor spells those. They are the table's other customers.
+
+**The reverse direction**, worth stating because D85's revisit-when
+raises it: *"[DD-13b]'s wave 1 needs `name` resolution before [DD-11]
+exists (then the table's first rows are library definitions and the
+option-scoped rows follow)."* This note's recommendation is the
+opposite order where it is free: W1's resolver is ~50 lines of name
+lookup over parsed blocks, and building it *as* the table's first
+consumer costs nothing extra — but if [DD-11] has not opened when W1
+lands, W1 ships its own lookup behind interface (1) above, and [DD-11]
+replaces the implementation without touching the format. That is
+implement-then-replace, which memory
+`pcrec-general-mechanisms-not-special-cases` permits explicitly, and it
+keeps [LIB] from waiting on a second design.
+
+### 4.3 [ENG-PGO] / D83 — the findings file
+
+D83 rules the analysis runs **outside** pcrec, once per exemplar file,
+delivering a **findings file pcrec accepts**, and that the file-general
+and pattern-specific analyses are two files and two builds. Frank then
+ruled the findings file **is** an `.rxt`.
+
+**The interface**: the findings file is an `.rxt` whose head carries one
+or more data blocks and whose body is empty. A user's file brings it in
+with `include "…freq.rxt"` (or `lib`, if the same file also carries
+definitions), a `config` selects a table by name (`freq loglines`), and a
+`target … with <config>` builds a pattern against it. **The same pattern
+built against two exemplars is two `target` lines** — which is the
+property that made the target-as-declaration shape right (Frank §6.4).
+
+**What [ENG-PGO] may rely on**: the block's shape and its required
+provenance (§2.10); that the harness never interprets the table beyond
+well-formedness; that the **analyzer is the only writer** of a findings
+file (the R30 lesson: an archiver is the only writer of its output, and a
+hand edit there is a red line — provenance imitation is worse than
+absent provenance).
+
+**What [ENG-PGO] owns**: the analyzer, D83's `--exemplar FILE`-shaped
+flag, the built-in static fallback table when no findings file is given,
+and — under D77 — whether any *second* family member is ever earned.
+Its plan row says it blocks on "wave 2/3"; on this design it blocks on
+**W2** alone.
+
+### 4.4 [V-E] — the manifest, the finder, and compilation units
+
+[V-E]'s manifest **is** the target list. Frank §6.4: "the target list IS
+the manifest — one line per artifact, all at the top of the file."
+
+- **R-VE-1** ("N named patterns → one emitted unit, perhaps several") is
+  answered at the format layer by **one `.c` per target** (Frank's ruling
+  6) and left open at the codegen layer: a single multi-pattern *unit* is
+  [V-E]'s charter, and the format does not prejudge it — several targets
+  in one file are several artifacts *by default*, which a later
+  unit-emitting mode can group without any change to the declarations.
+- **R-VE-2 / AR-2** (no dispatch for the statically-known single-pattern
+  call) is preserved by §2.7's compatibility default: a one-unnamed-block
+  file with no head is `target rx`, its expansion is the identity
+  (§2.3 step 6), and the compiler input is byte-for-byte today's. **The
+  format cannot add dispatch, because in that case it adds nothing at
+  all.**
+- **R-VE-5 / D39.2** (appended numbering) is not implemented by the
+  format; it *falls out* of appending the DEFINE block (§2.3, MEASURED).
+  That is the strongest form of the requirement being met — there is no
+  second numbering mechanism to keep in agreement with PCRE2's.
+- **R-VE-4** (source-level vs link-level composition kept distinct) —
+  the format expresses the **source-level** tier only, and expresses it
+  as a PCRE2 subroutine call. Link-level composition
+  ([M4-CALLOUTS]'s aligned ABI, non-regex predicates) has no spelling
+  here and must not acquire one that looks the same; §7 Q4 records that
+  as the open item it is.
+- **R-VE-6 / D39's labelled references** (`"a:reg1"`, path composition
+  `"c:a"`) — **the format needs no label**, because a definition is
+  referenced by name and appears **once** in the DEFINE block however
+  many times it is called. The label problem is the *inlining* tier's
+  ("the same regex inserted twice"), which this format does not spell.
+  If [V-E] later adds an insert-at-this-point tier, the label lives on
+  *its* construct, not on `(?&name)`.
+- **R-VE-12** (a per-pattern encoding field) is a `config` line — the
+  encoding selector is a pcrec option and `pcrec --encoding=…` inside a
+  config reaches it today with no new grammar.
+- **R-VE-9** (CLI args and a manifest file must not need contradictory
+  semantics): they do not — the CLI's single pattern is the
+  `target rx` default, and `--target <prefix>` selects from a file.
+
+### 4.5 pcrec-bench — regime, variant, outcome, objective, and the sidecar
+
+The bench's inputs (its `docs/design/requirements.md` §3, §4.4, §4.5, §5)
+were written against a **directory + sidecar** model that Frank's ruling
+supersedes: the sidecar is dropped and its fields become lines beside the
+pattern. The bench's *needs* are absorbed; its *shape* is not.
+
+**MEASURED — the absorption, field by field, against the live sidecar**
+(`/home/duxevents/pcrec-bench/bench/loglines/subbench.toml`, 11 patterns,
+112 subjects, a 1,364-row `expectations.tsv`):
+
+| `subbench.toml` field | becomes |
+|---|---|
+| `id`, `version` | `tag id=loglines` / `tag version=0.1` (file-level) |
+| `objective_kind` | `tag objective=realworld` (file-level) |
+| `objective`, `description` (prose) | `#` comments and `NOTES.md` — **the two things §4 of the position paper already said are not lines in a pattern file** |
+| `regimes = [...]` | `tag regime=search-short,throughput` (file-level), refined per block (below) |
+| `[[patterns]].name` | `name <ident>` (block-scoped) |
+| `[[patterns]].file` | the `pattern` line itself — the `.rx` file disappears |
+| `.feature_tier` | `features <list>` (a real directive) plus `tag tier=base` for the bench's own vocabulary |
+| `.hazard_class`, `.size_class`, `.convention`, `.tags`, `.role` | `tag hazard=… size=… convention=… role=…` |
+| `[subjects].generator`, `.manifest` | the directory convention — a generator beside its output, exactly as `tests/recursion/gen_corpus.py` already is |
+| `[subjects].short_search_max_bytes` | `tag short-search-max-bytes=4096` |
+| `[expectations].file` | `include "gen/expectations.rxt"` |
+| `[expectations].default_method` | `oracle pcre2` (file-level) |
+| `[testees.pcre2].options` | `config pcre2` with `testee pcre2/10.46` + `option k=v` lines |
+| `[testees.pcrec].options` | `config pcrec` with `pcrec --features all` |
+| `patterns[].variant = null` | the **absence** of a `variant` line |
+| an `expectations.tsv` row | `m @file:"subjects/s-000.bin" 234 258` / `n @file:"…"` / `mc @file:"…" <n>` |
+
+**The four bench requirements that needed a decision, decided:**
+
+1. **OUTCOME (§4.4).** `did-not-compile` is `perr`; `gave-up` is `gu`
+   (MEASURED live, 23 uses, §2.11); `matched-as-expected` /
+   `did-not-match-as-expected` / `wrong-span-or-captures` are what
+   `m`/`n`/`g` already score; **`unsupported-by-declaration`** is
+   `variant <testee> unsupported <reason>` — one line kind for both
+   halves of the variant axis, not two. `crashed` / `timed-out` are the
+   harness's own (exit ≥ 124 / ≥ 126, already distinguished by
+   `run.sh`), never expectations.
+2. **VARIANT (§4.5), constraint 1** — "the results must be the same" —
+   is **mechanical**: a `variant` is checked against the block's own
+   expectations, and a difference invalidates the cell. Nothing new is
+   needed; the variant simply supplies different pattern text for one
+   testee's cell.
+3. **VARIANT, constraint 2** — "the sub-bench's objective must be
+   preserved" — is **a review obligation the format records and does not
+   check**, and it must say so. The format's contribution is visibility
+   (T-2/AR-5: a variant is beside the pattern or it is a fork), not
+   verification. A `tag variant-note=…` carries the reviewer's statement.
+4. **REGIME (§3)** is a property of the **subject set**, not of a case,
+   and there is no case scope (Frank's ruling 4). So a sub-bench writes
+   the canonical pattern **once** as a `name`d definition and one block
+   per (pattern, regime), each `pattern (?&<name>)` with its own
+   `tag regime=…` and its own subject set. **MEASURED, the wrapper is
+   free here**: `expectations.tsv`'s columns are
+   `pattern subject regime expected start end nmatches method oracle` —
+   **no capture columns at all** — and a subroutine wrapper is
+   span-identical, differing only in capture visibility (§2.3). When
+   bench adds capture checking (its OD-B9, [DD-13a] T-3), the wrapper
+   stops being free and those blocks must carry the pattern text
+   directly; §7 Q2 records that trigger.
+
+**What the bench must still own** (D78 — this is a durable interface
+statement, not a ruling into their repo): the record and its keys, the
+adapters, the reporter, and the decision of *when* to move a sub-bench
+into the format. This note's contribution is that when they do, the
+sidecar has somewhere to go.
+
+### 4.6 [M4-SUBST] — the template slot only
+
+R-SUBST-1 says the format must have somewhere for a replacement template
+to live per named pattern, and R-SUBST-3 records the unpaneled prior art
+(`subst_template_design.md` §8.1's `repl`/`s`/`sg`/`serr`). **This note
+adds no template production**, per R-SUBST-1's own instruction ("Do not
+design the template's internal syntax here") and D77.
+
+What it does do is leave the slot obviously shaped: `repl` is a
+block-scoped line in the prior art and would be a block-scoped line here,
+`s`/`sg` are case lines exactly like `m` with a second quoted field, and
+`serr` is `perr`'s shape one construct over. None of the four collides
+with anything in §1.3 (MEASURED, §1.1: all four are 0 in the corpus).
+The one thing this note asserts is that when they land they should be
+**block-scoped and non-carrying**, like everything else in a pattern
+block — which is what the prior art already chose independently.
