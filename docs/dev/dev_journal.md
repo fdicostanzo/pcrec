@@ -17452,3 +17452,31 @@ test); witness 2 compiling → refused; witness 1 1.72 MB → 87 KB.
 edge case, more profitable ways to spend time). artsize3's delivery
 run: EXIT=0; it rebases onto main (abi 10→11, bit 18, registry 64→65)
 on the manager's signal now.
+
+#### Forty-fourth session, part 6 — the union battery on the [ENG-ABS] merge is GREEN; [OPT-2] closed; artsize3 released for its delivery run (2026-08-29 ~05:4x EDT)
+
+BATTERY on 808740c (code 517be95, the dfd112b merge), launched 02:16,
+mech trailer 05:43: build OK; strict clean; field validation 186
+definitions valid; all anchors resolve; `make -k -j12 test` rc 2 with
+1,711 checks / 0 failed, 26,917 cases / 29 failed (all counterk's
+`((a)|ab){4000}c` load cell + dependents), 27/27 sections, 2
+INCONCLUSIVE checks (the resource K7 CPU cells `[a-z]{0,30000}` and
+`(a|b){0,30000}` under the load guard at ratio 2.65/3.16 — the very
+cells r41 S1 was about, and the ceiling's K7 headroom held on the
+solo run); solo stages resource 20/0, counterk 24/0, corpus cell
+1,634/0; `make san` rc 0, 0 report lines, both axes (97 min — stretched
+by artsize3's 03:07-03:10 corpus run, which overlapped it before the
+hold arrived; no anomaly attributable); mech 186 rows: unexpected 0,
+undetected 6 (S150-S153 S160 S178 — expected), unreached 0, anomalies
+0, oracle-skipped 0. The battery script's own verdict line then died
+on `set -u` — `GUARD` is assigned only on the STOPPED branch (a v2
+latent bug, never reached before because v2's verdict happened to run
+with GUARD set on the previous session's path); fixed in battery_v3.sh
+(GUARD computed before the verdict) and the verdict computed by hand:
+**GREEN** — the one "make-error" line is the top-level `test` target's
+exit from the load cell. [ENG-ABS]'s second mechanism is
+BATTERY-PROVEN; **[OPT-2] CLOSED into it** (the lever it measured is
+built: 1.031× / 0.482× / 363,305×). artsize3 released at 05:43 with the
+delivery sequence (full test → S191/S192/S193 canonical → full
+ksweep census → strict → size log if needed). The abi-10 pin goes to
+the bench as I-16.
