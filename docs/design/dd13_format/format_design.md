@@ -14,7 +14,7 @@ OD-1..OD-6).
 **The rulings are not reopened.** Where this note departs from the
 position paper, it departs from the paper's *own* provisional choices,
 never from a ruling, and says so at the point of departure with the
-measurement that forced it. There are four such departures and they are
+measurement that forced it. There are five such departures and they are
 listed in §0.3.
 
 ## 0. How to read this
@@ -35,8 +35,9 @@ Every load-bearing claim in this note is one of three kinds, marked:
 
 A `.rxt` file gains a **HEAD** (file-level declarations and `config` /
 data blocks, everything before the first `pattern` line) above the
-**BODY** it already has (pattern blocks, unchanged). Ten new line kinds
-and three new block kinds live in the head or as block-scoped lines;
+**BODY** it already has (pattern blocks, unchanged). Thirteen additions —
+six file-level declarations, two head block kinds and five block-scoped
+lines — live there;
 today's thirteen line kinds and their semantics are untouched, so all
 179 files / 3,265 blocks / 26,691 expectation lines parse and mean
 exactly what they mean now (MEASURED, §1.1). Composition is
@@ -64,6 +65,7 @@ becomes lines beside the pattern (§4.5, field by field against the live
 | D-b | `config` is wave 3 (§2) | a **minimal `config`** (pcrec option lines only) is **wave 1**, beside `target … with` | CITED: `docs/spec/limits.md` "Handling an oversized artifact" already tells users to put `--max-emit-bytes=N` "in the pattern-source file's `config` block"; a shipped spec has made the promise. Plus Frank §6.4's own words ("I want to specify the options for them") |
 | D-c | OD-5's premise, inherited from requirements R-VE-8: "subroutine-call semantics are ATOMIC and shift capture numbering" | **BACKTRACKABLE, and capture-transparent**, on 10.46 | CITED, MEASURED by an earlier lane: `subroutines_design.md` §3.2 (four isolated cells + four atomic controls) and §3.1 (a live-ovector callout trace). OD-5's own tag is "measured, never read from docs" — this is that measurement, already taken |
 | D-d | `include` "splices a file's blocks"; nothing said about a second include of the same file | a second `include` of the same resolved path in one closure is **REFUSED** | ARGUED from learnings §3 / K35: both alternatives (splice twice, silently ignore) change a population nobody counts |
+| D-e | a `config` line `freq <name>` selects a data block (§6.5) | the selector is **`analysis freq <name>`** | ARGUED, a grammar ambiguity: `freq` would then be both a config-body line kind and a head block starter, so `freq x` after a `config` body could not be told from a new data block without a lookahead rule. OD-6 left the data block's naming open, so this is inside the design's mandate |
 
 ### 0.4 What this note does not design
 
@@ -151,13 +153,18 @@ line kind, so `frames-buffer=` stays the sole exception rather than
 becoming a precedent.
 
 **MEASURED — every proposed new keyword is unused as a first token.** All
-21 candidates, over all 179 files, count **0**:
+**32** candidates — the six file-level declarations, the two block
+starters, the five new block-scoped lines, `config`'s and the data
+block's own body vocabularies, and R-SUBST-3's four prior-art
+spellings — over all 179 files, count **0**:
 
 ```
-$ for w in name target lib include config use variant oracle tag mc \
-           freq gap def with from testee option repl s sg serr unsupported; do
-      echo "$w $(grep -rh "^$w\b" tests --include='*.rxt' | wc -l)"; done
-  -> every one 0
+$ for w in name target lib include config use variant oracle tag mc freq gap \
+           def with from testee option repl s sg serr unsupported analysis \
+           question reader exemplar bytes sha256 analyzer date row groups; do
+      c=$(grep -rh "^$w\b" tests --include='*.rxt' | wc -l)
+      [ "$c" != 0 ] && echo "COLLISION $w $c"; done
+  -> nothing printed: all 32 are 0
 ```
 
 This retires the requirements-note appendix bullet "keyword-collision risk
@@ -203,6 +210,12 @@ Lexical rules, unchanged from today and binding on every new line kind:
   body, data-block body). A first token unknown *in its context* is a
   hard error that names the context ("`testee` is not a pattern-block
   directive"). Nothing is a keyword everywhere.
+- **A head block ends at the first line whose first token starts a new
+  head item or a pattern block** — one of `lib`, `include`, `target`,
+  `use`, `oracle`, `tag`, `config`, `freq`, `pattern`. Any *other* token
+  a block's own vocabulary does not define is a hard error naming the
+  block, so a typo inside a `config` body is loud rather than silently
+  ending it.
 - **Leading whitespace on a line inside a `config` or data block is
   permitted and ignored** — a readability convention only, never
   significant. MEASURED: **0** lines in the 179-file corpus begin with
@@ -258,7 +271,7 @@ config-line =
     | "features" , ws , module-list           (* as a pattern block's   W1 *)
     | "engine"   , ws , ( "vm" | "dfa" )      (* as a pattern block's   W1 *)
     | "budget"   , ws , budget-item           (* as a pattern block's   W1 *)
-    | "freq"     , ws , ident                 (* select a data block    W2 *)
+    | "analysis" , ws , data-kind , ws , ident  (* select a data block  W2 *)
     | "testee"   , ws , engine-ref            (* a non-pcrec engine     W3 *)
     | "option"   , ws , tag-pair ;            (* that engine's options  W3 *)
 
@@ -316,7 +329,7 @@ each addition answers a named consumer in `requirements.md`.
 | wave | productions | the consumer that earns it | blocked row |
 |---|---|---|---|
 | **W1** | `name`, `lib`, `target … [with]`, `config` with `pcrec`/`flags`/`features`/`engine`/`budget`; `(?&name)` file-scope resolution; `rx_info.name` | a file carrying several patterns that reference each other; a shipped library a user `lib`s and builds three targets from | **[LIB]** (all three parts), [DD-14]'s multi-pattern files |
-| **W2** | `include`, `@file:` subjects, `mc`, `tag`, the `freq` data block and `config`'s `freq` line | a generated 1,364-row expectation set; a 1 MB subject; an exemplar findings file | **[ENG-PGO]** (the findings file — its plan row says "blocks on [DD-13b] wave 2/3"), the first in-format sub-bench |
+| **W2** | `include`, `@file:` subjects, `mc`, `tag`, the `freq` data block and `config`'s `analysis` line | a generated 1,364-row expectation set; a 1 MB subject; an exemplar findings file | **[ENG-PGO]** (the findings file — its plan row says "blocks on [DD-13b] wave 2/3"), the first in-format sub-bench |
 | **W3** | `use`, `oracle`, `variant`, `config`'s `testee`/`option` | a second engine in one file | **pcrec-bench** sub-benches with a non-pcrec testee |
 
 **W1 is a departure from the position paper's wave assignment for
@@ -366,7 +379,7 @@ never ambiguous about which namespace it is in:
 |---|---|---|---|
 | **definition name** | `name <ident>` in a pattern block | `(?&n)` / `(?P>n)` / `\g<n>` / `\g'n'` inside a pattern; `target … = <n>` | PCRE2 group name |
 | **config name** | `config <ident>` | `with <list>`, `use <list>`, `from <list>` | ident |
-| **data name** | `freq <ident>` (the family, §2.10) | a `config` block's `freq <ident>` line | ident |
+| **data name** | `freq <ident>` (the family, §2.10) | a `config` block's `analysis freq <ident>` line | ident |
 | **target prefix** | `target <ident> = …` | `pcrec --target <ident>`; the emitted C symbols | C identifier |
 
 **One rule governs all four: a duplicate declaration within the
@@ -742,9 +755,9 @@ findings file is the **committed artifact and the exemplar is not**
 (Frank) — a table that referred out to a second file would reintroduce
 exactly the uncommitted dependency the ruling removes, and 256 counts is
 ~2 KB of text a person can read. Its own namespace, because a `config`
-block's `freq <name>` line names a data block and nothing else, so there
-is no ambiguity to resolve and no reason to make `config prod` and
-`freq prod` collide.
+block's `analysis freq <name>` line names a data block and nothing else,
+so there is no ambiguity to resolve and no reason to make `config prod`
+and `freq prod` collide.
 
 **Provenance is required** — `exemplar`, `bytes`, `sha256`, `analyzer`,
 `date` — because the exemplar is absent by design (proprietary, secret,
@@ -910,9 +923,10 @@ but a *skip* that nobody counted is AR-3's failure mode exactly).
   definitions — because a build system needs it and because a person
   needs to check that a target list says what they think. It reads the
   parsed file, so it has **one derivation and two readers** (learnings
-  §3): the same resolver the harness runs. It is named in §7 Q3 rather
-  than specified, because its consumer ([V-E]'s build integration) is not
-  real yet and D77 applies.
+  §3): the same resolver the harness runs. It is **named here and not
+  specified**, because its consumer ([V-E]'s build integration) is not
+  real yet and D77 applies — the trigger is [V-E] opening, not W1
+  landing.
 
 ### 3.4 The spec delta (D80: the contract changes in the same change)
 
@@ -1024,7 +1038,8 @@ ruled the findings file **is** an `.rxt`.
 **The interface**: the findings file is an `.rxt` whose head carries one
 or more data blocks and whose body is empty. A user's file brings it in
 with `include "…freq.rxt"` (or `lib`, if the same file also carries
-definitions), a `config` selects a table by name (`freq loglines`), and a
+definitions), a `config` selects a table by name (`analysis freq
+loglines`), and a
 `target … with <config>` builds a pattern against it. **The same pattern
 built against two exemplars is two `target` lines** — which is the
 property that made the target-as-declaration shape right (Frank §6.4).
@@ -1144,7 +1159,7 @@ pattern. The bench's *needs* are absorbed; its *shape* is not.
    span-identical, differing only in capture visibility (§2.3). When
    bench adds capture checking (its OD-B9, [DD-13a] T-3), the wrapper
    stops being free and those blocks must carry the pattern text
-   directly; §7 Q2 records that trigger.
+   directly; §7 Q6 records that trigger.
 
 **What the bench must still own** (D78 — this is a durable interface
 statement, not a ruling into their repo): the record and its keys, the
@@ -1184,7 +1199,7 @@ include/reference pattern and check whether it is even representable as
 **ANSWERED, and the premise has expired.** Two measurements:
 
 1. **The corpus now exercises cross-references.** MEASURED: **143**
-   blocks across 24 files carry a by-name subroutine reference, and 99
+   blocks across 23 files carry a by-name subroutine reference, and 99
    lines use `(?(DEFINE)`. The `recursion` module landed *after* the
    requirements note was written; `(?&name)`, `(?P>name)`,
    `\g<name>`, `\g'name'` and `(?(DEFINE)…)` are all registry rows and
@@ -1226,7 +1241,7 @@ weaker than stated for a second reason: the appended numbering is
 convention, so an engine fed the same expanded pattern numbers it the
 same way. The mechanism for the case where it *does* bite —
 `variant … groups <name>=<n>` — exists in the grammar and is unexercised;
-§7 Q2 names its trigger rather than pretending it is proven.
+§7 Q6 names its trigger rather than pretending it is proven.
 
 **Attack 4 — "check whether `--replace`'s CLI-only existence has already
 created an informal convention a manifest template field would be awkward
@@ -1258,7 +1273,7 @@ which is an argument for the design's caution, not against it.
 
 | | how it is honoured |
 |---|---|
-| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 21 candidates, 0 head lines in 179 files, R = ∅ for every non-`perr` block |
+| **AR-1** no re-verification of the corpus | INV-COMPAT (§1.1) with three independent checks, six sabotage rows and asserted denominators. MEASURED: 0 keyword collisions over 32 candidates, 0 head lines in 179 files, R = ∅ for every non-`perr` block |
 | **AR-2** no dispatch in the common case | §2.3 step 6: with no references the expansion **is** the pattern text. §2.7's default: one unnamed block, no head → `target rx`, byte-for-byte today's compiler input. The format cannot add dispatch because in that case it adds nothing |
 | **AR-3** declared inapplicability ≠ failure ≠ silent pass | four separate, counted, printed states: `oracle none <reason>`, `variant … unsupported <reason>`, `gp`'s pending-vm bucket, and the resolution-failure taxonomy — each reported on its own line in the summary (§2.11) |
 | **AR-4** must not make D27 harder | the head is **bounded and above the first `pattern` line**, so a blinded author reading a block looks in exactly one other place; a fragment **may not declare file scope**, so a spliced block's meaning never depends on which file spliced it; and the one genuine cross-block dependency — a name a pattern references — is visible at the top of the file by construction |
@@ -1511,7 +1526,7 @@ lib <rfc5322>
 include "exemplars/loglines.freq.rxt"
 
 config prod
-  freq loglines
+  analysis freq loglines
   pcrec --features all
 
 target email_prod = email with prod
@@ -1564,3 +1579,79 @@ No `target` line and more than one block, so the file builds nothing. The
 `perr` block is evaluated in exactly one cell (§2.6). `\x41` and `\n`
 decode as they do today. **Nothing in this file is new, nothing in it
 means anything different, and nothing in it needed to change.**
+
+---
+
+## 7. Open questions for Frank
+
+Only what the rulings do not settle. Each carries a recommendation, so
+"agree" is a complete answer.
+
+**Q1 — prose has no home in the file, and the bench declares an
+OBJECTIVE field.** The format has no multi-line value (§1.2), by
+design: every value is one line. But pcrec-bench's live sidecar carries
+an `objective` and a `description` that are paragraphs, and its §4.5
+calls the objective "a declared field of the sub-bench". **Recommend:
+the machine-readable field is a single token (`tag objective=realworld`)
+and the paragraph lives in `#` comments and `NOTES.md`.** The reason is
+the position paper's own verdict — prose and generators are the two
+things that are files beside a pattern file, not lines in one — and the
+reason it is safe is that constraint 2 ("the objective is preserved") is
+a review obligation the format was never going to check anyway (§4.5).
+*The alternative, a multi-line block value, buys one field and costs the
+line-oriented property every other rule in the format rests on.*
+
+**Q2 — `features` composes by UNION, which is the one composition rule
+that is not "more specific wins."** §2.6. A config's modules are added
+to a block's, so a testee's `--features all` reaches a block that says
+`features classes`. **Recommend: union, together with the rule that a
+`perr` block is evaluated in exactly one cell and never re-run under a
+config.** Union is what a testee needs (pcrec-bench's own note: "a
+build/run flag of the TESTEE, not a variant of the pattern"), and it is
+safe because enabling a module cannot change what an
+already-compiling pattern matches — only what is refused. The `perr`
+carve-out is what stops it from silently changing the meaning of the
+**384** `perr` blocks in the corpus.
+
+**Q3 — a library definition must not carry subject anchors, and that is
+an authoring rule the format cannot enforce.** MEASURED (§6.0): the
+position paper's own §3a worked file returns `nomatch`, because `^`/`$`
+inside a called body anchor to the subject, not to the call site.
+**Recommend: [LIB]'s store discipline makes "a definition is a piece,
+and pieces carry no subject anchors" a store-entry rule with a trivial
+scan behind it, and whole-string matching is the caller's `^…$` or the
+artifact's own `<prefix>_match` entry.** The format's contribution stays
+loudness — the composing block's `m` case goes red — because a static
+rule ("a definition containing `$` may not be called from a non-final
+position") is not decidable in general and would refuse legitimate
+patterns.
+
+**Q4 — the link-level composition tier still has no spelling, and should
+not accidentally acquire one.** R-VE-4 requires source-level and
+link-level composition to be representable but never to look alike. This
+design spells the **source-level** tier only, as a PCRE2 subroutine call.
+**Recommend: confirm that when [M4-CALLOUTS]'s aligned-ABI tier arrives
+it gets its own construct, and that `(?&name)` never means "link to a
+separately compiled part".** The costs differ by orders of magnitude and
+a reader must be able to see which one they wrote.
+
+**Q5 — W2's include-closure accounting is designed against a population
+that does not exist yet.** No cross-file generator exists in either repo;
+every one of the six known generators writes a flat, self-contained file
+(§5.1, attack 2 — conceded, not argued away). **Recommend: ship W2 when
+the first real generated set needs it — the bench's 1,364-row expectation
+fragment is the natural first — and treat that set as the measurement
+that validates §2.11's rules rather than claiming they are validated
+now.** D77's shape: the trigger is named, the build waits for it.
+
+**Q6 — a bench sub-bench references its canonical pattern per regime
+rather than repeating it, and that is free only while bench checks no
+captures.** §4.5 item 4: regime is a property of the subject set, there
+is no case scope, so a sub-bench writes the pattern once as a `name`d
+definition and one block per (pattern, regime) spelled `pattern (?&n)`.
+**Recommend: reference now** — MEASURED, `expectations.tsv` has **no
+capture columns at all**, and a subroutine wrapper is span-identical,
+differing only in capture visibility (§2.3) — **and revisit when bench
+adds capture checking** (its OD-B9 / [DD-13a] T-3), at which point those
+blocks must carry the pattern text directly. The trigger is named so the
+change is a scheduled one rather than a surprise.
