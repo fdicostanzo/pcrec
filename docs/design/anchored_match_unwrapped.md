@@ -636,11 +636,48 @@ artifact is 97,789 B — 14× under the pin. The tripwire is not at risk; the
 number that matters is `scripts/size_diff`'s old-vs-new log, reported as a
 delivery number.
 
+### 8.1 MEASURED (2026-08-29)
+
+`scripts/size_diff` over the whole corpus, `tests/size/run_size_log.sh` at
+`PROCS=10`, `load1_at_start` 0.90 — 2,875 rows, 0 vanished, 0 new. Units are
+the log's own: comment-excluded `.c`+`.h` SOURCE bytes.
+
+| population | n | delta, min | median | p99 | max | ratio median | ratio max |
+|---|---|---|---|---|---|---|---|
+| DFA artifacts | 1,185 | +764 B | **+3,258 B** | +7,396 B | +44,684 B | **1.218×** | 1.457× |
+| VM artifacts | 1,690 | +60 B | +60 B | +60 B | +60 B | 1.002× | 1.006× |
+
+- The DFA median grows 15,338 → 18,656 B and the largest DFA artifact 97,789
+  → 142,473 B, which is **10× under** the `MAX_SIZE_BYTES = 1,400,000`
+  tripwire. The corpus's worst artifact overall is unchanged in kind — a VM
+  artifact at 652,060 B — and the worst `gcc_cpu_s` is 4.843 s against the
+  8.0 s pin. **The tripwire is not approached from either side.**
+- The DFA delta is a table set, as predicted, and lands where §8 said it would
+  (well under a doubling): the anchored machine really is smaller than the
+  wrapped forward one.
+- The VM delta is the `rx_info` member alone, and it is a CONSTANT 60 B on
+  every VM artifact — see the next paragraph for why it is not 716.
+
+**A MEASURED SIZE FINDING THIS ROW DID NOT SET OUT TO MAKE.**
+`tests/lib/size_count.sh`'s comment classifier is LINE-BASED: it recognises a
+line that STARTS a block comment and tracks the block to its end, so a comment
+placed ABOVE a struct member costs zero counted bytes — while the continuation
+lines of a TRAILING multi-line comment do not start a block and are counted as
+CODE. The first draft of `rx_info.match_form` used the trailing shape its two
+neighbours (`scan`, `prefilter`) use, and `size_diff` reported **+716 B on
+every one of the 2,875 artifacts**, +7.82 % on the corpus's total source
+bytes. Moving the comment above the member took the VM delta to **+60 B** and
+the corpus total to +2.6 %. **`scan` and `prefilter` still carry the trailing
+shape and therefore still carry that cost**; changing them moves emitted text
+for two other rows' stamps and is not this row's to do — recorded here rather
+than done.
+
 **OPEN (not built, no measured need — D77).** `adfa->clsmap` is
 byte-identical to `dfa->clsmap` by §2's derivation, so the artifact emits
-256 bytes of duplicate class table. Sharing it is a conditional emitted-text
-shape, i.e. another axis, for ~1.7 % of a median DFA artifact. Named here
-with its measurement (`size_diff` will show the 256 B), not built.
+256 bytes of duplicate class table — 7.9 % of the measured median DFA delta
+above, 1.4 % of a median DFA artifact. Sharing it is a conditional
+emitted-text shape, i.e. another axis. Named here with its measurement, not
+built.
 
 ---
 
@@ -654,6 +691,29 @@ with its measurement (`size_diff` will show the 256 B), not built.
 | 4 | sweep | `make test-axes` gains `-fno-anchored-dfa` (the manager runs the sweep) |
 | 5 | sabotage | one `tests/mech` row that breaks the ACCEPT DISCIPLINE — the natural one is "record the FIRST accept instead of the last", which §3.3(a) is precisely the argument against, and which a greedy pattern detects |
 | 6 | census | the form census floors: axis G's two values are new populations, and `RX_DFA_TABLE`'s `mixed` population may move because the composition now spans three machines rather than two (§5.1) |
+
+### 9.1 MEASURED OUTCOMES (2026-08-29)
+
+| # | instrument | result |
+|---|---|---|
+| 1 | `tests/codegen/run_anchored_match.sh` | **14 passed / 0 failed**. Census over 2,786 corpus patterns: 1,489 vm, 288 refused, **825 unwrapped**, 180 `search-filter`(attempt), 4 `search-filter`(empty), **0 `search-filter`(overflow)** |
+| 2 | `tests/anchored/run_anchored_diff.sh` | **5 passed / 0 failed**. 1,213 patterns × 18 subjects, every position 0..n+1, all four anchored entries + every capture pair + the search control — **147,986 cells, 0 divergences** |
+| 3 | `tests/codegen/run_recursion_identity.sh` | green; (B) whole-file identity 2,224/2,224 against the re-pinned `14d1feb`, (A) program-region identity against the UNCHANGED pre-module `ac4917d` with exactly the four named wave-G elision patterns moving — i.e. this row writes no VM program byte |
+| 4 | `make test-codegen` | 106 / 31 / 22 / 7 checks, 0 failed, after `[M6.2-KRESET rule 3b]` grew its second arm |
+| 5 | `tests/mech` S189 | pre-validated DETECTED, with `tests/base/alternation.rxt` **26/0** and `run_anchored_match.sh` **14/0** on the same planted tree |
+| 6 | `tests/registry` | 64 / 0 (coverage re-pinned 59 → 64) |
+| 7 | `make strict` | clean |
+
+**AND THE ONE THING THAT MEASURED NOTHING, stated because it is the row's own
+vacuity risk realised.** `make test-axes`'s `-fno-anchored-dfa` sweep is
+**trivially green and always will be**: `tests/harness/run.sh`'s `RXTDUMP`
+records the driver's exit code and stdout, which is `<prefix>_search`'s answer,
+and this row does not touch `<prefix>_search`. The corpus driver's own anchored
+arm is an `_in`-vs-un-suffixed cross-check whose two sides are one code path.
+So the axis sweep is a control on the SEARCH, and instrument 2 is the only
+thing in the tree that can be red for a wrong anchored ANSWER. The flag still
+joins the sweep — an axis with no sweep entry is the omission `[CHK-2]` exists
+to catch — but nobody should read its green as evidence about this form.
 
 **The vacuity trap this row must avoid**, named because the brief names it:
 today `docs/spec/match_api.md` §3.2's caveat describes a COST, not a
