@@ -156,9 +156,10 @@ anywhere in this file. (3) §6 gains a caller-facing `abi` paragraph
 restating D76 in contract terms: what a bump means, what is fixed within
 one number, and pre-v1's "the stamp is the whole of the announcement"
 posture (D40 regime 1) — the existing prose narrated four individual bump
-events but never stated the general rule; `rx_info.abi` is `9`
-([OPT-K], the offset-k candidate-start skip; it read `6` when this note
-was written, `7` after [OPT-3] and `8` after [ENG-FORM]).
+events but never stated the general rule; `rx_info.abi` is `10`
+([ENG-ABS], the anchored match-here form; it read `6` when this note
+was written, `7` after [OPT-3], `8` after [ENG-FORM] and `9` after
+[OPT-K]).
 (4) §8.2 gains a lead sentence stating plainly, before the field table,
 that `byte` is the only implemented encoding — matching `lib/pcrec.h`'s
 own enum comment and `cli/main.c --help`'s wording verbatim, rather than
@@ -735,20 +736,39 @@ ptrdiff_t <prefix>_match(const rx_ctx *ctx);
 **Matches at exactly `ctx->pos`: a match starting anywhere else is not
 reported.** That is the semantic promise, and it is what a caller can
 rely on; it is deliberately not a claim about how the artifact is built.
-The two engines implement it differently — the VM emitter genuinely has
-no search loop here, while the DFA emitter reaches the same answer by
-running its ordinary search and rejecting any match whose start is not
-`ctx->pos`. Both were measured to give the same answers; only the
-promise above is contractual. One COST consequence of the DFA shape is
-worth a caller's attention: on a FAILING match-here, the underlying
-unanchored search does not know the question is anchored — it may skim
+The engines and forms implement it differently — the VM emitter
+genuinely has no search loop here, and a DFA artifact takes one of two
+forms, which it names in `<PREFIX>_DFA_MATCH` and `rx_info.match_form`
+(§6.3). All were measured to give the same answers; only the promise
+above is contractual.
+
+**`"unwrapped"` — the anchored automaton ([ENG-ABS], 2026-08-29).** The
+artifact carries a THIRD machine: the same tables its forward scan is
+built from, WITHOUT the start-anywhere self-loop, run forward from
+`ctx->pos`. There is no later start to reject and no backwards pass to
+recover a start with, so a failing probe stops at the first byte that
+cannot continue a match beginning here, and a succeeding one costs one
+forward scan rather than a forward and a reverse.
+`docs/design/anchored_match_unwrapped.md` is the note; §3 there is the
+argument that this reports the same length the other form reports, on
+every input.
+
+**`"search-filter"` — the original shape, and still the form on some
+artifacts.** The entry runs the artifact's ordinary UNANCHORED search
+and rejects any match whose start is not `ctx->pos`. One COST
+consequence is worth a caller's attention: on a FAILING match-here, the
+underlying search does not know the question is anchored — it may skim
 the remainder of the subject hunting a later match the filter will then
 discard (the state-0 `memchr` skip keeps this a skim rather than a
-per-byte walk), where the VM's anchored body fails at the first
-divergent byte. A caller issuing many expected-to-fail `<prefix>_match`
-probes against long subjects on a DFA artifact is in this entry's worst
-case; the filed improvement (an emitted anchored automaton,
-docs/dev/plan.md [ENG-ABS]) is evidence-gated and not scheduled.
+per-byte walk), where an anchored body fails at the first divergent
+byte. **A caller issuing many expected-to-fail `<prefix>_match` probes
+against long subjects is in this form's worst case, and can read off the
+artifact whether it is in it.** Four populations still take this form:
+an artifact whose engine is the per-start attempt loop
+(`<PREFIX>_DFA_SCAN "attempt"`, i.e. a `^`- or `\G`-bearing pattern), an
+artifact that matches nothing (`"empty"`), one whose anchored machine
+exceeded a DFA cap — a SELECTION OUTCOME, never a refusal — and any
+build under `-fno-anchored-dfa` (`docs/spec/tuning.md` §2.15).
 
 Returns the matched
 length (`>= 0`), `0` for a zero-length match at `ctx->pos`, `-1` on no
@@ -764,7 +784,10 @@ into. Self-contained per its type's contract: a top-level caller passes
 ptrdiff_t <prefix>_match_caps(const rx_ctx *ctx, ptrdiff_t (*caps_out)[2]);
 ```
 
-Same anchoring promise as `<prefix>_match`, plus a
+Same anchoring promise as `<prefix>_match`, and the same two forms
+(§3.2) — under `"unwrapped"` this entry delegates to `<prefix>_match` and
+fills the spans itself, so `caps_out[0]` is `[ctx->pos, ctx->pos +
+length)` by construction rather than by a filter that proved it. Plus a
 capture-delivering output. On success, `caps_out[0..<PREFIX>_NCAPS-1]` are
 all written (the same completed-match discipline as `<prefix>_search`),
 `caps_out[0]` is `[ctx->pos, ctx->pos + length)`, and **`caps_out[k]` is
@@ -1361,8 +1384,24 @@ struct rx_info {
                                             candidate-start mechanism, in
                                             whichever engine's vocabulary
                                             applies. Never NULL */
+    const char           *match_form;   /* [ENG-ABS] HOW <prefix>_match
+                                            answers: "unwrapped" /
+                                            "search-filter", mirroring
+                                            <PREFIX>_DFA_MATCH. NULL on
+                                            every artifact whose _match the
+                                            DFA emitter did not write —
+                                            every VM artifact, HYBRIDS
+                                            INCLUDED (§6.3) */
 };
 ```
+
+**[ENG-ABS], 2026-08-29 — `match_form`.** Appended after `prefilter` on
+[DD-13c]'s own terms and for its own reason (a consumer with no
+preprocessor). Its NULL rule is NOT `scan`'s: `scan` is non-NULL on a
+hybrid, because a hybrid contains a DFA scan; `match_form` is NULL there,
+because a hybrid's `<prefix>_match` is the VM's anchored body and this
+field's value set does not describe it. `abi` bumps 9 → 10; no existing
+member's offset moves.
 
 **[DD-13c], 2026-08-25 (D40 addendum) — `scan` and `prefilter`: THE SELECTION
 FACTS GET RUNTIME MIRRORS.** §6.3's two DFA-scan macros are preprocessor-only,
@@ -1518,8 +1557,9 @@ against them:
   `ctx.ncap = 0`; nothing ever advances it, so no caller can observe a
   watermark. It is reserved for a future mid-match view, exactly as
   `nnames`/`groups` are reserved for `named-groups`.
-- **`rx_info.abi` is `9` on every artifact today ([OPT-K] bumped it from
-  8, which was [ENG-FORM]'s opaque DFA state token; `7` was [OPT-3]'s
+- **`rx_info.abi` is `10` on every artifact today ([ENG-ABS] bumped it
+  from 9, which was [OPT-K]'s offset-k candidate-start skip; `8` was
+  [ENG-FORM]'s opaque DFA state token and `7` [OPT-3]'s
   pre-multiplied DFA transition table), and is not yet a
   compatibility promise.** Being pre-v1 (§9), it is a layout version and
   nothing more: do not build version negotiation on it until v1 declares
@@ -1935,6 +1975,32 @@ about the individual machine; folding them would make the form's value set
 unbounded. Offset 0 is always a member: it is the test the four older
 values already make.
 
+**`<PREFIX>_DFA_MATCH` ([ENG-ABS], `abi` 10) is on every DFA
+ARTIFACT — and, unlike the four stamps above, NOT on a VM hybrid**, and
+names which of §3.2's two forms the artifact's `<prefix>_match` and
+`<prefix>_match_caps` take:
+
+```
+#define RX_DFA_MATCH "unwrapped"       /* its own anchored machine, run from ctx->pos */
+#define RX_DFA_MATCH "search-filter"   /* the unanchored search, non-ctx->pos starts rejected */
+```
+
+| value | mechanism |
+|---|---|
+| `"unwrapped"` | the artifact carries a THIRD machine — the forward tables WITHOUT the start-anywhere self-loop — and runs it from `ctx->pos`: no later start to reject, no backwards pass, and a failing probe stops at the first byte that cannot continue a match beginning here |
+| `"search-filter"` | the entry runs `<prefix>_search` and rejects any match whose start is not `ctx->pos`. Four populations: `_DFA_SCAN "attempt"`, `_DFA_SCAN "empty"`, an anchored machine that exceeded a DFA cap (a SELECTION OUTCOME, never a refusal), and any build under `-fno-anchored-dfa` |
+
+**THE IFF IS DIFFERENT FROM THE FOUR STAMPS ABOVE, and the difference is
+the fact rather than a filing decision.** Those four describe a DFA SCAN,
+and a VM HYBRID contains one — it inlines the DFA as its prefilter — so
+they appear on hybrids too. This one describes the artifact's
+`<prefix>_match` ENTRY, and on a hybrid that entry is the VM's own
+anchored body, which this axis does not describe and whose value set it
+does not share. So `<PREFIX>_DFA_MATCH` is defined on exactly the
+artifacts whose `RX_ENGINE` is `"dfa"`, and `rx_info.match_form` is NULL
+on every other artifact, hybrid included. It is the entry a caller reads
+to know whether it is in §3.2's worst case.
+
 **The two `-bounded` values are a REAL difference in what the mechanism
 buys, not a spelling.** Under a view, a skip may not pass the position
 whose accept has not been evaluated yet, so every skip stops one byte
@@ -1954,7 +2020,9 @@ VM-artifacts-only; the DFA block's `RX_DFA_SCAN`/`RX_DFA_PREFILTER`/
 the DFA SCAN's own selection facts ([DD-13]'s (a)/(b) split, above) and
 since [DD-13c] appear on every artifact that CONTAINS such a scan — DFA
 artifacts AND VM hybrids, the iff stated in (a). `RX_DFA_TABLE` is
-[OPT-3]'s and joins that iff unchanged. **[ABI-NS],
+[OPT-3]'s and joins that iff unchanged. `RX_DFA_MATCH` is [ENG-ABS]'s and
+does NOT: it is a fact about an ENTRY rather than about a scan, so its
+iff is `RX_ENGINE "dfa"` — see its own paragraph above. **[ABI-NS],
 2026-08-18 (D60): the NAMED bit constants each mask is built from
 (`PCREC_VM_RUNG_CURSOR`/etc., `PCREC_VM_STRAT_POSSESSIVE`/`_BACKTRACKING`,
 `PCREC_VM_PRUNE_CLAMPED`/`_UNCLAMPED`) are not emitted here any more —

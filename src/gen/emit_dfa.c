@@ -3589,9 +3589,17 @@ static void dir_fwd_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     const char *ind = f->dir->bind;
     sb_printf(c, "%s%s (%s == %d) {\n", ind, kw, f->dir->statev,
               f->repr->cell_of(K, f->d));
+    /* [ENG-ABS] THE TABLE NAME IS THE MACHINE'S, not the literal "forward".
+     * It was `%s_forward_stay%d` while forward and reverse were the only two
+     * directions and the forward one's name was "forward"; the anchored
+     * machine's stay tables are emitted as `<p>_anchored_stay<K>` by
+     * `emit_machine_tables` (which has always derived the tag from
+     * `dir->c.name`), so a hardcoded "forward" here emitted a reference to a
+     * table that does not exist in that function. Byte-for-byte unchanged on
+     * the forward machine, whose `c.name` IS "forward". */
     sb_printf(c, "%s    while (scan_position %s subject_length &&"
-                 " %s_forward_stay%d[subject[scan_position]]) scan_position++;\n",
-              ind, f->views ? "+ 1 <" : "<", f->p, K);
+                 " %s_%s_stay%d[subject[scan_position]]) scan_position++;\n",
+              ind, f->views ? "+ 1 <" : "<", f->p, f->dir->c.name, K);
     /* With the accept check ahead of us (the non-view order) the skipped
      * run's final position would otherwise go unrecorded; under a view the
      * check runs after the skip and already covers it. */
@@ -3608,9 +3616,13 @@ static void dir_rev_skip(StrBuf *c, const DfaForm *f, int K, const char *kw)
     sb_printf(c, "%s%s (%s == %d%s) {\n", ind, kw, f->dir->statev,
               f->repr->cell_of(K, f->d),
               f->views ? " && rewind_position + 1 < subject_length" : "");
+    /* Same rule as `dir_fwd_skip`'s: the table name is the machine's. Nothing
+     * but the reverse machine reaches this emitter today, so the text is
+     * unchanged; spelling it from `dir->c.name` is what stops the next
+     * direction re-learning [ENG-ABS]'s lesson. */
     sb_printf(c, "%s    while (rewind_position > search_from &&"
-                 " %s_reverse_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
-              ind, f->p, K);
+                 " %s_%s_stay%d[subject[rewind_position - 1]]) rewind_position--;\n",
+              ind, f->p, f->dir->c.name, K);
     if (!f->views && f->d->st[K].up[UPC_PLAIN].accept)
         sb_printf(c, "%s    %s = %s;\n", ind, f->dir->recv, f->dir->posv);
     sb_printf(c, "%s}\n", ind);
@@ -3621,8 +3633,14 @@ static void dir_fwd_bound_accept(StrBuf *c, const DfaForm *f)
     /* `pos == n` is the position with NO next byte, where §3.6.2 makes the
      * accept SCALAR: out of subject is neither a word character nor a
      * newline, and the base accept already is that bit. */
-    sb_printf(c, "%s    if (%s_forward_accepts(%s_forward_is_accepting, %s)) %s = %s;\n",
-              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);
+    /* [ENG-ABS] THE MACHINE'S NAME, not the literal "forward" — `dir_fwd_skip`'s
+     * rule, and this emitter is SHARED by the forward scan and the anchored
+     * MATCH-HERE scan, so a hardcoded name here referred to the wrong
+     * machine's accept table from inside `<prefix>_match`. Byte-for-byte
+     * unchanged on the forward machine, whose `c.name` IS "forward". */
+    sb_printf(c, "%s    if (%s_%s_accepts(%s_%s_is_accepting, %s)) %s = %s;\n",
+              f->dir->bind, f->p, f->dir->c.name, f->p, f->dir->c.name,
+              f->src, f->dir->recv, f->dir->posv);
 }
 
 static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
@@ -3640,14 +3658,18 @@ static void dir_rev_bound_accept(StrBuf *c, const DfaForm *f)
      * CONTEXT-INDEXED accept because the byte exists and is merely outside
      * the window. `startpos == 0` is out of subject to the left — non-word —
      * hence the scalar arm. */
+    /* Same rule as the forward site's: the machine's name, never the literal.
+     * Nothing but the reverse machine reaches this emitter today, so the text
+     * is unchanged. */
+    const char *m = f->dir->c.name;
     sb_printf(c, "%s    if (search_from"
-                 " ? %s_reverse_accepts_class(%s_reverse_is_accepting_by_class, %s,\n"
-                 "%s                          %s_reverse_byte_class[subject[search_from - 1]])\n"
-                 "%s                 : %s_reverse_accepts(%s_reverse_is_accepting, %s))"
+                 " ? %s_%s_accepts_class(%s_%s_is_accepting_by_class, %s,\n"
+                 "%s                          %s_%s_byte_class[subject[search_from - 1]])\n"
+                 "%s                 : %s_%s_accepts(%s_%s_is_accepting, %s))"
                  " %s = %s;\n",
-              f->dir->bind, f->p, f->p, f->src,
-              f->dir->bind, f->p,
-              f->dir->bind, f->p, f->p, f->src, f->dir->recv, f->dir->posv);
+              f->dir->bind, f->p, m, f->p, m, f->src,
+              f->dir->bind, f->p, m,
+              f->dir->bind, f->p, m, f->p, m, f->src, f->dir->recv, f->dir->posv);
 }
 
 static const DfaDir dfa_dir_forward = {
