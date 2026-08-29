@@ -707,6 +707,24 @@ built.
 | 5 | `tests/mech` S189 | pre-validated DETECTED, with `tests/base/alternation.rxt` **26/0** and `run_anchored_match.sh` **14/0** on the same planted tree |
 | 6 | `tests/registry` | 64 / 0 (coverage re-pinned 59 → 64) |
 | 7 | `make strict` | clean |
+| 8 | the D81 DIFFERENCE SET, measured | the `-fno-anchored-dfa` build against the PRE-ROW compiler over **2,498 corpus patterns**: **0 byte-identical, 2,498 differing ONLY in the expected lines, 0 other, 0 refusal mismatches** |
+
+**CHECK 8 IS THE ONE THE BRIEF NAMES AND D81 MAKES FALSE IN ITS OBVIOUS
+FORM.** A "byte-identical under the deny flag" claim would be wrong — selection
+facts are stamped unconditionally — so what is measured instead is the exact
+DIFFERENCE SET, and it comes back as precisely eleven distinct lines over the
+whole corpus:
+
+```
+#define RX_DFA_MATCH "search-filter"        (DFA artifacts only)
+.abi = 9,  ->  .abi = 10,
+.match_form = NULL,  /  .match_form = "search-filter",
+const char           *match_form;           + its 5-line block comment
+```
+
+Nothing else moves on any of the 2,498, which is what makes the denied build a
+usable control rather than a second variant.
+
 
 **AND THE ONE THING THAT MEASURED NOTHING, stated because it is the row's own
 vacuity risk realised.** `make test-axes`'s `-fno-anchored-dfa` sweep is
