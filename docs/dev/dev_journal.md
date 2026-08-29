@@ -17058,3 +17058,35 @@ for its throughput rows. FRANK'S RULE, saved as memory
 `pcrec-subagent-cache-warmth`: a context idle > 60 min is re-charged;
 ping held lanes inside the hour, never message done lanes. Cron
 55bbff34 carries it.
+
+#### Forty-third session, part 6 — THE UNION IS PROVEN: [OPT-K], [SEL-1], [CHK-2] CLOSED; I-15 sent (pin 8ab6152, abi 9); [FREESTANDING] filed; the census's timing runs on the quiet box (2026-08-28 ~20:3x EDT)
+
+The union battery's remaining stages: `make test-axes` 15/15 axes
+answer-identical (the new `-fno-offset-skip` 22,105/22,105; the one red
+was the form census's population floor — [OPT-K] moved ~75 memchr
+witnesses to the offset-set forms; re-floored 750 / new values 300 and
+30, census 1/0, 2e97c65) and the san RE-RUN after the 53→59 pin: rc 0,
+0 report lines, 0 guard lines, both axes, 33 scripts. With test
+1,644/0, solo clean and mech 184/0/6/0 from the first pass, the three
+rows are CLOSED and archived (8ab6152); optk's worktree retired. I-15
+to the bench: pin 8ab6152, what moved (two `RX_DFA_PREFILTER` values,
+the unconditional `_DFA_PREFILTER_OFFSETS` stamp, abi 9, bit 16,
+`--list-axes`, the auto fallback so level-context now compiles), the
+expected numbers as a ledger, and three asks — re-pin + re-measure,
+Frank's fallback-vs-JIT rows, [B11.4] next. FRANK, this stretch:
+"unroll seems key, the others incremental — pragma?" → not a pragma:
+the counter rung choosing K from a size model (nesting depth as the
+trigger) is STEP 2's first piece, `--unroll=K` stays the override;
+"zero-cost size test on the existing corpus … or log metrics and
+examine post-test" → [ART-SIZE.1b] chartered and running (lane
+sizeratchet: the log at the harness's existing compile at 1.79 %
+overhead, byte-exact with the census's size definition, size_diff, ONE
+corpus-level tripwire 700,000 B / 8.0 s with an unpinned-max guard,
+sabotage-proven with a real --unroll=48 compile tripping by name;
+baseline log waits for the quiet box); "memchr requires glibc?" →
+fact-checked (ISO C; the case is -ffreestanding) and filed as
+[FREESTANDING] in the boonies tier with the measured fact that a
+prefilter-less VM artifact already reaches no libc symbol. The census's
+throughput rows (artsize's tension.py) run on the quiet box since
+20:08; sizeratchet's baseline follows; then this session ends with
+wake.md.
