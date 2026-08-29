@@ -371,3 +371,21 @@ links, so it needs the C-identifier the artifact is emitted under
 The ruling list in §5 gains: 7. path spelling `""` local / `<>` library
 path; 8. `target [<prefix>]`, defaulting to `name`, `rx` for the lone
 unnamed target.
+
+**6.3 "Prefix in the C file, or name in the `rx_info` structure."** Both,
+and they are two identities with two consumers. The PREFIX is the
+link-time identity (`<prefix>_search`, `<prefix>_info` — the symbol a
+caller links, unique per translation unit). `rx_info` today carries
+`.pattern`/`.pattern_len` but no name; it gains **`const char *name`**
+(runtime identity: what [V-E]'s finder, a bench record, or a debugger
+prints — a `.rxt` `name`, not a C symbol). Defaults keep them equal:
+`target` alone → prefix = name = the block's `name`; but they may
+differ, and the case where they must is exactly U6: one target
+`email` built under two configs is two artifacts `email_avx2_*` /
+`email_base_*` whose `rx_info.name` is `"email"` in both. An unnamed
+lone target has `name == "rx"` (the prefix) so no artifact ever carries
+a NULL name. Adding the field is an `abi` bump under D76's ritual
+(bump + re-pin + spec hunk in one change) and rides wave 1's first
+landing, not a separate event. Ruling list item 8 is amended
+accordingly: `target [<prefix>]`; `rx_info.name` = the block's `name`
+(or the prefix when unnamed).
