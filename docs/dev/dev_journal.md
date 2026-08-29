@@ -17335,3 +17335,62 @@ check — recorded in its §4.6b. Every subagent report this session was
 DROPPED by the final-report channel and recovered by asking the agent
 to SEND it by message (critics cannot write files: "Subagents should
 return findings as text") — budget a message round-trip per agent.
+
+#### Forty-fourth session, part 4 — r40 CLOSED after three revision passes ([ART-SIZE] STEP 2 code phase OPENED); r41 two of three in, engabs holds for merge; D84 addenda 3 (2026-08-29 ~00:1x EDT)
+
+r40's focused re-check (critic-sem) found the BLOCKER in the moved
+mechanism: `ctx_fail` is a `longjmp` to the compiler's ONE recovery
+point (internal.h:1469 — the rule [SEL-1] paid a full pipeline retry
+to obey a day earlier), so a ladder TRIAL cannot be discarded — measured
+on a 6-deep `{41}` tower under `--engine=vm`: **K=8 compiles
+(N=118,098), K=6 refuses** ("VM exceeds 131072 emitted nodes"); the
+ladder as first written would have turned a pattern that compiles today
+into a refusal at a K nobody asked for. Plus R2 (the ladder's cost is
+its WORST rung — K=6 is routinely worst because `K + m%K` is
+non-monotone; a 6-deep tower emits 35.5 MB at K=6 to select a 42 KB
+artifact), R3 (`pcrec_emit_vm` mutates the shared AST — `.call.save`/
+`.nsave` point into that run's arena — benign only because every
+publisher precedes its readers within a run, a property nothing
+stated), R4 (under the ruled code-bytes quantity `a{1,31000}` is 12 KB
+of code and is ADMITTED by the code cap — refused by the TOTAL cap,
+which is the intended reading of Q4), R5 (`cap-rescue` stamp value),
+R6 (the give-up surface had no gate at all after S2's exclusion).
+S2/S3/S4/S5/S8/S9 closed. The lane's third pass (e72b57d) answered all
+six: §2.2b's TRIAL flag under which the five size guards RETURN
+`OVER(which,value)` — never a second setjmp; a trial's refusal is
+never the compile's answer; the early abort as the first such guard
+(55.4 MB → 4.3 MB scratch, bounded at |LADDER| × total cap); exact code
+bytes with the node cap DROPPED; the AST re-publication invariant +
+sabotage; R1's witness as a .rxt cell; the fuzz gate owes a `size_cap`
+bucket (a "pattern too large:" refusal otherwise lands in the DIVERGENCE
+bucket — and the two already-shipped replication-cap refusals have the
+same gap). One discrepancy recorded, not resolved: the lane's
+code-byte figures (witness 2 670,650) vs the critic's (1,248,680 —
+pointer tables counted as code); identical decisions either way; the
+note's all-initializers-excluded definition is the definition of
+record. FRANK, in this stretch: the caps are "an emergency failsafe,
+not a tuning" — total stays 1,000,000; and "our txt file format could
+set a higher byte limit, right? That would be the place" → yes: a
+`config` block in the grown .rxt carries the raise-only overrides per
+target (D84 addendum 3, 1172c30; paper §2 wave 3, 4cd74c7). r40 CLOSED
+5a5b548: [ART-SIZE] STEP 2 design APPROVED FOR CODE; the code phase
+opened on the same lane with the sequencing: [ENG-ABS] merges first
+(abi 10, bit 17, registry 64); [ART-SIZE] lands on top (abi 11, bit 18,
+registry 65) — VM-side code starts now, shared sites after a rebase on
+the manager's signal; paneled at close (r42).
+
+r41 on engabs: critic-checks — every obligation HOLDS (four abi sites,
+D80 hunks incl. cli.md's list, D81 with the documented entry-vs-scan
+exception, registry 64 and census floors DERIVED, no hard-coded bit
+range left, S189 detected by the ARTIFACT'S ANSWER only); one doc nit
+(C6, landed by the manager d986389); C10's expected size-log conflict
+does not exist (main has not touched the log since 017bf3d). critic-meas
+— every headline reproduced on an independent harness: matching
+**1.036×** (10-trial; a single 5-trial run read 1.062 — the margin is
+inside ±3 % noise, said so in the file), short emails **0.489×**, probe
+ratio 342,548×, size totals EXACT; M5 the flat 5.8 ns is ~62 % harness
+call cost; M11 the `.o` delta is only 2-11 % of the source delta (the
+anchored table is verbose decimal C that compresses) — both landed in
+the note (2484280). critic-sem (the accept-discipline differential with
+its own alphabet, assertions at pos > 0) still running; merge + union
+battery follow its verdict.
