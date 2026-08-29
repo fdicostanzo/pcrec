@@ -8267,6 +8267,30 @@ void pcrec_emit_vm(Ctx *cx, Ast *root)
         sb_printf(c, "#define %s_VM_CALL_SPLICED %lld\n", v.up, v.nsplicesite);
         sb_printf(c, "#define %s_VM_CALL_LINKED %lld\n", v.up, v.ncall);
     }
+    /* [ART-SIZE] THE SIZE TERM'S SELECTION FACTS (D81, D84;
+     * docs/design/artifact_size_term.md §7.1). UNCONDITIONAL on every VM
+     * artifact — that is D81's whole point: a fact stamped only when it fired
+     * is a hint, and `"default"` is a fact, not an absence.
+     *
+     * `_UNROLL_K_WHY` has SIX values (`option` / `denied` / `default` /
+     * `size-model` / `size-model-declined` / `cap-rescue`) because a check
+     * must be able to tell them apart; three of them would collapse four
+     * reachable states into one.
+     *
+     * The two `_MAX_EMIT_*` lines report the EFFECTIVE limits this artifact
+     * was built under, so a reader can tell an artifact that fitted from one
+     * built with a raised cap without having the command line. */
+    sb_printf(c, "#define %s_UNROLL_K %d\n", v.up, v.unroll_k);
+    sb_printf(c, "#define %s_UNROLL_K_WHY \"%s\"\n", v.up,
+              cx->size_term_why ? cx->size_term_why : "default");
+    sb_printf(c, "#define %s_MAX_EMIT_CODE_BYTES %llu\n", v.up,
+              cx->opt->max_emit_code_bytes
+                  ? (unsigned long long)cx->opt->max_emit_code_bytes
+                  : (unsigned long long)PCREC_MAX_VM_EMIT_CODE_BYTES);
+    sb_printf(c, "#define %s_MAX_EMIT_BYTES %llu\n", v.up,
+              cx->opt->max_emit_bytes
+                  ? (unsigned long long)cx->opt->max_emit_bytes
+                  : (unsigned long long)PCREC_MAX_EMIT_BYTES);
     /* [DD-14.EMPTY] THE ROOT MINIMUM-WIDTH STAMP, emitted only when the
      * search entry's root check above was emitted -- one condition, read
      * twice, never two conditions that could disagree. It is a NUMBER

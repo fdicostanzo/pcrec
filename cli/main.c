@@ -263,6 +263,11 @@ int main(int argc, char **argv)
             opt.flags |= PCREC_NO_PREMUL_TABLE;
         else if (!no_more_opts && !strcmp(a, "-fno-offset-skip"))
             opt.flags |= PCREC_NO_OFFSET_SKIP;
+        /* [ART-SIZE] Denies the K SELECTION only. It does NOT reach either
+         * emitted-size cap — those are raise-only via --max-emit-*-bytes
+         * (D84 ruling 1): a safety refusal a flag turns off is not one. */
+        else if (!no_more_opts && !strcmp(a, "-fno-size-term"))
+            opt.flags |= PCREC_NO_SIZE_TERM;
         /* [M4.6d] the family's FOURTH member: MINIMUM-REMAINING-LENGTH pruning
          * (D51 ruling 1), D46's controllability half for it. Denying it is
          * BYTE-IDENTITY-safe by construction — MRL emits a bound on whichever

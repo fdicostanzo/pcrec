@@ -1391,6 +1391,13 @@ struct Ctx {
      *
      * NULL until `pcrec_parse_mods_init` runs. Every Ctx that can reach a
      * parser or a doorway port calls it — see that function. */
+    /* [ART-SIZE] What the size term decided, set by compile_driver before the
+     * FINAL emission and read by the stamp block (D81: a selection fact is
+     * stamped whether or not it fired, so `size_term_why` is never NULL on a
+     * VM artifact). It is computed in the DRIVER and not in the emitter
+     * because only the driver has seen the whole ladder — an emitter run knows
+     * its own K and nothing about the alternatives it was chosen over. */
+    const char          *size_term_why;
     ParseMods           *mods;
     /* THE RUNNING CAPTURE COUNT (MOD-0.1, design §18.1 as Frank resolved
      * it: there is NO scanner). Incremented at p_group_body's capturing-`(`

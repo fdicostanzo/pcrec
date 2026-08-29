@@ -372,11 +372,20 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
     bool   st_ok[SIZE_TERM_LADDER_N + 1];
     size_t st_code[SIZE_TERM_LADDER_N + 1], st_total[SIZE_TERM_LADDER_N + 1];
     size_t st_nodes[SIZE_TERM_LADDER_N + 1];
+    /* [ART-SIZE] The length of the `_UNROLL_K_WHY` string THIS attempt
+     * stamped. The size term's own verdict is part of the artifact (D81), so
+     * an attempt that has not yet made the decision stamps a different value —
+     * and therefore a different NUMBER OF BYTES — from the final one. That is
+     * the single legitimate way a re-emission at the same K can differ, and
+     * subtracting it is what keeps the identity check below EXACT rather than
+     * giving it a tolerance that would also hide a real leak. */
+    size_t st_whylen[SIZE_TERM_LADDER_N + 1];
     memset(st_k, 0, sizeof st_k);
     memset(st_ok, 0, sizeof st_ok);
     memset(st_code, 0, sizeof st_code);
     memset(st_total, 0, sizeof st_total);
     memset(st_nodes, 0, sizeof st_nodes);
+    memset(st_whylen, 0, sizeof st_whylen);
 
     for (volatile int attempt = 0; attempt < COMPILE_MAX_ATTEMPTS; attempt++) {
         Ctx cx;
@@ -715,6 +724,19 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
                      "permanently UNSET (under a zero-count repeat, or reached "
                      "only through a call). Pass --engine=vm for the VM program");
 
+        /* [ART-SIZE] The size term's verdict, for the artifact's own stamp
+         * (D81). SIX values, because the first design's three hid four
+         * reachable states behind "default" and a check could not tell "the
+         * term was denied" from "it ran and the artifact was below the
+         * threshold" from "it ran and the bar declined its K" (r40 S9, R5). */
+        cx.size_term_why =
+            defo.unroll_k > 0 && st_phase == ST_DEFAULT ? "option"
+          : (defo.flags & PCREC_NO_SIZE_TERM)           ? "denied"
+          : st_phase != ST_FINAL                        ? "default"
+          : st_rescue                                   ? "cap-rescue"
+          : st_final_k != st_k[0]                       ? "size-model"
+          :                                               "size-model-declined";
+
         if (cx.job->fit.chosen == ENGM_VM) pcrec_emit_vm(&cx, root);
         else                               pcrec_emit_dfa(&cx);
 
@@ -744,6 +766,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             st_k[0] = defo.unroll_k > 0 ? defo.unroll_k : PCREC_DEFAULT_UNROLL_K;
             st_ok[0] = true; st_code[0] = emit_code; st_total[0] = emit_tot;
             st_nodes[0] = cx.job->vm_emitted_nodes;
+            st_whylen[0] = strlen(cx.size_term_why);
             /* DOES THE TERM RUN? Every condition is a reason NOT to, and each
              * is a separate sentence in the design: an explicit `--unroll=`
              * is a value the caller chose and the term never overrides it; the
@@ -765,6 +788,7 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
             st_ok[st_idx + 1] = true;
             st_code[st_idx + 1] = emit_code; st_total[st_idx + 1] = emit_tot;
             st_nodes[st_idx + 1] = cx.job->vm_emitted_nodes;
+            st_whylen[st_idx + 1] = strlen(cx.size_term_why);
             st_idx++;
             if (st_idx < SIZE_TERM_LADDER_N) { job_cleanup(&cx); continue; }
             {
@@ -787,15 +811,30 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * arise here, because each attempt re-parses and gets a FRESH AST;
              * this check is what makes that a verified property rather than an
              * argument. */
+            size_t wl = strlen(cx.size_term_why);
             for (int i = 0; i <= SIZE_TERM_LADDER_N; i++) {
                 if (!st_ok[i] || st_k[i] != st_final_k) continue;
-                if (st_code[i] != emit_code || st_total[i] != emit_tot)
+                /* Exact, once the artifact's own verdict string is discounted
+                 * on both sides. THIS CHECK EARNED ITSELF ON ITS FIRST RUN:
+                 * un-adjusted it fired on K41 witness 1 with a 3-byte delta,
+                 * which is exactly strlen("size-model") - strlen("default") —
+                 * a ladder trial stamps `"default"` because the decision has
+                 * not been made yet, and the final attempt stamps the verdict.
+                 * A tolerance would have hidden that; subtracting the known
+                 * term explains it and leaves every other byte under guard.
+                 * Node count is compared UNADJUSTED, because no stamp can
+                 * move it — it is the quantity the ladder actually selects on. */
+                if (st_nodes[i] != (size_t)cx.job->vm_emitted_nodes ||
+                    st_code[i] - st_whylen[i] != emit_code - wl ||
+                    st_total[i] - st_whylen[i] != emit_tot - wl)
                     ctx_fail(&cx, 0,
                              "internal error: re-emitting at --unroll=%d gave "
-                             "%zu/%zu bytes, the ladder measured %zu/%zu -- "
-                             "compiler state leaked across attempts",
-                             st_final_k, emit_code, emit_tot,
-                             st_code[i], st_total[i]);
+                             "%zu nodes %zu/%zu bytes, the ladder measured "
+                             "%zu nodes %zu/%zu -- state leaked across attempts",
+                             st_final_k, (size_t)cx.job->vm_emitted_nodes,
+                             emit_code - wl, emit_tot - wl,
+                             st_nodes[i], st_code[i] - st_whylen[i],
+                             st_total[i] - st_whylen[i]);
                 break;
             }
         }
