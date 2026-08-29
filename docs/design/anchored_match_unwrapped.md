@@ -525,9 +525,93 @@ and the VM (`--engine=vm`) for the ratio `opt2m` states the target in.
 | 3 | FAILING match-here on a 1 MB subject that diverges at byte 3 | O(1), not O(n) — a flat curve against subject length |
 | 4 | `_search` on the same corpus | UNCHANGED (this row does not touch it) |
 
-### 7.1 MEASURED
+### 7.1 MEASURED (2026-08-29, lane engabs)
 
-*(filled at delivery — see the lane report)*
+Box and discipline: `taskset -c 3`, `adriver` transcribed from `opt2m`'s (§1
+there) — per-subject iteration calibration toward a 30 ms timed run, **median
+of 5 independent process invocations** per subject before summing into set
+totals. Artifacts are the `(?:orig)\z` spelling `opt2m` measured, all
+`--features all`, all from this worktree's build:
+
+| arm | invocation | stamps |
+|---|---|---|
+| `on` | default | `RX_ENGINE "dfa"`, `RX_DFA_MATCH "unwrapped"`, `RX_DFA_PREFILTER "byte-class-bounded"`, `RX_DFA_TABLE "premultiplied"` |
+| `off` | `-fno-anchored-dfa` | the same, `RX_DFA_MATCH "search-filter"` |
+| `vm` | `--engine=vm` | `RX_ENGINE "vm"` |
+
+`load1` 1.47 → 0.88 across the series (no number here turns on it: the
+calibration is self-normalizing per subject, `opt2m` §1's argument).
+
+**THE `off` ARM REPRODUCES `opt2m`'s NUMBERS, which is what makes the `on`
+column comparable to the row's targets rather than to a new baseline**:
+2.132× vs `opt2m`'s 2.133× on the set, 2.074× vs 2.077× on the matching
+split, 1.223× vs 1.207× on the short valid emails. Different lane, different
+build, same measurement.
+
+#### Questions 1, 2 and 4 — the compliance set (85 subjects, `orig`/`match`)
+
+Set totals, ns per call summed over the split:
+
+| split | n | `on` | `off` | `vm` | **on/vm** | off/vm | on/off |
+|---|---|---|---|---|---|---|---|
+| ALL | 85 | 72,585.0 | 133,274.8 | 62,516.8 | **1.161** | 2.132 | 0.545 |
+| MATCHING | 40 | 48,337.1 | 97,202.1 | 46,874.6 | **1.031** | 2.074 | 0.497 |
+| NON-MATCHING | 45 | 24,247.9 | 36,072.7 | 15,642.2 | **1.550** | 2.306 | 0.672 |
+| short valid emails (`len <= 40`) | 35 | 899.8 | 2,284.3 | 1,867.3 | **0.482** | 1.223 | 0.394 |
+
+- **Question 1 MET.** Matching subjects: **1.031×** the VM, against a target
+  of ≤ 1.046× (the isolation's parity figure) and a starting point of 2.074×.
+  The form is at parity with the backtracking VM on the specimen's own
+  matching population.
+- **Question 2 MET, with room.** The 35 short valid emails: **0.482×** — the
+  DFA answers them **2.07× FASTER than the VM** — against a target of ≤ 0.571×
+  and a starting point of 1.223× behind. The isolation understated it by 16 %
+  for the reason §4 gives: it still paid the self-loop and skip machinery this
+  form removes outright.
+- The NON-MATCHING split improves least (2.306× → 1.550×), and that is the
+  expected shape rather than a shortfall: `opt2m` measured the reverse pass at
+  13.9 % of cost there, because a non-matching compliance subject is a
+  NEAR-MISS email that the forward scan walks to the end regardless. What
+  question 3 is about is the other kind of failure.
+- **Question 4 holds by construction and is checked, not asserted**:
+  `<prefix>_search` is byte-for-byte unchanged, and
+  `tests/anchored/run_anchored_diff.sh` compares it between the two builds on
+  every cell.
+
+#### Question 3 — the FAILING match-here on a long subject
+
+The original `[ENG-ABS]` motivation. Subject: `"abc\n"` followed by filler —
+`abc` is a valid atom prefix and the newline cannot continue it (not an atom
+byte, not `.`, not `@`), so the match at `ctx->pos = 0` fails at byte 3. Two
+fillers, because the spec caveat's parenthesis ("the state-0 `memchr` skip
+keeps this a skim rather than a per-byte walk") is a real distinction: `x` is
+a candidate start, so the prefilter skips nothing; `\n` is not, so the skip
+loop runs. Median of 3, ns per call:
+
+| filler | length | `on` | `off` | `vm` | **off/on** |
+|---|---|---|---|---|---|
+| `x` | 1 KB | 5.5 | 1,921.3 | 15.9 | 350× |
+| `x` | 16 KB | 5.4 | 30,884.8 | 15.8 | 5,744× |
+| `x` | 256 KB | 5.5 | 495,905.5 | 15.8 | 90,709× |
+| `x` | **1 MB** | **5.5** | **1,988,004.8** | 15.8 | **363,305×** |
+| `\n` | 1 KB | 5.4 | 401.4 | 15.8 | 74× |
+| `\n` | 16 KB | 5.4 | 5,858.2 | 15.8 | 1,090× |
+| `\n` | 256 KB | 5.4 | 96,878.5 | 15.7 | 17,927× |
+| `\n` | **1 MB** | **5.4** | **379,549.9** | 15.7 | **70,759×** |
+
+**The `on` column is FLAT — 5.4 to 5.5 ns at every length, on both fillers —
+and the `off` column is linear in the subject.** That is the claim: a failing
+match-here costs O(divergence), not O(subject). It is also **2.9× faster than
+the VM's own anchored body** at 15.8 ns, which the row did not promise. The
+two fillers differ by 5× in the `off` column and not at all in the `on` one,
+which is the spec caveat's skim-versus-walk distinction becoming moot.
+
+#### What this closes
+
+`[OPT-2]`'s lever (a) is discharged: the reverse pass is gone from the
+anchored entry, the ~50 % it cost on matching subjects is recovered, and
+§3.2's documented worst case no longer applies to an artifact that selects
+the form.
 
 ---
 
