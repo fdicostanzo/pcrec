@@ -1233,6 +1233,30 @@ typedef struct {
     const char *why;        /* the forcing construct, for the stamp and F7 */
     size_t      why_pos;    /* pattern offset of it */
     bool        prefilter;  /* §6: is a DFA prefilter emitted alongside */
+
+    /* [OPT-4] WHICH LANGUAGE THAT PREFILTER WAS BUILT FROM (K39;
+     * docs/design/prefilter_count_independence.md). False = the pattern's own
+     * (exact) language; true = the COUNT-COLLAPSED superset, every `A_REP`
+     * with `rmin > 1 || rmax > 1` lowered as `X{min(m,1),}`.
+     *
+     * IT IS NOT SET BY `pcrec_select_engine`, and that is the one thing to
+     * know about this field's home. Every other member here is a decision
+     * selection can make from the AST alone; this one is decided by MEASURING
+     * the exact machine (`src/core/compile.c`'s build gate compares `Nfa.n`
+     * against `PCREC_PREFILTER_EXACT_NFA_STATES`), because a prediction of
+     * that number would be a second statement of `compile_ast`'s own `A_REP`
+     * lowering and the two can drift (D24). It rides on `EngineFit` rather
+     * than on `Job` so that the emitter reads the prefilter's KIND and its
+     * LANGUAGE off one struct, in one place — `<PREFIX>_VM_PREFILTER` and
+     * `<PREFIX>_VM_PREFILTER_LANG` are two readers of one derivation (D81).
+     *
+     * ITS CONSUMERS ARE THREE AND THEY MUST AGREE: the stamp, the `--emit-ir`
+     * listing's `; prefilter` line, and `Vm.mrl_win` — where it joins
+     * `pcrec_has_atomic`/`pcrec_has_lookaround` as a third reason the span END
+     * is not an upper bound. R31 E3's finding applies unchanged: the lines
+     * that BUILD the ceiling read `mrl_win` itself, so flipping this field
+     * cannot leave a stamp disagreeing with a live clamp. */
+    bool        prefilter_collapsed;
 } EngineFit;
 
 typedef struct {
@@ -3272,8 +3296,13 @@ char *pcrec_emit_ir(const char *pattern, const pcrec_options *opt,
  * pcrec_parse_info instead: that one requires end-of-pattern and ctx_fails on
  * `)`. info may be NULL. */
 Ast *pcrec_parse_body(Ctx *cx, AltInfo *info);
+/* [OPT-4] `collapse` builds the COUNT-COLLAPSED language — every counted
+ * repeat lowered as `X{min(m,1),}` — and is true ONLY where this machine's
+ * sole customer is the VM hybrid's prefilter (docs/design/
+ * prefilter_count_independence.md §3). It also RESETS `nfa->n`, so the same
+ * `Nfa` can be measured exact and then rebuilt collapsed in place. */
 void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa,  /* src/ir/nfa.c */
-                     bool reverse);
+                     bool reverse, bool collapse);
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa);        /* lowest-priority start self-loop */
 bool nfa_has_asserts(const Nfa *nfa);
 bool nfa_has_bot(const Nfa *nfa);   /* ^ present: still needs ENG_ATTEMPT */
@@ -3420,6 +3449,23 @@ bool pcrec_has_atomic(const Ast *a);                  /* src/opt/atomic.c */
  * alternation" predicate and rejects it — a second analysis with no
  * independent check, against a silent match loss if it is wrong anywhere. */
 bool pcrec_has_lookaround(const Ast *a);              /* src/opt/atomic.c */
+
+/* [OPT-4] Does this tree carry an `A_REP` the count-collapse would CHANGE —
+ * one with `rmin > 1 || rmax > 1` (docs/design/prefilter_count_independence.md
+ * §3)? The third member of the family above, and declared beside them because
+ * it is the same question asked for the same consumer: which counted repeats
+ * make the prefilter's machine scale with a number the filter does not need.
+ *
+ * IT IS THE COLLAPSE'S OWN GUARD, SPELLED ONCE. `compile.c`'s build gate reads
+ * it to decide whether rebuilding is worth an NFA, and `emit_vm.c` never asks
+ * it at all — the artifact reports what was BUILT (`job->fit.prefilter_lang`),
+ * not what could have been, so there is no second derivation to disagree.
+ *
+ * It is ASKED OF THE POST-DISCHARGE TREE like its two neighbours, and for a
+ * sharper reason than symmetry: possessification rewrites `A_REP` nodes, and a
+ * predicate answering about the pre-pass tree could name a repeat the builder
+ * no longer sees. */
+bool pcrec_has_collapsible_rep(const Ast *a);         /* src/opt/atomic.c */
 
 /* Does any node in `a` carry `row` as its SR-8 producing stamp — i.e. did that
  * row's producer actually build something here?

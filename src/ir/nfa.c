@@ -50,6 +50,21 @@ typedef struct {
      * a stack overflow is the one failure a sabotage matrix cannot tell from
      * an infrastructure fault. */
     int  splice_depth;
+
+    /* [OPT-4] BUILD THE COUNT-COLLAPSED LANGUAGE (K39; docs/design/
+     * prefilter_count_independence.md §3). Set only by `compile.c`'s build
+     * gate, and only when this machine's sole customer is the VM hybrid's
+     * PREFILTER — never when the DFA is the engine, where the language must
+     * be exact.
+     *
+     * It is read at exactly one place, the `A_REP` arm, which is where the
+     * count enters the machine and therefore the only place it can be made to
+     * stop entering. A superset is what a filter is allowed to be: see the
+     * `A_ATOMIC` and `A_LOOK` arms below, which have been over-approximating
+     * for the same customer since [M6.4.2] and [M6.6.2], and whose consumers'
+     * obligations (rejection sound, span START a lower bound, span END NOT an
+     * upper bound) this flag joins rather than restates. */
+    bool collapse;
 } NB;
 
 /* [M4.5b] A_CAP IS INVISIBLE HERE, and that is load-bearing in two places at
@@ -685,6 +700,29 @@ static Frag compile_ast(NB *b, const Ast *a)
     }
     case A_REP: {
         int rmin = a->u.rep.rmin, rmax = a->u.rep.rmax;
+        /* [OPT-4] THE COUNT-COLLAPSE, and it is three lines because the whole
+         * mechanism is a change of BOUNDS — the construction below is
+         * untouched and every downstream stage sees an ordinary `A_REP`.
+         *
+         * `X{m,n}` becomes `X{min(m,1),}`. SOUND as a superset: every word of
+         * `X{m,n}` is k copies of X with m <= k <= n; k >= 0 = min(0,1) when
+         * m is 0 and k >= m >= 1 = min(m,1) otherwise, and k <= infinity
+         * always. The proof never mentions n, which is exactly why the
+         * resulting machine does not scale with the count.
+         *
+         * The guard is `rmin > 1 || rmax > 1`, not `n > 1`, so it covers the
+         * whole family in one arm — `{m,n}`, `{n}`, `{m,}` with m >= 2, and
+         * the lazy and nested spellings of all of them, since laziness is a
+         * preference the DFA does not have and nesting is this same recursion.
+         * A possessive bound needs nothing here: it parses to
+         * `A_ATOMIC(A_REP(X))` and the `A_ATOMIC` arm below already erases the
+         * wrapper before this arm sees the repeat. A repeat already satisfying
+         * the guard's negation replicates nothing, so collapsing it would buy
+         * no bytes and cost the filter its sharpness for free. */
+        if (b->collapse && (rmin > 1 || rmax > 1)) {
+            rmin = rmin ? 1 : 0;
+            rmax = -1;
+        }
         if (rmin == 0 && rmax == 0) return frag_single(b, N_EPS);
 
         Frag f = { -1, {0} };
@@ -884,9 +922,15 @@ static Frag compile_ast(NB *b, const Ast *a)
     ctx_fail(b->cx, 0, "internal error: bad AST node");
 }
 
-void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse)
+void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse, bool collapse)
 {
-    NB b = { cx, nfa, reverse, 0 };
+    /* [OPT-4] REBUILDABLE IN PLACE. `compile.c`'s build gate measures the
+     * exact machine and then, above the knee, rebuilds it collapsed into the
+     * SAME `Nfa` — so this resets the state count rather than assuming a
+     * fresh one. `st`/`cap` are deliberately kept: the array is Job-owned and
+     * `nst` reuses it, so the second build costs no allocation. */
+    nfa->n = 0;
+    NB b = { cx, nfa, reverse, 0, collapse };
     Frag f = compile_ast(&b, root);
     int acc = nst(&b, N_ACCEPT);
     patch_to(&b, &f.out, acc);
@@ -901,7 +945,7 @@ void pcrec_build_nfa(Ctx *cx, Ast *root, Nfa *nfa, bool reverse)
  * match end in one pass (D7). */
 void nfa_wrap_unanchored(Ctx *cx, Nfa *nfa)
 {
-    NB b = { cx, nfa, false, 0 };
+    NB b = { cx, nfa, false, 0, false };
     int sp = nst(&b, N_SPLIT);
     int any = nst(&b, N_CLASS);
     memset(nfa->st[any].cls, 0xff, 32);   /* every byte, including \n */

@@ -401,7 +401,35 @@ enum {
      * still be REFUSED for size — correctly: denying the term removes the
      * mechanism that would have made the artifact smaller, it does not make a
      * 2 MB artifact acceptable. */
-    PCREC_NO_SIZE_TERM = 1u << 18
+    PCREC_NO_SIZE_TERM = 1u << 18,
+
+    /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
+     * prefilter_count_independence.md). Bit 18 is [ART-SIZE]'s.
+     *
+     * The VM hybrid's prefilter is a FILTER: what it owes the VM is a sound
+     * REJECTION and a lower bound on the match start, never an exact language
+     * — `src/ir/nfa.c` already answers for a strict superset whenever the
+     * pattern carries an atomic group or a lookaround. Above
+     * `PCREC_PREFILTER_EXACT_NFA_STATES` a counted repeat `X{m,n}` is
+     * therefore lowered, FOR THE PREFILTER ONLY, as `X{min(m,1),}` — a
+     * superset whose proof never mentions `n`, so the prefilter's DFA (and
+     * the artifact) stops scaling with the count.
+     *
+     * `PCREC_NO_PREFILTER_COLLAPSE` recovers the exact prefilter, and with it
+     * the sharper match start and the `"prefilter-window"` pruning ceiling
+     * that a superset prefilter cannot carry — at the count-proportional size
+     * this flag exists to let a caller choose. `PCREC_FORCE_PREFILTER_COLLAPSE`
+     * drops the state budget instead, so the collapse applies to EVERY counted
+     * repeat and the emitted size is count-independent rather than merely
+     * count-bounded. Requesting both is refused.
+     *
+     * NEITHER FLAG CHANGES AN ANSWER. The prefilter axis is
+     * answer-identity-preserving (D46), which is what makes the deny/force
+     * pair a sweepable control rather than a semantic switch, and
+     * `<PREFIX>_VM_PREFILTER_LANG` is where the artifact says which language
+     * it was built from. */
+    PCREC_NO_PREFILTER_COLLAPSE    = 1u << 19,
+    PCREC_FORCE_PREFILTER_COLLAPSE = 1u << 20
 };
 
 /* [ENG-BREP] the counter rung's UNROLL FACTOR, K (counterk_design.md §4.1;

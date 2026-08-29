@@ -84,6 +84,33 @@ enum {
     PCREC_MAX_DFA_STATES_TABLE = 32000,   /* table engine; must fit in short */
     PCREC_MAX_TABLE_ENTRIES    = 2000000, /* states*ncls bound (~12 MB source) */
 
+    /* [OPT-4] (2026-08-29, K39) THE KNEE ABOVE WHICH THE HYBRID'S PREFILTER IS
+     * BUILT FROM THE COUNT-COLLAPSED LOWERING instead of the exact one
+     * (docs/design/prefilter_count_independence.md §4). It is compared against
+     * `Nfa.n` of the EXACT forward machine, at `compile.c`'s build gate, and
+     * only when that machine's sole customer is the VM's prefilter.
+     *
+     * IT IS NOT A TUNING KNOB, IT IS WHERE THE TWO POPULATIONS SEPARATE.
+     * MEASURED over the 1,388 corpus artifacts that carry `prefilter=hybrid`
+     * (docs/dev/artifact_size_log.tsv joined to the `pattern` line each row
+     * names): the 1,144 with NO counted repeat of replication factor >= 2 run
+     * 3 states minimum, 6 median, 10 at p90 and **20 at the maximum** — the
+     * whole population with nothing to collapse is under any budget in range,
+     * which is what makes this a rule about counts rather than about size. The
+     * 244 that DO carry one run 19 median and 107 at p90, so 128 sits above
+     * both distributions and fires only where the COUNT is what made the
+     * machine big: 23 artifacts at 128, and zero of them factor < 2 (41 at 64,
+     * 22 at 256, 14 at 512 — all likewise zero). At this value the largest
+     * reverse DFA still built from the exact language is 42 states and the
+     * smallest one collapsed is 110.
+     *
+     * WHY THE EXACT NFA IS BUILT AND MEASURED RATHER THAN PREDICTED FROM THE
+     * AST. A predictor would be a second statement of `compile_ast`'s own
+     * `A_REP` lowering, and the two can drift (D24). Building costs one NFA on
+     * the 23 artifacts over the knee; determinization, the expensive step,
+     * never runs on the machine that is discarded. */
+    PCREC_PREFILTER_EXACT_NFA_STATES = 128,
+
     /* [M4.7b] K7's SECOND half: how many NFA-state-list ELEMENTS the priority
      * subset construction may intern, summed over every machine one compile
      * builds (forward and reverse are charged together because both are live

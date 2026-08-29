@@ -858,12 +858,53 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
          * second attempt at the PIPELINE with that automaton already known
          * to be unbuildable. */
         if (cx.job->fit.chosen == ENGM_DFA || cx.job->fit.prefilter) {
-            pcrec_build_nfa(&cx, root, &cx.job->nfa, false);
+            pcrec_build_nfa(&cx, root, &cx.job->nfa, false, false);
+            /* [OPT-4] THE PREFILTER'S LANGUAGE (K39; docs/design/
+             * prefilter_count_independence.md §4). The decision sits HERE,
+             * between the exact build and everything downstream, because it
+             * needs a number only the exact build has and nothing after this
+             * point may see two machines.
+             *
+             * THE FIRST CONJUNCT IS THE WHOLE SAFETY ARGUMENT. `chosen !=
+             * ENGM_DFA` means these machines' ONLY customer is the VM's
+             * prefilter — a filter, which owes a sound rejection and a lower
+             * bound on the start and nothing else (§2 H1/H2, and `emit_vm.c`'s
+             * retry loop re-derives from every candidate it is handed). When
+             * the DFA is the ENGINE its machine IS the answer, and a superset
+             * would be a miscompile; that case never reaches this branch.
+             *
+             * THE SECOND ASKS WHETHER THERE IS ANYTHING TO COLLAPSE, so a
+             * pattern with no counted repeat never pays for a second build
+             * that would produce the identical machine. THE THIRD is the
+             * measured knee: below it the exact language is kept, because it
+             * is a strictly sharper filter and the artifact is small there
+             * anyway (limits.h states the two distributions the number sits
+             * between). `PCREC_FORCE_PREFILTER_COLLAPSE` drops the third
+             * conjunct — not the first two, which are correctness and not
+             * policy — which is what makes the emitted size count-INDEPENDENT
+             * rather than merely count-bounded, and what gives this axis its
+             * force half for `make test-axes`.
+             *
+             * The rebuild is into the SAME `Nfa`: `pcrec_build_nfa` resets
+             * `n` and `nst` reuses the Job-owned array, so the discarded exact
+             * machine costs no allocation and — the expensive half —
+             * determinization never runs on it. */
+            const unsigned pfc_flags = cx.opt->flags;
+            const bool pfc_deny  = (pfc_flags & PCREC_NO_PREFILTER_COLLAPSE) != 0;
+            const bool pfc_force = (pfc_flags & PCREC_FORCE_PREFILTER_COLLAPSE) != 0;
+            bool collapse = cx.job->fit.chosen != ENGM_DFA
+                         && !pfc_deny
+                         && pcrec_has_collapsible_rep(root)
+                         && (pfc_force
+                             || cx.job->nfa.n > PCREC_PREFILTER_EXACT_NFA_STATES);
+            if (collapse)
+                pcrec_build_nfa(&cx, root, &cx.job->nfa, false, true);
+            cx.job->fit.prefilter_collapsed = collapse;
             if (!nfa_has_bot(&cx.job->nfa)) {   /* M2.7: `$` is fine here now */
                 /* D7 fast path: O(n) unanchored forward + reverse machines */
                 cx.job->engine = PCREC_ENG_UNANCH;
                 nfa_wrap_unanchored(&cx, &cx.job->nfa);
-                pcrec_build_nfa(&cx, root, &cx.job->rnfa, true);
+                pcrec_build_nfa(&cx, root, &cx.job->rnfa, true, collapse);
                 pcrec_build_dfa(&cx, &cx.job->nfa, &cx.job->dfa, true, false,
                                 PCREC_MAX_DFA_STATES_TABLE,
                                 cx.job->nfa.start, false);

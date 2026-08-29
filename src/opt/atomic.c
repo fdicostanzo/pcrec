@@ -173,6 +173,78 @@ bool pcrec_has_lookaround(const Ast *a)
     }
 }
 
+/* [OPT-4] Does this tree carry a counted repeat the collapse would CHANGE?
+ * (K39; docs/design/prefilter_count_independence.md §3, §4.)
+ *
+ * THE PREDICATE IS THE COLLAPSE'S OWN GUARD, SPELLED HERE ONCE AND READ ONCE.
+ * `src/ir/nfa.c`'s `A_REP` arm applies `rmin > 1 || rmax > 1`; this asks
+ * whether any node satisfies it, so `compile.c` can decline to spend a second
+ * NFA build on a pattern where the collapsed lowering would be the identical
+ * machine. The two spellings of the condition are the one thing to keep in
+ * step, and the check that keeps them so is behavioural rather than textual:
+ * tests/codegen/run_prefilter_collapse.sh's byte-identity arm fails if this
+ * predicate is ever true where the arm changes nothing.
+ *
+ * WHY IT DESCENDS THROUGH `A_REP` RATHER THAN STOPPING AT ONE. A nested bound
+ * — `(a{10,20}){10,50}` — carries the count at BOTH levels, and the builder
+ * collapses both, so a predicate that returned at the outer node would be
+ * answering a different question from the one the builder asks. It is the one
+ * place this differs from its two neighbours above, which stop at the first
+ * hit of a kind that cannot nest inside itself meaningfully.
+ *
+ * `A_CALL` DECLINES, `pcrec_has_atomic`'s whole-tree argument verbatim
+ * (subroutines_design.md §4.4): following `.body` would hang the compiler on a
+ * recursive call, and a SPLICED callee's counted repeats are reached through
+ * the splice at the NFA builder, where they are collapsed on their merits. The
+ * cost of declining is that a pattern whose ONLY counted repeat lives inside a
+ * spliced callee keeps its exact prefilter — a missed optimisation, never a
+ * wrong answer, and the corpus has no such pattern (measured: the 244
+ * counted-repeat hybrid artifacts are all reached by this walk). */
+bool pcrec_has_collapsible_rep(const Ast *a)
+{
+    for (;;) {
+        switch (a->k) {
+        case A_REP:
+            if (a->u.rep.rmin > 1 || a->u.rep.rmax > 1) return true;
+            a = a->l;
+            continue;
+        case A_CLASS: case A_EMPTY: case A_BOL: case A_EOL: case A_END:
+        case A_WORDB: case A_NWORDB: case A_GSTART: case A_KRESET:
+        case A_BREF:
+            return false;
+        case A_CAP: case A_ATOMIC:
+            a = a->l;
+            continue;
+        case A_LOOK:
+            /* A lookaround's BODY is erased to an epsilon by the NFA builder
+             * (src/ir/nfa.c's `A_LOOK` arm), so a counted repeat inside one
+             * never reaches a machine and collapsing it would change nothing.
+             * Declining here is what keeps this predicate answering about the
+             * machine that gets BUILT rather than about the source text. */
+            return false;
+        case A_CALL:
+            return false;
+        case A_CAT:
+            while (a->k == A_CAT) {
+                if (pcrec_has_collapsible_rep(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        case A_ALT:
+            while (a->k == A_ALT) {
+                if (pcrec_has_collapsible_rep(a->r)) return true;
+                a = a->l;
+            }
+            continue;
+        }
+        /* No default arm — this file's header rule. A kind added later must be
+         * a compile error here: "can this construct CONTAIN a counted repeat"
+         * is a question only its author can answer, and inheriting "no" leaves
+         * a count-proportional prefilter on an artifact that has one. */
+        return false;
+    }
+}
+
 /* ---- stamped_by: "did THIS row's producer build anything here" ------------
  *
  * D65 derives a row's BUILT status by driving the row's own `syntax` through
