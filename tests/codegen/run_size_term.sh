@@ -91,6 +91,30 @@ else
     ok "--max-emit-bytes is raise-only (a below-default value is refused)"
 fi
 
+# --- 4b. the TOTAL cap's stamp is on BOTH ENGINES -------------------------
+# The total-bytes cap applies to whatever was emitted, not to one engine, so by
+# D81 a DFA artifact must say which limit it was built under too. This cell
+# exists because the emitter did NOT do that until the delivery size_diff
+# caught it — `match_api.md` §6.3 and `limits.md` §8 both already claimed it,
+# which is a spec/implementation divergence no check could see. Asserted on an
+# artifact that is DFA by construction, and the VM-only stamps asserted ABSENT
+# there in the same breath, so a future "stamp everything everywhere" change
+# fails here rather than silently making `_UNROLL_K` meaningless on an engine
+# with no counter rung.
+pcrec_run "$PCREC" -p rx --features all -o "$WORK/dfa.c" -- 'abc' 2>/dev/null
+if [ "$(stamp ENGINE "$WORK/dfa.c" | tr -d '"')" != "dfa" ]; then
+    bad "the DFA-stamp cell's own pattern no longer selects the DFA engine — the cell is vacuous until its pattern is re-chosen"
+else
+    [ -n "$(stamp MAX_EMIT_BYTES "$WORK/dfa.c")" ] \
+        && ok "RX_MAX_EMIT_BYTES is stamped on a DFA artifact (the total cap applies to both engines)" \
+        || bad "RX_MAX_EMIT_BYTES is MISSING on a DFA artifact, but the cap applies to it and the spec says so"
+    if [ -z "$(stamp UNROLL_K "$WORK/dfa.c")" ] && [ -z "$(stamp MAX_EMIT_CODE_BYTES "$WORK/dfa.c")" ]; then
+        ok "the VM-only size stamps are ABSENT on a DFA artifact (no counter rung, so no K to report)"
+    else
+        bad "a VM-only size stamp appears on a DFA artifact — _UNROLL_K on an engine with no counter rung is a fact about nothing"
+    fi
+fi
+
 # --- 5. cap-rescue, through a reference compiler with a LOWERED cap ---------
 REF="$WORK/pcrec_lowcap"
 srcs=$(find "$ROOT_DIR/src" -name '*.c' | tr '\n' ' ')
