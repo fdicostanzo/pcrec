@@ -57,3 +57,8 @@ self-contained and the split `.c`+`.h` form, including on the witness.
 - `levers/` — the census §7 lever pricing: `classify.py` (the span-loop /
   node-skeleton / MRL-guard classifier), `run_popc.sh`, and the population B
   and C results the note's §5 quotes. Archived per r40 F7.
+- `probes/axsweep.py` + `axsweep.tsv` — finding S11: the caps' zero-refusal
+  claim re-measured off the default axis, over `--engine=vm` and every deny
+  flag (emit only, no gcc). 0 over either cap on all ten axes; `-fno-counter`
+  is the only one that moves `N` (1,471 → 1,489) and the axis a future emitter
+  change would push over the node cap first.

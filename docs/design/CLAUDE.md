@@ -1444,35 +1444,44 @@ append-only or historical records.
 
 - `artifact_size_term.md` — **[ART-SIZE] STEP 2**, the design note written
   BEFORE the emitter (2026-08-28, lane artsize3), on `offset_k_skip.md`'s
-  model: artifact size as a term in the emitter's own candidate selection,
-  plus the emitted-size cap D45's consequence 1 has had open since
-  2026-08-15. **PANELED R40 (`../dev/reviews/2026-08-28-r40-artsize-term.md`)
-  and REVISED; read the note's §2.0 before any other section.** The panel
-  refuted the first version on a pattern the project had already pinned:
-  `measure.py`'s own regexes could not see the VM hybrid prefilter's
-  computed-goto machinery (`static const void *const rx_targets_N[…]` jump
-  tables, `rx_s<N>:` labels), so K41's SECOND witness read 118,240 B against
-  an actual 1,220,606 B and **neither mechanism engaged on it** — the
-  classifier's own regexes were the population nobody counted, one more
-  instance of `../dev/learnings.md` §3. The revision adds two measured terms
-  (prefilter states `S`, jump entries `J` at 11.08 B/entry, confirmed twice
-  independently) and changes the design: the cap now binds on **CODE bytes**,
-  not total bytes and not nodes, because a node costs gcc ~5,930x a data-table
-  entry and ~620x a jump entry — `a{1,31000}` is 1.37 MB and compiles in
-  0.34 s while K41's witness 2 is 1.22 MB and costs **66.92 s**. The two
-  witnesses are now handled by DIFFERENT mechanisms (witness 1's size is node
-  replication, so K descent takes it 1,719,349 → 87,118 B; witness 2's is its
-  prefilter, which K cannot touch, so the cap refuses it), which **moves K41's
-  pinned fuzz-gate bucket from 2 to 0**. It also records that there is **no
-  pre-emission node count in the compiler** (r40 F6: `vm_count_slots` counts
-  slot categories, `nlabel` is emission-time), and takes that as a constraint
-  rather than building a parallel counting walk — the rule RE-EMITS over the
-  ladder and reads exact counts, which removes the model's 7-25 % tail error
-  from both the selection and the refusal. Still carries the non-monotone K
-  curve, the measured decline of all three of census §7's levers (the best is
-  worth a corpus median of 0.99 %), and the identity gap the lane found by
-  reading the gate: `--unroll` is a VALUE axis, so **no gate proves any K
-  answer-identical today** and [CHK-2] (c) is where that is fixed.
+  model. **PANELED R40 (`../dev/reviews/2026-08-28-r40-artsize-term.md`, three
+  critics) and REVISED THREE TIMES; read §2.0 and §6.1 before any other
+  section** — the panel refuted the first version in three separate places and
+  each refutation is recorded where it bit:
+  (1) **the INSTRUMENT was blind** to the VM hybrid prefilter's computed-goto
+  machinery (`static const void *const rx_targets_N[…]`, `rx_s<N>:`), so K41's
+  SECOND witness read 118,240 B against an actual 1,220,606 B and **neither
+  mechanism engaged on an already-pinned oversize pattern** — the classifier's
+  own regexes were the population nobody counted (`../dev/learnings.md` §3);
+  (2) **the pre-emission node count the design assumed DOES NOT EXIST**
+  (`vm_count_slots` counts slot categories and returns void; `Vm.nodes` and
+  `nlabel` are emission-time; the pre-pass mutates state and can `ctx_fail`),
+  so the rule now DRY-EMITS the ladder from `compile.c:426` rather than
+  building a counting pre-pass that would be a third party to an agreement the
+  emitter's own header warns about; and (3) **"every K is answer-identical" is
+  FALSE on the give-up surface** — minimum step budget 89→110 across the
+  ladder, minimum backtrack frames 39 at K=1 against 28 at K=8 (descending K
+  RAISES the frame need), `RX_TRAIL_FRAMES` 62→51 and caller-read — so the
+  claim narrows to match results and captures and the new K sweep EXCLUDES
+  `budget`/`gu` cells by construction, stated rather than discovered.
+  **D84 then ruled the charter's one cap into TWO** (`../dev/decisions.md`):
+  a NODE cap (2,000) for D45's compile budget and a BYTE cap (1,000,000) for
+  usability, the byte cap an EXACT post-emission check with no model in it,
+  both overridable upward (`--max-emit-nodes=` / `--max-emit-bytes=`) and
+  stamped, neither deniable; `limits.md` gains a "Handling an oversized
+  artifact" section drafted in §4.6. The two caps exist because the note
+  measured a node at ~5,930x a data-table entry of gcc cost: `a{1,31000}` is
+  1.38 MB and compiles in 0.34 s while K41's witness 2 is 1.26 MB and costs
+  **66.92 s**. The two K41 witnesses are handled by DIFFERENT mechanisms —
+  witness 1's size is node replication (the K rule takes it 2,015,585 →
+  116,371 B, gcc 55.13 s → 1.02 s), witness 2's is its prefilter, which K
+  cannot touch, so the byte cap refuses it until **[OPT-4]/K39** shrinks the
+  mechanism — which moves K41's pinned fuzz-gate bucket 2 → 0. Also carries
+  the non-monotone K curve (in BYTES and in NODES), the measured decline of
+  all three of census §7's levers (the best is worth a corpus median 0.99 %),
+  and the identity gap found by reading the gate rather than trusting a
+  summary of it: `--unroll` is a VALUE axis, so no gate proves any K
+  answer-identical today and [CHK-2] (c) is where that is fixed.
   Measurements: `artsize_impl/`.
 - `artsize_impl/` — the [ART-SIZE] STEP 2 lane's probes and archived outputs
   (the corpus size measurement and its fit, the K curve, the gcc-cost
