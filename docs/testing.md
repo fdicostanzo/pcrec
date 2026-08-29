@@ -3430,7 +3430,28 @@ headroom over the `[ART-SIZE]` census's own numbers (675,555 B source /
 raw numbers, because this log measures a different compile shape (`-O1`
 compile+link with `driver.c`, not an isolated `-O2 -c`):
 
-- `MAX_SIZE_BYTES = 700,000` (default; `ARTSIZE_MAX_BYTES` overrides).
+- `MAX_SIZE_BYTES = 1,400,000` (default; `ARTSIZE_MAX_BYTES` overrides). RULED
+  at landing (manager, 2026-08-28) from the lane's proposed 700,000: the first
+  baseline's max was 651,344 B, 7 % under that pin — a drift detector, and drift
+  is `size_diff`'s job; the tripwire is for BLOWUPS, so it sits at ~2× the
+  measured max (a doubling of the corpus's largest artifact is the red). The
+  sabotage transcripts below that cite the 700,000 pin were run against it
+  (`ARTSIZE_MAX_BYTES=700000` reproduces them); the shipped pin's own sabotage
+  is the doctored-log run recorded after them.
+
+  SABOTAGE OF THE SHIPPED PIN (manager, at landing, 2026-08-28 ~21:2x; three
+  arms, no recompile): (1) `bash tests/size/check_size_tripwire.sh <file>` →
+  `FAIL: … takes no positional arguments … set ARTSIZE_LOG=<file>` rc 2 — the
+  guard exists because the manager's FIRST doctored-log run passed the file as
+  `$1`, the script silently checked the REAL log and printed OK: a sabotage
+  that passes against the wrong input is the worst outcome a check can have;
+  (2) `ARTSIZE_LOG=<copy of the baseline with k18_cost_gates.rxt:103's size set
+  to 1500000>` → `FAIL: … SIZE TRIPWIRE — 'tests/base/k18_cost_gates.rxt:103'
+  is 1500000 bytes (comment-excluded .c+.h source), 1.071x the 1400000-byte
+  pin (load1 at measurement: 10.65; log commit f446f1c)` rc 1; (3) the real
+  baseline → `OK — 2875 rows (commit f446f1c), worst size 651344 B
+  ('tests/counterk/counterk.rxt:1807', pin 1400000), worst gcc CPU 5.462s
+  ('tests/base/k18_cost_gates.rxt:103', pin 8.0s)` rc 0.
   `size_bytes` is comment-EXCLUDED while the census's 675,555 B ceiling is
   comment-INCLUDED — comments only ADD bytes, never subtract, so pinning
   at the census's own raw (larger) ceiling is headroom by construction for
