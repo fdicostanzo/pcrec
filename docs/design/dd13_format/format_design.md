@@ -2202,74 +2202,107 @@ to change.**
 
 ## 7. Open questions for Frank
 
-Only what the rulings do not settle. Each carries a recommendation, so
-"agree" is a complete answer.
+### 7.0 What is no longer open
 
-**Q1 — prose has no home in the file, and the bench declares an
-OBJECTIVE field.** The format has no multi-line value (§1.2), by
-design: every value is one line. But pcrec-bench's live sidecar carries
-an `objective` and a `description` that are paragraphs, and its §4.5
-calls the objective "a declared field of the sub-bench". **Recommend:
-the machine-readable field is a single token (`tag objective=realworld`)
-and the paragraph lives in `#` comments and `NOTES.md`.** The reason is
-the position paper's own verdict — prose and generators are the two
-things that are files beside a pattern file, not lines in one — and the
-reason it is safe is that constraint 2 ("the objective is preserved") is
-a review obligation the format was never going to check anyway (§4.5).
-*The alternative, a multi-line block value, buys one field and costs the
-line-oriented property every other rule in the format rests on.*
+Six of the first version's questions and residuals are settled, and this
+list is here so nobody re-answers them:
 
-**Q2 — `features` composes by UNION, which is the one composition rule
-that is not "more specific wins."** §2.6. A config's modules are added
-to a block's, so a testee's `--features all` reaches a block that says
-`features classes`. **Recommend: union, together with the rule that a
-`perr` block is evaluated in exactly one cell and never re-run under a
-config.** Union is what a testee needs (pcrec-bench's own note: "a
-build/run flag of the TESTEE, not a variant of the pattern"), and it is
-safe because enabling a module cannot change what an
-already-compiling pattern matches — only what is refused. The `perr`
-carve-out is what stops it from silently changing the meaning of the
-**384** `perr` blocks in the corpus.
+- **Q1 (where prose lives) is ANSWERED — the other way.** Frank, r44
+  15:0x: *"we may want to summarize via script what a library or other
+  rxt file has: therefore a description may be helpful outside of
+  comments, which should be operational."* `description` is a machine-
+  readable FIELD at file, definition, target and data-block level, with a
+  YAML-style `|` block scalar for multi-line prose (15:1x). The note's
+  recommendation — prose in `#` comments and `NOTES.md` — is **overturned**
+  and gone from §1.2, §4.5 and §6.
+- **Who composes, the numbering, and the collision rule** are D87 rules
+  1, 2 and 7. §2.3 is rewritten around them.
+- **"May a scope prefix reference CALLED groups?"** — which the first
+  version could not answer — is settled by D87 rule 5: **yes, exactly
+  where the call is declared as DELIVERING** (§1.5 B3, §2.13). A
+  delivering call creates the scope; an undeclared one has no groups to
+  name and stays capture-transparent.
+- **The three spellings** (numbered group, scope prefix, delivering
+  declaration) and the `.rxt`-level syntax calls are the manager's under
+  Frank's 14:5x ruling, and are settled in §1.5 and §1.3 rather than
+  asked here. One of them was settled by MEASUREMENT against the brief's
+  own leading candidate — see the note in §7.1.
+- **`analysis freq <name>`** (OD-6) is the manager's, accepted at the
+  panel, and r44-grammar G5's run demonstrated the ambiguity it avoids.
 
-**Q3 — a library definition must not carry subject anchors, and that is
-an authoring rule the format cannot enforce.** MEASURED (§6.0): the
-position paper's own §3a worked file returns `nomatch`, because `^`/`$`
-inside a called body anchor to the subject, not to the call site.
-**Recommend: [LIB]'s store discipline makes "a definition is a piece,
-and pieces carry no subject anchors" a store-entry rule with a trivial
-scan behind it, and whole-string matching is the caller's `^…$` or the
-artifact's own `<prefix>_match` entry.** The format's contribution stays
-loudness — the composing block's `m` case goes red — because a static
-rule ("a definition containing `$` may not be called from a non-final
-position") is not decidable in general and would refuse legitimate
-patterns.
+### 7.1 One thing the manager should see before settling B3
 
-**Q4 — the link-level composition tier still has no spelling, and should
-not accidentally acquire one.** R-VE-4 requires source-level and
-link-level composition to be representable but never to look alike. This
-design spells the **source-level** tier only, as a PCRE2 subroutine call.
-**Recommend: confirm that when [M4-CALLOUTS]'s aligned-ABI tier arrives
-it gets its own construct, and that `(?&name)` never means "link to a
-separately compiled part".** The costs differ by orders of magnitude and
-a reader must be able to see which one they wrote.
+The leading shape offered for the delivering-call declaration,
+`(?<from>&email)`, is **DISQUALIFIED by measurement**: it is an ordinary
+legal PCRE2 pattern today — a named group `from` whose body is the
+literal `&email` — and it matches the subject `&email` at (0,6) on
+libpcre2 10.46 AND on pcrec (§1.5). Adopting it would change the meaning
+of patterns that already exist, which is the one constraint every
+candidate must satisfy. §1.5 recommends `(?&from=email)` /
+`(?&=email)` instead, with all candidates' free-ness measured.
+
+### 7.2 The questions that remain
+
+**Q2 — `features` composes by UNION, with `features only` for a
+deliberate narrowing.** RECOMMENDED, and r44-sem could not refute the
+union rationale (8 probes: every difference was refuse→compile, never
+match→different-match). r44's counter-case (U12): more-specific-wins
+would let a block test under FEWER modules than the file intends.
+`features only` is the answer — the narrowing exists and is a thing an
+author wrote (M14). The `perr` one-cell carve-out stands and is what
+protects **384** blocks.
+
+**Q3 — the PIECE RULE is a [LIB] store scan, and it is now a
+five-member class with two mechanical members.** r44-sem found the first
+version had one member of five (M6, §6.0). After D87 the store scan
+refuses exactly two — subject anchors and `\K` — because absolute
+numeric references are now RE-BASED rather than refused, and edge
+assertions (`\b`, a lookbehind) are a legitimate thing to write and are
+DOCUMENTED. r44's counter-case (U12): a static top-level `^`/`$` check
+catches the bug once. Agreed, and that is what the scan is.
+
+**Q4 — the link-level tier still has no spelling, and should not
+acquire one by accident.** RECOMMENDED: confirm that [M4-CALLOUTS]'s
+aligned-ABI tier gets its own construct and that `(?&name)` never means
+"link to a separately compiled part". r44's counter-case (U12): reserve
+a distinct sigil NOW rather than later. **This note declines to reserve
+one** — D77, no consumer — but records that §1.5's constraint is what
+makes reservation unnecessary: any future construct must also be a
+spelling PCRE2 refuses, and that space is large.
 
 **Q5 — W2's include-closure accounting is designed against a population
-that does not exist yet.** No cross-file generator exists in either repo;
-every one of the six known generators writes a flat, self-contained file
-(§5.1, attack 2 — conceded, not argued away). **Recommend: ship W2 when
-the first real generated set needs it — the bench's 1,364-row expectation
-fragment is the natural first — and treat that set as the measurement
-that validates §2.11's rules rather than claiming they are validated
-now.** D77's shape: the trigger is named, the build waits for it.
+that does not exist.** No cross-file generator exists in either repo.
+RECOMMENDED: ship W2 when the bench's 1,364-row expectation fragment
+needs it, and treat that set as the validating measurement. r44's
+counter-case (U12): build §2.11 now, because the bench row is already
+blocked on it. **Both are right about different things** — the bench is
+blocked on the FORMAT, not on the accounting rules, so W1's landing
+unblocks the authoring and W2's landing carries the accounting with its
+first real population.
 
 **Q6 — a bench sub-bench references its canonical pattern per regime
-rather than repeating it, and that is free only while bench checks no
-captures.** §4.5 item 4: regime is a property of the subject set, there
-is no case scope, so a sub-bench writes the pattern once as a `name`d
-definition and one block per (pattern, regime) spelled `pattern (?&n)`.
-**Recommend: reference now** — MEASURED, `expectations.tsv` has **no
-capture columns at all**, and a subroutine wrapper is span-identical,
-differing only in capture visibility (§2.3) — **and revisit when bench
-adds capture checking** (its OD-B9 / [DD-13a] T-3), at which point those
-blocks must carry the pattern text directly. The trigger is named so the
-change is a scheduled one rather than a surprise.
+rather than repeating it.** RECOMMENDED: reference now — MEASURED,
+`expectations.tsv` has no capture columns at all, so the wrapper is
+span-identical — and revisit when bench adds capture checking (its
+OD-B9). r44's counter-case (U12): writing the pattern text directly
+avoids a corpus-wide rewrite later. The trigger is named either way;
+the choice is whether to pay now or on a known signal.
+
+**Q7 — NEW, and it is the residual D87 creates: the oracle control no
+longer covers the whole population.** Under the textual model the
+control was total. Under D87 it is valid only where the append form
+means what the composer means — **no absolute numeric reference in any
+body, no name collision between caller and closure** (§2.3.4) — and
+those are exactly the two shapes D87 added mechanism for. So the format
+gains two capabilities whose answers no independent oracle checks.
+**RECOMMENDED: accept it for W1 and name the trigger rather than build
+a second oracle now.** Three reasons: the shapes are individually
+verifiable by hand today (§2.3.3's M1 and M2 cells are that, on both
+oracles); `--emit-composed`'s round trip is a real, if weaker, control
+(pcrec must agree with itself across a serialization boundary); and a
+second oracle means a second composer, which is the drift hazard
+learnings §3 exists to name. **The trigger to revisit: the first
+library entry that legitimately needs an absolute reference or a
+colliding name.** If that never happens, the uncovered population is
+empty and the residual costs nothing — which is itself worth measuring
+at the [LIB] store's first ten entries.
