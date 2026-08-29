@@ -556,6 +556,15 @@ never ambiguous about which namespace it is in:
 | **config name** | `config <ident>` | `with <list>`, `use <list>`, `from <list>` | ident |
 | **data name** | `freq <ident>` (the family, §2.10) | a `config` block's `analysis freq <ident>` line | ident |
 | **target prefix** | `target <ident> = …` | `pcrec --target <ident>`; the emitted C symbols | C identifier |
+| **scope-path segment** | a delivering call `(?&<site>=<name>)` (§1.5 B3) | `(?&<site>.<group>)` in a pattern; `r.<site>.<group>` in C (§2.13) | PCRE2 group name |
+
+**A fifth: SCOPE PATHS, and they are what makes "lexical scope wins" a
+rule rather than a wall.** A delivering call names a scope; `^` names the
+caller's (§1.5 B2). Within one path, names resolve lexically — a
+caller's own group beats an injected definition of the same name (D87
+rule 2) — and either can still be reached explicitly by its path. Two
+paths never merge, so a caller's `w` and a library's `w` coexist without
+either being renamed in the source the author wrote.
 
 **One rule governs all four: a duplicate declaration within the
 resolution scope is REFUSED BY NAME, never shadowed.** (Frank's §2 wave 1
@@ -572,6 +581,16 @@ scope is:
   flat space — an included fragment cannot declare any of them (§2.5), so
   in practice this is the entry file plus its `lib` chain for definitions
   and the entry file alone for the other three.
+- scope-path segments: the pattern that writes the call. Two delivering
+  calls in one pattern with the same site name are a duplicate and are
+  refused; the same site name in two different patterns is two different
+  scopes and is fine.
+
+**The one namespace this rule does NOT govern is group NUMBERS**, and
+they have their own (D87 rule 7(c), §2.3.1): a number assigned twice by
+any mix of explicit and implicit assignment is a compile error naming
+both sites. Same discipline — refuse, never silently renumber — reached
+from the other direction.
 
 **Two identities, deliberately kept apart** (Frank §6.3): the **prefix**
 is the link-time identity (`<prefix>_search`, unique per translation
@@ -908,11 +927,12 @@ kinds are not alike:
 
 | option | how a config and a block compose | why |
 |---|---|---|
-| `features` | **UNION** — a config's modules are ADDED to the block's | enabling a module cannot change what an already-compiling pattern matches; it can only change what is refused. This is what a testee needs: pcrec-bench's `subbench.toml` records that `--features all` "is a build/run flag of the TESTEE, not a variant of the pattern, and the pattern text handed to pcrec is byte-identical either way" |
+| `features` | **UNION** — a config's modules are ADDED to the block's — **unless the block writes `features only <list>`**, which pins its own set against any config | enabling a module cannot change what an already-compiling pattern matches; it can only change what is refused (r44-sem probed 8 shapes: every difference was refuse→compile, never match→different-match). Union is what a testee needs: pcrec-bench's `subbench.toml` records that `--features all` "is a build/run flag of the TESTEE, not a variant of the pattern, and the pattern text handed to pcrec is byte-identical either way". **`only` exists because union alone makes NARROWING unspellable** (r44-sem M14: a block writing `features none` beside a config's `all` would silently get `all`) — a deliberate narrowing should be sayable, and spelled |
 | `flags` | **more specific wins** (block over config over default) | `flags i` changes what the pattern *matches*; a block that states it has stated the test's meaning |
+| `encoding` | **more specific wins**, block scope allowed | D58 makes encoding a PER-PATTERN scalar, so a block must be able to state it; the first version had no row and no block spelling (r44-sem M16) |
 | `engine`, `budget` | more specific wins | as above |
 | `pcrec <raw>` | config only; accumulated along the chain, later wins per flag | a block has no spelling for these, so there is nothing to conflict with |
-| size-limit overrides (`--max-emit-bytes=N`, `--max-emit-code-bytes=N`) | **raise-only at every scope** (D84) | CITED, `docs/spec/limits.md`: "raise-only (a value below the default is refused, so these can never be used to make a build fail that would have succeeded)". Precedence may therefore never *lower* an effective cap; a chain that tries is refused, not silently ignored |
+| size-limit overrides (`--max-emit-bytes=N`, `--max-emit-code-bytes=N`) | **MAX WINS** across every scope that names one | CITED, `docs/spec/limits.md`: "raise-only (a value below the default is refused, so these can never be used to make a build fail that would have succeeded)". The first version said "raise-only at every scope, a chain that tries to lower is refused" — which made `with c1, c2` **ORDER-SENSITIVE** (r44-sem M15), since `c1` raising then `c2` lowering refuses while the reverse order does not. Max-wins is order-insensitive and the raise-only law then follows automatically rather than being enforced by a refusal |
 
 **A `perr` block is evaluated in exactly ONE cell** — its own options
 composed with the file's default — and is **never re-run under a `use`
@@ -923,6 +943,12 @@ verified against something nobody asked for"), so re-running it under a
 testee's `--features all` would assert something nobody wrote — and
 MEASURED, it would silently change the meaning of **384** blocks. Under a
 non-pcrec testee a `perr` is meaningless in any case.
+
+**The counter-case r44 put beside this** (U12 on §7 Q2): more-specific-
+wins would let a block test under FEWER modules than the file intends,
+which is a real way to weaken a suite silently. `features only` is the
+answer to it — the narrowing exists, and it is a thing an author wrote
+rather than a thing precedence did.
 
 ### 2.7 Targets, `rx_info.name`, and how many `.c` files come out
 
@@ -949,16 +975,30 @@ target <prefix> = <name> [with <config>[,<config>…]]
   and exactly one **unnamed** block is `target rx = <that block>` —
   today's `pcrec 'pattern'`, and the CLI's `-p` still overrides the
   prefix for that case. **Every other file builds nothing unless it says
-  so.** MEASURED, this is the right default for the corpus: all 179 files
-  have several unnamed blocks and none declares a target, so
-  `pcrec --source tests/base/quantifiers.rxt` emits **nothing** rather
-  than 90 artifacts. Test compilation is untouched — the harness compiles
-  every block with cases, as it does today; target-ness and testability
-  are independent bits (T-1/OD-4, §5).
-- **One `.c` per target** (Frank's ruling 6). `pcrec --source f.rxt
-  --target <prefix> -o out.c` selects one; with no `--target`, every
-  declared target is built, one file each. A single multi-pattern
-  **unit** stays [V-E]'s question (§4.4).
+  so.** MEASURED, and the first version overstated it: **177** of the 179
+  files have several blocks and would build nothing;
+  **two have exactly one block** — `tests/mrl/11_motivating_shape_small.rxt`
+  and `tests/base/d27_nested_min_boundary.rxt` — and would therefore
+  BUILD as `target rx` under `--source` (r44-sem M11). That is harmless
+  and intended: it is exactly `pcrec '<that pattern>'`, one artifact, and
+  the harness already compiles both blocks as test artifacts today. No
+  file declares a target, so `pcrec --source tests/base/quantifiers.rxt`
+  emits **nothing** rather than 90 artifacts. Test compilation is
+  untouched; target-ness and testability are independent bits
+  (T-1/OD-4, §5).
+- **One `.c` per target, and N targets need a DIRECTORY** (Frank's
+  ruling 6; the naming rule is r44-sem M10, which found the first version
+  had none). `-o` names one file and pcrec also writes its `.h`, so with
+  more than one target that is not expressible:
+
+  | invocation | result |
+  |---|---|
+  | `--target <prefix> -o out.c` | that one target, to `out.c` + `out.h` |
+  | `-o <dir>` with N ≥ 1 targets | `<dir>/<prefix>.c` + `<dir>/<prefix>.h` per target |
+  | `-o out.c` with N > 1 targets | **refused**, naming the targets and the two ways to proceed |
+
+  A single multi-pattern **unit** stays [V-E]'s question (§4.4). Added to
+  S11.
 - **`rx_info` gains `const char *name`** (Frank §6.3): the block's
   `name`, or the prefix when the block is unnamed, so no artifact ever
   carries a NULL name. This is a scaffolding change and therefore **an
@@ -968,6 +1008,13 @@ target <prefix> = <name> [with <config>[,<config>…]]
   [DD-14.FB] §10.4 expectation, `docs/spec/match_api.md` §6, and the
   identity gate's (B) pin. It rides W1's first landing, not a separate
   event (memory `pcrec-abi-changes-pre-release`).
+- **`ngroups` and `nnames` stay the PRIMARY's own** (D61; r44-sem
+  M4/M5). A composed artifact's `ngroups` counts the target pattern's own
+  groups, not the closure's; the definitions' delivered slots sit above
+  it (§2.3.1 rule (i), §2.13). This is why `--source` and plain `-p` are
+  not interchangeable on a composed pattern — plain `-p` is handed text
+  and counts every group in it — and §3.4's S9 hunk states the difference
+  where a caller can see it.
 
 ### 2.8 Exemplar-file addressing (`@file:`)
 
