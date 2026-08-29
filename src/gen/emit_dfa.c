@@ -668,16 +668,23 @@ static void emit_rx_abi_types(StrBuf *sb)
          * anchored entry is not one this axis describes", which is every VM
          * artifact INCLUDING a hybrid — a hybrid's `_match` is the VM's own
          * anchored body, not a filtered search. */
-        "    const char           *match_form;   /* HOW <prefix>_match answers:\n"
-        "                                           \"unwrapped\" (its own\n"
-        "                                           anchored machine, run from\n"
-        "                                           ctx->pos) or \"search-filter\"\n"
-        "                                           (the unanchored search, with\n"
-        "                                           non-ctx->pos starts rejected),\n"
-        "                                           mirroring <PREFIX>_DFA_MATCH.\n"
-        "                                           NULL on every artifact whose\n"
-        "                                           _match this engine did not\n"
-        "                                           write. */\n"
+        /* THE COMMENT SITS ABOVE THE MEMBER, NOT AFTER IT, and that is a
+         * MEASURED choice rather than a style one. `tests/lib/size_count.sh`s
+         * comment classifier is LINE-BASED: it recognises a line that STARTS a
+         * block and tracks the block to its end, so a comment ABOVE a member
+         * costs zero counted bytes — while the continuation lines of a TRAILING
+         * multi-line comment do not start a block and are counted as CODE.
+         * Measured at this row: the trailing shape put +691 B of prose into
+         * every artifact in the corpus (2,875 of them), the above-the-member
+         * shape puts in 0. `scan` and `prefilter` above keep the trailing shape
+         * — changing them is not this row's to do, and the observation is
+         * recorded in docs/design/anchored_match_unwrapped.md §8 instead. */
+        "    /* [ENG-ABS] HOW <prefix>_match answers: \"unwrapped\" (its own\n"
+        "       anchored machine, run from ctx->pos) or \"search-filter\" (the\n"
+        "       unanchored search, with non-ctx->pos starts rejected),\n"
+        "       mirroring <PREFIX>_DFA_MATCH. NULL on every artifact whose\n"
+        "       _match this engine did not write. */\n"
+        "    const char           *match_form;\n"
         "};\n"
         "\n"
         /* [ABI-NS] (D60 addendum): rx_info.engine's number-only contract
