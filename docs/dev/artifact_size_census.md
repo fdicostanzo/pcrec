@@ -46,19 +46,25 @@ some size."*
    gcc time in the corpus at 6.995 s CPU for N=8) anchor the top of both
    lists.
 5. **§8's tension curves find THREE separate levers, not one, each with a
-   different trade.** `--unroll=1` is free (no measured throughput cost)
-   on nested-repeat patterns but nearly useless on single-level large-count
-   ones — the witness (17x smaller, 54x faster to compile, no speed loss
-   on its own short subjects) and the corpus's own nested-repeat outliers
-   (75-79% smaller, 12x faster to compile) are where it pays; `((a)|ab)
-   {4000}c`-shaped patterns barely move (1-3%). `-fno-premul-table` is the
-   well-behaved, already-understood [OPT-3] trade: ~22-25% smaller for a
-   modest, bounded speed cost. **`--engine=vm` is Frank's own "tension that
+   different trade.** `--unroll=1` costs no measured throughput — and on
+   the N=8 nested-repeat outlier, measures FASTER — on nested-repeat
+   patterns, but is nearly useless on single-level large-count ones — the
+   witness (17x smaller, 54x faster to compile, no speed loss on its own
+   short subjects) and the corpus's own nested-repeat outliers (75-79%
+   smaller, 12x faster to compile) are where it pays; `((a)|ab)
+   {4000}c`-shaped patterns barely move (1-3%). `-fno-premul-table` is
+   still the well-behaved, already-understood [OPT-3] SIZE lever
+   (~22-25% smaller, load-independent) — its throughput side is not: the
+   quiet-box re-run reads a direction flip on 2 of 5 outlier patterns
+   (faster without the table, not slower), against the loaded run's
+   clean ~20-34%-slower-on-4/5 story (§8 item 2). **`--engine=vm` is
+   Frank's own "tension that
    kicks in at some size," measured directly**: dropping the hybrid DFA
    prefilter shrinks `.o` to 4-9% of default on prefiltered patterns — the
    single biggest size lever found on any non-witness artifact — at up to
-   a measured 359,000x throughput cost on the failing path (PROVISIONAL,
-   taken at load1 1.6-5.0, re-verification queued), because the prefilter
+   a measured 173,580x throughput cost on the failing path (quiet-box
+   run, §8; loaded vs quiet: 359,000x → 173,580x — the effect held, the
+   exact magnitude moved by about half), because the prefilter
    IS the size AND the speed: the same forward+reverse DFA machine that
    costs the bytes is what lets a non-matching subject be dismissed in
    O(1) instead of backtracked through in full.
@@ -139,8 +145,12 @@ some size."*
   it has none) and `--engine=vm`, measuring size AND throughput on a
   matching and a failing subject constructed per pattern, `taskset -c 3`,
   median of >= 5 trials, `load1` recorded on every row, waited down when
-  above 2 (§8's own note records the box's ambient load during this run —
-  another lane's sections were active throughout).
+  above 2. Size/`.o`/gcc-time were measured in the first pass, at box
+  `load1` 1.6-5.0 (another lane's sections were active throughout).
+  Throughput (`match_us`/`fail_us`) was RE-MEASURED in a second pass on a
+  quiet box (`load1` 0.13-1.2, 20:08-20:22 EDT, 2026-08-28) once the
+  manager signaled that pass's contending union battery had cleared; §8's
+  own status note carries the loaded-vs-quiet comparison.
 
 ## 2. Population and refusals
 
@@ -656,29 +666,33 @@ witness/`engine-vm`, two DIFFERENT no-op-for-this-pattern variants
 compiled minutes apart at different load levels, both independently
 landed at exactly the same 503,344 `.o` bytes as witness/`default`,
 consistent with all three compiling to identical code rather than a
-load-dependent measurement). The
-`match_us`/`fail_us` throughput columns were taken at `load1` 1.6-5.0 (5
-of 6 patterns, before a union battery on the box's `main` branch pushed
-`load1` to ~13-14) — NOT the battery, but not a quiet box either. They are
-marked **PROVISIONAL** below and will be re-taken on a quiet box once the
-manager signals the battery is done; where a provisional number already
-shows a >10x effect the direction is trustworthy (a 4-5x load spread does
-not manufacture a 360,000x difference), but exact magnitudes should be
-re-checked. The witness's own `fno-counter`/`fno-splice-calls`/`engine-vm`
-rows have size data only (throughput not yet run for those three,
-independent of the load question — see §1's note on this run crashing on
-an unrelated bug and being restarted size-only for the remainder).
+load-dependent measurement). The `match_us`/`fail_us` throughput columns
+are now FINAL: re-taken on a quiet box (`load1` 0.13-1.2, 20:08-20:22
+EDT, 2026-08-28) once the manager signaled that the union battery on the
+box's `main` branch, which had held `load1` at ~13-14 for the remainder
+of the first pass, had cleared. The quiet pass filled in every row the
+first pass had marked "not run" or left PROVISIONAL, including the
+witness's own `-fno-splice-calls` and `--engine=vm` rows (throughput not
+run at all in the first pass). The witness's `-fno-counter` row still has
+no throughput number, for a reason independent of load: its split-form
+build times out linking `bdriver` past 180 s at this variant's ~4.1 MB
+source size (the same budget-kill visible in its gcc-CPU column).
+Everywhere the first pass's PROVISIONAL number showed a >10x effect, the
+quiet pass confirms the direction held; where a magnitude moved
+materially the text below states it as "loaded vs quiet: X → Y" — the
+largest is `--engine=vm`'s fail-path cost on `((a)|bc){0,4000}d`, 359,000x
+(PROVISIONAL) → 173,580x (quiet).
 
 ### The witness
 
-| variant | source | `.o` | gcc CPU | match (PROVISIONAL) | fail (PROVISIONAL) |
+| variant | source | `.o` | gcc CPU | match | fail |
 |---|---|---|---|---|---|
-| default | 2,015,594 | 503,344 | 55.13 s | 5.80 us | 6.37 us |
+| default | 2,015,594 | 503,344 | 55.13 s | 6.03 us | 5.60 us |
 | `--unroll=1` | 116,380 (5.8%) | 28,104 (5.6%) | 1.02 s | 0.13 us | 0.17 us |
-| `-fno-counter` | 4,126,673 (206%, LARGER) | — never finished | **150.10 s, CPU-budget-killed** | not run | not run |
-| `-fno-splice-calls` | 2,015,597 (100.5%) | 503,344 (100%) | 53.53 s | not run | not run |
+| `-fno-counter` | 4,126,673 (206%, LARGER) | — never finished | **150.10 s, CPU-budget-killed** | not run (bdriver link still times out past 180 s at this size, independent of load) | same |
+| `-fno-splice-calls` | 2,015,597 (100.5%) | 503,344 (100%) | 53.53 s | 2.33 us | 2.53 us |
 | `-fno-premul-table` | N/A — no DFA scan | | | | |
-| `--engine=vm` | 2,015,594 (100.5%) | 503,344 (100%) | 53.90 s | not run | not run |
+| `--engine=vm` | 2,015,594 (100.5%) | 503,344 (100%) | 53.90 s | 2.40 us | 2.37 us |
 
 `--unroll=1` is the whole story for this pattern: a 17x size reduction, a
 54x compile-time reduction, and — on the two short, fast-resolving
@@ -686,47 +700,74 @@ subjects this pattern's own catastrophic-backtracking hazard allows (§1's
 subject-construction note: longer/more elaborate subjects for this pattern
 risk genuine exponential blowup even in pcrec's bounded VM, so the
 subjects here are deliberately short) — a comparable or FASTER per-call
-time (0.13/0.17 us vs 5.80/6.37 us; plausibly instruction-cache locality
-on a 2 MB vs 116 KB body, not yet isolated as such — a hypothesis, not a
-measured mechanism).
+time (0.13/0.17 us vs 6.03/5.60 us; loaded vs quiet on the default row:
+5.80/6.37 us → 6.03/5.60 us, within this pattern's own run-to-run noise —
+`--unroll=1`'s own number barely moved at all). The two rows the loaded
+run never reached, `-fno-splice-calls` (2.33/2.53 us) and `--engine=vm`
+(2.40/2.37 us), land 2-3x FASTER than default despite compiling to
+byte-identical `.o` output (confirmed above) — consistent with the same
+per-build cache-locality effect floated for `--unroll=1`, not a per-flag
+one; still a hypothesis, not an isolated mechanism.
 
 ### The corpus's top-5 outliers by `.o` size
 
 `.o` bytes as a percentage of that pattern's own default, gcc CPU in ms,
-throughput in microseconds/call (PROVISIONAL, load1 1.6-5.0):
+throughput in microseconds/call (quiet box, `load1` 0.42-1.17,
+20:08-20:22 EDT, 2026-08-28):
 
 | pattern | variant | `.o` (% of default) | gcc CPU | match us | fail us |
 |---|---|---|---|---|---|
-| `((a)\|ab){4000}c` | default | 202,904 (100%) | 311 | 37.0 | 8.6 |
-| | `--unroll=1` | 200,648 (99%) | 245 | 43.0 | 8.4 |
+| `((a)\|ab){4000}c` | default | 202,904 (100%) | 311 | 36.5 | 7.7 |
+| | `--unroll=1` | 200,648 (99%) | 245 | 35.9 | 7.6 |
 | | `-fno-counter` | REFUSED (above the 64-copy cap, no fallback) | | | |
-| | `-fno-splice-calls` | 202,904 (100%) | 317 | 42.5 | 8.1 |
-| | `-fno-premul-table` | 154,920 (76%) | 331 | 49.5 | 11.3 |
-| | `--engine=vm` | **8,944 (4%)** | 183 | 10.2 | **35.6** |
-| `((a)\|bc){0,4000}d` | default | 128,136 (100%) | 236 | 18.9 | 0.10 |
-| | `--unroll=1` | 128,136 (100%) | 218 | 41.4 | 0.10 |
-| | `-fno-counter` | 128,136 (100%) — no-op, this pattern's rung is FRAMES_UNBOUNDED, not COUNTER | 237 | 28.2 | 0.17 |
-| | `-fno-splice-calls` | 128,136 (100%) | 220 | 26.9 | 0.10 |
-| | `-fno-premul-table` | 96,152 (75%) | 223 | 58.5 | 0.13 |
-| | `--engine=vm` | **6,168 (5%)** | 121 | 14.3 | **35,942.6** |
-| `((a)\|ab){0,4000}c` | default | 107,944 (100%) | 301 | 23.6 | 0.10 |
-| | `--unroll=1` | 104,776 (97%) | 202 | 22.7 | 0.10 |
+| | `-fno-splice-calls` | 202,904 (100%) | 317 | 89.5 | 18.4 |
+| | `-fno-premul-table` | 154,920 (76%) | 331 | 47.7 | 10.2 |
+| | `--engine=vm` | **8,944 (4%)** | 183 | 16.3 | **51.5** |
+| `((a)\|bc){0,4000}d` | default | 128,136 (100%) | 236 | 48.0 | 0.20 |
+| | `--unroll=1` | 128,136 (100%) | 218 | 47.2 | 0.23 |
+| | `-fno-counter` | 128,136 (100%) — no-op, this pattern's rung is FRAMES_UNBOUNDED, not COUNTER | 237 | 46.9 | 0.23 |
+| | `-fno-splice-calls` | 128,136 (100%) | 220 | 48.2 | 0.23 |
+| | `-fno-premul-table` | 96,152 (75%) | 223 | 23.0 | 0.10 |
+| | `--engine=vm` | **6,168 (5%)** | 121 | 31.5 | **34,716.0** |
+| `((a)\|ab){0,4000}c` | default | 107,944 (100%) | 301 | 28.0 | 0.10 |
+| | `--unroll=1` | 104,776 (97%) | 202 | 27.5 | 0.23 |
 | | `-fno-counter` | REFUSED (above the 64-copy cap) | | | |
-| | `-fno-splice-calls` | 107,944 (100%) | 290 | 23.3 | 0.13 |
-| | `-fno-premul-table` | 83,960 (78%) | 291 | 28.9 | 0.17 |
-| | `--engine=vm` | **9,992 (9%)** | 230 | 8.3 | **8.3** |
-| nested-repeat, N=8 | default | 103,384 (100%) | 7,900 | 6.1 | 5.9 |
-| | `--unroll=1` | **21,432 (21%)** | **646** | 6.2 | 4.3 |
-| | `-fno-counter` | 103,792 (100%) — under the cap, literal fallback ~same size but 21% faster to compile | 6,236 | 5.5 | 5.7 |
-| | `-fno-splice-calls` | 103,384 (100%) | 8,656 | 6.3 | 4.3 |
-| | `-fno-premul-table` | 103,384 (100%) | 8,550 | 7.7 | 4.1 |
-| | `--engine=vm` | 101,648 (98%) | 7,395 | 7.3 | 8.9 |
-| nested-repeat, N=6 | default | 85,400 (100%) | 3,779 | 12.8 | 7.6 |
-| | `--unroll=1` | **21,432 (25%)** | **596** | 13.7 | 8.4 |
-| | `-fno-counter` | 85,400 (100%) — no-op, no COUNTER bit in this rung | 3,746 | 15.3 | 9.4 |
-| | `-fno-splice-calls` | 85,400 (100%) | 3,843 | 14.1 | 8.3 |
-| | `-fno-premul-table` | 85,400 (100%) | 3,759 | 15.4 | 8.2 |
-| | `--engine=vm` | 83,664 (98%) | 3,767 | 5.4 | 4.2 |
+| | `-fno-splice-calls` | 107,944 (100%) | 290 | 23.4 | 0.10 |
+| | `-fno-premul-table` | 83,960 (78%) | 291 | 69.6 | 0.23 |
+| | `--engine=vm` | **9,992 (9%)** | 230 | 20.1 | **20.5** |
+| nested-repeat, N=8 | default | 103,384 (100%) | 7,900 | 13.4 | 9.0 |
+| | `--unroll=1` | **21,432 (21%)** | **646** | 5.9 | 3.7 |
+| | `-fno-counter` | 103,792 (100%) — under the cap, literal fallback ~same size but 21% faster to compile | 6,236 | 13.4 | 8.7 |
+| | `-fno-splice-calls` | 103,384 (100%) | 8,656 | 5.3 | 3.6 |
+| | `-fno-premul-table` | 103,384 (100%) | 8,550 | 6.3 | 3.8 |
+| | `--engine=vm` | 101,648 (98%) | 7,395 | 12.0 | 4.4 |
+| nested-repeat, N=6 | default | 85,400 (100%) | 3,779 | 14.0 | 8.5 |
+| | `--unroll=1` | **21,432 (25%)** | **596** | 14.3 | 8.1 |
+| | `-fno-counter` | 85,400 (100%) — no-op, no COUNTER bit in this rung | 3,746 | 6.4 | 3.6 |
+| | `-fno-splice-calls` | 85,400 (100%) | 3,843 | 6.9 | 4.2 |
+| | `-fno-premul-table` | 85,400 (100%) | 3,759 | 16.0 | 8.5 |
+| | `--engine=vm` | 83,664 (98%) | 3,767 | 4.8 | 3.6 |
+
+**Loaded vs quiet, the two rows that moved a stated conclusion**: on the
+N=8 nested-repeat row, the loaded pass read `--unroll=1` as parity with
+default (6.1/5.9 us vs 6.2/4.3 us); the quiet pass reads default as
+markedly slower (13.4/9.0 us) with `--unroll=1` unchanged (5.9/3.7 us) —
+loaded vs quiet: 6.1 us → 13.4 us (default match), 6.2 us → 5.9 us
+(`--unroll=1` match). And on `((a)|ab){4000}c`, `-fno-splice-calls`
+(a size no-op for this pattern — 202,904 `.o` bytes in both passes,
+identical to default) moved from the CHEAPEST cell in its row under load
+(8.1 us fail, alongside default's 8.6 and `--unroll=1`'s 8.4) to
+noticeably the most expensive non-`--engine=vm` cell under quiet
+conditions (18.4 us fail) — the same per-build cache-locality noise
+flagged for the witness's no-op variants above, now reproduced on a
+second, independent artifact. Given that, single-cell differences of a
+few microseconds anywhere in this table (this row's own default/
+`--unroll=1`/`-fno-splice-calls` triad, or N=6's `-fno-counter` reading
+6.4/3.6 us quiet against 15.3/9.4 us loaded despite being a stated
+size-no-op) should be read as noise at this magnitude, not as a per-flag
+effect; only the >=10x effects (`--engine=vm`'s fail-path cost,
+`-fno-premul-table`'s size trade) are load-independent claims this
+census stands behind.
 
 ### The tension curve's own finding: three DIFFERENT levers, three DIFFERENT trades
 
@@ -734,36 +775,58 @@ The census set out to measure "the same pattern under four knobs plus the
 engine axis" and found not one lever but three, each with a different
 cost:
 
-1. **`--unroll=1` is free on the nested-repeat family, useless on the
-   `((a)|ab){N}c` family.** 79-75% size reduction and 12x faster gcc, at
-   NO measured throughput cost, on rxt-00030/00029 (whose bounded factor,
-   `{0,8}`/`{0,6}`, is small and NESTED two levels deep — where K1 matters
-   is the multiplicative replication across nesting, and unroll's own
-   per-chunk savings compound down every level). On `((a)|ab){N}c`
-   (`{4000}`/`{0,4000}`/`{0,2047}`, ONE level, large factor) it is a 1-3%
-   effect — noise. **The lever's payoff is a property of the NESTING
-   STRUCTURE, not the raw replication count** — exactly what §6/§7's
-   node-skeleton and span-loop-shape levers would need to generalize
-   correctly rather than assuming "K down = smaller" universally.
-2. **`-fno-premul-table` is the OPT-3-predicted, well-behaved lever**:
-   a consistent ~22-25% size reduction on every pattern that has a DFA
-   scan to deny a table form on, at a measured throughput cost
-   (`docs/design/premultiplied_dfa_table.md`'s own 1.1-1.8x figure,
-   consistent in direction with the modest 10-30% slower match times
-   here) — a real, bounded, well-understood size/speed trade, the one
-   this census expected to find and did.
+1. **`--unroll=1` is free — on the N=8 nested-repeat outlier, measurably
+   FASTER — on the nested-repeat family, useless on the `((a)|ab){N}c`
+   family.** 79-75% size reduction and 12x faster gcc, at no measured
+   throughput cost, on rxt-00030/00029 (whose bounded factor, `{0,8}`/
+   `{0,6}`, is small and NESTED two levels deep — where K1 matters is the
+   multiplicative replication across nesting, and unroll's own per-chunk
+   savings compound down every level). Loaded vs quiet, N=8's own default
+   row moved (6.1 us → 13.4 us match) while its `--unroll=1` row barely
+   did (6.2 us → 5.9 us) — so what the loaded pass read as parity now
+   reads as `--unroll=1` roughly 2.3x FASTER, not merely free; N=6 stayed
+   at parity in both passes. On `((a)|ab){N}c` (`{4000}`/`{0,4000}`/
+   `{0,2047}`, ONE level, large factor) it is a 1-3% effect — noise. **The
+   lever's payoff is a property of the NESTING STRUCTURE, not the raw
+   replication count** — exactly what §6/§7's node-skeleton and
+   span-loop-shape levers would need to generalize correctly rather than
+   assuming "K down = smaller" universally.
+2. **`-fno-premul-table` is the OPT-3-predicted, well-behaved SIZE
+   lever; its throughput side did NOT survive the quiet-box re-run as a
+   clean story.** The ~22-25% size reduction on every pattern with a DFA
+   scan to deny a table form on is unchanged (size is load-independent).
+   The loaded pass read a consistent ~20-34% slower match time on 4 of 5
+   patterns (`docs/design/premultiplied_dfa_table.md`'s own 1.1-1.8x
+   figure) and one large outlier (`((a)|bc){0,4000}d`, +210%, unremarked
+   in the loaded numbers). The quiet pass reads: `((a)|ab){4000}c` still
+   ~31% slower and `((a)|ab){0,4000}c` now 2.3-2.5x slower (past
+   "modest"), but `((a)|bc){0,4000}d` and nested-repeat N=8 now read
+   FASTER without the premultiplied table (-52%/-50% and -53%/-57%
+   respectively) and N=6 is flat — a direction flip on 2 of 5 patterns
+   that the mechanism (denying a lookup optimization should never help)
+   cannot explain. Loaded vs quiet: "consistent ~20-34% slower on 4/5
+   patterns" → "-53% to +150% across the five, direction not consistent."
+   These are the same five artifacts where a stated size-no-op flag
+   elsewhere in this table swung 2x+ between passes (item 1's own
+   `-fno-splice-calls`/`-fno-counter` cells, §8's status note) — read as
+   the same per-build measurement noise, not a re-measured mechanism, and
+   NOT evidence against `-fno-premul-table`'s size claim, which does not
+   depend on this throughput number.
 3. **`--engine=vm` IS "the size vs performance tension that kicks in at
-   some size," measured directly and dramatically.** On all three
-   `((a)|ab)`-family patterns, dropping to pure VM (no hybrid DFA
-   prefilter) shrinks `.o` to **4-9% of default** — the single largest
-   size lever this census measured on ANY non-witness pattern. The COST is
-   the prefilter's own job: rejecting a non-matching subject fast. On
-   `((a)|bc){0,4000}d`'s failing subject (5,000 bytes, no literal `d`
-   anywhere — the DFA prefilter's `memchr`-class scan dismisses it in
-   O(1); the bare VM has no such shortcut and must backtrack through the
-   whole subject) the fail-path cost goes from **0.10 us to 35,942.6 us —
-   a 359,000x slowdown**, PROVISIONAL but not a number a 5x load spread
-   can manufacture. This is the concrete, measured shape of "size vs
+   some size," measured directly and dramatically — and this one DID
+   survive the quiet-box re-run.** On all three `((a)|ab)`-family
+   patterns, dropping to pure VM (no hybrid DFA prefilter) shrinks `.o`
+   to **4-9% of default** — the single largest size lever this census
+   measured on ANY non-witness pattern. The COST is the prefilter's own
+   job: rejecting a non-matching subject fast. On `((a)|bc){0,4000}d`'s
+   failing subject (5,000 bytes, no literal `d` anywhere — the DFA
+   prefilter's `memchr`-class scan dismisses it in O(1); the bare VM has
+   no such shortcut and must backtrack through the whole subject) the
+   fail-path cost goes from **0.20 us to 34,716.0 us — a 173,580x
+   slowdown** (quiet-box run; loaded vs quiet: 359,000x → 173,580x — the
+   loaded pass's own default-row denominator was itself noisy, 0.10 us
+   vs quiet's 0.20 us, but the effect is unmistakably still five orders
+   of magnitude). This is the concrete, measured shape of "size vs
    performance": the prefilter IS the size (a whole second DFA machine,
    forward+reverse tables, embedded in the artifact) and it IS the speed
    (an O(1) or O(subject) reject instead of an O(subject)-with-backtracking
@@ -802,17 +865,29 @@ cost:
   "the number a user ships." D45's sanitizer-axis budget (200s CPU) is a
   different quantity for a different population (the test suite's own
   battery) and is out of this census's scope.
-- **Quiet-box throughput for the tension curves.** §8's `match_us`/`fail_us`
-  columns are PROVISIONAL — taken at `load1` 1.6-5.0 (5 of 6 patterns) and
-  not yet run at all for 3 of the witness's own 6 variants, because a
-  union battery on the box's `main` branch held `load1` at ~13-14 for the
-  remainder of this lane's session (the manager's own call, communicated
-  live: size/`.o`/gcc-time numbers don't depend on load and were finished
-  under it; throughput numbers wait for a quiet box). The DIRECTION of
-  every large effect in §8 (`--engine=vm`'s size shrink, its fail-path
-  slowdown, `--unroll=1`'s free win on the nested-repeat family) is
-  measured at a magnitude no plausible load artifact could produce, but
-  the exact numbers are not final.
+- **Quiet-box throughput for the tension curves — DONE.** §8's
+  `match_us`/`fail_us` columns were re-taken on a quiet box (`load1`
+  0.13-1.2, 20:08-20:22 EDT, 2026-08-28) once the manager signaled that
+  the union battery on the box's `main` branch, which had held `load1` at
+  ~13-14 for the remainder of the first pass, had cleared. They are now
+  FINAL, including the 3 of the witness's own 6 variants
+  (`--unroll=1`, `-fno-splice-calls`, `--engine=vm`) the loaded pass never
+  reached; `-fno-counter` on the witness still has no throughput number
+  for a load-independent reason (its split-form bdriver link times out
+  past 180 s at this variant's ~4.1 MB source size). The DIRECTION of
+  every large (>=10x) effect in §8 held between the two passes
+  (`--engine=vm`'s size shrink and fail-path slowdown, `--unroll=1`'s win
+  on the nested-repeat family), but exact magnitudes moved, most notably
+  the `--engine=vm` fail-path cost on `((a)|bc){0,4000}d` (loaded vs
+  quiet: 359,000x → 173,580x) and `--unroll=1` on the N=8 nested-repeat
+  pattern (loaded vs quiet: read as parity with default → read as
+  default ~2.3x slower). One conclusion did NOT survive the re-run:
+  `-fno-premul-table`'s throughput cost, loaded-read as a consistent
+  ~20-34%-slower-on-4/5-patterns story, quiet-reads as direction-
+  inconsistent (-53% to +150% across the same five patterns) — §8 item 2
+  now states this as noise at this measurement's scale rather than a
+  re-confirmed mechanism; the flag's SIZE claim (~22-25% smaller,
+  load-independent) is untouched.
 - **The node-skeleton lever's actual predecessor-count walk** (§7 item 2):
   this census measured the label:goto RATIO (close to 1:1 on every
   outlier checked, §7) as a cheap proxy, not the real control-flow-graph
