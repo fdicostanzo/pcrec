@@ -1943,3 +1943,24 @@ VM hybrid) and move nothing inside the program region, so the reading above is
 copied verbatim: `abi` 5 -> 6 (lane srTier's two-tier entry took 4 -> 5 immediately before), (B) re-pinned, (A) byte-identical
 against the unchanged `ac4917d`. Demonstrated both directions again — see the
 [DD-13c] entry in `docs/dev/dev_journal.md` for the measured numbers.
+
+- **run_size_term.sh** — [ART-SIZE]/D84's structural check (2026-08-29). Reads
+  the ARTIFACT, never the stamp alone: the four size-term stamps unconditional
+  on every VM artifact (D81), four of the six `_UNROLL_K_WHY` values driven
+  through the path each one names, the stamped `K` checked against
+  `--unroll=1/2/4/8` and against the term's own choice, and the two effective
+  caps against the flags (including that a below-default `--max-emit-*` value
+  is REFUSED — raise-only is what stops those being used to manufacture a
+  refusal on someone else's build).
+  **It builds a second compiler, and that is [ENG-ABS]'s precedent rather than
+  a new surface.** `cap-rescue` has a natural population of ZERO and the CLI
+  overrides are raise-only, so the branch cannot be reached from outside at
+  all; the check builds a REFERENCE COMPILER with the limits lowered at
+  pcrec's own compile time (`-DPCREC_SIZE_TERM_THRESHOLD=20000
+  -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000`) and drives it there. BOTH constants
+  move, not one: the threshold gates on CODE bytes, so lowering only the cap
+  gives a compiler in which the ladder never runs on the witness and the
+  pattern simply refuses. An anti-vacuity cell asserts the rescue chose a
+  DIFFERENT K from the default build, and the NATURAL cap-rescue population is
+  pinned at 0 as a CEILING that fires if a real pattern ever lands in the band
+  `docs/design/artifact_size_term.md` §4.2b calls empty.

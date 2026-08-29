@@ -1,9 +1,8 @@
 # tests/size — the artifact-size metrics log + corpus-level tripwire
 
 [ART-SIZE.1b] (docs/dev/plan.md): the zero-cost size ratchet riding
-`test-corpus`'s existing compile pass. No test corpus of its own — this
-directory holds the WRAPPER and the CHECK, not `.rxt` files; the
-population it measures is the whole tree's, discovered by
+`test-corpus`'s existing compile pass. The wrapper and the check measure a
+population that is the whole tree's rather than one of their own, discovered by
 `tests/harness/run.sh` exactly as `test-corpus` always has.
 
 ## Files
@@ -96,3 +95,16 @@ other section.
 
 Maintenance: update this file when files are added/removed or the log
 format changes.
+
+- **size_term.rxt** — [ART-SIZE] STEP 2's ANSWER cells (added 2026-08-29).
+  The only `.rxt` in this directory, and it is here because it belongs to the
+  size row rather than to any construct's module. Everything structural about
+  the size term — its stamps, its two caps, `cap-rescue` — lives in
+  `tests/codegen/run_size_term.sh`; this file holds only what a MATCH would
+  notice. Its first block is r40 finding R1's witness, the pattern that
+  compiles at K=8 and refuses at K=6: a ladder that let a trial's refusal
+  escape would break it, so a cell that merely matches is the regression test
+  for the blocker. `engine vm` on that block is REQUIRED — on the default axis
+  the pattern refuses earlier at NFA construction, and the cell would then
+  pass for a reason unrelated to what it tests.
+

@@ -105,3 +105,24 @@ sweep" section has the measured runtime and how to read a failure.
 
 Maintenance: update this file when files are added/removed or their roles
 change.
+
+- **run_ksweep.sh** — [ART-SIZE]'s K-SWEEP IDENTITY GATE (`make test-ksweep`,
+  opt-in, 2026-08-29). `run_axes.sh` derives its axis list from
+  `lib/pcrec.h`'s `PCREC_(NO|FORCE)_* = 1u << N` constants, so it sweeps only
+  PREDICATE bits — and `--unroll=K` is a VALUE axis. Until this script **no
+  gate proved any K answer-identical**, which is the size term's entire
+  licence. [CHK-2] item (c) folds value axes into the generic sweep; this row
+  is its named trigger and this script is the gate meanwhile.
+  It reuses `dump_diff.awk` rather than inventing a second comparison, so the
+  give-up/capacity exclusion is that file's OWN existing `budget=` bucket —
+  the one `run_axes.sh` already uses. The exclusion is STATED in the header
+  with the measurements justifying it (§6.1's step-budget, frame and
+  `RX_TRAIL_FRAMES` figures), because those cells are genuinely K-dependent and
+  a sweep including them would fail on a TRUE property. An exclusion with
+  nothing behind it is how a defect hides, so on the excluded cells it still
+  asserts that where BOTH sides give up they give up with the same CODE, and it
+  PRINTS the excluded population's size.
+  Its **interior-optimum report** is the standing census of whether the
+  ladder's interior rungs earn their cost — it names any pattern whose argmin
+  is interior. On its first run it found three, which is why the ladder is
+  `[8,6,4,3,2,1]` and not its endpoints.
