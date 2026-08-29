@@ -5977,3 +5977,15 @@ a judgement inside the measured empty band (corpus worst 284,035;
 witness 2 at 836,621), ≈ 85 KB of `.o`. The spec states the `.o`
 equivalence beside each constant so the limit reads in the unit a
 user ships.
+
+**ADDENDUM 3 (Frank, 2026-08-28 ~23:5x): the caps are an EMERGENCY
+FAILSAFE, not a tuning.** The total-bytes cap stays at 1,000,000 (the
+lane offered a gap-centred 850,000; not taken — "we can adjust the
+number but it's really more of an emergency failsafe than a tuning").
+The place a caller raises a limit for a real build is the pattern-source
+file: a `config` block in the grown `.rxt` format
+(docs/design/dd13_format/usecases_and_outline.md §2 wave 3) carries
+pcrec option lines, so `pcrec --max-emit-bytes=N` inside a config
+raises the cap for every target built `with` that config — declared
+beside the pattern, per target, not a command-line habit. The CLI
+override exists for the single-pattern case and for the harness.
