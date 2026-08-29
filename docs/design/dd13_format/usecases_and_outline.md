@@ -328,3 +328,46 @@ the resolution/expansion semantics, the summary-unit rule, and the
 migration story (none — no existing line changes meaning), then the
 [DD-13b.panel] and a parser in the harness first, `pcrec --source`
 second.
+
+## 6. Frank's follow-ups (2026-08-28, same evening) — folded in
+
+**6.1 Local vs library resolution — C's `""` vs `<>`.** Yes, and it is a
+separate axis from the VERB. `lib`/`include` say what the file
+contributes (definitions vs spliced blocks); the PATH SPELLING says where
+to look:
+
+- `lib "lib/rfc5322.rxt"` — relative to the file that names it (local).
+- `lib <rfc5322>` — searched on the library path: pcrec's shipped store
+  ([LIB] (3)) plus `--lib-path DIR` entries in order, the `-I` model;
+  `.rxt` is implied. Never relative to the including file.
+- The same two spellings work for `include`. `@file:` subjects are
+  always local (quoted spelling only — a subject is data, never a
+  library).
+- A name reached both ways is the same file if it resolves to the same
+  path; two different files defining one name are refused by name, as
+  §2 wave 1 already says.
+
+**6.2 A target needs a NAME for reference — the emitted prefix.** Agreed;
+§2's "unnamed block = target" was too thin. A target is what a caller
+links, so it needs the C-identifier the artifact is emitted under
+(`-p rx` today → `rx_search`, `rx_match`, `RX_NCAPS`…). Rule:
+
+- `target [<prefix>]` — the block is a compilation target emitted under
+  `<prefix>`. `target` alone uses the block's `name` as the prefix (a
+  PCRE2 group name is a valid C identifier). A block with neither
+  `name` nor a `target` argument, in a file with exactly one target,
+  gets `rx` — today's single-pattern behaviour; the CLI's `-p` still
+  overrides for that case.
+- Two namespaces, deliberately: `name` is the PCRE2 reference name
+  (`(?&local)`), `target`'s argument is the C prefix. They coincide by
+  default and may differ (`name email` / `target rfc5322_email`).
+- `pcrec --source file.rxt --target <prefix> -o out.c` selects by
+  prefix; two targets with one prefix in an include closure are refused.
+- Tests keep addressing blocks by `file:line`; the prefix is for the
+  BUILD reader and the record (a bench cell keyed by `(file, prefix,
+  config)` is more stable than a block index — this also answers the
+  "identity of a case" row in §4's table for target blocks).
+
+The ruling list in §5 gains: 7. path spelling `""` local / `<>` library
+path; 8. `target [<prefix>]`, defaulting to `name`, `rx` for the lone
+unnamed target.
