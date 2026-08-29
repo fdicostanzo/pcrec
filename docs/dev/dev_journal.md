@@ -17905,3 +17905,60 @@ the tree, STEP 3, then the [SEL-1] rung as a second commit); dd11b
 (sonnet, fresh, from 4f460bc: [DD-11.1] → [DD-11.4b] sequential). Both
 resumed lanes carry the HOLD protocol explicitly (the enumerated shapes
 + a one-line ack). Watchdog cron v3 up.
+
+#### Forty-fifth session, part 5 — [OPT-4] delivered, Frank rules A, MERGED ba69380, battery launched; [DD-11] implementation through RK_BARE (~17:1x-19:5x EDT)
+
+**[OPT-4]** (opt4b, resumed from the stopped lane's STEP 2): the five
+STEP 2 conditions verified and finished — the bar pinned by a census on
+a MEASURED plateau (117..160, 128 mid-plateau; the 18 artifacts between
+64 and 128 all ≤ 116; zero factor<2 over any bar; band on the sweep's
+own 20, not the size log's 23 — K35), `_LANG_WHY` five values (its first
+run caught a `"denied"` leak into artifacts the flag cannot touch — the
+same defect fixed once before at `strategy_denials`), K39's check
+restated, K41 witness 2 671,039 REFUSED → 152,302 ACCEPTED from a gate
+RUN, costs MEASURED (9.24 s / 99,601 attempts vs 11 µs / 1 on the
+adversarial case; 44× on `(ab){300}` find-all; 1.49× the lost ceiling;
+2.7× FASTER on rejected subjects — a benefit the note had not
+predicted), corpus −1,874,322 over exactly the 23 with 60 controls at 0.
+The [SEL-1] rung as its own commit: level-context 2.4-3.4× faster
+(artifact 3× larger, compile unchanged — [SEL-1.2]: the 507 ms is the
+ENGINE-role exact attempt, the rung saves none, a predictor could only
+decline-to-try; not built). `RX_ENGINE_SEL` (O-8 6(d)), five values
+each witness-driven, with a closed-set + reachability check. Its finds:
+three stale sabotage anchors, the size-term check's witness being one
+of the 23 (moved to an insulated pattern), K40's own witness no longer
+overflowing at all. FILEPIN moved four times (one bump, abi 12).
+
+**The default question.** I recommended B (collapse only when the caps
+refuse) — MEASURED INERT by opt4b: `emit_code` excludes table
+initializers, so the row moves the capped quantity by ~3 bytes on the
+23; only witness 2 (computed-goto form) reaches the cap. Re-framed as A
+(knee default, the documented match-time cost) vs B′ (flag-only). Frank,
+19:4x: **A** — "it can be turned off. it reports when it did the
+collapse?" (yes: `_LANG` + `_LANG_WHY`) — and the PGO observation:
+whether to keep the exact prefilter is what an exemplar-file profile
+answers → cross-note on [ENG-PGO] (a second PGO selection point beside
+[OPT-A]'s rarest byte).
+
+**MERGED ba69380** after my review (one conjunct at one site; DFA-as-
+engine stays exact; the ladder bounded). Battery v4 (last session's v3
+re-pathed) launched at ~19:5x as a background task; verdict to follow.
+
+**[DD-11]** (dd11b): [DD-11.1] the table + structural/containment checks
+(a first-ever build of the parked WIP exposed 4 stale anchors);
+[DD-11.4b] six `RS_BASE` rows (registry_check.c had no RS_BASE branch
+for RK_ESC; compliance_section.py's hard-coded row guard was silently
+exiting); [DD-11.2] `--list-definitions` (+ registry.md §9, cli.md,
+table_contract.md; O-8's two spec fixes folded); `DEF_IDENTITY` +
+`DEFK_TEXTFN` (five operand rows sharing `esc_char_value`'s hex decoder;
+POSIX = 14 explicit entries, every byte range cross-checked vs python
+`re`; `\Q…\E` lexical, excluded); `RK_BARE` — a new no-doorway RegKind
+on RK_QUANTSUFFIX's precedent for `^`, `$`, plain `(` (its structural
+check found `$` is NOT identity under full reduction: `\Z ≡ (?=\n?\z)`;
+ruled: chain `$`→`\Z`→`(?=\n?\z)`, one fact one row). Rulings along the
+way: identity is an EXPLICIT entry (never NULL-as-signal); builder rows
+carry a TEMPLATE in the row (the dump prints it; [DD-11.3] instantiates
+it over a body set — one home, two readers); [DD-11.4]'s synthetic row
+is a test-local fixture. Now on [DD-11.3]. Message delivery to this
+lane lags a full tool round — three rulings were "still awaited" after
+being sent; the fix each time was a fresh RESUME send.
