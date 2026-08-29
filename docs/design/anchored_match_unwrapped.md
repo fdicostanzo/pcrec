@@ -739,3 +739,17 @@ a stamp value that is still legitimately reachable.
 2. **The `\z`-view fold** (`opt2m` lever (b), 3-5 %) belongs to `[DD-13]`(b)
    and is not folded in here.
 3. **Class-table sharing** (§8's OPEN) — measured, not built.
+4. **`scan` and `prefilter`'s trailing comments cost every artifact ~700 B**
+   of counted source (§8.1's classifier finding). Fixing them is two other
+   rows' emitted text and therefore two other `abi` bumps; recorded, not done.
+5. **`make test-axes`'s `-fno-anchored-dfa` arm is trivially green** and
+   cannot be otherwise (§9.1). Whether the sweep should gain a route that
+   drives the ANCHORED entries — the corpus driver already has the `_in`
+   cross-check machinery and would need only an oracle for the anchored
+   answer, which `tests/anchored/` now supplies — is a real question about
+   `[CHK-2]`'s sweep and not this row's to rule.
+6. **The NON-MATCHING split improves least** (2.306× → 1.550×, §7.1). The
+   remaining gap there is not the reverse pass; `opt2m` measured that at
+   13.9 % on non-matching subjects. What is left is the forward scan itself
+   on a near-miss email, which is `[OPT-3]`/`[OPT-K]` territory rather than
+   this row's.
