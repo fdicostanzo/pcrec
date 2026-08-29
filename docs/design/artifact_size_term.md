@@ -1618,7 +1618,7 @@ this row's.
 | 3 | identity gate | `make test-axes` bit 18 by construction, **plus** `make test-ksweep` (§6.2) |
 | — | *(and see AR3 below on why the K sweep is a one-off today)* | |
 | 4 | structural check | `tests/codegen/run_size_term.sh` — reads the ARTIFACT: the emitted body-copy count against the stamped K, `_WHY` against which path ran, and the two effective caps against the flags. **It must handle the NO-COUNTER-RUNG case** (finding S3): where `vm_counter_fits` declines, the copy count is `count` and K is inert, so a check that asserts `ceil(count/K)` unconditionally fails on a correct artifact |
-| 5 | sabotage row | `tests/mech/` — the ladder reduced to a greedy descent (must be caught by the non-monotone subject, §3.1); the materiality bar removed; the cap's comparison inverted |
+| 5 | sabotage row | `tests/mech/` — the ladder reduced to a greedy descent (must be caught by the non-monotone subject, §3.1); the materiality bar removed; the cap's comparison inverted. **BUILT** as S191/S192/S193 on the new `sizeterm` and `resource` arms; see §11.3 for what each one's green arms mean |
 
 Sabotage row 1 is the one worth naming: a greedy descent passes every
 answer-identity check ever written, because it is answer-identical. Only a
@@ -1837,12 +1837,33 @@ arise — §2.2d), and a pre-emission node count (§2.2a).
 
 ### 11.3 What is NOT built, and is owed
 
-- **`tests/mech` sabotage rows.** §7.4 item 5 names three (the ladder reduced
-  to a greedy descent; the materiality bar removed; the cap's comparison
-  inverted) and none is written. The first is the one that matters: a greedy
-  descent is ANSWER-IDENTICAL, so no identity gate can see it — only a SIZE
-  assertion on the non-monotone subject can. Until it exists, that property
-  rests on `run_size_term.sh`'s stamp checks rather than on a detection.
+- **`tests/mech` sabotage rows — WRITTEN, canonical runs owed.** §7.4 item 5's
+  three rows are `tests/mech/sabotages/S191_sizeterm_greedy_descent.sh`,
+  `S192_sizeterm_bar_removed.sh` and `S193_sizecap_comparison_inverted.sh`,
+  and the two arms they score on (`sizeterm` →
+  `tests/codegen/run_size_term.sh`, `resource` →
+  `tests/resource/run_resource_tests.sh`) are registered in the driver ahead of
+  them, per the R31 C11 rule that the vocabulary is closed. All three pass
+  `VALIDATE_ONLY=1` and the standing anchor tripwire
+  (`scripts/m6read_check_sab_anchors.py`, 189 sabotages / 200 anchor sites).
+  Their `SAB_DOC_FIGURE`s carry PLACEHOLDERS with the predicted arm figures
+  until each is run canonically (`bash tests/mech/run_sabotage_matrix.sh
+  S19x`) on a quiet box.
+
+  S191 is the one that matters and it is a SIZE-assertion detection by
+  necessity: a greedy descent is ANSWER-IDENTICAL — `K` is the counter rung's
+  chunking factor, so the artifact accepts the same language, reports the same
+  span and fills the same slots — and no oracle, differential or identity gate
+  in this repository can be red for it. Its `corpus` arm is EXPECTED GREEN,
+  and the row's header says so, so that a future reader does not read the
+  green as a half-detection. S192 records that the materiality bar has exactly
+  ONE witness in the tree (`run_size_term.sh` §5's lowered-cap reference
+  compiler, because `cap-rescue`'s natural population is zero and the
+  overrides are raise-only), with `SAB_REACH_POP` floors that make the
+  dependence checkable. S193 is loud by construction — the cap site is on
+  every successful compile's path — and its header states that plainly: what
+  it proves is a REACH fact plus the asymmetry that `tests/resource` §1b is
+  the only place in the tree asserting a cap's TRUE side.
 - **The byte-identity-against-explicit-`--unroll` control** (§6.2 control 4).
   `run_size_term.sh` asserts the stamped `K` matches the artifact, which is
   weaker than asserting the two builds are byte-identical.

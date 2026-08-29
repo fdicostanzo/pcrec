@@ -175,6 +175,20 @@
 #     `anchdiff` is the only instrument in the tree that can be red for it, so
 #     folding it into `harness` or `codegen` would report it as a sabotage of
 #     something else — or, worse, as no sabotage at all.
+#   sizeterm  resource              — added 2026-08-29 ([ART-SIZE] STEP 2);
+#     `sizeterm` runs tests/codegen/run_size_term.sh and `resource`
+#     tests/resource/run_resource_tests.sh. Registered BEFORE the three rows
+#     that need them (S191-S193), per the R31 C11 lesson below. `sizeterm` is
+#     the sharpest instance in this file of the reason these arms are separate:
+#     the size term chooses `K`, the counter rung's chunking factor, and an
+#     artifact built at the WRONG K answers every subject in the repository
+#     correctly — so a selection defect is invisible to every oracle,
+#     differential and identity gate here, and only a SIZE assertion can be red
+#     for it. Rows on this arm are EXPECTED to score `corpus:0fail`.
+#     `resource` is the only arm that asserts an emitted-size cap's TRUE side
+#     (§1b: an over-cap shape refused, then re-accepted when the raise-only
+#     override is raised past it) — a refusal is a contract, and nothing else
+#     in the tree states this one.
 #   framebuffer  stackdepth        — added 2026-08-25 ([DD-14.FB], D71 item 2);
 #     registered BEFORE the six rows that need them, per the R31 C11 lesson two
 #     paragraphs down. `framebuffer` runs tests/recursion/run_frame_buffer.sh
@@ -925,6 +939,50 @@ run_one() {
                 p="$(grep -m1 '^checks passed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
                 f="$(grep -m1 '^checks failed:' "$work/anchdiff.log" | grep -oE '[0-9]+')"
                 suite_bits+=("anchdiff:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            sizeterm)
+                # [ART-SIZE] tests/codegen/run_size_term.sh — the size term's
+                # structural check, and the ONLY instrument in this tree that
+                # can be red for a WRONG K. `K` is the counter rung's chunking
+                # factor and nothing else, so an artifact built at the wrong K
+                # answers every subject correctly: no oracle, no differential
+                # and no identity gate anywhere can see a selection defect.
+                # Its own arm rather than `codegen`, for the reason
+                # `offsetskip` gives above and with the same consequence —
+                # A ROW ON THIS ARM IS EXPECTED TO SCORE `corpus:0fail`
+                # (S191, S192). That is the arm working, not a half-detection.
+                #
+                # §5 of the script BUILDS A SECOND COMPILER with lowered
+                # constants, because `cap-rescue`'s natural population is zero
+                # and the CLI overrides are raise-only; that cell is the only
+                # witness in the tree to the materiality bar declining at all
+                # (S192). It costs one -O1 build of src/ per invocation.
+                PCREC="$pcrec" CC="$CC" bash "$tree/tests/codegen/run_size_term.sh" \
+                    > "$work/sizeterm.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/sizeterm.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/sizeterm.log" | grep -oE '[0-9]+')"
+                suite_bits+=("sizeterm:${f:-ERR}fail/${p:-?}pass")
+                [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
+                any_ran=1
+                ;;
+            resource)
+                # [M4.7b]/[ART-SIZE] tests/resource/run_resource_tests.sh —
+                # the K7 budget pins AND (§1b) the emitted-size caps' REFUSAL
+                # contract. Not foldable into `harness` for the reason the
+                # script's own header gives: its assertions are about what
+                # compiling a pattern COSTS and whether it is REFUSED, which no
+                # `.rxt` block can express — to the harness a SIGKILL and a
+                # `perr` are indistinguishable. It is the only arm that asserts
+                # the cap's TRUE side (an over-cap pattern refused, and
+                # re-accepted when the raise-only override is raised past it),
+                # which is what S193 scores against.
+                PCREC="$pcrec" bash "$tree/tests/resource/run_resource_tests.sh" \
+                    > "$work/resource.log" 2>&1
+                p="$(grep -m1 '^checks passed:' "$work/resource.log" | grep -oE '[0-9]+')"
+                f="$(grep -m1 '^checks failed:' "$work/resource.log" | grep -oE '[0-9]+')"
+                suite_bits+=("resource:${f:-ERR}fail/${p:-?}pass")
                 [ "${f:-1}" -gt 0 ] 2>/dev/null && any_fail=1
                 any_ran=1
                 ;;

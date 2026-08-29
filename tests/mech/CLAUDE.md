@@ -207,6 +207,31 @@ is EXPECTED to time out"*, and neither would a separate arm.
   corpus:0fail/26pass` at `cf05077` — and S190's single `anchoredmatch` red is
   §4b's reference-build-warnings check firing on gcc's complaint about the
   plant's own dead loop, NOT a detection.
+- `sizeterm` → `tests/codegen/run_size_term.sh`, [ART-SIZE] STEP 2's size
+  term (D84) held to the ARTIFACT: the stamps, the six `_UNROLL_K_WHY`
+  values, the effective caps against the flags, and the chosen `K` read off
+  the emitted body rather than off the stamp. **THE ONLY INSTRUMENT IN THE
+  TREE THAT CAN BE RED FOR A WRONG `K`.** `K` is the counter rung's chunking
+  factor and nothing else, so an artifact built at the wrong one accepts the
+  same language, reports the same span and fills the same capture slots —
+  every oracle, differential and identity gate here is blind to a selection
+  defect by construction. **ROWS ON THIS ARM ARE EXPECTED TO SCORE
+  `corpus:0fail`** (S191, S192); that is the arm working, not a
+  half-detection. Its §5 builds a SECOND compiler with
+  `-DPCREC_SIZE_TERM_THRESHOLD=20000 -DPCREC_MAX_VM_EMIT_CODE_BYTES=30000`
+  ([ENG-ABS]'s precedent), because `cap-rescue`'s natural population is zero
+  and the CLI overrides are raise-only — that cell is the tree's ONLY witness
+  to the materiality bar declining at all, which is what S192 scores against.
+- `resource` → `tests/resource/run_resource_tests.sh`, the K7 budget pins and
+  (§1b, [ART-SIZE]) the emitted-size caps' REFUSAL CONTRACT. Not foldable into
+  `harness`, for the reason that script's own header gives: its assertions are
+  about what a compile COSTS and whether it is REFUSED, and to the harness a
+  SIGKILL and a `perr` are indistinguishable. It is the only arm that asserts
+  a cap's TRUE side — an over-cap shape refused with its pinned byte count,
+  then RE-ACCEPTED when the raise-only override is raised past it — which is
+  what S193 scores against. A refusal is a contract ([SEL-1]'s lesson: a
+  fallback that made nine refusal tests unreachable), so the direction matters
+  and nothing else in the tree states it.
 - `trie` → `tests/codegen/run_trie_identity.sh` (the M2.8 differential check,
   default 500 patterns x 2 sweeps, plus 3 positive controls).
 - `reject` → `tests/reject/run_reject_tests.sh` (the "requires module 'X'"
