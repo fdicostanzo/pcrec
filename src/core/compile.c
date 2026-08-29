@@ -787,12 +787,24 @@ static int compile_driver(const char *pattern, const pcrec_options *opt,
              * tests/resource's K7 shape past its 45 s CPU ceiling. The corpus
              * sweep never caught it because that pattern lives in the resource
              * suite, not in the `.rxt` corpus — a population nobody counted,
-             * which is this project's oldest lesson and was mine to relearn. */
+             * which is this project's oldest lesson and was mine to relearn.
+             *
+             * AND THE THRESHOLD IS ON `emit_code`, NOT ON THE TOTAL, for the
+             * same reason one level up: `K` moves CODE and cannot move a table
+             * by a byte, so gating on total size runs the ladder on artifacts
+             * it provably cannot shrink. The corpus's largest artifacts are
+             * exactly that shape — `((a)|ab){4000}c` is 651,552 bytes of which
+             * only 32,440 are code — and the ladder on them was five wasted
+             * pipeline runs on the biggest patterns in the suite, which is
+             * what pushed tests/counterk and three identity checks over their
+             * CPU ceilings. Gating on code skips all of them and still runs
+             * the ladder on every pattern it can help (nested N=8: 283,212
+             * code bytes; K41 witness 1: 1,718,425). */
             bool run = cx.job->fit.chosen == ENGM_VM &&
                        defo.unroll_k == 0 &&
                        !(defo.flags & PCREC_NO_SIZE_TERM) &&
                        (cx.job->vm_rungs & 0x10u) != 0 &&
-                       emit_tot > (size_t)PCREC_SIZE_TERM_THRESHOLD;
+                       emit_code > (size_t)PCREC_SIZE_TERM_THRESHOLD;
             if (run) {
                 st_phase = ST_LADDER; st_idx = 0;
                 job_cleanup(&cx);
