@@ -1467,10 +1467,20 @@ append-only or historical records.
   **D84 then ruled the charter's one cap into TWO** (`../dev/decisions.md`),
   both on comment-excluded emitted C SOURCE bytes with the `.o` (≈17 %) quoted
   beside each: a CODE-BYTES cap (**500,000**, ≈85 KB `.o`, ruled by Frank in
-  addendum 2) for D45's compile budget and a TOTAL-BYTES cap (1,000,000,
-  ≈170 KB `.o`) for usability, the latter an EXACT post-emission check with no
-  model in it, both overridable upward (`--max-emit-code-bytes=` /
-  `--max-emit-bytes=`) and stamped, neither deniable; `limits.md` gains a "Handling an oversized
+  addendum 2 — bytes OUTSIDE table initializers, exact and emitter-counted, no
+  model coefficients in any refusal) for D45's compile budget and a
+  TOTAL-BYTES cap (1,000,000, ≈170 KB `.o`) for usability, both EXACT
+  post-emission checks, both overridable upward (`--max-emit-code-bytes=` /
+  `--max-emit-bytes=`) and stamped, neither deniable;
+  **and the re-check then found the BLOCKER that makes the mechanism real**:
+  `ctx_fail` is a `longjmp` to the compile's single recovery point, so a
+  ladder trial cannot be "discarded" — measured, `(?:…(a|b){41}…){41}` six deep
+  compiles at K=8 and REFUSES at K=6, so the ladder as first written would have
+  broken a pattern that compiles today. The note now specifies a `trial` flag
+  under which the five size guards RETURN an over-budget result, with the
+  buffer-size EARLY ABORT as the first such guard (without it the ladder writes
+  55.4 MB on a worst-rung tower to select a 42,619-byte artifact) and a stated
+  AST re-publication invariant with its own sabotage row; `limits.md` gains a "Handling an oversized
   artifact" section drafted in §4.6. The two caps exist because the note
   measured a node at ~5,930x a data-table entry of gcc cost: `a{1,31000}` is
   1.38 MB and compiles in 0.34 s while K41's witness 2 is 1.26 MB and costs

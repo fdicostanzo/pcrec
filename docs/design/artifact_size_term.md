@@ -16,12 +16,15 @@ tension that kicks in at some size."*
 
 ## 0. The answer in twelve lines
 
-1. **The r40 panel refuted the first version of this note three ways, and the
+1. **The r40 panel and its re-check refuted this note FOUR times, and the
    refutations are the most useful thing in it.** The instrument was blind to
    the hybrid prefilter's computed-goto machinery, so a pinned oversize pattern
    read 10× small and no mechanism engaged (§2.0, F1). The pre-emission node
-   count the design assumed **does not exist** (§2.2, S1/F6). And "every K is
-   answer-identical" is false on the give-up surface (§6.1, S2).
+   count the design assumed **does not exist** (§2.2a, S1/F6). "Every K is
+   answer-identical" is false on the give-up surface (§6.1, S2). And **the
+   ladder as first specified would have broken a pattern that compiles today**
+   (§2.2b, R1) — the blocker, because `ctx_fail` is a `longjmp` and a trial
+   cannot be "discarded".
 2. Emitted size is described by **four** counts: VM nodes `N`, prefilter DFA
    states `S`, data-table entries `E`, and computed-goto **jump-table entries
    `J`** (§2.3). Median error 2.39 % over 2,487 corpus artifacts, 2.56 % above
@@ -43,21 +46,26 @@ tension that kicks in at some size."*
    `[8,6,4,3,2,1]` and taking **`argmin N`, exact, with no model in it** (§3.3,
    S4). Both `N` and bytes are **non-monotone in K**, so it is evaluated, never
    descended.
-7. It dry-emits because **there is no pre-emission node count** — `vm_count_slots`
-   counts slot categories, `Vm.nodes` and `nlabel` are emission-time, and the
-   pre-pass mutates state and can fail. A counting pre-pass would be a third
-   party to an agreement the emitter's own header warns about; the emitter run
-   into a scratch buffer cannot drift from itself (§2.2). Measured cost:
-   **2.84 s** on the worst pattern in the project, 0.01 s on an ordinary one,
-   zero on the 99.72 % below the threshold.
-8. **A cap refuses only if NO K on the ladder is under it** (§4.4, S5). The
-   materiality bar gates a THROUGHPUT preference, so without the re-run a
-   declined bar could strand a pattern a lower K rescues — measured on witness
-   2, whose byte ratio 0.913 declines the bar despite an 81 % node reduction.
+7. It dry-emits because **there is no pre-emission node count**, and a
+   counting pre-pass would be a third party to an agreement the emitter's own
+   header warns about (§2.2a). But dry emission is **not free-standing**: it
+   needs a `trial` flag under which the five size guards RETURN
+   `OVER(which, value)` instead of `longjmp`-ing to the compile's single
+   recovery point (§2.2b, R1), an EARLY ABORT once a trial's buffer passes a
+   cap (§2.2c, R2 — the ladder otherwise writes **55.4 MB** on a worst-rung
+   tower to select a 42,619-byte artifact), and a stated **AST re-publication
+   invariant** (§2.2d, R3). Those three, not the ladder, are the code phase's
+   largest piece.
+8. **A cap refuses only if NO K on the ladder is under it** (§4.4, S5), and a
+   K taken that way is stamped `cap-rescue` (R5). The materiality bar gates a
+   THROUGHPUT preference, so without step 4 a declined bar could strand a
+   pattern a lower K rescues — measured on witness 2, whose byte ratio 0.913
+   declines the bar despite an 81 % node reduction.
 9. **Both K41 witnesses are handled, by different mechanisms** (§4.8): witness
    1's size IS node replication, so the K rule takes it 2,015,585 → 116,371 B
    and gcc 55.13 s → 1.02 s; witness 2's is its PREFILTER, which K cannot touch,
-   so the total-bytes cap refuses it. **K41's pinned bucket moves 2 → 0**, one fixed
+   so **both** caps refuse it (code 670,650; total 1,220,606). **K41's pinned
+   bucket moves 2 → 0**, one fixed
    and one refused — and witness 2 stays refused until **[OPT-4]/K39** shrinks
    the mechanism, which is that row's job, not this one's.
 10. **Thresholds and caps:** threshold **120,000 B** (AR10 — the first
@@ -66,7 +74,10 @@ tension that kicks in at some size."*
     1,000,000**. Every one is comment-excluded emitted C SOURCE bytes, and the
     `.o` is ≈ 17 % of that — ≈ 20 KB / 85 KB / 170 KB respectively, quoted
     beside each constant so the limit reads in the unit a user ships.
-    **0 of 2,487** corpus patterns refused by either, on all ten axes.
+    **0 of 2,487** corpus patterns refused by either, on all ten axes (worst
+   code 283,083 = 1.77× headroom; worst total 651,415 = 1.54×). The **node cap
+   an earlier pass proposed is DROPPED** (§4.2a): nodes are subsumed by code
+   bytes and miss the CFG-shaped cost — witness 2 is 552 nodes and 66.92 s.
 11. **The caps are NOT deniable but ARE overridable upward** (D84 ruling 1):
     `--max-emit-code-bytes=N`, `--max-emit-bytes=N`, raise-only, effective values
     stamped. Predictability is discharged by documentation — `limits.md` gains
@@ -527,9 +538,11 @@ At VM emission, with `K_opt` = `--unroll=`'s value if given, else
   `--unroll=` was NOT given, so `K_opt` is always the default 8 and every
   ladder value is already ≤ it. The guard the first version wrote was
   unreachable; if it is kept in the code it is marked defensive, not load-bearing.
-- **A trial that `ctx_fail`s is discarded, not propagated** (§2.2): the ladder
-  runs only after the default-K emission succeeded, so it can never turn a
-  pattern that refuses today into one that compiles.
+- **A trial NEVER fails by `longjmp`** (§2.2b, finding R1): under the `trial`
+  flag the size guards return `OVER(which, value)`, the ladder consumes it, and
+  a trial's refusal is never the compile's answer. The first version said a
+  failing trial was "discarded", which was false and would have broken a
+  pattern that compiles today.
 
 **What it costs.** The ladder is up to five extra emissions, and only above the
 threshold (7 of 2,487 patterns). Measured, best of one run each:
@@ -656,7 +669,7 @@ note's own measurements showed the question is two questions:
 
 **`a{1,31000}` is why they are separate, not why either is wrong.** It is
 1,367,865 bytes and gcc compiles it in **0.34 s**: cheap to compile, too large
-to ship. The code-bytes cap correctly passes it (107,869 code bytes); the
+to ship. The code-bytes cap correctly passes it (11,655 code bytes); the
 total-bytes cap correctly refuses it. A single cap would have to get one of
 those two answers wrong.
 
@@ -680,22 +693,16 @@ A node costs gcc **≈ 5,930×** a data entry and **≈ 620×** a jump entry.
 (The first version quoted "0.0009 µs per table entry" — a ms/µs slip, panel
 finding F3. The corrected unit is 0.905 µs; the ratio is unchanged.)
 
-**Measurement 2 — what that does to real artifacts:**
+**Measurement 2 — what that does to real artifacts.** The full table, with the
+CODE column that decides the cap, is **§4.2**; the two facts it turns on are:
 
-| artifact | comment-excl. total | code bytes | gcc CPU | % of D45's 10 s |
-|---|---|---|---|---|
-| `a{1,25000}` | 1,103,865 | 87,229 | 0.24 s | 2 % |
-| `a{1,31000}` | 1,367,865 | 107,869 | **0.34 s** | 3 % |
-| `((a)\|ab){4000}c` | 651,412 | ~0 | 0.29 s | 3 % |
-| witness 1 **at K=1** | 87,118 | 86,469 | 1.02 s | 10 % |
-| **nested N=8 — corpus worst** | 288,314 | **284,035** | 7.09 s | **71 %** |
-| `jfit` n800_k26 | 562,993 | 319,517 | 3.21 s | 32 % |
-| — *no measured artifact between 320 K and 837 K of code* — | | | | |
-| **K41 witness 2** | 1,220,606 | **836,621** | **66.92 s** | **669 %** |
-| **K41 witness 1** at K=8 | 1,719,349 | 1,718,700 | 55.13 s | 551 % |
+- `a{1,31000}` is **1,367,865 bytes and compiles in 0.34 s**;
+- **K41 witness 2 is 1,220,606 bytes and costs 66.92 s** — 669 % of D45's
+  budget.
 
-**Everything at or below 320 KB of code costs ≤ 71 % of the budget; the next
-measured artifact up costs 669 %.** The band between is empty.
+Same order of size, **197× apart in cost**. Whatever the caps bind on, it
+cannot be total bytes alone (that would refuse the first) and it cannot be
+nodes (witness 2 has 552 of them). §4.2 is the quantity that separates them.
 
 **A correction to the brief's premise, which strengthens the case.** Witness 2
 was described as compiling "inside the budget today, 7.8 CPU-s against 10 s".
@@ -925,7 +932,7 @@ lever that would pass:
 > --max-emit-bytes=N if that size is acceptable to you, or see
 > docs/spec/limits.md "Handling an oversized artifact".`
 
-> `pattern too large: the emitted matcher contains 836,621 bytes of CODE
+> `pattern too large: the emitted matcher contains 670,650 bytes of CODE
 > (limit 500,000; about 85 KB of .o), which gcc cannot compile in reasonable
 > time. A bounded repeat's body is replicated and repetition counts MULTIPLY
 > through nesting -- lower a count, reduce the nesting, or raise the limit with
@@ -1533,7 +1540,7 @@ under bit 17.
    `PCREC_MAX_VM_NODES`), and the note's own costless fix was taken (§3.2).
 3b. **RULED for the code-bytes cap** (D84 addendum 2: 500,000 stands, ≈ 85 KB
    of `.o`, a judgement inside the empty band between the corpus's worst
-   284,035 and witness 2's 836,621). The **TOTAL-bytes cap's 1,000,000 is
+   283,080 and witness 2's 670,650). The **TOTAL-bytes cap's 1,000,000 is
    still a judgement, and it is NOT centred**: 1.54× above the corpus max
    (651,412) but only 1.10× below `a{1,25000}` (1,103,865). 850,000 would be
    centred (1.30× each way). 1,000,000 is proposed for the `fuzz.py` alignment
