@@ -558,3 +558,207 @@ assertion is the check. (This is the K35 shape — a population whose
 meaning depends on something elsewhere in the file — and it is worth
 stating that it landed on the loud side by construction, not by luck: a
 `perr` block's expectation is *falsified* by resolution succeeding.)
+
+### 2.5 The include model
+
+`include <path-ref>` splices the referenced file's **blocks** as if they
+had been written at that point.
+
+- **Path spelling** (Frank §6.1, C's model): `include "rel/path.rxt"` is
+  resolved relative to **the directory of the file that names it** —
+  including when that file is itself a fragment; `include <name>` is
+  searched on the library path (pcrec's shipped store, then each
+  `--lib-path DIR` in order), with `.rxt` implied, and is **never**
+  relative to the including file.
+- **What an included file may contain: pattern blocks and `include`
+  lines. Nothing else.** No `lib`, `target`, `config`, `use`, `oracle`,
+  file-level `tag`, no data block. ARGUED from AR-4: a fragment that can
+  redefine file scope makes a block's meaning depend on which file
+  spliced it, which is exactly the cross-file context a D27 author must
+  not need. Nested `include` is allowed because a splice of a splice is
+  still only blocks.
+- **A second `include` of the same resolved real path in one closure is
+  REFUSED**, naming both sites (§0.3 D-d). The two alternatives —
+  splice twice, or silently ignore — respectively double a population
+  and hide one, and learnings §3 is a catalogue of exactly that failure.
+  `lib`, by contrast, **is** idempotent: it declares, it does not splice,
+  and the same file reached by two paths is one contribution.
+- **Cycles are refused**, naming the cycle (R-VE-7's requirement, one
+  level up: the *file* graph as well as the *reference* graph must be
+  statically analysable).
+- **A fragment is not an entry file.** §2.11 states the rule and why it
+  has to be a rule rather than a directory convention.
+
+### 2.6 Config scoping and precedence
+
+A **cell** is the unit that gets compiled and run: a (block, option-set)
+pair. Today every block is exactly one cell. Configs multiply cells.
+
+- **`with c1, c2` on a `target` COMPOSES**: one artifact, one option set,
+  `c1` then `c2`, later wins.
+- **`use c1, c2` ENUMERATES**: one cell per named config. ARGUED: `with`
+  builds a single artifact and so needs a single option set, while `use`
+  says "run these cases under each of these", which is plural by nature
+  — and `use`'s consumer is the bench, where the point is that pcrec and
+  pcre2-jit are *different testees*, not a composition.
+- **`config c from a, b`** expands to `a`'s lines, then `b`'s, then `c`'s
+  own. Cycles in `from` are refused.
+
+**Composition is per option kind, not one blanket rule**, because the
+kinds are not alike:
+
+| option | how a config and a block compose | why |
+|---|---|---|
+| `features` | **UNION** — a config's modules are ADDED to the block's | enabling a module cannot change what an already-compiling pattern matches; it can only change what is refused. This is what a testee needs: pcrec-bench's `subbench.toml` records that `--features all` "is a build/run flag of the TESTEE, not a variant of the pattern, and the pattern text handed to pcrec is byte-identical either way" |
+| `flags` | **more specific wins** (block over config over default) | `flags i` changes what the pattern *matches*; a block that states it has stated the test's meaning |
+| `engine`, `budget` | more specific wins | as above |
+| `pcrec <raw>` | config only; accumulated along the chain, later wins per flag | a block has no spelling for these, so there is nothing to conflict with |
+| size-limit overrides (`--max-emit-bytes=N`, `--max-emit-code-bytes=N`) | **raise-only at every scope** (D84) | CITED, `docs/spec/limits.md`: "raise-only (a value below the default is refused, so these can never be used to make a build fail that would have succeeded)". Precedence may therefore never *lower* an effective cap; a chain that tries is refused, not silently ignored |
+
+**A `perr` block is evaluated in exactly ONE cell** — its own options
+composed with the file's default — and is **never re-run under a `use`
+or `target` config. ARGUED, and it is load-bearing**: `perr` asserts a
+refusal *under a stated option set* (R-RXT-6: "a dropped flag would
+compile a different automaton and the block's expectations would then be
+verified against something nobody asked for"), so re-running it under a
+testee's `--features all` would assert something nobody wrote — and
+MEASURED, it would silently change the meaning of **384** blocks. Under a
+non-pcrec testee a `perr` is meaningless in any case.
+
+### 2.7 Targets, `rx_info.name`, and how many `.c` files come out
+
+A **target** is a file-level declaration, never a block marker (Frank
+§6.4, which supersedes the paper's §2/§6.2/§6.3 block-scoped `target`):
+
+```
+target <prefix> = <name> [with <config>[,<config>…]]
+```
+
+- `<name>` is any definition in scope — this file's or a `lib`'d one. A
+  library declares no targets; a user file declares the targets it wants
+  from the library, under the user's own configs. This is Frank's own
+  case ("there is a set of lib patterns I want to include in my compiled
+  file but I want to specify the options for them").
+- `<name>` may be declared **after** the `target` line (the head precedes
+  the body); resolution is a whole-file pass, so forward reference is
+  normal, not an exception.
+- **Several targets may name one definition**: `target email_avx2 = email
+  with avx2` and `target email_base = email with baseline` are two
+  artifacts, two prefixes, one pattern, and `rx_info.name == "email"` in
+  both. A duplicate **prefix** in the include closure is refused.
+- **Compatibility default** (Frank §6.4): a file with no `target` line
+  and exactly one **unnamed** block is `target rx = <that block>` —
+  today's `pcrec 'pattern'`, and the CLI's `-p` still overrides the
+  prefix for that case. **Every other file builds nothing unless it says
+  so.** MEASURED, this is the right default for the corpus: all 179 files
+  have several unnamed blocks and none declares a target, so
+  `pcrec --source tests/base/quantifiers.rxt` emits **nothing** rather
+  than 90 artifacts. Test compilation is untouched — the harness compiles
+  every block with cases, as it does today; target-ness and testability
+  are independent bits (T-1/OD-4, §5).
+- **One `.c` per target** (Frank's ruling 6). `pcrec --source f.rxt
+  --target <prefix> -o out.c` selects one; with no `--target`, every
+  declared target is built, one file each. A single multi-pattern
+  **unit** stays [V-E]'s question (§4.4).
+- **`rx_info` gains `const char *name`** (Frank §6.3): the block's
+  `name`, or the prefix when the block is unnamed, so no artifact ever
+  carries a NULL name. This is a scaffolding change and therefore **an
+  `abi` bump under D76's ritual, in the same change**, at all four sites
+  CLAUDE.md names: `src/gen/emit_dfa.c`'s `.abi` (currently **11**,
+  MEASURED at `src/gen/emit_dfa.c:1310`), `tests/codegen/run_codegen_tests.sh`'s
+  [DD-14.FB] §10.4 expectation, `docs/spec/match_api.md` §6, and the
+  identity gate's (B) pin. It rides W1's first landing, not a separate
+  event (memory `pcrec-abi-changes-pre-release`).
+
+### 2.8 Exemplar-file addressing (`@file:`)
+
+`@file:"path"` is a subject, usable wherever a quoted subject is —
+`m`, `n`, `ms`, `ns`, `mc`.
+
+- **Local spelling only** (Frank §6.1: "`@file:` subjects are always
+  local (quoted spelling only — a subject is data, never a library)").
+  There is no `<>` form.
+- **Relative to the file that names the subject**, so a spliced
+  fragment's paths are relative to the fragment, not to the entry file.
+- **The file's bytes ARE the subject.** No escape decoding, no newline or
+  encoding transformation, NUL-safe — T-5's requirement, and the same
+  discipline `tests/harness/driver.c` already keeps for inline subjects
+  ("the decoded bytes may include `\0`, so it never uses `strlen`",
+  `docs/spec/rxt_format.md`). The asymmetry is deliberate and must be
+  stated in the spec: a *quoted* subject's escapes are processed, a
+  *file* subject's bytes are not.
+- **The format imposes no size limit.** §3 records the driver-protocol
+  change this forces — today a subject travels as an `argv` string, which
+  can carry neither a NUL nor a megabyte.
+- **No content hash on a subject reference.** ARGUED, and it is the
+  principle §2.10 turns on: **provenance is required exactly where the
+  source is not committed.** A subject file sits in the repo beside the
+  `.rxt` and is covered by the same review and the same history; an
+  exemplar deliberately is not.
+
+### 2.9 The oracle declaration
+
+`oracle python` (the default) | `oracle pcre2` | `oracle none <reason>`,
+file-level or block-scoped, block wins.
+
+- **`# pcre2-only` immediately before a `pattern` line stays valid and
+  means `oracle pcre2` for that block.** MEASURED: **636** occurrences
+  across the corpus; not one of them changes.
+- `oracle none <reason>` is a **counted, printed** skip — AR-3, and the
+  same shape as `# pcre2-only`'s counted skip and PC-3's loud `SKIP:`
+  lines. R-RXT-7's obligation is unchanged: an exclusion still owes a
+  `docs/dev/upstream_issues.md` entry.
+- **An absent oracle degrades to a labelled skip, never a silent pass and
+  never a hard failure** (R-VG-3, the PC-3 discipline) — a stranger's
+  clone without libpcre2 must still exit 0 with its skips named.
+- **`oracle` never selects what pcrec compiles.** It selects what the
+  expectation is checked against. The distinction matters for `variant`
+  (§4.5): a testee's variant is checked against the *canonical*
+  expectations, which the *canonical* oracle produced.
+
+### 2.10 The data-block family, and its membership rule
+
+Frank ruled the exemplar-analysis findings file **is** an `.rxt`, and
+that the analysis block is a **family with a membership rule**: an
+analysis is included only when it answers a **specific question a named
+selection point asks**, with its value **measured first** (D77) — never
+on plausibility.
+
+**The rule is made structural, not editorial.** A data block's
+`question` and `reader` lines are **required**; a block without them is
+refused. `question` states what it answers; `reader` names the selection
+point that consumes it. "A block nobody reads is not emitted" is then a
+parse-time fact rather than a review convention.
+
+**`freq <name>` is the family's only member today**, and it is earned:
+it answers "which byte is rarest", which the rarest-byte candidate-scan
+selection ([OPT-A]/D21) asks, and D83 already rules that analysis runs
+outside pcrec and arrives as a findings file. Its body is
+**16 `row` lines of 16 counts each**, offset-labelled — 256 counts.
+
+**OD-6 is disposed of** (§5): inline values, not `@file:`; and a
+**namespace of its own**, not `config`'s (§2.2). Inline, because the
+findings file is the **committed artifact and the exemplar is not**
+(Frank) — a table that referred out to a second file would reintroduce
+exactly the uncommitted dependency the ruling removes, and 256 counts is
+~2 KB of text a person can read. Its own namespace, because a `config`
+block's `freq <name>` line names a data block and nothing else, so there
+is no ambiguity to resolve and no reason to make `config prod` and
+`freq prod` collide.
+
+**Provenance is required** — `exemplar`, `bytes`, `sha256`, `analyzer`,
+`date` — because the exemplar is absent by design (proprietary, secret,
+or too large). The table can then be re-derived when the exemplar is at
+hand and **reads honestly when it is not**. A byte histogram is 256
+counts and effectively non-reversible, so committing it leaks
+essentially nothing; committing it *without* provenance would be the
+population-nobody-counted hazard one file over.
+
+**`gap` — the illustrated second member — is NOT specified here.** Frank
+named it as an illustration ("I'm just illustrating that there may be
+more than frequency, not saying what"), its question is real (how far a
+`memchr` for a byte skips, and how bursty its occurrences are — which
+frequency cannot answer: equal means, different shapes), and its
+**value has not been measured**. D77 says wait. The family's grammar
+admits it as one new `data-kind` with its own body when it is earned;
+this note adds no production for it.
