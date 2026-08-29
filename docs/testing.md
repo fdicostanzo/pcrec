@@ -3593,7 +3593,8 @@ parallel: 177 of 177 file workers reported (PROCS=12)
 run_size_log.sh: wrote 2875 rows to docs/dev/artifact_size_log.tsv (commit f446f1c)
 ```
 
-`check_size_tripwire.sh` against that log:
+`check_size_tripwire.sh` against that log, with the pin this lane
+originally proposed (`MAX_SIZE_BYTES=700,000`):
 
 ```
 check_size_tripwire.sh: OK — 2875 rows (commit f446f1c), worst size
@@ -3606,7 +3607,24 @@ unchanged and its value within normal run-to-run CPU jitter of the
 first run's 5.475s — confirming the id fix did not otherwise change
 what the log measures.)
 
-Every pin held on the first real measurement, no adjustment needed:
+**The size pin was RULED UP at landing** (manager, 2026-08-28, from
+Frank — see "The tripwire and its pins" above for the full reasoning and
+the manager's own sabotage transcript): 651,344 B against a 700,000 B pin
+is only 7% headroom, which makes that pin a DRIFT detector (any ordinary
+corpus/emitter change trips it) rather than a BLOWUP detector, and drift
+is `scripts/size_diff`'s job, not this tripwire's. `MAX_SIZE_BYTES` is
+1,400,000 B (~2x the measured max) in the shipped script; re-running the
+identical log against it:
+
+```
+check_size_tripwire.sh: OK — 2875 rows (commit f446f1c), worst size
+651344 B ('tests/counterk/counterk.rxt:1807', pin 1400000), worst gcc CPU
+5.462s ('tests/base/k18_cost_gates.rxt:103', pin 8.0s)
+```
+
+No recompile, same log, same worst-size/worst-CPU pattern and value —
+only the pin changed. Every number below is read against the SHIPPED
+1,400,000 B / 8.0s / 1,500-row pins unless stated otherwise:
 
 - **Row count**: 2,875, self-consistent (header's `rows=2875` == 2,875 data
   rows == `run.sh`'s own printed `size-log rows: 2875`), 91.7% above the
@@ -3619,10 +3637,12 @@ Every pin held on the first real measurement, no adjustment needed:
   e.g. the email specimen appearing in both `tests/base/` and its bench
   copy).
 - **Size**: worst 651,344 B (`((a)|ab){4000}c`, the census's own largest
-  witness) against the 700,000 B pin — 93.0% of pin, 7.0% headroom. Matches
-  this lane's own manual measurement of the same pattern's split-form size
-  almost exactly (651,349 B, a 5-byte difference from a harness `mktemp`
-  working-directory artifact, not from the pattern or the definition).
+  witness) against the shipped 1,400,000 B pin — 46.5% of pin, well over
+  2x headroom by design (the pin is a doubling of this very number).
+  Matches this lane's own manual measurement of the same pattern's
+  split-form size almost exactly (651,349 B, a 5-byte difference from a
+  harness `mktemp` working-directory artifact, not from the pattern or the
+  definition).
   `size_bytes` is deterministic given an unchanged emitter and pattern, so
   this headroom is not "noise margin" the way the CPU pin's is — it only
   moves on a real emitter or corpus change, which is the ratchet's whole
@@ -3638,6 +3658,10 @@ Every pin held on the first real measurement, no adjustment needed:
   are the two numbers that transfer across the two shapes, CPU-time
   ranking does not.
 
-No pin was silently moved to make this pass — every number above is the
-first real measurement landing inside the pins this lane set from the
-census's own numbers before running the corpus once.
+The row count and gcc-CPU pins held at their FIRST proposed values with
+no adjustment. The size pin was RULED UP explicitly (not silently, and
+not to make a failure pass — the lane's proposed 700,000 B pin was
+already passing; the ruling moved it because 7% headroom makes a pin a
+drift detector rather than a blowup one), with the reasoning and the
+manager's own sabotage transcript recorded above under "The tripwire and
+its pins". Nothing here was moved to paper over a red result.
