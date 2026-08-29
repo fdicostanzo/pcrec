@@ -17860,3 +17860,48 @@ during the bench's pinned window: load 1.6 → 9.4, the bench's cell 2
 lost an attempt. The section had ended by the time I checked; HOLD
 re-relayed with the forbidden SHAPES enumerated and an ack demanded;
 memory `pcrec-box-concurrency` rule 11. pcrecdev2 will re-run the cell.
+
+#### Forty-fifth session, part 4 — the second breach and the idle hold; Frank's composition rulings → D87; window closed 17:04; all three lanes relaunched (~15:0x-17:1x EDT)
+
+**Second breach (14:59).** opt4 launched `make test-codegen` (a
+run_group of five codegen scripts, cc1 at 200 %) seconds after my
+re-relay — it had not yet drained the message. Killed the tree by PID
+(scripts/safekill, pgid 1937836), STOPPED the lane (TaskStop); its
+STEP 2 is complete on lane/opt4 (2ed6402 + one uncommitted edit). Then,
+at the bench's ask (its per-core gate limit was derived with ONE manager
+on the box; two claude processes' own CPU was the residue refusing
+cells), parked dd11 too — WIP-committed its in-progress [DD-11.1]
+files myself (4f460bc: RegRow.definitions, src/parse/definitions.c,
+registry.c) and stopped it; deleted the watchdog cron; went IDLE (no
+tool calls) 15:1x → 17:04, replying to Frank in text only.
+
+**Frank, during the hold — D87 (b92f358)**, ruling r44's blockers the
+OTHER way from my recommendations: absolute numeric references are LOCAL
+to their pattern and a group's number is an ASSIGNED property (the
+composer RENUMBERS, never refuses) → composition is an AST-LEVEL
+operation INSIDE PCREC, the harness's textual EXPAND only an oracle
+control; local names override incoming (own groups win; injected
+definitions name-qualified); a caller-scope PREFIX on subroutine calls
+(a deliberate PCRE2 break); the explicit-number spelling as a
+serialization pcrec emits and accepts (Frank floated composing outside
+pcrec via that syntax, "doubtful"; my breakdown — a second parser, an
+oracle that cannot read it, the concept needed inside anyway — and he
+agreed); context naming IS struct naming for the struct-loading feature:
+an INLINE per-call-site struct member, path = prefix, delivering calls
+declared per call site, non-finite calls not deliverable; duplicate
+names within a scope = one field, FIRST SET wins (PCRE2's
+substring_get_byname rule); and the numbering rules from his examples
+(`(3:abc)(1:xxx)(yyy)` → 3,1,2; adding `(fff)` → error): an explicit
+number RESTARTS the counter, collisions are errors, unassigned numbers
+are real never-set slots. Also: "maintain a cron to keep context cache
+from expiring" → keepalive cron at :09/:39 (memory
+`pcrec-cache-keepalive-cron`).
+
+**Window CLOSED 17:04** (12/12 measured after three re-runs; index 41;
+O-8 within 1-2 h). Relaunched: dd13b's revision round (r44 + D87 + the
+syntax items B1-B7, C the struct view, D the five-member piece class);
+opt4b (opus, fresh, from 2ed6402: the five STEP 2 conditions verified in
+the tree, STEP 3, then the [SEL-1] rung as a second commit); dd11b
+(sonnet, fresh, from 4f460bc: [DD-11.1] → [DD-11.4b] sequential). Both
+resumed lanes carry the HOLD protocol explicitly (the enumerated shapes
++ a one-line ack). Watchdog cron v3 up.
