@@ -17737,3 +17737,80 @@ while [OPT-A]'s frequency prior is D83's findings file, which is
 Stall watchdog cron up (10 min). Box rule to every lane: no full
 `make test`/san/mech — one heavy suite at a time, the bench window
 handshake; `gnutimeout`/`scripts/watchdog` on anything unbounded.
+
+#### Forty-fifth session, part 2 — [DD-11] note delivered + r43 panel; [OPT-4] STEP 0/1 gated to code; two census rulings from Frank; [SPEC-1.11] filed (~14:2x-15:0x EDT)
+
+**[DD-11]** (lane dd11, sonnet) delivered docs/design/definitions_table.md
+(86d8725, 424 lines) in one sitting: a census with file:line (4
+replacements — `(?m)^`, `(?m)$`, `\b`/`\B`, the possessive family — vs
+primitives, `.`/`(?i)`/`(?x)` argued out as PARAMETERS), the shipped
+`$`/`^` shown to be a D62 FIELD+FOLD not a syntactic substitution (the
+two coexist, D66), Option A (`RegRow.definitions`) recommended on D24's
+own anti-duplication argument, two python/PCRE2 divergences reproduced
+live, and the sharpest hazard a SEQUENCING one (wiring substitution
+before M6.6's exact one-byte lookbehind would trade D62's exact lowering
+for the A_LOOK→N_EPS erasure) — hence the [DD-11.1]-.4 (safe now) /
+[DD-11.5]-.6 (gated on M6.6) split.
+
+**Frank, mid-panel, two rulings:** "are we including `\d -> [0-9]`,
+etc?" and "there is also stuff like `\a`" — the CLASS-ESCAPE family and
+the LITERAL-ESCAPE family ARE definition rows (today's byte definitions,
+predicate `always`; UTF/UCP and encoding as their chartered second row;
+`\R` an atomic alternation the note also missed; cls_bits.inc becomes
+DERIVED from the definition strings with PC-4 as the control). The
+note's "already collapsed, out of scope" bucket was the wrong call.
+
+**r43 panel** (docs/dev/reviews/2026-08-29-r43-dd11-definitions.md,
+b323878; three sonnet critics, read-only, no make): FIVE BLOCKERS — C1
+`(?n)` is a fifth shipped replacement (`(...)` → `(?:...)`, parse.c:832,
+verified live); K1 the note's `ParseMods` type-hazard MECHANISM does not
+occur (forward-declared at internal.h:27); K2 the real gap — any stored
+callable in RegRow downgrades D62's "physically cannot compile"
+containment to convention; K3 §5's reachability check is unbuildable;
+K4 the predicate-swap sabotage is undetectable by anything the note
+proposes before [DD-11.5]. r43-sem verified EVERY equivalence and the
+whole possessive family (captures, numbering, backrefs) against
+libpcre2 10.46 via ctypes: 0 disagreements over ~90+ cells, with a
+vacuity control that DID diverge; its MAJORs sharpen [DD-11.5]'s gate
+(S3: the DFA-erasure safety net is a per-call-site `pcrec_ast_stamp`
+discipline — a mis-stamped table builder is a silent miscompile, not
+the note's perf-only story; S1/S2: libpcre2 is the CO-EQUAL leg of the
+self-oracle, lookaround_design.md §6.3). MANAGER RULINGS: the predicate
+is a TAG from a closed enum with ONE exhaustive-switch evaluator in
+src/parse and the dump printing the tag name (one derivation; resolves
+K1/K2/K3/K9 and the prose-drift question in one move); D82 rule 4
+governs emitter axes, not this table — a binding is a row because the
+listing and the core-set definition are the point (K8); `--flavour` YES
+like `--list-syntax` (K6, overturning the note's Q3); Q1 keep
+string/builder split; Q2 close after .1-.4, .5/.6 a follow-on row.
+One revision round sent to dd11 (15:0x); manager re-check, no second
+panel unless the census changes shape.
+
+**[OPT-4]** (lane opt4, opus): STEP 0 LOCATED the count's entry
+(compile.c:861-874 builds ONE DFA pair for both roles; nfa.c:686
+A_REP replication; BOTH directions carry it, shape-dependent — a
+one-direction fix would miss half) and COUNTED the population (244 of
+1,388 hybrids, 17.6 %; 24.6 % of hybrid bytes; bench 13/14 untouched by
+construction, `level-context` would GAIN a prefilter at 319 states).
+The finding that shaped the design: the prefilter is ALREADY an
+over-approximation twice (atomic transparent, lookaround epsilon) with
+H1/H2/H3 beside `emit_vm.c:7546`'s `mrl_win` — the count-collapse is a
+third member, one more conjunct. STEP 1 note (75e4df6,
+docs/design/prefilter_count_independence.md) REFUSED unconditional
+collapse on a measurement (96 of the 244 would GROW, +71,428 B; all 244
+would lose `prefilter-window`) and chose a BOUNDED default: exact NFA
+> 128 states → collapsed (23 of 2,878 artifacts change, zero factor<2
+above any bar; K41 witness 2 → ~158,601 B under the default caps).
+GO given with five conditions: the bar pinned by a CHECK after a
+plateau sweep (r40 S6's "mass at the bar"); a `_LANG_WHY` stamp with
+the count and the bar; K39's check restated (above-bar pair equal,
+below-bar byte-identical, force cell); the costs (100k-`a` worst case,
+lost ceiling) measured into tuning.md; the [SEL-1] rung as the
+separable second commit (level-context is the measured need). abi
+11→12.
+
+**[SPEC-1.11]** filed (ddd466e) on Frank's ask, late-game/boonies,
+unplanned "(ironic)": the extender's spec — recipe per extension kind.
+
+Bench: pcrecdev2's three light lanes up; WINDOW OPEN ≥1 h out; its ask
+that opt4's compile+gcc loops HOLD during the window relayed to opt4.
